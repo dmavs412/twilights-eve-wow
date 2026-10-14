@@ -53,6 +53,8 @@ futures-lite = "2.6.1"
 benilla-assets = { path = "../benilla-assets", default-features = false }
 benilla-formats = { path = "../benilla-formats", default-features = false }
 benilla-protocol = { path = "../benilla-protocol" }
+# Twilight's Eve's Local Realm, behind the net layer's in-process backend (`twilight/`).
+twilight-realm = { path = "../twilight-realm" }
 benilla-world = { path = "../benilla-world", default-features = false }
 # The CVar diff persisted in `benilla-config/config.toml`.
 serde = { version = "1", features = ["derive"] }

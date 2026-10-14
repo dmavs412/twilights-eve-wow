@@ -23,8 +23,6 @@ use benilla_world::schedule::WorldStage;
 mod apply;
 mod backend;
 pub(crate) use backend::NetBackend;
-// The far ends are for an in-process backend, which nothing in the crate attaches yet.
-#[allow(unused_imports)]
 pub(crate) use backend::{FarEnds, InProcessLink};
 pub(crate) mod handlers;
 pub(crate) mod io;

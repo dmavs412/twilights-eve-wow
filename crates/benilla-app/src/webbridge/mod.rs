@@ -203,12 +203,15 @@ fn unknown_command(name: &str, memo: &mut BridgeMemo, out: &mut BridgeOutbox) {
 
 /// The VM's binding commands as `(name, category)`, as the Key Bindings window lists them: the
 /// `GetNumBindings`/`GetBinding` walk, each command under the `HEADER_` row above it (hidden
-/// commands are not in that walk).
+/// commands are not in that walk). The walk returns its table, not `unpack(t)`: two hundred-odd
+/// results on the VM's base frame overflow its C stack, which a debug Lua aborts on.
 fn command_list(script: &UiScript) -> Vec<(String, String)> {
     const WALK: &str = "local t = {} for i = 1, GetNumBindings() do t[i] = (GetBinding(i)) end \
-                        return unpack(t)";
-    let rows = match script.eval_plain(WALK) {
-        Ok(rows) => rows,
+                        return t";
+    let rows = match script.eval_plain(WALK).map(|mut v| v.pop()) {
+        Ok(Some(PlainValue::List(rows))) => rows,
+        // An empty table renders as an empty map.
+        Ok(_) => Vec::new(),
         Err(e) => {
             warn!("webbridge: listing the binding commands: {e}");
             return Vec::new();

@@ -1,0 +1,12 @@
+[package]
+name = "twilight-realm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Twilight's Eve's Local Realm: the game rules behind the client's command/event seam, free of Bevy"
+
+[lints]
+workspace = true
+
+[dependencies]
+benilla-protocol = { path = "../benilla-protocol" }

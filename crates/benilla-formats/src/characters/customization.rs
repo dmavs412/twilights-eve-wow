@@ -123,6 +123,12 @@ impl CharCreateCatalog {
         self.combos.contains(&(race, class))
     }
 
+    /// Keeps only the combos whose class passes `keep`: a mode that offers fewer classes than the
+    /// realm (Twilight's Eve offers only Warrior).
+    pub fn retain_classes(&mut self, keep: impl Fn(u8) -> bool) {
+        self.combos.retain(|&(_, class)| keep(class));
+    }
+
     /// The ChrRaces fileString for a race (`"Human"`, `"Scourge"`), the GlueStrings key stem.
     pub fn race_file(&self, race: u8) -> Option<&str> {
         self.files.get(&race).map(String::as_str)

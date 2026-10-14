@@ -24,8 +24,6 @@ pub(crate) enum NetBackend {
     /// runs.
     Offline,
     /// The far ends wait in [`InProcessLink`] for an in-process backend to take them.
-    // Nothing boots into this yet; the Twilight's Eve glue will.
-    #[allow(dead_code)]
     InProcess,
 }
 
@@ -54,7 +52,7 @@ pub(crate) struct FarEnds {
 
 /// [`NetBackend::InProcess`]'s far ends, waiting for the in-process backend to take them.
 #[derive(Resource)]
-pub(crate) struct InProcessLink(#[allow(dead_code)] pub(crate) Option<FarEnds>);
+pub(crate) struct InProcessLink(pub(crate) Option<FarEnds>);
 
 /// One pair of every channel the net layer uses.
 pub(super) fn channels() -> (AppEnds, FarEnds) {

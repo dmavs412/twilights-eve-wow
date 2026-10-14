@@ -108,6 +108,8 @@ mod sound;
 mod spell;
 /// Warcraft Survivors: the top-down survival mode the `warcraft-survivors` launcher boots.
 mod survivors;
+/// Twilight's Eve: the boot flag and the Local Realm's glue (ADR 0001).
+mod twilight;
 /// The melee swing refusal's latch + 4 s repeat (`SMSG_ATTACKSWING_*`).
 mod swing_refusal;
 mod target;
@@ -302,7 +304,9 @@ fn launch(build: BuildId, extend: Option<Extension<'_>>) -> AppExit {
     // NPCs stream in) and exits.
     let capturing = run_mode::scenario_active();
     // Survivors runs server-less too, on Kalimdor; `world_map` reads the map at `Startup`.
-    let survivors = survivors::active();
+    // Twilight's Eve outranks Survivors, which every launcher turns on.
+    let twilight = twilight::active();
+    let survivors = survivors::active() && !twilight;
     if survivors {
         benilla_world::world_map::set_start_map(1);
     }
@@ -341,7 +345,9 @@ fn launch(build: BuildId, extend: Option<Extension<'_>>) -> AppExit {
     // (`embedded://benilla_app/shaders/…`), so no build-machine path reaches the binary.
 
     app.add_plugins(benilla_world::boot::tuned_default_plugins(Window {
-        title: if survivors {
+        title: if twilight {
+            "Twilight's Eve"
+        } else if survivors {
             "Warcraft Survivors"
         } else {
             "benilla"
@@ -435,17 +441,25 @@ fn launch(build: BuildId, extend: Option<Extension<'_>>) -> AppExit {
     .add_plugins(game_plugins::GamePlugins {
         net: if capturing || survivors {
             net::NetBackend::Offline
+        } else if twilight {
+            net::NetBackend::InProcess
         } else {
             net::NetBackend::Io
         },
         start: if survivors {
             char_select::ClientState::InWorld
+        } else if twilight {
+            // No login: the Local Realm's roster is the first screen.
+            char_select::ClientState::CharSelect
         } else {
             run_mode::start_state()
         },
     });
     if survivors {
         app.add_plugins(survivors::SurvivorsPlugin);
+    }
+    if twilight {
+        app.add_plugins(twilight::TwilightPlugin);
     }
 
     app.add_plugins(webbridge::WebBridgePlugin);
