@@ -565,7 +565,7 @@ def build(args):
         d["world_drop"] = any(s[1] for s in srcs)
         extra.append(d)
     extra.sort(key=lambda d: (d["required_level"], d["entry"]))
-    boss_pool = [d["entry"] for d in wc_list if d["proposed_for_boss"]] +         [d["entry"] for d in extra if 18 <= d["required_level"] <= 22]
+    boss_pool, boss_pool_why = trim_boss_pool(wc_list, extra)
 
     loot_out = {
         "meta": meta(args, "World-drop gear pools by level and quality. Items are keyed by "
@@ -600,10 +600,12 @@ def build(args):
                     "world-drop BoE blues WC trash shares with the open world. "
                     "level_17_25_warrior_blues: other blue drops (dungeon or world) with "
                     "required level 17-25, fixed stats and no unsupported spell, usable by a "
-                    "Warrior. proposed_boss_pool: the WC blues a Warrior can sensibly use "
+                    "Warrior. proposed_for_boss marks WC blues a Warrior can sensibly use "
                     "(fixed stats, no unsupported spell, no caster-only stats, no cloth body "
-                    "armour) plus the required-level 18-22 extras.",
+                    "armour). proposed_boss_pool is the trimmed pool; see boss_pool_rule.",
+            "boss_pool_rule": BOSS_POOL_RULE,
             "proposed_boss_pool": boss_pool,
+            "proposed_boss_pool_detail": boss_pool_why,
             "wailing_caverns": wc_list,
             "level_17_25_warrior_blues": extra,
         },
@@ -618,6 +620,45 @@ def build(args):
     goods_out = goods_vendor(con, items, spells, creatures, icons, args)
     prof_out = proficiency(con, args)
     return loot_out, token_out, goods_out, prof_out
+
+
+BOSS_POOL_SIZE = 20
+BOSS_POOL_RULE = (
+    "1) every Wailing-Caverns-only blue a Warrior can use (proposed_for_boss, no cloth); "
+    "2) then the WC-shared BoE blues a Warrior can use with required level 15-22, best "
+    "Warrior score first; 3) then the required-level 18-22 extras from other dungeons, best "
+    "score first; stop at 20 entries, at most 3 per slot. Items with a Warrior score of 0 "
+    "(no Warrior stat, armour or dps) are skipped. The run is level-20ish, so 15-22 keeps the "
+    "drop near the player.")
+
+
+def trim_boss_pool(wc_list, extra):
+    """The ~20-entry Dungeon-boss blue pool and why each item is in it."""
+    picked, why, per_slot = [], [], defaultdict(int)
+
+    def take(d, reason):
+        slot = SLOT_GROUP.get(d["inventory_type"], d["inventory_type_name"])
+        if len(picked) >= BOSS_POOL_SIZE or d["entry"] in picked or per_slot[slot] >= 3:
+            return
+        if score(d) <= 0 or d["subclass_name"] == "cloth" and slot != "back":
+            return
+        per_slot[slot] += 1
+        picked.append(d["entry"])
+        why.append({"entry": d["entry"], "name": d["name"], "slot": slot,
+                    "required_level": d["required_level"],
+                    "warrior_score": round(score(d), 1), "why": reason})
+
+    for d in sorted(wc_list, key=lambda d: (-score(d), d["entry"])):
+        if d["wailing_caverns_only"] and d["proposed_for_boss"]:
+            take(d, "wailing_caverns_boss_drop")
+    for d in sorted(wc_list, key=lambda d: (-score(d), d["entry"])):
+        if not d["wailing_caverns_only"] and d["proposed_for_boss"] \
+                and 15 <= d["required_level"] <= 22:
+            take(d, "wailing_caverns_shared_boe")
+    for d in sorted(extra, key=lambda d: (-score(d), d["entry"])):
+        if 18 <= d["required_level"] <= 22:
+            take(d, "other_dungeon_or_world_blue")
+    return picked, why
 
 
 def meta(args, desc):

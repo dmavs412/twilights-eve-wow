@@ -10,7 +10,9 @@ they are not loaded by anything yet.
 | `data/twilights-eve/token_vendor.json` | proposed Token-vendor greens for bands 1-10, 11-20 and 21-30, with a Token cost |
 | `data/twilights-eve/goods_vendor.json` | food and drink for levels 1-30, the Crossroads stock, durability loss and the repair tables |
 | `data/twilights-eve/warrior_proficiency.json` | what a Warrior can equip, and from what level |
+| `data/twilights-eve/barrens_creature_loot.json` | optional: Barrens creature families, their own drops and quest drops |
 | `tools/twilights-eve/import_items.py` | the generator (stdlib Python 3.10+) |
+| `tools/twilights-eve/barrens_loot.py` | the Barrens family generator; reuses `import_items.py` |
 | `tools/twilights-eve/mpq_dbc.py` | a minimal MPQ and DBC reader, a port of `crates/benilla-mpq` |
 
 ## Source
@@ -121,10 +123,36 @@ mods). 1.12 suffix stats are equip spells (`MOD_STAT`, `MOD_RESISTANCE`, attack 
 are decoded. Caster suffixes ("of Healing", "of Sorcery", "of the Owl" mana regen) are marked
 `supported: false`.
 
-To use them, the realm must roll a suffix, send its id in `ITEM_FIELD_RANDOM_PROPERTIES_ID` so
-that the stock client renders the name and stat lines from its own DBC, apply the mods
-server-side, and save the id with the item. Without that, they show and behave as stat-less
-greens. This doubles the green pool from 11-15 up, so it is worth doing in #9 if it fits.
+They show and behave as stat-less greens unless the realm does the work below. They double the
+green pool from 11-15 up, so it is worth doing in #9 if it fits.
+
+**What random-enchant support needs** (read-only look at the client; it already handles it):
+
+- **Client side, nothing to build.** `crates/benilla-formats/src/item_random_properties.rs`
+  loads `ItemRandomProperties.dbc`. `crates/benilla-app/src/items.rs` joins the suffix onto every
+  displayed name (`"%s %s"`, `ITEM_SUFFIX_TEMPLATE`).
+  `crates/benilla-ui/src/script/tooltip_item/mod.rs` draws the roll's stat lines
+  (`roll_enchants`). An item object takes its name from `ITEM_FIELD_RANDOM_PROPERTIES_ID` and its
+  stat lines from its own enchant slots 2..6. A loot or roll row (no object yet) reads the
+  enchants straight from the DBC row.
+- **On the wire, the realm must**:
+  1. Put the rolled property id in the loot row. `SMSG_LOOT_RESPONSE` items carry
+     `random_suffix` (always 0 in 1.12) and `random_property_id`
+     (`crates/benilla-protocol/src/messages/loot.rs`), and the loot window names the item from
+     it. Group-roll packets carry it too.
+  2. On the created item object, set `ITEM_FIELD_RANDOM_PROPERTIES_ID` (field 44) to the
+     property id. Set `ITEM_FIELD_ENCHANTMENT` slots 2..6 (fields `22 + 3*slot`: id, duration,
+     charges) to the row's enchantment ids, which are the `SpellItemEnchantment` ids in
+     `ItemRandomProperties.dbc` columns 2-6. The tooltip and the character sheet read these.
+  3. Send the base template unchanged in `SMSG_ITEM_QUERY_SINGLE_RESPONSE`; the suffix is not
+     part of it.
+- **In the realm**: roll the suffix from `suffix_tables[random_property]` by `chance_pct`. Apply
+  its `mods` to the character's stats while the item is equipped (and drop them at 0 durability
+  like any other stat). Save `random_property_id` with the item. The vendor price is the base
+  item's. To restrict to suffixes a Warrior can use, roll only `supported: true` rows and
+  re-normalise the chances.
+- **Tests** for #9: a rolled item round-trips the save with its property id, equipping it adds
+  the suffix stats, and the loot row and item object carry the same id.
 
 ### Dungeon blues (`dungeon_blues`)
 
@@ -139,10 +167,58 @@ greens. This doubles the green pool from 11-15 up, so it is worth doing in #9 if
   (Deadmines, Shadowfang Keep, Blackfathom Deeps, Stockade, Gnomeregan, Razorfen Kraul) or the
   world. Each has fixed stats, no unsupported spell, no caster-only stats, no cloth body armour,
   and is usable by a Warrior at its required level.
-- `proposed_boss_pool` (61 entries): the WC blues a Warrior can sensibly use (29), plus the
-  required-level 18-22 extras. Venomstrike and Stinging Viper are out because of their poison
-  procs, Seedcloud Buckler because its stats are caster-only, and Firebelcher because it is a
-  wand.
+- `proposed_for_boss` marks the 29 WC blues a Warrior can sensibly use. Venomstrike and
+  Stinging Viper are out because of their poison procs, Seedcloud Buckler because its stats are
+  caster-only, Firebelcher because it is a wand, and Slime-encrusted Pads because it is cloth.
+- `proposed_boss_pool` is trimmed to **20 entries, all real Wailing Caverns drops**
+  (`proposed_boss_pool_detail` gives each one's reason and score). The rule, in order:
+  1. Every WC-only boss blue a Warrior can use: Mutant Scale Breastplate (Mutanus), Kresh's Back
+     (Kresh), Leggings of the Fang and Cobrahn's Grasp (Lord Cobrahn), Living Root (Verdan),
+     Glowing Lizardscale Cloak (Skum) and Deep Fathom Ring (Mutanus).
+  2. Then the BoE blues WC trash shares with the world, at required level 15-22, best Warrior
+     score first: Redbeard Crest, Gargoyle's Bite (a polearm, so usable from level 20),
+     Prospector Axe, Thorbia's Gauntlets, Silver-linked Footguards, Diamond Hammer, Ironpatch
+     Blade, Stormbringer Belt, Razor's Edge, Feet of the Lynx, Starsight Tunic, Sentry Cloak and
+     Ranger Bow.
+  3. Then the other-dungeon extras at required level 18-22. They were not needed to reach 20.
+
+  No slot gets more than 3 entries, and an item with no Warrior value (no strength, stamina,
+  agility, armour or dps) is skipped. Why: the Dungeon is a level ~20 solo run, so the pool stays
+  inside the instance's real loot and near the player's level. It covers every armour slot a
+  Warrior fills at 20 plus each weapon type, and a clear never pays out a wand or a caster item.
+  `BOSS_POOL_SIZE` in the script changes the size.
+
+## Barrens creature families (`barrens_creature_loot.json`, optional)
+
+`tools/twilights-eve/barrens_loot.py` builds this file; run it after `import_items.py`, with the
+same `--db`. It groups every looted, non-boss, non-critter creature of level 30 or lower spawned
+in The Barrens into a family, and lists that family's **own** loot rows from vmangos
+`creature_loot_template`.
+
+- **Families** come from a keyword in the name first (`zhevra`, `kodo`, `giraffe`,
+  `thunder_lizard`, `harpy`, `quilboar_razormane`, `quilboar_bristleback`, `centaur_kolkar`,
+  `centaur_galak`, `venture_co`, `southsea_pirate`, `baeldun_dwarf`, `burning_blade`,
+  `silithid`, `oasis_snapjaw`, `theramore`), then the beast pet family (`plainstrider`, `raptor`,
+  `cat`, `hyena`, `wolf`, `wind_serpent`, `scorpid`, `crocolisk`, `boar`, ...), then the first
+  word of the name. Rares (rank 2/4) and families with 2 or fewer spawns are merged into
+  `named_and_rare`. That leaves 37 families.
+- **`drops`** are the family's non-gear rows at 1% or more, with the highest and lowest chance
+  across its members. For plainstriders: Cracked Bill 43%, Strider Meat 41%, Light Feather 41%,
+  Severed Talon 34%, and so on. For Razormane quilboar: Linen Cloth 39%, Wool Cloth 25%, food,
+  potions and gems. Rarer non-gear rows are counted in `rare_non_gear_rows`.
+- **`quest_drops`** are rows with a negative chance in vmangos, which drop only while a quest
+  wants them (Plainstrider Beak, Talon, Scale and Kidney; Fire Tar). They are good material for
+  #11's collect-N quests.
+- **Gear** that vmangos lists directly per creature is counted in `direct_gear_rows`, not
+  listed. The generic world-drop references are counted in `world_drop_refs`. The level pools in
+  `loot_items.json` stand in for both.
+
+Suggested use on a kill: roll each family `drops` row at its chance, then roll the level pool
+for gear and money. The zone test is a coordinate box (map 1, x -4700..1400, y -3950..-1050,
+minus a Dustwallow corner) plus the level cap, so a few edge creatures leak in (Ashenvale Bear,
+Theramore Marines, some Galak and Silithid from Thousand Needles, and Deviate creatures at the
+WC entrance). The realm's own spawn list (#3) is the real filter: look up its creatures' families
+here.
 
 ## Token vendor (`token_vendor.json`)
 
@@ -160,17 +236,49 @@ armour is left out, and so are items with no Warrior value. The Warrior score is
 Tokens an occasional quest reward. If that is about one Token per two or three quests, a few
 greens per Tier is the right pace. Tune `slot_mod` or the divisor once #11's rate is fixed.
 
-**Caveat for #12: the 1.12 merchant window cannot show a Token price.** `SMSG_LIST_INVENTORY`
-in 1.12 carries only a copper price per item. Extended costs (item or currency prices) came in
-2.0. The ways to make it work:
+### Showing a Token price (for #12)
 
-- (a) Make Tokens a real bag item and send each entry's Token cost as its copper price,
-  so the window reads "5c" for 5 Tokens. The realm takes Tokens instead of money on buy, and
-  refuses with `BUY_ERR_NOT_ENOUGHT_MONEY` when they run short. The money display then misleads.
-- (b) Sell through a gossip menu that names the cost, and give the item on pick.
-- (c) Put the cost into the item name sent in the vendor's item query.
+**The 1.12 merchant window can only show copper.** Extended costs (item or currency prices)
+came in 2.0. Here is what this client does with a vendor list (read-only look at the code):
 
-(a) is the most "stock"; ticket #12 should decide.
+- `SMSG_LIST_INVENTORY` is decoded in `crates/benilla-protocol/src/messages/vendor.rs`
+  (`read_list_inventory`). Each row is `slot, entry, display_id, current_count, price (copper),
+  max_durability, buy_count`. Nothing else is on the wire.
+- `crates/benilla-ui/src/script/merchant.rs` hands it to the stock `MerchantFrame.lua` through
+  `GetMerchantItemInfo(i)`, which returns `name, texture, price, quantity, numAvailable,
+  isUsable`. The frame draws `price` with the stock gold/silver/copper money frame.
+- The client only checks money for looks. The hover cursor turns into the greyed "unable to buy"
+  cursor when `price > money` (`arm_vendor_cursor`), but `BuyMerchantItem` queues the buy without
+  checking money, so the realm decides. A refusal is `SMSG_BUY_FAILED` with a `buy_result` reason;
+  `NOT_ENOUGH_MONEY` (2) shows the stock "You don't have enough money." line
+  (`crates/benilla-app/src/ui_merchant/mod.rs`).
+- The item name, and the quoted gold flavour line under the stats, come from the realm's
+  `SMSG_ITEM_QUERY_SINGLE_RESPONSE` (`ItemInfo.description`, drawn in
+  `crates/benilla-ui/src/script/tooltip_item/render.rs`). The realm owns both strings.
+
+Options, best first:
+
+1. **Price 0, cost in the tooltip, Tokens checked by the realm.** List each Token item with
+   `price = 0`, so the frame shows no coins and the cursor never greys. The item's query response
+   carries `description = "Costs 4 Tokens"`, so hovering shows the cost in stock gold flavour
+   text. On `CMSG_BUY_ITEM` the realm checks and spends Tokens. If there are too few, it sends
+   `SMSG_BUY_FAILED` with `NOT_ENOUGH_MONEY`, so the stock refusal line appears; a stock error
+   cannot say "not enough Tokens". Tokens can be a counter in the save. If they should be
+   visible, make them a real bag item (any unused 1.12 currency-looking entry, stackable) whose
+   count the realm keeps in step. Catch: the description is per entry, so the line also shows on
+   the item once it is bought. Fix that by using a vendor-only copy of each entry, or by
+   accepting it.
+2. **Copper price = Token count.** List `price = token_cost`, so the frame shows "4c". This
+   reads as money, and the cursor greys only when the player has under 4 copper, which never
+   happens. It needs no tooltip work but misleads. Only for a first cut.
+3. **Name suffix.** Send the vendor copy's name as `"Veteran Gloves (4 Tokens)"`. It is visible
+   in the list without hovering, but it needs vendor-only entries so that the bag item keeps its
+   real name.
+4. **Gossip menu.** A gossip option per item with the cost in its text, and the item given on
+   pick. Fully clear, but not the stock merchant window that #12 asks for.
+
+Recommendation: option 1, with Tokens as a save counter and also shown in the bag as a
+stackable item if #11 wants them visible.
 
 ## Goods vendor (`goods_vendor.json`)
 
@@ -279,21 +387,30 @@ creature_level_min, creature_level_max}`. Prices are in copper.
 - vmangos is a community reconstruction. Drop sources and some qualities (e.g. Spellbinder Boots
   and Defender Spaulders are white with no stats) are what vmangos ships, not sniffed truth.
 - "World drop" means some open-world creature drops it. The pools do not tie items to creature
-  types, so a plainstrider can drop a Gnoll Spittle. Per-creature tables can be built later from
-  the same DB, since `creature_loot_template` is there.
+  types, so a plainstrider can drop a Gnoll Spittle. `barrens_creature_loot.json` adds the
+  family-specific layer for The Barrens.
 - The token costs and the Warrior score are proposals, not vanilla data.
 - `tools/` is in this clone's `.git/info/exclude`, so the scripts were added with `git add -f`.
 
 ## Status / TODO
 
-Stopped early because the token budget ran out. What exists is complete and re-runnable. Still open:
+Done offline:
+
+- Barrens creature families with their own drops and quest drops (`barrens_creature_loot.json`).
+- The WC boss pool, trimmed to 20 real WC blues, with the rule and a reason per item.
+- Token-price display options for #12, checked against this client's merchant code, with a
+  recommendation (price 0, cost in the item description, Tokens checked by the realm).
+- What random-enchant support for #9 needs on the wire and in the realm. The client side already
+  exists.
+
+Still open; each needs realm code or a decision:
 
 - No realm code reads these files yet. Tickets #9, #10 and #12 will have to load them, or turn
   them into Rust data.
-- The `random_enchant` greens are resolved but sit outside the fixed pools. Whether #9 supports
-  random suffixes still has to be decided.
-- The Token price display is still open (see the caveat above), and so is the Token cost
-  pacing, which depends on #11.
-- There are no per-creature loot tables yet. The pools are by level only.
-- The proposed WC boss pool (61) is broad. It could be trimmed to the 12 WC-only blues plus a
-  handful of others.
+- #9 has to decide whether to support random suffixes. The work is described above; it is
+  realm-side only.
+- #12 has to choose a price-display option. The Token cost pacing waits on #11's Token reward
+  rate.
+- The Barrens family zone test is a coordinate box. Once #3 fixes the slice's spawn list, the
+  realm should key families on its own creature entries.
+- The real Token item entry, if Tokens are to be visible in bags, is not picked.
