@@ -92,6 +92,11 @@ impl Characters {
         self.list.iter().max_by_key(|c| c.guid)
     }
 
+    /// Hands out only guids above `guid` from now on.
+    pub(crate) fn reserve(&mut self, guid: u64) {
+        self.last_guid = self.last_guid.max(guid);
+    }
+
     /// Adds a character read from a save, keeping its guid.
     pub(crate) fn insert(&mut self, c: Char) -> Result<u64, SaveError> {
         if self.list.iter().any(|o| o.guid == c.guid || o.name == c.name) {

@@ -101,8 +101,10 @@ fn load_saves(realm: &mut Realm) -> BTreeSet<u64> {
         let Some(path) = save_path(guid) else {
             continue;
         };
-        // Indexed either way: an unreadable save stays on disk and in the index.
+        // Indexed either way: an unreadable save stays on disk and in the index, and its guid is
+        // never handed to a new character, whose save would overwrite it.
         saved.insert(guid);
+        realm.reserve_guid(guid);
         match crate::local_state::read_to_string(&path) {
             Ok(blob) => match realm.import_character(&blob) {
                 Ok(_) => {}

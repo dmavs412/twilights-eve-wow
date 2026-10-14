@@ -133,6 +133,12 @@ impl Realm {
         self.characters.insert(save::import(blob)?)
     }
 
+    /// Keeps `guid` from ever being handed out: the host holds a save under it that it could not
+    /// import, and a new character must not overwrite it.
+    pub fn reserve_guid(&mut self, guid: u64) {
+        self.characters.reserve(guid);
+    }
+
     fn save(&mut self, guid: u64) {
         if let Some(blob) = self.export_character(guid) {
             self.storage.push(Storage::Write { guid, blob });

@@ -168,3 +168,13 @@ fn a_save_whose_name_is_taken_is_refused() {
     let blob = realm.export_character(guid).unwrap();
     assert_eq!(realm.import_character(&blob), Err(SaveError::Duplicate));
 }
+
+#[test]
+fn a_guid_held_by_an_unreadable_save_is_never_reused() {
+    // The host found a save for guid 1 it could not import; it stays on disk for a newer build.
+    let mut realm = realm();
+    realm.reserve_guid(1);
+    create(&mut realm, "Newbie", HUMAN, 0);
+    let guid = roster(&mut realm)[0].guid;
+    assert_ne!(guid, 1, "a new character would overwrite the unreadable save");
+}
