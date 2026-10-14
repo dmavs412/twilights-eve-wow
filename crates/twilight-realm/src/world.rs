@@ -23,6 +23,8 @@ const XP_TO_LEVEL_2: u32 = 400;
 /// The session of the character that is in the world.
 pub(crate) struct InWorld {
     pub(crate) guid: u64,
+    /// Seconds since the last autosave.
+    pub(crate) since_save: f32,
 }
 
 impl InWorld {
@@ -64,7 +66,10 @@ impl InWorld {
             spline: None,
             fields: player_fields(c),
         });
-        Self { guid: c.guid }
+        Self {
+            guid: c.guid,
+            since_save: 0.0,
+        }
     }
 }
 

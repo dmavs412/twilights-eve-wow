@@ -1,0 +1,102 @@
+//! The character save: one versioned TOML blob per character. The realm decides when to save
+//! ([`Storage`]); its host decides where the blob lives.
+
+use serde::{Deserialize, Serialize};
+
+use crate::characters::Char;
+use crate::content::{self, Calling};
+
+/// The save format this realm writes and reads. A save from any other version is refused.
+pub const SAVE_VERSION: u32 = 1;
+
+/// Seconds between the in-world autosaves.
+pub(crate) const AUTOSAVE_SECS: f32 = 60.0;
+
+/// What the realm asks its host to do with a character's save.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Storage {
+    /// Write (or overwrite) this character's save.
+    Write { guid: u64, blob: String },
+    /// The character was deleted: remove its save.
+    Remove { guid: u64 },
+}
+
+/// Why a save could not be imported.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SaveError {
+    /// Not a save, or a damaged one.
+    Unreadable,
+    /// A save of another format version.
+    Version(u32),
+    /// The realm already has a character with this name or guid.
+    Duplicate,
+}
+
+/// Just the version, read first so an older or newer layout fails as a version, not as garbage.
+#[derive(Deserialize)]
+struct Header {
+    version: u32,
+}
+
+/// Version 1 of the save. Field names are the format: renaming one is a new version.
+#[derive(Serialize, Deserialize)]
+struct SaveV1 {
+    version: u32,
+    guid: u64,
+    name: String,
+    race: u8,
+    gender: u8,
+    /// `[skin, face, hair_style, hair_color, facial_hair]`.
+    look: [u8; 5],
+    calling: Calling,
+    level: u8,
+    xp: u32,
+    map: u32,
+    zone: u32,
+    position: [f32; 3],
+    orientation: f32,
+}
+
+pub(crate) fn export(c: &Char) -> String {
+    let save = SaveV1 {
+        version: SAVE_VERSION,
+        guid: c.guid,
+        name: c.name.clone(),
+        race: c.race,
+        gender: c.gender,
+        look: c.look,
+        calling: c.calling,
+        level: c.level,
+        xp: c.xp,
+        map: c.map,
+        zone: c.zone,
+        position: c.position,
+        orientation: c.orientation,
+    };
+    toml::to_string(&save).expect("a save always serializes")
+}
+
+pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
+    let header: Header = toml::from_str(blob).map_err(|_| SaveError::Unreadable)?;
+    if header.version != SAVE_VERSION {
+        return Err(SaveError::Version(header.version));
+    }
+    let s: SaveV1 = toml::from_str(blob).map_err(|_| SaveError::Unreadable)?;
+    if !content::valid_race(s.race) || s.gender > 1 || s.level == 0 {
+        return Err(SaveError::Unreadable);
+    }
+    Ok(Char {
+        guid: s.guid,
+        name: s.name,
+        race: s.race,
+        gender: s.gender,
+        look: s.look,
+        calling: s.calling,
+        level: s.level,
+        xp: s.xp,
+        map: s.map,
+        zone: s.zone,
+        position: s.position,
+        orientation: s.orientation,
+    })
+}

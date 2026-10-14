@@ -11,11 +11,13 @@
 mod characters;
 mod content;
 mod fields;
+mod save;
 mod world;
 
 use benilla_protocol::{CharCreateReq, SessionEvent};
 
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
+pub use save::{SaveError, Storage, SAVE_VERSION};
 
 /// What the realm asks of whoever runs it. Coordinates are WoW's (`x` north, `y` west, `z` up).
 pub trait Host {
@@ -48,6 +50,7 @@ pub struct Realm {
     characters: characters::Characters,
     world: Option<world::InWorld>,
     events: Vec<SessionEvent>,
+    storage: Vec<Storage>,
 }
 
 impl Realm {
@@ -63,6 +66,9 @@ impl Realm {
                 let code = self.characters.create(&req);
                 // A success changed the roster: the fresh list goes first, as the IO thread sends it.
                 if code == benilla_protocol::messages::CHAR_CREATE_SUCCESS {
+                    if let Some(guid) = self.characters.newest().map(|c| c.guid) {
+                        self.save(guid);
+                    }
                     self.send_roster();
                 }
                 self.events.push(SessionEvent::CharActionResult {
@@ -73,6 +79,7 @@ impl Realm {
             RealmCommand::DeleteCharacter { guid } => {
                 let code = self.characters.delete(guid);
                 if code == benilla_protocol::messages::CHAR_DELETE_SUCCESS {
+                    self.storage.push(Storage::Remove { guid });
                     self.send_roster();
                 }
                 self.events.push(SessionEvent::CharActionResult {
@@ -94,11 +101,42 @@ impl Realm {
     }
 
     /// Advances the world by `dt` seconds.
-    pub fn tick(&mut self, _dt: f32, _host: &dyn Host) {}
+    pub fn tick(&mut self, dt: f32, _host: &dyn Host) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        w.since_save += dt;
+        if w.since_save >= save::AUTOSAVE_SECS {
+            w.since_save = 0.0;
+            let guid = w.guid;
+            self.save(guid);
+        }
+    }
 
     /// The events since the last drain, oldest first.
     pub fn drain_events(&mut self) -> Vec<SessionEvent> {
         std::mem::take(&mut self.events)
+    }
+
+    /// The saves to write or remove since the last drain, oldest first.
+    pub fn drain_storage(&mut self) -> Vec<Storage> {
+        std::mem::take(&mut self.storage)
+    }
+
+    /// A character's save, as [`Storage::Write`] carries it.
+    pub fn export_character(&self, guid: u64) -> Option<String> {
+        self.characters.get(guid).map(save::export)
+    }
+
+    /// Adds a character from its save, keeping its guid.
+    pub fn import_character(&mut self, blob: &str) -> Result<u64, SaveError> {
+        self.characters.insert(save::import(blob)?)
+    }
+
+    fn save(&mut self, guid: u64) {
+        if let Some(blob) = self.export_character(guid) {
+            self.storage.push(Storage::Write { guid, blob });
+        }
     }
 
     fn send_roster(&mut self) {
@@ -120,9 +158,10 @@ impl Realm {
     }
 
     fn logout(&mut self) {
-        if self.world.take().is_none() {
+        let Some(w) = self.world.take() else {
             return;
-        }
+        };
+        self.save(w.guid);
         self.events.push(SessionEvent::LogoutResponse {
             reason: 0,
             instant: true,

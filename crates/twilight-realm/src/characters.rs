@@ -7,7 +7,8 @@ use benilla_protocol::messages::{
 use benilla_protocol::wire::Vector3d;
 use benilla_protocol::{CharCreateReq, CharEnumItem, Character};
 
-use crate::content::{self, CROSSROADS, KALIMDOR, THE_BARRENS};
+use crate::content::{self, Calling, CROSSROADS, KALIMDOR, THE_BARRENS};
+use crate::save::SaveError;
 
 /// `CharactersPerRealm`: the select screen's ten rows.
 const MAX_CHARACTERS: usize = 10;
@@ -29,7 +30,9 @@ pub(crate) struct Char {
     pub(crate) gender: u8,
     /// `[skin, face, hair_style, hair_color, facial_hair]`.
     pub(crate) look: [u8; 5],
+    pub(crate) calling: Calling,
     pub(crate) level: u8,
+    pub(crate) xp: u32,
     pub(crate) map: u32,
     pub(crate) zone: u32,
     pub(crate) position: [f32; 3],
@@ -73,13 +76,33 @@ impl Characters {
                 req.hair_color,
                 req.facial_hair,
             ],
+            calling: Calling::BasicWarrior,
             level: 1,
+            xp: 0,
             map: KALIMDOR,
             zone: THE_BARRENS,
             position: [x, y, z],
             orientation: facing,
         });
         CHAR_CREATE_SUCCESS
+    }
+
+    /// The character created last.
+    pub(crate) fn newest(&self) -> Option<&Char> {
+        self.list.iter().max_by_key(|c| c.guid)
+    }
+
+    /// Adds a character read from a save, keeping its guid.
+    pub(crate) fn insert(&mut self, c: Char) -> Result<u64, SaveError> {
+        if self.list.iter().any(|o| o.guid == c.guid || o.name == c.name) {
+            return Err(SaveError::Duplicate);
+        }
+        self.last_guid = self.last_guid.max(c.guid);
+        let guid = c.guid;
+        self.list.push(c);
+        // Saves load in any order; the roster keeps creation order, which guids follow.
+        self.list.sort_by_key(|c| c.guid);
+        Ok(guid)
     }
 
     pub(crate) fn delete(&mut self, guid: u64) -> u8 {

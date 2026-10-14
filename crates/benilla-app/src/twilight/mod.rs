@@ -9,8 +9,11 @@ use benilla_assets::AdtTile;
 use benilla_protocol::{SessionEnd, SessionEvent};
 use benilla_world::schedule::WorldStage;
 use benilla_world::terrain_stream::{terrain_height_under, TerrainStreamer};
+use std::collections::BTreeSet;
+use std::path::PathBuf;
+
 use bevy::prelude::*;
-use twilight_realm::{Host, Realm, RealmCommand};
+use twilight_realm::{Host, Realm, RealmCommand, Storage};
 
 use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
 
@@ -29,10 +32,13 @@ impl Plugin for TwilightPlugin {
             .get_resource_mut::<InProcessLink>()
             .and_then(|mut link| link.0.take())
             .expect("Twilight's Eve needs the net layer's in-process backend");
+        let mut realm = Realm::new();
+        let saved = load_saves(&mut realm);
         app.insert_resource(LocalRealm {
             far,
-            realm: Realm::new(),
+            realm,
             listed: false,
+            saved,
         })
         .add_systems(
             Update,
@@ -43,6 +49,17 @@ impl Plugin for TwilightPlugin {
             Update,
             only_warriors.run_if(resource_added::<crate::entities::CharCreate>),
         );
+        // Closing the window logs the character out, which saves it.
+        crate::shutdown::on_app_exit(app, save_on_exit.into_configs());
+    }
+}
+
+/// The client is going down: log out, and write the save that makes.
+fn save_on_exit(mut local: ResMut<LocalRealm>) {
+    let LocalRealm { realm, saved, .. } = &mut *local;
+    realm.handle(RealmCommand::Logout);
+    for op in realm.drain_storage() {
+        store(op, saved);
     }
 }
 
@@ -53,6 +70,83 @@ struct LocalRealm {
     realm: Realm,
     /// The first roster went out: there is no login, so the realm answers at once.
     listed: bool,
+    /// The guids with a save on disk, which the index file lists.
+    saved: BTreeSet<u64>,
+}
+
+// ── Saves ─────────────────────────────────────────────────────────────────────────────────────────
+//
+// One file per character under `benilla-config/twilight/` (`localStorage` keys on the web), and an
+// index naming them, since a browser's store cannot list a folder.
+
+/// `benilla-config/twilight/characters.txt`: one saved guid per line.
+fn index_path() -> Option<PathBuf> {
+    crate::local_state::home().map(|h| h.join("twilight/characters.txt"))
+}
+
+/// `benilla-config/twilight/character-<guid>.toml`: one character's save.
+fn save_path(guid: u64) -> Option<PathBuf> {
+    crate::local_state::home().map(|h| h.join(format!("twilight/character-{guid}.toml")))
+}
+
+/// Imports every indexed save; one that cannot be read is skipped with a warning and left on
+/// disk, so a newer build can still read it.
+fn load_saves(realm: &mut Realm) -> BTreeSet<u64> {
+    let mut saved = BTreeSet::new();
+    let Some(index) = index_path().and_then(|p| crate::local_state::read_to_string(&p).ok())
+    else {
+        return saved;
+    };
+    for guid in index.lines().filter_map(|l| l.trim().parse::<u64>().ok()) {
+        let Some(path) = save_path(guid) else {
+            continue;
+        };
+        // Indexed either way: an unreadable save stays on disk and in the index.
+        saved.insert(guid);
+        match crate::local_state::read_to_string(&path) {
+            Ok(blob) => match realm.import_character(&blob) {
+                Ok(_) => {}
+                Err(e) => warn!("twilight: skipping the save {} ({e:?})", path.display()),
+            },
+            Err(e) => warn!("twilight: cannot read the save {}: {e}", path.display()),
+        }
+    }
+    info!("twilight: {} character save(s) loaded", saved.len());
+    saved
+}
+
+/// Carries out the realm's save requests.
+fn store(op: Storage, saved: &mut BTreeSet<u64>) {
+    let changed = match op {
+        Storage::Write { guid, blob } => {
+            // `None`: persistence is off (a capture run).
+            let Some(path) = save_path(guid) else {
+                return;
+            };
+            if let Err(e) = crate::local_state::write_atomic(&path, &blob) {
+                warn!("twilight: saving character {guid}: {e}");
+                return;
+            }
+            saved.insert(guid)
+        }
+        Storage::Remove { guid } => {
+            let Some(path) = save_path(guid) else {
+                return;
+            };
+            match crate::local_state::remove_file(&path) {
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) => warn!("twilight: removing the save of character {guid}: {e}"),
+            }
+            saved.remove(&guid)
+        }
+    };
+    if changed {
+        let index: String = saved.iter().map(|g| format!("{g}\n")).collect();
+        if let Some(Err(e)) = index_path().map(|p| crate::local_state::write_atomic(&p, &index)) {
+            warn!("twilight: writing the save index: {e}");
+        }
+    }
 }
 
 /// Commands in, one tick, events out.
@@ -62,7 +156,12 @@ fn pump(
     streamer: Option<Res<TerrainStreamer>>,
     tiles: Res<Assets<AdtTile>>,
 ) {
-    let LocalRealm { far, realm, listed } = &mut *local;
+    let LocalRealm {
+        far,
+        realm,
+        listed,
+        saved,
+    } = &mut *local;
     if !*listed {
         *listed = true;
         realm.handle(RealmCommand::ListCharacters);
@@ -90,6 +189,10 @@ fn pump(
         tiles: &tiles,
     };
     realm.tick(time.delta_secs(), &host);
+
+    for op in realm.drain_storage() {
+        store(op, saved);
+    }
 
     for event in realm.drain_events() {
         let logged_out = matches!(event, SessionEvent::LoggedOut);

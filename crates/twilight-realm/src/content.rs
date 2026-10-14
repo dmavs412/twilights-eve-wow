@@ -8,6 +8,14 @@ pub const THE_BARRENS: u32 = 17;
 /// The Hub: the Crossroads, in front of the inn, facing the road north. `[x, y, z, facing]`.
 pub const CROSSROADS: [f32; 4] = [-441.8, -2648.6, 95.9, 1.6];
 
+/// A node in the advancement tree (`GLOSSARY.md`). Saved by name, so the names are the format.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum Calling {
+    /// Tier 0, where every character starts.
+    BasicWarrior,
+}
+
 /// `ChrRaces.dbc` ids 1..=8: Human … Troll.
 pub(crate) fn valid_race(race: u8) -> bool {
     (1..=8).contains(&race)

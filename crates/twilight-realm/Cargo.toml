@@ -10,3 +10,6 @@ workspace = true
 
 [dependencies]
 benilla-protocol = { path = "../benilla-protocol" }
+# The character save's versioned TOML (the app already ships `toml`; it keeps `serde_json` out).
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"

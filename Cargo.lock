@@ -7281,6 +7281,8 @@ name = "twilight-realm"
 version = "0.2.0"
 dependencies = [
  "benilla-protocol",
+ "serde",
+ "toml",
 ]
 
 [[package]]
