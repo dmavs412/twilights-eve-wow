@@ -227,11 +227,11 @@
           "realm": {
             "rage_cost": 30, "cooldown_ms": 6000, "cooldown_note": "Spell.dbc category 971 cooldown 6 s", "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
             "effects": [
-              { "kind": "weapon_strike", "weapon": "Wn", "bonus": { "base": 20, "per_level": 2.0, "per_ap": 0 } },
+              { "kind": "weapon_strike", "weapon": "Wn", "bonus": { "base": 25, "per_level": 2.5, "per_ap": 0 } },
               { "kind": "healing_reduction", "pct": 50, "duration_ms": 10000 }
             ]
           },
-          "vanilla_reference": "R1 L40 +85 (talent, 31 points deep). Given as the Tier 1 signature strike: +22 at L1, +80 at L30.",
+          "vanilla_reference": "R1 L40 +85 (talent, 31 points deep). Given as the Tier 1 signature strike: +28 at L1, +100 at L30 (tuned with tools/twilights-eve/simulate_fights.py).",
           "tooltip_note": "Tooltip says weapon damage plus 85."
         },
         {
@@ -323,7 +323,7 @@
             "rage_cost": 15, "cooldown_ms": 0, "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
             "requires": "target at or below 20% health. TargetAuraState 2 makes the stock client grey the button unless the target's UNIT_FIELD_AURASTATE has bit 0x2 (AURA_STATE_HEALTHLESS_20_PERCENT), so the realm sets and clears that bit on every unit as its health crosses 20%.",
             "effects": [
-              { "kind": "execute", "consumes_all_rage": true, "base": { "base": 40, "per_level": 3.5, "per_ap": 0.2 }, "per_extra_rage": { "base": 2, "per_level": 0.1, "per_ap": 0 } }
+              { "kind": "execute", "consumes_all_rage": true, "base": { "base": 15, "per_level": 4.2, "per_ap": 0.2 }, "per_extra_rage": { "base": 2, "per_level": 0.1, "per_ap": 0 } }
             ]
           },
           "vanilla_reference": "R1 L24 125 + 3 per extra rage, R2 L32 200 + 6.",
@@ -409,7 +409,7 @@
               { "key": "improved_execute", "talent_id": 1542, "source_tab_id": 164, "name": "Improved Execute", "tier": 4, "column": 2, "rank_spells": [20502, 20503],
                 "realm_effect": "Execute costs 2/5 less rage.", "client_spellmod": { "type": "flat", "op": "COST", "family_bit": 29, "values": [-20, -50] } },
               { "key": "enrage", "talent_id": 155, "source_tab_id": 164, "name": "Enrage", "tier": 4, "column": 3, "rank_spells": [12317, 13045, 13046, 13047, 13048],
-                "realm_effect": "When crit by an enemy, +5..25% melee damage for 12 s (vanilla also caps it at 12 swings; charges not checked)." },
+                "realm_effect": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)." },
               { "key": "death_wish", "talent_id": 165, "source_tab_id": 164, "name": "Death Wish", "tier": 5, "column": 2, "rank_spells": [12328], "exceptional": true,
                 "realm_effect": "Active (10 rage, 3 min cooldown): +20% physical damage and fear immunity, -20% armor, for 30 s." }
             ]

@@ -207,6 +207,10 @@ class Tables:
             "not_in_combat": bool(u(C_ATTR) & 0x10000000),
             "on_next_swing": bool(u(C_ATTR) & 0x4),
             "passive": bool(u(C_ATTR) & 0x40),
+            # The stock spellbook's add gate (benilla-formats SpellDisplay::in_spellbook,
+            # 0x4b25b0): out for Attributes 0x80 (do-not-display) or 0x20 (tradeskill), or a
+            # nonzero castUI. Passive alone does not hide a spell.
+            "in_spellbook": not (u(C_ATTR) & 0xA0) and u(3) == 0,
             "mechanic": u(C_MECHANIC),
             "dispel": u(C_DISPEL),
             "max_targets": u(C_MAX_TARGETS),
@@ -335,6 +339,16 @@ def verify(tables: Tables, callings: Dict[str, Any]) -> Tuple[List[str], Dict[st
         realm = want.get("realm")
         if realm and f["power_type"] == "rage" and realm.get("rage_cost", 0) < f["cost"]:
             errors.append(f"{where}: realm rage cost {realm.get('rage_cost')} below the client's {f['cost']}; the client would refuse casts the realm allows")
+        # The client runs the longer of RecoveryTime and CategoryRecoveryTime off SMSG_SPELL_GO;
+        # a realm cooldown shorter than that leaves the button grey while the realm would allow it.
+        if realm and "cooldown_ms" in realm:
+            client_cd = max(f["cooldown_ms"], f["category_cooldown_ms"])
+            if realm["cooldown_ms"] != client_cd:
+                errors.append(f"{where}: realm cooldown {realm['cooldown_ms']} ms, client runs {client_cd} ms")
+        if realm and not f["in_spellbook"]:
+            errors.append(f"{where}: spell {sid} is hidden from the stock spellbook (Attributes 0x80/0x20 or castUI)")
+        if realm and "gcd_ms" in realm and realm["gcd_ms"] != f["gcd_ms"]:
+            errors.append(f"{where}: realm GCD {realm['gcd_ms']} ms, Spell.dbc StartRecoveryTime {f['gcd_ms']} ms")
         return f
 
     for cname, calling in callings.get("callings", {}).items():
@@ -430,6 +444,46 @@ def verify(tables: Tables, callings: Dict[str, Any]) -> Tuple[List[str], Dict[st
     return errors, dump
 
 
+def selftest(data_dir: str) -> int:
+    """Checks of the reader and the formula helper; the DBC facts run only when the data is there."""
+    from wowdata import _hash  # noqa: PLC0415
+    fails: List[str] = []
+
+    def eq(what: str, got: Any, want: Any) -> None:
+        if got != want:
+            fails.append(f"{what}: got {got!r}, want {want!r}")
+
+    # The MPQ table keys every MPQ tool agrees on.
+    eq("hash('(hash table)', 3)", _hash("(hash table)", 3), 0xC3AF3770)
+    eq("hash('(block table)', 3)", _hash("(block table)", 3), 0xEC83B3A3)
+    eq("hash is case- and slash-blind", _hash("dbfilesclient/spell.dbc", 1), _hash("DBFilesClient\\Spell.dbc", 1))
+    eq("linear rounds half away from zero", linear({"base": 14.5, "per_level": 0.5}, 10, 0), 20)
+    eq("linear honours min", linear({"base": -3, "min": 1}, 1, 0), 1)
+    eq("linear AP term", linear({"base": 0, "per_ap": 0.2}, 1, 100), 20)
+    eq("ap_estimate L1 human", ap_estimate(1, 0), 29)
+    if os.path.isdir(data_dir):
+        t = Tables(data_dir)
+        hs = t.spell_fields(78)
+        eq("78 name/rank", (hs["name"], hs["rank"]), ("Heroic Strike", "Rank 1"))
+        eq("78 icon", (hs["icon_id"], hs["icon"]), (856, "Interface\\Icons\\Ability_Rogue_Ambush"))
+        eq("78 cost (rage tenths)", (hs["cost_raw"], hs["cost"]), (150, 15.0))
+        eq("100 Charge stances", t.spell_fields(100)["stances"], ["Battle Stance"])
+        eq("6343 Thunder Clap category cooldown", t.spell_fields(6343)["category_cooldown_ms"], 4000)
+        eq("2687 Bloodrage health cost %", t.spell_fields(2687)["cost_pct"], 20)
+        eq("12320 Cruelty hidden from the spellbook", t.spell_fields(12320)["in_spellbook"], False)
+        eq("12292 Sweeping Strikes in the spellbook", t.spell_fields(12292)["in_spellbook"], True)
+        imp = t.talent_fields(124)
+        eq("talent 124", (imp["tab"], imp["row"], imp["col"], imp["rank_spells"]), (161, 0, 0, [12282, 12663, 12664]))
+        eq("talent 121 prereq", (t.talent_fields(121)["prereq_talent"], t.talent_fields(121)["prereq_rank"]), (127, 2))
+        eq("warrior tabs", [x["background"] for x in t.tabs_for_class(1)], ["WarriorArms", "WarriorFury", "WarriorProtection"])
+    else:
+        print(f"no game data at {data_dir}: DBC checks skipped")
+    for f in fails:
+        print("FAIL", f)
+    print(f"selftest: {len(fails)} failure(s)")
+    return 1 if fails else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", default=default_data_dir())
@@ -443,10 +497,13 @@ def main() -> int:
     se.add_argument("name")
     se.add_argument("--family", type=int)
     se.add_argument("--brief", action="store_true")
+    sub.add_parser("selftest")
     ta = sub.add_parser("talents")
     ta.add_argument("--class", dest="cls", type=int, default=1)
     args = ap.parse_args()
 
+    if args.cmd == "selftest":
+        return selftest(args.data)
     tables = Tables(args.data)
     if args.cmd == "spell":
         print(json.dumps([tables.spell_fields(i) for i in args.ids], indent=1))

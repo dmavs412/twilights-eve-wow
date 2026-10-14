@@ -16,6 +16,8 @@ python tools/twilights-eve/extract_spells.py verify
 python tools/twilights-eve/extract_spells.py search "Heroic Strike" --family 4 --brief
 python tools/twilights-eve/extract_spells.py talents --class 1
 python tools/twilights-eve/extract_spells.py spell 78 12294
+python tools/twilights-eve/extract_spells.py selftest
+python tools/twilights-eve/simulate_fights.py --calling warrior --mobs ... --stats ...
 ```
 
 ## The client enforces some things before it sends a cast
@@ -74,9 +76,10 @@ The vanilla rank progressions behind each fit are in the JSON's `vanilla_referen
 
 Mortal Strike 12294 (R1), Overpower 7887 (R2), Charge 6178 (R2), Rend 6546 (R2), Thunder Clap
 8198 (R2), Cleave 845 (R1), Execute 5308 (R1) and Battle Shout 6192 (R3). All of them work in
-Battle Stance. Values at L1/10/20/30: MS Wn+22/40/60/80; Overpower +7/12/18/24; Charge
+Battle Stance. Values at L1/10/20/30: MS Wn+28/50/75/100; Overpower +7/12/18/24; Charge
 11–14 rage; Rend 6–14 per tick over 4 ticks; Thunder Clap 12/26/41/57; Cleave +4/8/12/16 on 2
-targets; Execute 54/95/140/185 plus 2–5 per extra rage; Battle Shout 22/40/60/80 AP. Mortal
+targets; Execute 30/77/129/181 plus 2–5 per extra rage; Battle Shout 22/40/60/80 AP. (The
+simulation below retuned MS and Execute.) Mortal
 Strike is a level-40 talent in vanilla. Here it is the Tier 1 signature, scaled down at low
 levels. It is left out of the Tier 1 tree, which stops at tier 5. Heroic Strike, Hamstring and
 Bloodrage drop out of the Tier 1 set.
@@ -136,19 +139,117 @@ header (QuestSort.dbc 81). The Advancement Quest is a speak-to quest, modelled o
 Warrior trainer. Champion's quest has an objective the realm never credits. The tone comes
 from 1718, 1791 and 1712, and no text is copied.
 
+## Checked against vmangos and the client code
+
+- **Deep Wounds** (vmangos `SpellEffects.cpp`, the `EffectDummy` arm for 12162/12850/12868)
+  takes the average of `UNIT_FIELD_MINDAMAGE` and `UNIT_FIELD_MAXDAMAGE`, so attack power is
+  included. It multiplies that by 0.2/0.4/0.6 and casts 12721 with base points = total / 4.
+  12721 is 4 ticks of 3 s over 12 s. The `realm_effect` text matches. vmangos uses the
+  off-hand when that swing timer is further along. The realm can ignore that until dual wield
+  exists.
+- **Enrage.** 12880..14204 carry 12 proc charges and a 12 s duration. The bonus ends after
+  12 s or 12 melee swings, whichever comes first.
+- **Last Stand** (same file): vmangos casts 12976 with base points = 30% of max health.
+- **Cooldowns.** `verify` now requires the realm's `cooldown_ms` to equal the longer of
+  Spell.dbc RecoveryTime and CategoryRecoveryTime, and `gcd_ms` to equal StartRecoveryTime.
+  The client runs both off `SMSG_SPELL_GO`. All 16 skills pass.
+- **Spellbook visibility.** The stock gate is `SpellDisplay::in_spellbook`
+  (`benilla-formats/src/spells/display.rs:453`, used by `ui_spellbook.rs` `build_book`). It
+  hides a spell with Attributes `0x80` (do-not-display), `0x20`, or a nonzero castUI. Passive
+  alone does not hide a spell. `extract_spells.py` now dumps `in_spellbook`:
+  - All 106 passive talent rank spells in the trees carry `0x80` and stay out of the book.
+  - Only the five active talents appear, under their skill line: Sweeping Strikes, Piercing
+    Howl, Death Wish, Last Stand and Concussion Blow.
+  - All 16 Calling skills are bookable, and `verify` now checks that.
+
+## Implementation pointers (read-only survey, nothing changed)
+
+**Blanking the rank text (#8, "no ranks").** Every reader of the rank text goes through
+`SpellDisplay.rank` in the `Spells` resource (`crates/benilla-app/src/ui_action/mod.rs`,
+`load_spells`, `commands.insert_resource(Spells { catalog, … })`):
+- spellbook slot `ui_spellbook.rs:373` (`rank: d.and_then(|d| d.rank.clone())`) and its sort
+  key at `:401`;
+- the tooltip's rank column, the `rank` field of `benilla-ui/src/script/tooltip_spell.rs`,
+  which is built from the catalog;
+- the learn line "You have learned a new ability: %s" (`spell/net.rs:510-511`, `ranked_name()`);
+- the craft and pet readers (`ui_craft.rs:205`, `ui_pet/bar.rs:134`, `ui_pet_book.rs:156`),
+  which don't matter here.
+
+`SpellCatalog.spells` is private (`benilla-formats/src/spells/mod.rs:282`), and there is only
+`get`, no `get_mut`. The smallest carry has two parts:
+1. A child module `spells/twilight.rs`. Its `mod` line in `spells/mod.rs` is the one upstream
+   line touched. It adds `impl SpellCatalog { pub fn clear_ranks(&mut self, ids: impl
+   IntoIterator<Item = u32>) }`, which sets `rank = None`.
+2. A Twilight-mode system in `crates/benilla-app/src/twilight/`. It runs once
+   `Res<Spells>` exists (`resource_added::<Spells>`) and calls `clear_ranks` on every Calling
+   skill id. Clearing all spells works too, since Twilight's Eve has no ranks.
+
+`Spells` is a change-detected resource, so the spellbook, action and tooltip feeds re-push by
+themselves.
+
+**Battle Stance form.** Nothing in the client needs changing. The realm sets the form byte in
+`UNIT_FIELD_BYTES_1` (`ObjectFields::unit_shapeshift_form`). The client already reads it in:
+- `spell/usable.rs:387` (the grey-out walk) and `spell/cast_send.rs:638` (press-time refusal),
+  through `SpellDisplay::form_refusal` (`display.rs:583`);
+- `ui_action/feed.rs:323-333`, which maps form 17 through `SpellShapeshiftForm.dbc`'s
+  `bonus_bar` to `set_bonus_bar_offset(1)` and fires `UPDATE_BONUS_ACTIONBAR`.
+
+The stance bar (`ui_shapeshift.rs`) lists only known shapeshift spells. With Battle Stance
+(2457) unlearned it stays empty. If the realm also applies the 2457 aura, the buff frame
+shows the Battle Stance icon the way real servers do. That is optional.
+
+## Balance simulation
+
+`tools/twilights-eve/simulate_fights.py` is a stdlib Monte Carlo. It pits a human Warrior
+(naked base stats + Tier Bonus + an assumed weapon and armour) against a same-level
+`creature_classlevelstats` warrior-class mob. It uses `vanilla-combat-rules.md` (hit table,
+armour, rage, two-roll yellow attacks) and the formulas in `callings.json`. Its inputs are
+`mob_base_stats.json` and `warrior_level_stats.json` from the combat-reference branch
+(`worktree-agent-a37ae08df1dab3a30`); pass `--mobs` and `--stats` until that branch lands.
+Results, 2000 fights per level, median (p10–p90):
+
+| Calling | L | player hp | mob hp | fight | hp lost |
+|---|---|---|---|---|---|
+| Basic Warrior | 1 | 60 | 42 | 7.7 s (6.2–9.2) | 12% |
+| Basic Warrior | 5 | 136 | 102 | 14.4 s (12.0–16.7) | 29% |
+| Basic Warrior | 10 | 231 | 198 | 20.6 s (18.1–25.6) | 59% |
+| Warrior (T1) | 1 | 180 | 42 | 4.2 s | 1% |
+| Warrior (T1) | 10 | 351 | 198 | 13.1 s (10.5–18.2) | 21% |
+| Warrior (T1) | 20 | 569 | 484 | 18.9 s (16.2–24.0) | 39% |
+| Warrior (T1) | 30 | 884 | 955 | 24.9 s (22.1–32.9) | 49% |
+
+What the simulation shows:
+- Basic Warrior's L5–10 fights land in the 15–25 s band as written.
+- Level 1 is short because a level-1 mob has 42 hp. White swings do over 70% of the damage,
+  so no skill formula can stretch it. If that matters, raise low-level mob health on the mob
+  side.
+- In Tier 1, Mortal Strike was starved of rage. I raised it to +25 + 2.5L (+100 at L30), and
+  the simulated rotation now pools rage for it. Execute was overtuned at low levels; I lowered
+  it to 15 + 4.2L + 0.2AP.
+- Tier 1 at L30 reaches about 25 s only with the green-weapon assumption from L15 (about
+  11–17 DPS). With white weapons it takes about 30 s, so Token greens are part of the curve.
+- The Tier Bonus makes a fresh Tier 1 clearly stronger: about 3× Basic Warrior's L1 health
+  and half the fight time at L10.
+- Rend barely appears in the Tier 1 rotation while pooling for Mortal Strike. That is a
+  rotation choice, not a bug.
+
 ## Status / TODO
 
-The work stopped early on the token budget. What is still open:
-- Rank blanking for "no ranks" (#8) is only proposed. Nobody has checked whether passive
-  talent rank spells show up in the stock spellbook.
-- The tooltip-sync spell-mod idea is untested. Improved Charge's mod has a family mask of 0,
-  so it needs a class script on the realm.
-- Enrage's swing cap (charges on 12880–14204) and the Deep Wounds tick math (12721, 4 ticks
-  over 12 s) still need checking against vmangos.
-- The realm cost check is in place, but cooldowns that come only from the category cooldown
-  (Charge, Thunder Clap, Overpower, Mortal Strike, Shield Bash) are recorded as prose
-  (`cooldown_note`), not cross-checked.
-- The balance numbers are first guesses. The level tables assume a naked warrior's AP. Nobody
-  has simulated time-to-kill against Barrens mobs.
+Done since the first pass:
+- vmangos checks for Deep Wounds and Enrage.
+- Category cooldown and GCD cross-checks in `verify`.
+- Spellbook visibility checked and enforced.
+- Rank-blanking and stance pointers.
+- `extract_spells.py selftest` (MPQ hash keys, formula rounding, and DBC facts when the data
+  is present).
+- The balance simulation, with Mortal Strike and Execute retuned.
+
+Still open:
+- Pushing spell mods so tooltips follow the realm's formulas is untested. Improved Charge's
+  mod has family mask 0, so the realm needs a class script for it.
+- The simulation leaves out talents, multi-mob pulls (Thunder Clap, Cleave, Sweeping
+  Strikes), the Wailing Caverns elites, and mob types other than warrior-class. Its gear
+  table is an assumption.
 - The Tier 2 and Tier 3 Tier Bonus values are placeholders.
-- `extract_spells.py` has no tests of its own. The `verify` exit code is the gate.
+- The simulator has no tests of its own. Its numbers are a tuning aid, and the realm's tests
+  remain the authority.
