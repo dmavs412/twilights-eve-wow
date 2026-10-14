@@ -441,7 +441,12 @@ mod tests {
     fn the_interact_npc_writer_is_seated_between_the_net_apply_and_the_facing_chain() {
         use crate::test_support::runs_before;
         let mut app = App::new();
-        app.add_plugins((crate::net::NetPlugin { connect: false }, UiSessionPlugin));
+        app.add_plugins((
+            crate::net::NetPlugin {
+                backend: crate::net::NetBackend::Offline,
+            },
+            UiSessionPlugin,
+        ));
         assert!(
             runs_before(&mut app, crate::net::apply_net_updates, feed_interact_npc),
             "feed_interact_npc must run after apply_net_updates"

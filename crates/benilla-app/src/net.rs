@@ -21,6 +21,11 @@ use crossbeam_channel::{Receiver, Sender};
 use benilla_world::schedule::WorldStage;
 
 mod apply;
+mod backend;
+pub(crate) use backend::NetBackend;
+// The far ends are for an in-process backend, which nothing in the crate attaches yet.
+#[allow(unused_imports)]
+pub(crate) use backend::{FarEnds, InProcessLink};
 pub(crate) mod handlers;
 pub(crate) mod io;
 mod motion;
@@ -49,14 +54,14 @@ pub(crate) use motion::{
 #[allow(unused_imports)]
 pub(crate) use motion::GroundClamped;
 
-/// The net subsystem: spawns the background IO threads and drives the per-frame event drain.
+/// The net subsystem: hands the far ends of its channels to a backend (by default the background
+/// IO threads) and drives the per-frame event drain.
 pub(crate) struct NetPlugin {
-    /// `false` in capture mode ([`crate::capture`]): the channels exist, sends are no-ops, and no
-    /// IO thread runs.
-    pub(crate) connect: bool,
+    /// What serves the far ends; [`NetBackend::Offline`] in capture mode ([`crate::capture`]).
+    pub(crate) backend: NetBackend,
 }
 
-/// This process has no IO thread ([`NetPlugin::connect`] false); `crate::preflight` announces it.
+/// This process has no backend ([`NetBackend::Offline`]); `crate::preflight` announces it.
 /// Not [`NetStatus`]'s `connected`, which a dropped connection also clears.
 #[derive(Resource)]
 pub(crate) struct NetOffline;
@@ -67,26 +72,42 @@ impl Plugin for NetPlugin {
         crate::query_cache::register::<crate::names::NameCache>(app);
         crate::query_cache::register::<crate::go_templates::GameObjectTemplates>(app);
         crate::query_cache::register::<crate::items::Items>(app);
-        let handles = io::spawn_net(self.connect);
-        if !self.connect {
+        let (handles, far) = backend::channels();
+        let io = match self.backend {
+            NetBackend::Io | NetBackend::Offline => Some(io::spawn_net(
+                self.backend == NetBackend::Io,
+                far,
+                &handles.login_abandon,
+                &handles.ping,
+            )),
+            NetBackend::InProcess => {
+                app.insert_resource(InProcessLink(Some(far)));
+                None
+            }
+        };
+        if self.backend == NetBackend::Offline {
             app.insert_resource(NetOffline);
         }
         // The web's write half. It runs *before* the event drain so a command the app issued last
         // frame is on the wire by the time this frame's inbound state lands on it.
         #[cfg(target_arch = "wasm32")]
-        app.insert_resource(WebWriter {
-            writer: None,
-            writer_rx: handles.writer_rx,
-            cmd_rx: handles.commands_rx,
-            last_ping: 0.0,
-            warned: 0,
-        })
-        .add_systems(
-            Update,
-            web_writer_pump
-                .in_set(WorldStage::Net)
-                .before(apply_net_updates),
-        );
+        if let Some(io) = io {
+            app.insert_resource(WebWriter {
+                writer: None,
+                writer_rx: io.writer_rx,
+                cmd_rx: io.commands_rx,
+                last_ping: 0.0,
+                warned: 0,
+            })
+            .add_systems(
+                Update,
+                web_writer_pump
+                    .in_set(WorldStage::Net)
+                    .before(apply_net_updates),
+            );
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        let _ = io;
         // In the net stage: the lighting resolve runs after it and reads this frame's clock.
         app.add_systems(
             Update,

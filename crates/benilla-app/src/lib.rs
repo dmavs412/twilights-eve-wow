@@ -433,7 +433,11 @@ fn launch(build: BuildId, extend: Option<Extension<'_>>) -> AppExit {
     // The game as one group on top of the engine; `game_plugins.rs` has its members, its
     // load-bearing ordering edges and the test that builds it headless.
     .add_plugins(game_plugins::GamePlugins {
-        connect: !capturing && !survivors,
+        net: if capturing || survivors {
+            net::NetBackend::Offline
+        } else {
+            net::NetBackend::Io
+        },
         start: if survivors {
             char_select::ClientState::InWorld
         } else {

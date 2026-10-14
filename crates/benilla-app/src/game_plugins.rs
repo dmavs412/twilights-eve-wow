@@ -94,9 +94,9 @@ use crate::world_backdrop::WorldBackdropPlugin;
 
 /// The game, as one plugin group. The two fields are the two plugins `run()` parameterises.
 pub(crate) struct GamePlugins {
-    /// [`NetPlugin::connect`]: `false` in capture mode, where no IO thread runs, so captures are
-    /// deterministic whether or not a server is up.
-    pub(crate) connect: bool,
+    /// [`NetPlugin::backend`]: `Offline` in capture mode, where no IO thread runs, so captures
+    /// are deterministic whether or not a server is up.
+    pub(crate) net: crate::net::NetBackend,
     /// [`crate::char_select::CharSelectPlugin::start`]: the screen this session opens on.
     pub(crate) start: crate::char_select::ClientState,
 }
@@ -127,9 +127,7 @@ impl PluginGroup for GamePlugins {
             // After PlayerPlugin, whose `control` it overrides in the same stage.
             .add(CinematicPlugin)
             .add(CursorPlugin)
-            .add(NetPlugin {
-                connect: self.connect,
-            })
+            .add(NetPlugin { backend: self.net })
             .add(crate::death::DeathPlugin)
             .add(crate::glue::GluePlugin)
             .add(crate::char_select::CharSelectPlugin { start: self.start })
@@ -288,7 +286,7 @@ pub(crate) mod schedule_tests {
         );
         app.add_plugins(benilla_world::world_plugins::WorldPlugins);
         app.add_plugins(GamePlugins {
-            connect: false,
+            net: crate::net::NetBackend::Offline,
             start: crate::char_select::ClientState::Login,
         });
         app.finish();

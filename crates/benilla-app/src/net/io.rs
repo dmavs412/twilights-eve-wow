@@ -31,6 +31,7 @@ use benilla_protocol::{
 };
 use crossbeam_channel::{Receiver, Sender};
 
+use super::backend::FarEnds;
 use super::{CharRequest, ClientCommand, RealmRequest};
 
 /// The inbound census: every packet off the world socket, and the unix ms of the latest, which
@@ -203,37 +204,33 @@ enum Cycle {
     LoginRefused,
 }
 
-/// Everything [`spawn_net`] hands the app.
-pub(super) struct NetHandles {
-    pub(super) events: Receiver<SessionEvent>,
-    pub(super) commands: Sender<ClientCommand>,
-    // The three park channels are `async_channel` — see [`Parks`]. The ECS side never waits on
-    // them (it `try_send`s into unbounded queues), so nothing above this line changed shape.
-    pub(super) pick: async_channel::Sender<CharRequest>,
-    pub(super) realm: async_channel::Sender<RealmRequest>,
-    pub(super) login: async_channel::Sender<LoginRequest>,
-    pub(super) login_abandon: Arc<AtomicU64>,
-    pub(super) ping: Arc<Mutex<PingClock>>,
-    /// The write half's two inputs — **web only**. A page has no threads, so what
-    /// [`writer_loop`] owns natively is owned instead by `crate::net`'s per-frame pump, and these
-    /// are how it gets hold of them.
+/// What [`spawn_net`] hands back: the write half's two inputs, **web only**. A page has no
+/// threads, so what [`writer_loop`] owns natively is owned instead by `crate::net`'s per-frame
+/// pump, and these are how it gets hold of them. Natively the write thread took them.
+pub(super) struct IoEnds {
     #[cfg(target_arch = "wasm32")]
     pub(super) writer_rx: Receiver<WorldWriter>,
     #[cfg(target_arch = "wasm32")]
     pub(super) commands_rx: Receiver<ClientCommand>,
 }
 
-/// Spawns the read thread with its park and cycle loop, and the one long-lived write thread.
-pub(super) fn spawn_net(connect: bool) -> NetHandles {
-    let (events_tx, events_rx) = crossbeam_channel::unbounded();
-    let (cmd_tx, cmd_rx) = crossbeam_channel::unbounded();
-    let (pick_tx, pick_rx) = async_channel::unbounded::<CharRequest>();
-    let (realm_tx, realm_rx) = async_channel::unbounded::<RealmRequest>();
-    let (login_tx, login_rx) = async_channel::unbounded::<LoginRequest>();
+/// The IO backend ([`super::backend`]): spawns the read thread with its park and cycle loop, and
+/// the one long-lived write thread, on the far ends of the app's channels.
+pub(super) fn spawn_net(
+    connect: bool,
+    far: FarEnds,
+    login_abandon: &Arc<AtomicU64>,
+    ping_clock: &Arc<Mutex<PingClock>>,
+) -> IoEnds {
+    let FarEnds {
+        events: events_tx,
+        commands: cmd_rx,
+        pick: pick_rx,
+        realm: realm_rx,
+        login: login_rx,
+    } = far;
     // The writer outlives connections; the sequencer hands it each new WorldWriter across here.
     let (writer_tx, writer_rx) = crossbeam_channel::unbounded::<WorldWriter>();
-    let login_abandon = Arc::new(AtomicU64::new(0));
-    let ping_clock = Arc::new(Mutex::new(PingClock::default()));
     if connect {
         let parks = Parks {
             login_rx,
@@ -242,11 +239,11 @@ pub(super) fn spawn_net(connect: bool) -> NetHandles {
         };
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let clock = Arc::clone(&ping_clock);
+            let clock = Arc::clone(ping_clock);
             // The sequencer's own handle: `SMSG_PONG` is measured where it lands, not where it is
             // drained (B346 — see [`PingClock`]).
-            let read_clock = Arc::clone(&ping_clock);
-            let abandon = Arc::clone(&login_abandon);
+            let read_clock = Arc::clone(ping_clock);
+            let abandon = Arc::clone(login_abandon);
             thread::Builder::new()
                 .name("wow-net-write".into())
                 .spawn(move || {
@@ -271,31 +268,29 @@ pub(super) fn spawn_net(connect: bool) -> NetHandles {
                     ));
                 })
                 .expect("spawn wow-net thread");
+            return IoEnds {};
         }
         #[cfg(target_arch = "wasm32")]
         {
             // No threads in a page: the sequencer is one task on the browser's own event loop, and
             // the writer is drained by a Bevy system instead of a sibling thread (`crate::net`).
-            let abandon = Arc::clone(&login_abandon);
-            let read_clock = Arc::clone(&ping_clock);
+            let abandon = Arc::clone(login_abandon);
+            let read_clock = Arc::clone(ping_clock);
             wasm_bindgen_futures::spawn_local(sequencer(
                 events_tx, writer_tx, parks, abandon, read_clock,
             ));
         }
     }
-    // Not connecting (capture mode): the channel ends drop here, sends become ignored `Err`s and
-    // the event stream stays empty.
-    NetHandles {
-        events: events_rx,
-        commands: cmd_tx,
-        pick: pick_tx,
-        realm: realm_tx,
-        login: login_tx,
-        login_abandon,
-        ping: ping_clock,
-        #[cfg(target_arch = "wasm32")]
+    // Not connecting (capture mode): the far ends drop here, sends become ignored `Err`s and the
+    // event stream stays empty.
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        drop((writer_rx, cmd_rx));
+        IoEnds {}
+    }
+    #[cfg(target_arch = "wasm32")]
+    IoEnds {
         writer_rx,
-        #[cfg(target_arch = "wasm32")]
         commands_rx: cmd_rx,
     }
 }
