@@ -275,6 +275,50 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             slot,
             count,
         }),
+        ClientCommand::ListInventory { guid } => Some(RealmCommand::ListInventory { guid }),
+        ClientCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        } => Some(RealmCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        }),
+        // A row dropped on a slot: bought into the first free one, as the realm stores loot.
+        ClientCommand::BuyItemInSlot {
+            vendor,
+            entry,
+            count,
+            ..
+        } => Some(RealmCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        }),
+        ClientCommand::SellItem {
+            vendor,
+            item_guid,
+            count,
+        } => Some(RealmCommand::SellItem {
+            vendor,
+            item: item_guid,
+            count,
+        }),
+        ClientCommand::BuybackItem { vendor, slot } => {
+            Some(RealmCommand::BuybackItem { vendor, slot })
+        }
+        ClientCommand::RepairItem { vendor, item_guid } => Some(RealmCommand::RepairItem {
+            vendor,
+            item: item_guid,
+        }),
+        ClientCommand::UseItem {
+            bag_index, slot, ..
+        } => Some(RealmCommand::UseItem {
+            bag: bag_index,
+            slot,
+        }),
+        ClientCommand::RepopRequest => Some(RealmCommand::RepopRequest),
         _ => None,
     }
 }
