@@ -65,6 +65,10 @@ impl Plugin for TwilightPlugin {
         .add_systems(
             Update,
             only_warriors.run_if(resource_added::<crate::entities::CharCreate>),
+        )
+        .add_systems(
+            Update,
+            blank_skill_ranks.run_if(resource_added::<crate::ui_action::Spells>),
         );
         // Closing the window logs the character out, which saves it.
         crate::shutdown::on_app_exit(app, save_on_exit.into_configs());
@@ -230,6 +234,14 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::AttackSwing { guid } => Some(RealmCommand::AttackSwing { guid }),
         ClientCommand::AttackStop => Some(RealmCommand::AttackStop),
         ClientCommand::CreatureQuery { entry, .. } => Some(RealmCommand::CreatureQuery { entry }),
+        ClientCommand::CastSpell { spell_id, target } => {
+            Some(RealmCommand::CastSpell { spell_id, target })
+        }
+        ClientCommand::CancelAura { spell_id } => Some(RealmCommand::CancelAura { spell_id }),
+        ClientCommand::SetActionButton { button, packed } => Some(RealmCommand::SetActionButton {
+            slot: button,
+            packed,
+        }),
         ClientCommand::Logout => Some(RealmCommand::Logout),
         ClientCommand::ItemQuery { entry, .. } => Some(RealmCommand::ItemQuery { entry }),
         ClientCommand::Loot { guid } => Some(RealmCommand::Loot { guid }),
@@ -319,6 +331,7 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             slot,
         }),
         ClientCommand::RepopRequest => Some(RealmCommand::RepopRequest),
+        ClientCommand::TeleportAck { counter, .. } => Some(RealmCommand::TeleportAck { counter }),
         _ => None,
     }
 }
@@ -337,6 +350,14 @@ impl Host for TerrainHost<'_, '_, '_> {
     fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
         true
     }
+}
+
+/// A Calling skill has no ranks: the spellbook, tooltip and learn line show none, even though
+/// each borrows a ranked 1.12 spell.
+fn blank_skill_ranks(mut spells: ResMut<crate::ui_action::Spells>) {
+    spells
+        .catalog
+        .clear_ranks(twilight_realm::callings::skill_spell_ids());
 }
 
 /// Basic Warrior is the only Calling a character starts as, so create offers only Warrior.

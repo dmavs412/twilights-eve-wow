@@ -73,17 +73,12 @@ impl InWorld {
         p.health = p.stats.max_health;
         p.swing_timer = 0.0;
         p.refused = None;
+        let health = p.health;
         c.map = to.map;
         c.position = to.position;
         c.orientation = to.orientation;
         if to.map == self.map {
-            self.teleports += 1;
-            events.push(SessionEvent::Teleport {
-                guid: self.guid,
-                counter: self.teleports,
-                position: to.position,
-                orientation: to.orientation,
-            });
+            self.teleport(c, to.position, to.orientation, events);
         } else {
             // Another map: the client rebuilds its world, so the realm's starts over too.
             self.map = to.map;
@@ -101,7 +96,7 @@ impl InWorld {
                 needs_ack: false,
             });
         }
-        events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, p.health)]));
+        events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, health)]));
         true
     }
 }

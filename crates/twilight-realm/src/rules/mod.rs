@@ -10,5 +10,6 @@ pub mod loot;
 pub mod melee;
 pub mod rage;
 pub mod respawn;
+pub mod skills;
 pub mod stats;
 pub mod xp;

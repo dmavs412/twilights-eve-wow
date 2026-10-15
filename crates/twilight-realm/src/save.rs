@@ -56,9 +56,16 @@ struct SaveV1 {
     zone: u32,
     position: [f32; 3],
     orientation: f32,
+    /// `[slot, kind << 24 | action]` per button, once the player has arranged the bar. Optional,
+    /// so a save from before it existed still reads as version 1.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    action_bar: Option<Vec<(u8, u32)>>,
     /// Copper. Added within version 1: a save without it has none.
     #[serde(default)]
     money: u32,
+    /// `[item entry, ms left]` per item cooling down after use. Optional within version 1.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    item_cooldowns: Vec<[u32; 2]>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -121,7 +128,13 @@ pub(crate) fn export(c: &Char) -> String {
         zone: c.zone,
         position: c.position,
         orientation: c.orientation,
+        action_bar: c.action_bar.clone(),
         money: c.inventory.money,
+        item_cooldowns: c
+            .item_cooldowns
+            .iter()
+            .map(|&(entry, left)| [entry, (left * 1000.0).round() as u32])
+            .collect(),
         items: saved_items(&c.inventory),
     };
     toml::to_string(&save).expect("a save always serializes")
@@ -149,6 +162,12 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         zone: s.zone,
         position: s.position,
         orientation: s.orientation,
+        action_bar: s.action_bar,
         inventory: load_inventory(s.money, &s.items)?,
+        item_cooldowns: s
+            .item_cooldowns
+            .iter()
+            .map(|&[entry, ms]| (entry, ms as f32 / 1000.0))
+            .collect(),
     })
 }

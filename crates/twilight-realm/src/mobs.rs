@@ -225,6 +225,8 @@ pub(crate) struct Mob {
     pub(crate) swing_timer: f32,
     /// Seconds until the chase may lay a new leg.
     pub(crate) repath_timer: f32,
+    /// What slows on it leave of its run speed: 1.0 unslowed.
+    pub(crate) speed_mul: f32,
     next_spline_id: u32,
     /// Its index in [`Mobs::spawn`].
     pub(crate) spawn: u32,
@@ -262,6 +264,7 @@ impl Mob {
             walk: None,
             swing_timer: 0.0,
             repath_timer: 0.0,
+            speed_mul: 1.0,
             next_spline_id: 1,
             spawn: index,
             camp: spawn.camp,
@@ -278,7 +281,7 @@ impl Mob {
     }
 
     pub(crate) fn run_speed(&self) -> f32 {
-        BASE_RUN * self.template.speed_run
+        BASE_RUN * self.template.speed_run * self.speed_mul
     }
 
     /// The mob's create: `SMSG_UPDATE_OBJECT`'s create block as a living unit.

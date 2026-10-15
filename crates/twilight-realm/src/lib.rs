@@ -8,6 +8,7 @@
 //! tick(dt, &dyn Host) ──┼─> Realm ──> drain_events() -> Vec<SessionEvent>
 //! ```
 
+pub mod callings;
 mod characters;
 mod combat;
 mod content;
@@ -72,6 +73,20 @@ pub enum RealmCommand {
     },
     /// Stop auto-attack.
     AttackStop,
+    /// Cast a skill; `target` is its unit target, `None` for a self or area skill.
+    CastSpell {
+        spell_id: u32,
+        target: Option<u64>,
+    },
+    /// Click off one of the player's own buffs.
+    CancelAura {
+        spell_id: u32,
+    },
+    /// Put `packed` (`kind << 24 | action`) on action bar `slot`; 0 clears it. No answer.
+    SetActionButton {
+        slot: u8,
+        packed: u32,
+    },
     /// A creature template's name, answered with [`SessionEvent::CreatureName`].
     CreatureQuery {
         entry: u32,
@@ -119,6 +134,15 @@ pub enum RealmCommand {
         src_slot: u8,
         dst_bag: u8,
     },
+    /// Use the item at a wire position (bag 255 is the player's own slots): the Hearthstone.
+    UseItem {
+        bag: u8,
+        slot: u8,
+    },
+    /// The client snapped to the teleport carrying `counter`.
+    TeleportAck {
+        counter: u32,
+    },
     /// Destroy `count` of the item at a wire position, 0 for all of it.
     DestroyItem {
         bag: u8,
@@ -153,11 +177,6 @@ pub enum RealmCommand {
     },
     /// Release Spirit: the dead player comes back at the respawn point.
     RepopRequest,
-    /// Use the item at a wire position: eat or drink.
-    UseItem {
-        bag: u8,
-        slot: u8,
-    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -224,8 +243,11 @@ impl Realm {
                 position,
                 orientation,
             } => {
-                if let Some(w) = &self.world {
-                    self.characters.set_position(w.guid, position, orientation);
+                if let Some(w) = &mut self.world {
+                    let from = self.characters.get(w.guid).map(|c| c.position);
+                    if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
+                        self.characters.set_position(w.guid, position, orientation);
+                    }
                 }
             }
             RealmCommand::SetSelection { guid } => {
@@ -241,6 +263,38 @@ impl Realm {
             RealmCommand::AttackStop => {
                 if let Some(w) = &mut self.world {
                     w.stop_attack(&mut self.events);
+                }
+            }
+            RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target),
+            RealmCommand::UseItem { bag, slot } => {
+                // Equipped bags are not modelled: only the player's own slots hold items.
+                if let (Some(w), 255) = (&mut self.world, bag) {
+                    if let Some(c) = self.characters.get_mut(w.guid) {
+                        // Food and drink are eaten at once; anything else casts its spell.
+                        match w.eat_or_drink(slot, c, &mut self.events) {
+                            Some(true) => {
+                                let guid = w.guid;
+                                self.save(guid);
+                            }
+                            Some(false) => {}
+                            None => w.use_item(slot, c, &mut self.events),
+                        }
+                    }
+                }
+            }
+            RealmCommand::TeleportAck { counter } => {
+                if let Some(w) = &mut self.world {
+                    w.teleport_ack(counter);
+                }
+            }
+            RealmCommand::CancelAura { spell_id } => {
+                if let Some(w) = &mut self.world {
+                    w.cancel_aura(spell_id, &mut self.events);
+                }
+            }
+            RealmCommand::SetActionButton { slot, packed } => {
+                if let Some(w) = &self.world {
+                    self.characters.set_action_button(w.guid, slot, packed);
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
@@ -312,9 +366,6 @@ impl Realm {
                 traded = vendor::repair(vendor, item, c, events);
             }
             RealmCommand::RepopRequest => traded.changed = w.release(c, events),
-            RealmCommand::UseItem { bag, slot } => {
-                traded.changed = w.use_item(bag, slot, c, events)
-            }
             _ => return,
         }
         moved.gear_changed |= traded.gear_changed;
@@ -344,6 +395,21 @@ impl Realm {
         // The dead are saved once they release, where they come back.
         if ticked.leveled || (w.since_save >= save::AUTOSAVE_SECS && !w.dead()) {
             w.since_save = 0.0;
+            let guid = w.guid;
+            self.save(guid);
+        }
+    }
+
+    /// A skill cast: answered at once, as an instant is.
+    fn cast(&mut self, spell_id: u32, target: Option<u64>) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let cast = w.cast(spell_id, target, c, &mut self.rng, &mut self.events);
+        if cast.leveled {
             let guid = w.guid;
             self.save(guid);
         }

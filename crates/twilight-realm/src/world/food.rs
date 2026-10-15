@@ -27,8 +27,6 @@ const TICK_SECS: f32 = 2.0;
 const AFFECTING_COMBAT: u8 = 0x00;
 /// `EQUIP_ERR_CANT_EQUIP_LEVEL_I`.
 const CANT_USE_LEVEL: u8 = 1;
-/// `BAG_PLAYER_INVENTORY`.
-const PLAYER_BAG: u8 = 255;
 
 /// A meal in progress.
 pub(super) struct Meal {
@@ -44,21 +42,31 @@ pub(super) struct Meal {
 }
 
 impl InWorld {
-    /// `CMSG_USE_ITEM` on food or drink at a wire position.
-    pub(crate) fn use_item(
+    /// `CMSG_USE_ITEM` on the item in player slot `slot`, if it is food or drink: `None` for any
+    /// other item, else whether one was eaten.
+    pub(crate) fn eat_or_drink(
         &mut self,
-        bag: u8,
         slot: u8,
         c: &mut Char,
         events: &mut Vec<SessionEvent>,
+    ) -> Option<bool> {
+        let item = c.inventory.get(slot)?;
+        let t = items::template(item.entry)
+            .filter(|t| t.use_spell != 0 && (t.restores_health > 0 || t.restores_mana > 0))?;
+        Some(self.sit_and_eat(slot, t, c, events))
+    }
+
+    fn sit_and_eat(
+        &mut self,
+        slot: u8,
+        t: &items::Template,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
     ) -> bool {
-        if bag != PLAYER_BAG || self.dead() {
+        if self.dead() {
             return false;
         }
         let Some(item) = c.inventory.get(slot) else {
-            return false;
-        };
-        let Some(t) = items::template(item.entry).filter(|t| t.use_spell != 0) else {
             return false;
         };
         if c.level < t.required_level {
