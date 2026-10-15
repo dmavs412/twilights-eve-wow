@@ -360,6 +360,49 @@ fn rage_drains_once_the_fight_is_over() {
     );
 }
 
+/// `UNIT_FLAG_PVP_ATTACKABLE`: the player is player-controlled. Without it the client's
+/// `CanAttack` lets the player attack only hostile mobs, never neutral ones.
+const UNIT_FLAG_PVP_ATTACKABLE: u32 = 0x8;
+/// `UNIT_FLAG_IN_COMBAT`.
+const UNIT_FLAG_IN_COMBAT: u32 = 0x0008_0000;
+/// `UNIT_FIELD_FLAGS`.
+const UNIT_FIELD_FLAGS: u16 = 46;
+
+#[test]
+fn the_player_is_player_controlled_from_entry_through_a_fight() {
+    let mut fresh = realm();
+    let (guid, events) = enter_new(&mut fresh, "Anduin", HUMAN);
+    assert_ne!(
+        own_create(&events, guid).unit_flags() & UNIT_FLAG_PVP_ATTACKABLE,
+        0,
+        "the create carries the player-controlled flag"
+    );
+
+    let (mut realm, me, mob) = warrior_at(5, 0);
+    stand_by(&mut realm, &mob);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let mut events = run_until_dead(&mut realm, &mob);
+    events.extend(run(&mut realm, 10.0));
+    let flags: Vec<u32> = own_values(&events, me)
+        .filter_map(|f| {
+            f.raw_fields()
+                .find_map(|(i, v)| (i == UNIT_FIELD_FLAGS).then_some(v))
+        })
+        .collect();
+    assert!(
+        flags.iter().any(|f| f & UNIT_FLAG_IN_COMBAT != 0),
+        "the fight sets the combat flag: {flags:x?}"
+    );
+    assert!(
+        flags.iter().any(|f| f & UNIT_FLAG_IN_COMBAT == 0),
+        "the fight's end clears it: {flags:x?}"
+    );
+    assert!(
+        flags.iter().all(|f| f & UNIT_FLAG_PVP_ATTACKABLE != 0),
+        "no flags update drops the player-controlled flag: {flags:x?}"
+    );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────────────────────
 
 const CROSSROADS_XY: [f32; 3] = [CROSSROADS[0], CROSSROADS[1], 0.0];

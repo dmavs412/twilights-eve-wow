@@ -180,6 +180,33 @@ fn a_neutral_camp_waits_to_be_attacked_then_fights_together() {
 }
 
 #[test]
+fn a_neutral_mob_can_be_attacked_and_killed() {
+    // A Plainstrider (1-2) under the neutral beast faction the client shows yellow.
+    const NEUTRAL_BEAST: u32 = 189;
+    let (mut realm, me) = warrior_at(5);
+    let striders = camp_units(&mut realm, "low-1");
+    let (guid, strider) = northernmost(&striders);
+    assert_eq!(strider.faction, NEUTRAL_BEAST);
+    let at = north_of(strider.position, 2.0);
+    teleport(&mut realm, at);
+    face(&mut realm, at, strider.position);
+
+    realm.handle(RealmCommand::AttackSwing { guid });
+    let events = run(&mut realm, 60.0);
+    assert!(
+        events.iter().any(
+            |e| matches!(e, SessionEvent::AttackStart { attacker, victim } if *attacker == me && *victim == guid)
+        ),
+        "the realm takes the attack"
+    );
+    assert!(
+        attackers(&events).any(|a| a == guid),
+        "the strider fights back"
+    );
+    assert_eq!(last_health(&events, guid), Some(0), "the strider dies");
+}
+
+#[test]
 fn a_mob_dragged_past_its_leash_runs_home_and_heals() {
     let (mut realm, me) = warrior_at(10);
     let wolves = camp_units(&mut realm, "low-6");
@@ -382,6 +409,7 @@ struct Unit {
     display_id: u32,
     health: u32,
     max_health: u32,
+    faction: u32,
     position: [f32; 3],
 }
 
@@ -404,6 +432,7 @@ fn creates(events: &[SessionEvent]) -> HashMap<u64, Unit> {
                     display_id: fields.unit_displayid().unwrap() as u32,
                     health: fields.unit_health().unwrap(),
                     max_health: fields.unit_max_health().unwrap(),
+                    faction: fields.unit_faction_template().unwrap(),
                     position: *position,
                 },
             )),
