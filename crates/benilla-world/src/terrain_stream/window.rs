@@ -75,12 +75,21 @@ impl StreamWindow {
         out
     }
 
+    /// What residency depends on: the wanted tile range and the keep range. Two windows with the
+    /// same key want and keep the same tiles, so a streamer that saw this key settle may skip.
+    pub fn residency_key(&self) -> ResidencyKey {
+        [self.tile_range(0), self.tile_range(KEEP_BAND_CHUNKS)]
+    }
+
     /// Whether a tile is inside the outer window plus the keep band.
     pub fn keeps(&self, tile: (i32, i32)) -> bool {
         let ((x0, y0), (x1, y1)) = self.tile_range(KEEP_BAND_CHUNKS);
         (x0..=x1).contains(&tile.0) && (y0..=y1).contains(&tile.1)
     }
 }
+
+/// [`StreamWindow::residency_key`]: the wanted and the kept tile ranges, each `(min, max)`.
+pub type ResidencyKey = [((i32, i32), (i32, i32)); 2];
 
 /// The inner half-width in chunks, `1 + trunc(farclip / 33.333)` (`0x6725e9`: `fmul −0.03`,
 /// `__ftol`, `1 − eax`): 777 ⇒ 24, 350 ⇒ 11, 177 ⇒ 6.
@@ -171,6 +180,48 @@ mod tests {
         for t in w.wanted_tiles() {
             assert!(w.keeps(t));
         }
+    }
+
+    /// Walking a tile end to end without leaving it changes the wanted set: from Lushwater Oasis
+    /// (tile 35, 33) heading west at the default farclip, tile column 34 enters the outer window
+    /// three chunks in. A skip keyed on the focus tile never requested it, and the ground past
+    /// the basin rim drew as sky.
+    #[test]
+    fn the_residency_key_changes_whenever_the_tiles_do() {
+        for farclip in [177.0, 350.0, 777.0] {
+            for row in 0..16 {
+                let walk: Vec<_> = (0..16)
+                    .rev()
+                    .map(|c| at_chunk(farclip, (35, 33), (c, row)))
+                    .collect();
+                for a in &walk {
+                    for b in &walk {
+                        if a.residency_key() != b.residency_key() {
+                            continue;
+                        }
+                        assert_eq!(
+                            a.wanted_tiles(),
+                            b.wanted_tiles(),
+                            "{farclip}: {a:?} vs {b:?}"
+                        );
+                        for t in a.wanted_tiles().into_iter().chain(b.wanted_tiles()) {
+                            for d in [(-1, 0), (1, 0), (0, -1), (0, 1), (0, 0)] {
+                                let n = (t.0 + d.0, t.1 + d.1);
+                                assert_eq!(a.keeps(n), b.keeps(n), "{farclip}: {a:?} vs {b:?}");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // The oasis walk itself: entered at chunk 13, the column ahead is not yet wanted; by
+        // chunk 7 it is, and the key says so.
+        let entry = at_chunk(350.0, (35, 33), (13, 9));
+        let walked = at_chunk(350.0, (35, 33), (7, 9));
+        assert_eq!(entry.focus_tile(), walked.focus_tile());
+        assert!(!entry.wanted_tiles().contains(&(34, 33)));
+        assert!(walked.wanted_tiles().contains(&(34, 33)));
+        assert_ne!(entry.residency_key(), walked.residency_key());
     }
 
     #[test]

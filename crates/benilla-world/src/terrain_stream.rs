@@ -70,6 +70,10 @@ pub struct TerrainStreamer {
     focus: (i32, i32),
     /// The window's `(inner, outer)` half-widths last frame, logged once per change.
     reach: Option<(i32, i32)>,
+    /// The tiles the window last wanted and kept ([`StreamWindow::residency_key`]): an unchanged
+    /// key is what lets a settled frame skip. The focus tile is not enough, since the outer
+    /// window crosses tile lines while the focus walks within one tile.
+    residency: Option<window::ResidencyKey>,
     /// The map's WDT tile index: ADT requests wait for it and consult its `MAIN` grid.
     wdt: Option<Handle<WdtIndex>>,
     /// The WDT failed to load: stream every tile ungated rather than show no world.
@@ -557,7 +561,8 @@ fn stream_terrain(
     let center = focus.resolve(camera.single().ok().map(|c| c.translation));
     let window = StreamWindow::at(view.farclip, center[0], center[1]);
     let (cx, cy) = window.focus_tile();
-    let same_window = state.focus == (cx, cy) && state.reach == Some((window.inner, window.outer));
+    let residency = window.residency_key();
+    let same_window = state.residency == Some(residency);
     // Skip an unchanged frame only in a paced, complete, presentable world, since the tail it
     // bypasses releases a load; even then the undrawn count stays fresh, so a rebake un-skips it.
     if same_window
@@ -575,6 +580,7 @@ fn stream_terrain(
         return;
     }
     state.focus = (cx, cy);
+    state.residency = Some(residency);
     if state.reach != Some((window.inner, window.outer)) {
         state.reach = Some((window.inner, window.outer));
         info!(
@@ -981,6 +987,8 @@ fn drop_streamed_world(
     if std::mem::take(&mut state.global_wmo) {
         release_placement(commands, placements, GLOBAL_WMO_UID, activity);
     }
+    // Tile keys repeat across maps, so the next frame must walk, never skip on the old key.
+    state.residency = None;
     placements.materials.clear();
     // Cleared here, not by the flush's dead-key discard: tile keys repeat across maps, and the
     // new map's tiles are inserted this same frame. The same holds for the merge accumulators,
