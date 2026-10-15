@@ -138,7 +138,22 @@ pub fn questing(
     tokens: u32,
     quests: &[Underway],
 ) -> (Realm, u64, Vec<SessionEvent>) {
+    questing_as("basic_warrior", level, items, tokens, quests)
+}
+
+/// [`questing`] as a character of another Calling (`warrior` for Tier 1, past level 10).
+pub fn questing_as(
+    calling: &str,
+    level: u8,
+    items: &[Carried],
+    tokens: u32,
+    quests: &[Underway],
+) -> (Realm, u64, Vec<SessionEvent>) {
     let (guid, blob) = save_with_quests(level, items, tokens, quests);
+    let blob = blob.replace(
+        "calling = \"basic_warrior\"",
+        &format!("calling = \"{calling}\""),
+    );
     let mut realm = Realm::with_seed(SEED);
     realm
         .import_character(&blob)
