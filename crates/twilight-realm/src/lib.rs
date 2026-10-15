@@ -14,6 +14,7 @@ mod content;
 mod dev;
 mod equipment;
 mod fields;
+mod hub;
 mod inventory;
 mod items;
 mod looting;
@@ -23,6 +24,7 @@ mod rng;
 pub mod rules;
 mod save;
 mod tables;
+mod vendor;
 mod world;
 
 use benilla_protocol::{CharCreateReq, SessionEvent};
@@ -122,6 +124,32 @@ pub enum RealmCommand {
         slot: u8,
         count: u8,
     },
+    /// Open a vendor's merchant window, answered with [`SessionEvent::VendorInventory`].
+    ListInventory {
+        guid: u64,
+    },
+    /// Buy `count` of a vendor row's bundles (`buy_count` items each) by item entry.
+    BuyItem {
+        vendor: u64,
+        entry: u32,
+        count: u8,
+    },
+    /// Sell `count` of an item, 0 for the whole stack.
+    SellItem {
+        vendor: u64,
+        item: u64,
+        count: u8,
+    },
+    /// Buy back what was sold, by its player buyback slot (69-80).
+    BuybackItem {
+        vendor: u64,
+        slot: u32,
+    },
+    /// Repair one item, or with `item` 0 everything carried.
+    RepairItem {
+        vendor: u64,
+        item: u64,
+    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -208,7 +236,9 @@ impl Realm {
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
-                self.events.push(mobs::creature_name(entry));
+                let answer =
+                    hub::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
+                self.events.push(answer);
             }
             RealmCommand::Logout => self.logout(),
             RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
@@ -227,6 +257,7 @@ impl Realm {
         let events = &mut self.events;
         let mut moved = equipment::Moved::default();
         let mut looted = looting::Looted::default();
+        let mut traded = vendor::Traded::default();
         match command {
             RealmCommand::Loot { guid } => w.open_loot(guid, c, events),
             RealmCommand::LootMoney => looted = w.looting.take_money(c, events),
@@ -255,8 +286,24 @@ impl Realm {
             RealmCommand::DestroyItem { bag, slot, count } => {
                 moved = equipment::destroy(c, bag, slot, count, events);
             }
+            RealmCommand::ListInventory { guid } => vendor::list(guid, c, events),
+            RealmCommand::BuyItem {
+                vendor,
+                entry,
+                count,
+            } => traded = vendor::buy(vendor, entry, count, c, events),
+            RealmCommand::SellItem {
+                vendor,
+                item,
+                count,
+            } => traded = vendor::sell(vendor, item, count, c, &mut w.buyback, events),
+            RealmCommand::BuybackItem { vendor, slot } => {
+                traded = vendor::buy_back(vendor, slot, c, &mut w.buyback, events);
+            }
             _ => return,
         }
+        moved.gear_changed |= traded.gear_changed;
+        looted.took |= traded.changed;
         if moved.gear_changed {
             w.refresh_gear(c, events);
         }

@@ -15,8 +15,8 @@ use crate::rules::stats::WarriorStats;
 // Item update fields (`UpdateFields_1_12_1.h`).
 const ITEM_FIELD_OWNER: u16 = 6;
 const ITEM_FIELD_CONTAINED: u16 = 8;
-const ITEM_FIELD_STACK_COUNT: u16 = 14;
-const ITEM_FIELD_DURABILITY: u16 = 46;
+pub(crate) const ITEM_FIELD_STACK_COUNT: u16 = 14;
+pub(crate) const ITEM_FIELD_DURABILITY: u16 = 46;
 const ITEM_FIELD_MAXDURABILITY: u16 = 47;
 /// `TYPEMASK_OBJECT | TYPEMASK_ITEM`.
 const TYPE_ITEM: u32 = 0x01 | 0x02;
@@ -132,11 +132,9 @@ pub(crate) fn sheet_pairs(s: &WarriorStats) -> Vec<(u16, u32)> {
         s.attack_power_bonus.clamp(0, i32::from(i16::MAX)) as u32,
     ));
     let skill = u32::from(s.weapon_skill);
-    let known = WEAPON_SKILLS
-        .iter()
-        .filter(|(_, sub)| {
-            gear::proficiency_level(gear::CLASS_WEAPON, *sub).is_some_and(|l| s.level >= l)
-        });
+    let known = WEAPON_SKILLS.iter().filter(|(_, sub)| {
+        gear::proficiency_level(gear::CLASS_WEAPON, *sub).is_some_and(|l| s.level >= l)
+    });
     for (i, (id, _)) in known.enumerate() {
         let base = PLAYER_SKILL_INFO_1_1 + 3 * (WEAPON_SKILL_SLOT + i as u16);
         pairs.extend([(base, *id), (base + 1, skill | skill << 16), (base + 2, 0)]);
@@ -180,6 +178,17 @@ pub(crate) fn receive(
     count: u32,
     events: &mut Vec<SessionEvent>,
 ) -> Result<(), u8> {
+    receive_from(c, entry, count, false, events)
+}
+
+/// [`receive`], saying whether an NPC handed it over (a purchase) rather than loot.
+pub(crate) fn receive_from(
+    c: &mut Char,
+    entry: u32,
+    count: u32,
+    from_npc: bool,
+    events: &mut Vec<SessionEvent>,
+) -> Result<(), u8> {
     let changed = c
         .inventory
         .store(entry, count)
@@ -202,7 +211,7 @@ pub(crate) fn receive(
     if let Some(&(slot, _)) = changed.first() {
         events.push(SessionEvent::ItemPushResult(ItemPushResult {
             player_guid: c.guid,
-            from_npc: false,
+            from_npc,
             created: false,
             show_in_chat: true,
             bag_slot: PLAYER_BAG,
@@ -424,11 +433,7 @@ fn is_two_hander(entry: u32) -> bool {
 /// Whether `item` may sit in player slot `to`: anything in the backpack; in a worn slot, only
 /// what goes there and what the character may wear. The `InventoryResult` and required level of
 /// a refusal.
-fn check_place(
-    c: &Char,
-    item: &Item,
-    to: u8,
-) -> Result<(), (u8, Option<u8>)> {
+fn check_place(c: &Char, item: &Item, to: u8) -> Result<(), (u8, Option<u8>)> {
     if PACK.contains(&to) {
         return Ok(());
     }
@@ -449,8 +454,7 @@ fn check_place(
     }
     // Nothing goes in the off hand beside a two-hander.
     if to == gear::SLOT_OFF_HAND
-        && c
-            .inventory
+        && c.inventory
             .get(gear::SLOT_MAIN_HAND)
             .is_some_and(|m| m.guid != item.guid && is_two_hander(m.entry))
     {
@@ -461,7 +465,10 @@ fn check_place(
 
 /// Moves as much of the stack at `src` onto the stack at `dst` as fits.
 fn merge(c: &mut Char, src: u8, dst: u8, stack: u32, events: &mut Vec<SessionEvent>) -> Moved {
-    let room = c.inventory.get(dst).map_or(0, |d| stack.saturating_sub(d.count));
+    let room = c
+        .inventory
+        .get(dst)
+        .map_or(0, |d| stack.saturating_sub(d.count));
     let moving = c.inventory.get(src).map_or(0, |s| s.count);
     let add = room.min(moving);
     if add == 0 {
@@ -484,7 +491,7 @@ fn merge(c: &mut Char, src: u8, dst: u8, stack: u32, events: &mut Vec<SessionEve
 }
 
 /// The player fields of the slots in `changed`.
-fn send_slots(c: &Char, changed: &[u8], events: &mut Vec<SessionEvent>) {
+pub(crate) fn send_slots(c: &Char, changed: &[u8], events: &mut Vec<SessionEvent>) {
     let pairs: Vec<(u16, u32)> = changed
         .iter()
         .flat_map(|s| slot_pairs(*s, c.inventory.get(*s)))

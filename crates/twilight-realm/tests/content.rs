@@ -265,6 +265,71 @@ fn the_reference_pools_follow_each_items_pool_level_and_quality() {
 }
 
 #[test]
+fn the_goods_vendors_food_and_drink_match_the_reference() {
+    let reference = json("goods_vendor.json");
+    let rows = &toml_table("goods.toml")["item"];
+    let stock: Vec<i64> = reference["proposed_crossroads_stock"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_i64().unwrap())
+        .collect();
+    let entries: Vec<i64> = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["entry"].as_integer().unwrap())
+        .collect();
+    assert_eq!(entries, stock, "the Crossroads' stock, in order");
+    let hub = toml_table("hub.toml");
+    let sold: Vec<i64> = hub["npc"][0]["stock"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_integer().unwrap())
+        .collect();
+    assert_eq!(sold, stock, "the goods vendor sells it");
+
+    for row in rows.as_array().unwrap() {
+        let entry = row["entry"].as_integer().unwrap();
+        let want = reference["food_and_drink"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["entry"].as_i64() == Some(entry))
+            .unwrap();
+        let int = |k: &str| row.get(k).and_then(|v| v.as_integer()).unwrap_or(0);
+        for (ours, theirs) in [
+            ("required_level", "required_level"),
+            ("item_level", "item_level"),
+            ("buy_price", "buy_price"),
+            ("buy_count", "buy_count"),
+            ("sell_price", "sell_price"),
+            ("stackable", "stackable"),
+            ("display_id", "display_id"),
+            ("use_spell", "spell"),
+        ] {
+            assert_eq!(int(ours), want[theirs].as_i64().unwrap(), "{entry} {ours}");
+        }
+        assert_eq!(row["name"].as_str(), want["name"].as_str());
+        assert_eq!(
+            int("restores_health"),
+            want["restores"]["health"].as_i64().unwrap_or(0),
+            "{entry}"
+        );
+        assert_eq!(
+            int("restores_mana"),
+            want["restores"]["mana"].as_i64().unwrap_or(0),
+            "{entry}"
+        );
+        assert_eq!(
+            int("duration_ms"),
+            (want["duration_s"].as_f64().unwrap() * 1000.0) as i64
+        );
+    }
+}
+
+#[test]
 fn the_repair_tables_match_the_reference() {
     let repair = &json("goods_vendor.json")["repair"];
     let table = toml_table("durability.toml");

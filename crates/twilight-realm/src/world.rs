@@ -86,6 +86,10 @@ pub(crate) struct InWorld {
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
+    /// The Hub's NPCs are in the world: they come with the first tick, after the mobs.
+    hub_shown: bool,
+    /// This session's sales, on the merchant window's buyback tab.
+    pub(crate) buyback: crate::vendor::Buyback,
 }
 
 impl InWorld {
@@ -148,6 +152,8 @@ impl InWorld {
             population: Population::default(),
             dev,
             looting: Looting::default(),
+            hub_shown: false,
+            buyback: crate::vendor::Buyback::default(),
         }
     }
 
@@ -209,6 +215,10 @@ impl InWorld {
         let me = c.position;
         self.population
             .update(dt, me, self.map, host, &mut self.mobs, events);
+        if !self.hub_shown {
+            self.hub_shown = true;
+            events.extend(crate::hub::npcs().iter().map(|n| n.create()));
+        }
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting

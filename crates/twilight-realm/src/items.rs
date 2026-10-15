@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use benilla_protocol::messages::{ItemDamage, ItemInfo, ItemSpellEntry};
+use benilla_protocol::messages::{ItemDamage, ItemInfo, ItemSpellEntry, ItemUseSpell};
 use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
@@ -49,6 +49,12 @@ pub(crate) struct Template {
     pub(crate) sheath: u32,
     pub(crate) material: i32,
     pub(crate) pool_level: u8,
+    /// Food and drink (`content/goods.toml`): the spell a use casts, 0 for none.
+    pub(crate) use_spell: u32,
+    /// What eating or drinking restores over `duration_ms`.
+    pub(crate) restores_health: u32,
+    pub(crate) restores_mana: u32,
+    pub(crate) duration_ms: u32,
 }
 
 impl Default for Template {
@@ -85,6 +91,10 @@ impl Default for Template {
             sheath: 0,
             material: 0,
             pool_level: 0,
+            use_spell: 0,
+            restores_health: 0,
+            restores_mana: 0,
+            duration_ms: 0,
         }
     }
 }
@@ -101,13 +111,20 @@ struct Table {
     item: Vec<Template>,
 }
 
-/// Every template, by entry.
+/// Every template, by entry: the world drops, then the goods vendor's food and drink.
 pub(crate) fn all() -> &'static HashMap<u32, Template> {
     static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
     ITEMS.get_or_init(|| {
         let table: Table = toml::from_str(include_str!("../content/items.toml"))
             .expect("content/items.toml parses");
-        table.item.into_iter().map(|t| (t.entry, t)).collect()
+        let goods: Table = toml::from_str(include_str!("../content/goods.toml"))
+            .expect("content/goods.toml parses");
+        table
+            .item
+            .into_iter()
+            .chain(goods.item)
+            .map(|t| (t.entry, t))
+            .collect()
     })
 }
 
@@ -117,6 +134,16 @@ pub(crate) fn template(entry: u32) -> Option<&'static Template> {
 
 /// `ITEM_SPELLTRIGGER_ON_EQUIP`.
 const ON_EQUIP: u32 = 1;
+/// `ITEM_SPELLTRIGGER_ON_USE`.
+const ON_USE: u32 = 0;
+/// The spell category food and drink share (`Spell.dbc`'s `Category` 11 and 59).
+fn use_category(t: &Template) -> u32 {
+    if t.restores_mana > 0 {
+        59
+    } else {
+        11
+    }
+}
 
 /// `SMSG_ITEM_QUERY_SINGLE_RESPONSE` for `entry`; an unknown entry answers with none.
 pub(crate) fn query_response(entry: u32) -> SessionEvent {
@@ -138,6 +165,38 @@ fn info(t: &Template) -> ItemInfo {
         .collect();
     let first = damages.first().copied();
     let [holy, fire, nature, frost, shadow, arcane] = t.resistances;
+    // Food and drink: one use spell that eats one of the stack (charges -1).
+    let mut spells: Vec<ItemSpellEntry> = t
+        .equip_spells
+        .iter()
+        .enumerate()
+        .map(|(i, &spell_id)| ItemSpellEntry {
+            index: i as u8,
+            spell_id,
+            trigger: ON_EQUIP,
+            charges: 0,
+            cooldown_ms: -1,
+            category: 0,
+            category_cooldown_ms: -1,
+        })
+        .collect();
+    let use_spell = (t.use_spell != 0).then(|| {
+        spells.push(ItemSpellEntry {
+            index: spells.len() as u8,
+            spell_id: t.use_spell,
+            trigger: ON_USE,
+            charges: -1,
+            cooldown_ms: -1,
+            category: use_category(t),
+            category_cooldown_ms: -1,
+        });
+        ItemUseSpell {
+            spell_id: t.use_spell,
+            cooldown_ms: -1,
+            category: use_category(t),
+            category_cooldown_ms: -1,
+        }
+    });
     ItemInfo {
         class: t.class,
         subclass: t.subclass,
@@ -176,22 +235,9 @@ fn info(t: &Template) -> ItemInfo {
         delay_ms: t.speed_ms,
         ammo_type: 0,
         ranged_mod_range: 0.0,
-        spells: t
-            .equip_spells
-            .iter()
-            .enumerate()
-            .map(|(i, &spell_id)| ItemSpellEntry {
-                index: i as u8,
-                spell_id,
-                trigger: ON_EQUIP,
-                charges: 0,
-                cooldown_ms: -1,
-                category: 0,
-                category_cooldown_ms: -1,
-            })
-            .collect(),
-        spell_charges_0: 0,
-        use_spell: None,
+        spell_charges_0: spells.first().map_or(0, |s| s.charges),
+        spells,
+        use_spell,
         bonding: t.bonding,
         description: String::new(),
         page_text: 0,
