@@ -70,6 +70,27 @@ impl InWorld {
         });
     }
 
+    /// A dev teleport (`WOW_PROBE_GOTO`): to the spot on this map, on the ground there, or
+    /// refused with a notification where the host has no ground.
+    pub(crate) fn dev_teleport(
+        &mut self,
+        to: crate::dev::DevTeleport,
+        host: &dyn crate::Host,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let crate::dev::DevTeleport { x, y, facing } = to;
+        match host.ground_height(self.map, x, y, crate::dev::DEV_TELEPORT_Z_HINT) {
+            Some(z) => {
+                let facing = facing.unwrap_or(c.orientation);
+                self.teleport(c, [x, y, z], facing, events);
+            }
+            None => events.push(SessionEvent::Notification {
+                text: format!("Dev teleport refused: no ground at ({x}, {y})"),
+            }),
+        }
+    }
+
     /// `MSG_MOVE_TELEPORT_ACK`: the client stands where it was sent.
     pub(crate) fn teleport_ack(&mut self, counter: u32) {
         if counter == self.teleports.counter {

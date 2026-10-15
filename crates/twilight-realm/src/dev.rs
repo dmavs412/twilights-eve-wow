@@ -53,3 +53,17 @@ impl DevMultipliers {
         (amount as f32 * self.xp).round() as u32
     }
 }
+
+/// A dev teleport asked for (`WOW_PROBE_GOTO`): a spot on the player's map, its height left to
+/// the ground there.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct DevTeleport {
+    pub x: f32,
+    pub y: f32,
+    /// The facing to land with; `None` keeps the player's own.
+    pub facing: Option<f32>,
+}
+
+/// The height the ground is asked from, above any in the world: a dev teleport lands on the
+/// highest surface under the spot.
+pub(crate) const DEV_TELEPORT_Z_HINT: f32 = 2000.0;

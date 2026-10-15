@@ -17,7 +17,10 @@ use twilight_realm::{DevMultipliers, Host, Realm, RealmCommand, Storage};
 
 use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
 
+mod goto;
 mod talents;
+
+pub(crate) use goto::DevGoto;
 
 /// `WOW_TWILIGHT` natively, `?twilight=1` in the browser: boot Twilight's Eve.
 pub(crate) fn active() -> bool {
@@ -58,6 +61,8 @@ impl Plugin for TwilightPlugin {
         let mut realm = Realm::with_seed(rand::random()).with_dev(dev_multipliers());
         let saved = load_saves(&mut realm);
         app.init_resource::<crate::char_select::ClassLabels>();
+        app.add_message::<DevGoto>()
+            .init_resource::<goto::GotoGround>();
         app.insert_resource(LocalRealm {
             far,
             realm,
@@ -66,7 +71,9 @@ impl Plugin for TwilightPlugin {
         })
         .add_systems(
             Update,
-            pump.in_set(WorldStage::Net)
+            (goto::fetch_goto_ground, pump)
+                .chain()
+                .in_set(WorldStage::Net)
                 .before(crate::net::apply_net_updates),
         )
         .add_systems(
@@ -192,6 +199,8 @@ fn pump(
     world: WorldPoint,
     collision: WorldCollision,
     mut labels: ResMut<crate::char_select::ClassLabels>,
+    mut goto: ResMut<goto::GotoGround>,
+    adts: Res<Assets<benilla_assets::AdtTile>>,
 ) {
     let LocalRealm {
         far,
@@ -225,10 +234,15 @@ fn pump(
             realm.handle(command);
         }
     }
+    for DevGoto { x, y, facing } in goto.take_ready() {
+        realm.handle(RealmCommand::DevTeleport { x, y, facing });
+    }
 
     let host = TerrainHost {
         world: &world,
         collision: &collision,
+        goto: &goto,
+        adts: &adts,
     };
     realm.tick(time.delta_secs(), &host);
 
@@ -420,6 +434,9 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
 struct TerrainHost<'a, 'w, 's, 'cw, 'cs> {
     world: &'a WorldPoint<'w, 's>,
     collision: &'a WorldCollision<'cw, 'cs>,
+    /// The tile a dev teleport fetched beyond the stream window.
+    goto: &'a goto::GotoGround,
+    adts: &'a Assets<benilla_assets::AdtTile>,
 }
 
 /// How much of each end a sight line leaves out, in yards: the two bodies it joins.
@@ -427,7 +444,9 @@ const SIGHT_END_YD: f32 = 1.0;
 
 impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     fn ground_height(&self, _map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32> {
-        self.world.terrain_height_under(wow_to_bevy([x, y, z_hint]))
+        self.world
+            .terrain_height_under(wow_to_bevy([x, y, z_hint]))
+            .or_else(|| self.goto.height(self.adts, x, y))
     }
 
     /// A ray through what a body collides with: terrain, doodads and WMO walls (a Dungeon's

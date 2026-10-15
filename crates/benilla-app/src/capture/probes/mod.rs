@@ -14,6 +14,9 @@ pub(crate) use act::{
 /// `WOW_PROBE_INTERACT`: a right-click's interact on the selection, at scripted times.
 mod interact;
 pub(crate) use interact::ProbeInteractPlugin;
+/// `WOW_PROBE_GOTO`: in Twilight's Eve, a realm teleport to a spot, grounded there.
+mod goto;
+pub(crate) use goto::ProbeGotoPlugin;
 
 /// The probe run's shell: its bounded lifetime and its window's level, parking and size.
 mod run;
