@@ -62,10 +62,14 @@ pub fn convert(barrens: &Value, low: &Value) -> String {
         .iter()
         .flat_map(|c| c["suppress_guids"].as_array().unwrap())
         .map(|g| g.as_u64().unwrap())
+        .chain(kept_out(barrens, low))
         .collect();
     suppress.sort_unstable();
+    suppress.dedup();
     out.push_str(
-        "# Imported spawns too close to a low camp for a level-1 player; the realm leaves them out.\n",
+        "# Imported spawns a level-1 player would meet at a low camp or on the way to it: each camp's\n\
+         # `suppress_guids`, and every spawn red to the camp near it or near the way from the\n\
+         # Crossroads (`import_barrens.rs`'s keep-out rule). The realm leaves them out.\n",
     );
     let _ = writeln!(out, "suppress = {suppress:?}\n");
 
@@ -150,6 +154,56 @@ pub fn convert(barrens: &Value, low: &Value) -> String {
         );
     }
     out
+}
+
+/// The keep-out rule: a player of a low camp's levels meets no mob red to them (vanilla's con
+/// colour, [`RED_ABOVE`] levels over the camp's top) while there or on the way from the
+/// Crossroads. An imported spawn that red is left out when its wander area reaches within
+/// [`KEEP_OUT_YD`] of the camp's centre, the realm's view distance, or within [`ROUTE_CLEAR_YD`]
+/// of the straight way from the Crossroads to it, beyond a red mob's aggro radius on a level-1
+/// player.
+const RED_ABOVE: u64 = 5;
+const KEEP_OUT_YD: f64 = 100.0;
+const ROUTE_CLEAR_YD: f64 = 40.0;
+
+/// The imported spawns the keep-out rule leaves out, by guid.
+fn kept_out(barrens: &Value, low: &Value) -> Vec<u64> {
+    let xy = |v: &Value| [v[0].as_f64().unwrap(), v[1].as_f64().unwrap()];
+    let town = xy(&low["crossroads"]);
+    let camps = low["camps"].as_array().unwrap();
+    barrens["spawns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|s| {
+            let at = [s["x"].as_f64().unwrap(), s["y"].as_f64().unwrap()];
+            let wander = s["wander_radius"].as_f64().unwrap_or(0.0);
+            let level = s["level_min"].as_u64().unwrap();
+            camps.iter().any(|c| {
+                let center = xy(&c["center"]);
+                level >= c["level_max"].as_u64().unwrap() + RED_ABOVE
+                    && (distance(at, center) - wander <= KEEP_OUT_YD
+                        || to_segment(at, town, center) - wander <= ROUTE_CLEAR_YD)
+            })
+        })
+        .map(|s| s["guid"].as_u64().unwrap())
+        .collect()
+}
+
+fn distance(a: [f64; 2], b: [f64; 2]) -> f64 {
+    (a[0] - b[0]).hypot(a[1] - b[1])
+}
+
+/// How far `p` is from the segment `a`–`b`.
+fn to_segment(p: [f64; 2], a: [f64; 2], b: [f64; 2]) -> f64 {
+    let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
+    let len2 = dx * dx + dy * dy;
+    let t = if len2 == 0.0 {
+        0.0
+    } else {
+        (((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2).clamp(0.0, 1.0)
+    };
+    distance(p, [a[0] + t * dx, a[1] + t * dy])
 }
 
 /// One spawn row.

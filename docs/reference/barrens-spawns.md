@@ -374,8 +374,16 @@ Local Realm's terrain trait (ADR 0001); the hint is for tooling and sanity check
 These camps sit among The Barrens' own level 11–13 wanderers (Greater Plainstriders, Savannah
 Huntresses, Fleeting Plainstriders). Each camp lists `suppress_guids`: the imported spawns whose
 home is within 70 yd of its centre (2–6 per camp, 23 in all). The realm should not spawn those,
-so a level-1 player does not meet a level-11 lion at the boars. Wanderers from further out can
-still walk in.
+so a level-1 player does not meet a level-11 lion at the boars.
+
+70 yd left level-11 Greater Plainstriders in view of the plainstriders and beside the way to
+them, so `examples/import_barrens.rs` adds a **keep-out rule** of its own: an imported spawn red
+to a camp (five or more levels above its top level, vanilla's con colour) is left out when its
+wander area reaches within 100 yd of the camp's centre (the realm's view distance) or within
+40 yd of the straight way from the Crossroads to it (beyond a red mob's aggro radius on a level-1
+player). With the camps' own lists that is 54 spawns of 2,819, 24 of the 93 Greater
+Plainstriders. `tests/barrens.rs` walks a level-1 player from the Crossroads to each camp and
+holds it there.
 
 `assists` is false for the plainstriders, boars and scorpids (neutral, and their faction
 template has no call-for-help flag) and for the Vile Familiars (faction template 14 has none
@@ -399,7 +407,8 @@ either); the quilboars and wolves have it. Whether a camp pulls together is the 
 - **Respawn.** A killed mob comes back 60 s after the player has gone more than 60 yd from its
   home (`rules::respawn`); the clock starts over whenever the player comes back. Vanilla's
   `respawn_secs` are ignored, rares included.
-- **Low camps.** Their members are spawned; the imported spawns in `suppress_guids` are not.
+- **Low camps.** Their members are spawned; the imported spawns in `suppress_guids` and those
+  the keep-out rule names are not (`barrens.toml`'s `suppress`).
 - **Not used yet:** `wander_radius` (mobs stand at their spawn point), waypoint paths, and the
   `alt_entries`.
 

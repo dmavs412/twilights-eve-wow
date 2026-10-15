@@ -3,8 +3,10 @@
 # data/twilights-eve/crossroads_low_camps.json. Do not edit: tests/content.rs fails when this
 # file and the dumps disagree. docs/reference/barrens-spawns.md says how to re-run it all.
 
-# Imported spawns too close to a low camp for a level-1 player; the realm leaves them out.
-suppress = [14111, 14115, 14118, 14119, 14120, 14123, 18654, 18659, 18667, 19234, 19239, 19284, 19289, 19297, 19307, 19312, 19319, 19610, 19614, 19616, 19617, 19620, 19983]
+# Imported spawns a level-1 player would meet at a low camp or on the way to it: each camp's
+# `suppress_guids`, and every spawn red to the camp near it or near the way from the
+# Crossroads (`import_barrens.rs`'s keep-out rule). The realm leaves them out.
+suppress = [14092, 14103, 14104, 14110, 14111, 14113, 14115, 14118, 14119, 14120, 14122, 14123, 18551, 18646, 18654, 18659, 18661, 18667, 19234, 19239, 19245, 19249, 19282, 19284, 19289, 19290, 19292, 19295, 19297, 19303, 19306, 19307, 19308, 19310, 19311, 19312, 19313, 19317, 19318, 19319, 19320, 19321, 19564, 19573, 19610, 19614, 19615, 19616, 19617, 19620, 19622, 19816, 19983, 19984]
 
 # One row per spawn: [guid, entry, level_min, level_max, x, y, z, orientation, display_id,
 # wander_radius, camp]. WoW coordinates on Kalimdor; z is the dump's (vmangos spawn height, or

@@ -108,6 +108,66 @@ fn level_1_to_6_camps_stand_near_the_crossroads() {
     assert!(levels.iter().max() >= Some(&5));
 }
 
+/// How far above a low camp's top level a mob is red to the camp's players (vanilla's con colour:
+/// five levels up).
+const RED_ABOVE: u32 = 5;
+/// How near the way from the Crossroads to a low camp no red mob stands.
+const ROUTE_CLEAR_YD: f32 = 40.0;
+
+#[test]
+fn at_a_low_camp_no_red_mob_is_in_view() {
+    let low = json("crossroads_low_camps.json");
+    for camp in low["camps"].as_array().unwrap() {
+        let (mut realm, _) = warrior_at(1);
+        let mut world = HashMap::new();
+        see(&mut world, &teleport(&mut realm, camp_center(camp)));
+        see(&mut world, &run(&mut realm, 2.0));
+        let red = red_to(camp);
+        let reds: Vec<_> = world.values().filter(|u| u.level >= red).collect();
+        assert!(
+            reds.is_empty(),
+            "{}: level {red}+ mobs in view: {reds:?}",
+            camp["camp_id"]
+        );
+    }
+}
+
+#[test]
+fn the_way_from_the_crossroads_to_a_low_camp_passes_no_red_mob() {
+    let low = json("crossroads_low_camps.json");
+    for camp in low["camps"].as_array().unwrap() {
+        let (mut realm, _) = warrior_at(1);
+        let mut world = HashMap::new();
+        let from = [CROSSROADS[0], CROSSROADS[1], 92.0];
+        let to = camp_center(camp);
+        let red = red_to(camp);
+        let steps = (distance2(from, to) / 8.0).ceil() as usize;
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
+            let at = [
+                from[0] + (to[0] - from[0]) * t,
+                from[1] + (to[1] - from[1]) * t,
+                92.0,
+            ];
+            realm.handle(RealmCommand::Move {
+                position: at,
+                orientation: 0.0,
+            });
+            see(&mut world, &run(&mut realm, 1.0));
+            for u in world.values().filter(|u| u.level >= red) {
+                let d = distance2(u.position, at);
+                assert!(
+                    d >= ROUTE_CLEAR_YD,
+                    "{}: a level {} {} stands {d} yd from the way",
+                    camp["camp_id"],
+                    u.level,
+                    u.entry
+                );
+            }
+        }
+    }
+}
+
 #[test]
 fn a_mob_notices_a_player_by_level_difference_and_brings_its_camp() {
     // The Prairie Wolves (5–6, hostile, 18 yd detection), south-east of the Crossroads.
@@ -444,6 +504,37 @@ fn creates(events: &[SessionEvent]) -> HashMap<u64, Unit> {
             _ => None,
         })
         .collect()
+}
+
+/// Keeps `world` to the units the client holds after `events`: created in, removed out.
+fn see(world: &mut HashMap<u64, Unit>, events: &[SessionEvent]) {
+    for e in events {
+        match e {
+            SessionEvent::ObjectsRemoved(guids) => {
+                for g in guids {
+                    world.remove(g);
+                }
+            }
+            SessionEvent::ObjectDestroyed(g) => {
+                world.remove(g);
+            }
+            _ => world.extend(creates(std::slice::from_ref(e))),
+        }
+    }
+}
+
+/// A low camp's centre, at the dump's ground height.
+fn camp_center(camp: &Value) -> [f32; 3] {
+    [
+        camp["center"][0].as_f64().unwrap() as f32,
+        camp["center"][1].as_f64().unwrap() as f32,
+        92.0,
+    ]
+}
+
+/// The lowest level that is red to a player at the top of a low camp's band.
+fn red_to(camp: &Value) -> u32 {
+    camp["level_max"].as_u64().unwrap() as u32 + RED_ABOVE
 }
 
 /// The members of a low camp (`crossroads_low_camps.json`'s `camp_id`) as the realm streams them
