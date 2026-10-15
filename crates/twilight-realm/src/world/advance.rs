@@ -1,6 +1,7 @@
 //! **Advancement** (`GLOSSARY.md`), in the world: the character becomes level 1 of the Calling it
 //! advanced into. Its skills, talents and Talent Points are replaced by the new Calling's, and
-//! that Calling's Tier Bonus lifts its base stats. Gear, bags, gold, Tokens and quests stay.
+//! that Calling's Tier Bonus lifts its base stats, and its proficiency is sent again. Gear, bags,
+//! gold, Tokens and quests stay.
 
 use benilla_protocol::SessionEvent;
 
@@ -33,6 +34,8 @@ impl InWorld {
             });
         }
         events.extend(crate::talents::spell_mods(c));
+        // The new Calling's armour, for the client's equip checks and tooltips.
+        crate::equipment::proficiency(c, events);
         events.push(cast::action_buttons(c));
         // An old skill queued on the next swing goes with it.
         self.skills.take_queued();
@@ -47,7 +50,7 @@ impl InWorld {
             (UNIT_FIELD_HEALTH, p.health),
             cast::stance(c),
         ];
-        pairs.extend(sheet_pairs(&cast::buffed(&p.stats, &self.skills)));
+        pairs.extend(sheet_pairs(c, &cast::white(&p.stats, &self.skills)));
         events.push(values(self.guid, &pairs));
     }
 }

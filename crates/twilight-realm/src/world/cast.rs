@@ -13,15 +13,18 @@ use benilla_protocol::messages::{
 use benilla_protocol::SessionEvent;
 
 use super::{in_front, melee_reach, InWorld, Ticked};
-use crate::callings::{self, Effect, Skill, Target, Weapon};
+use crate::callings::{self, Effect, Seal, Skill, Target, Weapon};
 use crate::characters::Char;
 use crate::clock;
 use crate::fields::*;
 use crate::items;
 use crate::mobs::State;
 use crate::rng::Rng;
-use crate::rules::melee::{armor_reduced, Outcome, PlayerOffense, ROLL};
+use crate::rules::haste::{haste_cut_damage, hasted_attack_time};
+use crate::rules::melee::{Outcome, PlayerOffense, ROLL};
 use crate::rules::rage;
+use crate::rules::school::{mitigated, School};
+use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::WarriorStats;
 use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled};
@@ -176,6 +179,18 @@ enum AuraKind {
     Heal {
         per_tick: u32,
     },
+    /// The player's one active Seal, and the attack power it adds (Seal of the Crusader's, sized
+    /// when cast).
+    Seal {
+        seal: Seal,
+        attack_power: u32,
+    },
+    /// The unit takes `pct`% more holy damage (Judgement of the Crusader); the player's landed
+    /// swings at it put it back to its full `duration_ms`.
+    HolyTaken {
+        pct: u32,
+        duration_ms: u32,
+    },
 }
 
 impl AuraKind {
@@ -188,6 +203,7 @@ impl AuraKind {
                 | AuraKind::DamagePct { .. }
                 | AuraKind::Sweeping { .. }
                 | AuraKind::Heal { .. }
+                | AuraKind::Seal { .. }
         )
     }
 }
@@ -207,9 +223,41 @@ impl Skills {
             .filter(|a| a.unit == self.me)
             .map(|a| match a.kind {
                 AuraKind::AttackPower(n) => n,
+                AuraKind::Seal { attack_power, .. } => attack_power,
                 _ => 0,
             })
             .sum()
+    }
+
+    /// How much faster the player's buffs make their swings, in percent (Seal of the
+    /// Crusader's).
+    fn haste_pct(&self) -> u32 {
+        match self.seal() {
+            Some(Seal::Crusader { haste_pct, .. }) => haste_pct,
+            _ => 0,
+        }
+    }
+
+    /// The percent more holy damage `unit` takes (Judgement of the Crusader).
+    fn holy_taken_pct(&self, unit: u64) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .map(|a| match a.kind {
+                AuraKind::HolyTaken { pct, .. } => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// A landed swing at `unit` puts its judgement back to its full duration ("Your melee
+    /// strikes will refresh the spell's duration").
+    fn refresh_judgement(&mut self, unit: u64) {
+        for a in self.auras.iter_mut().filter(|a| a.unit == unit) {
+            if let AuraKind::HolyTaken { duration_ms, .. } = a.kind {
+                a.left = clock::secs(duration_ms);
+            }
+        }
     }
 
     /// The percents the player's buffs raise their maximum health by, raise the physical damage
@@ -259,6 +307,17 @@ impl Skills {
             },
             events,
         )
+    }
+
+    /// The player's active Seal.
+    fn seal(&self) -> Option<Seal> {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .find_map(|a| match a.kind {
+                AuraKind::Seal { seal, .. } => Some(seal),
+                _ => None,
+            })
     }
 
     /// Whether a skill holds the player in combat.
@@ -469,8 +528,8 @@ pub(super) fn stance(c: &Char) -> (u16, u32) {
     )
 }
 
-/// The player's stats with their buffs: what swings and strikes roll from, and what the sheet
-/// shows.
+/// The player's stats with their buffs: what strikes roll from. White swings roll from
+/// [`white`], which adds the haste.
 pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
     let bonus = skills.attack_power_bonus();
     let mut s = *stats;
@@ -486,9 +545,23 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
     s
 }
 
-/// The sheet fields buffs move: the attack power mods and the damage they add.
+/// [`buffed`] with the haste: what white swings roll from and time by, and what the sheet shows.
+/// Faster swings, each white hit cut to match, so the haste alone adds no damage a second; a
+/// strike (Mortal Strike, Heroic Strike) keeps its full weapon roll.
+pub(super) fn white(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
+    let mut s = buffed(stats, skills);
+    let haste = skills.haste_pct();
+    if haste > 0 {
+        s.attack_time_ms = hasted_attack_time(s.attack_time_ms, haste);
+        s.min_damage = haste_cut_damage(s.min_damage, haste);
+        s.max_damage = haste_cut_damage(s.max_damage, haste);
+    }
+    s
+}
+
+/// The sheet fields buffs move: the attack power mods, the damage they add and the swing time.
 fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
-    let s = buffed(stats, skills);
+    let s = white(stats, skills);
     vec![
         (
             UNIT_FIELD_ATTACK_POWER_MODS,
@@ -496,6 +569,8 @@ fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
         ),
         (UNIT_FIELD_MINDAMAGE, float(s.min_damage)),
         (UNIT_FIELD_MAXDAMAGE, float(s.max_damage)),
+        (UNIT_FIELD_BASEATTACKTIME, s.attack_time_ms),
+        (UNIT_FIELD_BASEATTACKTIME + 1, s.attack_time_ms),
     ]
 }
 
@@ -513,6 +588,30 @@ fn refused(spell_id: u32, reason: u8) -> SessionEvent {
         success: false,
         reason: Some(reason),
         arg: None,
+    }
+}
+
+/// `SMSG_SPELLNONMELEEDAMAGELOG` for `damage` of `school` from `attacker`'s `spell_id`: nothing
+/// absorbed, resisted or blocked, flagged as a crit when it was one.
+fn damage_log(
+    attacker: u64,
+    target: u64,
+    spell_id: u32,
+    damage: u32,
+    school: School,
+    crit: bool,
+) -> SpellDamageLog {
+    SpellDamageLog {
+        target,
+        attacker,
+        spell_id,
+        damage,
+        school: school.index(),
+        absorb: 0,
+        resist: 0,
+        periodic: false,
+        blocked: 0,
+        hit_info: if crit { SPELL_HIT_TYPE_CRIT } else { 0 },
     }
 }
 
@@ -640,6 +739,10 @@ impl InWorld {
         }
         if skill.requires_out_of_combat && p.in_combat {
             return Err(SPELL_FAILED_AFFECTING_COMBAT);
+        }
+        // Judgement needs a Seal to judge.
+        if skill.effects.contains(&Effect::Judgement) && self.skills.seal().is_none() {
+            return Err(SPELL_FAILED_CASTER_AURASTATE);
         }
         match skill.target {
             Target::Caster => Ok(vec![self.guid]),
@@ -959,7 +1062,135 @@ impl InWorld {
                 self.skills
                     .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
             }
+            Effect::Seal { duration_ms, seal } => {
+                // One Seal at a time: the new one replaces any other.
+                let me = self.guid;
+                let gone = self.skills.remove_where(
+                    |a| {
+                        a.unit == me
+                            && a.spell_id != skill.spell_id
+                            && matches!(a.kind, AuraKind::Seal { .. })
+                    },
+                    events,
+                );
+                self.faded(&gone, events);
+                // Talents that raise the Seal's amounts (Improved Seal of the Crusader) raise its
+                // attack power and its judgement's holy damage taken alike.
+                let mut raised = seal;
+                let attack_power = match &mut raised {
+                    Seal::Crusader {
+                        attack_power,
+                        holy_taken_pct,
+                        ..
+                    } => {
+                        *holy_taken_pct = scaled(*holy_taken_pct, pct);
+                        sized(*attack_power)
+                    }
+                    Seal::Command { .. } => 0,
+                };
+                let kind = AuraKind::Seal {
+                    seal: raised,
+                    attack_power,
+                };
+                self.skills
+                    .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
+                let sheet = buff_sheet(&self.player.stats, &self.skills);
+                events.push(values(self.guid, &sheet));
+            }
+            Effect::Judgement => {
+                let me = self.guid;
+                let gone = self.skills.remove_where(
+                    |a| a.unit == me && matches!(a.kind, AuraKind::Seal { .. }),
+                    events,
+                );
+                self.faded(&gone, events);
+                let judged = gone.iter().find_map(|a| match a.kind {
+                    AuraKind::Seal { seal, .. } => Some(seal),
+                    _ => None,
+                });
+                match judged {
+                    Some(Seal::Command {
+                        judgement_spell_id,
+                        judgement,
+                        ..
+                    }) => {
+                        let raw = sized(judgement);
+                        self.holy_hit(judgement_spell_id, target, raw, c, rng, events, ticked);
+                    }
+                    Some(Seal::Crusader {
+                        judgement_spell_id,
+                        judgement_duration_ms,
+                        holy_taken_pct,
+                        ..
+                    }) => {
+                        let kind = AuraKind::HolyTaken {
+                            pct: holy_taken_pct,
+                            duration_ms: judgement_duration_ms,
+                        };
+                        let a = aura(kind, judgement_spell_id, judgement_duration_ms, 0);
+                        self.skills.apply(a, events);
+                    }
+                    None => {}
+                }
+            }
         }
+    }
+
+    /// A white swing of the player's landed on `target`: its judgement lasts afresh, and the
+    /// active Seal procs (Seal of Command's holy hit).
+    pub(super) fn seal_swing_landed(
+        &mut self,
+        target: u64,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        self.skills.refresh_judgement(target);
+        let Some(Seal::Command {
+            procs_per_minute,
+            weapon_pct,
+            proc_spell_id,
+            ..
+        }) = self.skills.seal()
+        else {
+            return;
+        };
+        if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
+            return;
+        }
+        let stats = white(&self.player.stats, &self.skills);
+        if rng.below(ROLL) >= seals::ppm_chance(procs_per_minute, stats.attack_time_ms) {
+            return;
+        }
+        let roll = weapon_roll(&stats, Weapon::Normal, rng);
+        let raw = seals::weapon_pct_damage(roll, weapon_pct);
+        self.holy_hit(proc_spell_id, target, raw, c, rng, events, ticked);
+    }
+
+    /// `raw` holy damage at `target`: no armour stops it. Logged as holy, taken off, maybe a
+    /// kill.
+    #[allow(clippy::too_many_arguments)]
+    fn holy_hit(
+        &mut self,
+        spell_id: u32,
+        target: u64,
+        raw: u32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
+            return;
+        };
+        let school = School::Holy;
+        let damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
+        let damage = seals::holy_taken(damage, self.skills.holy_taken_pct(target));
+        events.push(SessionEvent::SpellDamageLog(damage_log(
+            self.guid, target, spell_id, damage, school, false,
+        )));
+        self.hurt(target, damage, c, rng, events, ticked);
     }
 
     /// `raw` physical damage at `target`, after its armour: logged, taken off, maybe a kill.
@@ -978,27 +1209,20 @@ impl InWorld {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
             return;
         };
-        let mut damage = armor_reduced(raw, mob.stats.armor, self.player.stats.level);
+        let school = School::Physical;
+        let mut damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
         if how == Landed::Crit {
             damage = crit_damage(damage, crate::talents::skill_crit_damage_pct(c));
         }
         damage = self.dealt(c, damage);
-        events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
+        events.push(SessionEvent::SpellDamageLog(damage_log(
+            self.guid,
             target,
-            attacker: self.guid,
             spell_id,
             damage,
-            school: 0,
-            absorb: 0,
-            resist: 0,
-            periodic: false,
-            blocked: 0,
-            hit_info: if how == Landed::Crit {
-                SPELL_HIT_TYPE_CRIT
-            } else {
-                0
-            },
-        }));
+            school,
+            how == Landed::Crit,
+        )));
         self.hurt(target, damage, c, rng, events, ticked);
         if how == Landed::Crit {
             self.crit_landed(target, c, events);
@@ -1064,18 +1288,14 @@ impl InWorld {
         } else if let AuraKind::Sweeping { strikes, .. } = &mut self.skills.auras[i].kind {
             *strikes -= 1;
         }
-        events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
-            target: other,
-            attacker: me,
-            spell_id: strike_spell_id,
+        events.push(SessionEvent::SpellDamageLog(damage_log(
+            me,
+            other,
+            strike_spell_id,
             damage,
-            school: 0,
-            absorb: 0,
-            resist: 0,
-            periodic: false,
-            blocked: 0,
-            hit_info: 0,
-        }));
+            School::Physical,
+            false,
+        )));
         self.hurt(other, damage, c, rng, events, ticked);
     }
 
@@ -1354,20 +1574,15 @@ impl InWorld {
             }
             swing.damage = self.dealt(c, swing.damage);
             events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
-                target: guid,
-                attacker: self.guid,
-                spell_id,
-                damage: swing.damage,
-                school: 0,
-                absorb: 0,
-                resist: 0,
-                periodic: false,
                 blocked: swing.blocked,
-                hit_info: if swing.outcome == Outcome::Crit {
-                    SPELL_HIT_TYPE_CRIT
-                } else {
-                    0
-                },
+                ..damage_log(
+                    self.guid,
+                    guid,
+                    spell_id,
+                    swing.damage,
+                    School::Physical,
+                    swing.outcome == Outcome::Crit,
+                )
             }));
             self.hurt(guid, swing.damage, c, rng, events, ticked);
             if swing.outcome == Outcome::Crit {
@@ -1481,7 +1696,7 @@ impl InWorld {
         for a in gone {
             match a.kind {
                 AuraKind::MoveSlow { .. } => self.update_speed(a.unit),
-                AuraKind::AttackPower(_) => {
+                AuraKind::AttackPower(_) | AuraKind::Seal { .. } => {
                     let sheet = buff_sheet(&self.player.stats, &self.skills);
                     events.push(values(self.guid, &sheet));
                 }

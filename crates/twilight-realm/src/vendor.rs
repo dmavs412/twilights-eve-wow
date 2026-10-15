@@ -84,12 +84,7 @@ pub(crate) fn buy(
         return fail(buy_result::NOT_ENOUGH_MONEY, events);
     }
     if let Err(code) = equipment::receive_from(c, entry, t.buy_count.max(1) * count, true, events) {
-        events.push(SessionEvent::InventoryFailure {
-            reason: code,
-            required_level: None,
-            item_guid: 0,
-            bag_slot: 0,
-        });
+        events.push(equipment::inventory_failure(code, 0));
         return Traded::default();
     }
     c.inventory.money -= price;
@@ -270,12 +265,10 @@ pub(crate) fn buy_back(
         return Traded::default();
     }
     let Some(dst) = c.inventory.free_slot() else {
-        events.push(SessionEvent::InventoryFailure {
-            reason: equipment::EQUIP_ERR_INVENTORY_FULL,
-            required_level: None,
-            item_guid: sold.item.guid,
-            bag_slot: 0,
-        });
+        events.push(equipment::inventory_failure(
+            equipment::EQUIP_ERR_INVENTORY_FULL,
+            sold.item.guid,
+        ));
         return Traded::default();
     };
     let Some(sold) = buyback.take(c.guid, i, events) else {

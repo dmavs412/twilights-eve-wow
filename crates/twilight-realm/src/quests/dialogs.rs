@@ -376,12 +376,10 @@ fn turn_in(c: &Char, npc: u64, q: &Quest, events: &mut Vec<SessionEvent>) {
 /// anything changes, as vmangos `Player::CanRewardQuest` does; whether it went through.
 fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
     if q.tokens > 0 && !c.inventory.fits(TOKEN, q.tokens) {
-        events.push(SessionEvent::InventoryFailure {
-            reason: equipment::EQUIP_ERR_INVENTORY_FULL,
-            required_level: None,
-            item_guid: 0,
-            bag_slot: 0,
-        });
+        events.push(equipment::inventory_failure(
+            equipment::EQUIP_ERR_INVENTORY_FULL,
+            0,
+        ));
         return false;
     }
     for o in &q.collect {

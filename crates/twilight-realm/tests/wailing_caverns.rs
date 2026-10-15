@@ -338,13 +338,36 @@ const ANACONDRA_GUID: u64 = 0xF130 << 48 | (ANACONDRA as u64) << 24 | 300999;
 const PROSPECTOR_AXE: u32 = 12975;
 const MAIN_HAND: u8 = 15;
 
-/// The reference's boss pool: the run's level band of real Wailing Caverns blues.
-fn boss_pool() -> Vec<u32> {
+/// The item reference the realm's item tables are generated from.
+fn loot_items() -> serde_json::Value {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../data/twilights-eve/loot_items.json");
-    let reference: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    reference["dungeon_blues"]["proposed_boss_pool"]
+    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+/// An item's vanilla required level, from the reference: the item query reports 0 for every item
+/// (gear follows the Calling), but the loot bands still go by it.
+fn required_level(entry: u32) -> u32 {
+    fn find(v: &serde_json::Value, entry: u32) -> Option<u32> {
+        match v {
+            serde_json::Value::Object(o) => {
+                if o.get("entry").and_then(|e| e.as_u64()) == Some(u64::from(entry)) {
+                    if let Some(l) = o.get("required_level").and_then(|l| l.as_u64()) {
+                        return Some(l as u32);
+                    }
+                }
+                o.values().find_map(|v| find(v, entry))
+            }
+            serde_json::Value::Array(a) => a.iter().find_map(|v| find(v, entry)),
+            _ => None,
+        }
+    }
+    find(&loot_items(), entry).unwrap_or_else(|| panic!("{entry} is not in the reference"))
+}
+
+/// The reference's boss pool: the run's level band of real Wailing Caverns blues.
+fn boss_pool() -> Vec<u32> {
+    loot_items()["dungeon_blues"]["proposed_boss_pool"]
         .as_array()
         .unwrap()
         .iter()
@@ -390,14 +413,14 @@ fn kill(s: &mut Script, guid: u64, at: [f32; 3]) {
     panic!("{guid:#x} outlived five minutes of fighting");
 }
 
-/// What `entry`'s template says its quality and required level are.
-fn quality_and_level(s: &mut Script, entry: u32) -> (u32, u32) {
+/// What `entry`'s template says its quality is.
+fn quality(s: &mut Script, entry: u32) -> u32 {
     s.send(RealmCommand::ItemQuery { entry })
         .into_iter()
         .find_map(|e| match e {
             SessionEvent::ItemTemplate {
                 info: Some(info), ..
-            } => Some((info.quality, info.required_level)),
+            } => Some(info.quality),
             _ => None,
         })
         .unwrap_or_else(|| panic!("no template for {entry}"))
@@ -420,8 +443,8 @@ const RUN_GEAR: [(u8, u32); 8] = [
 fn boss_blues(seed: u64, level: u8) -> Vec<(u32, u32)> {
     let mut items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
     items.push((MAIN_HAND, PROSPECTOR_AXE, 1));
-    // A Tier 1 Warrior: past the Basic Warrior's Tier Cap, with the Tier Bonus.
-    let mut s = Script::seeded_as("warrior", seed, level, 0, &items);
+    // A Vanguard: past the Basic Warrior's Tier Cap, with the Tier Bonus.
+    let mut s = Script::seeded_as("vanguard", seed, level, 0, &items);
     s.enter();
     kill(&mut s, ANACONDRA_GUID, ANACONDRA_AT);
     let loot = s.send(RealmCommand::Loot {
@@ -436,9 +459,8 @@ fn boss_blues(seed: u64, level: u8) -> Vec<(u32, u32)> {
         .expect("her corpse has loot");
     items
         .iter()
-        .map(|i| (i.item_id, quality_and_level(&mut s, i.item_id)))
-        .filter(|(_, (quality, _))| *quality == 3)
-        .map(|(entry, (_, required))| (entry, required))
+        .filter(|i| quality(&mut s, i.item_id) == 3)
+        .map(|i| (i.item_id, required_level(i.item_id)))
         .collect()
 }
 

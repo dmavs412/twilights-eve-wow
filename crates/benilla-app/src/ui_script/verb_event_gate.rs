@@ -128,6 +128,20 @@ const GAP: &[(&str, &str, &str)] = &[
          would only repaint under its own Close",
     ),
     (
+        "AddSkillUp",
+        "SKILL_LINES_CHANGED",
+        "the reference's verb (0x4d3c30, helper 0x4d32d0) spends a skill point and fires; here it \
+         is an unbuilt stub (`reference_ui.rs`) of the pre-1.12 skill-point UI, whose arrow shows \
+         only for a point cost no 1.12 server sends, so nothing moves to announce",
+    ),
+    (
+        "RemoveSkillUp",
+        "SKILL_LINES_CHANGED",
+        "the reference's verb (0x4d3c70, helper 0x4d3480) refunds a skill point and fires; here it \
+         is an unbuilt stub (`reference_ui.rs`) of the pre-1.12 skill-point UI, whose arrow shows \
+         only for a point cost no 1.12 server sends, so nothing moves to announce",
+    ),
+    (
         "ClickTargetTradeButton",
         "TRADE_REPLACE_ENCHANT",
         "the reference runs the enchant clash check 0x496170 when a spell is on the cursor and \
@@ -237,8 +251,13 @@ fn quoted(text: &str, name: &str) -> bool {
     text.contains(&format!("\"{name}\""))
 }
 
+/// `p` with `/` separators on every host, so a `"…/ui_char.rs"` row matches on Windows too.
+fn slashed(p: &std::path::Path) -> String {
+    p.to_string_lossy().replace('\\', "/")
+}
+
 fn short(p: &std::path::Path) -> String {
-    let s = p.to_string_lossy();
+    let s = slashed(p);
     s.split_once("/crates/")
         .map_or(s.to_string(), |(_, t)| t.to_string())
 }
@@ -324,7 +343,7 @@ fn the_declared_rows_are_still_true() {
         }
         let named: Vec<&(PathBuf, String)> = src
             .iter()
-            .filter(|(p, _)| p.to_string_lossy().ends_with(file))
+            .filter(|(p, _)| slashed(p).ends_with(file))
             .collect();
         if named.is_empty() {
             wrong.push(format!(

@@ -72,6 +72,7 @@ pub(super) fn plugin(app: &mut App) {
         .add_systems(Update, (attach, toggle, drive).chain());
 }
 
+#[allow(clippy::type_complexity)] // the camera filter, one Bevy query
 fn attach(
     mut commands: Commands,
     cams: Query<Entity, (With<WorldCamera>, With<Camera3d>, Without<Grade>)>,

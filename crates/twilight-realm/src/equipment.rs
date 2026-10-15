@@ -1,10 +1,11 @@
 //! Items in the world: their objects and slot fields on the wire, and the moves the stock bag and
-//! character frames ask for (equip, unequip, swap, destroy), checked against the Warrior's
+//! character frames ask for (equip, unequip, swap, destroy), checked against the Calling's
 //! proficiency (vmangos `Player::SwapItem`, `Player::CanEquipItem`).
 
 use benilla_protocol::messages::{ItemPushResult, ObjectType};
 use benilla_protocol::{CharEnumItem, ObjectFields, SessionEvent};
 
+use crate::callings;
 use crate::characters::Char;
 use crate::fields::*;
 use crate::inventory::{bag_size, Inventory, Item, Pos, PACK, PLAYER_BAG};
@@ -135,18 +136,25 @@ pub(crate) fn stats(c: &Char) -> WarriorStats {
     WarriorStats::geared_at_tier(c.race, c.level, bonus, &c.inventory.worn_entries())
 }
 
-/// At login, ahead of the player's own create: the proficiencies the tooltips and the bag check
-/// against (`SMSG_SET_PROFICIENCY`), and every carried item's object.
-pub(crate) fn login(c: &Char, events: &mut Vec<SessionEvent>) {
+/// The Calling's proficiencies the tooltips and the bag check against (`SMSG_SET_PROFICIENCY`):
+/// at login, and again on Advancement.
+pub(crate) fn proficiency(c: &Char, events: &mut Vec<SessionEvent>) {
+    let calling = callings::of(c.calling);
     for class in [gear::CLASS_WEAPON, gear::CLASS_ARMOR] {
         let mask = (0..32u32)
-            .filter(|sub| gear::proficiency_level(class, *sub).is_some_and(|l| c.level >= l))
+            .filter(|sub| gear::knows(calling, class, *sub))
             .fold(0, |m, sub| m | 1 << sub);
         events.push(SessionEvent::Proficiency {
             item_class: class,
             subclass_mask: mask,
         });
     }
+}
+
+/// At login, ahead of the player's own create: the proficiencies, and every carried item's
+/// object.
+pub(crate) fn login(c: &Char, events: &mut Vec<SessionEvent>) {
+    proficiency(c, events);
     for (at, item) in c.inventory.iter() {
         events.push(item_create(c, at, item));
     }
@@ -176,9 +184,14 @@ const WEAPON_SKILLS: [(u32, u32); 14] = [
     (226, 18), // Crossbows
 ];
 
-/// The sheet's gear fields: each stat's green part, gear's flat attack power, and the weapon
-/// skill lines the character knows, at the level's maximum.
-pub(crate) fn sheet_pairs(s: &WarriorStats) -> Vec<(u16, u32)> {
+/// `PLAYER_SKILL_INFO` slots after the weapon lines: the armour lines, one slot per armour kind.
+const ARMOUR_SKILL_SLOT: u16 = WEAPON_SKILL_SLOT + WEAPON_SKILLS.len() as u16;
+const ARMOUR_KINDS: usize = 5;
+
+/// The sheet's gear fields: each stat's green part, gear's flat attack power, the weapon skill
+/// lines the character knows at the level's maximum, and the armour lines its Calling allows at
+/// 1 of 1, as a 1.12 armour skill reads. The armour slots past the Calling's are cleared.
+pub(crate) fn sheet_pairs(c: &Char, s: &WarriorStats) -> Vec<(u16, u32)> {
     let mut pairs: Vec<(u16, u32)> = (0..5)
         .map(|i| (PLAYER_FIELD_POSSTAT0 + i as u16, s.bonus[i]))
         .collect();
@@ -187,12 +200,18 @@ pub(crate) fn sheet_pairs(s: &WarriorStats) -> Vec<(u16, u32)> {
         s.attack_power_bonus.clamp(0, i32::from(i16::MAX)) as u32,
     ));
     let skill = u32::from(s.weapon_skill);
-    let known = WEAPON_SKILLS.iter().filter(|(_, sub)| {
-        gear::proficiency_level(gear::CLASS_WEAPON, *sub).is_some_and(|l| s.level >= l)
-    });
-    for (i, (id, _)) in known.enumerate() {
+    // Every Calling of the Warrior line wields every Warrior weapon.
+    for (i, (id, _)) in WEAPON_SKILLS.iter().enumerate() {
         let base = PLAYER_SKILL_INFO_1_1 + 3 * (WEAPON_SKILL_SLOT + i as u16);
         pairs.extend([(base, *id), (base + 1, skill | skill << 16), (base + 2, 0)]);
+    }
+    let armour = &callings::of(c.calling).armour;
+    for i in 0..ARMOUR_KINDS {
+        let base = PLAYER_SKILL_INFO_1_1 + 3 * (ARMOUR_SKILL_SLOT + i as u16);
+        let (id, value) = armour
+            .get(i)
+            .map_or((0, 0), |a| (a.skill_line(), 1 | 1 << 16));
+        pairs.extend([(base, id), (base + 1, value), (base + 2, 0)]);
     }
     pairs
 }
@@ -301,22 +320,24 @@ impl Moved {
     }
 }
 
-/// A refused move: `SMSG_INVENTORY_CHANGE_FAILURE`.
-fn refuse(reason: u8, required_level: Option<u8>, item: u64, events: &mut Vec<SessionEvent>) {
-    events.push(SessionEvent::InventoryFailure {
+/// `SMSG_INVENTORY_CHANGE_FAILURE` for `item` (0 for none). It never names a level: no item
+/// requires one ([`gear::SHOWN_REQUIRED_LEVEL`]).
+pub(crate) fn inventory_failure(reason: u8, item: u64) -> SessionEvent {
+    SessionEvent::InventoryFailure {
         reason,
-        required_level: required_level.map(u32::from),
+        required_level: None,
         item_guid: item,
         bag_slot: 0,
-    });
+    }
+}
+
+/// A refused move.
+fn refuse(reason: u8, item: u64, events: &mut Vec<SessionEvent>) {
+    events.push(inventory_failure(reason, item));
 }
 
 fn refusal(r: Refusal, item: u64, events: &mut Vec<SessionEvent>) {
-    let level = match r {
-        Refusal::Level(l) => Some(l),
-        _ => None,
-    };
-    refuse(r.code(), level, item, events);
+    refuse(r.code(), item, events);
 }
 
 /// The wire `(bag, slot)` as a place, if it names one: a player slot, or a slot of an equipped
@@ -330,11 +351,11 @@ fn place(c: &Char, bag: u8, slot: u8) -> Option<Pos> {
 /// slot, swapping out what is there). A bag goes in the first free bag slot.
 pub(crate) fn auto_equip(c: &mut Char, bag: u8, slot: u8, events: &mut Vec<SessionEvent>) -> Moved {
     let Some(src) = place(c, bag, slot) else {
-        refuse(EQUIP_ERR_ITEM_NOT_FOUND, None, 0, events);
+        refuse(EQUIP_ERR_ITEM_NOT_FOUND, 0, events);
         return Moved::default();
     };
     let Some(item) = c.inventory.get(src) else {
-        refuse(EQUIP_ERR_ITEM_NOT_FOUND, None, 0, events);
+        refuse(EQUIP_ERR_ITEM_NOT_FOUND, 0, events);
         return Moved::default();
     };
     let Some(t) = items::template(item.entry) else {
@@ -365,7 +386,7 @@ pub(crate) fn auto_store(
 ) -> Moved {
     let item = place(c, bag, slot).and_then(|at| c.inventory.get(at).map(|i| (at, i.guid)));
     let Some((src, guid)) = item else {
-        refuse(EQUIP_ERR_ITEM_NOT_FOUND, None, 0, events);
+        refuse(EQUIP_ERR_ITEM_NOT_FOUND, 0, events);
         return Moved::default();
     };
     let free = if dst_bag == PLAYER_BAG {
@@ -374,7 +395,7 @@ pub(crate) fn auto_store(
         c.inventory.free_slot_in_bag(dst_bag)
     };
     let Some(dst) = free else {
-        refuse(EQUIP_ERR_INVENTORY_FULL, None, guid, events);
+        refuse(EQUIP_ERR_INVENTORY_FULL, guid, events);
         return Moved::default();
     };
     swap(c, src, dst, events)
@@ -390,7 +411,7 @@ pub(crate) fn swap_positions(
     match (place(c, src.0, src.1), place(c, dst.0, dst.1)) {
         (Some(s), Some(d)) => swap(c, s, d, events),
         _ => {
-            refuse(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, None, 0, events);
+            refuse(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, 0, events);
             Moved::default()
         }
     }
@@ -406,7 +427,7 @@ pub(crate) fn swap(
 ) -> Moved {
     let (src, dst) = (src.into(), dst.into());
     let Some(moving) = c.inventory.get(src).cloned() else {
-        refuse(EQUIP_ERR_ITEM_NOT_FOUND, None, 0, events);
+        refuse(EQUIP_ERR_ITEM_NOT_FOUND, 0, events);
         return Moved::default();
     };
     if src == dst || !c.inventory.exists(dst) {
@@ -423,11 +444,11 @@ pub(crate) fn swap(
             continue;
         }
         if c.inventory.bag_holds_items(from.slot) {
-            refuse(EQUIP_ERR_ONLY_EMPTY_BAGS, None, item.guid, events);
+            refuse(EQUIP_ERR_ONLY_EMPTY_BAGS, item.guid, events);
             return Moved::default();
         }
         if to.bag == from.slot {
-            refuse(EQUIP_ERR_BAG_IN_BAG, None, item.guid, events);
+            refuse(EQUIP_ERR_BAG_IN_BAG, item.guid, events);
             return Moved::default();
         }
     }
@@ -447,7 +468,7 @@ pub(crate) fn swap(
             continue;
         };
         if let Err(code) = check_place(c, item, to) {
-            refuse(code.0, code.1, item.guid, events);
+            refuse(code, item.guid, events);
             return Moved::default();
         }
     }
@@ -461,7 +482,7 @@ pub(crate) fn swap(
                 c.inventory.free_slot()
             };
             let Some(room) = room else {
-                refuse(EQUIP_ERR_INVENTORY_FULL, None, off.guid, events);
+                refuse(EQUIP_ERR_INVENTORY_FULL, off.guid, events);
                 return Moved::default();
             };
             freed_off_hand = Some(room);
@@ -506,11 +527,11 @@ pub(crate) fn destroy(
         return Moved::default();
     };
     let Some(item) = c.inventory.get(at) else {
-        refuse(EQUIP_ERR_ITEM_NOT_FOUND, None, 0, events);
+        refuse(EQUIP_ERR_ITEM_NOT_FOUND, 0, events);
         return Moved::default();
     };
     if at.is_bag_slot() && c.inventory.bag_holds_items(at.slot) {
-        refuse(EQUIP_ERR_ONLY_EMPTY_BAGS, None, item.guid, events);
+        refuse(EQUIP_ERR_ONLY_EMPTY_BAGS, item.guid, events);
         return Moved::default();
     }
     let Some(item) = c.inventory.get_mut(at) else {
@@ -561,9 +582,9 @@ fn is_two_hander(entry: u32) -> bool {
 }
 
 /// Whether `item` may sit at `to`: anything in the backpack or a bag; in a bag slot, only a bag;
-/// in a worn slot, only what goes there and what the character may wear. The `InventoryResult`
-/// and required level of a refusal.
-fn check_place(c: &Char, item: &Item, to: Pos) -> Result<(), (u8, Option<u8>)> {
+/// in a worn slot, only what goes there and what the character's Calling may wear. The
+/// `InventoryResult` of a refusal.
+fn check_place(c: &Char, item: &Item, to: Pos) -> Result<(), u8> {
     if to.is_storage() {
         return Ok(());
     }
@@ -571,19 +592,13 @@ fn check_place(c: &Char, item: &Item, to: Pos) -> Result<(), (u8, Option<u8>)> {
         return if bag_size(item.entry) > 0 {
             Ok(())
         } else {
-            Err((EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, None))
+            Err(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT)
         };
     }
-    can_equip(item.entry, c.race, c.level).map_err(|r| {
-        let level = match r {
-            Refusal::Level(l) => Some(l),
-            _ => None,
-        };
-        (r.code(), level)
-    })?;
-    let t = items::template(item.entry).ok_or((EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, None))?;
+    can_equip(item.entry, c.race, callings::of(c.calling)).map_err(Refusal::code)?;
+    let t = items::template(item.entry).ok_or(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT)?;
     if !equip_slots(t.inventory_type).contains(&to.slot) {
-        return Err((EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT, None));
+        return Err(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT);
     }
     // Nothing goes in the off hand beside a two-hander.
     if to == Pos::own(gear::SLOT_OFF_HAND)
@@ -591,7 +606,7 @@ fn check_place(c: &Char, item: &Item, to: Pos) -> Result<(), (u8, Option<u8>)> {
             .get(gear::SLOT_MAIN_HAND)
             .is_some_and(|m| m.guid != item.guid && is_two_hander(m.entry))
     {
-        return Err((EQUIP_ERR_CANT_EQUIP_WITH_TWOHANDED, None));
+        return Err(EQUIP_ERR_CANT_EQUIP_WITH_TWOHANDED);
     }
     Ok(())
 }

@@ -77,13 +77,13 @@ impl Plugin for TwilightPlugin {
         )
         .add_systems(
             Update,
-            blank_skill_ranks.run_if(resource_added::<crate::ui_action::Spells>),
+            rewrite_spells.run_if(resource_added::<crate::ui_action::Spells>),
         )
         .add_systems(
             Update,
             (
                 talents::follow_calling.after(pump),
-                talents::unlock_talent_frame,
+                crate::ui_twilight::unlock_talent_frame,
             ),
         );
         // Closing the window logs the character out, which saves it.
@@ -449,12 +449,28 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     }
 }
 
-/// A Calling skill has no ranks: the spellbook, tooltip and learn line show none, even though
-/// each borrows a ranked 1.12 spell.
-fn blank_skill_ranks(mut spells: ResMut<crate::ui_action::Spells>) {
-    spells
-        .catalog
-        .clear_ranks(twilight_realm::callings::skill_spell_ids());
+/// The spell rewrites of ADR 0003, made once the client has loaded its spell data, from the
+/// realm's content:
+/// - a Calling skill has no ranks: the spellbook, tooltip and learn line show none, even though
+///   each borrows a ranked 1.12 spell;
+/// - a WIP talent's rank spells read "<Name> (WIP)" in the talent frame and its tooltips;
+/// - a skill borrowed from another Class (Zealot's Paladin spells) costs the realm's rage in any
+///   stance, as a Warrior spell, so its button is lit and its tooltip shows rage.
+fn rewrite_spells(mut spells: ResMut<crate::ui_action::Spells>) {
+    let catalog = &mut spells.catalog;
+    catalog.clear_ranks(twilight_realm::callings::skill_spell_ids());
+    catalog.mark_wip(twilight_realm::callings::wip_rank_spell_ids());
+    catalog.borrow_spells(
+        twilight_realm::callings::borrowed_spell_rewrites().map(|r| {
+            benilla_formats::BorrowedSpellRow {
+                spell_id: r.spell_id,
+                power_type: r.power_type,
+                cost: r.cost,
+                spell_family: r.spell_family,
+                family_bit: r.family_bit,
+            }
+        }),
+    );
 }
 
 /// Basic Warrior is the only Calling a character starts as, so create offers only Warrior.

@@ -198,12 +198,15 @@ fn an_addon_chunk_is_named_the_way_the_client_names_it() {
         &name,
     )
     .unwrap();
-    let folder: String = s
-        .eval(
-            "local _, _, f = string.find(BenillaProbeFolder(), \"\\\\AddOns\\\\(.*)\\\\\") \
-             return f or '<no match>'",
-        )
-        .unwrap();
+    // The caller is a named chunk: `eval`'s default name is the Rust caller's path, which on
+    // Windows carries backslashes into the trace and the greedy capture.
+    s.run_chunk_named(
+        b"local _, _, f = string.find(BenillaProbeFolder(), \"\\\\AddOns\\\\(.*)\\\\\") \
+          BenillaProbeFound = f or '<no match>'",
+        "=probe",
+    )
+    .unwrap();
+    let folder: String = s.eval("return BenillaProbeFound").unwrap();
     assert_eq!(
         folder, "FuBar_BagFu",
         "FuBarPlugin's own capture must yield the folder name"

@@ -15,6 +15,8 @@ const WARRIORS_SHIELD: u32 = 1438; // required level 4
 const FIRE_WAND: u32 = 5069;
 const GNOLL_WAR_HARNESS: u32 = 1211; // leather chest, 70 armour, +2 str +2 sta, required level 10
 const LARGE_OGRE_CHAIN_ARMOR: u32 = 914; // required level 25
+const JOUSTERS_CHESTPLATE: u32 = 8157; // plate, 339 armour, +15 str +4 sta, required level 40
+const TUNNEL_PICK: u32 = 756; // two-handed axe, required level 24
 
 const BACKPACK: u8 = 255;
 const MAIN_HAND: u8 = 15;
@@ -33,6 +35,17 @@ struct Script {
 impl Script {
     fn new(level: u8, items: &[Carried]) -> Self {
         let (realm, me, events) = warrior_with(level, 0, items);
+        Self { realm, me, events }
+    }
+
+    /// [`Script::new`] as a character of `calling`.
+    fn as_calling(calling: &str, level: u8, items: &[Carried]) -> Self {
+        let (guid, blob) = save_with(level, 0, items);
+        let blob = blob.replace(
+            "calling = \"basic_warrior\"",
+            &format!("calling = \"{calling}\""),
+        );
+        let (realm, me, events) = enter_saved(guid, &blob);
         Self { realm, me, events }
     }
 
@@ -103,32 +116,90 @@ fn carried_items_stream_in_ahead_of_the_character() {
     assert!(create_at(sword) < create_at(s.me));
 }
 
+/// The `(weapons, armour)` subclass masks the client was last told.
+fn proficiencies(events: &[SessionEvent]) -> (u32, u32) {
+    let last = |class| {
+        events
+            .iter()
+            .rev()
+            .find_map(|e| match e {
+                SessionEvent::Proficiency {
+                    item_class,
+                    subclass_mask,
+                } if *item_class == class => Some(*subclass_mask),
+                _ => None,
+            })
+            .expect("a proficiency")
+    };
+    (last(2), last(4))
+}
+
 #[test]
-fn a_warriors_proficiencies_are_sent_at_login() {
+fn a_basic_warriors_proficiencies_are_sent_at_login() {
     let s = Script::new(1, &[]);
-    let masks: Vec<(u32, u32)> = s
-        .events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::Proficiency {
-                item_class,
-                subclass_mask,
-            } => Some((*item_class, *subclass_mask)),
-            _ => None,
-        })
-        .collect();
-    let weapons = masks.iter().find(|(c, _)| *c == 2).expect("weapons").1;
-    let armour = masks.iter().find(|(c, _)| *c == 4).expect("armour").1;
+    let (weapons, armour) = proficiencies(&s.events);
     assert_ne!(weapons & 1 << 7, 0, "one-handed swords");
     assert_ne!(weapons & 1 << 10, 0, "staves");
-    assert_eq!(weapons & 1 << 6, 0, "no polearms before 20");
+    assert_ne!(weapons & 1 << 6, 0, "polearms at level 1");
     assert_eq!(weapons & 1 << 19, 0, "never wands");
     assert_eq!(
-        armour & 0b100_1111,
-        0b100_1111,
-        "misc, cloth, leather, mail, shields"
+        armour & 0b111_1111,
+        0b110_1111,
+        "misc, cloth, leather, mail, bucklers and shields; no plate"
     );
-    assert_eq!(armour & 1 << 4, 0, "no plate before 40");
+}
+
+#[test]
+fn a_vanguards_proficiencies_add_plate() {
+    let s = Script::as_calling("vanguard", 1, &[]);
+    let (_, armour) = proficiencies(&s.events);
+    assert_eq!(armour & 0b111_1111, 0b111_1111, "plate too");
+}
+
+#[test]
+fn a_basic_warrior_is_refused_plate_for_want_of_proficiency() {
+    let mut s = Script::new(10, &[(PACK_1, JOUSTERS_CHESTPLATE, 1)]);
+    let events = s.equip(PACK_1);
+    // `EQUIP_ERR_NO_REQUIRED_PROFICIENCY`, not the level.
+    assert_eq!(refusal(&events), Some((8, None)));
+    assert_eq!(s.slot(CHEST), 0);
+}
+
+#[test]
+fn a_level_1_vanguard_wears_plate_and_gear_far_above_its_level() {
+    let mut s = Script::as_calling(
+        "vanguard",
+        1,
+        &[(PACK_1, JOUSTERS_CHESTPLATE, 1), (PACK_2, TUNNEL_PICK, 1)],
+    );
+    for slot in [PACK_1, PACK_2] {
+        let events = s.equip(slot);
+        assert_eq!(refusal(&events), None, "{events:?}");
+    }
+    assert_eq!(s.slot(CHEST), s.item(JOUSTERS_CHESTPLATE));
+    assert_eq!(s.slot(MAIN_HAND), s.item(TUNNEL_PICK));
+}
+
+#[test]
+fn plate_worn_by_a_vanguard_keeps_giving_its_stats_after_a_reload() {
+    let mut s = Script::as_calling("vanguard", 1, &[(PACK_1, JOUSTERS_CHESTPLATE, 1)]);
+    let naked = s.me();
+    s.equip(PACK_1);
+    let worn = s.me();
+    assert_eq!(worn.player_posstat(0), Some(15), "the green +15 strength");
+    assert_eq!(
+        worn.unit_resistance(0),
+        Some(naked.unit_resistance(0).unwrap() + 339)
+    );
+    let blob = s.realm.export_character(s.me).unwrap();
+    let (_, me, events) = enter_saved(s.me, &blob);
+    let again = descriptor(&events, me);
+    assert_eq!(
+        again.player_visible_item_entry(CHEST),
+        Some(JOUSTERS_CHESTPLATE)
+    );
+    assert_eq!(again.player_posstat(0), Some(15));
+    assert_eq!(again.unit_resistance(0), worn.unit_resistance(0));
 }
 
 #[test]
@@ -262,12 +333,27 @@ fn a_wand_is_refused_for_want_of_proficiency() {
 }
 
 #[test]
-fn an_item_above_the_characters_level_is_refused_with_that_level() {
-    let mut s = Script::new(24, &[(PACK_1, LARGE_OGRE_CHAIN_ARMOR, 1)]);
+fn no_item_is_refused_for_level() {
+    let mut s = Script::new(1, &[(PACK_1, LARGE_OGRE_CHAIN_ARMOR, 1)]);
     let events = s.equip(PACK_1);
-    // `EQUIP_ERR_CANT_EQUIP_LEVEL_I`: "You must reach level 25 to use that item."
-    assert_eq!(refusal(&events), Some((1, Some(25))));
-    assert_eq!(s.slot(CHEST), 0);
+    assert_eq!(refusal(&events), None, "{events:?}");
+    assert_eq!(s.slot(CHEST), s.item(LARGE_OGRE_CHAIN_ARMOR));
+}
+
+#[test]
+fn an_items_query_reports_no_required_level() {
+    let mut s = Script::new(1, &[]);
+    for entry in [LARGE_OGRE_CHAIN_ARMOR, JOUSTERS_CHESTPLATE] {
+        let info = s
+            .send(RealmCommand::ItemQuery { entry })
+            .into_iter()
+            .find_map(|e| match e {
+                SessionEvent::ItemTemplate { info, .. } => info,
+                _ => None,
+            })
+            .expect("its template");
+        assert_eq!(info.required_level, 0, "{entry}");
+    }
 }
 
 #[test]

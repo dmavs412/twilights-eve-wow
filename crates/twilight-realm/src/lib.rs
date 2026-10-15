@@ -19,7 +19,23 @@
 //!   for a concern: Hub NPCs (`hub`), merchants (`vendor`), casts (`world/cast`), bags and slots
 //!   (`inventory`), the save (`save`, where new fields are optional within [`SAVE_VERSION`]).
 //! - **Tests** (`tests/`), two seams (ADR 0002): `rules_*.rs` pin exact values on [`rules`];
-//!   every other file is a player script through commands, `tick` and events only.
+//!   every other file is a player script through commands, `tick` and events only. Shared
+//!   helpers live in `tests/common/` (`fight` for combat scripts), `gear_common/` and
+//!   `quest_common/`.
+//!
+//! ## A Calling, end to end
+//!
+//! - **Data**: `content/callings.toml` holds each Calling's kit, Talent Tree, Tier Bonus and armour;
+//!   `content/quests.toml` its Advancement Quests. The [`callings`] module loads both.
+//! - **Reference**: `data/twilights-eve/callings.json` is the design data and
+//!   `tests/content_callings.rs` fails when the two drift. `tools/twilights-eve/extract_spells.py
+//!   verify` checks every spell, talent and tab id against the DBCs (the `spell-data` gate).
+//! - **Client**: `benilla-app/src/twilight/mod.rs`'s `rewrite_spells` rewrites the spell catalog
+//!   once it loads, from [`callings::skill_spell_ids`], [`callings::wip_rank_spell_ids`] and
+//!   [`callings::borrowed_spell_rewrites`] (ADR 0003); `twilight/talents.rs` builds the talent
+//!   frame's catalog from the current Calling's tree.
+//! - **Identity**: the `Calling` enum (`content.rs`) is the save's key; a renamed Calling keeps its
+//!   old key as a serde alias. A skill two Callings share has identical data in both.
 
 pub mod callings;
 mod characters;

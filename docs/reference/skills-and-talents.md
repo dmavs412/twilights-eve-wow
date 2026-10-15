@@ -8,7 +8,7 @@ dump to `data/twilights-eve/spells-extracted.json` and prints level tables. The 
 names, ranks, icons, family flags, the client-side fields (cost, range, stances, aura states,
 cooldowns, duration, GCD, on-next-swing, not-in-combat), whether talent rank spells form a
 prefix of the real ranks, seats, prerequisite arrows, tier reachability, the point schedule,
-and the spell-mod op, value and family bit of each `client_spellmod`. The script uses only the
+and the spell-mod op, value and family bit of each of `client_spellmods`. The script uses only the
 standard library and runs on any Python 3.9+ (`--data` defaults to `$WOW_DATA`).
 
 ```
@@ -17,7 +17,7 @@ python tools/twilights-eve/extract_spells.py search "Heroic Strike" --family 4 -
 python tools/twilights-eve/extract_spells.py talents --class 1
 python tools/twilights-eve/extract_spells.py spell 78 12294
 python tools/twilights-eve/extract_spells.py selftest
-python tools/twilights-eve/simulate_fights.py --calling warrior --mobs ... --stats ...
+python tools/twilights-eve/simulate_fights.py --calling vanguard --mobs ... --stats ...
 ```
 
 ## The client enforces some things before it sends a cast
@@ -54,7 +54,7 @@ These findings come from reading `crates/benilla-app/src/spell/{usable,cast_send
   have the realm push `SET_FLAT_SPELL_MODIFIER` op ALL_EFFECTS on each skill's family bit
   every level, so the tooltips track its formulas. That is untested.
 
-## Tier 0, Basic Warrior: the eight skills (levels 1–10)
+## Tier 0, Basic Warrior: two skills (levels 1–10)
 
 `L` is the level within the Tier. `W` is a white-swing roll, and `Wn` is a normalized roll.
 Each linear term is `round(base + per_level*L + per_ap*AP)`.
@@ -63,26 +63,48 @@ Each linear term is `round(base + per_level*L + per_ap*AP)`.
 |---|---|---|---|---|---|---|---|---|
 | Heroic Strike | 78 | Rank 1 | 856 Ability_Rogue_Ambush | 15 | – (next swing) | – | W + 9.5+1.4L | +11/17/24 |
 | Charge | 100 | Rank 1 | 457 Ability_Warrior_Charge | 0 | 15 s | Battle, 8–25 yd, out of combat | rage 8.5+0.14L, 1 s stun (7922) | 9/9/10 |
-| Rend | 772 | Rank 1 | 245 Ability_Gouge | 10 | – | Battle/Def | 3 ticks/9 s of 4+0.24L+0.01AP | 5/6/7 per tick |
-| Thunder Clap | 6343 | Rank 1 | 199 Spell_Nature_ThunderClap | 20 | 4 s | Battle | 8 yd, 4 targets, 2.6+1.23L+0.05AP; 10% attack slow 10 s | 5/11/19 |
-| Battle Shout | 6673 | Rank 1 | 456 Ability_Warrior_BattleShout | 10 | – | – | +AP 14.5+0.5L, 2 min (the client's own scaling) | 15/17/20 |
-| Hamstring | 1715 | Rank 1 | 23 Ability_ShockWave | 10 | – | Battle/Berserker | 0.7+0.54L+0.02AP; 40% slow 15 s | 2/4/8 |
-| Overpower | 7384 | Rank 1 | 26 Ability_MeleeDamage | 5 | 5 s | Battle, combo point | Wn + 2+0.5L, cannot be dodged, parried or blocked | +3/5/7 |
-| Bloodrage | 2687 | (none) | 86 Ability_Racial_BloodRage | 20% base hp | 60 s | – | 9.6+0.25L rage now + 10 over 10 s (29131) | 10/11/12 |
+
+The Callings handoff starts the Basic Warrior small (#18): Rend, Thunder Clap, Battle Shout,
+Hamstring, Overpower and Bloodrage are gone from the kit, and the spellbook shows the two skills
+with no rank text.
 
 The vanilla rank progressions behind each fit are in the JSON's `vanilla_reference` fields.
 
-## Tier 1, Warrior: eight skills (levels 1–30, Tier Bonus applies)
+## Tier 1, Vanguard: five skills (levels 1–30, Tier Bonus applies)
 
-Mortal Strike 12294 (R1), Overpower 7887 (R2), Charge 6178 (R2), Rend 6546 (R2), Thunder Clap
-8198 (R2), Cleave 845 (R1), Execute 5308 (R1) and Battle Shout 6192 (R3). All of them work in
-Battle Stance. Values at L1/10/20/30: MS Wn+28/50/75/100; Overpower +7/12/18/24; Charge
-11–14 rage; Rend 6–14 per tick over 4 ticks; Thunder Clap 12/26/41/57; Cleave +4/8/12/16 on 2
-targets; Execute 30/77/129/181 plus 2–5 per extra rage; Battle Shout 22/40/60/80 AP. (The
-simulation below retuned MS and Execute.) Mortal
-Strike is a level-40 talent in vanilla. Here it is the Tier 1 signature, scaled down at low
-levels. It is left out of the Tier 1 tree, which stops at tier 5. Heroic Strike, Hamstring and
-Bloodrage drop out of the Tier 1 set.
+The Callings handoff (#18, #20) renamed the Tier 1 Calling Vanguard and focused its kit: Mortal
+Strike 12294 (R1), Overpower 7887 (R2), Charge 6178 (R2), Rend 6546 (R2) and Battle Shout 6192
+(R3). All of them work in Battle Stance. Values at L1/10/20/30: MS Wn+28/50/75/100; Overpower
++7/12/18/24; Charge 11–14 rage; Rend 6–14 per tick over 4 ticks; Battle Shout 22/40/60/80 AP.
+Mortal Strike is a level-40 talent in vanilla. Here it is the Tier 1 signature, scaled down at
+low levels. Heroic Strike drops out of the Vanguard set, and Thunder Clap, Cleave and Execute
+are gone from it. A save made when Tier 1 was called "warrior" loads as a Vanguard.
+
+## Tier 2, Zealot: six skills (levels 1–50, Tier Bonus +28/+14/+28/0/+7)
+
+A holy berserker on the rage bar, still in Battle Stance and still in plate. Four skills are
+Paladin spells, marked `borrowed` in the content; the client rewrites their Spell.dbc rows when it
+loads them (ADR 0003): power rage at the realm's cost, no stance, family Warrior (4), and
+`SpellFamilyFlags` replaced by one bit no Warrior spell uses (Warrior spells use bits 0–32). The
+Paladin bits would collide once the family is 4 (25 is Mortal Strike, 23 the stances), and
+Judgement's 6% `ManaCostPercentage` is zeroed with the other cost terms.
+
+| skill | id | rage | cd | reach | bit | realm |
+|---|---|---|---|---|---|---|
+| Seal of Command | 20375 (R1) | 10 | – | self | 33 | 30 s Seal: a landed white swing procs 7 times a minute for a holy hit of 70% of a weapon roll (20424) |
+| Seal of the Crusader | 20305 (R3) | 10 | – | self | 34 | 30 s Seal: +20 + 4·L AP, swings 40% faster, each white swing ÷1.4 (strikes keep their full weapon roll). Judged: Judgement of the Crusader (20300), 10 s of +20% holy damage taken, refreshed by landed swings |
+| Judgement | 20271 | 5 | 10 s | 10 yd | 35 | consumes the Seal; Command's: a holy hit of 30 + 3·L + 0.15·AP (20467); no Seal: fails, no rage spent |
+| Hammer of Justice | 10308 (R4) | 15 | 60 s | 10 yd | 36 | 6 s stun (the only rank whose tooltip says 6 s) |
+| Mortal Strike | 12294 | 30 | 6 s | melee | – | Vanguard's |
+| Charge | 6178 | 0 | 15 s | 8–25 yd | – | Vanguard's |
+
+Mortal Strike and Charge carry Vanguard's data unchanged: `callings::skill` answers with a spell's
+first table, and a content test keeps shared skills identical. Zealot's Talent Tree is under
+[Talent trees](#talent-trees).
+
+Only one Seal is active: casting another replaces it. Holy damage (`rules::school`) skips armour,
+is logged with school 1, and is not raised by the talents and buffs that raise physical damage.
+Neither the proc nor Judgement's hit rolls the melee table or crits.
 
 ## Talent trees
 
@@ -107,21 +129,61 @@ only) works like this:
   rank in the same tab, required_spell 0, and the exceptional flag. The JSON holds all of
   this with 1-based tier and column.
 
-**Basic Warrior** has one tab, "Basic Warrior" (id 900, WarriorArms art), and 9 points.
-Capacity is 22 ranks over 2 tiers, and 9 points cannot reach tier 3. Tier 1: Improved Heroic
-Strike 124 ×3, Cruelty 157 ×3 (cut from 5), Improved Rend 127 ×3, Improved Battle Shout 154 ×3
-(cut). Tier 2: Improved Charge 126 ×2, Improved Overpower 131 ×2, Deep Wounds 121 ×3 (requires
-Improved Rend 3/3, arrow straight down), Improved Thunder Clap 128 ×3.
+**Basic Warrior** has one tab, "Recruit" (id 900, WarriorArms art), and 9 points. Capacity
+is 21 ranks over 2 rows on the vanilla grid: row 2 opens at 5 points. Row 1: Improved Heroic
+Strike 124 ×3, Improved Charge 126 ×2, Toughness 140 ×5. Row 2: Cruelty 157 ×5, Unbridled Wrath
+159 ×5, Anger Management 137 ×1. Anger Management (rage decays 30% slower out of combat) has no
+effect kind in the realm, so it ships with none: it is learnable, counts toward the row, and
+`tests/content_callings.rs` lists it as not modelled.
 
-**Tier 1 Warrior** has 29 points across three tabs. Each tab keeps the real tabs' seats and
-stops at tier 5, so 20 points reach Sweeping Strikes, Death Wish or Concussion Blow.
-Arms 161: 41 ranks, ending in Axe/Sweeping Strikes/Mace/Sword. Fury 164: 40 ranks, up to
-Death Wish. Protection 163: 27 ranks. In Protection, One-Handed Weapon Specialization moves
-from tier 6 to tier 4, and Last Stand loses its Improved Bloodrage prerequisite. The dropped
-talents and the reasons are in the JSON `catalog_note`. Five talents are exceptional (active)
-and need realm cast handlers: Sweeping Strikes, Piercing Howl, Death Wish, Last Stand and
-Concussion Blow. Each talent's `realm_effect` follows its DBC values, so the talent tooltips
-are accurate.
+**Vanguard** has 29 points across two tabs, re-seated on the vanilla grid:
+- **Weaponmaster** (id 901, WarriorArms art), 38 ranks over five rows. Row 1: Improved
+  Overpower 131 ×2, Improved Rend 127 ×3. Row 2: Improved Charge 126 ×2, Anger Management 137
+  ×1, Deep Wounds 121 ×3 (needs Improved Rend 3/3). Row 3: Two-Handed Weapon Specialization 136
+  ×5, Impale 662 ×2 (needs Deep Wounds 3/3). Row 4: Axe 132, Mace 125 and Sword 123
+  Specialization ×5 each. Row 5: Flurry 156 ×5.
+- **Warlord** (id 902, WarriorFury art), 28 ranks over three rows. Row 1: Booming Voice 158 ×5,
+  Cruelty 157 ×5. Row 2: Unbridled Wrath 159 ×5, Improved Battle Shout 154 ×5. Row 3: Blood
+  Craze 661 ×3, Enrage 155 ×5.
+
+Twenty points in Weaponmaster reach Flurry, and the other 9 go to Warlord. Prerequisites stay
+inside a tab: Anger Management loses Tactical Mastery and Flurry loses Enrage. Anger Management
+and Flurry (a crit hastes the next three swings; the player has no haste yet) are WIP: no effect,
+learnable, counted toward the row and named "<Name> (WIP)". The tree has no active talents.
+Each talent's `realm_effect` follows its DBC values, so the talent tooltips are accurate.
+
+**Zealot** has 49 points across three tabs (#26), mostly Paladin rows re-seated on the vanilla
+grid:
+- **Crusade** (id 903, PaladinCombat art), 43 ranks over seven rows. Row 1: Improved Seal of the
+  Crusader 1464 ×3, Benediction 1407 ×5. Row 2: Improved Judgement 1631 ×2, Deflection 1403 ×5.
+  Row 3: Vindication 1633 ×3, Conviction 1411 ×5. Row 4: Eye for an Eye 1632 ×2, Pursuit of
+  Justice 1634 ×2. Row 5: Two-Handed Weapon Specialization 1410 ×3, Improved Hammer of Justice
+  1521 ×3. Row 6: Vengeance 1402 ×5 (needs Conviction 5/5). Row 7: Holy Power 1627 ×5.
+- **Blade** (id 904, WarriorArms art), Vanguard's Warrior rows with Vanguard's effects, 28 ranks
+  over three rows. Row 1: Improved Charge 126 ×2, Anger Management 137 ×1, Deep Wounds 121 ×3,
+  Impale 662 ×2. Row 2: Axe 132, Mace 125 and Sword 123 Specialization ×5 each. Row 3: Flurry 156
+  ×5. The handoff lists Deep Wounds and Impale as a second row, but Improved Charge and Anger
+  Management hold only 3 ranks, short of the 5 that open one, so the two rows share the first.
+- **Faith** (id 905, PaladinProtection art), 33 ranks over four rows. Row 1: Divine Strength 1450
+  ×5, Toughness 1423 ×5. Row 2: Precision 1630 ×3, Redoubt 1421 ×5. Row 3: One-Handed Weapon
+  Specialization 1429 ×5, Anticipation 1629 ×5. Row 4: Reckoning 1426 ×5.
+
+Thirty points in Crusade reach Holy Power, so 31 or more go there and the rest to Blade and
+Faith. Modelled with the existing kinds: Benediction (rage cost), Improved Seal of the Crusader
+(the Seal's amounts, +5/10/15% to its attack power and its judgement's holy damage taken, with
+an EFFECT1 percent cell on bit 34), Deflection (parry), Conviction (crit), the two Weapon
+Specializations (weapon damage), Toughness (armour), Anticipation (defense) and Blade's Warrior
+talents. WIP: Improved Judgement and Improved Hammer of Justice (no cooldown kind),
+Vindication, Eye for an Eye, Vengeance, Redoubt and Reckoning (procs the realm does not roll),
+Pursuit of Justice (movement), Holy Power (holy crit), Divine Strength (Strength percent),
+Precision (hit), and Anger Management and Flurry as for Vanguard.
+
+**Benediction** takes 1/1/2/2/3 rage off each Seal and 1/1/1/1/2 off Judgement: vanilla's 3% of
+mana a rank, doubled for the small rage costs, rounded, and at least 1 rage a rank. A talent's
+`client_spellmods` is a list of cells, and Benediction's are three flat COST cells in tenths of
+rage, one per borrowed spell's own family bit (33, 34, 35), so the rewritten Seals and Judgement show the lower cost in
+their tooltips and on the action bar. No Spell.dbc row names bits 33–63, so `verify` checks only
+cells on the Warrior bits against the rank spells' own aura effects.
 
 ## Tier Bonus, caps and points
 
@@ -136,8 +198,11 @@ and has no quest DBC, so borrowing an ID gains nothing and risks cache collision
 ids 64001 and 64002 and `ZoneOrSort -81`, so they appear under the stock "Warrior" quest-log
 header (QuestSort.dbc 81). The Advancement Quest is a speak-to quest, modelled on vanilla 1505
 "Veteran Uzzek". Uzzek (creature 5810, the Barrens) is a candidate model for the Hub's
-Warrior trainer. Champion's quest has an objective the realm never credits. The tone comes
-from 1718, 1791 and 1712, and no text is copied.
+Warrior trainer. 64001 advances a Basic Warrior into Vanguard. 64002, offered at Vanguard 30,
+is Ironclad's ("The Ironclad's Oath"; Champion's quest is gone): it has an objective the realm
+never credits. The tone comes from 1718, 1791 and 1712, and no text is copied. 64003, "The
+Zealot's Vow", is offered beside it at Vanguard 30 and advances into Zealot. 64004, "The Templar's
+Charge", is offered at Zealot 50 and never completes.
 
 ## Checked against vmangos and the client code
 
@@ -152,7 +217,7 @@ from 1718, 1791 and 1712, and no text is copied.
 - **Last Stand** (same file): vmangos casts 12976 with base points = 30% of max health.
 - **Cooldowns.** `verify` now requires the realm's `cooldown_ms` to equal the longer of
   Spell.dbc RecoveryTime and CategoryRecoveryTime, and `gcd_ms` to equal StartRecoveryTime.
-  The client runs both off `SMSG_SPELL_GO`. All 16 skills pass.
+  The client runs both off `SMSG_SPELL_GO`. All 10 skills pass.
 - **Spellbook visibility.** The stock gate is `SpellDisplay::in_spellbook`
   (`benilla-formats/src/spells/display.rs:453`, used by `ui_spellbook.rs` `build_book`). It
   hides a spell with Attributes `0x80` (do-not-display), `0x20`, or a nonzero castUI. Passive
@@ -160,7 +225,7 @@ from 1718, 1791 and 1712, and no text is copied.
   - All 106 passive talent rank spells in the trees carry `0x80` and stay out of the book.
   - Only the five active talents appear, under their skill line: Sweeping Strikes, Piercing
     Howl, Death Wish, Last Stand and Concussion Blow.
-  - All 16 Calling skills are bookable, and `verify` now checks that.
+  - All 10 Calling skills are bookable, and `verify` now checks that.
 
 ## Implementation pointers (read-only survey, nothing changed)
 
@@ -206,7 +271,8 @@ shows the Battle Stance icon the way real servers do. That is optional.
 armour, rage, two-roll yellow attacks) and the formulas in `callings.json`. Its inputs are
 `mob_base_stats.json` and `warrior_level_stats.json` from the combat-reference branch
 (`worktree-agent-a37ae08df1dab3a30`); pass `--mobs` and `--stats` until that branch lands.
-Results, 2000 fights per level, median (p10–p90):
+Results, 2000 fights per level, median (p10–p90). The Basic Warrior rows were run on the old
+eight-skill kit:
 
 | Calling | L | player hp | mob hp | fight | hp lost |
 |---|---|---|---|---|---|
@@ -247,7 +313,7 @@ Done since the first pass:
 Built in #14 (talents):
 - The trees are Calling data: `[[calling.talent_tab]]` in `crates/twilight-realm/content/callings.toml`,
   with one `effects` entry per talent that the realm applies (`src/talents.rs`), and the
-  `client_spellmod` cells sent at login, on a learn and on a respec. The glue rebuilds the
+  `client_spellmods` cells sent at login, on a learn and on a respec. The glue rebuilds the
   client's talent catalog from the current Calling (`benilla-app/src/twilight/talents.rs`).
 - The stock UI opens the talent frame only from level 10 (`UIParent.lua` `ToggleTalentFrame`,
   `MainMenuBarMicroButtons.lua` `UpdateTalentButton`). Twilight mode redefines both without the
