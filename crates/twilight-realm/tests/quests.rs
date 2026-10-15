@@ -3,57 +3,14 @@
 
 mod common;
 mod gear_common;
+mod quest_common;
 
 use benilla_protocol::messages::dialog_status;
-use benilla_protocol::{EntityKind, SessionEvent};
+use benilla_protocol::SessionEvent;
 use common::*;
 use gear_common::*;
+use quest_common::*;
 use twilight_realm::CROSSROADS;
-
-/// `UNIT_NPC_FLAG_QUESTGIVER`.
-const NPC_FLAG_QUESTGIVER: u32 = 0x2;
-
-/// The Near Plains' giver and The Southern Barrens'.
-const GREZZ: u32 = 90101;
-const MAHU: u32 = 90105;
-
-/// Every quest giver created in `events`: `(guid, entry, position)`.
-fn givers(events: &[SessionEvent]) -> Vec<(u64, u32, [f32; 3])> {
-    events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::ObjectCreate {
-                guid,
-                kind: EntityKind::Unit,
-                position,
-                fields,
-                ..
-            } if fields.unit_npc_flags() & NPC_FLAG_QUESTGIVER != 0 => {
-                Some((*guid, fields.object_entry()?, *position))
-            }
-            _ => None,
-        })
-        .collect()
-}
-
-fn giver(events: &[SessionEvent], entry: u32) -> u64 {
-    givers(events)
-        .into_iter()
-        .find(|g| g.1 == entry)
-        .unwrap_or_else(|| panic!("giver {entry} stands at the Hub"))
-        .0
-}
-
-fn status(realm: &mut Realm, npc: u64) -> u32 {
-    realm.handle(RealmCommand::QuestGiverStatusQuery { npc });
-    drain(realm)
-        .into_iter()
-        .find_map(|e| match e {
-            SessionEvent::QuestGiverStatus { npc: n, status } if n == npc => Some(status),
-            _ => None,
-        })
-        .expect("a status answer")
-}
 
 #[test]
 fn quest_givers_stand_at_the_hub_with_names_and_marks() {
@@ -81,32 +38,6 @@ fn quest_givers_stand_at_the_hub_with_names_and_marks() {
         status(&mut realm, giver(&events, MAHU)),
         dialog_status::UNAVAILABLE
     );
-}
-
-/// The Near Plains' kill and collect quests.
-const THINNING_THE_HERDS: u32 = 91001;
-const SCORPID_VENOM: u32 = 91002;
-
-/// The player's quest log as the client reads it: `(slot, quest, counters, state)`.
-fn quest_log(events: &[SessionEvent], me: u64) -> Vec<(u8, u32, [u8; 4], u8)> {
-    let d = descriptor(events, me);
-    (0..20)
-        .filter_map(|slot| {
-            let s = d.player_quest_log(slot)?;
-            (s.quest_id != 0).then_some((slot, s.quest_id, s.counters, s.state))
-        })
-        .collect()
-}
-
-fn talk(realm: &mut Realm, npc: u64) -> Vec<SessionEvent> {
-    realm.handle(RealmCommand::QuestGiverHello { npc });
-    drain(realm)
-}
-
-/// Takes `quest` from `npc`, returning the events.
-fn accept(realm: &mut Realm, npc: u64, quest: u32) -> Vec<SessionEvent> {
-    realm.handle(RealmCommand::QuestGiverAcceptQuest { npc, quest });
-    drain(realm)
 }
 
 #[test]

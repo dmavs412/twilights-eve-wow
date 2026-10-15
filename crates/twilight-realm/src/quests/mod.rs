@@ -72,6 +72,46 @@ impl QuestLog {
     }
 }
 
+/// One quest under way in a save. Field names are the format.
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct SavedQuest {
+    id: u32,
+    slot: u8,
+    /// Kills so far, by kill objective.
+    #[serde(default)]
+    kills: [u8; 4],
+}
+
+/// The log as a save writes it, in slot order.
+pub(crate) fn saved(log: &QuestLog) -> Vec<SavedQuest> {
+    let mut out: Vec<SavedQuest> = log
+        .active
+        .iter()
+        .map(|a| SavedQuest {
+            id: a.id,
+            slot: a.slot,
+            kills: a.kills,
+        })
+        .collect();
+    out.sort_by_key(|q| q.slot);
+    out
+}
+
+/// The log a save describes. A quest the realm no longer has is dropped; a bad slot, or a slot or
+/// quest named twice, makes the save unreadable.
+pub(crate) fn load(saved: &[SavedQuest]) -> Result<QuestLog, crate::save::SaveError> {
+    let mut log = QuestLog::default();
+    for s in saved {
+        if s.slot >= LOG_SLOTS || log.active.iter().any(|a| a.slot == s.slot || a.id == s.id) {
+            return Err(crate::save::SaveError::Unreadable);
+        }
+        if content::quest(s.id).is_some() {
+            log.active.push(Active::new(s.id, s.slot, s.kills));
+        }
+    }
+    Ok(log)
+}
+
 /// How many of `item` the character carries.
 fn carried(c: &Char, item: u32) -> u32 {
     c.inventory
