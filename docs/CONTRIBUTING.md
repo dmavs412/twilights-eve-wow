@@ -7,7 +7,7 @@ top of benilla, in a crate of its own or a fork, and both are welcome.
 
 ## Where to start
 
-The [issues](https://github.com/samwhosung/benilla/issues) the maintainers file are checked
+The [issues](https://github.com/dmavs412/twilights-eve-wow/issues) the maintainers file are checked
 against 1.12.1 first: each says what 1.12.1 does, what benilla does instead, and where in the
 code, and any of them is a place to start. One labelled `in progress` is taken: someone is
 working on it or a pull request is open for it, so pick another. Once you start one, open a draft

@@ -78,6 +78,10 @@ const VERDICTS: &[(&str, Verdict)] = &[
     ),
     // ── Not input at all ────────────────────────────────────────────────────────────────────
     ("ButtonState", Plumbing),
+    // The webbridge's `wake()`: a Worker ticks a hidden tab through the event-loop proxy. A
+    // heartbeat that runs one update, never a key or a click.
+    ("EventLoopProxyWrapper", Plumbing),
+    ("WinitUserEvent", Plumbing),
     // Cursor outputs benilla writes; nothing arrives through them.
     ("CursorGrabMode", Plumbing),
     ("CursorIcon", Plumbing),

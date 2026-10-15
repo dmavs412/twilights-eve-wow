@@ -8,7 +8,8 @@ out as a plain text file, so `wow-data\Data` does not exist here. Do not run `fe
 
 Let every cargo build and test run to completion: one stopped mid-compile leaves rlibs with
 corrupt MSVC debug info, and later links fail with `LNK1103` on a crate you never touched. The
-cure is deleting the `target/debug/deps` files written during the interrupted run.
+cure is `cargo clean -p <crate>` for each crate the linker names; deleting the files by hand
+leaves fingerprints that call the crate built ("required to be available in rlib format").
 
 A worktree builds its own `target`, about 18 GB, and several building at once run rustc out of
 memory (which also ends in `LNK1103`). Delete a worktree's `target` once its branch is merged.

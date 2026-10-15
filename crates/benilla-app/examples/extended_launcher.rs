@@ -20,18 +20,19 @@
 //!
 //! [dependencies]
 //! # `default-features = false`, or `--no-default-features` still builds benilla-app with `dev`.
-//! benilla-app = { git = "https://github.com/samwhosung/benilla", default-features = false }
+//! benilla-app = { git = "https://github.com/dmavs412/twilights-eve-wow", default-features = false }
 //! # benilla's version, adding no features: bevy's defaults bring its audio stack back.
 //! bevy = { version = "0.18.1", default-features = false }
 //!
 //! [build-dependencies]
-//! benilla-buildstamp = { git = "https://github.com/samwhosung/benilla" }
+//! benilla-buildstamp = { git = "https://github.com/dmavs412/twilights-eve-wow" }
 //!
 //! # Cargo reads `[patch]` and `[profile]` from the root manifest only, so benilla's are repeated:
 //! # without the patches the addon Lua and the mixer are not benilla's.
 //! [patch.crates-io]
-//! lua-src = { git = "https://github.com/samwhosung/benilla" }
-//! kira = { git = "https://github.com/samwhosung/benilla" }
+//! lua-src = { git = "https://github.com/dmavs412/twilights-eve-wow" }
+//! mlua-sys = { git = "https://github.com/dmavs412/twilights-eve-wow" }
+//! kira = { git = "https://github.com/dmavs412/twilights-eve-wow" }
 //!
 //! [profile.dev]
 //! opt-level = 1
