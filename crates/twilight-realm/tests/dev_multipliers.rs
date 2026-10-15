@@ -135,6 +135,35 @@ fn the_realm_keeps_up_with_a_faster_player() {
     assert_eq!(position, there.map(f64::from));
 }
 
+#[test]
+fn the_boot_flags_set_the_multipliers() {
+    assert_eq!(
+        DevMultipliers::from_flags(Some("3"), Some("10")),
+        DevMultipliers {
+            speed: 3.0,
+            xp: 10.0
+        }
+    );
+    assert_eq!(
+        DevMultipliers::from_flags(Some(" 1.5 "), None),
+        DevMultipliers {
+            speed: 1.5,
+            xp: 1.0
+        }
+    );
+}
+
+#[test]
+fn a_missing_or_nonsense_flag_means_1() {
+    for bad in [None, Some(""), Some("fast"), Some("0"), Some("-2"), Some("NaN"), Some("inf")] {
+        assert_eq!(
+            DevMultipliers::from_flags(bad, bad),
+            DevMultipliers::default(),
+            "{bad:?}"
+        );
+    }
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────────────────────────
 
 const SEED: u64 = 4;
