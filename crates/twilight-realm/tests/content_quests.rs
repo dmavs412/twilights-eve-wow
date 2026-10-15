@@ -18,6 +18,8 @@ struct Collect {
 #[derive(Deserialize)]
 struct Quest {
     id: u32,
+    /// A Hub NPC's entry (`content/hub.toml`).
+    giver: u32,
     level: u8,
     title: String,
     money: u32,
@@ -31,13 +33,7 @@ struct Quest {
 }
 
 #[derive(Deserialize)]
-struct Giver {
-    entry: u32,
-}
-
-#[derive(Deserialize)]
 struct File {
-    giver: Vec<Giver>,
     quest: Vec<Quest>,
 }
 
@@ -118,9 +114,7 @@ fn every_quest_has_its_template_and_every_giver_its_name() {
             (q.title.as_str(), u32::from(q.level))
         );
         assert_eq!(t.money, q.money as i32);
-    }
-    for g in &file.giver {
-        assert!(creature_named(&mut realm, g.entry), "giver {}", g.entry);
+        assert!(creature_named(&mut realm, q.giver), "giver {}", q.giver);
     }
 }
 

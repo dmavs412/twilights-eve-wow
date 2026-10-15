@@ -9,7 +9,6 @@ use benilla_protocol::messages::{
 use benilla_protocol::SessionEvent;
 
 use super::content::{self, Quest};
-use super::givers::{self, within_reach};
 use super::{complete, slot_pairs, Active, TOKEN};
 use crate::characters::Char;
 use crate::fields::values;
@@ -177,39 +176,19 @@ impl Realm {
     }
 }
 
-/// Whoever gives quests: one of the Hub's quest givers, or a Hub NPC with the quest giver flag
-/// (the Warrior trainer, whose gossip menu lists his Advancement Quests).
-#[derive(Clone, Copy)]
-struct Speaker {
-    entry: u32,
-    greeting: &'static str,
-}
+/// A Hub NPC with the quest giver flag: a Hunting Ground's giver, or the Warrior trainer, whose
+/// gossip menu lists his Advancement Quests.
+type Speaker = &'static crate::hub::Npc;
 
 /// The quest giver with guid `npc`, wherever the player stands.
 fn any_speaker(npc: u64) -> Option<Speaker> {
-    if let Some(g) = givers::by_guid(npc) {
-        return Some(Speaker {
-            entry: g.entry,
-            greeting: &g.greeting,
-        });
-    }
-    crate::hub::find(npc)
-        .filter(|n| n.gives_quests())
-        .map(|n| Speaker {
-            entry: n.entry,
-            greeting: "",
-        })
+    crate::hub::find(npc).filter(|n| n.gives_quests())
 }
 
 /// The quest giver `npc`, if the player stands near enough to talk to it.
 fn talking_to(c: &Char, npc: u64) -> Option<Speaker> {
-    // Givers and the Hub stand on Kalimdor only, not in a Dungeon.
-    let near = c.map == crate::KALIMDOR
-        && match givers::by_guid(npc) {
-            Some(g) => within_reach(g, c.position),
-            None => crate::hub::find(npc).is_some_and(|n| crate::hub::within_reach(n, c.position)),
-        };
-    any_speaker(npc).filter(|_| near)
+    // The Hub stands on Kalimdor only, not in a Dungeon.
+    any_speaker(npc).filter(|n| c.map == crate::KALIMDOR && crate::hub::within_reach(n, c.position))
 }
 
 /// `quest`, if `g` offers it to the player now: theirs to take, and not in the log already.
@@ -291,7 +270,7 @@ fn hello(c: &Char, g: Speaker, npc: u64, events: &mut Vec<SessionEvent>) {
                 .collect();
             events.push(SessionEvent::QuestGreeting(QuestGiverList {
                 npc,
-                greeting: g.greeting.to_string(),
+                greeting: g.greeting.clone(),
                 emote_delay: 0,
                 emote: 0,
                 quests,

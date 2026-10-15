@@ -386,9 +386,8 @@ impl Realm {
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
-                let answer = hub::creature_name(entry)
-                    .or_else(|| quests::creature_name(entry))
-                    .unwrap_or_else(|| mobs::creature_name(entry));
+                let answer =
+                    hub::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
                 self.events.push(answer);
             }
             RealmCommand::Logout => self.logout(),

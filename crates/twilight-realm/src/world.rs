@@ -102,8 +102,8 @@ pub(crate) struct InWorld {
     skills: cast::Skills,
     /// The teleport the client has yet to acknowledge.
     teleports: hearth::Teleports,
-    /// The Hub's NPCs are in the world: they come with the first tick, after the mobs.
-    hub_shown: bool,
+    /// The Hub's NPCs in view: they stream in with the view, after the mobs.
+    hub: crate::hub::InView,
     /// This session's sales, on the merchant window's buyback tab.
     pub(crate) buyback: crate::vendor::Buyback,
     /// The dice for gear wear, apart from the fight's so that wearing changes no fight.
@@ -112,8 +112,6 @@ pub(crate) struct InWorld {
     pub(crate) respawn: death::Respawn,
     /// Food or drink being taken, sitting down.
     meal: Option<food::Meal>,
-    /// The Hub's quest givers in view.
-    givers: crate::quests::Givers,
     /// A worldport waits for the client's ack.
     transfer: bool,
 }
@@ -170,12 +168,11 @@ impl InWorld {
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
             teleports: hearth::Teleports::default(),
-            hub_shown: false,
+            hub: Default::default(),
             buyback: crate::vendor::Buyback::default(),
             wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
             respawn: death::Respawn::HUB,
             meal: None,
-            givers: Default::default(),
             transfer: false,
         };
         events.push(w.player_create(c));
@@ -264,11 +261,7 @@ impl InWorld {
             self.population
                 .update(dt, me, self.map, host, &mut self.mobs, events);
         }
-        if !self.hub_shown && self.map == content::KALIMDOR {
-            self.hub_shown = true;
-            events.extend(crate::hub::npcs().iter().map(|n| n.create()));
-        }
-        self.givers.update(me, self.map, host, events);
+        self.hub.update(me, self.map, host, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting

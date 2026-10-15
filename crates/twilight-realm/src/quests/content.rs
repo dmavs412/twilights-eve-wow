@@ -1,30 +1,12 @@
-//! The quest content: the Hub's givers and their Repeatable Quests (`content/quests.toml`), and the
+//! The quest content: the Repeatable Quests the Hub's givers offer (`content/quests.toml`), and the
 //! items those quests use (`content/quest_items.toml`).
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
 use crate::items;
-
-/// A quest giver at the Hub, tied to one Hunting Ground.
-#[derive(Deserialize)]
-pub(crate) struct Giver {
-    pub(crate) entry: u32,
-    /// Its spawn's low guid (24 bits).
-    pub(crate) guid: u32,
-    pub(crate) name: String,
-    /// The Hunting Ground, under the name.
-    pub(crate) subname: String,
-    pub(crate) display_id: u32,
-    pub(crate) level: u8,
-    /// WoW `[x, y, z]`; the host's ground replaces z.
-    pub(crate) position: [f32; 3],
-    pub(crate) orientation: f32,
-    pub(crate) greeting: String,
-}
 
 /// A collect objective: `count` of `item`, dropping `from` these creatures at `chance` percent
 /// while the quest wants more.
@@ -97,7 +79,6 @@ impl Quest {
 
 #[derive(Deserialize)]
 struct QuestFile {
-    giver: Vec<Giver>,
     quest: Vec<Quest>,
 }
 
@@ -111,12 +92,10 @@ fn file() -> &'static QuestFile {
             .expect("content/quests.toml parses");
         for q in &file.quest {
             assert!(
-                file.giver.iter().any(|g| g.entry == q.giver)
-                    || crate::hub::npcs()
-                        .iter()
-                        .any(|n| n.entry == q.giver && n.gives_quests()),
-                "quest {} names giver {}, who is neither in content/quests.toml nor a quest \
-                 giver in content/hub.toml",
+                crate::hub::npcs()
+                    .iter()
+                    .any(|n| n.entry == q.giver && n.gives_quests()),
+                "quest {} names giver {}, who is no quest giver in content/hub.toml",
                 q.id,
                 q.giver
             );
@@ -151,10 +130,6 @@ fn file() -> &'static QuestFile {
     })
 }
 
-pub(crate) fn givers() -> &'static [Giver] {
-    &file().giver
-}
-
 pub(crate) fn quests() -> &'static [Quest] {
     &file().quest
 }
@@ -182,22 +157,4 @@ pub(crate) fn item_template(entry: u32) -> Option<&'static items::Template> {
             table.item.into_iter().map(|t| (t.entry, t)).collect()
         })
         .get(&entry)
-}
-
-/// `SMSG_CREATURE_QUERY_RESPONSE` for a quest giver; `None` for any other entry.
-pub(crate) fn creature_name(entry: u32) -> Option<SessionEvent> {
-    let g = givers().iter().find(|g| g.entry == entry)?;
-    Some(SessionEvent::CreatureName {
-        entry,
-        name: Some(g.name.clone()),
-        subname: Some(g.subname.clone()),
-        // `CREATURE_TYPE_HUMANOID`.
-        creature_type: Some(7),
-        pet_family: 0,
-        rank: 0,
-        type_flags: 0,
-        display_id: g.display_id,
-        civilian: false,
-        racial_leader: false,
-    })
 }

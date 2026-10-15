@@ -1,5 +1,6 @@
-//! The Hub's friendly NPCs (`content/hub.toml`): units that stand in the Crossroads for the whole
-//! session, each opening the stock window its NPC flags name.
+//! The Hub's friendly NPCs (`content/hub.toml`): units that stand in the Crossroads, each opening
+//! the stock window its NPC flags name, and stream in and out with the player's view as the mobs
+//! do.
 
 use std::sync::OnceLock;
 
@@ -8,6 +9,7 @@ use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
 use crate::fields::*;
+use crate::Host;
 
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
 const HIGHGUID_UNIT: u64 = 0xF130;
@@ -35,6 +37,9 @@ pub(crate) struct Npc {
     /// The Token vendor: it sells the buyer's band of greens for Tokens (`crate::token_vendor`).
     #[serde(default)]
     pub(crate) tokens: bool,
+    /// What a quest giver's quest list opens with.
+    #[serde(default)]
+    pub(crate) greeting: String,
 }
 
 #[derive(Deserialize)]
@@ -73,8 +78,8 @@ impl Npc {
         self.npc_flags & 0x4000 != 0
     }
 
-    /// The NPC's create: a friendly unit with its NPC flags.
-    pub(crate) fn create(&self) -> SessionEvent {
+    /// The NPC's create at `position`: a friendly unit with its NPC flags.
+    fn create(&self, position: [f32; 3]) -> SessionEvent {
         let mut pairs = vec![
             (OBJECT_FIELD_TYPE, TYPE_UNIT),
             (OBJECT_FIELD_ENTRY, self.entry),
@@ -96,7 +101,7 @@ impl Npc {
             guid: self.guid(),
             kind: EntityKind::Unit,
             display_id: Some(self.display_id),
-            position: self.position,
+            position,
             orientation: self.orientation,
             scale: 1.0,
             speeds: Some(MoveSpeeds {
@@ -139,12 +144,60 @@ pub(crate) fn creature_name(entry: u32) -> Option<SessionEvent> {
     })
 }
 
-/// How near an NPC the player must stand to deal with it (`INTERACTION_DISTANCE` and the two
-/// bodies' reach), measured on the ground.
-pub(crate) const INTERACT_DISTANCE: f32 = 6.0;
+/// How near an NPC the player must stand to deal with it (`INTERACTION_DISTANCE`, with slack for
+/// the movement reports' lag), measured on the ground.
+pub(crate) const INTERACT_DISTANCE: f32 = 10.0;
 
 /// Whether the player at `at` can reach `npc`.
 pub(crate) fn within_reach(npc: &Npc, at: [f32; 3]) -> bool {
-    let (dx, dy) = (npc.position[0] - at[0], npc.position[1] - at[1]);
-    (dx * dx + dy * dy).sqrt() <= INTERACT_DISTANCE
+    flat_distance(npc.position, at) <= INTERACT_DISTANCE
+}
+
+/// How far the player sees a Hub NPC, and how far before it leaves the world (as the mobs).
+const VIEW_YD: f32 = crate::population::VIEW_YD;
+const FORGET_YD: f32 = VIEW_YD + 10.0;
+
+/// Which Hub NPCs are in the world.
+#[derive(Default)]
+pub(crate) struct InView {
+    present: Vec<bool>,
+}
+
+impl InView {
+    /// Brings the NPCs within view of `me` into the world, standing on the host's ground, and
+    /// lets distant ones go. They stand on Kalimdor only.
+    pub(crate) fn update(
+        &mut self,
+        me: [f32; 3],
+        map: u32,
+        host: &dyn Host,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let all = npcs();
+        self.present.resize(all.len(), false);
+        let mut gone = Vec::new();
+        for (npc, present) in all.iter().zip(&mut self.present) {
+            let d = if map == crate::KALIMDOR {
+                flat_distance(npc.position, me)
+            } else {
+                f32::INFINITY
+            };
+            if !*present && d <= VIEW_YD {
+                let [x, y, z] = npc.position;
+                let z = host.ground_height(map, x, y, z + 2.0).unwrap_or(z);
+                events.push(npc.create([x, y, z]));
+                *present = true;
+            } else if *present && d > FORGET_YD {
+                gone.push(npc.guid());
+                *present = false;
+            }
+        }
+        if !gone.is_empty() {
+            events.push(SessionEvent::ObjectsRemoved(gone));
+        }
+    }
+}
+
+fn flat_distance(a: [f32; 3], b: [f32; 3]) -> f32 {
+    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2)).sqrt()
 }

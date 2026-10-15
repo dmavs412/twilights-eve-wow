@@ -8,7 +8,6 @@
 
 mod content;
 mod dialogs;
-mod givers;
 
 use benilla_protocol::SessionEvent;
 
@@ -16,9 +15,8 @@ use crate::characters::Char;
 use crate::fields::values;
 use crate::rng::Rng;
 
-pub(crate) use content::{creature_name, item_template};
+pub(crate) use content::item_template;
 pub(crate) use dialogs::{gossip_rows, template_response};
-pub(crate) use givers::Givers;
 
 /// The Token's item entry. Tokens are stacks of it in the bags: the quest dialogs pay them there
 /// and the Token vendor takes them from there.

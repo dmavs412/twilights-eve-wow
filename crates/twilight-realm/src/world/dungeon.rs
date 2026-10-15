@@ -61,8 +61,7 @@ impl InWorld {
         }
         self.mobs.clear();
         self.population = Default::default();
-        self.hub_shown = false;
-        self.givers = Default::default();
+        self.hub = Default::default();
         self.map = to.map;
         c.map = to.map;
         c.position = to.position;

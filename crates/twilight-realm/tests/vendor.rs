@@ -166,6 +166,37 @@ fn the_goods_vendor_stands_in_the_crossroads_and_lists_food_and_drink() {
 }
 
 #[test]
+fn the_vendor_stands_on_the_ground_and_streams_with_the_view_as_every_hub_npc() {
+    let (mut realm, _, events) = warrior_with(1, 0, &[]);
+    let (vendor, at, _) = the_vendor(&events);
+    assert_eq!(at[2], 0.0, "the host's ground, not the content's z");
+
+    // Far off, it leaves the world; back at the Hub, it comes back.
+    realm.handle(RealmCommand::Move {
+        position: [
+            twilight_realm::CROSSROADS[0] + 300.0,
+            twilight_realm::CROSSROADS[1],
+            0.0,
+        ],
+        orientation: 0.0,
+    });
+    let away = run(&mut realm, 0.0);
+    assert!(away
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectsRemoved(gone) if gone.contains(&vendor))));
+    realm.handle(RealmCommand::Move {
+        position: [
+            twilight_realm::CROSSROADS[0],
+            twilight_realm::CROSSROADS[1],
+            0.0,
+        ],
+        orientation: 0.0,
+    });
+    let back = run(&mut realm, 0.0);
+    assert_eq!(the_vendor(&back).0, vendor);
+}
+
+#[test]
 fn buying_food_takes_its_price_and_puts_the_bundle_in_the_backpack() {
     let mut shop = Shop::new(1, 100, &[]);
     let events = shop.buy(TOUGH_JERKY, 1);
