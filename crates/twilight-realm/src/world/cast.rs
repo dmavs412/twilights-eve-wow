@@ -17,13 +17,14 @@ use crate::callings::{self, Effect, Skill, Target, Weapon};
 use crate::characters::Char;
 use crate::fields::*;
 use crate::items;
-use crate::mobs::{distance, State};
+use crate::mobs::State;
 use crate::rng::Rng;
 use crate::rules::melee::{armor_reduced, Outcome, PlayerOffense, ROLL};
 use crate::rules::rage;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::WarriorStats;
 use crate::rules::talents::{deep_wound_tick, scaled};
+use crate::space::distance;
 
 /// `UNIT_FIELD_BYTES_1`: stand state, loyalty, shapeshift form, visibility flags.
 const UNIT_FIELD_BYTES_1: u16 = 138;

@@ -12,10 +12,6 @@ use crate::items;
 use crate::rng::Rng;
 use crate::rules::loot::{money, pool, quality, QUALITY_ROLL};
 
-/// How near a corpse the player must stand to loot it (`INTERACTION_DISTANCE`, plus the two
-/// bodies' reach).
-pub(crate) const LOOT_DISTANCE: f32 = 6.0;
-
 /// `UNIT_DYNAMIC_FLAGS`, and its `UNIT_DYNFLAG_LOOTABLE` bit: the sparkle, the loot cursor and
 /// right-click looting.
 const UNIT_DYNAMIC_FLAGS: u16 = 143;

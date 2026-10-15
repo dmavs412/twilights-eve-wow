@@ -8,7 +8,7 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 
-use crate::mobs::distance;
+use crate::space::distance;
 use crate::Host;
 
 /// A place to be sent to.

@@ -9,6 +9,7 @@ use benilla_protocol::SessionEvent;
 
 use crate::mobs::{self, Mob, State};
 use crate::rules::respawn;
+use crate::space::flat_distance;
 use crate::Host;
 
 /// How far the player sees mobs: a spawn whose home is this close is in the world (vmangos's
@@ -185,9 +186,4 @@ impl Population {
         z ^= z >> 31;
         lo + (z % u64::from(hi - lo + 1)) as u8
     }
-}
-
-/// The distance in the plane.
-fn flat_distance(a: [f32; 3], b: [f32; 3]) -> f32 {
-    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2)).sqrt()
 }

@@ -89,7 +89,7 @@ impl InWorld {
         if self.teleports.pending || self.transferring() {
             return false;
         }
-        if crate::mobs::distance(from, to) > MOVE_EPSILON {
+        if crate::space::distance(from, to) > MOVE_EPSILON {
             self.interrupt_cast(events);
         }
         true

@@ -15,12 +15,13 @@ use crate::dev::DevMultipliers;
 use crate::equipment;
 use crate::fields::*;
 use crate::looting::{self, Looting};
-use crate::mobs::{distance, Mob, State, COMBAT_REACH};
+use crate::mobs::{Mob, State, COMBAT_REACH};
 use crate::population::Population;
 use crate::rng::Rng;
 use crate::rules::melee::Outcome;
 use crate::rules::stats::WarriorStats;
 use crate::rules::{aggro, leash, rage, xp};
+use crate::space::distance;
 use crate::Host;
 
 mod death;
@@ -839,7 +840,7 @@ impl InWorld {
         let near = self.mobs.iter().any(|m| {
             m.guid == corpse
                 && !m.alive()
-                && distance(m.position, c.position) <= looting::LOOT_DISTANCE
+                && crate::space::within_interaction(m.position, c.position)
         });
         self.looting.open(corpse, near, events);
     }

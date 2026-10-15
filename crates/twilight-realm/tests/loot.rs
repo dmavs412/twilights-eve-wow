@@ -3,7 +3,7 @@
 mod common;
 mod gear_common;
 
-use benilla_protocol::messages::LootItem;
+use benilla_protocol::messages::{loot_error, LootItem};
 use benilla_protocol::SessionEvent;
 use common::*;
 use gear_common::*;
@@ -72,6 +72,29 @@ fn the_loot_window_shows_the_mobs_money_and_item() {
         .expect("the item's template");
     assert_eq!(info.display_info_id, item.display_info_id);
     assert!(!info.name.is_empty());
+}
+
+#[test]
+fn a_corpse_is_in_reach_as_far_as_an_npc_is() {
+    let (mut realm, _, mob, _) = after_a_kill();
+    let step_back = |realm: &mut Realm, yards: f32| {
+        realm.handle(RealmCommand::Move {
+            position: [mob.position[0] + yards, mob.position[1], mob.position[2]],
+            orientation: std::f32::consts::PI,
+        });
+    };
+    step_back(&mut realm, 8.0);
+    realm.handle(RealmCommand::Loot { guid: mob.guid });
+    assert!(loot_window(&drain(&mut realm)).is_some(), "8 yd off");
+    realm.handle(RealmCommand::LootRelease { guid: mob.guid });
+    step_back(&mut realm, 12.0);
+    realm.handle(RealmCommand::Loot { guid: mob.guid });
+    let far = drain(&mut realm);
+    assert!(loot_window(&far).is_none(), "12 yd off");
+    assert!(far.iter().any(|e| matches!(
+        e,
+        SessionEvent::LootError { error, .. } if *error == loot_error::TOO_FAR
+    )));
 }
 
 #[test]

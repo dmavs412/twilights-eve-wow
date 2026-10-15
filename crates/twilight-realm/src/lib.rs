@@ -39,6 +39,7 @@ mod quests;
 mod rng;
 pub mod rules;
 mod save;
+mod space;
 mod tables;
 mod talents;
 mod token_vendor;

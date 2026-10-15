@@ -9,6 +9,7 @@ use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
 use crate::fields::*;
+use crate::space::flat_distance;
 use crate::Host;
 
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
@@ -152,13 +153,9 @@ pub(crate) fn creature_name(entry: u32) -> Option<SessionEvent> {
     })
 }
 
-/// How near an NPC the player must stand to deal with it (`INTERACTION_DISTANCE`, with slack for
-/// the movement reports' lag), measured on the ground.
-pub(crate) const INTERACT_DISTANCE: f32 = 10.0;
-
 /// Whether the player at `at` can reach `npc`.
 pub(crate) fn within_reach(npc: &Npc, at: [f32; 3]) -> bool {
-    flat_distance(npc.position, at) <= INTERACT_DISTANCE
+    crate::space::within_interaction(npc.position, at)
 }
 
 /// How far the player sees a Hub NPC, and how far before it leaves the world (as the mobs).
@@ -204,8 +201,4 @@ impl InView {
             events.push(SessionEvent::ObjectsRemoved(gone));
         }
     }
-}
-
-fn flat_distance(a: [f32; 3], b: [f32; 3]) -> f32 {
-    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2)).sqrt()
 }

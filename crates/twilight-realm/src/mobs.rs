@@ -11,6 +11,7 @@ use serde::Deserialize;
 
 use crate::fields::*;
 use crate::rules::stats::{MobStats, UnitClass};
+use crate::space::distance;
 
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
 const HIGHGUID_UNIT: u64 = 0xF130;
@@ -462,8 +463,4 @@ fn unit_class_id(class: UnitClass) -> u32 {
 /// The length of a path through `points`.
 fn length(points: &[[f32; 3]]) -> f32 {
     points.windows(2).map(|l| distance(l[0], l[1])).sum()
-}
-
-pub(crate) fn distance(a: [f32; 3], b: [f32; 3]) -> f32 {
-    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
 }
