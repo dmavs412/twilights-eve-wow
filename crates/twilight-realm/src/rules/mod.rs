@@ -14,4 +14,5 @@ pub mod respawn;
 pub mod skills;
 pub mod stats;
 pub mod talents;
+pub mod tokens;
 pub mod xp;

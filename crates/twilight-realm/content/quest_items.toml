@@ -16,8 +16,8 @@ item = [
   { entry = 5087, name = "Plainstrider Beak", quality = 1, item_level = 1, class = 12, display_id = 6633, stackable = 20 },
   { entry = 5164, name = "Thunderhawk Wings", quality = 1, item_level = 1, class = 12, display_id = 8284, stackable = 20 },
   { entry = 7119, name = "Twitching Antenna", quality = 1, item_level = 1, class = 12, display_id = 15507, stackable = 20 },
-  # The Token, as the quest dialogs list it among the rewards. Tokens are a count the character
-  # keeps, not an item in the bags: this entry only names and draws them. Its display is the
-  # amethyst's (INV_Misc_Gem_Amethyst_01). The entry is outside 1.12's item range.
-  { entry = 90001, name = "Twilight Token", quality = 2, item_level = 1, class = 15, display_id = 7401, stackable = 1 },
+  # The Token: Repeatable Quests pay it into the bags and the Token vendor takes it from there,
+  # so the bags show how many the character has. No vendor buys it (no sell price). Its display
+  # is the amethyst's (INV_Misc_Gem_Amethyst_01). The entry is outside 1.12's item range.
+  { entry = 90001, name = "Twilight Token", quality = 2, item_level = 1, class = 15, display_id = 7401, stackable = 100 },
 ]

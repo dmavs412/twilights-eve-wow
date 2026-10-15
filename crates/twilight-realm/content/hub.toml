@@ -34,3 +34,19 @@ faction_template = 35
 npc_flags = 0x11
 position = [-446.0, -2648.0, 95.9]
 orientation = 6.14
+
+# The Token vendor: the greens of the buyer's level band (content/token_vendor.toml), priced in
+# the Twilight Tokens in the bags. `tokens` says so; it has no `stock` of its own and no repairs.
+# The display is a dressed orc woman.
+[[npc]]
+guid = 0xF00002
+entry = 190002
+name = "Sarna Duskwhisper"
+subname = "Token Vendor"
+level = 30
+display_id = 1312
+faction_template = 35
+npc_flags = 0x4
+position = [-445.0, -2645.6, 95.9]
+orientation = 5.53
+tokens = true

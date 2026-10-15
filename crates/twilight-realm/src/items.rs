@@ -185,11 +185,14 @@ fn use_charges(t: &Template) -> i32 {
 pub(crate) fn query_response(entry: u32) -> SessionEvent {
     SessionEvent::ItemTemplate {
         entry,
-        info: template(entry).map(|t| Box::new(info(t))),
+        info: template(entry)
+            .map(info)
+            .or_else(|| crate::token_vendor::row_info(entry))
+            .map(Box::new),
     }
 }
 
-fn info(t: &Template) -> ItemInfo {
+pub(crate) fn info(t: &Template) -> ItemInfo {
     let damages: Vec<ItemDamage> = t
         .damage
         .iter()

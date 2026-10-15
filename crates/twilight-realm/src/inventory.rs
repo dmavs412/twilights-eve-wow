@@ -156,4 +156,18 @@ impl Inventory {
             })
             .collect())
     }
+
+    /// Whether [`Inventory::store`] would take `count` of `entry`.
+    pub(crate) fn fits(&self, entry: u32, count: u32) -> bool {
+        self.clone().store(entry, count).is_ok()
+    }
+
+    /// How many of `entry` the backpack holds.
+    pub(crate) fn count(&self, entry: u32) -> u32 {
+        PACK.clone()
+            .filter_map(|s| self.get(s))
+            .filter(|i| i.entry == entry)
+            .map(|i| i.count)
+            .sum()
+    }
 }

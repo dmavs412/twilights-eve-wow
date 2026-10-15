@@ -15,9 +15,6 @@ use crate::characters::Char;
 use crate::fields::values;
 use crate::{equipment, items, rules, Realm, RealmCommand};
 
-/// `INVENTORY_SLOT_BAG_0`: the player's own slots, as a wire position names them.
-const PLAYER_BAG: u8 = 255;
-
 /// `CMSG_QUEST_QUERY`'s answer for `id`; nothing for a quest the realm does not have.
 pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
     let q = content::quest(id)?;
@@ -146,8 +143,7 @@ impl Realm {
             }
             RealmCommand::QuestGiverChooseReward { npc, quest, .. } => {
                 if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
-                    if is_complete(c, q) {
-                        reward(c, q, events);
+                    if is_complete(c, q) && reward(c, q, events) {
                         let gained =
                             w.reward_xp(c, rules::quest::reward_xp(c.level, q.level), events);
                         let mut items = Vec::new();
@@ -342,13 +338,26 @@ fn turn_in(c: &Char, npc: u64, q: &Quest, events: &mut Vec<SessionEvent>) {
 }
 
 /// The hand-in's goods: the collected items go, the money and Tokens come, and the slot clears.
-/// The XP is the world's to pay.
-fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) {
+/// The XP is the world's to pay. Tokens that would not fit in the bags refuse the hand-in before
+/// anything changes, as vmangos `Player::CanRewardQuest` does; whether it went through.
+fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
+    if q.tokens > 0 && !c.inventory.fits(TOKEN, q.tokens) {
+        events.push(SessionEvent::InventoryFailure {
+            reason: equipment::EQUIP_ERR_INVENTORY_FULL,
+            required_level: None,
+            item_guid: 0,
+            bag_slot: 0,
+        });
+        return false;
+    }
     for o in &q.collect {
-        take_items(c, o.item, o.count, events);
+        equipment::take(c, o.item, o.count, events);
     }
     c.inventory.money = c.inventory.money.saturating_add(q.money);
-    c.tokens = c.tokens.saturating_add(q.tokens);
+    if q.tokens > 0 {
+        // Checked above.
+        let _ = equipment::receive_from(c, TOKEN, q.tokens, true, events);
+    }
     if let Some(i) = c.quests.active.iter().position(|a| a.id == q.id) {
         let a = c.quests.active.remove(i);
         let mut pairs = slot_pairs(a.slot, None).to_vec();
@@ -357,25 +366,5 @@ fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) {
     }
     // Handing in may undo another quest that wanted the same items.
     super::refresh(c, events);
-}
-
-/// Destroys `count` of `item` from the bags, last stacks first.
-fn take_items(c: &mut Char, item: u32, mut count: u32, events: &mut Vec<SessionEvent>) {
-    let stacks: Vec<(u8, u32)> = c
-        .inventory
-        .iter()
-        .filter(|(_, i)| i.entry == item)
-        .map(|(slot, i)| (slot, i.count))
-        .collect();
-    for (slot, have) in stacks.into_iter().rev() {
-        if count == 0 {
-            break;
-        }
-        let take = have.min(count);
-        // 0 destroys the whole stack.
-        let n = if take == have { 0 } else { take as u8 };
-        equipment::destroy(c, PLAYER_BAG, slot, n, events);
-        count -= take;
-    }
-    debug_assert_eq!(count, 0, "a complete quest's items are all there");
+    true
 }

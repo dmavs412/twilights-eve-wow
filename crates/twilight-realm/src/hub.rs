@@ -32,6 +32,9 @@ pub(crate) struct Npc {
     /// A vendor's list, in the merchant window's order.
     #[serde(default)]
     pub(crate) stock: Vec<u32>,
+    /// The Token vendor: it sells the buyer's band of greens for Tokens (`crate::token_vendor`).
+    #[serde(default)]
+    pub(crate) tokens: bool,
 }
 
 #[derive(Deserialize)]
@@ -53,6 +56,11 @@ impl Npc {
         HIGHGUID_UNIT << 48
             | u64::from(self.entry & 0xFF_FFFF) << 24
             | u64::from(self.guid & 0xFF_FFFF)
+    }
+
+    /// Whether it trades through the merchant window (`UNIT_NPC_FLAG_VENDOR`).
+    pub(crate) fn is_vendor(&self) -> bool {
+        self.npc_flags & 0x4 != 0
     }
 
     /// Whether it repairs gear (`UNIT_NPC_FLAG_REPAIR`).

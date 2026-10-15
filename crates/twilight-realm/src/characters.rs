@@ -53,8 +53,6 @@ pub(crate) struct Char {
     pub(crate) item_cooldowns: Vec<(u32, f32)>,
     /// The quests under way.
     pub(crate) quests: QuestLog,
-    /// The Tokens Repeatable Quests paid, which the Token vendor takes.
-    pub(crate) tokens: u32,
 }
 
 #[derive(Default)]
@@ -107,7 +105,6 @@ impl Characters {
             inventory: content::starting_inventory(),
             item_cooldowns: Vec::new(),
             quests: QuestLog::default(),
-            tokens: 0,
         });
         CHAR_CREATE_SUCCESS
     }

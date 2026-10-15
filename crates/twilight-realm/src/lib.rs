@@ -27,6 +27,7 @@ pub mod rules;
 mod save;
 mod tables;
 mod talents;
+mod token_vendor;
 mod trainer;
 mod vendor;
 mod wear;
