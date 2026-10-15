@@ -348,8 +348,12 @@
           "borrowed": { "from_class": 2, "family_bit": 34 },
           "realm": {
             "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self",
-            "effects": [{ "kind": "seal", "duration_ms": 30000, "seal": { "kind": "crusader" } }],
-            "effects_note": "A 30 s self Seal that replaces any other. Its attack power, attack speed and lighter hits, and its judgement, are not modelled yet."
+            "effects": [
+              { "kind": "seal", "duration_ms": 30000,
+                "seal": { "kind": "crusader", "attack_power": { "base": 20.0, "per_level": 4.0 }, "haste_pct": 40,
+                          "judgement_spell_id": 20300, "judgement_duration_ms": 10000, "holy_taken_pct": 20 } }
+            ],
+            "effects_note": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target."
           },
           "vanilla_reference": "R1 21082 L6 +31 AP, R3 20305 L22 +94 AP, R6 20308 +306 AP; every rank 40% faster. R3 sits mid Zealot band.",
           "tooltip_note": "Tooltip says 94 attack power and 40% faster."

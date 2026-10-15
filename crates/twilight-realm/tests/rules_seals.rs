@@ -98,3 +98,96 @@ fn judgement_of_command_grows_with_level_and_attack_power() {
     assert_eq!(judgement.at(50, 600), 270);
     assert_eq!(judgement.at(1, 0), 33);
 }
+
+/// Seal of the Crusader's 40% faster swings: the swing time over 1.4, to the millisecond.
+#[test]
+fn seal_of_the_crusader_swings_forty_percent_faster() {
+    use twilight_realm::rules::seals::hasted_attack_time;
+    assert_eq!(hasted_attack_time(2800, 40), 2000);
+    assert_eq!(hasted_attack_time(2000, 40), 1429, "1428.6");
+    assert_eq!(hasted_attack_time(3600, 40), 2571, "2571.4");
+    assert_eq!(hasted_attack_time(2000, 0), 2000);
+}
+
+/// "...but deals less damage with each attack": each hit over 1.4, so the faster swings alone
+/// deal what the slower ones did a second.
+#[test]
+fn seal_of_the_crusader_cuts_each_hit_to_match_its_haste() {
+    use twilight_realm::rules::seals::haste_cut_damage;
+    assert_eq!(haste_cut_damage(140.0, 40), 100.0);
+    assert_eq!(haste_cut_damage(70.0, 40), 50.0);
+    assert_eq!(haste_cut_damage(10.0, 0), 10.0);
+}
+
+/// Judgement of the Crusader's debuff: holy damage taken, raised by its percent and rounded.
+#[test]
+fn judgement_of_the_crusader_raises_holy_damage_taken() {
+    use twilight_realm::rules::seals::holy_taken;
+    assert_eq!(holy_taken(100, 20), 120);
+    assert_eq!(holy_taken(33, 20), 40, "39.6");
+    assert_eq!(holy_taken(7, 20), 8, "8.4");
+    assert_eq!(holy_taken(0, 20), 0);
+    assert_eq!(holy_taken(50, 0), 50);
+}
+
+/// The Zealot's Seal of the Crusader, as its content says.
+fn seal_of_the_crusader() -> Seal {
+    let skill = callings::skill(20305).expect("Seal of the Crusader");
+    assert!(skill.effects.iter().any(|e| matches!(
+        e,
+        Effect::Seal {
+            duration_ms: 30_000,
+            ..
+        }
+    )));
+    skill
+        .effects
+        .iter()
+        .find_map(|e| match *e {
+            Effect::Seal { seal, .. } => Some(seal),
+            _ => None,
+        })
+        .expect("a Seal")
+}
+
+/// 20 + 4 attack power a level (vanilla's Rank 3 gives 94 at 22, Rank 6 306 at 52); 40% faster
+/// at every level, so every level's hits are cut alike.
+#[test]
+fn seal_of_the_crusaders_attack_power_haste_and_cut_by_level() {
+    use twilight_realm::rules::seals::{haste_cut_damage, hasted_attack_time};
+    let Seal::Crusader {
+        attack_power,
+        haste_pct,
+        ..
+    } = seal_of_the_crusader()
+    else {
+        panic!("Seal of the Crusader's seal");
+    };
+    assert_eq!(attack_power.at(1, 0), 24);
+    assert_eq!(attack_power.at(10, 0), 60);
+    assert_eq!(attack_power.at(30, 0), 140);
+    assert_eq!(attack_power.at(50, 0), 220);
+    assert_eq!(attack_power.at(50, 1000), 220, "not from attack power");
+    assert_eq!(haste_pct, 40);
+    // No level in either: the same at every level.
+    assert_eq!(hasted_attack_time(2000, haste_pct), 1429);
+    assert_eq!(haste_cut_damage(140.0, haste_pct), 100.0);
+}
+
+/// Judged, Seal of the Crusader puts Judgement of the Crusader Rank 3 (20300) on the target for
+/// its 10 s: 20% more holy damage taken.
+#[test]
+fn judgement_of_the_crusader_is_ten_seconds_of_twenty_percent_more_holy_damage() {
+    let Seal::Crusader {
+        judgement_spell_id,
+        judgement_duration_ms,
+        holy_taken_pct,
+        ..
+    } = seal_of_the_crusader()
+    else {
+        panic!("Seal of the Crusader's seal");
+    };
+    assert_eq!(judgement_spell_id, 20300);
+    assert_eq!(judgement_duration_ms, 10_000);
+    assert_eq!(holy_taken_pct, 20);
+}

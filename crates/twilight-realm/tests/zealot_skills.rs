@@ -13,6 +13,8 @@ const SEAL_OF_THE_CRUSADER: u32 = 20305;
 const JUDGEMENT: u32 = 20271;
 /// Judgement of Command Rank 1, which the log names.
 const JUDGEMENT_OF_COMMAND: u32 = 20467;
+/// Judgement of the Crusader Rank 3, the debuff judging Seal of the Crusader leaves.
+const JUDGEMENT_OF_THE_CRUSADER: u32 = 20300;
 /// Spell.dbc's Seal of Command proc, which the log names.
 const SEAL_OF_COMMAND_PROC: u32 = 20424;
 /// `SPELL_SCHOOL_HOLY`.
@@ -164,6 +166,170 @@ fn judging_seal_of_command_consumes_it_for_a_holy_hit() {
     let want = (30.0 + 3.0 + 0.15 * ap).round() as u32;
     assert_eq!(hit.damage, want, "at {ap} attack power");
     assert_eq!(view.health(mob.guid), health.saturating_sub(want));
+}
+
+#[test]
+fn seal_of_the_crusader_quickens_swings_and_raises_attack_power_until_it_fades() {
+    let (mut realm, me, mob, mut view) = tanking(12);
+    let speed = view.fields(me).unit_base_attack_time(0).unwrap();
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
+
+    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    view.drain(&mut realm);
+    let seal = view.aura(me, SEAL_OF_THE_CRUSADER).expect("the Seal shows");
+    assert!(seal.slot < 32, "a buff");
+    // A level 1 Zealot: 20 + 4 attack power, and 40% faster.
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (24, 0));
+    let hasted = view.fields(me).unit_base_attack_time(0).unwrap();
+    assert_eq!(
+        hasted,
+        (f64::from(speed) / 1.4).round() as u32,
+        "from {speed} ms"
+    );
+
+    // The swings come at the hasted time, a tenth of a second at a time.
+    stand_at(&mut realm, &mob, 2.0);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let mut at = Vec::new();
+    for tick in 0..60 {
+        let events = view.run(&mut realm, 0.1);
+        if events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::AttackerState(s) if s.attacker == me))
+        {
+            at.push(tick);
+        }
+    }
+    realm.handle(RealmCommand::AttackStop);
+    assert!(at.len() >= 3, "swings at ticks {at:?}");
+    for gap in at.windows(2).map(|w| w[1] - w[0]) {
+        let ms: u32 = gap * 100;
+        assert!(
+            ms.abs_diff(hasted) <= 100 && ms < speed,
+            "a swing every {ms} ms, not {speed} ({at:?})"
+        );
+    }
+
+    // Thirty seconds on, it fades and the sheet is as it was.
+    view.run(&mut realm, 30.0 - 6.0 - 0.2);
+    assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_some());
+    view.run(&mut realm, 0.4);
+    assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_none(), "30 s");
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
+    assert_eq!(view.fields(me).unit_base_attack_time(0), Some(speed));
+}
+
+#[test]
+fn seal_of_command_replaces_seal_of_the_crusader_and_its_haste() {
+    let (mut realm, me, _, mut view) = tanking(20);
+    let speed = view.fields(me).unit_base_attack_time(0).unwrap();
+    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    view.drain(&mut realm);
+    assert!(view.fields(me).unit_base_attack_time(0).unwrap() < speed);
+    view.run(&mut realm, 1.6);
+    realm.handle(cast(SEAL_OF_COMMAND, None));
+    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_COMMAND), None);
+    assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_none());
+    assert!(view.aura(me, SEAL_OF_COMMAND).is_some());
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
+    assert_eq!(view.fields(me).unit_base_attack_time(0), Some(speed));
+}
+
+#[test]
+fn judging_seal_of_the_crusader_consumes_it_for_a_holy_damage_taken_debuff() {
+    let (mut realm, me, mob, mut view) = tanking(15);
+    let speed = view.fields(me).unit_base_attack_time(0).unwrap();
+    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    view.drain(&mut realm);
+    stand_at(&mut realm, &mob, 5.0);
+    let rage = view.rage(me);
+
+    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    let events = view.drain(&mut realm);
+    assert_eq!(refusal(&events, JUDGEMENT), None);
+    assert!(go_hits(&events, JUDGEMENT).is_some_and(|h| h.contains(&mob.guid)));
+    assert_eq!(view.rage(me), rage - 5, "5 rage");
+    assert!(
+        view.aura(me, SEAL_OF_THE_CRUSADER).is_none(),
+        "the Seal is spent"
+    );
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
+    assert_eq!(view.fields(me).unit_base_attack_time(0), Some(speed));
+    let debuff = view
+        .aura(mob.guid, JUDGEMENT_OF_THE_CRUSADER)
+        .expect("the judgement shows on the target");
+    assert!(debuff.slot >= 32, "a debuff");
+    assert!(
+        !events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::SpellDamageLog(_))),
+        "no hit of its own"
+    );
+
+    // Ten seconds, with no swing to refresh it.
+    view.run(&mut realm, 9.8);
+    assert!(view.aura(mob.guid, JUDGEMENT_OF_THE_CRUSADER).is_some());
+    view.run(&mut realm, 0.4);
+    assert!(view.aura(mob.guid, JUDGEMENT_OF_THE_CRUSADER).is_none());
+}
+
+/// Judgement of the Crusader, kept up by a landed swing past its 10 s, and then Seal of Command
+/// judged on the same target: the holy hit is a fifth bigger.
+#[test]
+fn holy_damage_at_a_judged_target_rises_by_a_fifth() {
+    let (mut realm, me, mob, mut view) = tanking(25);
+    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    view.drain(&mut realm);
+    view.run(&mut realm, 1.6);
+    stand_at(&mut realm, &mob, 2.0);
+    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(&mut realm), JUDGEMENT), None);
+    assert!(view.aura(mob.guid, JUDGEMENT_OF_THE_CRUSADER).is_some());
+    realm.handle(cast(SEAL_OF_COMMAND, None));
+    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_COMMAND), None);
+
+    // "Your melee strikes will refresh the spell's duration": one landed swing near its end.
+    view.run(&mut realm, 8.0);
+    let mut elapsed = 8.0;
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let mut landed = false;
+    for _ in 0..19 {
+        let events = view.run(&mut realm, 0.1);
+        elapsed += 0.1;
+        landed |= events.iter().any(
+            |e| matches!(e, SessionEvent::AttackerState(s) if s.attacker == me && s.damage > 0),
+        );
+        if landed {
+            break;
+        }
+    }
+    assert!(landed, "a swing landed before the judgement's 10 s were up");
+    realm.handle(RealmCommand::AttackStop);
+    // Past the judgement's first 10 s, when Judgement is ready again.
+    view.run(&mut realm, 10.5 - elapsed);
+    assert!(
+        view.aura(mob.guid, JUDGEMENT_OF_THE_CRUSADER).is_some(),
+        "refreshed by the swing"
+    );
+
+    let ap = view.fields(me).unit_attack_power().unwrap() as f64;
+    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    let events = view.drain(&mut realm);
+    assert_eq!(refusal(&events, JUDGEMENT), None);
+    let hit = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::SpellDamageLog(s) if s.spell_id == JUDGEMENT_OF_COMMAND => Some(s),
+            _ => None,
+        })
+        .expect("Judgement of Command's hit");
+    assert_eq!(hit.school, HOLY);
+    let plain = (30.0 + 3.0 + 0.15 * ap).round();
+    assert_eq!(
+        hit.damage,
+        (plain * 1.2).round() as u32,
+        "{plain} at {ap} attack power, a fifth more"
+    );
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────

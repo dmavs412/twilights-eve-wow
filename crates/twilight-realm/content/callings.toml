@@ -399,6 +399,11 @@ armour = ["cloth", "leather", "mail", "plate", "shield"]
 #
 # Seal of Command procs 7 times a minute (vmangos), each a holy hit of 70% of a weapon roll under
 # 20424, Spell.dbc's proc; judged, a holy hit under Judgement of Command Rank 1 (20467).
+#
+# Seal of the Crusader: 20 + 4 attack power a level (vanilla's Rank 3 gives 94 at 22), swings 40%
+# faster with each hit cut to match; judged, Judgement of the Crusader Rank 3 (20300) for its 10 s,
+# 20% more holy damage taken (vanilla's is flat; a percent keeps up with the levels), each landed
+# white swing at the target putting it back to its full 10 s, as the tooltip says.
 [[calling.skill]]
 key = "seal_of_command"
 spell_id = 20375
@@ -419,7 +424,9 @@ cooldown_ms = 0
 gcd_ms = 1500
 target = "self"
 borrowed = { family_bit = 34 }
-effects = [{ kind = "seal", duration_ms = 30000, seal = { kind = "crusader" } }]
+effects = [
+    { kind = "seal", duration_ms = 30000, seal = { kind = "crusader", attack_power = { base = 20.0, per_level = 4.0 }, haste_pct = 40, judgement_spell_id = 20300, judgement_duration_ms = 10000, holy_taken_pct = 20 } },
+]
 
 [[calling.skill]]
 key = "judgement"

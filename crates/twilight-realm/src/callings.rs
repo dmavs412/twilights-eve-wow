@@ -441,8 +441,16 @@ pub enum Seal {
         judgement_spell_id: u32,
         judgement: Linear,
     },
-    /// Seal of the Crusader: a Seal, and nothing more yet.
-    Crusader,
+    /// While it lasts: `attack_power` more (sized by level when cast), swings `haste_pct`% faster
+    /// and each hit cut to match. Judged: the target takes `holy_taken_pct`% more holy damage for
+    /// `judgement_duration_ms`, under the debuff `judgement_spell_id`.
+    Crusader {
+        attack_power: Linear,
+        haste_pct: u32,
+        judgement_spell_id: u32,
+        judgement_duration_ms: u32,
+        holy_taken_pct: u32,
+    },
 }
 
 #[derive(Deserialize)]
