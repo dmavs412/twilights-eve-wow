@@ -2,6 +2,7 @@
 //! (`docs/reference/vanilla-combat-rules.md`). The realm's world runs on them, and so will the
 //! systems built on top: aggro and leashing, skills, gear.
 
+pub mod aggro;
 pub mod melee;
 pub mod rage;
 pub mod stats;

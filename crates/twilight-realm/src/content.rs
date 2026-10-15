@@ -53,20 +53,3 @@ pub(crate) fn faction_template(race: u8) -> u32 {
         _ => 116,
     }
 }
-
-/// A Warrior's level-1 base stats by race, `[str, agi, sta, int, spi]` (`player_levelstats`).
-pub(crate) fn base_stats(race: u8) -> [u32; 5] {
-    match race {
-        1 => [23, 20, 22, 20, 21],
-        2 => [26, 17, 24, 17, 23],
-        3 => [25, 16, 25, 19, 19],
-        4 => [20, 25, 21, 20, 20],
-        5 => [22, 18, 23, 18, 25],
-        6 => [28, 15, 24, 15, 22],
-        7 => [18, 23, 21, 24, 20],
-        _ => [24, 22, 23, 16, 21],
-    }
-}
-
-/// A level-1 Warrior's base health (`player_classlevelstats`).
-pub(crate) const BASE_HEALTH: u32 = 20;

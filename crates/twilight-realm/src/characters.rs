@@ -128,6 +128,10 @@ impl Characters {
         self.list.iter().find(|c| c.guid == guid)
     }
 
+    pub(crate) fn get_mut(&mut self, guid: u64) -> Option<&mut Char> {
+        self.list.iter_mut().find(|c| c.guid == guid)
+    }
+
     pub(crate) fn set_position(&mut self, guid: u64, position: [f32; 3], orientation: f32) {
         if let Some(c) = self.list.iter_mut().find(|c| c.guid == guid) {
             c.position = position;

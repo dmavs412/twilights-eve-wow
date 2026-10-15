@@ -9,8 +9,11 @@
 //! ```
 
 mod characters;
+mod combat;
 mod content;
 mod fields;
+mod mobs;
+mod rng;
 pub mod rules;
 mod save;
 mod tables;
@@ -49,6 +52,20 @@ pub enum RealmCommand {
         position: [f32; 3],
         orientation: f32,
     },
+    /// The player's target; 0 clears it.
+    SetSelection {
+        guid: u64,
+    },
+    /// Start auto-attack on this unit.
+    AttackSwing {
+        guid: u64,
+    },
+    /// Stop auto-attack.
+    AttackStop,
+    /// A creature template's name, answered with [`SessionEvent::CreatureName`].
+    CreatureQuery {
+        entry: u32,
+    },
     /// Back to character select.
     Logout,
 }
@@ -60,11 +77,21 @@ pub struct Realm {
     world: Option<world::InWorld>,
     events: Vec<SessionEvent>,
     storage: Vec<Storage>,
+    rng: rng::Rng,
 }
 
 impl Realm {
+    /// A realm whose dice start from a fixed seed.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// A realm whose dice start from `seed`: the same seed and commands replay the same fights.
+    pub fn with_seed(seed: u64) -> Self {
+        Self {
+            rng: rng::Rng::new(seed),
+            ..Self::default()
+        }
     }
 
     /// Applies one command; its answers queue for [`Self::drain_events`].
@@ -105,17 +132,39 @@ impl Realm {
                     self.characters.set_position(w.guid, position, orientation);
                 }
             }
+            RealmCommand::SetSelection { guid } => {
+                if let Some(w) = &mut self.world {
+                    w.select(guid, &mut self.events);
+                }
+            }
+            RealmCommand::AttackSwing { guid } => {
+                if let Some(w) = &mut self.world {
+                    w.attack(guid, &mut self.events);
+                }
+            }
+            RealmCommand::AttackStop => {
+                if let Some(w) = &mut self.world {
+                    w.stop_attack(&mut self.events);
+                }
+            }
+            RealmCommand::CreatureQuery { entry } => {
+                self.events.push(mobs::creature_name(entry));
+            }
             RealmCommand::Logout => self.logout(),
         }
     }
 
     /// Advances the world by `dt` seconds.
-    pub fn tick(&mut self, dt: f32, _host: &dyn Host) {
+    pub fn tick(&mut self, dt: f32, host: &dyn Host) {
         let Some(w) = &mut self.world else {
             return;
         };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let ticked = w.tick(dt, host, c, &mut self.rng, &mut self.events);
         w.since_save += dt;
-        if w.since_save >= save::AUTOSAVE_SECS {
+        if ticked.leveled || w.since_save >= save::AUTOSAVE_SECS {
             w.since_save = 0.0;
             let guid = w.guid;
             self.save(guid);

@@ -1,0 +1,31 @@
+# The mobs: creature templates (vmangos `creature_template`) and where they stand.
+# One hostile mob near the Crossroads for now (#4); the camps come with #7.
+
+[[template]]
+entry = 3101
+name = "Vile Familiar"
+# CreatureType.dbc: Demon.
+creature_type = 3
+display_id = 1185
+# Monster: hostile to every player race.
+faction_template = 14
+unit_class = "paladin"
+level_min = 3
+level_max = 4
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+# Multiples of the base walk (2.5 yd/s) and run (7 yd/s) speeds.
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 10.0
+
+# `guid` is the spawn's low guid (24 bits). `position` is WoW `[x, y, z]`, z the terrain height
+# there, which the host's ground replaces once it is loaded.
+[[spawn]]
+guid = 9000015
+entry = 3101
+level = 3
+position = [-442.4, -2626.6, 95.9]
+orientation = 4.71
