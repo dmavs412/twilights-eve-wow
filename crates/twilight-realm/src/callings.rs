@@ -420,6 +420,30 @@ pub enum Effect {
         radius_yd: f32,
         strike_spell_id: u32,
     },
+    /// A Seal on the caster for `duration_ms`, under the skill's spell id. Only one Seal is ever
+    /// active: a new one replaces the old.
+    Seal { duration_ms: u32, seal: Seal },
+    /// Consumes the caster's active Seal for its judgement on the target. With no Seal active the
+    /// cast fails and costs nothing.
+    Judgement,
+}
+
+/// What a Seal does while it lasts, and what judging it does.
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum Seal {
+    /// Each landed white swing has a `procs_per_minute` chance of a holy hit of `weapon_pct`% of
+    /// a weapon roll, logged under `proc_spell_id`. Judged: a holy hit of `judgement`, logged
+    /// under `judgement_spell_id`.
+    Command {
+        procs_per_minute: f32,
+        weapon_pct: u32,
+        proc_spell_id: u32,
+        judgement_spell_id: u32,
+        judgement: Linear,
+    },
+    /// Seal of the Crusader: a Seal, and nothing more yet.
+    Crusader,
 }
 
 #[derive(Deserialize)]

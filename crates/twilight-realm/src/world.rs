@@ -421,6 +421,7 @@ impl InWorld {
         }
         if swing.damage > 0 {
             self.sweep(target, swing.damage, c, rng, events, ticked);
+            self.seal_swing_landed(target, c, rng, events, ticked);
             self.white_swing_landed(i, from_front, may_swing_again, c, rng, events, ticked);
         }
     }

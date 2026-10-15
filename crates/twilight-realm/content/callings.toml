@@ -395,8 +395,10 @@ armour = ["cloth", "leather", "mail", "plate", "shield"]
 
 # Borrowed Paladin spells (`borrowed`): the client rewrites each row to cost `rage_cost` rage in any
 # stance, as a Warrior spell with its own family bit (33..63, which no Warrior spell uses), so a
-# talent's spell modifier can name it (ADR 0003). The Seals and Judgement do nothing yet: their
-# effects come with the realm's Seals.
+# talent's spell modifier can name it (ADR 0003).
+#
+# Seal of Command procs 7 times a minute (vmangos), each a holy hit of 70% of a weapon roll under
+# 20424, Spell.dbc's proc; judged, a holy hit under Judgement of Command Rank 1 (20467).
 [[calling.skill]]
 key = "seal_of_command"
 spell_id = 20375
@@ -405,7 +407,9 @@ cooldown_ms = 0
 gcd_ms = 1500
 target = "self"
 borrowed = { family_bit = 33 }
-effects = []
+effects = [
+    { kind = "seal", duration_ms = 30000, seal = { kind = "command", procs_per_minute = 7.0, weapon_pct = 70, proc_spell_id = 20424, judgement_spell_id = 20467, judgement = { base = 30.0, per_level = 3.0, per_ap = 0.15 } } },
+]
 
 [[calling.skill]]
 key = "seal_of_the_crusader"
@@ -415,7 +419,7 @@ cooldown_ms = 0
 gcd_ms = 1500
 target = "self"
 borrowed = { family_bit = 34 }
-effects = []
+effects = [{ kind = "seal", duration_ms = 30000, seal = { kind = "crusader" } }]
 
 [[calling.skill]]
 key = "judgement"
@@ -426,7 +430,7 @@ gcd_ms = 0
 target = "enemy"
 range_yd = [0.0, 10.0]
 borrowed = { family_bit = 35 }
-effects = []
+effects = [{ kind = "judgement" }]
 
 # Rank 4, the one whose tooltip says six seconds.
 [[calling.skill]]

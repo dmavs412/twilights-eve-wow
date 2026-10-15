@@ -91,9 +91,9 @@ Judgement's 6% `ManaCostPercentage` is zeroed with the other cost terms.
 
 | skill | id | rage | cd | reach | bit | realm |
 |---|---|---|---|---|---|---|
-| Seal of Command | 20375 (R1) | 10 | – | self | 33 | effect pending (#24) |
-| Seal of the Crusader | 20305 (R3) | 10 | – | self | 34 | effect pending (#25) |
-| Judgement | 20271 | 5 | 10 s | 10 yd | 35 | effect pending (#24, #25) |
+| Seal of Command | 20375 (R1) | 10 | – | self | 33 | 30 s Seal: a landed white swing procs 7 times a minute for a holy hit of 70% of a weapon roll (20424) |
+| Seal of the Crusader | 20305 (R3) | 10 | – | self | 34 | 30 s Seal; its buff and judgement pending (#25) |
+| Judgement | 20271 | 5 | 10 s | 10 yd | 35 | consumes the Seal; Command's: a holy hit of 30 + 3·L + 0.15·AP (20467); no Seal: fails, no rage spent |
 | Hammer of Justice | 10308 (R4) | 15 | 60 s | 10 yd | 36 | 6 s stun (the only rank whose tooltip says 6 s) |
 | Mortal Strike | 12294 | 30 | 6 s | melee | – | Vanguard's |
 | Charge | 6178 | 0 | 15 s | 8–25 yd | – | Vanguard's |
@@ -101,6 +101,10 @@ Judgement's 6% `ManaCostPercentage` is zeroed with the other cost terms.
 Mortal Strike and Charge carry Vanguard's data unchanged: `callings::skill` answers with a spell's
 first table, and a content test keeps shared skills identical. Zealot's Talent Tree is under
 [Talent trees](#talent-trees).
+
+Only one Seal is active: casting another replaces it. Holy damage (`rules::school`) skips armour,
+is logged with school 1, and is not raised by the talents and buffs that raise physical damage.
+Neither the proc nor Judgement's hit rolls the melee table or crits.
 
 ## Talent trees
 

@@ -1,13 +1,22 @@
-//! The Zealot's borrowed Paladin skills, through the realm's seam: Hammer of Justice's stun, and
-//! what the Seals and Judgement cost before their effects arrive.
+//! The Zealot's borrowed Paladin skills, through the realm's seam: Hammer of Justice's stun, the
+//! Seals (one at a time; Seal of Command's holy procs) and Judgement consuming the Seal.
 
 mod common;
 
+use benilla_protocol::messages::SpellDamageLog;
 use benilla_protocol::SessionEvent;
 use common::*;
 
 const HAMMER_OF_JUSTICE: u32 = 10308;
 const SEAL_OF_COMMAND: u32 = 20375;
+const SEAL_OF_THE_CRUSADER: u32 = 20305;
+const JUDGEMENT: u32 = 20271;
+/// Judgement of Command Rank 1, which the log names.
+const JUDGEMENT_OF_COMMAND: u32 = 20467;
+/// Spell.dbc's Seal of Command proc, which the log names.
+const SEAL_OF_COMMAND_PROC: u32 = 20424;
+/// `SPELL_SCHOOL_HOLY`.
+const HOLY: u8 = 1;
 
 #[test]
 fn hammer_of_justice_stuns_for_six_seconds_and_the_mob_does_not_swing() {
@@ -51,6 +60,110 @@ fn a_seal_costs_ten_rage_in_battle_stance() {
     realm.handle(cast(SEAL_OF_COMMAND, None));
     assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_COMMAND), None);
     assert_eq!(view.rage(me), rage - 10);
+}
+
+#[test]
+fn seal_of_command_makes_landed_swings_proc_holy_damage() {
+    let (mut realm, me, mob, mut view) = tanking(12);
+    realm.handle(cast(SEAL_OF_COMMAND, None));
+    view.drain(&mut realm);
+    let seal = view.aura(me, SEAL_OF_COMMAND).expect("the Seal shows");
+    assert!(seal.slot < 32, "a buff");
+
+    stand_at(&mut realm, &mob, 2.0);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let events = view.run(&mut realm, 20.0);
+    let procs: Vec<&SpellDamageLog> = events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellDamageLog(s) if s.spell_id == SEAL_OF_COMMAND_PROC => Some(s),
+            _ => None,
+        })
+        .collect();
+    assert!(!procs.is_empty(), "seven procs a minute: some in 20 s");
+    for p in &procs {
+        assert_eq!(p.school, HOLY, "logged as holy");
+        assert_eq!((p.attacker, p.target), (me, mob.guid));
+        assert!(p.damage > 0);
+    }
+    // Each proc rides on a white swing that landed just before it.
+    for (i, e) in events.iter().enumerate() {
+        if matches!(e, SessionEvent::SpellDamageLog(s) if s.spell_id == SEAL_OF_COMMAND_PROC) {
+            let swing = events[..i].iter().rev().find_map(|e| match e {
+                SessionEvent::AttackerState(s) if s.attacker == me => Some(s.damage),
+                _ => None,
+            });
+            assert!(swing.is_some_and(|d| d > 0), "a landed swing first");
+        }
+    }
+    let swings = events
+        .iter()
+        .filter(|e| matches!(e, SessionEvent::AttackerState(s) if s.attacker == me && s.damage > 0))
+        .count();
+    assert!(procs.len() < swings, "a chance, not every swing");
+}
+
+#[test]
+fn casting_another_seal_removes_seal_of_command() {
+    let (mut realm, me, _, mut view) = tanking(20);
+    realm.handle(cast(SEAL_OF_COMMAND, None));
+    view.drain(&mut realm);
+    assert!(view.aura(me, SEAL_OF_COMMAND).is_some());
+    // Past the global cooldown.
+    view.run(&mut realm, 1.6);
+    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_THE_CRUSADER), None);
+    assert!(
+        view.aura(me, SEAL_OF_COMMAND).is_none(),
+        "one Seal at a time"
+    );
+    assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_some());
+}
+
+#[test]
+fn judgement_with_no_seal_fails_and_spends_no_rage() {
+    let (mut realm, me, mob, mut view) = tanking(10);
+    stand_at(&mut realm, &mob, 5.0);
+    let rage = view.rage(me);
+    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    let events = view.drain(&mut realm);
+    assert!(refusal(&events, JUDGEMENT).is_some(), "no Seal to judge");
+    assert_eq!(go_hits(&events, JUDGEMENT), None);
+    assert_eq!(view.rage(me), rage, "nothing spent");
+}
+
+#[test]
+fn judging_seal_of_command_consumes_it_for_a_holy_hit() {
+    let (mut realm, me, mob, mut view) = tanking(15);
+    realm.handle(cast(SEAL_OF_COMMAND, None));
+    view.drain(&mut realm);
+    stand_at(&mut realm, &mob, 5.0);
+    let rage = view.rage(me);
+    let health = view.health(mob.guid);
+    let ap = view.fields(me).unit_attack_power().unwrap() as f64;
+
+    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    let events = view.drain(&mut realm);
+    assert_eq!(refusal(&events, JUDGEMENT), None);
+    assert!(go_hits(&events, JUDGEMENT).is_some_and(|h| h.contains(&mob.guid)));
+    assert_eq!(view.rage(me), rage - 5, "5 rage");
+    assert!(
+        view.aura(me, SEAL_OF_COMMAND).is_none(),
+        "the Seal is spent"
+    );
+    let hit = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::SpellDamageLog(s) if s.spell_id == JUDGEMENT_OF_COMMAND => Some(s),
+            _ => None,
+        })
+        .expect("Judgement of Command's hit");
+    assert_eq!(hit.school, HOLY);
+    assert_eq!((hit.attacker, hit.target), (me, mob.guid));
+    // A level 1 Zealot: 30 + 3 a level + 0.15 an attack power point, and no armour off it.
+    let want = (30.0 + 3.0 + 0.15 * ap).round() as u32;
+    assert_eq!(hit.damage, want, "at {ap} attack power");
+    assert_eq!(view.health(mob.guid), health.saturating_sub(want));
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────

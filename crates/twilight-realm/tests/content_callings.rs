@@ -345,6 +345,12 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(base, linear(&want["base"]), "{key}");
             assert_eq!(per_extra_rage, linear(&want["per_extra_rage"]), "{key}");
         }
+        Effect::Seal { .. } | Effect::Judgement => {
+            assert!(matches!(kind, "seal" | "judgement"), "{key}");
+            let want: Effect =
+                serde_json::from_value(want.clone()).unwrap_or_else(|e| panic!("{key}: {e}"));
+            assert_eq!(*got, want, "{key}");
+        }
         // Only active talents' skills do these, and the reference has no realm half for them.
         Effect::AuraMaxHealthPct { .. }
         | Effect::AuraDamagePct { .. }

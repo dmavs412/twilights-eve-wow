@@ -329,8 +329,12 @@
           "borrowed": { "from_class": 2, "family_bit": 33 },
           "realm": {
             "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self",
-            "effects": [],
-            "effects_note": "The Seal's effect comes with the realm's Seals: a 30 s self aura; a landed white swing may add a holy hit of 70% weapon damage."
+            "effects": [
+              { "kind": "seal", "duration_ms": 30000,
+                "seal": { "kind": "command", "procs_per_minute": 7.0, "weapon_pct": 70, "proc_spell_id": 20424,
+                          "judgement_spell_id": 20467, "judgement": { "base": 30.0, "per_level": 3.0, "per_ap": 0.15 } } }
+            ],
+            "effects_note": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour."
           },
           "vanilla_reference": "R1 is the talent's (Talent 1481) only rank: 65 mana, 30 s, $20424s1 = 70% weapon damage.",
           "tooltip_note": "Tooltip says 70% of normal weapon damage."
@@ -344,8 +348,8 @@
           "borrowed": { "from_class": 2, "family_bit": 34 },
           "realm": {
             "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self",
-            "effects": [],
-            "effects_note": "The Seal's effect comes with the realm's Seals: a 30 s self aura of attack power and attack speed, with less damage per hit."
+            "effects": [{ "kind": "seal", "duration_ms": 30000, "seal": { "kind": "crusader" } }],
+            "effects_note": "A 30 s self Seal that replaces any other. Its attack power, attack speed and lighter hits, and its judgement, are not modelled yet."
           },
           "vanilla_reference": "R1 21082 L6 +31 AP, R3 20305 L22 +94 AP, R6 20308 +306 AP; every rank 40% faster. R3 sits mid Zealot band.",
           "tooltip_note": "Tooltip says 94 attack power and 40% faster."
@@ -360,8 +364,8 @@
           "borrowed": { "from_class": 2, "family_bit": 35 },
           "realm": {
             "rage_cost": 5, "cooldown_ms": 10000, "gcd_ms": 0, "range_yd": 10, "target": "enemy",
-            "effects": [],
-            "effects_note": "Judgement comes with the realm's Seals: it consumes the active Seal for that Seal's judgement, and with no Seal fails and costs nothing."
+            "effects": [{ "kind": "judgement" }],
+            "effects_note": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing."
           },
           "vanilla_reference": "The only castable Judgement: 10 s cooldown, 10 yd, off the global cooldown.",
           "tooltip_note": "Tooltip refers to the Seals."
