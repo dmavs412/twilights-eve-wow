@@ -2,6 +2,7 @@
 //! fights between them, one tick at a time.
 
 mod cast;
+mod hearth;
 
 use benilla_protocol::messages::{AttackSwingError, LevelUpInfo, ObjectType, XpGain};
 use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
@@ -92,6 +93,8 @@ pub(crate) struct InWorld {
     skills: cast::Skills,
     /// The Hub's Warrior trainer, shown once the ground is there.
     trainer: crate::trainer::Presence,
+    /// The teleport the client has yet to acknowledge.
+    teleports: hearth::Teleports,
 }
 
 impl InWorld {
@@ -159,6 +162,7 @@ impl InWorld {
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
             trainer: Default::default(),
+            teleports: hearth::Teleports::default(),
         }
     }
 
@@ -411,7 +415,10 @@ impl InWorld {
                         self.guid,
                         &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
                     ));
+                    // A hit breaks a timed cast (the Hearthstone's interrupts on damage).
+                    self.interrupt_cast(events);
                 }
+                let p = &mut self.player;
                 if !p.alive() {
                     // Death and the way back are a later ticket's; the fight just ends.
                     if let Some(victim) = p.attacking.take() {

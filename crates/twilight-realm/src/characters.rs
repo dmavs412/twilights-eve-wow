@@ -47,6 +47,9 @@ pub(crate) struct Char {
     pub(crate) talent_wipes: u32,
     /// Gear, bags and money.
     pub(crate) inventory: Inventory,
+    /// The items cooling down after use, `(entry, seconds left)`; the clock runs only in the
+    /// world.
+    pub(crate) item_cooldowns: Vec<(u32, f32)>,
 }
 
 #[derive(Default)]
@@ -96,7 +99,8 @@ impl Characters {
             action_bar: None,
             talents: Vec::new(),
             talent_wipes: 0,
-            inventory: Inventory::default(),
+            inventory: content::starting_inventory(),
+            item_cooldowns: Vec::new(),
         });
         CHAR_CREATE_SUCCESS
     }

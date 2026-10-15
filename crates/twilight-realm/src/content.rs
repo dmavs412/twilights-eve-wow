@@ -8,6 +8,22 @@ pub const THE_BARRENS: u32 = 17;
 /// The Hub: the Crossroads, in front of the inn, facing the road north. `[x, y, z, facing]`.
 pub const CROSSROADS: [f32; 4] = [-441.8, -2648.6, 95.9, 1.6];
 
+/// What every new character carries, `(player slot, item entry)`: vanilla's Warrior starting
+/// weapon in the main hand, and a Hearthstone in the backpack's first slot.
+const STARTING_ITEMS: [(u8, u32); 2] = [(15, WORN_SHORTSWORD), (23, HEARTHSTONE)];
+const WORN_SHORTSWORD: u32 = 25;
+const HEARTHSTONE: u32 = 6948;
+
+/// A new character's belongings.
+pub(crate) fn starting_inventory() -> crate::inventory::Inventory {
+    let mut inventory = crate::inventory::Inventory::default();
+    for (slot, entry) in STARTING_ITEMS {
+        let item = inventory.new_item(entry, 1);
+        inventory.put(slot, item);
+    }
+    inventory
+}
+
 /// A node in the advancement tree (`GLOSSARY.md`). Saved by name, so the names are the format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]

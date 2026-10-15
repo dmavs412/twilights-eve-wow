@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use benilla_protocol::messages::{ItemDamage, ItemInfo, ItemSpellEntry};
+use benilla_protocol::messages::{ItemDamage, ItemInfo, ItemSpellEntry, ItemUseSpell};
 use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
@@ -49,6 +49,12 @@ pub(crate) struct Template {
     pub(crate) sheath: u32,
     pub(crate) material: i32,
     pub(crate) pool_level: u8,
+    /// The on-use spell, 0 for none.
+    pub(crate) use_spell: u32,
+    /// The on-use cooldown, -1 for the spell's own.
+    pub(crate) use_cooldown_ms: i32,
+    /// The on-use category cooldown, -1 for the spell's own.
+    pub(crate) use_category_cooldown_ms: i32,
 }
 
 impl Default for Template {
@@ -85,6 +91,9 @@ impl Default for Template {
             sheath: 0,
             material: 0,
             pool_level: 0,
+            use_spell: 0,
+            use_cooldown_ms: -1,
+            use_category_cooldown_ms: -1,
         }
     }
 }
@@ -101,7 +110,7 @@ struct Table {
     item: Vec<Template>,
 }
 
-/// Every template, by entry.
+/// Every world-drop template, by entry: what the loot pools draw from.
 pub(crate) fn all() -> &'static HashMap<u32, Template> {
     static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
     ITEMS.get_or_init(|| {
@@ -111,10 +120,22 @@ pub(crate) fn all() -> &'static HashMap<u32, Template> {
     })
 }
 
-pub(crate) fn template(entry: u32) -> Option<&'static Template> {
-    all().get(&entry)
+/// The items the realm hands out itself (`content/given_items.toml`), by entry.
+fn given() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table = toml::from_str(include_str!("../content/given_items.toml"))
+            .expect("content/given_items.toml parses");
+        table.item.into_iter().map(|t| (t.entry, t)).collect()
+    })
 }
 
+pub(crate) fn template(entry: u32) -> Option<&'static Template> {
+    all().get(&entry).or_else(|| given().get(&entry))
+}
+
+/// `ITEM_SPELLTRIGGER_ON_USE`.
+const ON_USE: u32 = 0;
 /// `ITEM_SPELLTRIGGER_ON_EQUIP`.
 const ON_EQUIP: u32 = 1;
 
@@ -138,6 +159,40 @@ fn info(t: &Template) -> ItemInfo {
         .collect();
     let first = damages.first().copied();
     let [holy, fire, nature, frost, shadow, arcane] = t.resistances;
+    // The on-use spell takes the first block, as the stock Hearthstone's does.
+    let use_spell = (t.use_spell != 0).then_some(ItemUseSpell {
+        spell_id: t.use_spell,
+        cooldown_ms: t.use_cooldown_ms,
+        category: 0,
+        category_cooldown_ms: t.use_category_cooldown_ms,
+    });
+    let mut spells: Vec<ItemSpellEntry> = use_spell
+        .iter()
+        .map(|u| ItemSpellEntry {
+            index: 0,
+            spell_id: u.spell_id,
+            trigger: ON_USE,
+            charges: 0,
+            cooldown_ms: u.cooldown_ms,
+            category: u.category,
+            category_cooldown_ms: u.category_cooldown_ms,
+        })
+        .collect();
+    let first_equip = spells.len();
+    spells.extend(
+        t.equip_spells
+            .iter()
+            .enumerate()
+            .map(|(i, &spell_id)| ItemSpellEntry {
+                index: (first_equip + i) as u8,
+                spell_id,
+                trigger: ON_EQUIP,
+                charges: 0,
+                cooldown_ms: -1,
+                category: 0,
+                category_cooldown_ms: -1,
+            }),
+    );
     ItemInfo {
         class: t.class,
         subclass: t.subclass,
@@ -176,22 +231,9 @@ fn info(t: &Template) -> ItemInfo {
         delay_ms: t.speed_ms,
         ammo_type: 0,
         ranged_mod_range: 0.0,
-        spells: t
-            .equip_spells
-            .iter()
-            .enumerate()
-            .map(|(i, &spell_id)| ItemSpellEntry {
-                index: i as u8,
-                spell_id,
-                trigger: ON_EQUIP,
-                charges: 0,
-                cooldown_ms: -1,
-                category: 0,
-                category_cooldown_ms: -1,
-            })
-            .collect(),
+        spells,
         spell_charges_0: 0,
-        use_spell: None,
+        use_spell,
         bonding: t.bonding,
         description: String::new(),
         page_text: 0,

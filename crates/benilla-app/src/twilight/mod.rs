@@ -308,6 +308,13 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::TalentWipeConfirm { trainer } => {
             Some(RealmCommand::TalentWipeConfirm { trainer })
         }
+        ClientCommand::UseItem {
+            bag_index, slot, ..
+        } => Some(RealmCommand::UseItem {
+            bag: bag_index,
+            slot,
+        }),
+        ClientCommand::TeleportAck { counter, .. } => Some(RealmCommand::TeleportAck { counter }),
         _ => None,
     }
 }

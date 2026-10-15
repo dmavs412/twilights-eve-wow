@@ -69,6 +69,9 @@ struct SaveV1 {
     /// Respecs bought, which price the next. Added within version 1.
     #[serde(default)]
     talent_wipes: u32,
+    /// `[item entry, ms left]` per item cooling down after use. Optional within version 1.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    item_cooldowns: Vec<[u32; 2]>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -135,6 +138,11 @@ pub(crate) fn export(c: &Char) -> String {
         money: c.inventory.money,
         talents: c.talents.clone(),
         talent_wipes: c.talent_wipes,
+        item_cooldowns: c
+            .item_cooldowns
+            .iter()
+            .map(|&(entry, left)| [entry, (left * 1000.0).round() as u32])
+            .collect(),
         items: saved_items(&c.inventory),
     };
     toml::to_string(&save).expect("a save always serializes")
@@ -166,6 +174,11 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         talents: s.talents,
         talent_wipes: s.talent_wipes,
         inventory: load_inventory(s.money, &s.items)?,
+        item_cooldowns: s
+            .item_cooldowns
+            .iter()
+            .map(|&[entry, ms]| (entry, ms as f32 / 1000.0))
+            .collect(),
     };
     crate::talents::keep_valid(&mut c);
     Ok(c)
