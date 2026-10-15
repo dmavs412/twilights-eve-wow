@@ -13,15 +13,17 @@ use benilla_protocol::messages::{
 use benilla_protocol::SessionEvent;
 
 use super::{in_front, melee_reach, InWorld, Ticked};
-use crate::callings::{self, Effect, Skill, Target, Weapon};
+use crate::callings::{self, Effect, Seal, Skill, Target, Weapon};
 use crate::characters::Char;
 use crate::clock;
 use crate::fields::*;
 use crate::items;
 use crate::mobs::State;
 use crate::rng::Rng;
-use crate::rules::melee::{armor_reduced, Outcome, PlayerOffense, ROLL};
+use crate::rules::melee::{Outcome, PlayerOffense, ROLL};
 use crate::rules::rage;
+use crate::rules::school::{mitigated, School};
+use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::WarriorStats;
 use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled};
@@ -176,6 +178,8 @@ enum AuraKind {
     Heal {
         per_tick: u32,
     },
+    /// The player's one active Seal.
+    Seal(Seal),
 }
 
 impl AuraKind {
@@ -188,6 +192,7 @@ impl AuraKind {
                 | AuraKind::DamagePct { .. }
                 | AuraKind::Sweeping { .. }
                 | AuraKind::Heal { .. }
+                | AuraKind::Seal(_)
         )
     }
 }
@@ -259,6 +264,17 @@ impl Skills {
             },
             events,
         )
+    }
+
+    /// The player's active Seal.
+    fn seal(&self) -> Option<Seal> {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .find_map(|a| match a.kind {
+                AuraKind::Seal(seal) => Some(seal),
+                _ => None,
+            })
     }
 
     /// Whether a skill holds the player in combat.
@@ -641,6 +657,10 @@ impl InWorld {
         if skill.requires_out_of_combat && p.in_combat {
             return Err(SPELL_FAILED_AFFECTING_COMBAT);
         }
+        // Judgement needs a Seal to judge.
+        if skill.effects.contains(&Effect::Judgement) && self.skills.seal().is_none() {
+            return Err(SPELL_FAILED_CASTER_AURASTATE);
+        }
         match skill.target {
             Target::Caster => Ok(vec![self.guid]),
             Target::SelfArea => Ok(self
@@ -959,7 +979,109 @@ impl InWorld {
                 self.skills
                     .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
             }
+            Effect::Seal { duration_ms, seal } => {
+                // One Seal at a time: the new one replaces any other.
+                let me = self.guid;
+                let gone = self.skills.remove_where(
+                    |a| {
+                        a.unit == me
+                            && a.spell_id != skill.spell_id
+                            && matches!(a.kind, AuraKind::Seal(_))
+                    },
+                    events,
+                );
+                self.faded(&gone, events);
+                let a = aura(AuraKind::Seal(seal), skill.spell_id, duration_ms, 0);
+                self.skills.apply(a, events);
+            }
+            Effect::Judgement => {
+                let me = self.guid;
+                let gone = self.skills.remove_where(
+                    |a| a.unit == me && matches!(a.kind, AuraKind::Seal(_)),
+                    events,
+                );
+                self.faded(&gone, events);
+                let judged = gone.iter().find_map(|a| match a.kind {
+                    AuraKind::Seal(seal) => Some(seal),
+                    _ => None,
+                });
+                match judged {
+                    Some(Seal::Command {
+                        judgement_spell_id,
+                        judgement,
+                        ..
+                    }) => {
+                        let raw = sized(judgement);
+                        self.holy_hit(judgement_spell_id, target, raw, c, rng, events, ticked);
+                    }
+                    Some(Seal::Crusader) | None => {}
+                }
+            }
         }
+    }
+
+    /// A white swing of the player's landed on `target`: the active Seal's proc (Seal of
+    /// Command's holy hit).
+    pub(super) fn seal_swing_landed(
+        &mut self,
+        target: u64,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some(Seal::Command {
+            procs_per_minute,
+            weapon_pct,
+            proc_spell_id,
+            ..
+        }) = self.skills.seal()
+        else {
+            return;
+        };
+        if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
+            return;
+        }
+        let stats = buffed(&self.player.stats, &self.skills);
+        if rng.below(ROLL) >= seals::ppm_chance(procs_per_minute, stats.attack_time_ms) {
+            return;
+        }
+        let roll = weapon_roll(&stats, Weapon::Normal, rng);
+        let raw = seals::weapon_pct_damage(roll, weapon_pct);
+        self.holy_hit(proc_spell_id, target, raw, c, rng, events, ticked);
+    }
+
+    /// `raw` holy damage at `target`: no armour stops it. Logged as holy, taken off, maybe a
+    /// kill.
+    #[allow(clippy::too_many_arguments)]
+    fn holy_hit(
+        &mut self,
+        spell_id: u32,
+        target: u64,
+        raw: u32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
+            return;
+        };
+        let school = School::Holy;
+        let damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
+        events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
+            target,
+            attacker: self.guid,
+            spell_id,
+            damage,
+            school: school.index(),
+            absorb: 0,
+            resist: 0,
+            periodic: false,
+            blocked: 0,
+            hit_info: 0,
+        }));
+        self.hurt(target, damage, c, rng, events, ticked);
     }
 
     /// `raw` physical damage at `target`, after its armour: logged, taken off, maybe a kill.
@@ -978,7 +1100,8 @@ impl InWorld {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
             return;
         };
-        let mut damage = armor_reduced(raw, mob.stats.armor, self.player.stats.level);
+        let school = School::Physical;
+        let mut damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
         if how == Landed::Crit {
             damage = crit_damage(damage, crate::talents::skill_crit_damage_pct(c));
         }
@@ -988,7 +1111,7 @@ impl InWorld {
             attacker: self.guid,
             spell_id,
             damage,
-            school: 0,
+            school: school.index(),
             absorb: 0,
             resist: 0,
             periodic: false,

@@ -1,0 +1,16 @@
+//! The Seals' numbers: how often a Seal's swing proc goes off, and what it deals.
+
+use super::melee::ROLL;
+
+/// A procs-per-minute chance on one swing of `attack_time_ms`, in basis points of [`ROLL`]
+/// (`Unit::GetPPMProcChance`: `ppm × speed / 60`).
+pub fn ppm_chance(ppm: f32, attack_time_ms: u32) -> u32 {
+    let chance = f64::from(ppm) * f64::from(attack_time_ms) / 60_000.0;
+    (chance * f64::from(ROLL)).round() as u32
+}
+
+/// `pct`% of a weapon `roll`, rounded (`SPELL_EFFECT_WEAPON_PERCENT_DAMAGE`, Seal of Command's
+/// 70%).
+pub fn weapon_pct_damage(roll: f32, pct: u32) -> u32 {
+    (f64::from(roll) * f64::from(pct) / 100.0).round().max(0.0) as u32
+}
