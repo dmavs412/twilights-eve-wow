@@ -257,26 +257,26 @@ id = 64001
 giver = 5810
 level = 10
 zone_or_sort = -81
-advancement = { from = "basic_warrior", to = "warrior" }
+advancement = { from = "basic_warrior", to = "vanguard" }
 title = "The Warrior's Path"
 objectives = "Speak with the Warrior trainer at the Crossroads to take up the warrior's path."
 details = "You have learned all a Basic Warrior can learn, $N. Strength alone carried you this far; from here, discipline must carry you further.$B$BTake up the warrior's path and you begin again, untested, among the youngest of our blades. But you will not be the same fighter you were. Your body remembers. Your arm is stronger.$B$BSay the word, and it begins."
 progress = "Say the word, $N, and it begins."
-completion = "Then it is done. Forget your old habits, $N: you are a Warrior now, and a Warrior starts over. Go and earn your scars again."
+completion = "Then it is done. Forget your old habits, $N: you are a Vanguard now, and a Vanguard starts over. Go and earn your scars again."
 money = 0
 tokens = 0
 
-# Champion (Tier 2) is past this slice: the quest is offered at Tier 1's cap and never finishes.
+# Ironclad (Tier 2) has no kit yet: the quest is offered at Vanguard's cap and never finishes.
 [[quest]]
 id = 64002
 giver = 5810
 level = 30
 zone_or_sort = -81
-advancement = { from = "warrior", to = "champion", completable = false }
-title = "The Champion's Trial"
-objectives = "Await the Champions' summons."
-details = "Thirty battles' worth of scars, and still standing. Few warriors come this far, $N.$B$BThe Champions do not take just anyone. When they are ready to test you, I will send word. Until then, keep this charge with you, and keep your blade sharp."
-progress = "The Champions have not yet sent for you, $N. Patience."
-completion = "The Champions have not yet sent for you, $N. Patience."
+advancement = { from = "vanguard", to = "ironclad", completable = false }
+title = "The Ironclad's Oath"
+objectives = "Await the Ironclads' summons."
+details = "Thirty battles' worth of scars, and still standing at the front. Few Vanguards come this far, $N.$B$BThe Ironclads hold the line when every other blade has broken, and they do not take just anyone. When they are ready to test you, I will send word. Until then, keep your shield arm strong."
+progress = "The Ironclads have not yet sent for you, $N. Patience."
+completion = "The Ironclads have not yet sent for you, $N. Patience."
 money = 0
 tokens = 0

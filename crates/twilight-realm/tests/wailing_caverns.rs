@@ -420,8 +420,8 @@ const RUN_GEAR: [(u8, u32); 8] = [
 fn boss_blues(seed: u64, level: u8) -> Vec<(u32, u32)> {
     let mut items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
     items.push((MAIN_HAND, PROSPECTOR_AXE, 1));
-    // A Tier 1 Warrior: past the Basic Warrior's Tier Cap, with the Tier Bonus.
-    let mut s = Script::seeded_as("warrior", seed, level, 0, &items);
+    // A Vanguard: past the Basic Warrior's Tier Cap, with the Tier Bonus.
+    let mut s = Script::seeded_as("vanguard", seed, level, 0, &items);
     s.enter();
     kill(&mut s, ANACONDRA_GUID, ANACONDRA_AT);
     let loot = s.send(RealmCommand::Loot {

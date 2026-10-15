@@ -1,6 +1,6 @@
 //! Tiers and Advancement, played through the realm's seam: the Tier Cap that stops XP, the
 //! Advancement Quest at the Warrior trainer, what Advancement replaces and what it keeps, the
-//! Tier Bonus, and Champion's quest that cannot be finished.
+//! Tier Bonus, and Ironclad's quest that cannot be finished.
 
 mod common;
 mod gear_common;
@@ -81,13 +81,13 @@ fn a_basic_warrior_at_the_tier_cap_gains_no_xp() {
 }
 
 #[test]
-fn a_tier_1_warrior_levels_past_ten_and_stops_at_thirty() {
+fn a_vanguard_levels_past_ten_and_stops_at_thirty() {
     let quest = &[(CROCOLISK_SKINS, [0; 4])];
-    let (mut realm, me, mut events) = questing_as("warrior", 10, EIGHT_SKINS, 0, quest);
+    let (mut realm, me, mut events) = questing_as("vanguard", 10, EIGHT_SKINS, 0, quest);
     events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
     assert_eq!(descriptor(&events, me).unit_level(), Some(11));
 
-    let (mut realm, me, mut events) = questing_as("warrior", 30, EIGHT_SKINS, 0, quest);
+    let (mut realm, me, mut events) = questing_as("vanguard", 30, EIGHT_SKINS, 0, quest);
     let turned_in = hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS);
     assert_eq!(completed(&turned_in).unwrap().xp, 0, "Tier 1's cap is 30");
     events.extend(turned_in);
@@ -97,9 +97,9 @@ fn a_tier_1_warrior_levels_past_ten_and_stops_at_thirty() {
 // ── The Tier Bonus ──────────────────────────────────────────────────────────────────────────────
 
 #[test]
-fn a_tier_1_warrior_has_the_tier_bonus_on_its_sheet() {
+fn a_vanguard_has_the_tier_bonus_on_its_sheet() {
     let (_, me, basic) = questing(1, &[], 0, &[]);
-    let (_, _, tier1) = questing_as("warrior", 1, &[], 0, &[]);
+    let (_, _, tier1) = questing_as("vanguard", 1, &[], 0, &[]);
     let (basic, tier1) = (descriptor(&basic, me), descriptor(&tier1, me));
     let stats = |f: &benilla_protocol::ObjectFields| -> [u32; 5] {
         std::array::from_fn(|i| f.unit_stat(i as u8).unwrap())
@@ -120,15 +120,16 @@ fn a_tier_1_warrior_has_the_tier_bonus_on_its_sheet() {
 
 /// The Warrior trainer (Uzzek's entry), who gives the Advancement Quests.
 const UZZEK: u32 = 5810;
-/// Into Tier 1 Warrior, and Champion's, which cannot be finished.
+/// Into Vanguard, and Ironclad's, which cannot be finished.
 const THE_WARRIORS_PATH: u32 = 64001;
-const THE_CHAMPIONS_TRIAL: u32 = 64002;
+const THE_IRONCLADS_OATH: u32 = 64002;
 /// QuestSort.dbc 81, "Warrior": the quest log's header, as a negative `ZoneOrSort`.
 const SORT_WARRIOR: i32 = -81;
 
 // The two Callings' skills (`content/callings.toml`).
 const BASIC_SKILLS: [u32; 2] = [78, 100];
-const TIER_1_SKILLS: [u32; 8] = [12294, 7887, 6178, 6546, 8198, 845, 5308, 6192];
+/// Vanguard's: Mortal Strike, Overpower, Charge, Rend and Battle Shout.
+const TIER_1_SKILLS: [u32; 5] = [12294, 7887, 6178, 6546, 6192];
 /// Three of Cruelty's Recruit ranks.
 const CRUELTY_RANKS: [u32; 3] = [12320, 12852, 12853];
 
@@ -251,8 +252,8 @@ fn the_trainer_offers_the_advancement_quest_only_at_the_tier_cap() {
 }
 
 #[test]
-fn a_tier_1_warrior_is_not_offered_the_warriors_path() {
-    let (mut realm, _, events) = questing_as("warrior", 10, &[], 0, &[]);
+fn a_vanguard_is_not_offered_the_warriors_path() {
+    let (mut realm, _, events) = questing_as("vanguard", 10, &[], 0, &[]);
     let uzzek = trainer(&events);
     assert!(gossip_quests(&mut realm, uzzek).is_empty());
     assert_eq!(status(&mut realm, uzzek), dialog_status::NONE);
@@ -285,13 +286,13 @@ fn the_advancement_quest_is_finished_by_speaking_to_the_trainer() {
 }
 
 #[test]
-fn advancement_makes_a_level_1_tier_1_warrior_with_the_new_skills_and_tree() {
+fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
     let (mut realm, me, mut events) = capped_warrior();
     let before = descriptor(&events, me);
     assert_eq!(realm.current_calling().unwrap().key, "basic_warrior");
     events.extend(advance(&mut realm, trainer(&events)));
 
-    assert_eq!(realm.current_calling().unwrap().key, "warrior");
+    assert_eq!(realm.current_calling().unwrap().key, "vanguard");
     let now = descriptor(&events, me);
     assert_eq!(now.unit_level(), Some(1));
     assert_eq!(now.player_xp(), Some(0));
@@ -301,9 +302,11 @@ fn advancement_makes_a_level_1_tier_1_warrior_with_the_new_skills_and_tree() {
 
     // The kits swapped, and Cruelty's ranks gone with the old tree.
     let known = spellbook(&events);
-    for s in TIER_1_SKILLS {
-        assert!(known.contains(&s), "Tier 1 skill {s} learned");
-    }
+    assert_eq!(
+        known,
+        TIER_1_SKILLS.into_iter().collect(),
+        "exactly the kit"
+    );
     for s in BASIC_SKILLS.iter().chain(&CRUELTY_RANKS) {
         assert!(!known.contains(s), "spell {s} forgotten");
     }
@@ -314,7 +317,7 @@ fn advancement_makes_a_level_1_tier_1_warrior_with_the_new_skills_and_tree() {
         .iter()
         .map(|t| t.name.as_str())
         .collect();
-    assert_eq!(tabs, ["Arms", "Fury", "Protection"]);
+    assert_eq!(tabs, ["Weaponmaster", "Warlord"]);
     // The new Calling's default bar.
     let bar = events
         .iter()
@@ -324,7 +327,7 @@ fn advancement_makes_a_level_1_tier_1_warrior_with_the_new_skills_and_tree() {
             _ => None,
         })
         .expect("the bar is sent again");
-    assert_eq!(bar.len(), 8);
+    assert_eq!(bar.len(), 5);
     assert_eq!(bar[0].action, TIER_1_SKILLS[0]);
 
     // Stronger than a level 1 Basic Warrior: the Tier Bonus.
@@ -389,7 +392,7 @@ fn the_calling_survives_the_save() {
     let (mut realm, me, events) = capped_warrior();
     advance(&mut realm, trainer(&events));
     let blob = realm.export_character(me).unwrap();
-    assert!(blob.contains("calling = \"warrior\"\n"), "{blob}");
+    assert!(blob.contains("calling = \"vanguard\"\n"), "{blob}");
     assert!(blob.contains("level = 1\n"), "{blob}");
     assert!(!blob.contains("talents"), "no talents left: {blob}");
 
@@ -398,7 +401,7 @@ fn the_calling_survives_the_save() {
     reloaded.handle(RealmCommand::EnterWorld { guid: me });
     reloaded.tick(0.0, &FlatGround);
     let events = drain(&mut reloaded);
-    assert_eq!(reloaded.current_calling().unwrap().key, "warrior");
+    assert_eq!(reloaded.current_calling().unwrap().key, "vanguard");
     let known = spellbook(&events);
     assert!(TIER_1_SKILLS.iter().all(|s| known.contains(s)));
     assert_eq!(descriptor(&events, me).unit_level(), Some(1));
@@ -410,6 +413,31 @@ fn the_calling_survives_the_save() {
 }
 
 #[test]
+fn a_save_from_before_the_rename_loads_as_a_vanguard() {
+    // Tier 1 was saved as "warrior" before it was Vanguard; Cruelty sits in the new tree too.
+    let (guid, blob) = save_with(12, 0, &[]);
+    let blob = blob
+        .replace("calling = \"basic_warrior\"", "calling = \"warrior\"")
+        .replace("money = 0\n", "money = 0\ntalents = [[157, 3]]\n");
+    let mut realm = Realm::with_seed(SEED);
+    realm.import_character(&blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    let events = drain(&mut realm);
+    assert_eq!(realm.current_calling().unwrap().key, "vanguard");
+    assert_eq!(realm.calling_name(guid), Some("Vanguard"));
+    let known = spellbook(&events);
+    assert!(TIER_1_SKILLS.iter().all(|s| known.contains(s)));
+    assert!(
+        CRUELTY_RANKS.iter().all(|s| known.contains(s)),
+        "the talent kept"
+    );
+    assert_eq!(descriptor(&events, guid).unit_level(), Some(12));
+    let saved = realm.export_character(guid).unwrap();
+    assert!(saved.contains("calling = \"vanguard\"\n"), "{saved}");
+}
+
+#[test]
 fn advancement_saves_the_character() {
     let (mut realm, me, events) = capped_warrior();
     realm.drain_storage();
@@ -417,44 +445,44 @@ fn advancement_saves_the_character() {
     let saved = realm.drain_storage();
     assert!(saved.iter().any(|s| matches!(
         s,
-        twilight_realm::Storage::Write { guid, blob } if *guid == me && blob.contains("calling = \"warrior\"")
+        twilight_realm::Storage::Write { guid, blob } if *guid == me && blob.contains("calling = \"vanguard\"")
     )));
 }
 
-// ── Champion ────────────────────────────────────────────────────────────────────────────────────
+// ── Ironclad ────────────────────────────────────────────────────────────────────────────────────
 
 #[test]
-fn at_thirty_champions_quest_is_offered_but_cannot_be_finished() {
-    let (mut realm, _, events) = questing_as("warrior", 29, &[], 0, &[]);
+fn at_thirty_ironclads_quest_is_offered_but_cannot_be_finished() {
+    let (mut realm, _, events) = questing_as("vanguard", 29, &[], 0, &[]);
     assert!(
         gossip_quests(&mut realm, trainer(&events)).is_empty(),
         "not at 29"
     );
 
-    let (mut realm, me, mut events) = questing_as("warrior", 30, &[], 0, &[]);
+    let (mut realm, me, mut events) = questing_as("vanguard", 30, &[], 0, &[]);
     let uzzek = trainer(&events);
     let rows = gossip_quests(&mut realm, uzzek);
     assert_eq!(rows.len(), 1);
     assert_eq!(
         (rows[0].0, rows[0].1, rows[0].3.as_str()),
         (
-            THE_CHAMPIONS_TRIAL,
+            THE_IRONCLADS_OATH,
             dialog_status::AVAILABLE,
-            "The Champion's Trial"
+            "The Ironclad's Oath"
         )
     );
-    events.extend(take(&mut realm, uzzek, THE_CHAMPIONS_TRIAL));
+    events.extend(take(&mut realm, uzzek, THE_IRONCLADS_OATH));
     let log = quest_log(&events, me);
     assert_eq!(
         (log[0].1, log[0].3),
-        (THE_CHAMPIONS_TRIAL, 0),
+        (THE_IRONCLADS_OATH, 0),
         "never complete"
     );
     assert_eq!(status(&mut realm, uzzek), dialog_status::INCOMPLETE);
 
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
         npc: uzzek,
-        quest: THE_CHAMPIONS_TRIAL,
+        quest: THE_IRONCLADS_OATH,
     });
     let progress = drain(&mut realm)
         .into_iter()
@@ -464,8 +492,8 @@ fn at_thirty_champions_quest_is_offered_but_cannot_be_finished() {
         })
         .expect("the progress panel");
     assert!(!progress.is_complete);
-    assert!(completed(&hand_in(&mut realm, uzzek, THE_CHAMPIONS_TRIAL)).is_none());
-    assert_eq!(realm.current_calling().unwrap().key, "warrior");
+    assert!(completed(&hand_in(&mut realm, uzzek, THE_IRONCLADS_OATH)).is_none());
+    assert_eq!(realm.current_calling().unwrap().key, "vanguard");
 }
 
 // ── Character select ────────────────────────────────────────────────────────────────────────────
@@ -476,6 +504,6 @@ fn the_select_screen_names_each_characters_calling() {
     assert_eq!(realm.calling_name(me), Some("Basic Warrior"));
     advance(&mut realm, trainer(&events));
     realm.handle(RealmCommand::Logout);
-    assert_eq!(realm.calling_name(me), Some("Warrior"));
+    assert_eq!(realm.calling_name(me), Some("Vanguard"));
     assert_eq!(realm.calling_name(me + 1), None, "nobody");
 }

@@ -34,8 +34,8 @@ fn the_basic_warrior_matches_the_reference() {
 }
 
 #[test]
-fn the_tier_1_warrior_matches_the_reference() {
-    check_calling("warrior");
+fn the_vanguard_matches_the_reference() {
+    check_calling("vanguard");
 }
 
 fn check_calling(calling: &str) {
@@ -267,25 +267,55 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
 fn every_skill_id_is_listed_for_rank_blanking() {
     let mut ids: Vec<u32> = callings::skill_spell_ids().collect();
     ids.sort_unstable();
-    assert_eq!(
-        ids,
-        [
-            78, 100, 845, 5308, 6178, 6192, 6546, 7887, 8198, 12292, 12294, 12323, 12328, 12809,
-            12975
-        ]
-    );
+    assert_eq!(ids, [78, 100, 6178, 6192, 6546, 7887, 12294]);
 }
 
 /// The client names these " (WIP)": the rank spells of every talent with no effect and no skill,
-/// Anger Management's, Iron Will's and Dual Wield Specialization's.
+/// Anger Management's (in both trees) and Flurry's.
 #[test]
 fn the_wip_rank_spells_are_the_talents_with_no_effect() {
     let mut ids: Vec<u32> = callings::wip_rank_spell_ids().collect();
     ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids, [12296, 12319, 12971, 12972, 12973, 12974]);
+}
+
+#[test]
+fn the_vanguard_kit_is_mortal_strike_overpower_charge_rend_and_battle_shout() {
+    let kit: Vec<&str> = callings::calling("vanguard")
+        .unwrap()
+        .skills
+        .iter()
+        .map(|s| s.key.as_str())
+        .collect();
     assert_eq!(
-        ids,
-        [12296, 12300, 12959, 12960, 12961, 12962, 23584, 23585, 23586, 23587, 23588]
+        kit,
+        [
+            "mortal_strike",
+            "overpower",
+            "charge",
+            "rend",
+            "battle_shout"
+        ]
     );
+}
+
+#[test]
+fn talent_tab_ids_are_unique_across_callings() {
+    let mut ids: Vec<u32> = ["basic_warrior", "vanguard"]
+        .iter()
+        .flat_map(|c| {
+            callings::calling(c)
+                .unwrap()
+                .talent_tabs
+                .iter()
+                .map(|t| t.id)
+        })
+        .collect();
+    let all = ids.len();
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids.len(), all, "{ids:?}");
 }
 
 /// The Recruit talents the realm shows and lets the player learn, but does not model yet: Anger
@@ -311,15 +341,59 @@ fn the_basic_warrior_kit_is_heroic_strike_and_charge() {
     assert_eq!(kit, ["heroic_strike", "charge"]);
 }
 
-/// The Tier 1 talents the realm shows and lets the player learn, but does not model yet.
-const NOT_MODELLED: &[&str] = &["dual_wield_specialization", "iron_will"];
+/// The Vanguard talents the realm shows and lets the player learn, but does not model yet: Anger
+/// Management's slower rage decay and Flurry's haste after a crit have no effect kind.
+const VANGUARD_NOT_MODELLED: &[&str] = &["anger_management", "flurry"];
 
 #[test]
-fn the_tier_1_warrior_talent_tree_matches_the_reference() {
-    check_tree("warrior", NOT_MODELLED);
-    let tree = &callings::calling("warrior").unwrap().talent_tabs;
+fn the_vanguard_talent_tree_matches_the_reference() {
+    check_tree("vanguard", VANGUARD_NOT_MODELLED);
+    let tree = &callings::calling("vanguard").unwrap().talent_tabs;
     let names: Vec<&str> = tree.iter().map(|t| t.name.as_str()).collect();
-    assert_eq!(names, ["Arms", "Fury", "Protection"]);
+    assert_eq!(names, ["Weaponmaster", "Warlord"]);
+}
+
+/// The rows of each Vanguard tab, as the handoff lists them: talent keys by tier.
+#[test]
+fn the_vanguard_tabs_seat_the_handoffs_rows() {
+    let rows = |tab: usize| -> Vec<Vec<String>> {
+        let tab = &callings::calling("vanguard").unwrap().talent_tabs[tab];
+        let last = tab.talents.iter().map(|t| t.tier).max().unwrap();
+        (1..=last)
+            .map(|tier| {
+                let mut row: Vec<String> = tab
+                    .talents
+                    .iter()
+                    .filter(|t| t.tier == tier)
+                    .map(|t| t.key.clone())
+                    .collect();
+                row.sort();
+                row
+            })
+            .collect()
+    };
+    assert_eq!(
+        rows(0),
+        [
+            vec!["improved_overpower", "improved_rend"],
+            vec!["anger_management", "deep_wounds", "improved_charge"],
+            vec!["impale", "two_handed_weapon_specialization"],
+            vec![
+                "axe_specialization",
+                "mace_specialization",
+                "sword_specialization"
+            ],
+            vec!["flurry"],
+        ]
+    );
+    assert_eq!(
+        rows(1),
+        [
+            vec!["booming_voice", "cruelty"],
+            vec!["improved_battle_shout", "unbridled_wrath"],
+            vec!["blood_craze", "enrage"],
+        ]
+    );
 }
 
 /// A Calling's tree against the reference; the talents in `unmodelled` have no effect yet.

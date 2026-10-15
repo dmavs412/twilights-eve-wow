@@ -1,5 +1,5 @@
-//! The Tier 1 Warrior's skills that the Basic Warrior has no like of, played through the realm's
-//! seam: Mortal Strike's wound, Execute on a mob near death, and Cleave's second target.
+//! The Vanguard's skill that the other tests do not play, through the realm's seam: Mortal
+//! Strike's wound. Rend, Battle Shout and Overpower are played in `skills.rs`.
 
 mod common;
 
@@ -7,14 +7,6 @@ use benilla_protocol::SessionEvent;
 use common::*;
 
 const MORTAL_STRIKE: u32 = 12294;
-const EXECUTE: u32 = 5308;
-const CLEAVE: u32 = 845;
-
-/// `SPELL_FAILED_TARGET_AURASTATE`: the target is not low enough for Execute.
-const TARGET_AURASTATE: u8 = 0x67;
-/// `UNIT_FIELD_AURASTATE`'s bit for a unit at or below 20% health (`AURA_STATE_HEALTHLESS_20_PERCENT`),
-/// which the client's Execute button needs on the target.
-const HEALTHLESS_20: u32 = 0x2;
 
 #[test]
 fn mortal_strike_strikes_and_wounds_the_target() {
@@ -32,80 +24,6 @@ fn mortal_strike_strikes_and_wounds_the_target() {
     realm.handle(cast(MORTAL_STRIKE, Some(mob.guid)));
     let refused = refusal(&view.drain(&mut realm), MORTAL_STRIKE);
     assert!(refused.is_some(), "a 6 s cooldown, or no rage left");
-}
-
-#[test]
-fn execute_needs_the_target_at_a_fifth_of_its_health_and_spends_all_the_rage() {
-    let (mut realm, _, mob, mut view) = tanking(15);
-    assert_eq!(view.fields(mob.guid).unit_aura_state() & HEALTHLESS_20, 0);
-    realm.handle(cast(EXECUTE, Some(mob.guid)));
-    assert_eq!(
-        refusal(&view.drain(&mut realm), EXECUTE),
-        Some(TARGET_AURASTATE)
-    );
-
-    // Beaten down to a fifth: the mob's aura state says so, and Execute goes.
-    let Some((mut realm, me, mob, mut view)) = (0..100).find_map(low_mob_fight) else {
-        panic!("no seeded fight left the mob low with rage to spend");
-    };
-    assert_ne!(view.fields(mob.guid).unit_aura_state() & HEALTHLESS_20, 0);
-    let rage = view.rage(me);
-    assert!(rage >= 15);
-    realm.handle(cast(EXECUTE, Some(mob.guid)));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, EXECUTE), None);
-    let hits = go_hits(&events, EXECUTE).expect("it went off");
-    if hits.contains(&mob.guid) {
-        assert_eq!(view.rage(me), 0, "all {rage} rage spent");
-        assert_eq!(spell_damage(&events, EXECUTE).len(), 1);
-    } else {
-        assert_eq!(view.rage(me), rage - 15, "a miss costs only the cost");
-    }
-}
-
-#[test]
-fn cleave_strikes_a_second_enemy_beside_the_target() {
-    // A camp pulled: its mobs gather round the warrior, a stride from the one it fights.
-    let (mut realm, me, a, mut view) = tanking(20);
-    realm.handle(cast(CLEAVE, Some(a.guid)));
-    realm.handle(RealmCommand::AttackSwing { guid: a.guid });
-    let mut events = Vec::new();
-    for _ in 0..40 {
-        events.extend(view.run(&mut realm, 0.1));
-        if go_targets(&events, CLEAVE).is_some() {
-            break;
-        }
-    }
-    let targets = go_targets(&events, CLEAVE).expect("Cleave went with the swing");
-    assert_eq!(targets[0], a.guid);
-    assert_eq!(
-        targets.len(),
-        2,
-        "the target and one beside it: {targets:?}"
-    );
-    assert_ne!(targets[1], me);
-}
-
-/// Who `spell_id`'s `SMSG_SPELL_GO` names, hit or missed, the cast's target first.
-fn go_targets(events: &[SessionEvent], spell_id: u32) -> Option<Vec<u64>> {
-    events.iter().find_map(|e| match e {
-        SessionEvent::SpellGo {
-            spell_id: s,
-            hits,
-            misses,
-            target,
-            ..
-        } if *s == spell_id => {
-            let mut all: Vec<u64> = hits
-                .iter()
-                .copied()
-                .chain(misses.iter().map(|m| m.0))
-                .collect();
-            all.sort_by_key(|g| Some(*g) != *target);
-            Some(all)
-        }
-        _ => None,
-    })
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────
@@ -170,10 +88,6 @@ impl View {
         self.fields(guid).unit_health().unwrap()
     }
 
-    fn max_health(&self, guid: u64) -> u32 {
-        self.fields(guid).unit_max_health().unwrap()
-    }
-
     fn aura(&self, guid: u64, spell_id: u32) -> Option<benilla_protocol::messages::UnitAuraSlot> {
         self.fields(guid)
             .unit_auras()
@@ -181,7 +95,7 @@ impl View {
     }
 }
 
-/// A human Tier 1 Warrior of `level` in the world at the Crossroads, the hostile mobs in view (the
+/// A human Vanguard of `level` in the world at the Crossroads, the hostile mobs in view (the
 /// nearest first), and the view.
 fn tier1_at(level: u8, seed: u64) -> (Realm, u64, Vec<Mob>, View) {
     let mut maker = realm();
@@ -191,7 +105,7 @@ fn tier1_at(level: u8, seed: u64) -> (Realm, u64, Vec<Mob>, View) {
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", &format!("level = {level}\n"))
-        .replace("calling = \"basic_warrior\"", "calling = \"warrior\"");
+        .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
     let mut realm = Realm::with_seed(seed);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -224,7 +138,7 @@ fn tier1_at(level: u8, seed: u64) -> (Realm, u64, Vec<Mob>, View) {
     (realm, guid, mobs, view)
 }
 
-/// A level 1 Tier 1 Warrior that pulled the nearest camp without swinging back, and took its
+/// A level 1 Vanguard that pulled the nearest camp without swinging back, and took its
 /// blows until it had `rage`.
 fn tanking(rage: u32) -> (Realm, u64, Mob, View) {
     let (mut realm, me, _, mut view) = tier1_at(1, SEED);
@@ -262,28 +176,6 @@ fn tanking(rage: u32) -> (Realm, u64, Mob, View) {
         }
     }
     panic!("two minutes of blows built no {rage} rage");
-}
-
-/// A level 5 Tier 1 Warrior that beat the nearest mob down to a fifth of its health with 15 rage
-/// left over; `None` when this seed's fight does not get there.
-fn low_mob_fight(seed: u64) -> Option<(Realm, u64, Mob, View)> {
-    let (mut realm, me, mobs, mut view) = tier1_at(5, seed);
-    let mob = mobs[0].clone();
-    stand_at(&mut realm, &mob, 2.0);
-    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-    for _ in 0..600 {
-        view.run(&mut realm, 0.1);
-        let (hp, max) = (view.health(mob.guid), view.max_health(mob.guid));
-        if view.health(me) == 0 || hp == 0 {
-            return None;
-        }
-        if hp * 5 <= max {
-            realm.handle(RealmCommand::AttackStop);
-            view.drain(&mut realm);
-            return (view.rage(me) >= 15).then_some((realm, me, mob, view));
-        }
-    }
-    None
 }
 
 fn cast(spell_id: u32, target: Option<u64>) -> RealmCommand {

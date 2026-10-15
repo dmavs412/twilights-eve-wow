@@ -1,7 +1,7 @@
 //! Talent Points and the Basic Warrior's "Recruit" Talent Tree, played through the realm's seam:
 //! the points the client shows, `CMSG_LEARN_TALENT` and its refusals, what learned talents do in a
 //! fight, the respec at the Crossroads' Warrior trainer, and the save. The talents the Recruit tree
-//! dropped are played on the Tier 1 Warrior's tree, which still has them.
+//! dropped are played on the Vanguard's tree, which still has them.
 
 mod common;
 
@@ -559,62 +559,58 @@ fn unbridled_wrath_gives_rage_for_landed_swings() {
     assert!(procs(4) >= 5, "32% of the landed swings");
 }
 
-// ── The Tier 1 Warrior's talents the Recruit tree dropped ───────────────────────────────────────
+// ── The Vanguard's talents the Recruit tree dropped ───────────────────────────────────────
 
 const T1_IMPROVED_REND: u32 = 127;
 const T1_IMPROVED_BATTLE_SHOUT: u32 = 154;
-const T1_DEFLECTION: u32 = 130;
 const T1_DEEP_WOUNDS: u32 = 121;
-const T1_IMPROVED_THUNDER_CLAP: u32 = 128;
 const T1_IMPROVED_OVERPOWER: u32 = 131;
+const T1_IMPALE: u32 = 662;
 const T1_CRUELTY: u32 = 157;
 
 const T1_CHARGE: u32 = 6178;
 const T1_REND: u32 = 6546;
-const T1_THUNDER_CLAP: u32 = 8198;
 const T1_BATTLE_SHOUT: u32 = 6192;
 const T1_OVERPOWER: u32 = 7887;
 /// Deep Wounds' bleed (vmangos 12721, "Deep Wound").
 const DEEP_WOUND: u32 = 12721;
 
 #[test]
-fn deep_wounds_needs_improved_rend_at_three_of_three() {
+fn deep_wounds_opens_with_weaponmasters_first_row_and_impale_needs_it_at_three_of_three() {
     let (mut realm, me, _, mut view) = tier1_at(15, SEED, &[]);
-    // Ten points in Arms open its third tier.
-    for rank in 0..5 {
-        learn(&mut realm, T1_DEFLECTION, rank);
+    // Four points in the first row: Improved Rend 2/3, Improved Overpower 2/2.
+    for (talent, rank) in [
+        (T1_IMPROVED_REND, 0),
+        (T1_IMPROVED_REND, 1),
+        (T1_IMPROVED_OVERPOWER, 0),
+        (T1_IMPROVED_OVERPOWER, 1),
+    ] {
+        learn(&mut realm, talent, rank);
     }
-    learn(&mut realm, T1_IMPROVED_REND, 0);
-    learn(&mut realm, T1_IMPROVED_REND, 1);
-    learn(&mut realm, IMPROVED_CHARGE, 0);
-    learn(&mut realm, IMPROVED_CHARGE, 1);
-    learn(&mut realm, T1_IMPROVED_THUNDER_CLAP, 0);
     learn(&mut realm, T1_DEEP_WOUNDS, 0);
     view.drain(&mut realm);
-    assert_eq!(view.points(me), 4, "ten spent, but Improved Rend is at 2/3");
+    assert_eq!(view.points(me), 10, "four spent: the second row is shut");
 
+    // The fifth point is Improved Rend's last rank, which Deep Wounds also asks for.
     learn(&mut realm, T1_IMPROVED_REND, 2);
     learn(&mut realm, T1_DEEP_WOUNDS, 0);
+    learn(&mut realm, T1_DEEP_WOUNDS, 1);
+    view.drain(&mut realm);
+    assert_eq!(view.points(me), 7);
+    assert_eq!(view.talent_rank(&[12834, 12849, 12867]), 2);
+
+    // Ten in the tab open the third row, but Impale wants Deep Wounds at 3/3.
+    learn(&mut realm, IMPROVED_CHARGE, 0);
+    learn(&mut realm, IMPROVED_CHARGE, 1);
+    learn(&mut realm, ANGER_MANAGEMENT, 0);
+    learn(&mut realm, T1_IMPALE, 0);
+    view.drain(&mut realm);
+    assert_eq!(view.points(me), 4, "ten spent, but Deep Wounds is at 2/3");
+    learn(&mut realm, T1_DEEP_WOUNDS, 2);
+    learn(&mut realm, T1_IMPALE, 0);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 2);
-    assert_eq!(view.talent_rank(&[12834, 12849, 12867]), 1);
-}
-
-#[test]
-fn improved_thunder_clap_lowers_its_rage_cost() {
-    // Five points in Arms open its second tier.
-    let (mut realm, me, mob, mut view) = tier1_at(10, SEED, &[(T1_DEFLECTION, 5)]);
-    for rank in 0..3 {
-        learn(&mut realm, T1_IMPROVED_THUNDER_CLAP, rank);
-    }
-    let events = view.drain(&mut realm);
-    assert_eq!(spell_mod(&events, true, 7, SPELLMOD_COST), Some(-40));
-    tier1_rage_up(&mut realm, &mut view, me, &mob, 16);
-    let before = view.rage(me);
-    realm.handle(cast(T1_THUNDER_CLAP, None));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, T1_THUNDER_CLAP), None);
-    assert_eq!(before - view.rage(me), 16, "20 less 4");
+    assert_eq!(view.talent_rank(&[16493, 16494]), 1);
 }
 
 #[test]
@@ -924,11 +920,11 @@ fn warrior_wearing(level: u8, slot: u8, entry: u32) -> (Realm, u64, Mob, View) {
     })
 }
 
-/// A human Tier 1 Warrior of `level` with `talents` (`(talent id, rank)`) in its save, placed as
+/// A human Vanguard of `level` with `talents` (`(talent id, rank)`) in its save, placed as
 /// [`warrior_at`] places a Basic Warrior.
 fn tier1_at(level: u8, seed: u64, talents: &[(u32, u8)]) -> (Realm, u64, Mob, View) {
     warrior_from(level, seed, DevMultipliers::default(), |blob| {
-        let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"warrior\"");
+        let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
         if talents.is_empty() {
             return blob;
         }
@@ -980,7 +976,7 @@ fn rage_up(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob, rage: u32) {
     charge_and_swing(realm, view, me, mob, CHARGE, rage);
 }
 
-/// [`rage_up`] for the Tier 1 Warrior, with its own Charge.
+/// [`rage_up`] for the Vanguard, with its own Charge.
 fn tier1_rage_up(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob, rage: u32) {
     charge_and_swing(realm, view, me, mob, T1_CHARGE, rage);
 }
@@ -1062,7 +1058,7 @@ fn kill(realm: &mut Realm, view: &mut View, mob: &Mob) -> Vec<SessionEvent> {
     panic!("the mob outlived two minutes of fighting");
 }
 
-/// A level-10 Tier 1 Warrior with Improved Overpower at 2/2 on `seed`'s dice, that charged the
+/// A level-10 Vanguard with Improved Overpower at 2/2 on `seed`'s dice, that charged the
 /// mob and swings at it until it dodges; `None` when this fight never sees a dodge both survive.
 fn dodged_fight(seed: u64) -> Option<(Realm, u64, Mob, View)> {
     let (mut realm, me, mob, mut view) = tier1_at(10, seed, &[(T1_IMPROVED_OVERPOWER, 2)]);
