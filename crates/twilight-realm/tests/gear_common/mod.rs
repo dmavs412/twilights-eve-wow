@@ -140,6 +140,17 @@ pub fn item_creates(events: &[SessionEvent]) -> Vec<(u64, ObjectFields)> {
         .collect()
 }
 
+/// How many of `entry` the player `me` carries in the backpack, as the client's fields say.
+pub fn carried(events: &[SessionEvent], me: u64, entry: u32) -> u32 {
+    let player = descriptor(events, me);
+    (0..16)
+        .filter_map(|i| player.player_pack_slot(i).filter(|g| *g != 0))
+        .map(|guid| descriptor(events, guid))
+        .filter(|item| item.object_entry() == Some(entry))
+        .map(|item| item.item_stack_count().unwrap_or(1))
+        .sum()
+}
+
 /// The mob's create, out of the entry burst.
 pub struct Mob {
     pub guid: u64,

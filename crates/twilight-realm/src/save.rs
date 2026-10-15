@@ -66,8 +66,9 @@ struct SaveV1 {
     /// `[item entry, ms left]` per item cooling down after use. Optional within version 1.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     item_cooldowns: Vec<[u32; 2]>,
-    /// Added within version 1: a save without them has none.
-    #[serde(default)]
+    /// Tokens counted on the character, from before they were an item in the bags: read, and
+    /// turned into Tokens in the backpack; never written.
+    #[serde(default, skip_serializing)]
     tokens: u32,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
@@ -142,7 +143,7 @@ pub(crate) fn export(c: &Char) -> String {
             .iter()
             .map(|&(entry, left)| [entry, (left * 1000.0).round() as u32])
             .collect(),
-        tokens: c.tokens,
+        tokens: 0,
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -179,8 +180,16 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
             .map(|&[entry, ms]| (entry, ms as f32 / 1000.0))
             .collect(),
         quests: crate::quests::load(&s.quests)?,
-        tokens: s.tokens,
     };
+    if s.tokens > 0 {
+        // As many as the backpack takes: all of them in any save from those builds.
+        let room = (1..=s.tokens)
+            .rev()
+            .find(|&n| c.inventory.fits(crate::quests::TOKEN, n));
+        if let Some(n) = room {
+            let _ = c.inventory.store(crate::quests::TOKEN, n);
+        }
+    }
     crate::quests::settle(&mut c);
     Ok(c)
 }

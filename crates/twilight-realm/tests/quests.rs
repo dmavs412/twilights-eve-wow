@@ -301,8 +301,38 @@ fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
         .map(|(guid, _)| descriptor(&events, *guid).item_stack_count().unwrap_or(1))
         .sum();
     assert_eq!(left, 1);
-    let blob = realm.export_character(me).unwrap();
-    assert!(blob.contains("tokens = 3"), "{blob}");
+    // The Token goes onto the two in the bags.
+    assert_eq!(carried(&events, me, TOKEN), 3);
+    assert!(events.iter().any(|e| matches!(
+        e,
+        SessionEvent::ItemPushResult(p) if p.item_entry == TOKEN && p.count == 1
+    )));
+}
+
+#[test]
+fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
+    // Fifteen skins, one per slot, and the sixteenth slot full: the eight skins leave seven
+    // slots full, but the bags are checked before anything is taken, as vmangos does.
+    let mut items: Vec<Carried> = (23..38).map(|s| (s, CROCOLISK_SKIN, 1)).collect();
+    items.push((38, 4560, 1));
+    let (mut realm, me, mut events) = questing(15, &items, 0, &[(CROCOLISK_SKINS, [0; 4])]);
+    let zunjin = giver(&events, ZUNJIN);
+    let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
+    assert!(completed(&turned_in).is_none());
+    assert!(turned_in
+        .iter()
+        .any(|e| matches!(e, SessionEvent::InventoryFailure { reason: 50, .. })));
+    events.extend(turned_in);
+    assert_eq!(
+        carried(&events, me, CROCOLISK_SKIN),
+        15,
+        "nothing was taken"
+    );
+    assert_eq!(
+        quest_log(&events, me).len(),
+        1,
+        "the quest is still under way"
+    );
 }
 
 #[test]

@@ -114,15 +114,19 @@ pub fn completed(events: &[SessionEvent]) -> Option<benilla_protocol::messages::
 /// A quest under way in a save: `(quest, kills by objective)`, in log slots from 0.
 pub type Underway = (u32, [u8; 4]);
 
-/// A warrior's save at `level` carrying `items`, `tokens` and these quests.
+/// A warrior's save at `level` carrying `items`, `tokens` (a stack in the last backpack slot) and
+/// these quests.
 pub fn save_with_quests(
     level: u8,
     items: &[Carried],
     tokens: u32,
     quests: &[Underway],
 ) -> (u64, String) {
-    let (guid, blob) = save_with(level, 0, items);
-    let mut blob = blob.replace("tokens = 0\n", &format!("tokens = {tokens}\n"));
+    let mut items = items.to_vec();
+    if tokens > 0 {
+        items.push((38, TOKEN, tokens));
+    }
+    let (guid, mut blob) = save_with(level, 0, &items);
     for (slot, (id, kills)) in quests.iter().enumerate() {
         blob.push_str(&format!(
             "\n[[quests]]\nid = {id}\nslot = {slot}\nkills = {kills:?}\n"

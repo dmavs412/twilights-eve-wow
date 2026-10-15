@@ -59,8 +59,8 @@ fn kill_progress_and_tokens_survive_a_save_round_trip() {
         [(0, THINNING_THE_HERDS, [3, 1, 0, 0], 0)]
     );
     let blob = realm.export_character(me).unwrap();
-    assert!(blob.contains("tokens = 7"), "{blob}");
     let again = reload(me, &blob);
+    assert_eq!(carried(&again, me, TOKEN), 7);
     assert_eq!(quest_log(&again, me), quest_log(&events, me));
     assert_eq!(realm.export_character(me).unwrap(), blob);
 }
@@ -72,9 +72,20 @@ fn a_hand_in_saves_the_tokens_and_the_emptied_log() {
     realm.drain_storage();
     hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS);
     let blob = last_write(&mut realm);
-    assert!(blob.contains("tokens = 5"), "{blob}");
     assert!(!blob.contains("[[quests]]"), "{blob}");
-    assert!(quest_log(&reload(me, &blob), me).is_empty());
+    let again = reload(me, &blob);
+    assert_eq!(carried(&again, me, TOKEN), 5);
+    assert!(quest_log(&again, me).is_empty());
+}
+
+#[test]
+fn a_save_that_counts_tokens_on_the_character_carries_them_in_the_bags() {
+    // Before Tokens were an item, the save kept a count beside the money.
+    let (me, blob) = save_with(3, 0, &[(23, CROCOLISK_SKIN, 2)]);
+    let old = blob.replace("money = 0\n", "money = 0\ntokens = 4\n");
+    let events = reload(me, &old);
+    assert_eq!(carried(&events, me, TOKEN), 4);
+    assert_eq!(carried(&events, me, CROCOLISK_SKIN), 2);
 }
 
 #[test]
