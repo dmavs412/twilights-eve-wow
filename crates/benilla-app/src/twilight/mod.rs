@@ -75,7 +75,7 @@ impl Plugin for TwilightPlugin {
         )
         .add_systems(
             Update,
-            blank_skill_ranks.run_if(resource_added::<crate::ui_action::Spells>),
+            rewrite_spells.run_if(resource_added::<crate::ui_action::Spells>),
         )
         .add_systems(
             Update,
@@ -447,12 +447,15 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     }
 }
 
-/// A Calling skill has no ranks: the spellbook, tooltip and learn line show none, even though
-/// each borrows a ranked 1.12 spell.
-fn blank_skill_ranks(mut spells: ResMut<crate::ui_action::Spells>) {
-    spells
-        .catalog
-        .clear_ranks(twilight_realm::callings::skill_spell_ids());
+/// The spell rewrites of ADR 0003, made once the client has loaded its spell data, from the
+/// realm's content:
+/// - a Calling skill has no ranks: the spellbook, tooltip and learn line show none, even though
+///   each borrows a ranked 1.12 spell;
+/// - a WIP talent's rank spells read "<Name> (WIP)" in the talent frame and its tooltips.
+fn rewrite_spells(mut spells: ResMut<crate::ui_action::Spells>) {
+    let catalog = &mut spells.catalog;
+    catalog.clear_ranks(twilight_realm::callings::skill_spell_ids());
+    catalog.mark_wip(twilight_realm::callings::wip_rank_spell_ids());
 }
 
 /// Basic Warrior is the only Calling a character starts as, so create offers only Warrior.

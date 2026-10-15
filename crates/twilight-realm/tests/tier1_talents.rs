@@ -13,6 +13,9 @@ const ANTICIPATION: u32 = 138;
 const TOUGHNESS: u32 = 140;
 const CRUELTY: u32 = 157;
 const SWEEPING_STRIKES: u32 = 133;
+/// WIP: no effect yet.
+const IRON_WILL: u32 = 141;
+const LAST_STAND: u32 = 153;
 /// A Basic Warrior talent the Tier 1 tree does not have.
 const IMPROVED_HEROIC_STRIKE: u32 = 124;
 
@@ -71,4 +74,18 @@ fn anticipation_raises_defense_and_toughness_the_armour_of_items() {
     let armor = |f: &ObjectFields| f.unit_resistance(0).unwrap();
     // 10% more of the gloves' 62, rounded: 6.
     assert_eq!(armor(&descriptor(&events, me)), armor(&before) + 6);
+}
+
+#[test]
+fn a_wip_talent_is_learnable_and_opens_the_next_tier() {
+    let (mut realm, me, mut events) = tier1(30, &[]);
+    // Last Stand sits at tier 3 of Protection: 10 points there first.
+    learn(&mut realm, &mut events, LAST_STAND, 1);
+    learn(&mut realm, &mut events, ANTICIPATION, 5);
+    assert_eq!(descriptor(&events, me).player_talent_points(), Some(24));
+    // Iron Will does nothing yet, but takes its five points.
+    learn(&mut realm, &mut events, IRON_WILL, 5);
+    assert_eq!(descriptor(&events, me).player_talent_points(), Some(19));
+    learn(&mut realm, &mut events, LAST_STAND, 1);
+    assert_eq!(descriptor(&events, me).player_talent_points(), Some(18));
 }
