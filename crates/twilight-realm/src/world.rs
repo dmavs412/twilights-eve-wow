@@ -333,6 +333,8 @@ impl InWorld {
         }
         if self.mobs[i].health == 0 {
             self.kill(i, c, rng, events, ticked);
+        } else if swing.outcome == Outcome::Crit {
+            self.crit_landed(target, c, events);
         }
     }
 

@@ -22,6 +22,7 @@ use crate::rules::melee::{armor_reduced, Outcome, PlayerOffense, ROLL};
 use crate::rules::rage;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::WarriorStats;
+use crate::rules::talents::{deep_wound_tick, scaled};
 
 /// `UNIT_FIELD_BYTES_1`: stand state, loyalty, shapeshift form, visibility flags.
 const UNIT_FIELD_BYTES_1: u16 = 138;
@@ -505,7 +506,7 @@ impl InWorld {
         {
             return Err(SPELL_FAILED_NOT_READY);
         }
-        if p.rage < skill.rage_cost * 10 {
+        if p.rage < crate::talents::rage_cost(c, skill) * 10 {
             return Err(SPELL_FAILED_NO_POWER);
         }
         if skill.requires_out_of_combat && p.in_combat {
@@ -555,9 +556,8 @@ impl InWorld {
 
     /// Takes the cast's costs and starts its cooldowns.
     fn pay(&mut self, skill: &Skill, c: &Char, events: &mut Vec<SessionEvent>) {
-        let _ = c;
         let p = &mut self.player;
-        p.rage -= skill.rage_cost * 10;
+        p.rage -= crate::talents::rage_cost(c, skill) * 10;
         let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100;
         // A cost never kills.
         p.health = p.health.saturating_sub(health_cost).max(1);
@@ -619,7 +619,10 @@ impl InWorld {
             Outcome::Dodge => Landed::Missed(SPELL_MISS_DODGE),
             Outcome::Parry => Landed::Missed(SPELL_MISS_PARRY),
             Outcome::Block => Landed::Missed(SPELL_MISS_BLOCK),
-            _ if rng.below(ROLL) < crit => Landed::Crit,
+            // A talent's extra chance for this skill (Improved Overpower), in basis points.
+            _ if rng.below(ROLL) < crit + crate::talents::skill_crit_pct(c, &skill.key) * 100 => {
+                Landed::Crit
+            }
             _ => Landed::Hit,
         }
     }
@@ -640,6 +643,9 @@ impl InWorld {
     ) {
         let stats = buffed(&self.player.stats, &self.skills);
         let ap = stats.attack_power;
+        // Talents that raise the skill's amounts (Improved Rend, Improved Battle Shout).
+        let pct = crate::talents::amount_pct(c, &skill.key);
+        let sized = |l: formulas::Linear| scaled(l.at(level, ap), pct);
         let aura = |kind: AuraKind, spell_id: u32, duration_ms: u32, period_ms: u32| Aura {
             unit: target,
             spell_id,
@@ -652,7 +658,7 @@ impl InWorld {
         };
         match *effect {
             Effect::WeaponStrike { weapon, bonus, .. } => {
-                let raw = weapon_roll(&stats, weapon, rng) + bonus.at(level, ap) as f32;
+                let raw = weapon_roll(&stats, weapon, rng) + sized(bonus) as f32;
                 self.strike(
                     skill.spell_id,
                     target,
@@ -665,7 +671,7 @@ impl InWorld {
                 );
             }
             Effect::SchoolDamage { amount, .. } => {
-                let raw = amount.at(level, ap);
+                let raw = sized(amount);
                 self.strike(skill.spell_id, target, raw, how, c, rng, events, ticked);
             }
             Effect::PeriodicDamage {
@@ -673,7 +679,7 @@ impl InWorld {
                 duration_ms,
                 tick,
             } => {
-                let per_tick = tick.at(level, ap);
+                let per_tick = sized(tick);
                 let a = aura(
                     AuraKind::Bleed { per_tick },
                     skill.spell_id,
@@ -709,7 +715,7 @@ impl InWorld {
                 });
             }
             Effect::EnergizeRage { amount } => {
-                let gained = amount.at(level, ap);
+                let gained = amount.at(level, ap) + crate::talents::extra_rage(c, &skill.key);
                 let p = &mut self.player;
                 p.rage = (p.rage + gained * 10).min(rage::MAX);
                 events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
@@ -754,7 +760,7 @@ impl InWorld {
                 duration_ms,
                 amount,
             } => {
-                let n = amount.at(level, ap);
+                let n = sized(amount);
                 let a = aura(AuraKind::AttackPower(n), skill.spell_id, duration_ms, 0);
                 self.skills.apply(a, events);
                 let sheet = buff_sheet(&self.player.stats, &self.skills);
@@ -800,6 +806,35 @@ impl InWorld {
             },
         }));
         self.hurt(target, damage, c, rng, events, ticked);
+        if how == Landed::Crit {
+            self.crit_landed(target, c, events);
+        }
+    }
+
+    /// A melee crit landed on `target`: the bleed a talent leaves (Deep Wounds), which each new
+    /// crit refreshes.
+    pub(super) fn crit_landed(&mut self, target: u64, c: &Char, events: &mut Vec<SessionEvent>) {
+        let Some((spell_id, tick_ms, duration_ms, pct)) = crate::talents::crit_bleed(c) else {
+            return;
+        };
+        if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
+            return;
+        }
+        let s = buffed(&self.player.stats, &self.skills);
+        let period = tick_ms as f32 / 1000.0;
+        let bleed = Aura {
+            unit: target,
+            spell_id,
+            slot: 0,
+            level: c.level,
+            left: duration_ms as f32 / 1000.0,
+            period,
+            next_tick: period,
+            kind: AuraKind::Bleed {
+                per_tick: deep_wound_tick(s.min_damage, s.max_damage, pct),
+            },
+        };
+        self.skills.apply(bleed, events);
     }
 
     /// `target` loses `damage`; at 0 it dies at the player's hand.
@@ -843,7 +878,7 @@ impl InWorld {
         let Some(skill) = callings::skill(spell_id) else {
             return false;
         };
-        if self.player.rage < skill.rage_cost * 10 {
+        if self.player.rage < crate::talents::rage_cost(c, skill) * 10 {
             events.push(refused(spell_id, SPELL_FAILED_NO_POWER));
             return false;
         }
@@ -860,7 +895,8 @@ impl InWorld {
         self.pay(skill, c, events);
         // A next-swing strike rolls exactly as the white swing it replaces, its bonus added.
         let mut stats = buffed(&self.player.stats, &self.skills);
-        let extra = bonus.at(c.level, stats.attack_power) as f32;
+        let pct = crate::talents::amount_pct(c, &skill.key);
+        let extra = scaled(bonus.at(c.level, stats.attack_power), pct) as f32;
         stats.min_damage += extra;
         stats.max_damage += extra;
         let swing = crate::combat::player_swing(&stats, &self.mobs[i], from_front, rng);
@@ -922,6 +958,9 @@ impl InWorld {
                 },
             }));
             self.hurt(target, swing.damage, c, rng, events, ticked);
+            if swing.outcome == Outcome::Crit {
+                self.crit_landed(target, c, events);
+            }
         }
         true
     }
