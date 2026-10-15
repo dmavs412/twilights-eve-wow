@@ -12,6 +12,13 @@ cure is deleting the `target/debug/deps` files written during the interrupted ru
 
 A worktree builds its own `target`, about 18 GB, and several building at once run rustc out of
 memory (which also ends in `LNK1103`). Delete a worktree's `target` once its branch is merged.
+To skip a cold build, point `CARGO_TARGET_DIR` at another worktree's `target` (builds sharing
+one wait on its lock), or copy one. `lua-src` bakes in the folder of the worktree that first
+built it, so once that worktree is gone the build fails with "Cannot read
+…\third_party\lua-src\lua-5.1.5"; `cargo clean -p lua-src -p mlua-sys` in that `target` cures
+it. Build `--release` only in your own `target`: the user plays from
+`.claude/worktrees/integration/target/release/warcraft-survivors.exe`, and a running exe cannot
+be overwritten.
 `CARGO_BUILD_JOBS=4` and `WASI_SDK` (the main checkout's `tools\wasi-sdk`, which worktrees lack)
 are set in the user environment; if a shell lacks them, set them by hand.
 

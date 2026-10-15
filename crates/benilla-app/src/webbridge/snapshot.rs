@@ -37,6 +37,7 @@ mod nearby;
 /// `Option` for the same reason the unit feed's are — a UI-only harness runs without the net
 /// stack, and a missing resource must read as "nothing there", not a validation panic.
 #[derive(bevy::ecs::system::SystemParam)]
+#[allow(clippy::type_complexity)]
 pub(crate) struct BridgeReadout<'w, 's> {
     state: Res<'w, State<ClientState>>,
     time: Res<'w, Time>,
@@ -101,6 +102,7 @@ impl BridgeReadout<'_, '_> {
 
     /// The whole frame. Cheap when there is nothing to see (the glue screens): the
     /// session block and nulls.
+    #[allow(clippy::type_complexity)]
     pub(crate) fn build(
         &self,
         cfg: &BridgeConfig,
