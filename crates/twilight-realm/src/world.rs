@@ -7,6 +7,7 @@ use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use crate::characters::Char;
 use crate::combat;
 use crate::content;
+use crate::dev::DevMultipliers;
 use crate::fields::*;
 use crate::mobs::{distance, Mob, State, COMBAT_REACH};
 use crate::population::Population;
@@ -80,11 +81,12 @@ pub(crate) struct InWorld {
     /// The mobs near the player; they stream in from the first tick on, which brings the ground.
     mobs: Vec<Mob>,
     population: Population,
+    dev: DevMultipliers,
 }
 
 impl InWorld {
     /// Logs `c` in: what vmangos sends from `CMSG_PLAYER_LOGIN` to the player's own create.
-    pub(crate) fn enter(c: &Char, events: &mut Vec<SessionEvent>) -> Self {
+    pub(crate) fn enter(c: &Char, dev: DevMultipliers, events: &mut Vec<SessionEvent>) -> Self {
         let stats = WarriorStats::naked(c.race, c.level);
         events.push(SessionEvent::Connected {
             self_guid: c.guid,
@@ -115,7 +117,7 @@ impl InWorld {
             position: c.position,
             orientation: c.orientation,
             scale: 1.0,
-            speeds: Some(PLAYER_SPEEDS),
+            speeds: Some(dev.speeds(PLAYER_SPEEDS)),
             mover: None,
             transport_progress: None,
             transport: None,
@@ -138,6 +140,7 @@ impl InWorld {
             },
             mobs: Vec::new(),
             population: Population::default(),
+            dev,
         }
     }
 
@@ -417,7 +420,7 @@ impl InWorld {
         } else {
             xp::Elite::No
         };
-        let gained = xp::kill_xp(c.level, mob.level(), elite);
+        let gained = self.dev.xp(xp::kill_xp(c.level, mob.level(), elite));
         if gained > 0 {
             events.push(SessionEvent::XpGain(XpGain {
                 victim: mob.guid,

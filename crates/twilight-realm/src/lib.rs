@@ -11,6 +11,7 @@
 mod characters;
 mod combat;
 mod content;
+mod dev;
 mod fields;
 mod mobs;
 mod population;
@@ -23,6 +24,7 @@ mod world;
 use benilla_protocol::{CharCreateReq, SessionEvent};
 
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
+pub use dev::DevMultipliers;
 pub use save::{SaveError, Storage, SAVE_VERSION};
 
 /// What the realm asks of whoever runs it. Coordinates are WoW's (`x` north, `y` west, `z` up).
@@ -79,6 +81,7 @@ pub struct Realm {
     events: Vec<SessionEvent>,
     storage: Vec<Storage>,
     rng: rng::Rng,
+    dev: DevMultipliers,
 }
 
 impl Realm {
@@ -93,6 +96,11 @@ impl Realm {
             rng: rng::Rng::new(seed),
             ..Self::default()
         }
+    }
+
+    /// This realm with the dev multipliers set: the host's boot flags, for the whole run.
+    pub fn with_dev(self, dev: DevMultipliers) -> Self {
+        Self { dev, ..self }
     }
 
     /// Applies one command; its answers queue for [`Self::drain_events`].
@@ -218,7 +226,7 @@ impl Realm {
                 .push(SessionEvent::CharacterLoginFailed { result: 5 });
             return;
         };
-        let entry = world::InWorld::enter(c, &mut self.events);
+        let entry = world::InWorld::enter(c, self.dev, &mut self.events);
         self.world = Some(entry);
     }
 
