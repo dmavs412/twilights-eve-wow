@@ -247,9 +247,18 @@ fn drive_rig(
     mut entered: MessageReader<EnteredWorldMessage>,
     script: Option<NonSendMut<benilla_ui::script::UiScript>>,
     self_q: Query<&ObjectStore, With<SelfPlayer>>,
+    mut warned_empty: Local<bool>,
 ) {
     if let Some(list) = lists.read().last() {
         rig.roster = list.characters.clone();
+        // An empty roster parks the rig below; say so once rather than wait in silence.
+        if rig.roster.is_empty() && rig.phase == RigPhase::AwaitRoster && !*warned_empty {
+            *warned_empty = true;
+            warn!(
+                "rig: the roster is empty, and the rig creates only beside an existing character \
+                 — waiting. Create one first (WOW_CHARCREATE_SHOT=1 WOW_CHARCREATE_NAME=<name>)."
+            );
+        }
     }
     let entered_world = entered.read().next().is_some();
 

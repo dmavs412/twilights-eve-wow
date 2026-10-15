@@ -108,8 +108,6 @@ mod sound;
 mod spell;
 /// Warcraft Survivors: the top-down survival mode the `warcraft-survivors` launcher boots.
 mod survivors;
-/// Twilight's Eve: the boot flag and the Local Realm's glue (ADR 0001).
-mod twilight;
 /// The melee swing refusal's latch + 4 s repeat (`SMSG_ATTACKSWING_*`).
 mod swing_refusal;
 mod target;
@@ -120,6 +118,8 @@ mod text_reshape;
 mod textinput;
 mod transport;
 mod tutorial;
+/// Twilight's Eve: the boot flag and the Local Realm's glue (ADR 0001).
+mod twilight;
 mod ui_action;
 mod ui_auction;
 mod ui_aura;

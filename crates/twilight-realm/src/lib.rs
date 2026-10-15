@@ -35,11 +35,18 @@ pub enum RealmCommand {
     /// The roster, answered with [`SessionEvent::CharacterList`].
     ListCharacters,
     CreateCharacter(CharCreateReq),
-    DeleteCharacter { guid: u64 },
+    DeleteCharacter {
+        guid: u64,
+    },
     /// Log in as this character.
-    EnterWorld { guid: u64 },
+    EnterWorld {
+        guid: u64,
+    },
     /// The player's own movement report, WoW coordinates.
-    Move { position: [f32; 3], orientation: f32 },
+    Move {
+        position: [f32; 3],
+        orientation: f32,
+    },
     /// Back to character select.
     Logout,
 }

@@ -99,7 +99,11 @@ impl Characters {
 
     /// Adds a character read from a save, keeping its guid.
     pub(crate) fn insert(&mut self, c: Char) -> Result<u64, SaveError> {
-        if self.list.iter().any(|o| o.guid == c.guid || o.name == c.name) {
+        if self
+            .list
+            .iter()
+            .any(|o| o.guid == c.guid || o.name == c.name)
+        {
             return Err(SaveError::Duplicate);
         }
         self.last_guid = self.last_guid.max(c.guid);

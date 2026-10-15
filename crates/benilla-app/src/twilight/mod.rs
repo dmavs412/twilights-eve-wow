@@ -92,8 +92,7 @@ fn save_path(guid: u64) -> Option<PathBuf> {
 /// disk, so a newer build can still read it.
 fn load_saves(realm: &mut Realm) -> BTreeSet<u64> {
     let mut saved = BTreeSet::new();
-    let Some(index) = index_path().and_then(|p| crate::local_state::read_to_string(&p).ok())
-    else {
+    let Some(index) = index_path().and_then(|p| crate::local_state::read_to_string(&p).ok()) else {
         return saved;
     };
     for guid in index.lines().filter_map(|l| l.trim().parse::<u64>().ok()) {
@@ -151,11 +150,7 @@ fn store(op: Storage, saved: &mut BTreeSet<u64>) {
 }
 
 /// Commands in, one tick, events out.
-fn pump(
-    mut local: ResMut<LocalRealm>,
-    time: Res<Time>,
-    world: WorldPoint,
-) {
+fn pump(mut local: ResMut<LocalRealm>, time: Res<Time>, world: WorldPoint) {
     let LocalRealm {
         far,
         realm,

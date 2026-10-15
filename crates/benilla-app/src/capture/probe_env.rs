@@ -317,6 +317,36 @@ pub(crate) fn wall_clock_vars() -> impl Iterator<Item = &'static str> {
     PROBE_VARS.iter().filter(|v| v.wall_clock).map(|v| v.name)
 }
 
+/// The glue screens' unattended drivers: not `WOW_PROBE*` variables, but how a run with no person
+/// gets from an empty roster into the world (the rig waits for a non-empty roster). Listed so
+/// `WOW_PROBE=list` finds them; each keeps its read site in `char_create` or `char_select`.
+pub(crate) const GLUE_DRIVERS: &[(&str, &str)] = &[
+    (
+        "WOW_CHARCREATE_SHOT",
+        "1 — open the create screen a few seconds after select comes up",
+    ),
+    (
+        "WOW_CHARCREATE_PICK",
+        "\"race,sex[,class]\" — the create screen's selection once it is up",
+    ),
+    (
+        "WOW_CHARCREATE_NAME",
+        "<name> — fill the name and press Create once, ~6 s after the screen is up",
+    ),
+    (
+        "WOW_CHARCREATE_SHOT_OUT",
+        "<png> — screenshot the create screen 5 s after it is up",
+    ),
+    (
+        "WOW_CHARSELECT_PICK",
+        "<name> — select that row and stay on the screen",
+    ),
+    (
+        "WOW_CHARSELECT_WALK",
+        "<period>[:<enter_after>] — select each row in turn; with enter_after, press Enter World",
+    ),
+];
+
 /// `WOW_PROBE=list`: prints the registry, one variable per line, then the named values.
 pub(crate) fn print() {
     println!("The probe fleet's environment (capture::probe_env).");
@@ -335,6 +365,11 @@ pub(crate) fn print() {
     println!("WOW_PROBE=<name>:");
     for (name, purpose) in PROBE_NAMES {
         println!("  {name:<12} {purpose}");
+    }
+    println!();
+    println!("Glue-screen drivers (create a character and enter the world unattended):");
+    for (name, purpose) in GLUE_DRIVERS {
+        println!("  {name:<26} {purpose}");
     }
 }
 
@@ -394,6 +429,24 @@ mod tests {
              nothing reads them; drop the row or restore the read site:\n  {}",
             unread.join("\n  ")
         );
+    }
+
+    /// Every listed glue driver is a string literal somewhere else in the crate, so the list
+    /// cannot outlive its read sites.
+    #[test]
+    fn every_listed_glue_driver_is_read() {
+        let sources = crate_sources();
+        let unread: Vec<&str> = GLUE_DRIVERS
+            .iter()
+            .map(|(name, _)| *name)
+            .filter(|name| {
+                let lit = format!("\"{name}\"");
+                !sources
+                    .iter()
+                    .any(|(rel, text)| rel != SELF && text.contains(&lit))
+            })
+            .collect();
+        assert!(unread.is_empty(), "listed but read nowhere: {unread:?}");
     }
 
     /// Every `Ok("<name>")` compared against `WOW_PROBE` is a `PROBE_NAMES` row, and every row

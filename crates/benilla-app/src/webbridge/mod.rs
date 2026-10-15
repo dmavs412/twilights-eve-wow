@@ -668,4 +668,21 @@ mod tests {
         };
         assert_eq!(cmds.len(), 3);
     }
+
+    /// The stock `Bindings.xml` has 219 commands, far past the 20 free slots of the VM's base C
+    /// frame; a walk that returned them as separate values aborted a debug Lua.
+    #[test]
+    fn a_full_size_binding_table_lists_every_command() {
+        let script = UiScript::new().expect("VM");
+        let rows: String = (0..250)
+            .map(|i| format!(r#"<Binding name="CMD{i}" header="H">x = {i}</Binding>"#))
+            .collect();
+        script.register_bindings(
+            &benilla_ui::bindings_xml::parse(&format!("<Bindings>{rows}</Bindings>"))
+                .expect("well-formed"),
+        );
+        let list = command_list(&script);
+        assert_eq!(list.len(), 250);
+        assert_eq!(list[249], ("CMD249".to_string(), "H".to_string()));
+    }
 }

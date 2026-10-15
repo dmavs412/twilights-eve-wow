@@ -6,6 +6,10 @@ The WoW 1.12.1 game data (14 MPQs) is at `C:\Users\davis\wow-data\Data`. Use it 
 `WOW_DATA`; `run.ps1` defaults to it. The repo's `wow-data` is a git symlink that Windows checks
 out as a plain text file, so `wow-data\Data` does not exist here. Do not run `fetch-data.sh` again.
 
+Let every cargo build and test run to completion: one stopped mid-compile leaves rlibs with
+corrupt MSVC debug info, and later links fail with `LNK1103` on a crate you never touched. The
+cure is deleting the `target/debug/deps` files written during the interrupted run.
+
 ## Agent skills
 
 ### Issue tracker

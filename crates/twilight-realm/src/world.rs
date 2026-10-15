@@ -111,7 +111,10 @@ fn player_fields(c: &Char) -> ObjectFields {
         (UNIT_FIELD_MINDAMAGE, 1.0f32.to_bits()),
         (UNIT_FIELD_MAXDAMAGE, 2.0f32.to_bits()),
         (UNIT_FIELD_BASE_HEALTH, content::BASE_HEALTH),
-        (PLAYER_BYTES, skin | face << 8 | hair_style << 16 | hair_color << 24),
+        (
+            PLAYER_BYTES,
+            skin | face << 8 | hair_style << 16 | hair_color << 24,
+        ),
         // Facial hair, then `REST_STATE_NORMAL` in the top byte.
         (PLAYER_BYTES_2, facial_hair | 0x01 << 24),
         (PLAYER_BYTES_3, u32::from(c.gender)),

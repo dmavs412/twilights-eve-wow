@@ -58,7 +58,11 @@ fn every_race_and_both_genders_can_be_created() {
     let names = ["Aa", "Bb", "Cc", "Dd", "Ee", "Ff", "Gg", "Hh"];
     for (race, name) in (1..=8).zip(names) {
         let gender = race % 2;
-        assert_eq!(create(&mut realm, name, race, gender), CHAR_CREATE_SUCCESS, "race {race}");
+        assert_eq!(
+            create(&mut realm, name, race, gender),
+            CHAR_CREATE_SUCCESS,
+            "race {race}"
+        );
     }
     assert_eq!(roster(&mut realm).len(), 8);
 }
@@ -75,7 +79,10 @@ fn only_the_warrior_class_can_be_created() {
 fn a_taken_name_is_refused_whatever_its_case() {
     let mut realm = realm();
     assert_eq!(create(&mut realm, "Rexxar", ORC, 0), CHAR_CREATE_SUCCESS);
-    assert_eq!(create(&mut realm, "REXXAR", TAUREN, 0), CHAR_CREATE_NAME_IN_USE);
+    assert_eq!(
+        create(&mut realm, "REXXAR", TAUREN, 0),
+        CHAR_CREATE_NAME_IN_USE
+    );
 }
 
 #[test]
@@ -83,8 +90,14 @@ fn a_name_must_be_two_to_twelve_letters() {
     let mut realm = realm();
     assert_eq!(create(&mut realm, "", HUMAN, 0), CHAR_NAME_NO_NAME);
     assert_eq!(create(&mut realm, "A", HUMAN, 0), CHAR_NAME_TOO_SHORT);
-    assert_eq!(create(&mut realm, "Abcdefghijklm", HUMAN, 0), CHAR_NAME_TOO_LONG);
-    assert_eq!(create(&mut realm, "Ab1", HUMAN, 0), CHAR_NAME_INVALID_CHARACTER);
+    assert_eq!(
+        create(&mut realm, "Abcdefghijklm", HUMAN, 0),
+        CHAR_NAME_TOO_LONG
+    );
+    assert_eq!(
+        create(&mut realm, "Ab1", HUMAN, 0),
+        CHAR_NAME_INVALID_CHARACTER
+    );
 }
 
 #[test]

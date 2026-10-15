@@ -404,7 +404,10 @@
 */
 #if defined(LUA_USE_APICHECK)
 #include <assert.h>
-#define luai_apicheck(L,o)	{ (void)L; assert(o); }
+/* BENILLA ADDITION: a failed check names the call chain and the stack before it aborts
+** (`benilla_apicheck_report`, lbenilla.c); the bare assert leaves only a file and a line. */
+void benilla_apicheck_report(void *L);
+#define luai_apicheck(L,o)	{ if (!(o)) benilla_apicheck_report(L); assert(o); }
 #else
 #define luai_apicheck(L,o)	{ (void)L; }
 #endif

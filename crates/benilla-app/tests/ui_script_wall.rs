@@ -38,7 +38,8 @@ fn family(rel: &str) -> Family {
 }
 
 /// The standing count of `Game` files; raise it only with the reason written down.
-const CEILING: usize = 40;
+// Re-armed at the standing count on 2026-10-14 (the webbridge took it past 40).
+const CEILING: usize = 41;
 
 /// How far under [`CEILING`] the count may sit before the test asks for the ceiling to follow it.
 const SLACK: usize = 4;

@@ -33,8 +33,8 @@ whole of mlua's surface, stay exactly as upstream.
 
 ## The delta, and the command that proves it
 
-Eight hunks in three files. `src/lib.rs` additionally differs by having Lua 5.2/5.3/5.4/5.5 stripped
-from the `Version` enum (with their source trees deleted): benilla builds 5.1 and only 5.1, and a
+Nine hunks in three files, and one added file. `src/lib.rs` additionally differs by having Lua
+5.2/5.3/5.4/5.5 stripped from the `Version` enum (with their source trees deleted): benilla builds 5.1 and only 5.1, and a
 fork that still offered the other four would answer a request for one with a missing directory at
 build time instead of a compile error.
 
@@ -63,6 +63,15 @@ string-stripping scan of the 1.12 FrameXML (177 files), GlueXML, Blizzard's own 
 corpus finds zero sites of all three. No chunk of benilla's own Lua may use a construct the client's
 parser rejects.
 
+One hunk and the added file are a debugging aid. They exist only in a debug build
+(`LUA_USE_APICHECK`, which `src/lib.rs` defines under `debug_assertions`) and change nothing when a
+check passes:
+
+| file | hunk | why |
+|---|---|---|
+| `luaconf.h` | `luai_apicheck` calls `benilla_apicheck_report` before its `assert` | a failed API check aborted with only `Assertion failed … lapi.c:231`: no Rust backtrace, no Lua traceback, nothing naming the caller |
+| `lbenilla.c` (added) | `benilla_apicheck_report`: the call chain innermost first, then every value on the stack | the first such abort (`return unpack(t)` of 219 binding names on the VM's base frame) took three instrumented rebuilds to place; the stack dump names it at once. A file of its own because `<stdio.h>` must precede `ldebug.h`, whose `getline` macro breaks the wasi-sdk declaration |
+
 To verify the Lua sources against upstream at any time:
 
 ```sh
@@ -71,7 +80,7 @@ diff -r third_party/lua-src/lua-5.1.5 \
   ~/.cargo/registry/src/*/lua-src-550.0.0/lua-5.1.5
 ```
 
-That must print exactly the eight hunks in the tables above and nothing else.
+That must print exactly the nine hunks in the tables above, plus `Only in …: lbenilla.c`, and nothing else.
 
 ## The generic-for, in detail
 

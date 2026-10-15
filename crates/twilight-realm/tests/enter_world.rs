@@ -19,10 +19,16 @@ fn entering_announces_the_character_then_ports_it_to_the_crossroads() {
         .iter()
         .position(|e| matches!(e, SessionEvent::Worldport { .. }))
         .expect("a login worldport");
-    assert!(connected < port, "the IO thread announces the entry before any world packet");
+    assert!(
+        connected < port,
+        "the IO thread announces the entry before any world packet"
+    );
 
     let SessionEvent::Worldport {
-        map_id, position, needs_ack, ..
+        map_id,
+        position,
+        needs_ack,
+        ..
     } = &events[port]
     else {
         unreachable!()

@@ -34,7 +34,10 @@ fn an_exported_character_imports_into_a_fresh_realm_unchanged() {
 
     assert_eq!(after.len(), 1);
     let (a, b) = (&before[0], &after[0]);
-    assert_eq!((a.guid, &a.name, a.race, a.gender, a.level), (b.guid, &b.name, b.race, b.gender, b.level));
+    assert_eq!(
+        (a.guid, &a.name, a.race, a.gender, a.level),
+        (b.guid, &b.name, b.race, b.gender, b.level)
+    );
     assert_eq!((a.map, a.zone), (b.map, b.zone));
     assert_eq!(
         (a.position.x, a.position.y, a.position.z),
@@ -104,7 +107,10 @@ fn logging_out_writes_the_save_with_the_last_position() {
     let mut fresh = Realm::new();
     fresh.import_character(&blob).unwrap();
     let c = &roster(&mut fresh)[0];
-    assert_eq!((c.position.x, c.position.y, c.position.z), (-10.0, -20.0, 30.0));
+    assert_eq!(
+        (c.position.x, c.position.y, c.position.z),
+        (-10.0, -20.0, 30.0)
+    );
 }
 
 #[test]
@@ -115,11 +121,17 @@ fn the_world_saves_about_once_a_minute() {
     for _ in 0..50 {
         realm.tick(1.0, &FlatGround);
     }
-    assert!(last_write(&mut realm, guid).is_none(), "not before a minute");
+    assert!(
+        last_write(&mut realm, guid).is_none(),
+        "not before a minute"
+    );
     for _ in 0..15 {
         realm.tick(1.0, &FlatGround);
     }
-    assert!(last_write(&mut realm, guid).is_some(), "by a minute and a bit");
+    assert!(
+        last_write(&mut realm, guid).is_some(),
+        "by a minute and a bit"
+    );
 }
 
 #[test]
@@ -176,5 +188,8 @@ fn a_guid_held_by_an_unreadable_save_is_never_reused() {
     realm.reserve_guid(1);
     create(&mut realm, "Newbie", HUMAN, 0);
     let guid = roster(&mut realm)[0].guid;
-    assert_ne!(guid, 1, "a new character would overwrite the unreadable save");
+    assert_ne!(
+        guid, 1,
+        "a new character would overwrite the unreadable save"
+    );
 }
