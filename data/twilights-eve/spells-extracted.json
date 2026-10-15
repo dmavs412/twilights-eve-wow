@@ -12,20 +12,6 @@
     10
    ],
    "skills": {
-    "battle_shout": {
-     "aura_attack_power.amount": [
-      15,
-      17,
-      20
-     ]
-    },
-    "bloodrage": {
-     "energize_rage.amount": [
-      10,
-      11,
-      12
-     ]
-    },
     "charge": {
      "energize_rage.amount": [
       9,
@@ -33,39 +19,11 @@
       10
      ]
     },
-    "hamstring": {
-     "school_damage.amount": [
-      2,
-      4,
-      8
-     ]
-    },
     "heroic_strike": {
      "weapon_strike.bonus": [
       11,
       17,
       24
-     ]
-    },
-    "overpower": {
-     "weapon_strike.bonus": [
-      3,
-      5,
-      7
-     ]
-    },
-    "rend": {
-     "periodic_damage.tick": [
-      5,
-      6,
-      7
-     ]
-    },
-    "thunder_clap": {
-     "school_damage.amount": [
-      5,
-      11,
-      19
      ]
     }
    }
@@ -1108,6 +1066,85 @@
    "rank": "Rank 1",
    "school": "physical",
    "spell_level": 40,
+   "stances": [],
+   "stances_mask": 0,
+   "stances_not_mask": 0,
+   "target_aura_state": 0
+  },
+  "12296": {
+   "attributes": [
+    "0x400d0",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0"
+   ],
+   "aura_description": "",
+   "base_level": 0,
+   "cast_time_ms": 0,
+   "caster_aura_state": 0,
+   "category": 0,
+   "category_cooldown_ms": 0,
+   "cooldown_ms": 0,
+   "cost": 0,
+   "cost_pct": 0,
+   "cost_raw": 0,
+   "description": "Increases the time required for your rage to decay while out of combat by 30%.",
+   "dispel": 0,
+   "dmg_class": "none",
+   "duration_ms": -1,
+   "effects": [
+    {
+     "amplitude_ms": 0,
+     "aura": 85,
+     "aura_name": "MOD_POWER_REGEN",
+     "base_points": 14,
+     "chain_targets": 0,
+     "effect": 6,
+     "effect_name": "APPLY_AURA",
+     "implicit_target": [
+      1,
+      0
+     ],
+     "item_type_or_family_mask": "0x0",
+     "misc_value": 1,
+     "multiple_value": 0.0,
+     "radius_yd": null,
+     "real_points_per_level": 0.0,
+     "trigger_spell": 0,
+     "value": 15
+    }
+   ],
+   "family": 0,
+   "family_flags": 0,
+   "gcd_category": 0,
+   "gcd_ms": 0,
+   "icon": "Interface\\Icons\\Spell_Holy_BlessingOfStamina",
+   "icon_id": 238,
+   "id": 12296,
+   "in_spellbook": false,
+   "max_level": 0,
+   "max_targets": 0,
+   "mechanic": 0,
+   "name": "Anger Management",
+   "not_in_combat": false,
+   "on_next_swing": false,
+   "passive": true,
+   "power_type": "mana",
+   "proc": {
+    "chance": 101,
+    "charges": 0,
+    "flags": "0x0"
+   },
+   "range_index": 1,
+   "range_name": "Self Only",
+   "range_yd": [
+    0.0,
+    0.0
+   ],
+   "rank": "",
+   "school": "physical",
+   "spell_level": 1,
    "stances": [],
    "stances_mask": 0,
    "stances_not_mask": 0,
@@ -8906,108 +8943,6 @@
    "stances_not_mask": 0,
    "target_aura_state": 0
   },
-  "1715": {
-   "attributes": [
-    "0x50010",
-    "0x8000200",
-    "0x0",
-    "0x408",
-    "0x0"
-   ],
-   "aura_description": "Movement slowed by $s2%.",
-   "base_level": 8,
-   "cast_time_ms": 0,
-   "caster_aura_state": 0,
-   "category": 0,
-   "category_cooldown_ms": 0,
-   "cooldown_ms": 0,
-   "cost": 10.0,
-   "cost_pct": 0,
-   "cost_raw": 100,
-   "description": "Maims the enemy, causing $s1 damage and slowing the enemy's movement by $s2% for $d.",
-   "dispel": 0,
-   "dmg_class": "melee",
-   "duration_ms": 15000,
-   "effects": [
-    {
-     "amplitude_ms": 0,
-     "aura": 0,
-     "aura_name": null,
-     "base_points": 4,
-     "chain_targets": 0,
-     "effect": 2,
-     "effect_name": "SCHOOL_DAMAGE",
-     "implicit_target": [
-      6,
-      0
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 0,
-     "multiple_value": 0.0,
-     "radius_yd": null,
-     "real_points_per_level": 0.0,
-     "trigger_spell": 0,
-     "value": 5
-    },
-    {
-     "amplitude_ms": 0,
-     "aura": 33,
-     "aura_name": "MOD_DECREASE_SPEED",
-     "base_points": -41,
-     "chain_targets": 0,
-     "effect": 6,
-     "effect_name": "APPLY_AURA",
-     "implicit_target": [
-      6,
-      0
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 0,
-     "multiple_value": 0.0,
-     "radius_yd": null,
-     "real_points_per_level": 0.0,
-     "trigger_spell": 0,
-     "value": -40
-    }
-   ],
-   "family": 4,
-   "family_flags": 2,
-   "gcd_category": 133,
-   "gcd_ms": 1500,
-   "icon": "Interface\\Icons\\Ability_ShockWave",
-   "icon_id": 23,
-   "id": 1715,
-   "in_spellbook": true,
-   "max_level": 0,
-   "max_targets": 0,
-   "mechanic": 0,
-   "name": "Hamstring",
-   "not_in_combat": false,
-   "on_next_swing": false,
-   "passive": false,
-   "power_type": "rage",
-   "proc": {
-    "chance": 101,
-    "charges": 0,
-    "flags": "0x0"
-   },
-   "range_index": 2,
-   "range_name": "Combat Range",
-   "range_yd": [
-    0.0,
-    5.0
-   ],
-   "rank": "Rank 1",
-   "school": "physical",
-   "spell_level": 8,
-   "stances": [
-    "Battle Stance",
-    "Berserker Stance"
-   ],
-   "stances_mask": 327680,
-   "stances_not_mask": 0,
-   "target_aura_state": 0
-  },
   "20496": {
    "attributes": [
     "0x1d0",
@@ -9643,105 +9578,6 @@
    "stances_not_mask": 0,
    "target_aura_state": 0
   },
-  "2687": {
-   "attributes": [
-    "0x50010",
-    "0x0",
-    "0x0",
-    "0x0",
-    "0x0"
-   ],
-   "aura_description": "",
-   "base_level": 10,
-   "cast_time_ms": 0,
-   "caster_aura_state": 0,
-   "category": 0,
-   "category_cooldown_ms": 0,
-   "cooldown_ms": 60000,
-   "cost": 0,
-   "cost_pct": 20,
-   "cost_raw": 0,
-   "description": "Generates $/10;s1 rage at the cost of health, and then generates an additional $/10;29131o1 rage over $29131d.  The warrior is considered in combat for the duration.",
-   "dispel": 0,
-   "dmg_class": "none",
-   "duration_ms": null,
-   "effects": [
-    {
-     "amplitude_ms": 0,
-     "aura": 0,
-     "aura_name": null,
-     "base_points": 99,
-     "chain_targets": 0,
-     "effect": 30,
-     "effect_name": "ENERGIZE",
-     "implicit_target": [
-      1,
-      0
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 1,
-     "multiple_value": 0.0,
-     "radius_yd": null,
-     "real_points_per_level": 0.0,
-     "trigger_spell": 0,
-     "value": 100
-    },
-    {
-     "amplitude_ms": 0,
-     "aura": 0,
-     "aura_name": null,
-     "base_points": 0,
-     "chain_targets": 0,
-     "effect": 64,
-     "effect_name": "TRIGGER_SPELL",
-     "implicit_target": [
-      1,
-      0
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 0,
-     "multiple_value": 0.0,
-     "radius_yd": null,
-     "real_points_per_level": 0.0,
-     "trigger_spell": 29131,
-     "value": 0
-    }
-   ],
-   "family": 4,
-   "family_flags": 256,
-   "gcd_category": 0,
-   "gcd_ms": 0,
-   "icon": "Interface\\Icons\\Ability_Racial_BloodRage",
-   "icon_id": 86,
-   "id": 2687,
-   "in_spellbook": true,
-   "max_level": 0,
-   "max_targets": 0,
-   "mechanic": 0,
-   "name": "Bloodrage",
-   "not_in_combat": false,
-   "on_next_swing": false,
-   "passive": false,
-   "power_type": "health",
-   "proc": {
-    "chance": 101,
-    "charges": 0,
-    "flags": "0x0"
-   },
-   "range_index": 1,
-   "range_name": "Self Only",
-   "range_yd": [
-    0.0,
-    0.0
-   ],
-   "rank": "",
-   "school": "physical",
-   "spell_level": 10,
-   "stances": [],
-   "stances_mask": 0,
-   "stances_not_mask": 0,
-   "target_aura_state": 0
-  },
   "5308": {
    "attributes": [
     "0x50110",
@@ -10044,107 +9880,6 @@
    "stances_not_mask": 0,
    "target_aura_state": 0
   },
-  "6343": {
-   "attributes": [
-    "0x50010",
-    "0x88",
-    "0x0",
-    "0x0",
-    "0x0"
-   ],
-   "aura_description": "Time between attacks increased by $s2%.",
-   "base_level": 6,
-   "cast_time_ms": 0,
-   "caster_aura_state": 0,
-   "category": 49,
-   "category_cooldown_ms": 4000,
-   "cooldown_ms": 0,
-   "cost": 20.0,
-   "cost_pct": 0,
-   "cost_raw": 200,
-   "description": "Blasts nearby enemies increasing the time between their attacks by $s2% for $d and doing $s1 damage to them.  Will affect up to $i targets.",
-   "dispel": 0,
-   "dmg_class": "magic",
-   "duration_ms": 10000,
-   "effects": [
-    {
-     "amplitude_ms": 0,
-     "aura": 0,
-     "aura_name": null,
-     "base_points": 9,
-     "chain_targets": 0,
-     "effect": 2,
-     "effect_name": "SCHOOL_DAMAGE",
-     "implicit_target": [
-      22,
-      15
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 0,
-     "multiple_value": 0.0,
-     "radius_yd": 8.0,
-     "real_points_per_level": 0.0,
-     "trigger_spell": 0,
-     "value": 10
-    },
-    {
-     "amplitude_ms": 0,
-     "aura": 138,
-     "aura_name": "MOD_HASTE",
-     "base_points": -11,
-     "chain_targets": 0,
-     "effect": 6,
-     "effect_name": "APPLY_AURA",
-     "implicit_target": [
-      22,
-      15
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 0,
-     "multiple_value": 0.0,
-     "radius_yd": 8.0,
-     "real_points_per_level": 0.0,
-     "trigger_spell": 0,
-     "value": -10
-    }
-   ],
-   "family": 4,
-   "family_flags": 128,
-   "gcd_category": 133,
-   "gcd_ms": 1500,
-   "icon": "Interface\\Icons\\Spell_Nature_ThunderClap",
-   "icon_id": 199,
-   "id": 6343,
-   "in_spellbook": true,
-   "max_level": 0,
-   "max_targets": 4,
-   "mechanic": 0,
-   "name": "Thunder Clap",
-   "not_in_combat": false,
-   "on_next_swing": false,
-   "passive": false,
-   "power_type": "rage",
-   "proc": {
-    "chance": 0,
-    "charges": 0,
-    "flags": "0x0"
-   },
-   "range_index": 1,
-   "range_name": "Self Only",
-   "range_yd": [
-    0.0,
-    0.0
-   ],
-   "rank": "Rank 1",
-   "school": "physical",
-   "spell_level": 6,
-   "stances": [
-    "Battle Stance"
-   ],
-   "stances_mask": 65536,
-   "stances_not_mask": 0,
-   "target_aura_state": 0
-  },
   "6546": {
    "attributes": [
     "0x50010",
@@ -10219,248 +9954,6 @@
    "rank": "Rank 2",
    "school": "physical",
    "spell_level": 10,
-   "stances": [
-    "Battle Stance",
-    "Defensive Stance"
-   ],
-   "stances_mask": 196608,
-   "stances_not_mask": 0,
-   "target_aura_state": 0
-  },
-  "6673": {
-   "attributes": [
-    "0x50010",
-    "0x0",
-    "0x0",
-    "0x0",
-    "0x0"
-   ],
-   "aura_description": "Increases your melee attack power by $s1.",
-   "base_level": 1,
-   "cast_time_ms": 0,
-   "caster_aura_state": 0,
-   "category": 0,
-   "category_cooldown_ms": 0,
-   "cooldown_ms": 0,
-   "cost": 10.0,
-   "cost_pct": 0,
-   "cost_raw": 100,
-   "description": "The warrior shouts, increasing the melee attack power of all party members within $a1 yards by $s1.  Lasts $d.",
-   "dispel": 0,
-   "dmg_class": "magic",
-   "duration_ms": 120000,
-   "effects": [
-    {
-     "amplitude_ms": 0,
-     "aura": 99,
-     "aura_name": "MOD_ATTACK_POWER",
-     "base_points": 14,
-     "chain_targets": 0,
-     "effect": 6,
-     "effect_name": "APPLY_AURA",
-     "implicit_target": [
-      20,
-      0
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 0,
-     "multiple_value": 0.0,
-     "radius_yd": 20.0,
-     "real_points_per_level": 0.5,
-     "trigger_spell": 0,
-     "value": 15
-    }
-   ],
-   "family": 4,
-   "family_flags": 65536,
-   "gcd_category": 133,
-   "gcd_ms": 1500,
-   "icon": "Interface\\Icons\\Ability_Warrior_BattleShout",
-   "icon_id": 456,
-   "id": 6673,
-   "in_spellbook": true,
-   "max_level": 11,
-   "max_targets": 0,
-   "mechanic": 0,
-   "name": "Battle Shout",
-   "not_in_combat": false,
-   "on_next_swing": false,
-   "passive": false,
-   "power_type": "rage",
-   "proc": {
-    "chance": 101,
-    "charges": 0,
-    "flags": "0x0"
-   },
-   "range_index": 1,
-   "range_name": "Self Only",
-   "range_yd": [
-    0.0,
-    0.0
-   ],
-   "rank": "Rank 1",
-   "school": "physical",
-   "spell_level": 1,
-   "stances": [],
-   "stances_mask": 0,
-   "stances_not_mask": 0,
-   "target_aura_state": 0
-  },
-  "7384": {
-   "attributes": [
-    "0x250010",
-    "0x48100200",
-    "0x0",
-    "0x0",
-    "0x200"
-   ],
-   "aura_description": "",
-   "base_level": 12,
-   "cast_time_ms": 0,
-   "caster_aura_state": 0,
-   "category": 65,
-   "category_cooldown_ms": 5000,
-   "cooldown_ms": 0,
-   "cost": 5.0,
-   "cost_pct": 0,
-   "cost_raw": 50,
-   "description": "Instantly overpower the enemy, causing weapon damage plus $s1.  Only useable after the target dodges.  The Overpower cannot be blocked, dodged or parried.",
-   "dispel": 0,
-   "dmg_class": "melee",
-   "duration_ms": null,
-   "effects": [
-    {
-     "amplitude_ms": 0,
-     "aura": 0,
-     "aura_name": null,
-     "base_points": 4,
-     "chain_targets": 0,
-     "effect": 121,
-     "effect_name": "NORMALIZED_WEAPON_DMG",
-     "implicit_target": [
-      6,
-      0
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 0,
-     "multiple_value": 0.0,
-     "radius_yd": null,
-     "real_points_per_level": 0.0,
-     "trigger_spell": 0,
-     "value": 5
-    }
-   ],
-   "family": 4,
-   "family_flags": 4,
-   "gcd_category": 133,
-   "gcd_ms": 1500,
-   "icon": "Interface\\Icons\\Ability_MeleeDamage",
-   "icon_id": 26,
-   "id": 7384,
-   "in_spellbook": true,
-   "max_level": 0,
-   "max_targets": 0,
-   "mechanic": 0,
-   "name": "Overpower",
-   "not_in_combat": false,
-   "on_next_swing": false,
-   "passive": false,
-   "power_type": "rage",
-   "proc": {
-    "chance": 101,
-    "charges": 0,
-    "flags": "0x0"
-   },
-   "range_index": 2,
-   "range_name": "Combat Range",
-   "range_yd": [
-    0.0,
-    5.0
-   ],
-   "rank": "Rank 1",
-   "school": "physical",
-   "spell_level": 12,
-   "stances": [
-    "Battle Stance"
-   ],
-   "stances_mask": 65536,
-   "stances_not_mask": 0,
-   "target_aura_state": 0
-  },
-  "772": {
-   "attributes": [
-    "0x50010",
-    "0x8000200",
-    "0x0",
-    "0x400",
-    "0x0"
-   ],
-   "aura_description": "Bleeding for $s1 damage every $t1 seconds.",
-   "base_level": 4,
-   "cast_time_ms": 0,
-   "caster_aura_state": 0,
-   "category": 0,
-   "category_cooldown_ms": 0,
-   "cooldown_ms": 0,
-   "cost": 10.0,
-   "cost_pct": 0,
-   "cost_raw": 100,
-   "description": "Wounds the target causing them to bleed for $o1 damage over $d.",
-   "dispel": 0,
-   "dmg_class": "melee",
-   "duration_ms": 9000,
-   "effects": [
-    {
-     "amplitude_ms": 3000,
-     "aura": 3,
-     "aura_name": "PERIODIC_DAMAGE",
-     "base_points": 4,
-     "chain_targets": 0,
-     "effect": 6,
-     "effect_name": "APPLY_AURA",
-     "implicit_target": [
-      6,
-      0
-     ],
-     "item_type_or_family_mask": "0x0",
-     "misc_value": 0,
-     "multiple_value": 0.0,
-     "radius_yd": null,
-     "real_points_per_level": 0.0,
-     "trigger_spell": 0,
-     "value": 5
-    }
-   ],
-   "family": 4,
-   "family_flags": 32,
-   "gcd_category": 133,
-   "gcd_ms": 1500,
-   "icon": "Interface\\Icons\\Ability_Gouge",
-   "icon_id": 245,
-   "id": 772,
-   "in_spellbook": true,
-   "max_level": 0,
-   "max_targets": 0,
-   "mechanic": 15,
-   "name": "Rend",
-   "not_in_combat": false,
-   "on_next_swing": false,
-   "passive": false,
-   "power_type": "rage",
-   "proc": {
-    "chance": 101,
-    "charges": 0,
-    "flags": "0x0"
-   },
-   "range_index": 2,
-   "range_name": "Combat Range",
-   "range_yd": [
-    0.0,
-    5.0
-   ],
-   "rank": "Rank 1",
-   "school": "physical",
-   "spell_level": 4,
    "stances": [
     "Battle Stance",
     "Defensive Stance"
@@ -10811,12 +10304,12 @@
   }
  },
  "tab_capacity": {
-  "basic_warrior.Basic Warrior": {
+  "basic_warrior.Recruit": {
    "by_tier": {
-    "1": 12,
-    "2": 10
+    "1": 10,
+    "2": 11
    },
-   "ranks": 22
+   "ranks": 21
   },
   "warrior.Arms": {
    "by_tier": {
@@ -11141,6 +10634,25 @@
    ],
    "required_spell": 0,
    "row": 3,
+   "tab": 161
+  },
+  "137": {
+   "col": 1,
+   "description_rank1": "Increases the time required for your rage to decay while out of combat by 30%.",
+   "file_row": 56,
+   "flags": 1,
+   "icon": "Interface\\Icons\\Spell_Holy_BlessingOfStamina",
+   "icon_id": 238,
+   "id": 137,
+   "max_rank": 1,
+   "name": "Anger Management",
+   "prereq_rank": 4,
+   "prereq_talent": 641,
+   "rank_spells": [
+    12296
+   ],
+   "required_spell": 0,
+   "row": 2,
    "tab": 161
   },
   "138": {

@@ -76,130 +76,31 @@
           },
           "vanilla_reference": "R1 L4 9 rage, R2 L26 12, R3 L46 15: 8.5 + 0.14 L.",
           "tooltip_note": "Tooltip says 9 rage; realm gives 9 at L1-10."
-        },
-        {
-          "key": "rend",
-          "spell_id": 772, "name": "Rend", "rank": "Rank 1",
-          "icon_id": 245, "icon": "Interface\\Icons\\Ability_Gouge",
-          "family_flags": "0x20",
-          "client": { "cost": 10.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "duration_ms": 9000, "stances": ["Battle Stance", "Defensive Stance"] },
-          "realm": {
-            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
-            "effects": [
-              { "kind": "periodic_damage", "aura_slot_spell_id": 772, "school": "physical", "mechanic": "bleed", "tick_ms": 3000, "duration_ms": 9000, "tick": { "base": 4.0, "per_level": 0.24, "per_ap": 0.01, "min": 1 } }
-            ]
-          },
-          "vanilla_reference": "R1 L4 5/tick x3, R2 L10 7/tick x4, R4 L30 11/tick x6. Kept at 3 ticks (the tooltip's 9 s) and grown per tick.",
-          "tooltip_note": "Tooltip says 15 over 9 sec."
-        },
-        {
-          "key": "thunder_clap",
-          "spell_id": 6343, "name": "Thunder Clap", "rank": "Rank 1",
-          "icon_id": 199, "icon": "Interface\\Icons\\Spell_Nature_ThunderClap",
-          "family_flags": "0x80",
-          "client": { "cost": 20.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 0.0], "duration_ms": 10000, "stances": ["Battle Stance"] },
-          "realm": {
-            "rage_cost": 20, "cooldown_ms": 4000, "cooldown_note": "Spell.dbc category 49 cooldown 4 s", "gcd_ms": 1500, "target": "self_area", "radius_yd": 8, "max_targets": 4,
-            "effects": [
-              { "kind": "school_damage", "school": "physical", "amount": { "base": 2.6, "per_level": 1.23, "per_ap": 0.05, "min": 1 } },
-              { "kind": "attack_speed_slow", "pct": 10, "duration_ms": 10000 }
-            ]
-          },
-          "vanilla_reference": "R1 L6 10, R2 L18 23, R3 L28 37: 2.6 + 1.23 L.",
-          "tooltip_note": "Tooltip says 10 damage, 10% slower attacks for 10 sec, up to 4 targets."
-        },
-        {
-          "key": "battle_shout",
-          "spell_id": 6673, "name": "Battle Shout", "rank": "Rank 1",
-          "icon_id": 456, "icon": "Interface\\Icons\\Ability_Warrior_BattleShout",
-          "family_flags": "0x10000",
-          "client": { "cost": 10.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 0.0], "duration_ms": 120000, "stances": [] },
-          "realm": {
-            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self_party", "radius_yd": 20,
-            "effects": [
-              { "kind": "aura_attack_power", "duration_ms": 120000, "amount": { "base": 14.5, "per_level": 0.5, "per_ap": 0 } }
-            ]
-          },
-          "vanilla_reference": "R1 is 15 AP + 0.5/level to its MaxLevel 11 (RealPointsPerLevel). The formula is exactly the client's own $s1, so the tooltip is right at every Tier 0 level.",
-          "tooltip_note": "Tooltip scales with level itself (15 at L1, 19.5 at L10); realm rounds half up, so it may differ by 1."
-        },
-        {
-          "key": "hamstring",
-          "spell_id": 1715, "name": "Hamstring", "rank": "Rank 1",
-          "icon_id": 23, "icon": "Interface\\Icons\\Ability_ShockWave",
-          "family_flags": "0x2",
-          "client": { "cost": 10.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "duration_ms": 15000, "stances": ["Battle Stance", "Berserker Stance"] },
-          "realm": {
-            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
-            "effects": [
-              { "kind": "school_damage", "school": "physical", "melee_hit_table": true, "amount": { "base": 0.7, "per_level": 0.54, "per_ap": 0.02, "min": 1 } },
-              { "kind": "movement_slow", "pct": 40, "duration_ms": 15000 }
-            ]
-          },
-          "vanilla_reference": "R1 L8 5 dmg, R2 L32 18, R3 L54 45; slow 40/45/50%.",
-          "tooltip_note": "Tooltip says 5 damage, 40% for 15 sec."
-        },
-        {
-          "key": "overpower",
-          "spell_id": 7384, "name": "Overpower", "rank": "Rank 1",
-          "icon_id": 26, "icon": "Interface\\Icons\\Ability_MeleeDamage",
-          "family_flags": "0x4",
-          "client": { "cost": 5.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "stances": ["Battle Stance"], "caster_aura_state": 0, "target_aura_state": 0 },
-          "realm": {
-            "rage_cost": 5, "cooldown_ms": 5000, "cooldown_note": "Spell.dbc category 65 cooldown 5 s", "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
-            "requires": "the target dodged the caster in the last 5 s. AttributesEx 0x00100000 makes the stock client grey the button and refuse the cast while PLAYER_FIELD_BYTES combo points are 0, so on a dodge the realm sets 1 combo point on that target (vmangos does the same) and clears it on cast or after 5 s.",
-            "effects": [
-              { "kind": "weapon_strike", "weapon": "Wn", "unavoidable": ["dodge", "parry", "block"], "bonus": { "base": 2.0, "per_level": 0.5, "per_ap": 0 } }
-            ]
-          },
-          "vanilla_reference": "R1 L12 +5, R2 L28 +15, R3 L44 +25. 2 + 0.5 L gives +3..+7 over Tier 0, near rank 1.",
-          "tooltip_note": "Tooltip says weapon damage plus 5."
-        },
-        {
-          "key": "bloodrage",
-          "spell_id": 2687, "name": "Bloodrage", "rank": "",
-          "icon_id": 86, "icon": "Interface\\Icons\\Ability_Racial_BloodRage",
-          "family_flags": "0x100",
-          "client": { "cost": 0, "cooldown_ms": 60000, "gcd_ms": 0, "cast_time_ms": 0, "range_yd": [0.0, 0.0], "stances": [] },
-          "realm": {
-            "rage_cost": 0, "health_cost_pct_of_base_health": 20, "cooldown_ms": 60000, "gcd_ms": 0, "target": "self", "puts_in_combat_ms": 10000,
-            "effects": [
-              { "kind": "energize_rage", "amount": { "base": 9.6, "per_level": 0.25, "per_ap": 0 } },
-              { "kind": "periodic_rage", "aura_spell_id": 29131, "per_tick": 1, "tick_ms": 1000, "duration_ms": 10000 }
-            ]
-          },
-          "vanilla_reference": "10 rage now, 10 over 10 s, 20% of base health (Spell.dbc ManaCostPercentage 20, power type health). The only ranks-free skill: rank text is already empty.",
-          "tooltip_note": "Tooltip says 10 rage then 10 over 10 sec; realm grows the instant part to 12 by L10 so every skill scales with level."
         }
       ],
 
       "talent_tree": {
         "points_at_cap": 9,
-        "catalog_note": "Replaces the client's TalentCatalog for this Calling: one tab, class_mask 1, race_mask 511. Talent ids and rank spells are real Talent.dbc rows re-seated on the new grid; ranks are a prefix of the real ones (Cruelty and Improved Battle Shout cut to 3). Tier n needs 5*(n-1) points in the tab, so 9 points reach tier 2 only.",
+        "catalog_note": "Replaces the client's TalentCatalog for this Calling: one tab, class_mask 1, race_mask 511. Talent ids and rank spells are real Talent.dbc rows re-seated on the vanilla grid. Tier n needs 5*(n-1) points in the tab, so the 10 ranks of row 1 open row 2 at 5 points and 9 points reach it.",
         "tabs": [
           {
-            "name": "Basic Warrior",
+            "name": "Recruit",
             "catalog_tab_id": 900,
             "source_tab_id": null,
             "background": "WarriorArms",
             "talents": [
               { "key": "improved_heroic_strike", "talent_id": 124, "source_tab_id": 161, "name": "Improved Heroic Strike", "tier": 1, "column": 1, "rank_spells": [12282, 12663, 12664],
                 "realm_effect": "Heroic Strike costs 1/2/3 less rage.", "client_spellmod": { "type": "flat", "op": "COST", "family_bit": 6, "values": [-10, -20, -30] } },
-              { "key": "cruelty", "talent_id": 157, "source_tab_id": 164, "name": "Cruelty", "tier": 1, "column": 2, "rank_spells": [12320, 12852, 12853],
-                "realm_effect": "+1/2/3% melee critical strike chance." },
-              { "key": "improved_rend", "talent_id": 127, "source_tab_id": 161, "name": "Improved Rend", "tier": 1, "column": 3, "rank_spells": [12286, 12658, 12659],
-                "realm_effect": "Rend ticks deal 15/25/35% more.", "client_spellmod": { "type": "pct", "op": "ALL_EFFECTS", "family_bit": 5, "values": [15, 25, 35] } },
-              { "key": "improved_battle_shout", "talent_id": 154, "source_tab_id": 164, "name": "Improved Battle Shout", "tier": 1, "column": 4, "rank_spells": [12318, 12857, 12858],
-                "realm_effect": "Battle Shout's attack power +5/10/15%.", "client_spellmod": { "type": "pct", "op": "ALL_EFFECTS", "family_bit": 16, "values": [5, 10, 15] } },
-              { "key": "improved_charge", "talent_id": 126, "source_tab_id": 161, "name": "Improved Charge", "tier": 2, "column": 1, "rank_spells": [12285, 12697],
+              { "key": "improved_charge", "talent_id": 126, "source_tab_id": 161, "name": "Improved Charge", "tier": 1, "column": 2, "rank_spells": [12285, 12697],
                 "realm_effect": "Charge generates 3/6 more rage." },
-              { "key": "improved_overpower", "talent_id": 131, "source_tab_id": 161, "name": "Improved Overpower", "tier": 2, "column": 2, "rank_spells": [12290, 12963],
-                "realm_effect": "Overpower +25/50% critical strike chance." },
-              { "key": "deep_wounds", "talent_id": 121, "source_tab_id": 161, "name": "Deep Wounds", "tier": 2, "column": 3, "rank_spells": [12834, 12849, 12867],
-                "prereq": { "key": "improved_rend", "rank": 3 },
-                "realm_effect": "Melee crits make the target bleed for 20/40/60% of the main-hand weapon's average damage over 12 s (4 ticks of 3 s; a new crit refreshes)." },
-              { "key": "improved_thunder_clap", "talent_id": 128, "source_tab_id": 161, "name": "Improved Thunder Clap", "tier": 2, "column": 4, "rank_spells": [12287, 12665, 12666],
-                "realm_effect": "Thunder Clap costs 1/2/4 less rage.", "client_spellmod": { "type": "flat", "op": "COST", "family_bit": 7, "values": [-10, -20, -40] } }
+              { "key": "toughness", "talent_id": 140, "source_tab_id": 163, "name": "Toughness", "tier": 1, "column": 3, "rank_spells": [12299, 12761, 12762, 12763, 12764],
+                "realm_effect": "+2..10% armor from items." },
+              { "key": "cruelty", "talent_id": 157, "source_tab_id": 164, "name": "Cruelty", "tier": 2, "column": 1, "rank_spells": [12320, 12852, 12853, 12855, 12856],
+                "realm_effect": "+1..5% melee critical strike chance." },
+              { "key": "unbridled_wrath", "talent_id": 159, "source_tab_id": 164, "name": "Unbridled Wrath", "tier": 2, "column": 2, "rank_spells": [12322, 12999, 13000, 13001, 13002],
+                "realm_effect": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage." },
+              { "key": "anger_management", "talent_id": 137, "source_tab_id": 161, "name": "Anger Management", "tier": 2, "column": 3, "rank_spells": [12296], "exceptional": true,
+                "realm_effect": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row." }
             ]
           }
         ]
