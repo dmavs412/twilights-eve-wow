@@ -48,7 +48,14 @@ impl WarriorStats {
     /// power and Defense to theirs; a main-hand weapon sets the swing (vmangos
     /// `Player::_ApplyItemMods`, `UpdateDamagePhysical`).
     pub fn geared(race: u8, level: u8, gear: &[u32]) -> Self {
-        let base = tables::at(tables::levels().warrior.race_stats.of(race), level);
+        Self::geared_at_tier(race, level, [0; 5], gear)
+    }
+
+    /// [`Self::geared`] with a Tier Bonus, `[str, agi, sta, int, spi]`, added to the race's base
+    /// stats: it counts as base, not as the gear's green bonus.
+    pub fn geared_at_tier(race: u8, level: u8, tier_bonus: [u32; 5], gear: &[u32]) -> Self {
+        let race_base = tables::at(tables::levels().warrior.race_stats.of(race), level);
+        let base: [u32; 5] = std::array::from_fn(|i| race_base[i] + tier_bonus[i]);
         let mut g = Gear::default();
         for t in gear.iter().filter_map(|e| crate::items::template(*e)) {
             for &[stat, value] in &t.stats {

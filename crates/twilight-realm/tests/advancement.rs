@@ -78,3 +78,39 @@ fn a_basic_warrior_at_the_tier_cap_gains_no_xp() {
     assert_eq!(me_now.unit_level(), Some(10));
     assert_eq!(me_now.player_xp(), Some(0));
 }
+
+#[test]
+fn a_tier_1_warrior_levels_past_ten_and_stops_at_thirty() {
+    let quest = &[(CROCOLISK_SKINS, [0; 4])];
+    let (mut realm, me, mut events) = questing_as("warrior", 10, EIGHT_SKINS, 0, quest);
+    events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
+    assert_eq!(descriptor(&events, me).unit_level(), Some(11));
+
+    let (mut realm, me, mut events) = questing_as("warrior", 30, EIGHT_SKINS, 0, quest);
+    let turned_in = hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS);
+    assert_eq!(completed(&turned_in).unwrap().xp, 0, "Tier 1's cap is 30");
+    events.extend(turned_in);
+    assert_eq!(descriptor(&events, me).unit_level(), Some(30));
+}
+
+// ── The Tier Bonus ──────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn a_tier_1_warrior_has_the_tier_bonus_on_its_sheet() {
+    let (_, me, basic) = questing(1, &[], 0, &[]);
+    let (_, _, tier1) = questing_as("warrior", 1, &[], 0, &[]);
+    let (basic, tier1) = (descriptor(&basic, me), descriptor(&tier1, me));
+    let stats = |f: &benilla_protocol::ObjectFields| -> [u32; 5] {
+        std::array::from_fn(|i| f.unit_stat(i as u8).unwrap())
+    };
+    let [s, a, st, i, sp] = stats(&basic);
+    assert_eq!(stats(&tier1), [s + 12, a + 6, st + 12, i, sp + 3]);
+    assert_eq!(
+        tier1.unit_max_health().unwrap(),
+        basic.unit_max_health().unwrap() + 120
+    );
+    assert_eq!(
+        tier1.unit_attack_power().unwrap(),
+        basic.unit_attack_power().unwrap() + 24
+    );
+}
