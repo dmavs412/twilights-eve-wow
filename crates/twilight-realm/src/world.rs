@@ -81,6 +81,8 @@ pub(crate) struct InWorld {
     mobs: Vec<Mob>,
     /// Whether the mobs have streamed in; they wait for the first tick, which brings the ground.
     spawned: bool,
+    /// Cooldowns, the queued strike and the auras the skills leave.
+    skills: cast::Skills,
 }
 
 impl InWorld {
@@ -141,6 +143,7 @@ impl InWorld {
             },
             mobs: Vec::new(),
             spawned: false,
+            skills: cast::Skills::new(c.guid),
         }
     }
 
@@ -223,6 +226,7 @@ impl InWorld {
         for i in 0..self.mobs.len() {
             self.mob_tick(i, dt, host, c, rng, events);
         }
+        self.skills_tick(dt, c, events, &mut ticked);
         self.update_combat(dt, events);
         ticked
     }
@@ -273,11 +277,20 @@ impl InWorld {
             return;
         }
         p.refused = None;
+        p.swing_timer = p.stats.attack_time_ms as f32 / 1000.0;
 
         let from_front = in_front(mob.orientation, mob.position, c.position);
-        let swing = combat::player_swing(&p.stats, mob, from_front, rng);
+        // A queued Heroic Strike takes this swing's place.
+        if self.next_swing_strike(target, from_front, c, rng, events, ticked) {
+            return;
+        }
+        let p = &mut self.player;
+        let mob = &self.mobs[i];
+        let swing = combat::player_swing(&cast::buffed(&p.stats, &self.skills), mob, from_front, rng);
         events.push(SessionEvent::AttackerState(swing.report(self.guid, target)));
-        p.swing_timer = p.stats.attack_time_ms as f32 / 1000.0;
+        if swing.outcome == Outcome::Dodge {
+            self.skills.dodged_by(target, events);
+        }
 
         // Rage from what landed, or from three quarters of what a dodge or parry stopped.
         let earned = match swing.outcome {
@@ -334,6 +347,9 @@ impl InWorld {
                     evade(mob, self.guid, events);
                     return;
                 }
+                if self.skills.stunned(mob.guid) {
+                    return;
+                }
                 let d = distance(mob.position, me);
                 if d > melee_reach() {
                     let stale = mob
@@ -360,7 +376,8 @@ impl InWorld {
                 events.push(SessionEvent::AttackerState(
                     swing.report(mob.guid, self.guid),
                 ));
-                mob.swing_timer = mob.template.base_attack_time as f32 / 1000.0;
+                mob.swing_timer = mob.template.base_attack_time as f32 / 1000.0
+                    * self.skills.attack_time_mul(mob.guid);
                 if swing.damage > 0 {
                     p.health = p.health.saturating_sub(swing.damage);
                     p.rage = (p.rage + rage::from_damage_taken(swing.damage, p.stats.level))
@@ -422,6 +439,8 @@ impl InWorld {
             }));
             ticked.leveled |= self.give_xp(c, gained, events);
         }
+        let dead = self.mobs[i].guid;
+        self.auras_die_with(dead, events);
     }
 
     /// Adds `amount` XP, levelling up as often as it covers (`Player::GiveXP`). Whether a level
@@ -459,7 +478,7 @@ impl InWorld {
         if leveled {
             pairs.push((PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)));
             pairs.push((UNIT_FIELD_HEALTH, self.player.health));
-            pairs.extend(sheet_pairs(&self.player.stats));
+            pairs.extend(sheet_pairs(&cast::buffed(&self.player.stats, &self.skills)));
         }
         events.push(values(self.guid, &pairs));
         leveled
@@ -472,7 +491,7 @@ impl InWorld {
             .attacking
             .is_some_and(|t| self.mobs.iter().any(|m| m.guid == t && m.alive()));
         let attacked = self.mobs.iter().any(|m| m.state == State::Engaged);
-        let in_combat = p.alive() && (attacking || attacked);
+        let in_combat = p.alive() && (attacking || attacked || self.skills.holds_combat());
         if in_combat != p.in_combat {
             p.in_combat = in_combat;
             let flags = if in_combat { UNIT_FLAG_IN_COMBAT } else { 0 };

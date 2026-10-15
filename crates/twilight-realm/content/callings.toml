@@ -118,6 +118,7 @@ health_cost_pct_of_base_health = 20
 cooldown_ms = 60000
 gcd_ms = 0
 target = "self"
+puts_in_combat_ms = 10000
 effects = [
     { kind = "energize_rage", amount = { base = 9.6, per_level = 0.25 } },
     { kind = "periodic_rage", aura_spell_id = 29131, per_tick = 1, tick_ms = 1000, duration_ms = 10000 },

@@ -51,6 +51,9 @@ pub struct Skill {
     /// Only on a target that dodged the caster in the last few seconds (Overpower).
     #[serde(default)]
     pub requires_target_dodged: bool,
+    /// Holds the caster in combat this long (Bloodrage), so rage does not decay meanwhile.
+    #[serde(default)]
+    pub puts_in_combat_ms: u32,
     pub effects: Vec<Effect>,
 }
 

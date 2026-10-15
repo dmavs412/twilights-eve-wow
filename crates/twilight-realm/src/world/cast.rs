@@ -1,16 +1,301 @@
 //! The character's skills in the world: the spellbook at login, casting them, and the auras they
 //! leave. Every skill is cast from its data ([`crate::callings`]); nothing here names a skill.
+//!
+//! An instant cast answers as vmangos's does: `SMSG_SPELL_START`, `SMSG_CAST_RESULT` (ok),
+//! `SMSG_SPELL_GO` with its hits and misses, then what each effect did (damage, energize, the aura
+//! fields). A refusal is a lone failed `SMSG_CAST_RESULT` with the stock reason. An on-next-swing
+//! skill answers nothing until the swing it replaces.
 
-use benilla_protocol::messages::ActionButton;
+use benilla_protocol::messages::{
+    ActionButton, MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpellDamageLog,
+    SpellEnergizeLog,
+};
 use benilla_protocol::SessionEvent;
 
-use super::{InWorld, Ticked};
-use crate::callings;
+use super::{in_front, melee_reach, InWorld, Ticked};
+use crate::callings::{self, Effect, Skill, Target, Weapon};
 use crate::characters::Char;
+use crate::fields::*;
+use crate::mobs::{distance, State};
 use crate::rng::Rng;
+use crate::rules::melee::{armor_reduced, Outcome, PlayerOffense, ROLL};
+use crate::rules::skills::{self as formulas, ability_table};
+use crate::rules::stats::WarriorStats;
+use crate::rules::rage;
 
 /// `UNIT_FIELD_BYTES_1`: stand state, loyalty, shapeshift form, visibility flags.
 const UNIT_FIELD_BYTES_1: u16 = 138;
+const UNIT_FIELD_AURA: u16 = 47;
+/// Four bits a slot, eight slots a dword.
+const UNIT_FIELD_AURAFLAGS: u16 = 95;
+/// A byte a slot: the caster's level.
+const UNIT_FIELD_AURALEVELS: u16 = 101;
+/// A byte a slot: stacks - 1.
+const UNIT_FIELD_AURAAPPLICATIONS: u16 = 113;
+/// Two i16s: the flat positive and negative attack power mods.
+const UNIT_FIELD_ATTACK_POWER_MODS: u16 = 166;
+const PLAYER_FIELD_COMBO_TARGET: u16 = 714;
+/// Byte 1: combo points.
+const PLAYER_FIELD_BYTES: u16 = 1222;
+
+/// `AFLAG_CANCELABLE`: a buff the player may click off.
+const AFLAG_CANCELABLE: u32 = 0x01;
+/// `AFLAG_EFF_INDEX_0`: the slot is live.
+const AFLAG_EFF_INDEX_0: u32 = 0x02;
+/// Slots below this hold buffs, the rest debuffs.
+const POSITIVE_SLOTS: u8 = 32;
+const AURA_SLOTS: u8 = 48;
+
+// `SpellCastResult` (vmangos `SpellDefines.h`).
+const SPELL_FAILED_AFFECTING_COMBAT: u8 = 0x00;
+const SPELL_FAILED_BAD_TARGETS: u8 = 0x0a;
+const SPELL_FAILED_CASTER_AURASTATE: u8 = 0x12;
+const SPELL_FAILED_CASTER_DEAD: u8 = 0x13;
+const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
+const SPELL_FAILED_NOT_READY: u8 = 0x3c;
+const SPELL_FAILED_NO_POWER: u8 = 0x4d;
+const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
+const SPELL_FAILED_TARGETS_DEAD: u8 = 0x65;
+const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;
+const SPELL_FAILED_UNIT_NOT_INFRONT: u8 = 0x7c;
+
+// `SpellMissInfo`, as `SMSG_SPELL_GO`'s miss list carries it.
+const SPELL_MISS_MISS: u8 = 1;
+const SPELL_MISS_DODGE: u8 = 3;
+const SPELL_MISS_PARRY: u8 = 4;
+const SPELL_MISS_BLOCK: u8 = 5;
+
+/// `SPELL_HIT_TYPE_CRIT` in a spell damage log.
+const SPELL_HIT_TYPE_CRIT: u32 = 0x2;
+/// `POWER_RAGE` in an energize log.
+const POWER_RAGE: u32 = 1;
+
+/// How long a dodge leaves Overpower open, and the combo point that marks it (vmangos).
+const DODGE_WINDOW_SECS: f32 = 5.0;
+/// A cooldown counts as over this close to its end: the client's clock and the realm's tick
+/// differ by up to a frame, and the client sends the cast the moment its own clock says ready.
+const READY_SLACK_SECS: f32 = 0.1;
+/// Seconds of float drift an aura clock forgives, so a tick and the fade due on the same tick
+/// both land.
+const CLOCK_EPSILON: f32 = 1e-3;
+/// How far short of the target a charge stops.
+const CHARGE_STOP_YD: f32 = 2.0;
+
+/// The skills' lasting state: cooldowns, the global cooldown, the queued strike, the auras.
+#[derive(Default)]
+pub(super) struct Skills {
+    /// `(spell, seconds left)`.
+    cooldowns: Vec<(u32, f32)>,
+    gcd: f32,
+    /// The on-next-swing skill waiting for the next white swing.
+    queued: Option<u32>,
+    /// The mob that last dodged, and the seconds Overpower stays open on it.
+    dodged: Option<(u64, f32)>,
+    /// Seconds the caster is held in combat (Bloodrage).
+    combat_hold: f32,
+    auras: Vec<Aura>,
+    /// The player's guid, for the aura packets only the player's own auras get.
+    me: u64,
+}
+
+/// One aura on a unit.
+#[derive(Debug, Clone, Copy)]
+struct Aura {
+    unit: u64,
+    spell_id: u32,
+    slot: u8,
+    level: u8,
+    /// Seconds left.
+    left: f32,
+    /// Seconds between ticks, 0 for none, and until the next.
+    period: f32,
+    next_tick: f32,
+    kind: AuraKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum AuraKind {
+    Bleed { per_tick: u32 },
+    Rage { per_tick: u32 },
+    AttackPower(u32),
+    AttackSlow { pct: u32 },
+    MoveSlow { pct: u32 },
+    Stun,
+}
+
+impl AuraKind {
+    fn helpful(self) -> bool {
+        matches!(self, AuraKind::Rage { .. } | AuraKind::AttackPower(_))
+    }
+}
+
+impl Skills {
+    pub(super) fn new(me: u64) -> Self {
+        Self {
+            me,
+            ..Self::default()
+        }
+    }
+
+    /// The flat attack power the player's buffs add.
+    fn attack_power_bonus(&self) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::AttackPower(n) => n,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// Whether a skill holds the player in combat.
+    pub(super) fn holds_combat(&self) -> bool {
+        self.combat_hold > 0.0
+    }
+
+    /// Whether `unit` is stunned.
+    pub(super) fn stunned(&self, unit: u64) -> bool {
+        self.auras
+            .iter()
+            .any(|a| a.unit == unit && a.kind == AuraKind::Stun)
+    }
+
+    /// What `unit`'s swing time is multiplied by.
+    pub(super) fn attack_time_mul(&self, unit: u64) -> f32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .fold(1.0, |m, a| match a.kind {
+                AuraKind::AttackSlow { pct } => m * (1.0 + pct as f32 / 100.0),
+                _ => m,
+            })
+    }
+
+    /// What `unit`'s run speed is multiplied by.
+    fn speed_mul(&self, unit: u64) -> f32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .fold(1.0, |m, a| match a.kind {
+                AuraKind::MoveSlow { pct } => m * (1.0 - pct as f32 / 100.0),
+                _ => m,
+            })
+    }
+
+    fn cooldown_left(&self, spell_id: u32) -> f32 {
+        self.cooldowns
+            .iter()
+            .find(|(s, _)| *s == spell_id)
+            .map_or(0.0, |(_, left)| *left)
+    }
+
+    /// The queued on-next-swing skill, taken off the queue.
+    pub(super) fn take_queued(&mut self) -> Option<u32> {
+        self.queued.take()
+    }
+
+    /// `mob` dodged the player: Overpower opens on it, marked with a combo point.
+    pub(super) fn dodged_by(&mut self, mob: u64, events: &mut Vec<SessionEvent>) {
+        self.dodged = Some((mob, DODGE_WINDOW_SECS));
+        let mut pairs = vec![(PLAYER_FIELD_BYTES, 1 << 8)];
+        pairs.extend(guid_pairs(PLAYER_FIELD_COMBO_TARGET, mob));
+        events.push(values(self.me, &pairs));
+    }
+
+    fn close_dodge_window(&mut self, events: &mut Vec<SessionEvent>) {
+        if self.dodged.take().is_some() {
+            let mut pairs = vec![(PLAYER_FIELD_BYTES, 0)];
+            pairs.extend(guid_pairs(PLAYER_FIELD_COMBO_TARGET, 0));
+            events.push(values(self.me, &pairs));
+        }
+    }
+
+    /// Puts `aura` on its unit, in the slot its spell already holds there or a free one.
+    fn apply(&mut self, mut aura: Aura, events: &mut Vec<SessionEvent>) -> Option<Aura> {
+        if let Some(old) = self
+            .auras
+            .iter_mut()
+            .find(|a| a.unit == aura.unit && a.spell_id == aura.spell_id)
+        {
+            aura.slot = old.slot;
+            *old = aura;
+        } else {
+            let range = if aura.kind.helpful() {
+                0..POSITIVE_SLOTS
+            } else {
+                POSITIVE_SLOTS..AURA_SLOTS
+            };
+            let taken: Vec<u8> = self
+                .auras
+                .iter()
+                .filter(|a| a.unit == aura.unit)
+                .map(|a| a.slot)
+                .collect();
+            aura.slot = range.into_iter().find(|s| !taken.contains(s))?;
+            self.auras.push(aura);
+        }
+        if aura.unit == self.me {
+            events.push(SessionEvent::AuraDuration {
+                slot: aura.slot,
+                remaining_ms: (aura.left * 1000.0) as u32,
+            });
+        }
+        events.push(self.slot_fields(aura.unit, aura.slot));
+        Some(aura)
+    }
+
+    /// Takes every aura `keep` refuses off, clearing their slots.
+    fn remove_where(
+        &mut self,
+        mut drop: impl FnMut(&Aura) -> bool,
+        events: &mut Vec<SessionEvent>,
+    ) -> Vec<Aura> {
+        let (gone, kept): (Vec<Aura>, Vec<Aura>) =
+            std::mem::take(&mut self.auras).into_iter().partition(|a| drop(a));
+        self.auras = kept;
+        for a in &gone {
+            events.push(self.slot_fields(a.unit, a.slot));
+        }
+        gone
+    }
+
+    /// The `UNIT_FIELD_AURA*` dwords that hold `slot` on `unit`, as its auras now stand.
+    fn slot_fields(&self, unit: u64, slot: u8) -> SessionEvent {
+        let on_unit = |s: u8| self.auras.iter().find(|a| a.unit == unit && a.slot == s);
+        let flags_word = slot / 8;
+        let flags = (0..8).fold(0u32, |w, i| {
+            let s = flags_word * 8 + i;
+            let nibble = on_unit(s).map_or(0, |a| {
+                AFLAG_EFF_INDEX_0
+                    | if a.kind.helpful() {
+                        AFLAG_CANCELABLE
+                    } else {
+                        0
+                    }
+            });
+            w | nibble << (4 * u32::from(i))
+        });
+        let byte_word = slot / 4;
+        let levels = (0..4).fold(0u32, |w, i| {
+            let level = on_unit(byte_word * 4 + i).map_or(0, |a| u32::from(a.level));
+            w | level << (8 * u32::from(i))
+        });
+        values(
+            unit,
+            &[
+                (
+                    UNIT_FIELD_AURA + u16::from(slot),
+                    on_unit(slot).map_or(0, |a| a.spell_id),
+                ),
+                (UNIT_FIELD_AURAFLAGS + u16::from(flags_word), flags),
+                (UNIT_FIELD_AURALEVELS + u16::from(byte_word), levels),
+                // One stack each.
+                (UNIT_FIELD_AURAAPPLICATIONS + u16::from(byte_word), 0),
+            ],
+        )
+    }
+}
 
 /// `SMSG_INITIAL_SPELLS`: the current Calling's skills, with nothing cooling down.
 pub(super) fn spell_book(c: &Char) -> SessionEvent {
@@ -51,16 +336,684 @@ pub(super) fn stance(c: &Char) -> (u16, u32) {
     )
 }
 
+/// The player's stats with their buffs: what swings and strikes roll from, and what the sheet
+/// shows.
+pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
+    let bonus = skills.attack_power_bonus();
+    let mut s = *stats;
+    if bonus > 0 {
+        s.attack_power += bonus as i32;
+        let extra = formulas::ap_damage(bonus as i32, s.attack_time_ms as f32 / 1000.0);
+        s.min_damage += extra;
+        s.max_damage += extra;
+    }
+    s
+}
+
+/// The sheet fields buffs move: the attack power mods and the damage they add.
+fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
+    let s = buffed(stats, skills);
+    vec![
+        (UNIT_FIELD_ATTACK_POWER_MODS, skills.attack_power_bonus() & 0xFFFF),
+        (UNIT_FIELD_MINDAMAGE, float(s.min_damage)),
+        (UNIT_FIELD_MAXDAMAGE, float(s.max_damage)),
+    ]
+}
+
+/// How one strike against one target went.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Landed {
+    Hit,
+    Crit,
+    Missed(u8),
+}
+
+fn refused(spell_id: u32, reason: u8) -> SessionEvent {
+    SessionEvent::CastResult {
+        spell_id,
+        success: false,
+        reason: Some(reason),
+        arg: None,
+    }
+}
+
 impl InWorld {
-    /// `CMSG_CAST_SPELL`.
+    /// `CMSG_CAST_SPELL`: refused with the stock reason, queued on the next swing, or cast.
     pub(crate) fn cast(
         &mut self,
-        _spell_id: u32,
-        _target: Option<u64>,
-        _c: &mut Char,
-        _rng: &mut Rng,
-        _events: &mut Vec<SessionEvent>,
+        spell_id: u32,
+        target: Option<u64>,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
     ) -> Ticked {
-        Ticked::default()
+        let mut ticked = Ticked::default();
+        let Some(skill) = callings::of(c.calling)
+            .skills
+            .iter()
+            .find(|s| s.spell_id == spell_id)
+        else {
+            events.push(refused(spell_id, SPELL_FAILED_NOT_KNOWN));
+            return ticked;
+        };
+        let targets = match self.check(skill, target, c) {
+            Ok(targets) => targets,
+            Err(reason) => {
+                events.push(refused(spell_id, reason));
+                return ticked;
+            }
+        };
+        if skill
+            .effects
+            .iter()
+            .any(|e| matches!(e, Effect::WeaponStrike { on_next_swing: true, .. }))
+        {
+            // Paid and answered when the swing comes (`CURRENT_MELEE_SPELL`).
+            self.skills.queued = Some(spell_id);
+            return ticked;
+        }
+        self.pay(skill, c, events);
+
+        // Roll who it lands on first: `SMSG_SPELL_GO` lists the misses.
+        let level = c.level;
+        let landed: Vec<(u64, Landed)> = targets
+            .iter()
+            .map(|&t| (t, self.roll(skill, t, c, rng)))
+            .collect();
+        let hits: Vec<u64> = landed
+            .iter()
+            .filter(|(_, l)| !matches!(l, Landed::Missed(_)))
+            .map(|(t, _)| *t)
+            .collect();
+        let misses: Vec<(u64, u8)> = landed
+            .iter()
+            .filter_map(|(t, l)| match l {
+                Landed::Missed(why) => Some((*t, *why)),
+                _ => None,
+            })
+            .collect();
+        events.push(SessionEvent::SpellStart {
+            caster: self.guid,
+            spell_id,
+            cast_flags: 0,
+            cast_time_ms: 0,
+            target,
+            ammo_display_id: None,
+        });
+        events.push(SessionEvent::CastResult {
+            spell_id,
+            success: true,
+            reason: None,
+            arg: None,
+        });
+        events.push(SessionEvent::SpellGo {
+            caster: self.guid,
+            spell_id,
+            cast_flags: 0,
+            hits: hits.clone(),
+            misses: misses.clone(),
+            target,
+            go_target: None,
+            dest: None,
+            ammo_display_id: None,
+            item_caster: None,
+        });
+        for &(guid, why) in &misses {
+            if why == SPELL_MISS_DODGE {
+                self.skills.dodged_by(guid, events);
+            }
+        }
+        for (guid, how) in landed {
+            if !matches!(how, Landed::Missed(_)) {
+                for effect in &skill.effects {
+                    self.effect(skill, effect, guid, how, level, c, rng, events, &mut ticked);
+                }
+            }
+            // A cast at a mob, landed or not, turns it on the player.
+            if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == guid) {
+                if mob.state == State::Idle {
+                    super::engage(mob, self.guid, events);
+                }
+            }
+        }
+        let p = &self.player;
+        events.push(values(
+            self.guid,
+            &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
+        ));
+        ticked
+    }
+
+    /// Whether `skill` can go off now at `target`, and on whom.
+    fn check(&self, skill: &Skill, target: Option<u64>, c: &Char) -> Result<Vec<u64>, u8> {
+        let p = &self.player;
+        if !p.alive() {
+            return Err(SPELL_FAILED_CASTER_DEAD);
+        }
+        if self.skills.cooldown_left(skill.spell_id) > READY_SLACK_SECS
+            || (skill.gcd_ms > 0 && self.skills.gcd > READY_SLACK_SECS)
+        {
+            return Err(SPELL_FAILED_NOT_READY);
+        }
+        if p.rage < skill.rage_cost * 10 {
+            return Err(SPELL_FAILED_NO_POWER);
+        }
+        if skill.requires_out_of_combat && p.in_combat {
+            return Err(SPELL_FAILED_AFFECTING_COMBAT);
+        }
+        match skill.target {
+            Target::Caster => Ok(vec![self.guid]),
+            Target::SelfArea => Ok(self
+                .mobs
+                .iter()
+                .filter(|m| m.alive() && distance(m.position, c.position) <= skill.radius_yd)
+                .take(skill.max_targets as usize)
+                .map(|m| m.guid)
+                .collect()),
+            Target::Enemy => {
+                let guid = target.ok_or(SPELL_FAILED_BAD_TARGETS)?;
+                let mob = self
+                    .mobs
+                    .iter()
+                    .find(|m| m.guid == guid)
+                    .ok_or(SPELL_FAILED_BAD_TARGETS)?;
+                if !mob.alive() {
+                    return Err(SPELL_FAILED_TARGETS_DEAD);
+                }
+                let d = distance(mob.position, c.position);
+                let [min, max] = skill.range_yd;
+                // A 5 yd skill is a melee one: it reaches as far as a swing does.
+                let max = if max <= 5.0 { melee_reach() } else { max };
+                if d > max {
+                    return Err(SPELL_FAILED_OUT_OF_RANGE);
+                }
+                if d < min {
+                    return Err(SPELL_FAILED_TOO_CLOSE);
+                }
+                if !in_front(c.orientation, c.position, mob.position) {
+                    return Err(SPELL_FAILED_UNIT_NOT_INFRONT);
+                }
+                if skill.requires_target_dodged
+                    && !self.skills.dodged.is_some_and(|(m, _)| m == guid)
+                {
+                    return Err(SPELL_FAILED_CASTER_AURASTATE);
+                }
+                Ok(vec![guid])
+            }
+        }
+    }
+
+    /// Takes the cast's costs and starts its cooldowns.
+    fn pay(&mut self, skill: &Skill, c: &Char, events: &mut Vec<SessionEvent>) {
+        let _ = c;
+        let p = &mut self.player;
+        p.rage -= skill.rage_cost * 10;
+        let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100;
+        // A cost never kills.
+        p.health = p.health.saturating_sub(health_cost).max(1);
+        let s = &mut self.skills;
+        if skill.cooldown_ms > 0 {
+            s.cooldowns.retain(|(id, _)| *id != skill.spell_id);
+            s.cooldowns
+                .push((skill.spell_id, skill.cooldown_ms as f32 / 1000.0));
+        }
+        if skill.gcd_ms > 0 {
+            s.gcd = skill.gcd_ms as f32 / 1000.0;
+        }
+        if skill.puts_in_combat_ms > 0 {
+            s.combat_hold = s.combat_hold.max(skill.puts_in_combat_ms as f32 / 1000.0);
+        }
+        if skill.requires_target_dodged {
+            s.close_dodge_window(events);
+        }
+    }
+
+    /// The melee table's verdict on `skill` at `target`: a strike or a hit-table skill rolls
+    /// avoidance, then crit (the two-roll yellow model); anything else lands.
+    fn roll(&self, skill: &Skill, target: u64, c: &Char, rng: &mut Rng) -> Landed {
+        let mut rolls = false;
+        let mut unavoidable = false;
+        for e in &skill.effects {
+            match *e {
+                Effect::WeaponStrike {
+                    unavoidable: u, ..
+                } => {
+                    rolls = true;
+                    unavoidable |= u;
+                }
+                Effect::SchoolDamage {
+                    melee_hit_table: true,
+                    ..
+                } => rolls = true,
+                _ => {}
+            }
+        }
+        let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
+            return Landed::Hit;
+        };
+        if !rolls {
+            return Landed::Hit;
+        }
+        let stats = buffed(&self.player.stats, &self.skills);
+        let from_front = in_front(mob.orientation, mob.position, c.position);
+        let (table, crit) = ability_table(
+            PlayerOffense {
+                level: stats.level,
+                weapon_skill: stats.weapon_skill,
+                crit_pct: stats.crit_pct,
+            },
+            mob.level(),
+            from_front,
+            unavoidable,
+        );
+        match table.outcome(rng.below(ROLL)) {
+            Outcome::Miss => Landed::Missed(SPELL_MISS_MISS),
+            Outcome::Dodge => Landed::Missed(SPELL_MISS_DODGE),
+            Outcome::Parry => Landed::Missed(SPELL_MISS_PARRY),
+            Outcome::Block => Landed::Missed(SPELL_MISS_BLOCK),
+            _ if rng.below(ROLL) < crit => Landed::Crit,
+            _ => Landed::Hit,
+        }
+    }
+
+    /// One effect of a landed cast on `target`.
+    #[allow(clippy::too_many_arguments)]
+    fn effect(
+        &mut self,
+        skill: &Skill,
+        effect: &Effect,
+        target: u64,
+        how: Landed,
+        level: u8,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let stats = buffed(&self.player.stats, &self.skills);
+        let ap = stats.attack_power;
+        let aura = |kind: AuraKind, spell_id: u32, duration_ms: u32, period_ms: u32| Aura {
+            unit: target,
+            spell_id,
+            slot: 0,
+            level,
+            left: duration_ms as f32 / 1000.0,
+            period: period_ms as f32 / 1000.0,
+            next_tick: period_ms as f32 / 1000.0,
+            kind,
+        };
+        match *effect {
+            Effect::WeaponStrike { weapon, bonus, .. } => {
+                let raw = weapon_roll(&stats, weapon, rng) + bonus.at(level, ap) as f32;
+                self.strike(skill.spell_id, target, raw as u32, how, c, events, ticked);
+            }
+            Effect::SchoolDamage { amount, .. } => {
+                let raw = amount.at(level, ap);
+                self.strike(skill.spell_id, target, raw, how, c, events, ticked);
+            }
+            Effect::PeriodicDamage {
+                tick_ms,
+                duration_ms,
+                tick,
+            } => {
+                let per_tick = tick.at(level, ap);
+                let a = aura(
+                    AuraKind::Bleed { per_tick },
+                    skill.spell_id,
+                    duration_ms,
+                    tick_ms,
+                );
+                self.skills.apply(a, events);
+            }
+            Effect::Charge { speed_yd_s } => {
+                let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
+                    return;
+                };
+                let (from, to) = (c.position, mob.position);
+                let d = distance(from, to);
+                let t = ((d - CHARGE_STOP_YD) / d).max(0.0);
+                let dest = std::array::from_fn(|i| from[i] + (to[i] - from[i]) * t);
+                let duration = distance(from, dest) / speed_yd_s;
+                c.position = dest;
+                c.orientation = (to[1] - from[1])
+                    .atan2(to[0] - from[0])
+                    .rem_euclid(std::f32::consts::TAU);
+                events.push(SessionEvent::MonsterMove {
+                    guid: self.guid,
+                    transport: None,
+                    start: from,
+                    spline_id: 1,
+                    path: vec![from, dest],
+                    facing: MonsterMoveFacing::Target(target),
+                    stop: false,
+                    duration_ms: (duration * 1000.0) as u32,
+                    flying: false,
+                    run_mode: true,
+                });
+            }
+            Effect::EnergizeRage { amount } => {
+                let gained = amount.at(level, ap);
+                let p = &mut self.player;
+                p.rage = (p.rage + gained * 10).min(rage::MAX);
+                events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
+                    target: self.guid,
+                    caster: self.guid,
+                    spell_id: skill.spell_id,
+                    power: POWER_RAGE,
+                    amount: gained,
+                }));
+            }
+            Effect::PeriodicRage {
+                aura_spell_id,
+                per_tick,
+                tick_ms,
+                duration_ms,
+            } => {
+                let a = aura(
+                    AuraKind::Rage { per_tick },
+                    aura_spell_id,
+                    duration_ms,
+                    tick_ms,
+                );
+                self.skills.apply(a, events);
+            }
+            Effect::Stun {
+                aura_spell_id,
+                duration_ms,
+            } => {
+                self.skills
+                    .apply(aura(AuraKind::Stun, aura_spell_id, duration_ms, 0), events);
+            }
+            Effect::AttackSpeedSlow { pct, duration_ms } => {
+                let a = aura(AuraKind::AttackSlow { pct }, skill.spell_id, duration_ms, 0);
+                self.skills.apply(a, events);
+            }
+            Effect::MovementSlow { pct, duration_ms } => {
+                let a = aura(AuraKind::MoveSlow { pct }, skill.spell_id, duration_ms, 0);
+                self.skills.apply(a, events);
+                self.update_speed(target);
+            }
+            Effect::AuraAttackPower {
+                duration_ms,
+                amount,
+            } => {
+                let n = amount.at(level, ap);
+                let a = aura(AuraKind::AttackPower(n), skill.spell_id, duration_ms, 0);
+                self.skills.apply(a, events);
+                let sheet = buff_sheet(&self.player.stats, &self.skills);
+                events.push(values(self.guid, &sheet));
+            }
+        }
+    }
+
+    /// `raw` physical damage at `target`, after its armour: logged, taken off, maybe a kill.
+    #[allow(clippy::too_many_arguments)]
+    fn strike(
+        &mut self,
+        spell_id: u32,
+        target: u64,
+        raw: u32,
+        how: Landed,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
+            return;
+        };
+        let mut damage = armor_reduced(raw, mob.stats.armor, self.player.stats.level);
+        if how == Landed::Crit {
+            damage *= 2;
+        }
+        events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
+            target,
+            attacker: self.guid,
+            spell_id,
+            damage,
+            school: 0,
+            absorb: 0,
+            resist: 0,
+            periodic: false,
+            blocked: 0,
+            hit_info: if how == Landed::Crit {
+                SPELL_HIT_TYPE_CRIT
+            } else {
+                0
+            },
+        }));
+        self.hurt(target, damage, c, events, ticked);
+    }
+
+    /// `target` loses `damage`; at 0 it dies at the player's hand.
+    fn hurt(
+        &mut self,
+        target: u64,
+        damage: u32,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some(i) = self.mobs.iter().position(|m| m.guid == target && m.alive()) else {
+            return;
+        };
+        let mob = &mut self.mobs[i];
+        mob.health = mob.health.saturating_sub(damage);
+        events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+        if mob.state == State::Idle {
+            super::engage(mob, self.guid, events);
+        }
+        if mob.health == 0 {
+            self.kill(i, c, events, ticked);
+        }
+    }
+
+    /// The queued on-next-swing strike replaces this white swing at `target`, when its rage is
+    /// still there. Whether it did.
+    pub(super) fn next_swing_strike(
+        &mut self,
+        target: u64,
+        from_front: bool,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) -> bool {
+        let Some(spell_id) = self.skills.take_queued() else {
+            return false;
+        };
+        let Some(skill) = callings::skill(spell_id) else {
+            return false;
+        };
+        if self.player.rage < skill.rage_cost * 10 {
+            events.push(refused(spell_id, SPELL_FAILED_NO_POWER));
+            return false;
+        }
+        let Some(i) = self.mobs.iter().position(|m| m.guid == target && m.alive()) else {
+            return false;
+        };
+        let bonus = skill.effects.iter().find_map(|e| match e {
+            Effect::WeaponStrike { bonus, .. } => Some(*bonus),
+            _ => None,
+        });
+        let Some(bonus) = bonus else {
+            return false;
+        };
+        self.pay(skill, c, events);
+        // A next-swing strike rolls exactly as the white swing it replaces, its bonus added.
+        let mut stats = buffed(&self.player.stats, &self.skills);
+        let extra = bonus.at(c.level, stats.attack_power) as f32;
+        stats.min_damage += extra;
+        stats.max_damage += extra;
+        let swing = crate::combat::player_swing(&stats, &self.mobs[i], from_front, rng);
+        let missed = match swing.outcome {
+            Outcome::Miss => Some(SPELL_MISS_MISS),
+            Outcome::Dodge => Some(SPELL_MISS_DODGE),
+            Outcome::Parry => Some(SPELL_MISS_PARRY),
+            _ => None,
+        };
+        events.push(SessionEvent::SpellStart {
+            caster: self.guid,
+            spell_id,
+            cast_flags: 0,
+            cast_time_ms: 0,
+            target: Some(target),
+            ammo_display_id: None,
+        });
+        events.push(SessionEvent::CastResult {
+            spell_id,
+            success: true,
+            reason: None,
+            arg: None,
+        });
+        events.push(SessionEvent::SpellGo {
+            caster: self.guid,
+            spell_id,
+            cast_flags: 0,
+            hits: if missed.is_none() { vec![target] } else { vec![] },
+            misses: missed.map(|m| (target, m)).into_iter().collect(),
+            target: Some(target),
+            go_target: None,
+            dest: None,
+            ammo_display_id: None,
+            item_caster: None,
+        });
+        events.push(values(self.guid, &[(UNIT_FIELD_POWER2, self.player.rage)]));
+        if missed == Some(SPELL_MISS_DODGE) {
+            self.skills.dodged_by(target, events);
+        }
+        if missed.is_none() {
+            events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
+                target,
+                attacker: self.guid,
+                spell_id,
+                damage: swing.damage,
+                school: 0,
+                absorb: 0,
+                resist: 0,
+                periodic: false,
+                blocked: swing.blocked,
+                hit_info: if swing.outcome == Outcome::Crit {
+                    SPELL_HIT_TYPE_CRIT
+                } else {
+                    0
+                },
+            }));
+            self.hurt(target, swing.damage, c, events, ticked);
+        }
+        true
+    }
+
+    /// The skills' clocks: cooldowns, the dodge window, and every aura's ticks and fading.
+    pub(super) fn skills_tick(
+        &mut self,
+        dt: f32,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let s = &mut self.skills;
+        s.gcd = (s.gcd - dt).max(0.0);
+        s.combat_hold = (s.combat_hold - dt).max(0.0);
+        for (_, left) in &mut s.cooldowns {
+            *left -= dt;
+        }
+        s.cooldowns.retain(|(_, left)| *left > 0.0);
+        if let Some((_, left)) = &mut s.dodged {
+            *left -= dt;
+            if *left <= 0.0 {
+                s.close_dodge_window(events);
+            }
+        }
+
+        // Ticks first, then fading: the last tick lands as the aura runs out.
+        let mut due = Vec::new();
+        for a in &mut s.auras {
+            a.left -= dt;
+            if a.period > 0.0 {
+                a.next_tick -= dt;
+                while a.next_tick <= CLOCK_EPSILON {
+                    a.next_tick += a.period;
+                    due.push(*a);
+                }
+            }
+        }
+        for a in due {
+            match a.kind {
+                AuraKind::Bleed { per_tick } => {
+                    if !self.mobs.iter().any(|m| m.guid == a.unit && m.alive()) {
+                        continue;
+                    }
+                    events.push(SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
+                        target: a.unit,
+                        caster: self.guid,
+                        spell_id: a.spell_id,
+                        ticks: vec![PeriodicTick::Damage {
+                            amount: per_tick,
+                            school: 0,
+                            absorb: 0,
+                            resist: 0,
+                        }],
+                    }));
+                    self.hurt(a.unit, per_tick, c, events, ticked);
+                }
+                AuraKind::Rage { per_tick } => {
+                    let p = &mut self.player;
+                    p.rage = (p.rage + per_tick * 10).min(rage::MAX);
+                    events.push(SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
+                        target: self.guid,
+                        caster: self.guid,
+                        spell_id: a.spell_id,
+                        ticks: vec![PeriodicTick::Energize {
+                            power: POWER_RAGE,
+                            amount: per_tick,
+                        }],
+                    }));
+                    events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+                }
+                _ => {}
+            }
+        }
+        let gone = self.skills.remove_where(|a| a.left <= CLOCK_EPSILON, events);
+        self.faded(&gone, events);
+    }
+
+    /// What an aura's going undoes.
+    fn faded(&mut self, gone: &[Aura], events: &mut Vec<SessionEvent>) {
+        for a in gone {
+            match a.kind {
+                AuraKind::MoveSlow { .. } => self.update_speed(a.unit),
+                AuraKind::AttackPower(_) => {
+                    let sheet = buff_sheet(&self.player.stats, &self.skills);
+                    events.push(values(self.guid, &sheet));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// `unit` died: its auras go with it.
+    pub(super) fn auras_die_with(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
+        let gone = self.skills.remove_where(|a| a.unit == unit, events);
+        self.faded(&gone, events);
+    }
+
+    fn update_speed(&mut self, unit: u64) {
+        let mul = self.skills.speed_mul(unit);
+        if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
+            mob.speed_mul = mul;
+        }
+    }
+}
+
+/// A weapon roll before armour: a white swing's, or a normalized one.
+fn weapon_roll(stats: &WarriorStats, weapon: Weapon, rng: &mut Rng) -> f32 {
+    let roll = rng.frand(stats.min_damage, stats.max_damage);
+    match weapon {
+        Weapon::Normal => roll,
+        Weapon::Normalized => {
+            let speed = stats.attack_time_ms as f32 / 1000.0;
+            roll - formulas::ap_damage(stats.attack_power, speed)
+                + formulas::ap_damage(stats.attack_power, formulas::NORMALIZED_SPEED_ONE_HAND)
+        }
     }
 }

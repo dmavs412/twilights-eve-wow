@@ -91,6 +91,11 @@ fn the_basic_warrior_matches_the_reference() {
             "{key}"
         );
         assert_eq!(got.requires_target_dodged, realm.get("requires").is_some(), "{key}");
+        assert_eq!(
+            u64::from(got.puts_in_combat_ms),
+            realm["puts_in_combat_ms"].as_u64().unwrap_or(0),
+            "{key}"
+        );
 
         let effects = realm["effects"].as_array().unwrap();
         assert_eq!(got.effects.len(), effects.len(), "{key} effects");

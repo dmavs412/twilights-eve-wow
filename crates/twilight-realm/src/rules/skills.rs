@@ -4,6 +4,8 @@
 
 use serde::Deserialize;
 
+use super::melee::{player_vs_mob, HitTable, PlayerOffense};
+
 /// `round(base + per_level × L + per_ap × AP)`, half away from zero, never below `min`.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 pub struct Linear {
@@ -28,6 +30,27 @@ impl Linear {
 /// vanilla's normalized weapon speeds (`Player::GetAPMultiplier`), in seconds: what a normalized
 /// strike (Overpower, Mortal Strike) multiplies attack power by instead of the weapon's own speed.
 pub const NORMALIZED_SPEED_ONE_HAND: f32 = 2.4;
+
+/// The two rolls of a yellow (ability) strike at a mob of `mob_level`, the cmangos model that
+/// `vanilla-combat-rules.md` §1.5 recommends: the table to roll avoidance on, and then, for what
+/// lands, the crit chance in basis points. Abilities never glance, and a block is partial (left
+/// out here), so the table holds only miss, dodge and parry; an `unavoidable` strike (Overpower)
+/// only misses.
+pub fn ability_table(
+    p: PlayerOffense,
+    mob_level: u8,
+    from_front: bool,
+    unavoidable: bool,
+) -> (HitTable, u32) {
+    let white = player_vs_mob(p, mob_level, from_front);
+    let table = HitTable {
+        miss: white.miss,
+        dodge: if unavoidable { 0 } else { white.dodge },
+        parry: if unavoidable { 0 } else { white.parry },
+        ..HitTable::default()
+    };
+    (table, white.crit)
+}
 
 /// A weapon roll's attack-power part: `AP / 14 × speed`.
 pub fn ap_damage(attack_power: i32, speed_secs: f32) -> f32 {
