@@ -263,3 +263,28 @@ fn the_reference_pools_follow_each_items_pool_level_and_quality() {
         }
     }
 }
+
+#[test]
+fn the_repair_tables_match_the_reference() {
+    let repair = &json("goods_vendor.json")["repair"];
+    let table = toml_table("durability.toml");
+    let costs = table["costs"].as_array().unwrap();
+    let reference = repair["durability_costs"].as_object().unwrap();
+    assert_eq!(costs.len(), reference.len());
+    for (level, row) in reference {
+        let i = level.parse::<usize>().unwrap() - 1;
+        let want: Vec<f64> = row
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_f64().unwrap())
+            .collect();
+        assert_eq!(floats(&costs[i]), want, "item level {level}");
+    }
+    let by_quality = &repair["quality_mod_by_item_quality"];
+    let want: Vec<f64> = ["poor", "common", "uncommon", "rare", "epic"]
+        .iter()
+        .map(|q| by_quality[q].as_f64().unwrap())
+        .collect();
+    assert_eq!(floats(&table["quality"]), want);
+}
