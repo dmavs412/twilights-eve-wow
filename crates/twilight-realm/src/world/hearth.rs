@@ -7,7 +7,8 @@ use super::InWorld;
 use crate::characters::Char;
 use crate::content::CROSSROADS;
 
-/// `Spell.dbc` 8690, "Hearthstone".
+/// `Spell.dbc` 8690, "Hearthstone": the Hearthstone's `use_spell` in `content/given_items.toml`,
+/// which `tests/content_spell_ids.rs` checks against the client.
 const HEARTH_SPELL: u32 = 8690;
 /// Its cast time (`CastingTimeIndex` 16).
 const HEARTH_CAST_MS: u32 = 10_000;
@@ -119,3 +120,13 @@ impl InWorld {
 
 /// How far a report may drift before it counts as a step, in yards.
 const MOVE_EPSILON: f32 = 0.05;
+
+#[cfg(test)]
+mod tests {
+    /// The realm's own copy of the id agrees with the content the spell-id test checks.
+    #[test]
+    fn the_hearth_spell_is_the_hearthstones_use_spell() {
+        let stone = crate::items::template(crate::content::HEARTHSTONE).expect("the Hearthstone");
+        assert_eq!(super::HEARTH_SPELL, stone.use_spell);
+    }
+}
