@@ -24,7 +24,7 @@ use crate::rules::melee::{armor_reduced, Outcome, PlayerOffense, ROLL};
 use crate::rules::rage;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::WarriorStats;
-use crate::rules::talents::{deep_wound_tick, scaled};
+use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled};
 use crate::space::distance;
 
 /// `UNIT_FIELD_BYTES_1`: stand state, loyalty, shapeshift form, visibility flags.
@@ -124,7 +124,7 @@ struct TimedCast {
 
 /// One aura on a unit.
 #[derive(Debug, Clone, Copy)]
-struct Aura {
+pub(super) struct Aura {
     unit: u64,
     spell_id: u32,
     slot: u8,
@@ -156,11 +156,39 @@ enum AuraKind {
     /// Healing on the unit is cut (Mortal Strike's wound). Nothing heals a mob in a fight yet,
     /// so the debuff is all it does.
     HealingReduced,
+    /// The player's maximum health is `pct`% higher (Last Stand).
+    MaxHealthPct(u32),
+    /// The player deals `pct`% more physical damage, with `armor_loss_pct`% less armour; for
+    /// `swings` more white swings when it counts them (Death Wish, Enrage).
+    DamagePct {
+        pct: u32,
+        armor_loss_pct: u32,
+        swings: Option<u32>,
+    },
+    /// The player's next `strikes` landed melee blows also strike another enemy within
+    /// `radius_yd` (Sweeping Strikes).
+    Sweeping {
+        strikes: u32,
+        radius_yd: f32,
+        strike_spell_id: u32,
+    },
+    /// The player heals `per_tick` a tick (Blood Craze).
+    Heal {
+        per_tick: u32,
+    },
 }
 
 impl AuraKind {
     fn helpful(self) -> bool {
-        matches!(self, AuraKind::Rage { .. } | AuraKind::AttackPower(_))
+        matches!(
+            self,
+            AuraKind::Rage { .. }
+                | AuraKind::AttackPower(_)
+                | AuraKind::MaxHealthPct(_)
+                | AuraKind::DamagePct { .. }
+                | AuraKind::Sweeping { .. }
+                | AuraKind::Heal { .. }
+        )
     }
 }
 
@@ -182,6 +210,55 @@ impl Skills {
                 _ => 0,
             })
             .sum()
+    }
+
+    /// The percents the player's buffs raise their maximum health by, raise the physical damage
+    /// they deal by, and take off their armour.
+    fn buff_pcts(&self) -> (u32, u32, u32) {
+        self.auras.iter().filter(|a| a.unit == self.me).fold(
+            (0, 0, 0),
+            |(health, damage, armor), a| match a.kind {
+                AuraKind::MaxHealthPct(pct) => (health + pct, damage, armor),
+                AuraKind::DamagePct {
+                    pct,
+                    armor_loss_pct,
+                    ..
+                } => (health, damage + pct, armor + armor_loss_pct),
+                _ => (health, damage, armor),
+            },
+        )
+    }
+
+    /// The percent the player's buffs raise the physical damage they deal by.
+    pub(super) fn damage_pct(&self) -> u32 {
+        self.buff_pcts().1
+    }
+
+    /// A white swing went: the buffs that count swings count one, and go at their last. What
+    /// went.
+    pub(super) fn count_swing(&mut self, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
+        let me = self.me;
+        for a in self.auras.iter_mut().filter(|a| a.unit == me) {
+            if let AuraKind::DamagePct {
+                swings: Some(n), ..
+            } = &mut a.kind
+            {
+                *n = n.saturating_sub(1);
+            }
+        }
+        self.remove_where(
+            |a| {
+                a.unit == me
+                    && matches!(
+                        a.kind,
+                        AuraKind::DamagePct {
+                            swings: Some(0),
+                            ..
+                        }
+                    )
+            },
+            events,
+        )
     }
 
     /// Whether a skill holds the player in combat.
@@ -397,6 +474,9 @@ pub(super) fn stance(c: &Char) -> (u16, u32) {
 pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
     let bonus = skills.attack_power_bonus();
     let mut s = *stats;
+    let (health_pct, _, armor_loss_pct) = skills.buff_pcts();
+    s.max_health += s.max_health * health_pct / 100;
+    s.armor -= s.armor * armor_loss_pct.min(100) / 100;
     if bonus > 0 {
         s.attack_power += bonus as i32;
         let extra = formulas::ap_damage(bonus as i32, clock::secs(s.attack_time_ms));
@@ -447,11 +527,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) -> Ticked {
         let mut ticked = Ticked::default();
-        let Some(skill) = callings::of(c.calling)
-            .skills
-            .iter()
-            .find(|s| s.spell_id == spell_id)
-        else {
+        let Some(skill) = crate::talents::skill(c, spell_id) else {
             events.push(refused(spell_id, SPELL_FAILED_NOT_KNOWN));
             return ticked;
         };
@@ -707,12 +783,14 @@ impl InWorld {
         // Talents that raise the skill's amounts (Improved Rend, Improved Battle Shout).
         let pct = crate::talents::amount_pct(c, &skill.key);
         let sized = |l: formulas::Linear| scaled(l.at(level, ap), pct);
+        // Talents that make the skill's auras last longer (Booming Voice).
+        let longer = crate::talents::duration_pct(c, &skill.key);
         let aura = |kind: AuraKind, spell_id: u32, duration_ms: u32, period_ms: u32| Aura {
             unit: target,
             spell_id,
             slot: 0,
             level,
-            left: clock::secs(duration_ms),
+            left: clock::secs(scaled(duration_ms, longer)),
             period: clock::secs(period_ms),
             next_tick: clock::secs(period_ms),
             kind,
@@ -841,6 +919,46 @@ impl InWorld {
                 let raw = sized(base) + extra * sized(per_extra_rage);
                 self.strike(skill.spell_id, target, raw, how, c, rng, events, ticked);
             }
+            Effect::AuraMaxHealthPct {
+                aura_spell_id,
+                pct,
+                duration_ms,
+            } => {
+                let before = buffed(&self.player.stats, &self.skills).max_health;
+                let a = aura(AuraKind::MaxHealthPct(pct), aura_spell_id, duration_ms, 0);
+                self.skills.apply(a, events);
+                let after = buffed(&self.player.stats, &self.skills).max_health;
+                self.player.health += after.saturating_sub(before);
+                events.push(values(self.guid, &self.sheet_now()));
+            }
+            Effect::AuraDamagePct {
+                pct,
+                armor_loss_pct,
+                duration_ms,
+            } => {
+                let kind = AuraKind::DamagePct {
+                    pct,
+                    armor_loss_pct,
+                    swings: None,
+                };
+                self.skills
+                    .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
+                events.push(values(self.guid, &self.sheet_now()));
+            }
+            Effect::SweepingStrikes {
+                strikes,
+                duration_ms,
+                radius_yd,
+                strike_spell_id,
+            } => {
+                let kind = AuraKind::Sweeping {
+                    strikes,
+                    radius_yd,
+                    strike_spell_id,
+                };
+                self.skills
+                    .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
+            }
         }
     }
 
@@ -862,8 +980,9 @@ impl InWorld {
         };
         let mut damage = armor_reduced(raw, mob.stats.armor, self.player.stats.level);
         if how == Landed::Crit {
-            damage *= 2;
+            damage = crit_damage(damage, crate::talents::skill_crit_damage_pct(c));
         }
+        damage = self.dealt(c, damage);
         events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
             target,
             attacker: self.guid,
@@ -884,6 +1003,191 @@ impl InWorld {
         if how == Landed::Crit {
             self.crit_landed(target, c, events);
         }
+        // A blow at one enemy sweeps on; an area's blows do not.
+        if callings::skill(spell_id).is_some_and(|s| s.target == Target::Enemy) {
+            self.sweep(target, damage, c, rng, events, ticked);
+        }
+    }
+
+    /// `damage` the player deals, raised by their talents for the weapon in hand and by their
+    /// buffs.
+    pub(super) fn dealt(&self, c: &Char, damage: u32) -> u32 {
+        let pct = crate::talents::weapon_damage_pct(c) + self.skills.damage_pct();
+        damage * (100 + pct) / 100
+    }
+
+    /// A melee blow of the player's landed `damage` on `from`: under Sweeping Strikes, the
+    /// nearest other living enemy in reach takes as much.
+    pub(super) fn sweep(
+        &mut self,
+        from: u64,
+        damage: u32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let me = self.guid;
+        let Some(i) = self
+            .skills
+            .auras
+            .iter()
+            .position(|a| a.unit == me && matches!(a.kind, AuraKind::Sweeping { .. }))
+        else {
+            return;
+        };
+        let AuraKind::Sweeping {
+            strikes,
+            radius_yd,
+            strike_spell_id,
+        } = self.skills.auras[i].kind
+        else {
+            return;
+        };
+        let other = self
+            .mobs
+            .iter()
+            .filter(|m| m.guid != from && m.alive())
+            .map(|m| (m.guid, distance(m.position, c.position)))
+            .filter(|(_, d)| *d <= radius_yd)
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(guid, _)| guid);
+        let Some(other) = other.filter(|_| damage > 0) else {
+            return;
+        };
+        if strikes <= 1 {
+            let gone = self.skills.remove_where(
+                |a| a.unit == me && matches!(a.kind, AuraKind::Sweeping { .. }),
+                events,
+            );
+            self.faded(&gone, events);
+        } else if let AuraKind::Sweeping { strikes, .. } = &mut self.skills.auras[i].kind {
+            *strikes -= 1;
+        }
+        events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
+            target: other,
+            attacker: me,
+            spell_id: strike_spell_id,
+            damage,
+            school: 0,
+            absorb: 0,
+            resist: 0,
+            periodic: false,
+            blocked: 0,
+            hit_info: 0,
+        }));
+        self.hurt(other, damage, c, rng, events, ticked);
+    }
+
+    /// A mob's swing at the player went `outcome`: what the player's talents make of a block or
+    /// a crit taken (Shield Specialization's rage, Blood Craze, Enrage).
+    pub(super) fn struck(
+        &mut self,
+        outcome: Outcome,
+        c: &Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        if !self.player.alive() {
+            return;
+        }
+        let on = crate::talents::on_struck(c);
+        match outcome {
+            Outcome::Block => {
+                if let Some((spell_id, pct)) = on.block_rage {
+                    if rng.below(100) < pct {
+                        self.gain_rage(spell_id, 1, events);
+                    }
+                }
+            }
+            Outcome::Crit => {
+                if let Some((spell_id, tick_ms, duration_ms, pct)) = on.crit_heal {
+                    let max = buffed(&self.player.stats, &self.skills).max_health;
+                    let per_tick = heal_tick(max, pct, duration_ms / tick_ms.max(1));
+                    let kind = AuraKind::Heal { per_tick };
+                    self.buff_self(kind, spell_id, c.level, duration_ms, tick_ms, events);
+                }
+                if let Some((spell_id, duration_ms, swings, pct)) = on.crit_damage {
+                    let kind = AuraKind::DamagePct {
+                        pct,
+                        armor_loss_pct: 0,
+                        swings: Some(swings),
+                    };
+                    self.buff_self(kind, spell_id, c.level, duration_ms, 0, events);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// An aura of the player's own on the player.
+    fn buff_self(
+        &mut self,
+        kind: AuraKind,
+        spell_id: u32,
+        level: u8,
+        duration_ms: u32,
+        period_ms: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let aura = Aura {
+            unit: self.guid,
+            spell_id,
+            slot: 0,
+            level,
+            left: clock::secs(duration_ms),
+            period: clock::secs(period_ms),
+            next_tick: clock::secs(period_ms),
+            kind,
+        };
+        self.skills.apply(aura, events);
+    }
+
+    /// `amount` rage for the player, logged under `spell_id`.
+    pub(super) fn gain_rage(&mut self, spell_id: u32, amount: u32, events: &mut Vec<SessionEvent>) {
+        let p = &mut self.player;
+        p.rage = (p.rage + amount * 10).min(rage::MAX);
+        events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
+            target: self.guid,
+            caster: self.guid,
+            spell_id,
+            power: POWER_RAGE,
+            amount,
+        }));
+        events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+    }
+
+    /// `unit` is stunned for `duration_ms`, under `spell_id` (Mace Specialization).
+    pub(super) fn stun(
+        &mut self,
+        unit: u64,
+        spell_id: u32,
+        duration_ms: u32,
+        level: u8,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let aura = Aura {
+            unit,
+            spell_id,
+            slot: 0,
+            level,
+            left: clock::secs(duration_ms),
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Stun,
+        };
+        self.skills.apply(aura, events);
+    }
+
+    /// What the buffs move on the sheet besides attack power: maximum health and armour, and
+    /// the health.
+    pub(super) fn sheet_now(&self) -> Vec<(u16, u32)> {
+        let s = buffed(&self.player.stats, &self.skills);
+        vec![
+            (UNIT_FIELD_MAXHEALTH, s.max_health),
+            (UNIT_FIELD_RESISTANCES, s.armor),
+            (UNIT_FIELD_HEALTH, self.player.health),
+        ]
     }
 
     /// A melee crit landed on `target`: the bleed a talent leaves (Deep Wounds), which each new
@@ -1040,10 +1344,15 @@ impl InWorld {
         if missed_by(swings[0].1.outcome) == Some(SPELL_MISS_DODGE) {
             self.skills.dodged_by(target, events);
         }
-        for (guid, swing) in swings {
+        let impale = crate::talents::skill_crit_damage_pct(c);
+        for (guid, mut swing) in swings {
             if missed_by(swing.outcome).is_some() {
                 continue;
             }
+            if swing.outcome == Outcome::Crit {
+                swing.damage = crit_damage(swing.would_be, impale);
+            }
+            swing.damage = self.dealt(c, swing.damage);
             events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
                 target: guid,
                 attacker: self.guid,
@@ -1063,6 +1372,9 @@ impl InWorld {
             self.hurt(guid, swing.damage, c, rng, events, ticked);
             if swing.outcome == Outcome::Crit {
                 self.crit_landed(guid, c, events);
+            }
+            if guid == target {
+                self.sweep(guid, swing.damage, c, rng, events, ticked);
             }
         }
         true
@@ -1126,6 +1438,21 @@ impl InWorld {
                     }));
                     self.hurt(a.unit, per_tick, c, rng, events, ticked);
                 }
+                AuraKind::Heal { per_tick } => {
+                    let max = buffed(&self.player.stats, &self.skills).max_health;
+                    let p = &mut self.player;
+                    if !p.alive() {
+                        continue;
+                    }
+                    p.health = (p.health + per_tick).min(max);
+                    events.push(SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
+                        target: self.guid,
+                        caster: self.guid,
+                        spell_id: a.spell_id,
+                        ticks: vec![PeriodicTick::Heal { amount: per_tick }],
+                    }));
+                    events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, p.health)]));
+                }
                 AuraKind::Rage { per_tick } => {
                     let p = &mut self.player;
                     p.rage = (p.rage + per_tick * 10).min(rage::MAX);
@@ -1150,13 +1477,19 @@ impl InWorld {
     }
 
     /// What an aura's going undoes.
-    fn faded(&mut self, gone: &[Aura], events: &mut Vec<SessionEvent>) {
+    pub(super) fn faded(&mut self, gone: &[Aura], events: &mut Vec<SessionEvent>) {
         for a in gone {
             match a.kind {
                 AuraKind::MoveSlow { .. } => self.update_speed(a.unit),
                 AuraKind::AttackPower(_) => {
                     let sheet = buff_sheet(&self.player.stats, &self.skills);
                     events.push(values(self.guid, &sheet));
+                }
+                AuraKind::MaxHealthPct(_) | AuraKind::DamagePct { .. } => {
+                    // What was over the maximum goes with it.
+                    let max = buffed(&self.player.stats, &self.skills).max_health;
+                    self.player.health = self.player.health.min(max);
+                    events.push(values(self.guid, &self.sheet_now()));
                 }
                 _ => {}
             }

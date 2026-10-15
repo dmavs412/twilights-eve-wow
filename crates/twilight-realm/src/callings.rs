@@ -84,6 +84,10 @@ pub struct TalentDef {
     pub exceptional: bool,
     /// What it does, rank by rank.
     pub effects: Vec<TalentEffect>,
+    /// An active talent's skill, which its one rank teaches: cast as any Calling skill once
+    /// learned.
+    #[serde(default)]
+    pub skill: Option<Skill>,
     /// The spell-mod cell that makes the stock client's costs and tooltips agree with the realm.
     #[serde(default)]
     pub client_spellmod: Option<ClientSpellMod>,
@@ -122,6 +126,65 @@ pub enum TalentEffect {
         duration_ms: u32,
         per_rank: Vec<u32>,
     },
+    /// The physical damage the character deals rises by this percent while it wields `weapon`.
+    WeaponDamagePct { weapon: Wielded, per_rank: Vec<u32> },
+    /// The melee critical strike chance rises by this many percent while it wields `weapon`.
+    WeaponCritPct { weapon: Wielded, per_rank: Vec<u32> },
+    /// A skill's critical strike adds this percent of the crit's bonus damage (Impale).
+    SkillCritDamagePct { per_rank: Vec<u32> },
+    /// The skill's auras last this percent longer.
+    SkillDurationPct { skill: String, per_rank: Vec<u32> },
+    /// The parry chance rises by this many percent.
+    ParryPct { per_rank: Vec<u32> },
+    /// The block chance with a shield rises by this many percent.
+    BlockPct { per_rank: Vec<u32> },
+    /// A block gives 1 rage this percent of the time, logged under `spell_id`.
+    BlockRagePct { spell_id: u32, per_rank: Vec<u32> },
+    /// A white swing that lands gives 1 rage this percent of the time, logged under `spell_id`.
+    HitRagePct { spell_id: u32, per_rank: Vec<u32> },
+    /// A white swing that lands with `weapon` gives one more swing this percent of the time; the
+    /// extra swing never gives another.
+    ExtraSwingPct { weapon: Wielded, per_rank: Vec<u32> },
+    /// A white swing that lands with `weapon` stuns the target this percent of the time, under
+    /// `aura_spell_id` for `duration_ms`.
+    HitStunPct {
+        weapon: Wielded,
+        aura_spell_id: u32,
+        duration_ms: u32,
+        per_rank: Vec<u32>,
+    },
+    /// A critical strike taken heals this percent of the maximum health over `duration_ms`, a
+    /// tick every `tick_ms`, under the rank's aura of `aura_spell_ids`.
+    CritTakenHealPct {
+        aura_spell_ids: Vec<u32>,
+        tick_ms: u32,
+        duration_ms: u32,
+        per_rank: Vec<u32>,
+    },
+    /// A critical strike taken raises the melee damage dealt by this percent, under the rank's aura
+    /// of `aura_spell_ids`, for `duration_ms` or `swings` white swings.
+    CritTakenDamagePct {
+        aura_spell_ids: Vec<u32>,
+        duration_ms: u32,
+        swings: u32,
+        per_rank: Vec<u32>,
+    },
+}
+
+/// What a talent asks to be wielded in the main hand.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Wielded {
+    /// Any one-handed melee weapon.
+    OneHand,
+    /// Any two-handed melee weapon.
+    TwoHand,
+    /// An axe, one- or two-handed.
+    Axe,
+    /// A mace, one- or two-handed.
+    Mace,
+    /// A sword, one- or two-handed.
+    Sword,
 }
 
 impl TalentEffect {
@@ -135,7 +198,19 @@ impl TalentEffect {
             | Self::MeleeCritPct { per_rank }
             | Self::Defense { per_rank }
             | Self::ItemArmorPct { per_rank }
-            | Self::CritBleed { per_rank, .. } => per_rank,
+            | Self::CritBleed { per_rank, .. }
+            | Self::WeaponDamagePct { per_rank, .. }
+            | Self::WeaponCritPct { per_rank, .. }
+            | Self::SkillCritDamagePct { per_rank }
+            | Self::SkillDurationPct { per_rank, .. }
+            | Self::ParryPct { per_rank }
+            | Self::BlockPct { per_rank }
+            | Self::BlockRagePct { per_rank, .. }
+            | Self::HitRagePct { per_rank, .. }
+            | Self::ExtraSwingPct { per_rank, .. }
+            | Self::HitStunPct { per_rank, .. }
+            | Self::CritTakenHealPct { per_rank, .. }
+            | Self::CritTakenDamagePct { per_rank, .. } => per_rank,
         }
     }
 }
@@ -274,6 +349,29 @@ pub enum Effect {
         base: Linear,
         per_extra_rage: Linear,
     },
+    /// The caster's maximum health rises by `pct`% under `aura_spell_id`, and the health with it;
+    /// what is over the old maximum goes when it ends (Last Stand).
+    AuraMaxHealthPct {
+        aura_spell_id: u32,
+        pct: u32,
+        duration_ms: u32,
+    },
+    /// The caster deals `pct`% more physical damage and has `armor_loss_pct`% less armour, under
+    /// the skill's spell id (Death Wish).
+    AuraDamagePct {
+        pct: u32,
+        armor_loss_pct: u32,
+        duration_ms: u32,
+    },
+    /// The caster's next `strikes` melee strikes that land, within `duration_ms`, also strike the
+    /// nearest other enemy within `radius_yd` for as much, logged under `strike_spell_id`
+    /// (Sweeping Strikes).
+    SweepingStrikes {
+        strikes: u32,
+        duration_ms: u32,
+        radius_yd: f32,
+        strike_spell_id: u32,
+    },
 }
 
 #[derive(Deserialize)]
@@ -313,15 +411,26 @@ pub(crate) fn default_bar(calling: Calling) -> Vec<(u8, u32)> {
         .collect()
 }
 
-/// A skill of any Calling, by spell id.
+/// Every skill of a Calling: its own, then its active talents'.
+fn every_skill(c: &'static CallingDef) -> impl Iterator<Item = &'static Skill> {
+    c.skills.iter().chain(
+        c.talent_tabs
+            .iter()
+            .flat_map(|tab| &tab.talents)
+            .filter_map(|t| t.skill.as_ref()),
+    )
+}
+
+/// A skill of any Calling, an active talent's included, by spell id.
 pub fn skill(spell_id: u32) -> Option<&'static Skill> {
     all()
         .iter()
-        .flat_map(|c| &c.skills)
+        .flat_map(every_skill)
         .find(|s| s.spell_id == spell_id)
 }
 
-/// Every Calling skill's spell id: the spells whose rank text the client blanks.
+/// Every Calling skill's spell id, active talents' included: the spells whose rank text the
+/// client blanks.
 pub fn skill_spell_ids() -> impl Iterator<Item = u32> {
-    all().iter().flat_map(|c| &c.skills).map(|s| s.spell_id)
+    all().iter().flat_map(every_skill).map(|s| s.spell_id)
 }

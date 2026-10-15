@@ -137,3 +137,15 @@ fn a_dodged_or_parried_swing_earns_the_rage_of_three_quarters_of_its_damage() {
     // L1 would have dealt 10: 7 dealt (rounded down) is a hair under 7 rage, c(1) a hair over 7.5.
     assert_eq!(rage::from_avoided(10, 1), 69);
 }
+
+#[test]
+fn a_shield_blocks_five_percent_and_its_block_value_with_strength() {
+    use twilight_realm::rules::stats::{block_pct, block_value};
+    // 5% at the level's Defense, and 0.04% a point over it (`Player::UpdateBlockPercentage`).
+    assert_eq!(block_pct(50, 10), 5.0);
+    assert!((block_pct(60, 10) - 5.4).abs() < 1e-9);
+    // `Player::GetShieldBlockValue`: the shield's block, strength / 20, less 1.
+    assert_eq!(block_value(3, 40), 4);
+    assert_eq!(block_value(5, 33), 5);
+    assert_eq!(block_value(0, 10), 0);
+}

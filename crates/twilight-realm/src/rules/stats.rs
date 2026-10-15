@@ -22,6 +22,12 @@ pub struct WarriorStats {
     pub attack_power_bonus: i32,
     pub crit_pct: f64,
     pub dodge_pct: f64,
+    /// 0 without the Parry skill, which the slice's warriors do not train; talents add to it.
+    pub parry_pct: f64,
+    /// 0 without a shield.
+    pub block_pct: f64,
+    /// What a block stops; 0 without a shield.
+    pub block_value: u32,
     pub armor: u32,
     /// Main-hand swing damage before armour, attack power included.
     pub min_damage: f32,
@@ -72,6 +78,9 @@ impl WarriorStats {
             }
             g.armor += t.armor;
             g.attack_power += t.attack_power;
+            if t.class == crate::rules::gear::CLASS_ARMOR && t.subclass == SUBCLASS_SHIELD {
+                g.shield_block = Some(t.block);
+            }
             g.defense += t.defense;
             let main_hand = crate::rules::gear::equip_slots(t.inventory_type)
                 .first()
@@ -96,6 +105,7 @@ impl WarriorStats {
         let max_health = base_health + sta.min(20) + sta.saturating_sub(20) * 10;
         let attack_power = 3 * i32::from(level) + 2 * str as i32 - 20 + gear.attack_power;
         let skill = 5 * u16::from(level);
+        let defense = skill + gear.defense;
         let (min, max, attack_time_ms) = gear.weapon.unwrap_or(UNARMED);
         let ap_damage = attack_power.max(0) as f32 / 14.0 * attack_time_ms as f32 / 1000.0;
         Self {
@@ -109,12 +119,15 @@ impl WarriorStats {
             // Skill sits at the maximum, so its `(skill - 5L) × 0.04` terms are zero.
             crit_pct: f64::from(agi) / tables::at(&t.agi_per_crit, level),
             dodge_pct: f64::from(agi) / tables::at(&t.agi_per_dodge, level),
+            parry_pct: 0.0,
+            block_pct: gear.shield_block.map_or(0.0, |_| block_pct(defense, level)),
+            block_value: gear.shield_block.map_or(0, |block| block_value(block, str)),
             armor: 2 * agi + gear.armor,
             min_damage: min + ap_damage,
             max_damage: max + ap_damage,
             attack_time_ms,
             weapon_skill: skill,
-            defense: skill + gear.defense,
+            defense,
         }
     }
 }
@@ -129,7 +142,12 @@ struct Gear {
     defense: u16,
     /// The main hand's `(min, max, speed ms)`.
     weapon: Option<(f32, f32, u32)>,
+    /// The shield's block value, when one is worn.
+    shield_block: Option<u32>,
 }
+
+/// `ITEM_SUBCLASS_ARMOR_SHIELD`.
+const SUBCLASS_SHIELD: u32 = 6;
 
 /// `creature_classlevelstats`'s unit classes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
@@ -178,4 +196,16 @@ impl MobStats {
             max_damage: avg * (1.0 + DAMAGE_VARIANCE),
         }
     }
+}
+
+/// A warrior's block chance with a shield, in percent: 5, and 0.04 a point of Defense over the
+/// level's maximum (vmangos `Player::UpdateBlockPercentage`).
+pub fn block_pct(defense: u16, level: u8) -> f64 {
+    5.0 + (f64::from(defense) - 5.0 * f64::from(level)) * 0.04
+}
+
+/// What a block stops: the shield's block value, strength / 20, less 1, never below 0 (vmangos
+/// `Player::GetShieldBlockValue`).
+pub fn block_value(shield_block: u32, strength: u32) -> u32 {
+    (f64::from(shield_block) + f64::from(strength) / 20.0 - 1.0).max(0.0) as u32
 }

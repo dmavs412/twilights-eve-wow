@@ -8,7 +8,7 @@
 
 use benilla_protocol::SessionEvent;
 
-use crate::callings::{self, TalentDef, TalentEffect, TalentTab};
+use crate::callings::{self, Skill, TalentDef, TalentEffect, TalentTab, Wielded};
 use crate::characters::Char;
 use crate::fields::values;
 use crate::rules::stats::WarriorStats;
@@ -97,15 +97,150 @@ pub(crate) fn known_spells(c: &Char) -> impl Iterator<Item = u32> + '_ {
     })
 }
 
-/// The size of each learned talent's effects that `pick` takes, summed.
-fn sum(c: &Char, pick: impl Fn(&TalentEffect) -> bool) -> u32 {
+/// Every learned talent's effects, each with the index of the rank learned.
+fn learned(c: &Char) -> impl Iterator<Item = (&'static TalentEffect, usize)> + '_ {
     c.talents
         .iter()
         .filter_map(|&(id, r)| find(c, id).map(|(_, t)| (t, r)))
-        .flat_map(|(t, r)| t.effects.iter().map(move |e| (e, r)))
+        .flat_map(|(t, r)| t.effects.iter().map(move |e| (e, usize::from(r) - 1)))
+}
+
+/// The size of each learned talent's effects that `pick` takes, summed.
+fn sum(c: &Char, pick: impl Fn(&TalentEffect) -> bool) -> u32 {
+    learned(c)
         .filter(|(e, _)| pick(e))
-        .map(|(e, r)| e.per_rank()[usize::from(r) - 1])
+        .map(|(e, r)| e.per_rank()[r])
         .sum()
+}
+
+/// A skill `c` can cast: one of the current Calling's, or a learned active talent's.
+pub(crate) fn skill(c: &Char, spell_id: u32) -> Option<&'static Skill> {
+    let own = callings::of(c.calling).skills.iter();
+    let talents = tree(c)
+        .iter()
+        .flat_map(|tab| &tab.talents)
+        .filter(|t| rank(c, t.talent_id) > 0)
+        .filter_map(|t| t.skill.as_ref());
+    own.chain(talents).find(|s| s.spell_id == spell_id)
+}
+
+/// Whether `c` wields `weapon` in the main hand.
+pub(crate) fn wields(c: &Char, weapon: Wielded) -> bool {
+    use crate::rules::gear::{CLASS_WEAPON, INVTYPE_2HWEAPON, SLOT_MAIN_HAND};
+    let Some(t) = c
+        .inventory
+        .get(SLOT_MAIN_HAND)
+        .and_then(|item| crate::items::template(item.entry))
+        .filter(|t| t.class == CLASS_WEAPON)
+    else {
+        return false;
+    };
+    // `ItemSubclassWeapon`: 0/1 axes, 4/5 maces, 7/8 swords, one- and two-handed.
+    match weapon {
+        Wielded::OneHand => t.inventory_type != INVTYPE_2HWEAPON,
+        Wielded::TwoHand => t.inventory_type == INVTYPE_2HWEAPON,
+        Wielded::Axe => matches!(t.subclass, 0 | 1),
+        Wielded::Mace => matches!(t.subclass, 4 | 5),
+        Wielded::Sword => matches!(t.subclass, 7 | 8),
+    }
+}
+
+/// The percent the physical damage `c` deals rises by, for the weapon in hand.
+pub(crate) fn weapon_damage_pct(c: &Char) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::WeaponDamagePct { weapon, .. } if wields(c, *weapon)),
+    )
+}
+
+/// The percent of a crit's bonus a skill's crit adds (Impale).
+pub(crate) fn skill_crit_damage_pct(c: &Char) -> u32 {
+    sum(c, |e| matches!(e, TalentEffect::SkillCritDamagePct { .. }))
+}
+
+/// The percent a skill's auras last longer.
+pub(crate) fn duration_pct(c: &Char, skill: &str) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::SkillDurationPct { skill: s, .. } if s == skill),
+    )
+}
+
+/// What a landed white swing may do besides its damage.
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct OnHit {
+    /// `(energize spell, percent)`: 1 rage.
+    pub(crate) rage: Option<(u32, u32)>,
+    /// The percent chance of one more swing.
+    pub(crate) extra_swing_pct: u32,
+    /// `(aura spell, duration ms, percent)`: a stun on the target.
+    pub(crate) stun: Option<(u32, u32, u32)>,
+}
+
+/// What `c`'s landed white swings may do, for the weapon in hand.
+pub(crate) fn on_hit(c: &Char) -> OnHit {
+    let mut hit = OnHit::default();
+    for (e, r) in learned(c) {
+        match e {
+            TalentEffect::HitRagePct { spell_id, per_rank } => {
+                hit.rage = Some((*spell_id, per_rank[r]));
+            }
+            TalentEffect::ExtraSwingPct { weapon, per_rank } if wields(c, *weapon) => {
+                hit.extra_swing_pct += per_rank[r];
+            }
+            TalentEffect::HitStunPct {
+                weapon,
+                aura_spell_id,
+                duration_ms,
+                per_rank,
+            } if wields(c, *weapon) => {
+                hit.stun = Some((*aura_spell_id, *duration_ms, per_rank[r]));
+            }
+            _ => {}
+        }
+    }
+    hit
+}
+
+/// What being struck may do for `c`.
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct OnStruck {
+    /// `(energize spell, percent)`: 1 rage for a block.
+    pub(crate) block_rage: Option<(u32, u32)>,
+    /// `(aura spell, tick ms, duration ms, percent of max health)`: a heal after a crit taken.
+    pub(crate) crit_heal: Option<(u32, u32, u32, u32)>,
+    /// `(aura spell, duration ms, swings, percent)`: more damage after a crit taken.
+    pub(crate) crit_damage: Option<(u32, u32, u32, u32)>,
+}
+
+/// What `c` gets from being struck.
+pub(crate) fn on_struck(c: &Char) -> OnStruck {
+    let mut struck = OnStruck::default();
+    for (e, r) in learned(c) {
+        match e {
+            TalentEffect::BlockRagePct { spell_id, per_rank } => {
+                struck.block_rage = Some((*spell_id, per_rank[r]));
+            }
+            TalentEffect::CritTakenHealPct {
+                aura_spell_ids,
+                tick_ms,
+                duration_ms,
+                per_rank,
+            } => {
+                struck.crit_heal = Some((aura_spell_ids[r], *tick_ms, *duration_ms, per_rank[r]));
+            }
+            TalentEffect::CritTakenDamagePct {
+                aura_spell_ids,
+                duration_ms,
+                swings,
+                per_rank,
+            } => {
+                struck.crit_damage = Some((aura_spell_ids[r], *duration_ms, *swings, per_rank[r]));
+            }
+            _ => {}
+        }
+    }
+    struck
 }
 
 /// What a skill costs `c`, in whole rage points.
@@ -166,7 +301,20 @@ pub(crate) fn crit_bleed(c: &Char) -> Option<(u32, u32, u32, u32)> {
 pub(crate) fn stats(c: &Char) -> WarriorStats {
     let mut s = crate::equipment::stats(c);
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::MeleeCritPct { .. })));
+    s.crit_pct += f64::from(sum(
+        c,
+        |e| matches!(e, TalentEffect::WeaponCritPct { weapon, .. } if wields(c, *weapon)),
+    ));
     s.defense += sum(c, |e| matches!(e, TalentEffect::Defense { .. })) as u16;
+    // Parrying takes a weapon in hand (`Unit::GetUnitParryChance`).
+    if wields(c, Wielded::OneHand) || wields(c, Wielded::TwoHand) {
+        s.parry_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::ParryPct { .. })));
+    }
+    // A shield's block chance, with the Defense talents give.
+    if s.block_value > 0 || s.block_pct > 0.0 {
+        s.block_pct = crate::rules::stats::block_pct(s.defense, s.level)
+            + f64::from(sum(c, |e| matches!(e, TalentEffect::BlockPct { .. })));
+    }
     // Agility's armour is not the items'.
     let items_armor = s.armor.saturating_sub(2 * s.base[1]);
     let pct = sum(c, |e| matches!(e, TalentEffect::ItemArmorPct { .. }));

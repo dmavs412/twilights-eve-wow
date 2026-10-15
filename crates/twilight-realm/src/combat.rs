@@ -105,14 +105,13 @@ pub(crate) fn mob_swing(mob: &Mob, p: &WarriorStats, from_front: bool, rng: &mut
             level: p.level,
             defense: p.defense,
             dodge_pct: p.dodge_pct,
-            // A Basic Warrior has no Parry skill and no shield.
-            parry_pct: 0.0,
-            block_pct: 0.0,
+            parry_pct: p.parry_pct,
+            block_pct: p.block_pct,
         },
         from_front,
     );
     let outcome = table.outcome(rng.below(ROLL));
-    land(outcome, armored, 0, rng, || (1.0, 1.0))
+    land(outcome, armored, p.block_value, rng, || (1.0, 1.0))
 }
 
 fn land(

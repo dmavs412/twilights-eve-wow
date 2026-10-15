@@ -340,10 +340,23 @@ effects = [
 ]
 
 # The Tier 1 tree: the real Arms, Fury and Protection pages cut at tier 5, so 29 points reach one
-# tab's last talent with 9 to spare. A talent with `effects = []` is learnable and shown, but the
-# realm does not model it yet (parry, weapon types, procs and the active talents). Two more kinds:
-#   defense        - the Defense skill rises by that much
-#   item_armor_pct - the armour from items rises by that percent
+# tab's last talent with 9 to spare. An active talent's `skill` is cast as any skill once its rank
+# is learned. A talent with `effects = []` and no `skill` is learnable and shown, but the realm
+# does not model it (Dual Wield Specialization: no off hand swings; Iron Will: nothing stuns or
+# charms the player). More kinds than the Basic Warrior's:
+#   defense                - the Defense skill rises by that much
+#   item_armor_pct         - the armour from items rises by that percent
+#   weapon_damage_pct      - physical damage dealt rises by that percent with `weapon` in hand
+#   weapon_crit_pct        - melee crit chance rises by that percent with `weapon` in hand
+#   skill_crit_damage_pct  - a skill's crit adds that percent of its bonus
+#   skill_duration_pct     - the skill's auras last that percent longer
+#   parry_pct, block_pct   - the parry chance, and the block chance with a shield, rise by that much
+#   block_rage_pct         - a block gives 1 rage that percent of the time
+#   hit_rage_pct           - a landed white swing gives 1 rage that percent of the time
+#   extra_swing_pct        - a landed white swing with `weapon` swings again that percent of the time
+#   hit_stun_pct           - a landed white swing with `weapon` stuns that percent of the time
+#   crit_taken_heal_pct    - a crit taken heals that percent of maximum health over the aura
+#   crit_taken_damage_pct  - a crit taken raises melee damage by that percent for a while
 
 [[calling.talent_tab]]
 id = 161
@@ -356,7 +369,7 @@ talent_id = 130
 tier = 1
 column = 2
 rank_spells = [16462, 16463, 16464, 16465, 16466]
-effects = []
+effects = [{ kind = "parry_pct", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab.talent]]
 key = "improved_rend"
@@ -407,7 +420,7 @@ talent_id = 136
 tier = 4
 column = 2
 rank_spells = [12163, 12711, 12712, 12713, 12714]
-effects = []
+effects = [{ kind = "weapon_damage_pct", weapon = "two_hand", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab.talent]]
 key = "impale"
@@ -416,7 +429,7 @@ tier = 4
 column = 3
 rank_spells = [16493, 16494]
 prereq = { key = "deep_wounds", rank = 3 }
-effects = []
+effects = [{ kind = "skill_crit_damage_pct", per_rank = [10, 20] }]
 
 [[calling.talent_tab.talent]]
 key = "axe_specialization"
@@ -424,7 +437,7 @@ talent_id = 132
 tier = 5
 column = 1
 rank_spells = [12700, 12781, 12783, 12784, 12785]
-effects = []
+effects = [{ kind = "weapon_crit_pct", weapon = "axe", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab.talent]]
 key = "sweeping_strikes"
@@ -435,13 +448,26 @@ rank_spells = [12292]
 exceptional = true
 effects = []
 
+[calling.talent_tab.talent.skill]
+key = "sweeping_strikes"
+spell_id = 12292
+rage_cost = 30
+cooldown_ms = 30000
+gcd_ms = 0
+target = "self"
+effects = [
+    { kind = "sweeping_strikes", strikes = 5, duration_ms = 20000, radius_yd = 5.0, strike_spell_id = 12723 },
+]
+
 [[calling.talent_tab.talent]]
 key = "mace_specialization"
 talent_id = 125
 tier = 5
 column = 3
 rank_spells = [12284, 12701, 12702, 12703, 12704]
-effects = []
+effects = [
+    { kind = "hit_stun_pct", weapon = "mace", aura_spell_id = 5530, duration_ms = 3000, per_rank = [1, 2, 3, 4, 6] },
+]
 
 [[calling.talent_tab.talent]]
 key = "sword_specialization"
@@ -449,7 +475,7 @@ talent_id = 123
 tier = 5
 column = 4
 rank_spells = [12281, 12812, 12813, 12814, 12815]
-effects = []
+effects = [{ kind = "extra_swing_pct", weapon = "sword", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab]]
 id = 164
@@ -462,7 +488,7 @@ talent_id = 158
 tier = 1
 column = 2
 rank_spells = [12321, 12835, 12836, 12837, 12838]
-effects = []
+effects = [{ kind = "skill_duration_pct", skill = "battle_shout", per_rank = [10, 20, 30, 40, 50] }]
 
 [[calling.talent_tab.talent]]
 key = "cruelty"
@@ -478,7 +504,7 @@ talent_id = 159
 tier = 2
 column = 3
 rank_spells = [12322, 12999, 13000, 13001, 13002]
-effects = []
+effects = [{ kind = "hit_rage_pct", spell_id = 12964, per_rank = [8, 16, 24, 32, 40] }]
 
 [[calling.talent_tab.talent]]
 key = "improved_cleave"
@@ -497,13 +523,26 @@ rank_spells = [12323]
 exceptional = true
 effects = []
 
+[calling.talent_tab.talent.skill]
+key = "piercing_howl"
+spell_id = 12323
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self_area"
+radius_yd = 10.0
+max_targets = 10
+effects = [{ kind = "movement_slow", pct = 50, duration_ms = 6000 }]
+
 [[calling.talent_tab.talent]]
 key = "blood_craze"
 talent_id = 661
 tier = 3
 column = 3
 rank_spells = [16487, 16489, 16492]
-effects = []
+effects = [
+    { kind = "crit_taken_heal_pct", aura_spell_ids = [16488, 16490, 16491], tick_ms = 1000, duration_ms = 6000, per_rank = [1, 2, 3] },
+]
 
 [[calling.talent_tab.talent]]
 key = "improved_battle_shout"
@@ -537,7 +576,9 @@ talent_id = 155
 tier = 4
 column = 3
 rank_spells = [12317, 13045, 13046, 13047, 13048]
-effects = []
+effects = [
+    { kind = "crit_taken_damage_pct", aura_spell_ids = [12880, 14201, 14202, 14203, 14204], duration_ms = 12000, swings = 12, per_rank = [5, 10, 15, 20, 25] },
+]
 
 [[calling.talent_tab.talent]]
 key = "death_wish"
@@ -547,6 +588,15 @@ column = 2
 rank_spells = [12328]
 exceptional = true
 effects = []
+
+[calling.talent_tab.talent.skill]
+key = "death_wish"
+spell_id = 12328
+rage_cost = 10
+cooldown_ms = 180000
+gcd_ms = 0
+target = "self"
+effects = [{ kind = "aura_damage_pct", pct = 20, armor_loss_pct = 20, duration_ms = 30000 }]
 
 [[calling.talent_tab]]
 id = 163
@@ -559,7 +609,10 @@ talent_id = 1601
 tier = 1
 column = 2
 rank_spells = [12298, 12724, 12725, 12726, 12727]
-effects = []
+effects = [
+    { kind = "block_pct", per_rank = [1, 2, 3, 4, 5] },
+    { kind = "block_rage_pct", spell_id = 23602, per_rank = [20, 40, 60, 80, 100] },
+]
 
 [[calling.talent_tab.talent]]
 key = "anticipation"
@@ -594,13 +647,22 @@ rank_spells = [12975]
 exceptional = true
 effects = []
 
+[calling.talent_tab.talent.skill]
+key = "last_stand"
+spell_id = 12975
+rage_cost = 0
+cooldown_ms = 600000
+gcd_ms = 0
+target = "self"
+effects = [{ kind = "aura_max_health_pct", aura_spell_id = 12976, pct = 30, duration_ms = 20000 }]
+
 [[calling.talent_tab.talent]]
 key = "one_handed_weapon_specialization"
 talent_id = 702
 tier = 4
 column = 3
 rank_spells = [16538, 16539, 16540, 16541, 16542]
-effects = []
+effects = [{ kind = "weapon_damage_pct", weapon = "one_hand", per_rank = [2, 4, 6, 8, 10] }]
 
 [[calling.talent_tab.talent]]
 key = "concussion_blow"
@@ -610,3 +672,13 @@ column = 2
 rank_spells = [12809]
 exceptional = true
 effects = []
+
+[calling.talent_tab.talent.skill]
+key = "concussion_blow"
+spell_id = 12809
+rage_cost = 15
+cooldown_ms = 45000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [{ kind = "stun", aura_spell_id = 12809, duration_ms = 5000 }]

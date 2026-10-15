@@ -32,3 +32,14 @@ pub fn deep_wound_tick(min_damage: f32, max_damage: f32, pct: u32) -> u32 {
     let total = f64::from(min_damage + max_damage) / 2.0 * f64::from(pct) / 100.0;
     ((total / 4.0).round() as u32).max(1)
 }
+
+/// A skill's crit on `damage` (after armour): double, and `bonus_pct`% more of the bonus (Impale).
+pub fn crit_damage(damage: u32, bonus_pct: u32) -> u32 {
+    damage * 2 + damage * bonus_pct / 100
+}
+
+/// One of `ticks` heal ticks that give back `pct`% of `max_health` in all (Blood Craze), at
+/// least 1.
+pub fn heal_tick(max_health: u32, pct: u32, ticks: u32) -> u32 {
+    (max_health * pct / 100 / ticks.max(1)).max(1)
+}

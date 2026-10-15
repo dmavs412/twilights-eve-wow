@@ -360,16 +360,35 @@ impl InWorld {
         if self.next_swing_strike(target, from_front, c, rng, events, ticked) {
             return;
         }
-        let p = &mut self.player;
-        let mob = &self.mobs[i];
-        let swing =
-            combat::player_swing(&cast::buffed(&p.stats, &self.skills), mob, from_front, rng);
+        self.white_swing(i, from_front, true, c, rng, events, ticked);
+    }
+
+    /// One white swing at mob `i`, and what its landing sets off; `may_swing_again`: whether a
+    /// talent may give it one more swing (an extra swing never gives another).
+    #[allow(clippy::too_many_arguments)]
+    fn white_swing(
+        &mut self,
+        i: usize,
+        from_front: bool,
+        may_swing_again: bool,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let target = self.mobs[i].guid;
+        let stats = cast::buffed(&self.player.stats, &self.skills);
+        let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, rng);
+        swing.damage = self.dealt(c, swing.damage);
+        let counted = self.skills.count_swing(events);
+        self.faded(&counted, events);
         events.push(SessionEvent::AttackerState(swing.report(self.guid, target)));
         if swing.outcome == Outcome::Dodge {
             self.skills.dodged_by(target, events);
         }
 
         // Rage from what landed, or from three quarters of what a dodge or parry stopped.
+        let p = &mut self.player;
         let earned = match swing.outcome {
             Outcome::Dodge | Outcome::Parry => rage::from_avoided(swing.would_be, p.stats.level),
             _ => rage::from_damage_dealt(swing.damage, p.stats.level),
@@ -395,6 +414,49 @@ impl InWorld {
             self.kill(i, c, rng, events, ticked);
         } else if swing.outcome == Outcome::Crit {
             self.crit_landed(target, c, events);
+        }
+        if swing.damage > 0 {
+            self.sweep(target, swing.damage, c, rng, events, ticked);
+            self.white_swing_landed(i, from_front, may_swing_again, c, rng, events, ticked);
+        }
+    }
+
+    /// What the player's talents make of a white swing that landed on mob `i`: rage, a stun, one
+    /// more swing.
+    #[allow(clippy::too_many_arguments)]
+    fn white_swing_landed(
+        &mut self,
+        i: usize,
+        from_front: bool,
+        may_swing_again: bool,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let on_hit = crate::talents::on_hit(c);
+        if let Some((spell_id, pct)) = on_hit.rage {
+            if rng.below(100) < pct {
+                self.gain_rage(spell_id, 1, events);
+            }
+        }
+        if let Some((aura_spell_id, duration_ms, pct)) = on_hit.stun {
+            if self.mobs[i].alive() && rng.below(100) < pct {
+                self.stun(
+                    self.mobs[i].guid,
+                    aura_spell_id,
+                    duration_ms,
+                    c.level,
+                    events,
+                );
+            }
+        }
+        if may_swing_again
+            && on_hit.extra_swing_pct > 0
+            && rng.below(100) < on_hit.extra_swing_pct
+            && self.mobs[i].alive()
+        {
+            self.white_swing(i, from_front, false, c, rng, events, ticked);
         }
     }
 
@@ -461,14 +523,15 @@ impl InWorld {
                 if mob.swing_timer > 0.0 {
                     return;
                 }
-                let p = &mut self.player;
+                let stats = cast::buffed(&self.player.stats, &self.skills);
                 let from_front = in_front(c.orientation, me, mob.position);
-                let swing = combat::mob_swing(mob, &p.stats, from_front, rng);
+                let swing = combat::mob_swing(mob, &stats, from_front, rng);
                 events.push(SessionEvent::AttackerState(
                     swing.report(mob.guid, self.guid),
                 ));
                 mob.swing_timer = clock::secs(mob.template.base_attack_time)
                     * self.skills.attack_time_mul(mob.guid);
+                let p = &mut self.player;
                 if swing.damage > 0 {
                     p.health = p.health.saturating_sub(swing.damage);
                     p.rage = (p.rage + rage::from_damage_taken(swing.damage, p.stats.level))
@@ -483,6 +546,7 @@ impl InWorld {
                         self.refresh_gear(c, events);
                     }
                 }
+                self.struck(swing.outcome, c, rng, events);
             }
         }
     }
@@ -764,9 +828,8 @@ fn sheet_pairs(s: &WarriorStats) -> Vec<(u16, u32)> {
         (UNIT_FIELD_BASEATTACKTIME + 1, s.attack_time_ms),
         (PLAYER_CRIT_PERCENTAGE, float(s.crit_pct as f32)),
         (PLAYER_DODGE_PERCENTAGE, float(s.dodge_pct as f32)),
-        // A Basic Warrior has no Parry skill and no shield.
-        (PLAYER_PARRY_PERCENTAGE, float(0.0)),
-        (PLAYER_BLOCK_PERCENTAGE, float(0.0)),
+        (PLAYER_PARRY_PERCENTAGE, float(s.parry_pct as f32)),
+        (PLAYER_BLOCK_PERCENTAGE, float(s.block_pct as f32)),
     ];
     for (i, stat) in s.base.into_iter().enumerate() {
         pairs.push((UNIT_FIELD_STAT0 + i as u16, stat));
@@ -852,14 +915,17 @@ impl InWorld {
 
     /// The worn gear changed: redo the stats and the sheet, keeping the health lost so far.
     pub(crate) fn refresh_gear(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        let lost = cast::buffed(&self.player.stats, &self.skills)
+            .max_health
+            .saturating_sub(self.player.health);
+        self.player.stats = crate::talents::stats(c);
+        let max = cast::buffed(&self.player.stats, &self.skills).max_health;
         let p = &mut self.player;
-        let lost = p.stats.max_health.saturating_sub(p.health);
-        p.stats = crate::talents::stats(c);
         if p.alive() {
-            p.health = p.stats.max_health.saturating_sub(lost).max(1);
+            p.health = max.saturating_sub(lost).max(1);
         }
         let mut pairs = sheet_pairs(&p.stats);
-        pairs.push((UNIT_FIELD_HEALTH, p.health));
+        pairs.extend(self.sheet_now());
         events.push(values(self.guid, &pairs));
     }
 }

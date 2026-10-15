@@ -45,3 +45,22 @@ fn deep_wounds_bleeds_a_share_of_the_average_swing_over_four_ticks() {
     assert_eq!(deep_wound_tick(20.0, 30.0, 60), 4);
     assert_eq!(deep_wound_tick(50.0, 70.0, 40), 6);
 }
+
+#[test]
+fn impale_adds_a_share_of_the_crits_bonus() {
+    use twilight_realm::rules::talents::crit_damage;
+    // A plain crit doubles; Impale 2/2 adds a fifth of the bonus: 2.2×.
+    assert_eq!(crit_damage(100, 0), 200);
+    assert_eq!(crit_damage(100, 10), 210);
+    assert_eq!(crit_damage(100, 20), 220);
+    assert_eq!(crit_damage(33, 20), 72);
+}
+
+#[test]
+fn blood_craze_spreads_its_share_of_the_health_over_its_ticks() {
+    use twilight_realm::rules::talents::heal_tick;
+    // 3% of 1000 health over six ticks: 5 a tick; never under 1.
+    assert_eq!(heal_tick(1000, 3, 6), 5);
+    assert_eq!(heal_tick(400, 1, 6), 1);
+    assert_eq!(heal_tick(50, 1, 6), 1);
+}

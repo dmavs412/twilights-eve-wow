@@ -256,6 +256,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(base, linear(&want["base"]), "{key}");
             assert_eq!(per_extra_rage, linear(&want["per_extra_rage"]), "{key}");
         }
+        // Only active talents' skills do these, and the reference has no realm half for them.
+        Effect::AuraMaxHealthPct { .. }
+        | Effect::AuraDamagePct { .. }
+        | Effect::SweepingStrikes { .. } => panic!("{key}: a talent's effect on a Calling skill"),
     }
 }
 
@@ -267,7 +271,7 @@ fn every_skill_id_is_listed_for_rank_blanking() {
         ids,
         [
             78, 100, 772, 845, 1715, 2687, 5308, 6178, 6192, 6343, 6546, 6673, 7384, 7887, 8198,
-            12294
+            12292, 12294, 12323, 12328, 12809, 12975
         ]
     );
 }
@@ -278,27 +282,7 @@ fn the_basic_warrior_talent_tree_matches_the_reference() {
 }
 
 /// The Tier 1 talents the realm shows and lets the player learn, but does not model yet.
-const NOT_MODELLED: &[&str] = &[
-    "deflection",
-    "two_handed_weapon_specialization",
-    "impale",
-    "axe_specialization",
-    "sweeping_strikes",
-    "mace_specialization",
-    "sword_specialization",
-    "booming_voice",
-    "unbridled_wrath",
-    "piercing_howl",
-    "blood_craze",
-    "dual_wield_specialization",
-    "enrage",
-    "death_wish",
-    "shield_specialization",
-    "iron_will",
-    "last_stand",
-    "one_handed_weapon_specialization",
-    "concussion_blow",
-];
+const NOT_MODELLED: &[&str] = &["dual_wield_specialization", "iron_will"];
 
 #[test]
 fn the_tier_1_warrior_talent_tree_matches_the_reference() {
@@ -378,10 +362,15 @@ fn check_tree(calling: &str, unmodelled: &[&str]) {
                 (m, w) => panic!("{key}: spell mod {m:?} against {w:?}"),
             }
             assert_eq!(
-                t.effects.is_empty(),
+                t.effects.is_empty() && t.skill.is_none(),
                 unmodelled.contains(&key),
                 "{key}: the realm decides what it does"
             );
+            // An active talent's one rank is the skill it teaches.
+            if let Some(skill) = &t.skill {
+                assert!(t.exceptional, "{key}: a skill from a passive talent");
+                assert_eq!(t.rank_spells, [skill.spell_id], "{key}");
+            }
             for e in &t.effects {
                 assert_eq!(
                     e.per_rank().len(),
