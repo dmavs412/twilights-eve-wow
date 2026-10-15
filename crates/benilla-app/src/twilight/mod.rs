@@ -31,7 +31,8 @@ impl Plugin for TwilightPlugin {
             .get_resource_mut::<InProcessLink>()
             .and_then(|mut link| link.0.take())
             .expect("Twilight's Eve needs the net layer's in-process backend");
-        let mut realm = Realm::new();
+        // Fresh dice every session; a test seeds its own.
+        let mut realm = Realm::with_seed(rand::random());
         let saved = load_saves(&mut realm);
         app.insert_resource(LocalRealm {
             far,
@@ -208,6 +209,10 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             position: pos,
             orientation,
         }),
+        ClientCommand::SetSelection { guid } => Some(RealmCommand::SetSelection { guid }),
+        ClientCommand::AttackSwing { guid } => Some(RealmCommand::AttackSwing { guid }),
+        ClientCommand::AttackStop => Some(RealmCommand::AttackStop),
+        ClientCommand::CreatureQuery { entry, .. } => Some(RealmCommand::CreatureQuery { entry }),
         ClientCommand::Logout => Some(RealmCommand::Logout),
         _ => None,
     }
