@@ -1,0 +1,12 @@
+# The items the realm hands out itself and no mob ever drops, written by hand. Same fields as
+# items.toml; they stay out of its loot pools.
+#
+# `use_spell` is the item's on-use spell (the tooltip's "Use:"). `use_cooldown_ms` and
+# `use_category_cooldown_ms` override that spell's own recovery and category recovery from
+# `Spell.dbc`; -1 (the default) keeps the spell's.
+
+item = [
+  # The stock 1.12 Hearthstone, with its hour-long category cooldown cut to five minutes: the
+  # spell's 10 s cast returns the player to the Crossroads (`hearth.rs`).
+  { entry = 6948, name = "Hearthstone", quality = 1, item_level = 1, class = 15, display_id = 6418, bonding = 1, max_count = 1, stackable = 1, use_spell = 8690, use_cooldown_ms = 300000, use_category_cooldown_ms = 0 },
+]
