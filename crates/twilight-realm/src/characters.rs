@@ -9,6 +9,7 @@ use benilla_protocol::{CharCreateReq, Character};
 
 use crate::content::{self, Calling, CROSSROADS, KALIMDOR, THE_BARRENS};
 use crate::inventory::Inventory;
+use crate::quests::QuestLog;
 use crate::save::SaveError;
 
 /// `CharactersPerRealm`: the select screen's ten rows.
@@ -40,6 +41,10 @@ pub(crate) struct Char {
     pub(crate) orientation: f32,
     /// Gear, bags and money.
     pub(crate) inventory: Inventory,
+    /// The quests under way.
+    pub(crate) quests: QuestLog,
+    /// The Tokens Repeatable Quests paid, which the Token vendor takes.
+    pub(crate) tokens: u32,
 }
 
 #[derive(Default)]
@@ -87,6 +92,8 @@ impl Characters {
             position: [x, y, z],
             orientation: facing,
             inventory: Inventory::default(),
+            quests: QuestLog::default(),
+            tokens: 0,
         });
         CHAR_CREATE_SUCCESS
     }

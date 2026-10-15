@@ -86,6 +86,8 @@ pub(crate) struct InWorld {
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
+    /// The Hub's quest givers in view.
+    givers: crate::quests::Givers,
 }
 
 impl InWorld {
@@ -148,6 +150,7 @@ impl InWorld {
             population: Population::default(),
             dev,
             looting: Looting::default(),
+            givers: Default::default(),
         }
     }
 
@@ -209,6 +212,7 @@ impl InWorld {
         let me = c.position;
         self.population
             .update(dt, me, self.map, host, &mut self.mobs, events);
+        self.givers.update(me, self.map, host, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting
@@ -406,9 +410,12 @@ impl InWorld {
         ticked: &mut Ticked,
     ) {
         let mob = &mut self.mobs[i];
-        let lootable = self
-            .looting
-            .drop(mob.guid, looting::Loot::roll(mob.level(), rng));
+        let entry = mob.template.entry;
+        let mut loot = looting::Loot::roll(mob.level(), rng);
+        // The quest items the player's quests still want, after the corpse's own drop.
+        loot.items
+            .extend(crate::quests::drops(c, entry, rng).into_iter().map(Some));
+        let lootable = self.looting.drop(mob.guid, loot);
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
@@ -446,6 +453,21 @@ impl InWorld {
             }));
             ticked.leveled |= self.give_xp(c, gained, events);
         }
+        crate::quests::credit_kill(c, entry, events);
+    }
+
+    /// Pays a quest's `base` XP, scaled by the dev multiplier as kill XP is. What it paid.
+    pub(crate) fn reward_xp(
+        &mut self,
+        c: &mut Char,
+        base: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> u32 {
+        let gained = self.dev.xp(base);
+        if gained > 0 {
+            self.give_xp(c, gained, events);
+        }
+        gained
     }
 
     /// Adds `amount` XP, levelling up as often as it covers (`Player::GiveXP`). Whether a level
@@ -672,6 +694,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     pairs.extend(guid_pairs(OBJECT_FIELD_GUID, c.guid));
     pairs.extend(sheet_pairs(stats));
     pairs.extend(crate::equipment::inventory_pairs(&c.inventory));
+    pairs.extend(crate::quests::log_pairs(c));
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {
         pairs.push((PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, float(1.0)));

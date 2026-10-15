@@ -1,0 +1,381 @@
+//! The stock quest dialogs (vmangos `QuestHandler.cpp`, `GossipDef.cpp`): the `!`/`?` markers,
+//! the greeting list, the accept, progress and reward panels, the hand-in, and the quest template
+//! the log asks for.
+
+use benilla_protocol::messages::{
+    dialog_status, QuestComplete, QuestDetails, QuestGiverList, QuestListEntry, QuestObjective,
+    QuestOfferReward, QuestRequestItems, QuestRewardItem, QuestTemplate,
+};
+use benilla_protocol::SessionEvent;
+
+use super::content::{self, Giver, Quest};
+use super::givers::{self, within_reach};
+use super::{complete, slot_pairs, Active, TOKEN};
+use crate::characters::Char;
+use crate::fields::values;
+use crate::{equipment, items, rules, Realm, RealmCommand};
+
+/// `INVENTORY_SLOT_BAG_0`: the player's own slots, as a wire position names them.
+const PLAYER_BAG: u8 = 255;
+
+/// `CMSG_QUEST_QUERY`'s answer for `id`; nothing for a quest the realm does not have.
+pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
+    let q = content::quest(id)?;
+    let objectives = std::array::from_fn(|i| {
+        let (creature, kills) = q.kill.get(i).copied().unwrap_or((0, 0));
+        let (item, items) = q.collect.get(i).map_or((0, 0), |o| (o.item, o.count));
+        QuestObjective {
+            creature_or_go: creature,
+            required_count: kills,
+            item_id: item,
+            item_count: items,
+            text: String::new(),
+        }
+    });
+    let mut rewards = [(0, 0); 4];
+    if q.tokens > 0 {
+        rewards[0] = (TOKEN, q.tokens);
+    }
+    Some(SessionEvent::QuestTemplate(Box::new(QuestTemplate {
+        quest_id: q.id,
+        // `QUEST_METHOD_ENABLED`.
+        method: 2,
+        level: u32::from(q.level),
+        // The log files every quest under The Barrens.
+        zone_or_sort: crate::THE_BARRENS as i32,
+        quest_type: 0,
+        rep_objective_faction: 0,
+        rep_objective_value: 0,
+        next_quest_in_chain: 0,
+        money: q.money as i32,
+        money_max_level: 0,
+        reward_spell: 0,
+        src_item_id: 0,
+        flags: 0,
+        rewards,
+        choices: [(0, 0); 6],
+        point_map_id: 0,
+        point_x: 0.0,
+        point_y: 0.0,
+        point_opt: 0,
+        title: q.title.clone(),
+        objectives_text: q.objectives.clone(),
+        details: q.details.clone(),
+        end_text: String::new(),
+        objectives,
+    })))
+}
+
+impl RealmCommand {
+    /// The quest giver commands, which [`Realm::handle_quest`] takes.
+    pub(crate) fn is_quest(&self) -> bool {
+        matches!(
+            self,
+            Self::QuestGiverStatusQuery { .. }
+                | Self::QuestGiverHello { .. }
+                | Self::QuestGiverQueryQuest { .. }
+                | Self::QuestGiverAcceptQuest { .. }
+                | Self::QuestGiverCompleteQuest { .. }
+                | Self::QuestGiverRequestReward { .. }
+                | Self::QuestGiverChooseReward { .. }
+                | Self::QuestLogRemoveQuest { .. }
+        )
+    }
+}
+
+/// What a quest command did that the realm acts on.
+#[derive(Default)]
+struct Done {
+    /// The log or the purse changed: save.
+    save: bool,
+}
+
+impl Realm {
+    /// A quest giver command: they need the character in the world.
+    pub(crate) fn handle_quest(&mut self, command: RealmCommand) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let events = &mut self.events;
+        let mut done = Done::default();
+        match command {
+            RealmCommand::QuestGiverStatusQuery { npc } => {
+                if let Some(g) = givers::by_guid(npc) {
+                    events.push(SessionEvent::QuestGiverStatus {
+                        npc,
+                        status: status(c, g),
+                    });
+                }
+            }
+            RealmCommand::QuestLogRemoveQuest { slot } => {
+                if let Some(i) = c.quests.active.iter().position(|a| a.slot == slot) {
+                    c.quests.active.remove(i);
+                    events.push(values(c.guid, &slot_pairs(slot, None)));
+                    done.save = true;
+                }
+            }
+            RealmCommand::QuestGiverHello { npc } => {
+                if let Some(g) = talking_to(c, npc) {
+                    hello(c, g, npc, events);
+                }
+            }
+            RealmCommand::QuestGiverQueryQuest { npc, quest } => {
+                if let Some(q) = talking_to(c, npc).and_then(|g| offer(c, g, quest)) {
+                    events.push(SessionEvent::QuestDetail(details(npc, q)));
+                }
+            }
+            RealmCommand::QuestGiverAcceptQuest { npc, quest } => {
+                if let Some(q) = talking_to(c, npc).and_then(|g| offer(c, g, quest)) {
+                    done.save = accept(c, q, events);
+                }
+            }
+            RealmCommand::QuestGiverCompleteQuest { npc, quest } => {
+                if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
+                    turn_in(c, npc, q, events);
+                }
+            }
+            RealmCommand::QuestGiverRequestReward { npc, quest } => {
+                if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
+                    if is_complete(c, q) {
+                        events.push(SessionEvent::QuestOffer(offer_reward(npc, q)));
+                    }
+                }
+            }
+            RealmCommand::QuestGiverChooseReward { npc, quest, .. } => {
+                if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
+                    if is_complete(c, q) {
+                        reward(c, q, events);
+                        let gained =
+                            w.reward_xp(c, rules::quest::reward_xp(c.level, q.level), events);
+                        let mut items = Vec::new();
+                        if q.tokens > 0 {
+                            items.push((TOKEN, q.tokens));
+                        }
+                        events.push(SessionEvent::QuestComplete(QuestComplete {
+                            quest_id: q.id,
+                            xp: gained,
+                            money: q.money,
+                            items,
+                        }));
+                        done.save = true;
+                    }
+                }
+            }
+            _ => {}
+        }
+        if done.save {
+            let guid = w.guid;
+            self.save(guid);
+        }
+    }
+}
+
+/// The giver `npc`, if the player stands near enough to talk to it.
+fn talking_to(c: &Char, npc: u64) -> Option<&'static Giver> {
+    givers::by_guid(npc).filter(|g| within_reach(g, c.position))
+}
+
+/// `quest`, if `g` offers it to the player now: theirs to take, and not in the log already.
+fn offer(c: &Char, g: &Giver, quest: u32) -> Option<&'static Quest> {
+    content::quest(quest).filter(|q| q.giver == g.entry && offered(c, q))
+}
+
+fn offered(c: &Char, q: &Quest) -> bool {
+    c.level >= q.min_level() && c.quests.get(q.id).is_none()
+}
+
+/// `quest`, if it is in the player's log and `g` takes it in.
+fn in_log(c: &Char, g: &Giver, quest: u32) -> Option<&'static Quest> {
+    content::quest(quest).filter(|q| q.giver == g.entry && c.quests.get(q.id).is_some())
+}
+
+fn is_complete(c: &Char, q: &Quest) -> bool {
+    c.quests.get(q.id).is_some_and(|a| complete(c, a))
+}
+
+/// The giver's mark (`GetDialogStatus`): a yellow `?` for a quest to hand in, a yellow `!` for one
+/// to take, a grey `?` for one under way, a grey `!` for one the player is too low for.
+fn status(c: &Char, g: &Giver) -> u32 {
+    content::offered_by(g.entry)
+        .map(|q| match c.quests.get(q.id) {
+            Some(a) if complete(c, a) => dialog_status::REWARD2,
+            Some(_) => dialog_status::INCOMPLETE,
+            None if offered(c, q) => dialog_status::AVAILABLE,
+            None => dialog_status::UNAVAILABLE,
+        })
+        .max()
+        .unwrap_or(dialog_status::NONE)
+}
+
+/// `CMSG_QUESTGIVER_HELLO`: a lone quest opens its own panel, several open the greeting list.
+fn hello(c: &Char, g: &Giver, npc: u64, events: &mut Vec<SessionEvent>) {
+    // The quests under way first, as vmangos's menu lists them, then the ones on offer.
+    let active: Vec<&Quest> = content::offered_by(g.entry)
+        .filter(|q| c.quests.get(q.id).is_some())
+        .collect();
+    let open: Vec<&Quest> = content::offered_by(g.entry)
+        .filter(|q| offered(c, q))
+        .collect();
+    match (active.as_slice(), open.as_slice()) {
+        ([q], []) => turn_in(c, npc, q, events),
+        ([], [q]) => events.push(SessionEvent::QuestDetail(details(npc, q))),
+        _ => {
+            let row = |q: &Quest, icon: u32| QuestListEntry {
+                quest_id: q.id,
+                icon,
+                level: u32::from(q.level),
+                title: q.title.clone(),
+            };
+            let mut quests: Vec<QuestListEntry> = active
+                .iter()
+                .map(|q| {
+                    // The greeting's active rows: 4 for one to hand in, 3 for one under way.
+                    let icon = if is_complete(c, q) { 4 } else { 3 };
+                    row(q, icon)
+                })
+                .collect();
+            quests.extend(open.iter().map(|q| row(q, dialog_status::AVAILABLE)));
+            events.push(SessionEvent::QuestGreeting(QuestGiverList {
+                npc,
+                greeting: g.greeting.clone(),
+                emote_delay: 0,
+                emote: 0,
+                quests,
+            }));
+        }
+    }
+}
+
+/// The Token row, when the quest pays Tokens.
+fn token_rewards(q: &Quest) -> Vec<QuestRewardItem> {
+    if q.tokens == 0 {
+        return Vec::new();
+    }
+    vec![QuestRewardItem {
+        item_id: TOKEN,
+        count: q.tokens,
+        display_id: display(TOKEN),
+    }]
+}
+
+fn display(item: u32) -> u32 {
+    items::template(item).map_or(0, |t| t.display_id)
+}
+
+/// The accept panel.
+fn details(npc: u64, q: &Quest) -> QuestDetails {
+    QuestDetails {
+        npc,
+        quest_id: q.id,
+        title: q.title.clone(),
+        details: q.details.clone(),
+        objectives: q.objectives.clone(),
+        auto_finish: 0,
+        choices: Vec::new(),
+        rewards: token_rewards(q),
+        money: q.money as i32,
+        reward_spell: 0,
+    }
+}
+
+/// The reward panel.
+fn offer_reward(npc: u64, q: &Quest) -> QuestOfferReward {
+    QuestOfferReward {
+        npc,
+        quest_id: q.id,
+        title: q.title.clone(),
+        offer_text: q.completion.clone(),
+        auto_finish: 0,
+        choices: Vec::new(),
+        rewards: token_rewards(q),
+        money: q.money as i32,
+        quest_flags: 0,
+        reward_spell: 0,
+    }
+}
+
+/// `CMSG_QUESTGIVER_ACCEPT_QUEST`: the quest takes the lowest free log slot, and the dialog
+/// closes. Whether it went in.
+fn accept(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
+    let Some(slot) = c.quests.free_slot() else {
+        events.push(SessionEvent::QuestLogFull);
+        return false;
+    };
+    c.quests.active.push(Active::new(q.id, slot, [0; 4]));
+    let i = c.quests.active.len() - 1;
+    // The bags may already hold what it asks for.
+    super::update_slot(c, i, events);
+    events.push(SessionEvent::GossipComplete);
+    true
+}
+
+/// `CMSG_QUESTGIVER_COMPLETE_QUEST` on a quest in the log: the progress panel, or straight to the
+/// reward panel for a finished quest with nothing to bring.
+fn turn_in(c: &Char, npc: u64, q: &Quest, events: &mut Vec<SessionEvent>) {
+    let finished = is_complete(c, q);
+    if finished && q.collect.is_empty() {
+        events.push(SessionEvent::QuestOffer(offer_reward(npc, q)));
+        return;
+    }
+    events.push(SessionEvent::QuestProgress(QuestRequestItems {
+        npc,
+        quest_id: q.id,
+        title: q.title.clone(),
+        request_text: q.progress.clone(),
+        emote: 0,
+        close_on_cancel: 0,
+        required_money: 0,
+        required_items: q
+            .collect
+            .iter()
+            .map(|o| QuestRewardItem {
+                item_id: o.item,
+                count: o.count,
+                display_id: display(o.item),
+            })
+            .collect(),
+        is_complete: finished,
+    }));
+}
+
+/// The hand-in's goods: the collected items go, the money and Tokens come, and the slot clears.
+/// The XP is the world's to pay.
+fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) {
+    for o in &q.collect {
+        take_items(c, o.item, o.count, events);
+    }
+    c.inventory.money = c.inventory.money.saturating_add(q.money);
+    c.tokens = c.tokens.saturating_add(q.tokens);
+    if let Some(i) = c.quests.active.iter().position(|a| a.id == q.id) {
+        let a = c.quests.active.remove(i);
+        let mut pairs = slot_pairs(a.slot, None).to_vec();
+        pairs.push(equipment::money_pair(&c.inventory));
+        events.push(values(c.guid, &pairs));
+    }
+    // Handing in may undo another quest that wanted the same items.
+    super::refresh(c, events);
+}
+
+/// Destroys `count` of `item` from the bags, last stacks first.
+fn take_items(c: &mut Char, item: u32, mut count: u32, events: &mut Vec<SessionEvent>) {
+    let stacks: Vec<(u8, u32)> = c
+        .inventory
+        .iter()
+        .filter(|(_, i)| i.entry == item)
+        .map(|(slot, i)| (slot, i.count))
+        .collect();
+    for (slot, have) in stacks.into_iter().rev() {
+        if count == 0 {
+            break;
+        }
+        let take = have.min(count);
+        // 0 destroys the whole stack.
+        let n = if take == have { 0 } else { take as u8 };
+        equipment::destroy(c, PLAYER_BAG, slot, n, events);
+        count -= take;
+    }
+    debug_assert_eq!(count, 0, "a complete quest's items are all there");
+}

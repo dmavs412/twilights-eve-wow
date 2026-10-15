@@ -150,5 +150,7 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         position: s.position,
         orientation: s.orientation,
         inventory: load_inventory(s.money, &s.items)?,
+        quests: crate::quests::QuestLog::default(),
+        tokens: 0,
     })
 }

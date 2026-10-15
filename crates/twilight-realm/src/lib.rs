@@ -19,6 +19,7 @@ mod items;
 mod looting;
 mod mobs;
 mod population;
+mod quests;
 mod rng;
 pub mod rules;
 mod save;
@@ -122,6 +123,48 @@ pub enum RealmCommand {
         slot: u8,
         count: u8,
     },
+    /// The `!` or `?` over a quest giver, answered with [`SessionEvent::QuestGiverStatus`].
+    QuestGiverStatusQuery {
+        npc: u64,
+    },
+    /// Talk to a quest giver: its quest list, or its one quest's panel.
+    QuestGiverHello {
+        npc: u64,
+    },
+    /// An offered quest's accept panel.
+    QuestGiverQueryQuest {
+        npc: u64,
+        quest: u32,
+    },
+    /// Take an offered quest into the log.
+    QuestGiverAcceptQuest {
+        npc: u64,
+        quest: u32,
+    },
+    /// Start handing a quest in: its progress panel, or its reward panel.
+    QuestGiverCompleteQuest {
+        npc: u64,
+        quest: u32,
+    },
+    /// The progress panel's Continue: the reward panel.
+    QuestGiverRequestReward {
+        npc: u64,
+        quest: u32,
+    },
+    /// Hand a finished quest in, taking reward `choice`.
+    QuestGiverChooseReward {
+        npc: u64,
+        quest: u32,
+        choice: u32,
+    },
+    /// A quest template, answered with [`SessionEvent::QuestTemplate`].
+    QuestQuery {
+        quest: u32,
+    },
+    /// Abandon the quest in a log slot.
+    QuestLogRemoveQuest {
+        slot: u8,
+    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -208,10 +251,16 @@ impl Realm {
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
-                self.events.push(mobs::creature_name(entry));
+                let name =
+                    quests::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
+                self.events.push(name);
             }
             RealmCommand::Logout => self.logout(),
             RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
+            RealmCommand::QuestQuery { quest } => {
+                self.events.extend(quests::template_response(quest));
+            }
+            other if other.is_quest() => self.handle_quest(other),
             other => self.handle_items(other),
         }
     }
@@ -263,6 +312,8 @@ impl Realm {
         if let Some((corpse, lootable)) = looted.flag {
             events.push(fields::values(corpse, &[looting::lootable_pair(lootable)]));
         }
+        // A quest may want what came into the bags, or what left them.
+        quests::refresh(c, events);
         if moved.gear_changed || looted.took {
             let guid = w.guid;
             self.save(guid);

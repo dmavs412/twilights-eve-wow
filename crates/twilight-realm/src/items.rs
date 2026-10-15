@@ -111,8 +111,11 @@ pub(crate) fn all() -> &'static HashMap<u32, Template> {
     })
 }
 
+/// The template of `entry`: a world item, or one the quests use.
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
-    all().get(&entry)
+    all()
+        .get(&entry)
+        .or_else(|| crate::quests::item_template(entry))
 }
 
 /// `ITEM_SPELLTRIGGER_ON_EQUIP`.

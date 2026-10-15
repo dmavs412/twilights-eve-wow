@@ -1,0 +1,315 @@
+# The Hub's quest givers and their Repeatable Quests (GLOSSARY.md). Each giver stands in the
+# Crossroads for one Hunting Ground and offers its quests, which can be taken again as soon as
+# they are handed in. A quest's XP is not here: it is always the player's next level's worth,
+# shrunk once they outlevel the quest (`rules::quest`).
+#
+# A giver: `entry` (a creature entry of our own, outside 1.12's range) and `guid` (its spawn's low
+# guid), `name` and `subname` (the Hunting Ground, shown under the name), `display_id` (a real
+# 1.12 Horde NPC model), `level`, `position` (WoW `[x, y, z]`; the host's ground replaces z) and
+# `orientation`, and the `greeting` its quest list opens with.
+#
+# A quest: `id`, its `giver`, `level`, `min_level` (the lowest level it is offered at; by default
+# four below its level, and at least 1),
+# the dialog texts, `money` (copper) and `tokens` on hand-in, and its objectives: `kill` rows of
+# `[creature entry, count]`, and `collect` rows of an `item` (content/quest_items.toml), its
+# `count`, and the creatures it drops `from` at `chance` percent while the quest wants more.
+# At most four of each.
+
+[[giver]]
+entry = 90101
+guid = 9100001
+name = "Grezz Plainswatcher"
+subname = "The Near Plains"
+display_id = 1374
+level = 30
+position = [-435.2, -2644.1, 95.9]
+orientation = 3.74
+greeting = "The plains around the Crossroads teem with beasts. Thin them out, and the caravans thank you for it."
+
+[[giver]]
+entry = 90102
+guid = 9100002
+name = "Tamaha Swiftrunner"
+subname = "The Southern Fields"
+display_id = 2112
+level = 30
+position = [-437.5, -2641.9, 95.9]
+orientation = 4.14
+greeting = "South of here the quilboar dig in and the wolves run in packs. The fields need a strong arm."
+
+[[giver]]
+entry = 90103
+guid = 9100003
+name = "Zun'jin"
+subname = "The Southfury Banks"
+display_id = 4242
+level = 30
+position = [-440.4, -2640.7, 95.9]
+orientation = 4.54
+greeting = "Da river and da Razormane, mon. Both be hungry, and both be trouble."
+
+[[giver]]
+entry = 90104
+guid = 9100004
+name = "Garosh Ironhide"
+subname = "The Kolkar Lands"
+display_id = 3743
+level = 30
+position = [-443.6, -2640.8, 95.9]
+orientation = 4.94
+greeting = "The Kolkar raid our roads and the Witchwing harpies foul the hills. I pay for every one of them."
+
+[[giver]]
+entry = 90105
+guid = 9100005
+name = "Mahu Stormhoof"
+subname = "The Southern Barrens"
+display_id = 3793
+level = 30
+position = [-446.5, -2642.1, 95.9]
+orientation = 5.34
+greeting = "Far to the south the thunder lizards and the thunderhawks roam, and the Bristleback press north."
+
+[[giver]]
+entry = 90106
+guid = 9100006
+name = "Ula'zi"
+subname = "Blackthorn Ridge"
+display_id = 1882
+level = 30
+position = [-448.7, -2644.5, 95.9]
+orientation = 5.74
+greeting = "Past da gold road da silithid swarm and da Razormane gather. Only da strong come back."
+
+# ── The Near Plains (levels 1-3) ──────────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91001
+giver = 90101
+level = 2
+title = "Thinning the Herds"
+objectives = "Kill 5 Plainstriders and 5 Mottled Boars, then return to Grezz Plainswatcher at the Crossroads."
+details = "The plainstriders and the boars south-west of town trample the caravan trail. Cull them, and come back for your pay. There are always more."
+progress = "The herds are still thick out there."
+completion = "Good hunting. The trail is clear, for now. Come back when the herds grow again."
+money = 60
+tokens = 0
+kill = [[2955, 5], [3098, 5]]
+
+[[quest]]
+id = 91002
+giver = 90101
+level = 3
+title = "Scorpid Venom"
+objectives = "Bring 6 Venomtail Poison Sacs from the Scorpid Workers to Grezz Plainswatcher at the Crossroads."
+details = "The apothecaries want scorpid venom, and the Scorpid Workers east of town are full of it. Bring me their poison sacs."
+progress = "Have you got the venom sacs?"
+completion = "Careful with those. Here, for your trouble, and a Token besides."
+money = 80
+tokens = 1
+collect = [{ item = 4886, count = 6, chance = 60, from = [3124] }]
+
+# ── The Southern Fields (levels 4-6) ──────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91003
+giver = 90102
+level = 4
+title = "The Familiar Threat"
+objectives = "Kill 5 Vile Familiars, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Some warlock's imps have slipped their leash south of town, and they burn whatever they touch. Put them down."
+progress = "The familiars still burn the grass."
+completion = "That is the smell of burnt imp. Well done."
+money = 100
+tokens = 0
+kill = [[3101, 5]]
+
+[[quest]]
+id = 91004
+giver = 90102
+level = 5
+title = "Bristleback Tusks"
+objectives = "Bring 6 Bristleback Quilboar Tusks to Tamaha Swiftrunner at the Crossroads."
+details = "The Bristleback have dug in north-west of town. Every tusk you take is a quilboar that will not raid us."
+progress = "Their camp still stands?"
+completion = "Six tusks. The Bristleback will think twice. Take this, and a Token."
+money = 120
+tokens = 1
+collect = [{ item = 5085, count = 6, chance = 70, from = [2952, 2953, 2954] }]
+
+[[quest]]
+id = 91005
+giver = 90102
+level = 6
+title = "Prairie Wolf Paws"
+objectives = "Bring 5 Prairie Wolf Paws to Tamaha Swiftrunner at the Crossroads."
+details = "The prairie wolves south-east of here have taken to stalking our scouts. Bring me their paws as proof."
+progress = "The wolves still hunt our scouts."
+completion = "These will do. The scouts sleep easier. Here, and a Token."
+money = 150
+tokens = 1
+collect = [{ item = 4758, count = 5, chance = 60, from = [2958] }]
+
+# ── The Southfury Banks (levels 10-12) ────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91006
+giver = 90103
+level = 10
+title = "Crocolisk Skins"
+objectives = "Bring 8 Crocolisk Skins to Zun'jin at the Crossroads."
+details = "Da Dreadmaw crocolisks along da Southfury make fine leather. Bring me eight skins."
+progress = "No skins yet, mon?"
+completion = "Good, good. Dese will tan nice. A Token for you too."
+money = 400
+tokens = 1
+collect = [{ item = 2925, count = 8, chance = 60, from = [3110, 3231] }]
+
+[[quest]]
+id = 91007
+giver = 90103
+level = 11
+title = "Razormane Raiders"
+objectives = "Kill 5 Razormane Water Seekers and 5 Razormane Thornweavers, then return to Zun'jin at the Crossroads."
+details = "Da Razormane at Thorn Hill be sending raiders down da road. Kill dem seekers and thornweavers."
+progress = "Da Razormane still be raidin'."
+completion = "Dat'll teach dem. Here be your pay."
+money = 450
+tokens = 0
+kill = [[3267, 5], [3268, 5]]
+
+[[quest]]
+id = 91008
+giver = 90103
+level = 12
+title = "Plainstrider Beaks"
+objectives = "Bring 8 Plainstrider Beaks to Zun'jin at the Crossroads."
+details = "Da big plainstriders out on da savannah got beaks dat make good charms. Bring me eight."
+progress = "Da beaks, mon. Where dey be?"
+completion = "Ah, dese be fine beaks. A Token for your trouble."
+money = 500
+tokens = 1
+collect = [{ item = 5087, count = 8, chance = 70, from = [3244, 3246] }]
+
+# ── The Kolkar Lands (levels 14-16) ───────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91009
+giver = 90104
+level = 14
+title = "Kolkar Raiders"
+objectives = "Kill 6 Kolkar Wranglers and 6 Kolkar Stormers, then return to Garosh Ironhide at the Crossroads."
+details = "The Kolkar centaur ride out of their camps to hit our caravans. Kill their wranglers and stormers."
+progress = "The Kolkar still ride."
+completion = "Fewer centaur on the roads. Your coin."
+money = 700
+tokens = 0
+kill = [[3272, 6], [3273, 6]]
+
+[[quest]]
+id = 91010
+giver = 90104
+level = 15
+title = "Centaur Bracers"
+objectives = "Bring 8 Centaur Bracers to Garosh Ironhide at the Crossroads."
+details = "Every Kolkar warrior wears bracers. Bring me eight pairs, and I will know you have been busy."
+progress = "Where are the bracers?"
+completion = "Eight pairs. The Kolkar will feel that. A Token, as promised."
+money = 800
+tokens = 1
+collect = [{ item = 5030, count = 8, chance = 60, from = [3272, 3273, 3274, 3397, 3275] }]
+
+[[quest]]
+id = 91011
+giver = 90104
+level = 16
+title = "Witchwing Talons"
+objectives = "Bring 8 Witchwing Talons to Garosh Ironhide at the Crossroads."
+details = "The Witchwing harpies roost in the hills to the north-west. Bring me their talons."
+progress = "The harpies still screech in the hills."
+completion = "Talons, all eight. Good. Here is your pay, and a Token."
+money = 900
+tokens = 1
+collect = [{ item = 5064, count = 8, chance = 70, from = [3276, 3277, 3278, 3279, 3280] }]
+
+# ── The Southern Barrens (levels 18-21) ───────────────────────────────────────────────────────
+
+[[quest]]
+id = 91012
+giver = 90105
+level = 18
+title = "Bristleback Encroachment"
+objectives = "Kill 6 Bristleback Hunters and 6 Bristleback Thornweavers, then return to Mahu Stormhoof at the Crossroads."
+details = "In the south the Bristleback push into the land of my people. Drive back their hunters and thornweavers."
+progress = "The Bristleback still press north."
+completion = "The Earth Mother thanks you. Take this."
+money = 1200
+tokens = 0
+kill = [[3258, 6], [3261, 6]]
+
+[[quest]]
+id = 91013
+giver = 90105
+level = 20
+title = "Thunder Lizard Horns"
+objectives = "Bring 6 Thunder Lizard Horns to Mahu Stormhoof at the Crossroads."
+details = "The thunder lizards of the south grow horns that our shamans grind for their rites. Bring me six."
+progress = "The thunder still rolls in the south."
+completion = "Six horns. The shamans will be glad. Two Tokens for you."
+money = 1500
+tokens = 2
+collect = [{ item = 4895, count = 6, chance = 80, from = [3240, 3239] }]
+
+[[quest]]
+id = 91014
+giver = 90105
+level = 21
+title = "Thunderhawk Wings"
+objectives = "Bring 6 Thunderhawk Wings to Mahu Stormhoof at the Crossroads."
+details = "The thunderhawks dive on travellers in the southern plains. Bring me their wings."
+progress = "The thunderhawks still hunt."
+completion = "The skies are a little safer. Two Tokens, and my thanks."
+money = 1600
+tokens = 2
+collect = [{ item = 5164, count = 6, chance = 80, from = [3247, 3424, 3249] }]
+
+# ── Blackthorn Ridge (levels 22-24) ───────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91015
+giver = 90106
+level = 22
+title = "Silithid Antennae"
+objectives = "Bring 8 Twitching Antennae to Ula'zi at the Crossroads."
+details = "Da silithid be crawlin' out of da south. Cut off dere antennae and bring dem to me."
+progress = "Da bugs still be crawlin'."
+completion = "Dey still be twitchin'! Good. Two Tokens for you, mon."
+money = 1800
+tokens = 2
+collect = [{ item = 7119, count = 8, chance = 80, from = [3250, 3251, 3252] }]
+
+[[quest]]
+id = 91016
+giver = 90106
+level = 23
+title = "Hecklefang Stalkers"
+objectives = "Kill 10 Hecklefang Stalkers, then return to Ula'zi at the Crossroads."
+details = "Da Hecklefang stalkers be pickin' off anyone who walk alone down south. Hunt dem."
+progress = "Da hyenas still be laughin'."
+completion = "No more laughin' from dem. Here be your pay."
+money = 2000
+tokens = 0
+kill = [[4128, 10]]
+
+[[quest]]
+id = 91017
+giver = 90106
+level = 24
+title = "Razormane Warbands"
+objectives = "Kill 6 Razormane Stalkers and 6 Razormane Seers, then return to Ula'zi at the Crossroads."
+details = "Da Razormane be gatherin' warbands near Blackthorn Ridge. Break dem before dey march."
+progress = "Da warbands still be gatherin'."
+completion = "Dey won't be marchin' now. Your pay, mon."
+money = 2200
+tokens = 0
+kill = [[3457, 6], [3458, 6]]
