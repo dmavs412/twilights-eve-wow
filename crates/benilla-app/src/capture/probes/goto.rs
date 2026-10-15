@@ -125,11 +125,11 @@ mod tests {
             })
         );
         assert_eq!(
-            parse(" -848.7, -2050 ,3.14@25"),
+            parse(" -848.7, -2050 ,3.0@25"),
             Some(Goto {
                 x: -848.7,
                 y: -2050.0,
-                facing: Some(3.14),
+                facing: Some(3.0),
                 at: Some(25.0)
             })
         );

@@ -61,12 +61,12 @@ fn the_dev_teleport_puts_the_player_on_the_ground_at_the_spot() {
     realm.handle(RealmCommand::DevTeleport {
         x: OASIS.0,
         y: OASIS.1,
-        facing: Some(3.14),
+        facing: Some(2.5),
     });
     realm.tick(0.1, &Raised);
     let events = drain(&mut realm);
 
-    assert_eq!(teleports(&events), vec![([OASIS.0, OASIS.1, 42.0], 3.14)]);
+    assert_eq!(teleports(&events), vec![([OASIS.0, OASIS.1, 42.0], 2.5)]);
 }
 
 #[test]
@@ -143,7 +143,7 @@ fn the_teleport_lands_once_the_client_acknowledges_it() {
             twilight_realm::Storage::Write { blob, .. } => Some(blob),
             _ => None,
         })
-        .last()
+        .next_back()
         .expect("logout saves");
     assert!(
         saved.contains("-848.7") && saved.contains("-2050"),
