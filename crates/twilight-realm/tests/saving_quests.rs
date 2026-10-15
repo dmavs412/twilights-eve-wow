@@ -66,6 +66,40 @@ fn kill_progress_and_tokens_survive_a_save_round_trip() {
 }
 
 #[test]
+fn a_hand_in_saves_the_tokens_and_the_emptied_log() {
+    let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 8)];
+    let (mut realm, me, events) = questing(10, skins, 4, &[(CROCOLISK_SKINS, [0; 4])]);
+    realm.drain_storage();
+    hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS);
+    let blob = last_write(&mut realm);
+    assert!(blob.contains("tokens = 5"), "{blob}");
+    assert!(!blob.contains("[[quests]]"), "{blob}");
+    assert!(quest_log(&reload(me, &blob), me).is_empty());
+}
+
+#[test]
+fn abandoning_a_quest_clears_its_slot_and_saves() {
+    let (mut realm, me, mut events) = questing(
+        3,
+        &[],
+        0,
+        &[(SCORPID_VENOM, [0; 4]), (THINNING_THE_HERDS, [2, 0, 0, 0])],
+    );
+    realm.drain_storage();
+    realm.handle(RealmCommand::QuestLogRemoveQuest { slot: 0 });
+    events.extend(drain(&mut realm));
+    assert_eq!(
+        quest_log(&events, me),
+        [(1, THINNING_THE_HERDS, [2, 0, 0, 0], 0)]
+    );
+    let blob = last_write(&mut realm);
+    assert_eq!(
+        quest_log(&reload(me, &blob), me),
+        [(1, THINNING_THE_HERDS, [2, 0, 0, 0], 0)]
+    );
+}
+
+#[test]
 fn a_save_from_before_quests_loads_with_none() {
     let (me, blob) = save_with(3, 0, &[]);
     let old = blob.replace("tokens = 0\n", "");
