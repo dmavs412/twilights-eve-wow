@@ -146,8 +146,9 @@ impl Route {
         map: u32,
         host: &dyn Host,
     ) -> Vec<[f32; 3]> {
+        // The corridor first: it is arithmetic, sight a trace through the host's world.
         let clear =
-            |a: [f32; 3], b: [f32; 3]| host.line_of_sight(map, eye(a), eye(b)) && self.inside(a, b);
+            |a: [f32; 3], b: [f32; 3]| self.inside(a, b) && host.line_of_sight(map, eye(a), eye(b));
         if clear(from, to) {
             return vec![from, to];
         }

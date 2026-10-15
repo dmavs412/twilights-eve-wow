@@ -6,6 +6,7 @@
 
 use benilla_assets::coords::wow_to_bevy;
 use benilla_protocol::{SessionEnd, SessionEvent};
+use benilla_world::collision::WorldCollision;
 use benilla_world::schedule::WorldStage;
 use benilla_world::world_point::WorldPoint;
 use std::collections::BTreeSet;
@@ -33,7 +34,10 @@ fn dev_multipliers() -> DevMultipliers {
     };
     let dev = DevMultipliers::from_flags(flag("SPEED").as_deref(), flag("XP").as_deref());
     if dev != DevMultipliers::default() {
-        info!("twilight: dev multipliers speed ×{} xp ×{}", dev.speed, dev.xp);
+        info!(
+            "twilight: dev multipliers speed ×{} xp ×{}",
+            dev.speed, dev.xp
+        );
     }
     dev
 }
@@ -172,7 +176,12 @@ fn store(op: Storage, saved: &mut BTreeSet<u64>) {
 }
 
 /// Commands in, one tick, events out.
-fn pump(mut local: ResMut<LocalRealm>, time: Res<Time>, world: WorldPoint) {
+fn pump(
+    mut local: ResMut<LocalRealm>,
+    time: Res<Time>,
+    world: WorldPoint,
+    collision: WorldCollision,
+) {
     let LocalRealm {
         far,
         realm,
@@ -201,7 +210,10 @@ fn pump(mut local: ResMut<LocalRealm>, time: Res<Time>, world: WorldPoint) {
         }
     }
 
-    let host = TerrainHost { world: &world };
+    let host = TerrainHost {
+        world: &world,
+        collision: &collision,
+    };
     realm.tick(time.delta_secs(), &host);
 
     for op in realm.drain_storage() {
@@ -246,9 +258,7 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::ItemQuery { entry, .. } => Some(RealmCommand::ItemQuery { entry }),
         ClientCommand::Loot { guid } => Some(RealmCommand::Loot { guid }),
         ClientCommand::LootMoney => Some(RealmCommand::LootMoney),
-        ClientCommand::AutostoreLootItem { slot } => {
-            Some(RealmCommand::AutostoreLootItem { slot })
-        }
+        ClientCommand::AutostoreLootItem { slot } => Some(RealmCommand::AutostoreLootItem { slot }),
         ClientCommand::LootRelease { guid } => Some(RealmCommand::LootRelease { guid }),
         ClientCommand::AutoEquipItem { bag_index, slot } => Some(RealmCommand::AutoEquipItem {
             bag: bag_index,
@@ -332,23 +342,42 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         }),
         ClientCommand::RepopRequest => Some(RealmCommand::RepopRequest),
         ClientCommand::TeleportAck { counter, .. } => Some(RealmCommand::TeleportAck { counter }),
+        ClientCommand::AreaTrigger { trigger_id } => {
+            Some(RealmCommand::AreaTrigger { id: trigger_id })
+        }
+        ClientCommand::WorldportAck => Some(RealmCommand::WorldportAck),
         _ => None,
     }
 }
 
-/// The realm's view of the world, answered from the streamed terrain.
-struct TerrainHost<'a, 'w, 's> {
+/// The realm's view of the world, answered from the streamed terrain and its collision.
+struct TerrainHost<'a, 'w, 's, 'cw, 'cs> {
     world: &'a WorldPoint<'w, 's>,
+    collision: &'a WorldCollision<'cw, 'cs>,
 }
 
-impl Host for TerrainHost<'_, '_, '_> {
+/// How much of each end a sight line leaves out, in yards: the two bodies it joins.
+const SIGHT_END_YD: f32 = 1.0;
+
+impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     fn ground_height(&self, _map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32> {
         self.world.terrain_height_under(wow_to_bevy([x, y, z_hint]))
     }
 
-    // Nothing asks yet: the first reader is mob aggro, which brings the collision query with it.
-    fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
-        true
+    /// A ray through what a body collides with: terrain, doodads and WMO walls (a Dungeon's
+    /// tunnels). Where nothing is streamed in, nothing is in the way.
+    fn line_of_sight(&self, _map: u32, from: [f32; 3], to: [f32; 3]) -> bool {
+        let (a, b) = (wow_to_bevy(from), wow_to_bevy(to));
+        let span = b - a;
+        let length = span.length() - 2.0 * SIGHT_END_YD;
+        let Ok(dir) = Dir3::new(span) else {
+            return true;
+        };
+        length <= 0.0
+            || self
+                .collision
+                .ray_body(a + dir * SIGHT_END_YD, dir, length)
+                .is_none()
     }
 }
 
