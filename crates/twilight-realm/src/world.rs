@@ -90,6 +90,8 @@ pub(crate) struct InWorld {
     pub(crate) looting: Looting,
     /// Cooldowns, the queued strike and the auras the skills leave.
     skills: cast::Skills,
+    /// The Hub's Warrior trainer, shown once the ground is there.
+    trainer: crate::trainer::Presence,
 }
 
 impl InWorld {
@@ -156,6 +158,7 @@ impl InWorld {
             dev,
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
+            trainer: Default::default(),
         }
     }
 
@@ -217,6 +220,7 @@ impl InWorld {
         let me = c.position;
         self.population
             .update(dt, me, self.map, host, &mut self.mobs, events);
+        self.trainer.show(self.map, host, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting

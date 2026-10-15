@@ -25,6 +25,7 @@ pub mod rules;
 mod save;
 mod tables;
 mod talents;
+mod trainer;
 mod world;
 
 use benilla_protocol::{CharCreateReq, SessionEvent};
@@ -143,6 +144,23 @@ pub enum RealmCommand {
         talent_id: u32,
         rank: u32,
     },
+    /// Talk to an NPC: its gossip menu.
+    GossipHello {
+        guid: u64,
+    },
+    /// Pick line `option` of an NPC's gossip menu.
+    GossipSelectOption {
+        guid: u64,
+        option: u32,
+    },
+    /// A gossip greeting's text, answered with [`SessionEvent::NpcGreeting`].
+    NpcTextQuery {
+        text_id: u32,
+    },
+    /// Accept the respec the trainer priced: unlearn every talent for gold.
+    TalentWipeConfirm {
+        trainer: u64,
+    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -240,11 +258,19 @@ impl Realm {
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
-                self.events.push(mobs::creature_name(entry));
+                let name = trainer::creature_name(entry);
+                self.events
+                    .push(name.unwrap_or_else(|| mobs::creature_name(entry)));
             }
             RealmCommand::Logout => self.logout(),
             RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
             RealmCommand::LearnTalent { talent_id, rank } => self.learn_talent(talent_id, rank),
+            RealmCommand::GossipHello { guid } => self.gossip_hello(guid),
+            RealmCommand::GossipSelectOption { guid, option } => self.gossip_select(guid, option),
+            RealmCommand::NpcTextQuery { text_id } => {
+                self.events.extend(trainer::greeting(text_id))
+            }
+            RealmCommand::TalentWipeConfirm { trainer } => self.talent_wipe(trainer),
             other => self.handle_items(other),
         }
     }

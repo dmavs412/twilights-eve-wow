@@ -40,6 +40,10 @@ const SPELLMOD_COST: u8 = 14;
 
 const NO_POWER: u8 = 0x4d;
 
+// `NPCFlags`.
+const NPC_GOSSIP: u32 = 0x01;
+const NPC_TRAINER: u32 = 0x10;
+
 const SEED: u64 = 0x5EED_0014;
 const CROSSROADS_XY: [f32; 2] = [-441.8, -2648.6];
 
@@ -175,6 +179,264 @@ fn deep_wounds_needs_improved_rend_at_three_of_three() {
     view.drain(&mut realm);
     assert_eq!(view.points(me), 2);
     assert_eq!(view.talent_rank(&[12834, 12849, 12867]), 1);
+}
+
+// ── The respec at the Warrior trainer ───────────────────────────────────────────────────────────
+
+#[test]
+fn the_warrior_trainer_stands_in_the_crossroads() {
+    let (mut realm, me, _, mut view) = warrior_at(1);
+    let trainer = view.trainer();
+    let fields = view.fields(trainer.guid);
+    assert_eq!(
+        fields.unit_npc_flags(),
+        NPC_GOSSIP | NPC_TRAINER,
+        "a class trainer who talks"
+    );
+    // Friendly to every race the player may be (`FactionTemplate.dbc` 35).
+    assert_eq!(fields.unit_faction_template(), Some(35));
+    let [x, y, _] = trainer.position;
+    let d = ((x - CROSSROADS_XY[0]).powi(2) + (y - CROSSROADS_XY[1]).powi(2)).sqrt();
+    assert!(d < 8.0, "{d} yd from where a character starts");
+
+    let entry = fields.object_entry().unwrap();
+    realm.handle(RealmCommand::CreatureQuery { entry });
+    let named = view.drain(&mut realm).into_iter().find_map(|e| match e {
+        SessionEvent::CreatureName { name, subname, .. } => Some((name, subname)),
+        _ => None,
+    });
+    assert_eq!(
+        named,
+        Some((Some("Uzzek".into()), Some("Warrior Trainer".into())))
+    );
+    let _ = me;
+}
+
+#[test]
+fn the_trainer_offers_to_unlearn_talents() {
+    let (mut realm, _, _, mut view) = warrior_at(4);
+    let trainer = view.trainer();
+    realm.handle(RealmCommand::GossipHello { guid: trainer.guid });
+    let (text_id, options) = view
+        .drain(&mut realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu {
+                npc,
+                text_id,
+                options,
+                ..
+            } if npc == trainer.guid => Some((text_id, options)),
+            _ => None,
+        })
+        .expect("the trainer's menu");
+    assert!(options
+        .iter()
+        .any(|o| o.message == "I wish to unlearn my talents."));
+
+    // The greeting a menu waits on before it opens.
+    realm.handle(RealmCommand::NpcTextQuery { text_id });
+    let greeting = view.drain(&mut realm).into_iter().find_map(|e| match e {
+        SessionEvent::NpcGreeting { text_id: t, blocks } if t == text_id => Some(blocks),
+        _ => None,
+    });
+    let blocks = greeting.expect("the greeting");
+    assert!(!blocks[0].male.is_empty());
+}
+
+#[test]
+fn asking_to_unlearn_closes_the_menu_and_names_the_price() {
+    let (mut realm, _, _, mut view) = warrior_at(4);
+    learn(&mut realm, CRUELTY, 0);
+    let trainer = view.trainer();
+    let events = ask_for_respec(&mut realm, &mut view, trainer.guid);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::GossipComplete)));
+    assert_eq!(wipe_price(&events, trainer.guid), Some(10_000), "1 gold");
+}
+
+#[test]
+fn with_nothing_learned_there_is_nothing_to_unlearn() {
+    let (mut realm, _, _, mut view) = warrior_at(4);
+    let trainer = view.trainer();
+    let events = ask_for_respec(&mut realm, &mut view, trainer.guid);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::GossipComplete)));
+    assert_eq!(wipe_price(&events, trainer.guid), None);
+}
+
+#[test]
+fn a_respec_costs_gold_returns_every_point_and_clears_the_talents() {
+    let (mut realm, me, _, mut view) = warrior_with(
+        10,
+        DevMultipliers::default(),
+        &[("money = 0", "money = 200000")],
+    );
+    let crit_before = view.crit(me);
+    for rank in 0..3 {
+        learn(&mut realm, CRUELTY, rank);
+        learn(&mut realm, IMPROVED_HEROIC_STRIKE, rank);
+    }
+    view.drain(&mut realm);
+    assert_eq!(view.points(me), 3);
+    let trainer = view.trainer();
+    ask_for_respec(&mut realm, &mut view, trainer.guid);
+    realm.handle(RealmCommand::TalentWipeConfirm {
+        trainer: trainer.guid,
+    });
+    let events = view.drain(&mut realm);
+
+    assert_eq!(view.money(me), 190_000, "1 gold paid");
+    assert_eq!(view.points(me), 9, "every point back");
+    let removed: std::collections::BTreeSet<u32> = events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellRemoved { spell_id } => Some(*spell_id),
+            _ => None,
+        })
+        .collect();
+    let mut every_rank: Vec<u32> = CRUELTY_RANKS.into_iter().chain(IHS_RANKS).collect();
+    every_rank.sort_unstable();
+    assert_eq!(removed.into_iter().collect::<Vec<_>>(), every_rank);
+    assert_eq!(view.talent_rank(&CRUELTY_RANKS), 0);
+    assert_eq!(view.talent_rank(&IHS_RANKS), 0);
+    assert_eq!(spell_mod(&events, true, 6, SPELLMOD_COST), Some(0));
+    assert!(
+        (view.crit(me) - crit_before).abs() < 1e-4,
+        "Cruelty's crit gone"
+    );
+
+    // The next one costs 5 gold.
+    learn(&mut realm, CRUELTY, 0);
+    let events = ask_for_respec(&mut realm, &mut view, trainer.guid);
+    assert_eq!(wipe_price(&events, trainer.guid), Some(50_000));
+}
+
+#[test]
+fn a_respec_without_the_gold_changes_nothing() {
+    let (mut realm, me, _, mut view) = warrior_with(
+        4,
+        DevMultipliers::default(),
+        &[("money = 0", "money = 9999")],
+    );
+    learn(&mut realm, CRUELTY, 0);
+    let trainer = view.trainer();
+    ask_for_respec(&mut realm, &mut view, trainer.guid);
+    realm.handle(RealmCommand::TalentWipeConfirm {
+        trainer: trainer.guid,
+    });
+    view.drain(&mut realm);
+    assert_eq!(view.money(me), 9999);
+    assert_eq!(view.talent_rank(&CRUELTY_RANKS), 1);
+    assert_eq!(view.points(me), 2);
+}
+
+#[test]
+fn the_trainer_must_be_close_to_respec() {
+    let (mut realm, me, mob, mut view) = warrior_with(
+        4,
+        DevMultipliers::default(),
+        &[("money = 0", "money = 20000")],
+    );
+    learn(&mut realm, CRUELTY, 0);
+    let trainer = view.trainer();
+    ask_for_respec(&mut realm, &mut view, trainer.guid);
+    // Off to the mob, out of the trainer's reach.
+    stand_at(&mut realm, &mob, 2.0);
+    realm.handle(RealmCommand::TalentWipeConfirm {
+        trainer: trainer.guid,
+    });
+    view.drain(&mut realm);
+    assert_eq!(view.money(me), 20_000);
+    assert_eq!(view.talent_rank(&CRUELTY_RANKS), 1);
+}
+
+#[test]
+fn the_respec_price_is_saved() {
+    let (mut realm, me, _, mut view) = warrior_with(
+        4,
+        DevMultipliers::default(),
+        &[("money = 0", "money = 20000")],
+    );
+    learn(&mut realm, CRUELTY, 0);
+    let trainer = view.trainer();
+    ask_for_respec(&mut realm, &mut view, trainer.guid);
+    realm.handle(RealmCommand::TalentWipeConfirm {
+        trainer: trainer.guid,
+    });
+    view.drain(&mut realm);
+    let blob = realm.export_character(me).unwrap();
+
+    let mut other = Realm::with_seed(SEED);
+    other.import_character(&blob).unwrap();
+    other.handle(RealmCommand::EnterWorld { guid: me });
+    other.tick(0.0, &FlatGround);
+    let mut view = View::default();
+    view.drain(&mut other);
+    assert_eq!(view.points(me), 3);
+    learn(&mut other, CRUELTY, 0);
+    let events = ask_for_respec(&mut other, &mut view, trainer.guid);
+    assert_eq!(wipe_price(&events, trainer.guid), Some(50_000));
+}
+
+// ── The save ────────────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn learning_a_talent_saves_the_character() {
+    let (mut realm, me, _, _) = warrior_at(4);
+    realm.drain_storage();
+    learn(&mut realm, CRUELTY, 0);
+    let writes: Vec<_> = realm
+        .drain_storage()
+        .into_iter()
+        .filter(|s| matches!(s, twilight_realm::Storage::Write { guid, .. } if *guid == me))
+        .collect();
+    assert_eq!(writes.len(), 1);
+}
+
+#[test]
+fn talents_and_points_come_back_from_the_save() {
+    let (mut realm, me, _, mut view) = warrior_at(6);
+    for rank in 0..3 {
+        learn(&mut realm, IMPROVED_HEROIC_STRIKE, rank);
+    }
+    learn(&mut realm, CRUELTY, 0);
+    view.drain(&mut realm);
+    let blob = realm.export_character(me).unwrap();
+
+    let mut other = Realm::with_seed(SEED);
+    other.import_character(&blob).unwrap();
+    other.handle(RealmCommand::EnterWorld { guid: me });
+    other.tick(0.0, &FlatGround);
+    let mut view = View::default();
+    let events = view.drain(&mut other);
+    assert_eq!(view.points(me), 1);
+    assert_eq!(view.talent_rank(&IHS_RANKS), 3);
+    assert_eq!(view.talent_rank(&CRUELTY_RANKS), 1);
+    assert_eq!(
+        spell_mod(&events, true, 6, SPELLMOD_COST),
+        Some(-30),
+        "the client's cost comes back with the talent"
+    );
+    // And the stats with them.
+    let (_, fresh, _, fresh_view) = warrior_at(6);
+    assert!((view.crit(me) - fresh_view.crit(fresh) - 1.0).abs() < 1e-4);
+}
+
+#[test]
+fn a_save_from_before_talents_loads_with_none() {
+    let mut maker = realm();
+    assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
+    let guid = roster(&mut maker)[0].guid;
+    let blob = maker.export_character(guid).unwrap();
+    assert!(
+        !blob.contains("talents ="),
+        "nothing learned, nothing written"
+    );
+    let mut other = Realm::new();
+    other.import_character(&blob).unwrap();
 }
 
 // ── What the talents do ─────────────────────────────────────────────────────────────────────────
@@ -388,13 +650,20 @@ fn deep_wounds_bleeds_the_target_after_a_melee_crit() {
 struct View {
     objects: std::collections::HashMap<u64, ObjectFields>,
     spells: std::collections::BTreeSet<u32>,
+    positions: std::collections::HashMap<u64, [f32; 3]>,
 }
 
 impl View {
     fn see(&mut self, events: &[SessionEvent]) {
         for e in events {
             match e {
-                SessionEvent::ObjectCreate { guid, fields, .. } => {
+                SessionEvent::ObjectCreate {
+                    guid,
+                    fields,
+                    position,
+                    ..
+                } => {
+                    self.positions.insert(*guid, *position);
                     self.objects.insert(*guid, fields.clone());
                 }
                 SessionEvent::ObjectValues { guid, fields } => {
@@ -470,6 +739,51 @@ impl View {
             .rposition(|s| self.spells.contains(s))
             .map_or(0, |i| i + 1)
     }
+}
+
+impl View {
+    /// The trainer the client has been shown: the one unit with the trainer flag.
+    fn trainer(&self) -> Mob {
+        let mut trainers = self
+            .objects
+            .iter()
+            .filter(|(_, f)| f.unit_npc_flags() & NPC_TRAINER != 0);
+        let (&guid, _) = trainers.next().expect("a trainer in the world");
+        assert!(trainers.next().is_none(), "one trainer");
+        Mob {
+            guid,
+            position: self.positions[&guid],
+        }
+    }
+}
+
+/// Talks to the trainer and picks its unlearn line, as the stock gossip frame does.
+fn ask_for_respec(realm: &mut Realm, view: &mut View, trainer: u64) -> Vec<SessionEvent> {
+    realm.handle(RealmCommand::GossipHello { guid: trainer });
+    let option = view
+        .drain(realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu { options, .. } => options
+                .into_iter()
+                .find(|o| o.message == "I wish to unlearn my talents.")
+                .map(|o| o.index),
+            _ => None,
+        })
+        .expect("the unlearn line");
+    realm.handle(RealmCommand::GossipSelectOption {
+        guid: trainer,
+        option,
+    });
+    view.drain(realm)
+}
+
+/// `MSG_TALENT_WIPE_CONFIRM`'s price, if the trainer asked.
+fn wipe_price(events: &[SessionEvent], trainer: u64) -> Option<u32> {
+    events.iter().find_map(|e| match *e {
+        SessionEvent::TalentWipeConfirm { trainer: t, cost } if t == trainer => Some(cost),
+        _ => None,
+    })
 }
 
 /// `CMSG_LEARN_TALENT` for the 0-based `rank`, as the stock frame sends it.
