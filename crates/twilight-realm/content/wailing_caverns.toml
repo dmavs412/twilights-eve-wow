@@ -9,10 +9,11 @@
 map = 43
 zone = 718
 
-# Lady Anacondra's spawn: her kill always drops one of `boss_loot`.
+# Lady Anacondra's spawn: her kill always drops one blue of the run's level band, the five levels
+# up to the runner's (`rules::loot::boss_band`), out of `boss_loot` and the world's blues.
 boss = 300999
-# The run's level band: the reference's `proposed_boss_pool` in loot_items.json, twenty real
-# Wailing Caverns blues a level ~20 Warrior can use. Seven are the instance's own boss drops,
+# Her own pool, for the band the caverns are built for: the reference's `proposed_boss_pool` in
+# loot_items.json, twenty real Wailing Caverns blues a level ~20 Warrior can use. Seven are the instance's own boss drops,
 # whose templates are in dungeon_items.toml; the rest are world blues in items.toml.
 boss_loot = [6627, 13245, 10410, 6460, 6631, 6449, 6463, 12997, 12989, 12975, 12994, 12982, 2194, 12976, 12978, 12990, 1121, 12988, 2059, 3021]
 

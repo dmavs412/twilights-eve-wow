@@ -127,3 +127,31 @@ fn window(lo: u8, hi: u8, quality: Quality) -> Vec<u32> {
     entries.sort_unstable();
     entries
 }
+
+/// How many levels a Dungeon boss's band spans: the runner's level and the four below it.
+const BOSS_BAND: u8 = 5;
+
+/// The blues a Dungeon boss drops for a runner of `level`, out of `blues` (`(entry, required
+/// level)`), in their order: those of the run's level band, the five levels up to the runner's,
+/// which they can wear now. Below every band it is the lowest band there is, above every band the
+/// highest.
+pub fn boss_band(level: u8, blues: &[(u32, u8)]) -> Vec<u32> {
+    let within = |lo: u8, hi: u8| -> Vec<u32> {
+        blues
+            .iter()
+            .filter(|(_, required)| (lo..=hi).contains(required))
+            .map(|(entry, _)| *entry)
+            .collect()
+    };
+    let band = within(level.saturating_sub(BOSS_BAND - 1), level);
+    if !band.is_empty() {
+        return band;
+    }
+    let required = || blues.iter().map(|(_, r)| *r);
+    if let Some(lowest) = required().filter(|&r| r > level).min() {
+        return within(lowest, lowest.saturating_add(BOSS_BAND - 1));
+    }
+    required().max().map_or_else(Vec::new, |highest| {
+        within(highest.saturating_sub(BOSS_BAND - 1), highest)
+    })
+}

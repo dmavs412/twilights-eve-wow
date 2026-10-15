@@ -93,6 +93,34 @@ pub(crate) fn content() -> &'static Dungeon {
     })
 }
 
+/// The blues the boss drops for a runner of `level` and `race`: her own pool and the world's
+/// blues a Warrior can wear, in the run's level band ([`rules::loot::boss_band`]). Her own pool
+/// covers the band the Wailing Caverns are built for; the world's blues carry it on to the
+/// Tier's top.
+///
+/// [`rules::loot::boss_band`]: crate::rules::loot::boss_band
+pub(crate) fn boss_drops(level: u8, race: u8) -> Vec<u32> {
+    let mut entries: Vec<u32> = crate::items::all()
+        .values()
+        .filter(|t| t.quality == 3)
+        .map(|t| t.entry)
+        .chain(content().boss_loot.iter().copied())
+        .collect();
+    entries.sort_unstable();
+    entries.dedup();
+    let blues: Vec<(u32, u8)> = entries
+        .into_iter()
+        .filter_map(|entry| {
+            let t = crate::items::template(entry)?;
+            // Wearable once the level comes: who it is for and the proficiency, not the level.
+            crate::rules::gear::can_equip(entry, race, t.required_level.max(level))
+                .is_ok()
+                .then_some((entry, t.required_level))
+        })
+        .collect();
+    crate::rules::loot::boss_band(level, &blues)
+}
+
 /// The route graph of `map`, if it is the Dungeon's.
 pub(crate) fn route_on(map: u32) -> Option<&'static Route> {
     let d = content();

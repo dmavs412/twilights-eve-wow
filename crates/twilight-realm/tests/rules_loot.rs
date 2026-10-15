@@ -77,3 +77,18 @@ fn money_grows_with_the_mobs_level() {
     assert_eq!(money(20), (120, 240));
     assert_eq!(money(30), (255, 510));
 }
+
+#[test]
+fn a_boss_drops_from_the_band_of_the_five_levels_up_to_the_runners() {
+    use twilight_realm::rules::loot::boss_band;
+    // (entry, required level)
+    let blues = [(1, 15), (2, 17), (3, 20), (4, 21), (5, 26), (6, 30)];
+    assert_eq!(boss_band(20, &blues), [2, 3]);
+    assert_eq!(boss_band(25, &blues), [4]);
+    assert_eq!(boss_band(30, &blues), [5, 6]);
+    // Below every band: the lowest one there is, five levels from its first blue.
+    assert_eq!(boss_band(5, &blues), [1, 2]);
+    // Above every band: the highest, five levels down from its last blue.
+    assert_eq!(boss_band(40, &blues), [5, 6]);
+    assert!(boss_band(20, &[]).is_empty());
+}

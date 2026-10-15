@@ -500,7 +500,8 @@ impl InWorld {
         let mob = &mut self.mobs[i];
         let entry = mob.template.entry;
         let mut loot = if Self::is_boss(mob) {
-            looting::Loot::boss(mob.level(), &crate::dungeon::content().boss_loot, rng)
+            let pool = crate::dungeon::boss_drops(c.level, c.race);
+            looting::Loot::boss(mob.level(), &pool, rng)
         } else {
             looting::Loot::roll(mob.level(), rng)
         };

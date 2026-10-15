@@ -78,8 +78,16 @@ impl Script {
 
     /// The same, with the realm's dice from `seed`.
     fn seeded(seed: u64, level: u8, money: u32, items: &[Carried]) -> Self {
+        Self::seeded_as("basic_warrior", seed, level, money, items)
+    }
+
+    /// The same, in another Calling.
+    fn seeded_as(calling: &str, seed: u64, level: u8, money: u32, items: &[Carried]) -> Self {
         let (me, blob) = save_with(level, money, items);
-        let blob = place(&blob, ENTRANCE_AT);
+        let blob = place(&blob, ENTRANCE_AT).replace(
+            "calling = \"basic_warrior\"",
+            &format!("calling = \"{calling}\""),
+        );
         let mut realm = Realm::with_seed(seed);
         realm.import_character(&blob).unwrap();
         let mut s = Self {
@@ -382,46 +390,86 @@ fn kill(s: &mut Script, guid: u64, at: [f32; 3]) {
     panic!("{guid:#x} outlived five minutes of fighting");
 }
 
-/// What `entry`'s template says its quality is.
-fn quality(s: &mut Script, entry: u32) -> u32 {
+/// What `entry`'s template says its quality and required level are.
+fn quality_and_level(s: &mut Script, entry: u32) -> (u32, u32) {
     s.send(RealmCommand::ItemQuery { entry })
         .into_iter()
         .find_map(|e| match e {
             SessionEvent::ItemTemplate {
                 info: Some(info), ..
-            } => Some(info.quality),
+            } => Some((info.quality, info.required_level)),
             _ => None,
         })
         .unwrap_or_else(|| panic!("no template for {entry}"))
 }
 
+/// Mail and leather a warrior of 20 or more wears into the run: `(slot, entry)`, shoulders to cloak.
+const RUN_GEAR: [(u8, u32); 8] = [
+    (2, 3231),
+    (4, 14730),
+    (5, 12978),
+    (6, 14727),
+    (7, 12982),
+    (8, 14743),
+    (9, 12994),
+    (14, 2059),
+];
+
+/// The blues on Lady Anacondra's corpse after a geared warrior of `level` kills her, with their
+/// required levels.
+fn boss_blues(seed: u64, level: u8) -> Vec<(u32, u32)> {
+    let mut items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
+    items.push((MAIN_HAND, PROSPECTOR_AXE, 1));
+    // A Tier 1 Warrior: past the Basic Warrior's Tier Cap, with the Tier Bonus.
+    let mut s = Script::seeded_as("warrior", seed, level, 0, &items);
+    s.enter();
+    kill(&mut s, ANACONDRA_GUID, ANACONDRA_AT);
+    let loot = s.send(RealmCommand::Loot {
+        guid: ANACONDRA_GUID,
+    });
+    let items = loot
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::LootResponse { items, .. } => Some(items.clone()),
+            _ => None,
+        })
+        .expect("her corpse has loot");
+    items
+        .iter()
+        .map(|i| (i.item_id, quality_and_level(&mut s, i.item_id)))
+        .filter(|(_, (quality, _))| *quality == 3)
+        .map(|(entry, (_, required))| (entry, required))
+        .collect()
+}
+
 #[test]
 fn lady_anacondra_always_drops_one_blue_from_the_runs_level_band() {
+    // At level 25: a blue of levels 21-25, which the warrior can wear now. Some of hers are.
     let pool = boss_pool();
-    for seed in [1, 2, 3] {
-        let mut s = Script::seeded(seed, 40, 0, &[(MAIN_HAND, PROSPECTOR_AXE, 1)]);
-        s.enter();
-        kill(&mut s, ANACONDRA_GUID, ANACONDRA_AT);
-        let loot = s.send(RealmCommand::Loot {
-            guid: ANACONDRA_GUID,
-        });
-        let items = loot
-            .iter()
-            .find_map(|e| match e {
-                SessionEvent::LootResponse { items, .. } => Some(items.clone()),
-                _ => None,
-            })
-            .expect("her corpse has loot");
-        let blues: Vec<u32> = items
-            .iter()
-            .map(|i| i.item_id)
-            .filter(|&entry| quality(&mut s, entry) == 3)
-            .collect();
-        assert_eq!(blues.len(), 1, "seed {seed}: {items:?}");
+    let mut hers = 0;
+    for seed in [1, 2, 3, 4, 5, 6] {
+        let blues = boss_blues(seed, 25);
+        assert_eq!(blues.len(), 1, "seed {seed}: {blues:?}");
+        let (entry, required) = blues[0];
         assert!(
-            pool.contains(&blues[0]),
-            "seed {seed}: {} is not in the pool",
-            blues[0]
+            (21..=25).contains(&required),
+            "seed {seed}: needs {required}"
+        );
+        hers += usize::from(pool.contains(&entry));
+    }
+    assert!(hers > 0, "her own blues drop in their band");
+}
+
+#[test]
+fn the_boss_blue_follows_the_runners_level() {
+    // At level 30 her own blues are all below the band: a blue of levels 26-30 drops instead.
+    for seed in [1, 2, 3] {
+        let blues = boss_blues(seed, 30);
+        assert_eq!(blues.len(), 1, "seed {seed}: {blues:?}");
+        let (_, required) = blues[0];
+        assert!(
+            (26..=30).contains(&required),
+            "seed {seed}: needs {required}"
         );
     }
 }
