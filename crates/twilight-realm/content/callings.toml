@@ -71,8 +71,8 @@ effects = [
 # A talent with `effects = []` and no `skill` is WIP: learnable, shown as "<Name> (WIP)" and
 # counted toward the next row, but the realm does not model it yet (Anger Management: no kind
 # slows rage decay).
-# `client_spellmod` is the spell-mod cell the realm sends so the client's cost check and tooltips
-# agree: `op` 14 is COST (tenths of rage), 8 ALL_EFFECTS (percent).
+# `client_spellmods` are the spell-mod cells the realm sends so the client's cost check and
+# tooltips agree: `op` 14 is COST (tenths of rage), 8 ALL_EFFECTS (percent).
 
 # Recruit: one tab on the vanilla grid, row 2 open at 5 points; 9 points at the Tier Cap.
 [[calling.talent_tab]]
@@ -87,7 +87,7 @@ tier = 1
 column = 1
 rank_spells = [12282, 12663, 12664]
 effects = [{ kind = "skill_rage_cost", skill = "heroic_strike", per_rank = [1, 2, 3] }]
-client_spellmod = { flat = true, op = 14, family_bit = 6, per_rank = [-10, -20, -30] }
+client_spellmods = [{ flat = true, op = 14, family_bit = 6, per_rank = [-10, -20, -30] }]
 
 [[calling.talent_tab.talent]]
 key = "improved_charge"
@@ -245,7 +245,7 @@ tier = 1
 column = 3
 rank_spells = [12286, 12658, 12659]
 effects = [{ kind = "skill_amount_pct", skill = "rend", per_rank = [15, 25, 35] }]
-client_spellmod = { flat = false, op = 8, family_bit = 5, per_rank = [15, 25, 35] }
+client_spellmods = [{ flat = false, op = 8, family_bit = 5, per_rank = [15, 25, 35] }]
 
 [[calling.talent_tab.talent]]
 key = "improved_charge"
@@ -361,7 +361,7 @@ tier = 2
 column = 4
 rank_spells = [12318, 12857, 12858, 12860, 12861]
 effects = [{ kind = "skill_amount_pct", skill = "battle_shout", per_rank = [5, 10, 15, 20, 25] }]
-client_spellmod = { flat = false, op = 8, family_bit = 16, per_rank = [5, 10, 15, 20, 25] }
+client_spellmods = [{ flat = false, op = 8, family_bit = 16, per_rank = [5, 10, 15, 20, 25] }]
 
 [[calling.talent_tab.talent]]
 key = "blood_craze"
@@ -511,6 +511,13 @@ effects = [
     { kind = "skill_rage_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
     { kind = "skill_rage_cost", skill = "seal_of_the_crusader", per_rank = [1, 1, 2, 2, 3] },
     { kind = "skill_rage_cost", skill = "judgement", per_rank = [0, 1, 1, 1, 2] },
+]
+# One cell per borrowed spell's own family bit: 33 Seal of Command, 34 Seal of the Crusader,
+# 35 Judgement.
+client_spellmods = [
+    { flat = true, op = 14, family_bit = 33, per_rank = [-10, -10, -20, -20, -30] },
+    { flat = true, op = 14, family_bit = 34, per_rank = [-10, -10, -20, -20, -30] },
+    { flat = true, op = 14, family_bit = 35, per_rank = [0, -10, -10, -10, -20] },
 ]
 
 [[calling.talent_tab.talent]]

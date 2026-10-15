@@ -115,9 +115,10 @@ pub struct TalentDef {
     /// learned.
     #[serde(default)]
     pub skill: Option<Skill>,
-    /// The spell-mod cell that makes the stock client's costs and tooltips agree with the realm.
+    /// The spell-mod cells that make the stock client's costs and tooltips agree with the realm:
+    /// one per family bit, since a talent can touch several skills (Benediction).
     #[serde(default)]
-    pub client_spellmod: Option<ClientSpellMod>,
+    pub client_spellmods: Vec<ClientSpellMod>,
 }
 
 impl TalentDef {

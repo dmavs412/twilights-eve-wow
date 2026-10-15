@@ -371,7 +371,7 @@ pub(crate) fn learn(
     for &spell_id in &t.rank_spells[have as usize..want as usize] {
         events.push(SessionEvent::SpellLearned { spell_id });
     }
-    if t.client_spellmod.is_some() {
+    if !t.client_spellmods.is_empty() {
         events.extend(spell_mods(c));
     }
     events.push(values(c.guid, &[points_pair(c)]));
@@ -430,17 +430,16 @@ pub(crate) fn wipe(c: &mut Char, events: &mut Vec<SessionEvent>) {
 pub(crate) fn spell_mods(c: &Char) -> Vec<SessionEvent> {
     let mut cells: Vec<(bool, u8, u8, i32)> = Vec::new();
     for t in tree(c).iter().flat_map(|tab| &tab.talents) {
-        let Some(m) = &t.client_spellmod else {
-            continue;
-        };
         let r = usize::from(self::rank(c, t.talent_id));
-        let value = if r == 0 { 0 } else { m.per_rank[r - 1] };
-        match cells
-            .iter_mut()
-            .find(|(f, b, o, _)| (*f, *b, *o) == (m.flat, m.family_bit, m.op))
-        {
-            Some(cell) => cell.3 += value,
-            None => cells.push((m.flat, m.family_bit, m.op, value)),
+        for m in &t.client_spellmods {
+            let value = if r == 0 { 0 } else { m.per_rank[r - 1] };
+            match cells
+                .iter_mut()
+                .find(|(f, b, o, _)| (*f, *b, *o) == (m.flat, m.family_bit, m.op))
+            {
+                Some(cell) => cell.3 += value,
+                None => cells.push((m.flat, m.family_bit, m.op, value)),
+            }
         }
     }
     cells

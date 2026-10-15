@@ -395,8 +395,11 @@ def verify(tables: Tables, callings: Dict[str, Any]) -> Tuple[List[str], Dict[st
                 if not 1 <= len(t["rank_spells"]) <= 5:
                     errors.append(f"{where}: {len(t['rank_spells'])} ranks; the client catalog holds 1..5")
                 ranks = [check_spell(sid, f"{where}.rank{k + 1}", {"name": t["name"]}) for k, sid in enumerate(t["rank_spells"])]
-                mod = t.get("client_spellmod")
-                if mod and all(ranks):
+                for mod in t.get("client_spellmods", []):
+                    # Bits 33..63 are the family bits the client gives borrowed spells (ADR 0003):
+                    # no Spell.dbc row names them, so such a cell is the realm's own.
+                    if not all(ranks) or mod["family_bit"] >= 33:
+                        continue
                     want_aura = 107 if mod["type"] == "flat" else 108
                     for k, (f, val) in enumerate(zip(ranks, mod["values"])):
                         hit = [e for e in f["effects"] if e["aura"] == want_aura and e["misc_value"] == SPELLMOD_BY_NAME[mod["op"]]

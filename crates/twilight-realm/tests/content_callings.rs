@@ -381,8 +381,7 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Holy Power, Divine Strength.
         5923, 5924, 5925, 5926, 25829, 20262, 20263, 20264, 20265, 20266,
         // Precision, Redoubt, Reckoning.
-        20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180,
-        20182,
+        20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180, 20182,
     ];
     want.sort_unstable();
     assert_eq!(ids, want);
@@ -679,27 +678,32 @@ fn check_tree(calling: &str, unmodelled: &[&str]) {
                 }
                 (p, w) => panic!("{key}: prereq {p:?} against {w:?}"),
             }
-            match (&t.client_spellmod, want.get("client_spellmod")) {
-                (None, None) => {}
-                (Some(m), Some(w)) => {
-                    assert_eq!(m.flat, w["type"] == "flat", "{key}");
-                    // vmangos `SpellModOp`.
-                    let op = match w["op"].as_str().unwrap() {
-                        "COST" => 14,
-                        "ALL_EFFECTS" => 8,
-                        op => panic!("{key}: op {op}"),
-                    };
-                    assert_eq!(m.op, op, "{key}");
-                    assert_eq!(u64::from(m.family_bit), w["family_bit"].as_u64().unwrap());
-                    let values: Vec<i32> = w["values"]
-                        .as_array()
-                        .unwrap()
-                        .iter()
-                        .map(|v| v.as_i64().unwrap() as i32)
-                        .collect();
-                    assert_eq!(m.per_rank, values, "{key}");
-                }
-                (m, w) => panic!("{key}: spell mod {m:?} against {w:?}"),
+            let none = Vec::new();
+            let want_mods = want
+                .get("client_spellmods")
+                .map_or(&none, |w| w.as_array().unwrap());
+            assert_eq!(
+                t.client_spellmods.len(),
+                want_mods.len(),
+                "{key}: spell mods"
+            );
+            for (m, w) in t.client_spellmods.iter().zip(want_mods) {
+                assert_eq!(m.flat, w["type"] == "flat", "{key}");
+                // vmangos `SpellModOp`.
+                let op = match w["op"].as_str().unwrap() {
+                    "COST" => 14,
+                    "ALL_EFFECTS" => 8,
+                    op => panic!("{key}: op {op}"),
+                };
+                assert_eq!(m.op, op, "{key}");
+                assert_eq!(u64::from(m.family_bit), w["family_bit"].as_u64().unwrap());
+                let values: Vec<i32> = w["values"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_i64().unwrap() as i32)
+                    .collect();
+                assert_eq!(m.per_rank, values, "{key}");
             }
             assert_eq!(
                 t.is_wip(),
