@@ -1,0 +1,8 @@
+//! The game's rules as pure functions of their inputs, with vmangos (patch 1.12) as the reference
+//! (`docs/reference/vanilla-combat-rules.md`). The realm's world runs on them, and so will the
+//! systems built on top: aggro and leashing, skills, gear.
+
+pub mod melee;
+pub mod rage;
+pub mod stats;
+pub mod xp;

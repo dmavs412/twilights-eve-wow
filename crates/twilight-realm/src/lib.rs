@@ -11,7 +11,9 @@
 mod characters;
 mod content;
 mod fields;
+pub mod rules;
 mod save;
+mod tables;
 mod world;
 
 use benilla_protocol::{CharCreateReq, SessionEvent};
