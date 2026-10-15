@@ -26,8 +26,6 @@ const UNIT_STAND_STATE_SIT: u32 = 1;
 const TICK_SECS: f32 = 2.0;
 /// `SPELL_FAILED_AFFECTING_COMBAT`.
 const AFFECTING_COMBAT: u8 = 0x00;
-/// `EQUIP_ERR_CANT_EQUIP_LEVEL_I`.
-const CANT_USE_LEVEL: u8 = 1;
 
 /// A meal in progress.
 pub(super) struct Meal {
@@ -70,15 +68,7 @@ impl InWorld {
         let Some(item) = c.inventory.get(slot) else {
             return false;
         };
-        if c.level < t.required_level {
-            events.push(SessionEvent::InventoryFailure {
-                reason: CANT_USE_LEVEL,
-                required_level: Some(u32::from(t.required_level)),
-                item_guid: item.guid,
-                bag_slot: 0,
-            });
-            return false;
-        }
+        // Any level eats anything: the level resets with each Tier.
         if self.player.in_combat {
             events.push(SessionEvent::CastResult {
                 spell_id: t.use_spell,

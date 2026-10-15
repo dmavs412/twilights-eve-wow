@@ -27,4 +27,7 @@ item = [
   # The stock 1.12 Hearthstone, with its hour-long category cooldown cut to five minutes: the
   # spell's 10 s cast returns the player to the Crossroads (`hearth.rs`).
   { entry = 6948, name = "Hearthstone", quality = 1, item_level = 1, class = 15, display_id = 6418, bonding = 1, max_count = 1, stackable = 1, use_spell = 8690, use_cooldown_ms = 300000, use_category_cooldown_ms = 0 },
+  # Plate, which no world pool up to level 32 holds (vanilla plate starts at 40): one real
+  # vmangos piece so the realm knows plate a Vanguard can wear. Nothing hands it out yet.
+  { entry = 8157, name = "Jouster's Chestplate", quality = 2, item_level = 42, required_level = 40, class = 4, subclass = 4, inventory_type = 5, display_id = 27340, armor = 339, durability = 115, sell_price = 5197, buy_price = 25989, buy_count = 1, bonding = 2, stackable = 1, material = 6, stats = [[4, 15], [7, 4]] },
 ]

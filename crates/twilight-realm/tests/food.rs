@@ -11,6 +11,7 @@ use gear_common::*;
 const TOUGH_JERKY: u32 = 117; // 61 health over 18 s
 const REFRESHING_SPRING_WATER: u32 = 159; // 151 mana over 18 s
 const FOOD: u32 = 433; // the spell Tough Jerky casts
+const WILD_HOG_SHANK: u32 = 3771; // required level 25
 const PACK_1: u8 = 23;
 
 struct Script {
@@ -117,6 +118,30 @@ fn food_restores_its_health_over_its_duration_while_sitting() {
     assert_eq!(s.health(), before + 61, "Tough Jerky: 61 health over 18 s");
     assert!(!eating(&s.me()), "done");
     assert_eq!(s.me().unit_stand_state(), 0, "standing again");
+}
+
+#[test]
+fn food_above_the_characters_level_can_be_eaten() {
+    let (mut realm, me, mut events) = warrior_with(1, 0, &[(PACK_1, WILD_HOG_SHANK, 2)]);
+    realm.handle(RealmCommand::UseItem {
+        bag: 255,
+        slot: PACK_1,
+    });
+    let eaten = drain(&mut realm);
+    assert!(
+        !eaten
+            .iter()
+            .any(|e| matches!(e, SessionEvent::InventoryFailure { .. })),
+        "{eaten:?}"
+    );
+    events.extend(eaten);
+    let f = descriptor(&events, me);
+    assert!(
+        f.unit_aura_ids().any(|id| id == 1127),
+        "Wild Hog Shank's Food"
+    );
+    let shank = f.player_pack_slot(0).unwrap();
+    assert_eq!(descriptor(&events, shank).item_stack_count(), Some(1));
 }
 
 #[test]

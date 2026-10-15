@@ -23,11 +23,38 @@ pub struct CallingDef {
     pub tier_bonus: TierBonus,
     /// `UNIT_FIELD_BYTES_1` byte 2 while this Calling is current (17, Battle Stance).
     pub shapeshift_form: u8,
+    /// The armour it may wear. Every Calling of the Warrior line wields every Warrior weapon.
+    pub armour: Vec<Armour>,
     #[serde(rename = "skill")]
     pub skills: Vec<Skill>,
     /// The Talent Tree: its tabs, as the stock talent frame shows them.
     #[serde(default, rename = "talent_tab")]
     pub talent_tabs: Vec<TalentTab>,
+}
+
+/// An armour kind a Calling may wear.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Armour {
+    Cloth,
+    Leather,
+    Mail,
+    Plate,
+    /// Shields and bucklers.
+    Shield,
+}
+
+impl Armour {
+    /// The `ITEM_CLASS_ARMOR` subclasses it covers.
+    pub fn subclasses(self) -> &'static [u32] {
+        match self {
+            Armour::Cloth => &[1],
+            Armour::Leather => &[2],
+            Armour::Mail => &[3],
+            Armour::Plate => &[4],
+            Armour::Shield => &[5, 6],
+        }
+    }
 }
 
 /// A Tier Bonus: what a Calling adds to each base stat.

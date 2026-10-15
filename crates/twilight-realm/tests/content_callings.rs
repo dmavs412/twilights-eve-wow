@@ -53,6 +53,18 @@ fn check_calling(calling: &str) {
         u64::from(got.shapeshift_form),
         want["client_shapeshift_form"].as_u64().unwrap()
     );
+    let armour: Vec<String> = got
+        .armour
+        .iter()
+        .map(|a| format!("{a:?}").to_lowercase())
+        .collect();
+    let want_armour: Vec<&str> = want["armour"]
+        .as_array()
+        .unwrap_or_else(|| panic!("{calling}: the reference lists its armour"))
+        .iter()
+        .map(|a| a.as_str().unwrap())
+        .collect();
+    assert_eq!(armour, want_armour, "{calling}: armour");
 
     let skills = want["skills"].as_array().unwrap();
     assert_eq!(got.skills.len(), skills.len());
