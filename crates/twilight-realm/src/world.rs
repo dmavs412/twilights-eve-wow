@@ -279,6 +279,7 @@ impl InWorld {
             self.mob_tick(i, dt, host, c, rng, events);
         }
         self.skills_tick(dt, c, rng, events, &mut ticked);
+        self.update_aura_states(events);
         if !self.player.alive() && !self.player.dead {
             self.die(c, events);
         }
