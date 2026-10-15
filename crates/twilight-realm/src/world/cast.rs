@@ -197,24 +197,27 @@ impl Skills {
 
     /// What `unit`'s swing time is multiplied by.
     pub(super) fn attack_time_mul(&self, unit: u64) -> f32 {
-        self.auras
-            .iter()
-            .filter(|a| a.unit == unit)
-            .fold(1.0, |m, a| match a.kind {
-                AuraKind::AttackSlow { pct } => m * (1.0 + pct as f32 / 100.0),
-                _ => m,
-            })
+        self.multiplier(unit, |kind| match kind {
+            AuraKind::AttackSlow { pct } => Some(1.0 + pct as f32 / 100.0),
+            _ => None,
+        })
     }
 
     /// What `unit`'s run speed is multiplied by.
     fn speed_mul(&self, unit: u64) -> f32 {
+        self.multiplier(unit, |kind| match kind {
+            AuraKind::MoveSlow { pct } => Some(1.0 - pct as f32 / 100.0),
+            _ => None,
+        })
+    }
+
+    /// The product of the factors `factor` reads off `unit`'s auras; 1 with none.
+    fn multiplier(&self, unit: u64, factor: impl Fn(AuraKind) -> Option<f32>) -> f32 {
         self.auras
             .iter()
             .filter(|a| a.unit == unit)
-            .fold(1.0, |m, a| match a.kind {
-                AuraKind::MoveSlow { pct } => m * (1.0 - pct as f32 / 100.0),
-                _ => m,
-            })
+            .filter_map(|a| factor(a.kind))
+            .product()
     }
 
     fn cooldown_left(&self, spell_id: u32) -> f32 {
