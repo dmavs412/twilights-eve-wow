@@ -12,6 +12,7 @@ mod characters;
 mod combat;
 mod content;
 mod fields;
+mod items;
 mod mobs;
 mod rng;
 pub mod rules;
