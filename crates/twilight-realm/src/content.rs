@@ -74,6 +74,8 @@ pub(crate) enum Calling {
     /// "warrior".
     #[serde(alias = "warrior")]
     Vanguard,
+    /// Tier 2, a Vanguard's Advancement: Paladin Seals, Judgement and Hammer of Justice on rage.
+    Zealot,
 }
 
 impl Calling {
@@ -82,12 +84,13 @@ impl Calling {
         match self {
             Calling::BasicWarrior => "basic_warrior",
             Calling::Vanguard => "vanguard",
+            Calling::Zealot => "zealot",
         }
     }
 
     /// The Calling with this key.
     pub(crate) fn from_key(key: &str) -> Option<Self> {
-        [Calling::BasicWarrior, Calling::Vanguard]
+        [Calling::BasicWarrior, Calling::Vanguard, Calling::Zealot]
             .into_iter()
             .find(|c| c.key() == key)
     }

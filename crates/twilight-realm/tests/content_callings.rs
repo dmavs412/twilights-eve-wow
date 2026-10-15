@@ -38,6 +38,76 @@ fn the_vanguard_matches_the_reference() {
     check_calling("vanguard");
 }
 
+#[test]
+fn the_zealot_matches_the_reference() {
+    check_calling("zealot");
+}
+
+/// Spell.dbc as `extract_spells.py verify` dumped it.
+fn extracted_spells() -> Value {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/twilights-eve/spells-extracted.json");
+    serde_json::from_str::<Value>(&std::fs::read_to_string(path).unwrap()).unwrap()["spells"]
+        .clone()
+}
+
+/// `SpellFamilyName` 4.
+const WARRIOR_FAMILY: u64 = 4;
+
+/// A skill is marked borrowed exactly when Spell.dbc files it outside the Warrior family, and each
+/// borrowed skill has its own family bit that no Warrior spell uses (bits 0..=32 are taken).
+#[test]
+fn every_skill_borrowed_from_another_class_is_marked() {
+    let dbc = extracted_spells();
+    let mut bits = Vec::new();
+    for key in ["basic_warrior", "vanguard", "zealot"] {
+        for s in &callings::calling(key).unwrap().skills {
+            let row = &dbc[s.spell_id.to_string()];
+            let family = row["family"]
+                .as_u64()
+                .unwrap_or_else(|| panic!("{key}.{}: not in the dump", s.key));
+            assert_eq!(
+                s.borrowed.is_some(),
+                family != WARRIOR_FAMILY,
+                "{key}.{}: Spell.dbc family {family}",
+                s.key
+            );
+            if let Some(b) = s.borrowed {
+                assert!((33..=63).contains(&b.family_bit), "{}", s.key);
+                bits.push(b.family_bit);
+            }
+        }
+    }
+    let n = bits.len();
+    assert_eq!(n, 4, "Zealot's Seals, Judgement and Hammer of Justice");
+    bits.sort_unstable();
+    bits.dedup();
+    assert_eq!(bits.len(), n, "one bit each");
+}
+
+/// The client rewrites these once (ADR 0003): each borrowed spell once, at its rage cost.
+#[test]
+fn the_borrowed_skills_are_zealots_four_at_their_rage_costs() {
+    let got: Vec<(u32, u32)> = callings::borrowed_skills()
+        .map(|s| (s.spell_id, s.rage_cost))
+        .collect();
+    assert_eq!(got, [(20375, 10), (20305, 10), (20271, 5), (10308, 15)]);
+}
+
+/// `callings::skill` answers with a spell's first table, so a skill two Callings share must be
+/// the same in both.
+#[test]
+fn a_skill_two_callings_share_is_the_same_in_both() {
+    let all: Vec<&callings::Skill> = ["basic_warrior", "vanguard", "zealot"]
+        .iter()
+        .flat_map(|c| &callings::calling(c).unwrap().skills)
+        .collect();
+    for s in &all {
+        let first = callings::skill(s.spell_id).unwrap();
+        assert_eq!(format!("{first:?}"), format!("{s:?}"), "{}", s.key);
+    }
+}
+
 fn check_calling(calling: &str) {
     let reference = reference();
     let want = &reference["callings"][calling];
@@ -80,10 +150,17 @@ fn check_calling(calling: &str) {
         assert_eq!(got.rage_cost, ms(realm, "rage_cost"), "{key} rage");
         assert_eq!(got.cooldown_ms, ms(realm, "cooldown_ms"), "{key} cooldown");
         assert_eq!(got.gcd_ms, ms(realm, "gcd_ms"), "{key} gcd");
-        // The client refuses a cast it cannot afford at the Spell.dbc cost.
+        // The client refuses a cast it cannot afford at the Spell.dbc cost; a borrowed spell's
+        // cost there is mana, which the client rewrites to the realm's rage cost.
         assert!(
-            f64::from(got.rage_cost) >= want["client"]["cost"].as_f64().unwrap(),
+            got.borrowed.is_some()
+                || f64::from(got.rage_cost) >= want["client"]["cost"].as_f64().unwrap(),
             "{key}: realm cost under the client's"
+        );
+        assert_eq!(
+            got.borrowed.map(|b| u64::from(b.family_bit)),
+            want["borrowed"]["family_bit"].as_u64(),
+            "{key}: borrowed"
         );
         assert_eq!(
             u64::from(got.health_cost_pct_of_base_health),
@@ -279,7 +356,11 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
 fn every_skill_id_is_listed_for_rank_blanking() {
     let mut ids: Vec<u32> = callings::skill_spell_ids().collect();
     ids.sort_unstable();
-    assert_eq!(ids, [78, 100, 6178, 6192, 6546, 7887, 12294]);
+    ids.dedup();
+    assert_eq!(
+        ids,
+        [78, 100, 6178, 6192, 6546, 7887, 10308, 12294, 20271, 20305, 20375]
+    );
 }
 
 /// The client names these " (WIP)": the rank spells of every talent with no effect and no skill,
@@ -314,7 +395,7 @@ fn the_vanguard_kit_is_mortal_strike_overpower_charge_rend_and_battle_shout() {
 
 #[test]
 fn talent_tab_ids_are_unique_across_callings() {
-    let mut ids: Vec<u32> = ["basic_warrior", "vanguard"]
+    let mut ids: Vec<u32> = ["basic_warrior", "vanguard", "zealot"]
         .iter()
         .flat_map(|c| {
             callings::calling(c)

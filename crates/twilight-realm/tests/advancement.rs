@@ -1,6 +1,7 @@
 //! Tiers and Advancement, played through the realm's seam: the Tier Cap that stops XP, the
 //! Advancement Quest at the Warrior trainer, what Advancement replaces and what it keeps, the
-//! Tier Bonus, and Ironclad's quest that cannot be finished.
+//! Tier Bonus, Zealot's quest from Vanguard, and Ironclad's and Templar's quests that cannot be
+//! finished.
 
 mod common;
 mod gear_common;
@@ -123,6 +124,11 @@ const UZZEK: u32 = 5810;
 /// Into Vanguard, and Ironclad's, which cannot be finished.
 const THE_WARRIORS_PATH: u32 = 64001;
 const THE_IRONCLADS_OATH: u32 = 64002;
+/// Into Zealot, from Vanguard; and Templar's, from Zealot, which cannot be finished.
+const THE_ZEALOTS_VOW: u32 = 64003;
+const THE_TEMPLARS_CHARGE: u32 = 64004;
+/// Plate, required level 40.
+const JOUSTERS_CHESTPLATE: u32 = 8157;
 /// QuestSort.dbc 81, "Warrior": the quest log's header, as a negative `ZoneOrSort`.
 const SORT_WARRIOR: i32 = -81;
 
@@ -130,6 +136,9 @@ const SORT_WARRIOR: i32 = -81;
 const BASIC_SKILLS: [u32; 2] = [78, 100];
 /// Vanguard's: Mortal Strike, Overpower, Charge, Rend and Battle Shout.
 const TIER_1_SKILLS: [u32; 5] = [12294, 7887, 6178, 6546, 6192];
+/// Zealot's: Seal of Command, Seal of the Crusader, Judgement, Hammer of Justice, Mortal Strike and
+/// Charge.
+const ZEALOT_SKILLS: [u32; 6] = [20375, 20305, 20271, 10308, 12294, 6178];
 /// Three of Cruelty's Recruit ranks.
 const CRUELTY_RANKS: [u32; 3] = [12320, 12852, 12853];
 
@@ -500,14 +509,23 @@ fn at_thirty_ironclads_quest_is_offered_but_cannot_be_finished() {
     let (mut realm, me, mut events) = questing_as("vanguard", 30, &[], 0, &[]);
     let uzzek = trainer(&events);
     let rows = gossip_quests(&mut realm, uzzek);
-    assert_eq!(rows.len(), 1);
     assert_eq!(
-        (rows[0].0, rows[0].1, rows[0].3.as_str()),
-        (
-            THE_IRONCLADS_OATH,
-            dialog_status::AVAILABLE,
-            "The Ironclad's Oath"
-        )
+        rows.iter()
+            .map(|r| (r.0, r.1, r.3.as_str()))
+            .collect::<Vec<_>>(),
+        [
+            (
+                THE_IRONCLADS_OATH,
+                dialog_status::AVAILABLE,
+                "The Ironclad's Oath"
+            ),
+            (
+                THE_ZEALOTS_VOW,
+                dialog_status::AVAILABLE,
+                "The Zealot's Vow"
+            ),
+        ],
+        "both of Vanguard's branches"
     );
     events.extend(take(&mut realm, uzzek, THE_IRONCLADS_OATH));
     let log = quest_log(&events, me);
@@ -516,7 +534,11 @@ fn at_thirty_ironclads_quest_is_offered_but_cannot_be_finished() {
         (THE_IRONCLADS_OATH, 0),
         "never complete"
     );
-    assert_eq!(status(&mut realm, uzzek), dialog_status::INCOMPLETE);
+    assert_eq!(
+        status(&mut realm, uzzek),
+        dialog_status::AVAILABLE,
+        "the Zealot's Vow still on offer"
+    );
 
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
         npc: uzzek,
@@ -532,6 +554,116 @@ fn at_thirty_ironclads_quest_is_offered_but_cannot_be_finished() {
     assert!(!progress.is_complete);
     assert!(completed(&hand_in(&mut realm, uzzek, THE_IRONCLADS_OATH)).is_none());
     assert_eq!(realm.current_calling().unwrap().key, "vanguard");
+}
+
+// ── Zealot ──────────────────────────────────────────────────────────────────────────────────────
+
+/// A Vanguard at the cap in Jouster's Chestplate, with Cruelty 3/3.
+fn capped_vanguard() -> (Realm, u64, Vec<SessionEvent>) {
+    let (guid, blob) = save_with_quests(30, &[(4, JOUSTERS_CHESTPLATE, 1)], 0, &[]);
+    let blob = blob
+        .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"")
+        .replace("xp = 0\n", "xp = 0\ntalents = [[157, 3]]\n");
+    let mut realm = Realm::with_seed(SEED);
+    realm.import_character(&blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    let events = drain(&mut realm);
+    (realm, guid, events)
+}
+
+/// Takes the Zealot's Vow and hands it in.
+fn become_zealot(realm: &mut Realm, npc: u64) -> Vec<SessionEvent> {
+    let mut events = take(realm, npc, THE_ZEALOTS_VOW);
+    events.extend(hand_in(realm, npc, THE_ZEALOTS_VOW));
+    events
+}
+
+#[test]
+fn the_zealots_vow_makes_a_level_1_zealot_with_six_skills_in_the_same_plate() {
+    let (mut realm, me, mut events) = capped_vanguard();
+    let chest = descriptor(&events, me).player_inv_slot(4);
+    assert!(chest.is_some(), "the plate is worn");
+    let advanced = become_zealot(&mut realm, trainer(&events));
+    assert!(completed(&advanced).is_some(), "it completes");
+    events.extend(advanced);
+
+    assert_eq!(realm.current_calling().unwrap().key, "zealot");
+    let now = descriptor(&events, me);
+    assert_eq!(now.unit_level(), Some(1));
+    assert_eq!(now.player_xp(), Some(0));
+    assert_eq!(
+        spellbook(&events),
+        ZEALOT_SKILLS.into_iter().collect(),
+        "exactly the six, Cruelty and the Vanguard kit forgotten"
+    );
+    assert_eq!(now.player_inv_slot(4), chest, "the plate stays worn");
+    assert_eq!(now.unit_shapeshift_form(), 17, "still in Battle Stance");
+    assert_eq!(now.unit_power(1), Some(0), "a rage bar");
+}
+
+#[test]
+fn a_zealot_has_the_tier_2_bonus_on_its_sheet() {
+    let (_, me, basic) = questing(1, &[], 0, &[]);
+    let (_, _, zealot) = questing_as("zealot", 1, &[], 0, &[]);
+    let (basic, zealot) = (descriptor(&basic, me), descriptor(&zealot, me));
+    let stats = |f: &benilla_protocol::ObjectFields| -> [u32; 5] {
+        std::array::from_fn(|i| f.unit_stat(i as u8).unwrap())
+    };
+    let [s, a, st, i, sp] = stats(&basic);
+    assert_eq!(stats(&zealot), [s + 28, a + 14, st + 28, i, sp + 7]);
+}
+
+#[test]
+fn a_zealot_save_round_trips_and_names_the_calling() {
+    let (mut realm, me, events) = capped_vanguard();
+    become_zealot(&mut realm, trainer(&events));
+    realm.handle(RealmCommand::Logout);
+    assert_eq!(realm.calling_name(me), Some("Zealot"));
+    let blob = realm.export_character(me).unwrap();
+    assert!(blob.contains("calling = \"zealot\"\n"), "{blob}");
+
+    let mut reloaded = Realm::with_seed(SEED);
+    reloaded.import_character(&blob).unwrap();
+    assert_eq!(reloaded.calling_name(me), Some("Zealot"));
+    reloaded.handle(RealmCommand::EnterWorld { guid: me });
+    reloaded.tick(0.0, &FlatGround);
+    let events = drain(&mut reloaded);
+    assert_eq!(spellbook(&events), ZEALOT_SKILLS.into_iter().collect());
+    assert_eq!(
+        reloaded.export_character(me).unwrap(),
+        blob,
+        "the save reads back as it was written"
+    );
+}
+
+#[test]
+fn at_fifty_templars_quest_is_offered_but_cannot_be_finished() {
+    let (mut realm, _, events) = questing_as("zealot", 49, &[], 0, &[]);
+    assert!(
+        gossip_quests(&mut realm, trainer(&events)).is_empty(),
+        "not at 49"
+    );
+
+    let (mut realm, me, mut events) = questing_as("zealot", 50, &[], 0, &[]);
+    let uzzek = trainer(&events);
+    let rows = gossip_quests(&mut realm, uzzek);
+    assert_eq!(
+        rows.iter()
+            .map(|r| (r.0, r.1, r.3.as_str()))
+            .collect::<Vec<_>>(),
+        [(
+            THE_TEMPLARS_CHARGE,
+            dialog_status::AVAILABLE,
+            "The Templar's Charge"
+        )]
+    );
+    events.extend(take(&mut realm, uzzek, THE_TEMPLARS_CHARGE));
+    let log = quest_log(&events, me);
+    assert_eq!((log[0].1, log[0].3), (THE_TEMPLARS_CHARGE, 0));
+    assert_eq!(status(&mut realm, uzzek), dialog_status::INCOMPLETE);
+    assert!(completed(&hand_in(&mut realm, uzzek, THE_TEMPLARS_CHARGE)).is_none());
+    assert_eq!(realm.current_calling().unwrap().key, "zealot");
 }
 
 // ── Character select ────────────────────────────────────────────────────────────────────────────

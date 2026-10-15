@@ -280,3 +280,32 @@ progress = "The Ironclads have not yet sent for you, $N. Patience."
 completion = "The Ironclads have not yet sent for you, $N. Patience."
 money = 0
 tokens = 0
+
+[[quest]]
+id = 64003
+giver = 5810
+level = 30
+zone_or_sort = -81
+advancement = { from = "vanguard", to = "zealot" }
+title = "The Zealot's Vow"
+objectives = "Speak with the Warrior trainer at the Crossroads to swear the Zealot's vow."
+details = "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word."
+progress = "Say the word, $N, and swear the vow."
+completion = "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you."
+money = 0
+tokens = 0
+
+# Templar (Tier 3) has no kit yet: the quest is offered at Zealot's cap and never finishes.
+[[quest]]
+id = 64004
+giver = 5810
+level = 50
+zone_or_sort = -81
+advancement = { from = "zealot", to = "templar", completable = false }
+title = "The Templar's Charge"
+objectives = "Await the Templars' summons."
+details = "Fifty battles of holy fury, and the Light has not yet burned you out. The Templars have heard of you, $N.$B$BThey guard what the Zealots only strike for, and they choose their own. When they are ready to test you, I will send word. Until then, keep your Seals bright."
+progress = "The Templars have not yet sent for you, $N. Patience."
+completion = "The Templars have not yet sent for you, $N. Patience."
+money = 0
+tokens = 0

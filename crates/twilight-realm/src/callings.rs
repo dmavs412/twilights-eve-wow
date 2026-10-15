@@ -301,7 +301,19 @@ pub struct Skill {
     pub extra_targets: u32,
     #[serde(default)]
     pub extra_target_radius_yd: f32,
+    /// Set on a spell borrowed from another Class: the client rewrites its row to cost
+    /// `rage_cost` rage in any stance, as a Warrior spell (ADR 0003).
+    #[serde(default)]
+    pub borrowed: Option<Borrowed>,
     pub effects: Vec<Effect>,
+}
+
+/// How the client files a borrowed spell among the Warrior's.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+pub struct Borrowed {
+    /// Its own `SpellFamilyFlags` bit, one no Warrior spell uses (33..=63), so a talent's
+    /// [`ClientSpellMod`] can name it alone.
+    pub family_bit: u8,
 }
 
 /// Whom a skill lands on.
@@ -468,6 +480,17 @@ pub fn skill(spell_id: u32) -> Option<&'static Skill> {
 /// client blanks.
 pub fn skill_spell_ids() -> impl Iterator<Item = u32> {
     all().iter().flat_map(every_skill).map(|s| s.spell_id)
+}
+
+/// Every skill borrowed from another Class, once each: the spells the client rewrites to cost
+/// rage (ADR 0003).
+pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {
+    let mut seen = std::collections::HashSet::new();
+    all()
+        .iter()
+        .flat_map(every_skill)
+        .filter(|s| s.borrowed.is_some())
+        .filter(move |s| seen.insert(s.spell_id))
 }
 
 /// Every WIP talent's rank spells, of every Calling: the spells the client names
