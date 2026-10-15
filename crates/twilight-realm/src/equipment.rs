@@ -320,15 +320,20 @@ impl Moved {
     }
 }
 
-/// A refused move: `SMSG_INVENTORY_CHANGE_FAILURE`.
-fn refuse(reason: u8, item: u64, events: &mut Vec<SessionEvent>) {
-    events.push(SessionEvent::InventoryFailure {
+/// `SMSG_INVENTORY_CHANGE_FAILURE` for `item` (0 for none). It never names a level: no item
+/// requires one ([`gear::SHOWN_REQUIRED_LEVEL`]).
+pub(crate) fn inventory_failure(reason: u8, item: u64) -> SessionEvent {
+    SessionEvent::InventoryFailure {
         reason,
-        // No item is refused for level.
         required_level: None,
         item_guid: item,
         bag_slot: 0,
-    });
+    }
+}
+
+/// A refused move.
+fn refuse(reason: u8, item: u64, events: &mut Vec<SessionEvent>) {
+    events.push(inventory_failure(reason, item));
 }
 
 fn refusal(r: Refusal, item: u64, events: &mut Vec<SessionEvent>) {

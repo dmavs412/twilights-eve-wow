@@ -94,12 +94,10 @@ pub(crate) fn buy(
     }
     // The bags are checked before the Tokens go, as vmangos checks before it takes the price.
     if !c.inventory.fits(green, count) {
-        events.push(SessionEvent::InventoryFailure {
-            reason: equipment::EQUIP_ERR_INVENTORY_FULL,
-            required_level: None,
-            item_guid: 0,
-            bag_slot: 0,
-        });
+        events.push(equipment::inventory_failure(
+            equipment::EQUIP_ERR_INVENTORY_FULL,
+            0,
+        ));
         return Traded::default();
     }
     equipment::take(c, TOKEN, price, events);

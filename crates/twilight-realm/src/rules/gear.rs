@@ -33,6 +33,10 @@ impl Refusal {
 pub(crate) const CLASS_WEAPON: u32 = 2;
 pub(crate) const CLASS_ARMOR: u32 = 4;
 
+/// The required level the client is shown for every item: none, so no tooltip reads "Requires
+/// Level" and no move is refused for one. A template keeps its own level for the loot bands.
+pub(crate) const SHOWN_REQUIRED_LEVEL: u32 = 0;
+
 /// `CLASSMASK_WARRIOR`.
 const WARRIOR_MASK: i32 = 1;
 

@@ -185,12 +185,7 @@ impl Looting {
             return Looted::default();
         };
         if let Err(reason) = equipment::receive(c, entry, count, events) {
-            events.push(SessionEvent::InventoryFailure {
-                reason,
-                required_level: None,
-                item_guid: 0,
-                bag_slot: 0,
-            });
+            events.push(equipment::inventory_failure(reason, 0));
             return Looted::default();
         }
         *row = None;
