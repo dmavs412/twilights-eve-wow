@@ -12,7 +12,7 @@ const WOLF_FACTION: u32 = 32;
 
 /// The `vplates` fixture's self player, the fields of a real server's player create the plate
 /// gate reads.
-pub(crate) const VPLATES_SELF_PLAYER: [(u16, u32); 4] = [
+const VPLATES_SELF_PLAYER: [(u16, u32); 4] = [
     (34, 2),      // UNIT_FIELD_LEVEL
     (35, 1),      // UNIT_FIELD_FACTIONTEMPLATE: human
     (36, 0x0101), // UNIT_FIELD_BYTES_0: race human, class warrior
@@ -1618,5 +1618,22 @@ fn set_enemy_plates(script: Option<&benilla_ui::script::UiScript>, on: bool) {
     };
     if let Some(Err(e)) = script.map(|s| s.run(lua)) {
         warn!("nameplates: {e}");
+    }
+}
+
+/// The `vplates` self player is modelled on a real create: it must agree with the real server's
+/// (`twilight::vanilla_player`) on every field but the level, which it raises to 2 for a yellow con.
+#[test]
+fn the_vplates_self_player_agrees_with_a_real_player_create() {
+    for (field, value) in VPLATES_SELF_PLAYER {
+        let theirs =
+            crate::twilight::vanilla_player::real(field).expect("a field a real create sets");
+        if field != 34 {
+            assert_eq!(
+                value & !theirs,
+                0,
+                "field {field}: {value:#x} vs {theirs:#x}"
+            );
+        }
     }
 }

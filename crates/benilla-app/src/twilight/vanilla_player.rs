@@ -161,8 +161,8 @@ const ALLOWED: &[(u16, Allowed, &str)] = &[
     ),
 ];
 
-/// The real server's `field`, from [`REAL_PLAYER`]; the test's own lookups, and nothing else.
-fn real(field: u16) -> Option<u32> {
+/// The real server's `field`, from [`REAL_PLAYER`]; for the checks against it.
+pub(crate) fn real(field: u16) -> Option<u32> {
     REAL_PLAYER
         .iter()
         .find_map(|&(f, v)| (f == field).then_some(v))
@@ -274,22 +274,5 @@ fn every_allowance_names_a_real_field_once_and_says_why() {
             ALLOWED[..i].iter().all(|&(f, _, _)| f != field),
             "field {field} is allowed twice"
         );
-    }
-}
-
-/// The `vplates` fixture's self player is copied from a real create: it must agree with
-/// [`REAL_PLAYER`] on every field but the level, which the fixture raises to 2 for its yellow con.
-#[cfg(feature = "dev")]
-#[test]
-fn the_vplates_fixture_agrees_with_the_real_player() {
-    for &(field, value) in &crate::capture::VPLATES_SELF_PLAYER {
-        let theirs = real(field).expect("a field the real create sets");
-        if field != 34 {
-            assert_eq!(
-                value & !theirs,
-                0,
-                "field {field}: {value:#x} vs {theirs:#x}"
-            );
-        }
     }
 }
