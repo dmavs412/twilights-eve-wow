@@ -17,3 +17,5 @@ toml = "0.8"
 # tests/content.rs checks the generated `content/` tables against the JSON dumps they come from.
 [dev-dependencies]
 serde_json = "1"
+# examples/gen_outfits.rs reads CharStartOutfit.dbc out of the game's MPQs.
+benilla-formats = { path = "../benilla-formats", default-features = false }

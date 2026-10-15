@@ -557,6 +557,8 @@ fn tier1_at(
         .unwrap()
         .replace("level = 1\n", &format!("level = {level}\n"))
         .replace("calling = \"basic_warrior\"", "calling = \"warrior\"");
+    // The human's starting Worn Wooden Shield is set aside: a test that wants a shield gives one.
+    blob = drop_slot(&blob, OFF_HAND);
     if !talents.is_empty() {
         let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();
         blob = blob.replace(

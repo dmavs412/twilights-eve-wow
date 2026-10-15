@@ -379,3 +379,46 @@ fn the_repair_tables_match_the_reference() {
         .collect();
     assert_eq!(floats(&table["quality"]), want);
 }
+
+/// Every race's Warrior outfit (`content/starting_outfits.toml`, from `CharStartOutfit.dbc`) has
+/// an item template the realm answers queries with, worn in an equipment slot, and the template's
+/// display id and inventory type are the ones the client's outfit row names.
+#[test]
+fn every_starting_outfit_item_has_a_template_that_agrees_with_the_client() {
+    let outfits = toml_table("starting_outfits.toml");
+    let races = outfits.as_table().unwrap();
+    assert_eq!(races.len(), 8, "one outfit per race");
+    let mut realm = twilight_realm::Realm::new();
+    for (race, items) in races {
+        let items = items.as_array().unwrap();
+        assert!(
+            items.len() >= 3,
+            "{race}: shirt, legs and a weapon at least"
+        );
+        for row in items {
+            let int = |k: &str| row[k].as_integer().unwrap() as u32;
+            let entry = int("item");
+            realm.handle(twilight_realm::RealmCommand::ItemQuery { entry });
+            let info = realm
+                .drain_events()
+                .into_iter()
+                .find_map(|e| match e {
+                    benilla_protocol::SessionEvent::ItemTemplate { info, .. } => info,
+                    _ => None,
+                })
+                .unwrap_or_else(|| panic!("{race}: item {entry} has no template"));
+            assert_eq!(
+                (info.display_info_id, info.inventory_type),
+                (int("display_id"), int("inventory_type")),
+                "{race}: {} looks as the client dresses it",
+                info.name
+            );
+            assert!(
+                !twilight_realm::rules::gear::equip_slots(info.inventory_type).is_empty(),
+                "{race}: {} (inventory type {}) is worn",
+                info.name,
+                info.inventory_type
+            );
+        }
+    }
+}

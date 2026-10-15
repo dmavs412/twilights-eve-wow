@@ -102,7 +102,7 @@ impl Characters {
             action_bar: None,
             talents: Vec::new(),
             talent_wipes: 0,
-            inventory: content::starting_inventory(),
+            inventory: content::starting_inventory(req.race),
             item_cooldowns: Vec::new(),
             quests: QuestLog::default(),
         });
