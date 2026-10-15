@@ -286,7 +286,8 @@ impl InWorld {
         }
         let p = &mut self.player;
         let mob = &self.mobs[i];
-        let swing = combat::player_swing(&cast::buffed(&p.stats, &self.skills), mob, from_front, rng);
+        let swing =
+            combat::player_swing(&cast::buffed(&p.stats, &self.skills), mob, from_front, rng);
         events.push(SessionEvent::AttackerState(swing.report(self.guid, target)));
         if swing.outcome == Outcome::Dodge {
             self.skills.dodged_by(target, events);

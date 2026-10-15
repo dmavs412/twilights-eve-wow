@@ -21,7 +21,8 @@ pub struct Linear {
 impl Linear {
     /// The amount at `level` (within the Tier) and `attack_power`.
     pub fn at(&self, level: u8, attack_power: i32) -> u32 {
-        let v = self.base + self.per_level * f64::from(level) + self.per_ap * f64::from(attack_power);
+        let v =
+            self.base + self.per_level * f64::from(level) + self.per_ap * f64::from(attack_power);
         // `f64::round` rounds half away from zero; a negative amount is none.
         (v.round().max(0.0) as u32).max(self.min)
     }

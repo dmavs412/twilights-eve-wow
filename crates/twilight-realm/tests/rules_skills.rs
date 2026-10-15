@@ -125,6 +125,32 @@ fn bloodrage_costs_a_fifth_of_base_health_on_60_s_and_gives_10_11_12_rage() {
     assert_eq!(at_levels(2687, 0), [10, 11, 12]);
 }
 
+/// `vanilla-combat-rules.md` §1.5's worked two-roll vector: a level-10 player's ability at a
+/// level-12 mob, from the front: miss 600 + dodge 600 + parry 700, no glancing, no block.
+#[test]
+fn an_ability_rolls_avoidance_without_glancing_then_crit_on_its_own() {
+    use twilight_realm::rules::melee::{player_vs_mob, PlayerOffense};
+    use twilight_realm::rules::skills::ability_table;
+    let p = PlayerOffense {
+        level: 10,
+        weapon_skill: 50,
+        crit_pct: 5.0,
+    };
+    let (table, crit) = ability_table(p, 12, true, false);
+    assert_eq!((table.miss, table.dodge, table.parry), (600, 600, 700));
+    assert_eq!(
+        (table.glancing, table.block, table.crit, table.crushing),
+        (0, 0, 0, 0)
+    );
+    // The crit chance is the white table's: 5% less 0.2% per point of skill short, 10 points.
+    assert_eq!(crit, 300);
+    assert_eq!(crit, player_vs_mob(p, 12, true).crit);
+
+    // Overpower cannot be dodged or parried: it only misses.
+    let (table, _) = ability_table(p, 12, true, true);
+    assert_eq!((table.miss, table.dodge, table.parry), (600, 0, 0));
+}
+
 #[test]
 fn every_skill_is_stronger_at_level_10_than_at_level_1() {
     for id in [78, 100, 772, 6343, 6673, 1715, 7384, 2687] {

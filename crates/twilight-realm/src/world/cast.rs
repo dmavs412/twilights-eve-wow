@@ -19,9 +19,9 @@ use crate::fields::*;
 use crate::mobs::{distance, State};
 use crate::rng::Rng;
 use crate::rules::melee::{armor_reduced, Outcome, PlayerOffense, ROLL};
+use crate::rules::rage;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::WarriorStats;
-use crate::rules::rage;
 
 /// `UNIT_FIELD_BYTES_1`: stand state, loyalty, shapeshift form, visibility flags.
 const UNIT_FIELD_BYTES_1: u16 = 138;
@@ -251,8 +251,9 @@ impl Skills {
         mut drop: impl FnMut(&Aura) -> bool,
         events: &mut Vec<SessionEvent>,
     ) -> Vec<Aura> {
-        let (gone, kept): (Vec<Aura>, Vec<Aura>) =
-            std::mem::take(&mut self.auras).into_iter().partition(|a| drop(a));
+        let (gone, kept): (Vec<Aura>, Vec<Aura>) = std::mem::take(&mut self.auras)
+            .into_iter()
+            .partition(|a| drop(a));
         self.auras = kept;
         for a in &gone {
             events.push(self.slot_fields(a.unit, a.slot));
@@ -354,7 +355,10 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
 fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
     let s = buffed(stats, skills);
     vec![
-        (UNIT_FIELD_ATTACK_POWER_MODS, skills.attack_power_bonus() & 0xFFFF),
+        (
+            UNIT_FIELD_ATTACK_POWER_MODS,
+            skills.attack_power_bonus() & 0xFFFF,
+        ),
         (UNIT_FIELD_MINDAMAGE, float(s.min_damage)),
         (UNIT_FIELD_MAXDAMAGE, float(s.max_damage)),
     ]
@@ -403,11 +407,15 @@ impl InWorld {
                 return ticked;
             }
         };
-        if skill
-            .effects
-            .iter()
-            .any(|e| matches!(e, Effect::WeaponStrike { on_next_swing: true, .. }))
-        {
+        if skill.effects.iter().any(|e| {
+            matches!(
+                e,
+                Effect::WeaponStrike {
+                    on_next_swing: true,
+                    ..
+                }
+            )
+        }) {
             // Paid and answered when the swing comes (`CURRENT_MELEE_SPELL`).
             self.skills.queued = Some(spell_id);
             return ticked;
@@ -575,9 +583,7 @@ impl InWorld {
         let mut unavoidable = false;
         for e in &skill.effects {
             match *e {
-                Effect::WeaponStrike {
-                    unavoidable: u, ..
-                } => {
+                Effect::WeaponStrike { unavoidable: u, .. } => {
                     rolls = true;
                     unavoidable |= u;
                 }
@@ -869,7 +875,11 @@ impl InWorld {
             caster: self.guid,
             spell_id,
             cast_flags: 0,
-            hits: if missed.is_none() { vec![target] } else { vec![] },
+            hits: if missed.is_none() {
+                vec![target]
+            } else {
+                vec![]
+            },
             misses: missed.map(|m| (target, m)).into_iter().collect(),
             target: Some(target),
             go_target: None,
@@ -973,7 +983,9 @@ impl InWorld {
                 _ => {}
             }
         }
-        let gone = self.skills.remove_where(|a| a.left <= CLOCK_EPSILON, events);
+        let gone = self
+            .skills
+            .remove_where(|a| a.left <= CLOCK_EPSILON, events);
         self.faded(&gone, events);
     }
 

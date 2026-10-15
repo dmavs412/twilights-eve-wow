@@ -119,7 +119,10 @@ pub enum Effect {
         duration_ms: u32,
     },
     /// The target cannot act, under `aura_spell_id`.
-    Stun { aura_spell_id: u32, duration_ms: u32 },
+    Stun {
+        aura_spell_id: u32,
+        duration_ms: u32,
+    },
     /// The target swings `pct`% slower, under the skill's spell id.
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
     /// The target moves `pct`% slower, under the skill's spell id.

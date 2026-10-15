@@ -146,7 +146,9 @@ impl Characters {
     /// `CMSG_SET_ACTION_BUTTON`: puts `packed` on `slot` of the character's bar; 0 clears it.
     pub(crate) fn set_action_button(&mut self, guid: u64, slot: u8, packed: u32) {
         if let Some(c) = self.list.iter_mut().find(|c| c.guid == guid) {
-            let bar = c.action_bar.get_or_insert_with(|| crate::callings::default_bar(c.calling));
+            let bar = c
+                .action_bar
+                .get_or_insert_with(|| crate::callings::default_bar(c.calling));
             bar.retain(|&(s, _)| s != slot);
             if packed != 0 {
                 bar.push((slot, packed));

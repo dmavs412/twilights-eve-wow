@@ -9,8 +9,8 @@ use twilight_realm::callings::{self, Effect, Target, Weapon};
 use twilight_realm::rules::skills::Linear;
 
 fn reference() -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../data/twilights-eve/callings.json");
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/twilights-eve/callings.json");
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 
@@ -45,7 +45,11 @@ fn the_basic_warrior_matches_the_reference() {
     for (got, want) in got.skills.iter().zip(skills) {
         let key = want["key"].as_str().unwrap();
         assert_eq!(got.key, key);
-        assert_eq!(u64::from(got.spell_id), want["spell_id"].as_u64().unwrap(), "{key}");
+        assert_eq!(
+            u64::from(got.spell_id),
+            want["spell_id"].as_u64().unwrap(),
+            "{key}"
+        );
         let realm = &want["realm"];
         assert_eq!(got.rage_cost, ms(realm, "rage_cost"), "{key} rage");
         assert_eq!(got.cooldown_ms, ms(realm, "cooldown_ms"), "{key} cooldown");
@@ -57,7 +61,9 @@ fn the_basic_warrior_matches_the_reference() {
         );
         assert_eq!(
             u64::from(got.health_cost_pct_of_base_health),
-            realm["health_cost_pct_of_base_health"].as_u64().unwrap_or(0),
+            realm["health_cost_pct_of_base_health"]
+                .as_u64()
+                .unwrap_or(0),
             "{key} health cost"
         );
         let target = match realm["target"].as_str().unwrap() {
@@ -83,14 +89,21 @@ fn the_basic_warrior_matches_the_reference() {
         // A party shout's radius means nothing without a party: it lands on the caster alone.
         if let (Target::SelfArea, Some(r)) = (target, realm["radius_yd"].as_f64()) {
             assert_eq!(f64::from(got.radius_yd), r, "{key} radius");
-            assert_eq!(u64::from(got.max_targets), realm["max_targets"].as_u64().unwrap());
+            assert_eq!(
+                u64::from(got.max_targets),
+                realm["max_targets"].as_u64().unwrap()
+            );
         }
         assert_eq!(
             got.requires_out_of_combat,
             realm["requires_out_of_combat"].as_bool().unwrap_or(false),
             "{key}"
         );
-        assert_eq!(got.requires_target_dodged, realm.get("requires").is_some(), "{key}");
+        assert_eq!(
+            got.requires_target_dodged,
+            realm.get("requires").is_some(),
+            "{key}"
+        );
         assert_eq!(
             u64::from(got.puts_in_combat_ms),
             realm["puts_in_combat_ms"].as_u64().unwrap_or(0),
@@ -122,7 +135,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             };
             assert_eq!(weapon, w, "{key}");
             assert_eq!(bonus, linear(&want["bonus"]), "{key}");
-            assert_eq!(on_next_swing, want["on_next_swing"].as_bool().unwrap_or(false));
+            assert_eq!(
+                on_next_swing,
+                want["on_next_swing"].as_bool().unwrap_or(false)
+            );
             assert_eq!(unavoidable, want.get("unavoidable").is_some(), "{key}");
         }
         Effect::SchoolDamage {
