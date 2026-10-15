@@ -364,13 +364,28 @@ fn every_skill_id_is_listed_for_rank_blanking() {
 }
 
 /// The client names these " (WIP)": the rank spells of every talent with no effect and no skill,
-/// Anger Management's (in both trees) and Flurry's.
+/// Anger Management's and Flurry's (in every tree that has them), and the Zealot's unmodelled
+/// Paladin talents'.
 #[test]
 fn the_wip_rank_spells_are_the_talents_with_no_effect() {
     let mut ids: Vec<u32> = callings::wip_rank_spell_ids().collect();
     ids.sort_unstable();
     ids.dedup();
-    assert_eq!(ids, [12296, 12319, 12971, 12972, 12973, 12974]);
+    let mut want = vec![
+        // Anger Management, Flurry.
+        12296, 12319, 12971, 12972, 12973, 12974,
+        // Improved Seal of the Crusader, Improved Judgement, Vindication, Eye for an Eye.
+        20335, 20336, 20337, 25956, 25957, 9452, 26016, 26021, 9799, 25988,
+        // Pursuit of Justice, Improved Hammer of Justice, Vengeance.
+        26022, 26023, 20487, 20488, 20489, 20049, 20056, 20057, 20058, 20059,
+        // Holy Power, Divine Strength.
+        5923, 5924, 5925, 5926, 25829, 20262, 20263, 20264, 20265, 20266,
+        // Precision, Redoubt, Reckoning.
+        20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180,
+        20182,
+    ];
+    want.sort_unstable();
+    assert_eq!(ids, want);
 }
 
 #[test]
@@ -487,6 +502,134 @@ fn the_vanguard_tabs_seat_the_handoffs_rows() {
             vec!["blood_craze", "enrage"],
         ]
     );
+}
+
+/// The Zealot talents the realm shows and lets the player learn, but does not model yet: those
+/// waiting on the Seals (Improved Seal of the Crusader), on a kind no talent has yet (cooldowns,
+/// haste, hit, movement, Strength, holy crit) or on a proc the realm does not roll.
+const ZEALOT_NOT_MODELLED: &[&str] = &[
+    "improved_seal_of_the_crusader",
+    "improved_judgement",
+    "vindication",
+    "eye_for_an_eye",
+    "pursuit_of_justice",
+    "improved_hammer_of_justice",
+    "vengeance",
+    "holy_power",
+    "anger_management",
+    "flurry",
+    "divine_strength",
+    "precision",
+    "redoubt",
+    "reckoning",
+];
+
+#[test]
+fn the_zealot_talent_tree_matches_the_reference() {
+    check_tree("zealot", ZEALOT_NOT_MODELLED);
+    let tree = &callings::calling("zealot").unwrap().talent_tabs;
+    let names: Vec<&str> = tree.iter().map(|t| t.name.as_str()).collect();
+    assert_eq!(names, ["Crusade", "Blade", "Faith"]);
+}
+
+/// A tab's talent keys, tier by tier, each row sorted.
+fn rows(calling: &str, tab: usize) -> Vec<Vec<String>> {
+    let tab = &callings::calling(calling).unwrap().talent_tabs[tab];
+    let last = tab.talents.iter().map(|t| t.tier).max().unwrap();
+    (1..=last)
+        .map(|tier| {
+            let mut row: Vec<String> = tab
+                .talents
+                .iter()
+                .filter(|t| t.tier == tier)
+                .map(|t| t.key.clone())
+                .collect();
+            row.sort();
+            row
+        })
+        .collect()
+}
+
+/// The rows of each Zealot tab, as the handoff lists them.
+#[test]
+fn the_zealot_tabs_seat_the_handoffs_rows() {
+    assert_eq!(
+        rows("zealot", 0),
+        [
+            vec!["benediction", "improved_seal_of_the_crusader"],
+            vec!["deflection", "improved_judgement"],
+            vec!["conviction", "vindication"],
+            vec!["eye_for_an_eye", "pursuit_of_justice"],
+            vec![
+                "improved_hammer_of_justice",
+                "two_handed_weapon_specialization"
+            ],
+            vec!["vengeance"],
+            vec!["holy_power"],
+        ]
+    );
+    // The handoff's first two rows share the first: Improved Charge and Anger Management alone
+    // hold 3 ranks, short of the 5 that open a second row.
+    assert_eq!(
+        rows("zealot", 1),
+        [
+            vec![
+                "anger_management",
+                "deep_wounds",
+                "impale",
+                "improved_charge"
+            ],
+            vec![
+                "axe_specialization",
+                "mace_specialization",
+                "sword_specialization"
+            ],
+            vec!["flurry"],
+        ]
+    );
+    assert_eq!(
+        rows("zealot", 2),
+        [
+            vec!["divine_strength", "toughness"],
+            vec!["precision", "redoubt"],
+            vec!["anticipation", "one_handed_weapon_specialization"],
+            vec!["reckoning"],
+        ]
+    );
+}
+
+/// Blade's talents are Vanguard's Talent.dbc rows, doing for a Zealot what they do for a Vanguard,
+/// so the Vanguard's fights (tests/tier1_talents_in_combat.rs) cover them. The client names a rank
+/// spell WIP once for every Calling, so a talent two Callings share is WIP in both or neither.
+#[test]
+fn a_talent_two_callings_share_does_the_same_in_both() {
+    let tree = |c: &str| -> Vec<&'static callings::TalentDef> {
+        callings::calling(c)
+            .unwrap()
+            .talent_tabs
+            .iter()
+            .flat_map(|tab| &tab.talents)
+            .collect()
+    };
+    let vanguard = tree("vanguard");
+    let blade = &callings::calling("zealot").unwrap().talent_tabs[1].talents;
+    for t in blade {
+        let v = vanguard
+            .iter()
+            .find(|v| v.talent_id == t.talent_id)
+            .unwrap_or_else(|| panic!("{}: not Vanguard's", t.key));
+        assert_eq!(t.effects, v.effects, "{}", t.key);
+    }
+    let all: Vec<_> = ["basic_warrior", "vanguard", "zealot"]
+        .iter()
+        .flat_map(|c| tree(c))
+        .collect();
+    for a in &all {
+        for b in all.iter().filter(|b| b.talent_id == a.talent_id) {
+            assert_eq!(a.rank_spells, b.rank_spells, "{}", a.key);
+            assert_eq!(a.is_wip(), b.is_wip(), "{}", a.key);
+        }
+    }
 }
 
 /// A Calling's tree against the reference; the talents in `unmodelled` have no effect yet.

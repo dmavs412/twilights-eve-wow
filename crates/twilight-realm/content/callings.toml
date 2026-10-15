@@ -468,3 +468,262 @@ effects = [
     { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
     { kind = "stun", aura_spell_id = 7922, duration_ms = 1000 },
 ]
+
+# Zealot's tree: Crusade (seven rows of Paladin Retribution, Holy Power behind 30 points in the
+# tab), Blade (Vanguard's weapon talents, Flurry behind 10) and Faith (four rows of Paladin
+# defence), so 49 points at the cap put 31 or more in Crusade with the rest in the other two.
+# Blade's first row holds the handoff's first two: Improved Charge and Anger Management alone are
+# 3 ranks, short of the 5 that open a second row.
+# Prerequisites stay inside a tab: Vengeance needs Conviction 5/5, straight down column 2;
+# Anger Management, Deep Wounds, Impale and Flurry lose theirs (Tactical Mastery, Improved Rend
+# and Enrage are not in Blade, and Deep Wounds sits beside Impale). The Blade talents carry the
+# same effects as Vanguard's. WIP talents (`effects = []`): those that need the Seals' mechanics
+# (Improved Seal of the Crusader), or a cooldown, haste, hit, movement, Strength or holy-crit
+# kind the realm does not have yet, or a proc it does not model (Vindication, Eye for an Eye,
+# Vengeance, Redoubt, Reckoning).
+#   parry_pct - the parry chance rises by that percent
+#   defense   - the Defense skill rises by that much
+# Benediction takes rage off the Seals and Judgement; its spell-mod cells, one per borrowed
+# spell's family bit, make the client's costs agree.
+
+[[calling.talent_tab]]
+id = 903
+name = "Crusade"
+background = "PaladinCombat"
+
+[[calling.talent_tab.talent]]
+key = "improved_seal_of_the_crusader"
+talent_id = 1464
+tier = 1
+column = 2
+rank_spells = [20335, 20336, 20337]
+effects = []
+
+# Vanilla's 3% less mana a rank, doubled for the small rage costs and rounded: the Seals' 10 rage
+# loses 1/1/2/2/3, Judgement's 5 loses 0/1/1/1/2.
+[[calling.talent_tab.talent]]
+key = "benediction"
+talent_id = 1407
+tier = 1
+column = 3
+rank_spells = [20101, 20102, 20103, 20104, 20105]
+effects = [
+    { kind = "skill_rage_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
+    { kind = "skill_rage_cost", skill = "seal_of_the_crusader", per_rank = [1, 1, 2, 2, 3] },
+    { kind = "skill_rage_cost", skill = "judgement", per_rank = [0, 1, 1, 1, 2] },
+]
+
+[[calling.talent_tab.talent]]
+key = "improved_judgement"
+talent_id = 1631
+tier = 2
+column = 1
+rank_spells = [25956, 25957]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "deflection"
+talent_id = 1403
+tier = 2
+column = 3
+rank_spells = [20060, 20061, 20062, 20063, 20064]
+effects = [{ kind = "parry_pct", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "vindication"
+talent_id = 1633
+tier = 3
+column = 1
+rank_spells = [9452, 26016, 26021]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "conviction"
+talent_id = 1411
+tier = 3
+column = 2
+rank_spells = [20117, 20118, 20119, 20120, 20121]
+effects = [{ kind = "melee_crit_pct", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "eye_for_an_eye"
+talent_id = 1632
+tier = 4
+column = 1
+rank_spells = [9799, 25988]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "pursuit_of_justice"
+talent_id = 1634
+tier = 4
+column = 4
+rank_spells = [26022, 26023]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "two_handed_weapon_specialization"
+talent_id = 1410
+tier = 5
+column = 1
+rank_spells = [20111, 20112, 20113]
+effects = [{ kind = "weapon_damage_pct", weapon = "two_hand", per_rank = [2, 4, 6] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_hammer_of_justice"
+talent_id = 1521
+tier = 5
+column = 3
+rank_spells = [20487, 20488, 20489]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "vengeance"
+talent_id = 1402
+tier = 6
+column = 2
+rank_spells = [20049, 20056, 20057, 20058, 20059]
+prereq = { key = "conviction", rank = 5 }
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "holy_power"
+talent_id = 1627
+tier = 7
+column = 3
+rank_spells = [5923, 5924, 5925, 5926, 25829]
+effects = []
+
+[[calling.talent_tab]]
+id = 904
+name = "Blade"
+background = "WarriorArms"
+
+[[calling.talent_tab.talent]]
+key = "improved_charge"
+talent_id = 126
+tier = 1
+column = 1
+rank_spells = [12285, 12697]
+effects = [{ kind = "skill_rage", skill = "charge", per_rank = [3, 6] }]
+
+[[calling.talent_tab.talent]]
+key = "anger_management"
+talent_id = 137
+tier = 1
+column = 2
+rank_spells = [12296]
+# Talent.dbc flags it active, though the spell is a passive aura.
+exceptional = true
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "impale"
+talent_id = 662
+tier = 1
+column = 4
+rank_spells = [16493, 16494]
+effects = [{ kind = "skill_crit_damage_pct", per_rank = [10, 20] }]
+
+[[calling.talent_tab.talent]]
+key = "deep_wounds"
+talent_id = 121
+tier = 1
+column = 3
+rank_spells = [12834, 12849, 12867]
+effects = [{ kind = "crit_bleed", aura_spell_id = 12721, tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
+
+[[calling.talent_tab.talent]]
+key = "axe_specialization"
+talent_id = 132
+tier = 2
+column = 1
+rank_spells = [12700, 12781, 12783, 12784, 12785]
+effects = [{ kind = "weapon_crit_pct", weapon = "axe", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "mace_specialization"
+talent_id = 125
+tier = 2
+column = 3
+rank_spells = [12284, 12701, 12702, 12703, 12704]
+effects = [
+    { kind = "hit_stun_pct", weapon = "mace", aura_spell_id = 5530, duration_ms = 3000, per_rank = [1, 2, 3, 4, 6] },
+]
+
+[[calling.talent_tab.talent]]
+key = "sword_specialization"
+talent_id = 123
+tier = 2
+column = 4
+rank_spells = [12281, 12812, 12813, 12814, 12815]
+effects = [{ kind = "extra_swing_pct", weapon = "sword", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "flurry"
+talent_id = 156
+tier = 3
+column = 3
+rank_spells = [12319, 12971, 12972, 12973, 12974]
+effects = []
+
+[[calling.talent_tab]]
+id = 905
+name = "Faith"
+background = "PaladinProtection"
+
+[[calling.talent_tab.talent]]
+key = "divine_strength"
+talent_id = 1450
+tier = 1
+column = 2
+rank_spells = [20262, 20263, 20264, 20265, 20266]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "toughness"
+talent_id = 1423
+tier = 1
+column = 4
+rank_spells = [20143, 20144, 20145, 20146, 20147]
+effects = [{ kind = "item_armor_pct", per_rank = [2, 4, 6, 8, 10] }]
+
+[[calling.talent_tab.talent]]
+key = "precision"
+talent_id = 1630
+tier = 2
+column = 1
+rank_spells = [20189, 20192, 20193]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "redoubt"
+talent_id = 1421
+tier = 2
+column = 3
+rank_spells = [20127, 20130, 20135, 20136, 20137]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "one_handed_weapon_specialization"
+talent_id = 1429
+tier = 3
+column = 3
+rank_spells = [20196, 20197, 20198, 20199, 20200]
+effects = [{ kind = "weapon_damage_pct", weapon = "one_hand", per_rank = [2, 4, 6, 8, 10] }]
+
+[[calling.talent_tab.talent]]
+key = "anticipation"
+talent_id = 1629
+tier = 3
+column = 4
+rank_spells = [20096, 20097, 20098, 20099, 20100]
+effects = [{ kind = "defense", per_rank = [2, 4, 6, 8, 10] }]
+
+[[calling.talent_tab.talent]]
+key = "reckoning"
+talent_id = 1426
+tier = 4
+column = 3
+rank_spells = [20177, 20179, 20181, 20180, 20182]
+effects = []
