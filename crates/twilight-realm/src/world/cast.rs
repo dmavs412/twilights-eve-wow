@@ -1003,6 +1003,16 @@ impl InWorld {
         }
     }
 
+    /// `CMSG_CANCEL_AURA`: the player clicks off one of their own buffs; debuffs stay.
+    pub(crate) fn cancel_aura(&mut self, spell_id: u32, events: &mut Vec<SessionEvent>) {
+        let me = self.guid;
+        let gone = self.skills.remove_where(
+            |a| a.unit == me && a.spell_id == spell_id && a.kind.helpful(),
+            events,
+        );
+        self.faded(&gone, events);
+    }
+
     /// `unit` died: its auras go with it.
     pub(super) fn auras_die_with(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
         let gone = self.skills.remove_where(|a| a.unit == unit, events);

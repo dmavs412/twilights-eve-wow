@@ -154,6 +154,23 @@ fn bloodrage_cannot_be_cast_again_for_a_minute() {
 }
 
 #[test]
+fn a_buff_clicked_off_goes_and_takes_its_bonus_with_it() {
+    let (mut realm, me, _, mut view) = warrior_at(1);
+    realm.handle(cast(BLOODRAGE, None));
+    realm.handle(cast(BATTLE_SHOUT, None));
+    view.drain(&mut realm);
+    assert!(view.aura(me, BATTLE_SHOUT).is_some());
+
+    realm.handle(RealmCommand::CancelAura {
+        spell_id: BATTLE_SHOUT,
+    });
+    view.drain(&mut realm);
+    assert_eq!(view.aura(me, BATTLE_SHOUT), None);
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
+    assert!(view.aura(me, 29131).is_some(), "the other buff stays");
+}
+
+#[test]
 fn battle_shout_needs_its_rage_and_raises_attack_power_for_two_minutes() {
     let (mut realm, me, _, mut view) = warrior_at(1);
     realm.handle(cast(BATTLE_SHOUT, None));

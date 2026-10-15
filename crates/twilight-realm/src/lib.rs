@@ -68,6 +68,10 @@ pub enum RealmCommand {
         spell_id: u32,
         target: Option<u64>,
     },
+    /// Click off one of the player's own buffs.
+    CancelAura {
+        spell_id: u32,
+    },
     /// Put `packed` (`kind << 24 | action`) on action bar `slot`; 0 clears it. No answer.
     SetActionButton {
         slot: u8,
@@ -159,6 +163,11 @@ impl Realm {
                 }
             }
             RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target),
+            RealmCommand::CancelAura { spell_id } => {
+                if let Some(w) = &mut self.world {
+                    w.cancel_aura(spell_id, &mut self.events);
+                }
+            }
             RealmCommand::SetActionButton { slot, packed } => {
                 if let Some(w) = &self.world {
                     self.characters.set_action_button(w.guid, slot, packed);
