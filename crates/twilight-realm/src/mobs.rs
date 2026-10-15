@@ -11,6 +11,7 @@ use serde::Deserialize;
 
 use crate::clock;
 use crate::fields::*;
+use crate::rules::melee::MobDefense;
 use crate::rules::stats::{MobStats, UnitClass};
 use crate::space::distance;
 
@@ -56,7 +57,18 @@ pub(crate) struct Template {
     pub(crate) speed_walk: f32,
     pub(crate) speed_run: f32,
     pub(crate) detection_range: f32,
+    /// vmangos `creature_template.flags_extra`: `NO_PARRY` and `NO_BLOCK` take those slices off
+    /// the table.
+    #[serde(default)]
+    pub(crate) flags_extra: u32,
+    /// It carries a shield (`creature_equip_template`): a mob blocks only with one.
+    #[serde(default)]
+    pub(crate) shield: bool,
 }
+
+/// `CREATURE_FLAG_EXTRA_NO_PARRY` and `CREATURE_FLAG_EXTRA_NO_BLOCK` (vmangos).
+const FLAG_EXTRA_NO_PARRY: u32 = 0x4;
+const FLAG_EXTRA_NO_BLOCK: u32 = 0x10;
 
 impl Template {
     /// Elite and boss ranks, which kill XP pays double for.
@@ -320,6 +332,16 @@ impl Mob {
 
     pub(crate) fn level(&self) -> u8 {
         self.stats.level
+    }
+
+    /// What it defends with against a swing.
+    pub(crate) fn defense(&self) -> MobDefense {
+        let flags = self.template.flags_extra;
+        MobDefense {
+            level: self.level(),
+            parries: flags & FLAG_EXTRA_NO_PARRY == 0,
+            blocks: self.template.shield && flags & FLAG_EXTRA_NO_BLOCK == 0,
+        }
     }
 
     pub(crate) fn alive(&self) -> bool {

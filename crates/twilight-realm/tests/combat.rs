@@ -119,6 +119,24 @@ fn every_swing_is_reported_and_the_mob_loses_what_landed() {
 }
 
 #[test]
+fn a_mob_without_a_shield_never_blocks() {
+    // The Vile Familiar carries no shield (vmangos: no block without one); it still parries.
+    let (mut blocked, mut parried) = (0, 0);
+    for seed in 0..200 {
+        let (mut realm, me, mob) = warrior_seeded(1, seed);
+        stand_by(&mut realm, &mob);
+        realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+        let events = run(&mut realm, 12.0);
+        for s in swings(&events, me) {
+            blocked += u32::from(s.blocked > 0 || s.victim_state == 5);
+            parried += u32::from(s.victim_state == 3);
+        }
+    }
+    assert_eq!(blocked, 0);
+    assert!(parried > 0, "it parries from the front");
+}
+
+#[test]
 fn the_mob_fights_back_and_its_hits_come_off_the_players_health() {
     let (mut realm, me, mob) = warrior_at(1, 0);
     stand_by(&mut realm, &mob);
@@ -349,6 +367,15 @@ const SEED: u64 = 4;
 
 /// A human warrior of `level` with `xp`, in the world (on flat ground), and the mob near it.
 fn warrior_at(level: u8, xp: u32) -> (Realm, u64, Mob) {
+    warrior_rolling(level, xp, SEED)
+}
+
+/// A human warrior of `level` whose fights roll from `seed`, and the mob near it.
+fn warrior_seeded(level: u8, seed: u64) -> (Realm, u64, Mob) {
+    warrior_rolling(level, 0, seed)
+}
+
+fn warrior_rolling(level: u8, xp: u32, seed: u64) -> (Realm, u64, Mob) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
@@ -357,7 +384,7 @@ fn warrior_at(level: u8, xp: u32) -> (Realm, u64, Mob) {
         .unwrap()
         .replace("level = 1\n", &format!("level = {level}\n"))
         .replace("xp = 0\n", &format!("xp = {xp}\n"));
-    let mut realm = Realm::with_seed(SEED);
+    let mut realm = Realm::with_seed(seed);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);

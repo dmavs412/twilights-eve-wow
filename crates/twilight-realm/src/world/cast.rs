@@ -671,7 +671,7 @@ impl InWorld {
                 weapon_skill: stats.weapon_skill,
                 crit_pct: stats.crit_pct,
             },
-            mob.level(),
+            mob.defense(),
             from_front,
             unavoidable,
         );

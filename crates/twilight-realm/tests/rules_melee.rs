@@ -2,8 +2,8 @@
 //! (`docs/reference/vanilla-combat-rules.md` §1 and §3). Chances are basis points.
 
 use twilight_realm::rules::melee::{
-    armor_reduced, glancing_range, mob_vs_player, player_vs_mob, reach, HitTable, Outcome,
-    PlayerDefense, PlayerOffense,
+    armor_reduced, glancing_range, mob_vs_player, player_vs_mob, reach, HitTable, MobDefense,
+    Outcome, PlayerDefense, PlayerOffense,
 };
 
 fn table(miss: u32, dodge: u32, parry: u32, glancing: u32, block: u32, crit: u32) -> HitTable {
@@ -27,6 +27,39 @@ fn p10() -> PlayerOffense {
     }
 }
 
+/// A mob of `level` that parries and carries a shield: the reference's tables.
+fn armed(level: u8) -> MobDefense {
+    MobDefense {
+        level,
+        parries: true,
+        blocks: true,
+    }
+}
+
+#[test]
+fn a_mob_blocks_only_with_a_shield_and_parries_unless_its_data_says_not() {
+    // No shield: P10 vs M10's table without the block slice.
+    let bare = MobDefense {
+        level: 10,
+        parries: true,
+        blocks: false,
+    };
+    assert_eq!(
+        player_vs_mob(p10(), bare, true),
+        table(500, 500, 500, 1000, 0, 499)
+    );
+    // `CREATURE_FLAG_EXTRA_NO_PARRY`: without the parry slice.
+    let no_parry = MobDefense {
+        level: 10,
+        parries: false,
+        blocks: true,
+    };
+    assert_eq!(
+        player_vs_mob(p10(), no_parry, true),
+        table(500, 500, 0, 1000, 500, 499)
+    );
+}
+
 #[test]
 fn a_player_swinging_at_a_mob_from_the_front() {
     let cases = [
@@ -40,7 +73,11 @@ fn a_player_swinging_at_a_mob_from_the_front() {
         (5, table(125, 125, 0, 0, 125, 599)),
     ];
     for (mob, want) in cases {
-        assert_eq!(player_vs_mob(p10(), mob, true), want, "P10 vs M{mob}");
+        assert_eq!(
+            player_vs_mob(p10(), armed(mob), true),
+            want,
+            "P10 vs M{mob}"
+        );
     }
 }
 
@@ -52,12 +89,15 @@ fn low_level_fights() {
         crit_pct: 5.0,
     };
     assert_eq!(
-        player_vs_mob(p(1), 1, true),
+        player_vs_mob(p(1), armed(1), true),
         table(50, 50, 50, 1000, 50, 500)
     );
-    assert_eq!(player_vs_mob(p(3), 1, true), table(40, 40, 30, 0, 40, 540));
     assert_eq!(
-        player_vs_mob(p(5), 5, true),
+        player_vs_mob(p(3), armed(1), true),
+        table(40, 40, 30, 0, 40, 540)
+    );
+    assert_eq!(
+        player_vs_mob(p(5), armed(5), true),
         table(250, 250, 250, 1000, 250, 500)
     );
 }
@@ -70,18 +110,18 @@ fn a_mob_three_levels_up_is_the_famous_boss_table() {
         weapon_skill,
         crit_pct: 5.0 + f64::from(weapon_skill - 300) * 0.04,
     };
-    let t = player_vs_mob(p60(300), 63, true);
+    let t = player_vs_mob(p60(300), armed(63), true);
     assert_eq!(
         (t.miss, t.dodge, t.parry, t.glancing, t.block, t.crit),
         (800, 650, 1400, 4000, 500, 200)
     );
-    let t = player_vs_mob(p60(305), 63, true);
+    let t = player_vs_mob(p60(305), armed(63), true);
     assert_eq!((t.miss, t.dodge, t.crit), (600, 600, 220));
 }
 
 #[test]
 fn from_behind_a_mob_cannot_parry_or_block() {
-    let t = player_vs_mob(p10(), 10, false);
+    let t = player_vs_mob(p10(), armed(10), false);
     assert_eq!(t, table(500, 500, 0, 1000, 0, 499));
     // miss [0,500), dodge [500,1000), glance [1000,2000), crit [2000,2499), hit [2499,10000).
     assert_eq!(t.outcome(999), Outcome::Dodge);
@@ -92,7 +132,7 @@ fn from_behind_a_mob_cannot_parry_or_block() {
 
 #[test]
 fn one_roll_walks_the_table_in_vmangos_order() {
-    let t = player_vs_mob(p10(), 10, true);
+    let t = player_vs_mob(p10(), armed(10), true);
     let rolls = [
         (0, Outcome::Miss),
         (499, Outcome::Miss),
@@ -110,7 +150,7 @@ fn one_roll_walks_the_table_in_vmangos_order() {
         assert_eq!(t.outcome(roll), want, "roll {roll}");
     }
     // P10 vs M13's worked example: 7548 is the last crit.
-    let t = player_vs_mob(p10(), 13, true);
+    let t = player_vs_mob(p10(), armed(13), true);
     assert_eq!(t.outcome(7548), Outcome::Crit);
     assert_eq!(t.outcome(7549), Outcome::Hit);
 }

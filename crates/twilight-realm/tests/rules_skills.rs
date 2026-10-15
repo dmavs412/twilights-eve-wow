@@ -129,14 +129,19 @@ fn bloodrage_costs_a_fifth_of_base_health_on_60_s_and_gives_10_11_12_rage() {
 /// level-12 mob, from the front: miss 600 + dodge 600 + parry 700, no glancing, no block.
 #[test]
 fn an_ability_rolls_avoidance_without_glancing_then_crit_on_its_own() {
-    use twilight_realm::rules::melee::{player_vs_mob, PlayerOffense};
+    use twilight_realm::rules::melee::{player_vs_mob, MobDefense, PlayerOffense};
     use twilight_realm::rules::skills::ability_table;
     let p = PlayerOffense {
         level: 10,
         weapon_skill: 50,
         crit_pct: 5.0,
     };
-    let (table, crit) = ability_table(p, 12, true, false);
+    let m12 = MobDefense {
+        level: 12,
+        parries: true,
+        blocks: true,
+    };
+    let (table, crit) = ability_table(p, m12, true, false);
     assert_eq!((table.miss, table.dodge, table.parry), (600, 600, 700));
     assert_eq!(
         (table.glancing, table.block, table.crit, table.crushing),
@@ -144,10 +149,10 @@ fn an_ability_rolls_avoidance_without_glancing_then_crit_on_its_own() {
     );
     // The crit chance is the white table's: 5% less 0.2% per point of skill short, 10 points.
     assert_eq!(crit, 300);
-    assert_eq!(crit, player_vs_mob(p, 12, true).crit);
+    assert_eq!(crit, player_vs_mob(p, m12, true).crit);
 
     // Overpower cannot be dodged or parried: it only misses.
-    let (table, _) = ability_table(p, 12, true, true);
+    let (table, _) = ability_table(p, m12, true, true);
     assert_eq!((table.miss, table.dodge, table.parry), (600, 0, 0));
 }
 

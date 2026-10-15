@@ -81,7 +81,7 @@ capped    = min(A_max, A_skill) - V_max      (used for parry and crit vs mobs)
 | **dodge** | `500 − 10 × skillDiff` bp, then × `L_mob/10` if `L_mob < 10` | mob base dodge 5% (`GetUnitDodgeChance`) |
 | **parry** | only if the player is in front of the mob (`HasInArc`). `500 − 20 × capped` bp, or `500 − 60 × capped` bp when `capped < −10`; then × `L_mob/10` if `L_mob < 10` | mob base parry 5%; `CREATURE_FLAG_EXTRA_NO_PARRY` disables |
 | **glancing** | `(10 + (V_def − min(A_skill, A_max)) × 2)%`, clamped 0..40% | players (and their pets) vs non-player victims only, white swings and next-melee abilities only. No level reduction. |
-| **block** | only from the front. `500 − 10 × skillDiff` bp, **capped at 500** for mobs, then × `L_mob/10` if `L_mob < 10` | mob base block 5% |
+| **block** | only from the front, and only a mob with a shield. `500 − 10 × skillDiff` bp, **capped at 500** for mobs, then × `L_mob/10` if `L_mob < 10` | mob base block 5% with a shield (`creature_equip_template`); `CREATURE_FLAG_EXTRA_NO_BLOCK` disables. The realm's mob data has no equipment, so a template blocks only when its content says `shield = true`. |
 | **crit** | player sheet crit (§5.3, which already contains `(A_skill − A_max) × 0.04%`) plus `fullDiff × 0.04%` if `fullDiff > 0`, else `+ (min(A_max, A_skill) − V_def) × 0.2%`. Floor 0. | not reduced for low-level mobs |
 | **crushing** | never (players cannot crush) | |
 | **hit** | the rest | |

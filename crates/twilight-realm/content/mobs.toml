@@ -4,6 +4,9 @@
 #
 # A template's `hostile` (default true) says whether it attacks a player who comes too close; a
 # neutral creature only fights back. `rank` (default 0) is `CreatureEliteType`.
+# `flags_extra` (default 0) is vmangos's: 0x4 `NO_PARRY` and 0x10 `NO_BLOCK` change the attack table.
+# `shield` (default false): the creature carries one, the only way a mob blocks. The dumps hold no
+# equipment, so no template sets it yet.
 
 [[template]]
 entry = 3101

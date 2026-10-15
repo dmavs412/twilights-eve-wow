@@ -23,6 +23,16 @@ pub struct PlayerDefense {
     pub block_pct: f64,
 }
 
+/// What a defending mob brings to the table besides its level: whether it can parry (vmangos: unless
+/// `CREATURE_FLAG_EXTRA_NO_PARRY`) and block (only with a shield, and not with
+/// `CREATURE_FLAG_EXTRA_NO_BLOCK`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MobDefense {
+    pub level: u8,
+    pub parries: bool,
+    pub blocks: bool,
+}
+
 /// The slices of one swing's roll, in vmangos's order; a normal hit is what is left of 10000.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct HitTable {
@@ -93,9 +103,10 @@ fn clamp_bp(v: i64, max: i64) -> u32 {
     v.clamp(0, max) as u32
 }
 
-/// The table a player's white swing rolls on against a mob of `mob_level`; `from_front` when the
-/// player stands in the mob's front arc, which parry and block need.
-pub fn player_vs_mob(p: PlayerOffense, mob_level: u8, from_front: bool) -> HitTable {
+/// The table a player's white swing rolls on against `mob`; `from_front` when the player stands in
+/// the mob's front arc, which parry and block need.
+pub fn player_vs_mob(p: PlayerOffense, mob: MobDefense, from_front: bool) -> HitTable {
+    let mob_level = mob.level;
     let skill = i64::from(p.weapon_skill);
     let max_skill = 5 * i64::from(p.level);
     let defense = 5 * i64::from(mob_level);
@@ -108,7 +119,7 @@ pub fn player_vs_mob(p: PlayerOffense, mob_level: u8, from_front: bool) -> HitTa
         500 - 20 * full_diff
     };
     let dodge = 500 - 10 * full_diff;
-    let parry = if !from_front {
+    let parry = if !from_front || !mob.parries {
         0
     } else if capped < -10 {
         500 - 60 * capped
@@ -116,7 +127,7 @@ pub fn player_vs_mob(p: PlayerOffense, mob_level: u8, from_front: bool) -> HitTa
         500 - 20 * capped
     };
     let glancing = (10 + (defense - skill.min(max_skill)) * 2) * 100;
-    let block = if from_front {
+    let block = if from_front && mob.blocks {
         (500 - 10 * full_diff).min(500)
     } else {
         0

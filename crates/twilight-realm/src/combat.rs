@@ -83,7 +83,7 @@ pub(crate) fn player_swing(p: &WarriorStats, mob: &Mob, from_front: bool, rng: &
             weapon_skill: p.weapon_skill,
             crit_pct: p.crit_pct,
         },
-        mob.level(),
+        mob.defense(),
         from_front,
     );
     let outcome = table.outcome(rng.below(ROLL));
