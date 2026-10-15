@@ -3,7 +3,9 @@
 //! systems built on top: aggro and leashing, skills, gear.
 
 pub mod aggro;
+pub mod leash;
 pub mod melee;
 pub mod rage;
+pub mod respawn;
 pub mod stats;
 pub mod xp;

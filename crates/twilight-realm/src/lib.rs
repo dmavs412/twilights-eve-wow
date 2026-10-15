@@ -13,6 +13,7 @@ mod combat;
 mod content;
 mod fields;
 mod mobs;
+mod population;
 mod rng;
 pub mod rules;
 mod save;
