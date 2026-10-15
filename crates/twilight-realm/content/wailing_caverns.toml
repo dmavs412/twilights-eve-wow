@@ -1,0 +1,297 @@
+# The Wailing Caverns, the slice's one Dungeon (ticket #16), by hand from
+# data/twilights-eve/wailing_caverns_run.json (docs/reference/wailing-caverns.md). tests/content_wailing_caverns.rs
+# checks that the two agree.
+#
+# Map 43 is WMO-only: there is no terrain, so every z here is the server's and the client re-grounds
+# units on its own collision.
+
+# `Map.dbc` 43 and `AreaTable.dbc` 718.
+map = 43
+zone = 718
+
+# Lady Anacondra's spawn: her kill always drops one of `boss_loot`.
+boss = 300999
+# The run's level band: the reference's `proposed_boss_pool` in loot_items.json, twenty real
+# Wailing Caverns blues a level ~20 Warrior can use. Seven are the instance's own boss drops,
+# whose templates are in dungeon_items.toml; the rest are world blues in items.toml.
+boss_loot = [6627, 13245, 10410, 6460, 6631, 6449, 6463, 12997, 12989, 12975, 12994, 12982, 2194, 12976, 12978, 12990, 1121, 12988, 2059, 3021]
+
+# `AreaTrigger.dbc` 228 on Kalimdor, and where vmangos' `areatrigger_teleport` sends the player.
+[entrance]
+trigger = 228
+map = 1
+position = [-753.596, -2212.78, 21.54]
+radius = 13.0
+to = { map = 43, position = [-158.441, 131.601, -74.255], orientation = 5.847 }
+
+# `AreaTrigger.dbc` 226 inside, back out to the entrance.
+[exit]
+trigger = 226
+map = 43
+position = [-172.181, 138.98, -66.647]
+radius = 12.0
+to = { map = 1, position = [-738.462, -2217.8, 16.919], orientation = 6.021 }
+
+# The run's creatures (vmangos `creature_template`). Solo-tuned: the reference's elites carry 3x
+# health and 1.7x damage (the boss 5x and 2.5x), sized for a party of five; this slice is run
+# alone, so the multipliers are halved or so. They stay elite (`rank` 1): the dragon on the
+# portrait, and dungeon kill XP.
+
+[[template]]
+entry = 3637
+name = "Deviate Guardian"
+# Beast.
+creature_type = 1
+rank = 1
+display_id = 755
+faction_template = 270
+unit_class = "warrior"
+level_min = 18
+level_max = 19
+health_multiplier = 1.5
+damage_multiplier = 0.8
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 3636
+name = "Deviate Ravager"
+creature_type = 1
+rank = 1
+display_id = 1747
+faction_template = 270
+unit_class = "warrior"
+level_min = 18
+level_max = 19
+health_multiplier = 1.5
+damage_multiplier = 0.8
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 3840
+name = "Druid of the Fang"
+# Humanoid.
+creature_type = 7
+rank = 1
+display_id = 4211
+faction_template = 270
+unit_class = "paladin"
+level_min = 19
+level_max = 20
+health_multiplier = 1.5
+damage_multiplier = 0.8
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+
+[[template]]
+entry = 3671
+name = "Lady Anacondra"
+subname = "Fanglord"
+creature_type = 7
+rank = 1
+display_id = 4313
+faction_template = 270
+unit_class = "paladin"
+level_min = 20
+level_max = 20
+health_multiplier = 2.5
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 20.0
+
+# The run, in route order: ten trash mobs, then the boss. `camp` pulls together: the two Ravagers
+# of 26220's pack (`creature_groups`).
+
+[[spawn]]
+guid = 26202
+entry = 3637
+level_min = 18
+level_max = 19
+position = [-100.639, 180.884, -78.428]
+orientation = 5.62
+camp = 26202
+
+[[spawn]]
+guid = 26220
+entry = 3636
+level_min = 18
+level_max = 19
+position = [-105.548, 228.726, -89.885]
+orientation = 6.071
+camp = 26220
+
+[[spawn]]
+guid = 26224
+entry = 3636
+level_min = 18
+level_max = 19
+position = [-107.012, 240.249, -92.792]
+orientation = 5.263
+camp = 26220
+
+[[spawn]]
+guid = 26216
+entry = 3636
+level_min = 18
+level_max = 19
+position = [-67.853, 203.787, -93.573]
+orientation = 1.134
+camp = 26216
+
+[[spawn]]
+guid = 26223
+entry = 3636
+level_min = 18
+level_max = 19
+position = [-67.448, 214.535, -93.42]
+orientation = 3.543
+camp = 26223
+
+[[spawn]]
+guid = 26217
+entry = 3637
+level_min = 18
+level_max = 19
+position = [-35.194, 198.074, -96.579]
+orientation = 5.195
+camp = 26217
+
+[[spawn]]
+guid = 26227
+entry = 3636
+level_min = 18
+level_max = 19
+position = [-35.02, 209.613, -96.363]
+orientation = 5.833
+camp = 26227
+
+[[spawn]]
+guid = 26230
+entry = 3636
+level_min = 18
+level_max = 19
+position = [-47.748, 254.798, -92.844]
+orientation = 5.536
+camp = 26230
+
+[[spawn]]
+guid = 26239
+entry = 3840
+level_min = 19
+level_max = 20
+position = [-50.911, 263.772, -92.844]
+orientation = 3.409
+camp = 26239
+
+[[spawn]]
+guid = 26252
+entry = 3840
+level_min = 19
+level_max = 20
+position = [-55.257, 274.696, -92.761]
+orientation = 4.695
+camp = 26252
+
+[[spawn]]
+guid = 300999
+entry = 3671
+level_min = 20
+level_max = 20
+position = [-53.984, 271.39, -92.844]
+orientation = 2.41
+camp = 300999
+
+# The route graph that keeps a chase inside the tunnels: the Disciple of Naralex's escort path
+# (`escort_*`), a Druid of the Fang patrol (`patrol_*`), and a short spur to each spawn (`mob_*`).
+# Edges are undirected.
+[route]
+nodes = [
+  { id = "entrance", at = [-158.44, 131.6, -74.25] },
+  { id = "escort_0", at = [-134.9, 125.4, -78.1] },
+  { id = "escort_1", at = [-125.6, 132.9, -78.4] },
+  { id = "escort_2", at = [-113.8, 139.2, -80.9] },
+  { id = "escort_3", at = [-109.8, 157.5, -80.2] },
+  { id = "escort_4", at = [-108.6, 175.2, -79.7] },
+  { id = "escort_5", at = [-108.6, 195.4, -80.6] },
+  { id = "escort_6", at = [-111.0, 219.0, -86.5] },
+  { id = "escort_7", at = [-102.4, 232.8, -91.5] },
+  { id = "escort_8", at = [-82.4, 224.8, -93.5] },
+  { id = "escort_9", at = [-73.4, 214.7, -93.2] },
+  { id = "escort_10", at = [-67.7, 208.0, -93.3] },
+  { id = "escort_11", at = [-43.3, 205.2, -96.3] },
+  { id = "escort_12", at = [-34.6, 221.3, -95.8] },
+  { id = "escort_13", at = [-32.5, 238.5, -93.5] },
+  { id = "escort_14", at = [-42.1, 258.6, -92.8] },
+  { id = "escort_15", at = [-54.0, 276.2, -92.8] },
+  { id = "patrol_26225_1", at = [-40.44, 150.65, -94.07] },
+  { id = "patrol_26225_2", at = [-46.99, 138.93, -91.42] },
+  { id = "patrol_26225_3", at = [-63.71, 117.64, -89.22] },
+  { id = "patrol_26225_4", at = [-73.68, 111.54, -88.68] },
+  { id = "patrol_26225_5", at = [-60.89, 122.09, -89.42] },
+  { id = "patrol_26225_6", at = [-43.41, 143.58, -92.53] },
+  { id = "patrol_26225_7", at = [-37.88, 157.21, -95.03] },
+  { id = "patrol_26225_8", at = [-36.19, 195.92, -96.76] },
+  { id = "patrol_26225_9", at = [-35.47, 166.73, -96.14] },
+  { id = "mob_26202", at = [-100.64, 180.88, -78.43] },
+  { id = "mob_26220", at = [-105.55, 228.73, -89.89] },
+  { id = "mob_26224", at = [-107.01, 240.25, -92.79] },
+  { id = "mob_26216", at = [-67.85, 203.79, -93.57] },
+  { id = "mob_26223", at = [-67.45, 214.53, -93.42] },
+  { id = "mob_26217", at = [-35.19, 198.07, -96.58] },
+  { id = "mob_26227", at = [-35.02, 209.61, -96.36] },
+  { id = "mob_26230", at = [-47.75, 254.8, -92.84] },
+  { id = "mob_26239", at = [-50.91, 263.77, -92.84] },
+  { id = "mob_26252", at = [-55.26, 274.7, -92.76] },
+  { id = "mob_300999", at = [-53.98, 271.39, -92.84] },
+]
+edges = [
+  ["entrance", "escort_0"],
+  ["escort_0", "escort_1"],
+  ["escort_1", "escort_2"],
+  ["escort_2", "escort_3"],
+  ["escort_3", "escort_4"],
+  ["escort_4", "escort_5"],
+  ["escort_5", "escort_6"],
+  ["escort_6", "escort_7"],
+  ["escort_7", "escort_8"],
+  ["escort_8", "escort_9"],
+  ["escort_9", "escort_10"],
+  ["escort_10", "escort_11"],
+  ["escort_11", "escort_12"],
+  ["escort_12", "escort_13"],
+  ["escort_13", "escort_14"],
+  ["escort_14", "escort_15"],
+  ["patrol_26225_4", "patrol_26225_3"],
+  ["patrol_26225_3", "patrol_26225_5"],
+  ["patrol_26225_5", "patrol_26225_2"],
+  ["patrol_26225_2", "patrol_26225_6"],
+  ["patrol_26225_6", "patrol_26225_1"],
+  ["patrol_26225_1", "patrol_26225_7"],
+  ["patrol_26225_7", "patrol_26225_9"],
+  ["patrol_26225_9", "patrol_26225_8"],
+  ["escort_11", "patrol_26225_8"],
+  ["escort_4", "mob_26202"],
+  ["escort_7", "mob_26220"],
+  ["escort_7", "mob_26224"],
+  ["escort_10", "mob_26216"],
+  ["escort_9", "mob_26223"],
+  ["patrol_26225_8", "mob_26217"],
+  ["escort_11", "mob_26227"],
+  ["escort_14", "mob_26230"],
+  ["escort_14", "mob_26239"],
+  ["escort_15", "mob_26252"],
+  ["escort_15", "mob_300999"],
+]

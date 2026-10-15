@@ -148,11 +148,22 @@ fn given() -> &'static HashMap<u32, Template> {
     })
 }
 
+/// The Dungeon boss's own blues (`content/dungeon_items.toml`), by entry: no world pool holds them.
+fn dungeon() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table = toml::from_str(include_str!("../content/dungeon_items.toml"))
+            .expect("content/dungeon_items.toml parses");
+        table.item.into_iter().map(|t| (t.entry, t)).collect()
+    })
+}
+
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
     all()
         .get(&entry)
         .or_else(|| given().get(&entry))
         .or_else(|| goods().get(&entry))
+        .or_else(|| dungeon().get(&entry))
 }
 
 /// `ITEM_SPELLTRIGGER_ON_USE`.
