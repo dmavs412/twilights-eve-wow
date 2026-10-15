@@ -18,6 +18,14 @@ clippy `-D warnings` and the wasm `cargo check` (CI). These are the judgement ca
   `SAVE_VERSION`, and a test loads a save written without it.
 - **Test first.** A behaviour's test lands in the same commit as its code, or an earlier one.
   Player-script tests use commands, `tick` and events only, and assert on what the client sees.
+- **One test harness.** A player-script helper (a view of the fields, a drain, a cast, a fight
+  setup) lives in `tests/common/`, `gear_common/` or `quest_common/`; a test file defines only
+  what is unique to it. A helper copied into a second test file is a finding.
+
+## Everywhere
+
+- **Comments state what is, never how it came to be** (docs/METHOD.md, "No history, no stories"):
+  "saves from before the rename", "no kit yet" and "was X" belong in the commit message.
 
 ## Edits outside Twilight's Eve
 
