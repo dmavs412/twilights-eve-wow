@@ -250,7 +250,7 @@ fn a_full_backpack_keeps_the_tokens() {
 fn only_the_buyers_band_is_for_sale_and_only_within_reach() {
     let mut shop = Shop::new(15, 0, &[(23, TOKEN, 20)]);
     // The pants are the band below, and the real entry is no row at all.
-    let first = shop.list()[0].clone();
+    let first = shop.list()[0];
     let events = shop.buy(&VendorItem {
         entry: WARRIORS_PANTS,
         ..first

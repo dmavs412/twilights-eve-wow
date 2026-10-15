@@ -976,7 +976,7 @@ fn spell_mod(events: &[SessionEvent], flat: bool, bit: u8, op: u8) -> Option<i32
             } if (f, mask_bit, o) == (flat, bit, op) => Some(value),
             _ => None,
         })
-        .last()
+        .next_back()
 }
 
 /// `SMSG_PERIODICAURALOG` damage ticks for `spell_id`.

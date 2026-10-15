@@ -69,7 +69,10 @@ impl Script {
     }
 
     fn equip(&mut self, slot: u8) -> Vec<SessionEvent> {
-        self.send(RealmCommand::AutoEquipItem { bag: BACKPACK, slot })
+        self.send(RealmCommand::AutoEquipItem {
+            bag: BACKPACK,
+            slot,
+        })
     }
 }
 
@@ -92,9 +95,8 @@ fn carried_items_stream_in_ahead_of_the_character() {
     assert_eq!(s.me().player_visible_item_entry(CHEST), Some(2087));
     let create_at = |guid| {
         s.events.iter().position(|e| match e {
-            SessionEvent::ItemCreate { guid: g, .. } | SessionEvent::ObjectCreate { guid: g, .. } => {
-                *g == guid
-            }
+            SessionEvent::ItemCreate { guid: g, .. }
+            | SessionEvent::ObjectCreate { guid: g, .. } => *g == guid,
             _ => false,
         })
     };
@@ -121,7 +123,11 @@ fn a_warriors_proficiencies_are_sent_at_login() {
     assert_ne!(weapons & 1 << 10, 0, "staves");
     assert_eq!(weapons & 1 << 6, 0, "no polearms before 20");
     assert_eq!(weapons & 1 << 19, 0, "never wands");
-    assert_eq!(armour & 0b100_1111, 0b100_1111, "misc, cloth, leather, mail, shields");
+    assert_eq!(
+        armour & 0b100_1111,
+        0b100_1111,
+        "misc, cloth, leather, mail, shields"
+    );
     assert_eq!(armour & 1 << 4, 0, "no plate before 40");
 }
 
@@ -163,14 +169,26 @@ fn armour_and_stats_change_the_sheet() {
     let before = s.me();
     s.equip(PACK_1);
     let after = s.me();
-    assert_eq!(after.player_visible_item_entry(CHEST), Some(GNOLL_WAR_HARNESS));
-    assert_eq!(after.unit_resistance(0), Some(before.unit_resistance(0).unwrap() + 70));
+    assert_eq!(
+        after.player_visible_item_entry(CHEST),
+        Some(GNOLL_WAR_HARNESS)
+    );
+    assert_eq!(
+        after.unit_resistance(0),
+        Some(before.unit_resistance(0).unwrap() + 70)
+    );
     assert_eq!(after.unit_stat(0), Some(before.unit_stat(0).unwrap() + 2));
     assert_eq!(after.unit_stat(2), Some(before.unit_stat(2).unwrap() + 2));
     assert_eq!(after.player_posstat(0), Some(2), "the green +2 strength");
     assert_eq!(after.player_posstat(2), Some(2));
-    assert_eq!(after.unit_max_health(), Some(before.unit_max_health().unwrap() + 20));
-    assert_eq!(after.unit_attack_power(), Some(before.unit_attack_power().unwrap() + 4));
+    assert_eq!(
+        after.unit_max_health(),
+        Some(before.unit_max_health().unwrap() + 20)
+    );
+    assert_eq!(
+        after.unit_attack_power(),
+        Some(before.unit_attack_power().unwrap() + 4)
+    );
 }
 
 #[test]
@@ -186,7 +204,11 @@ fn taking_it_off_puts_it_in_the_backpack_and_the_sheet_back() {
     assert_eq!(s.slot(MAIN_HAND), 0);
     assert_eq!(s.slot(PACK_1), s.item(FINE_SCIMITAR));
     let me = s.me();
-    assert_eq!(me.player_visible_item_entry(MAIN_HAND), None, "nothing worn there");
+    assert_eq!(
+        me.player_visible_item_entry(MAIN_HAND),
+        None,
+        "nothing worn there"
+    );
     assert_eq!(me.unit_base_attack_time(0), Some(2000));
     assert_eq!(me.unit_min_damage(), naked.unit_min_damage());
 }
@@ -206,7 +228,10 @@ fn dragging_onto_a_worn_item_swaps_the_two() {
 
 #[test]
 fn a_two_hander_sends_the_shield_to_the_backpack() {
-    let mut s = Script::new(4, &[(OFF_HAND, WARRIORS_SHIELD, 1), (PACK_1, CROOKED_STAFF, 1)]);
+    let mut s = Script::new(
+        4,
+        &[(OFF_HAND, WARRIORS_SHIELD, 1), (PACK_1, CROOKED_STAFF, 1)],
+    );
     let events = s.equip(PACK_1);
     assert_eq!(refusal(&events), None);
     assert_eq!(s.slot(MAIN_HAND), s.item(CROOKED_STAFF));
@@ -216,7 +241,10 @@ fn a_two_hander_sends_the_shield_to_the_backpack() {
 
 #[test]
 fn a_shield_beside_a_two_hander_is_refused() {
-    let mut s = Script::new(4, &[(MAIN_HAND, CROOKED_STAFF, 1), (PACK_1, WARRIORS_SHIELD, 1)]);
+    let mut s = Script::new(
+        4,
+        &[(MAIN_HAND, CROOKED_STAFF, 1), (PACK_1, WARRIORS_SHIELD, 1)],
+    );
     let events = s.equip(PACK_1);
     // `EQUIP_ERR_CANT_EQUIP_WITH_TWOHANDED`.
     assert_eq!(refusal(&events), Some((13, None)));
@@ -271,7 +299,11 @@ fn destroying_an_item_removes_it() {
 
 #[test]
 fn the_select_screen_shows_worn_gear() {
-    let (_, blob) = save_with(1, 0, &[(MAIN_HAND, FINE_SCIMITAR, 1), (PACK_1, DULL_BLADE, 1)]);
+    let (_, blob) = save_with(
+        1,
+        0,
+        &[(MAIN_HAND, FINE_SCIMITAR, 1), (PACK_1, DULL_BLADE, 1)],
+    );
     let mut realm = realm();
     realm.import_character(&blob).unwrap();
     let c = &roster(&mut realm)[0];
@@ -302,9 +334,7 @@ fn changing_gear_asks_for_a_save() {
     let mut s = Script::new(1, &[(PACK_1, FINE_SCIMITAR, 1)]);
     s.realm.drain_storage();
     s.equip(PACK_1);
-    assert!(s
-        .realm
-        .drain_storage()
-        .iter()
-        .any(|op| matches!(op, twilight_realm::Storage::Write { blob, .. } if blob.contains("slot = 15"))));
+    assert!(s.realm.drain_storage().iter().any(
+        |op| matches!(op, twilight_realm::Storage::Write { blob, .. } if blob.contains("slot = 15"))
+    ));
 }

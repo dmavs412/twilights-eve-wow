@@ -185,9 +185,8 @@ pub(crate) fn content() -> &'static Mobs {
                     },
                 ),
         );
-        let dungeon: DungeonFile =
-            toml::from_str(include_str!("../content/wailing_caverns.toml"))
-                .expect("content/wailing_caverns.toml parses");
+        let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
+            .expect("content/wailing_caverns.toml parses");
         template.extend(dungeon.template);
         for s in dungeon.spawn {
             let Some(t) = template.iter().find(|t| t.entry == s.entry) else {

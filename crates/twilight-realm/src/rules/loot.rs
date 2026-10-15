@@ -87,7 +87,11 @@ fn build_pool(level: u8, quality: Quality) -> Vec<u32> {
     while let Some(quality) = q {
         for widen in 0..=MAX_WIDEN {
             let reach = WINDOW + widen;
-            let pool = window(level.saturating_sub(reach), level.saturating_add(reach), quality);
+            let pool = window(
+                level.saturating_sub(reach),
+                level.saturating_add(reach),
+                quality,
+            );
             if !pool.is_empty() {
                 return pool;
             }

@@ -127,7 +127,7 @@ fn the_penalty_and_the_respawn_are_saved() {
             twilight_realm::Storage::Write { blob, .. } => Some(blob),
             _ => None,
         })
-        .last()
+        .next_back()
         .expect("the release saves");
 
     let mut fresh = Realm::new();

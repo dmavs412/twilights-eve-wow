@@ -24,7 +24,7 @@ impl Rng {
 
     /// Uniform in `0..n` (`n > 0`).
     pub(crate) fn below(&mut self, n: u32) -> u32 {
-        ((self.next_u64() >> 32) * u64::from(n) >> 32) as u32
+        (((self.next_u64() >> 32) * u64::from(n)) >> 32) as u32
     }
 
     /// Uniform in `lo..=hi`, as vmangos's `urand`.
