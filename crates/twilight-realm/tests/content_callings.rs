@@ -217,3 +217,87 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     ids.sort_unstable();
     assert_eq!(ids, [78, 100, 772, 1715, 2687, 6343, 6673, 7384]);
 }
+
+#[test]
+fn the_basic_warrior_talent_tree_matches_the_reference() {
+    let reference = reference();
+    let want = &reference["callings"]["basic_warrior"]["talent_tree"]["tabs"];
+    let got = &callings::calling("basic_warrior").unwrap().talent_tabs;
+    let want = want.as_array().unwrap();
+    assert_eq!(got.len(), want.len(), "one tab");
+    for (tab, want) in got.iter().zip(want) {
+        assert_eq!(u64::from(tab.id), want["catalog_tab_id"].as_u64().unwrap());
+        assert_eq!(tab.name, want["name"].as_str().unwrap());
+        assert_eq!(tab.background, want["background"].as_str().unwrap());
+        let talents = want["talents"].as_array().unwrap();
+        assert_eq!(tab.talents.len(), talents.len());
+        for (t, want) in tab.talents.iter().zip(talents) {
+            let key = want["key"].as_str().unwrap();
+            assert_eq!(t.key, key);
+            assert_eq!(
+                u64::from(t.talent_id),
+                want["talent_id"].as_u64().unwrap(),
+                "{key}"
+            );
+            assert_eq!(u64::from(t.tier), want["tier"].as_u64().unwrap(), "{key}");
+            assert_eq!(
+                u64::from(t.column),
+                want["column"].as_u64().unwrap(),
+                "{key}"
+            );
+            let ranks: Vec<u32> = want["rank_spells"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v.as_u64().unwrap() as u32)
+                .collect();
+            assert_eq!(t.rank_spells, ranks, "{key}");
+            assert_eq!(
+                t.exceptional,
+                want["exceptional"].as_bool().unwrap_or(false),
+                "{key}"
+            );
+            match (&t.prereq, want.get("prereq")) {
+                (None, None) => {}
+                (Some(p), Some(w)) => {
+                    assert_eq!(p.key, w["key"].as_str().unwrap(), "{key}");
+                    assert_eq!(u64::from(p.rank), w["rank"].as_u64().unwrap(), "{key}");
+                }
+                (p, w) => panic!("{key}: prereq {p:?} against {w:?}"),
+            }
+            match (&t.client_spellmod, want.get("client_spellmod")) {
+                (None, None) => {}
+                (Some(m), Some(w)) => {
+                    assert_eq!(m.flat, w["type"] == "flat", "{key}");
+                    // vmangos `SpellModOp`.
+                    let op = match w["op"].as_str().unwrap() {
+                        "COST" => 14,
+                        "ALL_EFFECTS" => 8,
+                        op => panic!("{key}: op {op}"),
+                    };
+                    assert_eq!(m.op, op, "{key}");
+                    assert_eq!(u64::from(m.family_bit), w["family_bit"].as_u64().unwrap());
+                    let values: Vec<i32> = w["values"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|v| v.as_i64().unwrap() as i32)
+                        .collect();
+                    assert_eq!(m.per_rank, values, "{key}");
+                }
+                (m, w) => panic!("{key}: spell mod {m:?} against {w:?}"),
+            }
+            assert!(
+                !t.effects.is_empty(),
+                "{key}: the realm decides what it does"
+            );
+            for e in &t.effects {
+                assert_eq!(
+                    e.per_rank().len(),
+                    t.rank_spells.len(),
+                    "{key}: an effect for every rank"
+                );
+            }
+        }
+    }
+}

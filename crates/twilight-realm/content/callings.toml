@@ -123,3 +123,90 @@ effects = [
     { kind = "energize_rage", amount = { base = 9.6, per_level = 0.25 } },
     { kind = "periodic_rage", aura_spell_id = 29131, per_tick = 1, tick_ms = 1000, duration_ms = 10000 },
 ]
+
+# The Talent Tree, from `talent_tree` in the JSON (tests/content_callings.rs checks the seats, rank
+# spells, prerequisites and spell mods). Each talent is a real Talent.dbc row, so the stock frame
+# shows its name, icon and tooltip; `effects` is what the realm makes it do, one value per rank:
+#   skill_rage_cost  - the skill costs that much less rage
+#   skill_amount_pct - the skill's damage and buff amounts rise by that percent
+#   skill_rage       - the skill gives that much more rage
+#   skill_crit_pct   - the skill's critical strike chance rises by that percent
+#   melee_crit_pct   - every melee strike's critical strike chance rises by that percent
+#   crit_bleed       - a melee crit bleeds the target for that percent of the average swing
+# `client_spellmod` is the spell-mod cell the realm sends so the client's cost check and tooltips
+# agree: `op` 14 is COST (tenths of rage), 8 ALL_EFFECTS (percent).
+
+[[calling.talent_tab]]
+id = 900
+name = "Basic Warrior"
+background = "WarriorArms"
+
+[[calling.talent_tab.talent]]
+key = "improved_heroic_strike"
+talent_id = 124
+tier = 1
+column = 1
+rank_spells = [12282, 12663, 12664]
+effects = [{ kind = "skill_rage_cost", skill = "heroic_strike", per_rank = [1, 2, 3] }]
+client_spellmod = { flat = true, op = 14, family_bit = 6, per_rank = [-10, -20, -30] }
+
+[[calling.talent_tab.talent]]
+key = "cruelty"
+talent_id = 157
+tier = 1
+column = 2
+rank_spells = [12320, 12852, 12853]
+effects = [{ kind = "melee_crit_pct", per_rank = [1, 2, 3] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_rend"
+talent_id = 127
+tier = 1
+column = 3
+rank_spells = [12286, 12658, 12659]
+effects = [{ kind = "skill_amount_pct", skill = "rend", per_rank = [15, 25, 35] }]
+client_spellmod = { flat = false, op = 8, family_bit = 5, per_rank = [15, 25, 35] }
+
+[[calling.talent_tab.talent]]
+key = "improved_battle_shout"
+talent_id = 154
+tier = 1
+column = 4
+rank_spells = [12318, 12857, 12858]
+effects = [{ kind = "skill_amount_pct", skill = "battle_shout", per_rank = [5, 10, 15] }]
+client_spellmod = { flat = false, op = 8, family_bit = 16, per_rank = [5, 10, 15] }
+
+[[calling.talent_tab.talent]]
+key = "improved_charge"
+talent_id = 126
+tier = 2
+column = 1
+rank_spells = [12285, 12697]
+effects = [{ kind = "skill_rage", skill = "charge", per_rank = [3, 6] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_overpower"
+talent_id = 131
+tier = 2
+column = 2
+rank_spells = [12290, 12963]
+effects = [{ kind = "skill_crit_pct", skill = "overpower", per_rank = [25, 50] }]
+
+[[calling.talent_tab.talent]]
+key = "deep_wounds"
+talent_id = 121
+tier = 2
+column = 3
+rank_spells = [12834, 12849, 12867]
+prereq = { key = "improved_rend", rank = 3 }
+# vmangos: 12721 "Deep Wound", four ticks of 3 s.
+effects = [{ kind = "crit_bleed", aura_spell_id = 12721, tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_thunder_clap"
+talent_id = 128
+tier = 2
+column = 4
+rank_spells = [12287, 12665, 12666]
+effects = [{ kind = "skill_rage_cost", skill = "thunder_clap", per_rank = [1, 2, 4] }]
+client_spellmod = { flat = true, op = 14, family_bit = 7, per_rank = [-10, -20, -40] }

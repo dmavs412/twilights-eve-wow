@@ -21,6 +21,101 @@ pub struct CallingDef {
     pub shapeshift_form: u8,
     #[serde(rename = "skill")]
     pub skills: Vec<Skill>,
+    /// The Talent Tree: its tabs, as the stock talent frame shows them.
+    #[serde(default, rename = "talent_tab")]
+    pub talent_tabs: Vec<TalentTab>,
+}
+
+/// One page of a Talent Tree.
+#[derive(Debug, Deserialize)]
+pub struct TalentTab {
+    /// The client catalog's tab id, unique among every Calling's tabs.
+    pub id: u32,
+    pub name: String,
+    /// The `Interface\TalentFrame\<background>-…` art base.
+    pub background: String,
+    #[serde(rename = "talent")]
+    pub talents: Vec<TalentDef>,
+}
+
+/// One talent: a real `Talent.dbc` row re-seated on the Calling's grid, and what it does.
+#[derive(Debug, Deserialize)]
+pub struct TalentDef {
+    pub key: String,
+    /// The `Talent.dbc` id the client's `CMSG_LEARN_TALENT` carries.
+    pub talent_id: u32,
+    /// 1-based; tier `n` needs `5 × (n − 1)` points spent in the tab.
+    pub tier: u8,
+    /// 1-based, of 4.
+    pub column: u8,
+    /// The spell each rank teaches; their count is the talent's ranks.
+    pub rank_spells: Vec<u32>,
+    #[serde(default)]
+    pub prereq: Option<Prereq>,
+    /// An active talent (the Lua API's `isExceptional`).
+    #[serde(default)]
+    pub exceptional: bool,
+    /// What it does, rank by rank.
+    pub effects: Vec<TalentEffect>,
+    /// The spell-mod cell that makes the stock client's costs and tooltips agree with the realm.
+    #[serde(default)]
+    pub client_spellmod: Option<ClientSpellMod>,
+}
+
+/// A talent another needs, and the rank (1-based) it needs.
+#[derive(Debug, Deserialize)]
+pub struct Prereq {
+    pub key: String,
+    pub rank: u8,
+}
+
+/// One thing a talent does; `per_rank[r - 1]` is its size at rank `r`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum TalentEffect {
+    /// The skill costs this much less rage.
+    SkillRageCost { skill: String, per_rank: Vec<u32> },
+    /// The skill's damage and buff amounts rise by this percent.
+    SkillAmountPct { skill: String, per_rank: Vec<u32> },
+    /// The skill's rage gain rises by this many points.
+    SkillRage { skill: String, per_rank: Vec<u32> },
+    /// The skill's critical strike chance rises by this many percent.
+    SkillCritPct { skill: String, per_rank: Vec<u32> },
+    /// Every melee strike's critical strike chance rises by this many percent.
+    MeleeCritPct { per_rank: Vec<u32> },
+    /// A melee critical strike makes the target bleed for this percent of the average swing,
+    /// under `aura_spell_id`, a tick every `tick_ms` for `duration_ms`.
+    CritBleed {
+        aura_spell_id: u32,
+        tick_ms: u32,
+        duration_ms: u32,
+        per_rank: Vec<u32>,
+    },
+}
+
+impl TalentEffect {
+    /// The effect's size at each rank.
+    pub fn per_rank(&self) -> &[u32] {
+        match self {
+            Self::SkillRageCost { per_rank, .. }
+            | Self::SkillAmountPct { per_rank, .. }
+            | Self::SkillRage { per_rank, .. }
+            | Self::SkillCritPct { per_rank, .. }
+            | Self::MeleeCritPct { per_rank }
+            | Self::CritBleed { per_rank, .. } => per_rank,
+        }
+    }
+}
+
+/// An `SMSG_SET_FLAT_SPELL_MODIFIER` (or `_PCT_`) cell: `op` a vmangos `SpellModOp` (14 cost,
+/// 8 all effects), on the skills with SpellFamilyFlags bit `family_bit`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct ClientSpellMod {
+    pub flat: bool,
+    pub op: u8,
+    pub family_bit: u8,
+    /// The cell's value at each rank: tenths of rage for a cost, percent otherwise.
+    pub per_rank: Vec<i32>,
 }
 
 /// One skill: a 1.12.1 spell id, what it costs, what it needs and what it does.
