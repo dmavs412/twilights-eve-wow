@@ -100,6 +100,12 @@ impl TerrainStreamer {
         let spawned = self.tiles.values().filter(|t| t.furnished).count();
         (spawned, self.tiles.len())
     }
+
+    /// The map directory the tiles are for (`Kalimdor`), once streaming has begun: where a tile
+    /// outside the window is found.
+    pub fn map_dir(&self) -> Option<&str> {
+        self.map_dir.as_deref()
+    }
 }
 
 /// One loaded tile and everything it owns.
