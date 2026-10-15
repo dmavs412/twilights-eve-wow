@@ -33,15 +33,23 @@ impl Refusal {
 pub(crate) const CLASS_WEAPON: u32 = 2;
 pub(crate) const CLASS_ARMOR: u32 = 4;
 
+/// The required level the client is shown for every item: none, so no tooltip reads "Requires
+/// Level" and no move is refused for one. A template keeps its own level for the loot bands.
+pub(crate) const SHOWN_REQUIRED_LEVEL: u32 = 0;
+
 /// `CLASSMASK_WARRIOR`.
 const WARRIOR_MASK: i32 = 1;
+
+/// Whether a weapon subclass is one no Warrior ever wields: wands, and the unused spears,
+/// obsolete and exotic slots.
+fn never_warrior_weapon(subclass: u32) -> bool {
+    matches!(subclass, 9 | 11 | 12 | 17 | 19)
+}
 
 /// Whether `calling` knows a weapon or armour subclass.
 pub(crate) fn knows(calling: &CallingDef, class: u32, subclass: u32) -> bool {
     match (class, subclass) {
-        // Wands, and the unused spears, obsolete and exotic slots.
-        (CLASS_WEAPON, 9 | 11 | 12 | 17 | 19) => false,
-        (CLASS_WEAPON, _) => true,
+        (CLASS_WEAPON, sub) => !never_warrior_weapon(sub),
         // Rings, necks, trinkets, shirts and the like.
         (CLASS_ARMOR, 0) => true,
         (CLASS_ARMOR, sub) => calling.armour.iter().any(|a| a.subclasses().contains(&sub)),
@@ -78,7 +86,7 @@ fn vanilla_level(class: u32, subclass: u32) -> Option<u8> {
     match (class, subclass) {
         // Polearms.
         (CLASS_WEAPON, 6) => Some(20),
-        (CLASS_WEAPON, 9 | 11 | 12 | 17 | 19) => None,
+        (CLASS_WEAPON, sub) if never_warrior_weapon(sub) => None,
         (CLASS_WEAPON, _) => Some(1),
         // Plate.
         (CLASS_ARMOR, 4) => Some(40),

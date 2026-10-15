@@ -513,8 +513,8 @@ rank_spells = [20335, 20336, 20337]
 effects = [{ kind = "skill_amount_pct", skill = "seal_of_the_crusader", per_rank = [5, 10, 15] }]
 client_spellmods = [{ flat = false, op = 3, family_bit = 34, per_rank = [5, 10, 15] }]
 
-# Vanilla's 3% less mana a rank, doubled for the small rage costs and rounded: the Seals' 10 rage
-# loses 1/1/2/2/3, Judgement's 5 loses 0/1/1/1/2.
+# Vanilla's 3% less mana a rank, doubled for the small rage costs, rounded and at least 1 rage: the
+# Seals' 10 rage loses 1/1/2/2/3, Judgement's 5 loses 1/1/1/1/2.
 [[calling.talent_tab.talent]]
 key = "benediction"
 talent_id = 1407
@@ -524,14 +524,14 @@ rank_spells = [20101, 20102, 20103, 20104, 20105]
 effects = [
     { kind = "skill_rage_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
     { kind = "skill_rage_cost", skill = "seal_of_the_crusader", per_rank = [1, 1, 2, 2, 3] },
-    { kind = "skill_rage_cost", skill = "judgement", per_rank = [0, 1, 1, 1, 2] },
+    { kind = "skill_rage_cost", skill = "judgement", per_rank = [1, 1, 1, 1, 2] },
 ]
 # One cell per borrowed spell's own family bit: 33 Seal of Command, 34 Seal of the Crusader,
 # 35 Judgement.
 client_spellmods = [
     { flat = true, op = 14, family_bit = 33, per_rank = [-10, -10, -20, -20, -30] },
     { flat = true, op = 14, family_bit = 34, per_rank = [-10, -10, -20, -20, -30] },
-    { flat = true, op = 14, family_bit = 35, per_rank = [0, -10, -10, -10, -20] },
+    { flat = true, op = 14, family_bit = 35, per_rank = [-10, -10, -10, -10, -20] },
 ]
 
 [[calling.talent_tab.talent]]

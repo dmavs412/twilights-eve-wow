@@ -126,7 +126,7 @@ fn complete(c: &Char, a: &Active) -> bool {
     let Some(q) = content::quest(a.id) else {
         return false;
     };
-    // Ironclad's quest: offered, and never finished.
+    // An Advancement into a Calling with no kit: offered, and never finished.
     if q.advancement.as_ref().is_some_and(|adv| !adv.completable) {
         return false;
     }

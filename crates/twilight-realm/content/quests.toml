@@ -266,7 +266,7 @@ completion = "Then it is done. Forget your old habits, $N: you are a Vanguard no
 money = 0
 tokens = 0
 
-# Ironclad (Tier 2) has no kit yet: the quest is offered at Vanguard's cap and never finishes.
+# Ironclad (Tier 2) has no kit: the quest is offered at Vanguard's cap and never finishes.
 [[quest]]
 id = 64002
 giver = 5810

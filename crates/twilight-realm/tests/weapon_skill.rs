@@ -1,6 +1,6 @@
-//! Every skill line the Warrior knows sits at the level's maximum, 5 × level, current and max:
-//! at login, after a level-up, after Advancement, and whatever weapon is in hand. The slice has
-//! no Weapon Master and no skill-ups. Played through the realm's seam, read off the player's
+//! Every weapon line the Warrior knows sits at the level's maximum, 5 × level, current and max,
+//! and every armour line its Calling allows at 1 of 1: at login, after a level-up, after
+//! Advancement, and whatever weapon is in hand. The slice has no Weapon Master and no skill-ups. Played through the realm's seam, read off the player's
 //! `PLAYER_SKILL_INFO` fields as the client holds them.
 
 mod common;
@@ -24,6 +24,11 @@ const DEFENSE: u16 = 95;
 const WEAPONS: [u16; 14] = [
     44, 172, 45, 46, 54, 160, 229, 43, 55, 136, 473, 173, 176, 226,
 ];
+
+/// The armour lines a Basic Warrior wears: Cloth, Leather, Mail and Shield.
+const BASIC_ARMOUR: [u16; 4] = [415, 414, 413, 433];
+/// A Vanguard's and a Zealot's: the Basic Warrior's and Plate Mail.
+const PLATE_ARMOUR: [u16; 5] = [415, 414, 413, 293, 433];
 
 const MAIN_HAND: u8 = 15;
 const BACKPACK: u8 = 23;
@@ -50,12 +55,15 @@ fn skill_lines(f: &ObjectFields) -> BTreeMap<u16, (u16, u16)> {
     lines
 }
 
-/// What a Warrior of `level` should read: every line it knows at `5 × level`.
-fn at_max(level: u16) -> BTreeMap<u16, (u16, u16)> {
+/// What a Warrior of `level` wearing `armour` should read: every weapon line at `5 × level`,
+/// every armour line at 1 of 1.
+fn at_max(level: u16, armour: &[u16]) -> BTreeMap<u16, (u16, u16)> {
     let skill = 5 * level;
     let mut ids = vec![UNARMED, DEFENSE];
     ids.extend(WEAPONS);
-    ids.into_iter().map(|id| (id, (skill, skill))).collect()
+    let mut lines: BTreeMap<_, _> = ids.into_iter().map(|id| (id, (skill, skill))).collect();
+    lines.extend(armour.iter().map(|&id| (id, (1, 1))));
+    lines
 }
 
 fn with_dev_xp(level: u8, calling: &str, xp: f32) -> (Realm, u64, Vec<SessionEvent>) {
@@ -80,29 +88,41 @@ fn with_dev_xp(level: u8, calling: &str, xp: f32) -> (Realm, u64, Vec<SessionEve
 #[test]
 fn a_new_warrior_knows_every_line_at_five() {
     let (_, me, events) = questing(1, &[], 0, &[]);
-    assert_eq!(skill_lines(&descriptor(&events, me)), at_max(1));
+    assert_eq!(
+        skill_lines(&descriptor(&events, me)),
+        at_max(1, &BASIC_ARMOUR)
+    );
 }
 
 #[test]
 fn a_level_25_vanguard_knows_every_line_at_125() {
     let (_, me, events) = questing_as("vanguard", 25, &[], 0, &[]);
-    assert_eq!(skill_lines(&descriptor(&events, me)), at_max(25));
+    assert_eq!(
+        skill_lines(&descriptor(&events, me)),
+        at_max(25, &PLATE_ARMOUR)
+    );
 }
 
 #[test]
 fn a_level_up_raises_every_line_to_the_new_maximum() {
-    let (mut realm, me, mut events) = with_dev_xp(10, "warrior", 1.0);
-    assert_eq!(skill_lines(&descriptor(&events, me)), at_max(10));
+    let (mut realm, me, mut events) = with_dev_xp(10, "vanguard", 1.0);
+    assert_eq!(
+        skill_lines(&descriptor(&events, me)),
+        at_max(10, &PLATE_ARMOUR)
+    );
     events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
     let now = descriptor(&events, me);
     assert_eq!(now.unit_level(), Some(11));
-    assert_eq!(skill_lines(&now), at_max(11));
+    assert_eq!(skill_lines(&now), at_max(11, &PLATE_ARMOUR));
 }
 
 #[test]
-fn advancement_brings_every_line_back_to_five() {
+fn advancement_brings_every_line_back_to_five_and_adds_plate() {
     let (mut realm, me, mut events) = questing(10, &[], 0, &[]);
-    assert_eq!(skill_lines(&descriptor(&events, me)), at_max(10));
+    assert_eq!(
+        skill_lines(&descriptor(&events, me)),
+        at_max(10, &BASIC_ARMOUR)
+    );
     let uzzek = giver(&events, UZZEK);
     realm.handle(RealmCommand::QuestGiverQueryQuest {
         npc: uzzek,
@@ -113,14 +133,18 @@ fn advancement_brings_every_line_back_to_five() {
     events.extend(hand_in(&mut realm, uzzek, THE_WARRIORS_PATH));
     let now = descriptor(&events, me);
     assert_eq!(now.unit_level(), Some(1));
-    assert_eq!(skill_lines(&now), at_max(1));
+    assert_eq!(skill_lines(&now), at_max(1, &PLATE_ARMOUR));
 }
 
 #[test]
 fn the_weapon_in_hand_changes_no_line() {
     for weapon in [FINE_SCIMITAR, CROOKED_STAFF] {
         let (_, me, events) = warrior_with(8, 0, &[(MAIN_HAND, weapon, 1)]);
-        assert_eq!(skill_lines(&descriptor(&events, me)), at_max(8), "{weapon}");
+        assert_eq!(
+            skill_lines(&descriptor(&events, me)),
+            at_max(8, &BASIC_ARMOUR),
+            "{weapon}"
+        );
     }
 
     // Swapping the staff in for the sword keeps every line where it was.
@@ -140,5 +164,5 @@ fn the_weapon_in_hand_changes_no_line() {
         Some(CROOKED_STAFF),
         "the staff is in hand"
     );
-    assert_eq!(skill_lines(&now), at_max(8));
+    assert_eq!(skill_lines(&now), at_max(8, &BASIC_ARMOUR));
 }

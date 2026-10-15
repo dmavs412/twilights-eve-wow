@@ -184,9 +184,14 @@ const WEAPON_SKILLS: [(u32, u32); 14] = [
     (226, 18), // Crossbows
 ];
 
-/// The sheet's gear fields: each stat's green part, gear's flat attack power, and the weapon
-/// skill lines the character knows, at the level's maximum.
-pub(crate) fn sheet_pairs(s: &WarriorStats) -> Vec<(u16, u32)> {
+/// `PLAYER_SKILL_INFO` slots after the weapon lines: the armour lines, one slot per armour kind.
+const ARMOUR_SKILL_SLOT: u16 = WEAPON_SKILL_SLOT + WEAPON_SKILLS.len() as u16;
+const ARMOUR_KINDS: usize = 5;
+
+/// The sheet's gear fields: each stat's green part, gear's flat attack power, the weapon skill
+/// lines the character knows at the level's maximum, and the armour lines its Calling allows at
+/// 1 of 1, as a 1.12 armour skill reads. The armour slots past the Calling's are cleared.
+pub(crate) fn sheet_pairs(c: &Char, s: &WarriorStats) -> Vec<(u16, u32)> {
     let mut pairs: Vec<(u16, u32)> = (0..5)
         .map(|i| (PLAYER_FIELD_POSSTAT0 + i as u16, s.bonus[i]))
         .collect();
@@ -199,6 +204,14 @@ pub(crate) fn sheet_pairs(s: &WarriorStats) -> Vec<(u16, u32)> {
     for (i, (id, _)) in WEAPON_SKILLS.iter().enumerate() {
         let base = PLAYER_SKILL_INFO_1_1 + 3 * (WEAPON_SKILL_SLOT + i as u16);
         pairs.extend([(base, *id), (base + 1, skill | skill << 16), (base + 2, 0)]);
+    }
+    let armour = &callings::of(c.calling).armour;
+    for i in 0..ARMOUR_KINDS {
+        let base = PLAYER_SKILL_INFO_1_1 + 3 * (ARMOUR_SKILL_SLOT + i as u16);
+        let (id, value) = armour
+            .get(i)
+            .map_or((0, 0), |a| (a.skill_line(), 1 | 1 << 16));
+        pairs.extend([(base, id), (base + 1, value), (base + 2, 0)]);
     }
     pairs
 }
@@ -307,15 +320,20 @@ impl Moved {
     }
 }
 
-/// A refused move: `SMSG_INVENTORY_CHANGE_FAILURE`.
-fn refuse(reason: u8, item: u64, events: &mut Vec<SessionEvent>) {
-    events.push(SessionEvent::InventoryFailure {
+/// `SMSG_INVENTORY_CHANGE_FAILURE` for `item` (0 for none). It never names a level: no item
+/// requires one ([`gear::SHOWN_REQUIRED_LEVEL`]).
+pub(crate) fn inventory_failure(reason: u8, item: u64) -> SessionEvent {
+    SessionEvent::InventoryFailure {
         reason,
-        // No item is refused for level.
         required_level: None,
         item_guid: item,
         bag_slot: 0,
-    });
+    }
+}
+
+/// A refused move.
+fn refuse(reason: u8, item: u64, events: &mut Vec<SessionEvent>) {
+    events.push(inventory_failure(reason, item));
 }
 
 fn refusal(r: Refusal, item: u64, events: &mut Vec<SessionEvent>) {
