@@ -8,5 +8,7 @@
 item = [
   # The stock 1.12 Hearthstone, with its hour-long category cooldown cut to five minutes: the
   # spell's 10 s cast returns the player to the Crossroads (`hearth.rs`).
+  # Vanilla's Warrior starting weapon, worn in the main hand from creation.
+  { entry = 25, name = "Worn Shortsword", quality = 1, item_level = 2, required_level = 1, class = 2, subclass = 7, inventory_type = 21, display_id = 1542, speed_ms = 1900, durability = 20, sell_price = 7, buy_price = 35, buy_count = 1, stackable = 1, sheath = 3, material = 1, damage = [[1.0, 3.0, 0]] },
   { entry = 6948, name = "Hearthstone", quality = 1, item_level = 1, class = 15, display_id = 6418, bonding = 1, max_count = 1, stackable = 1, use_spell = 8690, use_cooldown_ms = 300000, use_category_cooldown_ms = 0 },
 ]

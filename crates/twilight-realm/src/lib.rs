@@ -131,6 +131,15 @@ pub enum RealmCommand {
         src_slot: u8,
         dst_bag: u8,
     },
+    /// Use the item at a wire position (bag 255 is the player's own slots): the Hearthstone.
+    UseItem {
+        bag: u8,
+        slot: u8,
+    },
+    /// The client snapped to the teleport carrying `counter`.
+    TeleportAck {
+        counter: u32,
+    },
     /// Destroy `count` of the item at a wire position, 0 for all of it.
     DestroyItem {
         bag: u8,
@@ -203,8 +212,11 @@ impl Realm {
                 position,
                 orientation,
             } => {
-                if let Some(w) = &self.world {
-                    self.characters.set_position(w.guid, position, orientation);
+                if let Some(w) = &mut self.world {
+                    let from = self.characters.get(w.guid).map(|c| c.position);
+                    if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
+                        self.characters.set_position(w.guid, position, orientation);
+                    }
                 }
             }
             RealmCommand::SetSelection { guid } => {
@@ -223,6 +235,19 @@ impl Realm {
                 }
             }
             RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target),
+            RealmCommand::UseItem { bag, slot } => {
+                // Equipped bags are not modelled: only the player's own slots hold items.
+                if let (Some(w), 255) = (&mut self.world, bag) {
+                    if let Some(c) = self.characters.get(w.guid) {
+                        w.use_item(slot, c, &mut self.events);
+                    }
+                }
+            }
+            RealmCommand::TeleportAck { counter } => {
+                if let Some(w) = &mut self.world {
+                    w.teleport_ack(counter);
+                }
+            }
             RealmCommand::CancelAura { spell_id } => {
                 if let Some(w) = &mut self.world {
                     w.cancel_aura(spell_id, &mut self.events);

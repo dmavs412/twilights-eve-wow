@@ -7,7 +7,7 @@
 //! skill answers nothing until the swing it replaces.
 
 use benilla_protocol::messages::{
-    ActionButton, MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpellDamageLog,
+    ActionButton, MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpellCooldown, SpellDamageLog,
     SpellEnergizeLog,
 };
 use benilla_protocol::SessionEvent;
@@ -16,6 +16,7 @@ use super::{in_front, melee_reach, InWorld, Ticked};
 use crate::callings::{self, Effect, Skill, Target, Weapon};
 use crate::characters::Char;
 use crate::fields::*;
+use crate::items;
 use crate::mobs::{distance, State};
 use crate::rng::Rng;
 use crate::rules::melee::{armor_reduced, Outcome, PlayerOffense, ROLL};
@@ -94,8 +95,21 @@ pub(super) struct Skills {
     /// Seconds the caster is held in combat (Bloodrage).
     combat_hold: f32,
     auras: Vec<Aura>,
+    /// The timed cast under way: an item's on-use spell (the Hearthstone's).
+    casting: Option<TimedCast>,
     /// The player's guid, for the aura packets only the player's own auras get.
     me: u64,
+}
+
+/// A cast with a cast bar, from an item.
+#[derive(Debug, Clone, Copy)]
+struct TimedCast {
+    spell_id: u32,
+    /// The item it is cast from, and that item's template entry.
+    item: u64,
+    entry: u32,
+    /// Seconds until it goes off.
+    left: f32,
 }
 
 /// One aura on a unit.
@@ -298,7 +312,8 @@ impl Skills {
     }
 }
 
-/// `SMSG_INITIAL_SPELLS`: the current Calling's skills, with nothing cooling down.
+/// `SMSG_INITIAL_SPELLS`: the current Calling's skills, and the item cooldowns still running from
+/// the save (the skills' own start afresh each session).
 pub(super) fn spell_book(c: &Char) -> SessionEvent {
     SessionEvent::SpellBook {
         spell_ids: callings::of(c.calling)
@@ -306,7 +321,20 @@ pub(super) fn spell_book(c: &Char) -> SessionEvent {
             .iter()
             .map(|s| s.spell_id)
             .collect(),
-        cooldowns: Vec::new(),
+        cooldowns: c
+            .item_cooldowns
+            .iter()
+            .filter_map(|&(entry, left)| {
+                let t = items::template(entry)?;
+                Some(SpellCooldown {
+                    spell_id: t.use_spell as u16,
+                    item_id: entry as u16,
+                    category: 0,
+                    spell_cd_ms: (left * 1000.0).round() as u32,
+                    category_cd_ms: 0,
+                })
+            })
+            .collect(),
     }
 }
 
@@ -940,6 +968,12 @@ impl InWorld {
             *left -= dt;
         }
         s.cooldowns.retain(|(_, left)| *left > 0.0);
+        for (_, left) in &mut c.item_cooldowns {
+            *left -= dt;
+        }
+        c.item_cooldowns.retain(|(_, left)| *left > 0.0);
+        self.timed_cast_tick(dt, c, events);
+        let s = &mut self.skills;
         if let Some((_, left)) = &mut s.dodged {
             *left -= dt;
             if *left <= 0.0 {
@@ -1049,5 +1083,118 @@ fn weapon_roll(stats: &WarriorStats, weapon: Weapon, rng: &mut Rng) -> f32 {
             roll - formulas::ap_damage(stats.attack_power, speed)
                 + formulas::ap_damage(stats.attack_power, formulas::NORMALIZED_SPEED_ONE_HAND)
         }
+    }
+}
+
+// ── Item casts ────────────────────────────────────────────────────────────────────────────────────
+//
+// An item's on-use spell with a cast bar: `SMSG_SPELL_START` with its cast time, then, unless
+// moving or a hit interrupts it, `SMSG_CAST_RESULT` (ok), `SMSG_SPELL_GO` naming the item, its
+// effect, and the item's cooldown, which the character keeps (it is saved).
+
+/// `SPELL_FAILED_INTERRUPTED`.
+const SPELL_FAILED_INTERRUPTED: u8 = 0x23;
+/// `SPELL_FAILED_SPELL_IN_PROGRESS`.
+const SPELL_FAILED_SPELL_IN_PROGRESS: u8 = 0x61;
+/// `CAST_FLAG_UNKNOWN2`, which vmangos sets on every player cast's start and go.
+const CAST_FLAG_UNKNOWN2: u16 = 0x02;
+
+impl InWorld {
+    /// `CMSG_USE_ITEM` on the item at player slot `slot`: its on-use spell starts casting, or is
+    /// refused with the stock reason. An item with no on-use spell the realm runs does nothing.
+    pub(crate) fn use_item(&mut self, slot: u8, c: &Char, events: &mut Vec<SessionEvent>) {
+        let Some(item) = c.inventory.get(slot) else {
+            return;
+        };
+        let Some(t) = items::template(item.entry) else {
+            return;
+        };
+        let Some(cast_ms) = super::hearth::cast_time_ms(t.use_spell) else {
+            return;
+        };
+        let spell_id = t.use_spell;
+        let reason = if !self.player.alive() {
+            Some(SPELL_FAILED_CASTER_DEAD)
+        } else if self.skills.casting.is_some() {
+            Some(SPELL_FAILED_SPELL_IN_PROGRESS)
+        } else if c
+            .item_cooldowns
+            .iter()
+            .any(|&(e, left)| e == item.entry && left > READY_SLACK_SECS)
+        {
+            Some(SPELL_FAILED_NOT_READY)
+        } else {
+            None
+        };
+        if let Some(reason) = reason {
+            events.push(refused(spell_id, reason));
+            return;
+        }
+        self.skills.casting = Some(TimedCast {
+            spell_id,
+            item: item.guid,
+            entry: item.entry,
+            left: cast_ms as f32 / 1000.0,
+        });
+        events.push(SessionEvent::SpellStart {
+            caster: self.guid,
+            spell_id,
+            cast_flags: CAST_FLAG_UNKNOWN2,
+            cast_time_ms: cast_ms,
+            target: None,
+            ammo_display_id: None,
+        });
+    }
+
+    /// The timed cast under way stops short (`Spell::cancel`): the bar shows "Interrupted", and
+    /// nothing goes on cooldown.
+    pub(crate) fn interrupt_cast(&mut self, events: &mut Vec<SessionEvent>) {
+        let Some(cast) = self.skills.casting.take() else {
+            return;
+        };
+        events.push(SessionEvent::SpellFailedOther {
+            caster: self.guid,
+            spell_id: cast.spell_id,
+        });
+        events.push(refused(cast.spell_id, SPELL_FAILED_INTERRUPTED));
+    }
+
+    /// The timed cast's clock: when it runs out the spell goes off.
+    fn timed_cast_tick(&mut self, dt: f32, c: &mut Char, events: &mut Vec<SessionEvent>) {
+        let Some(cast) = &mut self.skills.casting else {
+            return;
+        };
+        cast.left -= dt;
+        if cast.left > CLOCK_EPSILON {
+            return;
+        }
+        let cast = *cast;
+        self.skills.casting = None;
+        events.push(SessionEvent::CastResult {
+            spell_id: cast.spell_id,
+            success: true,
+            reason: None,
+            arg: None,
+        });
+        events.push(SessionEvent::SpellGo {
+            caster: self.guid,
+            spell_id: cast.spell_id,
+            cast_flags: CAST_FLAG_UNKNOWN2,
+            hits: vec![self.guid],
+            misses: Vec::new(),
+            target: None,
+            go_target: None,
+            dest: None,
+            ammo_display_id: None,
+            item_caster: Some(cast.item),
+        });
+        if let Some(t) = items::template(cast.entry) {
+            if t.use_cooldown_ms > 0 {
+                c.item_cooldowns.retain(|&(e, _)| e != cast.entry);
+                c.item_cooldowns
+                    .push((cast.entry, t.use_cooldown_ms as f32 / 1000.0));
+            }
+        }
+        self.item_spell_effect(cast.spell_id, c, events);
     }
 }

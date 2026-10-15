@@ -54,7 +54,7 @@ fn the_character_sheet_shows_the_realms_stats() {
     let mut realm = realm();
     let (guid, events) = enter_new(&mut realm, "Anduin", HUMAN);
     let f = own_create(&events, guid);
-    // A naked level-1 human warrior (§5 of the combat reference).
+    // A level-1 human warrior (§5 of the combat reference), with the Worn Shortsword in hand.
     assert_eq!(f.unit_max_health(), Some(60));
     assert_eq!(f.unit_health(), Some(60));
     assert_eq!(f.unit_attack_power(), Some(29));
@@ -67,9 +67,10 @@ fn the_character_sheet_shows_the_realms_stats() {
         (0..5).map(|i| f.unit_stat(i).unwrap()).collect::<Vec<_>>(),
         [23, 20, 22, 20, 20]
     );
-    assert!((f.unit_min_damage().unwrap() - 5.143).abs() < 1e-3);
-    assert!((f.unit_max_damage().unwrap() - 6.143).abs() < 1e-3);
-    assert_eq!(f.unit_base_attack_time(0), Some(2000));
+    // 1-3 damage plus 29 attack power over a 1.9 s swing.
+    assert!((f.unit_min_damage().unwrap() - 4.936).abs() < 1e-3);
+    assert!((f.unit_max_damage().unwrap() - 6.936).abs() < 1e-3);
+    assert_eq!(f.unit_base_attack_time(0), Some(1900));
     // The Attack and Defense rows: Unarmed and Defense at 5 of 5.
     let skills: Vec<_> = (0..2)
         .map(|s| f.player_skill(s).map(|k| (k.skill_id, k.value, k.max)))

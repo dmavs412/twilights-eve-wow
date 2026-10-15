@@ -188,9 +188,9 @@ fn battle_shout_needs_its_rage_and_raises_attack_power_for_two_minutes() {
     let aura = view.aura(me, BATTLE_SHOUT).expect("the shout's buff");
     assert!(aura.is_cancelable());
     assert_eq!(view.fields(me).unit_attack_power_mods(), (15, 0));
-    // 15 attack power is 15 / 14 damage a second, over a 2 s unarmed swing.
+    // 15 attack power is 15 / 14 damage a second, over the Worn Shortsword's 1.9 s swing.
     let gained = view.fields(me).unit_min_damage().unwrap() - min_before;
-    assert!((gained - 15.0 / 14.0 * 2.0).abs() < 1e-3, "{gained}");
+    assert!((gained - 15.0 / 14.0 * 1.9).abs() < 1e-3, "{gained}");
 
     view.run(&mut realm, 120.5);
     assert_eq!(view.aura(me, BATTLE_SHOUT), None, "faded");

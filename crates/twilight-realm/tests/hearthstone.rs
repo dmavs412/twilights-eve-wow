@@ -98,7 +98,9 @@ fn cast_failure(events: &[SessionEvent]) -> Option<(u32, Option<u8>)> {
 
 fn at_crossroads(position: [f32; 3]) -> bool {
     let [x, y, z, _] = CROSSROADS;
-    (position[0] - x).abs() < 0.01 && (position[1] - y).abs() < 0.01 && (position[2] - z).abs() < 0.01
+    (position[0] - x).abs() < 0.01
+        && (position[1] - y).abs() < 0.01
+        && (position[2] - z).abs() < 0.01
 }
 
 #[test]
@@ -147,7 +149,11 @@ fn using_it_casts_for_ten_seconds_then_returns_the_player_to_the_crossroads() {
     let events = run(&mut realm, 0.3);
     assert!(events.iter().any(|e| matches!(
         e,
-        SessionEvent::CastResult { spell_id: HEARTH_SPELL, success: true, .. }
+        SessionEvent::CastResult {
+            spell_id: HEARTH_SPELL,
+            success: true,
+            ..
+        }
     )));
     assert!(events.iter().any(|e| matches!(
         e,
@@ -160,7 +166,10 @@ fn using_it_casts_for_ten_seconds_then_returns_the_player_to_the_crossroads() {
 
     // The realm has the player there too: logged out, the roster says so.
     realm.handle(RealmCommand::Logout);
-    let c = roster(&mut realm).into_iter().find(|c| c.guid == me).unwrap();
+    let c = roster(&mut realm)
+        .into_iter()
+        .find(|c| c.guid == me)
+        .unwrap();
     assert!(at_crossroads([c.position.x, c.position.y, c.position.z]));
 }
 
@@ -185,7 +194,10 @@ fn a_move_sent_before_the_client_saw_the_teleport_does_not_undo_it() {
     });
     realm.handle(RealmCommand::TeleportAck { counter });
     realm.handle(RealmCommand::Logout);
-    let c = roster(&mut realm).into_iter().find(|c| c.guid == me).unwrap();
+    let c = roster(&mut realm)
+        .into_iter()
+        .find(|c| c.guid == me)
+        .unwrap();
     assert!(at_crossroads([c.position.x, c.position.y, c.position.z]));
 }
 
@@ -274,7 +286,10 @@ fn taking_damage_interrupts_the_cast() {
             }
         )
     });
-    let (hit, failed) = (hit.expect("the mob landed a hit"), failed.expect("an interrupt"));
+    let (hit, failed) = (
+        hit.expect("the mob landed a hit"),
+        failed.expect("an interrupt"),
+    );
     assert!(hit < failed, "the hit came first");
     assert_eq!(teleport(&events), None);
 }
@@ -309,7 +324,7 @@ fn after_hearthing_the_stone_rests_for_five_minutes() {
         Some((HEARTH_SPELL, Some(SPELL_FAILED_NOT_READY)))
     );
 
-    run(&mut realm, 289.0);
+    run(&mut realm, 299.0);
     realm.handle(use_hearthstone());
     assert_eq!(spell_start(&drain(&mut realm)), None, "not yet");
 
