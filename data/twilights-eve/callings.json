@@ -348,8 +348,12 @@
           "borrowed": { "from_class": 2, "family_bit": 34 },
           "realm": {
             "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self",
-            "effects": [{ "kind": "seal", "duration_ms": 30000, "seal": { "kind": "crusader" } }],
-            "effects_note": "A 30 s self Seal that replaces any other. Its attack power, attack speed and lighter hits, and its judgement, are not modelled yet."
+            "effects": [
+              { "kind": "seal", "duration_ms": 30000,
+                "seal": { "kind": "crusader", "attack_power": { "base": 20.0, "per_level": 4.0 }, "haste_pct": 40,
+                          "judgement_spell_id": 20300, "judgement_duration_ms": 10000, "holy_taken_pct": 20 } }
+            ],
+            "effects_note": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target."
           },
           "vanilla_reference": "R1 21082 L6 +31 AP, R3 20305 L22 +94 AP, R6 20308 +306 AP; every rank 40% faster. R3 sits mid Zealot band.",
           "tooltip_note": "Tooltip says 94 attack power and 40% faster."
@@ -431,7 +435,8 @@
             "background": "PaladinCombat",
             "talents": [
               { "key": "improved_seal_of_the_crusader", "talent_id": 1464, "source_tab_id": 381, "name": "Improved Seal of the Crusader", "tier": 1, "column": 2, "rank_spells": [20335, 20336, 20337],
-                "realm_effect": "Not modelled yet: waits on Seal of the Crusader's attack power (#25). Learnable, and counts toward the row." },
+                "realm_effect": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
+                "client_spellmods": [{ "type": "pct", "op": "EFFECT1", "family_bit": 34, "values": [5, 10, 15] }] },
               { "key": "benediction", "talent_id": 1407, "source_tab_id": 381, "name": "Benediction", "tier": 1, "column": 3, "rank_spells": [20101, 20102, 20103, 20104, 20105],
                 "realm_effect": "The Seals cost 1/1/2/2/3 less rage and Judgement 0/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs and rounded).",
                 "client_spellmods_note": "The realm's own cells, on the family bits the client gives the borrowed spells (33 Seal of Command, 34 Seal of the Crusader, 35 Judgement); Benediction's rank spells carry vanilla's Paladin mana-percent mods instead.",

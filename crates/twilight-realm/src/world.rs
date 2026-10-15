@@ -357,7 +357,7 @@ impl InWorld {
             return;
         }
         p.refused = None;
-        p.swing_timer = clock::secs(p.stats.attack_time_ms);
+        p.swing_timer = clock::secs(cast::buffed(&p.stats, &self.skills).attack_time_ms);
 
         let from_front = in_front(mob.orientation, mob.position, c.position);
         // A queued Heroic Strike takes this swing's place.

@@ -178,8 +178,18 @@ enum AuraKind {
     Heal {
         per_tick: u32,
     },
-    /// The player's one active Seal.
-    Seal(Seal),
+    /// The player's one active Seal, and the attack power it adds (Seal of the Crusader's, sized
+    /// when cast).
+    Seal {
+        seal: Seal,
+        attack_power: u32,
+    },
+    /// The unit takes `pct`% more holy damage (Judgement of the Crusader); the player's landed
+    /// swings at it put it back to its full `duration_ms`.
+    HolyTaken {
+        pct: u32,
+        duration_ms: u32,
+    },
 }
 
 impl AuraKind {
@@ -192,7 +202,7 @@ impl AuraKind {
                 | AuraKind::DamagePct { .. }
                 | AuraKind::Sweeping { .. }
                 | AuraKind::Heal { .. }
-                | AuraKind::Seal(_)
+                | AuraKind::Seal { .. }
         )
     }
 }
@@ -212,9 +222,41 @@ impl Skills {
             .filter(|a| a.unit == self.me)
             .map(|a| match a.kind {
                 AuraKind::AttackPower(n) => n,
+                AuraKind::Seal { attack_power, .. } => attack_power,
                 _ => 0,
             })
             .sum()
+    }
+
+    /// How much faster the player's buffs make their swings, in percent (Seal of the
+    /// Crusader's).
+    fn haste_pct(&self) -> u32 {
+        match self.seal() {
+            Some(Seal::Crusader { haste_pct, .. }) => haste_pct,
+            _ => 0,
+        }
+    }
+
+    /// The percent more holy damage `unit` takes (Judgement of the Crusader).
+    fn holy_taken_pct(&self, unit: u64) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .map(|a| match a.kind {
+                AuraKind::HolyTaken { pct, .. } => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// A landed swing at `unit` puts its judgement back to its full duration ("Your melee
+    /// strikes will refresh the spell's duration").
+    fn refresh_judgement(&mut self, unit: u64) {
+        for a in self.auras.iter_mut().filter(|a| a.unit == unit) {
+            if let AuraKind::HolyTaken { duration_ms, .. } = a.kind {
+                a.left = clock::secs(duration_ms);
+            }
+        }
     }
 
     /// The percents the player's buffs raise their maximum health by, raise the physical damage
@@ -272,7 +314,7 @@ impl Skills {
             .iter()
             .filter(|a| a.unit == self.me)
             .find_map(|a| match a.kind {
-                AuraKind::Seal(seal) => Some(seal),
+                AuraKind::Seal { seal, .. } => Some(seal),
                 _ => None,
             })
     }
@@ -499,10 +541,17 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
         s.min_damage += extra;
         s.max_damage += extra;
     }
+    // Faster swings, each hit cut to match: the haste alone adds no damage a second.
+    let haste = skills.haste_pct();
+    if haste > 0 {
+        s.attack_time_ms = seals::hasted_attack_time(s.attack_time_ms, haste);
+        s.min_damage = seals::haste_cut_damage(s.min_damage, haste);
+        s.max_damage = seals::haste_cut_damage(s.max_damage, haste);
+    }
     s
 }
 
-/// The sheet fields buffs move: the attack power mods and the damage they add.
+/// The sheet fields buffs move: the attack power mods, the damage they add and the swing time.
 fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
     let s = buffed(stats, skills);
     vec![
@@ -512,6 +561,8 @@ fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
         ),
         (UNIT_FIELD_MINDAMAGE, float(s.min_damage)),
         (UNIT_FIELD_MAXDAMAGE, float(s.max_damage)),
+        (UNIT_FIELD_BASEATTACKTIME, s.attack_time_ms),
+        (UNIT_FIELD_BASEATTACKTIME + 1, s.attack_time_ms),
     ]
 }
 
@@ -986,23 +1037,40 @@ impl InWorld {
                     |a| {
                         a.unit == me
                             && a.spell_id != skill.spell_id
-                            && matches!(a.kind, AuraKind::Seal(_))
+                            && matches!(a.kind, AuraKind::Seal { .. })
                     },
                     events,
                 );
                 self.faded(&gone, events);
-                let a = aura(AuraKind::Seal(seal), skill.spell_id, duration_ms, 0);
-                self.skills.apply(a, events);
+                // Talents that raise the Seal's amounts (Improved Seal of the Crusader) raise its
+                // attack power and its judgement's holy damage taken alike.
+                let mut seal = seal;
+                let attack_power = match &mut seal {
+                    Seal::Crusader {
+                        attack_power,
+                        holy_taken_pct,
+                        ..
+                    } => {
+                        *holy_taken_pct = scaled(*holy_taken_pct, pct);
+                        sized(*attack_power)
+                    }
+                    Seal::Command { .. } => 0,
+                };
+                let kind = AuraKind::Seal { seal, attack_power };
+                self.skills
+                    .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
+                let sheet = buff_sheet(&self.player.stats, &self.skills);
+                events.push(values(self.guid, &sheet));
             }
             Effect::Judgement => {
                 let me = self.guid;
                 let gone = self.skills.remove_where(
-                    |a| a.unit == me && matches!(a.kind, AuraKind::Seal(_)),
+                    |a| a.unit == me && matches!(a.kind, AuraKind::Seal { .. }),
                     events,
                 );
                 self.faded(&gone, events);
                 let judged = gone.iter().find_map(|a| match a.kind {
-                    AuraKind::Seal(seal) => Some(seal),
+                    AuraKind::Seal { seal, .. } => Some(seal),
                     _ => None,
                 });
                 match judged {
@@ -1014,14 +1082,27 @@ impl InWorld {
                         let raw = sized(judgement);
                         self.holy_hit(judgement_spell_id, target, raw, c, rng, events, ticked);
                     }
-                    Some(Seal::Crusader) | None => {}
+                    Some(Seal::Crusader {
+                        judgement_spell_id,
+                        judgement_duration_ms,
+                        holy_taken_pct,
+                        ..
+                    }) => {
+                        let kind = AuraKind::HolyTaken {
+                            pct: holy_taken_pct,
+                            duration_ms: judgement_duration_ms,
+                        };
+                        let a = aura(kind, judgement_spell_id, judgement_duration_ms, 0);
+                        self.skills.apply(a, events);
+                    }
+                    None => {}
                 }
             }
         }
     }
 
-    /// A white swing of the player's landed on `target`: the active Seal's proc (Seal of
-    /// Command's holy hit).
+    /// A white swing of the player's landed on `target`: its judgement lasts afresh, and the
+    /// active Seal procs (Seal of Command's holy hit).
     pub(super) fn seal_swing_landed(
         &mut self,
         target: u64,
@@ -1030,6 +1111,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
+        self.skills.refresh_judgement(target);
         let Some(Seal::Command {
             procs_per_minute,
             weapon_pct,
@@ -1069,6 +1151,7 @@ impl InWorld {
         };
         let school = School::Holy;
         let damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
+        let damage = seals::holy_taken(damage, self.skills.holy_taken_pct(target));
         events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
             target,
             attacker: self.guid,
@@ -1604,7 +1687,7 @@ impl InWorld {
         for a in gone {
             match a.kind {
                 AuraKind::MoveSlow { .. } => self.update_speed(a.unit),
-                AuraKind::AttackPower(_) => {
+                AuraKind::AttackPower(_) | AuraKind::Seal { .. } => {
                     let sheet = buff_sheet(&self.player.stats, &self.skills);
                     events.push(values(self.guid, &sheet));
                 }
