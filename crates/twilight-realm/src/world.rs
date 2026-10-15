@@ -1,6 +1,7 @@
 //! The character in the world: the login burst that puts it there, the mobs around it, and the
 //! fights between them, one tick at a time.
 
+mod advance;
 mod cast;
 mod hearth;
 

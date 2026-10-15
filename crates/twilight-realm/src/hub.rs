@@ -55,6 +55,11 @@ impl Npc {
             | u64::from(self.guid & 0xFF_FFFF)
     }
 
+    /// Whether it gives quests (`UNIT_NPC_FLAG_QUESTGIVER`).
+    pub(crate) fn gives_quests(&self) -> bool {
+        self.npc_flags & 0x2 != 0
+    }
+
     /// Whether it repairs gear (`UNIT_NPC_FLAG_REPAIR`).
     pub(crate) fn repairs(&self) -> bool {
         self.npc_flags & 0x4000 != 0

@@ -42,6 +42,13 @@ impl Calling {
             Calling::Warrior => "warrior",
         }
     }
+
+    /// The Calling with this key.
+    pub(crate) fn from_key(key: &str) -> Option<Self> {
+        [Calling::BasicWarrior, Calling::Warrior]
+            .into_iter()
+            .find(|c| c.key() == key)
+    }
 }
 
 /// `ChrRaces.dbc` ids 1..=8: Human … Troll.

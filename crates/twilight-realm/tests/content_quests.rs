@@ -25,6 +25,9 @@ struct Quest {
     kill: Vec<(u32, u32)>,
     #[serde(default)]
     collect: Vec<Collect>,
+    /// An Advancement Quest asks for nothing but a word with its giver.
+    #[serde(default)]
+    advancement: Option<toml::Value>,
 }
 
 #[derive(Deserialize)]
@@ -61,7 +64,7 @@ fn every_objective_names_a_creature_and_an_item_the_realm_has() {
     let mut realm = realm();
     for q in content().quest {
         assert!(
-            !q.kill.is_empty() || !q.collect.is_empty(),
+            !q.kill.is_empty() || !q.collect.is_empty() || q.advancement.is_some(),
             "quest {}",
             q.id
         );

@@ -57,9 +57,37 @@ pub(crate) struct Quest {
     pub(crate) kill: Vec<(u32, u32)>,
     #[serde(default)]
     pub(crate) collect: Vec<Collect>,
+    /// The quest log's header: a negative `QuestSort.dbc` id, or a zone; The Barrens by default.
+    #[serde(default)]
+    zone_or_sort: Option<i32>,
+    /// An Advancement Quest's Callings: offered at the Tier Cap of one, it advances into the
+    /// other. It asks for nothing but a word with its giver.
+    #[serde(default)]
+    pub(crate) advancement: Option<Advancement>,
+}
+
+/// What makes a quest an Advancement Quest.
+#[derive(Deserialize)]
+pub(crate) struct Advancement {
+    /// The Calling it is offered to, at that Calling's Tier Cap.
+    pub(crate) from: String,
+    /// The Calling it advances into.
+    pub(crate) to: String,
+    /// `false` for a quest that is offered and never finished (Champion's, past the slice).
+    #[serde(default = "yes")]
+    pub(crate) completable: bool,
+}
+
+fn yes() -> bool {
+    true
 }
 
 impl Quest {
+    /// The quest log's header the quest goes under.
+    pub(crate) fn zone_or_sort(&self) -> i32 {
+        self.zone_or_sort.unwrap_or(crate::THE_BARRENS as i32)
+    }
+
     /// The lowest level it is offered at: four below its own unless the content says otherwise.
     pub(crate) fn min_level(&self) -> u8 {
         self.min_level
@@ -83,11 +111,28 @@ fn file() -> &'static QuestFile {
             .expect("content/quests.toml parses");
         for q in &file.quest {
             assert!(
-                file.giver.iter().any(|g| g.entry == q.giver),
-                "quest {} names giver {}, who is not in content/quests.toml",
+                file.giver.iter().any(|g| g.entry == q.giver)
+                    || crate::hub::npcs()
+                        .iter()
+                        .any(|n| n.entry == q.giver && n.gives_quests()),
+                "quest {} names giver {}, who is neither in content/quests.toml nor a quest \
+                 giver in content/hub.toml",
                 q.id,
                 q.giver
             );
+            if let Some(a) = &q.advancement {
+                assert!(
+                    crate::callings::calling(&a.from).is_some()
+                        && (!a.completable || crate::content::Calling::from_key(&a.to).is_some()),
+                    "quest {}'s Advancement names a Calling the realm does not have",
+                    q.id
+                );
+                assert!(
+                    q.kill.is_empty() && q.collect.is_empty(),
+                    "Advancement Quest {} asks for more than a word",
+                    q.id
+                );
+            }
             assert!(
                 q.kill.len() <= OBJECTIVES && q.collect.len() <= OBJECTIVES,
                 "quest {} has more than {OBJECTIVES} objectives of a kind",

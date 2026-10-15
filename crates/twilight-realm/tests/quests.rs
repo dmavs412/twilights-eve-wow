@@ -15,7 +15,11 @@ use twilight_realm::CROSSROADS;
 #[test]
 fn quest_givers_stand_at_the_hub_with_names_and_marks() {
     let (mut realm, _, events) = warrior_with(1, 0, &[]);
-    let all = givers(&events);
+    // The Warrior trainer (5810) gives quests too: his Advancement Quests.
+    let all: Vec<_> = givers(&events)
+        .into_iter()
+        .filter(|g| g.1 != 5810)
+        .collect();
     assert_eq!(all.len(), 6, "one giver per Hunting Ground");
     for &(_, _, at) in &all {
         let d = ((at[0] - CROSSROADS[0]).powi(2) + (at[1] - CROSSROADS[1]).powi(2)).sqrt();

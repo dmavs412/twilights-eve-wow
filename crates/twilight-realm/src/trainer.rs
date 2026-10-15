@@ -1,4 +1,5 @@
-//! The Hub's Warrior trainer (`content/hub.toml`) sells the respec through the stock flow
+//! The Hub's Warrior trainer (`content/hub.toml`) lists his Advancement Quests in his gossip menu
+//! (they are quests: `content/quests.toml`), and sells the respec through the stock flow
 //! (vmangos `Player::SendTalentWipeConfirm`, `Player::ResetTalents`): his gossip's unlearn line
 //! closes the menu and asks `MSG_TALENT_WIPE_CONFIRM` with the price; the reset runs when the
 //! client sends the same opcode back with his guid.
@@ -43,6 +44,13 @@ impl crate::Realm {
         let Some(npc) = trainer(guid).filter(|npc| self.near(npc)) else {
             return;
         };
+        // His Advancement Quests ride the menu, as vmangos's gossip lists a quest giver's quests.
+        let quests = self
+            .world
+            .as_ref()
+            .and_then(|w| self.characters.get(w.guid))
+            .map(|c| crate::quests::gossip_rows(c, npc.entry))
+            .unwrap_or_default();
         self.events.push(SessionEvent::GossipMenu {
             npc: npc.guid(),
             text_id: TEXT_ID,
@@ -52,7 +60,7 @@ impl crate::Realm {
                 coded: false,
                 message: "I wish to unlearn my talents.".into(),
             }],
-            quests: Vec::new(),
+            quests,
         });
     }
 
