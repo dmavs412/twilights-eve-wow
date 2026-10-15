@@ -37,7 +37,9 @@ fn grid() -> &'static Grid {
     static GRID: OnceLock<Grid> = OnceLock::new();
     GRID.get_or_init(|| {
         let mut cells: HashMap<(i32, i32), Vec<u32>> = HashMap::new();
-        for (i, s) in mobs::content().spawn.iter().enumerate() {
+        // A Dungeon's spawns are its instance's, not the open world's.
+        let world = mobs::content().spawn.iter().enumerate();
+        for (i, s) in world.filter(|(_, s)| s.map == crate::content::KALIMDOR) {
             cells
                 .entry(cell(s.position[0], s.position[1]))
                 .or_default()

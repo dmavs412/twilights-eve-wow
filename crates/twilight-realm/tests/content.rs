@@ -248,6 +248,32 @@ fn with_defaults(row: &toml::Value) -> toml::Value {
 }
 
 #[test]
+fn the_dungeon_bosss_own_blues_match_the_reference() {
+    // Every boss-pool entry that no world pool holds, as the reference spells it.
+    let reference = json("loot_items.json");
+    let blues = &reference["dungeon_blues"];
+    let pool = blues["proposed_boss_pool"].as_array().unwrap();
+    let table = toml_table("dungeon_items.toml");
+    let rows = table["item"].as_array().unwrap();
+    let mut want: Vec<(i64, toml::Value)> = blues["wailing_caverns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| {
+            let entry = &i["entry"];
+            pool.contains(entry) && reference["items"][entry.to_string()].is_null()
+        })
+        .map(|i| (i["entry"].as_i64().unwrap(), expected_item(i)))
+        .collect();
+    want.sort_by_key(|(e, _)| *e);
+    assert_eq!(rows.len(), want.len());
+    assert_eq!(rows.len(), 7, "the instance's own boss drops");
+    for (row, (entry, want)) in rows.iter().zip(&want) {
+        assert_eq!(&with_defaults(row), want, "item {entry}");
+    }
+}
+
+#[test]
 fn the_reference_pools_follow_each_items_pool_level_and_quality() {
     // The realm builds its pools from each row's `pool_level` and quality, so the reference's
     // own pools must be exactly that grouping.

@@ -1,0 +1,14 @@
+# The Wailing Caverns boss's own blues: the entries of `proposed_boss_pool` that no world
+# pool holds, from `dungeon_blues.wailing_caverns` in data/twilights-eve/loot_items.json.
+# Generated with items.toml by `cargo run -p twilight-realm --example gen_items`; the same
+# fields and defaults. tests/content.rs checks that the two agree.
+
+item = [
+  { entry = 6449, name = "Glowing Lizardscale Cloak", quality = 3, item_level = 22, required_level = 17, class = 4, subclass = 1, inventory_type = 16, display_id = 23001, armor = 20, sell_price = 701, buy_price = 3509, buy_count = 1, bonding = 1, stackable = 1, material = 7, stats = [[3, 6], [6, 2]] },
+  { entry = 6460, name = "Cobrahn's Grasp", quality = 3, item_level = 24, required_level = 19, class = 4, subclass = 3, inventory_type = 6, display_id = 11945, armor = 111, durability = 35, sell_price = 844, buy_price = 4222, buy_count = 1, bonding = 1, stackable = 1, material = 5, stats = [[4, 8], [3, 3]] },
+  { entry = 6463, name = "Deep Fathom Ring", quality = 3, item_level = 26, required_level = 21, class = 4, inventory_type = 11, display_id = 9846, sell_price = 1527, buy_price = 6110, buy_count = 1, bonding = 1, max_count = 1, stackable = 1, material = 5, stats = [[6, 6], [7, 3], [5, 3]] },
+  { entry = 6627, name = "Mutant Scale Breastplate", quality = 3, item_level = 28, required_level = 23, class = 4, subclass = 3, inventory_type = 5, display_id = 12595, armor = 211, durability = 120, sell_price = 2620, buy_price = 13104, buy_count = 1, bonding = 1, stackable = 1, material = 5, stats = [[4, 13], [7, 5]] },
+  { entry = 6631, name = "Living Root", quality = 3, item_level = 25, required_level = 20, class = 2, subclass = 10, inventory_type = 17, display_id = 20336, speed_ms = 2900, durability = 90, sell_price = 4053, buy_price = 20266, buy_count = 1, bonding = 1, stackable = 1, sheath = 2, material = 2, stats = [[6, 12], [7, 2]], resistances = [0, 0, 5, 0, 0, 0], damage = [[49.0, 74.0, 0]] },
+  { entry = 10410, name = "Leggings of the Fang", quality = 3, item_level = 23, required_level = 18, class = 4, subclass = 2, inventory_type = 7, display_id = 28385, armor = 79, durability = 65, sell_price = 1256, buy_price = 6280, buy_count = 1, bonding = 1, stackable = 1, material = 8, stats = [[4, 5], [7, 4], [3, 9]] },
+  { entry = 13245, name = "Kresh's Back", quality = 3, item_level = 20, required_level = 15, class = 4, subclass = 6, inventory_type = 14, display_id = 23835, armor = 471, block = 9, durability = 75, sell_price = 1064, buy_price = 5323, buy_count = 1, bonding = 1, stackable = 1, sheath = 4, material = 1, equip_spells = [7517], defense = 4 },
+]

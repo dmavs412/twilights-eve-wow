@@ -79,6 +79,8 @@ pub(crate) struct Spawn {
     pub(crate) wander_radius: f32,
     /// The camp it fights with: pulling one member pulls the rest.
     pub(crate) camp: u32,
+    /// The map it stands on: Kalimdor, or a Dungeon's.
+    pub(crate) map: u32,
 }
 
 /// A hand-written spawn in `mobs.toml`, a camp of its own.
@@ -100,6 +102,26 @@ struct Row(u32, u32, u8, u8, f32, f32, f32, f32, u32, f32, u32);
 struct HandFile {
     template: Vec<Template>,
     spawn: Vec<HandSpawn>,
+}
+
+/// A Dungeon's creatures (`content/wailing_caverns.toml`); the rest of the file is
+/// [`crate::dungeon`]'s.
+#[derive(Deserialize)]
+struct DungeonFile {
+    map: u32,
+    template: Vec<Template>,
+    spawn: Vec<DungeonSpawn>,
+}
+
+#[derive(Deserialize)]
+struct DungeonSpawn {
+    guid: u32,
+    entry: u32,
+    level_min: u8,
+    level_max: u8,
+    position: [f32; 3],
+    orientation: f32,
+    camp: u32,
 }
 
 #[derive(Deserialize)]
@@ -138,6 +160,7 @@ pub(crate) fn content() -> &'static Mobs {
                     display_id,
                     wander_radius: 0.0,
                     camp: s.guid,
+                    map: crate::content::KALIMDOR,
                 })
             })
             .collect();
@@ -158,9 +181,31 @@ pub(crate) fn content() -> &'static Mobs {
                         display_id,
                         wander_radius: wander,
                         camp,
+                        map: crate::content::KALIMDOR,
                     },
                 ),
         );
+        let dungeon: DungeonFile =
+            toml::from_str(include_str!("../content/wailing_caverns.toml"))
+                .expect("content/wailing_caverns.toml parses");
+        template.extend(dungeon.template);
+        for s in dungeon.spawn {
+            let Some(t) = template.iter().find(|t| t.entry == s.entry) else {
+                continue;
+            };
+            spawn.push(Spawn {
+                guid: s.guid,
+                entry: s.entry,
+                level_min: s.level_min,
+                level_max: s.level_max.max(s.level_min),
+                position: s.position,
+                orientation: s.orientation,
+                display_id: t.display_id,
+                wander_radius: 0.0,
+                camp: s.camp,
+                map: dungeon.map,
+            });
+        }
         Mobs { template, spawn }
     })
 }
@@ -198,11 +243,11 @@ pub(crate) enum State {
     Dead,
 }
 
-/// A straight walk from `from` to `to` over `duration` seconds, `elapsed` of it done.
-#[derive(Debug, Clone, Copy)]
+/// A walk along `points` (straight legs, at one speed) over `duration` seconds, `elapsed` of it
+/// done.
+#[derive(Debug, Clone)]
 pub(crate) struct Walk {
-    pub(crate) from: [f32; 3],
-    pub(crate) to: [f32; 3],
+    pub(crate) points: Vec<[f32; 3]>,
     pub(crate) duration: f32,
     pub(crate) elapsed: f32,
     /// Where the player stood when this chase leg was laid.
@@ -333,22 +378,33 @@ impl Mob {
 
     /// Starts a straight run to `to` (ground walk: the client takes Z from its terrain).
     pub(crate) fn run_to(&mut self, to: [f32; 3], aimed_at: [f32; 3]) -> SessionEvent {
-        let duration = distance(self.position, to) / self.run_speed();
+        self.run_path(vec![self.position, to], aimed_at)
+    }
+
+    /// Starts a run along `path`, which begins where the mob stands: one spline through every
+    /// point, which the client walks leg by leg.
+    pub(crate) fn run_path(&mut self, mut path: Vec<[f32; 3]>, aimed_at: [f32; 3]) -> SessionEvent {
+        if path.first().is_none_or(|p| *p != self.position) {
+            path.insert(0, self.position);
+        }
+        if path.len() < 2 {
+            path.push(self.position);
+        }
+        let duration = length(&path) / self.run_speed();
+        let spline_id = self.next_spline_id;
+        self.next_spline_id += 1;
         self.walk = Some(Walk {
-            from: self.position,
-            to,
+            points: path.clone(),
             duration,
             elapsed: 0.0,
             aimed_at,
         });
-        let spline_id = self.next_spline_id;
-        self.next_spline_id += 1;
         SessionEvent::MonsterMove {
             guid: self.guid,
             transport: None,
             start: self.position,
             spline_id,
-            path: vec![self.position, to],
+            path,
             facing: MonsterMoveFacing::None,
             stop: false,
             duration_ms: (duration * 1000.0) as u32,
@@ -357,7 +413,7 @@ impl Mob {
         }
     }
 
-    /// Walks on along the current leg by `dt` seconds.
+    /// Walks on along the current path by `dt` seconds.
     pub(crate) fn advance(&mut self, dt: f32) {
         let Some(w) = &mut self.walk else {
             return;
@@ -368,12 +424,27 @@ impl Mob {
         } else {
             1.0
         };
-        let p = std::array::from_fn(|i| w.from[i] + (w.to[i] - w.from[i]) * t);
-        let (dx, dy) = (w.to[0] - w.from[0], w.to[1] - w.from[1]);
-        if dx != 0.0 || dy != 0.0 {
+        // The leg `t` of the way along, by distance.
+        let mut left = t * length(&w.points);
+        let mut at = *w.points.last().expect("a path has points");
+        let mut heading = None;
+        for leg in w.points.windows(2) {
+            let (from, to) = (leg[0], leg[1]);
+            let d = distance(from, to);
+            if d > 0.0 {
+                heading = Some((to[0] - from[0], to[1] - from[1]));
+            }
+            if left <= d && d > 0.0 {
+                let u = left / d;
+                at = std::array::from_fn(|i| from[i] + (to[i] - from[i]) * u);
+                break;
+            }
+            left -= d;
+        }
+        if let Some((dx, dy)) = heading {
             self.orientation = dy.atan2(dx).rem_euclid(std::f32::consts::TAU);
         }
-        self.position = p;
+        self.position = at;
         if t >= 1.0 {
             self.walk = None;
         }
@@ -387,6 +458,11 @@ fn unit_class_id(class: UnitClass) -> u32 {
         UnitClass::Paladin => 2,
         UnitClass::Mage => 8,
     }
+}
+
+/// The length of a path through `points`.
+fn length(points: &[[f32; 3]]) -> f32 {
+    points.windows(2).map(|l| distance(l[0], l[1])).sum()
 }
 
 pub(crate) fn distance(a: [f32; 3], b: [f32; 3]) -> f32 {
