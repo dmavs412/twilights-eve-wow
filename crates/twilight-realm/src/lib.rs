@@ -8,6 +8,7 @@
 //! tick(dt, &dyn Host) ──┼─> Realm ──> drain_events() -> Vec<SessionEvent>
 //! ```
 
+pub mod callings;
 mod characters;
 mod combat;
 mod content;
@@ -69,6 +70,20 @@ pub enum RealmCommand {
     },
     /// Stop auto-attack.
     AttackStop,
+    /// Cast a skill; `target` is its unit target, `None` for a self or area skill.
+    CastSpell {
+        spell_id: u32,
+        target: Option<u64>,
+    },
+    /// Click off one of the player's own buffs.
+    CancelAura {
+        spell_id: u32,
+    },
+    /// Put `packed` (`kind << 24 | action`) on action bar `slot`; 0 clears it. No answer.
+    SetActionButton {
+        slot: u8,
+        packed: u32,
+    },
     /// A creature template's name, answered with [`SessionEvent::CreatureName`].
     CreatureQuery {
         entry: u32,
@@ -207,6 +222,17 @@ impl Realm {
                     w.stop_attack(&mut self.events);
                 }
             }
+            RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target),
+            RealmCommand::CancelAura { spell_id } => {
+                if let Some(w) = &mut self.world {
+                    w.cancel_aura(spell_id, &mut self.events);
+                }
+            }
+            RealmCommand::SetActionButton { slot, packed } => {
+                if let Some(w) = &self.world {
+                    self.characters.set_action_button(w.guid, slot, packed);
+                }
+            }
             RealmCommand::CreatureQuery { entry } => {
                 self.events.push(mobs::creature_name(entry));
             }
@@ -281,6 +307,21 @@ impl Realm {
         w.since_save += dt;
         if ticked.leveled || w.since_save >= save::AUTOSAVE_SECS {
             w.since_save = 0.0;
+            let guid = w.guid;
+            self.save(guid);
+        }
+    }
+
+    /// A skill cast: answered at once, as an instant is.
+    fn cast(&mut self, spell_id: u32, target: Option<u64>) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let cast = w.cast(spell_id, target, c, &mut self.rng, &mut self.events);
+        if cast.leveled {
             let guid = w.guid;
             self.save(guid);
         }

@@ -1,0 +1,125 @@
+# The Callings and their skills, copied from `data/twilights-eve/callings.json` (the `realm` half
+# of each skill); tests/content_callings.rs keeps the two in step. Design notes:
+# docs/reference/skills-and-talents.md.
+#
+# A skill is one real 1.12.1 spell id with no ranks: the client shows that spell's name, icon and
+# tooltip, and the realm decides what it does. Amounts are `{ base, per_level, per_ap, min }`:
+# round(base + per_level * L + per_ap * AP), half away from zero, never below `min` (default 0),
+# where L is the level within the Tier and AP the attack power at cast time. Rage is whole points.
+#
+# `target`: "enemy" (the cast's unit target), "self", or "self_area" (every enemy within
+# `radius_yd`, at most `max_targets`). `range_yd` is `[min, max]`; a max of 5 is melee reach.
+
+[[calling]]
+key = "basic_warrior"
+tier = 0
+cap = 10
+# Battle Stance: the client refuses Charge, Rend, Thunder Clap, Hamstring and Overpower in any
+# other form, so every Warrior Calling stands in it.
+shapeshift_form = 17
+
+[[calling.skill]]
+key = "heroic_strike"
+spell_id = 78
+rage_cost = 15
+cooldown_ms = 0
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "weapon_strike", weapon = "normal", on_next_swing = true, bonus = { base = 9.5, per_level = 1.4 } },
+]
+
+[[calling.skill]]
+key = "charge"
+spell_id = 100
+rage_cost = 0
+cooldown_ms = 15000
+gcd_ms = 0
+target = "enemy"
+range_yd = [8.0, 25.0]
+requires_out_of_combat = true
+effects = [
+    { kind = "charge", speed_yd_s = 24.0 },
+    { kind = "energize_rage", amount = { base = 8.5, per_level = 0.14 } },
+    { kind = "stun", aura_spell_id = 7922, duration_ms = 1000 },
+]
+
+[[calling.skill]]
+key = "rend"
+spell_id = 772
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "periodic_damage", tick_ms = 3000, duration_ms = 9000, tick = { base = 4.0, per_level = 0.24, per_ap = 0.01, min = 1 } },
+]
+
+[[calling.skill]]
+key = "thunder_clap"
+spell_id = 6343
+rage_cost = 20
+cooldown_ms = 4000
+gcd_ms = 1500
+target = "self_area"
+radius_yd = 8.0
+max_targets = 4
+effects = [
+    { kind = "school_damage", amount = { base = 2.6, per_level = 1.23, per_ap = 0.05, min = 1 } },
+    { kind = "attack_speed_slow", pct = 10, duration_ms = 10000 },
+]
+
+[[calling.skill]]
+key = "battle_shout"
+spell_id = 6673
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self"
+effects = [
+    { kind = "aura_attack_power", duration_ms = 120000, amount = { base = 14.5, per_level = 0.5 } },
+]
+
+[[calling.skill]]
+key = "hamstring"
+spell_id = 1715
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "school_damage", melee_hit_table = true, amount = { base = 0.7, per_level = 0.54, per_ap = 0.02, min = 1 } },
+    { kind = "movement_slow", pct = 40, duration_ms = 15000 },
+]
+
+[[calling.skill]]
+key = "overpower"
+spell_id = 7384
+rage_cost = 5
+cooldown_ms = 5000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+# Castable for 5 s after the target dodged: the realm marks it with a combo point, which the
+# client's Overpower button needs.
+requires_target_dodged = true
+effects = [
+    { kind = "weapon_strike", weapon = "normalized", unavoidable = true, bonus = { base = 2.0, per_level = 0.5 } },
+]
+
+[[calling.skill]]
+key = "bloodrage"
+spell_id = 2687
+rage_cost = 0
+health_cost_pct_of_base_health = 20
+cooldown_ms = 60000
+gcd_ms = 0
+target = "self"
+puts_in_combat_ms = 10000
+effects = [
+    { kind = "energize_rage", amount = { base = 9.6, per_level = 0.25 } },
+    { kind = "periodic_rage", aura_spell_id = 29131, per_tick = 1, tick_ms = 1000, duration_ms = 10000 },
+]
