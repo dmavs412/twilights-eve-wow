@@ -584,6 +584,30 @@ fn refused(spell_id: u32, reason: u8) -> SessionEvent {
     }
 }
 
+/// `SMSG_SPELLNONMELEEDAMAGELOG` for `damage` of `school` from `attacker`'s `spell_id`: nothing
+/// absorbed, resisted or blocked, flagged as a crit when it was one.
+fn damage_log(
+    attacker: u64,
+    target: u64,
+    spell_id: u32,
+    damage: u32,
+    school: School,
+    crit: bool,
+) -> SpellDamageLog {
+    SpellDamageLog {
+        target,
+        attacker,
+        spell_id,
+        damage,
+        school: school.index(),
+        absorb: 0,
+        resist: 0,
+        periodic: false,
+        blocked: 0,
+        hit_info: if crit { SPELL_HIT_TYPE_CRIT } else { 0 },
+    }
+}
+
 impl InWorld {
     /// `CMSG_CAST_SPELL`: refused with the stock reason, queued on the next swing, or cast.
     pub(crate) fn cast(
@@ -1156,18 +1180,9 @@ impl InWorld {
         let school = School::Holy;
         let damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
         let damage = seals::holy_taken(damage, self.skills.holy_taken_pct(target));
-        events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
-            target,
-            attacker: self.guid,
-            spell_id,
-            damage,
-            school: school.index(),
-            absorb: 0,
-            resist: 0,
-            periodic: false,
-            blocked: 0,
-            hit_info: 0,
-        }));
+        events.push(SessionEvent::SpellDamageLog(damage_log(
+            self.guid, target, spell_id, damage, school, false,
+        )));
         self.hurt(target, damage, c, rng, events, ticked);
     }
 
@@ -1193,22 +1208,14 @@ impl InWorld {
             damage = crit_damage(damage, crate::talents::skill_crit_damage_pct(c));
         }
         damage = self.dealt(c, damage);
-        events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
+        events.push(SessionEvent::SpellDamageLog(damage_log(
+            self.guid,
             target,
-            attacker: self.guid,
             spell_id,
             damage,
-            school: school.index(),
-            absorb: 0,
-            resist: 0,
-            periodic: false,
-            blocked: 0,
-            hit_info: if how == Landed::Crit {
-                SPELL_HIT_TYPE_CRIT
-            } else {
-                0
-            },
-        }));
+            school,
+            how == Landed::Crit,
+        )));
         self.hurt(target, damage, c, rng, events, ticked);
         if how == Landed::Crit {
             self.crit_landed(target, c, events);
@@ -1274,18 +1281,14 @@ impl InWorld {
         } else if let AuraKind::Sweeping { strikes, .. } = &mut self.skills.auras[i].kind {
             *strikes -= 1;
         }
-        events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
-            target: other,
-            attacker: me,
-            spell_id: strike_spell_id,
+        events.push(SessionEvent::SpellDamageLog(damage_log(
+            me,
+            other,
+            strike_spell_id,
             damage,
-            school: 0,
-            absorb: 0,
-            resist: 0,
-            periodic: false,
-            blocked: 0,
-            hit_info: 0,
-        }));
+            School::Physical,
+            false,
+        )));
         self.hurt(other, damage, c, rng, events, ticked);
     }
 
@@ -1564,20 +1567,15 @@ impl InWorld {
             }
             swing.damage = self.dealt(c, swing.damage);
             events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
-                target: guid,
-                attacker: self.guid,
-                spell_id,
-                damage: swing.damage,
-                school: 0,
-                absorb: 0,
-                resist: 0,
-                periodic: false,
                 blocked: swing.blocked,
-                hit_info: if swing.outcome == Outcome::Crit {
-                    SPELL_HIT_TYPE_CRIT
-                } else {
-                    0
-                },
+                ..damage_log(
+                    self.guid,
+                    guid,
+                    spell_id,
+                    swing.damage,
+                    School::Physical,
+                    swing.outcome == Outcome::Crit,
+                )
             }));
             self.hurt(guid, swing.damage, c, rng, events, ticked);
             if swing.outcome == Outcome::Crit {
