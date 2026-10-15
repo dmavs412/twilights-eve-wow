@@ -270,6 +270,14 @@ pub enum RealmCommand {
     },
     /// The client has loaded the map a worldport sent it to.
     WorldportAck,
+    /// A dev aid (`WOW_PROBE_GOTO`): on the next tick, teleport the player to `(x, y)` on its
+    /// map, on the ground there, facing `facing` or its own way. A spot with no ground is refused
+    /// with a notification.
+    DevTeleport {
+        x: f32,
+        y: f32,
+        facing: Option<f32>,
+    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -281,6 +289,8 @@ pub struct Realm {
     storage: Vec<Storage>,
     rng: rng::Rng,
     dev: DevMultipliers,
+    /// The dev teleport asked for, waiting for the tick that can ask the host for ground.
+    dev_teleport: Option<dev::DevTeleport>,
     /// The wall clock, in seconds since the Unix epoch: the host's, advanced by every tick.
     wall: f64,
 }
@@ -404,7 +414,15 @@ impl Realm {
                     hub::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
                 self.events.push(answer);
             }
-            RealmCommand::Logout => self.logout(),
+            RealmCommand::Logout => {
+                self.dev_teleport = None;
+                self.logout();
+            }
+            RealmCommand::DevTeleport { x, y, facing } => {
+                if self.world.is_some() {
+                    self.dev_teleport = Some(dev::DevTeleport { x, y, facing });
+                }
+            }
             RealmCommand::AreaTrigger { id } => self.area_trigger(id),
             RealmCommand::WorldportAck => {
                 if let Some(w) = &mut self.world {
@@ -515,6 +533,9 @@ impl Realm {
             return;
         };
         let map = c.map;
+        if let Some(to) = self.dev_teleport.take() {
+            w.dev_teleport(to, host, c, &mut self.events);
+        }
         let ticked = w.tick(dt, self.wall, host, c, &mut self.rng, &mut self.events);
         w.since_save += dt;
         // Zoning saves (a hearth out of the Dungeon); the dead are saved once they release.
