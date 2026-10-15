@@ -81,7 +81,7 @@ impl Plugin for TwilightPlugin {
             Update,
             (
                 talents::follow_calling.after(pump),
-                talents::unlock_talent_frame,
+                crate::ui_twilight::unlock_talent_frame,
             ),
         );
         // Closing the window logs the character out, which saves it.
