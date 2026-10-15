@@ -435,7 +435,8 @@
             "background": "PaladinCombat",
             "talents": [
               { "key": "improved_seal_of_the_crusader", "talent_id": 1464, "source_tab_id": 381, "name": "Improved Seal of the Crusader", "tier": 1, "column": 2, "rank_spells": [20335, 20336, 20337],
-                "realm_effect": "Not modelled yet: waits on Seal of the Crusader's attack power (#25). Learnable, and counts toward the row." },
+                "realm_effect": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
+                "client_spellmods": [{ "type": "pct", "op": "EFFECT1", "family_bit": 34, "values": [5, 10, 15] }] },
               { "key": "benediction", "talent_id": 1407, "source_tab_id": 381, "name": "Benediction", "tier": 1, "column": 3, "rank_spells": [20101, 20102, 20103, 20104, 20105],
                 "realm_effect": "The Seals cost 1/1/2/2/3 less rage and Judgement 0/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs and rounded).",
                 "client_spellmods_note": "The realm's own cells, on the family bits the client gives the borrowed spells (33 Seal of Command, 34 Seal of the Crusader, 35 Judgement); Benediction's rank spells carry vanilla's Paladin mana-percent mods instead.",

@@ -169,10 +169,11 @@ grid:
   Specialization 1429 ×5, Anticipation 1629 ×5. Row 4: Reckoning 1426 ×5.
 
 Thirty points in Crusade reach Holy Power, so 31 or more go there and the rest to Blade and
-Faith. Modelled with the existing kinds: Benediction (rage cost), Deflection (parry), Conviction
-(crit), the two Weapon Specializations (weapon damage), Toughness (armour), Anticipation
-(defense) and Blade's Warrior talents. WIP: Improved Seal of the Crusader (waits on the Seal's
-attack power, #25), Improved Judgement and Improved Hammer of Justice (no cooldown kind),
+Faith. Modelled with the existing kinds: Benediction (rage cost), Improved Seal of the Crusader
+(the Seal's amounts, +5/10/15% to its attack power and its judgement's holy damage taken, with
+an EFFECT1 percent cell on bit 34), Deflection (parry), Conviction (crit), the two Weapon
+Specializations (weapon damage), Toughness (armour), Anticipation (defense) and Blade's Warrior
+talents. WIP: Improved Judgement and Improved Hammer of Justice (no cooldown kind),
 Vindication, Eye for an Eye, Vengeance, Redoubt and Reckoning (procs the realm does not roll),
 Pursuit of Justice (movement), Holy Power (holy crit), Divine Strength (Strength percent),
 Precision (hit), and Anger Management and Flurry as for Vanguard.

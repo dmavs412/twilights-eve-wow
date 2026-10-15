@@ -1042,8 +1042,18 @@ impl InWorld {
                     events,
                 );
                 self.faded(&gone, events);
-                let attack_power = match seal {
-                    Seal::Crusader { attack_power, .. } => sized(attack_power),
+                // Talents that raise the Seal's amounts (Improved Seal of the Crusader) raise its
+                // attack power and its judgement's holy damage taken alike.
+                let mut seal = seal;
+                let attack_power = match &mut seal {
+                    Seal::Crusader {
+                        attack_power,
+                        holy_taken_pct,
+                        ..
+                    } => {
+                        *holy_taken_pct = scaled(*holy_taken_pct, pct);
+                        sized(*attack_power)
+                    }
                     Seal::Command { .. } => 0,
                 };
                 let kind = AuraKind::Seal { seal, attack_power };

@@ -277,7 +277,66 @@ fn judging_seal_of_the_crusader_consumes_it_for_a_holy_damage_taken_debuff() {
 /// judged on the same target: the holy hit is a fifth bigger.
 #[test]
 fn holy_damage_at_a_judged_target_rises_by_a_fifth() {
-    let (mut realm, me, mob, mut view) = tanking(25);
+    let (hit, ap) = judged_judgement_of_command(tanking(25));
+    let plain = (30.0 + 3.0 + 0.15 * ap).round();
+    assert_eq!(
+        hit,
+        (plain * 1.2).round() as u32,
+        "{plain} at {ap} attack power, a fifth more"
+    );
+}
+
+/// Improved Seal of the Crusader 3/3: the Seal's attack power and the judgement's holy damage
+/// taken, each 15% more, and the client's tooltip cell for the attack power.
+#[test]
+fn improved_seal_of_the_crusader_raises_its_attack_power_and_judgement() {
+    let improved = |blob: String| {
+        blob.replace("level = 1\n", "level = 4\n")
+            .replace("xp = 0\n", "xp = 0\ntalents = [[1464, 3]]\n")
+    };
+    let (mut realm, me, _, mut view) = tanking_as(12, &improved);
+    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    view.drain(&mut realm);
+    // A level 4 Zealot: 20 + 4·4 = 36, 15% more is 41.4.
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (41, 0));
+
+    let (hit, ap) = judged_judgement_of_command(tanking_as(25, &improved));
+    let plain = (30.0 + 3.0 * 4.0 + 0.15 * ap).round();
+    assert_eq!(
+        hit,
+        (plain * 1.23).round() as u32,
+        "{plain} at {ap} attack power, 23% more"
+    );
+}
+
+#[test]
+fn improved_seal_of_the_crusader_tells_the_client_the_seals_attack_power_is_higher() {
+    let (_, _, _, entry) = zealot_at_as(SEED, &|blob: String| {
+        blob.replace("level = 1\n", "level = 4\n")
+            .replace("xp = 0\n", "xp = 0\ntalents = [[1464, 2]]\n")
+    });
+    let cell = entry
+        .iter()
+        .filter_map(|e| match *e {
+            // `SPELLMOD_EFFECT1`, a percent on Seal of the Crusader's family bit.
+            SessionEvent::SpellModifier {
+                flat: false,
+                mask_bit: 34,
+                op: 3,
+                value,
+            } => Some(value),
+            _ => None,
+        })
+        .next_back();
+    assert_eq!(cell, Some(10), "two ranks: 10%");
+}
+
+/// Seal of the Crusader judged on the tanked mob, kept up past its 10 s by one landed swing,
+/// and then Seal of Command judged on it: Judgement of Command's damage, and the attack power
+/// it was judged at.
+fn judged_judgement_of_command(
+    (mut realm, me, mob, mut view): (Realm, u64, Mob, View),
+) -> (u32, f64) {
     realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
     view.drain(&mut realm);
     view.run(&mut realm, 1.6);
@@ -324,12 +383,7 @@ fn holy_damage_at_a_judged_target_rises_by_a_fifth() {
         })
         .expect("Judgement of Command's hit");
     assert_eq!(hit.school, HOLY);
-    let plain = (30.0 + 3.0 + 0.15 * ap).round();
-    assert_eq!(
-        hit.damage,
-        (plain * 1.2).round() as u32,
-        "{plain} at {ap} attack power, a fifth more"
-    );
+    (hit.damage, ap)
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────
@@ -401,8 +455,12 @@ impl View {
     }
 }
 
-/// A level 1 human Zealot in the world at the Crossroads, and the view.
-fn zealot_at(seed: u64) -> (Realm, u64, View) {
+/// A human Zealot from a level 1 save that `edit` changes, in the world at the Crossroads; the
+/// view and what entering the world sent.
+fn zealot_at_as(
+    seed: u64,
+    edit: &dyn Fn(String) -> String,
+) -> (Realm, u64, View, Vec<SessionEvent>) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
@@ -410,6 +468,7 @@ fn zealot_at(seed: u64) -> (Realm, u64, View) {
         .export_character(guid)
         .unwrap()
         .replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
+    let blob = edit(blob);
     let mut realm = Realm::with_seed(seed);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -417,16 +476,21 @@ fn zealot_at(seed: u64) -> (Realm, u64, View) {
     let mut view = View {
         objects: Default::default(),
     };
-    view.drain(&mut realm);
+    let entry = view.drain(&mut realm);
     // The world streams in over the first ticks.
     view.run(&mut realm, 1.0);
-    (realm, guid, view)
+    (realm, guid, view, entry)
 }
 
 /// A level 1 Zealot that pulled the camp south of the Crossroads without swinging back, and took
 /// its blows until it had `rage`.
 fn tanking(rage: u32) -> (Realm, u64, Mob, View) {
-    let (mut realm, me, mut view) = zealot_at(SEED);
+    tanking_as(rage, &|blob| blob)
+}
+
+/// [`tanking`], from a save that `edit` changes.
+fn tanking_as(rage: u32, edit: &dyn Fn(String) -> String) -> (Realm, u64, Mob, View) {
+    let (mut realm, me, mut view, _) = zealot_at_as(SEED, edit);
     // Out of reach of the four neutral scorpids, then each of them in turn.
     realm.handle(RealmCommand::Move {
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],

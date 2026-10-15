@@ -380,8 +380,8 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
     let mut want = vec![
         // Anger Management, Flurry.
         12296, 12319, 12971, 12972, 12973, 12974,
-        // Improved Seal of the Crusader, Improved Judgement, Vindication, Eye for an Eye.
-        20335, 20336, 20337, 25956, 25957, 9452, 26016, 26021, 9799, 25988,
+        // Improved Judgement, Vindication, Eye for an Eye.
+        25956, 25957, 9452, 26016, 26021, 9799, 25988,
         // Pursuit of Justice, Improved Hammer of Justice, Vengeance.
         26022, 26023, 20487, 20488, 20489, 20049, 20056, 20057, 20058, 20059,
         // Holy Power, Divine Strength.
@@ -510,10 +510,9 @@ fn the_vanguard_tabs_seat_the_handoffs_rows() {
 }
 
 /// The Zealot talents the realm shows and lets the player learn, but does not model yet: those
-/// waiting on the Seals (Improved Seal of the Crusader), on a kind no talent has yet (cooldowns,
-/// haste, hit, movement, Strength, holy crit) or on a proc the realm does not roll.
+/// waiting on a kind no talent has yet (cooldowns, haste, hit, movement, Strength, holy crit) or
+/// on a proc the realm does not roll.
 const ZEALOT_NOT_MODELLED: &[&str] = &[
-    "improved_seal_of_the_crusader",
     "improved_judgement",
     "vindication",
     "eye_for_an_eye",
@@ -698,6 +697,7 @@ fn check_tree(calling: &str, unmodelled: &[&str]) {
                 // vmangos `SpellModOp`.
                 let op = match w["op"].as_str().unwrap() {
                     "COST" => 14,
+                    "EFFECT1" => 3,
                     "ALL_EFFECTS" => 8,
                     op => panic!("{key}: op {op}"),
                 };

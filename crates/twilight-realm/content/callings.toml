@@ -488,10 +488,12 @@ effects = [
 # Prerequisites stay inside a tab: Vengeance needs Conviction 5/5, straight down column 2;
 # Anger Management, Deep Wounds, Impale and Flurry lose theirs (Tactical Mastery, Improved Rend
 # and Enrage are not in Blade, and Deep Wounds sits beside Impale). The Blade talents carry the
-# same effects as Vanguard's. WIP talents (`effects = []`): those that need the Seals' mechanics
-# (Improved Seal of the Crusader), or a cooldown, haste, hit, movement, Strength or holy-crit
-# kind the realm does not have yet, or a proc it does not model (Vindication, Eye for an Eye,
-# Vengeance, Redoubt, Reckoning).
+# same effects as Vanguard's. WIP talents (`effects = []`): those that need a cooldown, haste,
+# hit, movement, Strength or holy-crit kind the realm does not have yet, or a proc it does not
+# model (Vindication, Eye for an Eye, Vengeance, Redoubt, Reckoning).
+# Improved Seal of the Crusader raises Seal of the Crusader's amounts (skill_amount_pct): its
+# attack power and its judgement's holy damage taken, as vanilla's tooltip says; its client cell
+# is vanilla's EFFECT1 percent (op 3), on the Seal's family bit.
 #   parry_pct - the parry chance rises by that percent
 #   defense   - the Defense skill rises by that much
 # Benediction takes rage off the Seals and Judgement; its spell-mod cells, one per borrowed
@@ -508,7 +510,8 @@ talent_id = 1464
 tier = 1
 column = 2
 rank_spells = [20335, 20336, 20337]
-effects = []
+effects = [{ kind = "skill_amount_pct", skill = "seal_of_the_crusader", per_rank = [5, 10, 15] }]
+client_spellmods = [{ flat = false, op = 3, family_bit = 34, per_rank = [5, 10, 15] }]
 
 # Vanilla's 3% less mana a rank, doubled for the small rage costs and rounded: the Seals' 10 rage
 # loses 1/1/2/2/3, Judgement's 5 loses 0/1/1/1/2.
