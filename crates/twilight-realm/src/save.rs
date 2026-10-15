@@ -4,7 +4,6 @@
 use serde::{Deserialize, Serialize};
 
 use crate::characters::Char;
-use crate::clock;
 use crate::content::{self, Calling};
 use crate::inventory::{Inventory, SLOTS};
 
@@ -70,9 +69,10 @@ struct SaveV1 {
     /// Respecs bought, which price the next. Added within version 1.
     #[serde(default)]
     talent_wipes: u32,
-    /// `[item entry, ms left]` per item cooling down after use. Optional within version 1.
+    /// `[item entry, the Unix ms it is ready at]` per item cooling down after use, so the time
+    /// between sessions counts. Optional within version 1.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    item_cooldowns: Vec<[u32; 2]>,
+    item_ready_at: Vec<(u32, u64)>,
     /// The quests ever handed in. Added within version 1: a save without it has finished none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     completed: Vec<u32>,
@@ -146,10 +146,10 @@ pub(crate) fn export(c: &Char) -> String {
         money: c.inventory.money,
         talents: c.talents.clone(),
         talent_wipes: c.talent_wipes,
-        item_cooldowns: c
+        item_ready_at: c
             .item_cooldowns
             .iter()
-            .map(|&(entry, left)| [entry, clock::ms(left)])
+            .map(|&(entry, ready)| (entry, (ready * 1000.0).round() as u64))
             .collect(),
         completed: c.quests.completed.clone(),
         items: saved_items(&c.inventory),
@@ -185,9 +185,9 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         talent_wipes: s.talent_wipes,
         inventory: load_inventory(s.money, &s.items)?,
         item_cooldowns: s
-            .item_cooldowns
+            .item_ready_at
             .iter()
-            .map(|&[entry, ms]| (entry, clock::secs(ms)))
+            .map(|&(entry, ms)| (entry, ms as f64 / 1000.0))
             .collect(),
         quests: crate::quests::QuestLog {
             completed: s.completed,

@@ -48,9 +48,9 @@ pub(crate) struct Char {
     pub(crate) talent_wipes: u32,
     /// Gear, bags and money.
     pub(crate) inventory: Inventory,
-    /// The items cooling down after use, `(entry, seconds left)`; the clock runs only in the
-    /// world.
-    pub(crate) item_cooldowns: Vec<(u32, f32)>,
+    /// The items cooling down after use, `(entry, the wall-clock second it is ready at)`: time
+    /// away counts.
+    pub(crate) item_cooldowns: Vec<(u32, f64)>,
     /// The quests under way.
     pub(crate) quests: QuestLog,
 }

@@ -278,6 +278,8 @@ pub struct Realm {
     storage: Vec<Storage>,
     rng: rng::Rng,
     dev: DevMultipliers,
+    /// The wall clock, in seconds since the Unix epoch: the host's, advanced by every tick.
+    wall: f64,
 }
 
 impl Realm {
@@ -297,6 +299,13 @@ impl Realm {
     /// This realm with the dev multipliers set: the host's boot flags, for the whole run.
     pub fn with_dev(self, dev: DevMultipliers) -> Self {
         Self { dev, ..self }
+    }
+
+    /// Sets the wall clock to `unix_ms`, milliseconds since the Unix epoch. Ticks advance it in
+    /// between; a host without one leaves it running from 0. An item's cooldown runs on it, so
+    /// the time between two sessions counts.
+    pub fn set_wall_clock(&mut self, unix_ms: u64) {
+        self.wall = unix_ms as f64 / 1000.0;
     }
 
     /// Applies one command; its answers queue for [`Self::drain_events`].
@@ -367,7 +376,7 @@ impl Realm {
                                 self.save(guid);
                             }
                             Some(false) => {}
-                            None => w.use_item(slot, c, &mut self.events),
+                            None => w.use_item(slot, c, self.wall, &mut self.events),
                         }
                     }
                 }
@@ -495,6 +504,7 @@ impl Realm {
 
     /// Advances the world by `dt` seconds.
     pub fn tick(&mut self, dt: f32, host: &dyn Host) {
+        self.wall += f64::from(dt);
         let Some(w) = &mut self.world else {
             return;
         };
@@ -502,7 +512,7 @@ impl Realm {
             return;
         };
         let map = c.map;
-        let ticked = w.tick(dt, host, c, &mut self.rng, &mut self.events);
+        let ticked = w.tick(dt, self.wall, host, c, &mut self.rng, &mut self.events);
         w.since_save += dt;
         // Zoning saves (a hearth out of the Dungeon); the dead are saved once they release.
         let zoned = c.map != map;
@@ -599,7 +609,7 @@ impl Realm {
                 .push(SessionEvent::CharacterLoginFailed { result: 5 });
             return;
         };
-        let entry = world::InWorld::enter(c, self.dev, &mut self.events);
+        let entry = world::InWorld::enter(c, self.dev, self.wall, &mut self.events);
         self.world = Some(entry);
     }
 

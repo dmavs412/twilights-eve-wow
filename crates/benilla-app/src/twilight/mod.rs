@@ -199,6 +199,11 @@ fn pump(
         listed,
         saved,
     } = &mut *local;
+    // The wall clock an item's cooldown runs on, so time between sessions counts. `web-time`:
+    // std's `SystemTime` panics in a browser.
+    if let Ok(now) = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH) {
+        realm.set_wall_clock(now.as_millis() as u64);
+    }
     if !*listed {
         *listed = true;
         realm.handle(RealmCommand::ListCharacters);

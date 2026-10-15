@@ -333,20 +333,11 @@ fn after_hearthing_the_stone_rests_for_five_minutes() {
     assert!(spell_start(&drain(&mut realm)).is_some(), "ready again");
 }
 
-#[test]
-fn the_cooldown_is_kept_across_a_save_and_reload() {
-    let mut realm = realm();
-    let (me, _) = far_from_home(&mut realm);
-    realm.handle(use_hearthstone());
-    run(&mut realm, 10.0 + 0.1 + 60.0);
-    realm.handle(RealmCommand::Logout);
-    drain(&mut realm);
-    let blob = realm.export_character(me).unwrap();
+/// A wall clock to start from: some afternoon in 2026, in Unix milliseconds.
+const T0: u64 = 1_781_000_000_000;
 
-    let mut back = Realm::new();
-    back.import_character(&blob).unwrap();
-    back.handle(RealmCommand::EnterWorld { guid: me });
-    let events = drain(&mut back);
+/// The Hearthstone's cooldown in the spell book a login sends, in ms; `None` without one.
+fn hearth_cooldown_at_login(events: &[SessionEvent]) -> Option<u32> {
     let cooldowns = events
         .iter()
         .find_map(|e| match e {
@@ -356,21 +347,66 @@ fn the_cooldown_is_kept_across_a_save_and_reload() {
         .expect("the spell book, with its cooldowns");
     let hearth = cooldowns
         .iter()
-        .find(|c| u32::from(c.spell_id) == HEARTH_SPELL)
-        .expect("the Hearthstone's cooldown");
+        .find(|c| u32::from(c.spell_id) == HEARTH_SPELL)?;
     assert_eq!(u32::from(hearth.item_id), HEARTHSTONE);
-    // Five minutes less the minute (and a tenth) spent waiting.
-    assert!(
-        (239_000..=240_000).contains(&hearth.spell_cd_ms),
-        "{}",
-        hearth.spell_cd_ms
-    );
+    Some(hearth.spell_cd_ms)
+}
+
+/// A character hearthed at `T0` (its cast over 10.2 s later) and then logged out, `waited`
+/// seconds on: its save.
+fn hearthed_and_saved(waited: f32) -> (u64, String) {
+    let mut realm = realm();
+    realm.set_wall_clock(T0);
+    let (me, _) = far_from_home(&mut realm);
+    realm.handle(use_hearthstone());
+    run(&mut realm, 10.1 + waited);
+    realm.handle(RealmCommand::Logout);
+    drain(&mut realm);
+    (me, realm.export_character(me).unwrap())
+}
+
+/// Logs the save in on a realm whose wall clock reads `at`.
+fn log_in_at(at: u64, me: u64, blob: &str) -> (Realm, Vec<SessionEvent>) {
+    let mut back = Realm::new();
+    back.set_wall_clock(at);
+    back.import_character(blob).unwrap();
+    back.handle(RealmCommand::EnterWorld { guid: me });
+    let events = drain(&mut back);
+    (back, events)
+}
+
+#[test]
+fn the_cooldown_is_kept_across_a_save_and_reload() {
+    let (me, blob) = hearthed_and_saved(60.0);
+    // Back at once: five minutes less the minute spent waiting.
+    let (mut back, events) = log_in_at(T0 + 70_200, me, &blob);
+    let left = hearth_cooldown_at_login(&events).expect("the Hearthstone's cooldown");
+    assert!((239_000..=240_100).contains(&left), "{left}");
 
     back.handle(use_hearthstone());
     assert_eq!(
         cast_failure(&drain(&mut back)),
         Some((HEARTH_SPELL, Some(SPELL_FAILED_NOT_READY)))
     );
+}
+
+#[test]
+fn time_spent_offline_counts_toward_the_cooldown() {
+    let (me, blob) = hearthed_and_saved(0.0);
+    // Four minutes away: one is left.
+    let (_, events) = log_in_at(T0 + 10_200 + 240_000, me, &blob);
+    let left = hearth_cooldown_at_login(&events).expect("a minute left");
+    assert!((59_000..=60_100).contains(&left), "{left}");
+
+    // Six minutes away: the stone has rested.
+    let (mut back, events) = log_in_at(T0 + 10_200 + 360_000, me, &blob);
+    assert_eq!(hearth_cooldown_at_login(&events), None);
+    back.handle(RealmCommand::Move {
+        position: FAR_AWAY,
+        orientation: 0.0,
+    });
+    back.handle(use_hearthstone());
+    assert!(spell_start(&drain(&mut back)).is_some());
 }
 
 #[test]

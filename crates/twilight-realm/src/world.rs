@@ -120,7 +120,12 @@ pub(crate) struct InWorld {
 
 impl InWorld {
     /// Logs `c` in: what vmangos sends from `CMSG_PLAYER_LOGIN` to the player's own create.
-    pub(crate) fn enter(c: &Char, dev: DevMultipliers, events: &mut Vec<SessionEvent>) -> Self {
+    pub(crate) fn enter(
+        c: &Char,
+        dev: DevMultipliers,
+        wall: f64,
+        events: &mut Vec<SessionEvent>,
+    ) -> Self {
         let stats = crate::talents::stats(c);
         events.push(SessionEvent::Connected {
             self_guid: c.guid,
@@ -144,7 +149,7 @@ impl InWorld {
             day_serial: 0,
             timescale: 1.0 / 60.0,
         });
-        events.push(cast::spell_book(c));
+        events.push(cast::spell_book(c, wall));
         events.extend(crate::talents::spell_mods(c));
         events.push(cast::action_buttons(c));
         // The proficiencies and the carried items' objects, ahead of the player that names them.
@@ -244,10 +249,11 @@ impl InWorld {
         }
     }
 
-    /// Advances the world by `dt` seconds around `c`.
+    /// Advances the world by `dt` seconds around `c`, to the wall clock's `wall`.
     pub(crate) fn tick(
         &mut self,
         dt: f32,
+        wall: f64,
         host: &dyn Host,
         c: &mut Char,
         rng: &mut Rng,
@@ -291,7 +297,7 @@ impl InWorld {
         for i in 0..self.mobs.len() {
             self.mob_tick(i, dt, host, c, rng, events);
         }
-        self.skills_tick(dt, c, rng, events, &mut ticked);
+        self.skills_tick(dt, wall, c, rng, events, &mut ticked);
         self.update_aura_states(events);
         if !self.player.alive() && !self.player.dead {
             self.die(c, events);

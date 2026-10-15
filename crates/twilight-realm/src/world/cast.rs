@@ -337,8 +337,9 @@ impl Skills {
 }
 
 /// `SMSG_INITIAL_SPELLS`: the current Calling's skills and learned talents' rank spells, and the
-/// item cooldowns still running from the save (the skills' own start afresh each session).
-pub(super) fn spell_book(c: &Char) -> SessionEvent {
+/// item cooldowns still running at the wall clock's `wall` (the skills' own start afresh each
+/// session).
+pub(super) fn spell_book(c: &Char, wall: f64) -> SessionEvent {
     SessionEvent::SpellBook {
         spell_ids: callings::of(c.calling)
             .skills
@@ -349,13 +350,14 @@ pub(super) fn spell_book(c: &Char) -> SessionEvent {
         cooldowns: c
             .item_cooldowns
             .iter()
-            .filter_map(|&(entry, left)| {
+            .filter(|&&(_, ready)| ready > wall)
+            .filter_map(|&(entry, ready)| {
                 let t = items::template(entry)?;
                 Some(SpellCooldown {
                     spell_id: t.use_spell as u16,
                     item_id: entry as u16,
                     category: 0,
-                    spell_cd_ms: clock::ms(left),
+                    spell_cd_ms: clock::ms((ready - wall) as f32),
                     category_cd_ms: 0,
                 })
             })
@@ -1070,6 +1072,7 @@ impl InWorld {
     pub(super) fn skills_tick(
         &mut self,
         dt: f32,
+        wall: f64,
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
@@ -1082,11 +1085,8 @@ impl InWorld {
             *left -= dt;
         }
         s.cooldowns.retain(|(_, left)| *left > 0.0);
-        for (_, left) in &mut c.item_cooldowns {
-            *left -= dt;
-        }
-        c.item_cooldowns.retain(|(_, left)| *left > 0.0);
-        self.timed_cast_tick(dt, c, events);
+        c.item_cooldowns.retain(|&(_, ready)| ready > wall);
+        self.timed_cast_tick(dt, wall, c, events);
         let s = &mut self.skills;
         if let Some((_, left)) = &mut s.dodged {
             *left -= dt;
@@ -1236,7 +1236,13 @@ const CAST_FLAG_UNKNOWN2: u16 = 0x02;
 impl InWorld {
     /// `CMSG_USE_ITEM` on the item at player slot `slot`: its on-use spell starts casting, or is
     /// refused with the stock reason. An item with no on-use spell the realm runs does nothing.
-    pub(crate) fn use_item(&mut self, slot: u8, c: &Char, events: &mut Vec<SessionEvent>) {
+    pub(crate) fn use_item(
+        &mut self,
+        slot: u8,
+        c: &Char,
+        wall: f64,
+        events: &mut Vec<SessionEvent>,
+    ) {
         let Some(item) = c.inventory.get(slot) else {
             return;
         };
@@ -1254,7 +1260,7 @@ impl InWorld {
         } else if c
             .item_cooldowns
             .iter()
-            .any(|&(e, left)| e == item.entry && left > READY_SLACK_SECS)
+            .any(|&(e, ready)| e == item.entry && ready - wall > f64::from(READY_SLACK_SECS))
         {
             Some(SPELL_FAILED_NOT_READY)
         } else {
@@ -1294,7 +1300,13 @@ impl InWorld {
     }
 
     /// The timed cast's clock: when it runs out the spell goes off.
-    fn timed_cast_tick(&mut self, dt: f32, c: &mut Char, events: &mut Vec<SessionEvent>) {
+    fn timed_cast_tick(
+        &mut self,
+        dt: f32,
+        wall: f64,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
         let Some(cast) = &mut self.skills.casting else {
             return;
         };
@@ -1325,8 +1337,8 @@ impl InWorld {
         if let Some(t) = items::template(cast.entry) {
             if t.use_cooldown_ms > 0 {
                 c.item_cooldowns.retain(|&(e, _)| e != cast.entry);
-                c.item_cooldowns
-                    .push((cast.entry, clock::secs(t.use_cooldown_ms as u32)));
+                let rest = f64::from(clock::secs(t.use_cooldown_ms as u32));
+                c.item_cooldowns.push((cast.entry, wall + rest));
             }
         }
         self.item_spell_effect(cast.spell_id, c, events);
