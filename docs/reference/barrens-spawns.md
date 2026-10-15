@@ -1,15 +1,19 @@
 # The Barrens spawns (Twilight's Eve, ticket #7)
 
-Two data files feed the Local Realm's Hunting Ground in The Barrens:
+Two data files feed the Local Realm's Hunting Ground in The Barrens, and the realm reads its own
+copy of them:
 
 | file | what | made by |
 |---|---|---|
 | `data/twilights-eve/barrens_spawns.json` | every hostile and neutral creature spawn in The Barrens (map 1, zone 17), with camps | `tools/twilights-eve/import_barrens_spawns.py` |
 | `data/twilights-eve/crossroads_low_camps.json` | six hand-placed level 1–6 camps near the Crossroads | `tools/twilights-eve/make_crossroads_low_camps.py` |
+| `crates/twilight-realm/content/barrens.toml` | the two above as the realm reads them: templates, spawn rows, camps, suppressed spawns | `cargo run -p twilight-realm --example import_barrens` |
 
-Both are committed. Building the game never needs the database or the scripts. The scripts
-use only the Python 3 standard library, plus `tools/twilights-eve/wowmpq.py`, a small read-only
-MPQ/ADT/DBC reader written for them.
+All three are committed. Building the game never needs the database or the scripts. The Python
+scripts use only the standard library, plus `tools/twilights-eve/wowmpq.py`, a small read-only
+MPQ/ADT/DBC reader written for them. The realm cannot read JSON (the shipped app keeps
+`serde_json` out), so `examples/import_barrens.rs` converts the dumps to TOML;
+`tests/content_barrens.rs` fails when the committed `barrens.toml` no longer matches them.
 
 ## Source
 
@@ -37,7 +41,16 @@ python -I tools/twilights-eve/import_barrens_spawns.py \
     --source-asset db-sqlite-4641790.zip
 python -I tools/twilights-eve/make_crossroads_low_camps.py \
     --db "$TMP/vmangos/sqlite-dump/mangos.sqlite" --data /path/to/WoW/Data
+
+# 3. The realm's copy (no Python, no DB: it reads the two JSON files above).
+cargo run -p twilight-realm --example import_barrens
+cargo test -p twilight-realm
 ```
+
+Step 3 alone is enough after editing either JSON file by hand. A creature added to the low
+camps needs its template written in `crates/twilight-realm/content/mobs.toml` (the dump has no
+stats for Mulgore's and Durotar's creatures); `tests/content_barrens.rs` names any spawned entry
+without one.
 
 `--data` defaults to `$WOW_DATA`. Run the importer first: the low-camp script reads
 `barrens_spawns.json` to list the imported spawns it overlaps. Both scripts are deterministic;
@@ -367,6 +380,27 @@ still walk in.
 `assists` is false for the plainstriders, boars and scorpids (neutral, and their faction
 template has no call-for-help flag) and for the Vile Familiars (faction template 14 has none
 either); the quilboars and wolves have it. Whether a camp pulls together is the realm's camp rule.
+
+## How the realm plays them
+
+- **Streaming.** Only spawns whose home is within 100 yd of the player are in the world
+  (`src/population.rs`, a 64 yd grid over the homes, looked over every 8 yd moved or every
+  second). Idle and dead mobs leave past 110 yd; a mob in a fight or running home stays.
+- **Level and model.** Each spawn comes in at a level in its range, from a hash of its guid
+  rather than the realm's dice. Its model is one of the template's displays, weighted by their
+  probabilities and picked by guid at import time.
+- **Aggro.** Templates are `hostile` when the dump's reaction is hostile and `no_aggro` is unset;
+  only hostile mobs aggro on sight, by `rules::aggro::radius`. Neutral ones fight when attacked.
+- **Camps.** Pulling a mob, by aggro or by attacking it, pulls every idle member of its camp,
+  whether or not the camp's faction has the call-for-help flag (`assists`).
+- **Leash.** A mob in a fight more than 50 yd from home (`rules::leash`) evades: it runs home,
+  heals to full and resets.
+- **Respawn.** A killed mob comes back 60 s after the player has gone more than 60 yd from its
+  home (`rules::respawn`); the clock starts over whenever the player comes back. Vanilla's
+  `respawn_secs` are ignored, rares included.
+- **Low camps.** Their members are spawned; the imported spawns in `suppress_guids` are not.
+- **Not used yet:** `wander_radius` (mobs stand at their spawn point), waypoint paths, and the
+  `alt_entries`.
 
 ## Caveats
 

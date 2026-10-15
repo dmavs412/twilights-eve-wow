@@ -107,3 +107,159 @@ fn the_mob_class_tables_match_the_reference() {
         }
     }
 }
+
+/// `ItemPrototype`'s stat ids, as `SMSG_ITEM_QUERY_SINGLE_RESPONSE` carries them.
+fn stat_id(name: &str) -> i64 {
+    match name {
+        "agility" => 3,
+        "strength" => 4,
+        "intellect" => 5,
+        "spirit" => 6,
+        "stamina" => 7,
+        other => panic!("an unknown item stat {other}"),
+    }
+}
+
+/// `SpellSchools`.
+fn school_id(name: &str) -> i64 {
+    match name {
+        "physical" => 0,
+        "holy" => 1,
+        "fire" => 2,
+        "nature" => 3,
+        "frost" => 4,
+        "shadow" => 5,
+        "arcane" => 6,
+        other => panic!("an unknown school {other}"),
+    }
+}
+
+/// One reference item as the realm's table should spell it.
+fn expected_item(item: &Value) -> toml::Value {
+    let int = |k: &str| toml::Value::Integer(item[k].as_i64().unwrap_or(0));
+    let mut t = toml::Table::new();
+    for k in [
+        "entry",
+        "quality",
+        "item_level",
+        "required_level",
+        "class",
+        "subclass",
+        "inventory_type",
+        "allowable_class",
+        "allowable_race",
+        "display_id",
+        "armor",
+        "block",
+        "speed_ms",
+        "durability",
+        "sell_price",
+        "buy_price",
+        "buy_count",
+        "bonding",
+        "max_count",
+        "stackable",
+        "container_slots",
+        "sheath",
+        "material",
+        "pool_level",
+    ] {
+        t.insert(k.into(), int(k));
+    }
+    t.insert("name".into(), item["name"].as_str().unwrap().into());
+    let stats: Vec<toml::Value> = item["stats"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|s| {
+            toml::Value::Array(vec![
+                stat_id(s["stat"].as_str().unwrap()).into(),
+                s["value"].as_i64().unwrap().into(),
+            ])
+        })
+        .collect();
+    t.insert("stats".into(), toml::Value::Array(stats));
+    let resistances: Vec<toml::Value> = ["holy", "fire", "nature", "frost", "shadow", "arcane"]
+        .iter()
+        .map(|s| item["resistances"][s].as_i64().unwrap_or(0).into())
+        .collect();
+    t.insert("resistances".into(), toml::Value::Array(resistances));
+    let damage: Vec<toml::Value> = item["damage"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| {
+            toml::Value::Array(vec![
+                d["min"].as_f64().unwrap().into(),
+                d["max"].as_f64().unwrap().into(),
+                school_id(d["school"].as_str().unwrap()).into(),
+            ])
+        })
+        .collect();
+    t.insert("damage".into(), toml::Value::Array(damage));
+    let mut spells = Vec::new();
+    let (mut attack_power, mut defense) = (0, 0);
+    for e in item["effects"].as_array().unwrap() {
+        assert_eq!(e["trigger"], "equip", "only equip spells are kept");
+        spells.push(toml::Value::Integer(e["spell"].as_i64().unwrap()));
+        for m in e["mods"].as_array().unwrap() {
+            match (m["stat"].as_str().unwrap(), m["skill"].as_i64()) {
+                ("attack_power", _) => attack_power += m["value"].as_i64().unwrap(),
+                ("skill", Some(95)) => defense += m["value"].as_i64().unwrap(),
+                _ => {}
+            }
+        }
+    }
+    t.insert("equip_spells".into(), toml::Value::Array(spells));
+    t.insert("attack_power".into(), attack_power.into());
+    t.insert("defense".into(), defense.into());
+    toml::Value::Table(t)
+}
+
+#[test]
+fn the_item_table_matches_the_reference() {
+    let reference = json("loot_items.json");
+    let table = toml_table("items.toml");
+    let rows = table["item"].as_array().unwrap();
+    let mut want: Vec<(i64, toml::Value)> = reference["items"]
+        .as_object()
+        .unwrap()
+        .values()
+        .map(|i| (i["entry"].as_i64().unwrap(), expected_item(i)))
+        .collect();
+    want.sort_by_key(|(e, _)| *e);
+    assert_eq!(rows.len(), want.len());
+    for (row, (entry, want)) in rows.iter().zip(&want) {
+        assert_eq!(&with_defaults(row), want, "item {entry}");
+    }
+}
+
+/// A row with the fields it leaves out filled in at their defaults.
+fn with_defaults(row: &toml::Value) -> toml::Value {
+    let mut t = row.as_table().unwrap().clone();
+    let want = expected_item(&serde_json::json!({
+        "entry": 0, "name": "", "stats": [], "damage": [], "effects": [], "resistances": {},
+        "allowable_class": -1, "allowable_race": -1,
+    }));
+    for (k, v) in want.as_table().unwrap() {
+        t.entry(k.clone()).or_insert_with(|| v.clone());
+    }
+    toml::Value::Table(t)
+}
+
+#[test]
+fn the_reference_pools_follow_each_items_pool_level_and_quality() {
+    // The realm builds its pools from each row's `pool_level` and quality, so the reference's
+    // own pools must be exactly that grouping.
+    let reference = json("loot_items.json");
+    let items = &reference["items"];
+    for (level, pools) in reference["pools_by_level"].as_object().unwrap() {
+        for (quality, entries) in pools.as_object().unwrap() {
+            for entry in entries.as_array().unwrap() {
+                let item = &items[entry.as_i64().unwrap().to_string()];
+                assert_eq!(item["pool_level"].to_string(), *level, "{entry}");
+                assert_eq!(item["quality"].to_string(), *quality, "{entry}");
+            }
+        }
+    }
+}

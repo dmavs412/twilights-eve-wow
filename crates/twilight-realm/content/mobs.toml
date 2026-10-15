@@ -1,5 +1,9 @@
-# The mobs: creature templates (vmangos `creature_template`) and where they stand.
-# One hostile mob near the Crossroads for now (#4); the camps come with #7.
+# The hand-written mobs: creature templates (vmangos `creature_template`) and where they stand.
+# The Barrens' own spawns and templates, and the low camps' spawns, are generated into
+# barrens.toml; the low camps borrow Mulgore's and Durotar's creatures, whose templates are here.
+#
+# A template's `hostile` (default true) says whether it attacks a player who comes too close; a
+# neutral creature only fights back. `rank` (default 0) is `CreatureEliteType`.
 
 [[template]]
 entry = 3101
@@ -21,10 +25,142 @@ speed_walk = 1.0
 speed_run = 1.143
 detection_range = 10.0
 
-# `guid` is the spawn's low guid (24 bits). `position` is WoW `[x, y, z]`, z the terrain height
-# there, which the host's ground replaces once it is loaded.
+# The low camps' creatures (crossroads_low_camps.json has their entries, names, levels, displays
+# and factions from the vmangos DB). The unit class, multipliers, speeds and detection range are
+# not in that dump: they are the values almost every normal creature of these levels has in
+# vmangos (unit class 1 or 2, multipliers 1, 2 s swings, speeds 1 / 1.143, 18 yd detection).
+
+[[template]]
+entry = 2955
+name = "Plainstrider"
+creature_type = 1
+display_id = 1219
+# 189: neutral beasts.
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 1
+level_max = 2
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 3098
+name = "Mottled Boar"
+creature_type = 1
+display_id = 503
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 1
+level_max = 2
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 3124
+name = "Scorpid Worker"
+creature_type = 1
+display_id = 2485
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 3
+level_max = 3
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 2952
+name = "Bristleback Quilboar"
+creature_type = 7
+display_id = 1967
+# 111: the Bristleback, hostile.
+faction_template = 111
+unit_class = "warrior"
+level_min = 3
+level_max = 4
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 2953
+name = "Bristleback Shaman"
+creature_type = 7
+display_id = 6090
+faction_template = 111
+# A caster with mana: vmangos gives casting hybrids the paladin stat line.
+unit_class = "paladin"
+level_min = 3
+level_max = 4
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 2954
+name = "Bristleback Battleboar"
+creature_type = 1
+display_id = 6807
+faction_template = 111
+unit_class = "warrior"
+level_min = 4
+level_max = 5
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 2958
+name = "Prairie Wolf"
+creature_type = 1
+display_id = 1100
+# 38: hostile beasts.
+faction_template = 38
+unit_class = "warrior"
+level_min = 5
+level_max = 6
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# `guid` is the spawn's low guid (24 bits); a hand-written spawn is a camp of its own. `position`
+# is WoW `[x, y, z]`, z the terrain height there, which the host's ground replaces once it is
+# loaded. The low camps hold 9000001..=9000029.
 [[spawn]]
-guid = 9000015
+guid = 9000030
 entry = 3101
 level = 3
 position = [-442.4, -2626.6, 95.9]

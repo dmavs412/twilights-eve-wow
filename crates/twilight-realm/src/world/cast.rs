@@ -651,11 +651,20 @@ impl InWorld {
         match *effect {
             Effect::WeaponStrike { weapon, bonus, .. } => {
                 let raw = weapon_roll(&stats, weapon, rng) + bonus.at(level, ap) as f32;
-                self.strike(skill.spell_id, target, raw as u32, how, c, events, ticked);
+                self.strike(
+                    skill.spell_id,
+                    target,
+                    raw as u32,
+                    how,
+                    c,
+                    rng,
+                    events,
+                    ticked,
+                );
             }
             Effect::SchoolDamage { amount, .. } => {
                 let raw = amount.at(level, ap);
-                self.strike(skill.spell_id, target, raw, how, c, events, ticked);
+                self.strike(skill.spell_id, target, raw, how, c, rng, events, ticked);
             }
             Effect::PeriodicDamage {
                 tick_ms,
@@ -761,6 +770,7 @@ impl InWorld {
         raw: u32,
         how: Landed,
         c: &mut Char,
+        rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
@@ -787,7 +797,7 @@ impl InWorld {
                 0
             },
         }));
-        self.hurt(target, damage, c, events, ticked);
+        self.hurt(target, damage, c, rng, events, ticked);
     }
 
     /// `target` loses `damage`; at 0 it dies at the player's hand.
@@ -796,6 +806,7 @@ impl InWorld {
         target: u64,
         damage: u32,
         c: &mut Char,
+        rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
@@ -809,7 +820,7 @@ impl InWorld {
             super::engage(mob, self.guid, events);
         }
         if mob.health == 0 {
-            self.kill(i, c, events, ticked);
+            self.kill(i, c, rng, events, ticked);
         }
     }
 
@@ -908,7 +919,7 @@ impl InWorld {
                     0
                 },
             }));
-            self.hurt(target, swing.damage, c, events, ticked);
+            self.hurt(target, swing.damage, c, rng, events, ticked);
         }
         true
     }
@@ -918,6 +929,7 @@ impl InWorld {
         &mut self,
         dt: f32,
         c: &mut Char,
+        rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
@@ -964,7 +976,7 @@ impl InWorld {
                             resist: 0,
                         }],
                     }));
-                    self.hurt(a.unit, per_tick, c, events, ticked);
+                    self.hurt(a.unit, per_tick, c, rng, events, ticked);
                 }
                 AuraKind::Rage { per_tick } => {
                     let p = &mut self.player;

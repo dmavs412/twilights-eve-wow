@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::characters::Char;
 use crate::content::{self, Calling};
+use crate::inventory::{Inventory, SLOTS};
 
 /// The save format this realm writes and reads. A save from any other version is refused.
 pub const SAVE_VERSION: u32 = 1;
@@ -59,6 +60,54 @@ struct SaveV1 {
     /// so a save from before it existed still reads as version 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     action_bar: Option<Vec<(u8, u32)>>,
+    /// Copper. Added within version 1: a save without it has none.
+    #[serde(default)]
+    money: u32,
+    /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
+    /// since TOML writes an array of tables after every plain key.
+    #[serde(default)]
+    items: Vec<SavedItem>,
+}
+
+/// One item in a save.
+#[derive(Serialize, Deserialize)]
+struct SavedItem {
+    /// The player slot: 0-18 worn, 23-38 the backpack.
+    slot: u8,
+    entry: u32,
+    count: u32,
+    /// Left out: full.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    durability: Option<u32>,
+}
+
+fn saved_items(inventory: &Inventory) -> Vec<SavedItem> {
+    inventory
+        .iter()
+        .map(|(slot, item)| SavedItem {
+            slot,
+            entry: item.entry,
+            count: item.count,
+            durability: Some(item.durability),
+        })
+        .collect()
+}
+
+/// The inventory a save describes; an unknown item, a bad slot or a slot named twice makes it
+/// unreadable.
+fn load_inventory(money: u32, saved: &[SavedItem]) -> Result<Inventory, SaveError> {
+    let mut inventory = Inventory::default();
+    inventory.money = money;
+    for s in saved {
+        let template = crate::items::template(s.entry).ok_or(SaveError::Unreadable)?;
+        if usize::from(s.slot) >= SLOTS || inventory.get(s.slot).is_some() || s.count == 0 {
+            return Err(SaveError::Unreadable);
+        }
+        let mut item = inventory.new_item(s.entry, s.count);
+        item.durability = s.durability.unwrap_or(template.durability);
+        inventory.put(s.slot, item);
+    }
+    Ok(inventory)
 }
 
 pub(crate) fn export(c: &Char) -> String {
@@ -77,6 +126,8 @@ pub(crate) fn export(c: &Char) -> String {
         position: c.position,
         orientation: c.orientation,
         action_bar: c.action_bar.clone(),
+        money: c.inventory.money,
+        items: saved_items(&c.inventory),
     };
     toml::to_string(&save).expect("a save always serializes")
 }
@@ -104,5 +155,6 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         position: s.position,
         orientation: s.orientation,
         action_bar: s.action_bar,
+        inventory: load_inventory(s.money, &s.items)?,
     })
 }

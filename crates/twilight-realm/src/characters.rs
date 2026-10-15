@@ -5,9 +5,10 @@ use benilla_protocol::messages::{
     CLASS_WARRIOR,
 };
 use benilla_protocol::wire::Vector3d;
-use benilla_protocol::{CharCreateReq, CharEnumItem, Character};
+use benilla_protocol::{CharCreateReq, Character};
 
 use crate::content::{self, Calling, CROSSROADS, KALIMDOR, THE_BARRENS};
+use crate::inventory::Inventory;
 use crate::save::SaveError;
 
 /// `CharactersPerRealm`: the select screen's ten rows.
@@ -40,6 +41,8 @@ pub(crate) struct Char {
     /// The action bar as the player arranged it, `(slot, kind << 24 | action)`; `None` until
     /// they first change it, which shows the Calling's default bar.
     pub(crate) action_bar: Option<Vec<(u8, u32)>>,
+    /// Gear, bags and money.
+    pub(crate) inventory: Inventory,
 }
 
 #[derive(Default)]
@@ -87,6 +90,7 @@ impl Characters {
             position: [x, y, z],
             orientation: facing,
             action_bar: None,
+            inventory: Inventory::default(),
         });
         CHAR_CREATE_SUCCESS
     }
@@ -182,7 +186,7 @@ impl Char {
             map: self.map,
             position: Vector3d { x, y, z },
             flags: 0,
-            equipment: [CharEnumItem::default(); 19],
+            equipment: crate::equipment::roster_gear(&self.inventory),
             pet_display_id: 0,
             pet_level: 0,
             pet_family: 0,

@@ -1,5 +1,8 @@
-//! The mobs: their templates and spawns (`content/mobs.toml`), and each one's state in the world.
+//! The mobs: their templates and spawns (`content/mobs.toml` by hand, `content/barrens.toml`
+//! generated from the research dumps by `examples/import_barrens.rs`), and each one's state in
+//! the world.
 
+use std::collections::HashSet;
 use std::sync::OnceLock;
 
 use benilla_protocol::messages::{MonsterMoveFacing, ObjectType};
@@ -20,13 +23,25 @@ const BASE_RUN: f32 = 7.0;
 const BOUNDING_RADIUS: f32 = 0.5;
 pub(crate) const COMBAT_REACH: f32 = 1.5;
 
+fn yes() -> bool {
+    true
+}
+
 #[derive(Deserialize)]
 pub(crate) struct Template {
     pub(crate) entry: u32,
     pub(crate) name: String,
+    #[serde(default)]
+    pub(crate) subname: String,
     pub(crate) creature_type: u32,
+    /// `CreatureEliteType`: 0 normal, 1 elite, 2 rare elite, 3 world boss, 4 rare.
+    #[serde(default)]
+    pub(crate) rank: u32,
     pub(crate) display_id: u32,
     pub(crate) faction_template: u32,
+    /// Attacks a player who comes too close; a neutral creature only fights back.
+    #[serde(default = "yes")]
+    pub(crate) hostile: bool,
     pub(crate) unit_class: UnitClass,
     #[allow(dead_code)]
     pub(crate) level_min: u8,
@@ -41,16 +56,59 @@ pub(crate) struct Template {
     pub(crate) detection_range: f32,
 }
 
-#[derive(Deserialize)]
+impl Template {
+    /// Elite and boss ranks, which kill XP pays double for.
+    pub(crate) fn elite(&self) -> bool {
+        matches!(self.rank, 1..=3)
+    }
+}
+
+/// Where a mob stands when it (re)spawns.
 pub(crate) struct Spawn {
+    /// The spawn's low guid (24 bits).
     pub(crate) guid: u32,
     pub(crate) entry: u32,
-    pub(crate) level: u8,
+    pub(crate) level_min: u8,
+    pub(crate) level_max: u8,
+    /// WoW `[x, y, z]`; z the spawn's height in the data, which the host's ground replaces once
+    /// it is loaded.
     pub(crate) position: [f32; 3],
     pub(crate) orientation: f32,
+    pub(crate) display_id: u32,
+    #[allow(dead_code)]
+    pub(crate) wander_radius: f32,
+    /// The camp it fights with: pulling one member pulls the rest.
+    pub(crate) camp: u32,
+}
+
+/// A hand-written spawn in `mobs.toml`, a camp of its own.
+#[derive(Deserialize)]
+struct HandSpawn {
+    guid: u32,
+    entry: u32,
+    level: u8,
+    position: [f32; 3],
+    orientation: f32,
+}
+
+/// A generated spawn row in `barrens.toml`: guid, entry, level_min, level_max, x, y, z,
+/// orientation, display_id, wander_radius, camp.
+#[derive(Deserialize)]
+struct Row(u32, u32, u8, u8, f32, f32, f32, f32, u32, f32, u32);
+
+#[derive(Deserialize)]
+struct HandFile {
+    template: Vec<Template>,
+    spawn: Vec<HandSpawn>,
 }
 
 #[derive(Deserialize)]
+struct BarrensFile {
+    suppress: Vec<u32>,
+    spawns: Vec<Row>,
+    template: Vec<Template>,
+}
+
 pub(crate) struct Mobs {
     pub(crate) template: Vec<Template>,
     pub(crate) spawn: Vec<Spawn>,
@@ -59,7 +117,51 @@ pub(crate) struct Mobs {
 pub(crate) fn content() -> &'static Mobs {
     static MOBS: OnceLock<Mobs> = OnceLock::new();
     MOBS.get_or_init(|| {
-        toml::from_str(include_str!("../content/mobs.toml")).expect("content/mobs.toml parses")
+        let hand: HandFile =
+            toml::from_str(include_str!("../content/mobs.toml")).expect("content/mobs.toml parses");
+        let barrens: BarrensFile = toml::from_str(include_str!("../content/barrens.toml"))
+            .expect("content/barrens.toml parses");
+        let mut template = hand.template;
+        template.extend(barrens.template);
+        let mut spawn: Vec<Spawn> = hand
+            .spawn
+            .into_iter()
+            .filter_map(|s| {
+                let display_id = template.iter().find(|t| t.entry == s.entry)?.display_id;
+                Some(Spawn {
+                    guid: s.guid,
+                    entry: s.entry,
+                    level_min: s.level,
+                    level_max: s.level,
+                    position: s.position,
+                    orientation: s.orientation,
+                    display_id,
+                    wander_radius: 0.0,
+                    camp: s.guid,
+                })
+            })
+            .collect();
+        let suppress: HashSet<u32> = barrens.suppress.into_iter().collect();
+        spawn.extend(
+            barrens
+                .spawns
+                .into_iter()
+                .filter(|r| !suppress.contains(&r.0))
+                .map(
+                    |Row(guid, entry, lmin, lmax, x, y, z, o, display_id, wander, camp)| Spawn {
+                        guid,
+                        entry,
+                        level_min: lmin,
+                        level_max: lmax.max(lmin),
+                        position: [x, y, z],
+                        orientation: o,
+                        display_id,
+                        wander_radius: wander,
+                        camp,
+                    },
+                ),
+        );
+        Mobs { template, spawn }
     })
 }
 
@@ -73,10 +175,10 @@ pub(crate) fn creature_name(entry: u32) -> SessionEvent {
     SessionEvent::CreatureName {
         entry,
         name: t.map(|t| t.name.clone()),
-        subname: t.map(|_| String::new()),
+        subname: t.map(|t| t.subname.clone()),
         creature_type: t.map(|t| t.creature_type),
         pet_family: 0,
-        rank: 0,
+        rank: t.map_or(0, |t| t.rank),
         type_flags: 0,
         display_id: t.map_or(0, |t| t.display_id),
         civilian: false,
@@ -126,15 +228,21 @@ pub(crate) struct Mob {
     /// What slows on it leave of its run speed: 1.0 unslowed.
     pub(crate) speed_mul: f32,
     next_spline_id: u32,
+    /// Its index in [`Mobs::spawn`].
+    pub(crate) spawn: u32,
+    pub(crate) camp: u32,
+    display_id: u32,
 }
 
 impl Mob {
-    /// The mob of `spawn`, standing at `z` (the ground under its spawn point).
-    pub(crate) fn spawn(spawn: &Spawn, z: f32) -> Option<Self> {
+    /// The mob of `content().spawn[index]` at `level`, standing at `z` (the ground under its
+    /// spawn point).
+    pub(crate) fn spawn(index: u32, level: u8, z: f32) -> Option<Self> {
+        let spawn = content().spawn.get(index as usize)?;
         let template = template(spawn.entry)?;
         let stats = MobStats::new(
             template.unit_class,
-            spawn.level,
+            level,
             template.health_multiplier,
             template.damage_multiplier,
             template.armor_multiplier,
@@ -158,6 +266,9 @@ impl Mob {
             repath_timer: 0.0,
             speed_mul: 1.0,
             next_spline_id: 1,
+            spawn: index,
+            camp: spawn.camp,
+            display_id: spawn.display_id,
         })
     }
 
@@ -190,8 +301,8 @@ impl Mob {
             (UNIT_FIELD_BASEATTACKTIME + 1, t.base_attack_time),
             (UNIT_FIELD_BOUNDINGRADIUS, float(BOUNDING_RADIUS)),
             (UNIT_FIELD_COMBATREACH, float(COMBAT_REACH)),
-            (UNIT_FIELD_DISPLAYID, t.display_id),
-            (UNIT_FIELD_NATIVEDISPLAYID, t.display_id),
+            (UNIT_FIELD_DISPLAYID, self.display_id),
+            (UNIT_FIELD_NATIVEDISPLAYID, self.display_id),
             (UNIT_FIELD_MINDAMAGE, float(self.stats.min_damage)),
             (UNIT_FIELD_MAXDAMAGE, float(self.stats.max_damage)),
             (UNIT_FIELD_RESISTANCES, self.stats.armor),
@@ -200,7 +311,7 @@ impl Mob {
         SessionEvent::ObjectCreate {
             guid: self.guid,
             kind: EntityKind::Unit,
-            display_id: Some(t.display_id),
+            display_id: Some(self.display_id),
             position: self.position,
             orientation: self.orientation,
             scale: 1.0,
