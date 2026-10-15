@@ -34,8 +34,8 @@ to = { map = 1, position = [-738.462, -2217.8, 16.919], orientation = 6.021 }
 
 # The run's creatures (vmangos `creature_template`). Solo-tuned: the reference's elites carry 3x
 # health and 1.7x damage (the boss 5x and 2.5x), sized for a party of five; this slice is run
-# alone, so the multipliers are halved or so. They stay elite (`rank` 1): the dragon on the
-# portrait, and dungeon kill XP.
+# alone, so health is halved and damage cut to about a normal mob's (the boss's packs two
+# druids beside her). They stay elite (`rank` 1): the dragon on the portrait, and dungeon kill XP.
 
 [[template]]
 entry = 3637

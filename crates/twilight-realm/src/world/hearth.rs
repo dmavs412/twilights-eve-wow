@@ -37,8 +37,14 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         if spell_id == HEARTH_SPELL {
+            // From inside a Dungeon, a worldport.
             let [x, y, z, facing] = CROSSROADS;
-            self.teleport(c, [x, y, z], facing, events);
+            let hub = crate::dungeon::Place {
+                map: crate::content::KALIMDOR,
+                position: [x, y, z],
+                orientation: facing,
+            };
+            self.move_to(c, hub, events);
         }
     }
 
@@ -79,7 +85,8 @@ impl InWorld {
         to: [f32; 3],
         events: &mut Vec<SessionEvent>,
     ) -> bool {
-        if self.teleports.pending {
+        // Nor while a worldport is unacknowledged: the report is from the map left behind.
+        if self.teleports.pending || self.transferring() {
             return false;
         }
         if crate::mobs::distance(from, to) > MOVE_EPSILON {

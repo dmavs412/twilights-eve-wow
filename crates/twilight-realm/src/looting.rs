@@ -55,6 +55,20 @@ impl Loot {
         }
     }
 
+    /// What a Dungeon boss of `level` drops: her money and always one of the blues in `pool`.
+    pub(crate) fn boss(level: u8, pool: &[u32], rng: &mut Rng) -> Self {
+        let (lo, hi) = money(level);
+        let items = if pool.is_empty() {
+            Vec::new()
+        } else {
+            vec![Some((pool[rng.below(pool.len() as u32) as usize], 1))]
+        };
+        Self {
+            money: rng.urand(lo, hi),
+            items,
+        }
+    }
+
     pub(crate) fn is_empty(&self) -> bool {
         self.money == 0 && self.items.iter().all(Option::is_none)
     }

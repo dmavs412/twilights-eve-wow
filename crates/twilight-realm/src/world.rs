@@ -23,7 +23,10 @@ use crate::rules::{aggro, leash, rage, xp};
 use crate::Host;
 
 mod death;
+mod dungeon;
 mod food;
+
+pub(crate) use dungeon::come_out;
 
 /// vanilla's player speeds (`baseMoveSpeed`): yd/s, turn in rad/s.
 const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
@@ -108,6 +111,8 @@ pub(crate) struct InWorld {
     pub(crate) respawn: death::Respawn,
     /// Food or drink being taken, sitting down.
     meal: Option<food::Meal>,
+    /// A worldport waits for the client's ack.
+    transfer: bool,
 }
 
 impl InWorld {
@@ -140,21 +145,7 @@ impl InWorld {
         events.push(cast::action_buttons(c));
         // The proficiencies and the carried items' objects, ahead of the player that names them.
         equipment::login(c, events);
-        events.push(SessionEvent::ObjectCreate {
-            guid: c.guid,
-            kind: EntityKind::Player,
-            display_id: Some(content::display_id(c.race, c.gender)),
-            position: c.position,
-            orientation: c.orientation,
-            scale: 1.0,
-            speeds: Some(dev.speeds(PLAYER_SPEEDS)),
-            mover: None,
-            transport_progress: None,
-            transport: None,
-            spline: None,
-            fields: player_fields(c, &stats),
-        });
-        Self {
+        let w = Self {
             guid: c.guid,
             since_save: 0.0,
             map: c.map,
@@ -180,6 +171,27 @@ impl InWorld {
             wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
             respawn: death::Respawn::HUB,
             meal: None,
+            transfer: false,
+        };
+        events.push(w.player_create(c));
+        w
+    }
+
+    /// The player's own create, as it stands.
+    fn player_create(&self, c: &Char) -> SessionEvent {
+        SessionEvent::ObjectCreate {
+            guid: c.guid,
+            kind: EntityKind::Player,
+            display_id: Some(content::display_id(c.race, c.gender)),
+            position: c.position,
+            orientation: c.orientation,
+            scale: 1.0,
+            speeds: Some(self.dev.speeds(PLAYER_SPEEDS)),
+            mover: None,
+            transport_progress: None,
+            transport: None,
+            spline: None,
+            fields: player_fields(c, &self.player.stats),
         }
     }
 
@@ -238,10 +250,16 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) -> Ticked {
         let mut ticked = Ticked::default();
+        if self.transfer {
+            return ticked;
+        }
         let me = c.position;
-        self.population
-            .update(dt, me, self.map, host, &mut self.mobs, events);
-        if !self.hub_shown {
+        // The open world streams in around the player; a Dungeon's run is all there at once.
+        if self.map == content::KALIMDOR {
+            self.population
+                .update(dt, me, self.map, host, &mut self.mobs, events);
+        }
+        if !self.hub_shown && self.map == content::KALIMDOR {
             self.hub_shown = true;
             events.extend(crate::hub::npcs().iter().map(|n| n.create()));
         }
@@ -383,6 +401,9 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         let me = c.position;
+        // Inside a Dungeon, its route graph keeps every run within the walls.
+        let route = crate::dungeon::route_on(self.map);
+        let map = self.map;
         let mob = &mut self.mobs[i];
         mob.advance(dt);
         mob.swing_timer = (mob.swing_timer - dt).max(0.0);
@@ -399,7 +420,7 @@ impl InWorld {
             }
             State::Engaged => {
                 if !self.player.alive() || leash::beyond(mob.home, mob.position) {
-                    evade(mob, self.guid, events);
+                    evade(mob, self.guid, route.map(|r| (r, map, host)), events);
                     return;
                 }
                 if self.skills.stunned(mob.guid) {
@@ -409,11 +430,18 @@ impl InWorld {
                 if d > melee_reach() {
                     let stale = mob
                         .walk
+                        .as_ref()
                         .is_none_or(|w| distance(w.aimed_at, me) > CHASE_SLACK);
                     if stale && mob.repath_timer <= 0.0 {
-                        let dest = chase_point(mob.position, me, self.map, host);
                         mob.repath_timer = REPATH_SECS;
-                        events.push(mob.run_to(dest, me));
+                        let run = match route {
+                            Some(r) => {
+                                let path = r.path(mob.position, me, map, host);
+                                mob.run_path(short_of(path, CHASE_DISTANCE), me)
+                            }
+                            None => mob.run_to(chase_point(mob.position, me, map, host), me),
+                        };
+                        events.push(run);
                     }
                     return;
                 }
@@ -460,10 +488,14 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
+        let elite_kind = self.elite_kind();
         let mob = &mut self.mobs[i];
-        let lootable = self
-            .looting
-            .drop(mob.guid, looting::Loot::roll(mob.level(), rng));
+        let loot = if Self::is_boss(mob) {
+            looting::Loot::boss(mob.level(), &crate::dungeon::content().boss_loot, rng)
+        } else {
+            looting::Loot::roll(mob.level(), rng)
+        };
+        let lootable = self.looting.drop(mob.guid, loot);
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
@@ -487,7 +519,7 @@ impl InWorld {
         events.push(values(mob.guid, &pairs));
 
         let elite = if mob.template.elite() {
-            xp::Elite::OpenWorld
+            elite_kind
         } else {
             xp::Elite::No
         };
@@ -594,8 +626,13 @@ fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
     events.push(values(mob.guid, &pairs));
 }
 
-/// `mob` gives up the fight and runs home, where it heals.
-fn evade(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
+/// `mob` gives up the fight and runs home, where it heals; inside a Dungeon, along its route.
+fn evade(
+    mob: &mut Mob,
+    player: u64,
+    route: Option<(&crate::dungeon::Route, u32, &dyn Host)>,
+    events: &mut Vec<SessionEvent>,
+) {
     mob.state = State::Evading;
     events.push(SessionEvent::AttackStop {
         attacker: mob.guid,
@@ -605,7 +642,22 @@ fn evade(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
     pairs.extend(guid_pairs(UNIT_FIELD_TARGET, 0));
     events.push(values(mob.guid, &pairs));
     let home = mob.home;
-    events.push(mob.run_to(home, home));
+    let run = match route {
+        Some((r, map, host)) => mob.run_path(r.path(mob.position, home, map, host), home),
+        None => mob.run_to(home, home),
+    };
+    events.push(run);
+}
+
+/// `path` stopped `by` yards short of its end, as a chase stops short of its quarry.
+fn short_of(mut path: Vec<[f32; 3]>, by: f32) -> Vec<[f32; 3]> {
+    if let [.., from, to] = path[..] {
+        let d = distance(from, to);
+        let t = if d > by { (d - by) / d } else { 0.0 };
+        let end = std::array::from_fn(|i| from[i] + (to[i] - from[i]) * t);
+        *path.last_mut().expect("two points") = end;
+    }
+    path
 }
 
 /// The melee reach between the player and a mob (`Unit::GetCombatReachToTarget`), never under

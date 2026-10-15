@@ -13,6 +13,7 @@ mod characters;
 mod combat;
 mod content;
 mod dev;
+mod dungeon;
 mod equipment;
 mod fields;
 mod hub;
@@ -177,6 +178,12 @@ pub enum RealmCommand {
     },
     /// Release Spirit: the dead player comes back at the respawn point.
     RepopRequest,
+    /// The client walked into `AreaTrigger.dbc` row `id`: the Dungeon's entrance or exit.
+    AreaTrigger {
+        id: u32,
+    },
+    /// The client has loaded the map a worldport sent it to.
+    WorldportAck,
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -303,6 +310,14 @@ impl Realm {
                 self.events.push(answer);
             }
             RealmCommand::Logout => self.logout(),
+            RealmCommand::AreaTrigger { id } => self.area_trigger(id),
+            RealmCommand::WorldportAck => {
+                if let Some(w) = &mut self.world {
+                    if let Some(c) = self.characters.get(w.guid) {
+                        w.worldport_ack(c, &mut self.events);
+                    }
+                }
+            }
             RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
             other => self.handle_items(other),
         }
@@ -390,10 +405,12 @@ impl Realm {
         let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
+        let map = c.map;
         let ticked = w.tick(dt, host, c, &mut self.rng, &mut self.events);
         w.since_save += dt;
-        // The dead are saved once they release, where they come back.
-        if ticked.leveled || (w.since_save >= save::AUTOSAVE_SECS && !w.dead()) {
+        // Zoning saves (a hearth out of the Dungeon); the dead are saved once they release.
+        let zoned = c.map != map;
+        if ticked.leveled || zoned || (w.since_save >= save::AUTOSAVE_SECS && !w.dead()) {
             w.since_save = 0.0;
             let guid = w.guid;
             self.save(guid);
@@ -454,7 +471,25 @@ impl Realm {
         });
     }
 
+    /// `CMSG_AREATRIGGER`: a trigger that moved the player saves where they went.
+    fn area_trigger(&mut self, id: u32) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        if w.area_trigger(id, c, &mut self.events) {
+            let guid = w.guid;
+            self.save(guid);
+        }
+    }
+
     fn enter_world(&mut self, guid: u64) {
+        // A save from inside the Dungeon comes back outside it: a run ends with its session.
+        if let Some(c) = self.characters.get_mut(guid) {
+            world::come_out(c);
+        }
         let Some(c) = self.characters.get(guid) else {
             // `CHAR_LOGIN_NO_CHARACTER`, the reference's fifth refusal.
             self.events
@@ -472,6 +507,8 @@ impl Realm {
         // Leaving dead is a release: the save puts the character where it comes back.
         if let Some(c) = self.characters.get_mut(w.guid) {
             w.release(c, &mut Vec::new());
+            // Leaving inside the Dungeon leaves it.
+            world::come_out(c);
         }
         self.save(w.guid);
         self.events.push(SessionEvent::LogoutResponse {

@@ -74,29 +74,19 @@ impl InWorld {
         p.swing_timer = 0.0;
         p.refused = None;
         let health = p.health;
-        c.map = to.map;
-        c.position = to.position;
-        c.orientation = to.orientation;
-        if to.map == self.map {
-            self.teleport(c, to.position, to.orientation, events);
-        } else {
-            // Another map: the client rebuilds its world, so the realm's starts over too.
-            self.map = to.map;
-            self.mobs.clear();
-            self.population = Default::default();
-            self.hub_shown = false;
-            events.push(SessionEvent::TransferPending {
-                map_id: to.map,
-                transport_entry: None,
-            });
-            events.push(SessionEvent::Worldport {
-                map_id: to.map,
+        // Another map is a worldport, after which the player is created again at full health.
+        self.move_to(
+            c,
+            crate::dungeon::Place {
+                map: to.map,
                 position: to.position,
                 orientation: to.orientation,
-                needs_ack: false,
-            });
+            },
+            events,
+        );
+        if !self.transferring() {
+            events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, health)]));
         }
-        events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, health)]));
         true
     }
 }
