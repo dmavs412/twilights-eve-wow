@@ -893,7 +893,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     pairs.extend(sheet_pairs(stats));
     pairs.push(cast::stance(c));
     pairs.push(crate::talents::points_pair(c));
-    pairs.extend(crate::equipment::inventory_pairs(&c.inventory));
+    pairs.extend(crate::equipment::inventory_pairs(c));
     pairs.extend(crate::quests::log_pairs(c));
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {

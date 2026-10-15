@@ -47,7 +47,7 @@ impl InWorld {
     /// other item, else whether one was eaten.
     pub(crate) fn eat_or_drink(
         &mut self,
-        slot: u8,
+        slot: crate::inventory::Pos,
         c: &mut Char,
         events: &mut Vec<SessionEvent>,
     ) -> Option<bool> {
@@ -59,7 +59,7 @@ impl InWorld {
 
     fn sit_and_eat(
         &mut self,
-        slot: u8,
+        slot: crate::inventory::Pos,
         t: &items::Template,
         c: &mut Char,
         events: &mut Vec<SessionEvent>,

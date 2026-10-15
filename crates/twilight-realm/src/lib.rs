@@ -369,9 +369,9 @@ impl Realm {
             }
             RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target),
             RealmCommand::UseItem { bag, slot } => {
-                // Equipped bags are not modelled: only the player's own slots hold items.
-                if let (Some(w), 255) = (&mut self.world, bag) {
+                if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {
+                        let slot = inventory::Pos { bag, slot };
                         // Food and drink are eaten at once; anything else casts its spell.
                         match w.eat_or_drink(slot, c, &mut self.events) {
                             Some(true) => {
@@ -499,7 +499,7 @@ impl Realm {
         }
         // A quest may want what came into the bags, or what left them.
         quests::refresh(c, events);
-        if moved.gear_changed || looted.took {
+        if moved.gear_changed || moved.bags_changed || looted.took {
             let guid = w.guid;
             self.save(guid);
         }

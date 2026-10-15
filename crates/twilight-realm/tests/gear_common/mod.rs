@@ -37,6 +37,53 @@ pub fn save_with(level: u8, money: u32, items: &[Carried]) -> (u64, String) {
     (guid, blob)
 }
 
+/// One item a test puts inside an equipped bag: `(bag slot 19-22, slot in the bag, entry,
+/// count)`.
+pub type Bagged = (u8, u8, u32, u32);
+
+/// [`save_with`], with `bagged` inside the bags `items` equips.
+pub fn save_with_bagged(
+    level: u8,
+    money: u32,
+    items: &[Carried],
+    bagged: &[Bagged],
+) -> (u64, String) {
+    let (guid, mut blob) = save_with(level, money, items);
+    for (bag, slot, entry, count) in bagged {
+        blob.push_str(&format!(
+            "
+[[items]]
+bag = {bag}
+slot = {slot}
+entry = {entry}
+count = {count}
+"
+        ));
+    }
+    (guid, blob)
+}
+
+/// [`warrior_with`], with `bagged` inside the bags `items` equips.
+pub fn warrior_with_bagged(
+    level: u8,
+    money: u32,
+    items: &[Carried],
+    bagged: &[Bagged],
+) -> (Realm, u64, Vec<SessionEvent>) {
+    let (guid, blob) = save_with_bagged(level, money, items, bagged);
+    enter_saved(guid, &blob)
+}
+
+/// A realm holding just the save `blob`, entered as `guid`, with the entry burst.
+pub fn enter_saved(guid: u64, blob: &str) -> (Realm, u64, Vec<SessionEvent>) {
+    let mut realm = Realm::with_seed(SEED);
+    realm.import_character(blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    let events = drain(&mut realm);
+    (realm, guid, events)
+}
+
 /// A human warrior of `level` in the world (on flat ground) carrying `money` and `items`, with
 /// the entry burst.
 pub fn warrior_with(level: u8, money: u32, items: &[Carried]) -> (Realm, u64, Vec<SessionEvent>) {
