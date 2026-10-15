@@ -11,8 +11,11 @@
 mod characters;
 mod combat;
 mod content;
+mod equipment;
 mod fields;
+mod inventory;
 mod items;
+mod looting;
 mod mobs;
 mod rng;
 pub mod rules;
@@ -69,6 +72,53 @@ pub enum RealmCommand {
     },
     /// Back to character select.
     Logout,
+    /// An item template, answered with [`SessionEvent::ItemTemplate`].
+    ItemQuery {
+        entry: u32,
+    },
+    /// Open a corpse's loot window.
+    Loot {
+        guid: u64,
+    },
+    /// Take the open loot's money.
+    LootMoney,
+    /// Take the open loot's row `slot` into the bags.
+    AutostoreLootItem {
+        slot: u8,
+    },
+    /// Close the loot window.
+    LootRelease {
+        guid: u64,
+    },
+    /// Wear the item at a wire position (bag 255 is the player's own slots).
+    AutoEquipItem {
+        bag: u8,
+        slot: u8,
+    },
+    /// Move an item between two of the player's own slots, swapping with what is there.
+    SwapInvItem {
+        src: u8,
+        dst: u8,
+    },
+    /// Move an item between two wire positions.
+    SwapItem {
+        src_bag: u8,
+        src_slot: u8,
+        dst_bag: u8,
+        dst_slot: u8,
+    },
+    /// Put the item at a wire position into the first free slot of `dst_bag`.
+    AutoStoreBagItem {
+        src_bag: u8,
+        src_slot: u8,
+        dst_bag: u8,
+    },
+    /// Destroy `count` of the item at a wire position, 0 for all of it.
+    DestroyItem {
+        bag: u8,
+        slot: u8,
+        count: u8,
+    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -152,6 +202,61 @@ impl Realm {
                 self.events.push(mobs::creature_name(entry));
             }
             RealmCommand::Logout => self.logout(),
+            RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
+            other => self.handle_items(other),
+        }
+    }
+
+    /// The loot and inventory commands: they need the character in the world.
+    fn handle_items(&mut self, command: RealmCommand) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let events = &mut self.events;
+        let mut moved = equipment::Moved::default();
+        let mut looted = looting::Looted::default();
+        match command {
+            RealmCommand::Loot { guid } => w.open_loot(guid, c, events),
+            RealmCommand::LootMoney => looted = w.looting.take_money(c, events),
+            RealmCommand::AutostoreLootItem { slot } => {
+                looted = w.looting.take_item(c, slot, events);
+            }
+            RealmCommand::LootRelease { .. } => looted = w.looting.release(events),
+            RealmCommand::AutoEquipItem { bag, slot } => {
+                moved = equipment::auto_equip(c, bag, slot, events);
+            }
+            RealmCommand::SwapInvItem { src, dst } => moved = equipment::swap(c, src, dst, events),
+            RealmCommand::SwapItem {
+                src_bag,
+                src_slot,
+                dst_bag,
+                dst_slot,
+            } => {
+                moved =
+                    equipment::swap_positions(c, (src_bag, src_slot), (dst_bag, dst_slot), events);
+            }
+            RealmCommand::AutoStoreBagItem {
+                src_bag,
+                src_slot,
+                dst_bag,
+            } => moved = equipment::auto_store(c, src_bag, src_slot, dst_bag, events),
+            RealmCommand::DestroyItem { bag, slot, count } => {
+                moved = equipment::destroy(c, bag, slot, count, events);
+            }
+            _ => return,
+        }
+        if moved.gear_changed {
+            w.refresh_gear(c, events);
+        }
+        if let Some((corpse, lootable)) = looted.flag {
+            events.push(fields::values(corpse, &[looting::lootable_pair(lootable)]));
+        }
+        if moved.gear_changed || looted.took {
+            let guid = w.guid;
+            self.save(guid);
         }
     }
 
