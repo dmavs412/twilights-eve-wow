@@ -4,6 +4,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::characters::Char;
+use crate::clock;
 use crate::content::{self, Calling};
 use crate::inventory::{Inventory, SLOTS};
 
@@ -152,7 +153,7 @@ pub(crate) fn export(c: &Char) -> String {
         item_cooldowns: c
             .item_cooldowns
             .iter()
-            .map(|&(entry, left)| [entry, (left * 1000.0).round() as u32])
+            .map(|&(entry, left)| [entry, clock::ms(left)])
             .collect(),
         tokens: 0,
         completed: c.quests.completed.clone(),
@@ -191,7 +192,7 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         item_cooldowns: s
             .item_cooldowns
             .iter()
-            .map(|&[entry, ms]| (entry, ms as f32 / 1000.0))
+            .map(|&[entry, ms]| (entry, clock::secs(ms)))
             .collect(),
         quests: crate::quests::QuestLog {
             completed: s.completed,

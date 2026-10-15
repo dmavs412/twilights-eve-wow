@@ -9,6 +9,7 @@ use benilla_protocol::messages::{MonsterMoveFacing, ObjectType};
 use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
+use crate::clock;
 use crate::fields::*;
 use crate::rules::stats::{MobStats, UnitClass};
 use crate::space::distance;
@@ -407,7 +408,7 @@ impl Mob {
             path,
             facing: MonsterMoveFacing::None,
             stop: false,
-            duration_ms: (duration * 1000.0) as u32,
+            duration_ms: clock::ms(duration),
             flying: false,
             run_mode: true,
         }

@@ -7,6 +7,7 @@ use benilla_protocol::SessionEvent;
 
 use super::InWorld;
 use crate::characters::Char;
+use crate::clock;
 use crate::equipment;
 use crate::fields::*;
 use crate::items;
@@ -121,7 +122,7 @@ impl InWorld {
             ammo_display_id: None,
             item_caster: Some(item_guid),
         });
-        let duration = t.duration_ms as f32 / 1000.0;
+        let duration = clock::secs(t.duration_ms);
         let mut pairs = vec![
             (UNIT_FIELD_AURA + AURA_SLOT, t.use_spell),
             (

@@ -9,6 +9,7 @@ use benilla_protocol::messages::{AttackSwingError, LevelUpInfo, ObjectType, XpGa
 use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 
 use crate::characters::Char;
+use crate::clock;
 use crate::combat;
 use crate::content;
 use crate::dev::DevMultipliers;
@@ -346,7 +347,7 @@ impl InWorld {
             return;
         }
         p.refused = None;
-        p.swing_timer = p.stats.attack_time_ms as f32 / 1000.0;
+        p.swing_timer = clock::secs(p.stats.attack_time_ms);
 
         let from_front = in_front(mob.orientation, mob.position, c.position);
         // A queued Heroic Strike takes this swing's place.
@@ -460,7 +461,7 @@ impl InWorld {
                 events.push(SessionEvent::AttackerState(
                     swing.report(mob.guid, self.guid),
                 ));
-                mob.swing_timer = mob.template.base_attack_time as f32 / 1000.0
+                mob.swing_timer = clock::secs(mob.template.base_attack_time)
                     * self.skills.attack_time_mul(mob.guid);
                 if swing.damage > 0 {
                     p.health = p.health.saturating_sub(swing.damage);

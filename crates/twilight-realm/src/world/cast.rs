@@ -15,6 +15,7 @@ use benilla_protocol::SessionEvent;
 use super::{in_front, melee_reach, InWorld, Ticked};
 use crate::callings::{self, Effect, Skill, Target, Weapon};
 use crate::characters::Char;
+use crate::clock;
 use crate::fields::*;
 use crate::items;
 use crate::mobs::State;
@@ -275,7 +276,7 @@ impl Skills {
         if aura.unit == self.me {
             events.push(SessionEvent::AuraDuration {
                 slot: aura.slot,
-                remaining_ms: (aura.left * 1000.0) as u32,
+                remaining_ms: clock::ms(aura.left),
             });
         }
         events.push(self.slot_fields(aura.unit, aura.slot));
@@ -354,7 +355,7 @@ pub(super) fn spell_book(c: &Char) -> SessionEvent {
                     spell_id: t.use_spell as u16,
                     item_id: entry as u16,
                     category: 0,
-                    spell_cd_ms: (left * 1000.0).round() as u32,
+                    spell_cd_ms: clock::ms(left),
                     category_cd_ms: 0,
                 })
             })
@@ -396,7 +397,7 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
     let mut s = *stats;
     if bonus > 0 {
         s.attack_power += bonus as i32;
-        let extra = formulas::ap_damage(bonus as i32, s.attack_time_ms as f32 / 1000.0);
+        let extra = formulas::ap_damage(bonus as i32, clock::secs(s.attack_time_ms));
         s.min_damage += extra;
         s.max_damage += extra;
     }
@@ -622,13 +623,13 @@ impl InWorld {
         if skill.cooldown_ms > 0 {
             s.cooldowns.retain(|(id, _)| *id != skill.spell_id);
             s.cooldowns
-                .push((skill.spell_id, skill.cooldown_ms as f32 / 1000.0));
+                .push((skill.spell_id, clock::secs(skill.cooldown_ms)));
         }
         if skill.gcd_ms > 0 {
-            s.gcd = skill.gcd_ms as f32 / 1000.0;
+            s.gcd = clock::secs(skill.gcd_ms);
         }
         if skill.puts_in_combat_ms > 0 {
-            s.combat_hold = s.combat_hold.max(skill.puts_in_combat_ms as f32 / 1000.0);
+            s.combat_hold = s.combat_hold.max(clock::secs(skill.puts_in_combat_ms));
         }
         if skill.requires_target_dodged {
             s.close_dodge_window(events);
@@ -709,9 +710,9 @@ impl InWorld {
             spell_id,
             slot: 0,
             level,
-            left: duration_ms as f32 / 1000.0,
-            period: period_ms as f32 / 1000.0,
-            next_tick: period_ms as f32 / 1000.0,
+            left: clock::secs(duration_ms),
+            period: clock::secs(period_ms),
+            next_tick: clock::secs(period_ms),
             kind,
         };
         match *effect {
@@ -767,7 +768,7 @@ impl InWorld {
                     path: vec![from, dest],
                     facing: MonsterMoveFacing::Target(target),
                     stop: false,
-                    duration_ms: (duration * 1000.0) as u32,
+                    duration_ms: clock::ms(duration),
                     flying: false,
                     run_mode: true,
                 });
@@ -893,13 +894,13 @@ impl InWorld {
             return;
         }
         let s = buffed(&self.player.stats, &self.skills);
-        let period = tick_ms as f32 / 1000.0;
+        let period = clock::secs(tick_ms);
         let bleed = Aura {
             unit: target,
             spell_id,
             slot: 0,
             level: c.level,
-            left: duration_ms as f32 / 1000.0,
+            left: clock::secs(duration_ms),
             period,
             next_tick: period,
             kind: AuraKind::Bleed {
@@ -1213,11 +1214,9 @@ fn weapon_roll(stats: &WarriorStats, weapon: Weapon, rng: &mut Rng) -> f32 {
     let roll = rng.frand(stats.min_damage, stats.max_damage);
     match weapon {
         Weapon::Normal => roll,
-        Weapon::Normalized => formulas::normalized_roll(
-            roll,
-            stats.attack_power,
-            stats.attack_time_ms as f32 / 1000.0,
-        ),
+        Weapon::Normalized => {
+            formulas::normalized_roll(roll, stats.attack_power, clock::secs(stats.attack_time_ms))
+        }
     }
 }
 
@@ -1269,7 +1268,7 @@ impl InWorld {
             spell_id,
             item: item.guid,
             entry: item.entry,
-            left: cast_ms as f32 / 1000.0,
+            left: clock::secs(cast_ms),
         });
         events.push(SessionEvent::SpellStart {
             caster: self.guid,
@@ -1327,7 +1326,7 @@ impl InWorld {
             if t.use_cooldown_ms > 0 {
                 c.item_cooldowns.retain(|&(e, _)| e != cast.entry);
                 c.item_cooldowns
-                    .push((cast.entry, t.use_cooldown_ms as f32 / 1000.0));
+                    .push((cast.entry, clock::secs(t.use_cooldown_ms as u32)));
             }
         }
         self.item_spell_effect(cast.spell_id, c, events);
