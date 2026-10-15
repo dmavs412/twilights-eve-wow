@@ -1,5 +1,7 @@
-//! The Basic Warrior's eight skills, played through the realm's seam: the spellbook at login,
-//! casts from the action bar, what they cost, what they refuse, and what they do to a mob.
+//! The Basic Warrior's two skills, played through the realm's seam: the spellbook at login, casts
+//! from the action bar, what they cost, what they refuse, and what they do to a mob. The skill
+//! mechanics its kit cannot show (a buff, a bleed, the global cooldown, Overpower's window) are
+//! played on the Tier 1 Warrior.
 
 mod common;
 
@@ -8,26 +10,12 @@ use common::*;
 
 const HEROIC_STRIKE: u32 = 78;
 const CHARGE: u32 = 100;
-const REND: u32 = 772;
-const THUNDER_CLAP: u32 = 6343;
-const BATTLE_SHOUT: u32 = 6673;
-const HAMSTRING: u32 = 1715;
-const OVERPOWER: u32 = 7384;
-const BLOODRAGE: u32 = 2687;
 
-const EIGHT: [u32; 8] = [
-    HEROIC_STRIKE,
-    CHARGE,
-    REND,
-    THUNDER_CLAP,
-    BATTLE_SHOUT,
-    HAMSTRING,
-    OVERPOWER,
-    BLOODRAGE,
-];
+/// The Basic Warrior's kit.
+const KIT: [u32; 2] = [HEROIC_STRIKE, CHARGE];
 
 #[test]
-fn a_new_basic_warriors_spellbook_holds_exactly_the_eight_skills() {
+fn a_new_basic_warriors_spellbook_holds_exactly_heroic_strike_and_charge() {
     let mut realm = realm();
     let (_, events) = enter_new(&mut realm, "Garrosh", ORC);
 
@@ -44,7 +32,7 @@ fn a_new_basic_warriors_spellbook_holds_exactly_the_eight_skills() {
     assert_eq!(books.len(), 1, "one spellbook at login");
     let (mut ids, cooldowns) = books[0].clone();
     ids.sort_unstable();
-    let mut want = EIGHT.to_vec();
+    let mut want = KIT.to_vec();
     want.sort_unstable();
     assert_eq!(ids, want);
     assert_eq!(cooldowns, 0, "a fresh character has nothing cooling down");
@@ -61,13 +49,13 @@ fn a_warrior_stands_in_battle_stance_so_the_client_allows_its_stance_skills() {
 }
 
 #[test]
-fn a_new_character_finds_the_eight_on_its_battle_stance_bar() {
+fn a_new_character_finds_its_kit_on_its_battle_stance_bar() {
     let mut realm = realm();
     let (_, events) = enter_new(&mut realm, "Garrosh", ORC);
     let buttons = action_buttons(&events);
     // Battle Stance pages the main bar to slots 73-84 (0-based 72-83).
     let on_bar: Vec<(u8, u32)> = buttons.iter().map(|b| (b.slot, b.action)).collect();
-    let want: Vec<(u8, u32)> = (72..).zip(EIGHT).collect();
+    let want: Vec<(u8, u32)> = (72..).zip(KIT).collect();
     assert_eq!(on_bar, want);
     assert!(buttons.iter().all(|b| b.kind == 0), "spell buttons");
 }
@@ -92,7 +80,7 @@ fn the_bar_the_player_arranges_comes_back_at_the_next_login() {
         .iter()
         .map(|b| (b.slot, b.action))
         .collect();
-    assert_eq!(&on_bar[..2], &[(72, CHARGE), (74, REND)]);
+    assert_eq!(on_bar, [(72, CHARGE)]);
 
     // And it survives the save.
     let blob = realm.export_character(guid).unwrap();
@@ -104,231 +92,34 @@ fn the_bar_the_player_arranges_comes_back_at_the_next_login() {
 }
 
 #[test]
-fn bloodrage_trades_a_fifth_of_base_health_for_rage_now_and_over_ten_seconds() {
-    let (mut realm, me, _, mut view) = warrior_at(1);
-    realm.handle(cast(BLOODRAGE, None));
-    let events = view.drain(&mut realm);
-
-    // The instant's packets, in a real server's order.
-    let kinds: Vec<&str> = events.iter().filter_map(cast_packet).collect();
-    assert_eq!(kinds, ["start", "result ok", "go"]);
-    // 9.6 + 0.25 rage at level 1.
-    assert_eq!(energized(&events, BLOODRAGE), vec![10]);
-    assert_eq!(view.rage(me), 10);
-    // A level-1 warrior's base health is 20 of its 60: 20% is 4.
-    assert_eq!(view.health(me), 56);
-    let aura = view.aura(me, 29131).expect("the rage-over-time aura");
-    assert!(aura.is_cancelable(), "a buff");
-    assert!(aura.slot < 32, "in a buff slot");
-    assert!(
-        events.iter().any(|e| matches!(e, SessionEvent::AuraDuration { slot, remaining_ms: 10_000 } if *slot == aura.slot)),
-        "the buff bar's timer"
-    );
-
-    // One rage a second for ten seconds; Bloodrage holds the warrior in combat, so none decays.
-    let events = view.run(&mut realm, 10.5);
-    assert_eq!(periodic_energize(&events, 29131), vec![1; 10]);
-    assert_eq!(view.rage(me), 20);
-    assert_eq!(view.aura(me, 29131), None, "faded");
-}
-
-#[test]
-fn bloodrage_cannot_be_cast_again_for_a_minute() {
-    let (mut realm, _, _, mut view) = warrior_at(1);
-    realm.handle(cast(BLOODRAGE, None));
-    view.drain(&mut realm);
-    view.run(&mut realm, 59.0);
-    realm.handle(cast(BLOODRAGE, None));
-    assert_eq!(refusal(&view.drain(&mut realm), BLOODRAGE), Some(NOT_READY));
-    view.run(&mut realm, 1.1);
-    realm.handle(cast(BLOODRAGE, None));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, BLOODRAGE), None);
-    assert!(events.iter().any(|e| matches!(
-        e,
-        SessionEvent::SpellGo {
-            spell_id: BLOODRAGE,
-            ..
-        }
-    )));
-}
-
-#[test]
-fn a_buff_clicked_off_goes_and_takes_its_bonus_with_it() {
-    let (mut realm, me, _, mut view) = warrior_at(1);
-    realm.handle(cast(BLOODRAGE, None));
-    realm.handle(cast(BATTLE_SHOUT, None));
-    view.drain(&mut realm);
-    assert!(view.aura(me, BATTLE_SHOUT).is_some());
-
-    realm.handle(RealmCommand::CancelAura {
-        spell_id: BATTLE_SHOUT,
-    });
-    view.drain(&mut realm);
-    assert_eq!(view.aura(me, BATTLE_SHOUT), None);
-    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
-    assert!(view.aura(me, 29131).is_some(), "the other buff stays");
-}
-
-#[test]
-fn battle_shout_needs_its_rage_and_raises_attack_power_for_two_minutes() {
-    let (mut realm, me, _, mut view) = warrior_at(1);
-    realm.handle(cast(BATTLE_SHOUT, None));
-    assert_eq!(
-        refusal(&view.drain(&mut realm), BATTLE_SHOUT),
-        Some(NO_POWER)
-    );
-
-    realm.handle(cast(BLOODRAGE, None));
-    let min_before = view.fields(me).unit_min_damage().unwrap();
-    realm.handle(cast(BATTLE_SHOUT, None));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, BATTLE_SHOUT), None);
-    assert_eq!(view.rage(me), 0, "10 rage spent");
-    let aura = view.aura(me, BATTLE_SHOUT).expect("the shout's buff");
-    assert!(aura.is_cancelable());
-    assert_eq!(view.fields(me).unit_attack_power_mods(), (15, 0));
-    // 15 attack power is 15 / 14 damage a second, over the Worn Shortsword's 1.9 s swing.
-    let gained = view.fields(me).unit_min_damage().unwrap() - min_before;
-    assert!((gained - 15.0 / 14.0 * 1.9).abs() < 1e-3, "{gained}");
-
-    view.run(&mut realm, 120.5);
-    assert_eq!(view.aura(me, BATTLE_SHOUT), None, "faded");
-    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
-}
-
-#[test]
 fn a_skill_grows_with_level_without_being_relearned() {
-    let shout = |level| {
-        let (mut realm, me, _, mut view) = warrior_at(level);
-        realm.handle(cast(BLOODRAGE, None));
-        realm.handle(cast(BATTLE_SHOUT, None));
-        view.drain(&mut realm);
-        view.fields(me).unit_attack_power_mods().0
+    let charge = |level| {
+        let (mut realm, _, mob, mut view) = warrior_at(level);
+        stand_at(&mut realm, &mob, 15.0);
+        realm.handle(cast(CHARGE, Some(mob.guid)));
+        energized(&view.drain(&mut realm), CHARGE)
     };
-    assert_eq!(shout(1), 15);
-    assert_eq!(shout(5), 17);
-    assert_eq!(shout(10), 20);
+    // 8.5 + 0.14 rage a level.
+    assert_eq!(charge(1), vec![9]);
+    assert_eq!(charge(10), vec![10]);
 }
 
 #[test]
-fn rend_bleeds_the_mob_three_times_over_nine_seconds() {
-    let (mut realm, me, mob, mut view) = warrior_at(1);
-    stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(BLOODRAGE, None));
-    let full = view.health(mob.guid);
-    realm.handle(cast(REND, Some(mob.guid)));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, REND), None);
-    assert!(
-        events.iter().any(|e| matches!(e, SessionEvent::AttackStart { attacker, victim } if *attacker == mob.guid && *victim == me)),
-        "the mob turns on the player"
-    );
-    let aura = view
-        .aura(mob.guid, REND)
-        .expect("the bleed on the mob's frame");
-    assert!(aura.slot >= 32 && !aura.is_cancelable(), "a debuff");
-    assert_eq!(aura.level, 1, "the caster's level");
-
-    let events = view.run(&mut realm, 9.5);
-    // 4 + 0.24 + 0.01 × 29 attack power.
-    assert_eq!(periodic_damage(&events, REND), vec![5, 5, 5]);
-    assert_eq!(view.health(mob.guid), full - 15);
-    assert_eq!(view.aura(mob.guid, REND), None, "run out");
-}
-
-#[test]
-fn a_global_cooldown_follows_rend_and_the_tank_skills() {
+fn a_skill_at_an_enemy_needs_a_target_in_front() {
     let (mut realm, _, mob, mut view) = warrior_at(10);
-    stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(BLOODRAGE, None));
-    view.run(&mut realm, 8.0);
-    realm.handle(cast(REND, Some(mob.guid)));
-    realm.handle(cast(HAMSTRING, Some(mob.guid)));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, REND), None);
-    assert_eq!(refusal(&events, HAMSTRING), Some(NOT_READY));
-    view.run(&mut realm, 1.5);
-    realm.handle(cast(HAMSTRING, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), HAMSTRING), None);
-}
+    realm.handle(cast(CHARGE, None));
+    assert_eq!(refusal(&view.drain(&mut realm), CHARGE), Some(BAD_TARGETS));
 
-#[test]
-fn a_melee_skill_needs_a_target_in_reach_and_in_front() {
-    let (mut realm, _, mob, mut view) = warrior_at(10);
-    realm.handle(cast(BLOODRAGE, None));
-    view.drain(&mut realm);
-
-    realm.handle(cast(REND, None));
-    assert_eq!(refusal(&view.drain(&mut realm), REND), Some(BAD_TARGETS));
-
-    stand_at(&mut realm, &mob, 7.0);
-    realm.handle(cast(REND, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), REND), Some(OUT_OF_RANGE));
-
-    stand_at(&mut realm, &mob, 2.0);
-    turn_around(&mut realm, &mob, 2.0);
-    realm.handle(cast(REND, Some(mob.guid)));
+    turn_around(&mut realm, &mob, 15.0);
+    realm.handle(cast(CHARGE, Some(mob.guid)));
     assert_eq!(
-        refusal(&view.drain(&mut realm), REND),
+        refusal(&view.drain(&mut realm), CHARGE),
         Some(UNIT_NOT_INFRONT)
     );
 
     // Fireball is not a Basic Warrior's.
     realm.handle(cast(133, Some(mob.guid)));
     assert_eq!(refusal(&view.drain(&mut realm), 133), Some(NOT_KNOWN));
-}
-
-#[test]
-fn hamstring_hits_and_slows_the_mobs_chase() {
-    let (mut realm, _, mob, mut view) = warrior_at(10);
-    stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(BLOODRAGE, None));
-    realm.handle(cast(HAMSTRING, Some(mob.guid)));
-    let events = view.drain(&mut realm);
-    // A level-10 warrior cannot miss a level-3 mob.
-    assert_eq!(spell_damage(&events, HAMSTRING).len(), 1);
-    assert!(view.aura(mob.guid, HAMSTRING).is_some());
-
-    // Step away: the mob's chase runs at 60% of its 8 yd/s.
-    stand_at(&mut realm, &mob, 15.0);
-    let events = view.run(&mut realm, 1.0);
-    let speed = chase_speed(&events, mob.guid).expect("the mob gives chase");
-    assert!((speed - 7.0 * 1.143 * 0.6).abs() < 0.05, "{speed} yd/s");
-}
-
-#[test]
-fn thunder_clap_hits_what_stands_close_and_slows_its_swings() {
-    let (mut realm, me, mob, mut view) = warrior_at(10);
-    realm.handle(cast(BLOODRAGE, None));
-    view.run(&mut realm, 8.0);
-
-    // Out of the clap's 8 yd: it goes off, on no one.
-    stand_at(&mut realm, &mob, 12.0);
-    realm.handle(cast(THUNDER_CLAP, None));
-    let events = view.drain(&mut realm);
-    assert_eq!(go_hits(&events, THUNDER_CLAP), Some(vec![]));
-    assert_eq!(view.rage(me), 0, "paid all the same");
-
-    let (mut realm, _, mob, mut view) = warrior_at(10);
-    realm.handle(cast(BLOODRAGE, None));
-    view.run(&mut realm, 8.0);
-    stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(THUNDER_CLAP, None));
-    let events = view.drain(&mut realm);
-    assert_eq!(go_hits(&events, THUNDER_CLAP), Some(vec![mob.guid]));
-    assert_eq!(spell_damage(&events, THUNDER_CLAP).len(), 1);
-    assert!(view.aura(mob.guid, THUNDER_CLAP).is_some());
-    realm.handle(cast(THUNDER_CLAP, None));
-    assert_eq!(
-        refusal(&view.drain(&mut realm), THUNDER_CLAP),
-        Some(NOT_READY)
-    );
-
-    // The mob swings every 2.2 s instead of 2.
-    let gaps = swing_gaps(&mut realm, &mut view, mob.guid, 7.0);
-    assert!(!gaps.is_empty());
-    assert!(gaps.iter().all(|&g| (g - 2.2).abs() < 0.11), "{gaps:?}");
 }
 
 #[test]
@@ -382,13 +173,23 @@ fn charge_is_refused_in_combat() {
 }
 
 #[test]
-fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
-    let (mut realm, me, mob, mut view) = warrior_at(10);
+fn heroic_strike_needs_its_rage() {
+    let (mut realm, _, mob, mut view) = warrior_at(10);
     stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(BLOODRAGE, None));
-    view.run(&mut realm, 3.0);
+    realm.handle(cast(HEROIC_STRIKE, Some(mob.guid)));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), HEROIC_STRIKE),
+        Some(NO_POWER)
+    );
+}
+
+#[test]
+fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
+    let (mut realm, me, mob, mut view) = warrior_at(1);
+    rage_up(&mut realm, &mut view, me, &mob, CHARGE, 15);
+    // The swing timer comes round again.
+    view.run(&mut realm, 2.0);
     let rage = view.rage(me);
-    assert!(rage >= 15);
 
     realm.handle(cast(HEROIC_STRIKE, Some(mob.guid)));
     let events = view.drain(&mut realm);
@@ -402,8 +203,8 @@ fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
     let events = view.run(&mut realm, 0.1);
     assert_eq!(go_hits(&events, HEROIC_STRIKE), Some(vec![mob.guid]));
     let damage = spell_damage(&events, HEROIC_STRIKE);
-    // The white roll plus 9.5 + 14, through a level-3 mob's armour: no white swing comes close.
-    assert!(damage[0] >= 20, "{damage:?}");
+    // The white roll plus 9.5 + 1.4, through a level-3 mob's armour: a white swing tops out at 7.
+    assert!(damage[0] >= 11, "{damage:?}");
     assert!(
         !events
             .iter()
@@ -420,20 +221,146 @@ fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
     assert_eq!(go_hits(&events, HEROIC_STRIKE), None);
 }
 
+// ── What the Basic Warrior's two skills cannot show, on the Tier 1 Warrior ──────────────────────
+
+// The Tier 1 Warrior's skills (`content/callings.toml`).
+const T1_CHARGE: u32 = 6178;
+const T1_REND: u32 = 6546;
+const T1_BATTLE_SHOUT: u32 = 6192;
+const T1_OVERPOWER: u32 = 7887;
+const T1_CLEAVE: u32 = 845;
+const T1_THUNDER_CLAP: u32 = 8198;
+
 #[test]
-fn a_queued_heroic_strike_without_its_rage_at_the_swing_fails_and_swings_white() {
-    let (mut realm, me, mob, mut view) = warrior_at(1);
-    stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(BLOODRAGE, None));
-    view.run(&mut realm, 5.0);
-    realm.handle(cast(HEROIC_STRIKE, Some(mob.guid)));
-    // The shout spends the rage the strike was waiting on.
-    realm.handle(cast(BATTLE_SHOUT, None));
+fn a_buff_clicked_off_goes_and_takes_its_bonus_with_it() {
+    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
+    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 10);
+    realm.handle(cast(T1_BATTLE_SHOUT, None));
     view.drain(&mut realm);
-    assert!(view.rage(me) < 15);
+    assert!(view.aura(me, T1_BATTLE_SHOUT).is_some());
+
+    realm.handle(RealmCommand::CancelAura {
+        spell_id: T1_BATTLE_SHOUT,
+    });
+    view.drain(&mut realm);
+    assert_eq!(view.aura(me, T1_BATTLE_SHOUT), None);
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
+}
+
+#[test]
+fn battle_shout_needs_its_rage_and_raises_attack_power_for_two_minutes() {
+    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
+    realm.handle(cast(T1_BATTLE_SHOUT, None));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), T1_BATTLE_SHOUT),
+        Some(NO_POWER)
+    );
+
+    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 10);
+    let rage = view.rage(me);
+    let min_before = view.fields(me).unit_min_damage().unwrap();
+    realm.handle(cast(T1_BATTLE_SHOUT, None));
+    let events = view.drain(&mut realm);
+    assert_eq!(refusal(&events, T1_BATTLE_SHOUT), None);
+    assert_eq!(view.rage(me), rage - 10);
+    let aura = view.aura(me, T1_BATTLE_SHOUT).expect("the shout's buff");
+    assert!(aura.is_cancelable());
+    // 20 + 2 a level.
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (22, 0));
+    // 22 attack power is 22 / 14 damage a second, over the Worn Shortsword's 1.9 s swing.
+    let gained = view.fields(me).unit_min_damage().unwrap() - min_before;
+    assert!((gained - 22.0 / 14.0 * 1.9).abs() < 1e-3, "{gained}");
+
+    view.run(&mut realm, 120.5);
+    assert_eq!(view.aura(me, T1_BATTLE_SHOUT), None, "faded");
+    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
+}
+
+#[test]
+fn rend_bleeds_the_mob_four_times_over_twelve_seconds() {
+    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
+    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 10);
+    let full = view.health(mob.guid);
+    realm.handle(cast(T1_REND, Some(mob.guid)));
+    let events = view.drain(&mut realm);
+    assert_eq!(refusal(&events, T1_REND), None);
+    let aura = view
+        .aura(mob.guid, T1_REND)
+        .expect("the bleed on the mob's frame");
+    assert!(aura.slot >= 32 && !aura.is_cancelable(), "a debuff");
+    assert_eq!(aura.level, 1, "the caster's level");
+
+    let events = view.run(&mut realm, 12.5);
+    // 5 + 0.25 + 0.01 × 53 attack power: a level-1 human's 29 and the Tier Bonus's 24.
+    assert_eq!(periodic_damage(&events, T1_REND), vec![6, 6, 6, 6]);
+    assert_eq!(view.health(mob.guid), full - 24);
+    assert_eq!(view.aura(mob.guid, T1_REND), None, "run out");
+}
+
+#[test]
+fn a_global_cooldown_follows_rend() {
+    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
+    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 20);
+    realm.handle(cast(T1_REND, Some(mob.guid)));
+    realm.handle(cast(T1_BATTLE_SHOUT, None));
+    let events = view.drain(&mut realm);
+    assert_eq!(refusal(&events, T1_REND), None);
+    assert_eq!(refusal(&events, T1_BATTLE_SHOUT), Some(NOT_READY));
+    view.run(&mut realm, 1.5);
+    realm.handle(cast(T1_BATTLE_SHOUT, None));
+    assert_eq!(refusal(&view.drain(&mut realm), T1_BATTLE_SHOUT), None);
+}
+
+#[test]
+fn a_melee_skill_needs_a_target_in_reach() {
+    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
+    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 10);
+    realm.handle(cast(T1_REND, None));
+    assert_eq!(refusal(&view.drain(&mut realm), T1_REND), Some(BAD_TARGETS));
+    stand_at(&mut realm, &mob, 7.0);
+    realm.handle(cast(T1_REND, Some(mob.guid)));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), T1_REND),
+        Some(OUT_OF_RANGE)
+    );
+}
+
+#[test]
+fn thunder_clap_hits_what_stands_close_and_slows_its_swings() {
+    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
+    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 20);
+    realm.handle(cast(T1_THUNDER_CLAP, None));
+    let events = view.drain(&mut realm);
+    assert_eq!(go_hits(&events, T1_THUNDER_CLAP), Some(vec![mob.guid]));
+    assert_eq!(spell_damage(&events, T1_THUNDER_CLAP).len(), 1);
+    assert!(view.aura(mob.guid, T1_THUNDER_CLAP).is_some());
+    realm.handle(cast(T1_THUNDER_CLAP, None));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), T1_THUNDER_CLAP),
+        Some(NOT_READY)
+    );
+
+    // The mob swings every 2.2 s instead of 2.
+    let gaps = swing_gaps(&mut realm, &mut view, mob.guid, 7.0);
+    assert!(!gaps.is_empty());
+    assert!(gaps.iter().all(|&g| (g - 2.2).abs() < 0.11), "{gaps:?}");
+}
+
+#[test]
+fn a_queued_strike_without_its_rage_at_the_swing_fails_and_swings_white() {
+    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
+    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 20);
+    // The swing timer comes round again.
+    view.run(&mut realm, 2.0);
+    assert!(view.rage(me) < 30);
+    realm.handle(cast(T1_CLEAVE, Some(mob.guid)));
+    // The shout spends the rage the strike was waiting on.
+    realm.handle(cast(T1_BATTLE_SHOUT, None));
+    view.drain(&mut realm);
+    assert!(view.rage(me) < 20);
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
     let events = view.run(&mut realm, 0.1);
-    assert_eq!(refusal(&events, HEROIC_STRIKE), Some(NO_POWER));
+    assert_eq!(refusal(&events, T1_CLEAVE), Some(NO_POWER));
     assert!(events
         .iter()
         .any(|e| matches!(e, SessionEvent::AttackerState(s) if s.attacker == me)));
@@ -441,12 +368,11 @@ fn a_queued_heroic_strike_without_its_rage_at_the_swing_fails_and_swings_white()
 
 #[test]
 fn overpower_opens_only_after_the_mob_dodges() {
-    let (mut realm, _, mob, mut view) = warrior_at(1);
-    stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(BLOODRAGE, None));
-    realm.handle(cast(OVERPOWER, Some(mob.guid)));
+    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
+    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 5);
+    realm.handle(cast(T1_OVERPOWER, Some(mob.guid)));
     assert_eq!(
-        refusal(&view.drain(&mut realm), OVERPOWER),
+        refusal(&view.drain(&mut realm), T1_OVERPOWER),
         Some(CASTER_AURASTATE)
     );
 
@@ -456,14 +382,14 @@ fn overpower_opens_only_after_the_mob_dodges() {
     assert_eq!(f.player_combo_points(), Some(1));
     assert_eq!(f.player_combo_target(), mob.guid);
 
-    realm.handle(cast(OVERPOWER, Some(mob.guid)));
+    realm.handle(cast(T1_OVERPOWER, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, OVERPOWER), None);
+    assert_eq!(refusal(&events, T1_OVERPOWER), None);
     let missed: Vec<u8> = events
         .iter()
         .filter_map(|e| match e {
             SessionEvent::SpellGo {
-                spell_id: OVERPOWER,
+                spell_id: T1_OVERPOWER,
                 misses,
                 ..
             } => Some(misses.iter().map(|m| m.1)),
@@ -481,9 +407,9 @@ fn the_dodge_window_closes_after_five_seconds() {
     realm.handle(RealmCommand::AttackStop);
     view.run(&mut realm, 5.1);
     assert_eq!(view.fields(me).player_combo_points(), Some(0));
-    realm.handle(cast(OVERPOWER, Some(mob.guid)));
+    realm.handle(cast(T1_OVERPOWER, Some(mob.guid)));
     assert_eq!(
-        refusal(&view.drain(&mut realm), OVERPOWER),
+        refusal(&view.drain(&mut realm), T1_OVERPOWER),
         Some(CASTER_AURASTATE)
     );
 }
@@ -600,13 +526,27 @@ fn warrior_at(level: u8) -> (Realm, u64, Mob, View) {
 
 /// [`warrior_at`] with its own dice.
 fn warrior_seeded(level: u8, seed: u64) -> (Realm, u64, Mob, View) {
+    calling_seeded("basic_warrior", level, seed)
+}
+
+/// A human Tier 1 Warrior, placed as [`warrior_seeded`] places a Basic Warrior.
+fn tier1_seeded(level: u8, seed: u64) -> (Realm, u64, Mob, View) {
+    calling_seeded("warrior", level, seed)
+}
+
+/// A human of `calling` at `level`, placed as [`warrior_at`] places one.
+fn calling_seeded(calling: &str, level: u8, seed: u64) -> (Realm, u64, Mob, View) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
     let blob = maker
         .export_character(guid)
         .unwrap()
-        .replace("level = 1\n", &format!("level = {level}\n"));
+        .replace("level = 1\n", &format!("level = {level}\n"))
+        .replace(
+            "calling = \"basic_warrior\"",
+            &format!("calling = \"{calling}\""),
+        );
     let mut realm = Realm::with_seed(seed);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -654,13 +594,12 @@ fn stand_at(realm: &mut Realm, mob: &Mob, yards: f32) {
     });
 }
 
-/// A level-1 warrior with Bloodrage's rage, swinging at the level-3 mob until it dodges: about
+/// A level-1 Tier 1 Warrior that charged the level-3 mob and swings at it until it dodges: about
 /// one swing in fifty, so the dice of the first seeded fight that gets one.
 fn dodged_fight() -> (Realm, u64, Mob, View) {
     for seed in 0..200 {
-        let (mut realm, me, mob, mut view) = warrior_seeded(1, seed);
-        stand_at(&mut realm, &mob, 2.0);
-        realm.handle(cast(BLOODRAGE, None));
+        let (mut realm, me, mob, mut view) = tier1_seeded(1, seed);
+        rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 5);
         realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
         for _ in 0..600 {
             realm.tick(0.1, &FlatGround);
@@ -677,6 +616,26 @@ fn dodged_fight() -> (Realm, u64, Mob, View) {
         }
     }
     panic!("no seeded fight saw a dodge");
+}
+
+/// Charges `mob` with `charge` for its rage, then swings at it until there is `rage`, and stops.
+fn rage_up(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob, charge: u32, rage: u32) {
+    stand_at(realm, mob, 15.0);
+    realm.handle(cast(charge, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(realm), charge), None, "the charge");
+    stand_at(realm, mob, 2.0);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    for _ in 0..600 {
+        if view.rage(me) >= rage {
+            realm.handle(RealmCommand::AttackStop);
+            view.drain(realm);
+            return;
+        }
+        view.run(realm, 0.1);
+        assert!(view.health(me) > 0, "died waiting for {rage} rage");
+        assert!(view.health(mob.guid) > 0, "killed it before {rage} rage");
+    }
+    panic!("a minute of swings built no {rage} rage");
 }
 
 /// Stands `yards` from `mob` as [`stand_at`] does, but with the back to it.
@@ -736,21 +695,6 @@ fn periodic_damage(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
             _ => None,
         })
         .collect()
-}
-
-/// A mob's run speed in its first chase leg, yd/s.
-fn chase_speed(events: &[SessionEvent], guid: u64) -> Option<f32> {
-    events.iter().find_map(|e| match e {
-        SessionEvent::MonsterMove {
-            guid: g,
-            path,
-            duration_ms,
-            ..
-        } if *g == guid && *duration_ms > 0 => {
-            Some(dist(path[0], *path.last().unwrap()) / (*duration_ms as f32 / 1000.0))
-        }
-        _ => None,
-    })
 }
 
 /// The seconds into the next `secs` at which `guid` first swings.
@@ -814,22 +758,6 @@ fn energized(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
                 assert_eq!(l.power, 1, "rage");
                 Some(l.amount)
             }
-            _ => None,
-        })
-        .collect()
-}
-
-/// `SMSG_PERIODICAURALOG` energize ticks for `spell_id`.
-fn periodic_energize(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
-    events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::PeriodicAuraLog(l) if l.spell_id == spell_id => Some(&l.ticks),
-            _ => None,
-        })
-        .flatten()
-        .filter_map(|t| match t {
-            benilla_protocol::messages::PeriodicTick::Energize { amount, .. } => Some(*amount),
             _ => None,
         })
         .collect()

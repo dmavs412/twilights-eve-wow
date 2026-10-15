@@ -270,15 +270,33 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     assert_eq!(
         ids,
         [
-            78, 100, 772, 845, 1715, 2687, 5308, 6178, 6192, 6343, 6546, 6673, 7384, 7887, 8198,
-            12292, 12294, 12323, 12328, 12809, 12975
+            78, 100, 845, 5308, 6178, 6192, 6546, 7887, 8198, 12292, 12294, 12323, 12328, 12809,
+            12975
         ]
     );
 }
 
+/// The Recruit talents the realm shows and lets the player learn, but does not model yet: Anger
+/// Management's slower rage decay has no effect kind.
+const RECRUIT_NOT_MODELLED: &[&str] = &["anger_management"];
+
 #[test]
 fn the_basic_warrior_talent_tree_matches_the_reference() {
-    check_tree("basic_warrior", &[]);
+    check_tree("basic_warrior", RECRUIT_NOT_MODELLED);
+    let tree = &callings::calling("basic_warrior").unwrap().talent_tabs;
+    let names: Vec<&str> = tree.iter().map(|t| t.name.as_str()).collect();
+    assert_eq!(names, ["Recruit"]);
+}
+
+#[test]
+fn the_basic_warrior_kit_is_heroic_strike_and_charge() {
+    let kit: Vec<&str> = callings::calling("basic_warrior")
+        .unwrap()
+        .skills
+        .iter()
+        .map(|s| s.key.as_str())
+        .collect();
+    assert_eq!(kit, ["heroic_strike", "charge"]);
 }
 
 /// The Tier 1 talents the realm shows and lets the player learn, but does not model yet.

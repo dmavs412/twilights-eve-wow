@@ -127,9 +127,9 @@ const THE_CHAMPIONS_TRIAL: u32 = 64002;
 const SORT_WARRIOR: i32 = -81;
 
 // The two Callings' skills (`content/callings.toml`).
-const BASIC_SKILLS: [u32; 8] = [78, 100, 772, 6343, 6673, 1715, 7384, 2687];
+const BASIC_SKILLS: [u32; 2] = [78, 100];
 const TIER_1_SKILLS: [u32; 8] = [12294, 7887, 6178, 6546, 8198, 845, 5308, 6192];
-/// Cruelty's three Basic Warrior ranks.
+/// Three of Cruelty's Recruit ranks.
 const CRUELTY_RANKS: [u32; 3] = [12320, 12852, 12853];
 
 /// The trainer's guid, from the entry burst.
@@ -299,7 +299,7 @@ fn advancement_makes_a_level_1_tier_1_warrior_with_the_new_skills_and_tree() {
     assert_eq!(now.player_talent_points(), Some(0), "no points at level 1");
     assert_eq!(now.unit_health(), now.unit_max_health(), "at full health");
 
-    // The eight skills swapped, and Cruelty's ranks gone with the old tree.
+    // The kits swapped, and Cruelty's ranks gone with the old tree.
     let known = spellbook(&events);
     for s in TIER_1_SKILLS {
         assert!(known.contains(&s), "Tier 1 skill {s} learned");

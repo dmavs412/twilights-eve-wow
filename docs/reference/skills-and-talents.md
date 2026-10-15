@@ -54,7 +54,7 @@ These findings come from reading `crates/benilla-app/src/spell/{usable,cast_send
   have the realm push `SET_FLAT_SPELL_MODIFIER` op ALL_EFFECTS on each skill's family bit
   every level, so the tooltips track its formulas. That is untested.
 
-## Tier 0, Basic Warrior: the eight skills (levels 1–10)
+## Tier 0, Basic Warrior: two skills (levels 1–10)
 
 `L` is the level within the Tier. `W` is a white-swing roll, and `Wn` is a normalized roll.
 Each linear term is `round(base + per_level*L + per_ap*AP)`.
@@ -63,12 +63,10 @@ Each linear term is `round(base + per_level*L + per_ap*AP)`.
 |---|---|---|---|---|---|---|---|---|
 | Heroic Strike | 78 | Rank 1 | 856 Ability_Rogue_Ambush | 15 | – (next swing) | – | W + 9.5+1.4L | +11/17/24 |
 | Charge | 100 | Rank 1 | 457 Ability_Warrior_Charge | 0 | 15 s | Battle, 8–25 yd, out of combat | rage 8.5+0.14L, 1 s stun (7922) | 9/9/10 |
-| Rend | 772 | Rank 1 | 245 Ability_Gouge | 10 | – | Battle/Def | 3 ticks/9 s of 4+0.24L+0.01AP | 5/6/7 per tick |
-| Thunder Clap | 6343 | Rank 1 | 199 Spell_Nature_ThunderClap | 20 | 4 s | Battle | 8 yd, 4 targets, 2.6+1.23L+0.05AP; 10% attack slow 10 s | 5/11/19 |
-| Battle Shout | 6673 | Rank 1 | 456 Ability_Warrior_BattleShout | 10 | – | – | +AP 14.5+0.5L, 2 min (the client's own scaling) | 15/17/20 |
-| Hamstring | 1715 | Rank 1 | 23 Ability_ShockWave | 10 | – | Battle/Berserker | 0.7+0.54L+0.02AP; 40% slow 15 s | 2/4/8 |
-| Overpower | 7384 | Rank 1 | 26 Ability_MeleeDamage | 5 | 5 s | Battle, combo point | Wn + 2+0.5L, cannot be dodged, parried or blocked | +3/5/7 |
-| Bloodrage | 2687 | (none) | 86 Ability_Racial_BloodRage | 20% base hp | 60 s | – | 9.6+0.25L rage now + 10 over 10 s (29131) | 10/11/12 |
+
+The Callings handoff starts the Basic Warrior small (#18): Rend, Thunder Clap, Battle Shout,
+Hamstring, Overpower and Bloodrage are gone from the kit, and the spellbook shows the two skills
+with no rank text.
 
 The vanilla rank progressions behind each fit are in the JSON's `vanilla_reference` fields.
 
@@ -81,8 +79,8 @@ Battle Stance. Values at L1/10/20/30: MS Wn+28/50/75/100; Overpower +7/12/18/24;
 targets; Execute 30/77/129/181 plus 2–5 per extra rage; Battle Shout 22/40/60/80 AP. (The
 simulation below retuned MS and Execute.) Mortal
 Strike is a level-40 talent in vanilla. Here it is the Tier 1 signature, scaled down at low
-levels. It is left out of the Tier 1 tree, which stops at tier 5. Heroic Strike, Hamstring and
-Bloodrage drop out of the Tier 1 set.
+levels. It is left out of the Tier 1 tree, which stops at tier 5. Heroic Strike drops out of the
+Tier 1 set.
 
 ## Talent trees
 
@@ -107,11 +105,12 @@ only) works like this:
   rank in the same tab, required_spell 0, and the exceptional flag. The JSON holds all of
   this with 1-based tier and column.
 
-**Basic Warrior** has one tab, "Basic Warrior" (id 900, WarriorArms art), and 9 points.
-Capacity is 22 ranks over 2 tiers, and 9 points cannot reach tier 3. Tier 1: Improved Heroic
-Strike 124 ×3, Cruelty 157 ×3 (cut from 5), Improved Rend 127 ×3, Improved Battle Shout 154 ×3
-(cut). Tier 2: Improved Charge 126 ×2, Improved Overpower 131 ×2, Deep Wounds 121 ×3 (requires
-Improved Rend 3/3, arrow straight down), Improved Thunder Clap 128 ×3.
+**Basic Warrior** has one tab, "Recruit" (id 900, WarriorArms art), and 9 points. Capacity
+is 21 ranks over 2 rows on the vanilla grid: row 2 opens at 5 points. Row 1: Improved Heroic
+Strike 124 ×3, Improved Charge 126 ×2, Toughness 140 ×5. Row 2: Cruelty 157 ×5, Unbridled Wrath
+159 ×5, Anger Management 137 ×1. Anger Management (rage decays 30% slower out of combat) has no
+effect kind in the realm, so it ships with none: it is learnable, counts toward the row, and
+`tests/content_callings.rs` lists it as not modelled.
 
 **Tier 1 Warrior** has 29 points across three tabs. Each tab keeps the real tabs' seats and
 stops at tier 5, so 20 points reach Sweeping Strikes, Death Wish or Concussion Blow.
@@ -152,7 +151,7 @@ from 1718, 1791 and 1712, and no text is copied.
 - **Last Stand** (same file): vmangos casts 12976 with base points = 30% of max health.
 - **Cooldowns.** `verify` now requires the realm's `cooldown_ms` to equal the longer of
   Spell.dbc RecoveryTime and CategoryRecoveryTime, and `gcd_ms` to equal StartRecoveryTime.
-  The client runs both off `SMSG_SPELL_GO`. All 16 skills pass.
+  The client runs both off `SMSG_SPELL_GO`. All 10 skills pass.
 - **Spellbook visibility.** The stock gate is `SpellDisplay::in_spellbook`
   (`benilla-formats/src/spells/display.rs:453`, used by `ui_spellbook.rs` `build_book`). It
   hides a spell with Attributes `0x80` (do-not-display), `0x20`, or a nonzero castUI. Passive
@@ -160,7 +159,7 @@ from 1718, 1791 and 1712, and no text is copied.
   - All 106 passive talent rank spells in the trees carry `0x80` and stay out of the book.
   - Only the five active talents appear, under their skill line: Sweeping Strikes, Piercing
     Howl, Death Wish, Last Stand and Concussion Blow.
-  - All 16 Calling skills are bookable, and `verify` now checks that.
+  - All 10 Calling skills are bookable, and `verify` now checks that.
 
 ## Implementation pointers (read-only survey, nothing changed)
 
@@ -206,7 +205,8 @@ shows the Battle Stance icon the way real servers do. That is optional.
 armour, rage, two-roll yellow attacks) and the formulas in `callings.json`. Its inputs are
 `mob_base_stats.json` and `warrior_level_stats.json` from the combat-reference branch
 (`worktree-agent-a37ae08df1dab3a30`); pass `--mobs` and `--stats` until that branch lands.
-Results, 2000 fights per level, median (p10–p90):
+Results, 2000 fights per level, median (p10–p90). The Basic Warrior rows were run on the old
+eight-skill kit:
 
 | Calling | L | player hp | mob hp | fight | hp lost |
 |---|---|---|---|---|---|
