@@ -191,3 +191,13 @@ pub fn armor_reduced(damage: u32, armor: u32, attacker_level: u8) -> u32 {
     let d = f64::from(damage);
     ((d - d * dr) as u32).max(1)
 }
+
+/// `NOMINAL_MELEE_RANGE`: the shortest melee reach, in yards.
+pub const NOMINAL_MELEE_RANGE: f32 = 5.0;
+
+/// How far apart two units of these combat reaches can strike each other in melee
+/// (`Unit::GetCombatReachToTarget` plus vmangos's 4/3 yd lean): both reaches and 4/3, never
+/// under [`NOMINAL_MELEE_RANGE`].
+pub fn reach(attacker_reach: f32, target_reach: f32) -> f32 {
+    (attacker_reach + target_reach + 4.0 / 3.0).max(NOMINAL_MELEE_RANGE)
+}

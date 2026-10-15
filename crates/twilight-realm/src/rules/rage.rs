@@ -25,3 +25,9 @@ pub fn from_damage_dealt(damage: u32, level: u8) -> u32 {
 pub fn from_damage_taken(damage: u32, level: u8) -> u32 {
     (f64::from(damage) / conversion(level) * 2.5 * 10.0) as u32
 }
+
+/// Tenths of rage for a white swing a dodge or parry stopped at `level`: what three quarters of
+/// the damage it `would_be` would have earned (vmangos `Unit::AttackerStateUpdate`).
+pub fn from_avoided(would_be: u32, level: u8) -> u32 {
+    from_damage_dealt(would_be * 3 / 4, level)
+}

@@ -2,8 +2,8 @@
 //! (`docs/reference/vanilla-combat-rules.md` §1 and §3). Chances are basis points.
 
 use twilight_realm::rules::melee::{
-    armor_reduced, glancing_range, mob_vs_player, player_vs_mob, HitTable, Outcome, PlayerDefense,
-    PlayerOffense,
+    armor_reduced, glancing_range, mob_vs_player, player_vs_mob, reach, HitTable, Outcome,
+    PlayerDefense, PlayerOffense,
 };
 
 fn table(miss: u32, dodge: u32, parry: u32, glancing: u32, block: u32, crit: u32) -> HitTable {
@@ -196,4 +196,12 @@ fn armour_mitigates_by_the_attackers_level() {
     }
     // A hit never mitigates below 1.
     assert_eq!(armor_reduced(1, 17265, 60), 1);
+}
+
+#[test]
+fn melee_reach_is_both_reaches_and_four_thirds_but_never_under_five_yards() {
+    // Two 1.5 yd bodies come to 4.33 yd: the 5 yd floor (`NOMINAL_MELEE_RANGE`).
+    assert_eq!(reach(1.5, 1.5), 5.0);
+    // A big mob (4 yd) is reached from 1.5 + 4 + 4/3.
+    assert!((reach(1.5, 4.0) - 6.833_333).abs() < 1e-5);
 }

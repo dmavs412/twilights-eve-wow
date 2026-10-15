@@ -129,3 +129,11 @@ fn the_tier_bonus_adds_to_the_base_stats_not_to_the_gear_bonus() {
     assert!(tier1.crit_pct > naked.crit_pct);
     assert_eq!(WarriorStats::geared_at_tier(HUMAN, 1, [0; 5], &[]), naked);
 }
+
+#[test]
+fn a_dodged_or_parried_swing_earns_the_rage_of_three_quarters_of_its_damage() {
+    // L10 would have dealt 40: 30 dealt is 30 / c(10) × 7.5 = 6.01 rage.
+    assert_eq!(rage::from_avoided(40, 10), 60);
+    // L1 would have dealt 10: 7 dealt (rounded down) is a hair under 7 rage, c(1) a hair over 7.5.
+    assert_eq!(rage::from_avoided(10, 1), 69);
+}

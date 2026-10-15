@@ -364,9 +364,7 @@ impl InWorld {
 
         // Rage from what landed, or from three quarters of what a dodge or parry stopped.
         let earned = match swing.outcome {
-            Outcome::Dodge | Outcome::Parry => {
-                rage::from_damage_dealt(swing.would_be * 3 / 4, p.stats.level)
-            }
+            Outcome::Dodge | Outcome::Parry => rage::from_avoided(swing.would_be, p.stats.level),
             _ => rage::from_damage_dealt(swing.damage, p.stats.level),
         };
         if earned > 0 {
@@ -701,10 +699,9 @@ fn short_of(mut path: Vec<[f32; 3]>, by: f32) -> Vec<[f32; 3]> {
     path
 }
 
-/// The melee reach between the player and a mob (`Unit::GetCombatReachToTarget`), never under
-/// 5 yd.
+/// The melee reach between the player and a mob.
 fn melee_reach() -> f32 {
-    (PLAYER_COMBAT_REACH + COMBAT_REACH + 4.0 / 3.0).max(5.0)
+    crate::rules::melee::reach(PLAYER_COMBAT_REACH, COMBAT_REACH)
 }
 
 /// Whether `target` is in the front half-circle of a unit at `from` facing `orientation`

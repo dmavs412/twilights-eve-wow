@@ -1210,11 +1210,11 @@ fn weapon_roll(stats: &WarriorStats, weapon: Weapon, rng: &mut Rng) -> f32 {
     let roll = rng.frand(stats.min_damage, stats.max_damage);
     match weapon {
         Weapon::Normal => roll,
-        Weapon::Normalized => {
-            let speed = stats.attack_time_ms as f32 / 1000.0;
-            roll - formulas::ap_damage(stats.attack_power, speed)
-                + formulas::ap_damage(stats.attack_power, formulas::NORMALIZED_SPEED_ONE_HAND)
-        }
+        Weapon::Normalized => formulas::normalized_roll(
+            roll,
+            stats.attack_power,
+            stats.attack_time_ms as f32 / 1000.0,
+        ),
     }
 }
 

@@ -158,3 +158,12 @@ fn every_skill_is_stronger_at_level_10_than_at_level_1() {
         assert!(a.at(10, 50) > a.at(1, 50), "spell {id}");
     }
 }
+
+#[test]
+fn a_normalized_strike_trades_the_weapons_speed_for_two_point_four() {
+    use twilight_realm::rules::skills::normalized_roll;
+    // 140 AP on a 2.0 s weapon added 20 to the roll; at 2.4 s it adds 24.
+    assert_eq!(normalized_roll(50.0, 140, 2.0), 54.0);
+    // On a slow 3.6 s weapon it added 36: normalizing takes 12 off.
+    assert_eq!(normalized_roll(80.0, 140, 3.6), 68.0);
+}

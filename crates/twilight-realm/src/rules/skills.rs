@@ -57,3 +57,9 @@ pub fn ability_table(
 pub fn ap_damage(attack_power: i32, speed_secs: f32) -> f32 {
     attack_power.max(0) as f32 / 14.0 * speed_secs
 }
+
+/// A normalized strike's weapon roll (Overpower, Mortal Strike): `roll`'s attack-power part at
+/// the weapon's `speed_secs` traded for one at [`NORMALIZED_SPEED_ONE_HAND`].
+pub fn normalized_roll(roll: f32, attack_power: i32, speed_secs: f32) -> f32 {
+    roll - ap_damage(attack_power, speed_secs) + ap_damage(attack_power, NORMALIZED_SPEED_ONE_HAND)
+}
