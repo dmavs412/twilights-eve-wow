@@ -11,6 +11,8 @@ pub mod melee;
 pub mod quest;
 pub mod rage;
 pub mod respawn;
+pub mod school;
+pub mod seals;
 pub mod skills;
 pub mod stats;
 pub mod talents;
