@@ -83,6 +83,58 @@ fn no_save_carries_a_multiplier() {
     assert_eq!(xp_shown(&events, me), Some(before + 42));
 }
 
+#[test]
+fn the_speed_multiplier_scales_the_players_movement_speeds() {
+    let dev = DevMultipliers {
+        speed: 3.0,
+        ..DevMultipliers::default()
+    };
+    let (_, events) = enter_with(dev);
+    let me = own_guid(&events);
+    let s = own_speeds(&events, me);
+    assert_eq!(
+        (s.walk, s.run, s.run_back, s.swim, s.swim_back),
+        (7.5, 21.0, 13.5, 4.722_222 * 3.0, 7.5)
+    );
+    assert_eq!(s.turn_rate, std::f32::consts::PI, "turning is not movement");
+}
+
+#[test]
+fn without_the_flags_the_player_runs_at_vanillas_7_yards_a_second() {
+    let (_, events) = enter_with(DevMultipliers::default());
+    let me = own_guid(&events);
+    let s = own_speeds(&events, me);
+    assert_eq!((s.walk, s.run, s.run_back), (2.5, 7.0, 4.5));
+}
+
+#[test]
+fn the_realm_keeps_up_with_a_faster_player() {
+    let dev = DevMultipliers {
+        speed: 3.0,
+        ..DevMultipliers::default()
+    };
+    let (mut realm, events) = enter_with(dev);
+    let me = own_guid(&events);
+    // One second of running at 21 yd/s, reported as a client reports it.
+    let [x, y, z, _] = CROSSROADS;
+    let there = [x + 21.0, y, z];
+    realm.handle(RealmCommand::Move {
+        position: there,
+        orientation: 0.0,
+    });
+    realm.tick(1.0, &FlatGround);
+    realm.handle(RealmCommand::Logout);
+    let blob = realm.export_character(me).unwrap();
+    let save: toml::Value = toml::from_str(&blob).unwrap();
+    let position: Vec<f64> = save["position"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_float().unwrap())
+        .collect();
+    assert_eq!(position, there.map(f64::from));
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────────────────────────
 
 const SEED: u64 = 4;
@@ -103,6 +155,23 @@ fn warrior_at(level: u8, dev: DevMultipliers) -> (Realm, u64, Mob) {
     let events = drain(&mut realm);
     let mob = the_mob(&events);
     (realm, guid, mob)
+}
+
+/// A new human warrior entering the world of a realm with `dev`, and the entry's events.
+fn enter_with(dev: DevMultipliers) -> (Realm, Vec<SessionEvent>) {
+    let mut realm = Realm::with_seed(SEED).with_dev(dev);
+    let (_, events) = enter_new(&mut realm, "Varian", HUMAN);
+    (realm, events)
+}
+
+fn own_guid(events: &[SessionEvent]) -> u64 {
+    events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::Connected { self_guid, .. } => Some(*self_guid),
+            _ => None,
+        })
+        .expect("connected")
 }
 
 /// Stands by `mob` and auto-attacks it until it dies, collecting the events.

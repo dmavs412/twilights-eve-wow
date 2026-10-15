@@ -116,7 +116,7 @@ impl InWorld {
             position: c.position,
             orientation: c.orientation,
             scale: 1.0,
-            speeds: Some(PLAYER_SPEEDS),
+            speeds: Some(dev.speeds(PLAYER_SPEEDS)),
             mover: None,
             transport_progress: None,
             transport: None,
