@@ -90,6 +90,8 @@ pub(crate) struct InWorld {
     hub_shown: bool,
     /// This session's sales, on the merchant window's buyback tab.
     pub(crate) buyback: crate::vendor::Buyback,
+    /// The dice for gear wear, apart from the fight's so that wearing changes no fight.
+    wear: Rng,
 }
 
 impl InWorld {
@@ -154,6 +156,7 @@ impl InWorld {
             looting: Looting::default(),
             hub_shown: false,
             buyback: crate::vendor::Buyback::default(),
+            wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
         }
     }
 
@@ -319,7 +322,11 @@ impl InWorld {
         if swing.damage > 0 {
             events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
         }
-        if mob.state == State::Idle {
+        let idle = mob.state == State::Idle;
+        if swing.damage > 0 && crate::wear::on_hit(c, &mut self.wear, events) {
+            self.refresh_gear(c, events);
+        }
+        if idle {
             self.pull(i, events);
         }
         if self.mobs[i].health == 0 {
@@ -392,7 +399,11 @@ impl InWorld {
                         self.guid,
                         &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
                     ));
+                    if crate::wear::on_hit(c, &mut self.wear, events) {
+                        self.refresh_gear(c, events);
+                    }
                 }
+                let p = &mut self.player;
                 if !p.alive() {
                     // Death and the way back are a later ticket's; the fight just ends.
                     if let Some(victim) = p.attacking.take() {

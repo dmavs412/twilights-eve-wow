@@ -25,6 +25,7 @@ pub mod rules;
 mod save;
 mod tables;
 mod vendor;
+mod wear;
 mod world;
 
 use benilla_protocol::{CharCreateReq, SessionEvent};
@@ -299,6 +300,9 @@ impl Realm {
             } => traded = vendor::sell(vendor, item, count, c, &mut w.buyback, events),
             RealmCommand::BuybackItem { vendor, slot } => {
                 traded = vendor::buy_back(vendor, slot, c, &mut w.buyback, events);
+            }
+            RealmCommand::RepairItem { vendor, item } => {
+                traded = vendor::repair(vendor, item, c, events);
             }
             _ => return,
         }

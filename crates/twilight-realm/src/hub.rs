@@ -55,6 +55,11 @@ impl Npc {
             | u64::from(self.guid & 0xFF_FFFF)
     }
 
+    /// Whether it repairs gear (`UNIT_NPC_FLAG_REPAIR`).
+    pub(crate) fn repairs(&self) -> bool {
+        self.npc_flags & 0x4000 != 0
+    }
+
     /// The NPC's create: a friendly unit with its NPC flags.
     pub(crate) fn create(&self) -> SessionEvent {
         let mut pairs = vec![

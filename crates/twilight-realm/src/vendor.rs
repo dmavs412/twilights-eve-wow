@@ -10,6 +10,7 @@ use crate::fields::{guid_pairs, values};
 use crate::hub::{self, Npc};
 use crate::inventory::{Item, EQUIPMENT_END};
 use crate::items;
+use crate::rules::durability;
 
 /// `CMSG_LIST_INVENTORY`: the vendor's rows, numbered from 1; nothing for an NPC out of reach or
 /// with nothing to sell.
@@ -277,6 +278,55 @@ pub(crate) fn buy_back(
         changed: true,
         gear_changed: false,
     }
+}
+
+/// `CMSG_REPAIR_ITEM`: item `guid` back to full durability, or with `guid` 0 everything carried,
+/// in slot order (vmangos `Player::DurabilityRepairAll`). Each repair is paid as it is made; the
+/// first the purse cannot cover stops it. Nothing answers but the fields.
+pub(crate) fn repair(
+    vendor: u64,
+    guid: u64,
+    c: &mut Char,
+    events: &mut Vec<SessionEvent>,
+) -> Traded {
+    let mut traded = Traded::default();
+    if !reachable(vendor, c).is_some_and(Npc::repairs) {
+        return traded;
+    }
+    let slots: Vec<u8> = c
+        .inventory
+        .iter()
+        .filter(|(_, i)| guid == 0 || i.guid == guid)
+        .map(|(s, _)| s)
+        .collect();
+    for slot in slots {
+        let Some(item) = c.inventory.get(slot) else {
+            continue;
+        };
+        let cost = durability::repair_cost(item.entry, item.durability);
+        if cost == 0 {
+            continue;
+        }
+        if c.inventory.money < cost {
+            break;
+        }
+        c.inventory.money -= cost;
+        let Some(item) = c.inventory.get_mut(slot) else {
+            continue;
+        };
+        let was_broken = item.durability == 0;
+        item.durability = items::template(item.entry).map_or(0, |t| t.durability);
+        events.push(values(
+            item.guid,
+            &[(equipment::ITEM_FIELD_DURABILITY, item.durability)],
+        ));
+        traded.changed = true;
+        traded.gear_changed |= was_broken && slot < EQUIPMENT_END;
+    }
+    if traded.changed {
+        events.push(values(c.guid, &[equipment::money_pair(&c.inventory)]));
+    }
+    traded
 }
 
 /// The vendor `guid`, if the character stands within reach of it.
