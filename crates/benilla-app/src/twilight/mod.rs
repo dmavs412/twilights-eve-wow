@@ -5,10 +5,9 @@
 //! nothing here decides anything.
 
 use benilla_assets::coords::wow_to_bevy;
-use benilla_assets::AdtTile;
 use benilla_protocol::{SessionEnd, SessionEvent};
 use benilla_world::schedule::WorldStage;
-use benilla_world::terrain_stream::{terrain_height_under, TerrainStreamer};
+use benilla_world::world_point::WorldPoint;
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
@@ -155,8 +154,7 @@ fn store(op: Storage, saved: &mut BTreeSet<u64>) {
 fn pump(
     mut local: ResMut<LocalRealm>,
     time: Res<Time>,
-    streamer: Option<Res<TerrainStreamer>>,
-    tiles: Res<Assets<AdtTile>>,
+    world: WorldPoint,
 ) {
     let LocalRealm {
         far,
@@ -186,10 +184,7 @@ fn pump(
         }
     }
 
-    let host = TerrainHost {
-        streamer: streamer.as_deref(),
-        tiles: &tiles,
-    };
+    let host = TerrainHost { world: &world };
     realm.tick(time.delta_secs(), &host);
 
     for op in realm.drain_storage() {
@@ -224,14 +219,13 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
 }
 
 /// The realm's view of the world, answered from the streamed terrain.
-struct TerrainHost<'a> {
-    streamer: Option<&'a TerrainStreamer>,
-    tiles: &'a Assets<AdtTile>,
+struct TerrainHost<'a, 'w, 's> {
+    world: &'a WorldPoint<'w, 's>,
 }
 
-impl Host for TerrainHost<'_> {
+impl Host for TerrainHost<'_, '_, '_> {
     fn ground_height(&self, _map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32> {
-        terrain_height_under(self.streamer?, self.tiles, wow_to_bevy([x, y, z_hint]))
+        self.world.terrain_height_under(wow_to_bevy([x, y, z_hint]))
     }
 
     // Nothing asks yet: the first reader is mob aggro, which brings the collision query with it.
