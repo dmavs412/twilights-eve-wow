@@ -70,8 +70,7 @@ pub(crate) fn starting_inventory(race: u8) -> crate::inventory::Inventory {
 pub(crate) enum Calling {
     /// Tier 0, where every character starts.
     BasicWarrior,
-    /// Tier 1, the Basic Warrior's Advancement. Saves from before it was renamed call it
-    /// "warrior".
+    /// Tier 1, the Basic Warrior's Advancement. A save may also name it "warrior".
     #[serde(alias = "warrior")]
     Vanguard,
     /// Tier 2, a Vanguard's Advancement: Paladin Seals, Judgement and Hammer of Justice on rage.
