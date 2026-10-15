@@ -8,12 +8,91 @@ pub const THE_BARRENS: u32 = 17;
 /// The Hub: the Crossroads, in front of the inn, facing the road north. `[x, y, z, facing]`.
 pub const CROSSROADS: [f32; 4] = [-441.8, -2648.6, 95.9, 1.6];
 
+/// The races in `ChrRaces.dbc` order (ids 1..=8), as `content/starting_outfits.toml` names them.
+const RACE_KEYS: [&str; 8] = [
+    "human",
+    "orc",
+    "dwarf",
+    "night_elf",
+    "undead",
+    "tauren",
+    "gnome",
+    "troll",
+];
+const HEARTHSTONE: u32 = 6948;
+/// `INVENTORY_SLOT_ITEM_START`: the backpack's first slot.
+const FIRST_PACK_SLOT: u8 = 23;
+
+/// One item of an outfit; the display id and inventory type are there for the content test.
+#[derive(serde::Deserialize)]
+struct OutfitItem {
+    item: u32,
+}
+
+/// A race's Warrior starting outfit (`content/starting_outfits.toml`, from `CharStartOutfit.dbc`).
+fn starting_outfit(race: u8) -> impl Iterator<Item = u32> {
+    static OUTFITS: std::sync::OnceLock<std::collections::HashMap<String, Vec<OutfitItem>>> =
+        std::sync::OnceLock::new();
+    let outfits = OUTFITS.get_or_init(|| {
+        toml::from_str(include_str!("../content/starting_outfits.toml"))
+            .expect("content/starting_outfits.toml parses")
+    });
+    usize::from(race)
+        .checked_sub(1)
+        .and_then(|i| RACE_KEYS.get(i))
+        .and_then(|key| outfits.get(*key))
+        .into_iter()
+        .flatten()
+        .map(|it| it.item)
+}
+
+/// A new character's belongings: its race's Warrior outfit, each item worn in its slot, and a
+/// Hearthstone in the backpack's first slot.
+pub(crate) fn starting_inventory(race: u8) -> crate::inventory::Inventory {
+    let mut inventory = crate::inventory::Inventory::default();
+    for entry in starting_outfit(race) {
+        let slot = crate::items::template(entry)
+            .and_then(|t| crate::rules::gear::equip_slots(t.inventory_type).first())
+            .copied();
+        if let Some(slot) = slot.filter(|s| inventory.get(*s).is_none()) {
+            let item = inventory.new_item(entry, 1);
+            inventory.put(slot, item);
+        }
+    }
+    let stone = inventory.new_item(HEARTHSTONE, 1);
+    inventory.put(FIRST_PACK_SLOT, stone);
+    inventory
+}
+
 /// A node in the advancement tree (`GLOSSARY.md`). Saved by name, so the names are the format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub(crate) enum Calling {
     /// Tier 0, where every character starts.
     BasicWarrior,
+    /// Tier 1, the Basic Warrior's Advancement. A save may also name it "warrior".
+    #[serde(alias = "warrior")]
+    Vanguard,
+    /// Tier 2, a Vanguard's Advancement: Paladin Seals, Judgement and Hammer of Justice on rage.
+    Zealot,
+}
+
+impl Calling {
+    /// Its key in `content/callings.toml`, the same as its save name.
+    pub(crate) fn key(self) -> &'static str {
+        match self {
+            Calling::BasicWarrior => "basic_warrior",
+            Calling::Vanguard => "vanguard",
+            Calling::Zealot => "zealot",
+        }
+    }
+
+    /// The Calling with this key.
+    pub(crate) fn from_key(key: &str) -> Option<Self> {
+        [Calling::BasicWarrior, Calling::Vanguard, Calling::Zealot]
+            .into_iter()
+            .find(|c| c.key() == key)
+    }
 }
 
 /// `ChrRaces.dbc` ids 1..=8: Human … Troll.
@@ -53,20 +132,3 @@ pub(crate) fn faction_template(race: u8) -> u32 {
         _ => 116,
     }
 }
-
-/// A Warrior's level-1 base stats by race, `[str, agi, sta, int, spi]` (`player_levelstats`).
-pub(crate) fn base_stats(race: u8) -> [u32; 5] {
-    match race {
-        1 => [23, 20, 22, 20, 21],
-        2 => [26, 17, 24, 17, 23],
-        3 => [25, 16, 25, 19, 19],
-        4 => [20, 25, 21, 20, 20],
-        5 => [22, 18, 23, 18, 25],
-        6 => [28, 15, 24, 15, 22],
-        7 => [18, 23, 21, 24, 20],
-        _ => [24, 22, 23, 16, 21],
-    }
-}
-
-/// A level-1 Warrior's base health (`player_classlevelstats`).
-pub(crate) const BASE_HEALTH: u32 = 20;

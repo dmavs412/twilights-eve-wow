@@ -5,6 +5,7 @@
 
 use std::io::BufRead;
 
+#[allow(clippy::type_complexity)]
 fn main() -> anyhow::Result<()> {
     let data = benilla_formats::wow_data().expect("no WoW install found (set $WOW_DATA)");
     let mut chain = benilla_formats::open_chain(&data)?;

@@ -146,6 +146,10 @@ fn probe_key_by_name(name: &str) -> Option<KeyCode> {
         // A window toggle (TOGGLEBACKPACK) and an action button (ACTIONBUTTON1), by their 1.12
         // defaults.
         "B" => KeyCode::KeyB,
+        // The character, talent and quest log toggles, by their 1.12 defaults.
+        "C" => KeyCode::KeyC,
+        "N" => KeyCode::KeyN,
+        "L" => KeyCode::KeyL,
         "1" => KeyCode::Digit1,
         // Free-fly is the dev chord (`Ctrl`+`Shift`) + `F` (`player.rs`); a held `Ctrl` is its ×5
         // speed boost (`camera.rs`).

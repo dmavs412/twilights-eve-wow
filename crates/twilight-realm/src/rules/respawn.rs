@@ -1,0 +1,20 @@
+//! When a killed mob comes back: about a minute after the player has left its area (the spec
+//! replaces vanilla's 5–7 minute timers, which ran whether or not anyone was there).
+
+/// Seconds the player must be away before a dead mob respawns.
+pub const SECS: f32 = 60.0;
+
+/// How far from a mob's home the player must be to count as away: past the widest aggro radius
+/// (45 yd), so a mob never comes back on top of the player who killed it.
+pub const AWAY_YD: f32 = 60.0;
+
+/// The seconds a dead mob still waits after `dt` more seconds with the player `player_distance`
+/// yards from its home: the clock runs only while the player is away, and starts over each time
+/// they come back.
+pub fn countdown(remaining: f32, dt: f32, player_distance: f32) -> f32 {
+    if player_distance > AWAY_YD {
+        remaining - dt
+    } else {
+        SECS
+    }
+}

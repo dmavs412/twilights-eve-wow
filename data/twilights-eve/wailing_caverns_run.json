@@ -1,0 +1,1279 @@
+{
+ "dungeon": "The Wailing Caverns",
+ "map_id": 43,
+ "zone_id": 718,
+ "client_map": {
+  "id": 43,
+  "directory": "WailingCaverns",
+  "instance_type": 1,
+  "name": "Wailing Caverns",
+  "loading_screen_id": 143,
+  "loading_screen_name": "InstanceWailingCaverns",
+  "loading_screen_blp": "Interface\\Glues\\LoadingScreens\\LoadScreenWailingCaverns.blp"
+ },
+ "wdt": {
+  "tiles_with_adt": 0,
+  "mphd_flags": 1,
+  "wmo_only": true,
+  "wmo": "world\\wmo\\dungeon\\kl_wailing\\wailingcaverns_instance.wmo",
+  "modf": {
+   "position": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "extents_min": [
+    -554.361,
+    -194.914,
+    -187.504
+   ],
+   "extents_max": [
+    369.778,
+    56.497,
+    483.479
+   ],
+   "doodad_set": 0,
+   "name_set": 0
+  }
+ },
+ "entrance": {
+  "area_trigger": {
+   "id": 228,
+   "map": 1,
+   "x": -753.596,
+   "y": -2212.78,
+   "z": 21.54,
+   "radius": 13.0,
+   "box": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "box_yaw": 0.0
+  },
+  "vmangos_areatrigger_teleport": {
+   "id": 228,
+   "name": "Wailing Caverns - Entrance",
+   "message": "You must be at least level 10 to enter.",
+   "required_level": 10
+  },
+  "teleport_to": {
+   "map": 43,
+   "x": -158.441,
+   "y": 131.601,
+   "z": -74.255,
+   "o": 5.847
+  }
+ },
+ "exit": {
+  "area_trigger": {
+   "id": 226,
+   "map": 43,
+   "x": -172.181,
+   "y": 138.98,
+   "z": -66.647,
+   "radius": 12.0,
+   "box": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "box_yaw": 0.0
+  },
+  "vmangos_areatrigger_teleport": {
+   "id": 226,
+   "name": "Wailing Caverns - Exit"
+  },
+  "teleport_to": {
+   "map": 1,
+   "x": -738.462,
+   "y": -2217.8,
+   "z": 16.919,
+   "o": 6.021
+  }
+ },
+ "death": {
+  "respawn_inside_at": {
+   "map": 43,
+   "x": -158.441,
+   "y": 131.601,
+   "z": -74.255,
+   "o": 5.847
+  },
+  "note": "Twilight's Eve rule: dying inside respawns at the instance entrance (teleport_to of the entrance trigger). vmangos instead sends the ghost to the zone graveyard below and lets the corpse run re-enter via map_template.ghost_entrance.",
+  "vmangos_ghost_entrance": {
+   "map": 1,
+   "x": -751.131,
+   "y": -2209.24
+  },
+  "vmangos_zone_graveyards": [
+   {
+    "id": 10,
+    "map": 1,
+    "x": -592.601,
+    "y": -2523.492,
+    "z": 91.788,
+    "name": "The Barrens, The Crossroads",
+    "faction": 0,
+    "o": 1.222
+   }
+  ]
+ },
+ "boss": {
+  "guid": 300999,
+  "entry": 3671,
+  "name": "Lady Anacondra",
+  "subname": "Fanglord",
+  "x": -53.984,
+  "y": 271.39,
+  "z": -92.844,
+  "o": 2.41,
+  "level_min": 20,
+  "level_max": 20,
+  "display_ids": [
+   4313
+  ],
+  "scale": 1.0,
+  "faction": 270,
+  "rank": 1,
+  "rank_name": "elite",
+  "type": 7,
+  "unit_class": 2,
+  "speed_walk": 1.0,
+  "speed_run": 1.143,
+  "detection_range": 20.0,
+  "call_for_help_range": 5.0,
+  "base_attack_time": 2000,
+  "stats_by_level": [
+   {
+    "level": 20,
+    "health": 2165,
+    "mana": 490,
+    "armor": 677,
+    "melee_damage_avg": 79.53,
+    "attack_power": 64
+   }
+  ],
+  "spawn_movement_type": 0,
+  "wander_distance": 0.0,
+  "waypoints": [],
+  "ai_name": "EventAI",
+  "role": "boss",
+  "route_node": "mob_300999",
+  "nearest_route_node": "escort_15",
+  "spur_length": 4.81,
+  "group_leader": null
+ },
+ "mobs": [
+  {
+   "guid": 26202,
+   "entry": 3637,
+   "name": "Deviate Guardian",
+   "subname": "",
+   "x": -100.639,
+   "y": 180.884,
+   "z": -78.428,
+   "o": 5.62,
+   "level_min": 18,
+   "level_max": 19,
+   "display_ids": [
+    755
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 1,
+   "unit_class": 1,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 18,
+     "health": 1251,
+     "mana": 0,
+     "armor": 755,
+     "melee_damage_avg": 51.86,
+     "attack_power": 64
+    },
+    {
+     "level": 19,
+     "health": 1347,
+     "mana": 0,
+     "armor": 789,
+     "melee_damage_avg": 55.02,
+     "attack_power": 68
+    }
+   ],
+   "spawn_movement_type": 1,
+   "wander_distance": 2.0,
+   "waypoints": [],
+   "ai_name": "EventAI",
+   "role": "trash",
+   "route_node": "mob_26202",
+   "nearest_route_node": "escort_4",
+   "spur_length": 9.86,
+   "group_leader": null
+  },
+  {
+   "guid": 26220,
+   "entry": 3636,
+   "name": "Deviate Ravager",
+   "subname": "",
+   "x": -105.548,
+   "y": 228.726,
+   "z": -89.885,
+   "o": 6.071,
+   "level_min": 18,
+   "level_max": 19,
+   "display_ids": [
+    1747
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 1,
+   "unit_class": 1,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 18,
+     "health": 1251,
+     "mana": 0,
+     "armor": 755,
+     "melee_damage_avg": 51.86,
+     "attack_power": 64
+    },
+    {
+     "level": 19,
+     "health": 1347,
+     "mana": 0,
+     "armor": 789,
+     "melee_damage_avg": 55.02,
+     "attack_power": 68
+    }
+   ],
+   "spawn_movement_type": 1,
+   "wander_distance": 2.0,
+   "waypoints": [],
+   "ai_name": "",
+   "role": "trash",
+   "route_node": "mob_26220",
+   "nearest_route_node": "escort_7",
+   "spur_length": 5.4,
+   "group_leader": 26220
+  },
+  {
+   "guid": 26224,
+   "entry": 3636,
+   "name": "Deviate Ravager",
+   "subname": "",
+   "x": -107.012,
+   "y": 240.249,
+   "z": -92.792,
+   "o": 5.263,
+   "level_min": 18,
+   "level_max": 19,
+   "display_ids": [
+    1747
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 1,
+   "unit_class": 1,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 18,
+     "health": 1251,
+     "mana": 0,
+     "armor": 755,
+     "melee_damage_avg": 51.86,
+     "attack_power": 64
+    },
+    {
+     "level": 19,
+     "health": 1347,
+     "mana": 0,
+     "armor": 789,
+     "melee_damage_avg": 55.02,
+     "attack_power": 68
+    }
+   ],
+   "spawn_movement_type": 1,
+   "wander_distance": 2.0,
+   "waypoints": [],
+   "ai_name": "",
+   "role": "trash",
+   "route_node": "mob_26224",
+   "nearest_route_node": "escort_7",
+   "spur_length": 8.86,
+   "group_leader": 26220
+  },
+  {
+   "guid": 26216,
+   "entry": 3636,
+   "name": "Deviate Ravager",
+   "subname": "",
+   "x": -67.853,
+   "y": 203.787,
+   "z": -93.573,
+   "o": 1.134,
+   "level_min": 18,
+   "level_max": 19,
+   "display_ids": [
+    1747
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 1,
+   "unit_class": 1,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 18,
+     "health": 1251,
+     "mana": 0,
+     "armor": 755,
+     "melee_damage_avg": 51.86,
+     "attack_power": 64
+    },
+    {
+     "level": 19,
+     "health": 1347,
+     "mana": 0,
+     "armor": 789,
+     "melee_damage_avg": 55.02,
+     "attack_power": 68
+    }
+   ],
+   "spawn_movement_type": 1,
+   "wander_distance": 2.0,
+   "waypoints": [],
+   "ai_name": "",
+   "role": "trash",
+   "route_node": "mob_26216",
+   "nearest_route_node": "escort_10",
+   "spur_length": 4.22,
+   "group_leader": null
+  },
+  {
+   "guid": 26223,
+   "entry": 3636,
+   "name": "Deviate Ravager",
+   "subname": "",
+   "x": -67.448,
+   "y": 214.535,
+   "z": -93.42,
+   "o": 3.543,
+   "level_min": 18,
+   "level_max": 19,
+   "display_ids": [
+    1747
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 1,
+   "unit_class": 1,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 18,
+     "health": 1251,
+     "mana": 0,
+     "armor": 755,
+     "melee_damage_avg": 51.86,
+     "attack_power": 64
+    },
+    {
+     "level": 19,
+     "health": 1347,
+     "mana": 0,
+     "armor": 789,
+     "melee_damage_avg": 55.02,
+     "attack_power": 68
+    }
+   ],
+   "spawn_movement_type": 1,
+   "wander_distance": 5.0,
+   "waypoints": [],
+   "ai_name": "",
+   "role": "trash",
+   "route_node": "mob_26223",
+   "nearest_route_node": "escort_9",
+   "spur_length": 5.96,
+   "group_leader": null
+  },
+  {
+   "guid": 26217,
+   "entry": 3637,
+   "name": "Deviate Guardian",
+   "subname": "",
+   "x": -35.194,
+   "y": 198.074,
+   "z": -96.579,
+   "o": 5.195,
+   "level_min": 18,
+   "level_max": 19,
+   "display_ids": [
+    755
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 1,
+   "unit_class": 1,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 18,
+     "health": 1251,
+     "mana": 0,
+     "armor": 755,
+     "melee_damage_avg": 51.86,
+     "attack_power": 64
+    },
+    {
+     "level": 19,
+     "health": 1347,
+     "mana": 0,
+     "armor": 789,
+     "melee_damage_avg": 55.02,
+     "attack_power": 68
+    }
+   ],
+   "spawn_movement_type": 1,
+   "wander_distance": 5.0,
+   "waypoints": [],
+   "ai_name": "EventAI",
+   "role": "trash",
+   "route_node": "mob_26217",
+   "nearest_route_node": "patrol_26225_8",
+   "spur_length": 2.38,
+   "group_leader": null
+  },
+  {
+   "guid": 26227,
+   "entry": 3636,
+   "name": "Deviate Ravager",
+   "subname": "",
+   "x": -35.02,
+   "y": 209.613,
+   "z": -96.363,
+   "o": 5.833,
+   "level_min": 18,
+   "level_max": 19,
+   "display_ids": [
+    1747
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 1,
+   "unit_class": 1,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 18,
+     "health": 1251,
+     "mana": 0,
+     "armor": 755,
+     "melee_damage_avg": 51.86,
+     "attack_power": 64
+    },
+    {
+     "level": 19,
+     "health": 1347,
+     "mana": 0,
+     "armor": 789,
+     "melee_damage_avg": 55.02,
+     "attack_power": 68
+    }
+   ],
+   "spawn_movement_type": 1,
+   "wander_distance": 5.0,
+   "waypoints": [],
+   "ai_name": "",
+   "role": "trash",
+   "route_node": "mob_26227",
+   "nearest_route_node": "escort_11",
+   "spur_length": 9.38,
+   "group_leader": null
+  },
+  {
+   "guid": 26230,
+   "entry": 3636,
+   "name": "Deviate Ravager",
+   "subname": "",
+   "x": -47.748,
+   "y": 254.798,
+   "z": -92.844,
+   "o": 5.536,
+   "level_min": 18,
+   "level_max": 19,
+   "display_ids": [
+    1747
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 1,
+   "unit_class": 1,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 18,
+     "health": 1251,
+     "mana": 0,
+     "armor": 755,
+     "melee_damage_avg": 51.86,
+     "attack_power": 64
+    },
+    {
+     "level": 19,
+     "health": 1347,
+     "mana": 0,
+     "armor": 789,
+     "melee_damage_avg": 55.02,
+     "attack_power": 68
+    }
+   ],
+   "spawn_movement_type": 1,
+   "wander_distance": 5.0,
+   "waypoints": [],
+   "ai_name": "",
+   "role": "trash",
+   "route_node": "mob_26230",
+   "nearest_route_node": "escort_14",
+   "spur_length": 6.81,
+   "group_leader": null
+  },
+  {
+   "guid": 26239,
+   "entry": 3840,
+   "name": "Druid of the Fang",
+   "subname": "",
+   "x": -50.911,
+   "y": 263.772,
+   "z": -92.844,
+   "o": 3.409,
+   "level_min": 19,
+   "level_max": 20,
+   "display_ids": [
+    4211,
+    4232,
+    4233,
+    4234
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 7,
+   "unit_class": 2,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 19,
+     "health": 1212,
+     "mana": 912,
+     "armor": 651,
+     "melee_damage_avg": 51.17,
+     "attack_power": 60
+    },
+    {
+     "level": 20,
+     "health": 1299,
+     "mana": 980,
+     "armor": 677,
+     "melee_damage_avg": 54.08,
+     "attack_power": 64
+    }
+   ],
+   "spawn_movement_type": 2,
+   "wander_distance": 0.0,
+   "waypoints": [
+    {
+     "point": 1,
+     "x": -50.911,
+     "y": 263.772,
+     "z": -92.844,
+     "o": 0.0,
+     "waittime": 0
+    },
+    {
+     "point": 2,
+     "x": -40.989,
+     "y": 280.014,
+     "z": -92.442,
+     "o": 0.0,
+     "waittime": 0
+    },
+    {
+     "point": 3,
+     "x": -62.635,
+     "y": 288.42,
+     "z": -90.968,
+     "o": 0.0,
+     "waittime": 0
+    },
+    {
+     "point": 4,
+     "x": -64.729,
+     "y": 265.895,
+     "z": -92.844,
+     "o": 0.0,
+     "waittime": 0
+    }
+   ],
+   "ai_name": "EventAI",
+   "role": "trash",
+   "route_node": "mob_26239",
+   "nearest_route_node": "escort_14",
+   "spur_length": 10.22,
+   "group_leader": null
+  },
+  {
+   "guid": 26252,
+   "entry": 3840,
+   "name": "Druid of the Fang",
+   "subname": "",
+   "x": -55.257,
+   "y": 274.696,
+   "z": -92.761,
+   "o": 4.695,
+   "level_min": 19,
+   "level_max": 20,
+   "display_ids": [
+    4211,
+    4232,
+    4233,
+    4234
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 7,
+   "unit_class": 2,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 19,
+     "health": 1212,
+     "mana": 912,
+     "armor": 651,
+     "melee_damage_avg": 51.17,
+     "attack_power": 60
+    },
+    {
+     "level": 20,
+     "health": 1299,
+     "mana": 980,
+     "armor": 677,
+     "melee_damage_avg": 54.08,
+     "attack_power": 64
+    }
+   ],
+   "spawn_movement_type": 0,
+   "wander_distance": 0.0,
+   "waypoints": [],
+   "ai_name": "EventAI",
+   "role": "trash",
+   "route_node": "mob_26252",
+   "nearest_route_node": "escort_15",
+   "spur_length": 1.96,
+   "group_leader": null
+  },
+  {
+   "guid": 300999,
+   "entry": 3671,
+   "name": "Lady Anacondra",
+   "subname": "Fanglord",
+   "x": -53.984,
+   "y": 271.39,
+   "z": -92.844,
+   "o": 2.41,
+   "level_min": 20,
+   "level_max": 20,
+   "display_ids": [
+    4313
+   ],
+   "scale": 1.0,
+   "faction": 270,
+   "rank": 1,
+   "rank_name": "elite",
+   "type": 7,
+   "unit_class": 2,
+   "speed_walk": 1.0,
+   "speed_run": 1.143,
+   "detection_range": 20.0,
+   "call_for_help_range": 5.0,
+   "base_attack_time": 2000,
+   "stats_by_level": [
+    {
+     "level": 20,
+     "health": 2165,
+     "mana": 490,
+     "armor": 677,
+     "melee_damage_avg": 79.53,
+     "attack_power": 64
+    }
+   ],
+   "spawn_movement_type": 0,
+   "wander_distance": 0.0,
+   "waypoints": [],
+   "ai_name": "EventAI",
+   "role": "boss",
+   "route_node": "mob_300999",
+   "nearest_route_node": "escort_15",
+   "spur_length": 4.81,
+   "group_leader": null
+  }
+ ],
+ "route": {
+  "nodes": [
+   {
+    "id": "entrance",
+    "x": -158.44,
+    "y": 131.6,
+    "z": -74.25,
+    "source": "areatrigger_teleport 228 target",
+    "note": "instance arrival point"
+   },
+   {
+    "id": "escort_0",
+    "x": -134.9,
+    "y": 125.4,
+    "z": -78.1,
+    "source": "script_waypoint 3678 point 0"
+   },
+   {
+    "id": "escort_1",
+    "x": -125.6,
+    "y": 132.9,
+    "z": -78.4,
+    "source": "script_waypoint 3678 point 1"
+   },
+   {
+    "id": "escort_2",
+    "x": -113.8,
+    "y": 139.2,
+    "z": -80.9,
+    "source": "script_waypoint 3678 point 2"
+   },
+   {
+    "id": "escort_3",
+    "x": -109.8,
+    "y": 157.5,
+    "z": -80.2,
+    "source": "script_waypoint 3678 point 3"
+   },
+   {
+    "id": "escort_4",
+    "x": -108.6,
+    "y": 175.2,
+    "z": -79.7,
+    "source": "script_waypoint 3678 point 4"
+   },
+   {
+    "id": "escort_5",
+    "x": -108.6,
+    "y": 195.4,
+    "z": -80.6,
+    "source": "script_waypoint 3678 point 5"
+   },
+   {
+    "id": "escort_6",
+    "x": -111.0,
+    "y": 219.0,
+    "z": -86.5,
+    "source": "script_waypoint 3678 point 6"
+   },
+   {
+    "id": "escort_7",
+    "x": -102.4,
+    "y": 232.8,
+    "z": -91.5,
+    "source": "script_waypoint 3678 point 7"
+   },
+   {
+    "id": "escort_8",
+    "x": -82.4,
+    "y": 224.8,
+    "z": -93.5,
+    "source": "script_waypoint 3678 point 8"
+   },
+   {
+    "id": "escort_9",
+    "x": -73.4,
+    "y": 214.7,
+    "z": -93.2,
+    "source": "script_waypoint 3678 point 9"
+   },
+   {
+    "id": "escort_10",
+    "x": -67.7,
+    "y": 208.0,
+    "z": -93.3,
+    "source": "script_waypoint 3678 point 10"
+   },
+   {
+    "id": "escort_11",
+    "x": -43.3,
+    "y": 205.2,
+    "z": -96.3,
+    "source": "script_waypoint 3678 point 11"
+   },
+   {
+    "id": "escort_12",
+    "x": -34.6,
+    "y": 221.3,
+    "z": -95.8,
+    "source": "script_waypoint 3678 point 12"
+   },
+   {
+    "id": "escort_13",
+    "x": -32.5,
+    "y": 238.5,
+    "z": -93.5,
+    "source": "script_waypoint 3678 point 13"
+   },
+   {
+    "id": "escort_14",
+    "x": -42.1,
+    "y": 258.6,
+    "z": -92.8,
+    "source": "script_waypoint 3678 point 14"
+   },
+   {
+    "id": "escort_15",
+    "x": -54.0,
+    "y": 276.2,
+    "z": -92.8,
+    "source": "script_waypoint 3678 point 15"
+   },
+   {
+    "id": "patrol_26225_1",
+    "x": -40.44,
+    "y": 150.65,
+    "z": -94.07,
+    "source": "creature_movement guid 26225 point 1"
+   },
+   {
+    "id": "patrol_26225_2",
+    "x": -46.99,
+    "y": 138.93,
+    "z": -91.42,
+    "source": "creature_movement guid 26225 point 2"
+   },
+   {
+    "id": "patrol_26225_3",
+    "x": -63.71,
+    "y": 117.64,
+    "z": -89.22,
+    "source": "creature_movement guid 26225 point 3"
+   },
+   {
+    "id": "patrol_26225_4",
+    "x": -73.68,
+    "y": 111.54,
+    "z": -88.68,
+    "source": "creature_movement guid 26225 point 4"
+   },
+   {
+    "id": "patrol_26225_5",
+    "x": -60.89,
+    "y": 122.09,
+    "z": -89.42,
+    "source": "creature_movement guid 26225 point 5"
+   },
+   {
+    "id": "patrol_26225_6",
+    "x": -43.41,
+    "y": 143.58,
+    "z": -92.53,
+    "source": "creature_movement guid 26225 point 6"
+   },
+   {
+    "id": "patrol_26225_7",
+    "x": -37.88,
+    "y": 157.21,
+    "z": -95.03,
+    "source": "creature_movement guid 26225 point 7"
+   },
+   {
+    "id": "patrol_26225_8",
+    "x": -36.19,
+    "y": 195.92,
+    "z": -96.76,
+    "source": "creature_movement guid 26225 point 8"
+   },
+   {
+    "id": "patrol_26225_9",
+    "x": -35.47,
+    "y": 166.73,
+    "z": -96.14,
+    "source": "creature_movement guid 26225 point 9"
+   },
+   {
+    "id": "mob_26202",
+    "x": -100.64,
+    "y": 180.88,
+    "z": -78.43,
+    "source": "creature spawn guid 26202"
+   },
+   {
+    "id": "mob_26220",
+    "x": -105.55,
+    "y": 228.73,
+    "z": -89.89,
+    "source": "creature spawn guid 26220"
+   },
+   {
+    "id": "mob_26224",
+    "x": -107.01,
+    "y": 240.25,
+    "z": -92.79,
+    "source": "creature spawn guid 26224"
+   },
+   {
+    "id": "mob_26216",
+    "x": -67.85,
+    "y": 203.79,
+    "z": -93.57,
+    "source": "creature spawn guid 26216"
+   },
+   {
+    "id": "mob_26223",
+    "x": -67.45,
+    "y": 214.53,
+    "z": -93.42,
+    "source": "creature spawn guid 26223"
+   },
+   {
+    "id": "mob_26217",
+    "x": -35.19,
+    "y": 198.07,
+    "z": -96.58,
+    "source": "creature spawn guid 26217"
+   },
+   {
+    "id": "mob_26227",
+    "x": -35.02,
+    "y": 209.61,
+    "z": -96.36,
+    "source": "creature spawn guid 26227"
+   },
+   {
+    "id": "mob_26230",
+    "x": -47.75,
+    "y": 254.8,
+    "z": -92.84,
+    "source": "creature spawn guid 26230"
+   },
+   {
+    "id": "mob_26239",
+    "x": -50.91,
+    "y": 263.77,
+    "z": -92.84,
+    "source": "creature spawn guid 26239"
+   },
+   {
+    "id": "mob_26252",
+    "x": -55.26,
+    "y": 274.7,
+    "z": -92.76,
+    "source": "creature spawn guid 26252"
+   },
+   {
+    "id": "mob_300999",
+    "x": -53.98,
+    "y": 271.39,
+    "z": -92.84,
+    "source": "creature spawn guid 300999"
+   }
+  ],
+  "edges": [
+   {
+    "a": "entrance",
+    "b": "escort_0",
+    "length": 24.65,
+    "source": "entrance->escort"
+   },
+   {
+    "a": "escort_0",
+    "b": "escort_1",
+    "length": 11.95,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_1",
+    "b": "escort_2",
+    "length": 13.61,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_2",
+    "b": "escort_3",
+    "length": 18.75,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_3",
+    "b": "escort_4",
+    "length": 17.75,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_4",
+    "b": "escort_5",
+    "length": 20.22,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_5",
+    "b": "escort_6",
+    "length": 24.44,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_6",
+    "b": "escort_7",
+    "length": 17.01,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_7",
+    "b": "escort_8",
+    "length": 21.63,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_8",
+    "b": "escort_9",
+    "length": 13.53,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_9",
+    "b": "escort_10",
+    "length": 8.8,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_10",
+    "b": "escort_11",
+    "length": 24.74,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_11",
+    "b": "escort_12",
+    "length": 18.31,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_12",
+    "b": "escort_13",
+    "length": 17.48,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_13",
+    "b": "escort_14",
+    "length": 22.29,
+    "source": "escort path"
+   },
+   {
+    "a": "escort_14",
+    "b": "escort_15",
+    "length": 21.25,
+    "source": "escort path"
+   },
+   {
+    "a": "patrol_26225_4",
+    "b": "patrol_26225_3",
+    "length": 11.7,
+    "source": "patrol 26225"
+   },
+   {
+    "a": "patrol_26225_3",
+    "b": "patrol_26225_5",
+    "length": 5.27,
+    "source": "patrol 26225"
+   },
+   {
+    "a": "patrol_26225_5",
+    "b": "patrol_26225_2",
+    "length": 21.93,
+    "source": "patrol 26225"
+   },
+   {
+    "a": "patrol_26225_2",
+    "b": "patrol_26225_6",
+    "length": 5.97,
+    "source": "patrol 26225"
+   },
+   {
+    "a": "patrol_26225_6",
+    "b": "patrol_26225_1",
+    "length": 7.82,
+    "source": "patrol 26225"
+   },
+   {
+    "a": "patrol_26225_1",
+    "b": "patrol_26225_7",
+    "length": 7.11,
+    "source": "patrol 26225"
+   },
+   {
+    "a": "patrol_26225_7",
+    "b": "patrol_26225_9",
+    "length": 9.88,
+    "source": "patrol 26225"
+   },
+   {
+    "a": "patrol_26225_9",
+    "b": "patrol_26225_8",
+    "length": 29.21,
+    "source": "patrol 26225"
+   },
+   {
+    "a": "escort_11",
+    "b": "patrol_26225_8",
+    "length": 11.7,
+    "source": "patrol end -> escort (nearest)"
+   },
+   {
+    "a": "escort_4",
+    "b": "mob_26202",
+    "length": 9.86,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_7",
+    "b": "mob_26220",
+    "length": 5.39,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_7",
+    "b": "mob_26224",
+    "length": 8.86,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_10",
+    "b": "mob_26216",
+    "length": 4.22,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_9",
+    "b": "mob_26223",
+    "length": 5.96,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "patrol_26225_8",
+    "b": "mob_26217",
+    "length": 2.38,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_11",
+    "b": "mob_26227",
+    "length": 9.38,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_14",
+    "b": "mob_26230",
+    "length": 6.81,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_14",
+    "b": "mob_26239",
+    "length": 10.22,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_15",
+    "b": "mob_26252",
+    "length": 1.96,
+    "source": "spur to spawn (straight line, short)"
+   },
+   {
+    "a": "escort_15",
+    "b": "mob_300999",
+    "length": 4.81,
+    "source": "spur to spawn (straight line, short)"
+   }
+  ],
+  "entrance_node": "entrance",
+  "boss_node": "mob_300999",
+  "walk_length_entrance_to_boss": 301.2,
+  "notes": [
+   "Edges are undirected. escort_* nodes are the Disciple of Naralex escort path (script_waypoint 3678, points 0-15): a scripted NPC walk through the tunnels, so consecutive points are known-walkable.",
+   "patrol_* nodes are a Druid of the Fang patrol (creature_movement): also walkable.",
+   "mob_* nodes are spawn points joined to the nearest route node by a straight spur (<= 20 yd). These spurs are the only edges not walked by a vmangos NPC.",
+   "z values are the server's; the client re-grounds units on its own collision."
+  ]
+ }
+}

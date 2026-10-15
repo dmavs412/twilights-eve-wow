@@ -6,19 +6,45 @@
 
 use benilla_assets::coords::wow_to_bevy;
 use benilla_protocol::{SessionEnd, SessionEvent};
+use benilla_world::collision::WorldCollision;
 use benilla_world::schedule::WorldStage;
 use benilla_world::world_point::WorldPoint;
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use bevy::prelude::*;
-use twilight_realm::{Host, Realm, RealmCommand, Storage};
+use twilight_realm::{DevMultipliers, Host, Realm, RealmCommand, Storage};
 
 use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
+
+mod goto;
+mod talents;
+
+pub(crate) use goto::DevGoto;
 
 /// `WOW_TWILIGHT` natively, `?twilight=1` in the browser: boot Twilight's Eve.
 pub(crate) fn active() -> bool {
     crate::webenv::var("WOW_TWILIGHT").is_some_and(|v| v != "0")
+}
+
+/// The dev multipliers, read once at boot: `?speed=` / `?xp=` in the browser, `WOW_TWILIGHT_SPEED`
+/// / `WOW_TWILIGHT_XP` natively. They live only in this run's realm, never in a save.
+fn dev_multipliers() -> DevMultipliers {
+    let flag = |name: &str| {
+        // The browser's short form first; `webenv` maps `WOW_<NAME>` to `?<name>=` there.
+        let short = cfg!(target_arch = "wasm32")
+            .then(|| crate::webenv::var(&format!("WOW_{name}")))
+            .flatten();
+        short.or_else(|| crate::webenv::var(&format!("WOW_TWILIGHT_{name}")))
+    };
+    let dev = DevMultipliers::from_flags(flag("SPEED").as_deref(), flag("XP").as_deref());
+    if dev != DevMultipliers::default() {
+        info!(
+            "twilight: dev multipliers speed ×{} xp ×{}",
+            dev.speed, dev.xp
+        );
+    }
+    dev
 }
 
 /// Attaches the Local Realm. Added after `NetPlugin`, whose [`InProcessLink`] it takes.
@@ -31,8 +57,12 @@ impl Plugin for TwilightPlugin {
             .get_resource_mut::<InProcessLink>()
             .and_then(|mut link| link.0.take())
             .expect("Twilight's Eve needs the net layer's in-process backend");
-        let mut realm = Realm::new();
+        // Fresh dice every session; a test seeds its own.
+        let mut realm = Realm::with_seed(rand::random()).with_dev(dev_multipliers());
         let saved = load_saves(&mut realm);
+        app.init_resource::<crate::char_select::ClassLabels>();
+        app.add_message::<DevGoto>()
+            .init_resource::<goto::GotoGround>();
         app.insert_resource(LocalRealm {
             far,
             realm,
@@ -41,12 +71,25 @@ impl Plugin for TwilightPlugin {
         })
         .add_systems(
             Update,
-            pump.in_set(WorldStage::Net)
+            (goto::fetch_goto_ground, pump)
+                .chain()
+                .in_set(WorldStage::Net)
                 .before(crate::net::apply_net_updates),
         )
         .add_systems(
             Update,
             only_warriors.run_if(resource_added::<crate::entities::CharCreate>),
+        )
+        .add_systems(
+            Update,
+            rewrite_spells.run_if(resource_added::<crate::ui_action::Spells>),
+        )
+        .add_systems(
+            Update,
+            (
+                talents::follow_calling.after(pump),
+                crate::ui_twilight::unlock_talent_frame,
+            ),
         );
         // Closing the window logs the character out, which saves it.
         crate::shutdown::on_app_exit(app, save_on_exit.into_configs());
@@ -150,13 +193,26 @@ fn store(op: Storage, saved: &mut BTreeSet<u64>) {
 }
 
 /// Commands in, one tick, events out.
-fn pump(mut local: ResMut<LocalRealm>, time: Res<Time>, world: WorldPoint) {
+fn pump(
+    mut local: ResMut<LocalRealm>,
+    time: Res<Time>,
+    world: WorldPoint,
+    collision: WorldCollision,
+    mut labels: ResMut<crate::char_select::ClassLabels>,
+    mut goto: ResMut<goto::GotoGround>,
+    adts: Res<Assets<benilla_assets::AdtTile>>,
+) {
     let LocalRealm {
         far,
         realm,
         listed,
         saved,
     } = &mut *local;
+    // The wall clock an item's cooldown runs on, so time between sessions counts. `web-time`:
+    // std's `SystemTime` panics in a browser.
+    if let Ok(now) = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH) {
+        realm.set_wall_clock(now.as_millis() as u64);
+    }
     if !*listed {
         *listed = true;
         realm.handle(RealmCommand::ListCharacters);
@@ -178,8 +234,16 @@ fn pump(mut local: ResMut<LocalRealm>, time: Res<Time>, world: WorldPoint) {
             realm.handle(command);
         }
     }
+    for DevGoto { x, y, facing } in goto.take_ready() {
+        realm.handle(RealmCommand::DevTeleport { x, y, facing });
+    }
 
-    let host = TerrainHost { world: &world };
+    let host = TerrainHost {
+        world: &world,
+        collision: &collision,
+        goto: &goto,
+        adts: &adts,
+    };
     realm.tick(time.delta_secs(), &host);
 
     for op in realm.drain_storage() {
@@ -187,6 +251,9 @@ fn pump(mut local: ResMut<LocalRealm>, time: Res<Time>, world: WorldPoint) {
     }
 
     for event in realm.drain_events() {
+        if let SessionEvent::CharacterList { characters, .. } = &event {
+            label_callings(realm, characters, &mut labels);
+        }
         let logged_out = matches!(event, SessionEvent::LoggedOut);
         let _ = far.events.send(event);
         // The IO thread ends the session after a logout, which tears the streamed world down.
@@ -199,6 +266,21 @@ fn pump(mut local: ResMut<LocalRealm>, time: Res<Time>, world: WorldPoint) {
     }
 }
 
+/// The select screen names each character's Calling (`Level 7 Basic Warrior`), not its class.
+fn label_callings(
+    realm: &Realm,
+    roster: &[benilla_protocol::Character],
+    labels: &mut ResMut<crate::char_select::ClassLabels>,
+) {
+    let named = crate::char_select::ClassLabels(
+        roster
+            .iter()
+            .filter_map(|c| Some((c.guid, realm.calling_name(c.guid)?.to_string())))
+            .collect(),
+    );
+    labels.set_if_neq(named);
+}
+
 /// The client's commands the realm understands; the rest are dropped.
 fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
     match command {
@@ -208,25 +290,204 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             position: pos,
             orientation,
         }),
+        ClientCommand::SetSelection { guid } => Some(RealmCommand::SetSelection { guid }),
+        ClientCommand::AttackSwing { guid } => Some(RealmCommand::AttackSwing { guid }),
+        ClientCommand::AttackStop => Some(RealmCommand::AttackStop),
+        ClientCommand::CreatureQuery { entry, .. } => Some(RealmCommand::CreatureQuery { entry }),
+        ClientCommand::CastSpell { spell_id, target } => {
+            Some(RealmCommand::CastSpell { spell_id, target })
+        }
+        ClientCommand::CancelAura { spell_id } => Some(RealmCommand::CancelAura { spell_id }),
+        ClientCommand::SetActionButton { button, packed } => Some(RealmCommand::SetActionButton {
+            slot: button,
+            packed,
+        }),
         ClientCommand::Logout => Some(RealmCommand::Logout),
+        ClientCommand::ItemQuery { entry, .. } => Some(RealmCommand::ItemQuery { entry }),
+        ClientCommand::Loot { guid } => Some(RealmCommand::Loot { guid }),
+        ClientCommand::LootMoney => Some(RealmCommand::LootMoney),
+        ClientCommand::AutostoreLootItem { slot } => Some(RealmCommand::AutostoreLootItem { slot }),
+        ClientCommand::LootRelease { guid } => Some(RealmCommand::LootRelease { guid }),
+        ClientCommand::AutoEquipItem { bag_index, slot } => Some(RealmCommand::AutoEquipItem {
+            bag: bag_index,
+            slot,
+        }),
+        ClientCommand::SwapInvItem { src_slot, dst_slot } => Some(RealmCommand::SwapInvItem {
+            src: src_slot,
+            dst: dst_slot,
+        }),
+        ClientCommand::SwapItem {
+            dst_bag,
+            dst_slot,
+            src_bag,
+            src_slot,
+        } => Some(RealmCommand::SwapItem {
+            src_bag,
+            src_slot,
+            dst_bag,
+            dst_slot,
+        }),
+        ClientCommand::AutoStoreBagItem {
+            src_bag,
+            src_slot,
+            dst_bag,
+        } => Some(RealmCommand::AutoStoreBagItem {
+            src_bag,
+            src_slot,
+            dst_bag,
+        }),
+        ClientCommand::DestroyItem {
+            bag_index,
+            slot,
+            count,
+        } => Some(RealmCommand::DestroyItem {
+            bag: bag_index,
+            slot,
+            count,
+        }),
+        ClientCommand::LearnTalent { talent_id, rank } => {
+            Some(RealmCommand::LearnTalent { talent_id, rank })
+        }
+        ClientCommand::GossipHello { guid } => Some(RealmCommand::GossipHello { guid }),
+        ClientCommand::GossipSelectOption { guid, option } => {
+            Some(RealmCommand::GossipSelectOption { guid, option })
+        }
+        ClientCommand::NpcTextQuery { text_id, .. } => Some(RealmCommand::NpcTextQuery { text_id }),
+        ClientCommand::TalentWipeConfirm { trainer } => {
+            Some(RealmCommand::TalentWipeConfirm { trainer })
+        }
+        ClientCommand::ListInventory { guid } => Some(RealmCommand::ListInventory { guid }),
+        ClientCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        } => Some(RealmCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        }),
+        // A row dropped on a slot: bought into the first free one, as the realm stores loot.
+        ClientCommand::BuyItemInSlot {
+            vendor,
+            entry,
+            count,
+            ..
+        } => Some(RealmCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        }),
+        ClientCommand::SellItem {
+            vendor,
+            item_guid,
+            count,
+        } => Some(RealmCommand::SellItem {
+            vendor,
+            item: item_guid,
+            count,
+        }),
+        ClientCommand::BuybackItem { vendor, slot } => {
+            Some(RealmCommand::BuybackItem { vendor, slot })
+        }
+        ClientCommand::RepairItem { vendor, item_guid } => Some(RealmCommand::RepairItem {
+            vendor,
+            item: item_guid,
+        }),
+        ClientCommand::UseItem {
+            bag_index, slot, ..
+        } => Some(RealmCommand::UseItem {
+            bag: bag_index,
+            slot,
+        }),
+        ClientCommand::RepopRequest => Some(RealmCommand::RepopRequest),
+        ClientCommand::TeleportAck { counter, .. } => Some(RealmCommand::TeleportAck { counter }),
+        ClientCommand::QuestgiverStatusQuery { npc } => {
+            Some(RealmCommand::QuestGiverStatusQuery { npc })
+        }
+        ClientCommand::QuestgiverHello { npc } => Some(RealmCommand::QuestGiverHello { npc }),
+        ClientCommand::QuestgiverQuery { npc, quest } => {
+            Some(RealmCommand::QuestGiverQueryQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverAccept { npc, quest } => {
+            Some(RealmCommand::QuestGiverAcceptQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverComplete { npc, quest } => {
+            Some(RealmCommand::QuestGiverCompleteQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverRequestReward { npc, quest } => {
+            Some(RealmCommand::QuestGiverRequestReward { npc, quest })
+        }
+        ClientCommand::QuestgiverChooseReward { npc, quest, choice } => {
+            Some(RealmCommand::QuestGiverChooseReward { npc, quest, choice })
+        }
+        ClientCommand::QuestQuery { quest } => Some(RealmCommand::QuestQuery { quest }),
+        ClientCommand::QuestlogRemove { slot } => Some(RealmCommand::QuestLogRemoveQuest { slot }),
+        ClientCommand::AreaTrigger { trigger_id } => {
+            Some(RealmCommand::AreaTrigger { id: trigger_id })
+        }
+        ClientCommand::WorldportAck => Some(RealmCommand::WorldportAck),
         _ => None,
     }
 }
 
-/// The realm's view of the world, answered from the streamed terrain.
-struct TerrainHost<'a, 'w, 's> {
+/// The realm's view of the world, answered from the streamed terrain and its collision.
+struct TerrainHost<'a, 'w, 's, 'cw, 'cs> {
     world: &'a WorldPoint<'w, 's>,
+    collision: &'a WorldCollision<'cw, 'cs>,
+    /// The tile a dev teleport fetched beyond the stream window.
+    goto: &'a goto::GotoGround,
+    adts: &'a Assets<benilla_assets::AdtTile>,
 }
 
-impl Host for TerrainHost<'_, '_, '_> {
+/// How much of each end a sight line leaves out, in yards: the two bodies it joins.
+const SIGHT_END_YD: f32 = 1.0;
+
+impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     fn ground_height(&self, _map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32> {
-        self.world.terrain_height_under(wow_to_bevy([x, y, z_hint]))
+        self.world
+            .terrain_height_under(wow_to_bevy([x, y, z_hint]))
+            .or_else(|| self.goto.height(self.adts, x, y))
     }
 
-    // Nothing asks yet: the first reader is mob aggro, which brings the collision query with it.
-    fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
-        true
+    /// A ray through what a body collides with: terrain, doodads and WMO walls (a Dungeon's
+    /// tunnels). Where nothing is streamed in, nothing is in the way.
+    fn line_of_sight(&self, _map: u32, from: [f32; 3], to: [f32; 3]) -> bool {
+        let (a, b) = (wow_to_bevy(from), wow_to_bevy(to));
+        let span = b - a;
+        let length = span.length() - 2.0 * SIGHT_END_YD;
+        let Ok(dir) = Dir3::new(span) else {
+            return true;
+        };
+        length <= 0.0
+            || self
+                .collision
+                .ray_body(a + dir * SIGHT_END_YD, dir, length)
+                .is_none()
     }
+}
+
+/// The spell rewrites of ADR 0003, made once the client has loaded its spell data, from the
+/// realm's content:
+/// - a Calling skill has no ranks: the spellbook, tooltip and learn line show none, even though
+///   each borrows a ranked 1.12 spell;
+/// - a WIP talent's rank spells read "<Name> (WIP)" in the talent frame and its tooltips;
+/// - a skill borrowed from another Class (Zealot's Paladin spells) costs the realm's rage in any
+///   stance, as a Warrior spell, so its button is lit and its tooltip shows rage.
+fn rewrite_spells(mut spells: ResMut<crate::ui_action::Spells>) {
+    let catalog = &mut spells.catalog;
+    catalog.clear_ranks(twilight_realm::callings::skill_spell_ids());
+    catalog.mark_wip(twilight_realm::callings::wip_rank_spell_ids());
+    catalog.borrow_spells(
+        twilight_realm::callings::borrowed_spell_rewrites().map(|r| {
+            benilla_formats::BorrowedSpellRow {
+                spell_id: r.spell_id,
+                power_type: r.power_type,
+                cost: r.cost,
+                spell_family: r.spell_family,
+                family_bit: r.family_bit,
+            }
+        }),
+    );
 }
 
 /// Basic Warrior is the only Calling a character starts as, so create offers only Warrior.

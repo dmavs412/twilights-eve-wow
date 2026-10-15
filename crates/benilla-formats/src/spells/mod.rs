@@ -22,6 +22,7 @@ mod radius;
 mod ranges;
 mod soft_float;
 mod tokens;
+mod twilight;
 
 pub use cast_times::{load_spell_cast_times, SpellCastTime, SpellCastTimeCatalog};
 pub use dispel_types::{load_spell_dispel_types, SpellDispelTypes};
@@ -38,6 +39,7 @@ pub use ranges::{
 };
 pub use soft_float::modify as soft_modify;
 pub use tokens::{substitute, SpellMods, TokenContext, TokenNumber};
+pub use twilight::BorrowedSpellRow;
 
 use std::collections::HashMap;
 

@@ -1,11 +1,35 @@
-//! The character in the world, and the login burst that puts it there.
+//! The character in the world: the login burst that puts it there, the mobs around it, and the
+//! fights between them, one tick at a time.
 
-use benilla_protocol::messages::ObjectType;
+mod advance;
+mod cast;
+mod hearth;
+
+use benilla_protocol::messages::{AttackSwingError, LevelUpInfo, ObjectType, XpGain};
 use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 
 use crate::characters::Char;
+use crate::clock;
+use crate::combat;
 use crate::content;
+use crate::dev::DevMultipliers;
+use crate::equipment;
 use crate::fields::*;
+use crate::looting::{self, Looting};
+use crate::mobs::{Mob, State, COMBAT_REACH};
+use crate::population::Population;
+use crate::rng::Rng;
+use crate::rules::melee::Outcome;
+use crate::rules::stats::WarriorStats;
+use crate::rules::{aggro, leash, rage, xp};
+use crate::space::distance;
+use crate::Host;
+
+mod death;
+mod dungeon;
+mod food;
+
+pub(crate) use dungeon::come_out;
 
 /// vanilla's player speeds (`baseMoveSpeed`): yd/s, turn in rad/s.
 const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
@@ -17,19 +41,92 @@ const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
     turn_rate: std::f32::consts::PI,
 };
 
-/// XP to level 2 (`player_xp_for_level`).
-const XP_TO_LEVEL_2: u32 = 400;
+/// A player's combat reach (`DEFAULT_COMBAT_REACH`).
+const PLAYER_COMBAT_REACH: f32 = 1.5;
+
+/// How far from the player a chasing mob stops.
+const CHASE_DISTANCE: f32 = 2.0;
+/// How far the player may move from where a chase leg was aimed before the mob lays a new one.
+const CHASE_SLACK: f32 = 1.0;
+/// The shortest time between two chase legs.
+const REPATH_SECS: f32 = 0.25;
+
+// `PLAYER_SKILL_INFO` skill lines (`SkillLine.dbc`).
+const SKILL_DEFENSE: u32 = 95;
+const SKILL_UNARMED: u32 = 162;
+
+/// What a tick did that the realm acts on.
+#[derive(Default)]
+pub(crate) struct Ticked {
+    /// The character gained a level: save it.
+    pub(crate) leveled: bool,
+}
+
+/// The player's side of a fight.
+struct Player {
+    stats: WarriorStats,
+    health: u32,
+    /// Tenths.
+    rage: u32,
+    /// Seconds until the next swing; 0 is ready.
+    swing_timer: f32,
+    /// Who auto-attack swings at, from `CMSG_ATTACKSWING` to `CMSG_ATTACKSTOP`.
+    attacking: Option<u64>,
+    /// The last swing refusal sent, so it is sent once and not every tick.
+    refused: Option<AttackSwingError>,
+    /// Seconds into the current rage-decay tick.
+    decay: f32,
+    in_combat: bool,
+    /// Killed, and the toll taken: lying dead until Release Spirit.
+    dead: bool,
+}
+
+impl Player {
+    fn alive(&self) -> bool {
+        self.health > 0
+    }
+}
 
 /// The session of the character that is in the world.
 pub(crate) struct InWorld {
     pub(crate) guid: u64,
     /// Seconds since the last autosave.
     pub(crate) since_save: f32,
+    map: u32,
+    player: Player,
+    /// The mobs near the player; they stream in from the first tick on, which brings the ground.
+    mobs: Vec<Mob>,
+    population: Population,
+    dev: DevMultipliers,
+    /// The corpses with loot on them.
+    pub(crate) looting: Looting,
+    /// Cooldowns, the queued strike and the auras the skills leave.
+    skills: cast::Skills,
+    /// The teleport the client has yet to acknowledge.
+    teleports: hearth::Teleports,
+    /// The Hub's NPCs in view: they stream in with the view, after the mobs.
+    hub: crate::hub::InView,
+    /// This session's sales, on the merchant window's buyback tab.
+    pub(crate) buyback: crate::vendor::Buyback,
+    /// The dice for gear wear, apart from the fight's so that wearing changes no fight.
+    wear: Rng,
+    /// Where Release Spirit brings the player back: the Hub, or a Dungeon's entrance.
+    pub(crate) respawn: death::Respawn,
+    /// Food or drink being taken, sitting down.
+    meal: Option<food::Meal>,
+    /// A worldport waits for the client's ack.
+    transfer: bool,
 }
 
 impl InWorld {
     /// Logs `c` in: what vmangos sends from `CMSG_PLAYER_LOGIN` to the player's own create.
-    pub(crate) fn enter(c: &Char, events: &mut Vec<SessionEvent>) -> Self {
+    pub(crate) fn enter(
+        c: &Char,
+        dev: DevMultipliers,
+        wall: f64,
+        events: &mut Vec<SessionEvent>,
+    ) -> Self {
+        let stats = crate::talents::stats(c);
         events.push(SessionEvent::Connected {
             self_guid: c.guid,
             name: c.name.clone(),
@@ -52,45 +149,727 @@ impl InWorld {
             day_serial: 0,
             timescale: 1.0 / 60.0,
         });
-        events.push(SessionEvent::ObjectCreate {
+        events.push(cast::spell_book(c, wall));
+        events.extend(crate::talents::spell_mods(c));
+        events.push(cast::action_buttons(c));
+        // The proficiencies and the carried items' objects, ahead of the player that names them.
+        equipment::login(c, events);
+        let w = Self {
+            guid: c.guid,
+            since_save: 0.0,
+            map: c.map,
+            player: Player {
+                stats,
+                health: stats.max_health,
+                rage: 0,
+                swing_timer: 0.0,
+                attacking: None,
+                refused: None,
+                decay: 0.0,
+                in_combat: false,
+                dead: false,
+            },
+            mobs: Vec::new(),
+            population: Population::default(),
+            dev,
+            looting: Looting::default(),
+            skills: cast::Skills::new(c.guid),
+            teleports: hearth::Teleports::default(),
+            hub: Default::default(),
+            buyback: crate::vendor::Buyback::default(),
+            wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
+            respawn: death::Respawn::HUB,
+            meal: None,
+            transfer: false,
+        };
+        events.push(w.player_create(c));
+        w
+    }
+
+    /// The player's own create, as it stands.
+    fn player_create(&self, c: &Char) -> SessionEvent {
+        SessionEvent::ObjectCreate {
             guid: c.guid,
             kind: EntityKind::Player,
             display_id: Some(content::display_id(c.race, c.gender)),
             position: c.position,
             orientation: c.orientation,
             scale: 1.0,
-            speeds: Some(PLAYER_SPEEDS),
+            speeds: Some(self.dev.speeds(PLAYER_SPEEDS)),
             mover: None,
             transport_progress: None,
             transport: None,
             spline: None,
-            fields: player_fields(c),
+            fields: player_fields(c, &self.player.stats),
+        }
+    }
+
+    /// `CMSG_SET_SELECTION`: the player's target, which the client shows in `UNIT_FIELD_TARGET`.
+    pub(crate) fn select(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
+        events.push(values(self.guid, &guid_pairs(UNIT_FIELD_TARGET, target)));
+    }
+
+    /// `CMSG_ATTACKSWING`: start auto-attack on `target`, echoed as `SMSG_ATTACKSTART`.
+    pub(crate) fn attack(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
+        let Some(i) = self.mobs.iter().position(|m| m.guid == target && m.alive()) else {
+            events.push(SessionEvent::AttackSwingError(
+                AttackSwingError::DeadOrUnattackable,
+            ));
+            return;
+        };
+        if !self.player.alive() {
+            return;
+        }
+        if let Some(old) = self.player.attacking.replace(target) {
+            if old != target {
+                events.push(SessionEvent::AttackStop {
+                    attacker: self.guid,
+                    victim: old,
+                });
+            }
+        }
+        self.player.refused = None;
+        events.push(SessionEvent::AttackStart {
+            attacker: self.guid,
+            victim: target,
         });
-        Self {
-            guid: c.guid,
-            since_save: 0.0,
+        // Being attacked turns a mob on its attacker (`CreatureAI::AttackedBy`).
+        if self.mobs[i].state == State::Idle {
+            self.pull(i, events);
+        }
+    }
+
+    /// `CMSG_ATTACKSTOP`.
+    pub(crate) fn stop_attack(&mut self, events: &mut Vec<SessionEvent>) {
+        if let Some(victim) = self.player.attacking.take() {
+            events.push(SessionEvent::AttackStop {
+                attacker: self.guid,
+                victim,
+            });
+        }
+    }
+
+    /// Advances the world by `dt` seconds around `c`, to the wall clock's `wall`.
+    pub(crate) fn tick(
+        &mut self,
+        dt: f32,
+        wall: f64,
+        host: &dyn Host,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) -> Ticked {
+        let mut ticked = Ticked::default();
+        if self.transfer {
+            return ticked;
+        }
+        let me = c.position;
+        // The open world streams in around the player; a Dungeon's run is all there at once.
+        if self.map == content::KALIMDOR {
+            self.population
+                .update(dt, me, self.map, host, &mut self.mobs, events);
+        }
+        self.hub.update(me, self.map, host, events);
+        // A corpse that respawned or streamed out takes its loot with it.
+        let mobs = &self.mobs;
+        self.looting
+            .retain(|corpse| mobs.iter().any(|m| m.guid == corpse && !m.alive()));
+        let p = &mut self.player;
+        p.swing_timer = (p.swing_timer - dt).max(0.0);
+
+        // Hostile mobs notice a living player who comes too close, and bring their camp.
+        if p.alive() {
+            for i in 0..self.mobs.len() {
+                let mob = &self.mobs[i];
+                if mob.state != State::Idle || !mob.template.hostile {
+                    continue;
+                }
+                let r = aggro::radius(mob.template.detection_range, c.level, mob.level());
+                if distance(mob.position, me) <= r
+                    && host.line_of_sight(self.map, eye(mob.position), eye(me))
+                {
+                    self.pull(i, events);
+                }
+            }
+        }
+
+        self.player_swing(c, rng, events, &mut ticked);
+        for i in 0..self.mobs.len() {
+            self.mob_tick(i, dt, host, c, rng, events);
+        }
+        self.skills_tick(dt, wall, c, rng, events, &mut ticked);
+        self.update_aura_states(events);
+        if !self.player.alive() && !self.player.dead {
+            self.die(c, events);
+        }
+        self.update_combat(dt, events);
+        self.eat(dt, c, events);
+        ticked
+    }
+
+    /// Mob `i` turns on the player. A hostile mob brings every idle member of its camp with it
+    /// (social aggro); a neutral one comes alone, and its campmates wait to be attacked themselves.
+    fn pull(&mut self, i: usize, events: &mut Vec<SessionEvent>) {
+        let camp = self.mobs[i].camp;
+        engage(&mut self.mobs[i], self.guid, events);
+        if !self.mobs[i].template.hostile {
+            return;
+        }
+        for mob in &mut self.mobs {
+            if mob.camp == camp && mob.state == State::Idle {
+                engage(mob, self.guid, events);
+            }
+        }
+    }
+
+    /// The player's auto-attack, when its timer is up and the target is in reach and in front.
+    fn player_swing(
+        &mut self,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let p = &mut self.player;
+        let Some(target) = p.attacking else {
+            return;
+        };
+        if p.swing_timer > 0.0 || !p.alive() {
+            return;
+        }
+        let Some(i) = self.mobs.iter().position(|m| m.guid == target && m.alive()) else {
+            p.attacking = None;
+            return;
+        };
+        let mob = &self.mobs[i];
+        let refusal = if distance(mob.position, c.position) > melee_reach() {
+            Some(AttackSwingError::NotInRange)
+        } else if !in_front(c.orientation, c.position, mob.position) {
+            Some(AttackSwingError::BadFacing)
+        } else {
+            None
+        };
+        if let Some(refusal) = refusal {
+            if p.refused != Some(refusal) {
+                p.refused = Some(refusal);
+                events.push(SessionEvent::AttackSwingError(refusal));
+            }
+            return;
+        }
+        p.refused = None;
+        p.swing_timer = clock::secs(cast::white(&p.stats, &self.skills).attack_time_ms);
+
+        let from_front = in_front(mob.orientation, mob.position, c.position);
+        // A queued Heroic Strike takes this swing's place.
+        if self.next_swing_strike(target, from_front, c, rng, events, ticked) {
+            return;
+        }
+        self.white_swing(i, from_front, true, c, rng, events, ticked);
+    }
+
+    /// One white swing at mob `i`, and what its landing sets off; `may_swing_again`: whether a
+    /// talent may give it one more swing (an extra swing never gives another).
+    #[allow(clippy::too_many_arguments)]
+    fn white_swing(
+        &mut self,
+        i: usize,
+        from_front: bool,
+        may_swing_again: bool,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let target = self.mobs[i].guid;
+        let stats = cast::white(&self.player.stats, &self.skills);
+        let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, rng);
+        swing.damage = self.dealt(c, swing.damage);
+        let counted = self.skills.count_swing(events);
+        self.faded(&counted, events);
+        events.push(SessionEvent::AttackerState(swing.report(self.guid, target)));
+        if swing.outcome == Outcome::Dodge {
+            self.skills.dodged_by(target, events);
+        }
+
+        // Rage from what landed, or from three quarters of what a dodge or parry stopped.
+        let p = &mut self.player;
+        let earned = match swing.outcome {
+            Outcome::Dodge | Outcome::Parry => rage::from_avoided(swing.would_be, p.stats.level),
+            _ => rage::from_damage_dealt(swing.damage, p.stats.level),
+        };
+        if earned > 0 {
+            p.rage = (p.rage + earned).min(rage::MAX);
+            events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+        }
+
+        let mob = &mut self.mobs[i];
+        mob.health = mob.health.saturating_sub(swing.damage);
+        if swing.damage > 0 {
+            events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+        }
+        let idle = mob.state == State::Idle;
+        if swing.damage > 0 && crate::wear::on_hit(c, &mut self.wear, events) {
+            self.refresh_gear(c, events);
+        }
+        if idle {
+            self.pull(i, events);
+        }
+        if self.mobs[i].health == 0 {
+            self.kill(i, c, rng, events, ticked);
+        } else if swing.outcome == Outcome::Crit {
+            self.crit_landed(target, c, events);
+        }
+        if swing.damage > 0 {
+            self.sweep(target, swing.damage, c, rng, events, ticked);
+            self.seal_swing_landed(target, c, rng, events, ticked);
+            self.white_swing_landed(i, from_front, may_swing_again, c, rng, events, ticked);
+        }
+    }
+
+    /// What the player's talents make of a white swing that landed on mob `i`: rage, a stun, one
+    /// more swing.
+    #[allow(clippy::too_many_arguments)]
+    fn white_swing_landed(
+        &mut self,
+        i: usize,
+        from_front: bool,
+        may_swing_again: bool,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let on_hit = crate::talents::on_hit(c);
+        if let Some((spell_id, pct)) = on_hit.rage {
+            if rng.below(100) < pct {
+                self.gain_rage(spell_id, 1, events);
+            }
+        }
+        if let Some((aura_spell_id, duration_ms, pct)) = on_hit.stun {
+            if self.mobs[i].alive() && rng.below(100) < pct {
+                self.stun(
+                    self.mobs[i].guid,
+                    aura_spell_id,
+                    duration_ms,
+                    c.level,
+                    events,
+                );
+            }
+        }
+        if may_swing_again
+            && on_hit.extra_swing_pct > 0
+            && rng.below(100) < on_hit.extra_swing_pct
+            && self.mobs[i].alive()
+        {
+            self.white_swing(i, from_front, false, c, rng, events, ticked);
+        }
+    }
+
+    /// A mob's tick: chase, swing, or walk home.
+    fn mob_tick(
+        &mut self,
+        i: usize,
+        dt: f32,
+        host: &dyn Host,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let me = c.position;
+        // Inside a Dungeon, its route graph keeps every run within the walls.
+        let route = crate::dungeon::route_on(self.map);
+        let map = self.map;
+        let mob = &mut self.mobs[i];
+        mob.advance(dt);
+        mob.swing_timer = (mob.swing_timer - dt).max(0.0);
+        mob.repath_timer = (mob.repath_timer - dt).max(0.0);
+        match mob.state {
+            State::Idle | State::Dead => {}
+            State::Evading => {
+                if mob.walk.is_none() {
+                    mob.state = State::Idle;
+                    mob.orientation = mob.home_orientation;
+                    mob.health = mob.stats.max_health;
+                    events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+                }
+            }
+            State::Engaged => {
+                if !self.player.alive() || leash::beyond(mob.home, mob.position) {
+                    evade(mob, self.guid, route.map(|r| (r, map, host)), events);
+                    return;
+                }
+                if self.skills.stunned(mob.guid) {
+                    return;
+                }
+                let d = distance(mob.position, me);
+                if d > melee_reach() {
+                    let stale = mob
+                        .walk
+                        .as_ref()
+                        .is_none_or(|w| distance(w.aimed_at, me) > CHASE_SLACK);
+                    if stale && mob.repath_timer <= 0.0 {
+                        mob.repath_timer = REPATH_SECS;
+                        let run = match route {
+                            Some(r) => {
+                                let path = r.path(mob.position, me, map, host);
+                                mob.run_path(short_of(path, CHASE_DISTANCE), me)
+                            }
+                            None => mob.run_to(chase_point(mob.position, me, map, host), me),
+                        };
+                        events.push(run);
+                    }
+                    return;
+                }
+                if mob.walk.is_none() {
+                    mob.orientation = (me[1] - mob.position[1])
+                        .atan2(me[0] - mob.position[0])
+                        .rem_euclid(std::f32::consts::TAU);
+                }
+                if mob.swing_timer > 0.0 {
+                    return;
+                }
+                let stats = cast::buffed(&self.player.stats, &self.skills);
+                let from_front = in_front(c.orientation, me, mob.position);
+                let swing = combat::mob_swing(mob, &stats, from_front, rng);
+                events.push(SessionEvent::AttackerState(
+                    swing.report(mob.guid, self.guid),
+                ));
+                mob.swing_timer = clock::secs(mob.template.base_attack_time)
+                    * self.skills.attack_time_mul(mob.guid);
+                let p = &mut self.player;
+                if swing.damage > 0 {
+                    p.health = p.health.saturating_sub(swing.damage);
+                    p.rage = (p.rage + rage::from_damage_taken(swing.damage, p.stats.level))
+                        .min(rage::MAX);
+                    events.push(values(
+                        self.guid,
+                        &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
+                    ));
+                    // A hit breaks a timed cast (the Hearthstone's interrupts on damage).
+                    self.interrupt_cast(events);
+                    if crate::wear::on_hit(c, &mut self.wear, events) {
+                        self.refresh_gear(c, events);
+                    }
+                }
+                self.struck(swing.outcome, c, rng, events);
+            }
+        }
+    }
+
+    /// `mob` dies at the player's hand: the fight ends and the kill's XP is paid.
+    fn kill(
+        &mut self,
+        i: usize,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let elite_kind = self.elite_kind();
+        let mob = &mut self.mobs[i];
+        let entry = mob.template.entry;
+        let mut loot = if Self::is_boss(mob) {
+            let pool = crate::dungeon::boss_drops(c.level, c.race);
+            looting::Loot::boss(mob.level(), &pool, rng)
+        } else {
+            looting::Loot::roll(mob.level(), rng)
+        };
+        // The quest items the player's quests still want, after the corpse's own drop.
+        loot.items
+            .extend(crate::quests::drops(c, entry, rng).into_iter().map(Some));
+        let lootable = self.looting.drop(mob.guid, loot);
+        let engaged = mob.state == State::Engaged;
+        mob.state = State::Dead;
+        mob.walk = None;
+        self.population.died(mob.spawn);
+        if self.player.attacking == Some(mob.guid) {
+            self.player.attacking = None;
+            events.push(SessionEvent::AttackStop {
+                attacker: self.guid,
+                victim: mob.guid,
+            });
+        }
+        if engaged {
+            events.push(SessionEvent::AttackStop {
+                attacker: mob.guid,
+                victim: self.guid,
+            });
+        }
+        let mut pairs = vec![(UNIT_FIELD_HEALTH, 0), (UNIT_FIELD_FLAGS, 0)];
+        pairs.extend(guid_pairs(UNIT_FIELD_TARGET, 0));
+        pairs.push(looting::lootable_pair(lootable));
+        events.push(values(mob.guid, &pairs));
+
+        let elite = if mob.template.elite() {
+            elite_kind
+        } else {
+            xp::Elite::No
+        };
+        let gained = if at_tier_cap(c) {
+            0
+        } else {
+            self.dev.xp(xp::kill_xp(c.level, mob.level(), elite))
+        };
+        if gained > 0 {
+            events.push(SessionEvent::XpGain(XpGain {
+                victim: mob.guid,
+                total: gained,
+                base: gained,
+                kill: true,
+            }));
+            ticked.leveled |= self.give_xp(c, gained, events);
+        }
+        let dead = self.mobs[i].guid;
+        self.auras_die_with(dead, events);
+        crate::quests::credit_kill(c, entry, events);
+    }
+
+    /// Pays a quest's `base` XP, scaled by the dev multiplier as kill XP is; nothing at the Tier
+    /// Cap. What it paid.
+    pub(crate) fn reward_xp(
+        &mut self,
+        c: &mut Char,
+        base: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> u32 {
+        if at_tier_cap(c) {
+            return 0;
+        }
+        let gained = self.dev.xp(base);
+        if gained > 0 {
+            self.give_xp(c, gained, events);
+        }
+        gained
+    }
+
+    /// Adds `amount` XP, levelling up as often as it covers (`Player::GiveXP`). Whether a level
+    /// was gained.
+    fn give_xp(&mut self, c: &mut Char, amount: u32, events: &mut Vec<SessionEvent>) -> bool {
+        let Some(mut next) = xp::xp_to_next(c.level).filter(|_| !at_tier_cap(c)) else {
+            return false;
+        };
+        c.xp += amount;
+        let mut leveled = false;
+        while c.xp >= next {
+            c.xp -= next;
+            leveled = true;
+            let old = self.player.stats;
+            c.level += 1;
+            let new = crate::talents::stats(c);
+            self.player.stats = new;
+            self.player.health = new.max_health;
+            events.push(SessionEvent::LevelUp(LevelUpInfo {
+                level: u32::from(c.level),
+                health: new.max_health.saturating_sub(old.max_health),
+                powers: [0; 5],
+                stats: std::array::from_fn(|s| new.base[s].saturating_sub(old.base[s])),
+            }));
+            match xp::xp_to_next(c.level) {
+                // The Tier Cap: what is left over is not banked.
+                Some(_) if at_tier_cap(c) => {
+                    c.xp = 0;
+                    break;
+                }
+                Some(n) => next = n,
+                None => {
+                    // The end of the game: nothing more to bank.
+                    c.xp = 0;
+                    break;
+                }
+            }
+        }
+        let mut pairs = vec![(PLAYER_XP, c.xp)];
+        if leveled {
+            pairs.push((PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)));
+            pairs.push(crate::talents::points_pair(c));
+            pairs.push((UNIT_FIELD_HEALTH, self.player.health));
+            pairs.extend(sheet_pairs(
+                c,
+                &cast::white(&self.player.stats, &self.skills),
+            ));
+        }
+        events.push(values(self.guid, &pairs));
+        leveled
+    }
+
+    /// The player's in-combat flag, and rage decay out of combat.
+    fn update_combat(&mut self, dt: f32, events: &mut Vec<SessionEvent>) {
+        let p = &mut self.player;
+        let attacking = p
+            .attacking
+            .is_some_and(|t| self.mobs.iter().any(|m| m.guid == t && m.alive()));
+        let attacked = self.mobs.iter().any(|m| m.state == State::Engaged);
+        let in_combat = p.alive() && (attacking || attacked || self.skills.holds_combat());
+        if in_combat != p.in_combat {
+            p.in_combat = in_combat;
+            let combat = if in_combat { UNIT_FLAG_IN_COMBAT } else { 0 };
+            let flags = UNIT_FLAG_PVP_ATTACKABLE | combat;
+            events.push(values(self.guid, &[(UNIT_FIELD_FLAGS, flags)]));
+        }
+        if in_combat || p.rage == 0 {
+            p.decay = 0.0;
+            return;
+        }
+        p.decay += dt;
+        let mut decayed = false;
+        while p.decay >= rage::DECAY_TICK_SECS && p.rage > 0 {
+            p.decay -= rage::DECAY_TICK_SECS;
+            p.rage = p.rage.saturating_sub(rage::DECAY_PER_TICK);
+            decayed = true;
+        }
+        if decayed {
+            events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
         }
     }
 }
 
+/// Whether `c` stands at their Calling's Tier Cap, where XP stops until they advance.
+fn at_tier_cap(c: &Char) -> bool {
+    c.level >= crate::callings::of(c.calling).cap
+}
+
+/// `mob` turns on the player: `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
+/// flag.
+fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
+    mob.state = State::Engaged;
+    events.push(SessionEvent::AiReaction {
+        unit: mob.guid,
+        // `AI_REACTION_HOSTILE`.
+        reaction: 2,
+    });
+    events.push(SessionEvent::AttackStart {
+        attacker: mob.guid,
+        victim: player,
+    });
+    let mut pairs = vec![(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT)];
+    pairs.extend(guid_pairs(UNIT_FIELD_TARGET, player));
+    events.push(values(mob.guid, &pairs));
+}
+
+/// `mob` gives up the fight and runs home, where it heals; inside a Dungeon, along its route.
+fn evade(
+    mob: &mut Mob,
+    player: u64,
+    route: Option<(&crate::dungeon::Route, u32, &dyn Host)>,
+    events: &mut Vec<SessionEvent>,
+) {
+    mob.state = State::Evading;
+    events.push(SessionEvent::AttackStop {
+        attacker: mob.guid,
+        victim: player,
+    });
+    let mut pairs = vec![(UNIT_FIELD_FLAGS, 0)];
+    pairs.extend(guid_pairs(UNIT_FIELD_TARGET, 0));
+    events.push(values(mob.guid, &pairs));
+    let home = mob.home;
+    let run = match route {
+        Some((r, map, host)) => mob.run_path(r.path(mob.position, home, map, host), home),
+        None => mob.run_to(home, home),
+    };
+    events.push(run);
+}
+
+/// `path` stopped `by` yards short of its end, as a chase stops short of its quarry.
+fn short_of(mut path: Vec<[f32; 3]>, by: f32) -> Vec<[f32; 3]> {
+    if let [.., from, to] = path[..] {
+        let d = distance(from, to);
+        let t = if d > by { (d - by) / d } else { 0.0 };
+        let end = std::array::from_fn(|i| from[i] + (to[i] - from[i]) * t);
+        *path.last_mut().expect("two points") = end;
+    }
+    path
+}
+
+/// The melee reach between the player and a mob.
+fn melee_reach() -> f32 {
+    crate::rules::melee::reach(PLAYER_COMBAT_REACH, COMBAT_REACH)
+}
+
+/// Whether `target` is in the front half-circle of a unit at `from` facing `orientation`
+/// (`HasInArc(π)`).
+fn in_front(orientation: f32, from: [f32; 3], target: [f32; 3]) -> bool {
+    let (dx, dy) = (target[0] - from[0], target[1] - from[1]);
+    if dx == 0.0 && dy == 0.0 {
+        return true;
+    }
+    let angle = (dy.atan2(dx) - orientation + std::f32::consts::PI)
+        .rem_euclid(std::f32::consts::TAU)
+        - std::f32::consts::PI;
+    angle.abs() <= std::f32::consts::FRAC_PI_2
+}
+
+/// Where a mob at `from` runs to reach a player at `to`: `CHASE_DISTANCE` short of them, on the
+/// ground.
+fn chase_point(from: [f32; 3], to: [f32; 3], map: u32, host: &dyn Host) -> [f32; 3] {
+    let d = distance(from, to);
+    let t = if d > CHASE_DISTANCE {
+        (d - CHASE_DISTANCE) / d
+    } else {
+        0.0
+    };
+    let x = from[0] + (to[0] - from[0]) * t;
+    let y = from[1] + (to[1] - from[1]) * t;
+    let z = host.ground_height(map, x, y, to[2] + 2.0).unwrap_or(to[2]);
+    [x, y, z]
+}
+
+/// A unit's eyes, for line of sight: two yards over its feet.
+fn eye(p: [f32; 3]) -> [f32; 3] {
+    [p[0], p[1], p[2] + 2.0]
+}
+
+/// The character sheet: every field the stock paper doll reads, from the realm's stats.
+fn sheet_pairs(c: &Char, s: &WarriorStats) -> Vec<(u16, u32)> {
+    let skill = u32::from(s.weapon_skill);
+    let mut pairs = vec![
+        (UNIT_FIELD_LEVEL, u32::from(s.level)),
+        (UNIT_FIELD_MAXHEALTH, s.max_health),
+        (UNIT_FIELD_BASE_HEALTH, s.base_health),
+        (UNIT_FIELD_RESISTANCES, s.armor),
+        // Gear's flat attack power rides apart, in the mods.
+        (
+            UNIT_FIELD_ATTACK_POWER,
+            (s.attack_power - s.attack_power_bonus) as u32,
+        ),
+        (UNIT_FIELD_MINDAMAGE, float(s.min_damage)),
+        (UNIT_FIELD_MAXDAMAGE, float(s.max_damage)),
+        (UNIT_FIELD_BASEATTACKTIME, s.attack_time_ms),
+        (UNIT_FIELD_BASEATTACKTIME + 1, s.attack_time_ms),
+        (PLAYER_CRIT_PERCENTAGE, float(s.crit_pct as f32)),
+        (PLAYER_DODGE_PERCENTAGE, float(s.dodge_pct as f32)),
+        (PLAYER_PARRY_PERCENTAGE, float(s.parry_pct as f32)),
+        (PLAYER_BLOCK_PERCENTAGE, float(s.block_pct as f32)),
+    ];
+    for (i, stat) in s.base.into_iter().enumerate() {
+        pairs.push((UNIT_FIELD_STAT0 + i as u16, stat));
+    }
+    // The skill lines the sheet's Attack row and the table read, at the level's maximum.
+    for (slot, id) in [SKILL_UNARMED, SKILL_DEFENSE].into_iter().enumerate() {
+        let base = PLAYER_SKILL_INFO_1_1 + 3 * slot as u16;
+        pairs.push((base, id));
+        pairs.push((base + 1, skill | skill << 16));
+        // Gear's Defense is the line's temporary bonus.
+        let bonus = if id == SKILL_DEFENSE {
+            u32::from(s.defense - s.weapon_skill)
+        } else {
+            0
+        };
+        pairs.push((base + 2, bonus));
+    }
+    pairs.extend(crate::equipment::sheet_pairs(c, s));
+    pairs
+}
+
 /// The player's own descriptor at login.
-fn player_fields(c: &Char) -> ObjectFields {
+fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     let display = content::display_id(c.race, c.gender);
-    let stats = content::base_stats(c.race);
-    // vanilla: the first 20 stamina give 1 health each, the rest 10.
-    let sta = stats[2];
-    let health = content::BASE_HEALTH + sta.min(20) + sta.saturating_sub(20) * 10;
     let [skin, face, hair_style, hair_color, facial_hair] = c.look.map(u32::from);
     let mut pairs = vec![
-        (OBJECT_FIELD_GUID, c.guid as u32),
-        (OBJECT_FIELD_GUID + 1, (c.guid >> 32) as u32),
         (OBJECT_FIELD_TYPE, TYPE_PLAYER),
-        (OBJECT_FIELD_SCALE_X, 1.0f32.to_bits()),
-        (UNIT_FIELD_HEALTH, health),
-        (UNIT_FIELD_MAXHEALTH, health),
+        (OBJECT_FIELD_SCALE_X, float(1.0)),
+        (UNIT_FIELD_HEALTH, stats.max_health),
         (UNIT_FIELD_POWER2, 0),
-        (UNIT_FIELD_MAXPOWER2, 1000),
-        (UNIT_FIELD_LEVEL, u32::from(c.level)),
+        (UNIT_FIELD_MAXPOWER2, rage::MAX),
         (
             UNIT_FIELD_FACTIONTEMPLATE,
             content::faction_template(c.race),
@@ -102,15 +881,11 @@ fn player_fields(c: &Char) -> ObjectFields {
                 | u32::from(c.gender) << 16
                 | POWER_RAGE << 24,
         ),
-        (UNIT_FIELD_BASEATTACKTIME, 2000),
-        (UNIT_FIELD_BASEATTACKTIME + 1, 2000),
-        (UNIT_FIELD_BOUNDINGRADIUS, 0.389f32.to_bits()),
-        (UNIT_FIELD_COMBATREACH, 1.5f32.to_bits()),
+        (UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE),
+        (UNIT_FIELD_BOUNDINGRADIUS, float(0.389)),
+        (UNIT_FIELD_COMBATREACH, float(PLAYER_COMBAT_REACH)),
         (UNIT_FIELD_DISPLAYID, display),
         (UNIT_FIELD_NATIVEDISPLAYID, display),
-        (UNIT_FIELD_MINDAMAGE, 1.0f32.to_bits()),
-        (UNIT_FIELD_MAXDAMAGE, 2.0f32.to_bits()),
-        (UNIT_FIELD_BASE_HEALTH, content::BASE_HEALTH),
         (
             PLAYER_BYTES,
             skin | face << 8 | hair_style << 16 | hair_color << 24,
@@ -118,12 +893,49 @@ fn player_fields(c: &Char) -> ObjectFields {
         // Facial hair, then `REST_STATE_NORMAL` in the top byte.
         (PLAYER_BYTES_2, facial_hair | 0x01 << 24),
         (PLAYER_BYTES_3, u32::from(c.gender)),
-        (PLAYER_XP, 0),
-        (PLAYER_NEXT_LEVEL_XP, XP_TO_LEVEL_2),
+        (PLAYER_XP, c.xp),
+        (PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)),
         (PLAYER_FIELD_WATCHED_FACTION_INDEX, u32::MAX),
     ];
-    for (i, stat) in stats.into_iter().enumerate() {
-        pairs.push((UNIT_FIELD_STAT0 + i as u16, stat));
+    pairs.extend(guid_pairs(OBJECT_FIELD_GUID, c.guid));
+    pairs.extend(sheet_pairs(c, stats));
+    pairs.push(cast::stance(c));
+    pairs.push(crate::talents::points_pair(c));
+    pairs.extend(crate::equipment::inventory_pairs(c));
+    pairs.extend(crate::quests::log_pairs(c));
+    // No school's damage is modified: every multiplier is 1.
+    for school in 0..7 {
+        pairs.push((PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, float(1.0)));
     }
     ObjectFields::from_pairs(&pairs).into_created(ObjectType::Player)
+}
+
+// ── Loot and gear ─────────────────────────────────────────────────────────────────────────────────
+
+impl InWorld {
+    /// `CMSG_LOOT` on `corpse`: the loot window, if it is a corpse with loot within reach.
+    pub(crate) fn open_loot(&mut self, corpse: u64, c: &Char, events: &mut Vec<SessionEvent>) {
+        let near = self.mobs.iter().any(|m| {
+            m.guid == corpse
+                && !m.alive()
+                && crate::space::within_interaction(m.position, c.position)
+        });
+        self.looting.open(corpse, near, events);
+    }
+
+    /// The worn gear changed: redo the stats and the sheet, keeping the health lost so far.
+    pub(crate) fn refresh_gear(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        let lost = cast::buffed(&self.player.stats, &self.skills)
+            .max_health
+            .saturating_sub(self.player.health);
+        self.player.stats = crate::talents::stats(c);
+        let max = cast::buffed(&self.player.stats, &self.skills).max_health;
+        let p = &mut self.player;
+        if p.alive() {
+            p.health = max.saturating_sub(lost).max(1);
+        }
+        let mut pairs = sheet_pairs(c, &p.stats);
+        pairs.extend(self.sheet_now());
+        events.push(values(self.guid, &pairs));
+    }
 }

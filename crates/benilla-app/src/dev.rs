@@ -101,6 +101,14 @@ impl Plugin for DevProbesPlugin {
             if std::env::var("WOW_PROBE_LUA").is_ok() {
                 app.add_plugins(crate::capture::ProbeLuaPlugin);
             }
+            // `WOW_PROBE_INTERACT="12;20"`: interacts with the selection as a right-click would.
+            if std::env::var("WOW_PROBE_INTERACT").is_ok() {
+                app.add_plugins(crate::capture::ProbeInteractPlugin);
+            }
+            // `WOW_PROBE_GOTO="x,y[,facing][@secs]"`: a Twilight realm teleport to a spot.
+            if std::env::var("WOW_PROBE_GOTO").is_ok() {
+                app.add_plugins(crate::capture::ProbeGotoPlugin);
+            }
             // `WOW_PROBE_DRAG="A>B"`: drags frame A onto B through the real pointer path.
             if std::env::var("WOW_PROBE_DRAG").is_ok() {
                 app.add_plugins(crate::capture::ProbeDragPlugin);

@@ -5,9 +5,11 @@ use benilla_protocol::messages::{
     CLASS_WARRIOR,
 };
 use benilla_protocol::wire::Vector3d;
-use benilla_protocol::{CharCreateReq, CharEnumItem, Character};
+use benilla_protocol::{CharCreateReq, Character};
 
 use crate::content::{self, Calling, CROSSROADS, KALIMDOR, THE_BARRENS};
+use crate::inventory::Inventory;
+use crate::quests::QuestLog;
 use crate::save::SaveError;
 
 /// `CharactersPerRealm`: the select screen's ten rows.
@@ -37,6 +39,20 @@ pub(crate) struct Char {
     pub(crate) zone: u32,
     pub(crate) position: [f32; 3],
     pub(crate) orientation: f32,
+    /// The action bar as the player arranged it, `(slot, kind << 24 | action)`; `None` until
+    /// they first change it, which shows the Calling's default bar.
+    pub(crate) action_bar: Option<Vec<(u8, u32)>>,
+    /// Learned talents of the current Calling's tree, `(talent id, rank)`.
+    pub(crate) talents: Vec<(u32, u8)>,
+    /// Respecs bought so far, which set the next one's price.
+    pub(crate) talent_wipes: u32,
+    /// Gear, bags and money.
+    pub(crate) inventory: Inventory,
+    /// The items cooling down after use, `(entry, the wall-clock second it is ready at)`: time
+    /// away counts.
+    pub(crate) item_cooldowns: Vec<(u32, f64)>,
+    /// The quests under way.
+    pub(crate) quests: QuestLog,
 }
 
 #[derive(Default)]
@@ -83,6 +99,12 @@ impl Characters {
             zone: THE_BARRENS,
             position: [x, y, z],
             orientation: facing,
+            action_bar: None,
+            talents: Vec::new(),
+            talent_wipes: 0,
+            inventory: content::starting_inventory(req.race),
+            item_cooldowns: Vec::new(),
+            quests: QuestLog::default(),
         });
         CHAR_CREATE_SUCCESS
     }
@@ -128,10 +150,28 @@ impl Characters {
         self.list.iter().find(|c| c.guid == guid)
     }
 
+    pub(crate) fn get_mut(&mut self, guid: u64) -> Option<&mut Char> {
+        self.list.iter_mut().find(|c| c.guid == guid)
+    }
+
     pub(crate) fn set_position(&mut self, guid: u64, position: [f32; 3], orientation: f32) {
         if let Some(c) = self.list.iter_mut().find(|c| c.guid == guid) {
             c.position = position;
             c.orientation = orientation;
+        }
+    }
+
+    /// `CMSG_SET_ACTION_BUTTON`: puts `packed` on `slot` of the character's bar; 0 clears it.
+    pub(crate) fn set_action_button(&mut self, guid: u64, slot: u8, packed: u32) {
+        if let Some(c) = self.list.iter_mut().find(|c| c.guid == guid) {
+            let bar = c
+                .action_bar
+                .get_or_insert_with(|| crate::callings::default_bar(c.calling));
+            bar.retain(|&(s, _)| s != slot);
+            if packed != 0 {
+                bar.push((slot, packed));
+                bar.sort_unstable_by_key(|&(s, _)| s);
+            }
         }
     }
 
@@ -160,7 +200,7 @@ impl Char {
             map: self.map,
             position: Vector3d { x, y, z },
             flags: 0,
-            equipment: [CharEnumItem::default(); 19],
+            equipment: crate::equipment::roster_gear(&self.inventory),
             pet_display_id: 0,
             pet_level: 0,
             pet_family: 0,

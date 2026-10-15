@@ -1,0 +1,750 @@
+# The Callings and their skills, copied from `data/twilights-eve/callings.json` (the `realm` half
+# of each skill); tests/content_callings.rs keeps the two in step. Design notes:
+# docs/reference/skills-and-talents.md.
+#
+# A skill is one real 1.12.1 spell id with no ranks: the client shows that spell's name, icon and
+# tooltip, and the realm decides what it does. Amounts are `{ base, per_level, per_ap, min }`:
+# round(base + per_level * L + per_ap * AP), half away from zero, never below `min` (default 0),
+# where L is the level within the Tier and AP the attack power at cast time. Rage is whole points.
+#
+# `target`: "enemy" (the cast's unit target), "self", or "self_area" (every enemy within
+# `radius_yd`, at most `max_targets`). `range_yd` is `[min, max]`; a max of 5 is melee reach.
+#
+# A Calling: its save `key`, the `name` the select screen shows, its `tier` and Tier Cap (`cap`),
+# the `tier_bonus` it adds to base stats (cumulative per Tier, on top of the race table), its
+# stance, the `armour` it may wear, skills and Talent Tree. The Advancement Quests into a Calling
+# are quests (content/quests.toml).
+#
+# Gear follows the Calling, never the level: every Calling of the Warrior line wields every
+# Warrior weapon, and wears the `armour` kinds it lists ("cloth", "leather", "mail", "plate",
+# "shield"). No item is refused for level.
+
+[[calling]]
+key = "basic_warrior"
+name = "Basic Warrior"
+tier = 0
+cap = 10
+tier_bonus = { strength = 0, agility = 0, stamina = 0, intellect = 0, spirit = 0 }
+# Battle Stance: the client refuses Charge, Rend, Thunder Clap, Hamstring and Overpower in any
+# other form, so every Warrior Calling stands in it.
+shapeshift_form = 17
+armour = ["cloth", "leather", "mail", "shield"]
+
+[[calling.skill]]
+key = "heroic_strike"
+spell_id = 78
+rage_cost = 15
+cooldown_ms = 0
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "weapon_strike", weapon = "normal", on_next_swing = true, bonus = { base = 9.5, per_level = 1.4 } },
+]
+
+[[calling.skill]]
+key = "charge"
+spell_id = 100
+rage_cost = 0
+cooldown_ms = 15000
+gcd_ms = 0
+target = "enemy"
+range_yd = [8.0, 25.0]
+requires_out_of_combat = true
+effects = [
+    { kind = "charge", speed_yd_s = 24.0 },
+    { kind = "energize_rage", amount = { base = 8.5, per_level = 0.14 } },
+    { kind = "stun", aura_spell_id = 7922, duration_ms = 1000 },
+]
+
+# The Talent Tree, from `talent_tree` in the JSON (tests/content_callings.rs checks the seats, rank
+# spells, prerequisites and spell mods). Each talent is a real Talent.dbc row, so the stock frame
+# shows its name, icon and tooltip; `effects` is what the realm makes it do, one value per rank:
+#   skill_rage_cost  - the skill costs that much less rage
+#   skill_amount_pct - the skill's damage and buff amounts rise by that percent
+#   skill_rage       - the skill gives that much more rage
+#   skill_crit_pct   - the skill's critical strike chance rises by that percent
+#   melee_crit_pct   - every melee strike's critical strike chance rises by that percent
+#   crit_bleed       - a melee crit bleeds the target for that percent of the average swing
+#   item_armor_pct   - the armour from items rises by that percent
+#   hit_rage_pct     - a landed white swing gives 1 rage that percent of the time
+# A talent with `effects = []` and no `skill` is WIP: learnable, shown as "<Name> (WIP)" and
+# counted toward the next row, but the realm does not model it yet (Anger Management: no kind
+# slows rage decay).
+# `client_spellmods` are the spell-mod cells the realm sends so the client's cost check and
+# tooltips agree: `op` 14 is COST (tenths of rage), 8 ALL_EFFECTS (percent).
+
+# Recruit: one tab on the vanilla grid, row 2 open at 5 points; 9 points at the Tier Cap.
+[[calling.talent_tab]]
+id = 900
+name = "Recruit"
+background = "WarriorArms"
+
+[[calling.talent_tab.talent]]
+key = "improved_heroic_strike"
+talent_id = 124
+tier = 1
+column = 1
+rank_spells = [12282, 12663, 12664]
+effects = [{ kind = "skill_rage_cost", skill = "heroic_strike", per_rank = [1, 2, 3] }]
+client_spellmods = [{ flat = true, op = 14, family_bit = 6, per_rank = [-10, -20, -30] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_charge"
+talent_id = 126
+tier = 1
+column = 2
+rank_spells = [12285, 12697]
+effects = [{ kind = "skill_rage", skill = "charge", per_rank = [3, 6] }]
+
+[[calling.talent_tab.talent]]
+key = "toughness"
+talent_id = 140
+tier = 1
+column = 3
+rank_spells = [12299, 12761, 12762, 12763, 12764]
+effects = [{ kind = "item_armor_pct", per_rank = [2, 4, 6, 8, 10] }]
+
+[[calling.talent_tab.talent]]
+key = "cruelty"
+talent_id = 157
+tier = 2
+column = 1
+rank_spells = [12320, 12852, 12853, 12855, 12856]
+effects = [{ kind = "melee_crit_pct", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "unbridled_wrath"
+talent_id = 159
+tier = 2
+column = 2
+rank_spells = [12322, 12999, 13000, 13001, 13002]
+effects = [{ kind = "hit_rage_pct", spell_id = 12964, per_rank = [8, 16, 24, 32, 40] }]
+
+[[calling.talent_tab.talent]]
+key = "anger_management"
+talent_id = 137
+tier = 2
+column = 3
+rank_spells = [12296]
+# Talent.dbc flags it active, though the spell is a passive aura.
+exceptional = true
+effects = []
+
+# ── Tier 1: Vanguard ────────────────────────────────────────────────────────────────────────────
+# Reached by the Advancement Quest at Basic Warrior's cap: a focused Battle Stance kit. Saves from
+# before the rename call it "warrior" (`Calling`'s serde alias).
+
+[[calling]]
+key = "vanguard"
+name = "Vanguard"
+tier = 1
+cap = 30
+tier_bonus = { strength = 12, agility = 6, stamina = 12, intellect = 0, spirit = 3 }
+shapeshift_form = 17
+# Plate from level 1: Vanguard and every Calling that branches from it.
+armour = ["cloth", "leather", "mail", "plate", "shield"]
+
+# The Tier 1 signature: a normalized strike that halves the target's healing.
+[[calling.skill]]
+key = "mortal_strike"
+spell_id = 12294
+rage_cost = 30
+cooldown_ms = 6000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "weapon_strike", weapon = "normalized", bonus = { base = 25.0, per_level = 2.5 } },
+    { kind = "healing_reduction", pct = 50, duration_ms = 10000 },
+]
+
+[[calling.skill]]
+key = "overpower"
+spell_id = 7887
+rage_cost = 5
+cooldown_ms = 5000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+requires_target_dodged = true
+effects = [
+    { kind = "weapon_strike", weapon = "normalized", unavoidable = true, bonus = { base = 6.0, per_level = 0.6 } },
+]
+
+[[calling.skill]]
+key = "charge"
+spell_id = 6178
+rage_cost = 0
+cooldown_ms = 15000
+gcd_ms = 0
+target = "enemy"
+range_yd = [8.0, 25.0]
+requires_out_of_combat = true
+effects = [
+    { kind = "charge", speed_yd_s = 24.0 },
+    { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
+    { kind = "stun", aura_spell_id = 7922, duration_ms = 1000 },
+]
+
+[[calling.skill]]
+key = "rend"
+spell_id = 6546
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "periodic_damage", tick_ms = 3000, duration_ms = 12000, tick = { base = 5.0, per_level = 0.25, per_ap = 0.01, min = 1 } },
+]
+
+[[calling.skill]]
+key = "battle_shout"
+spell_id = 6192
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self"
+effects = [
+    { kind = "aura_attack_power", duration_ms = 120000, amount = { base = 20.0, per_level = 2.0 } },
+]
+
+# Vanguard's tree: Weaponmaster (five rows, Flurry at 20 points in the tab) and Warlord (three
+# rows), so 29 points at the cap reach Flurry with 9 for Warlord. Each tier n needs 5 * (n - 1)
+# points in its tab. Prerequisites stay inside a tab: Deep Wounds needs Improved Rend 3/3 and
+# Impale Deep Wounds 3/3; Anger Management and Flurry lose theirs (Tactical Mastery and Enrage are
+# not in Weaponmaster). WIP talents (`effects = []`, no `skill`): Anger Management (no kind slows
+# rage decay) and Flurry (no player haste on a crit). More kinds than the Recruit tree's:
+#   weapon_damage_pct      - physical damage dealt rises by that percent with `weapon` in hand
+#   weapon_crit_pct        - melee crit chance rises by that percent with `weapon` in hand
+#   skill_crit_damage_pct  - a skill's crit adds that percent of its bonus
+#   skill_duration_pct     - the skill's auras last that percent longer
+#   extra_swing_pct        - a landed white swing with `weapon` swings again that percent of the time
+#   hit_stun_pct           - a landed white swing with `weapon` stuns that percent of the time
+#   crit_taken_heal_pct    - a crit taken heals that percent of maximum health over the aura
+#   crit_taken_damage_pct  - a crit taken raises melee damage by that percent for a while
+
+[[calling.talent_tab]]
+id = 901
+name = "Weaponmaster"
+background = "WarriorArms"
+
+[[calling.talent_tab.talent]]
+key = "improved_overpower"
+talent_id = 131
+tier = 1
+column = 1
+rank_spells = [12290, 12963]
+effects = [{ kind = "skill_crit_pct", skill = "overpower", per_rank = [25, 50] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_rend"
+talent_id = 127
+tier = 1
+column = 3
+rank_spells = [12286, 12658, 12659]
+effects = [{ kind = "skill_amount_pct", skill = "rend", per_rank = [15, 25, 35] }]
+client_spellmods = [{ flat = false, op = 8, family_bit = 5, per_rank = [15, 25, 35] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_charge"
+talent_id = 126
+tier = 2
+column = 1
+rank_spells = [12285, 12697]
+effects = [{ kind = "skill_rage", skill = "charge", per_rank = [3, 6] }]
+
+[[calling.talent_tab.talent]]
+key = "anger_management"
+talent_id = 137
+tier = 2
+column = 2
+rank_spells = [12296]
+# Talent.dbc flags it active, though the spell is a passive aura.
+exceptional = true
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "deep_wounds"
+talent_id = 121
+tier = 2
+column = 3
+rank_spells = [12834, 12849, 12867]
+prereq = { key = "improved_rend", rank = 3 }
+effects = [{ kind = "crit_bleed", aura_spell_id = 12721, tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
+
+[[calling.talent_tab.talent]]
+key = "two_handed_weapon_specialization"
+talent_id = 136
+tier = 3
+column = 2
+rank_spells = [12163, 12711, 12712, 12713, 12714]
+effects = [{ kind = "weapon_damage_pct", weapon = "two_hand", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "impale"
+talent_id = 662
+tier = 3
+column = 3
+rank_spells = [16493, 16494]
+prereq = { key = "deep_wounds", rank = 3 }
+effects = [{ kind = "skill_crit_damage_pct", per_rank = [10, 20] }]
+
+[[calling.talent_tab.talent]]
+key = "axe_specialization"
+talent_id = 132
+tier = 4
+column = 1
+rank_spells = [12700, 12781, 12783, 12784, 12785]
+effects = [{ kind = "weapon_crit_pct", weapon = "axe", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "mace_specialization"
+talent_id = 125
+tier = 4
+column = 3
+rank_spells = [12284, 12701, 12702, 12703, 12704]
+effects = [
+    { kind = "hit_stun_pct", weapon = "mace", aura_spell_id = 5530, duration_ms = 3000, per_rank = [1, 2, 3, 4, 6] },
+]
+
+[[calling.talent_tab.talent]]
+key = "sword_specialization"
+talent_id = 123
+tier = 4
+column = 4
+rank_spells = [12281, 12812, 12813, 12814, 12815]
+effects = [{ kind = "extra_swing_pct", weapon = "sword", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "flurry"
+talent_id = 156
+tier = 5
+column = 3
+rank_spells = [12319, 12971, 12972, 12973, 12974]
+effects = []
+
+[[calling.talent_tab]]
+id = 902
+name = "Warlord"
+background = "WarriorFury"
+
+[[calling.talent_tab.talent]]
+key = "booming_voice"
+talent_id = 158
+tier = 1
+column = 2
+rank_spells = [12321, 12835, 12836, 12837, 12838]
+effects = [{ kind = "skill_duration_pct", skill = "battle_shout", per_rank = [10, 20, 30, 40, 50] }]
+
+[[calling.talent_tab.talent]]
+key = "cruelty"
+talent_id = 157
+tier = 1
+column = 3
+rank_spells = [12320, 12852, 12853, 12855, 12856]
+effects = [{ kind = "melee_crit_pct", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "unbridled_wrath"
+talent_id = 159
+tier = 2
+column = 3
+rank_spells = [12322, 12999, 13000, 13001, 13002]
+effects = [{ kind = "hit_rage_pct", spell_id = 12964, per_rank = [8, 16, 24, 32, 40] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_battle_shout"
+talent_id = 154
+tier = 2
+column = 4
+rank_spells = [12318, 12857, 12858, 12860, 12861]
+effects = [{ kind = "skill_amount_pct", skill = "battle_shout", per_rank = [5, 10, 15, 20, 25] }]
+client_spellmods = [{ flat = false, op = 8, family_bit = 16, per_rank = [5, 10, 15, 20, 25] }]
+
+[[calling.talent_tab.talent]]
+key = "blood_craze"
+talent_id = 661
+tier = 3
+column = 2
+rank_spells = [16487, 16489, 16492]
+effects = [
+    { kind = "crit_taken_heal_pct", aura_spell_ids = [16488, 16490, 16491], tick_ms = 1000, duration_ms = 6000, per_rank = [1, 2, 3] },
+]
+
+[[calling.talent_tab.talent]]
+key = "enrage"
+talent_id = 155
+tier = 3
+column = 3
+rank_spells = [12317, 13045, 13046, 13047, 13048]
+effects = [
+    { kind = "crit_taken_damage_pct", aura_spell_ids = [12880, 14201, 14202, 14203, 14204], duration_ms = 12000, swings = 12, per_rank = [5, 10, 15, 20, 25] },
+]
+
+[[calling]]
+key = "zealot"
+name = "Zealot"
+tier = 2
+cap = 50
+tier_bonus = { strength = 28, agility = 14, stamina = 28, intellect = 0, spirit = 7 }
+# Still a rage bar and Battle Stance: the borrowed Paladin spells need no stance once rewritten.
+shapeshift_form = 17
+armour = ["cloth", "leather", "mail", "plate", "shield"]
+
+# Borrowed Paladin spells (`borrowed`): the client rewrites each row to cost `rage_cost` rage in any
+# stance, as a Warrior spell with its own family bit (33..63, which no Warrior spell uses), so a
+# talent's spell modifier can name it (ADR 0003).
+#
+# Seal of Command procs 7 times a minute (vmangos), each a holy hit of 70% of a weapon roll under
+# 20424, Spell.dbc's proc; judged, a holy hit under Judgement of Command Rank 1 (20467).
+#
+# Seal of the Crusader: 20 + 4 attack power a level (vanilla's Rank 3 gives 94 at 22), swings 40%
+# faster with each hit cut to match; judged, Judgement of the Crusader Rank 3 (20300) for its 10 s,
+# 20% more holy damage taken (vanilla's is flat; a percent keeps up with the levels), each landed
+# white swing at the target putting it back to its full 10 s, as the tooltip says.
+[[calling.skill]]
+key = "seal_of_command"
+spell_id = 20375
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self"
+borrowed = { family_bit = 33 }
+effects = [
+    { kind = "seal", duration_ms = 30000, seal = { kind = "command", procs_per_minute = 7.0, weapon_pct = 70, proc_spell_id = 20424, judgement_spell_id = 20467, judgement = { base = 30.0, per_level = 3.0, per_ap = 0.15 } } },
+]
+
+[[calling.skill]]
+key = "seal_of_the_crusader"
+spell_id = 20305
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self"
+borrowed = { family_bit = 34 }
+effects = [
+    { kind = "seal", duration_ms = 30000, seal = { kind = "crusader", attack_power = { base = 20.0, per_level = 4.0 }, haste_pct = 40, judgement_spell_id = 20300, judgement_duration_ms = 10000, holy_taken_pct = 20 } },
+]
+
+[[calling.skill]]
+key = "judgement"
+spell_id = 20271
+rage_cost = 5
+cooldown_ms = 10000
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 10.0]
+borrowed = { family_bit = 35 }
+effects = [{ kind = "judgement" }]
+
+# Rank 4, the one whose tooltip says six seconds.
+[[calling.skill]]
+key = "hammer_of_justice"
+spell_id = 10308
+rage_cost = 15
+cooldown_ms = 60000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 10.0]
+borrowed = { family_bit = 36 }
+effects = [{ kind = "stun", aura_spell_id = 10308, duration_ms = 6000 }]
+
+# Carried over from Vanguard with the same data: `callings::skill` finds a spell's first table.
+[[calling.skill]]
+key = "mortal_strike"
+spell_id = 12294
+rage_cost = 30
+cooldown_ms = 6000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "weapon_strike", weapon = "normalized", bonus = { base = 25.0, per_level = 2.5 } },
+    { kind = "healing_reduction", pct = 50, duration_ms = 10000 },
+]
+
+[[calling.skill]]
+key = "charge"
+spell_id = 6178
+rage_cost = 0
+cooldown_ms = 15000
+gcd_ms = 0
+target = "enemy"
+range_yd = [8.0, 25.0]
+requires_out_of_combat = true
+effects = [
+    { kind = "charge", speed_yd_s = 24.0 },
+    { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
+    { kind = "stun", aura_spell_id = 7922, duration_ms = 1000 },
+]
+
+# Zealot's tree: Crusade (seven rows of Paladin Retribution, Holy Power behind 30 points in the
+# tab), Blade (Vanguard's weapon talents, Flurry behind 10) and Faith (four rows of Paladin
+# defence), so 49 points at the cap put 31 or more in Crusade with the rest in the other two.
+# Blade's first row holds the handoff's first two: Improved Charge and Anger Management alone are
+# 3 ranks, short of the 5 that open a second row.
+# Prerequisites stay inside a tab: Vengeance needs Conviction 5/5, straight down column 2;
+# Anger Management, Deep Wounds, Impale and Flurry lose theirs (Tactical Mastery, Improved Rend
+# and Enrage are not in Blade, and Deep Wounds sits beside Impale). The Blade talents carry the
+# same effects as Vanguard's. WIP talents (`effects = []`): those that need a cooldown, haste,
+# hit, movement, Strength or holy-crit kind the realm does not have yet, or a proc it does not
+# model (Vindication, Eye for an Eye, Vengeance, Redoubt, Reckoning).
+# Improved Seal of the Crusader raises Seal of the Crusader's amounts (skill_amount_pct): its
+# attack power and its judgement's holy damage taken, as vanilla's tooltip says; its client cell
+# is vanilla's EFFECT1 percent (op 3), on the Seal's family bit.
+#   parry_pct - the parry chance rises by that percent
+#   defense   - the Defense skill rises by that much
+# Benediction takes rage off the Seals and Judgement; its spell-mod cells, one per borrowed
+# spell's family bit, make the client's costs agree.
+
+[[calling.talent_tab]]
+id = 903
+name = "Crusade"
+background = "PaladinCombat"
+
+[[calling.talent_tab.talent]]
+key = "improved_seal_of_the_crusader"
+talent_id = 1464
+tier = 1
+column = 2
+rank_spells = [20335, 20336, 20337]
+effects = [{ kind = "skill_amount_pct", skill = "seal_of_the_crusader", per_rank = [5, 10, 15] }]
+client_spellmods = [{ flat = false, op = 3, family_bit = 34, per_rank = [5, 10, 15] }]
+
+# Vanilla's 3% less mana a rank, doubled for the small rage costs, rounded and at least 1 rage: the
+# Seals' 10 rage loses 1/1/2/2/3, Judgement's 5 loses 1/1/1/1/2.
+[[calling.talent_tab.talent]]
+key = "benediction"
+talent_id = 1407
+tier = 1
+column = 3
+rank_spells = [20101, 20102, 20103, 20104, 20105]
+effects = [
+    { kind = "skill_rage_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
+    { kind = "skill_rage_cost", skill = "seal_of_the_crusader", per_rank = [1, 1, 2, 2, 3] },
+    { kind = "skill_rage_cost", skill = "judgement", per_rank = [1, 1, 1, 1, 2] },
+]
+# One cell per borrowed spell's own family bit: 33 Seal of Command, 34 Seal of the Crusader,
+# 35 Judgement.
+client_spellmods = [
+    { flat = true, op = 14, family_bit = 33, per_rank = [-10, -10, -20, -20, -30] },
+    { flat = true, op = 14, family_bit = 34, per_rank = [-10, -10, -20, -20, -30] },
+    { flat = true, op = 14, family_bit = 35, per_rank = [-10, -10, -10, -10, -20] },
+]
+
+[[calling.talent_tab.talent]]
+key = "improved_judgement"
+talent_id = 1631
+tier = 2
+column = 1
+rank_spells = [25956, 25957]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "deflection"
+talent_id = 1403
+tier = 2
+column = 3
+rank_spells = [20060, 20061, 20062, 20063, 20064]
+effects = [{ kind = "parry_pct", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "vindication"
+talent_id = 1633
+tier = 3
+column = 1
+rank_spells = [9452, 26016, 26021]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "conviction"
+talent_id = 1411
+tier = 3
+column = 2
+rank_spells = [20117, 20118, 20119, 20120, 20121]
+effects = [{ kind = "melee_crit_pct", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "eye_for_an_eye"
+talent_id = 1632
+tier = 4
+column = 1
+rank_spells = [9799, 25988]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "pursuit_of_justice"
+talent_id = 1634
+tier = 4
+column = 4
+rank_spells = [26022, 26023]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "two_handed_weapon_specialization"
+talent_id = 1410
+tier = 5
+column = 1
+rank_spells = [20111, 20112, 20113]
+effects = [{ kind = "weapon_damage_pct", weapon = "two_hand", per_rank = [2, 4, 6] }]
+
+[[calling.talent_tab.talent]]
+key = "improved_hammer_of_justice"
+talent_id = 1521
+tier = 5
+column = 3
+rank_spells = [20487, 20488, 20489]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "vengeance"
+talent_id = 1402
+tier = 6
+column = 2
+rank_spells = [20049, 20056, 20057, 20058, 20059]
+prereq = { key = "conviction", rank = 5 }
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "holy_power"
+talent_id = 1627
+tier = 7
+column = 3
+rank_spells = [5923, 5924, 5925, 5926, 25829]
+effects = []
+
+[[calling.talent_tab]]
+id = 904
+name = "Blade"
+background = "WarriorArms"
+
+[[calling.talent_tab.talent]]
+key = "improved_charge"
+talent_id = 126
+tier = 1
+column = 1
+rank_spells = [12285, 12697]
+effects = [{ kind = "skill_rage", skill = "charge", per_rank = [3, 6] }]
+
+[[calling.talent_tab.talent]]
+key = "anger_management"
+talent_id = 137
+tier = 1
+column = 2
+rank_spells = [12296]
+# Talent.dbc flags it active, though the spell is a passive aura.
+exceptional = true
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "impale"
+talent_id = 662
+tier = 1
+column = 4
+rank_spells = [16493, 16494]
+effects = [{ kind = "skill_crit_damage_pct", per_rank = [10, 20] }]
+
+[[calling.talent_tab.talent]]
+key = "deep_wounds"
+talent_id = 121
+tier = 1
+column = 3
+rank_spells = [12834, 12849, 12867]
+effects = [{ kind = "crit_bleed", aura_spell_id = 12721, tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
+
+[[calling.talent_tab.talent]]
+key = "axe_specialization"
+talent_id = 132
+tier = 2
+column = 1
+rank_spells = [12700, 12781, 12783, 12784, 12785]
+effects = [{ kind = "weapon_crit_pct", weapon = "axe", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "mace_specialization"
+talent_id = 125
+tier = 2
+column = 3
+rank_spells = [12284, 12701, 12702, 12703, 12704]
+effects = [
+    { kind = "hit_stun_pct", weapon = "mace", aura_spell_id = 5530, duration_ms = 3000, per_rank = [1, 2, 3, 4, 6] },
+]
+
+[[calling.talent_tab.talent]]
+key = "sword_specialization"
+talent_id = 123
+tier = 2
+column = 4
+rank_spells = [12281, 12812, 12813, 12814, 12815]
+effects = [{ kind = "extra_swing_pct", weapon = "sword", per_rank = [1, 2, 3, 4, 5] }]
+
+[[calling.talent_tab.talent]]
+key = "flurry"
+talent_id = 156
+tier = 3
+column = 3
+rank_spells = [12319, 12971, 12972, 12973, 12974]
+effects = []
+
+[[calling.talent_tab]]
+id = 905
+name = "Faith"
+background = "PaladinProtection"
+
+[[calling.talent_tab.talent]]
+key = "divine_strength"
+talent_id = 1450
+tier = 1
+column = 2
+rank_spells = [20262, 20263, 20264, 20265, 20266]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "toughness"
+talent_id = 1423
+tier = 1
+column = 4
+rank_spells = [20143, 20144, 20145, 20146, 20147]
+effects = [{ kind = "item_armor_pct", per_rank = [2, 4, 6, 8, 10] }]
+
+[[calling.talent_tab.talent]]
+key = "precision"
+talent_id = 1630
+tier = 2
+column = 1
+rank_spells = [20189, 20192, 20193]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "redoubt"
+talent_id = 1421
+tier = 2
+column = 3
+rank_spells = [20127, 20130, 20135, 20136, 20137]
+effects = []
+
+[[calling.talent_tab.talent]]
+key = "one_handed_weapon_specialization"
+talent_id = 1429
+tier = 3
+column = 3
+rank_spells = [20196, 20197, 20198, 20199, 20200]
+effects = [{ kind = "weapon_damage_pct", weapon = "one_hand", per_rank = [2, 4, 6, 8, 10] }]
+
+[[calling.talent_tab.talent]]
+key = "anticipation"
+talent_id = 1629
+tier = 3
+column = 4
+rank_spells = [20096, 20097, 20098, 20099, 20100]
+effects = [{ kind = "defense", per_rank = [2, 4, 6, 8, 10] }]
+
+[[calling.talent_tab.talent]]
+key = "reckoning"
+talent_id = 1426
+tier = 4
+column = 3
+rank_spells = [20177, 20179, 20181, 20180, 20182]
+effects = []

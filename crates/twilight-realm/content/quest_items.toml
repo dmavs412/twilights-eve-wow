@@ -1,0 +1,23 @@
+# The items Repeatable Quests use: the collect objectives' drops and the Token the reward panels
+# show. Same layout as items.toml, kept apart because that file is generated and its items fill
+# the loot pools; these drop only while a quest wants them.
+#
+# The drops are real 1.12 quest items (entry, name, display) from
+# data/twilights-eve/barrens_creature_loot.json's `quest_drops`. Class 12 is Quest.
+
+item = [
+  { entry = 2925, name = "Crocolisk Skin", quality = 1, item_level = 1, class = 12, display_id = 3124, stackable = 20 },
+  { entry = 4758, name = "Prairie Wolf Paw", quality = 1, item_level = 1, class = 12, display_id = 6669, stackable = 20 },
+  { entry = 4886, name = "Venomtail Poison Sac", quality = 1, item_level = 1, class = 12, display_id = 6694, stackable = 20 },
+  { entry = 4895, name = "Thunder Lizard Horn", quality = 1, item_level = 1, class = 12, display_id = 7089, stackable = 20 },
+  { entry = 5030, name = "Centaur Bracers", quality = 1, item_level = 1, class = 12, display_id = 7070, stackable = 20 },
+  { entry = 5064, name = "Witchwing Talon", quality = 1, item_level = 1, class = 12, display_id = 7288, stackable = 20 },
+  { entry = 5085, name = "Bristleback Quilboar Tusk", quality = 1, item_level = 1, class = 12, display_id = 7209, stackable = 20 },
+  { entry = 5087, name = "Plainstrider Beak", quality = 1, item_level = 1, class = 12, display_id = 6633, stackable = 20 },
+  { entry = 5164, name = "Thunderhawk Wings", quality = 1, item_level = 1, class = 12, display_id = 8284, stackable = 20 },
+  { entry = 7119, name = "Twitching Antenna", quality = 1, item_level = 1, class = 12, display_id = 15507, stackable = 20 },
+  # The Token: Repeatable Quests pay it into the bags and the Token vendor takes it from there,
+  # so the bags show how many the character has. No vendor buys it (no sell price). Its display
+  # is the amethyst's (INV_Misc_Gem_Amethyst_01). The entry is outside 1.12's item range.
+  { entry = 90001, name = "Twilight Token", quality = 2, item_level = 1, class = 15, display_id = 7401, stackable = 100 },
+]

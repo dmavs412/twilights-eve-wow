@@ -1,0 +1,61 @@
+{
+ "meta": {
+  "description": "Vanilla 1.12 Warrior item proficiency and the rule proposed for the realm.",
+  "source": "vmangos world DB (github.com/vmangos/core release db_latest, sqlite) + 1.12.1 client DBCs",
+  "db": "mangos.sqlite",
+  "patch": 10,
+  "client_build": 5875,
+  "generator": "tools/twilights-eve/import_items.py"
+ },
+ "armor": {
+  "misc": 1,
+  "cloth": 1,
+  "leather": 1,
+  "mail": 1,
+  "plate": 40,
+  "buckler": 1,
+  "shield": 1
+ },
+ "weapons": {
+  "axe_1h": 1,
+  "axe_2h": 1,
+  "bow": 1,
+  "gun": 1,
+  "mace_1h": 1,
+  "mace_2h": 1,
+  "polearm": 20,
+  "sword_1h": 1,
+  "sword_2h": 1,
+  "staff": 1,
+  "fist": 1,
+  "misc": 1,
+  "dagger": 1,
+  "thrown": 1,
+  "crossbow": 1,
+  "fishing_pole": 1
+ },
+ "never": [
+  "wand",
+  "libram",
+  "idol",
+  "totem"
+ ],
+ "starting_weapon_skills_by_race": {
+  "human": ["axe_1h","mace_1h","sword_1h"],
+  "orc": ["axe_1h","axe_2h","sword_1h"],
+  "dwarf": ["axe_1h","axe_2h","mace_1h"],
+  "night_elf": ["dagger","mace_1h","sword_1h"],
+  "undead": ["dagger","sword_1h","sword_2h"],
+  "tauren": ["axe_1h","mace_1h","mace_2h"],
+  "gnome": ["dagger","mace_1h","sword_1h"],
+  "troll": ["axe_1h","dagger","thrown"]
+ },
+ "vanilla_notes": [
+  "Cloth, leather, mail, shields and Block are known at creation.",
+  "Plate Mail (spell 750) is taught by Warrior trainers at level 40 (trainer spell 7109).",
+  "Weapon Masters teach every other Warrior weapon skill for 10s at any level; Polearms (trainer spell 15991) requires level 20.",
+  "Starting weapon skills differ by race (see starting_weapon_skills_by_race); a Warrior without a skill cannot equip that weapon type until trained.",
+  "Fist weapons were trainable by Warriors (spell 15590 via 15992)."
+ ],
+ "proposed_realm_rule": "can_equip(item) = item.required_level <= level AND (allowable_class == -1 OR allowable_class & 1) AND class/subclass level gate below is met. The slice has no Weapon Master, so every Warrior weapon type is known from level 1 except polearms (level 20); plate from level 40 (beyond the slice's level 30 cap, so never). Wands, librams, idols and totems are never usable."
+}

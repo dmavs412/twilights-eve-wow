@@ -1,0 +1,564 @@
+{
+  "schema": 1,
+  "about": "Twilight's Eve Callings for the Warrior line (Basic Warrior, Vanguard, Zealot, and Ironclad's and Templar's locked quests). Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
+
+  "formula_conventions": {
+    "L": "the character's level inside its current Tier (1..Tier Cap); it resets to 1 on Advancement",
+    "AP": "melee attack power at cast time (Battle Shout and other buffs included)",
+    "W": "a normal white-swing damage roll: rand(weapon min..max) + AP / 14 * weapon speed (unarmed: 1..2 dmg at speed 2.0)",
+    "Wn": "a normalized roll: rand(weapon min..max) + AP / 14 * normalized speed (2.4 one-hand, 3.3 two-hand, 1.7 dagger), as vanilla Overpower and Mortal Strike",
+    "linear": "{base, per_level, per_ap} means round(base + per_level * L + per_ap * AP), rounding half away from zero, never below `min` (default 0)",
+    "rage": "rage values are whole rage points; Spell.dbc stores rage costs in tenths (150 = 15 rage)",
+    "realm_vs_client": "`client` is what Spell.dbc makes the stock client show and enforce before it sends a cast (cost, range, stance, aura states, on-next-swing); it is checked by the extractor. `realm` is what the Local Realm does; it must keep realm cost >= client cost or the client refuses casts the realm would allow."
+  },
+
+  "tiers": [
+    { "tier": 0, "cap": 10 },
+    { "tier": 1, "cap": 30 },
+    { "tier": 2, "cap": 50 },
+    { "tier": 3, "cap": 60 }
+  ],
+
+  "tier_bonus": {
+    "about": "Flat additions to base stats (UNIT_FIELD_STAT0..4 base values), cumulative per Tier, applied on top of the race/class base table at the character's current level. +12 Stamina is about +120 health, so a level 1 Tier 1 Warrior (~180 hp) sits near a level 7 Basic Warrior; +12 Strength is +24 attack power.",
+    "0": { "strength": 0,  "agility": 0,  "stamina": 0,  "intellect": 0, "spirit": 0 },
+    "1": { "strength": 12, "agility": 6,  "stamina": 12, "intellect": 0, "spirit": 3 },
+    "2": { "strength": 28, "agility": 14, "stamina": 28, "intellect": 0, "spirit": 7 },
+    "3": { "strength": 48, "agility": 24, "stamina": 48, "intellect": 0, "spirit": 12 }
+  },
+
+  "talent_points": {
+    "first_level": 2,
+    "per_level": 1,
+    "at_cap": { "0": 9, "1": 29, "2": 49, "3": 59 },
+    "respec_cost_copper": { "about": "vanilla's escalating wipe cost, reset on Advancement", "first": 10000, "step": 50000, "max": 500000 }
+  },
+
+  "callings": {
+    "basic_warrior": {
+      "tier": 0,
+      "class": 1,
+      "display_name": "Basic Warrior",
+      "cap": 10,
+      "branches": ["vanguard"],
+      "armour": ["cloth", "leather", "mail", "shield"],
+      "armour_note": "Gear follows the Calling, never the level: every Warrior weapon from level 1, this armour, and no item refused for level. Plate is for Vanguard and every Calling that branches from it.",
+      "client_shapeshift_form": 17,
+      "client_shapeshift_form_note": "Battle Stance. The stock client refuses a cast whose Spell.dbc Stances mask excludes the current form (0x612480), before sending it. Charge, Rend, Thunder Clap, Hamstring and Overpower all need Battle Stance, so the realm keeps UNIT_FIELD_BYTES_1 byte 2 = 17 for every Warrior Calling. It also makes GetBonusBarOffset() 1, so the main action bar pages to slots 73..84.",
+
+      "skills": [
+        {
+          "key": "heroic_strike",
+          "spell_id": 78, "name": "Heroic Strike", "rank": "Rank 1",
+          "icon_id": 856, "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
+          "family_flags": "0x40",
+          "client": { "cost": 15.0, "cooldown_ms": 0, "gcd_ms": 0, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "stances": [], "on_next_swing": true, "not_in_combat": false },
+          "realm": {
+            "rage_cost": 15, "cooldown_ms": 0, "gcd_ms": 0, "range_yd": 5, "target": "enemy",
+            "effects": [
+              { "kind": "weapon_strike", "weapon": "W", "on_next_swing": true, "bonus": { "base": 9.5, "per_level": 1.4, "per_ap": 0 }, "threat_bonus": 20 }
+            ]
+          },
+          "vanilla_reference": "R1 L1 +11, R2 L8 +21, R3 L16 +32, R4 L24 +44: bonus = 9.5 + 1.4 L fits within 1 point to L24.",
+          "tooltip_note": "Tooltip says +11 (rank 1) at every level; the realm adds more from L2."
+        },
+        {
+          "key": "charge",
+          "spell_id": 100, "name": "Charge", "rank": "Rank 1",
+          "icon_id": 457, "icon": "Interface\\Icons\\Ability_Warrior_Charge",
+          "family_flags": "0x1",
+          "client": { "cost": 0.0, "cooldown_ms": 0, "gcd_ms": 0, "cast_time_ms": 0, "range_yd": [8.0, 25.0], "stances": ["Battle Stance"], "not_in_combat": true, "on_next_swing": false },
+          "realm": {
+            "rage_cost": 0, "cooldown_ms": 15000, "cooldown_note": "Spell.dbc category 44 cooldown 15 s", "gcd_ms": 0, "range_yd": [8, 25], "target": "enemy", "requires_out_of_combat": true,
+            "effects": [
+              { "kind": "charge", "speed_yd_s": 24 },
+              { "kind": "energize_rage", "amount": { "base": 8.5, "per_level": 0.14, "per_ap": 0 } },
+              { "kind": "stun", "duration_ms": 1000, "aura_spell_id": 7922 }
+            ]
+          },
+          "vanilla_reference": "R1 L4 9 rage, R2 L26 12, R3 L46 15: 8.5 + 0.14 L.",
+          "tooltip_note": "Tooltip says 9 rage; realm gives 9 at L1-10."
+        }
+      ],
+
+      "talent_tree": {
+        "points_at_cap": 9,
+        "catalog_note": "Replaces the client's TalentCatalog for this Calling: one tab, class_mask 1, race_mask 511. Talent ids and rank spells are real Talent.dbc rows re-seated on the vanilla grid. Tier n needs 5*(n-1) points in the tab, so the 10 ranks of row 1 open row 2 at 5 points and 9 points reach it.",
+        "tabs": [
+          {
+            "name": "Recruit",
+            "catalog_tab_id": 900,
+            "source_tab_id": null,
+            "background": "WarriorArms",
+            "talents": [
+              { "key": "improved_heroic_strike", "talent_id": 124, "source_tab_id": 161, "name": "Improved Heroic Strike", "tier": 1, "column": 1, "rank_spells": [12282, 12663, 12664],
+                "realm_effect": "Heroic Strike costs 1/2/3 less rage.", "client_spellmods": [{ "type": "flat", "op": "COST", "family_bit": 6, "values": [-10, -20, -30] }] },
+              { "key": "improved_charge", "talent_id": 126, "source_tab_id": 161, "name": "Improved Charge", "tier": 1, "column": 2, "rank_spells": [12285, 12697],
+                "realm_effect": "Charge generates 3/6 more rage." },
+              { "key": "toughness", "talent_id": 140, "source_tab_id": 163, "name": "Toughness", "tier": 1, "column": 3, "rank_spells": [12299, 12761, 12762, 12763, 12764],
+                "realm_effect": "+2..10% armor from items." },
+              { "key": "cruelty", "talent_id": 157, "source_tab_id": 164, "name": "Cruelty", "tier": 2, "column": 1, "rank_spells": [12320, 12852, 12853, 12855, 12856],
+                "realm_effect": "+1..5% melee critical strike chance." },
+              { "key": "unbridled_wrath", "talent_id": 159, "source_tab_id": 164, "name": "Unbridled Wrath", "tier": 2, "column": 2, "rank_spells": [12322, 12999, 13000, 13001, 13002],
+                "realm_effect": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage." },
+              { "key": "anger_management", "talent_id": 137, "source_tab_id": 161, "name": "Anger Management", "tier": 2, "column": 3, "rank_spells": [12296], "exceptional": true,
+                "realm_effect": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row." }
+            ]
+          }
+        ]
+      },
+      "advancement_quest": null
+    },
+
+    "vanguard": {
+      "tier": 1,
+      "class": 1,
+      "display_name": "Vanguard",
+      "select_screen_name": "Vanguard",
+      "cap": 30,
+      "branches": ["ironclad", "zealot"],
+      "armour": ["cloth", "leather", "mail", "plate", "shield"],
+      "client_shapeshift_form": 17,
+      "client_shapeshift_form_note": "Battle Stance again: every Vanguard skill below is legal in it. Thunder Clap, Cleave and Execute were dropped for the handoff's focused kit.",
+
+      "skills": [
+        {
+          "key": "mortal_strike",
+          "spell_id": 12294, "name": "Mortal Strike", "rank": "Rank 1",
+          "icon_id": 564, "icon": "Interface\\Icons\\Ability_Warrior_SavageBlow",
+          "family_flags": "0x2000000",
+          "client": { "cost": 30.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "duration_ms": 10000, "stances": [] },
+          "realm": {
+            "rage_cost": 30, "cooldown_ms": 6000, "cooldown_note": "Spell.dbc category 971 cooldown 6 s", "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
+            "effects": [
+              { "kind": "weapon_strike", "weapon": "Wn", "bonus": { "base": 25, "per_level": 2.5, "per_ap": 0 } },
+              { "kind": "healing_reduction", "pct": 50, "duration_ms": 10000 }
+            ]
+          },
+          "vanilla_reference": "R1 L40 +85 (talent, 31 points deep). Given as the Tier 1 signature strike: +28 at L1, +100 at L30 (tuned with tools/twilights-eve/simulate_fights.py).",
+          "tooltip_note": "Tooltip says weapon damage plus 85."
+        },
+        {
+          "key": "overpower",
+          "spell_id": 7887, "name": "Overpower", "rank": "Rank 2",
+          "icon_id": 26, "icon": "Interface\\Icons\\Ability_MeleeDamage",
+          "family_flags": "0x4",
+          "client": { "cost": 5.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "stances": ["Battle Stance"] },
+          "realm": {
+            "rage_cost": 5, "cooldown_ms": 5000, "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
+            "requires": "as Basic Warrior's Overpower (combo point on dodge)",
+            "effects": [
+              { "kind": "weapon_strike", "weapon": "Wn", "unavoidable": ["dodge", "parry", "block"], "bonus": { "base": 6, "per_level": 0.6, "per_ap": 0 } }
+            ]
+          },
+          "vanilla_reference": "R2 L28 +15, R3 L44 +25.",
+          "tooltip_note": "Tooltip says weapon damage plus 15."
+        },
+        {
+          "key": "charge",
+          "spell_id": 6178, "name": "Charge", "rank": "Rank 2",
+          "icon_id": 457, "icon": "Interface\\Icons\\Ability_Warrior_Charge",
+          "family_flags": "0x1",
+          "client": { "cost": 0.0, "cooldown_ms": 0, "gcd_ms": 0, "cast_time_ms": 0, "range_yd": [8.0, 25.0], "stances": ["Battle Stance"], "not_in_combat": true },
+          "realm": {
+            "rage_cost": 0, "cooldown_ms": 15000, "gcd_ms": 0, "range_yd": [8, 25], "target": "enemy", "requires_out_of_combat": true,
+            "effects": [
+              { "kind": "charge", "speed_yd_s": 24 },
+              { "kind": "energize_rage", "amount": { "base": 11, "per_level": 0.1, "per_ap": 0 } },
+              { "kind": "stun", "duration_ms": 1000, "aura_spell_id": 7922 }
+            ]
+          },
+          "vanilla_reference": "R2 L26 12 rage, R3 L46 15.",
+          "tooltip_note": "Tooltip says 12 rage."
+        },
+        {
+          "key": "rend",
+          "spell_id": 6546, "name": "Rend", "rank": "Rank 2",
+          "icon_id": 245, "icon": "Interface\\Icons\\Ability_Gouge",
+          "family_flags": "0x20",
+          "client": { "cost": 10.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "duration_ms": 12000, "stances": ["Battle Stance", "Defensive Stance"] },
+          "realm": {
+            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
+            "effects": [
+              { "kind": "periodic_damage", "school": "physical", "mechanic": "bleed", "tick_ms": 3000, "duration_ms": 12000, "tick": { "base": 5, "per_level": 0.25, "per_ap": 0.01, "min": 1 } }
+            ]
+          },
+          "vanilla_reference": "R2 L10 7x4, R3 L20 9x5, R4 L30 11x6.",
+          "tooltip_note": "Tooltip says 28 over 12 sec."
+        },
+        {
+          "key": "battle_shout",
+          "spell_id": 6192, "name": "Battle Shout", "rank": "Rank 3",
+          "icon_id": 456, "icon": "Interface\\Icons\\Ability_Warrior_BattleShout",
+          "family_flags": "0x10000",
+          "client": { "cost": 10.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 0.0], "duration_ms": 120000, "stances": [] },
+          "realm": {
+            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self_party", "radius_yd": 20,
+            "effects": [
+              { "kind": "aura_attack_power", "duration_ms": 120000, "amount": { "base": 20, "per_level": 2.0, "per_ap": 0 } }
+            ]
+          },
+          "vanilla_reference": "R2 L12 35, R3 L22 55, R4 L32 85.",
+          "tooltip_note": "Tooltip says 55 until L22, then +0.5/level (its own scaling) up to 59 at L30; the realm gives 22 at L1 rising to 80 at L30."
+        }
+      ],
+
+      "talent_tree": {
+        "points_at_cap": 29,
+        "catalog_note": "Two tabs from the Callings handoff. Weaponmaster has five rows, so 20 points in it reach Flurry and 29 at the cap leave 9 for Warlord's three rows. Talent ids and rank spells are real Talent.dbc rows re-seated on the vanilla grid (columns are the real ones where they do not collide). Prerequisites stay inside a tab: Deep Wounds needs Improved Rend 3/3 and Impale Deep Wounds 3/3; Anger Management loses Tactical Mastery and Flurry loses Enrage, which sits in Warlord.",
+        "tabs": [
+          {
+            "name": "Weaponmaster",
+            "catalog_tab_id": 901,
+            "source_tab_id": null,
+            "background": "WarriorArms",
+            "talents": [
+              { "key": "improved_overpower", "talent_id": 131, "source_tab_id": 161, "name": "Improved Overpower", "tier": 1, "column": 1, "rank_spells": [12290, 12963],
+                "realm_effect": "Overpower +25/50% crit chance." },
+              { "key": "improved_rend", "talent_id": 127, "source_tab_id": 161, "name": "Improved Rend", "tier": 1, "column": 3, "rank_spells": [12286, 12658, 12659],
+                "realm_effect": "Rend ticks +15/25/35%.", "client_spellmods": [{ "type": "pct", "op": "ALL_EFFECTS", "family_bit": 5, "values": [15, 25, 35] }] },
+              { "key": "improved_charge", "talent_id": 126, "source_tab_id": 161, "name": "Improved Charge", "tier": 2, "column": 1, "rank_spells": [12285, 12697],
+                "realm_effect": "Charge +3/6 rage." },
+              { "key": "anger_management", "talent_id": 137, "source_tab_id": 161, "name": "Anger Management", "tier": 2, "column": 2, "rank_spells": [12296], "exceptional": true,
+                "realm_effect": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row." },
+              { "key": "deep_wounds", "talent_id": 121, "source_tab_id": 161, "name": "Deep Wounds", "tier": 2, "column": 3, "rank_spells": [12834, 12849, 12867],
+                "prereq": { "key": "improved_rend", "rank": 3 },
+                "realm_effect": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s." },
+              { "key": "two_handed_weapon_specialization", "talent_id": 136, "source_tab_id": 161, "name": "Two-Handed Weapon Specialization", "tier": 3, "column": 2, "rank_spells": [12163, 12711, 12712, 12713, 12714],
+                "realm_effect": "+1..5% physical damage while wielding a two-handed melee weapon." },
+              { "key": "impale", "talent_id": 662, "source_tab_id": 161, "name": "Impale", "tier": 3, "column": 3, "rank_spells": [16493, 16494],
+                "prereq": { "key": "deep_wounds", "rank": 3 },
+                "realm_effect": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x)." },
+              { "key": "axe_specialization", "talent_id": 132, "source_tab_id": 161, "name": "Axe Specialization", "tier": 4, "column": 1, "rank_spells": [12700, 12781, 12783, 12784, 12785],
+                "realm_effect": "+1..5% crit chance with axes." },
+              { "key": "mace_specialization", "talent_id": 125, "source_tab_id": 161, "name": "Mace Specialization", "tier": 4, "column": 3, "rank_spells": [12284, 12701, 12702, 12703, 12704],
+                "realm_effect": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)." },
+              { "key": "sword_specialization", "talent_id": 123, "source_tab_id": 161, "name": "Sword Specialization", "tier": 4, "column": 4, "rank_spells": [12281, 12812, 12813, 12814, 12815],
+                "realm_effect": "Sword hits have 1..5% chance of one extra swing (no chained procs)." },
+              { "key": "flurry", "talent_id": 156, "source_tab_id": 164, "name": "Flurry", "tier": 5, "column": 3, "rank_spells": [12319, 12971, 12972, 12973, 12974],
+                "realm_effect": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row." }
+            ]
+          },
+          {
+            "name": "Warlord",
+            "catalog_tab_id": 902,
+            "source_tab_id": null,
+            "background": "WarriorFury",
+            "talents": [
+              { "key": "booming_voice", "talent_id": 158, "source_tab_id": 164, "name": "Booming Voice", "tier": 1, "column": 2, "rank_spells": [12321, 12835, 12836, 12837, 12838],
+                "realm_effect": "Battle Shout duration and radius +10..50%." },
+              { "key": "cruelty", "talent_id": 157, "source_tab_id": 164, "name": "Cruelty", "tier": 1, "column": 3, "rank_spells": [12320, 12852, 12853, 12855, 12856],
+                "realm_effect": "+1..5% melee crit chance." },
+              { "key": "unbridled_wrath", "talent_id": 159, "source_tab_id": 164, "name": "Unbridled Wrath", "tier": 2, "column": 3, "rank_spells": [12322, 12999, 13000, 13001, 13002],
+                "realm_effect": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage." },
+              { "key": "improved_battle_shout", "talent_id": 154, "source_tab_id": 164, "name": "Improved Battle Shout", "tier": 2, "column": 4, "rank_spells": [12318, 12857, 12858, 12860, 12861],
+                "realm_effect": "Battle Shout's attack power +5..25%.", "client_spellmods": [{ "type": "pct", "op": "ALL_EFFECTS", "family_bit": 16, "values": [5, 10, 15, 20, 25] }] },
+              { "key": "blood_craze", "talent_id": 661, "source_tab_id": 164, "name": "Blood Craze", "tier": 3, "column": 2, "rank_spells": [16487, 16489, 16492],
+                "realm_effect": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s." },
+              { "key": "enrage", "talent_id": 155, "source_tab_id": 164, "name": "Enrage", "tier": 3, "column": 3, "rank_spells": [12317, 13045, 13046, 13047, 13048],
+                "realm_effect": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)." }
+            ]
+          }
+        ]
+      },
+
+      "advancement_quest": {
+        "quest_id": 64001,
+        "synthesized": true,
+        "offered_by": "the Hub's Warrior trainer",
+        "offered_to": { "calling": "basic_warrior", "level": 10 },
+        "advances_to": "vanguard",
+        "zone_or_sort": -81,
+        "zone_or_sort_note": "QuestSort.dbc 81 'Warrior': the stock quest log files it under a Warrior header.",
+        "quest_level": 10,
+        "title": "The Warrior's Path",
+        "details": "You have learned all a Basic Warrior can learn, $N. Strength alone carried you this far; from here, discipline must carry you further.$B$BTake up the warrior's path and you begin again, untested, among the youngest of our blades. But you will not be the same fighter you were. Your body remembers. Your arm is stronger.$B$BSay the word, and it begins.",
+        "objectives": "Speak with the Warrior trainer at the Crossroads to take up the warrior's path.",
+        "offer_reward_text": "Then it is done. Forget your old habits, $N: you are a Vanguard now, and a Vanguard starts over. Go and earn your scars again.",
+        "objective": { "kind": "talk", "note": "No item or kill: accept and complete at the same NPC, like vanilla's 'Veteran Uzzek' (1505) speak-to quest." },
+        "on_complete": ["set_calling:vanguard", "level:1", "xp:0", "replace_skills", "wipe_talents_and_points", "swap_talent_catalog", "apply_tier_bonus:1"],
+        "flavour_source": "Vanilla Horde warrior quests 1505 'Veteran Uzzek' and 1498 'Path of Defense' (Uzzek, Far Watch Post, the Barrens, creature 5810) for tone only; no text is copied."
+      }
+    },
+
+    "ironclad": {
+      "tier": 2,
+      "class": 1,
+      "display_name": "Ironclad",
+      "cap": 50,
+      "locked": true,
+      "skills": [],
+      "talent_tree": null,
+      "advancement_quest": {
+        "quest_id": 64002,
+        "synthesized": true,
+        "offered_by": "the Hub's Warrior trainer",
+        "offered_to": { "calling": "vanguard", "level": 30 },
+        "advances_to": "ironclad",
+        "completable": false,
+        "zone_or_sort": -81,
+        "quest_level": 30,
+        "title": "The Ironclad's Oath",
+        "details": "Thirty battles' worth of scars, and still standing at the front. Few Vanguards come this far, $N.$B$BThe Ironclads hold the line when every other blade has broken, and they do not take just anyone. When they are ready to test you, I will send word. Until then, keep your shield arm strong.",
+        "objectives": "Await the Ironclads' summons.",
+        "objective": { "kind": "never", "note": "A single objective the realm never credits (or a kill of a creature entry that is never spawned), so the stock quest log shows it as in progress forever and the trainer shows the 'incomplete' text. Abandoning and retaking it is harmless." },
+        "request_items_text": "The Ironclads have not yet sent for you, $N. Patience.",
+        "flavour_source": "The vanilla level 30 warrior chain (1718 'The Islander', 1791 'The Windwatcher', 1712 'Cyclonian') for tone only."
+      }
+    },
+
+    "zealot": {
+      "tier": 2,
+      "class": 1,
+      "display_name": "Zealot",
+      "select_screen_name": "Zealot",
+      "cap": 50,
+      "branches": ["templar"],
+      "armour": ["cloth", "leather", "mail", "plate", "shield"],
+      "client_shapeshift_form": 17,
+      "client_shapeshift_form_note": "Battle Stance and the rage bar stay. The four borrowed Paladin spells need no stance: the client rewrites their rows (ADR 0003).",
+      "borrowed_note": "A skill with `borrowed` is a Paladin spell (SpellFamilyName 10). The client rewrites its row to cost the realm's rage_cost in rage, in any stance, as a Warrior spell (family 4) whose SpellFamilyFlags are only `borrowed.family_bit`, a bit no Warrior spell uses (Warrior spells use bits 0..32). Its `client` half below is the unrewritten Spell.dbc row, so its cost is mana.",
+
+      "skills": [
+        {
+          "key": "seal_of_command",
+          "spell_id": 20375, "name": "Seal of Command", "rank": "Rank 1",
+          "icon_id": 561, "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
+          "family_flags": "0x2000000",
+          "client": { "cost": 65, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 0.0], "duration_ms": 30000, "stances": [] },
+          "borrowed": { "from_class": 2, "family_bit": 33 },
+          "realm": {
+            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self",
+            "effects": [
+              { "kind": "seal", "duration_ms": 30000,
+                "seal": { "kind": "command", "procs_per_minute": 7.0, "weapon_pct": 70, "proc_spell_id": 20424,
+                          "judgement_spell_id": 20467, "judgement": { "base": 30.0, "per_level": 3.0, "per_ap": 0.15 } } }
+            ],
+            "effects_note": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour."
+          },
+          "vanilla_reference": "R1 is the talent's (Talent 1481) only rank: 65 mana, 30 s, $20424s1 = 70% weapon damage.",
+          "tooltip_note": "Tooltip says 70% of normal weapon damage."
+        },
+        {
+          "key": "seal_of_the_crusader",
+          "spell_id": 20305, "name": "Seal of the Crusader", "rank": "Rank 3",
+          "icon_id": 237, "icon": "Interface\\Icons\\Spell_Holy_HolySmite",
+          "family_flags": "0x200",
+          "client": { "cost": 65, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 0.0], "duration_ms": 30000, "stances": [] },
+          "borrowed": { "from_class": 2, "family_bit": 34 },
+          "realm": {
+            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self",
+            "effects": [
+              { "kind": "seal", "duration_ms": 30000,
+                "seal": { "kind": "crusader", "attack_power": { "base": 20.0, "per_level": 4.0 }, "haste_pct": 40,
+                          "judgement_spell_id": 20300, "judgement_duration_ms": 10000, "holy_taken_pct": 20 } }
+            ],
+            "effects_note": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target."
+          },
+          "vanilla_reference": "R1 21082 L6 +31 AP, R3 20305 L22 +94 AP, R6 20308 +306 AP; every rank 40% faster. R3 sits mid Zealot band.",
+          "tooltip_note": "Tooltip says 94 attack power and 40% faster."
+        },
+        {
+          "key": "judgement",
+          "spell_id": 20271, "name": "Judgement", "rank": "",
+          "icon_id": 205, "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
+          "family_flags": "0x800000",
+          "client": { "cost": 0, "cooldown_ms": 10000, "gcd_ms": 0, "cast_time_ms": 0, "range_yd": [0.0, 10.0], "stances": [] },
+          "client_note": "The cost is 6% of base mana (ManaCostPercentage), which the rewrite zeroes.",
+          "borrowed": { "from_class": 2, "family_bit": 35 },
+          "realm": {
+            "rage_cost": 5, "cooldown_ms": 10000, "gcd_ms": 0, "range_yd": 10, "target": "enemy",
+            "effects": [{ "kind": "judgement" }],
+            "effects_note": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing."
+          },
+          "vanilla_reference": "The only castable Judgement: 10 s cooldown, 10 yd, off the global cooldown.",
+          "tooltip_note": "Tooltip refers to the Seals."
+        },
+        {
+          "key": "hammer_of_justice",
+          "spell_id": 10308, "name": "Hammer of Justice", "rank": "Rank 4",
+          "icon_id": 302, "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
+          "family_flags": "0x800",
+          "client": { "cost": 100, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 10.0], "duration_ms": 6000, "stances": [] },
+          "borrowed": { "from_class": 2, "family_bit": 36 },
+          "realm": {
+            "rage_cost": 15, "cooldown_ms": 60000, "cooldown_note": "Spell.dbc category 32 cooldown 60 s", "gcd_ms": 1500, "range_yd": 10, "target": "enemy",
+            "effects": [
+              { "kind": "stun", "duration_ms": 6000, "aura_spell_id": 10308 }
+            ]
+          },
+          "vanilla_reference": "R1 853 3 s, R2 5588 4 s, R3 5589 5 s, R4 10308 6 s: only R4's tooltip says six seconds.",
+          "tooltip_note": "Tooltip says stuns the target for 6 sec."
+        },
+        {
+          "key": "mortal_strike",
+          "spell_id": 12294, "name": "Mortal Strike", "rank": "Rank 1",
+          "icon_id": 564, "icon": "Interface\\Icons\\Ability_Warrior_SavageBlow",
+          "family_flags": "0x2000000",
+          "client": { "cost": 30.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "duration_ms": 10000, "stances": [] },
+          "realm": {
+            "rage_cost": 30, "cooldown_ms": 6000, "cooldown_note": "Spell.dbc category 971 cooldown 6 s", "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
+            "effects": [
+              { "kind": "weapon_strike", "weapon": "Wn", "bonus": { "base": 25, "per_level": 2.5, "per_ap": 0 } },
+              { "kind": "healing_reduction", "pct": 50, "duration_ms": 10000 }
+            ]
+          },
+          "vanilla_reference": "Vanguard's, unchanged.",
+          "tooltip_note": "Tooltip says weapon damage plus 85."
+        },
+        {
+          "key": "charge",
+          "spell_id": 6178, "name": "Charge", "rank": "Rank 2",
+          "icon_id": 457, "icon": "Interface\\Icons\\Ability_Warrior_Charge",
+          "family_flags": "0x1",
+          "client": { "cost": 0.0, "cooldown_ms": 0, "gcd_ms": 0, "cast_time_ms": 0, "range_yd": [8.0, 25.0], "stances": ["Battle Stance"], "not_in_combat": true },
+          "realm": {
+            "rage_cost": 0, "cooldown_ms": 15000, "gcd_ms": 0, "range_yd": [8, 25], "target": "enemy", "requires_out_of_combat": true,
+            "effects": [
+              { "kind": "charge", "speed_yd_s": 24 },
+              { "kind": "energize_rage", "amount": { "base": 11, "per_level": 0.1, "per_ap": 0 } },
+              { "kind": "stun", "duration_ms": 1000, "aura_spell_id": 7922 }
+            ]
+          },
+          "vanilla_reference": "Vanguard's, unchanged.",
+          "tooltip_note": "Tooltip says 12 rage."
+        }
+      ],
+      "talent_tree": {
+        "points_at_cap": 49,
+        "catalog_note": "Three tabs from the Callings handoff. Crusade has seven rows, so 30 points in it reach Holy Power and 49 at the cap put 31 or more there with the rest in Blade and Faith. Talent ids and rank spells are real Talent.dbc rows (Paladin Retribution, Protection and Holy, and Vanguard's Warrior rows in Blade) re-seated on the vanilla grid. Blade's first row holds the handoff's first two: Improved Charge and Anger Management alone are 3 ranks, short of the 5 that open a second row. Prerequisites stay inside a tab: Vengeance needs Conviction 5/5; Anger Management, Deep Wounds, Impale and Flurry lose theirs. Talents with no fitting effect kind, or that wait on the Seals, are WIP.",
+        "tabs": [
+          {
+            "name": "Crusade",
+            "catalog_tab_id": 903,
+            "source_tab_id": null,
+            "background": "PaladinCombat",
+            "talents": [
+              { "key": "improved_seal_of_the_crusader", "talent_id": 1464, "source_tab_id": 381, "name": "Improved Seal of the Crusader", "tier": 1, "column": 2, "rank_spells": [20335, 20336, 20337],
+                "realm_effect": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
+                "client_spellmods": [{ "type": "pct", "op": "EFFECT1", "family_bit": 34, "values": [5, 10, 15] }] },
+              { "key": "benediction", "talent_id": 1407, "source_tab_id": 381, "name": "Benediction", "tier": 1, "column": 3, "rank_spells": [20101, 20102, 20103, 20104, 20105],
+                "realm_effect": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
+                "client_spellmods_note": "The realm's own cells, on the family bits the client gives the borrowed spells (33 Seal of Command, 34 Seal of the Crusader, 35 Judgement); Benediction's rank spells carry vanilla's Paladin mana-percent mods instead.",
+                "client_spellmods": [
+                  { "type": "flat", "op": "COST", "family_bit": 33, "values": [-10, -10, -20, -20, -30] },
+                  { "type": "flat", "op": "COST", "family_bit": 34, "values": [-10, -10, -20, -20, -30] },
+                  { "type": "flat", "op": "COST", "family_bit": 35, "values": [-10, -10, -10, -10, -20] }
+                ] },
+              { "key": "improved_judgement", "talent_id": 1631, "source_tab_id": 381, "name": "Improved Judgement", "tier": 2, "column": 1, "rank_spells": [25956, 25957],
+                "realm_effect": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row." },
+              { "key": "deflection", "talent_id": 1403, "source_tab_id": 381, "name": "Deflection", "tier": 2, "column": 3, "rank_spells": [20060, 20061, 20062, 20063, 20064],
+                "realm_effect": "+1..5% parry chance." },
+              { "key": "vindication", "talent_id": 1633, "source_tab_id": 381, "name": "Vindication", "tier": 3, "column": 1, "rank_spells": [9452, 26016, 26021],
+                "realm_effect": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row." },
+              { "key": "conviction", "talent_id": 1411, "source_tab_id": 381, "name": "Conviction", "tier": 3, "column": 2, "rank_spells": [20117, 20118, 20119, 20120, 20121],
+                "realm_effect": "+1..5% melee crit chance." },
+              { "key": "eye_for_an_eye", "talent_id": 1632, "source_tab_id": 381, "name": "Eye for an Eye", "tier": 4, "column": 1, "rank_spells": [9799, 25988],
+                "realm_effect": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row." },
+              { "key": "pursuit_of_justice", "talent_id": 1634, "source_tab_id": 381, "name": "Pursuit of Justice", "tier": 4, "column": 4, "rank_spells": [26022, 26023],
+                "realm_effect": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row." },
+              { "key": "two_handed_weapon_specialization", "talent_id": 1410, "source_tab_id": 381, "name": "Two-Handed Weapon Specialization", "tier": 5, "column": 1, "rank_spells": [20111, 20112, 20113],
+                "realm_effect": "+2/4/6% physical damage while wielding a two-handed melee weapon." },
+              { "key": "improved_hammer_of_justice", "talent_id": 1521, "source_tab_id": 383, "name": "Improved Hammer of Justice", "tier": 5, "column": 3, "rank_spells": [20487, 20488, 20489],
+                "realm_effect": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row." },
+              { "key": "vengeance", "talent_id": 1402, "source_tab_id": 381, "name": "Vengeance", "tier": 6, "column": 2, "rank_spells": [20049, 20056, 20057, 20058, 20059],
+                "prereq": { "key": "conviction", "rank": 5 },
+                "realm_effect": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row." },
+              { "key": "holy_power", "talent_id": 1627, "source_tab_id": 382, "name": "Holy Power", "tier": 7, "column": 3, "rank_spells": [5923, 5924, 5925, 5926, 25829],
+                "realm_effect": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable." }
+            ]
+          },
+          {
+            "name": "Blade",
+            "catalog_tab_id": 904,
+            "source_tab_id": null,
+            "background": "WarriorArms",
+            "talents": [
+              { "key": "improved_charge", "talent_id": 126, "source_tab_id": 161, "name": "Improved Charge", "tier": 1, "column": 1, "rank_spells": [12285, 12697],
+                "realm_effect": "Charge +3/6 rage." },
+              { "key": "anger_management", "talent_id": 137, "source_tab_id": 161, "name": "Anger Management", "tier": 1, "column": 2, "rank_spells": [12296], "exceptional": true,
+                "realm_effect": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row." },
+              { "key": "impale", "talent_id": 662, "source_tab_id": 161, "name": "Impale", "tier": 1, "column": 4, "rank_spells": [16493, 16494],
+                "realm_effect": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x)." },
+              { "key": "deep_wounds", "talent_id": 121, "source_tab_id": 161, "name": "Deep Wounds", "tier": 1, "column": 3, "rank_spells": [12834, 12849, 12867],
+                "realm_effect": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s." },
+              { "key": "axe_specialization", "talent_id": 132, "source_tab_id": 161, "name": "Axe Specialization", "tier": 2, "column": 1, "rank_spells": [12700, 12781, 12783, 12784, 12785],
+                "realm_effect": "+1..5% crit chance with axes." },
+              { "key": "mace_specialization", "talent_id": 125, "source_tab_id": 161, "name": "Mace Specialization", "tier": 2, "column": 3, "rank_spells": [12284, 12701, 12702, 12703, 12704],
+                "realm_effect": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)." },
+              { "key": "sword_specialization", "talent_id": 123, "source_tab_id": 161, "name": "Sword Specialization", "tier": 2, "column": 4, "rank_spells": [12281, 12812, 12813, 12814, 12815],
+                "realm_effect": "Sword hits have 1..5% chance of one extra swing (no chained procs)." },
+              { "key": "flurry", "talent_id": 156, "source_tab_id": 164, "name": "Flurry", "tier": 3, "column": 3, "rank_spells": [12319, 12971, 12972, 12973, 12974],
+                "realm_effect": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable." }
+            ]
+          },
+          {
+            "name": "Faith",
+            "catalog_tab_id": 905,
+            "source_tab_id": null,
+            "background": "PaladinProtection",
+            "talents": [
+              { "key": "divine_strength", "talent_id": 1450, "source_tab_id": 382, "name": "Divine Strength", "tier": 1, "column": 2, "rank_spells": [20262, 20263, 20264, 20265, 20266],
+                "realm_effect": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row." },
+              { "key": "toughness", "talent_id": 1423, "source_tab_id": 383, "name": "Toughness", "tier": 1, "column": 4, "rank_spells": [20143, 20144, 20145, 20146, 20147],
+                "realm_effect": "+2..10% armour from items." },
+              { "key": "precision", "talent_id": 1630, "source_tab_id": 383, "name": "Precision", "tier": 2, "column": 1, "rank_spells": [20189, 20192, 20193],
+                "realm_effect": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row." },
+              { "key": "redoubt", "talent_id": 1421, "source_tab_id": 383, "name": "Redoubt", "tier": 2, "column": 3, "rank_spells": [20127, 20130, 20135, 20136, 20137],
+                "realm_effect": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row." },
+              { "key": "one_handed_weapon_specialization", "talent_id": 1429, "source_tab_id": 383, "name": "One-Handed Weapon Specialization", "tier": 3, "column": 3, "rank_spells": [20196, 20197, 20198, 20199, 20200],
+                "realm_effect": "+2..10% physical damage while wielding a one-handed melee weapon." },
+              { "key": "anticipation", "talent_id": 1629, "source_tab_id": 383, "name": "Anticipation", "tier": 3, "column": 4, "rank_spells": [20096, 20097, 20098, 20099, 20100],
+                "realm_effect": "+2..10 Defense." },
+              { "key": "reckoning", "talent_id": 1426, "source_tab_id": 383, "name": "Reckoning", "tier": 4, "column": 3, "rank_spells": [20177, 20179, 20181, 20180, 20182],
+                "realm_effect": "Not modelled yet: a crit taken would give extra attacks. Learnable." }
+            ]
+          }
+        ]
+      },
+
+      "advancement_quest": {
+        "quest_id": 64003,
+        "synthesized": true,
+        "offered_by": "the Hub's Warrior trainer",
+        "offered_to": { "calling": "vanguard", "level": 30 },
+        "advances_to": "zealot",
+        "zone_or_sort": -81,
+        "quest_level": 30,
+        "title": "The Zealot's Vow",
+        "details": "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word.",
+        "objectives": "Speak with the Warrior trainer at the Crossroads to swear the Zealot's vow.",
+        "offer_reward_text": "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you.",
+        "objective": { "kind": "talk", "note": "As The Warrior's Path: accept and complete at the trainer." },
+        "on_complete": ["set_calling:zealot", "level:1", "xp:0", "replace_skills", "wipe_talents_and_points", "swap_talent_catalog", "apply_tier_bonus:2"],
+        "flavour_source": "Synthesized; no text is copied."
+      }
+    },
+
+    "templar": {
+      "tier": 3,
+      "class": 1,
+      "display_name": "Templar",
+      "cap": 60,
+      "locked": true,
+      "skills": [],
+      "talent_tree": null,
+      "advancement_quest": {
+        "quest_id": 64004,
+        "synthesized": true,
+        "offered_by": "the Hub's Warrior trainer",
+        "offered_to": { "calling": "zealot", "level": 50 },
+        "advances_to": "templar",
+        "completable": false,
+        "zone_or_sort": -81,
+        "quest_level": 50,
+        "title": "The Templar's Charge",
+        "details": "Fifty battles of holy fury, and the Light has not yet burned you out. The Templars have heard of you, $N.$B$BThey guard what the Zealots only strike for, and they choose their own. When they are ready to test you, I will send word. Until then, keep your Seals bright.",
+        "objectives": "Await the Templars' summons.",
+        "objective": { "kind": "never", "note": "As The Ironclad's Oath: offered, never finished." },
+        "request_items_text": "The Templars have not yet sent for you, $N. Patience.",
+        "flavour_source": "Synthesized; no text is copied."
+      }
+    }
+  }
+}

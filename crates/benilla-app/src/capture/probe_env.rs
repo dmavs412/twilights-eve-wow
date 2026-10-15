@@ -83,6 +83,18 @@ pub(crate) const PROBE_VARS: &[ProbeVar] = &[
         wall_clock: false,
     },
     ProbeVar {
+        name: "WOW_PROBE_INTERACT",
+        purpose: "\"<secs>[;…]\" — interact with the selection as a right-click would (vendor, loot, quest giver, trainer); select first, e.g. WOW_PROBE_LUA=\"TargetByName('Barg')\"",
+        // Each time fires once on `ProbeClock`.
+        wall_clock: true,
+    },
+    ProbeVar {
+        name: "WOW_PROBE_GOTO",
+        purpose: "\"x,y[,facing][@secs]\" — Twilight's Eve: the realm teleports the player to WoW (x, y) on its map, on the ground (default: as soon as the world settles)",
+        // `@secs` fires on `ProbeClock`.
+        wall_clock: true,
+    },
+    ProbeVar {
         name: "WOW_PROBE_HOVER",
         purpose: "\"<frame>[;<frame>…]\" — sweep the real pointer across the named frames' centres, pressing nothing",
         // Starts at `_AT`, one move per `_STEP` seconds, alternating on `_DUTY`, in wall seconds.

@@ -55,8 +55,9 @@ your change.
 
 ## How a change lands
 
-Branch from `main` and open a pull request with `gh pr create -R dmavs412/twilights-eve-wow`. CI runs the gates that need neither game data nor a
-display.
+Branch from `main` and open a pull request with `gh pr create -R dmavs412/twilights-eve-wow`. A branch is done when
+`scripts/gates.sh` is green on it: CI runs the gates only for pull requests from forks, so for
+this repository's own branches the local run is the guardrail.
 
 ## Where to look when
 

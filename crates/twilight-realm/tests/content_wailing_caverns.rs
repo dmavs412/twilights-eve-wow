@@ -1,0 +1,170 @@
+//! `content/wailing_caverns.toml` still says what the research's hand-picked run says
+//! (`data/twilights-eve/wailing_caverns_run.json`, `docs/reference/wailing-caverns.md`).
+
+use std::path::PathBuf;
+
+use serde_json::Value;
+
+fn run() -> Value {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/twilights-eve/wailing_caverns_run.json");
+    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn dungeon() -> toml::Value {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("content/wailing_caverns.toml");
+    toml::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn floats(v: &toml::Value) -> Vec<f64> {
+    v.as_array()
+        .unwrap()
+        .iter()
+        .map(|x| {
+            x.as_float()
+                .unwrap_or_else(|| x.as_integer().unwrap() as f64)
+        })
+        .collect()
+}
+
+fn int(v: &toml::Value) -> i64 {
+    v.as_integer().unwrap()
+}
+
+#[test]
+fn the_map_and_its_triggers_match_the_reference() {
+    let (run, d) = (run(), dungeon());
+    assert_eq!(int(&d["map"]), run["map_id"].as_i64().unwrap());
+    assert_eq!(int(&d["zone"]), run["zone_id"].as_i64().unwrap());
+    for side in ["entrance", "exit"] {
+        let (want, got) = (&run[side], &d[side]);
+        let t = &want["area_trigger"];
+        assert_eq!(int(&got["trigger"]), t["id"].as_i64().unwrap(), "{side}");
+        assert_eq!(int(&got["map"]), t["map"].as_i64().unwrap(), "{side}");
+        let at: Vec<f64> = ["x", "y", "z"]
+            .iter()
+            .map(|k| t[k].as_f64().unwrap())
+            .collect();
+        assert_eq!(floats(&got["position"]), at, "{side}");
+        assert_eq!(got["radius"].as_float(), t["radius"].as_f64(), "{side}");
+        let to = &want["teleport_to"];
+        assert_eq!(
+            int(&got["to"]["map"]),
+            to["map"].as_i64().unwrap(),
+            "{side}"
+        );
+        let at: Vec<f64> = ["x", "y", "z"]
+            .iter()
+            .map(|k| to[k].as_f64().unwrap())
+            .collect();
+        assert_eq!(floats(&got["to"]["position"]), at, "{side}");
+        assert_eq!(
+            got["to"]["orientation"].as_float(),
+            to["o"].as_f64(),
+            "{side}"
+        );
+    }
+    // A death inside comes back where the entrance puts the player.
+    let respawn = &run["death"]["respawn_inside_at"];
+    assert_eq!(
+        floats(&d["entrance"]["to"]["position"]),
+        ["x", "y", "z"]
+            .iter()
+            .map(|k| respawn[k].as_f64().unwrap())
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn the_spawns_are_the_runs_ten_mobs_and_its_boss() {
+    let (run, d) = (run(), dungeon());
+    let spawns = d["spawn"].as_array().unwrap();
+    let mobs = run["mobs"].as_array().unwrap();
+    assert_eq!(spawns.len(), mobs.len());
+    assert_eq!(mobs.len(), 11, "ten trash mobs and the boss");
+    for (got, want) in spawns.iter().zip(mobs) {
+        let guid = want["guid"].as_i64().unwrap();
+        assert_eq!(int(&got["guid"]), guid);
+        assert_eq!(
+            int(&got["entry"]),
+            want["entry"].as_i64().unwrap(),
+            "{guid}"
+        );
+        assert_eq!(int(&got["level_min"]), want["level_min"].as_i64().unwrap());
+        assert_eq!(int(&got["level_max"]), want["level_max"].as_i64().unwrap());
+        let at: Vec<f64> = ["x", "y", "z"]
+            .iter()
+            .map(|k| want[k].as_f64().unwrap())
+            .collect();
+        assert_eq!(floats(&got["position"]), at, "{guid}");
+        assert_eq!(got["orientation"].as_float(), want["o"].as_f64(), "{guid}");
+        let camp = want["group_leader"].as_i64().unwrap_or(guid);
+        assert_eq!(int(&got["camp"]), camp, "{guid}");
+        // Its creature, at the reference's display, faction, rank and speeds.
+        let template = d["template"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| int(&t["entry"]) == int(&got["entry"]))
+            .expect("a template for every spawn");
+        assert_eq!(template["name"].as_str(), want["name"].as_str());
+        assert_eq!(
+            int(&template["display_id"]),
+            want["display_ids"][0].as_i64().unwrap()
+        );
+        assert_eq!(
+            int(&template["faction_template"]),
+            want["faction"].as_i64().unwrap()
+        );
+        assert_eq!(int(&template["rank"]), want["rank"].as_i64().unwrap());
+        assert_eq!(
+            template["detection_range"].as_float(),
+            want["detection_range"].as_f64()
+        );
+    }
+    assert_eq!(int(&d["boss"]), run["boss"]["guid"].as_i64().unwrap());
+}
+
+#[test]
+fn the_route_graph_is_the_references() {
+    let (run, d) = (run(), dungeon());
+    let route = &run["route"];
+    let nodes = d["route"]["nodes"].as_array().unwrap();
+    let want = route["nodes"].as_array().unwrap();
+    assert_eq!(nodes.len(), want.len());
+    for (got, want) in nodes.iter().zip(want) {
+        assert_eq!(got["id"].as_str(), want["id"].as_str());
+        let at: Vec<f64> = ["x", "y", "z"]
+            .iter()
+            .map(|k| want[k].as_f64().unwrap())
+            .collect();
+        assert_eq!(floats(&got["at"]), at, "{}", want["id"]);
+    }
+    let edges = d["route"]["edges"].as_array().unwrap();
+    let want = route["edges"].as_array().unwrap();
+    assert_eq!(edges.len(), want.len());
+    for (got, want) in edges.iter().zip(want) {
+        assert_eq!(got[0].as_str(), want["a"].as_str());
+        assert_eq!(got[1].as_str(), want["b"].as_str());
+    }
+}
+
+#[test]
+fn the_boss_loot_is_the_references_boss_pool() {
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/twilights-eve/loot_items.json");
+    let reference: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let want: Vec<i64> = reference["dungeon_blues"]["proposed_boss_pool"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| e.as_i64().unwrap())
+        .collect();
+    let got: Vec<i64> = dungeon()["boss_loot"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(int)
+        .collect();
+    assert_eq!(got, want);
+}

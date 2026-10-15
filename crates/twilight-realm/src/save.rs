@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::characters::Char;
 use crate::content::{self, Calling};
+use crate::inventory::{bag_size, Inventory, Pos};
 
 /// The save format this realm writes and reads. A save from any other version is refused.
 pub const SAVE_VERSION: u32 = 1;
@@ -55,6 +56,86 @@ struct SaveV1 {
     zone: u32,
     position: [f32; 3],
     orientation: f32,
+    /// `[slot, kind << 24 | action]` per button, once the player has arranged the bar. Optional,
+    /// so a save from before it existed still reads as version 1.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    action_bar: Option<Vec<(u8, u32)>>,
+    /// Copper. Added within version 1: a save without it has none.
+    #[serde(default)]
+    money: u32,
+    /// `[talent id, rank]` per learned talent. Added within version 1: a save without them has none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    talents: Vec<(u32, u8)>,
+    /// Respecs bought, which price the next. Added within version 1.
+    #[serde(default)]
+    talent_wipes: u32,
+    /// `[item entry, the Unix ms it is ready at]` per item cooling down after use, so the time
+    /// between sessions counts. Optional within version 1.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    item_ready_at: Vec<(u32, u64)>,
+    /// The quests ever handed in. Added within version 1: a save without it has finished none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    completed: Vec<u32>,
+    /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
+    /// since TOML writes an array of tables after every plain key.
+    #[serde(default)]
+    items: Vec<SavedItem>,
+    /// The quest log. Added within version 1: a save without it has no quests under way. Left
+    /// out when empty, so it never writes a plain key after `items`' tables.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    quests: Vec<crate::quests::SavedQuest>,
+}
+
+/// One item in a save.
+#[derive(Serialize, Deserialize)]
+struct SavedItem {
+    /// The bag slot (19-22) of the equipped bag it is in; left out for a player slot. Added within
+    /// version 1: a save without it holds nothing in bags.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    bag: Option<u8>,
+    /// The player slot (0-18 worn, 19-22 bags, 23-38 the backpack), or the slot in its bag.
+    slot: u8,
+    entry: u32,
+    count: u32,
+    /// Left out: full.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    durability: Option<u32>,
+}
+
+fn saved_items(inventory: &Inventory) -> Vec<SavedItem> {
+    inventory
+        .iter()
+        .map(|(at, item)| SavedItem {
+            bag: at.own_slot().is_none().then_some(at.bag),
+            slot: at.slot,
+            entry: item.entry,
+            count: item.count,
+            durability: Some(item.durability),
+        })
+        .collect()
+}
+
+/// The inventory a save describes; an unknown item, a bad slot, a slot named twice or a bag slot
+/// holding what is no bag makes it unreadable. A bag's contents come after the bag.
+fn load_inventory(money: u32, saved: &[SavedItem]) -> Result<Inventory, SaveError> {
+    let mut inventory = Inventory::default();
+    inventory.money = money;
+    for s in saved {
+        let template = crate::items::template(s.entry).ok_or(SaveError::Unreadable)?;
+        let at = s
+            .bag
+            .map_or(Pos::own(s.slot), |bag| Pos { bag, slot: s.slot });
+        if !inventory.exists(at) || inventory.get(at).is_some() || s.count == 0 {
+            return Err(SaveError::Unreadable);
+        }
+        if at.is_bag_slot() && bag_size(s.entry) == 0 {
+            return Err(SaveError::Unreadable);
+        }
+        let mut item = inventory.new_item(s.entry, s.count);
+        item.durability = s.durability.unwrap_or(template.durability);
+        inventory.put(at, item);
+    }
+    Ok(inventory)
 }
 
 pub(crate) fn export(c: &Char) -> String {
@@ -72,6 +153,18 @@ pub(crate) fn export(c: &Char) -> String {
         zone: c.zone,
         position: c.position,
         orientation: c.orientation,
+        action_bar: c.action_bar.clone(),
+        money: c.inventory.money,
+        talents: c.talents.clone(),
+        talent_wipes: c.talent_wipes,
+        item_ready_at: c
+            .item_cooldowns
+            .iter()
+            .map(|&(entry, ready)| (entry, (ready * 1000.0).round() as u64))
+            .collect(),
+        completed: c.quests.completed.clone(),
+        items: saved_items(&c.inventory),
+        quests: crate::quests::saved(&c.quests),
     };
     toml::to_string(&save).expect("a save always serializes")
 }
@@ -85,7 +178,7 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
     if !content::valid_race(s.race) || s.gender > 1 || s.level == 0 {
         return Err(SaveError::Unreadable);
     }
-    Ok(Char {
+    let mut c = Char {
         guid: s.guid,
         name: s.name,
         race: s.race,
@@ -98,5 +191,21 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         zone: s.zone,
         position: s.position,
         orientation: s.orientation,
-    })
+        action_bar: s.action_bar,
+        talents: s.talents,
+        talent_wipes: s.talent_wipes,
+        inventory: load_inventory(s.money, &s.items)?,
+        item_cooldowns: s
+            .item_ready_at
+            .iter()
+            .map(|&(entry, ms)| (entry, ms as f64 / 1000.0))
+            .collect(),
+        quests: crate::quests::QuestLog {
+            completed: s.completed,
+            ..crate::quests::load(&s.quests)?
+        },
+    };
+    crate::quests::settle(&mut c);
+    crate::talents::keep_valid(&mut c);
+    Ok(c)
 }

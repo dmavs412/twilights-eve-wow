@@ -1,0 +1,33 @@
+# The items the realm hands out itself and no mob ever drops, written by hand. Same fields as
+# items.toml; they stay out of its loot pools.
+#
+# `use_spell` is the item's on-use spell (the tooltip's "Use:"). `use_cooldown_ms` and
+# `use_category_cooldown_ms` override that spell's own recovery and category recovery from
+# `Spell.dbc`; -1 (the default) keeps the spell's.
+
+item = [
+  # Each race's Warrior starting outfit (content/starting_outfits.toml), worn from creation:
+  # vmangos `item_template` rows (patch 0, db-sqlite-4641790), see
+  # docs/reference/starting-outfits.md.
+  { entry = 25, name = "Worn Shortsword", quality = 1, item_level = 2, required_level = 1, class = 2, subclass = 7, inventory_type = 21, display_id = 1542, speed_ms = 1900, durability = 20, sell_price = 7, buy_price = 35, buy_count = 1, stackable = 1, sheath = 3, material = 1, damage = [[1.0, 3.0, 0]] },
+  { entry = 37, name = "Worn Axe", quality = 1, item_level = 2, required_level = 1, class = 2, subclass = 0, inventory_type = 21, display_id = 14029, speed_ms = 2000, durability = 20, sell_price = 7, buy_price = 38, buy_count = 1, stackable = 1, sheath = 3, material = 1, damage = [[1.0, 3.0, 0]] },
+  { entry = 38, name = "Recruit's Shirt", quality = 1, item_level = 1, class = 4, subclass = 0, inventory_type = 4, display_id = 9891, sell_price = 1, buy_price = 1, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 39, name = "Recruit's Pants", quality = 0, item_level = 1, required_level = 1, class = 4, subclass = 1, inventory_type = 7, display_id = 9892, armor = 2, durability = 25, sell_price = 1, buy_price = 5, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 40, name = "Recruit's Boots", quality = 1, item_level = 1, class = 4, subclass = 0, inventory_type = 8, display_id = 10141, sell_price = 1, buy_price = 4, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 139, name = "Brawler's Pants", quality = 0, item_level = 1, required_level = 1, class = 4, subclass = 1, inventory_type = 7, display_id = 9988, armor = 2, durability = 25, sell_price = 1, buy_price = 4, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 140, name = "Brawler's Boots", quality = 1, item_level = 1, class = 4, subclass = 0, inventory_type = 8, display_id = 9992, sell_price = 1, buy_price = 4, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 2361, name = "Battleworn Hammer", quality = 1, item_level = 2, required_level = 1, class = 2, subclass = 5, inventory_type = 17, display_id = 8690, speed_ms = 2900, durability = 25, sell_price = 9, buy_price = 45, buy_count = 1, stackable = 1, sheath = 1, material = 2, damage = [[3.0, 5.0, 0]] },
+  { entry = 2362, name = "Worn Wooden Shield", quality = 0, item_level = 1, required_level = 1, class = 4, subclass = 6, inventory_type = 14, display_id = 18730, armor = 5, block = 1, durability = 20, sell_price = 1, buy_price = 7, buy_count = 1, stackable = 1, sheath = 4, material = 1 },
+  { entry = 3111, name = "Crude Throwing Axe", quality = 1, item_level = 3, required_level = 1, class = 2, subclass = 16, inventory_type = 25, display_id = 20777, speed_ms = 2000, buy_price = 15, buy_count = 200, stackable = 200, material = 1, damage = [[1.0, 3.0, 0]] },
+  { entry = 6120, name = "Recruit's Shirt", quality = 1, item_level = 1, class = 4, subclass = 0, inventory_type = 4, display_id = 9983, sell_price = 1, buy_price = 1, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 6121, name = "Recruit's Pants", quality = 0, item_level = 1, required_level = 1, class = 4, subclass = 1, inventory_type = 7, display_id = 9984, armor = 2, durability = 25, sell_price = 1, buy_price = 4, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 6122, name = "Recruit's Boots", quality = 1, item_level = 1, class = 4, subclass = 0, inventory_type = 8, display_id = 9985, sell_price = 1, buy_price = 4, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 6125, name = "Brawler's Harness", quality = 1, item_level = 1, class = 4, subclass = 0, inventory_type = 4, display_id = 9995, sell_price = 1, buy_price = 1, buy_count = 1, stackable = 1, material = 7 },
+  { entry = 12282, name = "Worn Battleaxe", quality = 1, item_level = 2, required_level = 1, class = 2, subclass = 1, inventory_type = 17, display_id = 22291, speed_ms = 2900, durability = 25, sell_price = 8, buy_price = 43, buy_count = 1, stackable = 1, sheath = 1, material = 1, damage = [[3.0, 5.0, 0]] },
+  # The stock 1.12 Hearthstone, with its hour-long category cooldown cut to five minutes: the
+  # spell's 10 s cast returns the player to the Crossroads (`hearth.rs`).
+  { entry = 6948, name = "Hearthstone", quality = 1, item_level = 1, class = 15, display_id = 6418, bonding = 1, max_count = 1, stackable = 1, use_spell = 8690, use_cooldown_ms = 300000, use_category_cooldown_ms = 0 },
+  # Plate, which no world pool up to level 32 holds (vanilla plate starts at 40): one real
+  # vmangos piece so the realm knows plate a Vanguard can wear. Nothing hands it out yet.
+  { entry = 8157, name = "Jouster's Chestplate", quality = 2, item_level = 42, required_level = 40, class = 4, subclass = 4, inventory_type = 5, display_id = 27340, armor = 339, durability = 115, sell_price = 5197, buy_price = 25989, buy_count = 1, bonding = 2, stackable = 1, material = 6, stats = [[4, 15], [7, 4]] },
+]

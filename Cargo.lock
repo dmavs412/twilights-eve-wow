@@ -7280,8 +7280,10 @@ dependencies = [
 name = "twilight-realm"
 version = "0.2.0"
 dependencies = [
+ "benilla-formats",
  "benilla-protocol",
  "serde",
+ "serde_json",
  "toml",
 ]
 
