@@ -1,5 +1,6 @@
 # creature_classlevelstats by unit class, generated from data/twilights-eve/mob_base_stats.json
-# (the vmangos world DB). tests/content.rs checks that the two agree. Indexed by level - 1.
+# (the vmangos world DB) by `cargo run -p twilight-realm --example gen_tables`.
+# tests/content.rs checks that the two agree. Indexed by level - 1.
 
 [warrior]
 health = [42, 55, 71, 86, 102, 120, 137, 156, 176, 198, 222, 247, 273, 300, 328, 356, 386, 417, 449, 484, 521, 562, 605, 651, 699, 750, 800, 853, 905, 955, 1006, 1057, 1110, 1163, 1220, 1277, 1336, 1395, 1459, 1524, 1585, 1651, 1716, 1782, 1848, 1919, 1990, 2062, 2138, 2215, 2292, 2371, 2453, 2533, 2614, 2699, 2784, 2871, 2961, 3052, 3144, 3237, 3331]
