@@ -93,6 +93,14 @@ pub struct TalentDef {
     pub client_spellmod: Option<ClientSpellMod>,
 }
 
+impl TalentDef {
+    /// A talent the realm does not model yet: no effect and no skill. It is still learnable and
+    /// still counts toward its tab's tier gates.
+    pub fn is_wip(&self) -> bool {
+        self.effects.is_empty() && self.skill.is_none()
+    }
+}
+
 /// A talent another needs, and the rank (1-based) it needs.
 #[derive(Debug, Deserialize)]
 pub struct Prereq {
@@ -433,4 +441,15 @@ pub fn skill(spell_id: u32) -> Option<&'static Skill> {
 /// client blanks.
 pub fn skill_spell_ids() -> impl Iterator<Item = u32> {
     all().iter().flat_map(every_skill).map(|s| s.spell_id)
+}
+
+/// Every WIP talent's rank spells, of every Calling: the spells the client names
+/// "<Name> (WIP)" (ADR 0003).
+pub fn wip_rank_spell_ids() -> impl Iterator<Item = u32> {
+    all()
+        .iter()
+        .flat_map(|c| &c.talent_tabs)
+        .flat_map(|tab| &tab.talents)
+        .filter(|t| t.is_wip())
+        .flat_map(|t| t.rank_spells.iter().copied())
 }

@@ -276,6 +276,18 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     );
 }
 
+/// The client names these " (WIP)": the rank spells of every talent with no effect and no skill,
+/// Dual Wield Specialization's and Iron Will's.
+#[test]
+fn the_wip_rank_spells_are_the_talents_with_no_effect() {
+    let mut ids: Vec<u32> = callings::wip_rank_spell_ids().collect();
+    ids.sort_unstable();
+    assert_eq!(
+        ids,
+        [12300, 12959, 12960, 12961, 12962, 23584, 23585, 23586, 23587, 23588]
+    );
+}
+
 #[test]
 fn the_basic_warrior_talent_tree_matches_the_reference() {
     check_tree("basic_warrior", &[]);
@@ -362,7 +374,7 @@ fn check_tree(calling: &str, unmodelled: &[&str]) {
                 (m, w) => panic!("{key}: spell mod {m:?} against {w:?}"),
             }
             assert_eq!(
-                t.effects.is_empty() && t.skill.is_none(),
+                t.is_wip(),
                 unmodelled.contains(&key),
                 "{key}: the realm decides what it does"
             );

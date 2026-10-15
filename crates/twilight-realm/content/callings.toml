@@ -341,9 +341,9 @@ effects = [
 
 # The Tier 1 tree: the real Arms, Fury and Protection pages cut at tier 5, so 29 points reach one
 # tab's last talent with 9 to spare. An active talent's `skill` is cast as any skill once its rank
-# is learned. A talent with `effects = []` and no `skill` is learnable and shown, but the realm
-# does not model it (Dual Wield Specialization: no off hand swings; Iron Will: nothing stuns or
-# charms the player). More kinds than the Basic Warrior's:
+# is learned. A talent with `effects = []` and no `skill` is WIP: learnable and shown as
+# "<Name> (WIP)", but the realm does not model it (Dual Wield Specialization: no off hand swings;
+# Iron Will: nothing stuns or charms the player). More kinds than the Basic Warrior's:
 #   defense                - the Defense skill rises by that much
 #   item_armor_pct         - the armour from items rises by that percent
 #   weapon_damage_pct      - physical damage dealt rises by that percent with `weapon` in hand
