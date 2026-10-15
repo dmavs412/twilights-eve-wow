@@ -275,6 +275,27 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             slot,
             count,
         }),
+        ClientCommand::QuestgiverStatusQuery { npc } => {
+            Some(RealmCommand::QuestGiverStatusQuery { npc })
+        }
+        ClientCommand::QuestgiverHello { npc } => Some(RealmCommand::QuestGiverHello { npc }),
+        ClientCommand::QuestgiverQuery { npc, quest } => {
+            Some(RealmCommand::QuestGiverQueryQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverAccept { npc, quest } => {
+            Some(RealmCommand::QuestGiverAcceptQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverComplete { npc, quest } => {
+            Some(RealmCommand::QuestGiverCompleteQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverRequestReward { npc, quest } => {
+            Some(RealmCommand::QuestGiverRequestReward { npc, quest })
+        }
+        ClientCommand::QuestgiverChooseReward { npc, quest, choice } => {
+            Some(RealmCommand::QuestGiverChooseReward { npc, quest, choice })
+        }
+        ClientCommand::QuestQuery { quest } => Some(RealmCommand::QuestQuery { quest }),
+        ClientCommand::QuestlogRemove { slot } => Some(RealmCommand::QuestLogRemoveQuest { slot }),
         _ => None,
     }
 }
