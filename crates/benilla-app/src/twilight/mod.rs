@@ -12,13 +12,30 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use bevy::prelude::*;
-use twilight_realm::{Host, Realm, RealmCommand, Storage};
+use twilight_realm::{DevMultipliers, Host, Realm, RealmCommand, Storage};
 
 use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
 
 /// `WOW_TWILIGHT` natively, `?twilight=1` in the browser: boot Twilight's Eve.
 pub(crate) fn active() -> bool {
     crate::webenv::var("WOW_TWILIGHT").is_some_and(|v| v != "0")
+}
+
+/// The dev multipliers, read once at boot: `?speed=` / `?xp=` in the browser, `WOW_TWILIGHT_SPEED`
+/// / `WOW_TWILIGHT_XP` natively. They live only in this run's realm, never in a save.
+fn dev_multipliers() -> DevMultipliers {
+    let flag = |name: &str| {
+        // The browser's short form first; `webenv` maps `WOW_<NAME>` to `?<name>=` there.
+        let short = cfg!(target_arch = "wasm32")
+            .then(|| crate::webenv::var(&format!("WOW_{name}")))
+            .flatten();
+        short.or_else(|| crate::webenv::var(&format!("WOW_TWILIGHT_{name}")))
+    };
+    let dev = DevMultipliers::from_flags(flag("SPEED").as_deref(), flag("XP").as_deref());
+    if dev != DevMultipliers::default() {
+        info!("twilight: dev multipliers speed ×{} xp ×{}", dev.speed, dev.xp);
+    }
+    dev
 }
 
 /// Attaches the Local Realm. Added after `NetPlugin`, whose [`InProcessLink`] it takes.
@@ -32,7 +49,7 @@ impl Plugin for TwilightPlugin {
             .and_then(|mut link| link.0.take())
             .expect("Twilight's Eve needs the net layer's in-process backend");
         // Fresh dice every session; a test seeds its own.
-        let mut realm = Realm::with_seed(rand::random());
+        let mut realm = Realm::with_seed(rand::random()).with_dev(dev_multipliers());
         let saved = load_saves(&mut realm);
         app.insert_resource(LocalRealm {
             far,

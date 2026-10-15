@@ -7,14 +7,16 @@ use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use crate::characters::Char;
 use crate::combat;
 use crate::content;
+use crate::dev::DevMultipliers;
 use crate::equipment;
 use crate::fields::*;
 use crate::looting::{self, Looting};
-use crate::mobs::{self, distance, Mob, State, COMBAT_REACH};
+use crate::mobs::{distance, Mob, State, COMBAT_REACH};
+use crate::population::Population;
 use crate::rng::Rng;
 use crate::rules::melee::Outcome;
 use crate::rules::stats::WarriorStats;
-use crate::rules::{aggro, rage, xp};
+use crate::rules::{aggro, leash, rage, xp};
 use crate::Host;
 
 /// vanilla's player speeds (`baseMoveSpeed`): yd/s, turn in rad/s.
@@ -78,16 +80,17 @@ pub(crate) struct InWorld {
     pub(crate) since_save: f32,
     map: u32,
     player: Player,
+    /// The mobs near the player; they stream in from the first tick on, which brings the ground.
     mobs: Vec<Mob>,
-    /// Whether the mobs have streamed in; they wait for the first tick, which brings the ground.
-    spawned: bool,
+    population: Population,
+    dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
 }
 
 impl InWorld {
     /// Logs `c` in: what vmangos sends from `CMSG_PLAYER_LOGIN` to the player's own create.
-    pub(crate) fn enter(c: &Char, events: &mut Vec<SessionEvent>) -> Self {
+    pub(crate) fn enter(c: &Char, dev: DevMultipliers, events: &mut Vec<SessionEvent>) -> Self {
         let stats = equipment::stats(c);
         events.push(SessionEvent::Connected {
             self_guid: c.guid,
@@ -120,7 +123,7 @@ impl InWorld {
             position: c.position,
             orientation: c.orientation,
             scale: 1.0,
-            speeds: Some(PLAYER_SPEEDS),
+            speeds: Some(dev.speeds(PLAYER_SPEEDS)),
             mover: None,
             transport_progress: None,
             transport: None,
@@ -142,7 +145,8 @@ impl InWorld {
                 in_combat: false,
             },
             mobs: Vec::new(),
-            spawned: false,
+            population: Population::default(),
+            dev,
             looting: Looting::default(),
         }
     }
@@ -178,7 +182,7 @@ impl InWorld {
         });
         // Being attacked turns a mob on its attacker (`CreatureAI::AttackedBy`).
         if self.mobs[i].state == State::Idle {
-            engage(&mut self.mobs[i], self.guid, events);
+            self.pull(i, events);
         }
     }
 
@@ -202,22 +206,28 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) -> Ticked {
         let mut ticked = Ticked::default();
-        if !self.spawned {
-            self.spawned = true;
-            self.spawn(host, events);
-        }
         let me = c.position;
+        self.population
+            .update(dt, me, self.map, host, &mut self.mobs, events);
+        // A corpse that respawned or streamed out takes its loot with it.
+        let mobs = &self.mobs;
+        self.looting
+            .retain(|corpse| mobs.iter().any(|m| m.guid == corpse && !m.alive()));
         let p = &mut self.player;
         p.swing_timer = (p.swing_timer - dt).max(0.0);
 
-        // Hostile mobs notice a living player who comes too close.
+        // Hostile mobs notice a living player who comes too close, and bring their camp.
         if p.alive() {
-            for mob in self.mobs.iter_mut().filter(|m| m.state == State::Idle) {
+            for i in 0..self.mobs.len() {
+                let mob = &self.mobs[i];
+                if mob.state != State::Idle || !mob.template.hostile {
+                    continue;
+                }
                 let r = aggro::radius(mob.template.detection_range, c.level, mob.level());
                 if distance(mob.position, me) <= r
                     && host.line_of_sight(self.map, eye(mob.position), eye(me))
                 {
-                    engage(mob, self.guid, events);
+                    self.pull(i, events);
                 }
             }
         }
@@ -230,13 +240,13 @@ impl InWorld {
         ticked
     }
 
-    fn spawn(&mut self, host: &dyn Host, events: &mut Vec<SessionEvent>) {
-        for spawn in &mobs::content().spawn {
-            let [x, y, z] = spawn.position;
-            let z = host.ground_height(self.map, x, y, z + 2.0).unwrap_or(z);
-            if let Some(mob) = Mob::spawn(spawn, z) {
-                events.push(mob.create());
-                self.mobs.push(mob);
+    /// Mob `i` turns on the player, and every idle member of its camp with it (social aggro).
+    fn pull(&mut self, i: usize, events: &mut Vec<SessionEvent>) {
+        let camp = self.mobs[i].camp;
+        engage(&mut self.mobs[i], self.guid, events);
+        for mob in &mut self.mobs {
+            if mob.camp == camp && mob.state == State::Idle {
+                engage(mob, self.guid, events);
             }
         }
     }
@@ -300,9 +310,9 @@ impl InWorld {
             events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
         }
         if mob.state == State::Idle {
-            engage(mob, self.guid, events);
+            self.pull(i, events);
         }
-        if mob.health == 0 {
+        if self.mobs[i].health == 0 {
             self.kill(i, c, rng, events, ticked);
         }
     }
@@ -333,7 +343,7 @@ impl InWorld {
                 }
             }
             State::Engaged => {
-                if !self.player.alive() {
+                if !self.player.alive() || leash::beyond(mob.home, mob.position) {
                     evade(mob, self.guid, events);
                     return;
                 }
@@ -402,6 +412,7 @@ impl InWorld {
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
+        self.population.died(mob.spawn);
         if self.player.attacking == Some(mob.guid) {
             self.player.attacking = None;
             events.push(SessionEvent::AttackStop {
@@ -420,7 +431,12 @@ impl InWorld {
         pairs.push(looting::lootable_pair(lootable));
         events.push(values(mob.guid, &pairs));
 
-        let gained = xp::kill_xp(c.level, mob.level(), xp::Elite::No);
+        let elite = if mob.template.elite() {
+            xp::Elite::OpenWorld
+        } else {
+            xp::Elite::No
+        };
+        let gained = self.dev.xp(xp::kill_xp(c.level, mob.level(), elite));
         if gained > 0 {
             events.push(SessionEvent::XpGain(XpGain {
                 victim: mob.guid,

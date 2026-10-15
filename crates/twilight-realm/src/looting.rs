@@ -86,11 +86,10 @@ impl Looting {
         true
     }
 
-    /// Forgets a corpse (it despawned or respawned).
-    #[allow(dead_code)]
-    pub(crate) fn clear(&mut self, corpse: u64) {
-        self.corpses.remove(&corpse);
-        if self.open == Some(corpse) {
+    /// Keeps only the corpses `keep` says are still lying there (the rest despawned or respawned).
+    pub(crate) fn retain(&mut self, keep: impl Fn(u64) -> bool) {
+        self.corpses.retain(|corpse, _| keep(*corpse));
+        if self.open.is_some_and(|c| !self.corpses.contains_key(&c)) {
             self.open = None;
         }
     }
