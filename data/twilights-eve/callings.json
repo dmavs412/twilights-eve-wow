@@ -41,6 +41,8 @@
       "display_name": "Basic Warrior",
       "cap": 10,
       "branches": ["vanguard"],
+      "armour": ["cloth", "leather", "mail", "shield"],
+      "armour_note": "Gear follows the Calling, never the level: every Warrior weapon from level 1, this armour, and no item refused for level. Plate is for Vanguard and every Calling that branches from it.",
       "client_shapeshift_form": 17,
       "client_shapeshift_form_note": "Battle Stance. The stock client refuses a cast whose Spell.dbc Stances mask excludes the current form (0x612480), before sending it. Charge, Rend, Thunder Clap, Hamstring and Overpower all need Battle Stance, so the realm keeps UNIT_FIELD_BYTES_1 byte 2 = 17 for every Warrior Calling. It also makes GetBonusBarOffset() 1, so the main action bar pages to slots 73..84.",
 
@@ -115,6 +117,7 @@
       "select_screen_name": "Vanguard",
       "cap": 30,
       "branches": ["ironclad"],
+      "armour": ["cloth", "leather", "mail", "plate", "shield"],
       "client_shapeshift_form": 17,
       "client_shapeshift_form_note": "Battle Stance again: every Vanguard skill below is legal in it. Thunder Clap, Cleave and Execute were dropped for the handoff's focused kit.",
 

@@ -374,6 +374,44 @@ fn advancement_keeps_gear_bags_gold_tokens_and_quests() {
 }
 
 #[test]
+fn advancement_resends_proficiency_with_plate() {
+    let (mut realm, me, mut events) = capped_warrior();
+    let armour = |events: &[SessionEvent]| {
+        events
+            .iter()
+            .rev()
+            .find_map(|e| match e {
+                SessionEvent::Proficiency {
+                    item_class: 4,
+                    subclass_mask,
+                } => Some(*subclass_mask),
+                _ => None,
+            })
+            .expect("an armour proficiency")
+    };
+    assert_eq!(armour(&events) & 1 << 4, 0, "no plate as a Basic Warrior");
+    let advanced = advance(&mut realm, trainer(&events));
+    assert_ne!(armour(&advanced) & 1 << 4, 0, "plate as a Vanguard");
+    events.extend(advanced);
+    assert_eq!(descriptor(&events, me).unit_level(), Some(1));
+}
+
+#[test]
+fn gear_worn_before_advancement_stays_worn_and_keeps_its_stats() {
+    // Required level 25 mail, worn by a level 10 Basic Warrior who becomes a level 1 Vanguard.
+    const LARGE_OGRE_CHAIN_ARMOR: u32 = 914;
+    let (mut realm, me, mut events) = questing(10, &[(4, LARGE_OGRE_CHAIN_ARMOR, 1)], 0, &[]);
+    let chest = descriptor(&events, me).player_inv_slot(4);
+    let green = descriptor(&events, me).player_posstat(0);
+    assert_eq!(green, Some(10), "its +10 strength");
+    events.extend(advance(&mut realm, trainer(&events)));
+    let now = descriptor(&events, me);
+    assert_eq!(now.unit_level(), Some(1));
+    assert_eq!(now.player_inv_slot(4), chest);
+    assert_eq!(now.player_posstat(0), green, "still counting");
+}
+
+#[test]
 fn completed_quests_carry_over_advancement() {
     let (mut realm, me, events) = questing(10, EIGHT_SKINS, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS);

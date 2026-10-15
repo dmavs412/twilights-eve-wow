@@ -18,11 +18,12 @@ use twilight_realm::DevMultipliers;
 // `SkillLine.dbc` ids.
 const UNARMED: u16 = 162;
 const DEFENSE: u16 = 95;
-const POLEARMS: u16 = 229;
-/// Every Warrior weapon line but Polearms, which comes at level 20
-/// (`data/twilights-eve/warrior_proficiency.json`): axes, two-handed axes, bows, guns, maces,
-/// two-handed maces, swords, two-handed swords, staves, fist weapons, daggers, thrown, crossbows.
-const WEAPONS_FROM_LEVEL_1: [u16; 13] = [44, 172, 45, 46, 54, 160, 43, 55, 136, 473, 173, 176, 226];
+/// Every Warrior weapon line, known from level 1 by every Calling of the Warrior line: axes,
+/// two-handed axes, bows, guns, maces, two-handed maces, polearms, swords, two-handed swords,
+/// staves, fist weapons, daggers, thrown, crossbows.
+const WEAPONS: [u16; 14] = [
+    44, 172, 45, 46, 54, 160, 229, 43, 55, 136, 473, 173, 176, 226,
+];
 
 const MAIN_HAND: u8 = 15;
 const BACKPACK: u8 = 23;
@@ -53,10 +54,7 @@ fn skill_lines(f: &ObjectFields) -> BTreeMap<u16, (u16, u16)> {
 fn at_max(level: u16) -> BTreeMap<u16, (u16, u16)> {
     let skill = 5 * level;
     let mut ids = vec![UNARMED, DEFENSE];
-    ids.extend(WEAPONS_FROM_LEVEL_1);
-    if level >= 20 {
-        ids.push(POLEARMS);
-    }
+    ids.extend(WEAPONS);
     ids.into_iter().map(|id| (id, (skill, skill))).collect()
 }
 
@@ -86,8 +84,8 @@ fn a_new_warrior_knows_every_line_at_five() {
 }
 
 #[test]
-fn a_level_25_warrior_knows_polearms_and_every_line_at_125() {
-    let (_, me, events) = questing_as("warrior", 25, &[], 0, &[]);
+fn a_level_25_vanguard_knows_every_line_at_125() {
+    let (_, me, events) = questing_as("vanguard", 25, &[], 0, &[]);
     assert_eq!(skill_lines(&descriptor(&events, me)), at_max(25));
 }
 
@@ -99,16 +97,6 @@ fn a_level_up_raises_every_line_to_the_new_maximum() {
     let now = descriptor(&events, me);
     assert_eq!(now.unit_level(), Some(11));
     assert_eq!(skill_lines(&now), at_max(11));
-}
-
-#[test]
-fn reaching_level_20_brings_polearms_at_100() {
-    let (mut realm, me, mut events) = with_dev_xp(19, "warrior", 1000.0);
-    events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
-    let now = descriptor(&events, me);
-    let level = now.unit_level().unwrap() as u16;
-    assert!(level >= 20, "level {level}");
-    assert_eq!(skill_lines(&now), at_max(level));
 }
 
 #[test]

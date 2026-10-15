@@ -262,7 +262,9 @@ pub(crate) fn info(t: &Template) -> ItemInfo {
         allowable_class: t.allowable_class,
         allowable_race: t.allowable_race,
         item_level: u32::from(t.item_level),
-        required_level: u32::from(t.required_level),
+        // Gear follows the Calling, never the level: no tooltip reads "Requires Level". The
+        // template keeps its level for the loot bands.
+        required_level: 0,
         required_skill: 0,
         required_skill_rank: 0,
         required_spell: 0,

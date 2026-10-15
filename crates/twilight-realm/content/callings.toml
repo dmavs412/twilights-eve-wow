@@ -12,8 +12,12 @@
 #
 # A Calling: its save `key`, the `name` the select screen shows, its `tier` and Tier Cap (`cap`),
 # the `tier_bonus` it adds to base stats (cumulative per Tier, on top of the race table), its
-# stance, skills and Talent Tree. The Advancement Quests into a Calling are quests
-# (content/quests.toml).
+# stance, the `armour` it may wear, skills and Talent Tree. The Advancement Quests into a Calling
+# are quests (content/quests.toml).
+#
+# Gear follows the Calling, never the level: every Calling of the Warrior line wields every
+# Warrior weapon, and wears the `armour` kinds it lists ("cloth", "leather", "mail", "plate",
+# "shield"). No item is refused for level.
 
 [[calling]]
 key = "basic_warrior"
@@ -24,6 +28,7 @@ tier_bonus = { strength = 0, agility = 0, stamina = 0, intellect = 0, spirit = 0
 # Battle Stance: the client refuses Charge, Rend, Thunder Clap, Hamstring and Overpower in any
 # other form, so every Warrior Calling stands in it.
 shapeshift_form = 17
+armour = ["cloth", "leather", "mail", "shield"]
 
 [[calling.skill]]
 key = "heroic_strike"
@@ -137,6 +142,8 @@ tier = 1
 cap = 30
 tier_bonus = { strength = 12, agility = 6, stamina = 12, intellect = 0, spirit = 3 }
 shapeshift_form = 17
+# Plate from level 1: Vanguard and every Calling that branches from it.
+armour = ["cloth", "leather", "mail", "plate", "shield"]
 
 # The Tier 1 signature: a normalized strike that halves the target's healing.
 [[calling.skill]]
