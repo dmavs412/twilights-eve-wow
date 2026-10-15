@@ -178,10 +178,10 @@ Vindication, Eye for an Eye, Vengeance, Redoubt and Reckoning (procs the realm d
 Pursuit of Justice (movement), Holy Power (holy crit), Divine Strength (Strength percent),
 Precision (hit), and Anger Management and Flurry as for Vanguard.
 
-**Benediction** takes 1/1/2/2/3 rage off each Seal and 0/1/1/1/2 off Judgement: vanilla's 3% of
-mana a rank, doubled for the small rage costs, and rounded. A talent's `client_spellmods` is a
-list of cells, and Benediction's are three flat COST cells in tenths of rage, one per borrowed
-spell's own family bit (33, 34, 35), so the rewritten Seals and Judgement show the lower cost in
+**Benediction** takes 1/1/2/2/3 rage off each Seal and 1/1/1/1/2 off Judgement: vanilla's 3% of
+mana a rank, doubled for the small rage costs, rounded, and at least 1 rage a rank. A talent's
+`client_spellmods` is a list of cells, and Benediction's are three flat COST cells in tenths of
+rage, one per borrowed spell's own family bit (33, 34, 35), so the rewritten Seals and Judgement show the lower cost in
 their tooltips and on the action bar. No Spell.dbc row names bits 33–63, so `verify` checks only
 cells on the Warrior bits against the rank spells' own aura effects.
 

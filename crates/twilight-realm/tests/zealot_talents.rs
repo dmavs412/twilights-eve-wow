@@ -105,7 +105,11 @@ fn benediction_tells_the_client_the_seals_and_judgement_cost_less() {
     learn(&mut realm, &mut events, BENEDICTION, 1);
     assert_eq!(cost_mod(&events, SEAL_OF_COMMAND_BIT), Some(-10));
     assert_eq!(cost_mod(&events, SEAL_OF_THE_CRUSADER_BIT), Some(-10));
-    assert_eq!(cost_mod(&events, JUDGEMENT_BIT), Some(0));
+    assert_eq!(
+        cost_mod(&events, JUDGEMENT_BIT),
+        Some(-10),
+        "every rank lowers Judgement"
+    );
     learn(&mut realm, &mut events, BENEDICTION, 5);
     // 3 rage off the Seals' 10, 2 off Judgement's 5, in tenths.
     assert_eq!(cost_mod(&events, SEAL_OF_COMMAND_BIT), Some(-30));
@@ -133,6 +137,19 @@ fn benediction_takes_rage_off_the_seals_and_judgement() {
     realm.handle(cast(JUDGEMENT, Some(mob.guid)));
     assert_eq!(refusal(&view.drain(&mut realm), JUDGEMENT), None);
     assert_eq!(view.rage(me), rage - 3, "5 rage, less 2");
+}
+
+#[test]
+fn one_rank_of_benediction_takes_rage_off_judgement() {
+    let (mut realm, me, mob, mut view) = tanking(6, &[(BENEDICTION, 1)], 20);
+    stand_at(&mut realm, &mob, 2.0);
+    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_THE_CRUSADER), None);
+    view.run(&mut realm, 1.6);
+    let rage = view.rage(me);
+    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(&mut realm), JUDGEMENT), None);
+    assert_eq!(view.rage(me), rage - 4, "5 rage, less 1");
 }
 
 #[test]

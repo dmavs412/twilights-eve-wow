@@ -438,12 +438,12 @@
                 "realm_effect": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
                 "client_spellmods": [{ "type": "pct", "op": "EFFECT1", "family_bit": 34, "values": [5, 10, 15] }] },
               { "key": "benediction", "talent_id": 1407, "source_tab_id": 381, "name": "Benediction", "tier": 1, "column": 3, "rank_spells": [20101, 20102, 20103, 20104, 20105],
-                "realm_effect": "The Seals cost 1/1/2/2/3 less rage and Judgement 0/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs and rounded).",
+                "realm_effect": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
                 "client_spellmods_note": "The realm's own cells, on the family bits the client gives the borrowed spells (33 Seal of Command, 34 Seal of the Crusader, 35 Judgement); Benediction's rank spells carry vanilla's Paladin mana-percent mods instead.",
                 "client_spellmods": [
                   { "type": "flat", "op": "COST", "family_bit": 33, "values": [-10, -10, -20, -20, -30] },
                   { "type": "flat", "op": "COST", "family_bit": 34, "values": [-10, -10, -20, -20, -30] },
-                  { "type": "flat", "op": "COST", "family_bit": 35, "values": [0, -10, -10, -10, -20] }
+                  { "type": "flat", "op": "COST", "family_bit": 35, "values": [-10, -10, -10, -10, -20] }
                 ] },
               { "key": "improved_judgement", "talent_id": 1631, "source_tab_id": 381, "name": "Improved Judgement", "tier": 2, "column": 1, "rank_spells": [25956, 25957],
                 "realm_effect": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row." },
