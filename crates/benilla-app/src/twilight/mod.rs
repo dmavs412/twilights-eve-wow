@@ -214,6 +214,50 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::AttackStop => Some(RealmCommand::AttackStop),
         ClientCommand::CreatureQuery { entry, .. } => Some(RealmCommand::CreatureQuery { entry }),
         ClientCommand::Logout => Some(RealmCommand::Logout),
+        ClientCommand::ItemQuery { entry, .. } => Some(RealmCommand::ItemQuery { entry }),
+        ClientCommand::Loot { guid } => Some(RealmCommand::Loot { guid }),
+        ClientCommand::LootMoney => Some(RealmCommand::LootMoney),
+        ClientCommand::AutostoreLootItem { slot } => {
+            Some(RealmCommand::AutostoreLootItem { slot })
+        }
+        ClientCommand::LootRelease { guid } => Some(RealmCommand::LootRelease { guid }),
+        ClientCommand::AutoEquipItem { bag_index, slot } => Some(RealmCommand::AutoEquipItem {
+            bag: bag_index,
+            slot,
+        }),
+        ClientCommand::SwapInvItem { src_slot, dst_slot } => Some(RealmCommand::SwapInvItem {
+            src: src_slot,
+            dst: dst_slot,
+        }),
+        ClientCommand::SwapItem {
+            dst_bag,
+            dst_slot,
+            src_bag,
+            src_slot,
+        } => Some(RealmCommand::SwapItem {
+            src_bag,
+            src_slot,
+            dst_bag,
+            dst_slot,
+        }),
+        ClientCommand::AutoStoreBagItem {
+            src_bag,
+            src_slot,
+            dst_bag,
+        } => Some(RealmCommand::AutoStoreBagItem {
+            src_bag,
+            src_slot,
+            dst_bag,
+        }),
+        ClientCommand::DestroyItem {
+            bag_index,
+            slot,
+            count,
+        } => Some(RealmCommand::DestroyItem {
+            bag: bag_index,
+            slot,
+            count,
+        }),
         _ => None,
     }
 }
