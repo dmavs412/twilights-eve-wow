@@ -92,7 +92,7 @@
             "background": "WarriorArms",
             "talents": [
               { "key": "improved_heroic_strike", "talent_id": 124, "source_tab_id": 161, "name": "Improved Heroic Strike", "tier": 1, "column": 1, "rank_spells": [12282, 12663, 12664],
-                "realm_effect": "Heroic Strike costs 1/2/3 less rage.", "client_spellmod": { "type": "flat", "op": "COST", "family_bit": 6, "values": [-10, -20, -30] } },
+                "realm_effect": "Heroic Strike costs 1/2/3 less rage.", "client_spellmods": [{ "type": "flat", "op": "COST", "family_bit": 6, "values": [-10, -20, -30] }] },
               { "key": "improved_charge", "talent_id": 126, "source_tab_id": 161, "name": "Improved Charge", "tier": 1, "column": 2, "rank_spells": [12285, 12697],
                 "realm_effect": "Charge generates 3/6 more rage." },
               { "key": "toughness", "talent_id": 140, "source_tab_id": 163, "name": "Toughness", "tier": 1, "column": 3, "rank_spells": [12299, 12761, 12762, 12763, 12764],
@@ -216,7 +216,7 @@
               { "key": "improved_overpower", "talent_id": 131, "source_tab_id": 161, "name": "Improved Overpower", "tier": 1, "column": 1, "rank_spells": [12290, 12963],
                 "realm_effect": "Overpower +25/50% crit chance." },
               { "key": "improved_rend", "talent_id": 127, "source_tab_id": 161, "name": "Improved Rend", "tier": 1, "column": 3, "rank_spells": [12286, 12658, 12659],
-                "realm_effect": "Rend ticks +15/25/35%.", "client_spellmod": { "type": "pct", "op": "ALL_EFFECTS", "family_bit": 5, "values": [15, 25, 35] } },
+                "realm_effect": "Rend ticks +15/25/35%.", "client_spellmods": [{ "type": "pct", "op": "ALL_EFFECTS", "family_bit": 5, "values": [15, 25, 35] }] },
               { "key": "improved_charge", "talent_id": 126, "source_tab_id": 161, "name": "Improved Charge", "tier": 2, "column": 1, "rank_spells": [12285, 12697],
                 "realm_effect": "Charge +3/6 rage." },
               { "key": "anger_management", "talent_id": 137, "source_tab_id": 161, "name": "Anger Management", "tier": 2, "column": 2, "rank_spells": [12296], "exceptional": true,
@@ -252,7 +252,7 @@
               { "key": "unbridled_wrath", "talent_id": 159, "source_tab_id": 164, "name": "Unbridled Wrath", "tier": 2, "column": 3, "rank_spells": [12322, 12999, 13000, 13001, 13002],
                 "realm_effect": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage." },
               { "key": "improved_battle_shout", "talent_id": 154, "source_tab_id": 164, "name": "Improved Battle Shout", "tier": 2, "column": 4, "rank_spells": [12318, 12857, 12858, 12860, 12861],
-                "realm_effect": "Battle Shout's attack power +5..25%.", "client_spellmod": { "type": "pct", "op": "ALL_EFFECTS", "family_bit": 16, "values": [5, 10, 15, 20, 25] } },
+                "realm_effect": "Battle Shout's attack power +5..25%.", "client_spellmods": [{ "type": "pct", "op": "ALL_EFFECTS", "family_bit": 16, "values": [5, 10, 15, 20, 25] }] },
               { "key": "blood_craze", "talent_id": 661, "source_tab_id": 164, "name": "Blood Craze", "tier": 3, "column": 2, "rank_spells": [16487, 16489, 16492],
                 "realm_effect": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s." },
               { "key": "enrage", "talent_id": 155, "source_tab_id": 164, "name": "Enrage", "tier": 3, "column": 3, "rank_spells": [12317, 13045, 13046, 13047, 13048],
@@ -424,8 +424,97 @@
           "tooltip_note": "Tooltip says 12 rage."
         }
       ],
-      "talent_tree": null,
-      "talent_tree_note": "Crusade, Blade and Faith come with Zealot's Talent Tree.",
+      "talent_tree": {
+        "points_at_cap": 49,
+        "catalog_note": "Three tabs from the Callings handoff. Crusade has seven rows, so 30 points in it reach Holy Power and 49 at the cap put 31 or more there with the rest in Blade and Faith. Talent ids and rank spells are real Talent.dbc rows (Paladin Retribution, Protection and Holy, and Vanguard's Warrior rows in Blade) re-seated on the vanilla grid. Blade's first row holds the handoff's first two: Improved Charge and Anger Management alone are 3 ranks, short of the 5 that open a second row. Prerequisites stay inside a tab: Vengeance needs Conviction 5/5; Anger Management, Deep Wounds, Impale and Flurry lose theirs. Talents with no fitting effect kind, or that wait on the Seals, are WIP.",
+        "tabs": [
+          {
+            "name": "Crusade",
+            "catalog_tab_id": 903,
+            "source_tab_id": null,
+            "background": "PaladinCombat",
+            "talents": [
+              { "key": "improved_seal_of_the_crusader", "talent_id": 1464, "source_tab_id": 381, "name": "Improved Seal of the Crusader", "tier": 1, "column": 2, "rank_spells": [20335, 20336, 20337],
+                "realm_effect": "Not modelled yet: waits on Seal of the Crusader's attack power (#25). Learnable, and counts toward the row." },
+              { "key": "benediction", "talent_id": 1407, "source_tab_id": 381, "name": "Benediction", "tier": 1, "column": 3, "rank_spells": [20101, 20102, 20103, 20104, 20105],
+                "realm_effect": "The Seals cost 1/1/2/2/3 less rage and Judgement 0/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs and rounded).",
+                "client_spellmods_note": "The realm's own cells, on the family bits the client gives the borrowed spells (33 Seal of Command, 34 Seal of the Crusader, 35 Judgement); Benediction's rank spells carry vanilla's Paladin mana-percent mods instead.",
+                "client_spellmods": [
+                  { "type": "flat", "op": "COST", "family_bit": 33, "values": [-10, -10, -20, -20, -30] },
+                  { "type": "flat", "op": "COST", "family_bit": 34, "values": [-10, -10, -20, -20, -30] },
+                  { "type": "flat", "op": "COST", "family_bit": 35, "values": [0, -10, -10, -10, -20] }
+                ] },
+              { "key": "improved_judgement", "talent_id": 1631, "source_tab_id": 381, "name": "Improved Judgement", "tier": 2, "column": 1, "rank_spells": [25956, 25957],
+                "realm_effect": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row." },
+              { "key": "deflection", "talent_id": 1403, "source_tab_id": 381, "name": "Deflection", "tier": 2, "column": 3, "rank_spells": [20060, 20061, 20062, 20063, 20064],
+                "realm_effect": "+1..5% parry chance." },
+              { "key": "vindication", "talent_id": 1633, "source_tab_id": 381, "name": "Vindication", "tier": 3, "column": 1, "rank_spells": [9452, 26016, 26021],
+                "realm_effect": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row." },
+              { "key": "conviction", "talent_id": 1411, "source_tab_id": 381, "name": "Conviction", "tier": 3, "column": 2, "rank_spells": [20117, 20118, 20119, 20120, 20121],
+                "realm_effect": "+1..5% melee crit chance." },
+              { "key": "eye_for_an_eye", "talent_id": 1632, "source_tab_id": 381, "name": "Eye for an Eye", "tier": 4, "column": 1, "rank_spells": [9799, 25988],
+                "realm_effect": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row." },
+              { "key": "pursuit_of_justice", "talent_id": 1634, "source_tab_id": 381, "name": "Pursuit of Justice", "tier": 4, "column": 4, "rank_spells": [26022, 26023],
+                "realm_effect": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row." },
+              { "key": "two_handed_weapon_specialization", "talent_id": 1410, "source_tab_id": 381, "name": "Two-Handed Weapon Specialization", "tier": 5, "column": 1, "rank_spells": [20111, 20112, 20113],
+                "realm_effect": "+2/4/6% physical damage while wielding a two-handed melee weapon." },
+              { "key": "improved_hammer_of_justice", "talent_id": 1521, "source_tab_id": 383, "name": "Improved Hammer of Justice", "tier": 5, "column": 3, "rank_spells": [20487, 20488, 20489],
+                "realm_effect": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row." },
+              { "key": "vengeance", "talent_id": 1402, "source_tab_id": 381, "name": "Vengeance", "tier": 6, "column": 2, "rank_spells": [20049, 20056, 20057, 20058, 20059],
+                "prereq": { "key": "conviction", "rank": 5 },
+                "realm_effect": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row." },
+              { "key": "holy_power", "talent_id": 1627, "source_tab_id": 382, "name": "Holy Power", "tier": 7, "column": 3, "rank_spells": [5923, 5924, 5925, 5926, 25829],
+                "realm_effect": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable." }
+            ]
+          },
+          {
+            "name": "Blade",
+            "catalog_tab_id": 904,
+            "source_tab_id": null,
+            "background": "WarriorArms",
+            "talents": [
+              { "key": "improved_charge", "talent_id": 126, "source_tab_id": 161, "name": "Improved Charge", "tier": 1, "column": 1, "rank_spells": [12285, 12697],
+                "realm_effect": "Charge +3/6 rage." },
+              { "key": "anger_management", "talent_id": 137, "source_tab_id": 161, "name": "Anger Management", "tier": 1, "column": 2, "rank_spells": [12296], "exceptional": true,
+                "realm_effect": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row." },
+              { "key": "impale", "talent_id": 662, "source_tab_id": 161, "name": "Impale", "tier": 1, "column": 4, "rank_spells": [16493, 16494],
+                "realm_effect": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x)." },
+              { "key": "deep_wounds", "talent_id": 121, "source_tab_id": 161, "name": "Deep Wounds", "tier": 1, "column": 3, "rank_spells": [12834, 12849, 12867],
+                "realm_effect": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s." },
+              { "key": "axe_specialization", "talent_id": 132, "source_tab_id": 161, "name": "Axe Specialization", "tier": 2, "column": 1, "rank_spells": [12700, 12781, 12783, 12784, 12785],
+                "realm_effect": "+1..5% crit chance with axes." },
+              { "key": "mace_specialization", "talent_id": 125, "source_tab_id": 161, "name": "Mace Specialization", "tier": 2, "column": 3, "rank_spells": [12284, 12701, 12702, 12703, 12704],
+                "realm_effect": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)." },
+              { "key": "sword_specialization", "talent_id": 123, "source_tab_id": 161, "name": "Sword Specialization", "tier": 2, "column": 4, "rank_spells": [12281, 12812, 12813, 12814, 12815],
+                "realm_effect": "Sword hits have 1..5% chance of one extra swing (no chained procs)." },
+              { "key": "flurry", "talent_id": 156, "source_tab_id": 164, "name": "Flurry", "tier": 3, "column": 3, "rank_spells": [12319, 12971, 12972, 12973, 12974],
+                "realm_effect": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable." }
+            ]
+          },
+          {
+            "name": "Faith",
+            "catalog_tab_id": 905,
+            "source_tab_id": null,
+            "background": "PaladinProtection",
+            "talents": [
+              { "key": "divine_strength", "talent_id": 1450, "source_tab_id": 382, "name": "Divine Strength", "tier": 1, "column": 2, "rank_spells": [20262, 20263, 20264, 20265, 20266],
+                "realm_effect": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row." },
+              { "key": "toughness", "talent_id": 1423, "source_tab_id": 383, "name": "Toughness", "tier": 1, "column": 4, "rank_spells": [20143, 20144, 20145, 20146, 20147],
+                "realm_effect": "+2..10% armour from items." },
+              { "key": "precision", "talent_id": 1630, "source_tab_id": 383, "name": "Precision", "tier": 2, "column": 1, "rank_spells": [20189, 20192, 20193],
+                "realm_effect": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row." },
+              { "key": "redoubt", "talent_id": 1421, "source_tab_id": 383, "name": "Redoubt", "tier": 2, "column": 3, "rank_spells": [20127, 20130, 20135, 20136, 20137],
+                "realm_effect": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row." },
+              { "key": "one_handed_weapon_specialization", "talent_id": 1429, "source_tab_id": 383, "name": "One-Handed Weapon Specialization", "tier": 3, "column": 3, "rank_spells": [20196, 20197, 20198, 20199, 20200],
+                "realm_effect": "+2..10% physical damage while wielding a one-handed melee weapon." },
+              { "key": "anticipation", "talent_id": 1629, "source_tab_id": 383, "name": "Anticipation", "tier": 3, "column": 4, "rank_spells": [20096, 20097, 20098, 20099, 20100],
+                "realm_effect": "+2..10 Defense." },
+              { "key": "reckoning", "talent_id": 1426, "source_tab_id": 383, "name": "Reckoning", "tier": 4, "column": 3, "rank_spells": [20177, 20179, 20181, 20180, 20182],
+                "realm_effect": "Not modelled yet: a crit taken would give extra attacks. Learnable." }
+            ]
+          }
+        ]
+      },
 
       "advancement_quest": {
         "quest_id": 64003,
