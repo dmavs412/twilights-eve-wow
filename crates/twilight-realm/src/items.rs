@@ -262,7 +262,7 @@ pub(crate) fn info(t: &Template) -> ItemInfo {
         allowable_class: t.allowable_class,
         allowable_race: t.allowable_race,
         item_level: u32::from(t.item_level),
-        required_level: u32::from(t.required_level),
+        required_level: crate::rules::gear::SHOWN_REQUIRED_LEVEL,
         required_skill: 0,
         required_skill_rank: 0,
         required_spell: 0,

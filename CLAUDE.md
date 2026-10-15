@@ -8,7 +8,8 @@ out as a plain text file, so `wow-data\Data` does not exist here. Do not run `fe
 
 Let every cargo build and test run to completion: one stopped mid-compile leaves rlibs with
 corrupt MSVC debug info, and later links fail with `LNK1103` on a crate you never touched. The
-cure is deleting the `target/debug/deps` files written during the interrupted run.
+cure is `cargo clean -p <crate>` for each crate the linker names; deleting the files by hand
+leaves fingerprints that call the crate built ("required to be available in rlib format").
 
 A worktree builds its own `target`, about 18 GB, and several building at once run rustc out of
 memory (which also ends in `LNK1103`). Delete a worktree's `target` once its branch is merged.
@@ -20,7 +21,11 @@ it. Build `--release` only in your own `target`: the user plays from
 `.claude/worktrees/integration/target/release/warcraft-survivors.exe`, and a running exe cannot
 be overwritten.
 `CARGO_BUILD_JOBS=4` and `WASI_SDK` (the main checkout's `tools\wasi-sdk`, which worktrees lack)
-are set in the user environment; if a shell lacks them, set them by hand.
+are set in the user environment; if a shell lacks them, set them by hand. A subagent's isolation
+worktree is cut from `main`: for work on another branch, create the worktree yourself
+(`git worktree add -b <branch> .claude/worktrees/<name> <base>`) and give the agent its path.
+
+Python is `python3.15` in `~/.local/bin`; `python3` on PATH is the Microsoft Store stub.
 
 ## Agent skills
 

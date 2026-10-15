@@ -23,11 +23,49 @@ pub struct CallingDef {
     pub tier_bonus: TierBonus,
     /// `UNIT_FIELD_BYTES_1` byte 2 while this Calling is current (17, Battle Stance).
     pub shapeshift_form: u8,
+    /// The armour it may wear. Every Calling of the Warrior line wields every Warrior weapon.
+    pub armour: Vec<Armour>,
     #[serde(rename = "skill")]
     pub skills: Vec<Skill>,
     /// The Talent Tree: its tabs, as the stock talent frame shows them.
     #[serde(default, rename = "talent_tab")]
     pub talent_tabs: Vec<TalentTab>,
+}
+
+/// An armour kind a Calling may wear.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Armour {
+    Cloth,
+    Leather,
+    Mail,
+    Plate,
+    /// Shields and bucklers.
+    Shield,
+}
+
+impl Armour {
+    /// The `ITEM_CLASS_ARMOR` subclasses it covers.
+    pub fn subclasses(self) -> &'static [u32] {
+        match self {
+            Armour::Cloth => &[1],
+            Armour::Leather => &[2],
+            Armour::Mail => &[3],
+            Armour::Plate => &[4],
+            Armour::Shield => &[5, 6],
+        }
+    }
+
+    /// Its `SkillLine.dbc` id, the line the skill frame lists.
+    pub fn skill_line(self) -> u32 {
+        match self {
+            Armour::Cloth => 415,
+            Armour::Leather => 414,
+            Armour::Mail => 413,
+            Armour::Plate => 293,
+            Armour::Shield => 433,
+        }
+    }
 }
 
 /// A Tier Bonus: what a Calling adds to each base stat.
@@ -88,9 +126,18 @@ pub struct TalentDef {
     /// learned.
     #[serde(default)]
     pub skill: Option<Skill>,
-    /// The spell-mod cell that makes the stock client's costs and tooltips agree with the realm.
+    /// The spell-mod cells that make the stock client's costs and tooltips agree with the realm:
+    /// one per family bit, since a talent can touch several skills (Benediction).
     #[serde(default)]
-    pub client_spellmod: Option<ClientSpellMod>,
+    pub client_spellmods: Vec<ClientSpellMod>,
+}
+
+impl TalentDef {
+    /// A talent the realm does not model yet: no effect and no skill. It is still learnable and
+    /// still counts toward its tab's tier gates.
+    pub fn is_wip(&self) -> bool {
+        self.effects.is_empty() && self.skill.is_none()
+    }
 }
 
 /// A talent another needs, and the rank (1-based) it needs.
@@ -266,7 +313,23 @@ pub struct Skill {
     pub extra_targets: u32,
     #[serde(default)]
     pub extra_target_radius_yd: f32,
+    /// Set on a spell borrowed from another Class: the client rewrites its row to cost
+    /// `rage_cost` rage in any stance, as a Warrior spell (ADR 0003).
+    #[serde(default)]
+    pub borrowed: Option<BorrowedFamilyBit>,
     pub effects: Vec<Effect>,
+}
+
+/// The `SpellFamilyFlags` bits the client gives borrowed spells: no Warrior spell uses a bit
+/// from 33 up, so a talent cell on one of them reaches that borrowed spell alone.
+pub const BORROWED_FAMILY_BITS: std::ops::RangeInclusive<u8> = 33..=63;
+
+/// Where the client files a borrowed spell among the Warrior's: its own family bit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+pub struct BorrowedFamilyBit {
+    /// Its own `SpellFamilyFlags` bit, in [`BORROWED_FAMILY_BITS`], so a talent's
+    /// [`ClientSpellMod`] can name it alone.
+    pub family_bit: u8,
 }
 
 /// Whom a skill lands on.
@@ -372,6 +435,38 @@ pub enum Effect {
         radius_yd: f32,
         strike_spell_id: u32,
     },
+    /// A Seal on the caster for `duration_ms`, under the skill's spell id. Only one Seal is ever
+    /// active: a new one replaces the old.
+    Seal { duration_ms: u32, seal: Seal },
+    /// Consumes the caster's active Seal for its judgement on the target. With no Seal active the
+    /// cast fails and costs nothing.
+    Judgement,
+}
+
+/// What a Seal does while it lasts, and what judging it does.
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum Seal {
+    /// Each landed white swing has a `procs_per_minute` chance of a holy hit of `weapon_pct`% of
+    /// a weapon roll, logged under `proc_spell_id`. Judged: a holy hit of `judgement`, logged
+    /// under `judgement_spell_id`.
+    Command {
+        procs_per_minute: f32,
+        weapon_pct: u32,
+        proc_spell_id: u32,
+        judgement_spell_id: u32,
+        judgement: Linear,
+    },
+    /// While it lasts: `attack_power` more (sized by level when cast), swings `haste_pct`% faster
+    /// and each white swing cut to match (strikes keep their full weapon roll). Judged: the target takes `holy_taken_pct`% more holy damage for
+    /// `judgement_duration_ms`, under the debuff `judgement_spell_id`.
+    Crusader {
+        attack_power: Linear,
+        haste_pct: u32,
+        judgement_spell_id: u32,
+        judgement_duration_ms: u32,
+        holy_taken_pct: u32,
+    },
 }
 
 #[derive(Deserialize)]
@@ -433,4 +528,59 @@ pub fn skill(spell_id: u32) -> Option<&'static Skill> {
 /// client blanks.
 pub fn skill_spell_ids() -> impl Iterator<Item = u32> {
     all().iter().flat_map(every_skill).map(|s| s.spell_id)
+}
+
+/// Every skill borrowed from another Class, once each: the spells the client rewrites to cost
+/// rage (ADR 0003).
+pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {
+    let mut seen = std::collections::HashSet::new();
+    all()
+        .iter()
+        .flat_map(every_skill)
+        .filter(|s| s.borrowed.is_some())
+        .filter(move |s| seen.insert(s.spell_id))
+}
+
+/// `SPELLFAMILY_WARRIOR`, the Warrior Class's `SpellFamilyName`: every Calling is of the Warrior
+/// line.
+const CLASS_SPELL_FAMILY: u32 = 4;
+
+/// What the client writes into a borrowed spell's row (ADR 0003): the Calling's power, the
+/// realm's cost in that power's client unit, and the Class's spell family with the spell's own
+/// bit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BorrowedSpellRewrite {
+    pub spell_id: u32,
+    /// The Calling's `powerType`.
+    pub power_type: u32,
+    /// The flat cost in tenths of rage, as `UNIT_FIELD_POWER2` carries it.
+    pub cost: u32,
+    /// The Class's `SpellFamilyName`.
+    pub spell_family: u32,
+    /// In [`BORROWED_FAMILY_BITS`].
+    pub family_bit: u8,
+}
+
+/// Every borrowed skill's rewrite, once each.
+pub fn borrowed_spell_rewrites() -> impl Iterator<Item = BorrowedSpellRewrite> {
+    borrowed_skills().filter_map(|s| {
+        Some(BorrowedSpellRewrite {
+            spell_id: s.spell_id,
+            power_type: crate::fields::POWER_RAGE,
+            cost: s.rage_cost * 10,
+            spell_family: CLASS_SPELL_FAMILY,
+            family_bit: s.borrowed?.family_bit,
+        })
+    })
+}
+
+/// Every WIP talent's rank spells, of every Calling: the spells the client names
+/// "<Name> (WIP)" (ADR 0003).
+pub fn wip_rank_spell_ids() -> impl Iterator<Item = u32> {
+    all()
+        .iter()
+        .flat_map(|c| &c.talent_tabs)
+        .flat_map(|tab| &tab.talents)
+        .filter(|t| t.is_wip())
+        .flat_map(|t| t.rank_spells.iter().copied())
 }

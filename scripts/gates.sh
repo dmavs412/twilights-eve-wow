@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # The land gate chain: every gate in order, stopping at the first failure.
 #
-# fmt, clippy, test, test-no-install, doc-links, pass-span-lint, player-tests, enforcer,
-# enforcer-no-install. A failure prints the gate's log tail and exits nonzero; a green
+# fmt, clippy, test, test-no-install, doc-links, pass-span-lint, map, spell-data (where the
+# install resolves), player-tests. A failure prints the gate's log tail and exits nonzero; a green
 # run stamps the tree, which then re-greens without running. GATES_FORCE=1 runs the chain anyway,
 # WOW_DATA picks the install (set and empty: none) and TMPDIR holds the scratch files; the script
 # sets BENILLA_REQUIRE_DATA, BENILLA_ADDON_CORPUS, BENILLA_SKIP_LOG and WOW_WORLDVIEW_CHECK for
 # its gates.
-# `.github/workflows/ci.yml` runs the gates that need neither the install nor a display on a fork's
-# pull request: a gate added here goes there too, if it can run on a bare Linux runner.
+# `.github/workflows/ci.yml` runs the gates that need neither the install nor a display on every
+# pull request and every push to main: a gate added here goes there too, if it can run on a bare
+# Linux runner.
 #
 #   scripts/gates.sh
 set -uo pipefail
@@ -42,10 +43,12 @@ tree_key() {
 }
 resolve_wow() { cargo run -q -p benilla-formats --example where 2>/dev/null || true; }
 # A delta only under docs/ or in top-level *.md files keeps the stamped verdict, since no gate
-# reads those paths; a gate that starts to read one must narrow this pattern.
+# reads those paths but `map`, which reads docs/MAP.md; a gate that starts to read another must
+# narrow this pattern too.
 docs_only_delta() { # $1 = stamped tree, $2 = current tree
     git cat-file -e "$1^{tree}" 2>/dev/null && git cat-file -e "$2^{tree}" 2>/dev/null || return 1
-    [ -z "$(git diff-tree -r --name-only "$1" "$2" 2>/dev/null | grep -vE '^(docs/|[^/]*\.md$)' || true)" ]
+    [ -z "$(git diff-tree -r --name-only "$1" "$2" 2>/dev/null \
+        | awk '$0 == "docs/MAP.md" || $0 !~ /^(docs\/|[^\/]*\.md$)/' || true)" ]
 }
 key_start="$(tree_key || true)"
 if [ "${GATES_FORCE:-}" != "1" ] && [ -n "$key_start" ] && [ -f "$stamp" ]; then
@@ -105,6 +108,14 @@ run() {
     note_timing "$name" "$((SECONDS - t0))" "ok"
 }
 
+# The Python gates run under the first interpreter that runs: on Windows `python3` can be the
+# Microsoft Store's stub, which exits nonzero without running anything.
+py=""
+for c in python3 python $(compgen -c python3. 2>/dev/null | sort -urV); do
+    "$c" -c '' >/dev/null 2>&1 && { py="$c"; break; }
+done
+[ -n "$py" ] || { echo "GATE FAILED: no Python 3 that runs (python3, python, python3.N)"; exit 1; }
+
 run fmt cargo fmt --all -- --check
 run clippy cargo clippy --workspace --all-targets -- -D warnings
 
@@ -129,11 +140,32 @@ run test-no-install env -u BENILLA_REQUIRE_DATA WOW_DATA= cargo test --workspace
 
 # doc-links: refuses a doc link to a `crate::`, `super::`, `self::` or `Self::` path whose leaf is
 # declared nowhere in the workspace. Narrow on purpose: every other unresolved link is a convention.
-run doc-links scripts/doc-links.py
+run doc-links "$py" scripts/doc-links.py
 
 # pass-span-lint: refuses a second `pass_span` on a render pass whose span is still open, a fatal
 # wgpu validation error on Vulkan and a silent no-op on Metal and DX12, which no macOS run sees.
-run pass-span-lint scripts/pass-span-lint.py
+run pass-span-lint "$py" scripts/pass-span-lint.py
+
+# map: refuses a committed docs/MAP.md that differs from a fresh scripts/genmap.sh run.
+map_fresh() {
+    scripts/genmap.sh target/MAP.fresh.md >/dev/null && diff -u --strip-trailing-cr docs/MAP.md target/MAP.fresh.md
+}
+run map map_fresh
+
+# spell-data: where the install resolves, checks every spell, talent and tab id in
+# data/twilights-eve/callings.json against the DBCs, and refuses a committed spells-extracted.json
+# that differs from a fresh dump.
+spell_data_fresh() {
+    "$py" tools/twilights-eve/extract_spells.py --data "$wow_data" verify \
+        --out target/spells-extracted.fresh.json \
+        && diff -q --strip-trailing-cr data/twilights-eve/spells-extracted.json target/spells-extracted.fresh.json
+}
+if [ -n "$wow_data" ]; then
+    run spell-data spell_data_fresh
+else
+    echo "gates: NOTE — no install here: spell-data skipped"
+    note_timing spell-data 0 skipped
+fi
 
 # player-tests: the player build, `benilla-app` without `dev`, which compiles out the debug panel,
 # perf HUD, inspector, capture harness and probes, so it fails when any other code names one of

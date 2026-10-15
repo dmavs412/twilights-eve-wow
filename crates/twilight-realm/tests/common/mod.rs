@@ -1,6 +1,8 @@
 //! Shared helpers: a realm on flat ground, and the steps a player script repeats.
 #![allow(dead_code, unused_imports)]
 
+pub mod fight;
+
 pub use benilla_protocol::messages::{
     CHAR_CREATE_NAME_IN_USE, CHAR_CREATE_SERVER_LIMIT, CHAR_CREATE_SUCCESS, CHAR_DELETE_SUCCESS,
 };

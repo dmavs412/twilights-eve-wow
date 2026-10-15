@@ -5,12 +5,15 @@
 pub mod aggro;
 pub mod durability;
 pub mod gear;
+pub mod haste;
 pub mod leash;
 pub mod loot;
 pub mod melee;
 pub mod quest;
 pub mod rage;
 pub mod respawn;
+pub mod school;
+pub mod seals;
 pub mod skills;
 pub mod stats;
 pub mod talents;

@@ -112,9 +112,9 @@ pub(crate) fn boss_drops(level: u8, race: u8) -> Vec<u32> {
         .into_iter()
         .filter_map(|entry| {
             let t = crate::items::template(entry)?;
-            // Wearable once the level comes: who it is for and the proficiency, not the level.
-            crate::rules::gear::can_equip(entry, race, t.required_level.max(level))
-                .is_ok()
+            // What a vanilla Warrior could wear once the level comes, whatever the Calling, so
+            // the pool is the run's level band and nothing else.
+            crate::rules::gear::vanilla_wearable(entry, race, level)
                 .then_some((entry, t.required_level))
         })
         .collect();

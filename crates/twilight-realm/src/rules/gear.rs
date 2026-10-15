@@ -1,16 +1,16 @@
-//! What a Warrior may equip, and where (vmangos `Player::CanUseItem`, `Player::FindEquipSlot`).
-//! Proficiency follows `data/twilights-eve/warrior_proficiency.json`: the slice has no Weapon
-//! Master, so every Warrior weapon is known from level 1 but polearms (level 20); plate comes at
-//! 40, beyond the slice; wands, librams, idols and totems never.
+//! What a Calling may equip, and where (vmangos `Player::CanUseItem`, `Player::FindEquipSlot`).
+//! Gear follows the Calling, never the level, so a level reset never takes gear away: every
+//! Calling of the Warrior line wields every Warrior weapon, and wears the armour its data lists
+//! (`content/callings.toml`). Wands, librams, idols and totems never. Items keep their required
+//! level only for the loot bands.
 
+use crate::callings::CallingDef;
 use crate::items;
 
 /// Why an item cannot be equipped, each a stock `InventoryResult`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Refusal {
-    /// `EQUIP_ERR_CANT_EQUIP_LEVEL_I`: the character is under the item's required level.
-    Level(u8),
-    /// `EQUIP_ERR_NO_REQUIRED_PROFICIENCY`: a weapon or armour kind the Warrior does not know.
+    /// `EQUIP_ERR_NO_REQUIRED_PROFICIENCY`: a weapon or armour kind the Calling does not know.
     Proficiency,
     /// `EQUIP_ERR_YOU_CAN_NEVER_USE_THAT_ITEM`: made for other classes or races.
     NeverUsable,
@@ -22,7 +22,6 @@ impl Refusal {
     /// The wire `InventoryResult`.
     pub fn code(self) -> u8 {
         match self {
-            Self::Level(_) => 1,
             Self::Proficiency => 8,
             Self::NeverUsable => 10,
             Self::NotEquippable => 20,
@@ -34,29 +33,32 @@ impl Refusal {
 pub(crate) const CLASS_WEAPON: u32 = 2;
 pub(crate) const CLASS_ARMOR: u32 = 4;
 
+/// The required level the client is shown for every item: none, so no tooltip reads "Requires
+/// Level" and no move is refused for one. A template keeps its own level for the loot bands.
+pub(crate) const SHOWN_REQUIRED_LEVEL: u32 = 0;
+
 /// `CLASSMASK_WARRIOR`.
 const WARRIOR_MASK: i32 = 1;
 
-/// The level a Warrior learns a weapon or armour subclass at; `None` for never.
-pub(crate) fn proficiency_level(class: u32, subclass: u32) -> Option<u8> {
+/// Whether a weapon subclass is one no Warrior ever wields: wands, and the unused spears,
+/// obsolete and exotic slots.
+fn never_warrior_weapon(subclass: u32) -> bool {
+    matches!(subclass, 9 | 11 | 12 | 17 | 19)
+}
+
+/// Whether `calling` knows a weapon or armour subclass.
+pub(crate) fn knows(calling: &CallingDef, class: u32, subclass: u32) -> bool {
     match (class, subclass) {
-        // Polearms.
-        (CLASS_WEAPON, 6) => Some(20),
-        // Wands, and the unused spears, obsolete and exotic slots.
-        (CLASS_WEAPON, 9 | 11 | 12 | 17 | 19) => None,
-        (CLASS_WEAPON, _) => Some(1),
-        // Plate.
-        (CLASS_ARMOR, 4) => Some(40),
-        // Librams, idols, totems.
-        (CLASS_ARMOR, 7..=9) => None,
-        (CLASS_ARMOR, _) => Some(1),
-        _ => Some(1),
+        (CLASS_WEAPON, sub) => !never_warrior_weapon(sub),
+        // Rings, necks, trinkets, shirts and the like.
+        (CLASS_ARMOR, 0) => true,
+        (CLASS_ARMOR, sub) => calling.armour.iter().any(|a| a.subclasses().contains(&sub)),
+        _ => true,
     }
 }
 
-/// Whether a Warrior of `race` at `level` may equip item `entry`, in vmangos's order: who it is
-/// for, then proficiency, then level.
-pub fn can_equip(entry: u32, race: u8, level: u8) -> Result<(), Refusal> {
+/// Who an item is for and whether it is equipment at all, ahead of proficiency.
+fn usable(entry: u32, race: u8) -> Result<&'static items::Template, Refusal> {
     let t = items::template(entry).ok_or(Refusal::NotEquippable)?;
     if equip_slots(t.inventory_type).is_empty() {
         return Err(Refusal::NotEquippable);
@@ -65,13 +67,40 @@ pub fn can_equip(entry: u32, race: u8, level: u8) -> Result<(), Refusal> {
     if t.allowable_class & WARRIOR_MASK == 0 || t.allowable_race & race_mask == 0 {
         return Err(Refusal::NeverUsable);
     }
-    if !proficiency_level(t.class, t.subclass).is_some_and(|l| level >= l) {
+    Ok(t)
+}
+
+/// Whether a character of `race` in `calling` may equip item `entry`, in vmangos's order: who it
+/// is for, then proficiency. Never the level.
+pub fn can_equip(entry: u32, race: u8, calling: &CallingDef) -> Result<(), Refusal> {
+    let t = usable(entry, race)?;
+    if !knows(calling, t.class, t.subclass) {
         return Err(Refusal::Proficiency);
     }
-    if level < t.required_level {
-        return Err(Refusal::Level(t.required_level));
-    }
     Ok(())
+}
+
+/// The level a vanilla Warrior learns a weapon or armour subclass at; `None` for never
+/// (`data/twilights-eve/warrior_proficiency.json`).
+fn vanilla_level(class: u32, subclass: u32) -> Option<u8> {
+    match (class, subclass) {
+        // Polearms.
+        (CLASS_WEAPON, 6) => Some(20),
+        (CLASS_WEAPON, sub) if never_warrior_weapon(sub) => None,
+        (CLASS_WEAPON, _) => Some(1),
+        // Plate.
+        (CLASS_ARMOR, 4) => Some(40),
+        (CLASS_ARMOR, 7..=9) => None,
+        _ => Some(1),
+    }
+}
+
+/// Whether a vanilla Warrior of `race` could wear item `entry` once it reaches the item's level:
+/// the Dungeon boss's blue pool, which follows the run's level band and not the Calling.
+pub(crate) fn vanilla_wearable(entry: u32, race: u8, level: u8) -> bool {
+    usable(entry, race).is_ok_and(|t| {
+        vanilla_level(t.class, t.subclass).is_some_and(|l| t.required_level.max(level) >= l)
+    })
 }
 
 // `EquipmentSlots`.
