@@ -8,7 +8,7 @@ dump to `data/twilights-eve/spells-extracted.json` and prints level tables. The 
 names, ranks, icons, family flags, the client-side fields (cost, range, stances, aura states,
 cooldowns, duration, GCD, on-next-swing, not-in-combat), whether talent rank spells form a
 prefix of the real ranks, seats, prerequisite arrows, tier reachability, the point schedule,
-and the spell-mod op, value and family bit of each `client_spellmod`. The script uses only the
+and the spell-mod op, value and family bit of each of `client_spellmods`. The script uses only the
 standard library and runs on any Python 3.9+ (`--data` defaults to `$WOW_DATA`).
 
 ```
@@ -99,8 +99,8 @@ Judgement's 6% `ManaCostPercentage` is zeroed with the other cost terms.
 | Charge | 6178 | 0 | 15 s | 8–25 yd | – | Vanguard's |
 
 Mortal Strike and Charge carry Vanguard's data unchanged: `callings::skill` answers with a spell's
-first table, and a content test keeps shared skills identical. Zealot's Talent Tree comes with
-#26.
+first table, and a content test keeps shared skills identical. Zealot's Talent Tree is under
+[Talent trees](#talent-trees).
 
 ## Talent trees
 
@@ -147,6 +147,38 @@ inside a tab: Anger Management loses Tactical Mastery and Flurry loses Enrage. A
 and Flurry (a crit hastes the next three swings; the player has no haste yet) are WIP: no effect,
 learnable, counted toward the row and named "<Name> (WIP)". The tree has no active talents.
 Each talent's `realm_effect` follows its DBC values, so the talent tooltips are accurate.
+
+**Zealot** has 49 points across three tabs (#26), mostly Paladin rows re-seated on the vanilla
+grid:
+- **Crusade** (id 903, PaladinCombat art), 43 ranks over seven rows. Row 1: Improved Seal of the
+  Crusader 1464 ×3, Benediction 1407 ×5. Row 2: Improved Judgement 1631 ×2, Deflection 1403 ×5.
+  Row 3: Vindication 1633 ×3, Conviction 1411 ×5. Row 4: Eye for an Eye 1632 ×2, Pursuit of
+  Justice 1634 ×2. Row 5: Two-Handed Weapon Specialization 1410 ×3, Improved Hammer of Justice
+  1521 ×3. Row 6: Vengeance 1402 ×5 (needs Conviction 5/5). Row 7: Holy Power 1627 ×5.
+- **Blade** (id 904, WarriorArms art), Vanguard's Warrior rows with Vanguard's effects, 28 ranks
+  over three rows. Row 1: Improved Charge 126 ×2, Anger Management 137 ×1, Deep Wounds 121 ×3,
+  Impale 662 ×2. Row 2: Axe 132, Mace 125 and Sword 123 Specialization ×5 each. Row 3: Flurry 156
+  ×5. The handoff lists Deep Wounds and Impale as a second row, but Improved Charge and Anger
+  Management hold only 3 ranks, short of the 5 that open one, so the two rows share the first.
+- **Faith** (id 905, PaladinProtection art), 33 ranks over four rows. Row 1: Divine Strength 1450
+  ×5, Toughness 1423 ×5. Row 2: Precision 1630 ×3, Redoubt 1421 ×5. Row 3: One-Handed Weapon
+  Specialization 1429 ×5, Anticipation 1629 ×5. Row 4: Reckoning 1426 ×5.
+
+Thirty points in Crusade reach Holy Power, so 31 or more go there and the rest to Blade and
+Faith. Modelled with the existing kinds: Benediction (rage cost), Deflection (parry), Conviction
+(crit), the two Weapon Specializations (weapon damage), Toughness (armour), Anticipation
+(defense) and Blade's Warrior talents. WIP: Improved Seal of the Crusader (waits on the Seal's
+attack power, #25), Improved Judgement and Improved Hammer of Justice (no cooldown kind),
+Vindication, Eye for an Eye, Vengeance, Redoubt and Reckoning (procs the realm does not roll),
+Pursuit of Justice (movement), Holy Power (holy crit), Divine Strength (Strength percent),
+Precision (hit), and Anger Management and Flurry as for Vanguard.
+
+**Benediction** takes 1/1/2/2/3 rage off each Seal and 0/1/1/1/2 off Judgement: vanilla's 3% of
+mana a rank, doubled for the small rage costs, and rounded. A talent's `client_spellmods` is a
+list of cells, and Benediction's are three flat COST cells in tenths of rage, one per borrowed
+spell's own family bit (33, 34, 35), so the rewritten Seals and Judgement show the lower cost in
+their tooltips and on the action bar. No Spell.dbc row names bits 33–63, so `verify` checks only
+cells on the Warrior bits against the rank spells' own aura effects.
 
 ## Tier Bonus, caps and points
 
@@ -276,7 +308,7 @@ Done since the first pass:
 Built in #14 (talents):
 - The trees are Calling data: `[[calling.talent_tab]]` in `crates/twilight-realm/content/callings.toml`,
   with one `effects` entry per talent that the realm applies (`src/talents.rs`), and the
-  `client_spellmod` cells sent at login, on a learn and on a respec. The glue rebuilds the
+  `client_spellmods` cells sent at login, on a learn and on a respec. The glue rebuilds the
   client's talent catalog from the current Calling (`benilla-app/src/twilight/talents.rs`).
 - The stock UI opens the talent frame only from level 10 (`UIParent.lua` `ToggleTalentFrame`,
   `MainMenuBarMicroButtons.lua` `UpdateTalentButton`). Twilight mode redefines both without the

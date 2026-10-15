@@ -181,6 +181,175 @@ fn a_zealot_at_the_cap_has_49_points_and_the_31st_in_crusade_reaches_holy_power(
     assert!(knows_any(&events, &HOLY_POWER_RANKS));
 }
 
+// ── The sheet and the swings ─────────────────────────────────────────────────────────────────
+
+// Faith.
+const TOUGHNESS: u32 = 1423;
+const ANTICIPATION: u32 = 1629;
+const ONE_HANDED_WEAPON_SPECIALIZATION: u32 = 1429;
+
+/// Brawler Gloves: 62 armour, worn in the hands slot.
+const BRAWLER_GLOVES: u32 = 720;
+const HANDS: u8 = 9;
+const MAIN_HAND: u8 = 15;
+/// A two-handed axe, for levels 2 to 4.
+const LARGE_AXE: u32 = 2491;
+
+/// The Defense line's bonus on the sheet (`PLAYER_SKILL_INFO` slot 1, its third dword).
+fn defense_bonus(view: &View, me: u64) -> i32 {
+    view.fields(me)
+        .player_skill(1)
+        .map_or(0, |s| i32::from(s.temp_bonus) + i32::from(s.perm_bonus))
+}
+
+#[test]
+fn deflection_gives_a_parry_chance_and_conviction_a_crit_chance() {
+    let sheet = |talents: &[(u32, u8)]| {
+        let (_, me, _, view) = zealot_at(10, SEED, talents, &[]);
+        let f = view.fields(me);
+        (
+            f.player_parry_percentage().unwrap(),
+            f.player_crit_percentage().unwrap(),
+        )
+    };
+    let (parry, crit) = sheet(&[]);
+    assert_eq!(parry, 0.0, "no Parry skill");
+    let (parry, _) = sheet(&[(DEFLECTION, 5)]);
+    assert!((parry - 5.0).abs() < 1e-4, "{parry}");
+    let (_, convicted) = sheet(&[(CONVICTION, 5)]);
+    assert!(
+        (convicted - crit - 5.0).abs() < 1e-4,
+        "{crit} -> {convicted}"
+    );
+}
+
+#[test]
+fn anticipation_raises_defense_and_toughness_the_armour_of_items() {
+    let gloves = [(HANDS, BRAWLER_GLOVES)];
+    let (_, me, _, plain) = zealot_at(10, SEED, &[], &gloves);
+    let (_, _, _, anticipating) = zealot_at(10, SEED, &[(ANTICIPATION, 5)], &gloves);
+    assert_eq!(
+        defense_bonus(&anticipating, me),
+        defense_bonus(&plain, me) + 10
+    );
+    let (_, _, _, tough) = zealot_at(10, SEED, &[(TOUGHNESS, 5)], &gloves);
+    let armor = |v: &View| v.fields(me).unit_resistance(0).unwrap();
+    // 10% more of the gloves' 62, rounded: 6.
+    assert_eq!(armor(&tough), armor(&plain) + 6);
+}
+
+#[test]
+fn the_weapon_specializations_add_to_the_damage_of_their_weapons() {
+    // The same fight with and without the talent: the dice fall the same.
+    let first = |seed: u64, talents: &[(u32, u8)], items: &[(u8, u32)]| {
+        let (mut realm, me, mob, mut view) = zealot_at(10, seed, talents, items);
+        stand_at(&mut realm, &mob, 2.0);
+        first_swing(&mut realm, &mut view, me, &mob)
+    };
+    let axe = [(MAIN_HAND, LARGE_AXE)];
+    let one = [(ONE_HANDED_WEAPON_SPECIALIZATION, 5)];
+    let two = [(TWO_HANDED_WEAPON_SPECIALIZATION, 3)];
+    let mut checked = 0;
+    for seed in 0..20 {
+        let (sword, axe_swing) = (first(seed, &[], &[]), first(seed, &[], &axe));
+        if sword == 0 || axe_swing == 0 {
+            continue;
+        }
+        // The Worn Shortsword is one-handed: 10% more at 5/5, nothing from the two-handed one.
+        assert_eq!(first(seed, &one, &[]), sword * 110 / 100);
+        assert_eq!(first(seed, &two, &[]), sword);
+        // A two-handed axe: 6% more at 3/3, nothing from the one-handed one.
+        assert_eq!(first(seed, &two, &axe), axe_swing * 106 / 100);
+        assert_eq!(first(seed, &one, &axe), axe_swing);
+        checked += 1;
+    }
+    assert!(
+        checked >= 3,
+        "only {checked} fights landed their first swings"
+    );
+}
+
+/// Swings at `mob` and returns the first white swing's damage, 0 for one that missed.
+fn first_swing(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob) -> u32 {
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    for _ in 0..30 {
+        for e in view.run(realm, 0.1) {
+            if let SessionEvent::AttackerState(s) = e {
+                if s.attacker == me {
+                    return s.damage;
+                }
+            }
+        }
+    }
+    panic!("no swing in three seconds");
+}
+
+// ── The respec ───────────────────────────────────────────────────────────────────────────────
+
+/// `UNIT_NPC_FLAGS` trainer bit.
+const NPC_TRAINER: u32 = 0x10;
+
+#[test]
+fn a_respec_at_the_trainer_wipes_the_zealot_tree() {
+    let (guid, blob) = save_with(50, 200_000, &[]);
+    let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
+    let mut realm = Realm::with_seed(SEED);
+    realm.import_character(&blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    let mut events = drain(&mut realm);
+    let trainer = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::ObjectCreate { guid, fields, .. }
+                if fields.unit_npc_flags() & NPC_TRAINER != 0 =>
+            {
+                Some(*guid)
+            }
+            _ => None,
+        })
+        .expect("the trainer stands by");
+    learn(&mut realm, &mut events, BENEDICTION, 5);
+    learn(&mut realm, &mut events, DEFLECTION, 5);
+    learn(&mut realm, &mut events, IMPROVED_CHARGE, 2);
+    assert_eq!(points(&events, guid), Some(37));
+
+    realm.handle(RealmCommand::GossipHello { guid: trainer });
+    let option = drain(&mut realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu { options, .. } => options
+                .into_iter()
+                .find(|o| o.message == "I wish to unlearn my talents.")
+                .map(|o| o.index),
+            _ => None,
+        })
+        .expect("the unlearn line");
+    realm.handle(RealmCommand::GossipSelectOption {
+        guid: trainer,
+        option,
+    });
+    realm.handle(RealmCommand::TalentWipeConfirm { trainer });
+    let wiped = drain(&mut realm);
+    events.extend(wiped.iter().cloned());
+
+    assert_eq!(points(&events, guid), Some(49), "every point back");
+    let removed: Vec<u32> = wiped
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellRemoved { spell_id } => Some(*spell_id),
+            _ => None,
+        })
+        .collect();
+    // Benediction's, Deflection's and Improved Charge's top ranks among them.
+    for spell in [20105, 20064, 12697] {
+        assert!(removed.contains(&spell), "{spell}: {removed:?}");
+    }
+    for bit in [SEAL_OF_COMMAND_BIT, SEAL_OF_THE_CRUSADER_BIT, JUDGEMENT_BIT] {
+        assert_eq!(cost_mod(&wiped, bit), Some(0), "bit {bit}");
+    }
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────
 
 const SEAL_OF_COMMAND: u32 = 20375;
