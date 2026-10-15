@@ -49,7 +49,10 @@ mod vendor;
 mod wear;
 mod world;
 
-use benilla_protocol::{CharCreateReq, SessionEvent};
+use benilla_protocol::{CharCreateReq, RealmInfo, SessionEvent};
+
+/// The realm's name, as the select screen's banner shows it.
+pub const REALM_NAME: &str = "Twilight's Eve";
 
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
@@ -577,10 +580,24 @@ impl Realm {
         }
     }
 
+    /// The roster, naming the realm: the select screen shows its banner and the Create New
+    /// Character button only for a list that names one.
     fn send_roster(&mut self) {
+        let characters = self.characters.roster();
+        let realm = RealmInfo {
+            name: REALM_NAME.into(),
+            address: String::new(),
+            population: 0.0,
+            characters: u8::try_from(characters.len()).unwrap_or(u8::MAX),
+            // A normal realm: the banner carries no PvP or RP suffix.
+            realm_type: 0,
+            flags: 0,
+            category: 0,
+            id: 1,
+        };
         self.events.push(SessionEvent::CharacterList {
-            characters: self.characters.roster(),
-            realm: None,
+            characters,
+            realm: Some(realm),
         });
     }
 
