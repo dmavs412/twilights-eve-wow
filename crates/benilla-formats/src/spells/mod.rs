@@ -39,7 +39,7 @@ pub use ranges::{
 };
 pub use soft_float::modify as soft_modify;
 pub use tokens::{substitute, SpellMods, TokenContext, TokenNumber};
-pub use twilight::Borrowed;
+pub use twilight::BorrowedSpellRow;
 
 use std::collections::HashMap;
 

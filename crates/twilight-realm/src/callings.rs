@@ -316,14 +316,18 @@ pub struct Skill {
     /// Set on a spell borrowed from another Class: the client rewrites its row to cost
     /// `rage_cost` rage in any stance, as a Warrior spell (ADR 0003).
     #[serde(default)]
-    pub borrowed: Option<Borrowed>,
+    pub borrowed: Option<BorrowedFamilyBit>,
     pub effects: Vec<Effect>,
 }
 
-/// How the client files a borrowed spell among the Warrior's.
+/// The `SpellFamilyFlags` bits the client gives borrowed spells: no Warrior spell uses a bit
+/// from 33 up, so a talent cell on one of them reaches that borrowed spell alone.
+pub const BORROWED_FAMILY_BITS: std::ops::RangeInclusive<u8> = 33..=63;
+
+/// Where the client files a borrowed spell among the Warrior's: its own family bit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-pub struct Borrowed {
-    /// Its own `SpellFamilyFlags` bit, one no Warrior spell uses (33..=63), so a talent's
+pub struct BorrowedFamilyBit {
+    /// Its own `SpellFamilyFlags` bit, in [`BORROWED_FAMILY_BITS`], so a talent's
     /// [`ClientSpellMod`] can name it alone.
     pub family_bit: u8,
 }
@@ -535,6 +539,39 @@ pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {
         .flat_map(every_skill)
         .filter(|s| s.borrowed.is_some())
         .filter(move |s| seen.insert(s.spell_id))
+}
+
+/// `SPELLFAMILY_WARRIOR`, the Warrior Class's `SpellFamilyName`: every Calling is of the Warrior
+/// line.
+const CLASS_SPELL_FAMILY: u32 = 4;
+
+/// What the client writes into a borrowed spell's row (ADR 0003): the Calling's power, the
+/// realm's cost in that power's client unit, and the Class's spell family with the spell's own
+/// bit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BorrowedSpellRewrite {
+    pub spell_id: u32,
+    /// The Calling's `powerType`.
+    pub power_type: u32,
+    /// The flat cost in tenths of rage, as `UNIT_FIELD_POWER2` carries it.
+    pub cost: u32,
+    /// The Class's `SpellFamilyName`.
+    pub spell_family: u32,
+    /// In [`BORROWED_FAMILY_BITS`].
+    pub family_bit: u8,
+}
+
+/// Every borrowed skill's rewrite, once each.
+pub fn borrowed_spell_rewrites() -> impl Iterator<Item = BorrowedSpellRewrite> {
+    borrowed_skills().filter_map(|s| {
+        Some(BorrowedSpellRewrite {
+            spell_id: s.spell_id,
+            power_type: crate::fields::POWER_RAGE,
+            cost: s.rage_cost * 10,
+            spell_family: CLASS_SPELL_FAMILY,
+            family_bit: s.borrowed?.family_bit,
+        })
+    })
 }
 
 /// Every WIP talent's rank spells, of every Calling: the spells the client names

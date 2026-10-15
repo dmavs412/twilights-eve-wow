@@ -1044,8 +1044,8 @@ impl InWorld {
                 self.faded(&gone, events);
                 // Talents that raise the Seal's amounts (Improved Seal of the Crusader) raise its
                 // attack power and its judgement's holy damage taken alike.
-                let mut seal = seal;
-                let attack_power = match &mut seal {
+                let mut raised = seal;
+                let attack_power = match &mut raised {
                     Seal::Crusader {
                         attack_power,
                         holy_taken_pct,
@@ -1056,7 +1056,10 @@ impl InWorld {
                     }
                     Seal::Command { .. } => 0,
                 };
-                let kind = AuraKind::Seal { seal, attack_power };
+                let kind = AuraKind::Seal {
+                    seal: raised,
+                    attack_power,
+                };
                 self.skills
                     .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
                 let sheet = buff_sheet(&self.player.stats, &self.skills);

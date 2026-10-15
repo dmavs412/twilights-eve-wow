@@ -73,7 +73,11 @@ fn every_skill_borrowed_from_another_class_is_marked() {
                 s.key
             );
             if let Some(b) = s.borrowed {
-                assert!((33..=63).contains(&b.family_bit), "{}", s.key);
+                assert!(
+                    callings::BORROWED_FAMILY_BITS.contains(&b.family_bit),
+                    "{}",
+                    s.key
+                );
                 bits.push(b.family_bit);
             }
         }
@@ -92,6 +96,32 @@ fn the_borrowed_skills_are_zealots_four_at_their_rage_costs() {
         .map(|s| (s.spell_id, s.rage_cost))
         .collect();
     assert_eq!(got, [(20375, 10), (20305, 10), (20271, 5), (10308, 15)]);
+}
+
+/// The rows the client rewrites: rage (`powerType` 1) in tenths, filed as Warrior spells
+/// (`SpellFamilyName` 4) on each one's own bit.
+#[test]
+fn the_borrowed_rewrites_cost_rage_as_warrior_spells() {
+    let got: Vec<(u32, u32, u32, u32, u8)> = callings::borrowed_spell_rewrites()
+        .map(|r| {
+            (
+                r.spell_id,
+                r.power_type,
+                r.cost,
+                r.spell_family,
+                r.family_bit,
+            )
+        })
+        .collect();
+    assert_eq!(
+        got,
+        [
+            (20375, 1, 100, 4, 33),
+            (20305, 1, 100, 4, 34),
+            (20271, 1, 50, 4, 35),
+            (10308, 1, 150, 4, 36),
+        ]
+    );
 }
 
 /// `callings::skill` answers with a spell's first table, so a skill two Callings share must be

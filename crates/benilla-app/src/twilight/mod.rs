@@ -455,21 +455,20 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
 /// - a skill borrowed from another Class (Zealot's Paladin spells) costs the realm's rage in any
 ///   stance, as a Warrior spell, so its button is lit and its tooltip shows rage.
 fn rewrite_spells(mut spells: ResMut<crate::ui_action::Spells>) {
-    /// `powerType` 1, with costs in tenths; `SpellFamilyName` 4.
-    const RAGE: u32 = 1;
-    const WARRIOR_FAMILY: u32 = 4;
     let catalog = &mut spells.catalog;
     catalog.clear_ranks(twilight_realm::callings::skill_spell_ids());
     catalog.mark_wip(twilight_realm::callings::wip_rank_spell_ids());
-    catalog.borrow_spells(twilight_realm::callings::borrowed_skills().filter_map(|s| {
-        Some(benilla_formats::Borrowed {
-            spell_id: s.spell_id,
-            power_type: RAGE,
-            cost: s.rage_cost * 10,
-            spell_family: WARRIOR_FAMILY,
-            family_bit: s.borrowed?.family_bit,
-        })
-    }));
+    catalog.borrow_spells(
+        twilight_realm::callings::borrowed_spell_rewrites().map(|r| {
+            benilla_formats::BorrowedSpellRow {
+                spell_id: r.spell_id,
+                power_type: r.power_type,
+                cost: r.cost,
+                spell_family: r.spell_family,
+                family_bit: r.family_bit,
+            }
+        }),
+    );
 }
 
 /// Basic Warrior is the only Calling a character starts as, so create offers only Warrior.

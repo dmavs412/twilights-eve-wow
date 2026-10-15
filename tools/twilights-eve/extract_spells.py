@@ -66,6 +66,10 @@ C_ICON, C_ACTIVE_ICON, C_NAME, C_RANK, C_DESC, C_AURA_DESC = 117, 118, 120, 129,
 C_GCD_CATEGORY, C_GCD, C_MAX_TARGET_LEVEL, C_FAMILY = 157, 158, 159, 160
 C_FAMILY_FLAGS_LO, C_FAMILY_FLAGS_HI, C_MAX_TARGETS, C_DMG_CLASS, C_PREVENTION = 161, 162, 163, 164, 165
 
+# The lowest SpellFamilyFlags bit the client gives a borrowed spell (ADR 0003), as the realm's
+# `callings::BORROWED_FAMILY_BITS` says. No Spell.dbc row names such a bit.
+BORROWED_FAMILY_BIT_FLOOR = 33
+
 POWER_NAMES = {0: "mana", 1: "rage", 2: "focus", 3: "energy", 4: "happiness", 0xFFFFFFFE: "health"}
 SCHOOLS = {0: "physical", 1: "holy", 2: "fire", 3: "nature", 4: "frost", 5: "shadow", 6: "arcane"}
 DMG_CLASS = {0: "none", 1: "magic", 2: "melee", 3: "ranged"}
@@ -396,9 +400,8 @@ def verify(tables: Tables, callings: Dict[str, Any]) -> Tuple[List[str], Dict[st
                     errors.append(f"{where}: {len(t['rank_spells'])} ranks; the client catalog holds 1..5")
                 ranks = [check_spell(sid, f"{where}.rank{k + 1}", {"name": t["name"]}) for k, sid in enumerate(t["rank_spells"])]
                 for mod in t.get("client_spellmods", []):
-                    # Bits 33..63 are the family bits the client gives borrowed spells (ADR 0003):
-                    # no Spell.dbc row names them, so such a cell is the realm's own.
-                    if not all(ranks) or mod["family_bit"] >= 33:
+                    # A cell on a borrowed spell's bit is the realm's own: no Spell.dbc row has it.
+                    if not all(ranks) or mod["family_bit"] >= BORROWED_FAMILY_BIT_FLOOR:
                         continue
                     want_aura = 107 if mod["type"] == "flat" else 108
                     for k, (f, val) in enumerate(zip(ranks, mod["values"])):
