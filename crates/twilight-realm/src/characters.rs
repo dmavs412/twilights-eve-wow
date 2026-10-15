@@ -39,8 +39,14 @@ pub(crate) struct Char {
     pub(crate) zone: u32,
     pub(crate) position: [f32; 3],
     pub(crate) orientation: f32,
+    /// The action bar as the player arranged it, `(slot, kind << 24 | action)`; `None` until
+    /// they first change it, which shows the Calling's default bar.
+    pub(crate) action_bar: Option<Vec<(u8, u32)>>,
     /// Gear, bags and money.
     pub(crate) inventory: Inventory,
+    /// The items cooling down after use, `(entry, seconds left)`; the clock runs only in the
+    /// world.
+    pub(crate) item_cooldowns: Vec<(u32, f32)>,
     /// The quests under way.
     pub(crate) quests: QuestLog,
     /// The Tokens Repeatable Quests paid, which the Token vendor takes.
@@ -91,7 +97,9 @@ impl Characters {
             zone: THE_BARRENS,
             position: [x, y, z],
             orientation: facing,
-            inventory: Inventory::default(),
+            action_bar: None,
+            inventory: content::starting_inventory(),
+            item_cooldowns: Vec::new(),
             quests: QuestLog::default(),
             tokens: 0,
         });
@@ -147,6 +155,20 @@ impl Characters {
         if let Some(c) = self.list.iter_mut().find(|c| c.guid == guid) {
             c.position = position;
             c.orientation = orientation;
+        }
+    }
+
+    /// `CMSG_SET_ACTION_BUTTON`: puts `packed` on `slot` of the character's bar; 0 clears it.
+    pub(crate) fn set_action_button(&mut self, guid: u64, slot: u8, packed: u32) {
+        if let Some(c) = self.list.iter_mut().find(|c| c.guid == guid) {
+            let bar = c
+                .action_bar
+                .get_or_insert_with(|| crate::callings::default_bar(c.calling));
+            bar.retain(|&(s, _)| s != slot);
+            if packed != 0 {
+                bar.push((slot, packed));
+                bar.sort_unstable_by_key(|&(s, _)| s);
+            }
         }
     }
 

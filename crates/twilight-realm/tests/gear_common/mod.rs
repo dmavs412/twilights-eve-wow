@@ -14,14 +14,18 @@ const CROSSROADS_XY: [f32; 3] = [CROSSROADS[0], CROSSROADS[1], 0.0];
 /// 23-38 the backpack.
 pub type Carried = (u8, u32, u32);
 
-/// A warrior's save at `level` with `money` and `items`.
+/// A warrior's save at `level` with `money` and `items`, and nothing else: not even what a new
+/// character starts with.
 pub fn save_with(level: u8, money: u32, items: &[Carried]) -> (u64, String) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
-    let mut blob = maker
-        .export_character(guid)
-        .unwrap()
+    let mut blob = maker.export_character(guid).unwrap();
+    // The items come last: drop the starting ones.
+    if let Some(at) = blob.find("[[items]]") {
+        blob.truncate(at);
+    }
+    let mut blob = blob
         .replace("level = 1\n", &format!("level = {level}\n"))
         .replace("money = 0\n", &format!("money = {money}\n"))
         .replace("items = []\n", "");
@@ -47,7 +51,10 @@ pub fn warrior_with(level: u8, money: u32, items: &[Carried]) -> (Realm, u64, Ve
 
 /// Moves the player to 2 yd from `mob`, on the Crossroads side, facing it.
 pub fn stand_by(realm: &mut Realm, mob: &Mob) {
-    let (dx, dy) = (CROSSROADS_XY[0] - mob.position[0], CROSSROADS_XY[1] - mob.position[1]);
+    let (dx, dy) = (
+        CROSSROADS_XY[0] - mob.position[0],
+        CROSSROADS_XY[1] - mob.position[1],
+    );
     let len = (dx * dx + dy * dy).sqrt();
     let at = [
         mob.position[0] + dx / len * 2.0,
@@ -115,9 +122,7 @@ pub fn descriptor(events: &[SessionEvent], guid: u64) -> ObjectFields {
             | SessionEvent::ItemCreate {
                 guid: g, fields, ..
             } if *g == guid => f = fields.clone(),
-            SessionEvent::ObjectValues { guid: g, fields } if *g == guid => {
-                f.merge(fields.clone())
-            }
+            SessionEvent::ObjectValues { guid: g, fields } if *g == guid => f.merge(fields.clone()),
             _ => {}
         }
     }

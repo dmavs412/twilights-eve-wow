@@ -1,6 +1,9 @@
 //! The character in the world: the login burst that puts it there, the mobs around it, and the
 //! fights between them, one tick at a time.
 
+mod cast;
+mod hearth;
+
 use benilla_protocol::messages::{AttackSwingError, LevelUpInfo, ObjectType, XpGain};
 use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 
@@ -18,6 +21,9 @@ use crate::rules::melee::Outcome;
 use crate::rules::stats::WarriorStats;
 use crate::rules::{aggro, leash, rage, xp};
 use crate::Host;
+
+mod death;
+mod food;
 
 /// vanilla's player speeds (`baseMoveSpeed`): yd/s, turn in rad/s.
 const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
@@ -65,6 +71,8 @@ struct Player {
     /// Seconds into the current rage-decay tick.
     decay: f32,
     in_combat: bool,
+    /// Killed, and the toll taken: lying dead until Release Spirit.
+    dead: bool,
 }
 
 impl Player {
@@ -86,6 +94,20 @@ pub(crate) struct InWorld {
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
+    /// Cooldowns, the queued strike and the auras the skills leave.
+    skills: cast::Skills,
+    /// The teleport the client has yet to acknowledge.
+    teleports: hearth::Teleports,
+    /// The Hub's NPCs are in the world: they come with the first tick, after the mobs.
+    hub_shown: bool,
+    /// This session's sales, on the merchant window's buyback tab.
+    pub(crate) buyback: crate::vendor::Buyback,
+    /// The dice for gear wear, apart from the fight's so that wearing changes no fight.
+    wear: Rng,
+    /// Where Release Spirit brings the player back: the Hub, or a Dungeon's entrance.
+    pub(crate) respawn: death::Respawn,
+    /// Food or drink being taken, sitting down.
+    meal: Option<food::Meal>,
     /// The Hub's quest givers in view.
     givers: crate::quests::Givers,
 }
@@ -116,6 +138,8 @@ impl InWorld {
             day_serial: 0,
             timescale: 1.0 / 60.0,
         });
+        events.push(cast::spell_book(c));
+        events.push(cast::action_buttons(c));
         // The proficiencies and the carried items' objects, ahead of the player that names them.
         equipment::login(c, events);
         events.push(SessionEvent::ObjectCreate {
@@ -145,11 +169,19 @@ impl InWorld {
                 refused: None,
                 decay: 0.0,
                 in_combat: false,
+                dead: false,
             },
             mobs: Vec::new(),
             population: Population::default(),
             dev,
             looting: Looting::default(),
+            skills: cast::Skills::new(c.guid),
+            teleports: hearth::Teleports::default(),
+            hub_shown: false,
+            buyback: crate::vendor::Buyback::default(),
+            wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
+            respawn: death::Respawn::HUB,
+            meal: None,
             givers: Default::default(),
         }
     }
@@ -212,6 +244,10 @@ impl InWorld {
         let me = c.position;
         self.population
             .update(dt, me, self.map, host, &mut self.mobs, events);
+        if !self.hub_shown {
+            self.hub_shown = true;
+            events.extend(crate::hub::npcs().iter().map(|n| n.create()));
+        }
         self.givers.update(me, self.map, host, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
@@ -240,7 +276,12 @@ impl InWorld {
         for i in 0..self.mobs.len() {
             self.mob_tick(i, dt, host, c, rng, events);
         }
+        self.skills_tick(dt, c, rng, events, &mut ticked);
+        if !self.player.alive() && !self.player.dead {
+            self.die(c, events);
+        }
         self.update_combat(dt, events);
+        self.eat(dt, c, events);
         ticked
     }
 
@@ -290,11 +331,21 @@ impl InWorld {
             return;
         }
         p.refused = None;
+        p.swing_timer = p.stats.attack_time_ms as f32 / 1000.0;
 
         let from_front = in_front(mob.orientation, mob.position, c.position);
-        let swing = combat::player_swing(&p.stats, mob, from_front, rng);
+        // A queued Heroic Strike takes this swing's place.
+        if self.next_swing_strike(target, from_front, c, rng, events, ticked) {
+            return;
+        }
+        let p = &mut self.player;
+        let mob = &self.mobs[i];
+        let swing =
+            combat::player_swing(&cast::buffed(&p.stats, &self.skills), mob, from_front, rng);
         events.push(SessionEvent::AttackerState(swing.report(self.guid, target)));
-        p.swing_timer = p.stats.attack_time_ms as f32 / 1000.0;
+        if swing.outcome == Outcome::Dodge {
+            self.skills.dodged_by(target, events);
+        }
 
         // Rage from what landed, or from three quarters of what a dodge or parry stopped.
         let earned = match swing.outcome {
@@ -313,7 +364,11 @@ impl InWorld {
         if swing.damage > 0 {
             events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
         }
-        if mob.state == State::Idle {
+        let idle = mob.state == State::Idle;
+        if swing.damage > 0 && crate::wear::on_hit(c, &mut self.wear, events) {
+            self.refresh_gear(c, events);
+        }
+        if idle {
             self.pull(i, events);
         }
         if self.mobs[i].health == 0 {
@@ -351,6 +406,9 @@ impl InWorld {
                     evade(mob, self.guid, events);
                     return;
                 }
+                if self.skills.stunned(mob.guid) {
+                    return;
+                }
                 let d = distance(mob.position, me);
                 if d > melee_reach() {
                     let stale = mob
@@ -377,7 +435,8 @@ impl InWorld {
                 events.push(SessionEvent::AttackerState(
                     swing.report(mob.guid, self.guid),
                 ));
-                mob.swing_timer = mob.template.base_attack_time as f32 / 1000.0;
+                mob.swing_timer = mob.template.base_attack_time as f32 / 1000.0
+                    * self.skills.attack_time_mul(mob.guid);
                 if swing.damage > 0 {
                     p.health = p.health.saturating_sub(swing.damage);
                     p.rage = (p.rage + rage::from_damage_taken(swing.damage, p.stats.level))
@@ -386,14 +445,10 @@ impl InWorld {
                         self.guid,
                         &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
                     ));
-                }
-                if !p.alive() {
-                    // Death and the way back are a later ticket's; the fight just ends.
-                    if let Some(victim) = p.attacking.take() {
-                        events.push(SessionEvent::AttackStop {
-                            attacker: self.guid,
-                            victim,
-                        });
+                    // A hit breaks a timed cast (the Hearthstone's interrupts on damage).
+                    self.interrupt_cast(events);
+                    if crate::wear::on_hit(c, &mut self.wear, events) {
+                        self.refresh_gear(c, events);
                     }
                 }
             }
@@ -453,6 +508,8 @@ impl InWorld {
             }));
             ticked.leveled |= self.give_xp(c, gained, events);
         }
+        let dead = self.mobs[i].guid;
+        self.auras_die_with(dead, events);
         crate::quests::credit_kill(c, entry, events);
     }
 
@@ -505,7 +562,7 @@ impl InWorld {
         if leveled {
             pairs.push((PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)));
             pairs.push((UNIT_FIELD_HEALTH, self.player.health));
-            pairs.extend(sheet_pairs(&self.player.stats));
+            pairs.extend(sheet_pairs(&cast::buffed(&self.player.stats, &self.skills)));
         }
         events.push(values(self.guid, &pairs));
         leveled
@@ -518,7 +575,7 @@ impl InWorld {
             .attacking
             .is_some_and(|t| self.mobs.iter().any(|m| m.guid == t && m.alive()));
         let attacked = self.mobs.iter().any(|m| m.state == State::Engaged);
-        let in_combat = p.alive() && (attacking || attacked);
+        let in_combat = p.alive() && (attacking || attacked || self.skills.holds_combat());
         if in_combat != p.in_combat {
             p.in_combat = in_combat;
             let flags = if in_combat { UNIT_FLAG_IN_COMBAT } else { 0 };
@@ -693,6 +750,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     ];
     pairs.extend(guid_pairs(OBJECT_FIELD_GUID, c.guid));
     pairs.extend(sheet_pairs(stats));
+    pairs.push(cast::stance(c));
     pairs.extend(crate::equipment::inventory_pairs(&c.inventory));
     pairs.extend(crate::quests::log_pairs(c));
     // No school's damage is modified: every multiplier is 1.

@@ -1,0 +1,21 @@
+# The Hub's friendly NPCs, written by hand: they stand in the Crossroads for the whole session.
+#
+# `guid` is the spawn's low guid, kept clear of the imported spawns' (0xF00000 up). `npc_flags`
+# are `UNIT_NPC_FLAG_*` (0x4 vendor, 0x4000 repair), which pick the stock window a right-click
+# opens. `faction_template` 35 is friendly to every race. `display_id` is a dressed orc man
+# (`CreatureDisplayInfo.dbc` with a `CreatureDisplayInfoExtra` row). WoW coordinates on Kalimdor.
+# `stock` is a vendor's list, in the merchant window's order.
+
+[[npc]]
+guid = 0xF00001
+entry = 190001
+name = "Barg"
+subname = "General Goods"
+level = 30
+display_id = 1316
+faction_template = 35
+npc_flags = 0x4004
+position = [-438.6, -2645.4, 95.9]
+orientation = 3.93
+# The four tiers of drink, then of food: 1, 5, 15 and 25.
+stock = [159, 1179, 1205, 1708, 117, 4536, 4540, 2287, 4537, 4541, 3770, 4538, 4542, 3771, 4539, 4544]

@@ -8,12 +8,14 @@
 //! tick(dt, &dyn Host) ──┼─> Realm ──> drain_events() -> Vec<SessionEvent>
 //! ```
 
+pub mod callings;
 mod characters;
 mod combat;
 mod content;
 mod dev;
 mod equipment;
 mod fields;
+mod hub;
 mod inventory;
 mod items;
 mod looting;
@@ -24,6 +26,8 @@ mod rng;
 pub mod rules;
 mod save;
 mod tables;
+mod vendor;
+mod wear;
 mod world;
 
 use benilla_protocol::{CharCreateReq, SessionEvent};
@@ -70,6 +74,20 @@ pub enum RealmCommand {
     },
     /// Stop auto-attack.
     AttackStop,
+    /// Cast a skill; `target` is its unit target, `None` for a self or area skill.
+    CastSpell {
+        spell_id: u32,
+        target: Option<u64>,
+    },
+    /// Click off one of the player's own buffs.
+    CancelAura {
+        spell_id: u32,
+    },
+    /// Put `packed` (`kind << 24 | action`) on action bar `slot`; 0 clears it. No answer.
+    SetActionButton {
+        slot: u8,
+        packed: u32,
+    },
     /// A creature template's name, answered with [`SessionEvent::CreatureName`].
     CreatureQuery {
         entry: u32,
@@ -117,12 +135,49 @@ pub enum RealmCommand {
         src_slot: u8,
         dst_bag: u8,
     },
+    /// Use the item at a wire position (bag 255 is the player's own slots): the Hearthstone.
+    UseItem {
+        bag: u8,
+        slot: u8,
+    },
+    /// The client snapped to the teleport carrying `counter`.
+    TeleportAck {
+        counter: u32,
+    },
     /// Destroy `count` of the item at a wire position, 0 for all of it.
     DestroyItem {
         bag: u8,
         slot: u8,
         count: u8,
     },
+    /// Open a vendor's merchant window, answered with [`SessionEvent::VendorInventory`].
+    ListInventory {
+        guid: u64,
+    },
+    /// Buy `count` of a vendor row's bundles (`buy_count` items each) by item entry.
+    BuyItem {
+        vendor: u64,
+        entry: u32,
+        count: u8,
+    },
+    /// Sell `count` of an item, 0 for the whole stack.
+    SellItem {
+        vendor: u64,
+        item: u64,
+        count: u8,
+    },
+    /// Buy back what was sold, by its player buyback slot (69-80).
+    BuybackItem {
+        vendor: u64,
+        slot: u32,
+    },
+    /// Repair one item, or with `item` 0 everything carried.
+    RepairItem {
+        vendor: u64,
+        item: u64,
+    },
+    /// Release Spirit: the dead player comes back at the respawn point.
+    RepopRequest,
     /// The `!` or `?` over a quest giver, answered with [`SessionEvent::QuestGiverStatus`].
     QuestGiverStatusQuery {
         npc: u64,
@@ -231,8 +286,11 @@ impl Realm {
                 position,
                 orientation,
             } => {
-                if let Some(w) = &self.world {
-                    self.characters.set_position(w.guid, position, orientation);
+                if let Some(w) = &mut self.world {
+                    let from = self.characters.get(w.guid).map(|c| c.position);
+                    if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
+                        self.characters.set_position(w.guid, position, orientation);
+                    }
                 }
             }
             RealmCommand::SetSelection { guid } => {
@@ -250,10 +308,43 @@ impl Realm {
                     w.stop_attack(&mut self.events);
                 }
             }
+            RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target),
+            RealmCommand::UseItem { bag, slot } => {
+                // Equipped bags are not modelled: only the player's own slots hold items.
+                if let (Some(w), 255) = (&mut self.world, bag) {
+                    if let Some(c) = self.characters.get_mut(w.guid) {
+                        // Food and drink are eaten at once; anything else casts its spell.
+                        match w.eat_or_drink(slot, c, &mut self.events) {
+                            Some(true) => {
+                                let guid = w.guid;
+                                self.save(guid);
+                            }
+                            Some(false) => {}
+                            None => w.use_item(slot, c, &mut self.events),
+                        }
+                    }
+                }
+            }
+            RealmCommand::TeleportAck { counter } => {
+                if let Some(w) = &mut self.world {
+                    w.teleport_ack(counter);
+                }
+            }
+            RealmCommand::CancelAura { spell_id } => {
+                if let Some(w) = &mut self.world {
+                    w.cancel_aura(spell_id, &mut self.events);
+                }
+            }
+            RealmCommand::SetActionButton { slot, packed } => {
+                if let Some(w) = &self.world {
+                    self.characters.set_action_button(w.guid, slot, packed);
+                }
+            }
             RealmCommand::CreatureQuery { entry } => {
-                let name =
-                    quests::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
-                self.events.push(name);
+                let answer = hub::creature_name(entry)
+                    .or_else(|| quests::creature_name(entry))
+                    .unwrap_or_else(|| mobs::creature_name(entry));
+                self.events.push(answer);
             }
             RealmCommand::Logout => self.logout(),
             RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
@@ -276,6 +367,7 @@ impl Realm {
         let events = &mut self.events;
         let mut moved = equipment::Moved::default();
         let mut looted = looting::Looted::default();
+        let mut traded = vendor::Traded::default();
         match command {
             RealmCommand::Loot { guid } => w.open_loot(guid, c, events),
             RealmCommand::LootMoney => looted = w.looting.take_money(c, events),
@@ -304,8 +396,28 @@ impl Realm {
             RealmCommand::DestroyItem { bag, slot, count } => {
                 moved = equipment::destroy(c, bag, slot, count, events);
             }
+            RealmCommand::ListInventory { guid } => vendor::list(guid, c, events),
+            RealmCommand::BuyItem {
+                vendor,
+                entry,
+                count,
+            } => traded = vendor::buy(vendor, entry, count, c, events),
+            RealmCommand::SellItem {
+                vendor,
+                item,
+                count,
+            } => traded = vendor::sell(vendor, item, count, c, &mut w.buyback, events),
+            RealmCommand::BuybackItem { vendor, slot } => {
+                traded = vendor::buy_back(vendor, slot, c, &mut w.buyback, events);
+            }
+            RealmCommand::RepairItem { vendor, item } => {
+                traded = vendor::repair(vendor, item, c, events);
+            }
+            RealmCommand::RepopRequest => traded.changed = w.release(c, events),
             _ => return,
         }
+        moved.gear_changed |= traded.gear_changed;
+        looted.took |= traded.changed;
         if moved.gear_changed {
             w.refresh_gear(c, events);
         }
@@ -330,8 +442,24 @@ impl Realm {
         };
         let ticked = w.tick(dt, host, c, &mut self.rng, &mut self.events);
         w.since_save += dt;
-        if ticked.leveled || w.since_save >= save::AUTOSAVE_SECS {
+        // The dead are saved once they release, where they come back.
+        if ticked.leveled || (w.since_save >= save::AUTOSAVE_SECS && !w.dead()) {
             w.since_save = 0.0;
+            let guid = w.guid;
+            self.save(guid);
+        }
+    }
+
+    /// A skill cast: answered at once, as an instant is.
+    fn cast(&mut self, spell_id: u32, target: Option<u64>) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let cast = w.cast(spell_id, target, c, &mut self.rng, &mut self.events);
+        if cast.leveled {
             let guid = w.guid;
             self.save(guid);
         }
@@ -388,9 +516,13 @@ impl Realm {
     }
 
     fn logout(&mut self) {
-        let Some(w) = self.world.take() else {
+        let Some(mut w) = self.world.take() else {
             return;
         };
+        // Leaving dead is a release: the save puts the character where it comes back.
+        if let Some(c) = self.characters.get_mut(w.guid) {
+            w.release(c, &mut Vec::new());
+        }
         self.save(w.guid);
         self.events.push(SessionEvent::LogoutResponse {
             reason: 0,

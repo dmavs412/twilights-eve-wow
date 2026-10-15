@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use benilla_protocol::messages::{ItemDamage, ItemInfo, ItemSpellEntry};
+use benilla_protocol::messages::{ItemDamage, ItemInfo, ItemSpellEntry, ItemUseSpell};
 use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
@@ -49,6 +49,17 @@ pub(crate) struct Template {
     pub(crate) sheath: u32,
     pub(crate) material: i32,
     pub(crate) pool_level: u8,
+    /// The on-use spell, 0 for none.
+    pub(crate) use_spell: u32,
+    /// The on-use cooldown, -1 for the spell's own.
+    pub(crate) use_cooldown_ms: i32,
+    /// The on-use category cooldown, -1 for the spell's own.
+    pub(crate) use_category_cooldown_ms: i32,
+    /// Food and drink (`content/goods.toml`): what eating or drinking restores over
+    /// `duration_ms`.
+    pub(crate) restores_health: u32,
+    pub(crate) restores_mana: u32,
+    pub(crate) duration_ms: u32,
 }
 
 impl Default for Template {
@@ -85,6 +96,12 @@ impl Default for Template {
             sheath: 0,
             material: 0,
             pool_level: 0,
+            use_spell: 0,
+            use_cooldown_ms: -1,
+            use_category_cooldown_ms: -1,
+            restores_health: 0,
+            restores_mana: 0,
+            duration_ms: 0,
         }
     }
 }
@@ -101,7 +118,7 @@ struct Table {
     item: Vec<Template>,
 }
 
-/// Every template, by entry.
+/// Every world-drop template, by entry: what the loot pools draw from.
 pub(crate) fn all() -> &'static HashMap<u32, Template> {
     static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
     ITEMS.get_or_init(|| {
@@ -111,15 +128,58 @@ pub(crate) fn all() -> &'static HashMap<u32, Template> {
     })
 }
 
-/// The template of `entry`: a world item, or one the quests use.
+/// The goods vendor's food and drink (`content/goods.toml`), by entry.
+fn goods() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table = toml::from_str(include_str!("../content/goods.toml"))
+            .expect("content/goods.toml parses");
+        table.item.into_iter().map(|t| (t.entry, t)).collect()
+    })
+}
+
+/// The items the realm hands out itself (`content/given_items.toml`), by entry.
+fn given() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table = toml::from_str(include_str!("../content/given_items.toml"))
+            .expect("content/given_items.toml parses");
+        table.item.into_iter().map(|t| (t.entry, t)).collect()
+    })
+}
+
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
     all()
         .get(&entry)
+        .or_else(|| given().get(&entry))
+        .or_else(|| goods().get(&entry))
         .or_else(|| crate::quests::item_template(entry))
 }
 
+/// `ITEM_SPELLTRIGGER_ON_USE`.
+const ON_USE: u32 = 0;
 /// `ITEM_SPELLTRIGGER_ON_EQUIP`.
 const ON_EQUIP: u32 = 1;
+
+/// The spell category an on-use spell shares (`Spell.dbc`'s `Category`): food 11, drink 59.
+fn use_category(t: &Template) -> u32 {
+    if t.restores_mana > 0 {
+        59
+    } else if t.restores_health > 0 {
+        11
+    } else {
+        0
+    }
+}
+
+/// Food and drink are eaten: the use takes one of the stack (charges -1).
+fn use_charges(t: &Template) -> i32 {
+    if t.restores_health > 0 || t.restores_mana > 0 {
+        -1
+    } else {
+        0
+    }
+}
 
 /// `SMSG_ITEM_QUERY_SINGLE_RESPONSE` for `entry`; an unknown entry answers with none.
 pub(crate) fn query_response(entry: u32) -> SessionEvent {
@@ -141,6 +201,40 @@ fn info(t: &Template) -> ItemInfo {
         .collect();
     let first = damages.first().copied();
     let [holy, fire, nature, frost, shadow, arcane] = t.resistances;
+    // The on-use spell takes the first block, as the stock Hearthstone's does.
+    let use_spell = (t.use_spell != 0).then_some(ItemUseSpell {
+        spell_id: t.use_spell,
+        cooldown_ms: t.use_cooldown_ms,
+        category: use_category(t),
+        category_cooldown_ms: t.use_category_cooldown_ms,
+    });
+    let mut spells: Vec<ItemSpellEntry> = use_spell
+        .iter()
+        .map(|u| ItemSpellEntry {
+            index: 0,
+            spell_id: u.spell_id,
+            trigger: ON_USE,
+            charges: use_charges(t),
+            cooldown_ms: u.cooldown_ms,
+            category: u.category,
+            category_cooldown_ms: u.category_cooldown_ms,
+        })
+        .collect();
+    let first_equip = spells.len();
+    spells.extend(
+        t.equip_spells
+            .iter()
+            .enumerate()
+            .map(|(i, &spell_id)| ItemSpellEntry {
+                index: (first_equip + i) as u8,
+                spell_id,
+                trigger: ON_EQUIP,
+                charges: 0,
+                cooldown_ms: -1,
+                category: 0,
+                category_cooldown_ms: -1,
+            }),
+    );
     ItemInfo {
         class: t.class,
         subclass: t.subclass,
@@ -179,22 +273,9 @@ fn info(t: &Template) -> ItemInfo {
         delay_ms: t.speed_ms,
         ammo_type: 0,
         ranged_mod_range: 0.0,
-        spells: t
-            .equip_spells
-            .iter()
-            .enumerate()
-            .map(|(i, &spell_id)| ItemSpellEntry {
-                index: i as u8,
-                spell_id,
-                trigger: ON_EQUIP,
-                charges: 0,
-                cooldown_ms: -1,
-                category: 0,
-                category_cooldown_ms: -1,
-            })
-            .collect(),
-        spell_charges_0: 0,
-        use_spell: None,
+        spell_charges_0: spells.first().map_or(0, |s| s.charges),
+        spells,
+        use_spell,
         bonding: t.bonding,
         description: String::new(),
         page_text: 0,
