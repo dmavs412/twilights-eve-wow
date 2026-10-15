@@ -422,6 +422,28 @@ pub(crate) fn destroy(
     }
 }
 
+/// Destroys `count` of `entry` from the character's slots, last stacks first: a hand-in's
+/// collected items, a Token purchase's Tokens. The caller has checked they are there.
+pub(crate) fn take(c: &mut Char, entry: u32, mut count: u32, events: &mut Vec<SessionEvent>) {
+    let stacks: Vec<(u8, u32)> = c
+        .inventory
+        .iter()
+        .filter(|(_, i)| i.entry == entry)
+        .map(|(slot, i)| (slot, i.count))
+        .collect();
+    for (slot, have) in stacks.into_iter().rev() {
+        if count == 0 {
+            break;
+        }
+        let take = have.min(count);
+        // 0 destroys the whole stack.
+        let n = if take == have { 0 } else { take as u8 };
+        destroy(c, PLAYER_BAG, slot, n, events);
+        count -= take;
+    }
+    debug_assert_eq!(count, 0, "the items to take are all there");
+}
+
 fn is_worn(slot: u8) -> bool {
     slot < EQUIPMENT_END
 }

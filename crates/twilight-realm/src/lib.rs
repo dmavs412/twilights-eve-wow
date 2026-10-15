@@ -26,6 +26,7 @@ mod rng;
 pub mod rules;
 mod save;
 mod tables;
+mod token_vendor;
 mod vendor;
 mod wear;
 mod world;

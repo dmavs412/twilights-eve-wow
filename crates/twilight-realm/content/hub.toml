@@ -19,3 +19,19 @@ position = [-438.6, -2645.4, 95.9]
 orientation = 3.93
 # The four tiers of drink, then of food: 1, 5, 15 and 25.
 stock = [159, 1179, 1205, 1708, 117, 4536, 4540, 2287, 4537, 4541, 3770, 4538, 4542, 3771, 4539, 4544]
+
+# The Token vendor: the greens of the buyer's level band (content/token_vendor.toml), priced in
+# the Twilight Tokens in the bags. `tokens` says so; it has no `stock` of its own and no repairs.
+# The display is a dressed orc woman.
+[[npc]]
+guid = 0xF00002
+entry = 190002
+name = "Sarna Duskwhisper"
+subname = "Token Vendor"
+level = 30
+display_id = 1312
+faction_template = 35
+npc_flags = 0x4
+position = [-445.0, -2645.6, 95.9]
+orientation = 5.53
+tokens = true

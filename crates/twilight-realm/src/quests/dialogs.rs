@@ -15,9 +15,6 @@ use crate::characters::Char;
 use crate::fields::values;
 use crate::{equipment, items, rules, Realm, RealmCommand};
 
-/// `INVENTORY_SLOT_BAG_0`: the player's own slots, as a wire position names them.
-const PLAYER_BAG: u8 = 255;
-
 /// `CMSG_QUEST_QUERY`'s answer for `id`; nothing for a quest the realm does not have.
 pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
     let q = content::quest(id)?;
@@ -354,7 +351,7 @@ fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
         return false;
     }
     for o in &q.collect {
-        take_items(c, o.item, o.count, events);
+        equipment::take(c, o.item, o.count, events);
     }
     c.inventory.money = c.inventory.money.saturating_add(q.money);
     if q.tokens > 0 {
@@ -370,25 +367,4 @@ fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
     // Handing in may undo another quest that wanted the same items.
     super::refresh(c, events);
     true
-}
-
-/// Destroys `count` of `item` from the bags, last stacks first.
-fn take_items(c: &mut Char, item: u32, mut count: u32, events: &mut Vec<SessionEvent>) {
-    let stacks: Vec<(u8, u32)> = c
-        .inventory
-        .iter()
-        .filter(|(_, i)| i.entry == item)
-        .map(|(slot, i)| (slot, i.count))
-        .collect();
-    for (slot, have) in stacks.into_iter().rev() {
-        if count == 0 {
-            break;
-        }
-        let take = have.min(count);
-        // 0 destroys the whole stack.
-        let n = if take == have { 0 } else { take as u8 };
-        equipment::destroy(c, PLAYER_BAG, slot, n, events);
-        count -= take;
-    }
-    debug_assert_eq!(count, 0, "a complete quest's items are all there");
 }
