@@ -79,12 +79,18 @@ fn a_hand_in_saves_the_tokens_and_the_emptied_log() {
 }
 
 #[test]
-fn a_save_that_counts_tokens_on_the_character_carries_them_in_the_bags() {
-    // Before Tokens were an item, the save kept a count beside the money.
+fn a_tokens_count_beside_the_money_is_no_part_of_the_save() {
+    // Only builds of the integration branch ever wrote one; Tokens are carried in the bags.
     let (me, blob) = save_with(3, 0, &[(23, CROCOLISK_SKIN, 2)]);
-    let old = blob.replace("money = 0\n", "money = 0\ntokens = 4\n");
+    let old = blob.replace(
+        "money = 0
+",
+        "money = 0
+tokens = 4
+",
+    );
     let events = reload(me, &old);
-    assert_eq!(carried(&events, me, TOKEN), 4);
+    assert_eq!(carried(&events, me, TOKEN), 0);
     assert_eq!(carried(&events, me, CROCOLISK_SKIN), 2);
 }
 
