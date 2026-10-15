@@ -391,8 +391,9 @@ either); the quilboars and wolves have it. Whether a camp pulls together is the 
   probabilities and picked by guid at import time.
 - **Aggro.** Templates are `hostile` when the dump's reaction is hostile and `no_aggro` is unset;
   only hostile mobs aggro on sight, by `rules::aggro::radius`. Neutral ones fight when attacked.
-- **Camps.** Pulling a mob, by aggro or by attacking it, pulls every idle member of its camp,
-  whether or not the camp's faction has the call-for-help flag (`assists`).
+- **Camps.** Pulling a hostile mob, by aggro or by attacking it, pulls every idle member of its
+  camp, whether or not the camp's faction has the call-for-help flag (`assists`). A neutral mob
+  comes alone: its campmates fight only when they are attacked themselves.
 - **Leash.** A mob in a fight more than 50 yd from home (`rules::leash`) evades: it runs home,
   heals to full and resets.
 - **Respawn.** A killed mob comes back 60 s after the player has gone more than 60 yd from its

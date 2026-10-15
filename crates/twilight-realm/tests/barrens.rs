@@ -152,7 +152,7 @@ fn a_mob_notices_a_player_by_level_difference_and_brings_its_camp() {
 }
 
 #[test]
-fn a_neutral_camp_waits_to_be_attacked_then_fights_together() {
+fn a_neutral_mob_waits_to_be_attacked_and_leaves_its_campmates_idle() {
     // The Plainstriders (1–2, neutral).
     let (mut realm, me) = warrior_at(1);
     let striders = camp_units(&mut realm, "low-1");
@@ -176,7 +176,12 @@ fn a_neutral_camp_waits_to_be_attacked_then_fights_together() {
             _ => None,
         })
         .collect();
-    assert_eq!(pulled, striders.keys().copied().collect());
+    assert!(striders.len() > 1, "a camp of several");
+    assert_eq!(
+        pulled,
+        HashSet::from([guid]),
+        "only the strider attacked fights; its campmates graze on"
+    );
 }
 
 #[test]
