@@ -55,6 +55,17 @@ impl Armour {
             Armour::Shield => &[5, 6],
         }
     }
+
+    /// Its `SkillLine.dbc` id, the line the skill frame lists.
+    pub fn skill_line(self) -> u32 {
+        match self {
+            Armour::Cloth => 415,
+            Armour::Leather => 414,
+            Armour::Mail => 413,
+            Armour::Plate => 293,
+            Armour::Shield => 433,
+        }
+    }
 }
 
 /// A Tier Bonus: what a Calling adds to each base stat.
