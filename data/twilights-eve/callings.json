@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "about": "Twilight's Eve Callings for the Warrior line (Basic Warrior, Vanguard, Ironclad's locked quest). Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
+  "about": "Twilight's Eve Callings for the Warrior line (Basic Warrior, Vanguard, Zealot, and Ironclad's and Templar's locked quests). Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
 
   "formula_conventions": {
     "L": "the character's level inside its current Tier (1..Tier Cap); it resets to 1 on Advancement",
@@ -116,7 +116,7 @@
       "display_name": "Vanguard",
       "select_screen_name": "Vanguard",
       "cap": 30,
-      "branches": ["ironclad"],
+      "branches": ["ironclad", "zealot"],
       "armour": ["cloth", "leather", "mail", "plate", "shield"],
       "client_shapeshift_form": 17,
       "client_shapeshift_form_note": "Battle Stance again: every Vanguard skill below is legal in it. Thunder Clap, Cleave and Execute were dropped for the handoff's focused kit.",
@@ -304,6 +304,162 @@
         "objective": { "kind": "never", "note": "A single objective the realm never credits (or a kill of a creature entry that is never spawned), so the stock quest log shows it as in progress forever and the trainer shows the 'incomplete' text. Abandoning and retaking it is harmless." },
         "request_items_text": "The Ironclads have not yet sent for you, $N. Patience.",
         "flavour_source": "The vanilla level 30 warrior chain (1718 'The Islander', 1791 'The Windwatcher', 1712 'Cyclonian') for tone only."
+      }
+    },
+
+    "zealot": {
+      "tier": 2,
+      "class": 1,
+      "display_name": "Zealot",
+      "select_screen_name": "Zealot",
+      "cap": 50,
+      "branches": ["templar"],
+      "armour": ["cloth", "leather", "mail", "plate", "shield"],
+      "client_shapeshift_form": 17,
+      "client_shapeshift_form_note": "Battle Stance and the rage bar stay. The four borrowed Paladin spells need no stance: the client rewrites their rows (ADR 0003).",
+      "borrowed_note": "A skill with `borrowed` is a Paladin spell (SpellFamilyName 10). The client rewrites its row to cost the realm's rage_cost in rage, in any stance, as a Warrior spell (family 4) whose SpellFamilyFlags are only `borrowed.family_bit`, a bit no Warrior spell uses (Warrior spells use bits 0..32). Its `client` half below is the unrewritten Spell.dbc row, so its cost is mana.",
+
+      "skills": [
+        {
+          "key": "seal_of_command",
+          "spell_id": 20375, "name": "Seal of Command", "rank": "Rank 1",
+          "icon_id": 561, "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
+          "family_flags": "0x2000000",
+          "client": { "cost": 65, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 0.0], "duration_ms": 30000, "stances": [] },
+          "borrowed": { "from_class": 2, "family_bit": 33 },
+          "realm": {
+            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self",
+            "effects": [],
+            "effects_note": "The Seal's effect comes with the realm's Seals: a 30 s self aura; a landed white swing may add a holy hit of 70% weapon damage."
+          },
+          "vanilla_reference": "R1 is the talent's (Talent 1481) only rank: 65 mana, 30 s, $20424s1 = 70% weapon damage.",
+          "tooltip_note": "Tooltip says 70% of normal weapon damage."
+        },
+        {
+          "key": "seal_of_the_crusader",
+          "spell_id": 20305, "name": "Seal of the Crusader", "rank": "Rank 3",
+          "icon_id": 237, "icon": "Interface\\Icons\\Spell_Holy_HolySmite",
+          "family_flags": "0x200",
+          "client": { "cost": 65, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 0.0], "duration_ms": 30000, "stances": [] },
+          "borrowed": { "from_class": 2, "family_bit": 34 },
+          "realm": {
+            "rage_cost": 10, "cooldown_ms": 0, "gcd_ms": 1500, "target": "self",
+            "effects": [],
+            "effects_note": "The Seal's effect comes with the realm's Seals: a 30 s self aura of attack power and attack speed, with less damage per hit."
+          },
+          "vanilla_reference": "R1 21082 L6 +31 AP, R3 20305 L22 +94 AP, R6 20308 +306 AP; every rank 40% faster. R3 sits mid Zealot band.",
+          "tooltip_note": "Tooltip says 94 attack power and 40% faster."
+        },
+        {
+          "key": "judgement",
+          "spell_id": 20271, "name": "Judgement", "rank": "",
+          "icon_id": 205, "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
+          "family_flags": "0x800000",
+          "client": { "cost": 0, "cooldown_ms": 10000, "gcd_ms": 0, "cast_time_ms": 0, "range_yd": [0.0, 10.0], "stances": [] },
+          "client_note": "The cost is 6% of base mana (ManaCostPercentage), which the rewrite zeroes.",
+          "borrowed": { "from_class": 2, "family_bit": 35 },
+          "realm": {
+            "rage_cost": 5, "cooldown_ms": 10000, "gcd_ms": 0, "range_yd": 10, "target": "enemy",
+            "effects": [],
+            "effects_note": "Judgement comes with the realm's Seals: it consumes the active Seal for that Seal's judgement, and with no Seal fails and costs nothing."
+          },
+          "vanilla_reference": "The only castable Judgement: 10 s cooldown, 10 yd, off the global cooldown.",
+          "tooltip_note": "Tooltip refers to the Seals."
+        },
+        {
+          "key": "hammer_of_justice",
+          "spell_id": 10308, "name": "Hammer of Justice", "rank": "Rank 4",
+          "icon_id": 302, "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
+          "family_flags": "0x800",
+          "client": { "cost": 100, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 10.0], "duration_ms": 6000, "stances": [] },
+          "borrowed": { "from_class": 2, "family_bit": 36 },
+          "realm": {
+            "rage_cost": 15, "cooldown_ms": 60000, "cooldown_note": "Spell.dbc category 32 cooldown 60 s", "gcd_ms": 1500, "range_yd": 10, "target": "enemy",
+            "effects": [
+              { "kind": "stun", "duration_ms": 6000, "aura_spell_id": 10308 }
+            ]
+          },
+          "vanilla_reference": "R1 853 3 s, R2 5588 4 s, R3 5589 5 s, R4 10308 6 s: only R4's tooltip says six seconds.",
+          "tooltip_note": "Tooltip says stuns the target for 6 sec."
+        },
+        {
+          "key": "mortal_strike",
+          "spell_id": 12294, "name": "Mortal Strike", "rank": "Rank 1",
+          "icon_id": 564, "icon": "Interface\\Icons\\Ability_Warrior_SavageBlow",
+          "family_flags": "0x2000000",
+          "client": { "cost": 30.0, "cooldown_ms": 0, "gcd_ms": 1500, "cast_time_ms": 0, "range_yd": [0.0, 5.0], "duration_ms": 10000, "stances": [] },
+          "realm": {
+            "rage_cost": 30, "cooldown_ms": 6000, "cooldown_note": "Spell.dbc category 971 cooldown 6 s", "gcd_ms": 1500, "range_yd": 5, "target": "enemy",
+            "effects": [
+              { "kind": "weapon_strike", "weapon": "Wn", "bonus": { "base": 25, "per_level": 2.5, "per_ap": 0 } },
+              { "kind": "healing_reduction", "pct": 50, "duration_ms": 10000 }
+            ]
+          },
+          "vanilla_reference": "Vanguard's, unchanged.",
+          "tooltip_note": "Tooltip says weapon damage plus 85."
+        },
+        {
+          "key": "charge",
+          "spell_id": 6178, "name": "Charge", "rank": "Rank 2",
+          "icon_id": 457, "icon": "Interface\\Icons\\Ability_Warrior_Charge",
+          "family_flags": "0x1",
+          "client": { "cost": 0.0, "cooldown_ms": 0, "gcd_ms": 0, "cast_time_ms": 0, "range_yd": [8.0, 25.0], "stances": ["Battle Stance"], "not_in_combat": true },
+          "realm": {
+            "rage_cost": 0, "cooldown_ms": 15000, "gcd_ms": 0, "range_yd": [8, 25], "target": "enemy", "requires_out_of_combat": true,
+            "effects": [
+              { "kind": "charge", "speed_yd_s": 24 },
+              { "kind": "energize_rage", "amount": { "base": 11, "per_level": 0.1, "per_ap": 0 } },
+              { "kind": "stun", "duration_ms": 1000, "aura_spell_id": 7922 }
+            ]
+          },
+          "vanilla_reference": "Vanguard's, unchanged.",
+          "tooltip_note": "Tooltip says 12 rage."
+        }
+      ],
+      "talent_tree": null,
+      "talent_tree_note": "Crusade, Blade and Faith come with Zealot's Talent Tree.",
+
+      "advancement_quest": {
+        "quest_id": 64003,
+        "synthesized": true,
+        "offered_by": "the Hub's Warrior trainer",
+        "offered_to": { "calling": "vanguard", "level": 30 },
+        "advances_to": "zealot",
+        "zone_or_sort": -81,
+        "quest_level": 30,
+        "title": "The Zealot's Vow",
+        "details": "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word.",
+        "objectives": "Speak with the Warrior trainer at the Crossroads to swear the Zealot's vow.",
+        "offer_reward_text": "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you.",
+        "objective": { "kind": "talk", "note": "As The Warrior's Path: accept and complete at the trainer." },
+        "on_complete": ["set_calling:zealot", "level:1", "xp:0", "replace_skills", "wipe_talents_and_points", "swap_talent_catalog", "apply_tier_bonus:2"],
+        "flavour_source": "Synthesized; no text is copied."
+      }
+    },
+
+    "templar": {
+      "tier": 3,
+      "class": 1,
+      "display_name": "Templar",
+      "cap": 60,
+      "locked": true,
+      "skills": [],
+      "talent_tree": null,
+      "advancement_quest": {
+        "quest_id": 64004,
+        "synthesized": true,
+        "offered_by": "the Hub's Warrior trainer",
+        "offered_to": { "calling": "zealot", "level": 50 },
+        "advances_to": "templar",
+        "completable": false,
+        "zone_or_sort": -81,
+        "quest_level": 50,
+        "title": "The Templar's Charge",
+        "details": "Fifty battles of holy fury, and the Light has not yet burned you out. The Templars have heard of you, $N.$B$BThey guard what the Zealots only strike for, and they choose their own. When they are ready to test you, I will send word. Until then, keep your Seals bright.",
+        "objectives": "Await the Templars' summons.",
+        "objective": { "kind": "never", "note": "As The Ironclad's Oath: offered, never finished." },
+        "request_items_text": "The Templars have not yet sent for you, $N. Patience.",
+        "flavour_source": "Synthesized; no text is copied."
       }
     }
   }

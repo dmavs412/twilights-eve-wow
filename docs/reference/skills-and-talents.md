@@ -80,6 +80,28 @@ Mortal Strike is a level-40 talent in vanilla. Here it is the Tier 1 signature, 
 low levels. Heroic Strike drops out of the Vanguard set, and Thunder Clap, Cleave and Execute
 are gone from it. A save made when Tier 1 was called "warrior" loads as a Vanguard.
 
+## Tier 2, Zealot: six skills (levels 1–50, Tier Bonus +28/+14/+28/0/+7)
+
+A holy berserker on the rage bar, still in Battle Stance and still in plate. Four skills are
+Paladin spells, marked `borrowed` in the content; the client rewrites their Spell.dbc rows when it
+loads them (ADR 0003): power rage at the realm's cost, no stance, family Warrior (4), and
+`SpellFamilyFlags` replaced by one bit no Warrior spell uses (Warrior spells use bits 0–32). The
+Paladin bits would collide once the family is 4 (25 is Mortal Strike, 23 the stances), and
+Judgement's 6% `ManaCostPercentage` is zeroed with the other cost terms.
+
+| skill | id | rage | cd | reach | bit | realm |
+|---|---|---|---|---|---|---|
+| Seal of Command | 20375 (R1) | 10 | – | self | 33 | effect pending (#24) |
+| Seal of the Crusader | 20305 (R3) | 10 | – | self | 34 | effect pending (#25) |
+| Judgement | 20271 | 5 | 10 s | 10 yd | 35 | effect pending (#24, #25) |
+| Hammer of Justice | 10308 (R4) | 15 | 60 s | 10 yd | 36 | 6 s stun (the only rank whose tooltip says 6 s) |
+| Mortal Strike | 12294 | 30 | 6 s | melee | – | Vanguard's |
+| Charge | 6178 | 0 | 15 s | 8–25 yd | – | Vanguard's |
+
+Mortal Strike and Charge carry Vanguard's data unchanged: `callings::skill` answers with a spell's
+first table, and a content test keeps shared skills identical. Zealot's Talent Tree comes with
+#26.
+
 ## Talent trees
 
 The client's catalog (`benilla-formats/src/talents.rs`, `benilla-app/src/ui_talent.rs`, read
@@ -141,7 +163,9 @@ header (QuestSort.dbc 81). The Advancement Quest is a speak-to quest, modelled o
 "Veteran Uzzek". Uzzek (creature 5810, the Barrens) is a candidate model for the Hub's
 Warrior trainer. 64001 advances a Basic Warrior into Vanguard. 64002, offered at Vanguard 30,
 is Ironclad's ("The Ironclad's Oath"; Champion's quest is gone): it has an objective the realm
-never credits. The tone comes from 1718, 1791 and 1712, and no text is copied.
+never credits. The tone comes from 1718, 1791 and 1712, and no text is copied. 64003, "The
+Zealot's Vow", is offered beside it at Vanguard 30 and advances into Zealot. 64004, "The Templar's
+Charge", is offered at Zealot 50 and never completes.
 
 ## Checked against vmangos and the client code
 

@@ -382,3 +382,89 @@ rank_spells = [12317, 13045, 13046, 13047, 13048]
 effects = [
     { kind = "crit_taken_damage_pct", aura_spell_ids = [12880, 14201, 14202, 14203, 14204], duration_ms = 12000, swings = 12, per_rank = [5, 10, 15, 20, 25] },
 ]
+
+[[calling]]
+key = "zealot"
+name = "Zealot"
+tier = 2
+cap = 50
+tier_bonus = { strength = 28, agility = 14, stamina = 28, intellect = 0, spirit = 7 }
+# Still a rage bar and Battle Stance: the borrowed Paladin spells need no stance once rewritten.
+shapeshift_form = 17
+armour = ["cloth", "leather", "mail", "plate", "shield"]
+
+# Borrowed Paladin spells (`borrowed`): the client rewrites each row to cost `rage_cost` rage in any
+# stance, as a Warrior spell with its own family bit (33..63, which no Warrior spell uses), so a
+# talent's spell modifier can name it (ADR 0003). The Seals and Judgement do nothing yet: their
+# effects come with the realm's Seals.
+[[calling.skill]]
+key = "seal_of_command"
+spell_id = 20375
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self"
+borrowed = { family_bit = 33 }
+effects = []
+
+[[calling.skill]]
+key = "seal_of_the_crusader"
+spell_id = 20305
+rage_cost = 10
+cooldown_ms = 0
+gcd_ms = 1500
+target = "self"
+borrowed = { family_bit = 34 }
+effects = []
+
+[[calling.skill]]
+key = "judgement"
+spell_id = 20271
+rage_cost = 5
+cooldown_ms = 10000
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 10.0]
+borrowed = { family_bit = 35 }
+effects = []
+
+# Rank 4, the one whose tooltip says six seconds.
+[[calling.skill]]
+key = "hammer_of_justice"
+spell_id = 10308
+rage_cost = 15
+cooldown_ms = 60000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 10.0]
+borrowed = { family_bit = 36 }
+effects = [{ kind = "stun", aura_spell_id = 10308, duration_ms = 6000 }]
+
+# Carried over from Vanguard with the same data: `callings::skill` finds a spell's first table.
+[[calling.skill]]
+key = "mortal_strike"
+spell_id = 12294
+rage_cost = 30
+cooldown_ms = 6000
+gcd_ms = 1500
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [
+    { kind = "weapon_strike", weapon = "normalized", bonus = { base = 25.0, per_level = 2.5 } },
+    { kind = "healing_reduction", pct = 50, duration_ms = 10000 },
+]
+
+[[calling.skill]]
+key = "charge"
+spell_id = 6178
+rage_cost = 0
+cooldown_ms = 15000
+gcd_ms = 0
+target = "enemy"
+range_yd = [8.0, 25.0]
+requires_out_of_combat = true
+effects = [
+    { kind = "charge", speed_yd_s = 24.0 },
+    { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
+    { kind = "stun", aura_spell_id = 7922, duration_ms = 1000 },
+]

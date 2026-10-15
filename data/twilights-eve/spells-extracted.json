@@ -90,6 +90,46 @@
      ]
     }
    }
+  },
+  "zealot": {
+   "ap_estimate": [
+    85,
+    130,
+    180,
+    205,
+    330
+   ],
+   "levels": [
+    1,
+    10,
+    20,
+    25,
+    50
+   ],
+   "skills": {
+    "charge": {
+     "energize_rage.amount": [
+      11,
+      12,
+      13,
+      14,
+      16
+     ]
+    },
+    "hammer_of_justice": {},
+    "judgement": {},
+    "mortal_strike": {
+     "weapon_strike.bonus": [
+      28,
+      50,
+      75,
+      88,
+      150
+     ]
+    },
+    "seal_of_command": {},
+    "seal_of_the_crusader": {}
+   }
   }
  },
  "sources": {
@@ -217,6 +257,85 @@
     "Battle Stance"
    ],
    "stances_mask": 65536,
+   "stances_not_mask": 0,
+   "target_aura_state": 0
+  },
+  "10308": {
+   "attributes": [
+    "0x50000",
+    "0x40000",
+    "0x0",
+    "0x0",
+    "0x0"
+   ],
+   "aura_description": "Stunned.",
+   "base_level": 54,
+   "cast_time_ms": 0,
+   "caster_aura_state": 0,
+   "category": 32,
+   "category_cooldown_ms": 60000,
+   "cooldown_ms": 0,
+   "cost": 100,
+   "cost_pct": 0,
+   "cost_raw": 100,
+   "description": "Stuns the target for $d.",
+   "dispel": 1,
+   "dmg_class": "magic",
+   "duration_ms": 6000,
+   "effects": [
+    {
+     "amplitude_ms": 0,
+     "aura": 12,
+     "aura_name": "MOD_STUN",
+     "base_points": -1,
+     "chain_targets": 0,
+     "effect": 6,
+     "effect_name": "APPLY_AURA",
+     "implicit_target": [
+      6,
+      0
+     ],
+     "item_type_or_family_mask": "0x0",
+     "misc_value": 0,
+     "multiple_value": 0.0,
+     "radius_yd": null,
+     "real_points_per_level": 0.0,
+     "trigger_spell": 0,
+     "value": 0
+    }
+   ],
+   "family": 10,
+   "family_flags": 2048,
+   "gcd_category": 133,
+   "gcd_ms": 1500,
+   "icon": "Interface\\Icons\\Spell_Holy_SealOfMight",
+   "icon_id": 302,
+   "id": 10308,
+   "in_spellbook": true,
+   "max_level": 0,
+   "max_targets": 0,
+   "mechanic": 12,
+   "name": "Hammer of Justice",
+   "not_in_combat": false,
+   "on_next_swing": false,
+   "passive": false,
+   "power_type": "mana",
+   "proc": {
+    "chance": 101,
+    "charges": 0,
+    "flags": "0x0"
+   },
+   "range_index": 7,
+   "range_name": "Very Short Range",
+   "range_yd": [
+    0.0,
+    10.0
+   ],
+   "rank": "Rank 4",
+   "school": "holy",
+   "spell_level": 54,
+   "stances": [],
+   "stances_mask": 0,
    "stances_not_mask": 0,
    "target_aura_state": 0
   },
@@ -6287,6 +6406,303 @@
    "rank": "Rank 2",
    "school": "physical",
    "spell_level": 0,
+   "stances": [],
+   "stances_mask": 0,
+   "stances_not_mask": 0,
+   "target_aura_state": 0
+  },
+  "20271": {
+   "attributes": [
+    "0x50000",
+    "0x0",
+    "0x100000",
+    "0x200",
+    "0x0"
+   ],
+   "aura_description": "",
+   "base_level": 4,
+   "cast_time_ms": 0,
+   "caster_aura_state": 5,
+   "category": 0,
+   "category_cooldown_ms": 0,
+   "cooldown_ms": 10000,
+   "cost": 0,
+   "cost_pct": 6,
+   "cost_raw": 0,
+   "description": "Unleashes the energy of a Seal spell upon an enemy.  Refer to individual Seals for Judgement effect.",
+   "dispel": 0,
+   "dmg_class": "none",
+   "duration_ms": null,
+   "effects": [
+    {
+     "amplitude_ms": 0,
+     "aura": 0,
+     "aura_name": null,
+     "base_points": -1,
+     "chain_targets": 0,
+     "effect": 77,
+     "effect_name": "SCRIPT_EFFECT",
+     "implicit_target": [
+      6,
+      0
+     ],
+     "item_type_or_family_mask": "0x0",
+     "misc_value": 0,
+     "multiple_value": 0.0,
+     "radius_yd": null,
+     "real_points_per_level": 0.0,
+     "trigger_spell": 0,
+     "value": 0
+    }
+   ],
+   "family": 10,
+   "family_flags": 8388608,
+   "gcd_category": 0,
+   "gcd_ms": 0,
+   "icon": "Interface\\Icons\\Spell_Holy_RighteousFury",
+   "icon_id": 205,
+   "id": 20271,
+   "in_spellbook": true,
+   "max_level": 0,
+   "max_targets": 0,
+   "mechanic": 0,
+   "name": "Judgement",
+   "not_in_combat": false,
+   "on_next_swing": false,
+   "passive": false,
+   "power_type": "mana",
+   "proc": {
+    "chance": 0,
+    "charges": 0,
+    "flags": "0x0"
+   },
+   "range_index": 7,
+   "range_name": "Very Short Range",
+   "range_yd": [
+    0.0,
+    10.0
+   ],
+   "rank": "",
+   "school": "holy",
+   "spell_level": 4,
+   "stances": [],
+   "stances_mask": 0,
+   "stances_not_mask": 0,
+   "target_aura_state": 0
+  },
+  "20305": {
+   "attributes": [
+    "0x50000",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0"
+   ],
+   "aura_description": "Melee attack power increased by $s1.  Melee attacks are $s2% faster, but deal less damage.",
+   "base_level": 22,
+   "cast_time_ms": 0,
+   "caster_aura_state": 0,
+   "category": 0,
+   "category_cooldown_ms": 0,
+   "cooldown_ms": 0,
+   "cost": 65,
+   "cost_pct": 0,
+   "cost_raw": 65,
+   "description": "Fills the Paladin with the spirit of a crusader for $d, granting $s1 melee attack power.  The Paladin also attacks $s2% faster, but deals less damage with each attack.  Only one Seal can be active on the Paladin at any one time.\r\n\r\nUnleashing this Seal's energy will judge an enemy for $20300d, increasing Holy damage taken by up to $20300s1.  Your melee strikes will refresh the spell's duration.  Only one Judgement per Paladin can be active at any one time.",
+   "dispel": 1,
+   "dmg_class": "magic",
+   "duration_ms": 30000,
+   "effects": [
+    {
+     "amplitude_ms": 0,
+     "aura": 99,
+     "aura_name": "MOD_ATTACK_POWER",
+     "base_points": 93,
+     "chain_targets": 0,
+     "effect": 6,
+     "effect_name": "APPLY_AURA",
+     "implicit_target": [
+      1,
+      0
+     ],
+     "item_type_or_family_mask": "0x0",
+     "misc_value": 0,
+     "multiple_value": 0.0,
+     "radius_yd": null,
+     "real_points_per_level": 1.7,
+     "trigger_spell": 0,
+     "value": 94
+    },
+    {
+     "amplitude_ms": 0,
+     "aura": 9,
+     "aura_name": "9",
+     "base_points": 39,
+     "chain_targets": 0,
+     "effect": 6,
+     "effect_name": "APPLY_AURA",
+     "implicit_target": [
+      1,
+      0
+     ],
+     "item_type_or_family_mask": "0x0",
+     "misc_value": 0,
+     "multiple_value": 0.0,
+     "radius_yd": null,
+     "real_points_per_level": 0.0,
+     "trigger_spell": 0,
+     "value": 40
+    },
+    {
+     "amplitude_ms": 0,
+     "aura": 4,
+     "aura_name": "DUMMY",
+     "base_points": 20299,
+     "chain_targets": 0,
+     "effect": 6,
+     "effect_name": "APPLY_AURA",
+     "implicit_target": [
+      1,
+      0
+     ],
+     "item_type_or_family_mask": "0x0",
+     "misc_value": 0,
+     "multiple_value": 0.0,
+     "radius_yd": null,
+     "real_points_per_level": 0.0,
+     "trigger_spell": 0,
+     "value": 20300
+    }
+   ],
+   "family": 10,
+   "family_flags": 512,
+   "gcd_category": 133,
+   "gcd_ms": 1500,
+   "icon": "Interface\\Icons\\Spell_Holy_HolySmite",
+   "icon_id": 237,
+   "id": 20305,
+   "in_spellbook": true,
+   "max_level": 30,
+   "max_targets": 0,
+   "mechanic": 0,
+   "name": "Seal of the Crusader",
+   "not_in_combat": false,
+   "on_next_swing": false,
+   "passive": false,
+   "power_type": "mana",
+   "proc": {
+    "chance": 0,
+    "charges": 0,
+    "flags": "0x0"
+   },
+   "range_index": 1,
+   "range_name": "Self Only",
+   "range_yd": [
+    0.0,
+    0.0
+   ],
+   "rank": "Rank 3",
+   "school": "holy",
+   "spell_level": 22,
+   "stances": [],
+   "stances_mask": 0,
+   "stances_not_mask": 0,
+   "target_aura_state": 0
+  },
+  "20375": {
+   "attributes": [
+    "0x50000",
+    "0x0",
+    "0x0",
+    "0x0",
+    "0x0"
+   ],
+   "aura_description": "Melee attacks have a chance to deal additional Holy damage.",
+   "base_level": 20,
+   "cast_time_ms": 0,
+   "caster_aura_state": 0,
+   "category": 0,
+   "category_cooldown_ms": 0,
+   "cooldown_ms": 0,
+   "cost": 65,
+   "cost_pct": 0,
+   "cost_raw": 65,
+   "description": "Gives the Paladin a chance to deal additional Holy damage equal to $20424s1% of normal weapon damage.  Only one Seal can be active on the Paladin at any one time.  Lasts $d.\r\n\r\nUnleashing this Seal's energy will judge an enemy, instantly causing $/2;20467s1 Holy damage, $20467s1 if the target is stunned or incapacitated.",
+   "dispel": 1,
+   "dmg_class": "magic",
+   "duration_ms": 30000,
+   "effects": [
+    {
+     "amplitude_ms": 0,
+     "aura": 42,
+     "aura_name": "PROC_TRIGGER_SPELL",
+     "base_points": -1,
+     "chain_targets": 0,
+     "effect": 6,
+     "effect_name": "APPLY_AURA",
+     "implicit_target": [
+      1,
+      0
+     ],
+     "item_type_or_family_mask": "0x0",
+     "misc_value": 0,
+     "multiple_value": 0.0,
+     "radius_yd": null,
+     "real_points_per_level": 0.0,
+     "trigger_spell": 20424,
+     "value": 0
+    },
+    {
+     "amplitude_ms": 0,
+     "aura": 4,
+     "aura_name": "DUMMY",
+     "base_points": 20424,
+     "chain_targets": 0,
+     "effect": 6,
+     "effect_name": "APPLY_AURA",
+     "implicit_target": [
+      1,
+      0
+     ],
+     "item_type_or_family_mask": "0x0",
+     "misc_value": 0,
+     "multiple_value": 0.0,
+     "radius_yd": null,
+     "real_points_per_level": 0.0,
+     "trigger_spell": 0,
+     "value": 20425
+    }
+   ],
+   "family": 10,
+   "family_flags": 33554432,
+   "gcd_category": 133,
+   "gcd_ms": 1500,
+   "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
+   "icon_id": 561,
+   "id": 20375,
+   "in_spellbook": true,
+   "max_level": 28,
+   "max_targets": 0,
+   "mechanic": 0,
+   "name": "Seal of Command",
+   "not_in_combat": false,
+   "on_next_swing": false,
+   "passive": false,
+   "power_type": "mana",
+   "proc": {
+    "chance": 100,
+    "charges": 0,
+    "flags": "0x4"
+   },
+   "range_index": 1,
+   "range_name": "Self Only",
+   "range_yd": [
+    0.0,
+    0.0
+   ],
+   "rank": "Rank 1",
+   "school": "holy",
+   "spell_level": 20,
    "stances": [],
    "stances_mask": 0,
    "stances_not_mask": 0,
