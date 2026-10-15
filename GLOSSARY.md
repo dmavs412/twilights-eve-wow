@@ -25,6 +25,10 @@ _Avoid_: base, city
 An area around the Hub where a character levels by killing mobs and doing repeatable quests.
 _Avoid_: zone (a WoW map area, which a Hunting Ground may only partly cover)
 
+**Camp**:
+A group of mobs that stand together and fight together: pulling one pulls the rest. The Barrens' camps come from its vanilla spawns; the low camps by the Hub are placed by hand.
+_Avoid_: pack, group (a player party)
+
 **Local Realm**:
 The simulated server that Twilight's Eve plays against, running inside the client with no network. It is the authority on all game state, as a real server would be.
 _Avoid_: fake server, mock server, sim
