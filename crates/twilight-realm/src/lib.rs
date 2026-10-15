@@ -24,6 +24,7 @@ mod rng;
 pub mod rules;
 mod save;
 mod tables;
+mod talents;
 mod world;
 
 use benilla_protocol::{CharCreateReq, SessionEvent};
@@ -137,6 +138,11 @@ pub enum RealmCommand {
         slot: u8,
         count: u8,
     },
+    /// Spend Talent Points on a talent of the current Calling's tree, up to the 0-based `rank`.
+    LearnTalent {
+        talent_id: u32,
+        rank: u32,
+    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -238,6 +244,7 @@ impl Realm {
             }
             RealmCommand::Logout => self.logout(),
             RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
+            RealmCommand::LearnTalent { talent_id, rank } => self.learn_talent(talent_id, rank),
             other => self.handle_items(other),
         }
     }

@@ -63,6 +63,12 @@ struct SaveV1 {
     /// Copper. Added within version 1: a save without it has none.
     #[serde(default)]
     money: u32,
+    /// `[talent id, rank]` per learned talent. Added within version 1: a save without them has none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    talents: Vec<(u32, u8)>,
+    /// Respecs bought, which price the next. Added within version 1.
+    #[serde(default)]
+    talent_wipes: u32,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -127,6 +133,8 @@ pub(crate) fn export(c: &Char) -> String {
         orientation: c.orientation,
         action_bar: c.action_bar.clone(),
         money: c.inventory.money,
+        talents: c.talents.clone(),
+        talent_wipes: c.talent_wipes,
         items: saved_items(&c.inventory),
     };
     toml::to_string(&save).expect("a save always serializes")
@@ -141,7 +149,7 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
     if !content::valid_race(s.race) || s.gender > 1 || s.level == 0 {
         return Err(SaveError::Unreadable);
     }
-    Ok(Char {
+    let mut c = Char {
         guid: s.guid,
         name: s.name,
         race: s.race,
@@ -155,6 +163,10 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         position: s.position,
         orientation: s.orientation,
         action_bar: s.action_bar,
+        talents: s.talents,
+        talent_wipes: s.talent_wipes,
         inventory: load_inventory(s.money, &s.items)?,
-    })
+    };
+    crate::talents::keep_valid(&mut c);
+    Ok(c)
 }

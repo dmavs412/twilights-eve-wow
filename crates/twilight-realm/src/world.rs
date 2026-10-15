@@ -95,7 +95,7 @@ pub(crate) struct InWorld {
 impl InWorld {
     /// Logs `c` in: what vmangos sends from `CMSG_PLAYER_LOGIN` to the player's own create.
     pub(crate) fn enter(c: &Char, dev: DevMultipliers, events: &mut Vec<SessionEvent>) -> Self {
-        let stats = equipment::stats(c);
+        let stats = crate::talents::stats(c);
         events.push(SessionEvent::Connected {
             self_guid: c.guid,
             name: c.name.clone(),
@@ -119,6 +119,7 @@ impl InWorld {
             timescale: 1.0 / 60.0,
         });
         events.push(cast::spell_book(c));
+        events.extend(crate::talents::spell_mods(c));
         events.push(cast::action_buttons(c));
         // The proficiencies and the carried items' objects, ahead of the player that names them.
         equipment::login(c, events);
@@ -485,7 +486,7 @@ impl InWorld {
             leveled = true;
             let old = self.player.stats;
             c.level += 1;
-            let new = equipment::stats(c);
+            let new = crate::talents::stats(c);
             self.player.stats = new;
             self.player.health = new.max_health;
             events.push(SessionEvent::LevelUp(LevelUpInfo {
@@ -506,6 +507,7 @@ impl InWorld {
         let mut pairs = vec![(PLAYER_XP, c.xp)];
         if leveled {
             pairs.push((PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)));
+            pairs.push(crate::talents::points_pair(c));
             pairs.push((UNIT_FIELD_HEALTH, self.player.health));
             pairs.extend(sheet_pairs(&cast::buffed(&self.player.stats, &self.skills)));
         }
@@ -696,6 +698,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     pairs.extend(guid_pairs(OBJECT_FIELD_GUID, c.guid));
     pairs.extend(sheet_pairs(stats));
     pairs.push(cast::stance(c));
+    pairs.push(crate::talents::points_pair(c));
     pairs.extend(crate::equipment::inventory_pairs(&c.inventory));
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {
@@ -721,7 +724,7 @@ impl InWorld {
     pub(crate) fn refresh_gear(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
         let p = &mut self.player;
         let lost = p.stats.max_health.saturating_sub(p.health);
-        p.stats = equipment::stats(c);
+        p.stats = crate::talents::stats(c);
         if p.alive() {
             p.health = p.stats.max_health.saturating_sub(lost).max(1);
         }
