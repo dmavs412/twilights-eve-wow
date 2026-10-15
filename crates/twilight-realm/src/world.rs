@@ -307,10 +307,14 @@ impl InWorld {
         ticked
     }
 
-    /// Mob `i` turns on the player, and every idle member of its camp with it (social aggro).
+    /// Mob `i` turns on the player. A hostile mob brings every idle member of its camp with it
+    /// (social aggro); a neutral one comes alone, and its campmates wait to be attacked themselves.
     fn pull(&mut self, i: usize, events: &mut Vec<SessionEvent>) {
         let camp = self.mobs[i].camp;
         engage(&mut self.mobs[i], self.guid, events);
+        if !self.mobs[i].template.hostile {
+            return;
+        }
         for mob in &mut self.mobs {
             if mob.camp == camp && mob.state == State::Idle {
                 engage(mob, self.guid, events);

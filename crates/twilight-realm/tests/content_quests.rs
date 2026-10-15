@@ -22,6 +22,7 @@ struct Quest {
     giver: u32,
     level: u8,
     title: String,
+    details: String,
     money: u32,
     #[serde(default)]
     kill: Vec<(u32, u32)>,
@@ -129,4 +130,89 @@ fn the_quests_cover_levels_one_to_twenty_four() {
 fn the_token_is_a_known_item() {
     let mut realm = realm();
     assert!(item_known(&mut realm, 90001));
+}
+
+/// The compass words a quest's details may use, as bearings: degrees from north (+x) toward west
+/// (+y), the way WoW's map coordinates run.
+const COMPASS: [(&str, f32); 8] = [
+    ("north", 0.0),
+    ("north-west", 45.0),
+    ("west", 90.0),
+    ("south-west", 135.0),
+    ("south", 180.0),
+    ("south-east", 225.0),
+    ("east", 270.0),
+    ("north-east", 315.0),
+];
+
+/// How far off a compass word may be and still point the way: half a quarter turn either side.
+const POINTS_THE_WAY_DEG: f32 = 45.0;
+
+#[test]
+fn the_low_quests_point_the_way_to_their_camps() {
+    let low: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../data/twilights-eve/crossroads_low_camps.json"
+    ))
+    .unwrap();
+    let camps = low["camps"].as_array().unwrap();
+    let town = twilight_realm::CROSSROADS;
+    let off = |a: f32, b: f32| {
+        let d = (a - b).rem_euclid(360.0);
+        d.min(360.0 - d)
+    };
+    let low_quests: Vec<Quest> = content()
+        .quest
+        .into_iter()
+        .filter(|q| q.level <= 6)
+        .collect();
+    assert!(!low_quests.is_empty());
+    for q in low_quests {
+        let targets: Vec<u32> = q
+            .kill
+            .iter()
+            .map(|k| k.0)
+            .chain(q.collect.iter().flat_map(|c| c.from.iter().copied()))
+            .collect();
+        let bearings: Vec<f32> = camps
+            .iter()
+            .filter(|c| {
+                c["members"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|m| targets.contains(&(m["entry"].as_u64().unwrap() as u32)))
+            })
+            .map(|c| {
+                let dx = c["center"][0].as_f64().unwrap() as f32 - town[0];
+                let dy = c["center"][1].as_f64().unwrap() as f32 - town[1];
+                dy.atan2(dx).to_degrees().rem_euclid(360.0)
+            })
+            .collect();
+        assert!(
+            !bearings.is_empty(),
+            "quest {}: no low camp of its targets",
+            q.id
+        );
+        let details = q.details.to_lowercase();
+        let words: Vec<f32> = details
+            .split(|ch: char| !(ch.is_ascii_alphabetic() || ch == '-'))
+            .filter_map(|w| COMPASS.iter().find(|(name, _)| *name == w).map(|c| c.1))
+            .collect();
+        for b in &bearings {
+            assert!(
+                words.iter().any(|w| off(*w, *b) <= POINTS_THE_WAY_DEG),
+                "quest {}: a camp lies at {b:.0} deg, and \"{}\" does not say so",
+                q.id,
+                q.details
+            );
+        }
+        for w in &words {
+            assert!(
+                bearings.iter().any(|b| off(*w, *b) <= POINTS_THE_WAY_DEG),
+                "quest {}: \"{}\" points at {w:.0} deg, where none of its camps is",
+                q.id,
+                q.details
+            );
+        }
+    }
 }

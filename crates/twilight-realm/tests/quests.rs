@@ -437,7 +437,7 @@ fn clear_the_scorpids(with_quest: bool) -> (Vec<u32>, Vec<SessionEvent>, u64) {
 
     let mut rows = Vec::new();
     for mob in &scorpids {
-        // The camp came at the player with the first pull: fight each where it now stands.
+        // Fight each where it now stands: an earlier fight may have moved it.
         let mob = Mob {
             guid: mob.guid,
             position: where_now(&all, mob),

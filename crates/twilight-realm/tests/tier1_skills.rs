@@ -142,14 +142,14 @@ fn tier1_at(level: u8, seed: u64) -> (Realm, u64, Vec<Mob>, View) {
 /// blows until it had `rage`.
 fn tanking(rage: u32) -> (Realm, u64, Mob, View) {
     let (mut realm, me, _, mut view) = tier1_at(1, SEED);
-    // Out of aggro range of the four level 3 scorpids south of the Crossroads, then a mob of
-    // theirs: its camp comes along.
+    // Out of reach of the four level 3 scorpids south of the Crossroads, then each of them in
+    // turn: neutral, they come only when attacked themselves.
     realm.handle(RealmCommand::Move {
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],
         orientation: std::f32::consts::PI,
     });
     let streamed = view.run(&mut realm, 1.0);
-    let mob = streamed
+    let camp: Vec<Mob> = streamed
         .iter()
         .filter_map(|e| match e {
             SessionEvent::ObjectCreate {
@@ -163,10 +163,12 @@ fn tanking(rage: u32) -> (Realm, u64, Mob, View) {
             }),
             _ => None,
         })
-        .next()
-        .expect("the scorpid camp streams in");
+        .collect();
+    let mob = camp.first().cloned().expect("the scorpid camp streams in");
     stand_at(&mut realm, &mob, 2.0);
-    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    for other in camp.iter().rev() {
+        realm.handle(RealmCommand::AttackSwing { guid: other.guid });
+    }
     realm.handle(RealmCommand::AttackStop);
     for _ in 0..1800 {
         view.run(&mut realm, 0.1);
