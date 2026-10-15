@@ -30,9 +30,23 @@ fn ms(v: &Value, k: &str) -> u32 {
 
 #[test]
 fn the_basic_warrior_matches_the_reference() {
+    check_calling("basic_warrior");
+}
+
+#[test]
+fn the_tier_1_warrior_matches_the_reference() {
+    check_calling("warrior");
+}
+
+fn check_calling(calling: &str) {
     let reference = reference();
-    let want = &reference["callings"]["basic_warrior"];
-    let got = callings::calling("basic_warrior").expect("the Basic Warrior");
+    let want = &reference["callings"][calling];
+    let got = callings::calling(calling).expect(calling);
+    let bonus = &reference["tier_bonus"][got.tier.to_string()];
+    let bonus = ["strength", "agility", "stamina", "intellect", "spirit"]
+        .map(|s| bonus[s].as_u64().unwrap() as u32);
+    assert_eq!(got.tier_bonus.stats(), bonus, "{calling}: the Tier Bonus");
+    assert_eq!(got.name, want["display_name"].as_str().unwrap());
     assert_eq!(u64::from(got.tier), want["tier"].as_u64().unwrap());
     assert_eq!(u64::from(got.cap), want["cap"].as_u64().unwrap());
     assert_eq!(
@@ -99,9 +113,29 @@ fn the_basic_warrior_matches_the_reference() {
             realm["requires_out_of_combat"].as_bool().unwrap_or(false),
             "{key}"
         );
+        let requires = realm["requires"].as_str().unwrap_or("");
         assert_eq!(
             got.requires_target_dodged,
-            realm.get("requires").is_some(),
+            requires.contains("dodge"),
+            "{key}"
+        );
+        assert_eq!(
+            got.requires_target_health_pct,
+            if requires.contains("20% health") {
+                20
+            } else {
+                0
+            },
+            "{key}"
+        );
+        assert_eq!(
+            u64::from(got.extra_targets),
+            realm["extra_targets"].as_u64().unwrap_or(0),
+            "{key}"
+        );
+        assert_eq!(
+            f64::from(got.extra_target_radius_yd),
+            realm["extra_target_radius_yd"].as_f64().unwrap_or(0.0),
             "{key}"
         );
         assert_eq!(
@@ -208,6 +242,20 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(duration_ms, ms(want, "duration_ms"));
             assert_eq!(amount, linear(&want["amount"]), "{key}");
         }
+        Effect::HealingReduction { pct, duration_ms } => {
+            assert_eq!(kind, "healing_reduction", "{key}");
+            assert_eq!(pct, ms(want, "pct"));
+            assert_eq!(duration_ms, ms(want, "duration_ms"));
+        }
+        Effect::Execute {
+            base,
+            per_extra_rage,
+        } => {
+            assert_eq!(kind, "execute", "{key}");
+            assert_eq!(want["consumes_all_rage"], true, "{key}");
+            assert_eq!(base, linear(&want["base"]), "{key}");
+            assert_eq!(per_extra_rage, linear(&want["per_extra_rage"]), "{key}");
+        }
     }
 }
 
@@ -215,16 +263,58 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
 fn every_skill_id_is_listed_for_rank_blanking() {
     let mut ids: Vec<u32> = callings::skill_spell_ids().collect();
     ids.sort_unstable();
-    assert_eq!(ids, [78, 100, 772, 1715, 2687, 6343, 6673, 7384]);
+    assert_eq!(
+        ids,
+        [
+            78, 100, 772, 845, 1715, 2687, 5308, 6178, 6192, 6343, 6546, 6673, 7384, 7887, 8198,
+            12294
+        ]
+    );
 }
 
 #[test]
 fn the_basic_warrior_talent_tree_matches_the_reference() {
+    check_tree("basic_warrior", &[]);
+}
+
+/// The Tier 1 talents the realm shows and lets the player learn, but does not model yet.
+const NOT_MODELLED: &[&str] = &[
+    "deflection",
+    "two_handed_weapon_specialization",
+    "impale",
+    "axe_specialization",
+    "sweeping_strikes",
+    "mace_specialization",
+    "sword_specialization",
+    "booming_voice",
+    "unbridled_wrath",
+    "piercing_howl",
+    "blood_craze",
+    "dual_wield_specialization",
+    "enrage",
+    "death_wish",
+    "shield_specialization",
+    "iron_will",
+    "last_stand",
+    "one_handed_weapon_specialization",
+    "concussion_blow",
+];
+
+#[test]
+fn the_tier_1_warrior_talent_tree_matches_the_reference() {
+    check_tree("warrior", NOT_MODELLED);
+    let tree = &callings::calling("warrior").unwrap().talent_tabs;
+    let names: Vec<&str> = tree.iter().map(|t| t.name.as_str()).collect();
+    assert_eq!(names, ["Arms", "Fury", "Protection"]);
+}
+
+/// A Calling's tree against the reference; the talents in `unmodelled` have no effect yet.
+fn check_tree(calling: &str, unmodelled: &[&str]) {
     let reference = reference();
-    let want = &reference["callings"]["basic_warrior"]["talent_tree"]["tabs"];
-    let got = &callings::calling("basic_warrior").unwrap().talent_tabs;
+    let want = &reference["callings"][calling]["talent_tree"]["tabs"];
+    let got = &callings::calling(calling).unwrap().talent_tabs;
     let want = want.as_array().unwrap();
-    assert_eq!(got.len(), want.len(), "one tab");
+    assert_eq!(got.len(), want.len(), "{calling}: the tabs");
     for (tab, want) in got.iter().zip(want) {
         assert_eq!(u64::from(tab.id), want["catalog_tab_id"].as_u64().unwrap());
         assert_eq!(tab.name, want["name"].as_str().unwrap());
@@ -287,8 +377,9 @@ fn the_basic_warrior_talent_tree_matches_the_reference() {
                 }
                 (m, w) => panic!("{key}: spell mod {m:?} against {w:?}"),
             }
-            assert!(
-                !t.effects.is_empty(),
+            assert_eq!(
+                t.effects.is_empty(),
+                unmodelled.contains(&key),
                 "{key}: the realm decides what it does"
             );
             for e in &t.effects {

@@ -793,6 +793,7 @@ impl InWorld {
                 let sheet = buff_sheet(&self.player.stats, &self.skills);
                 events.push(values(self.guid, &sheet));
             }
+            Effect::HealingReduction { .. } | Effect::Execute { .. } => {}
         }
     }
 

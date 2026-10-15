@@ -14,9 +14,13 @@ use crate::rules::skills::Linear;
 pub struct CallingDef {
     /// The save's name for it (`basic_warrior`).
     pub key: String,
+    /// What the select screen calls it (`Basic Warrior`).
+    pub name: String,
     pub tier: u8,
     /// The Tier Cap: the highest level inside the Tier.
     pub cap: u8,
+    /// The Tier Bonus: flat base stats on top of the race table, cumulative per Tier.
+    pub tier_bonus: TierBonus,
     /// `UNIT_FIELD_BYTES_1` byte 2 while this Calling is current (17, Battle Stance).
     pub shapeshift_form: u8,
     #[serde(rename = "skill")]
@@ -24,6 +28,29 @@ pub struct CallingDef {
     /// The Talent Tree: its tabs, as the stock talent frame shows them.
     #[serde(default, rename = "talent_tab")]
     pub talent_tabs: Vec<TalentTab>,
+}
+
+/// A Tier Bonus: what a Calling adds to each base stat.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+pub struct TierBonus {
+    pub strength: u32,
+    pub agility: u32,
+    pub stamina: u32,
+    pub intellect: u32,
+    pub spirit: u32,
+}
+
+impl TierBonus {
+    /// `[str, agi, sta, int, spi]`, the order of `UNIT_FIELD_STAT0..4`.
+    pub fn stats(&self) -> [u32; 5] {
+        [
+            self.strength,
+            self.agility,
+            self.stamina,
+            self.intellect,
+            self.spirit,
+        ]
+    }
 }
 
 /// One page of a Talent Tree.
@@ -83,6 +110,10 @@ pub enum TalentEffect {
     SkillCritPct { skill: String, per_rank: Vec<u32> },
     /// Every melee strike's critical strike chance rises by this many percent.
     MeleeCritPct { per_rank: Vec<u32> },
+    /// The Defense skill rises by this much.
+    Defense { per_rank: Vec<u32> },
+    /// The armour from items rises by this many percent.
+    ItemArmorPct { per_rank: Vec<u32> },
     /// A melee critical strike makes the target bleed for this percent of the average swing,
     /// under `aura_spell_id`, a tick every `tick_ms` for `duration_ms`.
     CritBleed {
@@ -102,6 +133,8 @@ impl TalentEffect {
             | Self::SkillRage { per_rank, .. }
             | Self::SkillCritPct { per_rank, .. }
             | Self::MeleeCritPct { per_rank }
+            | Self::Defense { per_rank }
+            | Self::ItemArmorPct { per_rank }
             | Self::CritBleed { per_rank, .. } => per_rank,
         }
     }
@@ -149,6 +182,15 @@ pub struct Skill {
     /// Holds the caster in combat this long (Bloodrage), so rage does not decay meanwhile.
     #[serde(default)]
     pub puts_in_combat_ms: u32,
+    /// Only on a target at or below this percent of its health (Execute); 0 for any.
+    #[serde(default)]
+    pub requires_target_health_pct: u32,
+    /// More enemies a strike also lands on, the nearest within `extra_target_radius_yd` of the
+    /// target (Cleave).
+    #[serde(default)]
+    pub extra_targets: u32,
+    #[serde(default)]
+    pub extra_target_radius_yd: f32,
     pub effects: Vec<Effect>,
 }
 
@@ -224,6 +266,14 @@ pub enum Effect {
     MovementSlow { pct: u32, duration_ms: u32 },
     /// The caster's attack power rises by `amount`, under the skill's spell id.
     AuraAttackPower { duration_ms: u32, amount: Linear },
+    /// The target's healing is cut by `pct`%, under the skill's spell id (Mortal Strike).
+    HealingReduction { pct: u32, duration_ms: u32 },
+    /// Physical damage of `base` plus `per_extra_rage` for every rage point over the cost, all of
+    /// which the cast spends (Execute).
+    Execute {
+        base: Linear,
+        per_extra_rage: Linear,
+    },
 }
 
 #[derive(Deserialize)]
@@ -248,10 +298,7 @@ pub fn calling(key: &str) -> Option<&'static CallingDef> {
 
 /// A current Calling's data.
 pub(crate) fn of(calling: Calling) -> &'static CallingDef {
-    let key = match calling {
-        Calling::BasicWarrior => "basic_warrior",
-    };
-    self::calling(key).expect("every Calling has a table in content/callings.toml")
+    self::calling(calling.key()).expect("every Calling has a table in content/callings.toml")
 }
 
 /// The first slot of the bar Battle Stance pages the main bar to (`GetBonusBarOffset` 1: Lua
