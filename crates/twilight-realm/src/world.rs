@@ -1,6 +1,7 @@
 //! The character in the world: the login burst that puts it there, the mobs around it, and the
 //! fights between them, one tick at a time.
 
+mod advance;
 mod cast;
 mod hearth;
 
@@ -296,6 +297,7 @@ impl InWorld {
             self.mob_tick(i, dt, host, c, rng, events);
         }
         self.skills_tick(dt, c, rng, events, &mut ticked);
+        self.update_aura_states(events);
         if !self.player.alive() && !self.player.dead {
             self.die(c, events);
         }
@@ -534,7 +536,11 @@ impl InWorld {
         } else {
             xp::Elite::No
         };
-        let gained = self.dev.xp(xp::kill_xp(c.level, mob.level(), elite));
+        let gained = if at_tier_cap(c) {
+            0
+        } else {
+            self.dev.xp(xp::kill_xp(c.level, mob.level(), elite))
+        };
         if gained > 0 {
             events.push(SessionEvent::XpGain(XpGain {
                 victim: mob.guid,
@@ -549,13 +555,17 @@ impl InWorld {
         crate::quests::credit_kill(c, entry, events);
     }
 
-    /// Pays a quest's `base` XP, scaled by the dev multiplier as kill XP is. What it paid.
+    /// Pays a quest's `base` XP, scaled by the dev multiplier as kill XP is; nothing at the Tier
+    /// Cap. What it paid.
     pub(crate) fn reward_xp(
         &mut self,
         c: &mut Char,
         base: u32,
         events: &mut Vec<SessionEvent>,
     ) -> u32 {
+        if at_tier_cap(c) {
+            return 0;
+        }
         let gained = self.dev.xp(base);
         if gained > 0 {
             self.give_xp(c, gained, events);
@@ -566,7 +576,7 @@ impl InWorld {
     /// Adds `amount` XP, levelling up as often as it covers (`Player::GiveXP`). Whether a level
     /// was gained.
     fn give_xp(&mut self, c: &mut Char, amount: u32, events: &mut Vec<SessionEvent>) -> bool {
-        let Some(mut next) = xp::xp_to_next(c.level) else {
+        let Some(mut next) = xp::xp_to_next(c.level).filter(|_| !at_tier_cap(c)) else {
             return false;
         };
         c.xp += amount;
@@ -586,6 +596,11 @@ impl InWorld {
                 stats: std::array::from_fn(|s| new.base[s].saturating_sub(old.base[s])),
             }));
             match xp::xp_to_next(c.level) {
+                // The Tier Cap: what is left over is not banked.
+                Some(_) if at_tier_cap(c) => {
+                    c.xp = 0;
+                    break;
+                }
                 Some(n) => next = n,
                 None => {
                     // The end of the game: nothing more to bank.
@@ -633,6 +648,11 @@ impl InWorld {
             events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
         }
     }
+}
+
+/// Whether `c` stands at their Calling's Tier Cap, where XP stops until they advance.
+fn at_tier_cap(c: &Char) -> bool {
+    c.level >= crate::callings::of(c.calling).cap
 }
 
 /// `mob` turns on the player: `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat

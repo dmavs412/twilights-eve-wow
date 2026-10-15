@@ -30,6 +30,25 @@ pub(crate) fn starting_inventory() -> crate::inventory::Inventory {
 pub(crate) enum Calling {
     /// Tier 0, where every character starts.
     BasicWarrior,
+    /// Tier 1, the Basic Warrior's Advancement.
+    Warrior,
+}
+
+impl Calling {
+    /// Its key in `content/callings.toml`, the same as its save name.
+    pub(crate) fn key(self) -> &'static str {
+        match self {
+            Calling::BasicWarrior => "basic_warrior",
+            Calling::Warrior => "warrior",
+        }
+    }
+
+    /// The Calling with this key.
+    pub(crate) fn from_key(key: &str) -> Option<Self> {
+        [Calling::BasicWarrior, Calling::Warrior]
+            .into_iter()
+            .find(|c| c.key() == key)
+    }
 }
 
 /// `ChrRaces.dbc` ids 1..=8: Human … Troll.

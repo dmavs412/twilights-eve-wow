@@ -15,7 +15,11 @@ use twilight_realm::CROSSROADS;
 #[test]
 fn quest_givers_stand_at_the_hub_with_names_and_marks() {
     let (mut realm, _, events) = warrior_with(1, 0, &[]);
-    let all = givers(&events);
+    // The Warrior trainer (5810) gives quests too: his Advancement Quests.
+    let all: Vec<_> = givers(&events)
+        .into_iter()
+        .filter(|g| g.1 != 5810)
+        .collect();
     assert_eq!(all.len(), 6, "one giver per Hunting Ground");
     for &(_, _, at) in &all {
         let d = ((at[0] - CROSSROADS[0]).powi(2) + (at[1] - CROSSROADS[1]).powi(2)).sqrt();
@@ -243,9 +247,10 @@ fn an_unfinished_quest_shows_its_progress_and_cannot_be_handed_in() {
 
 #[test]
 fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
-    // Level 15 on a level 10 quest: still a full level (15's 14400 XP).
+    // A level 15 Warrior on a level 10 quest: still a full level (15's 14400 XP).
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 5), (24, CROCOLISK_SKIN, 4)];
-    let (mut realm, me, mut events) = questing(15, skins, 2, &[(CROCOLISK_SKINS, [0; 4])]);
+    let (mut realm, me, mut events) =
+        questing_as("warrior", 15, skins, 2, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
     assert_eq!(quest_log(&events, me)[0].3, 1, "complete from the bags");
 
@@ -337,9 +342,9 @@ fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
 
 #[test]
 fn outlevelling_a_quest_shrinks_its_xp() {
-    // Level 16 on a level 10 quest: 80% of 16000.
+    // A level 16 Warrior on a level 10 quest: 80% of 16000.
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 8)];
-    let (mut realm, _, events) = questing(16, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
+    let (mut realm, _, events) = questing_as("warrior", 16, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
     let done = completed(&hand_in(&mut realm, zunjin, CROCOLISK_SKINS)).unwrap();
     assert_eq!(done.xp, 12800);

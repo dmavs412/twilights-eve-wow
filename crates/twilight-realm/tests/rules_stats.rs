@@ -107,3 +107,25 @@ fn a_mob_takes_its_stats_from_its_unit_class_and_level() {
     let imp = MobStats::new(UnitClass::Paladin, 3, 1.0, 1.0, 1.0);
     assert_eq!((imp.max_health, imp.armor), (69, 16));
 }
+
+#[test]
+fn the_tier_bonus_adds_to_the_base_stats_not_to_the_gear_bonus() {
+    // Tier 1's bonus on a level 1 human (AP 29, 60 hp, 40 armour): +12 Str, +6 Agi, +12 Sta, +3 Spi.
+    let bonus = [12, 6, 12, 0, 3];
+    let naked = WarriorStats::naked(HUMAN, 1);
+    let tier1 = WarriorStats::geared_at_tier(HUMAN, 1, bonus, &[]);
+    assert_eq!(
+        tier1.base,
+        std::array::from_fn(|i| naked.base[i] + bonus[i])
+    );
+    assert_eq!(
+        tier1.bonus, [0; 5],
+        "the sheet's green numbers are gear's alone"
+    );
+    // 24 attack power from 12 Strength, 12 armour from 6 Agility, 120 health from 12 Stamina.
+    assert_eq!(tier1.attack_power, 53);
+    assert_eq!(tier1.armor, 52);
+    assert_eq!(tier1.max_health, 180);
+    assert!(tier1.crit_pct > naked.crit_pct);
+    assert_eq!(WarriorStats::geared_at_tier(HUMAN, 1, [0; 5], &[]), naked);
+}

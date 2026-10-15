@@ -17,7 +17,7 @@ use crate::fields::values;
 use crate::rng::Rng;
 
 pub(crate) use content::{creature_name, item_template};
-pub(crate) use dialogs::template_response;
+pub(crate) use dialogs::{gossip_rows, template_response};
 pub(crate) use givers::Givers;
 
 /// The Token's item entry. Tokens are stacks of it in the bags: the quest dialogs pay them there
@@ -59,6 +59,8 @@ impl Active {
 #[derive(Debug, Clone, Default)]
 pub(crate) struct QuestLog {
     pub(crate) active: Vec<Active>,
+    /// Every quest ever handed in, once each, in the order first finished.
+    pub(crate) completed: Vec<u32>,
 }
 
 impl QuestLog {
@@ -126,6 +128,10 @@ fn complete(c: &Char, a: &Active) -> bool {
     let Some(q) = content::quest(a.id) else {
         return false;
     };
+    // Champion's quest: offered, and never finished.
+    if q.advancement.as_ref().is_some_and(|adv| !adv.completable) {
+        return false;
+    }
     q.kill
         .iter()
         .zip(a.kills)

@@ -77,7 +77,8 @@ fn slot_pairs(slot: u8, item: Option<&Item>) -> Vec<(u16, u32)> {
 
 /// The character's stats in what it wears.
 pub(crate) fn stats(c: &Char) -> WarriorStats {
-    WarriorStats::geared(c.race, c.level, &c.inventory.worn_entries())
+    let bonus = crate::callings::of(c.calling).tier_bonus.stats();
+    WarriorStats::geared_at_tier(c.race, c.level, bonus, &c.inventory.worn_entries())
 }
 
 /// At login, ahead of the player's own create: the proficiencies the tooltips and the bag check

@@ -42,6 +42,7 @@ const NO_POWER: u8 = 0x4d;
 
 // `NPCFlags`.
 const NPC_GOSSIP: u32 = 0x01;
+const NPC_QUESTGIVER: u32 = 0x02;
 const NPC_TRAINER: u32 = 0x10;
 
 const SEED: u64 = 0x5EED_0014;
@@ -202,8 +203,8 @@ fn the_warrior_trainer_stands_in_the_crossroads() {
     let fields = view.fields(trainer.guid);
     assert_eq!(
         fields.unit_npc_flags(),
-        NPC_GOSSIP | NPC_TRAINER,
-        "a class trainer who talks"
+        NPC_GOSSIP | NPC_QUESTGIVER | NPC_TRAINER,
+        "a class trainer who talks and gives the Advancement Quests"
     );
     // Friendly to every race the player may be (`FactionTemplate.dbc` 35).
     assert_eq!(fields.unit_faction_template(), Some(35));

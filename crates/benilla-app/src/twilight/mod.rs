@@ -57,6 +57,7 @@ impl Plugin for TwilightPlugin {
         // Fresh dice every session; a test seeds its own.
         let mut realm = Realm::with_seed(rand::random()).with_dev(dev_multipliers());
         let saved = load_saves(&mut realm);
+        app.init_resource::<crate::char_select::ClassLabels>();
         app.insert_resource(LocalRealm {
             far,
             realm,
@@ -190,6 +191,7 @@ fn pump(
     time: Res<Time>,
     world: WorldPoint,
     collision: WorldCollision,
+    mut labels: ResMut<crate::char_select::ClassLabels>,
 ) {
     let LocalRealm {
         far,
@@ -230,6 +232,9 @@ fn pump(
     }
 
     for event in realm.drain_events() {
+        if let SessionEvent::CharacterList { characters, .. } = &event {
+            label_callings(realm, characters, &mut labels);
+        }
         let logged_out = matches!(event, SessionEvent::LoggedOut);
         let _ = far.events.send(event);
         // The IO thread ends the session after a logout, which tears the streamed world down.
@@ -240,6 +245,21 @@ fn pump(
             });
         }
     }
+}
+
+/// The select screen names each character's Calling (`Level 7 Basic Warrior`), not its class.
+fn label_callings(
+    realm: &Realm,
+    roster: &[benilla_protocol::Character],
+    labels: &mut ResMut<crate::char_select::ClassLabels>,
+) {
+    let named = crate::char_select::ClassLabels(
+        roster
+            .iter()
+            .filter_map(|c| Some((c.guid, realm.calling_name(c.guid)?.to_string())))
+            .collect(),
+    );
+    labels.set_if_neq(named);
 }
 
 /// The client's commands the realm understands; the rest are dropped.

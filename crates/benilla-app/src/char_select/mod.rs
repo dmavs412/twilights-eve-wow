@@ -6,6 +6,7 @@
 mod addons;
 mod dialog;
 mod input;
+mod labels;
 mod refresh;
 mod screen;
 
@@ -13,6 +14,7 @@ use benilla_protocol::{CharAction, Character};
 use bevy::prelude::*;
 
 use crate::glue_strings::GlueStrings;
+pub(crate) use labels::ClassLabels;
 
 use crate::net::{
     CharActionResultMessage, CharListMessage, CharPick, CharRequest, CharacterLoginFailedMessage,

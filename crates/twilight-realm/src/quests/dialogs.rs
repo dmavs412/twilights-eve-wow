@@ -8,7 +8,7 @@ use benilla_protocol::messages::{
 };
 use benilla_protocol::SessionEvent;
 
-use super::content::{self, Giver, Quest};
+use super::content::{self, Quest};
 use super::givers::{self, within_reach};
 use super::{complete, slot_pairs, Active, TOKEN};
 use crate::characters::Char;
@@ -38,8 +38,7 @@ pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
         // `QUEST_METHOD_ENABLED`.
         method: 2,
         level: u32::from(q.level),
-        // The log files every quest under The Barrens.
-        zone_or_sort: crate::THE_BARRENS as i32,
+        zone_or_sort: q.zone_or_sort(),
         quest_type: 0,
         rep_objective_faction: 0,
         rep_objective_value: 0,
@@ -100,7 +99,7 @@ impl Realm {
         let mut done = Done::default();
         match command {
             RealmCommand::QuestGiverStatusQuery { npc } => {
-                if let Some(g) = givers::by_guid(npc) {
+                if let Some(g) = any_speaker(npc) {
                     events.push(SessionEvent::QuestGiverStatus {
                         npc,
                         status: status(c, g),
@@ -144,8 +143,12 @@ impl Realm {
             RealmCommand::QuestGiverChooseReward { npc, quest, .. } => {
                 if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
                     if is_complete(c, q) && reward(c, q, events) {
-                        let gained =
-                            w.reward_xp(c, rules::quest::reward_xp(c.level, q.level), events);
+                        // An Advancement Quest pays in a new Calling, not in XP.
+                        let gained = if q.advancement.is_some() {
+                            0
+                        } else {
+                            w.reward_xp(c, rules::quest::reward_xp(c.level, q.level), events)
+                        };
                         let mut items = Vec::new();
                         if q.tokens > 0 {
                             items.push((TOKEN, q.tokens));
@@ -156,6 +159,11 @@ impl Realm {
                             money: q.money,
                             items,
                         }));
+                        if let Some(to) = q.advancement.as_ref().and_then(|a| {
+                            crate::content::Calling::from_key(&a.to).filter(|_| a.completable)
+                        }) {
+                            w.advance(c, to, events);
+                        }
                         done.save = true;
                     }
                 }
@@ -169,22 +177,59 @@ impl Realm {
     }
 }
 
-/// The giver `npc`, if the player stands near enough to talk to it.
-fn talking_to(c: &Char, npc: u64) -> Option<&'static Giver> {
-    givers::by_guid(npc).filter(|g| within_reach(g, c.position))
+/// Whoever gives quests: one of the Hub's quest givers, or a Hub NPC with the quest giver flag
+/// (the Warrior trainer, whose gossip menu lists his Advancement Quests).
+#[derive(Clone, Copy)]
+struct Speaker {
+    entry: u32,
+    greeting: &'static str,
+}
+
+/// The quest giver with guid `npc`, wherever the player stands.
+fn any_speaker(npc: u64) -> Option<Speaker> {
+    if let Some(g) = givers::by_guid(npc) {
+        return Some(Speaker {
+            entry: g.entry,
+            greeting: &g.greeting,
+        });
+    }
+    crate::hub::find(npc)
+        .filter(|n| n.gives_quests())
+        .map(|n| Speaker {
+            entry: n.entry,
+            greeting: "",
+        })
+}
+
+/// The quest giver `npc`, if the player stands near enough to talk to it.
+fn talking_to(c: &Char, npc: u64) -> Option<Speaker> {
+    // Givers and the Hub stand on Kalimdor only, not in a Dungeon.
+    let near = c.map == crate::KALIMDOR
+        && match givers::by_guid(npc) {
+            Some(g) => within_reach(g, c.position),
+            None => crate::hub::find(npc).is_some_and(|n| crate::hub::within_reach(n, c.position)),
+        };
+    any_speaker(npc).filter(|_| near)
 }
 
 /// `quest`, if `g` offers it to the player now: theirs to take, and not in the log already.
-fn offer(c: &Char, g: &Giver, quest: u32) -> Option<&'static Quest> {
+fn offer(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
     content::quest(quest).filter(|q| q.giver == g.entry && offered(c, q))
 }
 
 fn offered(c: &Char, q: &Quest) -> bool {
-    c.level >= q.min_level() && c.quests.get(q.id).is_none()
+    if c.quests.get(q.id).is_some() {
+        return false;
+    }
+    match &q.advancement {
+        // At the Tier Cap of the Calling it advances from.
+        Some(a) => c.calling.key() == a.from && c.level >= crate::callings::of(c.calling).cap,
+        None => c.level >= q.min_level(),
+    }
 }
 
 /// `quest`, if it is in the player's log and `g` takes it in.
-fn in_log(c: &Char, g: &Giver, quest: u32) -> Option<&'static Quest> {
+fn in_log(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
     content::quest(quest).filter(|q| q.giver == g.entry && c.quests.get(q.id).is_some())
 }
 
@@ -193,50 +238,60 @@ fn is_complete(c: &Char, q: &Quest) -> bool {
 }
 
 /// The giver's mark (`GetDialogStatus`): a yellow `?` for a quest to hand in, a yellow `!` for one
-/// to take, a grey `?` for one under way, a grey `!` for one the player is too low for.
-fn status(c: &Char, g: &Giver) -> u32 {
+/// to take, a grey `?` for one under way, a grey `!` for one the player is too low for. An
+/// Advancement Quest that is not theirs yet shows nothing.
+fn status(c: &Char, g: Speaker) -> u32 {
     content::offered_by(g.entry)
         .map(|q| match c.quests.get(q.id) {
             Some(a) if complete(c, a) => dialog_status::REWARD2,
             Some(_) => dialog_status::INCOMPLETE,
             None if offered(c, q) => dialog_status::AVAILABLE,
+            None if q.advancement.is_some() => dialog_status::NONE,
             None => dialog_status::UNAVAILABLE,
         })
         .max()
         .unwrap_or(dialog_status::NONE)
 }
 
-/// `CMSG_QUESTGIVER_HELLO`: a lone quest opens its own panel, several open the greeting list.
-fn hello(c: &Char, g: &Giver, npc: u64, events: &mut Vec<SessionEvent>) {
-    // The quests under way first, as vmangos's menu lists them, then the ones on offer.
-    let active: Vec<&Quest> = content::offered_by(g.entry)
+/// The quests `giver` lists for the player, `(quest, icon)`: the ones under way first, as
+/// vmangos's menu lists them (4 for one to hand in, 3 for one under way), then the ones on offer.
+fn rows(c: &Char, giver: u32) -> Vec<(&'static Quest, u32)> {
+    let active = content::offered_by(giver)
         .filter(|q| c.quests.get(q.id).is_some())
-        .collect();
-    let open: Vec<&Quest> = content::offered_by(g.entry)
+        .map(|q| (q, if is_complete(c, q) { 4 } else { 3 }));
+    let open = content::offered_by(giver)
         .filter(|q| offered(c, q))
-        .collect();
-    match (active.as_slice(), open.as_slice()) {
-        ([q], []) => turn_in(c, npc, q, events),
-        ([], [q]) => events.push(SessionEvent::QuestDetail(details(npc, q))),
-        _ => {
-            let row = |q: &Quest, icon: u32| QuestListEntry {
-                quest_id: q.id,
-                icon,
-                level: u32::from(q.level),
-                title: q.title.clone(),
-            };
-            let mut quests: Vec<QuestListEntry> = active
+        .map(|q| (q, dialog_status::AVAILABLE));
+    active.chain(open).collect()
+}
+
+/// The quest rows of a gossip menu (`SMSG_GOSSIP_MESSAGE`), `(quest, icon, level, title)`: what
+/// the NPC with entry `giver` has for the player.
+pub(crate) fn gossip_rows(c: &Char, giver: u32) -> Vec<(u32, u32, u32, String)> {
+    rows(c, giver)
+        .into_iter()
+        .map(|(q, icon)| (q.id, icon, u32::from(q.level), q.title.clone()))
+        .collect()
+}
+
+/// `CMSG_QUESTGIVER_HELLO`: a lone quest opens its own panel, several open the greeting list.
+fn hello(c: &Char, g: Speaker, npc: u64, events: &mut Vec<SessionEvent>) {
+    match rows(c, g.entry).as_slice() {
+        [(q, icon)] if *icon != dialog_status::AVAILABLE => turn_in(c, npc, q, events),
+        [(q, _)] => events.push(SessionEvent::QuestDetail(details(npc, q))),
+        rows => {
+            let quests = rows
                 .iter()
-                .map(|q| {
-                    // The greeting's active rows: 4 for one to hand in, 3 for one under way.
-                    let icon = if is_complete(c, q) { 4 } else { 3 };
-                    row(q, icon)
+                .map(|(q, icon)| QuestListEntry {
+                    quest_id: q.id,
+                    icon: *icon,
+                    level: u32::from(q.level),
+                    title: q.title.clone(),
                 })
                 .collect();
-            quests.extend(open.iter().map(|q| row(q, dialog_status::AVAILABLE)));
             events.push(SessionEvent::QuestGreeting(QuestGiverList {
                 npc,
-                greeting: g.greeting.clone(),
+                greeting: g.greeting.to_string(),
                 emote_delay: 0,
                 emote: 0,
                 quests,
@@ -357,6 +412,9 @@ fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
     if q.tokens > 0 {
         // Checked above.
         let _ = equipment::receive_from(c, TOKEN, q.tokens, true, events);
+    }
+    if !c.quests.completed.contains(&q.id) {
+        c.quests.completed.push(q.id);
     }
     if let Some(i) = c.quests.active.iter().position(|a| a.id == q.id) {
         let a = c.quests.active.remove(i);

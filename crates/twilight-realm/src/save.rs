@@ -76,6 +76,9 @@ struct SaveV1 {
     /// turned into Tokens in the backpack; never written.
     #[serde(default, skip_serializing)]
     tokens: u32,
+    /// The quests ever handed in. Added within version 1: a save without it has finished none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    completed: Vec<u32>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -152,6 +155,7 @@ pub(crate) fn export(c: &Char) -> String {
             .map(|&(entry, left)| [entry, (left * 1000.0).round() as u32])
             .collect(),
         tokens: 0,
+        completed: c.quests.completed.clone(),
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -189,7 +193,10 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
             .iter()
             .map(|&[entry, ms]| (entry, ms as f32 / 1000.0))
             .collect(),
-        quests: crate::quests::load(&s.quests)?,
+        quests: crate::quests::QuestLog {
+            completed: s.completed,
+            ..crate::quests::load(&s.quests)?
+        },
     };
     if s.tokens > 0 {
         // As many as the backpack takes: all of them in any save from those builds.

@@ -10,7 +10,7 @@ use crate::net::NetStatus;
 use crate::portrait::{GlueLook, GluePreview, SelectLook};
 
 use super::screen::{RealmBanner, RowText, SelectAction, SelectedName, MAX_ROWS};
-use super::{class_name, Roster};
+use super::{class_name, ClassLabels, Roster};
 
 /// Refill the rows, the selected name and the realm banner when the roster changes or the screen
 /// was just spawned (a return from the create screen finds the roster unchanged).
@@ -20,6 +20,7 @@ pub(super) fn refresh_list(
     areas: Option<Res<AreaTableRes>>,
     strings: Option<Res<GlueStrings>>,
     status: Res<NetStatus>,
+    labels: Option<Res<ClassLabels>>,
     mut rows: Query<(&SelectAction, &mut Visibility), (With<Button>, Without<Hilight>)>,
     mut texts: Query<(&RowText, &mut Text), Without<SelectedName>>,
     mut name: Query<&mut Text, (With<SelectedName>, Without<RealmBanner>, Without<RowText>)>,
@@ -27,7 +28,8 @@ pub(super) fn refresh_list(
     spawned: Query<Ref<SelectAction>>,
 ) {
     let fresh = spawned.iter().any(|r| r.is_added());
-    if !roster.is_changed() && !fresh && !status.is_changed() {
+    let relabelled = labels.as_ref().is_some_and(|l| l.is_changed());
+    if !roster.is_changed() && !fresh && !status.is_changed() && !relabelled {
         return;
     }
     let empty = GlueStrings::default();
@@ -63,7 +65,11 @@ pub(super) fn refresh_list(
                     strings
                         .text(key.0, key.1)
                         .replacen("%d", &c.level.to_string(), 1)
-                        .replacen("%s", class_name(c.class), 1)
+                        .replacen(
+                            "%s",
+                            ClassLabels::label(labels.as_deref(), c.guid, class_name(c.class)),
+                            1,
+                        )
                 }
                 _ => areas
                     .as_deref()

@@ -39,6 +39,10 @@ const UNIT_FIELD_ATTACK_POWER_MODS: u16 = 166;
 const PLAYER_FIELD_COMBO_TARGET: u16 = 714;
 /// Byte 1: combo points.
 const PLAYER_FIELD_BYTES: u16 = 1222;
+/// The aura-state bits, and the one for a unit at or below 20% health
+/// (`AURA_STATE_HEALTHLESS_20_PERCENT`, bit 2 of `TargetAuraState`).
+const UNIT_FIELD_AURASTATE: u16 = 125;
+const AURA_STATE_HEALTHLESS_20: u32 = 0x2;
 
 /// `AFLAG_CANCELABLE`: a buff the player may click off.
 const AFLAG_CANCELABLE: u32 = 0x01;
@@ -57,6 +61,7 @@ const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
 const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
 const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
+const SPELL_FAILED_TARGET_AURASTATE: u8 = 0x67;
 const SPELL_FAILED_TARGETS_DEAD: u8 = 0x65;
 const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;
 const SPELL_FAILED_UNIT_NOT_INFRONT: u8 = 0x7c;
@@ -98,6 +103,8 @@ pub(super) struct Skills {
     auras: Vec<Aura>,
     /// The timed cast under way: an item's on-use spell (the Hearthstone's).
     casting: Option<TimedCast>,
+    /// The mobs whose aura state says they are at or below a fifth of their health.
+    low_health: Vec<u64>,
     /// The player's guid, for the aura packets only the player's own auras get.
     me: u64,
 }
@@ -130,12 +137,23 @@ struct Aura {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum AuraKind {
-    Bleed { per_tick: u32 },
-    Rage { per_tick: u32 },
+    Bleed {
+        per_tick: u32,
+    },
+    Rage {
+        per_tick: u32,
+    },
     AttackPower(u32),
-    AttackSlow { pct: u32 },
-    MoveSlow { pct: u32 },
+    AttackSlow {
+        pct: u32,
+    },
+    MoveSlow {
+        pct: u32,
+    },
     Stun,
+    /// Healing on the unit is cut (Mortal Strike's wound). Nothing heals a mob in a fight yet,
+    /// so the debuff is all it does.
+    HealingReduced,
 }
 
 impl AuraKind {
@@ -519,6 +537,7 @@ impl InWorld {
             self.guid,
             &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
         ));
+        self.update_aura_states(events);
         ticked
     }
 
@@ -576,6 +595,13 @@ impl InWorld {
                 {
                     return Err(SPELL_FAILED_CASTER_AURASTATE);
                 }
+                if skill.requires_target_health_pct > 0
+                    && u64::from(mob.health) * 100
+                        > u64::from(mob.stats.max_health)
+                            * u64::from(skill.requires_target_health_pct)
+                {
+                    return Err(SPELL_FAILED_TARGET_AURASTATE);
+                }
                 Ok(vec![guid])
             }
         }
@@ -619,7 +645,8 @@ impl InWorld {
                 Effect::SchoolDamage {
                     melee_hit_table: true,
                     ..
-                } => rolls = true,
+                }
+                | Effect::Execute { .. } => rolls = true,
                 _ => {}
             }
         }
@@ -793,6 +820,20 @@ impl InWorld {
                 let sheet = buff_sheet(&self.player.stats, &self.skills);
                 events.push(values(self.guid, &sheet));
             }
+            Effect::HealingReduction { duration_ms, .. } => {
+                let a = aura(AuraKind::HealingReduced, skill.spell_id, duration_ms, 0);
+                self.skills.apply(a, events);
+            }
+            Effect::Execute {
+                base,
+                per_extra_rage,
+            } => {
+                // The cost is paid; every rage point left goes into the blow.
+                let extra = self.player.rage / 10;
+                self.player.rage = 0;
+                let raw = sized(base) + extra * sized(per_extra_rage);
+                self.strike(skill.spell_id, target, raw, how, c, rng, events, ticked);
+            }
         }
     }
 
@@ -926,8 +967,29 @@ impl InWorld {
         let extra = scaled(bonus.at(c.level, stats.attack_power), pct) as f32;
         stats.min_damage += extra;
         stats.max_damage += extra;
-        let swing = crate::combat::player_swing(&stats, &self.mobs[i], from_front, rng);
-        let missed = match swing.outcome {
+        // Cleave's other targets: the nearest living mobs beside the first, each on its own roll.
+        let at = self.mobs[i].position;
+        let mut beside: Vec<usize> = (0..self.mobs.len())
+            .filter(|&j| {
+                j != i
+                    && self.mobs[j].alive()
+                    && distance(self.mobs[j].position, at) <= skill.extra_target_radius_yd
+            })
+            .collect();
+        beside.sort_by(|&a, &b| {
+            distance(self.mobs[a].position, at).total_cmp(&distance(self.mobs[b].position, at))
+        });
+        beside.truncate(skill.extra_targets as usize);
+        let mut swings = vec![(
+            target,
+            crate::combat::player_swing(&stats, &self.mobs[i], from_front, rng),
+        )];
+        for j in beside {
+            let m = &self.mobs[j];
+            let front = in_front(m.orientation, m.position, c.position);
+            swings.push((m.guid, crate::combat::player_swing(&stats, m, front, rng)));
+        }
+        let missed_by = |outcome: Outcome| match outcome {
             Outcome::Miss => Some(SPELL_MISS_MISS),
             Outcome::Dodge => Some(SPELL_MISS_DODGE),
             Outcome::Parry => Some(SPELL_MISS_PARRY),
@@ -951,12 +1013,15 @@ impl InWorld {
             caster: self.guid,
             spell_id,
             cast_flags: 0,
-            hits: if missed.is_none() {
-                vec![target]
-            } else {
-                vec![]
-            },
-            misses: missed.map(|m| (target, m)).into_iter().collect(),
+            hits: swings
+                .iter()
+                .filter(|(_, s)| missed_by(s.outcome).is_none())
+                .map(|(guid, _)| *guid)
+                .collect(),
+            misses: swings
+                .iter()
+                .filter_map(|(guid, s)| missed_by(s.outcome).map(|m| (*guid, m)))
+                .collect(),
             target: Some(target),
             go_target: None,
             dest: None,
@@ -964,12 +1029,16 @@ impl InWorld {
             item_caster: None,
         });
         events.push(values(self.guid, &[(UNIT_FIELD_POWER2, self.player.rage)]));
-        if missed == Some(SPELL_MISS_DODGE) {
+        // The first target's dodge opens Overpower, as a white swing's would.
+        if missed_by(swings[0].1.outcome) == Some(SPELL_MISS_DODGE) {
             self.skills.dodged_by(target, events);
         }
-        if missed.is_none() {
+        for (guid, swing) in swings {
+            if missed_by(swing.outcome).is_some() {
+                continue;
+            }
             events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
-                target,
+                target: guid,
                 attacker: self.guid,
                 spell_id,
                 damage: swing.damage,
@@ -984,9 +1053,9 @@ impl InWorld {
                     0
                 },
             }));
-            self.hurt(target, swing.damage, c, rng, events, ticked);
+            self.hurt(guid, swing.damage, c, rng, events, ticked);
             if swing.outcome == Outcome::Crit {
-                self.crit_landed(target, c, events);
+                self.crit_landed(guid, c, events);
             }
         }
         true
@@ -1103,6 +1172,28 @@ impl InWorld {
     pub(super) fn auras_die_with(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
         let gone = self.skills.remove_where(|a| a.unit == unit, events);
         self.faded(&gone, events);
+    }
+
+    /// Sets and clears each mob's health-under-20% aura state as its health crosses a fifth: the
+    /// client greys Execute unless its target has it.
+    pub(super) fn update_aura_states(&mut self, events: &mut Vec<SessionEvent>) {
+        let low: Vec<u64> = self
+            .mobs
+            .iter()
+            .filter(|m| m.alive() && u64::from(m.health) * 5 <= u64::from(m.stats.max_health))
+            .map(|m| m.guid)
+            .collect();
+        for m in &self.mobs {
+            let (was, is) = (
+                self.skills.low_health.contains(&m.guid),
+                low.contains(&m.guid),
+            );
+            if was != is {
+                let state = if is { AURA_STATE_HEALTHLESS_20 } else { 0 };
+                events.push(values(m.guid, &[(UNIT_FIELD_AURASTATE, state)]));
+            }
+        }
+        self.skills.low_health = low;
     }
 
     fn update_speed(&mut self, unit: u64) {

@@ -166,6 +166,11 @@ pub(crate) fn crit_bleed(c: &Char) -> Option<(u32, u32, u32, u32)> {
 pub(crate) fn stats(c: &Char) -> WarriorStats {
     let mut s = crate::equipment::stats(c);
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::MeleeCritPct { .. })));
+    s.defense += sum(c, |e| matches!(e, TalentEffect::Defense { .. })) as u16;
+    // Agility's armour is not the items'.
+    let items_armor = s.armor.saturating_sub(2 * s.base[1]);
+    let pct = sum(c, |e| matches!(e, TalentEffect::ItemArmorPct { .. }));
+    s.armor += crate::rules::talents::scaled(items_armor, pct) - items_armor;
     s
 }
 
