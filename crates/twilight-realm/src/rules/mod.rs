@@ -5,6 +5,7 @@
 pub mod aggro;
 pub mod durability;
 pub mod gear;
+pub mod haste;
 pub mod leash;
 pub mod loot;
 pub mod melee;

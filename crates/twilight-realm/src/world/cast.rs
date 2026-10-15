@@ -20,6 +20,7 @@ use crate::fields::*;
 use crate::items;
 use crate::mobs::State;
 use crate::rng::Rng;
+use crate::rules::haste::{haste_cut_damage, hasted_attack_time};
 use crate::rules::melee::{Outcome, PlayerOffense, ROLL};
 use crate::rules::rage;
 use crate::rules::school::{mitigated, School};
@@ -544,9 +545,9 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
     // Faster swings, each hit cut to match: the haste alone adds no damage a second.
     let haste = skills.haste_pct();
     if haste > 0 {
-        s.attack_time_ms = seals::hasted_attack_time(s.attack_time_ms, haste);
-        s.min_damage = seals::haste_cut_damage(s.min_damage, haste);
-        s.max_damage = seals::haste_cut_damage(s.max_damage, haste);
+        s.attack_time_ms = hasted_attack_time(s.attack_time_ms, haste);
+        s.min_damage = haste_cut_damage(s.min_damage, haste);
+        s.max_damage = haste_cut_damage(s.max_damage, haste);
     }
     s
 }

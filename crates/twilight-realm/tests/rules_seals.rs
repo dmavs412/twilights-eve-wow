@@ -99,26 +99,6 @@ fn judgement_of_command_grows_with_level_and_attack_power() {
     assert_eq!(judgement.at(1, 0), 33);
 }
 
-/// Seal of the Crusader's 40% faster swings: the swing time over 1.4, to the millisecond.
-#[test]
-fn seal_of_the_crusader_swings_forty_percent_faster() {
-    use twilight_realm::rules::seals::hasted_attack_time;
-    assert_eq!(hasted_attack_time(2800, 40), 2000);
-    assert_eq!(hasted_attack_time(2000, 40), 1429, "1428.6");
-    assert_eq!(hasted_attack_time(3600, 40), 2571, "2571.4");
-    assert_eq!(hasted_attack_time(2000, 0), 2000);
-}
-
-/// "...but deals less damage with each attack": each hit over 1.4, so the faster swings alone
-/// deal what the slower ones did a second.
-#[test]
-fn seal_of_the_crusader_cuts_each_hit_to_match_its_haste() {
-    use twilight_realm::rules::seals::haste_cut_damage;
-    assert_eq!(haste_cut_damage(140.0, 40), 100.0);
-    assert_eq!(haste_cut_damage(70.0, 40), 50.0);
-    assert_eq!(haste_cut_damage(10.0, 0), 10.0);
-}
-
 /// Judgement of the Crusader's debuff: holy damage taken, raised by its percent and rounded.
 #[test]
 fn judgement_of_the_crusader_raises_holy_damage_taken() {
@@ -154,7 +134,7 @@ fn seal_of_the_crusader() -> Seal {
 /// at every level, so every level's hits are cut alike.
 #[test]
 fn seal_of_the_crusaders_attack_power_haste_and_cut_by_level() {
-    use twilight_realm::rules::seals::{haste_cut_damage, hasted_attack_time};
+    use twilight_realm::rules::haste::{haste_cut_damage, hasted_attack_time};
     let Seal::Crusader {
         attack_power,
         haste_pct,
