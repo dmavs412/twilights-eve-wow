@@ -63,8 +63,9 @@ effects = [
 #   crit_bleed       - a melee crit bleeds the target for that percent of the average swing
 #   item_armor_pct   - the armour from items rises by that percent
 #   hit_rage_pct     - a landed white swing gives 1 rage that percent of the time
-# A talent with `effects = []` and no `skill` is learnable, shown and counted toward the next row,
-# but the realm does not model it yet (Anger Management: no kind slows rage decay).
+# A talent with `effects = []` and no `skill` is WIP: learnable, shown as "<Name> (WIP)" and
+# counted toward the next row, but the realm does not model it yet (Anger Management: no kind
+# slows rage decay).
 # `client_spellmod` is the spell-mod cell the realm sends so the client's cost check and tooltips
 # agree: `op` 14 is COST (tenths of rage), 8 ALL_EFFECTS (percent).
 
@@ -248,9 +249,9 @@ effects = [
 
 # The Tier 1 tree: the real Arms, Fury and Protection pages cut at tier 5, so 29 points reach one
 # tab's last talent with 9 to spare. An active talent's `skill` is cast as any skill once its rank
-# is learned. A talent with `effects = []` and no `skill` is learnable and shown, but the realm
-# does not model it (Dual Wield Specialization: no off hand swings; Iron Will: nothing stuns or
-# charms the player). More kinds than the Recruit tree's:
+# is learned. A talent with `effects = []` and no `skill` is WIP: learnable and shown as
+# "<Name> (WIP)", but the realm does not model it (Dual Wield Specialization: no off hand swings;
+# Iron Will: nothing stuns or charms the player). More kinds than the Recruit tree's:
 #   defense                - the Defense skill rises by that much
 #   weapon_damage_pct      - physical damage dealt rises by that percent with `weapon` in hand
 #   weapon_crit_pct        - melee crit chance rises by that percent with `weapon` in hand
