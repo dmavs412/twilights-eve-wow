@@ -8,7 +8,7 @@ use crate::characters::Char;
 use crate::equipment;
 use crate::fields::{guid_pairs, values};
 use crate::hub::{self, Npc};
-use crate::inventory::{Item, EQUIPMENT_END};
+use crate::inventory::{Item, Pos};
 use crate::items;
 use crate::rules::durability;
 
@@ -196,6 +196,9 @@ pub(crate) fn sell(
     else {
         return fail(sell_result::CANT_FIND_ITEM, events);
     };
+    if !equipment::may_leave(c, slot) {
+        return fail(sell_result::ONLY_EMPTY_BAG, events);
+    }
     let sell_price = items::template(entry).map_or(0, |t| t.sell_price);
     if sell_price == 0 {
         return fail(sell_result::CANT_SELL_ITEM, events);
@@ -220,7 +223,7 @@ pub(crate) fn sell(
             ));
         }
         let item = c.inventory.new_item(entry, count);
-        events.push(equipment::item_create(c.guid, &item));
+        events.push(equipment::item_create(c, slot, &item));
         item
     };
     let price = sell_price * count;
@@ -229,7 +232,7 @@ pub(crate) fn sell(
     buyback.add(c.guid, sold, price, events);
     Traded {
         changed: true,
-        gear_changed: slot < EQUIPMENT_END,
+        gear_changed: slot.is_worn(),
     }
 }
 
@@ -266,7 +269,7 @@ pub(crate) fn buy_back(
         });
         return Traded::default();
     }
-    let Some(dst) = c.inventory.free_pack_slot() else {
+    let Some(dst) = c.inventory.free_slot() else {
         events.push(SessionEvent::InventoryFailure {
             reason: equipment::EQUIP_ERR_INVENTORY_FULL,
             required_level: None,
@@ -301,7 +304,7 @@ pub(crate) fn repair(
     if !reachable(vendor, c).is_some_and(Npc::repairs) {
         return traded;
     }
-    let slots: Vec<u8> = c
+    let slots: Vec<Pos> = c
         .inventory
         .iter()
         .filter(|(_, i)| guid == 0 || i.guid == guid)
@@ -329,7 +332,7 @@ pub(crate) fn repair(
             &[(equipment::ITEM_FIELD_DURABILITY, item.durability)],
         ));
         traded.changed = true;
-        traded.gear_changed |= was_broken && slot < EQUIPMENT_END;
+        traded.gear_changed |= was_broken && slot.is_worn();
     }
     if traded.changed {
         events.push(values(c.guid, &[equipment::money_pair(&c.inventory)]));

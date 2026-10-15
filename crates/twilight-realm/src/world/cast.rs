@@ -1571,7 +1571,7 @@ impl InWorld {
     /// refused with the stock reason. An item with no on-use spell the realm runs does nothing.
     pub(crate) fn use_item(
         &mut self,
-        slot: u8,
+        slot: crate::inventory::Pos,
         c: &Char,
         wall: f64,
         events: &mut Vec<SessionEvent>,

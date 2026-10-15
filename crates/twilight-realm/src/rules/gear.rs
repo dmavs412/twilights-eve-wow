@@ -81,7 +81,8 @@ pub(crate) const SLOT_OFF_HAND: u8 = 16;
 pub(crate) const INVTYPE_2HWEAPON: u32 = 17;
 
 /// The equipment slots an `InventoryType` goes in, the first free one first. One-handers go in
-/// the main hand only: a Basic Warrior has no Dual Wield. Bags and ammo are not equipment here.
+/// the main hand only: a Basic Warrior has no Dual Wield. A bag goes in a bag slot; ammo is not
+/// equipment here.
 pub fn equip_slots(inventory_type: u32) -> &'static [u8] {
     match inventory_type {
         1 => &[0],
@@ -101,6 +102,7 @@ pub fn equip_slots(inventory_type: u32) -> &'static [u8] {
         14 | 23 => &[SLOT_OFF_HAND],
         15 | 25 | 26 => &[17],
         19 => &[18],
+        18 => &[19, 20, 21, 22],
         _ => &[],
     }
 }

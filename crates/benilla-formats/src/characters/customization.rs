@@ -79,9 +79,11 @@ fn shipped_combos_present(combos: &HashSet<(u8, u8)>) -> Result<()> {
     Ok(())
 }
 
-/// One worn item of a CharStartOutfit row: its ItemDisplayInfo id and its InventoryType.
+/// One worn item of a CharStartOutfit row: its item entry, ItemDisplayInfo id and InventoryType.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StartOutfitItem {
+    /// The `item_template` entry the server hands out.
+    pub item_id: u32,
     pub display_id: u32,
     pub inv_type: u8,
 }
@@ -339,7 +341,8 @@ fn load_combos(chain: &mut Chain) -> Result<HashSet<(u8, u8)>> {
 
 /// CharStartOutfit → (race, class, sex) → worn items, parsed by hand (41 fields, 152 bytes): `ID`
 /// u32 @0, race/class/gender u8 @4/5/6, `ItemId[12]` @8, `DisplayId[12]` @56, `InventoryType[12]`
-/// @104. A slot is kept when both are ≥ 1, dropping the `-1` tail and the InventoryType-0 bags.
+/// @104. A slot is kept when display and type are both ≥ 1, dropping the `-1` tail and the
+/// InventoryType-0 bags and food.
 fn load_start_outfits(chain: &mut Chain) -> Result<HashMap<(u8, u8, u8), Vec<StartOutfitItem>>> {
     let bytes = chain
         .read_file(CHAR_START_OUTFIT)
@@ -368,10 +371,12 @@ fn load_start_outfits(chain: &mut Chain) -> Result<HashMap<(u8, u8, u8), Vec<Sta
         let (race, class, sex) = (rec[4], rec[5], rec[6]);
         let mut items = Vec::new();
         for slot in 0..12 {
+            let item = i32_at(rec, 8 + slot * 4);
             let display = i32_at(rec, 56 + slot * 4);
             let inv = i32_at(rec, 104 + slot * 4);
             if display >= 1 && inv >= 1 {
                 items.push(StartOutfitItem {
+                    item_id: item.max(0) as u32,
                     display_id: display as u32,
                     inv_type: inv as u8,
                 });
@@ -638,6 +643,13 @@ mod tests {
                 }
             }
         }
+        // The item entries ride along: the Human Warrior's Worn Shortsword is item 25.
+        assert!(
+            cat.start_outfit(1, 1, 0)
+                .iter()
+                .any(|it| it.item_id == 25 && it.display_id == 1542),
+            "Human Warrior male should carry item 25, the Worn Shortsword"
+        );
         let mage = cat.start_outfit(1, 8, 0);
         assert!(
             mage.iter()

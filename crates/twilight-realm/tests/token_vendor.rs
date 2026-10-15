@@ -32,7 +32,12 @@ struct Shop {
 
 impl Shop {
     fn new(level: u8, money: u32, items: &[Carried]) -> Self {
-        let (realm, me, events) = warrior_with(level, money, items);
+        Self::with_bagged(level, money, items, &[])
+    }
+
+    /// [`Shop::new`], with `bagged` inside the bags `items` equips.
+    fn with_bagged(level: u8, money: u32, items: &[Carried], bagged: &[Bagged]) -> Self {
+        let (realm, me, events) = warrior_with_bagged(level, money, items, bagged);
         let vendor = events
             .iter()
             .find_map(|e| match e {
@@ -244,6 +249,35 @@ fn a_full_backpack_keeps_the_tokens() {
         .iter()
         .any(|e| matches!(e, SessionEvent::InventoryFailure { reason: 50, .. })));
     assert_eq!(shop.carried(TOKEN), 5);
+}
+
+#[test]
+fn tokens_in_a_bag_pay_and_the_green_finds_room_in_it() {
+    // The backpack is full; the Tokens and the room are in the Small Red Pouch.
+    let mut items: Vec<Carried> = (23..39).map(|s| (s, 4560, 1)).collect();
+    items.push((19, 805, 1));
+    let mut shop = Shop::with_bagged(5, 0, &items, &[(19, 0, TOKEN, 3)]);
+    let pants = shop.row_of("Warrior's Pants");
+    let events = shop.buy(&pants);
+    assert_eq!(buy_failure(&events), None);
+    assert!(
+        !events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::InventoryFailure { .. })),
+        "room in the bag"
+    );
+    let blob = shop.realm.export_character(shop.me).unwrap();
+    assert!(
+        blob.contains(&format!("entry = {WARRIORS_PANTS}")),
+        "{blob}"
+    );
+    assert!(
+        blob.contains(&format!(
+            "entry = {TOKEN}
+count = 1"
+        )),
+        "{blob}"
+    );
 }
 
 #[test]

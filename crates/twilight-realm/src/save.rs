@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::characters::Char;
 use crate::content::{self, Calling};
-use crate::inventory::{Inventory, SLOTS};
+use crate::inventory::{bag_size, Inventory, Pos};
 
 /// The save format this realm writes and reads. A save from any other version is refused.
 pub const SAVE_VERSION: u32 = 1;
@@ -89,7 +89,11 @@ struct SaveV1 {
 /// One item in a save.
 #[derive(Serialize, Deserialize)]
 struct SavedItem {
-    /// The player slot: 0-18 worn, 23-38 the backpack.
+    /// The bag slot (19-22) of the equipped bag it is in; left out for a player slot. Added within
+    /// version 1: a save without it holds nothing in bags.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    bag: Option<u8>,
+    /// The player slot (0-18 worn, 19-22 bags, 23-38 the backpack), or the slot in its bag.
     slot: u8,
     entry: u32,
     count: u32,
@@ -101,8 +105,9 @@ struct SavedItem {
 fn saved_items(inventory: &Inventory) -> Vec<SavedItem> {
     inventory
         .iter()
-        .map(|(slot, item)| SavedItem {
-            slot,
+        .map(|(at, item)| SavedItem {
+            bag: at.own_slot().is_none().then_some(at.bag),
+            slot: at.slot,
             entry: item.entry,
             count: item.count,
             durability: Some(item.durability),
@@ -110,19 +115,25 @@ fn saved_items(inventory: &Inventory) -> Vec<SavedItem> {
         .collect()
 }
 
-/// The inventory a save describes; an unknown item, a bad slot or a slot named twice makes it
-/// unreadable.
+/// The inventory a save describes; an unknown item, a bad slot, a slot named twice or a bag slot
+/// holding what is no bag makes it unreadable. A bag's contents come after the bag.
 fn load_inventory(money: u32, saved: &[SavedItem]) -> Result<Inventory, SaveError> {
     let mut inventory = Inventory::default();
     inventory.money = money;
     for s in saved {
         let template = crate::items::template(s.entry).ok_or(SaveError::Unreadable)?;
-        if usize::from(s.slot) >= SLOTS || inventory.get(s.slot).is_some() || s.count == 0 {
+        let at = s
+            .bag
+            .map_or(Pos::own(s.slot), |bag| Pos { bag, slot: s.slot });
+        if !inventory.exists(at) || inventory.get(at).is_some() || s.count == 0 {
+            return Err(SaveError::Unreadable);
+        }
+        if at.is_bag_slot() && bag_size(s.entry) == 0 {
             return Err(SaveError::Unreadable);
         }
         let mut item = inventory.new_item(s.entry, s.count);
         item.durability = s.durability.unwrap_or(template.durability);
-        inventory.put(s.slot, item);
+        inventory.put(at, item);
     }
     Ok(inventory)
 }

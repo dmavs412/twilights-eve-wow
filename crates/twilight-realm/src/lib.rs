@@ -49,7 +49,10 @@ mod vendor;
 mod wear;
 mod world;
 
-use benilla_protocol::{CharCreateReq, SessionEvent};
+use benilla_protocol::{CharCreateReq, RealmInfo, SessionEvent};
+
+/// The realm's name, as the select screen's banner shows it.
+pub const REALM_NAME: &str = "Twilight's Eve";
 
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
@@ -366,9 +369,9 @@ impl Realm {
             }
             RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target),
             RealmCommand::UseItem { bag, slot } => {
-                // Equipped bags are not modelled: only the player's own slots hold items.
-                if let (Some(w), 255) = (&mut self.world, bag) {
+                if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {
+                        let slot = inventory::Pos { bag, slot };
                         // Food and drink are eaten at once; anything else casts its spell.
                         match w.eat_or_drink(slot, c, &mut self.events) {
                             Some(true) => {
@@ -496,7 +499,7 @@ impl Realm {
         }
         // A quest may want what came into the bags, or what left them.
         quests::refresh(c, events);
-        if moved.gear_changed || looted.took {
+        if moved.gear_changed || moved.bags_changed || looted.took {
             let guid = w.guid;
             self.save(guid);
         }
@@ -577,10 +580,24 @@ impl Realm {
         }
     }
 
+    /// The roster, naming the realm: the select screen shows its banner and the Create New
+    /// Character button only for a list that names one.
     fn send_roster(&mut self) {
+        let characters = self.characters.roster();
+        let realm = RealmInfo {
+            name: REALM_NAME.into(),
+            address: String::new(),
+            population: 0.0,
+            characters: u8::try_from(characters.len()).unwrap_or(u8::MAX),
+            // A normal realm: the banner carries no PvP or RP suffix.
+            realm_type: 0,
+            flags: 0,
+            category: 0,
+            id: 1,
+        };
         self.events.push(SessionEvent::CharacterList {
-            characters: self.characters.roster(),
-            realm: None,
+            characters,
+            realm: Some(realm),
         });
     }
 

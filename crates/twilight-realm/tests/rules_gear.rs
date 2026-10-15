@@ -55,22 +55,24 @@ fn vendor_trash_is_not_equippable() {
 
 #[test]
 fn each_inventory_type_goes_to_its_equipment_slots() {
-    // vmangos `EquipmentSlots`: 0 head … 15 main hand, 16 off hand, 17 ranged, 18 tabard.
-    let vectors: [(u32, &[u8]); 14] = [
-        (1, &[0]),       // head
-        (5, &[4]),       // chest
-        (20, &[4]),      // robe
-        (6, &[5]),       // waist
-        (11, &[10, 11]), // finger
-        (12, &[12, 13]), // trinket
-        (16, &[14]),     // cloak
-        (13, &[15]),     // one-hand: no Dual Wield yet
-        (17, &[15]),     // two-hand
-        (21, &[15]),     // main hand
-        (14, &[16]),     // shield
-        (23, &[16]),     // held in off hand
-        (15, &[17]),     // ranged
-        (0, &[]),        // not equippable
+    // vmangos `EquipmentSlots`: 0 head … 15 main hand, 16 off hand, 17 ranged, 18 tabard; 19-22
+    // the bag slots.
+    let vectors: [(u32, &[u8]); 15] = [
+        (1, &[0]),               // head
+        (5, &[4]),               // chest
+        (20, &[4]),              // robe
+        (6, &[5]),               // waist
+        (11, &[10, 11]),         // finger
+        (12, &[12, 13]),         // trinket
+        (16, &[14]),             // cloak
+        (13, &[15]),             // one-hand: no Dual Wield yet
+        (17, &[15]),             // two-hand
+        (21, &[15]),             // main hand
+        (14, &[16]),             // shield
+        (23, &[16]),             // held in off hand
+        (15, &[17]),             // ranged
+        (18, &[19, 20, 21, 22]), // bag: the four bag slots
+        (0, &[]),                // not equippable
     ];
     for (inventory_type, slots) in vectors {
         assert_eq!(equip_slots(inventory_type), slots, "{inventory_type}");

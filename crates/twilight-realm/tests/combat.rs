@@ -54,15 +54,20 @@ fn the_character_sheet_shows_the_realms_stats() {
     let mut realm = realm();
     let (guid, events) = enter_new(&mut realm, "Anduin", HUMAN);
     let f = own_create(&events, guid);
-    // A level-1 human warrior (§5 of the combat reference), with the Worn Shortsword in hand.
+    // A level-1 human warrior (§5 of the combat reference) in the starting outfit: the Worn
+    // Shortsword in hand, Recruit's Pants (2 armour) and the Worn Wooden Shield (5 armour).
     assert_eq!(f.unit_max_health(), Some(60));
     assert_eq!(f.unit_health(), Some(60));
     assert_eq!(f.unit_attack_power(), Some(29));
-    assert_eq!(f.unit_resistance(0), Some(40), "armour is twice agility");
+    assert_eq!(
+        f.unit_resistance(0),
+        Some(40 + 2 + 5),
+        "twice agility, plus the pants and the shield"
+    );
     assert_eq!(f.player_crit_percentage(), Some(5.0));
     assert_eq!(f.player_dodge_percentage(), Some(5.0));
     assert_eq!(f.player_parry_percentage(), Some(0.0), "no Parry at Tier 0");
-    assert_eq!(f.player_block_percentage(), Some(0.0), "no shield");
+    assert_eq!(f.player_block_percentage(), Some(5.0), "the shield blocks");
     assert_eq!(
         (0..5).map(|i| f.unit_stat(i).unwrap()).collect::<Vec<_>>(),
         [23, 20, 22, 20, 20]
@@ -357,6 +362,49 @@ fn rage_drains_once_the_fight_is_over() {
             .filter_map(|f| f.unit_power(1))
             .last(),
         Some(0)
+    );
+}
+
+/// `UNIT_FLAG_PVP_ATTACKABLE`: the player is player-controlled. Without it the client's
+/// `CanAttack` lets the player attack only hostile mobs, never neutral ones.
+const UNIT_FLAG_PVP_ATTACKABLE: u32 = 0x8;
+/// `UNIT_FLAG_IN_COMBAT`.
+const UNIT_FLAG_IN_COMBAT: u32 = 0x0008_0000;
+/// `UNIT_FIELD_FLAGS`.
+const UNIT_FIELD_FLAGS: u16 = 46;
+
+#[test]
+fn the_player_is_player_controlled_from_entry_through_a_fight() {
+    let mut fresh = realm();
+    let (guid, events) = enter_new(&mut fresh, "Anduin", HUMAN);
+    assert_ne!(
+        own_create(&events, guid).unit_flags() & UNIT_FLAG_PVP_ATTACKABLE,
+        0,
+        "the create carries the player-controlled flag"
+    );
+
+    let (mut realm, me, mob) = warrior_at(5, 0);
+    stand_by(&mut realm, &mob);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let mut events = run_until_dead(&mut realm, &mob);
+    events.extend(run(&mut realm, 10.0));
+    let flags: Vec<u32> = own_values(&events, me)
+        .filter_map(|f| {
+            f.raw_fields()
+                .find_map(|(i, v)| (i == UNIT_FIELD_FLAGS).then_some(v))
+        })
+        .collect();
+    assert!(
+        flags.iter().any(|f| f & UNIT_FLAG_IN_COMBAT != 0),
+        "the fight sets the combat flag: {flags:x?}"
+    );
+    assert!(
+        flags.iter().any(|f| f & UNIT_FLAG_IN_COMBAT == 0),
+        "the fight's end clears it: {flags:x?}"
+    );
+    assert!(
+        flags.iter().all(|f| f & UNIT_FLAG_PVP_ATTACKABLE != 0),
+        "no flags update drops the player-controlled flag: {flags:x?}"
     );
 }
 

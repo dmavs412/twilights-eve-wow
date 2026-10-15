@@ -4,7 +4,7 @@
 mod common;
 mod gear_common;
 
-use benilla_protocol::messages::VendorItem;
+use benilla_protocol::messages::{sell_result, VendorItem};
 use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 use common::*;
 use gear_common::*;
@@ -45,7 +45,12 @@ struct Shop {
 
 impl Shop {
     fn new(level: u8, money: u32, items: &[Carried]) -> Self {
-        let (realm, me, events) = warrior_with(level, money, items);
+        Self::with_bagged(level, money, items, &[])
+    }
+
+    /// [`Shop::new`], with `bagged` inside the bags `items` equips.
+    fn with_bagged(level: u8, money: u32, items: &[Carried], bagged: &[Bagged]) -> Self {
+        let (realm, me, events) = warrior_with_bagged(level, money, items, bagged);
         let vendor = the_vendor(&events).0;
         Self {
             realm,
@@ -340,6 +345,32 @@ fn the_buyback_tab_keeps_the_last_twelve_sales() {
     assert!(events
         .iter()
         .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == guids[0])));
+}
+
+#[test]
+fn an_item_in_a_bag_sells_and_a_bag_that_holds_items_does_not() {
+    const SMALL_RED_POUCH: u32 = 805;
+    let mut shop = Shop::with_bagged(
+        1,
+        0,
+        &[(19, SMALL_RED_POUCH, 1)],
+        &[(19, 2, FINE_SCIMITAR, 1)],
+    );
+    let me = shop.me();
+    let pouch = me.player_inv_slot(19).unwrap();
+    let scimitar = descriptor(&shop.events, pouch).container_slot(2).unwrap();
+
+    let events = shop.sell(pouch, 0);
+    assert_eq!(sell_failure(&events), Some(sell_result::ONLY_EMPTY_BAG));
+
+    let events = shop.sell(scimitar, 0);
+    assert_eq!(sell_failure(&events), None);
+    assert_eq!(shop.money(), 37);
+    assert_eq!(
+        descriptor(&shop.events, pouch).container_slot(2),
+        Some(0),
+        "gone from the bag"
+    );
 }
 
 #[test]

@@ -142,3 +142,33 @@ fn deleting_an_unknown_guid_fails() {
         }
     )));
 }
+
+/// The roster's realm, as the select screen gets it: the client shows Create New Character
+/// only when the list names a realm.
+fn roster_realm(realm: &mut Realm) -> Option<benilla_protocol::RealmInfo> {
+    realm.handle(RealmCommand::ListCharacters);
+    drain(realm)
+        .into_iter()
+        .rev()
+        .find_map(|e| match e {
+            SessionEvent::CharacterList { realm, .. } => Some(realm),
+            _ => None,
+        })
+        .expect("a roster")
+}
+
+#[test]
+fn an_empty_roster_names_the_realm_so_a_character_can_be_created() {
+    let mut realm = realm();
+    let info = roster_realm(&mut realm).expect("the roster names its realm");
+    assert_eq!(info.name, "Twilight's Eve");
+}
+
+#[test]
+fn a_roster_with_characters_still_names_the_realm() {
+    let mut realm = realm();
+    create(&mut realm, "thrall", ORC, 0);
+    let info = roster_realm(&mut realm).expect("the roster names its realm");
+    assert_eq!(info.name, "Twilight's Eve");
+    assert_eq!(info.characters, 1);
+}

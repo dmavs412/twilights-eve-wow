@@ -694,7 +694,8 @@ impl InWorld {
         let in_combat = p.alive() && (attacking || attacked || self.skills.holds_combat());
         if in_combat != p.in_combat {
             p.in_combat = in_combat;
-            let flags = if in_combat { UNIT_FLAG_IN_COMBAT } else { 0 };
+            let combat = if in_combat { UNIT_FLAG_IN_COMBAT } else { 0 };
+            let flags = UNIT_FLAG_PVP_ATTACKABLE | combat;
             events.push(values(self.guid, &[(UNIT_FIELD_FLAGS, flags)]));
         }
         if in_combat || p.rage == 0 {
@@ -872,6 +873,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
                 | u32::from(c.gender) << 16
                 | POWER_RAGE << 24,
         ),
+        (UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE),
         (UNIT_FIELD_BOUNDINGRADIUS, float(0.389)),
         (UNIT_FIELD_COMBATREACH, float(PLAYER_COMBAT_REACH)),
         (UNIT_FIELD_DISPLAYID, display),
@@ -891,7 +893,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     pairs.extend(sheet_pairs(stats));
     pairs.push(cast::stance(c));
     pairs.push(crate::talents::points_pair(c));
-    pairs.extend(crate::equipment::inventory_pairs(&c.inventory));
+    pairs.extend(crate::equipment::inventory_pairs(c));
     pairs.extend(crate::quests::log_pairs(c));
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {
