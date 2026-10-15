@@ -1,0 +1,246 @@
+{
+ "_source": "vmangos world DB table player_xp_for_level (sqlite dump, vmangos/core db release 4641790); loaded by ObjectMgr::LoadPlayerInfo, used by Player::GetXPForNextLevel / Player::GiveXP.",
+ "_note": "xp_to_next is the XP needed to go from `level` to `level`+1. Level 60 is the cap (its row is the 1.12 value but is unused). Values are patch 1.12.",
+ "levels": [
+  {
+   "level": 1,
+   "xp_to_next": 400
+  },
+  {
+   "level": 2,
+   "xp_to_next": 900
+  },
+  {
+   "level": 3,
+   "xp_to_next": 1400
+  },
+  {
+   "level": 4,
+   "xp_to_next": 2100
+  },
+  {
+   "level": 5,
+   "xp_to_next": 2800
+  },
+  {
+   "level": 6,
+   "xp_to_next": 3600
+  },
+  {
+   "level": 7,
+   "xp_to_next": 4500
+  },
+  {
+   "level": 8,
+   "xp_to_next": 5400
+  },
+  {
+   "level": 9,
+   "xp_to_next": 6500
+  },
+  {
+   "level": 10,
+   "xp_to_next": 7600
+  },
+  {
+   "level": 11,
+   "xp_to_next": 8800
+  },
+  {
+   "level": 12,
+   "xp_to_next": 10100
+  },
+  {
+   "level": 13,
+   "xp_to_next": 11400
+  },
+  {
+   "level": 14,
+   "xp_to_next": 12900
+  },
+  {
+   "level": 15,
+   "xp_to_next": 14400
+  },
+  {
+   "level": 16,
+   "xp_to_next": 16000
+  },
+  {
+   "level": 17,
+   "xp_to_next": 17700
+  },
+  {
+   "level": 18,
+   "xp_to_next": 19400
+  },
+  {
+   "level": 19,
+   "xp_to_next": 21300
+  },
+  {
+   "level": 20,
+   "xp_to_next": 23200
+  },
+  {
+   "level": 21,
+   "xp_to_next": 25200
+  },
+  {
+   "level": 22,
+   "xp_to_next": 27300
+  },
+  {
+   "level": 23,
+   "xp_to_next": 29400
+  },
+  {
+   "level": 24,
+   "xp_to_next": 31700
+  },
+  {
+   "level": 25,
+   "xp_to_next": 34000
+  },
+  {
+   "level": 26,
+   "xp_to_next": 36400
+  },
+  {
+   "level": 27,
+   "xp_to_next": 38900
+  },
+  {
+   "level": 28,
+   "xp_to_next": 41400
+  },
+  {
+   "level": 29,
+   "xp_to_next": 44300
+  },
+  {
+   "level": 30,
+   "xp_to_next": 47400
+  },
+  {
+   "level": 31,
+   "xp_to_next": 50800
+  },
+  {
+   "level": 32,
+   "xp_to_next": 54500
+  },
+  {
+   "level": 33,
+   "xp_to_next": 58600
+  },
+  {
+   "level": 34,
+   "xp_to_next": 62800
+  },
+  {
+   "level": 35,
+   "xp_to_next": 67100
+  },
+  {
+   "level": 36,
+   "xp_to_next": 71600
+  },
+  {
+   "level": 37,
+   "xp_to_next": 76100
+  },
+  {
+   "level": 38,
+   "xp_to_next": 80800
+  },
+  {
+   "level": 39,
+   "xp_to_next": 85700
+  },
+  {
+   "level": 40,
+   "xp_to_next": 90700
+  },
+  {
+   "level": 41,
+   "xp_to_next": 95800
+  },
+  {
+   "level": 42,
+   "xp_to_next": 101000
+  },
+  {
+   "level": 43,
+   "xp_to_next": 106300
+  },
+  {
+   "level": 44,
+   "xp_to_next": 111800
+  },
+  {
+   "level": 45,
+   "xp_to_next": 117500
+  },
+  {
+   "level": 46,
+   "xp_to_next": 123200
+  },
+  {
+   "level": 47,
+   "xp_to_next": 129100
+  },
+  {
+   "level": 48,
+   "xp_to_next": 135100
+  },
+  {
+   "level": 49,
+   "xp_to_next": 141200
+  },
+  {
+   "level": 50,
+   "xp_to_next": 147500
+  },
+  {
+   "level": 51,
+   "xp_to_next": 153900
+  },
+  {
+   "level": 52,
+   "xp_to_next": 160400
+  },
+  {
+   "level": 53,
+   "xp_to_next": 167100
+  },
+  {
+   "level": 54,
+   "xp_to_next": 173900
+  },
+  {
+   "level": 55,
+   "xp_to_next": 180800
+  },
+  {
+   "level": 56,
+   "xp_to_next": 187900
+  },
+  {
+   "level": 57,
+   "xp_to_next": 195000
+  },
+  {
+   "level": 58,
+   "xp_to_next": 202300
+  },
+  {
+   "level": 59,
+   "xp_to_next": 209800
+  },
+  {
+   "level": 60,
+   "xp_to_next": 217400
+  }
+ ]
+}
