@@ -20,13 +20,11 @@ These changes address the September 2026 review while preserving the upstream me
 | Windows diagnostics | Process and calling-thread CPU clocks through Win32 | Windows-only helper |
 | Build experiments | `WEB_PROFILE=ship` opt-in; release remains default; wasm-opt errors stop builds | Owned build script |
 
-## Upstream updates
+## Shared client code
 
-Keep upstream as a Git merge through a PR, as described in `UPSTREAM.md`. No upstream histories or dependencies were replaced by these changes.
+The client changes use cfg-gated hooks: macOS retains the original event and rig paths, native collider construction retains its compute-pool path, and browser audio/diagnostics remain WASM-specific.
 
-Most changes belong to wenilla's own files. The shared client changes use cfg-gated hooks: macOS retains the original event and rig paths, native collider construction retains its compute-pool path, and browser audio/diagnostics remain WASM-specific. General client optimizations can eventually be proposed upstream to retire carries.
-
-`compose_scratch.rs` deliberately mirrors the original composition math. Its differential tests compare results to upstream's `rig_worlds`, including changed camera inputs, special bones, and different rig sizes. If an upstream merge changes that math, update the helper until the comparison passes. CI now runs these tests, listener mutation tests, browser startup/journal tests, and host/service tests in addition to the WASM compile check.
+`compose_scratch.rs` deliberately mirrors the original composition math. Its differential tests compare results to the original `rig_worlds`, including changed camera inputs, special bones, and different rig sizes. A change to either must keep the comparison passing. CI runs these tests, listener mutation tests, browser startup/journal tests, and host/service tests in addition to the WASM compile check.
 
 ## Limits and behavior to verify in gameplay
 
