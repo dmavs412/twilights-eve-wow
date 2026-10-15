@@ -105,11 +105,17 @@ fn equip_spells_add_attack_power_and_defense() {
     let s = WarriorStats::geared(HUMAN, 27, &[GAUNTLETS_OF_OGRE_STRENGTH, RING_OF_DEFENSE]);
     assert_eq!(s.attack_power_bonus, 16);
     // The gauntlets carry no strength of their own: just the 16.
-    assert_eq!(s.attack_power, naked.attack_power + 16 + 2 * s.bonus[0] as i32);
+    assert_eq!(
+        s.attack_power,
+        naked.attack_power + 16 + 2 * s.bonus[0] as i32
+    );
     assert_eq!(s.defense, naked.defense + 4);
 }
 
 #[test]
 fn naked_is_geared_with_nothing() {
-    assert_eq!(WarriorStats::geared(HUMAN, 7, &[]), WarriorStats::naked(HUMAN, 7));
+    assert_eq!(
+        WarriorStats::geared(HUMAN, 7, &[]),
+        WarriorStats::naked(HUMAN, 7)
+    );
 }

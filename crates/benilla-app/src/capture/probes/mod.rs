@@ -11,6 +11,9 @@ mod act;
 pub(crate) use act::{
     ProbeChatPlugin, ProbeDragPlugin, ProbeHoverPlugin, ProbeKeyPlugin, ProbeLuaPlugin,
 };
+/// `WOW_PROBE_INTERACT`: a right-click's interact on the selection, at scripted times.
+mod interact;
+pub(crate) use interact::ProbeInteractPlugin;
 
 /// The probe run's shell: its bounded lifetime and its window's level, parking and size.
 mod run;

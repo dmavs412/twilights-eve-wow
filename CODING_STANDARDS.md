@@ -1,0 +1,25 @@
+# Coding standards
+
+Read at review time. Mechanical rules live in checks instead: rustfmt (`.githooks/pre-commit`, CI),
+clippy `-D warnings` and the wasm `cargo check` (CI). These are the judgement calls a check can't make.
+
+## The Local Realm (`crates/twilight-realm`)
+
+- **One module per concern.** A change extends the existing module: Hub NPCs in `hub`, merchants
+  in `vendor`, casts in `world/cast`, bags and slots in `inventory`, the save in `save`. A second
+  module doing the same job (a parallel NPC list, a second cast path) is a finding, even when the
+  two were written on separate branches and only met at the merge.
+- **Content is data.** A mob, item, quest, NPC, skill or talent is a row in `content/*.toml`, not
+  a branch in code. A file generated from `data/twilights-eve/*.json` has its generator in
+  `examples/` and a content test that fails when the two drift.
+- **Formulas are rules.** A vanilla formula is a public function in `src/rules/` with an
+  exact-value test in `tests/rules_*.rs` (ADR 0002). A formula inlined in a system is a finding.
+- **Saves stay readable.** A new save field is optional with a default, within the current
+  `SAVE_VERSION`, and a test loads a save written without it.
+- **Test first.** A behaviour's test lands in the same commit as its code, or an earlier one.
+  Player-script tests use commands, `tick` and events only, and assert on what the client sees.
+
+## Edits outside Twilight's Eve
+
+- New work goes in new files. An edit to an existing client file is the smallest hook that calls
+  into the new file (a `mod` line, one match arm), and its commit says why.

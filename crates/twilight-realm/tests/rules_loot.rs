@@ -9,7 +9,11 @@ fn most_drops_are_grey_or_white_and_one_in_ten_is_green() {
         counts[quality(roll) as usize] += 1;
     }
     assert_eq!(QUALITY_ROLL, 100);
-    assert_eq!(counts, [60, 30, 10, 0], "grey, white, green, blue out of 100");
+    assert_eq!(
+        counts,
+        [60, 30, 10, 0],
+        "grey, white, green, blue out of 100"
+    );
     assert_eq!(quality(0), Quality::Poor);
     assert_eq!(quality(59), Quality::Poor);
     assert_eq!(quality(60), Quality::Common);

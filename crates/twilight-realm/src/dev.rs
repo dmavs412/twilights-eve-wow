@@ -14,7 +14,10 @@ pub struct DevMultipliers {
 
 impl Default for DevMultipliers {
     fn default() -> Self {
-        Self { speed: 1.0, xp: 1.0 }
+        Self {
+            speed: 1.0,
+            xp: 1.0,
+        }
     }
 }
 

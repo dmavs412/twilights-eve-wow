@@ -10,6 +10,11 @@ Let every cargo build and test run to completion: one stopped mid-compile leaves
 corrupt MSVC debug info, and later links fail with `LNK1103` on a crate you never touched. The
 cure is deleting the `target/debug/deps` files written during the interrupted run.
 
+A worktree builds its own `target`, about 18 GB, and several building at once run rustc out of
+memory (which also ends in `LNK1103`). Delete a worktree's `target` once its branch is merged.
+`CARGO_BUILD_JOBS=4` and `WASI_SDK` (the main checkout's `tools\wasi-sdk`, which worktrees lack)
+are set in the user environment; if a shell lacks them, set them by hand.
+
 ## Agent skills
 
 ### Issue tracker

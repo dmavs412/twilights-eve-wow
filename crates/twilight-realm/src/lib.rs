@@ -7,6 +7,19 @@
 //! handle(RealmCommand) ─┐
 //! tick(dt, &dyn Host) ──┼─> Realm ──> drain_events() -> Vec<SessionEvent>
 //! ```
+//!
+//! ## Where things go
+//!
+//! - **Rules** (`src/rules/`): pure functions of vanilla's formulas (melee table, rage, XP, loot,
+//!   durability, talents…), public as [`rules`] so their exact values can be tested.
+//! - **Content** (`content/*.toml`): every mob, item, quest, NPC and Calling is data, compiled in.
+//!   Each file generated from `data/twilights-eve/*.json` has a generator in `examples/` and a
+//!   content test in `tests/` that fails when the two drift.
+//! - **Systems** (`src/*.rs`, `src/world/`): state and the event flow. Extend the existing module
+//!   for a concern: Hub NPCs (`hub`), merchants (`vendor`), casts (`world/cast`), bags and slots
+//!   (`inventory`), the save (`save`, where new fields are optional within [`SAVE_VERSION`]).
+//! - **Tests** (`tests/`), two seams (ADR 0002): `rules_*.rs` pin exact values on [`rules`];
+//!   every other file is a player script through commands, `tick` and events only.
 
 pub mod callings;
 mod characters;

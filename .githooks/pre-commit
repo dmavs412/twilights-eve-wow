@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Refuse a commit whose staged Rust files are not rustfmt-clean: CI's `cargo fmt --check` runs only
+# on pull requests, and local integration branches never reach one. Checks the staged files, not
+# the workspace, so it never touches another branch's files; rustfmt does follow `mod` lines, so a
+# staged crate root checks its modules too. Enable once per clone:
+#
+#   git config core.hooksPath .githooks
+set -euo pipefail
+
+mapfile -t files < <(git diff --cached --name-only --diff-filter=ACMR -- '*.rs' | grep -v '^third_party/' || true)
+[ "${#files[@]}" -eq 0 ] && exit 0
+
+if ! rustfmt --edition 2021 --check "${files[@]}" >/dev/null 2>&1; then
+    echo "pre-commit: these staged files are not rustfmt-clean; run: rustfmt --edition 2021 <file>" >&2
+    rustfmt --edition 2021 --check -l "${files[@]}" 2>/dev/null | sed 's/^/  /' >&2 || true
+    exit 1
+fi

@@ -60,7 +60,9 @@ fn the_loot_window_shows_the_mobs_money_and_item() {
     assert!(near, "item {} is not a level 3 drop", item.item_id);
 
     // The row's icon is the item's.
-    realm.handle(RealmCommand::ItemQuery { entry: item.item_id });
+    realm.handle(RealmCommand::ItemQuery {
+        entry: item.item_id,
+    });
     let info = drain(&mut realm)
         .into_iter()
         .find_map(|e| match e {
@@ -120,7 +122,10 @@ fn taking_the_item_puts_it_in_the_backpack() {
     assert_eq!(fields.object_entry(), Some(row.item_id));
     assert_eq!(fields.item_stack_count(), Some(row.count));
     // The backpack's first slot holds it.
-    assert_eq!(descriptor(&events, me).player_pack_slot(0), Some(*item_guid));
+    assert_eq!(
+        descriptor(&events, me).player_pack_slot(0),
+        Some(*item_guid)
+    );
     let push = events
         .iter()
         .find_map(|e| match e {
@@ -129,7 +134,13 @@ fn taking_the_item_puts_it_in_the_backpack() {
         })
         .expect("the you-receive-loot line");
     assert_eq!(
-        (push.player_guid, push.bag_slot, push.item_slot, push.item_entry, push.count),
+        (
+            push.player_guid,
+            push.bag_slot,
+            push.item_slot,
+            push.item_entry,
+            push.count
+        ),
         (me, BACKPACK, PACK_FIRST, row.item_id, row.count)
     );
     assert!(!push.from_npc && push.show_in_chat);

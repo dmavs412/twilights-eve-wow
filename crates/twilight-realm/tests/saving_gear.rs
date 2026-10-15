@@ -35,7 +35,10 @@ fn carried(events: &[SessionEvent], me: u64) -> Vec<(u8, u32, u32, u32)> {
         let Some(guid) = guid.filter(|g| *g != 0) else {
             continue;
         };
-        let (_, item) = creates.iter().find(|(g, _)| *g == guid).expect("its object");
+        let (_, item) = creates
+            .iter()
+            .find(|(g, _)| *g == guid)
+            .expect("its object");
         out.push((
             slot,
             item.object_entry().unwrap(),
@@ -51,7 +54,11 @@ fn bags_equipment_and_money_survive_a_reload() {
     let (mut realm, me, _) = warrior_with(
         10,
         1234,
-        &[(23, FINE_SCIMITAR, 1), (24, MELTED_CANDLE, 3), (25, GNOLL_WAR_HARNESS, 1)],
+        &[
+            (23, FINE_SCIMITAR, 1),
+            (24, MELTED_CANDLE, 3),
+            (25, GNOLL_WAR_HARNESS, 1),
+        ],
     );
     realm.handle(RealmCommand::AutoEquipItem { bag: 255, slot: 23 });
     realm.handle(RealmCommand::AutoEquipItem { bag: 255, slot: 25 });
@@ -80,8 +87,14 @@ fn worn_down_durability_is_kept() {
     let blob = blob.replace("count = 1\n", "count = 1\ndurability = 7\n");
     let mut realm = Realm::new();
     realm.import_character(&blob).unwrap();
-    assert!(realm.export_character(guid).unwrap().contains("durability = 7"));
-    assert_eq!(carried(&reload(guid, &blob), guid), [(15, FINE_SCIMITAR, 1, 7)]);
+    assert!(realm
+        .export_character(guid)
+        .unwrap()
+        .contains("durability = 7"));
+    assert_eq!(
+        carried(&reload(guid, &blob), guid),
+        [(15, FINE_SCIMITAR, 1, 7)]
+    );
 }
 
 #[test]
@@ -129,11 +142,17 @@ fn a_save_from_before_gear_loads_with_empty_bags() {
 #[test]
 fn a_save_naming_an_unknown_item_is_unreadable() {
     let (_, blob) = save_with(1, 0, &[(23, 999_999, 1)]);
-    assert_eq!(Realm::new().import_character(&blob), Err(SaveError::Unreadable));
+    assert_eq!(
+        Realm::new().import_character(&blob),
+        Err(SaveError::Unreadable)
+    );
 }
 
 #[test]
 fn a_save_naming_a_slot_twice_is_unreadable() {
     let (_, blob) = save_with(1, 0, &[(23, FINE_SCIMITAR, 1), (23, FINE_SCIMITAR, 1)]);
-    assert_eq!(Realm::new().import_character(&blob), Err(SaveError::Unreadable));
+    assert_eq!(
+        Realm::new().import_character(&blob),
+        Err(SaveError::Unreadable)
+    );
 }

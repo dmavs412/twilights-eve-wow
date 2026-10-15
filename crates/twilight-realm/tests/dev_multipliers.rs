@@ -24,7 +24,10 @@ fn the_xp_multiplier_multiplies_kill_xp() {
 fn without_the_flags_xp_is_vanillas() {
     assert_eq!(
         DevMultipliers::default(),
-        DevMultipliers { speed: 1.0, xp: 1.0 }
+        DevMultipliers {
+            speed: 1.0,
+            xp: 1.0
+        }
     );
     let (mut realm, me, mob) = warrior_at(5, DevMultipliers::default());
     let events = kill(&mut realm, mob);
@@ -155,7 +158,15 @@ fn the_boot_flags_set_the_multipliers() {
 
 #[test]
 fn a_missing_or_nonsense_flag_means_1() {
-    for bad in [None, Some(""), Some("fast"), Some("0"), Some("-2"), Some("NaN"), Some("inf")] {
+    for bad in [
+        None,
+        Some(""),
+        Some("fast"),
+        Some("0"),
+        Some("-2"),
+        Some("NaN"),
+        Some("inf"),
+    ] {
         assert_eq!(
             DevMultipliers::from_flags(bad, bad),
             DevMultipliers::default(),
