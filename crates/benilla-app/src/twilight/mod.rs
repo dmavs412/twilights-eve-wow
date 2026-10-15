@@ -18,6 +18,8 @@ use twilight_realm::{DevMultipliers, Host, Realm, RealmCommand, Storage};
 use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
 
 mod talents;
+#[cfg(test)]
+mod vanilla_player;
 
 /// `WOW_TWILIGHT` natively, `?twilight=1` in the browser: boot Twilight's Eve.
 pub(crate) fn active() -> bool {

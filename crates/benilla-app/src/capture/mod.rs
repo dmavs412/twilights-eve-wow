@@ -48,6 +48,9 @@ use benilla_world::view::WorldCamera;
 
 mod depth_probe;
 mod fixtures;
+/// Checked against a real server's create by `twilight::vanilla_player`.
+#[cfg(test)]
+pub(crate) use fixtures::VPLATES_SELF_PLAYER;
 mod live_shot;
 mod phase_probe;
 mod pick_probe;

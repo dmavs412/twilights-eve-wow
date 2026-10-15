@@ -10,6 +10,17 @@ const WOLF_POS: [f32; 3] = [-8949.95, -132.49, 83.9];
 const WOLF_DISPLAY: u32 = 604;
 const WOLF_FACTION: u32 = 32;
 
+/// The `vplates` fixture's self player, the fields of a real server's player create the plate
+/// gate reads.
+pub(crate) const VPLATES_SELF_PLAYER: [(u16, u32); 4] = [
+    (34, 2),      // UNIT_FIELD_LEVEL
+    (35, 1),      // UNIT_FIELD_FACTIONTEMPLATE: human
+    (36, 0x0101), // UNIT_FIELD_BYTES_0: race human, class warrior
+    // UNIT_FIELD_FLAGS bit 3 (`PLAYER_CONTROLLED`), which every player carries; `CanAttack`
+    // picks its arm on it, and without it no plate draws on the wolf.
+    (46, 0x8),
+];
+
 /// The `name-water` fixture's wolf, 25 yd along the water scenario's look bearing at the river
 /// surface, so its overhead name projects onto the water beyond it.
 pub(super) const NAME_WATER_POS: [f32; 3] = [-9512.97, -331.29, 61.4];
@@ -894,14 +905,7 @@ pub(super) fn seed_ui_fixture(
             const PLAYER_GUID: u64 = 0x51;
             names.insert_player(PLAYER_GUID, "Benilla".into(), None);
             commands.spawn((
-                crate::net::ObjectStore(ObjectFields::from_pairs(&[
-                    (34, 2),      // UNIT_FIELD_LEVEL
-                    (35, 1),      // UNIT_FIELD_FACTIONTEMPLATE: human
-                    (36, 0x0101), // UNIT_FIELD_BYTES_0: race human, class warrior
-                    // UNIT_FIELD_FLAGS bit 3 (`PLAYER_CONTROLLED`), which every player carries;
-                    // `CanAttack` picks its arm on it, and without it no plate draws on the wolf.
-                    (46, 0x8),
-                ])),
+                crate::net::ObjectStore(ObjectFields::from_pairs(&VPLATES_SELF_PLAYER)),
                 crate::net::SelfPlayer,
                 crate::net::Guid(PLAYER_GUID),
                 Transform::from_translation(wow_to_bevy(scenario.eye)),
