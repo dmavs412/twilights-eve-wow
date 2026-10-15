@@ -55,6 +55,11 @@ pub(crate) struct Template {
     pub(crate) use_cooldown_ms: i32,
     /// The on-use category cooldown, -1 for the spell's own.
     pub(crate) use_category_cooldown_ms: i32,
+    /// Food and drink (`content/goods.toml`): what eating or drinking restores over
+    /// `duration_ms`.
+    pub(crate) restores_health: u32,
+    pub(crate) restores_mana: u32,
+    pub(crate) duration_ms: u32,
 }
 
 impl Default for Template {
@@ -94,6 +99,9 @@ impl Default for Template {
             use_spell: 0,
             use_cooldown_ms: -1,
             use_category_cooldown_ms: -1,
+            restores_health: 0,
+            restores_mana: 0,
+            duration_ms: 0,
         }
     }
 }
@@ -120,6 +128,16 @@ pub(crate) fn all() -> &'static HashMap<u32, Template> {
     })
 }
 
+/// The goods vendor's food and drink (`content/goods.toml`), by entry.
+fn goods() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table = toml::from_str(include_str!("../content/goods.toml"))
+            .expect("content/goods.toml parses");
+        table.item.into_iter().map(|t| (t.entry, t)).collect()
+    })
+}
+
 /// The items the realm hands out itself (`content/given_items.toml`), by entry.
 fn given() -> &'static HashMap<u32, Template> {
     static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
@@ -131,13 +149,37 @@ fn given() -> &'static HashMap<u32, Template> {
 }
 
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
-    all().get(&entry).or_else(|| given().get(&entry))
+    all()
+        .get(&entry)
+        .or_else(|| given().get(&entry))
+        .or_else(|| goods().get(&entry))
+        .or_else(|| crate::quests::item_template(entry))
 }
 
 /// `ITEM_SPELLTRIGGER_ON_USE`.
 const ON_USE: u32 = 0;
 /// `ITEM_SPELLTRIGGER_ON_EQUIP`.
 const ON_EQUIP: u32 = 1;
+
+/// The spell category an on-use spell shares (`Spell.dbc`'s `Category`): food 11, drink 59.
+fn use_category(t: &Template) -> u32 {
+    if t.restores_mana > 0 {
+        59
+    } else if t.restores_health > 0 {
+        11
+    } else {
+        0
+    }
+}
+
+/// Food and drink are eaten: the use takes one of the stack (charges -1).
+fn use_charges(t: &Template) -> i32 {
+    if t.restores_health > 0 || t.restores_mana > 0 {
+        -1
+    } else {
+        0
+    }
+}
 
 /// `SMSG_ITEM_QUERY_SINGLE_RESPONSE` for `entry`; an unknown entry answers with none.
 pub(crate) fn query_response(entry: u32) -> SessionEvent {
@@ -163,7 +205,7 @@ fn info(t: &Template) -> ItemInfo {
     let use_spell = (t.use_spell != 0).then_some(ItemUseSpell {
         spell_id: t.use_spell,
         cooldown_ms: t.use_cooldown_ms,
-        category: 0,
+        category: use_category(t),
         category_cooldown_ms: t.use_category_cooldown_ms,
     });
     let mut spells: Vec<ItemSpellEntry> = use_spell
@@ -172,7 +214,7 @@ fn info(t: &Template) -> ItemInfo {
             index: 0,
             spell_id: u.spell_id,
             trigger: ON_USE,
-            charges: 0,
+            charges: use_charges(t),
             cooldown_ms: u.cooldown_ms,
             category: u.category,
             category_cooldown_ms: u.category_cooldown_ms,
@@ -231,8 +273,8 @@ fn info(t: &Template) -> ItemInfo {
         delay_ms: t.speed_ms,
         ammo_type: 0,
         ranged_mod_range: 0.0,
+        spell_charges_0: spells.first().map_or(0, |s| s.charges),
         spells,
-        spell_charges_0: 0,
         use_spell,
         bonding: t.bonding,
         description: String::new(),

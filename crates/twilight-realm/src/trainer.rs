@@ -1,117 +1,27 @@
-//! The Hub's Warrior trainer: a friendly NPC by the Crossroads' inn who sells the respec through
-//! the stock flow (vmangos `Player::SendTalentWipeConfirm`, `Player::ResetTalents`): his gossip's
-//! unlearn line closes the menu and asks `MSG_TALENT_WIPE_CONFIRM` with the price; the reset runs
-//! when the client sends the same opcode back with his guid.
+//! The Hub's Warrior trainer (`content/hub.toml`) sells the respec through the stock flow
+//! (vmangos `Player::SendTalentWipeConfirm`, `Player::ResetTalents`): his gossip's unlearn line
+//! closes the menu and asks `MSG_TALENT_WIPE_CONFIRM` with the price; the reset runs when the
+//! client sends the same opcode back with his guid.
 
-use benilla_protocol::messages::{GossipOption, NpcTextBlock, ObjectType, NPC_TEXT_BLOCKS};
-use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
+use benilla_protocol::messages::{GossipOption, NpcTextBlock, NPC_TEXT_BLOCKS};
+use benilla_protocol::SessionEvent;
 
-use crate::content::{CROSSROADS, KALIMDOR};
-use crate::fields::*;
-use crate::Host;
+use crate::content::KALIMDOR;
+use crate::fields::values;
+use crate::hub::{self, Npc};
 
-/// `creature_template` 5810, Uzzek, the Barrens' warrior quest giver: his name and model.
+/// His `hub.toml` entry: Uzzek's.
 const ENTRY: u32 = 5810;
-const DISPLAY_ID: u32 = 4391;
-/// `HIGHGUID_UNIT`, the creature's entry, and a low guid no spawn uses.
-const GUID: u64 = 0xF130 << 48 | (ENTRY as u64) << 24 | 0xFF_FFFF;
-/// Five yards in front of where a character starts, facing them.
-const POSITION: [f32; 2] = [-441.95, -2643.6];
-const ORIENTATION: f32 = CROSSROADS[3] + std::f32::consts::PI;
-const LEVEL: u32 = 40;
-/// `FactionTemplate.dbc` 35: friendly to every race.
-const FACTION_FRIENDLY: u32 = 35;
-/// `UNIT_NPC_FLAG_GOSSIP | UNIT_NPC_FLAG_TRAINER`.
-const NPC_FLAGS: u32 = 0x01 | 0x10;
-const UNIT_NPC_FLAGS: u16 = 147;
-/// Humanoid (`CreatureType.dbc`).
-const HUMANOID: u32 = 7;
 /// The greeting's `npc_text` id, the realm's own.
 const TEXT_ID: u32 = 64_014;
 const GREETING: &str = "Strength is earned, $C, and so is every scar. If the path you chose \
     no longer serves you, I can help you forget it - for a price.";
 /// The gossip line's index, which `CMSG_GOSSIP_SELECT_OPTION` echoes.
 const OPTION_UNLEARN: u32 = 0;
-/// How close the player must stand to deal with him (vmangos `INTERACTION_DISTANCE` and
-/// his reach, with room for the client's own gate).
-const REACH_YD: f32 = 10.0;
 
-/// Whether the client has been shown the trainer this session.
-#[derive(Default)]
-pub(crate) struct Presence {
-    shown: bool,
-}
-
-impl Presence {
-    /// Shows the trainer once, on the ground the host gives, when the player is on his map.
-    pub(crate) fn show(&mut self, map: u32, host: &dyn Host, events: &mut Vec<SessionEvent>) {
-        if self.shown || map != KALIMDOR {
-            return;
-        }
-        self.shown = true;
-        let [x, y] = POSITION;
-        let z = host
-            .ground_height(map, x, y, CROSSROADS[2] + 5.0)
-            .unwrap_or(CROSSROADS[2]);
-        events.push(create([x, y, z]));
-    }
-}
-
-fn create(position: [f32; 3]) -> SessionEvent {
-    let mut pairs = vec![
-        (OBJECT_FIELD_TYPE, TYPE_UNIT),
-        (OBJECT_FIELD_ENTRY, ENTRY),
-        (OBJECT_FIELD_SCALE_X, float(1.0)),
-        (UNIT_FIELD_HEALTH, 1_600),
-        (UNIT_FIELD_MAXHEALTH, 1_600),
-        (UNIT_FIELD_LEVEL, LEVEL),
-        (UNIT_FIELD_FACTIONTEMPLATE, FACTION_FRIENDLY),
-        // Race 0, warrior, male, rage.
-        (UNIT_FIELD_BYTES_0, 1 << 8 | 1 << 24),
-        (UNIT_FIELD_BOUNDINGRADIUS, float(0.5)),
-        (UNIT_FIELD_COMBATREACH, float(1.5)),
-        (UNIT_FIELD_DISPLAYID, DISPLAY_ID),
-        (UNIT_FIELD_NATIVEDISPLAYID, DISPLAY_ID),
-        (UNIT_NPC_FLAGS, NPC_FLAGS),
-    ];
-    pairs.extend(guid_pairs(OBJECT_FIELD_GUID, GUID));
-    SessionEvent::ObjectCreate {
-        guid: GUID,
-        kind: EntityKind::Unit,
-        display_id: Some(DISPLAY_ID),
-        position,
-        orientation: ORIENTATION,
-        scale: 1.0,
-        speeds: Some(MoveSpeeds {
-            walk: 2.5,
-            run: 7.0,
-            run_back: 4.5,
-            swim: 4.722_222,
-            swim_back: 2.5,
-            turn_rate: std::f32::consts::PI,
-        }),
-        mover: None,
-        transport_progress: None,
-        transport: None,
-        spline: None,
-        fields: ObjectFields::from_pairs(&pairs).into_created(ObjectType::Unit),
-    }
-}
-
-/// The trainer's name, for `CMSG_CREATURE_QUERY`; `None` for any other entry.
-pub(crate) fn creature_name(entry: u32) -> Option<SessionEvent> {
-    (entry == ENTRY).then(|| SessionEvent::CreatureName {
-        entry,
-        name: Some("Uzzek".into()),
-        subname: Some("Warrior Trainer".into()),
-        creature_type: Some(HUMANOID),
-        pet_family: 0,
-        rank: 0,
-        type_flags: 0,
-        display_id: DISPLAY_ID,
-        civilian: false,
-        racial_leader: false,
-    })
+/// The trainer, when `guid` is his.
+fn trainer(guid: u64) -> Option<&'static Npc> {
+    hub::find(guid).filter(|n| n.entry == ENTRY)
 }
 
 /// The greeting, for `CMSG_NPC_TEXT_QUERY`; `None` for any other text.
@@ -127,19 +37,14 @@ pub(crate) fn greeting(text_id: u32) -> Option<SessionEvent> {
     })
 }
 
-fn within_reach(at: [f32; 3]) -> bool {
-    let [x, y] = POSITION;
-    (at[0] - x).hypot(at[1] - y) <= REACH_YD
-}
-
 impl crate::Realm {
     /// `CMSG_GOSSIP_HELLO` at the trainer: his menu.
     pub(crate) fn gossip_hello(&mut self, guid: u64) {
-        if guid != GUID || !self.near_trainer() {
+        let Some(npc) = trainer(guid).filter(|npc| self.near(npc)) else {
             return;
-        }
+        };
         self.events.push(SessionEvent::GossipMenu {
-            npc: GUID,
+            npc: npc.guid(),
             text_id: TEXT_ID,
             options: vec![GossipOption {
                 index: OPTION_UNLEARN,
@@ -154,7 +59,10 @@ impl crate::Realm {
     /// `CMSG_GOSSIP_SELECT_OPTION`: the unlearn line closes the menu and, when there is something
     /// to unlearn, names the price.
     pub(crate) fn gossip_select(&mut self, guid: u64, option: u32) {
-        if guid != GUID || option != OPTION_UNLEARN || !self.near_trainer() {
+        let Some(npc) = trainer(guid).filter(|npc| self.near(npc)) else {
+            return;
+        };
+        if option != OPTION_UNLEARN {
             return;
         }
         self.events.push(SessionEvent::GossipComplete);
@@ -167,7 +75,7 @@ impl crate::Realm {
         };
         if crate::talents::any(c) {
             self.events.push(SessionEvent::TalentWipeConfirm {
-                trainer: GUID,
+                trainer: npc.guid(),
                 cost: crate::talents::wipe_cost(c),
             });
         }
@@ -175,8 +83,8 @@ impl crate::Realm {
 
     /// `MSG_TALENT_WIPE_CONFIRM` back from the client: pay, unlearn everything, save. Refused
     /// without a word when the player is out of reach, has nothing learned or cannot pay.
-    pub(crate) fn talent_wipe(&mut self, trainer: u64) {
-        if trainer != GUID || !self.near_trainer() {
+    pub(crate) fn talent_wipe(&mut self, guid: u64) {
+        if trainer(guid).filter(|npc| self.near(npc)).is_none() {
             return;
         }
         let Some(w) = &mut self.world else {
@@ -201,10 +109,11 @@ impl crate::Realm {
         self.save(guid);
     }
 
-    fn near_trainer(&self) -> bool {
+    /// Whether the character in the world can reach `npc`.
+    fn near(&self, npc: &Npc) -> bool {
         self.world
             .as_ref()
             .and_then(|w| self.characters.get(w.guid))
-            .is_some_and(|c| c.map == KALIMDOR && within_reach(c.position))
+            .is_some_and(|c| c.map == KALIMDOR && hub::within_reach(npc, c.position))
     }
 }

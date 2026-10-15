@@ -22,6 +22,9 @@ use crate::rules::stats::WarriorStats;
 use crate::rules::{aggro, leash, rage, xp};
 use crate::Host;
 
+mod death;
+mod food;
+
 /// vanilla's player speeds (`baseMoveSpeed`): yd/s, turn in rad/s.
 const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
     walk: 2.5,
@@ -68,6 +71,8 @@ struct Player {
     /// Seconds into the current rage-decay tick.
     decay: f32,
     in_combat: bool,
+    /// Killed, and the toll taken: lying dead until Release Spirit.
+    dead: bool,
 }
 
 impl Player {
@@ -91,10 +96,20 @@ pub(crate) struct InWorld {
     pub(crate) looting: Looting,
     /// Cooldowns, the queued strike and the auras the skills leave.
     skills: cast::Skills,
-    /// The Hub's Warrior trainer, shown once the ground is there.
-    trainer: crate::trainer::Presence,
     /// The teleport the client has yet to acknowledge.
     teleports: hearth::Teleports,
+    /// The Hub's NPCs are in the world: they come with the first tick, after the mobs.
+    hub_shown: bool,
+    /// This session's sales, on the merchant window's buyback tab.
+    pub(crate) buyback: crate::vendor::Buyback,
+    /// The dice for gear wear, apart from the fight's so that wearing changes no fight.
+    wear: Rng,
+    /// Where Release Spirit brings the player back: the Hub, or a Dungeon's entrance.
+    pub(crate) respawn: death::Respawn,
+    /// Food or drink being taken, sitting down.
+    meal: Option<food::Meal>,
+    /// The Hub's quest givers in view.
+    givers: crate::quests::Givers,
 }
 
 impl InWorld {
@@ -155,14 +170,20 @@ impl InWorld {
                 refused: None,
                 decay: 0.0,
                 in_combat: false,
+                dead: false,
             },
             mobs: Vec::new(),
             population: Population::default(),
             dev,
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
-            trainer: Default::default(),
             teleports: hearth::Teleports::default(),
+            hub_shown: false,
+            buyback: crate::vendor::Buyback::default(),
+            wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
+            respawn: death::Respawn::HUB,
+            meal: None,
+            givers: Default::default(),
         }
     }
 
@@ -224,7 +245,11 @@ impl InWorld {
         let me = c.position;
         self.population
             .update(dt, me, self.map, host, &mut self.mobs, events);
-        self.trainer.show(self.map, host, events);
+        if !self.hub_shown {
+            self.hub_shown = true;
+            events.extend(crate::hub::npcs().iter().map(|n| n.create()));
+        }
+        self.givers.update(me, self.map, host, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting
@@ -253,7 +278,11 @@ impl InWorld {
             self.mob_tick(i, dt, host, c, rng, events);
         }
         self.skills_tick(dt, c, rng, events, &mut ticked);
+        if !self.player.alive() && !self.player.dead {
+            self.die(c, events);
+        }
         self.update_combat(dt, events);
+        self.eat(dt, c, events);
         ticked
     }
 
@@ -336,7 +365,11 @@ impl InWorld {
         if swing.damage > 0 {
             events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
         }
-        if mob.state == State::Idle {
+        let idle = mob.state == State::Idle;
+        if swing.damage > 0 && crate::wear::on_hit(c, &mut self.wear, events) {
+            self.refresh_gear(c, events);
+        }
+        if idle {
             self.pull(i, events);
         }
         if self.mobs[i].health == 0 {
@@ -417,15 +450,8 @@ impl InWorld {
                     ));
                     // A hit breaks a timed cast (the Hearthstone's interrupts on damage).
                     self.interrupt_cast(events);
-                }
-                let p = &mut self.player;
-                if !p.alive() {
-                    // Death and the way back are a later ticket's; the fight just ends.
-                    if let Some(victim) = p.attacking.take() {
-                        events.push(SessionEvent::AttackStop {
-                            attacker: self.guid,
-                            victim,
-                        });
+                    if crate::wear::on_hit(c, &mut self.wear, events) {
+                        self.refresh_gear(c, events);
                     }
                 }
             }
@@ -442,9 +468,12 @@ impl InWorld {
         ticked: &mut Ticked,
     ) {
         let mob = &mut self.mobs[i];
-        let lootable = self
-            .looting
-            .drop(mob.guid, looting::Loot::roll(mob.level(), rng));
+        let entry = mob.template.entry;
+        let mut loot = looting::Loot::roll(mob.level(), rng);
+        // The quest items the player's quests still want, after the corpse's own drop.
+        loot.items
+            .extend(crate::quests::drops(c, entry, rng).into_iter().map(Some));
+        let lootable = self.looting.drop(mob.guid, loot);
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
@@ -484,6 +513,21 @@ impl InWorld {
         }
         let dead = self.mobs[i].guid;
         self.auras_die_with(dead, events);
+        crate::quests::credit_kill(c, entry, events);
+    }
+
+    /// Pays a quest's `base` XP, scaled by the dev multiplier as kill XP is. What it paid.
+    pub(crate) fn reward_xp(
+        &mut self,
+        c: &mut Char,
+        base: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> u32 {
+        let gained = self.dev.xp(base);
+        if gained > 0 {
+            self.give_xp(c, gained, events);
+        }
+        gained
     }
 
     /// Adds `amount` XP, levelling up as often as it covers (`Player::GiveXP`). Whether a level
@@ -713,6 +757,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     pairs.push(cast::stance(c));
     pairs.push(crate::talents::points_pair(c));
     pairs.extend(crate::equipment::inventory_pairs(&c.inventory));
+    pairs.extend(crate::quests::log_pairs(c));
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {
         pairs.push((PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, float(1.0)));

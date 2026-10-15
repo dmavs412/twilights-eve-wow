@@ -43,7 +43,7 @@ impl InWorld {
     }
 
     /// Moves the player on its own map: the fight ends, and the client snaps there.
-    fn teleport(
+    pub(super) fn teleport(
         &mut self,
         c: &mut Char,
         position: [f32; 3],

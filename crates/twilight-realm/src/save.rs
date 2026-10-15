@@ -72,10 +72,17 @@ struct SaveV1 {
     /// `[item entry, ms left]` per item cooling down after use. Optional within version 1.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     item_cooldowns: Vec<[u32; 2]>,
+    /// Added within version 1: a save without them has none.
+    #[serde(default)]
+    tokens: u32,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
     items: Vec<SavedItem>,
+    /// The quest log. Added within version 1: a save without it has no quests under way. Left
+    /// out when empty, so it never writes a plain key after `items`' tables.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    quests: Vec<crate::quests::SavedQuest>,
 }
 
 /// One item in a save.
@@ -143,7 +150,9 @@ pub(crate) fn export(c: &Char) -> String {
             .iter()
             .map(|&(entry, left)| [entry, (left * 1000.0).round() as u32])
             .collect(),
+        tokens: c.tokens,
         items: saved_items(&c.inventory),
+        quests: crate::quests::saved(&c.quests),
     };
     toml::to_string(&save).expect("a save always serializes")
 }
@@ -179,7 +188,10 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
             .iter()
             .map(|&[entry, ms]| (entry, ms as f32 / 1000.0))
             .collect(),
+        quests: crate::quests::load(&s.quests)?,
+        tokens: s.tokens,
     };
+    crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);
     Ok(c)
 }

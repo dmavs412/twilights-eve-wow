@@ -9,6 +9,7 @@ use benilla_protocol::{CharCreateReq, Character};
 
 use crate::content::{self, Calling, CROSSROADS, KALIMDOR, THE_BARRENS};
 use crate::inventory::Inventory;
+use crate::quests::QuestLog;
 use crate::save::SaveError;
 
 /// `CharactersPerRealm`: the select screen's ten rows.
@@ -50,6 +51,10 @@ pub(crate) struct Char {
     /// The items cooling down after use, `(entry, seconds left)`; the clock runs only in the
     /// world.
     pub(crate) item_cooldowns: Vec<(u32, f32)>,
+    /// The quests under way.
+    pub(crate) quests: QuestLog,
+    /// The Tokens Repeatable Quests paid, which the Token vendor takes.
+    pub(crate) tokens: u32,
 }
 
 #[derive(Default)]
@@ -101,6 +106,8 @@ impl Characters {
             talent_wipes: 0,
             inventory: content::starting_inventory(),
             item_cooldowns: Vec::new(),
+            quests: QuestLog::default(),
+            tokens: 0,
         });
         CHAR_CREATE_SUCCESS
     }

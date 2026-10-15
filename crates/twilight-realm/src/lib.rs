@@ -15,17 +15,21 @@ mod content;
 mod dev;
 mod equipment;
 mod fields;
+mod hub;
 mod inventory;
 mod items;
 mod looting;
 mod mobs;
 mod population;
+mod quests;
 mod rng;
 pub mod rules;
 mod save;
 mod tables;
 mod talents;
 mod trainer;
+mod vendor;
+mod wear;
 mod world;
 
 use benilla_protocol::{CharCreateReq, SessionEvent};
@@ -170,6 +174,76 @@ pub enum RealmCommand {
     TalentWipeConfirm {
         trainer: u64,
     },
+    /// Open a vendor's merchant window, answered with [`SessionEvent::VendorInventory`].
+    ListInventory {
+        guid: u64,
+    },
+    /// Buy `count` of a vendor row's bundles (`buy_count` items each) by item entry.
+    BuyItem {
+        vendor: u64,
+        entry: u32,
+        count: u8,
+    },
+    /// Sell `count` of an item, 0 for the whole stack.
+    SellItem {
+        vendor: u64,
+        item: u64,
+        count: u8,
+    },
+    /// Buy back what was sold, by its player buyback slot (69-80).
+    BuybackItem {
+        vendor: u64,
+        slot: u32,
+    },
+    /// Repair one item, or with `item` 0 everything carried.
+    RepairItem {
+        vendor: u64,
+        item: u64,
+    },
+    /// Release Spirit: the dead player comes back at the respawn point.
+    RepopRequest,
+    /// The `!` or `?` over a quest giver, answered with [`SessionEvent::QuestGiverStatus`].
+    QuestGiverStatusQuery {
+        npc: u64,
+    },
+    /// Talk to a quest giver: its quest list, or its one quest's panel.
+    QuestGiverHello {
+        npc: u64,
+    },
+    /// An offered quest's accept panel.
+    QuestGiverQueryQuest {
+        npc: u64,
+        quest: u32,
+    },
+    /// Take an offered quest into the log.
+    QuestGiverAcceptQuest {
+        npc: u64,
+        quest: u32,
+    },
+    /// Start handing a quest in: its progress panel, or its reward panel.
+    QuestGiverCompleteQuest {
+        npc: u64,
+        quest: u32,
+    },
+    /// The progress panel's Continue: the reward panel.
+    QuestGiverRequestReward {
+        npc: u64,
+        quest: u32,
+    },
+    /// Hand a finished quest in, taking reward `choice`.
+    QuestGiverChooseReward {
+        npc: u64,
+        quest: u32,
+        choice: u32,
+    },
+    /// A quest template, answered with [`SessionEvent::QuestTemplate`].
+    QuestQuery {
+        quest: u32,
+    },
+    /// Abandon the quest in a log slot.
+    QuestLogRemoveQuest {
+        slot: u8,
+    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -262,8 +336,16 @@ impl Realm {
             RealmCommand::UseItem { bag, slot } => {
                 // Equipped bags are not modelled: only the player's own slots hold items.
                 if let (Some(w), 255) = (&mut self.world, bag) {
-                    if let Some(c) = self.characters.get(w.guid) {
-                        w.use_item(slot, c, &mut self.events);
+                    if let Some(c) = self.characters.get_mut(w.guid) {
+                        // Food and drink are eaten at once; anything else casts its spell.
+                        match w.eat_or_drink(slot, c, &mut self.events) {
+                            Some(true) => {
+                                let guid = w.guid;
+                                self.save(guid);
+                            }
+                            Some(false) => {}
+                            None => w.use_item(slot, c, &mut self.events),
+                        }
                     }
                 }
             }
@@ -283,9 +365,10 @@ impl Realm {
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
-                let name = trainer::creature_name(entry);
-                self.events
-                    .push(name.unwrap_or_else(|| mobs::creature_name(entry)));
+                let answer = hub::creature_name(entry)
+                    .or_else(|| quests::creature_name(entry))
+                    .unwrap_or_else(|| mobs::creature_name(entry));
+                self.events.push(answer);
             }
             RealmCommand::Logout => self.logout(),
             RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
@@ -293,9 +376,13 @@ impl Realm {
             RealmCommand::GossipHello { guid } => self.gossip_hello(guid),
             RealmCommand::GossipSelectOption { guid, option } => self.gossip_select(guid, option),
             RealmCommand::NpcTextQuery { text_id } => {
-                self.events.extend(trainer::greeting(text_id))
+                self.events.extend(trainer::greeting(text_id));
             }
             RealmCommand::TalentWipeConfirm { trainer } => self.talent_wipe(trainer),
+            RealmCommand::QuestQuery { quest } => {
+                self.events.extend(quests::template_response(quest));
+            }
+            other if other.is_quest() => self.handle_quest(other),
             other => self.handle_items(other),
         }
     }
@@ -311,6 +398,7 @@ impl Realm {
         let events = &mut self.events;
         let mut moved = equipment::Moved::default();
         let mut looted = looting::Looted::default();
+        let mut traded = vendor::Traded::default();
         match command {
             RealmCommand::Loot { guid } => w.open_loot(guid, c, events),
             RealmCommand::LootMoney => looted = w.looting.take_money(c, events),
@@ -339,14 +427,36 @@ impl Realm {
             RealmCommand::DestroyItem { bag, slot, count } => {
                 moved = equipment::destroy(c, bag, slot, count, events);
             }
+            RealmCommand::ListInventory { guid } => vendor::list(guid, c, events),
+            RealmCommand::BuyItem {
+                vendor,
+                entry,
+                count,
+            } => traded = vendor::buy(vendor, entry, count, c, events),
+            RealmCommand::SellItem {
+                vendor,
+                item,
+                count,
+            } => traded = vendor::sell(vendor, item, count, c, &mut w.buyback, events),
+            RealmCommand::BuybackItem { vendor, slot } => {
+                traded = vendor::buy_back(vendor, slot, c, &mut w.buyback, events);
+            }
+            RealmCommand::RepairItem { vendor, item } => {
+                traded = vendor::repair(vendor, item, c, events);
+            }
+            RealmCommand::RepopRequest => traded.changed = w.release(c, events),
             _ => return,
         }
+        moved.gear_changed |= traded.gear_changed;
+        looted.took |= traded.changed;
         if moved.gear_changed {
             w.refresh_gear(c, events);
         }
         if let Some((corpse, lootable)) = looted.flag {
             events.push(fields::values(corpse, &[looting::lootable_pair(lootable)]));
         }
+        // A quest may want what came into the bags, or what left them.
+        quests::refresh(c, events);
         if moved.gear_changed || looted.took {
             let guid = w.guid;
             self.save(guid);
@@ -363,7 +473,8 @@ impl Realm {
         };
         let ticked = w.tick(dt, host, c, &mut self.rng, &mut self.events);
         w.since_save += dt;
-        if ticked.leveled || w.since_save >= save::AUTOSAVE_SECS {
+        // The dead are saved once they release, where they come back.
+        if ticked.leveled || (w.since_save >= save::AUTOSAVE_SECS && !w.dead()) {
             w.since_save = 0.0;
             let guid = w.guid;
             self.save(guid);
@@ -436,9 +547,13 @@ impl Realm {
     }
 
     fn logout(&mut self) {
-        let Some(w) = self.world.take() else {
+        let Some(mut w) = self.world.take() else {
             return;
         };
+        // Leaving dead is a release: the save puts the character where it comes back.
+        if let Some(c) = self.characters.get_mut(w.guid) {
+            w.release(c, &mut Vec::new());
+        }
         self.save(w.guid);
         self.events.push(SessionEvent::LogoutResponse {
             reason: 0,

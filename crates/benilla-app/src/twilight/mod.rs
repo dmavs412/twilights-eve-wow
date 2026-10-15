@@ -308,13 +308,72 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::TalentWipeConfirm { trainer } => {
             Some(RealmCommand::TalentWipeConfirm { trainer })
         }
+        ClientCommand::ListInventory { guid } => Some(RealmCommand::ListInventory { guid }),
+        ClientCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        } => Some(RealmCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        }),
+        // A row dropped on a slot: bought into the first free one, as the realm stores loot.
+        ClientCommand::BuyItemInSlot {
+            vendor,
+            entry,
+            count,
+            ..
+        } => Some(RealmCommand::BuyItem {
+            vendor,
+            entry,
+            count,
+        }),
+        ClientCommand::SellItem {
+            vendor,
+            item_guid,
+            count,
+        } => Some(RealmCommand::SellItem {
+            vendor,
+            item: item_guid,
+            count,
+        }),
+        ClientCommand::BuybackItem { vendor, slot } => {
+            Some(RealmCommand::BuybackItem { vendor, slot })
+        }
+        ClientCommand::RepairItem { vendor, item_guid } => Some(RealmCommand::RepairItem {
+            vendor,
+            item: item_guid,
+        }),
         ClientCommand::UseItem {
             bag_index, slot, ..
         } => Some(RealmCommand::UseItem {
             bag: bag_index,
             slot,
         }),
+        ClientCommand::RepopRequest => Some(RealmCommand::RepopRequest),
         ClientCommand::TeleportAck { counter, .. } => Some(RealmCommand::TeleportAck { counter }),
+        ClientCommand::QuestgiverStatusQuery { npc } => {
+            Some(RealmCommand::QuestGiverStatusQuery { npc })
+        }
+        ClientCommand::QuestgiverHello { npc } => Some(RealmCommand::QuestGiverHello { npc }),
+        ClientCommand::QuestgiverQuery { npc, quest } => {
+            Some(RealmCommand::QuestGiverQueryQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverAccept { npc, quest } => {
+            Some(RealmCommand::QuestGiverAcceptQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverComplete { npc, quest } => {
+            Some(RealmCommand::QuestGiverCompleteQuest { npc, quest })
+        }
+        ClientCommand::QuestgiverRequestReward { npc, quest } => {
+            Some(RealmCommand::QuestGiverRequestReward { npc, quest })
+        }
+        ClientCommand::QuestgiverChooseReward { npc, quest, choice } => {
+            Some(RealmCommand::QuestGiverChooseReward { npc, quest, choice })
+        }
+        ClientCommand::QuestQuery { quest } => Some(RealmCommand::QuestQuery { quest }),
+        ClientCommand::QuestlogRemove { slot } => Some(RealmCommand::QuestLogRemoveQuest { slot }),
         _ => None,
     }
 }

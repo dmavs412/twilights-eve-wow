@@ -254,7 +254,8 @@ Built in #14 (talents):
   level gate, since points start at level 2.
 - The respec price follows vmangos `Player::resetTalentsCost` (1 g, 5 g, 10 g, then 5 g more a
   time up to 50 g), not the JSON's proposed `first`/`step`, and has no monthly discount. The
-  Warrior trainer is Uzzek (creature 5810, display 4391) beside the Crossroads start point.
+  Warrior trainer is Uzzek (creature 5810, display 4391), a `content/hub.toml` NPC beside the
+  Crossroads start point; his gossip lives in `src/trainer.rs`.
 
 Still open:
 - Pushing spell mods so tooltips follow the realm's formulas is untested. Improved Charge's
