@@ -250,7 +250,7 @@ fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
     // A level 15 Warrior on a level 10 quest: still a full level (15's 14400 XP).
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 5), (24, CROCOLISK_SKIN, 4)];
     let (mut realm, me, mut events) =
-        questing_as("warrior", 15, skins, 2, &[(CROCOLISK_SKINS, [0; 4])]);
+        questing_as("vanguard", 15, skins, 2, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
     assert_eq!(quest_log(&events, me)[0].3, 1, "complete from the bags");
 
@@ -344,7 +344,8 @@ fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
 fn outlevelling_a_quest_shrinks_its_xp() {
     // A level 16 Warrior on a level 10 quest: 80% of 16000.
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 8)];
-    let (mut realm, _, events) = questing_as("warrior", 16, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
+    let (mut realm, _, events) =
+        questing_as("vanguard", 16, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
     let done = completed(&hand_in(&mut realm, zunjin, CROCOLISK_SKINS)).unwrap();
     assert_eq!(done.xp, 12800);

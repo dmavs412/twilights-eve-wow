@@ -7,7 +7,7 @@ data/twilights-eve/callings.json. It is a tuning aid, not the realm: the realm's
 authority. The target is a fight of roughly 15-25 s against a same-level mob.
 
     python tools/twilights-eve/simulate_fights.py --mobs mob_base_stats.json --stats warrior_level_stats.json
-    python tools/twilights-eve/simulate_fights.py --calling warrior --levels 1 10 20 30
+    python tools/twilights-eve/simulate_fights.py --calling vanguard --levels 1 10 20 30
 
 --mobs and --stats default to data/twilights-eve/{mob_base_stats,warrior_level_stats}.json (from the
 combat-reference branch). Stdlib only.

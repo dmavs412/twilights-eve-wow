@@ -17,7 +17,7 @@ python tools/twilights-eve/extract_spells.py search "Heroic Strike" --family 4 -
 python tools/twilights-eve/extract_spells.py talents --class 1
 python tools/twilights-eve/extract_spells.py spell 78 12294
 python tools/twilights-eve/extract_spells.py selftest
-python tools/twilights-eve/simulate_fights.py --calling warrior --mobs ... --stats ...
+python tools/twilights-eve/simulate_fights.py --calling vanguard --mobs ... --stats ...
 ```
 
 ## The client enforces some things before it sends a cast
@@ -70,17 +70,15 @@ with no rank text.
 
 The vanilla rank progressions behind each fit are in the JSON's `vanilla_reference` fields.
 
-## Tier 1, Warrior: eight skills (levels 1–30, Tier Bonus applies)
+## Tier 1, Vanguard: five skills (levels 1–30, Tier Bonus applies)
 
-Mortal Strike 12294 (R1), Overpower 7887 (R2), Charge 6178 (R2), Rend 6546 (R2), Thunder Clap
-8198 (R2), Cleave 845 (R1), Execute 5308 (R1) and Battle Shout 6192 (R3). All of them work in
-Battle Stance. Values at L1/10/20/30: MS Wn+28/50/75/100; Overpower +7/12/18/24; Charge
-11–14 rage; Rend 6–14 per tick over 4 ticks; Thunder Clap 12/26/41/57; Cleave +4/8/12/16 on 2
-targets; Execute 30/77/129/181 plus 2–5 per extra rage; Battle Shout 22/40/60/80 AP. (The
-simulation below retuned MS and Execute.) Mortal
-Strike is a level-40 talent in vanilla. Here it is the Tier 1 signature, scaled down at low
-levels. It is left out of the Tier 1 tree, which stops at tier 5. Heroic Strike drops out of the
-Tier 1 set.
+The Callings handoff (#18, #20) renamed the Tier 1 Calling Vanguard and focused its kit: Mortal
+Strike 12294 (R1), Overpower 7887 (R2), Charge 6178 (R2), Rend 6546 (R2) and Battle Shout 6192
+(R3). All of them work in Battle Stance. Values at L1/10/20/30: MS Wn+28/50/75/100; Overpower
++7/12/18/24; Charge 11–14 rage; Rend 6–14 per tick over 4 ticks; Battle Shout 22/40/60/80 AP.
+Mortal Strike is a level-40 talent in vanilla. Here it is the Tier 1 signature, scaled down at
+low levels. Heroic Strike drops out of the Vanguard set, and Thunder Clap, Cleave and Execute
+are gone from it. A save made when Tier 1 was called "warrior" loads as a Vanguard.
 
 ## Talent trees
 
@@ -112,15 +110,21 @@ Strike 124 ×3, Improved Charge 126 ×2, Toughness 140 ×5. Row 2: Cruelty 157 �
 effect kind in the realm, so it ships with none: it is learnable, counts toward the row, and
 `tests/content_callings.rs` lists it as not modelled.
 
-**Tier 1 Warrior** has 29 points across three tabs. Each tab keeps the real tabs' seats and
-stops at tier 5, so 20 points reach Sweeping Strikes, Death Wish or Concussion Blow.
-Arms 161: 41 ranks, ending in Axe/Sweeping Strikes/Mace/Sword. Fury 164: 40 ranks, up to
-Death Wish. Protection 163: 27 ranks. In Protection, One-Handed Weapon Specialization moves
-from tier 6 to tier 4, and Last Stand loses its Improved Bloodrage prerequisite. The dropped
-talents and the reasons are in the JSON `catalog_note`. Five talents are exceptional (active)
-and need realm cast handlers: Sweeping Strikes, Piercing Howl, Death Wish, Last Stand and
-Concussion Blow. Each talent's `realm_effect` follows its DBC values, so the talent tooltips
-are accurate.
+**Vanguard** has 29 points across two tabs, re-seated on the vanilla grid:
+- **Weaponmaster** (id 901, WarriorArms art), 38 ranks over five rows. Row 1: Improved
+  Overpower 131 ×2, Improved Rend 127 ×3. Row 2: Improved Charge 126 ×2, Anger Management 137
+  ×1, Deep Wounds 121 ×3 (needs Improved Rend 3/3). Row 3: Two-Handed Weapon Specialization 136
+  ×5, Impale 662 ×2 (needs Deep Wounds 3/3). Row 4: Axe 132, Mace 125 and Sword 123
+  Specialization ×5 each. Row 5: Flurry 156 ×5.
+- **Warlord** (id 902, WarriorFury art), 28 ranks over three rows. Row 1: Booming Voice 158 ×5,
+  Cruelty 157 ×5. Row 2: Unbridled Wrath 159 ×5, Improved Battle Shout 154 ×5. Row 3: Blood
+  Craze 661 ×3, Enrage 155 ×5.
+
+Twenty points in Weaponmaster reach Flurry, and the other 9 go to Warlord. Prerequisites stay
+inside a tab: Anger Management loses Tactical Mastery and Flurry loses Enrage. Anger Management
+and Flurry (a crit hastes the next three swings; the player has no haste yet) are WIP: no effect,
+learnable, counted toward the row and named "<Name> (WIP)". The tree has no active talents.
+Each talent's `realm_effect` follows its DBC values, so the talent tooltips are accurate.
 
 ## Tier Bonus, caps and points
 
@@ -135,8 +139,9 @@ and has no quest DBC, so borrowing an ID gains nothing and risks cache collision
 ids 64001 and 64002 and `ZoneOrSort -81`, so they appear under the stock "Warrior" quest-log
 header (QuestSort.dbc 81). The Advancement Quest is a speak-to quest, modelled on vanilla 1505
 "Veteran Uzzek". Uzzek (creature 5810, the Barrens) is a candidate model for the Hub's
-Warrior trainer. Champion's quest has an objective the realm never credits. The tone comes
-from 1718, 1791 and 1712, and no text is copied.
+Warrior trainer. 64001 advances a Basic Warrior into Vanguard. 64002, offered at Vanguard 30,
+is Ironclad's ("The Ironclad's Oath"; Champion's quest is gone): it has an objective the realm
+never credits. The tone comes from 1718, 1791 and 1712, and no text is copied.
 
 ## Checked against vmangos and the client code
 

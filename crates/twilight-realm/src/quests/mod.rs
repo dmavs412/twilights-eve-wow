@@ -126,7 +126,7 @@ fn complete(c: &Char, a: &Active) -> bool {
     let Some(q) = content::quest(a.id) else {
         return false;
     };
-    // Champion's quest: offered, and never finished.
+    // Ironclad's quest: offered, and never finished.
     if q.advancement.as_ref().is_some_and(|adv| !adv.completable) {
         return false;
     }

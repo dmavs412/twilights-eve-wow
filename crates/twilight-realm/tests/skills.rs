@@ -1,7 +1,10 @@
 //! The Basic Warrior's two skills, played through the realm's seam: the spellbook at login, casts
 //! from the action bar, what they cost, what they refuse, and what they do to a mob. The skill
 //! mechanics its kit cannot show (a buff, a bleed, the global cooldown, Overpower's window) are
-//! played on the Tier 1 Warrior.
+//! played on the Vanguard.
+//!
+//! A queued strike that finds its rage spent by the swing went with Cleave and Thunder Clap: no
+//! Calling has both an on-next-swing strike and another rage spender now.
 
 mod common;
 
@@ -221,15 +224,13 @@ fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
     assert_eq!(go_hits(&events, HEROIC_STRIKE), None);
 }
 
-// ── What the Basic Warrior's two skills cannot show, on the Tier 1 Warrior ──────────────────────
+// ── What the Basic Warrior's two skills cannot show, on the Vanguard ──────────────────────
 
-// The Tier 1 Warrior's skills (`content/callings.toml`).
+// The Vanguard's skills (`content/callings.toml`).
 const T1_CHARGE: u32 = 6178;
 const T1_REND: u32 = 6546;
 const T1_BATTLE_SHOUT: u32 = 6192;
 const T1_OVERPOWER: u32 = 7887;
-const T1_CLEAVE: u32 = 845;
-const T1_THUNDER_CLAP: u32 = 8198;
 
 #[test]
 fn a_buff_clicked_off_goes_and_takes_its_bonus_with_it() {
@@ -323,47 +324,6 @@ fn a_melee_skill_needs_a_target_in_reach() {
         refusal(&view.drain(&mut realm), T1_REND),
         Some(OUT_OF_RANGE)
     );
-}
-
-#[test]
-fn thunder_clap_hits_what_stands_close_and_slows_its_swings() {
-    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 20);
-    realm.handle(cast(T1_THUNDER_CLAP, None));
-    let events = view.drain(&mut realm);
-    assert_eq!(go_hits(&events, T1_THUNDER_CLAP), Some(vec![mob.guid]));
-    assert_eq!(spell_damage(&events, T1_THUNDER_CLAP).len(), 1);
-    assert!(view.aura(mob.guid, T1_THUNDER_CLAP).is_some());
-    realm.handle(cast(T1_THUNDER_CLAP, None));
-    assert_eq!(
-        refusal(&view.drain(&mut realm), T1_THUNDER_CLAP),
-        Some(NOT_READY)
-    );
-
-    // The mob swings every 2.2 s instead of 2.
-    let gaps = swing_gaps(&mut realm, &mut view, mob.guid, 7.0);
-    assert!(!gaps.is_empty());
-    assert!(gaps.iter().all(|&g| (g - 2.2).abs() < 0.11), "{gaps:?}");
-}
-
-#[test]
-fn a_queued_strike_without_its_rage_at_the_swing_fails_and_swings_white() {
-    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 20);
-    // The swing timer comes round again.
-    view.run(&mut realm, 2.0);
-    assert!(view.rage(me) < 30);
-    realm.handle(cast(T1_CLEAVE, Some(mob.guid)));
-    // The shout spends the rage the strike was waiting on.
-    realm.handle(cast(T1_BATTLE_SHOUT, None));
-    view.drain(&mut realm);
-    assert!(view.rage(me) < 20);
-    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-    let events = view.run(&mut realm, 0.1);
-    assert_eq!(refusal(&events, T1_CLEAVE), Some(NO_POWER));
-    assert!(events
-        .iter()
-        .any(|e| matches!(e, SessionEvent::AttackerState(s) if s.attacker == me)));
 }
 
 #[test]
@@ -529,9 +489,9 @@ fn warrior_seeded(level: u8, seed: u64) -> (Realm, u64, Mob, View) {
     calling_seeded("basic_warrior", level, seed)
 }
 
-/// A human Tier 1 Warrior, placed as [`warrior_seeded`] places a Basic Warrior.
+/// A human Vanguard, placed as [`warrior_seeded`] places a Basic Warrior.
 fn tier1_seeded(level: u8, seed: u64) -> (Realm, u64, Mob, View) {
-    calling_seeded("warrior", level, seed)
+    calling_seeded("vanguard", level, seed)
 }
 
 /// A human of `calling` at `level`, placed as [`warrior_at`] places one.
@@ -594,7 +554,7 @@ fn stand_at(realm: &mut Realm, mob: &Mob, yards: f32) {
     });
 }
 
-/// A level-1 Tier 1 Warrior that charged the level-3 mob and swings at it until it dodges: about
+/// A level-1 Vanguard that charged the level-3 mob and swings at it until it dodges: about
 /// one swing in fifty, so the dice of the first seeded fight that gets one.
 fn dodged_fight() -> (Realm, u64, Mob, View) {
     for seed in 0..200 {
@@ -700,14 +660,6 @@ fn periodic_damage(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
 /// The seconds into the next `secs` at which `guid` first swings.
 fn first_swing_at(realm: &mut Realm, view: &mut View, guid: u64, secs: f32) -> Option<f32> {
     swing_times(realm, view, guid, secs).first().copied()
-}
-
-/// The seconds between `guid`'s swings over the next `secs`.
-fn swing_gaps(realm: &mut Realm, view: &mut View, guid: u64, secs: f32) -> Vec<f32> {
-    swing_times(realm, view, guid, secs)
-        .windows(2)
-        .map(|w| w[1] - w[0])
-        .collect()
 }
 
 fn swing_times(realm: &mut Realm, view: &mut View, guid: u64, secs: f32) -> Vec<f32> {
