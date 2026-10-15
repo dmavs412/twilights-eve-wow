@@ -50,7 +50,7 @@ impl InWorld {
             (UNIT_FIELD_HEALTH, p.health),
             cast::stance(c),
         ];
-        pairs.extend(sheet_pairs(c, &cast::buffed(&p.stats, &self.skills)));
+        pairs.extend(sheet_pairs(c, &cast::white(&p.stats, &self.skills)));
         events.push(values(self.guid, &pairs));
     }
 }

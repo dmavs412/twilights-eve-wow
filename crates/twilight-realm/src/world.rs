@@ -357,7 +357,7 @@ impl InWorld {
             return;
         }
         p.refused = None;
-        p.swing_timer = clock::secs(cast::buffed(&p.stats, &self.skills).attack_time_ms);
+        p.swing_timer = clock::secs(cast::white(&p.stats, &self.skills).attack_time_ms);
 
         let from_front = in_front(mob.orientation, mob.position, c.position);
         // A queued Heroic Strike takes this swing's place.
@@ -381,7 +381,7 @@ impl InWorld {
         ticked: &mut Ticked,
     ) {
         let target = self.mobs[i].guid;
-        let stats = cast::buffed(&self.player.stats, &self.skills);
+        let stats = cast::white(&self.player.stats, &self.skills);
         let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, rng);
         swing.damage = self.dealt(c, swing.damage);
         let counted = self.skills.count_swing(events);
@@ -685,7 +685,7 @@ impl InWorld {
             pairs.push((UNIT_FIELD_HEALTH, self.player.health));
             pairs.extend(sheet_pairs(
                 c,
-                &cast::buffed(&self.player.stats, &self.skills),
+                &cast::white(&self.player.stats, &self.skills),
             ));
         }
         events.push(values(self.guid, &pairs));

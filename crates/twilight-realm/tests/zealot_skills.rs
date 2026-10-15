@@ -12,6 +12,10 @@ const HAMMER_OF_JUSTICE: u32 = 10308;
 const SEAL_OF_COMMAND: u32 = 20375;
 const SEAL_OF_THE_CRUSADER: u32 = 20305;
 const JUDGEMENT: u32 = 20271;
+const MORTAL_STRIKE: u32 = 12294;
+const MAIN_HAND: u8 = 15;
+/// A two-handed axe.
+const LARGE_AXE: u32 = 2491;
 /// Judgement of Command Rank 1, which the log names.
 const JUDGEMENT_OF_COMMAND: u32 = 20467;
 /// Judgement of the Crusader Rank 3, the debuff judging Seal of the Crusader leaves.
@@ -218,6 +222,43 @@ fn seal_of_the_crusader_quickens_swings_and_raises_attack_power_until_it_fades()
     assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_none(), "30 s");
     assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
     assert_eq!(view.fields(me).unit_base_attack_time(0), Some(speed));
+}
+
+/// Seal of the Crusader cuts white swings only: Mortal Strike under it keeps its full weapon roll
+/// and adds the Seal's attack power. The same fight under Seal of Command, which moves neither,
+/// is the yardstick.
+#[test]
+fn mortal_strike_under_seal_of_the_crusader_keeps_its_full_weapon_roll() {
+    // A Large Axe, whose roll is big enough that a cut by 1.4 would show.
+    let axe = |blob: String| {
+        drop_slot(&blob, MAIN_HAND)
+            + &format!("\n[[items]]\nslot = {MAIN_HAND}\nentry = {LARGE_AXE}\ncount = 1\n")
+    };
+    let strike = |seal: u32| {
+        let (mut realm, me, mob, mut view) = tanking_as(40, &axe);
+        realm.handle(cast(seal, None));
+        assert_eq!(refusal(&view.drain(&mut realm), seal), None);
+        view.run(&mut realm, 1.6);
+        let ap = view.fields(me).unit_attack_power_mods();
+        realm.handle(cast(MORTAL_STRIKE, Some(mob.guid)));
+        let events = view.drain(&mut realm);
+        assert_eq!(refusal(&events, MORTAL_STRIKE), None);
+        let hit = events
+            .iter()
+            .find_map(|e| match e {
+                SessionEvent::SpellDamageLog(s) if s.spell_id == MORTAL_STRIKE => Some(s.damage),
+                _ => None,
+            })
+            .expect("Mortal Strike's hit");
+        (hit, ap)
+    };
+    let (plain, plain_mods) = strike(SEAL_OF_COMMAND);
+    let (sealed, sealed_mods) = strike(SEAL_OF_THE_CRUSADER);
+    assert!(plain > 0, "the yardstick strike landed");
+    assert_eq!(plain_mods, (0, 0));
+    assert_eq!(sealed_mods, (24, 0), "the Seal's 20 + 4 attack power");
+    // Cut by 1.4, the axe's roll loses what the Seal's attack power adds; uncut, it only adds.
+    assert!(sealed > plain, "{sealed} under the Seal, {plain} without");
 }
 
 #[test]

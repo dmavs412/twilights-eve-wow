@@ -12,7 +12,7 @@ fn forty_percent_haste_divides_the_swing_time_by_one_point_four() {
     assert_eq!(hasted_attack_time(2000, 0), 2000);
 }
 
-/// "...but deals less damage with each attack": each hit over 1.4, so the faster swings alone
+/// "...but deals less damage with each attack": each white swing over 1.4, so the faster swings alone
 /// deal what the slower ones did a second.
 #[test]
 fn the_haste_cut_divides_each_hit_by_the_same_factor() {
