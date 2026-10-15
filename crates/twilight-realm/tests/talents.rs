@@ -254,7 +254,16 @@ fn the_trainer_offers_to_unlearn_talents() {
         _ => None,
     });
     let blocks = greeting.expect("the greeting");
-    assert!(!blocks[0].male.is_empty());
+    // Both are the trainer's row in content/hub.toml.
+    let hub: toml::Table = include_str!("../content/hub.toml").parse().unwrap();
+    let row = hub["npc"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|n| n["name"].as_str() == Some("Uzzek"))
+        .expect("the trainer's row");
+    assert_eq!(i64::from(text_id), row["text_id"].as_integer().unwrap());
+    assert_eq!(Some(blocks[0].male.as_str()), row["greeting"].as_str());
 }
 
 #[test]

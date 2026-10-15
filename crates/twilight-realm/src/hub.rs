@@ -37,9 +37,12 @@ pub(crate) struct Npc {
     /// The Token vendor: it sells the buyer's band of greens for Tokens (`crate::token_vendor`).
     #[serde(default)]
     pub(crate) tokens: bool,
-    /// What a quest giver's quest list opens with.
+    /// What its quest list, or its gossip menu, opens with.
     #[serde(default)]
     pub(crate) greeting: String,
+    /// A gossip NPC's greeting's `npc_text` id, which `CMSG_NPC_TEXT_QUERY` asks for.
+    #[serde(default)]
+    pub(crate) text_id: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -71,6 +74,11 @@ impl Npc {
     /// Whether it gives quests (`UNIT_NPC_FLAG_QUESTGIVER`).
     pub(crate) fn gives_quests(&self) -> bool {
         self.npc_flags & 0x2 != 0
+    }
+
+    /// Whether it trains (`UNIT_NPC_FLAG_TRAINER`): the Warrior trainer, who sells the respec.
+    pub(crate) fn trains(&self) -> bool {
+        self.npc_flags & 0x10 != 0
     }
 
     /// Whether it repairs gear (`UNIT_NPC_FLAG_REPAIR`).

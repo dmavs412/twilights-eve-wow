@@ -1,4 +1,4 @@
-//! The Hub's Warrior trainer (`content/hub.toml`) lists his Advancement Quests in his gossip menu
+//! The Hub's Warrior trainer (`content/hub.toml`, with his greeting) lists his Advancement Quests in his gossip menu
 //! (they are quests: `content/quests.toml`), and sells the respec through the stock flow
 //! (vmangos `Player::SendTalentWipeConfirm`, `Player::ResetTalents`): his gossip's unlearn line
 //! closes the menu and asks `MSG_TALENT_WIPE_CONFIRM` with the price; the reset runs when the
@@ -11,31 +11,24 @@ use crate::content::KALIMDOR;
 use crate::fields::values;
 use crate::hub::{self, Npc};
 
-/// His `hub.toml` entry: Uzzek's.
-const ENTRY: u32 = 5810;
-/// The greeting's `npc_text` id, the realm's own.
-const TEXT_ID: u32 = 64_014;
-const GREETING: &str = "Strength is earned, $C, and so is every scar. If the path you chose \
-    no longer serves you, I can help you forget it - for a price.";
 /// The gossip line's index, which `CMSG_GOSSIP_SELECT_OPTION` echoes.
 const OPTION_UNLEARN: u32 = 0;
 
-/// The trainer, when `guid` is his.
+/// The trainer, when `guid` is his: a Hub NPC that trains and has a gossip greeting.
 fn trainer(guid: u64) -> Option<&'static Npc> {
-    hub::find(guid).filter(|n| n.entry == ENTRY)
+    hub::find(guid).filter(|n| n.trains() && n.text_id.is_some())
 }
 
-/// The greeting, for `CMSG_NPC_TEXT_QUERY`; `None` for any other text.
+/// A Hub NPC's gossip greeting, for `CMSG_NPC_TEXT_QUERY`; `None` for any other text.
 pub(crate) fn greeting(text_id: u32) -> Option<SessionEvent> {
-    (text_id == TEXT_ID).then(|| {
-        let mut blocks = vec![NpcTextBlock::default(); NPC_TEXT_BLOCKS];
-        blocks[0] = NpcTextBlock {
-            probability: 1.0,
-            male: GREETING.into(),
-            female: GREETING.into(),
-        };
-        SessionEvent::NpcGreeting { text_id, blocks }
-    })
+    let npc = hub::npcs().iter().find(|n| n.text_id == Some(text_id))?;
+    let mut blocks = vec![NpcTextBlock::default(); NPC_TEXT_BLOCKS];
+    blocks[0] = NpcTextBlock {
+        probability: 1.0,
+        male: npc.greeting.clone(),
+        female: npc.greeting.clone(),
+    };
+    Some(SessionEvent::NpcGreeting { text_id, blocks })
 }
 
 impl crate::Realm {
@@ -53,7 +46,7 @@ impl crate::Realm {
             .unwrap_or_default();
         self.events.push(SessionEvent::GossipMenu {
             npc: npc.guid(),
-            text_id: TEXT_ID,
+            text_id: npc.text_id.unwrap_or_default(),
             options: vec![GossipOption {
                 index: OPTION_UNLEARN,
                 icon: 0,
