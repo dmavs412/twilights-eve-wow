@@ -19,6 +19,8 @@ use crate::rules::stats::WarriorStats;
 use crate::rules::{aggro, leash, rage, xp};
 use crate::Host;
 
+mod death;
+
 /// vanilla's player speeds (`baseMoveSpeed`): yd/s, turn in rad/s.
 const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
     walk: 2.5,
@@ -65,6 +67,8 @@ struct Player {
     /// Seconds into the current rage-decay tick.
     decay: f32,
     in_combat: bool,
+    /// Killed, and the toll taken: lying dead until Release Spirit.
+    dead: bool,
 }
 
 impl Player {
@@ -92,6 +96,10 @@ pub(crate) struct InWorld {
     pub(crate) buyback: crate::vendor::Buyback,
     /// The dice for gear wear, apart from the fight's so that wearing changes no fight.
     wear: Rng,
+    /// Where Release Spirit brings the player back: the Hub, or a Dungeon's entrance.
+    pub(crate) respawn: death::Respawn,
+    /// `MSG_MOVE_TELEPORT_ACK`'s counter.
+    teleports: u32,
 }
 
 impl InWorld {
@@ -149,6 +157,7 @@ impl InWorld {
                 refused: None,
                 decay: 0.0,
                 in_combat: false,
+                dead: false,
             },
             mobs: Vec::new(),
             population: Population::default(),
@@ -157,6 +166,8 @@ impl InWorld {
             hub_shown: false,
             buyback: crate::vendor::Buyback::default(),
             wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
+            respawn: death::Respawn::HUB,
+            teleports: 0,
         }
     }
 
@@ -248,6 +259,9 @@ impl InWorld {
         self.player_swing(c, rng, events, &mut ticked);
         for i in 0..self.mobs.len() {
             self.mob_tick(i, dt, host, c, rng, events);
+        }
+        if !self.player.alive() && !self.player.dead {
+            self.die(c, events);
         }
         self.update_combat(dt, events);
         ticked
@@ -401,16 +415,6 @@ impl InWorld {
                     ));
                     if crate::wear::on_hit(c, &mut self.wear, events) {
                         self.refresh_gear(c, events);
-                    }
-                }
-                let p = &mut self.player;
-                if !p.alive() {
-                    // Death and the way back are a later ticket's; the fight just ends.
-                    if let Some(victim) = p.attacking.take() {
-                        events.push(SessionEvent::AttackStop {
-                            attacker: self.guid,
-                            victim,
-                        });
                     }
                 }
             }

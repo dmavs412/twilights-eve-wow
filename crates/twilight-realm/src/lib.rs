@@ -151,6 +151,8 @@ pub enum RealmCommand {
         vendor: u64,
         item: u64,
     },
+    /// Release Spirit: the dead player comes back at the respawn point.
+    RepopRequest,
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -304,6 +306,7 @@ impl Realm {
             RealmCommand::RepairItem { vendor, item } => {
                 traded = vendor::repair(vendor, item, c, events);
             }
+            RealmCommand::RepopRequest => traded.changed = w.release(c, events),
             _ => return,
         }
         moved.gear_changed |= traded.gear_changed;
@@ -330,7 +333,8 @@ impl Realm {
         };
         let ticked = w.tick(dt, host, c, &mut self.rng, &mut self.events);
         w.since_save += dt;
-        if ticked.leveled || w.since_save >= save::AUTOSAVE_SECS {
+        // The dead are saved once they release, where they come back.
+        if ticked.leveled || (w.since_save >= save::AUTOSAVE_SECS && !w.dead()) {
             w.since_save = 0.0;
             let guid = w.guid;
             self.save(guid);
@@ -388,9 +392,13 @@ impl Realm {
     }
 
     fn logout(&mut self) {
-        let Some(w) = self.world.take() else {
+        let Some(mut w) = self.world.take() else {
             return;
         };
+        // Leaving dead is a release: the save puts the character where it comes back.
+        if let Some(c) = self.characters.get_mut(w.guid) {
+            w.release(c, &mut Vec::new());
+        }
         self.save(w.guid);
         self.events.push(SessionEvent::LogoutResponse {
             reason: 0,
