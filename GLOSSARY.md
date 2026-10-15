@@ -34,17 +34,22 @@ The simulated server that Twilight's Eve plays against, running inside the clien
 _Avoid_: fake server, mock server, sim
 
 **Class**:
-One of the nine original WoW 1.12 classes.
+The original WoW 1.12 class the client is told a character is, which decides its power bar. Every Calling on one Line shares a Class; a Calling's skills and talents may be borrowed from any Class.
 _Avoid_: job
 
 **Tier**:
 How far a character has advanced: 0, 1, 2, and so on. Each Advancement puts the character one Tier higher.
 
 **Basic Warrior**:
-The Tier 0 character every player starts as. At level 10 it advances into a weak, Tier 1 version of any Class, Warrior included.
+The Tier 0 Calling every player starts as. At level 10 it advances into one of the Tier 1 Callings, each the start of a Line.
 
 **Calling**:
-A named node in the advancement tree, belonging to one Class at one Tier: Basic Warrior, Tier 1 Warrior, Champion, Captain. Each Calling can branch into several Callings at the next Tier, and has at most 8 skills and its own Talent Tree.
+A named node in the advancement tree, at one Tier on one Line: Basic Warrior, Vanguard, Zealot, Templar. Each Calling can branch into several Callings at the next Tier, and has at most 8 skills, its own Talent Tree, its own Tier Bonus and the armour it may wear.
+_Avoid_: specialization, spec (that means a talent build in WoW), job, rank, class
+
+**Line**:
+A Tier 1 Calling and every Calling that branches from it, such as the Vanguard line (Vanguard, Ironclad, Zealot, Bastion, Templar). Basic Warrior belongs to no Line.
+_Avoid_: path, tree (a Talent Tree)
 _Avoid_: specialization, spec (that means a talent build in WoW), job, rank
 
 **Advancement**:
@@ -71,10 +76,10 @@ _Avoid_: max level
 A quest from a Calling's trainer, offered at the Tier Cap. Completing it advances the character into that Calling, so choosing which one to finish is how a player chooses their branch.
 
 **Tier Bonus**:
-A flat boost to base stats that grows with each Tier. It is what makes a character stronger after Advancement resets their level. Gear, gold and completed quests carry over; skills and talents are replaced by the new Calling's.
+A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. It is what makes a character stronger after Advancement resets their level. Gear, gold and completed quests carry over; skills and talents are replaced by the new Calling's.
 
 **Talent Point**:
-Earned one per level. Talents are the only abilities a character must earn; every other skill of the character's current class is available.
+Earned one per level. Talents are the only abilities a character must earn; every skill of the character's current Calling is available from level 1.
 
 **Talent Tree**:
 The talents one Calling offers. Every Calling has its own.

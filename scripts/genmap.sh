@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Generate docs/MAP.md, the map of what is built, from what is on disk.
 #
-# Regenerated and committed at every land; run it by hand only to look, never edit the output. No
+# Regenerated and committed at every land; the `map` gate refuses a committed map that differs from
+# a fresh one. `scripts/genmap.sh FILE` writes FILE (absolute, or relative to the repo root)
+# instead; never edit the output. No
 # timestamps, so an identical tree gives an identical map. No `pipefail`/`-e`: a grep that finds
 # nothing (a single-file lib, a crate with no bins) must not abort the generator.
 set -u
 cd "$(dirname "$0")/.."
+out="${1:-docs/MAP.md}"
 
 # Extract a quoted `key = "value"` field from a Cargo.toml.
 field() { grep -m1 "^$2" "$1" 2>/dev/null | sed -E "s/^$2[[:space:]]*=[[:space:]]*\"//; s/\".*$//"; }
@@ -120,6 +123,6 @@ field() { grep -m1 "^$2" "$1" 2>/dev/null | sed -E "s/^$2[[:space:]]*=[[:space:]
   done
   echo
 
-} > docs/MAP.md
+} > "$out"
 
-echo "genmap: wrote docs/MAP.md"
+echo "genmap: wrote $out"

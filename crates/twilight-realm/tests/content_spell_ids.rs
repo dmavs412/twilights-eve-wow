@@ -16,6 +16,8 @@ const ID_KEYS: &[(&str, &str, Ids)] = &[
     ("spell_id", "spell_name", Ids::One),
     ("aura_spell_id", "aura_spell_name", Ids::One),
     ("strike_spell_id", "strike_spell_name", Ids::One),
+    ("proc_spell_id", "proc_spell_name", Ids::One),
+    ("judgement_spell_id", "judgement_spell_name", Ids::One),
     ("use_spell", "use_spell_name", Ids::One),
     // Every rank's aura is the one spell's name.
     ("aura_spell_ids", "aura_spell_name", Ids::SameName),
@@ -25,7 +27,7 @@ const ID_KEYS: &[(&str, &str, Ids)] = &[
 ];
 
 /// Keys with "spell" in them that hold no spell id.
-const NOT_IDS: &[&str] = &["client_spellmod"];
+const NOT_IDS: &[&str] = &["client_spellmods"];
 
 #[derive(Clone, Copy)]
 enum Ids {
@@ -56,7 +58,7 @@ fn every_content_spell_id_is_the_spell_its_name_says() {
     let named = content_spell_ids();
     let ids: BTreeSet<u32> = named.iter().map(|n| n.id).collect();
     // Callings' skills, talent ranks and procs, the Hearthstone, food and drink, equip spells.
-    assert!(ids.len() > 150, "only {} ids found", ids.len());
+    assert!(ids.len() > 180, "only {} ids found", ids.len());
 
     let wrong: Vec<String> = named.iter().filter_map(|n| mismatch(n, &spells)).collect();
     assert!(

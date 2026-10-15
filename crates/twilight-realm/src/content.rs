@@ -70,8 +70,11 @@ pub(crate) fn starting_inventory(race: u8) -> crate::inventory::Inventory {
 pub(crate) enum Calling {
     /// Tier 0, where every character starts.
     BasicWarrior,
-    /// Tier 1, the Basic Warrior's Advancement.
-    Warrior,
+    /// Tier 1, the Basic Warrior's Advancement. A save may also name it "warrior".
+    #[serde(alias = "warrior")]
+    Vanguard,
+    /// Tier 2, a Vanguard's Advancement: Paladin Seals, Judgement and Hammer of Justice on rage.
+    Zealot,
 }
 
 impl Calling {
@@ -79,13 +82,14 @@ impl Calling {
     pub(crate) fn key(self) -> &'static str {
         match self {
             Calling::BasicWarrior => "basic_warrior",
-            Calling::Warrior => "warrior",
+            Calling::Vanguard => "vanguard",
+            Calling::Zealot => "zealot",
         }
     }
 
     /// The Calling with this key.
     pub(crate) fn from_key(key: &str) -> Option<Self> {
-        [Calling::BasicWarrior, Calling::Warrior]
+        [Calling::BasicWarrior, Calling::Vanguard, Calling::Zealot]
             .into_iter()
             .find(|c| c.key() == key)
     }

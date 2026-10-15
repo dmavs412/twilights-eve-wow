@@ -27,6 +27,8 @@ use benilla_world::world_map::CurrentMap;
 
 /// The cover's input half: while it is up the client takes no input (a source cut in `PreUpdate`).
 mod input;
+// Its readers are native-only.
+#[cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 pub(crate) use input::CoverInput;
 
 // The bar, from the `LoadingScreen.cpp` descriptor table at `0x7ffd34` (read by `0x407150`):

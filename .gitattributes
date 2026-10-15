@@ -1,0 +1,7 @@
+# Text is LF in the index and in every checkout, whatever core.autocrlf says, so a generator's LF
+# output (genmap.sh, extract_spells.py) matches the checked-out file byte for byte.
+* text=auto eol=lf
+# The vendored kira keeps upstream's CRLF bytes (third_party/kira/BENILLA.md).
+third_party/kira/** -text
+*.jpg binary
+*.png binary

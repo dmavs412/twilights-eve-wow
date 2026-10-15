@@ -853,10 +853,13 @@ mod tests {
         // Lanes that never need the menagerie:
         // - TerrainMaterial / WdlMaterial: always drawn under the entry cover, no variant axis.
         // - AddUiMaterial: glue screens only, and every pre-world frame counts as covered.
+        // - SweepUiMaterial: Survivors' one cooldown-sweep quad, hidden until a run starts. Not
+        //   warmed: its one pipeline compiles on the first frame of the first run, a cost
+        //   accepted for one small UI lane.
         let families: [(&str, &[&str]); 3] = [
             ("MaterialPlugin::<", &["TerrainMaterial", "WdlMaterial"]),
             ("Material2dPlugin::<", &[]),
-            ("UiMaterialPlugin::<", &["AddUiMaterial"]),
+            ("UiMaterialPlugin::<", &["AddUiMaterial", "SweepUiMaterial"]),
         ];
         let own_src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         // Anywhere in the pipe_warm module folder.

@@ -5,6 +5,7 @@
 
 use std::io::BufRead;
 
+#[allow(clippy::type_complexity)]
 fn main() -> anyhow::Result<()> {
     let data = benilla_formats::wow_data().expect("no WoW install found (set $WOW_DATA)");
     let mut chain = benilla_formats::open_chain(&data)?;
@@ -12,6 +13,7 @@ fn main() -> anyhow::Result<()> {
     let mut mesh_cache: std::collections::HashMap<(String, u32, u32), benilla_formats::TileMesh> =
         std::collections::HashMap::new();
 
+    #[allow(clippy::type_complexity)]
     let mut groups: Vec<(String, String, Vec<(f32, f32)>)> = Vec::new();
     for line in std::io::stdin().lock().lines() {
         let line = line?;

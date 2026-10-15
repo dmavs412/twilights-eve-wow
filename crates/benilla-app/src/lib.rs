@@ -184,6 +184,7 @@ mod ui_tooltip;
 mod ui_trade;
 mod ui_tradeskill;
 mod ui_trainer;
+mod ui_twilight;
 mod ui_unit;
 mod ui_world_map;
 mod video;
