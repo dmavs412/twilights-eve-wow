@@ -467,3 +467,15 @@ fn at_thirty_champions_quest_is_offered_but_cannot_be_finished() {
     assert!(completed(&hand_in(&mut realm, uzzek, THE_CHAMPIONS_TRIAL)).is_none());
     assert_eq!(realm.current_calling().unwrap().key, "warrior");
 }
+
+// ── Character select ────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn the_select_screen_names_each_characters_calling() {
+    let (mut realm, me, events) = capped_warrior();
+    assert_eq!(realm.calling_name(me), Some("Basic Warrior"));
+    advance(&mut realm, trainer(&events));
+    realm.handle(RealmCommand::Logout);
+    assert_eq!(realm.calling_name(me), Some("Warrior"));
+    assert_eq!(realm.calling_name(me + 1), None, "nobody");
+}

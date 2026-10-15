@@ -516,6 +516,13 @@ impl Realm {
         self.characters.insert(save::import(blob)?)
     }
 
+    /// The name of a character's Calling, as the select screen shows it (`Basic Warrior`).
+    pub fn calling_name(&self, guid: u64) -> Option<&'static str> {
+        self.characters
+            .get(guid)
+            .map(|c| callings::of(c.calling).name.as_str())
+    }
+
     /// Keeps `guid` from ever being handed out: the host holds a save under it that it could not
     /// import, and a new character must not overwrite it.
     pub fn reserve_guid(&mut self, guid: u64) {
