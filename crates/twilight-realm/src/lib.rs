@@ -8,6 +8,7 @@
 //! tick(dt, &dyn Host) ──┼─> Realm ──> drain_events() -> Vec<SessionEvent>
 //! ```
 
+pub mod callings;
 mod characters;
 mod combat;
 mod content;

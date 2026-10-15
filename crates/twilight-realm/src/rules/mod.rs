@@ -5,5 +5,6 @@
 pub mod aggro;
 pub mod melee;
 pub mod rage;
+pub mod skills;
 pub mod stats;
 pub mod xp;

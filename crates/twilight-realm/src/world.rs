@@ -1,6 +1,8 @@
 //! The character in the world: the login burst that puts it there, the mobs around it, and the
 //! fights between them, one tick at a time.
 
+mod cast;
+
 use benilla_protocol::messages::{AttackSwingError, LevelUpInfo, ObjectType, XpGain};
 use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 
@@ -107,6 +109,7 @@ impl InWorld {
             day_serial: 0,
             timescale: 1.0 / 60.0,
         });
+        events.push(cast::spell_book(c));
         events.push(SessionEvent::ObjectCreate {
             guid: c.guid,
             kind: EntityKind::Player,
