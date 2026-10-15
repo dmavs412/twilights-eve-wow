@@ -7,6 +7,11 @@
 # round(base + per_level * L + per_ap * AP), half away from zero, never below `min` (default 0),
 # where L is the level within the Tier and AP the attack power at cast time. Rage is whole points.
 #
+# Every spell id has its `Spell.dbc` name beside it (`spell_id` and `spell_name`, `aura_spell_id`
+# and `aura_spell_name`, a talent's `rank_spells` and `spell_name`), and
+# tests/content_spell_ids.rs checks each pair against the client. `cargo run -p benilla-formats
+# --example spell_names -- <id>...` prints an id's name and rank.
+#
 # `target`: "enemy" (the cast's unit target), "self", or "self_area" (every enemy within
 # `radius_yd`, at most `max_targets`). `range_yd` is `[min, max]`; a max of 5 is melee reach.
 #
@@ -28,6 +33,7 @@ shapeshift_form = 17
 [[calling.skill]]
 key = "heroic_strike"
 spell_id = 78
+spell_name = "Heroic Strike"
 rage_cost = 15
 cooldown_ms = 0
 gcd_ms = 0
@@ -40,6 +46,7 @@ effects = [
 [[calling.skill]]
 key = "charge"
 spell_id = 100
+spell_name = "Charge"
 rage_cost = 0
 cooldown_ms = 15000
 gcd_ms = 0
@@ -49,12 +56,13 @@ requires_out_of_combat = true
 effects = [
     { kind = "charge", speed_yd_s = 24.0 },
     { kind = "energize_rage", amount = { base = 8.5, per_level = 0.14 } },
-    { kind = "stun", aura_spell_id = 7922, duration_ms = 1000 },
+    { kind = "stun", aura_spell_id = 7922, aura_spell_name = "Charge Stun", duration_ms = 1000 },
 ]
 
 [[calling.skill]]
 key = "rend"
 spell_id = 772
+spell_name = "Rend"
 rage_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
@@ -67,6 +75,7 @@ effects = [
 [[calling.skill]]
 key = "thunder_clap"
 spell_id = 6343
+spell_name = "Thunder Clap"
 rage_cost = 20
 cooldown_ms = 4000
 gcd_ms = 1500
@@ -81,6 +90,7 @@ effects = [
 [[calling.skill]]
 key = "battle_shout"
 spell_id = 6673
+spell_name = "Battle Shout"
 rage_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
@@ -92,6 +102,7 @@ effects = [
 [[calling.skill]]
 key = "hamstring"
 spell_id = 1715
+spell_name = "Hamstring"
 rage_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
@@ -105,6 +116,7 @@ effects = [
 [[calling.skill]]
 key = "overpower"
 spell_id = 7384
+spell_name = "Overpower"
 rage_cost = 5
 cooldown_ms = 5000
 gcd_ms = 1500
@@ -120,6 +132,7 @@ effects = [
 [[calling.skill]]
 key = "bloodrage"
 spell_id = 2687
+spell_name = "Bloodrage"
 rage_cost = 0
 health_cost_pct_of_base_health = 20
 cooldown_ms = 60000
@@ -128,7 +141,7 @@ target = "self"
 puts_in_combat_ms = 10000
 effects = [
     { kind = "energize_rage", amount = { base = 9.6, per_level = 0.25 } },
-    { kind = "periodic_rage", aura_spell_id = 29131, per_tick = 1, tick_ms = 1000, duration_ms = 10000 },
+    { kind = "periodic_rage", aura_spell_id = 29131, aura_spell_name = "Bloodrage", per_tick = 1, tick_ms = 1000, duration_ms = 10000 },
 ]
 
 # The Talent Tree, from `talent_tree` in the JSON (tests/content_callings.rs checks the seats, rank
@@ -154,6 +167,7 @@ talent_id = 124
 tier = 1
 column = 1
 rank_spells = [12282, 12663, 12664]
+spell_name = "Improved Heroic Strike"
 effects = [{ kind = "skill_rage_cost", skill = "heroic_strike", per_rank = [1, 2, 3] }]
 client_spellmod = { flat = true, op = 14, family_bit = 6, per_rank = [-10, -20, -30] }
 
@@ -163,6 +177,7 @@ talent_id = 157
 tier = 1
 column = 2
 rank_spells = [12320, 12852, 12853]
+spell_name = "Cruelty"
 effects = [{ kind = "melee_crit_pct", per_rank = [1, 2, 3] }]
 
 [[calling.talent_tab.talent]]
@@ -171,6 +186,7 @@ talent_id = 127
 tier = 1
 column = 3
 rank_spells = [12286, 12658, 12659]
+spell_name = "Improved Rend"
 effects = [{ kind = "skill_amount_pct", skill = "rend", per_rank = [15, 25, 35] }]
 client_spellmod = { flat = false, op = 8, family_bit = 5, per_rank = [15, 25, 35] }
 
@@ -180,6 +196,7 @@ talent_id = 154
 tier = 1
 column = 4
 rank_spells = [12318, 12857, 12858]
+spell_name = "Improved Battle Shout"
 effects = [{ kind = "skill_amount_pct", skill = "battle_shout", per_rank = [5, 10, 15] }]
 client_spellmod = { flat = false, op = 8, family_bit = 16, per_rank = [5, 10, 15] }
 
@@ -189,6 +206,7 @@ talent_id = 126
 tier = 2
 column = 1
 rank_spells = [12285, 12697]
+spell_name = "Improved Charge"
 effects = [{ kind = "skill_rage", skill = "charge", per_rank = [3, 6] }]
 
 [[calling.talent_tab.talent]]
@@ -197,6 +215,7 @@ talent_id = 131
 tier = 2
 column = 2
 rank_spells = [12290, 12963]
+spell_name = "Improved Overpower"
 effects = [{ kind = "skill_crit_pct", skill = "overpower", per_rank = [25, 50] }]
 
 [[calling.talent_tab.talent]]
@@ -205,9 +224,10 @@ talent_id = 121
 tier = 2
 column = 3
 rank_spells = [12834, 12849, 12867]
+spell_name = "Deep Wounds"
 prereq = { key = "improved_rend", rank = 3 }
 # vmangos: 12721 "Deep Wound", four ticks of 3 s.
-effects = [{ kind = "crit_bleed", aura_spell_id = 12721, tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
+effects = [{ kind = "crit_bleed", aura_spell_id = 12721, aura_spell_name = "Deep Wound", tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
 
 [[calling.talent_tab.talent]]
 key = "improved_thunder_clap"
@@ -215,6 +235,7 @@ talent_id = 128
 tier = 2
 column = 4
 rank_spells = [12287, 12665, 12666]
+spell_name = "Improved Thunder Clap"
 effects = [{ kind = "skill_rage_cost", skill = "thunder_clap", per_rank = [1, 2, 4] }]
 client_spellmod = { flat = true, op = 14, family_bit = 7, per_rank = [-10, -20, -40] }
 
@@ -233,6 +254,7 @@ shapeshift_form = 17
 [[calling.skill]]
 key = "mortal_strike"
 spell_id = 12294
+spell_name = "Mortal Strike"
 rage_cost = 30
 cooldown_ms = 6000
 gcd_ms = 1500
@@ -246,6 +268,7 @@ effects = [
 [[calling.skill]]
 key = "overpower"
 spell_id = 7887
+spell_name = "Overpower"
 rage_cost = 5
 cooldown_ms = 5000
 gcd_ms = 1500
@@ -259,6 +282,7 @@ effects = [
 [[calling.skill]]
 key = "charge"
 spell_id = 6178
+spell_name = "Charge"
 rage_cost = 0
 cooldown_ms = 15000
 gcd_ms = 0
@@ -268,12 +292,13 @@ requires_out_of_combat = true
 effects = [
     { kind = "charge", speed_yd_s = 24.0 },
     { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
-    { kind = "stun", aura_spell_id = 7922, duration_ms = 1000 },
+    { kind = "stun", aura_spell_id = 7922, aura_spell_name = "Charge Stun", duration_ms = 1000 },
 ]
 
 [[calling.skill]]
 key = "rend"
 spell_id = 6546
+spell_name = "Rend"
 rage_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
@@ -286,6 +311,7 @@ effects = [
 [[calling.skill]]
 key = "thunder_clap"
 spell_id = 8198
+spell_name = "Thunder Clap"
 rage_cost = 20
 cooldown_ms = 4000
 gcd_ms = 1500
@@ -301,6 +327,7 @@ effects = [
 [[calling.skill]]
 key = "cleave"
 spell_id = 845
+spell_name = "Cleave"
 rage_cost = 20
 cooldown_ms = 0
 gcd_ms = 0
@@ -318,6 +345,7 @@ effects = [
 [[calling.skill]]
 key = "execute"
 spell_id = 5308
+spell_name = "Execute"
 rage_cost = 15
 cooldown_ms = 0
 gcd_ms = 1500
@@ -331,6 +359,7 @@ effects = [
 [[calling.skill]]
 key = "battle_shout"
 spell_id = 6192
+spell_name = "Battle Shout"
 rage_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
@@ -369,6 +398,7 @@ talent_id = 130
 tier = 1
 column = 2
 rank_spells = [16462, 16463, 16464, 16465, 16466]
+spell_name = "Deflection"
 effects = [{ kind = "parry_pct", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab.talent]]
@@ -377,6 +407,7 @@ talent_id = 127
 tier = 1
 column = 3
 rank_spells = [12286, 12658, 12659]
+spell_name = "Improved Rend"
 effects = [{ kind = "skill_amount_pct", skill = "rend", per_rank = [15, 25, 35] }]
 client_spellmod = { flat = false, op = 8, family_bit = 5, per_rank = [15, 25, 35] }
 
@@ -386,6 +417,7 @@ talent_id = 126
 tier = 2
 column = 1
 rank_spells = [12285, 12697]
+spell_name = "Improved Charge"
 effects = [{ kind = "skill_rage", skill = "charge", per_rank = [3, 6] }]
 
 [[calling.talent_tab.talent]]
@@ -394,6 +426,7 @@ talent_id = 128
 tier = 2
 column = 4
 rank_spells = [12287, 12665, 12666]
+spell_name = "Improved Thunder Clap"
 effects = [{ kind = "skill_rage_cost", skill = "thunder_clap", per_rank = [1, 2, 4] }]
 client_spellmod = { flat = true, op = 14, family_bit = 7, per_rank = [-10, -20, -40] }
 
@@ -403,6 +436,7 @@ talent_id = 131
 tier = 3
 column = 1
 rank_spells = [12290, 12963]
+spell_name = "Improved Overpower"
 effects = [{ kind = "skill_crit_pct", skill = "overpower", per_rank = [25, 50] }]
 
 [[calling.talent_tab.talent]]
@@ -411,8 +445,9 @@ talent_id = 121
 tier = 3
 column = 3
 rank_spells = [12834, 12849, 12867]
+spell_name = "Deep Wounds"
 prereq = { key = "improved_rend", rank = 3 }
-effects = [{ kind = "crit_bleed", aura_spell_id = 12721, tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
+effects = [{ kind = "crit_bleed", aura_spell_id = 12721, aura_spell_name = "Deep Wound", tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
 
 [[calling.talent_tab.talent]]
 key = "two_handed_weapon_specialization"
@@ -420,6 +455,7 @@ talent_id = 136
 tier = 4
 column = 2
 rank_spells = [12163, 12711, 12712, 12713, 12714]
+spell_name = "Two-Handed Weapon Specialization"
 effects = [{ kind = "weapon_damage_pct", weapon = "two_hand", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab.talent]]
@@ -428,6 +464,7 @@ talent_id = 662
 tier = 4
 column = 3
 rank_spells = [16493, 16494]
+spell_name = "Impale"
 prereq = { key = "deep_wounds", rank = 3 }
 effects = [{ kind = "skill_crit_damage_pct", per_rank = [10, 20] }]
 
@@ -437,6 +474,7 @@ talent_id = 132
 tier = 5
 column = 1
 rank_spells = [12700, 12781, 12783, 12784, 12785]
+spell_name = "Axe Specialization"
 effects = [{ kind = "weapon_crit_pct", weapon = "axe", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab.talent]]
@@ -445,18 +483,20 @@ talent_id = 133
 tier = 5
 column = 2
 rank_spells = [12292]
+spell_name = "Sweeping Strikes"
 exceptional = true
 effects = []
 
 [calling.talent_tab.talent.skill]
 key = "sweeping_strikes"
 spell_id = 12292
+spell_name = "Sweeping Strikes"
 rage_cost = 30
 cooldown_ms = 30000
 gcd_ms = 0
 target = "self"
 effects = [
-    { kind = "sweeping_strikes", strikes = 5, duration_ms = 20000, radius_yd = 5.0, strike_spell_id = 12723 },
+    { kind = "sweeping_strikes", strikes = 5, duration_ms = 20000, radius_yd = 5.0, strike_spell_id = 12723, strike_spell_name = "Sweeping Strikes" },
 ]
 
 [[calling.talent_tab.talent]]
@@ -465,8 +505,9 @@ talent_id = 125
 tier = 5
 column = 3
 rank_spells = [12284, 12701, 12702, 12703, 12704]
+spell_name = "Mace Specialization"
 effects = [
-    { kind = "hit_stun_pct", weapon = "mace", aura_spell_id = 5530, duration_ms = 3000, per_rank = [1, 2, 3, 4, 6] },
+    { kind = "hit_stun_pct", weapon = "mace", aura_spell_id = 5530, aura_spell_name = "Mace Stun Effect", duration_ms = 3000, per_rank = [1, 2, 3, 4, 6] },
 ]
 
 [[calling.talent_tab.talent]]
@@ -475,6 +516,7 @@ talent_id = 123
 tier = 5
 column = 4
 rank_spells = [12281, 12812, 12813, 12814, 12815]
+spell_name = "Sword Specialization"
 effects = [{ kind = "extra_swing_pct", weapon = "sword", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab]]
@@ -488,6 +530,7 @@ talent_id = 158
 tier = 1
 column = 2
 rank_spells = [12321, 12835, 12836, 12837, 12838]
+spell_name = "Booming Voice"
 effects = [{ kind = "skill_duration_pct", skill = "battle_shout", per_rank = [10, 20, 30, 40, 50] }]
 
 [[calling.talent_tab.talent]]
@@ -496,6 +539,7 @@ talent_id = 157
 tier = 1
 column = 3
 rank_spells = [12320, 12852, 12853, 12855, 12856]
+spell_name = "Cruelty"
 effects = [{ kind = "melee_crit_pct", per_rank = [1, 2, 3, 4, 5] }]
 
 [[calling.talent_tab.talent]]
@@ -504,7 +548,8 @@ talent_id = 159
 tier = 2
 column = 3
 rank_spells = [12322, 12999, 13000, 13001, 13002]
-effects = [{ kind = "hit_rage_pct", spell_id = 12964, per_rank = [8, 16, 24, 32, 40] }]
+spell_name = "Unbridled Wrath"
+effects = [{ kind = "hit_rage_pct", spell_id = 12964, spell_name = "Unbridled Wrath", per_rank = [8, 16, 24, 32, 40] }]
 
 [[calling.talent_tab.talent]]
 key = "improved_cleave"
@@ -512,6 +557,7 @@ talent_id = 166
 tier = 3
 column = 1
 rank_spells = [12329, 12950, 20496]
+spell_name = "Improved Cleave"
 effects = [{ kind = "skill_amount_pct", skill = "cleave", per_rank = [40, 80, 120] }]
 
 [[calling.talent_tab.talent]]
@@ -520,12 +566,14 @@ talent_id = 160
 tier = 3
 column = 2
 rank_spells = [12323]
+spell_name = "Piercing Howl"
 exceptional = true
 effects = []
 
 [calling.talent_tab.talent.skill]
 key = "piercing_howl"
 spell_id = 12323
+spell_name = "Piercing Howl"
 rage_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
@@ -540,8 +588,9 @@ talent_id = 661
 tier = 3
 column = 3
 rank_spells = [16487, 16489, 16492]
+spell_name = "Blood Craze"
 effects = [
-    { kind = "crit_taken_heal_pct", aura_spell_ids = [16488, 16490, 16491], tick_ms = 1000, duration_ms = 6000, per_rank = [1, 2, 3] },
+    { kind = "crit_taken_heal_pct", aura_spell_ids = [16488, 16490, 16491], aura_spell_name = "Blood Craze", tick_ms = 1000, duration_ms = 6000, per_rank = [1, 2, 3] },
 ]
 
 [[calling.talent_tab.talent]]
@@ -550,6 +599,7 @@ talent_id = 154
 tier = 3
 column = 4
 rank_spells = [12318, 12857, 12858, 12860, 12861]
+spell_name = "Improved Battle Shout"
 effects = [{ kind = "skill_amount_pct", skill = "battle_shout", per_rank = [5, 10, 15, 20, 25] }]
 client_spellmod = { flat = false, op = 8, family_bit = 16, per_rank = [5, 10, 15, 20, 25] }
 
@@ -559,6 +609,7 @@ talent_id = 1581
 tier = 4
 column = 1
 rank_spells = [23584, 23585, 23586, 23587, 23588]
+spell_name = "Dual Wield Specialization"
 effects = []
 
 [[calling.talent_tab.talent]]
@@ -567,6 +618,7 @@ talent_id = 1542
 tier = 4
 column = 2
 rank_spells = [20502, 20503]
+spell_name = "Improved Execute"
 effects = [{ kind = "skill_rage_cost", skill = "execute", per_rank = [2, 5] }]
 client_spellmod = { flat = true, op = 14, family_bit = 29, per_rank = [-20, -50] }
 
@@ -576,8 +628,9 @@ talent_id = 155
 tier = 4
 column = 3
 rank_spells = [12317, 13045, 13046, 13047, 13048]
+spell_name = "Enrage"
 effects = [
-    { kind = "crit_taken_damage_pct", aura_spell_ids = [12880, 14201, 14202, 14203, 14204], duration_ms = 12000, swings = 12, per_rank = [5, 10, 15, 20, 25] },
+    { kind = "crit_taken_damage_pct", aura_spell_ids = [12880, 14201, 14202, 14203, 14204], aura_spell_name = "Enrage", duration_ms = 12000, swings = 12, per_rank = [5, 10, 15, 20, 25] },
 ]
 
 [[calling.talent_tab.talent]]
@@ -586,12 +639,14 @@ talent_id = 165
 tier = 5
 column = 2
 rank_spells = [12328]
+spell_name = "Death Wish"
 exceptional = true
 effects = []
 
 [calling.talent_tab.talent.skill]
 key = "death_wish"
 spell_id = 12328
+spell_name = "Death Wish"
 rage_cost = 10
 cooldown_ms = 180000
 gcd_ms = 0
@@ -609,9 +664,10 @@ talent_id = 1601
 tier = 1
 column = 2
 rank_spells = [12298, 12724, 12725, 12726, 12727]
+spell_name = "Shield Specialization"
 effects = [
     { kind = "block_pct", per_rank = [1, 2, 3, 4, 5] },
-    { kind = "block_rage_pct", spell_id = 23602, per_rank = [20, 40, 60, 80, 100] },
+    { kind = "block_rage_pct", spell_id = 23602, spell_name = "Shield Specialization", per_rank = [20, 40, 60, 80, 100] },
 ]
 
 [[calling.talent_tab.talent]]
@@ -620,6 +676,7 @@ talent_id = 138
 tier = 1
 column = 3
 rank_spells = [12297, 12750, 12751, 12752, 12753]
+spell_name = "Anticipation"
 effects = [{ kind = "defense", per_rank = [2, 4, 6, 8, 10] }]
 
 [[calling.talent_tab.talent]]
@@ -628,6 +685,7 @@ talent_id = 140
 tier = 2
 column = 3
 rank_spells = [12299, 12761, 12762, 12763, 12764]
+spell_name = "Toughness"
 effects = [{ kind = "item_armor_pct", per_rank = [2, 4, 6, 8, 10] }]
 
 [[calling.talent_tab.talent]]
@@ -636,6 +694,7 @@ talent_id = 141
 tier = 2
 column = 4
 rank_spells = [12300, 12959, 12960, 12961, 12962]
+spell_name = "Iron Will"
 effects = []
 
 [[calling.talent_tab.talent]]
@@ -644,17 +703,19 @@ talent_id = 153
 tier = 3
 column = 1
 rank_spells = [12975]
+spell_name = "Last Stand"
 exceptional = true
 effects = []
 
 [calling.talent_tab.talent.skill]
 key = "last_stand"
 spell_id = 12975
+spell_name = "Last Stand"
 rage_cost = 0
 cooldown_ms = 600000
 gcd_ms = 0
 target = "self"
-effects = [{ kind = "aura_max_health_pct", aura_spell_id = 12976, pct = 30, duration_ms = 20000 }]
+effects = [{ kind = "aura_max_health_pct", aura_spell_id = 12976, aura_spell_name = "Last Stand", pct = 30, duration_ms = 20000 }]
 
 [[calling.talent_tab.talent]]
 key = "one_handed_weapon_specialization"
@@ -662,6 +723,7 @@ talent_id = 702
 tier = 4
 column = 3
 rank_spells = [16538, 16539, 16540, 16541, 16542]
+spell_name = "One-Handed Weapon Specialization"
 effects = [{ kind = "weapon_damage_pct", weapon = "one_hand", per_rank = [2, 4, 6, 8, 10] }]
 
 [[calling.talent_tab.talent]]
@@ -670,15 +732,17 @@ talent_id = 152
 tier = 5
 column = 2
 rank_spells = [12809]
+spell_name = "Concussion Blow"
 exceptional = true
 effects = []
 
 [calling.talent_tab.talent.skill]
 key = "concussion_blow"
 spell_id = 12809
+spell_name = "Concussion Blow"
 rage_cost = 15
 cooldown_ms = 45000
 gcd_ms = 1500
 target = "enemy"
 range_yd = [0.0, 5.0]
-effects = [{ kind = "stun", aura_spell_id = 12809, duration_ms = 5000 }]
+effects = [{ kind = "stun", aura_spell_id = 12809, aura_spell_name = "Concussion Blow", duration_ms = 5000 }]
