@@ -528,8 +528,8 @@ pub(super) fn stance(c: &Char) -> (u16, u32) {
     )
 }
 
-/// The player's stats with their buffs: what swings and strikes roll from, and what the sheet
-/// shows.
+/// The player's stats with their buffs: what strikes roll from. White swings roll from
+/// [`white`], which adds the haste.
 pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
     let bonus = skills.attack_power_bonus();
     let mut s = *stats;
@@ -542,7 +542,14 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
         s.min_damage += extra;
         s.max_damage += extra;
     }
-    // Faster swings, each hit cut to match: the haste alone adds no damage a second.
+    s
+}
+
+/// [`buffed`] with the haste: what white swings roll from and time by, and what the sheet shows.
+/// Faster swings, each white hit cut to match, so the haste alone adds no damage a second; a
+/// strike (Mortal Strike, Heroic Strike) keeps its full weapon roll.
+pub(super) fn white(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
+    let mut s = buffed(stats, skills);
     let haste = skills.haste_pct();
     if haste > 0 {
         s.attack_time_ms = hasted_attack_time(s.attack_time_ms, haste);
@@ -554,7 +561,7 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
 
 /// The sheet fields buffs move: the attack power mods, the damage they add and the swing time.
 fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
-    let s = buffed(stats, skills);
+    let s = white(stats, skills);
     vec![
         (
             UNIT_FIELD_ATTACK_POWER_MODS,
@@ -1152,7 +1159,7 @@ impl InWorld {
         if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
             return;
         }
-        let stats = buffed(&self.player.stats, &self.skills);
+        let stats = white(&self.player.stats, &self.skills);
         if rng.below(ROLL) >= seals::ppm_chance(procs_per_minute, stats.attack_time_ms) {
             return;
         }

@@ -131,7 +131,7 @@ fn seal_of_the_crusader() -> Seal {
 }
 
 /// 20 + 4 attack power a level (vanilla's Rank 3 gives 94 at 22, Rank 6 306 at 52); 40% faster
-/// at every level, so every level's hits are cut alike.
+/// at every level, so every level's white swings are cut alike.
 #[test]
 fn seal_of_the_crusaders_attack_power_haste_and_cut_by_level() {
     use twilight_realm::rules::haste::{haste_cut_damage, hasted_attack_time};

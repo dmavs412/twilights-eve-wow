@@ -92,7 +92,7 @@ Judgement's 6% `ManaCostPercentage` is zeroed with the other cost terms.
 | skill | id | rage | cd | reach | bit | realm |
 |---|---|---|---|---|---|---|
 | Seal of Command | 20375 (R1) | 10 | – | self | 33 | 30 s Seal: a landed white swing procs 7 times a minute for a holy hit of 70% of a weapon roll (20424) |
-| Seal of the Crusader | 20305 (R3) | 10 | – | self | 34 | 30 s Seal: +20 + 4·L AP, swings 40% faster, each hit ÷1.4. Judged: Judgement of the Crusader (20300), 10 s of +20% holy damage taken, refreshed by landed swings |
+| Seal of the Crusader | 20305 (R3) | 10 | – | self | 34 | 30 s Seal: +20 + 4·L AP, swings 40% faster, each white swing ÷1.4 (strikes keep their full weapon roll). Judged: Judgement of the Crusader (20300), 10 s of +20% holy damage taken, refreshed by landed swings |
 | Judgement | 20271 | 5 | 10 s | 10 yd | 35 | consumes the Seal; Command's: a holy hit of 30 + 3·L + 0.15·AP (20467); no Seal: fails, no rage spent |
 | Hammer of Justice | 10308 (R4) | 15 | 60 s | 10 yd | 36 | 6 s stun (the only rank whose tooltip says 6 s) |
 | Mortal Strike | 12294 | 30 | 6 s | melee | – | Vanguard's |
