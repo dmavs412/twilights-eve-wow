@@ -9,6 +9,7 @@
 mod common;
 
 use benilla_protocol::SessionEvent;
+use common::fight::*;
 use common::*;
 
 const HEROIC_STRIKE: u32 = 78;
@@ -413,70 +414,6 @@ const TOO_CLOSE: u8 = 0x76;
 const UNIT_NOT_INFRONT: u8 = 0x7c;
 
 const SEED: u64 = 0x5EED_0008;
-const CROSSROADS_XY: [f32; 3] = [-441.8, -2648.6, 0.0];
-
-/// A mob, as its create shows it.
-#[derive(Clone)]
-struct Mob {
-    guid: u64,
-    position: [f32; 3],
-}
-
-/// What the client knows: every object's fields, merged as the packets arrive.
-#[derive(Default)]
-struct View(std::collections::HashMap<u64, benilla_protocol::ObjectFields>);
-
-impl View {
-    fn see(&mut self, events: &[SessionEvent]) {
-        for e in events {
-            match e {
-                SessionEvent::ObjectCreate { guid, fields, .. } => {
-                    self.0.insert(*guid, fields.clone());
-                }
-                SessionEvent::ObjectValues { guid, fields } => {
-                    self.0.entry(*guid).or_default().merge(fields.clone());
-                }
-                _ => {}
-            }
-        }
-    }
-
-    fn drain(&mut self, realm: &mut Realm) -> Vec<SessionEvent> {
-        let events = drain(realm);
-        self.see(&events);
-        events
-    }
-
-    /// Ticks `secs` in 0.1 s steps, collecting the events.
-    fn run(&mut self, realm: &mut Realm, secs: f32) -> Vec<SessionEvent> {
-        let mut events = Vec::new();
-        let steps = (secs / 0.1).round() as u32;
-        for _ in 0..steps {
-            realm.tick(0.1, &FlatGround);
-            events.extend(self.drain(realm));
-        }
-        events
-    }
-
-    fn fields(&self, guid: u64) -> &benilla_protocol::ObjectFields {
-        self.0.get(&guid).expect("an object the client has seen")
-    }
-
-    /// Whole rage points.
-    fn rage(&self, guid: u64) -> u32 {
-        self.fields(guid).unit_power(1).unwrap_or(0) / 10
-    }
-
-    fn health(&self, guid: u64) -> u32 {
-        self.fields(guid).unit_health().unwrap()
-    }
-
-    fn aura(&self, guid: u64, spell_id: u32) -> Option<benilla_protocol::messages::UnitAuraSlot> {
-        self.fields(guid)
-            .unit_auras()
-            .find(|a| a.spell_id == spell_id)
-    }
-}
 
 /// A human warrior of `level` in the world (on flat ground) at the Crossroads, the mob near it,
 /// and what the client has seen so far.
@@ -529,29 +466,6 @@ fn calling_seeded(calling: &str, level: u8, seed: u64) -> (Realm, u64, Mob, View
         })
         .expect("a mob near the Crossroads");
     (realm, guid, mob, view)
-}
-
-fn cast(spell_id: u32, target: Option<u64>) -> RealmCommand {
-    RealmCommand::CastSpell { spell_id, target }
-}
-
-/// Moves the player to `yards` from `mob`, on the Crossroads side, facing it.
-fn stand_at(realm: &mut Realm, mob: &Mob, yards: f32) {
-    let (dx, dy) = (
-        CROSSROADS_XY[0] - mob.position[0],
-        CROSSROADS_XY[1] - mob.position[1],
-    );
-    let len = (dx * dx + dy * dy).sqrt();
-    let at = [
-        mob.position[0] + dx / len * yards,
-        mob.position[1] + dy / len * yards,
-        mob.position[2],
-    ];
-    let facing = (mob.position[1] - at[1]).atan2(mob.position[0] - at[0]);
-    realm.handle(RealmCommand::Move {
-        position: at,
-        orientation: facing,
-    });
 }
 
 /// A level-1 Vanguard that charged the level-3 mob and swings at it until it dodges: about
@@ -686,19 +600,6 @@ fn cast_packet(e: &SessionEvent) -> Option<&'static str> {
         SessionEvent::SpellGo { .. } => Some("go"),
         _ => None,
     }
-}
-
-/// The reason `spell_id` was refused, if it was.
-fn refusal(events: &[SessionEvent], spell_id: u32) -> Option<u8> {
-    events.iter().find_map(|e| match e {
-        SessionEvent::CastResult {
-            spell_id: s,
-            success: false,
-            reason,
-            ..
-        } if *s == spell_id => *reason,
-        _ => None,
-    })
 }
 
 /// `SMSG_SPELLENERGIZELOG` amounts for `spell_id`, in rage points.
