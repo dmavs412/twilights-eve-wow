@@ -16,6 +16,8 @@ use twilight_realm::{DevMultipliers, Host, Realm, RealmCommand, Storage};
 
 use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
 
+mod talents;
+
 /// `WOW_TWILIGHT` natively, `?twilight=1` in the browser: boot Twilight's Eve.
 pub(crate) fn active() -> bool {
     crate::webenv::var("WOW_TWILIGHT").is_some_and(|v| v != "0")
@@ -33,7 +35,10 @@ fn dev_multipliers() -> DevMultipliers {
     };
     let dev = DevMultipliers::from_flags(flag("SPEED").as_deref(), flag("XP").as_deref());
     if dev != DevMultipliers::default() {
-        info!("twilight: dev multipliers speed ×{} xp ×{}", dev.speed, dev.xp);
+        info!(
+            "twilight: dev multipliers speed ×{} xp ×{}",
+            dev.speed, dev.xp
+        );
     }
     dev
 }
@@ -69,6 +74,13 @@ impl Plugin for TwilightPlugin {
         .add_systems(
             Update,
             blank_skill_ranks.run_if(resource_added::<crate::ui_action::Spells>),
+        )
+        .add_systems(
+            Update,
+            (
+                talents::follow_calling.after(pump),
+                talents::unlock_talent_frame,
+            ),
         );
         // Closing the window logs the character out, which saves it.
         crate::shutdown::on_app_exit(app, save_on_exit.into_configs());
@@ -246,9 +258,7 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::ItemQuery { entry, .. } => Some(RealmCommand::ItemQuery { entry }),
         ClientCommand::Loot { guid } => Some(RealmCommand::Loot { guid }),
         ClientCommand::LootMoney => Some(RealmCommand::LootMoney),
-        ClientCommand::AutostoreLootItem { slot } => {
-            Some(RealmCommand::AutostoreLootItem { slot })
-        }
+        ClientCommand::AutostoreLootItem { slot } => Some(RealmCommand::AutostoreLootItem { slot }),
         ClientCommand::LootRelease { guid } => Some(RealmCommand::LootRelease { guid }),
         ClientCommand::AutoEquipItem { bag_index, slot } => Some(RealmCommand::AutoEquipItem {
             bag: bag_index,
@@ -287,6 +297,17 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             slot,
             count,
         }),
+        ClientCommand::LearnTalent { talent_id, rank } => {
+            Some(RealmCommand::LearnTalent { talent_id, rank })
+        }
+        ClientCommand::GossipHello { guid } => Some(RealmCommand::GossipHello { guid }),
+        ClientCommand::GossipSelectOption { guid, option } => {
+            Some(RealmCommand::GossipSelectOption { guid, option })
+        }
+        ClientCommand::NpcTextQuery { text_id, .. } => Some(RealmCommand::NpcTextQuery { text_id }),
+        ClientCommand::TalentWipeConfirm { trainer } => {
+            Some(RealmCommand::TalentWipeConfirm { trainer })
+        }
         _ => None,
     }
 }

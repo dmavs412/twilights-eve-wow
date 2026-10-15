@@ -48,6 +48,18 @@ const SEED: u64 = 0x5EED_0014;
 const CROSSROADS_XY: [f32; 2] = [-441.8, -2648.6];
 
 #[test]
+fn the_client_shows_the_tree_of_the_calling_in_the_world() {
+    let mut realm = realm();
+    assert!(realm.current_calling().is_none(), "nobody at select");
+    enter_new(&mut realm, "Garrosh", ORC);
+    let calling = realm.current_calling().expect("in the world");
+    assert_eq!(calling.key, "basic_warrior");
+    assert_eq!(calling.talent_tabs[0].name, "Basic Warrior");
+    realm.handle(RealmCommand::Logout);
+    assert!(realm.current_calling().is_none(), "back at select");
+}
+
+#[test]
 fn a_new_character_has_no_talent_points() {
     let (_, me, _, view) = warrior_at(1);
     assert_eq!(view.points(me), 0);

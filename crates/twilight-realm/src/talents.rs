@@ -226,6 +226,13 @@ pub(crate) fn learn(
 }
 
 impl crate::Realm {
+    /// The Calling of the character in the world, whose Talent Tree the client's talent frame
+    /// must show; `None` at character select.
+    pub fn current_calling(&self) -> Option<&'static callings::CallingDef> {
+        let w = self.world.as_ref()?;
+        self.characters.get(w.guid).map(|c| callings::of(c.calling))
+    }
+
     /// `CMSG_LEARN_TALENT` from the character in the world: a refusal answers nothing, as
     /// vmangos's does; a learn redoes the sheet and saves.
     pub(crate) fn learn_talent(&mut self, talent_id: u32, rank: u32) {

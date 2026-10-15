@@ -244,6 +244,18 @@ Done since the first pass:
   is present).
 - The balance simulation, with Mortal Strike and Execute retuned.
 
+Built in #14 (talents):
+- The trees are Calling data: `[[calling.talent_tab]]` in `crates/twilight-realm/content/callings.toml`,
+  with one `effects` entry per talent that the realm applies (`src/talents.rs`), and the
+  `client_spellmod` cells sent at login, on a learn and on a respec. The glue rebuilds the
+  client's talent catalog from the current Calling (`benilla-app/src/twilight/talents.rs`).
+- The stock UI opens the talent frame only from level 10 (`UIParent.lua` `ToggleTalentFrame`,
+  `MainMenuBarMicroButtons.lua` `UpdateTalentButton`). Twilight mode redefines both without the
+  level gate, since points start at level 2.
+- The respec price follows vmangos `Player::resetTalentsCost` (1 g, 5 g, 10 g, then 5 g more a
+  time up to 50 g), not the JSON's proposed `first`/`step`, and has no monthly discount. The
+  Warrior trainer is Uzzek (creature 5810, display 4391) beside the Crossroads start point.
+
 Still open:
 - Pushing spell mods so tooltips follow the realm's formulas is untested. Improved Charge's
   mod has family mask 0, so the realm needs a class script for it.
