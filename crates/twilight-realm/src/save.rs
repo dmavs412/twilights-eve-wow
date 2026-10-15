@@ -55,6 +55,10 @@ struct SaveV1 {
     zone: u32,
     position: [f32; 3],
     orientation: f32,
+    /// `[slot, kind << 24 | action]` per button, once the player has arranged the bar. Optional,
+    /// so a save from before it existed still reads as version 1.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    action_bar: Option<Vec<(u8, u32)>>,
 }
 
 pub(crate) fn export(c: &Char) -> String {
@@ -72,6 +76,7 @@ pub(crate) fn export(c: &Char) -> String {
         zone: c.zone,
         position: c.position,
         orientation: c.orientation,
+        action_bar: c.action_bar.clone(),
     };
     toml::to_string(&save).expect("a save always serializes")
 }
@@ -98,5 +103,6 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
         zone: s.zone,
         position: s.position,
         orientation: s.orientation,
+        action_bar: s.action_bar,
     })
 }

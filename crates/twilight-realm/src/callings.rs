@@ -153,6 +153,18 @@ pub(crate) fn of(calling: Calling) -> &'static CallingDef {
     self::calling(key).expect("every Calling has a table in content/callings.toml")
 }
 
+/// The first slot of the bar Battle Stance pages the main bar to (`GetBonusBarOffset` 1: Lua
+/// actions 73-84).
+const STANCE_BAR: u8 = 72;
+
+/// A Calling's bar before the player arranges it: its skills in order on the stance bar, as
+/// `(slot, kind << 24 | spell)` with kind 0, a spell.
+pub(crate) fn default_bar(calling: Calling) -> Vec<(u8, u32)> {
+    (STANCE_BAR..)
+        .zip(of(calling).skills.iter().map(|s| s.spell_id))
+        .collect()
+}
+
 /// A skill of any Calling, by spell id.
 pub fn skill(spell_id: u32) -> Option<&'static Skill> {
     all()

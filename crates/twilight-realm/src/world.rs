@@ -110,6 +110,7 @@ impl InWorld {
             timescale: 1.0 / 60.0,
         });
         events.push(cast::spell_book(c));
+        events.push(cast::action_buttons(c));
         events.push(SessionEvent::ObjectCreate {
             guid: c.guid,
             kind: EntityKind::Player,
@@ -635,6 +636,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     ];
     pairs.extend(guid_pairs(OBJECT_FIELD_GUID, c.guid));
     pairs.extend(sheet_pairs(stats));
+    pairs.push(cast::stance(c));
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {
         pairs.push((PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, float(1.0)));

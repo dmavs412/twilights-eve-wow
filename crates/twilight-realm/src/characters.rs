@@ -37,6 +37,9 @@ pub(crate) struct Char {
     pub(crate) zone: u32,
     pub(crate) position: [f32; 3],
     pub(crate) orientation: f32,
+    /// The action bar as the player arranged it, `(slot, kind << 24 | action)`; `None` until
+    /// they first change it, which shows the Calling's default bar.
+    pub(crate) action_bar: Option<Vec<(u8, u32)>>,
 }
 
 #[derive(Default)]
@@ -83,6 +86,7 @@ impl Characters {
             zone: THE_BARRENS,
             position: [x, y, z],
             orientation: facing,
+            action_bar: None,
         });
         CHAR_CREATE_SUCCESS
     }
@@ -136,6 +140,18 @@ impl Characters {
         if let Some(c) = self.list.iter_mut().find(|c| c.guid == guid) {
             c.position = position;
             c.orientation = orientation;
+        }
+    }
+
+    /// `CMSG_SET_ACTION_BUTTON`: puts `packed` on `slot` of the character's bar; 0 clears it.
+    pub(crate) fn set_action_button(&mut self, guid: u64, slot: u8, packed: u32) {
+        if let Some(c) = self.list.iter_mut().find(|c| c.guid == guid) {
+            let bar = c.action_bar.get_or_insert_with(|| crate::callings::default_bar(c.calling));
+            bar.retain(|&(s, _)| s != slot);
+            if packed != 0 {
+                bar.push((slot, packed));
+                bar.sort_unstable_by_key(|&(s, _)| s);
+            }
         }
     }
 
