@@ -153,6 +153,11 @@ pub enum RealmCommand {
     },
     /// Release Spirit: the dead player comes back at the respawn point.
     RepopRequest,
+    /// Use the item at a wire position: eat or drink.
+    UseItem {
+        bag: u8,
+        slot: u8,
+    },
 }
 
 /// The realm: its characters, the one in the world, and the events not yet drained.
@@ -307,6 +312,9 @@ impl Realm {
                 traded = vendor::repair(vendor, item, c, events);
             }
             RealmCommand::RepopRequest => traded.changed = w.release(c, events),
+            RealmCommand::UseItem { bag, slot } => {
+                traded.changed = w.use_item(bag, slot, c, events)
+            }
             _ => return,
         }
         moved.gear_changed |= traded.gear_changed;

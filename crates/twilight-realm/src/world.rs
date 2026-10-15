@@ -20,6 +20,7 @@ use crate::rules::{aggro, leash, rage, xp};
 use crate::Host;
 
 mod death;
+mod food;
 
 /// vanilla's player speeds (`baseMoveSpeed`): yd/s, turn in rad/s.
 const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
@@ -100,6 +101,8 @@ pub(crate) struct InWorld {
     pub(crate) respawn: death::Respawn,
     /// `MSG_MOVE_TELEPORT_ACK`'s counter.
     teleports: u32,
+    /// Food or drink being taken, sitting down.
+    meal: Option<food::Meal>,
 }
 
 impl InWorld {
@@ -168,6 +171,7 @@ impl InWorld {
             wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
             respawn: death::Respawn::HUB,
             teleports: 0,
+            meal: None,
         }
     }
 
@@ -264,6 +268,7 @@ impl InWorld {
             self.die(c, events);
         }
         self.update_combat(dt, events);
+        self.eat(dt, c, events);
         ticked
     }
 
