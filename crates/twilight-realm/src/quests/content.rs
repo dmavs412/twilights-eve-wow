@@ -55,7 +55,7 @@ pub(crate) struct Advancement {
     pub(crate) from: String,
     /// The Calling it advances into.
     pub(crate) to: String,
-    /// `false` for a quest that is offered and never finished (Champion's, past the slice).
+    /// `false` for a quest that is offered and never finished: its Calling has no kit.
     #[serde(default = "yes")]
     pub(crate) completable: bool,
 }

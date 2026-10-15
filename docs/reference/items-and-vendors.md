@@ -355,22 +355,27 @@ Vanilla 1.12, from `playercreateinfo_spell` (class 1) and `npc_trainer`:
   level 20** (trainer spell 15991).
 - Never: wands, librams, idols, totems.
 
-**Rule for the realm**:
+**Rule for the realm** (spec #18): gear follows the Calling, never the level, because the level
+resets with each Tier.
 
 ```
-can_equip(item, level) =
-    item.required_level <= level
-    and (item.allowable_class == -1 or item.allowable_class & 1)
-    and level >= gate(item.class, item.subclass)
+can_equip(item, calling) =
+    (item.allowable_class == -1 or item.allowable_class & 1)
+    and knows(calling, item.class, item.subclass)
 
-gate: weapons 1, except polearm 20; wand never
-      armour 1, except plate 40; libram, idol and totem never
+knows: every weapon but wands (and the unused spear, obsolete and exotic slots)
+       armour: misc always; cloth, leather, mail, plate, shield as the Calling's `armour` lists
+       (content/callings.toml); libram, idol and totem never
 ```
 
-The slice has no Weapon Master, so every weapon type is open from level 1 (polearms from 20)
-whatever the race. Plate is out of reach under the level-30 cap. A refusal uses the stock
-`EQUIP_ERR_NO_REQUIRED_PROFICIENCY` (or `EQUIP_ERR_CANT_EQUIP_LEVEL_I` for required level).
-Every item record carries `warrior.usable`, `warrior.from_level` and `warrior.blocked_by`.
+Basic Warrior wears cloth, leather, mail and shields; Vanguard adds plate. No item is refused for
+level, food and drink included, and the item query reports a required level of 0. Items keep
+their required level for the loot bands: the Wailing Caverns boss's blue pool still filters by
+the vanilla gates above (polearms 20, plate 40) at the item's own level, so the band does not
+change with the Calling. A refusal uses the stock `EQUIP_ERR_NO_REQUIRED_PROFICIENCY`. No world
+pool to 32 holds plate, so `given_items.toml` carries one real piece (Jouster's Chestplate) that
+nothing hands out yet. Every item record carries `warrior.usable`, `warrior.from_level` and
+`warrior.blocked_by`, the vanilla gates.
 
 ## Item record fields
 

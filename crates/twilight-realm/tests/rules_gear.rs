@@ -1,6 +1,7 @@
-//! Gear: what a Warrior may wear (vanilla proficiency, `docs/reference/items-and-vendors.md`),
+//! Gear: what a Calling may wear (its own armour, every Warrior weapon, whatever the level),
 //! where it goes, and what it adds to the character sheet.
 
+use twilight_realm::callings::{self, CallingDef};
 use twilight_realm::rules::gear::{can_equip, equip_slots, Refusal};
 use twilight_realm::rules::stats::WarriorStats;
 
@@ -12,43 +13,63 @@ const FIRE_WAND: u32 = 5069; // required level 7
 const PITCHFORK: u32 = 1485; // polearm, required level 20
 const GNOLL_WAR_HARNESS: u32 = 1211; // leather chest, 70 armour, +2 str +2 sta, required level 10
 const LARGE_OGRE_CHAIN_ARMOR: u32 = 914; // mail chest, required level 25
+const JOUSTERS_CHESTPLATE: u32 = 8157; // plate chest, required level 40
 const GAUNTLETS_OF_OGRE_STRENGTH: u32 = 3341; // Equip: +16 attack power
 const RING_OF_DEFENSE: u32 = 12985; // Equip: +4 Defense
 const WARRIORS_SHIELD: u32 = 1438;
 const DULL_FRENZY_SCALE: u32 = 537; // grey vendor trash
 
-#[test]
-fn a_warrior_wears_cloth_leather_mail_shields_and_most_weapons() {
-    assert_eq!(can_equip(FINE_SCIMITAR, HUMAN, 1), Ok(()));
-    assert_eq!(can_equip(CROOKED_STAFF, HUMAN, 1), Ok(()));
-    assert_eq!(can_equip(WARRIORS_SHIELD, HUMAN, 4), Ok(()));
-    assert_eq!(can_equip(GNOLL_WAR_HARNESS, HUMAN, 10), Ok(()));
+fn basic_warrior() -> &'static CallingDef {
+    callings::calling("basic_warrior").unwrap()
+}
+
+fn vanguard() -> &'static CallingDef {
+    callings::calling("vanguard").unwrap()
 }
 
 #[test]
-fn a_warrior_can_never_use_a_wand() {
-    assert_eq!(can_equip(FIRE_WAND, HUMAN, 30), Err(Refusal::Proficiency));
+fn a_basic_warrior_wears_cloth_leather_mail_shields_and_every_warrior_weapon() {
+    let bw = basic_warrior();
+    assert_eq!(can_equip(FINE_SCIMITAR, HUMAN, bw), Ok(()));
+    assert_eq!(can_equip(CROOKED_STAFF, HUMAN, bw), Ok(()));
+    assert_eq!(can_equip(PITCHFORK, HUMAN, bw), Ok(()), "polearms too");
+    assert_eq!(can_equip(WARRIORS_SHIELD, HUMAN, bw), Ok(()));
+    assert_eq!(can_equip(GNOLL_WAR_HARNESS, HUMAN, bw), Ok(()));
 }
 
 #[test]
-fn polearms_need_level_20() {
-    assert_eq!(can_equip(PITCHFORK, HUMAN, 19), Err(Refusal::Proficiency));
-    assert_eq!(can_equip(PITCHFORK, HUMAN, 20), Ok(()));
-}
-
-#[test]
-fn an_item_above_the_characters_level_is_refused_with_its_level() {
+fn a_basic_warrior_is_refused_plate_for_want_of_proficiency() {
     assert_eq!(
-        can_equip(LARGE_OGRE_CHAIN_ARMOR, HUMAN, 24),
-        Err(Refusal::Level(25))
+        can_equip(JOUSTERS_CHESTPLATE, HUMAN, basic_warrior()),
+        Err(Refusal::Proficiency)
     );
-    assert_eq!(can_equip(LARGE_OGRE_CHAIN_ARMOR, HUMAN, 25), Ok(()));
+}
+
+#[test]
+fn a_vanguard_wears_plate() {
+    assert_eq!(can_equip(JOUSTERS_CHESTPLATE, HUMAN, vanguard()), Ok(()));
+}
+
+#[test]
+fn no_calling_can_use_a_wand() {
+    for c in [basic_warrior(), vanguard()] {
+        assert_eq!(can_equip(FIRE_WAND, HUMAN, c), Err(Refusal::Proficiency));
+    }
+}
+
+#[test]
+fn an_items_required_level_never_refuses_it() {
+    // Required level 25 mail, on a Calling whose level resets to 1.
+    assert_eq!(
+        can_equip(LARGE_OGRE_CHAIN_ARMOR, HUMAN, basic_warrior()),
+        Ok(())
+    );
 }
 
 #[test]
 fn vendor_trash_is_not_equippable() {
     assert_eq!(
-        can_equip(DULL_FRENZY_SCALE, HUMAN, 10),
+        can_equip(DULL_FRENZY_SCALE, HUMAN, basic_warrior()),
         Err(Refusal::NotEquippable)
     );
 }

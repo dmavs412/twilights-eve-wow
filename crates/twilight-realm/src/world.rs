@@ -357,7 +357,7 @@ impl InWorld {
             return;
         }
         p.refused = None;
-        p.swing_timer = clock::secs(p.stats.attack_time_ms);
+        p.swing_timer = clock::secs(cast::white(&p.stats, &self.skills).attack_time_ms);
 
         let from_front = in_front(mob.orientation, mob.position, c.position);
         // A queued Heroic Strike takes this swing's place.
@@ -381,7 +381,7 @@ impl InWorld {
         ticked: &mut Ticked,
     ) {
         let target = self.mobs[i].guid;
-        let stats = cast::buffed(&self.player.stats, &self.skills);
+        let stats = cast::white(&self.player.stats, &self.skills);
         let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, rng);
         swing.damage = self.dealt(c, swing.damage);
         let counted = self.skills.count_swing(events);
@@ -421,6 +421,7 @@ impl InWorld {
         }
         if swing.damage > 0 {
             self.sweep(target, swing.damage, c, rng, events, ticked);
+            self.seal_swing_landed(target, c, rng, events, ticked);
             self.white_swing_landed(i, from_front, may_swing_again, c, rng, events, ticked);
         }
     }
@@ -682,7 +683,10 @@ impl InWorld {
             pairs.push((PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)));
             pairs.push(crate::talents::points_pair(c));
             pairs.push((UNIT_FIELD_HEALTH, self.player.health));
-            pairs.extend(sheet_pairs(&cast::buffed(&self.player.stats, &self.skills)));
+            pairs.extend(sheet_pairs(
+                c,
+                &cast::white(&self.player.stats, &self.skills),
+            ));
         }
         events.push(values(self.guid, &pairs));
         leveled
@@ -815,7 +819,7 @@ fn eye(p: [f32; 3]) -> [f32; 3] {
 }
 
 /// The character sheet: every field the stock paper doll reads, from the realm's stats.
-fn sheet_pairs(s: &WarriorStats) -> Vec<(u16, u32)> {
+fn sheet_pairs(c: &Char, s: &WarriorStats) -> Vec<(u16, u32)> {
     let skill = u32::from(s.weapon_skill);
     let mut pairs = vec![
         (UNIT_FIELD_LEVEL, u32::from(s.level)),
@@ -852,7 +856,7 @@ fn sheet_pairs(s: &WarriorStats) -> Vec<(u16, u32)> {
         };
         pairs.push((base + 2, bonus));
     }
-    pairs.extend(crate::equipment::sheet_pairs(s));
+    pairs.extend(crate::equipment::sheet_pairs(c, s));
     pairs
 }
 
@@ -894,7 +898,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
         (PLAYER_FIELD_WATCHED_FACTION_INDEX, u32::MAX),
     ];
     pairs.extend(guid_pairs(OBJECT_FIELD_GUID, c.guid));
-    pairs.extend(sheet_pairs(stats));
+    pairs.extend(sheet_pairs(c, stats));
     pairs.push(cast::stance(c));
     pairs.push(crate::talents::points_pair(c));
     pairs.extend(crate::equipment::inventory_pairs(c));
@@ -930,7 +934,7 @@ impl InWorld {
         if p.alive() {
             p.health = max.saturating_sub(lost).max(1);
         }
-        let mut pairs = sheet_pairs(&p.stats);
+        let mut pairs = sheet_pairs(c, &p.stats);
         pairs.extend(self.sheet_now());
         events.push(values(self.guid, &pairs));
     }

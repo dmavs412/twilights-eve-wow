@@ -8,7 +8,7 @@ fn a_point_comes_with_every_level_from_two() {
     assert_eq!(points_at(1), 0);
     assert_eq!(points_at(2), 1);
     assert_eq!(points_at(5), 4);
-    // The Tier Caps: 9 for a Basic Warrior at 10, 29 for a Tier 1 Warrior at 30.
+    // The Tier Caps: 9 for a Basic Warrior at 10, 29 for a Vanguard at 30.
     assert_eq!(points_at(10), 9);
     assert_eq!(points_at(30), 29);
 }
