@@ -170,7 +170,9 @@ def client_override(row: dict, built: dict, where: str) -> dict | None:
             fields[column.removeprefix("client_")] = row[column] == "yes"
     if row["client_stances"]:
         fields["stances"] = row["client_stances"].split("|")
-    fields["effects"] = [{"kind": e["kind"], "params": e["params"]} for e in built["effects"] if not e["realm_only"]]
+    # No effects key on an unmodelled row: the client keeps the stock row's effects.
+    if built["modelled"]:
+        fields["effects"] = [{"kind": e["kind"], "params": e["params"]} for e in built["effects"] if not e["realm_only"]]
     spellmods = []
     for i in (1, 2):
         values = {c: row[f"spellmod{i}_{c}"] for c in SPELLMOD_COLUMNS}

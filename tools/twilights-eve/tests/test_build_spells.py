@@ -83,6 +83,9 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(data[0]["skills"][0]["effects"], [])
         self.assertFalse(data[0]["skills"][0]["modelled"])
+        fields = self.patch["spells"][0]["fields"]
+        self.assertNotIn("effects", fields)
+        self.assertEqual(fields["cost"], 15)
 
     def test_unknown_kind_fails_a_modelled_row(self):
         self.assert_fails([{**STRIKE, "effect1_kind": "not_yet_a_kind"}], "unknown effect kind")
