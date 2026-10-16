@@ -135,9 +135,12 @@ impl Script {
 
 /// `blob` with the character standing at `at` on Kalimdor.
 fn place(blob: &str, at: [f32; 3]) -> String {
+    // The character's own keys come before any table, such as the bind point's.
+    let mut top = true;
     blob.lines()
         .map(|l| {
-            if l.starts_with("position = ") {
+            top &= !l.starts_with('[');
+            if top && l.starts_with("position = ") {
                 format!("position = [{}, {}, {}]", at[0], at[1], at[2])
             } else {
                 l.to_string()

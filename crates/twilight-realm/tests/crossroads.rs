@@ -81,7 +81,7 @@ fn meet_the_town(realm: &mut Realm, entry: Vec<SessionEvent>) -> Vec<(u64, u32, 
 }
 
 #[test]
-fn a_new_character_starts_in_the_inn_beside_barg() {
+fn a_new_character_starts_in_the_inn_beside_barg_and_the_innkeeper() {
     let mut realm = realm();
     let (_, events) = enter_new(&mut realm, "Thrall", ORC);
     let position = events
@@ -99,6 +99,14 @@ fn a_new_character_starts_in_the_inn_beside_barg() {
         .expect("Barg stands in view");
     let d = ((barg.3[0] - position[0]).powi(2) + (barg.3[1] - position[1]).powi(2)).sqrt();
     assert!(d <= 10.0, "Barg stands {d:.1} yd from the start");
+    // The innkeeper, at the bar.
+    let innkeeper = npcs(&events)
+        .into_iter()
+        .find(|n| n.1 == 3934)
+        .expect("the innkeeper stands in view");
+    let d =
+        ((innkeeper.3[0] - position[0]).powi(2) + (innkeeper.3[1] - position[1]).powi(2)).sqrt();
+    assert!(d <= 12.0, "the innkeeper stands {d:.1} yd from the start");
 }
 
 #[test]

@@ -1,11 +1,11 @@
-//! The Hearthstone's spell: back to the Hub. The cast itself is an item cast ([`super::cast`]);
-//! this is what it does when it goes off, and the teleport handshake that follows.
+//! The Hearthstone's spell: back to the bind point ([`crate::inn`]). The cast itself is an item
+//! cast ([`super::cast`]); this is what it does when it goes off, and the teleport handshake that
+//! follows.
 
 use benilla_protocol::SessionEvent;
 
 use super::InWorld;
 use crate::characters::Char;
-use crate::content::CROSSROADS;
 
 /// `Spell.dbc` 8690, "Hearthstone".
 const HEARTH_SPELL: u32 = 8690;
@@ -37,14 +37,9 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         if spell_id == HEARTH_SPELL {
-            // From inside a Dungeon, a worldport.
-            let [x, y, z, facing] = CROSSROADS;
-            let hub = crate::dungeon::Place {
-                map: crate::content::KALIMDOR,
-                position: [x, y, z],
-                orientation: facing,
-            };
-            self.move_to(c, hub, events);
+            // From another map, a worldport.
+            let home = c.bind.place;
+            self.move_to(c, home, events);
         }
     }
 

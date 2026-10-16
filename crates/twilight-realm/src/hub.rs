@@ -49,6 +49,9 @@ pub(crate) struct Npc {
     /// A gossip NPC's greeting's `npc_text` id, which `CMSG_NPC_TEXT_QUERY` asks for.
     #[serde(default)]
     pub(crate) text_id: Option<u32>,
+    /// An innkeeper's inn: the `AreaTable` id a bind there names.
+    #[serde(default)]
+    pub(crate) area: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -90,6 +93,11 @@ impl Npc {
     /// Whether it trains (`UNIT_NPC_FLAG_TRAINER`): the Warrior trainer, who sells the respec.
     pub(crate) fn trains(&self) -> bool {
         self.npc_flags & 0x10 != 0
+    }
+
+    /// Whether it binds the Hearthstone (`UNIT_NPC_FLAG_INNKEEPER`).
+    pub(crate) fn is_innkeeper(&self) -> bool {
+        self.npc_flags & 0x80 != 0
     }
 
     /// Whether it repairs gear (`UNIT_NPC_FLAG_REPAIR`).
@@ -183,7 +191,7 @@ pub(crate) fn greeting(text_id: u32) -> Option<SessionEvent> {
 impl crate::Realm {
     /// `CMSG_GOSSIP_HELLO` at a Hub NPC with a gossip greeting: its menu. A trainer's carries
     /// his lines and his Advancement Quests, as vmangos's gossip lists a quest giver's quests;
-    /// a townsperson's is the greeting alone.
+    /// an innkeeper's, the bind and the merchant window; a townsperson's is the greeting alone.
     pub(crate) fn gossip_hello(&mut self, guid: u64) {
         let Some(npc) = find(guid).filter(|n| n.gossips() && n.text_id.is_some() && self.near(n))
         else {
@@ -198,9 +206,22 @@ impl crate::Realm {
         self.events.push(SessionEvent::GossipMenu {
             npc: npc.guid(),
             text_id: npc.text_id.unwrap_or_default(),
-            options: crate::trainer::options(npc),
+            options: if npc.is_innkeeper() {
+                crate::inn::options()
+            } else {
+                crate::trainer::options(npc)
+            },
             quests,
         });
+    }
+
+    /// `CMSG_GOSSIP_SELECT_OPTION`: a line of a trainer's or an innkeeper's menu.
+    pub(crate) fn gossip_select(&mut self, guid: u64, option: u32) {
+        match find(guid) {
+            Some(npc) if npc.is_innkeeper() => self.inn_select(npc, option),
+            Some(_) => self.trainer_select(guid, option),
+            None => {}
+        }
     }
 
     /// Whether the character in the world can reach `npc`.

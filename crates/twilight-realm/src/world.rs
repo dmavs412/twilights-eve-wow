@@ -145,6 +145,7 @@ impl InWorld {
             orientation: c.orientation,
             needs_ack: false,
         });
+        events.push(c.bind.update());
         // The dusk clock: evening twilight, just after the 21:00 sunset, and a timescale of zero
         // so the client never advances it. The sky over the world stays at dusk.
         events.push(SessionEvent::TimeSpeed {

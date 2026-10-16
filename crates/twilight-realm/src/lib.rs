@@ -47,6 +47,7 @@ mod dungeon;
 mod equipment;
 mod fields;
 mod hub;
+mod inn;
 mod inventory;
 mod items;
 mod looting;
@@ -205,6 +206,10 @@ pub enum RealmCommand {
     /// A gossip greeting's text, answered with [`SessionEvent::NpcGreeting`].
     NpcTextQuery {
         text_id: u32,
+    },
+    /// Accept the innkeeper's bind confirm: bind the Hearthstone where the player stands.
+    BinderActivate {
+        binder: u64,
     },
     /// Accept the respec the trainer priced: unlearn every talent for gold.
     TalentWipeConfirm {
@@ -457,6 +462,7 @@ impl Realm {
                 self.events.extend(hub::greeting(text_id));
             }
             RealmCommand::TalentWipeConfirm { trainer } => self.talent_wipe(trainer),
+            RealmCommand::BinderActivate { binder } => self.binder_activate(binder),
             RealmCommand::QuestQuery { quest } => {
                 self.events.extend(quests::template_response(quest));
             }
