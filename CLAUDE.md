@@ -1,42 +1,69 @@
-@AGENTS.md
+# Twilight's Eve: Callings
 
-## Game data on this machine
+A single-player offline WoW ORPG prototype on a from-scratch 1.12.1 client in Rust + Bevy. The
+client (`crates/benilla-*`) renders the game and speaks the 1.12.1 protocol. The Local Realm
+(`crates/twilight-realm`) is the game's rules: in-process today, behind a socket for friends
+later. The Survivors mode and the browser build are being removed, so `crates/warcraft-survivors`
+(still the launcher binary), `crates/wenilla*` and `web/` are dead weight, never a target.
 
-The WoW 1.12.1 game data (14 MPQs) is at `C:\Users\davis\wow-data\Data`. Use it for `--data` and
-`WOW_DATA`; `run.ps1` defaults to it. The repo's `wow-data` is a git symlink that Windows checks
-out as a plain text file, so `wow-data\Data` does not exist here. Do not run `fetch-data.sh` again.
+Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla reference notes:
+`docs/reference/`. Judgement-call coding rules: `CODING_STANDARDS.md`.
 
-Let every cargo build and test run to completion: one stopped mid-compile leaves rlibs with
-corrupt MSVC debug info, and later links fail with `LNK1103` on a crate you never touched. The
-cure is `cargo clean -p <crate>` for each crate the linker names; deleting the files by hand
-leaves fingerprints that call the crate built ("required to be available in rlib format").
+## How work runs
 
-A worktree builds its own `target`, about 18 GB, and several building at once run rustc out of
-memory (which also ends in `LNK1103`). Delete a worktree's `target` once its branch is merged.
-To skip a cold build, point `CARGO_TARGET_DIR` at another worktree's `target` (builds sharing
-one wait on its lock), or copy one. `lua-src` bakes in the folder of the worktree that first
-built it, so once that worktree is gone the build fails with "Cannot read
-…\third_party\lua-src\lua-5.1.5"; `cargo clean -p lua-src -p mlua-sys` in that `target` cures
-it. Build `--release` only in your own `target`: the user plays from
-`.claude/worktrees/integration/target/release/warcraft-survivors.exe`, and a running exe cannot
-be overwritten.
-`CARGO_BUILD_JOBS=4` and `WASI_SDK` (the main checkout's `tools\wasi-sdk`, which worktrees lack)
-are set in the user environment; if a shell lacks them, set them by hand. A subagent's isolation
-worktree is cut from `main`: for work on another branch, create the worktree yourself
-(`git worktree add -b <branch> .claude/worktrees/<name> <base>`) and give the agent its path.
+- **Verify with `cargo check -p <crate>`** in the foreground after every edit. When a realm rule
+  changes, also `cargo test -p twilight-realm` (seconds, no game data). That is the whole gate; a
+  commit needs nothing else. A full build or a game run happens only when Davis asks for one.
+- **Every command runs in the foreground, and you wait for it.** Let each cargo command finish:
+  one stopped mid-compile leaves rlibs with corrupt MSVC debug info, and later links fail with
+  `LNK1103` on a crate you never touched. The cure is `cargo clean -p <crate>` for each crate the
+  linker names.
+- **Do the work in this session.** Search with Grep, read with Read. Spawning any agent, through
+  the Agent tool or a skill that fans out (implement-spec, wayfinder, code-review, research),
+  needs Davis's explicit yes for that task. An approved agent runs on Haiku, which
+  `.claude/settings.json` sets through `CLAUDE_CODE_SUBAGENT_MODEL`; Opus or Fable only when Davis
+  says "deep reasoning".
+- **Keep context small.** Read the lines you need. Report in a few lines. Davis runs `/compact`
+  between tasks; say so when a task is done and the next one starts cold.
+- **Grill before architecture.** Run `/grill-me` first for: a new crate or a new `twilight-realm`
+  dependency; a new ECS component family or system ordering in the realm; a column added or
+  changed in the master CSV, or a schema change in a generated file; anything crossing the
+  client/realm seam or changing how the DBC patch applies; any decision that would need an ADR.
+  A bug fix, a new data row, or a component that follows an existing pattern goes straight to
+  code.
+- **Land as small commits on `main`**, each saying what changed and which check ran. A branch
+  and a pull request only when Davis asks. CI (`.github/workflows/ci.yml`) repeats the check and
+  the realm tests on GitHub's runners; it is a backstop you never wait on.
 
-Python is `python3.15` in `~/.local/bin`; `python3` on PATH is the Microsoft Store stub.
+## Architecture rules
 
-## Agent skills
+- **Content is data.** Spell ids, talent trees, costs, formulas and ability effects live in
+  `data/twilights-eve/master.csv` and flow through `tools/twilights-eve/build_spells.py` into
+  `server_spells.json` for the realm and `client_dbc_patch.json` for the client. A spell id or a
+  talent's numbers in a `.rs` file is a bug. `docs/spell_pipeline.md`.
+- **Compose in `bevy_ecs`.** The realm uses `bevy_ecs` alone: no Bevy app, renderer or window.
+  An ability is a bundle of generic components (`ProcOnCrit`, `CleaveOnHit`, `PeriodicDamage`)
+  driven by generic systems. A system or match arm named after one spell is a bug.
+  `docs/bevy_guidelines.md`.
+- **The client's DBCs and the realm are separate worlds.** Spell.dbc holds three effects per
+  spell. The client shows and gates a cast from its row; the realm decides what happens. A talent
+  that needs more than three effects sends effects 1 to 3 to the DBC patch and the rest to
+  realm-only components the client never sees. `docs/dbc_structure.md`.
 
-### Issue tracker
+## This machine
 
-GitHub Issues on `dmavs412/twilights-eve-wow`; always pass `-R dmavs412/twilights-eve-wow`. See `docs/agents/issue-tracker.md`.
+- Game data: `C:\Users\davis\wow-data\Data`, for `WOW_DATA` and `--data`; `run.ps1` defaults to
+  it. The repo's `wow-data` is a git symlink that Windows checks out as a text file.
+- Python is `~/.local/bin/python3.15`; `python3` on PATH is the Microsoft Store stub. No Node.
+- Build in this checkout's `target` only; a worktree's own `target` is 18 GB and fills C:.
+  `CARGO_BUILD_JOBS=4` is in the user environment. Davis plays from
+  `.claude/worktrees/integration/target/release/warcraft-survivors.exe`, and a running exe cannot
+  be overwritten.
+- `WOW_TWILIGHT=1` picks Twilight's Eve in the launcher. `WOW_PROBE=list` lists the variables
+  that drive a run with no one at the keyboard.
 
-### Triage labels
+## Issue tracker
 
-The five default labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+GitHub Issues on `dmavs412/twilights-eve-wow`; always pass `-R dmavs412/twilights-eve-wow`.
+Conventions: `docs/agents/issue-tracker.md`. Labels: `docs/agents/triage-labels.md`. Domain
+docs: `docs/agents/domain.md`.
