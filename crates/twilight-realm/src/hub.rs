@@ -1,6 +1,6 @@
-//! The Hub's friendly NPCs (`content/hub.toml`): units that stand in the Crossroads, each opening
-//! the stock window its NPC flags name, and stream in and out with the player's view as the mobs
-//! do.
+//! The Hub's friendly NPCs (`content/hub.toml`): units that stand in the Crossroads, or out in a
+//! Hunting Ground for a quest to find them, each opening the stock window its NPC flags name, and
+//! stream in and out with the player's view as the mobs do.
 
 use std::sync::OnceLock;
 

@@ -376,7 +376,15 @@ impl Realm {
                 if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
                     if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
-                        self.characters.set_position(w.guid, position, orientation);
+                        let guid = w.guid;
+                        self.characters.set_position(guid, position, orientation);
+                        let explored = self
+                            .characters
+                            .get_mut(guid)
+                            .is_some_and(|c| quests::explore(c, &mut self.events));
+                        if explored {
+                            self.save(guid);
+                        }
                     }
                 }
             }
