@@ -64,6 +64,18 @@ fn layer_prefixed(n: &str) -> bool {
     n.starts_with("Benilla") || n.starts_with("BENILLA_") || n.starts_with("SLASH_BENILLA_")
 }
 
+/// The install's locale symbol, `LOCALE_xxXX = true` (`Localization.lua:3`). The reference is an
+/// enGB client's capture, so it lists `LOCALE_enGB`; an enUS chain's FrameXML sets `LOCALE_enUS`,
+/// the same 1.12 global under its own locale.
+fn locale_symbol(n: &str) -> bool {
+    n.strip_prefix("LOCALE_").is_some_and(|l| {
+        let b = l.as_bytes();
+        b.len() == 4
+            && b[..2].iter().all(u8::is_ascii_lowercase)
+            && b[2..].iter().all(u8::is_ascii_uppercase)
+    })
+}
+
 /// What the production load adds past 1.12 and past the engine, and the layer's own names: the
 /// globals (`Benilla`-prefixed ones the engine does not also define passing) and the methods.
 fn production_beyond(s: &UiScript, engine: &UiScript) -> (Vec<String>, Vec<String>) {
@@ -72,7 +84,7 @@ fn production_beyond(s: &UiScript, engine: &UiScript) -> (Vec<String>, Vec<Strin
     let globals = globals_of(s)
         .into_iter()
         .filter(|n| !reference.contains(n.as_str()) && !engine_globals.contains(n))
-        .filter(|n| !layer_prefixed(n))
+        .filter(|n| !layer_prefixed(n) && !locale_symbol(n))
         .collect();
     let engine_methods = methods_of(engine);
     let methods = methods_of(s)
@@ -118,7 +130,8 @@ fn the_production_load_stays_inside_the_1_12_surface() {
 }
 
 /// The gate bites: a global past 1.12 put back into the loaded VM, an unprefixed layer-style one,
-/// an engine-only prefixed one and a method on a class's table are each caught.
+/// an engine-only prefixed one, a `LOCALE_` name that is no locale and a method on a class's table
+/// are each caught; another install's locale symbol passes.
 #[test]
 fn the_production_gate_catches_a_name_put_back() {
     let s = UiScript::new().unwrap();
@@ -130,12 +143,15 @@ fn the_production_gate_catches_a_name_put_back() {
     );
     s.run(
         "UnitAura = function() end \
-         BenillaLayerThing = 1 \
+         BenillaLayerThing = 1          LOCALE_enUS = true LOCALE_ENUS = true \
          getmetatable(CreateFrame('GameTooltip')).__index.BenillaSetItemById = function() end",
     )
     .unwrap();
     let (globals, methods) = production_beyond(&s, &engine);
-    assert_eq!(globals, vec!["UnitAura".to_string()]);
+    assert_eq!(
+        globals,
+        vec!["LOCALE_ENUS".to_string(), "UnitAura".to_string()]
+    );
     assert!(
         methods.contains(&"GameTooltip:BenillaSetItemById".to_string()),
         "{methods:?}"

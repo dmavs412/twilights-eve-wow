@@ -196,17 +196,24 @@ fn hovering_the_indicator_shows_and_live_updates_the_game_time_tooltip() {
         s.eval::<bool>("return GameTooltip:IsVisible()").unwrap(),
         "OnEnter owns the tooltip (the Scripts-walker auto-enable capturing at {x},{y})"
     );
-    // The enGB `LocalizeFrames` sets `TwentyFourHourTime = 1` (`Localization.lua:20`): 21:07.
+    // The install's `LocalizeFrames` picks the clock: the enGB one sets `TwentyFourHourTime = 1`
+    // (`Localization.lua:20`), 21:07; the enUS one leaves it nil, 9:07 PM.
+    let twenty_four = s.eval::<bool>("return TwentyFourHourTime ~= nil").unwrap();
+    let (at_7, at_8) = if twenty_four {
+        ("21:07", "21:08")
+    } else {
+        ("9:07 PM", "9:08 PM")
+    };
     let text = |s: &UiScript| {
         s.eval::<String>("return GameTooltipTextLeft1:GetText()")
             .unwrap()
     };
-    assert_eq!(text(&s), "21:07");
+    assert_eq!(text(&s), at_7);
 
     // While owned, `GameTimeFrame_Update` refreshes the tooltip (`GameTime.lua:20-22`).
     s.set_game_time(21, 8);
     s.tick(0.016);
-    assert_eq!(text(&s), "21:08", "the owned tooltip follows the clock");
+    assert_eq!(text(&s), at_8, "the owned tooltip follows the clock");
 
     // Inside the raw 50x50 rect but in the left inset: not hoverable.
     s.mouse_move(l + 2.0, y);
