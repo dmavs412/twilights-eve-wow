@@ -608,7 +608,8 @@ impl InWorld {
         let gained = if at_tier_cap(c) {
             0
         } else {
-            self.dev.xp(xp::kill_xp(c.level, mob.level(), elite))
+            self.dev
+                .xp(at_tier_rate(c, xp::kill_xp(c.level, mob.level(), elite)))
         };
         if gained > 0 {
             events.push(SessionEvent::XpGain(XpGain {
@@ -624,8 +625,8 @@ impl InWorld {
         crate::quests::credit_kill(c, entry, events);
     }
 
-    /// Pays a quest's `base` XP, scaled by the dev multiplier as kill XP is; nothing at the Tier
-    /// Cap. What it paid.
+    /// Pays a quest's `base` XP, scaled by the Tier XP Rate and the dev multiplier as kill XP is;
+    /// nothing at the Tier Cap. What it paid.
     pub(crate) fn reward_xp(
         &mut self,
         c: &mut Char,
@@ -635,7 +636,7 @@ impl InWorld {
         if at_tier_cap(c) {
             return 0;
         }
-        let gained = self.dev.xp(base);
+        let gained = self.dev.xp(at_tier_rate(c, base));
         if gained > 0 {
             self.give_xp(c, gained, events);
         }
@@ -726,6 +727,11 @@ impl InWorld {
 /// Whether `c` stands at their Calling's Tier Cap, where XP stops until they advance.
 fn at_tier_cap(c: &Char) -> bool {
     c.level >= crate::callings::of(c.calling).cap
+}
+
+/// An award of `base` XP times `c`'s Tier XP Rate; the dev multiplier goes on top.
+fn at_tier_rate(c: &Char, base: u32) -> u32 {
+    base * xp::tier_rate(crate::callings::of(c.calling).tier)
 }
 
 /// `mob` turns on the player: `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat

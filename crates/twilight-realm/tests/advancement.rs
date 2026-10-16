@@ -86,7 +86,8 @@ fn a_vanguard_levels_past_ten_and_stops_at_thirty() {
     let quest = &[(CROCOLISK_SKINS, [0; 4])];
     let (mut realm, me, mut events) = questing_as("vanguard", 10, EIGHT_SKINS, 0, quest);
     events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
-    assert_eq!(descriptor(&events, me).unit_level(), Some(11));
+    // A level at ×3 (the Tier XP Rate): 22800 XP covers 10 → 11 (7600) and 11 → 12 (8100).
+    assert_eq!(descriptor(&events, me).unit_level(), Some(12));
 
     let (mut realm, me, mut events) = questing_as("vanguard", 30, EIGHT_SKINS, 0, quest);
     let turned_in = hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS);

@@ -247,7 +247,8 @@ fn an_unfinished_quest_shows_its_progress_and_cannot_be_handed_in() {
 
 #[test]
 fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
-    // A level 15 Warrior on a level 10 quest: still a full level (15's 14400 XP).
+    // A level 15 Vanguard on a level 10 quest: still a full level (15's 14400 XP), at the Tier
+    // XP Rate's ×3.
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 5), (24, CROCOLISK_SKIN, 4)];
     let (mut realm, me, mut events) =
         questing_as("vanguard", 15, skins, 2, &[(CROCOLISK_SKINS, [0; 4])]);
@@ -290,7 +291,7 @@ fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
 
     let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
     let done = completed(&turned_in).expect("the quest completes");
-    assert_eq!((done.xp, done.money), (14400, 400));
+    assert_eq!((done.xp, done.money), (3 * 14400, 400));
     assert_eq!(done.items, [(TOKEN, 1)]);
     events.extend(turned_in);
     // Eight of the nine skins are gone: the first stack whole, three of the second... or the
@@ -342,13 +343,13 @@ fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
 
 #[test]
 fn outlevelling_a_quest_shrinks_its_xp() {
-    // A level 16 Warrior on a level 10 quest: 80% of 16000.
+    // A level 16 Vanguard on a level 10 quest: 80% of 16000, at the Tier XP Rate's ×3.
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 8)];
     let (mut realm, _, events) =
         questing_as("vanguard", 16, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
     let done = completed(&hand_in(&mut realm, zunjin, CROCOLISK_SKINS)).unwrap();
-    assert_eq!(done.xp, 12800);
+    assert_eq!(done.xp, 3 * 12800);
 }
 
 #[test]
