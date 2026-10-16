@@ -60,6 +60,37 @@ class BuildError(Exception):
     pass
 
 
+# The id columns the DBC check verifies, and the table each one must exist in.
+DBC_ID_COLUMNS = {
+    "spell_id": "Spell.dbc",
+    "talent_id": "Talent.dbc",
+    "icon_id": "SpellIcon.dbc",
+    "source_tab_id": "TalentTab.dbc",
+}
+
+
+def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
+    """Fail on any id the game's DBCs don't hold, naming every bad one on its own line."""
+    if not data_dir:
+        raise BuildError("the DBC check needs --data or WOW_DATA; pass --no-dbc-check to skip it")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from wowdata import Chain, load_dbc
+
+    try:
+        chain = Chain(data_dir)
+        tables = {name: load_dbc(chain, name) for name in set(DBC_ID_COLUMNS.values())}
+    except (OSError, KeyError, ValueError) as error:
+        raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
+    bad = []
+    for line, row in enumerate(rows, start=2):
+        for column, table in DBC_ID_COLUMNS.items():
+            text = (row.get(column) or "").strip()
+            if text and (not text.isdigit() or tables[table].row(int(text)) is None):
+                bad.append(f"line {line} ({row.get('calling')}/{row.get('key')}): {column} {text} is not in {table}")
+    if bad:
+        raise BuildError(f"{len(bad)} ids not in the DBCs:\n" + "\n".join(bad))
+
+
 def number(text: str, where: str) -> int | float:
     try:
         value = float(text)
@@ -127,6 +158,8 @@ def build_row(row: dict, where: str) -> dict:
     for column in ID_COLUMNS:
         if row[column]:
             out[column] = number(row[column], f"{where} {column}")
+            if not isinstance(out[column], int):
+                raise BuildError(f"{where} {column}: {row[column]!r} is not a whole id")
     for column in REALM_NUMBERS:
         if row[column]:
             out[column] = number(row[column], f"{where} {column}")
@@ -282,7 +315,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         server, patch = build(rows)
         if not args.no_dbc_check:
-            raise BuildError("the DBC check is not written yet; pass --no-dbc-check")
+            check_dbc_ids(rows, args.data)
+            print(f"DBC check: every id is in the DBCs in {args.data}")
     except BuildError as error:
         print(f"build_spells: {error}", file=sys.stderr)
         return 1

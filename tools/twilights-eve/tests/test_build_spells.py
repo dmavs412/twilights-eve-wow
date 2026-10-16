@@ -163,6 +163,23 @@ class BuildSpells(unittest.TestCase):
     def test_partial_spellmod_fails(self):
         self.assert_fails([{**STRIKE, "spellmod1_type": "pct"}], "spellmod1 needs")
 
+    def test_fractional_id_fails(self):
+        self.assert_fails([{**STRIKE, "spell_id": "78.0"}], "not a whole id")
+
+    def test_dbc_check_without_data_fails(self):
+        tmp = tempfile.mkdtemp()
+        path = os.path.join(tmp, "master.csv")
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, COLUMNS, restval="")
+            writer.writeheader()
+            writer.writerow(STRIKE)
+        env = {k: v for k, v in os.environ.items() if k != "WOW_DATA"}
+        done = subprocess.run([sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp],
+                              capture_output=True, text=True, env=env)
+        self.assertNotEqual(done.returncode, 0)
+        self.assertIn("needs --data", done.stderr)
+        self.assertFalse(os.path.exists(os.path.join(tmp, "server_spells.json")))
+
     def test_duplicate_rank_fails(self):
         self.assert_fails([STRIKE, STRIKE], "duplicate")
 
