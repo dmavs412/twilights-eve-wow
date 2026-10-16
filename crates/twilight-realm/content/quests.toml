@@ -234,7 +234,7 @@ money = 600
 tokens = 1
 kill = [[3274, 6]]
 
-# ── The Southern Barrens (levels 18-21) ───────────────────────────────────────────────────────
+# ── The Southern Barrens (level 18) ───────────────────────────────────────────────────────────
 
 [[quest]]
 id = 91012
@@ -245,82 +245,375 @@ title = "Bristleback Encroachment"
 objectives = "Kill 6 Bristleback Hunters and 6 Bristleback Thornweavers, then return to Mahu Stormhoof at the Crossroads."
 details = "In the south the Bristleback push into the land of my people. Drive back their hunters and thornweavers."
 progress = "The Bristleback still press north."
-completion = "The Earth Mother thanks you. Take this."
+completion = "The Earth Mother thanks you. Past them, Camp Taurajo holds the south. Go there when you are ready."
 money = 1200
 tokens = 1
 kill = [[3258, 6], [3261, 6]]
 
+# ── The outer ring (levels 20-30): Camp Taurajo's givers ─────────────────────────────────────────
+# Four givers at Camp Taurajo (content/hub.toml), one for each of the southern Hunting Grounds:
+# the Thunderhead plains around the camp, the Field of Giants, Blackthorn Ridge, and the Razorfen
+# edge, The Barrens' capstone. Each rare kept in the ring has a "Wanted" quest, and each Hunting
+# Ground has one find quest.
+
+# ── The Thunderhead Plains (levels 20-25) ────────────────────────────────────────────────────
+
 [[quest]]
 id = 91013
 kind = "hunting"
-giver = 90105
+giver = 190042
 level = 20
 title = "Thunder Lizard Horns"
-objectives = "Bring 6 Thunder Lizard Horns to Mahu Stormhoof at the Crossroads."
-details = "The thunder lizards of the south grow horns that our shamans grind for their rites. Bring me six."
-progress = "The thunder still rolls in the south."
-completion = "Six horns. The shamans will be glad. Two Tokens for you."
+objectives = "Bring 6 Thunder Lizard Horns to Kerna Plainstalker at Camp Taurajo."
+details = "The thunderheads graze all around the camp, and they charge anyone who walks too close. Our shamans grind their horns for their rites. Bring me six."
+progress = "The thunder still rolls on the plains."
+completion = "Six horns. The shamans will be glad. Your coin, and a Token."
 money = 1500
 tokens = 1
-collect = [{ item = 4895, count = 6, chance = 80, from = [3240, 3239] }]
+collect = [{ item = 4895, count = 6, chance = 80, from = [3239] }]
 
 [[quest]]
-id = 91014
+id = 91021
 kind = "hunting"
-giver = 90105
+giver = 190042
 level = 21
-title = "Thunderhawk Wings"
-objectives = "Bring 6 Thunderhawk Wings to Mahu Stormhoof at the Crossroads."
-details = "The thunderhawks dive on travellers in the southern plains. Bring me their wings."
-progress = "The thunderhawks still hunt."
-completion = "The skies are a little safer. Two Tokens, and my thanks."
+title = "Cloudscrapers"
+objectives = "Kill 5 Thunderhawk Cloudscrapers, then return to Kerna Plainstalker at Camp Taurajo."
+details = "The cloudscrapers circle over the plains east of the camp and dive on the refugee carts. Bring them down."
+progress = "I still see them circling."
+completion = "The carts come in whole today. Thank you."
 money = 1600
 tokens = 1
-collect = [{ item = 5164, count = 6, chance = 80, from = [3247, 3424, 3249] }]
+kill = [[3424, 5]]
 
-# ── Blackthorn Ridge (levels 22-24) ───────────────────────────────────────────────────────────
+[[quest]]
+id = 91022
+kind = "hunting"
+giver = 190042
+ender = 190045
+level = 21
+title = "The Plains Watch"
+objectives = "Find Scout Tomah, who watches the thunderheads south-east of Camp Taurajo."
+details = "Scout Tomah keeps watch out on the plains, past the thunderhead herds. She has seen something she does not like. Go and hear it from her."
+progress = "Kerna sent you? Keep your voice down."
+completion = "Out here you hear everything. The herds are restless, and one of them leads the rest."
+money = 1000
+tokens = 1
+
+[[quest]]
+id = 91023
+kind = "hunting"
+giver = 190045
+after = 91022
+level = 24
+title = "Wanted: Owatanka"
+objectives = "Kill Owatanka, then return to Scout Tomah."
+details = "Owatanka is the oldest thunderhead on these plains, and the herds follow him. He has trampled two of our patrols. End him."
+progress = "Owatanka still leads the herd."
+completion = "Without him the herds scatter. The plains are quieter."
+money = 2400
+tokens = 1
+kill = [[3473, 1]]
+
+[[quest]]
+id = 91024
+kind = "hunting"
+giver = 190042
+level = 25
+title = "Wanted: Azzere the Skyblade"
+objectives = "Kill Azzere the Skyblade, then return to Kerna Plainstalker at Camp Taurajo."
+details = "A great thunderhawk the scouts call Azzere hunts south of the camp. She has taken a kodo calf in front of my eyes. Bring her down."
+progress = "Azzere still rules the sky."
+completion = "Azzere's feathers. The sky is ours again."
+money = 2600
+tokens = 1
+kill = [[5834, 1]]
+
+# ── The Field of Giants (levels 22-27) ───────────────────────────────────────────────────────
 
 [[quest]]
 id = 91015
 kind = "hunting"
-giver = 90106
+giver = 190043
 level = 22
 title = "Silithid Antennae"
-objectives = "Bring 8 Twitching Antennae to Ula'zi at the Crossroads."
-details = "Da silithid be crawlin' out of da south. Cut off dere antennae and bring dem to me."
-progress = "Da bugs still be crawlin'."
-completion = "Dey still be twitchin'! Good. Two Tokens for you, mon."
+objectives = "Bring 8 Twitching Antennae to Halga Earthsong at Camp Taurajo."
+details = "The silithid dig among the giants' bones to the south. Every year their hives come closer, and this year the ground hums with them. Cut off their antennae and bring them to me."
+progress = "The ground still hums."
+completion = "They still twitch. Good. Here is your pay."
 money = 1800
 tokens = 1
 collect = [{ item = 7119, count = 8, chance = 80, from = [3250, 3251, 3252] }]
 
 [[quest]]
+id = 91025
+kind = "hunting"
+giver = 190043
+level = 22
+title = "Stormhide Herds"
+objectives = "Kill 8 Stormhides, then return to Halga Earthsong at Camp Taurajo."
+details = "The stormhides are driven north by the silithid, and they trample all in their path. Thin the herds before they reach the camp."
+progress = "The stormhides still come."
+completion = "The herds have turned back. Thank you."
+money = 1800
+tokens = 1
+kill = [[3238, 8]]
+
+[[quest]]
+id = 91014
+kind = "hunting"
+giver = 190043
+level = 23
+title = "Thunderhawk Wings"
+objectives = "Bring 6 Thunderhawk Wings to Halga Earthsong at Camp Taurajo."
+details = "The greater thunderhawks dive on travellers above the Field of Giants. Bring me their wings."
+progress = "The thunderhawks still hunt."
+completion = "The skies are a little safer. Your coin, and my thanks."
+money = 2000
+tokens = 1
+collect = [{ item = 5164, count = 6, chance = 80, from = [3249] }]
+
+[[quest]]
 id = 91016
 kind = "hunting"
-giver = 90106
+giver = 190043
 level = 23
 title = "Hecklefang Stalkers"
-objectives = "Kill 10 Hecklefang Stalkers, then return to Ula'zi at the Crossroads."
-details = "Da Hecklefang stalkers be pickin' off anyone who walk alone down south. Hunt dem."
-progress = "Da hyenas still be laughin'."
-completion = "No more laughin' from dem. Here be your pay."
+objectives = "Kill 10 Hecklefang Stalkers, then return to Halga Earthsong at Camp Taurajo."
+details = "The Hecklefang stalkers follow the herds and pick off anyone who walks alone in the Field of Giants. Hunt them."
+progress = "The hyenas still laugh."
+completion = "No more laughing from them. Here is your pay."
 money = 2000
 tokens = 1
 kill = [[4128, 10]]
 
 [[quest]]
+id = 91026
+kind = "hunting"
+giver = 190043
+level = 24
+title = "Field of Giants"
+objectives = "Explore the Field of Giants, then return to Halga Earthsong at Camp Taurajo."
+details = "Walk among the giants' bones, where the silithid hives break the ground, and tell me how close they have come."
+progress = "Have you seen the hives?"
+completion = "So close. The Earth Mother's bones should not hold such things."
+money = 1400
+tokens = 1
+explore = { place = "Field of Giants", position = [-3170.0, -1950.0], radius = 40.0 }
+
+[[quest]]
+id = 91027
+kind = "hunting"
+giver = 190043
+level = 24
+title = "Wanted: Silithid Harvester"
+objectives = "Kill the Silithid Harvester, then return to Halga Earthsong at Camp Taurajo."
+details = "One silithid is bigger than the rest, and the others feed it. Kill the harvester and the hive goes hungry."
+progress = "The harvester still feeds."
+completion = "The hive will starve a while. Well done."
+money = 2400
+tokens = 1
+kill = [[3253, 1]]
+
+[[quest]]
+id = 91028
+kind = "hunting"
+giver = 190043
+level = 24
+title = "Wanted: Thunderstomp"
+objectives = "Kill Thunderstomp, then return to Halga Earthsong at Camp Taurajo."
+details = "Thunderstomp is a thunderhead the size of a hut, south of the Field of Giants. Our hunters will not go near him. You will."
+progress = "Thunderstomp still shakes the ground."
+completion = "The ground is still at last."
+money = 2400
+tokens = 1
+kill = [[5832, 1]]
+
+[[quest]]
+id = 91029
+kind = "hunting"
+giver = 190043
+level = 25
+title = "Wanted: Washte Pawne"
+objectives = "Kill Washte Pawne, then return to Halga Earthsong at Camp Taurajo."
+details = "Washte Pawne is a great white thunderhawk that hunts the Field of Giants. Our elders call it an ill omen in these dark days. I call it a beast to be killed."
+progress = "The white hawk still flies."
+completion = "Omen or not, it is dead now."
+money = 2600
+tokens = 1
+kill = [[3472, 1]]
+
+[[quest]]
+id = 91030
+kind = "hunting"
+giver = 190043
+level = 27
+title = "Wanted: Brontus"
+objectives = "Kill Brontus, then return to Halga Earthsong at Camp Taurajo."
+details = "Brontus is an old kodo bull who wanders near the giants. He has gone mad with age and crushed a caravan. Put him to rest."
+progress = "Brontus still wanders."
+completion = "He rests with the giants now."
+money = 3000
+tokens = 1
+kill = [[5827, 1]]
+
+# ── Blackthorn Ridge (levels 21-26) ──────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91031
+kind = "hunting"
+giver = 90106
+level = 21
+title = "Razormane Pathfinders"
+objectives = "Kill 6 Razormane Pathfinders, then return to Ula'zi at Camp Taurajo."
+details = "Da Razormane pathfinders scout da way from Blackthorn Ridge to dis camp. Kill dem before dey find it."
+progress = "Da pathfinders still be scoutin'."
+completion = "Dey lost da path. Good work, mon."
+money = 1600
+tokens = 1
+kill = [[3456, 6]]
+
+[[quest]]
 id = 91017
 kind = "hunting"
 giver = 90106
-level = 24
+level = 23
 title = "Razormane Warbands"
-objectives = "Kill 6 Razormane Stalkers and 6 Razormane Seers, then return to Ula'zi at the Crossroads."
+objectives = "Kill 6 Razormane Stalkers and 6 Razormane Seers, then return to Ula'zi at Camp Taurajo."
 details = "Da Razormane be gatherin' warbands near Blackthorn Ridge. Break dem before dey march."
 progress = "Da warbands still be gatherin'."
 completion = "Dey won't be marchin' now. Your pay, mon."
 money = 2200
 tokens = 1
 kill = [[3457, 6], [3458, 6]]
+
+[[quest]]
+id = 91032
+kind = "hunting"
+giver = 90106
+level = 23
+title = "Blackthorn Ridge"
+objectives = "Explore Blackthorn Ridge, then return to Ula'zi at Camp Taurajo."
+details = "I need to know how many Razormane be on da ridge. Go look, and come back alive."
+progress = "You seen da ridge yet?"
+completion = "Dat many? Den we got work to do."
+money = 1400
+tokens = 1
+explore = { place = "Blackthorn Ridge", position = [-3880.0, -1730.0], radius = 40.0 }
+
+[[quest]]
+id = 91033
+kind = "hunting"
+giver = 90106
+level = 25
+title = "Warfrenzy"
+objectives = "Kill 8 Razormane Warfrenzies, then return to Ula'zi at Camp Taurajo."
+details = "Da warfrenzies be da Razormane's best fighters. Dey lead da raids. Kill eight."
+progress = "Da warfrenzies still be fightin'."
+completion = "Dey not so frenzied now. Here be your pay."
+money = 2600
+tokens = 1
+kill = [[3459, 8]]
+
+[[quest]]
+id = 91034
+kind = "hunting"
+giver = 90106
+level = 25
+title = "The Razormane Chiefs"
+objectives = "Kill Kuz, Nak and Lok Orcbane, then return to Ula'zi at Camp Taurajo."
+details = "Three chiefs lead da Razormane on Blackthorn Ridge: Kuz, Nak and Lok Orcbane. Kill all three, and da warbands fall apart."
+progress = "Da chiefs still be givin' orders."
+completion = "All three? Da Razormane will be fightin' each other for weeks."
+money = 2600
+tokens = 1
+kill = [[3436, 1], [3434, 1], [3435, 1]]
+
+[[quest]]
+id = 91035
+kind = "hunting"
+giver = 90106
+level = 26
+title = "Wanted: Hagg Taurenbane"
+objectives = "Kill Hagg Taurenbane, then return to Ula'zi at Camp Taurajo."
+details = "Hagg Taurenbane be da Razormane's champion. He wear tauren horns on his belt. Da braves want him dead, and so do I."
+progress = "Hagg still be wearin' dem horns."
+completion = "Da braves will sing about dis. Your pay, mon."
+money = 2800
+tokens = 1
+kill = [[5859, 1]]
+
+# ── The Razorfen Edge (levels 24-30), The Barrens' capstone ──────────────────────────────────
+
+[[quest]]
+id = 91036
+kind = "hunting"
+giver = 190044
+level = 24
+title = "Razorfen Servitors"
+objectives = "Kill 4 Razorfen Servitors, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "The Razorfen guard their thorn mounds at the far south of the Barrens. Their servitors haul and dig at its edge. Start with them."
+progress = "The servitors still dig."
+completion = "A start. The Razorfen will notice."
+money = 2200
+tokens = 1
+kill = [[6132, 4]]
+
+[[quest]]
+id = 91037
+kind = "hunting"
+giver = 190044
+level = 27
+title = "Razorfen Battleguards"
+objectives = "Kill 10 Razorfen Battleguards, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "The battleguards hold the edge of the thorns. They are the strongest quilboar in the Barrens. Break them."
+progress = "The battleguards still stand."
+completion = "You fight like a brave twice your age. Here."
+money = 3000
+tokens = 1
+kill = [[7873, 10]]
+
+[[quest]]
+id = 91038
+kind = "hunting"
+giver = 190044
+level = 28
+title = "Razorfen Thornweavers"
+objectives = "Kill 8 Razorfen Thornweavers, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "The thornweavers make the bramble walls grow. Kill them and the thorns stop spreading north."
+progress = "The thorns still spread."
+completion = "The thorns are still. Good."
+money = 3200
+tokens = 1
+kill = [[7874, 8]]
+
+[[quest]]
+id = 91039
+kind = "hunting"
+giver = 190044
+level = 29
+title = "Razorfen Kraul"
+objectives = "Explore Razorfen Kraul, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "Go to the mouth of the Kraul, where the thorns are thickest, and tell me what you find."
+progress = "What did you see at the Kraul?"
+completion = "Tracks in robes, and none of them quilboar? The Razorfen have had visitors from the south, at dusk, and they leave before dawn. I do not like it."
+money = 2400
+tokens = 1
+explore = { place = "Razorfen Kraul", position = [-4470.0, -1690.0], radius = 40.0 }
+
+[[quest]]
+id = 91040
+kind = "hunting"
+giver = 190044
+level = 30
+title = "The Edge of the Barrens"
+objectives = "Kill 8 Razorfen Battleguards and 6 Razorfen Thornweavers, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "One last push. Break the Razorfen's edge, and the south is safe for the refugees for a while."
+progress = "The edge still holds."
+completion = "You have done all the Barrens can ask of you. Look past it now: the Thousand Needles lie south, the Dustwallow east, and Stonetalon west. The Hammer's twilight reaches all of them."
+money = 3600
+tokens = 1
+kill = [[7873, 8], [7874, 6]]
 
 # ── Advancement Quests ──────────────────────────────────────────────────────────────────────────
 # Offered by the trainer of the Calling's Line (content/hub.toml) in the trainer's gossip menu,

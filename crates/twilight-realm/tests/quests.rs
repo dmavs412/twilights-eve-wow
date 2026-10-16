@@ -17,7 +17,7 @@ fn quest_givers_stand_at_the_hub_with_names_and_marks() {
     let (mut realm, _, events) = warrior_with(1, 0, &[]);
     // The Warrior trainer (5810) gives quests too: his Advancement Quests.
     // One giver per Hunting Ground, each at a gate or the watchtower of the town.
-    for entry in [GREZZ, TAMAHA, ZUNJIN, 90104, MAHU, 90106] {
+    for entry in [GREZZ, TAMAHA, ZUNJIN, 90104, MAHU] {
         let at = hub_home(giver(&events, entry));
         let d = ((at[0] - CROSSROADS[0]).powi(2) + (at[1] - CROSSROADS[1]).powi(2)).sqrt();
         assert!(d < 160.0, "giver {entry} stands {d} yd from the inn");

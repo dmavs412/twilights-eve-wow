@@ -159,10 +159,10 @@ fn every_quest_has_its_template_and_every_giver_its_name() {
 }
 
 #[test]
-fn the_quests_cover_levels_one_to_twenty_four() {
+fn the_quests_cover_levels_one_to_thirty() {
     let levels: Vec<u8> = content().quest.iter().map(|q| q.level).collect();
     assert_eq!(levels.iter().min(), Some(&2));
-    assert!(levels.iter().max().is_some_and(|&l| l >= 24));
+    assert!(levels.iter().max().is_some_and(|&l| l >= 30));
 }
 
 #[test]

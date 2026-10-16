@@ -219,21 +219,8 @@ role = "giver"
 npc_flags = 0x2
 position = [-549.0, -2645.0, 96.0]
 orientation = 3.00
-greeting = "Far to the south the thunder lizards and the thunderhawks roam, and the Bristleback press north."
+greeting = "The Bristleback press north out of the south. Past them, Camp Taurajo holds the outer plains."
 
-[[npc]]
-guid = 9100006
-entry = 90106
-name = "Ula'zi"
-subname = "Blackthorn Ridge"
-level = 30
-display_id = 1882
-faction_template = 35
-role = "giver"
-npc_flags = 0x2
-position = [-549.0, -2660.0, 95.9]
-orientation = 3.20
-greeting = "Past da gold road da silithid swarm and da Razormane gather. Only da strong come back."
 
 # The townsfolk: each says one line (`greeting`, its `npc_text` `text_id`) and offers nothing
 # else. `wander` is how many yards one walks about its spot.
@@ -635,9 +622,10 @@ greeting = "Since the sky dimmed, Naralex cries out in his sleep, and the cavern
 # (WMO at -2372, -1990) is the inn, the big hut (-2400, -1920) with its baskets is the trade hut,
 # and the signpost and brazier (-2347, -1915) mark the way in from the Gold Road.
 #
-# The quest givers (ticket #41) go at: the signpost (-2350, -1913), the windbreaks south of the
-# longhouse (-2354, -1998) and (-2339, -1990), and by hut D's kite (-2312, -1934). They need their
-# quests before they can stand here (tests/content_hub.rs), so they come with them.
+# The quest givers (ticket #41), one for each of the outer ring's Hunting Grounds, stand at the
+# signpost (-2350, -1913), the windbreaks south of the longhouse (-2354, -1998) and (-2339, -1990),
+# and by hut D's kite (-2312, -1934), each facing its ground. Ula'zi came from the Crossroads with
+# Blackthorn Ridge.
 
 # Byula (7714), Taurajo's innkeeper, lends her name; the display is a tauren woman. She stands in
 # the longhouse, facing its door; the longhouse is her rest area. `area` is Camp Taurajo.
@@ -797,3 +785,78 @@ orientation = 5.00
 wander = 3.0
 text_id = 64137
 greeting = "The braves share their meat with us. Nobody here asks who we were before."
+
+# Camp Taurajo's quest givers (ticket #41): their quests are in content/quests.toml.
+
+[[npc]]
+guid = 9100006
+entry = 90106
+name = "Ula'zi"
+subname = "Blackthorn Ridge"
+level = 30
+display_id = 1882
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-2350.0, -1913.0, 95.7]
+orientation = 3.01
+greeting = "Down south-west da Razormane gather on Blackthorn Ridge. Only da strong come back."
+
+[[npc]]
+guid = 0xF00202
+entry = 190042
+name = "Kerna Plainstalker"
+subname = "The Thunderhead Plains"
+level = 30
+display_id = 3793
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-2312.0, -1934.0, 95.8]
+orientation = 3.70
+greeting = "The thunderheads graze right up to our walls. Since the sky dimmed they charge at shadows."
+
+[[npc]]
+guid = 0xF00203
+entry = 190043
+name = "Halga Earthsong"
+subname = "The Field of Giants"
+level = 30
+display_id = 1374
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-2354.0, -1998.0, 96.4]
+orientation = 3.18
+greeting = "South lie the bones of the giants, and the silithid crawl among them. The ground hums at night."
+
+[[npc]]
+guid = 0xF00204
+entry = 190044
+name = "Mosarn Thornwatch"
+subname = "The Razorfen Edge"
+level = 30
+display_id = 3743
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-2339.0, -1990.0, 96.6]
+orientation = 3.22
+greeting = "At the far south of the Barrens the Razorfen grow their thorns. Only the hardest go there."
+
+# Out on the Thunderhead plains, south-east of the camp: she takes in "The Plains Watch" and
+# gives Owatanka's Wanted quest.
+
+[[npc]]
+guid = 0xF00205
+entry = 190045
+name = "Scout Tomah"
+subname = "The Thunderhead Plains"
+level = 30
+display_id = 2112
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-2700.0, -2150.0, 94.0]
+orientation = 6.23
+greeting = "Quiet. The herds hear everything, and so do I."
