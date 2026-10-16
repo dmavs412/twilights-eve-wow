@@ -50,6 +50,9 @@ impl Host for Caverns {
         let (a, b) = ([from[0], from[1]], [to[0], to[1]]);
         !self.walls.iter().any(|&(c, d)| crosses(a, b, c, d))
     }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
 }
 
 /// Whether segments `ab` and `cd` cross in the plane.

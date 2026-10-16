@@ -82,6 +82,10 @@ struct Save {
     /// of this Tier. Added within version 1: a save without it has finished none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     completed: Vec<u32>,
+    /// The `AreaTable.dbc` ids of the areas discovered. Added within version 2: a save without it
+    /// has discovered none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    discovered: Vec<u32>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -169,6 +173,7 @@ pub(crate) fn export(c: &Char) -> String {
             .map(|&(entry, ready)| (entry, (ready * 1000.0).round() as u64))
             .collect(),
         completed: c.quests.completed.clone(),
+        discovered: c.discovered.clone(),
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -210,6 +215,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
             .map(|&(entry, ms)| (entry, ms as f64 / 1000.0))
             .collect(),
         quests,
+        discovered: crate::areas::known(s.discovered),
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);

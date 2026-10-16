@@ -489,6 +489,9 @@ impl Host for NoGround {
     fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
         true
     }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
 }
 
 /// Moves the player to `at` (facing north) and ticks once.

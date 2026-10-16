@@ -1,7 +1,7 @@
 //! **The Local Realm** (ADR 0001): Twilight's Eve's simulated server. It owns every character and
 //! every rule, takes [`RealmCommand`]s, is ticked by its host, and answers with the protocol's
 //! [`SessionEvent`]s, the same values a real server's stream decodes to. It knows nothing of Bevy
-//! or the client: ground height and line of sight come through [`Host`].
+//! or the client: ground height, line of sight and the area under a point come through [`Host`].
 //!
 //! ```text
 //! handle(RealmCommand) ─┐
@@ -37,6 +37,7 @@
 //! - **Identity**: the `Calling` enum (`content.rs`) is the save's key; a renamed Calling keeps its
 //!   old key as a serde alias. A skill two Callings share has identical data in both.
 
+mod areas;
 pub mod callings;
 mod characters;
 mod clock;
@@ -81,6 +82,9 @@ pub trait Host {
     fn ground_height(&self, map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32>;
     /// Whether nothing solid lies between `from` and `to` on `map`.
     fn line_of_sight(&self, map: u32, from: [f32; 3], to: [f32; 3]) -> bool;
+    /// The `AreaTable.dbc` id of the subzone (or zone) under `(x, y)` on `map`, the one a
+    /// character standing there discovers; `None` where the host knows of none.
+    fn area_at(&self, map: u32, x: f32, y: f32) -> Option<u32>;
 }
 
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
@@ -558,7 +562,11 @@ impl Realm {
         w.since_save += dt;
         // Zoning saves (a hearth out of the Dungeon); the dead are saved once they release.
         let zoned = c.map != map;
-        if ticked.leveled || zoned || (w.since_save >= save::AUTOSAVE_SECS && !w.dead()) {
+        if ticked.leveled
+            || ticked.discovered
+            || zoned
+            || (w.since_save >= save::AUTOSAVE_SECS && !w.dead())
+        {
             w.since_save = 0.0;
             let guid = w.guid;
             self.save(guid);

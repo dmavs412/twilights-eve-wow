@@ -102,6 +102,11 @@ impl AreaTableCatalog {
         self.by_id.values()
     }
 
+    /// Every row with its id, unordered.
+    pub fn entries(&self) -> impl Iterator<Item = (u32, &AreaTableRow)> {
+        self.by_id.iter().map(|(&id, row)| (id, row))
+    }
+
     pub fn len(&self) -> usize {
         self.by_id.len()
     }

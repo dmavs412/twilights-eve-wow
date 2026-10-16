@@ -25,7 +25,7 @@ pub const MAGE: u8 = 8;
 pub const KALIMDOR: u32 = 1;
 pub const THE_BARRENS: u32 = 17;
 
-/// Flat ground at `z = 0` with nothing in the way.
+/// Flat ground at `z = 0` with nothing in the way, and no area anywhere: nothing to discover.
 pub struct FlatGround;
 
 impl Host for FlatGround {
@@ -34,6 +34,28 @@ impl Host for FlatGround {
     }
     fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
         true
+    }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
+}
+
+/// [`FlatGround`] with a scripted map of areas: each `(centre, radius, AreaTable id)`, the first
+/// whose circle holds a point naming it.
+pub struct Areas(pub Vec<([f32; 2], f32, u32)>);
+
+impl Host for Areas {
+    fn ground_height(&self, _map: u32, _x: f32, _y: f32, _z_hint: f32) -> Option<f32> {
+        Some(0.0)
+    }
+    fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
+        true
+    }
+    fn area_at(&self, _map: u32, x: f32, y: f32) -> Option<u32> {
+        self.0
+            .iter()
+            .find(|([cx, cy], r, _)| (x - cx).hypot(y - cy) <= *r)
+            .map(|&(_, _, id)| id)
     }
 }
 

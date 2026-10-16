@@ -26,6 +26,7 @@ use crate::space::distance;
 use crate::Host;
 
 mod death;
+mod discovery;
 mod dungeon;
 mod food;
 
@@ -63,6 +64,8 @@ const SKILL_UNARMED: u32 = 162;
 pub(crate) struct Ticked {
     /// The character gained a level: save it.
     pub(crate) leveled: bool,
+    /// The character discovered an area: save it.
+    pub(crate) discovered: bool,
 }
 
 /// The player's side of a fight.
@@ -274,6 +277,9 @@ impl InWorld {
                 .update(dt, me, self.map, host, &mut self.mobs, events);
         }
         self.hub.update(me, self.map, host, events);
+        if self.player.alive() {
+            self.discover(host, c, events, &mut ticked);
+        }
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting
@@ -609,23 +615,18 @@ impl InWorld {
         } else {
             xp::Elite::No
         };
-        let gained = if at_tier_cap(c) {
-            0
-        } else {
-            self.dev
-                .xp(at_tier_rate(c, xp::kill_xp(c.level, mob.level(), elite)))
-        };
+        let (victim, base) = (mob.guid, xp::kill_xp(c.level, mob.level(), elite));
+        let gained = self.scaled_xp(c, base);
         if gained > 0 {
             events.push(SessionEvent::XpGain(XpGain {
-                victim: mob.guid,
+                victim,
                 total: gained,
                 base: gained,
                 kill: true,
             }));
             ticked.leveled |= self.give_xp(c, gained, events);
         }
-        let dead = self.mobs[i].guid;
-        self.auras_die_with(dead, events);
+        self.auras_die_with(victim, events);
         crate::quests::credit_kill(c, entry, events);
     }
 
@@ -637,14 +638,21 @@ impl InWorld {
         base: u32,
         events: &mut Vec<SessionEvent>,
     ) -> u32 {
-        if at_tier_cap(c) {
-            return 0;
-        }
-        let gained = self.dev.xp(at_tier_rate(c, base));
+        let gained = self.scaled_xp(c, base);
         if gained > 0 {
             self.give_xp(c, gained, events);
         }
         gained
+    }
+
+    /// What an award of `base` XP pays `c`: times the Tier XP Rate, then the dev multiplier;
+    /// nothing at the Tier Cap.
+    fn scaled_xp(&self, c: &Char, base: u32) -> u32 {
+        if at_tier_cap(c) {
+            0
+        } else {
+            self.dev.xp(at_tier_rate(c, base))
+        }
     }
 
     /// Adds `amount` XP, levelling up as often as it covers (`Player::GiveXP`). Whether a level
@@ -913,6 +921,7 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     pairs.push(crate::talents::points_pair(c));
     pairs.extend(crate::equipment::inventory_pairs(c));
     pairs.extend(crate::quests::log_pairs(c));
+    pairs.extend(crate::areas::explored_pairs(&c.discovered));
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {
         pairs.push((PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, float(1.0)));

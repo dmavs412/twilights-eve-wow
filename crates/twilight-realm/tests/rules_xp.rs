@@ -61,3 +61,15 @@ fn the_level_table_is_vanillas() {
     assert_eq!(xp_to_next(60), None);
     assert_eq!(xp_to_next(0), None);
 }
+
+#[test]
+fn a_discovery_pays_an_eighth_of_the_xp_to_the_next_level() {
+    use twilight_realm::rules::xp::discovery_xp;
+    // 400, 7600 and 47400 to the next level.
+    assert_eq!(
+        [1, 10, 30].map(discovery_xp),
+        [50, 950, 5925],
+        "level 1, 10 and 30"
+    );
+    assert_eq!(discovery_xp(60), 0, "nothing past the end of the game");
+}
