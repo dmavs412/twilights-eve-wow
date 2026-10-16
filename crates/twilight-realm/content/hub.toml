@@ -1,7 +1,8 @@
-# The Hub's friendly NPCs, written by hand: they live in the Crossroads and stream in and out
-# with the player's view, as the mobs do. Each stands where a person living there would: Barg in
-# the inn (the innkeeper's place by the bar is left free), Sarna at its door, each quest giver at
-# the gate or tower that looks out on their Hunting Ground, and the townsfolk at the gates, the
+# The Hub's friendly NPCs, written by hand: they live in the Crossroads, or out in a Hunting
+# Ground for a quest to find them, and stream in and out with the player's view, as the mobs
+# do. Each in the town stands where a person living there would: Barg in the inn (the
+# innkeeper's place by the bar is left free), Sarna at its door, each quest giver at the gate
+# or tower that looks out on their Hunting Ground, and the townsfolk at the gates, the
 # watchtower, the inn, the empty flight tower, the well and about the town. The positions were
 # read off the ADT's doodads and checked in the client with `WOW_PROBE_GOTO`.
 #
@@ -494,3 +495,20 @@ orientation = 2.00
 wander = 3.0
 text_id = 64121
 greeting = "Boss says keep the catapults loaded. Me not ask why."
+
+# The people found out in the Hunting Grounds: each takes in a quest that sends the player to
+# find them (its `ender`, content/quests.toml), and may give the next.
+
+[[npc]]
+guid = 0xF00020
+entry = 190020
+name = "Outrider Kezra"
+subname = "The Kolkar Lands"
+level = 30
+display_id = 1312
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-1000.0, -2400.0, 92.0]
+orientation = 3.14
+greeting = "Keep low. The Kolkar have sharp eyes, and sharper spears."

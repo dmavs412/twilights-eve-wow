@@ -19,6 +19,15 @@
 # `[creature entry, count]`, and `collect` rows of an `item` (content/quest_items.toml), its
 # `count`, and the creatures it drops `from` at `chance` percent while the quest wants more.
 # At most four of each.
+#
+# A "find" quest sends the player to a place or a person:
+# - `explore`: a spot the player walks into, `{ place, position = [x, y], radius }` on Kalimdor
+#   (WoW coordinates, yards). It is met on entering, and the log shows "<place> explored".
+# - `ender`: the Hub NPC (content/hub.toml) who takes the quest in, when it is not the giver: a
+#   person found out in a Hunting Ground. A quest with no other objective is met on accepting,
+#   and finding them is the task.
+# - `after`: a quest offered only once that quest is handed in. When its giver is that quest's
+#   ender, it is the next in the chain: its accept panel opens as the other is handed in.
 
 # ── The Near Plains (levels 1-3) ──────────────────────────────────────────────────────────────
 
@@ -138,6 +147,20 @@ money = 500
 tokens = 1
 collect = [{ item = 5087, count = 8, chance = 70, from = [3244, 3246] }]
 
+[[quest]]
+id = 91018
+kind = "hunting"
+giver = 90103
+level = 11
+title = "Scouting Thorn Hill"
+objectives = "Scout Thorn Hill, then return to Zun'jin at the Crossroads."
+details = "Da Razormane be diggin' in on Thorn Hill, east of here along da road. Go see how many, and come back. Don't stay to fight, mon."
+progress = "You seen Thorn Hill yet?"
+completion = "Dat many? Dey be gettin' bold while da world looks south. Here, for da walk."
+money = 300
+tokens = 1
+explore = { place = "Thorn Hill", position = [-200.0, -3325.0], radius = 30.0 }
+
 # ── The Kolkar Lands (levels 14-16) ───────────────────────────────────────────────────────────
 
 [[quest]]
@@ -181,6 +204,35 @@ completion = "Talons, all eight. Good. Here is your pay, and a Token."
 money = 900
 tokens = 1
 collect = [{ item = 5064, count = 8, chance = 70, from = [3276, 3277, 3278, 3279, 3280] }]
+
+[[quest]]
+id = 91019
+kind = "hunting"
+giver = 90104
+ender = 190020
+level = 14
+title = "The Kolkar Watch"
+objectives = "Find Outrider Kezra, who watches the Kolkar south-west of the Crossroads."
+details = "My outrider Kezra rides the plains south-west of here, keeping an eye on the Kolkar. She has not reported in. Find her, and see what she needs."
+progress = "Garosh sent you? Good."
+completion = "Still breathing, as you see. The Kolkar are restless: every caravan fleeing the south passes their camps, and they know it."
+money = 500
+tokens = 1
+
+[[quest]]
+id = 91020
+kind = "hunting"
+giver = 190020
+after = 91019
+level = 15
+title = "Kolkar Pack Runners"
+objectives = "Kill 6 Kolkar Pack Runners, then return to Outrider Kezra."
+details = "The Kolkar pack runners carry word between their camps, south of here. Cut them down and the raids lose their eyes."
+progress = "The runners still ride."
+completion = "Their camps are blind for a while. Well done."
+money = 600
+tokens = 1
+kill = [[3274, 6]]
 
 # ── The Southern Barrens (levels 18-21) ───────────────────────────────────────────────────────
 
