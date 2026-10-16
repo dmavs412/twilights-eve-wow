@@ -754,9 +754,9 @@ fn at_fifty_templars_quest_is_offered_but_cannot_be_finished() {
 
 /// The Tier 1 trainers beside Uzzek, each with their line's Advancement Quest, which cannot be
 /// finished: those Callings have no kit yet.
-const CUTTHROAT_TRAINER: u32 = 190020;
-const INITIATE_TRAINER: u32 = 190021;
-const WITCH_HUNTER_TRAINER: u32 = 190022;
+const CUTTHROAT_TRAINER: u32 = 190030;
+const INITIATE_TRAINER: u32 = 190031;
+const WITCH_HUNTER_TRAINER: u32 = 190032;
 const THE_CUTTHROATS_MARK: u32 = 64005;
 const THE_INITIATES_SPARK: u32 = 64006;
 const THE_WITCH_HUNTERS_CREED: u32 = 64007;

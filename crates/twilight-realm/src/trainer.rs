@@ -36,7 +36,7 @@ pub(crate) fn options(npc: &Npc) -> Vec<GossipOption> {
 impl crate::Realm {
     /// `CMSG_GOSSIP_SELECT_OPTION`: the unlearn line closes the menu and, when there is something
     /// to unlearn, names the price.
-    pub(crate) fn gossip_select(&mut self, guid: u64, option: u32) {
+    pub(crate) fn trainer_select(&mut self, guid: u64, option: u32) {
         let Some(npc) = trainer(guid).filter(|npc| self.near(npc)) else {
             return;
         };

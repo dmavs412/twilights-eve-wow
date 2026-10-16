@@ -22,6 +22,12 @@ pub fn xp_to_next(level: u8) -> Option<u32> {
         .copied()
 }
 
+/// What discovering an area pays a character of `level` before the Tier XP Rate: an eighth of the
+/// XP to the next level; nothing at the end of the game.
+pub fn discovery_xp(level: u8) -> u32 {
+    xp_to_next(level).map_or(0, |next| next / 8)
+}
+
 /// The Tier XP Rate (`GLOSSARY.md`): what every XP award a character of `tier` earns is
 /// multiplied by, before the dev multiplier. ×1 at Tier 0, ×3 at Tier 1, ×5 at Tier 2, ×7 at
 /// Tier 3.

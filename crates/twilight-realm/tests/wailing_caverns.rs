@@ -50,6 +50,9 @@ impl Host for Caverns {
         let (a, b) = ([from[0], from[1]], [to[0], to[1]]);
         !self.walls.iter().any(|&(c, d)| crosses(a, b, c, d))
     }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
 }
 
 /// Whether segments `ab` and `cd` cross in the plane.
@@ -135,9 +138,12 @@ impl Script {
 
 /// `blob` with the character standing at `at` on Kalimdor.
 fn place(blob: &str, at: [f32; 3]) -> String {
+    // The character's own keys come before any table, such as the bind point's.
+    let mut top = true;
     blob.lines()
         .map(|l| {
-            if l.starts_with("position = ") {
+            top &= !l.starts_with('[');
+            if top && l.starts_with("position = ") {
                 format!("position = [{}, {}, {}]", at[0], at[1], at[2])
             } else {
                 l.to_string()

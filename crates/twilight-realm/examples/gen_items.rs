@@ -57,7 +57,8 @@ fn main() {
          # for the lists, 0 for the rest. `stats` are `[stat id, value]` (3 agility, 4 strength,\n\
          # 5 intellect, 6 spirit, 7 stamina). `resistances` are holy, fire, nature, frost, shadow,\n\
          # arcane. `damage` is `[min, max, school]`. `equip_spells` are the tooltip's \"Equip:\"\n\
-         # spells; `attack_power` and `defense` are what the realm applies of them. `pool_level` is\n\
+         # spells, `equip_spell_names` their `Spell.dbc` names (tests/content_spell_ids.rs);\n\
+         # `attack_power` and `defense` are what the realm applies of them. `pool_level` is\n\
          # the loot level the item drops at.\n\n\
          item = [\n",
     );
@@ -148,10 +149,12 @@ fn row(item: &Value) -> String {
     if !damage.is_empty() {
         parts.push(format!("damage = [{}]", damage.join(", ")));
     }
-    let (mut spells, mut attack_power, mut defense) = (Vec::new(), 0, 0);
+    let (mut spells, mut spell_names) = (Vec::new(), Vec::new());
+    let (mut attack_power, mut defense) = (0, 0);
     for e in item["effects"].as_array().unwrap() {
         assert_eq!(e["trigger"], "equip");
         spells.push(e["spell"].to_string());
+        spell_names.push(toml_string(e["name"].as_str().unwrap()));
         for m in e["mods"].as_array().unwrap() {
             match (m["stat"].as_str().unwrap(), m["skill"].as_i64()) {
                 ("attack_power", _) => attack_power += m["value"].as_i64().unwrap(),
@@ -162,6 +165,7 @@ fn row(item: &Value) -> String {
     }
     if !spells.is_empty() {
         parts.push(format!("equip_spells = [{}]", spells.join(", ")));
+        parts.push(format!("equip_spell_names = [{}]", spell_names.join(", ")));
     }
     if attack_power != 0 {
         parts.push(format!("attack_power = {attack_power}"));

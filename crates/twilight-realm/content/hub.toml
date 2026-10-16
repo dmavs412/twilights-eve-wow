@@ -1,16 +1,18 @@
-# The Hub's friendly NPCs, written by hand: they live in the Crossroads and stream in and out
-# with the player's view, as the mobs do. Each stands where a person living there would: Barg in
-# the inn (the innkeeper's place by the bar is left free), Sarna at its door, each quest giver at
-# the gate or tower that looks out on their Hunting Ground, the four Tier 1 trainers in the
-# training yard, and the townsfolk at the gates, the
+# The Hub's friendly NPCs, written by hand: they live in the Crossroads, or out in a Hunting
+# Ground for a quest to find them, and stream in and out with the player's view, as the mobs
+# do. Each in the town stands where a person living there would: Barg in the inn, the innkeeper
+# by the bar barrels, Sarna at its door, each quest giver at the gate or tower that looks out on
+# their Hunting Ground, the four Tier 1 trainers in the training yard, and the townsfolk at the
+# gates, the
 # watchtower, the inn, the empty flight tower, the well and about the town. The positions were
 # read off the ADT's doodads and checked in the client with `WOW_PROBE_GOTO`.
 #
 # `guid` is the spawn's low guid, kept clear of the imported spawns' (0xF00000 up). `entry` is a
 # creature entry of our own, outside 1.12's range, unless a real creature lends its name.
-# `role` is what it is in the town (goods, tokens, trainer, giver, ambient), which its flags must
-# fit (tests/content_hub.rs). `respec` marks the one trainer who sells the talent respec.
-# `npc_flags` are `UNIT_NPC_FLAG_*` (0x1 gossip, 0x2 quest giver, 0x4 vendor, 0x10 trainer, 0x4000 repair),
+# `role` is what it is in the town (goods, innkeeper, tokens, trainer, giver, ambient), which its
+# flags must fit (tests/content_hub.rs). `respec` marks the one trainer who sells the talent
+# respec. `npc_flags` are `UNIT_NPC_FLAG_*` (0x1 gossip, 0x2 quest giver, 0x4 vendor, 0x10
+# trainer, 0x80 innkeeper, 0x4000 repair),
 # which pick the stock window a right-click opens. `faction_template` 35 is friendly to every race.
 # `display_id` is a real 1.12 Horde NPC model (`CreatureDisplayInfo.dbc` with a
 # `CreatureDisplayInfoExtra` row). `position` is WoW `[x, y, z]` on Kalimdor, z the ADT terrain's
@@ -30,6 +32,27 @@ role = "goods"
 npc_flags = 0x4004
 position = [-411.0, -2639.0, 96.0]
 orientation = 4.71
+stock = [4496]
+
+# The innkeeper: Innkeeper Boorand Plainswind, creature 3934, the Crossroads' own, lends his name;
+# the display is a tauren man. 0x85 is gossip, vendor and innkeeper: his gossip binds the
+# Hearthstone (src/inn.rs) and opens his merchant window. `area` is the `AreaTable` id the bind
+# names, The Crossroads. He stands by the bar barrels, facing the hall.
+[[npc]]
+guid = 0xF00003
+entry = 3934
+name = "Innkeeper Boorand Plainswind"
+subname = "Innkeeper"
+level = 30
+display_id = 2085
+faction_template = 35
+role = "innkeeper"
+npc_flags = 0x85
+position = [-407.0, -2645.0, 96.0]
+orientation = 3.24
+area = 380
+text_id = 64015
+greeting = "Rest your feet, $C. Every bed is taken by folk running from the south, and the ones from Silithus swear the Twilight's Hammer marches there in the open. Here, at least, the stew is hot."
 # The four tiers of drink, then of food: 1, 5, 15 and 25.
 stock = [159, 1179, 1205, 1708, 117, 4536, 4540, 2287, 4537, 4541, 3770, 4538, 4542, 3771, 4539, 4544]
 
@@ -60,7 +83,7 @@ greeting = "I train the Vanguard, $C: warriors who fight on rage, in plate, at t
 # The Cutthroat trainer, the energy line: Shenthul's troll rogue model (display 4360).
 [[npc]]
 guid = 0xF00011
-entry = 190020
+entry = 190030
 name = "Zan'jash"
 subname = "Cutthroat Trainer"
 level = 40
@@ -70,13 +93,13 @@ role = "trainer"
 npc_flags = 0x13
 position = [-440.2, -2685.4, 96.5]
 orientation = 5.13
-text_id = 64015
+text_id = 64016
 greeting = "Cutthroats don't wait for rage, $C. We fight on energy: quick feet, a knife in da dark, and gone before da body fall."
 
 # The Initiate trainer, the mana caster line: Deino's robed troll mage model (display 4523).
 [[npc]]
 guid = 0xF00012
-entry = 190021
+entry = 190031
 name = "Jin'thaka"
 subname = "Initiate Trainer"
 level = 40
@@ -86,14 +109,14 @@ role = "trainer"
 npc_flags = 0x13
 position = [-433.8, -2682.6, 96.5]
 orientation = 5.13
-text_id = 64016
+text_id = 64017
 greeting = "I teach the Initiates, $C: those who trade rage for mana, and the blade for fire and frost cast from afar."
 
 # The Witch Hunter trainer, a melee Hunter on mana with Enhancement Shaman in it: Holt
 # Thunderhorn's tauren hunter model (display 2087).
 [[npc]]
 guid = 0xF00013
-entry = 190022
+entry = 190032
 name = "Hakan Mistwalker"
 subname = "Witch Hunter Trainer"
 level = 40
@@ -103,7 +126,7 @@ role = "trainer"
 npc_flags = 0x13
 position = [-430.6, -2681.1, 96.5]
 orientation = 5.13
-text_id = 64017
+text_id = 64018
 greeting = "The Witch Hunters fight on mana, $C, and up close: a hunter's blade, the storm in our weapons, and the spirits at our backs."
 
 # The Token vendor: the greens of the buyer's level band (content/token_vendor.toml), priced in
@@ -550,3 +573,20 @@ orientation = 2.00
 wander = 3.0
 text_id = 64121
 greeting = "Boss says keep the catapults loaded. Me not ask why."
+
+# The people found out in the Hunting Grounds: each takes in a quest that sends the player to
+# find them (its `ender`, content/quests.toml), and may give the next.
+
+[[npc]]
+guid = 0xF00020
+entry = 190020
+name = "Outrider Kezra"
+subname = "The Kolkar Lands"
+level = 30
+display_id = 1312
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-1000.0, -2400.0, 92.0]
+orientation = 4.10
+greeting = "Keep low. The Kolkar have sharp eyes, and sharper spears."

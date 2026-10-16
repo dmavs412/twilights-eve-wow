@@ -25,6 +25,8 @@ struct Npc {
     wander: f32,
     #[serde(default)]
     respec: bool,
+    /// The `AreaTable` id an innkeeper binds to.
+    area: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -56,6 +58,7 @@ const GOSSIP: u32 = 0x1;
 const QUEST_GIVER: u32 = 0x2;
 const VENDOR: u32 = 0x4;
 const TRAINER: u32 = 0x10;
+const INNKEEPER: u32 = 0x80;
 const REPAIR: u32 = 0x4000;
 
 fn hub() -> Vec<Npc> {
@@ -93,6 +96,14 @@ fn every_npcs_flags_fit_its_role() {
         let talks = n.text_id.is_some() && !n.greeting.is_empty();
         let ok = match n.role.as_str() {
             "goods" => n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty() && !n.tokens,
+            "innkeeper" => {
+                n.npc_flags == GOSSIP | VENDOR | INNKEEPER
+                    && talks
+                    && !gives
+                    && !n.stock.is_empty()
+                    && !n.tokens
+                    && n.area.is_some()
+            }
             "tokens" => n.npc_flags == VENDOR && n.tokens && n.stock.is_empty(),
             "trainer" => n.npc_flags == GOSSIP | QUEST_GIVER | TRAINER && talks,
             "giver" => n.npc_flags == QUEST_GIVER && gives && !n.greeting.is_empty(),
@@ -107,6 +118,11 @@ fn every_npcs_flags_fit_its_role() {
             other => panic!("{}: no role {other:?}", n.name),
         };
         assert!(ok, "{} ({}): flags {:#x}", n.name, n.role, n.npc_flags);
+        assert!(
+            n.area.is_none() || n.role == "innkeeper",
+            "{}: only an innkeeper binds",
+            n.name
+        );
         // Only the townsfolk walk about, and only a few yards.
         assert!(
             n.wander == 0.0 || (n.role == "ambient" && n.wander <= 6.0),

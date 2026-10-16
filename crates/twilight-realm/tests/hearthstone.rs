@@ -1,5 +1,7 @@
 //! The Hearthstone: every character carries one, and using it casts the stock hearth spell, which
-//! brings the player back to the Crossroads and then rests for five minutes.
+//! brings the player back to their bind point and then rests for five minutes. The innkeeper
+//! binds it through the stock binder gossip and confirm; a character starts bound to the
+//! Crossroads inn.
 
 mod common;
 mod gear_common;
@@ -418,4 +420,190 @@ fn a_rested_stone_sends_no_cooldown_at_login() {
         _ => None,
     });
     assert_eq!(cooldowns, Some(Vec::new()));
+}
+
+/// Innkeeper Boorand Plainswind, in the Crossroads inn.
+const INNKEEPER: u32 = 3934;
+/// `AreaTable.dbc`'s The Crossroads.
+const THE_CROSSROADS: u32 = 380;
+/// The gossip line's text and its icon (`GOSSIP_ICON_INTERACT_2`, the binder's).
+const BIND_LINE: &str = "Make this inn your home.";
+const ICON_BINDER: u8 = 5;
+
+/// The bind line in the innkeeper's gossip menu: its index and icon.
+fn bind_line(events: &[SessionEvent], innkeeper: u64) -> Option<(u32, u8)> {
+    events.iter().find_map(|e| match e {
+        SessionEvent::GossipMenu { npc, options, .. } if *npc == innkeeper => options
+            .iter()
+            .find(|o| o.message == BIND_LINE)
+            .map(|o| (o.index, o.icon)),
+        _ => None,
+    })
+}
+
+/// Walks up to the innkeeper and picks the bind line, as the stock gossip frame does: the
+/// events from the pick on.
+fn ask_to_bind(realm: &mut Realm, innkeeper: u64) -> Vec<SessionEvent> {
+    walk_up_to(realm, innkeeper);
+    realm.handle(RealmCommand::GossipHello { guid: innkeeper });
+    let (option, _) = bind_line(&drain(realm), innkeeper).expect("the bind line");
+    realm.handle(RealmCommand::GossipSelectOption {
+        guid: innkeeper,
+        option,
+    });
+    drain(realm)
+}
+
+/// Binds at the innkeeper, accepting the confirm: where the player stood, and the events.
+fn bind(realm: &mut Realm) -> (([f32; 3], f32), Vec<SessionEvent>) {
+    let innkeeper = hub_guid(INNKEEPER);
+    ask_to_bind(realm, innkeeper);
+    realm.handle(RealmCommand::BinderActivate { binder: innkeeper });
+    let [x, y, _] = hub_home(innkeeper);
+    // Where `walk_up_to` stands the player.
+    (([x + 1.5, y, 0.0], std::f32::consts::PI), drain(realm))
+}
+
+fn bound(events: &[SessionEvent]) -> Option<(u64, u32)> {
+    events.iter().find_map(|e| match e {
+        SessionEvent::PlayerBound { binder, area } => Some((*binder, *area)),
+        _ => None,
+    })
+}
+
+fn bind_point(events: &[SessionEvent]) -> Option<u32> {
+    events.iter().find_map(|e| match e {
+        SessionEvent::BindPoint { area } => Some(*area),
+        _ => None,
+    })
+}
+
+/// Walks far off, hearths and waits out the cast: where the teleport put the player.
+fn hearth_home(realm: &mut Realm) -> ([f32; 3], f32) {
+    realm.handle(RealmCommand::Move {
+        position: FAR_AWAY,
+        orientation: 0.0,
+    });
+    realm.tick(0.1, &FlatGround);
+    drain(realm);
+    realm.handle(use_hearthstone());
+    teleport(&run(realm, 10.1)).expect("a teleport")
+}
+
+#[test]
+fn a_login_names_the_bind_point_the_crossroads_inn() {
+    let mut realm = realm();
+    let (_, events) = enter_new(&mut realm, "Thrall", ORC);
+    assert_eq!(bind_point(&events), Some(THE_CROSSROADS));
+}
+
+#[test]
+fn the_innkeepers_bind_line_asks_with_the_stock_confirm_and_binds_nothing_yet() {
+    let mut realm = realm();
+    enter_new(&mut realm, "Thrall", ORC);
+    let innkeeper = hub_guid(INNKEEPER);
+    walk_up_to(&mut realm, innkeeper);
+    realm.handle(RealmCommand::GossipHello { guid: innkeeper });
+    let (_, icon) = bind_line(&drain(&mut realm), innkeeper).expect("the bind line");
+    assert_eq!(icon, ICON_BINDER);
+
+    let events = ask_to_bind(&mut realm, innkeeper);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::GossipComplete)));
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::BinderConfirm { binder } if *binder == innkeeper)));
+    assert_eq!(bound(&events), None, "only asked");
+}
+
+#[test]
+fn confirming_binds_with_the_stock_messages() {
+    let mut realm = realm();
+    enter_new(&mut realm, "Thrall", ORC);
+    let (_, events) = bind(&mut realm);
+    assert_eq!(bind_point(&events), Some(THE_CROSSROADS));
+    assert_eq!(bound(&events), Some((hub_guid(INNKEEPER), THE_CROSSROADS)));
+}
+
+#[test]
+fn the_hearthstone_takes_the_player_to_where_they_bound() {
+    let mut realm = realm();
+    enter_new(&mut realm, "Thrall", ORC);
+    let (home, _) = bind(&mut realm);
+    assert!(!at_crossroads(home.0), "a spot of its own");
+    assert_eq!(hearth_home(&mut realm), home);
+}
+
+#[test]
+fn an_innkeeper_out_of_reach_binds_nothing() {
+    let mut realm = realm();
+    enter_new(&mut realm, "Thrall", ORC);
+    let innkeeper = hub_guid(INNKEEPER);
+    ask_to_bind(&mut realm, innkeeper);
+    realm.handle(RealmCommand::Move {
+        position: FAR_AWAY,
+        orientation: 0.0,
+    });
+    realm.handle(RealmCommand::BinderActivate { binder: innkeeper });
+    assert_eq!(bound(&drain(&mut realm)), None);
+    let (position, _) = hearth_home(&mut realm);
+    assert!(at_crossroads(position), "{position:?}");
+}
+
+#[test]
+fn only_an_innkeeper_binds() {
+    let mut realm = realm();
+    enter_new(&mut realm, "Thrall", ORC);
+    let barg = hub_guid(190001);
+    walk_up_to(&mut realm, barg);
+    realm.handle(RealmCommand::BinderActivate { binder: barg });
+    assert_eq!(bound(&drain(&mut realm)), None);
+}
+
+#[test]
+fn the_bind_survives_a_save_and_reload() {
+    let mut realm = realm();
+    let (me, _) = enter_new(&mut realm, "Thrall", ORC);
+    let (home, _) = bind(&mut realm);
+    realm.handle(RealmCommand::Logout);
+    let blob = realm.export_character(me).unwrap();
+
+    let (mut back, events) = log_in_at(0, me, &blob);
+    assert_eq!(bind_point(&events), Some(THE_CROSSROADS));
+    assert_eq!(hearth_home(&mut back), home);
+}
+
+#[test]
+fn a_save_without_a_bind_loads_bound_to_the_crossroads_inn() {
+    let mut realm = realm();
+    let (me, _) = enter_new(&mut realm, "Thrall", ORC);
+    bind(&mut realm);
+    realm.handle(RealmCommand::Logout);
+    let blob = realm.export_character(me).unwrap();
+    let old = without_table(&blob, "bind");
+    assert_ne!(old, blob, "the save carries its bind");
+
+    let (mut back, events) = log_in_at(0, me, &old);
+    assert_eq!(bind_point(&events), Some(THE_CROSSROADS));
+    let (position, orientation) = hearth_home(&mut back);
+    assert!(at_crossroads(position), "{position:?}");
+    assert_eq!(orientation, CROSSROADS[3]);
+}
+
+/// `blob` without its `[name]` table.
+fn without_table(blob: &str, name: &str) -> String {
+    let header = format!("[{name}]");
+    let mut out = String::new();
+    let mut skipping = false;
+    for line in blob.lines() {
+        if line.starts_with('[') {
+            skipping = line == header;
+        }
+        if !skipping {
+            out.push_str(line);
+            out.push('\n');
+        }
+    }
+    out
 }
