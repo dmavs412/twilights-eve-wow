@@ -463,9 +463,9 @@ talents = [[157, 3]]
     let log_before = quest_log(&events, me);
     assert_eq!(log_before, [(1, THINNING_THE_HERDS, [1, 2, 0, 0], 0)]);
 
-    realm.handle(RealmCommand::TalentWipeConfirm {
-        trainer: trainer(&events),
-    });
+    let uzzek = trainer(&events);
+    walk_up_to(&mut realm, uzzek);
+    realm.handle(RealmCommand::TalentWipeConfirm { trainer: uzzek });
     events.extend(drain(&mut realm));
     assert_eq!(
         descriptor(&events, me).player_money(),
