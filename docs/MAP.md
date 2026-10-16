@@ -57,6 +57,7 @@
 - ProbeChatPlugin
 - ProbeLuaPlugin
 - ProbeInteractPlugin
+- ProbeGotoPlugin
 - ProbeDragPlugin
 - ProbeHoverPlugin
 - ProbeKeyPlugin
@@ -426,6 +427,7 @@
 - `WOW_PROBE_EXIT_AT` — benilla-app/src/capture/probes/run.rs, benilla-app/src/dev.rs
 - `WOW_PROBE_GMTICKET` — benilla-app/src/dev.rs
 - `WOW_PROBE_GOQUEST` — benilla-app/src/capture/probe_goquest.rs, benilla-app/src/dev.rs
+- `WOW_PROBE_GOTO` — benilla-app/src/capture/probes/goto.rs, benilla-app/src/dev.rs
 - `WOW_PROBE_HOVER` — benilla-app/src/capture/probes/act.rs, benilla-app/src/dev.rs
 - `WOW_PROBE_HOVER_AT` — benilla-app/src/capture/probes/act.rs
 - `WOW_PROBE_HOVER_DUTY` — benilla-app/src/capture/probes/act.rs
