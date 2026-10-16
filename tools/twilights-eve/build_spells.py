@@ -321,6 +321,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"build_spells: {error}", file=sys.stderr)
         return 1
 
+    carried = [(f"{row['calling']}/{row['key']}", row["assumptions"]) for row in rows if row["assumptions"]]
+    print(f"{len(carried)} rows carry assumptions:")
+    for who, text in carried:
+        print(f"  {who}: {text}")
     for name, data in (("server_spells.json", server), ("client_dbc_patch.json", patch)):
         with open(os.path.join(args.out_dir, name), "w", encoding="utf-8", newline="\n") as f:
             json.dump(data, f, indent=1, ensure_ascii=False)

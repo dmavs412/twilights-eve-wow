@@ -180,6 +180,19 @@ class BuildSpells(unittest.TestCase):
         self.assertIn("needs --data", done.stderr)
         self.assertFalse(os.path.exists(os.path.join(tmp, "server_spells.json")))
 
+    def test_build_prints_rows_that_carry_assumptions(self):
+        guessed = {**STRIKE, "key": "guess", "spell_id": "79", "assumptions": "damage is a placeholder"}
+        done, _ = self.run_build([STRIKE, guessed])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("vanguard/guess", done.stdout)
+        self.assertIn("damage is a placeholder", done.stdout)
+        self.assertNotIn("vanguard/strike", done.stdout)
+
+    def test_assumptions_never_reach_the_outputs(self):
+        done, data = self.run_build([{**STRIKE, "assumptions": "secret guess"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("secret guess", json.dumps(data) + json.dumps(self.patch))
+
     def test_duplicate_rank_fails(self):
         self.assert_fails([STRIKE, STRIKE], "duplicate")
 
