@@ -269,7 +269,7 @@ impl InWorld {
             self.population
                 .update(dt, me, self.map, host, &mut self.mobs, events);
         }
-        self.hub.update(me, self.map, host, events);
+        self.hub.update(dt, me, self.map, host, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting

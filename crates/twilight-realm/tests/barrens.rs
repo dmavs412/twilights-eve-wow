@@ -154,7 +154,8 @@ fn the_way_from_the_crossroads_to_a_low_camp_passes_no_red_mob() {
                 orientation: 0.0,
             });
             see(&mut world, &run(&mut realm, 1.0));
-            for u in world.values().filter(|u| u.level >= red) {
+            // The Hub's townsfolk (`FactionTemplate.dbc` 35) are friendly to every race.
+            for u in world.values().filter(|u| u.level >= red && u.faction != 35) {
                 let d = distance2(u.position, at);
                 assert!(
                     d >= ROUTE_CLEAR_YD,

@@ -16,14 +16,11 @@ use twilight_realm::CROSSROADS;
 fn quest_givers_stand_at_the_hub_with_names_and_marks() {
     let (mut realm, _, events) = warrior_with(1, 0, &[]);
     // The Warrior trainer (5810) gives quests too: his Advancement Quests.
-    let all: Vec<_> = givers(&events)
-        .into_iter()
-        .filter(|g| g.1 != 5810)
-        .collect();
-    assert_eq!(all.len(), 6, "one giver per Hunting Ground");
-    for &(_, _, at) in &all {
+    // One giver per Hunting Ground, each at a gate or the watchtower of the town.
+    for entry in [GREZZ, TAMAHA, ZUNJIN, 90104, MAHU, 90106] {
+        let at = hub_home(giver(&events, entry));
         let d = ((at[0] - CROSSROADS[0]).powi(2) + (at[1] - CROSSROADS[1]).powi(2)).sqrt();
-        assert!(d < 15.0, "a giver stands {d} yd from the Hub");
+        assert!(d < 160.0, "giver {entry} stands {d} yd from the inn");
     }
 
     realm.handle(RealmCommand::CreatureQuery { entry: GREZZ });
@@ -48,6 +45,7 @@ fn quest_givers_stand_at_the_hub_with_names_and_marks() {
 fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
     let (mut realm, me, mut events) = warrior_with(1, 0, &[]);
     let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
 
     // Two quests on offer: the greeting list, both under "Available".
     let greeting = talk(&mut realm, grezz)
@@ -123,12 +121,19 @@ fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
 fn a_giver_far_away_does_not_talk() {
     let (mut realm, _, events) = warrior_with(1, 0, &[]);
     let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
+    let [x, y, _] = hub_home(grezz);
     realm.handle(RealmCommand::Move {
-        position: [CROSSROADS[0] + 40.0, CROSSROADS[1], 0.0],
+        position: [x + 40.0, y, 0.0],
         orientation: 0.0,
     });
-    assert!(talk(&mut realm, grezz).is_empty());
-    assert!(accept(&mut realm, grezz, THINNING_THE_HERDS).is_empty());
+    realm.handle(RealmCommand::QuestGiverHello { npc: grezz });
+    assert!(drain(&mut realm).is_empty());
+    realm.handle(RealmCommand::QuestGiverAcceptQuest {
+        npc: grezz,
+        quest: THINNING_THE_HERDS,
+    });
+    assert!(drain(&mut realm).is_empty());
 }
 
 /// The Vile Familiar in front of the inn: the first unit to stream in.
@@ -139,6 +144,7 @@ fn a_kill_counts_toward_the_quest_and_the_last_one_completes_it() {
     // Four familiars down, one to go.
     let (mut realm, me, mut events) = questing(5, &[], 0, &[(THE_FAMILIAR_THREAT, [4, 0, 0, 0])]);
     let tamaha = giver(&events, TAMAHA);
+    walk_up_to(&mut realm, tamaha);
     // Her other quests' yellow `!` shows until this one is done.
     assert_eq!(status(&mut realm, tamaha), dialog_status::AVAILABLE);
     let mob = the_mob(&events);
@@ -185,6 +191,7 @@ fn levels(events: &[SessionEvent]) -> Vec<u32> {
 fn a_quest_handed_in_at_its_own_level_is_worth_a_level_and_can_be_taken_again() {
     let (mut realm, me, mut events) = questing(4, &[], 0, &[(THE_FAMILIAR_THREAT, [5, 0, 0, 0])]);
     let tamaha = giver(&events, TAMAHA);
+    walk_up_to(&mut realm, tamaha);
 
     // A finished kill quest skips the progress panel: its reward panel opens.
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
@@ -230,6 +237,7 @@ fn a_quest_handed_in_at_its_own_level_is_worth_a_level_and_can_be_taken_again() 
 fn an_unfinished_quest_shows_its_progress_and_cannot_be_handed_in() {
     let (mut realm, _, events) = questing(4, &[], 0, &[(THE_FAMILIAR_THREAT, [2, 0, 0, 0])]);
     let tamaha = giver(&events, TAMAHA);
+    walk_up_to(&mut realm, tamaha);
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
         npc: tamaha,
         quest: THE_FAMILIAR_THREAT,
@@ -252,6 +260,7 @@ fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
     let (mut realm, me, mut events) =
         questing_as("vanguard", 15, skins, 2, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     assert_eq!(quest_log(&events, me)[0].3, 1, "complete from the bags");
 
     // The progress panel asks for the skins and may go on; the reward panel shows the Token.
@@ -322,6 +331,7 @@ fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
     items.push((38, 4560, 1));
     let (mut realm, me, mut events) = questing(15, &items, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
     assert!(completed(&turned_in).is_none());
     assert!(turned_in
@@ -347,6 +357,7 @@ fn outlevelling_a_quest_shrinks_its_xp() {
     let (mut realm, _, events) =
         questing_as("vanguard", 16, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     let done = completed(&hand_in(&mut realm, zunjin, CROCOLISK_SKINS)).unwrap();
     assert_eq!(done.xp, 12800);
 }

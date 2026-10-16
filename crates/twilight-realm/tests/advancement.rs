@@ -48,6 +48,7 @@ fn xp_past_the_tier_cap_is_not_banked() {
     let (mut realm, me, mut events) =
         questing_with(xp_times(3.0), 9, EIGHT_SKINS, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     events.extend(hand_in(&mut realm, zunjin, CROCOLISK_SKINS));
     let me_now = descriptor(&events, me);
     assert_eq!(me_now.unit_level(), Some(10));
@@ -68,6 +69,7 @@ fn a_basic_warrior_at_the_tier_cap_gains_no_xp() {
         &[(CROCOLISK_SKINS, [0; 4])],
     );
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
     let done = completed(&turned_in).expect("the quest still completes");
     assert_eq!(done.xp, 0, "no XP at the cap, even with ?xp=");
@@ -159,6 +161,7 @@ fn trainer(events: &[SessionEvent]) -> u64 {
 
 /// The quest rows of the trainer's gossip menu: `(quest, icon, level, title)`.
 fn gossip_quests(realm: &mut Realm, npc: u64) -> Vec<(u32, u32, u32, String)> {
+    walk_up_to(realm, npc);
     realm.handle(RealmCommand::GossipHello { guid: npc });
     drain(realm)
         .into_iter()

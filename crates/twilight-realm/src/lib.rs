@@ -452,7 +452,7 @@ impl Realm {
             RealmCommand::GossipHello { guid } => self.gossip_hello(guid),
             RealmCommand::GossipSelectOption { guid, option } => self.gossip_select(guid, option),
             RealmCommand::NpcTextQuery { text_id } => {
-                self.events.extend(trainer::greeting(text_id));
+                self.events.extend(hub::greeting(text_id));
             }
             RealmCommand::TalentWipeConfirm { trainer } => self.talent_wipe(trainer),
             RealmCommand::QuestQuery { quest } => {
