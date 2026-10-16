@@ -20,9 +20,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   linker names.
 - **Do the work in this session.** Search with Grep, read with Read. Spawning any agent, through
   the Agent tool or a skill that fans out (implement-spec, wayfinder, code-review, research),
-  needs Davis's explicit yes for that task. An approved agent runs on Haiku, which
-  `.claude/settings.json` sets through `CLAUDE_CODE_SUBAGENT_MODEL`; Opus or Fable only when Davis
-  says "deep reasoning".
+  needs Davis's explicit yes for that task. When asking, name the task and ask which model it
+  should run on. Sonnet is the default (`CLAUDE_CODE_SUBAGENT_MODEL` in `.claude/settings.json`);
+  Haiku for a mechanical search or conversion, Opus or Fable only when Davis says so.
 - **Keep context small.** Read the lines you need. Report in a few lines. Davis runs `/compact`
   between tasks; say so when a task is done and the next one starts cold.
 - **Grill before architecture.** Run `/grill-me` first for: a new crate or a new `twilight-realm`
