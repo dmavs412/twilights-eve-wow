@@ -6,7 +6,11 @@
 Reads data/twilights-eve/master.csv and writes server_spells.json, the realm's view: a list of
 Callings, each with its skills and talent tabs, every row carrying its realm columns, a `modelled`
 flag and its effects as {kind, params, realm_only}. Effects 4 and 5 are realm-only. A row with
-modelled=no carries no effects. The column set and the formula fields are in
+modelled=no carries no effects.
+
+It also writes client_dbc_patch.json, {spells, talents}: `spells` holds one Spell.dbc override per
+row with a spell_id (its client columns, effects 1 to 3 only, and its spellmods), `talents` each
+talent's seat, talent_id, prereq and per-rank spell ids. The column set and the formula fields are in
 docs/spell_pipeline.md.
 
 Exits non-zero, writing nothing, on malformed params, a bad formula, realm_cost below
@@ -44,6 +48,12 @@ REALM_NUMBERS = (
     "realm_radius_yd",
 )
 ID_COLUMNS = ("spell_id", "talent_id", "source_tab_id", "icon_id")
+CLIENT_NUMBERS = (
+    "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
+    "client_range_max", "client_duration_ms", "borrowed_from_class", "borrowed_family_bit",
+)
+CLIENT_FLAGS = ("client_on_next_swing", "client_not_in_combat")
+SPELLMOD_COLUMNS = ("type", "op", "family_bit", "value")
 
 
 class BuildError(Exception):
@@ -147,8 +157,42 @@ def build_row(row: dict, where: str) -> dict:
     return out
 
 
-def build(rows: list[dict]) -> list[dict]:
+def client_override(row: dict, built: dict, where: str) -> dict | None:
+    """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
+    if "spell_id" not in built:
+        return None
+    fields: dict = {}
+    for column in CLIENT_NUMBERS:
+        if row[column]:
+            fields[column.removeprefix("client_")] = number(row[column], f"{where} {column}")
+    for column in CLIENT_FLAGS:
+        if row[column]:
+            fields[column.removeprefix("client_")] = row[column] == "yes"
+    if row["client_stances"]:
+        fields["stances"] = row["client_stances"].split("|")
+    fields["effects"] = [{"kind": e["kind"], "params": e["params"]} for e in built["effects"] if not e["realm_only"]]
+    spellmods = []
+    for i in (1, 2):
+        values = {c: row[f"spellmod{i}_{c}"] for c in SPELLMOD_COLUMNS}
+        if not any(values.values()):
+            continue
+        if not all(values.values()):
+            raise BuildError(f"{where}: spellmod{i} needs all of {', '.join(SPELLMOD_COLUMNS)}")
+        if values["type"] not in ("flat", "pct"):
+            raise BuildError(f"{where}: spellmod{i}_type is {values['type']!r}, want flat or pct")
+        spellmods.append({"type": values["type"], "op": values["op"],
+                          "family_bit": number(values["family_bit"], f"{where} spellmod{i}_family_bit"),
+                          "value": number(values["value"], f"{where} spellmod{i}_value")})
+    out = {"spell_id": built["spell_id"], "calling": row["calling"], "key": row["key"], "rank": built["rank"],
+           "fields": fields}
+    if spellmods:
+        out["spellmods"] = spellmods
+    return out
+
+
+def build(rows: list[dict]) -> tuple[list[dict], dict]:
     callings: dict[str, dict] = {}
+    overrides: list[dict] = []
     seen: set[tuple] = set()
     talent_rows: dict[tuple, list[tuple[dict, dict, str]]] = {}
     for line, row in enumerate(rows, start=2):
@@ -163,6 +207,9 @@ def build(rows: list[dict]) -> list[dict]:
         if identity in seen:
             raise BuildError(f"{where}: duplicate {kind} rank")
         seen.add(identity)
+        override = client_override(row, built, where)
+        if override:
+            overrides.append(override)
         calling = callings.setdefault(row["calling"], {"key": row["calling"], "skills": [], "talent_tabs": []})
         if kind == "skill":
             calling["skills"].append(built)
@@ -206,7 +253,18 @@ def build(rows: list[dict]) -> list[dict]:
                     raise BuildError(f"{where}: prereq {prereq['key']!r} is not a talent in {tab['name']}")
                 if prereq["rank"] > len(target["ranks"]):
                     raise BuildError(f"{where}: prereq {prereq['key']} has no rank {prereq['rank']}")
-    return list(callings.values())
+    seats = []
+    for calling in callings.values():
+        for tab in calling["talent_tabs"]:
+            for talent in tab["talents"]:
+                seat = {"calling": calling["key"], "key": talent["key"], "tab": tab["name"], **talent["seat"]}
+                if "talent_id" in talent["ranks"][0]:
+                    seat["talent_id"] = talent["ranks"][0]["talent_id"]
+                seat["rank_spell_ids"] = [r.get("spell_id") for r in talent["ranks"]]
+                if "prereq" in talent:
+                    seat["prereq"] = talent["prereq"]
+                seats.append(seat)
+    return list(callings.values()), {"spells": overrides, "talents": seats}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -220,18 +278,19 @@ def main(argv: list[str] | None = None) -> int:
     with open(args.csv, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     try:
-        server = build(rows)
+        server, patch = build(rows)
         if not args.no_dbc_check:
             raise BuildError("the DBC check is not written yet; pass --no-dbc-check")
     except BuildError as error:
         print(f"build_spells: {error}", file=sys.stderr)
         return 1
 
-    path = os.path.join(args.out_dir, "server_spells.json")
-    with open(path, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(server, f, indent=1, ensure_ascii=False)
-        f.write("\n")
-    print(f"wrote {path}: {len(server)} Callings, {len(rows)} rows")
+    for name, data in (("server_spells.json", server), ("client_dbc_patch.json", patch)):
+        with open(os.path.join(args.out_dir, name), "w", encoding="utf-8", newline="\n") as f:
+            json.dump(data, f, indent=1, ensure_ascii=False)
+            f.write("\n")
+    print(f"wrote {args.out_dir}: {len(server)} Callings, {len(rows)} rows, "
+          f"{len(patch['spells'])} spell overrides, {len(patch['talents'])} talent seats")
     return 0
 
 
