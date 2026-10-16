@@ -165,6 +165,21 @@ position = [-465.0, -2688.0, 95.9]
 orientation = 2.39
 greeting = "The plains around the Crossroads teem with beasts, and the quilboar and the imps with them. Thin them out, and the caravans thank you for it."
 
+# Up the watchtower with the lookout: she gives "Know the Land", once per character.
+[[npc]]
+guid = 9100012
+entry = 90112
+name = "Scout Ahanu"
+subname = "The Watchtower"
+level = 30
+display_id = 2112
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-474.0, -2603.0, 104.3]
+orientation = 2.40
+greeting = "Every trail in The Barrens starts under this tower. Few who climb it have walked them all."
+
 [[npc]]
 guid = 9100002
 entry = 90102

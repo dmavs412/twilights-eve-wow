@@ -52,6 +52,8 @@ pub(crate) enum Kind {
     Repeatable,
     /// Into another Calling, with an [`Advancement`].
     Advancement,
+    /// Once per character: Advancement never forgets it.
+    Once,
 }
 
 /// A quest.
@@ -84,6 +86,10 @@ pub(crate) struct Quest {
     pub(crate) collect: Vec<Collect>,
     #[serde(default)]
     pub(crate) explore: Option<Explore>,
+    /// A discover objective: these `AreaTable.dbc` areas (content/areas.toml), met once the
+    /// character has discovered every one.
+    #[serde(default)]
+    pub(crate) discover: Vec<u32>,
     /// The quest log's header: a negative `QuestSort.dbc` id, or a zone; The Barrens by default.
     #[serde(default)]
     zone_or_sort: Option<i32>,
@@ -133,7 +139,7 @@ impl Quest {
         match self.kind {
             Kind::Hunting => rules::quest::hunting_reward_xp(player, self.level),
             Kind::Repeatable => rules::quest::reward_xp(player, self.level),
-            Kind::Advancement => 0,
+            Kind::Advancement | Kind::Once => 0,
         }
     }
 
@@ -193,7 +199,10 @@ fn file() -> &'static QuestFile {
                     q.id
                 );
                 assert!(
-                    q.kill.is_empty() && q.collect.is_empty() && q.explore.is_none(),
+                    q.kill.is_empty()
+                        && q.collect.is_empty()
+                        && q.explore.is_none()
+                        && q.discover.is_empty(),
                     "Advancement Quest {} asks for more than a word",
                     q.id
                 );
@@ -203,6 +212,13 @@ fn file() -> &'static QuestFile {
                 "quest {} has more than {OBJECTIVES} objectives of a kind",
                 q.id
             );
+            for &area in &q.discover {
+                assert!(
+                    crate::areas::get(area).is_some(),
+                    "quest {} discovers area {area}, which is not in content/areas.toml",
+                    q.id
+                );
+            }
             for c in &q.collect {
                 assert!(
                     item_template(c.item).is_some(),

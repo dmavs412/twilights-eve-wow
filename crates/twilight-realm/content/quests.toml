@@ -6,6 +6,7 @@
 # - "repeatable": a Dungeon's Repeatable Quest, taken again as soon as it is handed in. It pays
 #   3 Tokens.
 # - "advancement": an Advancement Quest, with an `advancement` table (below). It pays no Token.
+# - "once": once per character. Advancement never forgets it. It pays no XP.
 #
 # A quest's XP is not here (`rules::quest`): a Hunting Quest's is half the XP from its own level
 # to the next, a Repeatable Quest's the player's next level's worth, and both shrink once the
@@ -26,6 +27,8 @@
 # - `ender`: the Hub NPC (content/hub.toml) who takes the quest in, when it is not the giver: a
 #   person found out in a Hunting Ground. A quest with no other objective is met on accepting,
 #   and finding them is the task.
+# - `discover`: `AreaTable.dbc` ids (content/areas.toml), met once the character has discovered
+#   every one (Discovery). It counts the discoveries made before the quest was taken.
 # - `after`: a quest offered only once that quest is handed in. When its giver is that quest's
 #   ender, it is the next in the chain: its accept panel opens as the other is handed in.
 
@@ -1423,6 +1426,28 @@ completion = "You have done all the Barrens can ask of you. Look past it now: th
 money = 3600
 tokens = 1
 kill = [[7873, 8], [7874, 6]]
+
+# ── Know the Land ───────────────────────────────────────────────────────────────────────────────
+
+# Every Barrens subzone the client's world map draws (`WorldMapOverlay.dbc`'s Barrens rows).
+
+[[quest]]
+id = 93001
+kind = "once"
+giver = 90112
+level = 10
+min_level = 1
+title = "Know the Land"
+objectives = "Discover every part of The Barrens, then return to Scout Ahanu in the Crossroads watchtower."
+details = "From up here I can name every hill and hollow between the Mor'shan Rampart and the Great Lift. Naming them is not knowing them.$B$BWalk them all, $N: the oases, the Dry Hills, the Merchant Coast, the Razorfen in the south. Come back when there is no fog left on your map."
+progress = "There is still fog on your map."
+completion = "Then you know the land as well as any scout. Take these. You earned them on your feet."
+money = 0
+tokens = 5
+discover = [
+  359, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 390, 391, 392,
+  1316, 1697, 1698, 1699, 1700, 1701, 1702, 1703, 1704, 1717,
+]
 
 # ── Advancement Quests ──────────────────────────────────────────────────────────────────────────
 # Offered by the trainer of the Calling's Line (content/hub.toml) in the trainer's gossip menu,

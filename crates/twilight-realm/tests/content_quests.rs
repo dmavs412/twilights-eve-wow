@@ -37,6 +37,8 @@ struct Quest {
     collect: Vec<Collect>,
     #[serde(default)]
     explore: Option<Explore>,
+    #[serde(default)]
+    discover: Vec<u32>,
     /// An Advancement Quest asks for nothing but a word with its giver.
     #[serde(default)]
     advancement: Option<toml::Value>,
@@ -80,6 +82,7 @@ fn every_objective_names_a_creature_and_an_item_the_realm_has() {
             !q.kill.is_empty()
                 || !q.collect.is_empty()
                 || q.explore.is_some()
+                || !q.discover.is_empty()
                 || q.ender.is_some_and(|e| e != q.giver)
                 || q.advancement.is_some(),
             "quest {}",
@@ -124,6 +127,8 @@ fn every_quest_names_its_kind_and_pays_its_kinds_tokens() {
             "hunting" => 1,
             "repeatable" => 3,
             "advancement" => 0,
+            // A once-per-character quest pays what it is worth, never nothing.
+            "once" if q.tokens > 0 => q.tokens,
             other => panic!("quest {}: kind {other:?}", q.id),
         };
         assert_eq!(q.tokens, tokens, "quest {} ({})", q.id, q.kind);

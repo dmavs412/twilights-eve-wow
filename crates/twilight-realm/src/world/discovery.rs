@@ -29,6 +29,7 @@ impl InWorld {
         };
         c.discovered.insert(at, area.id);
         ticked.discovered = true;
+        crate::quests::refresh(c, events);
         events.push(values(
             self.guid,
             &[crate::areas::explored_pair(&c.discovered, area)],

@@ -4,9 +4,10 @@
 //! is saved; the client reads it from the `PLAYER_QUEST_LOG` slots, and the stock quest dialogs
 //! drive it ([`dialogs`]).
 //!
-//! Kill objectives count in the log, and an explore objective is met when the player walks into
-//! its spot. Collect objectives count the quest items in the bags, as the
-//! client does: their drops only fall while a quest wants more.
+//! Kill objectives count in the log, an explore objective is met when the player walks into its
+//! spot, and a discover objective once the character has discovered all its areas. Collect
+//! objectives count the quest items in the bags, as the client does: their drops only fall while
+//! a quest wants more.
 
 mod content;
 mod dialogs;
@@ -62,8 +63,8 @@ impl Active {
 #[derive(Debug, Clone, Default)]
 pub(crate) struct QuestLog {
     pub(crate) active: Vec<Active>,
-    /// The quests handed in, once each, in the order first finished: every Advancement and
-    /// Repeatable Quest ever, and the Hunting Quests of this Tier.
+    /// The quests handed in, once each, in the order first finished: every Advancement,
+    /// Repeatable and once-per-character quest ever, and the Hunting Quests of this Tier.
     pub(crate) completed: Vec<u32>,
 }
 
@@ -162,6 +163,9 @@ fn complete(c: &Char, a: &Active) -> bool {
         .all(|(&(_, count), killed)| u32::from(killed) >= count)
         && q.collect.iter().all(|o| carried(c, o.item) >= o.count)
         && (q.explore.is_none() || a.explored)
+        && q.discover
+            .iter()
+            .all(|id| c.discovered.binary_search(id).is_ok())
 }
 
 /// One slot's three fields: `a`'s quest, or empty.
@@ -244,7 +248,7 @@ pub(crate) fn explore(c: &mut Char, events: &mut Vec<SessionEvent>) -> bool {
 }
 
 /// A new Tier begins: every Hunting Quest is forgotten, done or under way, so each is offered
-/// again. Repeatable and Advancement Quests stay as they are.
+/// again. Repeatable, Advancement and once-per-character quests stay as they are.
 pub(crate) fn new_tier(c: &mut Char, events: &mut Vec<SessionEvent>) {
     let hunting = |id: u32| content::quest(id).is_some_and(|q| q.kind == content::Kind::Hunting);
     c.quests.completed.retain(|&id| !hunting(id));

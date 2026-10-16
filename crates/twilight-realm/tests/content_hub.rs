@@ -258,6 +258,10 @@ fn each_quest_giver_faces_its_hunting_ground() {
                     .chain(q.collect.iter().flat_map(|c| c.from.iter().copied()))
             })
             .collect();
+        // A giver whose quests hunt nothing ("Know the Land") has no ground to face.
+        if targets.is_empty() {
+            continue;
+        }
         let at: Vec<(f32, f32)> = spawns
             .iter()
             .filter(|s| targets.contains(&s.0))
