@@ -104,3 +104,29 @@ fn logging_out_returns_to_the_roster_where_the_character_stood() {
     assert_eq!(list[0].position.x, -400.0);
     assert_eq!(list[0].position.y, -2600.0);
 }
+
+#[test]
+fn the_login_burst_holds_the_sky_at_dusk() {
+    let mut realm = realm();
+    let (_, events) = enter_new(&mut realm, "Cairne", TAUREN);
+
+    let (hours, minutes, timescale) = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::TimeSpeed {
+                hours,
+                minutes,
+                timescale,
+                ..
+            } => Some((*hours, *minutes, *timescale)),
+            _ => None,
+        })
+        .expect("the login burst sets the game clock");
+    // Evening twilight: after the 21:00 sunset, before full night at 22:00.
+    let minute = u32::from(hours) * 60 + u32::from(minutes);
+    assert!(
+        (21 * 60..22 * 60).contains(&minute),
+        "dusk, got {hours:02}:{minutes:02}"
+    );
+    assert_eq!(timescale, 0.0, "the game clock does not advance");
+}
