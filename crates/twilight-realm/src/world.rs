@@ -41,6 +41,9 @@ const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
     turn_rate: std::f32::consts::PI,
 };
 
+/// The game time the sky is held at (hours, minutes): evening twilight, after the 21:00 sunset.
+const DUSK: (u8, u8) = (21, 15);
+
 /// A player's combat reach (`DEFAULT_COMBAT_REACH`).
 const PLAYER_COMBAT_REACH: f32 = 1.5;
 
@@ -142,12 +145,13 @@ impl InWorld {
             orientation: c.orientation,
             needs_ack: false,
         });
-        // Mid-afternoon at the game clock's real-time pace (one game minute a minute).
+        // The dusk clock: evening twilight, just after the 21:00 sunset, and a timescale of zero
+        // so the client never advances it. The sky over the world stays at dusk.
         events.push(SessionEvent::TimeSpeed {
-            hours: 15,
-            minutes: 0,
+            hours: DUSK.0,
+            minutes: DUSK.1,
             day_serial: 0,
-            timescale: 1.0 / 60.0,
+            timescale: 0.0,
         });
         events.push(cast::spell_book(c, wall));
         events.extend(crate::talents::spell_mods(c));

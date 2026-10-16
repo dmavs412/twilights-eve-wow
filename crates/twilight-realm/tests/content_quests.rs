@@ -18,12 +18,15 @@ struct Collect {
 #[derive(Deserialize)]
 struct Quest {
     id: u32,
+    /// "hunting", "repeatable" or "advancement".
+    kind: String,
     /// A Hub NPC's entry (`content/hub.toml`).
     giver: u32,
     level: u8,
     title: String,
     details: String,
     money: u32,
+    tokens: u32,
     #[serde(default)]
     kill: Vec<(u32, u32)>,
     #[serde(default)]
@@ -94,6 +97,25 @@ fn every_objective_names_a_creature_and_an_item_the_realm_has() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn every_quest_names_its_kind_and_pays_its_kinds_tokens() {
+    for q in content().quest {
+        let tokens = match q.kind.as_str() {
+            "hunting" => 1,
+            "repeatable" => 3,
+            "advancement" => 0,
+            other => panic!("quest {}: kind {other:?}", q.id),
+        };
+        assert_eq!(q.tokens, tokens, "quest {} ({})", q.id, q.kind);
+        assert_eq!(
+            q.kind == "advancement",
+            q.advancement.is_some(),
+            "quest {}",
+            q.id
+        );
     }
 }
 

@@ -127,8 +127,34 @@ fn a_save_from_before_quests_loads_with_none() {
 #[test]
 fn a_quest_the_realm_no_longer_has_is_dropped_from_the_save() {
     let (me, blob) = save_with_quests(3, &[], 0, &[(99999, [0; 4]), (SCORPID_VENOM, [0; 4])]);
-    let events = reload(me, &blob);
+    let blob = blob.replace(
+        "money = 0
+",
+        &format!(
+            "money = 0
+completed = [99998, {THINNING_THE_HERDS}]
+"
+        ),
+    );
+    let mut realm = Realm::with_seed(SEED);
+    realm.import_character(&blob).unwrap();
+    let log = realm.drain_log();
+    assert!(
+        log.iter().any(|l| l.contains("99999")) && log.iter().any(|l| l.contains("99998")),
+        "each dropped quest is logged: {log:?}"
+    );
+    realm.handle(RealmCommand::EnterWorld { guid: me });
+    realm.tick(0.0, &FlatGround);
+    let events = drain(&mut realm);
     assert_eq!(quest_log(&events, me), [(1, SCORPID_VENOM, [0; 4], 0)]);
+    let saved = realm.export_character(me).unwrap();
+    assert!(
+        saved.contains(&format!(
+            "completed = [{THINNING_THE_HERDS}]
+"
+        )),
+        "{saved}"
+    );
 }
 
 #[test]

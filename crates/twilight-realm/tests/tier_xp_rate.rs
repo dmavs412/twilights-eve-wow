@@ -17,8 +17,8 @@ use twilight_realm::DevMultipliers;
 
 /// Level 5 kills level 3: 70 × 3/5 = 42 XP at ×1.
 const KILL_XP_AT_X1: u32 = 42;
-/// A level 5 character's full level for the level 10 Crocolisk Skins: 2800 XP at ×1.
-const QUEST_XP_AT_X1: u32 = 2800;
+/// The level 10 Crocolisk Skins, a Hunting Quest: half of level 10's 7600 XP at ×1.
+const QUEST_XP_AT_X1: u32 = 3800;
 
 #[test]
 fn the_rate_is_1_3_5_and_7_by_tier() {
