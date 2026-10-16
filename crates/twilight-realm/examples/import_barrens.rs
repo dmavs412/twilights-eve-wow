@@ -7,6 +7,9 @@
 //! - `crossroads_low_camps.json`: the hand-placed level 1–6 camps by the Crossroads
 //!   (`tools/twilights-eve/make_crossroads_low_camps.py`), and the imported spawns they replace.
 //!
+//! On the way it filters the imported spawns into the rings ([`filter`]): levels rise outward
+//! from the Crossroads and stop at 30.
+//!
 //! ```text
 //! cargo run -p twilight-realm --example import_barrens
 //! ```
@@ -58,20 +61,20 @@ pub fn convert(barrens: &Value, low: &Value) -> String {
     );
 
     let camps = low["camps"].as_array().expect("low camps");
-    let mut suppress: Vec<u64> = camps
-        .iter()
-        .flat_map(|c| c["suppress_guids"].as_array().unwrap())
-        .map(|g| g.as_u64().unwrap())
-        .chain(kept_out(barrens, low))
-        .collect();
-    suppress.sort_unstable();
-    suppress.dedup();
+    let filtered = filter(barrens, low);
     out.push_str(
-        "# Imported spawns a level-1 player would meet at a low camp or on the way to it: each camp's\n\
-         # `suppress_guids`, and every spawn red to the camp near it or near the way from the\n\
-         # Crossroads (`import_barrens.rs`'s keep-out rule). The realm leaves them out.\n",
+        "# The rings: the imported spawns are filtered (`import_barrens.rs`'s `filter`) so that levels\n\
+         # rise outward from the Crossroads and stop at the level cap. Left out of the dump's spawns:\n",
     );
-    let _ = writeln!(out, "suppress = {suppress:?}\n");
+    for (cut, n) in &filtered.cut {
+        let _ = writeln!(out, "# - {n} {}", cut.describe());
+    }
+    let _ = writeln!(
+        out,
+        "# The Razorfen edge's quilboar ({RAZORFEN_QUILBOAR:?}) are retuned to levels {}-{}, The\n\
+         # Barrens' capstone.\n",
+        RAZORFEN_LEVELS[0], RAZORFEN_LEVELS[1]
+    );
 
     out.push_str(
         "# One row per spawn: [guid, entry, level_min, level_max, x, y, z, orientation, display_id,\n\
@@ -80,7 +83,7 @@ pub fn convert(barrens: &Value, low: &Value) -> String {
          spawns = [\n",
     );
     let templates = &barrens["templates"];
-    for s in barrens["spawns"].as_array().expect("spawns") {
+    for s in &filtered.kept {
         let entry = s["entry"].as_u64().unwrap();
         let display = pick_display(
             &templates[entry.to_string()],
@@ -104,15 +107,20 @@ pub fn convert(barrens: &Value, low: &Value) -> String {
     out.push_str("]\n");
 
     // The imported creature templates, by entry. The low camps' are hand-written in mobs.toml.
-    let mut entries: Vec<u64> = templates
-        .as_object()
-        .unwrap()
-        .keys()
-        .map(|k| k.parse().unwrap())
+    let mut entries: Vec<u64> = filtered
+        .kept
+        .iter()
+        .map(|s| s["entry"].as_u64().unwrap())
         .collect();
     entries.sort_unstable();
+    entries.dedup();
     for entry in entries {
         let t = &templates[entry.to_string()];
+        let [lmin, lmax] = if RAZORFEN_QUILBOAR.contains(&entry) {
+            RAZORFEN_LEVELS
+        } else {
+            [&t["level_min"], &t["level_max"]].map(|l| l.as_u64().unwrap())
+        };
         let hostile = reaction(barrens, entry) && !t["no_aggro"].as_bool().unwrap_or(false);
         let _ = write!(
             out,
@@ -142,8 +150,6 @@ pub fn convert(barrens: &Value, low: &Value) -> String {
             display = most_likely_display(t),
             faction = t["faction_template"].as_u64().unwrap(),
             class = unit_class(t["unit_class"].as_u64().unwrap()),
-            lmin = t["level_min"].as_u64().unwrap(),
-            lmax = t["level_max"].as_u64().unwrap(),
             hm = f32_of(&t["health_multiplier"]),
             dm = f32_of(&t["damage_multiplier"]),
             am = f32_of(&t["armor_multiplier"]),
@@ -166,28 +172,212 @@ const RED_ABOVE: u64 = 5;
 const KEEP_OUT_YD: f64 = 100.0;
 const ROUTE_CLEAR_YD: f64 = 40.0;
 
-/// The imported spawns the keep-out rule leaves out, by guid.
-fn kept_out(barrens: &Value, low: &Value) -> Vec<u64> {
-    let xy = |v: &Value| [v[0].as_f64().unwrap(), v[1].as_f64().unwrap()];
-    let town = xy(&low["crossroads"]);
-    let camps = low["camps"].as_array().unwrap();
-    barrens["spawns"]
+/// Whether the keep-out rule leaves the imported spawn `s` out: a low camp's own
+/// `suppress_guids` lists it, or it is red to a camp near the camp or near the way to it.
+fn kept_out(s: &Value, low: &Value) -> bool {
+    let town = crossroads(low);
+    let at = xy_of(s);
+    let wander = s["wander_radius"].as_f64().unwrap_or(0.0);
+    let level = s["level_min"].as_u64().unwrap();
+    low["camps"].as_array().unwrap().iter().any(|c| {
+        let center = xy(&c["center"]);
+        c["suppress_guids"].as_array().unwrap().contains(&s["guid"])
+            || level >= c["level_max"].as_u64().unwrap() + RED_ABOVE
+                && (distance(at, center) - wander <= KEEP_OUT_YD
+                    || to_segment(at, town, center) - wander <= ROUTE_CLEAR_YD)
+    })
+}
+
+/// The inner ring: within this many yards of the Crossroads only the hand-placed camps stand,
+/// levels 1–10. An imported spawn whose wander area reaches into it is left out.
+pub const INNER_RING_YD: f64 = 600.0;
+/// The inner ring's top level.
+pub const INNER_RING_TOP: u64 = 10;
+/// The Barrens' top level, Tier 1's cap.
+pub const LEVEL_CAP: u64 = 30;
+/// The Razorfen edge's quilboar, Razorfen Battleguard and Razorfen Thornweaver (vanilla's
+/// 33–34 elites), kept as The Barrens' capstone at [`RAZORFEN_LEVELS`].
+pub const RAZORFEN_QUILBOAR: [u64; 2] = [7873, 7874];
+pub const RAZORFEN_LEVELS: [u64; 2] = [27, 30];
+/// Creatures left out by name: the Death's Head Cultist and Geomancer (no cultist stands in The
+/// Barrens), Ambassadors Bloodrage and Malcin, and the Wailing Caverns' Trigore the Lasher and
+/// Boahn.
+pub const LEFT_OUT: [u64; 6] = [7872, 7335, 7895, 12865, 3652, 3672];
+
+/// How near another spawn stands to count as a neighbour, in yards.
+pub const NEIGHBOURHOOD_YD: f64 = 120.0;
+/// How far a spawn's level may sit from its neighbours' median before it is a stray: five levels,
+/// where vanilla's con colour turns red (or grey, below).
+pub const STRAY_LEVELS: f64 = 5.0;
+/// The fewest neighbours that make a neighbourhood; a lone spawn is no stray.
+pub const MIN_NEIGHBOURS: usize = 3;
+
+/// Why the filter leaves an imported spawn out.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Cut {
+    /// Red to a low camp, near it or near the way to it.
+    LowCamp,
+    /// One of [`LEFT_OUT`].
+    Named,
+    /// Within [`INNER_RING_YD`] of the Crossroads.
+    InnerRing,
+    /// Above [`LEVEL_CAP`].
+    OverCap,
+    /// Far off its neighbours' level.
+    Stray,
+}
+
+impl Cut {
+    fn describe(self) -> String {
+        match self {
+            Cut::LowCamp => "red to a low camp's players near the camp or the way to it".into(),
+            Cut::Named => {
+                "by name: the Death's Head, the Ambassadors, Trigore the Lasher, Boahn".into()
+            }
+            Cut::InnerRing => {
+                format!("within {INNER_RING_YD} yd of the Crossroads, the inner ring")
+            }
+            Cut::OverCap => format!("above level {LEVEL_CAP}"),
+            Cut::Stray => format!(
+                "strays, more than {STRAY_LEVELS} levels off the median of the spawns within \
+                 {NEIGHBOURHOOD_YD} yd"
+            ),
+        }
+    }
+}
+
+/// What the filter keeps of the dump's spawns, with the Razorfen quilboar retuned, and how many
+/// it left out for each reason.
+pub struct Filtered {
+    pub kept: Vec<Value>,
+    pub cut: std::collections::BTreeMap<Cut, usize>,
+}
+
+/// The rings. The imported spawns are left out, in this order, when red to a low camp, named in
+/// [`LEFT_OUT`], in the inner ring, or above the level cap once the Razorfen quilboar are
+/// retuned; then the strays among what stays (with the low camps as neighbours) are left out
+/// until none is left.
+pub fn filter(barrens: &Value, low: &Value) -> Filtered {
+    let town = crossroads(low);
+    let mut cut = std::collections::BTreeMap::new();
+    let mut kept = Vec::new();
+    for s in barrens["spawns"].as_array().unwrap() {
+        let entry = s["entry"].as_u64().unwrap();
+        let at = xy_of(s);
+        let wander = s["wander_radius"].as_f64().unwrap_or(0.0);
+        let mut s = s.clone();
+        if RAZORFEN_QUILBOAR.contains(&entry) {
+            s["level_min"] = RAZORFEN_LEVELS[0].into();
+            s["level_max"] = RAZORFEN_LEVELS[1].into();
+        }
+        let why = if kept_out(&s, low) {
+            Some(Cut::LowCamp)
+        } else if LEFT_OUT.contains(&entry) {
+            Some(Cut::Named)
+        } else if distance(at, town) - wander <= INNER_RING_YD {
+            Some(Cut::InnerRing)
+        } else if s["level_max"].as_u64().unwrap() > LEVEL_CAP {
+            Some(Cut::OverCap)
+        } else {
+            None
+        };
+        match why {
+            Some(why) => *cut.entry(why).or_insert(0) += 1,
+            None => kept.push(s),
+        }
+    }
+
+    let templates = &barrens["templates"];
+    let placed = |s: &Value, normal: bool| Placed {
+        at: xy_of(s),
+        levels: [
+            s["level_min"].as_u64().unwrap(),
+            s["level_max"].as_u64().unwrap(),
+        ],
+        normal,
+    };
+    let low_members: Vec<Placed> = low["camps"]
         .as_array()
         .unwrap()
         .iter()
-        .filter(|s| {
-            let at = [s["x"].as_f64().unwrap(), s["y"].as_f64().unwrap()];
-            let wander = s["wander_radius"].as_f64().unwrap_or(0.0);
-            let level = s["level_min"].as_u64().unwrap();
-            camps.iter().any(|c| {
-                let center = xy(&c["center"]);
-                level >= c["level_max"].as_u64().unwrap() + RED_ABOVE
-                    && (distance(at, center) - wander <= KEEP_OUT_YD
-                        || to_segment(at, town, center) - wander <= ROUTE_CLEAR_YD)
+        .flat_map(|c| c["members"].as_array().unwrap())
+        .map(|m| placed(m, true))
+        .collect();
+    loop {
+        let mut all: Vec<Placed> = kept
+            .iter()
+            .map(|s| {
+                let rank = templates[s["entry"].as_u64().unwrap().to_string()]["rank"].as_str();
+                placed(s, rank == Some("normal"))
             })
+            .collect();
+        all.extend(low_members.iter().cloned());
+        let strays = strays(&all);
+        if strays.is_empty() {
+            break;
+        }
+        *cut.entry(Cut::Stray).or_insert(0) += strays.len();
+        let mut i = 0;
+        kept.retain(|_| {
+            i += 1;
+            !strays.contains(&(i - 1))
+        });
+    }
+    Filtered { kept, cut }
+}
+
+/// A spawn as the stray rule sees it: where it stands, its levels, and whether it is a normal
+/// creature (an elite, rare or boss is meant to stand above its neighbours).
+#[derive(Clone, Debug)]
+pub struct Placed {
+    pub at: [f64; 2],
+    pub levels: [u64; 2],
+    pub normal: bool,
+}
+
+impl Placed {
+    fn level(&self) -> f64 {
+        (self.levels[0] + self.levels[1]) as f64 / 2.0
+    }
+}
+
+/// The strays among `spawns`, by index: a normal creature more than [`STRAY_LEVELS`] off the
+/// median level of the at least [`MIN_NEIGHBOURS`] spawns within [`NEIGHBOURHOOD_YD`] of it.
+pub fn strays(spawns: &[Placed]) -> Vec<usize> {
+    (0..spawns.len())
+        .filter(|&i| {
+            let me = &spawns[i];
+            if !me.normal {
+                return false;
+            }
+            let mut levels: Vec<f64> = spawns
+                .iter()
+                .enumerate()
+                .filter(|&(j, o)| j != i && distance(o.at, me.at) <= NEIGHBOURHOOD_YD)
+                .map(|(_, o)| o.level())
+                .collect();
+            if levels.len() < MIN_NEIGHBOURS {
+                return false;
+            }
+            levels.sort_by(f64::total_cmp);
+            let n = levels.len();
+            let median = (levels[(n - 1) / 2] + levels[n / 2]) / 2.0;
+            (me.level() - median).abs() > STRAY_LEVELS
         })
-        .map(|s| s["guid"].as_u64().unwrap())
         .collect()
+}
+
+/// The Crossroads' centre, as the low camps' dump gives it.
+pub fn crossroads(low: &Value) -> [f64; 2] {
+    xy(&low["crossroads"])
+}
+
+fn xy(v: &Value) -> [f64; 2] {
+    [v[0].as_f64().unwrap(), v[1].as_f64().unwrap()]
+}
+
+fn xy_of(s: &Value) -> [f64; 2] {
+    [s["x"].as_f64().unwrap(), s["y"].as_f64().unwrap()]
 }
 
 fn distance(a: [f64; 2], b: [f64; 2]) -> f64 {
