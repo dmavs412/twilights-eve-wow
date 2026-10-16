@@ -92,6 +92,15 @@ struct Save {
     /// Crossroads inn.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     bind: Option<SavedBind>,
+    /// The rested XP pool. Added within version 2: a save without it has none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    rested: Option<f32>,
+    /// The Unix ms they last left the world at, and whether in an inn: the time away banks rest
+    /// on the next login. Added within version 2: a save without it banks none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    left_at: Option<u64>,
+    #[serde(default)]
+    left_in_inn: bool,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -215,6 +224,9 @@ pub(crate) fn export(c: &Char) -> String {
         completed: c.quests.completed.clone(),
         discovered: c.discovered.clone(),
         bind: Some(SavedBind::from(&c.bind)),
+        rested: (c.rest.pool > 0.0).then_some(c.rest.pool),
+        left_at: c.rest.left.map(|l| (l.at * 1000.0).round() as u64),
+        left_in_inn: c.rest.left.is_some_and(|l| l.in_inn),
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -261,6 +273,13 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
             .bind
             .as_ref()
             .map_or_else(Bind::crossroads_inn, Bind::from),
+        rest: crate::rest::Rest {
+            pool: s.rested.unwrap_or(0.0).max(0.0),
+            left: s.left_at.map(|ms| crate::rest::Left {
+                at: ms as f64 / 1000.0,
+                in_inn: s.left_in_inn,
+            }),
+        },
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);

@@ -29,6 +29,7 @@ pub(crate) const UNIT_FIELD_RESISTANCES: u16 = 155;
 pub(crate) const UNIT_FIELD_BASE_HEALTH: u16 = 163;
 pub(crate) const UNIT_FIELD_ATTACK_POWER: u16 = 165;
 
+pub(crate) const PLAYER_FLAGS: u16 = 190;
 pub(crate) const PLAYER_BYTES: u16 = 193;
 pub(crate) const PLAYER_BYTES_2: u16 = 194;
 pub(crate) const PLAYER_BYTES_3: u16 = 195;
@@ -42,6 +43,8 @@ pub(crate) const PLAYER_PARRY_PERCENTAGE: u16 = 1108;
 pub(crate) const PLAYER_CRIT_PERCENTAGE: u16 = 1109;
 /// 64 dwords of explore bits, bit `n` the `AreaTable.dbc` row whose explore flag is `n`.
 pub(crate) const PLAYER_EXPLORED_ZONES_1: u16 = 1111;
+/// The rested XP pool, the XP bar's purple marker.
+pub(crate) const PLAYER_REST_STATE_EXPERIENCE: u16 = 1175;
 /// Seven schools of float multipliers, 1.0 for none.
 pub(crate) const PLAYER_FIELD_MOD_DAMAGE_DONE_PCT: u16 = 1215;
 pub(crate) const PLAYER_FIELD_WATCHED_FACTION_INDEX: u16 = 1261;

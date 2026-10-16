@@ -58,6 +58,8 @@ pub(crate) struct Char {
     pub(crate) discovered: Vec<u32>,
     /// Where the Hearthstone takes them.
     pub(crate) bind: crate::inn::Bind,
+    /// Rested XP, and when they last left.
+    pub(crate) rest: crate::rest::Rest,
 }
 
 #[derive(Default)]
@@ -112,6 +114,7 @@ impl Characters {
             quests: QuestLog::default(),
             discovered: Vec::new(),
             bind: crate::inn::Bind::crossroads_inn(),
+            rest: crate::rest::Rest::default(),
         });
         CHAR_CREATE_SUCCESS
     }

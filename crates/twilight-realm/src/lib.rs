@@ -55,6 +55,7 @@ mod looting;
 mod mobs;
 mod population;
 mod quests;
+mod rest;
 mod rng;
 pub mod rules;
 mod save;
@@ -645,6 +646,13 @@ impl Realm {
     }
 
     fn save(&mut self, guid: u64) {
+        // A save from the world stamps the leaving: a session that ends without a logout banks
+        // its rest from the last save.
+        if self.world.as_ref().is_some_and(|w| w.guid == guid) {
+            if let Some(c) = self.characters.get_mut(guid) {
+                rest::leave(c, self.wall);
+            }
+        }
         if let Some(blob) = self.export_character(guid) {
             self.storage.push(Storage::Write { guid, blob });
         }
@@ -689,6 +697,7 @@ impl Realm {
         // A save from inside the Dungeon comes back outside it: a run ends with its session.
         if let Some(c) = self.characters.get_mut(guid) {
             world::come_out(c);
+            rest::come_back(c, self.wall);
         }
         let Some(c) = self.characters.get(guid) else {
             // `CHAR_LOGIN_NO_CHARACTER`, the reference's fifth refusal.
@@ -709,6 +718,7 @@ impl Realm {
             w.release(c, &mut Vec::new());
             // Leaving inside the Dungeon leaves it.
             world::come_out(c);
+            rest::leave(c, self.wall);
         }
         self.save(w.guid);
         self.events.push(SessionEvent::LogoutResponse {

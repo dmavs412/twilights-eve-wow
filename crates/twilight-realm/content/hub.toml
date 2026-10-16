@@ -37,7 +37,8 @@ stock = [4496]
 # The innkeeper: Innkeeper Boorand Plainswind, creature 3934, the Crossroads' own, lends his name;
 # the display is a tauren man. 0x85 is gossip, vendor and innkeeper: his gossip binds the
 # Hearthstone (src/inn.rs) and opens his merchant window. `area` is the `AreaTable` id the bind
-# names, The Crossroads. He stands by the bar barrels, facing the hall.
+# names, The Crossroads. He stands by the bar barrels, facing the hall. `rest_radius` makes the
+# inn a rest area (src/rest.rs): the yards around him that bank rested XP, the inn's hall.
 [[npc]]
 guid = 0xF00003
 entry = 3934
@@ -51,6 +52,7 @@ npc_flags = 0x85
 position = [-407.0, -2645.0, 96.0]
 orientation = 3.24
 area = 380
+rest_radius = 15.0
 text_id = 64015
 greeting = "Rest your feet, $C. Every bed is taken by folk running from the south, and the ones from Silithus swear the Twilight's Hammer marches there in the open. Here, at least, the stew is hot."
 # The four tiers of drink, then of food: 1, 5, 15 and 25.

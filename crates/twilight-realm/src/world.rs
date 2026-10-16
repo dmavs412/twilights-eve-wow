@@ -29,6 +29,7 @@ mod death;
 mod discovery;
 mod dungeon;
 mod food;
+mod rest;
 
 pub(crate) use dungeon::come_out;
 
@@ -122,6 +123,8 @@ pub(crate) struct InWorld {
     meal: Option<food::Meal>,
     /// A worldport waits for the client's ack.
     transfer: bool,
+    /// Standing in an inn: `PLAYER_FLAGS_RESTING` is up and the pool fills.
+    resting: bool,
 }
 
 impl InWorld {
@@ -189,6 +192,7 @@ impl InWorld {
             respawn: death::Respawn::HUB,
             meal: None,
             transfer: false,
+            resting: crate::rest::in_inn(c.map, c.position),
         };
         events.push(w.player_create(c));
         w
@@ -281,6 +285,7 @@ impl InWorld {
         if self.player.alive() {
             self.discover(host, c, events, &mut ticked);
         }
+        self.rest(dt, c, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting
@@ -619,13 +624,18 @@ impl InWorld {
         let (victim, base) = (mob.guid, xp::kill_xp(c.level, mob.level(), elite));
         let gained = self.scaled_xp(c, base);
         if gained > 0 {
+            // Rested XP doubles the kill, multiplied XP and all, while the pool lasts.
+            let rested = crate::rest::spend(c, gained);
             events.push(SessionEvent::XpGain(XpGain {
                 victim,
-                total: gained,
+                total: gained + rested,
                 base: gained,
                 kill: true,
             }));
-            ticked.leveled |= self.give_xp(c, gained, events);
+            if rested > 0 {
+                events.push(values(self.guid, &crate::rest::pairs(c)));
+            }
+            ticked.leveled |= self.give_xp(c, gained + rested, events);
         }
         self.auras_die_with(victim, events);
         crate::quests::credit_kill(c, entry, events);
@@ -882,7 +892,7 @@ fn sheet_pairs(c: &Char, s: &WarriorStats) -> Vec<(u16, u32)> {
 /// The player's own descriptor at login.
 fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
     let display = content::display_id(c.race, c.gender);
-    let [skin, face, hair_style, hair_color, facial_hair] = c.look.map(u32::from);
+    let [skin, face, hair_style, hair_color, _] = c.look.map(u32::from);
     let mut pairs = vec![
         (OBJECT_FIELD_TYPE, TYPE_PLAYER),
         (OBJECT_FIELD_SCALE_X, float(1.0)),
@@ -909,14 +919,15 @@ fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
             PLAYER_BYTES,
             skin | face << 8 | hair_style << 16 | hair_color << 24,
         ),
-        // Facial hair, then `REST_STATE_NORMAL` in the top byte.
-        (PLAYER_BYTES_2, facial_hair | 0x01 << 24),
+        crate::rest::flags(crate::rest::in_inn(c.map, c.position)),
         (PLAYER_BYTES_3, u32::from(c.gender)),
         (PLAYER_XP, c.xp),
         (PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)),
         (PLAYER_FIELD_WATCHED_FACTION_INDEX, u32::MAX),
     ];
     pairs.extend(guid_pairs(OBJECT_FIELD_GUID, c.guid));
+    // Facial hair and the rest state in `PLAYER_BYTES_2`, and the pool.
+    pairs.extend(crate::rest::pairs(c));
     pairs.extend(sheet_pairs(c, stats));
     pairs.push(cast::stance(c));
     pairs.push(crate::talents::points_pair(c));

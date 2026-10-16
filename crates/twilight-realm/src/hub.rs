@@ -55,6 +55,9 @@ pub(crate) struct Npc {
     /// An innkeeper's inn: the `AreaTable` id a bind there names.
     #[serde(default)]
     pub(crate) area: Option<u32>,
+    /// An innkeeper's inn as a rest area: the yards around `position` it covers.
+    #[serde(default)]
+    pub(crate) rest_radius: Option<f32>,
 }
 
 #[derive(Deserialize)]
