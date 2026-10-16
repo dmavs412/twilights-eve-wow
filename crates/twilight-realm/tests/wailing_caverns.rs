@@ -5,10 +5,14 @@
 
 mod common;
 mod gear_common;
+mod quest_common;
 
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::*;
-use gear_common::{descriptor, save_with, Carried};
+use gear_common::{carried, descriptor, save_with, Carried};
+use quest_common::{
+    accept, completed, givers, hand_in, on_offer, quest_log, save_with_quests, Underway, TOKEN,
+};
 
 /// `AreaTrigger.dbc` 228, "Wailing Caverns - Entrance": a 13 yd sphere on Kalimdor.
 const ENTRANCE: u32 = 228;
@@ -84,7 +88,12 @@ impl Script {
     /// The same, in another Calling.
     fn seeded_as(calling: &str, seed: u64, level: u8, money: u32, items: &[Carried]) -> Self {
         let (me, blob) = save_with(level, money, items);
-        let blob = place(&blob, ENTRANCE_AT).replace(
+        Self::from_save(calling, seed, me, &blob, ENTRANCE_AT)
+    }
+
+    /// The character `blob` saves, in `calling`, standing at `at` on Kalimdor.
+    fn from_save(calling: &str, seed: u64, me: u64, blob: &str, at: [f32; 3]) -> Self {
+        let blob = place(blob, at).replace(
             "calling = \"basic_warrior\"",
             &format!("calling = \"{calling}\""),
         );
@@ -662,4 +671,220 @@ fn logging_out_inside_comes_back_outside_the_entrance() {
     assert_eq!((map, needs_ack), (KALIMDOR, false));
     assert!(near(at, OUTSIDE), "{at:?}");
     assert_eq!(facing, OUTSIDE_FACING);
+}
+
+// ── The Disciples' quests ─────────────────────────────────────────────────────────────────────────
+
+/// The Disciples of Naralex on the skull: Nalpak and Ebru.
+const NALPAK: u32 = 5767;
+const EBRU: u32 = 5768;
+/// Their Repeatable Quests: kill the Deviates (Nalpak), bring their hides (Ebru), slay Lady
+/// Anacondra (Nalpak).
+const THE_NIGHTMARES_BROOD: u32 = 92001;
+const DEVIATE_HIDES: u32 = 92002;
+const THE_FANGLORD: u32 = 92003;
+/// The Deviates' quest drop.
+const DEVIATE_HIDE: u32 = 6443;
+/// The skull's crown: the ridge above the Caverns' mouth in the Lushwater Oasis, over its teeth
+/// (pinned in the client). The tunnels from the mouth lead down to the entrance's trigger.
+const SKULL: [f32; 3] = [-780.0, -2034.0, 100.0];
+/// How far from the crown's middle a Disciple may stand, in yards.
+const ON_THE_SKULL_YD: f32 = 15.0;
+
+impl Script {
+    /// Walks up to the Disciple `entry` on the skull; its guid. The player must be on Kalimdor.
+    fn go_to_disciple(&mut self, entry: u32) -> u64 {
+        let (guid, _, at) = givers(&self.events)
+            .into_iter()
+            .find(|g| g.1 == entry)
+            .unwrap_or_else(|| panic!("Disciple {entry} stands on the skull"));
+        self.send(RealmCommand::Move {
+            position: at,
+            orientation: 0.0,
+        });
+        self.tick(0.0);
+        guid
+    }
+
+    /// Walks out through the exit, back to The Barrens.
+    fn leave(&mut self) {
+        self.send(RealmCommand::Move {
+            position: EXIT_AT,
+            orientation: 0.0,
+        });
+        self.send(RealmCommand::AreaTrigger { id: EXIT });
+        self.send(RealmCommand::WorldportAck);
+        self.tick(0.0);
+    }
+
+    /// Keeps `events`, drained by a helper outside the script, as seen by the client.
+    fn keep(&mut self, events: Vec<SessionEvent>) -> Vec<SessionEvent> {
+        self.events.extend(events.clone());
+        events
+    }
+
+    /// The quest's state byte in the log, if it is there: 1 once complete.
+    fn quest_state(&self, quest: u32) -> Option<u8> {
+        quest_log(&self.events, self.me)
+            .into_iter()
+            .find(|q| q.1 == quest)
+            .map(|q| q.3)
+    }
+}
+
+/// A Vanguard of `level` on the skull, carrying `items`, with these quests under way.
+fn questing_at_the_skull(seed: u64, level: u8, items: &[Carried], quests: &[Underway]) -> Script {
+    let (me, blob) = save_with_quests(level, items, 0, quests);
+    Script::from_save("vanguard", seed, me, &blob, SKULL)
+}
+
+impl Script {
+    /// Goes down the tunnels to the entrance and into the Caverns.
+    fn go_in(&mut self) {
+        self.send(RealmCommand::Move {
+            position: ENTRANCE_AT,
+            orientation: 0.0,
+        });
+        self.enter();
+    }
+}
+
+fn flat_yd(a: [f32; 3], b: [f32; 3]) -> f32 {
+    (a[0] - b[0]).hypot(a[1] - b[1])
+}
+
+#[test]
+fn the_disciples_stand_on_the_skull_and_offer_the_caverns_quests_from_level_sixteen() {
+    let mut s = questing_at_the_skull(7, 16, &[], &[]);
+    let disciples: Vec<_> = givers(&s.events)
+        .into_iter()
+        .filter(|g| [NALPAK, EBRU].contains(&g.1))
+        .collect();
+    assert_eq!(disciples.len(), 2, "Nalpak and Ebru stand there");
+    for (_, entry, at) in &disciples {
+        let yd = flat_yd(*at, SKULL);
+        assert!(
+            yd < ON_THE_SKULL_YD,
+            "{entry} stands {yd} yd from the crown"
+        );
+    }
+    assert_eq!(creature_name(&mut s, NALPAK).as_deref(), Some("Nalpak"));
+    assert_eq!(creature_name(&mut s, EBRU).as_deref(), Some("Ebru"));
+
+    let mut offered = Vec::new();
+    for entry in [NALPAK, EBRU] {
+        let npc = s.go_to_disciple(entry);
+        offered.extend(on_offer(&mut s.realm, npc));
+    }
+    offered.sort_unstable();
+    assert_eq!(offered, [THE_NIGHTMARES_BROOD, DEVIATE_HIDES, THE_FANGLORD]);
+
+    // A level below, they have nothing for the player yet.
+    let mut s = questing_at_the_skull(7, 15, &[], &[]);
+    for entry in [NALPAK, EBRU] {
+        let npc = s.go_to_disciple(entry);
+        assert!(on_offer(&mut s.realm, npc).is_empty(), "{entry} at 15");
+    }
+}
+
+#[test]
+fn slaying_lady_anacondra_pays_a_full_level_and_three_tokens_and_is_offered_again_at_once() {
+    let mut items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
+    items.push((MAIN_HAND, PROSPECTOR_AXE, 1));
+    let mut s = questing_at_the_skull(1, 25, &items, &[]);
+    let nalpak = s.go_to_disciple(NALPAK);
+    let taken = accept(&mut s.realm, nalpak, THE_FANGLORD);
+    s.keep(taken);
+    assert_eq!(s.quest_state(THE_FANGLORD), Some(0), "under way");
+
+    s.go_in();
+    kill(&mut s, ANACONDRA_GUID, ANACONDRA_AT);
+    assert_eq!(
+        s.quest_state(THE_FANGLORD),
+        Some(1),
+        "her kill completes it"
+    );
+    s.leave();
+
+    let nalpak = s.go_to_disciple(NALPAK);
+    assert_eq!(descriptor(&s.events, s.me).unit_level(), Some(25));
+    let turned_in = hand_in(&mut s.realm, nalpak, THE_FANGLORD);
+    let turned_in = s.keep(turned_in);
+    let done = completed(&turned_in).expect("the quest completes");
+    // Level 25's whole 34000 XP: a Repeatable Quest pays the player's next level.
+    assert_eq!((done.quest_id, done.xp), (THE_FANGLORD, 34000));
+    assert_eq!(done.items, [(TOKEN, 3)]);
+    assert_eq!(carried(&s.events, s.me, TOKEN), 3);
+    assert_eq!(s.quest_state(THE_FANGLORD), None, "the slot clears");
+
+    // Repeatable: Nalpak offers it again at once, and it can be taken again.
+    assert!(on_offer(&mut s.realm, nalpak).contains(&THE_FANGLORD));
+    let taken = accept(&mut s.realm, nalpak, THE_FANGLORD);
+    s.keep(taken);
+    assert_eq!(s.quest_state(THE_FANGLORD), Some(0), "under way again");
+}
+
+#[test]
+fn a_deviate_killed_inside_counts_toward_nalpaks_quest() {
+    // Five Ravagers and both Guardians down already: the sixth Ravager finishes it.
+    let mut s = questing_at_the_skull(
+        7,
+        25,
+        &[(MAIN_HAND, PROSPECTOR_AXE, 1)],
+        &[(THE_NIGHTMARES_BROOD, [5, 2, 0, 0])],
+    );
+    assert_eq!(s.quest_state(THE_NIGHTMARES_BROOD), Some(0));
+    s.go_in();
+    let mark = s.events.len();
+    kill(&mut s, RAVAGER, RAVAGER_AT);
+    assert!(s.events[mark..].iter().any(|e| matches!(
+        e,
+        SessionEvent::QuestObjectiveKill { quest_id, entry: 3636, count: 6, required: 6 }
+            if *quest_id == THE_NIGHTMARES_BROOD
+    )));
+    assert_eq!(s.quest_state(THE_NIGHTMARES_BROOD), Some(1));
+
+    s.leave();
+    let nalpak = s.go_to_disciple(NALPAK);
+    let done = completed(&hand_in(&mut s.realm, nalpak, THE_NIGHTMARES_BROOD))
+        .expect("the quest completes");
+    assert_eq!(done.items, [(TOKEN, 3)]);
+}
+
+#[test]
+fn the_deviates_inside_drop_their_hides_for_ebrus_quest() {
+    // At 80% a hide falls from most Guardians; over three runs, one does.
+    let dropped = [1, 2, 3].into_iter().any(|seed| {
+        let mut s = questing_at_the_skull(
+            seed,
+            25,
+            &[(MAIN_HAND, PROSPECTOR_AXE, 1), (23, DEVIATE_HIDE, 4)],
+            &[(DEVIATE_HIDES, [0; 4])],
+        );
+        s.go_in();
+        kill(&mut s, GUARDIAN, GUARDIAN_AT);
+        s.send(RealmCommand::Loot { guid: GUARDIAN })
+            .iter()
+            .any(|e| {
+                matches!(
+                    e,
+                    SessionEvent::LootResponse { items, .. }
+                        if items.iter().any(|i| i.item_id == DEVIATE_HIDE)
+                )
+            })
+    });
+    assert!(dropped, "no Guardian dropped a hide");
+
+    // Five hides in the bags: Ebru takes them for a full level and three Tokens.
+    let mut s = questing_at_the_skull(7, 20, &[(23, DEVIATE_HIDE, 5)], &[(DEVIATE_HIDES, [0; 4])]);
+    assert_eq!(
+        s.quest_state(DEVIATE_HIDES),
+        Some(1),
+        "complete from the bags"
+    );
+    let ebru = s.go_to_disciple(EBRU);
+    let done = completed(&hand_in(&mut s.realm, ebru, DEVIATE_HIDES)).expect("it completes");
+    // Level 20's whole 23200 XP.
+    assert_eq!(done.xp, 23200);
+    assert_eq!(done.items, [(TOKEN, 3)]);
 }

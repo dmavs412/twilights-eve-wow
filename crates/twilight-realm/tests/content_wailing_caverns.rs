@@ -168,3 +168,80 @@ fn the_boss_loot_is_the_references_boss_pool() {
         .collect();
     assert_eq!(got, want);
 }
+
+fn content(file: &str) -> toml::Value {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("content")
+        .join(file);
+    toml::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+/// `AreaTable.dbc` 718, which files a quest under the Wailing Caverns in the log.
+const WAILING_CAVERNS_ZONE: i64 = 718;
+/// The skull's crown, the ridge above the Caverns' mouth in the Lushwater Oasis (pinned in the
+/// client), and how far from it a Disciple may stand.
+const SKULL: [f64; 2] = [-780.0, -2034.0];
+const ON_THE_SKULL_YD: f64 = 15.0;
+
+#[test]
+fn the_caverns_quests_are_repeatable_from_sixteen_given_on_the_skull_for_the_runs_creatures() {
+    let (quests, hub, d) = (content("quests.toml"), content("hub.toml"), dungeon());
+    let in_the_run: Vec<i64> = d["spawn"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|s| int(&s["entry"]))
+        .collect();
+    let caverns: Vec<&toml::Value> = quests["quest"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|q| q.get("zone_or_sort").map(int) == Some(WAILING_CAVERNS_ZONE))
+        .collect();
+    assert_eq!(caverns.len(), 3, "kill, collect and the boss");
+    let mut boss = false;
+    for q in caverns {
+        let id = int(&q["id"]);
+        assert_eq!(q["kind"].as_str(), Some("repeatable"), "{id}");
+        assert_eq!(int(&q["tokens"]), 3, "{id}");
+        assert_eq!(int(&q["min_level"]), 16, "{id}");
+        // Its giver stands on the skull's crown.
+        let giver = hub["npc"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|n| int(&n["entry"]) == int(&q["giver"]))
+            .unwrap_or_else(|| panic!("{id}'s giver"));
+        let at = floats(&giver["position"]);
+        let yd = (at[0] - SKULL[0]).hypot(at[1] - SKULL[1]);
+        assert!(
+            yd < ON_THE_SKULL_YD,
+            "{id}'s giver stands {yd} yd from the crown"
+        );
+        // And everything it asks for is met in the run.
+        let kills = q.get("kill").and_then(|k| k.as_array()).cloned();
+        let collects = q.get("collect").and_then(|c| c.as_array()).cloned();
+        let mut targets: Vec<i64> = Vec::new();
+        for k in kills.iter().flatten() {
+            let (entry, count) = (int(&k[0]), int(&k[1]));
+            let standing = in_the_run.iter().filter(|&&e| e == entry).count() as i64;
+            assert!(
+                count <= standing,
+                "{id}: {count} of {entry}, {standing} in a run"
+            );
+            boss |= entry == 3671;
+            targets.push(entry);
+        }
+        for c in collects.iter().flatten() {
+            targets.extend(c["from"].as_array().unwrap().iter().map(int));
+        }
+        assert!(!targets.is_empty(), "{id}");
+        for entry in targets {
+            assert!(
+                in_the_run.contains(&entry),
+                "{id}: {entry} is not in the run"
+            );
+        }
+    }
+    assert!(boss, "one asks for Lady Anacondra");
+}

@@ -15,6 +15,7 @@ item = [
   { entry = 5085, name = "Bristleback Quilboar Tusk", quality = 1, item_level = 1, class = 12, display_id = 7209, stackable = 20 },
   { entry = 5087, name = "Plainstrider Beak", quality = 1, item_level = 1, class = 12, display_id = 6633, stackable = 20 },
   { entry = 5164, name = "Thunderhawk Wings", quality = 1, item_level = 1, class = 12, display_id = 8284, stackable = 20 },
+  { entry = 6443, name = "Deviate Hide", quality = 1, item_level = 1, class = 12, display_id = 11164, stackable = 20 },
   { entry = 7119, name = "Twitching Antenna", quality = 1, item_level = 1, class = 12, display_id = 15507, stackable = 20 },
   # The Token: quests pay it into the bags and the Token vendor takes it from there,
   # so the bags show how many the character has. No vendor buys it (no sell price). Its display

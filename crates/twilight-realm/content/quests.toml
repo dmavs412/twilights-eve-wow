@@ -338,3 +338,58 @@ progress = "The Templars have not yet sent for you, $N. Patience."
 completion = "The Templars have not yet sent for you, $N. Patience."
 money = 0
 tokens = 0
+
+# ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
+# The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
+# Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):
+# its six Deviate Ravagers and two Deviate Guardians, and Lady Anacondra. `zone_or_sort` 718 files
+# them under the Wailing Caverns in the quest log (`AreaTable.dbc`).
+
+[[quest]]
+id = 92001
+kind = "repeatable"
+giver = 5767
+level = 20
+min_level = 16
+zone_or_sort = 718
+title = "The Nightmare's Brood"
+objectives = "Kill 6 Deviate Ravagers and 2 Deviate Guardians in the Wailing Caverns, then return to Nalpak on the skull."
+details = "Naralex's nightmare has darkened under the twilight, $N, and the caverns below breed to its shape. The Deviates that prowl the first tunnels grow larger and crueller with every night that does not end.$B$BGo down through the mouth beneath us and cut them back. They will grow again. Come back when they do."
+progress = "The Deviates still prowl the tunnels below."
+completion = "The tunnels are quieter, for a while. The nightmare will spawn more; it always does. Come back to me when it has."
+money = 2000
+tokens = 3
+kill = [[3636, 6], [3637, 2]]
+
+[[quest]]
+id = 92002
+kind = "repeatable"
+giver = 5768
+level = 20
+min_level = 16
+zone_or_sort = 718
+title = "Deviate Hides"
+objectives = "Bring 5 Deviate Hides from the Deviates of the Wailing Caverns to Ebru on the skull."
+details = "The hides of the Deviates below carry the taint of Naralex's dream. Under this dim sky the taint runs deeper than it ever did, and I must learn how deep before it reaches the oasis.$B$BBring me their hides from the tunnels beneath the skull. As many as you can carry; I will always need more."
+progress = "Have you brought the hides?"
+completion = "Darker than the last. The nightmare is feeding on something. Take this, and come back with more when you can."
+money = 2000
+tokens = 3
+collect = [{ item = 6443, count = 5, chance = 80, from = [3636, 3637] }]
+
+[[quest]]
+id = 92003
+kind = "repeatable"
+giver = 5767
+level = 20
+min_level = 16
+zone_or_sort = 718
+title = "The Fanglord"
+objectives = "Slay Lady Anacondra in the Wailing Caverns, then return to Nalpak on the skull."
+details = "Lady Anacondra was one of us once. Now she is a Fanglord, and she guards the nightmare as if it were her own dream. Under the twilight it may well be.$B$BFollow the tunnels to her hall and end her. The dream will raise her again, $N. Each time it does, end her again."
+progress = "The Fanglord still guards the dream."
+completion = "Then she sleeps, for now. The nightmare will wake her soon enough, and I will need you again when it does."
+money = 2500
+tokens = 3
+kill = [[3671, 1]]
+
