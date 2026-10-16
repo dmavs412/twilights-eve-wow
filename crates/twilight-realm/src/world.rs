@@ -148,6 +148,7 @@ impl InWorld {
             orientation: c.orientation,
             needs_ack: false,
         });
+        events.push(c.bind.update());
         // The dusk clock: evening twilight, just after the 21:00 sunset, and a timescale of zero
         // so the client never advances it. The sky over the world stays at dusk.
         events.push(SessionEvent::TimeSpeed {
@@ -276,7 +277,7 @@ impl InWorld {
             self.population
                 .update(dt, me, self.map, host, &mut self.mobs, events);
         }
-        self.hub.update(me, self.map, host, events);
+        self.hub.update(dt, me, self.map, host, events);
         if self.player.alive() {
             self.discover(host, c, events, &mut ticked);
         }

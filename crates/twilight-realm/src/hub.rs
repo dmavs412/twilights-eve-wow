@@ -1,14 +1,16 @@
-//! The Hub's friendly NPCs (`content/hub.toml`): units that stand in the Crossroads, each opening
-//! the stock window its NPC flags name, and stream in and out with the player's view as the mobs
-//! do.
+//! The Hub's friendly NPCs (`content/hub.toml`): units that live in the Crossroads, or out in a
+//! Hunting Ground for a quest to find them, each opening the stock window its NPC flags name,
+//! and stream in and out with the player's view as the mobs do. Some wander a few yards about
+//! where they stand, as vmangos's random movement walks a creature about its spawn point.
 
 use std::sync::OnceLock;
 
-use benilla_protocol::messages::ObjectType;
+use benilla_protocol::messages::{MonsterMoveFacing, NpcTextBlock, ObjectType, NPC_TEXT_BLOCKS};
 use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
 use crate::fields::*;
+use crate::rng::Rng;
 use crate::space::flat_distance;
 use crate::Host;
 
@@ -32,6 +34,9 @@ pub(crate) struct Npc {
     npc_flags: u32,
     pub(crate) position: [f32; 3],
     orientation: f32,
+    /// How far it wanders from `position`, in yards; 0 stands still.
+    #[serde(default)]
+    wander: f32,
     /// A vendor's list, in the merchant window's order.
     #[serde(default)]
     pub(crate) stock: Vec<u32>,
@@ -44,6 +49,9 @@ pub(crate) struct Npc {
     /// A gossip NPC's greeting's `npc_text` id, which `CMSG_NPC_TEXT_QUERY` asks for.
     #[serde(default)]
     pub(crate) text_id: Option<u32>,
+    /// An innkeeper's inn: the `AreaTable` id a bind there names.
+    #[serde(default)]
+    pub(crate) area: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -67,6 +75,11 @@ impl Npc {
             | u64::from(self.guid & 0xFF_FFFF)
     }
 
+    /// Whether a right-click opens its gossip menu (`UNIT_NPC_FLAG_GOSSIP`).
+    pub(crate) fn gossips(&self) -> bool {
+        self.npc_flags & 0x1 != 0
+    }
+
     /// Whether it trades through the merchant window (`UNIT_NPC_FLAG_VENDOR`).
     pub(crate) fn is_vendor(&self) -> bool {
         self.npc_flags & 0x4 != 0
@@ -82,13 +95,18 @@ impl Npc {
         self.npc_flags & 0x10 != 0
     }
 
+    /// Whether it binds the Hearthstone (`UNIT_NPC_FLAG_INNKEEPER`).
+    pub(crate) fn is_innkeeper(&self) -> bool {
+        self.npc_flags & 0x80 != 0
+    }
+
     /// Whether it repairs gear (`UNIT_NPC_FLAG_REPAIR`).
     pub(crate) fn repairs(&self) -> bool {
         self.npc_flags & 0x4000 != 0
     }
 
-    /// The NPC's create at `position`: a friendly unit with its NPC flags.
-    fn create(&self, position: [f32; 3]) -> SessionEvent {
+    /// The NPC's create at `position`, facing `orientation`: a friendly unit with its NPC flags.
+    fn create(&self, position: [f32; 3], orientation: f32) -> SessionEvent {
         let mut pairs = vec![
             (OBJECT_FIELD_TYPE, TYPE_UNIT),
             (OBJECT_FIELD_ENTRY, self.entry),
@@ -111,10 +129,10 @@ impl Npc {
             kind: EntityKind::Unit,
             display_id: Some(self.display_id),
             position,
-            orientation: self.orientation,
+            orientation,
             scale: 1.0,
             speeds: Some(MoveSpeeds {
-                walk: 2.5,
+                walk: WALK_SPEED,
                 run: 7.0,
                 run_back: 4.5,
                 swim: 4.722_222,
@@ -153,33 +171,117 @@ pub(crate) fn creature_name(entry: u32) -> Option<SessionEvent> {
     })
 }
 
-/// Whether the player at `at` can reach `npc`.
+/// Whether the player at `at` can reach `npc`, wherever within its wander it has walked to.
 pub(crate) fn within_reach(npc: &Npc, at: [f32; 3]) -> bool {
-    crate::space::within_interaction(npc.position, at)
+    flat_distance(npc.position, at) <= crate::space::INTERACTION_YD + npc.wander
 }
+
+/// A Hub NPC's gossip greeting, for `CMSG_NPC_TEXT_QUERY`; `None` for any other text.
+pub(crate) fn greeting(text_id: u32) -> Option<SessionEvent> {
+    let npc = npcs().iter().find(|n| n.text_id == Some(text_id))?;
+    let mut blocks = vec![NpcTextBlock::default(); NPC_TEXT_BLOCKS];
+    blocks[0] = NpcTextBlock {
+        probability: 1.0,
+        male: npc.greeting.clone(),
+        female: npc.greeting.clone(),
+    };
+    Some(SessionEvent::NpcGreeting { text_id, blocks })
+}
+
+impl crate::Realm {
+    /// `CMSG_GOSSIP_HELLO` at a Hub NPC with a gossip greeting: its menu. A trainer's carries
+    /// his lines and his Advancement Quests, as vmangos's gossip lists a quest giver's quests;
+    /// an innkeeper's, the bind and the merchant window; a townsperson's is the greeting alone.
+    pub(crate) fn gossip_hello(&mut self, guid: u64) {
+        let Some(npc) = find(guid).filter(|n| n.gossips() && n.text_id.is_some() && self.near(n))
+        else {
+            return;
+        };
+        let quests = self
+            .world
+            .as_ref()
+            .and_then(|w| self.characters.get(w.guid))
+            .map(|c| crate::quests::gossip_rows(c, npc.entry))
+            .unwrap_or_default();
+        self.events.push(SessionEvent::GossipMenu {
+            npc: npc.guid(),
+            text_id: npc.text_id.unwrap_or_default(),
+            options: if npc.is_innkeeper() {
+                crate::inn::options()
+            } else {
+                crate::trainer::options(npc)
+            },
+            quests,
+        });
+    }
+
+    /// `CMSG_GOSSIP_SELECT_OPTION`: a line of a trainer's or an innkeeper's menu.
+    pub(crate) fn gossip_select(&mut self, guid: u64, option: u32) {
+        match find(guid) {
+            Some(npc) if npc.is_innkeeper() => self.inn_select(npc, option),
+            Some(_) => self.trainer_select(guid, option),
+            None => {}
+        }
+    }
+
+    /// Whether the character in the world can reach `npc`.
+    pub(crate) fn near(&self, npc: &Npc) -> bool {
+        self.world
+            .as_ref()
+            .and_then(|w| self.characters.get(w.guid))
+            .is_some_and(|c| c.map == crate::KALIMDOR && within_reach(npc, c.position))
+    }
+}
+
+/// A Hub NPC's walking speed, yards per second (the stock 2.5).
+const WALK_SPEED: f32 = 2.5;
+/// How long a wanderer stands between walks, in seconds: a few, as vmangos's random movement
+/// pauses at each point.
+const WANDER_PAUSE: (f32, f32) = (5.0, 12.0);
 
 /// How far the player sees a Hub NPC, and how far before it leaves the world (as the mobs).
 const VIEW_YD: f32 = crate::population::VIEW_YD;
 const FORGET_YD: f32 = VIEW_YD + 10.0;
 
-/// Which Hub NPCs are in the world.
+/// Which Hub NPCs are in the world, and where each wanderer has walked to.
 #[derive(Default)]
 pub(crate) struct InView {
-    present: Vec<bool>,
+    present: Vec<Option<Standing>>,
+    /// The wanderers' own dice, so their walks never shift the realm's fights.
+    rng: Rng,
+}
+
+/// An NPC in the world: where it is, and what it is doing there.
+struct Standing {
+    at: [f32; 3],
+    walk: Option<Walk>,
+    /// Seconds until a wanderer sets off again.
+    idle: f32,
+}
+
+/// A walk under way: from, to, how long it takes and how far along it is.
+struct Walk {
+    from: [f32; 3],
+    to: [f32; 3],
+    duration: f32,
+    elapsed: f32,
 }
 
 impl InView {
-    /// Brings the NPCs within view of `me` into the world, standing on the host's ground, and
-    /// lets distant ones go. They stand on Kalimdor only.
+    /// Brings the NPCs within view of `me` into the world, standing on the host's ground, lets
+    /// distant ones go, and walks the wanderers in view on by `dt` seconds. They stand on
+    /// Kalimdor only.
     pub(crate) fn update(
         &mut self,
+        dt: f32,
         me: [f32; 3],
         map: u32,
         host: &dyn Host,
         events: &mut Vec<SessionEvent>,
     ) {
+        let rng = &mut self.rng;
         let all = npcs();
-        self.present.resize(all.len(), false);
+        self.present.resize_with(all.len(), || None);
         let mut gone = Vec::new();
         for (npc, present) in all.iter().zip(&mut self.present) {
             let d = if map == crate::KALIMDOR {
@@ -187,18 +289,84 @@ impl InView {
             } else {
                 f32::INFINITY
             };
-            if !*present && d <= VIEW_YD {
-                let [x, y, z] = npc.position;
-                let z = host.ground_height(map, x, y, z + 2.0).unwrap_or(z);
-                events.push(npc.create([x, y, z]));
-                *present = true;
-            } else if *present && d > FORGET_YD {
-                gone.push(npc.guid());
-                *present = false;
+            match present {
+                None if d <= VIEW_YD => {
+                    let [x, y, z] = npc.position;
+                    let at = [x, y, host.ground_height(map, x, y, z + 2.0).unwrap_or(z)];
+                    events.push(npc.create(at, npc.orientation));
+                    *present = Some(Standing {
+                        at,
+                        walk: None,
+                        idle: rng.frand(WANDER_PAUSE.0, WANDER_PAUSE.1),
+                    });
+                }
+                Some(_) if d > FORGET_YD => {
+                    gone.push(npc.guid());
+                    *present = None;
+                }
+                Some(s) if npc.wander > 0.0 => s.wander(npc, dt, map, host, rng, events),
+                _ => {}
             }
         }
         if !gone.is_empty() {
             events.push(SessionEvent::ObjectsRemoved(gone));
         }
+    }
+}
+
+impl Standing {
+    /// Walks on, or after a pause sets off for another spot within `npc`'s wander.
+    fn wander(
+        &mut self,
+        npc: &Npc,
+        dt: f32,
+        map: u32,
+        host: &dyn Host,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        if let Some(w) = &mut self.walk {
+            w.elapsed += dt;
+            let t = (w.elapsed / w.duration).min(1.0);
+            self.at = std::array::from_fn(|i| w.from[i] + (w.to[i] - w.from[i]) * t);
+            if t >= 1.0 {
+                self.walk = None;
+                self.idle = rng.frand(WANDER_PAUSE.0, WANDER_PAUSE.1);
+            }
+            return;
+        }
+        self.idle -= dt;
+        if self.idle > 0.0 {
+            return;
+        }
+        self.idle = rng.frand(WANDER_PAUSE.0, WANDER_PAUSE.1);
+        // A spot spread evenly over the wander's disc.
+        let angle = rng.frand(0.0, std::f32::consts::TAU);
+        let r = npc.wander * rng.frand(0.0, 1.0).sqrt();
+        let [hx, hy, hz] = npc.position;
+        let (x, y) = (hx + r * angle.cos(), hy + r * angle.sin());
+        let to = [x, y, host.ground_height(map, x, y, hz + 2.0).unwrap_or(hz)];
+        let duration = flat_distance(self.at, to) / WALK_SPEED;
+        if duration <= 0.0 {
+            return;
+        }
+        events.push(SessionEvent::MonsterMove {
+            guid: npc.guid(),
+            transport: None,
+            start: self.at,
+            spline_id: 0,
+            path: vec![self.at, to],
+            facing: MonsterMoveFacing::None,
+            stop: false,
+            duration_ms: crate::clock::ms(duration),
+            flying: false,
+            run_mode: false,
+        });
+        self.walk = Some(Walk {
+            from: self.at,
+            to,
+            duration,
+            elapsed: 0.0,
+        });
     }
 }

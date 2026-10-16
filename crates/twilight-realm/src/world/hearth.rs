@@ -1,13 +1,14 @@
-//! The Hearthstone's spell: back to the Hub. The cast itself is an item cast ([`super::cast`]);
-//! this is what it does when it goes off, and the teleport handshake that follows.
+//! The Hearthstone's spell: back to the bind point ([`crate::inn`]). The cast itself is an item
+//! cast ([`super::cast`]); this is what it does when it goes off, and the teleport handshake that
+//! follows.
 
 use benilla_protocol::SessionEvent;
 
 use super::InWorld;
 use crate::characters::Char;
-use crate::content::CROSSROADS;
 
-/// `Spell.dbc` 8690, "Hearthstone".
+/// `Spell.dbc` 8690, "Hearthstone": the Hearthstone's `use_spell` in `content/given_items.toml`,
+/// which `tests/content_spell_ids.rs` checks against the client.
 const HEARTH_SPELL: u32 = 8690;
 /// Its cast time (`CastingTimeIndex` 16).
 const HEARTH_CAST_MS: u32 = 10_000;
@@ -37,14 +38,9 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         if spell_id == HEARTH_SPELL {
-            // From inside a Dungeon, a worldport.
-            let [x, y, z, facing] = CROSSROADS;
-            let hub = crate::dungeon::Place {
-                map: crate::content::KALIMDOR,
-                position: [x, y, z],
-                orientation: facing,
-            };
-            self.move_to(c, hub, events);
+            // From another map, a worldport.
+            let home = c.bind.place;
+            self.move_to(c, home, events);
         }
     }
 
@@ -119,3 +115,13 @@ impl InWorld {
 
 /// How far a report may drift before it counts as a step, in yards.
 const MOVE_EPSILON: f32 = 0.05;
+
+#[cfg(test)]
+mod tests {
+    /// The realm's own copy of the id agrees with the content the spell-id test checks.
+    #[test]
+    fn the_hearth_spell_is_the_hearthstones_use_spell() {
+        let stone = crate::items::template(crate::content::HEARTHSTONE).expect("the Hearthstone");
+        assert_eq!(super::HEARTH_SPELL, stone.use_spell);
+    }
+}

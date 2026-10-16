@@ -1,0 +1,210 @@
+//! `content/hub.toml` against what each NPC is in the town: its NPC flags fit its role, the quest
+//! givers face their Hunting Grounds, and the townsfolk only talk.
+
+use std::collections::HashSet;
+
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct Npc {
+    guid: u32,
+    entry: u32,
+    name: String,
+    role: String,
+    npc_flags: u32,
+    position: [f32; 3],
+    orientation: f32,
+    #[serde(default)]
+    stock: Vec<u32>,
+    #[serde(default)]
+    tokens: bool,
+    #[serde(default)]
+    greeting: String,
+    text_id: Option<u32>,
+    #[serde(default)]
+    wander: f32,
+    /// The `AreaTable` id an innkeeper binds to.
+    area: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct Hub {
+    npc: Vec<Npc>,
+}
+
+#[derive(Deserialize)]
+struct Collect {
+    from: Vec<u32>,
+}
+
+#[derive(Deserialize)]
+struct Quest {
+    giver: u32,
+    #[serde(default)]
+    kill: Vec<(u32, u32)>,
+    #[serde(default)]
+    collect: Vec<Collect>,
+}
+
+#[derive(Deserialize)]
+struct Quests {
+    quest: Vec<Quest>,
+}
+
+/// `UNIT_NPC_FLAG_*`.
+const GOSSIP: u32 = 0x1;
+const QUEST_GIVER: u32 = 0x2;
+const VENDOR: u32 = 0x4;
+const TRAINER: u32 = 0x10;
+const INNKEEPER: u32 = 0x80;
+const REPAIR: u32 = 0x4000;
+
+fn hub() -> Vec<Npc> {
+    toml::from_str::<Hub>(include_str!("../content/hub.toml"))
+        .expect("hub.toml parses")
+        .npc
+}
+
+fn quests() -> Vec<Quest> {
+    toml::from_str::<Quests>(include_str!("../content/quests.toml"))
+        .expect("quests.toml parses")
+        .quest
+}
+
+/// Every creature spawn in The Barrens, `(entry, x, y)`.
+fn spawns() -> Vec<(u32, f32, f32)> {
+    let barrens: toml::Table = include_str!("../content/barrens.toml").parse().unwrap();
+    barrens["spawns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| {
+            let row = row.as_array().unwrap();
+            let f = |i: usize| row[i].as_float().unwrap() as f32;
+            (row[1].as_integer().unwrap() as u32, f(4), f(5))
+        })
+        .collect()
+}
+
+#[test]
+fn every_npcs_flags_fit_its_role() {
+    let quests = quests();
+    for n in hub() {
+        let gives = quests.iter().any(|q| q.giver == n.entry);
+        let talks = n.text_id.is_some() && !n.greeting.is_empty();
+        let ok = match n.role.as_str() {
+            "goods" => n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty() && !n.tokens,
+            "innkeeper" => {
+                n.npc_flags == GOSSIP | VENDOR | INNKEEPER
+                    && talks
+                    && !gives
+                    && !n.stock.is_empty()
+                    && !n.tokens
+                    && n.area.is_some()
+            }
+            "tokens" => n.npc_flags == VENDOR && n.tokens && n.stock.is_empty(),
+            "trainer" => n.npc_flags == GOSSIP | QUEST_GIVER | TRAINER && talks,
+            "giver" => n.npc_flags == QUEST_GIVER && gives && !n.greeting.is_empty(),
+            "ambient" => {
+                n.npc_flags == GOSSIP
+                    && talks
+                    && !gives
+                    && n.stock.is_empty()
+                    && !n.tokens
+                    && !n.greeting.contains('\n')
+            }
+            other => panic!("{}: no role {other:?}", n.name),
+        };
+        assert!(ok, "{} ({}): flags {:#x}", n.name, n.role, n.npc_flags);
+        assert!(
+            n.area.is_none() || n.role == "innkeeper",
+            "{}: only an innkeeper binds",
+            n.name
+        );
+        // Only the townsfolk walk about, and only a few yards.
+        assert!(
+            n.wander == 0.0 || (n.role == "ambient" && n.wander <= 6.0),
+            "{} wanders {} yd",
+            n.name,
+            n.wander
+        );
+    }
+}
+
+#[test]
+fn about_twenty_townsfolk_live_in_the_crossroads_and_some_wander() {
+    let ambient: Vec<Npc> = hub().into_iter().filter(|n| n.role == "ambient").collect();
+    assert!(
+        (18..=24).contains(&ambient.len()),
+        "{} townsfolk",
+        ambient.len()
+    );
+    let wanderers = ambient.iter().filter(|n| n.wander > 0.0).count();
+    assert!(
+        (2..ambient.len() / 2).contains(&wanderers),
+        "{wanderers} wander"
+    );
+}
+
+#[test]
+fn each_npc_is_its_own_spawn_and_each_line_its_own_text() {
+    let npcs = hub();
+    let mut guids = HashSet::new();
+    let mut texts = HashSet::new();
+    for n in &npcs {
+        assert!(guids.insert(n.guid), "{}: guid {:#x} again", n.name, n.guid);
+        if let Some(t) = n.text_id {
+            assert!(texts.insert(t), "{}: text {t} again", n.name);
+        }
+        // An entry names one creature: the client caches its name and title by entry.
+        for m in &npcs {
+            assert!(
+                m.entry != n.entry || m.name == n.name,
+                "{} and {}",
+                n.name,
+                m.name
+            );
+        }
+    }
+}
+
+/// How far a giver may face from its Hunting Ground and still be looking at it.
+const FACING_SLACK_DEG: f32 = 45.0;
+
+#[test]
+fn each_quest_giver_faces_its_hunting_ground() {
+    let quests = quests();
+    let spawns = spawns();
+    for g in hub().into_iter().filter(|n| n.role == "giver") {
+        let targets: HashSet<u32> = quests
+            .iter()
+            .filter(|q| q.giver == g.entry)
+            .flat_map(|q| {
+                q.kill
+                    .iter()
+                    .map(|k| k.0)
+                    .chain(q.collect.iter().flat_map(|c| c.from.iter().copied()))
+            })
+            .collect();
+        let at: Vec<(f32, f32)> = spawns
+            .iter()
+            .filter(|s| targets.contains(&s.0))
+            .map(|s| (s.1, s.2))
+            .collect();
+        assert!(!at.is_empty(), "{}: no spawn of its targets", g.name);
+        let n = at.len() as f32;
+        let (cx, cy) = at
+            .iter()
+            .fold((0.0, 0.0), |(x, y), p| (x + p.0 / n, y + p.1 / n));
+        let bearing = (cy - g.position[1]).atan2(cx - g.position[0]);
+        let off = (bearing - g.orientation).rem_euclid(std::f32::consts::TAU);
+        let off = off.min(std::f32::consts::TAU - off).to_degrees();
+        assert!(
+            off <= FACING_SLACK_DEG,
+            "{} faces {:.2} rad; its Hunting Ground lies at {:.2}",
+            g.name,
+            g.orientation,
+            bearing.rem_euclid(std::f32::consts::TAU)
+        );
+    }
+}

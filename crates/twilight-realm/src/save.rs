@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::characters::Char;
 use crate::content::{self, Calling};
+use crate::dungeon::Place;
+use crate::inn::Bind;
 use crate::inventory::{bag_size, Inventory, Pos};
 
 /// The save format this realm writes. It also reads version 1, which has the same layout; a save
@@ -86,6 +88,10 @@ struct Save {
     /// has discovered none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     discovered: Vec<u32>,
+    /// The Hearthstone's bind point. Added within version 2: a save without it is bound to the
+    /// Crossroads inn.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    bind: Option<SavedBind>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -94,6 +100,40 @@ struct Save {
     /// out when empty, so it never writes a plain key after `items`' tables.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     quests: Vec<crate::quests::SavedQuest>,
+}
+
+/// The bind point in a save.
+#[derive(Serialize, Deserialize)]
+struct SavedBind {
+    map: u32,
+    position: [f32; 3],
+    orientation: f32,
+    /// The `AreaTable` id that names it.
+    area: u32,
+}
+
+impl From<&Bind> for SavedBind {
+    fn from(b: &Bind) -> Self {
+        Self {
+            map: b.place.map,
+            position: b.place.position,
+            orientation: b.place.orientation,
+            area: b.area,
+        }
+    }
+}
+
+impl From<&SavedBind> for Bind {
+    fn from(s: &SavedBind) -> Self {
+        Self {
+            place: Place {
+                map: s.map,
+                position: s.position,
+                orientation: s.orientation,
+            },
+            area: s.area,
+        }
+    }
 }
 
 /// One item in a save.
@@ -174,6 +214,7 @@ pub(crate) fn export(c: &Char) -> String {
             .collect(),
         completed: c.quests.completed.clone(),
         discovered: c.discovered.clone(),
+        bind: Some(SavedBind::from(&c.bind)),
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -216,6 +257,10 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
             .collect(),
         quests,
         discovered: crate::areas::known(s.discovered),
+        bind: s
+            .bind
+            .as_ref()
+            .map_or_else(Bind::crossroads_inn, Bind::from),
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);

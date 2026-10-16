@@ -48,6 +48,7 @@ mod dungeon;
 mod equipment;
 mod fields;
 mod hub;
+mod inn;
 mod inventory;
 mod items;
 mod looting;
@@ -209,6 +210,10 @@ pub enum RealmCommand {
     /// A gossip greeting's text, answered with [`SessionEvent::NpcGreeting`].
     NpcTextQuery {
         text_id: u32,
+    },
+    /// Accept the innkeeper's bind confirm: bind the Hearthstone where the player stands.
+    BinderActivate {
+        binder: u64,
     },
     /// Accept the respec the trainer priced: unlearn every talent for gold.
     TalentWipeConfirm {
@@ -380,7 +385,15 @@ impl Realm {
                 if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
                     if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
-                        self.characters.set_position(w.guid, position, orientation);
+                        let guid = w.guid;
+                        self.characters.set_position(guid, position, orientation);
+                        let explored = self
+                            .characters
+                            .get_mut(guid)
+                            .is_some_and(|c| quests::explore(c, &mut self.events));
+                        if explored {
+                            self.save(guid);
+                        }
                     }
                 }
             }
@@ -458,9 +471,10 @@ impl Realm {
             RealmCommand::GossipHello { guid } => self.gossip_hello(guid),
             RealmCommand::GossipSelectOption { guid, option } => self.gossip_select(guid, option),
             RealmCommand::NpcTextQuery { text_id } => {
-                self.events.extend(trainer::greeting(text_id));
+                self.events.extend(hub::greeting(text_id));
             }
             RealmCommand::TalentWipeConfirm { trainer } => self.talent_wipe(trainer),
+            RealmCommand::BinderActivate { binder } => self.binder_activate(binder),
             RealmCommand::QuestQuery { quest } => {
                 self.events.extend(quests::template_response(quest));
             }

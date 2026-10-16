@@ -1,5 +1,6 @@
-//! The Crossroads' goods vendor through the stock merchant window: its food and drink, buying,
-//! selling and buyback, and repairs (vmangos `ItemHandler.cpp`, `NPCHandler.cpp`).
+//! The Crossroads' merchants through the stock merchant window: Barg's general goods and the
+//! innkeeper's food and drink, buying, selling and buyback, and repairs (vmangos
+//! `ItemHandler.cpp`, `NPCHandler.cpp`).
 
 mod common;
 mod gear_common;
@@ -11,13 +12,19 @@ use gear_common::*;
 
 const TOUGH_JERKY: u32 = 117; // 25c for 5, sells for 1c
 const REFRESHING_SPRING_WATER: u32 = 159;
+const SMALL_BROWN_POUCH: u32 = 4496;
+
+/// Barg, the goods vendor, and the innkeeper (`content/hub.toml`).
+const BARG: u32 = 190001;
+const INNKEEPER: u32 = 3934;
 
 /// `UNIT_NPC_FLAG_VENDOR` and `UNIT_NPC_FLAG_REPAIR`.
 const NPC_FLAG_VENDOR: u32 = 0x4;
 const NPC_FLAG_REPAIR: u32 = 0x4000;
 
-/// The goods vendor's create in `events`.
-fn the_vendor(events: &[SessionEvent]) -> (u64, [f32; 3], ObjectFields) {
+/// The create of the Hub NPC with creature `entry` in `events`.
+fn the_npc(events: &[SessionEvent], entry: u32) -> (u64, [f32; 3], ObjectFields) {
+    let want = hub_guid(entry);
     events
         .iter()
         .find_map(|e| match e {
@@ -27,12 +34,15 @@ fn the_vendor(events: &[SessionEvent]) -> (u64, [f32; 3], ObjectFields) {
                 position,
                 fields,
                 ..
-            } if fields.unit_npc_flags() & NPC_FLAG_VENDOR != 0 => {
-                Some((*guid, *position, fields.clone()))
-            }
+            } if *guid == want => Some((*guid, *position, fields.clone())),
             _ => None,
         })
-        .expect("the goods vendor stands in the Crossroads")
+        .expect("the merchant stands in the Crossroads")
+}
+
+/// The goods vendor's create in `events`.
+fn the_vendor(events: &[SessionEvent]) -> (u64, [f32; 3], ObjectFields) {
+    the_npc(events, BARG)
 }
 
 /// A warrior in front of the goods vendor, with every event so far.
@@ -50,8 +60,18 @@ impl Shop {
 
     /// [`Shop::new`], with `bagged` inside the bags `items` equips.
     fn with_bagged(level: u8, money: u32, items: &[Carried], bagged: &[Bagged]) -> Self {
-        let (realm, me, events) = warrior_with_bagged(level, money, items, bagged);
-        let vendor = the_vendor(&events).0;
+        Self::at(BARG, level, money, items, bagged)
+    }
+
+    /// A warrior in front of the innkeeper instead.
+    fn innkeeper(level: u8, money: u32, items: &[Carried]) -> Self {
+        Self::at(INNKEEPER, level, money, items, &[])
+    }
+
+    fn at(entry: u32, level: u8, money: u32, items: &[Carried], bagged: &[Bagged]) -> Self {
+        let (mut realm, me, events) = warrior_with_bagged(level, money, items, bagged);
+        let vendor = the_npc(&events, entry).0;
+        walk_up_to(&mut realm, vendor);
         Self {
             realm,
             me,
@@ -142,14 +162,37 @@ fn listing(events: &[SessionEvent]) -> Option<(u64, Vec<VendorItem>)> {
 }
 
 #[test]
-fn the_goods_vendor_stands_in_the_crossroads_and_lists_food_and_drink() {
+fn the_goods_vendor_stands_in_the_crossroads_and_lists_general_goods_but_no_food() {
     let (mut realm, _, events) = warrior_with(1, 0, &[]);
     let (vendor, at, fields) = the_vendor(&events);
     assert_eq!(fields.unit_npc_flags(), NPC_FLAG_VENDOR | NPC_FLAG_REPAIR);
     let crossroads = [twilight_realm::CROSSROADS[0], twilight_realm::CROSSROADS[1]];
     let d = ((at[0] - crossroads[0]).powi(2) + (at[1] - crossroads[1]).powi(2)).sqrt();
-    assert!(d < 6.0, "{d} yd from where characters appear");
+    // In the inn's hall with them.
+    assert!(d < 10.0, "{d} yd from where characters appear");
 
+    realm.handle(RealmCommand::ListInventory { guid: vendor });
+    let (from, items) = listing(&drain(&mut realm)).expect("the stock merchant list");
+    assert_eq!(from, vendor);
+    assert!(items.iter().any(|i| i.entry == SMALL_BROWN_POUCH));
+    for food in [TOUGH_JERKY, REFRESHING_SPRING_WATER] {
+        assert!(
+            !items.iter().any(|i| i.entry == food),
+            "the innkeeper sells {food}"
+        );
+    }
+}
+
+#[test]
+fn the_innkeeper_stands_in_the_inn_and_lists_food_and_drink() {
+    let (mut realm, _, events) = warrior_with(1, 0, &[]);
+    let (vendor, at, fields) = the_npc(&events, INNKEEPER);
+    assert_ne!(fields.unit_npc_flags() & NPC_FLAG_VENDOR, 0);
+    let crossroads = [twilight_realm::CROSSROADS[0], twilight_realm::CROSSROADS[1]];
+    let d = ((at[0] - crossroads[0]).powi(2) + (at[1] - crossroads[1]).powi(2)).sqrt();
+    assert!(d < 15.0, "{d} yd from where characters appear");
+
+    walk_up_to(&mut realm, vendor);
     realm.handle(RealmCommand::ListInventory { guid: vendor });
     let (from, items) = listing(&drain(&mut realm)).expect("the stock merchant list");
     assert_eq!(from, vendor);
@@ -203,7 +246,7 @@ fn the_vendor_stands_on_the_ground_and_streams_with_the_view_as_every_hub_npc() 
 
 #[test]
 fn buying_food_takes_its_price_and_puts_the_bundle_in_the_backpack() {
-    let mut shop = Shop::new(1, 100, &[]);
+    let mut shop = Shop::innkeeper(1, 100, &[]);
     let events = shop.buy(TOUGH_JERKY, 1);
     assert_eq!(shop.money(), 75);
     let (_, entry, count) = shop.pack(23).expect("the jerky in the first backpack slot");
@@ -238,7 +281,7 @@ fn buying_food_takes_its_price_and_puts_the_bundle_in_the_backpack() {
 
 #[test]
 fn what_the_player_cannot_afford_is_refused() {
-    let mut shop = Shop::new(1, 24, &[]);
+    let mut shop = Shop::innkeeper(1, 24, &[]);
     let events = shop.buy(TOUGH_JERKY, 1);
     assert_eq!(
         buy_failure(&events),
@@ -250,7 +293,16 @@ fn what_the_player_cannot_afford_is_refused() {
 
 #[test]
 fn the_vendor_sells_only_its_own_stock_and_only_within_reach() {
-    let mut shop = Shop::new(1, 10_000, &[]);
+    // Barg no longer sells food.
+    let mut barg = Shop::new(1, 10_000, &[]);
+    let events = barg.buy(TOUGH_JERKY, 1);
+    assert_eq!(
+        buy_failure(&events),
+        Some(benilla_protocol::messages::buy_result::CANT_FIND_ITEM)
+    );
+    assert_eq!(barg.money(), 10_000);
+
+    let mut shop = Shop::innkeeper(1, 10_000, &[]);
     let events = shop.buy(4560, 1);
     assert_eq!(
         buy_failure(&events),
@@ -297,7 +349,7 @@ fn selling_pays_the_sell_price_and_offers_the_item_back() {
 
 #[test]
 fn buying_back_costs_what_the_sale_paid() {
-    let mut shop = Shop::new(1, 0, &[(23, FINE_SCIMITAR, 1)]);
+    let mut shop = Shop::innkeeper(1, 0, &[(23, FINE_SCIMITAR, 1)]);
     let scimitar = shop.pack(23).unwrap().0;
     shop.sell(scimitar, 0);
     shop.buy(TOUGH_JERKY, 1);
@@ -381,4 +433,28 @@ fn selling_what_the_player_does_not_have_is_refused() {
         sell_failure(&events),
         Some(benilla_protocol::messages::sell_result::CANT_FIND_ITEM)
     );
+}
+
+#[test]
+fn the_innkeepers_gossip_opens_his_merchant_window() {
+    let mut shop = Shop::innkeeper(1, 0, &[]);
+    let innkeeper = shop.vendor;
+    let events = shop.send(RealmCommand::GossipHello { guid: innkeeper });
+    let option = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu { options, .. } => options
+                .iter()
+                .find(|o| o.message == "Let me browse your goods.")
+                .map(|o| o.index),
+            _ => None,
+        })
+        .expect("the browse line");
+    let events = shop.send(RealmCommand::GossipSelectOption {
+        guid: innkeeper,
+        option,
+    });
+    let (from, items) = listing(&events).expect("the merchant window");
+    assert_eq!(from, innkeeper);
+    assert!(items.iter().any(|i| i.entry == TOUGH_JERKY));
 }

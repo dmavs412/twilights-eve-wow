@@ -126,3 +126,40 @@ pub fn enter_new(realm: &mut Realm, name: &str, race: u8) -> (u64, Vec<SessionEv
     realm.tick(0.0, &FlatGround);
     (guid, drain(realm))
 }
+
+fn hub_rows() -> Vec<toml::Value> {
+    let hub: toml::Table = include_str!("../../content/hub.toml").parse().unwrap();
+    hub["npc"].as_array().unwrap().clone()
+}
+
+/// The object guid of the Hub NPC with creature `entry` (`HIGHGUID_UNIT`, entry, spawn).
+pub fn hub_guid(entry: u32) -> u64 {
+    let row = hub_rows()
+        .into_iter()
+        .find(|n| n["entry"].as_integer() == Some(i64::from(entry)))
+        .unwrap_or_else(|| panic!("{entry} is a Hub NPC"));
+    0xF130 << 48 | u64::from(entry) << 24 | row["guid"].as_integer().unwrap() as u64
+}
+
+/// A Hub NPC's home in `content/hub.toml`, by its object guid.
+pub fn hub_home(npc: u64) -> [f32; 3] {
+    let (entry, low) = ((npc >> 24) & 0xFF_FFFF, npc & 0xFF_FFFF);
+    let row = hub_rows()
+        .into_iter()
+        .find(|n| {
+            n["entry"].as_integer() == Some(entry as i64)
+                && n["guid"].as_integer() == Some(low as i64)
+        })
+        .unwrap_or_else(|| panic!("{npc:#x} is a Hub NPC"));
+    let p = row["position"].as_array().unwrap();
+    std::array::from_fn(|i| p[i].as_float().unwrap() as f32)
+}
+
+/// Walks the player in the world up to the Hub NPC `npc`, near enough to deal with it.
+pub fn walk_up_to(realm: &mut Realm, npc: u64) {
+    let [x, y, _] = hub_home(npc);
+    realm.handle(RealmCommand::Move {
+        position: [x + 1.5, y, 0.0],
+        orientation: std::f32::consts::PI,
+    });
+}

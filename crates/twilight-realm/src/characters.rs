@@ -56,6 +56,8 @@ pub(crate) struct Char {
     /// The `AreaTable.dbc` ids of the areas discovered, ascending: kept for good, through
     /// Advancement.
     pub(crate) discovered: Vec<u32>,
+    /// Where the Hearthstone takes them.
+    pub(crate) bind: crate::inn::Bind,
 }
 
 #[derive(Default)]
@@ -109,6 +111,7 @@ impl Characters {
             item_cooldowns: Vec::new(),
             quests: QuestLog::default(),
             discovered: Vec::new(),
+            bind: crate::inn::Bind::crossroads_inn(),
         });
         CHAR_CREATE_SUCCESS
     }

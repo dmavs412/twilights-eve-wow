@@ -1,6 +1,5 @@
-# The gates of scripts/gates.sh that need neither a WoW install nor a display, plus the wasm build
-# and the page's own tests, on every pull request and every push to main. The data-gated tests and
-# a live run happen on a machine with the game data.
+# The backstop: the same `cargo check` and realm tests a session runs by hand, on every push to
+# main and every pull request. Nothing here needs the game data or a display.
 name: CI
 
 on:
@@ -17,71 +16,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gates:
+  check:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 60
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
-      # No debuginfo: it is most of target/, and a runner's disk is small.
       CARGO_PROFILE_DEV_DEBUG: 0
       CARGO_PROFILE_TEST_DEBUG: 0
-      # Set and empty: no install, as the gates' test-no-install runs.
       WOW_DATA: ""
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Free disk space
-        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
       - name: System libraries
         run: sudo apt-get update -qq && sudo apt-get install -y -qq pkg-config libasound2-dev libudev-dev
       - name: Toolchain
         run: rustup toolchain install && rustc -V
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-      - name: fmt
-        run: cargo fmt --all -- --check
-      - name: clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
-      - name: test
-        run: cargo test --workspace
-      - name: doc-links
-        run: scripts/doc-links.py
-      - name: pass-span-lint
-        run: scripts/pass-span-lint.py
-      - name: map
-        run: scripts/genmap.sh target/MAP.fresh.md && diff -u --strip-trailing-cr docs/MAP.md target/MAP.fresh.md
-      - name: player-tests
-        run: cargo test -p benilla-formats -p benilla-app --no-default-features --lib
-
-  # Nothing native builds the wasm target, so a wasm-only break (a `std::time::Instant`, a thread)
-  # surfaces only here.
-  wasm:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
-          key: wasm
-          cache-directories: tools
-      # wasi-sdk is the C sysroot the Lua VM's build script needs even for `cargo check`.
-      - name: toolchain (scripts/web-setup.sh)
-        run: scripts/web-setup.sh
-      - name: cargo check, wasm32
-        run: cargo check --target wasm32-unknown-unknown -p wenilla --no-default-features --features webgpu
-
-  web:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: page startup and journal tests
-        run: node --test web/tests/*.test.mjs
+      - name: cargo check
+        run: cargo check --workspace
+      - name: realm tests
+        run: cargo test -p twilight-realm

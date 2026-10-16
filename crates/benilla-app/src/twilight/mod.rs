@@ -19,6 +19,8 @@ use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
 
 mod goto;
 mod talents;
+#[cfg(test)]
+pub(crate) mod vanilla_player;
 
 pub(crate) use goto::DevGoto;
 
@@ -360,6 +362,7 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::TalentWipeConfirm { trainer } => {
             Some(RealmCommand::TalentWipeConfirm { trainer })
         }
+        ClientCommand::BinderActivate { binder } => Some(RealmCommand::BinderActivate { binder }),
         ClientCommand::ListInventory { guid } => Some(RealmCommand::ListInventory { guid }),
         ClientCommand::BuyItem {
             vendor,
