@@ -1,0 +1,2763 @@
+{
+ "spells": [
+  {
+   "spell_id": 78,
+   "calling": "basic_warrior",
+   "key": "heroic_strike",
+   "rank": 1,
+   "fields": {
+    "cost": 15.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 5.0,
+    "on_next_swing": true,
+    "not_in_combat": false,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "W",
+       "on_next_swing": true,
+       "bonus": {
+        "base": 9.5,
+        "per_level": 1.4,
+        "per_ap": 0
+       },
+       "threat_bonus": 20
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 100,
+   "calling": "basic_warrior",
+   "key": "charge",
+   "rank": 1,
+   "fields": {
+    "cost": 0.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "cast_time_ms": 0,
+    "range_min": 8.0,
+    "range_max": 25.0,
+    "on_next_swing": false,
+    "not_in_combat": true,
+    "stances": [
+     "Battle Stance"
+    ],
+    "effects": [
+     {
+      "kind": "charge",
+      "params": {
+       "speed_yd_s": 24
+      }
+     },
+     {
+      "kind": "energize_rage",
+      "params": {
+       "amount": {
+        "base": 8.5,
+        "per_level": 0.14,
+        "per_ap": 0
+       }
+      }
+     },
+     {
+      "kind": "stun",
+      "params": {
+       "duration_ms": 1000,
+       "aura_spell_id": 7922
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 12294,
+   "calling": "vanguard",
+   "key": "mortal_strike",
+   "rank": 1,
+   "fields": {
+    "cost": 30.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 5.0,
+    "duration_ms": 10000,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "Wn",
+       "bonus": {
+        "base": 25,
+        "per_level": 2.5,
+        "per_ap": 0
+       }
+      }
+     },
+     {
+      "kind": "healing_reduction",
+      "params": {
+       "pct": 50,
+       "duration_ms": 10000
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 7887,
+   "calling": "vanguard",
+   "key": "overpower",
+   "rank": 1,
+   "fields": {
+    "cost": 5.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 5.0,
+    "stances": [
+     "Battle Stance"
+    ],
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "Wn",
+       "unavoidable": [
+        "dodge",
+        "parry",
+        "block"
+       ],
+       "bonus": {
+        "base": 6,
+        "per_level": 0.6,
+        "per_ap": 0
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 6178,
+   "calling": "vanguard",
+   "key": "charge",
+   "rank": 1,
+   "fields": {
+    "cost": 0.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "cast_time_ms": 0,
+    "range_min": 8.0,
+    "range_max": 25.0,
+    "not_in_combat": true,
+    "stances": [
+     "Battle Stance"
+    ],
+    "effects": [
+     {
+      "kind": "charge",
+      "params": {
+       "speed_yd_s": 24
+      }
+     },
+     {
+      "kind": "energize_rage",
+      "params": {
+       "amount": {
+        "base": 11,
+        "per_level": 0.1,
+        "per_ap": 0
+       }
+      }
+     },
+     {
+      "kind": "stun",
+      "params": {
+       "duration_ms": 1000,
+       "aura_spell_id": 7922
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 6546,
+   "calling": "vanguard",
+   "key": "rend",
+   "rank": 1,
+   "fields": {
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 5.0,
+    "duration_ms": 12000,
+    "stances": [
+     "Battle Stance",
+     "Defensive Stance"
+    ],
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "school": "physical",
+       "mechanic": "bleed",
+       "tick_ms": 3000,
+       "duration_ms": 12000,
+       "tick": {
+        "base": 5,
+        "per_level": 0.25,
+        "per_ap": 0.01,
+        "min": 1
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 6192,
+   "calling": "vanguard",
+   "key": "battle_shout",
+   "rank": 1,
+   "fields": {
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 0.0,
+    "duration_ms": 120000,
+    "effects": [
+     {
+      "kind": "aura_attack_power",
+      "params": {
+       "duration_ms": 120000,
+       "amount": {
+        "base": 20,
+        "per_level": 2.0,
+        "per_ap": 0
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 12290,
+   "calling": "vanguard",
+   "key": "improved_overpower",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12963,
+   "calling": "vanguard",
+   "key": "improved_overpower",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12286,
+   "calling": "vanguard",
+   "key": "improved_rend",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 5,
+     "value": 15
+    }
+   ]
+  },
+  {
+   "spell_id": 12658,
+   "calling": "vanguard",
+   "key": "improved_rend",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 5,
+     "value": 25
+    }
+   ]
+  },
+  {
+   "spell_id": 12659,
+   "calling": "vanguard",
+   "key": "improved_rend",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 5,
+     "value": 35
+    }
+   ]
+  },
+  {
+   "spell_id": 12285,
+   "calling": "vanguard",
+   "key": "improved_charge",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12697,
+   "calling": "vanguard",
+   "key": "improved_charge",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12296,
+   "calling": "vanguard",
+   "key": "anger_management",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 12834,
+   "calling": "vanguard",
+   "key": "deep_wounds",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12849,
+   "calling": "vanguard",
+   "key": "deep_wounds",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12867,
+   "calling": "vanguard",
+   "key": "deep_wounds",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12163,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12711,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12712,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12713,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12714,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16493,
+   "calling": "vanguard",
+   "key": "impale",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16494,
+   "calling": "vanguard",
+   "key": "impale",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12700,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12781,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12783,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12784,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12785,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12284,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12701,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12702,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12703,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12704,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12281,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12812,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12813,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12814,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12815,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12319,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 12971,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 12972,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 12973,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 4,
+   "fields": {}
+  },
+  {
+   "spell_id": 12974,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 5,
+   "fields": {}
+  },
+  {
+   "spell_id": 12321,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12835,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12836,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12837,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12838,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12320,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12852,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12853,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12855,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12856,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12322,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12999,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13000,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13001,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13002,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12318,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 5
+    }
+   ]
+  },
+  {
+   "spell_id": 12857,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 10
+    }
+   ]
+  },
+  {
+   "spell_id": 12858,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 15
+    }
+   ]
+  },
+  {
+   "spell_id": 12860,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 20
+    }
+   ]
+  },
+  {
+   "spell_id": 12861,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 25
+    }
+   ]
+  },
+  {
+   "spell_id": 16487,
+   "calling": "vanguard",
+   "key": "blood_craze",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16489,
+   "calling": "vanguard",
+   "key": "blood_craze",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16492,
+   "calling": "vanguard",
+   "key": "blood_craze",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12317,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13045,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13046,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13047,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13048,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20375,
+   "calling": "zealot",
+   "key": "seal_of_command",
+   "rank": 1,
+   "fields": {
+    "cost": 10,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 0.0,
+    "duration_ms": 30000,
+    "borrowed_from_class": 2,
+    "borrowed_family_bit": 33,
+    "effects": [
+     {
+      "kind": "seal",
+      "params": {
+       "duration_ms": 30000,
+       "seal": {
+        "kind": "command",
+        "procs_per_minute": 7.0,
+        "weapon_pct": 70,
+        "proc_spell_id": 20424,
+        "judgement_spell_id": 20467,
+        "judgement": {
+         "base": 30.0,
+         "per_level": 3.0,
+         "per_ap": 0.15
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 20305,
+   "calling": "zealot",
+   "key": "seal_of_the_crusader",
+   "rank": 1,
+   "fields": {
+    "cost": 10,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 0.0,
+    "duration_ms": 30000,
+    "borrowed_from_class": 2,
+    "borrowed_family_bit": 34,
+    "effects": [
+     {
+      "kind": "seal",
+      "params": {
+       "duration_ms": 30000,
+       "seal": {
+        "kind": "crusader",
+        "attack_power": {
+         "base": 20.0,
+         "per_level": 4.0
+        },
+        "haste_pct": 40,
+        "judgement_spell_id": 20300,
+        "judgement_duration_ms": 10000,
+        "holy_taken_pct": 20
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 20271,
+   "calling": "zealot",
+   "key": "judgement",
+   "rank": 1,
+   "fields": {
+    "cost": 0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 10.0,
+    "borrowed_from_class": 2,
+    "borrowed_family_bit": 35,
+    "effects": [
+     {
+      "kind": "judgement",
+      "params": {}
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 10308,
+   "calling": "zealot",
+   "key": "hammer_of_justice",
+   "rank": 1,
+   "fields": {
+    "cost": 15,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 10.0,
+    "duration_ms": 6000,
+    "borrowed_from_class": 2,
+    "borrowed_family_bit": 36,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "duration_ms": 6000,
+       "aura_spell_id": 10308
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 12294,
+   "calling": "zealot",
+   "key": "mortal_strike",
+   "rank": 1,
+   "fields": {
+    "cost": 30.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "cast_time_ms": 0,
+    "range_min": 0.0,
+    "range_max": 5.0,
+    "duration_ms": 10000,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "Wn",
+       "bonus": {
+        "base": 25,
+        "per_level": 2.5,
+        "per_ap": 0
+       }
+      }
+     },
+     {
+      "kind": "healing_reduction",
+      "params": {
+       "pct": 50,
+       "duration_ms": 10000
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 6178,
+   "calling": "zealot",
+   "key": "charge",
+   "rank": 1,
+   "fields": {
+    "cost": 0.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "cast_time_ms": 0,
+    "range_min": 8.0,
+    "range_max": 25.0,
+    "not_in_combat": true,
+    "stances": [
+     "Battle Stance"
+    ],
+    "effects": [
+     {
+      "kind": "charge",
+      "params": {
+       "speed_yd_s": 24
+      }
+     },
+     {
+      "kind": "energize_rage",
+      "params": {
+       "amount": {
+        "base": 11,
+        "per_level": 0.1,
+        "per_ap": 0
+       }
+      }
+     },
+     {
+      "kind": "stun",
+      "params": {
+       "duration_ms": 1000,
+       "aura_spell_id": 7922
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 20335,
+   "calling": "zealot",
+   "key": "improved_seal_of_the_crusader",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "EFFECT1",
+     "family_bit": 34,
+     "value": 5
+    }
+   ]
+  },
+  {
+   "spell_id": 20336,
+   "calling": "zealot",
+   "key": "improved_seal_of_the_crusader",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "EFFECT1",
+     "family_bit": 34,
+     "value": 10
+    }
+   ]
+  },
+  {
+   "spell_id": 20337,
+   "calling": "zealot",
+   "key": "improved_seal_of_the_crusader",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "EFFECT1",
+     "family_bit": 34,
+     "value": 15
+    }
+   ]
+  },
+  {
+   "spell_id": 20101,
+   "calling": "zealot",
+   "key": "benediction",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 33,
+     "value": -10
+    },
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 34,
+     "value": -10
+    }
+   ]
+  },
+  {
+   "spell_id": 20102,
+   "calling": "zealot",
+   "key": "benediction",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 33,
+     "value": -10
+    },
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 34,
+     "value": -10
+    }
+   ]
+  },
+  {
+   "spell_id": 20103,
+   "calling": "zealot",
+   "key": "benediction",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 33,
+     "value": -20
+    },
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 34,
+     "value": -20
+    }
+   ]
+  },
+  {
+   "spell_id": 20104,
+   "calling": "zealot",
+   "key": "benediction",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 33,
+     "value": -20
+    },
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 34,
+     "value": -20
+    }
+   ]
+  },
+  {
+   "spell_id": 20105,
+   "calling": "zealot",
+   "key": "benediction",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 33,
+     "value": -30
+    },
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 34,
+     "value": -30
+    }
+   ]
+  },
+  {
+   "spell_id": 25956,
+   "calling": "zealot",
+   "key": "improved_judgement",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 25957,
+   "calling": "zealot",
+   "key": "improved_judgement",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 20060,
+   "calling": "zealot",
+   "key": "deflection",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20061,
+   "calling": "zealot",
+   "key": "deflection",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20062,
+   "calling": "zealot",
+   "key": "deflection",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20063,
+   "calling": "zealot",
+   "key": "deflection",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20064,
+   "calling": "zealot",
+   "key": "deflection",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 9452,
+   "calling": "zealot",
+   "key": "vindication",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 26016,
+   "calling": "zealot",
+   "key": "vindication",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 26021,
+   "calling": "zealot",
+   "key": "vindication",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 20117,
+   "calling": "zealot",
+   "key": "conviction",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20118,
+   "calling": "zealot",
+   "key": "conviction",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20119,
+   "calling": "zealot",
+   "key": "conviction",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20120,
+   "calling": "zealot",
+   "key": "conviction",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20121,
+   "calling": "zealot",
+   "key": "conviction",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 9799,
+   "calling": "zealot",
+   "key": "eye_for_an_eye",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 25988,
+   "calling": "zealot",
+   "key": "eye_for_an_eye",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 26022,
+   "calling": "zealot",
+   "key": "pursuit_of_justice",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 26023,
+   "calling": "zealot",
+   "key": "pursuit_of_justice",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 20111,
+   "calling": "zealot",
+   "key": "two_handed_weapon_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20112,
+   "calling": "zealot",
+   "key": "two_handed_weapon_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20113,
+   "calling": "zealot",
+   "key": "two_handed_weapon_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20487,
+   "calling": "zealot",
+   "key": "improved_hammer_of_justice",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 20488,
+   "calling": "zealot",
+   "key": "improved_hammer_of_justice",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 20489,
+   "calling": "zealot",
+   "key": "improved_hammer_of_justice",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 20049,
+   "calling": "zealot",
+   "key": "vengeance",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 20056,
+   "calling": "zealot",
+   "key": "vengeance",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 20057,
+   "calling": "zealot",
+   "key": "vengeance",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 20058,
+   "calling": "zealot",
+   "key": "vengeance",
+   "rank": 4,
+   "fields": {}
+  },
+  {
+   "spell_id": 20059,
+   "calling": "zealot",
+   "key": "vengeance",
+   "rank": 5,
+   "fields": {}
+  },
+  {
+   "spell_id": 5923,
+   "calling": "zealot",
+   "key": "holy_power",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 5924,
+   "calling": "zealot",
+   "key": "holy_power",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 5925,
+   "calling": "zealot",
+   "key": "holy_power",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 5926,
+   "calling": "zealot",
+   "key": "holy_power",
+   "rank": 4,
+   "fields": {}
+  },
+  {
+   "spell_id": 25829,
+   "calling": "zealot",
+   "key": "holy_power",
+   "rank": 5,
+   "fields": {}
+  },
+  {
+   "spell_id": 12285,
+   "calling": "zealot",
+   "key": "improved_charge",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12697,
+   "calling": "zealot",
+   "key": "improved_charge",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12296,
+   "calling": "zealot",
+   "key": "anger_management",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 16493,
+   "calling": "zealot",
+   "key": "impale",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16494,
+   "calling": "zealot",
+   "key": "impale",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12834,
+   "calling": "zealot",
+   "key": "deep_wounds",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12849,
+   "calling": "zealot",
+   "key": "deep_wounds",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12867,
+   "calling": "zealot",
+   "key": "deep_wounds",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12700,
+   "calling": "zealot",
+   "key": "axe_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12781,
+   "calling": "zealot",
+   "key": "axe_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12783,
+   "calling": "zealot",
+   "key": "axe_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12784,
+   "calling": "zealot",
+   "key": "axe_specialization",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12785,
+   "calling": "zealot",
+   "key": "axe_specialization",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12284,
+   "calling": "zealot",
+   "key": "mace_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12701,
+   "calling": "zealot",
+   "key": "mace_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12702,
+   "calling": "zealot",
+   "key": "mace_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12703,
+   "calling": "zealot",
+   "key": "mace_specialization",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12704,
+   "calling": "zealot",
+   "key": "mace_specialization",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12281,
+   "calling": "zealot",
+   "key": "sword_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12812,
+   "calling": "zealot",
+   "key": "sword_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12813,
+   "calling": "zealot",
+   "key": "sword_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12814,
+   "calling": "zealot",
+   "key": "sword_specialization",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12815,
+   "calling": "zealot",
+   "key": "sword_specialization",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12319,
+   "calling": "zealot",
+   "key": "flurry",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 12971,
+   "calling": "zealot",
+   "key": "flurry",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 12972,
+   "calling": "zealot",
+   "key": "flurry",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 12973,
+   "calling": "zealot",
+   "key": "flurry",
+   "rank": 4,
+   "fields": {}
+  },
+  {
+   "spell_id": 12974,
+   "calling": "zealot",
+   "key": "flurry",
+   "rank": 5,
+   "fields": {}
+  },
+  {
+   "spell_id": 20262,
+   "calling": "zealot",
+   "key": "divine_strength",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 20263,
+   "calling": "zealot",
+   "key": "divine_strength",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 20264,
+   "calling": "zealot",
+   "key": "divine_strength",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 20265,
+   "calling": "zealot",
+   "key": "divine_strength",
+   "rank": 4,
+   "fields": {}
+  },
+  {
+   "spell_id": 20266,
+   "calling": "zealot",
+   "key": "divine_strength",
+   "rank": 5,
+   "fields": {}
+  },
+  {
+   "spell_id": 20143,
+   "calling": "zealot",
+   "key": "toughness",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20144,
+   "calling": "zealot",
+   "key": "toughness",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20145,
+   "calling": "zealot",
+   "key": "toughness",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20146,
+   "calling": "zealot",
+   "key": "toughness",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20147,
+   "calling": "zealot",
+   "key": "toughness",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20189,
+   "calling": "zealot",
+   "key": "precision",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 20192,
+   "calling": "zealot",
+   "key": "precision",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 20193,
+   "calling": "zealot",
+   "key": "precision",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 20127,
+   "calling": "zealot",
+   "key": "redoubt",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 20130,
+   "calling": "zealot",
+   "key": "redoubt",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 20135,
+   "calling": "zealot",
+   "key": "redoubt",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 20136,
+   "calling": "zealot",
+   "key": "redoubt",
+   "rank": 4,
+   "fields": {}
+  },
+  {
+   "spell_id": 20137,
+   "calling": "zealot",
+   "key": "redoubt",
+   "rank": 5,
+   "fields": {}
+  },
+  {
+   "spell_id": 20196,
+   "calling": "zealot",
+   "key": "one_handed_weapon_specialization",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20197,
+   "calling": "zealot",
+   "key": "one_handed_weapon_specialization",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20198,
+   "calling": "zealot",
+   "key": "one_handed_weapon_specialization",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20199,
+   "calling": "zealot",
+   "key": "one_handed_weapon_specialization",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20200,
+   "calling": "zealot",
+   "key": "one_handed_weapon_specialization",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20096,
+   "calling": "zealot",
+   "key": "anticipation",
+   "rank": 1,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20097,
+   "calling": "zealot",
+   "key": "anticipation",
+   "rank": 2,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20098,
+   "calling": "zealot",
+   "key": "anticipation",
+   "rank": 3,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20099,
+   "calling": "zealot",
+   "key": "anticipation",
+   "rank": 4,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20100,
+   "calling": "zealot",
+   "key": "anticipation",
+   "rank": 5,
+   "fields": {
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 20177,
+   "calling": "zealot",
+   "key": "reckoning",
+   "rank": 1,
+   "fields": {}
+  },
+  {
+   "spell_id": 20179,
+   "calling": "zealot",
+   "key": "reckoning",
+   "rank": 2,
+   "fields": {}
+  },
+  {
+   "spell_id": 20181,
+   "calling": "zealot",
+   "key": "reckoning",
+   "rank": 3,
+   "fields": {}
+  },
+  {
+   "spell_id": 20180,
+   "calling": "zealot",
+   "key": "reckoning",
+   "rank": 4,
+   "fields": {}
+  },
+  {
+   "spell_id": 20182,
+   "calling": "zealot",
+   "key": "reckoning",
+   "rank": 5,
+   "fields": {}
+  },
+  {
+   "spell_id": 1776,
+   "calling": "basic_warrior",
+   "key": "gouge",
+   "rank": 1,
+   "fields": {
+    "cost": 15,
+    "range_max": 5,
+    "duration_ms": 4000,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {
+       "duration_ms": 4000,
+       "break_on_damage": true
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 2136,
+   "calling": "basic_warrior",
+   "key": "fire_blast",
+   "rank": 1,
+   "fields": {
+    "cost": 10,
+    "cast_time_ms": 0,
+    "range_max": 20,
+    "effects": [
+     {
+      "kind": "spell_damage",
+      "params": {
+       "amount": {
+        "base": 20,
+        "per_level": 2.5
+       }
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "talents": [
+  {
+   "calling": "basic_warrior",
+   "key": "field_medic",
+   "tab": "Recruit",
+   "row": 1.0,
+   "column": 1.0,
+   "rank_spell_ids": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "calling": "basic_warrior",
+   "key": "initiates_spark",
+   "tab": "Recruit",
+   "row": 1.0,
+   "column": 2.0,
+   "rank_spell_ids": [
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "calling": "basic_warrior",
+   "key": "cutthroats_momentum",
+   "tab": "Recruit",
+   "row": 1.0,
+   "column": 3.0,
+   "rank_spell_ids": [
+    null,
+    null
+   ]
+  },
+  {
+   "calling": "basic_warrior",
+   "key": "savage_strikes",
+   "tab": "Recruit",
+   "row": 2.0,
+   "column": 1.0,
+   "rank_spell_ids": [
+    null,
+    null
+   ]
+  },
+  {
+   "calling": "basic_warrior",
+   "key": "vanguards_resolve",
+   "tab": "Recruit",
+   "row": 2.0,
+   "column": 2.0,
+   "rank_spell_ids": [
+    null
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "improved_overpower",
+   "tab": "Weaponmaster",
+   "row": 1,
+   "column": 1,
+   "talent_id": 131,
+   "rank_spell_ids": [
+    12290,
+    12963
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "improved_rend",
+   "tab": "Weaponmaster",
+   "row": 1,
+   "column": 3,
+   "talent_id": 127,
+   "rank_spell_ids": [
+    12286,
+    12658,
+    12659
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "improved_charge",
+   "tab": "Weaponmaster",
+   "row": 2,
+   "column": 1,
+   "talent_id": 126,
+   "rank_spell_ids": [
+    12285,
+    12697
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "anger_management",
+   "tab": "Weaponmaster",
+   "row": 2,
+   "column": 2,
+   "talent_id": 137,
+   "rank_spell_ids": [
+    12296
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "deep_wounds",
+   "tab": "Weaponmaster",
+   "row": 2,
+   "column": 3,
+   "talent_id": 121,
+   "rank_spell_ids": [
+    12834,
+    12849,
+    12867
+   ],
+   "prereq": {
+    "key": "improved_rend",
+    "rank": 3
+   }
+  },
+  {
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "tab": "Weaponmaster",
+   "row": 3,
+   "column": 2,
+   "talent_id": 136,
+   "rank_spell_ids": [
+    12163,
+    12711,
+    12712,
+    12713,
+    12714
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "impale",
+   "tab": "Weaponmaster",
+   "row": 3,
+   "column": 3,
+   "talent_id": 662,
+   "rank_spell_ids": [
+    16493,
+    16494
+   ],
+   "prereq": {
+    "key": "deep_wounds",
+    "rank": 3
+   }
+  },
+  {
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "tab": "Weaponmaster",
+   "row": 4,
+   "column": 1,
+   "talent_id": 132,
+   "rank_spell_ids": [
+    12700,
+    12781,
+    12783,
+    12784,
+    12785
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "tab": "Weaponmaster",
+   "row": 4,
+   "column": 3,
+   "talent_id": 125,
+   "rank_spell_ids": [
+    12284,
+    12701,
+    12702,
+    12703,
+    12704
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "tab": "Weaponmaster",
+   "row": 4,
+   "column": 4,
+   "talent_id": 123,
+   "rank_spell_ids": [
+    12281,
+    12812,
+    12813,
+    12814,
+    12815
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "flurry",
+   "tab": "Weaponmaster",
+   "row": 5,
+   "column": 3,
+   "talent_id": 156,
+   "rank_spell_ids": [
+    12319,
+    12971,
+    12972,
+    12973,
+    12974
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "tab": "Warlord",
+   "row": 1,
+   "column": 2,
+   "talent_id": 158,
+   "rank_spell_ids": [
+    12321,
+    12835,
+    12836,
+    12837,
+    12838
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "cruelty",
+   "tab": "Warlord",
+   "row": 1,
+   "column": 3,
+   "talent_id": 157,
+   "rank_spell_ids": [
+    12320,
+    12852,
+    12853,
+    12855,
+    12856
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "tab": "Warlord",
+   "row": 2,
+   "column": 3,
+   "talent_id": 159,
+   "rank_spell_ids": [
+    12322,
+    12999,
+    13000,
+    13001,
+    13002
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "tab": "Warlord",
+   "row": 2,
+   "column": 4,
+   "talent_id": 154,
+   "rank_spell_ids": [
+    12318,
+    12857,
+    12858,
+    12860,
+    12861
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "blood_craze",
+   "tab": "Warlord",
+   "row": 3,
+   "column": 2,
+   "talent_id": 661,
+   "rank_spell_ids": [
+    16487,
+    16489,
+    16492
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "enrage",
+   "tab": "Warlord",
+   "row": 3,
+   "column": 3,
+   "talent_id": 155,
+   "rank_spell_ids": [
+    12317,
+    13045,
+    13046,
+    13047,
+    13048
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "improved_seal_of_the_crusader",
+   "tab": "Crusade",
+   "row": 1,
+   "column": 2,
+   "talent_id": 1464,
+   "rank_spell_ids": [
+    20335,
+    20336,
+    20337
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "benediction",
+   "tab": "Crusade",
+   "row": 1,
+   "column": 3,
+   "talent_id": 1407,
+   "rank_spell_ids": [
+    20101,
+    20102,
+    20103,
+    20104,
+    20105
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "improved_judgement",
+   "tab": "Crusade",
+   "row": 2,
+   "column": 1,
+   "talent_id": 1631,
+   "rank_spell_ids": [
+    25956,
+    25957
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "deflection",
+   "tab": "Crusade",
+   "row": 2,
+   "column": 3,
+   "talent_id": 1403,
+   "rank_spell_ids": [
+    20060,
+    20061,
+    20062,
+    20063,
+    20064
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "vindication",
+   "tab": "Crusade",
+   "row": 3,
+   "column": 1,
+   "talent_id": 1633,
+   "rank_spell_ids": [
+    9452,
+    26016,
+    26021
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "conviction",
+   "tab": "Crusade",
+   "row": 3,
+   "column": 2,
+   "talent_id": 1411,
+   "rank_spell_ids": [
+    20117,
+    20118,
+    20119,
+    20120,
+    20121
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "eye_for_an_eye",
+   "tab": "Crusade",
+   "row": 4,
+   "column": 1,
+   "talent_id": 1632,
+   "rank_spell_ids": [
+    9799,
+    25988
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "pursuit_of_justice",
+   "tab": "Crusade",
+   "row": 4,
+   "column": 4,
+   "talent_id": 1634,
+   "rank_spell_ids": [
+    26022,
+    26023
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "two_handed_weapon_specialization",
+   "tab": "Crusade",
+   "row": 5,
+   "column": 1,
+   "talent_id": 1410,
+   "rank_spell_ids": [
+    20111,
+    20112,
+    20113
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "improved_hammer_of_justice",
+   "tab": "Crusade",
+   "row": 5,
+   "column": 3,
+   "talent_id": 1521,
+   "rank_spell_ids": [
+    20487,
+    20488,
+    20489
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "vengeance",
+   "tab": "Crusade",
+   "row": 6,
+   "column": 2,
+   "talent_id": 1402,
+   "rank_spell_ids": [
+    20049,
+    20056,
+    20057,
+    20058,
+    20059
+   ],
+   "prereq": {
+    "key": "conviction",
+    "rank": 5
+   }
+  },
+  {
+   "calling": "zealot",
+   "key": "holy_power",
+   "tab": "Crusade",
+   "row": 7,
+   "column": 3,
+   "talent_id": 1627,
+   "rank_spell_ids": [
+    5923,
+    5924,
+    5925,
+    5926,
+    25829
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "improved_charge",
+   "tab": "Blade",
+   "row": 1,
+   "column": 1,
+   "talent_id": 126,
+   "rank_spell_ids": [
+    12285,
+    12697
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "anger_management",
+   "tab": "Blade",
+   "row": 1,
+   "column": 2,
+   "talent_id": 137,
+   "rank_spell_ids": [
+    12296
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "impale",
+   "tab": "Blade",
+   "row": 1,
+   "column": 4,
+   "talent_id": 662,
+   "rank_spell_ids": [
+    16493,
+    16494
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "deep_wounds",
+   "tab": "Blade",
+   "row": 1,
+   "column": 3,
+   "talent_id": 121,
+   "rank_spell_ids": [
+    12834,
+    12849,
+    12867
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "axe_specialization",
+   "tab": "Blade",
+   "row": 2,
+   "column": 1,
+   "talent_id": 132,
+   "rank_spell_ids": [
+    12700,
+    12781,
+    12783,
+    12784,
+    12785
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "mace_specialization",
+   "tab": "Blade",
+   "row": 2,
+   "column": 3,
+   "talent_id": 125,
+   "rank_spell_ids": [
+    12284,
+    12701,
+    12702,
+    12703,
+    12704
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "sword_specialization",
+   "tab": "Blade",
+   "row": 2,
+   "column": 4,
+   "talent_id": 123,
+   "rank_spell_ids": [
+    12281,
+    12812,
+    12813,
+    12814,
+    12815
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "flurry",
+   "tab": "Blade",
+   "row": 3,
+   "column": 3,
+   "talent_id": 156,
+   "rank_spell_ids": [
+    12319,
+    12971,
+    12972,
+    12973,
+    12974
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "divine_strength",
+   "tab": "Faith",
+   "row": 1,
+   "column": 2,
+   "talent_id": 1450,
+   "rank_spell_ids": [
+    20262,
+    20263,
+    20264,
+    20265,
+    20266
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "toughness",
+   "tab": "Faith",
+   "row": 1,
+   "column": 4,
+   "talent_id": 1423,
+   "rank_spell_ids": [
+    20143,
+    20144,
+    20145,
+    20146,
+    20147
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "precision",
+   "tab": "Faith",
+   "row": 2,
+   "column": 1,
+   "talent_id": 1630,
+   "rank_spell_ids": [
+    20189,
+    20192,
+    20193
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "redoubt",
+   "tab": "Faith",
+   "row": 2,
+   "column": 3,
+   "talent_id": 1421,
+   "rank_spell_ids": [
+    20127,
+    20130,
+    20135,
+    20136,
+    20137
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "one_handed_weapon_specialization",
+   "tab": "Faith",
+   "row": 3,
+   "column": 3,
+   "talent_id": 1429,
+   "rank_spell_ids": [
+    20196,
+    20197,
+    20198,
+    20199,
+    20200
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "anticipation",
+   "tab": "Faith",
+   "row": 3,
+   "column": 4,
+   "talent_id": 1629,
+   "rank_spell_ids": [
+    20096,
+    20097,
+    20098,
+    20099,
+    20100
+   ]
+  },
+  {
+   "calling": "zealot",
+   "key": "reckoning",
+   "tab": "Faith",
+   "row": 4,
+   "column": 3,
+   "talent_id": 1426,
+   "rank_spell_ids": [
+    20177,
+    20179,
+    20181,
+    20180,
+    20182
+   ]
+  }
+ ]
+}

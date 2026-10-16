@@ -1,0 +1,3206 @@
+[
+ {
+  "key": "basic_warrior",
+  "skills": [
+   {
+    "key": "heroic_strike",
+    "name": "Heroic Strike",
+    "rank": 1,
+    "spell_id": 78,
+    "icon_id": 856,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "W",
+       "on_next_swing": true,
+       "bonus": {
+        "base": 9.5,
+        "per_level": 1.4,
+        "per_ap": 0
+       },
+       "threat_bonus": 20
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   },
+   {
+    "key": "charge",
+    "name": "Charge",
+    "rank": 1,
+    "spell_id": 100,
+    "icon_id": 457,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 15000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 8,
+    "realm_range_max": 25,
+    "target": "enemy",
+    "requires_out_of_combat": true,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "charge",
+      "params": {
+       "speed_yd_s": 24
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "energize_rage",
+      "params": {
+       "amount": {
+        "base": 8.5,
+        "per_level": 0.14,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "stun",
+      "params": {
+       "duration_ms": 1000,
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   },
+   {
+    "key": "gouge",
+    "name": "Gouge",
+    "rank": 1,
+    "spell_id": 1776,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 10000,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {
+       "duration_ms": 4000,
+       "break_on_damage": true
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Causes [custom] damage and incapacitates the opponent for 4 sec."
+   },
+   {
+    "key": "fire_blast",
+    "name": "Fire Blast",
+    "rank": 1,
+    "spell_id": 2136,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 8000,
+    "realm_range_max": 20,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "spell_damage",
+      "params": {
+       "amount": {
+        "base": 20,
+        "per_level": 2.5
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Blasts the enemy with fire damage."
+   }
+  ],
+  "talent_tabs": [
+   {
+    "name": "Recruit",
+    "talents": [
+     {
+      "key": "field_medic",
+      "name": "Field Medic",
+      "seat": {
+       "row": 1.0,
+       "column": 1.0
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "field_medic",
+        "name": "Field Medic",
+        "rank": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 20
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 3
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases out-of-combat health regeneration by 20% and Stamina by 3%."
+       },
+       {
+        "key": "field_medic",
+        "name": "Field Medic",
+        "rank": 2,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 40
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 6
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases out-of-combat health regeneration by 40% and Stamina by 6%."
+       },
+       {
+        "key": "field_medic",
+        "name": "Field Medic",
+        "rank": 3,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 60
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 9
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases out-of-combat health regeneration by 60% and Stamina by 9%."
+       },
+       {
+        "key": "field_medic",
+        "name": "Field Medic",
+        "rank": 4,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 80
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 12
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases out-of-combat health regeneration by 80% and Stamina by 12%."
+       },
+       {
+        "key": "field_medic",
+        "name": "Field Medic",
+        "rank": 5,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 100
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 15
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases out-of-combat health regeneration by 100% and Stamina by 15%."
+       }
+      ]
+     },
+     {
+      "key": "initiates_spark",
+      "name": "Initiate's Spark",
+      "seat": {
+       "row": 1.0,
+       "column": 2.0
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "initiates_spark",
+        "name": "Initiate's Spark",
+        "rank": 1,
+        "modelled": true,
+        "effects": [],
+        "description": "Increases Fire Blast damage by 10% and it generates 2 Rage."
+       },
+       {
+        "key": "initiates_spark",
+        "name": "Initiate's Spark",
+        "rank": 2,
+        "modelled": true,
+        "effects": [],
+        "description": "Increases Fire Blast damage by 20% and it generates 4 Rage."
+       },
+       {
+        "key": "initiates_spark",
+        "name": "Initiate's Spark",
+        "rank": 3,
+        "modelled": true,
+        "effects": [],
+        "description": "Increases Fire Blast damage by 30% and it generates 6 Rage."
+       }
+      ]
+     },
+     {
+      "key": "cutthroats_momentum",
+      "name": "Cutthroat's Momentum",
+      "seat": {
+       "row": 1.0,
+       "column": 3.0
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "cutthroats_momentum",
+        "name": "Cutthroat's Momentum",
+        "rank": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc_on_cast",
+          "params": {
+           "trigger_spell": "charge",
+           "proc_spell": "custom_momentum_buff_1"
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "After using Charge, your next Heroic Strike has a 50% chance to crit and movement speed increases by 15%."
+       },
+       {
+        "key": "cutthroats_momentum",
+        "name": "Cutthroat's Momentum",
+        "rank": 2,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc_on_cast",
+          "params": {
+           "trigger_spell": "charge",
+           "proc_spell": "custom_momentum_buff_2"
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "After using Charge, your next Heroic Strike has a 100% chance to crit and movement speed increases by 30%."
+       }
+      ]
+     },
+     {
+      "key": "savage_strikes",
+      "name": "Savage Strikes",
+      "seat": {
+       "row": 2.0,
+       "column": 1.0
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "savage_strikes",
+        "name": "Savage Strikes",
+        "rank": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "amount": 3
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_damage",
+          "params": {
+           "pct": 15
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases Critical Strike chance by 3% and Crit damage by 15%."
+       },
+       {
+        "key": "savage_strikes",
+        "name": "Savage Strikes",
+        "rank": 2,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "amount": 6
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_damage",
+          "params": {
+           "pct": 30
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases Critical Strike chance by 6% and Crit damage by 30%."
+       }
+      ]
+     },
+     {
+      "key": "vanguards_resolve",
+      "name": "Vanguard's Resolve",
+      "seat": {
+       "row": 2.0,
+       "column": 2.0
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "vanguards_resolve",
+        "name": "Vanguard's Resolve",
+        "rank": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc_on_kill",
+          "params": {
+           "heal_pct": 10
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Killing an experience-yielding target instantly heals you for 10% of max health."
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "key": "vanguard",
+  "skills": [
+   {
+    "key": "mortal_strike",
+    "name": "Mortal Strike",
+    "rank": 1,
+    "spell_id": 12294,
+    "icon_id": 564,
+    "realm_cost": 30,
+    "realm_cooldown_ms": 6000,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "Wn",
+       "bonus": {
+        "base": 25,
+        "per_level": 2.5,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "healing_reduction",
+      "params": {
+       "pct": 50,
+       "duration_ms": 10000
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   },
+   {
+    "key": "overpower",
+    "name": "Overpower",
+    "rank": 1,
+    "spell_id": 7887,
+    "icon_id": 26,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 5000,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "Wn",
+       "unavoidable": [
+        "dodge",
+        "parry",
+        "block"
+       ],
+       "bonus": {
+        "base": 6,
+        "per_level": 0.6,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   },
+   {
+    "key": "charge",
+    "name": "Charge",
+    "rank": 1,
+    "spell_id": 6178,
+    "icon_id": 457,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 15000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 8,
+    "realm_range_max": 25,
+    "target": "enemy",
+    "requires_out_of_combat": true,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "charge",
+      "params": {
+       "speed_yd_s": 24
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "energize_rage",
+      "params": {
+       "amount": {
+        "base": 11,
+        "per_level": 0.1,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "stun",
+      "params": {
+       "duration_ms": 1000,
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   },
+   {
+    "key": "rend",
+    "name": "Rend",
+    "rank": 1,
+    "spell_id": 6546,
+    "icon_id": 245,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "school": "physical",
+       "mechanic": "bleed",
+       "tick_ms": 3000,
+       "duration_ms": 12000,
+       "tick": {
+        "base": 5,
+        "per_level": 0.25,
+        "per_ap": 0.01,
+        "min": 1
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   },
+   {
+    "key": "battle_shout",
+    "name": "Battle Shout",
+    "rank": 1,
+    "spell_id": 6192,
+    "icon_id": 456,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 1500,
+    "realm_radius_yd": 20,
+    "target": "self_party",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "aura_attack_power",
+      "params": {
+       "duration_ms": 120000,
+       "amount": {
+        "base": 20,
+        "per_level": 2.0,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   }
+  ],
+  "talent_tabs": [
+   {
+    "name": "Weaponmaster",
+    "talents": [
+     {
+      "key": "improved_overpower",
+      "name": "Improved Overpower",
+      "seat": {
+       "row": 1,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_overpower",
+        "name": "Improved Overpower",
+        "rank": 1,
+        "spell_id": 12290,
+        "talent_id": 131,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Overpower +25/50% crit chance."
+       },
+       {
+        "key": "improved_overpower",
+        "name": "Improved Overpower",
+        "rank": 2,
+        "spell_id": 12963,
+        "talent_id": 131,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Overpower +25/50% crit chance."
+       }
+      ]
+     },
+     {
+      "key": "improved_rend",
+      "name": "Improved Rend",
+      "seat": {
+       "row": 1,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_rend",
+        "name": "Improved Rend",
+        "rank": 1,
+        "spell_id": 12286,
+        "talent_id": 127,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Rend ticks +15/25/35%."
+       },
+       {
+        "key": "improved_rend",
+        "name": "Improved Rend",
+        "rank": 2,
+        "spell_id": 12658,
+        "talent_id": 127,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Rend ticks +15/25/35%."
+       },
+       {
+        "key": "improved_rend",
+        "name": "Improved Rend",
+        "rank": 3,
+        "spell_id": 12659,
+        "talent_id": 127,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Rend ticks +15/25/35%."
+       }
+      ]
+     },
+     {
+      "key": "improved_charge",
+      "name": "Improved Charge",
+      "seat": {
+       "row": 2,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_charge",
+        "name": "Improved Charge",
+        "rank": 1,
+        "spell_id": 12285,
+        "talent_id": 126,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Charge +3/6 rage."
+       },
+       {
+        "key": "improved_charge",
+        "name": "Improved Charge",
+        "rank": 2,
+        "spell_id": 12697,
+        "talent_id": 126,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Charge +3/6 rage."
+       }
+      ]
+     },
+     {
+      "key": "anger_management",
+      "name": "Anger Management",
+      "seat": {
+       "row": 2,
+       "column": 2
+      },
+      "exceptional": true,
+      "ranks": [
+       {
+        "key": "anger_management",
+        "name": "Anger Management",
+        "rank": 1,
+        "spell_id": 12296,
+        "talent_id": 137,
+        "source_tab_id": 161,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "deep_wounds",
+      "name": "Deep Wounds",
+      "seat": {
+       "row": 2,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "deep_wounds",
+        "name": "Deep Wounds",
+        "rank": 1,
+        "spell_id": 12834,
+        "talent_id": 121,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
+       },
+       {
+        "key": "deep_wounds",
+        "name": "Deep Wounds",
+        "rank": 2,
+        "spell_id": 12849,
+        "talent_id": 121,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
+       },
+       {
+        "key": "deep_wounds",
+        "name": "Deep Wounds",
+        "rank": 3,
+        "spell_id": 12867,
+        "talent_id": 121,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
+       }
+      ],
+      "prereq": {
+       "key": "improved_rend",
+       "rank": 3
+      }
+     },
+     {
+      "key": "two_handed_weapon_specialization",
+      "name": "Two-Handed Weapon Specialization",
+      "seat": {
+       "row": 3,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "two_handed_weapon_specialization",
+        "name": "Two-Handed Weapon Specialization",
+        "rank": 1,
+        "spell_id": 12163,
+        "talent_id": 136,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
+       },
+       {
+        "key": "two_handed_weapon_specialization",
+        "name": "Two-Handed Weapon Specialization",
+        "rank": 2,
+        "spell_id": 12711,
+        "talent_id": 136,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
+       },
+       {
+        "key": "two_handed_weapon_specialization",
+        "name": "Two-Handed Weapon Specialization",
+        "rank": 3,
+        "spell_id": 12712,
+        "talent_id": 136,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
+       },
+       {
+        "key": "two_handed_weapon_specialization",
+        "name": "Two-Handed Weapon Specialization",
+        "rank": 4,
+        "spell_id": 12713,
+        "talent_id": 136,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
+       },
+       {
+        "key": "two_handed_weapon_specialization",
+        "name": "Two-Handed Weapon Specialization",
+        "rank": 5,
+        "spell_id": 12714,
+        "talent_id": 136,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
+       }
+      ]
+     },
+     {
+      "key": "impale",
+      "name": "Impale",
+      "seat": {
+       "row": 3,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "impale",
+        "name": "Impale",
+        "rank": 1,
+        "spell_id": 16493,
+        "talent_id": 662,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x)."
+       },
+       {
+        "key": "impale",
+        "name": "Impale",
+        "rank": 2,
+        "spell_id": 16494,
+        "talent_id": 662,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x)."
+       }
+      ],
+      "prereq": {
+       "key": "deep_wounds",
+       "rank": 3
+      }
+     },
+     {
+      "key": "axe_specialization",
+      "name": "Axe Specialization",
+      "seat": {
+       "row": 4,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 1,
+        "spell_id": 12700,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       },
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 2,
+        "spell_id": 12781,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       },
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 3,
+        "spell_id": 12783,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       },
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 4,
+        "spell_id": 12784,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       },
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 5,
+        "spell_id": 12785,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       }
+      ]
+     },
+     {
+      "key": "mace_specialization",
+      "name": "Mace Specialization",
+      "seat": {
+       "row": 4,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 1,
+        "spell_id": 12284,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       },
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 2,
+        "spell_id": 12701,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       },
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 3,
+        "spell_id": 12702,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       },
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 4,
+        "spell_id": 12703,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       },
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 5,
+        "spell_id": 12704,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       }
+      ]
+     },
+     {
+      "key": "sword_specialization",
+      "name": "Sword Specialization",
+      "seat": {
+       "row": 4,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 1,
+        "spell_id": 12281,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       },
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 2,
+        "spell_id": 12812,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       },
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 3,
+        "spell_id": 12813,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       },
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 4,
+        "spell_id": 12814,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       },
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 5,
+        "spell_id": 12815,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       }
+      ]
+     },
+     {
+      "key": "flurry",
+      "name": "Flurry",
+      "seat": {
+       "row": 5,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 1,
+        "spell_id": 12319,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+       },
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 2,
+        "spell_id": 12971,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+       },
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 3,
+        "spell_id": 12972,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+       },
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 4,
+        "spell_id": 12973,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+       },
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 5,
+        "spell_id": 12974,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Warlord",
+    "talents": [
+     {
+      "key": "booming_voice",
+      "name": "Booming Voice",
+      "seat": {
+       "row": 1,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "booming_voice",
+        "name": "Booming Voice",
+        "rank": 1,
+        "spell_id": 12321,
+        "talent_id": 158,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout duration and radius +10..50%."
+       },
+       {
+        "key": "booming_voice",
+        "name": "Booming Voice",
+        "rank": 2,
+        "spell_id": 12835,
+        "talent_id": 158,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout duration and radius +10..50%."
+       },
+       {
+        "key": "booming_voice",
+        "name": "Booming Voice",
+        "rank": 3,
+        "spell_id": 12836,
+        "talent_id": 158,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout duration and radius +10..50%."
+       },
+       {
+        "key": "booming_voice",
+        "name": "Booming Voice",
+        "rank": 4,
+        "spell_id": 12837,
+        "talent_id": 158,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout duration and radius +10..50%."
+       },
+       {
+        "key": "booming_voice",
+        "name": "Booming Voice",
+        "rank": 5,
+        "spell_id": 12838,
+        "talent_id": 158,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout duration and radius +10..50%."
+       }
+      ]
+     },
+     {
+      "key": "cruelty",
+      "name": "Cruelty",
+      "seat": {
+       "row": 1,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "cruelty",
+        "name": "Cruelty",
+        "rank": 1,
+        "spell_id": 12320,
+        "talent_id": 157,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       },
+       {
+        "key": "cruelty",
+        "name": "Cruelty",
+        "rank": 2,
+        "spell_id": 12852,
+        "talent_id": 157,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       },
+       {
+        "key": "cruelty",
+        "name": "Cruelty",
+        "rank": 3,
+        "spell_id": 12853,
+        "talent_id": 157,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       },
+       {
+        "key": "cruelty",
+        "name": "Cruelty",
+        "rank": 4,
+        "spell_id": 12855,
+        "talent_id": 157,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       },
+       {
+        "key": "cruelty",
+        "name": "Cruelty",
+        "rank": 5,
+        "spell_id": 12856,
+        "talent_id": 157,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       }
+      ]
+     },
+     {
+      "key": "unbridled_wrath",
+      "name": "Unbridled Wrath",
+      "seat": {
+       "row": 2,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "unbridled_wrath",
+        "name": "Unbridled Wrath",
+        "rank": 1,
+        "spell_id": 12322,
+        "talent_id": 159,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
+       },
+       {
+        "key": "unbridled_wrath",
+        "name": "Unbridled Wrath",
+        "rank": 2,
+        "spell_id": 12999,
+        "talent_id": 159,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
+       },
+       {
+        "key": "unbridled_wrath",
+        "name": "Unbridled Wrath",
+        "rank": 3,
+        "spell_id": 13000,
+        "talent_id": 159,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
+       },
+       {
+        "key": "unbridled_wrath",
+        "name": "Unbridled Wrath",
+        "rank": 4,
+        "spell_id": 13001,
+        "talent_id": 159,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
+       },
+       {
+        "key": "unbridled_wrath",
+        "name": "Unbridled Wrath",
+        "rank": 5,
+        "spell_id": 13002,
+        "talent_id": 159,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
+       }
+      ]
+     },
+     {
+      "key": "improved_battle_shout",
+      "name": "Improved Battle Shout",
+      "seat": {
+       "row": 2,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_battle_shout",
+        "name": "Improved Battle Shout",
+        "rank": 1,
+        "spell_id": 12318,
+        "talent_id": 154,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout's attack power +5..25%."
+       },
+       {
+        "key": "improved_battle_shout",
+        "name": "Improved Battle Shout",
+        "rank": 2,
+        "spell_id": 12857,
+        "talent_id": 154,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout's attack power +5..25%."
+       },
+       {
+        "key": "improved_battle_shout",
+        "name": "Improved Battle Shout",
+        "rank": 3,
+        "spell_id": 12858,
+        "talent_id": 154,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout's attack power +5..25%."
+       },
+       {
+        "key": "improved_battle_shout",
+        "name": "Improved Battle Shout",
+        "rank": 4,
+        "spell_id": 12860,
+        "talent_id": 154,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout's attack power +5..25%."
+       },
+       {
+        "key": "improved_battle_shout",
+        "name": "Improved Battle Shout",
+        "rank": 5,
+        "spell_id": 12861,
+        "talent_id": 154,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "Battle Shout's attack power +5..25%."
+       }
+      ]
+     },
+     {
+      "key": "blood_craze",
+      "name": "Blood Craze",
+      "seat": {
+       "row": 3,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "blood_craze",
+        "name": "Blood Craze",
+        "rank": 1,
+        "spell_id": 16487,
+        "talent_id": 661,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
+       },
+       {
+        "key": "blood_craze",
+        "name": "Blood Craze",
+        "rank": 2,
+        "spell_id": 16489,
+        "talent_id": 661,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
+       },
+       {
+        "key": "blood_craze",
+        "name": "Blood Craze",
+        "rank": 3,
+        "spell_id": 16492,
+        "talent_id": 661,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
+       }
+      ]
+     },
+     {
+      "key": "enrage",
+      "name": "Enrage",
+      "seat": {
+       "row": 3,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "enrage",
+        "name": "Enrage",
+        "rank": 1,
+        "spell_id": 12317,
+        "talent_id": 155,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
+       },
+       {
+        "key": "enrage",
+        "name": "Enrage",
+        "rank": 2,
+        "spell_id": 13045,
+        "talent_id": 155,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
+       },
+       {
+        "key": "enrage",
+        "name": "Enrage",
+        "rank": 3,
+        "spell_id": 13046,
+        "talent_id": 155,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
+       },
+       {
+        "key": "enrage",
+        "name": "Enrage",
+        "rank": 4,
+        "spell_id": 13047,
+        "talent_id": 155,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
+       },
+       {
+        "key": "enrage",
+        "name": "Enrage",
+        "rank": 5,
+        "spell_id": 13048,
+        "talent_id": 155,
+        "source_tab_id": 164,
+        "modelled": true,
+        "effects": [],
+        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "key": "zealot",
+  "skills": [
+   {
+    "key": "seal_of_command",
+    "name": "Seal of Command",
+    "rank": 1,
+    "spell_id": 20375,
+    "icon_id": 561,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 1500,
+    "target": "self",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "seal",
+      "params": {
+       "duration_ms": 30000,
+       "seal": {
+        "kind": "command",
+        "procs_per_minute": 7.0,
+        "weapon_pct": 70,
+        "proc_spell_id": 20424,
+        "judgement_spell_id": 20467,
+        "judgement": {
+         "base": 30.0,
+         "per_level": 3.0,
+         "per_ap": 0.15
+        }
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour."
+   },
+   {
+    "key": "seal_of_the_crusader",
+    "name": "Seal of the Crusader",
+    "rank": 1,
+    "spell_id": 20305,
+    "icon_id": 237,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 1500,
+    "target": "self",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "seal",
+      "params": {
+       "duration_ms": 30000,
+       "seal": {
+        "kind": "crusader",
+        "attack_power": {
+         "base": 20.0,
+         "per_level": 4.0
+        },
+        "haste_pct": 40,
+        "judgement_spell_id": 20300,
+        "judgement_duration_ms": 10000,
+        "holy_taken_pct": 20
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target."
+   },
+   {
+    "key": "judgement",
+    "name": "Judgement",
+    "rank": 1,
+    "spell_id": 20271,
+    "icon_id": 205,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 10000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 10,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "judgement",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing."
+   },
+   {
+    "key": "hammer_of_justice",
+    "name": "Hammer of Justice",
+    "rank": 1,
+    "spell_id": 10308,
+    "icon_id": 302,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 60000,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 10,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "duration_ms": 6000,
+       "aura_spell_id": 10308
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   },
+   {
+    "key": "mortal_strike",
+    "name": "Mortal Strike",
+    "rank": 1,
+    "spell_id": 12294,
+    "icon_id": 564,
+    "realm_cost": 30,
+    "realm_cooldown_ms": 6000,
+    "realm_gcd_ms": 1500,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "Wn",
+       "bonus": {
+        "base": 25,
+        "per_level": 2.5,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "healing_reduction",
+      "params": {
+       "pct": 50,
+       "duration_ms": 10000
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   },
+   {
+    "key": "charge",
+    "name": "Charge",
+    "rank": 1,
+    "spell_id": 6178,
+    "icon_id": 457,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 15000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 8,
+    "realm_range_max": 25,
+    "target": "enemy",
+    "requires_out_of_combat": true,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "charge",
+      "params": {
+       "speed_yd_s": 24
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "energize_rage",
+      "params": {
+       "amount": {
+        "base": 11,
+        "per_level": 0.1,
+        "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "stun",
+      "params": {
+       "duration_ms": 1000,
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": ""
+   }
+  ],
+  "talent_tabs": [
+   {
+    "name": "Crusade",
+    "talents": [
+     {
+      "key": "improved_seal_of_the_crusader",
+      "name": "Improved Seal of the Crusader",
+      "seat": {
+       "row": 1,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_seal_of_the_crusader",
+        "name": "Improved Seal of the Crusader",
+        "rank": 1,
+        "spell_id": 20335,
+        "talent_id": 1464,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%."
+       },
+       {
+        "key": "improved_seal_of_the_crusader",
+        "name": "Improved Seal of the Crusader",
+        "rank": 2,
+        "spell_id": 20336,
+        "talent_id": 1464,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%."
+       },
+       {
+        "key": "improved_seal_of_the_crusader",
+        "name": "Improved Seal of the Crusader",
+        "rank": 3,
+        "spell_id": 20337,
+        "talent_id": 1464,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%."
+       }
+      ]
+     },
+     {
+      "key": "benediction",
+      "name": "Benediction",
+      "seat": {
+       "row": 1,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "benediction",
+        "name": "Benediction",
+        "rank": 1,
+        "spell_id": 20101,
+        "talent_id": 1407,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+       },
+       {
+        "key": "benediction",
+        "name": "Benediction",
+        "rank": 2,
+        "spell_id": 20102,
+        "talent_id": 1407,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+       },
+       {
+        "key": "benediction",
+        "name": "Benediction",
+        "rank": 3,
+        "spell_id": 20103,
+        "talent_id": 1407,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+       },
+       {
+        "key": "benediction",
+        "name": "Benediction",
+        "rank": 4,
+        "spell_id": 20104,
+        "talent_id": 1407,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+       },
+       {
+        "key": "benediction",
+        "name": "Benediction",
+        "rank": 5,
+        "spell_id": 20105,
+        "talent_id": 1407,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+       }
+      ]
+     },
+     {
+      "key": "improved_judgement",
+      "name": "Improved Judgement",
+      "seat": {
+       "row": 2,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_judgement",
+        "name": "Improved Judgement",
+        "rank": 1,
+        "spell_id": 25956,
+        "talent_id": 1631,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "improved_judgement",
+        "name": "Improved Judgement",
+        "rank": 2,
+        "spell_id": 25957,
+        "talent_id": 1631,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "deflection",
+      "name": "Deflection",
+      "seat": {
+       "row": 2,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "deflection",
+        "name": "Deflection",
+        "rank": 1,
+        "spell_id": 20060,
+        "talent_id": 1403,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% parry chance."
+       },
+       {
+        "key": "deflection",
+        "name": "Deflection",
+        "rank": 2,
+        "spell_id": 20061,
+        "talent_id": 1403,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% parry chance."
+       },
+       {
+        "key": "deflection",
+        "name": "Deflection",
+        "rank": 3,
+        "spell_id": 20062,
+        "talent_id": 1403,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% parry chance."
+       },
+       {
+        "key": "deflection",
+        "name": "Deflection",
+        "rank": 4,
+        "spell_id": 20063,
+        "talent_id": 1403,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% parry chance."
+       },
+       {
+        "key": "deflection",
+        "name": "Deflection",
+        "rank": 5,
+        "spell_id": 20064,
+        "talent_id": 1403,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% parry chance."
+       }
+      ]
+     },
+     {
+      "key": "vindication",
+      "name": "Vindication",
+      "seat": {
+       "row": 3,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "vindication",
+        "name": "Vindication",
+        "rank": 1,
+        "spell_id": 9452,
+        "talent_id": 1633,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
+       },
+       {
+        "key": "vindication",
+        "name": "Vindication",
+        "rank": 2,
+        "spell_id": 26016,
+        "talent_id": 1633,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
+       },
+       {
+        "key": "vindication",
+        "name": "Vindication",
+        "rank": 3,
+        "spell_id": 26021,
+        "talent_id": 1633,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "conviction",
+      "name": "Conviction",
+      "seat": {
+       "row": 3,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "conviction",
+        "name": "Conviction",
+        "rank": 1,
+        "spell_id": 20117,
+        "talent_id": 1411,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       },
+       {
+        "key": "conviction",
+        "name": "Conviction",
+        "rank": 2,
+        "spell_id": 20118,
+        "talent_id": 1411,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       },
+       {
+        "key": "conviction",
+        "name": "Conviction",
+        "rank": 3,
+        "spell_id": 20119,
+        "talent_id": 1411,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       },
+       {
+        "key": "conviction",
+        "name": "Conviction",
+        "rank": 4,
+        "spell_id": 20120,
+        "talent_id": 1411,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       },
+       {
+        "key": "conviction",
+        "name": "Conviction",
+        "rank": 5,
+        "spell_id": 20121,
+        "talent_id": 1411,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% melee crit chance."
+       }
+      ]
+     },
+     {
+      "key": "eye_for_an_eye",
+      "name": "Eye for an Eye",
+      "seat": {
+       "row": 4,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "eye_for_an_eye",
+        "name": "Eye for an Eye",
+        "rank": 1,
+        "spell_id": 9799,
+        "talent_id": 1632,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
+       },
+       {
+        "key": "eye_for_an_eye",
+        "name": "Eye for an Eye",
+        "rank": 2,
+        "spell_id": 25988,
+        "talent_id": 1632,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "pursuit_of_justice",
+      "name": "Pursuit of Justice",
+      "seat": {
+       "row": 4,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "pursuit_of_justice",
+        "name": "Pursuit of Justice",
+        "rank": 1,
+        "spell_id": 26022,
+        "talent_id": 1634,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "pursuit_of_justice",
+        "name": "Pursuit of Justice",
+        "rank": 2,
+        "spell_id": 26023,
+        "talent_id": 1634,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "two_handed_weapon_specialization",
+      "name": "Two-Handed Weapon Specialization",
+      "seat": {
+       "row": 5,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "two_handed_weapon_specialization",
+        "name": "Two-Handed Weapon Specialization",
+        "rank": 1,
+        "spell_id": 20111,
+        "talent_id": 1410,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+2/4/6% physical damage while wielding a two-handed melee weapon."
+       },
+       {
+        "key": "two_handed_weapon_specialization",
+        "name": "Two-Handed Weapon Specialization",
+        "rank": 2,
+        "spell_id": 20112,
+        "talent_id": 1410,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+2/4/6% physical damage while wielding a two-handed melee weapon."
+       },
+       {
+        "key": "two_handed_weapon_specialization",
+        "name": "Two-Handed Weapon Specialization",
+        "rank": 3,
+        "spell_id": 20113,
+        "talent_id": 1410,
+        "source_tab_id": 381,
+        "modelled": true,
+        "effects": [],
+        "description": "+2/4/6% physical damage while wielding a two-handed melee weapon."
+       }
+      ]
+     },
+     {
+      "key": "improved_hammer_of_justice",
+      "name": "Improved Hammer of Justice",
+      "seat": {
+       "row": 5,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_hammer_of_justice",
+        "name": "Improved Hammer of Justice",
+        "rank": 1,
+        "spell_id": 20487,
+        "talent_id": 1521,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "improved_hammer_of_justice",
+        "name": "Improved Hammer of Justice",
+        "rank": 2,
+        "spell_id": 20488,
+        "talent_id": 1521,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "improved_hammer_of_justice",
+        "name": "Improved Hammer of Justice",
+        "rank": 3,
+        "spell_id": 20489,
+        "talent_id": 1521,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "vengeance",
+      "name": "Vengeance",
+      "seat": {
+       "row": 6,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "vengeance",
+        "name": "Vengeance",
+        "rank": 1,
+        "spell_id": 20049,
+        "talent_id": 1402,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+       },
+       {
+        "key": "vengeance",
+        "name": "Vengeance",
+        "rank": 2,
+        "spell_id": 20056,
+        "talent_id": 1402,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+       },
+       {
+        "key": "vengeance",
+        "name": "Vengeance",
+        "rank": 3,
+        "spell_id": 20057,
+        "talent_id": 1402,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+       },
+       {
+        "key": "vengeance",
+        "name": "Vengeance",
+        "rank": 4,
+        "spell_id": 20058,
+        "talent_id": 1402,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+       },
+       {
+        "key": "vengeance",
+        "name": "Vengeance",
+        "rank": 5,
+        "spell_id": 20059,
+        "talent_id": 1402,
+        "source_tab_id": 381,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+       }
+      ],
+      "prereq": {
+       "key": "conviction",
+       "rank": 5
+      }
+     },
+     {
+      "key": "holy_power",
+      "name": "Holy Power",
+      "seat": {
+       "row": 7,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "holy_power",
+        "name": "Holy Power",
+        "rank": 1,
+        "spell_id": 5923,
+        "talent_id": 1627,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+       },
+       {
+        "key": "holy_power",
+        "name": "Holy Power",
+        "rank": 2,
+        "spell_id": 5924,
+        "talent_id": 1627,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+       },
+       {
+        "key": "holy_power",
+        "name": "Holy Power",
+        "rank": 3,
+        "spell_id": 5925,
+        "talent_id": 1627,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+       },
+       {
+        "key": "holy_power",
+        "name": "Holy Power",
+        "rank": 4,
+        "spell_id": 5926,
+        "talent_id": 1627,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+       },
+       {
+        "key": "holy_power",
+        "name": "Holy Power",
+        "rank": 5,
+        "spell_id": 25829,
+        "talent_id": 1627,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Blade",
+    "talents": [
+     {
+      "key": "improved_charge",
+      "name": "Improved Charge",
+      "seat": {
+       "row": 1,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_charge",
+        "name": "Improved Charge",
+        "rank": 1,
+        "spell_id": 12285,
+        "talent_id": 126,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Charge +3/6 rage."
+       },
+       {
+        "key": "improved_charge",
+        "name": "Improved Charge",
+        "rank": 2,
+        "spell_id": 12697,
+        "talent_id": 126,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Charge +3/6 rage."
+       }
+      ]
+     },
+     {
+      "key": "anger_management",
+      "name": "Anger Management",
+      "seat": {
+       "row": 1,
+       "column": 2
+      },
+      "exceptional": true,
+      "ranks": [
+       {
+        "key": "anger_management",
+        "name": "Anger Management",
+        "rank": 1,
+        "spell_id": 12296,
+        "talent_id": 137,
+        "source_tab_id": 161,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "impale",
+      "name": "Impale",
+      "seat": {
+       "row": 1,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "impale",
+        "name": "Impale",
+        "rank": 1,
+        "spell_id": 16493,
+        "talent_id": 662,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x)."
+       },
+       {
+        "key": "impale",
+        "name": "Impale",
+        "rank": 2,
+        "spell_id": 16494,
+        "talent_id": 662,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x)."
+       }
+      ]
+     },
+     {
+      "key": "deep_wounds",
+      "name": "Deep Wounds",
+      "seat": {
+       "row": 1,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "deep_wounds",
+        "name": "Deep Wounds",
+        "rank": 1,
+        "spell_id": 12834,
+        "talent_id": 121,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
+       },
+       {
+        "key": "deep_wounds",
+        "name": "Deep Wounds",
+        "rank": 2,
+        "spell_id": 12849,
+        "talent_id": 121,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
+       },
+       {
+        "key": "deep_wounds",
+        "name": "Deep Wounds",
+        "rank": 3,
+        "spell_id": 12867,
+        "talent_id": 121,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
+       }
+      ]
+     },
+     {
+      "key": "axe_specialization",
+      "name": "Axe Specialization",
+      "seat": {
+       "row": 2,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 1,
+        "spell_id": 12700,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       },
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 2,
+        "spell_id": 12781,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       },
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 3,
+        "spell_id": 12783,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       },
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 4,
+        "spell_id": 12784,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       },
+       {
+        "key": "axe_specialization",
+        "name": "Axe Specialization",
+        "rank": 5,
+        "spell_id": 12785,
+        "talent_id": 132,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "+1..5% crit chance with axes."
+       }
+      ]
+     },
+     {
+      "key": "mace_specialization",
+      "name": "Mace Specialization",
+      "seat": {
+       "row": 2,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 1,
+        "spell_id": 12284,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       },
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 2,
+        "spell_id": 12701,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       },
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 3,
+        "spell_id": 12702,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       },
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 4,
+        "spell_id": 12703,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       },
+       {
+        "key": "mace_specialization",
+        "name": "Mace Specialization",
+        "rank": 5,
+        "spell_id": 12704,
+        "talent_id": 125,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
+       }
+      ]
+     },
+     {
+      "key": "sword_specialization",
+      "name": "Sword Specialization",
+      "seat": {
+       "row": 2,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 1,
+        "spell_id": 12281,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       },
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 2,
+        "spell_id": 12812,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       },
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 3,
+        "spell_id": 12813,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       },
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 4,
+        "spell_id": 12814,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       },
+       {
+        "key": "sword_specialization",
+        "name": "Sword Specialization",
+        "rank": 5,
+        "spell_id": 12815,
+        "talent_id": 123,
+        "source_tab_id": 161,
+        "modelled": true,
+        "effects": [],
+        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+       }
+      ]
+     },
+     {
+      "key": "flurry",
+      "name": "Flurry",
+      "seat": {
+       "row": 3,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 1,
+        "spell_id": 12319,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+       },
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 2,
+        "spell_id": 12971,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+       },
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 3,
+        "spell_id": 12972,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+       },
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 4,
+        "spell_id": 12973,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+       },
+       {
+        "key": "flurry",
+        "name": "Flurry",
+        "rank": 5,
+        "spell_id": 12974,
+        "talent_id": 156,
+        "source_tab_id": 164,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Faith",
+    "talents": [
+     {
+      "key": "divine_strength",
+      "name": "Divine Strength",
+      "seat": {
+       "row": 1,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 1,
+        "spell_id": 20262,
+        "talent_id": 1450,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 2,
+        "spell_id": 20263,
+        "talent_id": 1450,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 3,
+        "spell_id": 20264,
+        "talent_id": 1450,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 4,
+        "spell_id": 20265,
+        "talent_id": 1450,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 5,
+        "spell_id": 20266,
+        "talent_id": 1450,
+        "source_tab_id": 382,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "toughness",
+      "name": "Toughness",
+      "seat": {
+       "row": 1,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "toughness",
+        "name": "Toughness",
+        "rank": 1,
+        "spell_id": 20143,
+        "talent_id": 1423,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% armour from items."
+       },
+       {
+        "key": "toughness",
+        "name": "Toughness",
+        "rank": 2,
+        "spell_id": 20144,
+        "talent_id": 1423,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% armour from items."
+       },
+       {
+        "key": "toughness",
+        "name": "Toughness",
+        "rank": 3,
+        "spell_id": 20145,
+        "talent_id": 1423,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% armour from items."
+       },
+       {
+        "key": "toughness",
+        "name": "Toughness",
+        "rank": 4,
+        "spell_id": 20146,
+        "talent_id": 1423,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% armour from items."
+       },
+       {
+        "key": "toughness",
+        "name": "Toughness",
+        "rank": 5,
+        "spell_id": 20147,
+        "talent_id": 1423,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% armour from items."
+       }
+      ]
+     },
+     {
+      "key": "precision",
+      "name": "Precision",
+      "seat": {
+       "row": 2,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "precision",
+        "name": "Precision",
+        "rank": 1,
+        "spell_id": 20189,
+        "talent_id": 1630,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "precision",
+        "name": "Precision",
+        "rank": 2,
+        "spell_id": 20192,
+        "talent_id": 1630,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
+       },
+       {
+        "key": "precision",
+        "name": "Precision",
+        "rank": 3,
+        "spell_id": 20193,
+        "talent_id": 1630,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "redoubt",
+      "name": "Redoubt",
+      "seat": {
+       "row": 2,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "redoubt",
+        "name": "Redoubt",
+        "rank": 1,
+        "spell_id": 20127,
+        "talent_id": 1421,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+       },
+       {
+        "key": "redoubt",
+        "name": "Redoubt",
+        "rank": 2,
+        "spell_id": 20130,
+        "talent_id": 1421,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+       },
+       {
+        "key": "redoubt",
+        "name": "Redoubt",
+        "rank": 3,
+        "spell_id": 20135,
+        "talent_id": 1421,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+       },
+       {
+        "key": "redoubt",
+        "name": "Redoubt",
+        "rank": 4,
+        "spell_id": 20136,
+        "talent_id": 1421,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+       },
+       {
+        "key": "redoubt",
+        "name": "Redoubt",
+        "rank": 5,
+        "spell_id": 20137,
+        "talent_id": 1421,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+       }
+      ]
+     },
+     {
+      "key": "one_handed_weapon_specialization",
+      "name": "One-Handed Weapon Specialization",
+      "seat": {
+       "row": 3,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "one_handed_weapon_specialization",
+        "name": "One-Handed Weapon Specialization",
+        "rank": 1,
+        "spell_id": 20196,
+        "talent_id": 1429,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% physical damage while wielding a one-handed melee weapon."
+       },
+       {
+        "key": "one_handed_weapon_specialization",
+        "name": "One-Handed Weapon Specialization",
+        "rank": 2,
+        "spell_id": 20197,
+        "talent_id": 1429,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% physical damage while wielding a one-handed melee weapon."
+       },
+       {
+        "key": "one_handed_weapon_specialization",
+        "name": "One-Handed Weapon Specialization",
+        "rank": 3,
+        "spell_id": 20198,
+        "talent_id": 1429,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% physical damage while wielding a one-handed melee weapon."
+       },
+       {
+        "key": "one_handed_weapon_specialization",
+        "name": "One-Handed Weapon Specialization",
+        "rank": 4,
+        "spell_id": 20199,
+        "talent_id": 1429,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% physical damage while wielding a one-handed melee weapon."
+       },
+       {
+        "key": "one_handed_weapon_specialization",
+        "name": "One-Handed Weapon Specialization",
+        "rank": 5,
+        "spell_id": 20200,
+        "talent_id": 1429,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10% physical damage while wielding a one-handed melee weapon."
+       }
+      ]
+     },
+     {
+      "key": "anticipation",
+      "name": "Anticipation",
+      "seat": {
+       "row": 3,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "anticipation",
+        "name": "Anticipation",
+        "rank": 1,
+        "spell_id": 20096,
+        "talent_id": 1629,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10 Defense."
+       },
+       {
+        "key": "anticipation",
+        "name": "Anticipation",
+        "rank": 2,
+        "spell_id": 20097,
+        "talent_id": 1629,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10 Defense."
+       },
+       {
+        "key": "anticipation",
+        "name": "Anticipation",
+        "rank": 3,
+        "spell_id": 20098,
+        "talent_id": 1629,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10 Defense."
+       },
+       {
+        "key": "anticipation",
+        "name": "Anticipation",
+        "rank": 4,
+        "spell_id": 20099,
+        "talent_id": 1629,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10 Defense."
+       },
+       {
+        "key": "anticipation",
+        "name": "Anticipation",
+        "rank": 5,
+        "spell_id": 20100,
+        "talent_id": 1629,
+        "source_tab_id": 383,
+        "modelled": true,
+        "effects": [],
+        "description": "+2..10 Defense."
+       }
+      ]
+     },
+     {
+      "key": "reckoning",
+      "name": "Reckoning",
+      "seat": {
+       "row": 4,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "reckoning",
+        "name": "Reckoning",
+        "rank": 1,
+        "spell_id": 20177,
+        "talent_id": 1426,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+       },
+       {
+        "key": "reckoning",
+        "name": "Reckoning",
+        "rank": 2,
+        "spell_id": 20179,
+        "talent_id": 1426,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+       },
+       {
+        "key": "reckoning",
+        "name": "Reckoning",
+        "rank": 3,
+        "spell_id": 20181,
+        "talent_id": 1426,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+       },
+       {
+        "key": "reckoning",
+        "name": "Reckoning",
+        "rank": 4,
+        "spell_id": 20180,
+        "talent_id": 1426,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+       },
+       {
+        "key": "reckoning",
+        "name": "Reckoning",
+        "rank": 5,
+        "spell_id": 20182,
+        "talent_id": 1426,
+        "source_tab_id": 383,
+        "modelled": false,
+        "effects": [],
+        "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+]

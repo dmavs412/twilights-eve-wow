@@ -44,13 +44,16 @@ these fields, never as arithmetic in a cell.
 
 ## The script
 
-`tools/twilights-eve/build_spells.py` reads the CSV, checks every `spell_id`, `talent_id` and
-`source_tab_id` against the real `Spell.dbc`, `Talent.dbc` and `TalentTab.dbc` through
-`tools/twilights-eve/wowdata.py` (the stdlib MPQ and DBC reader `extract_spells.py` already
-uses), and writes both outputs. It exits non-zero on an unknown id, a duplicate `key` within a
-Calling, a `realm_cost` below `client_cost`, a client column set on effect 4 or 5, or a talent
-rank whose `spell_id` is not that rank's spell in `Talent.dbc`. Run it by hand after a CSV edit
-and commit the CSV and both outputs together, so a diff shows what a cell changed.
+`tools/twilights-eve/build_spells.py` reads the CSV, checks that every `spell_id`, `talent_id`,
+`icon_id` and `source_tab_id` is a row in `Spell.dbc`, `Talent.dbc`, `SpellIcon.dbc` and
+`TalentTab.dbc` through `tools/twilights-eve/wowdata.py`, and writes both outputs in one pass. It
+exits non-zero, writing nothing, on an id the DBCs do not hold, an id that is not a whole number,
+a duplicate rank within a Calling, a `realm_cost` below `client_cost`, an unknown effect kind or
+malformed params on a modelled row, a half-filled spellmod, or a talent seat that is missing,
+shared or has an unresolved prereq. The DBC check needs `--data` or `WOW_DATA`; `--no-dbc-check`
+skips it (the tests use that). Run it by hand after a CSV edit and commit the CSV and both outputs
+together, so a diff shows what a cell changed. Tests:
+`~/.local/bin/python3.15 -m unittest discover tools/twilights-eve/tests`.
 
 ```
 ~/.local/bin/python3.15 tools/twilights-eve/build_spells.py --data "$WOW_DATA"
@@ -63,15 +66,19 @@ Callings, each with its skills and talent tabs, each skill or rank carrying its 
 its effects as `{kind, params, realm_only}`. The realm spawns one entity per ability with the
 components `docs/bevy_guidelines.md` names for each `kind`.
 
-`client_dbc_patch.json` is a list of row overrides, `{spell_id, fields: {power_type, cost,
-stances, family_name, family_flags, ...}}`, plus the talent catalog seats. The client applies it
+`client_dbc_patch.json` is a list of row overrides, `{spell_id, fields: {cost, stances,
+cooldown_ms, ..., borrowed_from_class, borrowed_family_bit, effects}, spellmods}`, plus the talent
+seats (`talent_id`, grid position, prereq, one spell id per rank). Every row is emitted with its
+`modelled` flag; an unmodelled row sends no `effects` key, so the client keeps the stock effects. The client applies it
 in memory when it loads its spell data (ADR 0003). When a real server plays to a stock client,
 the same file feeds an MPQ writer.
 
 ## Where it stands
 
-The CSV was generated on 2026-10-16 from `data/twilights-eve/callings.json` by
-`tools/twilights-eve/callings_to_csv.py`. Until `build_spells.py` exists and the realm reads
-`server_spells.json`, the game still runs on `callings.json` and the `content/*.toml` files
-generated from it. Talents in the CSV carry their `description` and client spellmods; their realm
-effects are not yet structured columns, because `callings.json` never held them.
+As of 2026-10-16 `build_spells.py` generates both outputs from the CSV, and they are committed
+(3 Callings, 198 rows, 185 spell overrides, 49 talent seats). Nothing consumes them yet: the game
+still runs on `data/twilights-eve/callings.json` and the `content/*.toml` files generated from it,
+and the client does not apply the patch. The patch carries no `power_type` or `family_name`
+fields; adding them is a schema change and goes through `/grill-me`. Talents carry their
+`description` and client spellmods, but their realm effects are not yet structured columns,
+because `callings.json` never held them.
