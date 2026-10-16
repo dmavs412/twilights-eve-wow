@@ -105,7 +105,8 @@ fn a_level_25_vanguard_knows_every_line_at_125() {
 
 #[test]
 fn a_level_up_raises_every_line_to_the_new_maximum() {
-    let (mut realm, me, mut events) = with_dev_xp(10, "vanguard", 1.0);
+    // The quest's 3800 XP twice over: one level.
+    let (mut realm, me, mut events) = with_dev_xp(10, "vanguard", 2.0);
     assert_eq!(
         skill_lines(&descriptor(&events, me)),
         at_max(10, &PLATE_ARMOUR)
