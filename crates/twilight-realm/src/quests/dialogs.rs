@@ -230,10 +230,10 @@ fn is_complete(c: &Char, q: &Quest) -> bool {
 }
 
 /// The giver's mark (`GetDialogStatus`): a yellow `?` for a quest to hand in, a yellow `!` for one
-/// to take, a grey `?` for one under way, a grey `!` for one the player is too low for. The `?`
-/// marks show over the quest's ender, the `!` over its giver. An Advancement Quest that is not
-/// theirs yet, a Hunting Quest done this Tier, and a quest whose earlier step is not handed in
-/// show nothing.
+/// to take, a grey `?` for one under way. The `?` marks show over the quest's ender, the `!` over
+/// its giver. A quest the player is too low for, an Advancement Quest that is not theirs yet, a
+/// Hunting Quest done this Tier, and a quest whose earlier step is not handed in show nothing:
+/// no grey `!`, so the world shows only the quests the player can take now.
 fn status(c: &Char, g: Speaker) -> u32 {
     let to_hand_in = content::ended_by(g.entry).map(|q| match c.quests.get(q.id) {
         Some(a) if complete(c, a) => dialog_status::REWARD2,
@@ -243,10 +243,7 @@ fn status(c: &Char, g: Speaker) -> u32 {
     let to_take = content::offered_by(g.entry).map(|q| match c.quests.get(q.id) {
         Some(_) => dialog_status::NONE,
         None if offered(c, q) => dialog_status::AVAILABLE,
-        None if q.advancement.is_some() || done_for_now(c, q) || !after_met(c, q) => {
-            dialog_status::NONE
-        }
-        None => dialog_status::UNAVAILABLE,
+        None => dialog_status::NONE,
     });
     to_hand_in
         .chain(to_take)

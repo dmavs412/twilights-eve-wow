@@ -30,14 +30,14 @@ fn quest_givers_stand_at_the_hub_with_names_and_marks() {
     });
     assert_eq!(name.as_deref(), Some("Grezz Plainswatcher"));
 
-    // A new warrior sees a yellow `!` over the plains giver, and a grey one far south.
+    // A new warrior sees a yellow `!` over the plains giver, and nothing over the one far south.
     assert_eq!(
         status(&mut realm, giver(&events, GREZZ)),
         dialog_status::AVAILABLE
     );
     assert_eq!(
         status(&mut realm, giver(&events, MAHU)),
-        dialog_status::UNAVAILABLE
+        dialog_status::NONE
     );
 }
 
@@ -252,8 +252,8 @@ fn a_giver_whose_hunting_quests_for_now_are_all_done_shows_only_the_grey_mark() 
     hand_in(&mut realm, grezz, THINNING_THE_HERDS);
     hand_in(&mut realm, grezz, SCORPID_VENOM);
     assert_eq!(on_offer(&mut realm, grezz), []);
-    // Grezz's level 3 quests are still to come.
-    assert_eq!(status(&mut realm, grezz), dialog_status::UNAVAILABLE);
+    // Grezz's later quests are still to come, but too high to mark.
+    assert_eq!(status(&mut realm, grezz), dialog_status::NONE);
 }
 
 #[test]
