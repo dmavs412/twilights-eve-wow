@@ -171,8 +171,8 @@ impl Realm {
     }
 }
 
-/// A Hub NPC with the quest giver flag: a Hunting Ground's giver, or the Warrior trainer, whose
-/// gossip menu lists his Advancement Quests.
+/// A Hub NPC with the quest giver flag: a Hunting Ground's giver, or a Tier 1 trainer, whose
+/// gossip menu lists their Line's Advancement Quests.
 type Speaker = &'static crate::hub::Npc;
 
 /// The quest giver with guid `npc`, wherever the player stands.

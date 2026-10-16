@@ -204,6 +204,13 @@ never credits. The tone comes from 1718, 1791 and 1712, and no text is copied. 6
 Zealot's Vow", is offered beside it at Vanguard 30 and advances into Zealot. 64004, "The Templar's
 Charge", is offered at Zealot 50 and never completes.
 
+The other Tier 1 lines (Cutthroat on energy, Initiate a mana caster, Witch Hunter a melee Hunter on
+mana with Enhancement Shaman in it) are locked Callings with no kit yet. Each has its own trainer
+in the Crossroads' training yard beside Uzzek, now the Vanguard Trainer, and each trainer offers a
+level 10 Basic Warrior only their own line's quest: 64005 "The Cutthroat's Mark" (QuestSort 162,
+Rogue), 64006 "The Initiate's Spark" (161, Mage) and 64007 "The Witch Hunter's Creed" (261,
+Hunter), which never complete, as Ironclad's.
+
 ## Checked against vmangos and the client code
 
 - **Deep Wounds** (vmangos `SpellEffects.cpp`, the `EffectDummy` arm for 12162/12850/12868)
@@ -320,8 +327,9 @@ Built in #14 (talents):
   level gate, since points start at level 2.
 - The respec price follows vmangos `Player::resetTalentsCost` (1 g, 5 g, 10 g, then 5 g more a
   time up to 50 g), not the JSON's proposed `first`/`step`, and has no monthly discount. The
-  Warrior trainer is Uzzek (creature 5810, display 4391), a `content/hub.toml` NPC beside the
-  Crossroads start point; his gossip lives in `src/trainer.rs`.
+  Vanguard Trainer, Uzzek (creature 5810, display 4391), a `content/hub.toml` NPC in the
+  Crossroads' training yard, sells it alone (`respec = true`); his gossip lives in
+  `src/trainer.rs`.
 
 Still open:
 - Pushing spell mods so tooltips follow the realm's formulas is untested. Improved Charge's

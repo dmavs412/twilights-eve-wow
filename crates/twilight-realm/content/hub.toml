@@ -1,14 +1,16 @@
 # The Hub's friendly NPCs, written by hand: they live in the Crossroads and stream in and out
 # with the player's view, as the mobs do. Each stands where a person living there would: Barg in
 # the inn (the innkeeper's place by the bar is left free), Sarna at its door, each quest giver at
-# the gate or tower that looks out on their Hunting Ground, and the townsfolk at the gates, the
+# the gate or tower that looks out on their Hunting Ground, the four Tier 1 trainers in the
+# training yard, and the townsfolk at the gates, the
 # watchtower, the inn, the empty flight tower, the well and about the town. The positions were
 # read off the ADT's doodads and checked in the client with `WOW_PROBE_GOTO`.
 #
 # `guid` is the spawn's low guid, kept clear of the imported spawns' (0xF00000 up). `entry` is a
 # creature entry of our own, outside 1.12's range, unless a real creature lends its name.
 # `role` is what it is in the town (goods, tokens, trainer, giver, ambient), which its flags must
-# fit (tests/content_hub.rs). `npc_flags` are `UNIT_NPC_FLAG_*` (0x1 gossip, 0x2 quest giver, 0x4 vendor, 0x10 trainer, 0x4000 repair),
+# fit (tests/content_hub.rs). `respec` marks the one trainer who sells the talent respec.
+# `npc_flags` are `UNIT_NPC_FLAG_*` (0x1 gossip, 0x2 quest giver, 0x4 vendor, 0x10 trainer, 0x4000 repair),
 # which pick the stock window a right-click opens. `faction_template` 35 is friendly to every race.
 # `display_id` is a real 1.12 Horde NPC model (`CreatureDisplayInfo.dbc` with a
 # `CreatureDisplayInfoExtra` row). `position` is WoW `[x, y, z]` on Kalimdor, z the ADT terrain's
@@ -31,15 +33,19 @@ orientation = 4.71
 # The four tiers of drink, then of food: 1, 5, 15 and 25.
 stock = [159, 1179, 1205, 1708, 117, 4536, 4540, 2287, 4537, 4541, 3770, 4538, 4542, 3771, 4539, 4544]
 
-# The Warrior trainer: his gossip sells the respec (src/trainer.rs). Uzzek, creature 5810, the
-# Barrens' warrior quest giver, lends his name and model (display 4391). 0x13 is gossip, quest
-# giver and trainer: his gossip lists the Advancement Quests. Beside where a character starts.
-# `text_id` is his gossip greeting's `npc_text` id, the realm's own; `greeting` is its text.
+# The training yard's four Tier 1 trainers, by the archery targets. Each one's gossip lists their
+# own Line's Advancement Quests (content/quests.toml), and its greeting says what the Line is.
+# 0x13 is gossip, quest giver and trainer. `text_id` is a greeting's `npc_text` id, the realm's
+# own; `greeting` is its text.
+#
+# Uzzek, the Vanguard Trainer: creature 5810, the Barrens' warrior quest giver, lends his name and
+# model (display 4391, an orc warrior). He alone sells the talent respec (`respec`,
+# src/trainer.rs).
 [[npc]]
 guid = 0xF00010
 entry = 5810
 name = "Uzzek"
-subname = "Warrior Trainer"
+subname = "Vanguard Trainer"
 level = 40
 display_id = 4391
 faction_template = 35
@@ -48,7 +54,57 @@ npc_flags = 0x13
 position = [-437.0, -2684.0, 96.5]
 orientation = 5.13
 text_id = 64014
-greeting = "Strength is earned, $C, and so is every scar. If the path you chose no longer serves you, I can help you forget it - for a price."
+respec = true
+greeting = "I train the Vanguard, $C: warriors who fight on rage, in plate, at the front of every battle. Strength is earned, and so is every scar. If the path you chose no longer serves you, I can help you forget it - for a price."
+
+# The Cutthroat trainer, the energy line: Shenthul's troll rogue model (display 4360).
+[[npc]]
+guid = 0xF00011
+entry = 190020
+name = "Zan'jash"
+subname = "Cutthroat Trainer"
+level = 40
+display_id = 4360
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+position = [-440.2, -2685.4, 96.5]
+orientation = 5.13
+text_id = 64015
+greeting = "Cutthroats don't wait for rage, $C. We fight on energy: quick feet, a knife in da dark, and gone before da body fall."
+
+# The Initiate trainer, the mana caster line: Deino's robed troll mage model (display 4523).
+[[npc]]
+guid = 0xF00012
+entry = 190021
+name = "Jin'thaka"
+subname = "Initiate Trainer"
+level = 40
+display_id = 4523
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+position = [-433.8, -2682.6, 96.5]
+orientation = 5.13
+text_id = 64016
+greeting = "I teach the Initiates, $C: those who trade rage for mana, and the blade for fire and frost cast from afar."
+
+# The Witch Hunter trainer, a melee Hunter on mana with Enhancement Shaman in it: Holt
+# Thunderhorn's tauren hunter model (display 2087).
+[[npc]]
+guid = 0xF00013
+entry = 190022
+name = "Hakan Mistwalker"
+subname = "Witch Hunter Trainer"
+level = 40
+display_id = 2087
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+position = [-430.6, -2681.1, 96.5]
+orientation = 5.13
+text_id = 64017
+greeting = "The Witch Hunters fight on mana, $C, and up close: a hunter's blade, the storm in our weapons, and the spirits at our backs."
 
 # The Token vendor: the greens of the buyer's level band (content/token_vendor.toml), priced in
 # the Twilight Tokens in the bags. `tokens` says so; it has no `stock` of its own and no repairs.

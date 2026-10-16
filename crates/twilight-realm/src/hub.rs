@@ -40,6 +40,9 @@ pub(crate) struct Npc {
     /// A vendor's list, in the merchant window's order.
     #[serde(default)]
     pub(crate) stock: Vec<u32>,
+    /// The trainer who sells the talent respec (`crate::trainer`).
+    #[serde(default)]
+    respec: bool,
     /// The Token vendor: it sells the buyer's band of greens for Tokens (`crate::token_vendor`).
     #[serde(default)]
     pub(crate) tokens: bool,
@@ -87,9 +90,14 @@ impl Npc {
         self.npc_flags & 0x2 != 0
     }
 
-    /// Whether it trains (`UNIT_NPC_FLAG_TRAINER`): the Warrior trainer, who sells the respec.
+    /// Whether it trains (`UNIT_NPC_FLAG_TRAINER`): one of the four Tier 1 trainers.
     pub(crate) fn trains(&self) -> bool {
         self.npc_flags & 0x10 != 0
+    }
+
+    /// Whether it sells the talent respec: Uzzek, the Vanguard Trainer, alone.
+    pub(crate) fn sells_respec(&self) -> bool {
+        self.trains() && self.respec
     }
 
     /// Whether it repairs gear (`UNIT_NPC_FLAG_REPAIR`).

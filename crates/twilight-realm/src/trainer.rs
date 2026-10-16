@@ -1,5 +1,6 @@
-//! The Hub's Warrior trainer (`content/hub.toml`, with his greeting) lists his Advancement Quests in his gossip menu
-//! (they are quests: `content/quests.toml`), and sells the respec through the stock flow
+//! The Hub's four Tier 1 trainers (`content/hub.toml`, each with a greeting) list their Line's
+//! Advancement Quests in their gossip menus (they are quests: `content/quests.toml`). Uzzek, the
+//! Vanguard Trainer, also sells the respec through the stock flow
 //! (vmangos `Player::SendTalentWipeConfirm`, `Player::ResetTalents`): his gossip's unlearn line
 //! closes the menu and asks `MSG_TALENT_WIPE_CONFIRM` with the price; the reset runs when the
 //! client sends the same opcode back with his guid.
@@ -13,14 +14,15 @@ use crate::hub::{self, Npc};
 /// The gossip line's index, which `CMSG_GOSSIP_SELECT_OPTION` echoes.
 const OPTION_UNLEARN: u32 = 0;
 
-/// The trainer, when `guid` is his: a Hub NPC that trains and has a gossip greeting.
+/// The trainer who sells the respec, when `guid` is his: a Hub NPC that sells it and has a gossip
+/// greeting.
 fn trainer(guid: u64) -> Option<&'static Npc> {
-    hub::find(guid).filter(|n| n.trains() && n.text_id.is_some())
+    hub::find(guid).filter(|n| n.sells_respec() && n.text_id.is_some())
 }
 
-/// The lines a trainer's gossip menu offers: the unlearn line.
+/// The lines a Hub NPC's gossip menu offers: the unlearn line, at the trainer who sells the respec.
 pub(crate) fn options(npc: &Npc) -> Vec<GossipOption> {
-    if !npc.trains() {
+    if !npc.sells_respec() {
         return Vec::new();
     }
     vec![GossipOption {

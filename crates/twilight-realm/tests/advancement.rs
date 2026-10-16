@@ -750,6 +750,161 @@ fn at_fifty_templars_quest_is_offered_but_cannot_be_finished() {
     assert_eq!(realm.current_calling().unwrap().key, "zealot");
 }
 
+// ── The four Tier 1 trainers ────────────────────────────────────────────────────────────────────
+
+/// The Tier 1 trainers beside Uzzek, each with their line's Advancement Quest, which cannot be
+/// finished: those Callings have no kit yet.
+const CUTTHROAT_TRAINER: u32 = 190020;
+const INITIATE_TRAINER: u32 = 190021;
+const WITCH_HUNTER_TRAINER: u32 = 190022;
+const THE_CUTTHROATS_MARK: u32 = 64005;
+const THE_INITIATES_SPARK: u32 = 64006;
+const THE_WITCH_HUNTERS_CREED: u32 = 64007;
+
+/// Each new trainer, their quest and its title.
+const NEW_LINES: [(u32, u32, &str); 3] = [
+    (
+        CUTTHROAT_TRAINER,
+        THE_CUTTHROATS_MARK,
+        "The Cutthroat's Mark",
+    ),
+    (
+        INITIATE_TRAINER,
+        THE_INITIATES_SPARK,
+        "The Initiate's Spark",
+    ),
+    (
+        WITCH_HUNTER_TRAINER,
+        THE_WITCH_HUNTERS_CREED,
+        "The Witch Hunter's Creed",
+    ),
+];
+
+/// A trainer's gossip menu: its lines and its quests' `(quest, icon)`.
+fn gossip_menu(realm: &mut Realm, npc: u64) -> (Vec<String>, Vec<(u32, u32)>) {
+    walk_up_to(realm, npc);
+    realm.handle(RealmCommand::GossipHello { guid: npc });
+    drain(realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu {
+                options, quests, ..
+            } => Some((
+                options.into_iter().map(|o| o.message).collect(),
+                quests.into_iter().map(|q| (q.0, q.1)).collect(),
+            )),
+            _ => None,
+        })
+        .expect("the trainer's menu")
+}
+
+#[test]
+fn a_level_10_basic_warrior_is_offered_each_lines_quest_by_its_own_trainer() {
+    let (mut realm, _, events) = questing(10, &[], 0, &[]);
+    let uzzek = trainer(&events);
+    assert_eq!(
+        gossip_menu(&mut realm, uzzek).1,
+        [(THE_WARRIORS_PATH, dialog_status::AVAILABLE)],
+        "Vanguard's, and only Vanguard's"
+    );
+    for (entry, quest, title) in NEW_LINES {
+        let npc = giver(&events, entry);
+        let fields = descriptor(&events, npc);
+        assert_eq!(
+            fields.unit_npc_flags(),
+            0x13,
+            "{title}: a trainer who talks and gives quests"
+        );
+        let rows = gossip_quests(&mut realm, npc);
+        assert_eq!(
+            rows.iter()
+                .map(|r| (r.0, r.1, r.2, r.3.as_str()))
+                .collect::<Vec<_>>(),
+            [(quest, dialog_status::AVAILABLE, 10, title)],
+            "their own line's quest alone"
+        );
+        assert_eq!(status(&mut realm, npc), dialog_status::AVAILABLE);
+    }
+}
+
+#[test]
+fn the_new_trainers_offer_nothing_below_the_cap_or_to_a_vanguard() {
+    let (mut realm, _, events) = questing(9, &[], 0, &[]);
+    for (entry, _, title) in NEW_LINES {
+        let npc = giver(&events, entry);
+        assert!(gossip_quests(&mut realm, npc).is_empty(), "{title} at 9");
+        assert_eq!(status(&mut realm, npc), dialog_status::NONE, "{title}");
+    }
+    for (calling, level) in [("vanguard", 10), ("vanguard", 30), ("zealot", 50)] {
+        let (mut realm, _, events) = questing_as(calling, level, &[], 0, &[]);
+        for (entry, _, title) in NEW_LINES {
+            let npc = giver(&events, entry);
+            assert!(
+                gossip_quests(&mut realm, npc).is_empty(),
+                "{title} to a {calling} at {level}"
+            );
+        }
+    }
+}
+
+#[test]
+fn the_new_lines_quests_are_offered_but_cannot_be_finished() {
+    for (entry, quest, title) in NEW_LINES {
+        let (mut realm, me, mut events) = questing(10, &[], 0, &[]);
+        let npc = giver(&events, entry);
+        events.extend(take(&mut realm, npc, quest));
+        let log = quest_log(&events, me);
+        assert_eq!((log[0].1, log[0].3), (quest, 0), "{title}: never complete");
+        assert_eq!(
+            status(&mut realm, npc),
+            dialog_status::INCOMPLETE,
+            "{title}"
+        );
+
+        realm.handle(RealmCommand::QuestGiverCompleteQuest { npc, quest });
+        let progress = drain(&mut realm)
+            .into_iter()
+            .find_map(|e| match e {
+                SessionEvent::QuestProgress(p) => Some(p),
+                _ => None,
+            })
+            .expect("the progress panel");
+        assert!(!progress.is_complete, "{title}");
+        assert!(
+            completed(&hand_in(&mut realm, npc, quest)).is_none(),
+            "{title}"
+        );
+        assert_eq!(realm.current_calling().unwrap().key, "basic_warrior");
+        assert_eq!(
+            gossip_menu(&mut realm, trainer(&events)).1,
+            [(THE_WARRIORS_PATH, dialog_status::AVAILABLE)],
+            "{title}: Vanguard's still on offer"
+        );
+    }
+}
+
+#[test]
+fn only_uzzek_sells_the_respec() {
+    let (mut realm, _, events) = questing(10, &[], 0, &[]);
+    assert_eq!(
+        gossip_menu(&mut realm, trainer(&events)).0,
+        ["I wish to unlearn my talents."]
+    );
+    for (entry, _, title) in NEW_LINES {
+        let npc = giver(&events, entry);
+        assert!(gossip_menu(&mut realm, npc).0.is_empty(), "{title}");
+        walk_up_to(&mut realm, npc);
+        realm.handle(RealmCommand::GossipSelectOption {
+            guid: npc,
+            option: 0,
+        });
+        assert!(
+            drain(&mut realm).is_empty(),
+            "{title}: no unlearn line to pick"
+        );
+    }
+}
+
 // ── Character select ────────────────────────────────────────────────────────────────────────────
 
 #[test]

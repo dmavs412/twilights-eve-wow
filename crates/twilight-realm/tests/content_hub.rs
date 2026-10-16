@@ -23,6 +23,8 @@ struct Npc {
     text_id: Option<u32>,
     #[serde(default)]
     wander: f32,
+    #[serde(default)]
+    respec: bool,
 }
 
 #[derive(Deserialize)]
@@ -113,6 +115,25 @@ fn every_npcs_flags_fit_its_role() {
             n.wander
         );
     }
+}
+
+/// The four Tier 1 trainers stand together in the training yard, and Uzzek alone sells the respec.
+#[test]
+fn four_trainers_stand_in_the_yard_and_one_sells_the_respec() {
+    let trainers: Vec<Npc> = hub().into_iter().filter(|n| n.role == "trainer").collect();
+    assert_eq!(trainers.len(), 4);
+    for a in &trainers {
+        for b in &trainers {
+            let d = (a.position[0] - b.position[0]).hypot(a.position[1] - b.position[1]);
+            assert!(d <= 15.0, "{} and {} stand {d} yd apart", a.name, b.name);
+        }
+    }
+    let respec: Vec<(String, String)> = hub()
+        .into_iter()
+        .filter(|n| n.respec)
+        .map(|n| (n.name, n.role))
+        .collect();
+    assert_eq!(respec, [("Uzzek".to_string(), "trainer".to_string())]);
 }
 
 #[test]

@@ -761,3 +761,209 @@ fn check_tree(calling: &str, unmodelled: &[&str]) {
         }
     }
 }
+
+// ── The Advancement Quests and the Tier 1 trainers ──────────────────────────────────────────────
+
+/// An Advancement Quest as `content/quests.toml` writes it.
+#[derive(serde::Deserialize)]
+struct Quest {
+    id: u32,
+    giver: u32,
+    level: u8,
+    title: String,
+    objectives: String,
+    details: String,
+    progress: String,
+    completion: String,
+    zone_or_sort: Option<i32>,
+    advancement: Option<Advancement>,
+}
+
+#[derive(serde::Deserialize)]
+struct Advancement {
+    from: String,
+    to: String,
+    completable: Option<bool>,
+}
+
+/// A Hub NPC as `content/hub.toml` writes it.
+#[derive(serde::Deserialize)]
+struct Npc {
+    entry: u32,
+    name: String,
+    #[serde(default)]
+    subname: String,
+    role: String,
+    #[serde(default)]
+    greeting: String,
+}
+
+fn advancement_quests() -> Vec<Quest> {
+    #[derive(serde::Deserialize)]
+    struct File {
+        quest: Vec<Quest>,
+    }
+    toml::from_str::<File>(include_str!("../content/quests.toml"))
+        .expect("quests.toml parses")
+        .quest
+        .into_iter()
+        .filter(|q| q.advancement.is_some())
+        .collect()
+}
+
+fn trainers() -> Vec<Npc> {
+    #[derive(serde::Deserialize)]
+    struct File {
+        npc: Vec<Npc>,
+    }
+    toml::from_str::<File>(include_str!("../content/hub.toml"))
+        .expect("hub.toml parses")
+        .npc
+        .into_iter()
+        .filter(|n| n.role == "trainer")
+        .collect()
+}
+
+/// The Tier 1 Calling an Advancement Quest's Calling `to` branches from: its Line.
+fn line_of(quests: &[Quest], to: &str) -> String {
+    fn adv(q: &Quest) -> &Advancement {
+        q.advancement.as_ref().unwrap()
+    }
+    let q = quests
+        .iter()
+        .find(|q| adv(q).to == to)
+        .unwrap_or_else(|| panic!("no Advancement Quest into {to}"));
+    match adv(q).from.as_str() {
+        "basic_warrior" => to.to_string(),
+        from => line_of(quests, from),
+    }
+}
+
+/// Every Advancement Quest the reference names is in the content as it says, and the content has
+/// no other.
+#[test]
+fn every_advancement_quest_matches_the_reference() {
+    let reference = reference();
+    let quests = advancement_quests();
+    let mut named = Vec::new();
+    for (key, calling) in reference["callings"].as_object().unwrap() {
+        let want = &calling["advancement_quest"];
+        if want.is_null() {
+            continue;
+        }
+        let id = want["quest_id"].as_u64().unwrap() as u32;
+        named.push(id);
+        let q = quests
+            .iter()
+            .find(|q| q.id == id)
+            .unwrap_or_else(|| panic!("{key}: quest {id} is not in content/quests.toml"));
+        let adv = q.advancement.as_ref().unwrap();
+        let from = want["offered_to"]["calling"].as_str().unwrap();
+        assert_eq!((adv.from.as_str(), adv.to.as_str()), (from, key.as_str()));
+        assert_eq!(
+            want["offered_to"]["level"].as_u64(),
+            reference["callings"][from]["cap"].as_u64(),
+            "{key}: offered at {from}'s Tier Cap"
+        );
+        assert_eq!(
+            adv.completable.unwrap_or(true),
+            want["completable"].as_bool().unwrap_or(true),
+            "{key}"
+        );
+        assert_eq!(
+            adv.completable.unwrap_or(true),
+            !calling["locked"].as_bool().unwrap_or(false),
+            "{key}: a locked Calling's quest never finishes"
+        );
+        assert_eq!(u64::from(q.level), want["quest_level"].as_u64().unwrap());
+        assert_eq!(
+            q.zone_or_sort.map(i64::from),
+            want["zone_or_sort"].as_i64(),
+            "{key}"
+        );
+        assert_eq!(q.title, want["title"].as_str().unwrap(), "{key}");
+        assert_eq!(q.details, want["details"].as_str().unwrap(), "{key}");
+        assert_eq!(q.objectives, want["objectives"].as_str().unwrap(), "{key}");
+        if let Some(t) = want["offer_reward_text"].as_str() {
+            assert_eq!(q.completion, t, "{key}");
+        }
+        if let Some(t) = want["request_items_text"].as_str() {
+            assert_eq!(q.progress, t, "{key}");
+        }
+    }
+    let mut have: Vec<u32> = quests.iter().map(|q| q.id).collect();
+    have.sort_unstable();
+    named.sort_unstable();
+    assert_eq!(have, named);
+}
+
+/// Cutthroat, Initiate and Witch Hunter are Tier 1 Callings with no kit and no Talent Tree yet:
+/// their quests are offered, and nothing can enter them.
+#[test]
+fn the_three_new_tier_1_callings_are_locked_with_no_kit() {
+    let reference = reference();
+    let callings = reference["callings"].as_object().unwrap();
+    let mut tier_1: Vec<&str> = callings
+        .iter()
+        .filter(|(_, c)| c["tier"] == 1)
+        .map(|(k, _)| k.as_str())
+        .collect();
+    tier_1.sort_unstable();
+    assert_eq!(
+        tier_1,
+        ["cutthroat", "initiate", "vanguard", "witch_hunter"]
+    );
+    for (key, name) in [
+        ("cutthroat", "Cutthroat"),
+        ("initiate", "Initiate"),
+        ("witch_hunter", "Witch Hunter"),
+    ] {
+        let c = &callings[key];
+        assert_eq!(c["display_name"], name);
+        assert_eq!(c["cap"], 30, "{key}");
+        assert_eq!(c["locked"], true, "{key}");
+        assert_eq!(c["skills"], serde_json::json!([]), "{key}");
+        assert!(c["talent_tree"].is_null(), "{key}");
+        assert!(callings::calling(key).is_none(), "{key} has no kit");
+        assert_eq!(
+            c["advancement_quest"]["offered_to"]["calling"], "basic_warrior",
+            "{key}"
+        );
+    }
+}
+
+/// Each trainer offers the Advancement Quests of one Line, every Tier 1 Calling has its own
+/// trainer, and each trainer's title and greeting name the Line.
+#[test]
+fn each_tier_1_line_has_its_own_trainer() {
+    let reference = reference();
+    let quests = advancement_quests();
+    let mut lines = Vec::new();
+    for t in trainers() {
+        let mut line: Vec<String> = quests
+            .iter()
+            .filter(|q| q.giver == t.entry)
+            .map(|q| line_of(&quests, &q.advancement.as_ref().unwrap().to))
+            .collect();
+        line.sort();
+        line.dedup();
+        let [line] = <[String; 1]>::try_from(line)
+            .unwrap_or_else(|l| panic!("{}: the quests of {l:?}", t.name));
+        let name = reference["callings"][&line]["display_name"]
+            .as_str()
+            .unwrap();
+        assert_eq!(t.subname, format!("{name} Trainer"), "{}", t.name);
+        assert!(
+            t.greeting.contains(name),
+            "{}: the greeting names the {name} line",
+            t.name
+        );
+        lines.push(line);
+    }
+    lines.sort();
+    assert_eq!(
+        lines,
+        ["cutthroat", "initiate", "vanguard", "witch_hunter"],
+        "one trainer for each Tier 1 Calling"
+    );
+}
