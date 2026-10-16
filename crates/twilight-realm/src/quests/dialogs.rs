@@ -12,7 +12,7 @@ use super::content::{self, Quest};
 use super::{complete, slot_pairs, Active, TOKEN};
 use crate::characters::Char;
 use crate::fields::values;
-use crate::{equipment, items, rules, Realm, RealmCommand};
+use crate::{equipment, items, Realm, RealmCommand};
 
 /// `CMSG_QUEST_QUERY`'s answer for `id`; nothing for a quest the realm does not have.
 pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
@@ -142,12 +142,7 @@ impl Realm {
             RealmCommand::QuestGiverChooseReward { npc, quest, .. } => {
                 if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
                     if is_complete(c, q) && reward(c, q, events) {
-                        // An Advancement Quest pays in a new Calling, not in XP.
-                        let gained = if q.advancement.is_some() {
-                            0
-                        } else {
-                            w.reward_xp(c, rules::quest::reward_xp(c.level, q.level), events)
-                        };
+                        let gained = w.reward_xp(c, q.reward_xp(c.level), events);
                         let mut items = Vec::new();
                         if q.tokens > 0 {
                             items.push((TOKEN, q.tokens));
@@ -197,7 +192,7 @@ fn offer(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
 }
 
 fn offered(c: &Char, q: &Quest) -> bool {
-    if c.quests.get(q.id).is_some() {
+    if c.quests.get(q.id).is_some() || done_for_now(c, q) {
         return false;
     }
     match &q.advancement {
@@ -205,6 +200,11 @@ fn offered(c: &Char, q: &Quest) -> bool {
         Some(a) => c.calling.key() == a.from && c.level >= crate::callings::of(c.calling).cap,
         None => c.level >= q.min_level(),
     }
+}
+
+/// Whether the player has handed `q` in and may not take it again: a Hunting Quest this Tier.
+fn done_for_now(c: &Char, q: &Quest) -> bool {
+    !q.retakable() && c.quests.completed.contains(&q.id)
 }
 
 /// `quest`, if it is in the player's log and `g` takes it in.
@@ -218,14 +218,14 @@ fn is_complete(c: &Char, q: &Quest) -> bool {
 
 /// The giver's mark (`GetDialogStatus`): a yellow `?` for a quest to hand in, a yellow `!` for one
 /// to take, a grey `?` for one under way, a grey `!` for one the player is too low for. An
-/// Advancement Quest that is not theirs yet shows nothing.
+/// Advancement Quest that is not theirs yet, and a Hunting Quest done this Tier, show nothing.
 fn status(c: &Char, g: Speaker) -> u32 {
     content::offered_by(g.entry)
         .map(|q| match c.quests.get(q.id) {
             Some(a) if complete(c, a) => dialog_status::REWARD2,
             Some(_) => dialog_status::INCOMPLETE,
             None if offered(c, q) => dialog_status::AVAILABLE,
-            None if q.advancement.is_some() => dialog_status::NONE,
+            None if q.advancement.is_some() || done_for_now(c, q) => dialog_status::NONE,
             None => dialog_status::UNAVAILABLE,
         })
         .max()

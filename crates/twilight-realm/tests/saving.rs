@@ -158,11 +158,41 @@ fn garbage_is_unreadable() {
 }
 
 #[test]
+fn the_save_is_version_2_and_a_version_1_save_still_loads() {
+    assert_eq!(twilight_realm::SAVE_VERSION, 2);
+    let mut realm = realm();
+    let (guid, _) = enter_new(&mut realm, "Vol", TAUREN);
+    let blob = realm.export_character(guid).unwrap();
+    assert!(
+        blob.starts_with(
+            "version = 2
+"
+        ),
+        "{blob}"
+    );
+
+    let old = blob.replacen(
+        "version = 2
+",
+        "version = 1
+",
+        1,
+    );
+    let mut fresh = Realm::new();
+    assert_eq!(fresh.import_character(&old), Ok(guid));
+    assert_eq!(
+        fresh.export_character(guid),
+        Some(blob),
+        "written back as version 2"
+    );
+}
+
+#[test]
 fn a_save_from_another_format_version_is_refused() {
     let mut realm = realm();
     let (guid, _) = enter_new(&mut realm, "Vol", TAUREN);
     let blob = realm.export_character(guid).unwrap();
-    let future = blob.replacen("version = 1\n", "version = 999\n", 1);
+    let future = blob.replacen("version = 2\n", "version = 999\n", 1);
     assert_ne!(blob, future, "the save names its version");
 
     let mut fresh = Realm::new();

@@ -1,12 +1,12 @@
-//! The quest content: the Repeatable Quests the Hub's givers offer (`content/quests.toml`), and the
-//! items those quests use (`content/quest_items.toml`).
+//! The quest content: the Hunting, Repeatable and Advancement Quests the Hub's givers offer
+//! (`content/quests.toml`), and the items those quests use (`content/quest_items.toml`).
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use serde::Deserialize;
 
-use crate::items;
+use crate::{items, rules};
 
 /// A collect objective: `count` of `item`, dropping `from` these creatures at `chance` percent
 /// while the quest wants more.
@@ -18,10 +18,23 @@ pub(crate) struct Collect {
     pub(crate) from: Vec<u32>,
 }
 
-/// A Repeatable Quest.
+/// How often a quest can be done (`GLOSSARY.md`).
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum Kind {
+    /// Once per Tier: Advancement forgets it.
+    Hunting,
+    /// A Dungeon's: taken again as soon as it is handed in.
+    Repeatable,
+    /// Into another Calling, with an [`Advancement`].
+    Advancement,
+}
+
+/// A quest.
 #[derive(Deserialize)]
 pub(crate) struct Quest {
     pub(crate) id: u32,
+    pub(crate) kind: Kind,
     pub(crate) giver: u32,
     pub(crate) level: u8,
     min_level: Option<u8>,
@@ -70,6 +83,21 @@ impl Quest {
         self.zone_or_sort.unwrap_or(crate::THE_BARRENS as i32)
     }
 
+    /// The XP a player of level `player` earns handing it in, before the multipliers: an
+    /// Advancement Quest pays in a new Calling instead.
+    pub(crate) fn reward_xp(&self, player: u8) -> u32 {
+        match self.kind {
+            Kind::Hunting => rules::quest::hunting_reward_xp(player, self.level),
+            Kind::Repeatable => rules::quest::reward_xp(player, self.level),
+            Kind::Advancement => 0,
+        }
+    }
+
+    /// Whether a character who has handed it in this Tier may take it again.
+    pub(crate) fn retakable(&self) -> bool {
+        self.kind == Kind::Repeatable
+    }
+
     /// The lowest level it is offered at: four below its own unless the content says otherwise.
     pub(crate) fn min_level(&self) -> u8 {
         self.min_level
@@ -98,6 +126,12 @@ fn file() -> &'static QuestFile {
                 "quest {} names giver {}, who is no quest giver in content/hub.toml",
                 q.id,
                 q.giver
+            );
+            assert_eq!(
+                q.kind == Kind::Advancement,
+                q.advancement.is_some(),
+                "quest {}'s kind and its `advancement` table disagree",
+                q.id
             );
             if let Some(a) = &q.advancement {
                 assert!(
@@ -157,4 +191,61 @@ pub(crate) fn item_template(entry: u32) -> Option<&'static items::Template> {
             table.item.into_iter().map(|t| (t.entry, t)).collect()
         })
         .get(&entry)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A quest of `kind` at level 10, as the content would write it.
+    fn quest(kind: &str) -> Quest {
+        toml::from_str(&format!(
+            r#"
+            id = 1
+            kind = "{kind}"
+            giver = 1
+            level = 10
+            title = ""
+            objectives = ""
+            details = ""
+            progress = ""
+            completion = ""
+            money = 0
+            tokens = 3
+            "#
+        ))
+        .expect("a quest")
+    }
+
+    #[test]
+    fn a_repeatable_quest_can_be_retaken_and_pays_a_full_level() {
+        let q = quest("repeatable");
+        assert!(q.retakable());
+        // Level 10's whole 7600 XP; level 15's 14400 for a level 15 player.
+        assert_eq!((q.reward_xp(10), q.reward_xp(15)), (7600, 14400));
+    }
+
+    #[test]
+    fn a_hunting_quest_cannot_be_retaken_and_pays_half_its_level() {
+        let q = quest("hunting");
+        assert!(!q.retakable());
+        assert_eq!((q.reward_xp(10), q.reward_xp(15)), (3800, 3800));
+    }
+
+    #[test]
+    fn a_quest_without_a_kind_is_no_quest() {
+        let no_kind = r#"
+            id = 1
+            giver = 1
+            level = 10
+            title = ""
+            objectives = ""
+            details = ""
+            progress = ""
+            completion = ""
+            money = 0
+            tokens = 1
+        "#;
+        assert!(toml::from_str::<Quest>(no_kind).is_err());
+    }
 }

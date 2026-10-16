@@ -148,7 +148,11 @@ fn load_saves(realm: &mut Realm) -> BTreeSet<u64> {
         realm.reserve_guid(guid);
         match crate::local_state::read_to_string(&path) {
             Ok(blob) => match realm.import_character(&blob) {
-                Ok(_) => {}
+                Ok(_) => {
+                    for line in realm.drain_log() {
+                        warn!("twilight: {line}");
+                    }
+                }
                 Err(e) => warn!("twilight: skipping the save {} ({e:?})", path.display()),
             },
             Err(e) => warn!("twilight: cannot read the save {}: {e}", path.display()),

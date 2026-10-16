@@ -2,6 +2,7 @@
 //! quests under way.
 #![allow(dead_code)]
 
+use benilla_protocol::messages::dialog_status;
 use benilla_protocol::{EntityKind, SessionEvent};
 use twilight_realm::{Realm, RealmCommand};
 
@@ -83,6 +84,25 @@ pub fn quest_log(events: &[SessionEvent], me: u64) -> Vec<(u8, u32, [u8; 4], u8)
 pub fn talk(realm: &mut Realm, npc: u64) -> Vec<SessionEvent> {
     realm.handle(RealmCommand::QuestGiverHello { npc });
     drain(realm)
+}
+
+/// The quests `npc` offers the player to take, as talking to it shows them: the greeting list's
+/// rows with the yellow `!`, or the lone quest whose accept panel opens.
+pub fn on_offer(realm: &mut Realm, npc: u64) -> Vec<u32> {
+    talk(realm, npc)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::QuestGreeting(list) => Some(
+                list.quests
+                    .iter()
+                    .filter(|q| q.icon == dialog_status::AVAILABLE)
+                    .map(|q| q.quest_id)
+                    .collect(),
+            ),
+            SessionEvent::QuestDetail(d) => Some(vec![d.quest_id]),
+            _ => None,
+        })
+        .unwrap_or_default()
 }
 
 /// Takes `quest` from `npc`, returning the events.
