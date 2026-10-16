@@ -37,9 +37,17 @@ CLIENT_EFFECTS = 3
 KNOWN_KINDS = {
     "aura_attack_power", "charge", "energize_rage", "healing_reduction", "incapacitate",
     "judgement", "mod_crit_chance", "mod_crit_damage", "mod_health_regen_out_of_combat",
-    "mod_stat", "periodic_damage", "proc_on_cast", "proc_on_kill", "seal", "spell_damage",
-    "stun", "weapon_strike",
+    "mod_run_speed", "mod_stat", "periodic_damage", "proc", "school_damage", "seal",
+    "skill_amount_pct", "skill_crit_pct", "skill_rage", "stun", "weapon_strike",
 }
+ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
+STATS = ("strength", "agility", "stamina", "intellect", "spirit")
+ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
+# A Calling's resource, and the Spell.dbc power type the client patch sends for it.
+POWER_TYPES = {"mana": 0, "rage": 1, "focus": 2, "energy": 3, "happiness": 4}
+PROC_EVENTS = ("cast", "kill")
+PROC_ACTIONS = ("apply_aura", "heal_pct")
+WEAPON_ROLLS = ("normal", "normalized")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
 
@@ -150,7 +158,89 @@ def check_formulas(node: dict, where: str, path: str = "") -> None:
             raise BuildError(f"{where}: formula {path}{field} is {value!r}, not a number")
 
 
-def build_row(row: dict, where: str) -> dict:
+def whole(text: str, where: str) -> int:
+    value = number(text, where)
+    if not isinstance(value, int):
+        raise BuildError(f"{where}: {text!r} is not a whole number")
+    return value
+
+
+def check_resource(text: str, where: str) -> str:
+    if text not in POWER_TYPES:
+        raise BuildError(f"{where}: resource {text!r} is not one of {', '.join(POWER_TYPES)}")
+    return text
+
+
+def build_calling(row: dict, where: str) -> dict:
+    """A calling row: the Calling's name, tier, Tier Cap, Tier Bonus, form, armour and resource."""
+    for column in ("tier", "tier_cap", "resource"):
+        if not row[column]:
+            raise BuildError(f"{where}: a calling row needs {column}")
+    out: dict = {"name": row["name"], "tier": whole(row["tier"], f"{where} tier"),
+                 "tier_cap": whole(row["tier_cap"], f"{where} tier_cap")}
+    if row["tier_bonus"]:
+        bonus = parse_params(row["tier_bonus"], f"{where} tier_bonus")
+        for stat, value in bonus.items():
+            if stat not in STATS or isinstance(value, (dict, list, bool)) or not isinstance(value, (int, float)):
+                raise BuildError(f"{where}: tier_bonus {stat!r} is not a stat with a number (stats: {', '.join(STATS)})")
+        out["tier_bonus"] = bonus
+    if row["shapeshift_form"]:
+        out["shapeshift_form"] = whole(row["shapeshift_form"], f"{where} shapeshift_form")
+    if row["armour"]:
+        kinds = row["armour"].split("|")
+        for kind in kinds:
+            if kind not in ARMOUR_KINDS:
+                raise BuildError(f"{where}: armour {kind!r} is not one of {', '.join(ARMOUR_KINDS)}")
+        out["armour"] = kinds
+    out["resource"] = check_resource(row["resource"], where)
+    return out
+
+
+def build_talent_tab(row: dict, where: str) -> dict:
+    for column in ("tab_id", "background", "tab_order"):
+        if not row[column]:
+            raise BuildError(f"{where}: a talent_tab row needs {column}")
+    return {"name": row["name"], "id": whole(row["tab_id"], f"{where} tab_id"), "background": row["background"],
+            "order": whole(row["tab_order"], f"{where} tab_order"), "talents": []}
+
+
+def build_aura(row: dict, built: dict, where: str) -> dict:
+    """An aura row: a borrowed spell id, a duration, charges and effects, granted by key."""
+    out = {"key": built["key"], "name": built["name"]}
+    for column in ("spell_id", "icon_id"):
+        if column in built:
+            out[column] = built[column]
+    for column in ("duration_ms", "charges"):
+        if row[column]:
+            out[column] = number(row[column], f"{where} {column}")
+    out["modelled"] = built["modelled"]
+    out["effects"] = built["effects"]
+    out["description"] = built["description"]
+    return out
+
+
+def check_proc(params: dict, auras: set[str], where: str) -> None:
+    if params.get("on") not in PROC_EVENTS:
+        raise BuildError(f"{where}: proc on {params.get('on')!r}, want one of {', '.join(PROC_EVENTS)}")
+    if len([a for a in PROC_ACTIONS if a in params]) != 1:
+        raise BuildError(f"{where}: a proc needs exactly one of {', '.join(PROC_ACTIONS)}")
+    if "apply_aura" in params:
+        keys = params["apply_aura"] if isinstance(params["apply_aura"], list) else [params["apply_aura"]]
+        for key in keys:
+            if key not in auras:
+                raise BuildError(f"{where}: apply_aura {key!r} is not an aura row of this Calling")
+
+
+def check_vocabulary(kind: str, params: dict, where: str) -> None:
+    """The CSV uses the realm's names: normal or normalized weapon rolls, a boolean unavoidable."""
+    if kind == "weapon_strike":
+        if params.get("weapon") not in WEAPON_ROLLS:
+            raise BuildError(f"{where}: weapon is {params.get('weapon')!r}, want {' or '.join(WEAPON_ROLLS)}")
+        if "unavoidable" in params and not isinstance(params["unavoidable"], bool):
+            raise BuildError(f"{where}: unavoidable is {params['unavoidable']!r}, want yes or no")
+
+
+def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
         raise BuildError(f"{where}: modelled is {modelled!r}, want yes or no")
@@ -183,6 +273,9 @@ def build_row(row: dict, where: str) -> dict:
         parsed = parse_params(params, here)
         if modelled == "yes" and kind not in KNOWN_KINDS:
             raise BuildError(f"{here}: unknown effect kind {kind!r}")
+        if kind == "proc":
+            check_proc(parsed, auras, here)
+        check_vocabulary(kind, parsed, here)
         effects.append({"kind": kind, "params": parsed, "realm_only": i > CLIENT_EFFECTS})
     out["modelled"] = modelled == "yes"
     out["effects"] = effects if out["modelled"] else []
@@ -190,7 +283,7 @@ def build_row(row: dict, where: str) -> dict:
     return out
 
 
-def client_override(row: dict, built: dict, where: str) -> dict | None:
+def client_override(row: dict, built: dict, where: str, calling_resource: str | None = None) -> dict | None:
     """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
     if "spell_id" not in built:
         return None
@@ -201,6 +294,11 @@ def client_override(row: dict, built: dict, where: str) -> dict | None:
     for column in CLIENT_FLAGS:
         if row[column]:
             fields[column.removeprefix("client_")] = row[column] == "yes"
+    resource = row["resource"] or calling_resource
+    if resource:
+        fields["power_type"] = POWER_TYPES[check_resource(resource, where)]
+    if row["description"]:
+        fields["description"] = row["description"]
     if row["client_stances"]:
         fields["stances"] = row["client_stances"].split("|")
     # No effects key on an unmodelled row: the client keeps the stock row's effects.
@@ -230,23 +328,43 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
     overrides: list[dict] = []
     seen: set[tuple] = set()
     talent_rows: dict[tuple, list[tuple[dict, dict, str]]] = {}
+    # A calling's resource and aura keys are read before any row, so row order never matters.
+    resources = {r["calling"]: r["resource"] for r in rows if r["kind"] == "calling"}
+    auras = {c: {r["key"] for r in rows if r["kind"] == "aura" and r["calling"] == c} for c in
+             {r["calling"] for r in rows}}
     for line, row in enumerate(rows, start=2):
         where = f"line {line} ({row['calling']}/{row['key']})"
         kind = row["kind"]
-        if kind not in ("skill", "talent"):
-            raise BuildError(f"{where}: kind is {kind!r}, want skill or talent")
+        if kind not in ROW_KINDS:
+            raise BuildError(f"{where}: kind is {kind!r}, want one of {', '.join(ROW_KINDS)}")
         if not row["calling"] or not row["key"]:
             raise BuildError(f"{where}: calling and key are required")
-        built = build_row(row, where)
+        calling = callings.setdefault(row["calling"], {"key": row["calling"], "skills": [], "talent_tabs": [], "auras": []})
+        if kind == "calling":
+            if "tier" in calling:
+                raise BuildError(f"{where}: second calling row for {row['calling']}")
+            calling.update(build_calling(row, where))
+            continue
+        if kind == "talent_tab":
+            tab = build_talent_tab(row, where)
+            if any(t["name"] == tab["name"] or t["id"] == tab["id"] for t in calling["talent_tabs"]):
+                raise BuildError(f"{where}: duplicate talent_tab {tab['name']!r}")
+            calling["talent_tabs"].append(tab)
+            continue
+        built = build_row(row, where, auras[row["calling"]])
         identity = (row["calling"], kind, row["key"], built["rank"])
         if identity in seen:
             raise BuildError(f"{where}: duplicate {kind} rank")
         seen.add(identity)
-        override = client_override(row, built, where)
+        if kind == "aura":
+            calling["auras"].append(build_aura(row, built, where))
+            continue
+        override = client_override(row, built, where, resources.get(row["calling"]))
         if override:
             overrides.append(override)
-        calling = callings.setdefault(row["calling"], {"key": row["calling"], "skills": [], "talent_tabs": []})
         if kind == "skill":
+            if row["resource"]:
+                built["resource"] = check_resource(row["resource"], where)
             calling["skills"].append(built)
         else:
             talent_rows.setdefault((row["calling"], row["key"]), []).append((row, built, where))
@@ -259,9 +377,12 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
             if len(values) != 1 or not first[column]:
                 raise BuildError(f"{where}: talent {key} has no single {column}")
         tab_name = first["tab"]
-        seat = {"row": number(first["tab_row"], where), "column": number(first["tab_column"], where)}
+        seat = {"row": whole(first["tab_row"], f"{where} tab_row"),
+                "column": whole(first["tab_column"], f"{where} tab_column")}
         tab = next((t for t in calling["talent_tabs"] if t["name"] == tab_name), None)
         if tab is None:
+            if any("id" in t for t in calling["talent_tabs"]):
+                raise BuildError(f"{where}: talent {key} is in tab {tab_name!r}, which has no talent_tab row")
             tab = {"name": tab_name, "talents": []}
             calling["talent_tabs"].append(tab)
         for other in tab["talents"]:
@@ -273,7 +394,7 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
         if [b["rank"] for b in talent["ranks"]] != list(range(1, len(ranks) + 1)):
             raise BuildError(f"{where}: talent {key} ranks are not 1..{len(ranks)}")
         if first["prereq_key"]:
-            talent["prereq"] = {"key": first["prereq_key"], "rank": number(first["prereq_rank"] or "1", where)}
+            talent["prereq"] = {"key": first["prereq_key"], "rank": whole(first["prereq_rank"] or "1", where)}
         tab["talents"].append(talent)
 
     for calling in callings.values():
@@ -321,7 +442,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"build_spells: {error}", file=sys.stderr)
         return 1
 
-    carried = [(f"{row['calling']}/{row['key']}", row["assumptions"]) for row in rows if row["assumptions"]]
+    # A talent's ranks usually share one note; print it once.
+    carried = list(dict.fromkeys((f"{row['calling']}/{row['key']}", row["assumptions"]) for row in rows if row["assumptions"]))
     print(f"{len(carried)} rows carry assumptions:")
     for who, text in carried:
         print(f"  {who}: {text}")

@@ -14,11 +14,12 @@
     "range_max": 5.0,
     "on_next_swing": true,
     "not_in_combat": false,
+    "power_type": 1,
     "effects": [
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "W",
+       "weapon": "normal",
        "on_next_swing": true,
        "bonus": {
         "base": 9.5,
@@ -45,6 +46,7 @@
     "range_max": 25.0,
     "on_next_swing": false,
     "not_in_combat": true,
+    "power_type": 1,
     "stances": [
      "Battle Stance"
     ],
@@ -76,6 +78,36 @@
    }
   },
   {
+   "spell_id": 1776,
+   "calling": "basic_warrior",
+   "key": "gouge",
+   "rank": 1,
+   "fields": {
+    "cost": 15,
+    "range_max": 5,
+    "duration_ms": 4000,
+    "borrowed_from_class": 4,
+    "borrowed_family_bit": 38,
+    "power_type": 1,
+    "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it."
+   }
+  },
+  {
+   "spell_id": 2136,
+   "calling": "basic_warrior",
+   "key": "fire_blast",
+   "rank": 1,
+   "fields": {
+    "cost": 10,
+    "cast_time_ms": 0,
+    "range_max": 20,
+    "borrowed_from_class": 8,
+    "borrowed_family_bit": 37,
+    "power_type": 1,
+    "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked."
+   }
+  },
+  {
    "spell_id": 12294,
    "calling": "vanguard",
    "key": "mortal_strike",
@@ -92,7 +124,7 @@
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "Wn",
+       "weapon": "normalized",
        "bonus": {
         "base": 25,
         "per_level": 2.5,
@@ -129,12 +161,8 @@
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "Wn",
-       "unavoidable": [
-        "dodge",
-        "parry",
-        "block"
-       ],
+       "weapon": "normalized",
+       "unavoidable": true,
        "bonus": {
         "base": 6,
         "per_level": 0.6,
@@ -253,652 +281,6 @@
    }
   },
   {
-   "spell_id": 12290,
-   "calling": "vanguard",
-   "key": "improved_overpower",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12963,
-   "calling": "vanguard",
-   "key": "improved_overpower",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12286,
-   "calling": "vanguard",
-   "key": "improved_rend",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 5,
-     "value": 15
-    }
-   ]
-  },
-  {
-   "spell_id": 12658,
-   "calling": "vanguard",
-   "key": "improved_rend",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 5,
-     "value": 25
-    }
-   ]
-  },
-  {
-   "spell_id": 12659,
-   "calling": "vanguard",
-   "key": "improved_rend",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 5,
-     "value": 35
-    }
-   ]
-  },
-  {
-   "spell_id": 12285,
-   "calling": "vanguard",
-   "key": "improved_charge",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12697,
-   "calling": "vanguard",
-   "key": "improved_charge",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12296,
-   "calling": "vanguard",
-   "key": "anger_management",
-   "rank": 1,
-   "fields": {}
-  },
-  {
-   "spell_id": 12834,
-   "calling": "vanguard",
-   "key": "deep_wounds",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12849,
-   "calling": "vanguard",
-   "key": "deep_wounds",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12867,
-   "calling": "vanguard",
-   "key": "deep_wounds",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12163,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12711,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12712,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12713,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12714,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 16493,
-   "calling": "vanguard",
-   "key": "impale",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 16494,
-   "calling": "vanguard",
-   "key": "impale",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12700,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12781,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12783,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12784,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12785,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12284,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12701,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12702,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12703,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12704,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12281,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12812,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12813,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12814,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12815,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12319,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 1,
-   "fields": {}
-  },
-  {
-   "spell_id": 12971,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 2,
-   "fields": {}
-  },
-  {
-   "spell_id": 12972,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 3,
-   "fields": {}
-  },
-  {
-   "spell_id": 12973,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 4,
-   "fields": {}
-  },
-  {
-   "spell_id": 12974,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 5,
-   "fields": {}
-  },
-  {
-   "spell_id": 12321,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12835,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12836,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12837,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12838,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12320,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12852,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12853,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12855,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12856,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12322,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12999,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13000,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13001,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13002,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12318,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 5
-    }
-   ]
-  },
-  {
-   "spell_id": 12857,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 10
-    }
-   ]
-  },
-  {
-   "spell_id": 12858,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 15
-    }
-   ]
-  },
-  {
-   "spell_id": 12860,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 20
-    }
-   ]
-  },
-  {
-   "spell_id": 12861,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 25
-    }
-   ]
-  },
-  {
-   "spell_id": 16487,
-   "calling": "vanguard",
-   "key": "blood_craze",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 16489,
-   "calling": "vanguard",
-   "key": "blood_craze",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 16492,
-   "calling": "vanguard",
-   "key": "blood_craze",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12317,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 1,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13045,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 2,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13046,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 3,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13047,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 4,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13048,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 5,
-   "fields": {
-    "effects": []
-   }
-  },
-  {
    "spell_id": 20375,
    "calling": "zealot",
    "key": "seal_of_command",
@@ -913,6 +295,7 @@
     "duration_ms": 30000,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 33,
+    "description": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour.",
     "effects": [
      {
       "kind": "seal",
@@ -950,6 +333,7 @@
     "duration_ms": 30000,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 34,
+    "description": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target.",
     "effects": [
      {
       "kind": "seal",
@@ -985,6 +369,7 @@
     "range_max": 10.0,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 35,
+    "description": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing.",
     "effects": [
      {
       "kind": "judgement",
@@ -1036,7 +421,7 @@
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "Wn",
+       "weapon": "normalized",
        "bonus": {
         "base": 25,
         "per_level": 2.5,
@@ -1098,11 +483,730 @@
    }
   },
   {
+   "spell_id": 12290,
+   "calling": "vanguard",
+   "key": "improved_overpower",
+   "rank": 1,
+   "fields": {
+    "description": "Overpower +25/50% crit chance.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12963,
+   "calling": "vanguard",
+   "key": "improved_overpower",
+   "rank": 2,
+   "fields": {
+    "description": "Overpower +25/50% crit chance.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12286,
+   "calling": "vanguard",
+   "key": "improved_rend",
+   "rank": 1,
+   "fields": {
+    "description": "Rend ticks +15/25/35%.",
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 5,
+     "value": 15
+    }
+   ]
+  },
+  {
+   "spell_id": 12658,
+   "calling": "vanguard",
+   "key": "improved_rend",
+   "rank": 2,
+   "fields": {
+    "description": "Rend ticks +15/25/35%.",
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 5,
+     "value": 25
+    }
+   ]
+  },
+  {
+   "spell_id": 12659,
+   "calling": "vanguard",
+   "key": "improved_rend",
+   "rank": 3,
+   "fields": {
+    "description": "Rend ticks +15/25/35%.",
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 5,
+     "value": 35
+    }
+   ]
+  },
+  {
+   "spell_id": 12285,
+   "calling": "vanguard",
+   "key": "improved_charge",
+   "rank": 1,
+   "fields": {
+    "description": "Charge +3/6 rage.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12697,
+   "calling": "vanguard",
+   "key": "improved_charge",
+   "rank": 2,
+   "fields": {
+    "description": "Charge +3/6 rage.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12296,
+   "calling": "vanguard",
+   "key": "anger_management",
+   "rank": 1,
+   "fields": {
+    "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
+   }
+  },
+  {
+   "spell_id": 12834,
+   "calling": "vanguard",
+   "key": "deep_wounds",
+   "rank": 1,
+   "fields": {
+    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12849,
+   "calling": "vanguard",
+   "key": "deep_wounds",
+   "rank": 2,
+   "fields": {
+    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12867,
+   "calling": "vanguard",
+   "key": "deep_wounds",
+   "rank": 3,
+   "fields": {
+    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12163,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 1,
+   "fields": {
+    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12711,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 2,
+   "fields": {
+    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12712,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 3,
+   "fields": {
+    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12713,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 4,
+   "fields": {
+    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12714,
+   "calling": "vanguard",
+   "key": "two_handed_weapon_specialization",
+   "rank": 5,
+   "fields": {
+    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16493,
+   "calling": "vanguard",
+   "key": "impale",
+   "rank": 1,
+   "fields": {
+    "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16494,
+   "calling": "vanguard",
+   "key": "impale",
+   "rank": 2,
+   "fields": {
+    "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12700,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 1,
+   "fields": {
+    "description": "+1..5% crit chance with axes.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12781,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 2,
+   "fields": {
+    "description": "+1..5% crit chance with axes.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12783,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 3,
+   "fields": {
+    "description": "+1..5% crit chance with axes.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12784,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 4,
+   "fields": {
+    "description": "+1..5% crit chance with axes.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12785,
+   "calling": "vanguard",
+   "key": "axe_specialization",
+   "rank": 5,
+   "fields": {
+    "description": "+1..5% crit chance with axes.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12284,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 1,
+   "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12701,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 2,
+   "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12702,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 3,
+   "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12703,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 4,
+   "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12704,
+   "calling": "vanguard",
+   "key": "mace_specialization",
+   "rank": 5,
+   "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12281,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 1,
+   "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12812,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 2,
+   "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12813,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 3,
+   "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12814,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 4,
+   "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12815,
+   "calling": "vanguard",
+   "key": "sword_specialization",
+   "rank": 5,
+   "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12319,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 1,
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+   }
+  },
+  {
+   "spell_id": 12971,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 2,
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+   }
+  },
+  {
+   "spell_id": 12972,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 3,
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+   }
+  },
+  {
+   "spell_id": 12973,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 4,
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+   }
+  },
+  {
+   "spell_id": 12974,
+   "calling": "vanguard",
+   "key": "flurry",
+   "rank": 5,
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+   }
+  },
+  {
+   "spell_id": 12321,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 1,
+   "fields": {
+    "description": "Battle Shout duration and radius +10..50%.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12835,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 2,
+   "fields": {
+    "description": "Battle Shout duration and radius +10..50%.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12836,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 3,
+   "fields": {
+    "description": "Battle Shout duration and radius +10..50%.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12837,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 4,
+   "fields": {
+    "description": "Battle Shout duration and radius +10..50%.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12838,
+   "calling": "vanguard",
+   "key": "booming_voice",
+   "rank": 5,
+   "fields": {
+    "description": "Battle Shout duration and radius +10..50%.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12320,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 1,
+   "fields": {
+    "description": "+1..5% melee crit chance.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12852,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 2,
+   "fields": {
+    "description": "+1..5% melee crit chance.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12853,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 3,
+   "fields": {
+    "description": "+1..5% melee crit chance.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12855,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 4,
+   "fields": {
+    "description": "+1..5% melee crit chance.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12856,
+   "calling": "vanguard",
+   "key": "cruelty",
+   "rank": 5,
+   "fields": {
+    "description": "+1..5% melee crit chance.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12322,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 1,
+   "fields": {
+    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12999,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 2,
+   "fields": {
+    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13000,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 3,
+   "fields": {
+    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13001,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 4,
+   "fields": {
+    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13002,
+   "calling": "vanguard",
+   "key": "unbridled_wrath",
+   "rank": 5,
+   "fields": {
+    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12318,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 1,
+   "fields": {
+    "description": "Battle Shout's attack power +5..25%.",
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 5
+    }
+   ]
+  },
+  {
+   "spell_id": 12857,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 2,
+   "fields": {
+    "description": "Battle Shout's attack power +5..25%.",
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 10
+    }
+   ]
+  },
+  {
+   "spell_id": 12858,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 3,
+   "fields": {
+    "description": "Battle Shout's attack power +5..25%.",
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 15
+    }
+   ]
+  },
+  {
+   "spell_id": 12860,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 4,
+   "fields": {
+    "description": "Battle Shout's attack power +5..25%.",
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 20
+    }
+   ]
+  },
+  {
+   "spell_id": 12861,
+   "calling": "vanguard",
+   "key": "improved_battle_shout",
+   "rank": 5,
+   "fields": {
+    "description": "Battle Shout's attack power +5..25%.",
+    "effects": []
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "ALL_EFFECTS",
+     "family_bit": 16,
+     "value": 25
+    }
+   ]
+  },
+  {
+   "spell_id": 16487,
+   "calling": "vanguard",
+   "key": "blood_craze",
+   "rank": 1,
+   "fields": {
+    "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16489,
+   "calling": "vanguard",
+   "key": "blood_craze",
+   "rank": 2,
+   "fields": {
+    "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 16492,
+   "calling": "vanguard",
+   "key": "blood_craze",
+   "rank": 3,
+   "fields": {
+    "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 12317,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 1,
+   "fields": {
+    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13045,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 2,
+   "fields": {
+    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13046,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 3,
+   "fields": {
+    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13047,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 4,
+   "fields": {
+    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
+    "effects": []
+   }
+  },
+  {
+   "spell_id": 13048,
+   "calling": "vanguard",
+   "key": "enrage",
+   "rank": 5,
+   "fields": {
+    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
+    "effects": []
+   }
+  },
+  {
    "spell_id": 20335,
    "calling": "zealot",
    "key": "improved_seal_of_the_crusader",
    "rank": 1,
    "fields": {
+    "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
    "spellmods": [
@@ -1120,6 +1224,7 @@
    "key": "improved_seal_of_the_crusader",
    "rank": 2,
    "fields": {
+    "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
    "spellmods": [
@@ -1137,6 +1242,7 @@
    "key": "improved_seal_of_the_crusader",
    "rank": 3,
    "fields": {
+    "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
    "spellmods": [
@@ -1154,6 +1260,7 @@
    "key": "benediction",
    "rank": 1,
    "fields": {
+    "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
    "spellmods": [
@@ -1177,6 +1284,7 @@
    "key": "benediction",
    "rank": 2,
    "fields": {
+    "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
    "spellmods": [
@@ -1200,6 +1308,7 @@
    "key": "benediction",
    "rank": 3,
    "fields": {
+    "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
    "spellmods": [
@@ -1223,6 +1332,7 @@
    "key": "benediction",
    "rank": 4,
    "fields": {
+    "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
    "spellmods": [
@@ -1246,6 +1356,7 @@
    "key": "benediction",
    "rank": 5,
    "fields": {
+    "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
    "spellmods": [
@@ -1268,14 +1379,18 @@
    "calling": "zealot",
    "key": "improved_judgement",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 25957,
    "calling": "zealot",
    "key": "improved_judgement",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20060,
@@ -1283,6 +1398,7 @@
    "key": "deflection",
    "rank": 1,
    "fields": {
+    "description": "+1..5% parry chance.",
     "effects": []
    }
   },
@@ -1292,6 +1408,7 @@
    "key": "deflection",
    "rank": 2,
    "fields": {
+    "description": "+1..5% parry chance.",
     "effects": []
    }
   },
@@ -1301,6 +1418,7 @@
    "key": "deflection",
    "rank": 3,
    "fields": {
+    "description": "+1..5% parry chance.",
     "effects": []
    }
   },
@@ -1310,6 +1428,7 @@
    "key": "deflection",
    "rank": 4,
    "fields": {
+    "description": "+1..5% parry chance.",
     "effects": []
    }
   },
@@ -1319,6 +1438,7 @@
    "key": "deflection",
    "rank": 5,
    "fields": {
+    "description": "+1..5% parry chance.",
     "effects": []
    }
   },
@@ -1327,21 +1447,27 @@
    "calling": "zealot",
    "key": "vindication",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 26016,
    "calling": "zealot",
    "key": "vindication",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 26021,
    "calling": "zealot",
    "key": "vindication",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20117,
@@ -1349,6 +1475,7 @@
    "key": "conviction",
    "rank": 1,
    "fields": {
+    "description": "+1..5% melee crit chance.",
     "effects": []
    }
   },
@@ -1358,6 +1485,7 @@
    "key": "conviction",
    "rank": 2,
    "fields": {
+    "description": "+1..5% melee crit chance.",
     "effects": []
    }
   },
@@ -1367,6 +1495,7 @@
    "key": "conviction",
    "rank": 3,
    "fields": {
+    "description": "+1..5% melee crit chance.",
     "effects": []
    }
   },
@@ -1376,6 +1505,7 @@
    "key": "conviction",
    "rank": 4,
    "fields": {
+    "description": "+1..5% melee crit chance.",
     "effects": []
    }
   },
@@ -1385,6 +1515,7 @@
    "key": "conviction",
    "rank": 5,
    "fields": {
+    "description": "+1..5% melee crit chance.",
     "effects": []
    }
   },
@@ -1393,28 +1524,36 @@
    "calling": "zealot",
    "key": "eye_for_an_eye",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 25988,
    "calling": "zealot",
    "key": "eye_for_an_eye",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 26022,
    "calling": "zealot",
    "key": "pursuit_of_justice",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 26023,
    "calling": "zealot",
    "key": "pursuit_of_justice",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20111,
@@ -1422,6 +1561,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 1,
    "fields": {
+    "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
   },
@@ -1431,6 +1571,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 2,
    "fields": {
+    "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
   },
@@ -1440,6 +1581,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 3,
    "fields": {
+    "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
   },
@@ -1448,91 +1590,117 @@
    "calling": "zealot",
    "key": "improved_hammer_of_justice",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20488,
    "calling": "zealot",
    "key": "improved_hammer_of_justice",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20489,
    "calling": "zealot",
    "key": "improved_hammer_of_justice",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20049,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20056,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20057,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20058,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20059,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 5923,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+   }
   },
   {
    "spell_id": 5924,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+   }
   },
   {
    "spell_id": 5925,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+   }
   },
   {
    "spell_id": 5926,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+   }
   },
   {
    "spell_id": 25829,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
+   }
   },
   {
    "spell_id": 12285,
@@ -1540,6 +1708,7 @@
    "key": "improved_charge",
    "rank": 1,
    "fields": {
+    "description": "Charge +3/6 rage.",
     "effects": []
    }
   },
@@ -1549,6 +1718,7 @@
    "key": "improved_charge",
    "rank": 2,
    "fields": {
+    "description": "Charge +3/6 rage.",
     "effects": []
    }
   },
@@ -1557,7 +1727,9 @@
    "calling": "zealot",
    "key": "anger_management",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 16493,
@@ -1565,6 +1737,7 @@
    "key": "impale",
    "rank": 1,
    "fields": {
+    "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
     "effects": []
    }
   },
@@ -1574,6 +1747,7 @@
    "key": "impale",
    "rank": 2,
    "fields": {
+    "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
     "effects": []
    }
   },
@@ -1583,6 +1757,7 @@
    "key": "deep_wounds",
    "rank": 1,
    "fields": {
+    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
   },
@@ -1592,6 +1767,7 @@
    "key": "deep_wounds",
    "rank": 2,
    "fields": {
+    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
   },
@@ -1601,6 +1777,7 @@
    "key": "deep_wounds",
    "rank": 3,
    "fields": {
+    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
   },
@@ -1610,6 +1787,7 @@
    "key": "axe_specialization",
    "rank": 1,
    "fields": {
+    "description": "+1..5% crit chance with axes.",
     "effects": []
    }
   },
@@ -1619,6 +1797,7 @@
    "key": "axe_specialization",
    "rank": 2,
    "fields": {
+    "description": "+1..5% crit chance with axes.",
     "effects": []
    }
   },
@@ -1628,6 +1807,7 @@
    "key": "axe_specialization",
    "rank": 3,
    "fields": {
+    "description": "+1..5% crit chance with axes.",
     "effects": []
    }
   },
@@ -1637,6 +1817,7 @@
    "key": "axe_specialization",
    "rank": 4,
    "fields": {
+    "description": "+1..5% crit chance with axes.",
     "effects": []
    }
   },
@@ -1646,6 +1827,7 @@
    "key": "axe_specialization",
    "rank": 5,
    "fields": {
+    "description": "+1..5% crit chance with axes.",
     "effects": []
    }
   },
@@ -1655,6 +1837,7 @@
    "key": "mace_specialization",
    "rank": 1,
    "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
   },
@@ -1664,6 +1847,7 @@
    "key": "mace_specialization",
    "rank": 2,
    "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
   },
@@ -1673,6 +1857,7 @@
    "key": "mace_specialization",
    "rank": 3,
    "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
   },
@@ -1682,6 +1867,7 @@
    "key": "mace_specialization",
    "rank": 4,
    "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
   },
@@ -1691,6 +1877,7 @@
    "key": "mace_specialization",
    "rank": 5,
    "fields": {
+    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
   },
@@ -1700,6 +1887,7 @@
    "key": "sword_specialization",
    "rank": 1,
    "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
   },
@@ -1709,6 +1897,7 @@
    "key": "sword_specialization",
    "rank": 2,
    "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
   },
@@ -1718,6 +1907,7 @@
    "key": "sword_specialization",
    "rank": 3,
    "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
   },
@@ -1727,6 +1917,7 @@
    "key": "sword_specialization",
    "rank": 4,
    "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
   },
@@ -1736,6 +1927,7 @@
    "key": "sword_specialization",
    "rank": 5,
    "fields": {
+    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
   },
@@ -1744,70 +1936,90 @@
    "calling": "zealot",
    "key": "flurry",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+   }
   },
   {
    "spell_id": 12971,
    "calling": "zealot",
    "key": "flurry",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+   }
   },
   {
    "spell_id": 12972,
    "calling": "zealot",
    "key": "flurry",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+   }
   },
   {
    "spell_id": 12973,
    "calling": "zealot",
    "key": "flurry",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+   }
   },
   {
    "spell_id": 12974,
    "calling": "zealot",
    "key": "flurry",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
+   }
   },
   {
    "spell_id": 20262,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20263,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20264,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20265,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20266,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20143,
@@ -1815,6 +2027,7 @@
    "key": "toughness",
    "rank": 1,
    "fields": {
+    "description": "+2..10% armour from items.",
     "effects": []
    }
   },
@@ -1824,6 +2037,7 @@
    "key": "toughness",
    "rank": 2,
    "fields": {
+    "description": "+2..10% armour from items.",
     "effects": []
    }
   },
@@ -1833,6 +2047,7 @@
    "key": "toughness",
    "rank": 3,
    "fields": {
+    "description": "+2..10% armour from items.",
     "effects": []
    }
   },
@@ -1842,6 +2057,7 @@
    "key": "toughness",
    "rank": 4,
    "fields": {
+    "description": "+2..10% armour from items.",
     "effects": []
    }
   },
@@ -1851,6 +2067,7 @@
    "key": "toughness",
    "rank": 5,
    "fields": {
+    "description": "+2..10% armour from items.",
     "effects": []
    }
   },
@@ -1859,56 +2076,72 @@
    "calling": "zealot",
    "key": "precision",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20192,
    "calling": "zealot",
    "key": "precision",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20193,
    "calling": "zealot",
    "key": "precision",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20127,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20130,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20135,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20136,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20137,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
+   }
   },
   {
    "spell_id": 20196,
@@ -1916,6 +2149,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 1,
    "fields": {
+    "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
   },
@@ -1925,6 +2159,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 2,
    "fields": {
+    "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
   },
@@ -1934,6 +2169,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 3,
    "fields": {
+    "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
   },
@@ -1943,6 +2179,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 4,
    "fields": {
+    "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
   },
@@ -1952,6 +2189,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 5,
    "fields": {
+    "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
   },
@@ -1961,6 +2199,7 @@
    "key": "anticipation",
    "rank": 1,
    "fields": {
+    "description": "+2..10 Defense.",
     "effects": []
    }
   },
@@ -1970,6 +2209,7 @@
    "key": "anticipation",
    "rank": 2,
    "fields": {
+    "description": "+2..10 Defense.",
     "effects": []
    }
   },
@@ -1979,6 +2219,7 @@
    "key": "anticipation",
    "rank": 3,
    "fields": {
+    "description": "+2..10 Defense.",
     "effects": []
    }
   },
@@ -1988,6 +2229,7 @@
    "key": "anticipation",
    "rank": 4,
    "fields": {
+    "description": "+2..10 Defense.",
     "effects": []
    }
   },
@@ -1997,6 +2239,7 @@
    "key": "anticipation",
    "rank": 5,
    "fields": {
+    "description": "+2..10 Defense.",
     "effects": []
    }
   },
@@ -2005,76 +2248,246 @@
    "calling": "zealot",
    "key": "reckoning",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+   }
   },
   {
    "spell_id": 20179,
    "calling": "zealot",
    "key": "reckoning",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+   }
   },
   {
    "spell_id": 20181,
    "calling": "zealot",
    "key": "reckoning",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+   }
   },
   {
    "spell_id": 20180,
    "calling": "zealot",
    "key": "reckoning",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
+   }
   },
   {
    "spell_id": 20182,
    "calling": "zealot",
    "key": "reckoning",
    "rank": 5,
-   "fields": {}
-  },
-  {
-   "spell_id": 1776,
-   "calling": "basic_warrior",
-   "key": "gouge",
-   "rank": 1,
    "fields": {
-    "cost": 15,
-    "range_max": 5,
-    "duration_ms": 4000,
-    "effects": [
-     {
-      "kind": "incapacitate",
-      "params": {
-       "duration_ms": 4000,
-       "break_on_damage": true
-      }
-     }
-    ]
+    "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
   {
-   "spell_id": 2136,
+   "spell_id": 12299,
    "calling": "basic_warrior",
-   "key": "fire_blast",
+   "key": "field_medic",
    "rank": 1,
    "fields": {
-    "cost": 10,
-    "cast_time_ms": 0,
-    "range_max": 20,
+    "power_type": 1,
+    "description": "Increases out-of-combat health regeneration by 20% and Stamina by 3%."
+   }
+  },
+  {
+   "spell_id": 12761,
+   "calling": "basic_warrior",
+   "key": "field_medic",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases out-of-combat health regeneration by 40% and Stamina by 6%."
+   }
+  },
+  {
+   "spell_id": 12762,
+   "calling": "basic_warrior",
+   "key": "field_medic",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases out-of-combat health regeneration by 60% and Stamina by 9%."
+   }
+  },
+  {
+   "spell_id": 12763,
+   "calling": "basic_warrior",
+   "key": "field_medic",
+   "rank": 4,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases out-of-combat health regeneration by 80% and Stamina by 12%."
+   }
+  },
+  {
+   "spell_id": 12764,
+   "calling": "basic_warrior",
+   "key": "field_medic",
+   "rank": 5,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases out-of-combat health regeneration by 100% and Stamina by 15%."
+   }
+  },
+  {
+   "spell_id": 11078,
+   "calling": "basic_warrior",
+   "key": "initiates_spark",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases Fire Blast damage by 10% and it generates 2 Rage.",
     "effects": [
      {
-      "kind": "spell_damage",
+      "kind": "skill_amount_pct",
       "params": {
-       "amount": {
-        "base": 20,
-        "per_level": 2.5
-       }
+       "skill": "fire_blast",
+       "pct": 10
+      }
+     },
+     {
+      "kind": "skill_rage",
+      "params": {
+       "skill": "fire_blast",
+       "amount": 2
       }
      }
     ]
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "DAMAGE",
+     "family_bit": 37,
+     "value": 10
+    }
+   ]
+  },
+  {
+   "spell_id": 11080,
+   "calling": "basic_warrior",
+   "key": "initiates_spark",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases Fire Blast damage by 20% and it generates 4 Rage.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "fire_blast",
+       "pct": 20
+      }
+     },
+     {
+      "kind": "skill_rage",
+      "params": {
+       "skill": "fire_blast",
+       "amount": 4
+      }
+     }
+    ]
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "DAMAGE",
+     "family_bit": 37,
+     "value": 20
+    }
+   ]
+  },
+  {
+   "spell_id": 12342,
+   "calling": "basic_warrior",
+   "key": "initiates_spark",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases Fire Blast damage by 30% and it generates 6 Rage.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "fire_blast",
+       "pct": 30
+      }
+     },
+     {
+      "kind": "skill_rage",
+      "params": {
+       "skill": "fire_blast",
+       "amount": 6
+      }
+     }
+    ]
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "DAMAGE",
+     "family_bit": 37,
+     "value": 30
+    }
+   ]
+  },
+  {
+   "spell_id": 13743,
+   "calling": "basic_warrior",
+   "key": "cutthroats_momentum",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "description": "After using Charge, your next Heroic Strike has a 50% chance to crit and movement speed increases by 15%."
+   }
+  },
+  {
+   "spell_id": 13875,
+   "calling": "basic_warrior",
+   "key": "cutthroats_momentum",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "description": "After using Charge, your next Heroic Strike has a 100% chance to crit and movement speed increases by 30%."
+   }
+  },
+  {
+   "spell_id": 14144,
+   "calling": "basic_warrior",
+   "key": "savage_strikes",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases Critical Strike chance by 3% and Crit damage by 15%."
+   }
+  },
+  {
+   "spell_id": 14148,
+   "calling": "basic_warrior",
+   "key": "savage_strikes",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "description": "Increases Critical Strike chance by 6% and Crit damage by 30%."
+   }
+  },
+  {
+   "spell_id": 14983,
+   "calling": "basic_warrior",
+   "key": "vanguards_resolve",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "description": "Killing an experience-yielding target instantly heals you for 10% of max health."
    }
   }
  ],
@@ -2083,58 +2496,63 @@
    "calling": "basic_warrior",
    "key": "field_medic",
    "tab": "Recruit",
-   "row": 1.0,
-   "column": 1.0,
+   "row": 1,
+   "column": 1,
+   "talent_id": 140,
    "rank_spell_ids": [
-    null,
-    null,
-    null,
-    null,
-    null
+    12299,
+    12761,
+    12762,
+    12763,
+    12764
    ]
   },
   {
    "calling": "basic_warrior",
    "key": "initiates_spark",
    "tab": "Recruit",
-   "row": 1.0,
-   "column": 2.0,
+   "row": 1,
+   "column": 2,
+   "talent_id": 27,
    "rank_spell_ids": [
-    null,
-    null,
-    null
+    11078,
+    11080,
+    12342
    ]
   },
   {
    "calling": "basic_warrior",
    "key": "cutthroats_momentum",
    "tab": "Recruit",
-   "row": 1.0,
-   "column": 3.0,
+   "row": 1,
+   "column": 3,
+   "talent_id": 222,
    "rank_spell_ids": [
-    null,
-    null
+    13743,
+    13875
    ]
   },
   {
    "calling": "basic_warrior",
    "key": "savage_strikes",
    "tab": "Recruit",
-   "row": 2.0,
-   "column": 1.0,
+   "row": 2,
+   "column": 1,
+   "talent_id": 272,
    "rank_spell_ids": [
-    null,
-    null
+    14144,
+    14148
    ]
   },
   {
    "calling": "basic_warrior",
    "key": "vanguards_resolve",
    "tab": "Recruit",
-   "row": 2.0,
-   "column": 2.0,
+   "row": 2,
+   "column": 2,
+   "talent_id": 382,
    "rank_spell_ids": [
-    null
+    14983
    ]
   },
   {

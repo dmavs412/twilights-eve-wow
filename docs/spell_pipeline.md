@@ -15,11 +15,17 @@ data/twilights-eve/master.csv          hand-edited, the truth
 
 ## The CSV
 
-One row per skill, one row per talent rank. Columns, in groups:
+One row per skill, per talent rank, per aura, plus one `calling` and one `talent_tab` row per Calling
+and tab that declares them. Columns, in groups:
 
 | group | columns | meaning |
 |---|---|---|
-| identity | `kind`, `calling`, `key`, `name`, `rank` | `kind` is `skill` or `talent`; `key` is the save and content name; `rank` is 1 for a skill |
+| identity | `kind`, `calling`, `key`, `name`, `rank` | `kind` is `skill`, `talent`, `calling`, `talent_tab` or `aura`; `key` is the save and content name; `rank` is 1 for a skill or aura |
+| calling row | `tier`, `tier_cap`, `tier_bonus`, `shapeshift_form`, `armour`, `resource` | a Calling's Tier, Tier Cap, Tier Bonus (`strength=1;stamina=2`), form id, armour kinds joined by `\|`, and the resource every cost on its rows is an amount of |
+| talent_tab row | `tab_id`, `background`, `tab_order` | the tab's id, art and order; `name` is the tab name that talent rows put in `tab`. Once a Calling has a `talent_tab` row, every talent's `tab` must name one |
+| aura row | `spell_id`, `duration_ms`, `charges`, `effect1_kind`… | a buff granted by key; `spell_id` is a borrowed spell for its icon and name; a `proc` effect names auras in `apply_aura=key\|key` |
+| resource | `resource` | on a skill row, overrides the Calling's resource for that row (a borrowed mana spell that costs rage needs none) |
+| assumptions | `assumptions` | every guess beside the row it affects: placeholders, durations, borrowed ids, unmodelled parts. Every build prints the rows that carry one; the realm and client never see it |
 | ids | `spell_id`, `talent_id`, `source_tab_id`, `icon_id` | real 1.12.1 records; the build fails on an id the DBCs do not hold |
 | talent seat | `tab`, `tab_row`, `tab_column`, `prereq_key`, `prereq_rank`, `exceptional` | where the talent sits on the Calling's grid; `exceptional` marks a one-rank talent that still counts toward the row |
 | borrowed | `borrowed_from_class`, `borrowed_family_bit` | set when a Calling casts another class's spell (ADR 0003) |
@@ -69,16 +75,22 @@ components `docs/bevy_guidelines.md` names for each `kind`.
 `client_dbc_patch.json` is a list of row overrides, `{spell_id, fields: {cost, stances,
 cooldown_ms, ..., borrowed_from_class, borrowed_family_bit, effects}, spellmods}`, plus the talent
 seats (`talent_id`, grid position, prereq, one spell id per rank). Every row is emitted with its
-`modelled` flag; an unmodelled row sends no `effects` key, so the client keeps the stock effects. The client applies it
+`modelled` flag; an unmodelled row sends no `effects` key, so the client keeps the stock effects. Every
+override with a resource also sends `power_type` (the row's `resource`, else its Calling's: mana 0, rage 1,
+focus 2, energy 3, happiness 4) and, when the row has one, `description`; an empty description keeps the
+borrowed text. Auras are not Spell.dbc overrides. The CSV uses the realm's vocabulary: `weapon=normal` or
+`normalized`, boolean `unavoidable=yes`, `school_damage`, and `proc` (`on=cast|kill`, `skill=`, `yields_xp=yes`,
+`chance=`, then one of `apply_aura=key|key` or `heal_pct=`). Seats are whole numbers. The client applies it
 in memory when it loads its spell data (ADR 0003). When a real server plays to a stock client,
 the same file feeds an MPQ writer.
 
 ## Where it stands
 
 As of 2026-10-16 `build_spells.py` generates both outputs from the CSV, and they are committed
-(3 Callings, 198 rows, 185 spell overrides, 49 talent seats). Nothing consumes them yet: the game
-still runs on `data/twilights-eve/callings.json` and the `content/*.toml` files generated from it,
-and the client does not apply the patch. The patch carries no `power_type` or `family_name`
-fields; adding them is a schema change and goes through `/grill-me`. Talents carry their
+(3 Callings, 204 rows, 198 spell overrides, 49 talent seats). Basic Warrior is fully expressed in
+the CSV (calling, tab, aura rows; spec #50); its rows whose effects the realm cannot yet do are
+`modelled=no`. Nothing consumes the outputs yet: the game still runs on
+`data/twilights-eve/callings.json` and the `content/*.toml` files generated from it, and the client
+does not apply the patch. The patch carries no `family_name` field. Talents carry their
 `description` and client spellmods, but their realm effects are not yet structured columns,
 because `callings.json` never held them.

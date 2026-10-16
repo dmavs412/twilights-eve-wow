@@ -19,7 +19,7 @@
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "W",
+       "weapon": "normal",
        "on_next_swing": true,
        "bonus": {
         "base": 9.5,
@@ -86,18 +86,9 @@
     "realm_cooldown_ms": 10000,
     "realm_range_max": 5,
     "target": "enemy",
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "incapacitate",
-      "params": {
-       "duration_ms": 4000,
-       "break_on_damage": true
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Causes [custom] damage and incapacitates the opponent for 4 sec."
+    "modelled": false,
+    "effects": [],
+    "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it."
    },
    {
     "key": "fire_blast",
@@ -108,32 +99,24 @@
     "realm_cooldown_ms": 8000,
     "realm_range_max": 20,
     "target": "enemy",
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "spell_damage",
-      "params": {
-       "amount": {
-        "base": 20,
-        "per_level": 2.5
-       }
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Blasts the enemy with fire damage."
+    "modelled": false,
+    "effects": [],
+    "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked."
    }
   ],
   "talent_tabs": [
    {
     "name": "Recruit",
+    "id": 900,
+    "background": "WarriorArms",
+    "order": 0,
     "talents": [
      {
       "key": "field_medic",
       "name": "Field Medic",
       "seat": {
-       "row": 1.0,
-       "column": 1.0
+       "row": 1,
+       "column": 1
       },
       "exceptional": false,
       "ranks": [
@@ -141,120 +124,55 @@
         "key": "field_medic",
         "name": "Field Medic",
         "rank": 1,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "mod_health_regen_out_of_combat",
-          "params": {
-           "pct": 20
-          },
-          "realm_only": false
-         },
-         {
-          "kind": "mod_stat",
-          "params": {
-           "stat": "stamina",
-           "pct": 3
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 12299,
+        "talent_id": 140,
+        "source_tab_id": 163,
+        "modelled": false,
+        "effects": [],
         "description": "Increases out-of-combat health regeneration by 20% and Stamina by 3%."
        },
        {
         "key": "field_medic",
         "name": "Field Medic",
         "rank": 2,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "mod_health_regen_out_of_combat",
-          "params": {
-           "pct": 40
-          },
-          "realm_only": false
-         },
-         {
-          "kind": "mod_stat",
-          "params": {
-           "stat": "stamina",
-           "pct": 6
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 12761,
+        "talent_id": 140,
+        "source_tab_id": 163,
+        "modelled": false,
+        "effects": [],
         "description": "Increases out-of-combat health regeneration by 40% and Stamina by 6%."
        },
        {
         "key": "field_medic",
         "name": "Field Medic",
         "rank": 3,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "mod_health_regen_out_of_combat",
-          "params": {
-           "pct": 60
-          },
-          "realm_only": false
-         },
-         {
-          "kind": "mod_stat",
-          "params": {
-           "stat": "stamina",
-           "pct": 9
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 12762,
+        "talent_id": 140,
+        "source_tab_id": 163,
+        "modelled": false,
+        "effects": [],
         "description": "Increases out-of-combat health regeneration by 60% and Stamina by 9%."
        },
        {
         "key": "field_medic",
         "name": "Field Medic",
         "rank": 4,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "mod_health_regen_out_of_combat",
-          "params": {
-           "pct": 80
-          },
-          "realm_only": false
-         },
-         {
-          "kind": "mod_stat",
-          "params": {
-           "stat": "stamina",
-           "pct": 12
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 12763,
+        "talent_id": 140,
+        "source_tab_id": 163,
+        "modelled": false,
+        "effects": [],
         "description": "Increases out-of-combat health regeneration by 80% and Stamina by 12%."
        },
        {
         "key": "field_medic",
         "name": "Field Medic",
         "rank": 5,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "mod_health_regen_out_of_combat",
-          "params": {
-           "pct": 100
-          },
-          "realm_only": false
-         },
-         {
-          "kind": "mod_stat",
-          "params": {
-           "stat": "stamina",
-           "pct": 15
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 12764,
+        "talent_id": 140,
+        "source_tab_id": 163,
+        "modelled": false,
+        "effects": [],
         "description": "Increases out-of-combat health regeneration by 100% and Stamina by 15%."
        }
       ]
@@ -263,8 +181,8 @@
       "key": "initiates_spark",
       "name": "Initiate's Spark",
       "seat": {
-       "row": 1.0,
-       "column": 2.0
+       "row": 1,
+       "column": 2
       },
       "exceptional": false,
       "ranks": [
@@ -272,24 +190,84 @@
         "key": "initiates_spark",
         "name": "Initiate's Spark",
         "rank": 1,
+        "spell_id": 11078,
+        "talent_id": 27,
+        "source_tab_id": 41,
         "modelled": true,
-        "effects": [],
+        "effects": [
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "fire_blast",
+           "pct": 10
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_rage",
+          "params": {
+           "skill": "fire_blast",
+           "amount": 2
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases Fire Blast damage by 10% and it generates 2 Rage."
        },
        {
         "key": "initiates_spark",
         "name": "Initiate's Spark",
         "rank": 2,
+        "spell_id": 11080,
+        "talent_id": 27,
+        "source_tab_id": 41,
         "modelled": true,
-        "effects": [],
+        "effects": [
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "fire_blast",
+           "pct": 20
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_rage",
+          "params": {
+           "skill": "fire_blast",
+           "amount": 4
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases Fire Blast damage by 20% and it generates 4 Rage."
        },
        {
         "key": "initiates_spark",
         "name": "Initiate's Spark",
         "rank": 3,
+        "spell_id": 12342,
+        "talent_id": 27,
+        "source_tab_id": 41,
         "modelled": true,
-        "effects": [],
+        "effects": [
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "fire_blast",
+           "pct": 30
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_rage",
+          "params": {
+           "skill": "fire_blast",
+           "amount": 6
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases Fire Blast damage by 30% and it generates 6 Rage."
        }
       ]
@@ -298,8 +276,8 @@
       "key": "cutthroats_momentum",
       "name": "Cutthroat's Momentum",
       "seat": {
-       "row": 1.0,
-       "column": 3.0
+       "row": 1,
+       "column": 3
       },
       "exceptional": false,
       "ranks": [
@@ -307,34 +285,22 @@
         "key": "cutthroats_momentum",
         "name": "Cutthroat's Momentum",
         "rank": 1,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "proc_on_cast",
-          "params": {
-           "trigger_spell": "charge",
-           "proc_spell": "custom_momentum_buff_1"
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 13743,
+        "talent_id": 222,
+        "source_tab_id": 181,
+        "modelled": false,
+        "effects": [],
         "description": "After using Charge, your next Heroic Strike has a 50% chance to crit and movement speed increases by 15%."
        },
        {
         "key": "cutthroats_momentum",
         "name": "Cutthroat's Momentum",
         "rank": 2,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "proc_on_cast",
-          "params": {
-           "trigger_spell": "charge",
-           "proc_spell": "custom_momentum_buff_2"
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 13875,
+        "talent_id": 222,
+        "source_tab_id": 181,
+        "modelled": false,
+        "effects": [],
         "description": "After using Charge, your next Heroic Strike has a 100% chance to crit and movement speed increases by 30%."
        }
       ]
@@ -343,8 +309,8 @@
       "key": "savage_strikes",
       "name": "Savage Strikes",
       "seat": {
-       "row": 2.0,
-       "column": 1.0
+       "row": 2,
+       "column": 1
       },
       "exceptional": false,
       "ranks": [
@@ -352,46 +318,22 @@
         "key": "savage_strikes",
         "name": "Savage Strikes",
         "rank": 1,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "mod_crit_chance",
-          "params": {
-           "amount": 3
-          },
-          "realm_only": false
-         },
-         {
-          "kind": "mod_crit_damage",
-          "params": {
-           "pct": 15
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 14144,
+        "talent_id": 272,
+        "source_tab_id": 182,
+        "modelled": false,
+        "effects": [],
         "description": "Increases Critical Strike chance by 3% and Crit damage by 15%."
        },
        {
         "key": "savage_strikes",
         "name": "Savage Strikes",
         "rank": 2,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "mod_crit_chance",
-          "params": {
-           "amount": 6
-          },
-          "realm_only": false
-         },
-         {
-          "kind": "mod_crit_damage",
-          "params": {
-           "pct": 30
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 14148,
+        "talent_id": 272,
+        "source_tab_id": 182,
+        "modelled": false,
+        "effects": [],
         "description": "Increases Critical Strike chance by 6% and Crit damage by 30%."
        }
       ]
@@ -400,8 +342,8 @@
       "key": "vanguards_resolve",
       "name": "Vanguard's Resolve",
       "seat": {
-       "row": 2.0,
-       "column": 2.0
+       "row": 2,
+       "column": 2
       },
       "exceptional": false,
       "ranks": [
@@ -409,23 +351,76 @@
         "key": "vanguards_resolve",
         "name": "Vanguard's Resolve",
         "rank": 1,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "proc_on_kill",
-          "params": {
-           "heal_pct": 10
-          },
-          "realm_only": false
-         }
-        ],
+        "spell_id": 14983,
+        "talent_id": 382,
+        "source_tab_id": 182,
+        "modelled": false,
+        "effects": [],
         "description": "Killing an experience-yielding target instantly heals you for 10% of max health."
        }
       ]
      }
     ]
    }
-  ]
+  ],
+  "auras": [
+   {
+    "key": "momentum_crit_1",
+    "name": "Momentum (crit)",
+    "spell_id": 14177,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "Your next Heroic Strike has +50% critical strike chance."
+   },
+   {
+    "key": "momentum_speed_1",
+    "name": "Momentum (speed)",
+    "spell_id": 2983,
+    "duration_ms": 4000,
+    "modelled": false,
+    "effects": [],
+    "description": "Run speed increased by 15%."
+   },
+   {
+    "key": "momentum_crit_2",
+    "name": "Momentum (crit)",
+    "spell_id": 14177,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "Your next Heroic Strike has +100% critical strike chance."
+   },
+   {
+    "key": "momentum_speed_2",
+    "name": "Momentum (speed)",
+    "spell_id": 2983,
+    "duration_ms": 4000,
+    "modelled": false,
+    "effects": [],
+    "description": "Run speed increased by 30%."
+   }
+  ],
+  "name": "Basic Warrior",
+  "tier": 0,
+  "tier_cap": 10,
+  "tier_bonus": {
+   "strength": 0,
+   "agility": 0,
+   "stamina": 0,
+   "intellect": 0,
+   "spirit": 0
+  },
+  "shapeshift_form": 17,
+  "armour": [
+   "cloth",
+   "leather",
+   "mail",
+   "shield"
+  ],
+  "resource": "rage"
  },
  {
   "key": "vanguard",
@@ -447,7 +442,7 @@
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "Wn",
+       "weapon": "normalized",
        "bonus": {
         "base": 25,
         "per_level": 2.5,
@@ -484,12 +479,8 @@
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "Wn",
-       "unavoidable": [
-        "dodge",
-        "parry",
-        "block"
-       ],
+       "weapon": "normalized",
+       "unavoidable": true,
        "bonus": {
         "base": 6,
         "per_level": 0.6,
@@ -1539,7 +1530,8 @@
      }
     ]
    }
-  ]
+  ],
+  "auras": []
  },
  {
   "key": "zealot",
@@ -1675,7 +1667,7 @@
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "Wn",
+       "weapon": "normalized",
        "bonus": {
         "base": 25,
         "per_level": 2.5,
@@ -3201,6 +3193,7 @@
      }
     ]
    }
-  ]
+  ],
+  "auras": []
  }
 ]
