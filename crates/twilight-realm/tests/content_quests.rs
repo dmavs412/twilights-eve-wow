@@ -1,5 +1,6 @@
 //! `content/quests.toml` against the rest of the realm's content: every quest's creatures and
-//! items are ones the realm knows, so no objective can never be met.
+//! items are ones the realm knows, every explore spot lies in The Barrens and every ender stands
+//! somewhere, so no objective can never be met.
 
 mod common;
 
@@ -22,6 +23,9 @@ struct Quest {
     kind: String,
     /// A Hub NPC's entry (`content/hub.toml`).
     giver: u32,
+    /// The Hub NPC who takes it in, when not the giver.
+    #[serde(default)]
+    ender: Option<u32>,
     level: u8,
     title: String,
     details: String,
@@ -31,9 +35,18 @@ struct Quest {
     kill: Vec<(u32, u32)>,
     #[serde(default)]
     collect: Vec<Collect>,
+    #[serde(default)]
+    explore: Option<Explore>,
     /// An Advancement Quest asks for nothing but a word with its giver.
     #[serde(default)]
     advancement: Option<toml::Value>,
+}
+
+#[derive(Deserialize)]
+struct Explore {
+    place: String,
+    position: [f32; 2],
+    radius: f32,
 }
 
 #[derive(Deserialize)]
@@ -64,7 +77,11 @@ fn every_objective_names_a_creature_and_an_item_the_realm_has() {
     let mut realm = realm();
     for q in content().quest {
         assert!(
-            !q.kill.is_empty() || !q.collect.is_empty() || q.advancement.is_some(),
+            !q.kill.is_empty()
+                || !q.collect.is_empty()
+                || q.explore.is_some()
+                || q.ender.is_some_and(|e| e != q.giver)
+                || q.advancement.is_some(),
             "quest {}",
             q.id
         );
@@ -236,5 +253,68 @@ fn the_low_quests_point_the_way_to_their_camps() {
                 q.details
             );
         }
+    }
+}
+
+#[derive(Deserialize)]
+struct Npc {
+    entry: u32,
+    npc_flags: u32,
+}
+
+#[derive(Deserialize)]
+struct Hub {
+    npc: Vec<Npc>,
+}
+
+#[test]
+fn every_ender_is_a_quest_giver_with_a_name() {
+    let hub: Hub = toml::from_str(include_str!("../content/hub.toml")).expect("hub.toml parses");
+    let mut realm = realm();
+    for q in content().quest {
+        let ender = q.ender.unwrap_or(q.giver);
+        assert!(
+            hub.npc
+                .iter()
+                .any(|n| n.entry == ender && n.npc_flags & 0x2 != 0),
+            "quest {}: ender {ender} is no quest giver in hub.toml",
+            q.id
+        );
+        assert!(creature_named(&mut realm, ender), "ender {ender}");
+    }
+}
+
+#[test]
+fn every_explore_spot_is_a_named_place_in_the_barrens() {
+    // The Barrens as its spawns span it.
+    let barrens: toml::Value =
+        toml::from_str(include_str!("../content/barrens.toml")).expect("barrens.toml parses");
+    let at = |s: &toml::Value, i: usize| s[i].as_float().expect("a coordinate") as f32;
+    let spawns = barrens["spawns"].as_array().expect("spawns");
+    let span = |i: usize| {
+        let all = spawns.iter().map(|s| at(s, i));
+        let lo = all.clone().fold(f32::INFINITY, f32::min);
+        (lo, all.fold(f32::NEG_INFINITY, f32::max))
+    };
+    let ((x0, x1), (y0, y1)) = (span(4), span(5));
+    let spots: Vec<(u32, Explore)> = content()
+        .quest
+        .into_iter()
+        .filter_map(|q| Some((q.id, q.explore?)))
+        .collect();
+    assert!(!spots.is_empty());
+    for (id, e) in spots {
+        let [x, y] = e.position;
+        assert!(
+            (x0..=x1).contains(&x) && (y0..=y1).contains(&y),
+            "quest {id}: {} lies outside The Barrens",
+            e.place
+        );
+        assert!(!e.place.trim().is_empty(), "quest {id}");
+        assert!(
+            (5.0..=100.0).contains(&e.radius),
+            "quest {id}: radius {}",
+            e.radius
+        );
     }
 }

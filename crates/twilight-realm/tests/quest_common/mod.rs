@@ -12,10 +12,12 @@ use crate::gear_common::{descriptor, save_with, Carried, SEED};
 /// `UNIT_NPC_FLAG_QUESTGIVER`.
 pub const NPC_FLAG_QUESTGIVER: u32 = 0x2;
 
-/// The Near Plains' giver, The Southern Fields', The Southfury Banks' and The Southern Barrens'.
+/// The Near Plains' giver, The Southern Fields', The Southfury Banks', The Kolkar Lands' and The
+/// Southern Barrens'.
 pub const GREZZ: u32 = 90101;
 pub const TAMAHA: u32 = 90102;
 pub const ZUNJIN: u32 = 90103;
+pub const GAROSH: u32 = 90104;
 pub const MAHU: u32 = 90105;
 
 /// The Near Plains' kill and collect quests (levels 2 and 3), The Southern Fields' familiars
@@ -81,6 +83,16 @@ pub fn quest_log(events: &[SessionEvent], me: u64) -> Vec<(u8, u32, [u8; 4], u8)
             (s.quest_id != 0).then_some((slot, s.quest_id, s.counters, s.state))
         })
         .collect()
+}
+
+/// The player walks to `to` on flat ground, returning what the step brought.
+pub fn walk_to(realm: &mut Realm, to: [f32; 3]) -> Vec<SessionEvent> {
+    realm.handle(RealmCommand::Move {
+        position: to,
+        orientation: 0.0,
+    });
+    realm.tick(0.0, &FlatGround);
+    drain(realm)
 }
 
 /// Walks up to `npc` and says hello.

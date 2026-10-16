@@ -1,7 +1,7 @@
-//! The Hub's friendly NPCs (`content/hub.toml`): units that live in the Crossroads, each opening
-//! the stock window its NPC flags name, and stream in and out with the player's view as the mobs
-//! do. Some wander a few yards about where they stand, as vmangos's random movement walks a
-//! creature about its spawn point.
+//! The Hub's friendly NPCs (`content/hub.toml`): units that live in the Crossroads, or out in a
+//! Hunting Ground for a quest to find them, each opening the stock window its NPC flags name,
+//! and stream in and out with the player's view as the mobs do. Some wander a few yards about
+//! where they stand, as vmangos's random movement walks a creature about its spawn point.
 
 use std::sync::OnceLock;
 
