@@ -114,15 +114,15 @@ collect = [{ item = 2925, count = 8, chance = 60, from = [3110, 3231] }]
 id = 91007
 kind = "hunting"
 giver = 90103
-level = 11
+level = 12
 title = "Razormane Raiders"
-objectives = "Kill 5 Razormane Water Seekers and 5 Razormane Thornweavers, then return to Zun'jin at the Crossroads."
-details = "Da Razormane at Thorn Hill be sending raiders down da road. Kill dem seekers and thornweavers."
+objectives = "Kill 5 Razormane Defenders and 5 Razormane Geomancers, then return to Zun'jin at the Crossroads."
+details = "Da Razormane at Thorn Hill be sending raiders down da road. Kill dem defenders and geomancers."
 progress = "Da Razormane still be raidin'."
 completion = "Dat'll teach dem. Here be your pay."
 money = 450
 tokens = 1
-kill = [[3267, 5], [3268, 5]]
+kill = [[3266, 5], [3269, 5]]
 
 [[quest]]
 id = 91008

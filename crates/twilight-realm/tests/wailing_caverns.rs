@@ -249,10 +249,16 @@ fn leaving_through_the_exit_returns_the_player_to_the_entrance_outside() {
     assert_eq!(facing, OUTSIDE_FACING);
 
     s.send(RealmCommand::WorldportAck);
-    let events = s.tick(0.0);
+    let mut events = s.tick(0.0);
+    // The oasis round the skull is quiet ground; a little way out, The Barrens stream back in.
+    s.send(RealmCommand::Move {
+        position: [-831.0, -2100.0, OUTSIDE[2]],
+        orientation: 0.0,
+    });
+    events.extend(s.tick(0.0));
     assert!(
         !unit_creates(&events).is_empty(),
-        "The Barrens stream back in around the entrance"
+        "The Barrens stream back in beyond the entrance"
     );
     assert!(unit_creates(&events)
         .iter()

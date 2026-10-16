@@ -7,7 +7,7 @@ copy of them:
 |---|---|---|
 | `data/twilights-eve/barrens_spawns.json` | every hostile and neutral creature spawn in The Barrens (map 1, zone 17), with camps | `tools/twilights-eve/import_barrens_spawns.py` |
 | `data/twilights-eve/crossroads_low_camps.json` | six hand-placed level 1–6 camps near the Crossroads | `tools/twilights-eve/make_crossroads_low_camps.py` |
-| `crates/twilight-realm/content/barrens.toml` | the two above as the realm reads them: templates, spawn rows, camps, suppressed spawns | `cargo run -p twilight-realm --example import_barrens` |
+| `crates/twilight-realm/content/barrens.toml` | the two above as the realm reads them, filtered into the rings: templates, spawn rows, camps | `cargo run -p twilight-realm --example import_barrens` |
 
 All three are committed. Building the game never needs the database or the scripts. The Python
 scripts use only the standard library, plus `tools/twilights-eve/wowmpq.py`, a small read-only
@@ -389,6 +389,34 @@ holds it there.
 template has no call-for-help flag) and for the Vile Familiars (faction template 14 has none
 either); the quilboars and wolves have it. Whether a camp pulls together is the realm's camp rule.
 
+## The rings
+
+Twilight's Eve's Barrens runs from level 1 to 30 in rings around the Crossroads (spec #28).
+`examples/import_barrens.rs`'s `filter` makes that of the dump: the rows it leaves out are not
+in `barrens.toml` at all, and the file's header counts them by reason. In order, an imported
+spawn is left out when:
+
+1. **a low camp keeps it out**: a camp's `suppress_guids` lists it, or the keep-out rule above
+   names it;
+2. **by name**: the Death's Head Cultists and Geomancers, Ambassadors Bloodrage and Malcin,
+   Trigore the Lasher and Boahn (`LEFT_OUT`);
+3. **the inner ring**: its wander area reaches within 600 yd of the Crossroads. Only the
+   hand-placed camps stand there, levels 1–10. That takes in the oasis around the Wailing
+   Caverns' skull;
+4. **above level 30**, after the Razorfen edge's quilboar (Razorfen Battleguard 7873 and
+   Thornweaver 7874, vanilla's 33–34 elites) are retuned to 27–30 as The Barrens' capstone.
+   This drops the Withered Warriors and Jorb;
+5. **a stray**: a normal-rank creature more than 5 levels off the median level of the spawns
+   (low camps included) within 120 yd of it, with at least 3 of them. Elites, rares and bosses
+   are meant to stand above their neighbours and are never strays. The rule runs again on what
+   is left until no stray remains. It takes the Savannah Cubs out of the matriarchs' prides,
+   Isha Awak at Northwatch, a Zhevra Charger and a Sunscale Scytheclaw in the north and a
+   Fleeting Plainstrider on the Merchant Coast.
+
+Templates are written only for the entries that still spawn, with the Razorfen quilboar's at
+27–30. `tests/content_barrens.rs` checks the result: nothing in the inner ring above 10, nothing
+above 30, no stray, none of the named, and every quest's creatures still spawning.
+
 ## How the realm plays them
 
 - **Streaming.** Only spawns whose home is within 100 yd of the player are in the world
@@ -407,8 +435,8 @@ either); the quilboars and wolves have it. Whether a camp pulls together is the 
 - **Respawn.** A killed mob comes back 60 s after the player has gone more than 60 yd from its
   home (`rules::respawn`); the clock starts over whenever the player comes back. Vanilla's
   `respawn_secs` are ignored, rares included.
-- **Low camps.** Their members are spawned; the imported spawns in `suppress_guids` and those
-  the keep-out rule names are not (`barrens.toml`'s `suppress`).
+- **Low camps.** Their members are spawned; the imported spawns the rings leave out are not in
+  `barrens.toml`.
 - **Not used yet:** `wander_radius` (mobs stand at their spawn point), waypoint paths, and the
   `alt_entries`.
 
@@ -424,5 +452,5 @@ either); the quilboars and wolves have it. Whether a camp pulls together is the 
 - Rares appear as ordinary spawns with vanilla respawn times (often 1–3 days); none are in
   spawn pools in this DB. The realm decides how often they appear.
 - Some creatures in the file sit at the zone's edges because the terrain says they are in The
-  Barrens: the Razorfen Downs approach (33–36 elites) and Jorb in Ratchet (a neutral level-37 bodyguard; the realm may
-  want to drop him).
+  Barrens: the Razorfen Downs approach (33–36 elites) and Jorb in Ratchet (a neutral level-37
+  bodyguard). The rings retune or drop them.
