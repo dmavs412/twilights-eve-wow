@@ -49,6 +49,8 @@ impl Shop {
                 _ => None,
             })
             .expect("the Token vendor stands in the Crossroads");
+        let mut realm = realm;
+        walk_up_to(&mut realm, vendor);
         Self {
             realm,
             me,
@@ -140,7 +142,8 @@ fn the_token_vendor_stands_in_the_crossroads_and_sells_without_repairing() {
     assert_eq!(flags & (NPC_FLAG_VENDOR | NPC_FLAG_REPAIR), NPC_FLAG_VENDOR);
     let crossroads = twilight_realm::CROSSROADS;
     let d = ((at[0] - crossroads[0]).powi(2) + (at[1] - crossroads[1]).powi(2)).sqrt();
-    assert!(d < 6.0, "{d} yd from where characters appear");
+    // At the inn's door.
+    assert!(d < 20.0, "{d} yd from where characters appear");
 }
 
 #[test]

@@ -6,7 +6,7 @@ use benilla_protocol::messages::dialog_status;
 use benilla_protocol::{EntityKind, SessionEvent};
 use twilight_realm::{Realm, RealmCommand};
 
-use crate::common::{drain, FlatGround};
+use crate::common::{drain, hub_guid, walk_up_to, FlatGround};
 use crate::gear_common::{descriptor, save_with, Carried, SEED};
 
 /// `UNIT_NPC_FLAG_QUESTGIVER`.
@@ -51,12 +51,14 @@ pub fn givers(events: &[SessionEvent]) -> Vec<(u64, u32, [f32; 3])> {
         .collect()
 }
 
+/// The giver `entry`'s guid: as created in `events`, or, standing out of view across the town,
+/// as `content/hub.toml` places it.
 pub fn giver(events: &[SessionEvent], entry: u32) -> u64 {
     givers(events)
         .into_iter()
         .find(|g| g.1 == entry)
-        .unwrap_or_else(|| panic!("giver {entry} stands at the Hub"))
-        .0
+        .map(|g| g.0)
+        .unwrap_or_else(|| hub_guid(entry))
 }
 
 pub fn status(realm: &mut Realm, npc: u64) -> u32 {
@@ -81,7 +83,9 @@ pub fn quest_log(events: &[SessionEvent], me: u64) -> Vec<(u8, u32, [u8; 4], u8)
         .collect()
 }
 
+/// Walks up to `npc` and says hello.
 pub fn talk(realm: &mut Realm, npc: u64) -> Vec<SessionEvent> {
+    walk_up_to(realm, npc);
     realm.handle(RealmCommand::QuestGiverHello { npc });
     drain(realm)
 }
@@ -107,12 +111,14 @@ pub fn on_offer(realm: &mut Realm, npc: u64) -> Vec<u32> {
 
 /// Takes `quest` from `npc`, returning the events.
 pub fn accept(realm: &mut Realm, npc: u64, quest: u32) -> Vec<SessionEvent> {
+    walk_up_to(realm, npc);
     realm.handle(RealmCommand::QuestGiverAcceptQuest { npc, quest });
     drain(realm)
 }
 
 /// Hands `quest` in at `npc` the stock way (complete, continue, choose), returning the events.
 pub fn hand_in(realm: &mut Realm, npc: u64, quest: u32) -> Vec<SessionEvent> {
+    walk_up_to(realm, npc);
     realm.handle(RealmCommand::QuestGiverCompleteQuest { npc, quest });
     realm.handle(RealmCommand::QuestGiverRequestReward { npc, quest });
     realm.handle(RealmCommand::QuestGiverChooseReward {

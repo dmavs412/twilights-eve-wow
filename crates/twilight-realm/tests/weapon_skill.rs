@@ -126,6 +126,7 @@ fn advancement_brings_every_line_back_to_five_and_adds_plate() {
         at_max(10, &BASIC_ARMOUR)
     );
     let uzzek = giver(&events, UZZEK);
+    walk_up_to(&mut realm, uzzek);
     realm.handle(RealmCommand::QuestGiverQueryQuest {
         npc: uzzek,
         quest: THE_WARRIORS_PATH,

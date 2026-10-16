@@ -194,7 +194,8 @@ fn the_warrior_trainer_stands_in_the_crossroads() {
     assert_eq!(fields.unit_faction_template(), Some(35));
     let [x, y, _] = trainer.position;
     let d = ((x - CROSSROADS_XY[0]).powi(2) + (y - CROSSROADS_XY[1]).powi(2)).sqrt();
-    assert!(d < 8.0, "{d} yd from where a character starts");
+    // In the training yard, in view of the inn.
+    assert!(d < 60.0, "{d} yd from where a character starts");
 
     let entry = fields.object_entry().unwrap();
     realm.handle(RealmCommand::CreatureQuery { entry });
@@ -213,6 +214,7 @@ fn the_warrior_trainer_stands_in_the_crossroads() {
 fn the_trainer_offers_to_unlearn_talents() {
     let (mut realm, _, _, mut view) = warrior_at(4);
     let trainer = view.trainer();
+    walk_up_to(&mut realm, trainer.guid);
     realm.handle(RealmCommand::GossipHello { guid: trainer.guid });
     let (text_id, options) = view
         .drain(&mut realm)
@@ -849,6 +851,7 @@ impl View {
 
 /// Talks to the trainer and picks its unlearn line, as the stock gossip frame does.
 fn ask_for_respec(realm: &mut Realm, view: &mut View, trainer: u64) -> Vec<SessionEvent> {
+    walk_up_to(realm, trainer);
     realm.handle(RealmCommand::GossipHello { guid: trainer });
     let option = view
         .drain(realm)
