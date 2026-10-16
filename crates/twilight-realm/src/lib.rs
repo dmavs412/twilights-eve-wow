@@ -303,6 +303,8 @@ pub struct Realm {
     world: Option<world::InWorld>,
     events: Vec<SessionEvent>,
     storage: Vec<Storage>,
+    /// Lines for the host's log since the last drain.
+    log: Vec<String>,
     rng: rng::Rng,
     dev: DevMultipliers,
     /// The dev teleport asked for, waiting for the tick that can ask the host for ground.
@@ -588,6 +590,12 @@ impl Realm {
         std::mem::take(&mut self.storage)
     }
 
+    /// What the realm has to report since the last drain, for the host to log as warnings: what
+    /// a save named that the realm no longer has.
+    pub fn drain_log(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.log)
+    }
+
     /// A character's save, as [`Storage::Write`] carries it.
     pub fn export_character(&self, guid: u64) -> Option<String> {
         self.characters.get(guid).map(save::export)
@@ -595,7 +603,10 @@ impl Realm {
 
     /// Adds a character from its save, keeping its guid.
     pub fn import_character(&mut self, blob: &str) -> Result<u64, SaveError> {
-        self.characters.insert(save::import(blob)?)
+        let (c, notes) = save::import(blob)?;
+        let guid = self.characters.insert(c)?;
+        self.log.extend(notes);
+        Ok(guid)
     }
 
     /// The name of a character's Calling, as the select screen shows it (`Basic Warrior`).

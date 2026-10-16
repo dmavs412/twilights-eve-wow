@@ -1,12 +1,20 @@
-# The Hub's quest givers and their Repeatable Quests (GLOSSARY.md). Each giver stands in the
-# Crossroads for one Hunting Ground and offers its quests, which can be taken again as soon as
-# they are handed in. A quest's XP is not here: it is always the player's next level's worth,
-# shrunk once they outlevel the quest (`rules::quest`).
+# The Hub's quest givers and their quests (GLOSSARY.md). Each giver stands in the Crossroads for
+# one Hunting Ground and offers its quests. A quest's `kind` says how often it can be done:
+#
+# - "hunting": a Hunting Quest, once per Tier. Advancement forgets it, so the next Tier does it
+#   again. It pays 1 Token.
+# - "repeatable": a Dungeon's Repeatable Quest, taken again as soon as it is handed in. It pays
+#   3 Tokens.
+# - "advancement": an Advancement Quest, with an `advancement` table (below). It pays no Token.
+#
+# A quest's XP is not here (`rules::quest`): a Hunting Quest's is half the XP from its own level
+# to the next, a Repeatable Quest's the player's next level's worth, and both shrink once the
+# player outlevels the quest. An Advancement Quest pays in a new Calling, not in XP.
 #
 # The givers are Hub NPCs, in content/hub.toml; a quest names its giver's `entry`.
 #
-# A quest: `id`, its `giver`, `level`, `min_level` (the lowest level it is offered at; by default
-# four below its level, and at least 1),
+# A quest: `id`, its `kind`, its `giver`, `level`, `min_level` (the lowest level it is offered at;
+# by default four below its level, and at least 1),
 # the dialog texts, `money` (copper) and `tokens` on hand-in, and its objectives: `kill` rows of
 # `[creature entry, count]`, and `collect` rows of an `item` (content/quest_items.toml), its
 # `count`, and the creatures it drops `from` at `chance` percent while the quest wants more.
@@ -16,6 +24,7 @@
 
 [[quest]]
 id = 91001
+kind = "hunting"
 giver = 90101
 level = 2
 title = "Thinning the Herds"
@@ -24,11 +33,12 @@ details = "The plainstriders south-west of town and the boars to the south-east 
 progress = "The herds are still thick out there."
 completion = "Good hunting. The trail is clear, for now. Come back when the herds grow again."
 money = 60
-tokens = 0
+tokens = 1
 kill = [[2955, 5], [3098, 5]]
 
 [[quest]]
 id = 91002
+kind = "hunting"
 giver = 90101
 level = 3
 title = "Scorpid Venom"
@@ -44,6 +54,7 @@ collect = [{ item = 4886, count = 6, chance = 60, from = [3124] }]
 
 [[quest]]
 id = 91003
+kind = "hunting"
 giver = 90102
 level = 4
 title = "The Familiar Threat"
@@ -52,11 +63,12 @@ details = "Some warlock's imps have slipped their leash south of town, and they 
 progress = "The familiars still burn the grass."
 completion = "That is the smell of burnt imp. Well done."
 money = 100
-tokens = 0
+tokens = 1
 kill = [[3101, 5]]
 
 [[quest]]
 id = 91004
+kind = "hunting"
 giver = 90102
 level = 5
 title = "Bristleback Tusks"
@@ -70,6 +82,7 @@ collect = [{ item = 5085, count = 6, chance = 70, from = [2952, 2953, 2954] }]
 
 [[quest]]
 id = 91005
+kind = "hunting"
 giver = 90102
 level = 6
 title = "Prairie Wolf Paws"
@@ -85,6 +98,7 @@ collect = [{ item = 4758, count = 5, chance = 60, from = [2958] }]
 
 [[quest]]
 id = 91006
+kind = "hunting"
 giver = 90103
 level = 10
 title = "Crocolisk Skins"
@@ -98,6 +112,7 @@ collect = [{ item = 2925, count = 8, chance = 60, from = [3110, 3231] }]
 
 [[quest]]
 id = 91007
+kind = "hunting"
 giver = 90103
 level = 11
 title = "Razormane Raiders"
@@ -106,11 +121,12 @@ details = "Da Razormane at Thorn Hill be sending raiders down da road. Kill dem 
 progress = "Da Razormane still be raidin'."
 completion = "Dat'll teach dem. Here be your pay."
 money = 450
-tokens = 0
+tokens = 1
 kill = [[3267, 5], [3268, 5]]
 
 [[quest]]
 id = 91008
+kind = "hunting"
 giver = 90103
 level = 12
 title = "Plainstrider Beaks"
@@ -126,6 +142,7 @@ collect = [{ item = 5087, count = 8, chance = 70, from = [3244, 3246] }]
 
 [[quest]]
 id = 91009
+kind = "hunting"
 giver = 90104
 level = 14
 title = "Kolkar Raiders"
@@ -134,11 +151,12 @@ details = "The Kolkar centaur ride out of their camps to hit our caravans. Kill 
 progress = "The Kolkar still ride."
 completion = "Fewer centaur on the roads. Your coin."
 money = 700
-tokens = 0
+tokens = 1
 kill = [[3272, 6], [3273, 6]]
 
 [[quest]]
 id = 91010
+kind = "hunting"
 giver = 90104
 level = 15
 title = "Centaur Bracers"
@@ -152,6 +170,7 @@ collect = [{ item = 5030, count = 8, chance = 60, from = [3272, 3273, 3274, 3397
 
 [[quest]]
 id = 91011
+kind = "hunting"
 giver = 90104
 level = 16
 title = "Witchwing Talons"
@@ -167,6 +186,7 @@ collect = [{ item = 5064, count = 8, chance = 70, from = [3276, 3277, 3278, 3279
 
 [[quest]]
 id = 91012
+kind = "hunting"
 giver = 90105
 level = 18
 title = "Bristleback Encroachment"
@@ -175,11 +195,12 @@ details = "In the south the Bristleback push into the land of my people. Drive b
 progress = "The Bristleback still press north."
 completion = "The Earth Mother thanks you. Take this."
 money = 1200
-tokens = 0
+tokens = 1
 kill = [[3258, 6], [3261, 6]]
 
 [[quest]]
 id = 91013
+kind = "hunting"
 giver = 90105
 level = 20
 title = "Thunder Lizard Horns"
@@ -188,11 +209,12 @@ details = "The thunder lizards of the south grow horns that our shamans grind fo
 progress = "The thunder still rolls in the south."
 completion = "Six horns. The shamans will be glad. Two Tokens for you."
 money = 1500
-tokens = 2
+tokens = 1
 collect = [{ item = 4895, count = 6, chance = 80, from = [3240, 3239] }]
 
 [[quest]]
 id = 91014
+kind = "hunting"
 giver = 90105
 level = 21
 title = "Thunderhawk Wings"
@@ -201,13 +223,14 @@ details = "The thunderhawks dive on travellers in the southern plains. Bring me 
 progress = "The thunderhawks still hunt."
 completion = "The skies are a little safer. Two Tokens, and my thanks."
 money = 1600
-tokens = 2
+tokens = 1
 collect = [{ item = 5164, count = 6, chance = 80, from = [3247, 3424, 3249] }]
 
 # ── Blackthorn Ridge (levels 22-24) ───────────────────────────────────────────────────────────
 
 [[quest]]
 id = 91015
+kind = "hunting"
 giver = 90106
 level = 22
 title = "Silithid Antennae"
@@ -216,11 +239,12 @@ details = "Da silithid be crawlin' out of da south. Cut off dere antennae and br
 progress = "Da bugs still be crawlin'."
 completion = "Dey still be twitchin'! Good. Two Tokens for you, mon."
 money = 1800
-tokens = 2
+tokens = 1
 collect = [{ item = 7119, count = 8, chance = 80, from = [3250, 3251, 3252] }]
 
 [[quest]]
 id = 91016
+kind = "hunting"
 giver = 90106
 level = 23
 title = "Hecklefang Stalkers"
@@ -229,11 +253,12 @@ details = "Da Hecklefang stalkers be pickin' off anyone who walk alone down sout
 progress = "Da hyenas still be laughin'."
 completion = "No more laughin' from dem. Here be your pay."
 money = 2000
-tokens = 0
+tokens = 1
 kill = [[4128, 10]]
 
 [[quest]]
 id = 91017
+kind = "hunting"
 giver = 90106
 level = 24
 title = "Razormane Warbands"
@@ -242,7 +267,7 @@ details = "Da Razormane be gatherin' warbands near Blackthorn Ridge. Break dem b
 progress = "Da warbands still be gatherin'."
 completion = "Dey won't be marchin' now. Your pay, mon."
 money = 2200
-tokens = 0
+tokens = 1
 kill = [[3457, 6], [3458, 6]]
 
 # ── Advancement Quests ──────────────────────────────────────────────────────────────────────────
@@ -254,6 +279,7 @@ kill = [[3457, 6], [3458, 6]]
 
 [[quest]]
 id = 64001
+kind = "advancement"
 giver = 5810
 level = 10
 zone_or_sort = -81
@@ -269,6 +295,7 @@ tokens = 0
 # Ironclad (Tier 2) has no kit: the quest is offered at Vanguard's cap and never finishes.
 [[quest]]
 id = 64002
+kind = "advancement"
 giver = 5810
 level = 30
 zone_or_sort = -81
@@ -283,6 +310,7 @@ tokens = 0
 
 [[quest]]
 id = 64003
+kind = "advancement"
 giver = 5810
 level = 30
 zone_or_sort = -81
@@ -298,6 +326,7 @@ tokens = 0
 # Templar (Tier 3) has no kit yet: the quest is offered at Zealot's cap and never finishes.
 [[quest]]
 id = 64004
+kind = "advancement"
 giver = 5810
 level = 50
 zone_or_sort = -81
