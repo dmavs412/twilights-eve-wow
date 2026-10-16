@@ -60,7 +60,12 @@ fn walk_to(realm: &mut Realm, at: [f32; 3]) -> Vec<SessionEvent> {
     drain(realm)
 }
 
-/// Every Hub NPC the player meets walking the town: from the inn, then its corners.
+/// The middle of Camp Taurajo.
+const TAURAJO: [f32; 3] = [-2370.0, -1950.0, 0.0];
+
+/// Every Hub NPC the player meets walking the town: from the inn, then its corners, then Camp
+/// Taurajo.
+
 fn meet_the_town(realm: &mut Realm, entry: Vec<SessionEvent>) -> Vec<(u64, u32, u32, [f32; 3])> {
     let mut met = npcs(&entry);
     let [x, y, ..] = CROSSROADS;
@@ -75,6 +80,12 @@ fn meet_the_town(realm: &mut Realm, entry: Vec<SessionEvent>) -> Vec<(u64, u32, 
             if !met.iter().any(|m| m.0 == n.0) {
                 met.push(n);
             }
+        }
+    }
+    // Camp Taurajo, the Outpost, keeps townsfolk of its own.
+    for n in npcs(&walk_to(realm, TAURAJO)) {
+        if !met.iter().any(|m| m.0 == n.0) {
+            met.push(n);
         }
     }
     met

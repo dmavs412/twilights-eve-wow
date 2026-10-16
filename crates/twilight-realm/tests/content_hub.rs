@@ -27,6 +27,8 @@ struct Npc {
     respec: bool,
     /// The `AreaTable` id an innkeeper binds to.
     area: Option<u32>,
+    /// An innkeeper's rest area, in yards.
+    rest_radius: Option<f32>,
 }
 
 #[derive(Deserialize)]
@@ -77,7 +79,9 @@ fn quests() -> Vec<Quest> {
 /// standing at the Caverns' entrance: its Hunting Ground, seen from Kalimdor, is that mouth.
 fn spawns() -> Vec<(u32, f32, f32)> {
     let barrens: toml::Table = include_str!("../content/barrens.toml").parse().unwrap();
-    let caverns: toml::Table = include_str!("../content/wailing_caverns.toml").parse().unwrap();
+    let caverns: toml::Table = include_str!("../content/wailing_caverns.toml")
+        .parse()
+        .unwrap();
     let mouth = caverns["entrance"]["position"].as_array().unwrap();
     let mouth = |i: usize| mouth[i].as_float().unwrap() as f32;
     barrens["spawns"]
@@ -89,9 +93,13 @@ fn spawns() -> Vec<(u32, f32, f32)> {
             let f = |i: usize| row[i].as_float().unwrap() as f32;
             (row[1].as_integer().unwrap() as u32, f(4), f(5))
         })
-        .chain(caverns["template"].as_array().unwrap().iter().map(|t| {
-            (t["entry"].as_integer().unwrap() as u32, mouth(0), mouth(1))
-        }))
+        .chain(
+            caverns["template"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|t| (t["entry"].as_integer().unwrap() as u32, mouth(0), mouth(1))),
+        )
         .collect()
 }
 
@@ -159,9 +167,25 @@ fn four_trainers_stand_in_the_yard_and_one_sells_the_respec() {
     assert_eq!(respec, [("Uzzek".to_string(), "trainer".to_string())]);
 }
 
+/// The middle of the Crossroads and of Camp Taurajo, and how far each town reaches from it.
+const CROSSROADS: [f32; 2] = [-430.0, -2640.0];
+const TAURAJO: [f32; 2] = [-2370.0, -1950.0];
+const TOWN_RADIUS: f32 = 150.0;
+
+/// The town's NPCs.
+fn in_town(middle: [f32; 2]) -> Vec<Npc> {
+    hub()
+        .into_iter()
+        .filter(|n| (n.position[0] - middle[0]).hypot(n.position[1] - middle[1]) <= TOWN_RADIUS)
+        .collect()
+}
+
 #[test]
 fn about_twenty_townsfolk_live_in_the_crossroads_and_some_wander() {
-    let ambient: Vec<Npc> = hub().into_iter().filter(|n| n.role == "ambient").collect();
+    let ambient: Vec<Npc> = in_town(CROSSROADS)
+        .into_iter()
+        .filter(|n| n.role == "ambient")
+        .collect();
     assert!(
         (18..=24).contains(&ambient.len()),
         "{} townsfolk",
@@ -172,6 +196,26 @@ fn about_twenty_townsfolk_live_in_the_crossroads_and_some_wander() {
         (2..ambient.len() / 2).contains(&wanderers),
         "{wanderers} wander"
     );
+}
+
+/// Camp Taurajo, the Outpost: an innkeeper who binds to it, a goods vendor, about eight
+/// townsfolk, and no trainer or Token vendor.
+#[test]
+fn camp_taurajo_has_an_inn_a_goods_vendor_and_its_own_folk_but_no_trainers() {
+    const CAMP_TAURAJO: u32 = 378;
+    let camp = in_town(TAURAJO);
+    let count = |role: &str| camp.iter().filter(|n| n.role == role).count();
+    assert_eq!(count("innkeeper"), 1);
+    assert!(camp
+        .iter()
+        .any(|n| n.role == "innkeeper" && n.area == Some(CAMP_TAURAJO) && n.rest_radius.is_some()));
+    assert_eq!(count("goods"), 1);
+    assert!(
+        (7..=10).contains(&count("ambient")),
+        "{} townsfolk",
+        count("ambient")
+    );
+    assert_eq!(count("trainer") + count("tokens"), 0);
 }
 
 #[test]

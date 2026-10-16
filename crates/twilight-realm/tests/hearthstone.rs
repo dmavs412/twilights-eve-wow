@@ -535,6 +535,25 @@ fn the_hearthstone_takes_the_player_to_where_they_bound() {
     assert_eq!(hearth_home(&mut realm), home);
 }
 
+/// Innkeeper Byula, Camp Taurajo's.
+const BYULA: u32 = 7714;
+const CAMP_TAURAJO: u32 = 378;
+
+#[test]
+fn binding_at_camp_taurajo_sends_the_hearthstone_there() {
+    let mut realm = realm();
+    enter_new(&mut realm, "Thrall", ORC);
+    let byula = hub_guid(BYULA);
+    ask_to_bind(&mut realm, byula);
+    realm.handle(RealmCommand::BinderActivate { binder: byula });
+    let events = drain(&mut realm);
+    assert_eq!(bound(&events), Some((byula, CAMP_TAURAJO)));
+    assert_eq!(bind_point(&events), Some(CAMP_TAURAJO));
+    let [x, y, _] = hub_home(byula);
+    let (there, _) = hearth_home(&mut realm);
+    assert_eq!([there[0], there[1]], [x + 1.5, y], "back at Byula's fire");
+}
+
 #[test]
 fn an_innkeeper_out_of_reach_binds_nothing() {
     let mut realm = realm();

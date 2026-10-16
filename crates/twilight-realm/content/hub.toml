@@ -628,3 +628,172 @@ npc_flags = 0x2
 position = [-777.0, -2042.0, 96.0]
 orientation = 4.84
 greeting = "Since the sky dimmed, Naralex cries out in his sleep, and the caverns answer. The beasts below are twisted further every night."
+
+# ── Camp Taurajo, the Outpost (ticket #40) ───────────────────────────────────────────────────────
+# The outer ring's camp, in the southern Barrens: an inn, a goods vendor, and the camp's own folk,
+# but no trainers and no Token vendor. The spots were read off the ADT's doodads: the longhouse
+# (WMO at -2372, -1990) is the inn, the big hut (-2400, -1920) with its baskets is the trade hut,
+# and the signpost and brazier (-2347, -1915) mark the way in from the Gold Road.
+#
+# The quest givers (ticket #41) go at: the signpost (-2350, -1913), the windbreaks south of the
+# longhouse (-2354, -1998) and (-2339, -1990), and by hut D's kite (-2312, -1934). They need their
+# quests before they can stand here (tests/content_hub.rs), so they come with them.
+
+# Byula (7714), Taurajo's innkeeper, lends her name; the display is a tauren woman. She stands in
+# the longhouse, facing its door; the longhouse is her rest area. `area` is Camp Taurajo.
+[[npc]]
+guid = 0xF00200
+entry = 7714
+name = "Innkeeper Byula"
+subname = "Innkeeper"
+level = 30
+display_id = 2112
+faction_template = 35
+role = "innkeeper"
+npc_flags = 0x85
+position = [-2371.0, -1994.0, 96.4]
+orientation = 1.65
+area = 378
+rest_radius = 15.0
+text_id = 64019
+greeting = "Sit, $C, and eat. The braves turn nobody away, but every one of these mats holds someone the Needles burned out."
+stock = [159, 1179, 1205, 1708, 117, 4536, 4540, 2287, 4537, 4541, 3770, 4538, 4542, 3771, 4539, 4544]
+
+# The trade hut's goods vendor, by its baskets, facing the camp: general goods and repairs.
+[[npc]]
+guid = 0xF00201
+entry = 190041
+name = "Kaga Hidetrader"
+subname = "General Goods"
+level = 30
+display_id = 2101
+faction_template = 35
+role = "goods"
+npc_flags = 0x4004
+position = [-2384.0, -1938.0, 95.8]
+orientation = 5.35
+stock = [4496]
+
+# The townsfolk: braves on watch, and the refugees down from Thousand Needles.
+
+# weapon racks
+[[npc]]
+guid = 0xF00210
+entry = 190040
+name = "Taurajo Brave"
+level = 40
+display_id = 2087
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-2366.0, -1959.0, 96.0]
+orientation = 4.71
+text_id = 64130
+greeting = "Keep your weapon close, $C. The Bristleback test the camp's edge every night now."
+
+# the way in, by the signpost
+[[npc]]
+guid = 0xF00211
+entry = 190040
+name = "Taurajo Brave"
+level = 40
+display_id = 3793
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-2344.0, -1917.0, 95.7]
+orientation = 0.82
+text_id = 64131
+greeting = "The Gold Road was busy once. Now it carries only the ones running from the south."
+
+# the way in, by the brazier
+[[npc]]
+guid = 0xF00212
+entry = 190040
+name = "Taurajo Brave"
+level = 40
+display_id = 2087
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-2348.0, -1924.0, 95.7]
+orientation = 0.82
+text_id = 64132
+greeting = "Thunder Bluff sends no more braves. We hold Taurajo with the ones we have."
+
+# the longhouse's torches
+[[npc]]
+guid = 0xF00213
+entry = 190040
+name = "Taurajo Brave"
+level = 40
+display_id = 3793
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-2357.5, -1973.0, 96.1]
+orientation = 5.50
+text_id = 64133
+greeting = "Past the Field of Giants the land shakes. Something big walks there under the dark sky."
+
+# the hitching posts and trough
+[[npc]]
+guid = 0xF00214
+entry = 190015
+name = "Thousand Needles Refugee"
+level = 12
+display_id = 2084
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-2377.0, -1972.0, 96.1]
+orientation = 1.20
+wander = 2.0
+text_id = 64134
+greeting = "Our kodos drank from this trough before the mesas burned. Now they're all we have left."
+
+# the supply crates behind the longhouse
+[[npc]]
+guid = 0xF00215
+entry = 190015
+name = "Thousand Needles Refugee"
+level = 10
+display_id = 1879
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-2345.0, -1982.0, 96.6]
+orientation = 2.40
+text_id = 64135
+greeting = "The lifts at the Great Gate went down in flames. We climbed out the hard way."
+
+# the sacks by hut D
+[[npc]]
+guid = 0xF00216
+entry = 190015
+name = "Thousand Needles Refugee"
+level = 8
+display_id = 1029
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-2324.0, -1943.5, 95.8]
+orientation = 3.50
+text_id = 64136
+greeting = "Grandfather won't say what he saw at Freewind Post. He just watches the south."
+
+# the meat rack
+[[npc]]
+guid = 0xF00217
+entry = 190015
+name = "Thousand Needles Refugee"
+level = 14
+display_id = 2084
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-2381.5, -1902.0, 96.0]
+orientation = 5.00
+wander = 3.0
+text_id = 64137
+greeting = "The braves share their meat with us. Nobody here asks who we were before."
