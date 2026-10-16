@@ -110,10 +110,11 @@ fn a_level_up_raises_every_line_to_the_new_maximum() {
         skill_lines(&descriptor(&events, me)),
         at_max(10, &PLATE_ARMOUR)
     );
+    // A level at the Tier XP Rate's ×3: 10 → 11 → 12.
     events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
     let now = descriptor(&events, me);
-    assert_eq!(now.unit_level(), Some(11));
-    assert_eq!(skill_lines(&now), at_max(11, &PLATE_ARMOUR));
+    assert_eq!(now.unit_level(), Some(12));
+    assert_eq!(skill_lines(&now), at_max(12, &PLATE_ARMOUR));
 }
 
 #[test]
