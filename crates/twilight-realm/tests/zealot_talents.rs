@@ -332,6 +332,7 @@ fn a_respec_at_the_trainer_wipes_the_zealot_tree() {
     learn(&mut realm, &mut events, IMPROVED_CHARGE, 2);
     assert_eq!(points(&events, guid), Some(37));
 
+    walk_up_to(&mut realm, trainer);
     realm.handle(RealmCommand::GossipHello { guid: trainer });
     let option = drain(&mut realm)
         .into_iter()

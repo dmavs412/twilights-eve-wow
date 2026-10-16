@@ -36,6 +36,7 @@ fn reload(me: u64, blob: &str) -> Vec<SessionEvent> {
 fn accepting_a_quest_saves_it_and_it_is_in_the_log_after_a_reload() {
     let (mut realm, me, events) = warrior_with(1, 0, &[]);
     let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
     realm.drain_storage();
     accept(&mut realm, grezz, SCORPID_VENOM);
     accept(&mut realm, grezz, THINNING_THE_HERDS);

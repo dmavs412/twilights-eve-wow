@@ -197,11 +197,12 @@ fn expected_item(item: &Value) -> toml::Value {
         })
         .collect();
     t.insert("damage".into(), toml::Value::Array(damage));
-    let mut spells = Vec::new();
+    let (mut spells, mut spell_names) = (Vec::new(), Vec::new());
     let (mut attack_power, mut defense) = (0, 0);
     for e in item["effects"].as_array().unwrap() {
         assert_eq!(e["trigger"], "equip", "only equip spells are kept");
         spells.push(toml::Value::Integer(e["spell"].as_i64().unwrap()));
+        spell_names.push(toml::Value::from(e["name"].as_str().unwrap()));
         for m in e["mods"].as_array().unwrap() {
             match (m["stat"].as_str().unwrap(), m["skill"].as_i64()) {
                 ("attack_power", _) => attack_power += m["value"].as_i64().unwrap(),
@@ -211,6 +212,7 @@ fn expected_item(item: &Value) -> toml::Value {
         }
     }
     t.insert("equip_spells".into(), toml::Value::Array(spells));
+    t.insert("equip_spell_names".into(), toml::Value::Array(spell_names));
     t.insert("attack_power".into(), attack_power.into());
     t.insert("defense".into(), defense.into());
     toml::Value::Table(t)
@@ -308,13 +310,22 @@ fn the_goods_vendors_food_and_drink_match_the_reference() {
         .collect();
     assert_eq!(entries, stock, "the Crossroads' stock, in order");
     let hub = toml_table("hub.toml");
-    let sold: Vec<i64> = hub["npc"][0]["stock"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|v| v.as_integer().unwrap())
-        .collect();
-    assert_eq!(sold, stock, "the goods vendor sells it");
+    let sold_by = |role: &str| -> Vec<i64> {
+        hub["npc"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|n| n["role"].as_str() == Some(role))
+            .and_then(|n| n.get("stock"))
+            .and_then(|s| s.as_array())
+            .map(|s| s.iter().map(|v| v.as_integer().unwrap()).collect())
+            .unwrap_or_default()
+    };
+    assert_eq!(sold_by("innkeeper"), stock, "the innkeeper sells it");
+    assert!(
+        !sold_by("goods").iter().any(|e| stock.contains(e)),
+        "and the goods vendor does not"
+    );
 
     for row in rows.as_array().unwrap() {
         let entry = row["entry"].as_integer().unwrap();

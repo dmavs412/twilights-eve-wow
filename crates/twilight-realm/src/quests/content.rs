@@ -18,6 +18,30 @@ pub(crate) struct Collect {
     pub(crate) from: Vec<u32>,
 }
 
+/// An explore objective: a spot on Kalimdor, met when the player walks into it.
+#[derive(Deserialize)]
+pub(crate) struct Explore {
+    /// What the log calls the place.
+    pub(crate) place: String,
+    /// WoW `[x, y]`.
+    pub(crate) position: [f32; 2],
+    /// Yards.
+    pub(crate) radius: f32,
+}
+
+impl Explore {
+    /// Whether the player at `at` on `map` stands in the spot.
+    pub(crate) fn contains(&self, map: u32, at: [f32; 3]) -> bool {
+        let [x, y] = self.position;
+        map == crate::KALIMDOR && (at[0] - x).hypot(at[1] - y) <= self.radius
+    }
+
+    /// The log's exploration line.
+    pub(crate) fn text(&self) -> String {
+        format!("{} explored", self.place)
+    }
+}
+
 /// How often a quest can be done (`GLOSSARY.md`).
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -36,6 +60,12 @@ pub(crate) struct Quest {
     pub(crate) id: u32,
     pub(crate) kind: Kind,
     pub(crate) giver: u32,
+    /// Who takes it in, when not its giver: a person found in the field.
+    #[serde(default)]
+    ender: Option<u32>,
+    /// The quest that must be handed in before this one is offered.
+    #[serde(default)]
+    pub(crate) after: Option<u32>,
     pub(crate) level: u8,
     min_level: Option<u8>,
     pub(crate) title: String,
@@ -52,6 +82,8 @@ pub(crate) struct Quest {
     pub(crate) kill: Vec<(u32, u32)>,
     #[serde(default)]
     pub(crate) collect: Vec<Collect>,
+    #[serde(default)]
+    pub(crate) explore: Option<Explore>,
     /// The quest log's header: a negative `QuestSort.dbc` id, or a zone; The Barrens by default.
     #[serde(default)]
     zone_or_sort: Option<i32>,
@@ -78,6 +110,18 @@ fn yes() -> bool {
 }
 
 impl Quest {
+    /// The NPC entry that takes it in.
+    pub(crate) fn ender(&self) -> u32 {
+        self.ender.unwrap_or(self.giver)
+    }
+
+    /// The quest its ender offers next, once it is handed in (`NextQuestInChain`).
+    pub(crate) fn next_in_chain(&self) -> Option<&'static Quest> {
+        quests()
+            .iter()
+            .find(|n| n.after == Some(self.id) && n.giver == self.ender())
+    }
+
     /// The quest log's header the quest goes under.
     pub(crate) fn zone_or_sort(&self) -> i32 {
         self.zone_or_sort.unwrap_or(crate::THE_BARRENS as i32)
@@ -119,14 +163,22 @@ fn file() -> &'static QuestFile {
         let file: QuestFile = toml::from_str(include_str!("../../content/quests.toml"))
             .expect("content/quests.toml parses");
         for q in &file.quest {
-            assert!(
-                crate::hub::npcs()
-                    .iter()
-                    .any(|n| n.entry == q.giver && n.gives_quests()),
-                "quest {} names giver {}, who is no quest giver in content/hub.toml",
-                q.id,
-                q.giver
-            );
+            for npc in [q.giver, q.ender.unwrap_or(q.giver)] {
+                assert!(
+                    crate::hub::npcs()
+                        .iter()
+                        .any(|n| n.entry == npc && n.gives_quests()),
+                    "quest {} names {npc}, who is no quest giver in content/hub.toml",
+                    q.id,
+                );
+            }
+            if let Some(p) = q.after {
+                assert!(
+                    file.quest.iter().any(|o| o.id == p),
+                    "quest {} comes after quest {p}, which the content does not have",
+                    q.id
+                );
+            }
             assert_eq!(
                 q.kind == Kind::Advancement,
                 q.advancement.is_some(),
@@ -141,7 +193,7 @@ fn file() -> &'static QuestFile {
                     q.id
                 );
                 assert!(
-                    q.kill.is_empty() && q.collect.is_empty(),
+                    q.kill.is_empty() && q.collect.is_empty() && q.explore.is_none(),
                     "Advancement Quest {} asks for more than a word",
                     q.id
                 );
@@ -175,6 +227,11 @@ pub(crate) fn quest(id: u32) -> Option<&'static Quest> {
 /// The quests `giver` offers, in the content's order.
 pub(crate) fn offered_by(giver: u32) -> impl Iterator<Item = &'static Quest> {
     quests().iter().filter(move |q| q.giver == giver)
+}
+
+/// The quests `ender` takes in, in the content's order.
+pub(crate) fn ended_by(ender: u32) -> impl Iterator<Item = &'static Quest> {
+    quests().iter().filter(move |q| q.ender() == ender)
 }
 
 /// A quest item's (or the Token's) template.

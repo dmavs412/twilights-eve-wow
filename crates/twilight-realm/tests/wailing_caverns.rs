@@ -54,6 +54,9 @@ impl Host for Caverns {
         let (a, b) = ([from[0], from[1]], [to[0], to[1]]);
         !self.walls.iter().any(|&(c, d)| crosses(a, b, c, d))
     }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
 }
 
 /// Whether segments `ab` and `cd` cross in the plane.
@@ -144,9 +147,12 @@ impl Script {
 
 /// `blob` with the character standing at `at` on Kalimdor.
 fn place(blob: &str, at: [f32; 3]) -> String {
+    // The character's own keys come before any table, such as the bind point's.
+    let mut top = true;
     blob.lines()
         .map(|l| {
-            if l.starts_with("position = ") {
+            top &= !l.starts_with('[');
+            if top && l.starts_with("position = ") {
                 format!("position = [{}, {}, {}]", at[0], at[1], at[2])
             } else {
                 l.to_string()
@@ -811,8 +817,9 @@ fn slaying_lady_anacondra_pays_a_full_level_and_three_tokens_and_is_offered_agai
     let turned_in = hand_in(&mut s.realm, nalpak, THE_FANGLORD);
     let turned_in = s.keep(turned_in);
     let done = completed(&turned_in).expect("the quest completes");
-    // Level 25's whole 34000 XP: a Repeatable Quest pays the player's next level.
-    assert_eq!((done.quest_id, done.xp), (THE_FANGLORD, 34000));
+    // Level 25's whole 34000 XP, times the Calling's Tier XP Rate of 3: a Repeatable Quest pays
+    // the player's next level.
+    assert_eq!((done.quest_id, done.xp), (THE_FANGLORD, 102000));
     assert_eq!(done.items, [(TOKEN, 3)]);
     assert_eq!(carried(&s.events, s.me, TOKEN), 3);
     assert_eq!(s.quest_state(THE_FANGLORD), None, "the slot clears");
@@ -884,7 +891,7 @@ fn the_deviates_inside_drop_their_hides_for_ebrus_quest() {
     );
     let ebru = s.go_to_disciple(EBRU);
     let done = completed(&hand_in(&mut s.realm, ebru, DEVIATE_HIDES)).expect("it completes");
-    // Level 20's whole 23200 XP.
-    assert_eq!(done.xp, 23200);
+    // Level 20's whole 23200 XP, times the Tier XP Rate of 3.
+    assert_eq!(done.xp, 69600);
     assert_eq!(done.items, [(TOKEN, 3)]);
 }

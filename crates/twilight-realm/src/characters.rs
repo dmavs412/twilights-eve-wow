@@ -53,6 +53,11 @@ pub(crate) struct Char {
     pub(crate) item_cooldowns: Vec<(u32, f64)>,
     /// The quests under way.
     pub(crate) quests: QuestLog,
+    /// The `AreaTable.dbc` ids of the areas discovered, ascending: kept for good, through
+    /// Advancement.
+    pub(crate) discovered: Vec<u32>,
+    /// Where the Hearthstone takes them.
+    pub(crate) bind: crate::inn::Bind,
 }
 
 #[derive(Default)]
@@ -105,6 +110,8 @@ impl Characters {
             inventory: content::starting_inventory(req.race),
             item_cooldowns: Vec::new(),
             quests: QuestLog::default(),
+            discovered: Vec::new(),
+            bind: crate::inn::Bind::crossroads_inn(),
         });
         CHAR_CREATE_SUCCESS
     }

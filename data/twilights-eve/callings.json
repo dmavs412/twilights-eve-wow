@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "about": "Twilight's Eve Callings for the Warrior line (Basic Warrior, Vanguard, Zealot, and Ironclad's and Templar's locked quests). Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
+  "about": "Twilight's Eve Callings: the Warrior line (Basic Warrior, Vanguard, Zealot, and Ironclad's and Templar's locked quests), and the other Tier 1 lines (Cutthroat, Initiate, Witch Hunter), locked with their quests alone. Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
 
   "formula_conventions": {
     "L": "the character's level inside its current Tier (1..Tier Cap); it resets to 1 on Advancement",
@@ -40,7 +40,7 @@
       "class": 1,
       "display_name": "Basic Warrior",
       "cap": 10,
-      "branches": ["vanguard"],
+      "branches": ["cutthroat", "initiate", "vanguard", "witch_hunter"],
       "armour": ["cloth", "leather", "mail", "shield"],
       "armour_note": "Gear follows the Calling, never the level: every Warrior weapon from level 1, this armour, and no item refused for level. Plate is for Vanguard and every Calling that branches from it.",
       "client_shapeshift_form": 17,
@@ -265,7 +265,7 @@
       "advancement_quest": {
         "quest_id": 64001,
         "synthesized": true,
-        "offered_by": "the Hub's Warrior trainer",
+        "offered_by": "the Hub's Vanguard Trainer",
         "offered_to": { "calling": "basic_warrior", "level": 10 },
         "advances_to": "vanguard",
         "zone_or_sort": -81,
@@ -273,11 +273,95 @@
         "quest_level": 10,
         "title": "The Warrior's Path",
         "details": "You have learned all a Basic Warrior can learn, $N. Strength alone carried you this far; from here, discipline must carry you further.$B$BTake up the warrior's path and you begin again, untested, among the youngest of our blades. But you will not be the same fighter you were. Your body remembers. Your arm is stronger.$B$BSay the word, and it begins.",
-        "objectives": "Speak with the Warrior trainer at the Crossroads to take up the warrior's path.",
+        "objectives": "Speak with the Vanguard Trainer at the Crossroads to take up the warrior's path.",
         "offer_reward_text": "Then it is done. Forget your old habits, $N: you are a Vanguard now, and a Vanguard starts over. Go and earn your scars again.",
         "objective": { "kind": "talk", "note": "No item or kill: accept and complete at the same NPC, like vanilla's 'Veteran Uzzek' (1505) speak-to quest." },
         "on_complete": ["set_calling:vanguard", "level:1", "xp:0", "replace_skills", "wipe_talents_and_points", "swap_talent_catalog", "apply_tier_bonus:1"],
         "flavour_source": "Vanilla Horde warrior quests 1505 'Veteran Uzzek' and 1498 'Path of Defense' (Uzzek, Far Watch Post, the Barrens, creature 5810) for tone only; no text is copied."
+      }
+    },
+
+    "cutthroat": {
+      "tier": 1,
+      "display_name": "Cutthroat",
+      "cap": 30,
+      "locked": true,
+      "power": "energy",
+      "about": "Tier 1, the energy line: a rogue's kit. No kit or Talent Tree yet (its own spec); its Advancement Quest is offered at Basic Warrior's cap and never finishes.",
+      "skills": [],
+      "talent_tree": null,
+      "advancement_quest": {
+        "quest_id": 64005,
+        "synthesized": true,
+        "offered_by": "the Hub's Cutthroat Trainer",
+        "offered_to": { "calling": "basic_warrior", "level": 10 },
+        "advances_to": "cutthroat",
+        "completable": false,
+        "zone_or_sort": -162,
+        "zone_or_sort_note": "QuestSort.dbc 162 'Rogue': the quest log's Rogue header.",
+        "quest_level": 10,
+        "title": "The Cutthroat's Mark",
+        "details": "You swing that blade like it owe you money, $N. Strength be fine, but da Cutthroats fight smarter: quick feet, a knife in da dark, and gone before da body fall.$B$BDa Cutthroats be watchin' you. When dey ready to take you in, I send word. Until den, keep your blade sharp and your mouth shut.",
+        "objectives": "Await the Cutthroats' summons.",
+        "objective": { "kind": "never", "note": "As The Ironclad's Oath: offered, never finished." },
+        "request_items_text": "Da Cutthroats not be ready for you yet, $N. Patience.",
+        "flavour_source": "Synthesized; no text is copied."
+      }
+    },
+
+    "initiate": {
+      "tier": 1,
+      "display_name": "Initiate",
+      "cap": 30,
+      "locked": true,
+      "power": "mana",
+      "about": "Tier 1, the mana caster line. No kit or Talent Tree yet (its own spec); its Advancement Quest is offered at Basic Warrior's cap and never finishes.",
+      "skills": [],
+      "talent_tree": null,
+      "advancement_quest": {
+        "quest_id": 64006,
+        "synthesized": true,
+        "offered_by": "the Hub's Initiate Trainer",
+        "offered_to": { "calling": "basic_warrior", "level": 10 },
+        "advances_to": "initiate",
+        "completable": false,
+        "zone_or_sort": -161,
+        "zone_or_sort_note": "QuestSort.dbc 161 'Mage': the quest log's Mage header.",
+        "quest_level": 10,
+        "title": "The Initiate's Spark",
+        "details": "There is more in you than a strong arm, $N. I feel it when you pass: a spark, waiting for someone to fan it.$B$BThe Initiates draw on mana, not rage, and strike from afar with fire and frost. The circle is not ready to open to you yet. When it is, I will send word. Until then, watch the sky at dusk.",
+        "objectives": "Await the Initiates' summons.",
+        "objective": { "kind": "never", "note": "As The Ironclad's Oath: offered, never finished." },
+        "request_items_text": "The circle has not yet opened to you, $N. Patience.",
+        "flavour_source": "Synthesized; no text is copied."
+      }
+    },
+
+    "witch_hunter": {
+      "tier": 1,
+      "display_name": "Witch Hunter",
+      "cap": 30,
+      "locked": true,
+      "power": "mana",
+      "about": "Tier 1, a melee Hunter on mana with Enhancement Shaman in it (Raptor Strike, Mongoose Bite and Wing Clip beside Stormstrike, Lightning Shield and the weapon imbues). No kit or Talent Tree yet (its own spec); its Advancement Quest is offered at Basic Warrior's cap and never finishes.",
+      "skills": [],
+      "talent_tree": null,
+      "advancement_quest": {
+        "quest_id": 64007,
+        "synthesized": true,
+        "offered_by": "the Hub's Witch Hunter Trainer",
+        "offered_to": { "calling": "basic_warrior", "level": 10 },
+        "advances_to": "witch_hunter",
+        "completable": false,
+        "zone_or_sort": -261,
+        "zone_or_sort_note": "QuestSort.dbc 261 'Hunter': the quest log's Hunter header.",
+        "quest_level": 10,
+        "title": "The Witch Hunter's Creed",
+        "details": "The Twilight's witches hide behind beasts and storms, $N. Witch Hunters go in after them: a blade in hand, the storm in their weapons, the spirits at their backs.$B$BThe lodge is not ready to take you yet. When it is, I will send word. Until then, learn the wind.",
+        "objectives": "Await the Witch Hunters' summons.",
+        "objective": { "kind": "never", "note": "As The Ironclad's Oath: offered, never finished." },
+        "request_items_text": "The lodge has not yet sent for you, $N. Patience.",
+        "flavour_source": "Synthesized; no text is copied."
       }
     },
 
@@ -292,7 +376,7 @@
       "advancement_quest": {
         "quest_id": 64002,
         "synthesized": true,
-        "offered_by": "the Hub's Warrior trainer",
+        "offered_by": "the Hub's Vanguard Trainer",
         "offered_to": { "calling": "vanguard", "level": 30 },
         "advances_to": "ironclad",
         "completable": false,
@@ -520,14 +604,14 @@
       "advancement_quest": {
         "quest_id": 64003,
         "synthesized": true,
-        "offered_by": "the Hub's Warrior trainer",
+        "offered_by": "the Hub's Vanguard Trainer",
         "offered_to": { "calling": "vanguard", "level": 30 },
         "advances_to": "zealot",
         "zone_or_sort": -81,
         "quest_level": 30,
         "title": "The Zealot's Vow",
         "details": "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word.",
-        "objectives": "Speak with the Warrior trainer at the Crossroads to swear the Zealot's vow.",
+        "objectives": "Speak with the Vanguard Trainer at the Crossroads to swear the Zealot's vow.",
         "offer_reward_text": "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you.",
         "objective": { "kind": "talk", "note": "As The Warrior's Path: accept and complete at the trainer." },
         "on_complete": ["set_calling:zealot", "level:1", "xp:0", "replace_skills", "wipe_talents_and_points", "swap_talent_catalog", "apply_tier_bonus:2"],
@@ -546,7 +630,7 @@
       "advancement_quest": {
         "quest_id": 64004,
         "synthesized": true,
-        "offered_by": "the Hub's Warrior trainer",
+        "offered_by": "the Hub's Vanguard Trainer",
         "offered_to": { "calling": "zealot", "level": 50 },
         "advances_to": "templar",
         "completable": false,

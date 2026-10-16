@@ -5,8 +5,8 @@ pub const KALIMDOR: u32 = 1;
 /// `AreaTable.dbc`'s The Barrens.
 pub const THE_BARRENS: u32 = 17;
 
-/// The Hub: the Crossroads, in front of the inn, facing the road north. `[x, y, z, facing]`.
-pub const CROSSROADS: [f32; 4] = [-441.8, -2648.6, 95.9, 1.6];
+/// The Hub: the Crossroads inn's hall, where characters start, facing the bar. `[x, y, z, facing]`.
+pub const CROSSROADS: [f32; 4] = [-417.0, -2646.0, 96.0, 0.0];
 
 /// The races in `ChrRaces.dbc` order (ids 1..=8), as `content/starting_outfits.toml` names them.
 const RACE_KEYS: [&str; 8] = [
@@ -19,7 +19,7 @@ const RACE_KEYS: [&str; 8] = [
     "gnome",
     "troll",
 ];
-const HEARTHSTONE: u32 = 6948;
+pub(crate) const HEARTHSTONE: u32 = 6948;
 /// `INVENTORY_SLOT_ITEM_START`: the backpack's first slot.
 const FIRST_PACK_SLOT: u8 = 23;
 

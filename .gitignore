@@ -39,8 +39,10 @@ trace-*.json
 .DS_Store
 *.swp
 /.idea/
-# Claude Code: settings and skills under .claude/ are each person's own.
-/.claude/
+# Claude Code: worktrees and local settings under .claude/ are each person's own; the shared
+# project settings (the subagent model) are committed.
+/.claude/*
+!/.claude/settings.json
 
 # Python bytecode from the `scripts/` tooling.
 __pycache__/

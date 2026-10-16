@@ -12,3 +12,11 @@ Twilight's Eve has no server today, but one may be added later. So its game simu
 - The local realm has to speak the client's protocol faithfully: object update fields, GUIDs, spell start and go, and aura slots.
 - Twilight's Eve's custom rules (changing class, granting every non-talent skill) live in the local realm. A future real server has to reproduce them, and a stock 1.12 server cannot.
 - The Local Realm is a crate free of Bevy, `crates/twilight-realm`. Commands go in, events come out, and it is ticked by its host. Ground height and line of sight come through a trait its host implements. `crates/benilla-app/src/twilight/` is only glue: the boot flag, moving commands and events to and from `net.rs`'s channels, the per-frame tick, and the terrain queries. A future server is this crate behind a socket, so the custom rules move over unchanged.
+
+## Amended 2026-10-16: `bevy_ecs` in the realm
+
+The realm uses `bevy_ecs` alone, with no Bevy app, renderer, window or asset server, so that
+abilities and talents are generic, composable components and systems (`docs/bevy_guidelines.md`).
+"Free of Bevy" above now reads "free of the Bevy app and renderer". The seam is unchanged:
+commands in, events out, ticked by its host. A future server hosts the same `World` behind a
+socket. The cost is that the client's Bevy and the realm's `bevy_ecs` must be the same version.

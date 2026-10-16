@@ -25,7 +25,7 @@ pub const MAGE: u8 = 8;
 pub const KALIMDOR: u32 = 1;
 pub const THE_BARRENS: u32 = 17;
 
-/// Flat ground at `z = 0` with nothing in the way.
+/// Flat ground at `z = 0` with nothing in the way, and no area anywhere: nothing to discover.
 pub struct FlatGround;
 
 impl Host for FlatGround {
@@ -34,6 +34,28 @@ impl Host for FlatGround {
     }
     fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
         true
+    }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
+}
+
+/// [`FlatGround`] with a scripted map of areas: each `(centre, radius, AreaTable id)`, the first
+/// whose circle holds a point naming it.
+pub struct Areas(pub Vec<([f32; 2], f32, u32)>);
+
+impl Host for Areas {
+    fn ground_height(&self, _map: u32, _x: f32, _y: f32, _z_hint: f32) -> Option<f32> {
+        Some(0.0)
+    }
+    fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
+        true
+    }
+    fn area_at(&self, _map: u32, x: f32, y: f32) -> Option<u32> {
+        self.0
+            .iter()
+            .find(|([cx, cy], r, _)| (x - cx).hypot(y - cy) <= *r)
+            .map(|&(_, _, id)| id)
     }
 }
 
@@ -103,4 +125,41 @@ pub fn enter_new(realm: &mut Realm, name: &str, race: u8) -> (u64, Vec<SessionEv
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);
     (guid, drain(realm))
+}
+
+fn hub_rows() -> Vec<toml::Value> {
+    let hub: toml::Table = include_str!("../../content/hub.toml").parse().unwrap();
+    hub["npc"].as_array().unwrap().clone()
+}
+
+/// The object guid of the Hub NPC with creature `entry` (`HIGHGUID_UNIT`, entry, spawn).
+pub fn hub_guid(entry: u32) -> u64 {
+    let row = hub_rows()
+        .into_iter()
+        .find(|n| n["entry"].as_integer() == Some(i64::from(entry)))
+        .unwrap_or_else(|| panic!("{entry} is a Hub NPC"));
+    0xF130 << 48 | u64::from(entry) << 24 | row["guid"].as_integer().unwrap() as u64
+}
+
+/// A Hub NPC's home in `content/hub.toml`, by its object guid.
+pub fn hub_home(npc: u64) -> [f32; 3] {
+    let (entry, low) = ((npc >> 24) & 0xFF_FFFF, npc & 0xFF_FFFF);
+    let row = hub_rows()
+        .into_iter()
+        .find(|n| {
+            n["entry"].as_integer() == Some(entry as i64)
+                && n["guid"].as_integer() == Some(low as i64)
+        })
+        .unwrap_or_else(|| panic!("{npc:#x} is a Hub NPC"));
+    let p = row["position"].as_array().unwrap();
+    std::array::from_fn(|i| p[i].as_float().unwrap() as f32)
+}
+
+/// Walks the player in the world up to the Hub NPC `npc`, near enough to deal with it.
+pub fn walk_up_to(realm: &mut Realm, npc: u64) {
+    let [x, y, _] = hub_home(npc);
+    realm.handle(RealmCommand::Move {
+        position: [x + 1.5, y, 0.0],
+        orientation: std::f32::consts::PI,
+    });
 }

@@ -40,6 +40,8 @@ pub(crate) const PLAYER_BLOCK_PERCENTAGE: u16 = 1106;
 pub(crate) const PLAYER_DODGE_PERCENTAGE: u16 = 1107;
 pub(crate) const PLAYER_PARRY_PERCENTAGE: u16 = 1108;
 pub(crate) const PLAYER_CRIT_PERCENTAGE: u16 = 1109;
+/// 64 dwords of explore bits, bit `n` the `AreaTable.dbc` row whose explore flag is `n`.
+pub(crate) const PLAYER_EXPLORED_ZONES_1: u16 = 1111;
 /// Seven schools of float multipliers, 1.0 for none.
 pub(crate) const PLAYER_FIELD_MOD_DAMAGE_DONE_PCT: u16 = 1215;
 pub(crate) const PLAYER_FIELD_WATCHED_FACTION_INDEX: u16 = 1261;
