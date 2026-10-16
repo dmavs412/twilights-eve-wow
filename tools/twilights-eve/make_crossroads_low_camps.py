@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write data/twilights-eve/crossroads_low_camps.json: hand-placed level 1-6 camps near the Crossroads.
+"""Write data/twilights-eve/crossroads_low_camps.json: hand-placed level 1-10 camps near the Crossroads.
 
 The Barrens starts at level 10, so these camps borrow real low-level creatures from
 Mulgore and Durotar (entries, names, levels, display IDs and faction templates read
@@ -51,6 +51,22 @@ CAMPS = [
     ("prairie_wolves", -744.0, -2771.0,
      [(2958, 0, 0), (2958, 12, 6), (2958, -8, 11), (2958, 6, -12)], 7.0,
      "Mulgore's level 5-6 wolves, the furthest low camp (south-east). Hostile; faction 38 answers calls for help."),
+    # The 6-10 camps (#38), further out than the 1-6 ones.
+    ("razormane_camp", -440.0, -3010.0,
+     [(3111, 0, 0), (3111, 11, 7), (3112, -8, 10), (3112, 7, -11), (3113, -12, -4), (3113, 15, -2)], 3.0,
+     "Durotar's Razormane (level 6-9), on the east road toward Thorn Hill. Hostile; quilboar answer calls for help."),
+    ("dustwind_harpies", 40.0, -2560.0,
+     [(3115, 0, 0), (3115, 10, 8), (3115, -9, 9), (3115, 8, -10), (3117, -10, -7)], 5.0,
+     "Durotar's Dustwind harpies (level 7-10), on the rocks north of town."),
+    ("palemane_gnolls", -300.0, -2200.0,
+     [(2949, 0, 0), (2949, 10, 8), (2950, -9, 9), (2950, 8, -10), (2951, -11, -6), (2951, 13, -1)], 3.0,
+     "Mulgore's Palemane gnolls (level 5-8), north-west of town past the Bristleback."),
+    ("prairie_wolf_alphas", -860.0, -2350.0,
+     [(2960, 0, 0), (2960, 12, 7), (2960, -9, 11), (2960, 6, -12)], 7.0,
+     "Mulgore's level 9-10 Prairie Wolf Alphas, south-west beyond the gnolls."),
+    ("bloodtalon_raptors", -960.0, -2640.0,
+     [(3122, 0, 0), (3122, 11, 8), (3122, -10, 9), (3123, 7, -11), (3123, -9, -9)], 6.0,
+     "Durotar's Bloodtalon raptors (level 6-10), south of town."),
 ]
 
 RESPAWN_SECS = 60  # spec: ~60 s after the player leaves the area
@@ -140,7 +156,7 @@ def main():
 
     out = {
         "schema": 1,
-        "purpose": "Hand-placed level 1-6 camps near the Crossroads (Twilight's Eve ticket #7). Not vanilla spawns.",
+        "purpose": "Hand-placed level 1-10 camps near the Crossroads (Twilight's Eve ticket #7). Not vanilla spawns.",
         "crossroads": list(CROSSROADS),
         "map": 1,
         "ground_z": "z_hint is the ADT terrain height; the host resolves ground Z at runtime",

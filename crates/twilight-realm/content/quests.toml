@@ -29,7 +29,7 @@
 # - `after`: a quest offered only once that quest is handed in. When its giver is that quest's
 #   ender, it is the next in the chain: its accept panel opens as the other is handed in.
 
-# ── The Near Plains (levels 1-3) ──────────────────────────────────────────────────────────────
+# ── The Near Plains (levels 1-6) ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 [[quest]]
 id = 91001
@@ -59,15 +59,14 @@ money = 80
 tokens = 1
 collect = [{ item = 4886, count = 6, chance = 60, from = [3124] }]
 
-# ── The Southern Fields (levels 4-6) ──────────────────────────────────────────────────────────
-
 [[quest]]
 id = 91003
 kind = "hunting"
-giver = 90102
+giver = 90101
 level = 4
+min_level = 3
 title = "The Familiar Threat"
-objectives = "Kill 5 Vile Familiars, then return to Tamaha Swiftrunner at the Crossroads."
+objectives = "Kill 5 Vile Familiars, then return to Grezz Plainswatcher at the Crossroads."
 details = "Some warlock's imps have slipped their leash south of town, and they burn whatever they touch. Put them down."
 progress = "The familiars still burn the grass."
 completion = "That is the smell of burnt imp. Well done."
@@ -78,10 +77,11 @@ kill = [[3101, 5]]
 [[quest]]
 id = 91004
 kind = "hunting"
-giver = 90102
+giver = 90101
 level = 5
+min_level = 3
 title = "Bristleback Tusks"
-objectives = "Bring 6 Bristleback Quilboar Tusks to Tamaha Swiftrunner at the Crossroads."
+objectives = "Bring 6 Bristleback Quilboar Tusks to Grezz Plainswatcher at the Crossroads."
 details = "The Bristleback have dug in north-west of town. Every tusk you take is a quilboar that will not raid us."
 progress = "Their camp still stands?"
 completion = "Six tusks. The Bristleback will think twice. Take this, and a Token."
@@ -92,16 +92,160 @@ collect = [{ item = 5085, count = 6, chance = 70, from = [2952, 2953, 2954] }]
 [[quest]]
 id = 91005
 kind = "hunting"
-giver = 90102
+giver = 90101
 level = 6
+min_level = 4
 title = "Prairie Wolf Paws"
-objectives = "Bring 5 Prairie Wolf Paws to Tamaha Swiftrunner at the Crossroads."
+objectives = "Bring 5 Prairie Wolf Paws to Grezz Plainswatcher at the Crossroads."
 details = "The prairie wolves south-east of here have taken to stalking our scouts. Bring me their paws as proof."
 progress = "The wolves still hunt our scouts."
 completion = "These will do. The scouts sleep easier. Here, and a Token."
 money = 150
 tokens = 1
 collect = [{ item = 4758, count = 5, chance = 60, from = [2958] }]
+
+[[quest]]
+id = 91051
+kind = "hunting"
+giver = 90101
+level = 4
+min_level = 3
+title = "The Bristleback Diggings"
+objectives = "Find the Bristleback diggings, then return to Grezz Plainswatcher at the Crossroads."
+details = "The Bristleback came up out of Mulgore and started digging, north-west of town, a short walk past the well. Go and see what they dig for. Look, and come back."
+progress = "Found their diggings yet?"
+completion = "Burrows and bones. They dig like something chases them out of the west. Maybe something does."
+money = 110
+tokens = 1
+explore = { place = "The Bristleback Diggings", position = [-316.0, -2379.0], radius = 30.0 }
+
+# ── The Far Fields (levels 6-10) ──────────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91049
+kind = "hunting"
+giver = 90102
+level = 6
+title = "Smoke on the East Road"
+objectives = "Find the Razormane camp on the east road, then return to Tamaha Swiftrunner at the Crossroads."
+details = "From up here I see smoke on the east road, the road to Thorn Hill, an hour's walk out. Razormane, I think, camped right on the road. Go and look, and come back to me."
+progress = "Did you find the smoke?"
+completion = "Razormane, on our road, and bold enough to light fires. They were never this bold before the sky started to darken."
+money = 140
+tokens = 1
+explore = { place = "The Razormane Camp", position = [-440.0, -3010.0], radius = 30.0 }
+
+[[quest]]
+id = 91041
+kind = "hunting"
+giver = 90102
+level = 7
+title = "Razormane on the Road"
+objectives = "Kill 6 Razormane Quilboar and 4 Razormane Scouts, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The Razormane camp on the east road stops our caravans from Thorn Hill. Follow the road east out of town until you see their fire, and break them."
+progress = "The caravans still turn back on the east road."
+completion = "The road is open again. Take this, and a Token."
+money = 175
+tokens = 1
+kill = [[3111, 6], [3112, 4]]
+
+[[quest]]
+id = 91045
+kind = "hunting"
+giver = 90102
+level = 7
+title = "Palemane Poachers"
+objectives = "Kill 4 Palemane Tanners, 4 Palemane Skinners and 4 Palemane Poachers, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Gnolls from Mulgore, the Palemane, have come over the hills north-west of town, past the Bristleback diggings. They skin whatever they catch, and they have started to catch our scouts. Drive them back."
+progress = "The gnolls still skin in the hills."
+completion = "Good. Let them run home to Mulgore. Here, and a Token."
+money = 175
+tokens = 1
+kill = [[2949, 4], [2950, 4], [2951, 4]]
+
+[[quest]]
+id = 91043
+kind = "hunting"
+giver = 90102
+level = 8
+title = "Harpies on the Rocks"
+objectives = "Kill 8 Dustwind Harpies, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Dustwind harpies have flown down from Durotar and roost on the rocks north of town, straight up the road. They screech all night and drop on anyone alone. Clear their roost."
+progress = "I still hear them screeching."
+completion = "Quiet at last. Here is your pay, and a Token."
+money = 200
+tokens = 1
+kill = [[3115, 8]]
+
+[[quest]]
+id = 91047
+kind = "hunting"
+giver = 90102
+level = 8
+title = "Bloodtalon Taillashers"
+objectives = "Kill 6 Bloodtalon Taillashers, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Raptors have come up from the coast, Bloodtalons, and they hunt on the open ground south of town, beyond the imps. Six of the taillashers, and the herds will graze in peace."
+progress = "The raptors still hunt south of here."
+completion = "Fast things, raptors. You are faster. Take this, and a Token."
+money = 200
+tokens = 1
+kill = [[3122, 6]]
+
+[[quest]]
+id = 91042
+kind = "hunting"
+giver = 90102
+level = 9
+title = "The Dustrunners"
+objectives = "Kill 5 Razormane Dustrunners, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The Razormane camp on the east road has dustrunners, the ones who call the earth. While they live, the camp grows back. Go east down the road again and kill them."
+progress = "Are the dustrunners dead?"
+completion = "Without their earth-callers the Razormane will go home to Thorn Hill. For now. Here, and a Token."
+money = 225
+tokens = 1
+kill = [[3113, 5]]
+
+[[quest]]
+id = 91044
+kind = "hunting"
+giver = 90102
+level = 10
+title = "Dustwind Savages"
+objectives = "Kill 4 Dustwind Savages, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The savages lead the harpies on the rocks north of town. Kill them and the rest will fly home to Durotar."
+progress = "The savages still lead the flock?"
+completion = "Then the flock will scatter. Good work. Here, and a Token."
+money = 250
+tokens = 1
+kill = [[3117, 4]]
+
+[[quest]]
+id = 91046
+kind = "hunting"
+giver = 90102
+level = 10
+title = "Alpha Teeth"
+objectives = "Bring 5 Prairie Alpha Teeth to Tamaha Swiftrunner at the Crossroads."
+details = "The Prairie Wolf Alphas hunt the flat ground south-west of town, past where the plainstriders graze. Their packs have grown big as the light fails. Bring me five of their teeth."
+progress = "No teeth yet?"
+completion = "Big teeth. The packs will be smaller now. Take this, and a Token."
+money = 250
+tokens = 1
+collect = [{ item = 4803, count = 5, chance = 50, from = [2960] }]
+
+[[quest]]
+id = 91048
+kind = "hunting"
+giver = 90102
+level = 10
+title = "The Southern Hunters"
+objectives = "Kill 4 Bloodtalon Scythemaws and 4 Prairie Wolf Alphas, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The biggest hunters south of town are the Bloodtalon scythemaws and the Prairie Wolf Alphas, out beyond the imps and the plainstriders. Kill them both, and the southern fields are ours again."
+progress = "The big hunters still roam the south."
+completion = "That is the last I ask of the fields. Past here, Zun'jin and Garosh have work for you. Take this, and a Token."
+money = 250
+tokens = 1
+kill = [[3123, 4], [2960, 4]]
 
 # ── The Southfury Banks (levels 10-12) ────────────────────────────────────────────────────────
 

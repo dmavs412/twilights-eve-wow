@@ -202,7 +202,8 @@ fn the_low_quests_point_the_way_to_their_camps() {
     let low_quests: Vec<Quest> = content()
         .quest
         .into_iter()
-        .filter(|q| q.level <= 6)
+        .filter(|q| [90101, 90102].contains(&q.giver))
+        .filter(|q| !q.kill.is_empty() || !q.collect.is_empty())
         .collect();
     assert!(!low_quests.is_empty());
     for q in low_quests {

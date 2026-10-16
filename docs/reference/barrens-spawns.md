@@ -6,7 +6,7 @@ copy of them:
 | file | what | made by |
 |---|---|---|
 | `data/twilights-eve/barrens_spawns.json` | every hostile and neutral creature spawn in The Barrens (map 1, zone 17), with camps | `tools/twilights-eve/import_barrens_spawns.py` |
-| `data/twilights-eve/crossroads_low_camps.json` | six hand-placed level 1–6 camps near the Crossroads | `tools/twilights-eve/make_crossroads_low_camps.py` |
+| `data/twilights-eve/crossroads_low_camps.json` | eleven hand-placed level 1–10 camps near the Crossroads | `tools/twilights-eve/make_crossroads_low_camps.py` |
 | `crates/twilight-realm/content/barrens.toml` | the two above as the realm reads them, filtered into the rings: templates, spawn rows, camps | `cargo run -p twilight-realm --example import_barrens` |
 
 All three are committed. Building the game never needs the database or the scripts. The Python

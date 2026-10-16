@@ -8,6 +8,7 @@
 item = [
   { entry = 2925, name = "Crocolisk Skin", quality = 1, item_level = 1, class = 12, display_id = 3124, stackable = 20 },
   { entry = 4758, name = "Prairie Wolf Paw", quality = 1, item_level = 1, class = 12, display_id = 6669, stackable = 20 },
+  { entry = 4803, name = "Prairie Alpha Tooth", quality = 1, item_level = 1, class = 12, display_id = 6630, stackable = 20 },
   { entry = 4886, name = "Venomtail Poison Sac", quality = 1, item_level = 1, class = 12, display_id = 6694, stackable = 20 },
   { entry = 4895, name = "Thunder Lizard Horn", quality = 1, item_level = 1, class = 12, display_id = 7089, stackable = 20 },
   { entry = 5030, name = "Centaur Bracers", quality = 1, item_level = 1, class = 12, display_id = 7070, stackable = 20 },

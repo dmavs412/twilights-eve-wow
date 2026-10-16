@@ -143,10 +143,10 @@ const VILE_FAMILIAR: u32 = 3101;
 fn a_kill_counts_toward_the_quest_and_the_last_one_completes_it() {
     // Four familiars down, one to go.
     let (mut realm, me, mut events) = questing(5, &[], 0, &[(THE_FAMILIAR_THREAT, [4, 0, 0, 0])]);
-    let tamaha = giver(&events, TAMAHA);
-    walk_up_to(&mut realm, tamaha);
-    // Her other quests' yellow `!` shows until this one is done.
-    assert_eq!(status(&mut realm, tamaha), dialog_status::AVAILABLE);
+    let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
+    // Grezz's other quests' yellow `!` shows until this one is done.
+    assert_eq!(status(&mut realm, grezz), dialog_status::AVAILABLE);
     let mob = the_mob(&events);
     assert_eq!(mob.fields.object_entry(), Some(VILE_FAMILIAR));
 
@@ -174,7 +174,7 @@ fn a_kill_counts_toward_the_quest_and_the_last_one_completes_it() {
         quest_log(&events, me),
         [(0, THE_FAMILIAR_THREAT, [5, 0, 0, 0], 1)]
     );
-    assert_eq!(status(&mut realm, tamaha), dialog_status::REWARD2);
+    assert_eq!(status(&mut realm, grezz), dialog_status::REWARD2);
 }
 
 fn levels(events: &[SessionEvent]) -> Vec<u32> {
@@ -190,12 +190,12 @@ fn levels(events: &[SessionEvent]) -> Vec<u32> {
 #[test]
 fn a_hunting_quest_at_its_own_level_gives_half_a_level_and_a_token_and_is_not_offered_again() {
     let (mut realm, me, mut events) = questing(4, &[], 0, &[(THE_FAMILIAR_THREAT, [5, 0, 0, 0])]);
-    let tamaha = giver(&events, TAMAHA);
-    walk_up_to(&mut realm, tamaha);
+    let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
 
     // A finished kill quest skips the progress panel: its reward panel opens.
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
-        npc: tamaha,
+        npc: grezz,
         quest: THE_FAMILIAR_THREAT,
     });
     let offer = drain(&mut realm)
@@ -209,7 +209,7 @@ fn a_hunting_quest_at_its_own_level_gives_half_a_level_and_a_token_and_is_not_of
     let rewards: Vec<(u32, u32)> = offer.rewards.iter().map(|i| (i.item_id, i.count)).collect();
     assert_eq!(rewards, [(TOKEN, 1)]);
 
-    let turned_in = hand_in(&mut realm, tamaha, THE_FAMILIAR_THREAT);
+    let turned_in = hand_in(&mut realm, grezz, THE_FAMILIAR_THREAT);
     let done = completed(&turned_in).expect("the quest completes");
     // Half of level 4's 2100 XP.
     assert_eq!(
@@ -225,25 +225,25 @@ fn a_hunting_quest_at_its_own_level_gives_half_a_level_and_a_token_and_is_not_of
     assert_eq!(carried(&events, me, TOKEN), 1);
     assert!(quest_log(&events, me).is_empty(), "the slot clears");
 
-    // Done for this Tier: Tamaha no longer offers it, and it cannot be taken.
-    let offered = on_offer(&mut realm, tamaha);
+    // Done for this Tier: Grezz no longer offers it, and it cannot be taken.
+    let offered = on_offer(&mut realm, grezz);
     assert!(!offered.contains(&THE_FAMILIAR_THREAT), "{offered:?}");
     assert!(!offered.is_empty(), "her other quests are still on offer");
     realm.handle(RealmCommand::QuestGiverQueryQuest {
-        npc: tamaha,
+        npc: grezz,
         quest: THE_FAMILIAR_THREAT,
     });
     assert!(!drain(&mut realm)
         .iter()
         .any(|e| matches!(e, SessionEvent::QuestDetail(_))));
-    events.extend(accept(&mut realm, tamaha, THE_FAMILIAR_THREAT));
+    events.extend(accept(&mut realm, grezz, THE_FAMILIAR_THREAT));
     assert!(quest_log(&events, me).is_empty());
 }
 
 #[test]
-fn a_giver_whose_hunting_quests_are_all_done_shows_no_mark() {
+fn a_giver_whose_hunting_quests_for_now_are_all_done_shows_only_the_grey_mark() {
     let (mut realm, _, events) = questing(
-        3,
+        1,
         &[(23, VENOM_SAC, 6)],
         0,
         &[(THINNING_THE_HERDS, [5, 5, 0, 0]), (SCORPID_VENOM, [0; 4])],
@@ -251,17 +251,18 @@ fn a_giver_whose_hunting_quests_are_all_done_shows_no_mark() {
     let grezz = giver(&events, GREZZ);
     hand_in(&mut realm, grezz, THINNING_THE_HERDS);
     hand_in(&mut realm, grezz, SCORPID_VENOM);
-    assert_eq!(status(&mut realm, grezz), dialog_status::NONE);
-    assert!(on_offer(&mut realm, grezz).is_empty());
+    assert_eq!(on_offer(&mut realm, grezz), []);
+    // Grezz's level 3 quests are still to come.
+    assert_eq!(status(&mut realm, grezz), dialog_status::UNAVAILABLE);
 }
 
 #[test]
 fn an_unfinished_quest_shows_its_progress_and_cannot_be_handed_in() {
     let (mut realm, _, events) = questing(4, &[], 0, &[(THE_FAMILIAR_THREAT, [2, 0, 0, 0])]);
-    let tamaha = giver(&events, TAMAHA);
-    walk_up_to(&mut realm, tamaha);
+    let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
-        npc: tamaha,
+        npc: grezz,
         quest: THE_FAMILIAR_THREAT,
     });
     let progress = drain(&mut realm)
@@ -272,7 +273,7 @@ fn an_unfinished_quest_shows_its_progress_and_cannot_be_handed_in() {
         })
         .expect("the progress panel");
     assert!(!progress.is_complete);
-    assert!(completed(&hand_in(&mut realm, tamaha, THE_FAMILIAR_THREAT)).is_none());
+    assert!(completed(&hand_in(&mut realm, grezz, THE_FAMILIAR_THREAT)).is_none());
 }
 
 #[test]
@@ -399,7 +400,7 @@ fn the_xp_multiplier_multiplies_quest_xp() {
     let events = drain(&mut realm);
     let done = completed(&hand_in(
         &mut realm,
-        giver(&events, TAMAHA),
+        giver(&events, GREZZ),
         THE_FAMILIAR_THREAT,
     ));
     assert_eq!(done.unwrap().xp, 2100);

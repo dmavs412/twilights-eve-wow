@@ -421,13 +421,18 @@ fn after_advancement_every_hunting_quest_is_offered_again() {
     accept(&mut realm, grezz, SCORPID_VENOM);
     hand_in(&mut realm, grezz, THINNING_THE_HERDS);
     hand_in(&mut realm, grezz, SCORPID_VENOM);
-    assert!(on_offer(&mut realm, grezz).is_empty(), "done this Tier");
+    let offered = on_offer(&mut realm, grezz);
+    assert!(
+        !offered.contains(&THINNING_THE_HERDS) && !offered.contains(&SCORPID_VENOM),
+        "done this Tier: {offered:?}"
+    );
 
     advance(&mut realm, trainer(&events));
     assert_eq!(status(&mut realm, grezz), dialog_status::AVAILABLE);
-    assert_eq!(
-        on_offer(&mut realm, grezz),
-        [THINNING_THE_HERDS, SCORPID_VENOM]
+    let offered = on_offer(&mut realm, grezz);
+    assert!(
+        offered.contains(&THINNING_THE_HERDS) && offered.contains(&SCORPID_VENOM),
+        "{offered:?}"
     );
     // The Advancement Quest stays done.
     let blob = realm.export_character(me).unwrap();

@@ -75,7 +75,7 @@ fn only_the_mobs_near_the_player_are_in_the_world() {
 }
 
 #[test]
-fn level_1_to_6_camps_stand_near_the_crossroads() {
+fn level_1_to_10_camps_stand_near_the_crossroads() {
     let (mut realm, _) = warrior_at(1);
     let low = json("crossroads_low_camps.json");
     let mut levels = Vec::new();
@@ -86,13 +86,13 @@ fn level_1_to_6_camps_stand_near_the_crossroads() {
             92.0,
         ];
         let from_hub = distance2(center, [CROSSROADS[0], CROSSROADS[1], 0.0]);
-        assert!(from_hub < 400.0, "{from_hub} yd out");
+        assert!(from_hub < 600.0, "{from_hub} yd out");
 
         let units = creates(&teleport(&mut realm, center));
         for m in camp["members"].as_array().unwrap() {
             let guid = unit_guid(m["entry"].as_u64().unwrap(), m["guid"].as_u64().unwrap());
             let u = units.get(&guid).expect("every member stands in its camp");
-            assert!((1..=6).contains(&u.level), "level {}", u.level);
+            assert!((1..=10).contains(&u.level), "level {}", u.level);
             assert_eq!(u.display_id as u64, m["display_id"].as_u64().unwrap());
             levels.push(u.level);
         }

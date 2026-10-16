@@ -12,7 +12,7 @@ use crate::gear_common::{descriptor, save_with, Carried, SEED};
 /// `UNIT_NPC_FLAG_QUESTGIVER`.
 pub const NPC_FLAG_QUESTGIVER: u32 = 0x2;
 
-/// The Near Plains' giver, The Southern Fields', The Southfury Banks', The Kolkar Lands' and The
+/// The Near Plains' giver, The Far Fields', The Southfury Banks', The Kolkar Lands' and The
 /// Southern Barrens'.
 pub const GREZZ: u32 = 90101;
 pub const TAMAHA: u32 = 90102;
@@ -20,7 +20,7 @@ pub const ZUNJIN: u32 = 90103;
 pub const GAROSH: u32 = 90104;
 pub const MAHU: u32 = 90105;
 
-/// The Near Plains' kill and collect quests (levels 2 and 3), The Southern Fields' familiars
+/// The Near Plains' kill and collect quests (levels 2 and 3) and familiars
 /// (level 4), and The Southfury Banks' crocolisk skins (level 10).
 pub const THINNING_THE_HERDS: u32 = 91001;
 pub const SCORPID_VENOM: u32 = 91002;
