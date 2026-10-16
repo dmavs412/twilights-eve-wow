@@ -1,13 +1,19 @@
-# The Hub's friendly NPCs, written by hand: they stand in the Crossroads and stream in and out
-# with the player's view, as the mobs do.
+# The Hub's friendly NPCs, written by hand: they live in the Crossroads and stream in and out
+# with the player's view, as the mobs do. Each stands where a person living there would: Barg in
+# the inn (the innkeeper's place by the bar is left free), Sarna at its door, each quest giver at
+# the gate or tower that looks out on their Hunting Ground, and the townsfolk at the gates, the
+# watchtower, the inn, the empty flight tower, the well and about the town. The positions were
+# read off the ADT's doodads and checked in the client with `WOW_PROBE_GOTO`.
 #
 # `guid` is the spawn's low guid, kept clear of the imported spawns' (0xF00000 up). `entry` is a
 # creature entry of our own, outside 1.12's range, unless a real creature lends its name.
-# `npc_flags` are `UNIT_NPC_FLAG_*` (0x1 gossip, 0x2 quest giver, 0x4 vendor, 0x10 trainer, 0x4000 repair),
+# `role` is what it is in the town (goods, tokens, trainer, giver, ambient), which its flags must
+# fit (tests/content_hub.rs). `npc_flags` are `UNIT_NPC_FLAG_*` (0x1 gossip, 0x2 quest giver, 0x4 vendor, 0x10 trainer, 0x4000 repair),
 # which pick the stock window a right-click opens. `faction_template` 35 is friendly to every race.
 # `display_id` is a real 1.12 Horde NPC model (`CreatureDisplayInfo.dbc` with a
-# `CreatureDisplayInfoExtra` row). `position` is WoW `[x, y, z]` on Kalimdor; the host's ground
-# replaces z. `stock` is a vendor's list, in the merchant window's order. `greeting` opens a quest
+# `CreatureDisplayInfoExtra` row). `position` is WoW `[x, y, z]` on Kalimdor, z the ADT terrain's
+# height there (the inn's floor for those inside): the host's ground replaces it, and where the
+# host has none streamed in yet the NPC stands at it. `stock` is a vendor's list, in the merchant window's order. `greeting` opens a quest
 # giver's quest list.
 
 [[npc]]
@@ -18,9 +24,10 @@ subname = "General Goods"
 level = 30
 display_id = 1316
 faction_template = 35
+role = "goods"
 npc_flags = 0x4004
-position = [-438.6, -2645.4, 95.9]
-orientation = 3.93
+position = [-411.0, -2639.0, 96.0]
+orientation = 4.71
 # The four tiers of drink, then of food: 1, 5, 15 and 25.
 stock = [159, 1179, 1205, 1708, 117, 4536, 4540, 2287, 4537, 4541, 3770, 4538, 4542, 3771, 4539, 4544]
 
@@ -36,9 +43,10 @@ subname = "Warrior Trainer"
 level = 40
 display_id = 4391
 faction_template = 35
+role = "trainer"
 npc_flags = 0x13
-position = [-446.0, -2648.0, 95.9]
-orientation = 6.14
+position = [-437.0, -2684.0, 96.5]
+orientation = 5.13
 text_id = 64014
 greeting = "Strength is earned, $C, and so is every scar. If the path you chose no longer serves you, I can help you forget it - for a price."
 
@@ -53,9 +61,10 @@ subname = "Token Vendor"
 level = 30
 display_id = 1312
 faction_template = 35
+role = "tokens"
 npc_flags = 0x4
-position = [-445.0, -2645.6, 95.9]
-orientation = 5.53
+position = [-432.0, -2644.5, 96.3]
+orientation = 3.30
 tokens = true
 
 # The quest givers, one for each Hunting Ground (their quests are in content/quests.toml). 0x2 is
@@ -69,9 +78,10 @@ subname = "The Near Plains"
 level = 30
 display_id = 1374
 faction_template = 35
+role = "giver"
 npc_flags = 0x2
-position = [-435.2, -2644.1, 95.9]
-orientation = 3.74
+position = [-465.0, -2688.0, 95.9]
+orientation = 4.00
 greeting = "The plains around the Crossroads teem with beasts. Thin them out, and the caravans thank you for it."
 
 [[npc]]
@@ -82,9 +92,10 @@ subname = "The Southern Fields"
 level = 30
 display_id = 2112
 faction_template = 35
+role = "giver"
 npc_flags = 0x2
-position = [-437.5, -2641.9, 95.9]
-orientation = 4.14
+position = [-473.0, -2604.0, 104.3]
+orientation = 2.39
 greeting = "South of here the quilboar dig in and the wolves run in packs. The fields need a strong arm."
 
 [[npc]]
@@ -95,9 +106,10 @@ subname = "The Southfury Banks"
 level = 30
 display_id = 4242
 faction_template = 35
+role = "giver"
 npc_flags = 0x2
-position = [-440.4, -2640.7, 95.9]
-orientation = 4.54
+position = [-378.0, -2673.0, 96.2]
+orientation = 6.00
 greeting = "Da river and da Razormane, mon. Both be hungry, and both be trouble."
 
 [[npc]]
@@ -108,9 +120,10 @@ subname = "The Kolkar Lands"
 level = 30
 display_id = 3743
 faction_template = 35
+role = "giver"
 npc_flags = 0x2
-position = [-443.6, -2640.8, 95.9]
-orientation = 4.94
+position = [-360.0, -2536.0, 95.8]
+orientation = 1.43
 greeting = "The Kolkar raid our roads and the Witchwing harpies foul the hills. I pay for every one of them."
 
 [[npc]]
@@ -121,9 +134,10 @@ subname = "The Southern Barrens"
 level = 30
 display_id = 3793
 faction_template = 35
+role = "giver"
 npc_flags = 0x2
-position = [-446.5, -2642.1, 95.9]
-orientation = 5.34
+position = [-549.0, -2645.0, 96.0]
+orientation = 3.00
 greeting = "Far to the south the thunder lizards and the thunderhawks roam, and the Bristleback press north."
 
 [[npc]]
@@ -134,7 +148,349 @@ subname = "Blackthorn Ridge"
 level = 30
 display_id = 1882
 faction_template = 35
+role = "giver"
 npc_flags = 0x2
-position = [-448.7, -2644.5, 95.9]
-orientation = 5.74
+position = [-549.0, -2660.0, 95.9]
+orientation = 3.20
 greeting = "Past da gold road da silithid swarm and da Razormane gather. Only da strong come back."
+
+# The townsfolk: each says one line (`greeting`, its `npc_text` `text_id`) and offers nothing
+# else. `wander` is how many yards one walks about its spot.
+
+# north gate
+[[npc]]
+guid = 0xF00100
+entry = 190010
+name = "Crossroads Grunt"
+level = 45
+display_id = 4259
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-372.0, -2686.0, 95.9]
+orientation = 0.10
+text_id = 64100
+greeting = "Eyes up the road, $C. Every caravan from the north brings more mouths and fewer answers."
+
+# west gate
+[[npc]]
+guid = 0xF00101
+entry = 190010
+name = "Crossroads Grunt"
+level = 45
+display_id = 4261
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-350.0, -2537.0, 96.0]
+orientation = 1.00
+text_id = 64101
+greeting = "The Kolkar raid the west road, but they leave the walls alone. For now."
+
+# east gate
+[[npc]]
+guid = 0xF00102
+entry = 190010
+name = "Crossroads Grunt"
+level = 45
+display_id = 4262
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-478.0, -2690.0, 95.7]
+orientation = 4.71
+text_id = 64102
+greeting = "Ratchet's goblins still trade with us. Gold doesn't care who won."
+
+# south gate, east
+[[npc]]
+guid = 0xF00103
+entry = 190010
+name = "Crossroads Grunt"
+level = 45
+display_id = 4260
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-557.0, -2645.0, 96.1]
+orientation = 3.14
+text_id = 64103
+greeting = "South is where the sky went dark. The Hammer marches under it, and something older wakes beneath the sand."
+
+# south gate, west
+[[npc]]
+guid = 0xF00104
+entry = 190010
+name = "Crossroads Grunt"
+level = 45
+display_id = 4263
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-557.0, -2661.0, 95.9]
+orientation = 3.14
+text_id = 64104
+greeting = "Nothing has come up the Gold Road from the south in a month. Nothing, $C."
+
+# watchtower
+[[npc]]
+guid = 0xF00105
+entry = 190011
+name = "Crossroads Lookout"
+level = 40
+display_id = 4259
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-477.0, -2600.0, 104.3]
+orientation = 2.40
+text_id = 64105
+greeting = "From up here I can see half The Barrens. Quiet, all of it. Too quiet."
+
+# watchtower
+[[npc]]
+guid = 0xF00106
+entry = 190010
+name = "Crossroads Grunt"
+level = 45
+display_id = 4262
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-482.0, -2596.0, 103.9]
+orientation = 1.60
+text_id = 64106
+greeting = "Some nights the clouds to the north glow red. Mountain-fire, the shaman say. Ragnaros walks free."
+
+# inn
+[[npc]]
+guid = 0xF00107
+entry = 190012
+name = "Ashenvale Refugee"
+level = 12
+display_id = 2735
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-431.0, -2660.0, 96.6]
+orientation = 3.14
+text_id = 64107
+greeting = "We walked from Splintertree. The Hammer took the forest in a night."
+
+# inn
+[[npc]]
+guid = 0xF00108
+entry = 190012
+name = "Ashenvale Refugee"
+level = 10
+display_id = 2734
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-432.5, -2664.0, 96.3]
+orientation = 2.80
+text_id = 64108
+greeting = "There's no room left in the inn. There's no room left anywhere."
+
+# flight tower
+[[npc]]
+guid = 0xF00109
+entry = 190013
+name = "Stranded Traveler"
+level = 14
+display_id = 1027
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-424.0, -2590.0, 95.9]
+orientation = 1.20
+text_id = 64109
+greeting = "The wind riders flew south and never came back. So I wait."
+
+# flight tower
+[[npc]]
+guid = 0xF0010A
+entry = 190013
+name = "Stranded Traveler"
+level = 11
+display_id = 1378
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-426.0, -2586.0, 95.9]
+orientation = 5.80
+text_id = 64110
+greeting = "Orgrimmar sends no birds. Thunder Bluff sends no birds. We are on our own out here."
+
+# flight tower
+[[npc]]
+guid = 0xF0010B
+entry = 190014
+name = "Silithus Survivor"
+level = 15
+display_id = 2109
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-433.0, -2594.0, 95.9]
+orientation = 3.00
+wander = 3.0
+text_id = 64111
+greeting = "I saw the hive walls open at Silithus. What came out was not the Qiraji. It was what they serve."
+
+# well
+[[npc]]
+guid = 0xF0010C
+entry = 190015
+name = "Thousand Needles Refugee"
+level = 13
+display_id = 2084
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-539.0, -2640.0, 95.9]
+orientation = 0.60
+text_id = 64112
+greeting = "The water's still sweet here. Everything else out there has turned."
+
+# well
+[[npc]]
+guid = 0xF0010D
+entry = 190015
+name = "Thousand Needles Refugee"
+level = 9
+display_id = 1879
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-521.0, -2638.0, 95.9]
+orientation = 1.70
+text_id = 64113
+greeting = "The mesas burn at night now. We didn't wait to see what lit them."
+
+# well
+[[npc]]
+guid = 0xF0010E
+entry = 190015
+name = "Thousand Needles Refugee"
+level = 6
+display_id = 1029
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-517.0, -2633.0, 96.5]
+orientation = 2.40
+wander = 3.0
+text_id = 64114
+greeting = "Mama says the Crossroads never falls. Is that true?"
+
+# cook
+[[npc]]
+guid = 0xF0010F
+entry = 190016
+name = "Cook Grosh"
+subname = "Cook"
+level = 20
+display_id = 1653
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-401.5, -2703.5, 97.5]
+orientation = 5.36
+text_id = 64115
+greeting = "Strider again. The refugees don't complain, and neither should you."
+
+# stable
+[[npc]]
+guid = 0xF00110
+entry = 190017
+name = "Tavi Mudhoof"
+subname = "Stablehand"
+level = 15
+display_id = 2097
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-388.0, -2628.0, 95.8]
+orientation = 0.80
+wander = 3.0
+text_id = 64116
+greeting = "The kodos won't settle. Beasts know when the world has gone wrong."
+
+# market
+[[npc]]
+guid = 0xF00111
+entry = 190018
+name = "Resting Trader"
+level = 18
+display_id = 2101
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-412.0, -2617.0, 95.8]
+orientation = 0.50
+text_id = 64117
+greeting = "Last caravan out of Ratchet for a week. Then I'll go west, if the road lets me."
+
+# market
+[[npc]]
+guid = 0xF00112
+entry = 190018
+name = "Resting Trader"
+level = 17
+display_id = 3993
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-408.0, -2618.5, 95.8]
+orientation = 1.10
+text_id = 64118
+greeting = "Prices double every time someone says 'Twilight'. I don't say it."
+
+# crates
+[[npc]]
+guid = 0xF00113
+entry = 190019
+name = "Crossroads Peon"
+level = 5
+display_id = 1330
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-441.0, -2564.0, 96.2]
+orientation = 1.57
+wander = 4.0
+text_id = 64119
+greeting = "Work, work. More crates for more refugees."
+
+# wagon
+[[npc]]
+guid = 0xF00114
+entry = 190019
+name = "Crossroads Peon"
+level = 5
+display_id = 1331
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-421.0, -2623.0, 95.8]
+orientation = 4.00
+wander = 3.0
+text_id = 64120
+greeting = "Me not like the dark sky. Me keep hauling."
+
+# catapults
+[[npc]]
+guid = 0xF00115
+entry = 190019
+name = "Crossroads Peon"
+level = 5
+display_id = 1370
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+position = [-465.0, -2633.0, 96.7]
+orientation = 2.00
+wander = 3.0
+text_id = 64121
+greeting = "Boss says keep the catapults loaded. Me not ask why."

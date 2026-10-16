@@ -41,6 +41,9 @@ const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
     turn_rate: std::f32::consts::PI,
 };
 
+/// The game time the sky is held at (hours, minutes): evening twilight, after the 21:00 sunset.
+const DUSK: (u8, u8) = (21, 15);
+
 /// A player's combat reach (`DEFAULT_COMBAT_REACH`).
 const PLAYER_COMBAT_REACH: f32 = 1.5;
 
@@ -142,12 +145,13 @@ impl InWorld {
             orientation: c.orientation,
             needs_ack: false,
         });
-        // Mid-afternoon at the game clock's real-time pace (one game minute a minute).
+        // The dusk clock: evening twilight, just after the 21:00 sunset, and a timescale of zero
+        // so the client never advances it. The sky over the world stays at dusk.
         events.push(SessionEvent::TimeSpeed {
-            hours: 15,
-            minutes: 0,
+            hours: DUSK.0,
+            minutes: DUSK.1,
             day_serial: 0,
-            timescale: 1.0 / 60.0,
+            timescale: 0.0,
         });
         events.push(cast::spell_book(c, wall));
         events.extend(crate::talents::spell_mods(c));
@@ -269,7 +273,7 @@ impl InWorld {
             self.population
                 .update(dt, me, self.map, host, &mut self.mobs, events);
         }
-        self.hub.update(me, self.map, host, events);
+        self.hub.update(dt, me, self.map, host, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting
@@ -608,7 +612,8 @@ impl InWorld {
         let gained = if at_tier_cap(c) {
             0
         } else {
-            self.dev.xp(xp::kill_xp(c.level, mob.level(), elite))
+            self.dev
+                .xp(at_tier_rate(c, xp::kill_xp(c.level, mob.level(), elite)))
         };
         if gained > 0 {
             events.push(SessionEvent::XpGain(XpGain {
@@ -624,8 +629,8 @@ impl InWorld {
         crate::quests::credit_kill(c, entry, events);
     }
 
-    /// Pays a quest's `base` XP, scaled by the dev multiplier as kill XP is; nothing at the Tier
-    /// Cap. What it paid.
+    /// Pays a quest's `base` XP, scaled by the Tier XP Rate and the dev multiplier as kill XP is;
+    /// nothing at the Tier Cap. What it paid.
     pub(crate) fn reward_xp(
         &mut self,
         c: &mut Char,
@@ -635,7 +640,7 @@ impl InWorld {
         if at_tier_cap(c) {
             return 0;
         }
-        let gained = self.dev.xp(base);
+        let gained = self.dev.xp(at_tier_rate(c, base));
         if gained > 0 {
             self.give_xp(c, gained, events);
         }
@@ -726,6 +731,11 @@ impl InWorld {
 /// Whether `c` stands at their Calling's Tier Cap, where XP stops until they advance.
 fn at_tier_cap(c: &Char) -> bool {
     c.level >= crate::callings::of(c.calling).cap
+}
+
+/// An award of `base` XP times `c`'s Tier XP Rate; the dev multiplier goes on top.
+fn at_tier_rate(c: &Char, base: u32) -> u32 {
+    base * xp::tier_rate(crate::callings::of(c.calling).tier)
 }
 
 /// `mob` turns on the player: `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat

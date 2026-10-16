@@ -148,7 +148,8 @@ fn the_goods_vendor_stands_in_the_crossroads_and_lists_food_and_drink() {
     assert_eq!(fields.unit_npc_flags(), NPC_FLAG_VENDOR | NPC_FLAG_REPAIR);
     let crossroads = [twilight_realm::CROSSROADS[0], twilight_realm::CROSSROADS[1]];
     let d = ((at[0] - crossroads[0]).powi(2) + (at[1] - crossroads[1]).powi(2)).sqrt();
-    assert!(d < 6.0, "{d} yd from where characters appear");
+    // In the inn's hall with them.
+    assert!(d < 10.0, "{d} yd from where characters appear");
 
     realm.handle(RealmCommand::ListInventory { guid: vendor });
     let (from, items) = listing(&drain(&mut realm)).expect("the stock merchant list");

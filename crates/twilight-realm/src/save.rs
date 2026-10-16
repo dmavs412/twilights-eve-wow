@@ -7,8 +7,13 @@ use crate::characters::Char;
 use crate::content::{self, Calling};
 use crate::inventory::{bag_size, Inventory, Pos};
 
-/// The save format this realm writes and reads. A save from any other version is refused.
-pub const SAVE_VERSION: u32 = 1;
+/// The save format this realm writes. It also reads version 1, which has the same layout; a save
+/// from any other version is refused.
+pub const SAVE_VERSION: u32 = 2;
+
+/// The oldest save version the realm still reads. Version 2's quests are Hunting Quests, done once
+/// per Tier; version 1's are read the same way.
+const OLDEST_VERSION: u32 = 1;
 
 /// Seconds between the in-world autosaves.
 pub(crate) const AUTOSAVE_SECS: f32 = 60.0;
@@ -39,9 +44,9 @@ struct Header {
     version: u32,
 }
 
-/// Version 1 of the save. Field names are the format: renaming one is a new version.
+/// The save. Field names are the format: renaming one is a new version.
 #[derive(Serialize, Deserialize)]
-struct SaveV1 {
+struct Save {
     version: u32,
     guid: u64,
     name: String,
@@ -73,7 +78,8 @@ struct SaveV1 {
     /// between sessions counts. Optional within version 1.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     item_ready_at: Vec<(u32, u64)>,
-    /// The quests ever handed in. Added within version 1: a save without it has finished none.
+    /// The quests handed in: every Advancement and Repeatable Quest ever, and the Hunting Quests
+    /// of this Tier. Added within version 1: a save without it has finished none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     completed: Vec<u32>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
@@ -139,7 +145,7 @@ fn load_inventory(money: u32, saved: &[SavedItem]) -> Result<Inventory, SaveErro
 }
 
 pub(crate) fn export(c: &Char) -> String {
-    let save = SaveV1 {
+    let save = Save {
         version: SAVE_VERSION,
         guid: c.guid,
         name: c.name.clone(),
@@ -169,15 +175,18 @@ pub(crate) fn export(c: &Char) -> String {
     toml::to_string(&save).expect("a save always serializes")
 }
 
-pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
+/// The character a save describes, and lines for the host's log: each quest id it names that the
+/// realm no longer has, dropped from the log and the quests handed in.
+pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
     let header: Header = toml::from_str(blob).map_err(|_| SaveError::Unreadable)?;
-    if header.version != SAVE_VERSION {
+    if !(OLDEST_VERSION..=SAVE_VERSION).contains(&header.version) {
         return Err(SaveError::Version(header.version));
     }
-    let s: SaveV1 = toml::from_str(blob).map_err(|_| SaveError::Unreadable)?;
+    let s: Save = toml::from_str(blob).map_err(|_| SaveError::Unreadable)?;
     if !content::valid_race(s.race) || s.gender > 1 || s.level == 0 {
         return Err(SaveError::Unreadable);
     }
+    let (quests, dropped) = crate::quests::load(&s.quests, &s.completed)?;
     let mut c = Char {
         guid: s.guid,
         name: s.name,
@@ -200,12 +209,18 @@ pub(crate) fn import(blob: &str) -> Result<Char, SaveError> {
             .iter()
             .map(|&(entry, ms)| (entry, ms as f64 / 1000.0))
             .collect(),
-        quests: crate::quests::QuestLog {
-            completed: s.completed,
-            ..crate::quests::load(&s.quests)?
-        },
+        quests,
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);
-    Ok(c)
+    let notes = dropped
+        .iter()
+        .map(|id| {
+            format!(
+                "character {} ({}): dropped quest {id}, which the realm no longer has",
+                c.guid, c.name
+            )
+        })
+        .collect();
+    Ok((c, notes))
 }

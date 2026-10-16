@@ -1,7 +1,8 @@
-//! **Repeatable Quests** (`GLOSSARY.md`): the Hub's givers, the character's quest log and its
-//! progress. A quest is data (`content/quests.toml`): who gives it, what to kill or collect, and
-//! what it pays. The log lives on the character and is saved; the client reads it from the
-//! `PLAYER_QUEST_LOG` slots, and the stock quest dialogs drive it ([`dialogs`]).
+//! **Hunting Quests** and **Repeatable Quests** (`GLOSSARY.md`): the Hub's givers, the character's
+//! quest log and its progress. A quest is data (`content/quests.toml`): who gives it, how often
+//! it can be done, what to kill or collect, and what it pays. The log lives on the character and
+//! is saved; the client reads it from the `PLAYER_QUEST_LOG` slots, and the stock quest dialogs
+//! drive it ([`dialogs`]).
 //!
 //! Kill objectives count in the log. Collect objectives count the quest items in the bags, as the
 //! client does: their drops only fall while a quest wants more.
@@ -57,7 +58,8 @@ impl Active {
 #[derive(Debug, Clone, Default)]
 pub(crate) struct QuestLog {
     pub(crate) active: Vec<Active>,
-    /// Every quest ever handed in, once each, in the order first finished.
+    /// The quests handed in, once each, in the order first finished: every Advancement and
+    /// Repeatable Quest ever, and the Hunting Quests of this Tier.
     pub(crate) completed: Vec<u32>,
 }
 
@@ -97,19 +99,33 @@ pub(crate) fn saved(log: &QuestLog) -> Vec<SavedQuest> {
     out
 }
 
-/// The log a save describes. A quest the realm no longer has is dropped; a bad slot, or a slot or
-/// quest named twice, makes the save unreadable.
-pub(crate) fn load(saved: &[SavedQuest]) -> Result<QuestLog, crate::save::SaveError> {
+/// The log a save describes, with the quests it has handed in, and the quest ids the realm no
+/// longer has, which are dropped. A bad slot, or a slot or quest named twice, makes the save
+/// unreadable.
+pub(crate) fn load(
+    saved: &[SavedQuest],
+    completed: &[u32],
+) -> Result<(QuestLog, Vec<u32>), crate::save::SaveError> {
     let mut log = QuestLog::default();
+    let mut dropped = Vec::new();
     for s in saved {
         if s.slot >= LOG_SLOTS || log.active.iter().any(|a| a.slot == s.slot || a.id == s.id) {
             return Err(crate::save::SaveError::Unreadable);
         }
         if content::quest(s.id).is_some() {
             log.active.push(Active::new(s.id, s.slot, s.kills));
+        } else {
+            dropped.push(s.id);
         }
     }
-    Ok(log)
+    for &id in completed {
+        if content::quest(id).is_none() {
+            dropped.push(id);
+        } else if !log.completed.contains(&id) {
+            log.completed.push(id);
+        }
+    }
+    Ok((log, dropped))
 }
 
 /// How many of `item` the character carries.
@@ -195,6 +211,24 @@ pub(crate) fn credit_kill(c: &mut Char, entry: u32, events: &mut Vec<SessionEven
             required: q.kill[o].1,
         });
         update_slot(c, i, events);
+    }
+}
+
+/// A new Tier begins: every Hunting Quest is forgotten, done or under way, so each is offered
+/// again. Repeatable and Advancement Quests stay as they are.
+pub(crate) fn new_tier(c: &mut Char, events: &mut Vec<SessionEvent>) {
+    let hunting = |id: u32| content::quest(id).is_some_and(|q| q.kind == content::Kind::Hunting);
+    c.quests.completed.retain(|&id| !hunting(id));
+    let mut cleared = Vec::new();
+    c.quests.active.retain(|a| {
+        let drop = hunting(a.id);
+        if drop {
+            cleared.extend(slot_pairs(a.slot, None));
+        }
+        !drop
+    });
+    if !cleared.is_empty() {
+        events.push(values(c.guid, &cleared));
     }
 }
 

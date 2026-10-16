@@ -48,6 +48,7 @@ fn xp_past_the_tier_cap_is_not_banked() {
     let (mut realm, me, mut events) =
         questing_with(xp_times(3.0), 9, EIGHT_SKINS, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     events.extend(hand_in(&mut realm, zunjin, CROCOLISK_SKINS));
     let me_now = descriptor(&events, me);
     assert_eq!(me_now.unit_level(), Some(10));
@@ -68,6 +69,7 @@ fn a_basic_warrior_at_the_tier_cap_gains_no_xp() {
         &[(CROCOLISK_SKINS, [0; 4])],
     );
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
     let done = completed(&turned_in).expect("the quest still completes");
     assert_eq!(done.xp, 0, "no XP at the cap, even with ?xp=");
@@ -84,7 +86,18 @@ fn a_basic_warrior_at_the_tier_cap_gains_no_xp() {
 #[test]
 fn a_vanguard_levels_past_ten_and_stops_at_thirty() {
     let quest = &[(CROCOLISK_SKINS, [0; 4])];
-    let (mut realm, me, mut events) = questing_as("vanguard", 10, EIGHT_SKINS, 0, quest);
+    // Level 10 a Vanguard keeps: 4000 of its 7600 XP, and the quest's 3800 at the Tier XP Rate's
+    // ×3 on top: 15400, one level and 7800 of level 11's 8100.
+    let (guid, blob) = save_with_quests(10, EIGHT_SKINS, 0, quest);
+    let blob = blob
+        .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"")
+        .replace(
+            "xp = 0
+",
+            "xp = 4000
+",
+        );
+    let (mut realm, me, mut events) = enter_saved(guid, &blob);
     events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
     assert_eq!(descriptor(&events, me).unit_level(), Some(11));
 
@@ -159,6 +172,7 @@ fn trainer(events: &[SessionEvent]) -> u64 {
 
 /// The quest rows of the trainer's gossip menu: `(quest, icon, level, title)`.
 fn gossip_quests(realm: &mut Realm, npc: u64) -> Vec<(u32, u32, u32, String)> {
+    walk_up_to(realm, npc);
     realm.handle(RealmCommand::GossipHello { guid: npc });
     drain(realm)
         .into_iter()
@@ -354,7 +368,7 @@ fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
 }
 
 #[test]
-fn advancement_keeps_gear_bags_gold_tokens_and_quests() {
+fn advancement_keeps_gear_bags_gold_and_tokens() {
     let (mut realm, me, mut events) = capped_warrior();
     let uzzek = trainer(&events);
     let gear_before = descriptor(&events, me).player_inv_slot(15);
@@ -364,21 +378,105 @@ fn advancement_keeps_gear_bags_gold_tokens_and_quests() {
     assert_eq!(now.player_inv_slot(15), gear_before, "the worn sword");
     assert_eq!(now.player_inv_slot(23), bag_before, "the Hearthstone");
     assert_eq!(now.player_money(), Some(12345));
-    assert_eq!(
-        quest_log(&events, me),
-        [(0, THINNING_THE_HERDS, [1, 2, 0, 0], 0)],
-        "the quest under way"
-    );
     let blob = realm.export_character(me).unwrap();
     assert_eq!(carried(&events, me, TOKEN), 7, "the Tokens in the bags");
-    assert!(blob.contains("money = 12345\n"), "{blob}");
     assert!(
-        blob.contains(&format!("entry = {CROCOLISK_SKIN}\ncount = 3")),
+        blob.contains(
+            "money = 12345
+"
+        ),
         "{blob}"
     );
     assert!(
+        blob.contains(&format!(
+            "entry = {CROCOLISK_SKIN}
+count = 3"
+        )),
+        "{blob}"
+    );
+}
+
+#[test]
+fn advancement_drops_the_hunting_quests_under_way() {
+    let (mut realm, me, mut events) = capped_warrior();
+    assert_eq!(
+        quest_log(&events, me),
+        [(0, THINNING_THE_HERDS, [1, 2, 0, 0], 0)]
+    );
+    events.extend(advance(&mut realm, trainer(&events)));
+    assert!(
+        quest_log(&events, me).is_empty(),
+        "{:?}",
+        quest_log(&events, me)
+    );
+    // Offered afresh to the level 1 Vanguard.
+    assert!(on_offer(&mut realm, giver(&events, GREZZ)).contains(&THINNING_THE_HERDS));
+}
+
+#[test]
+fn after_advancement_every_hunting_quest_is_offered_again() {
+    let herds_done: &[Underway] = &[(THINNING_THE_HERDS, [5, 5, 0, 0])];
+    let (mut realm, me, events) = questing(10, &[(23, VENOM_SAC, 6)], 0, herds_done);
+    let grezz = giver(&events, GREZZ);
+    accept(&mut realm, grezz, SCORPID_VENOM);
+    hand_in(&mut realm, grezz, THINNING_THE_HERDS);
+    hand_in(&mut realm, grezz, SCORPID_VENOM);
+    assert!(on_offer(&mut realm, grezz).is_empty(), "done this Tier");
+
+    advance(&mut realm, trainer(&events));
+    assert_eq!(status(&mut realm, grezz), dialog_status::AVAILABLE);
+    assert_eq!(
+        on_offer(&mut realm, grezz),
+        [THINNING_THE_HERDS, SCORPID_VENOM]
+    );
+    // The Advancement Quest stays done.
+    let blob = realm.export_character(me).unwrap();
+    assert!(
         blob.contains(&format!("completed = [{THE_WARRIORS_PATH}]")),
-        "the completed quest is kept: {blob}"
+        "{blob}"
+    );
+}
+
+#[test]
+fn a_talent_respec_leaves_the_quests_alone() {
+    let quests: &[Underway] = &[
+        (CROCOLISK_SKINS, [0; 4]),
+        (THINNING_THE_HERDS, [1, 2, 0, 0]),
+    ];
+    let (guid, blob) = save_with_quests(10, EIGHT_SKINS, 0, quests);
+    let blob = blob
+        .replace(
+            "money = 0
+",
+            "money = 12345
+",
+        )
+        .replace(
+            "xp = 0
+",
+            "xp = 0
+talents = [[157, 3]]
+",
+        );
+    let (mut realm, me, mut events) = enter_saved(guid, &blob);
+    let zunjin = giver(&events, ZUNJIN);
+    events.extend(hand_in(&mut realm, zunjin, CROCOLISK_SKINS));
+    let log_before = quest_log(&events, me);
+    assert_eq!(log_before, [(1, THINNING_THE_HERDS, [1, 2, 0, 0], 0)]);
+
+    let uzzek = trainer(&events);
+    walk_up_to(&mut realm, uzzek);
+    realm.handle(RealmCommand::TalentWipeConfirm { trainer: uzzek });
+    events.extend(drain(&mut realm));
+    assert_eq!(
+        descriptor(&events, me).player_money(),
+        Some(12345 + 400 - 10000),
+        "the respec went through"
+    );
+    assert_eq!(quest_log(&events, me), log_before, "the quest under way");
+    assert!(
+        !on_offer(&mut realm, zunjin).contains(&CROCOLISK_SKINS),
+        "still done this Tier"
     );
 }
 
@@ -418,20 +516,6 @@ fn gear_worn_before_advancement_stays_worn_and_keeps_its_stats() {
     assert_eq!(now.unit_level(), Some(1));
     assert_eq!(now.player_inv_slot(4), chest);
     assert_eq!(now.player_posstat(0), green, "still counting");
-}
-
-#[test]
-fn completed_quests_carry_over_advancement() {
-    let (mut realm, me, events) = questing(10, EIGHT_SKINS, 0, &[(CROCOLISK_SKINS, [0; 4])]);
-    hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS);
-    advance(&mut realm, trainer(&events));
-    let blob = realm.export_character(me).unwrap();
-    assert!(
-        blob.contains(&format!(
-            "completed = [{CROCOLISK_SKINS}, {THE_WARRIORS_PATH}]"
-        )),
-        "{blob}"
-    );
 }
 
 #[test]

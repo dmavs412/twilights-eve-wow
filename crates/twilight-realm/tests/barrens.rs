@@ -1,5 +1,6 @@
 //! The Barrens is populated: its real camps stream in around the player, the low camps by the
-//! Crossroads cover levels 1–6, and the mobs pull as camps, leash home and respawn.
+//! Crossroads cover levels 1–6 with nothing above 10 around them, and the mobs pull as camps,
+//! leash home and respawn.
 //!
 //! Positions come from the research dumps the realm's content is generated from
 //! (`data/twilights-eve/`), so a script can walk to a real camp.
@@ -108,6 +109,46 @@ fn level_1_to_6_camps_stand_near_the_crossroads() {
     assert!(levels.iter().max() >= Some(&5));
 }
 
+#[test]
+fn walking_around_the_crossroads_meets_nothing_above_level_10() {
+    // Rings around the town, out to where what streams in still stands inside the inner ring.
+    const FRIENDLY: u32 = 35;
+    let (mut realm, _) = warrior_at(10);
+    let mut world = HashMap::new();
+    let mut met = HashSet::new();
+    for radius in [150.0_f32, 300.0, 440.0] {
+        let steps = (std::f32::consts::TAU * radius / 16.0).ceil() as usize;
+        for i in 0..steps {
+            let a = std::f32::consts::TAU * i as f32 / steps as f32;
+            let at = [
+                CROSSROADS[0] + radius * a.cos(),
+                CROSSROADS[1] + radius * a.sin(),
+                92.0,
+            ];
+            realm.handle(RealmCommand::Move {
+                position: at,
+                orientation: a,
+            });
+            see(&mut world, &run(&mut realm, 0.2));
+            for (guid, u) in world.iter().filter(|(_, u)| u.faction != FRIENDLY) {
+                assert!(
+                    u.level <= 10,
+                    "a level {} {} at {:?}, {radius} yd out",
+                    u.level,
+                    u.entry,
+                    u.position
+                );
+                met.insert(*guid);
+            }
+        }
+    }
+    assert!(
+        met.len() > 20,
+        "the low camps are on the way: {}",
+        met.len()
+    );
+}
+
 /// How far above a low camp's top level a mob is red to the camp's players (vanilla's con colour:
 /// five levels up).
 const RED_ABOVE: u32 = 5;
@@ -154,7 +195,8 @@ fn the_way_from_the_crossroads_to_a_low_camp_passes_no_red_mob() {
                 orientation: 0.0,
             });
             see(&mut world, &run(&mut realm, 1.0));
-            for u in world.values().filter(|u| u.level >= red) {
+            // The Hub's townsfolk (`FactionTemplate.dbc` 35) are friendly to every race.
+            for u in world.values().filter(|u| u.level >= red && u.faction != 35) {
                 let d = distance2(u.position, at);
                 assert!(
                     d >= ROUTE_CLEAR_YD,
@@ -391,15 +433,22 @@ fn unit_guid(entry: u64, low: u64) -> u64 {
     0xF130 << 48 | entry << 24 | low
 }
 
-/// The first imported spawn of `entry` in `barrens_spawns.json`.
+/// The first imported spawn of `entry` in `barrens_spawns.json` that the realm's rings keep.
 fn imported_spawn(entry: u64) -> Spawn {
     let dump = json("barrens_spawns.json");
+    let kept: toml::Value = toml::from_str(include_str!("../content/barrens.toml")).unwrap();
+    let kept: HashSet<i64> = kept["spawns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r[0].as_integer().unwrap())
+        .collect();
     let s = dump["spawns"]
         .as_array()
         .unwrap()
         .iter()
-        .find(|s| s["entry"].as_u64() == Some(entry))
-        .expect("an imported spawn of the entry");
+        .find(|s| s["entry"].as_u64() == Some(entry) && kept.contains(&s["guid"].as_i64().unwrap()))
+        .expect("a kept imported spawn of the entry");
     let displays = dump["templates"][entry.to_string()]["displays"]
         .as_array()
         .unwrap()
