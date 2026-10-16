@@ -190,7 +190,7 @@ faction_template = 35
 role = "giver"
 npc_flags = 0x2
 position = [-378.0, -2673.0, 96.2]
-orientation = 6.00
+orientation = 5.13
 greeting = "Da river and da Razormane, mon. Both be hungry, and both be trouble."
 
 [[npc]]
@@ -203,9 +203,9 @@ display_id = 3743
 faction_template = 35
 role = "giver"
 npc_flags = 0x2
-position = [-360.0, -2536.0, 95.8]
-orientation = 1.43
-greeting = "The Kolkar raid our roads and the Witchwing harpies foul the hills. I pay for every one of them."
+position = [-555.0, -2653.0, 96.0]
+orientation = 3.30
+greeting = "South of here the Kolkar camps raid our roads, and their hounds run down anyone alone. I pay for every one of them."
 
 [[npc]]
 guid = 9100005
@@ -220,6 +220,80 @@ npc_flags = 0x2
 position = [-549.0, -2645.0, 96.0]
 orientation = 3.00
 greeting = "The Bristleback press north out of the south. Past them, Camp Taurajo holds the outer plains."
+
+# The middle ring's other givers (ticket #39), each by the gate toward their Hunting Ground: the
+# oasis and the coast to the south, the fen and the hills to the north and west. Their spots sit
+# a few yards off the gate grunts' and still want a look in the client.
+
+[[npc]]
+guid = 9100007
+entry = 90107
+name = "Naleya Mistrunner"
+subname = "Lushwater Oasis"
+level = 30
+display_id = 2109
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-553.0, -2667.0, 95.9]
+orientation = 1.88
+greeting = "The oasis was a place of healing once. Now things crawl out of the caverns under it, and the water tastes of bad dreams."
+
+[[npc]]
+guid = 9100008
+entry = 90108
+name = "Grunt Rhaggoth"
+subname = "The Sludge Fen"
+level = 30
+display_id = 1378
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-368.0, -2691.0, 95.9]
+orientation = 5.95
+greeting = "The Venture Co. drained the fen north of here and poisoned what was left. Their foremen answer to nobody. Make them answer to you."
+
+[[npc]]
+guid = 9100009
+entry = 90109
+name = "Gazrog Saltblade"
+subname = "The Merchant Coast"
+level = 30
+display_id = 1370
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-483.0, -2696.0, 95.7]
+orientation = 4.0
+greeting = "Pirates on the coast road, makrura on the sand. Ratchet's goblins won't pay to clear them, so I will."
+
+[[npc]]
+guid = 9100010
+entry = 90110
+name = "Thrag Duneclaw"
+subname = "The Dry Hills"
+level = 30
+display_id = 1027
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-366.0, -2681.0, 95.9]
+orientation = 0.5
+greeting = "North, on Dreadmist Peak, the Burning Blade light their fires again. Even the lions there have grown bolder."
+
+[[npc]]
+guid = 9100011
+entry = 90111
+name = "Kaluk Windrider"
+subname = "The Witchwing Hills"
+level = 30
+display_id = 1029
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+position = [-346.0, -2543.0, 96.0]
+orientation = 1.0
+greeting = "The Witchwing nest in the north-west hills, past the Forgotten Pools. They take whatever strays from the road."
 
 
 # The townsfolk: each says one line (`greeting`, its `npc_text` `text_id`) and offers nothing
