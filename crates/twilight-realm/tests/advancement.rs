@@ -84,7 +84,8 @@ fn a_basic_warrior_at_the_tier_cap_gains_no_xp() {
 #[test]
 fn a_vanguard_levels_past_ten_and_stops_at_thirty() {
     let quest = &[(CROCOLISK_SKINS, [0; 4])];
-    // Level 10 a Vanguard keeps: 4000 of its 7600 XP, and the quest's 3800 on top.
+    // Level 10 a Vanguard keeps: 4000 of its 7600 XP, and the quest's 3800 at the Tier XP Rate's
+    // ×3 on top: 15400, one level and 7800 of level 11's 8100.
     let (guid, blob) = save_with_quests(10, EIGHT_SKINS, 0, quest);
     let blob = blob
         .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"")
