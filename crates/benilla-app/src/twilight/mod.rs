@@ -19,6 +19,8 @@ use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
 
 mod goto;
 mod talents;
+#[cfg(test)]
+pub(crate) mod vanilla_player;
 
 pub(crate) use goto::DevGoto;
 

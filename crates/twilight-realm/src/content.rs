@@ -19,7 +19,7 @@ const RACE_KEYS: [&str; 8] = [
     "gnome",
     "troll",
 ];
-const HEARTHSTONE: u32 = 6948;
+pub(crate) const HEARTHSTONE: u32 = 6948;
 /// `INVENTORY_SLOT_ITEM_START`: the backpack's first slot.
 const FIRST_PACK_SLOT: u8 = 23;
 

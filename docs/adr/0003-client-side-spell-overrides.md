@@ -20,3 +20,11 @@ The spell IDs stay the real ones. The realm's content marks which skills are bor
 
 - A future real server that plays to a stock client has to ship these rewrites as a patch MPQ after all. The realm's content already lists them.
 - The rewritten rows apply to every character, so they assume Twilight's Eve is the only mode and that no Calling uses the original Paladin version of the same spell.
+
+## Amended 2026-10-16: the rewrites come from the patch file
+
+The in-memory rewrite stays, but its source is now `data/twilights-eve/client_dbc_patch.json`,
+generated from the master CSV by `tools/twilights-eve/build_spells.py` (`docs/spell_pipeline.md`),
+not a mark in the realm's content. The client applies every override in that file when it loads
+its spell data. The same file is what an MPQ writer consumes when a real server plays to a stock
+client, so the two consequences above collapse into one data file.
