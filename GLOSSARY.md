@@ -29,6 +29,10 @@ _Avoid_: camp (a group of mobs), town
 An area around the Hub where a character levels by killing mobs and doing Hunting Quests.
 _Avoid_: zone (a WoW map area, which a Hunting Ground may only partly cover)
 
+**Level Band**:
+The range of character levels a Hunting Ground is built for, such as 1–10 for Northshire Valley. Its mobs' levels are set to fit the band, not taken from vanilla.
+_Avoid_: zone level, level range (of a single mob)
+
 **Camp**:
 A group of mobs that stand together and fight together: pulling one pulls the rest. The Barrens' camps come from its vanilla spawns; the low camps by the Hub are placed by hand.
 _Avoid_: pack, group (a player party)
