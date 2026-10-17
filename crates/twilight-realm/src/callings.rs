@@ -236,7 +236,7 @@ pub enum TalentEffect {
     WeaponDamagePct { weapon: Wielded, per_rank: Vec<u32> },
     /// The melee critical strike chance rises by this many percent while it wields `weapon`.
     WeaponCritPct { weapon: Wielded, per_rank: Vec<u32> },
-    /// A skill's critical strike adds this percent of the crit's bonus damage (Impale).
+    /// A skill's critical strike adds this percent of the whole crit's damage (Impale).
     SkillCritDamagePct { per_rank: Vec<u32> },
     /// The skill's auras last this percent longer.
     SkillDurationPct { skill: String, per_rank: Vec<u32> },

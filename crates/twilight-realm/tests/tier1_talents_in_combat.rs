@@ -107,9 +107,9 @@ fn impale_raises_a_skills_crit() {
         };
         let (impaled, crit) = strike(seed, true).expect("the same strike");
         assert!(crit);
-        // Twice the blow, and a fifth of the bonus more.
+        // Twice the blow, and a fifth more of the whole crit.
         let blow = plain / 2;
-        assert_eq!(impaled, blow * 2 + blow * 20 / 100, "seed {seed}");
+        assert_eq!(impaled, blow * 2 * 120 / 100, "seed {seed}");
         return;
     }
     panic!("no Mortal Strike crit in 150 fights");

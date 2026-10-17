@@ -46,11 +46,11 @@ impl School {
     }
 }
 
-/// A crit on `damage` (after mitigation) in `school`: physical doubles it and adds `bonus_pct`%
-/// ([`crit_damage`]); every other school does 150%, and `bonus_pct`% of the damage more.
+/// A crit on `damage` (after mitigation) in `school`: physical does 200% ([`crit_damage`]), every
+/// other school 150%, and `bonus_pct`% more of the whole crit on either.
 pub fn crit_scaled(school: School, damage: u32, bonus_pct: u32) -> u32 {
     if school.is_magic() {
-        damage * 3 / 2 + damage * bonus_pct / 100
+        super::talents::crit_multiplied(damage, 150, bonus_pct)
     } else {
         crit_damage(damage, bonus_pct)
     }

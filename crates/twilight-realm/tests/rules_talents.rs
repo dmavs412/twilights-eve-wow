@@ -49,11 +49,11 @@ fn deep_wounds_bleeds_a_share_of_the_average_swing_over_four_ticks() {
 #[test]
 fn impale_adds_a_share_of_the_crits_bonus() {
     use twilight_realm::rules::talents::crit_damage;
-    // A plain crit doubles; Impale 2/2 adds a fifth of the bonus: 2.2×.
+    // A plain crit doubles; a crit-damage mod multiplies the whole crit: +30% makes 200% x 1.3.
     assert_eq!(crit_damage(100, 0), 200);
-    assert_eq!(crit_damage(100, 10), 210);
-    assert_eq!(crit_damage(100, 20), 220);
-    assert_eq!(crit_damage(33, 20), 72);
+    assert_eq!(crit_damage(100, 10), 220);
+    assert_eq!(crit_damage(100, 30), 260);
+    assert_eq!(crit_damage(33, 20), 79);
 }
 
 #[test]

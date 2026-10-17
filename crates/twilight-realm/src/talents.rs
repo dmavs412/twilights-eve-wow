@@ -153,7 +153,7 @@ pub(crate) fn weapon_damage_pct(c: &Char) -> u32 {
     )
 }
 
-/// The percent of a crit's bonus a skill's crit adds (Impale).
+/// The percent of the whole crit a skill's crit adds (Impale).
 pub(crate) fn skill_crit_damage_pct(c: &Char) -> u32 {
     sum(c, |e| matches!(e, TalentEffect::SkillCritDamagePct { .. }))
 }

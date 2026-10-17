@@ -91,8 +91,8 @@ fn savage_strikes_crits_fire_blast_more_often_and_harder() {
         }
         for (crit, damage) in fire_blast(&[(SAVAGE_STRIKES, 2)], seed) {
             savage_crits += u32::from(crit);
-            // 150% of 45 and 30% more of it.
-            assert_eq!(damage, if crit { 80 } else { 45 });
+            // 150% of 45, times 1.3: 87.75, rounded down.
+            assert_eq!(damage, if crit { 87 } else { 45 });
         }
     }
     assert!(total > 300, "{total}");
