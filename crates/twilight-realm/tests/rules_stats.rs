@@ -149,3 +149,22 @@ fn a_shield_blocks_five_percent_and_its_block_value_with_strength() {
     assert_eq!(block_value(5, 33), 5);
     assert_eq!(block_value(0, 10), 0);
 }
+
+#[test]
+fn raising_strength_raises_a_shields_block_value_by_strength_over_twenty() {
+    use twilight_realm::rules::stats::{block_value, WarriorStats};
+    let mut s = WarriorStats::naked(HUMAN, 10);
+    let str = s.base[0];
+    s.shield_block = Some(5);
+    s.block_value = block_value(5, str);
+    s.raise_stat(0, 100);
+    assert_eq!(s.block_value, block_value(5, str + 100));
+    assert!(
+        s.block_value > block_value(5, str),
+        "100 Strength is 5 block more"
+    );
+    // Without a shield there is no block value to raise.
+    let mut bare = WarriorStats::naked(HUMAN, 10);
+    bare.raise_stat(0, 100);
+    assert_eq!(bare.block_value, 0);
+}

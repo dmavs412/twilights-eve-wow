@@ -21,7 +21,7 @@ pub struct WarriorStats {
     /// The flat part of `attack_power` from equip spells.
     pub attack_power_bonus: i32,
     pub crit_pct: f64,
-    /// The percent a crit's bonus damage grows by (talents): 30 makes a doubled crit 230%.
+    /// The percent a crit's whole damage grows by (talents): 30 makes a melee crit 200% x 1.3 = 260%.
     pub crit_damage_pct: u32,
     pub dodge_pct: f64,
     /// 0 without the Parry skill, which the slice's warriors do not train; talents add to it.
@@ -30,6 +30,8 @@ pub struct WarriorStats {
     pub block_pct: f64,
     /// What a block stops; 0 without a shield.
     pub block_value: u32,
+    /// The worn shield's own block value, which Strength adds to; `None` without a shield.
+    pub shield_block: Option<u32>,
     pub armor: u32,
     /// Main-hand swing damage before armour, attack power included.
     pub min_damage: f32,
@@ -57,6 +59,9 @@ impl WarriorStats {
                 let ap = 2.0 * delta as f32 / 14.0 * self.attack_time_ms as f32 / 1000.0;
                 self.min_damage += ap;
                 self.max_damage += ap;
+                if let Some(block) = self.shield_block {
+                    self.block_value = block_value(block, self.base[0]);
+                }
             }
             1 => {
                 self.crit_pct += f64::from(delta) / tables::at(&t.agi_per_crit, self.level);
@@ -153,6 +158,7 @@ impl WarriorStats {
             parry_pct: 0.0,
             block_pct: gear.shield_block.map_or(0.0, |_| block_pct(defense, level)),
             block_value: gear.shield_block.map_or(0, |block| block_value(block, str)),
+            shield_block: gear.shield_block,
             armor: 2 * agi + gear.armor,
             min_damage: min + ap_damage,
             max_damage: max + ap_damage,
