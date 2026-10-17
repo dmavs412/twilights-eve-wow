@@ -117,3 +117,19 @@ The spec left these open; each took the reading closest to vanilla 1.12.1 and th
   an `enemy`. `max_targets` above 1 needs `area_shape` or `realm_radius_yd`.
 - `area_shape`, `area_center` and `weapon_hand` have no patch field yet: implicit targets need the
   borrowed row to compare against, which belongs to the client patch ticket.
+
+## Details settled while building (ticket #70, client patch application)
+
+- `apply_dbc_patch` now writes `equipped_item_class`, `equipped_subclass_mask`,
+  `equipped_inventory_mask`, `category`, `category_cooldown_ms` (CategoryRecoveryTime), `school`,
+  `prevention_type`, `caster_aura_state`, `target_aura_state`, `interrupt_flags`,
+  `channel_interrupt_flags`, `dispel_type`, `mechanic` and `aura_description`; `cost_percent`
+  replaces the flat cost with ManaCostPercentage, `cost_per_second` with manaPerSecond (rage in
+  tenths like a flat cost); `channeled` sets AttributesEx `0x44`, `on_next_swing` Attributes `0x404`
+  and `auto_repeat` AttributesEx2 `0x20` (the pairs the client tests as one mask). A `false` clears
+  the bits. A key the patch lacks leaves the borrowed row.
+- Implicit targets, radius and `dmg_class` are not applied: the patch does not emit them (the build
+  has no borrowed row to compare against) and `SpellDisplay` has no `dmg_class` column. They need
+  a build change first.
+- The channel-interrupt values still are not checked against a real DBC row here; the real-data
+  test only asserts the patch lands as written.

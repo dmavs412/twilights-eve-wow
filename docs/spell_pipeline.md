@@ -124,7 +124,8 @@ in `content/callings.toml`, which uses the same vocabulary (`class`, `power_cost
 `power`, `add_combo_points`, `per_combo`). A skill with no effects, or an effect kind the realm
 lacks, is left out of the bar and spell book until its effects land; a talent in that state is
 learnable but does nothing and shows as WIP. The client applies the patch at load
-(`SpellCatalog::apply_dbc_patch`, compiled in), `power_type` included. The patch carries no
+(`SpellCatalog::apply_dbc_patch`, compiled in), `power_type` included, and writes each gate,
+cost-kind, cast-shape and aura field into its Spell.dbc column (ADR 0005, ticket #70). The patch carries no
 `family_name` field; adding one is a schema change and goes through `/grill-me`. Talents carry
 their `description` and client spellmods, but their realm effects are not yet structured columns,
 because `callings.json` never held them.

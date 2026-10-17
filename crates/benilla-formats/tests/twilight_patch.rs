@@ -65,3 +65,52 @@ fn zealots_borrowed_spells_cost_rage_as_warrior_spells() {
         );
     }
 }
+
+/// Every gate field the patch lists lands in its Spell.dbc column on the real catalog.
+#[test]
+fn every_patched_gate_field_lands_in_the_real_catalog() {
+    let data = benilla_formats::wow_data_or_skip!();
+    let mut chain = open_chain(&data).expect("open vanilla patch chain");
+    let mut catalog = load_spell_catalog(&mut chain).expect("load spell catalog");
+    catalog
+        .apply_dbc_patch(CLIENT_DBC_PATCH)
+        .expect("patch parses");
+    let patch: serde_json::Value = serde_json::from_str(CLIENT_DBC_PATCH).unwrap();
+    let mut checked = 0;
+    for entry in patch["spells"].as_array().unwrap() {
+        let f = &entry["fields"];
+        let Some(d) = catalog.get(entry["spell_id"].as_u64().unwrap() as u32) else {
+            continue;
+        };
+        let id = d.id;
+        for (key, got) in [
+            ("school", d.school),
+            ("prevention_type", d.prevention_type),
+            ("category", d.category),
+            ("category_cooldown_ms", d.category_recovery_ms),
+            ("equipped_subclass_mask", d.equipped_item_subclass_mask),
+            (
+                "equipped_inventory_mask",
+                d.equipped_item_inventory_type_mask,
+            ),
+            ("caster_aura_state", d.caster_aura_state),
+            ("target_aura_state", d.target_aura_state),
+            ("interrupt_flags", d.interrupt_flags),
+            ("channel_interrupt_flags", d.channel_interrupt_flags),
+            ("dispel_type", d.dispel),
+            ("mechanic", d.mechanic),
+        ] {
+            if let Some(want) = f[key].as_u64() {
+                assert_eq!(got, want as u32, "spell {id} {key}");
+                checked += 1;
+            }
+        }
+        if f["on_next_swing"] == true {
+            assert!(d.on_next_swing(), "spell {id} on_next_swing");
+        }
+        if f["auto_repeat"] == true {
+            assert!(d.auto_repeat(), "spell {id} auto_repeat");
+        }
+    }
+    assert!(checked > 100, "only {checked} gate fields checked");
+}

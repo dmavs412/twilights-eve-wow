@@ -5,7 +5,9 @@
 //! "<Name> (WIP)". The compiled-in client patch rewrites the rows it lists, among them the
 //! spells a Calling borrows from another Class.
 
-use super::{SpellCatalog, SpellDisplay};
+use super::{
+    SpellCatalog, SpellDisplay, ATTR_EX2_AUTO_REPEAT, ATTR_EX_CHANNELED, ATTR_ON_NEXT_SWING,
+};
 
 /// What a WIP talent's rank spells add to their names.
 const WIP_SUFFIX: &str = " (WIP)";
@@ -59,6 +61,21 @@ impl SpellCatalog {
                 d.mana_cost_per_level = 0;
                 d.mana_per_second = 0;
             }
+            // A percent-of-base or per-second cost replaces the flat one the same way.
+            if let Some(pct) = num("cost_percent") {
+                d.mana_cost = 0;
+                d.mana_cost_pct = pct.round() as u32;
+                d.mana_cost_per_level = 0;
+                d.mana_per_second = 0;
+            }
+            if let Some(per_second) = num("cost_per_second") {
+                let unit = if d.power_type == 1 { 10.0 } else { 1.0 };
+                d.mana_cost = 0;
+                d.mana_cost_pct = 0;
+                d.mana_cost_per_level = 0;
+                d.mana_per_second = (per_second * unit).round() as u32;
+            }
+            apply_gates(d, f);
             if let Some(ms) = num("cooldown_ms") {
                 d.recovery_ms = ms as u32;
             }
@@ -119,6 +136,53 @@ const CLASS_SPELL_FAMILY: u32 = 4;
 /// The compiled-in client patch the build script wrote from the master CSV.
 pub const CLIENT_DBC_PATCH: &str =
     include_str!("../../../../data/twilights-eve/client_dbc_patch.json");
+
+/// Writes the patch's gate, cast-shape and aura columns into their `Spell.dbc` columns: equipped
+/// item class and masks, category, school, prevention, aura states, interrupt flags, the
+/// channeled, on-next-swing and auto-repeat attribute bits, and the dispel type, mechanic and
+/// aura description. A key the patch lacks leaves the row's own value. The patch writes no
+/// implicit targets or radius yet, so none is applied here.
+fn apply_gates(d: &mut SpellDisplay, f: &serde_json::Value) {
+    let unsigned = |key: &str| f[key].as_u64().map(|v| v as u32);
+    if let Some(class) = f["equipped_item_class"].as_i64() {
+        d.equipped_item_class = class as i32;
+    }
+    for (key, slot) in [
+        ("equipped_subclass_mask", &mut d.equipped_item_subclass_mask),
+        (
+            "equipped_inventory_mask",
+            &mut d.equipped_item_inventory_type_mask,
+        ),
+        ("category", &mut d.category),
+        ("category_cooldown_ms", &mut d.category_recovery_ms),
+        ("school", &mut d.school),
+        ("prevention_type", &mut d.prevention_type),
+        ("caster_aura_state", &mut d.caster_aura_state),
+        ("target_aura_state", &mut d.target_aura_state),
+        ("interrupt_flags", &mut d.interrupt_flags),
+        ("channel_interrupt_flags", &mut d.channel_interrupt_flags),
+        ("dispel_type", &mut d.dispel),
+        ("mechanic", &mut d.mechanic),
+    ] {
+        if let Some(v) = unsigned(key) {
+            *slot = v;
+        }
+    }
+    for (key, word, bits) in [
+        ("channeled", &mut d.attributes_ex, ATTR_EX_CHANNELED),
+        ("on_next_swing", &mut d.attributes, ATTR_ON_NEXT_SWING),
+        ("auto_repeat", &mut d.attributes_ex2, ATTR_EX2_AUTO_REPEAT),
+    ] {
+        match f[key].as_bool() {
+            Some(true) => *word |= bits,
+            Some(false) => *word &= !bits,
+            None => {}
+        }
+    }
+    if let Some(text) = f["aura_description"].as_str().filter(|t| !t.is_empty()) {
+        d.aura_description = Some(text.to_owned());
+    }
+}
 
 /// `SPELL_EFFECT_SCHOOL_DAMAGE`.
 const EFFECT_SCHOOL_DAMAGE: u32 = 2;
@@ -276,6 +340,74 @@ mod tests {
             (fb.range_index, fb.casting_time_index, fb.duration_index),
             (3, 1, 21)
         );
+    }
+
+    #[test]
+    fn gate_columns_land_in_their_spell_dbc_fields() {
+        let mut catalog = patch_catalog();
+        catalog
+            .apply_dbc_patch(
+                r#"{"spells": [{"spell_id": 2136, "fields": {
+                "equipped_item_class": 2, "equipped_subclass_mask": 262156,
+                "equipped_inventory_mask": 8192, "category": 10003,
+                "category_cooldown_ms": 30000, "school": 4, "prevention_type": 1,
+                "caster_aura_state": 2, "target_aura_state": 5,
+                "interrupt_flags": 9, "channel_interrupt_flags": 17,
+                "dispel_type": 1, "mechanic": 7, "aura_description": "Slowed.",
+                "channeled": true, "on_next_swing": true, "auto_repeat": true}}]}"#,
+            )
+            .unwrap();
+        let d = catalog.get(2136).unwrap();
+        assert_eq!(
+            (
+                d.equipped_item_class,
+                d.equipped_item_subclass_mask,
+                d.equipped_item_inventory_type_mask
+            ),
+            (2, 262156, 8192)
+        );
+        assert_eq!((d.category, d.category_recovery_ms), (10003, 30000));
+        assert_eq!((d.school, d.prevention_type), (4, 1));
+        assert_eq!((d.caster_aura_state, d.target_aura_state), (2, 5));
+        assert_eq!((d.interrupt_flags, d.channel_interrupt_flags), (9, 17));
+        assert_eq!((d.dispel, d.mechanic), (1, 7));
+        assert_eq!(d.aura_description.as_deref(), Some("Slowed."));
+        assert_eq!(d.attributes_ex & 0x44, 0x44, "channeled");
+        assert_eq!(d.attributes & 0x404, 0x404, "on next swing");
+        assert_eq!(d.attributes_ex2 & 0x20, 0x20, "auto repeat");
+    }
+
+    #[test]
+    fn percent_and_per_second_costs_replace_the_flat_cost() {
+        let mut catalog = patch_catalog();
+        catalog
+            .apply_dbc_patch(
+                r#"{"spells": [
+                {"spell_id": 2136, "fields": {"power_type": 0, "cost_percent": 8}},
+                {"spell_id": 78, "fields": {"power_type": 1, "cost_per_second": 2}},
+                {"spell_id": 12300, "fields": {"power_type": 4294967294}}]}"#,
+            )
+            .unwrap();
+        let fb = catalog.get(2136).unwrap();
+        assert_eq!((fb.mana_cost, fb.mana_cost_pct), (0, 8));
+        let hs = catalog.get(78).unwrap();
+        assert_eq!(
+            (hs.mana_cost_pct, hs.mana_per_second),
+            (0, 20),
+            "rage in tenths"
+        );
+        assert_eq!(catalog.get(12300).unwrap().power_type, 0xFFFF_FFFE);
+    }
+
+    #[test]
+    fn a_patch_without_gate_keys_leaves_the_row_alone() {
+        let mut catalog = patch_catalog();
+        catalog
+            .apply_dbc_patch(r#"{"spells": [{"spell_id": 78, "fields": {"cost": 15}}]}"#)
+            .unwrap();
+        let hs = catalog.get(78).unwrap();
+        assert_eq!(hs.equipped_item_class, -1);
+        assert_eq!((hs.school, hs.attributes, hs.attributes_ex2), (0, 0, 0));
     }
 
     /// Fire Blast as Spell.dbc has it: effect 1 is `SCHOOL_DAMAGE` (2), 8 to 10 fire damage.
