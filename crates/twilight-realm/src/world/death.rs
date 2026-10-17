@@ -4,12 +4,14 @@
 
 use benilla_protocol::SessionEvent;
 
+use super::power::Power;
 use super::InWorld;
 use crate::characters::Char;
 use crate::content::{CROSSROADS, KALIMDOR};
 use crate::equipment;
 use crate::fields::*;
 use crate::rules::durability;
+use crate::rules::power::PowerKind;
 use crate::wear;
 
 /// Where a released player comes back. The Hub's is the default; a Dungeon sets its entrance's
@@ -41,7 +43,8 @@ impl InWorld {
     pub(super) fn die(&mut self, c: &mut Char, events: &mut Vec<SessionEvent>) {
         let p = &mut self.player;
         p.dead = true;
-        p.rage = 0;
+        // Death empties a rage bar; mana and energy keep what they held.
+        p.power.take_all(PowerKind::Rage);
         if let Some(victim) = p.attacking.take() {
             events.push(SessionEvent::AttackStop {
                 attacker: self.guid,
@@ -71,6 +74,7 @@ impl InWorld {
         let p = &mut self.player;
         p.dead = false;
         p.health = p.stats.max_health;
+        p.power = Power::fresh(&p.stats);
         p.swing_timer = 0.0;
         p.refused = None;
         let health = p.health;

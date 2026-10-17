@@ -20,7 +20,7 @@ difference is listed in [§14](#14-where-vmangos-and-cmangos-disagree) and next 
 | file | what |
 |---|---|
 | `data/twilights-eve/xp_table.json` | XP to next level, levels 1–60 (`player_xp_for_level`) |
-| `data/twilights-eve/warrior_level_stats.json` | Warrior base health/mana and agility→crit/dodge divisors per level (`player_classlevelstats`, `player_crit_per_agility`, `player_dodge_per_agility`), naked base stats per race per level 1–60 (`player_levelstats`), and derived check rows |
+| `data/twilights-eve/<class>_level_stats.json` | Each Class's base health/mana and agility→crit/dodge divisors per level (`player_classlevelstats`, `player_crit_per_agility`, `player_dodge_per_agility`) and naked base stats per race per level 1–60 (`player_levelstats`), from `tools/twilights-eve/extract_class_levels.py`; the warrior file also carries derived check rows |
 | `data/twilights-eve/mob_base_stats.json` | `creature_classlevelstats` for mob unit classes 1 (warrior), 2 (paladin), 8 (mage), levels 1–63 |
 
 **Conventions used in the vectors.**
@@ -410,6 +410,58 @@ human dodge 4.0%, armour 160; L1 orc dodge 4.25%, armour 34.
 Note: a new warrior has Block and Dodge from creation (`playercreateinfo_spell`), but **Parry** is
 a trained skill (vanilla warriors learn it from the class trainer at level 6). Whether a Basic
 Warrior can parry is a design decision for the slice. The values above assume it can.
+
+---
+
+### 5.5 Other Classes: attack power, mana and energy
+
+Every Class reads its own `player_classlevelstats`, `player_levelstats` and agility rows
+(`<class>_level_stats.json`, extracted by `tools/twilights-eve/extract_class_levels.py`); health
+from stamina and armour from agility are the same for all. `player_levelstats` holds only the
+race and Class pairs vanilla allowed; the files carry all eight races on every Class, the
+missing pairs synthesised as the Class's curve for its first non-human race plus the race's
+flat offset from the Warrior rows. Against every real pair that rule is exact in 93% of cells
+and within a point or two elsewhere (the human spirit and gnome intellect racials are +5%, not
+flat). What differs:
+
+**Attack power** (vmangos `Player::UpdateAttackPowerAndDamage`, before gear):
+
+```
+warrior, paladin:  3L + 2 str - 20
+rogue, hunter:     2L + str + agi - 20
+shaman:            2L + 2 str - 20
+druid:             2 str - 20          (caster form; cat and bear are not modelled)
+mage, priest, warlock:  str - 10
+```
+
+**Power kind** follows the Class: Warrior rage, Rogue energy, every other Class mana.
+
+**Mana** (`Player::UpdateMaxPower`, `GetManaBonusFromIntellect`):
+
+```
+bonus    = min(int, 20) + max(int - 20, 0) * 15
+max_mana = base_mana(class, L) + bonus
+```
+
+Vectors: int 20 → 20, int 21 → 35, int 23 → 65, int 125 → 1595. L1 human mage (base 100, int 23)
+→ **165**. L10 human mage (196, int 34) → **426**. L60 human mage (1213, int 125) → **2808**.
+L30 human priest (687, int 61) → **1322**. L60 orc shaman (1520, int 87) → **2545**.
+
+**Mana regen** (`Player::Regenerate(POWER_MANA)`, `OCTRegenMPPerSpirit`): every
+`REGEN_TIME_PLAYER_FULL = 2000` ms tick, unless a cast spent mana in the last 5 s
+(`IsUnderLastManaUseEffect`), in and out of combat alike:
+
+```
+mage, priest:                      spirit / 4 + 12.5
+shaman:                            spirit / 5 + 17
+druid, hunter, paladin, warlock:   spirit / 5 + 15
+```
+
+Vectors: L1 human mage (spi 22) → **18.0** a tick; L60 human mage (spi 126) → **44.0**;
+L30 human priest (spi 67) → **29.25**; L60 orc shaman (spi 103) → **37.6**.
+
+**Energy** (`Regenerate(POWER_ENERGY)`): the bar is 0..=100, and every 2 s tick adds 20, in and
+out of combat, with no five-second rule. Rage is §4.
 
 ---
 

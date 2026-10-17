@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 use twilight_realm::callings::{self, Effect, Target, Weapon};
+use twilight_realm::rules::power::PowerKind;
 use twilight_realm::rules::skills::Linear;
 
 fn reference() -> Value {
@@ -92,7 +93,7 @@ fn every_skill_borrowed_from_another_class_is_marked() {
 #[test]
 fn the_borrowed_skills_are_zealots_four_at_their_rage_costs() {
     let got: Vec<(u32, u32)> = callings::borrowed_skills()
-        .map(|s| (s.spell_id, s.rage_cost))
+        .map(|s| (s.spell_id, s.power_cost))
         .collect();
     assert_eq!(got, [(20375, 10), (20305, 10), (20271, 5), (10308, 15)]);
 }
@@ -150,14 +151,14 @@ fn check_calling(calling: &str) {
             "{key}"
         );
         let realm = &want["realm"];
-        assert_eq!(got.rage_cost, ms(realm, "rage_cost"), "{key} rage");
+        assert_eq!(got.power_cost, ms(realm, "rage_cost"), "{key} cost");
         assert_eq!(got.cooldown_ms, ms(realm, "cooldown_ms"), "{key} cooldown");
         assert_eq!(got.gcd_ms, ms(realm, "gcd_ms"), "{key} gcd");
         // The client refuses a cast it cannot afford at the Spell.dbc cost; a borrowed spell's
         // cost there is mana, which the client rewrites to the realm's rage cost.
         assert!(
             got.borrowed.is_some()
-                || f64::from(got.rage_cost) >= want["client"]["cost"].as_f64().unwrap(),
+                || f64::from(got.power_cost) >= want["client"]["cost"].as_f64().unwrap(),
             "{key}: realm cost under the client's"
         );
         assert_eq!(
@@ -252,8 +253,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             bonus,
             on_next_swing,
             unavoidable,
+            per_combo,
         } => {
             assert_eq!(kind, "weapon_strike", "{key}");
+            assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
             let w = match want["weapon"].as_str().unwrap() {
                 "W" => Weapon::Normal,
                 "Wn" => Weapon::Normalized,
@@ -270,9 +273,11 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::SchoolDamage {
             amount,
             melee_hit_table,
+            per_combo,
             ..
         } => {
             assert_eq!(kind, "school_damage", "{key}");
+            assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
             assert_eq!(amount, linear(&want["amount"]), "{key}");
             assert_eq!(
                 melee_hit_table,
@@ -283,8 +288,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             tick_ms,
             duration_ms,
             tick,
+            per_combo,
         } => {
             assert_eq!(kind, "periodic_damage", "{key}");
+            assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
             assert_eq!(tick_ms, ms(want, "tick_ms"));
             assert_eq!(duration_ms, ms(want, "duration_ms"));
             assert_eq!(tick, linear(&want["tick"]), "{key}");
@@ -293,8 +300,13 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(kind, "charge", "{key}");
             assert_eq!(f64::from(speed_yd_s), want["speed_yd_s"].as_f64().unwrap());
         }
-        Effect::EnergizeRage { amount } => {
-            assert_eq!(kind, "energize_rage", "{key}");
+        Effect::Energize { power, amount } => {
+            assert_eq!(kind, "energize", "{key}");
+            assert_eq!(
+                power,
+                serde_json::from_value::<PowerKind>(want["power"].clone()).unwrap(),
+                "{key}"
+            );
             assert_eq!(amount, linear(&want["amount"]), "{key}");
         }
         Effect::PeriodicRage {
@@ -312,8 +324,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::Stun {
             aura_spell_id,
             duration_ms,
+            per_combo,
         } => {
             assert_eq!(kind, "stun", "{key}");
+            assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
             assert_eq!(aura_spell_id, ms(want, "aura_spell_id"));
             assert_eq!(duration_ms, ms(want, "duration_ms"));
         }
@@ -358,6 +372,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(want["consumes_all_rage"], true, "{key}");
             assert_eq!(base, linear(&want["base"]), "{key}");
             assert_eq!(per_extra_rage, linear(&want["per_extra_rage"]), "{key}");
+        }
+        Effect::AddComboPoints { amount } => {
+            assert_eq!(kind, "add_combo_points", "{key}");
+            assert_eq!(amount, ms(want, "amount"));
         }
         Effect::Seal { .. } | Effect::Judgement => {
             assert!(matches!(kind, "seal" | "judgement"), "{key}");

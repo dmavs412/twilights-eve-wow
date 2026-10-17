@@ -13,7 +13,7 @@
    ],
    "skills": {
     "charge": {
-     "energize_rage.amount": [
+     "energize.amount": [
       9,
       9,
       10
@@ -54,7 +54,7 @@
      ]
     },
     "charge": {
-     "energize_rage.amount": [
+     "energize.amount": [
       11,
       12,
       13,
@@ -108,7 +108,7 @@
    ],
    "skills": {
     "charge": {
-     "energize_rage.amount": [
+     "energize.amount": [
       11,
       12,
       13,

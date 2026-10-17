@@ -72,7 +72,7 @@
             "rage_cost": 0, "cooldown_ms": 15000, "cooldown_note": "Spell.dbc category 44 cooldown 15 s", "gcd_ms": 0, "range_yd": [8, 25], "target": "enemy", "requires_out_of_combat": true,
             "effects": [
               { "kind": "charge", "speed_yd_s": 24 },
-              { "kind": "energize_rage", "amount": { "base": 8.5, "per_level": 0.14, "per_ap": 0 } },
+              { "kind": "energize", "power": "rage", "amount": { "base": 8.5, "per_level": 0.14, "per_ap": 0 } },
               { "kind": "stun", "duration_ms": 1000, "aura_spell_id": 7922 }
             ]
           },
@@ -164,7 +164,7 @@
             "rage_cost": 0, "cooldown_ms": 15000, "gcd_ms": 0, "range_yd": [8, 25], "target": "enemy", "requires_out_of_combat": true,
             "effects": [
               { "kind": "charge", "speed_yd_s": 24 },
-              { "kind": "energize_rage", "amount": { "base": 11, "per_level": 0.1, "per_ap": 0 } },
+              { "kind": "energize", "power": "rage", "amount": { "base": 11, "per_level": 0.1, "per_ap": 0 } },
               { "kind": "stun", "duration_ms": 1000, "aura_spell_id": 7922 }
             ]
           },
@@ -416,7 +416,7 @@
             "rage_cost": 0, "cooldown_ms": 15000, "gcd_ms": 0, "range_yd": [8, 25], "target": "enemy", "requires_out_of_combat": true,
             "effects": [
               { "kind": "charge", "speed_yd_s": 24 },
-              { "kind": "energize_rage", "amount": { "base": 11, "per_level": 0.1, "per_ap": 0 } },
+              { "kind": "energize", "power": "rage", "amount": { "base": 11, "per_level": 0.1, "per_ap": 0 } },
               { "kind": "stun", "duration_ms": 1000, "aura_spell_id": 7922 }
             ]
           },

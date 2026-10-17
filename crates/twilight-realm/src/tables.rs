@@ -12,18 +12,49 @@ pub(crate) const MAX_LEVEL: u8 = 60;
 pub(crate) struct Levels {
     /// Indexed by level - 1.
     pub(crate) xp_to_next: Vec<u32>,
-    pub(crate) warrior: WarriorLevels,
+    pub(crate) warrior: ClassLevels,
+    pub(crate) paladin: ClassLevels,
+    pub(crate) hunter: ClassLevels,
+    pub(crate) rogue: ClassLevels,
+    pub(crate) priest: ClassLevels,
+    pub(crate) shaman: ClassLevels,
+    pub(crate) mage: ClassLevels,
+    pub(crate) warlock: ClassLevels,
+    pub(crate) druid: ClassLevels,
 }
 
+impl Levels {
+    /// The tables of a Class by its `ChrClasses.dbc` id (1 warrior, 2 paladin, 3 hunter,
+    /// 4 rogue, 5 priest, 7 shaman, 8 mage, 9 warlock, 11 druid); an unknown id reads as a
+    /// warrior.
+    pub(crate) fn class(&self, class: u8) -> &ClassLevels {
+        match class {
+            2 => &self.paladin,
+            3 => &self.hunter,
+            4 => &self.rogue,
+            5 => &self.priest,
+            7 => &self.shaman,
+            8 => &self.mage,
+            9 => &self.warlock,
+            11 => &self.druid,
+            _ => &self.warrior,
+        }
+    }
+}
+
+/// One Class's per-level tables.
 #[derive(Deserialize)]
-pub(crate) struct WarriorLevels {
+pub(crate) struct ClassLevels {
     pub(crate) base_health: Vec<u32>,
+    pub(crate) base_mana: Vec<u32>,
     pub(crate) agi_per_crit: Vec<f64>,
     pub(crate) agi_per_dodge: Vec<f64>,
     pub(crate) race_stats: RaceStats,
 }
 
-/// Naked `[str, agi, sta, int, spi]` per level, by race.
+/// Naked `[str, agi, sta, int, spi]` per level, by race. Every Class has every race: a pair
+/// vanilla never allowed is synthesised by `extract_class_levels.py` from the race's Warrior
+/// offset.
 #[derive(Deserialize)]
 pub(crate) struct RaceStats {
     pub(crate) human: Vec<[u32; 5]>,

@@ -1,12 +1,13 @@
 {
  "_source": {
   "per_level": "vmangos world DB: player_classlevelstats (class=1) for base_health/base_mana; player_crit_per_agility and player_dodge_per_agility (class=1) for the agility divisors. Read by ObjectMgr::LoadPlayerInfo / ObjectMgr::GetPlayerCritPerAgility / GetPlayerDodgePerAgility.",
-  "race_base_stats": "vmangos world DB: player_levelstats (class=1). Naked base stats per race per level, before gear/buffs.",
-  "formulas": "see docs/reference/vanilla-combat-rules.md section 5"
+  "race_base_stats": "vmangos world DB: player_levelstats (class=1). Naked base stats per race per level, before gear/buffs. Races vanilla never paired with this Class are synthesised (see _synthesised_races).",
+  "formulas": "see docs/reference/vanilla-combat-rules.md section 5",
+  "script": "tools/twilights-eve/extract_class_levels.py"
  },
- "_interpolated_note": "Level 59 is missing from both agility tables in the vmangos DB; ObjectMgr::LoadPlayerInfo fills gaps by linear interpolation between neighbours, which is what per_level holds for level 59.",
- "_derived_check_rows_note": "naked_checks are derived with the formulas in the doc (vmangos StatSystem.cpp) and double as test vectors.",
+ "_interpolated_note": "Levels missing from the vmangos agility tables are filled by linear interpolation between the nearest neighbours, as ObjectMgr::LoadPlayerInfo does. Interpolated crit levels: [59]; dodge levels: [59].",
  "class": "warrior",
+ "class_id": 1,
  "per_level": [
   {
    "level": 1,
@@ -4287,6 +4288,8 @@
    }
   ]
  },
+ "_synthesised_races": [],
+ "_derived_check_rows_note": "naked_checks are derived with the formulas in the doc (vmangos StatSystem.cpp) and double as test vectors.",
  "naked_checks": [
   {
    "race": "human",

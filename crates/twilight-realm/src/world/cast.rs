@@ -12,6 +12,7 @@ use benilla_protocol::messages::{
 };
 use benilla_protocol::SessionEvent;
 
+use super::power::Combo;
 use super::{in_front, melee_reach, InWorld, Ticked};
 use crate::callings::{self, Effect, Seal, Skill, Target, Weapon};
 use crate::characters::Char;
@@ -22,11 +23,11 @@ use crate::mobs::State;
 use crate::rng::Rng;
 use crate::rules::haste::{haste_cut_damage, hasted_attack_time};
 use crate::rules::melee::{Outcome, PlayerOffense, ROLL};
-use crate::rules::rage;
+use crate::rules::power::PowerKind;
 use crate::rules::school::{crit_scaled, mitigated, School};
 use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
-use crate::rules::stats::WarriorStats;
+use crate::rules::stats::CharacterStats;
 use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled};
 use crate::space::distance;
 
@@ -64,6 +65,7 @@ const SPELL_FAILED_CASTER_AURASTATE: u8 = 0x12;
 const SPELL_FAILED_CASTER_DEAD: u8 = 0x13;
 const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
 const SPELL_FAILED_NOT_READY: u8 = 0x3c;
+const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
 const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
 const SPELL_FAILED_TARGET_AURASTATE: u8 = 0x67;
@@ -79,8 +81,6 @@ const SPELL_MISS_BLOCK: u8 = 5;
 
 /// `SPELL_HIT_TYPE_CRIT` in a spell damage log.
 const SPELL_HIT_TYPE_CRIT: u32 = 0x2;
-/// `POWER_RAGE` in an energize log.
-const POWER_RAGE: u32 = 1;
 
 /// How long a dodge leaves Overpower open, and the combo point that marks it (vmangos).
 const DODGE_WINDOW_SECS: f32 = 5.0;
@@ -103,6 +103,8 @@ pub(super) struct Skills {
     queued: Option<u32>,
     /// The mob that last dodged, and the seconds Overpower stays open on it.
     dodged: Option<(u64, f32)>,
+    /// The combo points a builder put on a target; the finisher that lands spends them.
+    pub(super) combo: Combo,
     /// Seconds the caster is held in combat (Bloodrage).
     combat_hold: f32,
     auras: Vec<Aura>,
@@ -429,16 +431,39 @@ impl Skills {
     /// `mob` dodged the player: Overpower opens on it, marked with a combo point.
     pub(super) fn dodged_by(&mut self, mob: u64, events: &mut Vec<SessionEvent>) {
         self.dodged = Some((mob, DODGE_WINDOW_SECS));
-        let mut pairs = vec![(PLAYER_FIELD_BYTES, 1 << 8)];
-        pairs.extend(guid_pairs(PLAYER_FIELD_COMBO_TARGET, mob));
-        events.push(values(self.me, &pairs));
+        self.send_combo(events);
     }
 
     fn close_dodge_window(&mut self, events: &mut Vec<SessionEvent>) {
         if self.dodged.take().is_some() {
-            let mut pairs = vec![(PLAYER_FIELD_BYTES, 0)];
-            pairs.extend(guid_pairs(PLAYER_FIELD_COMBO_TARGET, 0));
-            events.push(values(self.me, &pairs));
+            self.send_combo(events);
+        }
+    }
+
+    /// The combo fields as the client should see them: the points a builder put on a target,
+    /// else the point that marks the Overpower window, else none.
+    fn combo_pairs(&self) -> Vec<(u16, u32)> {
+        let (count, target) = if self.combo.count > 0 {
+            (u32::from(self.combo.count), self.combo.target)
+        } else if let Some((mob, _)) = self.dodged {
+            (1, mob)
+        } else {
+            (0, 0)
+        };
+        let mut pairs = vec![(PLAYER_FIELD_BYTES, count << 8)];
+        pairs.extend(guid_pairs(PLAYER_FIELD_COMBO_TARGET, target));
+        pairs
+    }
+
+    pub(super) fn send_combo(&self, events: &mut Vec<SessionEvent>) {
+        events.push(values(self.me, &self.combo_pairs()));
+    }
+
+    /// `mob` died: the points on it go with it.
+    pub(super) fn target_died(&mut self, mob: u64, events: &mut Vec<SessionEvent>) {
+        if self.combo.count > 0 && self.combo.target == mob {
+            self.combo.clear();
+            self.send_combo(events);
         }
     }
 
@@ -585,7 +610,7 @@ pub(super) fn stance(c: &Char) -> (u16, u32) {
 
 /// The player's stats with their buffs: what strikes roll from. White swings roll from
 /// [`white`], which adds the haste.
-pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
+pub(super) fn buffed(stats: &CharacterStats, skills: &Skills) -> CharacterStats {
     let bonus = skills.attack_power_bonus();
     let mut s = *stats;
     let (health_pct, _, armor_loss_pct) = skills.buff_pcts();
@@ -603,7 +628,7 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
 /// [`buffed`] with the haste: what white swings roll from and time by, and what the sheet shows.
 /// Faster swings, each white hit cut to match, so the haste alone adds no damage a second; a
 /// strike (Mortal Strike, Heroic Strike) keeps its full weapon roll.
-pub(super) fn white(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
+pub(super) fn white(stats: &CharacterStats, skills: &Skills) -> CharacterStats {
     let mut s = buffed(stats, skills);
     let haste = skills.haste_pct();
     if haste > 0 {
@@ -615,7 +640,7 @@ pub(super) fn white(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
 }
 
 /// The sheet fields buffs move: the attack power mods, the damage they add and the swing time.
-fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
+fn buff_sheet(stats: &CharacterStats, skills: &Skills) -> Vec<(u16, u32)> {
     let s = white(stats, skills);
     vec![
         (
@@ -758,18 +783,37 @@ impl InWorld {
         }
         // Talents that give rage back on a skill with no rage effect of its own.
         let extra = crate::talents::extra_rage(c, &skill.key);
-        let energizes = skill
-            .effects
-            .iter()
-            .any(|e| matches!(e, Effect::EnergizeRage { .. }));
+        let energizes = skill.effects.iter().any(|e| {
+            matches!(
+                e,
+                Effect::Energize {
+                    power: PowerKind::Rage,
+                    ..
+                }
+            )
+        });
         let any_landed = landed
             .iter()
             .any(|(_, how)| !matches!(how, Landed::Missed(_)));
+        let mut spent = false;
         for (guid, how) in landed {
             if !matches!(how, Landed::Missed(_)) {
+                let combo = self.skills.combo.on(guid);
                 for effect in &skill.effects {
-                    self.effect(skill, effect, guid, how, level, c, rng, events, &mut ticked);
+                    self.effect(
+                        skill,
+                        effect,
+                        guid,
+                        how,
+                        level,
+                        combo,
+                        c,
+                        rng,
+                        events,
+                        &mut ticked,
+                    );
                 }
+                spent |= skill.is_finisher();
             }
             // A cast at a mob, landed or not, turns it on the player.
             if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == guid) {
@@ -795,10 +839,15 @@ impl InWorld {
             rng,
             events,
         );
+        if spent {
+            // A finisher that landed spends every point.
+            self.skills.combo.clear();
+            self.skills.send_combo(events);
+        }
         let p = &self.player;
         events.push(values(
             self.guid,
-            &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
+            &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
         ));
         self.update_aura_states(events);
         ticked
@@ -815,11 +864,14 @@ impl InWorld {
         {
             return Err(SPELL_FAILED_NOT_READY);
         }
-        if p.rage < crate::talents::rage_cost(c, skill) * 10 {
+        if !p.power.has(crate::talents::power_cost(c, skill)) {
             return Err(SPELL_FAILED_NO_POWER);
         }
         if skill.requires_out_of_combat && p.in_combat {
             return Err(SPELL_FAILED_AFFECTING_COMBAT);
+        }
+        if skill.is_finisher() && target.is_none_or(|t| self.skills.combo.on(t) == 0) {
+            return Err(SPELL_FAILED_NO_COMBO_POINTS);
         }
         // Judgement needs a Seal to judge.
         if skill.effects.contains(&Effect::Judgement) && self.skills.seal().is_none() {
@@ -877,7 +929,7 @@ impl InWorld {
     /// Takes the cast's costs and starts its cooldowns.
     fn pay(&mut self, skill: &Skill, c: &Char, events: &mut Vec<SessionEvent>) {
         let p = &mut self.player;
-        p.rage -= crate::talents::rage_cost(c, skill) * 10;
+        p.power.spend(crate::talents::power_cost(c, skill));
         let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100;
         // A cost never kills.
         p.health = p.health.saturating_sub(health_cost).max(1);
@@ -968,6 +1020,7 @@ impl InWorld {
         target: u64,
         how: Landed,
         level: u8,
+        combo: u8,
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
@@ -978,6 +1031,8 @@ impl InWorld {
         // Talents that raise the skill's amounts (Improved Rend, Improved Battle Shout).
         let pct = crate::talents::amount_pct(c, &skill.key);
         let sized = |l: formulas::Linear| scaled(l.at(level, ap), pct);
+        // A finisher's block, once per combo point held on the target.
+        let per_combo = |l: Option<formulas::Linear>| l.map_or(0, |l| sized(l) * u32::from(combo));
         // Talents that make the skill's auras last longer (Booming Voice).
         let longer = crate::talents::duration_pct(c, &skill.key);
         let aura = |kind: AuraKind, spell_id: u32, duration_ms: u32, period_ms: u32| Aura {
@@ -992,8 +1047,14 @@ impl InWorld {
             charges: 0,
         };
         match *effect {
-            Effect::WeaponStrike { weapon, bonus, .. } => {
-                let raw = weapon_roll(&stats, weapon, rng) + sized(bonus) as f32;
+            Effect::WeaponStrike {
+                weapon,
+                bonus,
+                per_combo: more,
+                ..
+            } => {
+                let raw =
+                    weapon_roll(&stats, weapon, rng) + (sized(bonus) + per_combo(more)) as f32;
                 self.strike(
                     skill.spell_id,
                     target,
@@ -1006,8 +1067,13 @@ impl InWorld {
                     ticked,
                 );
             }
-            Effect::SchoolDamage { school, amount, .. } => {
-                let raw = sized(amount);
+            Effect::SchoolDamage {
+                school,
+                amount,
+                per_combo: more,
+                ..
+            } => {
+                let raw = sized(amount) + per_combo(more);
                 self.strike(
                     skill.spell_id,
                     target,
@@ -1024,8 +1090,9 @@ impl InWorld {
                 tick_ms,
                 duration_ms,
                 tick,
+                per_combo: more,
             } => {
-                let per_tick = sized(tick);
+                let per_tick = sized(tick) + per_combo(more);
                 let a = aura(
                     AuraKind::Bleed { per_tick },
                     skill.spell_id,
@@ -1060,9 +1127,23 @@ impl InWorld {
                     run_mode: true,
                 });
             }
-            Effect::EnergizeRage { amount } => {
-                let gained = amount.at(level, ap) + crate::talents::extra_rage(c, &skill.key);
-                self.gain_rage(skill.spell_id, gained, events);
+            Effect::Energize { power, amount } => {
+                // A power the caster's bar does not hold: nothing happens, nothing is logged.
+                if self.player.power.kind != power {
+                    return;
+                }
+                let mut gained = amount.at(level, ap);
+                if power == PowerKind::Rage {
+                    gained += crate::talents::extra_rage(c, &skill.key);
+                }
+                self.player.power.gain(power, gained);
+                events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
+                    target: self.guid,
+                    caster: self.guid,
+                    spell_id: skill.spell_id,
+                    power: power.id(),
+                    amount: gained,
+                }));
             }
             Effect::PeriodicRage {
                 aura_spell_id,
@@ -1081,7 +1162,9 @@ impl InWorld {
             Effect::Stun {
                 aura_spell_id,
                 duration_ms,
+                per_combo: more,
             } => {
+                let duration_ms = duration_ms + per_combo(more);
                 self.skills
                     .apply(aura(AuraKind::Stun, aura_spell_id, duration_ms, 0), events);
             }
@@ -1099,6 +1182,10 @@ impl InWorld {
                         self.drop_combat(target, events);
                     }
                 }
+            }
+            Effect::AddComboPoints { amount } => {
+                self.skills.combo.add(target, amount);
+                self.skills.send_combo(events);
             }
             Effect::AttackSpeedSlow { pct, duration_ms } => {
                 let a = aura(AuraKind::AttackSlow { pct }, skill.spell_id, duration_ms, 0);
@@ -1128,8 +1215,7 @@ impl InWorld {
                 per_extra_rage,
             } => {
                 // The cost is paid; every rage point left goes into the blow.
-                let extra = self.player.rage / 10;
-                self.player.rage = 0;
+                let extra = self.player.power.take_all(PowerKind::Rage);
                 let raw = sized(base) + extra * sized(per_extra_rage);
                 self.strike(
                     skill.spell_id,
@@ -1494,7 +1580,7 @@ impl InWorld {
     /// `amount` rage for the player, logged under `spell_id`.
     pub(super) fn gain_rage(&mut self, spell_id: u32, amount: u32, events: &mut Vec<SessionEvent>) {
         let p = &mut self.player;
-        p.rage = (p.rage + amount * 10).min(rage::MAX);
+        p.power.gain(PowerKind::Rage, amount);
         events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
             target: self.guid,
             caster: self.guid,
@@ -1502,7 +1588,7 @@ impl InWorld {
             power: POWER_RAGE,
             amount,
         }));
-        events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+        events.push(values(self.guid, &[p.power.field()]));
     }
 
     /// `unit` is stunned for `duration_ms`, under `spell_id` (Mace Specialization).
@@ -1654,7 +1740,7 @@ impl InWorld {
         let Some(skill) = callings::skill(spell_id) else {
             return false;
         };
-        if self.player.rage < crate::talents::rage_cost(c, skill) * 10 {
+        if !self.player.power.has(crate::talents::power_cost(c, skill)) {
             events.push(refused(spell_id, SPELL_FAILED_NO_POWER));
             return false;
         }
@@ -1738,7 +1824,7 @@ impl InWorld {
             ammo_display_id: None,
             item_caster: None,
         });
-        events.push(values(self.guid, &[(UNIT_FIELD_POWER2, self.player.rage)]));
+        events.push(values(self.guid, &[self.player.power.field()]));
         // The first target's dodge opens Overpower, as a white swing's would.
         if missed_by(swings[0].1.outcome) == Some(SPELL_MISS_DODGE) {
             self.skills.dodged_by(target, events);
@@ -1853,7 +1939,7 @@ impl InWorld {
                 }
                 AuraKind::Rage { per_tick } => {
                     let p = &mut self.player;
-                    p.rage = (p.rage + per_tick * 10).min(rage::MAX);
+                    p.power.gain(PowerKind::Rage, per_tick);
                     events.push(SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
                         target: self.guid,
                         caster: self.guid,
@@ -1863,7 +1949,7 @@ impl InWorld {
                             amount: per_tick,
                         }],
                     }));
-                    events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+                    events.push(values(self.guid, &[p.power.field()]));
                 }
                 _ => {}
             }
@@ -1987,7 +2073,7 @@ impl InWorld {
 }
 
 /// A weapon roll before armour: a white swing's, or a normalized one.
-fn weapon_roll(stats: &WarriorStats, weapon: Weapon, rng: &mut Rng) -> f32 {
+fn weapon_roll(stats: &CharacterStats, weapon: Weapon, rng: &mut Rng) -> f32 {
     let roll = rng.frand(stats.min_damage, stats.max_damage);
     match weapon {
         Weapon::Normal => roll,

@@ -5,6 +5,7 @@
 
 use benilla_protocol::SessionEvent;
 
+use super::power::Power;
 use super::{cast, sheet_pairs, InWorld};
 use crate::callings;
 use crate::characters::Char;
@@ -43,11 +44,21 @@ impl InWorld {
         let p = &mut self.player;
         p.stats = crate::talents::stats(c);
         p.health = p.stats.max_health;
+        // The new Calling's Class: its bar (rage empty, energy and mana full) and class byte.
+        p.power = Power::fresh(&p.stats);
         let mut pairs = vec![
             (PLAYER_XP, c.xp),
             (PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)),
             crate::talents::points_pair(c),
             (UNIT_FIELD_HEALTH, p.health),
+            p.power.field(),
+            (
+                UNIT_FIELD_BYTES_0,
+                u32::from(c.race)
+                    | u32::from(c.class()) << 8
+                    | u32::from(c.gender) << 16
+                    | p.power.kind.id() << 24,
+            ),
             cast::stance(c),
         ];
         pairs.extend(sheet_pairs(c, &cast::white(&p.stats, &self.skills)));

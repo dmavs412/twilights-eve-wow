@@ -92,7 +92,7 @@ impl Characters {
                 req.hair_color,
                 req.facial_hair,
             ],
-            calling: Calling::BasicWarrior,
+            calling: Calling::BASIC_WARRIOR,
             level: 1,
             xp: 0,
             map: KALIMDOR,
@@ -181,6 +181,11 @@ impl Characters {
 }
 
 impl Char {
+    /// The Class of the current Calling (`ChrClasses.dbc` id).
+    pub(crate) fn class(&self) -> u8 {
+        crate::callings::of(self.calling).class
+    }
+
     fn roster_entry(&self) -> Character {
         let [skin, face, hair_style, hair_color, facial_hair] = self.look;
         let [x, y, z] = self.position;
@@ -188,7 +193,7 @@ impl Char {
             guid: self.guid,
             name: self.name.clone(),
             race: self.race,
-            class: CLASS_WARRIOR,
+            class: self.class(),
             gender: self.gender,
             skin,
             face,

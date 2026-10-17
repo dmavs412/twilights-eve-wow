@@ -1,0 +1,4295 @@
+{
+ "_source": {
+  "per_level": "vmangos world DB: player_classlevelstats (class=4) for base_health/base_mana; player_crit_per_agility and player_dodge_per_agility (class=4) for the agility divisors. Read by ObjectMgr::LoadPlayerInfo / ObjectMgr::GetPlayerCritPerAgility / GetPlayerDodgePerAgility.",
+  "race_base_stats": "vmangos world DB: player_levelstats (class=4). Naked base stats per race per level, before gear/buffs. Races vanilla never paired with this Class are synthesised (see _synthesised_races).",
+  "formulas": "see docs/reference/vanilla-combat-rules.md section 5",
+  "script": "tools/twilights-eve/extract_class_levels.py"
+ },
+ "_interpolated_note": "Levels missing from the vmangos agility tables are filled by linear interpolation between the nearest neighbours, as ObjectMgr::LoadPlayerInfo does. Interpolated crit levels: [14, 15]; dodge levels: [14, 15].",
+ "class": "rogue",
+ "class_id": 4,
+ "per_level": [
+  {
+   "level": 1,
+   "base_health": 25,
+   "base_mana": 0,
+   "agi_per_crit_pct": 2.29991,
+   "agi_per_dodge_pct": 1.14995
+  },
+  {
+   "level": 2,
+   "base_health": 32,
+   "base_mana": 0,
+   "agi_per_crit_pct": 2.39981,
+   "agi_per_dodge_pct": 1.20005
+  },
+  {
+   "level": 3,
+   "base_health": 49,
+   "base_mana": 0,
+   "agi_per_crit_pct": 2.5,
+   "agi_per_dodge_pct": 1.25
+  },
+  {
+   "level": 4,
+   "base_health": 56,
+   "base_mana": 0,
+   "agi_per_crit_pct": 2.69978,
+   "agi_per_dodge_pct": 1.35007
+  },
+  {
+   "level": 5,
+   "base_health": 63,
+   "base_mana": 0,
+   "agi_per_crit_pct": 2.80034,
+   "agi_per_dodge_pct": 1.39997
+  },
+  {
+   "level": 6,
+   "base_health": 80,
+   "base_mana": 0,
+   "agi_per_crit_pct": 2.90023,
+   "agi_per_dodge_pct": 1.44991
+  },
+  {
+   "level": 7,
+   "base_health": 87,
+   "base_mana": 0,
+   "agi_per_crit_pct": 3.09981,
+   "agi_per_dodge_pct": 1.54991
+  },
+  {
+   "level": 8,
+   "base_health": 104,
+   "base_mana": 0,
+   "agi_per_crit_pct": 3.2,
+   "agi_per_dodge_pct": 1.6
+  },
+  {
+   "level": 9,
+   "base_health": 111,
+   "base_mana": 0,
+   "agi_per_crit_pct": 3.30033,
+   "agi_per_dodge_pct": 1.64989
+  },
+  {
+   "level": 10,
+   "base_health": 118,
+   "base_mana": 0,
+   "agi_per_crit_pct": 3.50017,
+   "agi_per_dodge_pct": 1.75009
+  },
+  {
+   "level": 11,
+   "base_health": 125,
+   "base_mana": 0,
+   "agi_per_crit_pct": 3.90016,
+   "agi_per_dodge_pct": 1.95008
+  },
+  {
+   "level": 12,
+   "base_health": 142,
+   "base_mana": 0,
+   "agi_per_crit_pct": 4.29923,
+   "agi_per_dodge_pct": 2.15008
+  },
+  {
+   "level": 13,
+   "base_health": 149,
+   "base_mana": 0,
+   "agi_per_crit_pct": 4.80077,
+   "agi_per_dodge_pct": 2.39981
+  },
+  {
+   "level": 14,
+   "base_health": 156,
+   "base_mana": 0,
+   "agi_per_crit_pct": 5.26706,
+   "agi_per_dodge_pct": 2.63314
+  },
+  {
+   "level": 15,
+   "base_health": 173,
+   "base_mana": 0,
+   "agi_per_crit_pct": 5.73334,
+   "agi_per_dodge_pct": 2.86648
+  },
+  {
+   "level": 16,
+   "base_health": 181,
+   "base_mana": 0,
+   "agi_per_crit_pct": 6.19963,
+   "agi_per_dodge_pct": 3.09981
+  },
+  {
+   "level": 17,
+   "base_health": 190,
+   "base_mana": 0,
+   "agi_per_crit_pct": 6.60066,
+   "agi_per_dodge_pct": 3.30033
+  },
+  {
+   "level": 18,
+   "base_health": 200,
+   "base_mana": 0,
+   "agi_per_crit_pct": 7.10227,
+   "agi_per_dodge_pct": 3.54988
+  },
+  {
+   "level": 19,
+   "base_health": 221,
+   "base_mana": 0,
+   "agi_per_crit_pct": 7.59878,
+   "agi_per_dodge_pct": 3.79939
+  },
+  {
+   "level": 20,
+   "base_health": 233,
+   "base_mana": 0,
+   "agi_per_crit_pct": 8.09717,
+   "agi_per_dodge_pct": 4.05022
+  },
+  {
+   "level": 21,
+   "base_health": 246,
+   "base_mana": 0,
+   "agi_per_crit_pct": 8.59845,
+   "agi_per_dodge_pct": 4.29923
+  },
+  {
+   "level": 22,
+   "base_health": 260,
+   "base_mana": 0,
+   "agi_per_crit_pct": 9.0009,
+   "agi_per_dodge_pct": 4.50045
+  },
+  {
+   "level": 23,
+   "base_health": 275,
+   "base_mana": 0,
+   "agi_per_crit_pct": 9.49668,
+   "agi_per_dodge_pct": 4.75059
+  },
+  {
+   "level": 24,
+   "base_health": 301,
+   "base_mana": 0,
+   "agi_per_crit_pct": 9.90099,
+   "agi_per_dodge_pct": 4.9505
+  },
+  {
+   "level": 25,
+   "base_health": 318,
+   "base_mana": 0,
+   "agi_per_crit_pct": 10.5042,
+   "agi_per_dodge_pct": 5.24934
+  },
+  {
+   "level": 26,
+   "base_health": 336,
+   "base_mana": 0,
+   "agi_per_crit_pct": 11.0011,
+   "agi_per_dodge_pct": 5.50055
+  },
+  {
+   "level": 27,
+   "base_health": 355,
+   "base_mana": 0,
+   "agi_per_crit_pct": 11.4025,
+   "agi_per_dodge_pct": 5.70125
+  },
+  {
+   "level": 28,
+   "base_health": 375,
+   "base_mana": 0,
+   "agi_per_crit_pct": 11.9048,
+   "agi_per_dodge_pct": 5.94884
+  },
+  {
+   "level": 29,
+   "base_health": 396,
+   "base_mana": 0,
+   "agi_per_crit_pct": 12.4069,
+   "agi_per_dodge_pct": 6.19963
+  },
+  {
+   "level": 30,
+   "base_health": 428,
+   "base_mana": 0,
+   "agi_per_crit_pct": 13.0039,
+   "agi_per_dodge_pct": 6.50195
+  },
+  {
+   "level": 31,
+   "base_health": 451,
+   "base_mana": 0,
+   "agi_per_crit_pct": 13.4048,
+   "agi_per_dodge_pct": 6.69792
+  },
+  {
+   "level": 32,
+   "base_health": 475,
+   "base_mana": 0,
+   "agi_per_crit_pct": 13.9082,
+   "agi_per_dodge_pct": 6.94927
+  },
+  {
+   "level": 33,
+   "base_health": 500,
+   "base_mana": 0,
+   "agi_per_crit_pct": 14.4092,
+   "agi_per_dodge_pct": 7.19942
+  },
+  {
+   "level": 34,
+   "base_health": 526,
+   "base_mana": 0,
+   "agi_per_crit_pct": 14.9031,
+   "agi_per_dodge_pct": 7.45156
+  },
+  {
+   "level": 35,
+   "base_health": 553,
+   "base_mana": 0,
+   "agi_per_crit_pct": 15.2765,
+   "agi_per_dodge_pct": 7.75194
+  },
+  {
+   "level": 36,
+   "base_health": 581,
+   "base_mana": 0,
+   "agi_per_crit_pct": 15.6068,
+   "agi_per_dodge_pct": 8.0
+  },
+  {
+   "level": 37,
+   "base_health": 610,
+   "base_mana": 0,
+   "agi_per_crit_pct": 16.3934,
+   "agi_per_dodge_pct": 8.19672
+  },
+  {
+   "level": 38,
+   "base_health": 640,
+   "base_mana": 0,
+   "agi_per_crit_pct": 16.8919,
+   "agi_per_dodge_pct": 8.45308
+  },
+  {
+   "level": 39,
+   "base_health": 671,
+   "base_mana": 0,
+   "agi_per_crit_pct": 17.3913,
+   "agi_per_dodge_pct": 8.70322
+  },
+  {
+   "level": 40,
+   "base_health": 703,
+   "base_mana": 0,
+   "agi_per_crit_pct": 17.9856,
+   "agi_per_dodge_pct": 9.0009
+  },
+  {
+   "level": 41,
+   "base_health": 736,
+   "base_mana": 0,
+   "agi_per_crit_pct": 18.4843,
+   "agi_per_dodge_pct": 9.25069
+  },
+  {
+   "level": 42,
+   "base_health": 770,
+   "base_mana": 0,
+   "agi_per_crit_pct": 19.0114,
+   "agi_per_dodge_pct": 9.49668
+  },
+  {
+   "level": 43,
+   "base_health": 805,
+   "base_mana": 0,
+   "agi_per_crit_pct": 19.4932,
+   "agi_per_dodge_pct": 9.74659
+  },
+  {
+   "level": 44,
+   "base_health": 841,
+   "base_mana": 0,
+   "agi_per_crit_pct": 20.0803,
+   "agi_per_dodge_pct": 10.0503
+  },
+  {
+   "level": 45,
+   "base_health": 878,
+   "base_mana": 0,
+   "agi_per_crit_pct": 20.7039,
+   "agi_per_dodge_pct": 10.352
+  },
+  {
+   "level": 46,
+   "base_health": 916,
+   "base_mana": 0,
+   "agi_per_crit_pct": 21.1864,
+   "agi_per_dodge_pct": 10.6045
+  },
+  {
+   "level": 47,
+   "base_health": 955,
+   "base_mana": 0,
+   "agi_per_crit_pct": 21.692,
+   "agi_per_dodge_pct": 10.846
+  },
+  {
+   "level": 48,
+   "base_health": 995,
+   "base_mana": 0,
+   "agi_per_crit_pct": 22.2222,
+   "agi_per_dodge_pct": 11.0988
+  },
+  {
+   "level": 49,
+   "base_health": 1026,
+   "base_mana": 0,
+   "agi_per_crit_pct": 22.6757,
+   "agi_per_dodge_pct": 11.3507
+  },
+  {
+   "level": 50,
+   "base_health": 1068,
+   "base_mana": 0,
+   "agi_per_crit_pct": 23.4192,
+   "agi_per_dodge_pct": 11.6959
+  },
+  {
+   "level": 51,
+   "base_health": 1111,
+   "base_mana": 0,
+   "agi_per_crit_pct": 23.6285,
+   "agi_per_dodge_pct": 11.9474
+  },
+  {
+   "level": 52,
+   "base_health": 1155,
+   "base_mana": 0,
+   "agi_per_crit_pct": 23.826,
+   "agi_per_dodge_pct": 12.1951
+  },
+  {
+   "level": 53,
+   "base_health": 1200,
+   "base_mana": 0,
+   "agi_per_crit_pct": 24.4186,
+   "agi_per_dodge_pct": 12.5
+  },
+  {
+   "level": 54,
+   "base_health": 1246,
+   "base_mana": 0,
+   "agi_per_crit_pct": 24.947,
+   "agi_per_dodge_pct": 12.7551
+  },
+  {
+   "level": 55,
+   "base_health": 1283,
+   "base_mana": 0,
+   "agi_per_crit_pct": 25.53,
+   "agi_per_dodge_pct": 13.0548
+  },
+  {
+   "level": 56,
+   "base_health": 1331,
+   "base_mana": 0,
+   "agi_per_crit_pct": 26.1183,
+   "agi_per_dodge_pct": 13.3511
+  },
+  {
+   "level": 57,
+   "base_health": 1380,
+   "base_mana": 0,
+   "agi_per_crit_pct": 26.6583,
+   "agi_per_dodge_pct": 13.6054
+  },
+  {
+   "level": 58,
+   "base_health": 1430,
+   "base_mana": 0,
+   "agi_per_crit_pct": 27.2448,
+   "agi_per_dodge_pct": 13.9082
+  },
+  {
+   "level": 59,
+   "base_health": 1471,
+   "base_mana": 0,
+   "agi_per_crit_pct": 27.7783,
+   "agi_per_dodge_pct": 14.1443
+  },
+  {
+   "level": 60,
+   "base_health": 1523,
+   "base_mana": 0,
+   "agi_per_crit_pct": 28.9855,
+   "agi_per_dodge_pct": 14.4928
+  }
+ ],
+ "race_base_stats": {
+  "human": [
+   {
+    "level": 1,
+    "str": 21,
+    "agi": 23,
+    "sta": 21,
+    "int": 20,
+    "spi": 20
+   },
+   {
+    "level": 2,
+    "str": 22,
+    "agi": 24,
+    "sta": 22,
+    "int": 20,
+    "spi": 20
+   },
+   {
+    "level": 3,
+    "str": 22,
+    "agi": 25,
+    "sta": 22,
+    "int": 20,
+    "spi": 21
+   },
+   {
+    "level": 4,
+    "str": 23,
+    "agi": 27,
+    "sta": 23,
+    "int": 21,
+    "spi": 21
+   },
+   {
+    "level": 5,
+    "str": 24,
+    "agi": 28,
+    "sta": 24,
+    "int": 21,
+    "spi": 21
+   },
+   {
+    "level": 6,
+    "str": 24,
+    "agi": 29,
+    "sta": 24,
+    "int": 21,
+    "spi": 22
+   },
+   {
+    "level": 7,
+    "str": 25,
+    "agi": 31,
+    "sta": 25,
+    "int": 21,
+    "spi": 22
+   },
+   {
+    "level": 8,
+    "str": 26,
+    "agi": 32,
+    "sta": 25,
+    "int": 21,
+    "spi": 22
+   },
+   {
+    "level": 9,
+    "str": 27,
+    "agi": 33,
+    "sta": 26,
+    "int": 21,
+    "spi": 23
+   },
+   {
+    "level": 10,
+    "str": 27,
+    "agi": 35,
+    "sta": 27,
+    "int": 22,
+    "spi": 23
+   },
+   {
+    "level": 11,
+    "str": 28,
+    "agi": 36,
+    "sta": 28,
+    "int": 22,
+    "spi": 24
+   },
+   {
+    "level": 12,
+    "str": 29,
+    "agi": 37,
+    "sta": 28,
+    "int": 22,
+    "spi": 24
+   },
+   {
+    "level": 13,
+    "str": 30,
+    "agi": 39,
+    "sta": 29,
+    "int": 22,
+    "spi": 24
+   },
+   {
+    "level": 14,
+    "str": 30,
+    "agi": 40,
+    "sta": 30,
+    "int": 22,
+    "spi": 25
+   },
+   {
+    "level": 15,
+    "str": 31,
+    "agi": 42,
+    "sta": 30,
+    "int": 23,
+    "spi": 25
+   },
+   {
+    "level": 16,
+    "str": 32,
+    "agi": 43,
+    "sta": 31,
+    "int": 23,
+    "spi": 26
+   },
+   {
+    "level": 17,
+    "str": 33,
+    "agi": 44,
+    "sta": 32,
+    "int": 23,
+    "spi": 26
+   },
+   {
+    "level": 18,
+    "str": 34,
+    "agi": 46,
+    "sta": 33,
+    "int": 23,
+    "spi": 26
+   },
+   {
+    "level": 19,
+    "str": 35,
+    "agi": 48,
+    "sta": 33,
+    "int": 23,
+    "spi": 27
+   },
+   {
+    "level": 20,
+    "str": 35,
+    "agi": 49,
+    "sta": 34,
+    "int": 24,
+    "spi": 27
+   },
+   {
+    "level": 21,
+    "str": 36,
+    "agi": 51,
+    "sta": 35,
+    "int": 24,
+    "spi": 28
+   },
+   {
+    "level": 22,
+    "str": 37,
+    "agi": 52,
+    "sta": 36,
+    "int": 24,
+    "spi": 28
+   },
+   {
+    "level": 23,
+    "str": 38,
+    "agi": 54,
+    "sta": 37,
+    "int": 24,
+    "spi": 29
+   },
+   {
+    "level": 24,
+    "str": 39,
+    "agi": 55,
+    "sta": 37,
+    "int": 25,
+    "spi": 29
+   },
+   {
+    "level": 25,
+    "str": 40,
+    "agi": 57,
+    "sta": 38,
+    "int": 25,
+    "spi": 30
+   },
+   {
+    "level": 26,
+    "str": 41,
+    "agi": 59,
+    "sta": 39,
+    "int": 25,
+    "spi": 30
+   },
+   {
+    "level": 27,
+    "str": 42,
+    "agi": 60,
+    "sta": 40,
+    "int": 25,
+    "spi": 30
+   },
+   {
+    "level": 28,
+    "str": 43,
+    "agi": 62,
+    "sta": 41,
+    "int": 25,
+    "spi": 31
+   },
+   {
+    "level": 29,
+    "str": 43,
+    "agi": 64,
+    "sta": 42,
+    "int": 26,
+    "spi": 31
+   },
+   {
+    "level": 30,
+    "str": 44,
+    "agi": 66,
+    "sta": 42,
+    "int": 26,
+    "spi": 32
+   },
+   {
+    "level": 31,
+    "str": 45,
+    "agi": 67,
+    "sta": 43,
+    "int": 26,
+    "spi": 32
+   },
+   {
+    "level": 32,
+    "str": 46,
+    "agi": 69,
+    "sta": 44,
+    "int": 26,
+    "spi": 33
+   },
+   {
+    "level": 33,
+    "str": 47,
+    "agi": 71,
+    "sta": 45,
+    "int": 27,
+    "spi": 33
+   },
+   {
+    "level": 34,
+    "str": 48,
+    "agi": 73,
+    "sta": 46,
+    "int": 27,
+    "spi": 34
+   },
+   {
+    "level": 35,
+    "str": 49,
+    "agi": 75,
+    "sta": 47,
+    "int": 27,
+    "spi": 34
+   },
+   {
+    "level": 36,
+    "str": 51,
+    "agi": 77,
+    "sta": 48,
+    "int": 28,
+    "spi": 35
+   },
+   {
+    "level": 37,
+    "str": 52,
+    "agi": 78,
+    "sta": 49,
+    "int": 28,
+    "spi": 36
+   },
+   {
+    "level": 38,
+    "str": 53,
+    "agi": 80,
+    "sta": 50,
+    "int": 28,
+    "spi": 36
+   },
+   {
+    "level": 39,
+    "str": 54,
+    "agi": 82,
+    "sta": 51,
+    "int": 28,
+    "spi": 37
+   },
+   {
+    "level": 40,
+    "str": 55,
+    "agi": 84,
+    "sta": 52,
+    "int": 29,
+    "spi": 37
+   },
+   {
+    "level": 41,
+    "str": 56,
+    "agi": 86,
+    "sta": 53,
+    "int": 29,
+    "spi": 38
+   },
+   {
+    "level": 42,
+    "str": 57,
+    "agi": 88,
+    "sta": 54,
+    "int": 29,
+    "spi": 38
+   },
+   {
+    "level": 43,
+    "str": 58,
+    "agi": 90,
+    "sta": 55,
+    "int": 29,
+    "spi": 39
+   },
+   {
+    "level": 44,
+    "str": 59,
+    "agi": 93,
+    "sta": 56,
+    "int": 30,
+    "spi": 39
+   },
+   {
+    "level": 45,
+    "str": 61,
+    "agi": 95,
+    "sta": 57,
+    "int": 30,
+    "spi": 40
+   },
+   {
+    "level": 46,
+    "str": 62,
+    "agi": 97,
+    "sta": 58,
+    "int": 30,
+    "spi": 41
+   },
+   {
+    "level": 47,
+    "str": 63,
+    "agi": 99,
+    "sta": 59,
+    "int": 31,
+    "spi": 41
+   },
+   {
+    "level": 48,
+    "str": 64,
+    "agi": 101,
+    "sta": 60,
+    "int": 31,
+    "spi": 42
+   },
+   {
+    "level": 49,
+    "str": 65,
+    "agi": 103,
+    "sta": 62,
+    "int": 31,
+    "spi": 43
+   },
+   {
+    "level": 50,
+    "str": 67,
+    "agi": 106,
+    "sta": 63,
+    "int": 32,
+    "spi": 43
+   },
+   {
+    "level": 51,
+    "str": 68,
+    "agi": 108,
+    "sta": 64,
+    "int": 32,
+    "spi": 44
+   },
+   {
+    "level": 52,
+    "str": 69,
+    "agi": 110,
+    "sta": 65,
+    "int": 32,
+    "spi": 44
+   },
+   {
+    "level": 53,
+    "str": 70,
+    "agi": 113,
+    "sta": 66,
+    "int": 33,
+    "spi": 45
+   },
+   {
+    "level": 54,
+    "str": 72,
+    "agi": 115,
+    "sta": 67,
+    "int": 33,
+    "spi": 46
+   },
+   {
+    "level": 55,
+    "str": 73,
+    "agi": 117,
+    "sta": 69,
+    "int": 33,
+    "spi": 46
+   },
+   {
+    "level": 56,
+    "str": 74,
+    "agi": 120,
+    "sta": 70,
+    "int": 34,
+    "spi": 47
+   },
+   {
+    "level": 57,
+    "str": 76,
+    "agi": 122,
+    "sta": 71,
+    "int": 34,
+    "spi": 48
+   },
+   {
+    "level": 58,
+    "str": 77,
+    "agi": 125,
+    "sta": 72,
+    "int": 34,
+    "spi": 49
+   },
+   {
+    "level": 59,
+    "str": 79,
+    "agi": 127,
+    "sta": 74,
+    "int": 35,
+    "spi": 49
+   },
+   {
+    "level": 60,
+    "str": 80,
+    "agi": 130,
+    "sta": 75,
+    "int": 35,
+    "spi": 50
+   }
+  ],
+  "orc": [
+   {
+    "level": 1,
+    "str": 24,
+    "agi": 20,
+    "sta": 23,
+    "int": 17,
+    "spi": 23
+   },
+   {
+    "level": 2,
+    "str": 25,
+    "agi": 21,
+    "sta": 24,
+    "int": 17,
+    "spi": 23
+   },
+   {
+    "level": 3,
+    "str": 25,
+    "agi": 22,
+    "sta": 24,
+    "int": 17,
+    "spi": 24
+   },
+   {
+    "level": 4,
+    "str": 26,
+    "agi": 24,
+    "sta": 25,
+    "int": 18,
+    "spi": 24
+   },
+   {
+    "level": 5,
+    "str": 27,
+    "agi": 25,
+    "sta": 26,
+    "int": 18,
+    "spi": 24
+   },
+   {
+    "level": 6,
+    "str": 27,
+    "agi": 26,
+    "sta": 26,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 7,
+    "str": 28,
+    "agi": 28,
+    "sta": 27,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 8,
+    "str": 29,
+    "agi": 29,
+    "sta": 27,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 9,
+    "str": 30,
+    "agi": 30,
+    "sta": 28,
+    "int": 18,
+    "spi": 26
+   },
+   {
+    "level": 10,
+    "str": 30,
+    "agi": 32,
+    "sta": 29,
+    "int": 19,
+    "spi": 26
+   },
+   {
+    "level": 11,
+    "str": 31,
+    "agi": 33,
+    "sta": 30,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 12,
+    "str": 32,
+    "agi": 34,
+    "sta": 30,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 13,
+    "str": 33,
+    "agi": 36,
+    "sta": 31,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 14,
+    "str": 33,
+    "agi": 37,
+    "sta": 32,
+    "int": 19,
+    "spi": 28
+   },
+   {
+    "level": 15,
+    "str": 34,
+    "agi": 39,
+    "sta": 32,
+    "int": 20,
+    "spi": 28
+   },
+   {
+    "level": 16,
+    "str": 35,
+    "agi": 40,
+    "sta": 33,
+    "int": 20,
+    "spi": 29
+   },
+   {
+    "level": 17,
+    "str": 36,
+    "agi": 41,
+    "sta": 34,
+    "int": 20,
+    "spi": 29
+   },
+   {
+    "level": 18,
+    "str": 37,
+    "agi": 43,
+    "sta": 35,
+    "int": 20,
+    "spi": 29
+   },
+   {
+    "level": 19,
+    "str": 38,
+    "agi": 45,
+    "sta": 35,
+    "int": 20,
+    "spi": 30
+   },
+   {
+    "level": 20,
+    "str": 38,
+    "agi": 46,
+    "sta": 36,
+    "int": 21,
+    "spi": 30
+   },
+   {
+    "level": 21,
+    "str": 39,
+    "agi": 48,
+    "sta": 37,
+    "int": 21,
+    "spi": 31
+   },
+   {
+    "level": 22,
+    "str": 40,
+    "agi": 49,
+    "sta": 38,
+    "int": 21,
+    "spi": 31
+   },
+   {
+    "level": 23,
+    "str": 41,
+    "agi": 51,
+    "sta": 39,
+    "int": 21,
+    "spi": 32
+   },
+   {
+    "level": 24,
+    "str": 42,
+    "agi": 52,
+    "sta": 39,
+    "int": 22,
+    "spi": 32
+   },
+   {
+    "level": 25,
+    "str": 43,
+    "agi": 54,
+    "sta": 40,
+    "int": 22,
+    "spi": 33
+   },
+   {
+    "level": 26,
+    "str": 44,
+    "agi": 56,
+    "sta": 41,
+    "int": 22,
+    "spi": 33
+   },
+   {
+    "level": 27,
+    "str": 45,
+    "agi": 57,
+    "sta": 42,
+    "int": 22,
+    "spi": 33
+   },
+   {
+    "level": 28,
+    "str": 46,
+    "agi": 59,
+    "sta": 43,
+    "int": 22,
+    "spi": 34
+   },
+   {
+    "level": 29,
+    "str": 46,
+    "agi": 61,
+    "sta": 44,
+    "int": 23,
+    "spi": 34
+   },
+   {
+    "level": 30,
+    "str": 47,
+    "agi": 63,
+    "sta": 44,
+    "int": 23,
+    "spi": 35
+   },
+   {
+    "level": 31,
+    "str": 48,
+    "agi": 64,
+    "sta": 45,
+    "int": 23,
+    "spi": 35
+   },
+   {
+    "level": 32,
+    "str": 49,
+    "agi": 66,
+    "sta": 46,
+    "int": 23,
+    "spi": 36
+   },
+   {
+    "level": 33,
+    "str": 50,
+    "agi": 68,
+    "sta": 47,
+    "int": 24,
+    "spi": 36
+   },
+   {
+    "level": 34,
+    "str": 51,
+    "agi": 70,
+    "sta": 48,
+    "int": 24,
+    "spi": 37
+   },
+   {
+    "level": 35,
+    "str": 52,
+    "agi": 72,
+    "sta": 49,
+    "int": 24,
+    "spi": 37
+   },
+   {
+    "level": 36,
+    "str": 54,
+    "agi": 74,
+    "sta": 50,
+    "int": 25,
+    "spi": 38
+   },
+   {
+    "level": 37,
+    "str": 55,
+    "agi": 75,
+    "sta": 51,
+    "int": 25,
+    "spi": 39
+   },
+   {
+    "level": 38,
+    "str": 56,
+    "agi": 77,
+    "sta": 52,
+    "int": 25,
+    "spi": 39
+   },
+   {
+    "level": 39,
+    "str": 57,
+    "agi": 79,
+    "sta": 53,
+    "int": 25,
+    "spi": 40
+   },
+   {
+    "level": 40,
+    "str": 58,
+    "agi": 81,
+    "sta": 54,
+    "int": 26,
+    "spi": 40
+   },
+   {
+    "level": 41,
+    "str": 59,
+    "agi": 83,
+    "sta": 55,
+    "int": 26,
+    "spi": 41
+   },
+   {
+    "level": 42,
+    "str": 60,
+    "agi": 85,
+    "sta": 56,
+    "int": 26,
+    "spi": 41
+   },
+   {
+    "level": 43,
+    "str": 61,
+    "agi": 87,
+    "sta": 57,
+    "int": 26,
+    "spi": 42
+   },
+   {
+    "level": 44,
+    "str": 62,
+    "agi": 90,
+    "sta": 58,
+    "int": 27,
+    "spi": 42
+   },
+   {
+    "level": 45,
+    "str": 64,
+    "agi": 92,
+    "sta": 59,
+    "int": 27,
+    "spi": 43
+   },
+   {
+    "level": 46,
+    "str": 65,
+    "agi": 94,
+    "sta": 60,
+    "int": 27,
+    "spi": 44
+   },
+   {
+    "level": 47,
+    "str": 66,
+    "agi": 96,
+    "sta": 61,
+    "int": 28,
+    "spi": 44
+   },
+   {
+    "level": 48,
+    "str": 67,
+    "agi": 98,
+    "sta": 62,
+    "int": 28,
+    "spi": 45
+   },
+   {
+    "level": 49,
+    "str": 68,
+    "agi": 100,
+    "sta": 64,
+    "int": 28,
+    "spi": 46
+   },
+   {
+    "level": 50,
+    "str": 70,
+    "agi": 103,
+    "sta": 65,
+    "int": 29,
+    "spi": 46
+   },
+   {
+    "level": 51,
+    "str": 71,
+    "agi": 105,
+    "sta": 66,
+    "int": 29,
+    "spi": 47
+   },
+   {
+    "level": 52,
+    "str": 72,
+    "agi": 107,
+    "sta": 67,
+    "int": 29,
+    "spi": 47
+   },
+   {
+    "level": 53,
+    "str": 73,
+    "agi": 110,
+    "sta": 68,
+    "int": 30,
+    "spi": 48
+   },
+   {
+    "level": 54,
+    "str": 75,
+    "agi": 112,
+    "sta": 69,
+    "int": 30,
+    "spi": 49
+   },
+   {
+    "level": 55,
+    "str": 76,
+    "agi": 114,
+    "sta": 71,
+    "int": 30,
+    "spi": 49
+   },
+   {
+    "level": 56,
+    "str": 77,
+    "agi": 117,
+    "sta": 72,
+    "int": 31,
+    "spi": 50
+   },
+   {
+    "level": 57,
+    "str": 79,
+    "agi": 119,
+    "sta": 73,
+    "int": 31,
+    "spi": 51
+   },
+   {
+    "level": 58,
+    "str": 80,
+    "agi": 122,
+    "sta": 74,
+    "int": 31,
+    "spi": 52
+   },
+   {
+    "level": 59,
+    "str": 82,
+    "agi": 124,
+    "sta": 76,
+    "int": 32,
+    "spi": 52
+   },
+   {
+    "level": 60,
+    "str": 83,
+    "agi": 127,
+    "sta": 77,
+    "int": 32,
+    "spi": 53
+   }
+  ],
+  "dwarf": [
+   {
+    "level": 1,
+    "str": 23,
+    "agi": 19,
+    "sta": 24,
+    "int": 19,
+    "spi": 19
+   },
+   {
+    "level": 2,
+    "str": 24,
+    "agi": 20,
+    "sta": 25,
+    "int": 19,
+    "spi": 19
+   },
+   {
+    "level": 3,
+    "str": 24,
+    "agi": 21,
+    "sta": 25,
+    "int": 19,
+    "spi": 20
+   },
+   {
+    "level": 4,
+    "str": 25,
+    "agi": 23,
+    "sta": 26,
+    "int": 20,
+    "spi": 20
+   },
+   {
+    "level": 5,
+    "str": 26,
+    "agi": 24,
+    "sta": 27,
+    "int": 20,
+    "spi": 20
+   },
+   {
+    "level": 6,
+    "str": 26,
+    "agi": 25,
+    "sta": 27,
+    "int": 20,
+    "spi": 21
+   },
+   {
+    "level": 7,
+    "str": 27,
+    "agi": 27,
+    "sta": 28,
+    "int": 20,
+    "spi": 21
+   },
+   {
+    "level": 8,
+    "str": 28,
+    "agi": 28,
+    "sta": 28,
+    "int": 20,
+    "spi": 21
+   },
+   {
+    "level": 9,
+    "str": 29,
+    "agi": 29,
+    "sta": 29,
+    "int": 20,
+    "spi": 22
+   },
+   {
+    "level": 10,
+    "str": 29,
+    "agi": 31,
+    "sta": 30,
+    "int": 21,
+    "spi": 22
+   },
+   {
+    "level": 11,
+    "str": 30,
+    "agi": 32,
+    "sta": 31,
+    "int": 21,
+    "spi": 23
+   },
+   {
+    "level": 12,
+    "str": 31,
+    "agi": 33,
+    "sta": 31,
+    "int": 21,
+    "spi": 23
+   },
+   {
+    "level": 13,
+    "str": 32,
+    "agi": 35,
+    "sta": 32,
+    "int": 21,
+    "spi": 23
+   },
+   {
+    "level": 14,
+    "str": 32,
+    "agi": 36,
+    "sta": 33,
+    "int": 21,
+    "spi": 24
+   },
+   {
+    "level": 15,
+    "str": 33,
+    "agi": 38,
+    "sta": 33,
+    "int": 22,
+    "spi": 24
+   },
+   {
+    "level": 16,
+    "str": 34,
+    "agi": 39,
+    "sta": 34,
+    "int": 22,
+    "spi": 25
+   },
+   {
+    "level": 17,
+    "str": 35,
+    "agi": 40,
+    "sta": 35,
+    "int": 22,
+    "spi": 25
+   },
+   {
+    "level": 18,
+    "str": 36,
+    "agi": 42,
+    "sta": 36,
+    "int": 22,
+    "spi": 25
+   },
+   {
+    "level": 19,
+    "str": 37,
+    "agi": 44,
+    "sta": 36,
+    "int": 22,
+    "spi": 26
+   },
+   {
+    "level": 20,
+    "str": 37,
+    "agi": 45,
+    "sta": 37,
+    "int": 23,
+    "spi": 26
+   },
+   {
+    "level": 21,
+    "str": 38,
+    "agi": 47,
+    "sta": 38,
+    "int": 23,
+    "spi": 27
+   },
+   {
+    "level": 22,
+    "str": 39,
+    "agi": 48,
+    "sta": 39,
+    "int": 23,
+    "spi": 27
+   },
+   {
+    "level": 23,
+    "str": 40,
+    "agi": 50,
+    "sta": 40,
+    "int": 23,
+    "spi": 28
+   },
+   {
+    "level": 24,
+    "str": 41,
+    "agi": 51,
+    "sta": 40,
+    "int": 24,
+    "spi": 28
+   },
+   {
+    "level": 25,
+    "str": 42,
+    "agi": 53,
+    "sta": 41,
+    "int": 24,
+    "spi": 29
+   },
+   {
+    "level": 26,
+    "str": 43,
+    "agi": 55,
+    "sta": 42,
+    "int": 24,
+    "spi": 29
+   },
+   {
+    "level": 27,
+    "str": 44,
+    "agi": 56,
+    "sta": 43,
+    "int": 24,
+    "spi": 29
+   },
+   {
+    "level": 28,
+    "str": 45,
+    "agi": 58,
+    "sta": 44,
+    "int": 24,
+    "spi": 30
+   },
+   {
+    "level": 29,
+    "str": 45,
+    "agi": 60,
+    "sta": 45,
+    "int": 25,
+    "spi": 30
+   },
+   {
+    "level": 30,
+    "str": 46,
+    "agi": 62,
+    "sta": 45,
+    "int": 25,
+    "spi": 31
+   },
+   {
+    "level": 31,
+    "str": 47,
+    "agi": 63,
+    "sta": 46,
+    "int": 25,
+    "spi": 31
+   },
+   {
+    "level": 32,
+    "str": 48,
+    "agi": 65,
+    "sta": 47,
+    "int": 25,
+    "spi": 32
+   },
+   {
+    "level": 33,
+    "str": 49,
+    "agi": 67,
+    "sta": 48,
+    "int": 26,
+    "spi": 32
+   },
+   {
+    "level": 34,
+    "str": 50,
+    "agi": 69,
+    "sta": 49,
+    "int": 26,
+    "spi": 33
+   },
+   {
+    "level": 35,
+    "str": 51,
+    "agi": 71,
+    "sta": 50,
+    "int": 26,
+    "spi": 33
+   },
+   {
+    "level": 36,
+    "str": 53,
+    "agi": 73,
+    "sta": 51,
+    "int": 27,
+    "spi": 34
+   },
+   {
+    "level": 37,
+    "str": 54,
+    "agi": 74,
+    "sta": 52,
+    "int": 27,
+    "spi": 35
+   },
+   {
+    "level": 38,
+    "str": 55,
+    "agi": 76,
+    "sta": 53,
+    "int": 27,
+    "spi": 35
+   },
+   {
+    "level": 39,
+    "str": 56,
+    "agi": 78,
+    "sta": 54,
+    "int": 27,
+    "spi": 36
+   },
+   {
+    "level": 40,
+    "str": 57,
+    "agi": 80,
+    "sta": 55,
+    "int": 28,
+    "spi": 36
+   },
+   {
+    "level": 41,
+    "str": 58,
+    "agi": 82,
+    "sta": 56,
+    "int": 28,
+    "spi": 37
+   },
+   {
+    "level": 42,
+    "str": 59,
+    "agi": 84,
+    "sta": 57,
+    "int": 28,
+    "spi": 37
+   },
+   {
+    "level": 43,
+    "str": 60,
+    "agi": 86,
+    "sta": 58,
+    "int": 28,
+    "spi": 38
+   },
+   {
+    "level": 44,
+    "str": 61,
+    "agi": 89,
+    "sta": 59,
+    "int": 29,
+    "spi": 38
+   },
+   {
+    "level": 45,
+    "str": 63,
+    "agi": 91,
+    "sta": 60,
+    "int": 29,
+    "spi": 39
+   },
+   {
+    "level": 46,
+    "str": 64,
+    "agi": 93,
+    "sta": 61,
+    "int": 29,
+    "spi": 40
+   },
+   {
+    "level": 47,
+    "str": 65,
+    "agi": 95,
+    "sta": 62,
+    "int": 30,
+    "spi": 40
+   },
+   {
+    "level": 48,
+    "str": 66,
+    "agi": 97,
+    "sta": 63,
+    "int": 30,
+    "spi": 41
+   },
+   {
+    "level": 49,
+    "str": 67,
+    "agi": 99,
+    "sta": 65,
+    "int": 30,
+    "spi": 42
+   },
+   {
+    "level": 50,
+    "str": 69,
+    "agi": 102,
+    "sta": 66,
+    "int": 31,
+    "spi": 42
+   },
+   {
+    "level": 51,
+    "str": 70,
+    "agi": 104,
+    "sta": 67,
+    "int": 31,
+    "spi": 43
+   },
+   {
+    "level": 52,
+    "str": 71,
+    "agi": 106,
+    "sta": 68,
+    "int": 31,
+    "spi": 43
+   },
+   {
+    "level": 53,
+    "str": 72,
+    "agi": 109,
+    "sta": 69,
+    "int": 32,
+    "spi": 44
+   },
+   {
+    "level": 54,
+    "str": 74,
+    "agi": 111,
+    "sta": 70,
+    "int": 32,
+    "spi": 45
+   },
+   {
+    "level": 55,
+    "str": 75,
+    "agi": 113,
+    "sta": 72,
+    "int": 32,
+    "spi": 45
+   },
+   {
+    "level": 56,
+    "str": 76,
+    "agi": 116,
+    "sta": 73,
+    "int": 33,
+    "spi": 46
+   },
+   {
+    "level": 57,
+    "str": 78,
+    "agi": 118,
+    "sta": 74,
+    "int": 33,
+    "spi": 47
+   },
+   {
+    "level": 58,
+    "str": 79,
+    "agi": 121,
+    "sta": 75,
+    "int": 33,
+    "spi": 48
+   },
+   {
+    "level": 59,
+    "str": 81,
+    "agi": 123,
+    "sta": 77,
+    "int": 34,
+    "spi": 48
+   },
+   {
+    "level": 60,
+    "str": 82,
+    "agi": 126,
+    "sta": 78,
+    "int": 34,
+    "spi": 49
+   }
+  ],
+  "night_elf": [
+   {
+    "level": 1,
+    "str": 18,
+    "agi": 28,
+    "sta": 20,
+    "int": 20,
+    "spi": 20
+   },
+   {
+    "level": 2,
+    "str": 19,
+    "agi": 29,
+    "sta": 21,
+    "int": 20,
+    "spi": 20
+   },
+   {
+    "level": 3,
+    "str": 19,
+    "agi": 30,
+    "sta": 21,
+    "int": 20,
+    "spi": 21
+   },
+   {
+    "level": 4,
+    "str": 20,
+    "agi": 32,
+    "sta": 22,
+    "int": 21,
+    "spi": 21
+   },
+   {
+    "level": 5,
+    "str": 21,
+    "agi": 33,
+    "sta": 23,
+    "int": 21,
+    "spi": 21
+   },
+   {
+    "level": 6,
+    "str": 21,
+    "agi": 34,
+    "sta": 23,
+    "int": 21,
+    "spi": 22
+   },
+   {
+    "level": 7,
+    "str": 22,
+    "agi": 36,
+    "sta": 24,
+    "int": 21,
+    "spi": 22
+   },
+   {
+    "level": 8,
+    "str": 23,
+    "agi": 37,
+    "sta": 24,
+    "int": 21,
+    "spi": 22
+   },
+   {
+    "level": 9,
+    "str": 24,
+    "agi": 38,
+    "sta": 25,
+    "int": 21,
+    "spi": 23
+   },
+   {
+    "level": 10,
+    "str": 24,
+    "agi": 40,
+    "sta": 26,
+    "int": 22,
+    "spi": 23
+   },
+   {
+    "level": 11,
+    "str": 25,
+    "agi": 41,
+    "sta": 27,
+    "int": 22,
+    "spi": 24
+   },
+   {
+    "level": 12,
+    "str": 26,
+    "agi": 42,
+    "sta": 27,
+    "int": 22,
+    "spi": 24
+   },
+   {
+    "level": 13,
+    "str": 27,
+    "agi": 44,
+    "sta": 28,
+    "int": 22,
+    "spi": 24
+   },
+   {
+    "level": 14,
+    "str": 27,
+    "agi": 45,
+    "sta": 29,
+    "int": 22,
+    "spi": 25
+   },
+   {
+    "level": 15,
+    "str": 28,
+    "agi": 47,
+    "sta": 29,
+    "int": 23,
+    "spi": 25
+   },
+   {
+    "level": 16,
+    "str": 29,
+    "agi": 48,
+    "sta": 30,
+    "int": 23,
+    "spi": 26
+   },
+   {
+    "level": 17,
+    "str": 30,
+    "agi": 49,
+    "sta": 31,
+    "int": 23,
+    "spi": 26
+   },
+   {
+    "level": 18,
+    "str": 31,
+    "agi": 51,
+    "sta": 32,
+    "int": 23,
+    "spi": 26
+   },
+   {
+    "level": 19,
+    "str": 32,
+    "agi": 53,
+    "sta": 32,
+    "int": 23,
+    "spi": 27
+   },
+   {
+    "level": 20,
+    "str": 32,
+    "agi": 54,
+    "sta": 33,
+    "int": 24,
+    "spi": 27
+   },
+   {
+    "level": 21,
+    "str": 33,
+    "agi": 56,
+    "sta": 34,
+    "int": 24,
+    "spi": 28
+   },
+   {
+    "level": 22,
+    "str": 34,
+    "agi": 57,
+    "sta": 35,
+    "int": 24,
+    "spi": 28
+   },
+   {
+    "level": 23,
+    "str": 35,
+    "agi": 59,
+    "sta": 36,
+    "int": 24,
+    "spi": 29
+   },
+   {
+    "level": 24,
+    "str": 36,
+    "agi": 60,
+    "sta": 36,
+    "int": 25,
+    "spi": 29
+   },
+   {
+    "level": 25,
+    "str": 37,
+    "agi": 62,
+    "sta": 37,
+    "int": 25,
+    "spi": 30
+   },
+   {
+    "level": 26,
+    "str": 38,
+    "agi": 64,
+    "sta": 38,
+    "int": 25,
+    "spi": 30
+   },
+   {
+    "level": 27,
+    "str": 39,
+    "agi": 65,
+    "sta": 39,
+    "int": 25,
+    "spi": 30
+   },
+   {
+    "level": 28,
+    "str": 40,
+    "agi": 67,
+    "sta": 40,
+    "int": 25,
+    "spi": 31
+   },
+   {
+    "level": 29,
+    "str": 40,
+    "agi": 69,
+    "sta": 41,
+    "int": 26,
+    "spi": 31
+   },
+   {
+    "level": 30,
+    "str": 41,
+    "agi": 71,
+    "sta": 41,
+    "int": 26,
+    "spi": 32
+   },
+   {
+    "level": 31,
+    "str": 42,
+    "agi": 72,
+    "sta": 42,
+    "int": 26,
+    "spi": 32
+   },
+   {
+    "level": 32,
+    "str": 43,
+    "agi": 74,
+    "sta": 43,
+    "int": 26,
+    "spi": 33
+   },
+   {
+    "level": 33,
+    "str": 44,
+    "agi": 76,
+    "sta": 44,
+    "int": 27,
+    "spi": 33
+   },
+   {
+    "level": 34,
+    "str": 45,
+    "agi": 78,
+    "sta": 45,
+    "int": 27,
+    "spi": 34
+   },
+   {
+    "level": 35,
+    "str": 46,
+    "agi": 80,
+    "sta": 46,
+    "int": 27,
+    "spi": 34
+   },
+   {
+    "level": 36,
+    "str": 48,
+    "agi": 82,
+    "sta": 47,
+    "int": 28,
+    "spi": 35
+   },
+   {
+    "level": 37,
+    "str": 49,
+    "agi": 83,
+    "sta": 48,
+    "int": 28,
+    "spi": 36
+   },
+   {
+    "level": 38,
+    "str": 50,
+    "agi": 85,
+    "sta": 49,
+    "int": 28,
+    "spi": 36
+   },
+   {
+    "level": 39,
+    "str": 51,
+    "agi": 87,
+    "sta": 50,
+    "int": 28,
+    "spi": 37
+   },
+   {
+    "level": 40,
+    "str": 52,
+    "agi": 89,
+    "sta": 51,
+    "int": 29,
+    "spi": 37
+   },
+   {
+    "level": 41,
+    "str": 53,
+    "agi": 91,
+    "sta": 52,
+    "int": 29,
+    "spi": 38
+   },
+   {
+    "level": 42,
+    "str": 54,
+    "agi": 93,
+    "sta": 53,
+    "int": 29,
+    "spi": 38
+   },
+   {
+    "level": 43,
+    "str": 55,
+    "agi": 95,
+    "sta": 54,
+    "int": 29,
+    "spi": 39
+   },
+   {
+    "level": 44,
+    "str": 56,
+    "agi": 98,
+    "sta": 55,
+    "int": 30,
+    "spi": 39
+   },
+   {
+    "level": 45,
+    "str": 58,
+    "agi": 100,
+    "sta": 56,
+    "int": 30,
+    "spi": 40
+   },
+   {
+    "level": 46,
+    "str": 59,
+    "agi": 102,
+    "sta": 57,
+    "int": 30,
+    "spi": 41
+   },
+   {
+    "level": 47,
+    "str": 60,
+    "agi": 104,
+    "sta": 58,
+    "int": 31,
+    "spi": 41
+   },
+   {
+    "level": 48,
+    "str": 61,
+    "agi": 106,
+    "sta": 59,
+    "int": 31,
+    "spi": 42
+   },
+   {
+    "level": 49,
+    "str": 62,
+    "agi": 108,
+    "sta": 61,
+    "int": 31,
+    "spi": 43
+   },
+   {
+    "level": 50,
+    "str": 64,
+    "agi": 111,
+    "sta": 62,
+    "int": 32,
+    "spi": 43
+   },
+   {
+    "level": 51,
+    "str": 65,
+    "agi": 113,
+    "sta": 63,
+    "int": 32,
+    "spi": 44
+   },
+   {
+    "level": 52,
+    "str": 66,
+    "agi": 115,
+    "sta": 64,
+    "int": 32,
+    "spi": 44
+   },
+   {
+    "level": 53,
+    "str": 67,
+    "agi": 118,
+    "sta": 65,
+    "int": 33,
+    "spi": 45
+   },
+   {
+    "level": 54,
+    "str": 69,
+    "agi": 120,
+    "sta": 66,
+    "int": 33,
+    "spi": 46
+   },
+   {
+    "level": 55,
+    "str": 70,
+    "agi": 122,
+    "sta": 68,
+    "int": 33,
+    "spi": 46
+   },
+   {
+    "level": 56,
+    "str": 71,
+    "agi": 125,
+    "sta": 69,
+    "int": 34,
+    "spi": 47
+   },
+   {
+    "level": 57,
+    "str": 73,
+    "agi": 127,
+    "sta": 70,
+    "int": 34,
+    "spi": 48
+   },
+   {
+    "level": 58,
+    "str": 74,
+    "agi": 130,
+    "sta": 71,
+    "int": 34,
+    "spi": 49
+   },
+   {
+    "level": 59,
+    "str": 76,
+    "agi": 132,
+    "sta": 73,
+    "int": 35,
+    "spi": 49
+   },
+   {
+    "level": 60,
+    "str": 77,
+    "agi": 135,
+    "sta": 74,
+    "int": 35,
+    "spi": 50
+   }
+  ],
+  "undead": [
+   {
+    "level": 1,
+    "str": 20,
+    "agi": 21,
+    "sta": 22,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 2,
+    "str": 21,
+    "agi": 22,
+    "sta": 23,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 3,
+    "str": 21,
+    "agi": 23,
+    "sta": 23,
+    "int": 18,
+    "spi": 26
+   },
+   {
+    "level": 4,
+    "str": 22,
+    "agi": 25,
+    "sta": 24,
+    "int": 19,
+    "spi": 26
+   },
+   {
+    "level": 5,
+    "str": 23,
+    "agi": 26,
+    "sta": 25,
+    "int": 19,
+    "spi": 26
+   },
+   {
+    "level": 6,
+    "str": 23,
+    "agi": 27,
+    "sta": 25,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 7,
+    "str": 24,
+    "agi": 29,
+    "sta": 26,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 8,
+    "str": 25,
+    "agi": 30,
+    "sta": 26,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 9,
+    "str": 26,
+    "agi": 31,
+    "sta": 27,
+    "int": 19,
+    "spi": 28
+   },
+   {
+    "level": 10,
+    "str": 26,
+    "agi": 33,
+    "sta": 28,
+    "int": 20,
+    "spi": 28
+   },
+   {
+    "level": 11,
+    "str": 27,
+    "agi": 34,
+    "sta": 29,
+    "int": 20,
+    "spi": 29
+   },
+   {
+    "level": 12,
+    "str": 28,
+    "agi": 35,
+    "sta": 29,
+    "int": 20,
+    "spi": 29
+   },
+   {
+    "level": 13,
+    "str": 29,
+    "agi": 37,
+    "sta": 30,
+    "int": 20,
+    "spi": 29
+   },
+   {
+    "level": 14,
+    "str": 29,
+    "agi": 38,
+    "sta": 31,
+    "int": 20,
+    "spi": 30
+   },
+   {
+    "level": 15,
+    "str": 30,
+    "agi": 40,
+    "sta": 31,
+    "int": 21,
+    "spi": 30
+   },
+   {
+    "level": 16,
+    "str": 31,
+    "agi": 41,
+    "sta": 32,
+    "int": 21,
+    "spi": 31
+   },
+   {
+    "level": 17,
+    "str": 32,
+    "agi": 42,
+    "sta": 33,
+    "int": 21,
+    "spi": 31
+   },
+   {
+    "level": 18,
+    "str": 33,
+    "agi": 44,
+    "sta": 34,
+    "int": 21,
+    "spi": 31
+   },
+   {
+    "level": 19,
+    "str": 34,
+    "agi": 46,
+    "sta": 34,
+    "int": 21,
+    "spi": 32
+   },
+   {
+    "level": 20,
+    "str": 34,
+    "agi": 47,
+    "sta": 35,
+    "int": 22,
+    "spi": 32
+   },
+   {
+    "level": 21,
+    "str": 35,
+    "agi": 49,
+    "sta": 36,
+    "int": 22,
+    "spi": 33
+   },
+   {
+    "level": 22,
+    "str": 36,
+    "agi": 50,
+    "sta": 37,
+    "int": 22,
+    "spi": 33
+   },
+   {
+    "level": 23,
+    "str": 37,
+    "agi": 52,
+    "sta": 38,
+    "int": 22,
+    "spi": 34
+   },
+   {
+    "level": 24,
+    "str": 38,
+    "agi": 53,
+    "sta": 38,
+    "int": 23,
+    "spi": 34
+   },
+   {
+    "level": 25,
+    "str": 39,
+    "agi": 55,
+    "sta": 39,
+    "int": 23,
+    "spi": 35
+   },
+   {
+    "level": 26,
+    "str": 40,
+    "agi": 57,
+    "sta": 40,
+    "int": 23,
+    "spi": 35
+   },
+   {
+    "level": 27,
+    "str": 41,
+    "agi": 58,
+    "sta": 41,
+    "int": 23,
+    "spi": 35
+   },
+   {
+    "level": 28,
+    "str": 42,
+    "agi": 60,
+    "sta": 42,
+    "int": 23,
+    "spi": 36
+   },
+   {
+    "level": 29,
+    "str": 42,
+    "agi": 62,
+    "sta": 43,
+    "int": 24,
+    "spi": 36
+   },
+   {
+    "level": 30,
+    "str": 43,
+    "agi": 64,
+    "sta": 43,
+    "int": 24,
+    "spi": 37
+   },
+   {
+    "level": 31,
+    "str": 44,
+    "agi": 65,
+    "sta": 44,
+    "int": 24,
+    "spi": 37
+   },
+   {
+    "level": 32,
+    "str": 45,
+    "agi": 67,
+    "sta": 45,
+    "int": 24,
+    "spi": 38
+   },
+   {
+    "level": 33,
+    "str": 46,
+    "agi": 69,
+    "sta": 46,
+    "int": 25,
+    "spi": 38
+   },
+   {
+    "level": 34,
+    "str": 47,
+    "agi": 71,
+    "sta": 47,
+    "int": 25,
+    "spi": 39
+   },
+   {
+    "level": 35,
+    "str": 48,
+    "agi": 73,
+    "sta": 48,
+    "int": 25,
+    "spi": 39
+   },
+   {
+    "level": 36,
+    "str": 50,
+    "agi": 75,
+    "sta": 49,
+    "int": 26,
+    "spi": 40
+   },
+   {
+    "level": 37,
+    "str": 51,
+    "agi": 76,
+    "sta": 50,
+    "int": 26,
+    "spi": 41
+   },
+   {
+    "level": 38,
+    "str": 52,
+    "agi": 78,
+    "sta": 51,
+    "int": 26,
+    "spi": 41
+   },
+   {
+    "level": 39,
+    "str": 53,
+    "agi": 80,
+    "sta": 52,
+    "int": 26,
+    "spi": 42
+   },
+   {
+    "level": 40,
+    "str": 54,
+    "agi": 82,
+    "sta": 53,
+    "int": 27,
+    "spi": 42
+   },
+   {
+    "level": 41,
+    "str": 55,
+    "agi": 84,
+    "sta": 54,
+    "int": 27,
+    "spi": 43
+   },
+   {
+    "level": 42,
+    "str": 56,
+    "agi": 86,
+    "sta": 55,
+    "int": 27,
+    "spi": 43
+   },
+   {
+    "level": 43,
+    "str": 57,
+    "agi": 88,
+    "sta": 56,
+    "int": 27,
+    "spi": 44
+   },
+   {
+    "level": 44,
+    "str": 58,
+    "agi": 91,
+    "sta": 57,
+    "int": 28,
+    "spi": 44
+   },
+   {
+    "level": 45,
+    "str": 60,
+    "agi": 93,
+    "sta": 58,
+    "int": 28,
+    "spi": 45
+   },
+   {
+    "level": 46,
+    "str": 61,
+    "agi": 95,
+    "sta": 59,
+    "int": 28,
+    "spi": 46
+   },
+   {
+    "level": 47,
+    "str": 62,
+    "agi": 97,
+    "sta": 60,
+    "int": 29,
+    "spi": 46
+   },
+   {
+    "level": 48,
+    "str": 63,
+    "agi": 99,
+    "sta": 61,
+    "int": 29,
+    "spi": 47
+   },
+   {
+    "level": 49,
+    "str": 64,
+    "agi": 101,
+    "sta": 63,
+    "int": 29,
+    "spi": 48
+   },
+   {
+    "level": 50,
+    "str": 66,
+    "agi": 104,
+    "sta": 64,
+    "int": 30,
+    "spi": 48
+   },
+   {
+    "level": 51,
+    "str": 67,
+    "agi": 106,
+    "sta": 65,
+    "int": 30,
+    "spi": 49
+   },
+   {
+    "level": 52,
+    "str": 68,
+    "agi": 108,
+    "sta": 66,
+    "int": 30,
+    "spi": 49
+   },
+   {
+    "level": 53,
+    "str": 69,
+    "agi": 111,
+    "sta": 67,
+    "int": 31,
+    "spi": 50
+   },
+   {
+    "level": 54,
+    "str": 71,
+    "agi": 113,
+    "sta": 68,
+    "int": 31,
+    "spi": 51
+   },
+   {
+    "level": 55,
+    "str": 72,
+    "agi": 115,
+    "sta": 70,
+    "int": 31,
+    "spi": 51
+   },
+   {
+    "level": 56,
+    "str": 73,
+    "agi": 118,
+    "sta": 71,
+    "int": 32,
+    "spi": 52
+   },
+   {
+    "level": 57,
+    "str": 75,
+    "agi": 120,
+    "sta": 72,
+    "int": 32,
+    "spi": 53
+   },
+   {
+    "level": 58,
+    "str": 76,
+    "agi": 123,
+    "sta": 73,
+    "int": 32,
+    "spi": 54
+   },
+   {
+    "level": 59,
+    "str": 78,
+    "agi": 125,
+    "sta": 75,
+    "int": 33,
+    "spi": 54
+   },
+   {
+    "level": 60,
+    "str": 79,
+    "agi": 128,
+    "sta": 76,
+    "int": 33,
+    "spi": 55
+   }
+  ],
+  "tauren": [
+   {
+    "level": 1,
+    "str": 26,
+    "agi": 18,
+    "sta": 23,
+    "int": 15,
+    "spi": 22
+   },
+   {
+    "level": 2,
+    "str": 27,
+    "agi": 19,
+    "sta": 24,
+    "int": 15,
+    "spi": 22
+   },
+   {
+    "level": 3,
+    "str": 27,
+    "agi": 20,
+    "sta": 24,
+    "int": 15,
+    "spi": 23
+   },
+   {
+    "level": 4,
+    "str": 28,
+    "agi": 22,
+    "sta": 25,
+    "int": 16,
+    "spi": 23
+   },
+   {
+    "level": 5,
+    "str": 29,
+    "agi": 23,
+    "sta": 26,
+    "int": 16,
+    "spi": 23
+   },
+   {
+    "level": 6,
+    "str": 29,
+    "agi": 24,
+    "sta": 26,
+    "int": 16,
+    "spi": 24
+   },
+   {
+    "level": 7,
+    "str": 30,
+    "agi": 26,
+    "sta": 27,
+    "int": 16,
+    "spi": 24
+   },
+   {
+    "level": 8,
+    "str": 31,
+    "agi": 27,
+    "sta": 27,
+    "int": 16,
+    "spi": 24
+   },
+   {
+    "level": 9,
+    "str": 32,
+    "agi": 28,
+    "sta": 28,
+    "int": 16,
+    "spi": 25
+   },
+   {
+    "level": 10,
+    "str": 32,
+    "agi": 30,
+    "sta": 29,
+    "int": 17,
+    "spi": 25
+   },
+   {
+    "level": 11,
+    "str": 33,
+    "agi": 31,
+    "sta": 30,
+    "int": 17,
+    "spi": 26
+   },
+   {
+    "level": 12,
+    "str": 34,
+    "agi": 32,
+    "sta": 30,
+    "int": 17,
+    "spi": 26
+   },
+   {
+    "level": 13,
+    "str": 35,
+    "agi": 34,
+    "sta": 31,
+    "int": 17,
+    "spi": 26
+   },
+   {
+    "level": 14,
+    "str": 35,
+    "agi": 35,
+    "sta": 32,
+    "int": 17,
+    "spi": 27
+   },
+   {
+    "level": 15,
+    "str": 36,
+    "agi": 37,
+    "sta": 32,
+    "int": 18,
+    "spi": 27
+   },
+   {
+    "level": 16,
+    "str": 37,
+    "agi": 38,
+    "sta": 33,
+    "int": 18,
+    "spi": 28
+   },
+   {
+    "level": 17,
+    "str": 38,
+    "agi": 39,
+    "sta": 34,
+    "int": 18,
+    "spi": 28
+   },
+   {
+    "level": 18,
+    "str": 39,
+    "agi": 41,
+    "sta": 35,
+    "int": 18,
+    "spi": 28
+   },
+   {
+    "level": 19,
+    "str": 40,
+    "agi": 43,
+    "sta": 35,
+    "int": 18,
+    "spi": 29
+   },
+   {
+    "level": 20,
+    "str": 40,
+    "agi": 44,
+    "sta": 36,
+    "int": 19,
+    "spi": 29
+   },
+   {
+    "level": 21,
+    "str": 41,
+    "agi": 46,
+    "sta": 37,
+    "int": 19,
+    "spi": 30
+   },
+   {
+    "level": 22,
+    "str": 42,
+    "agi": 47,
+    "sta": 38,
+    "int": 19,
+    "spi": 30
+   },
+   {
+    "level": 23,
+    "str": 43,
+    "agi": 49,
+    "sta": 39,
+    "int": 19,
+    "spi": 31
+   },
+   {
+    "level": 24,
+    "str": 44,
+    "agi": 50,
+    "sta": 39,
+    "int": 20,
+    "spi": 31
+   },
+   {
+    "level": 25,
+    "str": 45,
+    "agi": 52,
+    "sta": 40,
+    "int": 20,
+    "spi": 32
+   },
+   {
+    "level": 26,
+    "str": 46,
+    "agi": 54,
+    "sta": 41,
+    "int": 20,
+    "spi": 32
+   },
+   {
+    "level": 27,
+    "str": 47,
+    "agi": 55,
+    "sta": 42,
+    "int": 20,
+    "spi": 32
+   },
+   {
+    "level": 28,
+    "str": 48,
+    "agi": 57,
+    "sta": 43,
+    "int": 20,
+    "spi": 33
+   },
+   {
+    "level": 29,
+    "str": 48,
+    "agi": 59,
+    "sta": 44,
+    "int": 21,
+    "spi": 33
+   },
+   {
+    "level": 30,
+    "str": 49,
+    "agi": 61,
+    "sta": 44,
+    "int": 21,
+    "spi": 34
+   },
+   {
+    "level": 31,
+    "str": 50,
+    "agi": 62,
+    "sta": 45,
+    "int": 21,
+    "spi": 34
+   },
+   {
+    "level": 32,
+    "str": 51,
+    "agi": 64,
+    "sta": 46,
+    "int": 21,
+    "spi": 35
+   },
+   {
+    "level": 33,
+    "str": 52,
+    "agi": 66,
+    "sta": 47,
+    "int": 22,
+    "spi": 35
+   },
+   {
+    "level": 34,
+    "str": 53,
+    "agi": 68,
+    "sta": 48,
+    "int": 22,
+    "spi": 36
+   },
+   {
+    "level": 35,
+    "str": 54,
+    "agi": 70,
+    "sta": 49,
+    "int": 22,
+    "spi": 36
+   },
+   {
+    "level": 36,
+    "str": 56,
+    "agi": 72,
+    "sta": 50,
+    "int": 23,
+    "spi": 37
+   },
+   {
+    "level": 37,
+    "str": 57,
+    "agi": 73,
+    "sta": 51,
+    "int": 23,
+    "spi": 38
+   },
+   {
+    "level": 38,
+    "str": 58,
+    "agi": 75,
+    "sta": 52,
+    "int": 23,
+    "spi": 38
+   },
+   {
+    "level": 39,
+    "str": 59,
+    "agi": 77,
+    "sta": 53,
+    "int": 23,
+    "spi": 39
+   },
+   {
+    "level": 40,
+    "str": 60,
+    "agi": 79,
+    "sta": 54,
+    "int": 24,
+    "spi": 39
+   },
+   {
+    "level": 41,
+    "str": 61,
+    "agi": 81,
+    "sta": 55,
+    "int": 24,
+    "spi": 40
+   },
+   {
+    "level": 42,
+    "str": 62,
+    "agi": 83,
+    "sta": 56,
+    "int": 24,
+    "spi": 40
+   },
+   {
+    "level": 43,
+    "str": 63,
+    "agi": 85,
+    "sta": 57,
+    "int": 24,
+    "spi": 41
+   },
+   {
+    "level": 44,
+    "str": 64,
+    "agi": 88,
+    "sta": 58,
+    "int": 25,
+    "spi": 41
+   },
+   {
+    "level": 45,
+    "str": 66,
+    "agi": 90,
+    "sta": 59,
+    "int": 25,
+    "spi": 42
+   },
+   {
+    "level": 46,
+    "str": 67,
+    "agi": 92,
+    "sta": 60,
+    "int": 25,
+    "spi": 43
+   },
+   {
+    "level": 47,
+    "str": 68,
+    "agi": 94,
+    "sta": 61,
+    "int": 26,
+    "spi": 43
+   },
+   {
+    "level": 48,
+    "str": 69,
+    "agi": 96,
+    "sta": 62,
+    "int": 26,
+    "spi": 44
+   },
+   {
+    "level": 49,
+    "str": 70,
+    "agi": 98,
+    "sta": 64,
+    "int": 26,
+    "spi": 45
+   },
+   {
+    "level": 50,
+    "str": 72,
+    "agi": 101,
+    "sta": 65,
+    "int": 27,
+    "spi": 45
+   },
+   {
+    "level": 51,
+    "str": 73,
+    "agi": 103,
+    "sta": 66,
+    "int": 27,
+    "spi": 46
+   },
+   {
+    "level": 52,
+    "str": 74,
+    "agi": 105,
+    "sta": 67,
+    "int": 27,
+    "spi": 46
+   },
+   {
+    "level": 53,
+    "str": 75,
+    "agi": 108,
+    "sta": 68,
+    "int": 28,
+    "spi": 47
+   },
+   {
+    "level": 54,
+    "str": 77,
+    "agi": 110,
+    "sta": 69,
+    "int": 28,
+    "spi": 48
+   },
+   {
+    "level": 55,
+    "str": 78,
+    "agi": 112,
+    "sta": 71,
+    "int": 28,
+    "spi": 48
+   },
+   {
+    "level": 56,
+    "str": 79,
+    "agi": 115,
+    "sta": 72,
+    "int": 29,
+    "spi": 49
+   },
+   {
+    "level": 57,
+    "str": 81,
+    "agi": 117,
+    "sta": 73,
+    "int": 29,
+    "spi": 50
+   },
+   {
+    "level": 58,
+    "str": 82,
+    "agi": 120,
+    "sta": 74,
+    "int": 29,
+    "spi": 51
+   },
+   {
+    "level": 59,
+    "str": 84,
+    "agi": 122,
+    "sta": 76,
+    "int": 30,
+    "spi": 51
+   },
+   {
+    "level": 60,
+    "str": 85,
+    "agi": 125,
+    "sta": 77,
+    "int": 30,
+    "spi": 52
+   }
+  ],
+  "gnome": [
+   {
+    "level": 1,
+    "str": 16,
+    "agi": 26,
+    "sta": 20,
+    "int": 23,
+    "spi": 20
+   },
+   {
+    "level": 2,
+    "str": 17,
+    "agi": 27,
+    "sta": 21,
+    "int": 23,
+    "spi": 20
+   },
+   {
+    "level": 3,
+    "str": 17,
+    "agi": 28,
+    "sta": 21,
+    "int": 23,
+    "spi": 21
+   },
+   {
+    "level": 4,
+    "str": 18,
+    "agi": 30,
+    "sta": 22,
+    "int": 24,
+    "spi": 21
+   },
+   {
+    "level": 5,
+    "str": 19,
+    "agi": 31,
+    "sta": 23,
+    "int": 24,
+    "spi": 21
+   },
+   {
+    "level": 6,
+    "str": 19,
+    "agi": 32,
+    "sta": 23,
+    "int": 24,
+    "spi": 22
+   },
+   {
+    "level": 7,
+    "str": 20,
+    "agi": 34,
+    "sta": 24,
+    "int": 24,
+    "spi": 22
+   },
+   {
+    "level": 8,
+    "str": 21,
+    "agi": 35,
+    "sta": 24,
+    "int": 24,
+    "spi": 22
+   },
+   {
+    "level": 9,
+    "str": 22,
+    "agi": 36,
+    "sta": 25,
+    "int": 24,
+    "spi": 23
+   },
+   {
+    "level": 10,
+    "str": 22,
+    "agi": 38,
+    "sta": 26,
+    "int": 25,
+    "spi": 23
+   },
+   {
+    "level": 11,
+    "str": 23,
+    "agi": 39,
+    "sta": 27,
+    "int": 26,
+    "spi": 24
+   },
+   {
+    "level": 12,
+    "str": 24,
+    "agi": 40,
+    "sta": 27,
+    "int": 26,
+    "spi": 24
+   },
+   {
+    "level": 13,
+    "str": 25,
+    "agi": 42,
+    "sta": 28,
+    "int": 26,
+    "spi": 24
+   },
+   {
+    "level": 14,
+    "str": 25,
+    "agi": 43,
+    "sta": 29,
+    "int": 26,
+    "spi": 25
+   },
+   {
+    "level": 15,
+    "str": 26,
+    "agi": 45,
+    "sta": 29,
+    "int": 27,
+    "spi": 25
+   },
+   {
+    "level": 16,
+    "str": 27,
+    "agi": 46,
+    "sta": 30,
+    "int": 27,
+    "spi": 26
+   },
+   {
+    "level": 17,
+    "str": 28,
+    "agi": 47,
+    "sta": 31,
+    "int": 27,
+    "spi": 26
+   },
+   {
+    "level": 18,
+    "str": 29,
+    "agi": 49,
+    "sta": 32,
+    "int": 27,
+    "spi": 26
+   },
+   {
+    "level": 19,
+    "str": 30,
+    "agi": 51,
+    "sta": 32,
+    "int": 27,
+    "spi": 27
+   },
+   {
+    "level": 20,
+    "str": 30,
+    "agi": 52,
+    "sta": 33,
+    "int": 28,
+    "spi": 27
+   },
+   {
+    "level": 21,
+    "str": 31,
+    "agi": 54,
+    "sta": 34,
+    "int": 28,
+    "spi": 28
+   },
+   {
+    "level": 22,
+    "str": 32,
+    "agi": 55,
+    "sta": 35,
+    "int": 28,
+    "spi": 28
+   },
+   {
+    "level": 23,
+    "str": 33,
+    "agi": 57,
+    "sta": 36,
+    "int": 28,
+    "spi": 29
+   },
+   {
+    "level": 24,
+    "str": 34,
+    "agi": 58,
+    "sta": 36,
+    "int": 29,
+    "spi": 29
+   },
+   {
+    "level": 25,
+    "str": 35,
+    "agi": 60,
+    "sta": 37,
+    "int": 29,
+    "spi": 30
+   },
+   {
+    "level": 26,
+    "str": 36,
+    "agi": 62,
+    "sta": 38,
+    "int": 29,
+    "spi": 30
+   },
+   {
+    "level": 27,
+    "str": 37,
+    "agi": 63,
+    "sta": 39,
+    "int": 29,
+    "spi": 30
+   },
+   {
+    "level": 28,
+    "str": 38,
+    "agi": 65,
+    "sta": 40,
+    "int": 29,
+    "spi": 31
+   },
+   {
+    "level": 29,
+    "str": 38,
+    "agi": 67,
+    "sta": 41,
+    "int": 30,
+    "spi": 31
+   },
+   {
+    "level": 30,
+    "str": 39,
+    "agi": 69,
+    "sta": 41,
+    "int": 30,
+    "spi": 32
+   },
+   {
+    "level": 31,
+    "str": 40,
+    "agi": 70,
+    "sta": 42,
+    "int": 30,
+    "spi": 32
+   },
+   {
+    "level": 32,
+    "str": 41,
+    "agi": 72,
+    "sta": 43,
+    "int": 30,
+    "spi": 33
+   },
+   {
+    "level": 33,
+    "str": 42,
+    "agi": 74,
+    "sta": 44,
+    "int": 32,
+    "spi": 33
+   },
+   {
+    "level": 34,
+    "str": 43,
+    "agi": 76,
+    "sta": 45,
+    "int": 32,
+    "spi": 34
+   },
+   {
+    "level": 35,
+    "str": 44,
+    "agi": 78,
+    "sta": 46,
+    "int": 32,
+    "spi": 34
+   },
+   {
+    "level": 36,
+    "str": 46,
+    "agi": 80,
+    "sta": 47,
+    "int": 33,
+    "spi": 35
+   },
+   {
+    "level": 37,
+    "str": 47,
+    "agi": 81,
+    "sta": 48,
+    "int": 33,
+    "spi": 36
+   },
+   {
+    "level": 38,
+    "str": 48,
+    "agi": 83,
+    "sta": 49,
+    "int": 33,
+    "spi": 36
+   },
+   {
+    "level": 39,
+    "str": 49,
+    "agi": 85,
+    "sta": 50,
+    "int": 33,
+    "spi": 37
+   },
+   {
+    "level": 40,
+    "str": 50,
+    "agi": 87,
+    "sta": 51,
+    "int": 34,
+    "spi": 37
+   },
+   {
+    "level": 41,
+    "str": 51,
+    "agi": 89,
+    "sta": 52,
+    "int": 34,
+    "spi": 38
+   },
+   {
+    "level": 42,
+    "str": 52,
+    "agi": 91,
+    "sta": 53,
+    "int": 34,
+    "spi": 38
+   },
+   {
+    "level": 43,
+    "str": 53,
+    "agi": 93,
+    "sta": 54,
+    "int": 34,
+    "spi": 39
+   },
+   {
+    "level": 44,
+    "str": 54,
+    "agi": 96,
+    "sta": 55,
+    "int": 35,
+    "spi": 39
+   },
+   {
+    "level": 45,
+    "str": 56,
+    "agi": 98,
+    "sta": 56,
+    "int": 35,
+    "spi": 40
+   },
+   {
+    "level": 46,
+    "str": 57,
+    "agi": 100,
+    "sta": 57,
+    "int": 35,
+    "spi": 41
+   },
+   {
+    "level": 47,
+    "str": 58,
+    "agi": 102,
+    "sta": 58,
+    "int": 36,
+    "spi": 41
+   },
+   {
+    "level": 48,
+    "str": 59,
+    "agi": 104,
+    "sta": 59,
+    "int": 36,
+    "spi": 42
+   },
+   {
+    "level": 49,
+    "str": 60,
+    "agi": 106,
+    "sta": 61,
+    "int": 36,
+    "spi": 43
+   },
+   {
+    "level": 50,
+    "str": 62,
+    "agi": 109,
+    "sta": 62,
+    "int": 37,
+    "spi": 43
+   },
+   {
+    "level": 51,
+    "str": 63,
+    "agi": 111,
+    "sta": 63,
+    "int": 37,
+    "spi": 44
+   },
+   {
+    "level": 52,
+    "str": 64,
+    "agi": 113,
+    "sta": 64,
+    "int": 37,
+    "spi": 44
+   },
+   {
+    "level": 53,
+    "str": 65,
+    "agi": 116,
+    "sta": 65,
+    "int": 38,
+    "spi": 45
+   },
+   {
+    "level": 54,
+    "str": 67,
+    "agi": 118,
+    "sta": 66,
+    "int": 38,
+    "spi": 46
+   },
+   {
+    "level": 55,
+    "str": 68,
+    "agi": 120,
+    "sta": 68,
+    "int": 38,
+    "spi": 46
+   },
+   {
+    "level": 56,
+    "str": 69,
+    "agi": 123,
+    "sta": 69,
+    "int": 39,
+    "spi": 47
+   },
+   {
+    "level": 57,
+    "str": 71,
+    "agi": 125,
+    "sta": 70,
+    "int": 39,
+    "spi": 48
+   },
+   {
+    "level": 58,
+    "str": 72,
+    "agi": 128,
+    "sta": 71,
+    "int": 39,
+    "spi": 49
+   },
+   {
+    "level": 59,
+    "str": 74,
+    "agi": 130,
+    "sta": 73,
+    "int": 40,
+    "spi": 49
+   },
+   {
+    "level": 60,
+    "str": 75,
+    "agi": 133,
+    "sta": 74,
+    "int": 40,
+    "spi": 50
+   }
+  ],
+  "troll": [
+   {
+    "level": 1,
+    "str": 22,
+    "agi": 25,
+    "sta": 22,
+    "int": 16,
+    "spi": 21
+   },
+   {
+    "level": 2,
+    "str": 23,
+    "agi": 26,
+    "sta": 23,
+    "int": 16,
+    "spi": 21
+   },
+   {
+    "level": 3,
+    "str": 23,
+    "agi": 27,
+    "sta": 23,
+    "int": 16,
+    "spi": 22
+   },
+   {
+    "level": 4,
+    "str": 24,
+    "agi": 29,
+    "sta": 24,
+    "int": 17,
+    "spi": 22
+   },
+   {
+    "level": 5,
+    "str": 25,
+    "agi": 30,
+    "sta": 25,
+    "int": 17,
+    "spi": 22
+   },
+   {
+    "level": 6,
+    "str": 25,
+    "agi": 31,
+    "sta": 25,
+    "int": 17,
+    "spi": 23
+   },
+   {
+    "level": 7,
+    "str": 26,
+    "agi": 33,
+    "sta": 26,
+    "int": 17,
+    "spi": 23
+   },
+   {
+    "level": 8,
+    "str": 27,
+    "agi": 34,
+    "sta": 26,
+    "int": 17,
+    "spi": 23
+   },
+   {
+    "level": 9,
+    "str": 28,
+    "agi": 35,
+    "sta": 27,
+    "int": 17,
+    "spi": 24
+   },
+   {
+    "level": 10,
+    "str": 28,
+    "agi": 37,
+    "sta": 28,
+    "int": 18,
+    "spi": 24
+   },
+   {
+    "level": 11,
+    "str": 29,
+    "agi": 38,
+    "sta": 29,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 12,
+    "str": 30,
+    "agi": 39,
+    "sta": 29,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 13,
+    "str": 31,
+    "agi": 41,
+    "sta": 30,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 14,
+    "str": 31,
+    "agi": 42,
+    "sta": 31,
+    "int": 18,
+    "spi": 26
+   },
+   {
+    "level": 15,
+    "str": 32,
+    "agi": 44,
+    "sta": 31,
+    "int": 19,
+    "spi": 26
+   },
+   {
+    "level": 16,
+    "str": 33,
+    "agi": 45,
+    "sta": 32,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 17,
+    "str": 34,
+    "agi": 46,
+    "sta": 33,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 18,
+    "str": 35,
+    "agi": 48,
+    "sta": 34,
+    "int": 19,
+    "spi": 27
+   },
+   {
+    "level": 19,
+    "str": 36,
+    "agi": 50,
+    "sta": 34,
+    "int": 19,
+    "spi": 28
+   },
+   {
+    "level": 20,
+    "str": 36,
+    "agi": 51,
+    "sta": 35,
+    "int": 20,
+    "spi": 28
+   },
+   {
+    "level": 21,
+    "str": 37,
+    "agi": 53,
+    "sta": 36,
+    "int": 20,
+    "spi": 29
+   },
+   {
+    "level": 22,
+    "str": 38,
+    "agi": 54,
+    "sta": 37,
+    "int": 20,
+    "spi": 29
+   },
+   {
+    "level": 23,
+    "str": 39,
+    "agi": 56,
+    "sta": 38,
+    "int": 20,
+    "spi": 30
+   },
+   {
+    "level": 24,
+    "str": 40,
+    "agi": 57,
+    "sta": 38,
+    "int": 21,
+    "spi": 30
+   },
+   {
+    "level": 25,
+    "str": 41,
+    "agi": 59,
+    "sta": 39,
+    "int": 21,
+    "spi": 31
+   },
+   {
+    "level": 26,
+    "str": 42,
+    "agi": 61,
+    "sta": 40,
+    "int": 21,
+    "spi": 31
+   },
+   {
+    "level": 27,
+    "str": 43,
+    "agi": 62,
+    "sta": 41,
+    "int": 21,
+    "spi": 31
+   },
+   {
+    "level": 28,
+    "str": 44,
+    "agi": 64,
+    "sta": 42,
+    "int": 21,
+    "spi": 32
+   },
+   {
+    "level": 29,
+    "str": 44,
+    "agi": 66,
+    "sta": 43,
+    "int": 22,
+    "spi": 32
+   },
+   {
+    "level": 30,
+    "str": 45,
+    "agi": 68,
+    "sta": 43,
+    "int": 22,
+    "spi": 33
+   },
+   {
+    "level": 31,
+    "str": 46,
+    "agi": 69,
+    "sta": 44,
+    "int": 22,
+    "spi": 33
+   },
+   {
+    "level": 32,
+    "str": 47,
+    "agi": 71,
+    "sta": 45,
+    "int": 22,
+    "spi": 34
+   },
+   {
+    "level": 33,
+    "str": 48,
+    "agi": 73,
+    "sta": 46,
+    "int": 23,
+    "spi": 34
+   },
+   {
+    "level": 34,
+    "str": 49,
+    "agi": 75,
+    "sta": 47,
+    "int": 23,
+    "spi": 35
+   },
+   {
+    "level": 35,
+    "str": 50,
+    "agi": 77,
+    "sta": 48,
+    "int": 23,
+    "spi": 35
+   },
+   {
+    "level": 36,
+    "str": 52,
+    "agi": 79,
+    "sta": 49,
+    "int": 24,
+    "spi": 36
+   },
+   {
+    "level": 37,
+    "str": 53,
+    "agi": 80,
+    "sta": 50,
+    "int": 24,
+    "spi": 37
+   },
+   {
+    "level": 38,
+    "str": 54,
+    "agi": 82,
+    "sta": 51,
+    "int": 24,
+    "spi": 37
+   },
+   {
+    "level": 39,
+    "str": 55,
+    "agi": 84,
+    "sta": 52,
+    "int": 24,
+    "spi": 38
+   },
+   {
+    "level": 40,
+    "str": 56,
+    "agi": 86,
+    "sta": 53,
+    "int": 25,
+    "spi": 38
+   },
+   {
+    "level": 41,
+    "str": 57,
+    "agi": 88,
+    "sta": 54,
+    "int": 25,
+    "spi": 39
+   },
+   {
+    "level": 42,
+    "str": 58,
+    "agi": 90,
+    "sta": 55,
+    "int": 25,
+    "spi": 39
+   },
+   {
+    "level": 43,
+    "str": 59,
+    "agi": 92,
+    "sta": 56,
+    "int": 25,
+    "spi": 40
+   },
+   {
+    "level": 44,
+    "str": 60,
+    "agi": 95,
+    "sta": 57,
+    "int": 26,
+    "spi": 40
+   },
+   {
+    "level": 45,
+    "str": 62,
+    "agi": 97,
+    "sta": 58,
+    "int": 26,
+    "spi": 41
+   },
+   {
+    "level": 46,
+    "str": 63,
+    "agi": 99,
+    "sta": 59,
+    "int": 26,
+    "spi": 42
+   },
+   {
+    "level": 47,
+    "str": 64,
+    "agi": 101,
+    "sta": 60,
+    "int": 27,
+    "spi": 42
+   },
+   {
+    "level": 48,
+    "str": 65,
+    "agi": 103,
+    "sta": 61,
+    "int": 27,
+    "spi": 43
+   },
+   {
+    "level": 49,
+    "str": 66,
+    "agi": 105,
+    "sta": 63,
+    "int": 27,
+    "spi": 44
+   },
+   {
+    "level": 50,
+    "str": 68,
+    "agi": 108,
+    "sta": 64,
+    "int": 28,
+    "spi": 44
+   },
+   {
+    "level": 51,
+    "str": 69,
+    "agi": 110,
+    "sta": 65,
+    "int": 28,
+    "spi": 45
+   },
+   {
+    "level": 52,
+    "str": 70,
+    "agi": 112,
+    "sta": 66,
+    "int": 28,
+    "spi": 45
+   },
+   {
+    "level": 53,
+    "str": 71,
+    "agi": 115,
+    "sta": 67,
+    "int": 29,
+    "spi": 46
+   },
+   {
+    "level": 54,
+    "str": 73,
+    "agi": 117,
+    "sta": 68,
+    "int": 29,
+    "spi": 47
+   },
+   {
+    "level": 55,
+    "str": 74,
+    "agi": 119,
+    "sta": 70,
+    "int": 29,
+    "spi": 47
+   },
+   {
+    "level": 56,
+    "str": 75,
+    "agi": 122,
+    "sta": 71,
+    "int": 30,
+    "spi": 48
+   },
+   {
+    "level": 57,
+    "str": 77,
+    "agi": 124,
+    "sta": 72,
+    "int": 30,
+    "spi": 49
+   },
+   {
+    "level": 58,
+    "str": 78,
+    "agi": 127,
+    "sta": 73,
+    "int": 30,
+    "spi": 50
+   },
+   {
+    "level": 59,
+    "str": 80,
+    "agi": 129,
+    "sta": 75,
+    "int": 31,
+    "spi": 50
+   },
+   {
+    "level": 60,
+    "str": 81,
+    "agi": 132,
+    "sta": 76,
+    "int": 31,
+    "spi": 51
+   }
+  ]
+ },
+ "_synthesised_races": [
+  "tauren"
+ ],
+ "_synthesised_note": "tauren: not in player_levelstats for this Class; each is orc's rows plus the race's offset from the Warrior rows (player_levelstats class=1)."
+}

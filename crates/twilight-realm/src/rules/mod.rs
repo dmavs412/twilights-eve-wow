@@ -9,6 +9,7 @@ pub mod haste;
 pub mod leash;
 pub mod loot;
 pub mod melee;
+pub mod power;
 pub mod procs;
 pub mod quest;
 pub mod rage;

@@ -20,6 +20,8 @@ const SERVER_SPELLS: &str = include_str!("../../../data/twilights-eve/server_spe
 #[derive(Deserialize)]
 struct GenCalling {
     key: String,
+    /// `ChrClasses.dbc` id, on every Calling in the file.
+    class: u8,
     name: Option<String>,
     tier: Option<u8>,
     tier_cap: Option<u8>,
@@ -143,6 +145,7 @@ fn calling(g: GenCalling) -> CallingDef {
     CallingDef {
         name: g.name.clone().unwrap_or_else(|| missing("name")),
         tier,
+        class: g.class,
         cap: g.tier_cap.unwrap_or_else(|| missing("tier_cap")),
         tier_bonus: g.tier_bonus.unwrap_or_else(|| missing("tier_bonus")),
         shapeshift_form: g
@@ -191,7 +194,7 @@ fn skill(g: &GenSkill) -> Option<Skill> {
     Some(Skill {
         key: g.key.clone(),
         spell_id: g.spell_id,
-        rage_cost: g.realm_cost,
+        power_cost: g.realm_cost,
         health_cost_pct_of_base_health: 0,
         cooldown_ms: g.realm_cooldown_ms,
         gcd_ms: g.realm_gcd_ms,

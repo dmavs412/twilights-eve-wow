@@ -5,7 +5,8 @@
 # A skill is one real 1.12.1 spell id with no ranks: the client shows that spell's name, icon and
 # tooltip, and the realm decides what it does. Amounts are `{ base, per_level, per_ap, min }`:
 # round(base + per_level * L + per_ap * AP), half away from zero, never below `min` (default 0),
-# where L is the level within the Tier and AP the attack power at cast time. Rage is whole points.
+# where L is the level within the Tier and AP the attack power at cast time. A `power_cost` is whole
+# points of the Calling's power.
 #
 # Every spell id has its `Spell.dbc` name beside it (`spell_id` and `spell_name`, `aura_spell_id`
 # and `aura_spell_name`, a talent's `rank_spells` and `spell_name`), and
@@ -16,6 +17,7 @@
 # `radius_yd`, at most `max_targets`). `range_yd` is `[min, max]`; a max of 5 is melee reach.
 #
 # A Calling: its save `key`, the `name` the select screen shows, its `tier` and Tier Cap (`cap`),
+# its `class` (the 1.12.1 class id: 1 Warrior, 4 Rogue, 8 Mage ...; the power kind follows it),
 # the `tier_bonus` it adds to base stats (cumulative per Tier, on top of the race table), its
 # stance, the `armour` it may wear, skills and Talent Tree. The Advancement Quests into a Calling
 # are quests (content/quests.toml).
@@ -36,6 +38,7 @@
 key = "vanguard"
 name = "Vanguard"
 tier = 1
+class = 1
 cap = 30
 tier_bonus = { strength = 12, agility = 6, stamina = 12, intellect = 0, spirit = 3 }
 shapeshift_form = 17
@@ -47,7 +50,7 @@ armour = ["cloth", "leather", "mail", "plate", "shield"]
 key = "mortal_strike"
 spell_id = 12294
 spell_name = "Mortal Strike"
-rage_cost = 30
+power_cost = 30
 cooldown_ms = 6000
 gcd_ms = 1500
 target = "enemy"
@@ -61,7 +64,7 @@ effects = [
 key = "overpower"
 spell_id = 7887
 spell_name = "Overpower"
-rage_cost = 5
+power_cost = 5
 cooldown_ms = 5000
 gcd_ms = 1500
 target = "enemy"
@@ -75,7 +78,7 @@ effects = [
 key = "charge"
 spell_id = 6178
 spell_name = "Charge"
-rage_cost = 0
+power_cost = 0
 cooldown_ms = 15000
 gcd_ms = 0
 target = "enemy"
@@ -83,7 +86,7 @@ range_yd = [8.0, 25.0]
 requires_out_of_combat = true
 effects = [
     { kind = "charge", speed_yd_s = 24.0 },
-    { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
+    { kind = "energize", power = "rage", amount = { base = 11.0, per_level = 0.1 } },
     { kind = "stun", aura_spell_id = 7922, aura_spell_name = "Charge Stun", duration_ms = 1000 },
 ]
 
@@ -91,7 +94,7 @@ effects = [
 key = "rend"
 spell_id = 6546
 spell_name = "Rend"
-rage_cost = 10
+power_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
 target = "enemy"
@@ -104,7 +107,7 @@ effects = [
 key = "battle_shout"
 spell_id = 6192
 spell_name = "Battle Shout"
-rage_cost = 10
+power_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
 target = "self"
@@ -306,13 +309,14 @@ effects = [
 key = "zealot"
 name = "Zealot"
 tier = 2
+class = 1
 cap = 50
 tier_bonus = { strength = 28, agility = 14, stamina = 28, intellect = 0, spirit = 7 }
 # Still a rage bar and Battle Stance: the borrowed Paladin spells need no stance once rewritten.
 shapeshift_form = 17
 armour = ["cloth", "leather", "mail", "plate", "shield"]
 
-# Borrowed Paladin spells (`borrowed`): the client rewrites each row to cost `rage_cost` rage in any
+# Borrowed Paladin spells (`borrowed`): the client rewrites each row to cost `power_cost` rage in any
 # stance, as a Warrior spell with its own family bit (33..63, which no Warrior spell uses), so a
 # talent's spell modifier can name it (ADR 0003).
 #
@@ -327,7 +331,7 @@ armour = ["cloth", "leather", "mail", "plate", "shield"]
 key = "seal_of_command"
 spell_id = 20375
 spell_name = "Seal of Command"
-rage_cost = 10
+power_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
 target = "self"
@@ -340,7 +344,7 @@ effects = [
 key = "seal_of_the_crusader"
 spell_id = 20305
 spell_name = "Seal of the Crusader"
-rage_cost = 10
+power_cost = 10
 cooldown_ms = 0
 gcd_ms = 1500
 target = "self"
@@ -353,7 +357,7 @@ effects = [
 key = "judgement"
 spell_id = 20271
 spell_name = "Judgement"
-rage_cost = 5
+power_cost = 5
 cooldown_ms = 10000
 gcd_ms = 0
 target = "enemy"
@@ -366,7 +370,7 @@ effects = [{ kind = "judgement" }]
 key = "hammer_of_justice"
 spell_id = 10308
 spell_name = "Hammer of Justice"
-rage_cost = 15
+power_cost = 15
 cooldown_ms = 60000
 gcd_ms = 1500
 target = "enemy"
@@ -379,7 +383,7 @@ effects = [{ kind = "stun", aura_spell_id = 10308, aura_spell_name = "Hammer of 
 key = "mortal_strike"
 spell_id = 12294
 spell_name = "Mortal Strike"
-rage_cost = 30
+power_cost = 30
 cooldown_ms = 6000
 gcd_ms = 1500
 target = "enemy"
@@ -393,7 +397,7 @@ effects = [
 key = "charge"
 spell_id = 6178
 spell_name = "Charge"
-rage_cost = 0
+power_cost = 0
 cooldown_ms = 15000
 gcd_ms = 0
 target = "enemy"
@@ -401,7 +405,7 @@ range_yd = [8.0, 25.0]
 requires_out_of_combat = true
 effects = [
     { kind = "charge", speed_yd_s = 24.0 },
-    { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
+    { kind = "energize", power = "rage", amount = { base = 11.0, per_level = 0.1 } },
     { kind = "stun", aura_spell_id = 7922, aura_spell_name = "Charge Stun", duration_ms = 1000 },
 ]
 
@@ -449,9 +453,9 @@ column = 3
 rank_spells = [20101, 20102, 20103, 20104, 20105]
 spell_name = "Benediction"
 effects = [
-    { kind = "skill_rage_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
-    { kind = "skill_rage_cost", skill = "seal_of_the_crusader", per_rank = [1, 1, 2, 2, 3] },
-    { kind = "skill_rage_cost", skill = "judgement", per_rank = [1, 1, 1, 1, 2] },
+    { kind = "skill_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
+    { kind = "skill_cost", skill = "seal_of_the_crusader", per_rank = [1, 1, 2, 2, 3] },
+    { kind = "skill_cost", skill = "judgement", per_rank = [1, 1, 1, 1, 2] },
 ]
 # One cell per borrowed spell's own family bit: 33 Seal of Command, 34 Seal of the Crusader,
 # 35 Judgement.

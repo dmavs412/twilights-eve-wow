@@ -1,6 +1,7 @@
 [
  {
   "key": "basic_warrior",
+  "class": 1,
   "skills": [
    {
     "key": "heroic_strike",
@@ -56,8 +57,9 @@
       "realm_only": false
      },
      {
-      "kind": "energize_rage",
+      "kind": "energize",
       "params": {
+       "power": "rage",
        "amount": {
         "base": 8.5,
         "per_level": 0.14,
@@ -634,11 +636,11 @@
    "leather",
    "mail",
    "shield"
-  ],
-  "resource": "rage"
+  ]
  },
  {
   "key": "vanguard",
+  "class": 1,
   "skills": [
    {
     "key": "mortal_strike",
@@ -730,8 +732,9 @@
       "realm_only": false
      },
      {
-      "kind": "energize_rage",
+      "kind": "energize",
       "params": {
+       "power": "rage",
        "amount": {
         "base": 11,
         "per_level": 0.1,
@@ -1747,11 +1750,11 @@
    }
   ],
   "auras": [],
-  "name": "Vanguard",
-  "resource": "rage"
+  "name": "Vanguard"
  },
  {
   "key": "zealot",
+  "class": 1,
   "skills": [
    {
     "key": "seal_of_command",
@@ -1927,8 +1930,9 @@
       "realm_only": false
      },
      {
-      "kind": "energize_rage",
+      "kind": "energize",
       "params": {
+       "power": "rage",
        "amount": {
         "base": 11,
         "per_level": 0.1,
@@ -3412,7 +3416,6 @@
    }
   ],
   "auras": [],
-  "name": "Zealot",
-  "resource": "rage"
+  "name": "Zealot"
  }
 ]

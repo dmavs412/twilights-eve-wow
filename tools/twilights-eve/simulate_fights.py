@@ -153,14 +153,14 @@ def fight(p, mob, skills, rng: random.Random) -> Dict[str, float]:
     bs_amount = 0
     # Pull: Bloodrage, then Charge.
     if "bloodrage" in skills:
-        rage += linear(fx("bloodrage", "energize_rage")["amount"], L, ap())
+        rage += linear(fx("bloodrage", "energize")["amount"], L, ap())
         cds["bloodrage"] = 60
         bloodrage_ticks = 10
         hp -= int(0.2 * p.base_hp)  # 20% of base health (Spell.dbc ManaCostPercentage)
     else:
         bloodrage_ticks = 0
     if "charge" in skills:
-        rage += linear(fx("charge", "energize_rage")["amount"], L, ap())
+        rage += linear(fx("charge", "energize")["amount"], L, ap())
         cds["charge"] = 15
         mob_stunned_until = 1.0
     next_bloodrage_tick = 1.0

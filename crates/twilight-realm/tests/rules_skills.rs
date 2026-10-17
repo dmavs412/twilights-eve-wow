@@ -14,7 +14,7 @@ fn amount(spell_id: u32) -> Linear {
             Effect::WeaponStrike { bonus, .. } => Some(bonus),
             Effect::SchoolDamage { amount, .. } => Some(amount),
             Effect::PeriodicDamage { tick, .. } => Some(tick),
-            Effect::EnergizeRage { amount } => Some(amount),
+            Effect::Energize { amount, .. } => Some(amount),
             Effect::AuraAttackPower { amount, .. } => Some(amount),
             _ => None,
         })
@@ -56,14 +56,14 @@ fn amounts_round_half_away_from_zero_and_respect_their_floor() {
 #[test]
 fn heroic_strike_costs_15_rage_and_adds_11_17_24() {
     let s = callings::skill(78).unwrap();
-    assert_eq!((s.rage_cost, s.cooldown_ms, s.gcd_ms), (15, 0, 0));
+    assert_eq!((s.power_cost, s.cooldown_ms, s.gcd_ms), (15, 0, 0));
     assert_eq!(at_levels(78, 0), [11, 17, 24]);
 }
 
 #[test]
 fn charge_is_free_on_15_s_and_gives_9_9_10_rage() {
     let s = callings::skill(100).unwrap();
-    assert_eq!((s.rage_cost, s.cooldown_ms), (0, 15_000));
+    assert_eq!((s.power_cost, s.cooldown_ms), (0, 15_000));
     assert_eq!(s.range_yd, [8.0, 25.0]);
     assert!(s.requires_out_of_combat);
     assert_eq!(at_levels(100, 0), [9, 9, 10]);

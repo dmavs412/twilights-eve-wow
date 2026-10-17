@@ -64,34 +64,41 @@ pub(crate) fn starting_inventory(race: u8) -> crate::inventory::Inventory {
     inventory
 }
 
-/// A node in the advancement tree (`GLOSSARY.md`). Saved by name, so the names are the format.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub(crate) enum Calling {
-    /// Tier 0, where every character starts.
-    BasicWarrior,
-    /// Tier 1, the Basic Warrior's Advancement. A save may also name it "warrior".
-    #[serde(alias = "warrior")]
-    Vanguard,
-    /// Tier 2, a Vanguard's Advancement: Paladin Seals, Judgement and Hammer of Justice on rage.
-    Zealot,
-}
+/// A node in the advancement tree (`GLOSSARY.md`): a Calling's key in `content/callings.toml`
+/// (`basic_warrior`, Tier 0, where every character starts; `vanguard`, its Advancement;
+/// `zealot`, Vanguard's) or one a test added through `Realm::with_callings`. Saved by that key,
+/// so the keys are the format.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Calling(&'static str);
 
 impl Calling {
+    /// Tier 0, where every character starts.
+    pub(crate) const BASIC_WARRIOR: Calling = Calling("basic_warrior");
+
     /// Its key in `content/callings.toml`, the same as its save name.
     pub(crate) fn key(self) -> &'static str {
-        match self {
-            Calling::BasicWarrior => "basic_warrior",
-            Calling::Vanguard => "vanguard",
-            Calling::Zealot => "zealot",
-        }
+        self.0
     }
 
-    /// The Calling with this key.
+    /// The Calling with this key. A save from before the rename may say "warrior" for the
+    /// Vanguard.
     pub(crate) fn from_key(key: &str) -> Option<Self> {
-        [Calling::BasicWarrior, Calling::Vanguard, Calling::Zealot]
-            .into_iter()
-            .find(|c| c.key() == key)
+        let key = if key == "warrior" { "vanguard" } else { key };
+        crate::callings::calling(key).map(|def| Calling(def.key.as_str()))
+    }
+}
+
+impl serde::Serialize for Calling {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(self.0)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Calling {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let key = String::deserialize(d)?;
+        Self::from_key(&key)
+            .ok_or_else(|| serde::de::Error::custom(format!("an unknown Calling {key:?}")))
     }
 }
 

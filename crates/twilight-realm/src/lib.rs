@@ -331,6 +331,14 @@ impl Realm {
         Self { dev, ..self }
     }
 
+    /// This realm with the Callings in `toml` (the shape of `content/callings.toml`) added
+    /// alongside the shipped ones, for the rest of the process: a test seam, so a player script
+    /// can import a save on a Calling of a Class no shipped Calling sits on.
+    pub fn with_callings(self, toml: &str) -> Self {
+        callings::add(toml);
+        self
+    }
+
     /// Sets the wall clock to `unix_ms`, milliseconds since the Unix epoch. Ticks advance it in
     /// between; a host without one leaves it running from 0. An item's cooldown runs on it, so
     /// the time between two sessions counts.

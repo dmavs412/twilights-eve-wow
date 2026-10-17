@@ -20,7 +20,7 @@ with open(MASTER, newline="", encoding="utf-8") as _f:
     COLUMNS = next(csv.reader(_f))
 
 STRIKE = {
-    "kind": "skill", "calling": "vanguard", "key": "strike", "name": "Strike", "rank": "1",
+    "kind": "skill", "calling": "vanguard", "class": "1", "key": "strike", "name": "Strike", "rank": "1",
     "spell_id": "78", "client_cost": "15", "realm_cost": "15", "target": "enemy",
     "effect1_kind": "weapon_strike",
     "effect1_params": "weapon=normal;bonus.base=9.5;bonus.per_level=1.4;bonus.per_ap=0;tags=a|b",
@@ -30,19 +30,20 @@ STRIKE = {
 
 
 def talent(key: str, rank: int, row: int, column: int, **extra: str) -> dict:
-    return {"kind": "talent", "calling": "vanguard", "key": key, "name": key.title(),
+    return {"kind": "talent", "calling": "vanguard", "class": "1", "key": key, "name": key.title(),
             "rank": str(rank), "tab": "Arms", "tab_row": str(row), "tab_column": str(column),
             "modelled": "yes", **extra}
 
 
 CALLING = {
-    "kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard", "tier": "0",
+    "kind": "calling", "calling": "vanguard", "class": "1", "key": "vanguard", "name": "Vanguard",
+    "tier": "0",
     "tier_cap": "10", "tier_bonus": "strength=1;stamina=2", "shapeshift_form": "17",
-    "armour": "cloth|mail", "resource": "rage",
+    "armour": "cloth|mail",
 }
-TAB = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms", "tab_id": "900",
+TAB = {"kind": "talent_tab", "calling": "vanguard", "class": "1", "key": "arms", "name": "Arms", "tab_id": "900",
        "background": "WarriorArms", "tab_order": "0"}
-AURA = {"kind": "aura", "calling": "vanguard", "key": "buff", "name": "Buff", "rank": "1", "spell_id": "14177",
+AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "name": "Buff", "rank": "1", "spell_id": "14177",
         "duration_ms": "10000", "charges": "1", "effect1_kind": "skill_crit_pct",
         "effect1_params": "skill=strike;pct=50", "modelled": "no"}
 
@@ -113,6 +114,68 @@ class BuildSpells(unittest.TestCase):
 
     def test_realm_cost_below_client_cost_fails(self):
         self.assert_fails([{**STRIKE, "realm_cost": "10"}], "below client_cost")
+
+    def test_a_callings_rows_must_agree_on_class(self):
+        self.assert_fails([STRIKE, {**STRIKE, "key": "stab", "class": "4"}], "disagree on class")
+
+    def test_a_missing_or_unknown_class_fails(self):
+        self.assert_fails([{**STRIKE, "class": ""}], "class is required")
+        self.assert_fails([{**STRIKE, "class": "6"}], "is not one of")
+        self.assert_fails([{**STRIKE, "class": "1.5"}], "is not one of")
+
+    def test_every_patch_row_carries_the_power_type_of_its_class(self):
+        for cls, power_type in (("1", 1), ("4", 3), ("8", 0)):
+            rows = [{**STRIKE, "class": cls}, talent("cruelty", 1, 0, 1, **{"class": cls, "spell_id": "12320"})]
+            done, data = self.run_build(rows)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(data[0]["class"], int(cls))
+            self.assertNotIn("class", data[0]["skills"][0])
+            self.assertEqual(len(self.patch["spells"]), 2)
+            for override in self.patch["spells"]:
+                self.assertEqual(override["fields"]["power_type"], power_type, cls)
+
+    def test_energize_names_its_power(self):
+        row = {**STRIKE, "effect1_kind": "energize",
+               "effect1_params": "power=energy;amount.base=20;amount.per_level=0"}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"]["power"], "energy")
+
+    def test_energize_without_a_known_power_fails(self):
+        self.assert_fails([{**STRIKE, "effect1_kind": "energize",
+                            "effect1_params": "amount.base=20;amount.per_level=0"}], "energize needs power")
+        self.assert_fails([{**STRIKE, "effect1_kind": "energize",
+                            "effect1_params": "power=focus;amount.base=20;amount.per_level=0"}],
+                          "energize needs power")
+        self.assert_fails([{**STRIKE, "effect1_kind": "energize", "effect1_params": "power=rage"}],
+                          "lacks an amount")
+
+    def test_energize_rage_is_no_longer_a_kind(self):
+        self.assert_fails([{**STRIKE, "effect1_kind": "energize_rage",
+                            "effect1_params": "amount.base=20;amount.per_level=0"}], "unknown effect kind")
+
+    def test_add_combo_points_needs_a_positive_whole_amount(self):
+        row = {**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": "amount=1"}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {"amount": 1})
+        for bad in ("amount=0", "amount=-1", "amount=1.5", ""):
+            self.assert_fails([{**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": bad}],
+                              "positive whole amount")
+
+    def test_per_combo_is_a_formula_block(self):
+        row = {**STRIKE, "effect1_kind": "school_damage",
+               "effect1_params": "amount.base=5;amount.per_level=0;per_combo.base=5;per_combo.per_level=0.5"}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        params = data[0]["skills"][0]["effects"][0]["params"]
+        self.assertEqual(params["per_combo"], {"base": 5, "per_level": 0.5})
+        self.assert_fails([{**STRIKE, "effect1_kind": "school_damage",
+                            "effect1_params": "amount.base=5;amount.per_level=0;per_combo.base=5"}],
+                          "lacks per_level")
+        self.assert_fails([{**STRIKE, "effect1_kind": "school_damage",
+                            "effect1_params": "amount.base=5;amount.per_level=0;per_combo=5"}],
+                          "formula block")
 
     def test_talents_group_into_tabs_with_ranks_and_prereqs(self):
         rows = [talent("cruelty", 1, 0, 1), talent("cruelty", 2, 0, 1),
@@ -205,7 +268,7 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertNotIn("secret guess", json.dumps(data) + json.dumps(self.patch))
 
-    def test_calling_row_carries_tier_stats_form_armour_and_resource(self):
+    def test_calling_row_carries_tier_stats_form_armour_and_class(self):
         done, data = self.run_build([CALLING, STRIKE])
         self.assertEqual(done.returncode, 0, done.stderr)
         calling = data[0]
@@ -214,17 +277,15 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(calling["tier_bonus"], {"strength": 1, "stamina": 2})
         self.assertEqual(calling["shapeshift_form"], 17)
         self.assertEqual(calling["armour"], ["cloth", "mail"])
-        self.assertEqual(calling["resource"], "rage")
+        self.assertEqual(calling["class"], 1)
         self.assertEqual(len(calling["skills"]), 1)
 
-    def test_calling_row_needs_tier_cap_and_resource(self):
+    def test_calling_row_needs_tier_and_cap(self):
         self.assert_fails([{**CALLING, "tier_cap": ""}], "tier_cap")
         self.assert_fails([{**CALLING, "tier": ""}], "tier")
-        self.assert_fails([{**CALLING, "resource": ""}], "resource")
 
-    def test_calling_row_rejects_unknown_armour_resource_and_stat(self):
+    def test_calling_row_rejects_unknown_armour_and_stat(self):
         self.assert_fails([{**CALLING, "armour": "cloth|robe"}], "armour")
-        self.assert_fails([{**CALLING, "resource": "fury"}], "resource")
         self.assert_fails([{**CALLING, "tier_bonus": "luck=1"}], "tier_bonus")
 
     def test_second_calling_row_fails(self):
@@ -277,32 +338,15 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**base, "effect1_params": "on=kill;heal_pct=10;apply_aura=buff"}], "exactly one of")
         self.assert_fails([{**base, "effect1_params": "on=sneeze;heal_pct=10"}], "proc on")
 
-    def test_patch_power_type_is_the_row_override_else_the_callings_resource(self):
-        borrowed = {**STRIKE, "key": "borrowed", "spell_id": "2136", "resource": "mana"}
-        done, data = self.run_build([CALLING, STRIKE, borrowed])
-        self.assertEqual(done.returncode, 0, done.stderr)
-        power = {o["spell_id"]: o["fields"]["power_type"] for o in self.patch["spells"]}
-        self.assertEqual(power, {78: 1, 2136: 0})
-        self.assertEqual(data[0]["skills"][1]["resource"], "mana")
-        self.assertNotIn("resource", data[0]["skills"][0])
-
-    def test_patch_has_no_power_type_without_a_calling_row_or_row_resource(self):
-        done, _ = self.run_build([STRIKE])
-        self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertNotIn("power_type", self.patch["spells"][0]["fields"])
-
-    def test_calling_row_with_only_a_resource_gives_the_resource_and_no_tier(self):
+    def test_calling_row_with_only_a_name_and_class_gives_the_class_and_no_tier(self):
         bare = {"kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard",
-                "resource": "rage"}
+                "class": "1"}
         done, data = self.run_build([bare, STRIKE])
         self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual(data[0]["resource"], "rage")
+        self.assertEqual(data[0]["class"], 1)
         self.assertNotIn("tier", data[0])
         self.assertEqual(self.patch["spells"][0]["fields"]["power_type"], 1)
         self.assert_fails([{**bare, "tier": "1"}], "tier_cap")
-
-    def test_unknown_row_resource_fails(self):
-        self.assert_fails([CALLING, {**STRIKE, "resource": "fury"}], "resource")
 
     def test_patch_carries_the_description_only_when_the_row_has_one(self):
         done, _ = self.run_build([STRIKE, {**STRIKE, "key": "plain", "spell_id": "79", "description": ""}])

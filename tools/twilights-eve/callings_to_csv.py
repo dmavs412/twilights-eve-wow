@@ -22,7 +22,7 @@ DEFAULT_OUT = os.path.join(REPO, "data", "twilights-eve", "master.csv")
 MAX_EFFECTS = 5
 
 COLUMNS = [
-    "kind", "calling", "key", "name", "rank",
+    "kind", "calling", "class", "key", "name", "rank",
     "spell_id", "talent_id", "source_tab_id", "icon_id",
     "tab", "tab_row", "tab_column", "prereq_key", "prereq_rank", "exceptional",
     "borrowed_from_class", "borrowed_family_bit",
@@ -76,7 +76,7 @@ def skill_row(calling, s):
     rmin, rmax = pair(r.get("range_yd"))
     b = s.get("borrowed") or {}
     row = {
-        "kind": "skill", "calling": calling, "key": s["key"], "name": s.get("name", ""), "rank": 1,
+        "kind": "skill", "calling": calling, "class": 1, "key": s["key"], "name": s.get("name", ""), "rank": 1,
         "spell_id": s.get("spell_id", ""), "icon_id": s.get("icon_id", ""),
         "borrowed_from_class": b.get("from_class", ""), "borrowed_family_bit": b.get("family_bit", ""),
         "client_cost": c.get("cost", ""), "client_cooldown_ms": c.get("cooldown_ms", ""),
@@ -106,7 +106,7 @@ def talent_rows(calling, tab, t):
     mods = t.get("client_spellmods") or []
     for rank, spell in enumerate(t["rank_spells"], 1):
         row = {
-            "kind": "talent", "calling": calling, "key": t["key"], "name": t.get("name", ""), "rank": rank,
+            "kind": "talent", "calling": calling, "class": 1, "key": t["key"], "name": t.get("name", ""), "rank": rank,
             "spell_id": spell, "talent_id": t.get("talent_id", ""), "source_tab_id": t.get("source_tab_id", ""),
             "tab": tab.get("name", ""), "tab_row": t.get("tier", ""), "tab_column": t.get("column", ""),
             "prereq_key": pre.get("key", ""), "prereq_rank": pre.get("rank", ""),

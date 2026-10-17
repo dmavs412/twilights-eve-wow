@@ -20,11 +20,10 @@ and tab that declares them. Columns, in groups:
 
 | group | columns | meaning |
 |---|---|---|
-| identity | `kind`, `calling`, `key`, `name`, `rank` | `kind` is `skill`, `talent`, `calling`, `talent_tab` or `aura`; `key` is the save and content name; `rank` is 1 for a skill or aura |
-| calling row | `tier`, `tier_cap`, `tier_bonus`, `shapeshift_form`, `armour`, `resource` | a Calling's Tier, Tier Cap, Tier Bonus (`strength=1;stamina=2`), form id, armour kinds joined by `\|`, and the resource every cost on its rows is an amount of; only `resource` is required, and a row without `tier` leaves the rest of the Calling to the TOML |
+| identity | `kind`, `calling`, `class`, `key`, `name`, `rank` | `kind` is `skill`, `talent`, `calling`, `talent_tab` or `aura`; `class` is the Calling's 1.12.1 class id (1 Warrior, 4 Rogue, 8 Mage ...), the same on every row of a Calling, and decides its power kind (ADR 0004); `key` is the save and content name; `rank` is 1 for a skill or aura |
+| calling row | `tier`, `tier_cap`, `tier_bonus`, `shapeshift_form`, `armour` | a Calling's Tier, Tier Cap, Tier Bonus (`strength=1;stamina=2`), form id and armour kinds joined by `\|`; a row without `tier` leaves the rest of the Calling to the TOML. Its power is its `class`'s |
 | talent_tab row | `tab_id`, `background`, `tab_order` | the tab's id, art and order; `name` is the tab name that talent rows put in `tab`. Once a Calling has a `talent_tab` row, every talent's `tab` must name one |
 | aura row | `spell_id`, `duration_ms`, `charges`, `effect1_kind`… | a buff granted by key; `spell_id` is a borrowed spell for its icon and name; a `proc` effect names auras in `apply_aura=key\|key` |
-| resource | `resource` | on a skill row, overrides the Calling's resource for that row (a borrowed mana spell that costs rage needs none) |
 | assumptions | `assumptions` | every guess beside the row it affects: placeholders, durations, borrowed ids, unmodelled parts. Every build prints the rows that carry one; the realm and client never see it |
 | ids | `spell_id`, `talent_id`, `source_tab_id`, `icon_id` | real 1.12.1 records; the build fails on an id the DBCs do not hold |
 | talent seat | `tab`, `tab_row`, `tab_column`, `prereq_key`, `prereq_rank`, `exceptional` | where the talent sits on the Calling's grid; `exceptional` marks a one-rank talent that still counts toward the row |
@@ -45,6 +44,16 @@ per_ap * AP)`, half away from zero, never below `min`. `L` is the level within t
 attack power at cast time. `W` is a white-swing roll, `Wn` a normalized one. Keep formulas as
 these fields, never as arithmetic in a cell.
 
+**Power and combo points.** `energize` gives `amount` (a formula) of `power=rage|energy|mana`;
+a target whose bar is of another kind gains nothing. `add_combo_points` puts `amount` (a positive
+whole number) on the target, five at most; points on another target are lost, and a target's
+death takes them. A damage or duration effect (`weapon_strike`, `spell_damage`,
+`periodic_damage`, `stun`) may carry a `per_combo` formula block (`per_combo.base`,
+`per_combo.per_level`, `per_combo.per_ap`), added once per point held on the target; any row
+with a `per_combo` block is a finisher: it fails with no points and a cast that lands spends
+them all. There is no `finisher` kind or flag. A cost is paid in the Calling's power, read from
+its `class`; `realm_cost` and `client_cost` stay bare numbers.
+
 **Adding a column** changes both generated schemas and the realm loader, so it goes through
 `/grill-me` first (`CLAUDE.md`).
 
@@ -54,9 +63,11 @@ these fields, never as arithmetic in a cell.
 `icon_id` and `source_tab_id` is a row in `Spell.dbc`, `Talent.dbc`, `SpellIcon.dbc` and
 `TalentTab.dbc` through `tools/twilights-eve/wowdata.py`, and writes both outputs in one pass. It
 exits non-zero, writing nothing, on an id the DBCs do not hold, an id that is not a whole number,
-a duplicate rank within a Calling, a `realm_cost` below `client_cost`, an unknown effect kind or
-malformed params on a modelled row, a half-filled spellmod, or a talent seat that is missing,
-shared or has an unresolved prereq. The DBC check needs `--data` or `WOW_DATA`; `--no-dbc-check`
+a duplicate rank within a Calling, a `realm_cost` below `client_cost`, a missing or unknown
+`class` or rows of one Calling that disagree on it, an unknown effect kind or malformed params on
+a modelled row (an `energize` without a known `power`, an `add_combo_points` without a positive
+whole `amount`, a `per_combo` that is not a formula block), a half-filled spellmod, or a talent
+seat that is missing, shared or has an unresolved prereq. The DBC check needs `--data` or `WOW_DATA`; `--no-dbc-check`
 skips it (the tests use that). Run it by hand after a CSV edit and commit the CSV and both outputs
 together, so a diff shows what a cell changed. Tests:
 `~/.local/bin/python3.15 -m unittest discover tools/twilights-eve/tests`.
@@ -68,16 +79,15 @@ together, so a diff shows what a cell changed. Tests:
 ## The outputs
 
 `server_spells.json` is what the realm loads into its content resource at boot: a list of
-Callings, each with its skills and talent tabs, each skill or rank carrying its realm columns and
-its effects as `{kind, params, realm_only}`. The realm spawns one entity per ability with the
+Callings, each with its `class`, its skills and talent tabs, each skill or rank carrying its
+realm columns and its effects as `{kind, params, realm_only}`. The realm spawns one entity per ability with the
 components `docs/bevy_guidelines.md` names for each `kind`.
 
-`client_dbc_patch.json` is a list of row overrides, `{spell_id, fields: {cost, stances,
-cooldown_ms, ..., borrowed_from_class, borrowed_family_bit, effects}, spellmods}`, plus the talent
+`client_dbc_patch.json` is a list of row overrides, `{spell_id, fields: {power_type, cost,
+stances, cooldown_ms, ..., borrowed_from_class, borrowed_family_bit, effects}, spellmods}`, plus the talent
 seats (`talent_id`, grid position, prereq, one spell id per rank). Every row is emitted with its
 `modelled` flag; an unmodelled row sends no `effects` key, so the client keeps the stock effects. Every
-override with a resource also sends `power_type` (the row's `resource`, else its Calling's: mana 0, rage 1,
-focus 2, energy 3, happiness 4) and, when the row has one, `description`; an empty description keeps the
+override also sends `power_type` (from its Calling's `class`: Warrior rage 1, Rogue energy 3, every other class mana 0) and, when the row has one, `description`; an empty description keeps the
 borrowed text. Auras are not Spell.dbc overrides. The CSV uses the realm's vocabulary: `weapon=normal` or
 `normalized`, boolean `unavoidable=yes`, `mod_stat` (`stat=strength|agility|stamina|intellect|spirit` with `pct=` of the total, or flat `amount=`; max-health changes move current health with them), `mod_health_regen_out_of_combat` (`pct=`; natural regeneration is a Spirit-based tick every 2 s out of combat), `incapacitate` (`duration_ms`, `break_on_damage`, `drop_combat`: a stun that damage after the cast ends and that drops the target out of combat; on waking, aggro rules apply), `school_damage` (`school=physical|holy|fire`, default physical; any non-physical school ignores armour, rolls only the level-based miss and crits for 150%), and `proc` (`on=cast|kill`, `skill=`, `yields_xp=yes`,
 `chance=`, then one of `apply_aura=key|key` or `heal_pct=`). An `aura` row's effects are `skill_crit_pct` (`skill=`, `pct=`: that skill's crit chance, used up one `charges` at a time when the skill lands) and `mod_run_speed` (`pct=`: the realm sends the new run speed through `SMSG_FORCE_RUN_SPEED_CHANGE` and sends the old one back when it fades). Seats are whole numbers. The client applies it
@@ -94,13 +104,16 @@ the same file feeds an MPQ writer.
 ## Where it stands
 
 As of 2026-10-16 `build_spells.py` generates both outputs from the CSV, and they are committed
-(3 Callings, 206 rows, 198 spell overrides, 49 talent seats). Basic Warrior is fully expressed in
-the CSV (calling, tab, aura rows; spec #50); its rows whose effects the realm cannot yet do are
-`modelled=no`. The realm reads Basic Warrior from `server_spells.json` (`twilight-realm`'s
-`generated.rs`, compiled in): any Calling whose file entry carries a `tier`, which only a `calling`
-row gives it. Vanguard and Zealot have a `calling` row that names only their resource (rage, the power type of their patch rows); their tiers, skills and talents are still the tables in `content/callings.toml`. A skill with no
-effects, or an effect kind the realm lacks, is left out of the bar and spell book until its effects
-land; a talent in that state is learnable but does nothing and shows as WIP. The client applies the patch at load
-(`SpellCatalog::apply_dbc_patch`, compiled in). The patch carries no `family_name` field. Talents carry their
-`description` and client spellmods, but their realm effects are not yet structured columns,
+(3 Callings, 206 rows). Basic Warrior is fully expressed in the CSV (calling, tab, aura rows; spec
+#50); its rows whose effects the realm cannot yet do are `modelled=no`. The realm reads Basic
+Warrior from `server_spells.json` (`twilight-realm`'s `generated.rs`, compiled in): any Calling
+whose file entry carries a `tier`, which only a `calling` row gives it. Vanguard and Zealot have a
+`calling` row that names only their `class`; their tiers, skills and talents are still the tables
+in `content/callings.toml`, which uses the same vocabulary (`class`, `power_cost`, `energize` with
+`power`, `add_combo_points`, `per_combo`). A skill with no effects, or an effect kind the realm
+lacks, is left out of the bar and spell book until its effects land; a talent in that state is
+learnable but does nothing and shows as WIP. The client applies the patch at load
+(`SpellCatalog::apply_dbc_patch`, compiled in), `power_type` included. The patch carries no
+`family_name` field; adding one is a schema change and goes through `/grill-me`. Talents carry
+their `description` and client spellmods, but their realm effects are not yet structured columns,
 because `callings.json` never held them.

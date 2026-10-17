@@ -35,21 +35,25 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "aura_attack_power", "charge", "energize_rage", "healing_reduction", "incapacitate",
-    "judgement", "mod_crit_chance", "mod_crit_damage", "mod_health_regen_out_of_combat",
-    "mod_run_speed", "mod_stat", "periodic_damage", "proc", "school_damage", "seal",
-    "skill_amount_pct", "skill_crit_pct", "skill_rage", "stun", "weapon_strike",
+    "add_combo_points", "aura_attack_power", "charge", "energize", "healing_reduction",
+    "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
+    "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "periodic_damage", "proc",
+    "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_crit_pct",
+    "skill_rage", "stun", "weapon_strike",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
-# A Calling's resource, and the Spell.dbc power type the client patch sends for it.
-POWER_TYPES = {"mana": 0, "rage": 1, "focus": 2, "energy": 3, "happiness": 4}
 PROC_EVENTS = ("cast", "kill")
 PROC_ACTIONS = ("apply_aura", "heal_pct")
 WEAPON_ROLLS = ("normal", "normalized")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
+# What an `energize` may name in `power`.
+POWERS = ("rage", "energy", "mana")
+# A Calling's `class` (ChrClasses.dbc id) and the `Powers` value its bar uses: Warrior rage (1),
+# Rogue energy (3), every other Class mana (0). The client patch carries it as `power_type`.
+CLASS_POWER_TYPE = {1: 1, 2: 0, 3: 0, 4: 3, 5: 0, 7: 0, 8: 0, 9: 0, 11: 0}
 
 REALM_NUMBERS = (
     "realm_cost", "realm_cooldown_ms", "realm_gcd_ms", "realm_range_min", "realm_range_max",
@@ -216,18 +220,10 @@ def whole(text: str, where: str) -> int:
     return value
 
 
-def check_resource(text: str, where: str) -> str:
-    if text not in POWER_TYPES:
-        raise BuildError(f"{where}: resource {text!r} is not one of {', '.join(POWER_TYPES)}")
-    return text
-
-
 def build_calling(row: dict, where: str) -> dict:
-    """A calling row: the Calling's name, tier, Tier Cap, Tier Bonus, form, armour and resource."""
-    if not row["resource"]:
-        raise BuildError(f"{where}: a calling row needs resource")
+    """A calling row: the Calling's name, tier, Tier Cap, Tier Bonus, form and armour."""
     out: dict = {"name": row["name"]}
-    # A row with no tier only names the resource; the realm reads the Calling's rest elsewhere.
+    # A row with no tier only names the Calling; the realm reads the Calling's rest elsewhere.
     if row["tier"] or row["tier_cap"]:
         for column in ("tier", "tier_cap"):
             if not row[column]:
@@ -248,7 +244,6 @@ def build_calling(row: dict, where: str) -> dict:
             if kind not in ARMOUR_KINDS:
                 raise BuildError(f"{where}: armour {kind!r} is not one of {', '.join(ARMOUR_KINDS)}")
         out["armour"] = kinds
-    out["resource"] = check_resource(row["resource"], where)
     return out
 
 
@@ -296,11 +291,38 @@ def check_vocabulary(kind: str, params: dict, where: str) -> None:
             raise BuildError(f"{where}: unavoidable is {params['unavoidable']!r}, want yes or no")
 
 
+def check_kind_params(kind: str, params: dict, where: str) -> None:
+    """The params a kind cannot do without: energize's power and amount, add_combo_points' positive
+    whole amount, and per_combo (on any kind) as a formula block."""
+    if kind == "energize":
+        if params.get("power") not in POWERS:
+            raise BuildError(f"{where}: energize needs power={'|'.join(POWERS)}, has {params.get('power')!r}")
+        if not isinstance(params.get("amount"), dict):
+            raise BuildError(f"{where}: energize lacks an amount formula")
+    if kind == "add_combo_points":
+        amount = params.get("amount")
+        if isinstance(amount, bool) or not isinstance(amount, int) or amount <= 0:
+            raise BuildError(f"{where}: add_combo_points needs a positive whole amount, has {amount!r}")
+    if "per_combo" in params and not isinstance(params["per_combo"], dict):
+        raise BuildError(f"{where}: per_combo is a formula block (per_combo.base, per_combo.per_level)")
+
+
+def class_id(text: str, where: str) -> int:
+    """The row's `class`: a 1.12.1 class id the realm has tables for."""
+    if not text:
+        raise BuildError(f"{where}: class is required (the Calling's 1.12.1 class id)")
+    value = number(text, f"{where} class")
+    if not isinstance(value, int) or value not in CLASS_POWER_TYPE:
+        raise BuildError(f"{where}: class {text!r} is not one of {sorted(CLASS_POWER_TYPE)}")
+    return value
+
+
 def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
         raise BuildError(f"{where}: modelled is {modelled!r}, want yes or no")
-    out: dict = {"key": row["key"], "name": row["name"], "rank": number(row["rank"], f"{where} rank")}
+    out: dict = {"key": row["key"], "name": row["name"], "rank": number(row["rank"], f"{where} rank"),
+                 "class": class_id(row["class"], where)}
     for column in ID_COLUMNS:
         if row[column]:
             out[column] = number(row[column], f"{where} {column}")
@@ -327,8 +349,10 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
             continue
         here = f"{where} effect{i}"
         parsed = parse_params(params, here)
-        if modelled == "yes" and kind not in KNOWN_KINDS:
-            raise BuildError(f"{here}: unknown effect kind {kind!r}")
+        if modelled == "yes":
+            if kind not in KNOWN_KINDS:
+                raise BuildError(f"{here}: unknown effect kind {kind!r}")
+            check_kind_params(kind, parsed, here)
         if kind == "proc":
             check_proc(parsed, auras, here)
         check_vocabulary(kind, parsed, here)
@@ -339,20 +363,18 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
     return out
 
 
-def client_override(row: dict, built: dict, where: str, calling_resource: str | None = None) -> dict | None:
+def client_override(row: dict, built: dict, where: str) -> dict | None:
     """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
     if "spell_id" not in built:
         return None
-    fields: dict = {}
+    # The Calling's power, so a borrowed spell gates against the right bar.
+    fields: dict = {"power_type": CLASS_POWER_TYPE[built["class"]]}
     for column in CLIENT_NUMBERS:
         if row[column]:
             fields[column.removeprefix("client_")] = number(row[column], f"{where} {column}")
     for column in CLIENT_FLAGS:
         if row[column]:
             fields[column.removeprefix("client_")] = row[column] == "yes"
-    resource = row["resource"] or calling_resource
-    if resource:
-        fields["power_type"] = POWER_TYPES[check_resource(resource, where)]
     if row["description"]:
         fields["description"] = row["description"]
     if row["client_stances"]:
@@ -384,8 +406,7 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
     overrides: list[dict] = []
     seen: set[tuple] = set()
     talent_rows: dict[tuple, list[tuple[dict, dict, str]]] = {}
-    # A calling's resource and aura keys are read before any row, so row order never matters.
-    resources = {r["calling"]: r["resource"] for r in rows if r["kind"] == "calling"}
+    # A calling's aura keys are read before any row, so row order never matters.
     auras = {c: {r["key"] for r in rows if r["kind"] == "aura" and r["calling"] == c} for c in
              {r["calling"] for r in rows}}
     for line, row in enumerate(rows, start=2):
@@ -395,9 +416,14 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
             raise BuildError(f"{where}: kind is {kind!r}, want one of {', '.join(ROW_KINDS)}")
         if not row["calling"] or not row["key"]:
             raise BuildError(f"{where}: calling and key are required")
-        calling = callings.setdefault(row["calling"], {"key": row["calling"], "skills": [], "talent_tabs": [], "auras": []})
+        row_class = class_id(row["class"], where)
+        calling = callings.setdefault(row["calling"], {"key": row["calling"], "class": row_class, "skills": [],
+                                                      "talent_tabs": [], "auras": []})
+        if calling["class"] != row_class:
+            raise BuildError(f"{where}: rows of {row['calling']} disagree on class "
+                             f"({calling['class']} and {row_class})")
         if kind == "calling":
-            if "resource" in calling:
+            if "name" in calling:
                 raise BuildError(f"{where}: second calling row for {row['calling']}")
             calling.update(build_calling(row, where))
             continue
@@ -415,12 +441,11 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
         if kind == "aura":
             calling["auras"].append(build_aura(row, built, where))
             continue
-        override = client_override(row, built, where, resources.get(row["calling"]))
+        override = client_override(row, built, where)
         if override:
             overrides.append(override)
+        del built["class"]
         if kind == "skill":
-            if row["resource"]:
-                built["resource"] = check_resource(row["resource"], where)
             calling["skills"].append(built)
         else:
             talent_rows.setdefault((row["calling"], row["key"]), []).append((row, built, where))

@@ -3,7 +3,8 @@
 
 use twilight_realm::callings::{self, CallingDef};
 use twilight_realm::rules::gear::{can_equip, equip_slots, Refusal};
-use twilight_realm::rules::stats::WarriorStats;
+use twilight_realm::rules::power::class::WARRIOR;
+use twilight_realm::rules::stats::CharacterStats;
 
 const HUMAN: u8 = 1;
 
@@ -102,8 +103,8 @@ fn each_inventory_type_goes_to_its_equipment_slots() {
 
 #[test]
 fn armour_and_stats_add_to_the_sheet() {
-    let naked = WarriorStats::naked(HUMAN, 10);
-    let worn = WarriorStats::geared(HUMAN, 10, &[GNOLL_WAR_HARNESS]);
+    let naked = CharacterStats::naked(WARRIOR, HUMAN, 10);
+    let worn = CharacterStats::geared(WARRIOR, HUMAN, 10, &[GNOLL_WAR_HARNESS]);
     let [str, agi, sta, int, spi] = naked.base;
     assert_eq!(worn.base, [str + 2, agi, sta + 2, int, spi]);
     assert_eq!(worn.bonus, [2, 0, 2, 0, 0], "the green part of each stat");
@@ -116,7 +117,7 @@ fn armour_and_stats_add_to_the_sheet() {
 #[test]
 fn a_weapon_sets_the_swing_damage_and_speed() {
     // Level 1 human: 29 attack power, 29 / 14 × 1.9 s = 3.936 on each end.
-    let s = WarriorStats::geared(HUMAN, 1, &[FINE_SCIMITAR]);
+    let s = CharacterStats::geared(WARRIOR, HUMAN, 1, &[FINE_SCIMITAR]);
     assert_eq!(s.attack_time_ms, 1900);
     assert!((s.min_damage - 6.936).abs() < 1e-3, "{}", s.min_damage);
     assert!((s.max_damage - 9.936).abs() < 1e-3, "{}", s.max_damage);
@@ -124,8 +125,13 @@ fn a_weapon_sets_the_swing_damage_and_speed() {
 
 #[test]
 fn equip_spells_add_attack_power_and_defense() {
-    let naked = WarriorStats::naked(HUMAN, 27);
-    let s = WarriorStats::geared(HUMAN, 27, &[GAUNTLETS_OF_OGRE_STRENGTH, RING_OF_DEFENSE]);
+    let naked = CharacterStats::naked(WARRIOR, HUMAN, 27);
+    let s = CharacterStats::geared(
+        WARRIOR,
+        HUMAN,
+        27,
+        &[GAUNTLETS_OF_OGRE_STRENGTH, RING_OF_DEFENSE],
+    );
     assert_eq!(s.attack_power_bonus, 16);
     // The gauntlets carry no strength of their own: just the 16.
     assert_eq!(
@@ -138,7 +144,7 @@ fn equip_spells_add_attack_power_and_defense() {
 #[test]
 fn naked_is_geared_with_nothing() {
     assert_eq!(
-        WarriorStats::geared(HUMAN, 7, &[]),
-        WarriorStats::naked(HUMAN, 7)
+        CharacterStats::geared(WARRIOR, HUMAN, 7, &[]),
+        CharacterStats::naked(WARRIOR, HUMAN, 7)
     );
 }

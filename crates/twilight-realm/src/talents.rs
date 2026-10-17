@@ -11,7 +11,7 @@ use benilla_protocol::SessionEvent;
 use crate::callings::{self, Skill, Stat, TalentDef, TalentEffect, TalentTab, Wielded};
 use crate::characters::Char;
 use crate::fields::values;
-use crate::rules::stats::WarriorStats;
+use crate::rules::stats::CharacterStats;
 use crate::rules::talents::{points_at, respec_cost};
 
 /// `PLAYER_CHARACTER_POINTS1`: the unspent Talent Points.
@@ -245,13 +245,13 @@ pub(crate) fn on_struck(c: &Char) -> OnStruck {
     struck
 }
 
-/// What a skill costs `c`, in whole rage points.
-pub(crate) fn rage_cost(c: &Char, skill: &callings::Skill) -> u32 {
+/// What a skill costs `c`, in whole points of its power.
+pub(crate) fn power_cost(c: &Char, skill: &callings::Skill) -> u32 {
     let less = sum(
         c,
-        |e| matches!(e, TalentEffect::SkillRageCost { skill: s, .. } if *s == skill.key),
+        |e| matches!(e, TalentEffect::SkillCost { skill: s, .. } if *s == skill.key),
     );
-    skill.rage_cost.saturating_sub(less)
+    skill.power_cost.saturating_sub(less)
 }
 
 /// The percent a skill's damage and buff amounts rise by.
@@ -300,7 +300,7 @@ pub(crate) fn crit_bleed(c: &Char) -> Option<(u32, u32, u32, u32)> {
 }
 
 /// The character's stats: gear's, and the talents' on top.
-pub(crate) fn stats(c: &Char) -> WarriorStats {
+pub(crate) fn stats(c: &Char) -> CharacterStats {
     let mut s = crate::equipment::stats(c);
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::MeleeCritPct { .. })));
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::ModCritChance { .. })));
