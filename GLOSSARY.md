@@ -17,6 +17,18 @@ _Avoid_: Twilight (alone)
 
 ## Twilight's Eve
 
+**Gear Slot**:
+One of the ten places a character wears an item: Weapon, Offhand, Ranged, Ammo, two Rings, two Trinkets, Chest and Amulet. Items for any other body part do not exist.
+_Avoid_: equipment slot, inventory slot (bags and the backpack are not Gear Slots)
+
+**Gear**:
+An item worn in a Gear Slot. Junk, food, quest items and bags are items but not Gear.
+_Avoid_: equipment, loot (loot is what a mob drops, Gear or not)
+
+**Wardrobe**:
+The whole-body look a Chest carries: what the character's head, shoulders, back, wrists, hands, waist, legs and feet show while that Chest is worn. With no Chest, the character shows underclothes.
+_Avoid_: transmog, set (an item set with bonuses)
+
 **Hub**:
 The town at the centre of the world where the trainers, the innkeeper and most quest givers stand: the Crossroads.
 _Avoid_: base, city
