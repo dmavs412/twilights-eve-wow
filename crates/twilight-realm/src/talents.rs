@@ -303,6 +303,8 @@ pub(crate) fn crit_bleed(c: &Char) -> Option<(u32, u32, u32, u32)> {
 pub(crate) fn stats(c: &Char) -> WarriorStats {
     let mut s = crate::equipment::stats(c);
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::MeleeCritPct { .. })));
+    s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::ModCritChance { .. })));
+    s.crit_damage_pct = sum(c, |e| matches!(e, TalentEffect::ModCritDamage { .. }));
     s.crit_pct += f64::from(sum(
         c,
         |e| matches!(e, TalentEffect::WeaponCritPct { weapon, .. } if wields(c, *weapon)),

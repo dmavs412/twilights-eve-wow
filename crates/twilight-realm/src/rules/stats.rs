@@ -21,6 +21,8 @@ pub struct WarriorStats {
     /// The flat part of `attack_power` from equip spells.
     pub attack_power_bonus: i32,
     pub crit_pct: f64,
+    /// The percent a crit's bonus damage grows by (talents): 30 makes a doubled crit 230%.
+    pub crit_damage_pct: u32,
     pub dodge_pct: f64,
     /// 0 without the Parry skill, which the slice's warriors do not train; talents add to it.
     pub parry_pct: f64,
@@ -146,6 +148,7 @@ impl WarriorStats {
             attack_power_bonus: gear.attack_power,
             // Skill sits at the maximum, so its `(skill - 5L) × 0.04` terms are zero.
             crit_pct: f64::from(agi) / tables::at(&t.agi_per_crit, level),
+            crit_damage_pct: 0,
             dodge_pct: f64::from(agi) / tables::at(&t.agi_per_dodge, level),
             parry_pct: 0.0,
             block_pct: gear.shield_block.map_or(0.0, |_| block_pct(defense, level)),

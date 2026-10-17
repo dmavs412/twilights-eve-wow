@@ -47,10 +47,10 @@ impl School {
 }
 
 /// A crit on `damage` (after mitigation) in `school`: physical doubles it and adds `bonus_pct`%
-/// ([`crit_damage`]); every other school does 150%.
+/// ([`crit_damage`]); every other school does 150%, and `bonus_pct`% of the damage more.
 pub fn crit_scaled(school: School, damage: u32, bonus_pct: u32) -> u32 {
     if school.is_magic() {
-        damage * 3 / 2
+        damage * 3 / 2 + damage * bonus_pct / 100
     } else {
         crit_damage(damage, bonus_pct)
     }

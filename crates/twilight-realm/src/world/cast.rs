@@ -1267,7 +1267,11 @@ impl InWorld {
         };
         let mut damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
         if how == Landed::Crit {
-            damage = crit_scaled(school, damage, crate::talents::skill_crit_damage_pct(c));
+            damage = crit_scaled(
+                school,
+                damage,
+                crate::talents::skill_crit_damage_pct(c) + self.player.stats.crit_damage_pct,
+            );
         }
         damage = self.dealt(c, damage);
         events.push(SessionEvent::SpellDamageLog(damage_log(
@@ -1668,7 +1672,7 @@ impl InWorld {
         if missed_by(swings[0].1.outcome) == Some(SPELL_MISS_DODGE) {
             self.skills.dodged_by(target, events);
         }
-        let impale = crate::talents::skill_crit_damage_pct(c);
+        let impale = crate::talents::skill_crit_damage_pct(c) + self.player.stats.crit_damage_pct;
         for (guid, mut swing) in swings {
             if missed_by(swing.outcome).is_some() {
                 continue;

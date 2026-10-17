@@ -434,8 +434,23 @@
         "spell_id": 14144,
         "talent_id": 272,
         "source_tab_id": 182,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "amount": 3
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_damage",
+          "params": {
+           "pct": 15
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases Critical Strike chance by 3% and Crit damage by 15%."
        },
        {
@@ -445,8 +460,23 @@
         "spell_id": 14148,
         "talent_id": 272,
         "source_tab_id": 182,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "amount": 6
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_damage",
+          "params": {
+           "pct": 30
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases Critical Strike chance by 6% and Crit damage by 30%."
        }
       ]

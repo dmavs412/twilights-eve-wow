@@ -394,9 +394,9 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
     let mut want = vec![
         // Anger Management, Flurry.
         12296, 12319, 12971, 12972, 12973, 12974,
-        // Basic Warrior's sheet: Cutthroat's Momentum, Savage Strikes (Vanguard's Resolve
+        // Basic Warrior's sheet: Cutthroat's Momentum (Savage Strikes, Vanguard's Resolve
         // is modelled).
-        13743, 13875, 14144, 14148, // Improved Judgement, Vindication, Eye for an Eye.
+        13743, 13875, // Improved Judgement, Vindication, Eye for an Eye.
         25956, 25957, 9452, 26016, 26021, 9799, 25988,
         // Pursuit of Justice, Improved Hammer of Justice, Vengeance.
         26022, 26023, 20487, 20488, 20489, 20049, 20056, 20057, 20058, 20059,
@@ -513,8 +513,8 @@ fn basic_warrior_has_no_table_in_the_toml_and_the_others_keep_theirs() {
     assert!(callings::calling("basic_warrior").is_some());
 }
 
-/// Recruit keeps its id and art; the sheet's other two talents are unmodelled until their
-/// effects land, so only Field Medic, Initiate's Spark and Vanguard's Resolve do anything.
+/// Recruit keeps its id and art; the sheet's other talent is unmodelled until its
+/// effect lands, so only Field Medic, Initiate's Spark, Savage Strikes and Vanguard's Resolve do anything.
 #[test]
 fn the_basic_warrior_tree_is_recruit_on_the_warrior_arms_art() {
     let tree = &callings::calling("basic_warrior").unwrap().talent_tabs;
@@ -531,7 +531,12 @@ fn the_basic_warrior_tree_is_recruit_on_the_warrior_arms_art() {
         .collect();
     assert_eq!(
         modelled,
-        ["field_medic", "initiates_spark", "vanguards_resolve"]
+        [
+            "field_medic",
+            "initiates_spark",
+            "savage_strikes",
+            "vanguards_resolve"
+        ]
     );
 }
 

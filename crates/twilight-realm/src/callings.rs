@@ -173,6 +173,11 @@ pub enum TalentEffect {
         flat: bool,
         per_rank: Vec<u32>,
     },
+    /// Every critical strike chance, melee and spell, rises by this many percent.
+    ModCritChance { per_rank: Vec<u32> },
+    /// Every critical strike does this percent more of its damage (a physical crit's bonus is
+    /// its whole damage, a magic crit's the half over 100%).
+    ModCritDamage { per_rank: Vec<u32> },
     /// Out-of-combat health regeneration rises by this percent.
     ModHealthRegenOutOfCombat { per_rank: Vec<u32> },
     /// When `on` happens (and the filters hold), `chance` percent of the time: heal `per_rank`
@@ -298,6 +303,8 @@ impl TalentEffect {
             | Self::MeleeCritPct { per_rank }
             | Self::Defense { per_rank }
             | Self::ModStat { per_rank, .. }
+            | Self::ModCritChance { per_rank }
+            | Self::ModCritDamage { per_rank }
             | Self::ModHealthRegenOutOfCombat { per_rank }
             | Self::Proc { per_rank, .. }
             | Self::ItemArmorPct { per_rank }

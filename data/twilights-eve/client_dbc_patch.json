@@ -2742,7 +2742,21 @@
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "description": "Increases Critical Strike chance by 3% and Crit damage by 15%."
+    "description": "Increases Critical Strike chance by 3% and Crit damage by 15%.",
+    "effects": [
+     {
+      "kind": "mod_crit_chance",
+      "params": {
+       "amount": 3
+      }
+     },
+     {
+      "kind": "mod_crit_damage",
+      "params": {
+       "pct": 15
+      }
+     }
+    ]
    }
   },
   {
@@ -2752,7 +2766,21 @@
    "rank": 2,
    "fields": {
     "power_type": 1,
-    "description": "Increases Critical Strike chance by 6% and Crit damage by 30%."
+    "description": "Increases Critical Strike chance by 6% and Crit damage by 30%.",
+    "effects": [
+     {
+      "kind": "mod_crit_chance",
+      "params": {
+       "amount": 6
+      }
+     },
+     {
+      "kind": "mod_crit_damage",
+      "params": {
+       "pct": 30
+      }
+     }
+    ]
    }
   },
   {

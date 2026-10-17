@@ -90,9 +90,14 @@ pub(crate) fn player_swing(p: &WarriorStats, mob: &Mob, from_front: bool, rng: &
     let mob_defense = 5 * u16::from(mob.level());
     // `Creature::GetShieldBlockValue`: level / 2 + str / 20, the strength term 1 at these levels.
     let block_value = u32::from(mob.level()) / 2 + 1;
-    land(outcome, armored, block_value, rng, || {
-        glancing_range(mob_defense, p.weapon_skill)
-    })
+    land(
+        outcome,
+        armored,
+        p.crit_damage_pct,
+        block_value,
+        rng,
+        || glancing_range(mob_defense, p.weapon_skill),
+    )
 }
 
 /// `mob`'s swing at the player; `from_front` when the mob stands in the player's front arc.
@@ -111,12 +116,13 @@ pub(crate) fn mob_swing(mob: &Mob, p: &WarriorStats, from_front: bool, rng: &mut
         from_front,
     );
     let outcome = table.outcome(rng.below(ROLL));
-    land(outcome, armored, p.block_value, rng, || (1.0, 1.0))
+    land(outcome, armored, 0, p.block_value, rng, || (1.0, 1.0))
 }
 
 fn land(
     outcome: Outcome,
     armored: u32,
+    crit_damage_pct: u32,
     block_value: u32,
     rng: &mut Rng,
     glancing: impl FnOnce() -> (f32, f32),
@@ -124,7 +130,10 @@ fn land(
     let (damage, blocked) = match outcome {
         Outcome::Miss | Outcome::Dodge | Outcome::Parry => (0, 0),
         Outcome::Hit => (armored, 0),
-        Outcome::Crit => (armored * 2, 0),
+        Outcome::Crit => (
+            crate::rules::talents::crit_damage(armored, crit_damage_pct),
+            0,
+        ),
         Outcome::Crushing => (armored + armored / 2, 0),
         Outcome::Glancing => {
             let (lo, hi) = glancing();
