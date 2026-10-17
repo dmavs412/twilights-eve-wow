@@ -96,6 +96,18 @@ pub fn warrior_with(level: u8, money: u32, items: &[Carried]) -> (Realm, u64, Ve
     (realm, guid, events)
 }
 
+/// Where `guid` ends up: the end of its last stroll or run in `events`, else `created`.
+pub fn settled_at(events: &[SessionEvent], guid: u64, created: [f32; 3]) -> [f32; 3] {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::MonsterMove { guid: g, path, .. } if *g == guid => path.last().copied(),
+            _ => None,
+        })
+        .next_back()
+        .unwrap_or(created)
+}
+
 /// Moves the player to 2 yd from `mob`, on the Crossroads side, facing it.
 pub fn stand_by(realm: &mut Realm, mob: &Mob) {
     let (dx, dy) = (

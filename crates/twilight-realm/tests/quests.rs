@@ -544,7 +544,7 @@ fn the_last_quest_item_looted_completes_the_quest() {
     }) {
         let mob = Mob {
             guid,
-            position,
+            position: settled_at(&events, guid, settled_at(&near, guid, position)),
             fields,
         };
         events.extend(kill(&mut realm, &mob));
