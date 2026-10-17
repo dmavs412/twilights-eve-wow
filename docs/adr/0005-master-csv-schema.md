@@ -34,6 +34,12 @@ issue #63 (the spec); this record keeps the decisions that are hard to see from 
   reaches `client_dbc_patch.json`. The realm enforcing the realm-only rules is later work, one
   ticket per family. A row stays `modelled=no` until its rules are enforced.
 
+- **Details settled while building the identity and progress columns (#64).** A hidden row's
+  `realm_spell_id` is written to `server_spells.json` as `spell_id`, beside `client_visible: false`,
+  so the realm keeps one id key. `status` is required on every row, `calling` and `talent_tab` rows
+  included. `max_rank` on a skill, aura or other non-talent row fails the build. A `talent_tab`'s key
+  is emitted as `key` on the tab. `is_hidden` stays in the CSV, unread, until it is dropped.
+
 ## Considered Options
 
 - **Adopt `is_hidden`.** Rejected. `client_visible` says what is withheld and is checked against

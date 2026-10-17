@@ -21,7 +21,7 @@ with open(MASTER, newline="", encoding="utf-8") as _f:
 
 STRIKE = {
     "kind": "skill", "calling": "vanguard", "class": "1", "key": "strike", "name": "Strike", "rank": "1",
-    "spell_id": "78", "client_cost": "15", "realm_cost": "15", "target": "enemy",
+    "client_spell_id": "78", "client_cost": "15", "realm_cost": "15", "target": "enemy",
     "effect1_kind": "weapon_strike",
     "effect1_params": "weapon=normal;bonus.base=9.5;bonus.per_level=1.4;bonus.per_ap=0;tags=a|b",
     "effect4_kind": "stun", "effect4_params": "duration_ms=1000",
@@ -43,7 +43,7 @@ CALLING = {
 }
 TAB = {"kind": "talent_tab", "calling": "vanguard", "class": "1", "key": "arms", "name": "Arms", "tab_id": "900",
        "background": "WarriorArms", "tab_order": "0"}
-AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "name": "Buff", "rank": "1", "spell_id": "14177",
+AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "name": "Buff", "rank": "1", "client_spell_id": "14177",
         "duration_ms": "10000", "charges": "1", "effect1_kind": "skill_crit_pct",
         "effect1_params": "skill=strike;pct=50", "modelled": "no"}
 
@@ -52,6 +52,15 @@ class BuildSpells(unittest.TestCase):
     def run_build(self, rows: list[dict]) -> tuple[subprocess.CompletedProcess, list | None]:
         tmp = tempfile.mkdtemp()
         path = os.path.join(tmp, "master.csv")
+        # A fixture that leaves `status` or a talent's `max_rank` out gets the usual value; one that
+        # sets the cell, even to "", keeps it, so a test can aim at the missing case.
+        ranks: dict[tuple, int] = {}
+        for row in rows:
+            if row["kind"] == "talent":
+                ranks[(row["calling"], row["key"])] = ranks.get((row["calling"], row["key"]), 0) + 1
+        rows = [{"status": "placeholder",
+                 **({"max_rank": str(ranks[(row["calling"], row["key"])])} if row["kind"] == "talent" else {}),
+                 **row} for row in rows]
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, COLUMNS, restval="")
             writer.writeheader()
@@ -125,7 +134,7 @@ class BuildSpells(unittest.TestCase):
 
     def test_every_patch_row_carries_the_power_type_of_its_class(self):
         for cls, power_type in (("1", 1), ("4", 3), ("8", 0)):
-            rows = [{**STRIKE, "class": cls}, talent("cruelty", 1, 0, 1, **{"class": cls, "spell_id": "12320"})]
+            rows = [{**STRIKE, "class": cls}, talent("cruelty", 1, 0, 1, **{"class": cls, "client_spell_id": "12320"})]
             done, data = self.run_build(rows)
             self.assertEqual(done.returncode, 0, done.stderr)
             self.assertEqual(data[0]["class"], int(cls))
@@ -221,9 +230,9 @@ class BuildSpells(unittest.TestCase):
 
     def test_patch_emits_spellmods_and_seats_per_rank(self):
         mod = {"spellmod1_type": "flat", "spellmod1_op": "COST", "spellmod1_family_bit": "16"}
-        rows = [talent("cruelty", 1, 0, 1, spell_id="12320", talent_id="138", spellmod1_value="-1", **mod),
-                talent("cruelty", 2, 0, 1, spell_id="12852", talent_id="138", spellmod1_value="-2", **mod),
-                talent("fury", 1, 1, 1, spell_id="12300", prereq_key="cruelty", prereq_rank="2")]
+        rows = [talent("cruelty", 1, 0, 1, client_spell_id="12320", talent_id="138", spellmod1_value="-1", **mod),
+                talent("cruelty", 2, 0, 1, client_spell_id="12852", talent_id="138", spellmod1_value="-2", **mod),
+                talent("fury", 1, 1, 1, client_spell_id="12300", prereq_key="cruelty", prereq_rank="2")]
         done, _ = self.run_build(rows)
         self.assertEqual(done.returncode, 0, done.stderr)
         mods = {o["spell_id"]: o.get("spellmods") for o in self.patch["spells"]}
@@ -239,7 +248,7 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "spellmod1_type": "pct"}], "spellmod1 needs")
 
     def test_fractional_id_fails(self):
-        self.assert_fails([{**STRIKE, "spell_id": "78.0"}], "not a whole id")
+        self.assert_fails([{**STRIKE, "client_spell_id": "78.0"}], "not a whole id")
 
     def test_dbc_check_without_data_fails(self):
         tmp = tempfile.mkdtemp()
@@ -247,7 +256,7 @@ class BuildSpells(unittest.TestCase):
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, COLUMNS, restval="")
             writer.writeheader()
-            writer.writerow(STRIKE)
+            writer.writerow({**STRIKE, "status": "placeholder"})
         env = {k: v for k, v in os.environ.items() if k != "WOW_DATA"}
         done = subprocess.run([sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp],
                               capture_output=True, text=True, env=env)
@@ -256,7 +265,7 @@ class BuildSpells(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(tmp, "server_spells.json")))
 
     def test_build_prints_rows_that_carry_assumptions(self):
-        guessed = {**STRIKE, "key": "guess", "spell_id": "79", "assumptions": "damage is a placeholder"}
+        guessed = {**STRIKE, "key": "guess", "client_spell_id": "79", "assumptions": "damage is a placeholder"}
         done, _ = self.run_build([STRIKE, guessed])
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("vanguard/guess", done.stdout)
@@ -292,14 +301,83 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([CALLING, {**CALLING, "key": "again"}], "second calling row")
 
     def test_talent_tab_row_names_id_background_and_order(self):
-        done, data = self.run_build([CALLING, TAB, talent("cruelty", 1, 0, 1, tab="Arms")])
+        done, data = self.run_build([CALLING, TAB, talent("cruelty", 1, 0, 1, tab="arms")])
         self.assertEqual(done.returncode, 0, done.stderr)
         tab = data[0]["talent_tabs"][0]
         self.assertEqual((tab["name"], tab["id"], tab["background"], tab["order"]), ("Arms", 900, "WarriorArms", 0))
         self.assertEqual(tab["talents"][0]["key"], "cruelty")
 
     def test_talent_in_an_undeclared_tab_fails_when_the_calling_declares_tabs(self):
-        self.assert_fails([TAB, talent("cruelty", 1, 0, 1, tab="Fury")], "no talent_tab row")
+        self.assert_fails([TAB, talent("cruelty", 1, 0, 1, tab="fury")], "not a talent_tab key")
+
+    def test_a_tab_naming_a_display_name_fails(self):
+        self.assert_fails([TAB, talent("cruelty", 1, 0, 1, tab="Arms")], "cruelty tab 'Arms' is not a talent_tab key")
+
+    def test_a_calling_with_no_talent_tab_rows_keeps_the_bare_name(self):
+        done, data = self.run_build([CALLING, talent("cruelty", 1, 0, 1, tab="Arms")])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["talent_tabs"][0]["name"], "Arms")
+
+    def test_client_visible_no_emits_the_realm_id_and_nothing_to_the_patch(self):
+        hidden = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "bleed", "name": "Bleed", "rank": "1",
+                  "client_visible": "no", "realm_spell_id": "1000001", "modelled": "no"}
+        done, data = self.run_build([CALLING, hidden])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        aura = data[0]["auras"][0]
+        self.assertEqual((aura["spell_id"], aura["status"]), (1000001, "placeholder"))
+        self.assertEqual(self.patch["spells"], [])
+
+    def test_a_visible_row_emits_its_client_spell_id_as_spell_id(self):
+        done, data = self.run_build([{**STRIKE, "client_visible": "yes"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["spell_id"], 78)
+        self.assertEqual(self.patch["spells"][0]["spell_id"], 78)
+
+    def hidden(self, **extra: str) -> dict:
+        return {"kind": "skill", "calling": "vanguard", "class": "1", "key": "bleed", "name": "Bleed", "rank": "1",
+                "client_visible": "no", "realm_spell_id": "1000001", "modelled": "no", **extra}
+
+    def test_a_client_cell_on_a_hidden_row_fails(self):
+        self.assert_fails([self.hidden(client_cost="5")], "bleed): a client_visible=no row sets client_cost")
+
+    def test_realm_spell_id_below_range_fails(self):
+        self.assert_fails([self.hidden(realm_spell_id="999999")], "realm_spell_id 999999 is below")
+
+    def test_a_hidden_row_needs_a_realm_spell_id(self):
+        self.assert_fails([self.hidden(realm_spell_id="")], "needs realm_spell_id")
+
+    def test_duplicate_realm_spell_id_fails(self):
+        self.assert_fails([self.hidden(), self.hidden(key="bleed2")], "realm_spell_id 1000001 is already used")
+
+    def test_realm_spell_id_on_a_visible_row_fails(self):
+        self.assert_fails([{**STRIKE, "realm_spell_id": "1000001"}], "realm_spell_id is set on a row that is visible")
+
+    def test_max_rank_is_required_on_a_talent(self):
+        self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="")], "cruelty): a talent rank row needs max_rank")
+
+    def test_max_rank_above_five_fails(self):
+        self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="6")], "max_rank 6 is not 1 to 5")
+
+    def test_max_rank_mismatch_fails(self):
+        self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="2"), talent("cruelty", 2, 0, 1, max_rank="3")],
+                          "disagree on max_rank")
+
+    def test_a_rank_gap_fails(self):
+        self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="3"), talent("cruelty", 3, 0, 1, max_rank="3")],
+                          "ranks are not 1..max_rank")
+
+    def test_a_skill_leaves_max_rank_empty(self):
+        self.assert_fails([{**STRIKE, "max_rank": "1"}], "only talent ranks carry it")
+
+    def test_a_missing_or_unknown_status_fails(self):
+        self.assert_fails([{**STRIKE, "status": ""}], "status is ''")
+        self.assert_fails([{**STRIKE, "status": "finished"}], "status is 'finished'")
+
+    def test_status_counts_and_wip_rows_are_printed(self):
+        done, _ = self.run_build([STRIKE, {**STRIKE, "key": "other", "client_spell_id": "79", "status": "wip"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("status: 1 placeholder, 1 wip, 0 done", done.stdout)
+        self.assertIn("wip: vanguard/other", done.stdout)
 
     def test_duplicate_talent_tab_fails(self):
         self.assert_fails([TAB, {**TAB, "key": "arms2"}], "duplicate talent_tab")
@@ -349,7 +427,7 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**bare, "tier": "1"}], "tier_cap")
 
     def test_patch_carries_the_description_only_when_the_row_has_one(self):
-        done, _ = self.run_build([STRIKE, {**STRIKE, "key": "plain", "spell_id": "79", "description": ""}])
+        done, _ = self.run_build([STRIKE, {**STRIKE, "key": "plain", "client_spell_id": "79", "description": ""}])
         self.assertEqual(done.returncode, 0, done.stderr)
         fields = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
         self.assertEqual(fields[78]["description"], "Hits.")

@@ -22,11 +22,13 @@ and tab that declares them. Columns, in groups:
 |---|---|---|
 | identity | `kind`, `calling`, `class`, `key`, `name`, `rank` | `kind` is `skill`, `talent`, `calling`, `talent_tab` or `aura`; `class` is the Calling's 1.12.1 class id (1 Warrior, 4 Rogue, 8 Mage ...), the same on every row of a Calling, and decides its power kind (ADR 0004); `key` is the save and content name; `rank` is 1 for a skill or aura |
 | calling row | `tier`, `tier_cap`, `tier_bonus`, `shapeshift_form`, `armour` | a Calling's Tier, Tier Cap, Tier Bonus (`strength=1;stamina=2`), form id and armour kinds joined by `\|`; a row without `tier` leaves the rest of the Calling to the TOML. Its power is its `class`'s |
-| talent_tab row | `tab_id`, `background`, `tab_order` | the tab's id, art and order; `name` is the tab name that talent rows put in `tab`. Once a Calling has a `talent_tab` row, every talent's `tab` must name one |
-| aura row | `spell_id`, `duration_ms`, `charges`, `effect1_kind`… | a buff granted by key; `spell_id` is a borrowed spell for its icon and name; a `proc` effect names auras in `apply_aura=key\|key` |
+| progress | `status` | `placeholder`, `wip` or `done`, required on every row; `done` means Davis played it. The build prints a count per status and lists the `wip` rows |
+| talent_tab row | `tab_id`, `background`, `tab_order` | the tab's id, art and order; `key` is what talent rows put in `tab` (not the display `name`). Once a Calling has a `talent_tab` row, every talent's `tab` must be one of its keys; a Calling with none (Vanguard, Zealot) keeps the bare tab name |
+| aura row | `client_spell_id`, `duration_ms`, `charges`, `effect1_kind`… | a buff granted by key; `client_spell_id` is a borrowed spell for its icon and name; a `proc` effect names auras in `apply_aura=key\|key` |
+| hidden row | `client_visible`, `realm_spell_id` | `client_visible=no` (empty means yes) emits nothing to the client patch and may set no `client_*` cell. It needs a `realm_spell_id`: a whole number of at least 1,000,000, unique across the sheet, written to `server_spells.json` as `spell_id` with `client_visible: false`. A visible row may not set `realm_spell_id` |
 | assumptions | `assumptions` | every guess beside the row it affects: placeholders, durations, borrowed ids, unmodelled parts. Every build prints the rows that carry one; the realm and client never see it |
-| ids | `spell_id`, `talent_id`, `source_tab_id`, `icon_id` | real 1.12.1 records; the build fails on an id the DBCs do not hold |
-| talent seat | `tab`, `tab_row`, `tab_column`, `prereq_key`, `prereq_rank`, `exceptional` | where the talent sits on the Calling's grid; `exceptional` marks a one-rank talent that still counts toward the row |
+| ids | `client_spell_id`, `talent_id`, `source_tab_id`, `icon_id` | real 1.12.1 records; the build fails on an id the DBCs do not hold. `client_spell_id` reaches both JSON files as `spell_id` |
+| talent seat | `tab`, `tab_row`, `tab_column`, `prereq_key`, `prereq_rank`, `exceptional`, `max_rank` | where the talent sits on the Calling's grid; `exceptional` marks a one-rank talent that still counts toward the row; `max_rank` (1 to 5, equal across a talent's ranks, every rank 1..`max_rank` present) is required on every talent rank row and empty on a skill |
 | borrowed | `borrowed_from_class`, `borrowed_family_bit` | set when a Calling casts another class's spell (ADR 0003) |
 | client | `client_cost`, `client_cooldown_ms`, `client_gcd_ms`, `client_cast_time_ms`, `client_range_min`, `client_range_max`, `client_duration_ms`, `client_stances`, `client_on_next_swing`, `client_not_in_combat` | what the stock client shows and enforces before it sends a cast, as Spell.dbc stores it |
 | realm | `realm_cost`, `realm_cooldown_ms`, `realm_gcd_ms`, `realm_range_min`, `realm_range_max`, `realm_radius_yd`, `target`, `requires_out_of_combat` | what the realm does; `realm_cost` must be at least `client_cost`, or the client refuses casts the realm would allow |
@@ -59,7 +61,7 @@ its `class`; `realm_cost` and `client_cost` stay bare numbers.
 
 ## The script
 
-`tools/twilights-eve/build_spells.py` reads the CSV, checks that every `spell_id`, `talent_id`,
+`tools/twilights-eve/build_spells.py` reads the CSV, checks that every `client_spell_id`, `talent_id`,
 `icon_id` and `source_tab_id` is a row in `Spell.dbc`, `Talent.dbc`, `SpellIcon.dbc` and
 `TalentTab.dbc` through `tools/twilights-eve/wowdata.py`, and writes both outputs in one pass. It
 exits non-zero, writing nothing, on an id the DBCs do not hold, an id that is not a whole number,

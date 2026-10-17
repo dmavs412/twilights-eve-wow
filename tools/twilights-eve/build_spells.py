@@ -59,7 +59,12 @@ REALM_NUMBERS = (
     "realm_cost", "realm_cooldown_ms", "realm_gcd_ms", "realm_range_min", "realm_range_max",
     "realm_radius_yd",
 )
-ID_COLUMNS = ("spell_id", "talent_id", "source_tab_id", "icon_id")
+ID_COLUMNS = ("client_spell_id", "talent_id", "source_tab_id", "icon_id")
+# The CSV's `client_spell_id` is the JSON's `spell_id`, so realm and client code read the same key.
+JSON_KEY = {"client_spell_id": "spell_id"}
+STATUSES = ("placeholder", "wip", "done")
+MIN_REALM_SPELL_ID = 1_000_000
+MAX_TALENT_RANKS = 5
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms", "borrowed_from_class", "borrowed_family_bit",
@@ -74,7 +79,7 @@ class BuildError(Exception):
 
 # The id columns the DBC check verifies, and the table each one must exist in.
 DBC_ID_COLUMNS = {
-    "spell_id": "Spell.dbc",
+    "client_spell_id": "Spell.dbc",
     "talent_id": "Talent.dbc",
     "icon_id": "SpellIcon.dbc",
     "source_tab_id": "TalentTab.dbc",
@@ -258,7 +263,7 @@ def build_talent_tab(row: dict, where: str) -> dict:
 def build_aura(row: dict, built: dict, where: str) -> dict:
     """An aura row: a borrowed spell id, a duration, charges and effects, granted by key."""
     out = {"key": built["key"], "name": built["name"]}
-    for column in ("spell_id", "icon_id"):
+    for column in ("spell_id", "client_visible", "icon_id", "status"):
         if column in built:
             out[column] = built[column]
     for column in ("duration_ms", "charges"):
@@ -317,17 +322,56 @@ def class_id(text: str, where: str) -> int:
     return value
 
 
+def client_visible(row: dict, where: str) -> bool:
+    """The row's `client_visible` (empty means yes), with the hidden-row rules checked."""
+    flag = row["client_visible"]
+    if flag not in ("", "yes", "no"):
+        raise BuildError(f"{where}: client_visible is {flag!r}, want yes or no")
+    if flag != "no":
+        if row["realm_spell_id"]:
+            raise BuildError(f"{where}: realm_spell_id is set on a row that is visible to the client")
+        return True
+    if not row["realm_spell_id"]:
+        raise BuildError(f"{where}: a client_visible=no row needs realm_spell_id")
+    realm = whole(row["realm_spell_id"], f"{where} realm_spell_id")
+    if realm < MIN_REALM_SPELL_ID:
+        raise BuildError(f"{where}: realm_spell_id {realm} is below {MIN_REALM_SPELL_ID}")
+    for column in row:
+        if column.startswith("client_") and column != "client_visible" and row[column]:
+            raise BuildError(f"{where}: a client_visible=no row sets {column}")
+    return False
+
+
+def max_rank(row: dict, where: str) -> int:
+    """A talent rank row's `max_rank`: a whole number from 1 to 5."""
+    if not row["max_rank"]:
+        raise BuildError(f"{where}: a talent rank row needs max_rank")
+    value = whole(row["max_rank"], f"{where} max_rank")
+    if not 1 <= value <= MAX_TALENT_RANKS:
+        raise BuildError(f"{where}: max_rank {value} is not 1 to {MAX_TALENT_RANKS}")
+    return value
+
+
 def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
         raise BuildError(f"{where}: modelled is {modelled!r}, want yes or no")
     out: dict = {"key": row["key"], "name": row["name"], "rank": number(row["rank"], f"{where} rank"),
                  "class": class_id(row["class"], where)}
+    if row["status"] not in STATUSES:
+        raise BuildError(f"{where}: status is {row['status']!r}, want one of {', '.join(STATUSES)}")
+    out["status"] = row["status"]
+    hidden = not client_visible(row, where)
     for column in ID_COLUMNS:
         if row[column]:
-            out[column] = number(row[column], f"{where} {column}")
-            if not isinstance(out[column], int):
+            key = JSON_KEY.get(column, column)
+            out[key] = number(row[column], f"{where} {column}")
+            if not isinstance(out[key], int):
                 raise BuildError(f"{where} {column}: {row[column]!r} is not a whole id")
+    if hidden:
+        # A hidden row's one number is its realm id; the realm reads it as `spell_id`.
+        out["spell_id"] = whole(row["realm_spell_id"], f"{where} realm_spell_id")
+        out["client_visible"] = False
     for column in REALM_NUMBERS:
         if row[column]:
             out[column] = number(row[column], f"{where} {column}")
@@ -365,7 +409,7 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
 
 def client_override(row: dict, built: dict, where: str) -> dict | None:
     """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
-    if "spell_id" not in built:
+    if "spell_id" not in built or built.get("client_visible") is False:
         return None
     # The Calling's power, so a borrowed spell gates against the right bar.
     fields: dict = {"power_type": CLASS_POWER_TYPE[built["class"]]}
@@ -408,6 +452,7 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
     callings: dict[str, dict] = {}
     overrides: list[dict] = []
     seen: set[tuple] = set()
+    realm_ids: dict[str, str] = {}
     talent_rows: dict[tuple, list[tuple[dict, dict, str]]] = {}
     # A calling's aura keys are read before any row, so row order never matters.
     auras = {c: {r["key"] for r in rows if r["kind"] == "aura" and r["calling"] == c} for c in
@@ -419,6 +464,8 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
             raise BuildError(f"{where}: kind is {kind!r}, want one of {', '.join(ROW_KINDS)}")
         if not row["calling"] or not row["key"]:
             raise BuildError(f"{where}: calling and key are required")
+        if row["status"] not in STATUSES:
+            raise BuildError(f"{where}: status is {row['status']!r}, want one of {', '.join(STATUSES)}")
         row_class = class_id(row["class"], where)
         calling = callings.setdefault(row["calling"], {"key": row["calling"], "class": row_class, "skills": [],
                                                       "talent_tabs": [], "auras": []})
@@ -432,11 +479,22 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
             continue
         if kind == "talent_tab":
             tab = build_talent_tab(row, where)
-            if any(t["name"] == tab["name"] or t["id"] == tab["id"] for t in calling["talent_tabs"]):
+            tab["key"] = row["key"]
+            if any(t["key"] == tab["key"] or t["name"] == tab["name"] or t["id"] == tab["id"]
+                   for t in calling["talent_tabs"]):
                 raise BuildError(f"{where}: duplicate talent_tab {tab['name']!r}")
             calling["talent_tabs"].append(tab)
             continue
         built = build_row(row, where, auras[row["calling"]])
+        if row["realm_spell_id"]:
+            if row["realm_spell_id"] in realm_ids:
+                raise BuildError(f"{where}: realm_spell_id {row['realm_spell_id']} is already used by "
+                                 f"{realm_ids[row['realm_spell_id']]}")
+            realm_ids[row["realm_spell_id"]] = where
+        if kind == "talent":
+            built["max_rank"] = max_rank(row, where)
+        elif row["max_rank"]:
+            raise BuildError(f"{where}: max_rank is set on a {kind} row; only talent ranks carry it")
         identity = (row["calling"], kind, row["key"], built["rank"])
         if identity in seen:
             raise BuildError(f"{where}: duplicate {kind} rank")
@@ -463,10 +521,10 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
         tab_name = first["tab"]
         seat = {"row": whole(first["tab_row"], f"{where} tab_row"),
                 "column": whole(first["tab_column"], f"{where} tab_column")}
-        tab = next((t for t in calling["talent_tabs"] if t["name"] == tab_name), None)
+        tab = next((t for t in calling["talent_tabs"] if t.get("key", t["name"]) == tab_name), None)
         if tab is None:
             if any("id" in t for t in calling["talent_tabs"]):
-                raise BuildError(f"{where}: talent {key} is in tab {tab_name!r}, which has no talent_tab row")
+                raise BuildError(f"{where}: talent {key} tab {tab_name!r} is not a talent_tab key of {calling['key']}")
             tab = {"name": tab_name, "talents": []}
             calling["talent_tabs"].append(tab)
         for other in tab["talents"]:
@@ -475,8 +533,13 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
         talent = {"key": key, "name": first["name"], "seat": seat,
                   "exceptional": first["exceptional"] == "yes",
                   "ranks": sorted((b for _, b, _ in ranks), key=lambda b: b["rank"])}
-        if [b["rank"] for b in talent["ranks"]] != list(range(1, len(ranks) + 1)):
-            raise BuildError(f"{where}: talent {key} ranks are not 1..{len(ranks)}")
+        wanted = {b["max_rank"] for b in talent["ranks"]}
+        if len(wanted) != 1:
+            raise BuildError(f"{where}: talent {key} ranks disagree on max_rank ({sorted(wanted)})")
+        if [b["rank"] for b in talent["ranks"]] != list(range(1, wanted.pop() + 1)):
+            raise BuildError(f"{where}: talent {key} ranks are not 1..max_rank")
+        for b in talent["ranks"]:
+            del b["max_rank"]
         if first["prereq_key"]:
             talent["prereq"] = {"key": first["prereq_key"], "rank": whole(first["prereq_rank"] or "1", where)}
         tab["talents"].append(talent)
@@ -529,6 +592,11 @@ def main(argv: list[str] | None = None) -> int:
 
     # A talent's ranks usually share one note; print it once.
     carried = list(dict.fromkeys((f"{row['calling']}/{row['key']}", row["assumptions"]) for row in rows if row["assumptions"]))
+    counts = {s: sum(1 for row in rows if row["status"] == s) for s in STATUSES}
+    print("status: " + ", ".join(f"{n} {s}" for s, n in counts.items()))
+    for row in rows:
+        if row["status"] == "wip":
+            print(f"  wip: {row['calling']}/{row['key']}" + (f" rank {row['rank']}" if row["rank"] else ""))
     print(f"{len(carried)} rows carry assumptions:")
     for who, text in carried:
         print(f"  {who}: {text}")
