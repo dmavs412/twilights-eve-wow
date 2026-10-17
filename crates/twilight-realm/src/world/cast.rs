@@ -705,6 +705,15 @@ impl InWorld {
                 self.skills.dodged_by(guid, events);
             }
         }
+        // Talents that give rage back on a skill with no rage effect of its own.
+        let extra = crate::talents::extra_rage(c, &skill.key);
+        let energizes = skill
+            .effects
+            .iter()
+            .any(|e| matches!(e, Effect::EnergizeRage { .. }));
+        let any_landed = landed
+            .iter()
+            .any(|(_, how)| !matches!(how, Landed::Missed(_)));
         for (guid, how) in landed {
             if !matches!(how, Landed::Missed(_)) {
                 for effect in &skill.effects {
@@ -717,6 +726,9 @@ impl InWorld {
                     super::engage(mob, self.guid, events);
                 }
             }
+        }
+        if extra > 0 && !energizes && any_landed {
+            self.gain_rage(skill.spell_id, extra, events);
         }
         self.proc(
             crate::rules::procs::Happened {
@@ -988,15 +1000,7 @@ impl InWorld {
             }
             Effect::EnergizeRage { amount } => {
                 let gained = amount.at(level, ap) + crate::talents::extra_rage(c, &skill.key);
-                let p = &mut self.player;
-                p.rage = (p.rage + gained * 10).min(rage::MAX);
-                events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
-                    target: self.guid,
-                    caster: self.guid,
-                    spell_id: skill.spell_id,
-                    power: POWER_RAGE,
-                    amount: gained,
-                }));
+                self.gain_rage(skill.spell_id, gained, events);
             }
             Effect::PeriodicRage {
                 aura_spell_id,
