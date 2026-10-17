@@ -7,7 +7,7 @@ use benilla_protocol::SessionEvent;
 use super::power::Power;
 use super::InWorld;
 use crate::characters::Char;
-use crate::content::{CROSSROADS, KALIMDOR};
+use crate::content::{CROSSROADS, EASTERN_KINGDOMS, KALIMDOR, NORTHSHIRE};
 use crate::equipment;
 use crate::fields::*;
 use crate::rules::durability;
@@ -30,6 +30,23 @@ impl Respawn {
         position: [CROSSROADS[0], CROSSROADS[1], CROSSROADS[2]],
         orientation: CROSSROADS[3],
     };
+
+    /// Northshire Abbey, where a released player on Eastern Kingdoms comes back.
+    pub(crate) const NORTHSHIRE: Self = Self {
+        map: EASTERN_KINGDOMS,
+        position: [NORTHSHIRE[0], NORTHSHIRE[1], NORTHSHIRE[2]],
+        orientation: NORTHSHIRE[3],
+    };
+
+    /// The open world's respawn point on `map`: Northshire on Eastern Kingdoms, the Hub
+    /// elsewhere.
+    pub(crate) fn home(map: u32) -> Self {
+        if map == EASTERN_KINGDOMS {
+            Self::NORTHSHIRE
+        } else {
+            Self::HUB
+        }
+    }
 }
 
 impl InWorld {

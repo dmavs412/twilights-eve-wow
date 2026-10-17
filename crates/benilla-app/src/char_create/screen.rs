@@ -389,6 +389,46 @@ fn left_tower(
                         s,
                     );
                 });
+
+            // The Local Realm's starting zone: a button that switches it and the zone it names.
+            tower
+                .spawn((Node {
+                    position_type: PositionType::Absolute,
+                    left: px(30.0),
+                    top: px(680.0),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },))
+                .with_children(|r| {
+                    glue_button(
+                        r,
+                        art,
+                        font,
+                        CreateAction::Start,
+                        "Start Zone",
+                        146.0,
+                        30.0,
+                        GlueBtnKind::Small,
+                        s,
+                    );
+                    outlined_text(
+                        r,
+                        Node {
+                            margin: UiRect::top(px(4.0)),
+                            ..default()
+                        },
+                        (),
+                        DynText::Start,
+                        GlueText {
+                            text: "",
+                            size: 12.0,
+                            color: GOLD,
+                            wrap: false,
+                        },
+                        font,
+                        s,
+                    );
+                });
         });
 }
 

@@ -297,6 +297,7 @@ fn drive_rig(
                         hair_style: 0,
                         hair_color: 0,
                         facial_hair: 0,
+                        start: 0,
                     }));
                     rig.phase = RigPhase::Creating;
                 }

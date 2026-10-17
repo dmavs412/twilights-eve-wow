@@ -42,6 +42,8 @@ pub(super) enum DynText {
     InfoAbilities,
     /// A class slot's hover label.
     ClassSlotLabel(u8),
+    /// The starting zone under the Start button.
+    Start,
 }
 
 /// A tint that follows the selected faction, the reference's `SetBackdropColor`: an `ImageNode`

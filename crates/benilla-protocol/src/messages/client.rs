@@ -25,7 +25,8 @@ pub fn auth_session(
 }
 
 /// `CMSG_CHAR_CREATE` body: the name cstring then nine bytes (`Packets/Character.cpp:4-19`); the
-/// last, `outfit_id`, is 0 because the server ignores it (`CharacterHandler.cpp:310`).
+/// last, `outfit_id`, carries the Local Realm's starting zone, which vmangos ignores
+/// (`CharacterHandler.cpp:310`).
 pub fn char_create(req: &CharCreateReq) -> Vec<u8> {
     let mut body = Vec::with_capacity(req.name.len() + 10);
     body.extend_from_slice(req.name.as_bytes());
@@ -39,7 +40,7 @@ pub fn char_create(req: &CharCreateReq) -> Vec<u8> {
         req.hair_style,
         req.hair_color,
         req.facial_hair,
-        0,
+        req.start,
     ]);
     body
 }

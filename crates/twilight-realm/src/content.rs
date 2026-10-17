@@ -13,6 +13,14 @@ pub(crate) fn open_world(map: u32) -> bool {
 /// `AreaTable.dbc`'s The Barrens.
 pub const THE_BARRENS: u32 = 17;
 
+/// `AreaTable.dbc`'s Elwynn Forest, and its Northshire Valley.
+pub const ELWYNN_FOREST: u32 = 12;
+pub const NORTHSHIRE_VALLEY: u32 = 9;
+
+/// Northshire Abbey's steps, where a character who chose Elwynn Forest first appears: the classic
+/// human start (vmangos `playercreateinfo`). `[x, y, z, facing]`.
+pub const NORTHSHIRE: [f32; 4] = [-8949.95, -132.493, 83.5312, 0.0];
+
 /// The Hub: the Crossroads inn's hall, where characters start, facing the bar. `[x, y, z, facing]`.
 pub const CROSSROADS: [f32; 4] = [-417.0, -2646.0, 96.0, 0.0];
 

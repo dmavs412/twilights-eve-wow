@@ -78,6 +78,7 @@ pub fn create_cmd(name: &str, race: u8, gender: u8, class: u8) -> RealmCommand {
         hair_style: 0,
         hair_color: 0,
         facial_hair: 0,
+        start: 0,
     })
 }
 

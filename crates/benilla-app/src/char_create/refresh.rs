@@ -157,6 +157,10 @@ pub(super) fn refresh_dynamic(
                 .get(*i as usize)
                 .map(|&c| class_name(c).to_string())
                 .unwrap_or_default(),
+            DynText::Start if sel.start == benilla_protocol::START_ELWYNN => {
+                "Start: Elwynn Forest".to_string()
+            }
+            DynText::Start => "Start: The Barrens".to_string(),
         };
         if t.0 != new {
             t.0 = new;

@@ -200,7 +200,7 @@ impl InWorld {
             hub: Default::default(),
             buyback: crate::vendor::Buyback::default(),
             wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
-            respawn: death::Respawn::HUB,
+            respawn: death::Respawn::home(c.map),
             meal: None,
             transfer: false,
             resting: crate::rest::in_inn(c.map, c.position),

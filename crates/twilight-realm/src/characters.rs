@@ -7,7 +7,9 @@ use benilla_protocol::messages::{
 use benilla_protocol::wire::Vector3d;
 use benilla_protocol::{CharCreateReq, Character};
 
-use crate::content::{self, Calling, CROSSROADS, KALIMDOR, THE_BARRENS};
+use crate::content::{
+    self, Calling, CROSSROADS, EASTERN_KINGDOMS, ELWYNN_FOREST, KALIMDOR, THE_BARRENS,
+};
 use crate::inventory::Inventory;
 use crate::quests::QuestLog;
 use crate::save::SaveError;
@@ -86,7 +88,23 @@ impl Characters {
             return CHAR_CREATE_SERVER_LIMIT;
         }
         self.last_guid += 1;
-        let [x, y, z, facing] = CROSSROADS;
+        let elwynn = req.start == benilla_protocol::START_ELWYNN;
+        let (map, zone, [x, y, z, facing], bind) = if elwynn {
+            let at = content::NORTHSHIRE;
+            (
+                EASTERN_KINGDOMS,
+                ELWYNN_FOREST,
+                at,
+                crate::inn::Bind::northshire(),
+            )
+        } else {
+            (
+                KALIMDOR,
+                THE_BARRENS,
+                CROSSROADS,
+                crate::inn::Bind::crossroads_inn(),
+            )
+        };
         self.list.push(Char {
             guid: self.last_guid,
             name,
@@ -102,8 +120,8 @@ impl Characters {
             calling: Calling::BASIC_WARRIOR,
             level: 1,
             xp: 0,
-            map: KALIMDOR,
-            zone: THE_BARRENS,
+            map,
+            zone,
             position: [x, y, z],
             orientation: facing,
             action_bar: None,
@@ -113,7 +131,7 @@ impl Characters {
             item_cooldowns: Vec::new(),
             quests: QuestLog::default(),
             discovered: Vec::new(),
-            bind: crate::inn::Bind::crossroads_inn(),
+            bind,
             rest: crate::rest::Rest::default(),
         });
         CHAR_CREATE_SUCCESS

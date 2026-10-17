@@ -18,9 +18,12 @@ pub const RACE_HUMAN: u8 = 0x1;
 pub const CLASS_WARRIOR: u8 = 0x1;
 pub const GENDER_MALE: u8 = 0x0;
 
-/// A `CMSG_CHAR_CREATE` request for [`super::char_create`]. The outfit id is always 0 on the wire:
-/// the server ignores it and picks the start gear (vmangos `CharacterHandler.cpp:310`). The
-/// appearance bytes must be valid `CharSections` indices or `Player::ValidateAppearance` refuses.
+/// The Local Realm's starting zones, sent in [`CharCreateReq::start`].
+pub const START_BARRENS: u8 = 0;
+pub const START_ELWYNN: u8 = 1;
+
+/// A `CMSG_CHAR_CREATE` request for [`super::char_create`]. The appearance bytes must be valid
+/// `CharSections` indices or `Player::ValidateAppearance` refuses.
 #[derive(Debug, Clone)]
 pub struct CharCreateReq {
     pub name: String,
@@ -35,6 +38,10 @@ pub struct CharCreateReq {
     pub hair_style: u8,
     pub hair_color: u8,
     pub facial_hair: u8,
+    /// The starting zone ([`START_BARRENS`], [`START_ELWYNN`]), sent as the outfit id byte: vmangos
+    /// ignores that byte and picks the start gear itself (`CharacterHandler.cpp:310`), so 0 is
+    /// what a real server sees.
+    pub start: u8,
 }
 
 /// The vmangos `CHARACTER_FLAG_*` bits of [`Character::flags`] that the select screen renders.

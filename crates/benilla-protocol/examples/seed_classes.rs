@@ -213,6 +213,7 @@ fn main() -> Result<()> {
             hair_style: 0,
             hair_color: 0,
             facial_hair: 0,
+            start: 0,
         };
         match s.create_character(&req)? {
             messages::CHAR_CREATE_SUCCESS => {

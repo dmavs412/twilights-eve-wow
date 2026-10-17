@@ -43,6 +43,19 @@ impl Bind {
         }
     }
 
+    /// Northshire Abbey, a character's bind when they chose to start in Elwynn Forest.
+    pub(crate) fn northshire() -> Self {
+        let [x, y, z, orientation] = crate::content::NORTHSHIRE;
+        Self {
+            place: Place {
+                map: crate::content::EASTERN_KINGDOMS,
+                position: [x, y, z],
+                orientation,
+            },
+            area: crate::content::NORTHSHIRE_VALLEY,
+        }
+    }
+
     /// `SMSG_BINDPOINTUPDATE`, which a login sends and a bind sends again.
     pub(crate) fn update(&self) -> SessionEvent {
         SessionEvent::BindPoint { area: self.area }

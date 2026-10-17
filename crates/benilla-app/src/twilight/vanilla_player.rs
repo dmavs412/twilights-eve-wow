@@ -194,6 +194,7 @@ fn realm_player_create() -> BTreeMap<u16, u32> {
         hair_style: 0,
         hair_color: 0,
         facial_hair: 0,
+        start: 0,
     }));
     realm.handle(RealmCommand::ListCharacters);
     let guid = realm
