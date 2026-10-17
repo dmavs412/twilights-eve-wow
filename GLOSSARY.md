@@ -77,8 +77,22 @@ A currency that Hunting Quests and Repeatable Quests reward, traded at a Hub ven
 _Avoid_: mark, badge
 
 **Dungeon**:
-A solo run through a real 1.12 instance map: about ten mobs, then a boss whose kill always drops one blue (rare) item. It can be run again without limit.
+A run through mobs to a boss whose kill always drops one blue (rare) item, either on a real 1.12 instance map (Wailing Caverns) or as a Phased Dungeon on the open world. It can be run again without limit.
 _Avoid_: instance (the map a Dungeon takes place on), raid
+
+**Phased Dungeon**:
+A Dungeon inside a building on the open world, such as Northshire Abbey, instead of on an instance map of its own. Walking through its Portal puts a character in its Phase. Everyone who enters shares the one copy.
+
+**Phase**:
+The side of a Portal a character is on. A character sees and can target only creatures on its own side: dungeon creatures are invisible and untargetable from outside, and the open world's are from inside.
+_Avoid_: instance, layer
+
+**Run**:
+One go at a Phased Dungeon, shared by everyone inside. It starts when the first character enters an empty dungeon, keeps a clock that the dungeon's timed events read, and ends when the last character leaves, resetting the dungeon fully.
+
+**Portal**:
+The doorway that moves a character between the open world and a Phased Dungeon's Phase, with no loading screen.
+_Avoid_: area trigger (the client's mechanism for a real instance's entrance)
 
 **Tier Cap**:
 The highest level a character can reach in a Tier, which is also the level at which they may advance: 10 for Tier 0, 30 for Tier 1, 50 for Tier 2, 60 for Tier 3, the last Tier, where 60 is the end of the game.
