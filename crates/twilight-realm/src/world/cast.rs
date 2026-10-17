@@ -882,7 +882,7 @@ impl InWorld {
             Target::SelfArea => Ok(self
                 .mobs
                 .iter()
-                .filter(|m| m.alive() && distance(m.position, c.position) <= skill.radius_yd)
+                .filter(|m| m.attackable() && distance(m.position, c.position) <= skill.radius_yd)
                 .take(skill.max_targets as usize)
                 .map(|m| m.guid)
                 .collect()),
@@ -893,6 +893,9 @@ impl InWorld {
                     .iter()
                     .find(|m| m.guid == guid)
                     .ok_or(SPELL_FAILED_BAD_TARGETS)?;
+                if mob.template.friendly {
+                    return Err(SPELL_FAILED_BAD_TARGETS);
+                }
                 if !mob.alive() {
                     return Err(SPELL_FAILED_TARGETS_DEAD);
                 }
@@ -1484,7 +1487,7 @@ impl InWorld {
         let other = self
             .mobs
             .iter()
-            .filter(|m| m.guid != from && m.alive())
+            .filter(|m| m.guid != from && m.attackable())
             .map(|m| (m.guid, distance(m.position, c.position)))
             .filter(|(_, d)| *d <= radius_yd)
             .min_by(|a, b| a.1.total_cmp(&b.1))

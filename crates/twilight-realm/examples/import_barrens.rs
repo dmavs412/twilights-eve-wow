@@ -129,6 +129,19 @@ pub fn convert(barrens: &Value, low: &Value) -> String {
 
 /// One `[[template]]` table for the imported template `t`.
 pub fn template(out: &mut String, entry: u64, t: &Value, hostile: bool, [lmin, lmax]: [u64; 2]) {
+    template_with(out, entry, t, hostile, [lmin, lmax], None);
+}
+
+/// [`template`], with `friendly_faction` in place of the template's own faction for a creature
+/// friendly to every player.
+pub fn template_with(
+    out: &mut String,
+    entry: u64,
+    t: &Value,
+    hostile: bool,
+    [lmin, lmax]: [u64; 2],
+    friendly_faction: Option<u64>,
+) {
     let _ = write!(
         out,
         "\n[[template]]\n\
@@ -155,7 +168,7 @@ pub fn template(out: &mut String, entry: u64, t: &Value, hostile: bool, [lmin, l
         creature_type = creature_type(t["type"].as_str().unwrap()),
         rank = rank(t["rank"].as_str().unwrap()),
         display = most_likely_display(t),
-        faction = t["faction_template"].as_u64().unwrap(),
+        faction = friendly_faction.unwrap_or_else(|| t["faction_template"].as_u64().unwrap()),
         class = unit_class(t["unit_class"].as_u64().unwrap()),
         hm = f32_of(&t["health_multiplier"]),
         dm = f32_of(&t["damage_multiplier"]),
@@ -165,6 +178,12 @@ pub fn template(out: &mut String, entry: u64, t: &Value, hostile: bool, [lmin, l
         sr = f32_of(&t["speed_run"]),
         det = f32_of(&t["detection_range"]),
     );
+    if friendly_faction.is_some() {
+        out.push_str(
+            "friendly = true
+",
+        );
+    }
 }
 
 /// The keep-out rule: a player of a low camp's levels meets no mob red to them (vanilla's con

@@ -20,7 +20,7 @@ mod import_barrens;
 
 use std::path::PathBuf;
 
-use import_barrens::{pick_display, reaction, row, template};
+use import_barrens::{pick_display, reaction, row, template_with};
 use serde_json::Value;
 
 fn krate() -> PathBuf {
@@ -75,9 +75,25 @@ pub fn convert(elwynn: &Value) -> String {
         let t = &templates[entry.to_string()];
         let hostile = reaction(elwynn, entry) && !t["no_aggro"].as_bool().unwrap_or(false);
         let levels = [&t["level_min"], &t["level_max"]].map(|l| l.as_u64().unwrap());
-        template(&mut out, entry, t, hostile, levels);
+        let friendly = friendly(elwynn, entry).then_some(FRIENDLY_TO_ALL);
+        template_with(&mut out, entry, t, hostile, levels, friendly);
     }
     out
+}
+
+/// `FactionTemplate.dbc` 35, friendly to every player race. Elwynn's NPCs show it whatever the
+/// player's race (spec #71): the guards, vendors and trainers are everyone's friends.
+const FRIENDLY_TO_ALL: u64 = 35;
+
+/// Whether the entry's spawns are friendly to a player faction (they share one faction template,
+/// so they agree).
+fn friendly(elwynn: &Value, entry: u64) -> bool {
+    elwynn["spawns"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|s| s["entry"].as_u64() == Some(entry))
+        .is_some_and(|s| s["reaction"] == "friendly")
 }
 
 #[allow(dead_code)]

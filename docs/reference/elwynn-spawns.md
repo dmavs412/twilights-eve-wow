@@ -47,3 +47,10 @@ facing and level range and is a camp of its own. Templates carry the vmangos mul
 realm's `mob_class_stats.toml`, as Barrens templates do. Spawns stream in around the player on
 map 0 the way Kalimdor's do. Dead mobs come back on the realm's respawn rule
 (`rules::respawn`), not the vmangos timer, which the spec's "realm rules" choice covers.
+
+## Friendly NPCs
+
+A template whose spawns are friendly to either player faction gets `friendly = true` and faction
+template 35 (friendly to every player race) in place of its own, so guards and vendors show green
+to every character (spec #71). The realm never lets an attack, a spell or an area or cleave hit
+pick one (`Mob::attackable`). No npc flags are sent, so they offer no menus.

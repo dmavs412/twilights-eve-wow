@@ -234,7 +234,11 @@ impl InWorld {
 
     /// `CMSG_ATTACKSWING`: start auto-attack on `target`, echoed as `SMSG_ATTACKSTART`.
     pub(crate) fn attack(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
-        let Some(i) = self.mobs.iter().position(|m| m.guid == target && m.alive()) else {
+        let Some(i) = self
+            .mobs
+            .iter()
+            .position(|m| m.guid == target && m.attackable())
+        else {
             events.push(SessionEvent::AttackSwingError(
                 AttackSwingError::DeadOrUnattackable,
             ));

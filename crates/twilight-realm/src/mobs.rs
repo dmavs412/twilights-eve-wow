@@ -46,6 +46,9 @@ pub(crate) struct Template {
     /// Attacks a player who comes too close; a neutral creature only fights back.
     #[serde(default = "yes")]
     pub(crate) hostile: bool,
+    /// Friendly to every player: it never fights, and no attack or spell may target it.
+    #[serde(default)]
+    pub(crate) friendly: bool,
     pub(crate) unit_class: UnitClass,
     #[allow(dead_code)]
     pub(crate) level_min: u8,
@@ -422,6 +425,11 @@ impl Mob {
         self.state != State::Dead
     }
 
+    /// Alive and not friendly: what an attack or a spell may hit.
+    pub(crate) fn attackable(&self) -> bool {
+        self.alive() && !self.template.friendly
+    }
+
     pub(crate) fn run_speed(&self) -> f32 {
         BASE_RUN * self.template.speed_run * self.speed_mul
     }
@@ -560,4 +568,35 @@ fn unit_class_id(class: UnitClass) -> u32 {
 /// The length of a path through `points`.
 fn length(points: &[[f32; 3]]) -> f32 {
     points.windows(2).map(|l| distance(l[0], l[1])).sum()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn elwynn_npcs_are_everyones_friends_and_its_beasts_still_fight() {
+        // Northshire Guard, Innkeeper Farley, Marshal McBride.
+        for entry in [1642, 295, 197] {
+            let t = template(entry).unwrap();
+            assert!(t.friendly && !t.hostile, "{} fights", t.name);
+            assert_eq!(t.faction_template, 35, "{} shows its own faction", t.name);
+        }
+        // Defias Thug.
+        let thug = template(38).unwrap();
+        assert!(thug.hostile && !thug.friendly);
+    }
+
+    #[test]
+    fn a_friendly_npc_is_never_attackable() {
+        let i = content()
+            .spawn
+            .iter()
+            .position(|s| s.entry == 1642)
+            .unwrap();
+        let guard = Mob::spawn(i as u32, 10, 0.0).unwrap();
+        assert!(guard.alive() && !guard.attackable());
+        let i = content().spawn.iter().position(|s| s.entry == 6).unwrap();
+        assert!(Mob::spawn(i as u32, 1, 0.0).unwrap().attackable());
+    }
 }

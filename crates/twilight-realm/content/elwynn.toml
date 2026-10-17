@@ -1757,7 +1757,7 @@ subname = "Weaponsmith"
 creature_type = 7
 rank = 0
 display_id = 1287
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -1769,6 +1769,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 60
@@ -1817,7 +1818,7 @@ subname = "Trade Supplies"
 creature_type = 7
 rank = 0
 display_id = 1298
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -1829,6 +1830,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 68
@@ -1837,7 +1839,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 5446
-faction_template = 11
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 55
@@ -1849,6 +1851,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.429
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 69
@@ -1877,7 +1880,7 @@ subname = "Cloth & Leather Armor Merchant"
 creature_type = 7
 rank = 0
 display_id = 1289
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -1889,6 +1892,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 78
@@ -1897,7 +1901,7 @@ subname = "Weaponsmith"
 creature_type = 7
 rank = 0
 display_id = 3275
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -1909,6 +1913,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 79
@@ -2137,7 +2142,7 @@ subname = "General Supplies"
 creature_type = 7
 rank = 0
 display_id = 1292
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -2149,6 +2154,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 152
@@ -2157,7 +2163,7 @@ subname = "General Supplies"
 creature_type = 7
 rank = 0
 display_id = 3277
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -2169,6 +2175,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 190
@@ -2177,7 +2184,7 @@ subname = "Cloth & Leather Armor Merchant"
 creature_type = 7
 rank = 0
 display_id = 3276
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -2189,6 +2196,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 196
@@ -2197,7 +2205,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3251
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 3
@@ -2209,6 +2217,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 197
@@ -2217,7 +2226,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 1859
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 20
@@ -2229,6 +2238,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 198
@@ -2237,7 +2247,7 @@ subname = "Mage Trainer"
 creature_type = 7
 rank = 0
 display_id = 5001
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -2249,6 +2259,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 240
@@ -2257,7 +2268,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 1985
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 25
@@ -2269,6 +2280,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 241
@@ -2277,7 +2289,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3254
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -2289,6 +2301,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 244
@@ -2297,7 +2310,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3330
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 3
@@ -2309,6 +2322,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 246
@@ -2317,7 +2331,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3329
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 6
@@ -2329,6 +2343,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 247
@@ -2337,7 +2352,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 221
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -2349,6 +2364,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 248
@@ -2357,7 +2373,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 2959
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 3
@@ -2369,6 +2385,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 250
@@ -2377,7 +2394,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3327
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 6
@@ -2389,6 +2406,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 251
@@ -2397,7 +2415,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3323
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 2
@@ -2409,6 +2427,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 252
@@ -2417,7 +2436,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3331
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 2
@@ -2429,6 +2448,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 253
@@ -2437,7 +2457,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 5038
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 6
@@ -2449,6 +2469,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 255
@@ -2457,7 +2478,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3324
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 6
@@ -2469,6 +2490,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 257
@@ -2497,7 +2519,7 @@ subname = "Vintner"
 creature_type = 7
 rank = 0
 display_id = 3328
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -2509,6 +2531,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 261
@@ -2517,7 +2540,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 1984
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 30
@@ -2529,6 +2552,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 278
@@ -2537,7 +2561,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3268
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -2549,6 +2573,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 285
@@ -2577,7 +2602,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 1689
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 20
@@ -2589,6 +2614,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 295
@@ -2597,7 +2623,7 @@ subname = "Innkeeper"
 creature_type = 7
 rank = 0
 display_id = 1291
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 30
@@ -2609,6 +2635,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 299
@@ -2637,7 +2664,7 @@ subname = "Mage of Tower Azora"
 creature_type = 7
 rank = 0
 display_id = 3348
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 24
@@ -2649,6 +2676,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 327
@@ -2677,7 +2705,7 @@ subname = "Mage Trainer"
 creature_type = 7
 rank = 0
 display_id = 1294
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 13
@@ -2689,6 +2717,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 330
@@ -2717,7 +2746,7 @@ subname = "Priest Trainer"
 creature_type = 7
 rank = 0
 display_id = 3344
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -2729,6 +2758,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 377
@@ -2737,7 +2767,7 @@ subname = "Priest Trainer"
 creature_type = 7
 rank = 0
 display_id = 1295
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 13
@@ -2749,6 +2779,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 383
@@ -2757,7 +2788,7 @@ subname = "Fishmonger"
 creature_type = 7
 rank = 0
 display_id = 3273
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 7
@@ -2769,6 +2800,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 384
@@ -2777,7 +2809,7 @@ subname = "Horse Breeder"
 creature_type = 7
 rank = 0
 display_id = 3270
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -2789,6 +2821,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 385
@@ -2809,6 +2842,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 0.857
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 390
@@ -2837,7 +2871,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 262
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -2849,6 +2883,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 448
@@ -2877,7 +2912,7 @@ subname = "Warlock Trainer"
 creature_type = 7
 rank = 0
 display_id = 3345
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -2889,6 +2924,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 465
@@ -2897,7 +2933,7 @@ subname = "Bartender"
 creature_type = 7
 rank = 0
 display_id = 3266
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -2909,6 +2945,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 471
@@ -3057,7 +3094,7 @@ subname = "Journeyman Blacksmith"
 creature_type = 7
 rank = 0
 display_id = 1288
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 24
@@ -3069,6 +3106,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 524
@@ -3197,7 +3235,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 338
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3209,6 +3247,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 795
@@ -3217,7 +3256,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 338
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3229,6 +3268,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 796
@@ -3237,7 +3277,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 221
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3249,6 +3289,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 797
@@ -3257,7 +3298,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 338
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3269,6 +3310,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 804
@@ -3277,7 +3319,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 257
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3289,6 +3331,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 805
@@ -3297,7 +3340,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 262
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3309,6 +3352,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 806
@@ -3317,7 +3361,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 338
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3329,6 +3373,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 807
@@ -3337,7 +3382,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 252
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3349,6 +3394,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 810
@@ -3357,7 +3403,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 338
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3369,6 +3415,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 811
@@ -3377,7 +3424,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 221
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -3389,6 +3436,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 822
@@ -3417,7 +3465,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 2072
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 18
@@ -3429,6 +3477,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 844
@@ -3437,7 +3486,7 @@ subname = "Traveling Salesman"
 creature_type = 7
 rank = 0
 display_id = 4416
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 35
@@ -3449,6 +3498,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 880
@@ -3537,7 +3587,7 @@ subname = "Fruit Seller"
 creature_type = 7
 rank = 0
 display_id = 3332
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -3549,6 +3599,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 896
@@ -3557,7 +3608,7 @@ subname = "Leather Armor Merchant"
 creature_type = 7
 rank = 0
 display_id = 3339
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -3569,6 +3620,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 906
@@ -3577,7 +3629,7 @@ subname = "Warlock Trainer"
 creature_type = 7
 rank = 0
 display_id = 3271
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -3589,6 +3641,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 911
@@ -3597,7 +3650,7 @@ subname = "Warrior Trainer"
 creature_type = 7
 rank = 0
 display_id = 3343
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -3609,6 +3662,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 913
@@ -3617,7 +3671,7 @@ subname = "Warrior Trainer"
 creature_type = 7
 rank = 0
 display_id = 1300
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 12
@@ -3629,6 +3683,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 915
@@ -3637,7 +3692,7 @@ subname = "Rogue Trainer"
 creature_type = 7
 rank = 0
 display_id = 3351
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -3649,6 +3704,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 917
@@ -3657,7 +3713,7 @@ subname = "Rogue Trainer"
 creature_type = 7
 rank = 0
 display_id = 1297
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 11
@@ -3669,6 +3725,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 925
@@ -3677,7 +3734,7 @@ subname = "Paladin Trainer"
 creature_type = 7
 rank = 0
 display_id = 3346
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -3689,6 +3746,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 927
@@ -3697,7 +3755,7 @@ subname = "Paladin Trainer"
 creature_type = 7
 rank = 0
 display_id = 1299
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 11
@@ -3709,6 +3767,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 951
@@ -3717,7 +3776,7 @@ subname = "Librarian"
 creature_type = 7
 rank = 0
 display_id = 3253
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 27
@@ -3729,6 +3788,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 952
@@ -3737,7 +3797,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3317
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 50
@@ -3749,6 +3809,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 955
@@ -3757,7 +3818,7 @@ subname = "Morale Officer"
 creature_type = 7
 rank = 0
 display_id = 3338
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -3769,6 +3830,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 958
@@ -3777,7 +3839,7 @@ subname = "Arcane Goods"
 creature_type = 7
 rank = 0
 display_id = 3347
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 35
@@ -3789,6 +3851,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 959
@@ -3797,7 +3860,7 @@ subname = "Clothier"
 creature_type = 7
 rank = 0
 display_id = 5012
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -3809,6 +3872,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 963
@@ -3817,7 +3881,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3279
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -3829,6 +3893,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1103
@@ -3837,7 +3902,7 @@ subname = "Journeyman Tailor"
 creature_type = 7
 rank = 0
 display_id = 1290
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 22
@@ -3849,6 +3914,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1198
@@ -3857,7 +3923,7 @@ subname = "Bowyer"
 creature_type = 7
 rank = 0
 display_id = 5014
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 18
@@ -3869,6 +3935,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1213
@@ -3877,7 +3944,7 @@ subname = "Armorer & Shieldcrafter"
 creature_type = 7
 rank = 0
 display_id = 3278
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -3889,6 +3956,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1215
@@ -3897,7 +3965,7 @@ subname = "Journeyman Alchemist"
 creature_type = 7
 rank = 0
 display_id = 3237
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 26
@@ -3909,6 +3977,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1218
@@ -3917,7 +3986,7 @@ subname = "Herbalism Trainer"
 creature_type = 7
 rank = 0
 display_id = 3269
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -3929,6 +3998,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1249
@@ -3937,7 +4007,7 @@ subname = "Armorer & Shieldcrafter"
 creature_type = 7
 rank = 0
 display_id = 3337
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -3949,6 +4019,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1250
@@ -3957,7 +4028,7 @@ subname = "General & Trade Supplies"
 creature_type = 7
 rank = 0
 display_id = 3326
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -3969,6 +4040,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1325
@@ -3977,7 +4049,7 @@ subname = "Shady Dealer"
 creature_type = 7
 rank = 0
 display_id = 1513
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 30
@@ -3989,6 +4061,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1423
@@ -3997,7 +4070,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3257
-faction_template = 11
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 22
@@ -4009,6 +4082,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1430
@@ -4017,7 +4091,7 @@ subname = "Cook"
 creature_type = 7
 rank = 0
 display_id = 1293
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -4029,6 +4103,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1632
@@ -4037,7 +4112,7 @@ subname = "Journeyman Leatherworker"
 creature_type = 7
 rank = 0
 display_id = 3335
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 22
@@ -4049,6 +4124,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1642
@@ -4057,7 +4133,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3257
-faction_template = 11
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 55
@@ -4069,6 +4145,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1645
@@ -4077,7 +4154,7 @@ subname = "Master Weaponsmith"
 creature_type = 7
 rank = 0
 display_id = 3336
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -4089,6 +4166,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1650
@@ -4097,7 +4175,7 @@ subname = "Lumberjack"
 creature_type = 7
 rank = 0
 display_id = 5032
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 11
@@ -4109,6 +4187,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1651
@@ -4117,7 +4196,7 @@ subname = "Fisherman"
 creature_type = 7
 rank = 0
 display_id = 3272
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 8
@@ -4129,6 +4208,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1922
@@ -4177,7 +4257,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 5018
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 8
@@ -4189,6 +4269,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 1975
@@ -4197,7 +4278,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 5034
-faction_template = 11
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 7
@@ -4209,6 +4290,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 2046
@@ -4217,7 +4299,7 @@ subname = "Armorer & Shieldcrafter"
 creature_type = 7
 rank = 0
 display_id = 3340
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 8
@@ -4229,6 +4311,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 2329
@@ -4237,7 +4320,7 @@ subname = "Physician"
 creature_type = 7
 rank = 0
 display_id = 1296
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 11
@@ -4249,6 +4332,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 2442
@@ -4277,7 +4361,7 @@ subname = "Butcher"
 creature_type = 7
 rank = 0
 display_id = 3236
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -4289,6 +4373,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 3937
@@ -4297,7 +4382,7 @@ subname = "Traveling Baker"
 creature_type = 7
 rank = 0
 display_id = 3234
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 12
@@ -4309,6 +4394,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 4732
@@ -4317,7 +4403,7 @@ subname = "Riding Trainer"
 creature_type = 7
 rank = 0
 display_id = 3274
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -4329,6 +4415,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 5403
@@ -4349,6 +4436,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.386
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 5405
@@ -4369,6 +4457,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.386
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 5406
@@ -4389,6 +4478,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.386
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 5917
@@ -4397,7 +4487,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 4558
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -4409,6 +4499,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6093
@@ -4437,7 +4528,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 4866
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "mage"
 level_min = 10
@@ -4449,6 +4540,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6172
@@ -4457,7 +4549,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 4886
-faction_template = 123
+faction_template = 35
 hostile = false
 unit_class = "paladin"
 level_min = 10
@@ -4469,6 +4561,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6306
@@ -4477,7 +4570,7 @@ subname = "Skinner"
 creature_type = 7
 rank = 0
 display_id = 5365
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 12
@@ -4489,6 +4582,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6367
@@ -4497,7 +4591,7 @@ subname = "Crazy Cat Lady"
 creature_type = 7
 rank = 0
 display_id = 5086
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -4509,6 +4603,7 @@ base_attack_time = 1500
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6368
@@ -4537,7 +4632,7 @@ subname = "Demon Trainer"
 creature_type = 7
 rank = 0
 display_id = 5087
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "mage"
 level_min = 8
@@ -4549,6 +4644,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6374
@@ -4557,7 +4653,7 @@ subname = "Demon Trainer"
 creature_type = 7
 rank = 0
 display_id = 5092
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "mage"
 level_min = 11
@@ -4569,6 +4665,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6491
@@ -4589,6 +4686,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.0
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6749
@@ -4597,7 +4695,7 @@ subname = "Stable Master"
 creature_type = 7
 rank = 0
 display_id = 9257
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 30
@@ -4609,6 +4707,7 @@ base_attack_time = 1000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6774
@@ -4617,7 +4716,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 5526
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 10
@@ -4629,6 +4728,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6778
@@ -4637,7 +4737,7 @@ subname = "Assistant Innkeeper"
 creature_type = 7
 rank = 0
 display_id = 5527
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 11
@@ -4649,6 +4749,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 6846
@@ -4697,7 +4798,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 6446
-faction_template = 875
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 45
@@ -4709,6 +4810,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 7381
@@ -4797,7 +4899,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 8489
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 2
@@ -4809,6 +4911,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 10616
@@ -4817,7 +4920,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 10995
-faction_template = 123
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 15
@@ -4829,6 +4932,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 11072
@@ -4837,7 +4941,7 @@ subname = "Artisan Enchanter"
 creature_type = 7
 rank = 0
 display_id = 10610
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 44
@@ -4849,6 +4953,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 11260
@@ -4857,7 +4962,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 11354
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -4869,6 +4974,7 @@ base_attack_time = 2000
 speed_walk = 0.667
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 11328
@@ -4877,7 +4983,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 310
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 6
@@ -4889,6 +4995,7 @@ base_attack_time = 2000
 speed_walk = 0.667
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 11940
@@ -4897,7 +5004,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 11898
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 5
@@ -4909,6 +5016,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 11979
@@ -4917,7 +5025,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 11929
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 25
@@ -4929,6 +5037,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 11994
@@ -4937,7 +5046,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 11930
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 25
@@ -4949,6 +5058,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 11996
@@ -4957,7 +5067,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 257
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 1
@@ -4969,6 +5079,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 12375
@@ -4989,6 +5100,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.386
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 12376
@@ -5009,6 +5121,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.386
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 12423
@@ -5017,7 +5130,7 @@ subname = ""
 creature_type = 7
 rank = 0
 display_id = 3258
-faction_template = 12
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 7
@@ -5029,6 +5142,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 13159
@@ -5057,7 +5171,7 @@ subname = ""
 creature_type = 7
 rank = 1
 display_id = 3762
-faction_template = 57
+faction_template = 35
 hostile = false
 unit_class = "warrior"
 level_min = 36
@@ -5069,6 +5183,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 20.0
+friendly = true
 
 [[template]]
 entry = 14393
@@ -5077,7 +5192,7 @@ subname = ""
 creature_type = 7
 rank = 1
 display_id = 3766
-faction_template = 57
+faction_template = 35
 hostile = false
 unit_class = "paladin"
 level_min = 37
@@ -5089,6 +5204,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.143
 detection_range = 20.0
+friendly = true
 
 [[template]]
 entry = 14559
@@ -5109,6 +5225,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.386
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 14560
@@ -5129,6 +5246,7 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.386
 detection_range = 18.0
+friendly = true
 
 [[template]]
 entry = 14561
@@ -5149,3 +5267,4 @@ base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 1.386
 detection_range = 18.0
+friendly = true
