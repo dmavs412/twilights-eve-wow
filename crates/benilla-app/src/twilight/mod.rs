@@ -490,6 +490,10 @@ fn rewrite_spells(mut spells: ResMut<crate::ui_action::Spells>) {
             }
         }),
     );
+    // The compiled-in patch comes last, so the sheet's cost, power, cooldown and text win.
+    if let Err(err) = catalog.apply_dbc_patch(benilla_formats::CLIENT_DBC_PATCH) {
+        error!("client_dbc_patch.json does not parse: {err}");
+    }
 }
 
 /// Basic Warrior is the only Calling a character starts as, so create offers only Warrior.
