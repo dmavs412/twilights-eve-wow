@@ -13,9 +13,10 @@ benilla-protocol = { path = "../benilla-protocol" }
 # The character save's versioned TOML (the app already ships `toml`; it keeps `serde_json` out).
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
+# The master CSV's generated realm data (src/generated.rs).
+serde_json = "1"
 
 # tests/content.rs checks the generated `content/` tables against the JSON dumps they come from.
 [dev-dependencies]
-serde_json = "1"
 # examples/gen_outfits.rs reads CharStartOutfit.dbc out of the game's MPQs.
 benilla-formats = { path = "../benilla-formats", default-features = false }

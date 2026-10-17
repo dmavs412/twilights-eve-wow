@@ -410,6 +410,9 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
     let mut want = vec![
         // Anger Management, Flurry.
         12296, 12319, 12971, 12972, 12973, 12974,
+        // Basic Warrior's sheet: Field Medic, Cutthroat's Momentum, Savage Strikes, Vanguard's
+        // Resolve.
+        12299, 12761, 12762, 12763, 12764, 13743, 13875, 14144, 14148, 14983,
         // Improved Judgement, Vindication, Eye for an Eye.
         25956, 25957, 9452, 26016, 26021, 9799, 25988,
         // Pursuit of Justice, Improved Hammer of Justice, Vengeance.
@@ -461,16 +464,89 @@ fn talent_tab_ids_are_unique_across_callings() {
     assert_eq!(ids.len(), all, "{ids:?}");
 }
 
-/// The Recruit talents the realm shows and lets the player learn, but does not model yet: Anger
-/// Management's slower rage decay has no effect kind.
-const RECRUIT_NOT_MODELLED: &[&str] = &["anger_management"];
-
+/// Basic Warrior's tree is the master CSV's, as `build_spells.py` wrote it: the realm shows each
+/// talent on its borrowed `Talent.dbc` id and rank spells, and models only what the sheet marks
+/// modelled and the realm has a kind for.
 #[test]
-fn the_basic_warrior_talent_tree_matches_the_reference() {
-    check_tree("basic_warrior", RECRUIT_NOT_MODELLED);
+fn the_basic_warrior_talent_tree_is_the_sheets() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/twilights-eve/server_spells.json");
+    let file: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let want = file
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["key"] == "basic_warrior")
+        .unwrap();
+    let got = callings::calling("basic_warrior").unwrap();
+    assert_eq!(got.name, want["name"].as_str().unwrap());
+    assert_eq!(u64::from(got.cap), want["tier_cap"].as_u64().unwrap());
+    let tabs = want["talent_tabs"].as_array().unwrap();
+    assert_eq!(got.talent_tabs.len(), tabs.len());
+    for (tab, want) in got.talent_tabs.iter().zip(tabs) {
+        assert_eq!(u64::from(tab.id), want["id"].as_u64().unwrap());
+        assert_eq!(tab.name, want["name"].as_str().unwrap());
+        assert_eq!(tab.background, want["background"].as_str().unwrap());
+        let talents = want["talents"].as_array().unwrap();
+        assert_eq!(tab.talents.len(), talents.len());
+        for (t, want) in tab.talents.iter().zip(talents) {
+            let key = want["key"].as_str().unwrap();
+            let ranks = want["ranks"].as_array().unwrap();
+            assert_eq!(t.key, key);
+            assert_eq!(
+                u64::from(t.talent_id),
+                ranks[0]["talent_id"].as_u64().unwrap(),
+                "{key}"
+            );
+            assert_eq!(u64::from(t.tier), want["seat"]["row"].as_u64().unwrap());
+            assert_eq!(
+                u64::from(t.column),
+                want["seat"]["column"].as_u64().unwrap()
+            );
+            let spells: Vec<u64> = ranks
+                .iter()
+                .map(|r| r["spell_id"].as_u64().unwrap())
+                .collect();
+            let got_spells: Vec<u64> = t.rank_spells.iter().map(|&s| u64::from(s)).collect();
+            assert_eq!(got_spells, spells, "{key}");
+            for e in &t.effects {
+                assert_eq!(e.per_rank().len(), spells.len(), "{key}: a size per rank");
+            }
+        }
+    }
+}
+
+/// A Calling's source is data: the sheet's `calling` row moves it out of the TOML.
+#[test]
+fn basic_warrior_has_no_table_in_the_toml_and_the_others_keep_theirs() {
+    let tables: toml::Table = include_str!("../content/callings.toml").parse().unwrap();
+    let keys: Vec<&str> = tables["calling"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["key"].as_str().unwrap())
+        .collect();
+    assert_eq!(keys, ["vanguard", "zealot"]);
+    assert!(callings::calling("basic_warrior").is_some());
+}
+
+/// Recruit keeps its id and art; the sheet's other four talents are unmodelled until their
+/// effects land, so only Initiate's Spark does anything.
+#[test]
+fn the_basic_warrior_tree_is_recruit_on_the_warrior_arms_art() {
     let tree = &callings::calling("basic_warrior").unwrap().talent_tabs;
-    let names: Vec<&str> = tree.iter().map(|t| t.name.as_str()).collect();
-    assert_eq!(names, ["Recruit"]);
+    let tabs: Vec<(u32, &str, &str)> = tree
+        .iter()
+        .map(|t| (t.id, t.name.as_str(), t.background.as_str()))
+        .collect();
+    assert_eq!(tabs, [(900, "Recruit", "WarriorArms")]);
+    let modelled: Vec<&str> = tree[0]
+        .talents
+        .iter()
+        .filter(|t| !t.is_wip())
+        .map(|t| t.key.as_str())
+        .collect();
+    assert_eq!(modelled, ["initiates_spark"]);
 }
 
 #[test]

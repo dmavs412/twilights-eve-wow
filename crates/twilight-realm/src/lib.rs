@@ -46,6 +46,7 @@ mod dev;
 mod dungeon;
 mod equipment;
 mod fields;
+mod generated;
 mod hub;
 mod inventory;
 mod items;

@@ -89,8 +89,11 @@ the same file feeds an MPQ writer.
 As of 2026-10-16 `build_spells.py` generates both outputs from the CSV, and they are committed
 (3 Callings, 204 rows, 198 spell overrides, 49 talent seats). Basic Warrior is fully expressed in
 the CSV (calling, tab, aura rows; spec #50); its rows whose effects the realm cannot yet do are
-`modelled=no`. Nothing consumes the outputs yet: the game still runs on
-`data/twilights-eve/callings.json` and the `content/*.toml` files generated from it, and the client
-does not apply the patch. The patch carries no `family_name` field. Talents carry their
+`modelled=no`. The realm reads Basic Warrior from `server_spells.json` (`twilight-realm`'s
+`generated.rs`, compiled in): any Calling whose file entry carries a `tier`, which only a `calling`
+row gives it. Vanguard and Zealot are still the tables in `content/callings.toml`. A skill with no
+effects, or an effect kind the realm lacks, is left out of the bar and spell book until its effects
+land; a talent in that state is learnable but does nothing and shows as WIP. The client does not
+apply the patch yet. The patch carries no `family_name` field. Talents carry their
 `description` and client spellmods, but their realm effects are not yet structured columns,
 because `callings.json` never held them.

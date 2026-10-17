@@ -1,6 +1,7 @@
-//! The Callings (`GLOSSARY.md`) as data: each one's Tier, Tier Cap, stance and skills, parsed once
-//! from `content/callings.toml`. A new Calling or skill is a new table there, not new code: the
-//! world casts any skill from its effects.
+//! The Callings (`GLOSSARY.md`) as data: each one's Tier, Tier Cap, stance and skills, built once.
+//! A Calling the master CSV defines comes from the generated `server_spells.json`
+//! (`generated.rs`); the others from `content/callings.toml`. A new Calling or skill is new data,
+//! not new code: the world casts any skill from its effects.
 
 use std::sync::OnceLock;
 
@@ -475,13 +476,14 @@ struct Callings {
 }
 
 fn all() -> &'static [CallingDef] {
-    static CALLINGS: OnceLock<Callings> = OnceLock::new();
-    &CALLINGS
-        .get_or_init(|| {
-            toml::from_str(include_str!("../content/callings.toml"))
-                .expect("content/callings.toml parses")
-        })
-        .calling
+    static CALLINGS: OnceLock<Vec<CallingDef>> = OnceLock::new();
+    CALLINGS.get_or_init(|| {
+        let mut all = crate::generated::callings();
+        let tables: Callings = toml::from_str(include_str!("../content/callings.toml"))
+            .expect("content/callings.toml parses");
+        all.extend(tables.calling);
+        all
+    })
 }
 
 /// A Calling by its save key (`basic_warrior`).

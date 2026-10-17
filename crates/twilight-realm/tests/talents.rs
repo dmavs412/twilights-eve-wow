@@ -9,39 +9,28 @@ use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 use common::*;
 use twilight_realm::DevMultipliers;
 
-// The Recruit tree's `Talent.dbc` ids and their rank spells (`content/callings.toml`).
-const IMPROVED_HEROIC_STRIKE: u32 = 124;
-const IHS_RANKS: [u32; 3] = [12282, 12663, 12664];
+// The Recruit tree's borrowed `Talent.dbc` ids and their rank spells (`master.csv`).
+const FIELD_MEDIC: u32 = 140;
+const FIELD_MEDIC_RANKS: [u32; 5] = [12299, 12761, 12762, 12763, 12764];
+const INITIATES_SPARK: u32 = 27;
+const INITIATES_SPARK_RANKS: [u32; 3] = [11078, 11080, 12342];
+const SAVAGE_STRIKES: u32 = 272;
+const SAVAGE_STRIKES_RANKS: [u32; 2] = [14144, 14148];
+const VANGUARDS_RESOLVE: u32 = 382;
+const VANGUARDS_RESOLVE_RANKS: [u32; 1] = [14983];
+// Vanguard talents the Vanguard tests below use.
 const IMPROVED_CHARGE: u32 = 126;
-const IMPROVED_CHARGE_RANKS: [u32; 2] = [12285, 12697];
-const TOUGHNESS: u32 = 140;
-const TOUGHNESS_RANKS: [u32; 5] = [12299, 12761, 12762, 12763, 12764];
-const CRUELTY: u32 = 157;
-const CRUELTY_RANKS: [u32; 5] = [12320, 12852, 12853, 12855, 12856];
-const UNBRIDLED_WRATH: u32 = 159;
-/// Unbridled Wrath's rage (vmangos 12964).
-const UNBRIDLED_WRATH_RAGE: u32 = 12964;
 const ANGER_MANAGEMENT: u32 = 137;
-const ANGER_MANAGEMENT_RANKS: [u32; 1] = [12296];
 /// A real Warrior talent that is not in the Recruit tree: Mortal Strike.
 const MORTAL_STRIKE: u32 = 135;
 
-// The Basic Warrior's skills (`content/callings.toml`).
-const HEROIC_STRIKE: u32 = 78;
-const CHARGE: u32 = 100;
-
 // vmangos `SpellModOp`.
 const SPELLMOD_ALL_EFFECTS: u8 = 8;
-const SPELLMOD_COST: u8 = 14;
 
 // `NPCFlags`.
 const NPC_GOSSIP: u32 = 0x01;
 const NPC_QUESTGIVER: u32 = 0x02;
 const NPC_TRAINER: u32 = 0x10;
-
-/// Gnoll War Harness: a leather chest of 70 armour.
-const GNOLL_WAR_HARNESS: u32 = 1211;
-const CHEST: u8 = 4;
 
 const SEED: u64 = 0x5EED_0014;
 const CROSSROADS_XY: [f32; 2] = [-441.8, -2648.6];
@@ -97,28 +86,32 @@ fn a_level_up_brings_a_talent_point() {
 #[test]
 fn learning_a_talent_spends_a_point_and_teaches_its_rank_spell() {
     let (mut realm, me, _, mut view) = warrior_at(4);
-    learn(&mut realm, TOUGHNESS, 0);
+    learn(&mut realm, FIELD_MEDIC, 0);
     let events = view.drain(&mut realm);
     assert!(events.iter().any(
-        |e| matches!(e, SessionEvent::SpellLearned { spell_id } if *spell_id == TOUGHNESS_RANKS[0])
+        |e| matches!(e, SessionEvent::SpellLearned { spell_id } if *spell_id == FIELD_MEDIC_RANKS[0])
     ));
     assert_eq!(view.points(me), 2);
-    assert_eq!(view.talent_rank(&TOUGHNESS_RANKS), 1);
+    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 1);
 
-    learn(&mut realm, TOUGHNESS, 1);
+    learn(&mut realm, FIELD_MEDIC, 1);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 1);
-    assert_eq!(view.talent_rank(&TOUGHNESS_RANKS), 2);
+    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 2);
 }
 
 #[test]
 fn a_talent_cannot_be_learned_without_a_point() {
     let (mut realm, me, _, mut view) = warrior_at(2);
-    learn(&mut realm, TOUGHNESS, 0);
-    learn(&mut realm, TOUGHNESS, 1);
+    learn(&mut realm, FIELD_MEDIC, 0);
+    learn(&mut realm, FIELD_MEDIC, 1);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 0);
-    assert_eq!(view.talent_rank(&TOUGHNESS_RANKS), 1, "one point, one rank");
+    assert_eq!(
+        view.talent_rank(&FIELD_MEDIC_RANKS),
+        1,
+        "one point, one rank"
+    );
 }
 
 #[test]
@@ -136,45 +129,44 @@ fn only_the_callings_own_tree_can_be_learned() {
 fn a_talent_has_no_rank_past_its_last() {
     let (mut realm, me, _, mut view) = warrior_at(10);
     for rank in 0..4 {
-        learn(&mut realm, IMPROVED_HEROIC_STRIKE, rank);
+        learn(&mut realm, INITIATES_SPARK, rank);
     }
     view.drain(&mut realm);
-    assert_eq!(view.talent_rank(&IHS_RANKS), 3);
+    assert_eq!(view.talent_rank(&INITIATES_SPARK_RANKS), 3);
     assert_eq!(view.points(me), 6);
 }
 
 #[test]
 fn the_second_row_opens_after_five_points_in_the_tab() {
     let (mut realm, me, _, mut view) = warrior_at(10);
-    for second_row in [CRUELTY, UNBRIDLED_WRATH, ANGER_MANAGEMENT] {
+    for second_row in [SAVAGE_STRIKES, VANGUARDS_RESOLVE] {
         learn(&mut realm, second_row, 0);
     }
     view.drain(&mut realm);
     assert_eq!(view.points(me), 9, "row 2 is shut with nothing spent");
 
-    for rank in 0..3 {
-        learn(&mut realm, IMPROVED_HEROIC_STRIKE, rank);
+    for rank in 0..4 {
+        learn(&mut realm, FIELD_MEDIC, rank);
     }
-    learn(&mut realm, IMPROVED_CHARGE, 0);
-    learn(&mut realm, CRUELTY, 0);
+    learn(&mut realm, SAVAGE_STRIKES, 0);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 5, "still shut at four");
 
-    learn(&mut realm, IMPROVED_CHARGE, 1);
-    learn(&mut realm, CRUELTY, 0);
+    learn(&mut realm, FIELD_MEDIC, 4);
+    learn(&mut realm, SAVAGE_STRIKES, 0);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 3, "open at five");
-    assert_eq!(view.talent_rank(&IMPROVED_CHARGE_RANKS), 2);
-    assert_eq!(view.talent_rank(&CRUELTY_RANKS), 1);
+    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 5);
+    assert_eq!(view.talent_rank(&SAVAGE_STRIKES_RANKS), 1);
 }
 
 #[test]
 fn a_talent_the_realm_does_not_model_yet_is_still_learned() {
     let (mut realm, me, _, mut view) = warrior_at(10);
     open_the_second_row(&mut realm);
-    learn(&mut realm, ANGER_MANAGEMENT, 0);
+    learn(&mut realm, VANGUARDS_RESOLVE, 0);
     view.drain(&mut realm);
-    assert_eq!(view.talent_rank(&ANGER_MANAGEMENT_RANKS), 1);
+    assert_eq!(view.talent_rank(&VANGUARDS_RESOLVE_RANKS), 1);
     assert_eq!(view.points(me), 3);
 }
 
@@ -253,7 +245,7 @@ fn the_trainer_offers_to_unlearn_talents() {
 #[test]
 fn asking_to_unlearn_closes_the_menu_and_names_the_price() {
     let (mut realm, _, _, mut view) = warrior_at(4);
-    learn(&mut realm, TOUGHNESS, 0);
+    learn(&mut realm, FIELD_MEDIC, 0);
     let trainer = view.trainer();
     let events = ask_for_respec(&mut realm, &mut view, trainer.guid);
     assert!(events
@@ -280,13 +272,12 @@ fn a_respec_costs_gold_returns_every_point_and_clears_the_talents() {
         DevMultipliers::default(),
         &[("money = 0", "money = 200000")],
     );
-    let crit_before = view.crit(me);
     open_the_second_row(&mut realm);
-    for rank in 0..3 {
-        learn(&mut realm, CRUELTY, rank);
+    for rank in 0..2 {
+        learn(&mut realm, SAVAGE_STRIKES, rank);
     }
     view.drain(&mut realm);
-    assert_eq!(view.points(me), 1);
+    assert_eq!(view.points(me), 2);
     let trainer = view.trainer();
     ask_for_respec(&mut realm, &mut view, trainer.guid);
     realm.handle(RealmCommand::TalentWipeConfirm {
@@ -303,24 +294,17 @@ fn a_respec_costs_gold_returns_every_point_and_clears_the_talents() {
             _ => None,
         })
         .collect();
-    let mut every_rank: Vec<u32> = CRUELTY_RANKS[..3]
-        .iter()
-        .copied()
-        .chain(IHS_RANKS)
-        .chain(IMPROVED_CHARGE_RANKS)
+    let mut every_rank: Vec<u32> = SAVAGE_STRIKES_RANKS
+        .into_iter()
+        .chain(FIELD_MEDIC_RANKS)
         .collect();
     every_rank.sort_unstable();
     assert_eq!(removed.into_iter().collect::<Vec<_>>(), every_rank);
-    assert_eq!(view.talent_rank(&CRUELTY_RANKS), 0);
-    assert_eq!(view.talent_rank(&IHS_RANKS), 0);
-    assert_eq!(spell_mod(&events, true, 6, SPELLMOD_COST), Some(0));
-    assert!(
-        (view.crit(me) - crit_before).abs() < 1e-4,
-        "Cruelty's crit gone"
-    );
+    assert_eq!(view.talent_rank(&SAVAGE_STRIKES_RANKS), 0);
+    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 0);
 
     // The next one costs 5 gold.
-    learn(&mut realm, TOUGHNESS, 0);
+    learn(&mut realm, FIELD_MEDIC, 0);
     let events = ask_for_respec(&mut realm, &mut view, trainer.guid);
     assert_eq!(wipe_price(&events, trainer.guid), Some(50_000));
 }
@@ -332,7 +316,7 @@ fn a_respec_without_the_gold_changes_nothing() {
         DevMultipliers::default(),
         &[("money = 0", "money = 9999")],
     );
-    learn(&mut realm, TOUGHNESS, 0);
+    learn(&mut realm, FIELD_MEDIC, 0);
     let trainer = view.trainer();
     ask_for_respec(&mut realm, &mut view, trainer.guid);
     realm.handle(RealmCommand::TalentWipeConfirm {
@@ -340,7 +324,7 @@ fn a_respec_without_the_gold_changes_nothing() {
     });
     view.drain(&mut realm);
     assert_eq!(view.money(me), 9999);
-    assert_eq!(view.talent_rank(&TOUGHNESS_RANKS), 1);
+    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 1);
     assert_eq!(view.points(me), 2);
 }
 
@@ -351,7 +335,7 @@ fn the_trainer_must_be_close_to_respec() {
         DevMultipliers::default(),
         &[("money = 0", "money = 20000")],
     );
-    learn(&mut realm, TOUGHNESS, 0);
+    learn(&mut realm, FIELD_MEDIC, 0);
     let trainer = view.trainer();
     ask_for_respec(&mut realm, &mut view, trainer.guid);
     // Off to the mob, out of the trainer's reach.
@@ -361,7 +345,7 @@ fn the_trainer_must_be_close_to_respec() {
     });
     view.drain(&mut realm);
     assert_eq!(view.money(me), 20_000);
-    assert_eq!(view.talent_rank(&TOUGHNESS_RANKS), 1);
+    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 1);
 }
 
 #[test]
@@ -371,7 +355,7 @@ fn the_respec_price_is_saved() {
         DevMultipliers::default(),
         &[("money = 0", "money = 20000")],
     );
-    learn(&mut realm, TOUGHNESS, 0);
+    learn(&mut realm, FIELD_MEDIC, 0);
     let trainer = view.trainer();
     ask_for_respec(&mut realm, &mut view, trainer.guid);
     realm.handle(RealmCommand::TalentWipeConfirm {
@@ -387,7 +371,7 @@ fn the_respec_price_is_saved() {
     let mut view = View::default();
     view.drain(&mut other);
     assert_eq!(view.points(me), 3);
-    learn(&mut other, TOUGHNESS, 0);
+    learn(&mut other, FIELD_MEDIC, 0);
     let events = ask_for_respec(&mut other, &mut view, trainer.guid);
     assert_eq!(wipe_price(&events, trainer.guid), Some(50_000));
 }
@@ -398,7 +382,7 @@ fn the_respec_price_is_saved() {
 fn learning_a_talent_saves_the_character() {
     let (mut realm, me, _, _) = warrior_at(4);
     realm.drain_storage();
-    learn(&mut realm, TOUGHNESS, 0);
+    learn(&mut realm, FIELD_MEDIC, 0);
     let writes: Vec<_> = realm
         .drain_storage()
         .into_iter()
@@ -411,7 +395,7 @@ fn learning_a_talent_saves_the_character() {
 fn talents_and_points_come_back_from_the_save() {
     let (mut realm, me, _, mut view) = warrior_at(7);
     open_the_second_row(&mut realm);
-    learn(&mut realm, CRUELTY, 0);
+    learn(&mut realm, SAVAGE_STRIKES, 0);
     view.drain(&mut realm);
     let blob = realm.export_character(me).unwrap();
 
@@ -420,18 +404,10 @@ fn talents_and_points_come_back_from_the_save() {
     other.handle(RealmCommand::EnterWorld { guid: me });
     other.tick(0.0, &FlatGround);
     let mut view = View::default();
-    let events = view.drain(&mut other);
+    view.drain(&mut other);
     assert_eq!(view.points(me), 0);
-    assert_eq!(view.talent_rank(&IHS_RANKS), 3);
-    assert_eq!(view.talent_rank(&CRUELTY_RANKS), 1);
-    assert_eq!(
-        spell_mod(&events, true, 6, SPELLMOD_COST),
-        Some(-30),
-        "the client's cost comes back with the talent"
-    );
-    // And the stats with them.
-    let (_, fresh, _, fresh_view) = warrior_at(7);
-    assert!((view.crit(me) - fresh_view.crit(fresh) - 1.0).abs() < 1e-4);
+    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 5);
+    assert_eq!(view.talent_rank(&SAVAGE_STRIKES_RANKS), 1);
 }
 
 #[test]
@@ -446,117 +422,6 @@ fn a_save_from_before_talents_loads_with_none() {
     );
     let mut other = Realm::new();
     other.import_character(&blob).unwrap();
-}
-
-// ── What the Recruit talents do ─────────────────────────────────────────────────────────────────
-
-#[test]
-fn improved_heroic_strike_lowers_its_rage_cost_for_the_client_and_the_realm() {
-    let spent = |talent: bool| {
-        let (mut realm, me, mob, mut view) = warrior_at(4);
-        if talent {
-            for rank in 0..3 {
-                learn(&mut realm, IMPROVED_HEROIC_STRIKE, rank);
-            }
-            let events = view.drain(&mut realm);
-            // The client checks its cost before it sends: the cost cell on Heroic Strike's family
-            // bit.
-            assert_eq!(
-                spell_mod(&events, true, 6, SPELLMOD_COST),
-                Some(-30),
-                "3 rage less, in tenths"
-            );
-        }
-        rage_up(&mut realm, &mut view, me, &mob, 15);
-        // The swing timer comes round again.
-        view.run(&mut realm, 2.0);
-        let before = view.rage(me);
-        realm.handle(cast(HEROIC_STRIKE, Some(mob.guid)));
-        realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-        let events = view.run(&mut realm, 0.1);
-        assert!(went_off(&events, HEROIC_STRIKE));
-        assert!(
-            !events
-                .iter()
-                .any(|e| matches!(e, SessionEvent::AttackerState(s) if s.attacker == mob.guid)),
-            "no blow taken in the same tick"
-        );
-        before - view.rage(me)
-    };
-    assert_eq!(spent(false), 15);
-    assert_eq!(spent(true), 12);
-}
-
-#[test]
-fn improved_charge_gives_more_rage() {
-    let (mut realm, me, mob, mut view) = warrior_at(10);
-    learn(&mut realm, IMPROVED_CHARGE, 0);
-    learn(&mut realm, IMPROVED_CHARGE, 1);
-    view.drain(&mut realm);
-    stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
-    let events = view.drain(&mut realm);
-    // 8.5 + 0.14 × 10 = 9.9, so 10 rage; and 6 more.
-    assert_eq!(energized(&events, CHARGE), vec![16]);
-    assert_eq!(view.rage(me), 16);
-}
-
-#[test]
-fn toughness_raises_the_armour_from_items() {
-    let armour = |ranks: u32| {
-        let (mut realm, me, _, mut view) = warrior_wearing(10, CHEST, GNOLL_WAR_HARNESS);
-        for rank in 0..ranks {
-            learn(&mut realm, TOUGHNESS, rank);
-        }
-        view.drain(&mut realm);
-        view.armor(me)
-    };
-    // The harness's 70 and the human outfit's 7 (pants 2, shield 5): 10% more is 84.7.
-    assert_eq!(armour(5) - armour(0), 8);
-    // 2% is 1.54.
-    assert_eq!(armour(1) - armour(0), 2);
-}
-
-#[test]
-fn cruelty_raises_the_crit_chance_on_the_character_sheet() {
-    let (mut realm, me, _, mut view) = warrior_at(10);
-    open_the_second_row(&mut realm);
-    view.drain(&mut realm);
-    let before = view.crit(me);
-    for rank in 0..4 {
-        learn(&mut realm, CRUELTY, rank);
-    }
-    view.drain(&mut realm);
-    assert!(
-        (view.crit(me) - before - 4.0).abs() < 1e-4,
-        "{before} -> {}",
-        view.crit(me)
-    );
-}
-
-#[test]
-fn unbridled_wrath_gives_rage_for_landed_swings() {
-    let procs = |ranks: u32| -> usize {
-        (0..10)
-            .map(|seed| {
-                let (mut realm, me, mob, mut view) =
-                    warrior_seeded(10, seed, DevMultipliers::default(), &[]);
-                open_the_second_row(&mut realm);
-                for rank in 0..ranks {
-                    learn(&mut realm, UNBRIDLED_WRATH, rank);
-                }
-                view.drain(&mut realm);
-                assert_eq!(view.points(me), 4 - ranks);
-                stand_at(&mut realm, &mob, 2.0);
-                realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-                let events = view.run(&mut realm, 6.0);
-                energized(&events, UNBRIDLED_WRATH_RAGE).len()
-            })
-            .sum()
-    };
-    assert_eq!(procs(0), 0);
-    // Four swings a fight, 32% of the landed ones.
-    assert!(procs(4) >= 5, "32% of the landed swings");
 }
 
 // ── The Vanguard's talents the Recruit tree dropped ───────────────────────────────────────
@@ -803,18 +668,8 @@ impl View {
         self.fields(guid).unit_health().unwrap()
     }
 
-    /// The sheet's melee crit chance, percent.
-    fn crit(&self, me: u64) -> f32 {
-        self.fields(me).player_crit_percentage().unwrap()
-    }
-
     fn money(&self, me: u64) -> u32 {
         self.fields(me).player_money().unwrap_or(0)
-    }
-
-    /// The sheet's armour.
-    fn armor(&self, me: u64) -> i32 {
-        self.fields(me).unit_resistance(0).unwrap()
     }
 
     /// Whole rage points.
@@ -912,14 +767,6 @@ fn warrior_seeded(
     })
 }
 
-/// [`warrior_at`] wearing `entry` in `slot`, which the outfit leaves empty.
-fn warrior_wearing(level: u8, slot: u8, entry: u32) -> (Realm, u64, Mob, View) {
-    warrior_from(level, SEED, DevMultipliers::default(), |blob| {
-        assert!(!blob.contains(&format!("slot = {slot}\n")), "an empty slot");
-        format!("{blob}\n[[items]]\nslot = {slot}\nentry = {entry}\ncount = 1\n")
-    })
-}
-
 /// A human Vanguard of `level` with `talents` (`(talent id, rank)`) in its save, placed as
 /// [`warrior_at`] places a Basic Warrior.
 fn tier1_at(level: u8, seed: u64, talents: &[(u32, u8)]) -> (Realm, u64, Mob, View) {
@@ -962,21 +809,14 @@ fn warrior_from(
     (realm, guid, mob, view)
 }
 
-/// Five points in the Recruit tree's first row: Improved Heroic Strike 3/3, Improved Charge 2/2.
+/// Five points in the Recruit tree's first row: Field Medic 5/5.
 fn open_the_second_row(realm: &mut Realm) {
-    for rank in 0..3 {
-        learn(realm, IMPROVED_HEROIC_STRIKE, rank);
+    for rank in 0..5 {
+        learn(realm, FIELD_MEDIC, rank);
     }
-    learn(realm, IMPROVED_CHARGE, 0);
-    learn(realm, IMPROVED_CHARGE, 1);
 }
 
-/// A Basic Warrior charges `mob` for its rage, then swings at it until there is `rage`, and stops.
-fn rage_up(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob, rage: u32) {
-    charge_and_swing(realm, view, me, mob, CHARGE, rage);
-}
-
-/// [`rage_up`] for the Vanguard, with its own Charge.
+/// A Vanguard charges `mob` for its rage, then swings at it until there is `rage`, and stops.
 fn tier1_rage_up(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob, rage: u32) {
     charge_and_swing(realm, view, me, mob, T1_CHARGE, rage);
 }
@@ -1140,17 +980,6 @@ fn periodic_damage(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
         .flatten()
         .filter_map(|t| match t {
             benilla_protocol::messages::PeriodicTick::Damage { amount, .. } => Some(*amount),
-            _ => None,
-        })
-        .collect()
-}
-
-/// `SMSG_SPELLENERGIZELOG` rage for `spell_id`.
-fn energized(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
-    events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::SpellEnergizeLog(l) if l.spell_id == spell_id => Some(l.amount),
             _ => None,
         })
         .collect()
