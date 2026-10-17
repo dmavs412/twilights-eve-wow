@@ -1,8 +1,25 @@
 {
-  "env": {
-    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5"
-  },
   "permissions": {
-    "ask": ["Agent"]
+    "allow": [
+      "Read", "Edit", "Write", "Grep", "Glob",
+      "Bash(cargo check:*)", "Bash(cargo test:*)", "Bash(cargo metadata:*)", "Bash(cargo tree:*)",
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)",
+      "Bash(git blame:*)", "Bash(git ls-files:*)", "Bash(git grep:*)", "Bash(git rev-parse:*)",
+      "Bash(git merge-base:*)", "Bash(git worktree list:*)",
+      "Bash(git add:*)", "Bash(git commit:*)",
+      "Bash(gh issue:*)", "Bash(gh pr view:*)", "Bash(gh pr list:*)", "Bash(gh pr diff:*)",
+      "Bash(gh label list:*)", "Bash(gh run list:*)", "Bash(gh run view:*)",
+      "Bash(python3.15:*)", "Bash(~/.local/bin/python3.15:*)",
+      "Bash(cd:*)", "Bash(ls:*)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)",
+      "Bash(grep:*)", "Bash(rg:*)", "Bash(find:*)", "Bash(sed:*)", "Bash(awk:*)", "Bash(cut:*)",
+      "Bash(sort:*)", "Bash(uniq:*)", "Bash(diff:*)", "Bash(echo:*)", "Bash(sqlite3:*)", "Bash(jq:*)"
+    ],
+    "ask": [
+      "Bash(cargo build:*)", "Bash(cargo run:*)", "Bash(cargo clean:*)", "Bash(*run.ps1*)",
+      "Bash(git push:*)", "Bash(git reset --hard:*)", "Bash(git rebase:*)", "Bash(git worktree add:*)",
+      "Bash(git worktree remove:*)", "Bash(rm -rf:*)", "Bash(rm -r:*)",
+      "Bash(gh pr merge:*)", "Bash(gh pr create:*)", "Bash(gh issue delete:*)"
+    ],
+    "deny": ["Agent"]
   }
 }

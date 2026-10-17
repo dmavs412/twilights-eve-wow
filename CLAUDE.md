@@ -11,26 +11,30 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 
 ## How work runs
 
-- **Verify with `cargo check -p <crate>`** in the foreground after every edit. When a realm rule
-  changes, also `cargo test -p twilight-realm` (seconds, no game data). That is the whole gate; a
-  commit needs nothing else. A full build or a game run happens only when Davis asks for one.
+- **Verify with `cargo check -q -p <crate> 2>&1 | tail -40`** in the foreground after every
+  edit; the pipe keeps warnings out of the context. When a realm rule changes, also
+  `cargo test -q -p twilight-realm` (seconds, no game data). That is the whole gate; a commit
+  needs nothing else. A full build or a game run happens only when Davis asks for one.
 - **Every command runs in the foreground, and you wait for it.** Let each cargo command finish:
   one stopped mid-compile leaves rlibs with corrupt MSVC debug info, and later links fail with
   `LNK1103` on a crate you never touched. The cure is `cargo clean -p <crate>` for each crate the
   linker names.
-- **Do the work in this session.** Search with Grep, read with Read. Spawning any agent, through
-  the Agent tool or a skill that fans out (implement-spec, wayfinder, code-review, research),
-  needs Davis's explicit yes for that task. When asking, name the task and ask which model it
-  should run on. Sonnet is the default (`CLAUDE_CODE_SUBAGENT_MODEL` in `.claude/settings.json`);
-  Haiku for a mechanical search or conversion, Opus or Fable only when Davis says so.
-- **Keep context small.** Read the lines you need. Report in a few lines. Davis runs `/compact`
-  between tasks; say so when a task is done and the next one starts cold.
+- **Do the work in this session.** Search with Grep, read with Read. The Agent tool is denied
+  in `.claude/settings.json`, so no subagents and no skills that fan out (implement-spec,
+  wayfinder, code-review, research). If a task seems to need one, say so and do it inline.
+- **Keep context small.** Read the lines you need. Report in a few lines. Davis runs `/clear` or
+  `/compact` between tasks; say so when a task is done and the next one starts cold.
+- **Unattended runs.** `scripts/overnight.ps1` works through open issues labelled
+  `ready-for-agent`, oldest first, one fresh Sonnet session each, with no one at the keyboard;
+  rules in `docs/agents/unattended.md`. An evening grill ends by writing those tickets: each
+  one fully specified, with its assumptions allowed and its acceptance stated, so the night
+  session can pick a reading and record it instead of asking.
 - **Grill before architecture.** Run `/grill-me` first for: a new crate or a new `twilight-realm`
   dependency; a new ECS component family or system ordering in the realm; a column added or
   changed in the master CSV, or a schema change in a generated file; anything crossing the
   client/realm seam or changing how the DBC patch applies; any decision that would need an ADR.
   A bug fix, a new data row, or a component that follows an existing pattern goes straight to
-  code.
+  code. A ticket labelled `ready-for-agent` has already passed grilling.
 - **Land as small commits on `main`**, each saying what changed and which check ran. A branch
   and a pull request only when Davis asks. CI (`.github/workflows/ci.yml`) repeats the check and
   the realm tests on GitHub's runners; it is a backstop you never wait on.
