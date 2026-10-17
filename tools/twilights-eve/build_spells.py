@@ -70,7 +70,7 @@ CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms", "borrowed_from_class", "borrowed_family_bit",
 )
-CLIENT_FLAGS = ("client_on_next_swing", "client_not_in_combat")
+CLIENT_FLAGS = ("client_not_in_combat",)
 SPELLMOD_COLUMNS = ("type", "op", "target", "value")
 MAX_SPELLMODS = 5
 # The 1.12.1 client's SpellModOp names (vmangos `SpellModOp`; op 13 and 25 and up do not exist).
@@ -118,6 +118,23 @@ REQUIRES_VALUES = {
 USABLE_WHILE = ("stunned", "feared", "rooted", "charmed", "silenced")
 GATE_COLUMNS = ("requires_weapon", "cooldown_category", "category_cooldown_ms", "prevention",
                 "requires_caster_state", "requires_target_state", "requires")
+COST_KINDS = ("flat", "pct_base", "all_remaining", "per_sec", "health")
+# Spell.dbc PowerType of a health cost (-2 as the u32 the DBC stores).
+HEALTH_POWER_TYPE = 0xFFFFFFFE
+CAST_KINDS = ("instant", "cast", "channel", "next_swing", "auto_repeat")
+# Spell.dbc InterruptFlags bits (vmangos SpellInterruptFlags). The patch uses the same bits for
+# ChannelInterruptFlags; the client patch ticket checks them against the DBC.
+INTERRUPT_FLAGS = {"move": 0x01, "pushback": 0x02, "kick": 0x08, "damage": 0x10}
+DEFAULT_INTERRUPTS = ("move", "pushback", "kick")
+# Spell.dbc DmgClass.
+DEFENSE_TYPES = {"none": 0, "magic": 1, "melee": 2, "ranged": 3}
+OUTCOMES = ("miss", "dodge", "parry", "block", "crit")
+ON_CAST_KEYS = ("breaks_stealth", "starts_auto_attack", "resets_swing")
+WEAPON_HANDS = ("main", "off", "both")
+AREA_SHAPES = ("circle", "cone", "chain")
+AREA_CENTERS = ("caster", "target", "ground")
+SHAPE_COLUMNS = ("cost_kind", "cost_extra_max", "cast_kind", "channel_tick_ms", "interrupt_on", "on_cast",
+                 "defense_type", "outcomes", "weapon_hand", "max_targets", "area_shape", "area_center")
 # Spell.dbc columns of SpellFamilyFlags (low, high 32 bits), as extract_spells.py reads them.
 SPELL_FAMILY_FLAGS_COLUMNS = (161, 162)
 
@@ -366,8 +383,8 @@ def check_vocabulary(kind: str, params: dict, where: str) -> None:
     if kind == "weapon_strike":
         if params.get("weapon") not in WEAPON_ROLLS:
             raise BuildError(f"{where}: weapon is {params.get('weapon')!r}, want {' or '.join(WEAPON_ROLLS)}")
-        if "unavoidable" in params and not isinstance(params["unavoidable"], bool):
-            raise BuildError(f"{where}: unavoidable is {params['unavoidable']!r}, want yes or no")
+        if "unavoidable" in params:
+            raise BuildError(f"{where}: the unavoidable param is gone; write dodge=no;parry=no in the outcomes column")
 
 
 def check_kind_params(kind: str, params: dict, where: str) -> None:
@@ -522,6 +539,108 @@ def build_gates(row: dict, kind: str, where: str) -> dict:
     return out
 
 
+def yes_no_pairs(text: str, keys: tuple, where: str, column: str) -> dict[str, bool]:
+    """A cell of `key=yes|no` pairs joined by `;`, each key from `keys`."""
+    out: dict[str, bool] = {}
+    for pair in text.split(";"):
+        key, sep, value = pair.partition("=")
+        if not sep or not key or not value:
+            raise BuildError(f"{where} {column}: malformed pair {pair!r}")
+        if key not in keys:
+            raise BuildError(f"{where} {column}: unknown key {key!r}, want one of {', '.join(keys)}")
+        if key in out:
+            raise BuildError(f"{where} {column}: {key!r} given twice")
+        if value not in ("yes", "no"):
+            raise BuildError(f"{where} {column}: {key} is {value!r}, want yes or no")
+        out[key] = value == "yes"
+    return out
+
+
+def positive_whole(text: str, where: str, column: str) -> int:
+    value = whole(text, f"{where} {column}")
+    if value <= 0:
+        raise BuildError(f"{where} {column}: must be above 0")
+    return value
+
+
+def one_of(text: str, allowed, where: str, column: str) -> str:
+    if text not in allowed:
+        raise BuildError(f"{where} {column}: {text!r} is not one of {', '.join(allowed)}")
+    return text
+
+
+def build_shape(row: dict, kind: str, school: str, hidden: bool, where: str) -> dict:
+    """Cost kind and cast shape with their defaults. An aura row carries none of these columns. A
+    hidden row has no client cast time or duration, so `cast` and `channel` skip those checks."""
+    if kind == "aura":
+        for column in SHAPE_COLUMNS:
+            if row[column]:
+                raise BuildError(f"{where} {column}: set on an aura row; only skill and talent rows carry cost and cast shape")
+        return {}
+    out: dict = {"cost_kind": one_of(row["cost_kind"] or "flat", COST_KINDS, where, "cost_kind")}
+    if row["cost_extra_max"]:
+        if out["cost_kind"] != "all_remaining":
+            raise BuildError(f"{where} cost_extra_max: only with cost_kind=all_remaining")
+        out["cost_extra_max"] = positive_whole(row["cost_extra_max"], where, "cost_extra_max")
+
+    cast_kind = out["cast_kind"] = one_of(row["cast_kind"] or "instant", CAST_KINDS, where, "cast_kind")
+    if cast_kind == "cast" and not hidden and not (row["client_cast_time_ms"] and number(row["client_cast_time_ms"], where) > 0):
+        raise BuildError(f"{where} cast_kind: cast needs a client_cast_time_ms above 0")
+    if cast_kind == "channel":
+        if not hidden and not (row["client_duration_ms"] and number(row["client_duration_ms"], where) > 0):
+            raise BuildError(f"{where} cast_kind: channel needs a client_duration_ms above 0")
+        if not row["channel_tick_ms"]:
+            raise BuildError(f"{where} cast_kind: channel needs channel_tick_ms")
+    if row["channel_tick_ms"]:
+        if cast_kind != "channel":
+            raise BuildError(f"{where} channel_tick_ms: only with cast_kind=channel")
+        out["channel_tick_ms"] = positive_whole(row["channel_tick_ms"], where, "channel_tick_ms")
+
+    if not row["interrupt_on"]:
+        out["interrupt_on"] = list(DEFAULT_INTERRUPTS) if cast_kind in ("cast", "channel") else []
+    elif row["interrupt_on"] == "none":
+        out["interrupt_on"] = []
+    else:
+        names = row["interrupt_on"].split("|")
+        for name in names:
+            one_of(name, (*INTERRUPT_FLAGS, "none"), where, "interrupt_on")
+        if "none" in names or len(set(names)) != len(names):
+            raise BuildError(f"{where} interrupt_on: {row['interrupt_on']!r} repeats a name or mixes none with others")
+        out["interrupt_on"] = names
+
+    if row["defense_type"]:
+        defense = one_of(row["defense_type"], DEFENSE_TYPES, where, "defense_type")
+    elif row["target"] == "enemy":
+        defense = "melee" if school == "physical" else "magic"
+    else:
+        defense = "none"
+    out["defense_type"] = defense
+    on_cast = {"breaks_stealth": True, "starts_auto_attack": defense == "melee" and row["target"] == "enemy",
+               "resets_swing": False}
+    if row["on_cast"]:
+        on_cast.update(yes_no_pairs(row["on_cast"], ON_CAST_KEYS, where, "on_cast"))
+    out["on_cast"] = on_cast
+    if row["outcomes"]:
+        out["outcomes"] = yes_no_pairs(row["outcomes"], OUTCOMES, where, "outcomes")
+    out["weapon_hand"] = one_of(row["weapon_hand"] or "main", WEAPON_HANDS, where, "weapon_hand")
+
+    area = bool(row["area_shape"] or (row["realm_radius_yd"] and number(row["realm_radius_yd"], where) > 0))
+    if row["area_shape"]:
+        out["area_shape"] = one_of(row["area_shape"], AREA_SHAPES, where, "area_shape")
+    if row["area_center"]:
+        if not row["area_shape"]:
+            raise BuildError(f"{where} area_center: needs area_shape")
+        out["area_center"] = one_of(row["area_center"], AREA_CENTERS, where, "area_center")
+    if row["max_targets"]:
+        out["max_targets"] = positive_whole(row["max_targets"], where, "max_targets")
+        if out["max_targets"] > 1 and not area:
+            raise BuildError(f"{where} max_targets: {out['max_targets']} needs area_shape or realm_radius_yd")
+    else:
+        # Unlimited (null) for an area row, one target otherwise.
+        out["max_targets"] = None if area else 1
+    return out
+
+
 def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
@@ -548,6 +667,8 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
     if row["target"]:
         out["target"] = row["target"]
     out.update(build_gates(row, row["kind"], where))
+    out.update(build_shape(row, row["kind"], out["school"], hidden, where))
+    outcomes = out.get("outcomes", {})
     if row["realm_cost"] and row["client_cost"]:
         realm, client = number(row["realm_cost"], where), number(row["client_cost"], where)
         if realm < client:
@@ -569,6 +690,10 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
         if kind == "proc":
             check_proc(parsed, auras, here)
         check_vocabulary(kind, parsed, here)
+        if kind == "weapon_strike" and outcomes.get("dodge") is False and outcomes.get("parry") is False:
+            # The realm reads an unavoidable strike from the effect; the outcomes cell is its one source.
+            parsed = {"weapon": parsed["weapon"], "unavoidable": True,
+                      **{k: v for k, v in parsed.items() if k != "weapon"}}
         if kind == "school_damage":
             if "school" in parsed:
                 raise BuildError(f"{here}: school_damage takes no school param; set the row's school column")
@@ -655,6 +780,27 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
     for column in CLIENT_FLAGS:
         if row[column]:
             fields[column.removeprefix("client_")] = row[column] == "yes"
+    # Cost kind: the amount moves to the field Spell.dbc keeps it in; a health cost is a power type.
+    if built["cost_kind"] == "pct_base" and "cost" in fields:
+        fields["cost_percent"] = fields.pop("cost")
+    elif built["cost_kind"] == "per_sec" and "cost" in fields:
+        fields["cost_per_second"] = fields.pop("cost")
+    elif built["cost_kind"] == "health":
+        fields["power_type"] = HEALTH_POWER_TYPE
+    # Cast shape: the attribute bits; interrupt flags and DmgClass only when the cell is set, so a
+    # default leaves the borrowed row's own values.
+    cast_kind = built["cast_kind"]
+    if cast_kind == "next_swing":
+        fields["on_next_swing"] = True
+    elif cast_kind == "channel":
+        fields["channeled"] = True
+    elif cast_kind == "auto_repeat":
+        fields["auto_repeat"] = True
+    if row["interrupt_on"]:
+        flags = sum(INTERRUPT_FLAGS[name] for name in built["interrupt_on"])
+        fields["channel_interrupt_flags" if cast_kind == "channel" else "interrupt_flags"] = flags
+    if row["defense_type"]:
+        fields["dmg_class"] = DEFENSE_TYPES[built["defense_type"]]
     fields["school"] = SCHOOLS.index(built["school"])
     fields["prevention_type"] = PREVENTIONS[built["prevention"]]
     if row["requires_weapon"]:
@@ -687,6 +833,8 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
         if found and int(found.group(1)) > MAX_SPELLMODS:
             raise BuildError(f"column {column}: a row has at most {MAX_SPELLMODS} spellmod groups")
+    if rows and "client_on_next_swing" in rows[0]:
+        raise BuildError("column client_on_next_swing is gone; write cast_kind=next_swing in the cast_kind column")
     if rows and "requires_out_of_combat" in rows[0]:
         raise BuildError("column requires_out_of_combat is gone; write `requires: combat=out` in the requires column")
     masks = skill_masks(rows, spell_flags)

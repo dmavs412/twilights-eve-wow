@@ -77,3 +77,25 @@ issue #63 (the spec); this record keeps the decisions that are hard to see from 
 Existing rows migrate with no change in behaviour: `modelled=yes` Basic Warrior rows become
 `wip`, the rest `placeholder`, and inline lasting effects become aura rows. Adding a column still
 goes through `/grill-me`; this schema is that grilling's outcome.
+
+## Details settled while building (ticket #67, cost and cast shape)
+
+The spec left these open; each took the reading closest to vanilla 1.12.1 and the existing code.
+
+- `client_on_next_swing` was renamed in place to `cast_kind` (no row rewrite). Heroic Strike is
+  `next_swing`; Charge's old `no` is now empty, so the patch no longer writes `on_next_swing: false`.
+  The `on_next_swing=yes` param on Heroic Strike's `weapon_strike` effect stays, because the realm
+  reads it.
+- `outcomes` keys are `miss`, `dodge`, `parry`, `block`, `crit`, each `yes|no`. Overpower is
+  `dodge=no;parry=no` (the realm's table has no block). The build writes `unavoidable: true` into a
+  `weapon_strike` effect when both are `no`, so the realm and the patch read what they always did; a
+  literal `unavoidable` param now fails.
+- Server JSON carries the resolved defaults for `cost_kind`, `cast_kind`, `interrupt_on`, `on_cast`,
+  `defense_type`, `weapon_hand` and `max_targets` (`null` is unlimited). The patch carries
+  `interrupt_flags` and `dmg_class` only when the cell is set, so a default leaves the borrowed row.
+- Interrupt bits (move 1, pushback 2, kick 8, damage 16) are vmangos's `InterruptFlags`; the channel
+  flags reuse them. The client patch ticket must check the channel values against the DBC.
+- `starts_auto_attack` defaults to yes when the resolved `defense_type` is `melee` and the target is
+  an `enemy`. `max_targets` above 1 needs `area_shape` or `realm_radius_yd`.
+- `area_shape`, `area_center` and `weapon_hand` have no patch field yet: implicit targets need the
+  borrowed row to compare against, which belongs to the client patch ticket.

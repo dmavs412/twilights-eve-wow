@@ -18,6 +18,17 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "next_swing",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -56,6 +67,17 @@
      "combat": "out"
     },
     "requires_out_of_combat": true,
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -100,6 +122,17 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -136,6 +169,17 @@
     "target": "enemy",
     "school": "fire",
     "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -179,6 +223,17 @@
         "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -209,6 +264,17 @@
         "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -239,6 +305,17 @@
         "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -269,6 +346,17 @@
         "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -299,6 +387,17 @@
         "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -340,6 +439,17 @@
         "source_tab_id": 41,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -382,6 +492,17 @@
         "source_tab_id": 41,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -424,6 +545,17 @@
         "source_tab_id": 41,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -477,6 +609,17 @@
         "source_tab_id": 181,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -505,6 +648,17 @@
         "source_tab_id": 181,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -544,6 +698,17 @@
         "source_tab_id": 182,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -573,6 +738,17 @@
         "source_tab_id": 182,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -613,6 +789,17 @@
         "source_tab_id": 182,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [
          {
@@ -756,6 +943,17 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -796,6 +994,21 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "outcomes": {
+     "dodge": false,
+     "parry": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -833,6 +1046,17 @@
      "combat": "out"
     },
     "requires_out_of_combat": true,
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -880,6 +1104,17 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -915,6 +1150,17 @@
     "target": "self_party",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": null,
     "modelled": true,
     "effects": [
      {
@@ -956,6 +1202,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Overpower +25/50% crit chance."
@@ -970,6 +1227,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Overpower +25/50% crit chance."
@@ -995,6 +1263,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Rend ticks +15/25/35%.",
@@ -1020,6 +1299,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Rend ticks +15/25/35%.",
@@ -1045,6 +1335,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Rend ticks +15/25/35%.",
@@ -1081,6 +1382,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Charge +3/6 rage."
@@ -1095,6 +1407,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Charge +3/6 rage."
@@ -1120,6 +1443,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
@@ -1145,6 +1479,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
@@ -1159,6 +1504,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
@@ -1173,6 +1529,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
@@ -1202,6 +1569,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% physical damage while wielding a two-handed melee weapon."
@@ -1216,6 +1594,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% physical damage while wielding a two-handed melee weapon."
@@ -1230,6 +1619,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% physical damage while wielding a two-handed melee weapon."
@@ -1244,6 +1644,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% physical damage while wielding a two-handed melee weapon."
@@ -1258,6 +1669,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% physical damage while wielding a two-handed melee weapon."
@@ -1283,6 +1705,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x)."
@@ -1297,6 +1730,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x)."
@@ -1326,6 +1770,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -1340,6 +1795,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -1354,6 +1820,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -1368,6 +1845,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -1382,6 +1870,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -1407,6 +1906,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -1421,6 +1931,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -1435,6 +1956,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -1449,6 +1981,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -1463,6 +2006,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -1488,6 +2042,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -1502,6 +2067,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -1516,6 +2092,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -1530,6 +2117,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -1544,6 +2142,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -1569,6 +2178,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
@@ -1583,6 +2203,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
@@ -1597,6 +2228,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
@@ -1611,6 +2253,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
@@ -1625,6 +2278,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
@@ -1655,6 +2319,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout duration and radius +10..50%."
@@ -1669,6 +2344,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout duration and radius +10..50%."
@@ -1683,6 +2369,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout duration and radius +10..50%."
@@ -1697,6 +2394,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout duration and radius +10..50%."
@@ -1711,6 +2419,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout duration and radius +10..50%."
@@ -1736,6 +2455,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -1750,6 +2480,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -1764,6 +2505,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -1778,6 +2530,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -1792,6 +2555,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -1817,6 +2591,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
@@ -1831,6 +2616,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
@@ -1845,6 +2641,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
@@ -1859,6 +2666,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
@@ -1873,6 +2691,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
@@ -1898,6 +2727,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout's attack power +5..25%.",
@@ -1923,6 +2763,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout's attack power +5..25%.",
@@ -1948,6 +2799,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout's attack power +5..25%.",
@@ -1973,6 +2835,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout's attack power +5..25%.",
@@ -1998,6 +2871,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Battle Shout's attack power +5..25%.",
@@ -2034,6 +2918,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
@@ -2048,6 +2943,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
@@ -2062,6 +2968,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
@@ -2087,6 +3004,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
@@ -2101,6 +3029,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
@@ -2115,6 +3054,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
@@ -2129,6 +3079,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
@@ -2143,6 +3104,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
@@ -2172,6 +3144,17 @@
     "target": "self",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -2209,6 +3192,17 @@
     "target": "self",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -2247,6 +3241,17 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -2272,6 +3277,17 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -2300,6 +3316,17 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -2344,6 +3371,17 @@
      "combat": "out"
     },
     "requires_out_of_combat": true,
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
     "modelled": true,
     "effects": [
      {
@@ -2400,6 +3438,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
@@ -2425,6 +3474,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
@@ -2450,6 +3510,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
@@ -2486,6 +3557,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
@@ -2520,6 +3602,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
@@ -2554,6 +3647,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
@@ -2588,6 +3692,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
@@ -2622,6 +3737,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
@@ -2667,6 +3793,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
@@ -2681,6 +3818,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
@@ -2706,6 +3854,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% parry chance."
@@ -2720,6 +3879,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% parry chance."
@@ -2734,6 +3904,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% parry chance."
@@ -2748,6 +3929,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% parry chance."
@@ -2762,6 +3954,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% parry chance."
@@ -2787,6 +3990,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
@@ -2801,6 +4015,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
@@ -2815,6 +4040,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
@@ -2840,6 +4076,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -2854,6 +4101,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -2868,6 +4126,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -2882,6 +4151,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -2896,6 +4176,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% melee crit chance."
@@ -2921,6 +4212,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
@@ -2935,6 +4237,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
@@ -2960,6 +4273,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
@@ -2974,6 +4298,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
@@ -2999,6 +4334,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2/4/6% physical damage while wielding a two-handed melee weapon."
@@ -3013,6 +4359,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2/4/6% physical damage while wielding a two-handed melee weapon."
@@ -3027,6 +4384,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2/4/6% physical damage while wielding a two-handed melee weapon."
@@ -3052,6 +4420,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
@@ -3066,6 +4445,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
@@ -3080,6 +4470,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
@@ -3105,6 +4506,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
@@ -3119,6 +4531,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
@@ -3133,6 +4556,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
@@ -3147,6 +4581,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
@@ -3161,6 +4606,17 @@
         "source_tab_id": 381,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
@@ -3190,6 +4646,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
@@ -3204,6 +4671,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
@@ -3218,6 +4696,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
@@ -3232,6 +4721,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
@@ -3246,6 +4746,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
@@ -3276,6 +4787,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Charge +3/6 rage."
@@ -3290,6 +4812,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Charge +3/6 rage."
@@ -3315,6 +4848,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
@@ -3340,6 +4884,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x)."
@@ -3354,6 +4909,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x)."
@@ -3379,6 +4945,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
@@ -3393,6 +4970,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
@@ -3407,6 +4995,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
@@ -3432,6 +5031,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -3446,6 +5056,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -3460,6 +5081,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -3474,6 +5106,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -3488,6 +5131,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+1..5% crit chance with axes."
@@ -3513,6 +5167,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -3527,6 +5192,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -3541,6 +5217,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -3555,6 +5242,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -3569,6 +5267,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
@@ -3594,6 +5303,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -3608,6 +5328,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -3622,6 +5353,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -3636,6 +5378,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -3650,6 +5403,17 @@
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
@@ -3675,6 +5439,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
@@ -3689,6 +5464,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
@@ -3703,6 +5489,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
@@ -3717,6 +5514,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
@@ -3731,6 +5539,17 @@
         "source_tab_id": 164,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
@@ -3761,6 +5580,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
@@ -3775,6 +5605,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
@@ -3789,6 +5630,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
@@ -3803,6 +5655,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
@@ -3817,6 +5680,17 @@
         "source_tab_id": 382,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
@@ -3842,6 +5716,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% armour from items."
@@ -3856,6 +5741,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% armour from items."
@@ -3870,6 +5766,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% armour from items."
@@ -3884,6 +5791,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% armour from items."
@@ -3898,6 +5816,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% armour from items."
@@ -3923,6 +5852,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
@@ -3937,6 +5877,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
@@ -3951,6 +5902,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
@@ -3976,6 +5938,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
@@ -3990,6 +5963,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
@@ -4004,6 +5988,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
@@ -4018,6 +6013,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
@@ -4032,6 +6038,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
@@ -4057,6 +6074,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% physical damage while wielding a one-handed melee weapon."
@@ -4071,6 +6099,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% physical damage while wielding a one-handed melee weapon."
@@ -4085,6 +6124,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% physical damage while wielding a one-handed melee weapon."
@@ -4099,6 +6149,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% physical damage while wielding a one-handed melee weapon."
@@ -4113,6 +6174,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10% physical damage while wielding a one-handed melee weapon."
@@ -4138,6 +6210,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10 Defense."
@@ -4152,6 +6235,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10 Defense."
@@ -4166,6 +6260,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10 Defense."
@@ -4180,6 +6285,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10 Defense."
@@ -4194,6 +6310,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": true,
         "effects": [],
         "description": "+2..10 Defense."
@@ -4219,6 +6346,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
@@ -4233,6 +6371,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
@@ -4247,6 +6396,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
@@ -4261,6 +6421,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
@@ -4275,6 +6446,17 @@
         "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
         "modelled": false,
         "effects": [],
         "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."

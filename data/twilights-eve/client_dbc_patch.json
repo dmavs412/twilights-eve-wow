@@ -11,8 +11,8 @@
     "cost": 15.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
-    "on_next_swing": true,
     "not_in_combat": false,
+    "on_next_swing": true,
     "school": 0,
     "prevention_type": 2,
     "effects": [
@@ -45,7 +45,6 @@
     "cost": 0.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
-    "on_next_swing": false,
     "not_in_combat": true,
     "school": 0,
     "prevention_type": 2,

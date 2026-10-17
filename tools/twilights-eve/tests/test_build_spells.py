@@ -219,7 +219,7 @@ class BuildSpells(unittest.TestCase):
 
     def test_patch_carries_client_columns_and_only_effects_1_to_3(self):
         row = {**STRIKE, "client_cost": "10", "client_stances": "Battle Stance|Defensive Stance",
-               "client_on_next_swing": "yes", "effect2_kind": "stun", "effect2_params": "duration_ms=500",
+               "cast_kind": "next_swing", "effect2_kind": "stun", "effect2_params": "duration_ms=500",
                "effect3_kind": "stun", "effect3_params": "duration_ms=700",
                "effect5_kind": "stun", "effect5_params": "duration_ms=2000"}
         done, data = self.run_build([row])
@@ -506,12 +506,143 @@ class BuildSpells(unittest.TestCase):
     def test_weapon_rolls_use_the_realms_names(self):
         self.assert_fails([{**STRIKE, "effect1_params": "weapon=Wn;bonus.base=1;bonus.per_level=1"}], "weapon is")
 
-    def test_unavoidable_is_a_boolean(self):
-        params = "weapon=normalized;unavoidable=dodge|parry;bonus.base=1;bonus.per_level=1"
-        self.assert_fails([{**STRIKE, "effect1_params": params}], "unavoidable")
-        done, data = self.run_build([{**STRIKE, "effect1_params": params.replace("dodge|parry", "yes")}])
+    def test_the_unavoidable_param_is_replaced_by_outcomes(self):
+        params = "weapon=normalized;bonus.base=1;bonus.per_level=1"
+        self.assert_fails([{**STRIKE, "effect1_params": params + ";unavoidable=yes"}],
+                          "vanguard/strike) effect1: the unavoidable param is gone")
+        # dodge=no and parry=no together still reach the realm as the effect's unavoidable flag
+        done, data = self.run_build([{**STRIKE, "effect1_params": params, "outcomes": "dodge=no;parry=no"}])
         self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertIs(data[0]["skills"][0]["effects"][0]["params"]["unavoidable"], True)
+        skill = data[0]["skills"][0]
+        self.assertIs(skill["effects"][0]["params"]["unavoidable"], True)
+        self.assertEqual(list(skill["effects"][0]["params"])[:2], ["weapon", "unavoidable"])
+        self.assertEqual(skill["outcomes"], {"dodge": False, "parry": False})
+        self.assertIs(self.patch["spells"][0]["fields"]["effects"][0]["params"]["unavoidable"], True)
+        skill = self.built_skill(effect1_params=params, outcomes="crit=no")
+        self.assertNotIn("unavoidable", skill["effects"][0]["params"])
+
+    def test_cost_kind_and_its_patch_fields(self):
+        self.assertEqual(self.built_skill()["cost_kind"], "flat")
+        self.assertNotIn("cost_extra_max", self.built_skill())
+        skill = self.built_skill(cost_kind="all_remaining", cost_extra_max="30")
+        self.assertEqual((skill["cost_kind"], skill["cost_extra_max"]), ("all_remaining", 30))
+        fields = self.patch["spells"][0]["fields"]
+        self.assertEqual(fields["cost"], 15)
+        self.built_skill(cost_kind="pct_base", client_cost="5")
+        fields = self.patch["spells"][0]["fields"]
+        self.assertEqual((fields["cost_percent"], "cost" in fields), (5, False))
+        self.built_skill(cost_kind="per_sec", client_cost="8")
+        self.assertEqual(self.patch["spells"][0]["fields"]["cost_per_second"], 8)
+        self.built_skill(cost_kind="health")
+        self.assertEqual(self.patch["spells"][0]["fields"]["power_type"], 0xFFFFFFFE)
+
+    def test_cost_kind_failures(self):
+        self.assert_fails([{**STRIKE, "cost_kind": "mana"}], "vanguard/strike) cost_kind: 'mana' is not one of")
+        self.assert_fails([{**STRIKE, "cost_extra_max": "30"}], "vanguard/strike) cost_extra_max: only with cost_kind=all_remaining")
+        self.assert_fails([{**STRIKE, "cost_kind": "all_remaining", "cost_extra_max": "0"}],
+                          "cost_extra_max: must be above 0")
+
+    def test_cast_kind_and_its_patch_bits(self):
+        self.assertEqual(self.built_skill()["cast_kind"], "instant")
+        self.built_skill(cast_kind="next_swing")
+        self.assertIs(self.patch["spells"][0]["fields"]["on_next_swing"], True)
+        self.built_skill(cast_kind="auto_repeat")
+        self.assertIs(self.patch["spells"][0]["fields"]["auto_repeat"], True)
+        skill = self.built_skill(cast_kind="cast", client_cast_time_ms="2000")
+        self.assertEqual(skill["cast_kind"], "cast")
+        skill = self.built_skill(cast_kind="channel", client_duration_ms="8000", channel_tick_ms="1000")
+        self.assertEqual((skill["cast_kind"], skill["channel_tick_ms"]), ("channel", 1000))
+        self.assertIs(self.patch["spells"][0]["fields"]["channeled"], True)
+        self.assertNotIn("on_next_swing", self.patch["spells"][0]["fields"])
+
+    def test_cast_kind_failures(self):
+        self.assert_fails([{**STRIKE, "cast_kind": "sprint"}], "vanguard/strike) cast_kind: 'sprint' is not one of")
+        self.assert_fails([{**STRIKE, "cast_kind": "cast"}], "vanguard/strike) cast_kind: cast needs a client_cast_time_ms")
+        self.assert_fails([{**STRIKE, "cast_kind": "cast", "client_cast_time_ms": "0"}], "cast needs a client_cast_time_ms")
+        self.assert_fails([{**STRIKE, "cast_kind": "channel", "channel_tick_ms": "1000"}], "channel needs a client_duration_ms")
+        self.assert_fails([{**STRIKE, "cast_kind": "channel", "client_duration_ms": "5000"}], "channel needs channel_tick_ms")
+        self.assert_fails([{**STRIKE, "channel_tick_ms": "1000"}], "vanguard/strike) channel_tick_ms: only with cast_kind=channel")
+        self.assert_fails([{**STRIKE, "cast_kind": "channel", "client_duration_ms": "5000", "channel_tick_ms": "0"}],
+                          "channel_tick_ms: must be above 0")
+        done, _ = self.run_build([STRIKE], extra_columns=("client_on_next_swing",))
+        self.assertIn("client_on_next_swing is gone", done.stderr)
+
+    def test_interrupt_on_defaults_and_overrides(self):
+        self.assertEqual(self.built_skill()["interrupt_on"], [])
+        self.assertEqual(self.built_skill(cast_kind="next_swing")["interrupt_on"], [])
+        cast = {"cast_kind": "cast", "client_cast_time_ms": "2000"}
+        self.assertEqual(self.built_skill(**cast)["interrupt_on"], ["move", "pushback", "kick"])
+        self.assertNotIn("interrupt_flags", self.patch["spells"][0]["fields"])
+        channel = {"cast_kind": "channel", "client_duration_ms": "5000", "channel_tick_ms": "1000"}
+        self.assertEqual(self.built_skill(**channel)["interrupt_on"], ["move", "pushback", "kick"])
+        self.assertEqual(self.built_skill(**cast, interrupt_on="none")["interrupt_on"], [])
+        self.assertEqual(self.built_skill(**cast, interrupt_on="damage|kick")["interrupt_on"], ["damage", "kick"])
+        self.assertEqual(self.patch["spells"][0]["fields"]["interrupt_flags"], 0x10 | 0x08)
+        self.built_skill(**channel, interrupt_on="move")
+        self.assertEqual(self.patch["spells"][0]["fields"]["channel_interrupt_flags"], 0x01)
+        self.assert_fails([{**STRIKE, "interrupt_on": "sneeze"}], "vanguard/strike) interrupt_on: 'sneeze' is not one of")
+        self.assert_fails([{**STRIKE, "interrupt_on": "none|move"}], "vanguard/strike) interrupt_on:")
+        self.assert_fails([{**STRIKE, "interrupt_on": "move|move"}], "vanguard/strike) interrupt_on:")
+
+    def test_defense_type_defaults_and_overrides(self):
+        self.assertEqual(self.built_skill()["defense_type"], "melee")
+        self.assertEqual(self.built_skill(school="fire")["defense_type"], "magic")
+        self.assertEqual(self.built_skill(target="self")["defense_type"], "none")
+        self.assertEqual(self.built_skill(target="friend", school="holy")["defense_type"], "none")
+        self.assertNotIn("dmg_class", self.patch["spells"][0]["fields"])
+        self.assertEqual(self.built_skill(defense_type="ranged")["defense_type"], "ranged")
+        self.assertEqual(self.patch["spells"][0]["fields"]["dmg_class"], 3)
+        self.assert_fails([{**STRIKE, "defense_type": "psychic"}], "vanguard/strike) defense_type: 'psychic' is not one of")
+
+    def test_on_cast_defaults_and_overrides(self):
+        self.assertEqual(self.built_skill()["on_cast"],
+                         {"breaks_stealth": True, "starts_auto_attack": True, "resets_swing": False})
+        self.assertEqual(self.built_skill(target="self")["on_cast"]["starts_auto_attack"], False)
+        self.assertEqual(self.built_skill(school="fire")["on_cast"]["starts_auto_attack"], False)
+        self.assertEqual(self.built_skill(defense_type="ranged")["on_cast"]["starts_auto_attack"], False)
+        self.assertEqual(self.built_skill(on_cast="breaks_stealth=no;resets_swing=yes")["on_cast"],
+                         {"breaks_stealth": False, "starts_auto_attack": True, "resets_swing": True})
+        for cell, message in (("breaks_stealth=maybe", "breaks_stealth is 'maybe'"), ("hides=yes", "unknown key 'hides'"),
+                              ("resets_swing", "malformed pair"), ("resets_swing=yes;resets_swing=no", "'resets_swing' given twice")):
+            self.assert_fails([{**STRIKE, "on_cast": cell}], f"vanguard/strike) on_cast: {message}")
+
+    def test_outcomes_cell(self):
+        self.assertNotIn("outcomes", self.built_skill())
+        self.assertEqual(self.built_skill(outcomes="dodge=no;crit=no")["outcomes"], {"dodge": False, "crit": False})
+        for cell, message in (("glance=no", "unknown key 'glance'"), ("dodge=never", "dodge is 'never'"),
+                              ("dodge", "malformed pair"), ("dodge=no;dodge=no", "'dodge' given twice")):
+            self.assert_fails([{**STRIKE, "outcomes": cell}], f"vanguard/strike) outcomes: {message}")
+
+    def test_weapon_hand_default_and_failure(self):
+        self.assertEqual(self.built_skill()["weapon_hand"], "main")
+        self.assertEqual(self.built_skill(weapon_hand="both")["weapon_hand"], "both")
+        self.assert_fails([{**STRIKE, "weapon_hand": "left"}], "vanguard/strike) weapon_hand: 'left' is not one of")
+
+    def test_area_columns_and_max_targets_default(self):
+        skill = self.built_skill()
+        self.assertEqual(skill["max_targets"], 1)
+        self.assertNotIn("area_shape", skill)
+        skill = self.built_skill(realm_radius_yd="8")
+        self.assertIsNone(skill["max_targets"])
+        skill = self.built_skill(area_shape="cone", area_center="caster", max_targets="3")
+        self.assertEqual((skill["area_shape"], skill["area_center"], skill["max_targets"]), ("cone", "caster", 3))
+        self.assertEqual(self.built_skill(realm_radius_yd="8", max_targets="2")["max_targets"], 2)
+        self.assertEqual(self.built_skill(max_targets="1")["max_targets"], 1)
+        self.assert_fails([{**STRIKE, "area_shape": "square"}], "vanguard/strike) area_shape: 'square' is not one of")
+        self.assert_fails([{**STRIKE, "area_shape": "circle", "area_center": "moon"}], "area_center: 'moon' is not one of")
+        self.assert_fails([{**STRIKE, "area_center": "caster"}], "vanguard/strike) area_center: needs area_shape")
+        self.assert_fails([{**STRIKE, "max_targets": "3"}], "vanguard/strike) max_targets: 3 needs area_shape or realm_radius_yd")
+        self.assert_fails([{**STRIKE, "max_targets": "0"}], "max_targets: must be above 0")
+
+    def test_shape_columns_fail_on_an_aura_row(self):
+        for column, value in (("cost_kind", "health"), ("cast_kind", "channel"), ("outcomes", "crit=no"),
+                              ("weapon_hand", "off"), ("max_targets", "2")):
+            self.assert_fails([{**AURA, column: value}], f"vanguard/buff) {column}: set on an aura row")
+
+    def test_a_hidden_cast_row_needs_no_client_cast_time(self):
+        done, data = self.run_build([{**self.hidden(), "cast_kind": "cast"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["cast_kind"], "cast")
 
     def built_skill(self, **cells: str) -> dict:
         done, data = self.run_build([{**STRIKE, **cells}])
