@@ -114,7 +114,11 @@ As of 2026-10-16 `build_spells.py` generates both outputs from the CSV, and they
 (3 Callings, 206 rows). Basic Warrior is fully expressed in the CSV (calling, tab, aura rows; spec
 #50); its rows whose effects the realm cannot yet do are `modelled=no`. The realm reads Basic
 Warrior from `server_spells.json` (`twilight-realm`'s `generated.rs`, compiled in): any Calling
-whose file entry carries a `tier`, which only a `calling` row gives it. Vanguard and Zealot have a
+whose file entry carries a `tier`, which only a `calling` row gives it. The loader reads every
+schema #63 field into the content, loaded and not enforced: a skill's `meta` (gates, cost kind,
+cast shape, spellmods), an aura's `row` (the aura-only columns), a talent's `rank_spellmods`, and
+`hidden_skills` for `client_visible=no` rows, found by `CallingDef::hidden_skill(realm_spell_id)`.
+Vanguard and Zealot have a
 `calling` row that names only their `class`; their tiers, skills and talents are still the tables
 in `content/callings.toml`, which uses the same vocabulary (`class`, `power_cost`, `energize` with
 `power`, `add_combo_points`, `per_combo`). A skill with no effects, or an effect kind the realm

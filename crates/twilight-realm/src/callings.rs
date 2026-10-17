@@ -39,6 +39,19 @@ pub struct CallingDef {
     /// The buffs its skills and talents grant by key (a `proc`'s `apply_aura`).
     #[serde(default, rename = "aura")]
     pub auras: Vec<AuraDef>,
+    /// Hidden abilities (`client_visible=no` rows): skills the client never sees, keyed by their
+    /// realm spell id. They are not on the bar or in the spell book.
+    #[serde(default)]
+    pub hidden_skills: Vec<Skill>,
+}
+
+impl CallingDef {
+    /// The hidden ability with this `realm_spell_id`.
+    pub fn hidden_skill(&self, realm_spell_id: u32) -> Option<&Skill> {
+        self.hidden_skills
+            .iter()
+            .find(|s| s.spell_id == realm_spell_id)
+    }
 }
 
 /// A buff a skill or talent grants: what it does, for how long, and how many uses it has.
@@ -52,6 +65,117 @@ pub struct AuraDef {
     #[serde(default)]
     pub charges: u32,
     pub effects: Vec<AuraEffect>,
+    /// The aura-only columns of its row. Loaded, not enforced yet.
+    #[serde(default)]
+    pub row: AuraRow,
+}
+
+/// The aura-only columns of the master CSV (spec #63), as the build resolved them.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[serde(default)]
+pub struct AuraRow {
+    /// `Some(false)` for a `client_visible=no` row, whose `spell_id` is its realm spell id.
+    pub client_visible: Option<bool>,
+    pub school: Option<String>,
+    pub prevention: Option<String>,
+    pub max_stacks: u32,
+    pub stack_rule: Option<String>,
+    pub unique_per: Option<String>,
+    pub exclusive_group: Option<String>,
+    pub group_scope: Option<String>,
+    pub dispel_type: Option<String>,
+    pub mechanic: Option<String>,
+    pub aura_positive: bool,
+    pub aura_hidden: bool,
+    pub cancelable: bool,
+    pub persist_death: bool,
+    pub aura_description: Option<String>,
+    /// What ends it early: `damage`, `damage_threshold` and the like.
+    pub break_on: serde_json::Map<String, serde_json::Value>,
+    /// The shapeshift form it grants.
+    pub grants_form: Option<u32>,
+}
+
+impl AuraRow {
+    /// A `client_visible=no` row: the client never sees its spell id.
+    pub fn is_hidden(&self) -> bool {
+        self.client_visible == Some(false)
+    }
+}
+
+/// The gate columns of a skill or talent row: what the cast needs. Loaded, not enforced yet.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[serde(default)]
+pub struct SpellGates {
+    pub school: Option<String>,
+    /// What stops the cast: `pacify`, `silence`.
+    pub prevention: Option<String>,
+    /// Weapon names as written in `requires_weapon`.
+    pub requires_weapon: Vec<String>,
+    pub cooldown_category: Option<String>,
+    pub category_cooldown_ms: u32,
+    pub requires_caster_state: Option<String>,
+    pub requires_target_state: Option<String>,
+    /// The realm-only `requires` cell, `key` to value (`combat` = `out`).
+    pub requires: serde_json::Map<String, serde_json::Value>,
+}
+
+/// What a cast does on the way: cost kind and cast shape. Loaded, not enforced yet.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[serde(default)]
+pub struct CastShape {
+    pub cost_kind: Option<String>,
+    pub cost_extra_max: u32,
+    pub cast_kind: Option<String>,
+    pub channel_tick_ms: u32,
+    pub interrupt_on: Vec<String>,
+    pub defense_type: Option<String>,
+    pub on_cast: OnCast,
+    /// Which attack outcomes can happen (`dodge` = false for an unavoidable strike).
+    pub outcomes: std::collections::BTreeMap<String, bool>,
+    pub weapon_hand: Option<String>,
+    pub area_shape: Option<String>,
+    pub area_center: Option<String>,
+    /// How many targets it may land on; `None` for unlimited. Not [`Skill::max_targets`], which
+    /// the cast reads.
+    pub max_targets: Option<u32>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize)]
+#[serde(default)]
+pub struct OnCast {
+    pub breaks_stealth: bool,
+    pub starts_auto_attack: bool,
+    pub resets_swing: bool,
+}
+
+/// One spellmod group of a row: a flat or percent change to an op on the skills it targets.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct SpellMod {
+    /// `flat` or `pct`.
+    #[serde(rename = "type")]
+    pub kind: String,
+    /// A `SpellModOp` name (`DAMAGE`, `COST`).
+    pub op: String,
+    /// One skill's `SpellFamilyFlags` bit, or
+    pub family_bit: Option<u8>,
+    /// several skills' mask.
+    pub family_mask: Option<u64>,
+    pub value: f64,
+    /// The skill keys it targets (server only).
+    #[serde(default)]
+    pub target: Vec<String>,
+}
+
+/// A row's gates, cast shape and spellmods, as `server_spells.json` carries them.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize)]
+#[serde(default)]
+pub struct SpellMeta {
+    #[serde(flatten)]
+    pub gates: SpellGates,
+    #[serde(flatten)]
+    pub shape: CastShape,
+    pub spellmods: Vec<SpellMod>,
 }
 
 /// What a buff does while it lasts.
@@ -162,6 +286,10 @@ pub struct TalentDef {
     /// one per family bit, since a talent can touch several skills (Benediction).
     #[serde(default)]
     pub client_spellmods: Vec<ClientSpellMod>,
+    /// Each rank row's spellmod groups from the master CSV, by rank. Loaded, not enforced yet;
+    /// the client cells above still come from the TOML.
+    #[serde(default)]
+    pub rank_spellmods: Vec<Vec<SpellMod>>,
 }
 
 impl TalentDef {
@@ -411,6 +539,9 @@ pub struct Skill {
     #[serde(default)]
     pub borrowed: Option<BorrowedFamilyBit>,
     pub effects: Vec<Effect>,
+    /// Gates, cost kind, cast shape and spellmods from the master CSV. Loaded, not enforced yet.
+    #[serde(default)]
+    pub meta: SpellMeta,
 }
 
 /// The `SpellFamilyFlags` bits the client gives borrowed spells: no Warrior spell uses a bit

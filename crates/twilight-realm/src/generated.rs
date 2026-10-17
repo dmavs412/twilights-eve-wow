@@ -11,8 +11,8 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::callings::{
-    Armour, AuraDef, AuraEffect, CallingDef, Effect, Prereq, Skill, TalentDef, TalentEffect,
-    TalentTab, Target, TierBonus,
+    Armour, AuraDef, AuraEffect, AuraRow, CallingDef, Effect, Prereq, Skill, SpellMeta, TalentDef,
+    TalentEffect, TalentTab, Target, TierBonus,
 };
 
 const SERVER_SPELLS: &str = include_str!("../../../data/twilights-eve/server_spells.json");
@@ -47,11 +47,12 @@ struct GenAura {
     charges: u32,
     #[serde(default)]
     modelled: bool,
-    /// What ends it early: `damage` is read for a skill that applies it (an incapacitate).
-    #[serde(default)]
-    break_on: Map<String, Value>,
     #[serde(default)]
     effects: Vec<GenEffect>,
+    /// The aura-only columns; `row.break_on.damage` is read for a skill that applies it (an
+    /// incapacitate).
+    #[serde(flatten)]
+    row: AuraRow,
 }
 
 #[derive(Deserialize)]
@@ -80,8 +81,12 @@ struct GenSkill {
     target: Option<Target>,
     #[serde(default)]
     requires_out_of_combat: bool,
+    /// `Some(false)` for a hidden ability, whose `spell_id` is its `realm_spell_id`.
+    client_visible: Option<bool>,
     #[serde(default)]
     effects: Vec<GenEffect>,
+    #[serde(flatten)]
+    meta: SpellMeta,
 }
 
 #[derive(Deserialize)]
@@ -116,6 +121,8 @@ struct GenRank {
     talent_id: u32,
     #[serde(default)]
     effects: Vec<GenEffect>,
+    #[serde(flatten)]
+    meta: SpellMeta,
 }
 
 /// Every Calling the sheet defines.
@@ -155,7 +162,18 @@ fn calling(g: GenCalling) -> CallingDef {
             .shapeshift_form
             .unwrap_or_else(|| missing("shapeshift_form")),
         armour: g.armour.clone(),
-        skills: g.skills.iter().filter_map(|s| skill(s, &g.auras)).collect(),
+        skills: g
+            .skills
+            .iter()
+            .filter(|s| s.client_visible != Some(false))
+            .filter_map(|s| skill(s, &g.auras))
+            .collect(),
+        hidden_skills: g
+            .skills
+            .iter()
+            .filter(|s| s.client_visible == Some(false))
+            .filter_map(|s| skill(s, &g.auras))
+            .collect(),
         talent_tabs: tabs.into_iter().map(|t| tab(&g.key, t)).collect(),
         auras: g.auras.iter().filter_map(aura).collect(),
         key: g.key.clone(),
@@ -180,6 +198,7 @@ fn aura(g: &GenAura) -> Option<AuraDef> {
         duration_ms: g.duration_ms,
         charges: g.charges,
         effects,
+        row: g.row.clone(),
     })
 }
 
@@ -198,7 +217,7 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         if aura.duration_ms > 0 {
             merged.insert("duration_ms".into(), aura.duration_ms.into());
         }
-        if e.kind == "incapacitate" && aura.break_on.contains_key("damage") {
+        if e.kind == "incapacitate" && aura.row.break_on.contains_key("damage") {
             merged.insert("break_on_damage".into(), true.into());
         }
         merged.extend(object);
@@ -231,6 +250,7 @@ fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
         extra_target_radius_yd: 0.0,
         borrowed: None,
         effects,
+        meta: g.meta.clone(),
     })
 }
 
@@ -269,6 +289,7 @@ fn talent(g: &GenTalent) -> Option<TalentDef> {
         effects: talent_effects(&g.ranks),
         skill: None,
         client_spellmods: Vec::new(),
+        rank_spellmods: g.ranks.iter().map(|r| r.meta.spellmods.clone()).collect(),
     })
 }
 
@@ -324,6 +345,33 @@ mod tests {
         assert_eq!(keys, ["one"]);
     }
 
+    /// A `client_visible=no` skill loads as a hidden ability, found by its realm spell id, and is
+    /// not in the spell book's skills.
+    #[test]
+    fn a_hidden_skill_loads_by_its_realm_spell_id() {
+        let g: GenCalling = serde_json::from_value(serde_json::json!({
+            "key": "test", "class": 1, "name": "Test", "tier": 0, "tier_cap": 10,
+            "tier_bonus": {"strength": 0, "agility": 0, "stamina": 0, "intellect": 0, "spirit": 0},
+            "shapeshift_form": 17,
+            "skills": [
+                {"key": "shown", "spell_id": 5, "modelled": true,
+                 "effects": [{"kind": "charge", "params": {"speed_yd_s": 24}}]},
+                {"key": "unseen", "spell_id": 900001, "client_visible": false,
+                 "cast_kind": "instant", "requires": {"combat": "in"},
+                 "effects": [{"kind": "charge", "params": {"speed_yd_s": 24}}]},
+            ],
+        }))
+        .expect("a calling reads");
+        let calling = calling(g);
+        let keys: Vec<&str> = calling.skills.iter().map(|s| s.key.as_str()).collect();
+        assert_eq!(keys, ["shown"]);
+        let hidden = calling.hidden_skill(900001).expect("found by realm id");
+        assert_eq!(hidden.key, "unseen");
+        assert_eq!(hidden.meta.shape.cast_kind.as_deref(), Some("instant"));
+        assert_eq!(hidden.meta.gates.requires["combat"], "in");
+        assert!(calling.hidden_skill(5).is_none());
+    }
+
     fn auras() -> Vec<GenAura> {
         serde_json::from_value(serde_json::json!([
             {"key": "sleep", "spell_id": 1776, "duration_ms": 4000, "modelled": true,
@@ -333,6 +381,23 @@ mod tests {
              "effects": [{"kind": "stun", "params": {"aura_spell_id": 1}}]},
         ]))
         .expect("auras read")
+    }
+
+    /// An aura row keeps its aura-only columns, `break_on` and `mechanic` among them.
+    #[test]
+    fn an_aura_keeps_its_row_columns() {
+        let g: GenAura = serde_json::from_value(serde_json::json!({
+            "key": "g", "spell_id": 1776, "duration_ms": 4000, "modelled": true,
+            "mechanic": "incapacitate", "max_stacks": 2, "aura_positive": false,
+            "break_on": {"damage": true},
+            "effects": [{"kind": "mod_run_speed", "params": {"pct": 30}}],
+        }))
+        .expect("an aura reads");
+        let a = aura(&g).expect("it loads");
+        assert_eq!(a.row.mechanic.as_deref(), Some("incapacitate"));
+        assert_eq!(a.row.max_stacks, 2);
+        assert!(!a.row.aura_positive);
+        assert_eq!(a.row.break_on["damage"], true);
     }
 
     fn skill_applying(key: &str, kind: &str) -> Option<Skill> {

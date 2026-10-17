@@ -463,6 +463,51 @@ fn talent_tab_ids_are_unique_across_callings() {
     assert_eq!(ids.len(), all, "{ids:?}");
 }
 
+/// The fields schema #63 added reach the content: Charge's gate and cast shape, an aura row's
+/// columns, and a talent rank's spellmods. Loaded only; nothing enforces them yet.
+#[test]
+fn the_schema_fields_reach_the_content() {
+    let warrior = callings::calling("basic_warrior").unwrap();
+
+    let charge = warrior.skills.iter().find(|s| s.key == "charge").unwrap();
+    assert_eq!(charge.meta.gates.requires["combat"], "out");
+    assert_eq!(charge.meta.gates.school.as_deref(), Some("physical"));
+    assert_eq!(charge.meta.gates.prevention.as_deref(), Some("pacify"));
+    assert_eq!(charge.meta.shape.cost_kind.as_deref(), Some("flat"));
+    assert_eq!(charge.meta.shape.cast_kind.as_deref(), Some("instant"));
+    assert_eq!(charge.meta.shape.defense_type.as_deref(), Some("melee"));
+    assert!(charge.meta.shape.on_cast.breaks_stealth);
+    assert_eq!(charge.meta.shape.max_targets, Some(1));
+
+    // An aura whose effect kind the realm lacks (the stun) is still dropped, as before.
+    let buff = warrior
+        .auras
+        .iter()
+        .find(|a| a.key == "momentum_crit_1")
+        .unwrap();
+    assert!(!buff.row.is_hidden());
+    assert_eq!(buff.spell_id, 14177);
+    assert_eq!(buff.row.max_stacks, 1);
+    assert_eq!(buff.row.stack_rule.as_deref(), Some("refresh"));
+    assert_eq!(buff.row.unique_per.as_deref(), Some("caster"));
+    assert_eq!(buff.row.dispel_type.as_deref(), Some("none"));
+    assert!(buff.row.aura_positive && buff.row.cancelable);
+    assert!(!buff.row.aura_hidden && !buff.row.persist_death);
+
+    let spark = warrior
+        .talent_tabs
+        .iter()
+        .flat_map(|t| &t.talents)
+        .find(|t| t.key == "initiates_spark")
+        .unwrap();
+    assert_eq!(spark.rank_spellmods.len(), spark.rank_spells.len());
+    let first = &spark.rank_spellmods[0][0];
+    assert_eq!((first.kind.as_str(), first.op.as_str()), ("pct", "DAMAGE"));
+    assert_eq!(first.family_bit, Some(37));
+    assert_eq!(first.value, 10.0);
+    assert_eq!(first.target, ["fire_blast"]);
+}
+
 /// Basic Warrior's tree is the master CSV's, as `build_spells.py` wrote it: the realm shows each
 /// talent on its borrowed `Talent.dbc` id and rank spells, and models only what the sheet marks
 /// modelled and the realm has a kind for.
