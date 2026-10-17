@@ -2722,7 +2722,21 @@
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "description": "After using Charge, your next Heroic Strike has a 50% chance to crit and movement speed increases by 15%."
+    "description": "After using Charge, your next Heroic Strike has a 50% chance to crit and movement speed increases by 15%.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "charge",
+       "chance": 100,
+       "apply_aura": [
+        "momentum_crit_1",
+        "momentum_speed_1"
+       ]
+      }
+     }
+    ]
    }
   },
   {
@@ -2732,7 +2746,21 @@
    "rank": 2,
    "fields": {
     "power_type": 1,
-    "description": "After using Charge, your next Heroic Strike has a 100% chance to crit and movement speed increases by 30%."
+    "description": "After using Charge, your next Heroic Strike has a 100% chance to crit and movement speed increases by 30%.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "charge",
+       "chance": 100,
+       "apply_aura": [
+        "momentum_crit_2",
+        "momentum_speed_2"
+       ]
+      }
+     }
+    ]
    }
   },
   {

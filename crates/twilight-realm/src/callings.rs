@@ -32,6 +32,32 @@ pub struct CallingDef {
     /// The Talent Tree: its tabs, as the stock talent frame shows them.
     #[serde(default, rename = "talent_tab")]
     pub talent_tabs: Vec<TalentTab>,
+    /// The buffs its skills and talents grant by key (a `proc`'s `apply_aura`).
+    #[serde(default, rename = "aura")]
+    pub auras: Vec<AuraDef>,
+}
+
+/// A buff a skill or talent grants: what it does, for how long, and how many uses it has.
+#[derive(Debug, Clone, Deserialize)]
+pub struct AuraDef {
+    pub key: String,
+    /// The spell the client shows the buff as.
+    pub spell_id: u32,
+    pub duration_ms: u32,
+    /// Uses before it is spent; 0 for no limit.
+    #[serde(default)]
+    pub charges: u32,
+    pub effects: Vec<AuraEffect>,
+}
+
+/// What a buff does while it lasts.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum AuraEffect {
+    /// The skill's critical strike chance rises by `pct` percent.
+    SkillCritPct { skill: String, pct: u32 },
+    /// The player's run speed rises by `pct` percent.
+    ModRunSpeed { pct: u32 },
 }
 
 /// An armour kind a Calling may wear.
@@ -565,6 +591,11 @@ fn all() -> &'static [CallingDef] {
 /// A Calling by its save key (`basic_warrior`).
 pub fn calling(key: &str) -> Option<&'static CallingDef> {
     all().iter().find(|c| c.key == key)
+}
+
+/// A buff of any Calling, by its key in the sheet.
+pub fn aura(key: &str) -> Option<&'static AuraDef> {
+    all().iter().flat_map(|c| &c.auras).find(|a| a.key == key)
 }
 
 /// A current Calling's data.

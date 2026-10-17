@@ -7,8 +7,8 @@
 //! skill answers nothing until the swing it replaces.
 
 use benilla_protocol::messages::{
-    ActionButton, MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpellCooldown, SpellDamageLog,
-    SpellEnergizeLog,
+    ActionButton, MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpeedKind, SpellCooldown,
+    SpellDamageLog, SpellEnergizeLog,
 };
 use benilla_protocol::SessionEvent;
 
@@ -112,6 +112,8 @@ pub(super) struct Skills {
     low_health: Vec<u64>,
     /// The player's guid, for the aura packets only the player's own auras get.
     me: u64,
+    /// Speed changes sent to the client so far: the counter its ack echoes.
+    speed_changes: u32,
 }
 
 /// A cast with a cast bar, from an item.
@@ -138,6 +140,8 @@ pub(super) struct Aura {
     period: f32,
     next_tick: f32,
     kind: AuraKind,
+    /// Uses left before the aura is spent; 0 for no limit.
+    charges: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -195,6 +199,15 @@ enum AuraKind {
         pct: u32,
         duration_ms: u32,
     },
+    /// The player's `skill` has `pct`% more critical strike chance (a buff from a `proc`).
+    SkillCrit {
+        skill: &'static str,
+        pct: u32,
+    },
+    /// The player runs `pct`% faster (a buff from a `proc`).
+    RunSpeed {
+        pct: u32,
+    },
 }
 
 impl AuraKind {
@@ -208,6 +221,8 @@ impl AuraKind {
                 | AuraKind::Sweeping { .. }
                 | AuraKind::Heal { .. }
                 | AuraKind::Seal { .. }
+                | AuraKind::SkillCrit { .. }
+                | AuraKind::RunSpeed { .. }
         )
     }
 }
@@ -348,8 +363,37 @@ impl Skills {
     fn speed_mul(&self, unit: u64) -> f32 {
         self.multiplier(unit, |kind| match kind {
             AuraKind::MoveSlow { pct } => Some(1.0 - pct as f32 / 100.0),
+            AuraKind::RunSpeed { pct } => Some(1.0 + pct as f32 / 100.0),
             _ => None,
         })
+    }
+
+    /// The extra critical strike chance, in percent, the player's buffs give `skill`.
+    pub(super) fn skill_crit_pct(&self, skill: &str) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::SkillCrit { skill: s, pct } if s == skill => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// `skill` landed: each of the player's buffs for it with charges loses one, and a spent one
+    /// goes.
+    fn spend_charges(&mut self, skill: &str, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
+        for a in &mut self.auras {
+            let for_skill = matches!(a.kind, AuraKind::SkillCrit { skill: s, .. } if s == skill);
+            if a.unit == self.me && a.charges > 0 && for_skill {
+                a.charges -= 1;
+                if a.charges == 0 {
+                    // Spent: it runs out now.
+                    a.left = 0.0;
+                }
+            }
+        }
+        self.remove_where(|a| a.left <= CLOCK_EPSILON, events)
     }
 
     /// The product of the factors `factor` reads off `unit`'s auras; 1 with none.
@@ -391,11 +435,11 @@ impl Skills {
 
     /// Puts `aura` on its unit, in the slot its spell already holds there or a free one.
     fn apply(&mut self, mut aura: Aura, events: &mut Vec<SessionEvent>) -> Option<Aura> {
-        if let Some(old) = self
-            .auras
-            .iter_mut()
-            .find(|a| a.unit == aura.unit && a.spell_id == aura.spell_id)
-        {
+        if let Some(old) = self.auras.iter_mut().find(|a| {
+            a.unit == aura.unit
+                && a.spell_id == aura.spell_id
+                && std::mem::discriminant(&a.kind) == std::mem::discriminant(&aura.kind)
+        }) {
             aura.slot = old.slot;
             *old = aura;
         } else {
@@ -730,6 +774,10 @@ impl InWorld {
         if extra > 0 && !energizes && any_landed {
             self.gain_rage(skill.spell_id, extra, events);
         }
+        if any_landed {
+            let gone = self.skills.spend_charges(&skill.key, events);
+            self.faded(&gone, events);
+        }
         self.proc(
             crate::rules::procs::Happened {
                 event: crate::callings::ProcEvent::Cast,
@@ -891,7 +939,13 @@ impl InWorld {
             Outcome::Parry => Landed::Missed(SPELL_MISS_PARRY),
             Outcome::Block => Landed::Missed(SPELL_MISS_BLOCK),
             // A talent's extra chance for this skill (Improved Overpower), in basis points.
-            _ if rng.below(ROLL) < crit + crate::talents::skill_crit_pct(c, &skill.key) * 100 => {
+            // The player's buffs for the skill (Cutthroat's Momentum) add to it.
+            _ if rng.below(ROLL)
+                < crit
+                    + (crate::talents::skill_crit_pct(c, &skill.key)
+                        + self.skills.skill_crit_pct(&skill.key))
+                        * 100 =>
+            {
                 Landed::Crit
             }
             _ => Landed::Hit,
@@ -928,6 +982,7 @@ impl InWorld {
             period: clock::secs(period_ms),
             next_tick: clock::secs(period_ms),
             kind,
+            charges: 0,
         };
         match *effect {
             Effect::WeaponStrike { weapon, bonus, .. } => {
@@ -1045,7 +1100,7 @@ impl InWorld {
             Effect::MovementSlow { pct, duration_ms } => {
                 let a = aura(AuraKind::MoveSlow { pct }, skill.spell_id, duration_ms, 0);
                 self.skills.apply(a, events);
-                self.update_speed(target);
+                self.update_speed(target, events);
             }
             Effect::AuraAttackPower {
                 duration_ms,
@@ -1424,6 +1479,7 @@ impl InWorld {
             period: clock::secs(period_ms),
             next_tick: clock::secs(period_ms),
             kind,
+            charges: 0,
         };
         self.skills.apply(aura, events);
     }
@@ -1460,6 +1516,7 @@ impl InWorld {
             period: 0.0,
             next_tick: 0.0,
             kind: AuraKind::Stun,
+            charges: 0,
         };
         self.skills.apply(aura, events);
     }
@@ -1497,6 +1554,7 @@ impl InWorld {
             kind: AuraKind::Bleed {
                 per_tick: deep_wound_tick(s.min_damage, s.max_damage, pct),
             },
+            charges: 0,
         };
         self.skills.apply(bleed, events);
     }
@@ -1610,6 +1668,8 @@ impl InWorld {
         let extra = scaled(bonus.at(c.level, stats.attack_power), pct) as f32;
         stats.min_damage += extra;
         stats.max_damage += extra;
+        // The player's buffs for the skill (Cutthroat's Momentum) add crit chance.
+        stats.crit_pct += f64::from(self.skills.skill_crit_pct(&skill.key));
         // Cleave's other targets: the nearest living mobs beside the first, each on its own roll.
         let at = self.mobs[i].position;
         let mut beside: Vec<usize> = (0..self.mobs.len())
@@ -1675,6 +1735,10 @@ impl InWorld {
         // The first target's dodge opens Overpower, as a white swing's would.
         if missed_by(swings[0].1.outcome) == Some(SPELL_MISS_DODGE) {
             self.skills.dodged_by(target, events);
+        }
+        if missed_by(swings[0].1.outcome).is_none() {
+            let gone = self.skills.spend_charges(&skill.key, events);
+            self.faded(&gone, events);
         }
         let impale = crate::talents::skill_crit_damage_pct(c) + self.player.stats.crit_damage_pct;
         for (guid, mut swing) in swings {
@@ -1807,7 +1871,9 @@ impl InWorld {
     pub(super) fn faded(&mut self, gone: &[Aura], events: &mut Vec<SessionEvent>) {
         for a in gone {
             match a.kind {
-                AuraKind::MoveSlow { .. } => self.update_speed(a.unit),
+                AuraKind::MoveSlow { .. } | AuraKind::RunSpeed { .. } => {
+                    self.update_speed(a.unit, events)
+                }
                 AuraKind::AttackPower(_) | AuraKind::Seal { .. } => {
                     let sheet = buff_sheet(&self.player.stats, &self.skills);
                     events.push(values(self.guid, &sheet));
@@ -1861,10 +1927,54 @@ impl InWorld {
         self.skills.low_health = low;
     }
 
-    fn update_speed(&mut self, unit: u64) {
+    /// `unit`'s run speed after its auras changed: a mob's multiplier, or the player's new speed
+    /// sent to the client (`SMSG_FORCE_RUN_SPEED_CHANGE`).
+    fn update_speed(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
         let mul = self.skills.speed_mul(unit);
         if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
             mob.speed_mul = mul;
+        }
+        if unit == self.guid {
+            self.skills.speed_changes += 1;
+            events.push(SessionEvent::ForceSpeedChange {
+                guid: unit,
+                kind: SpeedKind::Run,
+                counter: self.skills.speed_changes,
+                speed: self.dev.speeds(super::PLAYER_SPEEDS).run * mul,
+            });
+        }
+    }
+
+    /// Puts the buff `def` on the player, one aura per effect.
+    pub(super) fn grant_aura(
+        &mut self,
+        def: &'static callings::AuraDef,
+        level: u8,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        for effect in &def.effects {
+            let kind = match effect {
+                callings::AuraEffect::SkillCritPct { skill, pct } => AuraKind::SkillCrit {
+                    skill: skill.as_str(),
+                    pct: *pct,
+                },
+                callings::AuraEffect::ModRunSpeed { pct } => AuraKind::RunSpeed { pct: *pct },
+            };
+            let aura = Aura {
+                unit: self.guid,
+                spell_id: def.spell_id,
+                slot: 0,
+                level,
+                left: clock::secs(def.duration_ms),
+                period: 0.0,
+                next_tick: 0.0,
+                kind,
+                charges: def.charges,
+            };
+            self.skills.apply(aura, events);
+            if matches!(kind, AuraKind::RunSpeed { .. }) {
+                self.update_speed(self.guid, events);
+            }
         }
     }
 }

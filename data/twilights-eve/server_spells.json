@@ -401,8 +401,22 @@
         "spell_id": 13743,
         "talent_id": 222,
         "source_tab_id": 181,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "charge",
+           "chance": 100,
+           "apply_aura": [
+            "momentum_crit_1",
+            "momentum_speed_1"
+           ]
+          },
+          "realm_only": false
+         }
+        ],
         "description": "After using Charge, your next Heroic Strike has a 50% chance to crit and movement speed increases by 15%."
        },
        {
@@ -412,8 +426,22 @@
         "spell_id": 13875,
         "talent_id": 222,
         "source_tab_id": 181,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "charge",
+           "chance": 100,
+           "apply_aura": [
+            "momentum_crit_2",
+            "momentum_speed_2"
+           ]
+          },
+          "realm_only": false
+         }
+        ],
         "description": "After using Charge, your next Heroic Strike has a 100% chance to crit and movement speed increases by 30%."
        }
       ]
@@ -523,8 +551,17 @@
     "spell_id": 14177,
     "duration_ms": 10000,
     "charges": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "heroic_strike",
+       "pct": 50
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Your next Heroic Strike has +50% critical strike chance."
    },
    {
@@ -532,8 +569,16 @@
     "name": "Momentum (speed)",
     "spell_id": 2983,
     "duration_ms": 4000,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 15
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Run speed increased by 15%."
    },
    {
@@ -542,8 +587,17 @@
     "spell_id": 14177,
     "duration_ms": 10000,
     "charges": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "heroic_strike",
+       "pct": 100
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Your next Heroic Strike has +100% critical strike chance."
    },
    {
@@ -551,8 +605,16 @@
     "name": "Momentum (speed)",
     "spell_id": 2983,
     "duration_ms": 4000,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 30
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Run speed increased by 30%."
    }
   ],

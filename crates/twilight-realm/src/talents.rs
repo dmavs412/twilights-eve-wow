@@ -354,6 +354,8 @@ pub(crate) struct Proc {
     pub(crate) chance: u32,
     /// Percent of the maximum health healed.
     pub(crate) heal_pct: u32,
+    /// The keys of the buffs it grants.
+    pub(crate) auras: Vec<String>,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -366,7 +368,7 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 yields_xp,
                 chance,
                 per_rank,
-                ..
+                auras,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -376,6 +378,7 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 trigger.fires(happened).then(|| Proc {
                     chance: *chance,
                     heal_pct: per_rank[r],
+                    auras: auras.get(r).cloned().unwrap_or_default(),
                 })
             }
             _ => None,

@@ -11,8 +11,8 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::callings::{
-    Armour, CallingDef, Effect, Prereq, Skill, TalentDef, TalentEffect, TalentTab, Target,
-    TierBonus,
+    Armour, AuraDef, AuraEffect, CallingDef, Effect, Prereq, Skill, TalentDef, TalentEffect,
+    TalentTab, Target, TierBonus,
 };
 
 const SERVER_SPELLS: &str = include_str!("../../../data/twilights-eve/server_spells.json");
@@ -31,6 +31,22 @@ struct GenCalling {
     skills: Vec<GenSkill>,
     #[serde(default)]
     talent_tabs: Vec<GenTab>,
+    #[serde(default)]
+    auras: Vec<GenAura>,
+}
+
+#[derive(Deserialize)]
+struct GenAura {
+    key: String,
+    spell_id: u32,
+    #[serde(default)]
+    duration_ms: u32,
+    #[serde(default)]
+    charges: u32,
+    #[serde(default)]
+    modelled: bool,
+    #[serde(default)]
+    effects: Vec<GenEffect>,
 }
 
 #[derive(Deserialize)]
@@ -135,8 +151,30 @@ fn calling(g: GenCalling) -> CallingDef {
         armour: g.armour.clone(),
         skills: g.skills.iter().filter_map(skill).collect(),
         talent_tabs: tabs.into_iter().map(|t| tab(&g.key, t)).collect(),
+        auras: g.auras.iter().filter_map(aura).collect(),
         key: g.key.clone(),
     }
+}
+
+/// The buff, or `None` while it is unmodelled or any effect is a kind the realm lacks.
+fn aura(g: &GenAura) -> Option<AuraDef> {
+    let effects: Option<Vec<AuraEffect>> = g
+        .effects
+        .iter()
+        .map(|e| {
+            let mut object = e.params.clone();
+            object.insert("kind".into(), e.kind.clone().into());
+            serde_json::from_value(Value::Object(object)).ok()
+        })
+        .collect();
+    let effects = effects.filter(|e| g.modelled && !e.is_empty())?;
+    Some(AuraDef {
+        key: g.key.clone(),
+        spell_id: g.spell_id,
+        duration_ms: g.duration_ms,
+        charges: g.charges,
+        effects,
+    })
 }
 
 /// The realm's [`Effect`] for a row's effect, or `None` for a kind it does not have yet.
