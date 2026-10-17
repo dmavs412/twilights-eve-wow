@@ -62,6 +62,24 @@ issue #63 (the spec); this record keeps the decisions that are hard to see from 
   New columns sit at the end of the CSV header; rows shorter than the header read the missing
   cells as empty. `requires_out_of_combat=yes` migrated on the three Charge rows.
 
+- **Details settled while building the aura columns (#68).** The aura-only columns sit at the end of
+  the header and fail on any non-aura row. A skill's effect names its aura as `apply_aura=key` (one
+  key, the aura must hold an effect of the same kind); the realm loader (`generated.rs`) takes that
+  effect's params from the aura row, plus the row's `duration_ms` and, for `break_on: damage` on an
+  incapacitate, `break_on_damage`, so the cast code is untouched and Basic Warrior plays the same.
+  An aura that is missing or unmodelled drops the skill, as an unknown effect kind does. Charge's
+  stun and Gouge's incapacitate migrated (`charge_stun`, `gouge_incapacitate`); Basic Warrior has no
+  Rend, Hamstring or Thunder Clap rows, and Vanguard's and Zealot's inline effects stay, because the
+  realm still reads them from the TOML. `aura_positive` defaults from the aura row's own `target`
+  (`enemy` makes a debuff; no target, a buff), and `cancelable` from that. `mechanic` takes the
+  client's names with the numbers from vmangos's `Mechanics`; `incapacitate` is the spec's name for
+  `knockout` (14), Gouge's and Sap's mechanic, from memory, so check it against Spell.dbc when a
+  row first depends on it. An aura's Spell.dbc fields (`dispel_type`, `mechanic`,
+  `aura_description`) go to the patch only when the cell is set, in an override of its
+  `client_spell_id`, merged into a skill's override of the same spell id. `damage` and
+  `damage_threshold` in `break_on` are exclusive. Unlike the spec's `break_on` list, `damage=no` and
+  other values are refused: a flag is `yes` or absent.
+
 ## Considered Options
 
 - **Adopt `is_hidden`.** Rejected. `client_visible` says what is withheld and is checked against

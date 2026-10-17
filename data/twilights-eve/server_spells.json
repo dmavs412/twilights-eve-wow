@@ -102,8 +102,7 @@
      {
       "kind": "stun",
       "params": {
-       "duration_ms": 1000,
-       "aura_spell_id": 7922
+       "apply_aura": "charge_stun"
       },
       "realm_only": false
      }
@@ -148,9 +147,7 @@
      {
       "kind": "incapacitate",
       "params": {
-       "duration_ms": 4000,
-       "break_on_damage": true,
-       "drop_combat": true
+       "apply_aura": "gouge_incapacitate"
       },
       "realm_only": false
      }
@@ -828,6 +825,15 @@
     "status": "wip",
     "school": "physical",
     "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
     "duration_ms": 10000,
     "charges": 1,
     "modelled": true,
@@ -850,6 +856,15 @@
     "status": "wip",
     "school": "physical",
     "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
     "duration_ms": 4000,
     "modelled": true,
     "effects": [
@@ -870,6 +885,15 @@
     "status": "wip",
     "school": "physical",
     "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
     "duration_ms": 10000,
     "charges": 1,
     "modelled": true,
@@ -892,6 +916,15 @@
     "status": "wip",
     "school": "physical",
     "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
     "duration_ms": 4000,
     "modelled": true,
     "effects": [
@@ -904,6 +937,71 @@
      }
     ],
     "description": "Run speed increased by 30%."
+   },
+   {
+    "key": "charge_stun",
+    "name": "Charge (stun)",
+    "spell_id": 7922,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 1000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
+   },
+   {
+    "key": "gouge_incapacitate",
+    "name": "Gouge (incapacitate)",
+    "spell_id": 1776,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "incapacitate",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "break_on": {
+     "damage": true
+    },
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {
+       "drop_combat": true
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Incapacitated. Any later damage ends it."
    }
   ],
   "name": "Basic Warrior",

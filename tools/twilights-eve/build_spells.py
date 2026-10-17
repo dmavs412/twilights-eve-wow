@@ -135,6 +135,22 @@ AREA_SHAPES = ("circle", "cone", "chain")
 AREA_CENTERS = ("caster", "target", "ground")
 SHAPE_COLUMNS = ("cost_kind", "cost_extra_max", "cast_kind", "channel_tick_ms", "interrupt_on", "on_cast",
                  "defense_type", "outcomes", "weapon_hand", "max_targets", "area_shape", "area_center")
+AURA_ONLY_COLUMNS = ("max_stacks", "stack_rule", "unique_per", "exclusive_group", "group_scope", "dispel_type",
+                     "mechanic", "aura_positive", "aura_hidden", "cancelable", "persist_death", "aura_description",
+                     "break_on", "grants_form")
+STACK_RULES = ("refresh", "replace", "ignore", "independent")
+AURA_SCOPES = ("caster", "target")
+# Spell.dbc Dispel.
+DISPEL_TYPES = {"none": 0, "magic": 1, "curse": 2, "disease": 3, "poison": 4}
+# Spell.dbc Mechanic (vmangos `Mechanics`; the client's own names, 5 fear, 7 root, 11 snare, 12 stun
+# and 17 polymorph are confirmed against the client's table). `incapacitate` is the name the spec
+# gives vanilla's knockout (14), the mechanic of Gouge and Sap.
+MECHANICS = {"charm": 1, "disoriented": 2, "disarm": 3, "distract": 4, "fear": 5, "fumble": 6, "root": 7,
+             "pacify": 8, "silence": 9, "sleep": 10, "snare": 11, "stun": 12, "freeze": 13, "incapacitate": 14,
+             "knockout": 14, "bleed": 15, "bandage": 16, "polymorph": 17, "banish": 18, "shield": 19,
+             "shackle": 20, "mount": 21, "infected": 22, "turn": 23, "horror": 24, "invulnerability": 25,
+             "interrupt": 26, "daze": 27, "discovery": 28, "immune_shield": 29, "sapped": 30, "enraged": 31}
+BREAK_ON_FLAGS = ("damage", "attack", "move", "stealth_break", "leave_combat")
 # Spell.dbc columns of SpellFamilyFlags (low, high 32 bits), as extract_spells.py reads them.
 SPELL_FAMILY_FLAGS_COLUMNS = (161, 162)
 
@@ -351,12 +367,102 @@ def build_talent_tab(row: dict, where: str) -> dict:
             "order": whole(row["tab_order"], f"{where} tab_order"), "talents": []}
 
 
+def yes_no(text: str, where: str, column: str) -> bool:
+    return one_of(text, ("yes", "no"), where, column) == "yes"
+
+
+def parse_break_on(text: str, where: str) -> dict:
+    """The aura's `break_on` cell: `key=yes` pairs joined by `;` from `BREAK_ON_FLAGS`, or
+    `damage_threshold=N` (damage taken in one go). `damage` and `damage_threshold` are exclusive."""
+    out: dict = {}
+    for pair in text.split(";"):
+        key, sep, value = pair.partition("=")
+        if not sep or not key or not value:
+            raise BuildError(f"{where} break_on: malformed pair {pair!r}")
+        if key in out:
+            raise BuildError(f"{where} break_on: {key!r} given twice")
+        if key == "damage_threshold":
+            out[key] = positive_whole(value, where, "break_on damage_threshold")
+        elif key in BREAK_ON_FLAGS:
+            if value != "yes":
+                raise BuildError(f"{where} break_on: {key} is {value!r}, want yes")
+            out[key] = True
+        else:
+            raise BuildError(f"{where} break_on: unknown key {key!r}, want one of "
+                             f"{', '.join([*BREAK_ON_FLAGS, 'damage_threshold'])}")
+    if "damage" in out and "damage_threshold" in out:
+        raise BuildError(f"{where} break_on: damage and damage_threshold are exclusive")
+    return out
+
+
+def build_aura_columns(row: dict, where: str) -> dict:
+    """The aura-only columns with their defaults. Positive follows the row's target: an enemy
+    target makes a debuff, anything else (or none) a buff; cancelable follows positive."""
+    out: dict = {}
+    out["max_stacks"] = positive_whole(row["max_stacks"], where, "max_stacks") if row["max_stacks"] else 1
+    out["stack_rule"] = one_of(row["stack_rule"] or "refresh", STACK_RULES, where, "stack_rule")
+    out["unique_per"] = one_of(row["unique_per"] or "caster", AURA_SCOPES, where, "unique_per")
+    if row["group_scope"] and not row["exclusive_group"]:
+        raise BuildError(f"{where} group_scope: needs exclusive_group")
+    if row["exclusive_group"]:
+        out["exclusive_group"] = row["exclusive_group"]
+    out["group_scope"] = one_of(row["group_scope"] or "caster", AURA_SCOPES, where, "group_scope")
+    out["dispel_type"] = one_of(row["dispel_type"] or "none", DISPEL_TYPES, where, "dispel_type")
+    if row["mechanic"]:
+        out["mechanic"] = one_of(row["mechanic"], MECHANICS, where, "mechanic")
+    positive = yes_no(row["aura_positive"], where, "aura_positive") if row["aura_positive"] else row["target"] != "enemy"
+    out["aura_positive"] = positive
+    out["aura_hidden"] = yes_no(row["aura_hidden"], where, "aura_hidden") if row["aura_hidden"] else False
+    out["cancelable"] = yes_no(row["cancelable"], where, "cancelable") if row["cancelable"] else positive
+    out["persist_death"] = yes_no(row["persist_death"], where, "persist_death") if row["persist_death"] else False
+    if row["aura_description"]:
+        out["aura_description"] = row["aura_description"]
+    if row["break_on"]:
+        out["break_on"] = parse_break_on(row["break_on"], where)
+    if row["grants_form"]:
+        out["grants_form"] = positive_whole(row["grants_form"], where, "grants_form")
+    return out
+
+
+def aura_override(row: dict, built: dict, where: str) -> dict | None:
+    """The Spell.dbc fields an aura row sets on its borrowed spell: dispel type, mechanic and aura
+    description, each only when its cell is set. None when it sets none, or is hidden."""
+    if "spell_id" not in built or built.get("client_visible") is False:
+        return None
+    fields: dict = {}
+    if row["dispel_type"]:
+        fields["dispel_type"] = DISPEL_TYPES[built["dispel_type"]]
+    if row["mechanic"]:
+        fields["mechanic"] = MECHANICS[built["mechanic"]]
+    if row["aura_description"]:
+        fields["aura_description"] = row["aura_description"]
+    if not fields:
+        return None
+    return {"spell_id": built["spell_id"], "calling": row["calling"], "key": row["key"],
+            "rank": number(row["rank"], f"{where} rank"), "fields": fields}
+
+
+def merge_override(overrides: list[dict], extra: dict, where: str) -> None:
+    """Add an aura's override, folding it into the override of the same spell id (a skill that is
+    also the spell its aura shows as): one Spell.dbc row, one override. Two rows that set one field
+    to different values fail."""
+    for entry in overrides:
+        if entry["spell_id"] == extra["spell_id"]:
+            for field, value in extra["fields"].items():
+                if entry["fields"].setdefault(field, value) != value:
+                    raise BuildError(f"{where}: {field} {value!r} differs from {entry['fields'][field]!r} on "
+                                     f"{entry['calling']}/{entry['key']}, which also overrides spell {extra['spell_id']}")
+            return
+    overrides.append(extra)
+
+
 def build_aura(row: dict, built: dict, where: str) -> dict:
     """An aura row: a borrowed spell id, a duration, charges and effects, granted by key."""
     out = {"key": built["key"], "name": built["name"]}
-    for column in ("spell_id", "client_visible", "icon_id", "status", "school", "prevention"):
+    for column in ("spell_id", "client_visible", "icon_id", "status", "school", "prevention", "target"):
         if column in built:
             out[column] = built[column]
+    out.update(build_aura_columns(row, where))
     for column in ("duration_ms", "charges"):
         if row[column]:
             out[column] = number(row[column], f"{where} {column}")
@@ -376,6 +482,18 @@ def check_proc(params: dict, auras: set[str], where: str) -> None:
         for key in keys:
             if key not in auras:
                 raise BuildError(f"{where}: apply_aura {key!r} is not an aura row of this Calling")
+
+
+def check_apply_aura(kind: str, params: dict, auras: dict[str, set[str]], where: str) -> None:
+    """An effect other than a proc that applies a lasting effect names one aura row of the Calling,
+    and that aura must hold an effect of the same kind: the realm takes its params from there."""
+    key = params["apply_aura"]
+    if not isinstance(key, str):
+        raise BuildError(f"{where}: apply_aura names one aura key, has {key!r}")
+    if key not in auras:
+        raise BuildError(f"{where}: apply_aura {key!r} is not an aura row of this Calling")
+    if kind not in auras[key]:
+        raise BuildError(f"{where}: aura {key!r} has no {kind} effect for apply_aura to apply")
 
 
 def check_vocabulary(kind: str, params: dict, where: str) -> None:
@@ -641,7 +759,7 @@ def build_shape(row: dict, kind: str, school: str, hidden: bool, where: str) -> 
     return out
 
 
-def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
+def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
         raise BuildError(f"{where}: modelled is {modelled!r}, want yes or no")
@@ -689,6 +807,8 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
             check_kind_params(kind, parsed, here)
         if kind == "proc":
             check_proc(parsed, auras, here)
+        elif "apply_aura" in parsed:
+            check_apply_aura(kind, parsed, auras, here)
         check_vocabulary(kind, parsed, here)
         if kind == "weapon_strike" and outcomes.get("dodge") is False and outcomes.get("parry") is False:
             # The realm reads an unavoidable strike from the effect; the outcomes cell is its one source.
@@ -854,12 +974,15 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
                              f"which shares cooldown_category {name!r}")
     callings: dict[str, dict] = {}
     overrides: list[dict] = []
+    aura_overrides: list[tuple[dict, str]] = []
     seen: set[tuple] = set()
     realm_ids: dict[str, str] = {}
     talent_rows: dict[tuple, list[tuple[dict, dict, str]]] = {}
-    # A calling's aura keys are read before any row, so row order never matters.
-    auras = {c: {r["key"] for r in rows if r["kind"] == "aura" and r["calling"] == c} for c in
-             {r["calling"] for r in rows}}
+    # A calling's aura keys, each with the effect kinds it holds, are read before any row, so row
+    # order never matters.
+    auras = {c: {r["key"]: {r[f"effect{i}_kind"] for i in range(1, MAX_EFFECTS + 1) if r[f"effect{i}_kind"]}
+                 for r in rows if r["kind"] == "aura" and r["calling"] == c}
+             for c in {r["calling"] for r in rows}}
     for line, row in enumerate(rows, start=2):
         where = f"line {line} ({row['calling']}/{row['key']})"
         kind = row["kind"]
@@ -869,6 +992,10 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
             raise BuildError(f"{where}: calling and key are required")
         if row["status"] not in STATUSES:
             raise BuildError(f"{where}: status is {row['status']!r}, want one of {', '.join(STATUSES)}")
+        if kind != "aura":
+            for column in AURA_ONLY_COLUMNS:
+                if row[column]:
+                    raise BuildError(f"{where} {column}: set on a {kind} row; only aura rows carry it")
         row_class = class_id(row["class"], where)
         calling = callings.setdefault(row["calling"], {"key": row["calling"], "class": row_class, "skills": [],
                                                       "talent_tabs": [], "auras": []})
@@ -903,7 +1030,10 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
             raise BuildError(f"{where}: duplicate {kind} rank")
         seen.add(identity)
         if kind == "aura":
-            calling["auras"].append(build_aura(row, built, where))
+            aura = build_aura(row, built, where)
+            calling["auras"].append(aura)
+            if override := aura_override(row, aura, where):
+                aura_overrides.append((override, where))
             continue
         spellmods = build_spellmods(row, where, masks.get(row["calling"], {}), spell_flags is not None)
         if spellmods and kind == "aura":
@@ -918,6 +1048,10 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
             calling["skills"].append(built)
         else:
             talent_rows.setdefault((row["calling"], row["key"]), []).append((row, built, where))
+
+    # An aura's Spell.dbc fields join the override of a skill that is the same spell, whatever the row order.
+    for extra, where in aura_overrides:
+        merge_override(overrides, extra, where)
 
     for (calling_key, key), ranks in talent_rows.items():
         calling = callings[calling_key]

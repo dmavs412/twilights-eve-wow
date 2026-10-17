@@ -775,6 +775,130 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(data[0]["auras"][0]["school"], "nature")
 
+    def aura(self, **cells: str) -> dict:
+        """The aura the first Calling of a build carries, built from AURA plus `cells`."""
+        done, data = self.run_build([{**AURA, **cells}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return data[0]["auras"][0]
+
+    def test_aura_only_columns_default(self):
+        aura = self.aura()
+        self.assertEqual(
+            {k: aura[k] for k in ("max_stacks", "stack_rule", "unique_per", "group_scope", "dispel_type",
+                                  "aura_positive", "aura_hidden", "cancelable", "persist_death")},
+            {"max_stacks": 1, "stack_rule": "refresh", "unique_per": "caster", "group_scope": "caster",
+             "dispel_type": "none", "aura_positive": True, "aura_hidden": False, "cancelable": True,
+             "persist_death": False})
+        for absent in ("exclusive_group", "mechanic", "aura_description", "break_on", "grants_form"):
+            self.assertNotIn(absent, aura)
+
+    def test_an_enemy_target_makes_a_debuff_that_cannot_be_cancelled(self):
+        aura = self.aura(target="enemy")
+        self.assertEqual((aura["target"], aura["aura_positive"], aura["cancelable"]), ("enemy", False, False))
+        aura = self.aura(target="enemy", aura_positive="yes", cancelable="yes")
+        self.assertEqual((aura["aura_positive"], aura["cancelable"]), (True, True))
+        aura = self.aura(aura_positive="no")
+        self.assertEqual((aura["aura_positive"], aura["cancelable"]), (False, False))
+
+    def test_aura_only_columns_are_read(self):
+        aura = self.aura(max_stacks="5", stack_rule="replace", unique_per="target", exclusive_group="seal",
+                         group_scope="target", dispel_type="magic", mechanic="snare", aura_hidden="yes",
+                         persist_death="yes", aura_description="Slowed by $s1%.", grants_form="30")
+        self.assertEqual((aura["max_stacks"], aura["stack_rule"], aura["unique_per"]), (5, "replace", "target"))
+        self.assertEqual((aura["exclusive_group"], aura["group_scope"]), ("seal", "target"))
+        self.assertEqual((aura["dispel_type"], aura["mechanic"]), ("magic", "snare"))
+        self.assertEqual((aura["aura_hidden"], aura["persist_death"]), (True, True))
+        self.assertEqual((aura["aura_description"], aura["grants_form"]), ("Slowed by $s1%.", 30))
+
+    def test_break_on_is_read(self):
+        self.assertEqual(self.aura(break_on="damage=yes")["break_on"], {"damage": True})
+        self.assertEqual(self.aura(break_on="damage_threshold=30;move=yes")["break_on"],
+                         {"damage_threshold": 30, "move": True})
+        self.assertEqual(self.aura(break_on="attack=yes;stealth_break=yes;leave_combat=yes")["break_on"],
+                         {"attack": True, "stealth_break": True, "leave_combat": True})
+
+    def test_aura_column_failures_name_the_row_and_the_column(self):
+        for column, value in (("max_stacks", "0"), ("max_stacks", "1.5"), ("stack_rule", "pile"),
+                              ("unique_per", "world"), ("group_scope", "world"), ("dispel_type", "holy"),
+                              ("mechanic", "dizzy"), ("aura_positive", "maybe"), ("aura_hidden", "1"),
+                              ("cancelable", "sure"), ("persist_death", "true"), ("grants_form", "0"),
+                              ("grants_form", "stealth"), ("break_on", "damage"), ("break_on", "damage=no"),
+                              ("break_on", "sneeze=yes"), ("break_on", "damage=yes;damage=yes"),
+                              ("break_on", "damage=yes;damage_threshold=5"), ("break_on", "damage_threshold=0")):
+            with self.subTest(column=column, value=value):
+                extra = {"exclusive_group": "g"} if column == "group_scope" else {}
+                done, data = self.run_build([{**AURA, **extra, column: value}])
+                self.assertNotEqual(done.returncode, 0)
+                self.assertRegex(done.stderr, rf"vanguard/buff\) {column}|vanguard/buff\) {column} ")
+                self.assertIsNone(data)
+
+    def test_a_group_scope_needs_an_exclusive_group(self):
+        self.assert_fails([{**AURA, "group_scope": "target"}], "vanguard/buff) group_scope: needs exclusive_group")
+
+    def test_aura_only_columns_fail_on_other_rows(self):
+        values = {"max_stacks": "2", "stack_rule": "replace", "unique_per": "target", "exclusive_group": "g",
+                  "group_scope": "caster", "dispel_type": "magic", "mechanic": "stun", "aura_positive": "yes",
+                  "aura_hidden": "no", "cancelable": "yes", "persist_death": "no", "aura_description": "x",
+                  "break_on": "damage=yes", "grants_form": "30"}
+        for column, value in values.items():
+            for row, kind in ((STRIKE, "skill"), (talent("rage", 1, 0, 0), "talent"), (CALLING, "calling"),
+                              (TAB, "talent_tab")):
+                with self.subTest(column=column, kind=kind):
+                    done, data = self.run_build([{**row, column: value}])
+                    self.assertNotEqual(done.returncode, 0)
+                    self.assertIn(f"{column}: set on a {kind} row; only aura rows carry it", done.stderr)
+                    self.assertIsNone(data)
+
+    def test_aura_dbc_fields_reach_the_patch(self):
+        done, _ = self.run_build([CALLING, {**AURA, "dispel_type": "poison", "mechanic": "stun",
+                                            "aura_description": "Poisoned."}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.patch["spells"], [{
+            "spell_id": 14177, "calling": "vanguard", "key": "buff", "rank": 1,
+            "fields": {"dispel_type": 4, "mechanic": 12, "aura_description": "Poisoned."}}])
+
+    def test_an_aura_that_sets_none_of_them_adds_no_override(self):
+        done, _ = self.run_build([CALLING, {**AURA, "max_stacks": "3"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.patch["spells"], [])
+
+    def test_an_aura_on_a_skills_spell_joins_the_skills_override(self):
+        aura = {**AURA, "client_spell_id": STRIKE["client_spell_id"], "mechanic": "incapacitate"}
+        for rows in ([CALLING, STRIKE, aura], [CALLING, aura, STRIKE]):
+            done, _ = self.run_build(rows)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(len(self.patch["spells"]), 1)
+            entry = self.patch["spells"][0]
+            self.assertEqual((entry["key"], entry["fields"]["mechanic"], entry["fields"]["cost"]), ("strike", 14, 15))
+
+    def test_two_auras_disagreeing_on_one_spell_fail(self):
+        other = {**AURA, "key": "other", "mechanic": "snare"}
+        self.assert_fails([CALLING, {**AURA, "mechanic": "stun"}, other], "(vanguard/other): mechanic 11 differs from 12")
+
+    def test_a_hidden_aura_adds_no_override(self):
+        hidden = {**AURA, "client_visible": "no", "realm_spell_id": "1000001", "client_spell_id": "", "duration_ms": "",
+                  "mechanic": "stun"}
+        done, data = self.run_build([CALLING, hidden])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.patch["spells"], [])
+        self.assertEqual(data[0]["auras"][0]["mechanic"], "stun")
+
+    def test_apply_aura_names_an_aura_with_an_effect_of_the_kind(self):
+        sleep = {**AURA, "key": "sleep", "effect1_kind": "incapacitate", "effect1_params": "drop_combat=yes",
+                 "modelled": "yes"}
+        hit = {**STRIKE, "effect4_kind": "", "effect4_params": "", "effect2_kind": "incapacitate",
+               "effect2_params": "apply_aura=sleep"}
+        done, data = self.run_build([CALLING, sleep, hit])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        effect = data[0]["skills"][0]["effects"][1]
+        self.assertEqual((effect["kind"], effect["params"]), ("incapacitate", {"apply_aura": "sleep"}))
+        self.assert_fails([CALLING, sleep, {**hit, "effect2_params": "apply_aura=ghost"}],
+                          "(vanguard/strike) effect2: apply_aura 'ghost' is not an aura row")
+        self.assert_fails([CALLING, sleep, {**hit, "effect2_kind": "stun"}],
+                          "(vanguard/strike) effect2: aura 'sleep' has no stun effect")
+        self.assert_fails([CALLING, sleep, {**hit, "effect2_params": "apply_aura=sleep|buff"}],
+                          "apply_aura names one aura key")
+
     def test_the_old_combat_column_is_refused(self):
         done, _ = self.run_build([STRIKE], extra_columns=("requires_out_of_combat",))
         self.assertNotEqual(done.returncode, 0)

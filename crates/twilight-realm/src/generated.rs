@@ -47,6 +47,9 @@ struct GenAura {
     charges: u32,
     #[serde(default)]
     modelled: bool,
+    /// What ends it early: `damage` is read for a skill that applies it (an incapacitate).
+    #[serde(default)]
+    break_on: Map<String, Value>,
     #[serde(default)]
     effects: Vec<GenEffect>,
 }
@@ -152,7 +155,7 @@ fn calling(g: GenCalling) -> CallingDef {
             .shapeshift_form
             .unwrap_or_else(|| missing("shapeshift_form")),
         armour: g.armour.clone(),
-        skills: g.skills.iter().filter_map(skill).collect(),
+        skills: g.skills.iter().filter_map(|s| skill(s, &g.auras)).collect(),
         talent_tabs: tabs.into_iter().map(|t| tab(&g.key, t)).collect(),
         auras: g.auras.iter().filter_map(aura).collect(),
         key: g.key.clone(),
@@ -180,16 +183,34 @@ fn aura(g: &GenAura) -> Option<AuraDef> {
     })
 }
 
-/// The realm's [`Effect`] for a row's effect, or `None` for a kind it does not have yet.
-fn effect(e: &GenEffect) -> Option<Effect> {
+/// The realm's [`Effect`] for a row's effect, or `None` for a kind it does not have yet. An effect
+/// with `apply_aura=key` takes its params from that aura row's effect of the same kind, plus the
+/// row's duration and, for `break_on: damage`, `break_on_damage`; params the skill's effect sets
+/// itself (`per_combo`) win. An aura that is missing or unmodelled makes it `None`.
+fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
     let mut object = e.params.clone();
+    if let Some(key) = object.remove("apply_aura") {
+        let aura = auras
+            .iter()
+            .find(|a| a.modelled && key.as_str() == Some(a.key.as_str()))?;
+        let lasting = aura.effects.iter().find(|l| l.kind == e.kind)?;
+        let mut merged = lasting.params.clone();
+        if aura.duration_ms > 0 {
+            merged.insert("duration_ms".into(), aura.duration_ms.into());
+        }
+        if e.kind == "incapacitate" && aura.break_on.contains_key("damage") {
+            merged.insert("break_on_damage".into(), true.into());
+        }
+        merged.extend(object);
+        object = merged;
+    }
     object.insert("kind".into(), e.kind.clone().into());
     serde_json::from_value(Value::Object(object)).ok()
 }
 
 /// The skill, or `None` while it has no effects or any is a kind the realm lacks.
-fn skill(g: &GenSkill) -> Option<Skill> {
-    let effects: Option<Vec<Effect>> = g.effects.iter().map(effect).collect();
+fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
+    let effects: Option<Vec<Effect>> = g.effects.iter().map(|e| effect(e, auras)).collect();
     let effects = effects.filter(|e| !e.is_empty())?;
     Some(Skill {
         key: g.key.clone(),
@@ -301,6 +322,49 @@ mod tests {
         let tab = tab("Warrior", &g);
         let keys: Vec<&str> = tab.talents.iter().map(|t| t.key.as_str()).collect();
         assert_eq!(keys, ["one"]);
+    }
+
+    fn auras() -> Vec<GenAura> {
+        serde_json::from_value(serde_json::json!([
+            {"key": "sleep", "spell_id": 1776, "duration_ms": 4000, "modelled": true,
+             "break_on": {"damage": true},
+             "effects": [{"kind": "incapacitate", "params": {"drop_combat": true}}]},
+            {"key": "unbuilt", "spell_id": 1, "duration_ms": 1000, "modelled": false,
+             "effects": [{"kind": "stun", "params": {"aura_spell_id": 1}}]},
+        ]))
+        .expect("auras read")
+    }
+
+    fn skill_applying(key: &str, kind: &str) -> Option<Skill> {
+        let g: GenSkill = serde_json::from_value(serde_json::json!({
+            "key": "hit", "spell_id": 5,
+            "effects": [{"kind": kind, "params": {"apply_aura": key}}],
+        }))
+        .expect("a skill reads");
+        skill(&g, &auras())
+    }
+
+    /// `apply_aura` expands into the aura row's effect: its params, the row's duration, and
+    /// `break_on: damage` as `break_on_damage`.
+    #[test]
+    fn an_applied_aura_fills_in_the_skills_effect() {
+        let hit = skill_applying("sleep", "incapacitate").expect("it loads");
+        assert_eq!(
+            hit.effects,
+            [Effect::Incapacitate {
+                duration_ms: 4000,
+                break_on_damage: true,
+                drop_combat: true,
+            }]
+        );
+    }
+
+    /// An aura that is unknown, unmodelled or has no effect of the skill's kind drops the skill.
+    #[test]
+    fn an_applied_aura_that_cannot_load_drops_the_skill() {
+        assert!(skill_applying("ghost", "incapacitate").is_none());
+        assert!(skill_applying("unbuilt", "stun").is_none());
+        assert!(skill_applying("sleep", "stun").is_none());
     }
 }
 

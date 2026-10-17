@@ -72,8 +72,7 @@
      {
       "kind": "stun",
       "params": {
-       "duration_ms": 1000,
-       "aura_spell_id": 7922
+       "apply_aura": "charge_stun"
       }
      }
     ],
@@ -108,12 +107,11 @@
      {
       "kind": "incapacitate",
       "params": {
-       "duration_ms": 4000,
-       "break_on_damage": true,
-       "drop_combat": true
+       "apply_aura": "gouge_incapacitate"
       }
      }
     ],
+    "mechanic": 14,
     "range_index": 2,
     "duration_index": 35
    }
@@ -3424,6 +3422,15 @@
       }
      }
     ]
+   }
+  },
+  {
+   "spell_id": 7922,
+   "calling": "basic_warrior",
+   "key": "charge_stun",
+   "rank": 1,
+   "fields": {
+    "mechanic": 12
    }
   }
  ],

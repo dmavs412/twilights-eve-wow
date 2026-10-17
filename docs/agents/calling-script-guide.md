@@ -128,7 +128,11 @@ Write `key=value` pairs joined by `;`, and lists joined by `|`:
 
 ### Auras (aura rows only)
 - Anything that lasts is an `aura` row with `duration_ms`. The skill applies it with an effect whose params include
-  `apply_aura=<aura key>`.
+  `apply_aura=<aura key>`: one key, and the aura row must hold an effect of the same kind as the skill's effect
+  (Charge: `effect3_kind=stun`, `effect3_params=apply_aura=charge_stun`; the aura row has `effect1_kind=stun`). Put
+  the lasting effect's params and `duration_ms` on the aura row, not on the skill's effect. An incapacitate that
+  damage ends is `break_on=damage=yes` on its aura row. Set `target=enemy` on a debuff row.
+- Aura-only columns on any other row kind fail the build.
 - `max_stacks` (default 1).
 - `stack_rule`: `refresh` (default), `replace` (a finisher's new strength replaces the old), `ignore` or
   `independent`.
