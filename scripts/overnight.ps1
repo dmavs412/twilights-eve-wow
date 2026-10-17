@@ -25,11 +25,22 @@ param(
 
 $ErrorActionPreference = "Continue"
 $Repo = "dmavs412/twilights-eve-wow"
-# Lowercase drive letter: Claude keys workspace trust by cwd as spelled, and VS Code trusted
-# "c:/Users/...". An uppercase "C:" counts as a different, untrusted project.
 $Root = Split-Path $PSScriptRoot -Parent
-$Root = $Root.Substring(0, 1).ToLower() + $Root.Substring(1)
 Set-Location $Root
+
+# Headless claude keys workspace trust on "C:/Users/..." (uppercase drive, forward slashes),
+# a different entry from the "c:/..." one VS Code trusted. Untrusted means the allowlist in
+# .claude/settings.json is ignored and every ticket stalls on a denied Bash call.
+function Test-Trusted {
+    $cfg = Join-Path $env:USERPROFILE ".claude.json"
+    if (-not (Test-Path $cfg)) { return $false }
+    $key = ($Root -replace '\\', '/')
+    $key = $key.Substring(0, 1).ToUpper() + $key.Substring(1)
+    $d = Get-Content $cfg -Raw | ConvertFrom-Json
+    $p = $d.projects.PSObject.Properties[$key]
+    if ($null -eq $p) { return $false }
+    return [bool]$p.Value.hasTrustDialogAccepted
+}
 
 function Find-Claude {
     $cmd = Get-Command claude -ErrorAction SilentlyContinue
@@ -90,6 +101,9 @@ if ($branch -ne "main") { throw "on branch '$branch', not main" }
 if (@(git status --porcelain).Count -gt 0) { throw "working tree is not clean; commit or stash first" }
 gh auth status 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "gh is not authenticated" }
+if (-not (Test-Trusted)) {
+    throw "workspace not trusted for headless runs: set projects[`"C:/Users/davis/code/twilights-eve-wow`"].hasTrustDialogAccepted = true in ~/.claude.json"
+}
 
 $stamp = Get-Date -Format "yyyy-MM-dd_HHmm"
 $script:LogDir = Join-Path $Root ".claude\overnight\$stamp"
