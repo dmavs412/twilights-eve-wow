@@ -2,7 +2,8 @@
 # level falls in, and the last band also serves every level above it. Copied from
 # data/twilights-eve/token_vendor.json (`bands`, `token_cost`); see
 # docs/reference/items-and-vendors.md, "Token vendor". tests/content_tokens.rs checks that the
-# two agree. Every entry is an item template in content/items.toml.
+# two agree. Every entry is a row of data/twilights-eve/gear.csv; the research's greens for a
+# body part outside the ten Gear Slots (ADR 0007) are left out.
 #
 # `tokens` is the price in Twilight Tokens: max(1, round(item_level / 4 * slot_mod)), with the
 # slot multipliers the research proposes. The rows are the merchant window's order.
@@ -10,82 +11,47 @@
 [[band]]
 levels = [1, 10]
 item = [
-  { entry = 2966, tokens = 2 }, # Warrior's Pants, legs, required level 5
   { entry = 2965, tokens = 2 }, # Warrior's Tunic, chest, required level 6
   { entry = 3223, tokens = 2 }, # Frostmane Scepter, one_hand, required level 6
   { entry = 8180, tokens = 1 }, # Hunting Bow, ranged, required level 6
-  { entry = 2284, tokens = 2 }, # Rat Cloth Cloak, back, required level 10
   { entry = 6195, tokens = 3 }, # Wax-polished Armor, chest, required level 10
-  { entry = 3302, tokens = 3 }, # Brackwater Boots, feet, required level 10
-  { entry = 2980, tokens = 3 }, # Veteran Gloves, hands, required level 10
-  { entry = 2978, tokens = 3 }, # Veteran Leggings, legs, required level 10
   { entry = 826, tokens = 3 }, # Brutish Riverpaw Axe, one_hand, required level 10
   { entry = 3036, tokens = 2 }, # Heavy Shortbow, ranged, required level 10
   { entry = 3651, tokens = 3 }, # Veteran Shield, shield, required level 10
   { entry = 3188, tokens = 4 }, # Coral Claymore, two_hand, required level 10
-  { entry = 832, tokens = 2 }, # Silver Defias Belt, waist, required level 10
 ]
 
 [[band]]
 levels = [11, 20]
 item = [
-  { entry = 14727, tokens = 4 }, # War Paint Legguards, legs, required level 14
   { entry = 1440, tokens = 4 }, # Gnoll Skull Basher, one_hand, required level 14
-  { entry = 3211, tokens = 2 }, # Burnished Bracers, wrist, required level 14
-  { entry = 14745, tokens = 2 }, # Hulking Cloak, back, required level 15
-  { entry = 2992, tokens = 4 }, # Burnished Gloves, hands, required level 15
   { entry = 1460, tokens = 5 }, # Shadowhide Two-handed Sword, two_hand, required level 15
-  { entry = 4697, tokens = 3 }, # Burnished Girdle, waist, required level 15
   { entry = 2989, tokens = 5 }, # Burnished Tunic, chest, required level 16
-  { entry = 2991, tokens = 4 }, # Burnished Boots, feet, required level 16
   { entry = 12052, tokens = 3 }, # Ring of the Moon, finger, required level 16
   { entry = 4576, tokens = 3 }, # Light Bow, ranged, required level 16
   { entry = 3655, tokens = 4 }, # Burnished Shield, shield, required level 16
-  { entry = 14743, tokens = 3 }, # Hulking Bands, wrist, required level 17
   { entry = 14730, tokens = 5 }, # War Paint Chestpiece, chest, required level 18
-  { entry = 14747, tokens = 4 }, # Hulking Gauntlets, hands, required level 18
   { entry = 3039, tokens = 3 }, # Short Ash Bow, ranged, required level 18
-  { entry = 5750, tokens = 3 }, # Warchief's Girdle, waist, required level 18
-  { entry = 4706, tokens = 3 }, # Lambent Scale Cloak, back, required level 19
-  { entry = 14742, tokens = 4 }, # Hulking Boots, feet, required level 19
   { entry = 12054, tokens = 4 }, # Demon Band, finger, required level 19
   { entry = 885, tokens = 5 }, # Black Metal Axe, one_hand, required level 19
-  { entry = 14748, tokens = 6 }, # Hulking Leggings, legs, required level 20
   { entry = 15894, tokens = 4 }, # Bristlebark Buckler, shield, required level 20
-  { entry = 3231, tokens = 4 }, # Cutthroat Pauldrons, shoulder, required level 20
   { entry = 911, tokens = 6 }, # Ironwood Treebranch, two_hand, required level 20
 ]
 
 [[band]]
 levels = [21, 30]
 item = [
-  { entry = 14752, tokens = 3 }, # Slayer's Cape, back, required level 22
   { entry = 5001, tokens = 4 }, # Heart Ring, finger, required level 22
   { entry = 2018, tokens = 5 }, # Skeletal Longsword, one_hand, required level 22
-  { entry = 4705, tokens = 5 }, # Lambent Scale Pauldrons, shoulder, required level 22
   { entry = 753, tokens = 6 }, # Dragonmaw Shortsword, one_hand, required level 23
-  { entry = 14755, tokens = 4 }, # Slayer's Sash, waist, required level 23
-  { entry = 14750, tokens = 4 }, # Slayer's Cuffs, wrist, required level 23
   { entry = 756, tokens = 7 }, # Tunnel Pick, two_hand, required level 24
   { entry = 2014, tokens = 7 }, # Black Metal Greatsword, two_hand, required level 24
-  { entry = 4712, tokens = 4 }, # Glimmering Mail Girdle, waist, required level 24
-  { entry = 6387, tokens = 4 }, # Glimmering Mail Bracers, wrist, required level 24
-  { entry = 4072, tokens = 5 }, # Glimmering Mail Gauntlets, hands, required level 25
-  { entry = 6386, tokens = 7 }, # Glimmering Mail Legguards, legs, required level 25
   { entry = 4071, tokens = 7 }, # Glimmering Mail Breastplate, chest, required level 26
-  { entry = 4073, tokens = 5 }, # Glimmering Mail Greaves, feet, required level 26
-  { entry = 6389, tokens = 7 }, # Glimmering Mail Coif, head, required level 26
   { entry = 5003, tokens = 5 }, # Crystal Starfire Medallion, neck, required level 26
   { entry = 5754, tokens = 5 }, # Wolfpack Medallion, neck, required level 26
   { entry = 3041, tokens = 4 }, # "Mage-Eye" Blunderbuss, ranged, required level 26
   { entry = 6400, tokens = 5 }, # Glimmering Shield, shield, required level 26
-  { entry = 14763, tokens = 4 }, # Enduring Cape, back, required level 27
   { entry = 6396, tokens = 7 }, # Emblazoned Chestpiece, chest, required level 27
-  { entry = 4464, tokens = 6 }, # Trouncing Boots, feet, required level 27
-  { entry = 3341, tokens = 6 }, # Gauntlets of Ogre Strength, hands, required level 27
-  { entry = 6204, tokens = 7 }, # Tribal Worg Helm, head, required level 27
-  { entry = 14757, tokens = 7 }, # Slayer's Pants, legs, required level 27
   { entry = 4474, tokens = 4 }, # Ravenwood Bow, ranged, required level 27
   { entry = 15892, tokens = 6 }, # Slayer's Shield, shield, required level 27
-  { entry = 14587, tokens = 6 }, # Dokebi Mantle, shoulder, required level 27
 ]

@@ -81,6 +81,7 @@ pub fn wears_on_hit(roll: u32) -> bool {
     roll < 5
 }
 
-/// The equipment slots a wearing hit picks from (`EQUIPMENT_SLOT_START..END`); an empty one loses
-/// nothing.
-pub const WEAR_SLOTS: u32 = 19;
+/// The equipment slots a wearing hit picks from: the ten Gear Slots' (neck, chest, fingers,
+/// trinkets, main hand, off hand, ranged; ADR 0007), where vanilla picks from all nineteen. An
+/// empty one loses nothing.
+pub const WEAR_SLOTS: [u8; 9] = [1, 4, 10, 11, 12, 13, 15, 16, 17];

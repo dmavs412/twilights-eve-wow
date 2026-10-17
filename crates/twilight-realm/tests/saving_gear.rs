@@ -149,6 +149,15 @@ fn a_save_naming_an_unknown_item_is_unreadable() {
 }
 
 #[test]
+fn a_save_from_before_the_gear_slots_loads_without_the_retired_gear() {
+    // Recruit's Pants, which the ten Gear Slots retired (ADR 0007), and a sword that stays.
+    let (guid, blob) = save_with(1, 0, &[(6, 39, 1), (23, FINE_SCIMITAR, 1)]);
+    let events = reload(guid, &blob);
+    let entries: Vec<u32> = carried(&events, guid).iter().map(|c| c.1).collect();
+    assert_eq!(entries, [FINE_SCIMITAR]);
+}
+
+#[test]
 fn a_save_naming_a_slot_twice_is_unreadable() {
     let (_, blob) = save_with(1, 0, &[(23, FINE_SCIMITAR, 1), (23, FINE_SCIMITAR, 1)]);
     assert_eq!(

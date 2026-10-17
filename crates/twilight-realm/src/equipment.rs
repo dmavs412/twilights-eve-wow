@@ -106,7 +106,9 @@ fn container_pairs(c: &Char, bag: u8) -> Vec<(u16, u32)> {
 }
 
 /// The fields that say what place `at` holds, `(object, field, value)`: a player slot's guid
-/// (and for a worn slot the entry others see), or the guid in the bag's container slot.
+/// (and for a worn slot the entry others see), or the guid in the bag's container slot. The chest
+/// slot also writes its Chest's Wardrobe (ADR 0007): the look worn on each hidden body part, into
+/// those slots' visible-item fields only, so no item object or guid stands behind them.
 fn slot_pairs(c: &Char, at: Pos, item: Option<&Item>) -> Vec<(u64, u16, u32)> {
     let guid = item.map_or(0, |i| i.guid);
     let (object, field) = match at.own_slot() {
@@ -121,13 +123,33 @@ fn slot_pairs(c: &Char, at: Pos, item: Option<&Item>) -> Vec<(u64, u16, u32)> {
         .map(|(f, v)| (object, f, v))
         .collect();
     if at.is_worn() {
-        pairs.push((
-            c.guid,
-            PLAYER_VISIBLE_ITEM_1_0 + 12 * u16::from(at.slot),
-            item.map_or(0, |i| i.entry),
-        ));
+        pairs.push((c.guid, visible_item(at.slot), item.map_or(0, |i| i.entry)));
+    }
+    if at == Pos::own(SLOT_CHEST) {
+        pairs.extend(
+            wardrobe(item)
+                .into_iter()
+                .map(|(slot, look)| (c.guid, visible_item(slot), look)),
+        );
     }
     pairs
+}
+
+/// `PLAYER_VISIBLE_ITEM_<slot>_0`.
+fn visible_item(slot: u8) -> u16 {
+    PLAYER_VISIBLE_ITEM_1_0 + 12 * u16::from(slot)
+}
+
+/// `EQUIPMENT_SLOT_CHEST`.
+const SLOT_CHEST: u8 = 4;
+
+/// What the worn Chest dresses each hidden body part in: `(equipment slot, look template)`, 0
+/// for bare, and bare everywhere with no Chest.
+fn wardrobe(chest: Option<&Item>) -> [(u8, u32); 8] {
+    let looks = chest
+        .and_then(|i| items::template(i.entry))
+        .map_or(&[][..], |t| &t.wardrobe[..]);
+    std::array::from_fn(|i| (items::WARDROBE_SLOTS[i], looks.get(i).copied().unwrap_or(0)))
 }
 
 /// The character's stats in what it wears.
@@ -240,12 +262,15 @@ pub(crate) fn money_pair(inventory: &Inventory) -> (u16, u32) {
     (PLAYER_FIELD_COINAGE, inventory.money)
 }
 
-/// The character-select doll: each worn item's look.
+/// The character-select doll: each worn item's look, and the worn Chest's Wardrobe on the body
+/// parts it dresses.
 pub(crate) fn roster_gear(inventory: &Inventory) -> [CharEnumItem; 19] {
+    let looks = wardrobe(inventory.get(SLOT_CHEST));
     std::array::from_fn(|slot| {
-        inventory
-            .get(slot as u8)
-            .and_then(|i| items::template(i.entry))
+        let look = looks.iter().find(|(s, _)| usize::from(*s) == slot);
+        look.map(|(_, entry)| *entry)
+            .or_else(|| inventory.get(slot as u8).map(|i| i.entry))
+            .and_then(items::template)
             .map_or(CharEnumItem::default(), |t| CharEnumItem {
                 display_id: t.display_id,
                 inventory_type: t.inventory_type as u8,
@@ -370,7 +395,7 @@ pub(crate) fn auto_equip(c: &mut Char, bag: u8, slot: u8, events: &mut Vec<Sessi
     };
     let slots = equip_slots(t.inventory_type);
     let Some(&first) = slots.first() else {
-        refusal(Refusal::NotEquippable, item.guid, events);
+        refusal(gear::slotless(t.inventory_type), item.guid, events);
         return Moved::default();
     };
     let dst = slots

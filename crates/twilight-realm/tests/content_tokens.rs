@@ -1,7 +1,9 @@
 //! The Token vendor's stock (`content/token_vendor.toml`) against the research it comes from,
-//! `data/twilights-eve/token_vendor.json` (`docs/reference/items-and-vendors.md`).
+//! `data/twilights-eve/token_vendor.json` (`docs/reference/items-and-vendors.md`), less the greens
+//! for a body part outside the ten Gear Slots (ADR 0007).
 
 use serde_json::Value;
+use twilight_realm::rules::gear::is_gear_slot;
 use twilight_realm::rules::tokens::stock;
 
 fn reference() -> Value {
@@ -18,6 +20,7 @@ fn each_band_sells_the_researched_greens_at_the_researched_price() {
             .as_array()
             .unwrap()
             .iter()
+            .filter(|row| is_gear_slot(row["item"]["inventory_type"].as_u64().unwrap() as u32))
             .map(|row| {
                 (
                     row["entry"].as_u64().unwrap() as u32,

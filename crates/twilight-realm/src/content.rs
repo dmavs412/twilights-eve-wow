@@ -24,54 +24,41 @@ pub const NORTHSHIRE: [f32; 4] = [-8949.95, -132.493, 83.5312, 0.0];
 /// The Hub: the Crossroads inn's hall, where characters start, facing the bar. `[x, y, z, facing]`.
 pub const CROSSROADS: [f32; 4] = [-417.0, -2646.0, 96.0, 0.0];
 
-/// The races in `ChrRaces.dbc` order (ids 1..=8), as `content/starting_outfits.toml` names them.
-const RACE_KEYS: [&str; 8] = [
-    "human",
-    "orc",
-    "dwarf",
-    "night_elf",
-    "undead",
-    "tauren",
-    "gnome",
-    "troll",
-];
 pub(crate) const HEARTHSTONE: u32 = 6948;
 /// `INVENTORY_SLOT_ITEM_START`: the backpack's first slot.
 const FIRST_PACK_SLOT: u8 = 23;
 
-/// One item of an outfit; the display id and inventory type are there for the content test.
+/// A Calling's starting outfit (`content/starting_outfits.toml`): one starter Chest and its
+/// weapons, ranged weapon and ammo, all Gear.
 #[derive(serde::Deserialize)]
-struct OutfitItem {
-    item: u32,
+pub(crate) struct Outfit {
+    pub(crate) items: Vec<u32>,
 }
 
-/// A race's Warrior starting outfit (`content/starting_outfits.toml`, from `CharStartOutfit.dbc`).
-fn starting_outfit(race: u8) -> impl Iterator<Item = u32> {
-    static OUTFITS: std::sync::OnceLock<std::collections::HashMap<String, Vec<OutfitItem>>> =
+/// Every Calling's starting outfit, by Calling key.
+pub(crate) fn starting_outfits() -> &'static std::collections::HashMap<String, Outfit> {
+    static OUTFITS: std::sync::OnceLock<std::collections::HashMap<String, Outfit>> =
         std::sync::OnceLock::new();
-    let outfits = OUTFITS.get_or_init(|| {
+    OUTFITS.get_or_init(|| {
         toml::from_str(include_str!("../content/starting_outfits.toml"))
             .expect("content/starting_outfits.toml parses")
-    });
-    usize::from(race)
-        .checked_sub(1)
-        .and_then(|i| RACE_KEYS.get(i))
-        .and_then(|key| outfits.get(*key))
-        .into_iter()
-        .flatten()
-        .map(|it| it.item)
+    })
 }
 
-/// A new character's belongings: its race's Warrior outfit, each item worn in its slot, and a
-/// Hearthstone in the backpack's first slot.
-pub(crate) fn starting_inventory(race: u8) -> crate::inventory::Inventory {
+/// A new character's belongings: its Calling's outfit, each item worn in its slot (a stack of
+/// ammo or thrown weapons whole), and a Hearthstone in the backpack's first slot.
+pub(crate) fn starting_inventory(calling: Calling) -> crate::inventory::Inventory {
     let mut inventory = crate::inventory::Inventory::default();
-    for entry in starting_outfit(race) {
-        let slot = crate::items::template(entry)
-            .and_then(|t| crate::rules::gear::equip_slots(t.inventory_type).first())
+    let outfit = starting_outfits().get(calling.key());
+    for &entry in outfit.into_iter().flat_map(|o| &o.items) {
+        let Some(t) = crate::items::template(entry) else {
+            continue;
+        };
+        let slot = crate::rules::gear::equip_slots(t.inventory_type)
+            .first()
             .copied();
         if let Some(slot) = slot.filter(|s| inventory.get(*s).is_none()) {
-            let item = inventory.new_item(entry, 1);
+            let item = inventory.new_item(entry, t.stack_size());
             inventory.put(slot, item);
         }
     }

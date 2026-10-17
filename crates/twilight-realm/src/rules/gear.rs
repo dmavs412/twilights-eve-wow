@@ -2,7 +2,9 @@
 //! Gear follows the Calling, never the level, so a level reset never takes gear away: every
 //! Calling of the Warrior line wields every Warrior weapon, and wears the armour its data lists
 //! (`content/callings.toml`). Wands, librams, idols and totems never. Items keep their required
-//! level only for the loot bands.
+//! level only for the loot bands. Only the ten Gear Slots exist (ADR 0007): Weapon, Offhand,
+//! Ranged, Ammo, two Rings, two Trinkets, Chest and Amulet; an item for any other body part is
+//! refused.
 
 use crate::callings::CallingDef;
 use crate::items;
@@ -16,6 +18,8 @@ pub enum Refusal {
     NeverUsable,
     /// `EQUIP_ERR_ITEM_CANT_BE_EQUIPPED`: not wearable at all.
     NotEquippable,
+    /// `EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT`: worn on a body part outside the ten Gear Slots.
+    NoGearSlot,
 }
 
 impl Refusal {
@@ -25,6 +29,7 @@ impl Refusal {
             Self::Proficiency => 8,
             Self::NeverUsable => 10,
             Self::NotEquippable => 20,
+            Self::NoGearSlot => 3,
         }
     }
 }
@@ -60,8 +65,8 @@ pub(crate) fn knows(calling: &CallingDef, class: u32, subclass: u32) -> bool {
 /// Who an item is for and whether it is equipment at all, ahead of proficiency.
 fn usable(entry: u32, race: u8) -> Result<&'static items::Template, Refusal> {
     let t = items::template(entry).ok_or(Refusal::NotEquippable)?;
-    if equip_slots(t.inventory_type).is_empty() {
-        return Err(Refusal::NotEquippable);
+    if !is_gear_slot(t.inventory_type) {
+        return Err(slotless(t.inventory_type));
     }
     let race_mask = 1i32 << (race.max(1) - 1);
     if t.allowable_class & WARRIOR_MASK == 0 || t.allowable_race & race_mask == 0 {
@@ -109,28 +114,42 @@ pub(crate) const SLOT_OFF_HAND: u8 = 16;
 /// `INVTYPE_2HWEAPON`.
 pub(crate) const INVTYPE_2HWEAPON: u32 = 17;
 
-/// The equipment slots an `InventoryType` goes in, the first free one first. One-handers go in
-/// the main hand only: a Basic Warrior has no Dual Wield. A bag goes in a bag slot; ammo is not
-/// equipment here.
+/// The `InventoryType`s of the body parts outside the ten Gear Slots: head, shoulders, shirt,
+/// waist, legs, feet, wrists, hands, back and tabard. A Chest's Wardrobe dresses them.
+const WORN_ELSEWHERE: [u32; 10] = [1, 3, 4, 6, 7, 8, 9, 10, 16, 19];
+
+/// Whether an `InventoryType` goes in one of the ten Gear Slots: a hand (main hand, off hand,
+/// one-hand, two-hand, shield, held in off hand), ranged (bow, gun, crossbow, wand, thrown,
+/// relic), ammo, a finger, a trinket, the chest (and robe) or the neck.
+pub fn is_gear_slot(inventory_type: u32) -> bool {
+    matches!(
+        inventory_type,
+        2 | 5 | 11 | 12 | 13 | 14 | 15 | 17 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 28
+    )
+}
+
+/// Why an item with no Gear Slot is refused: a body part outside the ten, or not wearable at all.
+pub(crate) fn slotless(inventory_type: u32) -> Refusal {
+    if WORN_ELSEWHERE.contains(&inventory_type) {
+        Refusal::NoGearSlot
+    } else {
+        Refusal::NotEquippable
+    }
+}
+
+/// The equipment slots an `InventoryType` goes in, the first free one first: only the ten Gear
+/// Slots' and the bag slots. One-handers go in the main hand only: a Basic Warrior has no Dual
+/// Wield, so an off-hand-only weapon has no slot either. A bag goes in a bag slot; ammo is not
+/// equipment here (1.12 keeps it in the bags).
 pub fn equip_slots(inventory_type: u32) -> &'static [u8] {
     match inventory_type {
-        1 => &[0],
         2 => &[1],
-        3 => &[2],
-        4 => &[3],
         5 | 20 => &[4],
-        6 => &[5],
-        7 => &[6],
-        8 => &[7],
-        9 => &[8],
-        10 => &[9],
         11 => &[10, 11],
         12 => &[12, 13],
-        16 => &[14],
         13 | 17 | 21 => &[SLOT_MAIN_HAND],
         14 | 23 => &[SLOT_OFF_HAND],
-        15 | 25 | 26 => &[17],
-        19 => &[18],
+        15 | 25 | 26 | 28 => &[17],
         18 => &[19, 20, 21, 22],
         _ => &[],
     }

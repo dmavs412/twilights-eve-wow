@@ -1,5 +1,5 @@
-//! The item templates (`content/items.toml`), and the `SMSG_ITEM_QUERY_SINGLE_RESPONSE` each one
-//! answers with.
+//! The item templates (`content/items.toml`, and Gear's `content/gear.toml`, generated from
+//! `data/twilights-eve/gear.csv`), and the `SMSG_ITEM_QUERY_SINGLE_RESPONSE` each one answers with.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -10,7 +10,7 @@ use serde::Deserialize;
 
 /// One item template, as the realm's table spells it. A field the table leaves out is at its
 /// default.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub(crate) struct Template {
     pub(crate) entry: u32,
@@ -60,6 +60,9 @@ pub(crate) struct Template {
     pub(crate) restores_health: u32,
     pub(crate) restores_mana: u32,
     pub(crate) duration_ms: u32,
+    /// A Chest's Wardrobe (ADR 0007): the look template worn on each hidden body part, in
+    /// [`WARDROBE_SLOTS`] order, 0 for bare. Empty on anything but a Chest.
+    pub(crate) wardrobe: Vec<u32>,
 }
 
 impl Default for Template {
@@ -102,6 +105,7 @@ impl Default for Template {
             restores_health: 0,
             restores_mana: 0,
             duration_ms: 0,
+            wardrobe: Vec::new(),
         }
     }
 }
@@ -118,12 +122,37 @@ struct Table {
     item: Vec<Template>,
 }
 
-/// Every world-drop template, by entry: what the loot pools draw from.
+/// The equipment slots a Chest's Wardrobe dresses (`EquipmentSlots`), in `wardrobe` order: head,
+/// shoulders, back, wrists, hands, waist, legs, feet.
+pub(crate) const WARDROBE_SLOTS: [u8; 8] = [0, 2, 14, 8, 9, 5, 6, 7];
+
+/// Every world-drop template, by entry: what the loot pools draw from. The junk and bags of
+/// `content/items.toml`, and the Gear a world pool holds (a `pool_level`).
 pub(crate) fn all() -> &'static HashMap<u32, Template> {
     static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
     ITEMS.get_or_init(|| {
         let table: Table = toml::from_str(include_str!("../content/items.toml"))
             .expect("content/items.toml parses");
+        table
+            .item
+            .into_iter()
+            .map(|t| (t.entry, t))
+            .chain(
+                gear()
+                    .values()
+                    .filter(|t| t.pool_level > 0)
+                    .map(|t| (t.entry, t.clone())),
+            )
+            .collect()
+    })
+}
+
+/// Every piece of Gear and the Wardrobe's look templates (`content/gear.toml`), by entry.
+fn gear() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table =
+            toml::from_str(include_str!("../content/gear.toml")).expect("content/gear.toml parses");
         table.item.into_iter().map(|t| (t.entry, t)).collect()
     })
 }
@@ -148,14 +177,22 @@ fn given() -> &'static HashMap<u32, Template> {
     })
 }
 
-/// The Dungeon boss's own blues (`content/dungeon_items.toml`), by entry: no world pool holds them.
-fn dungeon() -> &'static HashMap<u32, Template> {
-    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
-    ITEMS.get_or_init(|| {
-        let table: Table = toml::from_str(include_str!("../content/dungeon_items.toml"))
-            .expect("content/dungeon_items.toml parses");
-        table.item.into_iter().map(|t| (t.entry, t)).collect()
-    })
+/// Whether `entry` is Gear the ten Gear Slots retired (`content/retired_items.toml`): a save that
+/// holds one loads without it.
+pub(crate) fn retired(entry: u32) -> bool {
+    #[derive(Deserialize)]
+    struct Retired {
+        entries: Vec<u32>,
+    }
+    static RETIRED: OnceLock<Vec<u32>> = OnceLock::new();
+    RETIRED
+        .get_or_init(|| {
+            let table: Retired = toml::from_str(include_str!("../content/retired_items.toml"))
+                .expect("content/retired_items.toml parses");
+            table.entries
+        })
+        .binary_search(&entry)
+        .is_ok()
 }
 
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
@@ -164,7 +201,7 @@ pub(crate) fn template(entry: u32) -> Option<&'static Template> {
         .or_else(|| given().get(&entry))
         .or_else(|| goods().get(&entry))
         .or_else(|| crate::quests::item_template(entry))
-        .or_else(|| dungeon().get(&entry))
+        .or_else(|| gear().get(&entry))
 }
 
 /// `ITEM_SPELLTRIGGER_ON_USE`.

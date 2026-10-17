@@ -58,7 +58,7 @@ fn every_content_spell_id_is_the_spell_its_name_says() {
     let named = content_spell_ids();
     let ids: BTreeSet<u32> = named.iter().map(|n| n.id).collect();
     // Callings' skills, talent ranks and procs, the Hearthstone, food and drink, equip spells.
-    assert!(ids.len() > 180, "only {} ids found", ids.len());
+    assert!(ids.len() > 170, "only {} ids found", ids.len());
 
     let wrong: Vec<String> = named.iter().filter_map(|n| mismatch(n, &spells)).collect();
     assert!(

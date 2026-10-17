@@ -127,7 +127,7 @@ impl Characters {
             action_bar: None,
             talents: Vec::new(),
             talent_wipes: 0,
-            inventory: content::starting_inventory(req.race),
+            inventory: content::starting_inventory(Calling::BASIC_WARRIOR),
             item_cooldowns: Vec::new(),
             quests: QuestLog::default(),
             discovered: Vec::new(),

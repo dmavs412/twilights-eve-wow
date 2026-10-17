@@ -175,11 +175,12 @@ fn saved_items(inventory: &Inventory) -> Vec<SavedItem> {
 }
 
 /// The inventory a save describes; an unknown item, a bad slot, a slot named twice or a bag slot
-/// holding what is no bag makes it unreadable. A bag's contents come after the bag.
+/// holding what is no bag makes it unreadable. A bag's contents come after the bag. Gear the ten
+/// Gear Slots retired is left out.
 fn load_inventory(money: u32, saved: &[SavedItem]) -> Result<Inventory, SaveError> {
     let mut inventory = Inventory::default();
     inventory.money = money;
-    for s in saved {
+    for s in saved.iter().filter(|s| !crate::items::retired(s.entry)) {
         let template = crate::items::template(s.entry).ok_or(SaveError::Unreadable)?;
         let at = s
             .bag

@@ -447,25 +447,25 @@ fn quality(s: &mut Script, entry: u32) -> u32 {
         .unwrap_or_else(|| panic!("no template for {entry}"))
 }
 
-/// Mail and leather a warrior of 20 or more wears into the run: `(slot, entry)`, shoulders to cloak.
-const RUN_GEAR: [(u8, u32); 8] = [
-    (2, 3231),
-    (4, 14730),
-    (5, 12978),
-    (6, 14727),
-    (7, 12982),
-    (8, 14743),
-    (9, 12994),
-    (14, 2059),
+/// The Gear a warrior of 20 or more wears into the run: `(slot, entry)`, the Wolfpack Medallion,
+/// Jouster's Chestplate, the Ring of Defense, the Thunderbrow Ring, Headsplitter and Kresh's
+/// Back. Only a Chest carries armour now (ADR 0007), so the shield makes up the rest.
+const RUN_GEAR: [(u8, u32); 6] = [
+    (1, 5754),
+    (4, 8157),
+    (10, 12985),
+    (11, 13097),
+    (MAIN_HAND, 7786),
+    (16, 13245),
 ];
 
 /// The blues on Lady Anacondra's corpse after a geared warrior of `level` kills her, with their
 /// required levels.
 fn boss_blues(seed: u64, level: u8) -> Vec<(u32, u32)> {
-    let mut items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
-    items.push((MAIN_HAND, PROSPECTOR_AXE, 1));
-    // A Vanguard: past the Basic Warrior's Tier Cap, with the Tier Bonus.
-    let mut s = Script::seeded_as("vanguard", seed, level, 0, &items);
+    let items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
+    // A Zealot: past the Basic Warrior's Tier Cap, with a Tier Bonus that makes up for the set
+    // only a Chest now stands in for (ADR 0007).
+    let mut s = Script::seeded_as("zealot", seed, level, 0, &items);
     s.enter();
     kill(&mut s, ANACONDRA_GUID, ANACONDRA_AT);
     let loot = s.send(RealmCommand::Loot {
@@ -740,8 +740,19 @@ impl Script {
 
 /// A Vanguard of `level` on the skull, carrying `items`, with these quests under way.
 fn questing_at_the_skull(seed: u64, level: u8, items: &[Carried], quests: &[Underway]) -> Script {
+    questing_at_the_skull_as("vanguard", seed, level, items, quests)
+}
+
+/// [`questing_at_the_skull`], in `calling`.
+fn questing_at_the_skull_as(
+    calling: &str,
+    seed: u64,
+    level: u8,
+    items: &[Carried],
+    quests: &[Underway],
+) -> Script {
     let (me, blob) = save_with_quests(level, items, 0, quests);
-    Script::from_save("vanguard", seed, me, &blob, SKULL)
+    Script::from_save(calling, seed, me, &blob, SKULL)
 }
 
 impl Script {
@@ -795,9 +806,10 @@ fn the_disciples_stand_on_the_skull_and_offer_the_caverns_quests_from_level_sixt
 
 #[test]
 fn slaying_lady_anacondra_pays_a_full_level_and_three_tokens_and_is_offered_again_at_once() {
-    let mut items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
-    items.push((MAIN_HAND, PROSPECTOR_AXE, 1));
-    let mut s = questing_at_the_skull(1, 25, &items, &[]);
+    let items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
+    // A Zealot: only the Chest carries armour (ADR 0007), and its Tier Bonus makes up for the
+    // rest of the set a level 25 warrior used to wear against her.
+    let mut s = questing_at_the_skull_as("zealot", 1, 25, &items, &[]);
     let nalpak = s.go_to_disciple(NALPAK);
     let taken = accept(&mut s.realm, nalpak, THE_FANGLORD);
     s.keep(taken);
@@ -817,9 +829,9 @@ fn slaying_lady_anacondra_pays_a_full_level_and_three_tokens_and_is_offered_agai
     let turned_in = hand_in(&mut s.realm, nalpak, THE_FANGLORD);
     let turned_in = s.keep(turned_in);
     let done = completed(&turned_in).expect("the quest completes");
-    // Level 25's whole 34000 XP, times the Calling's Tier XP Rate of 3: a Repeatable Quest pays
+    // Level 25's whole 34000 XP, times the Calling's Tier XP Rate of 5: a Repeatable Quest pays
     // the player's next level.
-    assert_eq!((done.quest_id, done.xp), (THE_FANGLORD, 102000));
+    assert_eq!((done.quest_id, done.xp), (THE_FANGLORD, 170000));
     assert_eq!(done.items, [(TOKEN, 3)]);
     assert_eq!(carried(&s.events, s.me, TOKEN), 3);
     assert_eq!(s.quest_state(THE_FANGLORD), None, "the slot clears");

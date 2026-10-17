@@ -11,13 +11,12 @@ use crate::items;
 use crate::rng::Rng;
 use crate::rules::durability::{self, WEAR_ROLL, WEAR_SLOTS};
 
-/// A damaging hit the character dealt or took: now and then a point off a random equipment
-/// slot (vmangos `Unit::DealDamage`). Whether a worn item broke, so its stats must go.
+/// A damaging hit the character dealt or took: now and then a point off a random Gear Slot (vmangos `Unit::DealDamage`). Whether a worn item broke, so its stats must go.
 pub(crate) fn on_hit(c: &mut Char, rng: &mut Rng, events: &mut Vec<SessionEvent>) -> bool {
     if !durability::wears_on_hit(rng.below(WEAR_ROLL)) {
         return false;
     }
-    let slot = rng.below(WEAR_SLOTS) as u8;
+    let slot = WEAR_SLOTS[rng.below(WEAR_SLOTS.len() as u32) as usize];
     let Some(item) = c.inventory.get_mut(slot) else {
         return false;
     };

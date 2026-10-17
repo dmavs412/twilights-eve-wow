@@ -4,19 +4,19 @@
 
 use twilight_realm::rules::tokens::{band, price, stock};
 
-const WARRIORS_PANTS: u32 = 2966; // legs, item level 10: 10 / 4 * 0.9 = 2.25
+const WARRIORS_TUNIC: u32 = 2965; // chest, item level 11: 11 / 4 * 0.9 = 2.475
 const HUNTING_BOW: u32 = 8180; // ranged, item level 11: 11 / 4 * 0.5 = 1.375
 const CORAL_CLAYMORE: u32 = 3188; // two-hander, item level 15: 15 / 4 * 1.0 = 3.75
-const HULKING_LEGGINGS: u32 = 14748; // legs, item level 25: 25 / 4 * 0.9 = 5.625
+const TUNNEL_PICK: u32 = 756; // two-hander, item level 29: 29 / 4 * 1.0 = 7.25
 const GLIMMERING_MAIL_BREASTPLATE: u32 = 4071; // chest, item level 31: 31 / 4 * 0.9 = 6.975
 const TOUGH_JERKY: u32 = 117; // the goods vendor's
 
 #[test]
 fn a_green_costs_its_item_level_over_four_scaled_by_its_slot() {
-    assert_eq!(price(WARRIORS_PANTS), Some(2));
+    assert_eq!(price(WARRIORS_TUNIC), Some(2));
     assert_eq!(price(HUNTING_BOW), Some(1));
     assert_eq!(price(CORAL_CLAYMORE), Some(4));
-    assert_eq!(price(HULKING_LEGGINGS), Some(6));
+    assert_eq!(price(TUNNEL_PICK), Some(7));
     assert_eq!(price(GLIMMERING_MAIL_BREASTPLATE), Some(7));
 }
 
@@ -40,11 +40,11 @@ fn levels_fall_in_bands_of_ten_and_the_last_band_takes_everything_above() {
 #[test]
 fn the_stock_is_the_buyers_band() {
     let first = stock(1);
-    assert_eq!(first.len(), 14);
-    assert_eq!(first[0], (WARRIORS_PANTS, 2));
+    assert_eq!(first.len(), 8);
+    assert_eq!(first[0], (WARRIORS_TUNIC, 2));
     assert_eq!(stock(10), first);
-    assert_eq!(stock(15).len(), 25);
-    assert_eq!(stock(25).len(), 29);
+    assert_eq!(stock(15).len(), 12);
+    assert_eq!(stock(25).len(), 13);
     assert!(stock(25).contains(&(GLIMMERING_MAIL_BREASTPLATE, 7)));
-    assert!(!stock(25).iter().any(|&(e, _)| e == WARRIORS_PANTS));
+    assert!(!stock(25).iter().any(|&(e, _)| e == WARRIORS_TUNIC));
 }

@@ -13,9 +13,9 @@ zone = 718
 # up to the runner's (`rules::loot::boss_band`), out of `boss_loot` and the world's blues.
 boss = 300999
 # Her own pool, for the band the caverns are built for: the reference's `proposed_boss_pool` in
-# loot_items.json, twenty real Wailing Caverns blues a level ~20 Warrior can use. Seven are the instance's own boss drops,
-# whose templates are in dungeon_items.toml; the rest are world blues in items.toml.
-boss_loot = [6627, 13245, 10410, 6460, 6631, 6449, 6463, 12997, 12989, 12975, 12994, 12982, 2194, 12976, 12978, 12990, 1121, 12988, 2059, 3021]
+# loot_items.json, real Wailing Caverns blues a level ~20 Warrior can use, less those for a body part
+# outside the ten Gear Slots (ADR 0007). Every template is in data/twilights-eve/gear.csv.
+boss_loot = [6627, 13245, 6631, 6463, 12997, 12989, 12975, 2194, 12976, 12990, 12988, 3021]
 
 # `AreaTrigger.dbc` 228 on Kalimdor, and where vmangos' `areatrigger_teleport` sends the player.
 [entrance]

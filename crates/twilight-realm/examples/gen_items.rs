@@ -1,6 +1,8 @@
 //! Writes `content/items.toml` from `data/twilights-eve/loot_items.json`: the realm cannot read
 //! JSON (the shipped app keeps `serde_json` out), so it reads this TOML copy instead.
-//! `tests/content.rs` checks the two still agree.
+//! `tests/content.rs` checks the two still agree. Gear (weapons and armour) is left out: it lives
+//! in `data/twilights-eve/gear.csv` (ADR 0007), which `tools/twilights-eve/build_gear.py` turns
+//! into `content/gear.toml`.
 //!
 //! ```text
 //! cargo run -p twilight-realm --example gen_items
@@ -44,11 +46,16 @@ fn main() {
     let src = crate_dir.join("../../data/twilights-eve/loot_items.json");
     let reference: Value =
         serde_json::from_str(&std::fs::read_to_string(&src).expect("loot_items.json")).unwrap();
-    let mut items: Vec<&Value> = reference["items"].as_object().unwrap().values().collect();
+    let mut items: Vec<&Value> = reference["items"]
+        .as_object()
+        .unwrap()
+        .values()
+        .filter(|i| !is_gear(i))
+        .collect();
     items.sort_by_key(|i| i["entry"].as_i64().unwrap());
 
     let mut out = String::from(
-        "# The items the realm knows: every world-drop item of levels 1-32, one per line.\n\
+        "# The world-drop items of levels 1-32 that are no Gear (junk, bags), one per line.\n\
          # Generated from data/twilights-eve/loot_items.json (the vmangos world DB; see\n\
          # docs/reference/items-and-vendors.md) by `cargo run -p twilight-realm --example gen_items`.\n\
          # tests/content.rs checks that the two agree.\n\
@@ -69,38 +76,11 @@ fn main() {
     let dst = crate_dir.join("content/items.toml");
     std::fs::write(&dst, out).unwrap();
     println!("wrote {}", dst.display());
+}
 
-    // The Wailing Caverns boss pool's own drops, which no world pool holds.
-    let known: Vec<i64> = items.iter().map(|i| i["entry"].as_i64().unwrap()).collect();
-    let blues = &reference["dungeon_blues"];
-    let pool: Vec<i64> = blues["proposed_boss_pool"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|e| e.as_i64().unwrap())
-        .filter(|e| !known.contains(e))
-        .collect();
-    let mut dungeon: Vec<&Value> = blues["wailing_caverns"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|i| pool.contains(&i["entry"].as_i64().unwrap()))
-        .collect();
-    dungeon.sort_by_key(|i| i["entry"].as_i64().unwrap());
-    let mut out = String::from(
-        "# The Wailing Caverns boss's own blues: the entries of `proposed_boss_pool` that no world\n\
-         # pool holds, from `dungeon_blues.wailing_caverns` in data/twilights-eve/loot_items.json.\n\
-         # Generated with items.toml by `cargo run -p twilight-realm --example gen_items`; the same\n\
-         # fields and defaults. tests/content.rs checks that the two agree.\n\n\
-         item = [\n",
-    );
-    for item in dungeon {
-        out.push_str(&row(item));
-    }
-    out.push_str("]\n");
-    let dst = crate_dir.join("content/dungeon_items.toml");
-    std::fs::write(&dst, out).unwrap();
-    println!("wrote {}", dst.display());
+/// Weapons and armour: Gear, which `content/gear.toml` holds.
+fn is_gear(item: &Value) -> bool {
+    matches!(item["class"].as_i64(), Some(2 | 4))
 }
 
 /// One item's line in the table.

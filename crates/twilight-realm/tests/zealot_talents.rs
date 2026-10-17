@@ -206,9 +206,9 @@ const TOUGHNESS: u32 = 1423;
 const ANTICIPATION: u32 = 1629;
 const ONE_HANDED_WEAPON_SPECIALIZATION: u32 = 1429;
 
-/// Brawler Gloves: 62 armour, worn in the hands slot.
-const BRAWLER_GLOVES: u32 = 720;
-const HANDS: u8 = 9;
+/// Gnoll War Harness: 70 armour, worn in the chest slot.
+const GNOLL_WAR_HARNESS: u32 = 1211;
+const CHEST: u8 = 4;
 const MAIN_HAND: u8 = 15;
 /// A two-handed axe, for levels 2 to 4.
 const LARGE_AXE: u32 = 2491;
@@ -243,17 +243,17 @@ fn deflection_gives_a_parry_chance_and_conviction_a_crit_chance() {
 
 #[test]
 fn anticipation_raises_defense_and_toughness_the_armour_of_items() {
-    let gloves = [(HANDS, BRAWLER_GLOVES)];
-    let (_, me, _, plain) = zealot_at(10, SEED, &[], &gloves);
-    let (_, _, _, anticipating) = zealot_at(10, SEED, &[(ANTICIPATION, 5)], &gloves);
+    let harness = [(CHEST, GNOLL_WAR_HARNESS)];
+    let (_, me, _, plain) = zealot_at(10, SEED, &[], &harness);
+    let (_, _, _, anticipating) = zealot_at(10, SEED, &[(ANTICIPATION, 5)], &harness);
     assert_eq!(
         defense_bonus(&anticipating, me),
         defense_bonus(&plain, me) + 10
     );
-    let (_, _, _, tough) = zealot_at(10, SEED, &[(TOUGHNESS, 5)], &gloves);
+    let (_, _, _, tough) = zealot_at(10, SEED, &[(TOUGHNESS, 5)], &harness);
     let armor = |v: &View| v.fields(me).unit_resistance(0).unwrap();
-    // 10% more of the gloves' 62, rounded: 6.
-    assert_eq!(armor(&tough), armor(&plain) + 6);
+    // 10% more of the harness's 70: 7.
+    assert_eq!(armor(&tough), armor(&plain) + 7);
 }
 
 #[test]

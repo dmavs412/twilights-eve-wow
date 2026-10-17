@@ -4,6 +4,7 @@
 
 use std::path::PathBuf;
 
+use benilla_protocol::messages::ItemInfo;
 use serde_json::Value;
 
 fn repo() -> PathBuf {
@@ -221,10 +222,12 @@ fn the_item_table_matches_the_reference() {
     let reference = json("loot_items.json");
     let table = toml_table("items.toml");
     let rows = table["item"].as_array().unwrap();
+    // Weapons and armour are Gear, in gear.toml instead (ADR 0007).
     let mut want: Vec<(i64, toml::Value)> = reference["items"]
         .as_object()
         .unwrap()
         .values()
+        .filter(|i| !matches!(i["class"].as_i64(), Some(2 | 4)))
         .map(|i| (i["entry"].as_i64().unwrap(), expected_item(i)))
         .collect();
     want.sort_by_key(|(e, _)| *e);
@@ -247,30 +250,99 @@ fn with_defaults(row: &toml::Value) -> toml::Value {
     toml::Value::Table(t)
 }
 
-#[test]
-fn the_dungeon_bosss_own_blues_match_the_reference() {
-    // Every boss-pool entry that no world pool holds, as the reference spells it.
-    let reference = json("loot_items.json");
-    let blues = &reference["dungeon_blues"];
-    let pool = blues["proposed_boss_pool"].as_array().unwrap();
-    let table = toml_table("dungeon_items.toml");
-    let rows = table["item"].as_array().unwrap();
-    let mut want: Vec<(i64, toml::Value)> = blues["wailing_caverns"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|i| {
-            let entry = &i["entry"];
-            pool.contains(entry) && reference["items"][entry.to_string()].is_null()
-        })
-        .map(|i| (i["entry"].as_i64().unwrap(), expected_item(i)))
-        .collect();
-    want.sort_by_key(|(e, _)| *e);
-    assert_eq!(rows.len(), want.len());
-    assert_eq!(rows.len(), 7, "the instance's own boss drops");
-    for (row, (entry, want)) in rows.iter().zip(&want) {
-        assert_eq!(&with_defaults(row), want, "item {entry}");
+/// The fields the gear sheet does not carry (ADR 0007): vendor prices and bundles, uniqueness, the
+/// class and race masks and the stack size, which no copper vendor or Calling reads for Gear.
+const NOT_IN_THE_SHEET: [&str; 7] = [
+    "buy_price",
+    "buy_count",
+    "max_count",
+    "allowable_class",
+    "allowable_race",
+    "stackable",
+    "wardrobe",
+];
+
+/// A Gear row with the fields the sheet leaves out dropped, and its stats in stat-id order.
+fn sheet_fields(row: &toml::Value) -> toml::Value {
+    let mut t = with_defaults(row).as_table().unwrap().clone();
+    for k in NOT_IN_THE_SHEET {
+        t.remove(k);
     }
+    let mut stats = t["stats"].as_array().unwrap().clone();
+    stats.sort_by_key(|s| s[0].as_integer().unwrap());
+    t.insert("stats".into(), toml::Value::Array(stats));
+    toml::Value::Table(t)
+}
+
+/// Every piece of Gear seeded from the reference (world drops and the Wailing Caverns boss's own
+/// blues) still answers with the reference's numbers: the sheet is the source now, but the seed
+/// changed nothing.
+#[test]
+fn the_seeded_gear_keeps_the_references_numbers() {
+    let reference = json("loot_items.json");
+    let dungeon = reference["dungeon_blues"]["wailing_caverns"]
+        .as_array()
+        .unwrap();
+    let gear = toml_table("gear.toml");
+    let mut seeded = 0;
+    for row in gear["item"].as_array().unwrap() {
+        let entry = row["entry"].as_integer().unwrap();
+        let mut item = reference["items"][entry.to_string()].clone();
+        if item.is_null() {
+            // The boss's own blues drop from her pool, not a world pool.
+            match dungeon.iter().find(|i| i["entry"].as_i64() == Some(entry)) {
+                Some(i) => {
+                    item = i.clone();
+                    item["pool_level"] = 0.into();
+                }
+                None => continue,
+            }
+        }
+        assert_eq!(
+            sheet_fields(row),
+            sheet_fields(&expected_item(&item)),
+            "gear {entry}"
+        );
+        seeded += 1;
+    }
+    assert!(seeded > 400, "only {seeded} seeded rows");
+}
+
+/// Running `tools/twilights-eve/build_gear.py` on the committed sheet writes the committed
+/// `content/gear.toml`, byte for byte. Skips where no Python 3 runs.
+#[test]
+fn the_gear_table_is_the_gear_sheet_built() {
+    let script = repo().join("tools/twilights-eve/build_gear.py");
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .unwrap_or_default();
+    let candidates = [
+        std::env::var("PYTHON").unwrap_or_default(),
+        format!("{home}/.local/bin/python3.15.exe"),
+        format!("{home}/.local/bin/python3.15"),
+        "python3".to_owned(),
+    ];
+    let built = candidates
+        .iter()
+        .filter(|p| !p.is_empty())
+        .filter_map(|p| {
+            std::process::Command::new(p)
+                .arg(&script)
+                .args(["--out", "-"])
+                .output()
+                .ok()
+        })
+        .find(|o| o.status.success());
+    let Some(built) = built else {
+        eprintln!("skipped: no Python 3 to run build_gear.py");
+        return;
+    };
+    let committed =
+        std::fs::read(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("content/gear.toml")).unwrap();
+    assert!(
+        built.stdout == committed,
+        "content/gear.toml is stale: run tools/twilights-eve/build_gear.py"
+    );
 }
 
 #[test]
@@ -389,45 +461,103 @@ fn the_repair_tables_match_the_reference() {
     assert_eq!(floats(&table["quality"]), want);
 }
 
-/// Every race's Warrior outfit (`content/starting_outfits.toml`, from `CharStartOutfit.dbc`) has
-/// an item template the realm answers queries with, worn in an equipment slot, and the template's
-/// display id and inventory type are the ones the client's outfit row names.
+/// The item template the realm answers `entry`'s query with.
+fn queried(realm: &mut twilight_realm::Realm, entry: u32) -> Option<ItemInfo> {
+    realm.handle(twilight_realm::RealmCommand::ItemQuery { entry });
+    realm.drain_events().into_iter().find_map(|e| match e {
+        benilla_protocol::SessionEvent::ItemTemplate { info, .. } => info.map(|i| *i),
+        _ => None,
+    })
+}
+
+/// Every Calling's outfit (`content/starting_outfits.toml`) is exactly one Chest and the weapons,
+/// ranged weapon and ammo that go with it, each an item the realm answers queries with and the
+/// Calling may wear.
 #[test]
-fn every_starting_outfit_item_has_a_template_that_agrees_with_the_client() {
+fn every_callings_starting_outfit_is_one_chest_and_its_weapons() {
     let outfits = toml_table("starting_outfits.toml");
-    let races = outfits.as_table().unwrap();
-    assert_eq!(races.len(), 8, "one outfit per race");
+    let outfits = outfits.as_table().unwrap();
+    for calling in ["basic_warrior", "vanguard", "zealot"] {
+        assert!(outfits.contains_key(calling), "{calling} has an outfit");
+    }
     let mut realm = twilight_realm::Realm::new();
-    for (race, items) in races {
-        let items = items.as_array().unwrap();
-        assert!(
-            items.len() >= 3,
-            "{race}: shirt, legs and a weapon at least"
-        );
-        for row in items {
-            let int = |k: &str| row[k].as_integer().unwrap() as u32;
-            let entry = int("item");
-            realm.handle(twilight_realm::RealmCommand::ItemQuery { entry });
-            let info = realm
-                .drain_events()
-                .into_iter()
-                .find_map(|e| match e {
-                    benilla_protocol::SessionEvent::ItemTemplate { info, .. } => info,
-                    _ => None,
-                })
-                .unwrap_or_else(|| panic!("{race}: item {entry} has no template"));
+    for (calling, outfit) in outfits {
+        let def = twilight_realm::callings::calling(calling).expect("a Calling");
+        let mut chests = 0;
+        for entry in outfit["items"].as_array().unwrap() {
+            let entry = entry.as_integer().unwrap() as u32;
+            let info = queried(&mut realm, entry)
+                .unwrap_or_else(|| panic!("{calling}: item {entry} has no template"));
+            match info.inventory_type {
+                // Chest and robe.
+                5 | 20 => chests += 1,
+                // Main hand, one-hand, two-hand, shield, held, bow, thrown, gun, ammo.
+                21 | 13 | 17 | 14 | 23 | 15 | 25 | 26 | 24 => {}
+                other => panic!("{calling}: {} has inventory type {other}", info.name),
+            }
             assert_eq!(
-                (info.display_info_id, info.inventory_type),
-                (int("display_id"), int("inventory_type")),
-                "{race}: {} looks as the client dresses it",
+                twilight_realm::rules::gear::can_equip(entry, 1, def),
+                Ok(()),
+                "{calling} wears {}",
                 info.name
             );
-            assert!(
-                !twilight_realm::rules::gear::equip_slots(info.inventory_type).is_empty(),
-                "{race}: {} (inventory type {}) is worn",
-                info.name,
-                info.inventory_type
-            );
         }
+        assert_eq!(chests, 1, "{calling}: one starter Chest");
+    }
+}
+
+/// Whether the realm's template for `entry` is equipment for a body part outside the ten Gear
+/// Slots.
+fn outside_the_gear_slots(realm: &mut twilight_realm::Realm, entry: u32) -> bool {
+    let info = queried(realm, entry).unwrap_or_else(|| panic!("{entry} has no template"));
+    // 0 is no equipment at all, 18 a bag.
+    !matches!(info.inventory_type, 0 | 18)
+        && !twilight_realm::rules::gear::is_gear_slot(info.inventory_type)
+}
+
+/// No loot pool, vendor, Token vendor band or Dungeon boss hands out an item for a body part the
+/// ten Gear Slots leave out (ADR 0007). Quests reward XP and Tokens, no items.
+#[test]
+fn nothing_hands_out_gear_outside_the_ten_slots() {
+    use twilight_realm::rules::loot::{pool, Quality};
+    let mut entries: Vec<(String, u32)> = Vec::new();
+    for level in 1..=60 {
+        for q in [
+            Quality::Poor,
+            Quality::Common,
+            Quality::Uncommon,
+            Quality::Rare,
+        ] {
+            let from = format!("the level {level} {q:?} pool");
+            entries.extend(pool(level, q).iter().map(|e| (from.clone(), *e)));
+        }
+        let from = format!("the level {level} Token band");
+        entries.extend(
+            twilight_realm::rules::tokens::stock(level)
+                .into_iter()
+                .map(|(e, _)| (from.clone(), e)),
+        );
+    }
+    for npc in toml_table("hub.toml")["npc"].as_array().unwrap() {
+        let stock = npc.get("stock").and_then(|s| s.as_array());
+        for e in stock.into_iter().flatten() {
+            entries.push(("a Hub vendor".into(), e.as_integer().unwrap() as u32));
+        }
+    }
+    for e in toml_table("wailing_caverns.toml")["boss_loot"]
+        .as_array()
+        .unwrap()
+    {
+        entries.push(("the boss".into(), e.as_integer().unwrap() as u32));
+    }
+    entries.sort_unstable_by_key(|(_, e)| *e);
+    entries.dedup_by_key(|(_, e)| *e);
+    assert!(entries.len() > 300, "only {} entries", entries.len());
+    let mut realm = twilight_realm::Realm::new();
+    for (from, entry) in entries {
+        assert!(
+            !outside_the_gear_slots(&mut realm, entry),
+            "{from}: {entry}"
+        );
     }
 }

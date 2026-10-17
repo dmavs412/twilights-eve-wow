@@ -149,6 +149,11 @@ fn the_route_graph_is_the_references() {
     }
 }
 
+/// The reference pool's Leggings of the Fang, Cobrahn's Grasp, Glowing Lizardscale Cloak,
+/// Thorbia's Gauntlets, Silver-linked Footguards, Stormbringer Belt, Feet of the Lynx and Sentry
+/// Cloak: legs, waist, back, hands and feet.
+const NOT_GEAR_SLOTS: [i64; 8] = [10410, 6460, 6449, 12994, 12982, 12978, 1121, 2059];
+
 #[test]
 fn the_boss_loot_is_the_references_boss_pool() {
     let path =
@@ -159,6 +164,8 @@ fn the_boss_loot_is_the_references_boss_pool() {
         .unwrap()
         .iter()
         .map(|e| e.as_i64().unwrap())
+        // Less the blues for a body part outside the ten Gear Slots (ADR 0007).
+        .filter(|e| !NOT_GEAR_SLOTS.contains(e))
         .collect();
     let got: Vec<i64> = dungeon()["boss_loot"]
         .as_array()

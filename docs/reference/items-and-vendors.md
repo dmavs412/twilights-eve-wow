@@ -4,6 +4,15 @@ Offline data for tickets #9 (Loot and gear), #10 (Goods vendor, durability and d
 (Token vendor). Everything here is real 1.12 data. The JSON files are inputs for the realm crate;
 they are not loaded by anything yet.
 
+Since ADR 0007 the JSON is no input for Gear: weapons and armour were seeded once into
+`data/twilights-eve/gear.csv` (the ten Gear Slots only; the rest are retired), which
+`tools/twilights-eve/build_gear.py` turns into `crates/twilight-realm/content/gear.toml`, with
+each world drop's loot level in `data/twilights-eve/gear_drops.csv`. The sheet speaks in words:
+`slot` (Weapon, Offhand, Ranged, Ammo, Ring, Trinket, Chest, Amulet), `type`, `hand`, `quality`,
+one column per stat, and a Chest's `wardrobe_*` displays. Damage holds one `;`-separated value per
+line; `speed` is in seconds. Vendor prices, uniqueness and the class and race masks are not
+carried: no copper vendor sells Gear. `content/items.toml` keeps the junk and bags.
+
 | file | what |
 |---|---|
 | `data/twilights-eve/loot_items.json` | world-drop pools for levels 1-32 by level and quality, random-enchant greens, Wailing Caverns blues |
@@ -373,7 +382,7 @@ level, food and drink included, and the item query reports a required level of 0
 their required level for the loot bands: the Wailing Caverns boss's blue pool still filters by
 the vanilla gates above (polearms 20, plate 40) at the item's own level, so the band does not
 change with the Calling. A refusal uses the stock `EQUIP_ERR_NO_REQUIRED_PROFICIENCY`. No world
-pool to 32 holds plate, so `given_items.toml` carries one real piece (Jouster's Chestplate) that
+pool to 32 holds plate, so the gear sheet carries one real piece (Jouster's Chestplate) that
 nothing hands out yet. Every item record carries `warrior.usable`, `warrior.from_level` and
 `warrior.blocked_by`, the vanilla gates.
 

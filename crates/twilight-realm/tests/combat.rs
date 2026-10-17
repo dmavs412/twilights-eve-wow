@@ -55,14 +55,14 @@ fn the_character_sheet_shows_the_realms_stats() {
     let (guid, events) = enter_new(&mut realm, "Anduin", HUMAN);
     let f = own_create(&events, guid);
     // A level-1 human warrior (§5 of the combat reference) in the starting outfit: the Worn
-    // Shortsword in hand, Recruit's Pants (2 armour) and the Worn Wooden Shield (5 armour).
+    // Shortsword in hand, the Recruit's Mail Vest (12 armour) and the Worn Wooden Shield (5 armour).
     assert_eq!(f.unit_max_health(), Some(60));
     assert_eq!(f.unit_health(), Some(60));
     assert_eq!(f.unit_attack_power(), Some(29));
     assert_eq!(
         f.unit_resistance(0),
-        Some(40 + 2 + 5),
-        "twice agility, plus the pants and the shield"
+        Some(40 + 12 + 5),
+        "twice agility, plus the vest and the shield"
     );
     assert_eq!(f.player_crit_percentage(), Some(5.0));
     assert_eq!(f.player_dodge_percentage(), Some(5.0));

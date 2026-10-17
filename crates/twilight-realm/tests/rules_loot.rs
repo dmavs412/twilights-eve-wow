@@ -44,6 +44,8 @@ fn the_pool_is_every_item_of_the_window_at_that_quality() {
         755, 1367, 1372, 1377, 2650, 3363, 4865, 7098, // level 3
         1368, 1370, 1374, 1380, 2211, 2651, 2653, 7073, 7074, 7099, 7100, 7101, // level 4
     ];
+    // Gear for a body part outside the ten Gear Slots is in no pool (ADR 0007).
+    want.retain(|e| pool_level(*e).is_some());
     // Levels 1 and 5.
     for entry in items.iter().filter(|e| !want.contains(e)) {
         assert!(matches!(pool_level(*entry), Some(1 | 5)), "{entry}");

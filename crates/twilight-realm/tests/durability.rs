@@ -139,33 +139,28 @@ fn one_item_can_be_repaired_alone_and_nothing_is_repaired_on_credit() {
     assert_eq!(s.me().player_money(), Some(76));
 }
 
-/// Head, shoulders, chest, waist, legs, feet, wrists, hands and a sword: nine of the nineteen
-/// equipment slots a wearing hit picks from.
-const KIT: [Worn; 9] = [
-    (0, 3392, 50),
-    (2, 1445, 55),
-    (4, 795, 45),
-    (5, 832, 25),
-    (6, 794, 35),
-    (7, 792, 25),
-    (8, 763, 20),
-    (9, 720, 35),
+/// Chest, sword, shield and bow: four of the nine Gear Slot equipment slots a wearing hit picks
+/// from (ADR 0007); the others (neck, fingers, trinkets) have no durability.
+const KIT: [Worn; 4] = [
+    (CHEST, 795, 45),
     (MAIN_HAND, 886, 70),
+    (16, 2362, 20),
+    (17, 8180, 35),
 ];
 
 #[test]
 fn taking_hits_wears_gear_down_a_point_at_a_time() {
     // A level 60 warrior lets a level 1 mob at the Crossroads beat on it. One damaging hit in
-    // two hundred wears a random equipment slot; each session ends before the warrior could
-    // die, and logging back in heals it.
+    // two hundred wears a random Gear Slot; each session is an hour of hits, and
+    // logging back in heals it.
     let mut s = warrior_wearing(60, 0, &KIT);
-    for _session in 0..12 {
+    for _session in 0..3 {
         let mob = the_mob(&s.events);
         stand_by(&mut s.realm, &mob);
         // Strike once to pull it, then only stand and take it.
         s.send(RealmCommand::AttackSwing { guid: mob.guid });
         s.send(RealmCommand::AttackStop);
-        for _ in 0..6000 {
+        for _ in 0..36000 {
             s.realm.tick(0.1, &FlatGround);
             let new = drain(&mut s.realm);
             s.events.extend(new);
@@ -189,5 +184,5 @@ fn taking_hits_wears_gear_down_a_point_at_a_time() {
         let first = drain(&mut s.realm);
         s.events.extend(first);
     }
-    panic!("two hours of hits wore nothing");
+    panic!("three hours of hits wore nothing");
 }
