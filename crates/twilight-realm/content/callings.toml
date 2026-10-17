@@ -70,7 +70,7 @@ effects = [
 # The Talent Tree, from `talent_tree` in the JSON (tests/content_callings.rs checks the seats, rank
 # spells, prerequisites and spell mods). Each talent is a real Talent.dbc row, so the stock frame
 # shows its name, icon and tooltip; `effects` is what the realm makes it do, one value per rank:
-#   skill_rage_cost  - the skill costs that much less rage
+#   skill_cost       - the skill costs that much less of the Calling's power
 #   skill_amount_pct - the skill's damage and buff amounts rise by that percent
 #   skill_rage       - the skill gives that much more rage
 #   skill_crit_pct   - the skill's critical strike chance rises by that percent
@@ -97,7 +97,7 @@ tier = 1
 column = 1
 rank_spells = [12282, 12663, 12664]
 spell_name = "Improved Heroic Strike"
-effects = [{ kind = "skill_rage_cost", skill = "heroic_strike", per_rank = [1, 2, 3] }]
+effects = [{ kind = "skill_cost", skill = "heroic_strike", per_rank = [1, 2, 3] }]
 client_spellmods = [{ flat = true, op = 14, family_bit = 6, per_rank = [-10, -20, -30] }]
 
 [[calling.talent_tab.talent]]
@@ -570,9 +570,9 @@ column = 3
 rank_spells = [20101, 20102, 20103, 20104, 20105]
 spell_name = "Benediction"
 effects = [
-    { kind = "skill_rage_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
-    { kind = "skill_rage_cost", skill = "seal_of_the_crusader", per_rank = [1, 1, 2, 2, 3] },
-    { kind = "skill_rage_cost", skill = "judgement", per_rank = [1, 1, 1, 1, 2] },
+    { kind = "skill_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
+    { kind = "skill_cost", skill = "seal_of_the_crusader", per_rank = [1, 1, 2, 2, 3] },
+    { kind = "skill_cost", skill = "judgement", per_rank = [1, 1, 1, 1, 2] },
 ]
 # One cell per borrowed spell's own family bit: 33 Seal of Command, 34 Seal of the Crusader,
 # 35 Judgement.

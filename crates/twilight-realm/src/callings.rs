@@ -155,8 +155,8 @@ pub struct Prereq {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TalentEffect {
-    /// The skill costs this much less rage.
-    SkillRageCost { skill: String, per_rank: Vec<u32> },
+    /// The skill costs this many points less of the Calling's power.
+    SkillCost { skill: String, per_rank: Vec<u32> },
     /// The skill's damage and buff amounts rise by this percent.
     SkillAmountPct { skill: String, per_rank: Vec<u32> },
     /// The skill's rage gain rises by this many points.
@@ -242,7 +242,7 @@ impl TalentEffect {
     /// The effect's size at each rank.
     pub fn per_rank(&self) -> &[u32] {
         match self {
-            Self::SkillRageCost { per_rank, .. }
+            Self::SkillCost { per_rank, .. }
             | Self::SkillAmountPct { per_rank, .. }
             | Self::SkillRage { per_rank, .. }
             | Self::SkillCritPct { per_rank, .. }

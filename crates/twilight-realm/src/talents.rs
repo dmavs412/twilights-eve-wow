@@ -247,7 +247,7 @@ pub(crate) fn on_struck(c: &Char) -> OnStruck {
 pub(crate) fn power_cost(c: &Char, skill: &callings::Skill) -> u32 {
     let less = sum(
         c,
-        |e| matches!(e, TalentEffect::SkillRageCost { skill: s, .. } if *s == skill.key),
+        |e| matches!(e, TalentEffect::SkillCost { skill: s, .. } if *s == skill.key),
     );
     skill.power_cost.saturating_sub(less)
 }
