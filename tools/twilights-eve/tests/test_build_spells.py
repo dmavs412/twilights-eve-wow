@@ -321,5 +321,41 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([STRIKE, STRIKE], "duplicate")
 
 
+class ResolveRows(unittest.TestCase):
+    """The patch carries SpellRange, SpellCastTimes and SpellDuration row indexes, not values."""
+
+    def setUp(self):
+        sys.path.insert(0, os.path.join(HERE, ".."))
+        import build_spells
+        self.module = build_spells
+        # (id, min, max), (id, base_ms, per_level_ms), (id, base_ms): the stock rows' shape.
+        self.tables = {
+            "ranges": [(2, 0.0, 5.0), (12, 0.0, 5.0), (3, 0.0, 20.0)],
+            "cast_times": [(1, 0, 0), (191, 0, 0), (5, 1500, 0), (6, 1500, 50)],
+            "durations": [(1, 10000), (21, 4000), (30, 4000)],
+        }
+
+    def resolved(self, **fields):
+        patch = {"spells": [{"spell_id": 1, "fields": fields}], "talents": []}
+        self.module.resolve_dbc_rows(patch, **self.tables)
+        return patch["spells"][0]["fields"]
+
+    def test_values_become_the_lowest_matching_row_index(self):
+        fields = self.resolved(range_max=5.0, cast_time_ms=1500, duration_ms=4000, cost=15)
+        self.assertEqual(fields, {"range_index": 2, "cast_time_index": 5, "duration_index": 21, "cost": 15})
+
+    def test_a_missing_minimum_is_zero_and_an_instant_cast_is_row_one(self):
+        fields = self.resolved(range_min=0, range_max=20, cast_time_ms=0)
+        self.assertEqual((fields["range_index"], fields["cast_time_index"]), (3, 1))
+
+    def test_no_matching_row_fails_naming_the_value(self):
+        with self.assertRaisesRegex(self.module.BuildError, "range 3.0-7.0"):
+            self.resolved(range_min=3.0, range_max=7.0)
+        with self.assertRaisesRegex(self.module.BuildError, "cast time 1234 ms"):
+            self.resolved(cast_time_ms=1234)
+        with self.assertRaisesRegex(self.module.BuildError, "duration 999 ms"):
+            self.resolved(duration_ms=999)
+
+
 if __name__ == "__main__":
     unittest.main()

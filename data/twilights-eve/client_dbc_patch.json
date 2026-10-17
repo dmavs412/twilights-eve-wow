@@ -9,9 +9,6 @@
     "cost": 15.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 5.0,
     "on_next_swing": true,
     "not_in_combat": false,
     "power_type": 1,
@@ -29,7 +26,9 @@
        "threat_bonus": 20
       }
      }
-    ]
+    ],
+    "range_index": 2,
+    "cast_time_index": 1
    }
   },
   {
@@ -41,9 +40,6 @@
     "cost": 0.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
-    "cast_time_ms": 0,
-    "range_min": 8.0,
-    "range_max": 25.0,
     "on_next_swing": false,
     "not_in_combat": true,
     "power_type": 1,
@@ -74,7 +70,9 @@
        "aura_spell_id": 7922
       }
      }
-    ]
+    ],
+    "range_index": 95,
+    "cast_time_index": 1
    }
   },
   {
@@ -84,12 +82,12 @@
    "rank": 1,
    "fields": {
     "cost": 15,
-    "range_max": 5,
-    "duration_ms": 4000,
     "borrowed_from_class": 4,
     "borrowed_family_bit": 38,
     "power_type": 1,
-    "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it."
+    "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
+    "range_index": 2,
+    "duration_index": 35
    }
   },
   {
@@ -99,12 +97,12 @@
    "rank": 1,
    "fields": {
     "cost": 10,
-    "cast_time_ms": 0,
-    "range_max": 20,
     "borrowed_from_class": 8,
     "borrowed_family_bit": 37,
     "power_type": 1,
-    "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked."
+    "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked.",
+    "range_index": 3,
+    "cast_time_index": 1
    }
   },
   {
@@ -116,10 +114,6 @@
     "cost": 30.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 5.0,
-    "duration_ms": 10000,
     "effects": [
      {
       "kind": "weapon_strike",
@@ -139,7 +133,10 @@
        "duration_ms": 10000
       }
      }
-    ]
+    ],
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 1
    }
   },
   {
@@ -151,9 +148,6 @@
     "cost": 5.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 5.0,
     "stances": [
      "Battle Stance"
     ],
@@ -170,7 +164,9 @@
        }
       }
      }
-    ]
+    ],
+    "range_index": 2,
+    "cast_time_index": 1
    }
   },
   {
@@ -182,9 +178,6 @@
     "cost": 0.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
-    "cast_time_ms": 0,
-    "range_min": 8.0,
-    "range_max": 25.0,
     "not_in_combat": true,
     "stances": [
      "Battle Stance"
@@ -213,7 +206,9 @@
        "aura_spell_id": 7922
       }
      }
-    ]
+    ],
+    "range_index": 95,
+    "cast_time_index": 1
    }
   },
   {
@@ -225,10 +220,6 @@
     "cost": 10.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 5.0,
-    "duration_ms": 12000,
     "stances": [
      "Battle Stance",
      "Defensive Stance"
@@ -249,7 +240,10 @@
        }
       }
      }
-    ]
+    ],
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 29
    }
   },
   {
@@ -261,10 +255,6 @@
     "cost": 10.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 0.0,
-    "duration_ms": 120000,
     "effects": [
      {
       "kind": "aura_attack_power",
@@ -277,7 +267,10 @@
        }
       }
      }
-    ]
+    ],
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 4
    }
   },
   {
@@ -289,10 +282,6 @@
     "cost": 10,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 0.0,
-    "duration_ms": 30000,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 33,
     "description": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour.",
@@ -315,7 +304,10 @@
        }
       }
      }
-    ]
+    ],
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 2
    }
   },
   {
@@ -327,10 +319,6 @@
     "cost": 10,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 0.0,
-    "duration_ms": 30000,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 34,
     "description": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target.",
@@ -352,7 +340,10 @@
        }
       }
      }
-    ]
+    ],
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 2
    }
   },
   {
@@ -364,9 +355,6 @@
     "cost": 0,
     "cooldown_ms": 10000,
     "gcd_ms": 0,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 10.0,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 35,
     "description": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing.",
@@ -375,7 +363,9 @@
       "kind": "judgement",
       "params": {}
      }
-    ]
+    ],
+    "range_index": 7,
+    "cast_time_index": 1
    }
   },
   {
@@ -387,10 +377,6 @@
     "cost": 15,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 10.0,
-    "duration_ms": 6000,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 36,
     "effects": [
@@ -401,7 +387,10 @@
        "aura_spell_id": 10308
       }
      }
-    ]
+    ],
+    "range_index": 7,
+    "cast_time_index": 1,
+    "duration_index": 32
    }
   },
   {
@@ -413,10 +402,6 @@
     "cost": 30.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
-    "cast_time_ms": 0,
-    "range_min": 0.0,
-    "range_max": 5.0,
-    "duration_ms": 10000,
     "effects": [
      {
       "kind": "weapon_strike",
@@ -436,7 +421,10 @@
        "duration_ms": 10000
       }
      }
-    ]
+    ],
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 1
    }
   },
   {
@@ -448,9 +436,6 @@
     "cost": 0.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
-    "cast_time_ms": 0,
-    "range_min": 8.0,
-    "range_max": 25.0,
     "not_in_combat": true,
     "stances": [
      "Battle Stance"
@@ -479,7 +464,9 @@
        "aura_spell_id": 7922
       }
      }
-    ]
+    ],
+    "range_index": 95,
+    "cast_time_index": 1
    }
   },
   {

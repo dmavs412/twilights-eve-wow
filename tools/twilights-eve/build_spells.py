@@ -99,6 +99,57 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
         raise BuildError(f"{len(bad)} ids not in the DBCs:\n" + "\n".join(bad))
 
 
+def read_row_tables(data_dir: str | None) -> dict:
+    """SpellRange, SpellCastTimes and SpellDuration as plain tuples, for `resolve_dbc_rows`."""
+    if not data_dir:
+        raise BuildError("resolving range, cast time and duration needs --data or WOW_DATA; "
+                         "pass --no-dbc-check to leave them as values")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from wowdata import Chain, load_dbc
+
+    try:
+        chain = Chain(data_dir)
+        ranges, times, durations = (load_dbc(chain, n) for n in ("SpellRange.dbc", "SpellCastTimes.dbc", "SpellDuration.dbc"))
+    except (OSError, KeyError, ValueError) as error:
+        raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
+    return {
+        "ranges": [(ranges.u32(i, 0), ranges.f32(i, 1), ranges.f32(i, 2)) for i in range(ranges.nrec)],
+        "cast_times": [(times.u32(i, 0), times.i32(i, 1), times.i32(i, 2)) for i in range(times.nrec)],
+        "durations": [(durations.u32(i, 0), durations.i32(i, 1)) for i in range(durations.nrec)],
+    }
+
+
+def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: list) -> None:
+    """Replace each override's range, cast time and duration values with the index of the stock
+    row that holds them (the lowest id on a tie). The client overwrites the index. A value no
+    stock row holds fails the build."""
+    for entry in patch["spells"]:
+        fields = entry["fields"]
+        where = f"{entry['calling']}/{entry['key']}" if "key" in entry else str(entry["spell_id"])
+        if "range_min" in fields or "range_max" in fields:
+            low, high = float(fields.pop("range_min", 0)), float(fields.pop("range_max", 0))
+            fields["range_index"] = _lowest(
+                (i for i, a, b in ranges if abs(a - low) < 1e-3 and abs(b - high) < 1e-3),
+                f"{where}: no SpellRange.dbc row for range {low}-{high}")
+        if "cast_time_ms" in fields:
+            ms = fields.pop("cast_time_ms")
+            fields["cast_time_index"] = _lowest(
+                (i for i, base, per_level in cast_times if base == ms and per_level == 0),
+                f"{where}: no SpellCastTimes.dbc row for cast time {ms} ms")
+        if "duration_ms" in fields:
+            ms = fields.pop("duration_ms")
+            fields["duration_index"] = _lowest(
+                (i for i, base in durations if base == ms),
+                f"{where}: no SpellDuration.dbc row for duration {ms} ms")
+
+
+def _lowest(ids, message: str) -> int:
+    found = min(ids, default=None)
+    if found is None:
+        raise BuildError(message)
+    return found
+
+
 def number(text: str, where: str) -> int | float:
     try:
         value = float(text)
@@ -437,6 +488,7 @@ def main(argv: list[str] | None = None) -> int:
         server, patch = build(rows)
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)
+            resolve_dbc_rows(patch, **read_row_tables(args.data))
             print(f"DBC check: every id is in the DBCs in {args.data}")
     except BuildError as error:
         print(f"build_spells: {error}", file=sys.stderr)
