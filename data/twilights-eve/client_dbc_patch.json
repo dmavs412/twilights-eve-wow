@@ -2762,7 +2762,17 @@
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "description": "Killing an experience-yielding target instantly heals you for 10% of max health."
+    "description": "Killing an experience-yielding target instantly heals you for 10% of max health.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "kill",
+       "yields_xp": true,
+       "heal_pct": 10
+      }
+     }
+    ]
    }
   }
  ],

@@ -219,6 +219,9 @@ fn talent_effects(ranks: &[GenRank]) -> Vec<TalentEffect> {
 
 fn talent_effect(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     let first = ranks[0].effects.get(slot)?;
+    if first.kind == "proc" {
+        return proc(ranks, slot);
+    }
     let mut object = first.params.clone();
     let key = ["pct", "amount"]
         .into_iter()
@@ -232,5 +235,27 @@ fn talent_effect(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
         .collect();
     object.insert("per_rank".into(), Value::Array(sizes?));
     object.insert("kind".into(), first.kind.clone().into());
+    serde_json::from_value(Value::Object(object)).ok()
+}
+
+/// A `proc`: its trigger from the first rank, its action (a heal percent, aura keys) per rank.
+fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
+    let mut object = ranks[0].effects.get(slot)?.params.clone();
+    object.remove("heal_pct");
+    object.remove("apply_aura");
+    let mut heals = Vec::new();
+    let mut auras = Vec::new();
+    for rank in ranks {
+        let params = &rank.effects.get(slot)?.params;
+        heals.push(params.get("heal_pct").cloned().unwrap_or(0.into()));
+        auras.push(match params.get("apply_aura") {
+            Some(Value::Array(keys)) => Value::Array(keys.clone()),
+            Some(key) => Value::Array(vec![key.clone()]),
+            None => Value::Array(Vec::new()),
+        });
+    }
+    object.insert("per_rank".into(), Value::Array(heals));
+    object.insert("auras".into(), Value::Array(auras));
+    object.insert("kind".into(), "proc".into());
     serde_json::from_value(Value::Object(object)).ok()
 }

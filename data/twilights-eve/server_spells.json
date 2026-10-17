@@ -467,8 +467,18 @@
         "spell_id": 14983,
         "talent_id": 382,
         "source_tab_id": 182,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "kill",
+           "yields_xp": true,
+           "heal_pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Killing an experience-yielding target instantly heals you for 10% of max health."
        }
       ]

@@ -226,6 +226,7 @@ pub(crate) fn on_struck(c: &Char) -> OnStruck {
                 tick_ms,
                 duration_ms,
                 per_rank,
+                ..
             } => {
                 struck.crit_heal = Some((aura_spell_ids[r], *tick_ms, *duration_ms, per_rank[r]));
             }
@@ -234,6 +235,7 @@ pub(crate) fn on_struck(c: &Char) -> OnStruck {
                 duration_ms,
                 swings,
                 per_rank,
+                ..
             } => {
                 struck.crit_damage = Some((aura_spell_ids[r], *duration_ms, *swings, per_rank[r]));
             }
@@ -344,6 +346,40 @@ const STATS: [Stat; 5] = [
     Stat::Intellect,
     Stat::Spirit,
 ];
+
+/// One learned proc that `happened` sets off, before its chance is rolled.
+pub(crate) struct Proc {
+    pub(crate) chance: u32,
+    /// Percent of the maximum health healed.
+    pub(crate) heal_pct: u32,
+}
+
+/// The procs of `c`'s talents that `happened` sets off.
+pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<Proc> {
+    learned(c)
+        .filter_map(|(e, r)| match e {
+            TalentEffect::Proc {
+                on,
+                skill,
+                yields_xp,
+                chance,
+                per_rank,
+                ..
+            } => {
+                let trigger = crate::rules::procs::Trigger {
+                    on: *on,
+                    skill: skill.as_deref(),
+                    yields_xp: *yields_xp,
+                };
+                trigger.fires(happened).then(|| Proc {
+                    chance: *chance,
+                    heal_pct: per_rank[r],
+                })
+            }
+            _ => None,
+        })
+        .collect()
+}
 
 /// The percent `c`'s out-of-combat health regeneration is raised by.
 pub(crate) fn health_regen_pct(c: &Char) -> u32 {

@@ -718,6 +718,16 @@ impl InWorld {
                 }
             }
         }
+        self.proc(
+            crate::rules::procs::Happened {
+                event: crate::callings::ProcEvent::Cast,
+                skill: Some(&skill.key),
+                yields_xp: false,
+            },
+            c,
+            rng,
+            events,
+        );
         let p = &self.player;
         events.push(values(
             self.guid,

@@ -175,6 +175,22 @@ pub enum TalentEffect {
     },
     /// Out-of-combat health regeneration rises by this percent.
     ModHealthRegenOutOfCombat { per_rank: Vec<u32> },
+    /// When `on` happens (and the filters hold), `chance` percent of the time: heal `per_rank`
+    /// percent of the maximum health (0 for none), and apply the rank's `auras` by key.
+    Proc {
+        on: ProcEvent,
+        /// Only for a cast of this skill.
+        #[serde(default)]
+        skill: Option<String>,
+        /// Only for a killing blow on a target that yields experience.
+        #[serde(default)]
+        yields_xp: bool,
+        #[serde(default = "always")]
+        chance: u32,
+        per_rank: Vec<u32>,
+        #[serde(default)]
+        auras: Vec<Vec<String>>,
+    },
     /// The armour from items rises by this many percent.
     ItemArmorPct { per_rank: Vec<u32> },
     /// A melee critical strike makes the target bleed for this percent of the average swing,
@@ -230,6 +246,20 @@ pub enum TalentEffect {
     },
 }
 
+fn always() -> u32 {
+    100
+}
+
+/// What a [`TalentEffect::Proc`] waits for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProcEvent {
+    /// A skill is cast.
+    Cast,
+    /// The character lands a killing blow.
+    Kill,
+}
+
 /// One of the five stats, in the order of [`crate::rules::stats::WarriorStats::base`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -269,6 +299,7 @@ impl TalentEffect {
             | Self::Defense { per_rank }
             | Self::ModStat { per_rank, .. }
             | Self::ModHealthRegenOutOfCombat { per_rank }
+            | Self::Proc { per_rank, .. }
             | Self::ItemArmorPct { per_rank }
             | Self::CritBleed { per_rank, .. }
             | Self::WeaponDamagePct { per_rank, .. }

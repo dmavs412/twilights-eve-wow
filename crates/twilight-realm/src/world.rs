@@ -28,6 +28,7 @@ use crate::Host;
 mod death;
 mod dungeon;
 mod food;
+mod procs;
 mod regen;
 
 pub(crate) use dungeon::come_out;
@@ -643,10 +644,11 @@ impl InWorld {
         } else {
             xp::Elite::No
         };
+        let base_xp = xp::kill_xp(c.level, mob.level(), elite);
         let gained = if at_tier_cap(c) {
             0
         } else {
-            self.dev.xp(xp::kill_xp(c.level, mob.level(), elite))
+            self.dev.xp(base_xp)
         };
         if gained > 0 {
             events.push(SessionEvent::XpGain(XpGain {
@@ -657,6 +659,16 @@ impl InWorld {
             }));
             ticked.leveled |= self.give_xp(c, gained, events);
         }
+        self.proc(
+            crate::rules::procs::Happened {
+                event: crate::callings::ProcEvent::Kill,
+                skill: None,
+                yields_xp: base_xp > 0,
+            },
+            c,
+            rng,
+            events,
+        );
         let dead = self.mobs[i].guid;
         self.auras_die_with(dead, events);
         crate::quests::credit_kill(c, entry, events);
