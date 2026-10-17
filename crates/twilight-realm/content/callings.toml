@@ -63,7 +63,7 @@ range_yd = [8.0, 25.0]
 requires_out_of_combat = true
 effects = [
     { kind = "charge", speed_yd_s = 24.0 },
-    { kind = "energize_rage", amount = { base = 8.5, per_level = 0.14 } },
+    { kind = "energize", power = "rage", amount = { base = 8.5, per_level = 0.14 } },
     { kind = "stun", aura_spell_id = 7922, aura_spell_name = "Charge Stun", duration_ms = 1000 },
 ]
 
@@ -203,7 +203,7 @@ range_yd = [8.0, 25.0]
 requires_out_of_combat = true
 effects = [
     { kind = "charge", speed_yd_s = 24.0 },
-    { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
+    { kind = "energize", power = "rage", amount = { base = 11.0, per_level = 0.1 } },
     { kind = "stun", aura_spell_id = 7922, aura_spell_name = "Charge Stun", duration_ms = 1000 },
 ]
 
@@ -522,7 +522,7 @@ range_yd = [8.0, 25.0]
 requires_out_of_combat = true
 effects = [
     { kind = "charge", speed_yd_s = 24.0 },
-    { kind = "energize_rage", amount = { base = 11.0, per_level = 0.1 } },
+    { kind = "energize", power = "rage", amount = { base = 11.0, per_level = 0.1 } },
     { kind = "stun", aura_spell_id = 7922, aura_spell_name = "Charge Stun", duration_ms = 1000 },
 ]
 

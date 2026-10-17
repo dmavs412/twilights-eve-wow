@@ -14,7 +14,7 @@ fn amount(spell_id: u32) -> Linear {
             Effect::WeaponStrike { bonus, .. } => Some(bonus),
             Effect::SchoolDamage { amount, .. } => Some(amount),
             Effect::PeriodicDamage { tick, .. } => Some(tick),
-            Effect::EnergizeRage { amount } => Some(amount),
+            Effect::Energize { amount, .. } => Some(amount),
             Effect::AuraAttackPower { amount, .. } => Some(amount),
             _ => None,
         })

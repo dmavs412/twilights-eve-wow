@@ -1019,14 +1019,21 @@ impl InWorld {
                     run_mode: true,
                 });
             }
-            Effect::EnergizeRage { amount } => {
-                let gained = amount.at(level, ap) + crate::talents::extra_rage(c, &skill.key);
-                self.player.power.gain(PowerKind::Rage, gained);
+            Effect::Energize { power, amount } => {
+                // A power the caster's bar does not hold: nothing happens, nothing is logged.
+                if self.player.power.kind != power {
+                    return;
+                }
+                let mut gained = amount.at(level, ap);
+                if power == PowerKind::Rage {
+                    gained += crate::talents::extra_rage(c, &skill.key);
+                }
+                self.player.power.gain(power, gained);
                 events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
                     target: self.guid,
                     caster: self.guid,
                     spell_id: skill.spell_id,
-                    power: POWER_RAGE,
+                    power: power.id(),
                     amount: gained,
                 }));
             }

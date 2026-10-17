@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 use serde_json::Value;
 use twilight_realm::callings::{self, Effect, Target, Weapon};
+use twilight_realm::rules::power::PowerKind;
 use twilight_realm::rules::skills::Linear;
 
 fn reference() -> Value {
@@ -325,8 +326,17 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(kind, "charge", "{key}");
             assert_eq!(f64::from(speed_yd_s), want["speed_yd_s"].as_f64().unwrap());
         }
-        Effect::EnergizeRage { amount } => {
-            assert_eq!(kind, "energize_rage", "{key}");
+        Effect::Energize { power, amount } => {
+            // The research JSON predates the `power` param: its `energize_rage` is rage.
+            match kind {
+                "energize" => assert_eq!(
+                    power,
+                    serde_json::from_value::<PowerKind>(want["power"].clone()).unwrap(),
+                    "{key}"
+                ),
+                "energize_rage" => assert_eq!(power, PowerKind::Rage, "{key}"),
+                other => panic!("{key}: {other}"),
+            }
             assert_eq!(amount, linear(&want["amount"]), "{key}");
         }
         Effect::PeriodicRage {

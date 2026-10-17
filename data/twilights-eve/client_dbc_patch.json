@@ -56,8 +56,9 @@
       }
      },
      {
-      "kind": "energize_rage",
+      "kind": "energize",
       "params": {
+       "power": "rage",
        "amount": {
         "base": 8.5,
         "per_level": 0.14,
@@ -169,8 +170,9 @@
       }
      },
      {
-      "kind": "energize_rage",
+      "kind": "energize",
       "params": {
+       "power": "rage",
        "amount": {
         "base": 11,
         "per_level": 0.1,
@@ -1078,8 +1080,9 @@
       }
      },
      {
-      "kind": "energize_rage",
+      "kind": "energize",
       "params": {
+       "power": "rage",
        "amount": {
         "base": 11,
         "per_level": 0.1,

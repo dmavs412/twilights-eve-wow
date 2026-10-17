@@ -35,13 +35,15 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "aura_attack_power", "charge", "energize_rage", "healing_reduction", "incapacitate",
-    "judgement", "mod_crit_chance", "mod_crit_damage", "mod_health_regen_out_of_combat",
-    "mod_stat", "periodic_damage", "proc_on_cast", "proc_on_kill", "seal", "spell_damage",
-    "stun", "weapon_strike",
+    "add_combo_points", "aura_attack_power", "charge", "energize", "healing_reduction",
+    "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
+    "mod_health_regen_out_of_combat", "mod_stat", "periodic_damage", "proc_on_cast",
+    "proc_on_kill", "seal", "spell_damage", "stun", "weapon_strike",
 }
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
+# What an `energize` may name in `power`.
+POWERS = ("rage", "energy", "mana")
 
 REALM_NUMBERS = (
     "realm_cost", "realm_cooldown_ms", "realm_gcd_ms", "realm_range_min", "realm_range_max",
@@ -150,6 +152,22 @@ def check_formulas(node: dict, where: str, path: str = "") -> None:
             raise BuildError(f"{where}: formula {path}{field} is {value!r}, not a number")
 
 
+def check_kind_params(kind: str, params: dict, where: str) -> None:
+    """The params a kind cannot do without: energize's power and amount, add_combo_points' positive
+    whole amount, and per_combo (on any kind) as a formula block."""
+    if kind == "energize":
+        if params.get("power") not in POWERS:
+            raise BuildError(f"{where}: energize needs power={'|'.join(POWERS)}, has {params.get('power')!r}")
+        if not isinstance(params.get("amount"), dict):
+            raise BuildError(f"{where}: energize lacks an amount formula")
+    if kind == "add_combo_points":
+        amount = params.get("amount")
+        if isinstance(amount, bool) or not isinstance(amount, int) or amount <= 0:
+            raise BuildError(f"{where}: add_combo_points needs a positive whole amount, has {amount!r}")
+    if "per_combo" in params and not isinstance(params["per_combo"], dict):
+        raise BuildError(f"{where}: per_combo is a formula block (per_combo.base, per_combo.per_level)")
+
+
 def build_row(row: dict, where: str) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
@@ -181,8 +199,10 @@ def build_row(row: dict, where: str) -> dict:
             continue
         here = f"{where} effect{i}"
         parsed = parse_params(params, here)
-        if modelled == "yes" and kind not in KNOWN_KINDS:
-            raise BuildError(f"{here}: unknown effect kind {kind!r}")
+        if modelled == "yes":
+            if kind not in KNOWN_KINDS:
+                raise BuildError(f"{here}: unknown effect kind {kind!r}")
+            check_kind_params(kind, parsed, here)
         effects.append({"kind": kind, "params": parsed, "realm_only": i > CLIENT_EFFECTS})
     out["modelled"] = modelled == "yes"
     out["effects"] = effects if out["modelled"] else []

@@ -7,6 +7,7 @@ use std::sync::{OnceLock, RwLock};
 use serde::Deserialize;
 
 use crate::content::Calling;
+use crate::rules::power::PowerKind;
 use crate::rules::skills::Linear;
 
 /// One Calling.
@@ -398,8 +399,9 @@ pub enum Effect {
     AddComboPoints { amount: u32 },
     /// The caster runs to the target.
     Charge { speed_yd_s: f32 },
-    /// Rage now.
-    EnergizeRage { amount: Linear },
+    /// `amount` of `power` now, logged as an energize; nothing at all when the target's bar is
+    /// of another kind.
+    Energize { power: PowerKind, amount: Linear },
     /// Rage over time, under `aura_spell_id`.
     PeriodicRage {
         aura_spell_id: u32,

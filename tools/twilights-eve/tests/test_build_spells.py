@@ -102,6 +102,49 @@ class BuildSpells(unittest.TestCase):
     def test_realm_cost_below_client_cost_fails(self):
         self.assert_fails([{**STRIKE, "realm_cost": "10"}], "below client_cost")
 
+    def test_energize_names_its_power(self):
+        row = {**STRIKE, "effect1_kind": "energize",
+               "effect1_params": "power=energy;amount.base=20;amount.per_level=0"}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"]["power"], "energy")
+
+    def test_energize_without_a_known_power_fails(self):
+        self.assert_fails([{**STRIKE, "effect1_kind": "energize",
+                            "effect1_params": "amount.base=20;amount.per_level=0"}], "energize needs power")
+        self.assert_fails([{**STRIKE, "effect1_kind": "energize",
+                            "effect1_params": "power=focus;amount.base=20;amount.per_level=0"}],
+                          "energize needs power")
+        self.assert_fails([{**STRIKE, "effect1_kind": "energize", "effect1_params": "power=rage"}],
+                          "lacks an amount")
+
+    def test_energize_rage_is_no_longer_a_kind(self):
+        self.assert_fails([{**STRIKE, "effect1_kind": "energize_rage",
+                            "effect1_params": "amount.base=20;amount.per_level=0"}], "unknown effect kind")
+
+    def test_add_combo_points_needs_a_positive_whole_amount(self):
+        row = {**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": "amount=1"}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {"amount": 1})
+        for bad in ("amount=0", "amount=-1", "amount=1.5", ""):
+            self.assert_fails([{**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": bad}],
+                              "positive whole amount")
+
+    def test_per_combo_is_a_formula_block(self):
+        row = {**STRIKE, "effect1_kind": "spell_damage",
+               "effect1_params": "amount.base=5;amount.per_level=0;per_combo.base=5;per_combo.per_level=0.5"}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        params = data[0]["skills"][0]["effects"][0]["params"]
+        self.assertEqual(params["per_combo"], {"base": 5, "per_level": 0.5})
+        self.assert_fails([{**STRIKE, "effect1_kind": "spell_damage",
+                            "effect1_params": "amount.base=5;amount.per_level=0;per_combo.base=5"}],
+                          "lacks per_level")
+        self.assert_fails([{**STRIKE, "effect1_kind": "spell_damage",
+                            "effect1_params": "amount.base=5;amount.per_level=0;per_combo=5"}],
+                          "formula block")
+
     def test_talents_group_into_tabs_with_ranks_and_prereqs(self):
         rows = [talent("cruelty", 1, 0, 1), talent("cruelty", 2, 0, 1),
                 talent("fury", 1, 1, 1, prereq_key="cruelty", prereq_rank="2")]

@@ -18,8 +18,9 @@ pub mod class {
 }
 
 /// The power a Class runs on. Stored as the client field carries it: rage in tenths, energy
-/// and mana whole.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// and mana whole. Named in content as `rage`, `energy` or `mana`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum PowerKind {
     Rage,
     Energy,
