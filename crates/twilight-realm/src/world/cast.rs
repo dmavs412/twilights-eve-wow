@@ -156,6 +156,10 @@ enum AuraKind {
         pct: u32,
     },
     Stun,
+    /// A stun that damage ends when `break_on_damage` (Gouge).
+    Incapacitate {
+        break_on_damage: bool,
+    },
     /// Healing on the unit is cut (Mortal Strike's wound). Nothing heals a mob in a fight yet,
     /// so the debuff is all it does.
     HealingReduced,
@@ -327,9 +331,9 @@ impl Skills {
 
     /// Whether `unit` is stunned.
     pub(super) fn stunned(&self, unit: u64) -> bool {
-        self.auras
-            .iter()
-            .any(|a| a.unit == unit && a.kind == AuraKind::Stun)
+        self.auras.iter().any(|a| {
+            a.unit == unit && matches!(a.kind, AuraKind::Stun | AuraKind::Incapacitate { .. })
+        })
     }
 
     /// What `unit`'s swing time is multiplied by.
@@ -1005,6 +1009,21 @@ impl InWorld {
                 self.skills
                     .apply(aura(AuraKind::Stun, aura_spell_id, duration_ms, 0), events);
             }
+            Effect::Incapacitate {
+                duration_ms,
+                break_on_damage,
+                drop_combat,
+            } => {
+                // Damage in the same cast came first, so it does not wake the target.
+                if self.mobs.iter().any(|m| m.guid == target && m.alive()) {
+                    let kind = AuraKind::Incapacitate { break_on_damage };
+                    self.skills
+                        .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
+                    if drop_combat {
+                        self.drop_combat(target, events);
+                    }
+                }
+            }
             Effect::AttackSpeedSlow { pct, duration_ms } => {
                 let a = aura(AuraKind::AttackSlow { pct }, skill.spell_id, duration_ms, 0);
                 self.skills.apply(a, events);
@@ -1464,6 +1483,51 @@ impl InWorld {
         self.skills.apply(bleed, events);
     }
 
+    /// The mob `target` stops fighting the player, and the player it: the mob stands dazed until
+    /// its hold is over (`State::Dazed`).
+    fn drop_combat(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
+        let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == target && m.alive()) else {
+            return;
+        };
+        let was_engaged = mob.state == State::Engaged;
+        mob.state = State::Dazed;
+        if !was_engaged {
+            return;
+        }
+        mob.walk = None;
+        events.push(SessionEvent::AttackStop {
+            attacker: mob.guid,
+            victim: self.guid,
+        });
+        let mut pairs = vec![(UNIT_FIELD_FLAGS, 0)];
+        pairs.extend(guid_pairs(UNIT_FIELD_TARGET, 0));
+        events.push(values(mob.guid, &pairs));
+        if self.player.attacking == Some(target) {
+            self.player.attacking = None;
+            events.push(SessionEvent::AttackStop {
+                attacker: self.guid,
+                victim: target,
+            });
+        }
+    }
+
+    /// `unit` took damage: every incapacitate on it that breaks on damage ends.
+    pub(super) fn woken_by_damage(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
+        let gone = self.skills.remove_where(
+            |a| {
+                a.unit == unit
+                    && matches!(
+                        a.kind,
+                        AuraKind::Incapacitate {
+                            break_on_damage: true
+                        }
+                    )
+            },
+            events,
+        );
+        self.faded(&gone, events);
+    }
+
     /// `target` loses `damage`; at 0 it dies at the player's hand.
     fn hurt(
         &mut self,
@@ -1480,11 +1544,13 @@ impl InWorld {
         let mob = &mut self.mobs[i];
         mob.health = mob.health.saturating_sub(damage);
         events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
-        if mob.state == State::Idle {
+        if matches!(mob.state, State::Idle | State::Dazed) {
             super::engage(mob, self.guid, events);
         }
         if mob.health == 0 {
             self.kill(i, c, rng, events, ticked);
+        } else {
+            self.woken_by_damage(target, events);
         }
     }
 

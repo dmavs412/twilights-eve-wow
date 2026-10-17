@@ -14,10 +14,11 @@ use common::*;
 
 const HEROIC_STRIKE: u32 = 78;
 const CHARGE: u32 = 100;
+const GOUGE: u32 = 1776;
 const FIRE_BLAST: u32 = 2136;
 
 /// The Basic Warrior's kit.
-const KIT: [u32; 3] = [HEROIC_STRIKE, CHARGE, FIRE_BLAST];
+const KIT: [u32; 4] = [HEROIC_STRIKE, CHARGE, GOUGE, FIRE_BLAST];
 
 #[test]
 fn a_new_basic_warriors_spellbook_holds_exactly_its_kit() {
@@ -74,7 +75,7 @@ fn the_bar_the_player_arranges_comes_back_at_the_next_login() {
         slot: 72,
         packed: CHARGE,
     });
-    for slot in [73, 74] {
+    for slot in [73, 74, 75] {
         realm.handle(RealmCommand::SetActionButton { slot, packed: 0 });
     }
     realm.handle(RealmCommand::Logout);

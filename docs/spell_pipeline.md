@@ -79,7 +79,7 @@ seats (`talent_id`, grid position, prereq, one spell id per rank). Every row is 
 override with a resource also sends `power_type` (the row's `resource`, else its Calling's: mana 0, rage 1,
 focus 2, energy 3, happiness 4) and, when the row has one, `description`; an empty description keeps the
 borrowed text. Auras are not Spell.dbc overrides. The CSV uses the realm's vocabulary: `weapon=normal` or
-`normalized`, boolean `unavoidable=yes`, `school_damage` (`school=physical|holy|fire`, default physical; any non-physical school ignores armour, rolls only the level-based miss and crits for 150%), and `proc` (`on=cast|kill`, `skill=`, `yields_xp=yes`,
+`normalized`, boolean `unavoidable=yes`, `incapacitate` (`duration_ms`, `break_on_damage`, `drop_combat`: a stun that damage after the cast ends and that drops the target out of combat; on waking, aggro rules apply), `school_damage` (`school=physical|holy|fire`, default physical; any non-physical school ignores armour, rolls only the level-based miss and crits for 150%), and `proc` (`on=cast|kill`, `skill=`, `yields_xp=yes`,
 `chance=`, then one of `apply_aura=key|key` or `heal_pct=`). Seats are whole numbers. The client applies it
 in memory when it loads its spell data (ADR 0003). The build resolves each override's range, cast time and
 duration to the stock `SpellRange.dbc`, `SpellCastTimes.dbc` and `SpellDuration.dbc` row that holds

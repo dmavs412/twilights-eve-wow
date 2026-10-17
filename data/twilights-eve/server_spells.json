@@ -86,8 +86,29 @@
     "realm_cooldown_ms": 10000,
     "realm_range_max": 5,
     "target": "enemy",
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "school": "physical",
+       "amount": {
+        "base": 10,
+        "per_level": 1.5
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "incapacitate",
+      "params": {
+       "duration_ms": 4000,
+       "break_on_damage": true,
+       "drop_combat": true
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it."
    },
    {

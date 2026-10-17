@@ -293,6 +293,7 @@ impl InWorld {
             }
         }
 
+        self.dazed_wake(c, host, events);
         self.player_swing(c, rng, events, &mut ticked);
         for i in 0..self.mobs.len() {
             self.mob_tick(i, dt, host, c, rng, events);
@@ -305,6 +306,33 @@ impl InWorld {
         self.update_combat(dt, events);
         self.eat(dt, c, events);
         ticked
+    }
+
+    /// A dazed mob whose hold is over: it notices the player as any idle mob does, or goes home.
+    fn dazed_wake(&mut self, c: &Char, host: &dyn Host, events: &mut Vec<SessionEvent>) {
+        let me = c.position;
+        let route = crate::dungeon::route_on(self.map);
+        for i in 0..self.mobs.len() {
+            let mob = &self.mobs[i];
+            if mob.state != State::Dazed || self.skills.stunned(mob.guid) {
+                continue;
+            }
+            let r = aggro::radius(mob.template.detection_range, c.level, mob.level());
+            let notices = mob.template.hostile
+                && distance(mob.position, me) <= r
+                && host.line_of_sight(self.map, eye(mob.position), eye(me));
+            if notices {
+                self.pull(i, events);
+            } else {
+                let map = self.map;
+                evade(
+                    &mut self.mobs[i],
+                    self.guid,
+                    route.map(|r| (r, map, host)),
+                    events,
+                );
+            }
+        }
     }
 
     /// Mob `i` turns on the player. A hostile mob brings every idle member of its camp with it
@@ -407,7 +435,7 @@ impl InWorld {
         if swing.damage > 0 {
             events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
         }
-        let idle = mob.state == State::Idle;
+        let idle = matches!(mob.state, State::Idle | State::Dazed);
         if swing.damage > 0 && crate::wear::on_hit(c, &mut self.wear, events) {
             self.refresh_gear(c, events);
         }
@@ -416,8 +444,13 @@ impl InWorld {
         }
         if self.mobs[i].health == 0 {
             self.kill(i, c, rng, events, ticked);
-        } else if swing.outcome == Outcome::Crit {
-            self.crit_landed(target, c, events);
+        } else {
+            if swing.damage > 0 {
+                self.woken_by_damage(target, events);
+            }
+            if swing.outcome == Outcome::Crit {
+                self.crit_landed(target, c, events);
+            }
         }
         if swing.damage > 0 {
             self.sweep(target, swing.damage, c, rng, events, ticked);
@@ -484,7 +517,7 @@ impl InWorld {
         mob.swing_timer = (mob.swing_timer - dt).max(0.0);
         mob.repath_timer = (mob.repath_timer - dt).max(0.0);
         match mob.state {
-            State::Idle | State::Dead => {}
+            State::Idle | State::Dead | State::Dazed => {}
             State::Evading => {
                 if mob.walk.is_none() {
                     mob.state = State::Idle;

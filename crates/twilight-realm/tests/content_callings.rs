@@ -317,6 +317,16 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(aura_spell_id, ms(want, "aura_spell_id"));
             assert_eq!(duration_ms, ms(want, "duration_ms"));
         }
+        Effect::Incapacitate {
+            duration_ms,
+            break_on_damage,
+            drop_combat,
+        } => {
+            assert_eq!(kind, "incapacitate", "{key}");
+            assert_eq!(duration_ms, ms(want, "duration_ms"));
+            assert_eq!(break_on_damage, want["break_on_damage"] == true);
+            assert_eq!(drop_combat, want["drop_combat"] == true);
+        }
         Effect::AttackSpeedSlow { pct, duration_ms } => {
             assert_eq!(kind, "attack_speed_slow", "{key}");
             assert_eq!(pct, ms(want, "pct"));
@@ -369,7 +379,7 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     ids.dedup();
     assert_eq!(
         ids,
-        [78, 100, 2136, 6178, 6192, 6546, 7887, 10308, 12294, 20271, 20305, 20375]
+        [78, 100, 1776, 2136, 6178, 6192, 6546, 7887, 10308, 12294, 20271, 20305, 20375]
     );
 }
 
@@ -524,14 +534,14 @@ fn the_basic_warrior_tree_is_recruit_on_the_warrior_arms_art() {
 }
 
 #[test]
-fn the_basic_warrior_kit_is_heroic_strike_charge_and_fire_blast() {
+fn the_basic_warrior_kit_is_heroic_strike_charge_gouge_and_fire_blast() {
     let kit: Vec<&str> = callings::calling("basic_warrior")
         .unwrap()
         .skills
         .iter()
         .map(|s| s.key.as_str())
         .collect();
-    assert_eq!(kit, ["heroic_strike", "charge", "fire_blast"]);
+    assert_eq!(kit, ["heroic_strike", "charge", "gouge", "fire_blast"]);
 }
 
 /// The Vanguard talents the realm shows and lets the player learn, but does not model yet: Anger

@@ -86,6 +86,26 @@
     "borrowed_family_bit": 38,
     "power_type": 1,
     "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "school": "physical",
+       "amount": {
+        "base": 10,
+        "per_level": 1.5
+       }
+      }
+     },
+     {
+      "kind": "incapacitate",
+      "params": {
+       "duration_ms": 4000,
+       "break_on_damage": true,
+       "drop_combat": true
+      }
+     }
+    ],
     "range_index": 2,
     "duration_index": 35
    }

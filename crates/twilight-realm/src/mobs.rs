@@ -251,6 +251,9 @@ pub(crate) enum State {
     Idle,
     /// Fighting the player.
     Engaged,
+    /// Held out of the fight by an incapacitate that dropped combat; when the hold ends it
+    /// notices the player as an idle mob does, or runs home.
+    Dazed,
     /// Running home after the fight was lost to it; ignores everything on the way.
     Evading,
     Dead,
