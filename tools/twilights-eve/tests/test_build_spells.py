@@ -513,6 +513,142 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIs(data[0]["skills"][0]["effects"][0]["params"]["unavoidable"], True)
 
+    def built_skill(self, **cells: str) -> dict:
+        done, data = self.run_build([{**STRIKE, **cells}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return data[0]["skills"][0]
+
+    def test_requires_weapon_maps_to_item_class_and_masks(self):
+        skill = self.built_skill(requires_weapon="dagger")
+        self.assertEqual(skill["requires_weapon"], ["dagger"])
+        fields = self.patch["spells"][0]["fields"]
+        self.assertEqual(fields["equipped_item_class"], 2)
+        self.assertEqual(fields["equipped_subclass_mask"], 1 << 15)
+        self.assertEqual(fields["equipped_inventory_mask"], (1 << 13) | (1 << 21) | (1 << 22))
+        self.built_skill(requires_weapon="shield")
+        fields = self.patch["spells"][0]["fields"]
+        self.assertEqual((fields["equipped_item_class"], fields["equipped_subclass_mask"],
+                          fields["equipped_inventory_mask"]), (4, 1 << 6, 1 << 14))
+        self.built_skill(requires_weapon="any_ranged")
+        self.assertEqual(self.patch["spells"][0]["fields"]["equipped_subclass_mask"],
+                         (1 << 2) | (1 << 3) | (1 << 16) | (1 << 18) | (1 << 19))
+        self.built_skill(requires_weapon="one_hand|two_hand")
+        self.assertEqual(self.patch["spells"][0]["fields"]["equipped_inventory_mask"],
+                         (1 << 13) | (1 << 17) | (1 << 21) | (1 << 22))
+        self.built_skill()
+        self.assertNotIn("equipped_item_class", self.patch["spells"][0]["fields"])
+
+    def test_requires_weapon_failures(self):
+        self.assert_fails([{**STRIKE, "requires_weapon": "club"}], "vanguard/strike) requires_weapon: 'club'")
+        self.assert_fails([{**STRIKE, "requires_weapon": "shield|dagger"}], "requires_weapon: shield")
+
+    def test_cooldown_category_numbers_names_and_shares_the_cooldown(self):
+        other = {**STRIKE, "key": "other", "cooldown_category": "poison", "category_cooldown_ms": "6000"}
+        done, data = self.run_build([{**STRIKE, "cooldown_category": "poison", "category_cooldown_ms": "6000"},
+                                     other, {**STRIKE, "key": "third", "cooldown_category": "blind",
+                                             "category_cooldown_ms": "9000"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        first, second, third = (s["fields"] for s in self.patch["spells"])
+        self.assertEqual(first["category"], second["category"])
+        self.assertNotEqual(first["category"], third["category"])
+        self.assertGreaterEqual(first["category"], 10_000)
+        self.assertEqual(first["category_cooldown_ms"], 6000)
+        self.assertEqual(data[0]["skills"][0]["cooldown_category"], "poison")
+
+    def test_cooldown_category_failures(self):
+        self.assert_fails([{**STRIKE, "cooldown_category": "poison"}], "vanguard/strike) cooldown_category")
+        self.assert_fails([{**STRIKE, "category_cooldown_ms": "6000"}], "vanguard/strike) cooldown_category")
+        self.assert_fails([{**STRIKE, "cooldown_category": "p", "category_cooldown_ms": "0"}], "category_cooldown_ms")
+        self.assert_fails([{**STRIKE, "cooldown_category": "p", "category_cooldown_ms": "6000"},
+                           {**STRIKE, "key": "b", "cooldown_category": "p", "category_cooldown_ms": "7000"}],
+                          "vanguard/b) category_cooldown_ms")
+
+    def test_school_and_prevention_defaults(self):
+        skill = self.built_skill()
+        self.assertEqual((skill["school"], skill["prevention"]), ("physical", "pacify"))
+        self.assertEqual(self.patch["spells"][0]["fields"]["school"], 0)
+        self.assertEqual(self.patch["spells"][0]["fields"]["prevention_type"], 2)
+        skill = self.built_skill(school="fire")
+        self.assertEqual((skill["school"], skill["prevention"]), ("fire", "silence"))
+        self.assertEqual(self.patch["spells"][0]["fields"]["school"], 2)
+        self.assertEqual(self.patch["spells"][0]["fields"]["prevention_type"], 1)
+        skill = self.built_skill(school="frost", prevention="none")
+        self.assertEqual(skill["prevention"], "none")
+        skill = self.built_skill(prevention="silence")
+        self.assertEqual(skill["prevention"], "silence")
+
+    def test_school_and_prevention_failures(self):
+        self.assert_fails([{**STRIKE, "school": "light"}], "vanguard/strike) school: 'light'")
+        self.assert_fails([{**STRIKE, "prevention": "stun"}], "vanguard/strike) prevention: 'stun'")
+
+    def test_school_damage_takes_the_rows_school(self):
+        params = "amount.base=5;amount.per_level=0"
+        skill = self.built_skill(effect1_kind="school_damage", effect1_params=params, school="fire")
+        self.assertEqual(skill["effects"][0]["params"]["school"], "fire")
+        skill = self.built_skill(effect1_kind="school_damage", effect1_params=params)
+        self.assertNotIn("school", skill["effects"][0]["params"])
+        self.assert_fails([{**STRIKE, "effect1_kind": "school_damage",
+                            "effect1_params": "school=fire;" + params}], "school column")
+
+    def test_aura_states_map_to_numbers(self):
+        skill = self.built_skill(requires_target_state="health_below_20", requires_caster_state="defense")
+        self.assertEqual(skill["requires_target_state"], "health_below_20")
+        fields = self.patch["spells"][0]["fields"]
+        self.assertEqual((fields["target_aura_state"], fields["caster_aura_state"]), (2, 1))
+        self.assert_fails([{**STRIKE, "requires_target_state": "bleeding"}], "vanguard/strike) requires_target_state")
+        self.assert_fails([{**STRIKE, "requires_caster_state": "stealth"}], "vanguard/strike) requires_caster_state")
+
+    def test_every_requires_key_passes(self):
+        for cell, expected in (
+            ("position=behind", {"position": "behind"}), ("position=front", {"position": "front"}),
+            ("facing=no", {"facing": False}), ("stealth=yes", {"stealth": True}),
+            ("combat=in", {"combat": "in"}), ("target_state=bleeding", {"target_state": "bleeding"}),
+            ("caster_state=after_dodge;window_ms=5000", {"caster_state": "after_dodge", "window_ms": 5000}),
+            ("offhand=weapon", {"offhand": "weapon"}), ("los=no", {"los": False}),
+            ("usable_while=stunned|feared", {"usable_while": ["stunned", "feared"]}),
+            ("position=behind;stealth=yes", {"position": "behind", "stealth": True}),
+        ):
+            self.assertEqual(self.built_skill(requires=cell)["requires"], expected, cell)
+
+    def test_requires_failures(self):
+        for cell, message in (
+            ("position=above", "position is 'above'"), ("facing=maybe", "facing is 'maybe'"),
+            ("stealth=no", "stealth is 'no'"), ("combat=always", "combat is 'always'"),
+            ("target_state=asleep", "target_state is 'asleep'"),
+            ("caster_state=after_miss;window_ms=5", "caster_state is 'after_miss'"),
+            ("caster_state=after_crit", "go together"), ("window_ms=500", "go together"),
+            ("caster_state=after_crit;window_ms=0", "window_ms must be above 0"),
+            ("offhand=shield", "offhand is 'shield'"), ("los=sometimes", "los is 'sometimes'"),
+            ("usable_while=asleep", "usable_while 'asleep'"), ("colour=red", "unknown key 'colour'"),
+            ("position", "malformed pair"), ("combat=in;combat=out", "given twice"),
+        ):
+            self.assert_fails([{**STRIKE, "requires": cell}], message)
+
+    def test_combat_out_sets_the_realm_flag(self):
+        skill = self.built_skill(requires="combat=out")
+        self.assertTrue(skill["requires_out_of_combat"])
+        self.assertEqual(skill["requires"], {"combat": "out"})
+        self.assertNotIn("requires_out_of_combat", self.built_skill(requires="combat=in"))
+
+    def test_client_not_in_combat_needs_combat_out(self):
+        self.built_skill(client_not_in_combat="yes", requires="combat=out")
+        self.assertTrue(self.patch["spells"][0]["fields"]["not_in_combat"])
+        self.assert_fails([{**STRIKE, "client_not_in_combat": "yes"}],
+                          "vanguard/strike) client_not_in_combat: yes needs requires: combat=out")
+        self.assert_fails([{**STRIKE, "client_not_in_combat": "yes", "requires": "combat=in"}],
+                          "client_not_in_combat")
+
+    def test_gate_columns_fail_on_an_aura_row(self):
+        self.assert_fails([{**AURA, "requires": "stealth=yes"}], "vanguard/buff) requires: set on an aura row")
+        done, data = self.run_build([{**AURA, "school": "nature"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["auras"][0]["school"], "nature")
+
+    def test_the_old_combat_column_is_refused(self):
+        done, _ = self.run_build([STRIKE], extra_columns=("requires_out_of_combat",))
+        self.assertNotEqual(done.returncode, 0)
+        self.assertIn("requires_out_of_combat is gone", done.stderr)
+
     def test_duplicate_rank_fails(self):
         self.assert_fails([STRIKE, STRIKE], "duplicate")
 

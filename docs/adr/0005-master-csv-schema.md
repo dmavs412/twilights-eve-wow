@@ -48,6 +48,20 @@ issue #63 (the spec); this record keeps the decisions that are hard to see from 
   `family_bit` (the client patch is unchanged for existing talents); several as `family_mask`,
   which the client crate does not read yet. `server_spells.json` also carries `target`, the keys.
 
+- **Details settled while building the gate columns (#66).** Aura states are `defense` 1,
+  `health_below_20` 2, `berserking` 3, `frozen` 4, `judgement` 5, `hunter_parry` 7, from memory of
+  vmangos's `AuraStateType` (no vmangos source on the build machine); only 2 is confirmed by
+  `docs/reference/skills-and-talents.md`, so check the rest when a row first uses one. Weapon
+  subclass and inventory-type masks follow vmangos's `ItemSubclassWeapon` and `InventoryType`;
+  `any_ranged` includes `wand`; `shield` is item class 4 and cannot mix with weapons. Category
+  numbers start at 10,000 and follow first appearance in the sheet. `caster_state` requires
+  `window_ms`. Gate columns other than `school` fail on an aura row. The server JSON keeps
+  `requires_out_of_combat: true` (set by `combat=out`) so the realm loader is untouched, and a
+  `school_damage` effect's `school` param is written into the server JSON from the row's `school`
+  when it is not physical. The patch writes `school` and `prevention_type` on every override.
+  New columns sit at the end of the CSV header; rows shorter than the header read the missing
+  cells as empty. `requires_out_of_combat=yes` migrated on the three Charge rows.
+
 ## Considered Options
 
 - **Adopt `is_hidden`.** Rejected. `client_visible` says what is withheld and is checked against

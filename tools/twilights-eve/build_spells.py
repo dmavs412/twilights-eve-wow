@@ -80,6 +80,44 @@ SPELLMOD_OPS = (
     "CRIT_DAMAGE_BONUS", "RESIST_MISS_CHANCE", "JUMP_TARGETS", "CHANCE_OF_SUCCESS", "ACTIVATION_TIME",
     "EFFECT_PAST_FIRST", "CASTING_TIME_OLD", "DOT", "EFFECT3", "SPELL_BONUS_DAMAGE",
 )
+SCHOOLS = ("physical", "holy", "fire", "nature", "frost", "shadow", "arcane")
+# Spell.dbc PreventionType: 0 none, 1 silence, 2 pacify.
+PREVENTIONS = {"none": 0, "silence": 1, "pacify": 2}
+# Category numbers handed to `cooldown_category` names start here; no stock 1.12.1 Spell.dbc
+# Category is this high (the stock ones stop near 1,300).
+CATEGORY_BASE = 10_000
+# The client's aura states (vmangos `AuraStateType`), as Spell.dbc's CasterAuraState and
+# TargetAuraState store them.
+AURA_STATES = {"defense": 1, "health_below_20": 2, "berserking": 3, "frozen": 4, "judgement": 5,
+               "hunter_parry": 7}
+# Weapon item subclasses (item class 2) -> (subclass, the inventory types it sits in). Inventory
+# types: 13 weapon, 14 shield, 15 ranged, 17 two-hand, 21 main hand, 22 off hand, 25 thrown,
+# 26 ranged right.
+_ONE_HAND_SLOTS = (13, 21, 22)
+WEAPON_SUBCLASSES = {
+    "one_hand_axe": (0, _ONE_HAND_SLOTS), "two_hand_axe": (1, (17,)), "bow": (2, (15,)), "gun": (3, (26,)),
+    "one_hand_mace": (4, _ONE_HAND_SLOTS), "two_hand_mace": (5, (17,)), "polearm": (6, (17,)),
+    "one_hand_sword": (7, _ONE_HAND_SLOTS), "two_hand_sword": (8, (17,)), "staff": (10, (17,)),
+    "fist": (13, _ONE_HAND_SLOTS), "dagger": (15, _ONE_HAND_SLOTS), "thrown": (16, (25,)),
+    "crossbow": (18, (26,)), "wand": (19, (26,)),
+}
+SHIELD = ("shield", 4, 6, (14,))  # name, item class (armour), subclass, inventory types
+WEAPON_ALIASES = {
+    "any_melee": ("one_hand_axe", "two_hand_axe", "one_hand_mace", "two_hand_mace", "polearm",
+                  "one_hand_sword", "two_hand_sword", "staff", "fist", "dagger"),
+    "any_ranged": ("bow", "gun", "crossbow", "thrown", "wand"),
+    "one_hand": ("one_hand_axe", "one_hand_mace", "one_hand_sword", "fist", "dagger"),
+    "two_hand": ("two_hand_axe", "two_hand_mace", "polearm", "two_hand_sword", "staff"),
+}
+REQUIRES_VALUES = {
+    "position": ("behind", "front"), "facing": ("yes", "no"), "stealth": ("yes",), "combat": ("in", "out"),
+    "target_state": ("bleeding", "stunned", "rooted", "feared", "incapacitated", "poisoned"),
+    "caster_state": ("after_crit", "after_dodge", "after_parry", "after_block", "after_kill"),
+    "offhand": ("weapon",), "los": ("yes", "no"),
+}
+USABLE_WHILE = ("stunned", "feared", "rooted", "charmed", "silenced")
+GATE_COLUMNS = ("requires_weapon", "cooldown_category", "category_cooldown_ms", "prevention",
+                "requires_caster_state", "requires_target_state", "requires")
 # Spell.dbc columns of SpellFamilyFlags (low, high 32 bits), as extract_spells.py reads them.
 SPELL_FAMILY_FLAGS_COLUMNS = (161, 162)
 
@@ -299,7 +337,7 @@ def build_talent_tab(row: dict, where: str) -> dict:
 def build_aura(row: dict, built: dict, where: str) -> dict:
     """An aura row: a borrowed spell id, a duration, charges and effects, granted by key."""
     out = {"key": built["key"], "name": built["name"]}
-    for column in ("spell_id", "client_visible", "icon_id", "status"):
+    for column in ("spell_id", "client_visible", "icon_id", "status", "school", "prevention"):
         if column in built:
             out[column] = built[column]
     for column in ("duration_ms", "charges"):
@@ -388,6 +426,102 @@ def max_rank(row: dict, where: str) -> int:
     return value
 
 
+def parse_requires(text: str, where: str) -> dict:
+    """The realm-only `requires` cell: `key=value` pairs joined by `;`, each key and value from the
+    spec's table. yes/no become booleans, `usable_while` a list, `window_ms` a whole number."""
+    out: dict = {}
+    for pair in text.split(";"):
+        key, sep, value = pair.partition("=")
+        if not sep or not key or not value:
+            raise BuildError(f"{where} requires: malformed pair {pair!r}")
+        if key in out:
+            raise BuildError(f"{where} requires: {key!r} given twice")
+        if key == "usable_while":
+            states = value.split("|")
+            for state in states:
+                if state not in USABLE_WHILE:
+                    raise BuildError(f"{where} requires: usable_while {state!r} is not one of {', '.join(USABLE_WHILE)}")
+            out[key] = states
+        elif key == "window_ms":
+            out[key] = whole(value, f"{where} requires window_ms")
+            if out[key] <= 0:
+                raise BuildError(f"{where} requires: window_ms must be above 0")
+        elif key in REQUIRES_VALUES:
+            if value not in REQUIRES_VALUES[key]:
+                raise BuildError(f"{where} requires: {key} is {value!r}, want one of {', '.join(REQUIRES_VALUES[key])}")
+            out[key] = value == "yes" if value in ("yes", "no") else value
+        else:
+            raise BuildError(f"{where} requires: unknown key {key!r}, want one of "
+                             f"{', '.join([*REQUIRES_VALUES, 'usable_while', 'window_ms'])}")
+    if ("window_ms" in out) != ("caster_state" in out):
+        raise BuildError(f"{where} requires: caster_state and window_ms go together")
+    return out
+
+
+def weapon_requirement(text: str, where: str) -> tuple[list[str], dict]:
+    """`requires_weapon` names (joined by `|`, aliases allowed) -> the names as written and the
+    Spell.dbc equipped item class, subclass mask and inventory type mask."""
+    names = text.split("|")
+    subclasses: dict[str, tuple[int, tuple]] = {}
+    shield = False
+    for name in names:
+        if name in WEAPON_ALIASES:
+            subclasses.update({n: WEAPON_SUBCLASSES[n] for n in WEAPON_ALIASES[name]})
+        elif name in WEAPON_SUBCLASSES:
+            subclasses[name] = WEAPON_SUBCLASSES[name]
+        elif name == SHIELD[0]:
+            shield = True
+        else:
+            wanted = [*WEAPON_SUBCLASSES, SHIELD[0], *WEAPON_ALIASES]
+            raise BuildError(f"{where} requires_weapon: {name!r} is not one of {', '.join(wanted)}")
+    if shield and subclasses:
+        raise BuildError(f"{where} requires_weapon: shield (armour) cannot be mixed with weapons in one cell")
+    if shield:
+        return names, {"item_class": SHIELD[1], "subclass_mask": 1 << SHIELD[2],
+                       "inventory_mask": sum(1 << t for t in SHIELD[3])}
+    return names, {"item_class": 2, "subclass_mask": sum(1 << sub for sub, _ in subclasses.values()),
+                   "inventory_mask": sum(1 << t for t in {t for _, slots in subclasses.values() for t in slots})}
+
+
+def build_gates(row: dict, kind: str, where: str) -> dict:
+    """The gate columns: school and prevention with their defaults, and whatever of weapon,
+    cooldown category, aura states and `requires` the row sets. An aura row carries only a school."""
+    school = row["school"] or "physical"
+    if school not in SCHOOLS:
+        raise BuildError(f"{where} school: {school!r} is not one of {', '.join(SCHOOLS)}")
+    prevention = row["prevention"] or ("pacify" if school == "physical" else "silence")
+    if prevention not in PREVENTIONS:
+        raise BuildError(f"{where} prevention: {prevention!r} is not one of {', '.join(PREVENTIONS)}")
+    out: dict = {"school": school, "prevention": prevention}
+    if kind == "aura":
+        for column in GATE_COLUMNS:
+            if row[column]:
+                raise BuildError(f"{where} {column}: set on an aura row; only skill and talent rows carry gates")
+        return out
+    if row["requires_weapon"]:
+        out["requires_weapon"] = weapon_requirement(row["requires_weapon"], where)[0]
+    if bool(row["cooldown_category"]) != bool(row["category_cooldown_ms"]):
+        raise BuildError(f"{where} cooldown_category: needs category_cooldown_ms, and the other way round")
+    if row["cooldown_category"]:
+        out["cooldown_category"] = row["cooldown_category"]
+        out["category_cooldown_ms"] = whole(row["category_cooldown_ms"], f"{where} category_cooldown_ms")
+        if out["category_cooldown_ms"] <= 0:
+            raise BuildError(f"{where} category_cooldown_ms: must be above 0")
+    for column in ("requires_caster_state", "requires_target_state"):
+        if row[column]:
+            if row[column] not in AURA_STATES:
+                raise BuildError(f"{where} {column}: {row[column]!r} is not one of {', '.join(AURA_STATES)}")
+            out[column] = row[column]
+    requires = parse_requires(row["requires"], where) if row["requires"] else {}
+    if requires:
+        out["requires"] = requires
+    if row["client_not_in_combat"] == "yes" and requires.get("combat") != "out":
+        raise BuildError(f"{where} client_not_in_combat: yes needs requires: combat=out, or the realm is looser than the client")
+    if requires.get("combat") == "out":
+        out["requires_out_of_combat"] = True
+    return out
+
+
 def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
@@ -413,8 +547,7 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
             out[column] = number(row[column], f"{where} {column}")
     if row["target"]:
         out["target"] = row["target"]
-    if row["requires_out_of_combat"]:
-        out["requires_out_of_combat"] = row["requires_out_of_combat"] == "yes"
+    out.update(build_gates(row, row["kind"], where))
     if row["realm_cost"] and row["client_cost"]:
         realm, client = number(row["realm_cost"], where), number(row["client_cost"], where)
         if realm < client:
@@ -436,6 +569,12 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
         if kind == "proc":
             check_proc(parsed, auras, here)
         check_vocabulary(kind, parsed, here)
+        if kind == "school_damage":
+            if "school" in parsed:
+                raise BuildError(f"{here}: school_damage takes no school param; set the row's school column")
+            # The realm reads the school from the effect's params; the row's school is the one source.
+            if out["school"] != "physical":
+                parsed["school"] = out["school"]
         effects.append({"kind": kind, "params": parsed, "realm_only": i > CLIENT_EFFECTS})
     out["modelled"] = modelled == "yes"
     out["effects"] = effects if out["modelled"] else []
@@ -501,7 +640,7 @@ def build_spellmods(row: dict, where: str, masks: dict[str, int | None], flags_k
     return spellmods
 
 
-def client_override(row: dict, built: dict, where: str) -> dict | None:
+def client_override(row: dict, built: dict, where: str, categories: dict[str, int]) -> dict | None:
     """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
     if "spell_id" not in built or built.get("client_visible") is False:
         return None
@@ -516,6 +655,17 @@ def client_override(row: dict, built: dict, where: str) -> dict | None:
     for column in CLIENT_FLAGS:
         if row[column]:
             fields[column.removeprefix("client_")] = row[column] == "yes"
+    fields["school"] = SCHOOLS.index(built["school"])
+    fields["prevention_type"] = PREVENTIONS[built["prevention"]]
+    if row["requires_weapon"]:
+        for key, value in weapon_requirement(row["requires_weapon"], where)[1].items():
+            fields["equipped_" + key] = value
+    if row["cooldown_category"]:
+        fields["category"] = CATEGORY_BASE + categories[row["cooldown_category"]]
+        fields["category_cooldown_ms"] = built["category_cooldown_ms"]
+    for column, field in (("requires_caster_state", "caster_aura_state"), ("requires_target_state", "target_aura_state")):
+        if row[column]:
+            fields[field] = AURA_STATES[row[column]]
     if row["description"]:
         fields["description"] = row["description"]
     if row["client_stances"]:
@@ -537,7 +687,23 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
         if found and int(found.group(1)) > MAX_SPELLMODS:
             raise BuildError(f"column {column}: a row has at most {MAX_SPELLMODS} spellmod groups")
+    if rows and "requires_out_of_combat" in rows[0]:
+        raise BuildError("column requires_out_of_combat is gone; write `requires: combat=out` in the requires column")
     masks = skill_masks(rows, spell_flags)
+    # Each cooldown_category name gets a number in order of first appearance; every row sharing a
+    # name must carry the same category_cooldown_ms.
+    categories: dict[str, int] = {}
+    category_ms: dict[str, tuple[str, str]] = {}
+    for line, row in enumerate(rows, start=2):
+        name = row["cooldown_category"]
+        if not name:
+            continue
+        categories.setdefault(name, len(categories))
+        first = category_ms.setdefault(name, (row["category_cooldown_ms"], f"line {line} ({row['calling']}/{row['key']})"))
+        if row["category_cooldown_ms"] != first[0]:
+            raise BuildError(f"line {line} ({row['calling']}/{row['key']}) category_cooldown_ms: "
+                             f"{row['category_cooldown_ms']!r} differs from {first[0]!r} on {first[1]}, "
+                             f"which shares cooldown_category {name!r}")
     callings: dict[str, dict] = {}
     overrides: list[dict] = []
     seen: set[tuple] = set()
@@ -596,7 +762,7 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
             raise BuildError(f"{where}: spellmod cells are set on an aura row; only skill and talent rows carry them")
         if spellmods:
             built["spellmods"] = spellmods
-        override = client_override(row, built, where)
+        override = client_override(row, built, where, categories)
         if override:
             overrides.append(override)
         del built["class"]
@@ -674,7 +840,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     with open(args.csv, newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
+        # A row shorter than the header (columns added at the end) reads its missing cells as empty.
+        rows = [{k: v or "" for k, v in row.items() if k is not None} for row in csv.DictReader(f)]
     try:
         server, patch = build(rows, read_spell_flags(args.data, args.spell_flags, rows))
         if not args.no_dbc_check:

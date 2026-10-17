@@ -13,6 +13,8 @@
     "gcd_ms": 0,
     "on_next_swing": true,
     "not_in_combat": false,
+    "school": 0,
+    "prevention_type": 2,
     "effects": [
      {
       "kind": "weapon_strike",
@@ -45,6 +47,8 @@
     "gcd_ms": 0,
     "on_next_swing": false,
     "not_in_combat": true,
+    "school": 0,
+    "prevention_type": 2,
     "stances": [
      "Battle Stance"
     ],
@@ -89,12 +93,13 @@
     "cost": 15,
     "borrowed_from_class": 4,
     "borrowed_family_bit": 38,
+    "school": 0,
+    "prevention_type": 2,
     "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
     "effects": [
      {
       "kind": "school_damage",
       "params": {
-       "school": "physical",
        "amount": {
         "base": 10,
         "per_level": 1.5
@@ -125,16 +130,18 @@
     "cost": 10,
     "borrowed_from_class": 8,
     "borrowed_family_bit": 37,
+    "school": 2,
+    "prevention_type": 1,
     "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked.",
     "effects": [
      {
       "kind": "school_damage",
       "params": {
-       "school": "fire",
        "amount": {
         "base": 20,
         "per_level": 2.5
-       }
+       },
+       "school": "fire"
       }
      }
     ],
@@ -153,6 +160,8 @@
     "cost": 30.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "school": 0,
+    "prevention_type": 2,
     "effects": [
      {
       "kind": "weapon_strike",
@@ -189,6 +198,8 @@
     "cost": 5.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "school": 0,
+    "prevention_type": 2,
     "stances": [
      "Battle Stance"
     ],
@@ -222,6 +233,8 @@
     "cooldown_ms": 0,
     "gcd_ms": 0,
     "not_in_combat": true,
+    "school": 0,
+    "prevention_type": 2,
     "stances": [
      "Battle Stance"
     ],
@@ -266,6 +279,8 @@
     "cost": 10.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "school": 0,
+    "prevention_type": 2,
     "stances": [
      "Battle Stance",
      "Defensive Stance"
@@ -303,6 +318,8 @@
     "cost": 10.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "school": 0,
+    "prevention_type": 2,
     "effects": [
      {
       "kind": "aura_attack_power",
@@ -334,6 +351,8 @@
     "gcd_ms": 1500,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 33,
+    "school": 0,
+    "prevention_type": 2,
     "description": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour.",
     "effects": [
      {
@@ -373,6 +392,8 @@
     "gcd_ms": 1500,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 34,
+    "school": 0,
+    "prevention_type": 2,
     "description": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target.",
     "effects": [
      {
@@ -411,6 +432,8 @@
     "gcd_ms": 0,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 35,
+    "school": 0,
+    "prevention_type": 2,
     "description": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing.",
     "effects": [
      {
@@ -435,6 +458,8 @@
     "gcd_ms": 1500,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 36,
+    "school": 0,
+    "prevention_type": 2,
     "effects": [
      {
       "kind": "stun",
@@ -460,6 +485,8 @@
     "cost": 30.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "school": 0,
+    "prevention_type": 2,
     "effects": [
      {
       "kind": "weapon_strike",
@@ -497,6 +524,8 @@
     "cooldown_ms": 0,
     "gcd_ms": 0,
     "not_in_combat": true,
+    "school": 0,
+    "prevention_type": 2,
     "stances": [
      "Battle Stance"
     ],
@@ -538,6 +567,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Overpower",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Overpower +25/50% crit chance.",
     "effects": []
    }
@@ -550,6 +581,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Overpower",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Overpower +25/50% crit chance.",
     "effects": []
    }
@@ -562,6 +595,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Rend",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Rend ticks +15/25/35%.",
     "effects": []
    },
@@ -582,6 +617,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Rend",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Rend ticks +15/25/35%.",
     "effects": []
    },
@@ -602,6 +639,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Rend",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Rend ticks +15/25/35%.",
     "effects": []
    },
@@ -622,6 +661,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Charge",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Charge +3/6 rage.",
     "effects": []
    }
@@ -634,6 +675,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Charge",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Charge +3/6 rage.",
     "effects": []
    }
@@ -646,6 +689,8 @@
    "fields": {
     "power_type": 1,
     "name": "Anger Management",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
    }
   },
@@ -657,6 +702,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deep Wounds",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -669,6 +716,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deep Wounds",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -681,6 +730,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deep Wounds",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -693,6 +744,8 @@
    "fields": {
     "power_type": 1,
     "name": "Two-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -705,6 +758,8 @@
    "fields": {
     "power_type": 1,
     "name": "Two-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -717,6 +772,8 @@
    "fields": {
     "power_type": 1,
     "name": "Two-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -729,6 +786,8 @@
    "fields": {
     "power_type": 1,
     "name": "Two-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -741,6 +800,8 @@
    "fields": {
     "power_type": 1,
     "name": "Two-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -753,6 +814,8 @@
    "fields": {
     "power_type": 1,
     "name": "Impale",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
     "effects": []
    }
@@ -765,6 +828,8 @@
    "fields": {
     "power_type": 1,
     "name": "Impale",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
     "effects": []
    }
@@ -777,6 +842,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -789,6 +856,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -801,6 +870,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -813,6 +884,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -825,6 +898,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -837,6 +912,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -849,6 +926,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -861,6 +940,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -873,6 +954,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -885,6 +968,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -897,6 +982,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -909,6 +996,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -921,6 +1010,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -933,6 +1024,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -945,6 +1038,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -957,6 +1052,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -968,6 +1065,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -979,6 +1078,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -990,6 +1091,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -1001,6 +1104,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -1012,6 +1117,8 @@
    "fields": {
     "power_type": 1,
     "name": "Booming Voice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -1024,6 +1131,8 @@
    "fields": {
     "power_type": 1,
     "name": "Booming Voice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -1036,6 +1145,8 @@
    "fields": {
     "power_type": 1,
     "name": "Booming Voice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -1048,6 +1159,8 @@
    "fields": {
     "power_type": 1,
     "name": "Booming Voice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -1060,6 +1173,8 @@
    "fields": {
     "power_type": 1,
     "name": "Booming Voice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -1072,6 +1187,8 @@
    "fields": {
     "power_type": 1,
     "name": "Cruelty",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1084,6 +1201,8 @@
    "fields": {
     "power_type": 1,
     "name": "Cruelty",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1096,6 +1215,8 @@
    "fields": {
     "power_type": 1,
     "name": "Cruelty",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1108,6 +1229,8 @@
    "fields": {
     "power_type": 1,
     "name": "Cruelty",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1120,6 +1243,8 @@
    "fields": {
     "power_type": 1,
     "name": "Cruelty",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1132,6 +1257,8 @@
    "fields": {
     "power_type": 1,
     "name": "Unbridled Wrath",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -1144,6 +1271,8 @@
    "fields": {
     "power_type": 1,
     "name": "Unbridled Wrath",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -1156,6 +1285,8 @@
    "fields": {
     "power_type": 1,
     "name": "Unbridled Wrath",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -1168,6 +1299,8 @@
    "fields": {
     "power_type": 1,
     "name": "Unbridled Wrath",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -1180,6 +1313,8 @@
    "fields": {
     "power_type": 1,
     "name": "Unbridled Wrath",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -1192,6 +1327,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Battle Shout",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1212,6 +1349,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Battle Shout",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1232,6 +1371,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Battle Shout",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1252,6 +1393,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Battle Shout",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1272,6 +1415,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Battle Shout",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1292,6 +1437,8 @@
    "fields": {
     "power_type": 1,
     "name": "Blood Craze",
+    "school": 0,
+    "prevention_type": 2,
     "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
     "effects": []
    }
@@ -1304,6 +1451,8 @@
    "fields": {
     "power_type": 1,
     "name": "Blood Craze",
+    "school": 0,
+    "prevention_type": 2,
     "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
     "effects": []
    }
@@ -1316,6 +1465,8 @@
    "fields": {
     "power_type": 1,
     "name": "Blood Craze",
+    "school": 0,
+    "prevention_type": 2,
     "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
     "effects": []
    }
@@ -1328,6 +1479,8 @@
    "fields": {
     "power_type": 1,
     "name": "Enrage",
+    "school": 0,
+    "prevention_type": 2,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1340,6 +1493,8 @@
    "fields": {
     "power_type": 1,
     "name": "Enrage",
+    "school": 0,
+    "prevention_type": 2,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1352,6 +1507,8 @@
    "fields": {
     "power_type": 1,
     "name": "Enrage",
+    "school": 0,
+    "prevention_type": 2,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1364,6 +1521,8 @@
    "fields": {
     "power_type": 1,
     "name": "Enrage",
+    "school": 0,
+    "prevention_type": 2,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1376,6 +1535,8 @@
    "fields": {
     "power_type": 1,
     "name": "Enrage",
+    "school": 0,
+    "prevention_type": 2,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1388,6 +1549,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Seal of the Crusader",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
@@ -1408,6 +1571,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Seal of the Crusader",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
@@ -1428,6 +1593,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Seal of the Crusader",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
@@ -1448,6 +1615,8 @@
    "fields": {
     "power_type": 1,
     "name": "Benediction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1474,6 +1643,8 @@
    "fields": {
     "power_type": 1,
     "name": "Benediction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1500,6 +1671,8 @@
    "fields": {
     "power_type": 1,
     "name": "Benediction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1526,6 +1699,8 @@
    "fields": {
     "power_type": 1,
     "name": "Benediction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1552,6 +1727,8 @@
    "fields": {
     "power_type": 1,
     "name": "Benediction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1578,6 +1755,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Judgement",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1589,6 +1768,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Judgement",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1600,6 +1781,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deflection",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1612,6 +1795,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deflection",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1624,6 +1809,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deflection",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1636,6 +1823,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deflection",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1648,6 +1837,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deflection",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1660,6 +1851,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vindication",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
    }
   },
@@ -1671,6 +1864,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vindication",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
    }
   },
@@ -1682,6 +1877,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vindication",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
    }
   },
@@ -1693,6 +1890,8 @@
    "fields": {
     "power_type": 1,
     "name": "Conviction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1705,6 +1904,8 @@
    "fields": {
     "power_type": 1,
     "name": "Conviction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1717,6 +1918,8 @@
    "fields": {
     "power_type": 1,
     "name": "Conviction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1729,6 +1932,8 @@
    "fields": {
     "power_type": 1,
     "name": "Conviction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1741,6 +1946,8 @@
    "fields": {
     "power_type": 1,
     "name": "Conviction",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1753,6 +1960,8 @@
    "fields": {
     "power_type": 1,
     "name": "Eye for an Eye",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
    }
   },
@@ -1764,6 +1973,8 @@
    "fields": {
     "power_type": 1,
     "name": "Eye for an Eye",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
    }
   },
@@ -1775,6 +1986,8 @@
    "fields": {
     "power_type": 1,
     "name": "Pursuit of Justice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
    }
   },
@@ -1786,6 +1999,8 @@
    "fields": {
     "power_type": 1,
     "name": "Pursuit of Justice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
    }
   },
@@ -1797,6 +2012,8 @@
    "fields": {
     "power_type": 1,
     "name": "Two-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -1809,6 +2026,8 @@
    "fields": {
     "power_type": 1,
     "name": "Two-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -1821,6 +2040,8 @@
    "fields": {
     "power_type": 1,
     "name": "Two-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -1833,6 +2054,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Hammer of Justice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1844,6 +2067,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Hammer of Justice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1855,6 +2080,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Hammer of Justice",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1866,6 +2093,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vengeance",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1877,6 +2106,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vengeance",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1888,6 +2119,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vengeance",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1899,6 +2132,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vengeance",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1910,6 +2145,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vengeance",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1921,6 +2158,8 @@
    "fields": {
     "power_type": 1,
     "name": "Holy Power",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1932,6 +2171,8 @@
    "fields": {
     "power_type": 1,
     "name": "Holy Power",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1943,6 +2184,8 @@
    "fields": {
     "power_type": 1,
     "name": "Holy Power",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1954,6 +2197,8 @@
    "fields": {
     "power_type": 1,
     "name": "Holy Power",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1965,6 +2210,8 @@
    "fields": {
     "power_type": 1,
     "name": "Holy Power",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1976,6 +2223,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Charge",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Charge +3/6 rage.",
     "effects": []
    }
@@ -1988,6 +2237,8 @@
    "fields": {
     "power_type": 1,
     "name": "Improved Charge",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Charge +3/6 rage.",
     "effects": []
    }
@@ -2000,6 +2251,8 @@
    "fields": {
     "power_type": 1,
     "name": "Anger Management",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
    }
   },
@@ -2011,6 +2264,8 @@
    "fields": {
     "power_type": 1,
     "name": "Impale",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
     "effects": []
    }
@@ -2023,6 +2278,8 @@
    "fields": {
     "power_type": 1,
     "name": "Impale",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
     "effects": []
    }
@@ -2035,6 +2292,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deep Wounds",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -2047,6 +2306,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deep Wounds",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -2059,6 +2320,8 @@
    "fields": {
     "power_type": 1,
     "name": "Deep Wounds",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -2071,6 +2334,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -2083,6 +2348,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -2095,6 +2362,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -2107,6 +2376,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -2119,6 +2390,8 @@
    "fields": {
     "power_type": 1,
     "name": "Axe Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -2131,6 +2404,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -2143,6 +2418,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -2155,6 +2432,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -2167,6 +2446,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -2179,6 +2460,8 @@
    "fields": {
     "power_type": 1,
     "name": "Mace Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -2191,6 +2474,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -2203,6 +2488,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -2215,6 +2502,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -2227,6 +2516,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -2239,6 +2530,8 @@
    "fields": {
     "power_type": 1,
     "name": "Sword Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -2251,6 +2544,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -2262,6 +2557,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -2273,6 +2570,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -2284,6 +2583,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -2295,6 +2596,8 @@
    "fields": {
     "power_type": 1,
     "name": "Flurry",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -2306,6 +2609,8 @@
    "fields": {
     "power_type": 1,
     "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -2317,6 +2622,8 @@
    "fields": {
     "power_type": 1,
     "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -2328,6 +2635,8 @@
    "fields": {
     "power_type": 1,
     "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -2339,6 +2648,8 @@
    "fields": {
     "power_type": 1,
     "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -2350,6 +2661,8 @@
    "fields": {
     "power_type": 1,
     "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -2361,6 +2674,8 @@
    "fields": {
     "power_type": 1,
     "name": "Toughness",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2373,6 +2688,8 @@
    "fields": {
     "power_type": 1,
     "name": "Toughness",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2385,6 +2702,8 @@
    "fields": {
     "power_type": 1,
     "name": "Toughness",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2397,6 +2716,8 @@
    "fields": {
     "power_type": 1,
     "name": "Toughness",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2409,6 +2730,8 @@
    "fields": {
     "power_type": 1,
     "name": "Toughness",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2421,6 +2744,8 @@
    "fields": {
     "power_type": 1,
     "name": "Precision",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
    }
   },
@@ -2432,6 +2757,8 @@
    "fields": {
     "power_type": 1,
     "name": "Precision",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
    }
   },
@@ -2443,6 +2770,8 @@
    "fields": {
     "power_type": 1,
     "name": "Precision",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
    }
   },
@@ -2454,6 +2783,8 @@
    "fields": {
     "power_type": 1,
     "name": "Redoubt",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2465,6 +2796,8 @@
    "fields": {
     "power_type": 1,
     "name": "Redoubt",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2476,6 +2809,8 @@
    "fields": {
     "power_type": 1,
     "name": "Redoubt",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2487,6 +2822,8 @@
    "fields": {
     "power_type": 1,
     "name": "Redoubt",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2498,6 +2835,8 @@
    "fields": {
     "power_type": 1,
     "name": "Redoubt",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2509,6 +2848,8 @@
    "fields": {
     "power_type": 1,
     "name": "One-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2521,6 +2862,8 @@
    "fields": {
     "power_type": 1,
     "name": "One-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2533,6 +2876,8 @@
    "fields": {
     "power_type": 1,
     "name": "One-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2545,6 +2890,8 @@
    "fields": {
     "power_type": 1,
     "name": "One-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2557,6 +2904,8 @@
    "fields": {
     "power_type": 1,
     "name": "One-Handed Weapon Specialization",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2569,6 +2918,8 @@
    "fields": {
     "power_type": 1,
     "name": "Anticipation",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2581,6 +2932,8 @@
    "fields": {
     "power_type": 1,
     "name": "Anticipation",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2593,6 +2946,8 @@
    "fields": {
     "power_type": 1,
     "name": "Anticipation",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2605,6 +2960,8 @@
    "fields": {
     "power_type": 1,
     "name": "Anticipation",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2617,6 +2974,8 @@
    "fields": {
     "power_type": 1,
     "name": "Anticipation",
+    "school": 0,
+    "prevention_type": 2,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2629,6 +2988,8 @@
    "fields": {
     "power_type": 1,
     "name": "Reckoning",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2640,6 +3001,8 @@
    "fields": {
     "power_type": 1,
     "name": "Reckoning",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2651,6 +3014,8 @@
    "fields": {
     "power_type": 1,
     "name": "Reckoning",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2662,6 +3027,8 @@
    "fields": {
     "power_type": 1,
     "name": "Reckoning",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2673,6 +3040,8 @@
    "fields": {
     "power_type": 1,
     "name": "Reckoning",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2684,6 +3053,8 @@
    "fields": {
     "power_type": 1,
     "name": "Field Medic",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases out-of-combat health regeneration by 20% and Stamina by 3%.",
     "effects": [
      {
@@ -2710,6 +3081,8 @@
    "fields": {
     "power_type": 1,
     "name": "Field Medic",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases out-of-combat health regeneration by 40% and Stamina by 6%.",
     "effects": [
      {
@@ -2736,6 +3109,8 @@
    "fields": {
     "power_type": 1,
     "name": "Field Medic",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases out-of-combat health regeneration by 60% and Stamina by 9%.",
     "effects": [
      {
@@ -2762,6 +3137,8 @@
    "fields": {
     "power_type": 1,
     "name": "Field Medic",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases out-of-combat health regeneration by 80% and Stamina by 12%.",
     "effects": [
      {
@@ -2788,6 +3165,8 @@
    "fields": {
     "power_type": 1,
     "name": "Field Medic",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases out-of-combat health regeneration by 100% and Stamina by 15%.",
     "effects": [
      {
@@ -2814,6 +3193,8 @@
    "fields": {
     "power_type": 1,
     "name": "Initiate's Spark",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases Fire Blast damage by 10% and it generates 2 Rage.",
     "effects": [
      {
@@ -2849,6 +3230,8 @@
    "fields": {
     "power_type": 1,
     "name": "Initiate's Spark",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases Fire Blast damage by 20% and it generates 4 Rage.",
     "effects": [
      {
@@ -2884,6 +3267,8 @@
    "fields": {
     "power_type": 1,
     "name": "Initiate's Spark",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases Fire Blast damage by 30% and it generates 6 Rage.",
     "effects": [
      {
@@ -2919,6 +3304,8 @@
    "fields": {
     "power_type": 1,
     "name": "Cutthroat's Momentum",
+    "school": 0,
+    "prevention_type": 2,
     "description": "After using Charge, your next Heroic Strike has a 50% chance to crit and movement speed increases by 15%.",
     "effects": [
      {
@@ -2944,6 +3331,8 @@
    "fields": {
     "power_type": 1,
     "name": "Cutthroat's Momentum",
+    "school": 0,
+    "prevention_type": 2,
     "description": "After using Charge, your next Heroic Strike has a 100% chance to crit and movement speed increases by 30%.",
     "effects": [
      {
@@ -2969,6 +3358,8 @@
    "fields": {
     "power_type": 1,
     "name": "Savage Strikes",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases Critical Strike chance by 3% and Crit damage by 15%.",
     "effects": [
      {
@@ -2994,6 +3385,8 @@
    "fields": {
     "power_type": 1,
     "name": "Savage Strikes",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Increases Critical Strike chance by 6% and Crit damage by 30%.",
     "effects": [
      {
@@ -3019,6 +3412,8 @@
    "fields": {
     "power_type": 1,
     "name": "Vanguard's Resolve",
+    "school": 0,
+    "prevention_type": 2,
     "description": "Killing an experience-yielding target instantly heals you for 10% of max health.",
     "effects": [
      {
