@@ -24,6 +24,7 @@ import argparse
 import csv
 import json
 import os
+import re
 import sys
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -70,7 +71,17 @@ CLIENT_NUMBERS = (
     "client_range_max", "client_duration_ms", "borrowed_from_class", "borrowed_family_bit",
 )
 CLIENT_FLAGS = ("client_on_next_swing", "client_not_in_combat")
-SPELLMOD_COLUMNS = ("type", "op", "family_bit", "value")
+SPELLMOD_COLUMNS = ("type", "op", "target", "value")
+MAX_SPELLMODS = 5
+# The 1.12.1 client's SpellModOp names (vmangos `SpellModOp`; op 13 and 25 and up do not exist).
+SPELLMOD_OPS = (
+    "DAMAGE", "DURATION", "THREAT", "EFFECT1", "CHARGES", "RANGE", "RADIUS", "CRITICAL_CHANCE",
+    "ALL_EFFECTS", "NOT_LOSE_CASTING_TIME", "CASTING_TIME", "COOLDOWN", "EFFECT2", "COST",
+    "CRIT_DAMAGE_BONUS", "RESIST_MISS_CHANCE", "JUMP_TARGETS", "CHANCE_OF_SUCCESS", "ACTIVATION_TIME",
+    "EFFECT_PAST_FIRST", "CASTING_TIME_OLD", "DOT", "EFFECT3", "SPELL_BONUS_DAMAGE",
+)
+# Spell.dbc columns of SpellFamilyFlags (low, high 32 bits), as extract_spells.py reads them.
+SPELL_FAMILY_FLAGS_COLUMNS = (161, 162)
 
 
 class BuildError(Exception):
@@ -106,6 +117,31 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
                 bad.append(f"line {line} ({row.get('calling')}/{row.get('key')}): {column} {text} is not in {table}")
     if bad:
         raise BuildError(f"{len(bad)} ids not in the DBCs:\n" + "\n".join(bad))
+
+
+def read_spell_flags(data_dir: str | None, flags_path: str | None, rows: list[dict]) -> dict | None:
+    """SpellFamilyFlags of each stock skill's client_spell_id, from a JSON file or Spell.dbc; None
+    when neither is given."""
+    if flags_path:
+        with open(flags_path, encoding="utf-8") as f:
+            return {str(k): int(v) for k, v in json.load(f).items()}
+    if not data_dir:
+        return None
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from wowdata import Chain, load_dbc
+
+    try:
+        spells = load_dbc(Chain(data_dir), "Spell.dbc")
+    except (OSError, KeyError, ValueError) as error:
+        raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
+    flags = {}
+    low, high = SPELL_FAMILY_FLAGS_COLUMNS
+    for row in rows:
+        text = row["client_spell_id"]
+        if row["kind"] == "skill" and text.isdigit() and spells.row(int(text)) is not None:
+            r = spells.row(int(text))
+            flags[text] = (spells.u32(r, high) << 32) | spells.u32(r, low)
+    return flags
 
 
 def read_row_tables(data_dir: str | None) -> dict:
@@ -407,6 +443,64 @@ def build_row(row: dict, where: str, auras: set[str] = frozenset()) -> dict:
     return out
 
 
+def skill_masks(rows: list[dict], spell_flags: dict | None) -> dict[str, dict[str, int | None]]:
+    """Per calling, each skill key's SpellFamilyFlags mask: a borrowed skill's own bit, a stock
+    skill's from its Spell.dbc row. None where the flags are unknown (no --data or --spell-flags)."""
+    masks: dict[str, dict[str, int | None]] = {}
+    for line, row in enumerate(rows, start=2):
+        if row["kind"] != "skill":
+            continue
+        mine = masks.setdefault(row["calling"], {})
+        if mine.get(row["key"]):
+            continue
+        if row["borrowed_family_bit"]:
+            bit = whole(row["borrowed_family_bit"], f"line {line} ({row['calling']}/{row['key']}) borrowed_family_bit")
+            mine[row["key"]] = 1 << bit
+        elif spell_flags is not None and row["client_spell_id"]:
+            mine[row["key"]] = spell_flags.get(row["client_spell_id"])
+        else:
+            mine.setdefault(row["key"], None)
+    return masks
+
+
+def build_spellmods(row: dict, where: str, masks: dict[str, int | None], flags_known: bool) -> list[dict]:
+    """The row's spellmod groups, each target resolved from skill keys to a family mask."""
+    spellmods = []
+    for i in range(1, MAX_SPELLMODS + 1):
+        values = {c: row[f"spellmod{i}_{c}"] for c in SPELLMOD_COLUMNS}
+        if not any(values.values()):
+            continue
+        if not all(values.values()):
+            raise BuildError(f"{where}: spellmod{i} needs all of {', '.join(SPELLMOD_COLUMNS)}")
+        if values["type"] not in ("flat", "pct"):
+            raise BuildError(f"{where}: spellmod{i}_type is {values['type']!r}, want flat or pct")
+        if values["op"] not in SPELLMOD_OPS:
+            raise BuildError(f"{where}: spellmod{i}_op is {values['op']!r}, want one of {', '.join(SPELLMOD_OPS)}")
+        keys = values["target"].split("|")
+        mask = 0
+        for key in keys:
+            if key not in masks:
+                raise BuildError(f"{where}: spellmod{i}_target {key!r} is not a skill of {row['calling']}")
+            if not masks[key]:
+                why = "has no family flags" if flags_known else "needs --data or --spell-flags for its Spell.dbc flags"
+                raise BuildError(f"{where}: spellmod{i}_target {key!r} {why}")
+            mask |= masks[key]
+        for other, other_mask in masks.items():
+            if other not in keys and other_mask and other_mask & mask:
+                raise BuildError(f"{where}: spellmod{i}_target {values['target']!r} also reaches {other!r}, "
+                                 f"which the cell does not name; name it too")
+        mod: dict = {"type": values["type"], "op": values["op"]}
+        # One skill's mask goes out as a bit index, as the client patch always has; several as a mask.
+        if mask & (mask - 1):
+            mod["family_mask"] = mask
+        else:
+            mod["family_bit"] = mask.bit_length() - 1
+        mod["value"] = number(values["value"], f"{where} spellmod{i}_value")
+        mod["target"] = keys
+        spellmods.append(mod)
+    return spellmods
+
+
 def client_override(row: dict, built: dict, where: str) -> dict | None:
     """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
     if "spell_id" not in built or built.get("client_visible") is False:
@@ -429,18 +523,8 @@ def client_override(row: dict, built: dict, where: str) -> dict | None:
     # No effects key on an unmodelled row: the client keeps the stock row's effects.
     if built["modelled"]:
         fields["effects"] = [{"kind": e["kind"], "params": e["params"]} for e in built["effects"] if not e["realm_only"]]
-    spellmods = []
-    for i in (1, 2):
-        values = {c: row[f"spellmod{i}_{c}"] for c in SPELLMOD_COLUMNS}
-        if not any(values.values()):
-            continue
-        if not all(values.values()):
-            raise BuildError(f"{where}: spellmod{i} needs all of {', '.join(SPELLMOD_COLUMNS)}")
-        if values["type"] not in ("flat", "pct"):
-            raise BuildError(f"{where}: spellmod{i}_type is {values['type']!r}, want flat or pct")
-        spellmods.append({"type": values["type"], "op": values["op"],
-                          "family_bit": number(values["family_bit"], f"{where} spellmod{i}_family_bit"),
-                          "value": number(values["value"], f"{where} spellmod{i}_value")})
+    # The client's mods name no skill keys; the realm's do.
+    spellmods = [{k: v for k, v in m.items() if k != "target"} for m in built.get("spellmods", [])]
     out = {"spell_id": built["spell_id"], "calling": row["calling"], "key": row["key"], "rank": built["rank"],
            "fields": fields}
     if spellmods:
@@ -448,7 +532,12 @@ def client_override(row: dict, built: dict, where: str) -> dict | None:
     return out
 
 
-def build(rows: list[dict]) -> tuple[list[dict], dict]:
+def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict], dict]:
+    for column in (rows[0] if rows else {}):
+        found = re.fullmatch(r"spellmod(\d+)_\w+", column)
+        if found and int(found.group(1)) > MAX_SPELLMODS:
+            raise BuildError(f"column {column}: a row has at most {MAX_SPELLMODS} spellmod groups")
+    masks = skill_masks(rows, spell_flags)
     callings: dict[str, dict] = {}
     overrides: list[dict] = []
     seen: set[tuple] = set()
@@ -502,6 +591,11 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
         if kind == "aura":
             calling["auras"].append(build_aura(row, built, where))
             continue
+        spellmods = build_spellmods(row, where, masks.get(row["calling"], {}), spell_flags is not None)
+        if spellmods and kind == "aura":
+            raise BuildError(f"{where}: spellmod cells are set on an aura row; only skill and talent rows carry them")
+        if spellmods:
+            built["spellmods"] = spellmods
         override = client_override(row, built, where)
         if override:
             overrides.append(override)
@@ -576,12 +670,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
     parser.add_argument("--data", default=os.environ.get("WOW_DATA"), help="game Data folder for the DBC check")
     parser.add_argument("--no-dbc-check", action="store_true", help="skip checking ids against the DBCs")
+    parser.add_argument("--spell-flags", help="JSON {spell id: SpellFamilyFlags} standing in for Spell.dbc")
     args = parser.parse_args(argv)
 
     with open(args.csv, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     try:
-        server, patch = build(rows)
+        server, patch = build(rows, read_spell_flags(args.data, args.spell_flags, rows))
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)
             resolve_dbc_rows(patch, **read_row_tables(args.data))

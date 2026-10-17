@@ -144,10 +144,12 @@ Write `key=value` pairs joined by `;`, and lists joined by `|`:
 ### Talent spellmods: changes to other skills' numbers
 - Five groups, `spellmodN_type` (`flat` or `pct`), `spellmodN_op`, `spellmodN_target` and `spellmodN_value`, for N = 1 to 5.
 - `target` is skill keys joined by `|`.
-- `op` is one of `DAMAGE`, `DURATION`, `THREAT`, `CHARGES`, `RANGE`, `RADIUS`, `CRITICAL_CHANCE`, `ALL_EFFECTS`,
-  `NOT_LOSE_CASTING_TIME`, `CASTING_TIME`, `COOLDOWN`, `COST`, `CRIT_DAMAGE_BONUS`, `CHANCE_OF_SUCCESS`,
-  `ACTIVATION_TIME`, `EFFECT_PAST_FIRST`, `GLOBAL_COOLDOWN`, `DOT`, `HASTE`, `SPELL_BONUS_DAMAGE`,
-  `RESIST_MISS_CHANCE`, `EFFECT1`, `EFFECT2` or `EFFECT3`.
+- `op` is one of `DAMAGE`, `DURATION`, `THREAT`, `EFFECT1`, `CHARGES`, `RANGE`, `RADIUS`, `CRITICAL_CHANCE`,
+  `ALL_EFFECTS`, `NOT_LOSE_CASTING_TIME`, `CASTING_TIME`, `COOLDOWN`, `EFFECT2`, `COST`, `CRIT_DAMAGE_BONUS`,
+  `RESIST_MISS_CHANCE`, `JUMP_TARGETS`, `CHANCE_OF_SUCCESS`, `ACTIVATION_TIME`, `EFFECT_PAST_FIRST`,
+  `CASTING_TIME_OLD`, `DOT`, `EFFECT3` or `SPELL_BONUS_DAMAGE` (the 1.12.1 client's own list; there is no
+  `GLOBAL_COOLDOWN` or `HASTE`).
+- The build fails if the targets' combined family mask also reaches a skill of the Calling the cell did not name.
 - Example, "Sinister Strike costs 6 less": `flat`, `COST`, `sinister_strike`, `-6`. Durations are in ms.
 
 ### Effects

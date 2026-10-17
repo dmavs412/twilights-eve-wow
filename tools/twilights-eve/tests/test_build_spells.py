@@ -49,7 +49,8 @@ AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "nam
 
 
 class BuildSpells(unittest.TestCase):
-    def run_build(self, rows: list[dict]) -> tuple[subprocess.CompletedProcess, list | None]:
+    def run_build(self, rows: list[dict], flags: dict | None = None,
+                  extra_columns: tuple = ()) -> tuple[subprocess.CompletedProcess, list | None]:
         tmp = tempfile.mkdtemp()
         path = os.path.join(tmp, "master.csv")
         # A fixture that leaves `status` or a talent's `max_rank` out gets the usual value; one that
@@ -62,11 +63,16 @@ class BuildSpells(unittest.TestCase):
                  **({"max_rank": str(ranks[(row["calling"], row["key"])])} if row["kind"] == "talent" else {}),
                  **row} for row in rows]
         with open(path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, COLUMNS, restval="")
+            writer = csv.DictWriter(f, [*COLUMNS, *extra_columns], restval="")
             writer.writeheader()
             writer.writerows(rows)
-        done = subprocess.run([sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp, "--no-dbc-check"],
-                              capture_output=True, text=True)
+        command = [sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp, "--no-dbc-check"]
+        if flags is not None:
+            flags_path = os.path.join(tmp, "flags.json")
+            with open(flags_path, "w", encoding="utf-8") as f:
+                json.dump(flags, f)
+            command += ["--spell-flags", flags_path]
+        done = subprocess.run(command, capture_output=True, text=True)
         self.patch = None
         data = None
         for name in ("server_spells.json", "client_dbc_patch.json"):
@@ -229,11 +235,12 @@ class BuildSpells(unittest.TestCase):
         self.assertNotIn("realm_cost", fields)
 
     def test_patch_emits_spellmods_and_seats_per_rank(self):
-        mod = {"spellmod1_type": "flat", "spellmod1_op": "COST", "spellmod1_family_bit": "16"}
-        rows = [talent("cruelty", 1, 0, 1, client_spell_id="12320", talent_id="138", spellmod1_value="-1", **mod),
+        mod = {"spellmod1_type": "flat", "spellmod1_op": "COST", "spellmod1_target": "shout"}
+        rows = [{**STRIKE, "key": "shout", "client_spell_id": "6192"},
+                talent("cruelty", 1, 0, 1, client_spell_id="12320", talent_id="138", spellmod1_value="-1", **mod),
                 talent("cruelty", 2, 0, 1, client_spell_id="12852", talent_id="138", spellmod1_value="-2", **mod),
                 talent("fury", 1, 1, 1, client_spell_id="12300", prereq_key="cruelty", prereq_rank="2")]
-        done, _ = self.run_build(rows)
+        done, _ = self.run_build(rows, flags={"6192": 1 << 16})
         self.assertEqual(done.returncode, 0, done.stderr)
         mods = {o["spell_id"]: o.get("spellmods") for o in self.patch["spells"]}
         self.assertEqual(mods[12320], [{"type": "flat", "op": "COST", "family_bit": 16, "value": -1}])
@@ -243,6 +250,62 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(cruelty, {"calling": "vanguard", "key": "cruelty", "tab": "Arms", "row": 0, "column": 1,
                                    "talent_id": 138, "rank_spell_ids": [12320, 12852]})
         self.assertEqual(fury["prereq"], {"key": "cruelty", "rank": 2})
+
+    def borrowed(self, key: str, bit: int, spell_id: str) -> dict:
+        return {**STRIKE, "key": key, "client_spell_id": spell_id, "borrowed_from_class": "2",
+                "borrowed_family_bit": str(bit)}
+
+    def mod_talent(self, target: str, **extra: str) -> dict:
+        return talent("boon", 1, 0, 0, client_spell_id="12320", talent_id="138", spellmod1_type="pct",
+                      spellmod1_op="DAMAGE", spellmod1_target=target, spellmod1_value="10", **extra)
+
+    def test_spellmod_mask_is_built_from_skill_keys_for_both_outputs(self):
+        rows = [self.borrowed("a", 33, "20375"), self.borrowed("b", 34, "20305"),
+                {**STRIKE, "key": "c", "client_spell_id": "6546"}, self.mod_talent("a|c")]
+        done, data = self.run_build(rows, flags={"6546": 1 << 5})
+        self.assertEqual(done.returncode, 0, done.stderr)
+        want = {"type": "pct", "op": "DAMAGE", "family_mask": (1 << 33) | (1 << 5), "value": 10}
+        client = next(o for o in self.patch["spells"] if o["spell_id"] == 12320)
+        self.assertEqual(client["spellmods"], [want])
+        rank = data[0]["talent_tabs"][0]["talents"][0]["ranks"][0]
+        self.assertEqual(rank["spellmods"], [{**want, "target": ["a", "c"]}])
+
+    def test_a_single_skill_is_a_bit_index(self):
+        done, _ = self.run_build([self.borrowed("a", 33, "20375"), self.mod_talent("a")], flags={})
+        self.assertEqual(done.returncode, 0, done.stderr)
+        client = next(o for o in self.patch["spells"] if o["spell_id"] == 12320)
+        self.assertEqual(client["spellmods"][0]["family_bit"], 33)
+
+    def test_a_mask_reaching_an_unnamed_skill_fails(self):
+        shared = {**self.borrowed("b", 33, "20305")}
+        self.assert_fails([self.borrowed("a", 33, "20375"), shared, self.mod_talent("a")],
+                          "spellmod1_target 'a' also reaches 'b'")
+
+    def test_an_unknown_op_fails(self):
+        row = {**self.mod_talent("a"), "spellmod1_op": "MAKE_BIGGER"}
+        self.assert_fails([self.borrowed("a", 33, "20375"), row], "spellmod1_op is 'MAKE_BIGGER'")
+
+    def test_an_unknown_target_key_fails(self):
+        self.assert_fails([self.borrowed("a", 33, "20375"), self.mod_talent("zz")], "'zz' is not a skill")
+
+    def test_a_stock_target_without_flags_fails(self):
+        self.assert_fails([{**STRIKE, "key": "c", "client_spell_id": "6546"}, self.mod_talent("c")],
+                          "needs --data or --spell-flags")
+
+    def test_five_groups_are_read_and_a_sixth_column_fails(self):
+        rows = [self.borrowed(k, b, str(i)) for i, (k, b) in enumerate(
+            [("a", 33), ("b", 34), ("c", 35), ("d", 36), ("e", 37)], start=100)]
+        groups = {}
+        for n, key in enumerate("abcde", start=1):
+            groups |= {f"spellmod{n}_type": "pct", f"spellmod{n}_op": "DAMAGE", f"spellmod{n}_target": key,
+                       f"spellmod{n}_value": str(n)}
+        done, _ = self.run_build(rows + [talent("boon", 1, 0, 0, client_spell_id="12320", **groups)], flags={})
+        self.assertEqual(done.returncode, 0, done.stderr)
+        client = next(o for o in self.patch["spells"] if o["spell_id"] == 12320)
+        self.assertEqual([m["family_bit"] for m in client["spellmods"]], [33, 34, 35, 36, 37])
+        done, _ = self.run_build([STRIKE], extra_columns=("spellmod6_type",))
+        self.assertNotEqual(done.returncode, 0)
+        self.assertIn("spellmod6_type: a row has at most 5 spellmod groups", done.stderr)
 
     def test_partial_spellmod_fails(self):
         self.assert_fails([{**STRIKE, "spellmod1_type": "pct"}], "spellmod1 needs")

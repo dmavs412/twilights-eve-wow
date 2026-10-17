@@ -40,6 +40,14 @@ issue #63 (the spec); this record keeps the decisions that are hard to see from 
   included. `max_rank` on a skill, aura or other non-talent row fails the build. A `talent_tab`'s key
   is emitted as `key` on the tab. `is_hidden` stays in the CSV, unread, until it is dropped.
 
+- **Details settled while building the spellmod columns (#65).** The op list is the 1.12.1 client's
+  (`GLOBAL_COOLDOWN` and `HASTE` are later-expansion ops and are not accepted). A stock skill's
+  mask comes from Spell.dbc, so a stock target needs `--data` or `--spell-flags`. "Reaches a spell
+  the row did not name" is checked against the skills of the same Calling in the sheet, not every
+  Spell.dbc row, since other ranks of a stock spell share its flags. One named skill is emitted as
+  `family_bit` (the client patch is unchanged for existing talents); several as `family_mask`,
+  which the client crate does not read yet. `server_spells.json` also carries `target`, the keys.
+
 ## Considered Options
 
 - **Adopt `is_hidden`.** Rejected. `client_visible` says what is withheld and is checked against

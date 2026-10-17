@@ -337,7 +337,18 @@
           "realm_only": false
          }
         ],
-        "description": "Increases Fire Blast damage by 10% and it generates 2 Rage."
+        "description": "Increases Fire Blast damage by 10% and it generates 2 Rage.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "DAMAGE",
+          "family_bit": 37,
+          "value": 10,
+          "target": [
+           "fire_blast"
+          ]
+         }
+        ]
        },
        {
         "key": "initiates_spark",
@@ -366,7 +377,18 @@
           "realm_only": false
          }
         ],
-        "description": "Increases Fire Blast damage by 20% and it generates 4 Rage."
+        "description": "Increases Fire Blast damage by 20% and it generates 4 Rage.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "DAMAGE",
+          "family_bit": 37,
+          "value": 20,
+          "target": [
+           "fire_blast"
+          ]
+         }
+        ]
        },
        {
         "key": "initiates_spark",
@@ -395,7 +417,18 @@
           "realm_only": false
          }
         ],
-        "description": "Increases Fire Blast damage by 30% and it generates 6 Rage."
+        "description": "Increases Fire Blast damage by 30% and it generates 6 Rage.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "DAMAGE",
+          "family_bit": 37,
+          "value": 30,
+          "target": [
+           "fire_blast"
+          ]
+         }
+        ]
        }
       ]
      },
@@ -901,7 +934,18 @@
         "source_tab_id": 161,
         "modelled": true,
         "effects": [],
-        "description": "Rend ticks +15/25/35%."
+        "description": "Rend ticks +15/25/35%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "ALL_EFFECTS",
+          "family_bit": 5,
+          "value": 15,
+          "target": [
+           "rend"
+          ]
+         }
+        ]
        },
        {
         "key": "improved_rend",
@@ -913,7 +957,18 @@
         "source_tab_id": 161,
         "modelled": true,
         "effects": [],
-        "description": "Rend ticks +15/25/35%."
+        "description": "Rend ticks +15/25/35%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "ALL_EFFECTS",
+          "family_bit": 5,
+          "value": 25,
+          "target": [
+           "rend"
+          ]
+         }
+        ]
        },
        {
         "key": "improved_rend",
@@ -925,7 +980,18 @@
         "source_tab_id": 161,
         "modelled": true,
         "effects": [],
-        "description": "Rend ticks +15/25/35%."
+        "description": "Rend ticks +15/25/35%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "ALL_EFFECTS",
+          "family_bit": 5,
+          "value": 35,
+          "target": [
+           "rend"
+          ]
+         }
+        ]
        }
       ]
      },
@@ -1669,7 +1735,18 @@
         "source_tab_id": 164,
         "modelled": true,
         "effects": [],
-        "description": "Battle Shout's attack power +5..25%."
+        "description": "Battle Shout's attack power +5..25%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "ALL_EFFECTS",
+          "family_bit": 16,
+          "value": 5,
+          "target": [
+           "battle_shout"
+          ]
+         }
+        ]
        },
        {
         "key": "improved_battle_shout",
@@ -1681,7 +1758,18 @@
         "source_tab_id": 164,
         "modelled": true,
         "effects": [],
-        "description": "Battle Shout's attack power +5..25%."
+        "description": "Battle Shout's attack power +5..25%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "ALL_EFFECTS",
+          "family_bit": 16,
+          "value": 10,
+          "target": [
+           "battle_shout"
+          ]
+         }
+        ]
        },
        {
         "key": "improved_battle_shout",
@@ -1693,7 +1781,18 @@
         "source_tab_id": 164,
         "modelled": true,
         "effects": [],
-        "description": "Battle Shout's attack power +5..25%."
+        "description": "Battle Shout's attack power +5..25%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "ALL_EFFECTS",
+          "family_bit": 16,
+          "value": 15,
+          "target": [
+           "battle_shout"
+          ]
+         }
+        ]
        },
        {
         "key": "improved_battle_shout",
@@ -1705,7 +1804,18 @@
         "source_tab_id": 164,
         "modelled": true,
         "effects": [],
-        "description": "Battle Shout's attack power +5..25%."
+        "description": "Battle Shout's attack power +5..25%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "ALL_EFFECTS",
+          "family_bit": 16,
+          "value": 20,
+          "target": [
+           "battle_shout"
+          ]
+         }
+        ]
        },
        {
         "key": "improved_battle_shout",
@@ -1717,7 +1827,18 @@
         "source_tab_id": 164,
         "modelled": true,
         "effects": [],
-        "description": "Battle Shout's attack power +5..25%."
+        "description": "Battle Shout's attack power +5..25%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "ALL_EFFECTS",
+          "family_bit": 16,
+          "value": 25,
+          "target": [
+           "battle_shout"
+          ]
+         }
+        ]
        }
       ]
      },
@@ -2075,7 +2196,18 @@
         "source_tab_id": 381,
         "modelled": true,
         "effects": [],
-        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%."
+        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "EFFECT1",
+          "family_bit": 34,
+          "value": 5,
+          "target": [
+           "seal_of_the_crusader"
+          ]
+         }
+        ]
        },
        {
         "key": "improved_seal_of_the_crusader",
@@ -2087,7 +2219,18 @@
         "source_tab_id": 381,
         "modelled": true,
         "effects": [],
-        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%."
+        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "EFFECT1",
+          "family_bit": 34,
+          "value": 10,
+          "target": [
+           "seal_of_the_crusader"
+          ]
+         }
+        ]
        },
        {
         "key": "improved_seal_of_the_crusader",
@@ -2099,7 +2242,18 @@
         "source_tab_id": 381,
         "modelled": true,
         "effects": [],
-        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%."
+        "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "EFFECT1",
+          "family_bit": 34,
+          "value": 15,
+          "target": [
+           "seal_of_the_crusader"
+          ]
+         }
+        ]
        }
       ]
      },
@@ -2122,7 +2276,27 @@
         "source_tab_id": 381,
         "modelled": true,
         "effects": [],
-        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 33,
+          "value": -10,
+          "target": [
+           "seal_of_command"
+          ]
+         },
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 34,
+          "value": -10,
+          "target": [
+           "seal_of_the_crusader"
+          ]
+         }
+        ]
        },
        {
         "key": "benediction",
@@ -2134,7 +2308,27 @@
         "source_tab_id": 381,
         "modelled": true,
         "effects": [],
-        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 33,
+          "value": -10,
+          "target": [
+           "seal_of_command"
+          ]
+         },
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 34,
+          "value": -10,
+          "target": [
+           "seal_of_the_crusader"
+          ]
+         }
+        ]
        },
        {
         "key": "benediction",
@@ -2146,7 +2340,27 @@
         "source_tab_id": 381,
         "modelled": true,
         "effects": [],
-        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 33,
+          "value": -20,
+          "target": [
+           "seal_of_command"
+          ]
+         },
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 34,
+          "value": -20,
+          "target": [
+           "seal_of_the_crusader"
+          ]
+         }
+        ]
        },
        {
         "key": "benediction",
@@ -2158,7 +2372,27 @@
         "source_tab_id": 381,
         "modelled": true,
         "effects": [],
-        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 33,
+          "value": -20,
+          "target": [
+           "seal_of_command"
+          ]
+         },
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 34,
+          "value": -20,
+          "target": [
+           "seal_of_the_crusader"
+          ]
+         }
+        ]
        },
        {
         "key": "benediction",
@@ -2170,7 +2404,27 @@
         "source_tab_id": 381,
         "modelled": true,
         "effects": [],
-        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1)."
+        "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 33,
+          "value": -30,
+          "target": [
+           "seal_of_command"
+          ]
+         },
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 34,
+          "value": -30,
+          "target": [
+           "seal_of_the_crusader"
+          ]
+         }
+        ]
        }
       ]
      },
