@@ -148,6 +148,26 @@ struct ZoneFile {
     template: Vec<Template>,
 }
 
+/// `content/level_overrides.toml`: the Level Bands laid over the generated spawns.
+#[derive(Deserialize)]
+struct BandFile {
+    area: Vec<BandArea>,
+}
+
+#[derive(Deserialize)]
+struct BandArea {
+    map: u32,
+    x: [f32; 2],
+    y: [f32; 2],
+    creature: Vec<BandCreature>,
+}
+
+#[derive(Deserialize)]
+struct BandCreature {
+    entry: u32,
+    levels: [u8; 2],
+}
+
 pub(crate) struct Mobs {
     pub(crate) template: Vec<Template>,
     pub(crate) spawn: Vec<Spawn>,
@@ -203,6 +223,21 @@ pub(crate) fn content() -> &'static Mobs {
                     map,
                 },
             ));
+        }
+        let bands: BandFile = toml::from_str(include_str!("../content/level_overrides.toml"))
+            .expect("content/level_overrides.toml parses");
+        for s in &mut spawn {
+            let [x, y, _] = s.position;
+            let levels = bands
+                .area
+                .iter()
+                .filter(|a| a.map == s.map && (a.x[0]..=a.x[1]).contains(&x))
+                .filter(|a| (a.y[0]..=a.y[1]).contains(&y))
+                .flat_map(|a| &a.creature)
+                .find(|c| c.entry == s.entry);
+            if let Some(c) = levels {
+                [s.level_min, s.level_max] = c.levels;
+            }
         }
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
             .expect("content/wailing_caverns.toml parses");
@@ -585,6 +620,27 @@ mod tests {
         // Defias Thug.
         let thug = template(38).unwrap();
         assert!(thug.hostile && !thug.friendly);
+    }
+
+    #[test]
+    fn northshire_valley_spawns_at_its_level_band_and_the_rest_keeps_vanilla() {
+        // Defias Thug, in the valley.
+        let thugs: Vec<_> = content()
+            .spawn
+            .iter()
+            .filter(|s| s.entry == 38 && s.position[0] > -9160.0 && s.position[1] > -480.0)
+            .collect();
+        assert!(thugs.len() > 50);
+        for s in thugs {
+            assert_eq!((s.level_min, s.level_max), (6, 8), "thug {}", s.guid);
+        }
+        // Young Wolf, which also roams outside the valley toward Goldshire.
+        let wolves: Vec<_> = content().spawn.iter().filter(|s| s.entry == 299).collect();
+        let (inside, outside): (Vec<_>, Vec<_>) =
+            wolves.into_iter().partition(|s| s.position[0] > -9160.0);
+        assert!(!inside.is_empty() && !outside.is_empty());
+        assert!(inside.iter().all(|s| (s.level_min, s.level_max) == (1, 2)));
+        assert!(outside.iter().all(|s| (s.level_min, s.level_max) == (1, 1)));
     }
 
     #[test]

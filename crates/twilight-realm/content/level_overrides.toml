@@ -1,0 +1,21 @@
+# Hand-written. Level Bands: each area's creatures get new levels, set to fit the band rather
+# than taken from vanilla. Applied over the generated spawn files; a creature outside every
+# area keeps its vanilla levels. An area is a rectangle in WoW coordinates on one map (the
+# realm loads spawns before any host can name the area under a point).
+
+[[area]]
+name = "Northshire Valley"
+band = [1, 10]
+map = 0
+x = [-9160.0, -8500.0]
+y = [-480.0, 120.0]
+creature = [
+  { entry = 299, levels = [1, 2] },   # Young Wolf
+  { entry = 6, levels = [2, 3] },     # Kobold Vermin
+  { entry = 69, levels = [3, 4] },    # Timber Wolf
+  { entry = 257, levels = [4, 5] },   # Kobold Worker
+  { entry = 80, levels = [6, 7] },    # Kobold Laborer, Echo Ridge Mine
+  { entry = 38, levels = [6, 8] },    # Defias Thug
+  { entry = 94, levels = [8, 9] },    # Defias Cutpurse
+  { entry = 103, levels = [10, 10] }, # Garrick Padfoot
+]
