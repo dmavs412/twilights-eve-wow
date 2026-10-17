@@ -1,28 +1,86 @@
 # Northshire Abbey, the first Phased Dungeon (ADR 0006, issue #78). Hand-written.
 #
-# The footprint is two boxes, derived from the vmangos spawns of the Abbey's interior NPCs in
-# content/elwynn.toml (the trainers in the nave and wings at z 80–90, Brother Neals in the bell
-# tower at z 113, Marshal McBride just inside the front doors at (-8902.6, -162.6)) and the
-# guard and the Elwynn start outside the doors at y > -140. The boxes are axis-aligned and the
-# building is not, so they are a close fit, not an exact one.
+# The footprint is the building's own walls: the box of each interior group of
+# nsabbey.wmo (its MOGI table), in the model's frame, placed as the ADT's MODF places the
+# building, at `origin` turned `yaw` degrees about +Z (MODF heading less 180). Only the
+# front door's portal joins the interior to the outside, so that door is the one way in
+# and out; the bell tower's roof hatch is out of reach.
 
 id = 1
 map = 0
+origin = [-8897.0, -178.3, 80.07]
+yaw = -21.5
 
-# The nave and both wings.
+# The vestibule inside the front door, cut back to the doorway, which runs corner to corner
+# from (-26.6, 25.2) to (-23.3, 28.5).
 [[footprint]]
-x = [-8935.0, -8845.0]
-y = [-225.0, -150.0]
-z = [70.0, 105.0]
+x = [-24.0, -12.2]
+y = [14.0, 26.5]
+z = [0.0, 14.9]
 
-# The bell tower, above the nave box.
+# The nave, the side chapel and the gallery above them. The nave's box is split around the
+# doorway's corner, which it would otherwise hold.
 [[footprint]]
-x = [-8915.0, -8890.0]
-y = [-195.0, -168.0]
-z = [105.0, 130.0]
+x = [-28.8, 11.9]
+y = [-11.1, 26.5]
+z = [0.0, 23.9]
 
-# Four Defias Thugs for testing: two just inside the front doors, one by each side wall of the
-# nave. The guids are this file's own (78xxxx), clear of the generated spawns.
+[[footprint]]
+x = [-24.0, 11.9]
+y = [26.5, 31.0]
+z = [0.0, 23.9]
+
+[[footprint]]
+x = [-18.4, -0.2]
+y = [2.4, 20.6]
+z = [0.0, 16.7]
+
+[[footprint]]
+x = [-18.4, 12.7]
+y = [-11.7, 21.0]
+z = [15.6, 29.2]
+
+# The east wing: hall, library and its loft, and the room beyond.
+[[footprint]]
+x = [11.4, 32.6]
+y = [-5.0, 15.4]
+z = [0.0, 24.7]
+
+[[footprint]]
+x = [32.0, 50.2]
+y = [-5.0, 15.1]
+z = [0.0, 24.7]
+
+# The back wing, and the stairs and rooms between it and the nave.
+[[footprint]]
+x = [-12.5, 6.7]
+y = [-45.7, -10.4]
+z = [0.0, 24.1]
+
+[[footprint]]
+x = [-3.0, 12.3]
+y = [-10.5, 5.8]
+z = [0.0, 24.3]
+
+[[footprint]]
+x = [-4.1, 12.6]
+y = [-10.5, 4.8]
+z = [17.6, 40.2]
+
+# The bell tower.
+[[footprint]]
+x = [-17.3, 12.1]
+y = [-9.4, 18.8]
+z = [33.0, 57.0]
+
+# The instance portal in the front doorway, the vestibule's one portal to the outside,
+# facing out.
+[portal]
+position = [-8910.4, -144.2, 82.0]
+orientation = 1.98
+
+# Four Defias Thugs for testing: two just inside the front doors, one in the nave and one in
+# the east wing hall. The guids are this file's own (78xxxx), clear of the generated spawns.
 [[creature]]
 guid = 780001
 entry = 38
@@ -48,5 +106,5 @@ orientation = 2.0
 guid = 780004
 entry = 38
 level = 9
-position = [-8880.0, -168.0, 82.4]
+position = [-8874.7, -181.7, 82.0]
 orientation = 3.6

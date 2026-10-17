@@ -7,8 +7,9 @@
 removed = [198, 375, 911, 6373, 459, 925, 915, 152, 190, 1213, 78, 11940, 196, 951, 952]
 
 # Spawns moved. Marshal McBride stood just inside the Abbey's front doors, in its footprint
-# (content/northshire_abbey.toml); he now stands just outside them, facing the yard.
+# (content/northshire_abbey.toml); he now stands on the steps a few yards outside them, clear
+# of the doorway's portal, facing the yard.
 [[moved]]
 entry = 197
-position = [-8911.0, -144.0, 82.0]
+position = [-8912.0, -140.5, 81.5]
 orientation = 1.99

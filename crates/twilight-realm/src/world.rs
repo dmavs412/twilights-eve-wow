@@ -141,6 +141,8 @@ pub(crate) struct InWorld {
     phase: crate::phased::Phase,
     /// That dungeon's Run.
     run: Option<crate::phased::Run>,
+    /// The Phased Dungeons whose doorway portal the client has.
+    portals: Vec<u32>,
 }
 
 impl InWorld {
@@ -211,6 +213,7 @@ impl InWorld {
             resting: crate::rest::in_inn(c.map, c.position),
             phase: Default::default(),
             run: None,
+            portals: Vec::new(),
         };
         events.push(w.player_create(c));
         w
@@ -299,6 +302,7 @@ impl InWorld {
         }
         let me = c.position;
         self.cross_phase(c, events);
+        self.show_portals(me, events);
         if let Some(run) = &mut self.run {
             run.elapsed += dt;
         }
@@ -575,6 +579,7 @@ impl InWorld {
         // Inside a Dungeon, its route graph keeps every run within the walls.
         let route = crate::dungeon::route_on(self.map);
         let map = self.map;
+        let phase = self.phase;
         let mob = &mut self.mobs[i];
         mob.advance(dt);
         mob.swing_timer = (mob.swing_timer - dt).max(0.0);
@@ -626,7 +631,13 @@ impl InWorld {
                                 let path = r.path(mob.position, me, map, host);
                                 mob.run_path(short_of(path, CHASE_DISTANCE), me)
                             }
-                            None => mob.run_to(chase_point(mob.position, me, map, host), me),
+                            None => {
+                                let to = chase_point(mob.position, me, map, host);
+                                match crate::phased::chase_within(phase, map, to, me) {
+                                    Some(to) => mob.run_to(to, me),
+                                    None => return,
+                                }
+                            }
                         };
                         events.push(run);
                     }
