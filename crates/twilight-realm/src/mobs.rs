@@ -10,6 +10,7 @@ use serde::Deserialize;
 
 use crate::clock;
 use crate::fields::*;
+use crate::phased::{self, Phase};
 use crate::rng::Rng;
 use crate::rules::melee::MobDefense;
 use crate::rules::stats::{MobStats, UnitClass};
@@ -99,6 +100,8 @@ pub(crate) struct Spawn {
     pub(crate) camp: u32,
     /// The map it stands on: Kalimdor, or a Dungeon's.
     pub(crate) map: u32,
+    /// The open world's, or a Phased Dungeon's.
+    pub(crate) phase: Phase,
 }
 
 /// A hand-written spawn in `mobs.toml`, a camp of its own.
@@ -142,6 +145,21 @@ struct DungeonSpawn {
     camp: u32,
 }
 
+/// `content/elwynn_overrides.toml`: hand-written changes to the generated Elwynn spawns.
+#[derive(Deserialize)]
+struct Overrides {
+    /// Entries whose spawns are deleted.
+    removed: Vec<u32>,
+    moved: Vec<Moved>,
+}
+
+#[derive(Deserialize)]
+struct Moved {
+    entry: u32,
+    position: [f32; 3],
+    orientation: f32,
+}
+
 #[derive(Deserialize)]
 struct ZoneFile {
     spawns: Vec<Row>,
@@ -180,8 +198,17 @@ pub(crate) fn content() -> &'static Mobs {
             toml::from_str(include_str!("../content/mobs.toml")).expect("content/mobs.toml parses");
         let barrens: ZoneFile = toml::from_str(include_str!("../content/barrens.toml"))
             .expect("content/barrens.toml parses");
-        let elwynn: ZoneFile = toml::from_str(include_str!("../content/elwynn.toml"))
+        let mut elwynn: ZoneFile = toml::from_str(include_str!("../content/elwynn.toml"))
             .expect("content/elwynn.toml parses");
+        let overrides: Overrides = toml::from_str(include_str!("../content/elwynn_overrides.toml"))
+            .expect("content/elwynn_overrides.toml parses");
+        elwynn.spawns.retain(|r| !overrides.removed.contains(&r.1));
+        for m in &overrides.moved {
+            for r in elwynn.spawns.iter_mut().filter(|r| r.1 == m.entry) {
+                [r.4, r.5, r.6] = m.position;
+                r.7 = m.orientation;
+            }
+        }
         let mut template = hand.template;
         template.extend(barrens.template);
         template.extend(elwynn.template);
@@ -201,6 +228,7 @@ pub(crate) fn content() -> &'static Mobs {
                     wander_radius: 0.0,
                     camp: s.guid,
                     map: crate::content::KALIMDOR,
+                    phase: Phase::OpenWorld,
                 })
             })
             .collect();
@@ -221,6 +249,7 @@ pub(crate) fn content() -> &'static Mobs {
                     wander_radius: wander,
                     camp,
                     map,
+                    phase: Phase::OpenWorld,
                 },
             ));
         }
@@ -257,7 +286,28 @@ pub(crate) fn content() -> &'static Mobs {
                 wander_radius: 0.0,
                 camp: s.camp,
                 map: dungeon.map,
+                phase: Phase::OpenWorld,
             });
+        }
+        for d in phased::content() {
+            for c in &d.creature {
+                let Some(t) = template.iter().find(|t| t.entry == c.entry) else {
+                    continue;
+                };
+                spawn.push(Spawn {
+                    guid: c.guid,
+                    entry: c.entry,
+                    level_min: c.level,
+                    level_max: c.level,
+                    position: c.position,
+                    orientation: c.orientation,
+                    display_id: t.display_id,
+                    wander_radius: 0.0,
+                    camp: c.guid,
+                    map: d.map,
+                    phase: Phase::Dungeon(d.id),
+                });
+            }
         }
         Mobs { template, spawn }
     })
@@ -624,11 +674,12 @@ mod tests {
 
     #[test]
     fn northshire_valley_spawns_at_its_level_band_and_the_rest_keeps_vanilla() {
-        // Defias Thug, in the valley.
+        // Defias Thug, in the valley; the Abbey's are its own.
         let thugs: Vec<_> = content()
             .spawn
             .iter()
-            .filter(|s| s.entry == 38 && s.position[0] > -9160.0 && s.position[1] > -480.0)
+            .filter(|s| s.entry == 38 && s.phase == Phase::OpenWorld)
+            .filter(|s| s.position[0] > -9160.0 && s.position[1] > -480.0)
             .collect();
         assert!(thugs.len() > 50);
         for s in thugs {

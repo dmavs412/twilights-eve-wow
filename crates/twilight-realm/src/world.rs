@@ -32,6 +32,7 @@ mod death;
 mod discovery;
 mod dungeon;
 mod food;
+mod phase;
 mod procs;
 mod regen;
 mod rest;
@@ -136,6 +137,10 @@ pub(crate) struct InWorld {
     transfer: bool,
     /// Standing in an inn: `PLAYER_FLAGS_RESTING` is up and the pool fills.
     resting: bool,
+    /// The open world, or the Phased Dungeon the player stands in.
+    phase: crate::phased::Phase,
+    /// That dungeon's Run.
+    run: Option<crate::phased::Run>,
 }
 
 impl InWorld {
@@ -204,6 +209,8 @@ impl InWorld {
             meal: None,
             transfer: false,
             resting: crate::rest::in_inn(c.map, c.position),
+            phase: Default::default(),
+            run: None,
         };
         events.push(w.player_create(c));
         w
@@ -291,8 +298,12 @@ impl InWorld {
             return ticked;
         }
         let me = c.position;
+        self.cross_phase(c, host, events);
+        if let Some(run) = &mut self.run {
+            run.elapsed += dt;
+        }
         // The open world streams in around the player; a Dungeon's run is all there at once.
-        if content::open_world(self.map) {
+        if content::open_world(self.map) && self.phase == crate::phased::Phase::OpenWorld {
             self.population
                 .update(dt, me, self.map, host, &mut self.mobs, events);
         }
@@ -684,7 +695,10 @@ impl InWorld {
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
-        self.population.died(mob.spawn, mob.template.rank);
+        // A Phased Dungeon's dead stay down until its Run resets.
+        if self.phase == crate::phased::Phase::OpenWorld {
+            self.population.died(mob.spawn, mob.template.rank);
+        }
         self.skills.target_died(mob.guid, events);
         if self.player.attacking == Some(mob.guid) {
             self.player.attacking = None;

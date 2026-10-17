@@ -1,0 +1,52 @@
+# Northshire Abbey, the first Phased Dungeon (ADR 0006, issue #78). Hand-written.
+#
+# The footprint is two boxes, derived from the vmangos spawns of the Abbey's interior NPCs in
+# content/elwynn.toml (the trainers in the nave and wings at z 80–90, Brother Neals in the bell
+# tower at z 113, Marshal McBride just inside the front doors at (-8902.6, -162.6)) and the
+# guard and the Elwynn start outside the doors at y > -140. The boxes are axis-aligned and the
+# building is not, so they are a close fit, not an exact one.
+
+id = 1
+map = 0
+
+# The nave and both wings.
+[[footprint]]
+x = [-8935.0, -8845.0]
+y = [-225.0, -150.0]
+z = [70.0, 105.0]
+
+# The bell tower, above the nave box.
+[[footprint]]
+x = [-8915.0, -8890.0]
+y = [-195.0, -168.0]
+z = [105.0, 130.0]
+
+# Four Defias Thugs for testing: two just inside the front doors, one by each side wall of the
+# nave. The guids are this file's own (78xxxx), clear of the generated spawns.
+[[creature]]
+guid = 780001
+entry = 38
+level = 9
+position = [-8906.0, -157.0, 82.0]
+orientation = 5.13
+
+[[creature]]
+guid = 780002
+entry = 38
+level = 9
+position = [-8898.0, -160.0, 82.0]
+orientation = 5.13
+
+[[creature]]
+guid = 780003
+entry = 38
+level = 9
+position = [-8895.0, -183.0, 82.0]
+orientation = 2.0
+
+[[creature]]
+guid = 780004
+entry = 38
+level = 9
+position = [-8880.0, -168.0, 82.0]
+orientation = 3.6

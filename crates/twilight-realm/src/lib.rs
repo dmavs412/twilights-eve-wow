@@ -54,6 +54,7 @@ mod inventory;
 mod items;
 mod looting;
 mod mobs;
+mod phased;
 mod population;
 mod quests;
 mod rest;
@@ -646,6 +647,12 @@ impl Realm {
         self.characters
             .get(guid)
             .map(|c| callings::of(c.calling).name.as_str())
+    }
+
+    /// Seconds into the Run of the Phased Dungeon the character in the world stands in; `None`
+    /// outside every one.
+    pub fn run_elapsed(&self) -> Option<f32> {
+        self.world.as_ref().and_then(|w| w.run_elapsed())
     }
 
     /// Keeps `guid` from ever being handed out: the host holds a save under it that it could not

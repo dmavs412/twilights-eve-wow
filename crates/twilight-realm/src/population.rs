@@ -41,7 +41,11 @@ fn grid() -> &'static Grid {
         let mut cells: HashMap<(u32, i32, i32), Vec<u32>> = HashMap::new();
         // A Dungeon's spawns are its instance's, not the open world's.
         let world = mobs::content().spawn.iter().enumerate();
-        for (i, s) in world.filter(|(_, s)| crate::content::open_world(s.map)) {
+        // A Phased Dungeon's creatures come with its Run, not the view.
+        let open = |s: &mobs::Spawn| {
+            crate::content::open_world(s.map) && s.phase == crate::phased::Phase::OpenWorld
+        };
+        for (i, s) in world.filter(|(_, s)| open(s)) {
             let (cx, cy) = cell(s.position[0], s.position[1]);
             cells.entry((s.map, cx, cy)).or_default().push(i as u32);
         }
@@ -164,6 +168,13 @@ impl Population {
                 }
             }
         }
+    }
+
+    /// The player left the open world for a Phased Dungeon, and its mobs left with them: the
+    /// view is looked over afresh on the way out, and the dead keep their wait.
+    pub(crate) fn forget_view(&mut self) {
+        self.present.iter_mut().for_each(|p| *p = false);
+        self.scanned_at = None;
     }
 
     /// A mob of `spawn` died: it comes back once the player has been away long enough.
