@@ -298,7 +298,7 @@ impl InWorld {
             return ticked;
         }
         let me = c.position;
-        self.cross_phase(c, host, events);
+        self.cross_phase(c, events);
         if let Some(run) = &mut self.run {
             run.elapsed += dt;
         }

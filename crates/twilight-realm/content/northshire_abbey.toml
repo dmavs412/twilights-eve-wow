@@ -27,26 +27,26 @@ z = [105.0, 130.0]
 guid = 780001
 entry = 38
 level = 9
-position = [-8906.0, -157.0, 82.0]
+position = [-8906.0, -157.0, 82.4]
 orientation = 5.13
 
 [[creature]]
 guid = 780002
 entry = 38
 level = 9
-position = [-8898.0, -160.0, 82.0]
+position = [-8898.0, -160.0, 82.4]
 orientation = 5.13
 
 [[creature]]
 guid = 780003
 entry = 38
 level = 9
-position = [-8895.0, -183.0, 82.0]
+position = [-8895.0, -183.0, 82.4]
 orientation = 2.0
 
 [[creature]]
 guid = 780004
 entry = 38
 level = 9
-position = [-8880.0, -168.0, 82.0]
+position = [-8880.0, -168.0, 82.4]
 orientation = 3.6

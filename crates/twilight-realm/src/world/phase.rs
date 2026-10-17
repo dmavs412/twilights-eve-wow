@@ -8,16 +8,10 @@ use super::InWorld;
 use crate::characters::Char;
 use crate::mobs::{self, Mob};
 use crate::phased::{self, Phase, Run};
-use crate::Host;
 
 impl InWorld {
     /// Puts the player in the Phase where they stand; the dead are in none of a dungeon's.
-    pub(super) fn cross_phase(
-        &mut self,
-        c: &Char,
-        host: &dyn Host,
-        events: &mut Vec<SessionEvent>,
-    ) {
+    pub(super) fn cross_phase(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
         let now = if self.player.alive() {
             phased::at(self.map, c.position)
         } else {
@@ -43,7 +37,7 @@ impl InWorld {
         self.phase = now;
         if let Phase::Dungeon(_) = now {
             self.run = Some(Run { elapsed: 0.0 });
-            self.mobs = creatures(now, host);
+            self.mobs = creatures(now);
             events.extend(self.mobs.iter().map(Mob::create));
         }
     }
@@ -54,17 +48,16 @@ impl InWorld {
     }
 }
 
-/// A fresh set of `phase`'s creatures, at full health on the ground under their spawns.
-fn creatures(phase: Phase, host: &dyn Host) -> Vec<Mob> {
+/// A fresh set of `phase`'s creatures, at full health where their content file puts them.
+fn creatures(phase: Phase) -> Vec<Mob> {
     mobs::content()
         .spawn
         .iter()
         .enumerate()
         .filter(|(_, s)| s.phase == phase)
         .filter_map(|(i, s)| {
-            let [x, y, z] = s.position;
-            let z = host.ground_height(s.map, x, y, z + 2.0).unwrap_or(z);
-            Mob::spawn(i as u32, s.level_min, z)
+            // The authored height: the ground lookup finds the terrain under a building's floor.
+            Mob::spawn(i as u32, s.level_min, s.position[2])
         })
         .collect()
 }
