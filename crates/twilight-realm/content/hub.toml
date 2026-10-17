@@ -163,7 +163,7 @@ faction_template = 35
 role = "giver"
 npc_flags = 0x2
 position = [-465.0, -2688.0, 95.9]
-orientation = 2.39
+orientation = 0.61
 greeting = "The plains around the Crossroads teem with beasts, and the quilboar and the imps with them. Thin them out, and the caravans thank you for it."
 
 # Up the watchtower with the lookout: she gives "Know the Land", once per character.
@@ -192,7 +192,7 @@ faction_template = 35
 role = "giver"
 npc_flags = 0x2
 position = [-473.0, -2604.0, 104.3]
-orientation = 2.39
+orientation = 0.32
 greeting = "From this tower I watch the far fields: Razormane on the east road, harpies on the northern rocks, gnolls in the western hills, raptors and wolves to the south. Every day they come closer."
 
 [[npc]]

@@ -55,7 +55,7 @@ giver = 90101
 level = 3
 title = "Scorpid Venom"
 objectives = "Bring 6 Venomtail Poison Sacs from the Scorpid Workers to Grezz Plainswatcher at the Crossroads."
-details = "The apothecaries want scorpid venom, and the Scorpid Workers east of town are full of it. Bring me their poison sacs."
+details = "The apothecaries want scorpid venom, and the Scorpid Workers, to the north, the north-west and the east of town, are full of it. Bring me their poison sacs."
 progress = "Have you got the venom sacs?"
 completion = "Careful with those. Here, for your trouble, and a Token besides."
 money = 80
@@ -106,6 +106,36 @@ completion = "These will do. The scouts sleep easier. Here, and a Token."
 money = 150
 tokens = 1
 collect = [{ item = 4758, count = 5, chance = 60, from = [2958] }]
+
+[[quest]]
+id = 91052
+kind = "hunting"
+giver = 90101
+level = 3
+min_level = 3
+title = "Thistle Boars"
+objectives = "Kill 4 Young Thistle Boars and 4 Thistle Boars, then return to Grezz Plainswatcher at the Crossroads."
+details = "Young and grown, the thistle boars root up the grass to the west, south, south-east, east and north-east of town. They crowd the trail for every wagon that comes in. Thin them."
+progress = "The grass grows back; the boars keep rooting it up."
+completion = "Fewer boars, fewer broken wheels. Take this, and a Token."
+money = 70
+tokens = 1
+kill = [[1984, 4], [1985, 4]]
+
+[[quest]]
+id = 91053
+kind = "hunting"
+giver = 90101
+level = 4
+min_level = 3
+title = "Battleboars"
+objectives = "Kill 5 Battleboars, then return to Grezz Plainswatcher at the Crossroads."
+details = "The battleboars are the boars that fight back: bigger, angrier, and happy to charge a scout on the trail. They run to the east and north-east of town. Put them down."
+progress = "Still tusk marks on every post."
+completion = "Good. Hang your armour up for the night. Here, and a Token."
+money = 100
+tokens = 1
+kill = [[2966, 5]]
 
 [[quest]]
 id = 91051
@@ -249,6 +279,90 @@ completion = "That is the last I ask of the fields. Past here, Zun'jin and Garos
 money = 250
 tokens = 1
 kill = [[3123, 4], [2960, 4]]
+
+[[quest]]
+id = 91054
+kind = "hunting"
+giver = 90102
+level = 7
+title = "Dire Boars"
+objectives = "Kill 6 Dire Mottled Boars, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Out in the Far Fields the mottled boars grow dire. They gore anything that crosses their ground, to the south-east and north-east of town. Cull them."
+progress = "The boars still gore the herders."
+completion = "The herders can walk their ground again. Here, and a Token."
+money = 175
+tokens = 1
+kill = [[3099, 6]]
+
+[[quest]]
+id = 91055
+kind = "hunting"
+giver = 90102
+level = 7
+title = "Scorpids on the Flats"
+objectives = "Kill 5 Clattering Scorpids and 4 Armored Scorpids, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Scorpids clatter over the flats to the north, north-west, west and north-east of town. The smaller ones sting; the armored ones are worse, and the caravan guards are tired of both. Break them."
+progress = "The flats still clatter at night."
+completion = "Quiet at last. Take this, and a Token."
+money = 175
+tokens = 1
+kill = [[3125, 5], [3126, 4]]
+
+[[quest]]
+id = 91056
+kind = "hunting"
+giver = 90102
+level = 8
+title = "Adult Plainstriders"
+objectives = "Kill 6 Adult Plainstriders, then return to Tamaha Swiftrunner at the Crossroads."
+details = "A grown plainstrider is a long way from the chicks by the Crossroads: faster, meaner, and a kick like a mule. They range to the south-west and south of town. Thin them out."
+progress = "The big birds still range the fields."
+completion = "Quick work. Here, and a Token."
+money = 200
+tokens = 1
+kill = [[2956, 6]]
+
+[[quest]]
+id = 91057
+kind = "hunting"
+giver = 90102
+level = 9
+title = "The Elder Herds"
+objectives = "Kill 4 Elder Plainstriders and 4 Elder Mottled Boars, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The oldest of the herds, the elder plainstriders and the elder boars, hold the ground to the south-west, south, south-east and north-east of town. Nothing else grazes where they have been. Break them, and the fields are ours."
+progress = "The elders still hold their ground."
+completion = "The elders, down. You have walked far. Here, and a Token."
+money = 225
+tokens = 1
+kill = [[2957, 4], [3100, 4]]
+
+[[quest]]
+id = 91058
+kind = "hunting"
+giver = 90102
+level = 10
+title = "Venomtail Scorpids"
+objectives = "Kill 5 Venomtail Scorpids, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The Venomtail scorpids are the worst of the flats: their sting drops a full-grown kodo. They nest to the north-west and west of town, out where the ground is bare. Kill them."
+progress = "The Venomtail still nest out there."
+completion = "The worst of them, gone. Take this, and a Token."
+money = 250
+tokens = 1
+kill = [[3127, 5]]
+
+[[quest]]
+id = 91059
+kind = "hunting"
+giver = 90102
+level = 10
+title = "The Rake"
+objectives = "Kill the Rake, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Every herder west of town has a story about the Rake: one beast, bigger than the rest, that kills alone and does not leave a trail. It is out there. It comes back, if you leave it. Kill it."
+progress = "The Rake still hunts."
+completion = "The Rake, dead. The herders will tell that one for years. Here, and two Tokens' worth of thanks."
+money = 300
+tokens = 1
+kill = [[5807, 1]]
 
 # ── The middle ring (levels 10-20): the north and central Barrens ─────────────────────────────
 # Eight Crossroads givers, one for each Hunting Ground (tests/content_middle_ring.rs). Every Camp

@@ -178,7 +178,8 @@ fn kept_out(s: &Value, low: &Value) -> bool {
     let town = crossroads(low);
     let at = xy_of(s);
     let wander = s["wander_radius"].as_f64().unwrap_or(0.0);
-    let level = s["level_min"].as_u64().unwrap();
+    // Any level the spawn may roll: red to the camp when its top is.
+    let level = s["level_max"].as_u64().unwrap();
     low["camps"].as_array().unwrap().iter().any(|c| {
         let center = xy(&c["center"]);
         c["suppress_guids"].as_array().unwrap().contains(&s["guid"])

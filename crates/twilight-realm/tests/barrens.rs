@@ -76,10 +76,11 @@ fn only_the_mobs_near_the_player_are_in_the_world() {
 
 #[test]
 fn level_1_to_10_camps_stand_near_the_crossroads() {
-    let (mut realm, _) = warrior_at(1);
     let low = json("crossroads_low_camps.json");
     let mut levels = Vec::new();
     for camp in low["camps"].as_array().unwrap() {
+        // A realm of its own: a camp within view of the last one is already streamed in.
+        let (mut realm, _) = warrior_at(1);
         let center = [
             camp["center"][0].as_f64().unwrap() as f32,
             camp["center"][1].as_f64().unwrap() as f32,
@@ -91,8 +92,15 @@ fn level_1_to_10_camps_stand_near_the_crossroads() {
         let units = creates(&teleport(&mut realm, center));
         for m in camp["members"].as_array().unwrap() {
             let guid = unit_guid(m["entry"].as_u64().unwrap(), m["guid"].as_u64().unwrap());
-            let u = units.get(&guid).expect("every member stands in its camp");
-            assert!((1..=10).contains(&u.level), "level {}", u.level);
+            let u = units.get(&guid).unwrap_or_else(|| {
+                panic!(
+                    "{}: member {} ({}) does not stand in its camp",
+                    camp["camp_id"], m["guid"], m["name"]
+                )
+            });
+            // A rare (rank 4) stands a few levels above the ring's top: it is the scary one.
+            let top = if m["rank"] == 4 { 13 } else { 10 };
+            assert!((1..=top).contains(&u.level), "level {}", u.level);
             assert_eq!(u.display_id as u64, m["display_id"].as_u64().unwrap());
             levels.push(u.level);
         }
@@ -164,7 +172,11 @@ fn at_a_low_camp_no_red_mob_is_in_view() {
         see(&mut world, &teleport(&mut realm, camp_center(camp)));
         see(&mut world, &run(&mut realm, 2.0));
         let red = red_to(camp);
-        let reds: Vec<_> = world.values().filter(|u| u.level >= red).collect();
+        // The Hub's townsfolk (`FactionTemplate.dbc` 35) are friendly to every race.
+        let reds: Vec<_> = world
+            .values()
+            .filter(|u| u.level >= red && u.faction != 35)
+            .collect();
         assert!(
             reds.is_empty(),
             "{}: level {red}+ mobs in view: {reds:?}",

@@ -218,15 +218,25 @@ fn the_low_quests_point_the_way_to_their_camps() {
             .map(|k| k.0)
             .chain(q.collect.iter().flat_map(|c| c.from.iter().copied()))
             .collect();
+        // A camp is where its quest says when its own creatures (the first member's kind) are the
+        // quest's targets: the wild camps blend a few of another kind in, which no quest chases.
+        // A target that leads no camp is found where it stands among the others.
+        let has = |c: &&serde_json::Value, any: bool| {
+            let mut kinds = c["members"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|m| m["entry"].as_u64().unwrap() as u32);
+            if any {
+                kinds.any(|e| targets.contains(&e))
+            } else {
+                kinds.next().is_some_and(|e| targets.contains(&e))
+            }
+        };
+        let led = camps.iter().any(|c| has(&c, false));
         let bearings: Vec<f32> = camps
             .iter()
-            .filter(|c| {
-                c["members"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .any(|m| targets.contains(&(m["entry"].as_u64().unwrap() as u32)))
-            })
+            .filter(|c| has(c, !led))
             .map(|c| {
                 let dx = c["center"][0].as_f64().unwrap() as f32 - town[0];
                 let dy = c["center"][1].as_f64().unwrap() as f32 - town[1];

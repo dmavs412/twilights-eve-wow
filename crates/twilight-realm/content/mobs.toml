@@ -352,9 +352,225 @@ speed_walk = 1.0
 speed_run = 0.857
 detection_range = 18.0
 
+# The wild camps' creatures (`wild_camps.py` places them): the boars, scorpids and plainstriders of
+# Mulgore, Durotar and The Barrens, and two rares, with the values vmangos holds for them. A rare
+# (`rank = 4`) takes ten minutes to respawn.
+
+[[template]]
+entry = 1984
+name = "Young Thistle Boar"
+creature_type = 1
+display_id = 8869
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 1
+level_max = 2
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 0.857143
+detection_range = 10
+
+[[template]]
+entry = 1985
+name = "Thistle Boar"
+creature_type = 1
+display_id = 6807
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 2
+level_max = 3
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 0.857143
+detection_range = 10
+
+[[template]]
+entry = 2956
+name = "Adult Plainstrider"
+creature_type = 1
+display_id = 1220
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 6
+level_max = 7
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 0.666668
+speed_run = 1.14286
+detection_range = 18
+
+[[template]]
+entry = 2957
+name = "Elder Plainstrider"
+creature_type = 1
+display_id = 1221
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 8
+level_max = 9
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 0.666668
+speed_run = 1.14286
+detection_range = 18
+
+[[template]]
+entry = 2966
+name = "Battleboar"
+creature_type = 1
+display_id = 8869
+faction_template = 14
+unit_class = "warrior"
+level_min = 3
+level_max = 4
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 0.857143
+detection_range = 10
+
+[[template]]
+entry = 3056
+name = "Ghost Howl"
+creature_type = 1
+display_id = 720
+faction_template = 38
+unit_class = "warrior"
+level_min = 12
+level_max = 12
+rank = 4
+health_multiplier = 1
+damage_multiplier = 1.25
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 1.14286
+detection_range = 20
+
+[[template]]
+entry = 3099
+name = "Dire Mottled Boar"
+creature_type = 1
+display_id = 381
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 6
+level_max = 7
+health_multiplier = 1
+damage_multiplier = 1.53847
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 0.857143
+detection_range = 18
+
+[[template]]
+entry = 3100
+name = "Elder Mottled Boar"
+creature_type = 1
+display_id = 193
+faction_template = 189
+hostile = false
+unit_class = "warrior"
+level_min = 8
+level_max = 9
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 0.857143
+detection_range = 18
+
+[[template]]
+entry = 3125
+name = "Clattering Scorpid"
+creature_type = 1
+display_id = 2486
+faction_template = 413
+unit_class = "warrior"
+level_min = 5
+level_max = 6
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 0.857143
+detection_range = 18
+
+[[template]]
+entry = 3126
+name = "Armored Scorpid"
+creature_type = 1
+display_id = 2487
+faction_template = 413
+unit_class = "warrior"
+level_min = 7
+level_max = 8
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1.5
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 0.857143
+detection_range = 18
+
+[[template]]
+entry = 3127
+name = "Venomtail Scorpid"
+creature_type = 1
+display_id = 2732
+faction_template = 413
+unit_class = "warrior"
+level_min = 9
+level_max = 10
+health_multiplier = 1
+damage_multiplier = 1
+armor_multiplier = 1
+base_attack_time = 2000
+speed_walk = 1
+speed_run = 0.857143
+detection_range = 18
+
+[[template]]
+entry = 5807
+name = "The Rake"
+creature_type = 1
+display_id = 1973
+faction_template = 16
+unit_class = "warrior"
+level_min = 10
+level_max = 10
+rank = 4
+health_multiplier = 1
+damage_multiplier = 0.6
+armor_multiplier = 1
+base_attack_time = 1200
+speed_walk = 1
+speed_run = 1.42857
+detection_range = 20
+
 # `guid` is the spawn's low guid (24 bits); a hand-written spawn is a camp of its own. `position`
 # is WoW `[x, y, z]`, z the terrain height there, which the host's ground replaces once it is
-# loaded. The low camps hold 9000001..=9000056.
+# loaded. The low camps hold 9000001..=9000056 and the wild camps 9001001 up.
 [[spawn]]
 guid = 9000100
 entry = 3101

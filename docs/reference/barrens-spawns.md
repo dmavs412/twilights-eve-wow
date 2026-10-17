@@ -454,3 +454,23 @@ above 30, no stray, none of the named, and every quest's creatures still spawnin
 - Some creatures in the file sit at the zone's edges because the terrain says they are in The
   Barrens: the Razorfen Downs approach (33–36 elites) and Jorb in Ratchet (a neutral level-37
   bodyguard). The rings retune or drop them.
+
+## The wild camps of the early ring
+
+`make_crossroads_low_camps.py` keeps the eleven hand-placed camps (low-1 to low-11) and adds the rest
+from `tools/twilights-eve/wild_camps.py`, which reads the 1.12.1 ADTs through `crossroads_survey.py`:
+
+- **Landmark camps.** A camp stands by each hut, tent, wrecked caravan, bone field or stand of
+  trees the ADT places inside the ring (WMO placements, and clusters of M2 doodads).
+- **Filler camps** on flat ground until the ring holds 34 new camps.
+- **Two rares**, The Rake (level 10, west) and Ghost Howl (level 12, east), each alone, wandering 25 yd,
+  and ten minutes to respawn (`rules/respawn.rs`, `CreatureEliteType` 4).
+
+Rules the placer keeps: off the roads (the ADT's `BarrensRoad` texture), off every WMO, on ground that
+varies under 3.5 yd and under z 110, in The Barrens, 100 yd from any other camp. Three sectors
+(120° wedges round the Crossroads) have a home species each: striders (south-west), boars (south and
+east), scorpids (north); a camp is 70% its sector's kind with a few of another's. Level rises with the
+distance: the Near Plains (to 366 yd) hold the level 1-4 species, the Far Fields (from 394 yd) the 5-10
+ones, because a quest's targets all spawn in its giver's ground (`tests/content_inner_ring.rs`). Wild
+camp members start at guid 9001001. The vmangos spawn counts for these creatures stand in each member's
+`vmangos_spawns_on_map1`; the placer does not use the DB's positions, which lie in Mulgore and Durotar.

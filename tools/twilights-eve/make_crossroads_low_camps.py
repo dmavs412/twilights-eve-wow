@@ -27,6 +27,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wowmpq  # noqa: E402
 import import_barrens_spawns as imp  # noqa: E402
+import crossroads_survey  # noqa: E402
+import wild_camps  # noqa: E402
 
 CROSSROADS = (-441.0, -2596.0)
 
@@ -70,6 +72,8 @@ CAMPS = [
 ]
 
 RESPAWN_SECS = 60  # spec: ~60 s after the player leaves the area
+RARE_RESPAWN_SECS = 600  # a rare (CreatureEliteType 4) stays down ten times as long
+WILD_GUID = 9_001_001  # the wild camps' first member; the hand-placed ones hold 9000001..9000056
 # Imported Barrens spawns (level 10+) whose home is this close to a low camp's centre are
 # listed in suppress_guids: a level-1 player should not meet a Savannah Huntress at the boars.
 SUPPRESS_YD = 70.0
@@ -106,9 +110,20 @@ def main():
     else:
         print("warning: %s missing; suppress_guids left empty" % spawns_path)
 
+    # The wild camps: placed from the ADT survey (landmarks, open ground, two rares).
+    survey = crossroads_survey.Survey(gd, wild_camps.CROSSROADS, wild_camps.RING[1] + 150.0)
+    hand = [wild_camps.Site((cx, cy), [(cx + dx, cy + dy, templates[e]["level_min"], templates[e]["level_max"])
+                                       for e, dx, dy in members], wander)
+            for _, cx, cy, members, wander, _ in CAMPS]
+    planner = wild_camps.Planner(survey, area_rows, templates, hand)
+    wild = planner.plan()
+    all_camps = [c + (False,) for c in CAMPS] + [c + (templates[c[3][0][0]]["rank"] == 4,) for c in wild]
+
     camps = []
     guid = 9_000_001  # outside vmangos' guid range for map 1; the realm may renumber
-    for n, (key, cx, cy, members, wander, note) in enumerate(CAMPS, start=1):
+    for n, (key, cx, cy, members, wander, note, rare) in enumerate(all_camps, start=1):
+        if n == len(CAMPS) + 1:
+            guid = WILD_GUID
         out_members = []
         for entry, dx, dy in members:
             t = templates[entry]
@@ -134,7 +149,8 @@ def main():
                 "faction_template": t["faction"],
                 "reaction": "hostile" if "hostile" in (horde, alliance) else "neutral",
                 "wander_radius": wander,
-                "respawn_secs": RESPAWN_SECS,
+                "rank": t["rank"],
+                "respawn_secs": RARE_RESPAWN_SECS if t["rank"] == 4 else RESPAWN_SECS,
                 "area_id": area, "area_name": area_names.get(area, ""),
                 "vmangos_spawns_on_map1": spawn_counts.get(entry, 0),
             })
@@ -156,7 +172,7 @@ def main():
 
     out = {
         "schema": 1,
-        "purpose": "Hand-placed level 1-10 camps near the Crossroads (Twilight's Eve ticket #7). Not vanilla spawns.",
+        "purpose": "Level 1-10 camps near the Crossroads: eleven hand-placed (Twilight's Eve ticket #7) and the wild camps, landmarks and two rares that wild_camps.py places from the ADT survey. Not vanilla spawns.",
         "crossroads": list(CROSSROADS),
         "map": 1,
         "ground_z": "z_hint is the ADT terrain height; the host resolves ground Z at runtime",
