@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import The Barrens' hostile and neutral creature spawns from a vmangos world DB.
+"""Import a zone's creature spawns from a vmangos world DB (The Barrens by default).
 
 Offline, one-off, re-runnable. Writes data/twilights-eve/barrens_spawns.json, which
 is committed, so building the game never needs the database. See
@@ -54,6 +54,7 @@ STATIC_UNINTERACTIBLE = 0x200  # UNIT_FLAG_NOT_SELECTABLE on spawn
 FT_RESPOND_TO_CALL_FOR_HELP = 0x01
 
 # Prefilter box (map 1) before the exact ADT zone test. Generously larger than The Barrens.
+MAP_DIRS = {0: "Azeroth", 1: "Kalimdor"}
 BOX = (-5200.0, 2200.0, -5200.0, 400.0)  # min_x, max_x, min_y, max_y
 
 UNDERGROUND_YD = 3.0  # a spawn this far below the terrain surface is inside a cave/WMO
@@ -71,6 +72,12 @@ def parse_args():
     ap.add_argument("--source-asset", default="", help="release asset file name, e.g. db-sqlite-4641790.zip")
     ap.add_argument("--camp-link", type=float, default=CAMP_LINK_YD, help="camp clustering link distance (yd)")
     ap.add_argument("--camp-radius", type=float, default=CAMP_MAX_RADIUS_YD, help="max camp radius before splitting (yd)")
+    ap.add_argument("--map", type=int, default=MAP_KALIMDOR, help="map id (default 1, Kalimdor)")
+    ap.add_argument("--zone", type=int, default=ZONE_BARRENS, help="AreaTable zone id (default 17, The Barrens)")
+    ap.add_argument("--box", type=float, nargs=4, default=None, metavar=("MIN_X", "MAX_X", "MIN_Y", "MAX_Y"),
+                    help="prefilter box on the map, larger than the zone (default: the Barrens box)")
+    ap.add_argument("--all-creatures", action="store_true",
+                    help="keep every visible spawn: friendly NPCs, guards, quest givers, critters; adds npc_flags and guard")
     ap.add_argument("--include-faction-aligned", action="store_true",
                     help="also keep mobs friendly to one player faction and hostile to the other (Theramore, Bael'dun, Horde peons); default drops them")
     return ap.parse_args()
@@ -196,7 +203,9 @@ def main():
     player_fts = {**{k: fts[v] for k, v in HORDE_PLAYER_FT.items()}, **{k: fts[v] for k, v in ALLIANCE_PLAYER_FT.items()}}
 
     gd = wowmpq.GameData(a.data)
-    terrain = wowmpq.Terrain(gd, "Kalimdor")
+    terrain = wowmpq.Terrain(gd, MAP_DIRS[a.map])
+    box = tuple(a.box) if a.box else BOX
+    zone = a.zone
 
     # AreaTable.dbc from the client: 0 ID, 1 ContinentID, 2 ParentAreaID, 11 name (enUS).
     area_rows, area_strs = gd.dbc("AreaTable")
@@ -214,7 +223,7 @@ def main():
     rows = db.execute(
         "select * from creature where map = ? and patch_min <= ? and patch_max >= ? "
         "and position_x between ? and ? and position_y between ? and ? order by guid",
-        (MAP_KALIMDOR, PATCH, PATCH, BOX[0], BOX[1], BOX[2], BOX[3])).fetchall()
+        (a.map, PATCH, PATCH, box[0], box[1], box[2], box[3])).fetchall()
 
     dropped = defaultdict(int)
     dropped_names = defaultdict(lambda: defaultdict(int))
@@ -232,12 +241,12 @@ def main():
         gz = terrain.ground_z(x, y)
         if gz is not None and z < gz - UNDERGROUND_YD:
             w_area, w_path = terrain.wmo_area(x, y, z)
-            if w_area and areas.get(w_area, {}).get("map") == MAP_KALIMDOR and w_area != area:
-                if ZONE_BARRENS in (zone_of(area), zone_of(w_area)):
+            if w_area and areas.get(w_area, {}).get("map") == a.map and w_area != area:
+                if zone in (zone_of(area), zone_of(w_area)):
                     wmo_resolved["%s: %s -> %s" % (w_path.split("\\")[-1], areas.get(area, {}).get("name"),
                                                    areas[w_area]["name"])] += 1
                 area, area_src = w_area, "wmo"
-        if zone_of(area) != ZONE_BARRENS:
+        if zone_of(area) != zone:
             continue
         t = templates.get(c["id"])
 
@@ -253,14 +262,15 @@ def main():
             drop("disabled_or_invisible_spawn"); continue
         if t["flags_extra"] & FLAG_EXTRA_INVISIBLE or t["static_flags1"] & STATIC_UNINTERACTIBLE:
             drop("invisible_or_unselectable"); continue
-        if t["npc_flags"] != 0:
-            drop("npc_flags"); continue
-        if c["id"] in quest_npcs:
-            drop("quest_npc"); continue
-        if t["type"] in EXCLUDED_TYPES:
-            drop("critter_totem_pet"); continue
-        if t["flags_extra"] & FLAG_EXTRA_GUARD:
-            drop("guard"); continue
+        if not a.all_creatures:
+            if t["npc_flags"] != 0:
+                drop("npc_flags"); continue
+            if c["id"] in quest_npcs:
+                drop("quest_npc"); continue
+            if t["type"] in EXCLUDED_TYPES:
+                drop("critter_totem_pet"); continue
+            if t["flags_extra"] & FLAG_EXTRA_GUARD:
+                drop("guard"); continue
         ft = fts.get(t["faction"])
         if ft is None:
             drop("unknown_faction"); continue
@@ -269,9 +279,11 @@ def main():
         horde = side_reaction([rx[r] for r in HORDE_PLAYER_FT])
         alliance = side_reaction([rx[r] for r in ALLIANCE_PLAYER_FT])
         aligned = {horde, alliance} == {"friendly", "hostile"}
-        if (horde == "friendly" or alliance == "friendly") and not (aligned and a.include_faction_aligned):
+        if (horde == "friendly" or alliance == "friendly") and not (aligned and a.include_faction_aligned)                 and not a.all_creatures:
             drop("friendly_to_a_player_faction"); continue
-        if horde == "hostile" or alliance == "hostile":
+        if a.all_creatures and (horde == "friendly" or alliance == "friendly"):
+            react = "friendly"
+        elif horde == "hostile" or alliance == "hostile":
             react = "hostile"
         else:
             react = "neutral"
@@ -309,6 +321,9 @@ def main():
                       "description": pool_tpl.get(pool[0], {}).get("description")} if pool else None),
             "camp_id": None,
         })
+        if a.all_creatures:
+            spawns[-1]["npc_flags"] = t["npc_flags"]
+            spawns[-1]["guard"] = bool(t["flags_extra"] & FLAG_EXTRA_GUARD)
 
     # ------------------------------------------------------------ camps
     # vmangos call-for-help only reaches creatures with the *same faction template*
@@ -437,11 +452,14 @@ def main():
             "no_assist": bool(t["flags_extra"] & 0x10000),
             "loot_id": t["loot_id"], "gold_min": t["gold_min"], "gold_max": t["gold_max"],
         }
+        if a.all_creatures:
+            tpl_out[str(e)]["npc_flags"] = t["npc_flags"]
 
     counts = {
         "spawns": len(spawns),
         "hostile": sum(1 for s in spawns if s["reaction"] == "hostile"),
         "neutral": sum(1 for s in spawns if s["reaction"] == "neutral"),
+        **({"friendly": sum(1 for s in spawns if s["reaction"] == "friendly")} if a.all_creatures else {}),
         "entries": len({s["entry"] for s in spawns}),
         "camps": len(camps),
         "camps_multi": sum(1 for c in camps if c["size"] > 1),
@@ -458,9 +476,9 @@ def main():
             "patch": "1.12 (vmangos patch index %d)" % PATCH,
         },
         "method": {
-            "map": MAP_KALIMDOR,
-            "zone": ZONE_BARRENS,
-            "zone_membership": "area ID of the ADT MCNK terrain chunk under each spawn (WoW 1.12.1 MPQs); for spawns more than underground_yd below the terrain, the area of the enclosing WMO placement (WMOAreaTable root row) when there is one; that area's AreaTable.dbc parent (zone) == 17. WMO areas on another map are ignored",
+            "map": a.map,
+            "zone": zone,
+            "zone_membership": "area ID of the ADT MCNK terrain chunk under each spawn (WoW 1.12.1 MPQs); for spawns more than underground_yd below the terrain, the area of the enclosing WMO placement (WMOAreaTable root row) when there is one; that area's AreaTable.dbc parent (zone) == %d. WMO" % zone + " areas on another map are ignored",
             "underground_yd": UNDERGROUND_YD,
             "camp_link_yd": a.camp_link,
             "camp_max_radius_yd": a.camp_radius,
