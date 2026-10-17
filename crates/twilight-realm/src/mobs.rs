@@ -634,6 +634,12 @@ mod tests {
         for s in thugs {
             assert_eq!((s.level_min, s.level_max), (6, 8), "thug {}", s.guid);
         }
+        // Kobold Laborer, all of them in Echo Ridge Mine at the valley's far end.
+        let laborers: Vec<_> = content().spawn.iter().filter(|s| s.entry == 80).collect();
+        assert_eq!(laborers.len(), 25);
+        assert!(laborers
+            .iter()
+            .all(|s| (s.level_min, s.level_max) == (6, 7)));
         // Young Wolf, which also roams outside the valley toward Goldshire.
         let wolves: Vec<_> = content().spawn.iter().filter(|s| s.entry == 299).collect();
         let (inside, outside): (Vec<_>, Vec<_>) =
