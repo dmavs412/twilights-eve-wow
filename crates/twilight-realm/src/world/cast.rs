@@ -211,6 +211,15 @@ enum AuraKind {
 }
 
 impl AuraKind {
+    /// Whether `other` is this same effect (a reapplication replaces it): the same kind, and for
+    /// a skill's crit the same skill, since one spell may carry a crit effect per skill.
+    fn same_effect(self, other: AuraKind) -> bool {
+        match (self, other) {
+            (AuraKind::SkillCrit { skill: a, .. }, AuraKind::SkillCrit { skill: b, .. }) => a == b,
+            _ => std::mem::discriminant(&self) == std::mem::discriminant(&other),
+        }
+    }
+
     fn helpful(self) -> bool {
         matches!(
             self,
@@ -436,9 +445,7 @@ impl Skills {
     /// Puts `aura` on its unit, in the slot its spell already holds there or a free one.
     fn apply(&mut self, mut aura: Aura, events: &mut Vec<SessionEvent>) -> Option<Aura> {
         if let Some(old) = self.auras.iter_mut().find(|a| {
-            a.unit == aura.unit
-                && a.spell_id == aura.spell_id
-                && std::mem::discriminant(&a.kind) == std::mem::discriminant(&aura.kind)
+            a.unit == aura.unit && a.spell_id == aura.spell_id && a.kind.same_effect(aura.kind)
         }) {
             aura.slot = old.slot;
             *old = aura;
@@ -2112,5 +2119,37 @@ impl InWorld {
             }
         }
         self.item_spell_effect(cast.spell_id, c, events);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn crit(skill: &'static str, pct: u32) -> Aura {
+        Aura {
+            unit: 1,
+            spell_id: 14177,
+            slot: 0,
+            level: 10,
+            left: 10.0,
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::SkillCrit { skill, pct },
+            charges: 1,
+        }
+    }
+
+    /// Two crit effects of one spell on different skills each keep their own aura.
+    #[test]
+    fn two_effects_of_one_kind_on_one_spell_do_not_overwrite_each_other() {
+        let mut skills = Skills::new(1);
+        let mut events = Vec::new();
+        skills.apply(crit("heroic_strike", 10), &mut events);
+        skills.apply(crit("cleave", 20), &mut events);
+        assert_eq!(skills.auras.len(), 2);
+        // Granting one again refreshes it rather than adding a third.
+        skills.apply(crit("cleave", 30), &mut events);
+        assert_eq!(skills.auras.len(), 2);
     }
 }
