@@ -36,10 +36,15 @@ function Test-Trusted {
     if (-not (Test-Path $cfg)) { return $false }
     $key = ($Root -replace '\\', '/')
     $key = $key.Substring(0, 1).ToUpper() + $key.Substring(1)
-    $d = Get-Content $cfg -Raw | ConvertFrom-Json
-    $p = $d.projects.PSObject.Properties[$key]
-    if ($null -eq $p) { return $false }
-    return [bool]$p.Value.hasTrustDialogAccepted
+    # ConvertFrom-Json is case-insensitive on keys and throws on "c:/..." next to "C:/...";
+    # JavaScriptSerializer keeps both.
+    Add-Type -AssemblyName System.Web.Extensions
+    $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
+    $ser.MaxJsonLength = [int]::MaxValue
+    $d = $ser.DeserializeObject((Get-Content $cfg -Raw))
+    $projects = $d["projects"]
+    if ($null -eq $projects -or -not $projects.ContainsKey($key)) { return $false }
+    return [bool]$projects[$key]["hasTrustDialogAccepted"]
 }
 
 function Find-Claude {
