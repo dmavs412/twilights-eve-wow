@@ -49,46 +49,43 @@ fn the_level_tables_match_the_reference() {
         column(&json("xp_table.json")["levels"], "xp_to_next")
     );
 
-    let stats = json("warrior_level_stats.json");
-    let w = &levels["warrior"];
-    assert_eq!(
-        floats(&w["base_health"]),
-        column(&stats["per_level"], "base_health")
-    );
-    assert_eq!(
-        floats(&w["agi_per_crit"]),
-        column(&stats["per_level"], "agi_per_crit_pct")
-    );
-    assert_eq!(
-        floats(&w["agi_per_dodge"]),
-        column(&stats["per_level"], "agi_per_dodge_pct")
-    );
-    for race in [
-        "human",
-        "orc",
-        "dwarf",
-        "night_elf",
-        "undead",
-        "tauren",
-        "gnome",
-        "troll",
+    for class in [
+        "warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid",
     ] {
-        let rows: Vec<Vec<f64>> = w["race_stats"][race]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(floats)
-            .collect();
-        let reference = &stats["race_base_stats"][race];
-        let want: Vec<Vec<f64>> = (0..rows.len())
-            .map(|i| {
-                ["str", "agi", "sta", "int", "spi"]
-                    .iter()
-                    .map(|f| column(reference, f)[i])
-                    .collect()
-            })
-            .collect();
-        assert_eq!(rows, want, "{race}");
+        let stats = json(&format!("{class}_level_stats.json"));
+        let w = &levels[class];
+        for (field, reference) in [
+            ("base_health", "base_health"),
+            ("base_mana", "base_mana"),
+            ("agi_per_crit", "agi_per_crit_pct"),
+            ("agi_per_dodge", "agi_per_dodge_pct"),
+        ] {
+            assert_eq!(
+                floats(&w[field]),
+                column(&stats["per_level"], reference),
+                "{class} {field}"
+            );
+        }
+        let race_stats = w["race_stats"].as_table().unwrap();
+        let reference_races = stats["race_base_stats"].as_object().unwrap();
+        assert_eq!(
+            race_stats.keys().collect::<Vec<_>>(),
+            reference_races.keys().collect::<Vec<_>>(),
+            "{class}: the races it can be"
+        );
+        for (race, rows) in race_stats {
+            let rows: Vec<Vec<f64>> = rows.as_array().unwrap().iter().map(floats).collect();
+            let reference = &reference_races[race];
+            let want: Vec<Vec<f64>> = (0..rows.len())
+                .map(|i| {
+                    ["str", "agi", "sta", "int", "spi"]
+                        .iter()
+                        .map(|f| column(reference, f)[i])
+                        .collect()
+                })
+                .collect();
+            assert_eq!(rows, want, "{class} {race}");
+        }
     }
 }
 

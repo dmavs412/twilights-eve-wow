@@ -1,0 +1,1399 @@
+{
+ "_source": {
+  "per_level": "vmangos world DB: player_classlevelstats (class=11) for base_health/base_mana; player_crit_per_agility and player_dodge_per_agility (class=11) for the agility divisors. Read by ObjectMgr::LoadPlayerInfo / ObjectMgr::GetPlayerCritPerAgility / GetPlayerDodgePerAgility.",
+  "race_base_stats": "vmangos world DB: player_levelstats (class=11). Naked base stats per race per level, before gear/buffs. Only the races this Class can be.",
+  "formulas": "see docs/reference/vanilla-combat-rules.md section 5",
+  "script": "tools/twilights-eve/extract_class_levels.py"
+ },
+ "_interpolated_note": "Levels missing from the vmangos agility tables are filled by linear interpolation between the nearest neighbours, as ObjectMgr::LoadPlayerInfo does. Interpolated crit levels: [41]; dodge levels: [41].",
+ "class": "druid",
+ "class_id": 11,
+ "per_level": [
+  {
+   "level": 1,
+   "base_health": 34,
+   "base_mana": 50,
+   "agi_per_crit_pct": 4.87805,
+   "agi_per_dodge_pct": 4.87805
+  },
+  {
+   "level": 2,
+   "base_health": 41,
+   "base_mana": 57,
+   "agi_per_crit_pct": 4.87805,
+   "agi_per_dodge_pct": 4.87805
+  },
+  {
+   "level": 3,
+   "base_health": 58,
+   "base_mana": 65,
+   "agi_per_crit_pct": 5.12295,
+   "agi_per_dodge_pct": 5.12295
+  },
+  {
+   "level": 4,
+   "base_health": 65,
+   "base_mana": 74,
+   "agi_per_crit_pct": 5.12295,
+   "agi_per_dodge_pct": 5.12295
+  },
+  {
+   "level": 5,
+   "base_health": 82,
+   "base_mana": 84,
+   "agi_per_crit_pct": 5.36481,
+   "agi_per_dodge_pct": 5.36481
+  },
+  {
+   "level": 6,
+   "base_health": 89,
+   "base_mana": 95,
+   "agi_per_crit_pct": 5.36481,
+   "agi_per_dodge_pct": 5.36481
+  },
+  {
+   "level": 7,
+   "base_health": 96,
+   "base_mana": 107,
+   "agi_per_crit_pct": 5.60853,
+   "agi_per_dodge_pct": 5.60853
+  },
+  {
+   "level": 8,
+   "base_health": 113,
+   "base_mana": 120,
+   "agi_per_crit_pct": 5.60853,
+   "agi_per_dodge_pct": 5.60853
+  },
+  {
+   "level": 9,
+   "base_health": 120,
+   "base_mana": 134,
+   "agi_per_crit_pct": 5.8548,
+   "agi_per_dodge_pct": 5.8548
+  },
+  {
+   "level": 10,
+   "base_health": 137,
+   "base_mana": 149,
+   "agi_per_crit_pct": 6.34115,
+   "agi_per_dodge_pct": 6.34115
+  },
+  {
+   "level": 11,
+   "base_health": 144,
+   "base_mana": 165,
+   "agi_per_crit_pct": 6.58328,
+   "agi_per_dodge_pct": 6.58328
+  },
+  {
+   "level": 12,
+   "base_health": 151,
+   "base_mana": 182,
+   "agi_per_crit_pct": 6.58328,
+   "agi_per_dodge_pct": 6.58328
+  },
+  {
+   "level": 13,
+   "base_health": 168,
+   "base_mana": 200,
+   "agi_per_crit_pct": 6.8306,
+   "agi_per_dodge_pct": 6.8306
+  },
+  {
+   "level": 14,
+   "base_health": 175,
+   "base_mana": 219,
+   "agi_per_crit_pct": 6.8306,
+   "agi_per_dodge_pct": 6.8306
+  },
+  {
+   "level": 15,
+   "base_health": 182,
+   "base_mana": 239,
+   "agi_per_crit_pct": 7.31529,
+   "agi_per_dodge_pct": 7.31529
+  },
+  {
+   "level": 16,
+   "base_health": 199,
+   "base_mana": 260,
+   "agi_per_crit_pct": 7.31529,
+   "agi_per_dodge_pct": 7.31529
+  },
+  {
+   "level": 17,
+   "base_health": 206,
+   "base_mana": 282,
+   "agi_per_crit_pct": 7.55858,
+   "agi_per_dodge_pct": 7.55858
+  },
+  {
+   "level": 18,
+   "base_health": 214,
+   "base_mana": 305,
+   "agi_per_crit_pct": 7.8064,
+   "agi_per_dodge_pct": 7.8064
+  },
+  {
+   "level": 19,
+   "base_health": 233,
+   "base_mana": 329,
+   "agi_per_crit_pct": 7.8064,
+   "agi_per_dodge_pct": 7.8064
+  },
+  {
+   "level": 20,
+   "base_health": 243,
+   "base_mana": 354,
+   "agi_per_crit_pct": 8.77963,
+   "agi_per_dodge_pct": 8.77963
+  },
+  {
+   "level": 21,
+   "base_health": 254,
+   "base_mana": 380,
+   "agi_per_crit_pct": 8.77963,
+   "agi_per_dodge_pct": 8.77963
+  },
+  {
+   "level": 22,
+   "base_health": 266,
+   "base_mana": 392,
+   "agi_per_crit_pct": 9.02527,
+   "agi_per_dodge_pct": 9.02527
+  },
+  {
+   "level": 23,
+   "base_health": 289,
+   "base_mana": 420,
+   "agi_per_crit_pct": 9.26784,
+   "agi_per_dodge_pct": 9.26784
+  },
+  {
+   "level": 24,
+   "base_health": 303,
+   "base_mana": 449,
+   "agi_per_crit_pct": 9.26784,
+   "agi_per_dodge_pct": 9.26784
+  },
+  {
+   "level": 25,
+   "base_health": 318,
+   "base_mana": 479,
+   "agi_per_crit_pct": 9.7561,
+   "agi_per_dodge_pct": 9.7561
+  },
+  {
+   "level": 26,
+   "base_health": 334,
+   "base_mana": 509,
+   "agi_per_crit_pct": 9.7561,
+   "agi_per_dodge_pct": 9.7561
+  },
+  {
+   "level": 27,
+   "base_health": 361,
+   "base_mana": 524,
+   "agi_per_crit_pct": 10.0,
+   "agi_per_dodge_pct": 10.0
+  },
+  {
+   "level": 28,
+   "base_health": 379,
+   "base_mana": 554,
+   "agi_per_crit_pct": 10.2459,
+   "agi_per_dodge_pct": 10.2459
+  },
+  {
+   "level": 29,
+   "base_health": 398,
+   "base_mana": 584,
+   "agi_per_crit_pct": 10.2459,
+   "agi_per_dodge_pct": 10.2459
+  },
+  {
+   "level": 30,
+   "base_health": 418,
+   "base_mana": 614,
+   "agi_per_crit_pct": 11.2233,
+   "agi_per_dodge_pct": 11.2233
+  },
+  {
+   "level": 31,
+   "base_health": 439,
+   "base_mana": 629,
+   "agi_per_crit_pct": 11.4679,
+   "agi_per_dodge_pct": 11.4679
+  },
+  {
+   "level": 32,
+   "base_health": 461,
+   "base_mana": 659,
+   "agi_per_crit_pct": 11.4679,
+   "agi_per_dodge_pct": 11.4679
+  },
+  {
+   "level": 33,
+   "base_health": 494,
+   "base_mana": 689,
+   "agi_per_crit_pct": 11.7096,
+   "agi_per_dodge_pct": 11.7096
+  },
+  {
+   "level": 34,
+   "base_health": 518,
+   "base_mana": 704,
+   "agi_per_crit_pct": 11.9474,
+   "agi_per_dodge_pct": 11.9474
+  },
+  {
+   "level": 35,
+   "base_health": 543,
+   "base_mana": 734,
+   "agi_per_crit_pct": 12.1951,
+   "agi_per_dodge_pct": 12.1951
+  },
+  {
+   "level": 36,
+   "base_health": 569,
+   "base_mana": 749,
+   "agi_per_crit_pct": 12.4378,
+   "agi_per_dodge_pct": 12.4378
+  },
+  {
+   "level": 37,
+   "base_health": 596,
+   "base_mana": 779,
+   "agi_per_crit_pct": 12.6904,
+   "agi_per_dodge_pct": 12.6904
+  },
+  {
+   "level": 38,
+   "base_health": 624,
+   "base_mana": 809,
+   "agi_per_crit_pct": 12.6904,
+   "agi_per_dodge_pct": 12.6904
+  },
+  {
+   "level": 39,
+   "base_health": 653,
+   "base_mana": 824,
+   "agi_per_crit_pct": 12.9199,
+   "agi_per_dodge_pct": 12.9199
+  },
+  {
+   "level": 40,
+   "base_health": 683,
+   "base_mana": 854,
+   "agi_per_crit_pct": 13.9082,
+   "agi_per_dodge_pct": 13.9082
+  },
+  {
+   "level": 41,
+   "base_health": 714,
+   "base_mana": 869,
+   "agi_per_crit_pct": 14.02625,
+   "agi_per_dodge_pct": 14.02625
+  },
+  {
+   "level": 42,
+   "base_health": 746,
+   "base_mana": 899,
+   "agi_per_crit_pct": 14.1443,
+   "agi_per_dodge_pct": 14.1443
+  },
+  {
+   "level": 43,
+   "base_health": 779,
+   "base_mana": 914,
+   "agi_per_crit_pct": 14.3885,
+   "agi_per_dodge_pct": 14.3885
+  },
+  {
+   "level": 44,
+   "base_health": 823,
+   "base_mana": 944,
+   "agi_per_crit_pct": 14.6413,
+   "agi_per_dodge_pct": 14.6413
+  },
+  {
+   "level": 45,
+   "base_health": 858,
+   "base_mana": 959,
+   "agi_per_crit_pct": 15.1286,
+   "agi_per_dodge_pct": 15.1286
+  },
+  {
+   "level": 46,
+   "base_health": 894,
+   "base_mana": 989,
+   "agi_per_crit_pct": 15.361,
+   "agi_per_dodge_pct": 15.361
+  },
+  {
+   "level": 47,
+   "base_health": 921,
+   "base_mana": 1004,
+   "agi_per_crit_pct": 15.361,
+   "agi_per_dodge_pct": 15.361
+  },
+  {
+   "level": 48,
+   "base_health": 959,
+   "base_mana": 1019,
+   "agi_per_crit_pct": 15.6006,
+   "agi_per_dodge_pct": 15.6006
+  },
+  {
+   "level": 49,
+   "base_health": 998,
+   "base_mana": 1049,
+   "agi_per_crit_pct": 15.8479,
+   "agi_per_dodge_pct": 15.8479
+  },
+  {
+   "level": 50,
+   "base_health": 1038,
+   "base_mana": 1064,
+   "agi_per_crit_pct": 16.835,
+   "agi_per_dodge_pct": 16.835
+  },
+  {
+   "level": 51,
+   "base_health": 1079,
+   "base_mana": 1079,
+   "agi_per_crit_pct": 17.0648,
+   "agi_per_dodge_pct": 17.0648
+  },
+  {
+   "level": 52,
+   "base_health": 1121,
+   "base_mana": 1109,
+   "agi_per_crit_pct": 17.331,
+   "agi_per_dodge_pct": 17.331
+  },
+  {
+   "level": 53,
+   "base_health": 1164,
+   "base_mana": 1124,
+   "agi_per_crit_pct": 17.5747,
+   "agi_per_dodge_pct": 17.5747
+  },
+  {
+   "level": 54,
+   "base_health": 1208,
+   "base_mana": 1139,
+   "agi_per_crit_pct": 17.5747,
+   "agi_per_dodge_pct": 17.5747
+  },
+  {
+   "level": 55,
+   "base_health": 1253,
+   "base_mana": 1154,
+   "agi_per_crit_pct": 18.0505,
+   "agi_per_dodge_pct": 18.0505
+  },
+  {
+   "level": 56,
+   "base_health": 1299,
+   "base_mana": 1169,
+   "agi_per_crit_pct": 18.2815,
+   "agi_per_dodge_pct": 18.2815
+  },
+  {
+   "level": 57,
+   "base_health": 1346,
+   "base_mana": 1199,
+   "agi_per_crit_pct": 18.5529,
+   "agi_per_dodge_pct": 18.5529
+  },
+  {
+   "level": 58,
+   "base_health": 1384,
+   "base_mana": 1214,
+   "agi_per_crit_pct": 18.797,
+   "agi_per_dodge_pct": 18.797
+  },
+  {
+   "level": 59,
+   "base_health": 1433,
+   "base_mana": 1229,
+   "agi_per_crit_pct": 19.0114,
+   "agi_per_dodge_pct": 19.0114
+  },
+  {
+   "level": 60,
+   "base_health": 1483,
+   "base_mana": 1244,
+   "agi_per_crit_pct": 20.0,
+   "agi_per_dodge_pct": 20.0
+  }
+ ],
+ "race_base_stats": {
+  "night_elf": [
+   {
+    "level": 1,
+    "str": 18,
+    "agi": 25,
+    "sta": 19,
+    "int": 22,
+    "spi": 22
+   },
+   {
+    "level": 2,
+    "str": 19,
+    "agi": 25,
+    "sta": 20,
+    "int": 23,
+    "spi": 23
+   },
+   {
+    "level": 3,
+    "str": 19,
+    "agi": 26,
+    "sta": 20,
+    "int": 24,
+    "spi": 24
+   },
+   {
+    "level": 4,
+    "str": 20,
+    "agi": 26,
+    "sta": 21,
+    "int": 25,
+    "spi": 25
+   },
+   {
+    "level": 5,
+    "str": 20,
+    "agi": 27,
+    "sta": 21,
+    "int": 26,
+    "spi": 26
+   },
+   {
+    "level": 6,
+    "str": 21,
+    "agi": 27,
+    "sta": 22,
+    "int": 27,
+    "spi": 27
+   },
+   {
+    "level": 7,
+    "str": 21,
+    "agi": 28,
+    "sta": 23,
+    "int": 28,
+    "spi": 28
+   },
+   {
+    "level": 8,
+    "str": 22,
+    "agi": 28,
+    "sta": 23,
+    "int": 28,
+    "spi": 29
+   },
+   {
+    "level": 9,
+    "str": 22,
+    "agi": 29,
+    "sta": 24,
+    "int": 29,
+    "spi": 30
+   },
+   {
+    "level": 10,
+    "str": 23,
+    "agi": 29,
+    "sta": 24,
+    "int": 30,
+    "spi": 31
+   },
+   {
+    "level": 11,
+    "str": 23,
+    "agi": 30,
+    "sta": 25,
+    "int": 31,
+    "spi": 33
+   },
+   {
+    "level": 12,
+    "str": 24,
+    "agi": 30,
+    "sta": 26,
+    "int": 32,
+    "spi": 34
+   },
+   {
+    "level": 13,
+    "str": 24,
+    "agi": 31,
+    "sta": 26,
+    "int": 33,
+    "spi": 35
+   },
+   {
+    "level": 14,
+    "str": 25,
+    "agi": 31,
+    "sta": 27,
+    "int": 34,
+    "spi": 36
+   },
+   {
+    "level": 15,
+    "str": 26,
+    "agi": 32,
+    "sta": 28,
+    "int": 36,
+    "spi": 37
+   },
+   {
+    "level": 16,
+    "str": 26,
+    "agi": 32,
+    "sta": 28,
+    "int": 37,
+    "spi": 38
+   },
+   {
+    "level": 17,
+    "str": 27,
+    "agi": 33,
+    "sta": 29,
+    "int": 38,
+    "spi": 40
+   },
+   {
+    "level": 18,
+    "str": 27,
+    "agi": 34,
+    "sta": 30,
+    "int": 39,
+    "spi": 41
+   },
+   {
+    "level": 19,
+    "str": 28,
+    "agi": 34,
+    "sta": 30,
+    "int": 40,
+    "spi": 42
+   },
+   {
+    "level": 20,
+    "str": 29,
+    "agi": 35,
+    "sta": 31,
+    "int": 41,
+    "spi": 43
+   },
+   {
+    "level": 21,
+    "str": 29,
+    "agi": 35,
+    "sta": 32,
+    "int": 42,
+    "spi": 45
+   },
+   {
+    "level": 22,
+    "str": 30,
+    "agi": 36,
+    "sta": 33,
+    "int": 43,
+    "spi": 46
+   },
+   {
+    "level": 23,
+    "str": 31,
+    "agi": 37,
+    "sta": 33,
+    "int": 44,
+    "spi": 47
+   },
+   {
+    "level": 24,
+    "str": 31,
+    "agi": 37,
+    "sta": 34,
+    "int": 46,
+    "spi": 49
+   },
+   {
+    "level": 25,
+    "str": 32,
+    "agi": 38,
+    "sta": 35,
+    "int": 47,
+    "spi": 50
+   },
+   {
+    "level": 26,
+    "str": 33,
+    "agi": 38,
+    "sta": 36,
+    "int": 48,
+    "spi": 51
+   },
+   {
+    "level": 27,
+    "str": 33,
+    "agi": 39,
+    "sta": 36,
+    "int": 49,
+    "spi": 53
+   },
+   {
+    "level": 28,
+    "str": 34,
+    "agi": 40,
+    "sta": 37,
+    "int": 50,
+    "spi": 54
+   },
+   {
+    "level": 29,
+    "str": 35,
+    "agi": 40,
+    "sta": 38,
+    "int": 52,
+    "spi": 56
+   },
+   {
+    "level": 30,
+    "str": 35,
+    "agi": 41,
+    "sta": 39,
+    "int": 53,
+    "spi": 57
+   },
+   {
+    "level": 31,
+    "str": 36,
+    "agi": 42,
+    "sta": 40,
+    "int": 54,
+    "spi": 58
+   },
+   {
+    "level": 32,
+    "str": 37,
+    "agi": 42,
+    "sta": 41,
+    "int": 56,
+    "spi": 60
+   },
+   {
+    "level": 33,
+    "str": 38,
+    "agi": 43,
+    "sta": 41,
+    "int": 57,
+    "spi": 61
+   },
+   {
+    "level": 34,
+    "str": 38,
+    "agi": 44,
+    "sta": 42,
+    "int": 58,
+    "spi": 63
+   },
+   {
+    "level": 35,
+    "str": 39,
+    "agi": 44,
+    "sta": 43,
+    "int": 60,
+    "spi": 64
+   },
+   {
+    "level": 36,
+    "str": 40,
+    "agi": 45,
+    "sta": 44,
+    "int": 61,
+    "spi": 66
+   },
+   {
+    "level": 37,
+    "str": 41,
+    "agi": 46,
+    "sta": 45,
+    "int": 62,
+    "spi": 68
+   },
+   {
+    "level": 38,
+    "str": 42,
+    "agi": 46,
+    "sta": 46,
+    "int": 64,
+    "spi": 69
+   },
+   {
+    "level": 39,
+    "str": 42,
+    "agi": 47,
+    "sta": 47,
+    "int": 65,
+    "spi": 71
+   },
+   {
+    "level": 40,
+    "str": 43,
+    "agi": 48,
+    "sta": 48,
+    "int": 67,
+    "spi": 72
+   },
+   {
+    "level": 41,
+    "str": 44,
+    "agi": 49,
+    "sta": 49,
+    "int": 68,
+    "spi": 74
+   },
+   {
+    "level": 42,
+    "str": 45,
+    "agi": 49,
+    "sta": 50,
+    "int": 70,
+    "spi": 76
+   },
+   {
+    "level": 43,
+    "str": 46,
+    "agi": 50,
+    "sta": 51,
+    "int": 71,
+    "spi": 77
+   },
+   {
+    "level": 44,
+    "str": 47,
+    "agi": 51,
+    "sta": 51,
+    "int": 73,
+    "spi": 79
+   },
+   {
+    "level": 45,
+    "str": 47,
+    "agi": 52,
+    "sta": 52,
+    "int": 74,
+    "spi": 81
+   },
+   {
+    "level": 46,
+    "str": 48,
+    "agi": 53,
+    "sta": 53,
+    "int": 76,
+    "spi": 83
+   },
+   {
+    "level": 47,
+    "str": 49,
+    "agi": 53,
+    "sta": 55,
+    "int": 77,
+    "spi": 84
+   },
+   {
+    "level": 48,
+    "str": 50,
+    "agi": 54,
+    "sta": 56,
+    "int": 79,
+    "spi": 86
+   },
+   {
+    "level": 49,
+    "str": 51,
+    "agi": 55,
+    "sta": 57,
+    "int": 81,
+    "spi": 88
+   },
+   {
+    "level": 50,
+    "str": 52,
+    "agi": 56,
+    "sta": 58,
+    "int": 82,
+    "spi": 90
+   },
+   {
+    "level": 51,
+    "str": 53,
+    "agi": 57,
+    "sta": 59,
+    "int": 84,
+    "spi": 92
+   },
+   {
+    "level": 52,
+    "str": 54,
+    "agi": 58,
+    "sta": 60,
+    "int": 86,
+    "spi": 94
+   },
+   {
+    "level": 53,
+    "str": 55,
+    "agi": 59,
+    "sta": 61,
+    "int": 87,
+    "spi": 96
+   },
+   {
+    "level": 54,
+    "str": 56,
+    "agi": 59,
+    "sta": 62,
+    "int": 89,
+    "spi": 98
+   },
+   {
+    "level": 55,
+    "str": 57,
+    "agi": 60,
+    "sta": 63,
+    "int": 91,
+    "spi": 100
+   },
+   {
+    "level": 56,
+    "str": 58,
+    "agi": 61,
+    "sta": 64,
+    "int": 93,
+    "spi": 102
+   },
+   {
+    "level": 57,
+    "str": 59,
+    "agi": 62,
+    "sta": 65,
+    "int": 94,
+    "spi": 104
+   },
+   {
+    "level": 58,
+    "str": 60,
+    "agi": 63,
+    "sta": 67,
+    "int": 96,
+    "spi": 106
+   },
+   {
+    "level": 59,
+    "str": 61,
+    "agi": 64,
+    "sta": 68,
+    "int": 98,
+    "spi": 108
+   },
+   {
+    "level": 60,
+    "str": 62,
+    "agi": 65,
+    "sta": 69,
+    "int": 100,
+    "spi": 110
+   }
+  ],
+  "tauren": [
+   {
+    "level": 1,
+    "str": 26,
+    "agi": 15,
+    "sta": 22,
+    "int": 17,
+    "spi": 24
+   },
+   {
+    "level": 2,
+    "str": 27,
+    "agi": 15,
+    "sta": 23,
+    "int": 18,
+    "spi": 25
+   },
+   {
+    "level": 3,
+    "str": 27,
+    "agi": 16,
+    "sta": 23,
+    "int": 19,
+    "spi": 26
+   },
+   {
+    "level": 4,
+    "str": 28,
+    "agi": 16,
+    "sta": 24,
+    "int": 20,
+    "spi": 27
+   },
+   {
+    "level": 5,
+    "str": 28,
+    "agi": 17,
+    "sta": 24,
+    "int": 21,
+    "spi": 28
+   },
+   {
+    "level": 6,
+    "str": 29,
+    "agi": 17,
+    "sta": 25,
+    "int": 22,
+    "spi": 29
+   },
+   {
+    "level": 7,
+    "str": 29,
+    "agi": 18,
+    "sta": 26,
+    "int": 23,
+    "spi": 30
+   },
+   {
+    "level": 8,
+    "str": 30,
+    "agi": 18,
+    "sta": 26,
+    "int": 23,
+    "spi": 31
+   },
+   {
+    "level": 9,
+    "str": 30,
+    "agi": 19,
+    "sta": 27,
+    "int": 24,
+    "spi": 32
+   },
+   {
+    "level": 10,
+    "str": 31,
+    "agi": 19,
+    "sta": 27,
+    "int": 25,
+    "spi": 33
+   },
+   {
+    "level": 11,
+    "str": 31,
+    "agi": 20,
+    "sta": 28,
+    "int": 26,
+    "spi": 35
+   },
+   {
+    "level": 12,
+    "str": 32,
+    "agi": 20,
+    "sta": 29,
+    "int": 27,
+    "spi": 36
+   },
+   {
+    "level": 13,
+    "str": 32,
+    "agi": 21,
+    "sta": 29,
+    "int": 28,
+    "spi": 37
+   },
+   {
+    "level": 14,
+    "str": 33,
+    "agi": 21,
+    "sta": 30,
+    "int": 29,
+    "spi": 38
+   },
+   {
+    "level": 15,
+    "str": 34,
+    "agi": 22,
+    "sta": 31,
+    "int": 31,
+    "spi": 39
+   },
+   {
+    "level": 16,
+    "str": 34,
+    "agi": 22,
+    "sta": 31,
+    "int": 32,
+    "spi": 40
+   },
+   {
+    "level": 17,
+    "str": 35,
+    "agi": 23,
+    "sta": 32,
+    "int": 33,
+    "spi": 42
+   },
+   {
+    "level": 18,
+    "str": 35,
+    "agi": 24,
+    "sta": 33,
+    "int": 34,
+    "spi": 43
+   },
+   {
+    "level": 19,
+    "str": 36,
+    "agi": 24,
+    "sta": 33,
+    "int": 35,
+    "spi": 44
+   },
+   {
+    "level": 20,
+    "str": 37,
+    "agi": 25,
+    "sta": 34,
+    "int": 36,
+    "spi": 45
+   },
+   {
+    "level": 21,
+    "str": 37,
+    "agi": 25,
+    "sta": 35,
+    "int": 37,
+    "spi": 47
+   },
+   {
+    "level": 22,
+    "str": 38,
+    "agi": 26,
+    "sta": 36,
+    "int": 38,
+    "spi": 48
+   },
+   {
+    "level": 23,
+    "str": 39,
+    "agi": 27,
+    "sta": 36,
+    "int": 39,
+    "spi": 49
+   },
+   {
+    "level": 24,
+    "str": 39,
+    "agi": 27,
+    "sta": 37,
+    "int": 41,
+    "spi": 51
+   },
+   {
+    "level": 25,
+    "str": 40,
+    "agi": 28,
+    "sta": 38,
+    "int": 42,
+    "spi": 52
+   },
+   {
+    "level": 26,
+    "str": 41,
+    "agi": 28,
+    "sta": 39,
+    "int": 43,
+    "spi": 53
+   },
+   {
+    "level": 27,
+    "str": 41,
+    "agi": 29,
+    "sta": 39,
+    "int": 44,
+    "spi": 55
+   },
+   {
+    "level": 28,
+    "str": 42,
+    "agi": 30,
+    "sta": 40,
+    "int": 45,
+    "spi": 56
+   },
+   {
+    "level": 29,
+    "str": 43,
+    "agi": 30,
+    "sta": 41,
+    "int": 47,
+    "spi": 58
+   },
+   {
+    "level": 30,
+    "str": 43,
+    "agi": 31,
+    "sta": 42,
+    "int": 48,
+    "spi": 59
+   },
+   {
+    "level": 31,
+    "str": 44,
+    "agi": 32,
+    "sta": 43,
+    "int": 49,
+    "spi": 60
+   },
+   {
+    "level": 32,
+    "str": 45,
+    "agi": 32,
+    "sta": 44,
+    "int": 51,
+    "spi": 62
+   },
+   {
+    "level": 33,
+    "str": 46,
+    "agi": 33,
+    "sta": 44,
+    "int": 52,
+    "spi": 63
+   },
+   {
+    "level": 34,
+    "str": 46,
+    "agi": 34,
+    "sta": 45,
+    "int": 53,
+    "spi": 65
+   },
+   {
+    "level": 35,
+    "str": 47,
+    "agi": 34,
+    "sta": 46,
+    "int": 55,
+    "spi": 66
+   },
+   {
+    "level": 36,
+    "str": 48,
+    "agi": 35,
+    "sta": 47,
+    "int": 56,
+    "spi": 68
+   },
+   {
+    "level": 37,
+    "str": 49,
+    "agi": 36,
+    "sta": 48,
+    "int": 57,
+    "spi": 70
+   },
+   {
+    "level": 38,
+    "str": 50,
+    "agi": 36,
+    "sta": 49,
+    "int": 59,
+    "spi": 71
+   },
+   {
+    "level": 39,
+    "str": 50,
+    "agi": 37,
+    "sta": 50,
+    "int": 60,
+    "spi": 73
+   },
+   {
+    "level": 40,
+    "str": 51,
+    "agi": 38,
+    "sta": 51,
+    "int": 62,
+    "spi": 74
+   },
+   {
+    "level": 41,
+    "str": 52,
+    "agi": 39,
+    "sta": 52,
+    "int": 63,
+    "spi": 76
+   },
+   {
+    "level": 42,
+    "str": 53,
+    "agi": 39,
+    "sta": 53,
+    "int": 65,
+    "spi": 78
+   },
+   {
+    "level": 43,
+    "str": 54,
+    "agi": 40,
+    "sta": 54,
+    "int": 66,
+    "spi": 79
+   },
+   {
+    "level": 44,
+    "str": 55,
+    "agi": 41,
+    "sta": 54,
+    "int": 68,
+    "spi": 81
+   },
+   {
+    "level": 45,
+    "str": 55,
+    "agi": 42,
+    "sta": 55,
+    "int": 69,
+    "spi": 83
+   },
+   {
+    "level": 46,
+    "str": 56,
+    "agi": 43,
+    "sta": 56,
+    "int": 71,
+    "spi": 85
+   },
+   {
+    "level": 47,
+    "str": 57,
+    "agi": 43,
+    "sta": 58,
+    "int": 72,
+    "spi": 86
+   },
+   {
+    "level": 48,
+    "str": 58,
+    "agi": 44,
+    "sta": 59,
+    "int": 74,
+    "spi": 88
+   },
+   {
+    "level": 49,
+    "str": 59,
+    "agi": 45,
+    "sta": 60,
+    "int": 76,
+    "spi": 90
+   },
+   {
+    "level": 50,
+    "str": 60,
+    "agi": 46,
+    "sta": 61,
+    "int": 77,
+    "spi": 92
+   },
+   {
+    "level": 51,
+    "str": 61,
+    "agi": 47,
+    "sta": 62,
+    "int": 79,
+    "spi": 94
+   },
+   {
+    "level": 52,
+    "str": 62,
+    "agi": 48,
+    "sta": 63,
+    "int": 81,
+    "spi": 96
+   },
+   {
+    "level": 53,
+    "str": 63,
+    "agi": 49,
+    "sta": 64,
+    "int": 82,
+    "spi": 98
+   },
+   {
+    "level": 54,
+    "str": 64,
+    "agi": 49,
+    "sta": 65,
+    "int": 84,
+    "spi": 100
+   },
+   {
+    "level": 55,
+    "str": 65,
+    "agi": 50,
+    "sta": 66,
+    "int": 86,
+    "spi": 102
+   },
+   {
+    "level": 56,
+    "str": 66,
+    "agi": 51,
+    "sta": 67,
+    "int": 88,
+    "spi": 104
+   },
+   {
+    "level": 57,
+    "str": 67,
+    "agi": 52,
+    "sta": 68,
+    "int": 89,
+    "spi": 106
+   },
+   {
+    "level": 58,
+    "str": 68,
+    "agi": 53,
+    "sta": 70,
+    "int": 91,
+    "spi": 108
+   },
+   {
+    "level": 59,
+    "str": 69,
+    "agi": 54,
+    "sta": 71,
+    "int": 93,
+    "spi": 110
+   },
+   {
+    "level": 60,
+    "str": 70,
+    "agi": 55,
+    "sta": 72,
+    "int": 95,
+    "spi": 112
+   }
+  ]
+ }
+}
