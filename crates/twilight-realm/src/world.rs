@@ -680,7 +680,7 @@ impl InWorld {
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
-        self.population.died(mob.spawn);
+        self.population.died(mob.spawn, mob.template.rank);
         self.skills.target_died(mob.guid, events);
         if self.player.attacking == Some(mob.guid) {
             self.player.attacking = None;

@@ -53,6 +53,8 @@ fn grid() -> &'static Grid {
 /// A dead spawn waiting to come back.
 struct Corpse {
     spawn: u32,
+    /// Seconds of the player's absence it takes in all.
+    wait: f32,
     /// Seconds of the player's absence still needed.
     remaining: f32,
 }
@@ -92,7 +94,7 @@ impl Population {
         let mut back = Vec::new();
         self.dead.retain_mut(|c| {
             let home = content.spawn[c.spawn as usize].position;
-            c.remaining = respawn::countdown(c.remaining, dt, flat_distance(home, me));
+            c.remaining = respawn::countdown(c.remaining, c.wait, dt, flat_distance(home, me));
             if c.remaining > 0.0 {
                 return true;
             }
@@ -166,10 +168,12 @@ impl Population {
     }
 
     /// A mob of `spawn` died: it comes back once the player has been away long enough.
-    pub(crate) fn died(&mut self, spawn: u32) {
+    pub(crate) fn died(&mut self, spawn: u32, rank: u32) {
+        let wait = respawn::wait(rank);
         self.dead.push(Corpse {
             spawn,
-            remaining: respawn::SECS,
+            wait,
+            remaining: wait,
         });
     }
 
