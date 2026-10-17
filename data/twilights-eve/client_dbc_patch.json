@@ -718,7 +718,7 @@
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
+    "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
     "effects": []
    }
   },
@@ -729,7 +729,7 @@
    "rank": 2,
    "fields": {
     "power_type": 1,
-    "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
+    "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
     "effects": []
    }
   },
@@ -1880,7 +1880,7 @@
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
+    "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
     "effects": []
    }
   },
@@ -1891,7 +1891,7 @@
    "rank": 2,
    "fields": {
     "power_type": 1,
-    "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
+    "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
     "effects": []
    }
   },
