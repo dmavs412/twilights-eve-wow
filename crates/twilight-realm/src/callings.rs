@@ -2,7 +2,7 @@
 //! from `content/callings.toml`. A new Calling or skill is a new table there, not new code: the
 //! world casts any skill from its effects.
 
-use std::sync::OnceLock;
+use std::sync::{OnceLock, RwLock};
 
 use serde::Deserialize;
 
@@ -372,19 +372,30 @@ pub enum Effect {
         /// Cannot be dodged, parried or blocked (Overpower).
         #[serde(default)]
         unavoidable: bool,
+        /// Added to `bonus` once per combo point on the target: a finisher.
+        #[serde(default)]
+        per_combo: Option<Linear>,
     },
     /// Flat physical damage, against armour; through the melee table when `melee_hit_table`.
     SchoolDamage {
         amount: Linear,
         #[serde(default)]
         melee_hit_table: bool,
+        /// Added to `amount` once per combo point on the target: a finisher.
+        #[serde(default)]
+        per_combo: Option<Linear>,
     },
     /// A bleed on the target under the skill's own spell id: `tick` every `tick_ms`.
     PeriodicDamage {
         tick_ms: u32,
         duration_ms: u32,
         tick: Linear,
+        /// Added to `tick` once per combo point on the target: a finisher.
+        #[serde(default)]
+        per_combo: Option<Linear>,
     },
+    /// `amount` combo points on the target, five at most; points on another target are lost.
+    AddComboPoints { amount: u32 },
     /// The caster runs to the target.
     Charge { speed_yd_s: f32 },
     /// Rage now.
@@ -400,6 +411,9 @@ pub enum Effect {
     Stun {
         aura_spell_id: u32,
         duration_ms: u32,
+        /// Milliseconds added to `duration_ms` once per combo point on the target: a finisher.
+        #[serde(default)]
+        per_combo: Option<Linear>,
     },
     /// The target swings `pct`% slower, under the skill's spell id.
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
@@ -446,6 +460,27 @@ pub enum Effect {
     Judgement,
 }
 
+impl Effect {
+    /// The block added once per combo point held on the target, when the effect carries one.
+    pub fn per_combo(&self) -> Option<Linear> {
+        match *self {
+            Effect::WeaponStrike { per_combo, .. }
+            | Effect::SchoolDamage { per_combo, .. }
+            | Effect::PeriodicDamage { per_combo, .. }
+            | Effect::Stun { per_combo, .. } => per_combo,
+            _ => None,
+        }
+    }
+}
+
+impl Skill {
+    /// A finisher: any effect carries a `per_combo` block. It needs combo points on the target
+    /// to cast, and a cast that lands spends them all.
+    pub fn is_finisher(&self) -> bool {
+        self.effects.iter().any(|e| e.per_combo().is_some())
+    }
+}
+
 /// What a Seal does while it lasts, and what judging it does.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -477,7 +512,8 @@ struct Callings {
     calling: Vec<CallingDef>,
 }
 
-fn all() -> &'static [CallingDef] {
+/// The shipped Callings.
+fn shipped() -> &'static [CallingDef] {
     static CALLINGS: OnceLock<Callings> = OnceLock::new();
     &CALLINGS
         .get_or_init(|| {
@@ -487,9 +523,40 @@ fn all() -> &'static [CallingDef] {
         .calling
 }
 
+/// The Callings tests added ([`add`]), for the rest of the process.
+fn added() -> &'static RwLock<Vec<&'static CallingDef>> {
+    static ADDED: RwLock<Vec<&'static CallingDef>> = RwLock::new(Vec::new());
+    &ADDED
+}
+
+/// Adds the Callings in `toml` (the shape of `content/callings.toml`) alongside the shipped
+/// ones, for the rest of the process; a key already present is left as it is. A test seam
+/// (`Realm::with_callings`), so a player script can run on a Class no shipped Calling sits on.
+pub(crate) fn add(toml: &str) {
+    let parsed: Callings = toml::from_str(toml).expect("the added Callings parse");
+    let mut added = added().write().unwrap();
+    for def in parsed.calling {
+        if shipped()
+            .iter()
+            .chain(added.iter().copied())
+            .all(|c| c.key != def.key)
+        {
+            added.push(Box::leak(Box::new(def)));
+        }
+    }
+}
+
+/// Every Calling: the shipped ones, then any a test added.
+fn all() -> Vec<&'static CallingDef> {
+    shipped()
+        .iter()
+        .chain(added().read().unwrap().iter().copied())
+        .collect()
+}
+
 /// A Calling by its save key (`basic_warrior`).
 pub fn calling(key: &str) -> Option<&'static CallingDef> {
-    all().iter().find(|c| c.key == key)
+    all().into_iter().find(|c| c.key == key)
 }
 
 /// A current Calling's data.
@@ -522,7 +589,7 @@ fn every_skill(c: &'static CallingDef) -> impl Iterator<Item = &'static Skill> {
 /// A skill of any Calling, an active talent's included, by spell id.
 pub fn skill(spell_id: u32) -> Option<&'static Skill> {
     all()
-        .iter()
+        .into_iter()
         .flat_map(every_skill)
         .find(|s| s.spell_id == spell_id)
 }
@@ -530,7 +597,7 @@ pub fn skill(spell_id: u32) -> Option<&'static Skill> {
 /// Every Calling skill's spell id, active talents' included: the spells whose rank text the
 /// client blanks.
 pub fn skill_spell_ids() -> impl Iterator<Item = u32> {
-    all().iter().flat_map(every_skill).map(|s| s.spell_id)
+    all().into_iter().flat_map(every_skill).map(|s| s.spell_id)
 }
 
 /// Every skill borrowed from another Class, once each: the spells the client rewrites to cost
@@ -538,7 +605,7 @@ pub fn skill_spell_ids() -> impl Iterator<Item = u32> {
 pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {
     let mut seen = std::collections::HashSet::new();
     all()
-        .iter()
+        .into_iter()
         .flat_map(every_skill)
         .filter(|s| s.borrowed.is_some())
         .filter(move |s| seen.insert(s.spell_id))
@@ -581,7 +648,7 @@ pub fn borrowed_spell_rewrites() -> impl Iterator<Item = BorrowedSpellRewrite> {
 /// "<Name> (WIP)" (ADR 0003).
 pub fn wip_rank_spell_ids() -> impl Iterator<Item = u32> {
     all()
-        .iter()
+        .into_iter()
         .flat_map(|c| &c.talent_tabs)
         .flat_map(|tab| &tab.talents)
         .filter(|t| t.is_wip())

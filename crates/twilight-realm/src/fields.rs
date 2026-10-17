@@ -9,13 +9,13 @@ pub(crate) const OBJECT_FIELD_SCALE_X: u16 = 4;
 
 pub(crate) const UNIT_FIELD_TARGET: u16 = 16;
 pub(crate) const UNIT_FIELD_HEALTH: u16 = 22;
-/// `UNIT_FIELD_POWER1 + Powers`: mana, rage (+1), energy (+3).
+/// `UNIT_FIELD_POWER1 + Powers`: mana, rage (+1), energy (+3); the maxima sit at the same offsets
+/// from `UNIT_FIELD_MAXPOWER1`.
 pub(crate) const UNIT_FIELD_POWER1: u16 = 23;
 pub(crate) const UNIT_FIELD_POWER2: u16 = 24;
 pub(crate) const UNIT_FIELD_MAXHEALTH: u16 = 28;
 pub(crate) const UNIT_FIELD_MAXPOWER1: u16 = 29;
 pub(crate) const UNIT_FIELD_MAXPOWER2: u16 = 30;
-pub(crate) const UNIT_FIELD_MAXPOWER3: u16 = 31;
 pub(crate) const UNIT_FIELD_LEVEL: u16 = 34;
 pub(crate) const UNIT_FIELD_FACTIONTEMPLATE: u16 = 35;
 pub(crate) const UNIT_FIELD_BYTES_0: u16 = 36;

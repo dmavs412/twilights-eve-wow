@@ -279,8 +279,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             bonus,
             on_next_swing,
             unavoidable,
+            per_combo,
         } => {
             assert_eq!(kind, "weapon_strike", "{key}");
+            assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
             let w = match want["weapon"].as_str().unwrap() {
                 "W" => Weapon::Normal,
                 "Wn" => Weapon::Normalized,
@@ -297,8 +299,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::SchoolDamage {
             amount,
             melee_hit_table,
+            per_combo,
         } => {
             assert_eq!(kind, "school_damage", "{key}");
+            assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
             assert_eq!(amount, linear(&want["amount"]), "{key}");
             assert_eq!(
                 melee_hit_table,
@@ -309,8 +313,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             tick_ms,
             duration_ms,
             tick,
+            per_combo,
         } => {
             assert_eq!(kind, "periodic_damage", "{key}");
+            assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
             assert_eq!(tick_ms, ms(want, "tick_ms"));
             assert_eq!(duration_ms, ms(want, "duration_ms"));
             assert_eq!(tick, linear(&want["tick"]), "{key}");
@@ -338,8 +344,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::Stun {
             aura_spell_id,
             duration_ms,
+            per_combo,
         } => {
             assert_eq!(kind, "stun", "{key}");
+            assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
             assert_eq!(aura_spell_id, ms(want, "aura_spell_id"));
             assert_eq!(duration_ms, ms(want, "duration_ms"));
         }
@@ -374,6 +382,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(want["consumes_all_rage"], true, "{key}");
             assert_eq!(base, linear(&want["base"]), "{key}");
             assert_eq!(per_extra_rage, linear(&want["per_extra_rage"]), "{key}");
+        }
+        Effect::AddComboPoints { amount } => {
+            assert_eq!(kind, "add_combo_points", "{key}");
+            assert_eq!(amount, ms(want, "amount"));
         }
         Effect::Seal { .. } | Effect::Judgement => {
             assert!(matches!(kind, "seal" | "judgement"), "{key}");

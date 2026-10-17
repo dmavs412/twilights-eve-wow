@@ -92,7 +92,7 @@ impl Characters {
                 req.hair_color,
                 req.facial_hair,
             ],
-            calling: Calling::BasicWarrior,
+            calling: Calling::BASIC_WARRIOR,
             level: 1,
             xp: 0,
             map: KALIMDOR,

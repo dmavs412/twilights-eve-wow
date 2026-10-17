@@ -589,6 +589,7 @@ impl InWorld {
         mob.state = State::Dead;
         mob.walk = None;
         self.population.died(mob.spawn);
+        self.skills.target_died(mob.guid, events);
         if self.player.attacking == Some(mob.guid) {
             self.player.attacking = None;
             events.push(SessionEvent::AttackStop {
@@ -871,7 +872,10 @@ fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectField
         power.field(),
         (UNIT_FIELD_MAXPOWER1, stats.max_mana),
         (UNIT_FIELD_MAXPOWER2, rage::MAX),
-        (UNIT_FIELD_MAXPOWER3, power_rules::ENERGY_MAX),
+        (
+            UNIT_FIELD_MAXPOWER1 + PowerKind::Energy.id() as u16,
+            power_rules::ENERGY_MAX,
+        ),
         (
             UNIT_FIELD_FACTIONTEMPLATE,
             content::faction_template(c.race),

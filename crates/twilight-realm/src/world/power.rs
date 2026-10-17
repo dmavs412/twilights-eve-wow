@@ -128,3 +128,38 @@ impl Power {
         self.current != was
     }
 }
+
+/// Combo points: on one target at a time, five at most (vmangos `Player::AddComboPoints`,
+/// `ClearComboPoints`). The client shows them in `PLAYER_FIELD_BYTES` byte 1 against
+/// `PLAYER_FIELD_COMBO_TARGET`.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub(super) struct Combo {
+    pub(super) target: u64,
+    pub(super) count: u8,
+}
+
+impl Combo {
+    pub(super) const MAX: u8 = 5;
+
+    /// `amount` points on `target`; points on another target are lost first.
+    pub(super) fn add(&mut self, target: u64, amount: u32) {
+        if target != self.target {
+            *self = Self::default();
+        }
+        self.target = target;
+        self.count = (u32::from(self.count) + amount).min(u32::from(Self::MAX)) as u8;
+    }
+
+    /// The points held on `target`.
+    pub(super) fn on(&self, target: u64) -> u8 {
+        if target == self.target {
+            self.count
+        } else {
+            0
+        }
+    }
+
+    pub(super) fn clear(&mut self) {
+        *self = Self::default();
+    }
+}
