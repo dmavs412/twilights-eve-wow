@@ -21,7 +21,7 @@ and tab that declares them. Columns, in groups:
 | group | columns | meaning |
 |---|---|---|
 | identity | `kind`, `calling`, `key`, `name`, `rank` | `kind` is `skill`, `talent`, `calling`, `talent_tab` or `aura`; `key` is the save and content name; `rank` is 1 for a skill or aura |
-| calling row | `tier`, `tier_cap`, `tier_bonus`, `shapeshift_form`, `armour`, `resource` | a Calling's Tier, Tier Cap, Tier Bonus (`strength=1;stamina=2`), form id, armour kinds joined by `\|`, and the resource every cost on its rows is an amount of |
+| calling row | `tier`, `tier_cap`, `tier_bonus`, `shapeshift_form`, `armour`, `resource` | a Calling's Tier, Tier Cap, Tier Bonus (`strength=1;stamina=2`), form id, armour kinds joined by `\|`, and the resource every cost on its rows is an amount of; only `resource` is required, and a row without `tier` leaves the rest of the Calling to the TOML |
 | talent_tab row | `tab_id`, `background`, `tab_order` | the tab's id, art and order; `name` is the tab name that talent rows put in `tab`. Once a Calling has a `talent_tab` row, every talent's `tab` must name one |
 | aura row | `spell_id`, `duration_ms`, `charges`, `effect1_kind`… | a buff granted by key; `spell_id` is a borrowed spell for its icon and name; a `proc` effect names auras in `apply_aura=key\|key` |
 | resource | `resource` | on a skill row, overrides the Calling's resource for that row (a borrowed mana spell that costs rage needs none) |
@@ -94,11 +94,11 @@ the same file feeds an MPQ writer.
 ## Where it stands
 
 As of 2026-10-16 `build_spells.py` generates both outputs from the CSV, and they are committed
-(3 Callings, 204 rows, 198 spell overrides, 49 talent seats). Basic Warrior is fully expressed in
+(3 Callings, 206 rows, 198 spell overrides, 49 talent seats). Basic Warrior is fully expressed in
 the CSV (calling, tab, aura rows; spec #50); its rows whose effects the realm cannot yet do are
 `modelled=no`. The realm reads Basic Warrior from `server_spells.json` (`twilight-realm`'s
 `generated.rs`, compiled in): any Calling whose file entry carries a `tier`, which only a `calling`
-row gives it. Vanguard and Zealot are still the tables in `content/callings.toml`. A skill with no
+row gives it. Vanguard and Zealot have a `calling` row that names only their resource (rage, the power type of their patch rows); their tiers, skills and talents are still the tables in `content/callings.toml`. A skill with no
 effects, or an effect kind the realm lacks, is left out of the bar and spell book until its effects
 land; a talent in that state is learnable but does nothing and shows as WIP. The client applies the patch at load
 (`SpellCatalog::apply_dbc_patch`, compiled in). The patch carries no `family_name` field. Talents carry their

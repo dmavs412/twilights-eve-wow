@@ -1746,7 +1746,9 @@
     ]
    }
   ],
-  "auras": []
+  "auras": [],
+  "name": "Vanguard",
+  "resource": "rage"
  },
  {
   "key": "zealot",
@@ -3409,6 +3411,8 @@
     ]
    }
   ],
-  "auras": []
+  "auras": [],
+  "name": "Zealot",
+  "resource": "rage"
  }
 ]

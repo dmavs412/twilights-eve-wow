@@ -219,6 +219,7 @@ class BuildSpells(unittest.TestCase):
 
     def test_calling_row_needs_tier_cap_and_resource(self):
         self.assert_fails([{**CALLING, "tier_cap": ""}], "tier_cap")
+        self.assert_fails([{**CALLING, "tier": ""}], "tier")
         self.assert_fails([{**CALLING, "resource": ""}], "resource")
 
     def test_calling_row_rejects_unknown_armour_resource_and_stat(self):
@@ -285,10 +286,20 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(data[0]["skills"][1]["resource"], "mana")
         self.assertNotIn("resource", data[0]["skills"][0])
 
-    def test_patch_power_type_defaults_to_rage_without_a_calling_row(self):
+    def test_patch_has_no_power_type_without_a_calling_row_or_row_resource(self):
         done, _ = self.run_build([STRIKE])
         self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("power_type", self.patch["spells"][0]["fields"])
+
+    def test_calling_row_with_only_a_resource_gives_the_resource_and_no_tier(self):
+        bare = {"kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard",
+                "resource": "rage"}
+        done, data = self.run_build([bare, STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["resource"], "rage")
+        self.assertNotIn("tier", data[0])
         self.assertEqual(self.patch["spells"][0]["fields"]["power_type"], 1)
+        self.assert_fails([{**bare, "tier": "1"}], "tier_cap")
 
     def test_unknown_row_resource_fails(self):
         self.assert_fails([CALLING, {**STRIKE, "resource": "fury"}], "resource")

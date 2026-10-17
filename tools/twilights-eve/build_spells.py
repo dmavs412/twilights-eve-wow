@@ -224,11 +224,16 @@ def check_resource(text: str, where: str) -> str:
 
 def build_calling(row: dict, where: str) -> dict:
     """A calling row: the Calling's name, tier, Tier Cap, Tier Bonus, form, armour and resource."""
-    for column in ("tier", "tier_cap", "resource"):
-        if not row[column]:
-            raise BuildError(f"{where}: a calling row needs {column}")
-    out: dict = {"name": row["name"], "tier": whole(row["tier"], f"{where} tier"),
-                 "tier_cap": whole(row["tier_cap"], f"{where} tier_cap")}
+    if not row["resource"]:
+        raise BuildError(f"{where}: a calling row needs resource")
+    out: dict = {"name": row["name"]}
+    # A row with no tier only names the resource; the realm reads the Calling's rest elsewhere.
+    if row["tier"] or row["tier_cap"]:
+        for column in ("tier", "tier_cap"):
+            if not row[column]:
+                raise BuildError(f"{where}: a calling row needs {column}")
+        out["tier"] = whole(row["tier"], f"{where} tier")
+        out["tier_cap"] = whole(row["tier_cap"], f"{where} tier_cap")
     if row["tier_bonus"]:
         bonus = parse_params(row["tier_bonus"], f"{where} tier_bonus")
         for stat, value in bonus.items():
@@ -345,8 +350,7 @@ def client_override(row: dict, built: dict, where: str, calling_resource: str | 
     for column in CLIENT_FLAGS:
         if row[column]:
             fields[column.removeprefix("client_")] = row[column] == "yes"
-    # Every Calling is of the Warrior line, so a Calling with no row of its own plays on rage.
-    resource = row["resource"] or calling_resource or "rage"
+    resource = row["resource"] or calling_resource
     if resource:
         fields["power_type"] = POWER_TYPES[check_resource(resource, where)]
     if row["description"]:
@@ -393,7 +397,7 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
             raise BuildError(f"{where}: calling and key are required")
         calling = callings.setdefault(row["calling"], {"key": row["calling"], "skills": [], "talent_tabs": [], "auras": []})
         if kind == "calling":
-            if "tier" in calling:
+            if "resource" in calling:
                 raise BuildError(f"{where}: second calling row for {row['calling']}")
             calling.update(build_calling(row, where))
             continue
