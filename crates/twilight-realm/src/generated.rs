@@ -224,14 +224,16 @@ fn tab(calling: &str, g: &GenTab) -> TalentTab {
             .background
             .clone()
             .unwrap_or_else(|| missing("background")),
-        talents: g.talents.iter().map(talent).collect(),
+        talents: g.talents.iter().filter_map(talent).collect(),
     }
 }
 
-fn talent(g: &GenTalent) -> TalentDef {
-    TalentDef {
+/// The talent, or `None` for a row with no ranks.
+fn talent(g: &GenTalent) -> Option<TalentDef> {
+    let first = g.ranks.first()?;
+    Some(TalentDef {
         key: g.key.clone(),
-        talent_id: g.ranks[0].talent_id,
+        talent_id: first.talent_id,
         tier: g.seat.row,
         column: g.seat.column,
         rank_spells: g.ranks.iter().map(|r| r.spell_id).collect(),
@@ -243,7 +245,7 @@ fn talent(g: &GenTalent) -> TalentDef {
         effects: talent_effects(&g.ranks),
         skill: None,
         client_spellmods: Vec::new(),
-    }
+    })
 }
 
 /// What the talent does, one [`TalentEffect`] per effect slot with a value per rank; none at all
@@ -277,6 +279,28 @@ fn talent_effect(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
 }
 
 /// A `proc`: its trigger from the first rank, its action (a heal percent, aura keys) per rank.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A talent row with no ranks is dropped; the tab still reads.
+    #[test]
+    fn a_talent_with_no_ranks_is_dropped() {
+        let tab_json = serde_json::json!({
+            "id": 1, "name": "Arms", "background": "WarriorArms",
+            "talents": [
+                {"key": "empty", "seat": {"row": 0, "column": 0}, "ranks": []},
+                {"key": "one", "seat": {"row": 0, "column": 1},
+                 "ranks": [{"spell_id": 5, "talent_id": 9}]},
+            ],
+        });
+        let g: GenTab = serde_json::from_value(tab_json).expect("a tab reads");
+        let tab = tab("Warrior", &g);
+        let keys: Vec<&str> = tab.talents.iter().map(|t| t.key.as_str()).collect();
+        assert_eq!(keys, ["one"]);
+    }
+}
+
 fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     let mut object = ranks[0].effects.get(slot)?.params.clone();
     object.remove("heal_pct");
