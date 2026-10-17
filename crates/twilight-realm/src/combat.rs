@@ -9,7 +9,7 @@ use crate::rules::melee::{
     armor_reduced, glancing_range, mob_vs_player, player_vs_mob, Outcome, PlayerDefense,
     PlayerOffense, ROLL,
 };
-use crate::rules::stats::WarriorStats;
+use crate::rules::stats::CharacterStats;
 
 // `HitInfo` bits (vmangos `Unit.h`), as the client reads them.
 const HITINFO_AFFECTS_VICTIM: u32 = 0x2;
@@ -74,7 +74,12 @@ impl Swing {
 }
 
 /// The player's swing at `mob`; `from_front` when the player stands in the mob's front arc.
-pub(crate) fn player_swing(p: &WarriorStats, mob: &Mob, from_front: bool, rng: &mut Rng) -> Swing {
+pub(crate) fn player_swing(
+    p: &CharacterStats,
+    mob: &Mob,
+    from_front: bool,
+    rng: &mut Rng,
+) -> Swing {
     let raw = rng.urand(p.min_damage as u32, p.max_damage as u32);
     let armored = armor_reduced(raw, mob.stats.armor, p.level);
     let table = player_vs_mob(
@@ -96,7 +101,7 @@ pub(crate) fn player_swing(p: &WarriorStats, mob: &Mob, from_front: bool, rng: &
 }
 
 /// `mob`'s swing at the player; `from_front` when the mob stands in the player's front arc.
-pub(crate) fn mob_swing(mob: &Mob, p: &WarriorStats, from_front: bool, rng: &mut Rng) -> Swing {
+pub(crate) fn mob_swing(mob: &Mob, p: &CharacterStats, from_front: bool, rng: &mut Rng) -> Swing {
     let raw = rng.urand(mob.stats.min_damage as u32, mob.stats.max_damage as u32);
     let armored = armor_reduced(raw, p.armor, mob.level());
     let table = mob_vs_player(

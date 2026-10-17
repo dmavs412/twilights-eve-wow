@@ -26,7 +26,7 @@ use crate::rules::rage;
 use crate::rules::school::{mitigated, School};
 use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
-use crate::rules::stats::WarriorStats;
+use crate::rules::stats::CharacterStats;
 use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled};
 use crate::space::distance;
 
@@ -530,7 +530,7 @@ pub(super) fn stance(c: &Char) -> (u16, u32) {
 
 /// The player's stats with their buffs: what strikes roll from. White swings roll from
 /// [`white`], which adds the haste.
-pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
+pub(super) fn buffed(stats: &CharacterStats, skills: &Skills) -> CharacterStats {
     let bonus = skills.attack_power_bonus();
     let mut s = *stats;
     let (health_pct, _, armor_loss_pct) = skills.buff_pcts();
@@ -548,7 +548,7 @@ pub(super) fn buffed(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
 /// [`buffed`] with the haste: what white swings roll from and time by, and what the sheet shows.
 /// Faster swings, each white hit cut to match, so the haste alone adds no damage a second; a
 /// strike (Mortal Strike, Heroic Strike) keeps its full weapon roll.
-pub(super) fn white(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
+pub(super) fn white(stats: &CharacterStats, skills: &Skills) -> CharacterStats {
     let mut s = buffed(stats, skills);
     let haste = skills.haste_pct();
     if haste > 0 {
@@ -560,7 +560,7 @@ pub(super) fn white(stats: &WarriorStats, skills: &Skills) -> WarriorStats {
 }
 
 /// The sheet fields buffs move: the attack power mods, the damage they add and the swing time.
-fn buff_sheet(stats: &WarriorStats, skills: &Skills) -> Vec<(u16, u32)> {
+fn buff_sheet(stats: &CharacterStats, skills: &Skills) -> Vec<(u16, u32)> {
     let s = white(stats, skills);
     vec![
         (
@@ -1758,7 +1758,7 @@ impl InWorld {
 }
 
 /// A weapon roll before armour: a white swing's, or a normalized one.
-fn weapon_roll(stats: &WarriorStats, weapon: Weapon, rng: &mut Rng) -> f32 {
+fn weapon_roll(stats: &CharacterStats, weapon: Weapon, rng: &mut Rng) -> f32 {
     let roll = rng.frand(stats.min_damage, stats.max_damage);
     match weapon {
         Weapon::Normal => roll,

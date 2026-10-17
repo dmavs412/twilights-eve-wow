@@ -1,14 +1,18 @@
-//! What a unit's stats come to: a warrior's sheet from its base stats and level (vmangos
-//! `StatSystem.cpp`), and a mob's from its unit class and level (`creature_classlevelstats`).
+//! What a unit's stats come to: a character's sheet from its Class, base stats and level
+//! (vmangos `StatSystem.cpp`), and a mob's from its unit class and level
+//! (`creature_classlevelstats`).
 
+use crate::rules::power::{self, class};
 use crate::tables;
 
 /// Unarmed: 1–2 damage every 2 s (`BASE_MINDAMAGE`, `BASE_MAXDAMAGE`, `BASE_ATTACK_TIME`).
 const UNARMED: (f32, f32, u32) = (1.0, 2.0, 2000);
 
-/// A warrior's derived stats: what the character sheet shows and the attack table reads.
+/// A character's derived stats: what the character sheet shows and the attack table reads.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct WarriorStats {
+pub struct CharacterStats {
+    /// `ChrClasses.dbc` id ([`class`]).
+    pub class: u8,
     pub level: u8,
     /// `[str, agi, sta, int, spi]`, gear included.
     pub base: [u32; 5],
@@ -16,6 +20,10 @@ pub struct WarriorStats {
     pub bonus: [u32; 5],
     pub base_health: u32,
     pub max_health: u32,
+    /// 0 for a Class that does not run on mana.
+    pub max_mana: u32,
+    /// Mana from spirit every regen tick, outside the five-second pause; 0 without a mana bar.
+    pub mana_regen: f64,
     /// Everything included.
     pub attack_power: i32,
     /// The flat part of `attack_power` from equip spells.
@@ -37,30 +45,37 @@ pub struct WarriorStats {
     pub defense: u16,
 }
 
-impl WarriorStats {
-    /// A naked warrior of `race` (`ChrRaces.dbc` id) at `level`, on its race's base stats.
-    pub fn naked(race: u8, level: u8) -> Self {
-        let base = tables::at(tables::levels().warrior.race_stats.of(race), level);
-        Self::from_base(level, base)
+impl CharacterStats {
+    /// A naked character of `class` and `race` (`ChrRaces.dbc` id) at `level`, on the race's
+    /// base stats for that Class.
+    pub fn naked(class: u8, race: u8, level: u8) -> Self {
+        let base = tables::at(tables::levels().class(class).race_stats.of(race), level);
+        Self::from_base(class, level, base)
     }
 
-    /// A naked warrior at `level` on these base stats, `[str, agi, sta, int, spi]`.
-    pub fn from_base(level: u8, base: [u32; 5]) -> Self {
-        Self::build(level, base, &Gear::default())
+    /// A naked character of `class` at `level` on these base stats, `[str, agi, sta, int, spi]`.
+    pub fn from_base(class: u8, level: u8, base: [u32; 5]) -> Self {
+        Self::build(class, level, base, &Gear::default())
     }
 
-    /// A warrior of `race` at `level` wearing the items `gear` (template entries; unknown ones
-    /// add nothing). Item stats add to the base stats, armour to armour, and equip spells' attack
-    /// power and Defense to theirs; a main-hand weapon sets the swing (vmangos
+    /// A character of `class` and `race` at `level` wearing the items `gear` (template entries;
+    /// unknown ones add nothing). Item stats add to the base stats, armour to armour, and equip
+    /// spells' attack power and Defense to theirs; a main-hand weapon sets the swing (vmangos
     /// `Player::_ApplyItemMods`, `UpdateDamagePhysical`).
-    pub fn geared(race: u8, level: u8, gear: &[u32]) -> Self {
-        Self::geared_at_tier(race, level, [0; 5], gear)
+    pub fn geared(class: u8, race: u8, level: u8, gear: &[u32]) -> Self {
+        Self::geared_at_tier(class, race, level, [0; 5], gear)
     }
 
     /// [`Self::geared`] with a Tier Bonus, `[str, agi, sta, int, spi]`, added to the race's base
     /// stats: it counts as base, not as the gear's green bonus.
-    pub fn geared_at_tier(race: u8, level: u8, tier_bonus: [u32; 5], gear: &[u32]) -> Self {
-        let race_base = tables::at(tables::levels().warrior.race_stats.of(race), level);
+    pub fn geared_at_tier(
+        class: u8,
+        race: u8,
+        level: u8,
+        tier_bonus: [u32; 5],
+        gear: &[u32],
+    ) -> Self {
+        let race_base = tables::at(tables::levels().class(class).race_stats.of(race), level);
         let base: [u32; 5] = std::array::from_fn(|i| race_base[i] + tier_bonus[i]);
         let mut g = Gear::default();
         for t in gear.iter().filter_map(|e| crate::items::template(*e)) {
@@ -91,29 +106,32 @@ impl WarriorStats {
                 }
             }
         }
-        Self::build(level, base, &g)
+        Self::build(class, level, base, &g)
     }
 
-    fn build(level: u8, naked: [u32; 5], gear: &Gear) -> Self {
-        let t = &tables::levels().warrior;
+    fn build(class: u8, level: u8, naked: [u32; 5], gear: &Gear) -> Self {
+        let t = tables::levels().class(class);
         let bonus = gear.stats.map(|v| v.max(0) as u32);
         let base: [u32; 5] =
             std::array::from_fn(|i| (naked[i] as i32 + gear.stats[i]).max(0) as u32);
-        let [str, agi, sta, _, _] = base;
+        let [str, agi, sta, int, spi] = base;
         let base_health = tables::at(&t.base_health, level);
         // The first 20 stamina give 1 health each, the rest 10.
         let max_health = base_health + sta.min(20) + sta.saturating_sub(20) * 10;
-        let attack_power = 3 * i32::from(level) + 2 * str as i32 - 20 + gear.attack_power;
+        let attack_power = attack_power(class, level, str, agi) + gear.attack_power;
         let skill = 5 * u16::from(level);
         let defense = skill + gear.defense;
         let (min, max, attack_time_ms) = gear.weapon.unwrap_or(UNARMED);
         let ap_damage = attack_power.max(0) as f32 / 14.0 * attack_time_ms as f32 / 1000.0;
         Self {
+            class,
             level,
             base,
             bonus,
             base_health,
             max_health,
+            max_mana: power::max_mana(class, level, int),
+            mana_regen: power::mana_per_tick(class, spi),
             attack_power,
             attack_power_bonus: gear.attack_power,
             // Skill sits at the maximum, so its `(skill - 5L) × 0.04` terms are zero.
@@ -129,6 +147,19 @@ impl WarriorStats {
             weapon_skill: skill,
             defense,
         }
+    }
+}
+
+/// Melee attack power before gear, by Class (vmangos `Player::UpdateAttackPowerAndDamage`; a
+/// Druid's cat and bear forms are not modelled).
+fn attack_power(class: u8, level: u8, str: u32, agi: u32) -> i32 {
+    let (level, str, agi) = (i32::from(level), str as i32, agi as i32);
+    match class {
+        class::WARRIOR | class::PALADIN => 3 * level + 2 * str - 20,
+        class::ROGUE | class::HUNTER => 2 * level + str + agi - 20,
+        class::SHAMAN => 2 * level + 2 * str - 20,
+        class::DRUID => 2 * str - 20,
+        _ => str - 10,
     }
 }
 

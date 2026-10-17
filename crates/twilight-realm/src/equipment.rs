@@ -11,7 +11,7 @@ use crate::fields::*;
 use crate::inventory::{bag_size, Inventory, Item, Pos, PACK, PLAYER_BAG};
 use crate::items;
 use crate::rules::gear::{self, can_equip, equip_slots, Refusal};
-use crate::rules::stats::WarriorStats;
+use crate::rules::stats::CharacterStats;
 
 // Item update fields (`UpdateFields_1_12_1.h`).
 const ITEM_FIELD_OWNER: u16 = 6;
@@ -131,9 +131,16 @@ fn slot_pairs(c: &Char, at: Pos, item: Option<&Item>) -> Vec<(u64, u16, u32)> {
 }
 
 /// The character's stats in what it wears.
-pub(crate) fn stats(c: &Char) -> WarriorStats {
+pub(crate) fn stats(c: &Char) -> CharacterStats {
     let bonus = crate::callings::of(c.calling).tier_bonus.stats();
-    WarriorStats::geared_at_tier(c.race, c.level, bonus, &c.inventory.worn_entries())
+    // Every shipped Calling sits on the Warrior Class until the Calling carries its own.
+    CharacterStats::geared_at_tier(
+        crate::rules::power::class::WARRIOR,
+        c.race,
+        c.level,
+        bonus,
+        &c.inventory.worn_entries(),
+    )
 }
 
 /// The Calling's proficiencies the tooltips and the bag check against (`SMSG_SET_PROFICIENCY`):
@@ -191,7 +198,7 @@ const ARMOUR_KINDS: usize = 5;
 /// The sheet's gear fields: each stat's green part, gear's flat attack power, the weapon skill
 /// lines the character knows at the level's maximum, and the armour lines its Calling allows at
 /// 1 of 1, as a 1.12 armour skill reads. The armour slots past the Calling's are cleared.
-pub(crate) fn sheet_pairs(c: &Char, s: &WarriorStats) -> Vec<(u16, u32)> {
+pub(crate) fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
     let mut pairs: Vec<(u16, u32)> = (0..5)
         .map(|i| (PLAYER_FIELD_POSSTAT0 + i as u16, s.bonus[i]))
         .collect();

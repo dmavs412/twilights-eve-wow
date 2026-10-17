@@ -11,7 +11,7 @@ use benilla_protocol::SessionEvent;
 use crate::callings::{self, Skill, TalentDef, TalentEffect, TalentTab, Wielded};
 use crate::characters::Char;
 use crate::fields::values;
-use crate::rules::stats::WarriorStats;
+use crate::rules::stats::CharacterStats;
 use crate::rules::talents::{points_at, respec_cost};
 
 /// `PLAYER_CHARACTER_POINTS1`: the unspent Talent Points.
@@ -298,7 +298,7 @@ pub(crate) fn crit_bleed(c: &Char) -> Option<(u32, u32, u32, u32)> {
 }
 
 /// The character's stats: gear's, and the talents' on top.
-pub(crate) fn stats(c: &Char) -> WarriorStats {
+pub(crate) fn stats(c: &Char) -> CharacterStats {
     let mut s = crate::equipment::stats(c);
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::MeleeCritPct { .. })));
     s.crit_pct += f64::from(sum(

@@ -1,8 +1,9 @@
 //! Rage and a warrior's derived stats against vmangos's values
 //! (`docs/reference/vanilla-combat-rules.md` §4 and §5).
 
+use twilight_realm::rules::power::class::WARRIOR;
 use twilight_realm::rules::rage;
-use twilight_realm::rules::stats::WarriorStats;
+use twilight_realm::rules::stats::CharacterStats;
 
 const HUMAN: u8 = 1;
 const ORC: u8 = 2;
@@ -54,7 +55,7 @@ fn a_naked_warriors_sheet_matches_vmangos() {
         (TAUREN, 10, 86, 4.0383, None, None),
     ];
     for (race, level, ap, crit, hp, armor) in cases {
-        let s = WarriorStats::naked(race, level);
+        let s = CharacterStats::naked(WARRIOR, race, level);
         assert_eq!(s.attack_power, ap, "race {race} L{level} AP");
         assert!(
             (s.crit_pct - crit).abs() < 1e-3,
@@ -77,14 +78,14 @@ fn a_naked_warriors_sheet_matches_vmangos() {
 
 #[test]
 fn skills_sit_at_the_levels_maximum() {
-    let s = WarriorStats::naked(HUMAN, 10);
+    let s = CharacterStats::naked(WARRIOR, HUMAN, 10);
     assert_eq!(s.weapon_skill, 50);
     assert_eq!(s.defense, 50);
 }
 
 #[test]
 fn bare_fists_hit_for_one_to_two_plus_attack_power_over_a_two_second_swing() {
-    let s = WarriorStats::naked(HUMAN, 1);
+    let s = CharacterStats::naked(WARRIOR, HUMAN, 1);
     assert_eq!(s.attack_time_ms, 2000);
     // AP 29: 29 / 14 × 2.0 = 4.143.
     assert!((s.min_damage - 5.143).abs() < 1e-3, "{}", s.min_damage);
@@ -112,8 +113,8 @@ fn a_mob_takes_its_stats_from_its_unit_class_and_level() {
 fn the_tier_bonus_adds_to_the_base_stats_not_to_the_gear_bonus() {
     // Tier 1's bonus on a level 1 human (AP 29, 60 hp, 40 armour): +12 Str, +6 Agi, +12 Sta, +3 Spi.
     let bonus = [12, 6, 12, 0, 3];
-    let naked = WarriorStats::naked(HUMAN, 1);
-    let tier1 = WarriorStats::geared_at_tier(HUMAN, 1, bonus, &[]);
+    let naked = CharacterStats::naked(WARRIOR, HUMAN, 1);
+    let tier1 = CharacterStats::geared_at_tier(WARRIOR, HUMAN, 1, bonus, &[]);
     assert_eq!(
         tier1.base,
         std::array::from_fn(|i| naked.base[i] + bonus[i])
@@ -127,7 +128,10 @@ fn the_tier_bonus_adds_to_the_base_stats_not_to_the_gear_bonus() {
     assert_eq!(tier1.armor, 52);
     assert_eq!(tier1.max_health, 180);
     assert!(tier1.crit_pct > naked.crit_pct);
-    assert_eq!(WarriorStats::geared_at_tier(HUMAN, 1, [0; 5], &[]), naked);
+    assert_eq!(
+        CharacterStats::geared_at_tier(WARRIOR, HUMAN, 1, [0; 5], &[]),
+        naked
+    );
 }
 
 #[test]

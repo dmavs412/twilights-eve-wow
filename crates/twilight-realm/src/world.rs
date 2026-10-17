@@ -20,7 +20,7 @@ use crate::mobs::{Mob, State, COMBAT_REACH};
 use crate::population::Population;
 use crate::rng::Rng;
 use crate::rules::melee::Outcome;
-use crate::rules::stats::WarriorStats;
+use crate::rules::stats::CharacterStats;
 use crate::rules::{aggro, leash, rage, xp};
 use crate::space::distance;
 use crate::Host;
@@ -64,7 +64,7 @@ pub(crate) struct Ticked {
 
 /// The player's side of a fight.
 struct Player {
-    stats: WarriorStats,
+    stats: CharacterStats,
     health: u32,
     /// Tenths.
     rage: u32,
@@ -819,7 +819,7 @@ fn eye(p: [f32; 3]) -> [f32; 3] {
 }
 
 /// The character sheet: every field the stock paper doll reads, from the realm's stats.
-fn sheet_pairs(c: &Char, s: &WarriorStats) -> Vec<(u16, u32)> {
+fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
     let skill = u32::from(s.weapon_skill);
     let mut pairs = vec![
         (UNIT_FIELD_LEVEL, u32::from(s.level)),
@@ -861,7 +861,7 @@ fn sheet_pairs(c: &Char, s: &WarriorStats) -> Vec<(u16, u32)> {
 }
 
 /// The player's own descriptor at login.
-fn player_fields(c: &Char, stats: &WarriorStats) -> ObjectFields {
+fn player_fields(c: &Char, stats: &CharacterStats) -> ObjectFields {
     let display = content::display_id(c.race, c.gender);
     let [skin, face, hair_style, hair_color, facial_hair] = c.look.map(u32::from);
     let mut pairs = vec![

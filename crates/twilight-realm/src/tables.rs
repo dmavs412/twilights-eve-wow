@@ -74,9 +74,10 @@ pub(crate) struct RaceStats {
 }
 
 impl RaceStats {
-    /// `ChrRaces.dbc` ids 1..=8.
+    /// `ChrRaces.dbc` ids 1..=8. A race the Class cannot be (a Tauren mage) reads the first race
+    /// in id order that it can, so a Calling on any Class has a sheet for every race.
     pub(crate) fn of(&self, race: u8) -> &[[u32; 5]] {
-        match race {
+        let rows = match race {
             1 => &self.human,
             2 => &self.orc,
             3 => &self.dwarf,
@@ -85,7 +86,23 @@ impl RaceStats {
             6 => &self.tauren,
             7 => &self.gnome,
             _ => &self.troll,
+        };
+        if !rows.is_empty() {
+            return rows;
         }
+        [
+            &self.human,
+            &self.orc,
+            &self.dwarf,
+            &self.night_elf,
+            &self.undead,
+            &self.tauren,
+            &self.gnome,
+            &self.troll,
+        ]
+        .into_iter()
+        .find(|r| !r.is_empty())
+        .expect("a Class some race can be")
     }
 }
 
