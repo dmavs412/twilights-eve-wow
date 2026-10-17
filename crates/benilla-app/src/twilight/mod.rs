@@ -150,7 +150,11 @@ fn load_saves(realm: &mut Realm) -> BTreeSet<u64> {
         realm.reserve_guid(guid);
         match crate::local_state::read_to_string(&path) {
             Ok(blob) => match realm.import_character(&blob) {
-                Ok(_) => {}
+                Ok(_) => {
+                    for line in realm.drain_log() {
+                        warn!("twilight: {line}");
+                    }
+                }
                 Err(e) => warn!("twilight: skipping the save {} ({e:?})", path.display()),
             },
             Err(e) => warn!("twilight: cannot read the save {}: {e}", path.display()),
@@ -358,6 +362,7 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::TalentWipeConfirm { trainer } => {
             Some(RealmCommand::TalentWipeConfirm { trainer })
         }
+        ClientCommand::BinderActivate { binder } => Some(RealmCommand::BinderActivate { binder }),
         ClientCommand::ListInventory { guid } => Some(RealmCommand::ListInventory { guid }),
         ClientCommand::BuyItem {
             vendor,
@@ -466,6 +471,12 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
                 .ray_body(a + dir * SIGHT_END_YD, dir, length)
                 .is_none()
     }
+
+    /// The streamed terrain's MCNK `areaId` under the point, the area the client's own zone
+    /// text names; where nothing is streamed in (or inside a Dungeon, which has no terrain), none.
+    fn area_at(&self, _map: u32, x: f32, y: f32) -> Option<u32> {
+        self.world.area_id_under(wow_to_bevy([x, y, 0.0]))
+    }
 }
 
 /// The spell rewrites of ADR 0003, made once the client has loaded its spell data, from the
@@ -490,4 +501,33 @@ fn only_warriors(mut catalog: ResMut<crate::entities::CharCreate>) {
     catalog
         .0
         .retain_classes(|class| class == benilla_protocol::messages::CLASS_WARRIOR);
+}
+
+#[cfg(test)]
+mod tests {
+    use benilla_formats::{area_id_at, load_area_table_catalog, load_tile_mesh, world_to_tile};
+
+    /// The host's `area_at` reads the streamed tile's MCNK `areaId` through
+    /// [`benilla_formats::area_id_at`]: on the game data, it names the Barrens subzones the realm's
+    /// discovery and "Know the Land" rest on, at known points. Skipped without the data.
+    #[test]
+    fn the_terrain_names_the_crossroads_thorn_hill_and_the_lushwater_oasis() {
+        let Some(data) = benilla_formats::wow_data() else {
+            eprintln!("skipped: no WoW data (set WOW_DATA)");
+            return;
+        };
+        let mut chain = benilla_formats::open_chain(&data).expect("the MPQs open");
+        let areas = load_area_table_catalog(&mut chain).expect("AreaTable.dbc");
+        let [x, y, ..] = twilight_realm::CROSSROADS;
+        for ((x, y), name) in [
+            ((x, y), "The Crossroads"),
+            ((-183.3, -3183.3), "Thorn Hill"),
+            ((-1049.9, -2116.6), "Lushwater Oasis"),
+        ] {
+            let (tx, ty) = world_to_tile(x, y);
+            let tile = load_tile_mesh(&mut chain, "Kalimdor", tx, ty).expect("the tile loads");
+            let id = area_id_at(&tile.chunks, [x, y, 0.0]).expect("an area under the point");
+            assert_eq!(areas.name(id), Some(name), "({x}, {y}) is area {id}");
+        }
+    }
 }

@@ -1,21 +1,42 @@
-# The Hub's quest givers and their Repeatable Quests (GLOSSARY.md). Each giver stands in the
-# Crossroads for one Hunting Ground and offers its quests, which can be taken again as soon as
-# they are handed in. A quest's XP is not here: it is always the player's next level's worth,
-# shrunk once they outlevel the quest (`rules::quest`).
+# The Hub's quest givers and their quests (GLOSSARY.md). Each giver stands in the Crossroads for
+# one Hunting Ground and offers its quests. A quest's `kind` says how often it can be done:
+#
+# - "hunting": a Hunting Quest, once per Tier. Advancement forgets it, so the next Tier does it
+#   again. It pays 1 Token.
+# - "repeatable": a Dungeon's Repeatable Quest, taken again as soon as it is handed in. It pays
+#   3 Tokens.
+# - "advancement": an Advancement Quest, with an `advancement` table (below). It pays no Token.
+# - "once": once per character. Advancement never forgets it. It pays no XP.
+#
+# A quest's XP is not here (`rules::quest`): a Hunting Quest's is half the XP from its own level
+# to the next, a Repeatable Quest's the player's next level's worth, and both shrink once the
+# player outlevels the quest. An Advancement Quest pays in a new Calling, not in XP.
 #
 # The givers are Hub NPCs, in content/hub.toml; a quest names its giver's `entry`.
 #
-# A quest: `id`, its `giver`, `level`, `min_level` (the lowest level it is offered at; by default
-# four below its level, and at least 1),
+# A quest: `id`, its `kind`, its `giver`, `level`, `min_level` (the lowest level it is offered at;
+# by default four below its level, and at least 1),
 # the dialog texts, `money` (copper) and `tokens` on hand-in, and its objectives: `kill` rows of
 # `[creature entry, count]`, and `collect` rows of an `item` (content/quest_items.toml), its
 # `count`, and the creatures it drops `from` at `chance` percent while the quest wants more.
 # At most four of each.
+#
+# A "find" quest sends the player to a place or a person:
+# - `explore`: a spot the player walks into, `{ place, position = [x, y], radius }` on Kalimdor
+#   (WoW coordinates, yards). It is met on entering, and the log shows "<place> explored".
+# - `ender`: the Hub NPC (content/hub.toml) who takes the quest in, when it is not the giver: a
+#   person found out in a Hunting Ground. A quest with no other objective is met on accepting,
+#   and finding them is the task.
+# - `discover`: `AreaTable.dbc` ids (content/areas.toml), met once the character has discovered
+#   every one (Discovery). It counts the discoveries made before the quest was taken.
+# - `after`: a quest offered only once that quest is handed in. When its giver is that quest's
+#   ender, it is the next in the chain: its accept panel opens as the other is handed in.
 
-# ── The Near Plains (levels 1-3) ──────────────────────────────────────────────────────────────
+# ── The Near Plains (levels 1-6) ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 [[quest]]
 id = 91001
+kind = "hunting"
 giver = 90101
 level = 2
 title = "Thinning the Herds"
@@ -24,11 +45,12 @@ details = "The plainstriders south-west of town and the boars to the south-east 
 progress = "The herds are still thick out there."
 completion = "Good hunting. The trail is clear, for now. Come back when the herds grow again."
 money = 60
-tokens = 0
+tokens = 1
 kill = [[2955, 5], [3098, 5]]
 
 [[quest]]
 id = 91002
+kind = "hunting"
 giver = 90101
 level = 3
 title = "Scorpid Venom"
@@ -40,27 +62,29 @@ money = 80
 tokens = 1
 collect = [{ item = 4886, count = 6, chance = 60, from = [3124] }]
 
-# ── The Southern Fields (levels 4-6) ──────────────────────────────────────────────────────────
-
 [[quest]]
 id = 91003
-giver = 90102
+kind = "hunting"
+giver = 90101
 level = 4
+min_level = 3
 title = "The Familiar Threat"
-objectives = "Kill 5 Vile Familiars, then return to Tamaha Swiftrunner at the Crossroads."
+objectives = "Kill 5 Vile Familiars, then return to Grezz Plainswatcher at the Crossroads."
 details = "Some warlock's imps have slipped their leash south of town, and they burn whatever they touch. Put them down."
 progress = "The familiars still burn the grass."
 completion = "That is the smell of burnt imp. Well done."
 money = 100
-tokens = 0
+tokens = 1
 kill = [[3101, 5]]
 
 [[quest]]
 id = 91004
-giver = 90102
+kind = "hunting"
+giver = 90101
 level = 5
+min_level = 3
 title = "Bristleback Tusks"
-objectives = "Bring 6 Bristleback Quilboar Tusks to Tamaha Swiftrunner at the Crossroads."
+objectives = "Bring 6 Bristleback Quilboar Tusks to Grezz Plainswatcher at the Crossroads."
 details = "The Bristleback have dug in north-west of town. Every tusk you take is a quilboar that will not raid us."
 progress = "Their camp still stands?"
 completion = "Six tusks. The Bristleback will think twice. Take this, and a Token."
@@ -70,10 +94,12 @@ collect = [{ item = 5085, count = 6, chance = 70, from = [2952, 2953, 2954] }]
 
 [[quest]]
 id = 91005
-giver = 90102
+kind = "hunting"
+giver = 90101
 level = 6
+min_level = 4
 title = "Prairie Wolf Paws"
-objectives = "Bring 5 Prairie Wolf Paws to Tamaha Swiftrunner at the Crossroads."
+objectives = "Bring 5 Prairie Wolf Paws to Grezz Plainswatcher at the Crossroads."
 details = "The prairie wolves south-east of here have taken to stalking our scouts. Bring me their paws as proof."
 progress = "The wolves still hunt our scouts."
 completion = "These will do. The scouts sleep easier. Here, and a Token."
@@ -81,10 +107,161 @@ money = 150
 tokens = 1
 collect = [{ item = 4758, count = 5, chance = 60, from = [2958] }]
 
-# ── The Southfury Banks (levels 10-12) ────────────────────────────────────────────────────────
+[[quest]]
+id = 91051
+kind = "hunting"
+giver = 90101
+level = 4
+min_level = 3
+title = "The Bristleback Diggings"
+objectives = "Find the Bristleback diggings, then return to Grezz Plainswatcher at the Crossroads."
+details = "The Bristleback came up out of Mulgore and started digging, north-west of town, a short walk past the well. Go and see what they dig for. Look, and come back."
+progress = "Found their diggings yet?"
+completion = "Burrows and bones. They dig like something chases them out of the west. Maybe something does."
+money = 110
+tokens = 1
+explore = { place = "The Bristleback Diggings", position = [-316.0, -2379.0], radius = 30.0 }
+
+# ── The Far Fields (levels 6-10) ──────────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91049
+kind = "hunting"
+giver = 90102
+level = 6
+title = "Smoke on the East Road"
+objectives = "Find the Razormane camp on the east road, then return to Tamaha Swiftrunner at the Crossroads."
+details = "From up here I see smoke on the east road, the road to Thorn Hill, an hour's walk out. Razormane, I think, camped right on the road. Go and look, and come back to me."
+progress = "Did you find the smoke?"
+completion = "Razormane, on our road, and bold enough to light fires. They were never this bold before the sky started to darken."
+money = 140
+tokens = 1
+explore = { place = "The Razormane Camp", position = [-440.0, -3010.0], radius = 30.0 }
+
+[[quest]]
+id = 91041
+kind = "hunting"
+giver = 90102
+level = 7
+title = "Razormane on the Road"
+objectives = "Kill 6 Razormane Quilboar and 4 Razormane Scouts, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The Razormane camp on the east road stops our caravans from Thorn Hill. Follow the road east out of town until you see their fire, and break them."
+progress = "The caravans still turn back on the east road."
+completion = "The road is open again. Take this, and a Token."
+money = 175
+tokens = 1
+kill = [[3111, 6], [3112, 4]]
+
+[[quest]]
+id = 91045
+kind = "hunting"
+giver = 90102
+level = 7
+title = "Palemane Poachers"
+objectives = "Kill 4 Palemane Tanners, 4 Palemane Skinners and 4 Palemane Poachers, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Gnolls from Mulgore, the Palemane, have come over the hills north-west of town, past the Bristleback diggings. They skin whatever they catch, and they have started to catch our scouts. Drive them back."
+progress = "The gnolls still skin in the hills."
+completion = "Good. Let them run home to Mulgore. Here, and a Token."
+money = 175
+tokens = 1
+kill = [[2949, 4], [2950, 4], [2951, 4]]
+
+[[quest]]
+id = 91043
+kind = "hunting"
+giver = 90102
+level = 8
+title = "Harpies on the Rocks"
+objectives = "Kill 8 Dustwind Harpies, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Dustwind harpies have flown down from Durotar and roost on the rocks north of town, straight up the road. They screech all night and drop on anyone alone. Clear their roost."
+progress = "I still hear them screeching."
+completion = "Quiet at last. Here is your pay, and a Token."
+money = 200
+tokens = 1
+kill = [[3115, 8]]
+
+[[quest]]
+id = 91047
+kind = "hunting"
+giver = 90102
+level = 8
+title = "Bloodtalon Taillashers"
+objectives = "Kill 6 Bloodtalon Taillashers, then return to Tamaha Swiftrunner at the Crossroads."
+details = "Raptors have come up from the coast, Bloodtalons, and they hunt on the open ground south of town, beyond the imps. Six of the taillashers, and the herds will graze in peace."
+progress = "The raptors still hunt south of here."
+completion = "Fast things, raptors. You are faster. Take this, and a Token."
+money = 200
+tokens = 1
+kill = [[3122, 6]]
+
+[[quest]]
+id = 91042
+kind = "hunting"
+giver = 90102
+level = 9
+title = "The Dustrunners"
+objectives = "Kill 5 Razormane Dustrunners, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The Razormane camp on the east road has dustrunners, the ones who call the earth. While they live, the camp grows back. Go east down the road again and kill them."
+progress = "Are the dustrunners dead?"
+completion = "Without their earth-callers the Razormane will go home to Thorn Hill. For now. Here, and a Token."
+money = 225
+tokens = 1
+kill = [[3113, 5]]
+
+[[quest]]
+id = 91044
+kind = "hunting"
+giver = 90102
+level = 10
+title = "Dustwind Savages"
+objectives = "Kill 4 Dustwind Savages, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The savages lead the harpies on the rocks north of town. Kill them and the rest will fly home to Durotar."
+progress = "The savages still lead the flock?"
+completion = "Then the flock will scatter. Good work. Here, and a Token."
+money = 250
+tokens = 1
+kill = [[3117, 4]]
+
+[[quest]]
+id = 91046
+kind = "hunting"
+giver = 90102
+level = 10
+title = "Alpha Teeth"
+objectives = "Bring 5 Prairie Alpha Teeth to Tamaha Swiftrunner at the Crossroads."
+details = "The Prairie Wolf Alphas hunt the flat ground south-west of town, past where the plainstriders graze. Their packs have grown big as the light fails. Bring me five of their teeth."
+progress = "No teeth yet?"
+completion = "Big teeth. The packs will be smaller now. Take this, and a Token."
+money = 250
+tokens = 1
+collect = [{ item = 4803, count = 5, chance = 50, from = [2960] }]
+
+[[quest]]
+id = 91048
+kind = "hunting"
+giver = 90102
+level = 10
+title = "The Southern Hunters"
+objectives = "Kill 4 Bloodtalon Scythemaws and 4 Prairie Wolf Alphas, then return to Tamaha Swiftrunner at the Crossroads."
+details = "The biggest hunters south of town are the Bloodtalon scythemaws and the Prairie Wolf Alphas, out beyond the imps and the plainstriders. Kill them both, and the southern fields are ours again."
+progress = "The big hunters still roam the south."
+completion = "That is the last I ask of the fields. Past here, Zun'jin and Garosh have work for you. Take this, and a Token."
+money = 250
+tokens = 1
+kill = [[3123, 4], [2960, 4]]
+
+# ── The middle ring (levels 10-20): the north and central Barrens ─────────────────────────────
+# Eight Crossroads givers, one for each Hunting Ground (tests/content_middle_ring.rs). Every Camp
+# in the ring is some quest's target, each kept rare has a "Wanted" quest, and each ground has
+# one find quest. A quest's level is its targets'. The plains' roamers (the Sunscale, Hecklefang,
+# Prowlers, Kolkar Stormers and Wranglers), which wander the whole Barrens, are no Camp: no
+# quest hunts them.
+
+# ── The Southfury Banks (levels 10-17): the river, Thorn Hill and the eastern savannah ────────
 
 [[quest]]
 id = 91006
+kind = "hunting"
 giver = 90103
 level = 10
 title = "Crocolisk Skins"
@@ -97,169 +274,1199 @@ tokens = 1
 collect = [{ item = 2925, count = 8, chance = 60, from = [3110, 3231] }]
 
 [[quest]]
-id = 91007
+id = 91018
+kind = "hunting"
 giver = 90103
 level = 11
+title = "Scouting Thorn Hill"
+objectives = "Scout Thorn Hill, then return to Zun'jin at the Crossroads."
+details = "Da Razormane be diggin' in on Thorn Hill, east of here along da road. Go see how many, and come back. Don't stay to fight, mon."
+progress = "You seen Thorn Hill yet?"
+completion = "Dat many? Dey be gettin' bold while da world looks south. Here, for da walk."
+money = 300
+tokens = 1
+explore = { place = "Thorn Hill", position = [-200.0, -3325.0], radius = 30.0 }
+
+[[quest]]
+id = 91007
+kind = "hunting"
+giver = 90103
+level = 12
 title = "Razormane Raiders"
-objectives = "Kill 5 Razormane Water Seekers and 5 Razormane Thornweavers, then return to Zun'jin at the Crossroads."
-details = "Da Razormane at Thorn Hill be sending raiders down da road. Kill dem seekers and thornweavers."
+objectives = "Kill 8 Razormane Defenders and 6 Razormane Geomancers, then return to Zun'jin at the Crossroads."
+details = "Da Razormane at Thorn Hill be sending raiders down da road. Kill dem defenders and geomancers."
 progress = "Da Razormane still be raidin'."
 completion = "Dat'll teach dem. Here be your pay."
-money = 450
-tokens = 0
-kill = [[3267, 5], [3268, 5]]
+money = 480
+tokens = 1
+kill = [[3266, 8], [3269, 6]]
 
 [[quest]]
 id = 91008
+kind = "hunting"
 giver = 90103
-level = 12
-title = "Plainstrider Beaks"
-objectives = "Bring 8 Plainstrider Beaks to Zun'jin at the Crossroads."
-details = "Da big plainstriders out on da savannah got beaks dat make good charms. Bring me eight."
-progress = "Da beaks, mon. Where dey be?"
-completion = "Ah, dese be fine beaks. A Token for your trouble."
+level = 13
+title = "Mystics and Hunters"
+objectives = "Kill 5 Razormane Mystics and 5 Razormane Hunters, then return to Zun'jin at the Crossroads."
+details = "Up on Thorn Hill dey got mystics callin' on da spirits, and hunters with da spears. Take dem both down."
+progress = "Da mystics still be chantin' up dere."
+completion = "Quieter on da hill now. Here, mon."
+money = 600
+tokens = 1
+kill = [[3271, 5], [3265, 5]]
+
+[[quest]]
+id = 91060
+kind = "hunting"
+giver = 90103
+level = 15
+title = "The Warlord of Thorn Hill"
+objectives = "Kill Kreenig Snarlsnout and 6 Razormane Defenders, then return to Zun'jin at the Crossroads."
+details = "Kreenig Snarlsnout rules da hill. He sits up top behind his defenders. Cut through dem and end him."
+progress = "Kreenig still be givin' orders?"
+completion = "No head, no raids. Dey be fightin' each other for his place now."
+money = 800
+tokens = 1
+kill = [[3438, 1], [3266, 6]]
+
+[[quest]]
+id = 91061
+kind = "hunting"
+giver = 90103
+level = 15
+title = "Wanted: Elder Mystic Razorsnout"
+objectives = "Kill Elder Mystic Razorsnout, then return to Zun'jin at the Crossroads."
+details = "Da oldest mystic on Thorn Hill, Razorsnout, be readin' da dark sky for dem. Whatever he sees, it makes dem brave. Kill him."
+progress = "Da old mystic still be breathin'."
+completion = "No more omens for da Razormane. Good work."
+money = 800
+tokens = 1
+kill = [[3270, 1]]
+
+[[quest]]
+id = 91062
+kind = "hunting"
+giver = 90103
+level = 17
+title = "The Savannah Matriarchs"
+objectives = "Kill 6 Savannah Matriarchs, then return to Zun'jin at the Crossroads."
+details = "Past Thorn Hill, toward da river, da old lionesses hunt our runners. Dey be bigger dan dey used to be."
+progress = "Da matriarchs still be huntin'."
+completion = "Da runners can pass again. Here."
+money = 1050
+tokens = 1
+kill = [[3416, 6]]
+
+# ── The Kolkar Lands (levels 13-17): the Kolkar camps and the Stagnant Oasis ──────────────────
+
+[[quest]]
+id = 91011
+kind = "hunting"
+giver = 90104
+level = 13
+title = "Kolkar Packhounds"
+objectives = "Kill 8 Kolkar Packhounds, then return to Garosh Ironhide at the Crossroads."
+details = "The Kolkar set their hounds on anything that moves south of here. Kill the hounds first, and the riders come slower."
+progress = "The hounds still bay at night."
+completion = "Good. Without their hounds the Kolkar hunt blind."
+money = 600
+tokens = 1
+kill = [[4316, 8]]
+
+[[quest]]
+id = 91019
+kind = "hunting"
+giver = 90104
+ender = 190020
+level = 14
+title = "The Kolkar Watch"
+objectives = "Find Outrider Kezra, who watches the Kolkar south-west of the Crossroads."
+details = "My outrider Kezra rides the plains south-west of here, keeping an eye on the Kolkar. She has not reported in. Find her, and see what she needs."
+progress = "Garosh sent you? Good."
+completion = "Still breathing, as you see. The Kolkar are restless: every caravan fleeing the south passes their camps, and they know it."
 money = 500
 tokens = 1
-collect = [{ item = 5087, count = 8, chance = 70, from = [3244, 3246] }]
 
-# ── The Kolkar Lands (levels 14-16) ───────────────────────────────────────────────────────────
+[[quest]]
+id = 91020
+kind = "hunting"
+giver = 190020
+after = 91019
+level = 15
+title = "Kolkar Pack Runners"
+objectives = "Kill 6 Kolkar Pack Runners, then return to Outrider Kezra."
+details = "The Kolkar pack runners carry word between their camps, south of here. Cut them down and the raids lose their eyes."
+progress = "The runners still ride."
+completion = "Their camps are blind for a while. Well done."
+money = 600
+tokens = 1
+kill = [[3274, 6]]
 
 [[quest]]
 id = 91009
+kind = "hunting"
 giver = 90104
-level = 14
+level = 15
 title = "Kolkar Raiders"
-objectives = "Kill 6 Kolkar Wranglers and 6 Kolkar Stormers, then return to Garosh Ironhide at the Crossroads."
-details = "The Kolkar centaur ride out of their camps to hit our caravans. Kill their wranglers and stormers."
+objectives = "Kill 6 Kolkar Marauders and 6 Kolkar Bloodchargers, then return to Garosh Ironhide at the Crossroads."
+details = "The Kolkar centaur ride out of their camps to hit our caravans. Kill their marauders and bloodchargers."
 progress = "The Kolkar still ride."
 completion = "Fewer centaur on the roads. Your coin."
-money = 700
-tokens = 0
-kill = [[3272, 6], [3273, 6]]
+money = 800
+tokens = 1
+kill = [[3275, 6], [3397, 6]]
 
 [[quest]]
 id = 91010
+kind = "hunting"
 giver = 90104
 level = 15
 title = "Centaur Bracers"
 objectives = "Bring 8 Centaur Bracers to Garosh Ironhide at the Crossroads."
-details = "Every Kolkar warrior wears bracers. Bring me eight pairs, and I will know you have been busy."
+details = "Every Kolkar warrior in the camps wears bracers. Bring me eight pairs, and I will know you have been busy."
 progress = "Where are the bracers?"
 completion = "Eight pairs. The Kolkar will feel that. A Token, as promised."
 money = 800
 tokens = 1
-collect = [{ item = 5030, count = 8, chance = 60, from = [3272, 3273, 3274, 3397, 3275] }]
+collect = [{ item = 5030, count = 8, chance = 60, from = [3274, 3397, 3275] }]
 
 [[quest]]
-id = 91011
+id = 91063
+kind = "hunting"
 giver = 90104
 level = 16
+title = "Snapjaws in the Oases"
+objectives = "Kill 8 Oasis Snapjaws, then return to Garosh Ironhide at the Crossroads."
+details = "The snapjaw turtles in the oases bite the legs off our kodos when they drink. Clear the water's edge."
+progress = "The kodos still won't drink."
+completion = "The kodos thank you, in their way. So do I."
+money = 900
+tokens = 1
+kill = [[3461, 8]]
+
+[[quest]]
+id = 91064
+kind = "hunting"
+giver = 90104
+level = 17
+title = "Wanted: Rocklance"
+objectives = "Kill Rocklance, then return to Garosh Ironhide at the Crossroads."
+details = "Rocklance leads the Kolkar's raids on the southern road. He wears the scalps of our caravan guards. End him."
+progress = "Rocklance still rides."
+completion = "The raids will need a new leader. Let them argue over it."
+money = 1050
+tokens = 1
+kill = [[5841, 1]]
+
+[[quest]]
+id = 91065
+kind = "hunting"
+giver = 90104
+level = 17
+title = "Wanted: Brokespear"
+objectives = "Kill Brokespear, then return to Garosh Ironhide at the Crossroads."
+details = "Brokespear hunts alone at the Kolkar lands' eastern edge. He has broken every spear we sent after him."
+progress = "Brokespear still hunts."
+completion = "One spear he could not break. Well done."
+money = 1050
+tokens = 1
+kill = [[5838, 1]]
+
+# ── Lushwater Oasis (levels 15-19): the Wailing Caverns' mouth ────────────────────────────────
+
+[[quest]]
+id = 91066
+kind = "hunting"
+giver = 90107
+ender = 5767
+level = 15
+title = "The Skull Above the Caverns"
+objectives = "Find the Disciples of Naralex on the skull above the Wailing Caverns, in Lushwater Oasis."
+details = "West of here lies Lushwater Oasis. Above the caverns' mouth, on the great skull, the Disciples of Naralex keep their watch. Go to them. They know what stirs below."
+progress = "Naleya sent you? Then you know already that something is wrong."
+completion = "Welcome. From here we watch the caverns, and lately they watch us back."
+money = 800
+tokens = 1
+
+[[quest]]
+id = 91067
+kind = "hunting"
+giver = 90107
+level = 16
+title = "Deviate Creatures"
+objectives = "Kill 4 Deviate Creepers and 3 Deviate Coilers, then return to Naleya Mistrunner at the Crossroads."
+details = "Twisted beasts crawl out of the Wailing Caverns into the oasis. Kill the creepers and coilers before they spread."
+progress = "Still they crawl out."
+completion = "The water's edge is cleaner. Thank you."
+money = 900
+tokens = 1
+kill = [[3632, 4], [3630, 3]]
+
+[[quest]]
+id = 91068
+kind = "hunting"
+giver = 90107
+level = 16
+title = "Deviate Hides"
+objectives = "Bring 6 Deviate Hides to Naleya Mistrunner at the Crossroads."
+details = "I want to know what twists these creatures. Bring me their hides from the oasis, and I will study them."
+progress = "The hides?"
+completion = "Look at this. The beast was dreaming as it changed. Here, for your work."
+money = 900
+tokens = 1
+collect = [{ item = 6443, count = 6, chance = 60, from = [3632, 3630, 3634] }]
+
+[[quest]]
+id = 91069
+kind = "hunting"
+giver = 90107
+level = 18
+title = "What Crawls Out"
+objectives = "Kill Mad Magglish, a Devouring Ectoplasm and a Deviate Stalker, then return to Naleya Mistrunner at the Crossroads."
+details = "Worse things than creepers come up from the caverns now: a goblin gone mad, a hungry slime, a stalker. All of them at the caverns' mouth."
+progress = "Are they still at the mouth?"
+completion = "For now the mouth is quiet. For now."
+money = 1200
+tokens = 1
+kill = [[3655, 1], [3638, 1], [3634, 1]]
+
+[[quest]]
+id = 91070
+kind = "hunting"
+giver = 90107
+level = 19
+title = "Hezrul Bloodmark"
+objectives = "Kill Hezrul Bloodmark, then return to Naleya Mistrunner at the Crossroads."
+details = "Hezrul Bloodmark leads the Kolkar at the oasis' edge, and he has been killing the pilgrims who come to the skull. Stop him."
+progress = "Hezrul still waits at the oasis."
+completion = "The pilgrims can come again. The Earth Mother sees what you did."
+money = 1350
+tokens = 1
+kill = [[3396, 1]]
+
+# ── The Sludge Fen (levels 13-19): the Venture Co., ending with their bosses ───────────────────
+
+[[quest]]
+id = 91071
+kind = "hunting"
+giver = 90108
+level = 13
+title = "The Sludge Fen"
+objectives = "Find the Venture Co.'s camp in the Sludge Fen, then return to Grunt Rhaggoth at the Crossroads."
+details = "North-east of here the goblins dug up the fen. Go and look at their camp from the ridge. Count the machines, then come back."
+progress = "Well? What are they building?"
+completion = "A derrick, pumping sludge out of the ground. Then we break it."
+money = 600
+tokens = 1
+explore = { place = "The Sludge Fen", position = [1035.0, -3053.0], radius = 30.0 }
+
+[[quest]]
+id = 91072
+kind = "hunting"
+giver = 90108
+level = 14
+title = "Venture Co. Drudgers"
+objectives = "Kill 10 Venture Co. Drudgers, then return to Grunt Rhaggoth at the Crossroads."
+details = "The drudgers do the digging in the fen. No hands, no digging."
+progress = "They still dig."
+completion = "Slower work for the goblins now. Good."
+money = 700
+tokens = 1
+kill = [[3284, 10]]
+
+[[quest]]
+id = 91073
+kind = "hunting"
+giver = 90108
+level = 15
+title = "Mercenaries and Peons"
+objectives = "Kill 8 Venture Co. Mercenaries and 6 Venture Co. Peons, then return to Grunt Rhaggoth at the Crossroads."
+details = "Hired blades guard the fen, and the peons haul for them on the road out. Kill both."
+progress = "The fen is still guarded."
+completion = "Their guard is thinner. Good."
+money = 800
+tokens = 1
+kill = [[3282, 8], [3285, 6]]
+
+[[quest]]
+id = 91074
+kind = "hunting"
+giver = 90108
+level = 17
+title = "The Fen's Foremen"
+objectives = "Kill Tinkerer Sniggles, Overseer Glibby and Supervisor Lugwizzle, then return to Grunt Rhaggoth at the Crossroads."
+details = "Three goblins run the fen's work: Sniggles at his workbench on the road, Glibby and Lugwizzle down at the derrick. Take them out."
+progress = "The goblins still give orders."
+completion = "Nobody left to shout at the drudgers. Now for the ones above them."
+money = 1050
+tokens = 1
+kill = [[3471, 1], [6606, 1], [3445, 1]]
+
+[[quest]]
+id = 91075
+kind = "hunting"
+giver = 90108
+level = 17
+title = "Enforcers and Overseers"
+objectives = "Kill 8 Venture Co. Enforcers and 6 Venture Co. Overseers, then return to Grunt Rhaggoth at the Crossroads."
+details = "By the river, Boss Copperplug's enforcers and overseers keep the goblins' second camp. Break them."
+progress = "Copperplug's camp still stands."
+completion = "His camp is broken. Copperplug himself is left."
+money = 1050
+tokens = 1
+kill = [[3283, 8], [3286, 6]]
+
+[[quest]]
+id = 91076
+kind = "hunting"
+giver = 90108
+level = 19
+title = "Wanted: Takk the Leaper"
+objectives = "Kill Takk the Leaper, then return to Grunt Rhaggoth at the Crossroads."
+details = "A raptor called Takk the Leaper hunts the land between the goblins' camps. The goblins fear him more than us. Kill him too."
+progress = "Takk still hunts."
+completion = "No more leaping. Good."
+money = 1350
+tokens = 1
+kill = [[5842, 1]]
+
+[[quest]]
+id = 91077
+kind = "hunting"
+giver = 90108
+after = 91075
+level = 19
+title = "Boss Copperplug"
+objectives = "Kill Boss Copperplug, then return to Grunt Rhaggoth at the Crossroads."
+details = "With his camp broken, Copperplug hides among his crates by the river. Finish him."
+progress = "Copperplug still breathes."
+completion = "One boss down. The fen's own bosses are next."
+money = 1350
+tokens = 1
+kill = [[9336, 1]]
+
+[[quest]]
+id = 91078
+kind = "hunting"
+giver = 90108
+after = 91074
+level = 19
+title = "Wanted: Foreman Grills"
+objectives = "Kill Foreman Grills, then return to Grunt Rhaggoth at the Crossroads."
+details = "With his foremen dead, Foreman Grills runs the derrick himself. End him."
+progress = "Grills still drives them."
+completion = "Grills is done. Whirleygig built the derrick. He is next."
+money = 1350
+tokens = 1
+kill = [[5835, 1]]
+
+[[quest]]
+id = 91079
+kind = "hunting"
+giver = 90108
+after = 91078
+level = 19
+title = "Wanted: Engineer Whirleygig"
+objectives = "Kill Engineer Whirleygig, then return to Grunt Rhaggoth at the Crossroads."
+details = "Engineer Whirleygig built the derrick, and he keeps it pumping. Kill him, and it stops."
+progress = "The derrick still pumps."
+completion = "The derrick stops. Only what it pumped up is left."
+money = 1350
+tokens = 1
+kill = [[5836, 1]]
+
+[[quest]]
+id = 91080
+kind = "hunting"
+giver = 90108
+after = 91079
+level = 19
+title = "Wanted: Sludge Beast"
+objectives = "Kill the Sludge Beast, then return to Grunt Rhaggoth at the Crossroads."
+details = "The derrick pumped something alive out of the fen. It crawls in the sludge by the derrick. Finish what the goblins started."
+progress = "It still crawls?"
+completion = "The fen is ours again, what's left of it. You have earned this."
+money = 1350
+tokens = 1
+kill = [[3295, 1]]
+
+# ── The Merchant Coast (levels 12-19): the Southsea pirates and the shore ─────────────────────
+
+[[quest]]
+id = 91081
+kind = "hunting"
+giver = 90109
+level = 13
+title = "The Southsea Camp"
+objectives = "Find the Southsea pirates' camp on the Merchant Coast, then return to Gazrog Saltblade at the Crossroads."
+details = "South of Ratchet, on the coast, pirates made a camp. Find it, see how many there are, and come back."
+progress = "Found them?"
+completion = "That many. They came ashore when the ships stopped sailing south."
+money = 600
+tokens = 1
+explore = { place = "The Southsea Camp", position = [-1540.0, -3760.0], radius = 30.0 }
+
+[[quest]]
+id = 91082
+kind = "hunting"
+giver = 90109
+level = 13
+title = "Southsea Brigands"
+objectives = "Kill 8 Southsea Brigands and 6 Southsea Cannoneers, then return to Gazrog Saltblade at the Crossroads."
+details = "The pirates' brigands rob the coast road, and their cannoneers shell anyone who comes close. Kill both."
+progress = "The coast road is still theirs."
+completion = "Good. The traders may use the road again."
+money = 600
+tokens = 1
+kill = [[3381, 8], [3382, 6]]
+
+[[quest]]
+id = 91083
+kind = "hunting"
+giver = 90109
+level = 14
+title = "Teeth in the Water"
+objectives = "Kill 5 Muck Frenzies and the Sand Shark, then return to Gazrog Saltblade at the Crossroads."
+details = "Along the coast the water bites: muck frenzies in the shallows, and a sand shark further out. Clear them."
+progress = "The water still bites?"
+completion = "Safer to wade now. Not safe. Safer."
+money = 700
+tokens = 1
+kill = [[8236, 5], [5435, 1]]
+
+[[quest]]
+id = 91084
+kind = "hunting"
+giver = 90109
+level = 15
+title = "Cutthroats and Privateers"
+objectives = "Kill 8 Southsea Cutthroats and 6 Southsea Privateers, then return to Gazrog Saltblade at the Crossroads."
+details = "Deeper in the camp, the cutthroats and privateers guard their plunder. Break them."
+progress = "They still guard it."
+completion = "Their plunder is unguarded. Not that we touch it."
+money = 800
+tokens = 1
+kill = [[3383, 8], [3384, 6]]
+
+[[quest]]
+id = 91085
+kind = "hunting"
+giver = 90109
+level = 16
+title = "Baron Longshore"
+objectives = "Kill Baron Longshore and Tazan, then return to Gazrog Saltblade at the Crossroads."
+details = "Baron Longshore leads the pirates, and Tazan keeps his loot. Kill them both."
+progress = "Longshore still gives orders."
+completion = "Without their baron the pirates will scatter. Good work."
+money = 900
+tokens = 1
+kill = [[3467, 1], [6494, 1]]
+
+[[quest]]
+id = 91086
+kind = "hunting"
+giver = 90109
+level = 18
+title = "Makrura on the Shore"
+objectives = "Kill 8 Slimeshell Makrura, then return to Gazrog Saltblade at the Crossroads."
+details = "The makrura climb out of the sea onto the beaches and fight anything they meet. Push them back into the water."
+progress = "The makrura still crawl up the sand."
+completion = "Back into the sea with them. Here."
+money = 1200
+tokens = 1
+kill = [[6020, 8]]
+
+# ── The Dry Hills (levels 10-15): Dreadmist Peak and the northern savannah ────────────────────
+
+[[quest]]
+id = 91087
+kind = "hunting"
+giver = 90110
+level = 10
+title = "Dreadmist Peak"
+objectives = "Find the Burning Blade's camp on Dreadmist Peak, then return to Thrag Duneclaw at the Crossroads."
+details = "North of here, on Dreadmist Peak, I see fires. The Burning Blade, I think. Go and look, then come back."
+progress = "What did you see?"
+completion = "The Burning Blade, then. Demon worshippers on our doorstep."
+money = 400
+tokens = 1
+explore = { place = "Dreadmist Peak", position = [400.0, -2190.0], radius = 30.0 }
+
+[[quest]]
+id = 91088
+kind = "hunting"
+giver = 90110
+level = 11
+title = "The Burning Blade"
+objectives = "Kill 8 Burning Blade Bruisers and 6 Burning Blade Acolytes, then return to Thrag Duneclaw at the Crossroads."
+details = "The Burning Blade's bruisers guard Dreadmist Peak while their acolytes call on demons. Kill them, before they call something we can't kill."
+progress = "Their fires still burn."
+completion = "The fires are smaller. Good."
+money = 420
+tokens = 1
+kill = [[3379, 8], [3380, 6]]
+
+[[quest]]
+id = 91089
+kind = "hunting"
+giver = 90110
+level = 12
+title = "The Savannah Pride"
+objectives = "Kill 6 Savannah Huntresses, 3 Savannah Highmanes and 2 Sunscale Lashtails, then return to Thrag Duneclaw at the Crossroads."
+details = "The lions north of town have taken to hunting near the road, and a few raptors with them. Thin out the pride."
+progress = "The pride still hunts."
+completion = "The road north is safer. Here."
+money = 480
+tokens = 1
+kill = [[3415, 6], [3243, 3], [3254, 2]]
+
+[[quest]]
+id = 91090
+kind = "hunting"
+giver = 90110
+level = 13
+title = "Wanted: Dishu"
+objectives = "Kill Dishu, then return to Thrag Duneclaw at the Crossroads."
+details = "Dishu is the pride's oldest hunter, and the cleverest. Kill him, and the rest of the lions will follow someone stupider."
+progress = "Dishu still hunts."
+completion = "Dishu is gone. Good hunting."
+money = 600
+tokens = 1
+kill = [[5865, 1]]
+
+[[quest]]
+id = 91091
+kind = "hunting"
+giver = 90110
+level = 15
+title = "Wanted: Rathorian"
+objectives = "Kill Rathorian, then return to Thrag Duneclaw at the Crossroads."
+details = "A great cat called Rathorian prowls below Dreadmist Peak. Even the Burning Blade fear him. Kill him."
+progress = "Rathorian still prowls."
+completion = "The peak has lost its guardian. Good."
+money = 800
+tokens = 1
+kill = [[3470, 1]]
+
+# ── The Witchwing Hills (levels 14-19): the harpies and the Forgotten Pools ────────────────────
+
+[[quest]]
+id = 91092
+kind = "hunting"
+giver = 90111
+level = 14
+title = "The Forgotten Pools"
+objectives = "Find the Forgotten Pools, then return to Kaluk Windrider at the Crossroads."
+details = "North-west of here lie the Forgotten Pools. Old water, and old things around it. Go and look, and tell me what you saw."
+progress = "Found the pools?"
+completion = "Kodo bones and harpy feathers. The Witchwing hunt that far now."
+money = 700
+tokens = 1
+explore = { place = "The Forgotten Pools", position = [0.0, -1700.0], radius = 30.0 }
+
+[[quest]]
+id = 91093
+kind = "hunting"
+giver = 90111
+level = 15
 title = "Witchwing Talons"
-objectives = "Bring 8 Witchwing Talons to Garosh Ironhide at the Crossroads."
+objectives = "Bring 8 Witchwing Talons to Kaluk Windrider at the Crossroads."
 details = "The Witchwing harpies roost in the hills to the north-west. Bring me their talons."
 progress = "The harpies still screech in the hills."
 completion = "Talons, all eight. Good. Here is your pay, and a Token."
+money = 800
+tokens = 1
+collect = [{ item = 5064, count = 8, chance = 70, from = [3276, 3277] }]
+
+[[quest]]
+id = 91094
+kind = "hunting"
+giver = 90111
+level = 15
+title = "Wanted: Stonearm"
+objectives = "Kill Stonearm, then return to Kaluk Windrider at the Crossroads."
+details = "By the Forgotten Pools roams Stonearm, a centaur who kills for sport. Kill him."
+progress = "Stonearm still roams."
+completion = "The pools are quieter. Good."
+money = 800
+tokens = 1
+kill = [[5837, 1]]
+
+[[quest]]
+id = 91095
+kind = "hunting"
+giver = 90111
+level = 16
+title = "Barak Kodobane"
+objectives = "Kill Barak Kodobane, then return to Kaluk Windrider at the Crossroads."
+details = "Barak Kodobane hunts our kodos near the Forgotten Pools, for their hides. Hunt him instead."
+progress = "Barak still hunts."
+completion = "The kodos are safe from him. Thank you."
 money = 900
 tokens = 1
-collect = [{ item = 5064, count = 8, chance = 70, from = [3276, 3277, 3278, 3279, 3280] }]
+kill = [[3394, 1]]
 
-# ── The Southern Barrens (levels 18-21) ───────────────────────────────────────────────────────
+[[quest]]
+id = 91096
+kind = "hunting"
+giver = 90111
+level = 17
+title = "Slayers and Windcallers"
+objectives = "Kill 8 Witchwing Slayers, 6 Witchwing Windcallers and 2 Witchwing Ambushers, then return to Kaluk Windrider at the Crossroads."
+details = "Deeper in the hills the Witchwing's slayers hunt, and their windcallers call the storms. Their ambushers wait on the ridges. Kill them all."
+progress = "The Witchwing still hunt."
+completion = "The hills are quieter. Here."
+money = 1050
+tokens = 1
+kill = [[3278, 8], [3280, 6], [3279, 2]]
+
+[[quest]]
+id = 91097
+kind = "hunting"
+giver = 90111
+level = 17
+title = "Wanted: Snort the Heckler"
+objectives = "Kill Snort the Heckler, then return to Kaluk Windrider at the Crossroads."
+details = "A hyena called Snort the Heckler laughs at our scouts from the hills, then eats them. Kill it."
+progress = "Snort still laughs?"
+completion = "No more laughing. Good."
+money = 1050
+tokens = 1
+kill = [[5829, 1]]
+
+[[quest]]
+id = 91098
+kind = "hunting"
+giver = 90111
+level = 19
+title = "Wanted: Sister Rathtalon"
+objectives = "Kill Sister Rathtalon, then return to Kaluk Windrider at the Crossroads."
+details = "Sister Rathtalon leads the Witchwing's hunts. Kill her, and the harpies will fight each other for her place."
+progress = "Rathtalon still leads them."
+completion = "The harpies scatter. You did well."
+money = 1350
+tokens = 1
+kill = [[5830, 1]]
+
+# ── The Southern Barrens (levels 17-19): the Bristleback and the thunder lizards ──────────────
+
+[[quest]]
+id = 91099
+kind = "hunting"
+giver = 90105
+level = 17
+title = "The Bristleback Camps"
+objectives = "Find the Bristleback camps in the Southern Barrens, then return to Mahu Stormhoof at the Crossroads."
+details = "South of here, the Bristleback have pitched their camps on my people's land. Go and see how many have come."
+progress = "Have you found them?"
+completion = "More than I feared. Then we drive them back."
+money = 1050
+tokens = 1
+explore = { place = "The Bristleback Camps", position = [-1900.0, -2150.0], radius = 30.0 }
+
+[[quest]]
+id = 91100
+kind = "hunting"
+giver = 90105
+level = 17
+title = "Water Seekers"
+objectives = "Kill 8 Bristleback Water Seekers, then return to Mahu Stormhoof at the Crossroads."
+details = "The Bristleback's water seekers dig our wells dry. Stop them."
+progress = "Our wells still run low."
+completion = "The water will come back. Thank you."
+money = 1050
+tokens = 1
+kill = [[3260, 8]]
 
 [[quest]]
 id = 91012
+kind = "hunting"
 giver = 90105
 level = 18
 title = "Bristleback Encroachment"
 objectives = "Kill 6 Bristleback Hunters and 6 Bristleback Thornweavers, then return to Mahu Stormhoof at the Crossroads."
 details = "In the south the Bristleback push into the land of my people. Drive back their hunters and thornweavers."
 progress = "The Bristleback still press north."
-completion = "The Earth Mother thanks you. Take this."
+completion = "The Earth Mother thanks you. Past them, Camp Taurajo holds the south. Go there when you are ready."
 money = 1200
-tokens = 0
+tokens = 1
 kill = [[3258, 6], [3261, 6]]
 
 [[quest]]
-id = 91013
+id = 91101
+kind = "hunting"
 giver = 90105
-level = 20
+level = 18
 title = "Thunder Lizard Horns"
 objectives = "Bring 6 Thunder Lizard Horns to Mahu Stormhoof at the Crossroads."
-details = "The thunder lizards of the south grow horns that our shamans grind for their rites. Bring me six."
-progress = "The thunder still rolls in the south."
-completion = "Six horns. The shamans will be glad. Two Tokens for you."
-money = 1500
-tokens = 2
-collect = [{ item = 4895, count = 6, chance = 80, from = [3240, 3239] }]
+details = "The Stormsnout thunder lizards in the south grow wilder by the day. Bring me their horns."
+progress = "The horns?"
+completion = "Fine horns. My people will make use of them."
+money = 1200
+tokens = 1
+collect = [{ item = 4895, count = 6, chance = 60, from = [3240] }]
 
 [[quest]]
-id = 91014
+id = 91102
+kind = "hunting"
 giver = 90105
-level = 21
-title = "Thunderhawk Wings"
-objectives = "Bring 6 Thunderhawk Wings to Mahu Stormhoof at the Crossroads."
-details = "The thunderhawks dive on travellers in the southern plains. Bring me their wings."
-progress = "The thunderhawks still hunt."
-completion = "The skies are a little safer. Two Tokens, and my thanks."
-money = 1600
-tokens = 2
-collect = [{ item = 5164, count = 6, chance = 80, from = [3247, 3424, 3249] }]
+level = 18
+title = "Snarlers in the Grass"
+objectives = "Kill 8 Hecklefang Snarlers, then return to Mahu Stormhoof at the Crossroads."
+details = "The snarlers follow the Bristleback and eat what they leave. Kill them."
+progress = "The snarlers still follow."
+completion = "Good. Fewer mouths in the grass."
+money = 1200
+tokens = 1
+kill = [[4129, 8]]
 
-# ── Blackthorn Ridge (levels 22-24) ───────────────────────────────────────────────────────────
+[[quest]]
+id = 91103
+kind = "hunting"
+giver = 90105
+level = 19
+title = "Thunderhawk Wings"
+objectives = "Bring 5 Thunderhawk Wings to Mahu Stormhoof at the Crossroads."
+details = "The thunderhawks nest in the south. Their wings are sacred to my people. Bring me five."
+progress = "The wings?"
+completion = "Thank you. These will be honoured."
+money = 1350
+tokens = 1
+collect = [{ item = 5164, count = 5, chance = 60, from = [3247] }]
+
+[[quest]]
+id = 91104
+kind = "hunting"
+giver = 90105
+level = 19
+title = "Bristleback Geomancers"
+objectives = "Kill 8 Bristleback Geomancers, then return to Mahu Stormhoof at the Crossroads."
+details = "The Bristleback's geomancers twist the earth itself. Kill them."
+progress = "The earth still groans."
+completion = "The earth is quieter. Thank you."
+money = 1350
+tokens = 1
+kill = [[3263, 8]]
+
+[[quest]]
+id = 91105
+kind = "hunting"
+giver = 90105
+level = 19
+title = "Wanted: Geopriest Gukk'rok"
+objectives = "Kill Geopriest Gukk'rok, then return to Mahu Stormhoof at the Crossroads."
+details = "Geopriest Gukk'rok leads the Bristleback's push north. Kill him."
+progress = "Gukk'rok still leads them."
+completion = "The Bristleback have lost their priest. Now Camp Taurajo is in reach."
+money = 1350
+tokens = 1
+kill = [[5863, 1]]
+
+# ── The outer ring (levels 20-30): Camp Taurajo's givers ─────────────────────────────────────────
+# Four givers at Camp Taurajo (content/hub.toml), one for each of the southern Hunting Grounds:
+# the Thunderhead plains around the camp, the Field of Giants, Blackthorn Ridge, and the Razorfen
+# edge, The Barrens' capstone. Each rare kept in the ring has a "Wanted" quest, and each Hunting
+# Ground has one find quest.
+
+# ── The Thunderhead Plains (levels 20-25) ────────────────────────────────────────────────────
+
+[[quest]]
+id = 91013
+kind = "hunting"
+giver = 190042
+level = 20
+title = "Thunder Lizard Horns"
+objectives = "Bring 6 Thunder Lizard Horns to Kerna Plainstalker at Camp Taurajo."
+details = "The thunderheads graze all around the camp, and they charge anyone who walks too close. Our shamans grind their horns for their rites. Bring me six."
+progress = "The thunder still rolls on the plains."
+completion = "Six horns. The shamans will be glad. Your coin, and a Token."
+money = 1500
+tokens = 1
+collect = [{ item = 4895, count = 6, chance = 80, from = [3239] }]
+
+[[quest]]
+id = 91021
+kind = "hunting"
+giver = 190042
+level = 21
+title = "Cloudscrapers"
+objectives = "Kill 5 Thunderhawk Cloudscrapers, then return to Kerna Plainstalker at Camp Taurajo."
+details = "The cloudscrapers circle over the plains east of the camp and dive on the refugee carts. Bring them down."
+progress = "I still see them circling."
+completion = "The carts come in whole today. Thank you."
+money = 1600
+tokens = 1
+kill = [[3424, 5]]
+
+[[quest]]
+id = 91022
+kind = "hunting"
+giver = 190042
+ender = 190045
+level = 21
+title = "The Plains Watch"
+objectives = "Find Scout Tomah, who watches the thunderheads south-east of Camp Taurajo."
+details = "Scout Tomah keeps watch out on the plains, past the thunderhead herds. She has seen something she does not like. Go and hear it from her."
+progress = "Kerna sent you? Keep your voice down."
+completion = "Out here you hear everything. The herds are restless, and one of them leads the rest."
+money = 1000
+tokens = 1
+
+[[quest]]
+id = 91023
+kind = "hunting"
+giver = 190045
+after = 91022
+level = 24
+title = "Wanted: Owatanka"
+objectives = "Kill Owatanka, then return to Scout Tomah."
+details = "Owatanka is the oldest thunderhead on these plains, and the herds follow him. He has trampled two of our patrols. End him."
+progress = "Owatanka still leads the herd."
+completion = "Without him the herds scatter. The plains are quieter."
+money = 2400
+tokens = 1
+kill = [[3473, 1]]
+
+[[quest]]
+id = 91024
+kind = "hunting"
+giver = 190042
+level = 25
+title = "Wanted: Azzere the Skyblade"
+objectives = "Kill Azzere the Skyblade, then return to Kerna Plainstalker at Camp Taurajo."
+details = "A great thunderhawk the scouts call Azzere hunts south of the camp. She has taken a kodo calf in front of my eyes. Bring her down."
+progress = "Azzere still rules the sky."
+completion = "Azzere's feathers. The sky is ours again."
+money = 2600
+tokens = 1
+kill = [[5834, 1]]
+
+# ── The Field of Giants (levels 22-27) ───────────────────────────────────────────────────────
 
 [[quest]]
 id = 91015
-giver = 90106
+kind = "hunting"
+giver = 190043
 level = 22
 title = "Silithid Antennae"
-objectives = "Bring 8 Twitching Antennae to Ula'zi at the Crossroads."
-details = "Da silithid be crawlin' out of da south. Cut off dere antennae and bring dem to me."
-progress = "Da bugs still be crawlin'."
-completion = "Dey still be twitchin'! Good. Two Tokens for you, mon."
+objectives = "Bring 8 Twitching Antennae to Halga Earthsong at Camp Taurajo."
+details = "The silithid dig among the giants' bones to the south. Every year their hives come closer, and this year the ground hums with them. Cut off their antennae and bring them to me."
+progress = "The ground still hums."
+completion = "They still twitch. Good. Here is your pay."
 money = 1800
-tokens = 2
+tokens = 1
 collect = [{ item = 7119, count = 8, chance = 80, from = [3250, 3251, 3252] }]
 
 [[quest]]
+id = 91025
+kind = "hunting"
+giver = 190043
+level = 22
+title = "Stormhide Herds"
+objectives = "Kill 8 Stormhides, then return to Halga Earthsong at Camp Taurajo."
+details = "The stormhides are driven north by the silithid, and they trample all in their path. Thin the herds before they reach the camp."
+progress = "The stormhides still come."
+completion = "The herds have turned back. Thank you."
+money = 1800
+tokens = 1
+kill = [[3238, 8]]
+
+[[quest]]
+id = 91014
+kind = "hunting"
+giver = 190043
+level = 23
+title = "Thunderhawk Wings"
+objectives = "Bring 6 Thunderhawk Wings to Halga Earthsong at Camp Taurajo."
+details = "The greater thunderhawks dive on travellers above the Field of Giants. Bring me their wings."
+progress = "The thunderhawks still hunt."
+completion = "The skies are a little safer. Your coin, and my thanks."
+money = 2000
+tokens = 1
+collect = [{ item = 5164, count = 6, chance = 80, from = [3249] }]
+
+[[quest]]
 id = 91016
-giver = 90106
+kind = "hunting"
+giver = 190043
 level = 23
 title = "Hecklefang Stalkers"
-objectives = "Kill 10 Hecklefang Stalkers, then return to Ula'zi at the Crossroads."
-details = "Da Hecklefang stalkers be pickin' off anyone who walk alone down south. Hunt dem."
-progress = "Da hyenas still be laughin'."
-completion = "No more laughin' from dem. Here be your pay."
+objectives = "Kill 10 Hecklefang Stalkers, then return to Halga Earthsong at Camp Taurajo."
+details = "The Hecklefang stalkers follow the herds and pick off anyone who walks alone in the Field of Giants. Hunt them."
+progress = "The hyenas still laugh."
+completion = "No more laughing from them. Here is your pay."
 money = 2000
-tokens = 0
+tokens = 1
 kill = [[4128, 10]]
 
 [[quest]]
-id = 91017
-giver = 90106
+id = 91026
+kind = "hunting"
+giver = 190043
 level = 24
+title = "Field of Giants"
+objectives = "Explore the Field of Giants, then return to Halga Earthsong at Camp Taurajo."
+details = "Walk among the giants' bones, where the silithid hives break the ground, and tell me how close they have come."
+progress = "Have you seen the hives?"
+completion = "So close. The Earth Mother's bones should not hold such things."
+money = 1400
+tokens = 1
+explore = { place = "Field of Giants", position = [-3170.0, -1950.0], radius = 40.0 }
+
+[[quest]]
+id = 91027
+kind = "hunting"
+giver = 190043
+level = 24
+title = "Wanted: Silithid Harvester"
+objectives = "Kill the Silithid Harvester, then return to Halga Earthsong at Camp Taurajo."
+details = "One silithid is bigger than the rest, and the others feed it. Kill the harvester and the hive goes hungry."
+progress = "The harvester still feeds."
+completion = "The hive will starve a while. Well done."
+money = 2400
+tokens = 1
+kill = [[3253, 1]]
+
+[[quest]]
+id = 91028
+kind = "hunting"
+giver = 190043
+level = 24
+title = "Wanted: Thunderstomp"
+objectives = "Kill Thunderstomp, then return to Halga Earthsong at Camp Taurajo."
+details = "Thunderstomp is a thunderhead the size of a hut, south of the Field of Giants. Our hunters will not go near him. You will."
+progress = "Thunderstomp still shakes the ground."
+completion = "The ground is still at last."
+money = 2400
+tokens = 1
+kill = [[5832, 1]]
+
+[[quest]]
+id = 91029
+kind = "hunting"
+giver = 190043
+level = 25
+title = "Wanted: Washte Pawne"
+objectives = "Kill Washte Pawne, then return to Halga Earthsong at Camp Taurajo."
+details = "Washte Pawne is a great white thunderhawk that hunts the Field of Giants. Our elders call it an ill omen in these dark days. I call it a beast to be killed."
+progress = "The white hawk still flies."
+completion = "Omen or not, it is dead now."
+money = 2600
+tokens = 1
+kill = [[3472, 1]]
+
+[[quest]]
+id = 91030
+kind = "hunting"
+giver = 190043
+level = 27
+title = "Wanted: Brontus"
+objectives = "Kill Brontus, then return to Halga Earthsong at Camp Taurajo."
+details = "Brontus is an old kodo bull who wanders near the giants. He has gone mad with age and crushed a caravan. Put him to rest."
+progress = "Brontus still wanders."
+completion = "He rests with the giants now."
+money = 3000
+tokens = 1
+kill = [[5827, 1]]
+
+# ── Blackthorn Ridge (levels 21-26) ──────────────────────────────────────────────────────────
+
+[[quest]]
+id = 91031
+kind = "hunting"
+giver = 90106
+level = 21
+title = "Razormane Pathfinders"
+objectives = "Kill 6 Razormane Pathfinders, then return to Ula'zi at Camp Taurajo."
+details = "Da Razormane pathfinders scout da way from Blackthorn Ridge to dis camp. Kill dem before dey find it."
+progress = "Da pathfinders still be scoutin'."
+completion = "Dey lost da path. Good work, mon."
+money = 1600
+tokens = 1
+kill = [[3456, 6]]
+
+[[quest]]
+id = 91017
+kind = "hunting"
+giver = 90106
+level = 23
 title = "Razormane Warbands"
-objectives = "Kill 6 Razormane Stalkers and 6 Razormane Seers, then return to Ula'zi at the Crossroads."
+objectives = "Kill 6 Razormane Stalkers and 6 Razormane Seers, then return to Ula'zi at Camp Taurajo."
 details = "Da Razormane be gatherin' warbands near Blackthorn Ridge. Break dem before dey march."
 progress = "Da warbands still be gatherin'."
 completion = "Dey won't be marchin' now. Your pay, mon."
 money = 2200
-tokens = 0
+tokens = 1
 kill = [[3457, 6], [3458, 6]]
 
+[[quest]]
+id = 91032
+kind = "hunting"
+giver = 90106
+level = 23
+title = "Blackthorn Ridge"
+objectives = "Explore Blackthorn Ridge, then return to Ula'zi at Camp Taurajo."
+details = "I need to know how many Razormane be on da ridge. Go look, and come back alive."
+progress = "You seen da ridge yet?"
+completion = "Dat many? Den we got work to do."
+money = 1400
+tokens = 1
+explore = { place = "Blackthorn Ridge", position = [-3880.0, -1730.0], radius = 40.0 }
+
+[[quest]]
+id = 91033
+kind = "hunting"
+giver = 90106
+level = 25
+title = "Warfrenzy"
+objectives = "Kill 8 Razormane Warfrenzies, then return to Ula'zi at Camp Taurajo."
+details = "Da warfrenzies be da Razormane's best fighters. Dey lead da raids. Kill eight."
+progress = "Da warfrenzies still be fightin'."
+completion = "Dey not so frenzied now. Here be your pay."
+money = 2600
+tokens = 1
+kill = [[3459, 8]]
+
+[[quest]]
+id = 91034
+kind = "hunting"
+giver = 90106
+level = 25
+title = "The Razormane Chiefs"
+objectives = "Kill Kuz, Nak and Lok Orcbane, then return to Ula'zi at Camp Taurajo."
+details = "Three chiefs lead da Razormane on Blackthorn Ridge: Kuz, Nak and Lok Orcbane. Kill all three, and da warbands fall apart."
+progress = "Da chiefs still be givin' orders."
+completion = "All three? Da Razormane will be fightin' each other for weeks."
+money = 2600
+tokens = 1
+kill = [[3436, 1], [3434, 1], [3435, 1]]
+
+[[quest]]
+id = 91035
+kind = "hunting"
+giver = 90106
+level = 26
+title = "Wanted: Hagg Taurenbane"
+objectives = "Kill Hagg Taurenbane, then return to Ula'zi at Camp Taurajo."
+details = "Hagg Taurenbane be da Razormane's champion. He wear tauren horns on his belt. Da braves want him dead, and so do I."
+progress = "Hagg still be wearin' dem horns."
+completion = "Da braves will sing about dis. Your pay, mon."
+money = 2800
+tokens = 1
+kill = [[5859, 1]]
+
+# ── The Razorfen Edge (levels 24-30), The Barrens' capstone ──────────────────────────────────
+
+[[quest]]
+id = 91036
+kind = "hunting"
+giver = 190044
+level = 24
+title = "Razorfen Servitors"
+objectives = "Kill 4 Razorfen Servitors, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "The Razorfen guard their thorn mounds at the far south of the Barrens. Their servitors haul and dig at its edge. Start with them."
+progress = "The servitors still dig."
+completion = "A start. The Razorfen will notice."
+money = 2200
+tokens = 1
+kill = [[6132, 4]]
+
+[[quest]]
+id = 91037
+kind = "hunting"
+giver = 190044
+level = 27
+title = "Razorfen Battleguards"
+objectives = "Kill 10 Razorfen Battleguards, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "The battleguards hold the edge of the thorns. They are the strongest quilboar in the Barrens. Break them."
+progress = "The battleguards still stand."
+completion = "You fight like a brave twice your age. Here."
+money = 3000
+tokens = 1
+kill = [[7873, 10]]
+
+[[quest]]
+id = 91038
+kind = "hunting"
+giver = 190044
+level = 28
+title = "Razorfen Thornweavers"
+objectives = "Kill 8 Razorfen Thornweavers, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "The thornweavers make the bramble walls grow. Kill them and the thorns stop spreading north."
+progress = "The thorns still spread."
+completion = "The thorns are still. Good."
+money = 3200
+tokens = 1
+kill = [[7874, 8]]
+
+[[quest]]
+id = 91039
+kind = "hunting"
+giver = 190044
+level = 29
+title = "Razorfen Kraul"
+objectives = "Explore Razorfen Kraul, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "Go to the mouth of the Kraul, where the thorns are thickest, and tell me what you find."
+progress = "What did you see at the Kraul?"
+completion = "Tracks in robes, and none of them quilboar? The Razorfen have had visitors from the south, at dusk, and they leave before dawn. I do not like it."
+money = 2400
+tokens = 1
+explore = { place = "Razorfen Kraul", position = [-4470.0, -1690.0], radius = 40.0 }
+
+[[quest]]
+id = 91040
+kind = "hunting"
+giver = 190044
+level = 30
+title = "The Edge of the Barrens"
+objectives = "Kill 8 Razorfen Battleguards and 6 Razorfen Thornweavers, then return to Mosarn Thornwatch at Camp Taurajo."
+details = "One last push. Break the Razorfen's edge, and the south is safe for the refugees for a while."
+progress = "The edge still holds."
+completion = "You have done all the Barrens can ask of you. Look past it now: the Thousand Needles lie south, the Dustwallow east, and Stonetalon west. The Hammer's twilight reaches all of them."
+money = 3600
+tokens = 1
+kill = [[7873, 8], [7874, 6]]
+
+# ── Know the Land ───────────────────────────────────────────────────────────────────────────────
+
+# Every Barrens subzone the client's world map draws (`WorldMapOverlay.dbc`'s Barrens rows).
+
+[[quest]]
+id = 93001
+kind = "once"
+giver = 90112
+level = 10
+min_level = 1
+title = "Know the Land"
+objectives = "Discover every part of The Barrens, then return to Scout Ahanu in the Crossroads watchtower."
+details = "From up here I can name every hill and hollow between the Mor'shan Rampart and the Great Lift. Naming them is not knowing them.$B$BWalk them all, $N: the oases, the Dry Hills, the Merchant Coast, the Razorfen in the south. Come back when there is no fog left on your map."
+progress = "There is still fog on your map."
+completion = "Then you know the land as well as any scout. Take these. You earned them on your feet."
+money = 0
+tokens = 5
+discover = [
+  359, 378, 379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 390, 391, 392,
+  1316, 1697, 1698, 1699, 1700, 1701, 1702, 1703, 1704, 1717,
+]
+
 # ── Advancement Quests ──────────────────────────────────────────────────────────────────────────
-# Offered by the Warrior trainer (Uzzek, content/hub.toml) in his gossip menu, to a character of
-# `advancement.from` at that Calling's Tier Cap. They ask for nothing but a word: accepted and
-# handed in at the trainer. Handing one in advances the character into `advancement.to`
-# (GLOSSARY.md, Advancement). `zone_or_sort = -81` files them under the quest log's Warrior
-# header (QuestSort.dbc 81). Texts: data/twilights-eve/callings.json, `advancement_quest`.
+# Offered by the trainer of the Calling's Line (content/hub.toml) in the trainer's gossip menu,
+# to a character of `advancement.from` at that Calling's Tier Cap: Uzzek, the Vanguard Trainer,
+# gives the Vanguard line's, and each other Tier 1 line has its own trainer. They ask for nothing
+# but a word: accepted and handed in at the trainer. Handing one in advances the character into
+# `advancement.to` (GLOSSARY.md, Advancement). `zone_or_sort` files them under a quest log header:
+# the Vanguard line's under Warrior (QuestSort.dbc 81), the others under their class's. Texts:
+# data/twilights-eve/callings.json, `advancement_quest`.
 
 [[quest]]
 id = 64001
+kind = "advancement"
 giver = 5810
 level = 10
 zone_or_sort = -81
 advancement = { from = "basic_warrior", to = "vanguard" }
 title = "The Warrior's Path"
-objectives = "Speak with the Warrior trainer at the Crossroads to take up the warrior's path."
+objectives = "Speak with the Vanguard Trainer at the Crossroads to take up the warrior's path."
 details = "You have learned all a Basic Warrior can learn, $N. Strength alone carried you this far; from here, discipline must carry you further.$B$BTake up the warrior's path and you begin again, untested, among the youngest of our blades. But you will not be the same fighter you were. Your body remembers. Your arm is stronger.$B$BSay the word, and it begins."
 progress = "Say the word, $N, and it begins."
 completion = "Then it is done. Forget your old habits, $N: you are a Vanguard now, and a Vanguard starts over. Go and earn your scars again."
@@ -269,6 +1476,7 @@ tokens = 0
 # Ironclad (Tier 2) has no kit: the quest is offered at Vanguard's cap and never finishes.
 [[quest]]
 id = 64002
+kind = "advancement"
 giver = 5810
 level = 30
 zone_or_sort = -81
@@ -283,12 +1491,13 @@ tokens = 0
 
 [[quest]]
 id = 64003
+kind = "advancement"
 giver = 5810
 level = 30
 zone_or_sort = -81
 advancement = { from = "vanguard", to = "zealot" }
 title = "The Zealot's Vow"
-objectives = "Speak with the Warrior trainer at the Crossroads to swear the Zealot's vow."
+objectives = "Speak with the Vanguard Trainer at the Crossroads to swear the Zealot's vow."
 details = "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word."
 progress = "Say the word, $N, and swear the vow."
 completion = "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you."
@@ -298,6 +1507,7 @@ tokens = 0
 # Templar (Tier 3) has no kit yet: the quest is offered at Zealot's cap and never finishes.
 [[quest]]
 id = 64004
+kind = "advancement"
 giver = 5810
 level = 50
 zone_or_sort = -81
@@ -309,3 +1519,109 @@ progress = "The Templars have not yet sent for you, $N. Patience."
 completion = "The Templars have not yet sent for you, $N. Patience."
 money = 0
 tokens = 0
+
+# Cutthroat (Tier 1) has no kit yet: its trainer offers the quest at Basic Warrior's cap, and it
+# never finishes.
+[[quest]]
+id = 64005
+kind = "advancement"
+giver = 190030
+level = 10
+zone_or_sort = -162
+advancement = { from = "basic_warrior", to = "cutthroat", completable = false }
+title = "The Cutthroat's Mark"
+objectives = "Await the Cutthroats' summons."
+details = "You swing that blade like it owe you money, $N. Strength be fine, but da Cutthroats fight smarter: quick feet, a knife in da dark, and gone before da body fall.$B$BDa Cutthroats be watchin' you. When dey ready to take you in, I send word. Until den, keep your blade sharp and your mouth shut."
+progress = "Da Cutthroats not be ready for you yet, $N. Patience."
+completion = "Da Cutthroats not be ready for you yet, $N. Patience."
+money = 0
+tokens = 0
+
+# Initiate (Tier 1) has no kit yet: its trainer offers the quest at Basic Warrior's cap, and it
+# never finishes.
+[[quest]]
+id = 64006
+kind = "advancement"
+giver = 190031
+level = 10
+zone_or_sort = -161
+advancement = { from = "basic_warrior", to = "initiate", completable = false }
+title = "The Initiate's Spark"
+objectives = "Await the Initiates' summons."
+details = "There is more in you than a strong arm, $N. I feel it when you pass: a spark, waiting for someone to fan it.$B$BThe Initiates draw on mana, not rage, and strike from afar with fire and frost. The circle is not ready to open to you yet. When it is, I will send word. Until then, watch the sky at dusk."
+progress = "The circle has not yet opened to you, $N. Patience."
+completion = "The circle has not yet opened to you, $N. Patience."
+money = 0
+tokens = 0
+
+# Witch Hunter (Tier 1) has no kit yet: its trainer offers the quest at Basic Warrior's cap, and it
+# never finishes.
+[[quest]]
+id = 64007
+kind = "advancement"
+giver = 190032
+level = 10
+zone_or_sort = -261
+advancement = { from = "basic_warrior", to = "witch_hunter", completable = false }
+title = "The Witch Hunter's Creed"
+objectives = "Await the Witch Hunters' summons."
+details = "The Twilight's witches hide behind beasts and storms, $N. Witch Hunters go in after them: a blade in hand, the storm in their weapons, the spirits at their backs.$B$BThe lodge is not ready to take you yet. When it is, I will send word. Until then, learn the wind."
+progress = "The lodge has not yet sent for you, $N. Patience."
+completion = "The lodge has not yet sent for you, $N. Patience."
+money = 0
+tokens = 0
+
+# ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
+# The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
+# Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):
+# its six Deviate Ravagers and two Deviate Guardians, and Lady Anacondra. `zone_or_sort` 718 files
+# them under the Wailing Caverns in the quest log (`AreaTable.dbc`).
+
+[[quest]]
+id = 92001
+kind = "repeatable"
+giver = 5767
+level = 20
+min_level = 16
+zone_or_sort = 718
+title = "The Nightmare's Brood"
+objectives = "Kill 6 Deviate Ravagers and 2 Deviate Guardians in the Wailing Caverns, then return to Nalpak on the skull."
+details = "Naralex's nightmare has darkened under the twilight, $N, and the caverns below breed to its shape. The Deviates that prowl the first tunnels grow larger and crueller with every night that does not end.$B$BGo down through the mouth beneath us and cut them back. They will grow again. Come back when they do."
+progress = "The Deviates still prowl the tunnels below."
+completion = "The tunnels are quieter, for a while. The nightmare will spawn more; it always does. Come back to me when it has."
+money = 2000
+tokens = 3
+kill = [[3636, 6], [3637, 2]]
+
+[[quest]]
+id = 92002
+kind = "repeatable"
+giver = 5768
+level = 20
+min_level = 16
+zone_or_sort = 718
+title = "Deviate Hides"
+objectives = "Bring 5 Deviate Hides from the Deviates of the Wailing Caverns to Ebru on the skull."
+details = "The hides of the Deviates below carry the taint of Naralex's dream. Under this dim sky the taint runs deeper than it ever did, and I must learn how deep before it reaches the oasis.$B$BBring me their hides from the tunnels beneath the skull. As many as you can carry; I will always need more."
+progress = "Have you brought the hides?"
+completion = "Darker than the last. The nightmare is feeding on something. Take this, and come back with more when you can."
+money = 2000
+tokens = 3
+collect = [{ item = 6443, count = 5, chance = 80, from = [3636, 3637] }]
+
+[[quest]]
+id = 92003
+kind = "repeatable"
+giver = 5767
+level = 20
+min_level = 16
+zone_or_sort = 718
+title = "The Fanglord"
+objectives = "Slay Lady Anacondra in the Wailing Caverns, then return to Nalpak on the skull."
+details = "Lady Anacondra was one of us once. Now she is a Fanglord, and she guards the nightmare as if it were her own dream. Under the twilight it may well be.$B$BFollow the tunnels to her hall and end her. The dream will raise her again, $N. Each time it does, end her again."
+progress = "The Fanglord still guards the dream."
+completion = "Then she sleeps, for now. The nightmare will wake her soon enough, and I will need you again when it does."
+money = 2500
+tokens = 3
+kill = [[3671, 1]]
+

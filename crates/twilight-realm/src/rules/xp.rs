@@ -22,6 +22,19 @@ pub fn xp_to_next(level: u8) -> Option<u32> {
         .copied()
 }
 
+/// What discovering an area pays a character of `level` before the Tier XP Rate: an eighth of the
+/// XP to the next level; nothing at the end of the game.
+pub fn discovery_xp(level: u8) -> u32 {
+    xp_to_next(level).map_or(0, |next| next / 8)
+}
+
+/// The Tier XP Rate (`GLOSSARY.md`): what every XP award a character of `tier` earns is
+/// multiplied by, before the dev multiplier. ×1 at Tier 0, ×3 at Tier 1, ×5 at Tier 2, ×7 at
+/// Tier 3.
+pub fn tier_rate(tier: u8) -> u32 {
+    2 * u32::from(tier) + 1
+}
+
 /// The highest mob level that is gray (worth nothing) to a player of `level` (`GetGrayLevel`).
 pub fn gray_level(level: u8) -> u8 {
     match level {

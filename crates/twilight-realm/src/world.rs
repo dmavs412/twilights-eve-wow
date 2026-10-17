@@ -29,10 +29,12 @@ use crate::Host;
 use power::Power;
 
 mod death;
+mod discovery;
 mod dungeon;
 mod food;
 mod procs;
 mod regen;
+mod rest;
 
 pub(crate) use dungeon::come_out;
 
@@ -45,6 +47,9 @@ const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
     swim_back: 2.5,
     turn_rate: std::f32::consts::PI,
 };
+
+/// The game time the sky is held at (hours, minutes): evening twilight, after the 21:00 sunset.
+const DUSK: (u8, u8) = (21, 15);
 
 /// A player's combat reach (`DEFAULT_COMBAT_REACH`).
 const PLAYER_COMBAT_REACH: f32 = 1.5;
@@ -65,6 +70,8 @@ const SKILL_UNARMED: u32 = 162;
 pub(crate) struct Ticked {
     /// The character gained a level: save it.
     pub(crate) leveled: bool,
+    /// The character discovered an area: save it.
+    pub(crate) discovered: bool,
 }
 
 /// The player's side of a fight.
@@ -127,6 +134,8 @@ pub(crate) struct InWorld {
     meal: Option<food::Meal>,
     /// A worldport waits for the client's ack.
     transfer: bool,
+    /// Standing in an inn: `PLAYER_FLAGS_RESTING` is up and the pool fills.
+    resting: bool,
 }
 
 impl InWorld {
@@ -153,12 +162,14 @@ impl InWorld {
             orientation: c.orientation,
             needs_ack: false,
         });
-        // Mid-afternoon at the game clock's real-time pace (one game minute a minute).
+        events.push(c.bind.update());
+        // The dusk clock: evening twilight, just after the 21:00 sunset, and a timescale of zero
+        // so the client never advances it. The sky over the world stays at dusk.
         events.push(SessionEvent::TimeSpeed {
-            hours: 15,
-            minutes: 0,
+            hours: DUSK.0,
+            minutes: DUSK.1,
             day_serial: 0,
-            timescale: 1.0 / 60.0,
+            timescale: 0.0,
         });
         events.push(cast::spell_book(c, wall));
         events.extend(crate::talents::spell_mods(c));
@@ -192,6 +203,7 @@ impl InWorld {
             respawn: death::Respawn::HUB,
             meal: None,
             transfer: false,
+            resting: crate::rest::in_inn(c.map, c.position),
         };
         events.push(w.player_create(c));
         w
@@ -280,7 +292,11 @@ impl InWorld {
             self.population
                 .update(dt, me, self.map, host, &mut self.mobs, events);
         }
-        self.hub.update(me, self.map, host, events);
+        self.hub.update(dt, me, self.map, host, events);
+        if self.player.alive() {
+            self.discover(host, c, events, &mut ticked);
+        }
+        self.rest(dt, c, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting
@@ -652,20 +668,21 @@ impl InWorld {
         } else {
             xp::Elite::No
         };
-        let base_xp = xp::kill_xp(c.level, mob.level(), elite);
-        let gained = if at_tier_cap(c) {
-            0
-        } else {
-            self.dev.xp(base_xp)
-        };
+        let (victim, base_xp) = (mob.guid, xp::kill_xp(c.level, mob.level(), elite));
+        let gained = self.scaled_xp(c, base_xp);
         if gained > 0 {
+            // Rested XP doubles the kill, multiplied XP and all, while the pool lasts.
+            let rested = crate::rest::spend(c, gained);
             events.push(SessionEvent::XpGain(XpGain {
-                victim: mob.guid,
-                total: gained,
+                victim,
+                total: gained + rested,
                 base: gained,
                 kill: true,
             }));
-            ticked.leveled |= self.give_xp(c, gained, events);
+            if rested > 0 {
+                events.push(values(self.guid, &crate::rest::pairs(c)));
+            }
+            ticked.leveled |= self.give_xp(c, gained + rested, events);
         }
         self.proc(
             crate::rules::procs::Happened {
@@ -677,27 +694,33 @@ impl InWorld {
             rng,
             events,
         );
-        let dead = self.mobs[i].guid;
-        self.auras_die_with(dead, events);
+        self.auras_die_with(victim, events);
         crate::quests::credit_kill(c, entry, events);
     }
 
-    /// Pays a quest's `base` XP, scaled by the dev multiplier as kill XP is; nothing at the Tier
-    /// Cap. What it paid.
+    /// Pays a quest's `base` XP, scaled by the Tier XP Rate and the dev multiplier as kill XP is;
+    /// nothing at the Tier Cap. What it paid.
     pub(crate) fn reward_xp(
         &mut self,
         c: &mut Char,
         base: u32,
         events: &mut Vec<SessionEvent>,
     ) -> u32 {
-        if at_tier_cap(c) {
-            return 0;
-        }
-        let gained = self.dev.xp(base);
+        let gained = self.scaled_xp(c, base);
         if gained > 0 {
             self.give_xp(c, gained, events);
         }
         gained
+    }
+
+    /// What an award of `base` XP pays `c`: times the Tier XP Rate, then the dev multiplier;
+    /// nothing at the Tier Cap.
+    fn scaled_xp(&self, c: &Char, base: u32) -> u32 {
+        if at_tier_cap(c) {
+            0
+        } else {
+            self.dev.xp(at_tier_rate(c, base))
+        }
     }
 
     /// Adds `amount` XP, levelling up as often as it covers (`Player::GiveXP`). Whether a level
@@ -775,6 +798,11 @@ impl InWorld {
 /// Whether `c` stands at their Calling's Tier Cap, where XP stops until they advance.
 fn at_tier_cap(c: &Char) -> bool {
     c.level >= crate::callings::of(c.calling).cap
+}
+
+/// An award of `base` XP times `c`'s Tier XP Rate; the dev multiplier goes on top.
+fn at_tier_rate(c: &Char, base: u32) -> u32 {
+    base * xp::tier_rate(crate::callings::of(c.calling).tier)
 }
 
 /// `mob` turns on the player: `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
@@ -913,7 +941,7 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
 /// The player's own descriptor at login.
 fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectFields {
     let display = content::display_id(c.race, c.gender);
-    let [skin, face, hair_style, hair_color, facial_hair] = c.look.map(u32::from);
+    let [skin, face, hair_style, hair_color, _] = c.look.map(u32::from);
     let kind = PowerKind::of_class(c.class());
     let mut pairs = vec![
         (OBJECT_FIELD_TYPE, TYPE_PLAYER),
@@ -946,19 +974,21 @@ fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectField
             PLAYER_BYTES,
             skin | face << 8 | hair_style << 16 | hair_color << 24,
         ),
-        // Facial hair, then `REST_STATE_NORMAL` in the top byte.
-        (PLAYER_BYTES_2, facial_hair | 0x01 << 24),
+        crate::rest::flags(crate::rest::in_inn(c.map, c.position)),
         (PLAYER_BYTES_3, u32::from(c.gender)),
         (PLAYER_XP, c.xp),
         (PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)),
         (PLAYER_FIELD_WATCHED_FACTION_INDEX, u32::MAX),
     ];
     pairs.extend(guid_pairs(OBJECT_FIELD_GUID, c.guid));
+    // Facial hair and the rest state in `PLAYER_BYTES_2`, and the pool.
+    pairs.extend(crate::rest::pairs(c));
     pairs.extend(sheet_pairs(c, stats));
     pairs.push(cast::stance(c));
     pairs.push(crate::talents::points_pair(c));
     pairs.extend(crate::equipment::inventory_pairs(c));
     pairs.extend(crate::quests::log_pairs(c));
+    pairs.extend(crate::areas::explored_pairs(&c.discovered));
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {
         pairs.push((PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, float(1.0)));

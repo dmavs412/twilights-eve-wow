@@ -18,11 +18,15 @@ _Avoid_: Twilight (alone)
 ## Twilight's Eve
 
 **Hub**:
-The town at the centre of the world where the trainers and quest givers stand.
+The town at the centre of the world where the trainers, the innkeeper and most quest givers stand: the Crossroads.
 _Avoid_: base, city
 
+**Outpost**:
+A smaller camp further out from the Hub, with quest givers for the Hunting Grounds around it but no trainers: Camp Taurajo, for The Barrens' southern reaches.
+_Avoid_: camp (a group of mobs), town
+
 **Hunting Ground**:
-An area around the Hub where a character levels by killing mobs and doing repeatable quests.
+An area around the Hub where a character levels by killing mobs and doing Hunting Quests.
 _Avoid_: zone (a WoW map area, which a Hunting Ground may only partly cover)
 
 **Camp**:
@@ -56,12 +60,16 @@ _Avoid_: specialization, spec (that means a talent build in WoW), job, rank
 Moving from a Calling to one of the Callings it branches into at the next Tier. It resets the character's level, and the character comes out stronger than before.
 _Avoid_: upgrade, promotion, prestige
 
+**Hunting Quest**:
+A quest from a Hunting Ground's giver, about the mobs or places of that Hunting Ground. It can be done once per Tier: Advancement forgets every completed Hunting Quest and drops any still in the log, so each Tier does them again from level 1.
+_Avoid_: repeatable quest, daily
+
 **Repeatable Quest**:
-A kill or collect quest tied to a Hunting Ground that can be taken again as soon as it is handed in. At its own level it is worth about one level of XP; the reward shrinks as the character outlevels it.
+A quest tied to a Dungeon that can be taken again as soon as it is handed in. At its own level it is worth about one level of XP; the reward shrinks as the character outlevels it.
 _Avoid_: daily
 
 **Token**:
-A currency that Repeatable Quests can reward, traded at a Hub vendor for green (uncommon) gear.
+A currency that Hunting Quests and Repeatable Quests reward, traded at a Hub vendor for green (uncommon) gear.
 _Avoid_: mark, badge
 
 **Dungeon**:
@@ -76,7 +84,11 @@ _Avoid_: max level
 A quest from a Calling's trainer, offered at the Tier Cap. Completing it advances the character into that Calling, so choosing which one to finish is how a player chooses their branch.
 
 **Tier Bonus**:
-A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. It is what makes a character stronger after Advancement resets their level. Gear, gold and completed quests carry over; skills and talents are replaced by the new Calling's.
+A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. It is what makes a character stronger after Advancement resets their level. Gear and gold carry over, completed Hunting Quests do not; skills and talents are replaced by the new Calling's.
+
+**Tier XP Rate**:
+How much more XP a character earns from everything, set by their Tier: ×1 at Tier 0, ×3 at Tier 1, ×5 at Tier 2 and ×7 at Tier 3. It makes replaying the low levels after an Advancement quick.
+_Avoid_: XP bonus, rested XP (WoW's own, which is separate)
 
 **Talent Point**:
 Earned one per level. Talents are the only abilities a character must earn; every skill of the character's current Calling is available from level 1.

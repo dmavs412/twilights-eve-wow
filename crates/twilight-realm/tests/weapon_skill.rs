@@ -105,15 +105,17 @@ fn a_level_25_vanguard_knows_every_line_at_125() {
 
 #[test]
 fn a_level_up_raises_every_line_to_the_new_maximum() {
-    let (mut realm, me, mut events) = with_dev_xp(10, "vanguard", 1.0);
+    // The quest's 3800 XP twice over by `?xp=` and ×3 by the Tier XP Rate: 22800, two levels
+    // (7600 and 8100).
+    let (mut realm, me, mut events) = with_dev_xp(10, "vanguard", 2.0);
     assert_eq!(
         skill_lines(&descriptor(&events, me)),
         at_max(10, &PLATE_ARMOUR)
     );
     events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
     let now = descriptor(&events, me);
-    assert_eq!(now.unit_level(), Some(11));
-    assert_eq!(skill_lines(&now), at_max(11, &PLATE_ARMOUR));
+    assert_eq!(now.unit_level(), Some(12));
+    assert_eq!(skill_lines(&now), at_max(12, &PLATE_ARMOUR));
 }
 
 #[test]
@@ -124,6 +126,7 @@ fn advancement_brings_every_line_back_to_five_and_adds_plate() {
         at_max(10, &BASIC_ARMOUR)
     );
     let uzzek = giver(&events, UZZEK);
+    walk_up_to(&mut realm, uzzek);
     realm.handle(RealmCommand::QuestGiverQueryQuest {
         npc: uzzek,
         quest: THE_WARRIORS_PATH,

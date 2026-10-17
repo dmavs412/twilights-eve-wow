@@ -1,7 +1,7 @@
 //! **The Local Realm** (ADR 0001): Twilight's Eve's simulated server. It owns every character and
 //! every rule, takes [`RealmCommand`]s, is ticked by its host, and answers with the protocol's
 //! [`SessionEvent`]s, the same values a real server's stream decodes to. It knows nothing of Bevy
-//! or the client: ground height and line of sight come through [`Host`].
+//! or the client: ground height, line of sight and the area under a point come through [`Host`].
 //!
 //! ```text
 //! handle(RealmCommand) ─┐
@@ -37,6 +37,7 @@
 //! - **Identity**: the `Calling` enum (`content.rs`) is the save's key; a renamed Calling keeps its
 //!   old key as a serde alias. A skill two Callings share has identical data in both.
 
+mod areas;
 pub mod callings;
 mod characters;
 mod clock;
@@ -48,12 +49,14 @@ mod equipment;
 mod fields;
 mod generated;
 mod hub;
+mod inn;
 mod inventory;
 mod items;
 mod looting;
 mod mobs;
 mod population;
 mod quests;
+mod rest;
 mod rng;
 pub mod rules;
 mod save;
@@ -82,6 +85,9 @@ pub trait Host {
     fn ground_height(&self, map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32>;
     /// Whether nothing solid lies between `from` and `to` on `map`.
     fn line_of_sight(&self, map: u32, from: [f32; 3], to: [f32; 3]) -> bool;
+    /// The `AreaTable.dbc` id of the subzone (or zone) under `(x, y)` on `map`, the one a
+    /// character standing there discovers; `None` where the host knows of none.
+    fn area_at(&self, map: u32, x: f32, y: f32) -> Option<u32>;
 }
 
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
@@ -207,6 +213,10 @@ pub enum RealmCommand {
     NpcTextQuery {
         text_id: u32,
     },
+    /// Accept the innkeeper's bind confirm: bind the Hearthstone where the player stands.
+    BinderActivate {
+        binder: u64,
+    },
     /// Accept the respec the trainer priced: unlearn every talent for gold.
     TalentWipeConfirm {
         trainer: u64,
@@ -304,6 +314,8 @@ pub struct Realm {
     world: Option<world::InWorld>,
     events: Vec<SessionEvent>,
     storage: Vec<Storage>,
+    /// Lines for the host's log since the last drain.
+    log: Vec<String>,
     rng: rng::Rng,
     dev: DevMultipliers,
     /// The dev teleport asked for, waiting for the tick that can ask the host for ground.
@@ -383,7 +395,15 @@ impl Realm {
                 if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
                     if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
-                        self.characters.set_position(w.guid, position, orientation);
+                        let guid = w.guid;
+                        self.characters.set_position(guid, position, orientation);
+                        let explored = self
+                            .characters
+                            .get_mut(guid)
+                            .is_some_and(|c| quests::explore(c, &mut self.events));
+                        if explored {
+                            self.save(guid);
+                        }
                     }
                 }
             }
@@ -461,9 +481,10 @@ impl Realm {
             RealmCommand::GossipHello { guid } => self.gossip_hello(guid),
             RealmCommand::GossipSelectOption { guid, option } => self.gossip_select(guid, option),
             RealmCommand::NpcTextQuery { text_id } => {
-                self.events.extend(trainer::greeting(text_id));
+                self.events.extend(hub::greeting(text_id));
             }
             RealmCommand::TalentWipeConfirm { trainer } => self.talent_wipe(trainer),
+            RealmCommand::BinderActivate { binder } => self.binder_activate(binder),
             RealmCommand::QuestQuery { quest } => {
                 self.events.extend(quests::template_response(quest));
             }
@@ -565,7 +586,11 @@ impl Realm {
         w.since_save += dt;
         // Zoning saves (a hearth out of the Dungeon); the dead are saved once they release.
         let zoned = c.map != map;
-        if ticked.leveled || zoned || (w.since_save >= save::AUTOSAVE_SECS && !w.dead()) {
+        if ticked.leveled
+            || ticked.discovered
+            || zoned
+            || (w.since_save >= save::AUTOSAVE_SECS && !w.dead())
+        {
             w.since_save = 0.0;
             let guid = w.guid;
             self.save(guid);
@@ -597,6 +622,12 @@ impl Realm {
         std::mem::take(&mut self.storage)
     }
 
+    /// What the realm has to report since the last drain, for the host to log as warnings: what
+    /// a save named that the realm no longer has.
+    pub fn drain_log(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.log)
+    }
+
     /// A character's save, as [`Storage::Write`] carries it.
     pub fn export_character(&self, guid: u64) -> Option<String> {
         self.characters.get(guid).map(save::export)
@@ -604,7 +635,10 @@ impl Realm {
 
     /// Adds a character from its save, keeping its guid.
     pub fn import_character(&mut self, blob: &str) -> Result<u64, SaveError> {
-        self.characters.insert(save::import(blob)?)
+        let (c, notes) = save::import(blob)?;
+        let guid = self.characters.insert(c)?;
+        self.log.extend(notes);
+        Ok(guid)
     }
 
     /// The name of a character's Calling, as the select screen shows it (`Basic Warrior`).
@@ -621,6 +655,13 @@ impl Realm {
     }
 
     fn save(&mut self, guid: u64) {
+        // A save from the world stamps the leaving: a session that ends without a logout banks
+        // its rest from the last save.
+        if self.world.as_ref().is_some_and(|w| w.guid == guid) {
+            if let Some(c) = self.characters.get_mut(guid) {
+                rest::leave(c, self.wall);
+            }
+        }
         if let Some(blob) = self.export_character(guid) {
             self.storage.push(Storage::Write { guid, blob });
         }
@@ -665,6 +706,7 @@ impl Realm {
         // A save from inside the Dungeon comes back outside it: a run ends with its session.
         if let Some(c) = self.characters.get_mut(guid) {
             world::come_out(c);
+            rest::come_back(c, self.wall);
         }
         let Some(c) = self.characters.get(guid) else {
             // `CHAR_LOGIN_NO_CHARACTER`, the reference's fifth refusal.
@@ -685,6 +727,7 @@ impl Realm {
             w.release(c, &mut Vec::new());
             // Leaving inside the Dungeon leaves it.
             world::come_out(c);
+            rest::leave(c, self.wall);
         }
         self.save(w.guid);
         self.events.push(SessionEvent::LogoutResponse {

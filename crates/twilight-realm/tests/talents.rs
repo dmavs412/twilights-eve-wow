@@ -1,6 +1,6 @@
 //! Talent Points and the Basic Warrior's "Recruit" Talent Tree, played through the realm's seam:
 //! the points the client shows, `CMSG_LEARN_TALENT` and its refusals, what learned talents do in a
-//! fight, the respec at the Crossroads' Warrior trainer, and the save. The talents the Recruit tree
+//! fight, the respec at the Crossroads' Vanguard Trainer, and the save. The talents the Recruit tree
 //! dropped are played on the Vanguard's tree, which still has them.
 
 mod common;
@@ -31,6 +31,8 @@ const SPELLMOD_ALL_EFFECTS: u8 = 8;
 const NPC_GOSSIP: u32 = 0x01;
 const NPC_QUESTGIVER: u32 = 0x02;
 const NPC_TRAINER: u32 = 0x10;
+/// Uzzek, the Vanguard Trainer, who sells the respec.
+const UZZEK: u32 = 5810;
 
 const SEED: u64 = 0x5EED_0014;
 const CROSSROADS_XY: [f32; 2] = [-441.8, -2648.6];
@@ -170,10 +172,10 @@ fn a_talent_the_realm_does_not_model_yet_is_still_learned() {
     assert_eq!(view.points(me), 3);
 }
 
-// ── The respec at the Warrior trainer ───────────────────────────────────────────────────────────
+// ── The respec at the Vanguard Trainer ──────────────────────────────────────────────────────────
 
 #[test]
-fn the_warrior_trainer_stands_in_the_crossroads() {
+fn the_vanguard_trainer_stands_in_the_crossroads() {
     let (mut realm, me, _, mut view) = warrior_at(1);
     let trainer = view.trainer();
     let fields = view.fields(trainer.guid);
@@ -186,7 +188,8 @@ fn the_warrior_trainer_stands_in_the_crossroads() {
     assert_eq!(fields.unit_faction_template(), Some(35));
     let [x, y, _] = trainer.position;
     let d = ((x - CROSSROADS_XY[0]).powi(2) + (y - CROSSROADS_XY[1]).powi(2)).sqrt();
-    assert!(d < 8.0, "{d} yd from where a character starts");
+    // In the training yard, in view of the inn.
+    assert!(d < 60.0, "{d} yd from where a character starts");
 
     let entry = fields.object_entry().unwrap();
     realm.handle(RealmCommand::CreatureQuery { entry });
@@ -196,7 +199,7 @@ fn the_warrior_trainer_stands_in_the_crossroads() {
     });
     assert_eq!(
         named,
-        Some((Some("Uzzek".into()), Some("Warrior Trainer".into())))
+        Some((Some("Uzzek".into()), Some("Vanguard Trainer".into())))
     );
     let _ = me;
 }
@@ -205,6 +208,7 @@ fn the_warrior_trainer_stands_in_the_crossroads() {
 fn the_trainer_offers_to_unlearn_talents() {
     let (mut realm, _, _, mut view) = warrior_at(4);
     let trainer = view.trainer();
+    walk_up_to(&mut realm, trainer.guid);
     realm.handle(RealmCommand::GossipHello { guid: trainer.guid });
     let (text_id, options) = view
         .drain(&mut realm)
@@ -687,14 +691,17 @@ impl View {
 }
 
 impl View {
-    /// The trainer the client has been shown: the one unit with the trainer flag.
+    /// The trainer who sells the respec, as the client has been shown him: Uzzek, the Vanguard
+    /// Trainer, one of the training yard's four.
     fn trainer(&self) -> Mob {
         let mut trainers = self
             .objects
             .iter()
             .filter(|(_, f)| f.unit_npc_flags() & NPC_TRAINER != 0);
-        let (&guid, _) = trainers.next().expect("a trainer in the world");
-        assert!(trainers.next().is_none(), "one trainer");
+        assert_eq!(trainers.clone().count(), 4, "the four Tier 1 trainers");
+        let (&guid, _) = trainers
+            .find(|(_, f)| f.object_entry() == Some(UZZEK))
+            .expect("Uzzek in the world");
         Mob {
             guid,
             position: self.positions[&guid],
@@ -704,6 +711,7 @@ impl View {
 
 /// Talks to the trainer and picks its unlearn line, as the stock gossip frame does.
 fn ask_for_respec(realm: &mut Realm, view: &mut View, trainer: u64) -> Vec<SessionEvent> {
+    walk_up_to(realm, trainer);
     realm.handle(RealmCommand::GossipHello { guid: trainer });
     let option = view
         .drain(realm)

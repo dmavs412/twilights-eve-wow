@@ -159,11 +159,204 @@ speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
 
+# The 6-10 camps' creatures, their every value from vmangos' creature_template.
+
+[[template]]
+entry = 3111
+name = "Razormane Quilboar"
+creature_type = 7
+display_id = 1218
+# 109: the Razormane, hostile.
+faction_template = 109
+unit_class = "warrior"
+level_min = 6
+level_max = 7
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 3112
+name = "Razormane Scout"
+creature_type = 7
+display_id = 1252
+faction_template = 109
+unit_class = "warrior"
+level_min = 7
+level_max = 8
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 3113
+name = "Razormane Dustrunner"
+creature_type = 7
+display_id = 6088
+faction_template = 109
+unit_class = "paladin"
+level_min = 8
+level_max = 9
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 3115
+name = "Dustwind Harpy"
+creature_type = 7
+display_id = 3012
+# 514: the Dustwind harpies, hostile.
+faction_template = 514
+unit_class = "warrior"
+level_min = 7
+level_max = 8
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.389
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 3117
+name = "Dustwind Savage"
+creature_type = 7
+display_id = 2166
+faction_template = 514
+unit_class = "warrior"
+level_min = 9
+level_max = 10
+health_multiplier = 1.0
+damage_multiplier = 0.85
+armor_multiplier = 0.4
+base_attack_time = 1300
+speed_walk = 1.389
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 2949
+name = "Palemane Tanner"
+creature_type = 7
+display_id = 550
+# 39: the Palemane gnolls, hostile.
+faction_template = 39
+unit_class = "paladin"
+level_min = 5
+level_max = 6
+health_multiplier = 1.0
+damage_multiplier = 0.95
+armor_multiplier = 0.8
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 2950
+name = "Palemane Skinner"
+creature_type = 7
+display_id = 1216
+faction_template = 39
+unit_class = "paladin"
+level_min = 6
+level_max = 7
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.2
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 2951
+name = "Palemane Poacher"
+creature_type = 7
+display_id = 1217
+faction_template = 39
+unit_class = "warrior"
+level_min = 7
+level_max = 8
+health_multiplier = 1.0
+damage_multiplier = 0.9
+armor_multiplier = 0.85
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 2960
+name = "Prairie Wolf Alpha"
+creature_type = 1
+display_id = 161
+faction_template = 38
+unit_class = "warrior"
+level_min = 9
+level_max = 10
+health_multiplier = 1.0
+damage_multiplier = 0.7
+armor_multiplier = 1.0
+base_attack_time = 1400
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+[[template]]
+entry = 3122
+name = "Bloodtalon Taillasher"
+creature_type = 1
+display_id = 1960
+# 48: hostile beasts (raptors).
+faction_template = 48
+unit_class = "warrior"
+level_min = 6
+level_max = 8
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
+[[template]]
+entry = 3123
+name = "Bloodtalon Scythemaw"
+creature_type = 1
+display_id = 1959
+faction_template = 48
+unit_class = "warrior"
+level_min = 8
+level_max = 10
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
 # `guid` is the spawn's low guid (24 bits); a hand-written spawn is a camp of its own. `position`
 # is WoW `[x, y, z]`, z the terrain height there, which the host's ground replaces once it is
-# loaded. The low camps hold 9000001..=9000029.
+# loaded. The low camps hold 9000001..=9000056.
 [[spawn]]
-guid = 9000030
+guid = 9000100
 entry = 3101
 level = 3
 position = [-442.4, -2626.6, 95.9]

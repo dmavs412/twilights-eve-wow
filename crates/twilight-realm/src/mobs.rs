@@ -2,7 +2,6 @@
 //! generated from the research dumps by `examples/import_barrens.rs`), and each one's state in
 //! the world.
 
-use std::collections::HashSet;
 use std::sync::OnceLock;
 
 use benilla_protocol::messages::{MonsterMoveFacing, ObjectType};
@@ -140,7 +139,6 @@ struct DungeonSpawn {
 
 #[derive(Deserialize)]
 struct BarrensFile {
-    suppress: Vec<u32>,
     spawns: Vec<Row>,
     template: Vec<Template>,
 }
@@ -178,27 +176,20 @@ pub(crate) fn content() -> &'static Mobs {
                 })
             })
             .collect();
-        let suppress: HashSet<u32> = barrens.suppress.into_iter().collect();
-        spawn.extend(
-            barrens
-                .spawns
-                .into_iter()
-                .filter(|r| !suppress.contains(&r.0))
-                .map(
-                    |Row(guid, entry, lmin, lmax, x, y, z, o, display_id, wander, camp)| Spawn {
-                        guid,
-                        entry,
-                        level_min: lmin,
-                        level_max: lmax.max(lmin),
-                        position: [x, y, z],
-                        orientation: o,
-                        display_id,
-                        wander_radius: wander,
-                        camp,
-                        map: crate::content::KALIMDOR,
-                    },
-                ),
-        );
+        spawn.extend(barrens.spawns.into_iter().map(
+            |Row(guid, entry, lmin, lmax, x, y, z, o, display_id, wander, camp)| Spawn {
+                guid,
+                entry,
+                level_min: lmin,
+                level_max: lmax.max(lmin),
+                position: [x, y, z],
+                orientation: o,
+                display_id,
+                wander_radius: wander,
+                camp,
+                map: crate::content::KALIMDOR,
+            },
+        ));
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
             .expect("content/wailing_caverns.toml parses");
         template.extend(dungeon.template);

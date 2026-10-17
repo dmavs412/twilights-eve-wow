@@ -12,7 +12,7 @@ use super::content::{self, Quest};
 use super::{complete, slot_pairs, Active, TOKEN};
 use crate::characters::Char;
 use crate::fields::values;
-use crate::{equipment, items, rules, Realm, RealmCommand};
+use crate::{equipment, items, Realm, RealmCommand};
 
 /// `CMSG_QUEST_QUERY`'s answer for `id`; nothing for a quest the realm does not have.
 pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
@@ -41,7 +41,7 @@ pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
         quest_type: 0,
         rep_objective_faction: 0,
         rep_objective_value: 0,
-        next_quest_in_chain: 0,
+        next_quest_in_chain: q.next_in_chain().map_or(0, |n| n.id),
         money: q.money as i32,
         money_max_level: 0,
         reward_spell: 0,
@@ -56,7 +56,8 @@ pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
         title: q.title.clone(),
         objectives_text: q.objectives.clone(),
         details: q.details.clone(),
-        end_text: String::new(),
+        // The log's exploration line.
+        end_text: q.explore.as_ref().map(|e| e.text()).unwrap_or_default(),
         objectives,
     })))
 }
@@ -142,12 +143,7 @@ impl Realm {
             RealmCommand::QuestGiverChooseReward { npc, quest, .. } => {
                 if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
                     if is_complete(c, q) && reward(c, q, events) {
-                        // An Advancement Quest pays in a new Calling, not in XP.
-                        let gained = if q.advancement.is_some() {
-                            0
-                        } else {
-                            w.reward_xp(c, rules::quest::reward_xp(c.level, q.level), events)
-                        };
+                        let gained = w.reward_xp(c, q.reward_xp(c.level), events);
                         let mut items = Vec::new();
                         if q.tokens > 0 {
                             items.push((TOKEN, q.tokens));
@@ -163,6 +159,13 @@ impl Realm {
                         }) {
                             w.advance(c, to, events);
                         }
+                        // The next in the chain opens at once (vmangos `GetNextQuest`).
+                        if let Some(next) = q
+                            .next_in_chain()
+                            .and_then(|n| talking_to(c, npc).and_then(|g| offer(c, g, n.id)))
+                        {
+                            events.push(SessionEvent::QuestDetail(details(npc, next)));
+                        }
                         done.save = true;
                     }
                 }
@@ -176,8 +179,8 @@ impl Realm {
     }
 }
 
-/// A Hub NPC with the quest giver flag: a Hunting Ground's giver, or the Warrior trainer, whose
-/// gossip menu lists his Advancement Quests.
+/// A Hub NPC with the quest giver flag: a Hunting Ground's giver, a person found out in one, or
+/// a Tier 1 trainer, whose gossip menu lists their Line's Advancement Quests.
 type Speaker = &'static crate::hub::Npc;
 
 /// The quest giver with guid `npc`, wherever the player stands.
@@ -197,7 +200,7 @@ fn offer(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
 }
 
 fn offered(c: &Char, q: &Quest) -> bool {
-    if c.quests.get(q.id).is_some() {
+    if c.quests.get(q.id).is_some() || done_for_now(c, q) || !after_met(c, q) {
         return false;
     }
     match &q.advancement {
@@ -207,9 +210,19 @@ fn offered(c: &Char, q: &Quest) -> bool {
     }
 }
 
+/// Whether the player has handed `q` in and may not take it again: a Hunting Quest this Tier.
+fn done_for_now(c: &Char, q: &Quest) -> bool {
+    !q.retakable() && c.quests.completed.contains(&q.id)
+}
+
+/// Whether the quest `q` comes after, if any, is handed in.
+fn after_met(c: &Char, q: &Quest) -> bool {
+    q.after.is_none_or(|p| c.quests.completed.contains(&p))
+}
+
 /// `quest`, if it is in the player's log and `g` takes it in.
 fn in_log(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
-    content::quest(quest).filter(|q| q.giver == g.entry && c.quests.get(q.id).is_some())
+    content::quest(quest).filter(|q| q.ender() == g.entry && c.quests.get(q.id).is_some())
 }
 
 fn is_complete(c: &Char, q: &Quest) -> bool {
@@ -217,25 +230,32 @@ fn is_complete(c: &Char, q: &Quest) -> bool {
 }
 
 /// The giver's mark (`GetDialogStatus`): a yellow `?` for a quest to hand in, a yellow `!` for one
-/// to take, a grey `?` for one under way, a grey `!` for one the player is too low for. An
-/// Advancement Quest that is not theirs yet shows nothing.
+/// to take, a grey `?` for one under way. The `?` marks show over the quest's ender, the `!` over
+/// its giver. A quest the player is too low for, an Advancement Quest that is not theirs yet, a
+/// Hunting Quest done this Tier, and a quest whose earlier step is not handed in show nothing:
+/// no grey `!`, so the world shows only the quests the player can take now.
 fn status(c: &Char, g: Speaker) -> u32 {
-    content::offered_by(g.entry)
-        .map(|q| match c.quests.get(q.id) {
-            Some(a) if complete(c, a) => dialog_status::REWARD2,
-            Some(_) => dialog_status::INCOMPLETE,
-            None if offered(c, q) => dialog_status::AVAILABLE,
-            None if q.advancement.is_some() => dialog_status::NONE,
-            None => dialog_status::UNAVAILABLE,
-        })
+    let to_hand_in = content::ended_by(g.entry).map(|q| match c.quests.get(q.id) {
+        Some(a) if complete(c, a) => dialog_status::REWARD2,
+        Some(_) => dialog_status::INCOMPLETE,
+        None => dialog_status::NONE,
+    });
+    let to_take = content::offered_by(g.entry).map(|q| match c.quests.get(q.id) {
+        Some(_) => dialog_status::NONE,
+        None if offered(c, q) => dialog_status::AVAILABLE,
+        None => dialog_status::NONE,
+    });
+    to_hand_in
+        .chain(to_take)
         .max()
         .unwrap_or(dialog_status::NONE)
 }
 
-/// The quests `giver` lists for the player, `(quest, icon)`: the ones under way first, as
-/// vmangos's menu lists them (4 for one to hand in, 3 for one under way), then the ones on offer.
+/// The quests the NPC `giver` lists for the player, `(quest, icon)`: the ones under way that it
+/// takes in first, as vmangos's menu lists them (4 for one to hand in, 3 for one under way), then
+/// the ones it has on offer.
 fn rows(c: &Char, giver: u32) -> Vec<(&'static Quest, u32)> {
-    let active = content::offered_by(giver)
+    let active = content::ended_by(giver)
         .filter(|q| c.quests.get(q.id).is_some())
         .map(|q| (q, if is_complete(c, q) { 4 } else { 3 }));
     let open = content::offered_by(giver)

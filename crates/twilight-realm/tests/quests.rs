@@ -1,5 +1,5 @@
-//! Repeatable Quests: the Hub's givers, accepting, progress, hand-in and retake, through the stock
-//! quest dialogs and the `PLAYER_QUEST_LOG` slots.
+//! Hunting Quests: the Hub's givers, accepting, progress and hand-in, once per Tier, through the
+//! stock quest dialogs and the `PLAYER_QUEST_LOG` slots.
 
 mod common;
 mod gear_common;
@@ -16,14 +16,11 @@ use twilight_realm::CROSSROADS;
 fn quest_givers_stand_at_the_hub_with_names_and_marks() {
     let (mut realm, _, events) = warrior_with(1, 0, &[]);
     // The Warrior trainer (5810) gives quests too: his Advancement Quests.
-    let all: Vec<_> = givers(&events)
-        .into_iter()
-        .filter(|g| g.1 != 5810)
-        .collect();
-    assert_eq!(all.len(), 6, "one giver per Hunting Ground");
-    for &(_, _, at) in &all {
+    // One giver per Hunting Ground, each at a gate or the watchtower of the town.
+    for entry in [GREZZ, TAMAHA, ZUNJIN, 90104, MAHU] {
+        let at = hub_home(giver(&events, entry));
         let d = ((at[0] - CROSSROADS[0]).powi(2) + (at[1] - CROSSROADS[1]).powi(2)).sqrt();
-        assert!(d < 15.0, "a giver stands {d} yd from the Hub");
+        assert!(d < 160.0, "giver {entry} stands {d} yd from the inn");
     }
 
     realm.handle(RealmCommand::CreatureQuery { entry: GREZZ });
@@ -33,14 +30,14 @@ fn quest_givers_stand_at_the_hub_with_names_and_marks() {
     });
     assert_eq!(name.as_deref(), Some("Grezz Plainswatcher"));
 
-    // A new warrior sees a yellow `!` over the plains giver, and a grey one far south.
+    // A new warrior sees a yellow `!` over the plains giver, and nothing over the one far south.
     assert_eq!(
         status(&mut realm, giver(&events, GREZZ)),
         dialog_status::AVAILABLE
     );
     assert_eq!(
         status(&mut realm, giver(&events, MAHU)),
-        dialog_status::UNAVAILABLE
+        dialog_status::NONE
     );
 }
 
@@ -48,6 +45,7 @@ fn quest_givers_stand_at_the_hub_with_names_and_marks() {
 fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
     let (mut realm, me, mut events) = warrior_with(1, 0, &[]);
     let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
 
     // Two quests on offer: the greeting list, both under "Available".
     let greeting = talk(&mut realm, grezz)
@@ -123,12 +121,19 @@ fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
 fn a_giver_far_away_does_not_talk() {
     let (mut realm, _, events) = warrior_with(1, 0, &[]);
     let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
+    let [x, y, _] = hub_home(grezz);
     realm.handle(RealmCommand::Move {
-        position: [CROSSROADS[0] + 40.0, CROSSROADS[1], 0.0],
+        position: [x + 40.0, y, 0.0],
         orientation: 0.0,
     });
-    assert!(talk(&mut realm, grezz).is_empty());
-    assert!(accept(&mut realm, grezz, THINNING_THE_HERDS).is_empty());
+    realm.handle(RealmCommand::QuestGiverHello { npc: grezz });
+    assert!(drain(&mut realm).is_empty());
+    realm.handle(RealmCommand::QuestGiverAcceptQuest {
+        npc: grezz,
+        quest: THINNING_THE_HERDS,
+    });
+    assert!(drain(&mut realm).is_empty());
 }
 
 /// The Vile Familiar in front of the inn: the first unit to stream in.
@@ -138,9 +143,10 @@ const VILE_FAMILIAR: u32 = 3101;
 fn a_kill_counts_toward_the_quest_and_the_last_one_completes_it() {
     // Four familiars down, one to go.
     let (mut realm, me, mut events) = questing(5, &[], 0, &[(THE_FAMILIAR_THREAT, [4, 0, 0, 0])]);
-    let tamaha = giver(&events, TAMAHA);
-    // Her other quests' yellow `!` shows until this one is done.
-    assert_eq!(status(&mut realm, tamaha), dialog_status::AVAILABLE);
+    let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
+    // Grezz's other quests' yellow `!` shows until this one is done.
+    assert_eq!(status(&mut realm, grezz), dialog_status::AVAILABLE);
     let mob = the_mob(&events);
     assert_eq!(mob.fields.object_entry(), Some(VILE_FAMILIAR));
 
@@ -168,7 +174,7 @@ fn a_kill_counts_toward_the_quest_and_the_last_one_completes_it() {
         quest_log(&events, me),
         [(0, THE_FAMILIAR_THREAT, [5, 0, 0, 0], 1)]
     );
-    assert_eq!(status(&mut realm, tamaha), dialog_status::REWARD2);
+    assert_eq!(status(&mut realm, grezz), dialog_status::REWARD2);
 }
 
 fn levels(events: &[SessionEvent]) -> Vec<u32> {
@@ -182,13 +188,14 @@ fn levels(events: &[SessionEvent]) -> Vec<u32> {
 }
 
 #[test]
-fn a_quest_handed_in_at_its_own_level_is_worth_a_level_and_can_be_taken_again() {
+fn a_hunting_quest_at_its_own_level_gives_half_a_level_and_a_token_and_is_not_offered_again() {
     let (mut realm, me, mut events) = questing(4, &[], 0, &[(THE_FAMILIAR_THREAT, [5, 0, 0, 0])]);
-    let tamaha = giver(&events, TAMAHA);
+    let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
 
     // A finished kill quest skips the progress panel: its reward panel opens.
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
-        npc: tamaha,
+        npc: grezz,
         quest: THE_FAMILIAR_THREAT,
     });
     let offer = drain(&mut realm)
@@ -199,39 +206,63 @@ fn a_quest_handed_in_at_its_own_level_is_worth_a_level_and_can_be_taken_again() 
         })
         .expect("the reward panel");
     assert_eq!((offer.quest_id, offer.money), (THE_FAMILIAR_THREAT, 100));
-    assert!(offer.rewards.is_empty(), "a kill quest pays no Token");
+    let rewards: Vec<(u32, u32)> = offer.rewards.iter().map(|i| (i.item_id, i.count)).collect();
+    assert_eq!(rewards, [(TOKEN, 1)]);
 
-    let turned_in = hand_in(&mut realm, tamaha, THE_FAMILIAR_THREAT);
+    let turned_in = hand_in(&mut realm, grezz, THE_FAMILIAR_THREAT);
     let done = completed(&turned_in).expect("the quest completes");
-    // Level 4's whole 2100 XP: exactly one level.
+    // Half of level 4's 2100 XP.
     assert_eq!(
         (done.quest_id, done.xp, done.money),
-        (THE_FAMILIAR_THREAT, 2100, 100)
+        (THE_FAMILIAR_THREAT, 1050, 100)
     );
-    assert!(done.items.is_empty());
-    assert_eq!(levels(&turned_in), [5]);
+    assert_eq!(done.items, [(TOKEN, 1)]);
+    assert!(levels(&turned_in).is_empty());
     events.extend(turned_in);
     let me_now = descriptor(&events, me);
-    assert_eq!(me_now.unit_level(), Some(5));
-    assert_eq!(me_now.player_xp(), Some(0));
-    assert_eq!(me_now.player_money(), Some(100));
+    assert_eq!(me_now.unit_level(), Some(4));
+    assert_eq!(me_now.player_xp(), Some(1050));
+    assert_eq!(carried(&events, me, TOKEN), 1);
     assert!(quest_log(&events, me).is_empty(), "the slot clears");
 
-    // Straight back on offer, and taken again from scratch.
-    assert_eq!(status(&mut realm, tamaha), dialog_status::AVAILABLE);
-    events.extend(accept(&mut realm, tamaha, THE_FAMILIAR_THREAT));
-    assert_eq!(
-        quest_log(&events, me),
-        [(0, THE_FAMILIAR_THREAT, [0; 4], 0)]
+    // Done for this Tier: Grezz no longer offers it, and it cannot be taken.
+    let offered = on_offer(&mut realm, grezz);
+    assert!(!offered.contains(&THE_FAMILIAR_THREAT), "{offered:?}");
+    assert!(!offered.is_empty(), "her other quests are still on offer");
+    realm.handle(RealmCommand::QuestGiverQueryQuest {
+        npc: grezz,
+        quest: THE_FAMILIAR_THREAT,
+    });
+    assert!(!drain(&mut realm)
+        .iter()
+        .any(|e| matches!(e, SessionEvent::QuestDetail(_))));
+    events.extend(accept(&mut realm, grezz, THE_FAMILIAR_THREAT));
+    assert!(quest_log(&events, me).is_empty());
+}
+
+#[test]
+fn a_giver_whose_hunting_quests_for_now_are_all_done_shows_only_the_grey_mark() {
+    let (mut realm, _, events) = questing(
+        1,
+        &[(23, VENOM_SAC, 6)],
+        0,
+        &[(THINNING_THE_HERDS, [5, 5, 0, 0]), (SCORPID_VENOM, [0; 4])],
     );
+    let grezz = giver(&events, GREZZ);
+    hand_in(&mut realm, grezz, THINNING_THE_HERDS);
+    hand_in(&mut realm, grezz, SCORPID_VENOM);
+    assert!(on_offer(&mut realm, grezz).is_empty());
+    // Grezz's later quests are still to come, but too high to mark.
+    assert_eq!(status(&mut realm, grezz), dialog_status::NONE);
 }
 
 #[test]
 fn an_unfinished_quest_shows_its_progress_and_cannot_be_handed_in() {
     let (mut realm, _, events) = questing(4, &[], 0, &[(THE_FAMILIAR_THREAT, [2, 0, 0, 0])]);
-    let tamaha = giver(&events, TAMAHA);
+    let grezz = giver(&events, GREZZ);
+    walk_up_to(&mut realm, grezz);
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
-        npc: tamaha,
+        npc: grezz,
         quest: THE_FAMILIAR_THREAT,
     });
     let progress = drain(&mut realm)
@@ -242,16 +273,18 @@ fn an_unfinished_quest_shows_its_progress_and_cannot_be_handed_in() {
         })
         .expect("the progress panel");
     assert!(!progress.is_complete);
-    assert!(completed(&hand_in(&mut realm, tamaha, THE_FAMILIAR_THREAT)).is_none());
+    assert!(completed(&hand_in(&mut realm, grezz, THE_FAMILIAR_THREAT)).is_none());
 }
 
 #[test]
 fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
-    // A level 15 Warrior on a level 10 quest: still a full level (15's 14400 XP).
+    // A level 15 Vanguard on a level 10 quest: still half of level 10's 7600 XP, at the Tier XP
+    // Rate's ×3.
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 5), (24, CROCOLISK_SKIN, 4)];
     let (mut realm, me, mut events) =
         questing_as("vanguard", 15, skins, 2, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     assert_eq!(quest_log(&events, me)[0].3, 1, "complete from the bags");
 
     // The progress panel asks for the skins and may go on; the reward panel shows the Token.
@@ -290,7 +323,7 @@ fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
 
     let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
     let done = completed(&turned_in).expect("the quest completes");
-    assert_eq!((done.xp, done.money), (14400, 400));
+    assert_eq!((done.xp, done.money), (3 * 3800, 400));
     assert_eq!(done.items, [(TOKEN, 1)]);
     events.extend(turned_in);
     // Eight of the nine skins are gone: the first stack whole, three of the second... or the
@@ -322,6 +355,7 @@ fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
     items.push((38, 4560, 1));
     let (mut realm, me, mut events) = questing(15, &items, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
     assert!(completed(&turned_in).is_none());
     assert!(turned_in
@@ -342,13 +376,15 @@ fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
 
 #[test]
 fn outlevelling_a_quest_shrinks_its_xp() {
-    // A level 16 Warrior on a level 10 quest: 80% of 16000.
+    // A level 16 Vanguard on a level 10 quest: 80% of half of level 10's 7600, at the Tier XP
+    // Rate's ×3.
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 8)];
     let (mut realm, _, events) =
         questing_as("vanguard", 16, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
+    walk_up_to(&mut realm, zunjin);
     let done = completed(&hand_in(&mut realm, zunjin, CROCOLISK_SKINS)).unwrap();
-    assert_eq!(done.xp, 12800);
+    assert_eq!(done.xp, 3 * 3040);
 }
 
 #[test]
@@ -364,10 +400,10 @@ fn the_xp_multiplier_multiplies_quest_xp() {
     let events = drain(&mut realm);
     let done = completed(&hand_in(
         &mut realm,
-        giver(&events, TAMAHA),
+        giver(&events, GREZZ),
         THE_FAMILIAR_THREAT,
     ));
-    assert_eq!(done.unwrap().xp, 4200);
+    assert_eq!(done.unwrap().xp, 2100);
 }
 
 #[test]
