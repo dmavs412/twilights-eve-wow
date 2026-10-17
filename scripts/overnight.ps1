@@ -130,12 +130,12 @@ if ($Issues) {
         @{ number = $_; title = $t }
     })
 } else {
-    $jq = '[.[] | select([.labels[].name] | index("blocked") | not)] | sort_by(.number) | .[] | "\(.number)\t\(.title)"'
-    $raw = gh issue list -R $Repo --state open --label $Label --limit 100 --json number,title,labels --jq $jq
-    $queue = @($raw | Where-Object { $_ } | ForEach-Object {
-        $parts = $_ -split "`t", 2
-        @{ number = [int]$parts[0]; title = $parts[1] }
-    })
+    # Filter here, not in --jq: PowerShell 5.1 strips the double quotes a jq string needs.
+    $raw = (gh issue list -R $Repo --state open --label $Label --limit 100 --json number,title,labels) -join "`n" | ConvertFrom-Json
+    $queue = @($raw |
+        Where-Object { @($_.labels | Where-Object { $_.name -eq "blocked" }).Count -eq 0 } |
+        Sort-Object number |
+        ForEach-Object { @{ number = [int]$_.number; title = $_.title } })
 }
 if ($queue.Count -gt $Max) { $queue = $queue[0..($Max - 1)] }
 
@@ -188,8 +188,8 @@ foreach ($t in $queue) {
 
     $after = (git rev-parse HEAD).Trim()
     if ($after -eq $before) {
-        $labels = gh issue view -R $Repo $n --json labels --jq '[.labels[].name] | join(",")'
-        if ($labels -notmatch "blocked") {
+        $labels = ((gh issue view -R $Repo $n --json labels) -join "`n" | ConvertFrom-Json).labels | ForEach-Object { $_.name }
+        if ($labels -notcontains "blocked") {
             $tail = $text.Substring([Math]::Max(0, $text.Length - 1500))
             Set-Blocked $n "Overnight run produced no commit (exit $exit, $turns turns). Last words of the session:`n`n$tail"
         }
