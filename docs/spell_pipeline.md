@@ -81,7 +81,14 @@ focus 2, energy 3, happiness 4) and, when the row has one, `description`; an emp
 borrowed text. Auras are not Spell.dbc overrides. The CSV uses the realm's vocabulary: `weapon=normal` or
 `normalized`, boolean `unavoidable=yes`, `school_damage`, and `proc` (`on=cast|kill`, `skill=`, `yields_xp=yes`,
 `chance=`, then one of `apply_aura=key|key` or `heal_pct=`). Seats are whole numbers. The client applies it
-in memory when it loads its spell data (ADR 0003). When a real server plays to a stock client,
+in memory when it loads its spell data (ADR 0003). The build resolves each override's range, cast time and
+duration to the stock `SpellRange.dbc`, `SpellCastTimes.dbc` and `SpellDuration.dbc` row that holds
+the value (the lowest id on a tie; no match fails the build, and `--no-dbc-check` leaves the raw
+values), so the patch carries `range_index`, `cast_time_index` and `duration_index`, which the
+client writes over the row's own. The client keeps the borrowed spell's stock effects; a sheet
+`school_damage` or `weapon_strike` only overwrites the numbers of the stock damage effect it lines
+up with, so `$s1` and spell mods read the sheet's damage. Cost is an amount of the row's power
+(rage is stored in tenths). When a real server plays to a stock client,
 the same file feeds an MPQ writer.
 
 ## Where it stands
@@ -93,7 +100,7 @@ the CSV (calling, tab, aura rows; spec #50); its rows whose effects the realm ca
 `generated.rs`, compiled in): any Calling whose file entry carries a `tier`, which only a `calling`
 row gives it. Vanguard and Zealot are still the tables in `content/callings.toml`. A skill with no
 effects, or an effect kind the realm lacks, is left out of the bar and spell book until its effects
-land; a talent in that state is learnable but does nothing and shows as WIP. The client does not
-apply the patch yet. The patch carries no `family_name` field. Talents carry their
+land; a talent in that state is learnable but does nothing and shows as WIP. The client applies the patch at load
+(`SpellCatalog::apply_dbc_patch`, compiled in). The patch carries no `family_name` field. Talents carry their
 `description` and client spellmods, but their realm effects are not yet structured columns,
 because `callings.json` never held them.

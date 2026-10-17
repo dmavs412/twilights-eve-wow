@@ -2,25 +2,10 @@
 //! (ADR 0003). The realm's content names the spells; each function here is one kind of rewrite.
 //! A Calling skill is one 1.12.1 spell with no ranks, so the spellbook, the tooltip and the learn
 //! line must not show the borrowed spell's "Rank 1". A talent the realm does not model yet reads
-//! "<Name> (WIP)". A spell a Calling borrows from another Class costs what the realm charges, in
-//! the Calling's power, with no stance, as one of the character's Class family.
+//! "<Name> (WIP)". The compiled-in client patch rewrites the rows it lists, among them the
+//! spells a Calling borrows from another Class.
 
-use super::SpellCatalog;
-
-/// The values a borrowed spell's row is rewritten to (ADR 0003).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct BorrowedSpellRow {
-    pub spell_id: u32,
-    /// The Calling's `powerType`: 1, rage.
-    pub power_type: u32,
-    /// The flat cost in that power's client unit (tenths of rage).
-    pub cost: u32,
-    /// The character's Class's `SpellFamilyName`: 4, Warrior.
-    pub spell_family: u32,
-    /// The one `SpellFamilyFlags` bit it gets, which no spell of that family uses, so the realm's
-    /// talent spell modifiers reach it and nothing else.
-    pub family_bit: u8,
-}
+use super::{SpellCatalog, SpellDisplay};
 
 /// What a WIP talent's rank spells add to their names.
 const WIP_SUFFIX: &str = " (WIP)";
@@ -43,26 +28,6 @@ impl SpellCatalog {
                 if !display.name.ends_with(WIP_SUFFIX) {
                     display.name.push_str(WIP_SUFFIX);
                 }
-            }
-        }
-    }
-
-    /// Rewrites every spell in `spells` as its [`BorrowedSpellRow`] says: that power and flat cost
-    /// and no other cost term, no stance requirement, and that family with its own flag alone
-    /// (the lending family's flags would name the borrower's spells). An id the catalog lacks is
-    /// skipped.
-    pub fn borrow_spells(&mut self, spells: impl IntoIterator<Item = BorrowedSpellRow>) {
-        for b in spells {
-            if let Some(d) = self.spells.get_mut(&b.spell_id) {
-                d.power_type = b.power_type;
-                d.mana_cost = b.cost;
-                d.mana_cost_pct = 0;
-                d.mana_cost_per_level = 0;
-                d.mana_per_second = 0;
-                d.stances = 0;
-                d.stances_not = 0;
-                d.spell_family = b.spell_family;
-                d.spell_family_flags = 1 << b.family_bit;
             }
         }
     }
@@ -116,6 +81,21 @@ impl SpellCatalog {
                     d.spell_family_flags = 1 << bit as u32;
                 }
             }
+            // The stock Spell.dbc rows the sheet's range, cast time and duration select.
+            for (key, slot) in [
+                ("range_index", &mut d.range_index),
+                ("cast_time_index", &mut d.casting_time_index),
+                ("duration_index", &mut d.duration_index),
+            ] {
+                if let Some(index) = f[key].as_u64() {
+                    *slot = index as u32;
+                }
+            }
+            // The stock effects stay; a sheet effect only sets the numbers of the stock effect
+            // it lines up with, so `$s1` and the spell mods read the sheet's damage.
+            for effect in f["effects"].as_array().into_iter().flatten() {
+                overwrite_damage(d, effect);
+            }
             if let Some(text) = f["description"].as_str().filter(|t| !t.is_empty()) {
                 d.description = Some(text.to_owned());
             }
@@ -131,6 +111,34 @@ const CLASS_SPELL_FAMILY: u32 = 4;
 /// The compiled-in client patch the build script wrote from the master CSV.
 pub const CLIENT_DBC_PATCH: &str =
     include_str!("../../../../data/twilights-eve/client_dbc_patch.json");
+
+/// `SPELL_EFFECT_SCHOOL_DAMAGE`.
+const EFFECT_SCHOOL_DAMAGE: u32 = 2;
+/// `SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL`, `WEAPON_DAMAGE` and `NORMALIZED_WEAPON_DMG`: the flat
+/// bonus on top of a weapon swing.
+const EFFECTS_WEAPON_BONUS: [u32; 3] = [17, 58, 121];
+
+/// Sets the first stock effect a sheet damage effect lines up with (`school_damage` with a school
+/// damage effect, `weapon_strike` with a weapon bonus) to the sheet's number: a one-sided die on
+/// `base - 1`, and the per-level term. No stock effect of that kind leaves the row alone.
+fn overwrite_damage(d: &mut SpellDisplay, effect: &serde_json::Value) {
+    let (stock, formula): (&[u32], _) = match effect["kind"].as_str() {
+        Some("school_damage") => (&[EFFECT_SCHOOL_DAMAGE], &effect["params"]["amount"]),
+        Some("weapon_strike") => (&EFFECTS_WEAPON_BONUS, &effect["params"]["bonus"]),
+        _ => return,
+    };
+    let (Some(base), Some(slot)) = (
+        formula["base"].as_f64(),
+        d.effects.iter().position(|e| stock.contains(e)),
+    ) else {
+        return;
+    };
+    d.effect_base_points[slot] = base.round() as i32 - 1;
+    d.effect_base_dice[slot] = 1;
+    d.effect_die_sides[slot] = 1;
+    d.effect_dice_per_level[slot] = 0;
+    d.effect_real_points_per_level[slot] = formula["per_level"].as_f64().unwrap_or(0.0) as f32;
+}
 
 /// A warrior stance by its sheet name: its `SpellShapeshiftForm.dbc` id.
 fn stance_form(name: &str) -> Option<u32> {
@@ -181,68 +189,6 @@ mod tests {
         assert_eq!(iron_will.name, "Iron Will (WIP)");
         assert_eq!(iron_will.rank.as_deref(), Some("Rank 1"));
         assert_eq!(catalog.get(12297).unwrap().name, "Anticipation");
-    }
-
-    #[test]
-    fn a_borrowed_spell_costs_rage_needs_no_stance_and_joins_the_warrior_family() {
-        // Judgement 20271 as Spell.dbc has it: 6% of base mana, Paladin family bit 23 (which the
-        // Warrior family spends on its stances).
-        let judgement = SpellDisplay {
-            name: "Judgement".into(),
-            power_type: 0,
-            mana_cost: 0,
-            mana_cost_pct: 6,
-            mana_cost_per_level: 2,
-            mana_per_second: 1,
-            stances: 1 << 16,
-            stances_not: 1 << 1,
-            spell_family: 10,
-            spell_family_flags: 1 << 23,
-            ..SpellDisplay::default()
-        };
-        let charge = SpellDisplay {
-            name: "Charge".into(),
-            power_type: 1,
-            stances: 1 << 16,
-            spell_family: 4,
-            spell_family_flags: 1,
-            ..SpellDisplay::default()
-        };
-        let mut catalog =
-            SpellCatalog::from_displays(HashMap::from([(20271, judgement), (6178, charge)]));
-        catalog.borrow_spells([
-            BorrowedSpellRow {
-                spell_id: 20271,
-                power_type: 1,
-                cost: 50,
-                spell_family: 4,
-                family_bit: 35,
-            },
-            BorrowedSpellRow {
-                spell_id: 999,
-                power_type: 1,
-                cost: 10,
-                spell_family: 4,
-                family_bit: 36,
-            },
-        ]);
-        let j = catalog.get(20271).unwrap();
-        assert_eq!(j.name, "Judgement", "the real name");
-        assert_eq!((j.power_type, j.mana_cost), (1, 50), "5 rage, in tenths");
-        assert_eq!(
-            (j.mana_cost_pct, j.mana_cost_per_level, j.mana_per_second),
-            (0, 0, 0),
-            "no cost but the flat one"
-        );
-        assert_eq!((j.stances, j.stances_not), (0, 0), "any stance");
-        assert_eq!(j.spell_family, 4);
-        assert_eq!(j.spell_family_flags, 1 << 35, "only its own bit");
-        let charge = catalog.get(6178).unwrap();
-        assert_eq!(
-            (charge.stances, charge.spell_family_flags),
-            (1 << 16, 1),
-            "Charge untouched"
-        );
     }
 
     fn patch_catalog() -> SpellCatalog {
@@ -301,6 +247,84 @@ mod tests {
             catalog.get(12300).unwrap().mana_cost_pct,
             6,
             "unlisted row untouched"
+        );
+    }
+
+    #[test]
+    fn row_indexes_overwrite_range_cast_time_and_duration() {
+        let mut catalog = patch_catalog();
+        catalog
+            .apply_dbc_patch(
+                r#"{"spells": [{"spell_id": 2136, "fields":
+                {"range_index": 3, "cast_time_index": 1, "duration_index": 21}}]}"#,
+            )
+            .unwrap();
+        let fb = catalog.get(2136).unwrap();
+        assert_eq!(
+            (fb.range_index, fb.casting_time_index, fb.duration_index),
+            (3, 1, 21)
+        );
+    }
+
+    /// Fire Blast as Spell.dbc has it: effect 1 is `SCHOOL_DAMAGE` (2), 8 to 10 fire damage.
+    fn stock_fire_blast() -> SpellDisplay {
+        SpellDisplay {
+            effects: [2, 0, 0],
+            effect_base_points: [7, 0, 0],
+            effect_base_dice: [1, 0, 0],
+            effect_die_sides: [3, 0, 0],
+            ..SpellDisplay::default()
+        }
+    }
+
+    #[test]
+    fn the_sheets_damage_overwrites_the_stock_effect_it_lines_up_with() {
+        let mut catalog = SpellCatalog::from_displays(HashMap::from([
+            (2136, stock_fire_blast()),
+            (
+                78,
+                SpellDisplay {
+                    effects: [17, 0, 0],
+                    ..SpellDisplay::default()
+                },
+            ),
+            (
+                1776,
+                SpellDisplay {
+                    effects: [6, 0, 0],
+                    effect_base_points: [4, 0, 0],
+                    ..SpellDisplay::default()
+                },
+            ),
+        ]));
+        catalog
+            .apply_dbc_patch(
+                r#"{"spells": [
+                {"spell_id": 2136, "fields": {"effects": [{"kind": "school_damage",
+                    "params": {"school": "fire", "amount": {"base": 20, "per_level": 2.5}}}]}},
+                {"spell_id": 78, "fields": {"effects": [{"kind": "weapon_strike",
+                    "params": {"bonus": {"base": 9.5, "per_level": 1.4}}}]}},
+                {"spell_id": 1776, "fields": {"effects": [{"kind": "school_damage",
+                    "params": {"amount": {"base": 10, "per_level": 1.5}}}]}}
+            ]}"#,
+            )
+            .unwrap();
+        let fb = catalog.get(2136).unwrap();
+        // Value = base points + one one-sided die: 19 + 1 = 20, plus 2.5 per level.
+        assert_eq!(
+            (
+                fb.effect_base_points[0],
+                fb.effect_base_dice[0],
+                fb.effect_die_sides[0]
+            ),
+            (19, 1, 1)
+        );
+        assert_eq!(fb.effect_real_points_per_level[0], 2.5);
+        assert_eq!(catalog.get(78).unwrap().effect_base_points[0], 9);
+        let gouge = catalog.get(1776).unwrap();
+        assert_eq!(
+            gouge.effect_base_points[0], 4,
+            "no stock damage effect: left alone"
         );
     }
 }

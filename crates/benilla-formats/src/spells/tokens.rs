@@ -831,6 +831,47 @@ mod tests {
         );
     }
 
+    /// A patched row keeps working in a tooltip: the sheet's text, its `$s1` reading the sheet's
+    /// damage, and a talent's spell mod (op 0, +10 percent) still scaling that number.
+    #[test]
+    fn s_token_and_spell_mods_work_on_a_patched_row() {
+        let durations = SpellDurationCatalog::default();
+        let radii = SpellRadiusCatalog::default();
+        let stock = SpellDisplay {
+            effects: [2, 0, 0],
+            effect_base_points: [7, 0, 0],
+            effect_base_dice: [1, 0, 0],
+            effect_die_sides: [3, 0, 0],
+            description: Some("Stock text.".into()),
+            ..Default::default()
+        };
+        let mut catalog =
+            crate::SpellCatalog::from_displays(std::collections::HashMap::from([(2136, stock)]));
+        catalog
+            .apply_dbc_patch(
+                r#"{"spells": [{"spell_id": 2136, "fields": {
+                "description": "Blasts the enemy for $s1 fire damage.",
+                "effects": [{"kind": "school_damage", "params": {"amount": {"base": 20}}}]}}]}"#,
+            )
+            .unwrap();
+        let spell = catalog.get(2136).unwrap();
+        let text = spell.description.as_deref().unwrap();
+        let c = ctx(&durations, &radii, &none_lookup);
+        assert_eq!(
+            substitute(text, spell, &c),
+            "Blasts the enemy for 20 fire damage."
+        );
+        let mods = Mods(vec![(0, 0, 110)]);
+        let c = TokenContext {
+            mods: Some(&mods),
+            ..ctx(&durations, &radii, &none_lookup)
+        };
+        assert_eq!(
+            substitute(text, spell, &c),
+            "Blasts the enemy for 22 fire damage."
+        );
+    }
+
     #[test]
     fn scaled_effect_points_keep_fractional_seconds() {
         let durations = SpellDurationCatalog::default();

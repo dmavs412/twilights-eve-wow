@@ -285,10 +285,10 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(data[0]["skills"][1]["resource"], "mana")
         self.assertNotIn("resource", data[0]["skills"][0])
 
-    def test_patch_has_no_power_type_without_a_resource(self):
+    def test_patch_power_type_defaults_to_rage_without_a_calling_row(self):
         done, _ = self.run_build([STRIKE])
         self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertNotIn("power_type", self.patch["spells"][0]["fields"])
+        self.assertEqual(self.patch["spells"][0]["fields"]["power_type"], 1)
 
     def test_unknown_row_resource_fails(self):
         self.assert_fails([CALLING, {**STRIKE, "resource": "fury"}], "resource")

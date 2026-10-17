@@ -543,39 +543,6 @@ pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {
         .filter(move |s| seen.insert(s.spell_id))
 }
 
-/// `SPELLFAMILY_WARRIOR`, the Warrior Class's `SpellFamilyName`: every Calling is of the Warrior
-/// line.
-const CLASS_SPELL_FAMILY: u32 = 4;
-
-/// What the client writes into a borrowed spell's row (ADR 0003): the Calling's power, the
-/// realm's cost in that power's client unit, and the Class's spell family with the spell's own
-/// bit.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct BorrowedSpellRewrite {
-    pub spell_id: u32,
-    /// The Calling's `powerType`.
-    pub power_type: u32,
-    /// The flat cost in tenths of rage, as `UNIT_FIELD_POWER2` carries it.
-    pub cost: u32,
-    /// The Class's `SpellFamilyName`.
-    pub spell_family: u32,
-    /// In [`BORROWED_FAMILY_BITS`].
-    pub family_bit: u8,
-}
-
-/// Every borrowed skill's rewrite, once each.
-pub fn borrowed_spell_rewrites() -> impl Iterator<Item = BorrowedSpellRewrite> {
-    borrowed_skills().filter_map(|s| {
-        Some(BorrowedSpellRewrite {
-            spell_id: s.spell_id,
-            power_type: crate::fields::POWER_RAGE,
-            cost: s.rage_cost * 10,
-            spell_family: CLASS_SPELL_FAMILY,
-            family_bit: s.borrowed?.family_bit,
-        })
-    })
-}
-
 /// Every WIP talent's rank spells, of every Calling: the spells the client names
 /// "<Name> (WIP)" (ADR 0003).
 pub fn wip_rank_spell_ids() -> impl Iterator<Item = u32> {

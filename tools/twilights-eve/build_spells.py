@@ -345,7 +345,8 @@ def client_override(row: dict, built: dict, where: str, calling_resource: str | 
     for column in CLIENT_FLAGS:
         if row[column]:
             fields[column.removeprefix("client_")] = row[column] == "yes"
-    resource = row["resource"] or calling_resource
+    # Every Calling is of the Warrior line, so a Calling with no row of its own plays on rage.
+    resource = row["resource"] or calling_resource or "rage"
     if resource:
         fields["power_type"] = POWER_TYPES[check_resource(resource, where)]
     if row["description"]:

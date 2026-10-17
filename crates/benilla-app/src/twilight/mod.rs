@@ -479,17 +479,6 @@ fn rewrite_spells(mut spells: ResMut<crate::ui_action::Spells>) {
     let catalog = &mut spells.catalog;
     catalog.clear_ranks(twilight_realm::callings::skill_spell_ids());
     catalog.mark_wip(twilight_realm::callings::wip_rank_spell_ids());
-    catalog.borrow_spells(
-        twilight_realm::callings::borrowed_spell_rewrites().map(|r| {
-            benilla_formats::BorrowedSpellRow {
-                spell_id: r.spell_id,
-                power_type: r.power_type,
-                cost: r.cost,
-                spell_family: r.spell_family,
-                family_bit: r.family_bit,
-            }
-        }),
-    );
     // The compiled-in patch comes last, so the sheet's cost, power, cooldown and text win.
     if let Err(err) = catalog.apply_dbc_patch(benilla_formats::CLIENT_DBC_PATCH) {
         error!("client_dbc_patch.json does not parse: {err}");

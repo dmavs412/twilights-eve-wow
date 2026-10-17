@@ -114,6 +114,7 @@
     "cost": 30.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "power_type": 1,
     "effects": [
      {
       "kind": "weapon_strike",
@@ -148,6 +149,7 @@
     "cost": 5.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "power_type": 1,
     "stances": [
      "Battle Stance"
     ],
@@ -179,6 +181,7 @@
     "cooldown_ms": 0,
     "gcd_ms": 0,
     "not_in_combat": true,
+    "power_type": 1,
     "stances": [
      "Battle Stance"
     ],
@@ -220,6 +223,7 @@
     "cost": 10.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "power_type": 1,
     "stances": [
      "Battle Stance",
      "Defensive Stance"
@@ -255,6 +259,7 @@
     "cost": 10.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "power_type": 1,
     "effects": [
      {
       "kind": "aura_attack_power",
@@ -284,6 +289,7 @@
     "gcd_ms": 1500,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 33,
+    "power_type": 1,
     "description": "A 30 s self Seal: a landed white swing has 7 procs a minute (vmangos) of a holy hit of 70% of a weapon roll (20424). Judged: a holy hit under Judgement of Command (20467). Holy ignores armour.",
     "effects": [
      {
@@ -321,6 +327,7 @@
     "gcd_ms": 1500,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 34,
+    "power_type": 1,
     "description": "A 30 s self Seal that replaces any other: 20 + 4 attack power a level, swings 40% faster with each hit cut to match (so the haste alone adds no damage a second). Judged: Judgement of the Crusader Rank 3 (20300) on the target for 10 s, 20% more holy damage taken (vanilla's is a flat amount), its duration refreshed by each landed white swing at the target.",
     "effects": [
      {
@@ -352,11 +359,12 @@
    "key": "judgement",
    "rank": 1,
    "fields": {
-    "cost": 0,
+    "cost": 5,
     "cooldown_ms": 10000,
     "gcd_ms": 0,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 35,
+    "power_type": 1,
     "description": "Consumes the active Seal for that Seal's judgement; with no Seal it fails and costs nothing.",
     "effects": [
      {
@@ -379,6 +387,7 @@
     "gcd_ms": 1500,
     "borrowed_from_class": 2,
     "borrowed_family_bit": 36,
+    "power_type": 1,
     "effects": [
      {
       "kind": "stun",
@@ -402,6 +411,7 @@
     "cost": 30.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
+    "power_type": 1,
     "effects": [
      {
       "kind": "weapon_strike",
@@ -437,6 +447,7 @@
     "cooldown_ms": 0,
     "gcd_ms": 0,
     "not_in_combat": true,
+    "power_type": 1,
     "stances": [
      "Battle Stance"
     ],
@@ -475,6 +486,7 @@
    "key": "improved_overpower",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Overpower +25/50% crit chance.",
     "effects": []
    }
@@ -485,6 +497,7 @@
    "key": "improved_overpower",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Overpower +25/50% crit chance.",
     "effects": []
    }
@@ -495,6 +508,7 @@
    "key": "improved_rend",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Rend ticks +15/25/35%.",
     "effects": []
    },
@@ -513,6 +527,7 @@
    "key": "improved_rend",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Rend ticks +15/25/35%.",
     "effects": []
    },
@@ -531,6 +546,7 @@
    "key": "improved_rend",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Rend ticks +15/25/35%.",
     "effects": []
    },
@@ -549,6 +565,7 @@
    "key": "improved_charge",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Charge +3/6 rage.",
     "effects": []
    }
@@ -559,6 +576,7 @@
    "key": "improved_charge",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Charge +3/6 rage.",
     "effects": []
    }
@@ -569,6 +587,7 @@
    "key": "anger_management",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
    }
   },
@@ -578,6 +597,7 @@
    "key": "deep_wounds",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -588,6 +608,7 @@
    "key": "deep_wounds",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -598,6 +619,7 @@
    "key": "deep_wounds",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -608,6 +630,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -618,6 +641,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -628,6 +652,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -638,6 +663,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -648,6 +674,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -658,6 +685,7 @@
    "key": "impale",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
     "effects": []
    }
@@ -668,6 +696,7 @@
    "key": "impale",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
     "effects": []
    }
@@ -678,6 +707,7 @@
    "key": "axe_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -688,6 +718,7 @@
    "key": "axe_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -698,6 +729,7 @@
    "key": "axe_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -708,6 +740,7 @@
    "key": "axe_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -718,6 +751,7 @@
    "key": "axe_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -728,6 +762,7 @@
    "key": "mace_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -738,6 +773,7 @@
    "key": "mace_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -748,6 +784,7 @@
    "key": "mace_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -758,6 +795,7 @@
    "key": "mace_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -768,6 +806,7 @@
    "key": "mace_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -778,6 +817,7 @@
    "key": "sword_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -788,6 +828,7 @@
    "key": "sword_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -798,6 +839,7 @@
    "key": "sword_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -808,6 +850,7 @@
    "key": "sword_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -818,6 +861,7 @@
    "key": "sword_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -828,6 +872,7 @@
    "key": "flurry",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -837,6 +882,7 @@
    "key": "flurry",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -846,6 +892,7 @@
    "key": "flurry",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -855,6 +902,7 @@
    "key": "flurry",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -864,6 +912,7 @@
    "key": "flurry",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
    }
   },
@@ -873,6 +922,7 @@
    "key": "booming_voice",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -883,6 +933,7 @@
    "key": "booming_voice",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -893,6 +944,7 @@
    "key": "booming_voice",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -903,6 +955,7 @@
    "key": "booming_voice",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -913,6 +966,7 @@
    "key": "booming_voice",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout duration and radius +10..50%.",
     "effects": []
    }
@@ -923,6 +977,7 @@
    "key": "cruelty",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -933,6 +988,7 @@
    "key": "cruelty",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -943,6 +999,7 @@
    "key": "cruelty",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -953,6 +1010,7 @@
    "key": "cruelty",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -963,6 +1021,7 @@
    "key": "cruelty",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -973,6 +1032,7 @@
    "key": "unbridled_wrath",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -983,6 +1043,7 @@
    "key": "unbridled_wrath",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -993,6 +1054,7 @@
    "key": "unbridled_wrath",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -1003,6 +1065,7 @@
    "key": "unbridled_wrath",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -1013,6 +1076,7 @@
    "key": "unbridled_wrath",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
     "effects": []
    }
@@ -1023,6 +1087,7 @@
    "key": "improved_battle_shout",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1041,6 +1106,7 @@
    "key": "improved_battle_shout",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1059,6 +1125,7 @@
    "key": "improved_battle_shout",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1077,6 +1144,7 @@
    "key": "improved_battle_shout",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1095,6 +1163,7 @@
    "key": "improved_battle_shout",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Battle Shout's attack power +5..25%.",
     "effects": []
    },
@@ -1113,6 +1182,7 @@
    "key": "blood_craze",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
     "effects": []
    }
@@ -1123,6 +1193,7 @@
    "key": "blood_craze",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
     "effects": []
    }
@@ -1133,6 +1204,7 @@
    "key": "blood_craze",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
     "effects": []
    }
@@ -1143,6 +1215,7 @@
    "key": "enrage",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1153,6 +1226,7 @@
    "key": "enrage",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1163,6 +1237,7 @@
    "key": "enrage",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1173,6 +1248,7 @@
    "key": "enrage",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1183,6 +1259,7 @@
    "key": "enrage",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
     "effects": []
    }
@@ -1193,6 +1270,7 @@
    "key": "improved_seal_of_the_crusader",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
@@ -1211,6 +1289,7 @@
    "key": "improved_seal_of_the_crusader",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
@@ -1229,6 +1308,7 @@
    "key": "improved_seal_of_the_crusader",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Seal of the Crusader's attack power and its judgement's holy damage taken +5/10/15%.",
     "effects": []
    },
@@ -1247,6 +1327,7 @@
    "key": "benediction",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1271,6 +1352,7 @@
    "key": "benediction",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1295,6 +1377,7 @@
    "key": "benediction",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1319,6 +1402,7 @@
    "key": "benediction",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1343,6 +1427,7 @@
    "key": "benediction",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "The Seals cost 1/1/2/2/3 less rage and Judgement 1/1/1/1/2 less (vanilla's 3% a rank, doubled for the small rage costs, rounded and at least 1).",
     "effects": []
    },
@@ -1367,6 +1452,7 @@
    "key": "improved_judgement",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1376,6 +1462,7 @@
    "key": "improved_judgement",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: Judgement's cooldown would be 1/2 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1385,6 +1472,7 @@
    "key": "deflection",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1395,6 +1483,7 @@
    "key": "deflection",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1405,6 +1494,7 @@
    "key": "deflection",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1415,6 +1505,7 @@
    "key": "deflection",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1425,6 +1516,7 @@
    "key": "deflection",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% parry chance.",
     "effects": []
    }
@@ -1435,6 +1527,7 @@
    "key": "vindication",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
    }
   },
@@ -1444,6 +1537,7 @@
    "key": "vindication",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
    }
   },
@@ -1453,6 +1547,7 @@
    "key": "vindication",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: melee hits would sap the target's Strength and Agility. Learnable, and counts toward the row."
    }
   },
@@ -1462,6 +1557,7 @@
    "key": "conviction",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1472,6 +1568,7 @@
    "key": "conviction",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1482,6 +1579,7 @@
    "key": "conviction",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1492,6 +1590,7 @@
    "key": "conviction",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1502,6 +1601,7 @@
    "key": "conviction",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% melee crit chance.",
     "effects": []
    }
@@ -1512,6 +1612,7 @@
    "key": "eye_for_an_eye",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
    }
   },
@@ -1521,6 +1622,7 @@
    "key": "eye_for_an_eye",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: crits taken would strike back at the attacker. Learnable, and counts toward the row."
    }
   },
@@ -1530,6 +1632,7 @@
    "key": "pursuit_of_justice",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
    }
   },
@@ -1539,6 +1642,7 @@
    "key": "pursuit_of_justice",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: movement speed (no kind). Learnable, and counts toward the row."
    }
   },
@@ -1548,6 +1652,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -1558,6 +1663,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -1568,6 +1674,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+2/4/6% physical damage while wielding a two-handed melee weapon.",
     "effects": []
    }
@@ -1578,6 +1685,7 @@
    "key": "improved_hammer_of_justice",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1587,6 +1695,7 @@
    "key": "improved_hammer_of_justice",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1596,6 +1705,7 @@
    "key": "improved_hammer_of_justice",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: Hammer of Justice's cooldown would be 5/10/15 s shorter (no cooldown kind). Learnable, and counts toward the row."
    }
   },
@@ -1605,6 +1715,7 @@
    "key": "vengeance",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1614,6 +1725,7 @@
    "key": "vengeance",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1623,6 +1735,7 @@
    "key": "vengeance",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1632,6 +1745,7 @@
    "key": "vengeance",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1641,6 +1755,7 @@
    "key": "vengeance",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit dealt would raise the damage dealt for a while. Learnable, and counts toward the row."
    }
   },
@@ -1650,6 +1765,7 @@
    "key": "holy_power",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1659,6 +1775,7 @@
    "key": "holy_power",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1668,6 +1785,7 @@
    "key": "holy_power",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1677,6 +1795,7 @@
    "key": "holy_power",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1686,6 +1805,7 @@
    "key": "holy_power",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +1..5% crit chance of holy damage (the holy damage comes with #24). Learnable."
    }
   },
@@ -1695,6 +1815,7 @@
    "key": "improved_charge",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Charge +3/6 rage.",
     "effects": []
    }
@@ -1705,6 +1826,7 @@
    "key": "improved_charge",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Charge +3/6 rage.",
     "effects": []
    }
@@ -1715,6 +1837,7 @@
    "key": "anger_management",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
    }
   },
@@ -1724,6 +1847,7 @@
    "key": "impale",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
     "effects": []
    }
@@ -1734,6 +1858,7 @@
    "key": "impale",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Skill crits deal +10/20% of the crit bonus (2.0x becomes 2.1x/2.2x).",
     "effects": []
    }
@@ -1744,6 +1869,7 @@
    "key": "deep_wounds",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -1754,6 +1880,7 @@
    "key": "deep_wounds",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -1764,6 +1891,7 @@
    "key": "deep_wounds",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
     "effects": []
    }
@@ -1774,6 +1902,7 @@
    "key": "axe_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -1784,6 +1913,7 @@
    "key": "axe_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -1794,6 +1924,7 @@
    "key": "axe_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -1804,6 +1935,7 @@
    "key": "axe_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -1814,6 +1946,7 @@
    "key": "axe_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+1..5% crit chance with axes.",
     "effects": []
    }
@@ -1824,6 +1957,7 @@
    "key": "mace_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -1834,6 +1968,7 @@
    "key": "mace_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -1844,6 +1979,7 @@
    "key": "mace_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -1854,6 +1990,7 @@
    "key": "mace_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -1864,6 +2001,7 @@
    "key": "mace_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
     "effects": []
    }
@@ -1874,6 +2012,7 @@
    "key": "sword_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -1884,6 +2023,7 @@
    "key": "sword_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -1894,6 +2034,7 @@
    "key": "sword_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -1904,6 +2045,7 @@
    "key": "sword_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -1914,6 +2056,7 @@
    "key": "sword_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
     "effects": []
    }
@@ -1924,6 +2067,7 @@
    "key": "flurry",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -1933,6 +2077,7 @@
    "key": "flurry",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -1942,6 +2087,7 @@
    "key": "flurry",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -1951,6 +2097,7 @@
    "key": "flurry",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -1960,6 +2107,7 @@
    "key": "flurry",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable."
    }
   },
@@ -1969,6 +2117,7 @@
    "key": "divine_strength",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -1978,6 +2127,7 @@
    "key": "divine_strength",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -1987,6 +2137,7 @@
    "key": "divine_strength",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -1996,6 +2147,7 @@
    "key": "divine_strength",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -2005,6 +2157,7 @@
    "key": "divine_strength",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +2..10% Strength (no stat-percent kind). Learnable, and counts toward the row."
    }
   },
@@ -2014,6 +2167,7 @@
    "key": "toughness",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2024,6 +2178,7 @@
    "key": "toughness",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2034,6 +2189,7 @@
    "key": "toughness",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2044,6 +2200,7 @@
    "key": "toughness",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2054,6 +2211,7 @@
    "key": "toughness",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% armour from items.",
     "effects": []
    }
@@ -2064,6 +2222,7 @@
    "key": "precision",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
    }
   },
@@ -2073,6 +2232,7 @@
    "key": "precision",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
    }
   },
@@ -2082,6 +2242,7 @@
    "key": "precision",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: +1..3% melee hit (no hit kind). Learnable, and counts toward the row."
    }
   },
@@ -2091,6 +2252,7 @@
    "key": "redoubt",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2100,6 +2262,7 @@
    "key": "redoubt",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2109,6 +2272,7 @@
    "key": "redoubt",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2118,6 +2282,7 @@
    "key": "redoubt",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2127,6 +2292,7 @@
    "key": "redoubt",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would raise the block chance for a few blocks. Learnable, and counts toward the row."
    }
   },
@@ -2136,6 +2302,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2146,6 +2313,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2156,6 +2324,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2166,6 +2335,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2176,6 +2346,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+2..10% physical damage while wielding a one-handed melee weapon.",
     "effects": []
    }
@@ -2186,6 +2357,7 @@
    "key": "anticipation",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2196,6 +2368,7 @@
    "key": "anticipation",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2206,6 +2379,7 @@
    "key": "anticipation",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2216,6 +2390,7 @@
    "key": "anticipation",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2226,6 +2401,7 @@
    "key": "anticipation",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "+2..10 Defense.",
     "effects": []
    }
@@ -2236,6 +2412,7 @@
    "key": "reckoning",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2245,6 +2422,7 @@
    "key": "reckoning",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2254,6 +2432,7 @@
    "key": "reckoning",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2263,6 +2442,7 @@
    "key": "reckoning",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
@@ -2272,6 +2452,7 @@
    "key": "reckoning",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "description": "Not modelled yet: a crit taken would give extra attacks. Learnable."
    }
   },
