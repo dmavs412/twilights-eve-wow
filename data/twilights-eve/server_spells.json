@@ -1,6 +1,7 @@
 [
  {
   "key": "basic_warrior",
+  "class": 1,
   "skills": [
    {
     "key": "heroic_strike",
@@ -430,6 +431,7 @@
  },
  {
   "key": "vanguard",
+  "class": 1,
   "skills": [
    {
     "key": "mortal_strike",
@@ -1545,6 +1547,7 @@
  },
  {
   "key": "zealot",
+  "class": 1,
   "skills": [
    {
     "key": "seal_of_command",

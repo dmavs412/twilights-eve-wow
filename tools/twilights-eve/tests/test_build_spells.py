@@ -20,7 +20,7 @@ with open(MASTER, newline="", encoding="utf-8") as _f:
     COLUMNS = next(csv.reader(_f))
 
 STRIKE = {
-    "kind": "skill", "calling": "vanguard", "key": "strike", "name": "Strike", "rank": "1",
+    "kind": "skill", "calling": "vanguard", "class": "1", "key": "strike", "name": "Strike", "rank": "1",
     "spell_id": "78", "client_cost": "15", "realm_cost": "15", "target": "enemy",
     "effect1_kind": "weapon_strike",
     "effect1_params": "weapon=W;bonus.base=9.5;bonus.per_level=1.4;bonus.per_ap=0;tags=a|b",
@@ -30,7 +30,7 @@ STRIKE = {
 
 
 def talent(key: str, rank: int, row: int, column: int, **extra: str) -> dict:
-    return {"kind": "talent", "calling": "vanguard", "key": key, "name": key.title(),
+    return {"kind": "talent", "calling": "vanguard", "class": "1", "key": key, "name": key.title(),
             "rank": str(rank), "tab": "Arms", "tab_row": str(row), "tab_column": str(column),
             "modelled": "yes", **extra}
 
@@ -101,6 +101,25 @@ class BuildSpells(unittest.TestCase):
 
     def test_realm_cost_below_client_cost_fails(self):
         self.assert_fails([{**STRIKE, "realm_cost": "10"}], "below client_cost")
+
+    def test_a_callings_rows_must_agree_on_class(self):
+        self.assert_fails([STRIKE, {**STRIKE, "key": "stab", "class": "4"}], "disagree on class")
+
+    def test_a_missing_or_unknown_class_fails(self):
+        self.assert_fails([{**STRIKE, "class": ""}], "class is required")
+        self.assert_fails([{**STRIKE, "class": "6"}], "is not one of")
+        self.assert_fails([{**STRIKE, "class": "1.5"}], "is not one of")
+
+    def test_every_patch_row_carries_the_power_type_of_its_class(self):
+        for cls, power_type in (("1", 1), ("4", 3), ("8", 0)):
+            rows = [{**STRIKE, "class": cls}, talent("cruelty", 1, 0, 1, **{"class": cls, "spell_id": "12320"})]
+            done, data = self.run_build(rows)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(data[0]["class"], int(cls))
+            self.assertNotIn("class", data[0]["skills"][0])
+            self.assertEqual(len(self.patch["spells"]), 2)
+            for override in self.patch["spells"]:
+                self.assertEqual(override["fields"]["power_type"], power_type, cls)
 
     def test_energize_names_its_power(self):
         row = {**STRIKE, "effect1_kind": "energize",

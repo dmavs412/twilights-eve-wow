@@ -20,7 +20,7 @@ difference is listed in [§14](#14-where-vmangos-and-cmangos-disagree) and next 
 | file | what |
 |---|---|
 | `data/twilights-eve/xp_table.json` | XP to next level, levels 1–60 (`player_xp_for_level`) |
-| `data/twilights-eve/warrior_level_stats.json` | Warrior base health/mana and agility→crit/dodge divisors per level (`player_classlevelstats`, `player_crit_per_agility`, `player_dodge_per_agility`), naked base stats per race per level 1–60 (`player_levelstats`), and derived check rows |
+| `data/twilights-eve/<class>_level_stats.json` | Each Class's base health/mana and agility→crit/dodge divisors per level (`player_classlevelstats`, `player_crit_per_agility`, `player_dodge_per_agility`) and naked base stats per race per level 1–60 (`player_levelstats`), from `tools/twilights-eve/extract_class_levels.py`; the warrior file also carries derived check rows |
 | `data/twilights-eve/mob_base_stats.json` | `creature_classlevelstats` for mob unit classes 1 (warrior), 2 (paladin), 8 (mage), levels 1–63 |
 
 **Conventions used in the vectors.**

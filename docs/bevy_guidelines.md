@@ -19,7 +19,9 @@ Each effect `kind` in the CSV maps to one component:
 | `weapon_strike` | `WeaponStrike` | weapon roll (`W` or `Wn`), bonus amount, on next swing, unavoidable set, threat bonus |
 | `periodic_damage` | `PeriodicDamage` | school, mechanic, tick amount, tick interval, duration |
 | `stun` | `Stun` | duration, aura spell id |
-| `energize_rage` | `Energize` | power kind, amount |
+| `energize` | `Energize` | power kind (`rage`, `energy`, `mana`), amount; nothing on a bar of another kind |
+| `add_combo_points` | `AddComboPoints` | amount, on the target, five at most |
+| `per_combo` (a block on a damage or duration kind) | `PerCombo` | the amount added once per combo point; its presence makes the ability a finisher (`Finisher`: needs points, spends them when it lands) |
 | `aura_attack_power` | `AuraAttackPower` | amount, duration |
 | `healing_reduction` | `HealingReduction` | percent, duration |
 | `charge` | `Charge` | speed |

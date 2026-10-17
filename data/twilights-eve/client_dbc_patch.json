@@ -6,6 +6,7 @@
    "key": "heroic_strike",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 15.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
@@ -37,6 +38,7 @@
    "key": "charge",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 0.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
@@ -82,6 +84,7 @@
    "key": "mortal_strike",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 30.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
@@ -117,6 +120,7 @@
    "key": "overpower",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 5.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
@@ -152,6 +156,7 @@
    "key": "charge",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 0.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
@@ -196,6 +201,7 @@
    "key": "rend",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 10.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
@@ -232,6 +238,7 @@
    "key": "battle_shout",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 10.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
@@ -260,6 +267,7 @@
    "key": "improved_overpower",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -269,6 +277,7 @@
    "key": "improved_overpower",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -278,6 +287,7 @@
    "key": "improved_rend",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -295,6 +305,7 @@
    "key": "improved_rend",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -312,6 +323,7 @@
    "key": "improved_rend",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -329,6 +341,7 @@
    "key": "improved_charge",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -338,6 +351,7 @@
    "key": "improved_charge",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -346,7 +360,9 @@
    "calling": "vanguard",
    "key": "anger_management",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12834,
@@ -354,6 +370,7 @@
    "key": "deep_wounds",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -363,6 +380,7 @@
    "key": "deep_wounds",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -372,6 +390,7 @@
    "key": "deep_wounds",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -381,6 +400,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -390,6 +410,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -399,6 +420,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -408,6 +430,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -417,6 +440,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -426,6 +450,7 @@
    "key": "impale",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -435,6 +460,7 @@
    "key": "impale",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -444,6 +470,7 @@
    "key": "axe_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -453,6 +480,7 @@
    "key": "axe_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -462,6 +490,7 @@
    "key": "axe_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -471,6 +500,7 @@
    "key": "axe_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -480,6 +510,7 @@
    "key": "axe_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -489,6 +520,7 @@
    "key": "mace_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -498,6 +530,7 @@
    "key": "mace_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -507,6 +540,7 @@
    "key": "mace_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -516,6 +550,7 @@
    "key": "mace_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -525,6 +560,7 @@
    "key": "mace_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -534,6 +570,7 @@
    "key": "sword_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -543,6 +580,7 @@
    "key": "sword_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -552,6 +590,7 @@
    "key": "sword_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -561,6 +600,7 @@
    "key": "sword_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -570,6 +610,7 @@
    "key": "sword_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -578,35 +619,45 @@
    "calling": "vanguard",
    "key": "flurry",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12971,
    "calling": "vanguard",
    "key": "flurry",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12972,
    "calling": "vanguard",
    "key": "flurry",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12973,
    "calling": "vanguard",
    "key": "flurry",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12974,
    "calling": "vanguard",
    "key": "flurry",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12321,
@@ -614,6 +665,7 @@
    "key": "booming_voice",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -623,6 +675,7 @@
    "key": "booming_voice",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -632,6 +685,7 @@
    "key": "booming_voice",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -641,6 +695,7 @@
    "key": "booming_voice",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -650,6 +705,7 @@
    "key": "booming_voice",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -659,6 +715,7 @@
    "key": "cruelty",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -668,6 +725,7 @@
    "key": "cruelty",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -677,6 +735,7 @@
    "key": "cruelty",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -686,6 +745,7 @@
    "key": "cruelty",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -695,6 +755,7 @@
    "key": "cruelty",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -704,6 +765,7 @@
    "key": "unbridled_wrath",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -713,6 +775,7 @@
    "key": "unbridled_wrath",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -722,6 +785,7 @@
    "key": "unbridled_wrath",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -731,6 +795,7 @@
    "key": "unbridled_wrath",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -740,6 +805,7 @@
    "key": "unbridled_wrath",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -749,6 +815,7 @@
    "key": "improved_battle_shout",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -766,6 +833,7 @@
    "key": "improved_battle_shout",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -783,6 +851,7 @@
    "key": "improved_battle_shout",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -800,6 +869,7 @@
    "key": "improved_battle_shout",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -817,6 +887,7 @@
    "key": "improved_battle_shout",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -834,6 +905,7 @@
    "key": "blood_craze",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -843,6 +915,7 @@
    "key": "blood_craze",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -852,6 +925,7 @@
    "key": "blood_craze",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -861,6 +935,7 @@
    "key": "enrage",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -870,6 +945,7 @@
    "key": "enrage",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -879,6 +955,7 @@
    "key": "enrage",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -888,6 +965,7 @@
    "key": "enrage",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -897,6 +975,7 @@
    "key": "enrage",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -906,6 +985,7 @@
    "key": "seal_of_command",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 10,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
@@ -943,6 +1023,7 @@
    "key": "seal_of_the_crusader",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 10,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
@@ -979,6 +1060,7 @@
    "key": "judgement",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 0,
     "cooldown_ms": 10000,
     "gcd_ms": 0,
@@ -1001,6 +1083,7 @@
    "key": "hammer_of_justice",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 15,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
@@ -1027,6 +1110,7 @@
    "key": "mortal_strike",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 30.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
@@ -1062,6 +1146,7 @@
    "key": "charge",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 0.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
@@ -1106,6 +1191,7 @@
    "key": "improved_seal_of_the_crusader",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -1123,6 +1209,7 @@
    "key": "improved_seal_of_the_crusader",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -1140,6 +1227,7 @@
    "key": "improved_seal_of_the_crusader",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -1157,6 +1245,7 @@
    "key": "benediction",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -1180,6 +1269,7 @@
    "key": "benediction",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -1203,6 +1293,7 @@
    "key": "benediction",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -1226,6 +1317,7 @@
    "key": "benediction",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -1249,6 +1341,7 @@
    "key": "benediction",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    },
    "spellmods": [
@@ -1271,14 +1364,18 @@
    "calling": "zealot",
    "key": "improved_judgement",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 25957,
    "calling": "zealot",
    "key": "improved_judgement",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20060,
@@ -1286,6 +1383,7 @@
    "key": "deflection",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1295,6 +1393,7 @@
    "key": "deflection",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1304,6 +1403,7 @@
    "key": "deflection",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1313,6 +1413,7 @@
    "key": "deflection",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1322,6 +1423,7 @@
    "key": "deflection",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1330,21 +1432,27 @@
    "calling": "zealot",
    "key": "vindication",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 26016,
    "calling": "zealot",
    "key": "vindication",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 26021,
    "calling": "zealot",
    "key": "vindication",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20117,
@@ -1352,6 +1460,7 @@
    "key": "conviction",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1361,6 +1470,7 @@
    "key": "conviction",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1370,6 +1480,7 @@
    "key": "conviction",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1379,6 +1490,7 @@
    "key": "conviction",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1388,6 +1500,7 @@
    "key": "conviction",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1396,28 +1509,36 @@
    "calling": "zealot",
    "key": "eye_for_an_eye",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 25988,
    "calling": "zealot",
    "key": "eye_for_an_eye",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 26022,
    "calling": "zealot",
    "key": "pursuit_of_justice",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 26023,
    "calling": "zealot",
    "key": "pursuit_of_justice",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20111,
@@ -1425,6 +1546,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1434,6 +1556,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1443,6 +1566,7 @@
    "key": "two_handed_weapon_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1451,91 +1575,117 @@
    "calling": "zealot",
    "key": "improved_hammer_of_justice",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20488,
    "calling": "zealot",
    "key": "improved_hammer_of_justice",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20489,
    "calling": "zealot",
    "key": "improved_hammer_of_justice",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20049,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20056,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20057,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20058,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20059,
    "calling": "zealot",
    "key": "vengeance",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 5923,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 5924,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 5925,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 5926,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 25829,
    "calling": "zealot",
    "key": "holy_power",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12285,
@@ -1543,6 +1693,7 @@
    "key": "improved_charge",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1552,6 +1703,7 @@
    "key": "improved_charge",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1560,7 +1712,9 @@
    "calling": "zealot",
    "key": "anger_management",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 16493,
@@ -1568,6 +1722,7 @@
    "key": "impale",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1577,6 +1732,7 @@
    "key": "impale",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1586,6 +1742,7 @@
    "key": "deep_wounds",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1595,6 +1752,7 @@
    "key": "deep_wounds",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1604,6 +1762,7 @@
    "key": "deep_wounds",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1613,6 +1772,7 @@
    "key": "axe_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1622,6 +1782,7 @@
    "key": "axe_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1631,6 +1792,7 @@
    "key": "axe_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1640,6 +1802,7 @@
    "key": "axe_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1649,6 +1812,7 @@
    "key": "axe_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1658,6 +1822,7 @@
    "key": "mace_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1667,6 +1832,7 @@
    "key": "mace_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1676,6 +1842,7 @@
    "key": "mace_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1685,6 +1852,7 @@
    "key": "mace_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1694,6 +1862,7 @@
    "key": "mace_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1703,6 +1872,7 @@
    "key": "sword_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1712,6 +1882,7 @@
    "key": "sword_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1721,6 +1892,7 @@
    "key": "sword_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1730,6 +1902,7 @@
    "key": "sword_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1739,6 +1912,7 @@
    "key": "sword_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1747,70 +1921,90 @@
    "calling": "zealot",
    "key": "flurry",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12971,
    "calling": "zealot",
    "key": "flurry",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12972,
    "calling": "zealot",
    "key": "flurry",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12973,
    "calling": "zealot",
    "key": "flurry",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 12974,
    "calling": "zealot",
    "key": "flurry",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20262,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20263,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20264,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20265,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20266,
    "calling": "zealot",
    "key": "divine_strength",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20143,
@@ -1818,6 +2012,7 @@
    "key": "toughness",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1827,6 +2022,7 @@
    "key": "toughness",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1836,6 +2032,7 @@
    "key": "toughness",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1845,6 +2042,7 @@
    "key": "toughness",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1854,6 +2052,7 @@
    "key": "toughness",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1862,56 +2061,72 @@
    "calling": "zealot",
    "key": "precision",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20192,
    "calling": "zealot",
    "key": "precision",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20193,
    "calling": "zealot",
    "key": "precision",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20127,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20130,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20135,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20136,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20137,
    "calling": "zealot",
    "key": "redoubt",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20196,
@@ -1919,6 +2134,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1928,6 +2144,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1937,6 +2154,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1946,6 +2164,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1955,6 +2174,7 @@
    "key": "one_handed_weapon_specialization",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1964,6 +2184,7 @@
    "key": "anticipation",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1973,6 +2194,7 @@
    "key": "anticipation",
    "rank": 2,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1982,6 +2204,7 @@
    "key": "anticipation",
    "rank": 3,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -1991,6 +2214,7 @@
    "key": "anticipation",
    "rank": 4,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -2000,6 +2224,7 @@
    "key": "anticipation",
    "rank": 5,
    "fields": {
+    "power_type": 1,
     "effects": []
    }
   },
@@ -2008,35 +2233,45 @@
    "calling": "zealot",
    "key": "reckoning",
    "rank": 1,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20179,
    "calling": "zealot",
    "key": "reckoning",
    "rank": 2,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20181,
    "calling": "zealot",
    "key": "reckoning",
    "rank": 3,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20180,
    "calling": "zealot",
    "key": "reckoning",
    "rank": 4,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 20182,
    "calling": "zealot",
    "key": "reckoning",
    "rank": 5,
-   "fields": {}
+   "fields": {
+    "power_type": 1
+   }
   },
   {
    "spell_id": 1776,
@@ -2044,6 +2279,7 @@
    "key": "gouge",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 15,
     "range_max": 5,
     "duration_ms": 4000,
@@ -2064,6 +2300,7 @@
    "key": "fire_blast",
    "rank": 1,
    "fields": {
+    "power_type": 1,
     "cost": 10,
     "cast_time_ms": 0,
     "range_max": 20,

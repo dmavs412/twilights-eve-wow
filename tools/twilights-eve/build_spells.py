@@ -44,6 +44,9 @@ FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
 # What an `energize` may name in `power`.
 POWERS = ("rage", "energy", "mana")
+# A Calling's `class` (ChrClasses.dbc id) and the `Powers` value its bar uses: Warrior rage (1),
+# Rogue energy (3), every other Class mana (0). The client patch carries it as `power_type`.
+CLASS_POWER_TYPE = {1: 1, 2: 0, 3: 0, 4: 3, 5: 0, 7: 0, 8: 0, 9: 0, 11: 0}
 
 REALM_NUMBERS = (
     "realm_cost", "realm_cooldown_ms", "realm_gcd_ms", "realm_range_min", "realm_range_max",
@@ -168,11 +171,22 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         raise BuildError(f"{where}: per_combo is a formula block (per_combo.base, per_combo.per_level)")
 
 
+def class_id(text: str, where: str) -> int:
+    """The row's `class`: a 1.12.1 class id the realm has tables for."""
+    if not text:
+        raise BuildError(f"{where}: class is required (the Calling's 1.12.1 class id)")
+    value = number(text, f"{where} class")
+    if not isinstance(value, int) or value not in CLASS_POWER_TYPE:
+        raise BuildError(f"{where}: class {text!r} is not one of {sorted(CLASS_POWER_TYPE)}")
+    return value
+
+
 def build_row(row: dict, where: str) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
         raise BuildError(f"{where}: modelled is {modelled!r}, want yes or no")
-    out: dict = {"key": row["key"], "name": row["name"], "rank": number(row["rank"], f"{where} rank")}
+    out: dict = {"key": row["key"], "name": row["name"], "rank": number(row["rank"], f"{where} rank"),
+                 "class": class_id(row["class"], where)}
     for column in ID_COLUMNS:
         if row[column]:
             out[column] = number(row[column], f"{where} {column}")
@@ -214,7 +228,8 @@ def client_override(row: dict, built: dict, where: str) -> dict | None:
     """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
     if "spell_id" not in built:
         return None
-    fields: dict = {}
+    # The Calling's power, so a borrowed spell gates against the right bar.
+    fields: dict = {"power_type": CLASS_POWER_TYPE[built["class"]]}
     for column in CLIENT_NUMBERS:
         if row[column]:
             fields[column.removeprefix("client_")] = number(row[column], f"{where} {column}")
@@ -265,7 +280,12 @@ def build(rows: list[dict]) -> tuple[list[dict], dict]:
         override = client_override(row, built, where)
         if override:
             overrides.append(override)
-        calling = callings.setdefault(row["calling"], {"key": row["calling"], "skills": [], "talent_tabs": []})
+        calling = callings.setdefault(row["calling"], {"key": row["calling"], "class": built["class"],
+                                                      "skills": [], "talent_tabs": []})
+        if calling["class"] != built["class"]:
+            raise BuildError(f"{where}: rows of {row['calling']} disagree on class "
+                             f"({calling['class']} and {built['class']})")
+        del built["class"]
         if kind == "skill":
             calling["skills"].append(built)
         else:
