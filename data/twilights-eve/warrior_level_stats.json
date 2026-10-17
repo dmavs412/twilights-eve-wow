@@ -1,7 +1,7 @@
 {
  "_source": {
   "per_level": "vmangos world DB: player_classlevelstats (class=1) for base_health/base_mana; player_crit_per_agility and player_dodge_per_agility (class=1) for the agility divisors. Read by ObjectMgr::LoadPlayerInfo / ObjectMgr::GetPlayerCritPerAgility / GetPlayerDodgePerAgility.",
-  "race_base_stats": "vmangos world DB: player_levelstats (class=1). Naked base stats per race per level, before gear/buffs. Only the races this Class can be.",
+  "race_base_stats": "vmangos world DB: player_levelstats (class=1). Naked base stats per race per level, before gear/buffs. Races vanilla never paired with this Class are synthesised (see _synthesised_races).",
   "formulas": "see docs/reference/vanilla-combat-rules.md section 5",
   "script": "tools/twilights-eve/extract_class_levels.py"
  },
@@ -4288,6 +4288,7 @@
    }
   ]
  },
+ "_synthesised_races": [],
  "_derived_check_rows_note": "naked_checks are derived with the formulas in the doc (vmangos StatSystem.cpp) and double as test vectors.",
  "naked_checks": [
   {

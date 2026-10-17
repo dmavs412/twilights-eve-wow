@@ -71,8 +71,9 @@ fn the_level_tables_match_the_reference() {
         assert_eq!(
             race_stats.keys().collect::<Vec<_>>(),
             reference_races.keys().collect::<Vec<_>>(),
-            "{class}: the races it can be"
+            "{class}: the same races"
         );
+        assert_eq!(race_stats.len(), 8, "{class}: every race");
         for (race, rows) in race_stats {
             let rows: Vec<Vec<f64>> = rows.as_array().unwrap().iter().map(floats).collect();
             let reference = &reference_races[race];

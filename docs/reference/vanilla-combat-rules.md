@@ -417,7 +417,12 @@ Warrior can parry is a design decision for the slice. The values above assume it
 
 Every Class reads its own `player_classlevelstats`, `player_levelstats` and agility rows
 (`<class>_level_stats.json`, extracted by `tools/twilights-eve/extract_class_levels.py`); health
-from stamina and armour from agility are the same for all. What differs:
+from stamina and armour from agility are the same for all. `player_levelstats` holds only the
+race and Class pairs vanilla allowed; the files carry all eight races on every Class, the
+missing pairs synthesised as the Class's curve for its first non-human race plus the race's
+flat offset from the Warrior rows. Against every real pair that rule is exact in 93% of cells
+and within a point or two elsewhere (the human spirit and gnome intellect racials are +5%, not
+flat). What differs:
 
 **Attack power** (vmangos `Player::UpdateAttackPowerAndDamage`, before gear):
 

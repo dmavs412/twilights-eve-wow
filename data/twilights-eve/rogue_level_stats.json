@@ -1,7 +1,7 @@
 {
  "_source": {
   "per_level": "vmangos world DB: player_classlevelstats (class=4) for base_health/base_mana; player_crit_per_agility and player_dodge_per_agility (class=4) for the agility divisors. Read by ObjectMgr::LoadPlayerInfo / ObjectMgr::GetPlayerCritPerAgility / GetPlayerDodgePerAgility.",
-  "race_base_stats": "vmangos world DB: player_levelstats (class=4). Naked base stats per race per level, before gear/buffs. Only the races this Class can be.",
+  "race_base_stats": "vmangos world DB: player_levelstats (class=4). Naked base stats per race per level, before gear/buffs. Races vanilla never paired with this Class are synthesised (see _synthesised_races).",
   "formulas": "see docs/reference/vanilla-combat-rules.md section 5",
   "script": "tools/twilights-eve/extract_class_levels.py"
  },
@@ -2841,6 +2841,488 @@
     "spi": 55
    }
   ],
+  "tauren": [
+   {
+    "level": 1,
+    "str": 26,
+    "agi": 18,
+    "sta": 23,
+    "int": 15,
+    "spi": 22
+   },
+   {
+    "level": 2,
+    "str": 27,
+    "agi": 19,
+    "sta": 24,
+    "int": 15,
+    "spi": 22
+   },
+   {
+    "level": 3,
+    "str": 27,
+    "agi": 20,
+    "sta": 24,
+    "int": 15,
+    "spi": 23
+   },
+   {
+    "level": 4,
+    "str": 28,
+    "agi": 22,
+    "sta": 25,
+    "int": 16,
+    "spi": 23
+   },
+   {
+    "level": 5,
+    "str": 29,
+    "agi": 23,
+    "sta": 26,
+    "int": 16,
+    "spi": 23
+   },
+   {
+    "level": 6,
+    "str": 29,
+    "agi": 24,
+    "sta": 26,
+    "int": 16,
+    "spi": 24
+   },
+   {
+    "level": 7,
+    "str": 30,
+    "agi": 26,
+    "sta": 27,
+    "int": 16,
+    "spi": 24
+   },
+   {
+    "level": 8,
+    "str": 31,
+    "agi": 27,
+    "sta": 27,
+    "int": 16,
+    "spi": 24
+   },
+   {
+    "level": 9,
+    "str": 32,
+    "agi": 28,
+    "sta": 28,
+    "int": 16,
+    "spi": 25
+   },
+   {
+    "level": 10,
+    "str": 32,
+    "agi": 30,
+    "sta": 29,
+    "int": 17,
+    "spi": 25
+   },
+   {
+    "level": 11,
+    "str": 33,
+    "agi": 31,
+    "sta": 30,
+    "int": 17,
+    "spi": 26
+   },
+   {
+    "level": 12,
+    "str": 34,
+    "agi": 32,
+    "sta": 30,
+    "int": 17,
+    "spi": 26
+   },
+   {
+    "level": 13,
+    "str": 35,
+    "agi": 34,
+    "sta": 31,
+    "int": 17,
+    "spi": 26
+   },
+   {
+    "level": 14,
+    "str": 35,
+    "agi": 35,
+    "sta": 32,
+    "int": 17,
+    "spi": 27
+   },
+   {
+    "level": 15,
+    "str": 36,
+    "agi": 37,
+    "sta": 32,
+    "int": 18,
+    "spi": 27
+   },
+   {
+    "level": 16,
+    "str": 37,
+    "agi": 38,
+    "sta": 33,
+    "int": 18,
+    "spi": 28
+   },
+   {
+    "level": 17,
+    "str": 38,
+    "agi": 39,
+    "sta": 34,
+    "int": 18,
+    "spi": 28
+   },
+   {
+    "level": 18,
+    "str": 39,
+    "agi": 41,
+    "sta": 35,
+    "int": 18,
+    "spi": 28
+   },
+   {
+    "level": 19,
+    "str": 40,
+    "agi": 43,
+    "sta": 35,
+    "int": 18,
+    "spi": 29
+   },
+   {
+    "level": 20,
+    "str": 40,
+    "agi": 44,
+    "sta": 36,
+    "int": 19,
+    "spi": 29
+   },
+   {
+    "level": 21,
+    "str": 41,
+    "agi": 46,
+    "sta": 37,
+    "int": 19,
+    "spi": 30
+   },
+   {
+    "level": 22,
+    "str": 42,
+    "agi": 47,
+    "sta": 38,
+    "int": 19,
+    "spi": 30
+   },
+   {
+    "level": 23,
+    "str": 43,
+    "agi": 49,
+    "sta": 39,
+    "int": 19,
+    "spi": 31
+   },
+   {
+    "level": 24,
+    "str": 44,
+    "agi": 50,
+    "sta": 39,
+    "int": 20,
+    "spi": 31
+   },
+   {
+    "level": 25,
+    "str": 45,
+    "agi": 52,
+    "sta": 40,
+    "int": 20,
+    "spi": 32
+   },
+   {
+    "level": 26,
+    "str": 46,
+    "agi": 54,
+    "sta": 41,
+    "int": 20,
+    "spi": 32
+   },
+   {
+    "level": 27,
+    "str": 47,
+    "agi": 55,
+    "sta": 42,
+    "int": 20,
+    "spi": 32
+   },
+   {
+    "level": 28,
+    "str": 48,
+    "agi": 57,
+    "sta": 43,
+    "int": 20,
+    "spi": 33
+   },
+   {
+    "level": 29,
+    "str": 48,
+    "agi": 59,
+    "sta": 44,
+    "int": 21,
+    "spi": 33
+   },
+   {
+    "level": 30,
+    "str": 49,
+    "agi": 61,
+    "sta": 44,
+    "int": 21,
+    "spi": 34
+   },
+   {
+    "level": 31,
+    "str": 50,
+    "agi": 62,
+    "sta": 45,
+    "int": 21,
+    "spi": 34
+   },
+   {
+    "level": 32,
+    "str": 51,
+    "agi": 64,
+    "sta": 46,
+    "int": 21,
+    "spi": 35
+   },
+   {
+    "level": 33,
+    "str": 52,
+    "agi": 66,
+    "sta": 47,
+    "int": 22,
+    "spi": 35
+   },
+   {
+    "level": 34,
+    "str": 53,
+    "agi": 68,
+    "sta": 48,
+    "int": 22,
+    "spi": 36
+   },
+   {
+    "level": 35,
+    "str": 54,
+    "agi": 70,
+    "sta": 49,
+    "int": 22,
+    "spi": 36
+   },
+   {
+    "level": 36,
+    "str": 56,
+    "agi": 72,
+    "sta": 50,
+    "int": 23,
+    "spi": 37
+   },
+   {
+    "level": 37,
+    "str": 57,
+    "agi": 73,
+    "sta": 51,
+    "int": 23,
+    "spi": 38
+   },
+   {
+    "level": 38,
+    "str": 58,
+    "agi": 75,
+    "sta": 52,
+    "int": 23,
+    "spi": 38
+   },
+   {
+    "level": 39,
+    "str": 59,
+    "agi": 77,
+    "sta": 53,
+    "int": 23,
+    "spi": 39
+   },
+   {
+    "level": 40,
+    "str": 60,
+    "agi": 79,
+    "sta": 54,
+    "int": 24,
+    "spi": 39
+   },
+   {
+    "level": 41,
+    "str": 61,
+    "agi": 81,
+    "sta": 55,
+    "int": 24,
+    "spi": 40
+   },
+   {
+    "level": 42,
+    "str": 62,
+    "agi": 83,
+    "sta": 56,
+    "int": 24,
+    "spi": 40
+   },
+   {
+    "level": 43,
+    "str": 63,
+    "agi": 85,
+    "sta": 57,
+    "int": 24,
+    "spi": 41
+   },
+   {
+    "level": 44,
+    "str": 64,
+    "agi": 88,
+    "sta": 58,
+    "int": 25,
+    "spi": 41
+   },
+   {
+    "level": 45,
+    "str": 66,
+    "agi": 90,
+    "sta": 59,
+    "int": 25,
+    "spi": 42
+   },
+   {
+    "level": 46,
+    "str": 67,
+    "agi": 92,
+    "sta": 60,
+    "int": 25,
+    "spi": 43
+   },
+   {
+    "level": 47,
+    "str": 68,
+    "agi": 94,
+    "sta": 61,
+    "int": 26,
+    "spi": 43
+   },
+   {
+    "level": 48,
+    "str": 69,
+    "agi": 96,
+    "sta": 62,
+    "int": 26,
+    "spi": 44
+   },
+   {
+    "level": 49,
+    "str": 70,
+    "agi": 98,
+    "sta": 64,
+    "int": 26,
+    "spi": 45
+   },
+   {
+    "level": 50,
+    "str": 72,
+    "agi": 101,
+    "sta": 65,
+    "int": 27,
+    "spi": 45
+   },
+   {
+    "level": 51,
+    "str": 73,
+    "agi": 103,
+    "sta": 66,
+    "int": 27,
+    "spi": 46
+   },
+   {
+    "level": 52,
+    "str": 74,
+    "agi": 105,
+    "sta": 67,
+    "int": 27,
+    "spi": 46
+   },
+   {
+    "level": 53,
+    "str": 75,
+    "agi": 108,
+    "sta": 68,
+    "int": 28,
+    "spi": 47
+   },
+   {
+    "level": 54,
+    "str": 77,
+    "agi": 110,
+    "sta": 69,
+    "int": 28,
+    "spi": 48
+   },
+   {
+    "level": 55,
+    "str": 78,
+    "agi": 112,
+    "sta": 71,
+    "int": 28,
+    "spi": 48
+   },
+   {
+    "level": 56,
+    "str": 79,
+    "agi": 115,
+    "sta": 72,
+    "int": 29,
+    "spi": 49
+   },
+   {
+    "level": 57,
+    "str": 81,
+    "agi": 117,
+    "sta": 73,
+    "int": 29,
+    "spi": 50
+   },
+   {
+    "level": 58,
+    "str": 82,
+    "agi": 120,
+    "sta": 74,
+    "int": 29,
+    "spi": 51
+   },
+   {
+    "level": 59,
+    "str": 84,
+    "agi": 122,
+    "sta": 76,
+    "int": 30,
+    "spi": 51
+   },
+   {
+    "level": 60,
+    "str": 85,
+    "agi": 125,
+    "sta": 77,
+    "int": 30,
+    "spi": 52
+   }
+  ],
   "gnome": [
    {
     "level": 1,
@@ -3805,5 +4287,9 @@
     "spi": 51
    }
   ]
- }
+ },
+ "_synthesised_races": [
+  "tauren"
+ ],
+ "_synthesised_note": "tauren: not in player_levelstats for this Class; each is orc's rows plus the race's offset from the Warrior rows (player_levelstats class=1)."
 }

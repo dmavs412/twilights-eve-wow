@@ -17,7 +17,13 @@ base stats by race and level), player_crit_per_agility and player_dodge_per_agil
 per 1% by level). The agility tables have gaps; ObjectMgr::LoadPlayerInfo fills them by linear
 interpolation between the nearest levels on either side, and so does this script.
 
-Only the races a Class can be appear under race_base_stats. The warrior file also carries
+player_levelstats holds only the race and Class pairs vanilla allowed. Every file still carries
+all eight races: a pair the DB lacks (a Tauren mage) is synthesised the way the table itself is
+built, as the Class's curve for a reference race (its first non-human race, so the human +5%
+spirit racial stays out of it) plus the race's flat offset read from the Warrior table, where
+every race exists. Checked against every real pair, that rule is exact for 93% of cells and
+within a point or two elsewhere (the human spirit and gnome intellect racials are percentages).
+The synthesised races are named in `_synthesised_races`. The warrior file also carries
 hand-derived naked_checks (test vectors); the script keeps that key when it rewrites the file.
 
 Standard library only. Run with -I when the DB came from the internet.
@@ -100,7 +106,7 @@ def extract(db: sqlite3.Connection, class_id: int) -> dict:
         }
         for level, hp, mana in base
     ]
-    race_base_stats = {}
+    race_base_stats: dict[str, list[dict]] = {}
     for race_id, race in RACES.items():
         rows = db.execute(
             "select level, str, agi, sta, inte, spi from player_levelstats"
@@ -127,7 +133,8 @@ def extract(db: sqlite3.Connection, class_id: int) -> dict:
             ),
             "race_base_stats": (
                 f"vmangos world DB: player_levelstats (class={class_id}). Naked base stats per"
-                " race per level, before gear/buffs. Only the races this Class can be."
+                " race per level, before gear/buffs. Races vanilla never paired with this Class"
+                " are synthesised (see _synthesised_races)."
             ),
             "formulas": "see docs/reference/vanilla-combat-rules.md section 5",
             "script": "tools/twilights-eve/extract_class_levels.py",
@@ -144,6 +151,32 @@ def extract(db: sqlite3.Connection, class_id: int) -> dict:
     }
 
 
+STATS = ("str", "agi", "sta", "int", "spi")
+
+
+def synthesise(data: dict, warrior: dict) -> None:
+    """Fills the races `data` lacks: the Class's curve for its first non-human race plus the
+    race's flat offset from the Warrior table (never below 1)."""
+    races = data["race_base_stats"]
+    missing = [r for r in RACES.values() if r not in races]
+    if not missing:
+        data["_synthesised_races"] = []
+        return
+    base = next((r for r in races if r != "human"), next(iter(races)))
+    w = warrior["race_base_stats"]
+    for race in missing:
+        races[race] = [
+            {"level": row["level"], **{k: max(1, row[k] + w[race][i][k] - w[base][i][k]) for k in STATS}}
+            for i, row in enumerate(races[base])
+        ]
+    data["race_base_stats"] = {r: races[r] for r in RACES.values()}
+    data["_synthesised_races"] = missing
+    data["_synthesised_note"] = (
+        f"{', '.join(missing)}: not in player_levelstats for this Class; each is {base}'s rows"
+        " plus the race's offset from the Warrior rows (player_levelstats class=1)."
+    )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--db", required=True)
@@ -151,9 +184,11 @@ def main() -> None:
         os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "twilights-eve"))
     args = ap.parse_args()
     db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
+    extracted = {class_id: extract(db, class_id) for class_id in CLASSES}
     for class_id, name in CLASSES.items():
         path = os.path.join(args.out, f"{name}_level_stats.json")
-        data = extract(db, class_id)
+        data = extracted[class_id]
+        synthesise(data, extracted[1])
         if os.path.exists(path):
             with open(path, encoding="utf-8") as f:
                 old = json.load(f)
@@ -163,7 +198,7 @@ def main() -> None:
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             json.dump(data, f, indent=1)
             f.write("\n")
-        print(f"wrote {path} ({len(data['race_base_stats'])} races)")
+        print(f"wrote {path} ({len(data['_synthesised_races'])} races synthesised)")
 
 
 if __name__ == "__main__":

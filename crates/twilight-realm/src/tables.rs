@@ -52,32 +52,25 @@ pub(crate) struct ClassLevels {
     pub(crate) race_stats: RaceStats,
 }
 
-/// Naked `[str, agi, sta, int, spi]` per level, by race; empty for a race the Class cannot be.
+/// Naked `[str, agi, sta, int, spi]` per level, by race. Every Class has every race: a pair
+/// vanilla never allowed is synthesised by `extract_class_levels.py` from the race's Warrior
+/// offset.
 #[derive(Deserialize)]
 pub(crate) struct RaceStats {
-    #[serde(default)]
     pub(crate) human: Vec<[u32; 5]>,
-    #[serde(default)]
     pub(crate) orc: Vec<[u32; 5]>,
-    #[serde(default)]
     pub(crate) dwarf: Vec<[u32; 5]>,
-    #[serde(default)]
     pub(crate) night_elf: Vec<[u32; 5]>,
-    #[serde(default)]
     pub(crate) undead: Vec<[u32; 5]>,
-    #[serde(default)]
     pub(crate) tauren: Vec<[u32; 5]>,
-    #[serde(default)]
     pub(crate) gnome: Vec<[u32; 5]>,
-    #[serde(default)]
     pub(crate) troll: Vec<[u32; 5]>,
 }
 
 impl RaceStats {
-    /// `ChrRaces.dbc` ids 1..=8. A race the Class cannot be (a Tauren mage) reads the first race
-    /// in id order that it can, so a Calling on any Class has a sheet for every race.
+    /// `ChrRaces.dbc` ids 1..=8.
     pub(crate) fn of(&self, race: u8) -> &[[u32; 5]] {
-        let rows = match race {
+        match race {
             1 => &self.human,
             2 => &self.orc,
             3 => &self.dwarf,
@@ -86,23 +79,7 @@ impl RaceStats {
             6 => &self.tauren,
             7 => &self.gnome,
             _ => &self.troll,
-        };
-        if !rows.is_empty() {
-            return rows;
         }
-        [
-            &self.human,
-            &self.orc,
-            &self.dwarf,
-            &self.night_elf,
-            &self.undead,
-            &self.tauren,
-            &self.gnome,
-            &self.troll,
-        ]
-        .into_iter()
-        .find(|r| !r.is_empty())
-        .expect("a Class some race can be")
     }
 }
 

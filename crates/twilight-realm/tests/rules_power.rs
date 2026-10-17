@@ -131,10 +131,15 @@ fn a_rogue_uses_its_own_attack_power_and_agility_rates() {
 }
 
 #[test]
-fn a_race_the_class_cannot_be_reads_the_first_race_that_can() {
-    // No Tauren mage exists in player_levelstats; a human mage's rows stand in.
-    assert_eq!(
-        CharacterStats::naked(class::MAGE, TAUREN, 10).base,
-        CharacterStats::naked(class::MAGE, HUMAN, 10).base
-    );
+fn a_race_vanilla_never_paired_with_the_class_has_synthesised_rows() {
+    // No Tauren mage exists in player_levelstats: its rows are the undead mage's (the Class's
+    // first non-human race) plus the Tauren's offset from the undead in the Warrior table.
+    const UNDEAD: u8 = 5;
+    let tauren = CharacterStats::naked(class::MAGE, TAUREN, 10).base;
+    let undead = CharacterStats::naked(class::MAGE, UNDEAD, 10).base;
+    let tauren_w = CharacterStats::naked(class::WARRIOR, TAUREN, 10).base;
+    let undead_w = CharacterStats::naked(class::WARRIOR, UNDEAD, 10).base;
+    let want: [u32; 5] = std::array::from_fn(|i| undead[i] + tauren_w[i] - undead_w[i]);
+    assert_eq!(tauren, want);
+    assert_ne!(tauren, CharacterStats::naked(class::MAGE, HUMAN, 10).base);
 }

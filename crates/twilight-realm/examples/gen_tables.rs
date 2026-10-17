@@ -96,8 +96,9 @@ fn levels(data: &Path) -> String {
             column(per_level, "agi_per_dodge_pct")
         );
         out += &format!(
-            "\n# player_levelstats: naked [str, agi, sta, int, spi], by race (only the races the\n\
-             # Class can be)\n[{class}.race_stats]\n"
+            "\n# player_levelstats: naked [str, agi, sta, int, spi], by race (a race vanilla never\n\
+             # paired with the Class is synthesised; see the JSON's _synthesised_note)\n\
+             [{class}.race_stats]\n"
         );
         for race in RACES {
             let Some(rows) = stats["race_base_stats"][race].as_array() else {
