@@ -1,6 +1,6 @@
 //! The mobs: their templates and spawns (`content/mobs.toml` by hand, `content/barrens.toml`
-//! generated from the research dumps by `examples/import_barrens.rs`), and each one's state in
-//! the world.
+//! and `content/elwynn.toml` generated from the research dumps by `examples/import_barrens.rs`
+//! and `examples/import_elwynn.rs`), and each one's state in the world.
 
 use std::sync::OnceLock;
 
@@ -108,7 +108,7 @@ struct HandSpawn {
     orientation: f32,
 }
 
-/// A generated spawn row in `barrens.toml`: guid, entry, level_min, level_max, x, y, z,
+/// A generated spawn row in `barrens.toml` or `elwynn.toml`: guid, entry, level_min, level_max, x, y, z,
 /// orientation, display_id, wander_radius, camp.
 #[derive(Deserialize)]
 struct Row(u32, u32, u8, u8, f32, f32, f32, f32, u32, f32, u32);
@@ -140,7 +140,7 @@ struct DungeonSpawn {
 }
 
 #[derive(Deserialize)]
-struct BarrensFile {
+struct ZoneFile {
     spawns: Vec<Row>,
     template: Vec<Template>,
 }
@@ -155,10 +155,13 @@ pub(crate) fn content() -> &'static Mobs {
     MOBS.get_or_init(|| {
         let hand: HandFile =
             toml::from_str(include_str!("../content/mobs.toml")).expect("content/mobs.toml parses");
-        let barrens: BarrensFile = toml::from_str(include_str!("../content/barrens.toml"))
+        let barrens: ZoneFile = toml::from_str(include_str!("../content/barrens.toml"))
             .expect("content/barrens.toml parses");
+        let elwynn: ZoneFile = toml::from_str(include_str!("../content/elwynn.toml"))
+            .expect("content/elwynn.toml parses");
         let mut template = hand.template;
         template.extend(barrens.template);
+        template.extend(elwynn.template);
         let mut spawn: Vec<Spawn> = hand
             .spawn
             .into_iter()
@@ -178,20 +181,26 @@ pub(crate) fn content() -> &'static Mobs {
                 })
             })
             .collect();
-        spawn.extend(barrens.spawns.into_iter().map(
-            |Row(guid, entry, lmin, lmax, x, y, z, o, display_id, wander, camp)| Spawn {
-                guid,
-                entry,
-                level_min: lmin,
-                level_max: lmax.max(lmin),
-                position: [x, y, z],
-                orientation: o,
-                display_id,
-                wander_radius: wander,
-                camp,
-                map: crate::content::KALIMDOR,
-            },
-        ));
+        let zones = [
+            (barrens.spawns, crate::content::KALIMDOR),
+            (elwynn.spawns, crate::content::EASTERN_KINGDOMS),
+        ];
+        for (rows, map) in zones {
+            spawn.extend(rows.into_iter().map(
+                |Row(guid, entry, lmin, lmax, x, y, z, o, display_id, wander, camp)| Spawn {
+                    guid,
+                    entry,
+                    level_min: lmin,
+                    level_max: lmax.max(lmin),
+                    position: [x, y, z],
+                    orientation: o,
+                    display_id,
+                    wander_radius: wander,
+                    camp,
+                    map,
+                },
+            ));
+        }
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
             .expect("content/wailing_caverns.toml parses");
         template.extend(dungeon.template);

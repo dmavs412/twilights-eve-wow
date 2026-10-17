@@ -27,7 +27,8 @@ const CELL_YD: f32 = 64.0;
 
 /// The spawns' homes by grid cell.
 struct Grid {
-    cells: HashMap<(i32, i32), Vec<u32>>,
+    /// By map, then cell.
+    cells: HashMap<(u32, i32, i32), Vec<u32>>,
 }
 
 fn cell(x: f32, y: f32) -> (i32, i32) {
@@ -37,14 +38,12 @@ fn cell(x: f32, y: f32) -> (i32, i32) {
 fn grid() -> &'static Grid {
     static GRID: OnceLock<Grid> = OnceLock::new();
     GRID.get_or_init(|| {
-        let mut cells: HashMap<(i32, i32), Vec<u32>> = HashMap::new();
+        let mut cells: HashMap<(u32, i32, i32), Vec<u32>> = HashMap::new();
         // A Dungeon's spawns are its instance's, not the open world's.
         let world = mobs::content().spawn.iter().enumerate();
-        for (i, s) in world.filter(|(_, s)| s.map == crate::content::KALIMDOR) {
-            cells
-                .entry(cell(s.position[0], s.position[1]))
-                .or_default()
-                .push(i as u32);
+        for (i, s) in world.filter(|(_, s)| crate::content::open_world(s.map)) {
+            let (cx, cy) = cell(s.position[0], s.position[1]);
+            cells.entry((s.map, cx, cy)).or_default().push(i as u32);
         }
         Grid { cells }
     })
@@ -143,7 +142,7 @@ impl Population {
         let grid = grid();
         for cx in lo.0..=hi.0 {
             for cy in lo.1..=hi.1 {
-                let Some(list) = grid.cells.get(&(cx, cy)) else {
+                let Some(list) = grid.cells.get(&(map, cx, cy)) else {
                     continue;
                 };
                 for &i in list {
@@ -189,5 +188,65 @@ impl Population {
         z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
         z ^= z >> 31;
         lo + (z % u64::from(hi - lo + 1)) as u8
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::content::{EASTERN_KINGDOMS, KALIMDOR};
+
+    struct Flat;
+    impl Host for Flat {
+        fn ground_height(&self, _: u32, _: f32, _: f32, z: f32) -> Option<f32> {
+            Some(z - 2.0)
+        }
+        fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
+            true
+        }
+        fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
+            None
+        }
+    }
+
+    /// The first spawn of `entry` and the mobs that stream in standing on it on `map`.
+    fn stream_at(entry: u32, map: u32) -> (&'static mobs::Spawn, Vec<Mob>) {
+        let spawn = mobs::content()
+            .spawn
+            .iter()
+            .find(|s| s.entry == entry)
+            .unwrap();
+        let mut mobs = Vec::new();
+        Population::default().update(0.1, spawn.position, map, &Flat, &mut mobs, &mut Vec::new());
+        (spawn, mobs)
+    }
+
+    #[test]
+    fn elwynn_streams_in_on_eastern_kingdoms() {
+        // Hogger at Forest's Edge, Marshal McBride in Northshire Abbey.
+        for (entry, at) in [(448, [-10125.0, 662.0]), (197, [-8902.0, -162.0])] {
+            let (spawn, mobs) = stream_at(entry, EASTERN_KINGDOMS);
+            assert_eq!(spawn.map, EASTERN_KINGDOMS);
+            assert!(
+                flat_distance(spawn.position, [at[0], at[1], 0.0]) < 400.0,
+                "{entry} far off"
+            );
+            let here =
+                |m: &&Mob| m.template.entry == entry && m.position[..2] == spawn.position[..2];
+            assert!(
+                mobs.iter().any(|m| here(&m)),
+                "{entry} did not stream in at its spawn"
+            );
+        }
+    }
+
+    #[test]
+    fn a_continent_streams_only_its_own_spawns() {
+        let (_, mobs) = stream_at(197, KALIMDOR);
+        assert!(
+            mobs.is_empty(),
+            "Kalimdor shows Northshire's {} mobs",
+            mobs.len()
+        );
     }
 }

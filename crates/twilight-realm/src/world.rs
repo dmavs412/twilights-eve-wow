@@ -288,7 +288,7 @@ impl InWorld {
         }
         let me = c.position;
         // The open world streams in around the player; a Dungeon's run is all there at once.
-        if self.map == content::KALIMDOR {
+        if content::open_world(self.map) {
             self.population
                 .update(dt, me, self.map, host, &mut self.mobs, events);
         }

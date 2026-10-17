@@ -38,3 +38,12 @@ dropped. Mine interiors come from the WMO rule: Fargodeep 15, Echo Ridge 8, Jasp
 Spot checks: Marshal McBride (197) in Northshire Valley, Northshire Guards (1642), Marshal Dughan
 (240) and Innkeeper Farley (295) in Goldshire, and Hogger (448) at Forest's Edge (two pooled
 spawns, one up at a time).
+
+## The realm's copy: `crates/twilight-realm/content/elwynn.toml`
+
+`cargo run -p twilight-realm --example import_elwynn` converts the dump, and
+`tests/content_elwynn.rs` fails when the two disagree. Every spawn keeps its vmangos position,
+facing and level range and is a camp of its own. Templates carry the vmangos multipliers over the
+realm's `mob_class_stats.toml`, as Barrens templates do. Spawns stream in around the player on
+map 0 the way Kalimdor's do. Dead mobs come back on the realm's respawn rule
+(`rules::respawn`), not the vmangos timer, which the spec's "realm rules" choice covers.

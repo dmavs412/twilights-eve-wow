@@ -122,44 +122,49 @@ pub fn convert(barrens: &Value, low: &Value) -> String {
             [&t["level_min"], &t["level_max"]].map(|l| l.as_u64().unwrap())
         };
         let hostile = reaction(barrens, entry) && !t["no_aggro"].as_bool().unwrap_or(false);
-        let _ = write!(
-            out,
-            "\n[[template]]\n\
-             entry = {entry}\n\
-             name = {name}\n\
-             subname = {subname}\n\
-             creature_type = {creature_type}\n\
-             rank = {rank}\n\
-             display_id = {display}\n\
-             faction_template = {faction}\n\
-             hostile = {hostile}\n\
-             unit_class = \"{class}\"\n\
-             level_min = {lmin}\n\
-             level_max = {lmax}\n\
-             health_multiplier = {hm:?}\n\
-             damage_multiplier = {dm:?}\n\
-             armor_multiplier = {am:?}\n\
-             base_attack_time = {bat}\n\
-             speed_walk = {sw:?}\n\
-             speed_run = {sr:?}\n\
-             detection_range = {det:?}\n",
-            name = quoted(t["name"].as_str().unwrap()),
-            subname = quoted(t["subname"].as_str().unwrap_or("")),
-            creature_type = creature_type(t["type"].as_str().unwrap()),
-            rank = rank(t["rank"].as_str().unwrap()),
-            display = most_likely_display(t),
-            faction = t["faction_template"].as_u64().unwrap(),
-            class = unit_class(t["unit_class"].as_u64().unwrap()),
-            hm = f32_of(&t["health_multiplier"]),
-            dm = f32_of(&t["damage_multiplier"]),
-            am = f32_of(&t["armor_multiplier"]),
-            bat = t["base_attack_time"].as_u64().unwrap(),
-            sw = f32_of(&t["speed_walk"]),
-            sr = f32_of(&t["speed_run"]),
-            det = f32_of(&t["detection_range"]),
-        );
+        template(&mut out, entry, t, hostile, [lmin, lmax]);
     }
     out
+}
+
+/// One `[[template]]` table for the imported template `t`.
+pub fn template(out: &mut String, entry: u64, t: &Value, hostile: bool, [lmin, lmax]: [u64; 2]) {
+    let _ = write!(
+        out,
+        "\n[[template]]\n\
+         entry = {entry}\n\
+         name = {name}\n\
+         subname = {subname}\n\
+         creature_type = {creature_type}\n\
+         rank = {rank}\n\
+         display_id = {display}\n\
+         faction_template = {faction}\n\
+         hostile = {hostile}\n\
+         unit_class = \"{class}\"\n\
+         level_min = {lmin}\n\
+         level_max = {lmax}\n\
+         health_multiplier = {hm:?}\n\
+         damage_multiplier = {dm:?}\n\
+         armor_multiplier = {am:?}\n\
+         base_attack_time = {bat}\n\
+         speed_walk = {sw:?}\n\
+         speed_run = {sr:?}\n\
+         detection_range = {det:?}\n",
+        name = quoted(t["name"].as_str().unwrap()),
+        subname = quoted(t["subname"].as_str().unwrap_or("")),
+        creature_type = creature_type(t["type"].as_str().unwrap()),
+        rank = rank(t["rank"].as_str().unwrap()),
+        display = most_likely_display(t),
+        faction = t["faction_template"].as_u64().unwrap(),
+        class = unit_class(t["unit_class"].as_u64().unwrap()),
+        hm = f32_of(&t["health_multiplier"]),
+        dm = f32_of(&t["damage_multiplier"]),
+        am = f32_of(&t["armor_multiplier"]),
+        bat = t["base_attack_time"].as_u64().unwrap(),
+        sw = f32_of(&t["speed_walk"]),
+        sr = f32_of(&t["speed_run"]),
+        det = f32_of(&t["detection_range"]),
+    );
 }
 
 /// The keep-out rule: a player of a low camp's levels meets no mob red to them (vanilla's con
@@ -398,7 +403,7 @@ fn to_segment(p: [f64; 2], a: [f64; 2], b: [f64; 2]) -> f64 {
 }
 
 /// One spawn row.
-fn row(out: &mut String, s: &Value, display: u64, camp: u64) {
+pub fn row(out: &mut String, s: &Value, display: u64, camp: u64) {
     let z = if s["z"].is_null() {
         &s["z_hint"]
     } else {
@@ -423,7 +428,7 @@ fn row(out: &mut String, s: &Value, display: u64, camp: u64) {
 
 /// The spawn's model: one of the template's displays, weighted by their probabilities and picked
 /// by the spawn's guid, so a Kolkar camp shows its several models and every run shows the same.
-fn pick_display(template: &Value, guid: u64, fallback: u64) -> u64 {
+pub fn pick_display(template: &Value, guid: u64, fallback: u64) -> u64 {
     let displays: Vec<(u64, u64)> = template["displays"]
         .as_array()
         .map(|ds| {
@@ -453,7 +458,7 @@ fn pick_display(template: &Value, guid: u64, fallback: u64) -> u64 {
 }
 
 /// The template's most probable display, what a creature query answers.
-fn most_likely_display(template: &Value) -> u64 {
+pub fn most_likely_display(template: &Value) -> u64 {
     template["displays"]
         .as_array()
         .unwrap()
@@ -465,7 +470,7 @@ fn most_likely_display(template: &Value) -> u64 {
 
 /// Whether the entry's spawns are hostile to a player (every spawn of an entry shares its
 /// faction template, so they agree).
-fn reaction(barrens: &Value, entry: u64) -> bool {
+pub fn reaction(barrens: &Value, entry: u64) -> bool {
     let reactions: Vec<&str> = barrens["spawns"]
         .as_array()
         .unwrap()
@@ -482,7 +487,7 @@ fn reaction(barrens: &Value, entry: u64) -> bool {
 }
 
 /// `CreatureType.dbc`.
-fn creature_type(name: &str) -> u32 {
+pub fn creature_type(name: &str) -> u32 {
     match name {
         "beast" => 1,
         "dragonkin" => 2,
@@ -499,7 +504,7 @@ fn creature_type(name: &str) -> u32 {
 }
 
 /// The creature query's rank (`CreatureEliteType`).
-fn rank(name: &str) -> u32 {
+pub fn rank(name: &str) -> u32 {
     match name {
         "normal" => 0,
         "elite" => 1,
@@ -511,7 +516,7 @@ fn rank(name: &str) -> u32 {
 }
 
 /// `creature_classlevelstats`' unit classes, as `content/mob_class_stats.toml` names them.
-fn unit_class(id: u64) -> &'static str {
+pub fn unit_class(id: u64) -> &'static str {
     match id {
         1 => "warrior",
         2 => "paladin",
@@ -520,12 +525,12 @@ fn unit_class(id: u64) -> &'static str {
     }
 }
 
-fn f32_of(v: &Value) -> f32 {
+pub fn f32_of(v: &Value) -> f32 {
     v.as_f64().unwrap_or_else(|| panic!("a number: {v}")) as f32
 }
 
 /// A TOML basic string.
-fn quoted(s: &str) -> String {
+pub fn quoted(s: &str) -> String {
     format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
 }
 

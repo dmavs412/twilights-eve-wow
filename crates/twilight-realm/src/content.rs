@@ -2,6 +2,14 @@
 
 /// Kalimdor, the continent The Barrens is on.
 pub const KALIMDOR: u32 = 1;
+/// Eastern Kingdoms, the continent Elwynn Forest is on.
+pub const EASTERN_KINGDOMS: u32 = 0;
+
+/// Whether `map` is an open-world continent, whose spawns stream in around the player, rather
+/// than a Dungeon's instance.
+pub(crate) fn open_world(map: u32) -> bool {
+    matches!(map, KALIMDOR | EASTERN_KINGDOMS)
+}
 /// `AreaTable.dbc`'s The Barrens.
 pub const THE_BARRENS: u32 = 17;
 
