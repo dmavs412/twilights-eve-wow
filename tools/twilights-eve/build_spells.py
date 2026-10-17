@@ -369,6 +369,9 @@ def client_override(row: dict, built: dict, where: str) -> dict | None:
         return None
     # The Calling's power, so a borrowed spell gates against the right bar.
     fields: dict = {"power_type": CLASS_POWER_TYPE[built["class"]]}
+    # The sheet's name replaces the borrowed spell's, so a talent reads as the sheet calls it.
+    if row["name"]:
+        fields["name"] = row["name"]
     for column in CLIENT_NUMBERS:
         if row[column]:
             fields[column.removeprefix("client_")] = number(row[column], f"{where} {column}")

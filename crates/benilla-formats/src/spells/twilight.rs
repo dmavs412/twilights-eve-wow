@@ -34,7 +34,7 @@ impl SpellCatalog {
 
     /// Applies the compiled-in client patch (`client_dbc_patch.json`, ADR 0003) to the rows it
     /// lists: power type, cost, cooldown, global cooldown, stances, the borrowed family, and the
-    /// sheet's description (an empty one keeps the borrowed text). A field the patch lacks leaves
+    /// sheet's name and description (an empty description keeps the borrowed text). A field the patch lacks leaves
     /// the row's own value; an id the catalog lacks is skipped. Returns how many rows changed.
     pub fn apply_dbc_patch(&mut self, json: &str) -> Result<usize, serde_json::Error> {
         let patch: serde_json::Value = serde_json::from_str(json)?;
@@ -95,6 +95,14 @@ impl SpellCatalog {
             // it lines up with, so `$s1` and the spell mods read the sheet's damage.
             for effect in f["effects"].as_array().into_iter().flatten() {
                 overwrite_damage(d, effect);
+            }
+            // The sheet's name replaces the borrowed one; a WIP mark made before stays on it.
+            if let Some(name) = f["name"].as_str().filter(|n| !n.is_empty()) {
+                let wip = d.name.ends_with(WIP_SUFFIX);
+                d.name = name.to_owned();
+                if wip {
+                    d.name.push_str(WIP_SUFFIX);
+                }
             }
             if let Some(text) = f["description"].as_str().filter(|t| !t.is_empty()) {
                 d.description = Some(text.to_owned());
@@ -210,7 +218,7 @@ mod tests {
     const PATCH: &str = r#"{"spells": [
         {"spell_id": 2136, "fields": {"cost": 10, "power_type": 1, "cooldown_ms": 6000,
          "gcd_ms": 1500, "borrowed_from_class": 8, "borrowed_family_bit": 37,
-         "description": "Blasts the enemy."}},
+         "name": "Scorch", "description": "Blasts the enemy."}},
         {"spell_id": 78, "fields": {"cost": 15, "power_type": 1, "stances": ["Battle Stance", "Berserker Stance"],
          "description": ""}},
         {"spell_id": 999999, "fields": {"cost": 1}}
@@ -234,6 +242,10 @@ mod tests {
         assert_eq!((fb.recovery_ms, fb.start_recovery_ms), (6000, 1500));
         assert_eq!((fb.spell_family, fb.spell_family_flags), (4, 1 << 37));
         assert_eq!(fb.description.as_deref(), Some("Blasts the enemy."));
+        assert_eq!(
+            fb.name, "Scorch",
+            "the sheet's name replaces the borrowed one"
+        );
     }
 
     #[test]
