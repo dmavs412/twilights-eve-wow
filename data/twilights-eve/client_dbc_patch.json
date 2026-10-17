@@ -101,6 +101,18 @@
     "borrowed_family_bit": 37,
     "power_type": 1,
     "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked.",
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "school": "fire",
+       "amount": {
+        "base": 20,
+        "per_level": 2.5
+       }
+      }
+     }
+    ],
     "range_index": 3,
     "cast_time_index": 1
    }

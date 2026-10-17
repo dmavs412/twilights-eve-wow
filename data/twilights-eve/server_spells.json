@@ -99,8 +99,20 @@
     "realm_cooldown_ms": 8000,
     "realm_range_max": 20,
     "target": "enemy",
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "school": "fire",
+       "amount": {
+        "base": 20,
+        "per_level": 2.5
+       }
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked."
    }
   ],

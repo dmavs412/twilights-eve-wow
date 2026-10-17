@@ -8,6 +8,7 @@ use std::sync::OnceLock;
 use serde::Deserialize;
 
 use crate::content::Calling;
+use crate::rules::school::School;
 use crate::rules::skills::Linear;
 
 /// One Calling.
@@ -371,8 +372,12 @@ pub enum Effect {
         #[serde(default)]
         unavoidable: bool,
     },
-    /// Flat physical damage, against armour; through the melee table when `melee_hit_table`.
+    /// Flat damage of a school. Physical goes against armour, and through the melee table when
+    /// `melee_hit_table`; any other school ignores armour, rolls only the level-based miss, and
+    /// crits for 150%.
     SchoolDamage {
+        #[serde(default)]
+        school: School,
         amount: Linear,
         #[serde(default)]
         melee_hit_table: bool,

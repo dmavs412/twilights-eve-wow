@@ -1,14 +1,21 @@
 //! Damage schools: what a blow's school takes off it, and how the client numbers it
 //! (`SpellSchools`, `SPELL_SCHOOL0_CAP`..: 0 physical, 1 holy).
 
+use serde::Deserialize;
+
 use super::melee::armor_reduced;
+use super::talents::crit_damage;
 
 /// The school a blow deals its damage in.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum School {
+    #[default]
     Physical,
     /// Not reduced by armour (`Unit::CalcArmorReducedDamage` is for physical damage only).
     Holy,
+    /// Magic, like holy: armour does not touch it.
+    Fire,
 }
 
 impl School {
@@ -17,6 +24,7 @@ impl School {
         match self {
             School::Physical => 0,
             School::Holy => 1,
+            School::Fire => 2,
         }
     }
 }
@@ -26,6 +34,24 @@ impl School {
 pub fn mitigated(school: School, raw: u32, armor: u32, attacker_level: u8) -> u32 {
     match school {
         School::Physical => armor_reduced(raw, armor, attacker_level),
-        School::Holy => raw,
+        School::Holy | School::Fire => raw,
+    }
+}
+
+impl School {
+    /// A blow of this school that avoids nothing by the melee table: dodge, parry and block are
+    /// for physical blows only.
+    pub fn is_magic(self) -> bool {
+        self != School::Physical
+    }
+}
+
+/// A crit on `damage` (after mitigation) in `school`: physical doubles it and adds `bonus_pct`%
+/// ([`crit_damage`]); every other school does 150%.
+pub fn crit_scaled(school: School, damage: u32, bonus_pct: u32) -> u32 {
+    if school.is_magic() {
+        damage * 3 / 2
+    } else {
+        crit_damage(damage, bonus_pct)
     }
 }

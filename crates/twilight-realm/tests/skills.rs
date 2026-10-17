@@ -1,4 +1,4 @@
-//! The Basic Warrior's two skills, played through the realm's seam: the spellbook at login, casts
+//! The Basic Warrior's skills, played through the realm's seam: the spellbook at login, casts
 //! from the action bar, what they cost, what they refuse, and what they do to a mob. The skill
 //! mechanics its kit cannot show (a buff, a bleed, the global cooldown, Overpower's window) are
 //! played on the Vanguard.
@@ -14,12 +14,13 @@ use common::*;
 
 const HEROIC_STRIKE: u32 = 78;
 const CHARGE: u32 = 100;
+const FIRE_BLAST: u32 = 2136;
 
 /// The Basic Warrior's kit.
-const KIT: [u32; 2] = [HEROIC_STRIKE, CHARGE];
+const KIT: [u32; 3] = [HEROIC_STRIKE, CHARGE, FIRE_BLAST];
 
 #[test]
-fn a_new_basic_warriors_spellbook_holds_exactly_heroic_strike_and_charge() {
+fn a_new_basic_warriors_spellbook_holds_exactly_its_kit() {
     let mut realm = realm();
     let (_, events) = enter_new(&mut realm, "Garrosh", ORC);
 
@@ -73,10 +74,9 @@ fn the_bar_the_player_arranges_comes_back_at_the_next_login() {
         slot: 72,
         packed: CHARGE,
     });
-    realm.handle(RealmCommand::SetActionButton {
-        slot: 73,
-        packed: 0,
-    });
+    for slot in [73, 74] {
+        realm.handle(RealmCommand::SetActionButton { slot, packed: 0 });
+    }
     realm.handle(RealmCommand::Logout);
     realm.handle(RealmCommand::EnterWorld { guid });
     let events = drain(&mut realm);

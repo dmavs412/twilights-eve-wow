@@ -23,7 +23,7 @@ use crate::rng::Rng;
 use crate::rules::haste::{haste_cut_damage, hasted_attack_time};
 use crate::rules::melee::{Outcome, PlayerOffense, ROLL};
 use crate::rules::rage;
-use crate::rules::school::{mitigated, School};
+use crate::rules::school::{crit_scaled, mitigated, School};
 use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::WarriorStats;
@@ -833,6 +833,11 @@ impl InWorld {
                     ..
                 }
                 | Effect::Execute { .. } => rolls = true,
+                // Magic misses on the level-based chance alone.
+                Effect::SchoolDamage { school, .. } if school.is_magic() => {
+                    rolls = true;
+                    unavoidable = true;
+                }
                 _ => {}
             }
         }
@@ -905,6 +910,7 @@ impl InWorld {
                     skill.spell_id,
                     target,
                     raw as u32,
+                    School::Physical,
                     how,
                     c,
                     rng,
@@ -912,9 +918,19 @@ impl InWorld {
                     ticked,
                 );
             }
-            Effect::SchoolDamage { amount, .. } => {
+            Effect::SchoolDamage { school, amount, .. } => {
                 let raw = sized(amount);
-                self.strike(skill.spell_id, target, raw, how, c, rng, events, ticked);
+                self.strike(
+                    skill.spell_id,
+                    target,
+                    raw,
+                    school,
+                    how,
+                    c,
+                    rng,
+                    events,
+                    ticked,
+                );
             }
             Effect::PeriodicDamage {
                 tick_ms,
@@ -1020,7 +1036,17 @@ impl InWorld {
                 let extra = self.player.rage / 10;
                 self.player.rage = 0;
                 let raw = sized(base) + extra * sized(per_extra_rage);
-                self.strike(skill.spell_id, target, raw, how, c, rng, events, ticked);
+                self.strike(
+                    skill.spell_id,
+                    target,
+                    raw,
+                    School::Physical,
+                    how,
+                    c,
+                    rng,
+                    events,
+                    ticked,
+                );
             }
             Effect::AuraMaxHealthPct {
                 aura_spell_id,
@@ -1200,6 +1226,7 @@ impl InWorld {
         spell_id: u32,
         target: u64,
         raw: u32,
+        school: School,
         how: Landed,
         c: &mut Char,
         rng: &mut Rng,
@@ -1209,10 +1236,9 @@ impl InWorld {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
             return;
         };
-        let school = School::Physical;
         let mut damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
         if how == Landed::Crit {
-            damage = crit_damage(damage, crate::talents::skill_crit_damage_pct(c));
+            damage = crit_scaled(school, damage, crate::talents::skill_crit_damage_pct(c));
         }
         damage = self.dealt(c, damage);
         events.push(SessionEvent::SpellDamageLog(damage_log(
@@ -1228,7 +1254,9 @@ impl InWorld {
             self.crit_landed(target, c, events);
         }
         // A blow at one enemy sweeps on; an area's blows do not.
-        if callings::skill(spell_id).is_some_and(|s| s.target == Target::Enemy) {
+        if !school.is_magic()
+            && callings::skill(spell_id).is_some_and(|s| s.target == Target::Enemy)
+        {
             self.sweep(target, damage, c, rng, events, ticked);
         }
     }
