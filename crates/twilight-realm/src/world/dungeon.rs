@@ -103,7 +103,7 @@ impl InWorld {
         let p = &self.player;
         events.push(values(
             self.guid,
-            &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
+            &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
         ));
         if self.in_dungeon() {
             self.mobs = instance(self.map);

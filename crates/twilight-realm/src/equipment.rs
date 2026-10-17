@@ -133,9 +133,8 @@ fn slot_pairs(c: &Char, at: Pos, item: Option<&Item>) -> Vec<(u64, u16, u32)> {
 /// The character's stats in what it wears.
 pub(crate) fn stats(c: &Char) -> CharacterStats {
     let bonus = crate::callings::of(c.calling).tier_bonus.stats();
-    // Every shipped Calling sits on the Warrior Class until the Calling carries its own.
     CharacterStats::geared_at_tier(
-        crate::rules::power::class::WARRIOR,
+        c.class(),
         c.race,
         c.level,
         bonus,

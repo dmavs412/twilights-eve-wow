@@ -4,6 +4,7 @@
 mod advance;
 mod cast;
 mod hearth;
+mod power;
 
 use benilla_protocol::messages::{AttackSwingError, LevelUpInfo, ObjectType, XpGain};
 use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
@@ -20,10 +21,12 @@ use crate::mobs::{Mob, State, COMBAT_REACH};
 use crate::population::Population;
 use crate::rng::Rng;
 use crate::rules::melee::Outcome;
+use crate::rules::power::{self as power_rules, PowerKind};
 use crate::rules::stats::CharacterStats;
 use crate::rules::{aggro, leash, rage, xp};
 use crate::space::distance;
 use crate::Host;
+use power::Power;
 
 mod death;
 mod dungeon;
@@ -66,16 +69,14 @@ pub(crate) struct Ticked {
 struct Player {
     stats: CharacterStats,
     health: u32,
-    /// Tenths.
-    rage: u32,
+    /// The Calling's Class's bar: rage, energy or mana.
+    power: Power,
     /// Seconds until the next swing; 0 is ready.
     swing_timer: f32,
     /// Who auto-attack swings at, from `CMSG_ATTACKSWING` to `CMSG_ATTACKSTOP`.
     attacking: Option<u64>,
     /// The last swing refusal sent, so it is sent once and not every tick.
     refused: Option<AttackSwingError>,
-    /// Seconds into the current rage-decay tick.
-    decay: f32,
     in_combat: bool,
     /// Killed, and the toll taken: lying dead until Release Spirit.
     dead: bool,
@@ -84,6 +85,12 @@ struct Player {
 impl Player {
     fn alive(&self) -> bool {
         self.health > 0
+    }
+
+    /// New stats (a level, a piece of gear): the power's max follows them.
+    fn set_stats(&mut self, stats: CharacterStats) {
+        self.stats = stats;
+        self.power.resize(&stats);
     }
 }
 
@@ -161,11 +168,10 @@ impl InWorld {
             player: Player {
                 stats,
                 health: stats.max_health,
-                rage: 0,
+                power: Power::fresh(&stats),
                 swing_timer: 0.0,
                 attacking: None,
                 refused: None,
-                decay: 0.0,
                 in_combat: false,
                 dead: false,
             },
@@ -200,7 +206,7 @@ impl InWorld {
             transport_progress: None,
             transport: None,
             spline: None,
-            fields: player_fields(c, &self.player.stats),
+            fields: player_fields(c, &self.player.stats, &self.player.power),
         }
     }
 
@@ -397,9 +403,8 @@ impl InWorld {
             Outcome::Dodge | Outcome::Parry => rage::from_avoided(swing.would_be, p.stats.level),
             _ => rage::from_damage_dealt(swing.damage, p.stats.level),
         };
-        if earned > 0 {
-            p.rage = (p.rage + earned).min(rage::MAX);
-            events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+        if p.power.gain_stored(PowerKind::Rage, earned) {
+            events.push(values(self.guid, &[p.power.field()]));
         }
 
         let mob = &mut self.mobs[i];
@@ -539,11 +544,13 @@ impl InWorld {
                 let p = &mut self.player;
                 if swing.damage > 0 {
                     p.health = p.health.saturating_sub(swing.damage);
-                    p.rage = (p.rage + rage::from_damage_taken(swing.damage, p.stats.level))
-                        .min(rage::MAX);
+                    p.power.gain_stored(
+                        PowerKind::Rage,
+                        rage::from_damage_taken(swing.damage, p.stats.level),
+                    );
                     events.push(values(
                         self.guid,
-                        &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
+                        &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
                     ));
                     // A hit breaks a timed cast (the Hearthstone's interrupts on damage).
                     self.interrupt_cast(events);
@@ -656,12 +663,14 @@ impl InWorld {
             let old = self.player.stats;
             c.level += 1;
             let new = crate::talents::stats(c);
-            self.player.stats = new;
+            self.player.set_stats(new);
             self.player.health = new.max_health;
+            let mut powers = [0; 5];
+            powers[PowerKind::Mana.id() as usize] = new.max_mana.saturating_sub(old.max_mana);
             events.push(SessionEvent::LevelUp(LevelUpInfo {
                 level: u32::from(c.level),
                 health: new.max_health.saturating_sub(old.max_health),
-                powers: [0; 5],
+                powers,
                 stats: std::array::from_fn(|s| new.base[s].saturating_sub(old.base[s])),
             }));
             match xp::xp_to_next(c.level) {
@@ -692,7 +701,7 @@ impl InWorld {
         leveled
     }
 
-    /// The player's in-combat flag, and rage decay out of combat.
+    /// The player's in-combat flag, and the power's regeneration (rage decay out of combat).
     fn update_combat(&mut self, dt: f32, events: &mut Vec<SessionEvent>) {
         let p = &mut self.player;
         let attacking = p
@@ -706,19 +715,8 @@ impl InWorld {
             let flags = UNIT_FLAG_PVP_ATTACKABLE | combat;
             events.push(values(self.guid, &[(UNIT_FIELD_FLAGS, flags)]));
         }
-        if in_combat || p.rage == 0 {
-            p.decay = 0.0;
-            return;
-        }
-        p.decay += dt;
-        let mut decayed = false;
-        while p.decay >= rage::DECAY_TICK_SECS && p.rage > 0 {
-            p.decay -= rage::DECAY_TICK_SECS;
-            p.rage = p.rage.saturating_sub(rage::DECAY_PER_TICK);
-            decayed = true;
-        }
-        if decayed {
-            events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+        if p.power.regenerate(dt, in_combat, p.stats.mana_regen) {
+            events.push(values(self.guid, &[p.power.field()]));
         }
     }
 }
@@ -825,6 +823,7 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
         (UNIT_FIELD_LEVEL, u32::from(s.level)),
         (UNIT_FIELD_MAXHEALTH, s.max_health),
         (UNIT_FIELD_BASE_HEALTH, s.base_health),
+        (UNIT_FIELD_MAXPOWER1, s.max_mana),
         (UNIT_FIELD_RESISTANCES, s.armor),
         // Gear's flat attack power rides apart, in the mods.
         (
@@ -861,15 +860,18 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
 }
 
 /// The player's own descriptor at login.
-fn player_fields(c: &Char, stats: &CharacterStats) -> ObjectFields {
+fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectFields {
     let display = content::display_id(c.race, c.gender);
     let [skin, face, hair_style, hair_color, facial_hair] = c.look.map(u32::from);
+    let kind = PowerKind::of_class(c.class());
     let mut pairs = vec![
         (OBJECT_FIELD_TYPE, TYPE_PLAYER),
         (OBJECT_FIELD_SCALE_X, float(1.0)),
         (UNIT_FIELD_HEALTH, stats.max_health),
-        (UNIT_FIELD_POWER2, 0),
+        power.field(),
+        (UNIT_FIELD_MAXPOWER1, stats.max_mana),
         (UNIT_FIELD_MAXPOWER2, rage::MAX),
+        (UNIT_FIELD_MAXPOWER3, power_rules::ENERGY_MAX),
         (
             UNIT_FIELD_FACTIONTEMPLATE,
             content::faction_template(c.race),
@@ -877,9 +879,9 @@ fn player_fields(c: &Char, stats: &CharacterStats) -> ObjectFields {
         (
             UNIT_FIELD_BYTES_0,
             u32::from(c.race)
-                | u32::from(benilla_protocol::messages::CLASS_WARRIOR) << 8
+                | u32::from(c.class()) << 8
                 | u32::from(c.gender) << 16
-                | POWER_RAGE << 24,
+                | kind.id() << 24,
         ),
         (UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE),
         (UNIT_FIELD_BOUNDINGRADIUS, float(0.389)),
@@ -928,7 +930,7 @@ impl InWorld {
         let lost = cast::buffed(&self.player.stats, &self.skills)
             .max_health
             .saturating_sub(self.player.health);
-        self.player.stats = crate::talents::stats(c);
+        self.player.set_stats(crate::talents::stats(c));
         let max = cast::buffed(&self.player.stats, &self.skills).max_health;
         let p = &mut self.player;
         if p.alive() {

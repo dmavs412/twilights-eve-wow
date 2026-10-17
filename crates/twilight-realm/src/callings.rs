@@ -19,6 +19,9 @@ pub struct CallingDef {
     pub tier: u8,
     /// The Tier Cap: the highest level inside the Tier.
     pub cap: u8,
+    /// The Class it sits on (`ChrClasses.dbc` id, `rules::power::class`): its power kind, its
+    /// per-level tables and the client's class byte follow it.
+    pub class: u8,
     /// The Tier Bonus: flat base stats on top of the race table, cumulative per Tier.
     pub tier_bonus: TierBonus,
     /// `UNIT_FIELD_BYTES_1` byte 2 while this Calling is current (17, Battle Stance).
@@ -278,8 +281,8 @@ pub struct ClientSpellMod {
 pub struct Skill {
     pub key: String,
     pub spell_id: u32,
-    /// Whole rage points.
-    pub rage_cost: u32,
+    /// Whole points of the Calling's power (`realm_cost` in the master CSV).
+    pub power_cost: u32,
     /// Percent of base health a cast costs (Bloodrage).
     #[serde(default)]
     pub health_cost_pct_of_base_health: u32,
@@ -314,7 +317,7 @@ pub struct Skill {
     #[serde(default)]
     pub extra_target_radius_yd: f32,
     /// Set on a spell borrowed from another Class: the client rewrites its row to cost
-    /// `rage_cost` rage in any stance, as a Warrior spell (ADR 0003).
+    /// `power_cost` rage in any stance, as a Warrior spell (ADR 0003).
     #[serde(default)]
     pub borrowed: Option<BorrowedFamilyBit>,
     pub effects: Vec<Effect>,
@@ -567,7 +570,7 @@ pub fn borrowed_spell_rewrites() -> impl Iterator<Item = BorrowedSpellRewrite> {
         Some(BorrowedSpellRewrite {
             spell_id: s.spell_id,
             power_type: crate::fields::POWER_RAGE,
-            cost: s.rage_cost * 10,
+            cost: s.power_cost * 10,
             spell_family: CLASS_SPELL_FAMILY,
             family_bit: s.borrowed?.family_bit,
         })

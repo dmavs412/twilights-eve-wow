@@ -22,7 +22,7 @@ use crate::mobs::State;
 use crate::rng::Rng;
 use crate::rules::haste::{haste_cut_damage, hasted_attack_time};
 use crate::rules::melee::{Outcome, PlayerOffense, ROLL};
-use crate::rules::rage;
+use crate::rules::power::PowerKind;
 use crate::rules::school::{mitigated, School};
 use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
@@ -717,7 +717,7 @@ impl InWorld {
         let p = &self.player;
         events.push(values(
             self.guid,
-            &[(UNIT_FIELD_HEALTH, p.health), (UNIT_FIELD_POWER2, p.rage)],
+            &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
         ));
         self.update_aura_states(events);
         ticked
@@ -734,7 +734,7 @@ impl InWorld {
         {
             return Err(SPELL_FAILED_NOT_READY);
         }
-        if p.rage < crate::talents::rage_cost(c, skill) * 10 {
+        if !p.power.has(crate::talents::power_cost(c, skill)) {
             return Err(SPELL_FAILED_NO_POWER);
         }
         if skill.requires_out_of_combat && p.in_combat {
@@ -796,7 +796,7 @@ impl InWorld {
     /// Takes the cast's costs and starts its cooldowns.
     fn pay(&mut self, skill: &Skill, c: &Char, events: &mut Vec<SessionEvent>) {
         let p = &mut self.player;
-        p.rage -= crate::talents::rage_cost(c, skill) * 10;
+        p.power.spend(crate::talents::power_cost(c, skill));
         let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100;
         // A cost never kills.
         p.health = p.health.saturating_sub(health_cost).max(1);
@@ -958,8 +958,7 @@ impl InWorld {
             }
             Effect::EnergizeRage { amount } => {
                 let gained = amount.at(level, ap) + crate::talents::extra_rage(c, &skill.key);
-                let p = &mut self.player;
-                p.rage = (p.rage + gained * 10).min(rage::MAX);
+                self.player.power.gain(PowerKind::Rage, gained);
                 events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
                     target: self.guid,
                     caster: self.guid,
@@ -1017,8 +1016,7 @@ impl InWorld {
                 per_extra_rage,
             } => {
                 // The cost is paid; every rage point left goes into the blow.
-                let extra = self.player.rage / 10;
-                self.player.rage = 0;
+                let extra = self.player.power.take_all(PowerKind::Rage);
                 let raw = sized(base) + extra * sized(per_extra_rage);
                 self.strike(skill.spell_id, target, raw, how, c, rng, events, ticked);
             }
@@ -1366,7 +1364,7 @@ impl InWorld {
     /// `amount` rage for the player, logged under `spell_id`.
     pub(super) fn gain_rage(&mut self, spell_id: u32, amount: u32, events: &mut Vec<SessionEvent>) {
         let p = &mut self.player;
-        p.rage = (p.rage + amount * 10).min(rage::MAX);
+        p.power.gain(PowerKind::Rage, amount);
         events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
             target: self.guid,
             caster: self.guid,
@@ -1374,7 +1372,7 @@ impl InWorld {
             power: POWER_RAGE,
             amount,
         }));
-        events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+        events.push(values(self.guid, &[p.power.field()]));
     }
 
     /// `unit` is stunned for `duration_ms`, under `spell_id` (Mace Specialization).
@@ -1477,7 +1475,7 @@ impl InWorld {
         let Some(skill) = callings::skill(spell_id) else {
             return false;
         };
-        if self.player.rage < crate::talents::rage_cost(c, skill) * 10 {
+        if !self.player.power.has(crate::talents::power_cost(c, skill)) {
             events.push(refused(spell_id, SPELL_FAILED_NO_POWER));
             return false;
         }
@@ -1559,7 +1557,7 @@ impl InWorld {
             ammo_display_id: None,
             item_caster: None,
         });
-        events.push(values(self.guid, &[(UNIT_FIELD_POWER2, self.player.rage)]));
+        events.push(values(self.guid, &[self.player.power.field()]));
         // The first target's dodge opens Overpower, as a white swing's would.
         if missed_by(swings[0].1.outcome) == Some(SPELL_MISS_DODGE) {
             self.skills.dodged_by(target, events);
@@ -1670,7 +1668,7 @@ impl InWorld {
                 }
                 AuraKind::Rage { per_tick } => {
                     let p = &mut self.player;
-                    p.rage = (p.rage + per_tick * 10).min(rage::MAX);
+                    p.power.gain(PowerKind::Rage, per_tick);
                     events.push(SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
                         target: self.guid,
                         caster: self.guid,
@@ -1680,7 +1678,7 @@ impl InWorld {
                             amount: per_tick,
                         }],
                     }));
-                    events.push(values(self.guid, &[(UNIT_FIELD_POWER2, p.rage)]));
+                    events.push(values(self.guid, &[p.power.field()]));
                 }
                 _ => {}
             }

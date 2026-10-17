@@ -36,12 +36,21 @@ impl PowerKind {
         }
     }
 
-    /// `Powers`: the client's power index, `UNIT_FIELD_POWER1 + index` holds the current value.
-    pub fn index(self) -> u16 {
+    /// `Powers`: the client's id, in the unit's bytes, the energize logs and the field offset
+    /// (`UNIT_FIELD_POWER1 + id` holds the current value).
+    pub fn id(self) -> u32 {
         match self {
             Self::Mana => 0,
             Self::Rage => 1,
             Self::Energy => 3,
+        }
+    }
+
+    /// `points` as the client field stores them: rage in tenths, energy and mana whole.
+    pub fn stored(self, points: u32) -> u32 {
+        match self {
+            Self::Rage => points * 10,
+            Self::Energy | Self::Mana => points,
         }
     }
 }

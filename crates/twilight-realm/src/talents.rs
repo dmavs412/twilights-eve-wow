@@ -243,13 +243,13 @@ pub(crate) fn on_struck(c: &Char) -> OnStruck {
     struck
 }
 
-/// What a skill costs `c`, in whole rage points.
-pub(crate) fn rage_cost(c: &Char, skill: &callings::Skill) -> u32 {
+/// What a skill costs `c`, in whole points of its power.
+pub(crate) fn power_cost(c: &Char, skill: &callings::Skill) -> u32 {
     let less = sum(
         c,
         |e| matches!(e, TalentEffect::SkillRageCost { skill: s, .. } if *s == skill.key),
     );
-    skill.rage_cost.saturating_sub(less)
+    skill.power_cost.saturating_sub(less)
 }
 
 /// The percent a skill's damage and buff amounts rise by.

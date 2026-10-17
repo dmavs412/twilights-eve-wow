@@ -93,7 +93,7 @@ fn every_skill_borrowed_from_another_class_is_marked() {
 #[test]
 fn the_borrowed_skills_are_zealots_four_at_their_rage_costs() {
     let got: Vec<(u32, u32)> = callings::borrowed_skills()
-        .map(|s| (s.spell_id, s.rage_cost))
+        .map(|s| (s.spell_id, s.power_cost))
         .collect();
     assert_eq!(got, [(20375, 10), (20305, 10), (20271, 5), (10308, 15)]);
 }
@@ -177,14 +177,14 @@ fn check_calling(calling: &str) {
             "{key}"
         );
         let realm = &want["realm"];
-        assert_eq!(got.rage_cost, ms(realm, "rage_cost"), "{key} rage");
+        assert_eq!(got.power_cost, ms(realm, "rage_cost"), "{key} cost");
         assert_eq!(got.cooldown_ms, ms(realm, "cooldown_ms"), "{key} cooldown");
         assert_eq!(got.gcd_ms, ms(realm, "gcd_ms"), "{key} gcd");
         // The client refuses a cast it cannot afford at the Spell.dbc cost; a borrowed spell's
         // cost there is mana, which the client rewrites to the realm's rage cost.
         assert!(
             got.borrowed.is_some()
-                || f64::from(got.rage_cost) >= want["client"]["cost"].as_f64().unwrap(),
+                || f64::from(got.power_cost) >= want["client"]["cost"].as_f64().unwrap(),
             "{key}: realm cost under the client's"
         );
         assert_eq!(
