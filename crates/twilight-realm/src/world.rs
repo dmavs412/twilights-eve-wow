@@ -575,7 +575,12 @@ impl InWorld {
             }
         }
         match mob.state {
-            State::Idle | State::Dead | State::Dazed => {}
+            State::Idle => {
+                if mob.assist_in.is_none() {
+                    mob.stroll(dt, map, host, rng, events);
+                }
+            }
+            State::Dead | State::Dazed => {}
             State::Evading => {
                 if mob.walk.is_none() {
                     mob.state = State::Idle;

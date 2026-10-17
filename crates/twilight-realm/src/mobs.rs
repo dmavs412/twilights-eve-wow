@@ -10,9 +10,11 @@ use serde::Deserialize;
 
 use crate::clock;
 use crate::fields::*;
+use crate::rng::Rng;
 use crate::rules::melee::MobDefense;
 use crate::rules::stats::{MobStats, UnitClass};
 use crate::space::distance;
+use crate::Host;
 
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
 const HIGHGUID_UNIT: u64 = 0xF130;
@@ -88,7 +90,7 @@ pub(crate) struct Spawn {
     pub(crate) position: [f32; 3],
     pub(crate) orientation: f32,
     pub(crate) display_id: u32,
-    #[allow(dead_code)]
+    /// How far from its spawn point it strolls while idle, in yards; 0 stands still.
     pub(crate) wander_radius: f32,
     /// The camp it fights with: pulling one member pulls the rest.
     pub(crate) camp: u32,
@@ -285,8 +287,15 @@ pub(crate) struct Mob {
     pub(crate) camp: u32,
     /// Seconds until it answers a campmate's cry for help; `None` when no one has called.
     pub(crate) assist_in: Option<f32>,
+    /// How far from home it strolls while idle.
+    wander_radius: f32,
+    /// Seconds until an idle mob sets off on its next stroll.
+    wander_in: f32,
     display_id: u32,
 }
+
+/// The pause between one stroll and the next, in seconds.
+const WANDER_PAUSE: (f32, f32) = (6.0, 16.0);
 
 impl Mob {
     /// The mob of `content().spawn[index]` at `level`, standing at `z` (the ground under its
@@ -323,8 +332,67 @@ impl Mob {
             spawn: index,
             camp: spawn.camp,
             assist_in: None,
+            wander_radius: spawn.wander_radius,
+            // A stagger, so a camp's mobs don't all set off together.
+            wander_in: WANDER_PAUSE.0 + (spawn.guid % 97) as f32 / 97.0 * WANDER_PAUSE.1,
             display_id: spawn.display_id,
         })
+    }
+
+    /// An idle mob's stroll: after a pause it walks to a spot within its wander of home, and
+    /// never through something solid. Does nothing while it walks, fights or flees.
+    pub(crate) fn stroll(
+        &mut self,
+        dt: f32,
+        map: u32,
+        host: &dyn Host,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        if self.wander_radius <= 0.0 || self.state != State::Idle || self.walk.is_some() {
+            return;
+        }
+        self.wander_in -= dt;
+        if self.wander_in > 0.0 {
+            return;
+        }
+        self.wander_in = rng.frand(WANDER_PAUSE.0, WANDER_PAUSE.1);
+        // A spot spread evenly over the wander's disc.
+        let angle = rng.frand(0.0, std::f32::consts::TAU);
+        let r = self.wander_radius * rng.frand(0.0, 1.0).sqrt();
+        let [hx, hy, hz] = self.home;
+        let (x, y) = (hx + r * angle.cos(), hy + r * angle.sin());
+        let to = [x, y, host.ground_height(map, x, y, hz + 2.0).unwrap_or(hz)];
+        let eye = |p: [f32; 3]| [p[0], p[1], p[2] + 2.0];
+        if !host.line_of_sight(map, eye(self.position), eye(to)) {
+            return;
+        }
+        let duration = distance(self.position, to) / (BASE_WALK * self.template.speed_walk);
+        if duration <= 0.0 {
+            return;
+        }
+        let path = vec![self.position, to];
+        let spline_id = self.next_spline_id;
+        self.next_spline_id += 1;
+        // Aimed nowhere near a player, so a chase that begins mid-stroll lays its own leg.
+        self.walk = Some(Walk {
+            points: path.clone(),
+            duration,
+            elapsed: 0.0,
+            aimed_at: [f32::MAX; 3],
+        });
+        events.push(SessionEvent::MonsterMove {
+            guid: self.guid,
+            transport: None,
+            start: self.position,
+            spline_id,
+            path,
+            facing: MonsterMoveFacing::None,
+            stop: false,
+            duration_ms: clock::ms(duration),
+            flying: false,
+            run_mode: false,
+        });
     }
 
     pub(crate) fn level(&self) -> u8 {
