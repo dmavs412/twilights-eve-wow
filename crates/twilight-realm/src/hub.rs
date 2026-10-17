@@ -34,6 +34,9 @@ pub(crate) struct Npc {
     npc_flags: u32,
     pub(crate) position: [f32; 3],
     orientation: f32,
+    /// A spot (`[x, y]`) it stands facing; when set, it replaces `orientation`.
+    #[serde(default)]
+    faces: Option<[f32; 2]>,
     /// How far it wanders from `position`, in yards; 0 stands still.
     #[serde(default)]
     wander: f32,
@@ -79,6 +82,16 @@ impl Npc {
         HIGHGUID_UNIT << 48
             | u64::from(self.entry & 0xFF_FFFF) << 24
             | u64::from(self.guid & 0xFF_FFFF)
+    }
+
+    /// The way it stands: toward `faces` when set, else `orientation`.
+    fn facing(&self) -> f32 {
+        match self.faces {
+            Some([x, y]) => (y - self.position[1])
+                .atan2(x - self.position[0])
+                .rem_euclid(std::f32::consts::TAU),
+            None => self.orientation,
+        }
     }
 
     /// Whether a right-click opens its gossip menu (`UNIT_NPC_FLAG_GOSSIP`).
@@ -265,6 +278,8 @@ pub(crate) struct InView {
 /// An NPC in the world: where it is, and what it is doing there.
 struct Standing {
     at: [f32; 3],
+    /// Whether `at` is on the host's ground; false when it spawned before the terrain streamed in.
+    grounded: bool,
     walk: Option<Walk>,
     /// Seconds until a wanderer sets off again.
     idle: f32,
@@ -303,10 +318,12 @@ impl InView {
             match present {
                 None if d <= VIEW_YD => {
                     let [x, y, z] = npc.position;
-                    let at = [x, y, host.ground_height(map, x, y, z + 2.0).unwrap_or(z)];
-                    events.push(npc.create(at, npc.orientation));
+                    let ground = host.ground_height(map, x, y, z + 2.0);
+                    let at = [x, y, ground.unwrap_or(z)];
+                    events.push(npc.create(at, npc.facing()));
                     *present = Some(Standing {
                         at,
+                        grounded: ground.is_some(),
                         walk: None,
                         idle: rng.frand(WANDER_PAUSE.0, WANDER_PAUSE.1),
                     });
@@ -315,8 +332,13 @@ impl InView {
                     gone.push(npc.guid());
                     *present = None;
                 }
-                Some(s) if npc.wander > 0.0 => s.wander(npc, dt, map, host, rng, events),
-                _ => {}
+                Some(s) => {
+                    s.settle(npc, map, host, events);
+                    if npc.wander > 0.0 {
+                        s.wander(npc, dt, map, host, rng, events);
+                    }
+                }
+                None => {}
             }
         }
         if !gone.is_empty() {
@@ -326,6 +348,36 @@ impl InView {
 }
 
 impl Standing {
+    /// An NPC that spawned before the ground streamed in stood at its spawn's height, often under
+    /// the terrain; once the ground is there, lifts it onto it.
+    fn settle(&mut self, npc: &Npc, map: u32, host: &dyn Host, events: &mut Vec<SessionEvent>) {
+        if self.grounded || self.walk.is_some() {
+            return;
+        }
+        let [x, y, z] = self.at;
+        let Some(ground) = host.ground_height(map, x, y, z + 2.0) else {
+            return;
+        };
+        self.grounded = true;
+        if (ground - z).abs() < 0.05 {
+            return;
+        }
+        let to = [x, y, ground];
+        events.push(SessionEvent::MonsterMove {
+            guid: npc.guid(),
+            transport: None,
+            start: self.at,
+            spline_id: 0,
+            path: vec![self.at, to],
+            facing: MonsterMoveFacing::Angle(npc.facing()),
+            stop: false,
+            duration_ms: 1,
+            flying: false,
+            run_mode: false,
+        });
+        self.at = to;
+    }
+
     /// Walks on, or after a pause sets off for another spot within `npc`'s wander.
     fn wander(
         &mut self,
@@ -357,6 +409,11 @@ impl Standing {
         let [hx, hy, hz] = npc.position;
         let (x, y) = (hx + r * angle.cos(), hy + r * angle.sin());
         let to = [x, y, host.ground_height(map, x, y, hz + 2.0).unwrap_or(hz)];
+        // Never walk through a catapult, a wall or a cart: a blocked spot waits for the next try.
+        let eye = |p: [f32; 3]| [p[0], p[1], p[2] + 1.0];
+        if !host.line_of_sight(map, eye(self.at), eye(to)) {
+            return;
+        }
         let duration = flat_distance(self.at, to) / WALK_SPEED;
         if duration <= 0.0 {
             return;

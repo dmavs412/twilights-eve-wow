@@ -121,6 +121,8 @@ fn every_npcs_flags_fit_its_role() {
             }
             "tokens" => n.npc_flags == VENDOR && n.tokens && n.stock.is_empty(),
             "trainer" => n.npc_flags == GOSSIP | QUEST_GIVER | TRAINER && talks,
+            // The flight master only stands there: no flags, no menu, no words.
+            "flight" => n.npc_flags == 0 && n.text_id.is_none() && n.stock.is_empty() && !n.tokens,
             "giver" => n.npc_flags == QUEST_GIVER && gives && !n.greeting.is_empty(),
             "ambient" => {
                 n.npc_flags == GOSSIP
