@@ -283,6 +283,8 @@ pub(crate) struct Mob {
     /// Its index in [`Mobs::spawn`].
     pub(crate) spawn: u32,
     pub(crate) camp: u32,
+    /// Seconds until it answers a campmate's cry for help; `None` when no one has called.
+    pub(crate) assist_in: Option<f32>,
     display_id: u32,
 }
 
@@ -320,6 +322,7 @@ impl Mob {
             next_spline_id: 1,
             spawn: index,
             camp: spawn.camp,
+            assist_in: None,
             display_id: spawn.display_id,
         })
     }

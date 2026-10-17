@@ -363,17 +363,38 @@ impl InWorld {
         }
     }
 
-    /// Mob `i` turns on the player. A hostile mob brings every idle member of its camp with it
-    /// (social aggro); a neutral one comes alone, and its campmates wait to be attacked themselves.
+    /// Mob `i` turns on the player. A hostile mob calls the idle campmates within earshot, each
+    /// of whom joins after a short delay (social aggro); a neutral one comes alone. The call
+    /// goes one hop: a mob that joins calls no one.
     fn pull(&mut self, i: usize, events: &mut Vec<SessionEvent>) {
         let camp = self.mobs[i].camp;
+        let at = self.mobs[i].position;
         engage(&mut self.mobs[i], self.guid, events);
         if !self.mobs[i].template.hostile {
             return;
         }
         for mob in &mut self.mobs {
-            if mob.camp == camp && mob.state == State::Idle {
-                engage(mob, self.guid, events);
+            let d = distance(mob.position, at);
+            if mob.camp == camp
+                && mob.state == State::Idle
+                && mob.assist_in.is_none()
+                && d <= aggro::SOCIAL_RANGE_YD
+            {
+                mob.assist_in = Some(aggro::social_delay(d));
+            }
+        }
+    }
+
+    /// Everyone in `camp` that is fighting runs home together.
+    fn evade_camp(
+        &mut self,
+        camp: u32,
+        route: Option<(&crate::dungeon::Route, u32, &dyn Host)>,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        for mob in &mut self.mobs {
+            if mob.camp == camp && mob.state == State::Engaged {
+                evade(mob, self.guid, route, events);
             }
         }
     }
@@ -543,6 +564,16 @@ impl InWorld {
         mob.advance(dt);
         mob.swing_timer = (mob.swing_timer - dt).max(0.0);
         mob.repath_timer = (mob.repath_timer - dt).max(0.0);
+        if let Some(t) = mob.assist_in {
+            if mob.state != State::Idle || !self.player.alive() {
+                mob.assist_in = None;
+            } else if t <= dt {
+                mob.assist_in = None;
+                engage(mob, self.guid, events);
+            } else {
+                mob.assist_in = Some(t - dt);
+            }
+        }
         match mob.state {
             State::Idle | State::Dead | State::Dazed => {}
             State::Evading => {
@@ -555,7 +586,8 @@ impl InWorld {
             }
             State::Engaged => {
                 if !self.player.alive() || leash::beyond(mob.home, mob.position) {
-                    evade(mob, self.guid, route.map(|r| (r, map, host)), events);
+                    let camp = mob.camp;
+                    self.evade_camp(camp, route.map(|r| (r, map, host)), events);
                     return;
                 }
                 if self.skills.stunned(mob.guid) {

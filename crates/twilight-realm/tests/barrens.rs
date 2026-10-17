@@ -233,9 +233,17 @@ fn a_mob_notices_a_player_by_level_difference_and_brings_its_camp() {
     assert!(pulled.contains(&wolf.0), "noticed at {} yd", r - 1.0);
     assert_eq!(
         pulled,
-        wolves.keys().copied().collect(),
-        "the whole camp comes"
+        HashSet::from([wolf.0]),
+        "the campmates wait to hear"
     );
+    // Within three seconds the campmates in earshot join, and only they.
+    let later: HashSet<u64> = attackers(&run(&mut realm, 3.0)).collect();
+    let near: HashSet<u64> = wolves
+        .iter()
+        .filter(|(_, u)| distance2(u.position, wolf.1.position) <= 8.0)
+        .map(|(g, _)| *g)
+        .collect();
+    assert_eq!(later, &near - &pulled, "the campmates within 8 yd come");
     assert!(events.iter().all(|e| !matches!(
         e,
         SessionEvent::AttackStart { victim, .. } if *victim != me
