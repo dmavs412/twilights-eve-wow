@@ -2495,7 +2495,22 @@
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "description": "Increases out-of-combat health regeneration by 20% and Stamina by 3%."
+    "description": "Increases out-of-combat health regeneration by 20% and Stamina by 3%.",
+    "effects": [
+     {
+      "kind": "mod_health_regen_out_of_combat",
+      "params": {
+       "pct": 20
+      }
+     },
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 3
+      }
+     }
+    ]
    }
   },
   {
@@ -2505,7 +2520,22 @@
    "rank": 2,
    "fields": {
     "power_type": 1,
-    "description": "Increases out-of-combat health regeneration by 40% and Stamina by 6%."
+    "description": "Increases out-of-combat health regeneration by 40% and Stamina by 6%.",
+    "effects": [
+     {
+      "kind": "mod_health_regen_out_of_combat",
+      "params": {
+       "pct": 40
+      }
+     },
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 6
+      }
+     }
+    ]
    }
   },
   {
@@ -2515,7 +2545,22 @@
    "rank": 3,
    "fields": {
     "power_type": 1,
-    "description": "Increases out-of-combat health regeneration by 60% and Stamina by 9%."
+    "description": "Increases out-of-combat health regeneration by 60% and Stamina by 9%.",
+    "effects": [
+     {
+      "kind": "mod_health_regen_out_of_combat",
+      "params": {
+       "pct": 60
+      }
+     },
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 9
+      }
+     }
+    ]
    }
   },
   {
@@ -2525,7 +2570,22 @@
    "rank": 4,
    "fields": {
     "power_type": 1,
-    "description": "Increases out-of-combat health regeneration by 80% and Stamina by 12%."
+    "description": "Increases out-of-combat health regeneration by 80% and Stamina by 12%.",
+    "effects": [
+     {
+      "kind": "mod_health_regen_out_of_combat",
+      "params": {
+       "pct": 80
+      }
+     },
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 12
+      }
+     }
+    ]
    }
   },
   {
@@ -2535,7 +2595,22 @@
    "rank": 5,
    "fields": {
     "power_type": 1,
-    "description": "Increases out-of-combat health regeneration by 100% and Stamina by 15%."
+    "description": "Increases out-of-combat health regeneration by 100% and Stamina by 15%.",
+    "effects": [
+     {
+      "kind": "mod_health_regen_out_of_combat",
+      "params": {
+       "pct": 100
+      }
+     },
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 15
+      }
+     }
+    ]
    }
   },
   {

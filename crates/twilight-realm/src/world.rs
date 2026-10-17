@@ -28,6 +28,7 @@ use crate::Host;
 mod death;
 mod dungeon;
 mod food;
+mod regen;
 
 pub(crate) use dungeon::come_out;
 
@@ -76,6 +77,8 @@ struct Player {
     refused: Option<AttackSwingError>,
     /// Seconds into the current rage-decay tick.
     decay: f32,
+    /// Seconds into the current health-regeneration tick.
+    regen: f32,
     in_combat: bool,
     /// Killed, and the toll taken: lying dead until Release Spirit.
     dead: bool,
@@ -166,6 +169,7 @@ impl InWorld {
                 attacking: None,
                 refused: None,
                 decay: 0.0,
+                regen: 0.0,
                 in_combat: false,
                 dead: false,
             },
@@ -305,6 +309,7 @@ impl InWorld {
         }
         self.update_combat(dt, events);
         self.eat(dt, c, events);
+        self.regenerate(dt, c, events);
         ticked
     }
 

@@ -165,6 +165,16 @@ pub enum TalentEffect {
     MeleeCritPct { per_rank: Vec<u32> },
     /// The Defense skill rises by this much.
     Defense { per_rank: Vec<u32> },
+    /// A stat rises by this percent of its total (base, Tier Bonus and gear), or, with `flat`,
+    /// by this many points.
+    ModStat {
+        stat: Stat,
+        #[serde(default)]
+        flat: bool,
+        per_rank: Vec<u32>,
+    },
+    /// Out-of-combat health regeneration rises by this percent.
+    ModHealthRegenOutOfCombat { per_rank: Vec<u32> },
     /// The armour from items rises by this many percent.
     ItemArmorPct { per_rank: Vec<u32> },
     /// A melee critical strike makes the target bleed for this percent of the average swing,
@@ -220,6 +230,17 @@ pub enum TalentEffect {
     },
 }
 
+/// One of the five stats, in the order of [`crate::rules::stats::WarriorStats::base`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Stat {
+    Strength,
+    Agility,
+    Stamina,
+    Intellect,
+    Spirit,
+}
+
 /// What a talent asks to be wielded in the main hand.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -246,6 +267,8 @@ impl TalentEffect {
             | Self::SkillCritPct { per_rank, .. }
             | Self::MeleeCritPct { per_rank }
             | Self::Defense { per_rank }
+            | Self::ModStat { per_rank, .. }
+            | Self::ModHealthRegenOutOfCombat { per_rank }
             | Self::ItemArmorPct { per_rank }
             | Self::CritBleed { per_rank, .. }
             | Self::WeaponDamagePct { per_rank, .. }

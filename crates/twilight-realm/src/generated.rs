@@ -224,6 +224,8 @@ fn talent_effect(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
         .into_iter()
         .find(|k| object.contains_key(*k))?;
     object.remove(key);
+    // An effect that can be a percent or a flat amount (`mod_stat`) reads which it was.
+    object.insert("flat".into(), (key == "amount").into());
     let sizes: Option<Vec<Value>> = ranks
         .iter()
         .map(|r| r.effects.get(slot)?.params.get(key).cloned())

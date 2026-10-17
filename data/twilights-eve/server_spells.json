@@ -160,8 +160,24 @@
         "spell_id": 12299,
         "talent_id": 140,
         "source_tab_id": 163,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 20
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 3
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases out-of-combat health regeneration by 20% and Stamina by 3%."
        },
        {
@@ -171,8 +187,24 @@
         "spell_id": 12761,
         "talent_id": 140,
         "source_tab_id": 163,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 40
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 6
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases out-of-combat health regeneration by 40% and Stamina by 6%."
        },
        {
@@ -182,8 +214,24 @@
         "spell_id": 12762,
         "talent_id": 140,
         "source_tab_id": 163,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 60
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 9
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases out-of-combat health regeneration by 60% and Stamina by 9%."
        },
        {
@@ -193,8 +241,24 @@
         "spell_id": 12763,
         "talent_id": 140,
         "source_tab_id": 163,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 80
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 12
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases out-of-combat health regeneration by 80% and Stamina by 12%."
        },
        {
@@ -204,8 +268,24 @@
         "spell_id": 12764,
         "talent_id": 140,
         "source_tab_id": 163,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_health_regen_out_of_combat",
+          "params": {
+           "pct": 100
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "stamina",
+           "pct": 15
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases out-of-combat health regeneration by 100% and Stamina by 15%."
        }
       ]

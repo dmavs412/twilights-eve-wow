@@ -37,7 +37,35 @@ pub struct WarriorStats {
     pub defense: u16,
 }
 
+/// The health Stamina gives: the first 20 points 1 each, the rest 10.
+fn stamina_health(sta: u32) -> u32 {
+    sta.min(20) + sta.saturating_sub(20) * 10
+}
+
 impl WarriorStats {
+    /// Raises stat `i` (`[str, agi, sta, int, spi]`) by `delta`, and what it feeds with it:
+    /// Strength attack power and damage, Agility crit, dodge and armour, Stamina max health.
+    pub fn raise_stat(&mut self, i: usize, delta: u32) {
+        let old = self.base[i];
+        self.base[i] += delta;
+        let t = &tables::levels().warrior;
+        match i {
+            0 => {
+                self.attack_power += 2 * delta as i32;
+                let ap = 2.0 * delta as f32 / 14.0 * self.attack_time_ms as f32 / 1000.0;
+                self.min_damage += ap;
+                self.max_damage += ap;
+            }
+            1 => {
+                self.crit_pct += f64::from(delta) / tables::at(&t.agi_per_crit, self.level);
+                self.dodge_pct += f64::from(delta) / tables::at(&t.agi_per_dodge, self.level);
+                self.armor += 2 * delta;
+            }
+            2 => self.max_health += stamina_health(old + delta) - stamina_health(old),
+            _ => {}
+        }
+    }
+
     /// A naked warrior of `race` (`ChrRaces.dbc` id) at `level`, on its race's base stats.
     pub fn naked(race: u8, level: u8) -> Self {
         let base = tables::at(tables::levels().warrior.race_stats.of(race), level);
@@ -102,7 +130,7 @@ impl WarriorStats {
         let [str, agi, sta, _, _] = base;
         let base_health = tables::at(&t.base_health, level);
         // The first 20 stamina give 1 health each, the rest 10.
-        let max_health = base_health + sta.min(20) + sta.saturating_sub(20) * 10;
+        let max_health = base_health + stamina_health(sta);
         let attack_power = 3 * i32::from(level) + 2 * str as i32 - 20 + gear.attack_power;
         let skill = 5 * u16::from(level);
         let defense = skill + gear.defense;

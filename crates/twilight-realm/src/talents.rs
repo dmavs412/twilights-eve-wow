@@ -8,7 +8,7 @@
 
 use benilla_protocol::SessionEvent;
 
-use crate::callings::{self, Skill, TalentDef, TalentEffect, TalentTab, Wielded};
+use crate::callings::{self, Skill, Stat, TalentDef, TalentEffect, TalentTab, Wielded};
 use crate::characters::Char;
 use crate::fields::values;
 use crate::rules::stats::WarriorStats;
@@ -319,7 +319,37 @@ pub(crate) fn stats(c: &Char) -> WarriorStats {
     let items_armor = s.armor.saturating_sub(2 * s.base[1]);
     let pct = sum(c, |e| matches!(e, TalentEffect::ItemArmorPct { .. }));
     s.armor += crate::rules::talents::scaled(items_armor, pct) - items_armor;
+    // Stat talents, last: a percent is of the total, base, Tier Bonus and gear.
+    for (i, stat) in STATS.into_iter().enumerate() {
+        let pct = sum(
+            c,
+            |e| matches!(e, TalentEffect::ModStat { stat: s, flat: false, .. } if *s == stat),
+        );
+        let flat = sum(
+            c,
+            |e| matches!(e, TalentEffect::ModStat { stat: s, flat: true, .. } if *s == stat),
+        );
+        let delta = s.base[i] * pct / 100 + flat;
+        if delta > 0 {
+            s.raise_stat(i, delta);
+        }
+    }
     s
+}
+
+const STATS: [Stat; 5] = [
+    Stat::Strength,
+    Stat::Agility,
+    Stat::Stamina,
+    Stat::Intellect,
+    Stat::Spirit,
+];
+
+/// The percent `c`'s out-of-combat health regeneration is raised by.
+pub(crate) fn health_regen_pct(c: &Char) -> u32 {
+    sum(c, |e| {
+        matches!(e, TalentEffect::ModHealthRegenOutOfCombat { .. })
+    })
 }
 
 /// Why a talent could not be learned.

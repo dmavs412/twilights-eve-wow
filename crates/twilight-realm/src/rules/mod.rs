@@ -11,6 +11,7 @@ pub mod loot;
 pub mod melee;
 pub mod quest;
 pub mod rage;
+pub mod regen;
 pub mod respawn;
 pub mod school;
 pub mod seals;

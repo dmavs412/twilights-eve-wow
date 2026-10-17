@@ -89,7 +89,13 @@ impl Script {
             position: away,
             orientation: 0.0,
         });
-        self.run(30.0);
+        // Stop at the first out-of-combat moment: natural regeneration starts there.
+        for _ in 0..300 {
+            if self.me().unit_flags() & 0x0008_0000 == 0 {
+                break;
+            }
+            self.run(0.1);
+        }
         assert_eq!(self.me().unit_flags() & 0x0008_0000, 0, "out of combat");
     }
 }
@@ -115,7 +121,14 @@ fn food_restores_its_health_over_its_duration_while_sitting() {
     assert_eq!(s.me().unit_stand_state(), 1, "sitting");
 
     s.run(18.0);
-    assert_eq!(s.health(), before + 61, "Tough Jerky: 61 health over 18 s");
+    // Tough Jerky: 61 health over 18 s, on top of the natural regeneration out of combat.
+    let spirit = s.me().unit_stat(4).unwrap();
+    let natural = 10 * twilight_realm::rules::regen::tick_heal(spirit, 0);
+    let gained = s.health() - before;
+    assert!(
+        (61..=61 + natural).contains(&gained),
+        "the meal's 61 plus at most {natural}: {gained}"
+    );
     assert!(!eating(&s.me()), "done");
     assert_eq!(s.me().unit_stand_state(), 0, "standing again");
 }
@@ -188,7 +201,12 @@ fn standing_up_ends_the_meal() {
     s.run(0.1);
     assert!(!eating(&s.me()));
     s.run(14.0);
-    assert_eq!(s.health(), mid, "no more once up");
+    let spirit = s.me().unit_stat(4).unwrap();
+    let natural = 8 * twilight_realm::rules::regen::tick_heal(spirit, 0);
+    assert!(
+        s.health() <= mid + natural,
+        "no more meal once up, only the natural regeneration"
+    );
 }
 
 #[test]

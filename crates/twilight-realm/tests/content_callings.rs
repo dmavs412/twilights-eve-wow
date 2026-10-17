@@ -394,9 +394,9 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
     let mut want = vec![
         // Anger Management, Flurry.
         12296, 12319, 12971, 12972, 12973, 12974,
-        // Basic Warrior's sheet: Field Medic, Cutthroat's Momentum, Savage Strikes, Vanguard's
+        // Basic Warrior's sheet: Cutthroat's Momentum, Savage Strikes, Vanguard's
         // Resolve.
-        12299, 12761, 12762, 12763, 12764, 13743, 13875, 14144, 14148, 14983,
+        13743, 13875, 14144, 14148, 14983,
         // Improved Judgement, Vindication, Eye for an Eye.
         25956, 25957, 9452, 26016, 26021, 9799, 25988,
         // Pursuit of Justice, Improved Hammer of Justice, Vengeance.
@@ -530,7 +530,7 @@ fn the_basic_warrior_tree_is_recruit_on_the_warrior_arms_art() {
         .filter(|t| !t.is_wip())
         .map(|t| t.key.as_str())
         .collect();
-    assert_eq!(modelled, ["initiates_spark"]);
+    assert_eq!(modelled, ["field_medic", "initiates_spark"]);
 }
 
 #[test]
