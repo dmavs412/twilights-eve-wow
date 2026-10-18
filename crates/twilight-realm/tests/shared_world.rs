@@ -220,7 +220,11 @@ fn walking_away_takes_the_view_with_the_player_alone() {
 
     two.go(b, north_of(HUB, 500.0));
     let got = two.run(0.0);
-    let b_lost = removed(&got[&b]);
+    // The other player leaves the walker's view too; only the units are the Hub's.
+    let b_lost: HashSet<u64> = removed(&got[&b])
+        .into_iter()
+        .filter(|g| g >> 48 != 0)
+        .collect();
     assert!(
         !b_lost.is_empty(),
         "the walker's client drops the Hub's mobs"

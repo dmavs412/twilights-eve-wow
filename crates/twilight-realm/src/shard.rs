@@ -40,6 +40,32 @@ pub(crate) struct OnShard<S> {
     pub(crate) guid: u64,
     pub(crate) position: [f32; 3],
     pub(crate) alive: bool,
+    /// Their create as other clients are sent it.
+    pub(crate) create: SessionEvent,
+    /// Stealthed: other clients are not shown them.
+    pub(crate) hidden: bool,
+}
+
+/// Whether `guid` is a player's: `HIGHGUID_PLAYER` is 0.
+pub(crate) fn is_player(guid: u64) -> bool {
+    guid >> 48 == 0
+}
+
+/// Whether another client may be sent a player's descriptor `field`: the object and unit block
+/// short of the stats, the player's flags and looks, and what they wear in sight. Never the
+/// quest log, skills, inventory, XP or money.
+pub(crate) fn public_player_field(field: u16) -> bool {
+    use crate::fields::{PLAYER_FLAGS, UNIT_FIELD_STAT0};
+    /// `UNIT_FIELD_BYTES_2`: the sheath and the PvP flag.
+    const UNIT_FIELD_BYTES_2: u16 = 164;
+    /// `PLAYER_QUEST_LOG_1_1`, where the private block after the looks starts.
+    const PLAYER_QUEST_LOG_1_1: u16 = 198;
+    /// `PLAYER_VISIBLE_ITEM_1_CREATOR` and `PLAYER_FIELD_INV_SLOT_HEAD`: the gear in sight.
+    const VISIBLE_ITEMS: std::ops::Range<u16> = 258..486;
+    field < UNIT_FIELD_STAT0
+        || field == UNIT_FIELD_BYTES_2
+        || (PLAYER_FLAGS - 2..PLAYER_QUEST_LOG_1_1).contains(&field)
+        || VISIBLE_ITEMS.contains(&field)
 }
 
 impl Shard {
@@ -168,6 +194,8 @@ pub(crate) fn shown_units(e: &SessionEvent) -> Vec<u64> {
     match e {
         E::ObjectValues { guid, .. }
         | E::MonsterMove { guid, .. }
+        | E::UnitMove { guid, .. }
+        | E::ObjectMove { guid, .. }
         | E::Emote { guid, .. }
         | E::PlaySpellVisual { unit: guid, .. } => vec![*guid],
         E::AttackStart { attacker, victim } | E::AttackStop { attacker, victim } => {
@@ -188,23 +216,26 @@ pub(crate) fn shown_units(e: &SessionEvent) -> Vec<u64> {
     }
 }
 
-/// `e` as another client sees it: a corpse is lootable only by its killer.
-pub(crate) fn as_seen_by_others(e: &SessionEvent) -> SessionEvent {
+/// `e` as another client sees it: a corpse is lootable only by its killer, and a player shows
+/// only their public fields; `None` when nothing of it is for others.
+pub(crate) fn as_seen_by_others(e: &SessionEvent) -> Option<SessionEvent> {
     match e {
         SessionEvent::ObjectValues { guid, fields } => {
             let (dynamic, _) = lootable_pair(false);
+            let player = is_player(*guid);
             let pairs: Vec<(u16, u32)> = fields
                 .raw_fields()
+                .filter(|&(field, _)| !player || public_player_field(field))
                 .map(|(field, v)| {
-                    if field == dynamic {
+                    if field == dynamic && !player {
                         lootable_pair(false)
                     } else {
                         (field, v)
                     }
                 })
                 .collect();
-            values(*guid, &pairs)
+            (!pairs.is_empty()).then(|| values(*guid, &pairs))
         }
-        other => other.clone(),
+        other => Some(other.clone()),
     }
 }

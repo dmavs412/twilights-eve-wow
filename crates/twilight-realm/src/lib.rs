@@ -539,7 +539,7 @@ impl Realm {
             if w.shard_place() == Some(map) {
                 for e in &new {
                     match e {
-                        SessionEvent::ObjectCreate { guid, .. } => {
+                        SessionEvent::ObjectCreate { guid, .. } if *guid != w.guid => {
                             w.seen.insert(*guid);
                         }
                         SessionEvent::ObjectDestroyed(guid) => {
@@ -572,7 +572,7 @@ impl Realm {
             }
             for e in events {
                 if shard::shown_units(e).iter().any(|u| w.seen.contains(u)) {
-                    s.events.push(shard::as_seen_by_others(e));
+                    s.events.extend(shard::as_seen_by_others(e));
                 }
             }
         }
@@ -597,6 +597,8 @@ impl Realm {
                 guid: w.guid,
                 position: c.position,
                 alive: w.alive(),
+                create: w.remote_create(c),
+                hidden: w.hidden(),
             });
         }
         self.shards.retain(|map, _| on.contains_key(map));
@@ -641,7 +643,17 @@ impl Realm {
                     }
                 }
                 // The view: what came within it is created, what left it removed.
-                let view = shard.in_view(p.position);
+                let mut view = shard.in_view(p.position);
+                // The other players in view.
+                view.extend(
+                    players
+                        .iter()
+                        .filter(|o| o.guid != p.guid && !o.hidden)
+                        .filter(|o| {
+                            space::flat_distance(o.position, p.position) <= population::VIEW_YD
+                        })
+                        .map(|o| (o.guid, o.create.clone())),
+                );
                 let gone: Vec<u64> = w
                     .seen
                     .iter()
@@ -713,6 +725,22 @@ impl Realm {
                     if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
                         let guid = w.guid;
                         self.characters.set_position(guid, position, orientation);
+                        // Trusted, as reported (ADR 0009): the others who see the player see it.
+                        if let Some(place) = w.shard_place() {
+                            let moved = SessionEvent::UnitMove {
+                                guid,
+                                position,
+                                orientation,
+                                flags: 0,
+                                pitch: 0.0,
+                                time: (self.wall * 1000.0) as u32,
+                                verb: benilla_protocol::messages::RelayVerb::Heartbeat,
+                                fall_time: 0,
+                                jump: None,
+                                transport: None,
+                            };
+                            self.show_others(place, &[moved]);
+                        }
                         let explored = self
                             .characters
                             .get_mut(guid)

@@ -33,6 +33,10 @@ fn create_as(realm: &mut Realm, session: SessionId, name: &str) -> u64 {
         .guid
 }
 
+/// `PLAYER_XP`: only a client's own player carries it.
+const PLAYER_XP: u16 = 716;
+
+/// The players created as the client's own: with their private fields.
 fn player_creates(events: &[SessionEvent]) -> Vec<u64> {
     events
         .iter()
@@ -40,8 +44,9 @@ fn player_creates(events: &[SessionEvent]) -> Vec<u64> {
             SessionEvent::ObjectCreate {
                 guid,
                 kind: EntityKind::Player,
+                fields,
                 ..
-            } => Some(*guid),
+            } if fields.raw_fields().any(|(f, _)| f == PLAYER_XP) => Some(*guid),
             _ => None,
         })
         .collect()

@@ -335,6 +335,24 @@ impl InWorld {
 
     /// Whether this session runs mob `guid`'s fight and AI: every mob of its own, and the lent
     /// ones the realm gave it this tick.
+    /// The player as another client is sent them: a remote player, public fields only.
+    pub(crate) fn remote_create(&self, c: &Char) -> SessionEvent {
+        let mut create = self.player_create(c);
+        if let SessionEvent::ObjectCreate { fields, .. } = &mut create {
+            let pairs: Vec<(u16, u32)> = fields
+                .raw_fields()
+                .filter(|&(f, _)| crate::shard::public_player_field(f))
+                .collect();
+            *fields = ObjectFields::from_pairs(&pairs).into_created(ObjectType::Player);
+        }
+        create
+    }
+
+    /// Whether other clients are kept from seeing the player: stealthed.
+    pub(crate) fn hidden(&self) -> bool {
+        self.skills.stealthed()
+    }
+
     pub(crate) fn alive(&self) -> bool {
         self.player.alive()
     }

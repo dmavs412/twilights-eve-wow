@@ -609,7 +609,7 @@ impl Skills {
     }
 
     /// Whether the player is stealthed.
-    pub(super) fn stealthed(&self) -> bool {
+    pub(crate) fn stealthed(&self) -> bool {
         self.auras
             .iter()
             .any(|a| a.unit == self.me && matches!(a.kind, AuraKind::Stealth { .. }))
