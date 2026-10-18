@@ -1656,20 +1656,18 @@ completion = "It be done. Build your cuts, then finish dem, Cutthroat. You start
 money = 0
 tokens = 0
 
-# Initiate (Tier 1) has no kit yet: its trainer offers the quest at Basic Warrior's cap, and it
-# never finishes.
 [[quest]]
 id = 64006
 kind = "advancement"
 giver = 190031
 level = 10
 zone_or_sort = -161
-advancement = { from = "basic_warrior", to = "initiate", completable = false }
+advancement = { from = "basic_warrior", to = "initiate" }
 title = "The Initiate's Spark"
-objectives = "Await the Initiates' summons."
-details = "There is more in you than a strong arm, $N. I feel it when you pass: a spark, waiting for someone to fan it.$B$BThe Initiates draw on mana, not rage, and strike from afar with fire and frost. The circle is not ready to open to you yet. When it is, I will send word. Until then, watch the sky at dusk."
-progress = "The circle has not yet opened to you, $N. Patience."
-completion = "The circle has not yet opened to you, $N. Patience."
+objectives = "Speak with the Initiate Trainer at the Crossroads to fan the spark."
+details = "There is more in you than a strong arm, $N. I feel it when you pass: a spark, waiting for someone to fan it.$B$BAccept it and you begin again, a novice of the circle. No more rage: you draw on mana now, and you strike from afar with fire and frost, then break what you have woven.$B$BSay the word."
+progress = "Say the word, $N, and let the spark catch."
+completion = "It is done. Burn, chill, then shatter, Initiate. You start over; mind your mana as you once minded your blade."
 money = 0
 tokens = 0
 

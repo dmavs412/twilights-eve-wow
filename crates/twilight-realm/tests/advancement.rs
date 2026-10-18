@@ -756,8 +756,8 @@ fn at_fifty_templars_quest_is_offered_but_cannot_be_finished() {
 
 // ── The four Tier 1 trainers ────────────────────────────────────────────────────────────────────
 
-/// The Tier 1 trainers beside Uzzek, each with their line's Advancement Quest. Only the
-/// Cutthroat's can be finished: the other Callings have no kit yet.
+/// The Tier 1 trainers beside Uzzek, each with their line's Advancement Quest. The Cutthroat's
+/// and the Initiate's can be finished: the Witch Hunter has no kit yet.
 const CUTTHROAT_TRAINER: u32 = 190030;
 const INITIATE_TRAINER: u32 = 190031;
 const WITCH_HUNTER_TRAINER: u32 = 190032;
@@ -881,8 +881,40 @@ fn the_cutthroats_mark_makes_a_level_1_cutthroat_on_energy() {
 }
 
 #[test]
+fn the_initiates_spark_makes_a_level_1_initiate_on_mana() {
+    let (mut realm, me, mut events) = capped_warrior();
+    let npc = giver(&events, INITIATE_TRAINER);
+    events.extend(take(&mut realm, npc, THE_INITIATES_SPARK));
+    let advanced = hand_in(&mut realm, npc, THE_INITIATES_SPARK);
+    assert!(completed(&advanced).is_some(), "it completes");
+    events.extend(advanced);
+
+    assert_eq!(realm.current_calling().unwrap().key, "initiate");
+    let now = descriptor(&events, me);
+    assert_eq!(now.unit_level(), Some(1));
+    assert_eq!(
+        spellbook(&events),
+        [116, 133, 2912].into_iter().collect(),
+        "Biting Cold, Searing Ember and Ley-Spark; Catalyst and Blink wait for their tickets"
+    );
+    let tabs: Vec<&str> = realm
+        .current_calling()
+        .unwrap()
+        .talent_tabs
+        .iter()
+        .map(|t| t.name.as_str())
+        .collect();
+    assert_eq!(tabs, ["The Weaver", "The Channeler"]);
+    assert_eq!(now.unit_shapeshift_form(), 0, "no stance");
+    assert!(now.unit_power(0).is_some_and(|m| m > 0), "a mana bar");
+}
+
+#[test]
 fn the_new_lines_quests_are_offered_but_cannot_be_finished() {
-    for (entry, quest, title) in NEW_LINES.into_iter().filter(|l| l.1 != THE_CUTTHROATS_MARK) {
+    for (entry, quest, title) in NEW_LINES
+        .into_iter()
+        .filter(|l| l.1 == THE_WITCH_HUNTERS_CREED)
+    {
         let (mut realm, me, mut events) = questing(10, &[], 0, &[]);
         let npc = giver(&events, entry);
         events.extend(take(&mut realm, npc, quest));

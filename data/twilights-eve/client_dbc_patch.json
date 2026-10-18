@@ -4070,6 +4070,712 @@
    }
   },
   {
+   "spell_id": 2912,
+   "calling": "initiate",
+   "key": "ley_spark",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Spark",
+    "cost_percent": 5.0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is.",
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 31,
+        "per_level": 2.5
+       },
+       "school": "arcane"
+      }
+     }
+    ],
+    "range_index": 4,
+    "cast_time_index": 16
+   }
+  },
+  {
+   "spell_id": 133,
+   "calling": "initiate",
+   "key": "searing_ember",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Searing Ember",
+    "cost_percent": 4.0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target.",
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 21.5,
+        "per_level": 1.5
+       },
+       "school": "fire"
+      }
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_searing_ember"
+      }
+     }
+    ],
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 116,
+   "calling": "initiate",
+   "key": "biting_cold",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Biting Cold",
+    "cost_percent": 8.0,
+    "school": 4,
+    "prevention_type": 1,
+    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 5 seconds.",
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 18,
+        "per_level": 1.7
+       },
+       "school": "frost"
+      }
+     }
+    ],
+    "range_index": 4,
+    "cast_time_index": 19
+   }
+  },
+  {
+   "spell_id": 8921,
+   "calling": "initiate",
+   "key": "catalyst",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalyst",
+    "cost": 0.0,
+    "cooldown_ms": 12000,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds a large chunk of Mana. If it consumes a Cold, it deals a massive burst of shatter damage.",
+    "range_index": 4
+   }
+  },
+  {
+   "spell_id": 1953,
+   "calling": "initiate",
+   "key": "blink",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Blink",
+    "cooldown_ms": 15000,
+    "cost_percent": 10.0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Teleports you forward 20 yards and frees you from stuns and roots."
+   }
+  },
+  {
+   "spell_id": 11069,
+   "calling": "initiate",
+   "key": "thermal_feedback",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Feedback",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 2% chance to make your next Biting Cold instant cast and cost no mana."
+   }
+  },
+  {
+   "spell_id": 12338,
+   "calling": "initiate",
+   "key": "thermal_feedback",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Feedback",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 4% chance to make your next Biting Cold instant cast and cost no mana."
+   }
+  },
+  {
+   "spell_id": 12339,
+   "calling": "initiate",
+   "key": "thermal_feedback",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Feedback",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 6% chance to make your next Biting Cold instant cast and cost no mana."
+   }
+  },
+  {
+   "spell_id": 12340,
+   "calling": "initiate",
+   "key": "thermal_feedback",
+   "rank": 4,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Feedback",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 8% chance to make your next Biting Cold instant cast and cost no mana."
+   }
+  },
+  {
+   "spell_id": 12341,
+   "calling": "initiate",
+   "key": "thermal_feedback",
+   "rank": 5,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Feedback",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 10% chance to make your next Biting Cold instant cast and cost no mana."
+   }
+  },
+  {
+   "spell_id": 11103,
+   "calling": "initiate",
+   "key": "arcane_substrate",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Substrate",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.1 seconds or increases the duration of your next Searing Ember by 1 seconds."
+   }
+  },
+  {
+   "spell_id": 12357,
+   "calling": "initiate",
+   "key": "arcane_substrate",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Substrate",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.2 seconds or increases the duration of your next Searing Ember by 2 seconds."
+   }
+  },
+  {
+   "spell_id": 12358,
+   "calling": "initiate",
+   "key": "arcane_substrate",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Substrate",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.3 seconds or increases the duration of your next Searing Ember by 3 seconds."
+   }
+  },
+  {
+   "spell_id": 12359,
+   "calling": "initiate",
+   "key": "arcane_substrate",
+   "rank": 4,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Substrate",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.4 seconds or increases the duration of your next Searing Ember by 4 seconds."
+   }
+  },
+  {
+   "spell_id": 12360,
+   "calling": "initiate",
+   "key": "arcane_substrate",
+   "rank": 5,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Substrate",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.5 seconds or increases the duration of your next Searing Ember by 5 seconds."
+   }
+  },
+  {
+   "spell_id": 11078,
+   "calling": "initiate",
+   "key": "thermal_shock",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Shock",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Catalyst deals 10% more damage when consuming a Biting Cold, and refunds 10% more mana when consuming a Searing Ember."
+   }
+  },
+  {
+   "spell_id": 11080,
+   "calling": "initiate",
+   "key": "thermal_shock",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Shock",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Catalyst deals 20% more damage when consuming a Biting Cold, and refunds 20% more mana when consuming a Searing Ember."
+   }
+  },
+  {
+   "spell_id": 12342,
+   "calling": "initiate",
+   "key": "thermal_shock",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Thermal Shock",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Catalyst deals 30% more damage when consuming a Biting Cold, and refunds 30% more mana when consuming a Searing Ember."
+   }
+  },
+  {
+   "spell_id": 11165,
+   "calling": "initiate",
+   "key": "shattered_blink",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Shattered Blink",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 2 seconds."
+   }
+  },
+  {
+   "spell_id": 12475,
+   "calling": "initiate",
+   "key": "shattered_blink",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Shattered Blink",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 4 seconds."
+   }
+  },
+  {
+   "spell_id": 11095,
+   "calling": "initiate",
+   "key": "combustion_engine",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Combustion Engine",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Biting Cold deals 15% increased damage to targets currently afflicted by your Searing Ember."
+   }
+  },
+  {
+   "spell_id": 12872,
+   "calling": "initiate",
+   "key": "combustion_engine",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Combustion Engine",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Biting Cold deals 30% increased damage to targets currently afflicted by your Searing Ember."
+   }
+  },
+  {
+   "spell_id": 12873,
+   "calling": "initiate",
+   "key": "combustion_engine",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Combustion Engine",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Biting Cold deals 45% increased damage to targets currently afflicted by your Searing Ember."
+   }
+  },
+  {
+   "spell_id": 11083,
+   "calling": "initiate",
+   "key": "catalytic_chain",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Chain",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 50% chance to immediately spread a copy of that consumed effect to an additional nearby enemy."
+   }
+  },
+  {
+   "spell_id": 12351,
+   "calling": "initiate",
+   "key": "catalytic_chain",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Chain",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 100% chance to immediately spread a copy of that consumed effect to an additional nearby enemy."
+   }
+  },
+  {
+   "spell_id": 11366,
+   "calling": "initiate",
+   "key": "elemental_convergence",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Elemental Convergence",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instantly hurls a volatile orb that applies both Searing Ember and Biting Cold to the target simultaneously. Your next Catalyst cast within 6 seconds is guaranteed to critically strike."
+   }
+  },
+  {
+   "spell_id": 11213,
+   "calling": "initiate",
+   "key": "ley_line_tap",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Tap",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark has a 10% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+   }
+  },
+  {
+   "spell_id": 12574,
+   "calling": "initiate",
+   "key": "ley_line_tap",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Tap",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark has a 20% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+   }
+  },
+  {
+   "spell_id": 12575,
+   "calling": "initiate",
+   "key": "ley_line_tap",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Tap",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark has a 30% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+   }
+  },
+  {
+   "spell_id": 12576,
+   "calling": "initiate",
+   "key": "ley_line_tap",
+   "rank": 4,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Tap",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark has a 40% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+   }
+  },
+  {
+   "spell_id": 12577,
+   "calling": "initiate",
+   "key": "ley_line_tap",
+   "rank": 5,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Tap",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting Ley-Spark has a 50% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+   }
+  },
+  {
+   "spell_id": 11222,
+   "calling": "initiate",
+   "key": "volatile_embers",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Volatile Embers",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Searing Ember costs 10% more mana to cast, but deals 10% more damage per tick."
+   }
+  },
+  {
+   "spell_id": 12839,
+   "calling": "initiate",
+   "key": "volatile_embers",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Volatile Embers",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Searing Ember costs 20% more mana to cast, but deals 20% more damage per tick."
+   }
+  },
+  {
+   "spell_id": 12840,
+   "calling": "initiate",
+   "key": "volatile_embers",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Volatile Embers",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Searing Ember costs 30% more mana to cast, but deals 30% more damage per tick."
+   }
+  },
+  {
+   "spell_id": 12841,
+   "calling": "initiate",
+   "key": "volatile_embers",
+   "rank": 4,
+   "fields": {
+    "power_type": 0,
+    "name": "Volatile Embers",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Searing Ember costs 40% more mana to cast, but deals 40% more damage per tick."
+   }
+  },
+  {
+   "spell_id": 12842,
+   "calling": "initiate",
+   "key": "volatile_embers",
+   "rank": 5,
+   "fields": {
+    "power_type": 0,
+    "name": "Volatile Embers",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Searing Ember costs 50% more mana to cast, but deals 50% more damage per tick."
+   }
+  },
+  {
+   "spell_id": 18462,
+   "calling": "initiate",
+   "key": "ley_line_attunement",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Attunement",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+   }
+  },
+  {
+   "spell_id": 18463,
+   "calling": "initiate",
+   "key": "ley_line_attunement",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Attunement",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+   }
+  },
+  {
+   "spell_id": 18464,
+   "calling": "initiate",
+   "key": "ley_line_attunement",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley-Line Attunement",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+   }
+  },
+  {
+   "spell_id": 16757,
+   "calling": "initiate",
+   "key": "frigid_conservation",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Frigid Conservation",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "If Biting Cold strikes a target that is already slowed, it refunds 25% of its base mana cost."
+   }
+  },
+  {
+   "spell_id": 16758,
+   "calling": "initiate",
+   "key": "frigid_conservation",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Frigid Conservation",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "If Biting Cold strikes a target that is already slowed, it refunds 50% of its base mana cost."
+   }
+  },
+  {
+   "spell_id": 15058,
+   "calling": "initiate",
+   "key": "arcane_momentum",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Momentum",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "After using Blink, the damage of your Ley-Spark is increased by 15% for 5 seconds."
+   }
+  },
+  {
+   "spell_id": 15059,
+   "calling": "initiate",
+   "key": "arcane_momentum",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Momentum",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "After using Blink, the damage of your Ley-Spark is increased by 30% for 5 seconds."
+   }
+  },
+  {
+   "spell_id": 15060,
+   "calling": "initiate",
+   "key": "arcane_momentum",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Arcane Momentum",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "After using Blink, the damage of your Ley-Spark is increased by 45% for 5 seconds."
+   }
+  },
+  {
+   "spell_id": 11237,
+   "calling": "initiate",
+   "key": "catalytic_resonance",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Resonance",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 2% increased spell damage for 8 seconds."
+   }
+  },
+  {
+   "spell_id": 12463,
+   "calling": "initiate",
+   "key": "catalytic_resonance",
+   "rank": 2,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Resonance",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 4% increased spell damage for 8 seconds."
+   }
+  },
+  {
+   "spell_id": 12464,
+   "calling": "initiate",
+   "key": "catalytic_resonance",
+   "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Resonance",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 6% increased spell damage for 8 seconds."
+   }
+  },
+  {
+   "spell_id": 16769,
+   "calling": "initiate",
+   "key": "catalytic_resonance",
+   "rank": 4,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Resonance",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 8% increased spell damage for 8 seconds."
+   }
+  },
+  {
+   "spell_id": 16770,
+   "calling": "initiate",
+   "key": "catalytic_resonance",
+   "rank": 5,
+   "fields": {
+    "power_type": 0,
+    "name": "Catalytic Resonance",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 10% increased spell damage for 8 seconds."
+   }
+  },
+  {
+   "spell_id": 12043,
+   "calling": "initiate",
+   "key": "mana_surge",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Mana Surge",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Instantly restores 50% of your maximum mana and resets the cooldown of both Blink and Catalyst. For the next 10 seconds, Ley-Spark has no cast time."
+   }
+  },
+  {
    "spell_id": 7922,
    "calling": "basic_warrior",
    "key": "charge_stun",
@@ -4881,6 +5587,191 @@
     14140,
     14141,
     14142
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "thermal_feedback",
+   "tab": "The Weaver",
+   "row": 1,
+   "column": 1,
+   "talent_id": 26,
+   "rank_spell_ids": [
+    11069,
+    12338,
+    12339,
+    12340,
+    12341
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "arcane_substrate",
+   "tab": "The Weaver",
+   "row": 1,
+   "column": 2,
+   "talent_id": 30,
+   "rank_spell_ids": [
+    11103,
+    12357,
+    12358,
+    12359,
+    12360
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "thermal_shock",
+   "tab": "The Weaver",
+   "row": 2,
+   "column": 1,
+   "talent_id": 27,
+   "rank_spell_ids": [
+    11078,
+    11080,
+    12342
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "shattered_blink",
+   "tab": "The Weaver",
+   "row": 2,
+   "column": 2,
+   "talent_id": 62,
+   "rank_spell_ids": [
+    11165,
+    12475
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "combustion_engine",
+   "tab": "The Weaver",
+   "row": 3,
+   "column": 1,
+   "talent_id": 25,
+   "rank_spell_ids": [
+    11095,
+    12872,
+    12873
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "catalytic_chain",
+   "tab": "The Weaver",
+   "row": 3,
+   "column": 2,
+   "talent_id": 23,
+   "rank_spell_ids": [
+    11083,
+    12351
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "elemental_convergence",
+   "tab": "The Weaver",
+   "row": 4,
+   "column": 1,
+   "talent_id": 29,
+   "rank_spell_ids": [
+    11366
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "ley_line_tap",
+   "tab": "The Channeler",
+   "row": 1,
+   "column": 1,
+   "talent_id": 75,
+   "rank_spell_ids": [
+    11213,
+    12574,
+    12575,
+    12576,
+    12577
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "volatile_embers",
+   "tab": "The Channeler",
+   "row": 1,
+   "column": 2,
+   "talent_id": 76,
+   "rank_spell_ids": [
+    11222,
+    12839,
+    12840,
+    12841,
+    12842
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "ley_line_attunement",
+   "tab": "The Channeler",
+   "row": 2,
+   "column": 1,
+   "talent_id": 1142,
+   "rank_spell_ids": [
+    18462,
+    18463,
+    18464
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "frigid_conservation",
+   "tab": "The Channeler",
+   "row": 2,
+   "column": 2,
+   "talent_id": 741,
+   "rank_spell_ids": [
+    16757,
+    16758
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "arcane_momentum",
+   "tab": "The Channeler",
+   "row": 3,
+   "column": 1,
+   "talent_id": 421,
+   "rank_spell_ids": [
+    15058,
+    15059,
+    15060
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "catalytic_resonance",
+   "tab": "The Channeler",
+   "row": 3,
+   "column": 2,
+   "talent_id": 80,
+   "rank_spell_ids": [
+    11237,
+    12463,
+    12464,
+    16769,
+    16770
+   ]
+  },
+  {
+   "calling": "initiate",
+   "key": "mana_surge",
+   "tab": "The Channeler",
+   "row": 4,
+   "column": 1,
+   "talent_id": 86,
+   "rank_spell_ids": [
+    12043
    ]
   }
  ]

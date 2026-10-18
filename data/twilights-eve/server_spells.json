@@ -8013,5 +8013,1562 @@
    "cloth",
    "leather"
   ]
+ },
+ {
+  "key": "initiate",
+  "class": 8,
+  "skills": [
+   {
+    "key": "ley_spark",
+    "name": "Ley-Spark",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 2912,
+    "realm_cost": 5,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "cast",
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 31,
+        "per_level": 2.5
+       },
+       "school": "arcane"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your primary casted filler. Deals Arcane damage. Its critical strike chance naturally scales higher based on how full your current mana pool is."
+   },
+   {
+    "key": "searing_ember",
+    "name": "Searing Ember",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 133,
+    "realm_cost": 4,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "fire",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 21.5,
+        "per_level": 1.5
+       },
+       "school": "fire"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_searing_ember"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Instant cast. Deals low initial Fire damage and leaves a stacking burn DoT on the target."
+   },
+   {
+    "key": "biting_cold",
+    "name": "Biting Cold",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 116,
+    "realm_cost": 8,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "frost",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "cast",
+    "interrupt_on": [
+     "move",
+     "pushback",
+     "kick"
+    ],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 18,
+        "per_level": 1.7
+       },
+       "school": "frost"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 5 seconds."
+   },
+   {
+    "key": "catalyst",
+    "name": "Catalyst",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 8921,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 12000,
+    "realm_range_max": 30,
+    "target": "enemy",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds a large chunk of Mana. If it consumes a Cold, it deals a massive burst of shatter damage."
+   },
+   {
+    "key": "blink",
+    "name": "Blink",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1953,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 15000,
+    "target": "self",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "Teleports you forward 20 yards and frees you from stuns and roots."
+   }
+  ],
+  "talent_tabs": [
+   {
+    "name": "The Weaver",
+    "id": 906,
+    "background": "MageFire",
+    "order": 1,
+    "talents": [
+     {
+      "key": "thermal_feedback",
+      "name": "Thermal Feedback",
+      "seat": {
+       "row": 1,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "thermal_feedback",
+        "name": "Thermal Feedback",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11069,
+        "talent_id": 26,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever your Searing Ember deals periodic damage, you have a 2% chance to make your next Biting Cold instant cast and cost no mana."
+       },
+       {
+        "key": "thermal_feedback",
+        "name": "Thermal Feedback",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12338,
+        "talent_id": 26,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever your Searing Ember deals periodic damage, you have a 4% chance to make your next Biting Cold instant cast and cost no mana."
+       },
+       {
+        "key": "thermal_feedback",
+        "name": "Thermal Feedback",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12339,
+        "talent_id": 26,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever your Searing Ember deals periodic damage, you have a 6% chance to make your next Biting Cold instant cast and cost no mana."
+       },
+       {
+        "key": "thermal_feedback",
+        "name": "Thermal Feedback",
+        "rank": 4,
+        "status": "placeholder",
+        "spell_id": 12340,
+        "talent_id": 26,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever your Searing Ember deals periodic damage, you have a 8% chance to make your next Biting Cold instant cast and cost no mana."
+       },
+       {
+        "key": "thermal_feedback",
+        "name": "Thermal Feedback",
+        "rank": 5,
+        "status": "placeholder",
+        "spell_id": 12341,
+        "talent_id": 26,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever your Searing Ember deals periodic damage, you have a 10% chance to make your next Biting Cold instant cast and cost no mana."
+       }
+      ]
+     },
+     {
+      "key": "arcane_substrate",
+      "name": "Arcane Substrate",
+      "seat": {
+       "row": 1,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "arcane_substrate",
+        "name": "Arcane Substrate",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11103,
+        "talent_id": 30,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.1 seconds or increases the duration of your next Searing Ember by 1 seconds."
+       },
+       {
+        "key": "arcane_substrate",
+        "name": "Arcane Substrate",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12357,
+        "talent_id": 30,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.2 seconds or increases the duration of your next Searing Ember by 2 seconds."
+       },
+       {
+        "key": "arcane_substrate",
+        "name": "Arcane Substrate",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12358,
+        "talent_id": 30,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.3 seconds or increases the duration of your next Searing Ember by 3 seconds."
+       },
+       {
+        "key": "arcane_substrate",
+        "name": "Arcane Substrate",
+        "rank": 4,
+        "status": "placeholder",
+        "spell_id": 12359,
+        "talent_id": 30,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.4 seconds or increases the duration of your next Searing Ember by 4 seconds."
+       },
+       {
+        "key": "arcane_substrate",
+        "name": "Arcane Substrate",
+        "rank": 5,
+        "status": "placeholder",
+        "spell_id": 12360,
+        "talent_id": 30,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.5 seconds or increases the duration of your next Searing Ember by 5 seconds."
+       }
+      ]
+     },
+     {
+      "key": "thermal_shock",
+      "name": "Thermal Shock",
+      "seat": {
+       "row": 2,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "thermal_shock",
+        "name": "Thermal Shock",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11078,
+        "talent_id": 27,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Catalyst deals 10% more damage when consuming a Biting Cold, and refunds 10% more mana when consuming a Searing Ember."
+       },
+       {
+        "key": "thermal_shock",
+        "name": "Thermal Shock",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 11080,
+        "talent_id": 27,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Catalyst deals 20% more damage when consuming a Biting Cold, and refunds 20% more mana when consuming a Searing Ember."
+       },
+       {
+        "key": "thermal_shock",
+        "name": "Thermal Shock",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12342,
+        "talent_id": 27,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Catalyst deals 30% more damage when consuming a Biting Cold, and refunds 30% more mana when consuming a Searing Ember."
+       }
+      ]
+     },
+     {
+      "key": "shattered_blink",
+      "name": "Shattered Blink",
+      "seat": {
+       "row": 2,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "shattered_blink",
+        "name": "Shattered Blink",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11165,
+        "talent_id": 62,
+        "source_tab_id": 61,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 2 seconds."
+       },
+       {
+        "key": "shattered_blink",
+        "name": "Shattered Blink",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12475,
+        "talent_id": 62,
+        "source_tab_id": 61,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 4 seconds."
+       }
+      ]
+     },
+     {
+      "key": "combustion_engine",
+      "name": "Combustion Engine",
+      "seat": {
+       "row": 3,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "combustion_engine",
+        "name": "Combustion Engine",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11095,
+        "talent_id": 25,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Biting Cold deals 15% increased damage to targets currently afflicted by your Searing Ember."
+       },
+       {
+        "key": "combustion_engine",
+        "name": "Combustion Engine",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12872,
+        "talent_id": 25,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Biting Cold deals 30% increased damage to targets currently afflicted by your Searing Ember."
+       },
+       {
+        "key": "combustion_engine",
+        "name": "Combustion Engine",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12873,
+        "talent_id": 25,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Biting Cold deals 45% increased damage to targets currently afflicted by your Searing Ember."
+       }
+      ]
+     },
+     {
+      "key": "catalytic_chain",
+      "name": "Catalytic Chain",
+      "seat": {
+       "row": 3,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "catalytic_chain",
+        "name": "Catalytic Chain",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11083,
+        "talent_id": 23,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 50% chance to immediately spread a copy of that consumed effect to an additional nearby enemy."
+       },
+       {
+        "key": "catalytic_chain",
+        "name": "Catalytic Chain",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12351,
+        "talent_id": 23,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 100% chance to immediately spread a copy of that consumed effect to an additional nearby enemy."
+       }
+      ]
+     },
+     {
+      "key": "elemental_convergence",
+      "name": "Elemental Convergence",
+      "seat": {
+       "row": 4,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "elemental_convergence",
+        "name": "Elemental Convergence",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11366,
+        "talent_id": 29,
+        "source_tab_id": 41,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Instantly hurls a volatile orb that applies both Searing Ember and Biting Cold to the target simultaneously. Your next Catalyst cast within 6 seconds is guaranteed to critically strike."
+       }
+      ]
+     }
+    ],
+    "key": "weaver"
+   },
+   {
+    "name": "The Channeler",
+    "id": 907,
+    "background": "MageArcane",
+    "order": 2,
+    "talents": [
+     {
+      "key": "ley_line_tap",
+      "name": "Ley-Line Tap",
+      "seat": {
+       "row": 1,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "ley_line_tap",
+        "name": "Ley-Line Tap",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11213,
+        "talent_id": 75,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark has a 10% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+       },
+       {
+        "key": "ley_line_tap",
+        "name": "Ley-Line Tap",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12574,
+        "talent_id": 75,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark has a 20% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+       },
+       {
+        "key": "ley_line_tap",
+        "name": "Ley-Line Tap",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12575,
+        "talent_id": 75,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark has a 30% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+       },
+       {
+        "key": "ley_line_tap",
+        "name": "Ley-Line Tap",
+        "rank": 4,
+        "status": "placeholder",
+        "spell_id": 12576,
+        "talent_id": 75,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark has a 40% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+       },
+       {
+        "key": "ley_line_tap",
+        "name": "Ley-Line Tap",
+        "rank": 5,
+        "status": "placeholder",
+        "spell_id": 12577,
+        "talent_id": 75,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Casting Ley-Spark has a 50% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+       }
+      ]
+     },
+     {
+      "key": "volatile_embers",
+      "name": "Volatile Embers",
+      "seat": {
+       "row": 1,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "volatile_embers",
+        "name": "Volatile Embers",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11222,
+        "talent_id": 76,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Searing Ember costs 10% more mana to cast, but deals 10% more damage per tick."
+       },
+       {
+        "key": "volatile_embers",
+        "name": "Volatile Embers",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12839,
+        "talent_id": 76,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Searing Ember costs 20% more mana to cast, but deals 20% more damage per tick."
+       },
+       {
+        "key": "volatile_embers",
+        "name": "Volatile Embers",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12840,
+        "talent_id": 76,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Searing Ember costs 30% more mana to cast, but deals 30% more damage per tick."
+       },
+       {
+        "key": "volatile_embers",
+        "name": "Volatile Embers",
+        "rank": 4,
+        "status": "placeholder",
+        "spell_id": 12841,
+        "talent_id": 76,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Searing Ember costs 40% more mana to cast, but deals 40% more damage per tick."
+       },
+       {
+        "key": "volatile_embers",
+        "name": "Volatile Embers",
+        "rank": 5,
+        "status": "placeholder",
+        "spell_id": 12842,
+        "talent_id": 76,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Searing Ember costs 50% more mana to cast, but deals 50% more damage per tick."
+       }
+      ]
+     },
+     {
+      "key": "ley_line_attunement",
+      "name": "Ley-Line Attunement",
+      "seat": {
+       "row": 2,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "ley_line_attunement",
+        "name": "Ley-Line Attunement",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 18462,
+        "talent_id": 1142,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+       },
+       {
+        "key": "ley_line_attunement",
+        "name": "Ley-Line Attunement",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 18463,
+        "talent_id": 1142,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+       },
+       {
+        "key": "ley_line_attunement",
+        "name": "Ley-Line Attunement",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 18464,
+        "talent_id": 1142,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+       }
+      ]
+     },
+     {
+      "key": "frigid_conservation",
+      "name": "Frigid Conservation",
+      "seat": {
+       "row": 2,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "frigid_conservation",
+        "name": "Frigid Conservation",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 16757,
+        "talent_id": 741,
+        "source_tab_id": 61,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "If Biting Cold strikes a target that is already slowed, it refunds 25% of its base mana cost."
+       },
+       {
+        "key": "frigid_conservation",
+        "name": "Frigid Conservation",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 16758,
+        "talent_id": 741,
+        "source_tab_id": 61,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "If Biting Cold strikes a target that is already slowed, it refunds 50% of its base mana cost."
+       }
+      ]
+     },
+     {
+      "key": "arcane_momentum",
+      "name": "Arcane Momentum",
+      "seat": {
+       "row": 3,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "arcane_momentum",
+        "name": "Arcane Momentum",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 15058,
+        "talent_id": 421,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "After using Blink, the damage of your Ley-Spark is increased by 15% for 5 seconds."
+       },
+       {
+        "key": "arcane_momentum",
+        "name": "Arcane Momentum",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 15059,
+        "talent_id": 421,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "After using Blink, the damage of your Ley-Spark is increased by 30% for 5 seconds."
+       },
+       {
+        "key": "arcane_momentum",
+        "name": "Arcane Momentum",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 15060,
+        "talent_id": 421,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "After using Blink, the damage of your Ley-Spark is increased by 45% for 5 seconds."
+       }
+      ]
+     },
+     {
+      "key": "catalytic_resonance",
+      "name": "Catalytic Resonance",
+      "seat": {
+       "row": 3,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "catalytic_resonance",
+        "name": "Catalytic Resonance",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 11237,
+        "talent_id": 80,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 2% increased spell damage for 8 seconds."
+       },
+       {
+        "key": "catalytic_resonance",
+        "name": "Catalytic Resonance",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12463,
+        "talent_id": 80,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 4% increased spell damage for 8 seconds."
+       },
+       {
+        "key": "catalytic_resonance",
+        "name": "Catalytic Resonance",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12464,
+        "talent_id": 80,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 6% increased spell damage for 8 seconds."
+       },
+       {
+        "key": "catalytic_resonance",
+        "name": "Catalytic Resonance",
+        "rank": 4,
+        "status": "placeholder",
+        "spell_id": 16769,
+        "talent_id": 80,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 8% increased spell damage for 8 seconds."
+       },
+       {
+        "key": "catalytic_resonance",
+        "name": "Catalytic Resonance",
+        "rank": 5,
+        "status": "placeholder",
+        "spell_id": 16770,
+        "talent_id": 80,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 10% increased spell damage for 8 seconds."
+       }
+      ]
+     },
+     {
+      "key": "mana_surge",
+      "name": "Mana Surge",
+      "seat": {
+       "row": 4,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "mana_surge",
+        "name": "Mana Surge",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 12043,
+        "talent_id": 86,
+        "source_tab_id": 81,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Instantly restores 50% of your maximum mana and resets the cooldown of both Blink and Catalyst. For the next 10 seconds, Ley-Spark has no cast time."
+       }
+      ]
+     }
+    ],
+    "key": "channeler"
+   }
+  ],
+  "auras": [
+   {
+    "key": "aura_searing_ember",
+    "name": "Searing Ember",
+    "spell_id": 133,
+    "status": "placeholder",
+    "school": "fire",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 2,
+        "per_level": 0.3
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Burning for Fire damage every 3 sec."
+   },
+   {
+    "key": "aura_biting_cold",
+    "name": "Biting Cold",
+    "spell_id": 116,
+    "status": "placeholder",
+    "school": "frost",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "replace",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": false,
+    "effects": [],
+    "description": "Movement speed slowed by 50%."
+   }
+  ],
+  "name": "Initiate",
+  "tier": 1,
+  "tier_cap": 30,
+  "tier_bonus": {
+   "intellect": 15,
+   "spirit": 10,
+   "stamina": 5,
+   "strength": 0,
+   "agility": 0
+  },
+  "shapeshift_form": 0,
+  "armour": [
+   "cloth"
+  ]
  }
 ]
