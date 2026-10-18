@@ -414,7 +414,14 @@ pub struct Prereq {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TalentEffect {
     /// The skill costs this many points less of the Calling's power.
-    SkillCost { skill: String, per_rank: Vec<u32> },
+    SkillCost {
+        skill: String,
+        per_rank: Vec<u32>,
+        /// A flat amount taken off (`amount=`); with `pct=`, the cost rises by that percent
+        /// instead (Volatile Embers).
+        #[serde(default = "yes")]
+        flat: bool,
+    },
     /// The skill has this percent chance to land on one more enemy in melee reach in front of
     /// the caster, for the same blow and no combo point (Flurry of Blades).
     SkillExtraTarget { skill: String, per_rank: Vec<u32> },
@@ -427,7 +434,17 @@ pub enum TalentEffect {
         per_rank: Vec<u32>,
     },
     /// The skill's damage and buff amounts rise by this percent.
-    SkillAmountPct { skill: String, per_rank: Vec<u32> },
+    SkillAmountPct {
+        skill: String,
+        per_rank: Vec<u32>,
+        /// Which of the skill's amounts it raises: its hit, its ticks, or both (and its other
+        /// amounts).
+        #[serde(default)]
+        applies_to: AppliesTo,
+        /// Only while the caster's aura of this aura row is on the target as the blow lands.
+        #[serde(default)]
+        requires_target_aura: Option<String>,
+    },
     /// The skill's rage gain rises by this many points.
     SkillRage { skill: String, per_rank: Vec<u32> },
     /// The skill's critical strike chance rises by this many percent.
@@ -609,6 +626,23 @@ pub enum TalentEffect {
         swings: u32,
         per_rank: Vec<u32>,
     },
+}
+
+fn yes() -> bool {
+    true
+}
+
+/// Which of a skill's amounts a `skill_amount_pct` raises.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AppliesTo {
+    /// Every amount: the hit, the ticks, and the rest.
+    #[default]
+    Both,
+    /// The direct hit only.
+    Hit,
+    /// The damage-over-time ticks only.
+    Tick,
 }
 
 fn always() -> u32 {

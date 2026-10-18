@@ -847,6 +847,11 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
         if kind in ("add_aura_stacks", "consume_aura_stacks", "grant_aura", "consume_aura"):
             if parsed.get("aura") not in auras:
                 raise BuildError(f"{here}: aura {parsed.get('aura')!r} is not an aura row of this Calling")
+        if kind == "skill_amount_pct":
+            if parsed.get("applies_to", "both") not in ("hit", "tick", "both"):
+                raise BuildError(f"{here}: applies_to is {parsed['applies_to']!r}, want hit, tick or both")
+            if "requires_target_aura" in parsed and parsed["requires_target_aura"] not in auras:
+                raise BuildError(f"{here}: requires_target_aura {parsed['requires_target_aura']!r} is not an aura row of this Calling")
         if kind == "proc":
             check_proc(parsed, auras, here)
         elif "apply_aura" in parsed:

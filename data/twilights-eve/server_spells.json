@@ -10595,8 +10595,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "biting_cold",
+           "pct": 15,
+           "requires_target_aura": "aura_searing_ember"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Biting Cold deals 15% increased damage to targets currently afflicted by your Searing Ember."
        },
        {
@@ -10620,8 +10630,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "biting_cold",
+           "pct": 30,
+           "requires_target_aura": "aura_searing_ember"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Biting Cold deals 30% increased damage to targets currently afflicted by your Searing Ember."
        },
        {
@@ -10645,8 +10665,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "biting_cold",
+           "pct": 45,
+           "requires_target_aura": "aura_searing_ember"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Biting Cold deals 45% increased damage to targets currently afflicted by your Searing Ember."
        }
       ]
@@ -11015,8 +11045,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 10
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 10,
+           "applies_to": "tick"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Searing Ember costs 10% more mana to cast, but deals 10% more damage per tick."
        },
        {
@@ -11040,8 +11088,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 20
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 20,
+           "applies_to": "tick"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Searing Ember costs 20% more mana to cast, but deals 20% more damage per tick."
        },
        {
@@ -11065,8 +11131,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 30
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 30,
+           "applies_to": "tick"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Searing Ember costs 30% more mana to cast, but deals 30% more damage per tick."
        },
        {
@@ -11090,8 +11174,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 40
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 40,
+           "applies_to": "tick"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Searing Ember costs 40% more mana to cast, but deals 40% more damage per tick."
        },
        {
@@ -11115,8 +11217,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 50
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "searing_ember",
+           "pct": 50,
+           "applies_to": "tick"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Searing Ember costs 50% more mana to cast, but deals 50% more damage per tick."
        }
       ]

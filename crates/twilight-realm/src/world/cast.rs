@@ -1869,6 +1869,23 @@ impl InWorld {
         let pct =
             crate::talents::amount_pct(c, &skill.key) + self.skills.skill_amount_pct(&skill.key);
         let sized = |l: formulas::Linear| scaled(l.at(level, ap), pct);
+        // A hit's and a tick's own talents, some only against a target wearing the caster's aura
+        // (Combustion Engine, Volatile Embers).
+        let wears = |key: &str| {
+            crate::callings::of(c.calling)
+                .auras
+                .iter()
+                .find(|a| a.key == key)
+                .is_some_and(|a| self.skills.on(target, a.spell_id))
+        };
+        let part_pct = |part| {
+            crate::talents::amount_pct_on(c, &skill.key, part, wears)
+                + self.skills.skill_amount_pct(&skill.key)
+        };
+        let (hit_pct, tick_pct) = (
+            part_pct(crate::callings::AppliesTo::Hit),
+            part_pct(crate::callings::AppliesTo::Tick),
+        );
         // A finisher's block, once per combo point held on the target.
         let per_combo = |l: Option<formulas::Linear>| l.map_or(0, |l| sized(l) * u32::from(combo));
         // Talents that make the skill's auras last longer (Booming Voice).
@@ -1922,7 +1939,7 @@ impl InWorld {
                 per_combo: more,
                 ..
             } => {
-                let raw = sized(amount) + per_combo(more);
+                let raw = scaled(amount.at(level, ap), hit_pct) + per_combo(more);
                 self.strike(
                     skill.spell_id,
                     target,
@@ -1943,7 +1960,7 @@ impl InWorld {
                 duration_per_combo: stretch,
                 max_stacks,
             } => {
-                let per_tick = sized(tick) + per_combo(more);
+                let per_tick = scaled(tick.at(level, ap), tick_pct) + per_combo(more);
                 let duration_ms =
                     duration_ms + stretch.map_or(0, |l| l.at(level, ap) * u32::from(combo));
                 let a = aura(

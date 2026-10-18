@@ -282,9 +282,13 @@ pub(crate) fn on_struck(c: &Char) -> OnStruck {
 pub(crate) fn power_cost(c: &Char, skill: &callings::Skill) -> u32 {
     let less = sum(
         c,
-        |e| matches!(e, TalentEffect::SkillCost { skill: s, .. } if *s == skill.key),
+        |e| matches!(e, TalentEffect::SkillCost { skill: s, flat: true, .. } if *s == skill.key),
     );
-    skill.power_cost.saturating_sub(less)
+    let more = sum(
+        c,
+        |e| matches!(e, TalentEffect::SkillCost { skill: s, flat: false, .. } if *s == skill.key),
+    );
+    crate::rules::talents::scaled(skill.power_cost, more).saturating_sub(less)
 }
 
 /// The percent of the shield's Block Value a skill's strike adds.
@@ -295,12 +299,39 @@ pub(crate) fn block_value_pct(c: &Char, skill: &str) -> u32 {
     )
 }
 
-/// The percent a skill's damage and buff amounts rise by.
+/// The percent a skill's damage and buff amounts rise by, whatever the target.
 pub(crate) fn amount_pct(c: &Char, skill: &str) -> u32 {
-    sum(
-        c,
-        |e| matches!(e, TalentEffect::SkillAmountPct { skill: s, .. } if s == skill),
-    )
+    sum(c, |e| {
+        matches!(e, TalentEffect::SkillAmountPct {
+            skill: s,
+            applies_to: callings::AppliesTo::Both,
+            requires_target_aura: None,
+            ..
+        } if s == skill)
+    })
+}
+
+/// The percent a skill's `part` (its hit or its ticks) rises by on a target that wears what
+/// `wears` says it does (an aura row key).
+pub(crate) fn amount_pct_on(
+    c: &Char,
+    skill: &str,
+    part: callings::AppliesTo,
+    wears: impl Fn(&str) -> bool,
+) -> u32 {
+    sum(c, |e| match e {
+        TalentEffect::SkillAmountPct {
+            skill: s,
+            applies_to,
+            requires_target_aura,
+            ..
+        } => {
+            s == skill
+                && (*applies_to == callings::AppliesTo::Both || *applies_to == part)
+                && requires_target_aura.as_deref().is_none_or(&wears)
+        }
+        _ => false,
+    })
 }
 
 /// The extra rage a skill gives.

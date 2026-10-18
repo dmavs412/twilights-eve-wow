@@ -62,7 +62,10 @@ them all. `periodic_damage` also takes `duration_per_combo` (a formula in millis
 `duration_ms` once per point; it too makes the row a finisher). Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`
-(`skill=`, `amount=` flat power off the cost), `skill_extra_target` (`skill=`, `pct=` chance that
+(`skill=`, `amount=` flat power off the cost, or `pct=` that percent more), `skill_amount_pct`
+(`skill=`, `pct=`; `applies_to=hit|tick|both`, default both, picks the direct hit or the
+damage-over-time ticks, and `requires_target_aura=key` counts it only while the caster's aura of
+that row is on the target as the blow lands), `skill_extra_target` (`skill=`, `pct=` chance that
 the skill also strikes the nearest enemy in melee reach in front of the caster, for no combo
 point) and `skill_bonus_combo` (`skill=`, `pct=` chance of one more combo point, with
 `target_state=bleeding` only on a target the caster has a physical bleed on) and `crit_bleed`

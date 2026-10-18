@@ -446,10 +446,9 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Wield Specialization, Phantom Guile and Relentless Strikes are modelled now).
         // Cutthroat's Tracker: nothing (Scent of Blood, Bloodletting, Predator's Step, Serrated
         // Strikes, Ruthlessness and Executioner's Toll are modelled now).
-        // Initiate's Weaver: Combustion Engine, Elemental Convergence.
-        11095, 12872, 12873, 11366,
-        // Initiate's Channeler: Volatile Embers, Mana Surge.
-        11222, 12839, 12840, 12841, 12842, 12043,
+        // Initiate's Weaver: Elemental Convergence.
+        11366, // Initiate's Channeler: Mana Surge.
+        12043,
         // Ranger's Swiftbow: Guerilla Tactics, Rhythmic Draw, Twin Arrows, Parting Gift, Adrenaline
         // Rush, Flurry, Rapid Assault.
         19295, 19297, 19298, 19301, 19300, 19184, 19387, 19388, 19389, 19390, 19151, 19152, 19153,

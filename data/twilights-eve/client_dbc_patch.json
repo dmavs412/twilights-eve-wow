@@ -5855,7 +5855,17 @@
     "name": "Combustion Engine",
     "school": 0,
     "prevention_type": 2,
-    "description": "Biting Cold deals 15% increased damage to targets currently afflicted by your Searing Ember."
+    "description": "Biting Cold deals 15% increased damage to targets currently afflicted by your Searing Ember.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "biting_cold",
+       "pct": 15,
+       "requires_target_aura": "aura_searing_ember"
+      }
+     }
+    ]
    }
   },
   {
@@ -5868,7 +5878,17 @@
     "name": "Combustion Engine",
     "school": 0,
     "prevention_type": 2,
-    "description": "Biting Cold deals 30% increased damage to targets currently afflicted by your Searing Ember."
+    "description": "Biting Cold deals 30% increased damage to targets currently afflicted by your Searing Ember.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "biting_cold",
+       "pct": 30,
+       "requires_target_aura": "aura_searing_ember"
+      }
+     }
+    ]
    }
   },
   {
@@ -5881,7 +5901,17 @@
     "name": "Combustion Engine",
     "school": 0,
     "prevention_type": 2,
-    "description": "Biting Cold deals 45% increased damage to targets currently afflicted by your Searing Ember."
+    "description": "Biting Cold deals 45% increased damage to targets currently afflicted by your Searing Ember.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "biting_cold",
+       "pct": 45,
+       "requires_target_aura": "aura_searing_ember"
+      }
+     }
+    ]
    }
   },
   {
@@ -6090,7 +6120,24 @@
     "name": "Volatile Embers",
     "school": 0,
     "prevention_type": 2,
-    "description": "Searing Ember costs 10% more mana to cast, but deals 10% more damage per tick."
+    "description": "Searing Ember costs 10% more mana to cast, but deals 10% more damage per tick.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 10
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 10,
+       "applies_to": "tick"
+      }
+     }
+    ]
    }
   },
   {
@@ -6103,7 +6150,24 @@
     "name": "Volatile Embers",
     "school": 0,
     "prevention_type": 2,
-    "description": "Searing Ember costs 20% more mana to cast, but deals 20% more damage per tick."
+    "description": "Searing Ember costs 20% more mana to cast, but deals 20% more damage per tick.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 20
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 20,
+       "applies_to": "tick"
+      }
+     }
+    ]
    }
   },
   {
@@ -6116,7 +6180,24 @@
     "name": "Volatile Embers",
     "school": 0,
     "prevention_type": 2,
-    "description": "Searing Ember costs 30% more mana to cast, but deals 30% more damage per tick."
+    "description": "Searing Ember costs 30% more mana to cast, but deals 30% more damage per tick.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 30
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 30,
+       "applies_to": "tick"
+      }
+     }
+    ]
    }
   },
   {
@@ -6129,7 +6210,24 @@
     "name": "Volatile Embers",
     "school": 0,
     "prevention_type": 2,
-    "description": "Searing Ember costs 40% more mana to cast, but deals 40% more damage per tick."
+    "description": "Searing Ember costs 40% more mana to cast, but deals 40% more damage per tick.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 40
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 40,
+       "applies_to": "tick"
+      }
+     }
+    ]
    }
   },
   {
@@ -6142,7 +6240,24 @@
     "name": "Volatile Embers",
     "school": 0,
     "prevention_type": 2,
-    "description": "Searing Ember costs 50% more mana to cast, but deals 50% more damage per tick."
+    "description": "Searing Ember costs 50% more mana to cast, but deals 50% more damage per tick.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 50
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "searing_ember",
+       "pct": 50,
+       "applies_to": "tick"
+      }
+     }
+    ]
    }
   },
   {
