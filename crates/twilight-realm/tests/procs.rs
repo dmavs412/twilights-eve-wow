@@ -45,12 +45,15 @@ fn a_cast_proc_filtered_to_one_skill_fires_only_for_that_skill() {
         on: ProcEvent::Cast,
         skill: Some("charge"),
         yields_xp: false,
+        school: None,
     };
     let cast = |skill| Happened {
         event: ProcEvent::Cast,
         skill,
         yields_xp: false,
         target: None,
+        amount: 0,
+        school: None,
     };
     assert!(trigger.fires(&cast(Some("charge"))));
     assert!(!trigger.fires(&cast(Some("heroic_strike"))));
@@ -59,6 +62,8 @@ fn a_cast_proc_filtered_to_one_skill_fires_only_for_that_skill() {
         skill: None,
         yields_xp: true,
         target: None,
+        amount: 0,
+        school: None,
     }));
     let unfiltered = Trigger {
         skill: None,

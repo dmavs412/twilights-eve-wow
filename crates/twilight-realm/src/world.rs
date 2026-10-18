@@ -876,6 +876,8 @@ impl InWorld {
                 skill: None,
                 yields_xp: base_xp > 0,
                 target: None,
+                amount: 0,
+                school: None,
             },
             c,
             rng,

@@ -54,6 +54,13 @@ impl InWorld {
             if proc.absorb_at_full_power && self.skills.was_full {
                 continue;
             }
+            if proc.spread_aura > 0.0 {
+                self.spread_ticking(proc.spread_aura, events);
+            }
+            if proc.heal_allies_pct > 0 {
+                let total = happened.amount * proc.heal_allies_pct / 100;
+                self.heal_allies(c, c.position, proc.radius_yd, total, proc.spell_id, events);
+            }
             for key in &proc.target_auras {
                 if let (Some(def), Some(target)) = (crate::callings::aura(key), happened.target) {
                     self.put_aura(def, target, c.level, events);

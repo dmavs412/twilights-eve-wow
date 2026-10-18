@@ -2,6 +2,7 @@
 //! does, are the world's.
 
 use crate::callings::ProcEvent;
+use crate::rules::school::School;
 
 /// What a proc waits for: the event, and the filters that narrow it.
 #[derive(Debug, Clone, Copy)]
@@ -11,6 +12,8 @@ pub struct Trigger<'a> {
     pub skill: Option<&'a str>,
     /// Only a killing blow on a target that yields experience.
     pub yields_xp: bool,
+    /// Only damage in this school (`damage_school=`).
+    pub school: Option<School>,
 }
 
 /// What just happened.
@@ -24,6 +27,10 @@ pub struct Happened<'a> {
     /// Who a combo point from this proc lands on: the target of a finisher, or the mob the
     /// character is fighting.
     pub target: Option<u64>,
+    /// The damage done, for `damage_done` and `periodic_tick`; 0 otherwise.
+    pub amount: u32,
+    /// The school of that damage.
+    pub school: Option<School>,
 }
 
 impl Trigger<'_> {
@@ -32,5 +39,6 @@ impl Trigger<'_> {
         self.on == happened.event
             && self.skill.is_none_or(|s| happened.skill == Some(s))
             && (!self.yields_xp || happened.yields_xp)
+            && self.school.is_none_or(|s| happened.school == Some(s))
     }
 }

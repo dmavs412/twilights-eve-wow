@@ -212,6 +212,13 @@ pub enum AuraEffect {
     ModHitChance { pct: i32 },
     /// The healing the unit receives rises by `pct` percent.
     ModHealingTakenPct { pct: u32 },
+    /// The unit takes `pct` percent more `school` damage from others than the aura's caster
+    /// (Festering Wounds). No other player deals damage yet, so it changes nothing today.
+    ModDamageTakenPct {
+        pct: u32,
+        #[serde(default)]
+        school: School,
+    },
     /// The player's next cast of one of the skills changes: see [`NextCast`].
     NextCast(NextCast),
     /// A count that grows by one each time the aura is put on again; at the row's `max_stacks`
@@ -589,6 +596,17 @@ pub enum TalentEffect {
         /// Each rank's aura keys put on the event's target.
         #[serde(default)]
         target_auras: Vec<Vec<String>>,
+        /// Only for damage in this school (`damage_school=`).
+        #[serde(default)]
+        damage_school: Option<School>,
+        /// The ticking aura's copy, its time left and one stack, goes on the nearest other enemy
+        /// within this many yards of the target that lacks it (Epidemic).
+        #[serde(default)]
+        spread_aura: f32,
+        /// Each rank's percent of the damage done that heals the friendly players within
+        /// `radius_yd` of the character, split evenly (Symbiotic Rot).
+        #[serde(default)]
+        heal_allies_pct: Vec<u32>,
     },
     /// The armour from items rises by this many percent.
     #[serde(alias = "armor_items_pct")]
@@ -1003,6 +1021,9 @@ pub enum Effect {
         pct_of: Option<PctOf>,
         #[serde(default)]
         pct: u32,
+        /// Each tick heals the caster this percent of what it dealt (Creeping Blight).
+        #[serde(default)]
+        leech_pct: u32,
     },
     /// Heals the target `amount`, up to its maximum health.
     Heal { amount: Linear },
@@ -1112,10 +1133,19 @@ pub enum Effect {
         amount: Option<Linear>,
         #[serde(default)]
         school: School,
-        #[serde(default)]
+        #[serde(default = "always")]
         amount_pct: u32,
         #[serde(default)]
         energize_pct_of_max: u32,
+        /// The damage is `amount` once per stack the aura held (Necrotic Detonation).
+        #[serde(default)]
+        per_stack: bool,
+        /// Then `heal_allies_pct` percent of the damage dealt heals the friendly players within
+        /// `radius_yd` of the target, split evenly.
+        #[serde(default)]
+        heal_allies_pct: u32,
+        #[serde(default)]
+        radius_yd: f32,
     },
     /// The target's run speed changes by `pct` percent for `duration_ms`: a snare on an enemy
     /// when negative, a sprint on the caster when positive.

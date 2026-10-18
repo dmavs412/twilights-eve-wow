@@ -132,6 +132,8 @@ pub(super) struct Skills {
     dest: Option<[f32; 3]>,
     /// The spell-mod cells the player's `next_cast` buffs last set on the client, with values.
     sent_mods: Vec<(bool, u8, u8, i32)>,
+    /// The aura whose tick is running its procs: what a spread copies.
+    ticking: Option<Aura>,
     /// What the cast under way has dealt and healed so far: a share of either (`pct_of`) reads it.
     cast_dealt: u32,
     cast_healed: u32,
@@ -253,6 +255,8 @@ enum AuraKind {
         /// Applications stacked so far, each tick dealing `per_tick` once for each, and the most.
         stacks: u32,
         max_stacks: u32,
+        /// Percent of each tick's damage that heals its caster.
+        leech_pct: u32,
     },
     Rage {
         per_tick: u32,
@@ -322,6 +326,11 @@ enum AuraKind {
     /// A shield on the player that soaks `left` more damage.
     Absorb {
         left: u32,
+    },
+    /// The unit takes `pct` percent more `school` damage from others than the aura's caster.
+    DamageTaken {
+        pct: u32,
+        school: School,
     },
     /// The unit's chance to hit is `pct` points higher (lower when negative).
     HitChance {
@@ -1825,6 +1834,8 @@ impl InWorld {
                         skill: Some(&skill.key),
                         yields_xp: false,
                         target: Some(first),
+                        amount: self.skills.cast_dealt,
+                        school: Some(skill_school(skill)),
                     },
                     c,
                     rng,
@@ -1842,6 +1853,8 @@ impl InWorld {
                 skill: Some(&skill.key),
                 yields_xp: false,
                 target: None,
+                amount: 0,
+                school: None,
             },
             c,
             rng,
@@ -1859,6 +1872,8 @@ impl InWorld {
                     skill: Some(&skill.key),
                     yields_xp: false,
                     target: finisher_target,
+                    amount: 0,
+                    school: None,
                 },
                 c,
                 rng,
@@ -1917,6 +1932,68 @@ impl InWorld {
             .filter(|(_, p, _)| distance(*p, at) <= radius_yd)
             .min_by(|a, b| a.2.total_cmp(&b.2))
             .map(|(guid, _, _)| guid)
+    }
+
+    /// `total` healing split evenly among the friendly players within `radius_yd` of `at`.
+    pub(super) fn heal_allies(
+        &mut self,
+        c: &Char,
+        at: [f32; 3],
+        radius_yd: f32,
+        total: u32,
+        spell_id: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let allies: Vec<u64> = self
+            .friendly_players(c)
+            .into_iter()
+            .filter(|(_, p, _)| distance(*p, at) <= radius_yd)
+            .map(|(guid, _, _)| guid)
+            .collect();
+        if allies.is_empty() || total == 0 {
+            return;
+        }
+        let each = total / allies.len() as u32;
+        for guid in allies {
+            // The player is the only friendly player there is.
+            if guid == self.guid {
+                self.heal_player(spell_id, each, events);
+            }
+        }
+    }
+
+    /// A copy of the aura whose tick is running its procs, its time left and one stack, goes
+    /// on the living enemy nearest its unit within `radius_yd` that does not already have it.
+    pub(super) fn spread_ticking(&mut self, radius_yd: f32, events: &mut Vec<SessionEvent>) {
+        let Some(tick) = self.skills.ticking else {
+            return;
+        };
+        let Some(at) = self
+            .mobs
+            .iter()
+            .find(|m| m.guid == tick.unit)
+            .map(|m| m.position)
+        else {
+            return;
+        };
+        let Some(other) = self
+            .mobs
+            .iter()
+            .filter(|m| m.guid != tick.unit && m.alive() && !self.skills.on(m.guid, tick.spell_id))
+            .map(|m| (m.guid, distance(m.position, at)))
+            .filter(|&(_, d)| d <= radius_yd)
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(guid, _)| guid)
+        else {
+            return;
+        };
+        let mut copy = tick;
+        copy.unit = other;
+        copy.slot = 0;
+        if let AuraKind::PeriodicDamage { stacks, .. } = &mut copy.kind {
+            *stacks = 1;
+        }
+        self.skills.apply(copy, events);
     }
 
     /// Heals the player `amount` under `spell_id`, up to their maximum: what was healed.
@@ -2368,6 +2445,7 @@ impl InWorld {
                 school,
                 pct_of,
                 pct,
+                leech_pct,
             } => {
                 let duration_ms =
                     duration_ms + stretch.map_or(0, |l| l.at(level, ap) * u32::from(combo));
@@ -2381,6 +2459,7 @@ impl InWorld {
                         caster: self.guid,
                         stacks: 1,
                         max_stacks,
+                        leech_pct,
                     },
                     aura_spell_id.unwrap_or(skill.spell_id),
                     duration_ms,
@@ -2837,15 +2916,24 @@ impl InWorld {
                 school,
                 amount_pct,
                 energize_pct_of_max,
+                per_stack,
+                heal_allies_pct,
+                radius_yd,
             } => {
+                let at = self
+                    .mobs
+                    .iter()
+                    .find(|m| m.guid == target)
+                    .map(|m| m.position);
                 let Some(gone) = self.skills.take_aura(target, aura_spell_id, events) else {
                     return;
                 };
+                let stacks = if per_stack { gone.kind.stacks() } else { 1 };
                 self.update_speed(target, events);
                 // Talents that raise the consume's outcomes (Thermal Shock).
                 let more = crate::talents::consume_amount_pct(c, &skill.key);
                 if let Some(amount) = amount {
-                    let raw = scaled_share(amount.at(level, ap), amount_pct);
+                    let raw = scaled_share(amount.at(level, ap), amount_pct) * stacks;
                     // The shatter crits on the caster's chance and the skill's own (Elemental
                     // Convergence's buff).
                     let chance = (stats.crit_pct * 100.0) as u32
@@ -2857,7 +2945,7 @@ impl InWorld {
                     } else {
                         Landed::Hit
                     };
-                    self.strike(
+                    let dealt = self.strike(
                         skill.spell_id,
                         target,
                         scaled(raw, more),
@@ -2868,6 +2956,13 @@ impl InWorld {
                         events,
                         ticked,
                     );
+                    self.skills.cast_dealt += dealt;
+                    if heal_allies_pct > 0 {
+                        if let Some(at) = at {
+                            let total = scaled_share(dealt, heal_allies_pct);
+                            self.heal_allies(c, at, radius_yd, total, skill.spell_id, events);
+                        }
+                    }
                 }
                 let p = &mut self.player;
                 let kind = p.power.kind;
@@ -2892,6 +2987,8 @@ impl InWorld {
                         skill: Some(&skill.key),
                         yields_xp: false,
                         target: Some(target),
+                        amount: 0,
+                        school: None,
                     },
                     c,
                     rng,
@@ -3145,6 +3242,8 @@ impl InWorld {
                 skill: None,
                 yields_xp: false,
                 target: Some(target),
+                amount: 0,
+                school: None,
             },
             c,
             rng,
@@ -3250,6 +3349,8 @@ impl InWorld {
                     skill: None,
                     yields_xp: false,
                     target,
+                    amount: 0,
+                    school: None,
                 },
                 c,
                 rng,
@@ -3402,6 +3503,7 @@ impl InWorld {
                     caster: self.guid,
                     stacks: 1,
                     max_stacks: 1,
+                    leech_pct: 0,
                 },
                 charges: 0,
             };
@@ -3704,6 +3806,7 @@ impl InWorld {
                     school,
                     caster,
                     stacks,
+                    leech_pct,
                     ..
                 } => {
                     let per_tick = per_tick * stacks;
@@ -3737,9 +3840,17 @@ impl InWorld {
                         self.player_takes(per_tick, events);
                     } else {
                         self.hurt(a.unit, per_tick, c, rng, events, ticked);
-                        // The caster's own damage over time ticked: its procs (Thermal Feedback,
-                        // Morbid Fascination).
+                        // The caster's own damage over time ticked: its leech, and its procs
+                        // (Thermal Feedback, Morbid Fascination, Epidemic).
                         if caster == self.guid {
+                            if leech_pct > 0 {
+                                self.heal_player(
+                                    a.spell_id,
+                                    scaled_share(per_tick, leech_pct),
+                                    events,
+                                );
+                            }
+                            self.skills.ticking = Some(a);
                             let skill =
                                 crate::talents::skill(c, a.spell_id).map(|s| s.key.as_str());
                             for event in [
@@ -3752,6 +3863,8 @@ impl InWorld {
                                         skill,
                                         yields_xp: false,
                                         target: Some(a.unit),
+                                        amount: per_tick,
+                                        school: Some(school),
                                     },
                                     c,
                                     rng,
@@ -3759,6 +3872,7 @@ impl InWorld {
                                     ticked,
                                 );
                             }
+                            self.skills.ticking = None;
                         }
                     }
                 }
@@ -3989,6 +4103,7 @@ impl InWorld {
                 caster,
                 stacks: 1,
                 max_stacks: 1,
+                leech_pct: 0,
             },
             charges: 0,
         };
@@ -4087,9 +4202,14 @@ impl InWorld {
                         caster: self.guid,
                         stacks: 1,
                         max_stacks: 1,
+                        leech_pct: 0,
                     }
                 }
                 callings::AuraEffect::ModHitChance { pct } => AuraKind::HitChance { pct: *pct },
+                callings::AuraEffect::ModDamageTakenPct { pct, school } => AuraKind::DamageTaken {
+                    pct: *pct,
+                    school: *school,
+                },
                 callings::AuraEffect::ModHealingTakenPct { pct } => {
                     AuraKind::HealingTaken { pct: *pct }
                 }
@@ -4429,4 +4549,20 @@ fn run_speed(pct: i32) -> AuraKind {
     } else {
         AuraKind::RunSpeed { pct: pct as u32 }
     }
+}
+
+/// The school a skill's damage is in: its first damaging effect's, physical with none.
+fn skill_school(skill: &Skill) -> School {
+    skill
+        .effects
+        .iter()
+        .find_map(|e| match *e {
+            Effect::SchoolDamage { school, .. }
+            | Effect::WeaponStrike { school, .. }
+            | Effect::Drain { school, .. }
+            | Effect::PeriodicDamage { school, .. } => Some(school),
+            Effect::ConsumeAura { school, .. } => Some(school),
+            _ => None,
+        })
+        .unwrap_or(School::Physical)
 }

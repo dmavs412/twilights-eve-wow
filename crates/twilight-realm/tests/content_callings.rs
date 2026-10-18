@@ -423,8 +423,8 @@ fn every_skill_id_is_listed_for_rank_blanking() {
         ids,
         [
             78, 100, 116, 133, 589, 689, 845, 1752, 1776, 1784, 1943, 1953, 2061, 2098, 2120, 2136,
-            2912, 5277, 6178, 8092, 8921, 10308, 11366, 12043, 12294, 12809, 20165, 20271, 20305,
-            20375, 25899
+            2912, 5277, 6178, 8092, 8921, 10308, 11366, 12043, 12294, 12809, 15286, 20165, 20271,
+            20305, 20375, 25899
         ]
     );
 }
@@ -463,10 +463,7 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Shattered Defenses, Point Blank, Explosive Payload.
         19426, 19427, 19429, 19430, 19431, 19464, 19465, 19466, 19467, 19468, 19461, 19462, 24691,
         19559, 19560, 19498, 19499, 19500, 19557, 19558, 19503,
-        // Acolyte's Rot-Weaver: Virulence, Epidemic, Symbiotic Rot, Festering Wounds, Necrotic
-        // Detonation.
-        15270, 15335, 15336, 15337, 15338, 15318, 15272, 15320, 27811, 27815, 27816, 15274, 15311,
-        15286,
+        // Acolyte's Rot-Weaver: nothing (every talent is modelled now).
         // Acolyte's Hemomancer: Vitality, Masochism, Coagulation, Crimson Surge, Will to Survive,
         // Blood Ties, Sanguine Shell.
         14889, 15008, 15009, 15010, 15011, 14898, 15349, 15354, 15355, 15356, 14912, 15013, 15014,

@@ -518,6 +518,10 @@ pub(crate) struct Proc {
     pub(crate) energize_pct_of_base: u32,
     /// The keys of the auras put on the event's target.
     pub(crate) target_auras: Vec<String>,
+    /// Yards from the target the ticking aura's copy may spread to; 0 for none.
+    pub(crate) spread_aura: f32,
+    /// Percent of the damage done that heals the friendly players within `radius_yd`.
+    pub(crate) heal_allies_pct: u32,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -553,11 +557,15 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 requires_target_aura,
                 energize_pct_of_base,
                 target_auras,
+                damage_school,
+                spread_aura,
+                heal_allies_pct,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
                     skill: skill.as_deref(),
                     yields_xp: *yields_xp,
+                    school: *damage_school,
                 };
                 trigger.fires(happened).then(|| Proc {
                     spell_id: t.rank_spells.get(r).copied().unwrap_or(0),
@@ -582,6 +590,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     requires_target_aura: requires_target_aura.as_deref(),
                     energize_pct_of_base: energize_pct_of_base.get(r).copied().unwrap_or(0),
                     target_auras: target_auras.get(r).cloned().unwrap_or_default(),
+                    spread_aura: *spread_aura,
+                    heal_allies_pct: heal_allies_pct.get(r).copied().unwrap_or(0),
                 })
             }
             _ => None,
@@ -599,6 +609,7 @@ pub(crate) fn aura_proc(
         on: p.on,
         skill: None,
         yields_xp: false,
+        school: None,
     };
     trigger.fires(happened).then(|| Proc {
         spell_id,
@@ -623,6 +634,8 @@ pub(crate) fn aura_proc(
         requires_target_aura: None,
         energize_pct_of_base: 0,
         target_auras: Vec::new(),
+        spread_aura: 0.0,
+        heal_allies_pct: 0,
     })
 }
 

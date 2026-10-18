@@ -523,6 +523,8 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     object.remove("refund_cost_pct");
     object.remove("energize_pct_of_base");
     object.remove("apply_aura_target");
+    object.remove("heal_allies_pct");
+    let mut ally_heals = Vec::new();
     let mut refunds = Vec::new();
     let mut base_energize = Vec::new();
     let mut target_auras = Vec::new();
@@ -548,6 +550,7 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
             None => Value::Array(Vec::new()),
         });
         refunds.push(params.get("refund_cost_pct").cloned().unwrap_or(0.into()));
+        ally_heals.push(params.get("heal_allies_pct").cloned().unwrap_or(0.into()));
         base_energize.push(
             params
                 .get("energize_pct_of_base")
@@ -569,6 +572,7 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     object.insert("refund_cost_pct".into(), Value::Array(refunds));
     object.insert("energize_pct_of_base".into(), Value::Array(base_energize));
     object.insert("target_auras".into(), Value::Array(target_auras));
+    object.insert("heal_allies_pct".into(), Value::Array(ally_heals));
     object.insert("per_rank".into(), Value::Array(heals));
     object.insert("auras".into(), Value::Array(auras));
     object.insert("chances".into(), Value::Array(chances));
