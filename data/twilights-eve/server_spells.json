@@ -1027,22 +1027,25 @@
   "class": 1,
   "skills": [
    {
-    "key": "mortal_strike",
-    "name": "Mortal Strike",
+    "key": "righteous_smash",
+    "name": "Righteous Smash",
     "rank": 1,
     "status": "placeholder",
-    "spell_id": 12294,
-    "icon_id": 564,
-    "realm_cost": 30,
-    "realm_cooldown_ms": 6000,
-    "realm_gcd_ms": 1500,
+    "spell_id": 78,
+    "icon_id": 856,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 0,
     "realm_range_min": 0,
     "realm_range_max": 5,
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
     "cost_kind": "flat",
-    "cast_kind": "instant",
+    "cast_kind": "next_swing",
     "interrupt_on": [],
     "defense_type": "melee",
     "on_cast": {
@@ -1057,80 +1060,25 @@
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "normalized",
+       "weapon": "normal",
+       "on_next_swing": true,
        "bonus": {
-        "base": 25,
-        "per_level": 2.5,
-        "per_ap": 0
-       }
-      },
-      "realm_only": false
-     },
-     {
-      "kind": "healing_reduction",
-      "params": {
-       "pct": 50,
-       "duration_ms": 10000
-      },
-      "realm_only": false
-     }
-    ],
-    "description": ""
-   },
-   {
-    "key": "overpower",
-    "name": "Overpower",
-    "rank": 1,
-    "status": "placeholder",
-    "spell_id": 7887,
-    "icon_id": 26,
-    "realm_cost": 5,
-    "realm_cooldown_ms": 5000,
-    "realm_gcd_ms": 1500,
-    "realm_range_min": 0,
-    "realm_range_max": 5,
-    "target": "enemy",
-    "school": "physical",
-    "prevention": "pacify",
-    "cost_kind": "flat",
-    "cast_kind": "instant",
-    "interrupt_on": [],
-    "defense_type": "melee",
-    "on_cast": {
-     "breaks_stealth": true,
-     "starts_auto_attack": true,
-     "resets_swing": false
-    },
-    "outcomes": {
-     "dodge": false,
-     "parry": false
-    },
-    "weapon_hand": "main",
-    "max_targets": 1,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "weapon_strike",
-      "params": {
-       "weapon": "normalized",
-       "unavoidable": true,
-       "bonus": {
-        "base": 6,
-        "per_level": 0.6,
+        "base": 14.3,
+        "per_level": 2,
         "per_ap": 0
        }
       },
       "realm_only": false
      }
     ],
-    "description": ""
+    "description": "Your next melee swing strikes the target for weapon damage plus a bonus. Every hit grants a stack of Conviction."
    },
    {
-    "key": "charge",
-    "name": "Charge",
+    "key": "bulwark_charge",
+    "name": "Bulwark Charge",
     "rank": 1,
     "status": "placeholder",
-    "spell_id": 6178,
+    "spell_id": 100,
     "icon_id": 457,
     "realm_cost": 0,
     "realm_cooldown_ms": 15000,
@@ -1140,10 +1088,6 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
-    "requires": {
-     "combat": "out"
-    },
-    "requires_out_of_combat": true,
     "cost_kind": "flat",
     "cast_kind": "instant",
     "interrupt_on": [],
@@ -1169,32 +1113,53 @@
       "params": {
        "power": "rage",
        "amount": {
-        "base": 11,
-        "per_level": 0.1,
+        "base": 15,
+        "per_level": 0,
         "per_ap": 0
        }
       },
       "realm_only": false
-     },
-     {
-      "kind": "stun",
-      "params": {
-       "duration_ms": 1000,
-       "aura_spell_id": 7922
-      },
-      "realm_only": false
      }
     ],
-    "description": ""
+    "description": "Charge an enemy, generating 15 Rage and leaving a pool of holy light at the destination. Usable in combat."
    },
    {
-    "key": "rend",
-    "name": "Rend",
+    "key": "shield_of_penitent",
+    "name": "Shield of the Penitent",
     "rank": 1,
     "status": "placeholder",
-    "spell_id": 6546,
-    "icon_id": 245,
+    "spell_id": 25899,
     "realm_cost": 10,
+    "realm_cooldown_ms": 15000,
+    "realm_gcd_ms": 0,
+    "target": "self",
+    "school": "holy",
+    "prevention": "silence",
+    "requires_weapon": [
+     "shield"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "For 10 sec your chance to Block is increased by 75%. Every block deals 30 Holy damage to the attacker."
+   },
+   {
+    "key": "zealous_cleave",
+    "name": "Zealous Cleave",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 845,
+    "realm_cost": 20,
     "realm_cooldown_ms": 0,
     "realm_gcd_ms": 1500,
     "realm_range_min": 0,
@@ -1202,6 +1167,9 @@
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
     "cost_kind": "flat",
     "cast_kind": "instant",
     "interrupt_on": [],
@@ -1216,38 +1184,32 @@
     "modelled": true,
     "effects": [
      {
-      "kind": "periodic_damage",
+      "kind": "weapon_strike",
       "params": {
-       "school": "physical",
-       "mechanic": "bleed",
-       "tick_ms": 3000,
-       "duration_ms": 12000,
-       "tick": {
-        "base": 5,
-        "per_level": 0.25,
-        "per_ap": 0.01,
-        "min": 1
+       "weapon": "normal",
+       "bonus": {
+        "base": 6.5,
+        "per_level": 1.3,
+        "per_ap": 0
        }
       },
       "realm_only": false
      }
     ],
-    "description": ""
+    "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage."
    },
    {
-    "key": "battle_shout",
-    "name": "Battle Shout",
+    "key": "seal_of_iron",
+    "name": "Seal of Iron",
     "rank": 1,
     "status": "placeholder",
-    "spell_id": 6192,
-    "icon_id": 456,
+    "spell_id": 20165,
     "realm_cost": 10,
     "realm_cooldown_ms": 0,
     "realm_gcd_ms": 1500,
-    "realm_radius_yd": 20,
-    "target": "self_party",
-    "school": "physical",
-    "prevention": "pacify",
+    "target": "self",
+    "school": "holy",
+    "prevention": "silence",
     "cost_kind": "flat",
     "cast_kind": "instant",
     "interrupt_on": [],
@@ -1258,286 +1220,35 @@
      "resets_swing": false
     },
     "weapon_hand": "main",
-    "max_targets": null,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "aura_attack_power",
-      "params": {
-       "duration_ms": 120000,
-       "amount": {
-        "base": 20,
-        "per_level": 2.0,
-        "per_ap": 0
-       }
-      },
-      "realm_only": false
-     }
-    ],
-    "description": ""
+    "max_targets": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike."
    }
   ],
   "talent_tabs": [
    {
-    "name": "Weaponmaster",
+    "name": "The Bastion",
+    "id": 901,
+    "background": "WarriorProtection",
+    "order": 1,
     "talents": [
      {
-      "key": "improved_overpower",
-      "name": "Improved Overpower",
+      "key": "reactive_strike",
+      "name": "Reactive Strike",
       "seat": {
        "row": 1,
-       "column": 1
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "improved_overpower",
-        "name": "Improved Overpower",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12290,
-        "talent_id": 131,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Overpower +25/50% crit chance."
-       },
-       {
-        "key": "improved_overpower",
-        "name": "Improved Overpower",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 12963,
-        "talent_id": 131,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Overpower +25/50% crit chance."
-       }
-      ]
-     },
-     {
-      "key": "improved_rend",
-      "name": "Improved Rend",
-      "seat": {
-       "row": 1,
-       "column": 3
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "improved_rend",
-        "name": "Improved Rend",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12286,
-        "talent_id": 127,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Rend ticks +15/25/35%.",
-        "spellmods": [
-         {
-          "type": "pct",
-          "op": "ALL_EFFECTS",
-          "family_bit": 5,
-          "value": 15,
-          "target": [
-           "rend"
-          ]
-         }
-        ]
-       },
-       {
-        "key": "improved_rend",
-        "name": "Improved Rend",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 12658,
-        "talent_id": 127,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Rend ticks +15/25/35%.",
-        "spellmods": [
-         {
-          "type": "pct",
-          "op": "ALL_EFFECTS",
-          "family_bit": 5,
-          "value": 25,
-          "target": [
-           "rend"
-          ]
-         }
-        ]
-       },
-       {
-        "key": "improved_rend",
-        "name": "Improved Rend",
-        "rank": 3,
-        "status": "placeholder",
-        "spell_id": 12659,
-        "talent_id": 127,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Rend ticks +15/25/35%.",
-        "spellmods": [
-         {
-          "type": "pct",
-          "op": "ALL_EFFECTS",
-          "family_bit": 5,
-          "value": 35,
-          "target": [
-           "rend"
-          ]
-         }
-        ]
-       }
-      ]
-     },
-     {
-      "key": "improved_charge",
-      "name": "Improved Charge",
-      "seat": {
-       "row": 2,
-       "column": 1
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "improved_charge",
-        "name": "Improved Charge",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12285,
-        "talent_id": 126,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Charge +3/6 rage."
-       },
-       {
-        "key": "improved_charge",
-        "name": "Improved Charge",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 12697,
-        "talent_id": 126,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Charge +3/6 rage."
-       }
-      ]
-     },
-     {
-      "key": "anger_management",
-      "name": "Anger Management",
-      "seat": {
-       "row": 2,
        "column": 2
       },
-      "exceptional": true,
+      "exceptional": false,
       "ranks": [
        {
-        "key": "anger_management",
-        "name": "Anger Management",
+        "key": "reactive_strike",
+        "name": "Reactive Strike",
         "rank": 1,
         "status": "placeholder",
-        "spell_id": 12296,
-        "talent_id": 137,
+        "spell_id": 16462,
+        "talent_id": 130,
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
@@ -1554,51 +1265,15 @@
         "max_targets": 1,
         "modelled": false,
         "effects": [],
-        "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
-       }
-      ]
-     },
-     {
-      "key": "deep_wounds",
-      "name": "Deep Wounds",
-      "seat": {
-       "row": 2,
-       "column": 3
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "deep_wounds",
-        "name": "Deep Wounds",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12834,
-        "talent_id": 121,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
+        "description": "Increases your Parry chance by 1% and reduces the Rage cost of your next Righteous Smash after a parry by 2."
        },
        {
-        "key": "deep_wounds",
-        "name": "Deep Wounds",
+        "key": "reactive_strike",
+        "name": "Reactive Strike",
         "rank": 2,
         "status": "placeholder",
-        "spell_id": 12849,
-        "talent_id": 121,
+        "spell_id": 16463,
+        "talent_id": 130,
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
@@ -1613,17 +1288,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
+        "description": "Increases your Parry chance by 2% and reduces the Rage cost of your next Righteous Smash after a parry by 4."
        },
        {
-        "key": "deep_wounds",
-        "name": "Deep Wounds",
+        "key": "reactive_strike",
+        "name": "Reactive Strike",
         "rank": 3,
         "status": "placeholder",
-        "spell_id": 12867,
-        "talent_id": 121,
+        "spell_id": 16464,
+        "talent_id": 130,
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
@@ -1638,107 +1313,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s."
-       }
-      ],
-      "prereq": {
-       "key": "improved_rend",
-       "rank": 3
-      }
-     },
-     {
-      "key": "two_handed_weapon_specialization",
-      "name": "Two-Handed Weapon Specialization",
-      "seat": {
-       "row": 3,
-       "column": 2
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "two_handed_weapon_specialization",
-        "name": "Two-Handed Weapon Specialization",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12163,
-        "talent_id": 136,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
+        "description": "Increases your Parry chance by 3% and reduces the Rage cost of your next Righteous Smash after a parry by 6."
        },
        {
-        "key": "two_handed_weapon_specialization",
-        "name": "Two-Handed Weapon Specialization",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 12711,
-        "talent_id": 136,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
-       },
-       {
-        "key": "two_handed_weapon_specialization",
-        "name": "Two-Handed Weapon Specialization",
-        "rank": 3,
-        "status": "placeholder",
-        "spell_id": 12712,
-        "talent_id": 136,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
-       },
-       {
-        "key": "two_handed_weapon_specialization",
-        "name": "Two-Handed Weapon Specialization",
+        "key": "reactive_strike",
+        "name": "Reactive Strike",
         "rank": 4,
         "status": "placeholder",
-        "spell_id": 12713,
-        "talent_id": 136,
+        "spell_id": 16465,
+        "talent_id": 130,
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
@@ -1753,17 +1338,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
+        "description": "Increases your Parry chance by 4% and reduces the Rage cost of your next Righteous Smash after a parry by 8."
        },
        {
-        "key": "two_handed_weapon_specialization",
-        "name": "Two-Handed Weapon Specialization",
+        "key": "reactive_strike",
+        "name": "Reactive Strike",
         "rank": 5,
         "status": "placeholder",
-        "spell_id": 12714,
-        "talent_id": 136,
+        "spell_id": 16466,
+        "talent_id": 130,
         "source_tab_id": 161,
         "school": "physical",
         "prevention": "pacify",
@@ -1778,366 +1363,29 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "+1..5% physical damage while wielding a two-handed melee weapon."
+        "description": "Increases your Parry chance by 5% and reduces the Rage cost of your next Righteous Smash after a parry by 10."
        }
       ]
      },
      {
-      "key": "impale",
-      "name": "Impale",
+      "key": "tempered_steel",
+      "name": "Tempered Steel",
       "seat": {
-       "row": 3,
-       "column": 3
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "impale",
-        "name": "Impale",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 16493,
-        "talent_id": 662,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x)."
-       },
-       {
-        "key": "impale",
-        "name": "Impale",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 16494,
-        "talent_id": 662,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x)."
-       }
-      ],
-      "prereq": {
-       "key": "deep_wounds",
-       "rank": 3
-      }
-     },
-     {
-      "key": "axe_specialization",
-      "name": "Axe Specialization",
-      "seat": {
-       "row": 4,
-       "column": 1
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "axe_specialization",
-        "name": "Axe Specialization",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12700,
-        "talent_id": 132,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "+1..5% crit chance with axes."
-       },
-       {
-        "key": "axe_specialization",
-        "name": "Axe Specialization",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 12781,
-        "talent_id": 132,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "+1..5% crit chance with axes."
-       },
-       {
-        "key": "axe_specialization",
-        "name": "Axe Specialization",
-        "rank": 3,
-        "status": "placeholder",
-        "spell_id": 12783,
-        "talent_id": 132,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "+1..5% crit chance with axes."
-       },
-       {
-        "key": "axe_specialization",
-        "name": "Axe Specialization",
-        "rank": 4,
-        "status": "placeholder",
-        "spell_id": 12784,
-        "talent_id": 132,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "+1..5% crit chance with axes."
-       },
-       {
-        "key": "axe_specialization",
-        "name": "Axe Specialization",
-        "rank": 5,
-        "status": "placeholder",
-        "spell_id": 12785,
-        "talent_id": 132,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "+1..5% crit chance with axes."
-       }
-      ]
-     },
-     {
-      "key": "mace_specialization",
-      "name": "Mace Specialization",
-      "seat": {
-       "row": 4,
-       "column": 3
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "mace_specialization",
-        "name": "Mace Specialization",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12284,
-        "talent_id": 125,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
-       },
-       {
-        "key": "mace_specialization",
-        "name": "Mace Specialization",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 12701,
-        "talent_id": 125,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
-       },
-       {
-        "key": "mace_specialization",
-        "name": "Mace Specialization",
-        "rank": 3,
-        "status": "placeholder",
-        "spell_id": 12702,
-        "talent_id": 125,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
-       },
-       {
-        "key": "mace_specialization",
-        "name": "Mace Specialization",
-        "rank": 4,
-        "status": "placeholder",
-        "spell_id": 12703,
-        "talent_id": 125,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
-       },
-       {
-        "key": "mace_specialization",
-        "name": "Mace Specialization",
-        "rank": 5,
-        "status": "placeholder",
-        "spell_id": 12704,
-        "talent_id": 125,
-        "source_tab_id": 161,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530)."
-       }
-      ]
-     },
-     {
-      "key": "sword_specialization",
-      "name": "Sword Specialization",
-      "seat": {
-       "row": 4,
+       "row": 1,
        "column": 4
       },
       "exceptional": false,
       "ranks": [
        {
-        "key": "sword_specialization",
-        "name": "Sword Specialization",
+        "key": "tempered_steel",
+        "name": "Tempered Steel",
         "rank": 1,
         "status": "placeholder",
-        "spell_id": 12281,
-        "talent_id": 123,
-        "source_tab_id": 161,
+        "spell_id": 20138,
+        "talent_id": 1422,
+        "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2151,18 +1399,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+        "description": "Increases your armor value from items by 2%. When struck by a critical hit, your chance to Block is increased by 10% for 6 sec."
        },
        {
-        "key": "sword_specialization",
-        "name": "Sword Specialization",
+        "key": "tempered_steel",
+        "name": "Tempered Steel",
         "rank": 2,
         "status": "placeholder",
-        "spell_id": 12812,
-        "talent_id": 123,
-        "source_tab_id": 161,
+        "spell_id": 20139,
+        "talent_id": 1422,
+        "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2176,18 +1424,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+        "description": "Increases your armor value from items by 4%. When struck by a critical hit, your chance to Block is increased by 20% for 6 sec."
        },
        {
-        "key": "sword_specialization",
-        "name": "Sword Specialization",
+        "key": "tempered_steel",
+        "name": "Tempered Steel",
         "rank": 3,
         "status": "placeholder",
-        "spell_id": 12813,
-        "talent_id": 123,
-        "source_tab_id": 161,
+        "spell_id": 20140,
+        "talent_id": 1422,
+        "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2201,18 +1449,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+        "description": "Increases your armor value from items by 6%. When struck by a critical hit, your chance to Block is increased by 30% for 6 sec."
        },
        {
-        "key": "sword_specialization",
-        "name": "Sword Specialization",
+        "key": "tempered_steel",
+        "name": "Tempered Steel",
         "rank": 4,
         "status": "placeholder",
-        "spell_id": 12814,
-        "talent_id": 123,
-        "source_tab_id": 161,
+        "spell_id": 20141,
+        "talent_id": 1422,
+        "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2226,18 +1474,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+        "description": "Increases your armor value from items by 8%. When struck by a critical hit, your chance to Block is increased by 40% for 6 sec."
        },
        {
-        "key": "sword_specialization",
-        "name": "Sword Specialization",
+        "key": "tempered_steel",
+        "name": "Tempered Steel",
         "rank": 5,
         "status": "placeholder",
-        "spell_id": 12815,
-        "talent_id": 123,
-        "source_tab_id": 161,
+        "spell_id": 20142,
+        "talent_id": 1422,
+        "source_tab_id": 383,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2251,29 +1499,165 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Sword hits have 1..5% chance of one extra swing (no chained procs)."
+        "description": "Increases your armor value from items by 10%. When struck by a critical hit, your chance to Block is increased by 50% for 6 sec."
        }
       ]
      },
      {
-      "key": "flurry",
-      "name": "Flurry",
+      "key": "shield_specialization",
+      "name": "Shield Specialization",
       "seat": {
-       "row": 5,
+       "row": 2,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "shield_specialization",
+        "name": "Shield Specialization",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 12298,
+        "talent_id": 1601,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Increases your chance to block by 1% and gives you a 20% chance to generate 2 Rage when a block occurs."
+       },
+       {
+        "key": "shield_specialization",
+        "name": "Shield Specialization",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12724,
+        "talent_id": 1601,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Increases your chance to block by 2% and gives you a 40% chance to generate 2 Rage when a block occurs."
+       },
+       {
+        "key": "shield_specialization",
+        "name": "Shield Specialization",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12725,
+        "talent_id": 1601,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Increases your chance to block by 3% and gives you a 60% chance to generate 2 Rage when a block occurs."
+       },
+       {
+        "key": "shield_specialization",
+        "name": "Shield Specialization",
+        "rank": 4,
+        "status": "placeholder",
+        "spell_id": 12726,
+        "talent_id": 1601,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Increases your chance to block by 4% and gives you a 80% chance to generate 2 Rage when a block occurs."
+       },
+       {
+        "key": "shield_specialization",
+        "name": "Shield Specialization",
+        "rank": 5,
+        "status": "placeholder",
+        "spell_id": 12727,
+        "talent_id": 1601,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Increases your chance to block by 5% and gives you a 100% chance to generate 2 Rage when a block occurs."
+       }
+      ]
+     },
+     {
+      "key": "vengeful_conviction",
+      "name": "Vengeful Conviction",
+      "seat": {
+       "row": 2,
        "column": 3
       },
       "exceptional": false,
       "ranks": [
        {
-        "key": "flurry",
-        "name": "Flurry",
+        "key": "vengeful_conviction",
+        "name": "Vengeful Conviction",
         "rank": 1,
         "status": "placeholder",
-        "spell_id": 12319,
-        "talent_id": 156,
-        "source_tab_id": 164,
+        "spell_id": 12797,
+        "talent_id": 147,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2289,16 +1673,16 @@
         "max_targets": 1,
         "modelled": false,
         "effects": [],
-        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+        "description": "Blocking an attack has a 33% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
        },
        {
-        "key": "flurry",
-        "name": "Flurry",
+        "key": "vengeful_conviction",
+        "name": "Vengeful Conviction",
         "rank": 2,
         "status": "placeholder",
-        "spell_id": 12971,
-        "talent_id": 156,
-        "source_tab_id": 164,
+        "spell_id": 12799,
+        "talent_id": 147,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2314,16 +1698,16 @@
         "max_targets": 1,
         "modelled": false,
         "effects": [],
-        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+        "description": "Blocking an attack has a 66% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
        },
        {
-        "key": "flurry",
-        "name": "Flurry",
+        "key": "vengeful_conviction",
+        "name": "Vengeful Conviction",
         "rank": 3,
         "status": "placeholder",
-        "spell_id": 12972,
-        "talent_id": 156,
-        "source_tab_id": 164,
+        "spell_id": 12800,
+        "talent_id": 147,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2339,82 +1723,110 @@
         "max_targets": 1,
         "modelled": false,
         "effects": [],
-        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
-       },
-       {
-        "key": "flurry",
-        "name": "Flurry",
-        "rank": 4,
-        "status": "placeholder",
-        "spell_id": 12973,
-        "talent_id": 156,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": false,
-        "effects": [],
-        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
-       },
-       {
-        "key": "flurry",
-        "name": "Flurry",
-        "rank": 5,
-        "status": "placeholder",
-        "spell_id": 12974,
-        "talent_id": 156,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": false,
-        "effects": [],
-        "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
+        "description": "Blocking an attack has a 100% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
        }
       ]
-     }
-    ]
-   },
-   {
-    "name": "Warlord",
-    "talents": [
+     },
      {
-      "key": "booming_voice",
-      "name": "Booming Voice",
+      "key": "improved_shield_of_penitent",
+      "name": "Improved Shield of the Penitent",
       "seat": {
-       "row": 1,
+       "row": 3,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "improved_shield_of_penitent",
+        "name": "Improved Shield of the Penitent",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 12312,
+        "talent_id": 150,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Reduces the Rage cost of Shield of the Penitent by 5 and increases the Holy damage it deals by 15%.",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 39,
+          "value": -50,
+          "target": [
+           "shield_of_penitent"
+          ]
+         }
+        ]
+       },
+       {
+        "key": "improved_shield_of_penitent",
+        "name": "Improved Shield of the Penitent",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12803,
+        "talent_id": 150,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Reduces the Rage cost of Shield of the Penitent by 10 and increases the Holy damage it deals by 30%.",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 39,
+          "value": -100,
+          "target": [
+           "shield_of_penitent"
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "key": "iron_retribution",
+      "name": "Iron Retribution",
+      "seat": {
+       "row": 3,
        "column": 2
       },
       "exceptional": false,
       "ranks": [
        {
-        "key": "booming_voice",
-        "name": "Booming Voice",
+        "key": "iron_retribution",
+        "name": "Iron Retribution",
         "rank": 1,
         "status": "placeholder",
-        "spell_id": 12321,
-        "talent_id": 158,
-        "source_tab_id": 164,
+        "spell_id": 12300,
+        "talent_id": 141,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2428,18 +1840,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Battle Shout duration and radius +10..50%."
+        "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 10% of your Block Value."
        },
        {
-        "key": "booming_voice",
-        "name": "Booming Voice",
+        "key": "iron_retribution",
+        "name": "Iron Retribution",
         "rank": 2,
         "status": "placeholder",
-        "spell_id": 12835,
-        "talent_id": 158,
-        "source_tab_id": 164,
+        "spell_id": 12959,
+        "talent_id": 141,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2453,18 +1865,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Battle Shout duration and radius +10..50%."
+        "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 20% of your Block Value."
        },
        {
-        "key": "booming_voice",
-        "name": "Booming Voice",
+        "key": "iron_retribution",
+        "name": "Iron Retribution",
         "rank": 3,
         "status": "placeholder",
-        "spell_id": 12836,
-        "talent_id": 158,
-        "source_tab_id": 164,
+        "spell_id": 12960,
+        "talent_id": 141,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2478,18 +1890,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Battle Shout duration and radius +10..50%."
+        "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 30% of your Block Value."
        },
        {
-        "key": "booming_voice",
-        "name": "Booming Voice",
+        "key": "iron_retribution",
+        "name": "Iron Retribution",
         "rank": 4,
         "status": "placeholder",
-        "spell_id": 12837,
-        "talent_id": 158,
-        "source_tab_id": 164,
+        "spell_id": 12961,
+        "talent_id": 141,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2503,18 +1915,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Battle Shout duration and radius +10..50%."
+        "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 40% of your Block Value."
        },
        {
-        "key": "booming_voice",
-        "name": "Booming Voice",
+        "key": "iron_retribution",
+        "name": "Iron Retribution",
         "rank": 5,
         "status": "placeholder",
-        "spell_id": 12838,
-        "talent_id": 158,
-        "source_tab_id": 164,
+        "spell_id": 12962,
+        "talent_id": 141,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -2528,15 +1940,291 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "Battle Shout duration and radius +10..50%."
+        "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 50% of your Block Value."
        }
       ]
      },
      {
-      "key": "cruelty",
-      "name": "Cruelty",
+      "key": "iron_juggernaut",
+      "name": "Iron Juggernaut",
+      "seat": {
+       "row": 4,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "iron_juggernaut",
+        "name": "Iron Juggernaut",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 12308,
+        "talent_id": 146,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 10% of your shield's Block Value."
+       },
+       {
+        "key": "iron_juggernaut",
+        "name": "Iron Juggernaut",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12810,
+        "talent_id": 146,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 20% of your shield's Block Value."
+       },
+       {
+        "key": "iron_juggernaut",
+        "name": "Iron Juggernaut",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12811,
+        "talent_id": 146,
+        "source_tab_id": 163,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 30% of your shield's Block Value."
+       }
+      ]
+     }
+    ],
+    "key": "bastion"
+   },
+   {
+    "name": "The Righteous",
+    "id": 902,
+    "background": "WarriorArms",
+    "order": 2,
+    "talents": [
+     {
+      "key": "divine_strength",
+      "name": "Divine Strength",
+      "seat": {
+       "row": 1,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 20042,
+        "talent_id": 1401,
+        "source_tab_id": 381,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "strength",
+           "pct": 2
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases your total Strength by 2%."
+       },
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 20045,
+        "talent_id": 1401,
+        "source_tab_id": 381,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "strength",
+           "pct": 4
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases your total Strength by 4%."
+       },
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 20046,
+        "talent_id": 1401,
+        "source_tab_id": 381,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "strength",
+           "pct": 6
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases your total Strength by 6%."
+       },
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 4,
+        "status": "placeholder",
+        "spell_id": 20047,
+        "talent_id": 1401,
+        "source_tab_id": 381,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "strength",
+           "pct": 8
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases your total Strength by 8%."
+       },
+       {
+        "key": "divine_strength",
+        "name": "Divine Strength",
+        "rank": 5,
+        "status": "placeholder",
+        "spell_id": 20048,
+        "talent_id": 1401,
+        "source_tab_id": 381,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_stat",
+          "params": {
+           "stat": "strength",
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases your total Strength by 10%."
+       }
+      ]
+     },
+     {
+      "key": "wrathful_iron",
+      "name": "Wrathful Iron",
       "seat": {
        "row": 1,
        "column": 3
@@ -2544,8 +2232,451 @@
       "exceptional": false,
       "ranks": [
        {
-        "key": "cruelty",
-        "name": "Cruelty",
+        "key": "wrathful_iron",
+        "name": "Wrathful Iron",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 20224,
+        "talent_id": 1463,
+        "source_tab_id": 382,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Your Seal of Iron also gives your melee attacks a 10% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+       },
+       {
+        "key": "wrathful_iron",
+        "name": "Wrathful Iron",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 20225,
+        "talent_id": 1463,
+        "source_tab_id": 382,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Your Seal of Iron also gives your melee attacks a 20% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+       },
+       {
+        "key": "wrathful_iron",
+        "name": "Wrathful Iron",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 20330,
+        "talent_id": 1463,
+        "source_tab_id": 382,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Your Seal of Iron also gives your melee attacks a 30% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+       },
+       {
+        "key": "wrathful_iron",
+        "name": "Wrathful Iron",
+        "rank": 4,
+        "status": "placeholder",
+        "spell_id": 20331,
+        "talent_id": 1463,
+        "source_tab_id": 382,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Your Seal of Iron also gives your melee attacks a 40% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+       },
+       {
+        "key": "wrathful_iron",
+        "name": "Wrathful Iron",
+        "rank": 5,
+        "status": "placeholder",
+        "spell_id": 20332,
+        "talent_id": 1463,
+        "source_tab_id": 382,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Your Seal of Iron also gives your melee attacks a 50% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+       }
+      ]
+     },
+     {
+      "key": "hallowed_ground",
+      "name": "Hallowed Ground",
+      "seat": {
+       "row": 2,
+       "column": 4
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "hallowed_ground",
+        "name": "Hallowed Ground",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 12287,
+        "talent_id": 128,
+        "source_tab_id": 161,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Increases the damage of the Consecration left by your Bulwark Charge by 15% and its duration by 2 sec."
+       },
+       {
+        "key": "hallowed_ground",
+        "name": "Hallowed Ground",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 12665,
+        "talent_id": 128,
+        "source_tab_id": 161,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Increases the damage of the Consecration left by your Bulwark Charge by 30% and its duration by 4 sec."
+       },
+       {
+        "key": "hallowed_ground",
+        "name": "Hallowed Ground",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 12666,
+        "talent_id": 128,
+        "source_tab_id": 161,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Increases the damage of the Consecration left by your Bulwark Charge by 45% and its duration by 6 sec."
+       }
+      ]
+     },
+     {
+      "key": "spiritual_focus",
+      "name": "Spiritual Focus",
+      "seat": {
+       "row": 2,
+       "column": 2
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "spiritual_focus",
+        "name": "Spiritual Focus",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 20091,
+        "talent_id": 1405,
+        "source_tab_id": 381,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "shield_of_penitent",
+           "amount": 2
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "seal_of_iron",
+           "amount": 2
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Reduces the Rage cost of Shield of the Penitent and Seal of Iron by 2.",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 39,
+          "value": -20,
+          "target": [
+           "shield_of_penitent"
+          ]
+         },
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 40,
+          "value": -20,
+          "target": [
+           "seal_of_iron"
+          ]
+         }
+        ]
+       },
+       {
+        "key": "spiritual_focus",
+        "name": "Spiritual Focus",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 20092,
+        "talent_id": 1405,
+        "source_tab_id": 381,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "shield_of_penitent",
+           "amount": 4
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "seal_of_iron",
+           "amount": 4
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Reduces the Rage cost of Shield of the Penitent and Seal of Iron by 4.",
+        "spellmods": [
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 39,
+          "value": -40,
+          "target": [
+           "shield_of_penitent"
+          ]
+         },
+         {
+          "type": "flat",
+          "op": "COST",
+          "family_bit": 40,
+          "value": -40,
+          "target": [
+           "seal_of_iron"
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "key": "zealous_restoration",
+      "name": "Zealous Restoration",
+      "seat": {
+       "row": 3,
+       "column": 1
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "zealous_restoration",
+        "name": "Zealous Restoration",
+        "rank": 1,
+        "status": "placeholder",
+        "spell_id": 20237,
+        "talent_id": 1444,
+        "source_tab_id": 382,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 10% of the bonus Holy damage dealt."
+       },
+       {
+        "key": "zealous_restoration",
+        "name": "Zealous Restoration",
+        "rank": 2,
+        "status": "placeholder",
+        "spell_id": 20238,
+        "talent_id": 1444,
+        "source_tab_id": 382,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 20% of the bonus Holy damage dealt."
+       },
+       {
+        "key": "zealous_restoration",
+        "name": "Zealous Restoration",
+        "rank": 3,
+        "status": "placeholder",
+        "spell_id": 20239,
+        "talent_id": 1444,
+        "source_tab_id": 382,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": false,
+        "effects": [],
+        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 30% of the bonus Holy damage dealt."
+       }
+      ]
+     },
+     {
+      "key": "righteous_fury",
+      "name": "Righteous Fury",
+      "seat": {
+       "row": 3,
+       "column": 3
+      },
+      "exceptional": false,
+      "ranks": [
+       {
+        "key": "righteous_fury",
+        "name": "Righteous Fury",
         "rank": 1,
         "status": "placeholder",
         "spell_id": 12320,
@@ -2565,12 +2696,29 @@
         "weapon_hand": "main",
         "max_targets": 1,
         "modelled": true,
-        "effects": [],
-        "description": "+1..5% melee crit chance."
+        "effects": [
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "righteous_smash",
+           "pct": 1
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 1
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 1%."
        },
        {
-        "key": "cruelty",
-        "name": "Cruelty",
+        "key": "righteous_fury",
+        "name": "Righteous Fury",
         "rank": 2,
         "status": "placeholder",
         "spell_id": 12852,
@@ -2590,12 +2738,29 @@
         "weapon_hand": "main",
         "max_targets": 1,
         "modelled": true,
-        "effects": [],
-        "description": "+1..5% melee crit chance."
+        "effects": [
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "righteous_smash",
+           "pct": 2
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 2
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 2%."
        },
        {
-        "key": "cruelty",
-        "name": "Cruelty",
+        "key": "righteous_fury",
+        "name": "Righteous Fury",
         "rank": 3,
         "status": "placeholder",
         "spell_id": 12853,
@@ -2615,12 +2780,29 @@
         "weapon_hand": "main",
         "max_targets": 1,
         "modelled": true,
-        "effects": [],
-        "description": "+1..5% melee crit chance."
+        "effects": [
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "righteous_smash",
+           "pct": 3
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 3
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 3%."
        },
        {
-        "key": "cruelty",
-        "name": "Cruelty",
+        "key": "righteous_fury",
+        "name": "Righteous Fury",
         "rank": 4,
         "status": "placeholder",
         "spell_id": 12855,
@@ -2640,12 +2822,29 @@
         "weapon_hand": "main",
         "max_targets": 1,
         "modelled": true,
-        "effects": [],
-        "description": "+1..5% melee crit chance."
+        "effects": [
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "righteous_smash",
+           "pct": 4
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 4
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 4%."
        },
        {
-        "key": "cruelty",
-        "name": "Cruelty",
+        "key": "righteous_fury",
+        "name": "Righteous Fury",
         "rank": 5,
         "status": "placeholder",
         "spell_id": 12856,
@@ -2665,355 +2864,45 @@
         "weapon_hand": "main",
         "max_targets": 1,
         "modelled": true,
-        "effects": [],
-        "description": "+1..5% melee crit chance."
+        "effects": [
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "righteous_smash",
+           "pct": 5
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_crit_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 5
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 5%."
        }
       ]
      },
      {
-      "key": "unbridled_wrath",
-      "name": "Unbridled Wrath",
+      "key": "hammer_of_vanguard",
+      "name": "Hammer of the Vanguard",
       "seat": {
-       "row": 2,
-       "column": 3
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "unbridled_wrath",
-        "name": "Unbridled Wrath",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12322,
-        "talent_id": 159,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
-       },
-       {
-        "key": "unbridled_wrath",
-        "name": "Unbridled Wrath",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 12999,
-        "talent_id": 159,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
-       },
-       {
-        "key": "unbridled_wrath",
-        "name": "Unbridled Wrath",
-        "rank": 3,
-        "status": "placeholder",
-        "spell_id": 13000,
-        "talent_id": 159,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
-       },
-       {
-        "key": "unbridled_wrath",
-        "name": "Unbridled Wrath",
-        "rank": 4,
-        "status": "placeholder",
-        "spell_id": 13001,
-        "talent_id": 159,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
-       },
-       {
-        "key": "unbridled_wrath",
-        "name": "Unbridled Wrath",
-        "rank": 5,
-        "status": "placeholder",
-        "spell_id": 13002,
-        "talent_id": 159,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage."
-       }
-      ]
-     },
-     {
-      "key": "improved_battle_shout",
-      "name": "Improved Battle Shout",
-      "seat": {
-       "row": 2,
-       "column": 4
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "improved_battle_shout",
-        "name": "Improved Battle Shout",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12318,
-        "talent_id": 154,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Battle Shout's attack power +5..25%.",
-        "spellmods": [
-         {
-          "type": "pct",
-          "op": "ALL_EFFECTS",
-          "family_bit": 16,
-          "value": 5,
-          "target": [
-           "battle_shout"
-          ]
-         }
-        ]
-       },
-       {
-        "key": "improved_battle_shout",
-        "name": "Improved Battle Shout",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 12857,
-        "talent_id": 154,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Battle Shout's attack power +5..25%.",
-        "spellmods": [
-         {
-          "type": "pct",
-          "op": "ALL_EFFECTS",
-          "family_bit": 16,
-          "value": 10,
-          "target": [
-           "battle_shout"
-          ]
-         }
-        ]
-       },
-       {
-        "key": "improved_battle_shout",
-        "name": "Improved Battle Shout",
-        "rank": 3,
-        "status": "placeholder",
-        "spell_id": 12858,
-        "talent_id": 154,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Battle Shout's attack power +5..25%.",
-        "spellmods": [
-         {
-          "type": "pct",
-          "op": "ALL_EFFECTS",
-          "family_bit": 16,
-          "value": 15,
-          "target": [
-           "battle_shout"
-          ]
-         }
-        ]
-       },
-       {
-        "key": "improved_battle_shout",
-        "name": "Improved Battle Shout",
-        "rank": 4,
-        "status": "placeholder",
-        "spell_id": 12860,
-        "talent_id": 154,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Battle Shout's attack power +5..25%.",
-        "spellmods": [
-         {
-          "type": "pct",
-          "op": "ALL_EFFECTS",
-          "family_bit": 16,
-          "value": 20,
-          "target": [
-           "battle_shout"
-          ]
-         }
-        ]
-       },
-       {
-        "key": "improved_battle_shout",
-        "name": "Improved Battle Shout",
-        "rank": 5,
-        "status": "placeholder",
-        "spell_id": 12861,
-        "talent_id": 154,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "Battle Shout's attack power +5..25%.",
-        "spellmods": [
-         {
-          "type": "pct",
-          "op": "ALL_EFFECTS",
-          "family_bit": 16,
-          "value": 25,
-          "target": [
-           "battle_shout"
-          ]
-         }
-        ]
-       }
-      ]
-     },
-     {
-      "key": "blood_craze",
-      "name": "Blood Craze",
-      "seat": {
-       "row": 3,
+       "row": 4,
        "column": 2
       },
       "exceptional": false,
       "ranks": [
        {
-        "key": "blood_craze",
-        "name": "Blood Craze",
+        "key": "hammer_of_vanguard",
+        "name": "Hammer of the Vanguard",
         "rank": 1,
         "status": "placeholder",
-        "spell_id": 16487,
-        "talent_id": 661,
-        "source_tab_id": 164,
+        "spell_id": 12809,
+        "talent_id": 152,
+        "source_tab_id": 163,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -3027,203 +2916,99 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": true,
+        "modelled": false,
         "effects": [],
-        "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
-       },
-       {
-        "key": "blood_craze",
-        "name": "Blood Craze",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 16489,
-        "talent_id": 661,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
-       },
-       {
-        "key": "blood_craze",
-        "name": "Blood Craze",
-        "rank": 3,
-        "status": "placeholder",
-        "spell_id": 16492,
-        "talent_id": 661,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s."
-       }
-      ]
-     },
-     {
-      "key": "enrage",
-      "name": "Enrage",
-      "seat": {
-       "row": 3,
-       "column": 3
-      },
-      "exceptional": false,
-      "ranks": [
-       {
-        "key": "enrage",
-        "name": "Enrage",
-        "rank": 1,
-        "status": "placeholder",
-        "spell_id": 12317,
-        "talent_id": 155,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
-       },
-       {
-        "key": "enrage",
-        "name": "Enrage",
-        "rank": 2,
-        "status": "placeholder",
-        "spell_id": 13045,
-        "talent_id": 155,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
-       },
-       {
-        "key": "enrage",
-        "name": "Enrage",
-        "rank": 3,
-        "status": "placeholder",
-        "spell_id": 13046,
-        "talent_id": 155,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
-       },
-       {
-        "key": "enrage",
-        "name": "Enrage",
-        "rank": 4,
-        "status": "placeholder",
-        "spell_id": 13047,
-        "talent_id": 155,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
-       },
-       {
-        "key": "enrage",
-        "name": "Enrage",
-        "rank": 5,
-        "status": "placeholder",
-        "spell_id": 13048,
-        "talent_id": 155,
-        "source_tab_id": 164,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [],
-        "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges)."
+        "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd."
        }
       ]
      }
-    ]
+    ],
+    "key": "righteous"
    }
   ],
-  "auras": [],
-  "name": "Vanguard"
+  "auras": [
+   {
+    "key": "conviction",
+    "name": "Conviction",
+    "spell_id": 78,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "modelled": false,
+    "effects": [],
+    "description": "Each stack adds Holy damage to your next Zealous Cleave."
+   },
+   {
+    "key": "aura_shield_of_penitent",
+    "name": "Shield of the Penitent",
+    "spell_id": 25899,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": false,
+    "effects": [],
+    "description": "Block chance increased by 75%."
+   },
+   {
+    "key": "aura_seal_of_iron",
+    "name": "Seal of Iron",
+    "spell_id": 20165,
+    "status": "placeholder",
+    "school": "holy",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": false,
+    "effects": [],
+    "description": "Melee attacks may heal you or raise your armor."
+   }
+  ],
+  "name": "Vanguard",
+  "tier": 1,
+  "tier_cap": 30,
+  "tier_bonus": {
+   "strength": 12,
+   "agility": 6,
+   "stamina": 12,
+   "intellect": 0,
+   "spirit": 3
+  },
+  "shapeshift_form": 17,
+  "armour": [
+   "cloth",
+   "leather",
+   "mail",
+   "plate",
+   "shield"
+  ]
  },
  {
   "key": "zealot",

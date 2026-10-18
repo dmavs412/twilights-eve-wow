@@ -1,5 +1,6 @@
 //! The Vanguard's two-tab tree, played through the realm's seam: 29 points at the cap, enough to
-//! reach Flurry, the tabs' tier gates, and a WIP talent that still opens the next row.
+//! reach Hammer of the Vanguard, the tabs' tier gates, and a WIP talent that still opens the next
+//! row.
 
 mod common;
 mod gear_common;
@@ -8,21 +9,16 @@ use benilla_protocol::SessionEvent;
 use common::*;
 use gear_common::*;
 
-// `Talent.dbc` ids in the Vanguard tree (`content/callings.toml`).
-// Weaponmaster.
-const IMPROVED_OVERPOWER: u32 = 131;
-const IMPROVED_REND: u32 = 127;
-const IMPROVED_CHARGE: u32 = 126;
-const DEEP_WOUNDS: u32 = 121;
-const TWO_HANDED_WEAPON_SPECIALIZATION: u32 = 136;
-const SWORD_SPECIALIZATION: u32 = 123;
+// `Talent.dbc` ids in the Vanguard tree (the master CSV).
+// The Righteous.
+const DIVINE_STRENGTH: u32 = 1401;
 /// WIP: no effect yet.
-const ANGER_MANAGEMENT: u32 = 137;
-const FLURRY: u32 = 156;
-const FLURRY_RANKS: [u32; 5] = [12319, 12971, 12972, 12973, 12974];
-// Warlord.
-const CRUELTY: u32 = 157;
-const ENRAGE: u32 = 155;
+const WRATHFUL_IRON: u32 = 1463;
+const HALLOWED_GROUND: u32 = 128;
+const SPIRITUAL_FOCUS: u32 = 1405;
+const RIGHTEOUS_FURY: u32 = 157;
+const HAMMER_OF_THE_VANGUARD: u32 = 152;
+const HAMMER_RANKS: [u32; 1] = [12809];
 /// A Basic Warrior talent the Vanguard tree does not have.
 const IMPROVED_HEROIC_STRIKE: u32 = 124;
 
@@ -62,14 +58,12 @@ fn knows_any(events: &[SessionEvent], ranks: &[u32]) -> bool {
     known
 }
 
-/// Nineteen points down Weaponmaster without Anger Management: one short of Flurry's row.
-fn nineteen_in_weaponmaster(realm: &mut Realm, events: &mut Vec<SessionEvent>) {
-    learn(realm, events, IMPROVED_OVERPOWER, 2);
-    learn(realm, events, IMPROVED_REND, 3);
-    learn(realm, events, DEEP_WOUNDS, 3);
-    learn(realm, events, IMPROVED_CHARGE, 2);
-    learn(realm, events, TWO_HANDED_WEAPON_SPECIALIZATION, 5);
-    learn(realm, events, SWORD_SPECIALIZATION, 4);
+/// Fifteen points down The Righteous: enough for Hammer of the Vanguard's row.
+fn fifteen_in_righteous(realm: &mut Realm, events: &mut Vec<SessionEvent>) {
+    learn(realm, events, DIVINE_STRENGTH, 5);
+    learn(realm, events, WRATHFUL_IRON, 5);
+    learn(realm, events, HALLOWED_GROUND, 3);
+    learn(realm, events, SPIRITUAL_FOCUS, 2);
 }
 
 #[test]
@@ -79,41 +73,44 @@ fn a_vanguard_at_the_cap_has_29_points_across_two_tabs() {
     // Not the Basic Warrior's tree any more.
     learn(&mut realm, &mut events, IMPROVED_HEROIC_STRIKE, 1);
     assert_eq!(points(&events, me), Some(29));
-    // Enrage sits in Warlord's third row: 10 points there first.
-    learn(&mut realm, &mut events, ENRAGE, 1);
+    // Hammer of the Vanguard sits in The Righteous' fourth row: 15 points there first.
+    learn(&mut realm, &mut events, HAMMER_OF_THE_VANGUARD, 1);
     assert_eq!(points(&events, me), Some(29));
-    learn(&mut realm, &mut events, CRUELTY, 5);
+    learn(&mut realm, &mut events, DIVINE_STRENGTH, 5);
     assert_eq!(points(&events, me), Some(24));
 }
 
 #[test]
-fn twenty_points_in_weaponmaster_reach_flurry_with_nine_left_for_warlord() {
+fn fifteen_points_in_righteous_reach_the_hammer() {
     let (mut realm, me, mut events) = vanguard(30);
-    nineteen_in_weaponmaster(&mut realm, &mut events);
-    // Sword Specialization's fifth rank.
-    realm.handle(RealmCommand::LearnTalent {
-        talent_id: SWORD_SPECIALIZATION,
-        rank: 4,
-    });
-    events.extend(drain(&mut realm));
-    assert_eq!(points(&events, me), Some(9));
-    learn(&mut realm, &mut events, FLURRY, 5);
-    assert_eq!(points(&events, me), Some(4));
-    assert!(knows_any(&events, &FLURRY_RANKS));
-    learn(&mut realm, &mut events, CRUELTY, 4);
-    assert_eq!(points(&events, me), Some(0));
+    fifteen_in_righteous(&mut realm, &mut events);
+    assert_eq!(points(&events, me), Some(14));
+    learn(&mut realm, &mut events, HAMMER_OF_THE_VANGUARD, 1);
+    assert_eq!(points(&events, me), Some(13));
+    assert!(knows_any(&events, &HAMMER_RANKS));
 }
 
 #[test]
 fn a_wip_talent_is_learnable_and_opens_the_next_tier() {
     let (mut realm, me, mut events) = vanguard(30);
-    nineteen_in_weaponmaster(&mut realm, &mut events);
-    assert_eq!(points(&events, me), Some(10));
-    learn(&mut realm, &mut events, FLURRY, 1);
-    assert_eq!(points(&events, me), Some(10), "Flurry's row needs 20");
-    // Anger Management does nothing yet, but takes its point and counts toward the row.
-    learn(&mut realm, &mut events, ANGER_MANAGEMENT, 1);
-    assert_eq!(points(&events, me), Some(9));
-    learn(&mut realm, &mut events, FLURRY, 1);
-    assert_eq!(points(&events, me), Some(8));
+    learn(&mut realm, &mut events, DIVINE_STRENGTH, 5);
+    learn(&mut realm, &mut events, HALLOWED_GROUND, 3);
+    learn(&mut realm, &mut events, WRATHFUL_IRON, 1);
+    assert_eq!(points(&events, me), Some(20));
+    learn(&mut realm, &mut events, RIGHTEOUS_FURY, 1);
+    assert_eq!(
+        points(&events, me),
+        Some(20),
+        "Righteous Fury's row needs 10"
+    );
+    // Wrathful Iron does nothing yet, but takes its point and counts toward the row.
+    // Its second rank.
+    realm.handle(RealmCommand::LearnTalent {
+        talent_id: WRATHFUL_IRON,
+        rank: 1,
+    });
+    events.extend(drain(&mut realm));
+    assert_eq!(points(&events, me), Some(19));
+    learn(&mut realm, &mut events, RIGHTEOUS_FURY, 1);
+    assert_eq!(points(&events, me), Some(18));
 }

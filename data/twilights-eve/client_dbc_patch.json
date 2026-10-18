@@ -147,68 +147,32 @@
    }
   },
   {
-   "spell_id": 12294,
+   "spell_id": 78,
    "calling": "vanguard",
-   "key": "mortal_strike",
+   "key": "righteous_smash",
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "name": "Mortal Strike",
-    "cost": 30.0,
+    "name": "Righteous Smash",
+    "cost": 15.0,
     "cooldown_ms": 0,
-    "gcd_ms": 1500,
+    "gcd_ms": 0,
+    "on_next_swing": true,
     "school": 0,
     "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 42483,
+    "equipped_inventory_mask": 6430720,
+    "description": "Your next melee swing strikes the target for weapon damage plus a bonus. Every hit grants a stack of Conviction.",
     "effects": [
      {
       "kind": "weapon_strike",
       "params": {
-       "weapon": "normalized",
+       "weapon": "normal",
+       "on_next_swing": true,
        "bonus": {
-        "base": 25,
-        "per_level": 2.5,
-        "per_ap": 0
-       }
-      }
-     },
-     {
-      "kind": "healing_reduction",
-      "params": {
-       "pct": 50,
-       "duration_ms": 10000
-      }
-     }
-    ],
-    "range_index": 2,
-    "cast_time_index": 1,
-    "duration_index": 1
-   }
-  },
-  {
-   "spell_id": 7887,
-   "calling": "vanguard",
-   "key": "overpower",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Overpower",
-    "cost": 5.0,
-    "cooldown_ms": 0,
-    "gcd_ms": 1500,
-    "school": 0,
-    "prevention_type": 2,
-    "stances": [
-     "Battle Stance"
-    ],
-    "effects": [
-     {
-      "kind": "weapon_strike",
-      "params": {
-       "weapon": "normalized",
-       "unavoidable": true,
-       "bonus": {
-        "base": 6,
-        "per_level": 0.6,
+        "base": 14.3,
+        "per_level": 2,
         "per_ap": 0
        }
       }
@@ -219,19 +183,20 @@
    }
   },
   {
-   "spell_id": 6178,
+   "spell_id": 100,
    "calling": "vanguard",
-   "key": "charge",
+   "key": "bulwark_charge",
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "name": "Charge",
+    "name": "Bulwark Charge",
     "cost": 0.0,
     "cooldown_ms": 0,
     "gcd_ms": 0,
-    "not_in_combat": true,
+    "not_in_combat": false,
     "school": 0,
     "prevention_type": 2,
+    "description": "Charge an enemy, generating 15 Rage and leaving a pool of holy light at the destination. Usable in combat.",
     "stances": [
      "Battle Stance"
     ],
@@ -247,17 +212,10 @@
       "params": {
        "power": "rage",
        "amount": {
-        "base": 11,
-        "per_level": 0.1,
+        "base": 15,
+        "per_level": 0,
         "per_ap": 0
        }
-      }
-     },
-     {
-      "kind": "stun",
-      "params": {
-       "duration_ms": 1000,
-       "aura_spell_id": 7922
       }
      }
     ],
@@ -266,73 +224,956 @@
    }
   },
   {
-   "spell_id": 6546,
+   "spell_id": 25899,
    "calling": "vanguard",
-   "key": "rend",
+   "key": "shield_of_penitent",
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "name": "Rend",
+    "name": "Shield of the Penitent",
     "cost": 10.0,
-    "cooldown_ms": 0,
-    "gcd_ms": 1500,
-    "school": 0,
-    "prevention_type": 2,
-    "stances": [
-     "Battle Stance",
-     "Defensive Stance"
-    ],
-    "effects": [
-     {
-      "kind": "periodic_damage",
-      "params": {
-       "school": "physical",
-       "mechanic": "bleed",
-       "tick_ms": 3000,
-       "duration_ms": 12000,
-       "tick": {
-        "base": 5,
-        "per_level": 0.25,
-        "per_ap": 0.01,
-        "min": 1
-       }
-      }
-     }
-    ],
-    "range_index": 2,
-    "cast_time_index": 1,
-    "duration_index": 29
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "borrowed_from_class": 2,
+    "borrowed_family_bit": 39,
+    "school": 1,
+    "prevention_type": 1,
+    "equipped_item_class": 4,
+    "equipped_subclass_mask": 64,
+    "equipped_inventory_mask": 16384,
+    "description": "For 10 sec your chance to Block is increased by 75%. Every block deals 30 Holy damage to the attacker.",
+    "cast_time_index": 1
    }
   },
   {
-   "spell_id": 6192,
+   "spell_id": 845,
    "calling": "vanguard",
-   "key": "battle_shout",
+   "key": "zealous_cleave",
    "rank": 1,
    "fields": {
     "power_type": 1,
-    "name": "Battle Shout",
-    "cost": 10.0,
+    "name": "Zealous Cleave",
+    "cost": 20.0,
     "cooldown_ms": 0,
     "gcd_ms": 1500,
     "school": 0,
     "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 42483,
+    "equipped_inventory_mask": 6430720,
+    "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage.",
     "effects": [
      {
-      "kind": "aura_attack_power",
+      "kind": "weapon_strike",
       "params": {
-       "duration_ms": 120000,
-       "amount": {
-        "base": 20,
-        "per_level": 2.0,
+       "weapon": "normal",
+       "bonus": {
+        "base": 6.5,
+        "per_level": 1.3,
         "per_ap": 0
        }
       }
      }
     ],
-    "range_index": 1,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 20165,
+   "calling": "vanguard",
+   "key": "seal_of_iron",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Seal of Iron",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1500,
+    "borrowed_from_class": 2,
+    "borrowed_family_bit": 40,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike.",
     "cast_time_index": 1,
-    "duration_index": 4
+    "duration_index": 2
+   }
+  },
+  {
+   "spell_id": 16462,
+   "calling": "vanguard",
+   "key": "reactive_strike",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Reactive Strike",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your Parry chance by 1% and reduces the Rage cost of your next Righteous Smash after a parry by 2."
+   }
+  },
+  {
+   "spell_id": 16463,
+   "calling": "vanguard",
+   "key": "reactive_strike",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Reactive Strike",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your Parry chance by 2% and reduces the Rage cost of your next Righteous Smash after a parry by 4."
+   }
+  },
+  {
+   "spell_id": 16464,
+   "calling": "vanguard",
+   "key": "reactive_strike",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Reactive Strike",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your Parry chance by 3% and reduces the Rage cost of your next Righteous Smash after a parry by 6."
+   }
+  },
+  {
+   "spell_id": 16465,
+   "calling": "vanguard",
+   "key": "reactive_strike",
+   "rank": 4,
+   "fields": {
+    "power_type": 1,
+    "name": "Reactive Strike",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your Parry chance by 4% and reduces the Rage cost of your next Righteous Smash after a parry by 8."
+   }
+  },
+  {
+   "spell_id": 16466,
+   "calling": "vanguard",
+   "key": "reactive_strike",
+   "rank": 5,
+   "fields": {
+    "power_type": 1,
+    "name": "Reactive Strike",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your Parry chance by 5% and reduces the Rage cost of your next Righteous Smash after a parry by 10."
+   }
+  },
+  {
+   "spell_id": 20138,
+   "calling": "vanguard",
+   "key": "tempered_steel",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Tempered Steel",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your armor value from items by 2%. When struck by a critical hit, your chance to Block is increased by 10% for 6 sec."
+   }
+  },
+  {
+   "spell_id": 20139,
+   "calling": "vanguard",
+   "key": "tempered_steel",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Tempered Steel",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your armor value from items by 4%. When struck by a critical hit, your chance to Block is increased by 20% for 6 sec."
+   }
+  },
+  {
+   "spell_id": 20140,
+   "calling": "vanguard",
+   "key": "tempered_steel",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Tempered Steel",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your armor value from items by 6%. When struck by a critical hit, your chance to Block is increased by 30% for 6 sec."
+   }
+  },
+  {
+   "spell_id": 20141,
+   "calling": "vanguard",
+   "key": "tempered_steel",
+   "rank": 4,
+   "fields": {
+    "power_type": 1,
+    "name": "Tempered Steel",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your armor value from items by 8%. When struck by a critical hit, your chance to Block is increased by 40% for 6 sec."
+   }
+  },
+  {
+   "spell_id": 20142,
+   "calling": "vanguard",
+   "key": "tempered_steel",
+   "rank": 5,
+   "fields": {
+    "power_type": 1,
+    "name": "Tempered Steel",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your armor value from items by 10%. When struck by a critical hit, your chance to Block is increased by 50% for 6 sec."
+   }
+  },
+  {
+   "spell_id": 12298,
+   "calling": "vanguard",
+   "key": "shield_specialization",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Specialization",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your chance to block by 1% and gives you a 20% chance to generate 2 Rage when a block occurs."
+   }
+  },
+  {
+   "spell_id": 12724,
+   "calling": "vanguard",
+   "key": "shield_specialization",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Specialization",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your chance to block by 2% and gives you a 40% chance to generate 2 Rage when a block occurs."
+   }
+  },
+  {
+   "spell_id": 12725,
+   "calling": "vanguard",
+   "key": "shield_specialization",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Specialization",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your chance to block by 3% and gives you a 60% chance to generate 2 Rage when a block occurs."
+   }
+  },
+  {
+   "spell_id": 12726,
+   "calling": "vanguard",
+   "key": "shield_specialization",
+   "rank": 4,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Specialization",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your chance to block by 4% and gives you a 80% chance to generate 2 Rage when a block occurs."
+   }
+  },
+  {
+   "spell_id": 12727,
+   "calling": "vanguard",
+   "key": "shield_specialization",
+   "rank": 5,
+   "fields": {
+    "power_type": 1,
+    "name": "Shield Specialization",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your chance to block by 5% and gives you a 100% chance to generate 2 Rage when a block occurs."
+   }
+  },
+  {
+   "spell_id": 12797,
+   "calling": "vanguard",
+   "key": "vengeful_conviction",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Vengeful Conviction",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Blocking an attack has a 33% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
+   }
+  },
+  {
+   "spell_id": 12799,
+   "calling": "vanguard",
+   "key": "vengeful_conviction",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Vengeful Conviction",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Blocking an attack has a 66% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
+   }
+  },
+  {
+   "spell_id": 12800,
+   "calling": "vanguard",
+   "key": "vengeful_conviction",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Vengeful Conviction",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Blocking an attack has a 100% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
+   }
+  },
+  {
+   "spell_id": 12312,
+   "calling": "vanguard",
+   "key": "improved_shield_of_penitent",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Improved Shield of the Penitent",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Reduces the Rage cost of Shield of the Penitent by 5 and increases the Holy damage it deals by 15%."
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 39,
+     "value": -50
+    }
+   ]
+  },
+  {
+   "spell_id": 12803,
+   "calling": "vanguard",
+   "key": "improved_shield_of_penitent",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Improved Shield of the Penitent",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Reduces the Rage cost of Shield of the Penitent by 10 and increases the Holy damage it deals by 30%."
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 39,
+     "value": -100
+    }
+   ]
+  },
+  {
+   "spell_id": 12300,
+   "calling": "vanguard",
+   "key": "iron_retribution",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Retribution",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 10% of your Block Value."
+   }
+  },
+  {
+   "spell_id": 12959,
+   "calling": "vanguard",
+   "key": "iron_retribution",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Retribution",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 20% of your Block Value."
+   }
+  },
+  {
+   "spell_id": 12960,
+   "calling": "vanguard",
+   "key": "iron_retribution",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Retribution",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 30% of your Block Value."
+   }
+  },
+  {
+   "spell_id": 12961,
+   "calling": "vanguard",
+   "key": "iron_retribution",
+   "rank": 4,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Retribution",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 40% of your Block Value."
+   }
+  },
+  {
+   "spell_id": 12962,
+   "calling": "vanguard",
+   "key": "iron_retribution",
+   "rank": 5,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Retribution",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 50% of your Block Value."
+   }
+  },
+  {
+   "spell_id": 12308,
+   "calling": "vanguard",
+   "key": "iron_juggernaut",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Juggernaut",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 10% of your shield's Block Value."
+   }
+  },
+  {
+   "spell_id": 12810,
+   "calling": "vanguard",
+   "key": "iron_juggernaut",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Juggernaut",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 20% of your shield's Block Value."
+   }
+  },
+  {
+   "spell_id": 12811,
+   "calling": "vanguard",
+   "key": "iron_juggernaut",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Iron Juggernaut",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 30% of your shield's Block Value."
+   }
+  },
+  {
+   "spell_id": 20042,
+   "calling": "vanguard",
+   "key": "divine_strength",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your total Strength by 2%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "strength",
+       "pct": 2
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 20045,
+   "calling": "vanguard",
+   "key": "divine_strength",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your total Strength by 4%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "strength",
+       "pct": 4
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 20046,
+   "calling": "vanguard",
+   "key": "divine_strength",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your total Strength by 6%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "strength",
+       "pct": 6
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 20047,
+   "calling": "vanguard",
+   "key": "divine_strength",
+   "rank": 4,
+   "fields": {
+    "power_type": 1,
+    "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your total Strength by 8%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "strength",
+       "pct": 8
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 20048,
+   "calling": "vanguard",
+   "key": "divine_strength",
+   "rank": 5,
+   "fields": {
+    "power_type": 1,
+    "name": "Divine Strength",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases your total Strength by 10%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "strength",
+       "pct": 10
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 20224,
+   "calling": "vanguard",
+   "key": "wrathful_iron",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Wrathful Iron",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Seal of Iron also gives your melee attacks a 10% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+   }
+  },
+  {
+   "spell_id": 20225,
+   "calling": "vanguard",
+   "key": "wrathful_iron",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Wrathful Iron",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Seal of Iron also gives your melee attacks a 20% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+   }
+  },
+  {
+   "spell_id": 20330,
+   "calling": "vanguard",
+   "key": "wrathful_iron",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Wrathful Iron",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Seal of Iron also gives your melee attacks a 30% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+   }
+  },
+  {
+   "spell_id": 20331,
+   "calling": "vanguard",
+   "key": "wrathful_iron",
+   "rank": 4,
+   "fields": {
+    "power_type": 1,
+    "name": "Wrathful Iron",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Seal of Iron also gives your melee attacks a 40% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+   }
+  },
+  {
+   "spell_id": 20332,
+   "calling": "vanguard",
+   "key": "wrathful_iron",
+   "rank": 5,
+   "fields": {
+    "power_type": 1,
+    "name": "Wrathful Iron",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Your Seal of Iron also gives your melee attacks a 50% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+   }
+  },
+  {
+   "spell_id": 12287,
+   "calling": "vanguard",
+   "key": "hallowed_ground",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hallowed Ground",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 15% and its duration by 2 sec."
+   }
+  },
+  {
+   "spell_id": 12665,
+   "calling": "vanguard",
+   "key": "hallowed_ground",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Hallowed Ground",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 30% and its duration by 4 sec."
+   }
+  },
+  {
+   "spell_id": 12666,
+   "calling": "vanguard",
+   "key": "hallowed_ground",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Hallowed Ground",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 45% and its duration by 6 sec."
+   }
+  },
+  {
+   "spell_id": 20091,
+   "calling": "vanguard",
+   "key": "spiritual_focus",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Spiritual Focus",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Reduces the Rage cost of Shield of the Penitent and Seal of Iron by 2.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "shield_of_penitent",
+       "amount": 2
+      }
+     },
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "seal_of_iron",
+       "amount": 2
+      }
+     }
+    ]
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 39,
+     "value": -20
+    },
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 40,
+     "value": -20
+    }
+   ]
+  },
+  {
+   "spell_id": 20092,
+   "calling": "vanguard",
+   "key": "spiritual_focus",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Spiritual Focus",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Reduces the Rage cost of Shield of the Penitent and Seal of Iron by 4.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "shield_of_penitent",
+       "amount": 4
+      }
+     },
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "seal_of_iron",
+       "amount": 4
+      }
+     }
+    ]
+   },
+   "spellmods": [
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 39,
+     "value": -40
+    },
+    {
+     "type": "flat",
+     "op": "COST",
+     "family_bit": 40,
+     "value": -40
+    }
+   ]
+  },
+  {
+   "spell_id": 20237,
+   "calling": "vanguard",
+   "key": "zealous_restoration",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Zealous Restoration",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 10% of the bonus Holy damage dealt."
+   }
+  },
+  {
+   "spell_id": 20238,
+   "calling": "vanguard",
+   "key": "zealous_restoration",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Zealous Restoration",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 20% of the bonus Holy damage dealt."
+   }
+  },
+  {
+   "spell_id": 20239,
+   "calling": "vanguard",
+   "key": "zealous_restoration",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Zealous Restoration",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 30% of the bonus Holy damage dealt."
+   }
+  },
+  {
+   "spell_id": 12320,
+   "calling": "vanguard",
+   "key": "righteous_fury",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Righteous Fury",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 1%.",
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "righteous_smash",
+       "pct": 1
+      }
+     },
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 1
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 12852,
+   "calling": "vanguard",
+   "key": "righteous_fury",
+   "rank": 2,
+   "fields": {
+    "power_type": 1,
+    "name": "Righteous Fury",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 2%.",
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "righteous_smash",
+       "pct": 2
+      }
+     },
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 2
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 12853,
+   "calling": "vanguard",
+   "key": "righteous_fury",
+   "rank": 3,
+   "fields": {
+    "power_type": 1,
+    "name": "Righteous Fury",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 3%.",
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "righteous_smash",
+       "pct": 3
+      }
+     },
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 3
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 12855,
+   "calling": "vanguard",
+   "key": "righteous_fury",
+   "rank": 4,
+   "fields": {
+    "power_type": 1,
+    "name": "Righteous Fury",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 4%.",
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "righteous_smash",
+       "pct": 4
+      }
+     },
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 4
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 12856,
+   "calling": "vanguard",
+   "key": "righteous_fury",
+   "rank": 5,
+   "fields": {
+    "power_type": 1,
+    "name": "Righteous Fury",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Increases the critical strike chance of Righteous Smash and Zealous Cleave by 5%.",
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "righteous_smash",
+       "pct": 5
+      }
+     },
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 5
+      }
+     }
+    ]
+   }
+  },
+  {
+   "spell_id": 12809,
+   "calling": "vanguard",
+   "key": "hammer_of_vanguard",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Hammer of the Vanguard",
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd."
    }
   },
   {
@@ -554,988 +1395,6 @@
     ],
     "range_index": 95,
     "cast_time_index": 1
-   }
-  },
-  {
-   "spell_id": 12290,
-   "calling": "vanguard",
-   "key": "improved_overpower",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Overpower",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Overpower +25/50% crit chance.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12963,
-   "calling": "vanguard",
-   "key": "improved_overpower",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Overpower",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Overpower +25/50% crit chance.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12286,
-   "calling": "vanguard",
-   "key": "improved_rend",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Rend",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Rend ticks +15/25/35%.",
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 5,
-     "value": 15
-    }
-   ]
-  },
-  {
-   "spell_id": 12658,
-   "calling": "vanguard",
-   "key": "improved_rend",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Rend",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Rend ticks +15/25/35%.",
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 5,
-     "value": 25
-    }
-   ]
-  },
-  {
-   "spell_id": 12659,
-   "calling": "vanguard",
-   "key": "improved_rend",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Rend",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Rend ticks +15/25/35%.",
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 5,
-     "value": 35
-    }
-   ]
-  },
-  {
-   "spell_id": 12285,
-   "calling": "vanguard",
-   "key": "improved_charge",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Charge",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Charge +3/6 rage.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12697,
-   "calling": "vanguard",
-   "key": "improved_charge",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Charge",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Charge +3/6 rage.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12296,
-   "calling": "vanguard",
-   "key": "anger_management",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Anger Management",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Not modelled yet: rage would decay 30% slower out of combat. Learnable, and counts toward the row."
-   }
-  },
-  {
-   "spell_id": 12834,
-   "calling": "vanguard",
-   "key": "deep_wounds",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Deep Wounds",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12849,
-   "calling": "vanguard",
-   "key": "deep_wounds",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Deep Wounds",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12867,
-   "calling": "vanguard",
-   "key": "deep_wounds",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Deep Wounds",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Melee crits bleed the target for 20/40/60% of average weapon damage over 12 s.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12163,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Two-Handed Weapon Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12711,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Two-Handed Weapon Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12712,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Two-Handed Weapon Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12713,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Two-Handed Weapon Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12714,
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Two-Handed Weapon Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% physical damage while wielding a two-handed melee weapon.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 16493,
-   "calling": "vanguard",
-   "key": "impale",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Impale",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 16494,
-   "calling": "vanguard",
-   "key": "impale",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Impale",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Skill crits deal +10/20% more damage (2.0x becomes 2.2x/2.4x).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12700,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Axe Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% crit chance with axes.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12781,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Axe Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% crit chance with axes.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12783,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Axe Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% crit chance with axes.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12784,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Axe Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% crit chance with axes.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12785,
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Axe Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% crit chance with axes.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12284,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Mace Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12701,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Mace Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12702,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Mace Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12703,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Mace Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12704,
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Mace Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Mace hits have 1/2/3/4/6% chance to stun for 3 s (spell 5530).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12281,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Sword Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12812,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Sword Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12813,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Sword Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12814,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Sword Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12815,
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Sword Specialization",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Sword hits have 1..5% chance of one extra swing (no chained procs).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12319,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Flurry",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
-   }
-  },
-  {
-   "spell_id": 12971,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Flurry",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
-   }
-  },
-  {
-   "spell_id": 12972,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Flurry",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
-   }
-  },
-  {
-   "spell_id": 12973,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Flurry",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
-   }
-  },
-  {
-   "spell_id": 12974,
-   "calling": "vanguard",
-   "key": "flurry",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Flurry",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Not modelled yet: a melee crit would raise attack speed 10..30% for the next 3 swings (the player has no haste yet). Learnable, and counts toward the row."
-   }
-  },
-  {
-   "spell_id": 12321,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Booming Voice",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout duration and radius +10..50%.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12835,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Booming Voice",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout duration and radius +10..50%.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12836,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Booming Voice",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout duration and radius +10..50%.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12837,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Booming Voice",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout duration and radius +10..50%.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12838,
-   "calling": "vanguard",
-   "key": "booming_voice",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Booming Voice",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout duration and radius +10..50%.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12320,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Cruelty",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% melee crit chance.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12852,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Cruelty",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% melee crit chance.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12853,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Cruelty",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% melee crit chance.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12855,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Cruelty",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% melee crit chance.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12856,
-   "calling": "vanguard",
-   "key": "cruelty",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Cruelty",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "+1..5% melee crit chance.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12322,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Unbridled Wrath",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12999,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Unbridled Wrath",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13000,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Unbridled Wrath",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13001,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Unbridled Wrath",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13002,
-   "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Unbridled Wrath",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Melee weapon hits have 8/16/24/32/40% chance to give 1 extra rage.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12318,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Battle Shout",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout's attack power +5..25%.",
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 5
-    }
-   ]
-  },
-  {
-   "spell_id": 12857,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Battle Shout",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout's attack power +5..25%.",
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 10
-    }
-   ]
-  },
-  {
-   "spell_id": 12858,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Battle Shout",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout's attack power +5..25%.",
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 15
-    }
-   ]
-  },
-  {
-   "spell_id": 12860,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Battle Shout",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout's attack power +5..25%.",
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 20
-    }
-   ]
-  },
-  {
-   "spell_id": 12861,
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Improved Battle Shout",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Battle Shout's attack power +5..25%.",
-    "effects": []
-   },
-   "spellmods": [
-    {
-     "type": "pct",
-     "op": "ALL_EFFECTS",
-     "family_bit": 16,
-     "value": 25
-    }
-   ]
-  },
-  {
-   "spell_id": 16487,
-   "calling": "vanguard",
-   "key": "blood_craze",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Blood Craze",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 16489,
-   "calling": "vanguard",
-   "key": "blood_craze",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Blood Craze",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 16492,
-   "calling": "vanguard",
-   "key": "blood_craze",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Blood Craze",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "When crit by an enemy, regenerate 1/2/3% of max health over 6 s.",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 12317,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 1,
-   "fields": {
-    "power_type": 1,
-    "name": "Enrage",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13045,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 2,
-   "fields": {
-    "power_type": 1,
-    "name": "Enrage",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13046,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 3,
-   "fields": {
-    "power_type": 1,
-    "name": "Enrage",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13047,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 4,
-   "fields": {
-    "power_type": 1,
-    "name": "Enrage",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
-    "effects": []
-   }
-  },
-  {
-   "spell_id": 13048,
-   "calling": "vanguard",
-   "key": "enrage",
-   "rank": 5,
-   "fields": {
-    "power_type": 1,
-    "name": "Enrage",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "When crit by an enemy, +5..25% melee damage for 12 s or 12 melee swings (12880..14204 have 12 proc charges).",
-    "effects": []
    }
   },
   {
@@ -3500,180 +3359,175 @@
   },
   {
    "calling": "vanguard",
-   "key": "improved_overpower",
-   "tab": "Weaponmaster",
+   "key": "reactive_strike",
+   "tab": "The Bastion",
    "row": 1,
-   "column": 1,
-   "talent_id": 131,
+   "column": 2,
+   "talent_id": 130,
    "rank_spell_ids": [
-    12290,
-    12963
+    16462,
+    16463,
+    16464,
+    16465,
+    16466
    ]
   },
   {
    "calling": "vanguard",
-   "key": "improved_rend",
-   "tab": "Weaponmaster",
+   "key": "tempered_steel",
+   "tab": "The Bastion",
    "row": 1,
-   "column": 3,
-   "talent_id": 127,
-   "rank_spell_ids": [
-    12286,
-    12658,
-    12659
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "improved_charge",
-   "tab": "Weaponmaster",
-   "row": 2,
-   "column": 1,
-   "talent_id": 126,
-   "rank_spell_ids": [
-    12285,
-    12697
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "anger_management",
-   "tab": "Weaponmaster",
-   "row": 2,
-   "column": 2,
-   "talent_id": 137,
-   "rank_spell_ids": [
-    12296
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "deep_wounds",
-   "tab": "Weaponmaster",
-   "row": 2,
-   "column": 3,
-   "talent_id": 121,
-   "rank_spell_ids": [
-    12834,
-    12849,
-    12867
-   ],
-   "prereq": {
-    "key": "improved_rend",
-    "rank": 3
-   }
-  },
-  {
-   "calling": "vanguard",
-   "key": "two_handed_weapon_specialization",
-   "tab": "Weaponmaster",
-   "row": 3,
-   "column": 2,
-   "talent_id": 136,
-   "rank_spell_ids": [
-    12163,
-    12711,
-    12712,
-    12713,
-    12714
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "impale",
-   "tab": "Weaponmaster",
-   "row": 3,
-   "column": 3,
-   "talent_id": 662,
-   "rank_spell_ids": [
-    16493,
-    16494
-   ],
-   "prereq": {
-    "key": "deep_wounds",
-    "rank": 3
-   }
-  },
-  {
-   "calling": "vanguard",
-   "key": "axe_specialization",
-   "tab": "Weaponmaster",
-   "row": 4,
-   "column": 1,
-   "talent_id": 132,
-   "rank_spell_ids": [
-    12700,
-    12781,
-    12783,
-    12784,
-    12785
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "mace_specialization",
-   "tab": "Weaponmaster",
-   "row": 4,
-   "column": 3,
-   "talent_id": 125,
-   "rank_spell_ids": [
-    12284,
-    12701,
-    12702,
-    12703,
-    12704
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "sword_specialization",
-   "tab": "Weaponmaster",
-   "row": 4,
    "column": 4,
-   "talent_id": 123,
+   "talent_id": 1422,
    "rank_spell_ids": [
-    12281,
-    12812,
-    12813,
-    12814,
-    12815
+    20138,
+    20139,
+    20140,
+    20141,
+    20142
    ]
   },
   {
    "calling": "vanguard",
-   "key": "flurry",
-   "tab": "Weaponmaster",
-   "row": 5,
+   "key": "shield_specialization",
+   "tab": "The Bastion",
+   "row": 2,
+   "column": 1,
+   "talent_id": 1601,
+   "rank_spell_ids": [
+    12298,
+    12724,
+    12725,
+    12726,
+    12727
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "vengeful_conviction",
+   "tab": "The Bastion",
+   "row": 2,
    "column": 3,
-   "talent_id": 156,
+   "talent_id": 147,
    "rank_spell_ids": [
-    12319,
-    12971,
-    12972,
-    12973,
-    12974
+    12797,
+    12799,
+    12800
    ]
   },
   {
    "calling": "vanguard",
-   "key": "booming_voice",
-   "tab": "Warlord",
-   "row": 1,
+   "key": "improved_shield_of_penitent",
+   "tab": "The Bastion",
+   "row": 3,
+   "column": 4,
+   "talent_id": 150,
+   "rank_spell_ids": [
+    12312,
+    12803
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "iron_retribution",
+   "tab": "The Bastion",
+   "row": 3,
    "column": 2,
-   "talent_id": 158,
+   "talent_id": 141,
    "rank_spell_ids": [
-    12321,
-    12835,
-    12836,
-    12837,
-    12838
+    12300,
+    12959,
+    12960,
+    12961,
+    12962
    ]
   },
   {
    "calling": "vanguard",
-   "key": "cruelty",
-   "tab": "Warlord",
+   "key": "iron_juggernaut",
+   "tab": "The Bastion",
+   "row": 4,
+   "column": 3,
+   "talent_id": 146,
+   "rank_spell_ids": [
+    12308,
+    12810,
+    12811
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "divine_strength",
+   "tab": "The Righteous",
    "row": 1,
+   "column": 1,
+   "talent_id": 1401,
+   "rank_spell_ids": [
+    20042,
+    20045,
+    20046,
+    20047,
+    20048
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "wrathful_iron",
+   "tab": "The Righteous",
+   "row": 1,
+   "column": 3,
+   "talent_id": 1463,
+   "rank_spell_ids": [
+    20224,
+    20225,
+    20330,
+    20331,
+    20332
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "hallowed_ground",
+   "tab": "The Righteous",
+   "row": 2,
+   "column": 4,
+   "talent_id": 128,
+   "rank_spell_ids": [
+    12287,
+    12665,
+    12666
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "spiritual_focus",
+   "tab": "The Righteous",
+   "row": 2,
+   "column": 2,
+   "talent_id": 1405,
+   "rank_spell_ids": [
+    20091,
+    20092
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "zealous_restoration",
+   "tab": "The Righteous",
+   "row": 3,
+   "column": 1,
+   "talent_id": 1444,
+   "rank_spell_ids": [
+    20237,
+    20238,
+    20239
+   ]
+  },
+  {
+   "calling": "vanguard",
+   "key": "righteous_fury",
+   "tab": "The Righteous",
+   "row": 3,
    "column": 3,
    "talent_id": 157,
    "rank_spell_ids": [
@@ -3686,60 +3540,13 @@
   },
   {
    "calling": "vanguard",
-   "key": "unbridled_wrath",
-   "tab": "Warlord",
-   "row": 2,
-   "column": 3,
-   "talent_id": 159,
-   "rank_spell_ids": [
-    12322,
-    12999,
-    13000,
-    13001,
-    13002
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "improved_battle_shout",
-   "tab": "Warlord",
-   "row": 2,
-   "column": 4,
-   "talent_id": 154,
-   "rank_spell_ids": [
-    12318,
-    12857,
-    12858,
-    12860,
-    12861
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "blood_craze",
-   "tab": "Warlord",
-   "row": 3,
+   "key": "hammer_of_vanguard",
+   "tab": "The Righteous",
+   "row": 4,
    "column": 2,
-   "talent_id": 661,
+   "talent_id": 152,
    "rank_spell_ids": [
-    16487,
-    16489,
-    16492
-   ]
-  },
-  {
-   "calling": "vanguard",
-   "key": "enrage",
-   "tab": "Warlord",
-   "row": 3,
-   "column": 3,
-   "talent_id": 155,
-   "rank_spell_ids": [
-    12317,
-    13045,
-    13046,
-    13047,
-    13048
+    12809
    ]
   },
   {

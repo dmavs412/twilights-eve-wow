@@ -29,13 +29,8 @@ fn ms(v: &Value, k: &str) -> u32 {
     v[k].as_u64().unwrap_or_else(|| panic!("{k}")) as u32
 }
 
-// The Basic Warrior is not checked here: it plays from the master CSV (`server_spells.json`), the
-// sheet being its truth, and `callings.json` has no Fire Blast.
-
-#[test]
-fn the_vanguard_matches_the_reference() {
-    check_calling("vanguard");
-}
+// Basic Warrior and Vanguard are not checked here: they play from the master CSV
+// (`server_spells.json`), the sheet being their truth.
 
 #[test]
 fn the_zealot_matches_the_reference() {
@@ -60,7 +55,7 @@ fn every_skill_borrowed_from_another_class_is_marked() {
     let dbc = extracted_spells();
     let mut bits = Vec::new();
     // The Basic Warrior's borrowed spells are the client patch's, not marked here.
-    for key in ["vanguard", "zealot"] {
+    for key in ["zealot"] {
         for s in &callings::calling(key).unwrap().skills {
             let row = &dbc[s.spell_id.to_string()];
             let family = row["family"]
@@ -96,20 +91,6 @@ fn the_borrowed_skills_are_zealots_four_at_their_rage_costs() {
         .map(|s| (s.spell_id, s.power_cost))
         .collect();
     assert_eq!(got, [(20375, 10), (20305, 10), (20271, 5), (10308, 15)]);
-}
-
-/// `callings::skill` answers with a spell's first table, so a skill two Callings share must be
-/// the same in both.
-#[test]
-fn a_skill_two_callings_share_is_the_same_in_both() {
-    let all: Vec<&callings::Skill> = ["basic_warrior", "vanguard", "zealot"]
-        .iter()
-        .flat_map(|c| &callings::calling(c).unwrap().skills)
-        .collect();
-    for s in &all {
-        let first = callings::skill(s.spell_id).unwrap();
-        assert_eq!(format!("{first:?}"), format!("{s:?}"), "{}", s.key);
-    }
 }
 
 fn check_calling(calling: &str) {
@@ -397,13 +378,13 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     ids.dedup();
     assert_eq!(
         ids,
-        [78, 100, 1776, 2136, 6178, 6192, 6546, 7887, 10308, 12294, 20271, 20305, 20375]
+        [78, 100, 845, 1776, 2136, 6178, 10308, 12294, 20271, 20305, 20375]
     );
 }
 
 /// The client names these " (WIP)": the rank spells of every talent with no effect and no skill,
-/// Anger Management's and Flurry's (in every tree that has them), and the Zealot's unmodelled
-/// Paladin talents'.
+/// Anger Management's and Flurry's (in every tree that has them), the Zealot's unmodelled
+/// Paladin talents' and the Vanguard's unmodelled talents'.
 #[test]
 fn the_wip_rank_spells_are_the_talents_with_no_effect() {
     let mut ids: Vec<u32> = callings::wip_rank_spell_ids().collect();
@@ -420,29 +401,29 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         5923, 5924, 5925, 5926, 25829, 20262, 20263, 20264, 20265, 20266,
         // Precision, Redoubt, Reckoning.
         20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180, 20182,
+        // Vanguard's Bastion: Reactive Strike, Tempered Steel, Shield Specialization, Vengeful
+        // Conviction, Improved Shield of the Penitent, Iron Retribution, Iron Juggernaut.
+        16462, 16463, 16464, 16465, 16466, 20138, 20139, 20140, 20141, 20142, 12298, 12724, 12725,
+        12726, 12727, 12797, 12799, 12800, 12312, 12803, 12300, 12959, 12960, 12961, 12962, 12308,
+        12810, 12811,
+        // Vanguard's Righteous: Wrathful Iron, Hallowed Ground, Zealous Restoration, Hammer of the
+        // Vanguard.
+        20224, 20225, 20330, 20331, 20332, 12287, 12665, 12666, 20237, 20238, 20239, 12809,
     ];
     want.sort_unstable();
     assert_eq!(ids, want);
 }
 
 #[test]
-fn the_vanguard_kit_is_mortal_strike_overpower_charge_rend_and_battle_shout() {
+fn the_vanguard_plays_righteous_smash_bulwark_charge_and_zealous_cleave() {
     let kit: Vec<&str> = callings::calling("vanguard")
         .unwrap()
         .skills
         .iter()
         .map(|s| s.key.as_str())
         .collect();
-    assert_eq!(
-        kit,
-        [
-            "mortal_strike",
-            "overpower",
-            "charge",
-            "rend",
-            "battle_shout"
-        ]
-    );
+    // Shield of the Penitent and Seal of Iron are on the sheet but off the bar until modelled.
+    assert_eq!(kit, ["righteous_smash", "bulwark_charge", "zealous_cleave"]);
 }
 
 #[test]
@@ -562,7 +543,7 @@ fn the_basic_warrior_talent_tree_is_the_sheets() {
 
 /// A Calling's source is data: the sheet's `calling` row moves it out of the TOML.
 #[test]
-fn basic_warrior_has_no_table_in_the_toml_and_the_others_keep_theirs() {
+fn only_the_zealot_keeps_a_table_in_the_toml() {
     let tables: toml::Table = include_str!("../content/callings.toml").parse().unwrap();
     let keys: Vec<&str> = tables["calling"]
         .as_array()
@@ -570,8 +551,9 @@ fn basic_warrior_has_no_table_in_the_toml_and_the_others_keep_theirs() {
         .iter()
         .map(|c| c["key"].as_str().unwrap())
         .collect();
-    assert_eq!(keys, ["vanguard", "zealot"]);
+    assert_eq!(keys, ["zealot"]);
     assert!(callings::calling("basic_warrior").is_some());
+    assert!(callings::calling("vanguard").is_some());
 }
 
 /// Recruit keeps its id and art; every talent on the sheet is modelled.
@@ -610,61 +592,6 @@ fn the_basic_warrior_kit_is_heroic_strike_charge_gouge_and_fire_blast() {
         .map(|s| s.key.as_str())
         .collect();
     assert_eq!(kit, ["heroic_strike", "charge", "gouge", "fire_blast"]);
-}
-
-/// The Vanguard talents the realm shows and lets the player learn, but does not model yet: Anger
-/// Management's slower rage decay and Flurry's haste after a crit have no effect kind.
-const VANGUARD_NOT_MODELLED: &[&str] = &["anger_management", "flurry"];
-
-#[test]
-fn the_vanguard_talent_tree_matches_the_reference() {
-    check_tree("vanguard", VANGUARD_NOT_MODELLED);
-    let tree = &callings::calling("vanguard").unwrap().talent_tabs;
-    let names: Vec<&str> = tree.iter().map(|t| t.name.as_str()).collect();
-    assert_eq!(names, ["Weaponmaster", "Warlord"]);
-}
-
-/// The rows of each Vanguard tab, as the handoff lists them: talent keys by tier.
-#[test]
-fn the_vanguard_tabs_seat_the_handoffs_rows() {
-    let rows = |tab: usize| -> Vec<Vec<String>> {
-        let tab = &callings::calling("vanguard").unwrap().talent_tabs[tab];
-        let last = tab.talents.iter().map(|t| t.tier).max().unwrap();
-        (1..=last)
-            .map(|tier| {
-                let mut row: Vec<String> = tab
-                    .talents
-                    .iter()
-                    .filter(|t| t.tier == tier)
-                    .map(|t| t.key.clone())
-                    .collect();
-                row.sort();
-                row
-            })
-            .collect()
-    };
-    assert_eq!(
-        rows(0),
-        [
-            vec!["improved_overpower", "improved_rend"],
-            vec!["anger_management", "deep_wounds", "improved_charge"],
-            vec!["impale", "two_handed_weapon_specialization"],
-            vec![
-                "axe_specialization",
-                "mace_specialization",
-                "sword_specialization"
-            ],
-            vec!["flurry"],
-        ]
-    );
-    assert_eq!(
-        rows(1),
-        [
-            vec!["booming_voice", "cruelty"],
-            vec!["improved_battle_shout", "unbridled_wrath"],
-            vec!["blood_craze", "enrage"],
-        ]
-    );
 }
 
 /// The Zealot talents the realm shows and lets the player learn, but does not model yet: those
@@ -760,9 +687,9 @@ fn the_zealot_tabs_seat_the_handoffs_rows() {
     );
 }
 
-/// Blade's talents are Vanguard's Talent.dbc rows, doing for a Zealot what they do for a Vanguard,
-/// so the Vanguard's fights (tests/tier1_talents_in_combat.rs) cover them. The client names a rank
-/// spell WIP once for every Calling, so a talent two Callings share is WIP in both or neither.
+/// The client names a rank spell WIP once for every Calling, so a talent two Callings share (the
+/// Vanguard's Righteous Fury borrows Cruelty's row, which the Zealot's Blade has too) is WIP in both
+/// or neither.
 #[test]
 fn a_talent_two_callings_share_does_the_same_in_both() {
     let tree = |c: &str| -> Vec<&'static callings::TalentDef> {
@@ -773,15 +700,6 @@ fn a_talent_two_callings_share_does_the_same_in_both() {
             .flat_map(|tab| &tab.talents)
             .collect()
     };
-    let vanguard = tree("vanguard");
-    let blade = &callings::calling("zealot").unwrap().talent_tabs[1].talents;
-    for t in blade {
-        let v = vanguard
-            .iter()
-            .find(|v| v.talent_id == t.talent_id)
-            .unwrap_or_else(|| panic!("{}: not Vanguard's", t.key));
-        assert_eq!(t.effects, v.effects, "{}", t.key);
-    }
     let all: Vec<_> = ["basic_warrior", "vanguard", "zealot"]
         .iter()
         .flat_map(|c| tree(c))

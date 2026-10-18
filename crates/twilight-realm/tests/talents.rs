@@ -1,7 +1,7 @@
 //! Talent Points and the Basic Warrior's "Recruit" Talent Tree, played through the realm's seam:
 //! the points the client shows, `CMSG_LEARN_TALENT` and its refusals, what learned talents do in a
-//! fight, the respec at the Crossroads' Vanguard Trainer, and the save. The talents the Recruit tree
-//! dropped are played on the Vanguard's tree, which still has them.
+//! fight, the respec at the Crossroads' Vanguard Trainer, and the save. Deep Wounds, which the Recruit
+//! tree dropped, is played on the Zealot's Blade tab, which still has it.
 
 mod common;
 
@@ -18,14 +18,10 @@ const SAVAGE_STRIKES: u32 = 272;
 const SAVAGE_STRIKES_RANKS: [u32; 2] = [14144, 14148];
 const VANGUARDS_RESOLVE: u32 = 382;
 const VANGUARDS_RESOLVE_RANKS: [u32; 1] = [14983];
-// Vanguard talents the Vanguard tests below use.
-const IMPROVED_CHARGE: u32 = 126;
-const ANGER_MANAGEMENT: u32 = 137;
 /// A real Warrior talent that is not in the Recruit tree: Mortal Strike.
 const MORTAL_STRIKE: u32 = 135;
 
 // vmangos `SpellModOp`.
-const SPELLMOD_ALL_EFFECTS: u8 = 8;
 
 // `NPCFlags`.
 const NPC_GOSSIP: u32 = 0x01;
@@ -428,137 +424,18 @@ fn a_save_from_before_talents_loads_with_none() {
     other.import_character(&blob).unwrap();
 }
 
-// ── The Vanguard's talents the Recruit tree dropped ───────────────────────────────────────
+// ── A talent the Recruit tree dropped, on the Zealot ──────────────────────────────────────────
 
-const T1_IMPROVED_REND: u32 = 127;
-const T1_IMPROVED_BATTLE_SHOUT: u32 = 154;
 const T1_DEEP_WOUNDS: u32 = 121;
-const T1_IMPROVED_OVERPOWER: u32 = 131;
-const T1_IMPALE: u32 = 662;
-const T1_CRUELTY: u32 = 157;
 
-const T1_CHARGE: u32 = 6178;
-const T1_REND: u32 = 6546;
-const T1_BATTLE_SHOUT: u32 = 6192;
-const T1_OVERPOWER: u32 = 7887;
 /// Deep Wounds' bleed (vmangos 12721, "Deep Wound").
 const DEEP_WOUND: u32 = 12721;
-
-#[test]
-fn deep_wounds_opens_with_weaponmasters_first_row_and_impale_needs_it_at_three_of_three() {
-    let (mut realm, me, _, mut view) = tier1_at(15, SEED, &[]);
-    // Four points in the first row: Improved Rend 2/3, Improved Overpower 2/2.
-    for (talent, rank) in [
-        (T1_IMPROVED_REND, 0),
-        (T1_IMPROVED_REND, 1),
-        (T1_IMPROVED_OVERPOWER, 0),
-        (T1_IMPROVED_OVERPOWER, 1),
-    ] {
-        learn(&mut realm, talent, rank);
-    }
-    learn(&mut realm, T1_DEEP_WOUNDS, 0);
-    view.drain(&mut realm);
-    assert_eq!(view.points(me), 10, "four spent: the second row is shut");
-
-    // The fifth point is Improved Rend's last rank, which Deep Wounds also asks for.
-    learn(&mut realm, T1_IMPROVED_REND, 2);
-    learn(&mut realm, T1_DEEP_WOUNDS, 0);
-    learn(&mut realm, T1_DEEP_WOUNDS, 1);
-    view.drain(&mut realm);
-    assert_eq!(view.points(me), 7);
-    assert_eq!(view.talent_rank(&[12834, 12849, 12867]), 2);
-
-    // Ten in the tab open the third row, but Impale wants Deep Wounds at 3/3.
-    learn(&mut realm, IMPROVED_CHARGE, 0);
-    learn(&mut realm, IMPROVED_CHARGE, 1);
-    learn(&mut realm, ANGER_MANAGEMENT, 0);
-    learn(&mut realm, T1_IMPALE, 0);
-    view.drain(&mut realm);
-    assert_eq!(view.points(me), 4, "ten spent, but Deep Wounds is at 2/3");
-    learn(&mut realm, T1_DEEP_WOUNDS, 2);
-    learn(&mut realm, T1_IMPALE, 0);
-    view.drain(&mut realm);
-    assert_eq!(view.points(me), 2);
-    assert_eq!(view.talent_rank(&[16493, 16494]), 1);
-}
-
-#[test]
-fn improved_rend_makes_every_tick_bleed_more() {
-    let ticks = |talent: bool| {
-        let talents: &[(u32, u8)] = if talent {
-            &[(T1_IMPROVED_REND, 3)]
-        } else {
-            &[]
-        };
-        let (mut realm, me, mob, mut view) = tier1_at(4, SEED, talents);
-        tier1_rage_up(&mut realm, &mut view, me, &mob, 10);
-        realm.handle(cast(T1_REND, Some(mob.guid)));
-        periodic_damage(&view.run(&mut realm, 12.5), T1_REND)
-    };
-    // 5 + 0.25 × 4 + 0.01 × AP, with 50 to 149 attack power at level 4: 7 a tick; 35% more is 9.
-    assert_eq!(ticks(false), [7, 7, 7, 7]);
-    assert_eq!(ticks(true), [9, 9, 9, 9]);
-}
-
-#[test]
-fn improved_rend_tells_the_client_its_tooltip() {
-    let (mut realm, _, _, mut view) = tier1_at(4, SEED, &[]);
-    for rank in 0..3 {
-        learn(&mut realm, T1_IMPROVED_REND, rank);
-    }
-    let events = view.drain(&mut realm);
-    assert_eq!(
-        spell_mod(&events, false, 5, SPELLMOD_ALL_EFFECTS),
-        Some(35),
-        "the tooltip's +35%"
-    );
-}
-
-#[test]
-fn improved_battle_shout_raises_the_shouts_attack_power() {
-    let (mut realm, me, mob, mut view) = tier1_at(4, SEED, &[(T1_IMPROVED_BATTLE_SHOUT, 3)]);
-    tier1_rage_up(&mut realm, &mut view, me, &mob, 10);
-    realm.handle(cast(T1_BATTLE_SHOUT, None));
-    view.drain(&mut realm);
-    // 20 + 2 × 4 = 28 attack power; 15% more is 32.2.
-    assert_eq!(view.fields(me).unit_attack_power_mods(), (32, 0));
-}
-
-#[test]
-fn improved_overpower_makes_overpower_crit_far_more_often() {
-    let mut crits = 0;
-    let mut casts = 0;
-    for seed in 0..3000 {
-        if casts == 20 {
-            break;
-        }
-        let Some((mut realm, _, mob, mut view)) = dodged_fight(seed) else {
-            continue;
-        };
-        realm.handle(cast(T1_OVERPOWER, Some(mob.guid)));
-        let events = view.drain(&mut realm);
-        if !went_off(&events, T1_OVERPOWER) {
-            continue;
-        }
-        casts += 1;
-        if crit_damage(&events, T1_OVERPOWER) {
-            crits += 1;
-        }
-    }
-    assert_eq!(casts, 20, "twenty Overpowers");
-    // About 5% without the talent; over 55% with it.
-    assert!(crits >= 6, "{crits} of {casts} crit");
-}
 
 #[test]
 fn deep_wounds_bleeds_the_target_after_a_melee_crit() {
     // The first seeded fight whose crit leaves the mob standing.
     for seed in 0..100 {
-        let (mut realm, me, mob, mut view) = tier1_at(
-            10,
-            seed,
-            &[(T1_CRUELTY, 5), (T1_IMPROVED_REND, 3), (T1_DEEP_WOUNDS, 1)],
-        );
+        let (mut realm, me, mob, mut view) = tier1_at(10, seed, &[(T1_DEEP_WOUNDS, 1)]);
         stand_at(&mut realm, &mob, 2.0);
         realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
         let mut critted = false;
@@ -676,11 +553,6 @@ impl View {
         self.fields(me).player_money().unwrap_or(0)
     }
 
-    /// Whole rage points.
-    fn rage(&self, guid: u64) -> u32 {
-        self.fields(guid).unit_power(1).unwrap_or(0) / 10
-    }
-
     /// A talent's rank as the stock frame reads it: the highest rank spell known.
     fn talent_rank(&self, ranks: &[u32]) -> usize {
         ranks
@@ -775,11 +647,11 @@ fn warrior_seeded(
     })
 }
 
-/// A human Vanguard of `level` with `talents` (`(talent id, rank)`) in its save, placed as
+/// A human Zealot of `level` with `talents` (`(talent id, rank)`) in its save, placed as
 /// [`warrior_at`] places a Basic Warrior.
 fn tier1_at(level: u8, seed: u64, talents: &[(u32, u8)]) -> (Realm, u64, Mob, View) {
     warrior_from(level, seed, DevMultipliers::default(), |blob| {
-        let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
+        let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
         if talents.is_empty() {
             return blob;
         }
@@ -822,37 +694,6 @@ fn open_the_second_row(realm: &mut Realm) {
     for rank in 0..5 {
         learn(realm, FIELD_MEDIC, rank);
     }
-}
-
-/// A Vanguard charges `mob` for its rage, then swings at it until there is `rage`, and stops.
-fn tier1_rage_up(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob, rage: u32) {
-    charge_and_swing(realm, view, me, mob, T1_CHARGE, rage);
-}
-
-fn charge_and_swing(
-    realm: &mut Realm,
-    view: &mut View,
-    me: u64,
-    mob: &Mob,
-    charge: u32,
-    rage: u32,
-) {
-    stand_at(realm, mob, 15.0);
-    realm.handle(cast(charge, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(realm), charge), None, "the charge");
-    stand_at(realm, mob, 2.0);
-    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-    for _ in 0..600 {
-        if view.rage(me) >= rage {
-            realm.handle(RealmCommand::AttackStop);
-            view.drain(realm);
-            return;
-        }
-        view.run(realm, 0.1);
-        assert!(view.health(me) > 0, "died waiting for {rage} rage");
-        assert!(view.health(mob.guid) > 0, "killed it before {rage} rage");
-    }
-    panic!("a minute of swings built no {rage} rage");
 }
 
 fn the_mob(events: &[SessionEvent]) -> Mob {
@@ -904,77 +745,6 @@ fn kill(realm: &mut Realm, view: &mut View, mob: &Mob) -> Vec<SessionEvent> {
         }
     }
     panic!("the mob outlived two minutes of fighting");
-}
-
-/// A level-10 Vanguard with Improved Overpower at 2/2 on `seed`'s dice, that charged the
-/// mob and swings at it until it dodges; `None` when this fight never sees a dodge both survive.
-fn dodged_fight(seed: u64) -> Option<(Realm, u64, Mob, View)> {
-    let (mut realm, me, mob, mut view) = tier1_at(10, seed, &[(T1_IMPROVED_OVERPOWER, 2)]);
-    stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(T1_CHARGE, Some(mob.guid)));
-    stand_at(&mut realm, &mob, 2.0);
-    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-    for _ in 0..600 {
-        realm.tick(0.1, &FlatGround);
-        let events = view.drain(&mut realm);
-        let dodge = events.iter().any(|e| {
-            matches!(e, SessionEvent::AttackerState(s) if s.attacker == me && s.victim_state == 2)
-        });
-        if dodge && view.health(me) > 0 && view.health(mob.guid) > 0 {
-            return Some((realm, me, mob, view));
-        }
-        if view.health(me) == 0 || view.health(mob.guid) == 0 {
-            return None;
-        }
-    }
-    None
-}
-
-fn cast(spell_id: u32, target: Option<u64>) -> RealmCommand {
-    RealmCommand::CastSpell { spell_id, target }
-}
-
-/// The reason `spell_id` was refused, if it was.
-fn refusal(events: &[SessionEvent], spell_id: u32) -> Option<u8> {
-    events.iter().find_map(|e| match e {
-        SessionEvent::CastResult {
-            spell_id: s,
-            success: false,
-            reason,
-            ..
-        } if *s == spell_id => *reason,
-        _ => None,
-    })
-}
-
-/// Whether `spell_id` went off (`SMSG_SPELL_GO`).
-fn went_off(events: &[SessionEvent], spell_id: u32) -> bool {
-    events
-        .iter()
-        .any(|e| matches!(e, SessionEvent::SpellGo { spell_id: s, .. } if *s == spell_id))
-}
-
-/// Whether `spell_id`'s damage log was a crit.
-fn crit_damage(events: &[SessionEvent], spell_id: u32) -> bool {
-    events.iter().any(|e| {
-        matches!(e, SessionEvent::SpellDamageLog(l) if l.spell_id == spell_id && l.hit_info & 0x2 != 0)
-    })
-}
-
-/// The last spell-mod cell `(flat, family bit, op)` was set to.
-fn spell_mod(events: &[SessionEvent], flat: bool, bit: u8, op: u8) -> Option<i32> {
-    events
-        .iter()
-        .filter_map(|e| match *e {
-            SessionEvent::SpellModifier {
-                flat: f,
-                mask_bit,
-                op: o,
-                value,
-            } if (f, mask_bit, o) == (flat, bit, op) => Some(value),
-            _ => None,
-        })
-        .next_back()
 }
 
 /// `SMSG_PERIODICAURALOG` damage ticks for `spell_id`.

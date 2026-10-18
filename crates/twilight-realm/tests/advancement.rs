@@ -145,10 +145,9 @@ const JOUSTERS_CHESTPLATE: u32 = 8157;
 /// QuestSort.dbc 81, "Warrior": the quest log's header, as a negative `ZoneOrSort`.
 const SORT_WARRIOR: i32 = -81;
 
-// The two Callings' skills (`content/callings.toml`).
-const BASIC_SKILLS: [u32; 2] = [78, 100];
-/// Vanguard's: Mortal Strike, Overpower, Charge, Rend and Battle Shout.
-const TIER_1_SKILLS: [u32; 5] = [12294, 7887, 6178, 6546, 6192];
+/// Vanguard's skills (the master CSV): Righteous Smash and Bulwark Charge on Basic Warrior's spell
+/// ids, and Zealous Cleave. Shield of the Penitent and Seal of Iron are off the bar until modelled.
+const TIER_1_SKILLS: [u32; 3] = [78, 100, 845];
 /// Zealot's: Seal of Command, Seal of the Crusader, Judgement, Hammer of Justice, Mortal Strike and
 /// Charge.
 const ZEALOT_SKILLS: [u32; 6] = [20375, 20305, 20271, 10308, 12294, 6178];
@@ -330,7 +329,7 @@ fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
         TIER_1_SKILLS.into_iter().collect(),
         "exactly the kit"
     );
-    for s in BASIC_SKILLS.iter().chain(&CRUELTY_RANKS) {
+    for s in &CRUELTY_RANKS {
         assert!(!known.contains(s), "spell {s} forgotten");
     }
     let tabs: Vec<&str> = realm
@@ -340,7 +339,7 @@ fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
         .iter()
         .map(|t| t.name.as_str())
         .collect();
-    assert_eq!(tabs, ["Weaponmaster", "Warlord"]);
+    assert_eq!(tabs, ["The Bastion", "The Righteous"]);
     // The new Calling's default bar.
     let bar = events
         .iter()
@@ -350,7 +349,7 @@ fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
             _ => None,
         })
         .expect("the bar is sent again");
-    assert_eq!(bar.len(), 5);
+    assert_eq!(bar.len(), TIER_1_SKILLS.len());
     assert_eq!(bar[0].action, TIER_1_SKILLS[0]);
 
     // Stronger than a level 1 Basic Warrior: the Tier Bonus.
@@ -550,7 +549,7 @@ fn the_calling_survives_the_save() {
 
 #[test]
 fn a_save_from_before_the_rename_loads_as_a_vanguard() {
-    // Tier 1 was saved as "warrior" before it was Vanguard; Cruelty sits in the new tree too.
+    // Tier 1 was saved as "warrior" before it was Vanguard; Cruelty's talent (157) is Righteous Fury now.
     let (guid, blob) = save_with(12, 0, &[]);
     let blob = blob
         .replace("calling = \"basic_warrior\"", "calling = \"warrior\"")

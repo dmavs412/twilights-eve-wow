@@ -39,7 +39,7 @@ KNOWN_KINDS = {
     "add_combo_points", "aura_attack_power", "charge", "energize", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "periodic_damage", "proc",
-    "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_crit_pct",
+    "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_pct",
     "skill_rage", "stun", "weapon_strike",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")

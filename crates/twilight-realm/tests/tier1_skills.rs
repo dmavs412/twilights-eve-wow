@@ -1,5 +1,5 @@
-//! The Vanguard's skill that the other tests do not play, through the realm's seam: Mortal
-//! Strike's wound. Rend, Battle Shout and Overpower are played in `skills.rs`.
+//! Mortal Strike's wound, played through the realm's seam as a Zealot (the one Calling that still
+//! has it).
 
 mod common;
 
@@ -95,7 +95,7 @@ impl View {
     }
 }
 
-/// A human Vanguard of `level` in the world at the Crossroads, the hostile mobs in view (the
+/// A human Zealot of `level` in the world at the Crossroads, the hostile mobs in view (the
 /// nearest first), and the view.
 fn tier1_at(level: u8, seed: u64) -> (Realm, u64, Vec<Mob>, View) {
     let mut maker = realm();
@@ -105,7 +105,7 @@ fn tier1_at(level: u8, seed: u64) -> (Realm, u64, Vec<Mob>, View) {
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", &format!("level = {level}\n"))
-        .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
+        .replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
     let mut realm = Realm::with_seed(seed);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -138,7 +138,7 @@ fn tier1_at(level: u8, seed: u64) -> (Realm, u64, Vec<Mob>, View) {
     (realm, guid, mobs, view)
 }
 
-/// A level 1 Vanguard that pulled the nearest camp without swinging back, and took its
+/// A level 1 Zealot that pulled the nearest camp without swinging back, and took its
 /// blows until it had `rage`.
 fn tanking(rage: u32) -> (Realm, u64, Mob, View) {
     let (mut realm, me, _, mut view) = tier1_at(1, SEED);

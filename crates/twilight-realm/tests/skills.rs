@@ -228,151 +228,24 @@ fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
 
 // ── What the Basic Warrior's two skills cannot show, on the Vanguard ──────────────────────
 
-// The Vanguard's skills (`content/callings.toml`).
-const T1_CHARGE: u32 = 6178;
-const T1_REND: u32 = 6546;
-const T1_BATTLE_SHOUT: u32 = 6192;
-const T1_OVERPOWER: u32 = 7887;
-
-#[test]
-fn a_buff_clicked_off_goes_and_takes_its_bonus_with_it() {
-    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 10);
-    realm.handle(cast(T1_BATTLE_SHOUT, None));
-    view.drain(&mut realm);
-    assert!(view.aura(me, T1_BATTLE_SHOUT).is_some());
-
-    realm.handle(RealmCommand::CancelAura {
-        spell_id: T1_BATTLE_SHOUT,
-    });
-    view.drain(&mut realm);
-    assert_eq!(view.aura(me, T1_BATTLE_SHOUT), None);
-    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
-}
-
-#[test]
-fn battle_shout_needs_its_rage_and_raises_attack_power_for_two_minutes() {
-    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    realm.handle(cast(T1_BATTLE_SHOUT, None));
-    assert_eq!(
-        refusal(&view.drain(&mut realm), T1_BATTLE_SHOUT),
-        Some(NO_POWER)
-    );
-
-    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 10);
-    let rage = view.rage(me);
-    let min_before = view.fields(me).unit_min_damage().unwrap();
-    realm.handle(cast(T1_BATTLE_SHOUT, None));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, T1_BATTLE_SHOUT), None);
-    assert_eq!(view.rage(me), rage - 10);
-    let aura = view.aura(me, T1_BATTLE_SHOUT).expect("the shout's buff");
-    assert!(aura.is_cancelable());
-    // 20 + 2 a level.
-    assert_eq!(view.fields(me).unit_attack_power_mods(), (22, 0));
-    // 22 attack power is 22 / 14 damage a second, over the Worn Shortsword's 1.9 s swing.
-    let gained = view.fields(me).unit_min_damage().unwrap() - min_before;
-    assert!((gained - 22.0 / 14.0 * 1.9).abs() < 1e-3, "{gained}");
-
-    view.run(&mut realm, 120.5);
-    assert_eq!(view.aura(me, T1_BATTLE_SHOUT), None, "faded");
-    assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
-}
-
-#[test]
-fn rend_bleeds_the_mob_four_times_over_twelve_seconds() {
-    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 10);
-    let full = view.health(mob.guid);
-    realm.handle(cast(T1_REND, Some(mob.guid)));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, T1_REND), None);
-    let aura = view
-        .aura(mob.guid, T1_REND)
-        .expect("the bleed on the mob's frame");
-    assert!(aura.slot >= 32 && !aura.is_cancelable(), "a debuff");
-    assert_eq!(aura.level, 1, "the caster's level");
-
-    let events = view.run(&mut realm, 12.5);
-    // 5 + 0.25 + 0.01 × 53 attack power: a level-1 human's 29 and the Tier Bonus's 24.
-    assert_eq!(periodic_damage(&events, T1_REND), vec![6, 6, 6, 6]);
-    assert_eq!(view.health(mob.guid), full - 24);
-    assert_eq!(view.aura(mob.guid, T1_REND), None, "run out");
-}
-
-#[test]
-fn a_global_cooldown_follows_rend() {
-    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 20);
-    realm.handle(cast(T1_REND, Some(mob.guid)));
-    realm.handle(cast(T1_BATTLE_SHOUT, None));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, T1_REND), None);
-    assert_eq!(refusal(&events, T1_BATTLE_SHOUT), Some(NOT_READY));
-    view.run(&mut realm, 1.5);
-    realm.handle(cast(T1_BATTLE_SHOUT, None));
-    assert_eq!(refusal(&view.drain(&mut realm), T1_BATTLE_SHOUT), None);
-}
+// The Vanguard's skills (the master CSV).
+const T1_BULWARK_CHARGE: u32 = 100;
+const T1_ZEALOUS_CLEAVE: u32 = 845;
 
 #[test]
 fn a_melee_skill_needs_a_target_in_reach() {
     let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 10);
-    realm.handle(cast(T1_REND, None));
-    assert_eq!(refusal(&view.drain(&mut realm), T1_REND), Some(BAD_TARGETS));
+    rage_up(&mut realm, &mut view, me, &mob, T1_BULWARK_CHARGE, 20);
+    realm.handle(cast(T1_ZEALOUS_CLEAVE, None));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), T1_ZEALOUS_CLEAVE),
+        Some(BAD_TARGETS)
+    );
     stand_at(&mut realm, &mob, 7.0);
-    realm.handle(cast(T1_REND, Some(mob.guid)));
+    realm.handle(cast(T1_ZEALOUS_CLEAVE, Some(mob.guid)));
     assert_eq!(
-        refusal(&view.drain(&mut realm), T1_REND),
+        refusal(&view.drain(&mut realm), T1_ZEALOUS_CLEAVE),
         Some(OUT_OF_RANGE)
-    );
-}
-
-#[test]
-fn overpower_opens_only_after_the_mob_dodges() {
-    let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 5);
-    realm.handle(cast(T1_OVERPOWER, Some(mob.guid)));
-    assert_eq!(
-        refusal(&view.drain(&mut realm), T1_OVERPOWER),
-        Some(CASTER_AURASTATE)
-    );
-
-    // The dodge leaves a combo point on the mob, which the client's Overpower button needs.
-    let (mut realm, me, mob, mut view) = dodged_fight();
-    let f = view.fields(me);
-    assert_eq!(f.player_combo_points(), Some(1));
-    assert_eq!(f.player_combo_target(), mob.guid);
-
-    realm.handle(cast(T1_OVERPOWER, Some(mob.guid)));
-    let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, T1_OVERPOWER), None);
-    let missed: Vec<u8> = events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::SpellGo {
-                spell_id: T1_OVERPOWER,
-                misses,
-                ..
-            } => Some(misses.iter().map(|m| m.1)),
-            _ => None,
-        })
-        .flatten()
-        .collect();
-    assert!(missed.iter().all(|&m| m == 1), "only a miss: {missed:?}");
-    assert_eq!(view.fields(me).player_combo_points(), Some(0), "spent");
-}
-
-#[test]
-fn the_dodge_window_closes_after_five_seconds() {
-    let (mut realm, me, mob, mut view) = dodged_fight();
-    realm.handle(RealmCommand::AttackStop);
-    view.run(&mut realm, 5.1);
-    assert_eq!(view.fields(me).player_combo_points(), Some(0));
-    realm.handle(cast(T1_OVERPOWER, Some(mob.guid)));
-    assert_eq!(
-        refusal(&view.drain(&mut realm), T1_OVERPOWER),
-        Some(CASTER_AURASTATE)
     );
 }
 
@@ -406,7 +279,6 @@ fn action_buttons(events: &[SessionEvent]) -> Vec<benilla_protocol::messages::Ac
 // `SpellCastResult` (vmangos `SpellDefines.h`), as the client's red error line reads them.
 const AFFECTING_COMBAT: u8 = 0x00;
 const BAD_TARGETS: u8 = 0x0a;
-const CASTER_AURASTATE: u8 = 0x12;
 const NOT_KNOWN: u8 = 0x38;
 const NOT_READY: u8 = 0x3c;
 const NO_POWER: u8 = 0x4d;
@@ -469,30 +341,6 @@ fn calling_seeded(calling: &str, level: u8, seed: u64) -> (Realm, u64, Mob, View
     (realm, guid, mob, view)
 }
 
-/// A level-1 Vanguard that charged the level-3 mob and swings at it until it dodges: about
-/// one swing in fifty, so the dice of the first seeded fight that gets one.
-fn dodged_fight() -> (Realm, u64, Mob, View) {
-    for seed in 0..200 {
-        let (mut realm, me, mob, mut view) = tier1_seeded(1, seed);
-        rage_up(&mut realm, &mut view, me, &mob, T1_CHARGE, 5);
-        realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-        for _ in 0..600 {
-            realm.tick(0.1, &FlatGround);
-            let events = view.drain(&mut realm);
-            let dodge = events.iter().any(|e| {
-                matches!(e, SessionEvent::AttackerState(s) if s.attacker == me && s.victim_state == 2)
-            });
-            if dodge && view.health(me) > 0 && view.health(mob.guid) > 0 {
-                return (realm, me, mob, view);
-            }
-            if view.health(me) == 0 || view.health(mob.guid) == 0 {
-                break;
-            }
-        }
-    }
-    panic!("no seeded fight saw a dodge");
-}
-
 /// Charges `mob` with `charge` for its rage, then swings at it until there is `rage`, and stops.
 fn rage_up(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob, charge: u32, rage: u32) {
     stand_at(realm, mob, 15.0);
@@ -551,22 +399,6 @@ fn spell_damage(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
         .iter()
         .filter_map(|e| match e {
             SessionEvent::SpellDamageLog(l) if l.spell_id == spell_id => Some(l.damage),
-            _ => None,
-        })
-        .collect()
-}
-
-/// `SMSG_PERIODICAURALOG` damage ticks for `spell_id`.
-fn periodic_damage(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
-    events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::PeriodicAuraLog(l) if l.spell_id == spell_id => Some(&l.ticks),
-            _ => None,
-        })
-        .flatten()
-        .filter_map(|t| match t {
-            benilla_protocol::messages::PeriodicTick::Damage { amount, .. } => Some(*amount),
             _ => None,
         })
         .collect()
