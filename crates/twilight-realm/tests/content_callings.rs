@@ -422,10 +422,10 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Vanguard's Righteous: Wrathful Iron, Hallowed Ground, Zealous Restoration, Hammer of the
         // Vanguard.
         20224, 20225, 20330, 20331, 20332, 12809,
-        // Cutthroat's Skirmisher: Lethality, Phantom Guile, Dual Wield Specialization, Flurry of
-        // Blades, Relentless Strikes (Reflexive Strike is modelled now).
-        14128, 14132, 14135, 14136, 14137, 13741, 13793, 13792, 13715, 13848, 13849, 13851, 13852,
-        18427, 18428, 18429, 14186, 14190, 14193, 14194, 14195,
+        // Cutthroat's Skirmisher: Lethality, Phantom Guile, Flurry of Blades, Relentless Strikes
+        // (Reflexive Strike and Dual Wield Specialization are modelled now).
+        14128, 14132, 14135, 14136, 14137, 13741, 13793, 13792, 18427, 18428, 18429, 14186, 14190,
+        14193, 14194, 14195,
         // Cutthroat's Tracker: Bloodletting, Ruthlessness, Scent of Blood, Executioner's Toll
         // (Predator's Step and Serrated Strikes are modelled now).
         30902, 30903, 30904, 30905, 30906, 14156, 14160, 14161, 14171, 14172, 14173, 13976, 13979,

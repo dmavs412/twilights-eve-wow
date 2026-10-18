@@ -95,6 +95,7 @@ impl InWorld {
         p.health = p.stats.max_health;
         p.power = Power::fresh(&p.stats);
         p.swing_timer = 0.0;
+        p.off_swing_timer = 0.0;
         p.refused = None;
         let health = p.health;
         // Another map is a worldport, after which the player is created again at full health.

@@ -38,7 +38,7 @@ CLIENT_EFFECTS = 3
 KNOWN_KINDS = {
     "add_aura_stacks", "add_combo_points", "armor_pen", "aura_attack_power", "dodge_pct", "max_power", "consume_aura_stacks", "consume_heal_pct", "charge", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
-    "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "periodic_damage", "proc",
+    "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_pct",
     "skill_rage", "stun", "weapon_strike",
 }

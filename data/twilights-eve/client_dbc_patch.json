@@ -3782,7 +3782,15 @@
     "name": "Dual Wield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the damage done by your offhand weapon by 10%."
+    "description": "Increases the damage done by your offhand weapon by 10%.",
+    "effects": [
+     {
+      "kind": "offhand_damage_pct",
+      "params": {
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -3795,7 +3803,15 @@
     "name": "Dual Wield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the damage done by your offhand weapon by 20%."
+    "description": "Increases the damage done by your offhand weapon by 20%.",
+    "effects": [
+     {
+      "kind": "offhand_damage_pct",
+      "params": {
+       "pct": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -3808,7 +3824,15 @@
     "name": "Dual Wield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the damage done by your offhand weapon by 30%."
+    "description": "Increases the damage done by your offhand weapon by 30%.",
+    "effects": [
+     {
+      "kind": "offhand_damage_pct",
+      "params": {
+       "pct": 30
+      }
+     }
+    ]
    }
   },
   {
@@ -3821,7 +3845,15 @@
     "name": "Dual Wield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the damage done by your offhand weapon by 40%."
+    "description": "Increases the damage done by your offhand weapon by 40%.",
+    "effects": [
+     {
+      "kind": "offhand_damage_pct",
+      "params": {
+       "pct": 40
+      }
+     }
+    ]
    }
   },
   {
@@ -3834,7 +3866,15 @@
     "name": "Dual Wield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the damage done by your offhand weapon by 50%."
+    "description": "Increases the damage done by your offhand weapon by 50%.",
+    "effects": [
+     {
+      "kind": "offhand_damage_pct",
+      "params": {
+       "pct": 50
+      }
+     }
+    ]
    }
   },
   {

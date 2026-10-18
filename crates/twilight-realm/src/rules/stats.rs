@@ -51,9 +51,28 @@ pub struct CharacterStats {
     pub min_damage: f32,
     pub max_damage: f32,
     pub attack_time_ms: u32,
+    /// The weapon in the off hand, when a weapon is worn there.
+    pub off_hand: Option<OffHand>,
+    /// The percent talents raise the off hand's damage by.
+    pub offhand_damage_pct: u32,
     pub weapon_skill: u16,
     pub defense: u16,
 }
+
+/// A weapon worn in the off hand: its swing before the off hand's halving, attack power included.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct OffHand {
+    pub min_damage: f32,
+    pub max_damage: f32,
+    pub attack_time_ms: u32,
+}
+
+/// The share of its damage an off-hand swing deals (vmangos `OFF_HAND` damage 50%).
+pub const OFF_HAND_DAMAGE_PCT: u32 = 50;
+
+/// What a white swing's miss chance gains while two weapons are worn, in basis points (vmangos
+/// `Unit::MeleeMissChanceCalc`: +19%).
+pub const DUAL_WIELD_MISS_BP: u32 = 1900;
 
 /// The health Stamina gives: the first 20 points 1 each, the rest 10.
 fn stamina_health(sta: u32) -> u32 {
@@ -121,10 +140,28 @@ impl CharacterStats {
         tier_bonus: [u32; 5],
         gear: &[u32],
     ) -> Self {
+        Self::geared_dual(class, race, level, tier_bonus, gear, None)
+    }
+
+    /// [`Self::geared_at_tier`] with `off_hand`, the template entry worn in the off hand and
+    /// not in `gear`: a weapon there swings on its own timer instead of setting the main swing.
+    pub fn geared_dual(
+        class: u8,
+        race: u8,
+        level: u8,
+        tier_bonus: [u32; 5],
+        gear: &[u32],
+        off_hand: Option<u32>,
+    ) -> Self {
         let race_base = tables::at(tables::levels().class(class).race_stats.of(race), level);
         let base: [u32; 5] = std::array::from_fn(|i| race_base[i] + tier_bonus[i]);
         let mut g = Gear::default();
-        for t in gear.iter().filter_map(|e| crate::items::template(*e)) {
+        let worn = gear.iter().map(|e| (*e, false));
+        let worn = worn.chain(off_hand.map(|e| (e, true)));
+        for (entry, in_off_hand) in worn {
+            let Some(t) = crate::items::template(entry) else {
+                continue;
+            };
             for &[stat, value] in &t.stats {
                 // `ItemModType`: 3 agility, 4 strength, 5 intellect, 6 spirit, 7 stamina.
                 let i = match stat {
@@ -146,9 +183,13 @@ impl CharacterStats {
             let main_hand = crate::rules::gear::equip_slots(t.inventory_type)
                 .first()
                 .is_some_and(|s| *s == crate::rules::gear::SLOT_MAIN_HAND);
-            if main_hand && t.class == crate::rules::gear::CLASS_WEAPON {
+            if t.class == crate::rules::gear::CLASS_WEAPON {
                 if let Some(&[min, max, _]) = t.damage.first() {
-                    g.weapon = Some((min, max, t.speed_ms));
+                    if in_off_hand {
+                        g.off_weapon = Some((min, max, t.speed_ms));
+                    } else if main_hand {
+                        g.weapon = Some((min, max, t.speed_ms));
+                    }
                 }
             }
         }
@@ -195,6 +236,15 @@ impl CharacterStats {
             min_damage: min + ap_damage,
             max_damage: max + ap_damage,
             attack_time_ms,
+            off_hand: gear.off_weapon.map(|(min, max, time_ms)| {
+                let ap_damage = attack_power.max(0) as f32 / 14.0 * time_ms as f32 / 1000.0;
+                OffHand {
+                    min_damage: min + ap_damage,
+                    max_damage: max + ap_damage,
+                    attack_time_ms: time_ms,
+                }
+            }),
+            offhand_damage_pct: 0,
             weapon_skill: skill,
             defense,
         }
@@ -224,6 +274,8 @@ struct Gear {
     defense: u16,
     /// The main hand's `(min, max, speed ms)`.
     weapon: Option<(f32, f32, u32)>,
+    /// The off-hand weapon's `(min, max, speed ms)`.
+    off_weapon: Option<(f32, f32, u32)>,
     /// The shield's block value, when one is worn.
     shield_block: Option<u32>,
 }

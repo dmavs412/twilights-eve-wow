@@ -85,6 +85,8 @@ struct Player {
     power: Power,
     /// Seconds until the next swing; 0 is ready.
     swing_timer: f32,
+    /// [`Self::swing_timer`] for the off-hand weapon.
+    off_swing_timer: f32,
     /// Who auto-attack swings at, from `CMSG_ATTACKSWING` to `CMSG_ATTACKSTOP`.
     attacking: Option<u64>,
     /// The last swing refusal sent, so it is sent once and not every tick.
@@ -196,6 +198,7 @@ impl InWorld {
                 health: stats.max_health,
                 power: Power::fresh(&stats),
                 swing_timer: 0.0,
+                off_swing_timer: 0.0,
                 attacking: None,
                 refused: None,
                 regen: 0.0,
@@ -344,6 +347,7 @@ impl InWorld {
             .retain(|corpse| mobs.iter().any(|m| m.guid == corpse && !m.alive()));
         let p = &mut self.player;
         p.swing_timer = (p.swing_timer - dt).max(0.0);
+        p.off_swing_timer = (p.off_swing_timer - dt).max(0.0);
 
         // Hostile mobs notice a living player who comes too close, and bring their camp.
         if p.alive() {
@@ -453,6 +457,15 @@ impl InWorld {
         let Some(target) = p.attacking else {
             return;
         };
+        if !p.alive() {
+            return;
+        }
+        // The off hand swings on its own timer, at the main hand's target and under its reach and
+        // facing, without a refusal of its own.
+        if p.off_swing_timer <= 0.0 && p.stats.off_hand.is_some() {
+            self.off_hand_swing(target, c, rng, events, ticked);
+        }
+        let p = &mut self.player;
         if p.swing_timer > 0.0 || !p.alive() {
             return;
         }
@@ -483,28 +496,66 @@ impl InWorld {
         if self.next_swing_strike(target, from_front, c, rng, events, ticked) {
             return;
         }
-        self.white_swing(i, from_front, true, c, rng, events, ticked);
+        self.white_swing(i, from_front, true, false, c, rng, events, ticked);
+    }
+
+    /// The off-hand weapon's swing at `target`, when it is alive, in reach and in front; the
+    /// off hand's timer restarts from the weapon's own speed.
+    fn off_hand_swing(
+        &mut self,
+        target: u64,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some(i) = self.mobs.iter().position(|m| m.guid == target && m.alive()) else {
+            return;
+        };
+        let mob = &self.mobs[i];
+        if distance(mob.position, c.position) > melee_reach()
+            || !in_front(c.orientation, c.position, mob.position)
+        {
+            return;
+        }
+        let Some(stats) = cast::off_hand_white(&self.player.stats, &self.skills) else {
+            return;
+        };
+        self.player.off_swing_timer = clock::secs(stats.attack_time_ms);
+        let from_front = in_front(mob.orientation, mob.position, c.position);
+        self.white_swing(i, from_front, false, true, c, rng, events, ticked);
     }
 
     /// One white swing at mob `i`, and what its landing sets off; `may_swing_again`: whether a
-    /// talent may give it one more swing (an extra swing never gives another).
+    /// talent may give it one more swing (an extra swing never gives another); `off_hand`: with
+    /// the off-hand weapon.
     #[allow(clippy::too_many_arguments)]
     fn white_swing(
         &mut self,
         i: usize,
         from_front: bool,
         may_swing_again: bool,
+        off_hand: bool,
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
         let target = self.mobs[i].guid;
-        let stats = cast::white(&self.player.stats, &self.skills);
+        let stats = if off_hand {
+            cast::off_hand_white(&self.player.stats, &self.skills)
+                .unwrap_or_else(|| cast::white(&self.player.stats, &self.skills))
+        } else {
+            cast::white(&self.player.stats, &self.skills)
+        };
         let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, rng);
+        swing.off_hand = off_hand;
         swing.damage = self.dealt(c, swing.damage);
-        let counted = self.skills.count_swing(events);
-        self.faded(&counted, events);
+        // The next-swing buffs count main-hand swings only.
+        if !off_hand {
+            let counted = self.skills.count_swing(events);
+            self.faded(&counted, events);
+        }
         events.push(SessionEvent::AttackerState(swing.report(self.guid, target)));
         if swing.outcome == Outcome::Dodge {
             self.skills.dodged_by(target, events);
@@ -584,7 +635,7 @@ impl InWorld {
             && rng.below(100) < on_hit.extra_swing_pct
             && self.mobs[i].alive()
         {
-            self.white_swing(i, from_front, false, c, rng, events, ticked);
+            self.white_swing(i, from_front, false, false, c, rng, events, ticked);
         }
     }
 
@@ -1042,7 +1093,10 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
         (UNIT_FIELD_MINDAMAGE, float(s.min_damage)),
         (UNIT_FIELD_MAXDAMAGE, float(s.max_damage)),
         (UNIT_FIELD_BASEATTACKTIME, s.attack_time_ms),
-        (UNIT_FIELD_BASEATTACKTIME + 1, s.attack_time_ms),
+        (
+            UNIT_FIELD_BASEATTACKTIME + 1,
+            s.off_hand.map_or(s.attack_time_ms, |o| o.attack_time_ms),
+        ),
         (PLAYER_CRIT_PERCENTAGE, float(s.crit_pct as f32)),
         (PLAYER_DODGE_PERCENTAGE, float(s.dodge_pct as f32)),
         (PLAYER_PARRY_PERCENTAGE, float(s.parry_pct as f32)),

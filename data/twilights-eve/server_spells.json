@@ -7146,8 +7146,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "offhand_damage_pct",
+          "params": {
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the damage done by your offhand weapon by 10%."
        },
        {
@@ -7171,8 +7179,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "offhand_damage_pct",
+          "params": {
+           "pct": 20
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the damage done by your offhand weapon by 20%."
        },
        {
@@ -7196,8 +7212,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "offhand_damage_pct",
+          "params": {
+           "pct": 30
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the damage done by your offhand weapon by 30%."
        },
        {
@@ -7221,8 +7245,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "offhand_damage_pct",
+          "params": {
+           "pct": 40
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the damage done by your offhand weapon by 40%."
        },
        {
@@ -7246,8 +7278,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "offhand_damage_pct",
+          "params": {
+           "pct": 50
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the damage done by your offhand weapon by 50%."
        }
       ]

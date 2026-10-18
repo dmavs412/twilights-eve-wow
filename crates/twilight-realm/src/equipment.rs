@@ -155,13 +155,19 @@ fn wardrobe(chest: Option<&Item>) -> [(u8, u32); 8] {
 /// The character's stats in what it wears.
 pub(crate) fn stats(c: &Char) -> CharacterStats {
     let bonus = crate::callings::of(c.calling).tier_bonus.stats();
-    CharacterStats::geared_at_tier(
-        c.class(),
-        c.race,
-        c.level,
-        bonus,
-        &c.inventory.worn_entries(),
-    )
+    let mut worn = c.inventory.worn_entries();
+    // A weapon in the off hand swings apart from the main hand's.
+    let off_hand = c
+        .inventory
+        .get(gear::SLOT_OFF_HAND)
+        .map(|i| i.entry)
+        .filter(|e| {
+            items::template(*e).is_some_and(|t| t.class == gear::CLASS_WEAPON) && worn.contains(e)
+        });
+    if let Some(at) = off_hand.and_then(|e| worn.iter().position(|w| *w == e)) {
+        worn.remove(at);
+    }
+    CharacterStats::geared_dual(c.class(), c.race, c.level, bonus, &worn, off_hand)
 }
 
 /// The Calling's proficiencies the tooltips and the bag check against (`SMSG_SET_PROFICIENCY`):
@@ -393,7 +399,7 @@ pub(crate) fn auto_equip(c: &mut Char, bag: u8, slot: u8, events: &mut Vec<Sessi
         refusal(Refusal::NotEquippable, item.guid, events);
         return Moved::default();
     };
-    let slots = equip_slots(t.inventory_type);
+    let slots = slots_for(c, t.inventory_type);
     let Some(&first) = slots.first() else {
         refusal(gear::slotless(t.inventory_type), item.guid, events);
         return Moved::default();
@@ -608,6 +614,22 @@ pub(crate) fn may_leave(c: &Char, at: Pos) -> bool {
     !(at.is_bag_slot() && c.inventory.bag_holds_items(at.slot))
 }
 
+/// The `CLASS_ROGUE` of `ChrClasses.dbc`: a Cutthroat's Class.
+const CLASS_ROGUE: u8 = 4;
+
+/// [`equip_slots`] for `c`: a Cutthroat (class 4) also wears a one-hander in the off hand, since
+/// it dual wields. Every other Calling keeps one-handers in the main hand only.
+fn slots_for(c: &Char, inventory_type: u32) -> Vec<u8> {
+    let mut slots = equip_slots(inventory_type).to_vec();
+    if inventory_type == ONE_HAND && c.class() == CLASS_ROGUE {
+        slots.push(gear::SLOT_OFF_HAND);
+    }
+    slots
+}
+
+/// `INVTYPE_WEAPON`: a weapon of either hand.
+const ONE_HAND: u32 = 13;
+
 fn is_two_hander(entry: u32) -> bool {
     items::template(entry).is_some_and(|t| t.inventory_type == gear::INVTYPE_2HWEAPON)
 }
@@ -628,7 +650,7 @@ fn check_place(c: &Char, item: &Item, to: Pos) -> Result<(), u8> {
     }
     can_equip(item.entry, c.race, callings::of(c.calling)).map_err(Refusal::code)?;
     let t = items::template(item.entry).ok_or(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT)?;
-    if !equip_slots(t.inventory_type).contains(&to.slot) {
+    if !slots_for(c, t.inventory_type).contains(&to.slot) {
         return Err(EQUIP_ERR_ITEM_DOESNT_GO_TO_SLOT);
     }
     // Nothing goes in the off hand beside a two-hander.

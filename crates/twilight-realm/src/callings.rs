@@ -351,6 +351,8 @@ pub enum TalentEffect {
     MaxPower { per_rank: Vec<u32> },
     /// The character runs this many percent faster, always.
     ModRunSpeed { per_rank: Vec<u32> },
+    /// The off hand's swings deal this many percent more damage.
+    OffhandDamagePct { per_rank: Vec<u32> },
     /// Every critical strike does this percent more of its damage (a physical crit's bonus is
     /// its whole damage, a magic crit's the half over 100%).
     ModCritDamage { per_rank: Vec<u32> },
@@ -487,6 +489,7 @@ impl TalentEffect {
             | Self::ArmorPen { per_rank }
             | Self::MaxPower { per_rank }
             | Self::ModRunSpeed { per_rank }
+            | Self::OffhandDamagePct { per_rank }
             | Self::ModCritDamage { per_rank }
             | Self::ModHealthRegenOutOfCombat { per_rank }
             | Self::Proc { per_rank, .. }

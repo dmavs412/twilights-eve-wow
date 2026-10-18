@@ -27,7 +27,7 @@ use crate::rules::power::PowerKind;
 use crate::rules::school::{crit_scaled, mitigated, School};
 use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
-use crate::rules::stats::CharacterStats;
+use crate::rules::stats::{CharacterStats, OFF_HAND_DAMAGE_PCT};
 use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled};
 use crate::space::distance;
 
@@ -747,9 +747,37 @@ pub(super) fn white(stats: &CharacterStats, skills: &Skills) -> CharacterStats {
     s
 }
 
+/// [`white`] for an off-hand swing: the off-hand weapon's damage at half, and Dual Wield
+/// Specialization's share more, on the off-hand weapon's own swing time; `None` without a weapon
+/// in the off hand. The buffs and the haste land as they do on the main hand.
+pub(super) fn off_hand_white(stats: &CharacterStats, skills: &Skills) -> Option<CharacterStats> {
+    let off = stats.off_hand?;
+    let bonus = skills.attack_power_bonus();
+    let extra = if bonus > 0 {
+        formulas::ap_damage(bonus as i32, clock::secs(off.attack_time_ms))
+    } else {
+        0.0
+    };
+    let halved = OFF_HAND_DAMAGE_PCT as f32 / 100.0;
+    let share = halved * (100 + stats.offhand_damage_pct) as f32 / 100.0;
+    let mut s = buffed(stats, skills);
+    s.attack_time_ms = off.attack_time_ms;
+    s.min_damage = (off.min_damage + extra) * share;
+    s.max_damage = (off.max_damage + extra) * share;
+    let haste = skills.haste_pct();
+    if haste > 0 {
+        s.attack_time_ms = hasted_attack_time(s.attack_time_ms, haste);
+        s.min_damage = haste_cut_damage(s.min_damage, haste);
+        s.max_damage = haste_cut_damage(s.max_damage, haste);
+    }
+    Some(s)
+}
+
 /// The sheet fields buffs move: the attack power mods, the damage they add and the swing time.
 fn buff_sheet(stats: &CharacterStats, skills: &Skills) -> Vec<(u16, u32)> {
     let s = white(stats, skills);
+    let off = off_hand_white(stats, skills);
+    let off_time = off.map_or(s.attack_time_ms, |o| o.attack_time_ms);
     vec![
         (
             UNIT_FIELD_ATTACK_POWER_MODS,
@@ -758,7 +786,7 @@ fn buff_sheet(stats: &CharacterStats, skills: &Skills) -> Vec<(u16, u32)> {
         (UNIT_FIELD_MINDAMAGE, float(s.min_damage)),
         (UNIT_FIELD_MAXDAMAGE, float(s.max_damage)),
         (UNIT_FIELD_BASEATTACKTIME, s.attack_time_ms),
-        (UNIT_FIELD_BASEATTACKTIME + 1, s.attack_time_ms),
+        (UNIT_FIELD_BASEATTACKTIME + 1, off_time),
     ]
 }
 
@@ -2066,6 +2094,8 @@ impl InWorld {
         self.pay(skill, c, events);
         // A next-swing strike rolls exactly as the white swing it replaces, its bonus added.
         let mut stats = buffed(&self.player.stats, &self.skills);
+        // A yellow attack: the main hand's, with no dual-wield miss penalty.
+        stats.off_hand = None;
         let pct = crate::talents::amount_pct(c, &skill.key);
         let extra = scaled(bonus.at(c.level, stats.attack_power), pct) as f32;
         stats.min_damage += extra;

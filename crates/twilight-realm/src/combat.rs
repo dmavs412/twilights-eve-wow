@@ -9,10 +9,11 @@ use crate::rules::melee::{
     armor_reduced, glancing_range, mob_vs_player, player_vs_mob, Outcome, PlayerDefense,
     PlayerOffense, ROLL,
 };
-use crate::rules::stats::CharacterStats;
+use crate::rules::stats::{CharacterStats, DUAL_WIELD_MISS_BP};
 
 // `HitInfo` bits (vmangos `Unit.h`), as the client reads them.
 const HITINFO_AFFECTS_VICTIM: u32 = 0x2;
+const HITINFO_LEFTSWING: u32 = 0x4;
 const HITINFO_MISS: u32 = 0x10;
 const HITINFO_CRITICALHIT: u32 = 0x80;
 const HITINFO_GLANCING: u32 = 0x4000;
@@ -35,6 +36,8 @@ pub(crate) struct Swing {
     /// The damage after armour had the swing landed: a dodged or parried swing still earns
     /// rage from it.
     pub(crate) would_be: u32,
+    /// Struck with the off-hand weapon (`HITINFO_LEFTSWING`).
+    pub(crate) off_hand: bool,
 }
 
 impl Swing {
@@ -61,7 +64,11 @@ impl Swing {
         AttackerState {
             attacker,
             victim,
-            hit_info,
+            hit_info: if self.off_hand {
+                hit_info | HITINFO_LEFTSWING
+            } else {
+                hit_info
+            },
             damage: self.damage,
             victim_state,
             absorb: 0,
@@ -91,6 +98,11 @@ pub(crate) fn player_swing(
         mob.defense(),
         from_front,
     );
+    let mut table = table;
+    // Two weapons worn: every white swing, either hand, misses 19% more.
+    if p.off_hand.is_some() {
+        table.miss = (table.miss + DUAL_WIELD_MISS_BP).min(6000);
+    }
     let outcome = table.outcome(rng.below(ROLL));
     let mob_defense = 5 * u16::from(mob.level());
     // `Creature::GetShieldBlockValue`: level / 2 + str / 20, the strength term 1 at these levels.
@@ -154,5 +166,6 @@ fn land(
         damage,
         blocked,
         would_be: armored,
+        off_hand: false,
     }
 }
