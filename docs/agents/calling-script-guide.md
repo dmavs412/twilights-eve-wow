@@ -3,6 +3,7 @@
 This guide is for an LLM that is asked to write a Python script appending one Calling (a class, such as Cutthroat) to
 `data/twilights-eve/master.csv`. Read all of it before writing code. The schema is spec #63; the build
 (`tools/twilights-eve/build_spells.py`) checks every rule below and rejects the sheet on the first error.
+The design inputs for each Tier 1 Calling (class, tabs, Tier Bonus, kit) are in `docs/agents/tier1-callings-sheet.md`.
 
 ## What we want from you
 
