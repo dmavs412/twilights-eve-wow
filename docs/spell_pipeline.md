@@ -62,7 +62,10 @@ them all. `periodic_damage` also takes `duration_per_combo` (a formula in millis
 `duration_ms` once per point; it too makes the row a finisher). Talent kinds that modify a skill:
 `skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points),
 `skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`
-(`skill=`, `amount=` flat power off the cost). There is no `finisher` kind or flag. A cost is paid in the Calling's power, read from
+(`skill=`, `amount=` flat power off the cost), `skill_extra_target` (`skill=`, `pct=` chance that
+the skill also strikes the nearest enemy in melee reach in front of the caster, for no combo
+point) and `skill_bonus_combo` (`skill=`, `pct=` chance of one more combo point, with
+`target_state=bleeding` only on a target the caster has a physical bleed on). There is no `finisher` kind or flag. A cost is paid in the Calling's power, read from
 its `class`; `realm_cost` and `client_cost` stay bare numbers.
 
 **Adding a column** changes both generated schemas and the realm loader, so it goes through

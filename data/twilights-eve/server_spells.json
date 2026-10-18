@@ -7421,6 +7421,14 @@
            "amount": 2
           },
           "realm_only": false
+         },
+         {
+          "kind": "skill_extra_target",
+          "params": {
+           "skill": "sinister_strike",
+           "pct": 10
+          },
+          "realm_only": false
          }
         ],
         "description": "Reduces the Energy cost of Sinister Strike by 2, and gives Sinister Strike a 10% chance to strike a second nearby target."
@@ -7455,6 +7463,14 @@
            "amount": 4
           },
           "realm_only": false
+         },
+         {
+          "kind": "skill_extra_target",
+          "params": {
+           "skill": "sinister_strike",
+           "pct": 20
+          },
+          "realm_only": false
          }
         ],
         "description": "Reduces the Energy cost of Sinister Strike by 4, and gives Sinister Strike a 20% chance to strike a second nearby target."
@@ -7487,6 +7503,14 @@
           "params": {
            "skill": "sinister_strike",
            "amount": 6
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_extra_target",
+          "params": {
+           "skill": "sinister_strike",
+           "pct": 30
           },
           "realm_only": false
          }
@@ -8456,7 +8480,7 @@
         "key": "serrated_strikes",
         "name": "Serrated Strikes",
         "rank": 1,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14138,
         "talent_id": 270,
         "source_tab_id": 182,
@@ -8481,6 +8505,15 @@
            "amount": 50
           },
           "realm_only": false
+         },
+         {
+          "kind": "skill_bonus_combo",
+          "params": {
+           "skill": "sinister_strike",
+           "target_state": "bleeding",
+           "pct": 20
+          },
+          "realm_only": false
          }
         ],
         "description": "Your attacks ignore 50 of the target's Armor, and Sinister Strike has a 20% chance to generate an additional combo point when striking a bleeding target."
@@ -8489,7 +8522,7 @@
         "key": "serrated_strikes",
         "name": "Serrated Strikes",
         "rank": 2,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14139,
         "talent_id": 270,
         "source_tab_id": 182,
@@ -8514,6 +8547,15 @@
            "amount": 100
           },
           "realm_only": false
+         },
+         {
+          "kind": "skill_bonus_combo",
+          "params": {
+           "skill": "sinister_strike",
+           "target_state": "bleeding",
+           "pct": 40
+          },
+          "realm_only": false
          }
         ],
         "description": "Your attacks ignore 100 of the target's Armor, and Sinister Strike has a 40% chance to generate an additional combo point when striking a bleeding target."
@@ -8522,7 +8564,7 @@
         "key": "serrated_strikes",
         "name": "Serrated Strikes",
         "rank": 3,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14140,
         "talent_id": 270,
         "source_tab_id": 182,
@@ -8547,6 +8589,15 @@
            "amount": 150
           },
           "realm_only": false
+         },
+         {
+          "kind": "skill_bonus_combo",
+          "params": {
+           "skill": "sinister_strike",
+           "target_state": "bleeding",
+           "pct": 60
+          },
+          "realm_only": false
          }
         ],
         "description": "Your attacks ignore 150 of the target's Armor, and Sinister Strike has a 60% chance to generate an additional combo point when striking a bleeding target."
@@ -8555,7 +8606,7 @@
         "key": "serrated_strikes",
         "name": "Serrated Strikes",
         "rank": 4,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14141,
         "talent_id": 270,
         "source_tab_id": 182,
@@ -8580,6 +8631,15 @@
            "amount": 200
           },
           "realm_only": false
+         },
+         {
+          "kind": "skill_bonus_combo",
+          "params": {
+           "skill": "sinister_strike",
+           "target_state": "bleeding",
+           "pct": 80
+          },
+          "realm_only": false
          }
         ],
         "description": "Your attacks ignore 200 of the target's Armor, and Sinister Strike has a 80% chance to generate an additional combo point when striking a bleeding target."
@@ -8588,7 +8648,7 @@
         "key": "serrated_strikes",
         "name": "Serrated Strikes",
         "rank": 5,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14142,
         "talent_id": 270,
         "source_tab_id": 182,
@@ -8611,6 +8671,15 @@
           "kind": "armor_pen",
           "params": {
            "amount": 250
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_bonus_combo",
+          "params": {
+           "skill": "sinister_strike",
+           "target_state": "bleeding",
+           "pct": 100
           },
           "realm_only": false
          }

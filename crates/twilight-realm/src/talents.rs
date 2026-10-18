@@ -163,6 +163,24 @@ pub(crate) fn skill_crit_damage_pct(c: &Char, builder: bool) -> u32 {
     )
 }
 
+/// The percent chance a skill also lands on one more enemy in front of the caster (Flurry of
+/// Blades).
+pub(crate) fn extra_target_pct(c: &Char, skill: &str) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::SkillExtraTarget { skill: s, .. } if s == skill),
+    )
+}
+
+/// The percent chance a skill's combo point gains one more, on a target that is bleeding or
+/// not (Serrated Strikes).
+pub(crate) fn bonus_combo_pct(c: &Char, skill: &str, bleeding: bool) -> u32 {
+    sum(c, |e| {
+        matches!(e, TalentEffect::SkillBonusCombo { skill: s, target_state, .. }
+            if s == skill && (bleeding || target_state.is_none()))
+    })
+}
+
 /// The milliseconds a skill's auras last longer (Bloodletting).
 pub(crate) fn duration_ms(c: &Char, skill: &str) -> u32 {
     sum(

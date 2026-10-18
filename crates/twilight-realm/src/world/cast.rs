@@ -884,7 +884,7 @@ impl InWorld {
             events.push(refused(spell_id, SPELL_FAILED_NOT_KNOWN));
             return ticked;
         };
-        let targets = match self.check(skill, target, c) {
+        let mut targets = match self.check(skill, target, c) {
             Ok(targets) => targets,
             Err(reason) => {
                 events.push(refused(spell_id, reason));
@@ -907,6 +907,26 @@ impl InWorld {
         self.pay(skill, c, events);
         // A cast that breaks stealth does so as it goes; its first blow from stealth is a crit.
         let opener = self.skills.opens_from_stealth(skill, events);
+
+        // Flurry of Blades: a chance of one more enemy in melee reach in front of the caster.
+        let chance = crate::talents::extra_target_pct(c, &skill.key);
+        let mut rider = None;
+        if chance > 0 && rng.below(100) < chance {
+            rider = self
+                .mobs
+                .iter()
+                .filter(|m| {
+                    m.attackable()
+                        && !targets.contains(&m.guid)
+                        && distance(m.position, c.position) <= melee_reach()
+                        && in_front(c.orientation, c.position, m.position)
+                })
+                .min_by(|a, b| {
+                    distance(a.position, c.position).total_cmp(&distance(b.position, c.position))
+                })
+                .map(|m| m.guid);
+            targets.extend(rider);
+        }
 
         // Roll who it lands on first: `SMSG_SPELL_GO` lists the misses.
         let level = c.level;
@@ -977,6 +997,10 @@ impl InWorld {
             if !matches!(how, Landed::Missed(_)) {
                 let combo = self.skills.combo.on(guid);
                 for effect in &skill.effects {
+                    // The rider's blow gives no combo point of its own.
+                    if rider == Some(guid) && matches!(effect, Effect::AddComboPoints { .. }) {
+                        continue;
+                    }
                     self.effect(
                         skill,
                         effect,
@@ -1470,7 +1494,18 @@ impl InWorld {
                 }
             }
             Effect::AddComboPoints { amount } => {
-                self.skills.combo.add(target, amount);
+                // Serrated Strikes: a chance of one more point, more so on a bleeding target.
+                let bleeding = self.skills.auras.iter().any(|a| {
+                    a.unit == target
+                        && matches!(
+                            a.kind,
+                            AuraKind::PeriodicDamage { school: School::Physical, caster, .. }
+                                if caster == self.guid
+                        )
+                });
+                let chance = crate::talents::bonus_combo_pct(c, &skill.key, bleeding);
+                let more = u32::from(chance > 0 && rng.below(100) < chance);
+                self.skills.combo.add(target, amount + more);
                 self.skills.send_combo(events);
             }
             Effect::AttackSpeedSlow { pct, duration_ms } => {

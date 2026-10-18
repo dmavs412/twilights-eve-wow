@@ -321,6 +321,17 @@ pub struct Prereq {
 pub enum TalentEffect {
     /// The skill costs this many points less of the Calling's power.
     SkillCost { skill: String, per_rank: Vec<u32> },
+    /// The skill has this percent chance to land on one more enemy in melee reach in front of
+    /// the caster, for the same blow and no combo point (Flurry of Blades).
+    SkillExtraTarget { skill: String, per_rank: Vec<u32> },
+    /// The skill's combo point gains this percent chance of one more; with `target_state`
+    /// `"bleeding"`, only on a target the caster has a bleed on (Serrated Strikes).
+    SkillBonusCombo {
+        skill: String,
+        #[serde(default)]
+        target_state: Option<String>,
+        per_rank: Vec<u32>,
+    },
     /// The skill's damage and buff amounts rise by this percent.
     SkillAmountPct { skill: String, per_rank: Vec<u32> },
     /// The skill's rage gain rises by this many points.
@@ -501,6 +512,8 @@ impl TalentEffect {
     pub fn per_rank(&self) -> &[u32] {
         match self {
             Self::SkillCost { per_rank, .. }
+            | Self::SkillExtraTarget { per_rank, .. }
+            | Self::SkillBonusCombo { per_rank, .. }
             | Self::SkillAmountPct { per_rank, .. }
             | Self::SkillRage { per_rank, .. }
             | Self::SkillCritPct { per_rank, .. }

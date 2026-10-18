@@ -40,7 +40,7 @@ KNOWN_KINDS = {
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
-    "skill_crit_pct", "skill_duration_ms", "skill_rage", "stealth", "stun", "weapon_strike",
+    "skill_crit_pct", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")

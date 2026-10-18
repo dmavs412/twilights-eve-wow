@@ -3985,6 +3985,13 @@
        "skill": "sinister_strike",
        "amount": 2
       }
+     },
+     {
+      "kind": "skill_extra_target",
+      "params": {
+       "skill": "sinister_strike",
+       "pct": 10
+      }
      }
     ]
    }
@@ -4007,6 +4014,13 @@
        "skill": "sinister_strike",
        "amount": 4
       }
+     },
+     {
+      "kind": "skill_extra_target",
+      "params": {
+       "skill": "sinister_strike",
+       "pct": 20
+      }
      }
     ]
    }
@@ -4028,6 +4042,13 @@
       "params": {
        "skill": "sinister_strike",
        "amount": 6
+      }
+     },
+     {
+      "kind": "skill_extra_target",
+      "params": {
+       "skill": "sinister_strike",
+       "pct": 30
       }
      }
     ]
@@ -4625,6 +4646,14 @@
       "params": {
        "amount": 50
       }
+     },
+     {
+      "kind": "skill_bonus_combo",
+      "params": {
+       "skill": "sinister_strike",
+       "target_state": "bleeding",
+       "pct": 20
+      }
      }
     ]
    }
@@ -4645,6 +4674,14 @@
       "kind": "armor_pen",
       "params": {
        "amount": 100
+      }
+     },
+     {
+      "kind": "skill_bonus_combo",
+      "params": {
+       "skill": "sinister_strike",
+       "target_state": "bleeding",
+       "pct": 40
       }
      }
     ]
@@ -4667,6 +4704,14 @@
       "params": {
        "amount": 150
       }
+     },
+     {
+      "kind": "skill_bonus_combo",
+      "params": {
+       "skill": "sinister_strike",
+       "target_state": "bleeding",
+       "pct": 60
+      }
      }
     ]
    }
@@ -4688,6 +4733,14 @@
       "params": {
        "amount": 200
       }
+     },
+     {
+      "kind": "skill_bonus_combo",
+      "params": {
+       "skill": "sinister_strike",
+       "target_state": "bleeding",
+       "pct": 80
+      }
      }
     ]
    }
@@ -4708,6 +4761,14 @@
       "kind": "armor_pen",
       "params": {
        "amount": 250
+      }
+     },
+     {
+      "kind": "skill_bonus_combo",
+      "params": {
+       "skill": "sinister_strike",
+       "target_state": "bleeding",
+       "pct": 100
       }
      }
     ]
