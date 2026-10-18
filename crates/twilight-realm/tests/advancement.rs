@@ -863,8 +863,8 @@ fn the_cutthroats_mark_makes_a_level_1_cutthroat_on_energy() {
     assert_eq!(now.unit_level(), Some(1));
     assert_eq!(
         spellbook(&events),
-        [1752, 1943, 2098, 5277].into_iter().collect(),
-        "Sinister Strike, Rupture, Eviscerate and Evasion; Stealth waits for its ticket"
+        [1752, 1784, 1943, 2098, 5277].into_iter().collect(),
+        "Sinister Strike, Stealth, Rupture, Eviscerate and Evasion"
     );
     let tabs: Vec<&str> = realm
         .current_calling()

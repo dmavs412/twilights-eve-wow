@@ -40,7 +40,7 @@ KNOWN_KINDS = {
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_pct",
-    "skill_rage", "stun", "weapon_strike",
+    "skill_rage", "stealth", "stun", "weapon_strike",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
@@ -521,6 +521,8 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         stacks = params.get("stacks", 1)
         if isinstance(stacks, bool) or not isinstance(stacks, int) or stacks <= 0:
             raise BuildError(f"{where}: add_aura_stacks needs a positive whole stacks, has {stacks!r}")
+    if kind == "stealth" and not isinstance(params.get("opener_crit", False), bool):
+        raise BuildError(f"{where}: stealth opener_crit is yes or no, has {params['opener_crit']!r}")
     if kind == "ground_effect":
         if not isinstance(params.get("amount"), dict):
             raise BuildError(f"{where}: ground_effect lacks an amount formula (amount.base, amount.per_level)")

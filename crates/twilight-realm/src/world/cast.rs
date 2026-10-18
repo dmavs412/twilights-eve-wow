@@ -90,6 +90,8 @@ const READY_SLACK_SECS: f32 = 0.1;
 /// Seconds of float drift an aura clock forgives, so a tick and the fade due on the same tick
 /// both land.
 const CLOCK_EPSILON: f32 = 1e-3;
+/// Seconds left on an aura with no duration, which lasts until something breaks it (Stealth).
+const UNTIL_BROKEN_SECS: f32 = 1.0e9;
 /// How far short of the target a charge stops.
 const CHARGE_STOP_YD: f32 = 2.0;
 
@@ -247,6 +249,10 @@ enum AuraKind {
     Dodge {
         pct: u32,
     },
+    /// The player is stealthed; `opener_crit`: their first attack from it is a critical strike.
+    Stealth {
+        opener_crit: bool,
+    },
     /// A count of stacks that does nothing itself; a skill that consumes it reads the count
     /// (Conviction). The aura row's `max_stacks` and `stack_rule` govern a new application.
     Stacks {
@@ -279,6 +285,7 @@ impl AuraKind {
                 | AuraKind::SkillCrit { .. }
                 | AuraKind::RunSpeed { .. }
                 | AuraKind::Dodge { .. }
+                | AuraKind::Stealth { .. }
                 | AuraKind::Stacks { .. }
         )
     }
@@ -371,6 +378,37 @@ impl Skills {
                 _ => 0,
             })
             .sum()
+    }
+
+    /// Whether the player is stealthed.
+    pub(super) fn stealthed(&self) -> bool {
+        self.auras
+            .iter()
+            .any(|a| a.unit == self.me && matches!(a.kind, AuraKind::Stealth { .. }))
+    }
+
+    /// Takes the player's stealth off (an attack, a cast, a blow taken). `Some(opener_crit)` when
+    /// they were stealthed, whether the attack that broke it is a guaranteed critical strike.
+    pub(super) fn break_stealth(&mut self, events: &mut Vec<SessionEvent>) -> Option<bool> {
+        let me = self.me;
+        let gone = self.remove_where(
+            |a| a.unit == me && matches!(a.kind, AuraKind::Stealth { .. }),
+            events,
+        );
+        gone.iter().find_map(|a| match a.kind {
+            AuraKind::Stealth { opener_crit } => Some(opener_crit),
+            _ => None,
+        })
+    }
+
+    /// Whether `skill` is the first blow from stealth with an opener crit; a skill that breaks
+    /// stealth takes it off either way.
+    pub(super) fn opens_from_stealth(
+        &mut self,
+        skill: &Skill,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        skill.meta.shape.on_cast.breaks_stealth && self.break_stealth(events) == Some(true)
     }
 
     /// The percent the player's buffs raise the physical damage they deal by.
@@ -867,12 +905,14 @@ impl InWorld {
             return ticked;
         }
         self.pay(skill, c, events);
+        // A cast that breaks stealth does so as it goes; its first blow from stealth is a crit.
+        let opener = self.skills.opens_from_stealth(skill, events);
 
         // Roll who it lands on first: `SMSG_SPELL_GO` lists the misses.
         let level = c.level;
         let landed: Vec<(u64, Landed)> = targets
             .iter()
-            .map(|&t| (t, self.roll(skill, t, c, rng)))
+            .map(|&t| (t, self.roll(skill, t, opener, c, rng)))
             .collect();
         let hits: Vec<u64> = landed
             .iter()
@@ -1166,7 +1206,8 @@ impl InWorld {
 
     /// The melee table's verdict on `skill` at `target`: a strike or a hit-table skill rolls
     /// avoidance, then crit (the two-roll yellow model); anything else lands.
-    fn roll(&self, skill: &Skill, target: u64, c: &Char, rng: &mut Rng) -> Landed {
+    /// An `opener` (the first blow from stealth) skips the table and is a critical strike.
+    fn roll(&self, skill: &Skill, target: u64, opener: bool, c: &Char, rng: &mut Rng) -> Landed {
         let mut rolls = false;
         let mut unavoidable = false;
         for e in &skill.effects {
@@ -1193,6 +1234,9 @@ impl InWorld {
         };
         if !rolls {
             return Landed::Hit;
+        }
+        if opener {
+            return Landed::Crit;
         }
         let stats = buffed(&self.player.stats, &self.skills);
         let from_front = in_front(mob.orientation, mob.position, c.position);
@@ -1431,6 +1475,22 @@ impl InWorld {
                 a.unit = self.guid;
                 self.skills.apply(a, events);
                 events.push(values(self.guid, &self.sheet_now()));
+            }
+            Effect::Stealth {
+                duration_ms,
+                opener_crit,
+            } => {
+                let mut a = aura(
+                    AuraKind::Stealth { opener_crit },
+                    skill.spell_id,
+                    duration_ms,
+                    0,
+                );
+                if duration_ms == 0 {
+                    a.left = UNTIL_BROKEN_SECS;
+                }
+                a.unit = self.guid;
+                self.skills.apply(a, events);
             }
             Effect::HealingReduction { duration_ms, .. } => {
                 let a = aura(AuraKind::HealingReduced, skill.spell_id, duration_ms, 0);
@@ -2092,6 +2152,7 @@ impl InWorld {
             return false;
         };
         self.pay(skill, c, events);
+        let opener = self.skills.opens_from_stealth(skill, events);
         // A next-swing strike rolls exactly as the white swing it replaces, its bonus added.
         let mut stats = buffed(&self.player.stats, &self.skills);
         // A yellow attack: the main hand's, with no dual-wield miss penalty.
@@ -2117,12 +2178,15 @@ impl InWorld {
         beside.truncate(skill.extra_targets as usize);
         let mut swings = vec![(
             target,
-            crate::combat::player_swing(&stats, &self.mobs[i], from_front, rng),
+            crate::combat::player_swing(&stats, &self.mobs[i], from_front, opener, rng),
         )];
         for j in beside {
             let m = &self.mobs[j];
             let front = in_front(m.orientation, m.position, c.position);
-            swings.push((m.guid, crate::combat::player_swing(&stats, m, front, rng)));
+            swings.push((
+                m.guid,
+                crate::combat::player_swing(&stats, m, front, false, rng),
+            ));
         }
         let missed_by = |outcome: Outcome| match outcome {
             Outcome::Miss => Some(SPELL_MISS_MISS),
@@ -2482,13 +2546,20 @@ impl InWorld {
                 },
                 callings::AuraEffect::ModRunSpeed { pct } => AuraKind::RunSpeed { pct: *pct },
                 callings::AuraEffect::DodgePct { pct } => AuraKind::Dodge { pct: *pct },
+                callings::AuraEffect::Stealth { opener_crit } => AuraKind::Stealth {
+                    opener_crit: *opener_crit,
+                },
             };
             let aura = Aura {
                 unit: self.guid,
                 spell_id: def.spell_id,
                 slot: 0,
                 level,
-                left: clock::secs(def.duration_ms),
+                left: if def.duration_ms == 0 {
+                    UNTIL_BROKEN_SECS
+                } else {
+                    clock::secs(def.duration_ms)
+                },
                 period: 0.0,
                 next_tick: 0.0,
                 kind,

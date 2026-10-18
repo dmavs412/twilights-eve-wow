@@ -188,6 +188,12 @@ pub enum AuraEffect {
     ModRunSpeed { pct: u32 },
     /// The player's dodge chance rises by `pct` percent.
     DodgePct { pct: u32 },
+    /// The player is stealthed until it breaks; `opener_crit`: the first melee attack or skill
+    /// from stealth is a guaranteed critical strike.
+    Stealth {
+        #[serde(default)]
+        opener_crit: bool,
+    },
 }
 
 /// An armour kind a Calling may wear.
@@ -691,6 +697,14 @@ pub enum Effect {
     /// The caster's dodge chance rises by `pct` percent for `duration_ms`, under the skill's
     /// spell id (Evasion).
     DodgePct { pct: u32, duration_ms: u32 },
+    /// The caster is stealthed (Stealth) until it breaks, or for `duration_ms` when set, under the
+    /// skill's spell id; see [`AuraEffect::Stealth`].
+    Stealth {
+        #[serde(default)]
+        duration_ms: u32,
+        #[serde(default)]
+        opener_crit: bool,
+    },
     /// The caster's attack power rises by `amount`, under the skill's spell id.
     AuraAttackPower { duration_ms: u32, amount: Linear },
     /// The target's healing is cut by `pct`%, under the skill's spell id (Mortal Strike).

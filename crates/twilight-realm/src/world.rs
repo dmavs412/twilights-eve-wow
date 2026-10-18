@@ -356,7 +356,7 @@ impl InWorld {
                 if mob.state != State::Idle || !mob.template.hostile {
                     continue;
                 }
-                let r = aggro::radius(mob.template.detection_range, c.level, mob.level());
+                let r = self.notice_radius(mob, c.level);
                 if distance(mob.position, me) <= r
                     && host.line_of_sight(self.map, eye(mob.position), eye(me))
                 {
@@ -382,6 +382,17 @@ impl InWorld {
         ticked
     }
 
+    /// How close the player may come before an idle `mob` notices them: a stealthed player is
+    /// noticed only inside the short stealth range.
+    fn notice_radius(&self, mob: &Mob, player_level: u8) -> f32 {
+        let r = aggro::radius(mob.template.detection_range, player_level, mob.level());
+        if self.skills.stealthed() {
+            r.min(aggro::stealth_radius(player_level, mob.level()))
+        } else {
+            r
+        }
+    }
+
     /// A dazed mob whose hold is over: it notices the player as any idle mob does, or goes home.
     fn dazed_wake(&mut self, c: &Char, host: &dyn Host, events: &mut Vec<SessionEvent>) {
         let me = c.position;
@@ -391,7 +402,7 @@ impl InWorld {
             if mob.state != State::Dazed || self.skills.stunned(mob.guid) {
                 continue;
             }
-            let r = aggro::radius(mob.template.detection_range, c.level, mob.level());
+            let r = self.notice_radius(mob, c.level);
             let notices = mob.template.hostile
                 && distance(mob.position, me) <= r
                 && host.line_of_sight(self.map, eye(mob.position), eye(me));
@@ -548,7 +559,8 @@ impl InWorld {
         } else {
             cast::white(&self.player.stats, &self.skills)
         };
-        let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, rng);
+        let opener = self.skills.break_stealth(events) == Some(true);
+        let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, opener, rng);
         swing.off_hand = off_hand;
         swing.damage = self.dealt(c, swing.damage);
         // The next-swing buffs count main-hand swings only.
@@ -752,6 +764,7 @@ impl InWorld {
     /// The player loses `damage` to a creature's blow or spell: rage from it, and a timed cast
     /// broken (the Hearthstone's interrupts on damage).
     fn player_takes(&mut self, damage: u32, events: &mut Vec<SessionEvent>) {
+        self.skills.break_stealth(events);
         let p = &mut self.player;
         p.health = p.health.saturating_sub(damage);
         p.power.gain_stored(

@@ -378,6 +378,8 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::DodgePct { .. } => {
             panic!("{key}: the reference has no realm half for a dodge aura")
         }
+        // Stealth lives in the master CSV only; tests/stealth.rs reads it.
+        Effect::Stealth { .. } => panic!("{key}: the reference has no realm half for stealth"),
     }
 }
 
@@ -389,8 +391,8 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     assert_eq!(
         ids,
         [
-            78, 100, 116, 133, 589, 845, 1752, 1776, 1943, 2098, 2136, 2912, 5277, 6178, 10308,
-            12294, 20271, 20305, 20375
+            78, 100, 116, 133, 589, 845, 1752, 1776, 1784, 1943, 2098, 2136, 2912, 5277, 6178,
+            10308, 12294, 20271, 20305, 20375
         ]
     );
 }

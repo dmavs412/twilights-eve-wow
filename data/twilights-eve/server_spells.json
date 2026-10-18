@@ -6665,14 +6665,22 @@
     "interrupt_on": [],
     "defense_type": "none",
     "on_cast": {
-     "breaks_stealth": true,
+     "breaks_stealth": false,
      "starts_auto_attack": false,
      "resets_swing": false
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stealth",
+      "params": {
+       "apply_aura": "aura_stealth"
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it."
    }
   ],
@@ -8354,8 +8362,16 @@
     "aura_hidden": false,
     "cancelable": true,
     "persist_death": false,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stealth",
+      "params": {
+       "opener_crit": true
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Stealthed."
    }
   ],

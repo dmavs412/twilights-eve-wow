@@ -80,11 +80,13 @@ impl Swing {
     }
 }
 
-/// The player's swing at `mob`; `from_front` when the player stands in the mob's front arc.
+/// The player's swing at `mob`; `from_front` when the player stands in the mob's front arc;
+/// `opener`: the first blow from stealth, which skips the attack table and is a critical strike.
 pub(crate) fn player_swing(
     p: &CharacterStats,
     mob: &Mob,
     from_front: bool,
+    opener: bool,
     rng: &mut Rng,
 ) -> Swing {
     let raw = rng.urand(p.min_damage as u32, p.max_damage as u32);
@@ -103,7 +105,11 @@ pub(crate) fn player_swing(
     if p.off_hand.is_some() {
         table.miss = (table.miss + DUAL_WIELD_MISS_BP).min(6000);
     }
-    let outcome = table.outcome(rng.below(ROLL));
+    let outcome = if opener {
+        Outcome::Crit
+    } else {
+        table.outcome(rng.below(ROLL))
+    };
     let mob_defense = 5 * u16::from(mob.level());
     // `Creature::GetShieldBlockValue`: level / 2 + str / 20, the strength term 1 at these levels.
     let block_value = u32::from(mob.level()) / 2 + 1;

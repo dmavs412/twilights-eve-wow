@@ -12,6 +12,13 @@ pub fn radius(detection: f32, player_level: u8, mob_level: u8) -> f32 {
     (detection - diff as f32).max(detection.min(5.0))
 }
 
+/// How close a stealthed player of `player_level` may come before a mob of `mob_level` notices
+/// them: 3 yd, a yard more for each level the mob is above (placeholder).
+pub fn stealth_radius(player_level: u8, mob_level: u8) -> f32 {
+    let above = i32::from(mob_level) - i32::from(player_level);
+    3.0 + above.max(0) as f32
+}
+
 /// How near a pulled mob its campmates must stand to hear it (social aggro).
 pub const SOCIAL_RANGE_YD: f32 = 8.0;
 

@@ -3530,7 +3530,15 @@
     "cooldown_ms": 10000,
     "school": 0,
     "prevention_type": 2,
-    "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it."
+    "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it.",
+    "effects": [
+     {
+      "kind": "stealth",
+      "params": {
+       "apply_aura": "aura_stealth"
+      }
+     }
+    ]
    }
   },
   {
