@@ -382,7 +382,7 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         }
         // The Initiate's snare and consume live in the master CSV only; tests/initiate_*.rs read
         // them.
-        Effect::ModRunSpeed { .. } | Effect::ConsumeAura { .. } => {
+        Effect::ModRunSpeed { .. } | Effect::ConsumeAura { .. } | Effect::Blink { .. } => {
             panic!("{key}: the reference has no realm half for a snare or a consume")
         }
         // Consecration lives in the master CSV only; tests/vanguard_consecration.rs reads it.
@@ -415,8 +415,8 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     assert_eq!(
         ids,
         [
-            78, 100, 116, 133, 589, 845, 1752, 1776, 1784, 1943, 2098, 2136, 2912, 5277, 6178,
-            8921, 10308, 12294, 12809, 20165, 20271, 20305, 20375, 25899
+            78, 100, 116, 133, 589, 845, 1752, 1776, 1784, 1943, 1953, 2098, 2136, 2912, 5277,
+            6178, 8921, 10308, 12294, 12809, 20165, 20271, 20305, 20375, 25899
         ]
     );
 }
@@ -446,10 +446,10 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Wield Specialization, Phantom Guile and Relentless Strikes are modelled now).
         // Cutthroat's Tracker: nothing (Scent of Blood, Bloodletting, Predator's Step, Serrated
         // Strikes, Ruthlessness and Executioner's Toll are modelled now).
-        // Initiate's Weaver: Thermal Feedback, Arcane Substrate, Shattered Blink, Combustion
-        // Engine, Elemental Convergence.
-        11069, 12338, 12339, 12340, 12341, 11103, 12357, 12358, 12359, 12360, 11165, 12475, 11095,
-        12872, 12873, 11366,
+        // Initiate's Weaver: Thermal Feedback, Arcane Substrate, Combustion Engine, Elemental
+        // Convergence.
+        11069, 12338, 12339, 12340, 12341, 11103, 12357, 12358, 12359, 12360, 11095, 12872, 12873,
+        11366,
         // Initiate's Channeler: Ley-Line Tap, Volatile Embers, Ley-Line Attunement, Frigid
         // Conservation, Arcane Momentum, Mana Surge.
         11213, 12574, 12575, 12576, 12577, 11222, 12839, 12840, 12841, 12842, 18462, 18463, 18464,

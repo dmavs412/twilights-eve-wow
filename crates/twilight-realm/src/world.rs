@@ -325,6 +325,7 @@ impl InWorld {
         if self.transfer {
             return ticked;
         }
+        self.land_blink(host, c, events);
         let me = c.position;
         self.cross_phase(c, events);
         self.show_portals(me, events);
@@ -669,8 +670,14 @@ impl InWorld {
         let route = crate::dungeon::route_on(self.map);
         let map = self.map;
         let phase = self.phase;
+        // A rooted mob stands where it is.
+        let rooted = self.skills.rooted(self.mobs[i].guid);
         let mob = &mut self.mobs[i];
-        mob.advance(dt);
+        if rooted {
+            events.extend(mob.halt());
+        } else {
+            mob.advance(dt);
+        }
         mob.swing_timer = (mob.swing_timer - dt).max(0.0);
         mob.repath_timer = (mob.repath_timer - dt).max(0.0);
         if let Some(t) = mob.assist_in {
@@ -713,6 +720,9 @@ impl InWorld {
                 }
                 let mob = &mut self.mobs[i];
                 let d = distance(mob.position, me);
+                if d > melee_reach() && rooted {
+                    return;
+                }
                 if d > melee_reach() {
                     let stale = mob
                         .walk

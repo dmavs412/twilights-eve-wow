@@ -504,6 +504,10 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     object.remove("energize");
     object.remove("add_combo_points");
     object.remove("block_value_pct");
+    object.remove("apply_aura_area");
+    // The ring is always centred where the caster stood (`center=origin`, the build's only one).
+    object.remove("center");
+    let mut area_auras = Vec::new();
     let mut heals = Vec::new();
     let mut block_value = Vec::new();
     let mut auras = Vec::new();
@@ -522,7 +526,13 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
             Some(key) => Value::Array(vec![key.clone()]),
             None => Value::Array(Vec::new()),
         });
+        area_auras.push(match params.get("apply_aura_area") {
+            Some(Value::Array(keys)) => Value::Array(keys.clone()),
+            Some(key) => Value::Array(vec![key.clone()]),
+            None => Value::Array(Vec::new()),
+        });
     }
+    object.insert("area_auras".into(), Value::Array(area_auras));
     object.insert("per_rank".into(), Value::Array(heals));
     object.insert("auras".into(), Value::Array(auras));
     object.insert("chances".into(), Value::Array(chances));

@@ -190,6 +190,8 @@ pub enum AuraEffect {
     DodgePct { pct: u32 },
     /// The damage the player's non-physical skills deal rises by `pct` percent.
     ModSpellDamagePct { pct: u32 },
+    /// The unit cannot move, though it still attacks and casts; damage does not break it.
+    Root,
     /// The player's parry chance rises by `pct` percent.
     ParryPct { pct: u32 },
     /// The player's block chance rises by `pct` percent while a shield is worn.
@@ -470,6 +472,12 @@ pub enum TalentEffect {
         /// many yards of the target.
         #[serde(default)]
         spread: f32,
+        /// Each rank's aura keys put on every living enemy within `radius_yd` of where the
+        /// caster stood as they cast.
+        #[serde(default)]
+        area_auras: Vec<Vec<String>>,
+        #[serde(default)]
+        radius_yd: f32,
     },
     /// The armour from items rises by this many percent.
     #[serde(alias = "armor_items_pct")]
@@ -860,6 +868,9 @@ pub enum Effect {
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
     /// The target moves `pct`% slower, under the skill's spell id.
     MovementSlow { pct: u32, duration_ms: u32 },
+    /// The caster teleports `distance_yd` along their facing, as far as the ground lets them, and
+    /// sheds their stuns and roots first.
+    Blink { distance_yd: f32 },
     /// Takes the caster's aura `aura_spell_id` off the target, then pays its outcome: damage of
     /// `amount_pct` percent of the hit `amount` of the skill `amount_of` names, in its `school`, and
     /// `energize_pct_of_max` percent of the caster's power bar. Nothing when the aura is absent.

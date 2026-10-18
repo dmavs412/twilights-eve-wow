@@ -123,7 +123,22 @@ pub(super) struct Skills {
     /// The aura a `consume_aura` just took, and its row's full duration in ms, while the consume
     /// procs run: what a spread copies.
     consumed: Option<(Aura, u32)>,
+    /// A Blink cast and not yet landed: the next tick, which has the ground, moves the caster.
+    blink: Option<PendingBlink>,
 }
+
+/// Where a Blink starts, the way it faces, and how far it goes.
+#[derive(Debug, Clone, Copy)]
+struct PendingBlink {
+    from: [f32; 3],
+    orientation: f32,
+    distance_yd: f32,
+}
+
+/// How far a Blink steps between ground checks, and the most the ground may rise or fall over one
+/// step before the Blink stops short.
+const BLINK_STEP_YD: f32 = 1.0;
+const BLINK_MAX_CLIMB_YD: f32 = 1.5;
 
 /// A cast with a cast bar, from an item.
 #[derive(Debug, Clone, Copy)]
@@ -204,6 +219,8 @@ enum AuraKind {
         pct: u32,
     },
     Stun,
+    /// The unit cannot move; it still attacks and casts, and damage does not break it.
+    Root,
     /// A stun that damage ends when `break_on_damage` (Gouge).
     Incapacitate {
         break_on_damage: bool,
@@ -571,6 +588,13 @@ impl Skills {
         self.auras.iter().any(|a| {
             a.unit == unit && matches!(a.kind, AuraKind::Stun | AuraKind::Incapacitate { .. })
         })
+    }
+
+    /// Whether `unit` is rooted.
+    pub(super) fn rooted(&self, unit: u64) -> bool {
+        self.auras
+            .iter()
+            .any(|a| a.unit == unit && a.kind == AuraKind::Root)
     }
 
     /// What `unit`'s swing time is multiplied by.
@@ -1931,6 +1955,24 @@ impl InWorld {
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
+            Effect::Blink { distance_yd } => {
+                let me = self.guid;
+                self.skills.remove_where(
+                    |a| {
+                        a.unit == me
+                            && matches!(
+                                a.kind,
+                                AuraKind::Stun | AuraKind::Incapacitate { .. } | AuraKind::Root
+                            )
+                    },
+                    events,
+                );
+                self.skills.blink = Some(PendingBlink {
+                    from: c.position,
+                    orientation: c.orientation,
+                    distance_yd,
+                });
+            }
             Effect::ConsumeAura {
                 aura_spell_id,
                 duration_ms,
@@ -3060,6 +3102,44 @@ impl InWorld {
         level: u8,
         events: &mut Vec<SessionEvent>,
     ) {
+        self.put_aura(def, self.guid, level, events);
+    }
+
+    /// Lands a Blink cast since the last tick: the caster steps along their facing over the
+    /// ground, stopping where there is none or it rises or falls too sharply, and is teleported
+    /// there.
+    pub(super) fn land_blink(
+        &mut self,
+        host: &dyn crate::Host,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Some(b) = self.skills.blink.take() else {
+            return;
+        };
+        let (dx, dy) = (b.orientation.cos(), b.orientation.sin());
+        let mut at = b.from;
+        let mut gone = 0.0;
+        while gone < b.distance_yd {
+            let step = BLINK_STEP_YD.min(b.distance_yd - gone);
+            let (x, y) = (at[0] + dx * step, at[1] + dy * step);
+            match host.ground_height(self.map, x, y, at[2] + BLINK_MAX_CLIMB_YD) {
+                Some(z) if (z - at[2]).abs() <= BLINK_MAX_CLIMB_YD => at = [x, y, z],
+                _ => break,
+            }
+            gone += step;
+        }
+        self.teleport(c, at, b.orientation, events);
+    }
+
+    /// Puts the aura row `def` on `unit`, one aura per effect.
+    pub(super) fn put_aura(
+        &mut self,
+        def: &'static callings::AuraDef,
+        unit: u64,
+        level: u8,
+        events: &mut Vec<SessionEvent>,
+    ) {
         for effect in &def.effects {
             let kind = match effect {
                 callings::AuraEffect::SkillCritPct { skill, pct } => AuraKind::SkillCrit {
@@ -3071,6 +3151,7 @@ impl InWorld {
                 callings::AuraEffect::ModSpellDamagePct { pct } => {
                     AuraKind::SpellDamagePct { pct: *pct }
                 }
+                callings::AuraEffect::Root => AuraKind::Root,
                 callings::AuraEffect::Proc(p) => AuraKind::Proc(p),
                 callings::AuraEffect::SkillCost { skill, amount } => AuraKind::SkillCost {
                     skill: skill.as_str(),
@@ -3101,7 +3182,7 @@ impl InWorld {
                 },
             };
             let aura = Aura {
-                unit: self.guid,
+                unit,
                 spell_id: def.spell_id,
                 slot: 0,
                 level,
@@ -3116,8 +3197,13 @@ impl InWorld {
                 charges: def.charges,
             };
             self.skills.apply(aura, events);
-            if matches!(kind, AuraKind::RunSpeed { .. }) {
-                self.update_speed(self.guid, events);
+            if matches!(kind, AuraKind::RunSpeed { .. } | AuraKind::MoveSlow { .. }) {
+                self.update_speed(unit, events);
+            }
+            if kind == AuraKind::Root {
+                if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
+                    events.extend(mob.halt());
+                }
             }
             if matches!(kind, AuraKind::Dodge { .. } | AuraKind::Defense { .. }) {
                 events.push(values(self.guid, &self.sheet_now()));

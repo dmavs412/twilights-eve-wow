@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "blink", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -46,7 +46,7 @@ ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
 PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume")
-PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread")
+PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread", "apply_aura_area")
 WEAPON_ROLLS = ("normal", "normalized")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
@@ -481,11 +481,19 @@ def check_proc(params: dict, auras: set[str], where: str) -> None:
         raise BuildError(f"{where}: a proc takes apply_aura or heal_pct, not both")
     if "while_aura" in params and params["while_aura"] not in auras:
         raise BuildError(f"{where}: while_aura {params['while_aura']!r} is not an aura row of this Calling")
-    if "apply_aura" in params:
-        keys = params["apply_aura"] if isinstance(params["apply_aura"], list) else [params["apply_aura"]]
+    for action in ("apply_aura", "apply_aura_area"):
+        if action not in params:
+            continue
+        keys = params[action] if isinstance(params[action], list) else [params[action]]
         for key in keys:
             if key not in auras:
-                raise BuildError(f"{where}: apply_aura {key!r} is not an aura row of this Calling")
+                raise BuildError(f"{where}: {action} {key!r} is not an aura row of this Calling")
+    if "apply_aura_area" in params:
+        if params.get("center", "origin") != "origin":
+            raise BuildError(f"{where}: apply_aura_area center is {params['center']!r}, want origin")
+        radius = params.get("radius_yd")
+        if isinstance(radius, bool) or not isinstance(radius, (int, float)) or radius <= 0:
+            raise BuildError(f"{where}: apply_aura_area needs a positive radius_yd, has {radius!r}")
 
 
 def check_apply_aura(kind: str, params: dict, auras: dict[str, set[str]], where: str) -> None:

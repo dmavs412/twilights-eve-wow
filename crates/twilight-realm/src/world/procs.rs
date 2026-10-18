@@ -77,6 +77,23 @@ impl InWorld {
                     self.grant_aura(def, c.level, events);
                 }
             }
+            for key in &proc.area_auras {
+                let Some(def) = crate::callings::aura(key) else {
+                    continue;
+                };
+                let around: Vec<u64> = self
+                    .mobs
+                    .iter()
+                    .filter(|m| {
+                        m.alive()
+                            && crate::space::distance(m.position, c.position) <= proc.radius_yd
+                    })
+                    .map(|m| m.guid)
+                    .collect();
+                for guid in around {
+                    self.put_aura(def, guid, c.level, events);
+                }
+            }
             if let (true, Some(target)) = (proc.spread > 0.0, happened.target) {
                 self.spread_consumed(target, proc.spread, events);
             }

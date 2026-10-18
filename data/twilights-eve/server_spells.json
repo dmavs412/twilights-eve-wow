@@ -9953,8 +9953,16 @@
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "blink",
+      "params": {
+       "distance_yd": 20
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Teleports you forward 20 yards and frees you from stuns and roots."
    }
   ],
@@ -10380,8 +10388,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "blink",
+           "apply_aura_area": "aura_shattered_blink_1",
+           "radius_yd": 8,
+           "center": "origin"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 2 seconds."
        },
        {
@@ -10405,8 +10425,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "blink",
+           "apply_aura_area": "aura_shattered_blink_2",
+           "radius_yd": 8,
+           "center": "origin"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 4 seconds."
        }
       ]
@@ -11418,6 +11450,62 @@
      }
     ],
     "description": "Movement speed slowed by 50%."
+   },
+   {
+    "key": "aura_shattered_blink_1",
+    "name": "Shattered Blink",
+    "spell_id": 122,
+    "status": "placeholder",
+    "school": "frost",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "root",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 2000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "root",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Frozen in place."
+   },
+   {
+    "key": "aura_shattered_blink_2",
+    "name": "Shattered Blink",
+    "spell_id": 122,
+    "status": "placeholder",
+    "school": "frost",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "root",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 4000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "root",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Frozen in place."
    },
    {
     "key": "aura_catalytic_resonance_1",

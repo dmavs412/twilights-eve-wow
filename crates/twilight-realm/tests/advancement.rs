@@ -892,8 +892,8 @@ fn the_initiates_spark_makes_a_level_1_initiate_on_mana() {
     assert_eq!(now.unit_level(), Some(1));
     assert_eq!(
         spellbook(&events),
-        [116, 133, 2912, 8921].into_iter().collect(),
-        "Biting Cold, Searing Ember, Ley-Spark and Catalyst; Blink waits for its ticket"
+        [116, 133, 1953, 2912, 8921].into_iter().collect(),
+        "Biting Cold, Searing Ember, Blink, Ley-Spark and Catalyst"
     );
     let tabs: Vec<&str> = realm
         .current_calling()

@@ -469,6 +469,9 @@ pub(crate) struct Proc {
     pub(crate) while_aura: Option<&'static str>,
     /// Yards from the target a consumed aura's copy may spread to; 0 for none.
     pub(crate) spread: f32,
+    /// The keys of the auras put on every enemy within `radius_yd` of the caster.
+    pub(crate) area_auras: Vec<String>,
+    pub(crate) radius_yd: f32,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -495,6 +498,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 weapon_pct,
                 while_aura,
                 spread,
+                area_auras,
+                radius_yd,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -515,6 +520,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     weapon_pct: *weapon_pct,
                     while_aura: while_aura.as_deref(),
                     spread: *spread,
+                    area_auras: area_auras.get(r).cloned().unwrap_or_default(),
+                    radius_yd: *radius_yd,
                 })
             }
             _ => None,
@@ -547,6 +554,8 @@ pub(crate) fn aura_proc(
         weapon_pct: p.weapon_pct,
         while_aura: None,
         spread: 0.0,
+        area_auras: Vec::new(),
+        radius_yd: 0.0,
     })
 }
 

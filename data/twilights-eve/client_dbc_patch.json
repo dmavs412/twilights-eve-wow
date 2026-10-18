@@ -5468,7 +5468,15 @@
     "cost_percent": 10.0,
     "school": 6,
     "prevention_type": 1,
-    "description": "Teleports you forward 20 yards and frees you from stuns and roots."
+    "description": "Teleports you forward 20 yards and frees you from stuns and roots.",
+    "effects": [
+     {
+      "kind": "blink",
+      "params": {
+       "distance_yd": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -5677,7 +5685,19 @@
     "name": "Shattered Blink",
     "school": 0,
     "prevention_type": 2,
-    "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 2 seconds."
+    "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 2 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "blink",
+       "apply_aura_area": "aura_shattered_blink_1",
+       "radius_yd": 8,
+       "center": "origin"
+      }
+     }
+    ]
    }
   },
   {
@@ -5690,7 +5710,19 @@
     "name": "Shattered Blink",
     "school": 0,
     "prevention_type": 2,
-    "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 4 seconds."
+    "description": "Blinking leaves behind a ring of frost at your starting location, rooting all enemies within 8 yards for 4 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "blink",
+       "apply_aura_area": "aura_shattered_blink_2",
+       "radius_yd": 8,
+       "center": "origin"
+      }
+     }
+    ]
    }
   },
   {
@@ -7409,6 +7441,15 @@
    "rank": 1,
    "fields": {
     "mechanic": 12
+   }
+  },
+  {
+   "spell_id": 122,
+   "calling": "initiate",
+   "key": "aura_shattered_blink_1",
+   "rank": 1,
+   "fields": {
+    "mechanic": 7
    }
   }
  ],

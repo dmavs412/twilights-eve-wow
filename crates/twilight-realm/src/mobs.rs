@@ -709,6 +709,23 @@ impl Mob {
         }
     }
 
+    /// Stops the mob where it stands, if it was moving: the stop the client needs.
+    pub(crate) fn halt(&mut self) -> Option<SessionEvent> {
+        self.walk.take()?;
+        Some(SessionEvent::MonsterMove {
+            guid: self.guid,
+            transport: None,
+            start: self.position,
+            spline_id: 0,
+            path: vec![self.position],
+            facing: MonsterMoveFacing::None,
+            stop: true,
+            duration_ms: 0,
+            flying: false,
+            run_mode: false,
+        })
+    }
+
     /// Walks on along the current path by `dt` seconds.
     pub(crate) fn advance(&mut self, dt: f32) {
         let Some(w) = &mut self.walk else {
