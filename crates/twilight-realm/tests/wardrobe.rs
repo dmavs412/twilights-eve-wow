@@ -144,3 +144,55 @@ fn the_look_templates_answer_the_item_query_and_are_never_gear() {
         assert!(twilight_realm::rules::gear::can_equip(entry, HUMAN, basic).is_err());
     }
 }
+
+/// Every look template in `content/gear.toml` (entries 990000 up) answers the item query with a
+/// display and carries nothing, and none appears in a pool, vendor or reward: the other content
+/// files never name one.
+#[test]
+fn every_look_template_answers_the_query_and_sits_in_no_pool_vendor_or_reward() {
+    let content = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("content");
+    let gear: toml::Table = std::fs::read_to_string(content.join("gear.toml"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    let looks: Vec<(u32, u32)> = gear["item"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|t| {
+            let entry = u32::try_from(t["entry"].as_integer()?).ok()?;
+            let display = u32::try_from(t["display_id"].as_integer()?).ok()?;
+            (entry >= 990_000).then_some((entry, display))
+        })
+        .collect();
+    assert!(!looks.is_empty(), "the sheet has look templates");
+
+    let mut realm = realm();
+    for &(entry, display) in &looks {
+        realm.handle(RealmCommand::ItemQuery { entry });
+        let info = drain(&mut realm)
+            .into_iter()
+            .find_map(|e| match e {
+                SessionEvent::ItemTemplate { info, .. } => info,
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("{entry} answers"));
+        assert_eq!(info.display_info_id, display, "{entry}");
+        assert!(info.stats.is_empty() && info.armor == 0 && info.damages.is_empty());
+    }
+
+    for file in std::fs::read_dir(&content).unwrap() {
+        let path = file.unwrap().path();
+        if path.file_name().is_some_and(|n| n == "gear.toml") {
+            continue;
+        }
+        let text = std::fs::read_to_string(&path).unwrap();
+        for &(entry, _) in &looks {
+            assert!(
+                !text.contains(&entry.to_string()),
+                "{entry} appears in {}",
+                path.display()
+            );
+        }
+    }
+}
