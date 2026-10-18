@@ -7051,7 +7051,7 @@
         "key": "phantom_guile",
         "name": "Phantom Guile",
         "rank": 1,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 13741,
         "talent_id": 203,
         "source_tab_id": 181,
@@ -7068,15 +7068,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "dodge",
+           "chance": 33,
+           "add_combo_points": 1,
+           "energize": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Dodging an attack has a 33% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy."
        },
        {
         "key": "phantom_guile",
         "name": "Phantom Guile",
         "rank": 2,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 13793,
         "talent_id": 203,
         "source_tab_id": 181,
@@ -7093,15 +7104,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "dodge",
+           "chance": 66,
+           "add_combo_points": 1,
+           "energize": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Dodging an attack has a 66% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy."
        },
        {
         "key": "phantom_guile",
         "name": "Phantom Guile",
         "rank": 3,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 13792,
         "talent_id": 203,
         "source_tab_id": 181,
@@ -7118,8 +7140,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "dodge",
+           "chance": 100,
+           "add_combo_points": 1,
+           "energize": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Dodging an attack has a 100% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy."
        }
       ]
@@ -7399,7 +7432,7 @@
         "key": "relentless_strikes",
         "name": "Relentless Strikes",
         "rank": 1,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14186,
         "talent_id": 283,
         "source_tab_id": 182,
@@ -7416,15 +7449,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "finisher",
+           "chance": 20,
+           "energize": 25
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your finishing moves have a 20% chance to restore 25 Energy."
        },
        {
         "key": "relentless_strikes",
         "name": "Relentless Strikes",
         "rank": 2,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14190,
         "talent_id": 283,
         "source_tab_id": 182,
@@ -7441,15 +7484,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "finisher",
+           "chance": 40,
+           "energize": 25
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your finishing moves have a 40% chance to restore 25 Energy."
        },
        {
         "key": "relentless_strikes",
         "name": "Relentless Strikes",
         "rank": 3,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14193,
         "talent_id": 283,
         "source_tab_id": 182,
@@ -7466,15 +7519,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "finisher",
+           "chance": 60,
+           "energize": 25
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your finishing moves have a 60% chance to restore 25 Energy."
        },
        {
         "key": "relentless_strikes",
         "name": "Relentless Strikes",
         "rank": 4,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14194,
         "talent_id": 283,
         "source_tab_id": 182,
@@ -7491,15 +7554,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "finisher",
+           "chance": 80,
+           "energize": 25
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your finishing moves have a 80% chance to restore 25 Energy."
        },
        {
         "key": "relentless_strikes",
         "name": "Relentless Strikes",
         "rank": 5,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14195,
         "talent_id": 283,
         "source_tab_id": 182,
@@ -7516,8 +7589,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "finisher",
+           "chance": 100,
+           "energize": 25
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your finishing moves have a 100% chance to restore 25 Energy."
        }
       ]
@@ -7680,7 +7763,7 @@
         "key": "ruthlessness",
         "name": "Ruthlessness",
         "rank": 1,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14156,
         "talent_id": 273,
         "source_tab_id": 182,
@@ -7697,15 +7780,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "finisher",
+           "chance": 33,
+           "add_combo_points": 1
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Gives your melee finishing moves a 33% chance to add a combo point to your target."
        },
        {
         "key": "ruthlessness",
         "name": "Ruthlessness",
         "rank": 2,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14160,
         "talent_id": 273,
         "source_tab_id": 182,
@@ -7722,15 +7815,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "finisher",
+           "chance": 66,
+           "add_combo_points": 1
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Gives your melee finishing moves a 66% chance to add a combo point to your target."
        },
        {
         "key": "ruthlessness",
         "name": "Ruthlessness",
         "rank": 3,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14161,
         "talent_id": 273,
         "source_tab_id": 182,
@@ -7747,8 +7850,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "finisher",
+           "chance": 100,
+           "add_combo_points": 1
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Gives your melee finishing moves a 100% chance to add a combo point to your target."
        }
       ]
@@ -8063,7 +8176,7 @@
         "key": "executioners_toll",
         "name": "Executioner's Toll",
         "rank": 1,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 13976,
         "talent_id": 245,
         "source_tab_id": 183,
@@ -8080,15 +8193,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "kill",
+           "yields_xp": true,
+           "heal_pct": 5,
+           "energize": 20
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Landing a killing blow that yields experience instantly heals you for 5% of your total health and refunds 20 Energy."
        },
        {
         "key": "executioners_toll",
         "name": "Executioner's Toll",
         "rank": 2,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 13979,
         "talent_id": 245,
         "source_tab_id": 183,
@@ -8105,15 +8229,26 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "kill",
+           "yields_xp": true,
+           "heal_pct": 10,
+           "energize": 40
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Landing a killing blow that yields experience instantly heals you for 10% of your total health and refunds 40 Energy."
        },
        {
         "key": "executioners_toll",
         "name": "Executioner's Toll",
         "rank": 3,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 13980,
         "talent_id": 245,
         "source_tab_id": 183,
@@ -8130,8 +8265,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "kill",
+           "yields_xp": true,
+           "heal_pct": 15,
+           "energize": 60
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Landing a killing blow that yields experience instantly heals you for 15% of your total health and refunds 60 Energy."
        }
       ]

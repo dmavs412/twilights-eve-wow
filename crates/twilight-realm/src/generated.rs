@@ -452,11 +452,20 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     let mut object = ranks[0].effects.get(slot)?.params.clone();
     object.remove("heal_pct");
     object.remove("apply_aura");
+    object.remove("chance");
+    object.remove("energize");
+    object.remove("add_combo_points");
     let mut heals = Vec::new();
     let mut auras = Vec::new();
+    let mut chances = Vec::new();
+    let mut energize = Vec::new();
+    let mut combo_points = Vec::new();
     for rank in ranks {
         let params = &rank.effects.get(slot)?.params;
         heals.push(params.get("heal_pct").cloned().unwrap_or(0.into()));
+        chances.push(params.get("chance").cloned().unwrap_or(100.into()));
+        energize.push(params.get("energize").cloned().unwrap_or(0.into()));
+        combo_points.push(params.get("add_combo_points").cloned().unwrap_or(0.into()));
         auras.push(match params.get("apply_aura") {
             Some(Value::Array(keys)) => Value::Array(keys.clone()),
             Some(key) => Value::Array(vec![key.clone()]),
@@ -465,6 +474,9 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     }
     object.insert("per_rank".into(), Value::Array(heals));
     object.insert("auras".into(), Value::Array(auras));
+    object.insert("chances".into(), Value::Array(chances));
+    object.insert("energize".into(), Value::Array(energize));
+    object.insert("combo_points".into(), Value::Array(combo_points));
     object.insert("kind".into(), "proc".into());
     serde_json::from_value(Value::Object(object)).ok()
 }

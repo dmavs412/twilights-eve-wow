@@ -394,6 +394,10 @@ pub(crate) struct Proc {
     pub(crate) heal_pct: u32,
     /// The keys of the buffs it grants.
     pub(crate) auras: Vec<String>,
+    /// Points of the character's own power given.
+    pub(crate) energize: u32,
+    /// Combo points added on the event's target.
+    pub(crate) combo_points: u32,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -405,8 +409,11 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 skill,
                 yields_xp,
                 chance,
+                chances,
                 per_rank,
                 auras,
+                energize,
+                combo_points,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -414,9 +421,11 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     yields_xp: *yields_xp,
                 };
                 trigger.fires(happened).then(|| Proc {
-                    chance: *chance,
+                    chance: chances.get(r).copied().unwrap_or(*chance),
                     heal_pct: per_rank[r],
                     auras: auras.get(r).cloned().unwrap_or_default(),
+                    energize: energize.get(r).copied().unwrap_or(0),
+                    combo_points: combo_points.get(r).copied().unwrap_or(0),
                 })
             }
             _ => None,

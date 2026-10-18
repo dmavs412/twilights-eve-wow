@@ -491,9 +491,13 @@ class BuildSpells(unittest.TestCase):
 
     def test_proc_needs_one_action_and_a_known_event(self):
         base = {**STRIKE, "effect1_kind": "proc", "effect4_kind": "", "effect4_params": ""}
-        self.assert_fails([{**base, "effect1_params": "on=cast"}], "exactly one of")
-        self.assert_fails([{**base, "effect1_params": "on=kill;heal_pct=10;apply_aura=buff"}], "exactly one of")
+        self.assert_fails([{**base, "effect1_params": "on=cast"}], "at least one of")
+        self.assert_fails([{**base, "effect1_params": "on=kill;heal_pct=10;apply_aura=buff"}], "not both")
         self.assert_fails([{**base, "effect1_params": "on=sneeze;heal_pct=10"}], "proc on")
+        for on in ("dodge", "finisher"):
+            params = f"on={on};chance=50;energize=10;add_combo_points=1"
+            done, _ = self.run_build([CALLING, {**base, "effect1_params": params}])
+            self.assertEqual(done.returncode, 0, done.stderr)
 
     def test_calling_row_with_only_a_name_and_class_gives_the_class_and_no_tier(self):
         bare = {"kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard",

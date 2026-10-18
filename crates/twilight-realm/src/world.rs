@@ -857,6 +857,7 @@ impl InWorld {
                 event: crate::callings::ProcEvent::Kill,
                 skill: None,
                 yields_xp: base_xp > 0,
+                target: None,
             },
             c,
             rng,

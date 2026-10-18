@@ -365,7 +365,9 @@ pub enum TalentEffect {
     /// Out-of-combat health regeneration rises by this percent.
     ModHealthRegenOutOfCombat { per_rank: Vec<u32> },
     /// When `on` happens (and the filters hold), `chance` percent of the time: heal `per_rank`
-    /// percent of the maximum health (0 for none), and apply the rank's `auras` by key.
+    /// percent of the maximum health (0 for none), apply the rank's `auras` by key, give the
+    /// rank's `energize` of the character's power, and add the rank's `combo_points` on the
+    /// event's target.
     Proc {
         on: ProcEvent,
         /// Only for a cast of this skill.
@@ -376,9 +378,16 @@ pub enum TalentEffect {
         yields_xp: bool,
         #[serde(default = "always")]
         chance: u32,
+        /// The chance a rank has, when it differs from `chance`.
+        #[serde(default)]
+        chances: Vec<u32>,
         per_rank: Vec<u32>,
         #[serde(default)]
         auras: Vec<Vec<String>>,
+        #[serde(default)]
+        energize: Vec<u32>,
+        #[serde(default)]
+        combo_points: Vec<u32>,
     },
     /// The armour from items rises by this many percent.
     ItemArmorPct { per_rank: Vec<u32> },
@@ -447,6 +456,10 @@ pub enum ProcEvent {
     Cast,
     /// The character lands a killing blow.
     Kill,
+    /// The character dodges a melee attack.
+    Dodge,
+    /// The character lands a skill that spends combo points.
+    Finisher,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].

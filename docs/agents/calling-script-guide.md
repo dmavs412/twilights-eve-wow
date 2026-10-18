@@ -187,8 +187,10 @@ The params the build checks:
 - **Finishers:** there is no finisher kind. A damage or duration effect with a `per_combo.*` block (`per_combo.base`,
   `per_combo.per_level`, `per_combo.per_ap`) is a finisher. It needs combo points and spends them all.
 - **`mod_stat`:** `stat=strength|agility|stamina|intellect|spirit` with `pct=` or `amount=`.
-- **`proc`:** `on=cast|kill`, optional `skill=` and `chance=`, then exactly one of `apply_aura=key|key` or
-  `heal_pct=`.
+- **`proc`:** `on=cast|kill|dodge|finisher`, optional `skill=` and `chance=` (per rank), then at
+  least one of `apply_aura=key|key` or `heal_pct=` (not both), `energize=` (the character's own
+  power) and `add_combo_points=` (on the mob being fought, or on the finisher's target; none with no
+  target). A `finisher` proc fires after the finisher has spent its points.
 
 Any other trigger (on dodge, on crit, on a finisher) or proc rate is not in the vocabulary yet. Write it as a
 descriptive kind on a `modelled=no` row and list it in the summary.

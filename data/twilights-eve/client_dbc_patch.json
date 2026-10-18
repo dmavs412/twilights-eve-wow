@@ -3751,7 +3751,18 @@
     "name": "Phantom Guile",
     "school": 0,
     "prevention_type": 2,
-    "description": "Dodging an attack has a 33% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy."
+    "description": "Dodging an attack has a 33% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "dodge",
+       "chance": 33,
+       "add_combo_points": 1,
+       "energize": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -3764,7 +3775,18 @@
     "name": "Phantom Guile",
     "school": 0,
     "prevention_type": 2,
-    "description": "Dodging an attack has a 66% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy."
+    "description": "Dodging an attack has a 66% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "dodge",
+       "chance": 66,
+       "add_combo_points": 1,
+       "energize": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -3777,7 +3799,18 @@
     "name": "Phantom Guile",
     "school": 0,
     "prevention_type": 2,
-    "description": "Dodging an attack has a 100% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy."
+    "description": "Dodging an attack has a 100% chance to instantly generate 1 Combo Point on your current target and restore 10 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "dodge",
+       "chance": 100,
+       "add_combo_points": 1,
+       "energize": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -3934,7 +3967,17 @@
     "name": "Relentless Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your finishing moves have a 20% chance to restore 25 Energy."
+    "description": "Your finishing moves have a 20% chance to restore 25 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "finisher",
+       "chance": 20,
+       "energize": 25
+      }
+     }
+    ]
    }
   },
   {
@@ -3947,7 +3990,17 @@
     "name": "Relentless Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your finishing moves have a 40% chance to restore 25 Energy."
+    "description": "Your finishing moves have a 40% chance to restore 25 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "finisher",
+       "chance": 40,
+       "energize": 25
+      }
+     }
+    ]
    }
   },
   {
@@ -3960,7 +4013,17 @@
     "name": "Relentless Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your finishing moves have a 60% chance to restore 25 Energy."
+    "description": "Your finishing moves have a 60% chance to restore 25 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "finisher",
+       "chance": 60,
+       "energize": 25
+      }
+     }
+    ]
    }
   },
   {
@@ -3973,7 +4036,17 @@
     "name": "Relentless Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your finishing moves have a 80% chance to restore 25 Energy."
+    "description": "Your finishing moves have a 80% chance to restore 25 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "finisher",
+       "chance": 80,
+       "energize": 25
+      }
+     }
+    ]
    }
   },
   {
@@ -3986,7 +4059,17 @@
     "name": "Relentless Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your finishing moves have a 100% chance to restore 25 Energy."
+    "description": "Your finishing moves have a 100% chance to restore 25 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "finisher",
+       "chance": 100,
+       "energize": 25
+      }
+     }
+    ]
    }
   },
   {
@@ -4064,7 +4147,17 @@
     "name": "Ruthlessness",
     "school": 0,
     "prevention_type": 2,
-    "description": "Gives your melee finishing moves a 33% chance to add a combo point to your target."
+    "description": "Gives your melee finishing moves a 33% chance to add a combo point to your target.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "finisher",
+       "chance": 33,
+       "add_combo_points": 1
+      }
+     }
+    ]
    }
   },
   {
@@ -4077,7 +4170,17 @@
     "name": "Ruthlessness",
     "school": 0,
     "prevention_type": 2,
-    "description": "Gives your melee finishing moves a 66% chance to add a combo point to your target."
+    "description": "Gives your melee finishing moves a 66% chance to add a combo point to your target.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "finisher",
+       "chance": 66,
+       "add_combo_points": 1
+      }
+     }
+    ]
    }
   },
   {
@@ -4090,7 +4193,17 @@
     "name": "Ruthlessness",
     "school": 0,
     "prevention_type": 2,
-    "description": "Gives your melee finishing moves a 100% chance to add a combo point to your target."
+    "description": "Gives your melee finishing moves a 100% chance to add a combo point to your target.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "finisher",
+       "chance": 100,
+       "add_combo_points": 1
+      }
+     }
+    ]
    }
   },
   {
@@ -4277,7 +4390,18 @@
     "name": "Executioner's Toll",
     "school": 0,
     "prevention_type": 2,
-    "description": "Landing a killing blow that yields experience instantly heals you for 5% of your total health and refunds 20 Energy."
+    "description": "Landing a killing blow that yields experience instantly heals you for 5% of your total health and refunds 20 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "kill",
+       "yields_xp": true,
+       "heal_pct": 5,
+       "energize": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -4290,7 +4414,18 @@
     "name": "Executioner's Toll",
     "school": 0,
     "prevention_type": 2,
-    "description": "Landing a killing blow that yields experience instantly heals you for 10% of your total health and refunds 40 Energy."
+    "description": "Landing a killing blow that yields experience instantly heals you for 10% of your total health and refunds 40 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "kill",
+       "yields_xp": true,
+       "heal_pct": 10,
+       "energize": 40
+      }
+     }
+    ]
    }
   },
   {
@@ -4303,7 +4438,18 @@
     "name": "Executioner's Toll",
     "school": 0,
     "prevention_type": 2,
-    "description": "Landing a killing blow that yields experience instantly heals you for 15% of your total health and refunds 60 Energy."
+    "description": "Landing a killing blow that yields experience instantly heals you for 15% of your total health and refunds 60 Energy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "kill",
+       "yields_xp": true,
+       "heal_pct": 15,
+       "energize": 60
+      }
+     }
+    ]
    }
   },
   {

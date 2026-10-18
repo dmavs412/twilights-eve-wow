@@ -31,6 +31,17 @@ impl InWorld {
                     events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, p.health)]));
                 }
             }
+            let p = &mut self.player;
+            if proc.energize > 0 && p.alive() {
+                let kind = p.power.kind;
+                if p.power.gain(kind, proc.energize) {
+                    events.push(values(self.guid, &[p.power.field()]));
+                }
+            }
+            if let (true, Some(target)) = (proc.combo_points > 0, happened.target) {
+                self.skills.combo.add(target, proc.combo_points);
+                self.skills.send_combo(events);
+            }
             for key in &proc.auras {
                 if let Some(def) = crate::callings::aura(key) {
                     self.grant_aura(def, c.level, events);

@@ -972,6 +972,7 @@ impl InWorld {
             .iter()
             .any(|(_, how)| !matches!(how, Landed::Missed(_)));
         let mut spent = false;
+        let mut finisher_target = None;
         for (guid, how) in landed {
             if !matches!(how, Landed::Missed(_)) {
                 let combo = self.skills.combo.on(guid);
@@ -989,7 +990,10 @@ impl InWorld {
                         &mut ticked,
                     );
                 }
-                spent |= skill.is_finisher();
+                if skill.is_finisher() {
+                    spent = true;
+                    finisher_target.get_or_insert(guid);
+                }
             }
             // A cast at a mob, landed or not, turns it on the player.
             if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == guid) {
@@ -1044,6 +1048,7 @@ impl InWorld {
                 event: crate::callings::ProcEvent::Cast,
                 skill: Some(&skill.key),
                 yields_xp: false,
+                target: None,
             },
             c,
             rng,
@@ -1053,6 +1058,18 @@ impl InWorld {
             // A finisher that landed spends every point.
             self.skills.combo.clear();
             self.skills.send_combo(events);
+            // Its procs come after, so a point they add survives the spend.
+            self.proc(
+                crate::rules::procs::Happened {
+                    event: crate::callings::ProcEvent::Finisher,
+                    skill: Some(&skill.key),
+                    yields_xp: false,
+                    target: finisher_target,
+                },
+                c,
+                rng,
+                events,
+            );
         }
         let p = &self.player;
         events.push(values(
@@ -1912,6 +1929,19 @@ impl InWorld {
             return;
         }
         let on = crate::talents::on_struck(c);
+        if outcome == Outcome::Dodge {
+            self.proc(
+                crate::rules::procs::Happened {
+                    event: crate::callings::ProcEvent::Dodge,
+                    skill: None,
+                    yields_xp: false,
+                    target: self.player.attacking,
+                },
+                c,
+                rng,
+                events,
+            );
+        }
         match outcome {
             Outcome::Block => {
                 if let Some((spell_id, pct)) = on.block_rage {

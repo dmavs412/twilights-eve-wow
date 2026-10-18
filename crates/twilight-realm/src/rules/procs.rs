@@ -21,6 +21,9 @@ pub struct Happened<'a> {
     pub skill: Option<&'a str>,
     /// Whether the target of a kill yielded experience.
     pub yields_xp: bool,
+    /// Who a combo point from this proc lands on: the target of a finisher, or the mob the
+    /// character is fighting.
+    pub target: Option<u64>,
 }
 
 impl Trigger<'_> {
