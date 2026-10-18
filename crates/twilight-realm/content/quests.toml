@@ -5,6 +5,8 @@
 #   again. It pays 1 Token.
 # - "repeatable": a Dungeon's Repeatable Quest, taken again as soon as it is handed in. It pays
 #   3 Tokens.
+# - "bounty": a Field Giver's bounty, taken again as soon as it is handed in. It pays half a
+#   level's XP, as a Hunting Quest does, and the `tokens` and `money` it names (1 Token).
 # - "advancement": an Advancement Quest, with an `advancement` table (below). It pays no Token.
 # - "once": once per character. Advancement never forgets it. It pays no XP.
 # - "story": a Story Quest, once per character. Advancement never forgets it. It pays XP as a
@@ -21,7 +23,9 @@
 # fails on an entry that is neither.
 #
 # A quest: `id`, its `kind`, its `giver`, `level`, `min_level` (the lowest level it is offered at;
-# by default four below its level, and at least 1),
+# by default four below its level, and at least 1), an optional `max_level` (the highest level
+# it is offered at; a copy accepted earlier is still handed in above it, and a hunting or bounty
+# quest with one pays its XP unshrunk anywhere in its range),
 # the dialog texts, `money` (copper) and `tokens` on hand-in, and its objectives: `kill` rows of
 # `[creature entry, count]`, and `collect` rows of an `item` (content/quest_items.toml), its
 # `count`, and the creatures it drops `from` at `chance` percent while the quest wants more.

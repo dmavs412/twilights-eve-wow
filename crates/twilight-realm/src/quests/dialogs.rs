@@ -302,7 +302,7 @@ fn offered(c: &Char, q: &Quest) -> bool {
     match &q.advancement {
         // At the Tier Cap of the Calling it advances from.
         Some(a) => c.calling.key() == a.from && c.level >= crate::callings::of(c.calling).cap,
-        None => c.level >= q.min_level(),
+        None => q.in_range(c.level),
     }
 }
 

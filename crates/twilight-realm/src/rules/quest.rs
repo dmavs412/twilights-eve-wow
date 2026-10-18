@@ -32,3 +32,12 @@ pub fn hunting_reward_xp(player: u8, quest: u8) -> u32 {
     }
     xp_to_next(quest).map_or(0, |full| (full * falloff_pct(player, quest)).div_ceil(200))
 }
+
+/// The XP of a Bounty, or any quest with a `max_level`: a Hunting Quest's half level, with no
+/// falloff, since it is only offered inside its range; none at the end of the game.
+pub fn bounty_reward_xp(player: u8, quest: u8) -> u32 {
+    if xp_to_next(player).is_none() {
+        return 0;
+    }
+    xp_to_next(quest).map_or(0, |full| full.div_ceil(2))
+}

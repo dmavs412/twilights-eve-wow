@@ -70,6 +70,9 @@ pub(crate) enum Kind {
     Hunting,
     /// A Dungeon's: taken again as soon as it is handed in.
     Repeatable,
+    /// A field giver's: taken again as soon as it is handed in, paying half a level's XP, a
+    /// Token and its money. Advancement never forgets it.
+    Bounty,
     /// Into another Calling, with an [`Advancement`].
     Advancement,
     /// Once per character: Advancement never forgets it.
@@ -129,6 +132,9 @@ pub(crate) struct Quest {
     pub(crate) after: Option<u32>,
     pub(crate) level: u8,
     min_level: Option<u8>,
+    /// The highest level it is offered at; none by default.
+    #[serde(default)]
+    max_level: Option<u8>,
     pub(crate) title: String,
     pub(crate) objectives: String,
     pub(crate) details: String,
@@ -201,7 +207,12 @@ impl Quest {
     /// The XP a player of level `player` earns handing it in, before the multipliers: an
     /// Advancement Quest pays in a new Calling instead.
     pub(crate) fn reward_xp(&self, player: u8) -> u32 {
+        // A quest with a range pays its whole rate anywhere in it.
+        if self.max_level.is_some() && matches!(self.kind, Kind::Hunting | Kind::Bounty) {
+            return rules::quest::bounty_reward_xp(player, self.level);
+        }
         match self.kind {
+            Kind::Bounty => rules::quest::hunting_reward_xp(player, self.level),
             Kind::Hunting => rules::quest::hunting_reward_xp(player, self.level),
             Kind::Repeatable => rules::quest::reward_xp(player, self.level),
             // Once per character, at the Hunting Quest's rate.
@@ -212,7 +223,13 @@ impl Quest {
 
     /// Whether a character who has handed it in this Tier may take it again.
     pub(crate) fn retakable(&self) -> bool {
-        self.kind == Kind::Repeatable
+        matches!(self.kind, Kind::Repeatable | Kind::Bounty)
+    }
+
+    /// Whether the quest is offered at level `level`: from its lowest level to its `max_level`.
+    /// A copy accepted earlier is handed in at any level.
+    pub(crate) fn in_range(&self, level: u8) -> bool {
+        level >= self.min_level() && self.max_level.is_none_or(|max| level <= max)
     }
 
     /// The lowest level it is offered at: four below its own unless the content says otherwise.
@@ -541,6 +558,38 @@ mod tests {
         let q = quest("hunting");
         assert!(!q.retakable());
         assert_eq!((q.reward_xp(10), q.reward_xp(15)), (3800, 3800));
+    }
+
+    #[test]
+    fn a_bounty_can_be_retaken_and_pays_half_a_level() {
+        let q = quest("bounty");
+        assert!(q.retakable());
+        assert_eq!((q.reward_xp(10), q.reward_xp(15)), (3800, 3800));
+    }
+
+    #[test]
+    fn a_quest_is_not_offered_above_its_max_level() {
+        let q: Quest = toml::from_str(&format!(
+            "kind = \"bounty\"\nmax_level = 12\n{}",
+            quest_body()
+        ))
+        .expect("a quest");
+        assert!(!q.in_range(5) && q.in_range(6) && q.in_range(12) && !q.in_range(13));
+        // Unshrunk anywhere in its range.
+        assert_eq!(q.reward_xp(6), q.reward_xp(12));
+    }
+
+    fn quest_body() -> &'static str {
+        r#"id = 1
+        giver = 1
+        level = 10
+        title = ""
+        objectives = ""
+        details = ""
+        progress = ""
+        completion = ""
+        money = 0
+        tokens = 1"#
     }
 
     #[test]
