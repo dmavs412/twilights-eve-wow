@@ -203,7 +203,7 @@
     "not_in_combat": false,
     "school": 0,
     "prevention_type": 2,
-    "description": "Charge an enemy, generating 15 Rage and leaving a pool of holy light at the destination. Usable in combat.",
+    "description": "Charge an enemy, generating 15 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. Usable in combat.",
     "stances": [
      "Battle Stance"
     ],
@@ -222,6 +222,19 @@
         "base": 15,
         "per_level": 0,
         "per_ap": 0
+       }
+      }
+     },
+     {
+      "kind": "ground_effect",
+      "params": {
+       "radius_yd": 8,
+       "tick_ms": 1000,
+       "duration_ms": 8000,
+       "school": "holy",
+       "amount": {
+        "base": 4,
+        "per_level": 0.6
        }
       }
      }
@@ -882,7 +895,23 @@
     "name": "Hallowed Ground",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 15% and its duration by 2 sec."
+    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 15% and its duration by 2 sec.",
+    "effects": [
+     {
+      "kind": "ground_amount_pct",
+      "params": {
+       "skill": "bulwark_charge",
+       "pct": 15
+      }
+     },
+     {
+      "kind": "ground_duration_ms",
+      "params": {
+       "skill": "bulwark_charge",
+       "amount": 2000
+      }
+     }
+    ]
    }
   },
   {
@@ -895,7 +924,23 @@
     "name": "Hallowed Ground",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 30% and its duration by 4 sec."
+    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 30% and its duration by 4 sec.",
+    "effects": [
+     {
+      "kind": "ground_amount_pct",
+      "params": {
+       "skill": "bulwark_charge",
+       "pct": 30
+      }
+     },
+     {
+      "kind": "ground_duration_ms",
+      "params": {
+       "skill": "bulwark_charge",
+       "amount": 4000
+      }
+     }
+    ]
    }
   },
   {
@@ -908,7 +953,23 @@
     "name": "Hallowed Ground",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 45% and its duration by 6 sec."
+    "description": "Increases the damage of the Consecration left by your Bulwark Charge by 45% and its duration by 6 sec.",
+    "effects": [
+     {
+      "kind": "ground_amount_pct",
+      "params": {
+       "skill": "bulwark_charge",
+       "pct": 45
+      }
+     },
+     {
+      "kind": "ground_duration_ms",
+      "params": {
+       "skill": "bulwark_charge",
+       "amount": 6000
+      }
+     }
+    ]
    }
   },
   {
@@ -3446,7 +3507,15 @@
     "cooldown_ms": 300000,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Dodge chance by 50% for 15 sec."
+    "description": "Increases your Dodge chance by 50% for 15 sec.",
+    "effects": [
+     {
+      "kind": "dodge_pct",
+      "params": {
+       "apply_aura": "aura_evasion"
+      }
+     }
+    ]
    }
   },
   {
@@ -3474,7 +3543,21 @@
     "name": "Reflexive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Dodge chance by 1% and your Critical Strike chance by 1%."
+    "description": "Increases your Dodge chance by 1% and your Critical Strike chance by 1%.",
+    "effects": [
+     {
+      "kind": "dodge_pct",
+      "params": {
+       "pct": 1
+      }
+     },
+     {
+      "kind": "mod_crit_chance",
+      "params": {
+       "pct": 1
+      }
+     }
+    ]
    }
   },
   {
@@ -3487,7 +3570,21 @@
     "name": "Reflexive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Dodge chance by 2% and your Critical Strike chance by 2%."
+    "description": "Increases your Dodge chance by 2% and your Critical Strike chance by 2%.",
+    "effects": [
+     {
+      "kind": "dodge_pct",
+      "params": {
+       "pct": 2
+      }
+     },
+     {
+      "kind": "mod_crit_chance",
+      "params": {
+       "pct": 2
+      }
+     }
+    ]
    }
   },
   {
@@ -3500,7 +3597,21 @@
     "name": "Reflexive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Dodge chance by 3% and your Critical Strike chance by 3%."
+    "description": "Increases your Dodge chance by 3% and your Critical Strike chance by 3%.",
+    "effects": [
+     {
+      "kind": "dodge_pct",
+      "params": {
+       "pct": 3
+      }
+     },
+     {
+      "kind": "mod_crit_chance",
+      "params": {
+       "pct": 3
+      }
+     }
+    ]
    }
   },
   {
@@ -3513,7 +3624,21 @@
     "name": "Reflexive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Dodge chance by 4% and your Critical Strike chance by 4%."
+    "description": "Increases your Dodge chance by 4% and your Critical Strike chance by 4%.",
+    "effects": [
+     {
+      "kind": "dodge_pct",
+      "params": {
+       "pct": 4
+      }
+     },
+     {
+      "kind": "mod_crit_chance",
+      "params": {
+       "pct": 4
+      }
+     }
+    ]
    }
   },
   {
@@ -3526,7 +3651,21 @@
     "name": "Reflexive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Dodge chance by 5% and your Critical Strike chance by 5%."
+    "description": "Increases your Dodge chance by 5% and your Critical Strike chance by 5%.",
+    "effects": [
+     {
+      "kind": "dodge_pct",
+      "params": {
+       "pct": 5
+      }
+     },
+     {
+      "kind": "mod_crit_chance",
+      "params": {
+       "pct": 5
+      }
+     }
+    ]
    }
   },
   {
@@ -3955,7 +4094,21 @@
     "name": "Predator's Step",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 3% and increases your maximum Energy by 10."
+    "description": "Increases your passive movement speed by 3% and increases your maximum Energy by 10.",
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 3
+      }
+     },
+     {
+      "kind": "max_power",
+      "params": {
+       "amount": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -3968,7 +4121,21 @@
     "name": "Predator's Step",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 6% and increases your maximum Energy by 20."
+    "description": "Increases your passive movement speed by 6% and increases your maximum Energy by 20.",
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 6
+      }
+     },
+     {
+      "kind": "max_power",
+      "params": {
+       "amount": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -3981,7 +4148,21 @@
     "name": "Predator's Step",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 9% and increases your maximum Energy by 30."
+    "description": "Increases your passive movement speed by 9% and increases your maximum Energy by 30.",
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 9
+      }
+     },
+     {
+      "kind": "max_power",
+      "params": {
+       "amount": 30
+      }
+     }
+    ]
    }
   },
   {
@@ -3994,7 +4175,21 @@
     "name": "Predator's Step",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 12% and increases your maximum Energy by 40."
+    "description": "Increases your passive movement speed by 12% and increases your maximum Energy by 40.",
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 12
+      }
+     },
+     {
+      "kind": "max_power",
+      "params": {
+       "amount": 40
+      }
+     }
+    ]
    }
   },
   {
@@ -4007,7 +4202,21 @@
     "name": "Predator's Step",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 15% and increases your maximum Energy by 50."
+    "description": "Increases your passive movement speed by 15% and increases your maximum Energy by 50.",
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": 15
+      }
+     },
+     {
+      "kind": "max_power",
+      "params": {
+       "amount": 50
+      }
+     }
+    ]
    }
   },
   {
@@ -4059,7 +4268,15 @@
     "name": "Serrated Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your attacks ignore 50 of the target's Armor, and Sinister Strike has a 20% chance to generate an additional combo point when striking a bleeding target."
+    "description": "Your attacks ignore 50 of the target's Armor, and Sinister Strike has a 20% chance to generate an additional combo point when striking a bleeding target.",
+    "effects": [
+     {
+      "kind": "armor_pen",
+      "params": {
+       "amount": 50
+      }
+     }
+    ]
    }
   },
   {
@@ -4072,7 +4289,15 @@
     "name": "Serrated Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your attacks ignore 100 of the target's Armor, and Sinister Strike has a 40% chance to generate an additional combo point when striking a bleeding target."
+    "description": "Your attacks ignore 100 of the target's Armor, and Sinister Strike has a 40% chance to generate an additional combo point when striking a bleeding target.",
+    "effects": [
+     {
+      "kind": "armor_pen",
+      "params": {
+       "amount": 100
+      }
+     }
+    ]
    }
   },
   {
@@ -4085,7 +4310,15 @@
     "name": "Serrated Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your attacks ignore 150 of the target's Armor, and Sinister Strike has a 60% chance to generate an additional combo point when striking a bleeding target."
+    "description": "Your attacks ignore 150 of the target's Armor, and Sinister Strike has a 60% chance to generate an additional combo point when striking a bleeding target.",
+    "effects": [
+     {
+      "kind": "armor_pen",
+      "params": {
+       "amount": 150
+      }
+     }
+    ]
    }
   },
   {
@@ -4098,7 +4331,15 @@
     "name": "Serrated Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your attacks ignore 200 of the target's Armor, and Sinister Strike has a 80% chance to generate an additional combo point when striking a bleeding target."
+    "description": "Your attacks ignore 200 of the target's Armor, and Sinister Strike has a 80% chance to generate an additional combo point when striking a bleeding target.",
+    "effects": [
+     {
+      "kind": "armor_pen",
+      "params": {
+       "amount": 200
+      }
+     }
+    ]
    }
   },
   {
@@ -4111,7 +4352,15 @@
     "name": "Serrated Strikes",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your attacks ignore 250 of the target's Armor, and Sinister Strike has a 100% chance to generate an additional combo point when striking a bleeding target."
+    "description": "Your attacks ignore 250 of the target's Armor, and Sinister Strike has a 100% chance to generate an additional combo point when striking a bleeding target.",
+    "effects": [
+     {
+      "kind": "armor_pen",
+      "params": {
+       "amount": 250
+      }
+     }
+    ]
    }
   },
   {

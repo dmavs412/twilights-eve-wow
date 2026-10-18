@@ -25,6 +25,7 @@ Each effect `kind` in the CSV maps to one component:
 | `aura_attack_power` | `AuraAttackPower` | amount, duration |
 | `healing_reduction` | `HealingReduction` | percent, duration |
 | `charge` | `Charge` | speed |
+| `ground_effect` | `Ground` | the caster, the centre where the cast ended, radius, school, damage a tick, tick interval, time left; one per caster, ticked by one generic system (`ground_tick`) |
 | `seal`, `judgement` | `Seal`, `Judgement` | the seal kind and its judgement spell |
 
 Talents add the generic families: `ProcOnCrit`, `ProcOnHit`, `CleaveOnHit` (a chance and what it

@@ -224,6 +224,13 @@ impl InWorld {
         w
     }
 
+    /// The player's movement speeds: the dev multiplier's, and the run speed talents add.
+    pub(crate) fn player_speeds(&self) -> MoveSpeeds {
+        let mut speeds = self.dev.speeds(PLAYER_SPEEDS);
+        speeds.run *= 1.0 + self.player.stats.run_speed_pct as f32 / 100.0;
+        speeds
+    }
+
     /// The player's own create, as it stands.
     fn player_create(&self, c: &Char) -> SessionEvent {
         SessionEvent::ObjectCreate {
@@ -233,7 +240,7 @@ impl InWorld {
             position: c.position,
             orientation: c.orientation,
             scale: 1.0,
-            speeds: Some(self.dev.speeds(PLAYER_SPEEDS)),
+            speeds: Some(self.player_speeds()),
             mover: None,
             transport_progress: None,
             transport: None,
@@ -1022,6 +1029,10 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
         (UNIT_FIELD_MAXHEALTH, s.max_health),
         (UNIT_FIELD_BASE_HEALTH, s.base_health),
         (UNIT_FIELD_MAXPOWER1, s.max_mana),
+        (
+            UNIT_FIELD_MAXPOWER1 + PowerKind::Energy.id() as u16,
+            power_rules::ENERGY_MAX + s.max_energy_bonus,
+        ),
         (UNIT_FIELD_RESISTANCES, s.armor),
         // Gear's flat attack power rides apart, in the mods.
         (
@@ -1071,7 +1082,7 @@ fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectField
         (UNIT_FIELD_MAXPOWER2, rage::MAX),
         (
             UNIT_FIELD_MAXPOWER1 + PowerKind::Energy.id() as u16,
-            power_rules::ENERGY_MAX,
+            power_rules::ENERGY_MAX + stats.max_energy_bonus,
         ),
         (
             UNIT_FIELD_FACTIONTEMPLATE,
@@ -1133,7 +1144,11 @@ impl InWorld {
         let lost = cast::buffed(&self.player.stats, &self.skills)
             .max_health
             .saturating_sub(self.player.health);
+        let run_was = self.player.stats.run_speed_pct;
         self.player.set_stats(crate::talents::stats(c));
+        if self.player.stats.run_speed_pct != run_was {
+            self.update_speed(self.guid, events);
+        }
         let max = cast::buffed(&self.player.stats, &self.skills).max_health;
         let p = &mut self.player;
         if p.alive() {

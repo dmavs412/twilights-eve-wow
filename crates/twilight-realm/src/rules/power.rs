@@ -69,11 +69,12 @@ pub const REGEN_TICK_SECS: f32 = 2.0;
 /// (`Player::IsUnderLastManaUseEffect`).
 pub const MANA_PAUSE_SECS: f32 = 5.0;
 
-/// The most a bar can hold at `max`: rage and energy have a fixed cap, mana its computed max.
-pub fn cap(kind: PowerKind, max: u32) -> u32 {
+/// The most a bar can hold at `max`: rage has a fixed cap, energy its 100 and what talents add,
+/// mana its computed max.
+pub fn cap(kind: PowerKind, max: u32, energy_bonus: u32) -> u32 {
     match kind {
         PowerKind::Rage => super::rage::MAX,
-        PowerKind::Energy => ENERGY_MAX,
+        PowerKind::Energy => ENERGY_MAX + energy_bonus,
         PowerKind::Mana => max,
     }
 }

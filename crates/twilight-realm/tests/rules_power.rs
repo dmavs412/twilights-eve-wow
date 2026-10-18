@@ -28,10 +28,10 @@ fn the_power_kind_follows_the_class() {
 
 #[test]
 fn rage_and_energy_cap_at_a_hundred_and_mana_at_its_max() {
-    assert_eq!(power::cap(PowerKind::Rage, 0), rage::MAX);
+    assert_eq!(power::cap(PowerKind::Rage, 0, 0), rage::MAX);
     assert_eq!(rage::MAX, 1000, "rage is stored in tenths");
-    assert_eq!(power::cap(PowerKind::Energy, 0), 100);
-    assert_eq!(power::cap(PowerKind::Mana, 2808), 2808);
+    assert_eq!(power::cap(PowerKind::Energy, 0, 0), 100);
+    assert_eq!(power::cap(PowerKind::Mana, 2808, 0), 2808);
 }
 
 #[test]

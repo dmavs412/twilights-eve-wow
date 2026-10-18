@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "aura_attack_power", "consume_aura_stacks", "consume_heal_pct", "charge", "energize", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "armor_pen", "aura_attack_power", "dodge_pct", "max_power", "consume_aura_stacks", "consume_heal_pct", "charge", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_pct",
@@ -521,6 +521,13 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         stacks = params.get("stacks", 1)
         if isinstance(stacks, bool) or not isinstance(stacks, int) or stacks <= 0:
             raise BuildError(f"{where}: add_aura_stacks needs a positive whole stacks, has {stacks!r}")
+    if kind == "ground_effect":
+        if not isinstance(params.get("amount"), dict):
+            raise BuildError(f"{where}: ground_effect lacks an amount formula (amount.base, amount.per_level)")
+        for field in ("radius_yd", "tick_ms", "duration_ms"):
+            value = params.get(field)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+                raise BuildError(f"{where}: ground_effect needs a positive {field}, has {value!r}")
     if kind == "consume_aura_stacks" and not isinstance(params.get("per_stack"), dict):
         raise BuildError(f"{where}: consume_aura_stacks lacks a per_stack formula (per_stack.base, per_stack.per_level)")
     if "per_combo" in params and not isinstance(params["per_combo"], dict):

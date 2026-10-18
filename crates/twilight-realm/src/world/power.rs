@@ -25,7 +25,7 @@ impl Power {
     /// (vmangos `Player::InitStatsForLevel`, `ResurrectPlayer`).
     pub(super) fn fresh(stats: &CharacterStats) -> Self {
         let kind = PowerKind::of_class(stats.class);
-        let max = power::cap(kind, stats.max_mana);
+        let max = power::cap(kind, stats.max_mana, stats.max_energy_bonus);
         Self {
             kind,
             current: if kind == PowerKind::Rage { 0 } else { max },
@@ -38,7 +38,7 @@ impl Power {
 
     /// The max follows new `stats` (a level, a piece of gear); what is held stays, clamped.
     pub(super) fn resize(&mut self, stats: &CharacterStats) {
-        self.max = power::cap(self.kind, stats.max_mana);
+        self.max = power::cap(self.kind, stats.max_mana, stats.max_energy_bonus);
         self.current = self.current.min(self.max);
     }
 

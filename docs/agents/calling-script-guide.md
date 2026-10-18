@@ -168,7 +168,7 @@ Write `key=value` pairs joined by `;`, and lists joined by `|`:
 
 ## Effect vocabulary the game runs today (allowed on `modelled=yes`)
 
-`add_aura_stacks`, `add_combo_points`, `aura_attack_power`, `charge`, `consume_aura_stacks`, `consume_heal_pct`, `energize`,
+`add_aura_stacks`, `add_combo_points`, `armor_pen` (talent, `amount=`), `aura_attack_power`, `dodge_pct` (talent or aura, `pct=`), `max_power` (talent, `amount=`), `charge`, `consume_aura_stacks`, `consume_heal_pct`, `energize`,
 `healing_reduction`, `incapacitate`, `judgement`, `mod_crit_chance`, `mod_crit_damage`, `mod_health_regen_out_of_combat`, `mod_run_speed`, `mod_stat`,
 `periodic_damage`, `proc`, `proc_on_cast`, `proc_on_kill`, `school_damage`, `seal`, `skill_amount_pct`,
 `skill_crit_pct`, `skill_rage`, `stun`, `weapon_strike`.

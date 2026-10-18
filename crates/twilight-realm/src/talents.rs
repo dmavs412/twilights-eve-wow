@@ -11,6 +11,7 @@ use benilla_protocol::SessionEvent;
 use crate::callings::{self, Skill, Stat, TalentDef, TalentEffect, TalentTab, Wielded};
 use crate::characters::Char;
 use crate::fields::values;
+use crate::rules::power::PowerKind;
 use crate::rules::stats::CharacterStats;
 use crate::rules::talents::{points_at, respec_cost};
 
@@ -286,6 +287,22 @@ pub(crate) fn consume_heal_pct(c: &Char, skill: &str) -> u32 {
     )
 }
 
+/// The percent more damage a tick of the patches a skill leaves deals.
+pub(crate) fn ground_amount_pct(c: &Char, skill: &str) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::GroundAmountPct { skill: s, .. } if s == skill),
+    )
+}
+
+/// The milliseconds the patches a skill leaves last longer.
+pub(crate) fn ground_duration_ms(c: &Char, skill: &str) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::GroundDurationMs { skill: s, .. } if s == skill),
+    )
+}
+
 /// The bleed a melee crit leaves: `(aura spell, tick ms, duration ms, percent of the swing)`.
 pub(crate) fn crit_bleed(c: &Char) -> Option<(u32, u32, u32, u32)> {
     c.talents.iter().find_map(|&(id, r)| {
@@ -313,6 +330,18 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::MeleeCritPct { .. })));
     s.crit_pct += f64::from(sum(c, |e| matches!(e, TalentEffect::ModCritChance { .. })));
     s.crit_damage_pct = sum(c, |e| matches!(e, TalentEffect::ModCritDamage { .. }));
+    // Talents' dodge adds to the agility-based base; the roll table never passes 100%.
+    s.dodge_pct = (s.dodge_pct + f64::from(sum(c, |e| matches!(e, TalentEffect::DodgePct { .. }))))
+        .min(100.0);
+    s.armor_pen = sum(c, |e| matches!(e, TalentEffect::ArmorPen { .. }));
+    s.run_speed_pct = sum(c, |e| matches!(e, TalentEffect::ModRunSpeed { .. }));
+    // Max power is of the Calling's own bar; a rage bar has a fixed cap.
+    let max_power = sum(c, |e| matches!(e, TalentEffect::MaxPower { .. }));
+    match PowerKind::of_class(s.class) {
+        PowerKind::Mana => s.max_mana += max_power,
+        PowerKind::Energy => s.max_energy_bonus = max_power,
+        PowerKind::Rage => {}
+    }
     s.crit_pct += f64::from(sum(
         c,
         |e| matches!(e, TalentEffect::WeaponCritPct { weapon, .. } if wields(c, *weapon)),

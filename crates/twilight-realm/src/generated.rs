@@ -256,7 +256,7 @@ fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
         target: g.target.unwrap_or(Target::Enemy),
         range_yd: [g.realm_range_min, g.realm_range_max],
         radius_yd: g.realm_radius_yd,
-        max_targets: 0,
+        max_targets: g.meta.shape.max_targets.unwrap_or(u32::MAX),
         requires_out_of_combat: g.requires_out_of_combat,
         requires_target_dodged: false,
         puts_in_combat_ms: 0,

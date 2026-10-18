@@ -1127,9 +1127,23 @@
        }
       },
       "realm_only": false
+     },
+     {
+      "kind": "ground_effect",
+      "params": {
+       "radius_yd": 8,
+       "tick_ms": 1000,
+       "duration_ms": 8000,
+       "school": "holy",
+       "amount": {
+        "base": 4,
+        "per_level": 0.6
+       }
+      },
+      "realm_only": false
      }
     ],
-    "description": "Charge an enemy, generating 15 Rage and leaving a pool of holy light at the destination. Usable in combat."
+    "description": "Charge an enemy, generating 15 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. Usable in combat."
    },
    {
     "key": "shield_of_penitent",
@@ -1172,6 +1186,7 @@
     "realm_gcd_ms": 1500,
     "realm_range_min": 0,
     "realm_range_max": 5,
+    "realm_radius_yd": 5,
     "target": "enemy",
     "school": "physical",
     "prevention": "pacify",
@@ -1188,7 +1203,9 @@
      "resets_swing": false
     },
     "weapon_hand": "main",
-    "max_targets": 1,
+    "area_shape": "cone",
+    "area_center": "caster",
+    "max_targets": 3,
     "modelled": true,
     "effects": [
      {
@@ -2408,8 +2425,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "ground_amount_pct",
+          "params": {
+           "skill": "bulwark_charge",
+           "pct": 15
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "ground_duration_ms",
+          "params": {
+           "skill": "bulwark_charge",
+           "amount": 2000
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the damage of the Consecration left by your Bulwark Charge by 15% and its duration by 2 sec."
        },
        {
@@ -2433,8 +2467,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "ground_amount_pct",
+          "params": {
+           "skill": "bulwark_charge",
+           "pct": 30
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "ground_duration_ms",
+          "params": {
+           "skill": "bulwark_charge",
+           "amount": 4000
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the damage of the Consecration left by your Bulwark Charge by 30% and its duration by 4 sec."
        },
        {
@@ -2458,8 +2509,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "ground_amount_pct",
+          "params": {
+           "skill": "bulwark_charge",
+           "pct": 45
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "ground_duration_ms",
+          "params": {
+           "skill": "bulwark_charge",
+           "amount": 6000
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the damage of the Consecration left by your Bulwark Charge by 45% and its duration by 6 sec."
        }
       ]
@@ -6565,8 +6633,16 @@
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "dodge_pct",
+      "params": {
+       "apply_aura": "aura_evasion"
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Increases your Dodge chance by 50% for 15 sec."
    },
    {
@@ -6637,8 +6713,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "dodge_pct",
+          "params": {
+           "pct": 1
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "pct": 1
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Dodge chance by 1% and your Critical Strike chance by 1%."
        },
        {
@@ -6662,8 +6753,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "dodge_pct",
+          "params": {
+           "pct": 2
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "pct": 2
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Dodge chance by 2% and your Critical Strike chance by 2%."
        },
        {
@@ -6687,8 +6793,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "dodge_pct",
+          "params": {
+           "pct": 3
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "pct": 3
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Dodge chance by 3% and your Critical Strike chance by 3%."
        },
        {
@@ -6712,8 +6833,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "dodge_pct",
+          "params": {
+           "pct": 4
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "pct": 4
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Dodge chance by 4% and your Critical Strike chance by 4%."
        },
        {
@@ -6737,8 +6873,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "dodge_pct",
+          "params": {
+           "pct": 5
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_crit_chance",
+          "params": {
+           "pct": 5
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Dodge chance by 5% and your Critical Strike chance by 5%."
        }
       ]
@@ -7670,8 +7821,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_run_speed",
+          "params": {
+           "pct": 3
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "max_power",
+          "params": {
+           "amount": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your passive movement speed by 3% and increases your maximum Energy by 10."
        },
        {
@@ -7695,8 +7861,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_run_speed",
+          "params": {
+           "pct": 6
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "max_power",
+          "params": {
+           "amount": 20
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your passive movement speed by 6% and increases your maximum Energy by 20."
        },
        {
@@ -7720,8 +7901,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_run_speed",
+          "params": {
+           "pct": 9
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "max_power",
+          "params": {
+           "amount": 30
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your passive movement speed by 9% and increases your maximum Energy by 30."
        },
        {
@@ -7745,8 +7941,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_run_speed",
+          "params": {
+           "pct": 12
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "max_power",
+          "params": {
+           "amount": 40
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your passive movement speed by 12% and increases your maximum Energy by 40."
        },
        {
@@ -7770,8 +7981,23 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "mod_run_speed",
+          "params": {
+           "pct": 15
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "max_power",
+          "params": {
+           "amount": 50
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your passive movement speed by 15% and increases your maximum Energy by 50."
        }
       ]
@@ -7892,8 +8118,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_pen",
+          "params": {
+           "amount": 50
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your attacks ignore 50 of the target's Armor, and Sinister Strike has a 20% chance to generate an additional combo point when striking a bleeding target."
        },
        {
@@ -7917,8 +8151,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_pen",
+          "params": {
+           "amount": 100
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your attacks ignore 100 of the target's Armor, and Sinister Strike has a 40% chance to generate an additional combo point when striking a bleeding target."
        },
        {
@@ -7942,8 +8184,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_pen",
+          "params": {
+           "amount": 150
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your attacks ignore 150 of the target's Armor, and Sinister Strike has a 60% chance to generate an additional combo point when striking a bleeding target."
        },
        {
@@ -7967,8 +8217,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_pen",
+          "params": {
+           "amount": 200
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your attacks ignore 200 of the target's Armor, and Sinister Strike has a 80% chance to generate an additional combo point when striking a bleeding target."
        },
        {
@@ -7992,8 +8250,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_pen",
+          "params": {
+           "amount": 250
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your attacks ignore 250 of the target's Armor, and Sinister Strike has a 100% chance to generate an additional combo point when striking a bleeding target."
        }
       ]
@@ -8020,8 +8286,16 @@
     "cancelable": true,
     "persist_death": false,
     "duration_ms": 15000,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "dodge_pct",
+      "params": {
+       "pct": 50
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Dodge chance increased by 50%."
    },
    {

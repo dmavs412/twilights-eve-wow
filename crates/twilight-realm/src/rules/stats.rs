@@ -32,6 +32,12 @@ pub struct CharacterStats {
     /// The percent a crit's whole damage grows by (talents): 30 makes a melee crit 200% x 1.3 = 260%.
     pub crit_damage_pct: u32,
     pub dodge_pct: f64,
+    /// The flat armour the character's physical attacks ignore (talents).
+    pub armor_pen: u32,
+    /// What talents add to the Energy bar's 100; Mana's goes straight into `max_mana`.
+    pub max_energy_bonus: u32,
+    /// The percent talents raise the run speed by.
+    pub run_speed_pct: u32,
     /// 0 without the Parry skill, which the slice's warriors do not train; talents add to it.
     pub parry_pct: f64,
     /// 0 without a shield.
@@ -178,6 +184,9 @@ impl CharacterStats {
             crit_pct: f64::from(agi) / tables::at(&t.agi_per_crit, level),
             crit_damage_pct: 0,
             dodge_pct: f64::from(agi) / tables::at(&t.agi_per_dodge, level),
+            armor_pen: 0,
+            max_energy_bonus: 0,
+            run_speed_pct: 0,
             parry_pct: 0.0,
             block_pct: gear.shield_block.map_or(0.0, |_| block_pct(defense, level)),
             block_value: gear.shield_block.map_or(0, |block| block_value(block, str)),

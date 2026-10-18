@@ -186,6 +186,8 @@ pub enum AuraEffect {
     SkillCritPct { skill: String, pct: u32 },
     /// The player's run speed rises by `pct` percent.
     ModRunSpeed { pct: u32 },
+    /// The player's dodge chance rises by `pct` percent.
+    DodgePct { pct: u32 },
 }
 
 /// An armour kind a Calling may wear.
@@ -322,6 +324,10 @@ pub enum TalentEffect {
     /// A skill that consumes aura stacks heals the caster for this percent of the bonus damage
     /// the stacks dealt.
     ConsumeHealPct { skill: String, per_rank: Vec<u32> },
+    /// The patches the skill leaves deal this percent more damage a tick.
+    GroundAmountPct { skill: String, per_rank: Vec<u32> },
+    /// The patches the skill leaves last this many milliseconds longer.
+    GroundDurationMs { skill: String, per_rank: Vec<u32> },
     /// Every melee strike's critical strike chance rises by this many percent.
     MeleeCritPct { per_rank: Vec<u32> },
     /// The Defense skill rises by this much.
@@ -336,6 +342,15 @@ pub enum TalentEffect {
     },
     /// Every critical strike chance, melee and spell, rises by this many percent.
     ModCritChance { per_rank: Vec<u32> },
+    /// The dodge chance rises by this many percent.
+    DodgePct { per_rank: Vec<u32> },
+    /// The character's physical attacks ignore this much of the target's armour (never below 0).
+    ArmorPen { per_rank: Vec<u32> },
+    /// The maximum of the character's own power (Energy for a Cutthroat) rises by this much; what
+    /// is held stays.
+    MaxPower { per_rank: Vec<u32> },
+    /// The character runs this many percent faster, always.
+    ModRunSpeed { per_rank: Vec<u32> },
     /// Every critical strike does this percent more of its damage (a physical crit's bonus is
     /// its whole damage, a magic crit's the half over 100%).
     ModCritDamage { per_rank: Vec<u32> },
@@ -462,10 +477,16 @@ impl TalentEffect {
             | Self::SkillRage { per_rank, .. }
             | Self::SkillCritPct { per_rank, .. }
             | Self::ConsumeHealPct { per_rank, .. }
+            | Self::GroundAmountPct { per_rank, .. }
+            | Self::GroundDurationMs { per_rank, .. }
             | Self::MeleeCritPct { per_rank }
             | Self::Defense { per_rank }
             | Self::ModStat { per_rank, .. }
             | Self::ModCritChance { per_rank }
+            | Self::DodgePct { per_rank }
+            | Self::ArmorPen { per_rank }
+            | Self::MaxPower { per_rank }
+            | Self::ModRunSpeed { per_rank }
             | Self::ModCritDamage { per_rank }
             | Self::ModHealthRegenOutOfCombat { per_rank }
             | Self::Proc { per_rank, .. }
@@ -664,6 +685,9 @@ pub enum Effect {
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
     /// The target moves `pct`% slower, under the skill's spell id.
     MovementSlow { pct: u32, duration_ms: u32 },
+    /// The caster's dodge chance rises by `pct` percent for `duration_ms`, under the skill's
+    /// spell id (Evasion).
+    DodgePct { pct: u32, duration_ms: u32 },
     /// The caster's attack power rises by `amount`, under the skill's spell id.
     AuraAttackPower { duration_ms: u32, amount: Linear },
     /// The target's healing is cut by `pct`%, under the skill's spell id (Mortal Strike).
@@ -723,6 +747,17 @@ pub enum Effect {
         per_stack: Linear,
         #[serde(default)]
         school: School,
+    },
+    /// A patch on the ground where the cast ends (the caster's spot, after a Charge), `radius_yd`
+    /// wide: every `tick_ms` for `duration_ms`, each enemy inside takes `amount` of `school`
+    /// damage. The caster has one patch at a time; a new one replaces the old.
+    GroundEffect {
+        radius_yd: f32,
+        tick_ms: u32,
+        duration_ms: u32,
+        #[serde(default)]
+        school: School,
+        amount: Linear,
     },
 }
 

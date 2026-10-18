@@ -81,7 +81,7 @@ pub(crate) fn player_swing(
     rng: &mut Rng,
 ) -> Swing {
     let raw = rng.urand(p.min_damage as u32, p.max_damage as u32);
-    let armored = armor_reduced(raw, mob.stats.armor, p.level);
+    let armored = armor_reduced(raw, mob.stats.armor.saturating_sub(p.armor_pen), p.level);
     let table = player_vs_mob(
         PlayerOffense {
             level: p.level,

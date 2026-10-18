@@ -108,6 +108,8 @@ pub(super) struct Skills {
     /// Seconds the caster is held in combat (Bloodrage).
     combat_hold: f32,
     auras: Vec<Aura>,
+    /// The patches on the ground, one at most for each caster.
+    grounds: Vec<Ground>,
     /// The timed cast under way: an item's on-use spell (the Hearthstone's).
     casting: Option<TimedCast>,
     /// The mobs whose aura state says they are at or below a fifth of their health.
@@ -127,6 +129,33 @@ struct TimedCast {
     entry: u32,
     /// Seconds until it goes off.
     left: f32,
+}
+
+/// A patch on the ground (a `GroundEffect`): each tick it strikes every enemy inside it.
+#[derive(Debug, Clone, Copy)]
+struct Ground {
+    caster: u64,
+    /// The spell its damage is logged under.
+    spell_id: u32,
+    centre: [f32; 3],
+    radius_yd: f32,
+    school: School,
+    /// What each enemy inside takes a tick, talents folded in.
+    damage: u32,
+    /// Seconds left, between ticks, and until the next.
+    left: f32,
+    period: f32,
+    next_tick: f32,
+}
+
+impl Skills {
+    /// Whether `position` is inside a patch `caster` left on the ground.
+    #[allow(dead_code)] // Hammer of the Vanguard asks it (#104).
+    pub(super) fn in_ground_effect(&self, caster: u64, position: [f32; 3]) -> bool {
+        self.grounds
+            .iter()
+            .any(|g| g.caster == caster && distance(g.centre, position) <= g.radius_yd)
+    }
 }
 
 /// One aura on a unit.
@@ -214,6 +243,10 @@ enum AuraKind {
     RunSpeed {
         pct: u32,
     },
+    /// The player's dodge chance is `pct` percent higher.
+    Dodge {
+        pct: u32,
+    },
     /// A count of stacks that does nothing itself; a skill that consumes it reads the count
     /// (Conviction). The aura row's `max_stacks` and `stack_rule` govern a new application.
     Stacks {
@@ -245,6 +278,7 @@ impl AuraKind {
                 | AuraKind::Seal { .. }
                 | AuraKind::SkillCrit { .. }
                 | AuraKind::RunSpeed { .. }
+                | AuraKind::Dodge { .. }
                 | AuraKind::Stacks { .. }
         )
     }
@@ -325,6 +359,18 @@ impl Skills {
                 _ => (health, damage, armor),
             },
         )
+    }
+
+    /// The percent the player's buffs raise their dodge chance by.
+    fn dodge_pct(&self) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::Dodge { pct } => pct,
+                _ => 0,
+            })
+            .sum()
     }
 
     /// The percent the player's buffs raise the physical damage they deal by.
@@ -677,6 +723,7 @@ pub(super) fn buffed(stats: &CharacterStats, skills: &Skills) -> CharacterStats 
     let (health_pct, _, armor_loss_pct) = skills.buff_pcts();
     s.max_health += s.max_health * health_pct / 100;
     s.armor -= s.armor * armor_loss_pct.min(100) / 100;
+    s.dodge_pct = (s.dodge_pct + f64::from(skills.dodge_pct())).min(100.0);
     if bonus > 0 {
         s.attack_power += bonus as i32;
         let extra = formulas::ap_damage(bonus as i32, clock::secs(s.attack_time_ms));
@@ -984,11 +1031,12 @@ impl InWorld {
                 .collect()),
             Target::Enemy => {
                 let guid = target.ok_or(SPELL_FAILED_BAD_TARGETS)?;
-                let mob = self
+                let i = self
                     .mobs
                     .iter()
-                    .find(|m| m.guid == guid)
+                    .position(|m| m.guid == guid)
                     .ok_or(SPELL_FAILED_BAD_TARGETS)?;
+                let mob = &self.mobs[i];
                 if mob.template.friendly {
                     return Err(SPELL_FAILED_BAD_TARGETS);
                 }
@@ -1020,9 +1068,48 @@ impl InWorld {
                 {
                     return Err(SPELL_FAILED_TARGET_AURASTATE);
                 }
-                Ok(vec![guid])
+                let mut targets = vec![guid];
+                targets.extend(self.beside(skill, i, c));
+                Ok(targets)
             }
         }
+    }
+
+    /// The enemies a sheet skill with an area shape lands on besides its target `first` (an index
+    /// into `mobs`): the nearest within `radius_yd` of the shape's centre, up to `max_targets`
+    /// in all. A cone also keeps to the caster's front half-circle.
+    fn beside(&self, skill: &Skill, first: usize, c: &Char) -> Vec<u64> {
+        let shape = &skill.meta.shape;
+        let Some(area) = shape.area_shape.as_deref() else {
+            return Vec::new();
+        };
+        let centre = match shape.area_center.as_deref() {
+            Some("caster") => c.position,
+            _ => self.mobs[first].position,
+        };
+        // A 5 yd reach is a melee one, as for the target's range.
+        let radius = if skill.radius_yd <= 5.0 {
+            melee_reach()
+        } else {
+            skill.radius_yd
+        };
+        let mut near: Vec<_> = self
+            .mobs
+            .iter()
+            .enumerate()
+            .filter(|&(j, m)| {
+                j != first
+                    && m.attackable()
+                    && distance(m.position, centre) <= radius
+                    && (area != "cone" || in_front(c.orientation, c.position, m.position))
+            })
+            .map(|(_, m)| m)
+            .collect();
+        near.sort_by(|a, b| distance(a.position, centre).total_cmp(&distance(b.position, centre)));
+        near.into_iter()
+            .take((skill.max_targets as usize).saturating_sub(1))
+            .map(|m| m.guid)
+            .collect()
     }
 
     /// Takes the cast's costs and starts its cooldowns.
@@ -1311,6 +1398,12 @@ impl InWorld {
                 let sheet = buff_sheet(&self.player.stats, &self.skills);
                 events.push(values(self.guid, &sheet));
             }
+            Effect::DodgePct { pct, duration_ms } => {
+                let mut a = aura(AuraKind::Dodge { pct }, skill.spell_id, duration_ms, 0);
+                a.unit = self.guid;
+                self.skills.apply(a, events);
+                events.push(values(self.guid, &self.sheet_now()));
+            }
             Effect::HealingReduction { duration_ms, .. } => {
                 let a = aura(AuraKind::HealingReduced, skill.spell_id, duration_ms, 0);
                 self.skills.apply(a, events);
@@ -1410,6 +1503,30 @@ impl InWorld {
                 events.push(values(self.guid, &sheet));
             }
             Effect::AddAuraStacks { .. } => self.add_aura_stacks(effect, level, events),
+            Effect::GroundEffect {
+                radius_yd,
+                tick_ms,
+                duration_ms,
+                school,
+                amount,
+            } => {
+                // Where the cast ended: after a Charge, the caster stands at its destination.
+                let more = crate::talents::ground_amount_pct(c, &skill.key);
+                let longer = crate::talents::ground_duration_ms(c, &skill.key);
+                let ground = Ground {
+                    caster: self.guid,
+                    spell_id: skill.spell_id,
+                    centre: c.position,
+                    radius_yd,
+                    school,
+                    damage: scaled(sized(amount), more),
+                    left: clock::secs(duration_ms + longer),
+                    period: clock::secs(tick_ms),
+                    next_tick: clock::secs(tick_ms),
+                };
+                self.skills.grounds.retain(|g| g.caster != ground.caster);
+                self.skills.grounds.push(ground);
+            }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
             Effect::Judgement => {
@@ -1500,7 +1617,12 @@ impl InWorld {
             return;
         };
         let school = School::Holy;
-        let damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
+        let damage = mitigated(
+            school,
+            raw,
+            mob.stats.armor.saturating_sub(self.player.stats.armor_pen),
+            self.player.stats.level,
+        );
         let damage = seals::holy_taken(damage, self.skills.holy_taken_pct(target));
         events.push(SessionEvent::SpellDamageLog(damage_log(
             self.guid, target, spell_id, damage, school, false,
@@ -1525,7 +1647,12 @@ impl InWorld {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target && m.alive()) else {
             return 0;
         };
-        let mut damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
+        let mut damage = mitigated(
+            school,
+            raw,
+            mob.stats.armor.saturating_sub(self.player.stats.armor_pen),
+            self.player.stats.level,
+        );
         if school == School::Holy {
             damage = seals::holy_taken(damage, self.skills.holy_taken_pct(target));
         }
@@ -1584,7 +1711,12 @@ impl InWorld {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
             return;
         };
-        let mut damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
+        let mut damage = mitigated(
+            school,
+            raw,
+            mob.stats.armor.saturating_sub(self.player.stats.armor_pen),
+            self.player.stats.level,
+        );
         if how == Landed::Crit {
             damage = crit_scaled(
                 school,
@@ -1789,6 +1921,7 @@ impl InWorld {
             (UNIT_FIELD_MAXHEALTH, s.max_health),
             (UNIT_FIELD_RESISTANCES, s.armor),
             (UNIT_FIELD_HEALTH, self.player.health),
+            (PLAYER_DODGE_PERCENTAGE, float(s.dodge_pct as f32)),
         ]
     }
 
@@ -2151,6 +2284,40 @@ impl InWorld {
             .skills
             .remove_where(|a| a.left <= CLOCK_EPSILON, events);
         self.faded(&gone, events);
+        self.ground_tick(dt, c, rng, events, ticked);
+    }
+
+    /// The patches on the ground: each tick strikes every living enemy inside, and the last lands
+    /// as the patch runs out.
+    fn ground_tick(
+        &mut self,
+        dt: f32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let mut due = Vec::new();
+        for g in &mut self.skills.grounds {
+            g.left -= dt;
+            g.next_tick -= dt;
+            while g.next_tick <= CLOCK_EPSILON {
+                g.next_tick += g.period;
+                due.push(*g);
+            }
+        }
+        self.skills.grounds.retain(|g| g.left > CLOCK_EPSILON);
+        for g in due {
+            let inside: Vec<u64> = self
+                .mobs
+                .iter()
+                .filter(|m| m.attackable() && distance(g.centre, m.position) <= g.radius_yd)
+                .map(|m| m.guid)
+                .collect();
+            for guid in inside {
+                self.bonus_hit(g.spell_id, guid, g.damage, g.school, c, rng, events, ticked);
+            }
+        }
     }
 
     /// What an aura's going undoes.
@@ -2163,6 +2330,9 @@ impl InWorld {
                 AuraKind::AttackPower(_) | AuraKind::Seal { .. } => {
                     let sheet = buff_sheet(&self.player.stats, &self.skills);
                     events.push(values(self.guid, &sheet));
+                }
+                AuraKind::Dodge { .. } => {
+                    events.push(values(self.guid, &self.sheet_now()));
                 }
                 AuraKind::MaxHealthPct(_) | AuraKind::DamagePct { .. } => {
                     // What was over the maximum goes with it.
@@ -2215,7 +2385,7 @@ impl InWorld {
 
     /// `unit`'s run speed after its auras changed: a mob's multiplier, or the player's new speed
     /// sent to the client (`SMSG_FORCE_RUN_SPEED_CHANGE`).
-    fn update_speed(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
+    pub(super) fn update_speed(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
         let mul = self.skills.speed_mul(unit);
         if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
             mob.speed_mul = mul;
@@ -2226,7 +2396,7 @@ impl InWorld {
                 guid: unit,
                 kind: SpeedKind::Run,
                 counter: self.skills.speed_changes,
-                speed: self.dev.speeds(super::PLAYER_SPEEDS).run * mul,
+                speed: self.player_speeds().run * mul,
             });
         }
     }
@@ -2281,6 +2451,7 @@ impl InWorld {
                     pct: *pct,
                 },
                 callings::AuraEffect::ModRunSpeed { pct } => AuraKind::RunSpeed { pct: *pct },
+                callings::AuraEffect::DodgePct { pct } => AuraKind::Dodge { pct: *pct },
             };
             let aura = Aura {
                 unit: self.guid,
@@ -2296,6 +2467,9 @@ impl InWorld {
             self.skills.apply(aura, events);
             if matches!(kind, AuraKind::RunSpeed { .. }) {
                 self.update_speed(self.guid, events);
+            }
+            if matches!(kind, AuraKind::Dodge { .. }) {
+                events.push(values(self.guid, &self.sheet_now()));
             }
         }
     }
