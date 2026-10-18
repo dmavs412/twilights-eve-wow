@@ -1451,7 +1451,7 @@ impl InWorld {
         }
         // A blow at one enemy sweeps on; an area's blows do not.
         if !school.is_magic()
-            && callings::skill(spell_id).is_some_and(|s| s.target == Target::Enemy)
+            && crate::talents::skill(c, spell_id).is_some_and(|s| s.target == Target::Enemy)
         {
             self.sweep(target, damage, c, rng, events, ticked);
         }
@@ -1750,7 +1750,7 @@ impl InWorld {
         let Some(spell_id) = self.skills.take_queued() else {
             return false;
         };
-        let Some(skill) = callings::skill(spell_id) else {
+        let Some(skill) = crate::talents::skill(c, spell_id) else {
             return false;
         };
         if !self.player.power.has(crate::talents::power_cost(c, skill)) {
