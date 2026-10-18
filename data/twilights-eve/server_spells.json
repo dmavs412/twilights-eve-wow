@@ -9780,6 +9780,7 @@
         "base": 31,
         "per_level": 2.5
        },
+       "crit_pct_at_full_mana": 15,
        "school": "arcane"
       },
       "realm_only": false

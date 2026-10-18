@@ -1386,7 +1386,15 @@ impl InWorld {
         let mut rolls = false;
         let mut unavoidable = false;
         let mut crit_if = None;
+        let mut mana_crit_pct = 0.0;
         for e in &skill.effects {
+            if let Effect::SchoolDamage {
+                crit_pct_at_full_mana: Some(pct),
+                ..
+            } = *e
+            {
+                mana_crit_pct += pct;
+            }
             match *e {
                 Effect::WeaponStrike {
                     unavoidable: u,
@@ -1427,6 +1435,13 @@ impl InWorld {
         }
         let stats = buffed(&self.player.stats, &self.skills);
         let from_front = in_front(mob.orientation, mob.position, c.position);
+        // The mana-fill crit, in basis points; only a mana bar has a fill to read.
+        let bar = &self.player.power;
+        let mana_crit = if bar.kind == PowerKind::Mana && bar.max > 0 {
+            (mana_crit_pct * 100.0 * bar.current as f32 / bar.max as f32) as u32
+        } else {
+            0
+        };
         let (table, crit) = ability_table(
             PlayerOffense {
                 level: stats.level,
@@ -1446,6 +1461,7 @@ impl InWorld {
             // The player's buffs for the skill (Cutthroat's Momentum) add to it.
             _ if rng.below(ROLL)
                 < crit
+                    + mana_crit
                     + (crate::talents::skill_crit_pct(c, &skill.key)
                         + self.skills.skill_crit_pct(&skill.key))
                         * 100 =>

@@ -791,6 +791,10 @@ pub enum Effect {
         /// Added to `amount` once per combo point on the target: a finisher.
         #[serde(default)]
         per_combo: Option<Linear>,
+        /// Extra crit chance, in percent, at a full mana bar, scaled by how full it is when the
+        /// blow rolls (after the cast's own cost). A caster on another bar gets none.
+        #[serde(default)]
+        crit_pct_at_full_mana: Option<f32>,
     },
     /// A bleed on the target under the skill's own spell id: `tick` every `tick_ms`.
     PeriodicDamage {
