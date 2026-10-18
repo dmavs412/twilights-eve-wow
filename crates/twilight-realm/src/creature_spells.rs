@@ -6,8 +6,23 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 
-use crate::callings::Effect;
 use crate::rules::school::School;
+use crate::rules::skills::Linear;
+
+/// What a Creature Spell does, in the skills' own terms where they have one.
+#[derive(Deserialize, Debug, Clone, Copy)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub(crate) enum CreatureEffect {
+    /// A curse on the player: `tick` every `tick_ms`, for `duration_ms`.
+    PeriodicDamage {
+        tick_ms: u32,
+        duration_ms: u32,
+        tick: Linear,
+    },
+    /// Restores the caster's health by `pct_max_health` percent of its maximum. The format stays
+    /// open to a flat `base` later.
+    Heal { pct_max_health: u32 },
+}
 
 /// One Creature Spell.
 #[derive(Deserialize, Debug)]
@@ -18,11 +33,14 @@ pub(crate) struct CreatureSpell {
     pub(crate) school: School,
     pub(crate) cast_time_ms: u32,
     pub(crate) cooldown_ms: u32,
+    /// Yards to the player; a self-cast (heal) has no range to check.
     pub(crate) range_max: f32,
     /// Percent per decision while the creature fights and the spell is ready.
     pub(crate) chance: u32,
-    /// What it does to the target, in the skills' own terms.
-    pub(crate) effect: Effect,
+    /// The spell is cast only while the caster's health is under this percent of its maximum.
+    #[serde(default)]
+    pub(crate) below_health_pct: Option<u32>,
+    pub(crate) effect: CreatureEffect,
 }
 
 #[derive(Deserialize)]
@@ -35,15 +53,25 @@ fn all() -> &'static [CreatureSpell] {
     SPELLS.get_or_init(|| {
         let file: File = toml::from_str(include_str!("../content/creature_spells.toml"))
             .expect("content/creature_spells.toml parses");
-        for s in &file.spell {
-            assert!(
-                matches!(s.effect, Effect::PeriodicDamage { .. }),
-                "creature spell {}: only periodic_damage is cast by creatures yet",
-                s.key
-            );
-        }
         file.spell
     })
+}
+
+/// Health a heal of `pct`% of `max` restores to a unit at `health`: never past `max`.
+pub(crate) fn healed(health: u32, max: u32, pct: u32) -> u32 {
+    (max * pct / 100).min(max.saturating_sub(health))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::healed;
+
+    #[test]
+    fn a_heal_restores_its_percent_and_never_overheals() {
+        assert_eq!(healed(50, 100, 15), 15);
+        assert_eq!(healed(95, 100, 15), 5);
+        assert_eq!(healed(100, 100, 15), 0);
+    }
 }
 
 /// The Creature Spell `key`.

@@ -9,9 +9,11 @@
 # school           physical, holy, fire or shadow
 # cast_time_ms     the cast bar; the creature stops swinging for it
 # cooldown_ms      from the cast's end
-# range_max        yards; the cast is interrupted if the target leaves it
+# range_max        yards; the cast is interrupted if the target leaves it (0 for a self-cast)
 # chance           percent per decision (one a second) while fighting and off cooldown
-# effect           in the skills' own terms (callings.toml's effects); only periodic_damage yet
+# below_health_pct optional: cast only while the caster's health is under this percent of its max
+# effect           periodic_damage (a curse on the player, in the skills' own terms), or
+#                  heal { pct_max_health } (the caster, no range or line of sight to check)
 
 # Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
 [[spell]]
@@ -23,3 +25,17 @@ cooldown_ms = 15000
 range_max = 30.0
 chance = 100
 effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = { base = 10 } }
+
+# The Abbot's self-heal. Looks like Lesser Heal rank 1 (client_spell_id 2050). All placeholders:
+# 15% of max health after a 3 s cast, every 20 s, and only once the caster is under 80% health,
+# since a heal at full health wastes the cast (the decision code makes that a one-line check).
+[[spell]]
+key = "abbot_heal"
+client_spell_id = 2050
+school = "holy"
+cast_time_ms = 3000
+cooldown_ms = 20000
+range_max = 0.0
+chance = 100
+below_health_pct = 80
+effect = { kind = "heal", pct_max_health = 15 }

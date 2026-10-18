@@ -15,6 +15,9 @@ const CORRUPTION: &str = "corruption_creature";
 const CORRUPTION_LOOK: u32 = 172;
 /// The shadow school in a damage log.
 const SHADOW: u32 = 5;
+const HEAL: &str = "abbot_heal";
+/// What the client shows for it: Lesser Heal rank 1.
+const HEAL_LOOK: u32 = 2050;
 const GOUGE: u32 = 1776;
 /// Whole rage points Gouge costs.
 const GOUGE_RAGE: u32 = 15;
@@ -253,6 +256,140 @@ fn an_incapacitated_creature_starts_no_cast() {
     panic!("no seed leaves the familiar between casts with rage in hand");
 }
 
+#[test]
+fn a_hurt_creature_heals_fifteen_percent_of_its_max_health_after_the_cast_time() {
+    let mut healed = 0;
+    for seed in 0..10 {
+        let Some((mut realm, _, mob, mut view)) = hurt_and_healing(seed, 0) else {
+            continue;
+        };
+        let max = view.objects[&mob].unit_max_health().unwrap();
+        let before = view.objects[&mob].unit_health().unwrap();
+        let mut events = Vec::new();
+        for n in 1..=34 {
+            realm.tick(0.1, &FlatGround);
+            events.extend(
+                view.drain(&mut realm)
+                    .into_iter()
+                    .map(|e| (n as f32 * 0.1, e)),
+            );
+        }
+        let go = events
+            .iter()
+            .find(|(_, e)| heal_go(e, mob))
+            .map(|(t, _)| *t);
+        let go = go.unwrap_or_else(|| panic!("seed {seed}: the heal goes off"));
+        assert!(
+            (go - 3.0).abs() < 0.25,
+            "seed {seed}: after its 3 s cast: {go}"
+        );
+        let log = events.iter().find_map(|(_, e)| match e {
+            SessionEvent::SpellHealLog(l) if l.target == mob => Some(*l),
+            _ => None,
+        });
+        let log = log.unwrap_or_else(|| panic!("seed {seed}: the heal is logged"));
+        assert_eq!((log.healer, log.spell_id), (mob, HEAL_LOOK));
+        assert_eq!(log.amount, max * 15 / 100, "seed {seed}");
+        assert_eq!(
+            view.objects[&mob].unit_health(),
+            Some(before + max * 15 / 100),
+            "seed {seed}: its health field rose"
+        );
+        assert!(before + log.amount <= max, "seed {seed}: no overheal");
+        healed += 1;
+    }
+    assert!(healed > 0, "some seed leaves the hurt familiar healing");
+}
+
+#[test]
+fn a_creature_at_full_health_does_not_heal() {
+    let realm = Realm::with_seed(1).with_creature_spells(VILE_FAMILIAR, &[HEAL]);
+    let (mut realm, _, mob) = warrior(realm, LEVEL);
+    stand_by(&mut realm, mob.1);
+    let events = run(&mut realm, 3.0);
+    let started = events
+        .iter()
+        .any(|(_, e)| matches!(e, SessionEvent::SpellStart { caster, .. } if *caster == mob.0));
+    assert!(!started, "a full-health familiar began a heal");
+}
+
+/// Whether `e` is `mob`'s heal going off on itself.
+fn heal_go(e: &SessionEvent, mob: u64) -> bool {
+    match e {
+        SessionEvent::SpellGo {
+            caster,
+            spell_id,
+            hits,
+            ..
+        } => *caster == mob && *spell_id == HEAL_LOOK && hits == &[mob],
+        _ => false,
+    }
+}
+
+/// Whether `e` is `mob`'s heal ending short.
+fn heal_failed(e: &SessionEvent, mob: u64) -> bool {
+    match e {
+        SessionEvent::SpellFailedOther { caster, spell_id } => {
+            *caster == mob && *spell_id == HEAL_LOOK
+        }
+        _ => false,
+    }
+}
+
+#[test]
+fn a_gouge_mid_heal_cancels_it() {
+    let mut gouged = 0;
+    for seed in 0..40 {
+        let Some((mut realm, _, mob, mut view)) = hurt_and_healing(seed, GOUGE_RAGE) else {
+            continue;
+        };
+        realm.handle(fight::cast(GOUGE, Some(mob)));
+        let mut events = view.drain(&mut realm);
+        for _ in 0..34 {
+            realm.tick(0.1, &FlatGround);
+            events.extend(view.drain(&mut realm));
+        }
+        gouged += 1;
+        let failed = events.iter().any(|e| heal_failed(e, mob));
+        assert!(failed, "seed {seed}: the client sees the cast end");
+        let landed = events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::SpellHealLog(_)));
+        assert!(!landed, "seed {seed}: the cancelled heal landed");
+    }
+    assert!(gouged > 0, "some seed gouges the familiar mid-heal");
+}
+
+/// A warrior fights a familiar carrying `abbot_heal` until the familiar, hurt under 80%, starts
+/// its heal; then the warrior stops swinging. The realm, the warrior's and the familiar's guids,
+/// and what the client has seen.
+fn hurt_and_healing(seed: u64, rage: u32) -> Option<(Realm, u64, u64, fight::View)> {
+    let realm = Realm::with_seed(seed).with_creature_spells(VILE_FAMILIAR, &[HEAL]);
+    let (mut realm, me, mob, mut view) = warrior_seen(realm, LEVEL);
+    stand_by(&mut realm, mob.1);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.0 });
+    let mut casting = false;
+    for _ in 0..600 {
+        realm.tick(0.1, &FlatGround);
+        let events = view.drain(&mut realm);
+        if dead(&view, me) || dead(&view, mob.0) {
+            return None;
+        }
+        for e in &events {
+            match e {
+                SessionEvent::SpellStart { caster, .. } if *caster == mob.0 => casting = true,
+                SessionEvent::SpellGo { caster, .. } if *caster == mob.0 => casting = false,
+                _ => {}
+            }
+        }
+        if casting && rage_of(&view, me) >= rage {
+            realm.handle(RealmCommand::AttackStop);
+            return Some((realm, me, mob.0, view));
+        }
+    }
+    None
+}
+
 /// Whether `guid` is known to be at 0 health; `warrior` drained the creates, so a unit not yet
 /// updated is unhurt.
 fn dead(view: &fight::View, guid: u64) -> bool {
@@ -272,7 +409,13 @@ fn rage_of(view: &fight::View, guid: u64) -> u32 {
 }
 
 /// A human warrior of `level` in `realm`, on flat ground, and the familiar's guid and position.
-fn warrior(mut realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3])) {
+fn warrior(realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3])) {
+    let (realm, guid, mob, _) = warrior_seen(realm, level);
+    (realm, guid, mob)
+}
+
+/// [`warrior`], and the view of what entering the world created.
+fn warrior_seen(mut realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3]), fight::View) {
     let mut maker = common::realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
@@ -283,7 +426,9 @@ fn warrior(mut realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3])) {
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);
-    let mob = drain(&mut realm)
+    let mut view = fight::View::default();
+    let created = view.drain(&mut realm);
+    let mob = created
         .into_iter()
         .find_map(|e| match e {
             SessionEvent::ObjectCreate {
@@ -296,7 +441,7 @@ fn warrior(mut realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3])) {
             _ => None,
         })
         .expect("the familiar is near");
-    (realm, guid, mob)
+    (realm, guid, mob, view)
 }
 
 /// The player 2 yd from `mob`, facing it: close enough that it notices and fights.

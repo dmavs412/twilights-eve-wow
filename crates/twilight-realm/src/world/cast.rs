@@ -4263,11 +4263,11 @@ impl InWorld {
         spell: &crate::creature_spells::CreatureSpell,
         events: &mut Vec<SessionEvent>,
     ) {
-        let Effect::PeriodicDamage {
+        // A heal lands on its caster in `mob_cast`, which holds the mob.
+        let crate::creature_spells::CreatureEffect::PeriodicDamage {
             tick_ms,
             duration_ms,
             tick,
-            ..
         } = spell.effect
         else {
             return;

@@ -3,10 +3,13 @@
 //! `SMSG_SPELL_START` with the cast time, then `SMSG_SPELL_GO`, then the aura on its target, as
 //! vmangos sends a creature's cast. Nothing here names a spell.
 
+use benilla_protocol::messages::SpellHealLog;
 use benilla_protocol::SessionEvent;
 
 use super::{eye, InWorld};
 use crate::clock;
+use crate::creature_spells::CreatureEffect;
+use crate::fields::{values, UNIT_FIELD_HEALTH};
 use crate::rng::Rng;
 use crate::space::distance;
 use crate::Host;
@@ -42,7 +45,8 @@ impl InWorld {
 
         if let Some((spell, left)) = &mut mob.casting {
             let spell = *spell;
-            if !player_alive || distance(mob.position, me) > spell.range_max {
+            let self_cast = matches!(spell.effect, CreatureEffect::Heal { .. });
+            if !player_alive || (!self_cast && distance(mob.position, me) > spell.range_max) {
                 super::drop_cast(mob, events);
                 return false;
             }
@@ -54,19 +58,34 @@ impl InWorld {
             mob.spell_cooldowns
                 .push((spell.key.as_str(), clock::secs(spell.cooldown_ms)));
             let (guid, level) = (mob.guid, mob.level());
+            let target = if self_cast { guid } else { player };
             events.push(SessionEvent::SpellGo {
                 caster: guid,
                 spell_id: spell.client_spell_id,
                 cast_flags: 0,
-                hits: vec![player],
+                hits: vec![target],
                 misses: Vec::new(),
-                target: Some(player),
+                target: Some(target),
                 go_target: None,
                 dest: None,
                 ammo_display_id: None,
                 item_caster: None,
             });
-            self.creature_spell_lands(guid, level, spell, events);
+            if let CreatureEffect::Heal { pct_max_health } = spell.effect {
+                let max = mob.stats.max_health;
+                let healed = crate::creature_spells::healed(mob.health, max, pct_max_health);
+                mob.health += healed;
+                events.push(SessionEvent::SpellHealLog(SpellHealLog {
+                    target: guid,
+                    healer: guid,
+                    spell_id: spell.client_spell_id,
+                    amount: healed,
+                    critical: false,
+                }));
+                events.push(values(guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+            } else {
+                self.creature_spell_lands(guid, level, spell, events);
+            }
             return true;
         }
 
@@ -76,13 +95,21 @@ impl InWorld {
         }
         mob.think_in = THINK_SECS;
         let d = distance(mob.position, me);
-        let ready = spells
-            .into_iter()
-            .find(|s| d <= s.range_max && !mob.spell_cooldowns.iter().any(|(k, _)| *k == s.key));
+        let (health, max_health) = (mob.health, mob.stats.max_health);
+        let ready = spells.into_iter().find(|s| {
+            let in_reach = matches!(s.effect, CreatureEffect::Heal { .. }) || d <= s.range_max;
+            let hurt = s
+                .below_health_pct
+                .is_none_or(|pct| health * 100 < max_health * pct);
+            in_reach && hurt && !mob.spell_cooldowns.iter().any(|(k, _)| *k == s.key)
+        });
         let Some(spell) = ready else {
             return false;
         };
-        if rng.below(100) >= spell.chance || !host.line_of_sight(map, eye(mob.position), eye(me)) {
+        let self_cast = matches!(spell.effect, CreatureEffect::Heal { .. });
+        if rng.below(100) >= spell.chance
+            || (!self_cast && !host.line_of_sight(map, eye(mob.position), eye(me)))
+        {
             return false;
         }
         // It stands where it is for the cast, facing its target.
@@ -100,7 +127,7 @@ impl InWorld {
             spell_id: spell.client_spell_id,
             cast_flags: 0,
             cast_time_ms: spell.cast_time_ms,
-            target: Some(player),
+            target: Some(if self_cast { mob.guid } else { player }),
             ammo_display_id: None,
         });
         true
