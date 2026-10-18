@@ -67,6 +67,9 @@ pub(crate) struct Creature {
     /// Calls for help, each made once per life.
     #[serde(default)]
     pub(crate) on_health: Vec<OnHealth>,
+    /// Items its corpse always holds, on top of the rolled loot.
+    #[serde(default)]
+    pub(crate) drop: Vec<u32>,
 }
 
 /// A creature's call for help: the first time its health is at or below `pct`% of its maximum
@@ -190,6 +193,16 @@ pub(crate) fn content() -> &'static [Dungeon] {
     })
 }
 
+/// The items a Phased Dungeon creature of `guid` on `map` always drops; none for any other.
+pub(crate) fn drops(map: u32, guid: u32) -> &'static [u32] {
+    content()
+        .iter()
+        .filter(|d| d.map == map)
+        .flat_map(|d| &d.creature)
+        .find(|c| c.guid == guid)
+        .map_or(&[], |c| &c.drop)
+}
+
 /// The Phase of a character standing at `position` on `map`.
 pub(crate) fn at(map: u32, position: [f32; 3]) -> Phase {
     content()
@@ -233,6 +246,57 @@ mod tests {
         assert!(!call.reached(51, 100));
         assert!(call.reached(50, 100));
         assert!(call.reached(1, 100));
+    }
+
+    #[test]
+    fn the_abbey_holds_its_brothers_lieutenants_and_abbot() {
+        let abbey = &content()[0];
+        let template = |entry| {
+            crate::mobs::content()
+                .template
+                .iter()
+                .find(|t| t.entry == entry)
+                .unwrap()
+        };
+        assert!(
+            abbey.creature.iter().all(|c| c.entry != 38),
+            "a Thug remains"
+        );
+        let named = |name| {
+            abbey
+                .creature
+                .iter()
+                .filter(move |c| template(c.entry).name == name)
+        };
+        let brothers = named("Corrupted Brother").count();
+        assert!((5..=7).contains(&brothers), "{brothers} brothers");
+        let lieutenants: Vec<_> = named("Twilight Disciple").collect();
+        assert_eq!(lieutenants.len(), 3);
+        assert!(lieutenants.iter().all(|c| template(c.entry).rank == 1));
+
+        let abbots: Vec<_> = named("Abbot Ashworth").collect();
+        let [abbot] = abbots[..] else {
+            panic!("{} abbots", abbots.len())
+        };
+        assert_eq!((abbot.level, template(abbot.entry).rank), (10, 1));
+        assert!(template(abbot.entry)
+            .spells
+            .iter()
+            .any(|s| s == "abbot_heal"));
+        assert!(abbot.on_health.iter().any(|call| call.pct == 50));
+        assert!(!abbot.drop.is_empty(), "the Abbot drops no blue");
+        for &item in &abbot.drop {
+            let blue = crate::items::template(item).expect("the Abbot's drop is an item");
+            assert_eq!(blue.quality, 3);
+        }
+    }
+
+    #[test]
+    fn neals_offers_the_abbots_fall_after_into_the_abbey() {
+        let q = crate::quests::content::quest(94004).unwrap();
+        assert!(matches!(q.giver, crate::quests::content::Giver::Npc(952)));
+        assert_eq!(q.after, Some(94002));
+        assert_eq!(q.kill, [(96005, 1)]);
     }
 
     #[test]

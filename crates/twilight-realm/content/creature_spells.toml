@@ -39,3 +39,27 @@ range_max = 0.0
 chance = 100
 below_health_pct = 80
 effect = { kind = "heal", pct_max_health = 15 }
+
+# The Twilight Disciple's. Looks like Shadow Word: Pain rank 1 (client_spell_id 589): instant.
+# Placeholders: 6 ticks of 5, 30 shadow damage over 18 s, every 12 s.
+[[spell]]
+key = "shadow_word_pain_creature"
+client_spell_id = 589
+school = "shadow"
+cast_time_ms = 0
+cooldown_ms = 12000
+range_max = 30.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = { base = 5 } }
+
+# The Abbot's heavy curse. Looks like Corruption rank 2 (client_spell_id 6222). Placeholders:
+# 6 ticks of 18, 108 shadow damage over 18 s, every 25 s.
+[[spell]]
+key = "abbot_corruption"
+client_spell_id = 6222
+school = "shadow"
+cast_time_ms = 2000
+cooldown_ms = 25000
+range_max = 30.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = { base = 18 } }

@@ -648,3 +648,68 @@ entry = 3101
 level = 3
 position = [-442.4, -2626.6, 95.9]
 orientation = 4.71
+
+# Northshire Abbey's monsters (#94), placed in northshire_abbey.toml. Every multiplier is a
+# placeholder, untested against a level 8 to 10.
+
+# A brother of the Abbey turned by the Twilight's Hammer: melee only. Display 3277 is vmangos's
+# Brother Danil (entry 152), a Northshire monk; no shadowy variant of it is in the stock files.
+[[template]]
+entry = 96003
+name = "Corrupted Brother"
+creature_type = 7
+display_id = 3277
+faction_template = 14
+unit_class = "warrior"
+level_min = 8
+level_max = 8
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# A Twilight cultist lieutenant: elite, with a Shadow Word: Pain. Display 2882 is the Twilight
+# Acolyte's (vmangos entry 4809, Blackfathom Deeps).
+[[template]]
+entry = 96004
+name = "Twilight Disciple"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 9
+level_max = 9
+health_multiplier = 1.4
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+spells = ["shadow_word_pain_creature"]
+
+# The Abbot, the Abbey's boss at the top of the bell tower: elite, a heavy Corruption and a
+# self-heal, and his bell (northshire_abbey.toml). Display 2492 is vmangos's Scarlet Abbot's
+# (entry 4303), a robed human priest.
+[[template]]
+entry = 96005
+name = "Abbot Ashworth"
+creature_type = 7
+rank = 1
+display_id = 2492
+faction_template = 14
+unit_class = "mage"
+level_min = 10
+level_max = 10
+health_multiplier = 2.0
+damage_multiplier = 1.1
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+spells = ["abbot_corruption", "abbot_heal"]

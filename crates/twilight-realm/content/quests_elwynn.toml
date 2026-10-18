@@ -59,3 +59,23 @@ tokens = 0
 zone_or_sort = 12
 kill = [[103, 1]]
 choices = [900101, 900102, 900103, 900104]
+
+# ── The Abbot's Fall (#94) ───────────────────────────────────────────────────────────────────
+#
+# Brother Neals's next step after Into the Abbey: the Abbot at the top of the bell tower. XP only.
+[[quest]]
+id = 94004
+kind = "story"
+giver = 952
+ender = 952
+after = 94002
+level = 10
+title = "The Abbot's Fall"
+objectives = "Kill Abbot Ashworth at the top of the bell tower, then return to Brother Neals."
+details = "It was the Abbot who let them in. He opened the undercroft himself and stood with them while they chanted. Now he keeps the bell tower, and when he rings that bell the brothers he turned come running. Climb the stair and end him. I'll pray for what's left of him."
+progress = "The bell. I keep hearing the bell."
+completion = "Then it's quiet up there at last. Light forgive him, and forgive me for being glad. Whatever they were digging for, they'll have to dig without him."
+money = 0
+tokens = 0
+zone_or_sort = 12
+kill = [[96005, 1]]

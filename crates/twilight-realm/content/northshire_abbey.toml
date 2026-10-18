@@ -79,45 +79,100 @@ z = [33.0, 57.0]
 position = [-8910.4, -144.2, 82.0]
 orientation = 1.98
 
-# Four Defias Thugs for testing: two just inside the front doors, one in the nave and one in
-# the east wing hall. The guids are this file's own (78xxxx), clear of the generated spawns.
+# The Abbey's monsters (#94), along the route vestibule → nave → east wing → back wing → tower
+# stair → bell tower top. Each point is a model-frame (x, y, z) on a footprint group's floor, put
+# through the header's transform. Every level and placement is a placeholder for Davis to tune.
+# The guids are this file's own (78xxxx), clear of the generated spawns.
+
+# Corrupted Brother: the vestibule, model (-18, 20).
 [[creature]]
-guid = 780001
-entry = 38
-level = 9
-position = [-8906.0, -157.0, 82.4]
+guid = 780006
+entry = 96003
+level = 8
+position = [-8906.4, -153.1, 82.4]
 orientation = 5.13
 
+# Corrupted Brother: the nave's west end, model (-20, 0).
 [[creature]]
-guid = 780002
-entry = 38
-level = 9
-position = [-8898.0, -160.0, 82.4]
-orientation = 5.13
+guid = 780007
+entry = 96003
+level = 8
+position = [-8915.6, -171.0, 82.4]
+orientation = 0.5
 
+# Corrupted Brother: the nave by the side chapel, model (5, 20).
 [[creature]]
-guid = 780003
-entry = 38
-level = 9
-position = [-8895.0, -183.0, 82.4]
-orientation = 2.0
-
-[[creature]]
-guid = 780004
-entry = 38
-level = 1
-position = [-8874.7, -181.7, 82.0]
+guid = 780008
+entry = 96003
+level = 8
+position = [-8885.0, -161.5, 82.4]
 orientation = 3.6
 
-# The hall's Thug is level 1, so a level 1 character can hurt it, and calls two more when a blow
-# takes a tenth of its health: a stand-in for the Abbot's bell until he comes (#93). They appear
-# at the hall's west door.
+# Corrupted Brother: the nave's south end, model (-6, -6).
+[[creature]]
+guid = 780009
+entry = 96003
+level = 8
+position = [-8904.8, -181.7, 82.4]
+orientation = 1.2
+
+# Twilight Disciple: the east wing, the room past the library, model (40, 5).
+[[creature]]
+guid = 780010
+entry = 96004
+level = 9
+position = [-8858.0, -188.3, 82.4]
+orientation = 3.6
+
+# Corrupted Brother: the back wing, model (-3, -25).
+[[creature]]
+guid = 780011
+entry = 96003
+level = 8
+position = [-8909.0, -200.5, 82.4]
+orientation = 1.2
+
+# Twilight Disciple: the back wing, model (0, -33).
+[[creature]]
+guid = 780012
+entry = 96004
+level = 9
+position = [-8909.1, -209.0, 82.4]
+orientation = 1.2
+
+# Corrupted Brother: the back wing's far end, model (-3, -40).
+[[creature]]
+guid = 780013
+entry = 96003
+level = 8
+position = [-8914.5, -214.4, 82.4]
+orientation = 1.2
+
+# Twilight Disciple: up the tower stair, model (4, -3, 22).
+[[creature]]
+guid = 780014
+entry = 96004
+level = 9
+position = [-8894.4, -182.6, 104.4]
+orientation = 2.0
+
+# The Abbot: the top of the bell tower, model (-2, 5, 34). He always drops Ashworth's Black Psalter.
+[[creature]]
+guid = 780015
+entry = 96005
+level = 10
+position = [-8897.0, -172.9, 116.4]
+orientation = 5.0
+drop = [900105]
+
+# The bell: at half health he rings it, and two Corrupted Brothers come up the tower stair below
+# him, model (6, -7, 22).
 [[creature.on_health]]
-pct = 90
-entry = 38
-level = 1
+pct = 50
+entry = 96003
+level = 8
 count = 2
-position = [-8878.0, -184.0, 82.0]
+position = [-8894.0, -187.0, 104.4]
 
 # Brother Neals (#85), the Abbey's one survivor and the ender of Into the Abbey: friendly, quest
 # flags only. He hides at the foot of the bell tower stair, past the nave, in the group of

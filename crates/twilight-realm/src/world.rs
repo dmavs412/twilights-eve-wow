@@ -77,6 +77,8 @@ pub(crate) struct Kill {
     pub(crate) level: u8,
     pub(crate) elite: xp::Elite,
     pub(crate) boss: bool,
+    /// Items the corpse always holds (a Phased Dungeon creature's `drop`).
+    pub(crate) drops: &'static [u32],
     /// The corpse's money, rolled once for everyone; 0 for a kill made alone, whose loot rolls
     /// its own.
     pub(crate) money: u32,
@@ -989,6 +991,11 @@ impl InWorld {
         let mob = &mut self.mobs[i];
         let entry = mob.template.entry;
         let boss = Self::is_boss(mob);
+        let spawn = &crate::mobs::content().spawn[mob.spawn as usize];
+        let drops = match spawn.phase {
+            crate::phased::Phase::Dungeon(_) => crate::phased::drops(spawn.map, spawn.guid),
+            crate::phased::Phase::OpenWorld => &[],
+        };
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
@@ -1037,6 +1044,7 @@ impl InWorld {
             level: mob.level(),
             elite,
             boss,
+            drops,
             money,
             position: mob.position,
         };
@@ -1098,6 +1106,8 @@ impl InWorld {
         if let Some(money) = credit.money {
             loot.money = money;
         }
+        loot.items
+            .extend(k.drops.iter().map(|&item| Some((item, 1))));
         // The quest items the player's quests still want, after the corpse's own drop.
         loot.items
             .extend(crate::quests::drops(c, k.entry, rng).into_iter().map(Some));

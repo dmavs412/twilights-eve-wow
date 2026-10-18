@@ -10,7 +10,6 @@ use common::party::*;
 use common::*;
 
 const HIGHGUID_UNIT: u64 = 0xF130;
-const DEFIAS_THUG: u64 = 38;
 const BROTHER_NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
 /// Inside the nave, and out in the yard before the front doors.
 const INSIDE: [f32; 2] = [-8890.0, -172.0];
@@ -31,14 +30,29 @@ impl Host for AbbeyFloor {
     }
 }
 
-fn thugs() -> HashSet<u64> {
-    (780001..=780004)
-        .map(|g| HIGHGUID_UNIT << 48 | DEFIAS_THUG << 24 | g)
+/// The Abbey's monsters at a Run's start (#94): their low guids and entries.
+const MONSTERS: [(u64, u64); 10] = [
+    (780006, 96003),
+    (780007, 96003),
+    (780008, 96003),
+    (780009, 96003),
+    (780010, 96004),
+    (780011, 96003),
+    (780012, 96004),
+    (780013, 96003),
+    (780014, 96004),
+    (780015, 96005),
+];
+
+fn monsters() -> HashSet<u64> {
+    MONSTERS
+        .iter()
+        .map(|&(g, entry)| HIGHGUID_UNIT << 48 | entry << 24 | g)
         .collect()
 }
 
 fn the_abbeys() -> HashSet<u64> {
-    let mut all = thugs();
+    let mut all = monsters();
     all.insert(BROTHER_NEALS);
     all
 }
@@ -73,7 +87,7 @@ fn two_inside_share_the_runs_creatures_and_clock() {
     go(&mut party, 0, INSIDE);
     party.run(0.1);
     // The one outside sees none of the Run's creatures.
-    assert!(party.units_held(1).is_disjoint(&thugs()));
+    assert!(party.units_held(1).is_disjoint(&monsters()));
     party.run(2.0);
     go(&mut party, 1, INSIDE);
     party.run(0.1);
@@ -88,7 +102,7 @@ fn two_inside_share_the_runs_creatures_and_clock() {
     party.run(1.0);
     assert_eq!(elapsed(&party, 0), None);
     assert!(elapsed(&party, 1).is_some_and(|t| t > a));
-    assert!(party.units_held(0).is_disjoint(&thugs()));
+    assert!(party.units_held(0).is_disjoint(&monsters()));
 
     // Both out: it resets, and the next one in starts a new one.
     go(&mut party, 1, OUTSIDE);
@@ -104,10 +118,10 @@ fn both_dead_inside_resets_the_run() {
     go(&mut party, 0, INSIDE);
     go(&mut party, 1, INSIDE);
     party.run(0.1);
-    let thug = *thugs().iter().next().unwrap();
-    party.cmd(0, RealmCommand::AttackSwing { guid: thug });
-    party.cmd(1, RealmCommand::AttackSwing { guid: thug });
-    // Four level 9 Thugs against two level 1 warriors.
+    let brother = HIGHGUID_UNIT << 48 | 96003 << 24 | 780009;
+    party.cmd(0, RealmCommand::AttackSwing { guid: brother });
+    party.cmd(1, RealmCommand::AttackSwing { guid: brother });
+    // The nave's level 8 Corrupted Brother against two level 1 warriors.
     let (a, b) = (party.guids[0], party.guids[1]);
     let mut dead = (false, false);
     party.run_until(120.0, |got| {
@@ -115,7 +129,7 @@ fn both_dead_inside_resets_the_run() {
         dead.1 |= died(&got[1], b);
         dead.0 && dead.1
     });
-    assert!(dead.0 && dead.1, "the Thugs kill both");
+    assert!(dead.0 && dead.1, "the Abbey kills both");
     party.run(0.1);
     assert_eq!(elapsed(&party, 0), None);
     assert_eq!(elapsed(&party, 1), None);

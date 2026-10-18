@@ -1,5 +1,5 @@
 //! Northshire Abbey, the first Phased Dungeon (#78): a character inside its footprint sees and
-//! fights only its four Defias Thugs (Brother Neals stands there too, and never fights), and its
+//! fights only its own monsters (#94; Brother Neals stands there too, and never fights), and its
 //! Run resets when the last one leaves or dies.
 
 mod common;
@@ -12,11 +12,12 @@ use common::*;
 
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
 const HIGHGUID_UNIT: u64 = 0xF130;
-const DEFIAS_THUG: u64 = 38;
 /// The Abbey's survivor, a Field Giver (#85).
 const BROTHER_NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
-/// The Thug in the east wing hall, which calls two more when it is hurt.
-const HALL_THUG: u64 = HIGHGUID_UNIT << 48 | DEFIAS_THUG << 24 | 780004;
+/// The Abbot at the top of the bell tower, whose bell calls two Corrupted Brothers at half health.
+const ABBOT: u64 = HIGHGUID_UNIT << 48 | 96005 << 24 | 780015;
+/// Where the Abbot stands, in the test's flat Abbey.
+const ABBOT_AT: [f32; 2] = [-8897.0, -172.9];
 /// The first low guid of a creature a call for help brings in.
 const CALLED_GUID_BASE: u64 = 0x90_0000;
 /// Inside the nave, and out in the yard before the front doors.
@@ -38,9 +39,24 @@ impl Host for AbbeyFloor {
     }
 }
 
-fn thugs() -> HashSet<u64> {
-    (780001..=780004)
-        .map(|g| HIGHGUID_UNIT << 48 | DEFIAS_THUG << 24 | g)
+/// The Abbey's monsters at a Run's start (#94): their low guids and entries.
+const MONSTERS: [(u64, u64); 10] = [
+    (780006, 96003),
+    (780007, 96003),
+    (780008, 96003),
+    (780009, 96003),
+    (780010, 96004),
+    (780011, 96003),
+    (780012, 96004),
+    (780013, 96003),
+    (780014, 96004),
+    (780015, 96005),
+];
+
+fn monsters() -> HashSet<u64> {
+    MONSTERS
+        .iter()
+        .map(|&(g, entry)| HIGHGUID_UNIT << 48 | entry << 24 | g)
         .collect()
 }
 
@@ -52,7 +68,7 @@ fn is_unit(guid: u64) -> bool {
 struct Abbey {
     realm: Realm,
     seen: HashSet<u64>,
-    /// Each Thug's health in its latest create.
+    /// Each monster's health in its latest create.
     created_health: Vec<(u32, u32)>,
     /// The character.
     me: u64,
@@ -64,14 +80,25 @@ struct Abbey {
 
 impl Abbey {
     fn new() -> Self {
-        let mut realm = realm();
+        Self::at_level(1)
+    }
+
+    /// A human warrior of `level` in the yard.
+    fn at_level(level: u8) -> Self {
+        let mut maker = realm();
         let RealmCommand::CreateCharacter(mut req) = create_cmd("Pilgrim", HUMAN, 0, WARRIOR)
         else {
             unreachable!()
         };
         req.start = START_ELWYNN;
-        realm.handle(RealmCommand::CreateCharacter(req));
-        let me = roster(&mut realm)[0].guid;
+        maker.handle(RealmCommand::CreateCharacter(req));
+        let me = roster(&mut maker)[0].guid;
+        let blob = maker
+            .export_character(me)
+            .unwrap()
+            .replace("level = 1\n", &format!("level = {level}\n"));
+        let mut realm = realm();
+        realm.import_character(&blob).unwrap();
         realm.handle(RealmCommand::EnterWorld { guid: me });
         let mut a = Self {
             realm,
@@ -100,7 +127,7 @@ impl Abbey {
                     if guid & 0xFF_FFFF >= CALLED_GUID_BASE {
                         self.called.insert(guid);
                     }
-                    if thugs().contains(&guid) {
+                    if monsters().contains(&guid) {
                         let h = (
                             fields.unit_health().unwrap(),
                             fields.unit_max_health().unwrap(),
@@ -131,19 +158,18 @@ impl Abbey {
         self.tick(secs);
     }
 
-    /// Walks up to the hall's Thug, the one that calls for help, and fights it until it does.
-    fn fight_the_hall_thug(&mut self) {
+    /// Walks up to the Abbot and fights him until he rings his bell.
+    fn fight_the_abbot(&mut self) {
         self.called.clear();
         self.attackers.clear();
         self.realm.handle(RealmCommand::DevTeleport {
-            x: -8872.5,
-            y: -181.7,
+            x: ABBOT_AT[0] + 1.5,
+            y: ABBOT_AT[1],
             facing: Some(std::f32::consts::PI),
         });
         self.tick(0.1);
-        self.realm
-            .handle(RealmCommand::AttackSwing { guid: HALL_THUG });
-        for _ in 0..600 {
+        self.realm.handle(RealmCommand::AttackSwing { guid: ABBOT });
+        for _ in 0..3000 {
             self.tick(0.1);
             if !self.called.is_empty() {
                 break;
@@ -163,21 +189,21 @@ impl Abbey {
 }
 
 #[test]
-fn outside_sees_no_thug_and_inside_sees_only_the_abbeys_own() {
+fn outside_sees_no_monster_and_inside_sees_only_the_abbeys_own() {
     let mut a = Abbey::new();
-    assert!(a.seen.is_disjoint(&thugs()), "a Thug shows outside");
+    assert!(a.seen.is_disjoint(&monsters()), "a monster shows outside");
     assert!(!a.seen.is_empty(), "the open world streamed in");
-    let thug = *thugs().iter().next().unwrap();
-    assert!(a.refused(thug), "a Thug is targetable from outside");
+    let brother = HIGHGUID_UNIT << 48 | 96003 << 24 | 780009;
+    assert!(a.refused(brother), "a monster is targetable from outside");
 
     a.go(INSIDE, 0.1);
-    let mut abbeys = thugs();
+    let mut abbeys = monsters();
     abbeys.insert(BROTHER_NEALS);
     assert_eq!(
         a.seen, abbeys,
-        "inside holds the four Thugs and Brother Neals, and nothing else"
+        "inside holds the Abbey's monsters and Brother Neals, and nothing else"
     );
-    assert!(!a.refused(thug), "a Thug is not attackable inside");
+    assert!(!a.refused(brother), "a monster is not attackable inside");
 }
 
 #[test]
@@ -192,16 +218,16 @@ fn entering_starts_a_run_and_leaving_ends_it() {
         None,
         "the Run outlived the last one out"
     );
-    assert!(a.seen.is_disjoint(&thugs()));
+    assert!(a.seen.is_disjoint(&monsters()));
 }
 
 #[test]
-fn dying_inside_ends_the_run_and_the_thugs_come_back_at_full_health() {
+fn dying_inside_ends_the_run_and_the_monsters_come_back_at_full_health() {
     let mut a = Abbey::new();
     a.go(INSIDE, 0.1);
-    let thug = *thugs().iter().next().unwrap();
-    a.realm.handle(RealmCommand::AttackSwing { guid: thug });
-    // Four level 9 Thugs against a level 1 warrior.
+    let brother = HIGHGUID_UNIT << 48 | 96003 << 24 | 780009;
+    a.realm.handle(RealmCommand::AttackSwing { guid: brother });
+    // A level 8 Corrupted Brother against a level 1 warrior.
     for _ in 0..600 {
         a.tick(0.1);
         if a.realm.run_elapsed().is_none() {
@@ -209,7 +235,10 @@ fn dying_inside_ends_the_run_and_the_thugs_come_back_at_full_health() {
         }
     }
     assert_eq!(a.realm.run_elapsed(), None, "dying did not end the Run");
-    assert!(a.seen.is_disjoint(&thugs()), "the dead still see the Thugs");
+    assert!(
+        a.seen.is_disjoint(&monsters()),
+        "the dead still see the monsters"
+    );
 
     a.realm.handle(RealmCommand::RepopRequest);
     a.tick(0.1);
@@ -219,7 +248,7 @@ fn dying_inside_ends_the_run_and_the_thugs_come_back_at_full_health() {
         a.realm.run_elapsed().is_some(),
         "re-entering starts a new Run"
     );
-    assert_eq!(a.created_health.len(), 4);
+    assert_eq!(a.created_health.len(), MONSTERS.len());
     assert!(
         a.created_health.iter().all(|(h, max)| h == max),
         "{:?}",
@@ -241,11 +270,11 @@ fn the_abbeys_npcs_are_gone_and_mcbride_waits_outside() {
 }
 
 #[test]
-fn a_hurt_thug_calls_its_adds_and_they_fall_on_its_attacker() {
-    let mut a = Abbey::new();
+fn the_abbots_bell_calls_two_brothers_and_they_fall_on_his_attacker() {
+    let mut a = Abbey::at_level(20);
     a.go(INSIDE, 0.1);
     assert!(a.called.is_empty(), "the adds were there from the start");
-    a.fight_the_hall_thug();
+    a.fight_the_abbot();
     assert_eq!(a.called.len(), 2, "the call brought {:?}", a.called);
     assert!(
         a.called.is_subset(&a.attackers),
@@ -257,9 +286,9 @@ fn a_hurt_thug_calls_its_adds_and_they_fall_on_its_attacker() {
 
 #[test]
 fn a_call_is_made_once_a_life() {
-    let mut a = Abbey::new();
+    let mut a = Abbey::at_level(20);
     a.go(INSIDE, 0.1);
-    a.fight_the_hall_thug();
+    a.fight_the_abbot();
     assert_eq!(a.called.len(), 2);
     // Many more blows, each past the threshold again.
     a.tick(3.0);
@@ -268,9 +297,9 @@ fn a_call_is_made_once_a_life() {
 
 #[test]
 fn a_reset_run_lets_the_call_fire_again() {
-    let mut a = Abbey::new();
+    let mut a = Abbey::at_level(20);
     a.go(INSIDE, 0.1);
-    a.fight_the_hall_thug();
+    a.fight_the_abbot();
     assert_eq!(a.called.len(), 2);
 
     a.go(OUTSIDE, 0.1);
@@ -281,6 +310,6 @@ fn a_reset_run_lets_the_call_fire_again() {
         a.seen.is_disjoint(&a.called),
         "the adds are there at the Run's start"
     );
-    a.fight_the_hall_thug();
+    a.fight_the_abbot();
     assert_eq!(a.called.len(), 2, "no call in the second Run");
 }
