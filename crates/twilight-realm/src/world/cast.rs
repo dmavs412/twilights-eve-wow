@@ -127,6 +127,9 @@ pub(super) struct Skills {
     blink: Option<PendingBlink>,
     /// The spell-mod cells the player's `next_cast` buffs last set on the client, with values.
     sent_mods: Vec<(bool, u8, u8, i32)>,
+    /// What the cast under way has dealt and healed so far: a share of either (`pct_of`) reads it.
+    cast_dealt: u32,
+    cast_healed: u32,
     /// What the last cast cost, and whether the bar was full before it paid: its procs read them.
     pub(super) last_cost: u32,
     pub(super) was_full: bool,
@@ -1354,6 +1357,8 @@ impl InWorld {
         let mut ticked = Ticked::default();
         let spell_id = skill.spell_id;
         self.pay(skill, instant, c, events);
+        self.skills.cast_dealt = 0;
+        self.skills.cast_healed = 0;
         // A cast that breaks stealth does so as it goes; its first blow from stealth is a crit.
         let opener = self.skills.opens_from_stealth(skill, events);
 
@@ -1571,6 +1576,71 @@ impl InWorld {
         ticked
     }
 
+    /// `pct` percent of what the cast under way dealt or healed (`pct_of`), a tick's share over
+    /// `duration_ms` in `tick_ms` ticks; 0 with no share.
+    fn share(
+        &self,
+        pct_of: Option<callings::PctOf>,
+        pct: u32,
+        duration_ms: u32,
+        tick_ms: u32,
+    ) -> u32 {
+        let Some(of) = pct_of else {
+            return 0;
+        };
+        let amount = match of {
+            callings::PctOf::Hit => self.skills.cast_dealt,
+            callings::PctOf::Heal => self.skills.cast_healed,
+        };
+        let ticks = (duration_ms / tick_ms.max(1)).max(1);
+        scaled_share(amount, pct) / ticks
+    }
+
+    /// The friendly players in the world, each with where they stand and the share of their
+    /// health they have left. Only the player, until there are others.
+    fn friendly_players(&self, c: &Char) -> Vec<(u64, [f32; 3], f32)> {
+        let max = buffed(&self.player.stats, &self.skills).max_health.max(1);
+        if !self.player.alive() {
+            return Vec::new();
+        }
+        vec![(
+            self.guid,
+            c.position,
+            self.player.health as f32 / max as f32,
+        )]
+    }
+
+    /// The friendly player within `radius_yd` of `at` with the smallest share of health left.
+    fn lowest_health_ally(&self, c: &Char, at: [f32; 3], radius_yd: f32) -> Option<u64> {
+        self.friendly_players(c)
+            .into_iter()
+            .filter(|(_, p, _)| distance(*p, at) <= radius_yd)
+            .min_by(|a, b| a.2.total_cmp(&b.2))
+            .map(|(guid, _, _)| guid)
+    }
+
+    /// Heals the player `amount` under `spell_id`, up to their maximum: what was healed.
+    fn heal_player(&mut self, spell_id: u32, amount: u32, events: &mut Vec<SessionEvent>) -> u32 {
+        let max = buffed(&self.player.stats, &self.skills).max_health;
+        let p = &mut self.player;
+        if !p.alive() {
+            return 0;
+        }
+        let healed = amount.min(max.saturating_sub(p.health));
+        p.health += healed;
+        events.push(SessionEvent::SpellHealLog(
+            benilla_protocol::messages::SpellHealLog {
+                target: self.guid,
+                healer: self.guid,
+                spell_id,
+                amount: healed,
+                critical: false,
+            },
+        ));
+        events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, p.health)]));
+        healed
+    }
+
     /// Sends the spell-mod cells the player's `next_cast` buffs move, each with the talents'
     /// value added (a packet sets a cell outright), and puts back the ones they no longer move.
     pub(super) fn sync_next_cast_mods(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
@@ -1598,9 +1668,27 @@ impl InWorld {
 
     /// What `skill` costs now: the talents' price, less what the player's buffs take off.
     fn power_cost(&self, c: &Char, skill: &Skill) -> u32 {
-        let cost =
-            crate::talents::power_cost(c, skill).saturating_sub(self.skills.cost_less(&skill.key));
+        // The row's price is a share of base mana for `pct_base`, and health for `health`.
+        let base = match skill.meta.shape.cost_kind.as_deref() {
+            Some("pct_base") => {
+                let s = &self.player.stats;
+                crate::rules::power::base_mana(s.class, s.level) * skill.power_cost / 100
+            }
+            Some("health") => 0,
+            _ => skill.power_cost,
+        };
+        let cost = crate::talents::power_cost_from(c, skill, base)
+            .saturating_sub(self.skills.cost_less(&skill.key));
         (cost as i32 * (100 + self.skills.next_cost_pct(&skill.key)) / 100) as u32
+    }
+
+    /// The health `skill` costs: its row's share of the caster's maximum health, for a
+    /// `cost_kind` of `health`.
+    fn health_cost(&self, skill: &Skill) -> u32 {
+        if skill.meta.shape.cost_kind.as_deref() != Some("health") {
+            return 0;
+        }
+        buffed(&self.player.stats, &self.skills).max_health * skill.power_cost / 100
     }
 
     /// Whether `skill` can go off now at `target`, and on whom; `gcd`: whether the global
@@ -1622,6 +1710,11 @@ impl InWorld {
             return Err(SPELL_FAILED_NOT_READY);
         }
         if !p.power.has(self.power_cost(c, skill)) {
+            return Err(SPELL_FAILED_NO_POWER);
+        }
+        // A health cost that would kill is refused.
+        let blood = self.health_cost(skill);
+        if blood > 0 && blood >= p.health {
             return Err(SPELL_FAILED_NO_POWER);
         }
         if skill.requires_out_of_combat && p.in_combat {
@@ -1732,9 +1825,10 @@ impl InWorld {
         let cost = self.power_cost(c, skill);
         self.skills.last_cost = cost;
         self.skills.was_full = self.player.power.current >= self.player.power.max;
+        let blood = self.health_cost(skill);
         let p = &mut self.player;
         p.power.spend(cost);
-        let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100;
+        let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100 + blood;
         // A cost never kills.
         p.health = p.health.saturating_sub(health_cost).max(1);
         let s = &mut self.skills;
@@ -1940,7 +2034,7 @@ impl InWorld {
                 ..
             } => {
                 let raw = scaled(amount.at(level, ap), hit_pct) + per_combo(more);
-                self.strike(
+                self.skills.cast_dealt += self.strike(
                     skill.spell_id,
                     target,
                     raw,
@@ -1960,15 +2054,19 @@ impl InWorld {
                 duration_per_combo: stretch,
                 max_stacks,
                 aura_spell_id,
+                school,
+                pct_of,
+                pct,
             } => {
-                let per_tick = scaled(tick.at(level, ap), tick_pct) + per_combo(more);
                 let duration_ms =
                     duration_ms + stretch.map_or(0, |l| l.at(level, ap) * u32::from(combo));
+                let share = self.share(pct_of, pct, duration_ms, tick_ms);
+                let per_tick = scaled(tick.at(level, ap), tick_pct) + per_combo(more) + share;
                 let a = aura(
                     AuraKind::PeriodicDamage {
                         per_tick,
                         carry: 0,
-                        school: School::Physical,
+                        school,
                         caster: self.guid,
                         stacks: 1,
                         max_stacks,
@@ -2285,6 +2383,55 @@ impl InWorld {
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
+            Effect::Heal { amount } => {
+                if target == self.guid {
+                    let healed = self.heal_player(skill.spell_id, sized(amount), events);
+                    self.skills.cast_healed += healed;
+                }
+            }
+            Effect::PeriodicHeal {
+                tick_ms,
+                duration_ms,
+                tick,
+                pct_of,
+                pct,
+                aura_spell_id,
+                ally,
+                radius_yd,
+                center,
+            } => {
+                let unit = match ally {
+                    Some(callings::AllyPick::LowestHealth) => {
+                        let at = match center {
+                            callings::Center::Caster => Some(c.position),
+                            callings::Center::Target => self
+                                .mobs
+                                .iter()
+                                .find(|m| m.guid == target)
+                                .map(|m| m.position)
+                                .or((target == self.guid).then_some(c.position)),
+                        };
+                        at.and_then(|at| self.lowest_health_ally(c, at, radius_yd))
+                    }
+                    None => (target == self.guid).then_some(self.guid),
+                };
+                let Some(unit) = unit else {
+                    return;
+                };
+                let per_tick = tick.map_or(0, sized)
+                    + self.share(pct_of, pct, scaled(duration_ms + later, longer), tick_ms);
+                if per_tick == 0 {
+                    return;
+                }
+                let mut a = aura(
+                    AuraKind::Heal { per_tick },
+                    aura_spell_id.unwrap_or(skill.spell_id),
+                    duration_ms,
+                    tick_ms,
+                );
+                a.unit = unit;
+                self.skills.apply(a, events);
+            }
             Effect::ResetCooldowns { spell_ids } => {
                 for id in spell_ids.into_iter().filter(|&id| id != 0) {
                     let s = &mut self.skills;
@@ -3211,6 +3358,12 @@ impl InWorld {
                         }],
                     }));
                     if on_player {
+                        // The caster's own toll on themselves (Dark Mending) never kills.
+                        let per_tick = if caster == self.guid {
+                            per_tick.min(self.player.health.saturating_sub(1))
+                        } else {
+                            per_tick
+                        };
                         self.player_takes(per_tick, events);
                     } else {
                         self.hurt(a.unit, per_tick, c, rng, events, ticked);

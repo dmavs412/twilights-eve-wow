@@ -85,6 +85,14 @@ pub fn mana_from_intellect(intellect: u32) -> u32 {
     intellect.min(20) + intellect.saturating_sub(20) * 15
 }
 
+/// The base mana of `class` at `level`, before intellect: what a `pct_base` cost is a share of.
+pub fn base_mana(class: u8, level: u8) -> u32 {
+    if PowerKind::of_class(class) != PowerKind::Mana {
+        return 0;
+    }
+    tables::at(&tables::levels().class(class).base_mana, level)
+}
+
 /// The mana bar of `class` at `level` with `intellect`: the Class's base mana for the level plus
 /// the intellect bonus; 0 for a Class that does not run on mana.
 pub fn max_mana(class: u8, level: u8, intellect: u32) -> u32 {

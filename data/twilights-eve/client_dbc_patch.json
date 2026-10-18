@@ -7303,6 +7303,30 @@
     "school": 5,
     "prevention_type": 1,
     "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target.",
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 33,
+        "per_level": 2
+       },
+       "school": "shadow"
+      }
+     },
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 2000,
+       "duration_ms": 6000,
+       "pct_of": "hit",
+       "pct": 20,
+       "ally": "lowest_health",
+       "radius_yd": 15,
+       "center": "target"
+      }
+     }
+    ],
     "range_index": 4,
     "cast_time_index": 16
    }
@@ -7319,6 +7343,23 @@
     "school": 1,
     "prevention_type": 1,
     "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds.",
+    "effects": [
+     {
+      "kind": "heal",
+      "params": {
+       "amount": {
+        "base": 80,
+        "per_level": 10
+       }
+      }
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_dark_mending"
+      }
+     }
+    ],
     "range_index": 5,
     "cast_time_index": 1
    }

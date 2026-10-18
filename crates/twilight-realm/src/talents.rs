@@ -278,8 +278,9 @@ pub(crate) fn on_struck(c: &Char) -> OnStruck {
     struck
 }
 
-/// What a skill costs `c`, in whole points of its power.
-pub(crate) fn power_cost(c: &Char, skill: &callings::Skill) -> u32 {
+/// What a skill whose row prices it at `base` costs `c`, in whole points of its power, its
+/// talents applied.
+pub(crate) fn power_cost_from(c: &Char, skill: &callings::Skill, base: u32) -> u32 {
     let less = sum(
         c,
         |e| matches!(e, TalentEffect::SkillCost { skill: s, flat: true, .. } if *s == skill.key),
@@ -288,7 +289,7 @@ pub(crate) fn power_cost(c: &Char, skill: &callings::Skill) -> u32 {
         c,
         |e| matches!(e, TalentEffect::SkillCost { skill: s, flat: false, .. } if *s == skill.key),
     );
-    crate::rules::talents::scaled(skill.power_cost, more).saturating_sub(less)
+    crate::rules::talents::scaled(base, more).saturating_sub(less)
 }
 
 /// The percent of the shield's Block Value a skill's strike adds.

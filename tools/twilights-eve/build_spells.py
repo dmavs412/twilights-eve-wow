@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "at_max_stacks", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "at_max_stacks", "heal", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -861,12 +861,20 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             # The realm reads an unavoidable strike from the effect; the outcomes cell is its one source.
             parsed = {"weapon": parsed["weapon"], "unavoidable": True,
                       **{k: v for k, v in parsed.items() if k != "weapon"}}
-        if kind in ("school_damage", "weapon_strike"):
+        if kind in ("school_damage", "weapon_strike", "periodic_damage"):
             if "school" in parsed:
                 raise BuildError(f"{here}: {kind} takes no school param; set the row's school column")
             # The realm reads the school from the effect's params; the row's school is the one source.
-            if out["school"] != "physical":
+            # An effect naming an aura row takes that row's school instead.
+            if out["school"] != "physical" and "apply_aura" not in parsed:
                 parsed["school"] = out["school"]
+        if kind in ("periodic_damage", "periodic_heal"):
+            if parsed.get("pct_of", "hit") not in ("hit", "heal"):
+                raise BuildError(f"{here}: pct_of is {parsed['pct_of']!r}, want hit or heal")
+            if parsed.get("ally", "lowest_health") != "lowest_health":
+                raise BuildError(f"{here}: ally is {parsed['ally']!r}, want lowest_health")
+            if parsed.get("center", "target") not in ("target", "caster"):
+                raise BuildError(f"{here}: center is {parsed['center']!r}, want target or caster")
         effects.append({"kind": kind, "params": parsed, "realm_only": i > CLIENT_EFFECTS})
     out["modelled"] = modelled == "yes"
     out["effects"] = effects if out["modelled"] else []

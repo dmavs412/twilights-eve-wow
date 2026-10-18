@@ -643,6 +643,33 @@ fn yes() -> bool {
     true
 }
 
+/// What a share is of: the damage the cast dealt, or what it healed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PctOf {
+    Hit,
+    Heal,
+}
+
+/// How an effect picks its friendly player.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AllyPick {
+    /// The one with the smallest share of their health left.
+    LowestHealth,
+}
+
+/// Where an ally pick's radius is measured from.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Center {
+    /// The cast's target.
+    #[default]
+    Target,
+    /// The caster.
+    Caster,
+}
+
 /// Which of a skill's amounts a `skill_amount_pct` raises.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -944,6 +971,38 @@ pub enum Effect {
         /// (Elemental Convergence) puts on the same aura; the skill's own otherwise.
         #[serde(default)]
         aura_spell_id: Option<u32>,
+        /// The school its ticks are logged in (the row's `school`).
+        #[serde(default)]
+        school: School,
+        /// Also `pct` percent of what this cast dealt or healed (`pct_of`), spread over the ticks
+        /// (Dark Mending's toll).
+        #[serde(default)]
+        pct_of: Option<PctOf>,
+        #[serde(default)]
+        pct: u32,
+    },
+    /// Heals the target `amount`, up to its maximum health.
+    Heal { amount: Linear },
+    /// A heal every `tick_ms` for `duration_ms`: `tick` a tick, and `pct` percent of what this
+    /// cast dealt or healed (`pct_of`) spread over the ticks. With `ally`, it goes on the friendly
+    /// player that rule picks within `radius_yd` of `center` instead of the cast's target.
+    PeriodicHeal {
+        tick_ms: u32,
+        duration_ms: u32,
+        #[serde(default)]
+        tick: Option<Linear>,
+        #[serde(default)]
+        pct_of: Option<PctOf>,
+        #[serde(default)]
+        pct: u32,
+        #[serde(default)]
+        aura_spell_id: Option<u32>,
+        #[serde(default)]
+        ally: Option<AllyPick>,
+        #[serde(default)]
+        radius_yd: f32,
+        #[serde(default)]
+        center: Center,
     },
     /// `amount` combo points on the target, five at most; points on another target are lost.
     AddComboPoints { amount: u32 },

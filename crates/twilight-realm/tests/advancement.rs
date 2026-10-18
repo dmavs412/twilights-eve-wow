@@ -923,7 +923,7 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
             ACOLYTE_TRAINER,
             THE_ACOLYTES_VEIN,
             "acolyte",
-            vec![589],
+            vec![589, 2061, 8092],
             ["The Rot-Weaver", "The Hemomancer"],
         ),
     ] {
@@ -940,7 +940,7 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
         assert_eq!(
             spellbook(&events),
             skills.into_iter().collect(),
-            "{key}: the Ranger's shots wait for ranged combat; the Acolyte has Creeping Blight"
+            "{key}: the Ranger's shots wait for ranged combat; the Acolyte has Creeping Blight, Dark Mending and Blood Lance"
         );
         let tabs: Vec<&str> = realm
             .current_calling()
