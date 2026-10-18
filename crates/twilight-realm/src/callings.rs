@@ -193,6 +193,8 @@ pub enum AuraEffect {
     DodgePct { pct: u32 },
     /// The damage the player's non-physical skills deal rises by `pct` percent.
     ModSpellDamagePct { pct: u32 },
+    /// The amounts `skill` deals rise by `pct` percent (Arcane Momentum).
+    SkillAmountPct { skill: String, pct: u32 },
     /// The unit cannot move, though it still attacks and casts; damage does not break it.
     Root,
     /// The player's next cast of one of the skills changes: see [`NextCast`].
@@ -521,6 +523,23 @@ pub enum TalentEffect {
         area_auras: Vec<Vec<String>>,
         #[serde(default)]
         radius_yd: f32,
+        /// Each rank's percent of the triggering cast's cost given back.
+        #[serde(default)]
+        refund_cost_pct: Vec<u32>,
+        /// A shield on the caster soaking this percent of the triggering cast's cost, for
+        /// `absorb_duration_ms`.
+        #[serde(default)]
+        absorb_cost_pct: u32,
+        #[serde(default)]
+        absorb_duration_ms: u32,
+        /// `absorb`: when the caster's bar was full before the cast, the shield goes up and
+        /// nothing else; otherwise everything but the shield.
+        #[serde(default)]
+        at_full_power: Option<String>,
+        /// Only when the target wore this aura row's aura before the cast landed; `slowed` for
+        /// any snare.
+        #[serde(default)]
+        requires_target_aura: Option<String>,
     },
     /// The armour from items rises by this many percent.
     #[serde(alias = "armor_items_pct")]
@@ -618,6 +637,8 @@ pub enum ProcEvent {
     MeleeHit,
     /// The character's `consume_aura` takes its aura off a target.
     Consume,
+    /// A damage-over-time the character put on a target ticks.
+    PeriodicTick,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].

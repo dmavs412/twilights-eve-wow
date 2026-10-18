@@ -5489,7 +5489,18 @@
     "name": "Thermal Feedback",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 2% chance to make your next Biting Cold instant cast and cost no mana."
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 2% chance to make your next Biting Cold instant cast and cost no mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "searing_ember",
+       "chance": 2,
+       "apply_aura": "aura_thermal_feedback"
+      }
+     }
+    ]
    }
   },
   {
@@ -5502,7 +5513,18 @@
     "name": "Thermal Feedback",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 4% chance to make your next Biting Cold instant cast and cost no mana."
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 4% chance to make your next Biting Cold instant cast and cost no mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "searing_ember",
+       "chance": 4,
+       "apply_aura": "aura_thermal_feedback"
+      }
+     }
+    ]
    }
   },
   {
@@ -5515,7 +5537,18 @@
     "name": "Thermal Feedback",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 6% chance to make your next Biting Cold instant cast and cost no mana."
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 6% chance to make your next Biting Cold instant cast and cost no mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "searing_ember",
+       "chance": 6,
+       "apply_aura": "aura_thermal_feedback"
+      }
+     }
+    ]
    }
   },
   {
@@ -5528,7 +5561,18 @@
     "name": "Thermal Feedback",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 8% chance to make your next Biting Cold instant cast and cost no mana."
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 8% chance to make your next Biting Cold instant cast and cost no mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "searing_ember",
+       "chance": 8,
+       "apply_aura": "aura_thermal_feedback"
+      }
+     }
+    ]
    }
   },
   {
@@ -5541,7 +5585,18 @@
     "name": "Thermal Feedback",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 10% chance to make your next Biting Cold instant cast and cost no mana."
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 10% chance to make your next Biting Cold instant cast and cost no mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "searing_ember",
+       "chance": 10,
+       "apply_aura": "aura_thermal_feedback"
+      }
+     }
+    ]
    }
   },
   {
@@ -5900,7 +5955,21 @@
     "name": "Ley-Line Tap",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark has a 10% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+    "description": "Casting Ley-Spark has a 10% chance to instantly refund its mana cost. If at full mana, grants a shield instead.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "chance": 10,
+       "refund_cost_pct": 100,
+       "absorb_cost_pct": 200,
+       "absorb_duration_ms": 10000,
+       "at_full_power": "absorb"
+      }
+     }
+    ]
    }
   },
   {
@@ -5913,7 +5982,21 @@
     "name": "Ley-Line Tap",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark has a 20% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+    "description": "Casting Ley-Spark has a 20% chance to instantly refund its mana cost. If at full mana, grants a shield instead.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "chance": 20,
+       "refund_cost_pct": 100,
+       "absorb_cost_pct": 200,
+       "absorb_duration_ms": 10000,
+       "at_full_power": "absorb"
+      }
+     }
+    ]
    }
   },
   {
@@ -5926,7 +6009,21 @@
     "name": "Ley-Line Tap",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark has a 30% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+    "description": "Casting Ley-Spark has a 30% chance to instantly refund its mana cost. If at full mana, grants a shield instead.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "chance": 30,
+       "refund_cost_pct": 100,
+       "absorb_cost_pct": 200,
+       "absorb_duration_ms": 10000,
+       "at_full_power": "absorb"
+      }
+     }
+    ]
    }
   },
   {
@@ -5939,7 +6036,21 @@
     "name": "Ley-Line Tap",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark has a 40% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+    "description": "Casting Ley-Spark has a 40% chance to instantly refund its mana cost. If at full mana, grants a shield instead.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "chance": 40,
+       "refund_cost_pct": 100,
+       "absorb_cost_pct": 200,
+       "absorb_duration_ms": 10000,
+       "at_full_power": "absorb"
+      }
+     }
+    ]
    }
   },
   {
@@ -5952,7 +6063,21 @@
     "name": "Ley-Line Tap",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark has a 50% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
+    "description": "Casting Ley-Spark has a 50% chance to instantly refund its mana cost. If at full mana, grants a shield instead.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "chance": 50,
+       "refund_cost_pct": 100,
+       "absorb_cost_pct": 200,
+       "absorb_duration_ms": 10000,
+       "at_full_power": "absorb"
+      }
+     }
+    ]
    }
   },
   {
@@ -6099,7 +6224,18 @@
     "name": "Frigid Conservation",
     "school": 0,
     "prevention_type": 2,
-    "description": "If Biting Cold strikes a target that is already slowed, it refunds 25% of its base mana cost."
+    "description": "If Biting Cold strikes a target that is already slowed, it refunds 25% of its base mana cost.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "biting_cold",
+       "requires_target_aura": "slowed",
+       "refund_cost_pct": 25
+      }
+     }
+    ]
    }
   },
   {
@@ -6112,7 +6248,18 @@
     "name": "Frigid Conservation",
     "school": 0,
     "prevention_type": 2,
-    "description": "If Biting Cold strikes a target that is already slowed, it refunds 50% of its base mana cost."
+    "description": "If Biting Cold strikes a target that is already slowed, it refunds 50% of its base mana cost.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "biting_cold",
+       "requires_target_aura": "slowed",
+       "refund_cost_pct": 50
+      }
+     }
+    ]
    }
   },
   {
@@ -6125,7 +6272,17 @@
     "name": "Arcane Momentum",
     "school": 0,
     "prevention_type": 2,
-    "description": "After using Blink, the damage of your Ley-Spark is increased by 15% for 5 seconds."
+    "description": "After using Blink, the damage of your Ley-Spark is increased by 15% for 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "blink",
+       "apply_aura": "aura_arcane_momentum_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -6138,7 +6295,17 @@
     "name": "Arcane Momentum",
     "school": 0,
     "prevention_type": 2,
-    "description": "After using Blink, the damage of your Ley-Spark is increased by 30% for 5 seconds."
+    "description": "After using Blink, the damage of your Ley-Spark is increased by 30% for 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "blink",
+       "apply_aura": "aura_arcane_momentum_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -6151,7 +6318,17 @@
     "name": "Arcane Momentum",
     "school": 0,
     "prevention_type": 2,
-    "description": "After using Blink, the damage of your Ley-Spark is increased by 45% for 5 seconds."
+    "description": "After using Blink, the damage of your Ley-Spark is increased by 45% for 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "blink",
+       "apply_aura": "aura_arcane_momentum_3"
+      }
+     }
+    ]
    }
   },
   {

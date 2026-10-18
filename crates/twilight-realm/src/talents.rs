@@ -472,6 +472,16 @@ pub(crate) struct Proc {
     /// The keys of the auras put on every enemy within `radius_yd` of the caster.
     pub(crate) area_auras: Vec<String>,
     pub(crate) radius_yd: f32,
+    /// Percent of the triggering cast's cost given back.
+    pub(crate) refund_cost_pct: u32,
+    /// A shield of this percent of the triggering cast's cost, for `absorb_ms`.
+    pub(crate) absorb_cost_pct: u32,
+    pub(crate) absorb_ms: u32,
+    /// The shield instead of everything else when the bar was full before the cast, and
+    /// everything else without the shield when it was not.
+    pub(crate) absorb_at_full_power: bool,
+    /// Only when the target wore this aura row's aura (or, `slowed`, a snare) before the cast.
+    pub(crate) requires_target_aura: Option<&'static str>,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -500,6 +510,11 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 spread,
                 area_auras,
                 radius_yd,
+                refund_cost_pct,
+                absorb_cost_pct,
+                absorb_duration_ms,
+                at_full_power,
+                requires_target_aura,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -522,6 +537,11 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     spread: *spread,
                     area_auras: area_auras.get(r).cloned().unwrap_or_default(),
                     radius_yd: *radius_yd,
+                    refund_cost_pct: refund_cost_pct.get(r).copied().unwrap_or(0),
+                    absorb_cost_pct: *absorb_cost_pct,
+                    absorb_ms: *absorb_duration_ms,
+                    absorb_at_full_power: at_full_power.as_deref() == Some("absorb"),
+                    requires_target_aura: requires_target_aura.as_deref(),
                 })
             }
             _ => None,
@@ -556,6 +576,11 @@ pub(crate) fn aura_proc(
         spread: 0.0,
         area_auras: Vec::new(),
         radius_yd: 0.0,
+        refund_cost_pct: 0,
+        absorb_cost_pct: 0,
+        absorb_ms: 0,
+        absorb_at_full_power: false,
+        requires_target_aura: None,
     })
 }
 

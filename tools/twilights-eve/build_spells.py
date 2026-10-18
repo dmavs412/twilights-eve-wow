@@ -45,8 +45,8 @@ KNOWN_KINDS = {
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
-PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume")
-PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread", "apply_aura_area")
+PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume", "periodic_tick")
+PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread", "apply_aura_area", "refund_cost_pct", "absorb_cost_pct")
 WEAPON_ROLLS = ("normal", "normalized")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
@@ -488,6 +488,12 @@ def check_proc(params: dict, auras: set[str], where: str) -> None:
         for key in keys:
             if key not in auras:
                 raise BuildError(f"{where}: {action} {key!r} is not an aura row of this Calling")
+    if params.get("at_full_power", "absorb") != "absorb":
+        raise BuildError(f"{where}: at_full_power is {params['at_full_power']!r}, want absorb")
+    if "at_full_power" in params and "absorb_cost_pct" not in params:
+        raise BuildError(f"{where}: at_full_power=absorb needs absorb_cost_pct")
+    if "requires_target_aura" in params and params["requires_target_aura"] not in {*auras, "slowed"}:
+        raise BuildError(f"{where}: requires_target_aura {params['requires_target_aura']!r} is not an aura row or slowed")
     if "apply_aura_area" in params:
         if params.get("center", "origin") != "origin":
             raise BuildError(f"{where}: apply_aura_area center is {params['center']!r}, want origin")

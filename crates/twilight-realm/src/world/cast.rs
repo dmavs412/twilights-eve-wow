@@ -127,6 +127,12 @@ pub(super) struct Skills {
     blink: Option<PendingBlink>,
     /// The spell-mod cells the player's `next_cast` buffs last set on the client, with values.
     sent_mods: Vec<(bool, u8, u8, i32)>,
+    /// What the last cast cost, and whether the bar was full before it paid: its procs read them.
+    pub(super) last_cost: u32,
+    pub(super) was_full: bool,
+    /// The last cast's target as it stood before the cast landed: whether it was snared, and the
+    /// spell ids of its auras. A cast proc's `requires_target_aura` reads it.
+    pub(super) before: Option<(bool, Vec<u32>)>,
 }
 
 /// The client's `SpellModOp`s a `next_cast` buff moves: the cast bar and the cost.
@@ -281,6 +287,15 @@ enum AuraKind {
     Dodge {
         pct: u32,
     },
+    /// A shield on the player that soaks `left` more damage.
+    Absorb {
+        left: u32,
+    },
+    /// The amounts the player's `skill` deals are `pct` percent higher (a buff from a `proc`).
+    SkillAmount {
+        skill: &'static str,
+        pct: u32,
+    },
     /// The player's non-physical skills deal `pct` percent more damage.
     SpellDamagePct {
         pct: u32,
@@ -362,6 +377,9 @@ impl AuraKind {
             (AuraKind::SkillCrit { skill: a, .. }, AuraKind::SkillCrit { skill: b, .. }) => a == b,
             (AuraKind::Defense { stat: a, .. }, AuraKind::Defense { stat: b, .. }) => a == b,
             (AuraKind::SkillCost { skill: a, .. }, AuraKind::SkillCost { skill: b, .. }) => a == b,
+            (AuraKind::SkillAmount { skill: a, .. }, AuraKind::SkillAmount { skill: b, .. }) => {
+                a == b
+            }
             (AuraKind::SkillStacks { skill: a, .. }, AuraKind::SkillStacks { skill: b, .. }) => {
                 a == b
             }
@@ -386,6 +404,8 @@ impl AuraKind {
                 | AuraKind::SkillCrit { .. }
                 | AuraKind::RunSpeed { .. }
                 | AuraKind::Dodge { .. }
+                | AuraKind::Absorb { .. }
+                | AuraKind::SkillAmount { .. }
                 | AuraKind::SpellDamagePct { .. }
                 | AuraKind::Defense { .. }
                 | AuraKind::Proc(_)
@@ -710,6 +730,55 @@ impl Skills {
             }
         }
         cells
+    }
+
+    /// The percent the player's buffs raise `skill`'s amounts by.
+    pub(super) fn skill_amount_pct(&self, skill: &str) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::SkillAmount { skill: s, pct } if s == skill => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// `damage` coming at the player, less what their shields soak; a spent shield breaks.
+    pub(super) fn absorb(&mut self, damage: u32, events: &mut Vec<SessionEvent>) -> u32 {
+        let me = self.me;
+        let mut left = damage;
+        for a in &mut self.auras {
+            if let AuraKind::Absorb { left: shield } = &mut a.kind {
+                if a.unit == me && left > 0 {
+                    let soaked = left.min(*shield);
+                    *shield -= soaked;
+                    left -= soaked;
+                    if *shield == 0 {
+                        a.left = 0.0;
+                    }
+                }
+            }
+        }
+        self.remove_where(
+            |a| a.unit == me && matches!(a.kind, AuraKind::Absorb { left: 0 }),
+            events,
+        );
+        left
+    }
+
+    /// Whether `unit` wears an aura of `spell_id`.
+    pub(super) fn on(&self, unit: u64, spell_id: u32) -> bool {
+        self.auras
+            .iter()
+            .any(|a| a.unit == unit && a.spell_id == spell_id)
+    }
+
+    /// Whether `unit` is snared.
+    pub(super) fn slowed(&self, unit: u64) -> bool {
+        self.auras
+            .iter()
+            .any(|a| a.unit == unit && matches!(a.kind, AuraKind::MoveSlow { pct } if pct > 0))
     }
 
     /// Whether `unit` is rooted.
@@ -1326,6 +1395,16 @@ impl InWorld {
                 _ => None,
             })
             .collect();
+        self.skills.before = target.map(|t| {
+            let auras = self
+                .skills
+                .auras
+                .iter()
+                .filter(|a| a.unit == t)
+                .map(|a| a.spell_id)
+                .collect();
+            (self.skills.slowed(t), auras)
+        });
         if instant {
             events.push(SessionEvent::SpellStart {
                 caster: self.guid,
@@ -1651,6 +1730,8 @@ impl InWorld {
     /// Takes the cast's costs and starts its cooldowns.
     fn pay(&mut self, skill: &Skill, gcd: bool, c: &Char, events: &mut Vec<SessionEvent>) {
         let cost = self.power_cost(c, skill);
+        self.skills.last_cost = cost;
+        self.skills.was_full = self.player.power.current >= self.player.power.max;
         let p = &mut self.player;
         p.power.spend(cost);
         let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100;
@@ -1783,8 +1864,10 @@ impl InWorld {
     ) {
         let stats = buffed(&self.player.stats, &self.skills);
         let ap = stats.attack_power;
-        // Talents that raise the skill's amounts (Improved Rend, Improved Battle Shout).
-        let pct = crate::talents::amount_pct(c, &skill.key);
+        // Talents that raise the skill's amounts (Improved Rend, Improved Battle Shout), and the
+        // player's buffs for it (Arcane Momentum).
+        let pct =
+            crate::talents::amount_pct(c, &skill.key) + self.skills.skill_amount_pct(&skill.key);
         let sized = |l: formulas::Linear| scaled(l.at(level, ap), pct);
         // A finisher's block, once per combo point held on the target.
         let per_combo = |l: Option<formulas::Linear>| l.map_or(0, |l| sized(l) * u32::from(combo));
@@ -3075,6 +3158,23 @@ impl InWorld {
                         self.player_takes(per_tick, events);
                     } else {
                         self.hurt(a.unit, per_tick, c, rng, events, ticked);
+                        // The caster's own damage over time ticked: its procs (Thermal Feedback).
+                        if caster == self.guid {
+                            if let Some(skill) = crate::talents::skill(c, a.spell_id) {
+                                self.proc(
+                                    crate::rules::procs::Happened {
+                                        event: crate::callings::ProcEvent::PeriodicTick,
+                                        skill: Some(&skill.key),
+                                        yields_xp: false,
+                                        target: Some(a.unit),
+                                    },
+                                    c,
+                                    rng,
+                                    events,
+                                    ticked,
+                                );
+                            }
+                        }
                     }
                 }
                 AuraKind::Heal { per_tick } => {
@@ -3346,6 +3446,33 @@ impl InWorld {
         self.teleport(c, at, b.orientation, events);
     }
 
+    /// A shield on the player under `spell_id` that soaks `amount` for `duration_ms`; a new one
+    /// replaces the old.
+    pub(super) fn shield(
+        &mut self,
+        spell_id: u32,
+        amount: u32,
+        duration_ms: u32,
+        level: u8,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        if amount == 0 {
+            return;
+        }
+        let aura = Aura {
+            unit: self.guid,
+            spell_id,
+            slot: 0,
+            level,
+            left: clock::secs(duration_ms),
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Absorb { left: amount },
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
+    }
+
     /// Puts the aura row `def` on `unit`, one aura per effect.
     pub(super) fn put_aura(
         &mut self,
@@ -3366,6 +3493,10 @@ impl InWorld {
                     AuraKind::SpellDamagePct { pct: *pct }
                 }
                 callings::AuraEffect::Root => AuraKind::Root,
+                callings::AuraEffect::SkillAmountPct { skill, pct } => AuraKind::SkillAmount {
+                    skill: skill.as_str(),
+                    pct: *pct,
+                },
                 callings::AuraEffect::NextCast(next) => AuraKind::NextCast {
                     next,
                     group: def.row.exclusive_group.as_deref(),
@@ -3632,6 +3763,29 @@ impl InWorld {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A shield soaks blows up to its size, then breaks; the overflow comes through.
+    #[test]
+    fn a_shield_soaks_up_to_its_size_then_breaks() {
+        let mut skills = Skills::new(1);
+        let mut events = Vec::new();
+        let shield = Aura {
+            unit: 1,
+            spell_id: 12577,
+            slot: 0,
+            level: 10,
+            left: 10.0,
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Absorb { left: 40 },
+            charges: 0,
+        };
+        skills.apply(shield, &mut events);
+        assert_eq!(skills.absorb(30, &mut events), 0);
+        assert_eq!(skills.absorb(30, &mut events), 20, "10 left to soak");
+        assert!(!skills.on(1, 12577), "spent, it breaks");
+        assert_eq!(skills.absorb(30, &mut events), 30);
+    }
 
     fn crit(skill: &'static str, pct: u32) -> Aura {
         Aura {

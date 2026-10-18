@@ -35,8 +35,37 @@ impl InWorld {
             if !proc.while_aura.is_none_or(|key| self.wears_aura(c, key)) {
                 continue;
             }
+            if !proc
+                .requires_target_aura
+                .is_none_or(|key| self.target_wore(c, key, &happened))
+            {
+                continue;
+            }
             if proc.chance < 100 && rng.below(100) >= proc.chance {
                 continue;
+            }
+            // A shield at a full bar, instead of the rest; the rest, without it, otherwise.
+            let shield =
+                proc.absorb_cost_pct > 0 && (!proc.absorb_at_full_power || self.skills.was_full);
+            if shield {
+                let amount = self.skills.last_cost * proc.absorb_cost_pct / 100;
+                self.shield(proc.spell_id, amount, proc.absorb_ms, c.level, events);
+            }
+            if proc.absorb_at_full_power && self.skills.was_full {
+                continue;
+            }
+            let refund = self.skills.last_cost * proc.refund_cost_pct / 100;
+            let p = &mut self.player;
+            let kind = p.power.kind;
+            if refund > 0 && p.alive() && p.power.gain(kind, refund) {
+                events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
+                    target: self.guid,
+                    caster: self.guid,
+                    spell_id: proc.spell_id,
+                    power: kind.id(),
+                    amount: refund,
+                }));
+                events.push(values(self.guid, &[p.power.field()]));
             }
             if proc.heal_pct > 0 {
                 let max = cast::buffed(&self.player.stats, &self.skills).max_health;
@@ -123,6 +152,32 @@ impl InWorld {
                 }
             }
         }
+    }
+
+    /// Whether the event's target wore the aura row `key` (or, `slowed`, any snare): for a cast,
+    /// as it stood before the cast landed.
+    fn target_wore(&self, c: &Char, key: &str, happened: &Happened) -> bool {
+        let spell_id = crate::callings::of(c.calling)
+            .auras
+            .iter()
+            .find(|a| a.key == key)
+            .map(|a| a.spell_id);
+        if happened.event == crate::callings::ProcEvent::Cast {
+            return self.skills.before.as_ref().is_some_and(|(slowed, auras)| {
+                if key == "slowed" {
+                    *slowed
+                } else {
+                    spell_id.is_some_and(|id| auras.contains(&id))
+                }
+            });
+        }
+        happened.target.is_some_and(|t| {
+            if key == "slowed" {
+                self.skills.slowed(t)
+            } else {
+                spell_id.is_some_and(|id| self.skills.on(t, id))
+            }
+        })
     }
 
     /// Whether the player wears the aura row `key` of their Calling.

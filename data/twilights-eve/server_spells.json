@@ -10005,8 +10005,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "searing_ember",
+           "chance": 2,
+           "apply_aura": "aura_thermal_feedback"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever your Searing Ember deals periodic damage, you have a 2% chance to make your next Biting Cold instant cast and cost no mana."
        },
        {
@@ -10030,8 +10041,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "searing_ember",
+           "chance": 4,
+           "apply_aura": "aura_thermal_feedback"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever your Searing Ember deals periodic damage, you have a 4% chance to make your next Biting Cold instant cast and cost no mana."
        },
        {
@@ -10055,8 +10077,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "searing_ember",
+           "chance": 6,
+           "apply_aura": "aura_thermal_feedback"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever your Searing Ember deals periodic damage, you have a 6% chance to make your next Biting Cold instant cast and cost no mana."
        },
        {
@@ -10080,8 +10113,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "searing_ember",
+           "chance": 8,
+           "apply_aura": "aura_thermal_feedback"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever your Searing Ember deals periodic damage, you have a 8% chance to make your next Biting Cold instant cast and cost no mana."
        },
        {
@@ -10105,8 +10149,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "searing_ember",
+           "chance": 10,
+           "apply_aura": "aura_thermal_feedback"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever your Searing Ember deals periodic damage, you have a 10% chance to make your next Biting Cold instant cast and cost no mana."
        }
       ]
@@ -10754,8 +10809,22 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "chance": 10,
+           "refund_cost_pct": 100,
+           "absorb_cost_pct": 200,
+           "absorb_duration_ms": 10000,
+           "at_full_power": "absorb"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark has a 10% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
        },
        {
@@ -10779,8 +10848,22 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "chance": 20,
+           "refund_cost_pct": 100,
+           "absorb_cost_pct": 200,
+           "absorb_duration_ms": 10000,
+           "at_full_power": "absorb"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark has a 20% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
        },
        {
@@ -10804,8 +10887,22 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "chance": 30,
+           "refund_cost_pct": 100,
+           "absorb_cost_pct": 200,
+           "absorb_duration_ms": 10000,
+           "at_full_power": "absorb"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark has a 30% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
        },
        {
@@ -10829,8 +10926,22 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "chance": 40,
+           "refund_cost_pct": 100,
+           "absorb_cost_pct": 200,
+           "absorb_duration_ms": 10000,
+           "at_full_power": "absorb"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark has a 40% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
        },
        {
@@ -10854,8 +10965,22 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "chance": 50,
+           "refund_cost_pct": 100,
+           "absorb_cost_pct": 200,
+           "absorb_duration_ms": 10000,
+           "at_full_power": "absorb"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark has a 50% chance to instantly refund its mana cost. If at full mana, grants a shield instead."
        }
       ]
@@ -11142,8 +11267,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "biting_cold",
+           "requires_target_aura": "slowed",
+           "refund_cost_pct": 25
+          },
+          "realm_only": false
+         }
+        ],
         "description": "If Biting Cold strikes a target that is already slowed, it refunds 25% of its base mana cost."
        },
        {
@@ -11167,8 +11303,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "biting_cold",
+           "requires_target_aura": "slowed",
+           "refund_cost_pct": 50
+          },
+          "realm_only": false
+         }
+        ],
         "description": "If Biting Cold strikes a target that is already slowed, it refunds 50% of its base mana cost."
        }
       ]
@@ -11203,8 +11350,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "blink",
+           "apply_aura": "aura_arcane_momentum_1"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "After using Blink, the damage of your Ley-Spark is increased by 15% for 5 seconds."
        },
        {
@@ -11228,8 +11385,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "blink",
+           "apply_aura": "aura_arcane_momentum_2"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "After using Blink, the damage of your Ley-Spark is increased by 30% for 5 seconds."
        },
        {
@@ -11253,8 +11420,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "blink",
+           "apply_aura": "aura_arcane_momentum_3"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "After using Blink, the damage of your Ley-Spark is increased by 45% for 5 seconds."
        }
       ]
@@ -11566,8 +11743,21 @@
     "persist_death": false,
     "duration_ms": 15000,
     "charges": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "biting_cold",
+       "instant": true,
+       "cost_pct": -100,
+       "family_bits": [
+        5
+       ]
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Your next Biting Cold is instant and costs no mana."
    },
    {
@@ -12042,6 +12232,96 @@
      }
     ],
     "description": "Your next Biting Cold or Catalyst costs no mana."
+   },
+   {
+    "key": "aura_arcane_momentum_1",
+    "name": "Arcane Momentum",
+    "spell_id": 15058,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "ley_spark",
+       "pct": 15
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ley-Spark deals 15% more damage."
+   },
+   {
+    "key": "aura_arcane_momentum_2",
+    "name": "Arcane Momentum",
+    "spell_id": 15059,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "ley_spark",
+       "pct": 30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ley-Spark deals 30% more damage."
+   },
+   {
+    "key": "aura_arcane_momentum_3",
+    "name": "Arcane Momentum",
+    "spell_id": 15060,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "ley_spark",
+       "pct": 45
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ley-Spark deals 45% more damage."
    },
    {
     "key": "aura_catalytic_resonance_1",

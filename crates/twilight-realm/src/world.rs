@@ -781,6 +781,7 @@ impl InWorld {
     /// broken (the Hearthstone's interrupts on damage).
     fn player_takes(&mut self, damage: u32, events: &mut Vec<SessionEvent>) {
         self.skills.break_stealth(events);
+        let damage = self.skills.absorb(damage, events);
         let p = &mut self.player;
         p.health = p.health.saturating_sub(damage);
         p.power.gain_stored(

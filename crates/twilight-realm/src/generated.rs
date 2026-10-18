@@ -505,6 +505,8 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     object.remove("add_combo_points");
     object.remove("block_value_pct");
     object.remove("apply_aura_area");
+    object.remove("refund_cost_pct");
+    let mut refunds = Vec::new();
     // The ring is always centred where the caster stood (`center=origin`, the build's only one).
     object.remove("center");
     let mut area_auras = Vec::new();
@@ -526,6 +528,7 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
             Some(key) => Value::Array(vec![key.clone()]),
             None => Value::Array(Vec::new()),
         });
+        refunds.push(params.get("refund_cost_pct").cloned().unwrap_or(0.into()));
         area_auras.push(match params.get("apply_aura_area") {
             Some(Value::Array(keys)) => Value::Array(keys.clone()),
             Some(key) => Value::Array(vec![key.clone()]),
@@ -533,6 +536,7 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
         });
     }
     object.insert("area_auras".into(), Value::Array(area_auras));
+    object.insert("refund_cost_pct".into(), Value::Array(refunds));
     object.insert("per_rank".into(), Value::Array(heals));
     object.insert("auras".into(), Value::Array(auras));
     object.insert("chances".into(), Value::Array(chances));
