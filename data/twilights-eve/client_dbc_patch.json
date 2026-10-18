@@ -7394,6 +7394,19 @@
     "school": 5,
     "prevention_type": 1,
     "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool.",
+    "effects": [
+     {
+      "kind": "drain",
+      "params": {
+       "amount": {
+        "base": 13,
+        "per_level": 0.6
+       },
+       "heal_pct": 100,
+       "school": "shadow"
+      }
+     }
+    ],
     "range_index": 4,
     "duration_index": 7
    }

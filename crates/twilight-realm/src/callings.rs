@@ -127,6 +127,9 @@ pub struct SpellGates {
 pub struct CastShape {
     /// How long the cast bar runs (`client_cast_time_ms`, for a `cast`); 0 for instant.
     pub cast_time_ms: u32,
+    /// How long a `channel` lasts (`client_duration_ms`); its effects run every
+    /// `channel_tick_ms` of it.
+    pub channel_ms: u32,
     pub cost_kind: Option<String>,
     pub cost_extra_max: u32,
     pub cast_kind: Option<String>,
@@ -983,6 +986,15 @@ pub enum Effect {
     },
     /// Heals the target `amount`, up to its maximum health.
     Heal { amount: Linear },
+    /// Deals `amount` in `school` to the target and heals the caster `heal_pct` percent of what
+    /// it dealt (Siphon Life's tick).
+    Drain {
+        amount: Linear,
+        #[serde(default)]
+        heal_pct: u32,
+        #[serde(default)]
+        school: School,
+    },
     /// A heal every `tick_ms` for `duration_ms`: `tick` a tick, and `pct` percent of what this
     /// cast dealt or healed (`pct_of`) spread over the ticks. With `ally`, it goes on the friendly
     /// player that rule picks within `radius_yd` of `center` instead of the cast's target.

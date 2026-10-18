@@ -387,7 +387,8 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         | Effect::Blink { .. }
         | Effect::ResetCooldowns { .. }
         | Effect::Heal { .. }
-        | Effect::PeriodicHeal { .. } => {
+        | Effect::PeriodicHeal { .. }
+        | Effect::Drain { .. } => {
             panic!("{key}: the reference has no realm half for a snare or a consume")
         }
         // Consecration lives in the master CSV only; tests/vanguard_consecration.rs reads it.
@@ -420,7 +421,7 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     assert_eq!(
         ids,
         [
-            78, 100, 116, 133, 589, 845, 1752, 1776, 1784, 1943, 1953, 2061, 2098, 2136, 2912,
+            78, 100, 116, 133, 589, 689, 845, 1752, 1776, 1784, 1943, 1953, 2061, 2098, 2136, 2912,
             5277, 6178, 8092, 8921, 10308, 11366, 12043, 12294, 12809, 20165, 20271, 20305, 20375,
             25899
         ]

@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "at_max_stacks", "heal", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "at_max_stacks", "drain", "heal", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -752,6 +752,9 @@ def build_shape(row: dict, kind: str, school: str, hidden: bool, where: str) -> 
         if cast_kind != "channel":
             raise BuildError(f"{where} channel_tick_ms: only with cast_kind=channel")
         out["channel_tick_ms"] = positive_whole(row["channel_tick_ms"], where, "channel_tick_ms")
+        if row["client_duration_ms"]:
+            # The realm runs the channel as long as the client's bar.
+            out["channel_ms"] = int(number(row["client_duration_ms"], where))
 
     if not row["interrupt_on"]:
         out["interrupt_on"] = list(DEFAULT_INTERRUPTS) if cast_kind in ("cast", "channel") else []
@@ -861,7 +864,7 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             # The realm reads an unavoidable strike from the effect; the outcomes cell is its one source.
             parsed = {"weapon": parsed["weapon"], "unavoidable": True,
                       **{k: v for k, v in parsed.items() if k != "weapon"}}
-        if kind in ("school_damage", "weapon_strike", "periodic_damage"):
+        if kind in ("school_damage", "weapon_strike", "periodic_damage", "drain"):
             if "school" in parsed:
                 raise BuildError(f"{here}: {kind} takes no school param; set the row's school column")
             # The realm reads the school from the effect's params; the row's school is the one source.

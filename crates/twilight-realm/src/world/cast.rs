@@ -125,6 +125,8 @@ pub(super) struct Skills {
     consumed: Option<(Aura, u32)>,
     /// A Blink cast and not yet landed: the next tick, which has the ground, moves the caster.
     blink: Option<PendingBlink>,
+    /// The channel under way, if any.
+    channel: Option<Channel>,
     /// The spell-mod cells the player's `next_cast` buffs last set on the client, with values.
     sent_mods: Vec<(bool, u8, u8, i32)>,
     /// What the cast under way has dealt and healed so far: a share of either (`pct_of`) reads it.
@@ -141,6 +143,16 @@ pub(super) struct Skills {
 /// The client's `SpellModOp`s a `next_cast` buff moves: the cast bar and the cost.
 const SPELLMOD_CASTING_TIME: u8 = 10;
 const SPELLMOD_COST: u8 = 14;
+
+/// A channelled skill under way: its spell and target, seconds left, and its tick clock.
+#[derive(Debug, Clone, Copy)]
+struct Channel {
+    spell_id: u32,
+    target: u64,
+    left: f32,
+    period: f32,
+    next_tick: f32,
+}
 
 /// Where a Blink starts, the way it faces, and how far it goes.
 #[derive(Debug, Clone, Copy)]
@@ -1315,6 +1327,13 @@ impl InWorld {
             events.push(refused(spell_id, SPELL_FAILED_SPELL_IN_PROGRESS));
             return ticked;
         }
+        // A new cast ends a channel under way.
+        self.end_channel(true, events);
+        let shape = &skill.meta.shape;
+        if shape.cast_kind.as_deref() == Some("channel") && shape.channel_ms > 0 {
+            self.start_channel(skill, target, &targets, c, events);
+            return ticked;
+        }
         let cast_ms = self.skills.cast_time_ms(skill);
         if cast_ms > 0 {
             // A cast bar: the global cooldown starts now, the rest when it fills.
@@ -1339,6 +1358,134 @@ impl InWorld {
             return ticked;
         }
         self.go(skill, target, targets, true, c, rng, events)
+    }
+
+    /// A channelled `skill` starts at its first target: paid now, its bar on the client, its
+    /// effects each tick until it runs out or breaks.
+    fn start_channel(
+        &mut self,
+        skill: &Skill,
+        target: Option<u64>,
+        targets: &[u64],
+        c: &Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Some(&at) = targets.first() else {
+            events.push(refused(skill.spell_id, SPELL_FAILED_BAD_TARGETS));
+            return;
+        };
+        self.pay(skill, true, c, events);
+        let shape = &skill.meta.shape;
+        events.push(SessionEvent::SpellStart {
+            caster: self.guid,
+            spell_id: skill.spell_id,
+            cast_flags: 0,
+            cast_time_ms: 0,
+            target,
+            ammo_display_id: None,
+        });
+        events.push(SessionEvent::CastResult {
+            spell_id: skill.spell_id,
+            success: true,
+            reason: None,
+            arg: None,
+        });
+        events.push(SessionEvent::SpellGo {
+            caster: self.guid,
+            spell_id: skill.spell_id,
+            cast_flags: 0,
+            hits: vec![at],
+            misses: Vec::new(),
+            target,
+            go_target: None,
+            dest: None,
+            ammo_display_id: None,
+            item_caster: None,
+        });
+        events.push(SessionEvent::ChannelStart {
+            spell_id: skill.spell_id,
+            duration_ms: shape.channel_ms,
+        });
+        if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == at) {
+            if mob.state == State::Idle {
+                super::engage(mob, self.guid, events);
+            }
+        }
+        let period = clock::secs(shape.channel_tick_ms.max(1));
+        self.skills.channel = Some(Channel {
+            spell_id: skill.spell_id,
+            target: at,
+            left: clock::secs(shape.channel_ms),
+            period,
+            next_tick: period,
+        });
+        let p = &self.player;
+        events.push(values(self.guid, &[p.power.field()]));
+    }
+
+    /// The channel's clock: each tick runs the skill's effects at its target, rolled afresh; it
+    /// ends when it runs out, or when its target dies or leaves its range.
+    #[allow(clippy::too_many_arguments)]
+    fn channel_tick(
+        &mut self,
+        dt: f32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some(ch) = &mut self.skills.channel else {
+            return;
+        };
+        ch.left -= dt;
+        ch.next_tick -= dt;
+        let due = ch.next_tick <= CLOCK_EPSILON;
+        if due {
+            ch.next_tick += ch.period;
+        }
+        let ch = *ch;
+        if due {
+            let Some(skill) = crate::talents::skill(c, ch.spell_id) else {
+                self.end_channel(true, events);
+                return;
+            };
+            let [lo, hi] = skill.range_yd;
+            let in_reach = self.mobs.iter().any(|m| {
+                m.guid == ch.target && m.alive() && {
+                    let d = distance(m.position, c.position);
+                    d >= lo && (hi == 0.0 || d <= hi)
+                }
+            });
+            if !in_reach {
+                self.end_channel(true, events);
+                return;
+            }
+            let how = self.roll(skill, ch.target, false, c, rng);
+            if !matches!(how, Landed::Missed(_)) {
+                for effect in &skill.effects {
+                    self.effect(
+                        skill, effect, ch.target, how, c.level, 0, c, rng, events, ticked,
+                    );
+                }
+            }
+        }
+        if ch.left <= CLOCK_EPSILON {
+            self.end_channel(false, events);
+        }
+    }
+
+    /// Ends the channel under way, if any: `broken` when it stops short.
+    pub(super) fn end_channel(&mut self, broken: bool, events: &mut Vec<SessionEvent>) {
+        let Some(ch) = self.skills.channel.take() else {
+            return;
+        };
+        if broken {
+            events.push(SessionEvent::SpellFailedOther {
+                caster: self.guid,
+                spell_id: ch.spell_id,
+            });
+        }
+        events.push(SessionEvent::ChannelUpdate { remaining_ms: 0 });
     }
 
     /// `skill` goes off at `targets` (`target` the client's pick): paid, rolled, landed. `instant`
@@ -1880,7 +2027,9 @@ impl InWorld {
                 }
                 | Effect::Execute { .. } => rolls = true,
                 // Magic misses on the level-based chance alone.
-                Effect::SchoolDamage { school, .. } if school.is_magic() => {
+                Effect::SchoolDamage { school, .. } | Effect::Drain { school, .. }
+                    if school.is_magic() =>
+                {
                     rolls = true;
                     unavoidable = true;
                 }
@@ -2383,6 +2532,27 @@ impl InWorld {
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
+            Effect::Drain {
+                amount,
+                heal_pct,
+                school,
+            } => {
+                let dealt = self.strike(
+                    skill.spell_id,
+                    target,
+                    sized(amount),
+                    school,
+                    how,
+                    c,
+                    rng,
+                    events,
+                    ticked,
+                );
+                self.skills.cast_dealt += dealt;
+                if dealt > 0 && heal_pct > 0 {
+                    self.heal_player(skill.spell_id, scaled_share(dealt, heal_pct), events);
+                }
+            }
             Effect::Heal { amount } => {
                 if target == self.guid {
                     let healed = self.heal_player(skill.spell_id, sized(amount), events);
@@ -3295,6 +3465,7 @@ impl InWorld {
         s.cooldowns.retain(|(_, left)| *left > 0.0);
         c.item_cooldowns.retain(|&(_, ready)| ready > wall);
         self.timed_cast_tick(dt, wall, c, rng, events, ticked);
+        self.channel_tick(dt, c, rng, events, ticked);
         let s = &mut self.skills;
         if let Some((_, left)) = &mut s.dodged {
             *left -= dt;
@@ -3888,6 +4059,7 @@ impl InWorld {
     /// The timed cast under way stops short (`Spell::cancel`): the bar shows "Interrupted", and
     /// nothing goes on cooldown.
     pub(crate) fn interrupt_cast(&mut self, events: &mut Vec<SessionEvent>) {
+        self.end_channel(true, events);
         let Some(cast) = self.skills.casting.take() else {
             return;
         };

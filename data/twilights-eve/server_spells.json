@@ -14345,6 +14345,7 @@
     "cost_kind": "pct_base",
     "cast_kind": "channel",
     "channel_tick_ms": 1000,
+    "channel_ms": 5000,
     "interrupt_on": [
      "move",
      "pushback",
@@ -14358,8 +14359,21 @@
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "drain",
+      "params": {
+       "amount": {
+        "base": 13,
+        "per_level": 0.6
+       },
+       "heal_pct": 100,
+       "school": "shadow"
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool."
    }
   ],
