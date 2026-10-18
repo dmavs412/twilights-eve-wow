@@ -19,8 +19,27 @@ pub const DEFAULT_LISTEN: &str = "0.0.0.0:3725";
 /// The realm's tick rate.
 const TICK: Duration = Duration::from_millis(50);
 
-/// The world as the server sees it until the headless terrain (#141) and line of sight (#142)
-/// replace it: no ground is known (a mob keeps its own height; the realm probes 2 yd above it, so
+mod collision;
+mod terrain;
+
+pub use terrain::Terrain;
+
+/// The world the realm runs in, as the server keeps it: a [`Host`] that loads what the players
+/// are near before each tick.
+pub trait World: Host + Send {
+    /// Called before each tick with where every character in the world stands.
+    fn refresh(&mut self, _players: &[(u32, [f32; 3])]) {}
+}
+
+impl World for Terrain {
+    fn refresh(&mut self, players: &[(u32, [f32; 3])]) {
+        Terrain::refresh(self, players);
+    }
+}
+
+impl World for FlatHost {}
+
+/// A world with no game data, for tests: no ground is known (a mob keeps its own height; the realm probes 2 yd above it, so
 /// echoing the probe would lift it every step), and nothing blocks a sight line.
 pub struct FlatHost;
 
@@ -51,10 +70,10 @@ enum Inbound {
     },
 }
 
-/// Serves `listener` forever, keeping saves under `data_dir`.
-pub fn serve(listener: TcpListener, data_dir: PathBuf) {
+/// Serves `listener` forever in `world`, keeping saves under `data_dir`.
+pub fn serve(listener: TcpListener, data_dir: PathBuf, world: Box<dyn World>) {
     let (tx, rx) = mpsc::channel();
-    std::thread::spawn(move || run_realm(rx, &data_dir));
+    std::thread::spawn(move || run_realm(rx, &data_dir, world));
     for (conn, stream) in (1..).zip(listener.incoming()) {
         match stream {
             Ok(stream) => accept(conn, stream, tx.clone()),
@@ -113,7 +132,7 @@ fn write_events(stream: TcpStream, events: Receiver<SessionEvent>) {
 }
 
 /// The realm thread: applies commands as they arrive and ticks at [`TICK`].
-fn run_realm(rx: Receiver<Inbound>, data_dir: &Path) {
+fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) {
     let mut realm = Realm::with_seed(seed());
     load_saves(&mut realm, data_dir);
     let mut sessions: HashMap<u64, (SessionId, Sender<SessionEvent>)> = HashMap::new();
@@ -146,7 +165,8 @@ fn run_realm(rx: Receiver<Inbound>, data_dir: &Path) {
         if let Ok(wall) = SystemTime::now().duration_since(UNIX_EPOCH) {
             realm.set_wall_clock(wall.as_millis() as u64);
         }
-        realm.tick((now - last).as_secs_f32(), &FlatHost);
+        world.refresh(&realm.player_positions());
+        realm.tick((now - last).as_secs_f32(), &*world);
         last = now;
         for op in realm.drain_storage() {
             store(data_dir, op);

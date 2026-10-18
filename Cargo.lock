@@ -7302,7 +7302,11 @@ dependencies = [
 name = "twilight-server"
 version = "0.2.0"
 dependencies = [
+ "anyhow",
+ "benilla-formats",
  "benilla-protocol",
+ "benilla-wdt",
+ "parry3d",
  "twilight-realm",
 ]
 

@@ -89,7 +89,9 @@ fn two_clients_see_each_other_over_the_wire() {
         std::env::temp_dir().join(format!("twilight-server-test-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&data_dir);
     let dir = data_dir.clone();
-    std::thread::spawn(move || twilight_server::serve(listener, dir));
+    std::thread::spawn(move || {
+        twilight_server::serve(listener, dir, Box::new(twilight_server::FlatHost))
+    });
 
     let mut a = Client::connect(addr);
     let mut b = Client::connect(addr);

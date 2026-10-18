@@ -445,6 +445,19 @@ impl Realm {
         }
     }
 
+    /// Where every character in the world stands: `(map, position)`, for a host that loads the
+    /// world around its players.
+    pub fn player_positions(&self) -> Vec<(u32, [f32; 3])> {
+        let worlds = self
+            .world
+            .iter()
+            .chain(self.parked.values().filter_map(|s| s.world.as_ref()));
+        worlds
+            .filter_map(|w| self.characters.get(w.guid))
+            .map(|c| (c.map, c.position))
+            .collect()
+    }
+
     /// Applies one command from `session`; its answers queue for that session. An unknown session
     /// is ignored.
     pub fn handle_as(&mut self, session: SessionId, command: RealmCommand) {
