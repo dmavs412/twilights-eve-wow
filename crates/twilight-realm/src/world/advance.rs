@@ -24,6 +24,9 @@ impl InWorld {
             });
         }
         c.calling = to;
+        events.push(SessionEvent::Callings {
+            by_guid: vec![(c.guid, callings::of(to).key.clone())],
+        });
         c.level = 1;
         c.xp = 0;
         // The respec's price starts over with the new tree.

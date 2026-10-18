@@ -135,6 +135,9 @@ pub enum SessionEvent {
         characters: Vec<Character>,
         realm: Option<crate::RealmInfo>,
     },
+    /// Twilight's Eve, not 1.12: each listed character's Calling key, with the roster and after
+    /// an Advancement, for the select labels and the talent frame. Never wire-decoded.
+    Callings { by_guid: Vec<(u64, String)> },
     /// `SMSG_CHAR_CREATE`/`_DELETE`'s raw `WorldResult`; on success a fresh roster comes first.
     CharActionResult { action: CharAction, code: u8 },
     /// We are in the world; the IO thread emits this before any object update.

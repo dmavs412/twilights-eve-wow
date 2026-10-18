@@ -1243,10 +1243,16 @@ impl Realm {
             category: 0,
             id: 1,
         };
+        let by_guid = characters
+            .iter()
+            .filter_map(|c| Some((c.guid, self.characters.get(c.guid)?)))
+            .map(|(guid, c)| (guid, callings::of(c.calling).key.clone()))
+            .collect();
         self.events.push(SessionEvent::CharacterList {
             characters,
             realm: Some(realm),
         });
+        self.events.push(SessionEvent::Callings { by_guid });
     }
 
     /// `CMSG_AREATRIGGER`: a trigger that moved the player saves where they went.

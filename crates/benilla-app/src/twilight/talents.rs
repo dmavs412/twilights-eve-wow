@@ -7,7 +7,8 @@ use benilla_formats::{Talent, TalentCatalog, TalentTabInfo, MAX_TALENT_RANK};
 use bevy::prelude::*;
 use twilight_realm::callings::CallingDef;
 
-use super::LocalRealm;
+use super::CallingKeys;
+use crate::net::SelfGuid;
 use crate::ui_talent::Talents;
 
 /// Every race's bit (`ChrRaces.dbc` 1..9), as the shipped tabs carry it.
@@ -17,15 +18,13 @@ const WARRIOR: u32 = 1;
 
 /// Puts the current Calling's tree in the talent catalog when it changes.
 pub(super) fn follow_calling(
-    local: Res<LocalRealm>,
+    keys: Res<CallingKeys>,
+    me: Res<SelfGuid>,
     mut commands: Commands,
     mut built_for: Local<Option<&'static str>>,
 ) {
-    // On a friends server there is no realm here to ask; the frame keeps its tree.
-    let super::Backing::Local { realm, .. } = &local.backing else {
-        return;
-    };
-    let Some(calling) = realm.current_calling() else {
+    // The realm names the Calling, in-process or on a friends server alike.
+    let Some(calling) = me.0.and_then(|guid| keys.of(guid)) else {
         return;
     };
     if *built_for == Some(calling.key.as_str()) {

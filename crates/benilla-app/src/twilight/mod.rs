@@ -76,7 +76,8 @@ impl Plugin for TwilightPlugin {
                 Backing::Local { realm, saved }
             }
         };
-        app.init_resource::<crate::char_select::ClassLabels>();
+        app.init_resource::<crate::char_select::ClassLabels>()
+            .init_resource::<CallingKeys>();
         app.add_message::<DevGoto>()
             .init_resource::<goto::GotoGround>();
         app.insert_resource(LocalRealm {
@@ -237,6 +238,7 @@ fn pump(
     world: WorldPoint,
     collision: WorldCollision,
     mut labels: ResMut<crate::char_select::ClassLabels>,
+    mut keys: ResMut<CallingKeys>,
     mut goto: ResMut<goto::GotoGround>,
     adts: Res<Assets<benilla_assets::AdtTile>>,
 ) {
@@ -287,19 +289,18 @@ fn pump(
             for op in realm.drain_storage() {
                 store(op, saved);
             }
-            let events = realm.drain_events();
-            for event in &events {
-                if let SessionEvent::CharacterList { characters, .. } = event {
-                    label_callings(realm, characters, &mut labels);
-                }
-            }
-            events
+            realm.drain_events()
         }
-        // The server ticks its own realm; the select screen shows Classes, not Callings.
         Backing::Remote(link) => link.drain().collect(),
     };
 
     for event in events {
+        // The realm's word on each character's Calling, the same in-process or on a server.
+        if let SessionEvent::Callings { by_guid } = event {
+            keys.0.extend(by_guid);
+            label_callings(&keys, &mut labels);
+            continue;
+        }
         let logged_out = matches!(event, SessionEvent::LoggedOut);
         let _ = far.events.send(event);
         // The IO thread ends the session after a logout, which tears the streamed world down.
@@ -312,16 +313,23 @@ fn pump(
     }
 }
 
+/// Each character's Calling key, as the realm last said (`SessionEvent::Callings`).
+#[derive(Resource, Default)]
+pub(crate) struct CallingKeys(pub(crate) std::collections::HashMap<u64, String>);
+
+impl CallingKeys {
+    /// The Calling of the character `guid`, if the realm named one this client knows.
+    pub(crate) fn of(&self, guid: u64) -> Option<&'static twilight_realm::callings::CallingDef> {
+        twilight_realm::callings::calling(self.0.get(&guid)?)
+    }
+}
+
 /// The select screen names each character's Calling (`Level 7 Basic Warrior`), not its class.
-fn label_callings(
-    realm: &Realm,
-    roster: &[benilla_protocol::Character],
-    labels: &mut ResMut<crate::char_select::ClassLabels>,
-) {
+fn label_callings(keys: &CallingKeys, labels: &mut ResMut<crate::char_select::ClassLabels>) {
     let named = crate::char_select::ClassLabels(
-        roster
-            .iter()
-            .filter_map(|c| Some((c.guid, realm.calling_name(c.guid)?.to_string())))
+        keys.0
+            .keys()
+            .filter_map(|&guid| Some((guid, keys.of(guid)?.name.clone())))
             .collect(),
     );
     labels.set_if_neq(named);
