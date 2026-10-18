@@ -14,7 +14,7 @@ pub const QUEST_REWARD_CHOICES_COUNT: u32 = 6;
 
 /// One objective quad plus its text, which the packet sends after all the quads. `creature_or_go`
 /// stays raw: a creature entry, or `(-id)|0x80000000` for a gameobject (`Quest.cpp:512-516`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestObjective {
     pub creature_or_go: u32,
     pub required_count: u32,
@@ -47,7 +47,7 @@ pub mod quest_flags {
 
 /// `SMSG_QUEST_QUERY_RESPONSE` (vmangos `Quest.cpp:393-528`, the `>1_9_4` branch): the quest
 /// template behind the quest log's detail view. Its arrays are fixed-count with no display ids.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct QuestTemplate {
     pub quest_id: u32,
     pub method: u32,

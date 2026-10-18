@@ -24,7 +24,7 @@ pub fn hidden_from_reply(statuses: &[u8], sent: &[SecureAddon]) -> Vec<String> {
 }
 
 /// One record of the addon block.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SecureAddon<'a> {
     /// The addon's folder name (`Blizzard_AuctionUI`), sent as a `CString`.
     pub name: &'a str,

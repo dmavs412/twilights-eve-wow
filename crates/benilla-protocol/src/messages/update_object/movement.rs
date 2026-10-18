@@ -9,7 +9,7 @@ use crate::wire::{
 };
 
 /// Object class (the `TypeId` on a create packet).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ObjectType {
     Object,
     Item,
@@ -54,7 +54,7 @@ const SPLINE_FLAG_CYCLIC: u32 = 0x10_0000;
 /// The spline a `LIVING` unit is already riding when it streams in (`packet_builder.cpp:152`).
 /// vmangos builds every spline as Catmull-Rom (`spline.cpp:52`), so the wire array is
 /// `[phantom, p₀, …, pₙ, tail]` and [`Self::path`] is its walkable range `1 ..= len − 2`.
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct CreateSpline {
     /// The travel-order polyline in raw WoW coords, start to endpoint.
     pub path: Vec<[f32; 3]>,
@@ -73,7 +73,7 @@ pub struct CreateSpline {
 }
 
 /// A `LIVING` block's live mover state: the `MOVEMENTFLAGS` word and the swim pitch that rides it.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct MoverState {
     /// The raw `MOVEMENTFLAGS` word (`CMovement+0x40`).
     pub flags: u32,

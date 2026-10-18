@@ -41,7 +41,7 @@ pub mod channel_notice {
 }
 
 /// What follows the notice byte and channel name, by notice (`Chat/Channel.cpp:804-1008`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum ChannelNoticeTail {
     /// The member who joined or left.
     Guid(u64),
@@ -64,7 +64,7 @@ pub enum ChannelNoticeTail {
 }
 
 /// One decoded `SMSG_CHANNEL_NOTIFY`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ChannelNotify {
     pub notice: u8,
     pub channel: String,

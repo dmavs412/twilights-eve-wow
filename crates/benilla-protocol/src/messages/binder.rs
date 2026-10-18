@@ -7,7 +7,7 @@ use std::io;
 use crate::wire::{read_u32_le, read_u64_le};
 
 /// `SMSG_PLAYERBOUND`, sent once the bind has taken (`SpellEffects.cpp:5806`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlayerBound {
     /// The caster of spell 3286, the innkeeper.
     pub binder: u64,

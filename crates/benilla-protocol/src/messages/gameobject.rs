@@ -21,7 +21,7 @@ pub fn gameobject_query(entry: u32, guid: u64) -> Vec<u8> {
 
 /// A game object template from `SMSG_GAMEOBJECT_QUERY_RESPONSE`; `data` is the raw
 /// `GameObjectData` union, whose slots mean different things per `type_id`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct GameObjectQueryInfo {
     pub type_id: u32,
     pub display_id: u32,

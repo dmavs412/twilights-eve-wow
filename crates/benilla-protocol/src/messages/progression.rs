@@ -5,7 +5,7 @@ use std::io::{self, Read};
 use crate::wire::{read_f32_le, read_u32_le, read_u64_le, read_u8};
 
 /// `SMSG_LOG_XPGAIN`: an XP award; `victim` is 0 for non-kill XP (vmangos `Misc.cpp:512-522`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct XpGain {
     pub victim: u64,
     pub total: u32,
@@ -38,7 +38,7 @@ pub(super) fn read_xp_gain(r: &mut impl Read) -> io::Result<XpGain> {
 
 /// `SMSG_EXPLORATION_EXPERIENCE`: a first visit to an area, sent even for 0 XP
 /// (`Player.cpp:6228-6341`). The XP also arrives as a non-kill [`XpGain`]; this names the area.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExplorationXp {
     /// The `AreaTable.dbc` row id, not the explore-flag bit.
     pub area_id: u32,
@@ -64,7 +64,7 @@ pub fn learn_talent(talent_id: u32, requested_rank: u32) -> Vec<u8> {
 
 /// Inbound `MSG_TALENT_WIPE_CONFIRM`: a class trainer asks whether to unlearn every talent
 /// (vmangos `Player.cpp:8414`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TalentWipeConfirm {
     /// The asking trainer, echoed in the answer and required to be a trainer in range there.
     /// Zero means "you have no talents to reset" (vmangos `SkillHandler.cpp:52`).
@@ -88,7 +88,7 @@ pub fn talent_wipe_confirm(trainer_guid: u64) -> Vec<u8> {
 }
 
 /// `SMSG_LEVELUP_INFO`: our own level-up, sent only to us with no guid (`Player.cpp:3210-3218`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LevelUpInfo {
     /// The level just reached.
     pub level: u32,

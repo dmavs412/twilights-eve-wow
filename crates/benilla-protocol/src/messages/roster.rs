@@ -24,7 +24,7 @@ pub const START_ELWYNN: u8 = 1;
 
 /// A `CMSG_CHAR_CREATE` request for [`super::char_create`]. The appearance bytes must be valid
 /// `CharSections` indices or `Player::ValidateAppearance` refuses.
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct CharCreateReq {
     pub name: String,
     /// `ChrRaces.dbc` id (1 Human … 8 Troll).
@@ -52,14 +52,14 @@ pub const CHARACTER_FLAG_RENAME: u32 = 0x4000;
 
 /// One visible-equipment slot: an `ItemDisplayInfo.dbc` id (not an item id, 0 for empty) and the
 /// item's `InventoryType`.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct CharEnumItem {
     pub display_id: u32,
     pub inventory_type: u8,
 }
 
 /// One `SMSG_CHAR_ENUM` roster entry.
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Character {
     pub guid: u64,
     pub name: String,

@@ -147,7 +147,7 @@ pub const AURA_FLAG_EFF_INDEX_MASK: u8 = 0x0E;
 
 /// One occupied aura slot, from the four `UNIT_FIELD_AURA*` arrays; duration and caster are not
 /// on the descriptor.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct UnitAuraSlot {
     /// Also the buff or debuff class, and the key `SMSG_UPDATE_AURA_DURATION` uses.
     pub slot: u8,
@@ -200,7 +200,7 @@ pub mod field {
 pub const PLAYER_QUEST_LOG_SLOTS: u8 = 20;
 
 /// One `PLAYER_QUEST_LOG` slot, the durable quest state; `SMSG_QUESTUPDATE_*` are only toasts.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct QuestLogSlot {
     /// 0 for an empty slot.
     pub quest_id: u32,
@@ -311,7 +311,7 @@ pub const PLAYER_SKILL_SLOTS: u8 = 128;
 
 /// One `PLAYER_SKILL_INFO` slot, three dwords (`Player.cpp:90-99`): `id | step << 16`,
 /// `value | max << 16`, `temp_bonus | perm_bonus << 16` with signed bonuses.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlayerSkillSlot {
     /// A `SkillLine.dbc` id, 0 for an unused slot.
     pub skill_id: u16,
@@ -327,7 +327,7 @@ pub struct PlayerSkillSlot {
 
 /// A corpse's own appearance, snapshotted at death: the seven `CORPSE_FIELD_BYTES_1`/`_2` bytes
 /// the client's dress `0x5d6260` loads, not the owner's live `PLAYER_BYTES`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CorpseLook {
     pub race: u8,
     pub sex: u8,
@@ -342,7 +342,7 @@ pub struct CorpseLook {
 /// nonzero fields (`Object::_SetCreateBits`) into the client's zeroed buffer, so an absent field
 /// within the created type's descriptor reads `Some(0)`; in a `Values` delta, or past the
 /// descriptor's end, it reads `None`.
-#[derive(Debug, Clone, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default)]
 pub struct ObjectFields {
     /// The wire's block mask, verbatim (`index = word * 32 + bit`).
     present: Vec<u32>,

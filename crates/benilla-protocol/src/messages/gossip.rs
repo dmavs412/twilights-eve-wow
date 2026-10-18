@@ -6,7 +6,7 @@ use crate::wire::{capacity_hint, read_cstring, read_f32_le, read_u32_le, read_u6
 
 /// One `SMSG_GOSSIP_MESSAGE` option: `index` is echoed as `gossipListId` on select, `icon` is a
 /// `GOSSIP_ICON_*` (0 chat, 1 vendor, 2 taxi, 3 trainer, …), `coded` asks for a code.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct GossipOption {
     pub index: u32,
     pub icon: u8,
@@ -15,7 +15,7 @@ pub struct GossipOption {
 }
 
 /// One quest in `SMSG_GOSSIP_MESSAGE`'s quest list.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestOption {
     pub quest_id: u32,
     pub icon: u32,
@@ -82,7 +82,7 @@ pub(super) fn read_gossip_message(
 }
 
 /// One of the eight greeting variants of an `SMSG_NPC_TEXT_UPDATE` record, both gender columns.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct NpcTextBlock {
     /// The block's draw weight, not a rank; vmangos's fallback record sets all eight to 0.
     pub probability: f32,
@@ -134,7 +134,7 @@ pub(super) fn read_npc_text_update(r: &mut &[u8]) -> io::Result<(u32, Vec<NpcTex
 /// `SMSG_GOSSIP_POI`, the map flag a guard drops when asked for directions; the server sends it
 /// unasked from a gossip option (`Player::OnGossipSelect`). The 1.12 client treats it as an
 /// `AreaPOI.dbc` record in minimap blip slot 1 (`0x4e2840`), hence the DBC field names.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct GossipPoi {
     /// As `AreaPOI.dbc` `Flags`: bit 0 makes it a candidate, bit 1 draws the in-range icon; every
     /// vmangos row sends 99.

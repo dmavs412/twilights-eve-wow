@@ -21,7 +21,7 @@ const OLDEST_VERSION: u32 = 1;
 pub(crate) const AUTOSAVE_SECS: f32 = 60.0;
 
 /// What the realm asks its host to do with a character's save.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum Storage {
     /// Write (or overwrite) this character's save.
     Write { guid: u64, blob: String },

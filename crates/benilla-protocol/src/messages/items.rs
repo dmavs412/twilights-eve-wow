@@ -8,7 +8,7 @@ use std::io;
 use crate::wire::{read_cstring, read_f32_le, read_i32_le, read_u32_le, read_u64_le, read_u8};
 
 /// One item template, as `SMSG_ITEM_QUERY_SINGLE_RESPONSE` carries it.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct ItemInfo {
     pub class: u32,
     pub subclass: u32,
@@ -186,7 +186,7 @@ pub const ITEM_DYNFLAG_UNLOCKED: u32 = 0x0000_0004;
 pub const ITEM_DYNFLAG_WRAPPED: u32 = 0x0000_0008;
 
 /// One `Damage` block of [`ItemInfo::damages`].
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct ItemDamage {
     pub min: f32,
     pub max: f32,
@@ -196,7 +196,7 @@ pub struct ItemDamage {
 
 /// One template spell block of [`ItemInfo::spells`]. Negative `charges` use the item up when they
 /// run out, positive ones leave it (`ItemPrototype::_ItemSpell::SpellCharges`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ItemSpellEntry {
     /// The template block ordinal (0..4), which `CMSG_USE_ITEM`'s spell byte carries.
     pub index: u8,
@@ -215,7 +215,7 @@ pub struct ItemSpellEntry {
 /// An item's first ON_USE spell block. The server substitutes the spell's own cooldowns for unset
 /// ones (`ItemHandler.cpp:354-380`), but a `-1` can still arrive; negative means the spell's
 /// `Spell.dbc` value, as the reference's `StartCooldown` (`0x6e2c60`) reads it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ItemUseSpell {
     pub spell_id: u32,
     /// Use-cooldown ms; negative = the spell's own `RecoveryTime`.
@@ -443,7 +443,7 @@ const TARGET_FLAG_ITEM: u16 = 0x0010;
 
 /// The `SpellCastTargets` block of a `CMSG_USE_ITEM`, the same block a `CMSG_CAST_SPELL` carries:
 /// the reference's `SendCast` (`0x6e54f0`) only picks the opcode (`0x6e57d8`).
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, Default, PartialEq)]
 pub enum UseItemTarget {
     /// Mask 0 (`TARGET_FLAG_SELF`): an ordinary consumable; the server resolves the target.
     #[default]

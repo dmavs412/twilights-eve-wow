@@ -63,7 +63,7 @@ pub mod friend_status {
 
 /// One friend-list row. The name is not on the wire: the client resolves it through its name cache
 /// (`0x55f080`, filled by `CMSG_NAME_QUERY`) when it draws the row.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct FriendEntry {
     /// Always a player guid: vmangos rebuilds it as `ObjectGuid(HIGHGUID_PLAYER, lowguid)`.
     pub guid: u64,
@@ -111,7 +111,7 @@ pub fn read_ignore_list(r: &mut impl Read) -> io::Result<Vec<u64>> {
 }
 
 /// `SMSG_FRIEND_STATUS`: one result about one player, with their whereabouts when online.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FriendStatusUpdate {
     /// A [`friend_result`] code, either an ack or a login/logout broadcast; the code says which.
     pub result: u8,
@@ -122,7 +122,7 @@ pub struct FriendStatusUpdate {
 }
 
 /// The presence tail of an online `SMSG_FRIEND_STATUS`: the four fields a [`FriendEntry`] holds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FriendOnline {
     /// A [`friend_status`] (the vmangos `SUPPORTED_CLIENT_BUILD > CLIENT_BUILD_1_8_4` arm).
     pub status: u8,
@@ -155,7 +155,7 @@ pub fn read_friend_status(r: &mut impl Read) -> io::Result<FriendStatusUpdate> {
 }
 
 /// One `/who` hit; unlike a friend row, every field is on the wire.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct WhoEntry {
     pub name: String,
     /// An empty cstring when unguilded.
@@ -168,7 +168,7 @@ pub struct WhoEntry {
 }
 
 /// `SMSG_WHO`: the results and the two counts of the "N players total (M displayed)" line.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct WhoResults {
     /// Entries that follow (`clientCount`); vmangos stops at 49.
     pub displayed: u32,
@@ -203,7 +203,7 @@ pub fn read_who(r: &mut impl Read) -> io::Result<WhoResults> {
 
 /// A `/who` query parsed from the typed filter, e.g. `z-"Elwynn Forest" 1-10`, which the 1.12
 /// engine (not FrameXML) parses for `SendWho`. [`Default`] is a bare `/who`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct WhoRequest {
     /// Inclusive minimum level.
     pub level_min: u32,

@@ -52,7 +52,7 @@ pub fn host_port(host: &str, default: u16) -> (&str, u16) {
 
 /// A dial that got no socket, split by step: the name did not resolve, or nothing answered (one
 /// `io::Error` cannot tell them apart; macOS reports a failed lookup as `Uncategorized`).
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct DialFailure {
     /// What we tried to reach, as the player would recognise it (`host:port`).
     pub address: String,
@@ -117,7 +117,7 @@ async fn dial(host: &str, port: u16) -> Result<Conn> {
 }
 
 /// A realm from realmd's realm list, with every field the wire carries.
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct RealmInfo {
     pub name: String,
     /// `host:port` of the world server, as the client would connect to it.

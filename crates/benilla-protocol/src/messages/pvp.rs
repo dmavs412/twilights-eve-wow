@@ -9,7 +9,7 @@ use crate::wire::{read_i32_le, read_u16_le, read_u32_le, read_u64_le, read_u8};
 /// Another player's honor stats, the `MSG_INSPECT_HONOR_STATS` reply (opcode 726): 50 bytes in
 /// vmangos `Misc.cpp:301-325` order, from the target's `PLAYER_FIELD_*` honor block. Their
 /// current rank is not here; it streams publicly in `PLAYER_BYTES_3`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InspectHonorStats {
     /// Echoed from the request. There is no error reply: a missing, distant (10 yd) or hostile
     /// target gets no answer at all (`MiscHandler.cpp:977`).
@@ -87,7 +87,7 @@ pub fn inspect_honor_stats(guid: u64) -> Vec<u8> {
 
 /// `SMSG_PVP_CREDIT` (opcode 652): one honor payout, dishonorable ones included (vmangos
 /// `HonorMgr.cpp:1061-1093`). The descriptor holds only totals; this is the only per-payout notice.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PvpCredit {
     /// Honor, truncated server-side; negative for a dishonorable kill (`HonorMgr.cpp:807`).
     pub honor: i32,

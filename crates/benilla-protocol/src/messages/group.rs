@@ -47,7 +47,7 @@ pub mod party_result {
 
 /// One `SMSG_GROUP_LIST` member row (`Group.cpp:161-167`); the recipient has no row, their flags
 /// ride the list's own-flags byte.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct GroupMemberEntry {
     pub name: String,
     pub guid: u64,
@@ -69,7 +69,7 @@ impl GroupMemberEntry {
 
 /// The loot tail `SMSG_GROUP_LIST` carries only when it lists members (`Group.cpp:170-179`);
 /// `threshold` is an item quality, 2 to 4 in practice.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GroupLootInfo {
     /// 0 free-for-all, 1 round-robin, 2 master, 3 group, 4 need before greed (`LootMethod`).
     pub method: u8,
@@ -162,7 +162,7 @@ pub mod party_member_mask {
 
 /// One `SMSG_PARTY_MEMBER_STATS` or `_FULL` payload (`GroupHandler.cpp:590-742`): only the masked
 /// fields are present. The plain opcode carries what changed; `_FULL` everything the server has.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 pub struct PartyMemberStatsInfo {
     pub status: Option<u8>,
     pub cur_hp: Option<u16>,
@@ -486,7 +486,7 @@ pub(super) fn read_minimap_ping(r: &mut impl Read) -> io::Result<(u64, f32, f32)
 
 /// A server `MSG_RAID_TARGET_UPDATE` (`Group.cpp:132-147`): mode 0 is one changed icon, mode 1
 /// every set icon, an empty list when none is.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum RaidTargetUpdate {
     Delta { icon: u8, guid: u64 },
     List(Vec<(u8, u64)>),
@@ -510,7 +510,7 @@ pub(super) fn read_raid_target_update(r: &mut &[u8]) -> io::Result<RaidTargetUpd
 
 /// A server `MSG_RAID_READY_CHECK`: empty when the leader starts a check, else one member's answer,
 /// sent to the leader only (`Group.cpp:94-96`, `126-130`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReadyCheck {
     Started,
     Answer { guid: u64, ready: u8 },
@@ -649,7 +649,7 @@ pub fn ready_check_answer(ready: bool) -> Vec<u8> {
 }
 
 /// One `SMSG_RAID_INSTANCE_INFO` row, a permanent raid lockout (vmangos `Player::SendRaidInfo`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RaidInstanceEntry {
     /// `Map.dbc` id; the name shown is the client's own lookup.
     pub map: u32,

@@ -18,7 +18,7 @@ use crate::messages::{
 };
 
 /// Coarse entity classification, free of wire types, carried on [`SessionEvent::ObjectCreate`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EntityKind {
     Player,
     Unit,
@@ -32,14 +32,14 @@ pub enum EntityKind {
 }
 
 /// Which character verb a [`SessionEvent::CharActionResult`] answers, and so which code family.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CharAction {
     Create,
     Delete,
 }
 
 /// A unit's six movement speeds from its `LIVING` block: yd/s, except `turn_rate` in rad/s.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, Default, PartialEq)]
 pub struct MoveSpeeds {
     pub walk: f32,
     pub run: f32,
@@ -63,7 +63,7 @@ impl MoveSpeeds {
 }
 
 /// A login attempt's pre-roster stage; the connecting dialog shows its `LOGIN_STATE_*` string.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LoginStage {
     /// Dialing the auth server (`LOGIN_STATE_CONNECTING`).
     Connecting,
@@ -75,7 +75,7 @@ pub enum LoginStage {
 
 /// How a world session ended. On a loss the reference fires `DISCONNECTED_FROM_SERVER` and
 /// `GlueParent.lua` returns to the login screen; a logout returns to character select.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SessionEnd {
     /// A logout the server confirmed (`SMSG_LOGOUT_COMPLETE`); a fresh roster follows.
     LoggedOut,
@@ -86,7 +86,7 @@ pub enum SessionEnd {
 
 /// Which server refused the login, and its result byte. The two enums overlap: 0x0C is
 /// `AUTH_LOGON_FAILED_SUSPENDED` to realmd but `AUTH_OK` to the world server.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LoginRefusal {
     /// realmd's logon-proof `AuthLogonResult` (`crate::AuthReject`).
     Logon(u8),
@@ -104,7 +104,7 @@ impl LoginRefusal {
 }
 
 /// One decoded world-stream event; its fieldless twin [`SessionEventKind`] keys the handler table.
-#[derive(Debug, Clone, strum::EnumDiscriminants)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, strum::EnumDiscriminants)]
 #[strum_discriminants(
     name(SessionEventKind),
     derive(Hash, PartialOrd, Ord, strum::EnumIter, strum::IntoStaticStr)

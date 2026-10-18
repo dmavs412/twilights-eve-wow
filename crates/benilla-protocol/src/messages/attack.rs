@@ -13,7 +13,7 @@ pub(super) fn read_attack_start(r: &mut impl Read) -> io::Result<(u64, u64)> {
 /// `SMSG_ATTACKERSTATEUPDATE`: one melee swing (`Unit.cpp:4572-4605`), sent once per weapon-timer
 /// cycle per hand; the reference plays one swing animation per packet. `hit_info` bit `0x4` marks
 /// an offhand swing, bit `0x10000` suppresses the swing animation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AttackerState {
     pub attacker: u64,
     pub victim: u64,
@@ -97,7 +97,7 @@ pub(super) fn read_attacker_state(r: &mut impl Read) -> io::Result<AttackerState
 
 /// The server's refusal of `CMSG_ATTACKSWING`; every body is empty. Four opcodes, three variants:
 /// the reference (`0x6255b0`) handles `0x148` and `0x149` in one shared arm.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AttackSwingError {
     /// `SMSG_ATTACKSWING_NOTINRANGE` (`0x145`): the reference latches code 1 (`0x625a8a`).
     NotInRange,

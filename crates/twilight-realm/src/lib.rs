@@ -70,6 +70,8 @@ mod token_vendor;
 mod trainer;
 mod vendor;
 mod wear;
+#[cfg(feature = "wire")]
+pub mod wire;
 mod world;
 
 use benilla_protocol::{CharCreateReq, RealmInfo, SessionEvent};
@@ -95,7 +97,7 @@ pub trait Host {
 
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
 /// and drops the rest.
-#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub enum RealmCommand {
     /// The roster, answered with [`SessionEvent::CharacterList`].
     ListCharacters,

@@ -100,7 +100,7 @@ pub fn capacity_hint(count: impl TryInto<u64>, cap: usize) -> usize {
 }
 
 /// A 3-float position/vector in raw WoW coordinates.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct Vector3d {
     pub x: f32,
     pub y: f32,

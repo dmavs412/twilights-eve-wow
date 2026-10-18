@@ -25,7 +25,7 @@ pub fn power_display_scale(ty: u32) -> u32 {
 
 /// The field [`ObjectFields::unit_owner`] falls back to when `CHARMEDBY` is clear, the one thing
 /// the client's two owner readers do differently.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OwnerFallback {
     /// `UNIT_FIELD_CREATEDBY`, as the own-pet resolver `0x5ee5a0` reads.
     CreatedBy,

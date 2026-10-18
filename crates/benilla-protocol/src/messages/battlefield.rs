@@ -6,7 +6,7 @@ use std::io::{self, Read};
 use crate::wire::{capacity_hint, read_u32_le, read_u8};
 
 /// `SMSG_BATTLEFIELD_STATUS`, one slot's update (handler `0x4aa850`).
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct BattlefieldStatus {
     /// Which of the three slots, 0-based on the wire (1-based in Lua).
     pub slot: u32,
@@ -72,7 +72,7 @@ pub(super) fn read_battlefield_status(r: &mut impl Read) -> io::Result<Battlefie
 }
 
 /// One `MSG_PVP_LOG_DATA` scoreboard row (handler `0x4aab30`), a 0x40-byte block in the client.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct PvpLogRow {
     pub guid: u64,
     /// Wire field 2, before the kills; stored at `+0x1c`.
@@ -86,7 +86,7 @@ pub struct PvpLogRow {
 }
 
 /// `MSG_PVP_LOG_DATA` inbound: the whole scoreboard, rows in wire order.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 pub struct PvpLogData {
     /// The battleground has ended; `LeaveBattlefield` sends nothing until it has.
     pub ended: bool,
@@ -140,7 +140,7 @@ pub fn leave_battlefield(map_id: u32) -> Vec<u8> {
 }
 
 /// `SMSG_BATTLEFIELD_LIST` (handler `0x4aa6c0`): the instance list a battlemaster opens.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 pub struct BattlefieldList {
     /// 0 when opened without an NPC; `JoinBattlefield` picks the join opcode by it.
     pub battlemaster: u64,
@@ -170,7 +170,7 @@ pub(super) fn read_battlefield_list(r: &mut impl Read) -> io::Result<Battlefield
 
 /// One teammate's position from `MSG_BATTLEGROUND_PLAYER_POSITIONS`, in raw world coordinates;
 /// the client prefers a live object's own position.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq)]
 pub struct BattlefieldPosition {
     pub guid: u64,
     pub x: f32,
@@ -179,7 +179,7 @@ pub struct BattlefieldPosition {
 
 /// `MSG_BATTLEGROUND_PLAYER_POSITIONS` (handler `0x4aad40`): teammates outside our group, then
 /// the friendly flag carrier if any.
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct BattlefieldPositions {
     pub players: Vec<BattlefieldPosition>,
     pub carrier: Option<BattlefieldPosition>,

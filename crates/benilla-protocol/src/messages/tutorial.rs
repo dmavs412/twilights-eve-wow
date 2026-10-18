@@ -4,7 +4,7 @@
 use std::io::{self, Read};
 
 /// `SMSG_TUTORIAL_FLAGS` (handler `0x4b5700`): bit `id` is `bytes[id >> 3] & (1 << (id & 7))`.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 pub struct TutorialFlags {
     pub bytes: Vec<u8>,
 }

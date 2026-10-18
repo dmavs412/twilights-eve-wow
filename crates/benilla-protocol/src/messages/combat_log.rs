@@ -9,7 +9,7 @@ use crate::wire::{
 
 /// `SMSG_SPELLNONMELEEDAMAGELOG`, spell damage dealt (`Server/Packets/Spell.cpp:124-140`);
 /// `hit_info` bit `0x2` is a crit (`SpellDefines.h:179`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SpellDamageLog {
     pub target: u64,
     pub attacker: u64,
@@ -51,7 +51,7 @@ pub(super) fn read_spell_damage_log(r: &mut impl Read) -> io::Result<SpellDamage
 }
 
 /// One `SMSG_PERIODICAURALOG` tick, shaped by its aura type (vmangos `SpellAuraDefines.h`).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PeriodicTick {
     Damage {
         amount: u32,
@@ -74,7 +74,7 @@ pub enum PeriodicTick {
 }
 
 /// `SMSG_PERIODICAURALOG`, periodic aura ticks (vmangos `Unit.cpp:4395-4443`).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct PeriodicAuraLog {
     pub target: u64,
     pub caster: u64,
@@ -137,7 +137,7 @@ pub(super) fn read_periodic_aura_log(r: &mut impl Read) -> io::Result<PeriodicAu
 }
 
 /// `SMSG_SPELLHEALLOG`, a direct heal landing (`Server/Packets/Spell.cpp:105-112`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SpellHealLog {
     pub target: u64,
     pub healer: u64,
@@ -158,7 +158,7 @@ pub(super) fn read_spell_heal_log(r: &mut impl Read) -> io::Result<SpellHealLog>
 
 /// `SMSG_SPELLENERGIZELOG`, an instant power gain (`Server/Packets/Spell.cpp:114-121`); `power` is
 /// 0 mana, 1 rage, 2 focus, 3 energy, 4 happiness.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SpellEnergizeLog {
     pub target: u64,
     pub caster: u64,
@@ -179,7 +179,7 @@ pub(super) fn read_spell_energize_log(r: &mut impl Read) -> io::Result<SpellEner
 
 /// `SMSG_SPELLDAMAGESHIELD`, a Thorns-style return hit (`Server/Packets/Combat.cpp:73-79`):
 /// `victim` bears the shield, `attacker` struck it and takes this damage.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DamageShield {
     pub victim: u64,
     pub attacker: u64,
@@ -199,7 +199,7 @@ pub(super) fn read_damage_shield(r: &mut impl Read) -> io::Result<DamageShield> 
 /// `SMSG_ENVIRONMENTALDAMAGELOG`, environmental damage taken (`Server/Packets/Combat.cpp:58-67`).
 /// `damage_type` is 0 exhausted, 1 drowning, 2 fall, 3 lava, 4 slime, 5 fire (`Player.h:590`), the
 /// row of `EnvironmentalDamage.dbc` whose visual kit plays (fall's is the landing dust puff).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EnvironmentalDamageLog {
     pub victim: u64,
     pub damage_type: u8,
@@ -224,7 +224,7 @@ pub(super) fn read_environmental_damage_log(
 /// `SMSG_SPELLLOGMISS`, a cast's per-target miss list (`Server/Packets/Spell.cpp:68-86`). Each
 /// `u8` is a `SpellMissInfo` (`SpellDefines.h:160-174`): 1 miss, 2 resist, 3 dodge, 4 parry,
 /// 5 block, 6 evade, 7 and 8 immune, 9 deflect, 10 absorb, 11 reflect.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct SpellLogMiss {
     pub spell_id: u32,
     pub caster: u64,
@@ -256,7 +256,7 @@ pub(super) fn read_spell_log_miss(r: &mut impl Read) -> io::Result<SpellLogMiss>
 
 /// `SMSG_PARTYKILLLOG`, the killing blow, sent to the killer's party (`Combat.cpp:52-56`): the
 /// only source of "You have slain %s!"; "%s dies." comes from the client's own death handling.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PartyKillLog {
     pub killer: u64,
     pub victim: u64,
@@ -270,7 +270,7 @@ pub(super) fn read_party_kill_log(r: &mut impl Read) -> io::Result<PartyKillLog>
 }
 
 /// `SMSG_SPELLINSTAKILLLOG`, an instant kill (vmangos `Spells/SpellEffects.cpp:274-279`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SpellInstaKillLog {
     pub victim: u64,
     pub spell_id: u32,
@@ -286,7 +286,7 @@ pub(super) fn read_spell_insta_kill_log(r: &mut impl Read) -> io::Result<SpellIn
 /// `SMSG_PROCRESIST` or `SMSG_SPELLORDAMAGE_IMMUNE`, which share one body
 /// (`Server/Packets/Spell.cpp:88-102`). The 1.12 client reads `log_format` as the "is periodic"
 /// flag that lets `CombatLogPeriodicSpells` gate the line.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SpellOutcomeLog {
     pub caster: u64,
     pub target: u64,
@@ -304,7 +304,7 @@ pub(super) fn read_spell_outcome_log(r: &mut impl Read) -> io::Result<SpellOutco
 }
 
 /// `SMSG_SPELLDISPELLOG`, the auras a dispel removed (vmangos `SpellEffects.cpp:2524-2539`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct SpellDispelLog {
     /// The unit the auras were on.
     pub victim: u64,
@@ -330,7 +330,7 @@ pub(super) fn read_spell_dispel_log(r: &mut impl Read) -> io::Result<SpellDispel
 
 /// `SMSG_DISPEL_FAILED`, the auras a dispel failed to remove (`SpellEffects.cpp:2549-2555`). No
 /// count: the spell ids run to the end of the body, as the 1.12 client reads them (`0x628c20`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct DispelFailed {
     pub caster: u64,
     pub victim: u64,
@@ -359,7 +359,7 @@ pub(super) fn read_dispel_failed(r: &mut impl Read) -> io::Result<DispelFailed> 
 
 /// `SMSG_ENCHANTMENTLOG`, an enchant landing on or fading from an item
 /// (`Server/Packets/Item.cpp:235-242`); a zero `caster` means it faded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EnchantmentLog {
     pub caster: u64,
     pub owner: u64,
@@ -382,7 +382,7 @@ pub(super) fn read_enchantment_log(r: &mut impl Read) -> io::Result<EnchantmentL
 
 /// One `SMSG_SPELLLOGEXECUTE` row, shaped by its effect id as vmangos writes it
 /// (`Spells/Spell.cpp:4694-4771`) and the 1.12 client reads it (`0x5e8074`).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub enum ExecuteLog {
     /// Effect 8 `POWER_DRAIN`: amount, then power (the 1.12 client, `0x5e807b` and `0x62793c`).
     PowerDrain {
@@ -424,7 +424,7 @@ pub enum ExecuteLog {
 
 /// `SMSG_SPELLLOGEXECUTE`, what a cast's effects did (`Spells/Spell.cpp:4662-4778`): one group of
 /// rows per logging effect, keyed by the effect id that picks the combat-log line.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct SpellLogExecute {
     pub caster: u64,
     pub spell_id: u32,

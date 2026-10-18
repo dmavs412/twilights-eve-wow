@@ -7,7 +7,7 @@ use crate::wire::{read_u32_le, read_u64_le, read_u8};
 
 /// The known-node bitmask (vmangos `PlayerTaxi::AppendTaximaskTo`, `PlayerTaxi.cpp:53-65`). Node
 /// ids are 1-based: node `id` is bit `(id-1) % 32` of word `(id-1) / 32` (`PlayerTaxi.h:37-49`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct TaxiMask(pub [u32; 8]);
 
 impl TaxiMask {

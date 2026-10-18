@@ -7,7 +7,7 @@ use crate::wire::{capacity_hint, read_cstring, read_u32_le, read_u64_le, read_u8
 
 /// One 38-byte `SMSG_TRAINER_LIST` service (`NPCHandler.cpp:97-139`); the server already filters
 /// the list to the player's class and race.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrainerSpell {
     /// The service spell id, which `CMSG_TRAINER_BUY_SPELL` names to buy it.
     pub spell: u32,

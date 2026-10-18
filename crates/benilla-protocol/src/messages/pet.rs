@@ -58,7 +58,7 @@ pub const PET_COOLDOWN_PERMANENT: u32 = 0x0800_0000;
 /// One packed pet action word, as the client decodes it (`0x4bdcc7`/`0x4bdccd`/`0x4bdce3`): the
 /// action in bits 0-15, the type in 24-29, autocast allowed in 31 and on in 30; bits 16-23 are
 /// never read. The raw word is kept because the client echoes it verbatim in [`pet_action`].
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PetActionEntry {
     pub packed: u32,
 }
@@ -109,7 +109,7 @@ impl From<u32> for PetActionEntry {
 }
 
 /// One decoded entry of `SMSG_PET_SPELLS`' trailing cooldown block.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PetSpellCooldown {
     pub spell_id: u32,
     pub category: u16,
@@ -119,7 +119,7 @@ pub struct PetSpellCooldown {
 }
 
 /// `SMSG_PET_SPELLS`: the pet action bar's entire state in one body.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 pub struct PetSpells {
     /// The pet, possessed minion or charmed creature; zero means the bar is gone.
     pub pet_guid: u64,
@@ -224,7 +224,7 @@ fn read_cooldown_block(r: &mut &[u8]) -> io::Result<Vec<PetSpellCooldown>> {
 }
 
 /// `SMSG_PET_MODE`: the state word without the bar, for a command or reaction change.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PetMode {
     pub pet_guid: u64,
     /// The same dword as [`PetSpells::state`]; the client stores both through `0x4bc930`.
@@ -605,7 +605,7 @@ mod tests {
 
 /// `SMSG_PET_UNLEARN_CONFIRM` (`0x5e4a26`): the trainer's guid and the unlearn cost in copper,
 /// which the reference latches before firing `CONFIRM_PET_UNLEARN(cost)`.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct PetUnlearnConfirm {
     pub trainer: u64,
     pub cost: u32,

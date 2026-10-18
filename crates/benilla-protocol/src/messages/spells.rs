@@ -11,7 +11,7 @@ use crate::wire::{
 
 /// `SMSG_CAST_RESULT`'s verdict: status 0 (`OKAY`) ends the packet; status 2 (`FAIL`) adds a `u8`
 /// reason and up to two argument words (vmangos `CastResult::AppendBodyTo`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CastOutcome {
     Ok,
     Failed {
@@ -57,7 +57,7 @@ const TARGET_FLAG_CORPSE_ALLY: u16 = 0x8000;
 /// A decoded `SpellCastTargets` in the server's write order (`SpellCastTargetsInfo.cpp:180-234`),
 /// not its read order: any mix of UNIT, GAMEOBJECT and CORPSE_* bits yields one packed guid.
 /// Item, corpse, source and string targets are read and dropped.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct SpellCastTargets {
     pub mask: u16,
     pub unit_target: Option<u64>,
@@ -121,7 +121,7 @@ fn read_ammo(r: &mut impl Read) -> io::Result<u32> {
 /// included (`cast_time_ms == 0`). `item_or_caster` is the cast item's guid if any, else the
 /// caster's; `caster` is 0 for a GameObject caster. `cast_flags` is always 0x2, plus
 /// `CAST_FLAG_AMMO` for a ranged spell.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct SpellStart {
     pub item_or_caster: u64,
     pub caster: u64,
@@ -163,7 +163,7 @@ const SPELL_MISS_REFLECT: u8 = 11;
 /// as in [`SpellStart`]; `cast_flags` is always 0x100, plus `CAST_FLAG_AMMO` for a ranged spell.
 /// Sent at launch: the server times the impact from `Spell.dbc` Speed, so no missile travel data
 /// rides it.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct SpellGo {
     pub item_or_caster: u64,
     pub caster: u64,
@@ -307,7 +307,7 @@ pub fn cast_spell_gameobject(spell_id: u32, go_guid: u64) -> Vec<u8> {
 /// The corpse bit a corpse cast carries: `BindTarget 0x6e5b40`'s corpse arm writes `0x8000` for a
 /// corpse its caster's reaction toward is friendly (`0x6e5fc7`), `0x200` for one it is not
 /// (`0x6e600c`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CorpseTarget {
     /// `TARGET_FLAG_CORPSE_ALLY`, a resurrection's.
     Ally,
@@ -504,7 +504,7 @@ mod tests {
 /// `SMSG_SPELL_UPDATE_CHAIN_TARGETS`: a beam's hop list (vmangos `Spell.cpp:4970-4997`, client
 /// `0x6e9820`). vmangos sends it only for channeled spells; the 1.12 client also fills the same
 /// hop array from `SMSG_SPELL_GO`'s hits (`0x6e800d`), which is how Chain Lightning draws.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct SpellChainTargets {
     pub caster: u64,
     pub spell_id: u32,

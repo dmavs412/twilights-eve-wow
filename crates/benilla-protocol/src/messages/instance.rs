@@ -10,7 +10,7 @@ use crate::wire::read_u32_le;
 
 /// `SMSG_RAID_INSTANCE_MESSAGE`'s `type` (`Objects/Player.h:568-573`). Outside 1-4 the reference
 /// prints nothing (jump table `0x49e45c`), even for 5, later clients' `RAID_INSTANCE_EXPIRED`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RaidInstanceWarning {
     /// 1: `RAID_INSTANCE_WARNING_HOURS`, filled with `resetTime / 3600`.
     Hours,
@@ -45,7 +45,7 @@ impl RaidInstanceWarning {
 }
 
 /// `SMSG_RAID_INSTANCE_MESSAGE`: a raid lockout's welcome or countdown line.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RaidInstanceMessage {
     /// The raw wire type; [`RaidInstanceWarning::from_wire`] resolves it.
     pub message_type: u32,
@@ -56,7 +56,7 @@ pub struct RaidInstanceMessage {
 
 /// `SMSG_INSTANCE_RESET_FAILED`'s `reason` (ladder at `0x49e5b7`; vmangos
 /// `Maps/MapPersistentStateMgr.h:270-276`, whose `INSTANCERESET_FAIL_SILENTLY` is 3).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InstanceResetFailure {
     /// 0: `INSTANCE_RESET_FAILED`, players still inside.
     General,
@@ -89,7 +89,7 @@ impl InstanceResetFailure {
 }
 
 /// `SMSG_INSTANCE_RESET_FAILED`: the group leader's reset was refused.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InstanceResetFailed {
     /// The raw wire reason; [`InstanceResetFailure::from_wire`] resolves it.
     pub reason: u32,
@@ -129,7 +129,7 @@ pub fn reset_instances() -> Vec<u8> {
 /// `SMSG_RAID_GROUP_ONLY` (reference `0x5e48f1`): a nonzero `delay_ms` arms the instance-boot
 /// deadline (`INSTANCE_BOOT_START`); `0` clears it (`INSTANCE_BOOT_STOP`), and then `reason` 1 or
 /// 2 shows `ERR_RAID_GROUP_ONLY` or `ERR_RAID_GROUP_FULL`.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct RaidGroupOnly {
     pub delay_ms: u32,
     pub reason: u32,

@@ -13,7 +13,7 @@ pub const ACTION_KIND_ITEM: u8 = 0x80;
 
 /// An occupied slot of `SMSG_ACTION_BUTTONS`, 120 packed `u32`s
 /// (`MasterPlayer::SendInitialActionButtons`); a zero word is an empty slot.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ActionButton {
     /// The bar slot index (0..119). Slots 0–11 are the main bar's buttons 1–12.
     pub slot: u8,

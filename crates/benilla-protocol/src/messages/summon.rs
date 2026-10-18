@@ -7,7 +7,7 @@ use std::io;
 use crate::wire::{read_u32_le, read_u64_le};
 
 /// `SMSG_SUMMON_REQUEST`: someone is asking to pull us to them.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SummonRequest {
     /// Echoed in [`summon_response`]; `GetSummonConfirmSummoner()` names it from the name cache.
     pub summoner: u64,

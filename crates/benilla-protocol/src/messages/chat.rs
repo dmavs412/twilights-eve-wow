@@ -68,7 +68,7 @@ pub mod chat_tag {
 }
 
 /// One decoded chat line.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ChatMessage {
     /// The `ChatMsg` type byte (0x00 say, 0x0A system, 0x0B monster say, …).
     pub chat_type: u8,

@@ -37,4 +37,4 @@ jobs:
       - name: cargo check
         run: cargo check --workspace
       - name: realm tests
-        run: cargo test -p twilight-realm
+        run: cargo test -p twilight-realm --features wire

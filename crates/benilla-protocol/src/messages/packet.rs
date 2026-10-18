@@ -23,7 +23,7 @@ use super::{
 
 /// The final facing a `SMSG_MONSTER_MOVE` dictates (`moveType`), applied as a hard snap, not a
 /// turn (`0x6018f0`); `Spot` and `Target` resolve once, from positions at receipt.
-#[derive(Debug, Clone, Copy)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy)]
 pub enum MonsterMoveFacing {
     /// `moveType` 0 or a stop: the unit faces its travel direction.
     None,
@@ -36,7 +36,7 @@ pub enum MonsterMoveFacing {
 }
 
 /// One creature template's UI-visible head, from `SMSG_CREATURE_QUERY_RESPONSE`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct CreatureQueryInfo {
     pub name: String,
     /// The NPC subtitle ("Stable Master"), the unit tooltip's second line.

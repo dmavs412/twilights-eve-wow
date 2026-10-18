@@ -13,7 +13,7 @@ pub const TRADE_SLOT_TRADED_COUNT: usize = 6;
 pub const TRADE_SLOT_NONTRADED: usize = 6;
 
 /// `SMSG_TRADE_STATUS` codes (`SharedDefines.h` `enum TradeStatus`), each with its tail inline.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TradeStatus {
     /// The target is busy, or the initiator is already trading.
     Busy,
@@ -101,7 +101,7 @@ impl TradeStatus {
 }
 
 /// One trade slot's 60-byte item block; an all-zero block is an empty slot.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TradeItem {
     /// `Item.dbc` entry (`OBJECT_FIELD_ENTRY`), the key for name and icon via `ITEM_QUERY_SINGLE`.
     pub entry: u32,
@@ -122,7 +122,7 @@ pub struct TradeItem {
 }
 
 /// `SMSG_TRADE_STATUS_EXTENDED`: one side's snapshot, sent whenever that side's offer changes.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TradeStatusExtended {
     /// The partner's (right) column when the wire byte is 1, ours (left) when 0.
     pub their_window: bool,

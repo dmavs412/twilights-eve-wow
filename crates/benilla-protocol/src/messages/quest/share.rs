@@ -9,7 +9,9 @@ use crate::wire::{read_cstring, read_u32_le, read_u64_le, read_u8};
 
 /// `QuestShareMessages` (vmangos `QuestDef.h:62-70`): the `u8` verdict of `MSG_QUEST_PUSH_RESULT`.
 /// A newtype, not an enum, so an unknown value survives the parse.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub struct QuestShareMsg(pub u8);
 
 impl QuestShareMsg {
@@ -35,7 +37,7 @@ impl QuestShareMsg {
 
 /// `MSG_QUEST_PUSH_RESULT` from the server (`Quest.cpp:81-85`). Its guid is the member the verdict
 /// is about, never the sharer, and fills the `%s` of `ERR_QUEST_PUSH_*` (`Player.cpp:14596-14608`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct QuestPushResult {
     pub member: u64,
     pub msg: QuestShareMsg,
@@ -43,7 +45,7 @@ pub struct QuestPushResult {
 
 /// `SMSG_QUEST_CONFIRM_ACCEPT` (`Quest.cpp:131-136`): the escort confirm, sent to the other
 /// eligible members when one accepts.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestConfirmAccept {
     /// Echoed back in [`quest_confirm_accept`].
     pub quest_id: u32,

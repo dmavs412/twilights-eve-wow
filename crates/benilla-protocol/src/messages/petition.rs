@@ -50,7 +50,7 @@ pub mod petition_result {
 
 /// One row of `SMSG_PETITION_SHOWLIST`: a charter the NPC sells. vmangos always sends exactly one
 /// (`Petition.h:176`: "only 1 element is supported in the client").
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct PetitionShowListEntry {
     /// Row index, 1-based (`PetitionsHandler.cpp:496`).
     pub index: u32,
@@ -66,7 +66,7 @@ pub struct PetitionShowListEntry {
 }
 
 /// `SMSG_PETITION_SHOWLIST`: the registrar NPC's charter list, which opens its window.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct PetitionShowList {
     /// The NPC; every later verb in the flow that names an NPC takes this guid.
     pub npc: u64,
@@ -94,7 +94,7 @@ pub(super) fn read_petition_show_list(r: &mut impl Read) -> io::Result<PetitionS
 }
 
 /// One signature on a charter: the signer's guid and a trailing dword.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct PetitionSignature {
     /// The signer's guid; the packet carries no names.
     pub signer: u64,
@@ -104,7 +104,7 @@ pub struct PetitionSignature {
 
 /// `SMSG_PETITION_SHOW_SIGNATURES`: a charter's signers, in answer to our request or when
 /// someone offers us theirs. Its name and requirement come from `SMSG_PETITION_QUERY_RESPONSE`.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct PetitionShowSignatures {
     /// The charter item's guid, which every later verb takes; not the petition id.
     pub item: u64,
@@ -142,7 +142,7 @@ pub(super) fn read_petition_show_signatures(
 
 /// `SMSG_PETITION_SIGN_RESULTS`: the verdict on one signature. A success goes, identical, to the
 /// signer and the online owner (`PetitionsHandler.cpp:299`, `:312-316`); both name the signer.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct PetitionSignResults {
     /// The charter item's guid.
     pub item: u64,
@@ -162,7 +162,7 @@ pub(super) fn read_petition_sign_results(r: &mut impl Read) -> io::Result<Petiti
 }
 
 /// `SMSG_PETITION_QUERY_RESPONSE`: a petition's record, keyed by petition id.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct PetitionQueryResponse {
     /// The petition id we asked about.
     pub petition_id: u32,
@@ -247,7 +247,7 @@ pub(super) fn read_petition_query_response(r: &mut impl Read) -> io::Result<Peti
 
 /// `MSG_PETITION_RENAME`: the server's echo of a successful rename (`PetitionsHandler.cpp:209`);
 /// a rejected name gets `SMSG_GUILD_COMMAND_RESULT`. Any holder of the item may rename it.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct PetitionRename {
     /// The charter item's guid.
     pub item: u64,

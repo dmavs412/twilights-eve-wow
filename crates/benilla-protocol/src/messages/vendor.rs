@@ -6,7 +6,7 @@ use crate::wire::{capacity_hint, read_u32_le, read_u64_le, read_u8};
 
 /// One vendor row (`ItemHandler.cpp:741-810`): `slot` is the 1-based list position, not what a buy
 /// sends; `current_count` `0xFFFF_FFFF` is unlimited; `price` is already reputation-discounted.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VendorItem {
     pub slot: u32,
     pub entry: u32,

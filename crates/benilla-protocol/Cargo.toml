@@ -18,6 +18,7 @@ flate2 = "1.0"
 futures-lite = "2.6.1"
 sha1.workspace = true
 # Derives `SessionEventKind`, `SessionEvent`'s fieldless twin that the handler table keys on.
+serde = { version = "1", features = ["derive"] }
 strum = { version = "0.26", features = ["derive"] }
 
 [dev-dependencies]

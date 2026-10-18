@@ -44,7 +44,7 @@ pub mod mail_error {
 
 /// A mail's one attachment (`MAX_MAIL_ITEMS` is 1 in 1.12): a fixed-width block present on every
 /// `SMSG_MAIL_LIST_RESULT` row, all zero when there is no item.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MailAttachment {
     pub entry: u32,
     pub perm_enchant: u32,
@@ -58,7 +58,7 @@ pub struct MailAttachment {
 
 /// One `SMSG_MAIL_LIST_RESULT` row (vmangos `HandleGetMailList`, `Handlers/MailHandler.cpp`).
 /// `sender_guid` and `sender_id` are one wire field, whose form `message_type` picks.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct MailListEntry {
     pub message_id: u32,
     pub message_type: u8,

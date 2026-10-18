@@ -11,7 +11,7 @@ use std::io;
 use crate::wire::{read_u16_le, read_u32_le};
 
 /// `SMSG_INIT_WORLD_STATES`: the whole table for a zone, sent on login and every zone change.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct InitWorldStates {
     /// The map the states are scoped to; the reference keeps it at `[0xb71e84]`.
     pub map: u32,

@@ -6,7 +6,7 @@ use crate::wire::{read_u32_le, read_u8};
 
 /// `SMSG 0x295` (reference handler `0x4ca230`): the queued area and a status byte, which the
 /// client turns into one of five messages before firing `MEETINGSTONE_CHANGED`.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct MeetingStoneSetQueue {
     pub area: u32,
     pub status: u8,
@@ -31,7 +31,7 @@ pub fn meeting_stone_leave() -> Vec<u8> {
 }
 
 /// Display-only replies (reference handler `0x4ca3c0`): none changes the queue or fires an event.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum MeetingStoneNotice {
     /// `0x297`, empty.
     Success,

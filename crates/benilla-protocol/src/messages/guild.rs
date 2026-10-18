@@ -208,7 +208,7 @@ pub mod guild_command_error {
 }
 
 /// `SMSG_GUILD_QUERY_RESPONSE`: one guild's name, ten rank names and tabard, by guild id.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct GuildQueryResponse {
     /// The guild id we asked about.
     pub guild_id: u32,
@@ -254,7 +254,7 @@ pub(super) fn read_guild_query_response(r: &mut impl Read) -> io::Result<GuildQu
 }
 
 /// One row of `SMSG_GUILD_ROSTER`; every field the guild pane shows is on the wire.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct GuildRosterMember {
     /// The member's player guid (vmangos always builds it as `ObjectGuid(HIGHGUID_PLAYER, …)`).
     pub guid: u64,
@@ -289,7 +289,7 @@ impl GuildRosterMember {
 /// `SMSG_GUILD_ROSTER`: the whole guild, re-sent complete on any change. The server truncates the
 /// member list to fit `GUILD_ROSTER_MAX_LENGTH` (`0x8000 - 4` bytes, `Guild/Guild.h:41`), so a
 /// large guild can arrive short.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct GuildRoster {
     pub motd: String,
     /// The "Guild Information" text, written only for builds above `CLIENT_BUILD_1_8_4`.
@@ -351,7 +351,7 @@ pub(super) fn read_guild_roster(r: &mut impl Read) -> io::Result<GuildRoster> {
 }
 
 /// `SMSG_GUILD_EVENT`: a guild event id and its `%s` arguments.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct GuildEventNotice {
     /// A [`guild_event`] id; the reference sends anything above `0x0D` to its default arm.
     pub event: u8,
@@ -385,7 +385,7 @@ pub(super) fn read_guild_event(r: &mut impl Read) -> io::Result<GuildEventNotice
 }
 
 /// `SMSG_GUILD_COMMAND_RESULT`: the server's verdict on a guild verb we sent.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct GuildCommandResult {
     /// A [`guild_command`] tag; it decides which of result `0x08`'s two meanings applies.
     pub command: u32,
@@ -407,7 +407,7 @@ pub(super) fn read_guild_command_result(r: &mut impl Read) -> io::Result<GuildCo
 /// `SMSG_GUILD_INFO`, answering `CMSG_GUILD_INFO`: founding date, member and account counts. The
 /// field names are vmangos's; the reference formats wire fields 2, 1, 3 into its enUS `M/D/Y`
 /// `GUILD_INFO_TEMPLATE` (`0x5e704d`), which fits day, month, year.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq, Default)]
 pub struct GuildInfo {
     pub name: String,
     pub created_day: u32,

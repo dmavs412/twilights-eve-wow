@@ -9,7 +9,7 @@ use crate::wire::{capacity_hint, read_cstring, read_u32_le, read_u64_le, read_u8
 
 /// One `MSG_LIST_STABLED_PETS` row (vmangos `NPCHandler.cpp:522-575`), the current pet or a
 /// stabled one. It has no display id or family; those come from a creature query on the entry.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct StabledPet {
     /// vmangos `character_pet.id`; [`unstable_pet`] and [`stable_swap_pet`] take this, not a slot.
     pub pet_number: u32,

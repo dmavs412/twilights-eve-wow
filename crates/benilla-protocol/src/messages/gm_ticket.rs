@@ -21,7 +21,7 @@ pub const GMTICKET_QUEUE_ENABLED: i32 = 1;
 /// The player's open ticket from `SMSG_GMTICKET_GETTICKET`, in wire order: text before category
 /// (`GmTicket.cpp:66-79`), which the Lua `UPDATE_TICKET` event reverses. The `f32`s are days, and
 /// a negative one means unknown (the stock Help frame then shows no wait time).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct GmTicket {
     /// What the player typed; vmangos appends a GM's answer here, as 1.12 has no reply channel
     /// (`GMTicketMgr.cpp:124-136`).

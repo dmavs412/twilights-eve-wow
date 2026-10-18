@@ -7,7 +7,7 @@ use crate::wire::{capacity_hint, read_u32_le, read_u64_le, read_u8};
 /// One item row of `SMSG_LOOT_RESPONSE` (vmangos `LootMgr.cpp:837-845,900-912`). `slot` is the
 /// 0-based wire slot that [`autostore_loot_item`] sends back; quest items follow at
 /// `items.len() + i` (`LootMgr.cpp:970`). The wire's `randomSuffix` is always 0 and is discarded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LootItem {
     pub slot: u8,
     pub item_id: u32,
@@ -64,7 +64,7 @@ pub mod loot_error {
 }
 
 /// The two shapes of `SMSG_LOOT_RESPONSE`: a `lootType` of 0 after the guid is the error shape.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub enum LootResponseBody {
     /// `u32 gold, u8 itemCount`, then the [`LootItem`] rows (vmangos `LootMgr.cpp:848-873`).
     Items {
@@ -124,7 +124,7 @@ pub fn loot_master_give(loot_guid: u64, slot: u8, player_guid: u64) -> Vec<u8> {
 
 /// `SMSG_LOOT_START_ROLL` (`Loot.cpp:43-51`): a group roll opened on one drop, sent to every
 /// eligible roller. Its `randomSuffix` is always 0 (`Group/Group.cpp:765`) and is discarded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LootStartRoll {
     pub looted_target: u64,
     /// The wire [`LootItem::slot`], carried as a `u32` here.
@@ -138,7 +138,7 @@ pub struct LootStartRoll {
 /// `SMSG_LOOT_ROLL` (`Loot.cpp:53-63`): one player's vote or dice roll, sent to every roller.
 /// `(roll_number, roll_type)` is overloaded: a vote is `(0, 0)` Need, `(128, 128)` Pass or
 /// `(128, 2)` Greed; a dice result is `(1..=100, 1 or 2)` (`Group/Group.cpp:970-990,1163,1214`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LootRoll {
     pub looted_target: u64,
     pub item_slot: u32,
@@ -168,7 +168,7 @@ impl LootRoll {
 
 /// `SMSG_LOOT_ROLL_WON` (`Loot.cpp:65-75`): `winner` took the item. Unlike [`LootRoll`], the
 /// winner guid comes after the item fields.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LootRollWon {
     pub looted_target: u64,
     pub item_slot: u32,
@@ -183,7 +183,7 @@ pub struct LootRollWon {
 
 /// `SMSG_LOOT_ALL_PASSED` (`Loot.cpp:77-84`): everyone passed; the item stays for normal looting.
 /// Unlike the rest of the family, `itemRandomPropId` comes before `randomSuffixId` here.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LootAllPassed {
     pub looted_target: u64,
     pub item_slot: u32,
@@ -331,7 +331,7 @@ pub(super) fn read_loot_money_notify(r: &mut &[u8]) -> io::Result<u32> {
 
 /// `SMSG_ITEM_PUSH_RESULT` (vmangos `Server/Packets/Item.cpp:211-224`, both post-1.10.2 fields
 /// present at 5875): the "You receive …" chat line. `item_slot` is `0xFFFF_FFFF` when it stacked.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ItemPushResult {
     pub player_guid: u64,
     /// `false` = looted, `true` = received from an NPC (vendor purchase, quest reward).

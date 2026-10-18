@@ -23,7 +23,7 @@ pub mod dialog_status {
 
 /// One reward or choice item on a questgiver panel (vmangos `Quest.cpp:244-249`). `display_id`
 /// is an `ItemDisplayInfo.dbc` row; an all-zero triple means the server had no item template.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct QuestRewardItem {
     pub item_id: u32,
     pub count: u32,
@@ -34,7 +34,7 @@ pub struct QuestRewardItem {
 pub type QuestRequiredItem = QuestRewardItem;
 
 /// One greeting-panel quest row; `icon` is a [`dialog_status`] value, a `u32` (`Quest.h:270`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestListEntry {
     pub quest_id: u32,
     pub icon: u32,
@@ -43,7 +43,7 @@ pub struct QuestListEntry {
 }
 
 /// `SMSG_QUESTGIVER_QUEST_LIST` (vmangos `Quest.cpp:159-203`): the multi-quest greeting panel.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestGiverList {
     pub npc: u64,
     pub greeting: String,
@@ -54,7 +54,7 @@ pub struct QuestGiverList {
 
 /// `SMSG_QUESTGIVER_QUEST_DETAILS` (vmangos `Quest.cpp:205-273`): the accept panel. `money` is
 /// signed, negative for a quest that costs money (`GetRewOrReqMoney`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestDetails {
     pub npc: u64,
     pub quest_id: u32,
@@ -69,7 +69,7 @@ pub struct QuestDetails {
 }
 
 /// `SMSG_QUESTGIVER_OFFER_REWARD` (vmangos `Quest.cpp:275-339`): the reward panel.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestOfferReward {
     pub npc: u64,
     pub quest_id: u32,
@@ -85,7 +85,7 @@ pub struct QuestOfferReward {
 
 /// `SMSG_QUESTGIVER_REQUEST_ITEMS` (vmangos `Quest.cpp:341-391`): the progress panel. The client
 /// ANDs four flag words to enable Continue; `is_complete` comes from the second (`Quest.cpp:388`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestRequestItems {
     pub npc: u64,
     pub quest_id: u32,
@@ -100,7 +100,7 @@ pub struct QuestRequestItems {
 
 /// `SMSG_QUESTGIVER_QUEST_COMPLETE` (vmangos `Quest.cpp:96-108`): the XP, money and fixed items
 /// granted; the item rows carry no display id.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QuestComplete {
     pub quest_id: u32,
     pub xp: u32,

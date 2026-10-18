@@ -9,7 +9,7 @@ use crate::wire::{read_i32_le, read_u32_le, read_u8};
 
 /// The wire's `timerType` (vmangos `Objects/MirrorTimer.h`), also the reference client's index
 /// into its 3-entry timer name table.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MirrorTimerKind {
     /// `0`: swimming in deep, uncharted water.
     Fatigue,
@@ -40,7 +40,7 @@ impl MirrorTimerKind {
 }
 
 /// `SMSG_START_MIRROR_TIMER`: starts, or wholly re-states, one mirror timer.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MirrorTimerStart {
     /// The raw `timerType`, left unmapped so an unknown one still decodes.
     pub kind: u32,

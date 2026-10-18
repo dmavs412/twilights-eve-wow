@@ -74,7 +74,7 @@ pub(super) fn read_movement_info(r: &mut impl Read) -> io::Result<MovementInfo> 
 
 /// A mover speed, each with its own force-change opcode pair; the order is the `LIVING` block's
 /// speed array and vmangos `UnitMoveType`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SpeedKind {
     Walk,
     Run,
@@ -104,7 +104,7 @@ impl SpeedKind {
 /// falling but not turning (`0x618054`); water walk makes liquid walkable (aura 104); feather fall
 /// caps the fall at 7 yd/s instead of 60.148 (aura 105, `0x7c5d20`); hover lifts ground contact by
 /// 1.0 yd (aura 106, `0x6367b0`). Levitate (spell 1706) grants the last three at once.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MoveMode {
     Root,
     WaterWalk,
@@ -146,7 +146,7 @@ impl MoveMode {
 /// A mode set on a unit we do not control, by the twelve `SMSG_SPLINE_MOVE_*`: a bare packed guid,
 /// no counter, no ack (client handler `0x603c80`, any unit). vmangos sends the four shared modes
 /// only for units no player moves, and walk/run always. Walk mode and swimming have no acked form.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SplineMode {
     Root,
     WaterWalk,
@@ -177,7 +177,7 @@ impl SplineMode {
 /// What a relayed move's opcode means beyond its pose. The 23 `[packed guid][MovementInfo]` relays
 /// share one reference handler (`0x603bb0`, `0x601580`), and for most the opcode adds nothing the
 /// flags word does not say. The variants beyond `Pose` name the opcodes a receiver tells apart.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RelayVerb {
     /// Every other relay (start, stop, strafe, jump, turn, swim, land, facing, modes, knockback).
     #[default]
@@ -212,7 +212,7 @@ impl RelayVerb {
 /// The `JUMPING` tail: `zspeed, cosAngle, sinAngle, xyspeed`, cos before sin (vmangos
 /// `MovementInfo::Read`). The launch is `(cos, sin) * xy_speed` in world XY, frozen at take-off,
 /// so a receiver can replay the arc under `g = 19.291105` (vmangos `ExtrapolateMovement`).
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, Default, PartialEq)]
 pub struct JumpInfo {
     /// Take-off vertical speed (yd/s), down-positive: the 1.12 client sends `-7.955547` for a
     /// rising jump, so the up-speed is `-zspeed`.
@@ -225,7 +225,7 @@ pub struct JumpInfo {
 
 /// The `ON_TRANSPORT` tail of `MovementInfo` and of a `LIVING` block: a full `u64` transport guid,
 /// then position and facing in the transport's own frame (vmangos `MovementInfo::Read`).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct TransportPose {
     /// The transport GameObject's guid, `HIGH_MO_TRANSPORT` or `HIGH_TRANSPORT`.
     pub guid: u64,

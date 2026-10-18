@@ -6,7 +6,7 @@ use std::io::{self, Read};
 use crate::wire::{read_cstring, read_u32_le, read_u64_le, read_u8};
 
 /// `SMSG_DUEL_REQUESTED`, a duel challenge sent to both parties (vmangos `EffectDuel`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DuelRequested {
     /// The duel flag game object (entry 21680) between the players: the bounds anchor, the
     /// `PLAYER_DUEL_ARBITER` value, and the guid echoed on accept and cancel.
@@ -31,7 +31,7 @@ pub fn read_duel_complete(r: &mut impl Read) -> io::Result<bool> {
 }
 
 /// `SMSG_DUEL_WINNER`, the outcome line, broadcast around the loser (`Player::DuelComplete`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct DuelWinner {
     /// True when the loser fled or forfeited (`DUEL_WINNER_RETREAT`), false for a knockout
     /// (`DUEL_WINNER_KNOCKOUT`); the 1.12 client picks the line by it (`0x4d4bd9`).

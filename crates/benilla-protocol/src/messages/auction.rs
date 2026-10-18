@@ -62,7 +62,7 @@ pub const AUCTION_PAGE_SIZE: u32 = 50;
 pub const AUCTION_RECORD_BYTES: usize = 64;
 
 /// One row of any of the three list results; the item name is not on the wire.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AuctionListEntry {
     pub auction_id: u32,
     pub item_entry: u32,
@@ -93,7 +93,7 @@ pub struct AuctionListEntry {
 
 /// The tail after `SMSG_AUCTION_COMMAND_RESULT`'s three dwords, chosen by `error`, then by
 /// `action` only on success (`AuctionHouseHandler.cpp:70-96`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AuctionCommandTail {
     /// Every other pair: the three dwords are the whole packet.
     Empty,
@@ -111,7 +111,7 @@ pub enum AuctionCommandTail {
 
 /// `SMSG_AUCTION_BIDDER_NOTIFICATION`, won or outbid (`Server/Packets/AuctionHouse.cpp:78-87`);
 /// it leads with the house id and has the guid third, unlike the owner notice.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AuctionBidderNotification {
     /// `AuctionHouse.dbc` row (1..7), as in the hello reply.
     pub house_id: u32,
@@ -128,7 +128,7 @@ pub struct AuctionBidderNotification {
 
 /// `SMSG_AUCTION_OWNER_NOTIFICATION`, a sale or a new bid, to the seller
 /// (`Server/Packets/AuctionHouse.cpp:89-97`): no house id, and the guid fourth.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AuctionOwnerNotification {
     pub auction_id: u32,
     pub bid: u32,

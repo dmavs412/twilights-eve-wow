@@ -7,7 +7,7 @@ use crate::wire::{capacity_hint, read_u16_le, read_u32_le, read_u64_le, read_u8}
 
 /// One active cooldown from `SMSG_INITIAL_SPELLS` (vmangos `SendInitialSpells`). A permanent one,
 /// re-armed by the server, is `spell_cd_ms == 1` with the category word's top bit set.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SpellCooldown {
     pub spell_id: u16,
     pub item_id: u16,
