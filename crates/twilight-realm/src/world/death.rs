@@ -74,6 +74,8 @@ impl InWorld {
             self.guid,
             &[equipment::money_pair(&c.inventory), (UNIT_FIELD_POWER2, 0)],
         ));
+        // Death takes every aura off the player, a creature's curse with the rest.
+        self.auras_die_with(self.guid, events);
         let broke = wear::on_death(c, events);
         events.push(SessionEvent::DurabilityDamageDeath);
         if broke {

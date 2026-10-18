@@ -148,8 +148,12 @@ pub(super) struct Aura {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum AuraKind {
-    Bleed {
+    /// `per_tick` damage of `school` a tick, from `caster`: a bleed, or a creature's curse on
+    /// the player.
+    PeriodicDamage {
         per_tick: u32,
+        school: School,
+        caster: u64,
     },
     Rage {
         per_tick: u32,
@@ -1097,7 +1101,11 @@ impl InWorld {
             } => {
                 let per_tick = sized(tick) + per_combo(more);
                 let a = aura(
-                    AuraKind::Bleed { per_tick },
+                    AuraKind::PeriodicDamage {
+                        per_tick,
+                        school: School::Physical,
+                        caster: self.guid,
+                    },
                     skill.spell_id,
                     duration_ms,
                     tick_ms,
@@ -1647,8 +1655,10 @@ impl InWorld {
             left: clock::secs(duration_ms),
             period,
             next_tick: period,
-            kind: AuraKind::Bleed {
+            kind: AuraKind::PeriodicDamage {
                 per_tick: deep_wound_tick(s.min_damage, s.max_damage, pct),
+                school: School::Physical,
+                caster: self.guid,
             },
             charges: 0,
         };
@@ -1908,22 +1918,36 @@ impl InWorld {
         }
         for a in due {
             match a.kind {
-                AuraKind::Bleed { per_tick } => {
-                    if !self.mobs.iter().any(|m| m.guid == a.unit && m.alive()) {
+                AuraKind::PeriodicDamage {
+                    per_tick,
+                    school,
+                    caster,
+                } => {
+                    let on_player = a.unit == self.guid;
+                    let alive = if on_player {
+                        self.player.alive()
+                    } else {
+                        self.mobs.iter().any(|m| m.guid == a.unit && m.alive())
+                    };
+                    if !alive {
                         continue;
                     }
                     events.push(SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
                         target: a.unit,
-                        caster: self.guid,
+                        caster,
                         spell_id: a.spell_id,
                         ticks: vec![PeriodicTick::Damage {
                             amount: per_tick,
-                            school: 0,
+                            school: u32::from(school.index()),
                             absorb: 0,
                             resist: 0,
                         }],
                     }));
-                    self.hurt(a.unit, per_tick, c, rng, events, ticked);
+                    if on_player {
+                        self.player_takes(per_tick, events);
+                    } else {
+                        self.hurt(a.unit, per_tick, c, rng, events, ticked);
+                    }
                 }
                 AuraKind::Heal { per_tick } => {
                     let max = buffed(&self.player.stats, &self.skills).max_health;
@@ -2039,6 +2063,42 @@ impl InWorld {
                 speed: self.dev.speeds(super::PLAYER_SPEEDS).run * mul,
             });
         }
+    }
+
+    /// A creature's `spell` went off at the player: its effect lands, under the client's spell id
+    /// so the debuff shows that spell's icon.
+    pub(super) fn creature_spell_lands(
+        &mut self,
+        caster: u64,
+        level: u8,
+        spell: &crate::creature_spells::CreatureSpell,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Effect::PeriodicDamage {
+            tick_ms,
+            duration_ms,
+            tick,
+            ..
+        } = spell.effect
+        else {
+            return;
+        };
+        let aura = Aura {
+            unit: self.guid,
+            spell_id: spell.client_spell_id,
+            slot: 0,
+            level,
+            left: clock::secs(duration_ms),
+            period: clock::secs(tick_ms),
+            next_tick: clock::secs(tick_ms),
+            kind: AuraKind::PeriodicDamage {
+                per_tick: tick.at(level, 0),
+                school: spell.school,
+                caster,
+            },
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
     }
 
     /// Puts the buff `def` on the player, one aura per effect.

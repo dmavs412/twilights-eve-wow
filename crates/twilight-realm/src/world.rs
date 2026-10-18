@@ -3,6 +3,7 @@
 
 mod advance;
 mod cast;
+mod creature_cast;
 mod hearth;
 mod power;
 
@@ -143,6 +144,8 @@ pub(crate) struct InWorld {
     run: Option<crate::phased::Run>,
     /// The Phased Dungeons whose doorway portal the client has.
     portals: Vec<u32>,
+    /// What each creature casts.
+    pub(crate) casters: crate::creature_spells::Casters,
 }
 
 impl InWorld {
@@ -214,6 +217,7 @@ impl InWorld {
             phase: Default::default(),
             run: None,
             portals: Vec::new(),
+            casters: Default::default(),
         };
         events.push(w.player_create(c));
         w
@@ -616,8 +620,13 @@ impl InWorld {
                     return;
                 }
                 if self.skills.stunned(mob.guid) {
+                    drop_cast(mob, events);
                     return;
                 }
+                if self.mob_cast(i, dt, me, host, rng, events) {
+                    return;
+                }
+                let mob = &mut self.mobs[i];
                 let d = distance(mob.position, me);
                 if d > melee_reach() {
                     let stale = mob
@@ -659,19 +668,8 @@ impl InWorld {
                 ));
                 mob.swing_timer = clock::secs(mob.template.base_attack_time)
                     * self.skills.attack_time_mul(mob.guid);
-                let p = &mut self.player;
                 if swing.damage > 0 {
-                    p.health = p.health.saturating_sub(swing.damage);
-                    p.power.gain_stored(
-                        PowerKind::Rage,
-                        rage::from_damage_taken(swing.damage, p.stats.level),
-                    );
-                    events.push(values(
-                        self.guid,
-                        &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
-                    ));
-                    // A hit breaks a timed cast (the Hearthstone's interrupts on damage).
-                    self.interrupt_cast(events);
+                    self.player_takes(swing.damage, events);
                     if crate::wear::on_hit(c, &mut self.wear, events) {
                         self.refresh_gear(c, events);
                     }
@@ -679,6 +677,22 @@ impl InWorld {
                 self.struck(swing.outcome, c, rng, events);
             }
         }
+    }
+
+    /// The player loses `damage` to a creature's blow or spell: rage from it, and a timed cast
+    /// broken (the Hearthstone's interrupts on damage).
+    fn player_takes(&mut self, damage: u32, events: &mut Vec<SessionEvent>) {
+        let p = &mut self.player;
+        p.health = p.health.saturating_sub(damage);
+        p.power.gain_stored(
+            PowerKind::Rage,
+            rage::from_damage_taken(damage, p.stats.level),
+        );
+        events.push(values(
+            self.guid,
+            &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
+        ));
+        self.interrupt_cast(events);
     }
 
     /// `mob` dies at the player's hand: the fight ends and the kill's XP is paid.
@@ -706,6 +720,7 @@ impl InWorld {
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
+        drop_cast(mob, events);
         // A Phased Dungeon's dead stay down until its Run resets.
         if self.phase == crate::phased::Phase::OpenWorld {
             self.population.died(mob.spawn, mob.template.rank);
@@ -897,6 +912,7 @@ fn evade(
     events: &mut Vec<SessionEvent>,
 ) {
     mob.state = State::Evading;
+    drop_cast(mob, events);
     events.push(SessionEvent::AttackStop {
         attacker: mob.guid,
         victim: player,
@@ -910,6 +926,16 @@ fn evade(
         None => mob.run_to(home, home),
     };
     events.push(run);
+}
+
+/// `mob`'s Creature Spell under way stops short, and lands nothing.
+fn drop_cast(mob: &mut Mob, events: &mut Vec<SessionEvent>) {
+    if let Some((spell, _)) = mob.casting.take() {
+        events.push(SessionEvent::SpellFailedOther {
+            caster: mob.guid,
+            spell_id: spell.client_spell_id,
+        });
+    }
 }
 
 /// `path` stopped `by` yards short of its end, as a chase stops short of its quarry.

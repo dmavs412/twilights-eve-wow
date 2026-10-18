@@ -9,6 +9,7 @@ use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
 use crate::clock;
+use crate::creature_spells::CreatureSpell;
 use crate::fields::*;
 use crate::phased::{self, Phase};
 use crate::rng::Rng;
@@ -69,6 +70,9 @@ pub(crate) struct Template {
     /// It carries a shield (`creature_equip_template`): a mob blocks only with one.
     #[serde(default)]
     pub(crate) shield: bool,
+    /// The Creature Spells it casts in a fight (`content/creature_spells.toml` keys).
+    #[serde(default)]
+    pub(crate) spells: Vec<String>,
 }
 
 /// `CREATURE_FLAG_EXTRA_NO_PARRY` and `CREATURE_FLAG_EXTRA_NO_BLOCK` (vmangos).
@@ -389,6 +393,12 @@ pub(crate) struct Mob {
     /// Seconds until an idle mob sets off on its next stroll.
     wander_in: f32,
     display_id: u32,
+    /// The Creature Spell it is casting, and seconds until it goes off.
+    pub(crate) casting: Option<(&'static CreatureSpell, f32)>,
+    /// Its Creature Spells' cooldowns: `(key, seconds left)`.
+    pub(crate) spell_cooldowns: Vec<(&'static str, f32)>,
+    /// Seconds until it next decides whether to cast.
+    pub(crate) think_in: f32,
 }
 
 /// The pause between one stroll and the next, in seconds.
@@ -433,6 +443,9 @@ impl Mob {
             // A stagger, so a camp's mobs don't all set off together.
             wander_in: WANDER_PAUSE.0 + (spawn.guid % 97) as f32 / 97.0 * WANDER_PAUSE.1,
             display_id: spawn.display_id,
+            casting: None,
+            spell_cooldowns: Vec::new(),
+            think_in: 0.0,
         })
     }
 

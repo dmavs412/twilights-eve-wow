@@ -1,0 +1,25 @@
+# Creature Spells (ADR 0008): what creatures cast in a fight. Hand-written, not from master.csv,
+# and no build script: Davis tunes these numbers by hand while testing.
+#
+# A creature template in mobs.toml (or any template source) names its spells with
+# `spells = ["key", ...]`; one without casts nothing.
+#
+# key              the name a template uses
+# client_spell_id  what the client shows: cast bar, icon, debuff (from the stock Spell.dbc)
+# school           physical, holy, fire or shadow
+# cast_time_ms     the cast bar; the creature stops swinging for it
+# cooldown_ms      from the cast's end
+# range_max        yards; the cast is interrupted if the target leaves it
+# chance           percent per decision (one a second) while fighting and off cooldown
+# effect           in the skills' own terms (callings.toml's effects); only periodic_damage yet
+
+# Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
+[[spell]]
+key = "corruption_creature"
+client_spell_id = 172
+school = "shadow"
+cast_time_ms = 2000
+cooldown_ms = 15000
+range_max = 30.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = { base = 10 } }

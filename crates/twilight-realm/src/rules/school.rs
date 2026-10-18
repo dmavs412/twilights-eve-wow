@@ -16,6 +16,8 @@ pub enum School {
     Holy,
     /// Magic, like holy: armour does not touch it.
     Fire,
+    /// Magic: armour does not touch it.
+    Shadow,
 }
 
 impl School {
@@ -25,6 +27,7 @@ impl School {
             School::Physical => 0,
             School::Holy => 1,
             School::Fire => 2,
+            School::Shadow => 5,
         }
     }
 }
@@ -34,7 +37,7 @@ impl School {
 pub fn mitigated(school: School, raw: u32, armor: u32, attacker_level: u8) -> u32 {
     match school {
         School::Physical => armor_reduced(raw, armor, attacker_level),
-        School::Holy | School::Fire => raw,
+        School::Holy | School::Fire | School::Shadow => raw,
     }
 }
 

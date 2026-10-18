@@ -125,3 +125,7 @@ Earned one per level. Talents are the only abilities a character must earn; ever
 
 **Talent Tree**:
 The talents one Calling offers. Every Calling has its own.
+
+**Creature Spell**:
+A spell a creature casts in a fight, such as Geomancer Vurx's Corruption. Creature Spells are written by hand in the realm's `creature_spells.toml`, not in the master CSV, and a creature lists the ones it knows. The client only shows them: the cast bar, the icon and the debuff come from a stock spell's row.
+_Avoid_: mob ability, creature ability

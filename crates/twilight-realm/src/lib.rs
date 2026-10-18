@@ -43,6 +43,7 @@ mod characters;
 mod clock;
 mod combat;
 mod content;
+mod creature_spells;
 mod dev;
 mod dungeon;
 mod equipment;
@@ -323,6 +324,8 @@ pub struct Realm {
     dev_teleport: Option<dev::DevTeleport>,
     /// The wall clock, in seconds since the Unix epoch: the host's, advanced by every tick.
     wall: f64,
+    /// The Creature Spells a test gave creatures beyond their templates'.
+    casters: creature_spells::Casters,
 }
 
 impl Realm {
@@ -349,6 +352,14 @@ impl Realm {
     /// can import a save on a Calling of a Class no shipped Calling sits on.
     pub fn with_callings(self, toml: &str) -> Self {
         callings::add(toml);
+        self
+    }
+
+    /// This realm with creature `entry` casting the Creature Spells `keys`
+    /// (`content/creature_spells.toml`) in place of its template's: a test seam, so a player
+    /// script can fight a caster where the content has none.
+    pub fn with_creature_spells(mut self, entry: u32, keys: &[&str]) -> Self {
+        self.casters.add(entry, keys);
         self
     }
 
@@ -721,7 +732,8 @@ impl Realm {
                 .push(SessionEvent::CharacterLoginFailed { result: 5 });
             return;
         };
-        let entry = world::InWorld::enter(c, self.dev, self.wall, &mut self.events);
+        let mut entry = world::InWorld::enter(c, self.dev, self.wall, &mut self.events);
+        entry.casters = self.casters.clone();
         self.world = Some(entry);
     }
 
