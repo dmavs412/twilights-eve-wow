@@ -20,6 +20,8 @@ struct Two {
     guids: Vec<u64>,
     /// Every event so far, by session.
     log: HashMap<SessionId, Vec<SessionEvent>>,
+    /// What each session got while both came into the world, before `log` started.
+    entered: HashMap<SessionId, Vec<SessionEvent>>,
 }
 
 impl Two {
@@ -60,6 +62,7 @@ impl Two {
             b,
             guids,
             log: HashMap::new(),
+            entered: HashMap::new(),
         };
         two.run(0.0);
         // Away first, so both come to the Hub together.
@@ -68,7 +71,7 @@ impl Two {
         two.run(0.0);
         two.go(a, HUB);
         two.go(b, HUB);
-        two.log.clear();
+        two.entered = std::mem::take(&mut two.log);
         two.run(0.0);
         two
     }
@@ -325,4 +328,46 @@ fn a_heal_lands_on_the_friend_targeted_and_else_on_the_caster() {
 
     let got = cast(&mut two, None);
     assert!(healed_by(&got[&a], ga, ga), "no target: auto self-cast");
+}
+
+#[test]
+fn everyone_is_one_party_led_by_the_first_in() {
+    let mut two = Two::at_the_hub();
+    let (a, b) = (two.a, two.b);
+    let (ga, gb) = (two.guids[0], two.guids[1]);
+    let got = two.run(1.1);
+    let roster = |s: SessionId, other: u64| {
+        two.entered[&s].iter().any(|e| {
+            matches!(e, SessionEvent::GroupList { members, leader, .. }
+                if *leader == ga && members.len() == 1 && members[0].guid == other)
+        })
+    };
+    assert!(
+        roster(a, gb) && roster(b, ga),
+        "each is listed the other, the first in leading"
+    );
+    let stats = |s, other| {
+        got[&s].iter().any(|e| {
+            matches!(e, SessionEvent::PartyMemberStats { guid, info, .. }
+                if *guid == other && info.level == Some(20))
+        })
+    };
+    assert!(stats(a, gb) && stats(b, ga), "each sees the other's frame");
+
+    two.realm.handle_as(
+        b,
+        RealmCommand::Chat {
+            chat_type: benilla_protocol::messages::CHAT_TYPE_PARTY,
+            target: None,
+            text: "inc".into(),
+        },
+    );
+    let got = two.run(0.1);
+    let heard = |s: SessionId| {
+        got[&s].iter().any(|e| {
+            matches!(e, SessionEvent::Chat(m)
+                if m.chat_type == benilla_protocol::messages::CHAT_MSG_PARTY && m.text == "inc")
+        })
+    };
+    assert!(heard(a) && heard(b), "/p reaches the whole party");
 }

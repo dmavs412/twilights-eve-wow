@@ -181,9 +181,9 @@ pub(crate) struct InWorld {
     pub(crate) runs: std::collections::HashSet<u64>,
     /// The open-world spawns that died since the shard last heard: `(spawn, respawn wait)`.
     pub(crate) died: Vec<(u32, f32)>,
-    /// The other living players sharing this player's mobs and where they stand, as of the
-    /// tick's start.
-    pub(crate) others: Vec<(u64, [f32; 3])>,
+    /// The other living players sharing this player's mobs, where they stand and the share of
+    /// their health left, as of the tick's start.
+    pub(crate) others: Vec<(u64, [f32; 3], f32)>,
     /// The lent mobs this session killed, for the realm to share out (#148).
     pub(crate) kills: Vec<Kill>,
     /// This player's parts in kills nearby, paid on the next tick.

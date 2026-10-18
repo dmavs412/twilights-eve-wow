@@ -41,6 +41,8 @@ pub(crate) struct OnShard<S> {
     pub(crate) guid: u64,
     pub(crate) position: [f32; 3],
     pub(crate) alive: bool,
+    /// The share of their health they have left.
+    pub(crate) health: f32,
     /// Their create as other clients are sent it.
     pub(crate) create: SessionEvent,
     /// Stealthed: other clients are not shown them.

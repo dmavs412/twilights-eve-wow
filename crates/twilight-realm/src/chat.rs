@@ -46,7 +46,7 @@ impl Realm {
     }
 
     /// Queues `event` for `session`, served or parked.
-    fn send_to(&mut self, session: SessionId, event: SessionEvent) {
+    pub(crate) fn send_to(&mut self, session: SessionId, event: SessionEvent) {
         if session == self.active {
             self.events.push(event);
         } else if let Some(s) = self.parked.get_mut(&session) {
@@ -55,7 +55,8 @@ impl Realm {
     }
 
     /// The served player's line of `chat_type` (`CMSG_MESSAGECHAT`'s); `target` names a whisper's
-    /// addressee or a channel. Any other type is dropped, as it is for the ungrouped.
+    /// addressee or a channel; `/p` reaches everyone, all in one party (#149). Any other type is
+    /// dropped.
     pub(crate) fn chat(&mut self, chat_type: u32, target: Option<String>, text: String) {
         let all = self.listeners();
         let Some(me) = all.iter().find(|l| l.session == self.active) else {
@@ -90,6 +91,11 @@ impl Realm {
                 self.send_to(to_session, line(m::CHAT_MSG_WHISPER, from, None));
                 self.events
                     .push(line(m::CHAT_MSG_WHISPER_INFORM, to_guid, None));
+                return;
+            }
+            m::CHAT_TYPE_PARTY => {
+                let said = line(m::CHAT_MSG_PARTY, me.guid, None);
+                self.party_line(said);
                 return;
             }
             m::CHAT_TYPE_CHANNEL => {

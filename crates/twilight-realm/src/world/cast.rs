@@ -1970,17 +1970,21 @@ impl InWorld {
     }
 
     /// The friendly players in the world, each with where they stand and the share of their
-    /// health they have left. Only the player, until there are others.
+    /// health they have left: the player, and the other living players on the shard, all one
+    /// party (#149).
     fn friendly_players(&self, c: &Char) -> Vec<(u64, [f32; 3], f32)> {
-        let max = buffed(&self.player.stats, &self.skills).max_health.max(1);
         if !self.player.alive() {
             return Vec::new();
         }
-        vec![(
-            self.guid,
-            c.position,
-            self.player.health as f32 / max as f32,
-        )]
+        let mut all = vec![(self.guid, c.position, self.health_share())];
+        all.extend(self.others.iter().copied());
+        all
+    }
+
+    /// The share of the player's health they have left.
+    pub(crate) fn health_share(&self) -> f32 {
+        let max = buffed(&self.player.stats, &self.skills).max_health.max(1);
+        self.player.health as f32 / max as f32
     }
 
     /// The friendly player within `radius_yd` of `at` with the smallest share of health left.
@@ -2020,9 +2024,15 @@ impl InWorld {
         }
         let each = total / allies.len() as u32;
         for guid in allies {
-            // The player is the only friendly player there is.
             if guid == self.guid {
                 self.heal_player(c, spell_id, each, events);
+            } else {
+                self.helps.push(super::Help::Heal {
+                    to: guid,
+                    healer: self.guid,
+                    spell_id,
+                    amount: each,
+                });
             }
         }
     }
@@ -2061,13 +2071,37 @@ impl InWorld {
         self.skills.apply(copy, events);
     }
 
+    /// What the party frames show of the player (#149): health, power, level, zone and place.
+    pub(crate) fn party_stats(&self, c: &Char) -> benilla_protocol::messages::PartyMemberStatsInfo {
+        use benilla_protocol::messages::member_status;
+        let p = &self.player;
+        let max = buffed(&p.stats, &self.skills).max_health;
+        let mut status = member_status::ONLINE;
+        if !p.alive() {
+            status |= member_status::DEAD;
+        }
+        let clamp = |v: u32| v.min(u32::from(u16::MAX)) as u16;
+        benilla_protocol::messages::PartyMemberStatsInfo {
+            status: Some(status),
+            cur_hp: Some(clamp(p.health)),
+            max_hp: Some(clamp(max)),
+            power_type: Some(p.power.kind.id() as u8),
+            cur_power: Some(clamp(p.power.current)),
+            max_power: Some(clamp(p.power.max)),
+            level: Some(u16::from(c.level)),
+            zone: Some(clamp(c.zone)),
+            position: Some((c.position[0] as i16, c.position[1] as i16)),
+            ..Default::default()
+        }
+    }
+
     /// Whom an ally skill lands on (#150): the other living player targeted, in its range; the
     /// caster when nothing friendly is targeted (vanilla's auto self-cast).
     fn ally(&self, skill: &Skill, target: Option<u64>, c: &Char) -> Result<u64, u8> {
         let Some(g) = target.filter(|&g| g != self.guid && crate::shard::is_player(g)) else {
             return Ok(self.guid);
         };
-        let Some(&(_, at)) = self.others.iter().find(|o| o.0 == g) else {
+        let Some(&(_, at, _)) = self.others.iter().find(|o| o.0 == g) else {
             return Err(SPELL_FAILED_TARGETS_DEAD);
         };
         let [_, hi] = skill.range_yd;
@@ -2909,7 +2943,7 @@ impl InWorld {
                     .map(|(guid, _, _)| guid)
                     .collect();
                 for guid in allies {
-                    // The player is the only friendly player there is.
+                    // Only the caster is shielded yet; a friend in the radius gets none.
                     if guid == self.guid {
                         self.shield(skill.spell_id, amount, duration_ms, school, level, events);
                     }

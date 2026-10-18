@@ -57,6 +57,7 @@ mod inventory;
 mod items;
 mod looting;
 mod mobs;
+mod party;
 mod phased;
 mod population;
 mod quests;
@@ -363,6 +364,8 @@ struct Session {
 #[derive(Default)]
 pub struct Realm {
     characters: characters::Characters,
+    /// Everyone in the world, as one party.
+    party: party::Party,
     /// The served session's character in the world: `active`'s, swapped in by [`Self::serve`].
     world: Option<world::InWorld>,
     /// The served session's events.
@@ -726,6 +729,7 @@ impl Realm {
                 guid: w.guid,
                 position: c.position,
                 alive: w.alive(),
+                health: w.health_share(),
                 create: w.remote_create(c),
                 hidden: w.hidden(),
             });
@@ -804,7 +808,7 @@ impl Realm {
                 w.others = players
                     .iter()
                     .filter(|o| o.alive && o.guid != w.guid)
-                    .map(|o| (o.guid, o.position))
+                    .map(|o| (o.guid, o.position, o.health))
                     .collect();
             }
         }
@@ -1086,6 +1090,7 @@ impl Realm {
             self.tick_served(dt, host);
         }
         self.give_back();
+        self.party_tick(dt);
     }
 
     fn dev_teleport_served(&mut self, host: &dyn Host) {
