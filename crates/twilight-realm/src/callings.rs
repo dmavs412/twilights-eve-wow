@@ -403,10 +403,17 @@ pub enum TalentEffect {
     WeaponDamagePct { weapon: Wielded, per_rank: Vec<u32> },
     /// The melee critical strike chance rises by this many percent while it wields `weapon`.
     WeaponCritPct { weapon: Wielded, per_rank: Vec<u32> },
-    /// A skill's critical strike adds this percent of the whole crit's damage (Impale).
-    SkillCritDamagePct { per_rank: Vec<u32> },
+    /// A skill's critical strike adds this percent of the whole crit's damage (Impale). With
+    /// `builders`, only the skills that add combo points (Lethality).
+    SkillCritDamagePct {
+        #[serde(default)]
+        builders: bool,
+        per_rank: Vec<u32>,
+    },
     /// The skill's auras last this percent longer.
     SkillDurationPct { skill: String, per_rank: Vec<u32> },
+    /// The skill's auras last this many milliseconds longer (Bloodletting).
+    SkillDurationMs { skill: String, per_rank: Vec<u32> },
     /// The parry chance rises by this many percent.
     ParryPct { per_rank: Vec<u32> },
     /// The block chance with a shield rises by this many percent.
@@ -516,8 +523,9 @@ impl TalentEffect {
             | Self::CritBleed { per_rank, .. }
             | Self::WeaponDamagePct { per_rank, .. }
             | Self::WeaponCritPct { per_rank, .. }
-            | Self::SkillCritDamagePct { per_rank }
+            | Self::SkillCritDamagePct { per_rank, .. }
             | Self::SkillDurationPct { per_rank, .. }
+            | Self::SkillDurationMs { per_rank, .. }
             | Self::ParryPct { per_rank }
             | Self::BlockPct { per_rank }
             | Self::BlockRagePct { per_rank, .. }
@@ -670,6 +678,9 @@ pub enum Effect {
         /// Added to `tick` once per combo point on the target: a finisher.
         #[serde(default)]
         per_combo: Option<Linear>,
+        /// Milliseconds added to `duration_ms` once per combo point on the target: a finisher.
+        #[serde(default)]
+        duration_per_combo: Option<Linear>,
     },
     /// `amount` combo points on the target, five at most; points on another target are lost.
     AddComboPoints { amount: u32 },
@@ -828,7 +839,23 @@ impl Skill {
     /// A finisher: any effect carries a `per_combo` block. It needs combo points on the target
     /// to cast, and a cast that lands spends them all.
     pub fn is_finisher(&self) -> bool {
-        self.effects.iter().any(|e| e.per_combo().is_some())
+        self.effects.iter().any(|e| {
+            e.per_combo().is_some()
+                || matches!(
+                    e,
+                    Effect::PeriodicDamage {
+                        duration_per_combo: Some(_),
+                        ..
+                    }
+                )
+        })
+    }
+
+    /// A builder: a cast that lands puts combo points on the target.
+    pub fn adds_combo_points(&self) -> bool {
+        self.effects
+            .iter()
+            .any(|e| matches!(e, Effect::AddComboPoints { .. }))
     }
 }
 

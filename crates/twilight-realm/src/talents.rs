@@ -154,9 +154,21 @@ pub(crate) fn weapon_damage_pct(c: &Char) -> u32 {
     )
 }
 
-/// The percent of the whole crit a skill's crit adds (Impale).
-pub(crate) fn skill_crit_damage_pct(c: &Char) -> u32 {
-    sum(c, |e| matches!(e, TalentEffect::SkillCritDamagePct { .. }))
+/// The percent of the whole crit a skill's crit adds (Impale); a `builders` talent (Lethality)
+/// counts only when the skill is a combo point builder.
+pub(crate) fn skill_crit_damage_pct(c: &Char, builder: bool) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::SkillCritDamagePct { builders, .. } if builder || !builders),
+    )
+}
+
+/// The milliseconds a skill's auras last longer (Bloodletting).
+pub(crate) fn duration_ms(c: &Char, skill: &str) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::SkillDurationMs { skill: s, .. } if s == skill),
+    )
 }
 
 /// The percent a skill's auras last longer.

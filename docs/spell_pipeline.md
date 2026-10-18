@@ -58,7 +58,11 @@ death takes them. A damage or duration effect (`weapon_strike`, `spell_damage`,
 `periodic_damage`, `stun`) may carry a `per_combo` formula block (`per_combo.base`,
 `per_combo.per_level`, `per_combo.per_ap`), added once per point held on the target; any row
 with a `per_combo` block is a finisher: it fails with no points and a cast that lands spends
-them all. There is no `finisher` kind or flag. A cost is paid in the Calling's power, read from
+them all. `periodic_damage` also takes `duration_per_combo` (a formula in milliseconds, added to
+`duration_ms` once per point; it too makes the row a finisher). Talent kinds that modify a skill:
+`skill_crit_damage_pct` (`pct=`, with `builders=yes` only for skills that add combo points),
+`skill_duration_ms` (`skill=`, `amount=` ms added to the skill's auras) and `skill_cost`
+(`skill=`, `amount=` flat power off the cost). There is no `finisher` kind or flag. A cost is paid in the Calling's power, read from
 its `class`; `realm_cost` and `client_cost` stay bare numbers.
 
 **Adding a column** changes both generated schemas and the realm loader, so it goes through

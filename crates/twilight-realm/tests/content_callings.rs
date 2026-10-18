@@ -270,9 +270,15 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             duration_ms,
             tick,
             per_combo,
+            duration_per_combo,
         } => {
             assert_eq!(kind, "periodic_damage", "{key}");
             assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
+            assert_eq!(
+                duration_per_combo,
+                want.get("duration_per_combo").map(linear),
+                "{key}"
+            );
             assert_eq!(tick_ms, ms(want, "tick_ms"));
             assert_eq!(duration_ms, ms(want, "duration_ms"));
             assert_eq!(tick, linear(&want["tick"]), "{key}");
@@ -424,12 +430,11 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Vanguard's Righteous: Wrathful Iron, Hallowed Ground, Zealous Restoration, Hammer of the
         // Vanguard.
         20224, 20225, 20330, 20331, 20332, 12809,
-        // Cutthroat's Skirmisher: Lethality, Flurry of Blades (Reflexive Strike, Dual Wield
-        // Specialization, Phantom Guile and Relentless Strikes are modelled now).
-        14128, 14132, 14135, 14136, 14137, 18427, 18428, 18429,
-        // Cutthroat's Tracker: Bloodletting, Scent of Blood (Predator's Step, Serrated Strikes,
+        // Cutthroat's Skirmisher: nothing (Lethality, Flurry of Blades, Reflexive Strike, Dual
+        // Wield Specialization, Phantom Guile and Relentless Strikes are modelled now).
+        // Cutthroat's Tracker: Scent of Blood (Bloodletting, Predator's Step, Serrated Strikes,
         // Ruthlessness and Executioner's Toll are modelled now).
-        30902, 30903, 30904, 30905, 30906, 14171, 14172, 14173,
+        14171, 14172, 14173,
         // Initiate's Weaver: Thermal Feedback, Arcane Substrate, Thermal Shock, Shattered Blink,
         // Combustion Engine, Catalytic Chain, Elemental Convergence.
         11069, 12338, 12339, 12340, 12341, 11103, 12357, 12358, 12359, 12360, 11078, 11080, 12342,

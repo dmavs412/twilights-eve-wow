@@ -171,7 +171,7 @@ Write `key=value` pairs joined by `;`, and lists joined by `|`:
 `add_aura_stacks`, `add_combo_points`, `armor_pen` (talent, `amount=`), `aura_attack_power`, `dodge_pct` (talent or aura, `pct=`), `max_power` (talent, `amount=`), `charge`, `consume_aura_stacks`, `consume_heal_pct`, `energize`,
 `healing_reduction`, `incapacitate`, `judgement`, `mod_crit_chance`, `mod_crit_damage`, `mod_health_regen_out_of_combat`, `mod_run_speed`, `mod_stat`,
 `periodic_damage`, `proc`, `proc_on_cast`, `proc_on_kill`, `school_damage`, `seal`, `skill_amount_pct`,
-`skill_crit_pct`, `skill_rage`, `stealth` (aura, `opener_crit=yes`; it lasts until it breaks, so the aura row has no duration, and the skill sets `on_cast=breaks_stealth=no`), `stun`, `weapon_strike`.
+`skill_crit_damage_pct`, `skill_crit_pct`, `skill_duration_ms`, `skill_rage`, `stealth` (aura, `opener_crit=yes`; it lasts until it breaks, so the aura row has no duration, and the skill sets `on_cast=breaks_stealth=no`), `stun`, `weapon_strike`.
 
 **Formulas.** An amount is a block, `name.base`, `name.per_level` and `name.per_ap`, computed as `round(base + per_level × level +
 per_ap × attack power)`. Never put arithmetic in a cell.

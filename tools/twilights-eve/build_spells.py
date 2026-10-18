@@ -39,8 +39,8 @@ KNOWN_KINDS = {
     "add_aura_stacks", "add_combo_points", "armor_pen", "aura_attack_power", "dodge_pct", "max_power", "consume_aura_stacks", "consume_heal_pct", "charge", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
-    "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_pct",
-    "skill_rage", "stealth", "stun", "weapon_strike",
+    "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
+    "skill_crit_pct", "skill_duration_ms", "skill_rage", "stealth", "stun", "weapon_strike",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
@@ -534,8 +534,9 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
                 raise BuildError(f"{where}: ground_effect needs a positive {field}, has {value!r}")
     if kind == "consume_aura_stacks" and not isinstance(params.get("per_stack"), dict):
         raise BuildError(f"{where}: consume_aura_stacks lacks a per_stack formula (per_stack.base, per_stack.per_level)")
-    if "per_combo" in params and not isinstance(params["per_combo"], dict):
-        raise BuildError(f"{where}: per_combo is a formula block (per_combo.base, per_combo.per_level)")
+    for block in ("per_combo", "duration_per_combo"):
+        if block in params and not isinstance(params[block], dict):
+            raise BuildError(f"{where}: {block} is a formula block ({block}.base, {block}.per_level)")
 
 
 def class_id(text: str, where: str) -> int:

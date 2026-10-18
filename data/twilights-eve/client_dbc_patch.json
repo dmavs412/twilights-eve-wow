@@ -3474,20 +3474,24 @@
     "equipped_item_class": 2,
     "equipped_subclass_mask": 42483,
     "equipped_inventory_mask": 6430720,
-    "description": "Finishing move: a bleed that deals damage every 2 sec for 8 sec, more per combo point.",
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point.",
     "effects": [
      {
       "kind": "periodic_damage",
       "params": {
        "tick_ms": 2000,
-       "duration_ms": 8000,
+       "duration_ms": 6000,
+       "duration_per_combo": {
+        "base": 2000,
+        "per_level": 0
+       },
        "tick": {
-        "base": 7.2,
-        "per_level": 0.3
+        "base": 13,
+        "per_level": 0.15
        },
        "per_combo": {
-        "base": 5.8,
-        "per_level": 0.2
+        "base": 1,
+        "per_level": 0.1
        }
       }
      }
@@ -3686,7 +3690,16 @@
     "name": "Lethality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 6%."
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 6%.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "pct": 6,
+       "builders": true
+      }
+     }
+    ]
    }
   },
   {
@@ -3699,7 +3712,16 @@
     "name": "Lethality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 12%."
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 12%.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "pct": 12,
+       "builders": true
+      }
+     }
+    ]
    }
   },
   {
@@ -3712,7 +3734,16 @@
     "name": "Lethality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 18%."
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 18%.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "pct": 18,
+       "builders": true
+      }
+     }
+    ]
    }
   },
   {
@@ -3725,7 +3756,16 @@
     "name": "Lethality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 24%."
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 24%.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "pct": 24,
+       "builders": true
+      }
+     }
+    ]
    }
   },
   {
@@ -3738,7 +3778,16 @@
     "name": "Lethality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 30%."
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 30%.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "pct": 30,
+       "builders": true
+      }
+     }
+    ]
    }
   },
   {
@@ -3928,7 +3977,16 @@
     "name": "Flurry of Blades",
     "school": 0,
     "prevention_type": 2,
-    "description": "Reduces the Energy cost of Sinister Strike by 2, and gives Sinister Strike a 10% chance to strike a second nearby target."
+    "description": "Reduces the Energy cost of Sinister Strike by 2, and gives Sinister Strike a 10% chance to strike a second nearby target.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "sinister_strike",
+       "amount": 2
+      }
+     }
+    ]
    }
   },
   {
@@ -3941,7 +3999,16 @@
     "name": "Flurry of Blades",
     "school": 0,
     "prevention_type": 2,
-    "description": "Reduces the Energy cost of Sinister Strike by 4, and gives Sinister Strike a 20% chance to strike a second nearby target."
+    "description": "Reduces the Energy cost of Sinister Strike by 4, and gives Sinister Strike a 20% chance to strike a second nearby target.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "sinister_strike",
+       "amount": 4
+      }
+     }
+    ]
    }
   },
   {
@@ -3954,7 +4021,16 @@
     "name": "Flurry of Blades",
     "school": 0,
     "prevention_type": 2,
-    "description": "Reduces the Energy cost of Sinister Strike by 6, and gives Sinister Strike a 30% chance to strike a second nearby target."
+    "description": "Reduces the Energy cost of Sinister Strike by 6, and gives Sinister Strike a 30% chance to strike a second nearby target.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "sinister_strike",
+       "amount": 6
+      }
+     }
+    ]
    }
   },
   {
@@ -4082,7 +4158,23 @@
     "name": "Bloodletting",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the duration of Rupture by 2 seconds and its damage by 10%."
+    "description": "Increases the duration of Rupture by 2 seconds and its damage by 10%.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "rupture",
+       "pct": 10
+      }
+     },
+     {
+      "kind": "skill_duration_ms",
+      "params": {
+       "skill": "rupture",
+       "amount": 2000
+      }
+     }
+    ]
    }
   },
   {
@@ -4095,7 +4187,23 @@
     "name": "Bloodletting",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the duration of Rupture by 4 seconds and its damage by 20%."
+    "description": "Increases the duration of Rupture by 4 seconds and its damage by 20%.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "rupture",
+       "pct": 20
+      }
+     },
+     {
+      "kind": "skill_duration_ms",
+      "params": {
+       "skill": "rupture",
+       "amount": 4000
+      }
+     }
+    ]
    }
   },
   {
@@ -4108,7 +4216,23 @@
     "name": "Bloodletting",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the duration of Rupture by 6 seconds and its damage by 30%."
+    "description": "Increases the duration of Rupture by 6 seconds and its damage by 30%.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "rupture",
+       "pct": 30
+      }
+     },
+     {
+      "kind": "skill_duration_ms",
+      "params": {
+       "skill": "rupture",
+       "amount": 6000
+      }
+     }
+    ]
    }
   },
   {
@@ -4121,7 +4245,23 @@
     "name": "Bloodletting",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the duration of Rupture by 8 seconds and its damage by 40%."
+    "description": "Increases the duration of Rupture by 8 seconds and its damage by 40%.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "rupture",
+       "pct": 40
+      }
+     },
+     {
+      "kind": "skill_duration_ms",
+      "params": {
+       "skill": "rupture",
+       "amount": 8000
+      }
+     }
+    ]
    }
   },
   {
@@ -4134,7 +4274,23 @@
     "name": "Bloodletting",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the duration of Rupture by 10 seconds and its damage by 50%."
+    "description": "Increases the duration of Rupture by 10 seconds and its damage by 50%.",
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "rupture",
+       "pct": 50
+      }
+     },
+     {
+      "kind": "skill_duration_ms",
+      "params": {
+       "skill": "rupture",
+       "amount": 10000
+      }
+     }
+    ]
    }
   },
   {

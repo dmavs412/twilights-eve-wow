@@ -1310,12 +1310,14 @@ impl InWorld {
         let per_combo = |l: Option<formulas::Linear>| l.map_or(0, |l| sized(l) * u32::from(combo));
         // Talents that make the skill's auras last longer (Booming Voice).
         let longer = crate::talents::duration_pct(c, &skill.key);
+        // ... and by a flat time (Bloodletting).
+        let later = crate::talents::duration_ms(c, &skill.key);
         let aura = |kind: AuraKind, spell_id: u32, duration_ms: u32, period_ms: u32| Aura {
             unit: target,
             spell_id,
             slot: 0,
             level,
-            left: clock::secs(scaled(duration_ms, longer)),
+            left: clock::secs(scaled(duration_ms + later, longer)),
             period: clock::secs(period_ms),
             next_tick: clock::secs(period_ms),
             kind,
@@ -1366,8 +1368,11 @@ impl InWorld {
                 duration_ms,
                 tick,
                 per_combo: more,
+                duration_per_combo: stretch,
             } => {
                 let per_tick = sized(tick) + per_combo(more);
+                let duration_ms =
+                    duration_ms + stretch.map_or(0, |l| l.at(level, ap) * u32::from(combo));
                 let a = aura(
                     AuraKind::PeriodicDamage {
                         per_tick,
@@ -1823,10 +1828,13 @@ impl InWorld {
             self.player.stats.level,
         );
         if how == Landed::Crit {
+            let spell = crate::talents::skill(c, spell_id);
+            let builder = spell.is_some_and(Skill::adds_combo_points);
             damage = crit_scaled(
                 school,
                 damage,
-                crate::talents::skill_crit_damage_pct(c) + self.player.stats.crit_damage_pct,
+                crate::talents::skill_crit_damage_pct(c, builder)
+                    + self.player.stats.crit_damage_pct,
             );
         }
         damage = self.dealt(c, damage);
@@ -2269,7 +2277,8 @@ impl InWorld {
                 self.add_aura_stacks(effect, c.level, events);
             }
         }
-        let impale = crate::talents::skill_crit_damage_pct(c) + self.player.stats.crit_damage_pct;
+        let impale = crate::talents::skill_crit_damage_pct(c, skill.adds_combo_points())
+            + self.player.stats.crit_damage_pct;
         for (guid, mut swing) in swings {
             if missed_by(swing.outcome).is_some() {
                 continue;
