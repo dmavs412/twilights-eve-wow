@@ -241,6 +241,16 @@ impl InWorld {
         }
     }
 
+    /// The entry of the living friendly creature `guid` in the player's view (their map and
+    /// Phase) and within talking reach of `at`: a Field Giver the player can speak to.
+    pub(crate) fn friendly_within_reach(&self, guid: u64, at: [f32; 3]) -> Option<u32> {
+        self.mobs
+            .iter()
+            .find(|m| m.guid == guid && m.alive() && m.template.friendly)
+            .filter(|m| crate::space::within_interaction(m.position, at))
+            .map(|m| m.template.entry)
+    }
+
     /// `CMSG_SET_SELECTION`: the player's target, which the client shows in `UNIT_FIELD_TARGET`.
     pub(crate) fn select(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
         events.push(values(self.guid, &guid_pairs(UNIT_FIELD_TARGET, target)));

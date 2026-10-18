@@ -9,7 +9,7 @@
 //! objectives count the quest items in the bags, as the client does: their drops only fall while
 //! a quest wants more.
 
-mod content;
+pub(crate) mod content;
 mod dialogs;
 
 use benilla_protocol::SessionEvent;

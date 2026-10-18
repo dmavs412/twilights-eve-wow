@@ -114,34 +114,34 @@ impl Realm {
                 }
             }
             RealmCommand::QuestGiverHello { npc } => {
-                if let Some(g) = talking_to(c, npc) {
+                if let Some(g) = talking_to(c, w, npc) {
                     hello(c, g, npc, events);
                 }
             }
             RealmCommand::QuestGiverQueryQuest { npc, quest } => {
-                if let Some(q) = talking_to(c, npc).and_then(|g| offer(c, g, quest)) {
+                if let Some(q) = talking_to(c, w, npc).and_then(|g| offer(c, g, quest)) {
                     events.push(SessionEvent::QuestDetail(details(npc, q)));
                 }
             }
             RealmCommand::QuestGiverAcceptQuest { npc, quest } => {
-                if let Some(q) = talking_to(c, npc).and_then(|g| offer(c, g, quest)) {
+                if let Some(q) = talking_to(c, w, npc).and_then(|g| offer(c, g, quest)) {
                     done.save = accept(c, q, events);
                 }
             }
             RealmCommand::QuestGiverCompleteQuest { npc, quest } => {
-                if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
+                if let Some(q) = talking_to(c, w, npc).and_then(|g| in_log(c, g, quest)) {
                     turn_in(c, npc, q, events);
                 }
             }
             RealmCommand::QuestGiverRequestReward { npc, quest } => {
-                if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
+                if let Some(q) = talking_to(c, w, npc).and_then(|g| in_log(c, g, quest)) {
                     if is_complete(c, q) {
                         events.push(SessionEvent::QuestOffer(offer_reward(npc, q)));
                     }
                 }
             }
             RealmCommand::QuestGiverChooseReward { npc, quest, .. } => {
-                if let Some(q) = talking_to(c, npc).and_then(|g| in_log(c, g, quest)) {
+                if let Some(q) = talking_to(c, w, npc).and_then(|g| in_log(c, g, quest)) {
                     if is_complete(c, q) && reward(c, q, events) {
                         let gained = w.reward_xp(c, q.reward_xp(c.level), events);
                         let mut items = Vec::new();
@@ -162,7 +162,7 @@ impl Realm {
                         // The next in the chain opens at once (vmangos `GetNextQuest`).
                         if let Some(next) = q
                             .next_in_chain()
-                            .and_then(|n| talking_to(c, npc).and_then(|g| offer(c, g, n.id)))
+                            .and_then(|n| talking_to(c, w, npc).and_then(|g| offer(c, g, n.id)))
                         {
                             events.push(SessionEvent::QuestDetail(details(npc, next)));
                         }
@@ -179,19 +179,55 @@ impl Realm {
     }
 }
 
-/// A Hub NPC with the quest giver flag: a Hunting Ground's giver, a person found out in one, or
-/// a Tier 1 trainer, whose gossip menu lists their Line's Advancement Quests.
-type Speaker = &'static crate::hub::Npc;
+/// A quest giver: a Hub NPC with the quest giver flag (a Hunting Ground's giver, a person found
+/// out in one, or a Tier 1 trainer, whose gossip menu lists their Line's Advancement Quests), or a
+/// Field Giver, a friendly creature the realm places on any map or in a Phased Dungeon.
+#[derive(Clone, Copy)]
+struct Speaker {
+    entry: u32,
+    greeting: &'static str,
+}
 
-/// The quest giver with guid `npc`, wherever the player stands.
-fn any_speaker(npc: u64) -> Option<Speaker> {
+/// `HIGHGUID_UNIT`, in a creature guid's top 16 bits, which carries its entry in bits 24-47.
+const HIGHGUID_UNIT: u64 = 0xF130;
+
+fn hub_speaker(npc: u64) -> Option<&'static crate::hub::Npc> {
     crate::hub::find(npc).filter(|n| n.gives_quests())
 }
 
+/// The Field Giver whose creature entry is `entry`.
+fn field_speaker(entry: u32) -> Option<Speaker> {
+    content::field_giver(entry).then_some(Speaker {
+        entry,
+        greeting: "",
+    })
+}
+
+/// The quest giver with guid `npc`, wherever the player stands.
+fn any_speaker(npc: u64) -> Option<Speaker> {
+    if let Some(n) = hub_speaker(npc) {
+        return Some(Speaker {
+            entry: n.entry,
+            greeting: &n.greeting,
+        });
+    }
+    if npc >> 48 != HIGHGUID_UNIT {
+        return None;
+    }
+    field_speaker((npc >> 24 & 0xFF_FFFF) as u32)
+}
+
 /// The quest giver `npc`, if the player stands near enough to talk to it.
-fn talking_to(c: &Char, npc: u64) -> Option<Speaker> {
-    // The Hub stands on Kalimdor only, not in a Dungeon.
-    any_speaker(npc).filter(|n| c.map == crate::KALIMDOR && crate::hub::within_reach(n, c.position))
+fn talking_to(c: &Char, w: &crate::world::InWorld, npc: u64) -> Option<Speaker> {
+    if let Some(n) = hub_speaker(npc) {
+        // The Hub stands on Kalimdor only, not in a Dungeon.
+        let near = c.map == crate::KALIMDOR && crate::hub::within_reach(n, c.position);
+        return near.then_some(Speaker {
+            entry: n.entry,
+            greeting: &n.greeting,
+        });
+    }
+    field_speaker(w.friendly_within_reach(npc, c.position)?)
 }
 
 /// `quest`, if `g` offers it to the player now: theirs to take, and not in the log already.
@@ -290,7 +326,7 @@ fn hello(c: &Char, g: Speaker, npc: u64, events: &mut Vec<SessionEvent>) {
                 .collect();
             events.push(SessionEvent::QuestGreeting(QuestGiverList {
                 npc,
-                greeting: g.greeting.clone(),
+                greeting: g.greeting.to_string(),
                 emote_delay: 0,
                 emote: 0,
                 quests,

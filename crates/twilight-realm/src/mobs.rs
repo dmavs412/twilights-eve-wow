@@ -21,6 +21,10 @@ use crate::Host;
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
 const HIGHGUID_UNIT: u64 = 0xF130;
 
+/// `UNIT_NPC_FLAGS`, and its `UNIT_NPC_FLAG_QUESTGIVER` bit.
+const UNIT_NPC_FLAGS: u16 = 147;
+const UNIT_NPC_FLAG_QUESTGIVER: u32 = 0x2;
+
 /// vanilla's base movement speeds, yd/s, which a template's multipliers scale.
 const BASE_WALK: f32 = 2.5;
 const BASE_RUN: f32 = 7.0;
@@ -555,6 +559,10 @@ impl Mob {
             (UNIT_FIELD_MAXDAMAGE, float(self.stats.max_damage)),
             (UNIT_FIELD_RESISTANCES, self.stats.armor),
         ];
+        // A Field Giver shows the quest giver flag, so the client asks for its `!` and `?`.
+        if t.friendly && crate::quests::content::field_giver(t.entry) {
+            pairs.push((UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER));
+        }
         pairs.extend(guid_pairs(OBJECT_FIELD_GUID, self.guid));
         SessionEvent::ObjectCreate {
             guid: self.guid,

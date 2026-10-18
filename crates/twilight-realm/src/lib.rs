@@ -355,6 +355,14 @@ impl Realm {
         self
     }
 
+    /// This realm with the quests in `toml` (the shape of `content/quests.toml`) added alongside
+    /// the shipped ones, for the rest of the process: a test seam, so a player script can try a
+    /// quest the content does not ship.
+    pub fn with_quests(self, toml: &str) -> Self {
+        quests::content::add(toml);
+        self
+    }
+
     /// This realm with creature `entry` casting the Creature Spells `keys`
     /// (`content/creature_spells.toml`) in place of its template's: a test seam, so a player
     /// script can fight a caster where the content has none.

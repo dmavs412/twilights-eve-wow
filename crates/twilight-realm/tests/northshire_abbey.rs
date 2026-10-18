@@ -1,5 +1,6 @@
 //! Northshire Abbey, the first Phased Dungeon (#78): a character inside its footprint sees and
-//! fights only its four Defias Thugs, and its Run resets when the last one leaves or dies.
+//! fights only its four Defias Thugs (Brother Neals stands there too, and never fights), and its
+//! Run resets when the last one leaves or dies.
 
 mod common;
 
@@ -12,6 +13,8 @@ use common::*;
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
 const HIGHGUID_UNIT: u64 = 0xF130;
 const DEFIAS_THUG: u64 = 38;
+/// The Abbey's survivor, a Field Giver (#85).
+const BROTHER_NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
 /// Inside the nave, and out in the yard before the front doors.
 const INSIDE: [f32; 2] = [-8890.0, -172.0];
 const OUTSIDE: [f32; 2] = [-8950.0, -120.0];
@@ -121,7 +124,7 @@ impl Abbey {
 }
 
 #[test]
-fn outside_sees_no_thug_and_inside_sees_only_the_thugs() {
+fn outside_sees_no_thug_and_inside_sees_only_the_abbeys_own() {
     let mut a = Abbey::new();
     assert!(a.seen.is_disjoint(&thugs()), "a Thug shows outside");
     assert!(!a.seen.is_empty(), "the open world streamed in");
@@ -129,10 +132,11 @@ fn outside_sees_no_thug_and_inside_sees_only_the_thugs() {
     assert!(a.refused(thug), "a Thug is targetable from outside");
 
     a.go(INSIDE, 0.1);
+    let mut abbeys = thugs();
+    abbeys.insert(BROTHER_NEALS);
     assert_eq!(
-        a.seen,
-        thugs(),
-        "inside holds the four Thugs and nothing else"
+        a.seen, abbeys,
+        "inside holds the four Thugs and Brother Neals, and nothing else"
     );
     assert!(!a.refused(thug), "a Thug is not attackable inside");
 }

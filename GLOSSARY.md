@@ -129,3 +129,11 @@ The talents one Calling offers. Every Calling has its own.
 **Creature Spell**:
 A spell a creature casts in a fight, such as Geomancer Vurx's Corruption. Creature Spells are written by hand in the realm's `creature_spells.toml`, not in the master CSV, and a creature lists the ones it knows. The client only shows them: the cast bar, the icon and the debuff come from a stock spell's row.
 _Avoid_: mob ability, creature ability
+
+**Field Giver**:
+A quest giver or ender who is not a Hub NPC: a friendly creature the realm places out in the world (Marshal McBride on the Abbey steps) or inside a Phased Dungeon (Brother Neals in the Abbey). It shows the `!` and `?` and answers the quest dialogs exactly as a Hub NPC does.
+_Avoid_: field NPC, quest NPC
+
+**Story Quest**:
+A quest that tells part of the world's story, such as the Idol chain out of Echo Ridge Mine. It can be done once per character and Advancement never forgets it. It pays XP as a Hunting Quest does, and no Token.
+_Avoid_: main quest, campaign quest

@@ -2,7 +2,7 @@
 //! (`content/quests.toml`), and the items those quests use (`content/quest_items.toml`).
 
 use std::collections::HashMap;
-use std::sync::OnceLock;
+use std::sync::{OnceLock, RwLock};
 
 use serde::Deserialize;
 
@@ -18,22 +18,29 @@ pub(crate) struct Collect {
     pub(crate) from: Vec<u32>,
 }
 
-/// An explore objective: a spot on Kalimdor, met when the player walks into it.
+/// An explore objective: a spot on a map, met when the player walks into it.
 #[derive(Deserialize)]
 pub(crate) struct Explore {
     /// What the log calls the place.
     pub(crate) place: String,
+    /// The map the spot is on: Kalimdor unless the content says otherwise.
+    #[serde(default = "kalimdor")]
+    map: u32,
     /// WoW `[x, y]`.
     pub(crate) position: [f32; 2],
     /// Yards.
     pub(crate) radius: f32,
 }
 
+fn kalimdor() -> u32 {
+    crate::KALIMDOR
+}
+
 impl Explore {
     /// Whether the player at `at` on `map` stands in the spot.
     pub(crate) fn contains(&self, map: u32, at: [f32; 3]) -> bool {
         let [x, y] = self.position;
-        map == crate::KALIMDOR && (at[0] - x).hypot(at[1] - y) <= self.radius
+        map == self.map && (at[0] - x).hypot(at[1] - y) <= self.radius
     }
 
     /// The log's exploration line.
@@ -54,6 +61,9 @@ pub(crate) enum Kind {
     Advancement,
     /// Once per character: Advancement never forgets it.
     Once,
+    /// A Story Quest: once per character, Advancement never forgets it, and it pays XP as a
+    /// Hunting Quest does, with no Token.
+    Story,
 }
 
 /// A quest.
@@ -124,7 +134,7 @@ impl Quest {
     /// The quest its ender offers next, once it is handed in (`NextQuestInChain`).
     pub(crate) fn next_in_chain(&self) -> Option<&'static Quest> {
         quests()
-            .iter()
+            .into_iter()
             .find(|n| n.after == Some(self.id) && n.giver == self.ender())
     }
 
@@ -139,6 +149,8 @@ impl Quest {
         match self.kind {
             Kind::Hunting => rules::quest::hunting_reward_xp(player, self.level),
             Kind::Repeatable => rules::quest::reward_xp(player, self.level),
+            // Once per character, at the Hunting Quest's rate.
+            Kind::Story => rules::quest::hunting_reward_xp(player, self.level),
             Kind::Advancement | Kind::Once => 0,
         }
     }
@@ -157,97 +169,161 @@ impl Quest {
 
 #[derive(Deserialize)]
 struct QuestFile {
+    #[serde(default)]
     quest: Vec<Quest>,
 }
 
 /// At most this many kill and this many collect objectives (`QUEST_OBJECTIVES_COUNT`).
 const OBJECTIVES: usize = 4;
 
-fn file() -> &'static QuestFile {
-    static FILE: OnceLock<QuestFile> = OnceLock::new();
+/// Whether the creature `entry` is a Field Giver's: a friendly spawn the realm places anywhere,
+/// on the open world or in a Phased Dungeon.
+fn friendly_spawn(entry: u32) -> bool {
+    crate::mobs::template(entry).is_some_and(|t| t.friendly)
+        && crate::mobs::content()
+            .spawn
+            .iter()
+            .any(|s| s.entry == entry)
+}
+
+/// The shipped quests: `content/quests.toml`, then `content/quests_elwynn.toml`.
+fn shipped() -> &'static [Quest] {
+    static FILE: OnceLock<Vec<Quest>> = OnceLock::new();
     FILE.get_or_init(|| {
-        let file: QuestFile = toml::from_str(include_str!("../../content/quests.toml"))
-            .expect("content/quests.toml parses");
-        for q in &file.quest {
-            for npc in [q.giver, q.ender.unwrap_or(q.giver)] {
-                assert!(
-                    crate::hub::npcs()
-                        .iter()
-                        .any(|n| n.entry == npc && n.gives_quests()),
-                    "quest {} names {npc}, who is no quest giver in content/hub.toml",
-                    q.id,
-                );
-            }
-            if let Some(p) = q.after {
-                assert!(
-                    file.quest.iter().any(|o| o.id == p),
-                    "quest {} comes after quest {p}, which the content does not have",
-                    q.id
-                );
-            }
-            assert_eq!(
-                q.kind == Kind::Advancement,
-                q.advancement.is_some(),
-                "quest {}'s kind and its `advancement` table disagree",
-                q.id
-            );
-            if let Some(a) = &q.advancement {
-                assert!(
-                    crate::callings::calling(&a.from).is_some()
-                        && (!a.completable || crate::content::Calling::from_key(&a.to).is_some()),
-                    "quest {}'s Advancement names a Calling the realm does not have",
-                    q.id
-                );
-                assert!(
-                    q.kill.is_empty()
-                        && q.collect.is_empty()
-                        && q.explore.is_none()
-                        && q.discover.is_empty(),
-                    "Advancement Quest {} asks for more than a word",
-                    q.id
-                );
-            }
-            assert!(
-                q.kill.len() <= OBJECTIVES && q.collect.len() <= OBJECTIVES,
-                "quest {} has more than {OBJECTIVES} objectives of a kind",
-                q.id
-            );
-            for &area in &q.discover {
-                assert!(
-                    crate::areas::get(area).is_some(),
-                    "quest {} discovers area {area}, which is not in content/areas.toml",
-                    q.id
-                );
-            }
-            for c in &q.collect {
-                assert!(
-                    item_template(c.item).is_some(),
-                    "quest {}'s item {} is not in content/quest_items.toml",
-                    q.id,
-                    c.item
-                );
-            }
+        let mut quests = Vec::new();
+        for (name, text) in [
+            ("quests.toml", include_str!("../../content/quests.toml")),
+            (
+                "quests_elwynn.toml",
+                include_str!("../../content/quests_elwynn.toml"),
+            ),
+        ] {
+            let file: QuestFile =
+                toml::from_str(text).unwrap_or_else(|e| panic!("content/{name} parses: {e}"));
+            quests.extend(file.quest);
         }
-        file
+        for q in &quests {
+            check(q, &|id| quests.iter().any(|o| o.id == id));
+        }
+        quests
     })
 }
 
-pub(crate) fn quests() -> &'static [Quest] {
-    &file().quest
+fn added() -> &'static RwLock<Vec<&'static Quest>> {
+    static ADDED: RwLock<Vec<&'static Quest>> = RwLock::new(Vec::new());
+    &ADDED
+}
+
+/// Adds the quests in `toml` (the shape of `content/quests.toml`) alongside the shipped ones, for
+/// the rest of the process; an id already present is left as it is. A test seam
+/// (`Realm::with_quests`), so a player script can try a quest the content does not ship.
+pub(crate) fn add(toml: &str) {
+    let parsed: QuestFile = toml::from_str(toml).expect("the added quests parse");
+    for q in parsed.quest {
+        if quest(q.id).is_some() {
+            continue;
+        }
+        check(&q, &|id| quest(id).is_some() || id == q.id);
+        added().write().unwrap().push(Box::leak(Box::new(q)));
+    }
+}
+
+/// What the content load refuses in `q`; `known` says whether a quest id exists.
+fn check(q: &Quest, known: &dyn Fn(u32) -> bool) {
+    for npc in [q.giver, q.ender.unwrap_or(q.giver)] {
+        let hub = crate::hub::npcs()
+            .iter()
+            .any(|n| n.entry == npc && n.gives_quests());
+        assert!(
+            hub || friendly_spawn(npc),
+            "quest {} names {npc}, who is no quest giver in content/hub.toml and no \
+                     friendly spawn anywhere",
+            q.id,
+        );
+    }
+    if let Some(p) = q.after {
+        assert!(
+            known(p),
+            "quest {} comes after quest {p}, which the content does not have",
+            q.id
+        );
+    }
+    assert_eq!(
+        q.kind == Kind::Advancement,
+        q.advancement.is_some(),
+        "quest {}'s kind and its `advancement` table disagree",
+        q.id
+    );
+    if let Some(a) = &q.advancement {
+        assert!(
+            crate::callings::calling(&a.from).is_some()
+                && (!a.completable || crate::content::Calling::from_key(&a.to).is_some()),
+            "quest {}'s Advancement names a Calling the realm does not have",
+            q.id
+        );
+        assert!(
+            q.kill.is_empty()
+                && q.collect.is_empty()
+                && q.explore.is_none()
+                && q.discover.is_empty(),
+            "Advancement Quest {} asks for more than a word",
+            q.id
+        );
+    }
+    assert!(
+        q.kill.len() <= OBJECTIVES && q.collect.len() <= OBJECTIVES,
+        "quest {} has more than {OBJECTIVES} objectives of a kind",
+        q.id
+    );
+    for &area in &q.discover {
+        assert!(
+            crate::areas::get(area).is_some(),
+            "quest {} discovers area {area}, which is not in content/areas.toml",
+            q.id
+        );
+    }
+    for c in &q.collect {
+        assert!(
+            item_template(c.item).is_some(),
+            "quest {}'s item {} is not in content/quest_items.toml",
+            q.id,
+            c.item
+        );
+    }
+}
+
+/// Every quest: the shipped ones, then any a test added.
+pub(crate) fn quests() -> Vec<&'static Quest> {
+    shipped()
+        .iter()
+        .chain(added().read().unwrap().iter().copied())
+        .collect()
 }
 
 pub(crate) fn quest(id: u32) -> Option<&'static Quest> {
-    quests().iter().find(|q| q.id == id)
+    shipped()
+        .iter()
+        .find(|q| q.id == id)
+        .or_else(|| added().read().unwrap().iter().copied().find(|q| q.id == id))
 }
 
 /// The quests `giver` offers, in the content's order.
 pub(crate) fn offered_by(giver: u32) -> impl Iterator<Item = &'static Quest> {
-    quests().iter().filter(move |q| q.giver == giver)
+    quests().into_iter().filter(move |q| q.giver == giver)
 }
 
 /// The quests `ender` takes in, in the content's order.
 pub(crate) fn ended_by(ender: u32) -> impl Iterator<Item = &'static Quest> {
-    quests().iter().filter(move |q| q.ender() == ender)
+    quests().into_iter().filter(move |q| q.ender() == ender)
+}
+
+/// Whether the creature `entry` gives or takes in any quest: a Field Giver, whose create carries
+/// the quest giver flag.
+pub(crate) fn field_giver(entry: u32) -> bool {
+    friendly_spawn(entry)
+        && quests()
+            .iter()
+            .any(|q| q.giver == entry || q.ender() == entry)
 }
 
 /// A quest item's (or the Token's) template.
