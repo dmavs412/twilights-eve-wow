@@ -41,6 +41,9 @@ impl InWorld {
             {
                 continue;
             }
+            if proc.requires_health_cost && self.skills.last_health_cost == 0 {
+                continue;
+            }
             if proc.chance < 100 && rng.below(100) >= proc.chance {
                 continue;
             }
@@ -48,8 +51,18 @@ impl InWorld {
             let shield =
                 proc.absorb_cost_pct > 0 && (!proc.absorb_at_full_power || self.skills.was_full);
             if shield {
-                let amount = self.skills.last_cost * proc.absorb_cost_pct / 100;
-                self.shield(proc.spell_id, amount, proc.absorb_ms, c.level, events);
+                let of = proc
+                    .absorb_of
+                    .map_or(self.skills.last_cost, |of| self.skills.of(of));
+                let amount = of * proc.absorb_cost_pct / 100;
+                self.shield(
+                    proc.spell_id,
+                    amount,
+                    proc.absorb_ms,
+                    proc.absorb_school,
+                    c.level,
+                    events,
+                );
             }
             if proc.absorb_at_full_power && self.skills.was_full {
                 continue;

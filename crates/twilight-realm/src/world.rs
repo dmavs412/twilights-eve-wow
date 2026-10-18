@@ -767,7 +767,7 @@ impl InWorld {
                 mob.swing_timer = clock::secs(mob.template.base_attack_time)
                     * self.skills.attack_time_mul(mob.guid);
                 if swing.damage > 0 {
-                    self.player_takes(swing.damage, events);
+                    self.player_takes(swing.damage, crate::rules::school::School::Physical, events);
                     if crate::wear::on_hit(c, &mut self.wear, events) {
                         self.refresh_gear(c, events);
                     }
@@ -780,9 +780,14 @@ impl InWorld {
 
     /// The player loses `damage` to a creature's blow or spell: rage from it, and a timed cast
     /// broken (the Hearthstone's interrupts on damage).
-    fn player_takes(&mut self, damage: u32, events: &mut Vec<SessionEvent>) {
+    fn player_takes(
+        &mut self,
+        damage: u32,
+        school: crate::rules::school::School,
+        events: &mut Vec<SessionEvent>,
+    ) {
         self.skills.break_stealth(events);
-        let damage = self.skills.absorb(damage, events);
+        let damage = self.skills.absorb(damage, school, events);
         let p = &mut self.player;
         p.health = p.health.saturating_sub(damage);
         p.power.gain_stored(

@@ -7891,7 +7891,22 @@
     "name": "Vitality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your total Stamina by 2% and your total Health by an additional 2%."
+    "description": "Increases your total Stamina by 2% and your total Health by an additional 2%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 2
+      }
+     },
+     {
+      "kind": "max_health_pct",
+      "params": {
+       "pct": 2
+      }
+     }
+    ]
    }
   },
   {
@@ -7904,7 +7919,22 @@
     "name": "Vitality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your total Stamina by 4% and your total Health by an additional 4%."
+    "description": "Increases your total Stamina by 4% and your total Health by an additional 4%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 4
+      }
+     },
+     {
+      "kind": "max_health_pct",
+      "params": {
+       "pct": 4
+      }
+     }
+    ]
    }
   },
   {
@@ -7917,7 +7947,22 @@
     "name": "Vitality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your total Stamina by 6% and your total Health by an additional 6%."
+    "description": "Increases your total Stamina by 6% and your total Health by an additional 6%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 6
+      }
+     },
+     {
+      "kind": "max_health_pct",
+      "params": {
+       "pct": 6
+      }
+     }
+    ]
    }
   },
   {
@@ -7930,7 +7975,22 @@
     "name": "Vitality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your total Stamina by 8% and your total Health by an additional 8%."
+    "description": "Increases your total Stamina by 8% and your total Health by an additional 8%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 8
+      }
+     },
+     {
+      "kind": "max_health_pct",
+      "params": {
+       "pct": 8
+      }
+     }
+    ]
    }
   },
   {
@@ -7943,7 +8003,22 @@
     "name": "Vitality",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your total Stamina by 10% and your total Health by an additional 10%."
+    "description": "Increases your total Stamina by 10% and your total Health by an additional 10%.",
+    "effects": [
+     {
+      "kind": "mod_stat",
+      "params": {
+       "stat": "stamina",
+       "pct": 10
+      }
+     },
+     {
+      "kind": "max_health_pct",
+      "params": {
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -7956,7 +8031,17 @@
     "name": "Masochism",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 10% of the Health spent over the next 5 seconds."
+    "description": "Casting spells that cost Health grants you a buff that regenerates 10% of the Health spent over the next 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "cost_kind": "health",
+       "apply_aura": "aura_masochism_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -7969,7 +8054,17 @@
     "name": "Masochism",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 20% of the Health spent over the next 5 seconds."
+    "description": "Casting spells that cost Health grants you a buff that regenerates 20% of the Health spent over the next 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "cost_kind": "health",
+       "apply_aura": "aura_masochism_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -7982,7 +8077,17 @@
     "name": "Masochism",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 30% of the Health spent over the next 5 seconds."
+    "description": "Casting spells that cost Health grants you a buff that regenerates 30% of the Health spent over the next 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "cost_kind": "health",
+       "apply_aura": "aura_masochism_3"
+      }
+     }
+    ]
    }
   },
   {
@@ -7995,7 +8100,17 @@
     "name": "Masochism",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 40% of the Health spent over the next 5 seconds."
+    "description": "Casting spells that cost Health grants you a buff that regenerates 40% of the Health spent over the next 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "cost_kind": "health",
+       "apply_aura": "aura_masochism_4"
+      }
+     }
+    ]
    }
   },
   {
@@ -8008,7 +8123,17 @@
     "name": "Masochism",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 50% of the Health spent over the next 5 seconds."
+    "description": "Casting spells that cost Health grants you a buff that regenerates 50% of the Health spent over the next 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "cost_kind": "health",
+       "apply_aura": "aura_masochism_5"
+      }
+     }
+    ]
    }
   },
   {
@@ -8021,7 +8146,20 @@
     "name": "Coagulation",
     "school": 0,
     "prevention_type": 2,
-    "description": "Dark Mending now also leaves a physical blood shield on the target, absorbing damage equal to 10% of the amount healed."
+    "description": "Dark Mending now also leaves a physical blood shield on the target, absorbing damage equal to 10% of the amount healed.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "dark_mending",
+       "absorb_cost_pct": 10,
+       "absorb_of": "heal",
+       "absorb_school": "physical",
+       "absorb_duration_ms": 10000
+      }
+     }
+    ]
    }
   },
   {
@@ -8034,7 +8172,20 @@
     "name": "Coagulation",
     "school": 0,
     "prevention_type": 2,
-    "description": "Dark Mending now also leaves a physical blood shield on the target, absorbing damage equal to 20% of the amount healed."
+    "description": "Dark Mending now also leaves a physical blood shield on the target, absorbing damage equal to 20% of the amount healed.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "dark_mending",
+       "absorb_cost_pct": 20,
+       "absorb_of": "heal",
+       "absorb_school": "physical",
+       "absorb_duration_ms": 10000
+      }
+     }
+    ]
    }
   },
   {
@@ -8047,7 +8198,20 @@
     "name": "Coagulation",
     "school": 0,
     "prevention_type": 2,
-    "description": "Dark Mending now also leaves a physical blood shield on the target, absorbing damage equal to 30% of the amount healed."
+    "description": "Dark Mending now also leaves a physical blood shield on the target, absorbing damage equal to 30% of the amount healed.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "dark_mending",
+       "absorb_cost_pct": 30,
+       "absorb_of": "heal",
+       "absorb_school": "physical",
+       "absorb_duration_ms": 10000
+      }
+     }
+    ]
    }
   },
   {
@@ -8060,7 +8224,17 @@
     "name": "Crimson Surge",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Blood Lance increases your spell casting speed by 10% for 6 seconds."
+    "description": "Casting Blood Lance increases your spell casting speed by 10% for 6 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "blood_lance",
+       "apply_aura": "aura_crimson_surge_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -8073,7 +8247,17 @@
     "name": "Crimson Surge",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Blood Lance increases your spell casting speed by 20% for 6 seconds."
+    "description": "Casting Blood Lance increases your spell casting speed by 20% for 6 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "blood_lance",
+       "apply_aura": "aura_crimson_surge_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -8086,7 +8270,16 @@
     "name": "Will to Survive",
     "school": 0,
     "prevention_type": 2,
-    "description": "While you are below 50% health, all healing you receive (including your own Leech and Siphon Life) is increased by 10%."
+    "description": "While you are below 50% health, all healing you receive (including your own Leech and Siphon Life) is increased by 10%.",
+    "effects": [
+     {
+      "kind": "healing_taken_pct",
+      "params": {
+       "pct": 10,
+       "below_health_pct": 50
+      }
+     }
+    ]
    }
   },
   {
@@ -8099,7 +8292,16 @@
     "name": "Will to Survive",
     "school": 0,
     "prevention_type": 2,
-    "description": "While you are below 50% health, all healing you receive (including your own Leech and Siphon Life) is increased by 20%."
+    "description": "While you are below 50% health, all healing you receive (including your own Leech and Siphon Life) is increased by 20%.",
+    "effects": [
+     {
+      "kind": "healing_taken_pct",
+      "params": {
+       "pct": 20,
+       "below_health_pct": 50
+      }
+     }
+    ]
    }
   },
   {
@@ -8112,7 +8314,16 @@
     "name": "Will to Survive",
     "school": 0,
     "prevention_type": 2,
-    "description": "While you are below 50% health, all healing you receive (including your own Leech and Siphon Life) is increased by 30%."
+    "description": "While you are below 50% health, all healing you receive (including your own Leech and Siphon Life) is increased by 30%.",
+    "effects": [
+     {
+      "kind": "healing_taken_pct",
+      "params": {
+       "pct": 30,
+       "below_health_pct": 50
+      }
+     }
+    ]
    }
   },
   {
@@ -8147,11 +8358,25 @@
    "key": "sanguine_shell",
    "rank": 1,
    "fields": {
-    "power_type": 0,
+    "power_type": 4294967294,
     "name": "Sanguine Shell",
+    "cost": 30,
+    "cooldown_ms": 180000,
     "school": 0,
     "prevention_type": 2,
-    "description": "Instant. 3-minute cooldown. Instantly slice your own veins, sacrificing 30% of your current health. Grants all party members within 30 yards a massive shield that absorbs all damage equal to 300% of the health you sacrificed. Lasts 15 seconds."
+    "description": "Instant. 3-minute cooldown. Instantly slice your own veins, sacrificing 30% of your current health. Grants all party members within 30 yards a massive shield that absorbs all damage equal to 300% of the health you sacrificed. Lasts 15 seconds.",
+    "effects": [
+     {
+      "kind": "absorb",
+      "params": {
+       "pct": 300,
+       "pct_of": "health_cost",
+       "duration_ms": 15000,
+       "radius_yd": 30
+      }
+     }
+    ],
+    "cast_time_index": 1
    }
   },
   {

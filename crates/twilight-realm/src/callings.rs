@@ -212,6 +212,25 @@ pub enum AuraEffect {
     ModHitChance { pct: i32 },
     /// The healing the unit receives rises by `pct` percent.
     ModHealingTakenPct { pct: u32 },
+    /// A heal every `tick_ms` for the row's duration: `tick` a tick, and `pct` percent of what
+    /// the cast that put it on dealt, healed or cost in health (`pct_of`), spread over the ticks
+    /// (Masochism).
+    PeriodicHeal {
+        tick_ms: u32,
+        #[serde(default)]
+        tick: Option<Linear>,
+        #[serde(default)]
+        pct_of: Option<PctOf>,
+        #[serde(default)]
+        pct: u32,
+    },
+    /// The unit's casts are `pct` percent faster (Crimson Surge). `family_bits`, resolved by the
+    /// build, carry it to the client's cast bars.
+    ModCastSpeedPct {
+        pct: u32,
+        #[serde(default)]
+        family_bits: Vec<u8>,
+    },
     /// The unit takes `pct` percent more `school` damage from others than the aura's caster
     /// (Festering Wounds). No other player deals damage yet, so it changes nothing today.
     ModDamageTakenPct {
@@ -503,6 +522,15 @@ pub enum TalentEffect {
         flat: bool,
         per_rank: Vec<u32>,
     },
+    /// The maximum health rises by this percent, after the stat talents (Vitality).
+    MaxHealthPct { per_rank: Vec<u32> },
+    /// The healing the character receives rises by this percent while their health is below
+    /// `below_health_pct` percent (Will to Survive); at any health with none.
+    HealingTakenPct {
+        per_rank: Vec<u32>,
+        #[serde(default)]
+        below_health_pct: u32,
+    },
     /// Every critical strike chance, melee and spell, rises by this many percent.
     ModCritChance { per_rank: Vec<u32> },
     /// The dodge chance rises by this many percent.
@@ -607,6 +635,15 @@ pub enum TalentEffect {
         /// `radius_yd` of the character, split evenly (Symbiotic Rot).
         #[serde(default)]
         heal_allies_pct: Vec<u32>,
+        /// `health`: only a cast that cost health.
+        #[serde(default)]
+        cost_kind: Option<String>,
+        /// What the shield is a share of: the cast's cost (default), its heal, its hit or its
+        /// health cost; and the one school it soaks, if any.
+        #[serde(default)]
+        absorb_of: Option<PctOf>,
+        #[serde(default)]
+        absorb_school: Option<School>,
     },
     /// The armour from items rises by this many percent.
     #[serde(alias = "armor_items_pct")]
@@ -688,6 +725,8 @@ fn yes() -> bool {
 pub enum PctOf {
     Hit,
     Heal,
+    /// The health the cast cost.
+    HealthCost,
 }
 
 /// How an effect picks its friendly player.
@@ -809,6 +848,8 @@ impl TalentEffect {
             | Self::MeleeCritPct { per_rank }
             | Self::Defense { per_rank }
             | Self::ModStat { per_rank, .. }
+            | Self::MaxHealthPct { per_rank }
+            | Self::HealingTakenPct { per_rank, .. }
             | Self::ModCritChance { per_rank }
             | Self::DodgePct { per_rank }
             | Self::ArmorPen { per_rank }
@@ -1105,6 +1146,18 @@ pub enum Effect {
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
     /// The target moves `pct`% slower, under the skill's spell id.
     MovementSlow { pct: u32, duration_ms: u32 },
+    /// A shield of `pct` percent of what this cast dealt, healed or cost in health (`pct_of`) on
+    /// every friendly player within `radius_yd` of the caster, for `duration_ms`; with a
+    /// `school`, it soaks only that (Sanguine Shell).
+    Absorb {
+        pct: u32,
+        pct_of: PctOf,
+        duration_ms: u32,
+        #[serde(default)]
+        radius_yd: f32,
+        #[serde(default)]
+        school: Option<School>,
+    },
     /// A ground area at the cast's destination: `radius_yd` across, for `duration_ms`. Every
     /// enemy inside holds the aura row `enemy_aura_spell_id`, every friendly player inside
     /// `ally_aura_spell_id`; leaving or the area's end takes them off. A new one from the same

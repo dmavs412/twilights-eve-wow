@@ -137,6 +137,8 @@ pub(super) struct Skills {
     /// What the cast under way has dealt and healed so far: a share of either (`pct_of`) reads it.
     cast_dealt: u32,
     cast_healed: u32,
+    /// The health the last cast cost.
+    pub(super) last_health_cost: u32,
     /// What the last cast cost, and whether the bar was full before it paid: its procs read them.
     pub(super) last_cost: u32,
     pub(super) was_full: bool,
@@ -323,9 +325,15 @@ enum AuraKind {
     Dodge {
         pct: u32,
     },
-    /// A shield on the player that soaks `left` more damage.
+    /// A shield on the player that soaks `left` more damage, of `school` only when set.
     Absorb {
         left: u32,
+        school: Option<School>,
+    },
+    /// The player's casts are `pct` percent faster; `bits` carry it to the client's cast bars.
+    CastSpeed {
+        pct: u32,
+        bits: &'static [u8],
     },
     /// The unit takes `pct` percent more `school` damage from others than the aura's caster.
     DamageTaken {
@@ -455,6 +463,7 @@ impl AuraKind {
                 | AuraKind::Dodge { .. }
                 | AuraKind::Absorb { .. }
                 | AuraKind::HealingTaken { .. }
+                | AuraKind::CastSpeed { .. }
                 | AuraKind::SkillAmount { .. }
                 | AuraKind::SpellDamagePct { .. }
                 | AuraKind::Defense { .. }
@@ -708,7 +717,20 @@ impl Skills {
             return 0;
         }
         let change: i32 = self.next_casts(&skill.key).map(|n| n.cast_time_ms).sum();
-        (base as i32 + change).max(0) as u32
+        let ms = (base as i32 + change).max(0) as u32;
+        ms * 100 / (100 + self.cast_speed_pct())
+    }
+
+    /// The percent faster the player's buffs make their casts.
+    fn cast_speed_pct(&self) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::CastSpeed { pct, .. } => pct,
+                _ => 0,
+            })
+            .sum()
     }
 
     /// The percent the player's `next_cast` buffs change `skill`'s cost by, -100 at least.
@@ -765,6 +787,13 @@ impl Skills {
             None => cells.push((flat, bit, op, value)),
         };
         for a in self.auras.iter().filter(|a| a.unit == self.me) {
+            if let AuraKind::CastSpeed { pct, bits } = a.kind {
+                // The client's percent shortens the bar: 10% faster is about 9% shorter.
+                let shorter = (pct * 100 / (100 + pct)) as i32;
+                for &bit in bits {
+                    add(false, bit, SPELLMOD_CASTING_TIME, -shorter);
+                }
+            }
             let AuraKind::NextCast { next, .. } = a.kind else {
                 continue;
             };
@@ -795,12 +824,21 @@ impl Skills {
     }
 
     /// `damage` coming at the player, less what their shields soak; a spent shield breaks.
-    pub(super) fn absorb(&mut self, damage: u32, events: &mut Vec<SessionEvent>) -> u32 {
+    pub(super) fn absorb(
+        &mut self,
+        damage: u32,
+        school: School,
+        events: &mut Vec<SessionEvent>,
+    ) -> u32 {
         let me = self.me;
         let mut left = damage;
         for a in &mut self.auras {
-            if let AuraKind::Absorb { left: shield } = &mut a.kind {
-                if a.unit == me && left > 0 {
+            if let AuraKind::Absorb {
+                left: shield,
+                school: only,
+            } = &mut a.kind
+            {
+                if a.unit == me && left > 0 && only.is_none_or(|s| s == school) {
                     let soaked = left.min(*shield);
                     *shield -= soaked;
                     left -= soaked;
@@ -811,7 +849,7 @@ impl Skills {
             }
         }
         self.remove_where(
-            |a| a.unit == me && matches!(a.kind, AuraKind::Absorb { left: 0 }),
+            |a| a.unit == me && matches!(a.kind, AuraKind::Absorb { left: 0, .. }),
             events,
         );
         left
@@ -829,6 +867,15 @@ impl Skills {
             })
             .sum();
         (-pct).max(0) as u32
+    }
+
+    /// What the cast under way dealt, healed or cost in health.
+    pub(super) fn of(&self, of: callings::PctOf) -> u32 {
+        match of {
+            callings::PctOf::Hit => self.cast_dealt,
+            callings::PctOf::Heal => self.cast_healed,
+            callings::PctOf::HealthCost => self.last_health_cost,
+        }
     }
 
     /// The percent more healing `unit` receives.
@@ -1903,10 +1950,7 @@ impl InWorld {
         let Some(of) = pct_of else {
             return 0;
         };
-        let amount = match of {
-            callings::PctOf::Hit => self.skills.cast_dealt,
-            callings::PctOf::Heal => self.skills.cast_healed,
-        };
+        let amount = self.skills.of(of);
         let ticks = (duration_ms / tick_ms.max(1)).max(1);
         scaled_share(amount, pct) / ticks
     }
@@ -1934,6 +1978,13 @@ impl InWorld {
             .map(|(guid, _, _)| guid)
     }
 
+    /// The percent more healing the player receives: their buffs', and their talents' at the
+    /// health they have now out of `max`.
+    fn healing_taken(&self, c: &Char, max: u32) -> u32 {
+        let health_pct = self.player.health * 100 / max.max(1);
+        self.skills.healing_taken_pct(self.guid) + crate::talents::healing_taken_pct(c, health_pct)
+    }
+
     /// `total` healing split evenly among the friendly players within `radius_yd` of `at`.
     pub(super) fn heal_allies(
         &mut self,
@@ -1957,7 +2008,7 @@ impl InWorld {
         for guid in allies {
             // The player is the only friendly player there is.
             if guid == self.guid {
-                self.heal_player(spell_id, each, events);
+                self.heal_player(c, spell_id, each, events);
             }
         }
     }
@@ -1997,9 +2048,15 @@ impl InWorld {
     }
 
     /// Heals the player `amount` under `spell_id`, up to their maximum: what was healed.
-    fn heal_player(&mut self, spell_id: u32, amount: u32, events: &mut Vec<SessionEvent>) -> u32 {
-        let amount = scaled(amount, self.skills.healing_taken_pct(self.guid));
+    fn heal_player(
+        &mut self,
+        c: &Char,
+        spell_id: u32,
+        amount: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> u32 {
         let max = buffed(&self.player.stats, &self.skills).max_health;
+        let amount = scaled(amount, self.healing_taken(c, max));
         let p = &mut self.player;
         if !p.alive() {
             return 0;
@@ -2052,7 +2109,7 @@ impl InWorld {
                 let s = &self.player.stats;
                 crate::rules::power::base_mana(s.class, s.level) * skill.power_cost / 100
             }
-            Some("health") => 0,
+            Some("health") | Some("health_current") => 0,
             _ => skill.power_cost,
         };
         let cost = crate::talents::power_cost_from(c, skill, base)
@@ -2063,10 +2120,15 @@ impl InWorld {
     /// The health `skill` costs: its row's share of the caster's maximum health, for a
     /// `cost_kind` of `health`.
     fn health_cost(&self, skill: &Skill) -> u32 {
-        if skill.meta.shape.cost_kind.as_deref() != Some("health") {
-            return 0;
+        match skill.meta.shape.cost_kind.as_deref() {
+            Some("health") => {
+                buffed(&self.player.stats, &self.skills).max_health * skill.power_cost / 100
+            }
+            // A share of the health left, which never kills.
+            Some("health_current") => (self.player.health * skill.power_cost / 100)
+                .min(self.player.health.saturating_sub(1)),
+            _ => 0,
         }
-        buffed(&self.player.stats, &self.skills).max_health * skill.power_cost / 100
     }
 
     /// Whether `skill` can go off now at `target`, and on whom; `gcd`: whether the global
@@ -2215,6 +2277,7 @@ impl InWorld {
         let p = &mut self.player;
         p.power.spend(cost);
         let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100 + blood;
+        self.skills.last_health_cost = health_cost.min(p.health.saturating_sub(1));
         // A cost never kills.
         p.health = p.health.saturating_sub(health_cost).max(1);
         let s = &mut self.skills;
@@ -2773,6 +2836,27 @@ impl InWorld {
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
+            Effect::Absorb {
+                pct,
+                pct_of,
+                duration_ms,
+                radius_yd,
+                school,
+            } => {
+                let amount = scaled_share(self.skills.of(pct_of), pct);
+                let allies: Vec<u64> = self
+                    .friendly_players(c)
+                    .into_iter()
+                    .filter(|(_, p, _)| distance(*p, c.position) <= radius_yd)
+                    .map(|(guid, _, _)| guid)
+                    .collect();
+                for guid in allies {
+                    // The player is the only friendly player there is.
+                    if guid == self.guid {
+                        self.shield(skill.spell_id, amount, duration_ms, school, level, events);
+                    }
+                }
+            }
             Effect::GroundArea {
                 radius_yd,
                 duration_ms,
@@ -2827,12 +2911,12 @@ impl InWorld {
                 );
                 self.skills.cast_dealt += dealt;
                 if dealt > 0 && heal_pct > 0 {
-                    self.heal_player(skill.spell_id, scaled_share(dealt, heal_pct), events);
+                    self.heal_player(c, skill.spell_id, scaled_share(dealt, heal_pct), events);
                 }
             }
             Effect::Heal { amount } => {
                 if target == self.guid {
-                    let healed = self.heal_player(skill.spell_id, sized(amount), events);
+                    let healed = self.heal_player(c, skill.spell_id, sized(amount), events);
                     self.skills.cast_healed += healed;
                 }
             }
@@ -3837,7 +3921,7 @@ impl InWorld {
                         } else {
                             per_tick
                         };
-                        self.player_takes(per_tick, events);
+                        self.player_takes(per_tick, school, events);
                     } else {
                         self.hurt(a.unit, per_tick, c, rng, events, ticked);
                         // The caster's own damage over time ticked: its leech, and its procs
@@ -3845,6 +3929,7 @@ impl InWorld {
                         if caster == self.guid {
                             if leech_pct > 0 {
                                 self.heal_player(
+                                    c,
                                     a.spell_id,
                                     scaled_share(per_tick, leech_pct),
                                     events,
@@ -3877,8 +3962,8 @@ impl InWorld {
                     }
                 }
                 AuraKind::Heal { per_tick } => {
-                    let per_tick = scaled(per_tick, self.skills.healing_taken_pct(self.guid));
                     let max = buffed(&self.player.stats, &self.skills).max_health;
+                    let per_tick = scaled(per_tick, self.healing_taken(c, max));
                     let p = &mut self.player;
                     if !p.alive() {
                         continue;
@@ -4149,11 +4234,13 @@ impl InWorld {
 
     /// A shield on the player under `spell_id` that soaks `amount` for `duration_ms`; a new one
     /// replaces the old.
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn shield(
         &mut self,
         spell_id: u32,
         amount: u32,
         duration_ms: u32,
+        school: Option<School>,
         level: u8,
         events: &mut Vec<SessionEvent>,
     ) {
@@ -4168,7 +4255,10 @@ impl InWorld {
             left: clock::secs(duration_ms),
             period: 0.0,
             next_tick: 0.0,
-            kind: AuraKind::Absorb { left: amount },
+            kind: AuraKind::Absorb {
+                left: amount,
+                school,
+            },
             charges: 0,
         };
         self.skills.apply(aura, events);
@@ -4206,6 +4296,19 @@ impl InWorld {
                     }
                 }
                 callings::AuraEffect::ModHitChance { pct } => AuraKind::HitChance { pct: *pct },
+                callings::AuraEffect::ModCastSpeedPct { pct, family_bits } => AuraKind::CastSpeed {
+                    pct: *pct,
+                    bits: family_bits.as_slice(),
+                },
+                callings::AuraEffect::PeriodicHeal {
+                    tick_ms,
+                    tick,
+                    pct_of,
+                    pct,
+                } => AuraKind::Heal {
+                    per_tick: tick.map_or(0, |t| t.at(level, 0))
+                        + self.share(*pct_of, *pct, def.duration_ms, *tick_ms),
+                },
                 callings::AuraEffect::ModDamageTakenPct { pct, school } => AuraKind::DamageTaken {
                     pct: *pct,
                     school: *school,
@@ -4256,7 +4359,8 @@ impl InWorld {
                 },
             };
             let period = match effect {
-                callings::AuraEffect::PeriodicDamage { tick_ms, .. } => clock::secs(*tick_ms),
+                callings::AuraEffect::PeriodicDamage { tick_ms, .. }
+                | callings::AuraEffect::PeriodicHeal { tick_ms, .. } => clock::secs(*tick_ms),
                 _ => 0.0,
             };
             let aura = Aura {
@@ -4502,14 +4606,45 @@ mod tests {
             left: 10.0,
             period: 0.0,
             next_tick: 0.0,
-            kind: AuraKind::Absorb { left: 40 },
+            kind: AuraKind::Absorb {
+                left: 40,
+                school: None,
+            },
             charges: 0,
         };
         skills.apply(shield, &mut events);
-        assert_eq!(skills.absorb(30, &mut events), 0);
-        assert_eq!(skills.absorb(30, &mut events), 20, "10 left to soak");
+        assert_eq!(skills.absorb(30, School::Physical, &mut events), 0);
+        assert_eq!(
+            skills.absorb(30, School::Physical, &mut events),
+            20,
+            "10 left to soak"
+        );
         assert!(!skills.on(1, 12577), "spent, it breaks");
-        assert_eq!(skills.absorb(30, &mut events), 30);
+        assert_eq!(skills.absorb(30, School::Physical, &mut events), 30);
+    }
+
+    /// A physical-only shield lets other schools through untouched.
+    #[test]
+    fn a_physical_shield_soaks_only_physical_damage() {
+        let mut skills = Skills::new(1);
+        let mut events = Vec::new();
+        let shield = Aura {
+            unit: 1,
+            spell_id: 14912,
+            slot: 0,
+            level: 10,
+            left: 10.0,
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Absorb {
+                left: 40,
+                school: Some(School::Physical),
+            },
+            charges: 0,
+        };
+        skills.apply(shield, &mut events);
+        assert_eq!(skills.absorb(30, School::Shadow, &mut events), 30);
+        assert_eq!(skills.absorb(30, School::Physical, &mut events), 0);
     }
 
     fn crit(skill: &'static str, pct: u32) -> Aura {

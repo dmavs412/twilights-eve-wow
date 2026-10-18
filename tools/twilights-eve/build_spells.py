@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "at_max_stacks", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "absorb", "add_aura_stacks", "add_combo_points", "at_max_stacks", "healing_taken_pct", "max_health_pct", "mod_cast_speed_pct", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -118,7 +118,7 @@ REQUIRES_VALUES = {
 USABLE_WHILE = ("stunned", "feared", "rooted", "charmed", "silenced")
 GATE_COLUMNS = ("requires_weapon", "cooldown_category", "category_cooldown_ms", "prevention",
                 "requires_caster_state", "requires_target_state", "requires")
-COST_KINDS = ("flat", "pct_base", "all_remaining", "per_sec", "health")
+COST_KINDS = ("flat", "pct_base", "all_remaining", "per_sec", "health", "health_current")
 # Spell.dbc PowerType of a health cost (-2 as the u32 the DBC stores).
 HEALTH_POWER_TYPE = 0xFFFFFFFE
 CAST_KINDS = ("instant", "cast", "channel", "next_swing", "auto_repeat")
@@ -488,6 +488,12 @@ def check_proc(params: dict, auras: set[str], where: str) -> None:
         for key in keys:
             if key not in auras:
                 raise BuildError(f"{where}: {action} {key!r} is not an aura row of this Calling")
+    if params.get("cost_kind", "health") != "health":
+        raise BuildError(f"{where}: a proc's cost_kind is {params['cost_kind']!r}, want health")
+    if params.get("absorb_of", "heal") not in ("hit", "heal", "health_cost"):
+        raise BuildError(f"{where}: absorb_of is {params['absorb_of']!r}, want hit, heal or health_cost")
+    if params.get("absorb_school", "physical") not in SCHOOLS:
+        raise BuildError(f"{where}: absorb_school is {params['absorb_school']!r}, want one of {', '.join(SCHOOLS)}")
     if params.get("damage_school", "shadow") not in SCHOOLS:
         raise BuildError(f"{where}: damage_school is {params['damage_school']!r}, want one of {', '.join(SCHOOLS)}")
     if params.get("at_full_power", "absorb") != "absorb":
@@ -881,9 +887,9 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             # An effect naming an aura row takes that row's school instead.
             if out["school"] != "physical" and "apply_aura" not in parsed:
                 parsed["school"] = out["school"]
-        if kind in ("periodic_damage", "periodic_heal"):
-            if parsed.get("pct_of", "hit") not in ("hit", "heal"):
-                raise BuildError(f"{here}: pct_of is {parsed['pct_of']!r}, want hit or heal")
+        if kind in ("periodic_damage", "periodic_heal", "absorb"):
+            if parsed.get("pct_of", "hit") not in ("hit", "heal", "health_cost"):
+                raise BuildError(f"{here}: pct_of is {parsed['pct_of']!r}, want hit, heal or health_cost")
             if parsed.get("ally", "lowest_health") != "lowest_health":
                 raise BuildError(f"{here}: ally is {parsed['ally']!r}, want lowest_health")
             if parsed.get("center", "target") not in ("target", "caster"):
@@ -944,9 +950,12 @@ def resolve_next_cast(calling: dict, masks: dict[str, int | None]) -> None:
             params = effect["params"]
             if effect["kind"] == "at_max_stacks" and params.get("becomes") not in auras:
                 raise BuildError(f"{where} at_max_stacks: becomes {params.get("becomes")!r} is not an aura row")
-            if effect["kind"] != "next_cast":
+            if effect["kind"] == "mod_cast_speed_pct":
+                skills = sorted(keys)
+            elif effect["kind"] != "next_cast":
                 continue
-            skills = params.get("skill")
+            else:
+                skills = params.get("skill")
             skills = skills if isinstance(skills, list) else [skills]
             bits = []
             for key in skills:
@@ -1041,7 +1050,7 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
         fields["cost_percent"] = fields.pop("cost")
     elif built["cost_kind"] == "per_sec" and "cost" in fields:
         fields["cost_per_second"] = fields.pop("cost")
-    elif built["cost_kind"] == "health":
+    elif built["cost_kind"] in ("health", "health_current"):
         fields["power_type"] = HEALTH_POWER_TYPE
     # Cast shape: the attribute bits; interrupt flags and DmgClass only when the cell is set, so a
     # default leaves the borrowed row's own values.

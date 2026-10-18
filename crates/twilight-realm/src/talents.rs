@@ -464,7 +464,18 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
             s.raise_stat(i, delta);
         }
     }
+    // Then the maximum health, stamina's share included (Vitality).
+    let pct = sum(c, |e| matches!(e, TalentEffect::MaxHealthPct { .. }));
+    s.max_health = crate::rules::talents::scaled(s.max_health, pct);
     s
+}
+
+/// The percent more healing `c` receives at `health_pct` percent of their health.
+pub(crate) fn healing_taken_pct(c: &Char, health_pct: u32) -> u32 {
+    sum(c, |e| {
+        matches!(e, TalentEffect::HealingTakenPct { below_health_pct: b, .. }
+            if *b == 0 || health_pct < *b)
+    })
 }
 
 const STATS: [Stat; 5] = [
@@ -522,6 +533,11 @@ pub(crate) struct Proc {
     pub(crate) spread_aura: f32,
     /// Percent of the damage done that heals the friendly players within `radius_yd`.
     pub(crate) heal_allies_pct: u32,
+    /// Only after a cast that cost health.
+    pub(crate) requires_health_cost: bool,
+    /// What the shield is a share of (the cast's cost when `None`), and the school it soaks.
+    pub(crate) absorb_of: Option<callings::PctOf>,
+    pub(crate) absorb_school: Option<crate::rules::school::School>,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -560,6 +576,9 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 damage_school,
                 spread_aura,
                 heal_allies_pct,
+                cost_kind,
+                absorb_of,
+                absorb_school,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -592,6 +611,9 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     target_auras: target_auras.get(r).cloned().unwrap_or_default(),
                     spread_aura: *spread_aura,
                     heal_allies_pct: heal_allies_pct.get(r).copied().unwrap_or(0),
+                    requires_health_cost: cost_kind.as_deref() == Some("health"),
+                    absorb_of: *absorb_of,
+                    absorb_school: *absorb_school,
                 })
             }
             _ => None,
@@ -636,6 +658,9 @@ pub(crate) fn aura_proc(
         target_auras: Vec::new(),
         spread_aura: 0.0,
         heal_allies_pct: 0,
+        requires_health_cost: false,
+        absorb_of: None,
+        absorb_school: None,
     })
 }
 
