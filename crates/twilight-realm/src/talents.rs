@@ -327,6 +327,14 @@ pub(crate) fn consume_heal_pct(c: &Char, skill: &str) -> u32 {
     )
 }
 
+/// The percent a skill's consume outcomes are raised by (Thermal Shock).
+pub(crate) fn consume_amount_pct(c: &Char, skill: &str) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::ConsumeAmountPct { skill: s, .. } if s == skill),
+    )
+}
+
 /// The percent more damage a tick of the patches a skill leaves deals.
 pub(crate) fn ground_amount_pct(c: &Char, skill: &str) -> u32 {
     sum(
@@ -459,6 +467,8 @@ pub(crate) struct Proc {
     pub(crate) weapon_pct: u32,
     /// Only while the aura row of this key is on the character.
     pub(crate) while_aura: Option<&'static str>,
+    /// Yards from the target a consumed aura's copy may spread to; 0 for none.
+    pub(crate) spread: f32,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -484,6 +494,7 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 amount_skill,
                 weapon_pct,
                 while_aura,
+                spread,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -503,6 +514,7 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     amount_skill: amount_skill.as_deref(),
                     weapon_pct: *weapon_pct,
                     while_aura: while_aura.as_deref(),
+                    spread: *spread,
                 })
             }
             _ => None,
@@ -534,6 +546,7 @@ pub(crate) fn aura_proc(
         amount_skill: p.amount_skill.as_deref(),
         weapon_pct: p.weapon_pct,
         while_aura: None,
+        spread: 0.0,
     })
 }
 

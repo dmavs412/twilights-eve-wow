@@ -231,6 +231,9 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
             .iter()
             .find(|a| a.modelled && key.as_str() == Some(a.key.as_str()))?;
         object.insert("aura_spell_id".into(), aura.spell_id.into());
+        if e.kind == "consume_aura" {
+            object.insert("duration_ms".into(), aura.duration_ms.into());
+        }
         if e.kind == "add_aura_stacks" {
             object.insert("duration_ms".into(), aura.duration_ms.into());
             object.insert("max_stacks".into(), aura.row.max_stacks.into());

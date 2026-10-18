@@ -9905,8 +9905,30 @@
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "consume_aura",
+      "params": {
+       "aura": "aura_biting_cold",
+       "amount_pct": 200,
+       "amount": {
+        "base": 18,
+        "per_level": 1.7
+       },
+       "school": "frost"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "consume_aura",
+      "params": {
+       "aura": "aura_searing_ember",
+       "energize_pct_of_max": 20
+      },
+      "realm_only": false
+     }
+    ],
     "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds a large chunk of Mana. If it consumes a Cold, it deals a massive burst of shatter damage."
    },
    {
@@ -10245,8 +10267,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "consume_amount_pct",
+          "params": {
+           "skill": "catalyst",
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Catalyst deals 10% more damage when consuming a Biting Cold, and refunds 10% more mana when consuming a Searing Ember."
        },
        {
@@ -10270,8 +10301,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "consume_amount_pct",
+          "params": {
+           "skill": "catalyst",
+           "pct": 20
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Catalyst deals 20% more damage when consuming a Biting Cold, and refunds 20% more mana when consuming a Searing Ember."
        },
        {
@@ -10295,8 +10335,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "consume_amount_pct",
+          "params": {
+           "skill": "catalyst",
+           "pct": 30
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Catalyst deals 30% more damage when consuming a Biting Cold, and refunds 30% more mana when consuming a Searing Ember."
        }
       ]
@@ -10478,8 +10527,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "consume",
+           "skill": "catalyst",
+           "spread": 10,
+           "chance": 50
+          },
+          "realm_only": false
+         }
+        ],
         "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 50% chance to immediately spread a copy of that consumed effect to an additional nearby enemy."
        },
        {
@@ -10503,8 +10563,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "consume",
+           "skill": "catalyst",
+           "spread": 10,
+           "chance": 100
+          },
+          "realm_only": false
+         }
+        ],
         "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 100% chance to immediately spread a copy of that consumed effect to an additional nearby enemy."
        }
       ]
@@ -11089,8 +11160,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "consume",
+           "skill": "catalyst",
+           "apply_aura": "aura_catalytic_resonance_1"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 2% increased spell damage for 8 seconds."
        },
        {
@@ -11114,8 +11195,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "consume",
+           "skill": "catalyst",
+           "apply_aura": "aura_catalytic_resonance_2"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 4% increased spell damage for 8 seconds."
        },
        {
@@ -11139,8 +11230,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "consume",
+           "skill": "catalyst",
+           "apply_aura": "aura_catalytic_resonance_3"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 6% increased spell damage for 8 seconds."
        },
        {
@@ -11164,8 +11265,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "consume",
+           "skill": "catalyst",
+           "apply_aura": "aura_catalytic_resonance_4"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 8% increased spell damage for 8 seconds."
        },
        {
@@ -11189,8 +11300,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "consume",
+           "skill": "catalyst",
+           "apply_aura": "aura_catalytic_resonance_5"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 10% increased spell damage for 8 seconds."
        }
       ]
@@ -11297,6 +11418,151 @@
      }
     ],
     "description": "Movement speed slowed by 50%."
+   },
+   {
+    "key": "aura_catalytic_resonance_1",
+    "name": "Catalytic Resonance",
+    "spell_id": 12042,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_spell_damage_pct",
+      "params": {
+       "pct": 2
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spell damage increased by 2%."
+   },
+   {
+    "key": "aura_catalytic_resonance_2",
+    "name": "Catalytic Resonance",
+    "spell_id": 12042,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_spell_damage_pct",
+      "params": {
+       "pct": 4
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spell damage increased by 4%."
+   },
+   {
+    "key": "aura_catalytic_resonance_3",
+    "name": "Catalytic Resonance",
+    "spell_id": 12042,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_spell_damage_pct",
+      "params": {
+       "pct": 6
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spell damage increased by 6%."
+   },
+   {
+    "key": "aura_catalytic_resonance_4",
+    "name": "Catalytic Resonance",
+    "spell_id": 12042,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_spell_damage_pct",
+      "params": {
+       "pct": 8
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spell damage increased by 8%."
+   },
+   {
+    "key": "aura_catalytic_resonance_5",
+    "name": "Catalytic Resonance",
+    "spell_id": 12042,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_spell_damage_pct",
+      "params": {
+       "pct": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Spell damage increased by 10%."
    }
   ],
   "name": "Initiate",

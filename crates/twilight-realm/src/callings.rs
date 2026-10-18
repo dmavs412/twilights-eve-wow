@@ -188,6 +188,8 @@ pub enum AuraEffect {
     ModRunSpeed { pct: i32 },
     /// The player's dodge chance rises by `pct` percent.
     DodgePct { pct: u32 },
+    /// The damage the player's non-physical skills deal rises by `pct` percent.
+    ModSpellDamagePct { pct: u32 },
     /// The player's parry chance rises by `pct` percent.
     ParryPct { pct: u32 },
     /// The player's block chance rises by `pct` percent while a shield is worn.
@@ -386,6 +388,8 @@ pub enum TalentEffect {
     /// A skill that consumes aura stacks heals the caster for this percent of the bonus damage
     /// the stacks dealt.
     ConsumeHealPct { skill: String, per_rank: Vec<u32> },
+    /// The skill's `consume_aura` outcomes, damage and power alike, are this percent larger.
+    ConsumeAmountPct { skill: String, per_rank: Vec<u32> },
     /// The patches the skill leaves deal this percent more damage a tick.
     GroundAmountPct { skill: String, per_rank: Vec<u32> },
     /// The patches the skill leaves last this many milliseconds longer.
@@ -462,6 +466,10 @@ pub enum TalentEffect {
         /// Only while the aura row of this key is on the character.
         #[serde(default)]
         while_aura: Option<String>,
+        /// On a consume: a fresh copy of the consumed aura goes on one other enemy within this
+        /// many yards of the target.
+        #[serde(default)]
+        spread: f32,
     },
     /// The armour from items rises by this many percent.
     #[serde(alias = "armor_items_pct")]
@@ -557,6 +565,8 @@ pub enum ProcEvent {
     CritTaken,
     /// The character lands a melee hit, a white swing or a weapon skill's.
     MeleeHit,
+    /// The character's `consume_aura` takes its aura off a target.
+    Consume,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].
@@ -608,6 +618,7 @@ impl TalentEffect {
             | Self::SkillRage { per_rank, .. }
             | Self::SkillCritPct { per_rank, .. }
             | Self::ConsumeHealPct { per_rank, .. }
+            | Self::ConsumeAmountPct { per_rank, .. }
             | Self::GroundAmountPct { per_rank, .. }
             | Self::GroundDurationMs { per_rank, .. }
             | Self::MeleeCritPct { per_rank }
@@ -849,6 +860,24 @@ pub enum Effect {
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
     /// The target moves `pct`% slower, under the skill's spell id.
     MovementSlow { pct: u32, duration_ms: u32 },
+    /// Takes the caster's aura `aura_spell_id` off the target, then pays its outcome: damage of
+    /// `amount_pct` percent of the hit `amount` of the skill `amount_of` names, in its `school`, and
+    /// `energize_pct_of_max` percent of the caster's power bar. Nothing when the aura is absent.
+    /// `duration_ms` is the aura row's, for a fresh copy a proc spreads.
+    ConsumeAura {
+        aura_spell_id: u32,
+        #[serde(default)]
+        duration_ms: u32,
+        /// The named skill's hit, resolved by the build from `amount_of=skill`.
+        #[serde(default)]
+        amount: Option<Linear>,
+        #[serde(default)]
+        school: School,
+        #[serde(default)]
+        amount_pct: u32,
+        #[serde(default)]
+        energize_pct_of_max: u32,
+    },
     /// The target's run speed changes by `pct` percent for `duration_ms`: a snare on an enemy
     /// when negative, a sprint on the caster when positive.
     ModRunSpeed { pct: i32, duration_ms: u32 },

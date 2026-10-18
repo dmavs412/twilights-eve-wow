@@ -5432,6 +5432,27 @@
     "school": 6,
     "prevention_type": 1,
     "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds a large chunk of Mana. If it consumes a Cold, it deals a massive burst of shatter damage.",
+    "effects": [
+     {
+      "kind": "consume_aura",
+      "params": {
+       "aura": "aura_biting_cold",
+       "amount_pct": 200,
+       "amount": {
+        "base": 18,
+        "per_level": 1.7
+       },
+       "school": "frost"
+      }
+     },
+     {
+      "kind": "consume_aura",
+      "params": {
+       "aura": "aura_searing_ember",
+       "energize_pct_of_max": 20
+      }
+     }
+    ],
     "range_index": 4
    }
   },
@@ -5590,7 +5611,16 @@
     "name": "Thermal Shock",
     "school": 0,
     "prevention_type": 2,
-    "description": "Catalyst deals 10% more damage when consuming a Biting Cold, and refunds 10% more mana when consuming a Searing Ember."
+    "description": "Catalyst deals 10% more damage when consuming a Biting Cold, and refunds 10% more mana when consuming a Searing Ember.",
+    "effects": [
+     {
+      "kind": "consume_amount_pct",
+      "params": {
+       "skill": "catalyst",
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -5603,7 +5633,16 @@
     "name": "Thermal Shock",
     "school": 0,
     "prevention_type": 2,
-    "description": "Catalyst deals 20% more damage when consuming a Biting Cold, and refunds 20% more mana when consuming a Searing Ember."
+    "description": "Catalyst deals 20% more damage when consuming a Biting Cold, and refunds 20% more mana when consuming a Searing Ember.",
+    "effects": [
+     {
+      "kind": "consume_amount_pct",
+      "params": {
+       "skill": "catalyst",
+       "pct": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -5616,7 +5655,16 @@
     "name": "Thermal Shock",
     "school": 0,
     "prevention_type": 2,
-    "description": "Catalyst deals 30% more damage when consuming a Biting Cold, and refunds 30% more mana when consuming a Searing Ember."
+    "description": "Catalyst deals 30% more damage when consuming a Biting Cold, and refunds 30% more mana when consuming a Searing Ember.",
+    "effects": [
+     {
+      "kind": "consume_amount_pct",
+      "params": {
+       "skill": "catalyst",
+       "pct": 30
+      }
+     }
+    ]
    }
   },
   {
@@ -5694,7 +5742,18 @@
     "name": "Catalytic Chain",
     "school": 0,
     "prevention_type": 2,
-    "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 50% chance to immediately spread a copy of that consumed effect to an additional nearby enemy."
+    "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 50% chance to immediately spread a copy of that consumed effect to an additional nearby enemy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "consume",
+       "skill": "catalyst",
+       "spread": 10,
+       "chance": 50
+      }
+     }
+    ]
    }
   },
   {
@@ -5707,7 +5766,18 @@
     "name": "Catalytic Chain",
     "school": 0,
     "prevention_type": 2,
-    "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 100% chance to immediately spread a copy of that consumed effect to an additional nearby enemy."
+    "description": "When Catalyst successfully consumes an elemental effect on a target, it has a 100% chance to immediately spread a copy of that consumed effect to an additional nearby enemy.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "consume",
+       "skill": "catalyst",
+       "spread": 10,
+       "chance": 100
+      }
+     }
+    ]
    }
   },
   {
@@ -5967,7 +6037,17 @@
     "name": "Catalytic Resonance",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 2% increased spell damage for 8 seconds."
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 2% increased spell damage for 8 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "consume",
+       "skill": "catalyst",
+       "apply_aura": "aura_catalytic_resonance_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -5980,7 +6060,17 @@
     "name": "Catalytic Resonance",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 4% increased spell damage for 8 seconds."
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 4% increased spell damage for 8 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "consume",
+       "skill": "catalyst",
+       "apply_aura": "aura_catalytic_resonance_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -5993,7 +6083,17 @@
     "name": "Catalytic Resonance",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 6% increased spell damage for 8 seconds."
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 6% increased spell damage for 8 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "consume",
+       "skill": "catalyst",
+       "apply_aura": "aura_catalytic_resonance_3"
+      }
+     }
+    ]
    }
   },
   {
@@ -6006,7 +6106,17 @@
     "name": "Catalytic Resonance",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 8% increased spell damage for 8 seconds."
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 8% increased spell damage for 8 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "consume",
+       "skill": "catalyst",
+       "apply_aura": "aura_catalytic_resonance_4"
+      }
+     }
+    ]
    }
   },
   {
@@ -6019,7 +6129,17 @@
     "name": "Catalytic Resonance",
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 10% increased spell damage for 8 seconds."
+    "description": "Whenever Catalyst successfully consumes an elemental effect, you gain 10% increased spell damage for 8 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "consume",
+       "skill": "catalyst",
+       "apply_aura": "aura_catalytic_resonance_5"
+      }
+     }
+    ]
    }
   },
   {

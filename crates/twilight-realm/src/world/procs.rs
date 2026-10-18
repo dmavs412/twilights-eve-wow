@@ -77,6 +77,9 @@ impl InWorld {
                     self.grant_aura(def, c.level, events);
                 }
             }
+            if let (true, Some(target)) = (proc.spread > 0.0, happened.target) {
+                self.spread_consumed(target, proc.spread, events);
+            }
             if let Some(target) = happened.target {
                 let stats = cast::buffed(&self.player.stats, &self.skills);
                 let swing = cast::white(&self.player.stats, &self.skills);

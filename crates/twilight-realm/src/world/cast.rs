@@ -120,6 +120,9 @@ pub(super) struct Skills {
     me: u64,
     /// Speed changes sent to the client so far: the counter its ack echoes.
     speed_changes: u32,
+    /// The aura a `consume_aura` just took, and its row's full duration in ms, while the consume
+    /// procs run: what a spread copies.
+    consumed: Option<(Aura, u32)>,
 }
 
 /// A cast with a cast bar, from an item.
@@ -253,6 +256,10 @@ enum AuraKind {
     Dodge {
         pct: u32,
     },
+    /// The player's non-physical skills deal `pct` percent more damage.
+    SpellDamagePct {
+        pct: u32,
+    },
     /// A buff's proc, live while the buff is (Shield of the Penitent's burst).
     Proc(&'static callings::AuraProc),
     /// The player's `skill` costs `amount` less power (a buff from a `proc`).
@@ -340,6 +347,7 @@ impl AuraKind {
                 | AuraKind::SkillCrit { .. }
                 | AuraKind::RunSpeed { .. }
                 | AuraKind::Dodge { .. }
+                | AuraKind::SpellDamagePct { .. }
                 | AuraKind::Defense { .. }
                 | AuraKind::Proc(_)
                 | AuraKind::SkillCost { .. }
@@ -438,6 +446,33 @@ impl Skills {
                 _ => 0,
             })
             .sum()
+    }
+
+    /// The percent the player's buffs raise the damage of their non-physical skills by.
+    fn spell_damage_pct(&self) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::SpellDamagePct { pct } => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// Takes the harmful aura `spell_id` off `unit`, if it is there.
+    fn take_aura(
+        &mut self,
+        unit: u64,
+        spell_id: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> Option<Aura> {
+        self.remove_where(
+            |a| a.unit == unit && a.spell_id == spell_id && !a.kind.helpful(),
+            events,
+        )
+        .into_iter()
+        .next()
     }
 
     /// The percent the player's buffs raise `stat` by.
@@ -1896,6 +1931,65 @@ impl InWorld {
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
+            Effect::ConsumeAura {
+                aura_spell_id,
+                duration_ms,
+                amount,
+                school,
+                amount_pct,
+                energize_pct_of_max,
+            } => {
+                let Some(gone) = self.skills.take_aura(target, aura_spell_id, events) else {
+                    return;
+                };
+                self.update_speed(target, events);
+                // Talents that raise the consume's outcomes (Thermal Shock).
+                let more = crate::talents::consume_amount_pct(c, &skill.key);
+                if let Some(amount) = amount {
+                    let raw = scaled_share(amount.at(level, ap), amount_pct);
+                    self.strike(
+                        skill.spell_id,
+                        target,
+                        scaled(raw, more),
+                        school,
+                        Landed::Hit,
+                        c,
+                        rng,
+                        events,
+                        ticked,
+                    );
+                }
+                let p = &mut self.player;
+                let kind = p.power.kind;
+                let gain = scaled(
+                    scaled_share(p.power.max / kind.stored(1), energize_pct_of_max),
+                    more,
+                );
+                if energize_pct_of_max > 0 && p.alive() && p.power.gain(kind, gain) {
+                    events.push(SessionEvent::SpellEnergizeLog(SpellEnergizeLog {
+                        target: self.guid,
+                        caster: self.guid,
+                        spell_id: skill.spell_id,
+                        power: kind.id(),
+                        amount: gain,
+                    }));
+                    events.push(values(self.guid, &[p.power.field()]));
+                }
+                self.skills.consumed = Some((gone, duration_ms));
+                self.proc(
+                    crate::rules::procs::Happened {
+                        event: crate::callings::ProcEvent::Consume,
+                        skill: Some(&skill.key),
+                        yields_xp: false,
+                        target: Some(target),
+                    },
+                    c,
+                    rng,
+                    events,
+                    ticked,
+                );
+                self.skills.consumed = None;
+            }
             Effect::Judgement => {
                 let me = self.guid;
                 let gone = self.skills.remove_where(
@@ -2102,6 +2196,9 @@ impl InWorld {
             );
         }
         damage = self.dealt(c, damage);
+        if school.is_magic() {
+            damage = scaled(damage, self.skills.spell_damage_pct());
+        }
         events.push(SessionEvent::SpellDamageLog(damage_log(
             self.guid,
             target,
@@ -2861,6 +2958,46 @@ impl InWorld {
 
     /// `unit`'s run speed after its auras changed: a mob's multiplier, or the player's new speed
     /// sent to the client (`SMSG_FORCE_RUN_SPEED_CHANGE`).
+    /// A fresh copy of the aura a consume just took goes on the living enemy nearest `from`
+    /// within `radius_yd`, other than `from`: one stack, its row's full duration.
+    pub(super) fn spread_consumed(
+        &mut self,
+        from: u64,
+        radius_yd: f32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let (Some((gone, duration_ms)), Some(at)) = (
+            self.skills.consumed,
+            self.mobs
+                .iter()
+                .find(|m| m.guid == from)
+                .map(|m| m.position),
+        ) else {
+            return;
+        };
+        let Some(other) = self
+            .mobs
+            .iter()
+            .filter(|m| m.guid != from && m.alive())
+            .map(|m| (m.guid, distance(m.position, at)))
+            .filter(|&(_, d)| d <= radius_yd)
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(guid, _)| guid)
+        else {
+            return;
+        };
+        let mut copy = gone;
+        copy.unit = other;
+        copy.slot = 0;
+        copy.left = clock::secs(duration_ms);
+        copy.next_tick = copy.period;
+        if let AuraKind::PeriodicDamage { stacks, .. } = &mut copy.kind {
+            *stacks = 1;
+        }
+        self.skills.apply(copy, events);
+        self.update_speed(other, events);
+    }
+
     pub(super) fn update_speed(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
         let mul = self.skills.speed_mul(unit);
         if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
@@ -2931,6 +3068,9 @@ impl InWorld {
                 },
                 callings::AuraEffect::ModRunSpeed { pct } => run_speed(*pct),
                 callings::AuraEffect::DodgePct { pct } => AuraKind::Dodge { pct: *pct },
+                callings::AuraEffect::ModSpellDamagePct { pct } => {
+                    AuraKind::SpellDamagePct { pct: *pct }
+                }
                 callings::AuraEffect::Proc(p) => AuraKind::Proc(p),
                 callings::AuraEffect::SkillCost { skill, amount } => AuraKind::SkillCost {
                     skill: skill.as_str(),

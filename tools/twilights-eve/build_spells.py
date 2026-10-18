@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura_stacks", "consume_heal_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -45,8 +45,8 @@ KNOWN_KINDS = {
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
-PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit")
-PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct")
+PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume")
+PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread")
 WEAPON_ROLLS = ("normal", "normalized")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
@@ -827,7 +827,7 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             if kind not in KNOWN_KINDS:
                 raise BuildError(f"{here}: unknown effect kind {kind!r}")
             check_kind_params(kind, parsed, here)
-        if kind in ("add_aura_stacks", "consume_aura_stacks", "grant_aura"):
+        if kind in ("add_aura_stacks", "consume_aura_stacks", "grant_aura", "consume_aura"):
             if parsed.get("aura") not in auras:
                 raise BuildError(f"{here}: aura {parsed.get('aura')!r} is not an aura row of this Calling")
         if kind == "proc":
@@ -850,6 +850,24 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
     out["effects"] = effects if out["modelled"] else []
     out["description"] = row["description"]
     return out
+
+
+def resolve_amount_of(calling: dict) -> None:
+    """A `consume_aura`'s `amount_of=skill` becomes that skill's `school_damage` amount formula and
+    school, so the realm reads the hit it is a multiple of without looking the skill up."""
+    for skill in calling["skills"]:
+        for effect in skill["effects"]:
+            name = effect["params"].pop("amount_of", None) if effect["kind"] == "consume_aura" else None
+            if name is None:
+                continue
+            where = f"{calling['key']}/{skill['key']} consume_aura"
+            hit = next((e for s in calling["skills"] if s["key"] == name and s["modelled"]
+                        for e in s["effects"] if e["kind"] == "school_damage"), None)
+            if hit is None:
+                raise BuildError(f"{where}: amount_of {name!r} is not a modelled skill with a school_damage")
+            effect["params"]["amount"] = hit["params"]["amount"]
+            if "school" in hit["params"]:
+                effect["params"]["school"] = hit["params"]["school"]
 
 
 def skill_masks(rows: list[dict], spell_flags: dict | None) -> dict[str, dict[str, int | None]]:
@@ -1077,6 +1095,9 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
     # An aura's Spell.dbc fields join the override of a skill that is the same spell, whatever the row order.
     for extra, where in aura_overrides:
         merge_override(overrides, extra, where)
+
+    for calling in callings.values():
+        resolve_amount_of(calling)
 
     for (calling_key, key), ranks in talent_rows.items():
         calling = callings[calling_key]
