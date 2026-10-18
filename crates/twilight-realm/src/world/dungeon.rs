@@ -59,9 +59,7 @@ impl InWorld {
         for unit in units.into_iter().chain([self.guid]) {
             self.auras_die_with(unit, events);
         }
-        self.mobs.clear();
-        self.population = Default::default();
-        self.hub = Default::default();
+        self.drop_view(&mut Vec::new());
         self.map = to.map;
         c.map = to.map;
         c.position = to.position;

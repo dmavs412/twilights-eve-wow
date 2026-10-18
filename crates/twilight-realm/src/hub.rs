@@ -294,13 +294,13 @@ struct Walk {
 }
 
 impl InView {
-    /// Brings the NPCs within view of `me` into the world, standing on the host's ground, lets
-    /// distant ones go, and walks the wanderers in view on by `dt` seconds. They stand on
-    /// Kalimdor only.
+    /// Brings the NPCs within view of any of `players` into the world, standing on the host's
+    /// ground, lets go those far from them all, and walks the wanderers in view on by `dt`
+    /// seconds. They stand on Kalimdor only.
     pub(crate) fn update(
         &mut self,
         dt: f32,
-        me: [f32; 3],
+        players: &[[f32; 3]],
         map: u32,
         host: &dyn Host,
         events: &mut Vec<SessionEvent>,
@@ -311,7 +311,10 @@ impl InView {
         let mut gone = Vec::new();
         for (npc, present) in all.iter().zip(&mut self.present) {
             let d = if map == crate::KALIMDOR {
-                flat_distance(npc.position, me)
+                players
+                    .iter()
+                    .map(|&p| flat_distance(npc.position, p))
+                    .fold(f32::INFINITY, f32::min)
             } else {
                 f32::INFINITY
             };
@@ -344,6 +347,19 @@ impl InView {
         if !gone.is_empty() {
             events.push(SessionEvent::ObjectsRemoved(gone));
         }
+    }
+}
+
+impl InView {
+    /// The NPCs in the world within view of `me`: each one's guid and its create where it stands.
+    pub(crate) fn in_view(&self, me: [f32; 3]) -> Vec<(u64, SessionEvent)> {
+        npcs()
+            .iter()
+            .zip(&self.present)
+            .filter_map(|(npc, s)| s.as_ref().map(|s| (npc, s)))
+            .filter(|(_, s)| flat_distance(s.at, me) <= VIEW_YD)
+            .map(|(npc, s)| (npc.guid(), npc.create(s.at, npc.facing())))
+            .collect()
     }
 }
 

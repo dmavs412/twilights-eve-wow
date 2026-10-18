@@ -29,11 +29,7 @@ impl InWorld {
         for &unit in &units {
             self.auras_die_with(unit, events);
         }
-        if !units.is_empty() {
-            events.push(SessionEvent::ObjectsRemoved(units));
-        }
-        self.mobs.clear();
-        self.population.forget_view();
+        self.drop_view(events);
         // One character to a realm: whoever leaves is the last one out, and the Run ends.
         self.run = None;
         self.phase = now;

@@ -1,6 +1,7 @@
-//! Which of The Barrens' thousands of spawns are in the world: only those near the player, so a
-//! tick costs the same anywhere in the zone. Spawns stream in as the player comes within view
-//! and out as they leave it, and the dead come back once the player has been away a while.
+//! Which of The Barrens' thousands of spawns are in the world: only those near a player, so a
+//! tick costs the same anywhere in the zone. Spawns stream in as a player comes within view
+//! and out once every player has left it, and the dead come back once the players have been away
+//! a while.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -12,8 +13,9 @@ use crate::rules::respawn;
 use crate::space::flat_distance;
 use crate::Host;
 
-/// How far the player sees mobs: a spawn whose home is this close is in the world (vmangos's
-/// continent visibility is about 90–100 yd).
+/// How far a player sees mobs: a spawn whose home is this close is in the world (vmangos's
+/// continent visibility is about 90–100 yd). The one view range: a client is sent what is this
+/// close to its player.
 pub(crate) const VIEW_YD: f32 = 100.0;
 /// How far an idle or dead mob's home may be before it leaves the world; above [`VIEW_YD`] so a
 /// player on the edge does not make it flicker.
@@ -65,8 +67,8 @@ struct Corpse {
 /// The world's share of the spawns.
 #[derive(Default)]
 pub(crate) struct Population {
-    /// Where the player stood at the last look over the view; `None` forces one.
-    scanned_at: Option<[f32; 3]>,
+    /// Where the players stood at the last look over the view; `None` forces one.
+    scanned_at: Option<Vec<[f32; 3]>>,
     /// Seconds since that look.
     since_scan: f32,
     /// Which spawns have a mob in the world, by spawn index.
@@ -77,12 +79,12 @@ pub(crate) struct Population {
 }
 
 impl Population {
-    /// Brings spawns within view of `me` into `mobs` and lets distant ones go, and brings back
-    /// the dead whose time is up.
+    /// Brings spawns within view of any of `players` into `mobs` and lets go those far from them
+    /// all, and brings back the dead whose time is up.
     pub(crate) fn update(
         &mut self,
         dt: f32,
-        me: [f32; 3],
+        players: &[[f32; 3]],
         map: u32,
         host: &dyn Host,
         mobs: &mut Vec<Mob>,
@@ -93,11 +95,17 @@ impl Population {
             self.present = vec![false; content.spawn.len()];
         }
 
-        // The dead come back once the player has been away long enough.
+        let nearest = |at: [f32; 3]| {
+            players
+                .iter()
+                .map(|&p| flat_distance(at, p))
+                .fold(f32::INFINITY, f32::min)
+        };
+        // The dead come back once the players have been away long enough.
         let mut back = Vec::new();
         self.dead.retain_mut(|c| {
             let home = content.spawn[c.spawn as usize].position;
-            c.remaining = respawn::countdown(c.remaining, c.wait, dt, flat_distance(home, me));
+            c.remaining = respawn::countdown(c.remaining, c.wait, dt, nearest(home));
             if c.remaining > 0.0 {
                 return true;
             }
@@ -114,20 +122,24 @@ impl Population {
 
         self.since_scan += dt;
         if self.since_scan < RESCAN_SECS
-            && self
-                .scanned_at
-                .is_some_and(|at| flat_distance(at, me) < RESCAN_YD)
+            && self.scanned_at.as_ref().is_some_and(|at| {
+                at.len() == players.len()
+                    && at
+                        .iter()
+                        .zip(players)
+                        .all(|(&a, &p)| flat_distance(a, p) < RESCAN_YD)
+            })
         {
             return;
         }
-        self.scanned_at = Some(me);
+        self.scanned_at = Some(players.to_vec());
         self.since_scan = 0.0;
 
         // Out of view: the idle and the dead leave; a fight or a run home stays.
         let mut gone = Vec::new();
         mobs.retain(|m| {
-            let leaves = matches!(m.state, State::Idle | State::Dead)
-                && flat_distance(m.home, me) > FORGET_YD;
+            let leaves =
+                matches!(m.state, State::Idle | State::Dead) && nearest(m.home) > FORGET_YD;
             if leaves {
                 gone.push(m.guid);
                 self.present[m.spawn as usize] = false;
@@ -139,11 +151,29 @@ impl Population {
         }
 
         // Into view.
-        let (lo, hi) = (
-            cell(me[0] - VIEW_YD, me[1] - VIEW_YD),
-            cell(me[0] + VIEW_YD, me[1] + VIEW_YD),
-        );
         let grid = grid();
+        for &me in players {
+            let (lo, hi) = (
+                cell(me[0] - VIEW_YD, me[1] - VIEW_YD),
+                cell(me[0] + VIEW_YD, me[1] + VIEW_YD),
+            );
+            self.stream_in(lo, hi, me, map, host, grid, mobs, events);
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn stream_in(
+        &mut self,
+        lo: (i32, i32),
+        hi: (i32, i32),
+        me: [f32; 3],
+        map: u32,
+        host: &dyn Host,
+        grid: &Grid,
+        mobs: &mut Vec<Mob>,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let content = mobs::content();
         for cx in lo.0..=hi.0 {
             for cy in lo.1..=hi.1 {
                 let Some(list) = grid.cells.get(&(map, cx, cy)) else {
@@ -168,13 +198,6 @@ impl Population {
                 }
             }
         }
-    }
-
-    /// The player left the open world for a Phased Dungeon, and its mobs left with them: the
-    /// view is looked over afresh on the way out, and the dead keep their wait.
-    pub(crate) fn forget_view(&mut self) {
-        self.present.iter_mut().for_each(|p| *p = false);
-        self.scanned_at = None;
     }
 
     /// A mob of `spawn` died: it comes back once the player has been away `wait` seconds.
@@ -227,7 +250,14 @@ mod tests {
             .find(|s| s.entry == entry)
             .unwrap();
         let mut mobs = Vec::new();
-        Population::default().update(0.1, spawn.position, map, &Flat, &mut mobs, &mut Vec::new());
+        Population::default().update(
+            0.1,
+            &[spawn.position],
+            map,
+            &Flat,
+            &mut mobs,
+            &mut Vec::new(),
+        );
         (spawn, mobs)
     }
 

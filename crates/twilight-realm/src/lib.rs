@@ -62,6 +62,7 @@ mod rest;
 mod rng;
 pub mod rules;
 mod save;
+mod shard;
 mod space;
 mod tables;
 mod talents;
@@ -348,6 +349,13 @@ pub struct Realm {
     parked: std::collections::BTreeMap<SessionId, Session>,
     /// The last session id handed out.
     last_session: u32,
+    /// The open-world maps someone stands on, each shared by every player there.
+    shards: std::collections::BTreeMap<u32, shard::Shard>,
+    /// The shard whose mobs the served session holds, lent.
+    lent_from: Option<u32>,
+    /// How many of the served session's events came before the lend: what follows is shown to
+    /// the other players who see the units in it.
+    lent_mark: usize,
     storage: Vec<Storage>,
     /// Lines for the host's log since the last drain.
     log: Vec<String>,
@@ -447,6 +455,9 @@ impl Realm {
 
     /// Every session's events since the last drain, by session then oldest first.
     pub fn drain_session_events(&mut self) -> Vec<(SessionId, SessionEvent)> {
+        self.give_back();
+        self.lend();
+        self.lent_mark = 0;
         let mut out: Vec<_> = std::mem::take(&mut self.events)
             .into_iter()
             .map(|e| (self.active, e))
@@ -461,17 +472,183 @@ impl Realm {
     /// Makes `session` the served one: its state moves into `world`, `events` and
     /// `dev_teleport`, and the one served before is parked.
     fn serve(&mut self, session: SessionId) {
-        if session == self.active {
+        if session != self.active {
+            self.give_back();
+            let incoming = self.parked.remove(&session).unwrap_or_default();
+            let outgoing = Session {
+                world: std::mem::replace(&mut self.world, incoming.world),
+                events: std::mem::replace(&mut self.events, incoming.events),
+                dev_teleport: std::mem::replace(&mut self.dev_teleport, incoming.dev_teleport),
+            };
+            self.parked.insert(self.active, outgoing);
+            self.active = session;
+        }
+        self.lend();
+    }
+
+    /// Lends the served session its shard's mobs, when its player stands in the open world.
+    fn lend(&mut self) {
+        if self.lent_from.is_some() {
             return;
         }
-        let incoming = self.parked.remove(&session).unwrap_or_default();
-        let outgoing = Session {
-            world: std::mem::replace(&mut self.world, incoming.world),
-            events: std::mem::replace(&mut self.events, incoming.events),
-            dev_teleport: std::mem::replace(&mut self.dev_teleport, incoming.dev_teleport),
+        let Some(w) = &mut self.world else {
+            return;
         };
-        self.parked.insert(self.active, outgoing);
-        self.active = session;
+        let Some(map) = w.shard_map() else {
+            return;
+        };
+        let shard = self.shards.entry(map).or_default();
+        w.mobs = std::mem::take(&mut shard.mobs);
+        w.lent = true;
+        self.lent_from = Some(map);
+        self.lent_mark = self.events.len();
+    }
+
+    /// Takes the lent mobs back into their shard, with the deaths the served session saw, and
+    /// shows the other players there what it did to the units they see.
+    fn give_back(&mut self) {
+        let Some(map) = self.lent_from.take() else {
+            // A player who came out into the open world left their own mobs behind.
+            if let Some(w) = &mut self.world {
+                if w.shard_map().is_some() {
+                    w.mobs.clear();
+                }
+                w.died.clear();
+            }
+            return;
+        };
+        let new: Vec<SessionEvent> = self.events[self.lent_mark.min(self.events.len())..].to_vec();
+        let shard = self.shards.entry(map).or_default();
+        if let Some(w) = &mut self.world {
+            shard.mobs = if w.lent {
+                w.lent = false;
+                std::mem::take(&mut w.mobs)
+            } else {
+                w.handed_back.take().unwrap_or_default()
+            };
+            for (spawn, wait) in w.died.drain(..) {
+                shard.died(spawn, wait);
+            }
+            // What the session itself created or removed (a call for help's adds).
+            if w.shard_map() == Some(map) {
+                for e in &new {
+                    match e {
+                        SessionEvent::ObjectCreate { guid, .. } => {
+                            w.seen.insert(*guid);
+                        }
+                        SessionEvent::ObjectDestroyed(guid) => {
+                            w.seen.remove(guid);
+                        }
+                        SessionEvent::ObjectsRemoved(guids) => {
+                            guids.iter().for_each(|g| {
+                                w.seen.remove(g);
+                            });
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        self.show_others(map, &new);
+    }
+
+    /// Shows `events` to every parked session on `map` whose client sees a unit in them.
+    fn show_others(&mut self, map: u32, events: &[SessionEvent]) {
+        for s in self.parked.values_mut() {
+            let Some(w) = &s.world else {
+                continue;
+            };
+            if w.shard_map() != Some(map) {
+                continue;
+            }
+            for e in events {
+                if shard::shown_units(e).iter().any(|u| w.seen.contains(u)) {
+                    s.events.push(shard::as_seen_by_others(e));
+                }
+            }
+        }
+    }
+
+    /// The shards' own tick: each streams around its players, and every client there is sent
+    /// what came into its view and what left it; then each mob is given to the player who runs
+    /// it this tick.
+    fn tick_shards(&mut self, dt: f32, host: &dyn Host) {
+        self.give_back();
+        let mut on: std::collections::BTreeMap<u32, Vec<shard::OnShard<SessionId>>> =
+            Default::default();
+        let worlds = std::iter::once((self.active, &self.world))
+            .chain(self.parked.iter().map(|(id, s)| (*id, &s.world)));
+        for (id, w) in worlds {
+            let Some(w) = w else { continue };
+            let (Some(map), Some(c)) = (w.shard_map(), self.characters.get(w.guid)) else {
+                continue;
+            };
+            on.entry(map).or_default().push(shard::OnShard {
+                session: id,
+                guid: w.guid,
+                position: c.position,
+            });
+        }
+        self.shards.retain(|map, _| on.contains_key(map));
+        for (map, players) in &on {
+            let shard = self.shards.entry(*map).or_default();
+            let positions: Vec<[f32; 3]> = players.iter().map(|p| p.position).collect();
+            let made = shard.update(dt, &positions, *map, host);
+            let mut owners = shard.owners(players);
+            let shard = &self.shards[map];
+            let sessions = std::iter::once((self.active, &mut self.world, &mut self.events)).chain(
+                self.parked
+                    .iter_mut()
+                    .map(|(id, s)| (*id, &mut s.world, &mut s.events)),
+            );
+            for (id, w, events) in sessions {
+                let Some(p) = players.iter().find(|p| p.session == id) else {
+                    continue;
+                };
+                let Some(w) = w else { continue };
+                // What streamed out or came back, and the Hub's wanderers' walks.
+                for e in &made {
+                    match e {
+                        SessionEvent::ObjectDestroyed(g) => {
+                            if w.seen.remove(g) {
+                                events.push(e.clone());
+                            }
+                        }
+                        SessionEvent::ObjectsRemoved(gs) => {
+                            let gone: Vec<u64> =
+                                gs.iter().copied().filter(|g| w.seen.remove(g)).collect();
+                            if !gone.is_empty() {
+                                events.push(SessionEvent::ObjectsRemoved(gone));
+                            }
+                        }
+                        other if shard::shown_units(other).iter().any(|u| w.seen.contains(u)) => {
+                            events.push(other.clone());
+                        }
+                        _ => {}
+                    }
+                }
+                // The view: what came within it is created, what left it removed.
+                let view = shard.in_view(p.position);
+                let gone: Vec<u64> = w
+                    .seen
+                    .iter()
+                    .copied()
+                    .filter(|g| !view.iter().any(|(v, _)| v == g) && !shard.keeps(*g))
+                    .collect();
+                if !gone.is_empty() {
+                    gone.iter().for_each(|g| {
+                        w.seen.remove(g);
+                    });
+                    events.push(SessionEvent::ObjectsRemoved(gone));
+                }
+                for (guid, create) in view {
+                    if w.seen.insert(guid) {
+                        events.push(create);
+                    }
+                }
+                w.runs = owners.remove(&id).unwrap_or_default();
+            }
+        }
     }
 
     /// Applies one command from the default session; its answers queue for
@@ -702,9 +879,32 @@ impl Realm {
         let mut ids: Vec<SessionId> = self.parked.keys().copied().collect();
         ids.push(self.active);
         ids.sort();
+        // A dev teleport lands first, so the world streams in where it put the player.
+        for &id in &ids {
+            let pending = if id == self.active {
+                self.dev_teleport.is_some()
+            } else {
+                self.parked[&id].dev_teleport.is_some()
+            };
+            if pending {
+                self.serve(id);
+                self.dev_teleport_served(host);
+            }
+        }
+        self.tick_shards(dt, host);
         for id in ids {
             self.serve(id);
             self.tick_served(dt, host);
+        }
+        self.give_back();
+    }
+
+    fn dev_teleport_served(&mut self, host: &dyn Host) {
+        let (Some(w), Some(to)) = (&mut self.world, self.dev_teleport.take()) else {
+            return;
+        };
+        if let Some(c) = self.characters.get_mut(w.guid) {
+            w.dev_teleport(to, host, c, &mut self.events);
         }
     }
 
@@ -752,7 +952,9 @@ impl Realm {
 
     /// The default session's events since the last drain, oldest first.
     pub fn drain_events(&mut self) -> Vec<SessionEvent> {
+        self.give_back();
         self.serve(SessionId::DEFAULT);
+        self.lent_mark = 0;
         std::mem::take(&mut self.events)
     }
 
@@ -855,6 +1057,7 @@ impl Realm {
     }
 
     fn enter_world(&mut self, guid: u64) {
+        self.give_back();
         // A character another session has in the world stays with it.
         if self
             .parked
@@ -883,6 +1086,7 @@ impl Realm {
     }
 
     fn logout(&mut self) {
+        self.give_back();
         let Some(mut w) = self.world.take() else {
             return;
         };

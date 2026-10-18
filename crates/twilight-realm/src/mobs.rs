@@ -487,6 +487,8 @@ pub(crate) struct Mob {
     pub(crate) think_in: f32,
     /// Which of its spawn's calls for help it has made, this life.
     pub(crate) called: Vec<bool>,
+    /// The player it last turned on; 0 before any.
+    pub(crate) target: u64,
 }
 
 /// The pause between one stroll and the next, in seconds.
@@ -535,6 +537,7 @@ impl Mob {
             spell_cooldowns: Vec::new(),
             think_in: 0.0,
             called: vec![false; spawn.on_health.len()],
+            target: 0,
         })
     }
 

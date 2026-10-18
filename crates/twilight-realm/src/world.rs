@@ -20,7 +20,6 @@ use crate::equipment;
 use crate::fields::*;
 use crate::looting::{self, Looting};
 use crate::mobs::{Mob, State, COMBAT_REACH};
-use crate::population::Population;
 use crate::rng::Rng;
 use crate::rules::melee::Outcome;
 use crate::rules::power::{self as power_rules, PowerKind};
@@ -117,9 +116,20 @@ pub(crate) struct InWorld {
     pub(crate) since_save: f32,
     map: u32,
     player: Player,
-    /// The mobs near the player; they stream in from the first tick on, which brings the ground.
-    mobs: Vec<Mob>,
-    population: Population,
+    /// The mobs near the player. In the open world they are the [`crate::shard::Shard`]'s, lent
+    /// while this session is served; in a Dungeon or a Phased Dungeon's Run, the player's own.
+    pub(crate) mobs: Vec<Mob>,
+    /// Whether `mobs` is the shard's, lent.
+    pub(crate) lent: bool,
+    /// The shard's mobs, handed back when the player left the open world while they were lent.
+    pub(crate) handed_back: Option<Vec<Mob>>,
+    /// The mobs and Hub NPCs whose create the client has been sent, in the open world.
+    pub(crate) seen: std::collections::HashSet<u64>,
+    /// The lent mobs whose fight this session runs this tick; every other is another
+    /// session's to run.
+    pub(crate) runs: std::collections::HashSet<u64>,
+    /// The open-world spawns that died since the shard last heard: `(spawn, respawn wait)`.
+    pub(crate) died: Vec<(u32, f32)>,
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
@@ -127,8 +137,6 @@ pub(crate) struct InWorld {
     skills: cast::Skills,
     /// The teleport the client has yet to acknowledge.
     teleports: hearth::Teleports,
-    /// The Hub's NPCs in view: they stream in with the view, after the mobs.
-    hub: crate::hub::InView,
     /// This session's sales, on the merchant window's buyback tab.
     pub(crate) buyback: crate::vendor::Buyback,
     /// The dice for gear wear, apart from the fight's so that wearing changes no fight.
@@ -206,12 +214,15 @@ impl InWorld {
                 dead: false,
             },
             mobs: Vec::new(),
-            population: Population::default(),
+            lent: false,
+            handed_back: None,
+            seen: Default::default(),
+            runs: Default::default(),
+            died: Vec::new(),
             dev,
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
             teleports: hearth::Teleports::default(),
-            hub: Default::default(),
             buyback: crate::vendor::Buyback::default(),
             wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
             respawn: death::Respawn::home(c.map),
@@ -311,6 +322,40 @@ impl InWorld {
         }
     }
 
+    /// The map of the shard this player shares, when they stand in the open world: the realm lends
+    /// it its mobs and sends it what comes into view.
+    pub(crate) fn shard_map(&self) -> Option<u32> {
+        (!self.transfer
+            && content::open_world(self.map)
+            && self.phase == crate::phased::Phase::OpenWorld)
+            .then_some(self.map)
+    }
+
+    /// Whether this session runs mob `guid`'s fight and AI: every mob of its own, and the lent
+    /// ones the realm gave it this tick.
+    pub(crate) fn runs(&self, guid: u64) -> bool {
+        !self.lent || self.runs.contains(&guid)
+    }
+
+    /// The player leaves the mobs where they are: the client is told they are gone, the shard's
+    /// go back to it untouched, and the player's own are dropped.
+    pub(crate) fn drop_view(&mut self, events: &mut Vec<SessionEvent>) {
+        let units: Vec<u64> = if self.lent {
+            self.seen.drain().collect()
+        } else {
+            self.mobs.iter().map(|m| m.guid).collect()
+        };
+        if !units.is_empty() {
+            events.push(SessionEvent::ObjectsRemoved(units));
+        }
+        if self.lent {
+            self.handed_back = Some(std::mem::take(&mut self.mobs));
+            self.lent = false;
+        }
+        self.mobs.clear();
+        self.seen.clear();
+    }
+
     /// Advances the world by `dt` seconds around `c`, to the wall clock's `wall`.
     pub(crate) fn tick(
         &mut self,
@@ -332,12 +377,6 @@ impl InWorld {
         if let Some(run) = &mut self.run {
             run.elapsed += dt;
         }
-        // The open world streams in around the player; a Dungeon's run is all there at once.
-        if content::open_world(self.map) && self.phase == crate::phased::Phase::OpenWorld {
-            self.population
-                .update(dt, me, self.map, host, &mut self.mobs, events);
-        }
-        self.hub.update(dt, me, self.map, host, events);
         if self.player.alive() {
             self.discover(host, c, events, &mut ticked);
         }
@@ -369,7 +408,9 @@ impl InWorld {
         self.dazed_wake(c, host, events);
         self.player_swing(c, rng, events, &mut ticked);
         for i in 0..self.mobs.len() {
-            self.mob_tick(i, dt, host, c, rng, events, &mut ticked);
+            if self.runs(self.mobs[i].guid) {
+                self.mob_tick(i, dt, host, c, rng, events, &mut ticked);
+            }
         }
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
         // A next-cast buff that ran out puts the client's cast bar back.
@@ -402,7 +443,7 @@ impl InWorld {
         let route = crate::dungeon::route_on(self.map);
         for i in 0..self.mobs.len() {
             let mob = &self.mobs[i];
-            if mob.state != State::Dazed || self.skills.stunned(mob.guid) {
+            if mob.state != State::Dazed || self.skills.stunned(mob.guid) || !self.runs(mob.guid) {
                 continue;
             }
             let r = self.notice_radius(mob, c.level);
@@ -707,6 +748,8 @@ impl InWorld {
                     events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
                 }
             }
+            // Another player's fight, handed over mid-tick: theirs to run from the next.
+            State::Engaged if mob.target != self.guid => {}
             State::Engaged => {
                 if !self.player.alive() || leash::beyond(mob.home, mob.position) {
                     let camp = mob.camp;
@@ -833,7 +876,7 @@ impl InWorld {
             let wait = t
                 .respawn_secs
                 .unwrap_or_else(|| crate::rules::respawn::wait(t.rank));
-            self.population.died(mob.spawn, wait);
+            self.died.push((mob.spawn, wait));
         }
         self.skills.target_died(mob.guid, events);
         if self.player.attacking == Some(mob.guid) {
@@ -976,7 +1019,10 @@ impl InWorld {
         let attacking = p
             .attacking
             .is_some_and(|t| self.mobs.iter().any(|m| m.guid == t && m.alive()));
-        let attacked = self.mobs.iter().any(|m| m.state == State::Engaged);
+        let attacked = self
+            .mobs
+            .iter()
+            .any(|m| m.state == State::Engaged && m.target == self.guid);
         let in_combat = p.alive() && (attacking || attacked || self.skills.holds_combat());
         if in_combat != p.in_combat {
             p.in_combat = in_combat;
@@ -1004,6 +1050,7 @@ fn at_tier_rate(c: &Char, base: u32) -> u32 {
 /// flag.
 fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
     mob.state = State::Engaged;
+    mob.target = player;
     events.push(SessionEvent::AiReaction {
         unit: mob.guid,
         // `AI_REACTION_HOSTILE`.
