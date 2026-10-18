@@ -314,12 +314,40 @@ pub enum RealmCommand {
     },
 }
 
-/// The realm: its characters, the one in the world, and the events not yet drained.
+/// One client the realm serves: a handle from [`Realm::connect`]. The realm starts with
+/// [`SessionId::DEFAULT`], which the session-less calls ([`Realm::handle`], [`Realm::drain_events`])
+/// act on.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SessionId(u32);
+
+impl SessionId {
+    /// The session every realm has from [`Realm::new`].
+    pub const DEFAULT: Self = Self(0);
+}
+
+/// What one session owns: its character in the world, its undrained events, its dev teleport.
+#[derive(Default)]
+struct Session {
+    world: Option<world::InWorld>,
+    events: Vec<SessionEvent>,
+    dev_teleport: Option<dev::DevTeleport>,
+}
+
+/// The realm: its characters, the sessions and who of theirs is in the world, and the events not
+/// yet drained.
 #[derive(Default)]
 pub struct Realm {
     characters: characters::Characters,
+    /// The served session's character in the world: `active`'s, swapped in by [`Self::serve`].
     world: Option<world::InWorld>,
+    /// The served session's events.
     events: Vec<SessionEvent>,
+    /// The session `world`, `events` and `dev_teleport` belong to.
+    active: SessionId,
+    /// Every other session, parked while another is served.
+    parked: std::collections::BTreeMap<SessionId, Session>,
+    /// The last session id handed out.
+    last_session: u32,
     storage: Vec<Storage>,
     /// Lines for the host's log since the last drain.
     log: Vec<String>,
@@ -383,8 +411,76 @@ impl Realm {
         self.wall = unix_ms as f64 / 1000.0;
     }
 
-    /// Applies one command; its answers queue for [`Self::drain_events`].
+    /// A new session, with no character in the world.
+    pub fn connect(&mut self) -> SessionId {
+        self.last_session += 1;
+        let id = SessionId(self.last_session);
+        self.parked.insert(id, Session::default());
+        id
+    }
+
+    /// Ends `session`: its character logs out and is saved, as [`RealmCommand::Logout`] does, and
+    /// its undrained events are dropped. The default session is emptied, never removed.
+    pub fn disconnect(&mut self, session: SessionId) {
+        if session != self.active && !self.parked.contains_key(&session) {
+            return;
+        }
+        self.serve(session);
+        self.dev_teleport = None;
+        self.logout();
+        self.events.clear();
+        if session != SessionId::DEFAULT {
+            self.serve(SessionId::DEFAULT);
+            self.parked.remove(&session);
+        }
+    }
+
+    /// Applies one command from `session`; its answers queue for that session. An unknown session
+    /// is ignored.
+    pub fn handle_as(&mut self, session: SessionId, command: RealmCommand) {
+        if session != self.active && !self.parked.contains_key(&session) {
+            return;
+        }
+        self.serve(session);
+        self.handle_served(command);
+    }
+
+    /// Every session's events since the last drain, by session then oldest first.
+    pub fn drain_session_events(&mut self) -> Vec<(SessionId, SessionEvent)> {
+        let mut out: Vec<_> = std::mem::take(&mut self.events)
+            .into_iter()
+            .map(|e| (self.active, e))
+            .collect();
+        for (&id, s) in &mut self.parked {
+            out.extend(std::mem::take(&mut s.events).into_iter().map(|e| (id, e)));
+        }
+        out.sort_by_key(|(id, _)| *id);
+        out
+    }
+
+    /// Makes `session` the served one: its state moves into `world`, `events` and
+    /// `dev_teleport`, and the one served before is parked.
+    fn serve(&mut self, session: SessionId) {
+        if session == self.active {
+            return;
+        }
+        let incoming = self.parked.remove(&session).unwrap_or_default();
+        let outgoing = Session {
+            world: std::mem::replace(&mut self.world, incoming.world),
+            events: std::mem::replace(&mut self.events, incoming.events),
+            dev_teleport: std::mem::replace(&mut self.dev_teleport, incoming.dev_teleport),
+        };
+        self.parked.insert(self.active, outgoing);
+        self.active = session;
+    }
+
+    /// Applies one command from the default session; its answers queue for
+    /// [`Self::drain_events`].
     pub fn handle(&mut self, command: RealmCommand) {
+        self.handle_as(SessionId::DEFAULT, command);
+    }
+
+    fn handle_served(&mut self, command: RealmCommand) {
         match command {
             RealmCommand::ListCharacters => self.send_roster(),
             RealmCommand::CreateCharacter(req) => {
@@ -600,9 +696,19 @@ impl Realm {
         }
     }
 
-    /// Advances the world by `dt` seconds.
+    /// Advances the world by `dt` seconds: every session's, in session order.
     pub fn tick(&mut self, dt: f32, host: &dyn Host) {
         self.wall += f64::from(dt);
+        let mut ids: Vec<SessionId> = self.parked.keys().copied().collect();
+        ids.push(self.active);
+        ids.sort();
+        for id in ids {
+            self.serve(id);
+            self.tick_served(dt, host);
+        }
+    }
+
+    fn tick_served(&mut self, dt: f32, host: &dyn Host) {
         let Some(w) = &mut self.world else {
             return;
         };
@@ -644,8 +750,9 @@ impl Realm {
         }
     }
 
-    /// The events since the last drain, oldest first.
+    /// The default session's events since the last drain, oldest first.
     pub fn drain_events(&mut self) -> Vec<SessionEvent> {
+        self.serve(SessionId::DEFAULT);
         std::mem::take(&mut self.events)
     }
 
@@ -683,7 +790,14 @@ impl Realm {
     /// Seconds into the Run of the Phased Dungeon the character in the world stands in; `None`
     /// outside every one.
     pub fn run_elapsed(&self) -> Option<f32> {
-        self.world.as_ref().and_then(|w| w.run_elapsed())
+        let world = if self.active == SessionId::DEFAULT {
+            self.world.as_ref()
+        } else {
+            self.parked
+                .get(&SessionId::DEFAULT)
+                .and_then(|s| s.world.as_ref())
+        };
+        world.and_then(|w| w.run_elapsed())
     }
 
     /// Keeps `guid` from ever being handed out: the host holds a save under it that it could not
@@ -741,6 +855,17 @@ impl Realm {
     }
 
     fn enter_world(&mut self, guid: u64) {
+        // A character another session has in the world stays with it.
+        if self
+            .parked
+            .values()
+            .any(|s| s.world.as_ref().is_some_and(|w| w.guid == guid))
+        {
+            // `CHAR_LOGIN_DUPLICATE_CHARACTER`, the reference's second refusal.
+            self.events
+                .push(SessionEvent::CharacterLoginFailed { result: 2 });
+            return;
+        }
         // A save from inside the Dungeon comes back outside it: a run ends with its session.
         if let Some(c) = self.characters.get_mut(guid) {
             world::come_out(c);
