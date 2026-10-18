@@ -64,6 +64,30 @@ pub(crate) struct Creature {
     pub(crate) level: u8,
     pub(crate) position: [f32; 3],
     pub(crate) orientation: f32,
+    /// Calls for help, each made once per life.
+    #[serde(default)]
+    pub(crate) on_health: Vec<OnHealth>,
+}
+
+/// A creature's call for help: the first time its health is at or below `pct`% of its maximum
+/// in a life, `count` creatures of `entry` appear at `position` and fall on its target.
+#[derive(Deserialize)]
+pub(crate) struct OnHealth {
+    pub(crate) pct: u32,
+    pub(crate) entry: u32,
+    pub(crate) level: u8,
+    pub(crate) count: u32,
+    pub(crate) position: [f32; 3],
+    /// A cast the client shows as the call goes out.
+    #[serde(default)]
+    pub(crate) client_spell_id: Option<u32>,
+}
+
+impl OnHealth {
+    /// Whether `health` of `max` has fallen to the threshold.
+    pub(crate) fn reached(&self, health: u32, max: u32) -> bool {
+        u64::from(health) * 100 <= u64::from(max) * u64::from(self.pct)
+    }
 }
 
 /// The instance portal a Phased Dungeon shows in its doorway.
@@ -195,6 +219,21 @@ pub(crate) struct Run {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_call_at_half_health_is_reached_at_half_and_not_above() {
+        let call = OnHealth {
+            pct: 50,
+            entry: 38,
+            level: 9,
+            count: 2,
+            position: [0.0; 3],
+            client_spell_id: None,
+        };
+        assert!(!call.reached(51, 100));
+        assert!(call.reached(50, 100));
+        assert!(call.reached(1, 100));
+    }
 
     #[test]
     fn marshal_mcbride_stands_outside_the_abbey() {

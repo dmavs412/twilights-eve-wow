@@ -75,7 +75,7 @@ fn creatures(phase: Phase) -> Vec<Mob> {
         .spawn
         .iter()
         .enumerate()
-        .filter(|(_, s)| s.phase == phase)
+        .filter(|(_, s)| s.phase == phase && s.called_by.is_none())
         .filter_map(|(i, s)| {
             // The authored height: the ground lookup finds the terrain under a building's floor.
             Mob::spawn(i as u32, s.level_min, s.position[2])

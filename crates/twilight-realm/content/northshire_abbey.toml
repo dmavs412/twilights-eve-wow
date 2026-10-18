@@ -105,9 +105,19 @@ orientation = 2.0
 [[creature]]
 guid = 780004
 entry = 38
-level = 9
+level = 1
 position = [-8874.7, -181.7, 82.0]
 orientation = 3.6
+
+# The hall's Thug is level 1, so a level 1 character can hurt it, and calls two more when a blow
+# takes a tenth of its health: a stand-in for the Abbot's bell until he comes (#93). They appear
+# at the hall's west door.
+[[creature.on_health]]
+pct = 90
+entry = 38
+level = 1
+count = 2
+position = [-8878.0, -184.0, 82.0]
 
 # Brother Neals (#85), the Abbey's one survivor and the ender of Into the Abbey: friendly, quest
 # flags only. He hides at the foot of the bell tower stair, past the nave, in the group of

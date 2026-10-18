@@ -33,6 +33,9 @@ const BASE_RUN: f32 = 7.0;
 const BOUNDING_RADIUS: f32 = 0.5;
 pub(crate) const COMBAT_REACH: f32 = 1.5;
 
+/// The first low guid given to a creature a call for help brings in.
+const CALLED_GUID_BASE: u32 = 0x90_0000;
+
 fn yes() -> bool {
     true
 }
@@ -114,6 +117,11 @@ pub(crate) struct Spawn {
     pub(crate) map: u32,
     /// The open world's, or a Phased Dungeon's.
     pub(crate) phase: Phase,
+    /// The calls for help it makes in a fight.
+    pub(crate) on_health: &'static [phased::OnHealth],
+    /// A creature a call for help brings in, not one the Run starts with: the caller's guid and
+    /// which of its calls.
+    pub(crate) called_by: Option<(u32, usize)>,
 }
 
 /// A hand-written spawn in `mobs.toml`, a camp of its own.
@@ -255,6 +263,8 @@ pub(crate) fn content() -> &'static Mobs {
                     camp: s.guid,
                     map: crate::content::KALIMDOR,
                     phase: Phase::OpenWorld,
+                    on_health: &[],
+                    called_by: None,
                 })
             })
             .collect();
@@ -276,6 +286,8 @@ pub(crate) fn content() -> &'static Mobs {
                     camp,
                     map,
                     phase: Phase::OpenWorld,
+                    on_health: &[],
+                    called_by: None,
                 },
             ));
         }
@@ -311,6 +323,8 @@ pub(crate) fn content() -> &'static Mobs {
                 camp: a.guid,
                 map: crate::content::EASTERN_KINGDOMS,
                 phase: Phase::OpenWorld,
+                on_health: &[],
+                called_by: None,
             });
         }
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
@@ -332,8 +346,11 @@ pub(crate) fn content() -> &'static Mobs {
                 camp: s.camp,
                 map: dungeon.map,
                 phase: Phase::OpenWorld,
+                on_health: &[],
+                called_by: None,
             });
         }
+        let mut called_guids = 0;
         for d in phased::content() {
             for c in &d.creature {
                 let Some(t) = template.iter().find(|t| t.entry == c.entry) else {
@@ -351,7 +368,35 @@ pub(crate) fn content() -> &'static Mobs {
                     camp: c.guid,
                     map: d.map,
                     phase: Phase::Dungeon(d.id),
+                    on_health: &c.on_health,
+                    called_by: None,
                 });
+                // The creatures its calls bring in: rows the Run does not start with, each
+                // with a guid of its own above every authored one.
+                for (k, call) in c.on_health.iter().enumerate() {
+                    let t = template
+                        .iter()
+                        .find(|t| t.entry == call.entry)
+                        .unwrap_or_else(|| panic!("creature {}'s call names no template", c.guid));
+                    for _ in 0..call.count {
+                        spawn.push(Spawn {
+                            guid: CALLED_GUID_BASE + called_guids,
+                            entry: call.entry,
+                            level_min: call.level,
+                            level_max: call.level,
+                            position: call.position,
+                            orientation: c.orientation,
+                            display_id: t.display_id,
+                            wander_radius: 0.0,
+                            camp: c.guid,
+                            map: d.map,
+                            phase: Phase::Dungeon(d.id),
+                            on_health: &[],
+                            called_by: Some((c.guid, k)),
+                        });
+                        called_guids += 1;
+                    }
+                }
             }
         }
         Mobs { template, spawn }
@@ -440,6 +485,8 @@ pub(crate) struct Mob {
     pub(crate) spell_cooldowns: Vec<(&'static str, f32)>,
     /// Seconds until it next decides whether to cast.
     pub(crate) think_in: f32,
+    /// Which of its spawn's calls for help it has made, this life.
+    pub(crate) called: Vec<bool>,
 }
 
 /// The pause between one stroll and the next, in seconds.
@@ -487,6 +534,7 @@ impl Mob {
             casting: None,
             spell_cooldowns: Vec::new(),
             think_in: 0.0,
+            called: vec![false; spawn.on_health.len()],
         })
     }
 

@@ -2,6 +2,7 @@
 //! fights between them, one tick at a time.
 
 mod advance;
+mod call_for_help;
 mod cast;
 mod creature_cast;
 mod hearth;
@@ -359,6 +360,7 @@ impl InWorld {
             self.mob_tick(i, dt, host, c, rng, events);
         }
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
+        self.call_for_help(events);
         self.update_aura_states(events);
         if !self.player.alive() && !self.player.dead {
             self.die(c, events);
