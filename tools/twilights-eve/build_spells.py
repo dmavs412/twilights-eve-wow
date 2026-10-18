@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura_stacks", "consume_heal_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "grant_aura", "skill_stacks", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura_stacks", "consume_heal_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -45,8 +45,8 @@ KNOWN_KINDS = {
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
-PROC_EVENTS = ("cast", "kill", "dodge", "finisher")
-PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points")
+PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken")
+PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct")
 WEAPON_ROLLS = ("normal", "normalized")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
@@ -823,7 +823,7 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             if kind not in KNOWN_KINDS:
                 raise BuildError(f"{here}: unknown effect kind {kind!r}")
             check_kind_params(kind, parsed, here)
-        if kind in ("add_aura_stacks", "consume_aura_stacks"):
+        if kind in ("add_aura_stacks", "consume_aura_stacks", "grant_aura"):
             if parsed.get("aura") not in auras:
                 raise BuildError(f"{here}: aura {parsed.get('aura')!r} is not an aura row of this Calling")
         if kind == "proc":

@@ -427,8 +427,10 @@ const STATS: [Stat; 5] = [
     Stat::Spirit,
 ];
 
-/// One learned proc that `happened` sets off, before its chance is rolled.
+/// One proc that `happened` sets off, a learned talent's or a buff's, before its chance is rolled.
 pub(crate) struct Proc {
+    /// The spell its effects are logged under: the talent rank's, or the buff's.
+    pub(crate) spell_id: u32,
     pub(crate) chance: u32,
     /// Percent of the maximum health healed.
     pub(crate) heal_pct: u32,
@@ -438,12 +440,22 @@ pub(crate) struct Proc {
     pub(crate) energize: u32,
     /// Combo points added on the event's target.
     pub(crate) combo_points: u32,
+    /// Damage dealt to the event's target, a formula.
+    pub(crate) damage: Option<crate::rules::skills::Linear>,
+    /// Damage dealt to the event's target, a percent of the shield's Block Value.
+    pub(crate) block_value_pct: u32,
+    pub(crate) school: crate::rules::school::School,
+    /// The skill whose `skill_amount_pct` talents raise the damage.
+    pub(crate) amount_skill: Option<&'static str>,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
 pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<Proc> {
-    learned(c)
-        .filter_map(|(e, r)| match e {
+    c.talents
+        .iter()
+        .filter_map(|&(id, r)| find(c, id).map(|(_, t)| (t, usize::from(r) - 1)))
+        .flat_map(|(t, r)| t.effects.iter().map(move |e| (t, e, r)))
+        .filter_map(|(t, e, r)| match e {
             TalentEffect::Proc {
                 on,
                 skill,
@@ -454,6 +466,10 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 auras,
                 energize,
                 combo_points,
+                damage_attacker,
+                block_value_pct,
+                school,
+                amount_skill,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -461,16 +477,46 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     yields_xp: *yields_xp,
                 };
                 trigger.fires(happened).then(|| Proc {
+                    spell_id: t.rank_spells.get(r).copied().unwrap_or(0),
                     chance: chances.get(r).copied().unwrap_or(*chance),
                     heal_pct: per_rank[r],
                     auras: auras.get(r).cloned().unwrap_or_default(),
                     energize: energize.get(r).copied().unwrap_or(0),
                     combo_points: combo_points.get(r).copied().unwrap_or(0),
+                    damage: *damage_attacker,
+                    block_value_pct: block_value_pct.get(r).copied().unwrap_or(0),
+                    school: *school,
+                    amount_skill: amount_skill.as_deref(),
                 })
             }
             _ => None,
         })
         .collect()
+}
+
+/// A buff's proc, as [`procs`] gives a talent's, when `happened` sets it off.
+pub(crate) fn aura_proc(
+    spell_id: u32,
+    p: &'static crate::callings::AuraProc,
+    happened: &crate::rules::procs::Happened,
+) -> Option<Proc> {
+    let trigger = crate::rules::procs::Trigger {
+        on: p.on,
+        skill: None,
+        yields_xp: false,
+    };
+    trigger.fires(happened).then(|| Proc {
+        spell_id,
+        chance: p.chance,
+        heal_pct: p.heal_pct,
+        auras: p.apply_aura.iter().cloned().collect(),
+        energize: p.energize,
+        combo_points: 0,
+        damage: p.damage_attacker,
+        block_value_pct: p.block_value_pct,
+        school: p.school,
+        amount_skill: p.amount_skill.as_deref(),
+    })
 }
 
 /// The percent `c`'s out-of-combat health regeneration is raised by.

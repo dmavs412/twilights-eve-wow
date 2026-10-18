@@ -383,6 +383,9 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         // Evasion lives in the master CSV only; tests/cutthroat_stats.rs reads it.
         // Shield of the Penitent's and Seal of Iron's lasting stats live in the master CSV only;
         // tests/vanguard_defense.rs reads them.
+        Effect::GrantAura { .. } => {
+            panic!("{key}: the reference has no realm half for an aura row")
+        }
         Effect::ParryPct { .. }
         | Effect::BlockPct { .. }
         | Effect::BlockValuePct { .. }
@@ -430,10 +433,8 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         5923, 5924, 5925, 5926, 25829, 20262, 20263, 20264, 20265, 20266,
         // Precision, Redoubt, Reckoning.
         20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180, 20182,
-        // Vanguard's Bastion: Vengeful Conviction, Improved Shield of the Penitent, Iron
-        // Juggernaut (Reactive Strike, Tempered Steel, Shield Specialization and Iron Retribution
-        // are modelled now).
-        12797, 12799, 12800, 12312, 12803, 12308, 12810, 12811,
+        // Vanguard's Bastion: Iron Juggernaut (the rest are modelled now).
+        12308, 12810, 12811,
         // Vanguard's Righteous: Wrathful Iron, Hallowed Ground, Zealous Restoration, Hammer of the
         // Vanguard.
         20224, 20225, 20330, 20331, 20332, 12809,

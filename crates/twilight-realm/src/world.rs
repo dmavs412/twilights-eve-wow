@@ -368,7 +368,7 @@ impl InWorld {
         self.dazed_wake(c, host, events);
         self.player_swing(c, rng, events, &mut ticked);
         for i in 0..self.mobs.len() {
-            self.mob_tick(i, dt, host, c, rng, events);
+            self.mob_tick(i, dt, host, c, rng, events, &mut ticked);
         }
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
         self.call_for_help(events);
@@ -652,6 +652,7 @@ impl InWorld {
     }
 
     /// A mob's tick: chase, swing, or walk home.
+    #[allow(clippy::too_many_arguments)]
     fn mob_tick(
         &mut self,
         i: usize,
@@ -660,6 +661,7 @@ impl InWorld {
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
     ) {
         let me = c.position;
         // Inside a Dungeon, its route graph keeps every run within the walls.
@@ -756,7 +758,8 @@ impl InWorld {
                         self.refresh_gear(c, events);
                     }
                 }
-                self.struck(swing.outcome, c, rng, events);
+                let attacker = self.mobs[i].guid;
+                self.struck(swing.outcome, attacker, c, rng, events, ticked);
             }
         }
     }
@@ -862,6 +865,7 @@ impl InWorld {
             c,
             rng,
             events,
+            ticked,
         );
         self.auras_die_with(victim, events);
         crate::quests::credit_kill(c, entry, events);

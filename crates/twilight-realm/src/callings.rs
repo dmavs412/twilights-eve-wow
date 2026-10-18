@@ -196,12 +196,46 @@ pub enum AuraEffect {
     BlockValuePct { pct: u32 },
     /// The player's armour from items rises by `pct` percent.
     ArmorItemsPct { pct: u32 },
+    /// While the aura is up, a proc of its own: see [`AuraProc`].
+    Proc(AuraProc),
+    /// The skill costs `amount` less of the player's power, used up one `charges` at a time when
+    /// the skill lands.
+    SkillCost { skill: String, amount: u32 },
+    /// The skill's `add_aura_stacks` adds `stacks` (if more than its own), used up one `charges`
+    /// at a time when the skill lands.
+    SkillStacks { skill: String, stacks: u32 },
     /// The player is stealthed until it breaks; `opener_crit`: the first melee attack or skill
     /// from stealth is a guaranteed critical strike.
     Stealth {
         #[serde(default)]
         opener_crit: bool,
     },
+}
+
+/// A proc an aura row carries: while the aura is on the player, when `on` happens, `chance`
+/// percent of the time: heal `heal_pct` of the maximum health, give `energize` of the player's
+/// power, put up the aura row `apply_aura`, and deal `damage_attacker` (a formula) or
+/// `block_value_pct` of the shield's Block Value in `school` to the event's target.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct AuraProc {
+    pub on: ProcEvent,
+    #[serde(default = "always")]
+    pub chance: u32,
+    #[serde(default)]
+    pub heal_pct: u32,
+    #[serde(default)]
+    pub energize: u32,
+    #[serde(default)]
+    pub apply_aura: Option<String>,
+    #[serde(default)]
+    pub damage_attacker: Option<Linear>,
+    #[serde(default)]
+    pub block_value_pct: u32,
+    #[serde(default)]
+    pub school: School,
+    /// The skill whose `skill_amount_pct` talents raise the damage.
+    #[serde(default)]
+    pub amount_skill: Option<String>,
 }
 
 /// An armour kind a Calling may wear.
@@ -324,7 +358,7 @@ pub struct Prereq {
 }
 
 /// One thing a talent does; `per_rank[r - 1]` is its size at rank `r`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TalentEffect {
     /// The skill costs this many points less of the Calling's power.
@@ -407,6 +441,18 @@ pub enum TalentEffect {
         energize: Vec<u32>,
         #[serde(default)]
         combo_points: Vec<u32>,
+        /// Deal this formula's damage in `school` to the event's target (the attacker, for a
+        /// defensive event).
+        #[serde(default)]
+        damage_attacker: Option<Linear>,
+        /// Deal the rank's percent of the shield's Block Value in `school` to the event's target.
+        #[serde(default)]
+        block_value_pct: Vec<u32>,
+        #[serde(default)]
+        school: School,
+        /// The skill whose `skill_amount_pct` talents raise the damage.
+        #[serde(default)]
+        amount_skill: Option<String>,
     },
     /// The armour from items rises by this many percent.
     #[serde(alias = "armor_items_pct")]
@@ -492,6 +538,12 @@ pub enum ProcEvent {
     Dodge,
     /// The character lands a skill that spends combo points.
     Finisher,
+    /// The character blocks a melee attack.
+    Block,
+    /// The character parries a melee attack.
+    Parry,
+    /// A melee attack crits the character.
+    CritTaken,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].
@@ -760,6 +812,9 @@ pub enum Effect {
     /// The caster's dodge chance rises by `pct` percent for `duration_ms`, under the skill's
     /// spell id (Evasion).
     DodgePct { pct: u32, duration_ms: u32 },
+    /// The caster takes its Calling's aura row of `aura_spell_id`, every effect of it, for the
+    /// row's duration.
+    GrantAura { aura_spell_id: u32 },
     /// The caster's parry chance rises by `pct` percent for `duration_ms`.
     ParryPct { pct: u32, duration_ms: u32 },
     /// The caster's block chance rises by `pct` percent for `duration_ms`, with a shield worn

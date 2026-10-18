@@ -264,9 +264,9 @@
     "description": "For 10 sec your chance to Block is increased by 75%. Every block deals 30 Holy damage to the attacker.",
     "effects": [
      {
-      "kind": "block_pct",
+      "kind": "grant_aura",
       "params": {
-       "apply_aura": "aura_shield_of_penitent"
+       "aura": "aura_shield_of_penitent"
       }
      }
     ],
@@ -355,6 +355,13 @@
       "params": {
        "pct": 1
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "parry",
+       "apply_aura": "aura_reactive_strike_1"
+      }
      }
     ]
    }
@@ -375,6 +382,13 @@
       "kind": "parry_pct",
       "params": {
        "pct": 2
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "parry",
+       "apply_aura": "aura_reactive_strike_2"
       }
      }
     ]
@@ -397,6 +411,13 @@
       "params": {
        "pct": 3
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "parry",
+       "apply_aura": "aura_reactive_strike_3"
+      }
      }
     ]
    }
@@ -417,6 +438,13 @@
       "kind": "parry_pct",
       "params": {
        "pct": 4
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "parry",
+       "apply_aura": "aura_reactive_strike_4"
       }
      }
     ]
@@ -439,6 +467,13 @@
       "params": {
        "pct": 5
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "parry",
+       "apply_aura": "aura_reactive_strike_5"
+      }
      }
     ]
    }
@@ -459,6 +494,13 @@
       "kind": "armor_items_pct",
       "params": {
        "pct": 2
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "crit_taken",
+       "apply_aura": "aura_tempered_steel_1"
       }
      }
     ]
@@ -481,6 +523,13 @@
       "params": {
        "pct": 4
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "crit_taken",
+       "apply_aura": "aura_tempered_steel_2"
+      }
      }
     ]
    }
@@ -501,6 +550,13 @@
       "kind": "armor_items_pct",
       "params": {
        "pct": 6
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "crit_taken",
+       "apply_aura": "aura_tempered_steel_3"
       }
      }
     ]
@@ -523,6 +579,13 @@
       "params": {
        "pct": 8
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "crit_taken",
+       "apply_aura": "aura_tempered_steel_4"
+      }
      }
     ]
    }
@@ -543,6 +606,13 @@
       "kind": "armor_items_pct",
       "params": {
        "pct": 10
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "crit_taken",
+       "apply_aura": "aura_tempered_steel_5"
       }
      }
     ]
@@ -565,6 +635,14 @@
       "params": {
        "pct": 1
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 20,
+       "energize": 2
+      }
      }
     ]
    }
@@ -585,6 +663,14 @@
       "kind": "block_pct",
       "params": {
        "pct": 2
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 40,
+       "energize": 2
       }
      }
     ]
@@ -607,6 +693,14 @@
       "params": {
        "pct": 3
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 60,
+       "energize": 2
+      }
      }
     ]
    }
@@ -627,6 +721,14 @@
       "kind": "block_pct",
       "params": {
        "pct": 4
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 80,
+       "energize": 2
       }
      }
     ]
@@ -649,6 +751,14 @@
       "params": {
        "pct": 5
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 100,
+       "energize": 2
+      }
      }
     ]
    }
@@ -663,7 +773,17 @@
     "name": "Vengeful Conviction",
     "school": 0,
     "prevention_type": 2,
-    "description": "Blocking an attack has a 33% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
+    "description": "Blocking an attack has a 33% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 33,
+       "apply_aura": "aura_vengeful_conviction"
+      }
+     }
+    ]
    }
   },
   {
@@ -676,7 +796,17 @@
     "name": "Vengeful Conviction",
     "school": 0,
     "prevention_type": 2,
-    "description": "Blocking an attack has a 66% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
+    "description": "Blocking an attack has a 66% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 66,
+       "apply_aura": "aura_vengeful_conviction"
+      }
+     }
+    ]
    }
   },
   {
@@ -689,7 +819,17 @@
     "name": "Vengeful Conviction",
     "school": 0,
     "prevention_type": 2,
-    "description": "Blocking an attack has a 100% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
+    "description": "Blocking an attack has a 100% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "chance": 100,
+       "apply_aura": "aura_vengeful_conviction"
+      }
+     }
+    ]
    }
   },
   {
@@ -702,7 +842,23 @@
     "name": "Improved Shield of the Penitent",
     "school": 0,
     "prevention_type": 2,
-    "description": "Reduces the Rage cost of Shield of the Penitent by 5 and increases the Holy damage it deals by 15%."
+    "description": "Reduces the Rage cost of Shield of the Penitent by 5 and increases the Holy damage it deals by 15%.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "shield_of_penitent",
+       "amount": 5
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "shield_of_penitent",
+       "pct": 15
+      }
+     }
+    ]
    },
    "spellmods": [
     {
@@ -723,7 +879,23 @@
     "name": "Improved Shield of the Penitent",
     "school": 0,
     "prevention_type": 2,
-    "description": "Reduces the Rage cost of Shield of the Penitent by 10 and increases the Holy damage it deals by 30%."
+    "description": "Reduces the Rage cost of Shield of the Penitent by 10 and increases the Holy damage it deals by 30%.",
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "shield_of_penitent",
+       "amount": 10
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "shield_of_penitent",
+       "pct": 30
+      }
+     }
+    ]
    },
    "spellmods": [
     {
@@ -751,6 +923,13 @@
       "params": {
        "pct": 5
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "block_value_pct": 10
+      }
      }
     ]
    }
@@ -771,6 +950,13 @@
       "kind": "block_value_pct",
       "params": {
        "pct": 10
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "block_value_pct": 20
       }
      }
     ]
@@ -793,6 +979,13 @@
       "params": {
        "pct": 15
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "block_value_pct": 30
+      }
      }
     ]
    }
@@ -814,6 +1007,13 @@
       "params": {
        "pct": 20
       }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "block_value_pct": 40
+      }
      }
     ]
    }
@@ -834,6 +1034,13 @@
       "kind": "block_value_pct",
       "params": {
        "pct": 25
+      }
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "block_value_pct": 50
       }
      }
     ]

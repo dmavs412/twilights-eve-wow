@@ -146,3 +146,141 @@ fn shield_of_the_penitent_adds_seventy_five_block_for_ten_seconds() {
     view.run(&mut realm, 2.0);
     assert!((block(&view, me) - base).abs() < 1e-3, "off after 11 s");
 }
+
+/// The spell id of the Vanguard talent `key`'s rank `rank`.
+fn rank_spell(key: &str, rank: usize) -> u32 {
+    vanguard()
+        .talent_tabs
+        .iter()
+        .flat_map(|t| &t.talents)
+        .find(|t| t.key == key)
+        .unwrap_or_else(|| panic!("the Vanguard has {key}"))
+        .rank_spells[rank - 1]
+}
+
+/// Whether `e` is `mob`'s swing at `me` that the player blocked.
+fn blocked(e: &SessionEvent, mob: u64, me: u64) -> bool {
+    matches!(e, SessionEvent::AttackerState(s)
+        if s.attacker == mob && s.victim == me && (s.blocked > 0 || s.victim_state == 5))
+}
+
+/// The damage `me` dealt under `spell_id` in `events`, one entry a hit.
+fn dealt(events: &[SessionEvent], me: u64, spell_id: u32) -> Vec<u32> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellDamageLog(l) if l.attacker == me && l.spell_id == spell_id => {
+                Some(l.damage)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Pulls `mob` onto the player, who stands facing it and does not swing back, so the fight
+/// lasts: every event of the next `secs`.
+fn tank(realm: &mut Realm, view: &mut View, mob: &Mob, secs: f32) -> Vec<SessionEvent> {
+    stand_at(realm, mob, 2.0);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    realm.handle(RealmCommand::AttackStop);
+    let mut seen = Vec::new();
+    let mut t = 0.0;
+    while t < secs {
+        seen.extend(view.run(realm, 0.1));
+        t += 0.1;
+    }
+    seen
+}
+
+#[test]
+fn shield_specialization_gives_two_rage_on_every_block() {
+    let spell = rank_spell("shield_specialization", 5);
+    let (mut realm, me, mob, mut view) =
+        vanguard_in_world(&[(talent("shield_specialization"), 5)], true);
+    let seen = tank(&mut realm, &mut view, &mob, 60.0);
+    let blocks = seen.iter().filter(|e| blocked(e, mob.guid, me)).count();
+    let energizes: Vec<u32> = seen
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::SpellEnergizeLog(l) if l.spell_id == spell => Some(l.amount),
+            _ => None,
+        })
+        .collect();
+    assert!(blocks > 0, "the seed blocks");
+    assert_eq!(energizes.len(), blocks, "one energize a block");
+    assert!(energizes.iter().all(|&a| a == 2), "{energizes:?}");
+}
+
+#[test]
+fn a_block_under_shield_of_the_penitent_burns_the_attacker() {
+    let penitent = skill("shield_of_penitent");
+    let (mut realm, me, mob, mut view) = vanguard_in_world(&[], true);
+    // Rage for the cast from trading blows, then the player stops swinging.
+    stand_at(&mut realm, &mob, 2.0);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let mut waited = 0;
+    while view.rage(me) < 10 {
+        view.run(&mut realm, 0.1);
+        waited += 1;
+        assert!(waited < 300, "never reached 10 rage");
+    }
+    realm.handle(RealmCommand::AttackStop);
+    realm.handle(cast(penitent, None));
+    let mut seen = view.drain(&mut realm);
+    assert_eq!(refusal(&seen, penitent), None, "the cast");
+    for _ in 0..95 {
+        seen.extend(view.run(&mut realm, 0.1));
+    }
+    let blocks = seen.iter().filter(|e| blocked(e, mob.guid, me)).count();
+    let burns = dealt(&seen, me, penitent);
+    assert!(blocks > 0, "the seed blocks under the aura");
+    assert_eq!(burns.len(), blocks, "one burn a block");
+    // 30 + 3 a level, Holy: no armour, no roll.
+    let want = 30 + 3 * u32::from(LEVEL);
+    assert!(burns.iter().all(|&d| d == want), "{burns:?}, want {want}");
+}
+
+#[test]
+fn iron_retribution_hits_back_for_half_the_block_value() {
+    let spell = rank_spell("iron_retribution", 5);
+    let (mut realm, me, mob, mut view) =
+        vanguard_in_world(&[(talent("iron_retribution"), 5)], true);
+    let seen = tank(&mut realm, &mut view, &mob, 60.0);
+    let blocks = seen.iter().filter(|e| blocked(e, mob.guid, me)).count();
+    let hits = dealt(&seen, me, spell);
+    assert!(blocks > 0, "the seed blocks");
+    assert_eq!(hits.len(), blocks, "one hit back a block");
+    // Half of the Block Value; physical, so the attacker's armour takes a little off.
+    let first = hits[0];
+    assert!(first > 0, "{hits:?}");
+    assert!(hits.iter().all(|&d| d == first), "{hits:?}");
+}
+
+#[test]
+fn tempered_steel_raises_block_after_a_crit_taken() {
+    let aura = vanguard()
+        .auras
+        .iter()
+        .find(|a| a.key == "aura_tempered_steel_5")
+        .expect("Tempered Steel's rank 5 buff")
+        .spell_id;
+    let (mut realm, me, mob, mut view) = vanguard_in_world(&[(talent("tempered_steel"), 5)], true);
+    let base = block(&view, me);
+    let mut seen = tank(&mut realm, &mut view, &mob, 0.1);
+    for _ in 0..1200 {
+        let crit = seen.iter().any(|e| {
+            matches!(e, SessionEvent::AttackerState(s)
+            if s.attacker == mob.guid && s.hit_info & 0x80 != 0)
+        });
+        if crit {
+            assert!(
+                view.aura(me, aura).is_some(),
+                "the buff is up after the crit"
+            );
+            assert!((block(&view, me) - base - 50.0).abs() < 1e-3, "+50% block");
+            return;
+        }
+        seen = view.run(&mut realm, 0.1);
+    }
+    panic!("no crit taken in two minutes");
+}

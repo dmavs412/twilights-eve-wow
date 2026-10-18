@@ -251,6 +251,18 @@ enum AuraKind {
     Dodge {
         pct: u32,
     },
+    /// A buff's proc, live while the buff is (Shield of the Penitent's burst).
+    Proc(&'static callings::AuraProc),
+    /// The player's `skill` costs `amount` less power (a buff from a `proc`).
+    SkillCost {
+        skill: &'static str,
+        amount: u32,
+    },
+    /// The player's `skill` adds `stacks` of its aura, if more than its own (a buff from a `proc`).
+    SkillStacks {
+        skill: &'static str,
+        stacks: u32,
+    },
     /// The player's `stat` is `pct` percent higher.
     Defense {
         stat: DefenseStat,
@@ -304,6 +316,11 @@ impl AuraKind {
         match (self, other) {
             (AuraKind::SkillCrit { skill: a, .. }, AuraKind::SkillCrit { skill: b, .. }) => a == b,
             (AuraKind::Defense { stat: a, .. }, AuraKind::Defense { stat: b, .. }) => a == b,
+            (AuraKind::SkillCost { skill: a, .. }, AuraKind::SkillCost { skill: b, .. }) => a == b,
+            (AuraKind::SkillStacks { skill: a, .. }, AuraKind::SkillStacks { skill: b, .. }) => {
+                a == b
+            }
+            (AuraKind::Proc(a), AuraKind::Proc(b)) => std::ptr::eq(a, b),
             _ => std::mem::discriminant(&self) == std::mem::discriminant(&other),
         }
     }
@@ -322,6 +339,9 @@ impl AuraKind {
                 | AuraKind::RunSpeed { .. }
                 | AuraKind::Dodge { .. }
                 | AuraKind::Defense { .. }
+                | AuraKind::Proc(_)
+                | AuraKind::SkillCost { .. }
+                | AuraKind::SkillStacks { .. }
                 | AuraKind::Stealth { .. }
                 | AuraKind::Stacks { .. }
         )
@@ -544,11 +564,53 @@ impl Skills {
             .sum()
     }
 
+    /// The power the player's buffs take off `skill`'s cost.
+    pub(super) fn cost_less(&self, skill: &str) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::SkillCost { skill: s, amount } if s == skill => amount,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// The most stacks the player's buffs make `skill` add, 0 for none.
+    fn skill_stacks(&self, skill: &str) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::SkillStacks { skill: s, stacks } if s == skill => stacks,
+                _ => 0,
+            })
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// The procs the player's buffs carry, each with the buff's spell id.
+    pub(super) fn aura_procs(&self) -> Vec<(u32, &'static callings::AuraProc)> {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .filter_map(|a| match a.kind {
+                AuraKind::Proc(p) => Some((a.spell_id, p)),
+                _ => None,
+            })
+            .collect()
+    }
+
     /// `skill` landed: each of the player's buffs for it with charges loses one, and a spent one
     /// goes.
     fn spend_charges(&mut self, skill: &str, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
         for a in &mut self.auras {
-            let for_skill = matches!(a.kind, AuraKind::SkillCrit { skill: s, .. } if s == skill);
+            let for_skill = matches!(
+                a.kind,
+                AuraKind::SkillCrit { skill: s, .. }
+                | AuraKind::SkillCost { skill: s, .. }
+                | AuraKind::SkillStacks { skill: s, .. } if s == skill
+            );
             if a.unit == self.me && a.charges > 0 && for_skill {
                 a.charges -= 1;
                 if a.charges == 0 {
@@ -1135,6 +1197,7 @@ impl InWorld {
             c,
             rng,
             events,
+            &mut ticked,
         );
         if spent {
             // A finisher that landed spends every point.
@@ -1151,6 +1214,7 @@ impl InWorld {
                 c,
                 rng,
                 events,
+                &mut ticked,
             );
         }
         let p = &self.player;
@@ -1160,6 +1224,11 @@ impl InWorld {
         ));
         self.update_aura_states(events);
         ticked
+    }
+
+    /// What `skill` costs now: the talents' price, less what the player's buffs take off.
+    fn power_cost(&self, c: &Char, skill: &Skill) -> u32 {
+        crate::talents::power_cost(c, skill).saturating_sub(self.skills.cost_less(&skill.key))
     }
 
     /// Whether `skill` can go off now at `target`, and on whom.
@@ -1173,7 +1242,7 @@ impl InWorld {
         {
             return Err(SPELL_FAILED_NOT_READY);
         }
-        if !p.power.has(crate::talents::power_cost(c, skill)) {
+        if !p.power.has(self.power_cost(c, skill)) {
             return Err(SPELL_FAILED_NO_POWER);
         }
         if skill.requires_out_of_combat && p.in_combat {
@@ -1281,8 +1350,9 @@ impl InWorld {
 
     /// Takes the cast's costs and starts its cooldowns.
     fn pay(&mut self, skill: &Skill, c: &Char, events: &mut Vec<SessionEvent>) {
+        let cost = self.power_cost(c, skill);
         let p = &mut self.player;
-        p.power.spend(crate::talents::power_cost(c, skill));
+        p.power.spend(cost);
         let health_cost = p.stats.base_health * skill.health_cost_pct_of_base_health / 100;
         // A cost never kills.
         p.health = p.health.saturating_sub(health_cost).max(1);
@@ -1717,7 +1787,16 @@ impl InWorld {
                 let sheet = buff_sheet(&self.player.stats, &self.skills);
                 events.push(values(self.guid, &sheet));
             }
-            Effect::AddAuraStacks { .. } => self.add_aura_stacks(effect, level, events),
+            Effect::AddAuraStacks { .. } => {
+                let more = self.skills.skill_stacks(&skill.key);
+                self.add_aura_stacks(effect, more, level, events)
+            }
+            Effect::GrantAura { aura_spell_id } => {
+                let auras = &callings::of(c.calling).auras;
+                if let Some(def) = auras.iter().find(|a| a.spell_id == aura_spell_id) {
+                    self.grant_aura(def, level, events);
+                }
+            }
             Effect::GroundEffect {
                 radius_yd,
                 tick_ms,
@@ -1848,7 +1927,7 @@ impl InWorld {
     /// A bonus hit of `raw` in `school` at `target` that cannot miss or crit, logged under
     /// `spell_id`: the damage dealt.
     #[allow(clippy::too_many_arguments)]
-    fn bonus_hit(
+    pub(super) fn bonus_hit(
         &mut self,
         spell_id: u32,
         target: u64,
@@ -1879,8 +1958,15 @@ impl InWorld {
         damage
     }
 
-    /// The landed hit of an `AddAuraStacks` effect: the caster's aura takes its stacks.
-    fn add_aura_stacks(&mut self, effect: &Effect, level: u8, events: &mut Vec<SessionEvent>) {
+    /// The landed hit of an `AddAuraStacks` effect: the caster's aura takes its stacks, or `more`
+    /// when a buff raises them past that.
+    fn add_aura_stacks(
+        &mut self,
+        effect: &Effect,
+        more: u32,
+        level: u8,
+        events: &mut Vec<SessionEvent>,
+    ) {
         let Effect::AddAuraStacks {
             aura_spell_id,
             stacks,
@@ -1900,7 +1986,7 @@ impl InWorld {
             period: 0.0,
             next_tick: 0.0,
             kind: AuraKind::Stacks {
-                count: stacks,
+                count: stacks.max(more),
                 max: max_stacks.max(1),
                 rule: stack_rule,
             },
@@ -2031,28 +2117,40 @@ impl InWorld {
 
     /// A mob's swing at the player went `outcome`: what the player's talents make of a block or
     /// a crit taken (Shield Specialization's rage, Blood Craze, Enrage).
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn struck(
         &mut self,
         outcome: Outcome,
-        c: &Char,
+        attacker: u64,
+        c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
     ) {
         if !self.player.alive() {
             return;
         }
         let on = crate::talents::on_struck(c);
-        if outcome == Outcome::Dodge {
+        let event = match outcome {
+            // A combo point from dodging lands on the mob the player fights.
+            Outcome::Dodge => Some((crate::callings::ProcEvent::Dodge, self.player.attacking)),
+            Outcome::Parry => Some((crate::callings::ProcEvent::Parry, Some(attacker))),
+            Outcome::Block => Some((crate::callings::ProcEvent::Block, Some(attacker))),
+            Outcome::Crit => Some((crate::callings::ProcEvent::CritTaken, Some(attacker))),
+            _ => None,
+        };
+        if let Some((event, target)) = event {
             self.proc(
                 crate::rules::procs::Happened {
-                    event: crate::callings::ProcEvent::Dodge,
+                    event,
                     skill: None,
                     yields_xp: false,
-                    target: self.player.attacking,
+                    target,
                 },
                 c,
                 rng,
                 events,
+                ticked,
             );
         }
         match outcome {
@@ -2300,7 +2398,7 @@ impl InWorld {
         let Some(skill) = crate::talents::skill(c, spell_id) else {
             return false;
         };
-        if !self.player.power.has(crate::talents::power_cost(c, skill)) {
+        if !self.player.power.has(self.power_cost(c, skill)) {
             events.push(refused(spell_id, SPELL_FAILED_NO_POWER));
             return false;
         }
@@ -2396,11 +2494,13 @@ impl InWorld {
             self.skills.dodged_by(target, events);
         }
         if missed_by(swings[0].1.outcome).is_none() {
+            // A buff that raises the stacks is spent by this same hit.
+            let more = self.skills.skill_stacks(&skill.key);
+            for effect in &skill.effects {
+                self.add_aura_stacks(effect, more, c.level, events);
+            }
             let gone = self.skills.spend_charges(&skill.key, events);
             self.faded(&gone, events);
-            for effect in &skill.effects {
-                self.add_aura_stacks(effect, c.level, events);
-            }
         }
         let impale = crate::talents::skill_crit_damage_pct(c, skill.adds_combo_points())
             + self.player.stats.crit_damage_pct;
@@ -2724,6 +2824,15 @@ impl InWorld {
                 },
                 callings::AuraEffect::ModRunSpeed { pct } => AuraKind::RunSpeed { pct: *pct },
                 callings::AuraEffect::DodgePct { pct } => AuraKind::Dodge { pct: *pct },
+                callings::AuraEffect::Proc(p) => AuraKind::Proc(p),
+                callings::AuraEffect::SkillCost { skill, amount } => AuraKind::SkillCost {
+                    skill: skill.as_str(),
+                    amount: *amount,
+                },
+                callings::AuraEffect::SkillStacks { skill, stacks } => AuraKind::SkillStacks {
+                    skill: skill.as_str(),
+                    stacks: *stacks,
+                },
                 callings::AuraEffect::ParryPct { pct } => AuraKind::Defense {
                     stat: DefenseStat::Parry,
                     pct: *pct,

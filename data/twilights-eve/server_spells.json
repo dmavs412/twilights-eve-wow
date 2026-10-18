@@ -1174,9 +1174,9 @@
     "modelled": true,
     "effects": [
      {
-      "kind": "block_pct",
+      "kind": "grant_aura",
       "params": {
-       "apply_aura": "aura_shield_of_penitent"
+       "aura": "aura_shield_of_penitent"
       },
       "realm_only": false
      }
@@ -1316,6 +1316,14 @@
            "pct": 1
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "parry",
+           "apply_aura": "aura_reactive_strike_1"
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your Parry chance by 1% and reduces the Rage cost of your next Righteous Smash after a parry by 2."
@@ -1347,6 +1355,14 @@
           "kind": "parry_pct",
           "params": {
            "pct": 2
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "parry",
+           "apply_aura": "aura_reactive_strike_2"
           },
           "realm_only": false
          }
@@ -1382,6 +1398,14 @@
            "pct": 3
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "parry",
+           "apply_aura": "aura_reactive_strike_3"
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your Parry chance by 3% and reduces the Rage cost of your next Righteous Smash after a parry by 6."
@@ -1415,6 +1439,14 @@
            "pct": 4
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "parry",
+           "apply_aura": "aura_reactive_strike_4"
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your Parry chance by 4% and reduces the Rage cost of your next Righteous Smash after a parry by 8."
@@ -1446,6 +1478,14 @@
           "kind": "parry_pct",
           "params": {
            "pct": 5
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "parry",
+           "apply_aura": "aura_reactive_strike_5"
           },
           "realm_only": false
          }
@@ -1492,6 +1532,14 @@
            "pct": 2
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "crit_taken",
+           "apply_aura": "aura_tempered_steel_1"
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your armor value from items by 2%. When struck by a critical hit, your chance to Block is increased by 10% for 6 sec."
@@ -1523,6 +1571,14 @@
           "kind": "armor_items_pct",
           "params": {
            "pct": 4
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "crit_taken",
+           "apply_aura": "aura_tempered_steel_2"
           },
           "realm_only": false
          }
@@ -1558,6 +1614,14 @@
            "pct": 6
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "crit_taken",
+           "apply_aura": "aura_tempered_steel_3"
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your armor value from items by 6%. When struck by a critical hit, your chance to Block is increased by 30% for 6 sec."
@@ -1591,6 +1655,14 @@
            "pct": 8
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "crit_taken",
+           "apply_aura": "aura_tempered_steel_4"
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your armor value from items by 8%. When struck by a critical hit, your chance to Block is increased by 40% for 6 sec."
@@ -1622,6 +1694,14 @@
           "kind": "armor_items_pct",
           "params": {
            "pct": 10
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "crit_taken",
+           "apply_aura": "aura_tempered_steel_5"
           },
           "realm_only": false
          }
@@ -1668,6 +1748,15 @@
            "pct": 1
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "chance": 20,
+           "energize": 2
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your chance to block by 1% and gives you a 20% chance to generate 2 Rage when a block occurs."
@@ -1699,6 +1788,15 @@
           "kind": "block_pct",
           "params": {
            "pct": 2
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "chance": 40,
+           "energize": 2
           },
           "realm_only": false
          }
@@ -1734,6 +1832,15 @@
            "pct": 3
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "chance": 60,
+           "energize": 2
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your chance to block by 3% and gives you a 60% chance to generate 2 Rage when a block occurs."
@@ -1767,6 +1874,15 @@
            "pct": 4
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "chance": 80,
+           "energize": 2
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your chance to block by 4% and gives you a 80% chance to generate 2 Rage when a block occurs."
@@ -1798,6 +1914,15 @@
           "kind": "block_pct",
           "params": {
            "pct": 5
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "chance": 100,
+           "energize": 2
           },
           "realm_only": false
          }
@@ -1836,8 +1961,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "chance": 33,
+           "apply_aura": "aura_vengeful_conviction"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Blocking an attack has a 33% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
        },
        {
@@ -1861,8 +1996,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "chance": 66,
+           "apply_aura": "aura_vengeful_conviction"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Blocking an attack has a 66% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
        },
        {
@@ -1886,8 +2031,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "chance": 100,
+           "apply_aura": "aura_vengeful_conviction"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Blocking an attack has a 100% chance to empower your next Righteous Smash to generate 2 stacks of Conviction instead of 1."
        }
       ]
@@ -1922,8 +2077,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "shield_of_penitent",
+           "amount": 5
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "shield_of_penitent",
+           "pct": 15
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Reduces the Rage cost of Shield of the Penitent by 5 and increases the Holy damage it deals by 15%.",
         "spellmods": [
          {
@@ -1958,8 +2130,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_cost",
+          "params": {
+           "skill": "shield_of_penitent",
+           "amount": 10
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "shield_of_penitent",
+           "pct": 30
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Reduces the Rage cost of Shield of the Penitent by 10 and increases the Holy damage it deals by 30%.",
         "spellmods": [
          {
@@ -2013,6 +2202,14 @@
            "pct": 5
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "block_value_pct": 10
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 10% of your Block Value."
@@ -2044,6 +2241,14 @@
           "kind": "block_value_pct",
           "params": {
            "pct": 10
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "block_value_pct": 20
           },
           "realm_only": false
          }
@@ -2079,6 +2284,14 @@
            "pct": 15
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "block_value_pct": 30
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 30% of your Block Value."
@@ -2112,6 +2325,14 @@
            "pct": 20
           },
           "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "block_value_pct": 40
+          },
+          "realm_only": false
          }
         ],
         "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 40% of your Block Value."
@@ -2143,6 +2364,14 @@
           "kind": "block_value_pct",
           "params": {
            "pct": 25
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "proc",
+          "params": {
+           "on": "block",
+           "block_value_pct": 50
           },
           "realm_only": false
          }
@@ -3256,6 +3485,19 @@
        "pct": 75
       },
       "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "block",
+       "damage_attacker": {
+        "base": 30,
+        "per_level": 3
+       },
+       "school": "holy",
+       "amount_skill": "shield_of_penitent"
+      },
+      "realm_only": false
      }
     ],
     "description": "Block chance increased by 75%."
@@ -3280,6 +3522,337 @@
     "modelled": false,
     "effects": [],
     "description": "Melee attacks may heal you or raise your armor."
+   },
+   {
+    "key": "aura_reactive_strike_1",
+    "name": "Reactive Strike",
+    "spell_id": 6572,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "righteous_smash",
+       "amount": 2
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Righteous Smash costs 2 less Rage."
+   },
+   {
+    "key": "aura_reactive_strike_2",
+    "name": "Reactive Strike",
+    "spell_id": 6572,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "righteous_smash",
+       "amount": 4
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Righteous Smash costs 4 less Rage."
+   },
+   {
+    "key": "aura_reactive_strike_3",
+    "name": "Reactive Strike",
+    "spell_id": 6572,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "righteous_smash",
+       "amount": 6
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Righteous Smash costs 6 less Rage."
+   },
+   {
+    "key": "aura_reactive_strike_4",
+    "name": "Reactive Strike",
+    "spell_id": 6572,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "righteous_smash",
+       "amount": 8
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Righteous Smash costs 8 less Rage."
+   },
+   {
+    "key": "aura_reactive_strike_5",
+    "name": "Reactive Strike",
+    "spell_id": 6572,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_cost",
+      "params": {
+       "skill": "righteous_smash",
+       "amount": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Righteous Smash costs 10 less Rage."
+   },
+   {
+    "key": "aura_tempered_steel_1",
+    "name": "Tempered Steel",
+    "spell_id": 10290,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 10%."
+   },
+   {
+    "key": "aura_tempered_steel_2",
+    "name": "Tempered Steel",
+    "spell_id": 10290,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 20
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 20%."
+   },
+   {
+    "key": "aura_tempered_steel_3",
+    "name": "Tempered Steel",
+    "spell_id": 10290,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 30%."
+   },
+   {
+    "key": "aura_tempered_steel_4",
+    "name": "Tempered Steel",
+    "spell_id": 10290,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 40
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 40%."
+   },
+   {
+    "key": "aura_tempered_steel_5",
+    "name": "Tempered Steel",
+    "spell_id": 10290,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 50
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Block chance increased by 50%."
+   },
+   {
+    "key": "aura_vengeful_conviction",
+    "name": "Vengeful Conviction",
+    "spell_id": 12798,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_stacks",
+      "params": {
+       "skill": "righteous_smash",
+       "stacks": 2
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Righteous Smash grants 2 stacks of Conviction."
    }
   ],
   "name": "Vanguard",
