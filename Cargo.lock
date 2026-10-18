@@ -7299,6 +7299,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "twilight-server"
+version = "0.2.0"
+dependencies = [
+ "benilla-protocol",
+ "twilight-realm",
+]
+
+[[package]]
 name = "twox-hash"
 version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

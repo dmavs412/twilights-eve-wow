@@ -21,7 +21,11 @@ pub(super) fn follow_calling(
     mut commands: Commands,
     mut built_for: Local<Option<&'static str>>,
 ) {
-    let Some(calling) = local.realm.current_calling() else {
+    // On a friends server there is no realm here to ask; the frame keeps its tree.
+    let super::Backing::Local { realm, .. } = &local.backing else {
+        return;
+    };
+    let Some(calling) = realm.current_calling() else {
         return;
     };
     if *built_for == Some(calling.key.as_str()) {

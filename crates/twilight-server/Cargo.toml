@@ -1,0 +1,13 @@
+[package]
+name = "twilight-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Twilight's Eve's friends server: one Local Realm behind a TCP socket (ADR 0009)"
+
+[lints]
+workspace = true
+
+[dependencies]
+benilla-protocol = { path = "../benilla-protocol" }
+twilight-realm = { path = "../twilight-realm", features = ["wire"] }

@@ -18,6 +18,7 @@ use twilight_realm::{DevMultipliers, Host, Realm, RealmCommand, Storage};
 use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
 
 mod goto;
+mod remote;
 mod talents;
 #[cfg(test)]
 pub(crate) mod vanilla_player;
@@ -59,17 +60,22 @@ impl Plugin for TwilightPlugin {
             .get_resource_mut::<InProcessLink>()
             .and_then(|mut link| link.0.take())
             .expect("Twilight's Eve needs the net layer's in-process backend");
-        // Fresh dice every session; a test seeds its own.
-        let mut realm = Realm::with_seed(rand::random()).with_dev(dev_multipliers());
-        let saved = load_saves(&mut realm);
+        let backing = match remote::server_address() {
+            Some(address) => Backing::Remote(remote::RemoteLink::connect(&address)),
+            None => {
+                // Fresh dice every session; a test seeds its own.
+                let mut realm = Realm::with_seed(rand::random()).with_dev(dev_multipliers());
+                let saved = load_saves(&mut realm);
+                Backing::Local { realm, saved }
+            }
+        };
         app.init_resource::<crate::char_select::ClassLabels>();
         app.add_message::<DevGoto>()
             .init_resource::<goto::GotoGround>();
         app.insert_resource(LocalRealm {
             far,
-            realm,
+            backing,
             listed: false,
-            saved,
         })
         .add_systems(
             Update,
@@ -99,11 +105,13 @@ impl Plugin for TwilightPlugin {
 }
 
 /// The client is going down: log out, and write the save that makes.
+/// On a server, the logout is sent and the server saves.
 fn save_on_exit(mut local: ResMut<LocalRealm>) {
-    let LocalRealm { realm, saved, .. } = &mut *local;
-    realm.handle(RealmCommand::Logout);
-    for op in realm.drain_storage() {
-        store(op, saved);
+    local.backing.handle(RealmCommand::Logout);
+    if let Backing::Local { realm, saved } = &mut local.backing {
+        for op in realm.drain_storage() {
+            store(op, saved);
+        }
     }
 }
 
@@ -111,11 +119,28 @@ fn save_on_exit(mut local: ResMut<LocalRealm>) {
 #[derive(Resource)]
 struct LocalRealm {
     far: FarEnds,
-    realm: Realm,
+    backing: Backing,
     /// The first roster went out: there is no login, so the realm answers at once.
     listed: bool,
-    /// The guids with a save on disk, which the index file lists.
-    saved: BTreeSet<u64>,
+}
+
+/// Where the realm runs: in this process, or on a friends server.
+enum Backing {
+    Local {
+        realm: Realm,
+        /// The guids with a save on disk, which the index file lists.
+        saved: BTreeSet<u64>,
+    },
+    Remote(remote::RemoteLink),
+}
+
+impl Backing {
+    fn handle(&mut self, command: RealmCommand) {
+        match self {
+            Backing::Local { realm, .. } => realm.handle(command),
+            Backing::Remote(link) => link.send(command),
+        }
+    }
 }
 
 // ── Saves ─────────────────────────────────────────────────────────────────────────────────────────
@@ -210,21 +235,15 @@ fn pump(
 ) {
     let LocalRealm {
         far,
-        realm,
+        backing,
         listed,
-        saved,
     } = &mut *local;
-    // The wall clock an item's cooldown runs on, so time between sessions counts. `web-time`:
-    // std's `SystemTime` panics in a browser.
-    if let Ok(now) = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH) {
-        realm.set_wall_clock(now.as_millis() as u64);
-    }
     if !*listed {
         *listed = true;
-        realm.handle(RealmCommand::ListCharacters);
+        backing.handle(RealmCommand::ListCharacters);
     }
     while let Ok(pick) = far.pick.try_recv() {
-        realm.handle(match pick {
+        backing.handle(match pick {
             CharRequest::Enter(guid) => RealmCommand::EnterWorld { guid },
             CharRequest::Create(req) => RealmCommand::CreateCharacter(req),
             CharRequest::Delete(guid) => RealmCommand::DeleteCharacter { guid },
@@ -237,29 +256,43 @@ fn pump(
     while far.login.try_recv().is_ok() {}
     while let Ok(command) = far.commands.try_recv() {
         if let Some(command) = realm_command(command) {
-            realm.handle(command);
+            backing.handle(command);
         }
     }
     for DevGoto { x, y, facing } in goto.take_ready() {
-        realm.handle(RealmCommand::DevTeleport { x, y, facing });
+        backing.handle(RealmCommand::DevTeleport { x, y, facing });
     }
 
-    let host = TerrainHost {
-        world: &world,
-        collision: &collision,
-        goto: &goto,
-        adts: &adts,
-    };
-    realm.tick(time.delta_secs(), &host);
-
-    for op in realm.drain_storage() {
-        store(op, saved);
-    }
-
-    for event in realm.drain_events() {
-        if let SessionEvent::CharacterList { characters, .. } = &event {
-            label_callings(realm, characters, &mut labels);
+    let events: Vec<SessionEvent> = match backing {
+        Backing::Local { realm, saved } => {
+            // The wall clock an item's cooldown runs on, so time between sessions counts.
+            // `web-time`: std's `SystemTime` panics in a browser.
+            if let Ok(now) = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH) {
+                realm.set_wall_clock(now.as_millis() as u64);
+            }
+            let host = TerrainHost {
+                world: &world,
+                collision: &collision,
+                goto: &goto,
+                adts: &adts,
+            };
+            realm.tick(time.delta_secs(), &host);
+            for op in realm.drain_storage() {
+                store(op, saved);
+            }
+            let events = realm.drain_events();
+            for event in &events {
+                if let SessionEvent::CharacterList { characters, .. } = event {
+                    label_callings(realm, characters, &mut labels);
+                }
+            }
+            events
         }
+        // The server ticks its own realm; the select screen shows Classes, not Callings.
+        Backing::Remote(link) => link.drain().collect(),
+    };
+
+    for event in events {
         let logged_out = matches!(event, SessionEvent::LoggedOut);
         let _ = far.events.send(event);
         // The IO thread ends the session after a logout, which tears the streamed world down.
