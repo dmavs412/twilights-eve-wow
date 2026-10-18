@@ -3483,12 +3483,18 @@
         "spell_id": 12809,
         "talent_id": 152,
         "source_tab_id": 163,
-        "school": "physical",
-        "prevention": "pacify",
+        "realm_cost": 30,
+        "realm_cooldown_ms": 6000,
+        "realm_gcd_ms": 0,
+        "realm_range_min": 0,
+        "realm_range_max": 20,
+        "target": "enemy",
+        "school": "holy",
+        "prevention": "silence",
         "cost_kind": "flat",
         "cast_kind": "instant",
         "interrupt_on": [],
-        "defense_type": "none",
+        "defense_type": "magic",
         "on_cast": {
          "breaks_stealth": true,
          "starts_auto_attack": false,
@@ -3496,8 +3502,24 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "weapon_strike",
+          "params": {
+           "weapon": "normal",
+           "weapon_pct": 150,
+           "bonus": {
+            "base": 0,
+            "per_level": 0,
+            "per_ap": 0
+           },
+           "crit_if_target_in": "ground_effect",
+           "school": "holy"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd."
        }
       ]

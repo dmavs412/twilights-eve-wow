@@ -507,6 +507,8 @@ def check_vocabulary(kind: str, params: dict, where: str) -> None:
             raise BuildError(f"{where}: weapon is {params.get('weapon')!r}, want {' or '.join(WEAPON_ROLLS)}")
         if "unavoidable" in params:
             raise BuildError(f"{where}: the unavoidable param is gone; write dodge=no;parry=no in the outcomes column")
+        if params.get("crit_if_target_in", "ground_effect") != "ground_effect":
+            raise BuildError(f"{where}: crit_if_target_in is {params['crit_if_target_in']!r}, want ground_effect")
 
 
 def check_kind_params(kind: str, params: dict, where: str) -> None:
@@ -837,9 +839,9 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             # The realm reads an unavoidable strike from the effect; the outcomes cell is its one source.
             parsed = {"weapon": parsed["weapon"], "unavoidable": True,
                       **{k: v for k, v in parsed.items() if k != "weapon"}}
-        if kind == "school_damage":
+        if kind in ("school_damage", "weapon_strike"):
             if "school" in parsed:
-                raise BuildError(f"{here}: school_damage takes no school param; set the row's school column")
+                raise BuildError(f"{here}: {kind} takes no school param; set the row's school column")
             # The realm reads the school from the effect's params; the row's school is the one source.
             if out["school"] != "physical":
                 parsed["school"] = out["school"]

@@ -741,6 +741,14 @@ pub enum Weapon {
     Normalized,
 }
 
+/// Where a target stands for a strike to be a guaranteed critical strike.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CritIf {
+    /// Inside a patch the caster left on the ground (Consecration).
+    GroundEffect,
+}
+
 /// One thing a skill does.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -758,6 +766,15 @@ pub enum Effect {
         /// Added to `bonus` once per combo point on the target: a finisher.
         #[serde(default)]
         per_combo: Option<Linear>,
+        /// The percent of the weapon roll the strike deals.
+        #[serde(default = "always")]
+        weapon_pct: u32,
+        /// The school of its damage; a magic one ignores armour.
+        #[serde(default)]
+        school: School,
+        /// A guaranteed critical strike on a target standing in this of the caster's.
+        #[serde(default)]
+        crit_if_target_in: Option<CritIf>,
     },
     /// Flat damage of a school. Physical goes against armour, and through the melee table when
     /// `melee_hit_table`; any other school ignores armour, rolls only the level-based miss, and

@@ -55,7 +55,7 @@ struct GenAura {
     row: AuraRow,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct GenEffect {
     kind: String,
     #[serde(default)]
@@ -117,10 +117,26 @@ struct GenTalent {
 
 #[derive(Deserialize)]
 struct GenRank {
+    #[serde(default)]
+    key: String,
     spell_id: u32,
     talent_id: u32,
     #[serde(default)]
     effects: Vec<GenEffect>,
+    /// An active talent's skill columns; `target` set marks one.
+    #[serde(default)]
+    realm_cost: u32,
+    #[serde(default)]
+    realm_cooldown_ms: u32,
+    #[serde(default)]
+    realm_gcd_ms: u32,
+    #[serde(default)]
+    realm_range_min: f32,
+    #[serde(default)]
+    realm_range_max: f32,
+    #[serde(default)]
+    realm_radius_yd: f32,
+    target: Option<Target>,
     #[serde(flatten)]
     meta: SpellMeta,
 }
@@ -174,7 +190,7 @@ fn calling(g: GenCalling) -> CallingDef {
             .filter(|s| s.client_visible == Some(false))
             .filter_map(|s| skill(s, &g.auras))
             .collect(),
-        talent_tabs: tabs.into_iter().map(|t| tab(&g.key, t)).collect(),
+        talent_tabs: tabs.into_iter().map(|t| tab(&g.key, t, &g.auras)).collect(),
         auras: g.auras.iter().filter_map(aura).collect(),
         key: g.key.clone(),
     }
@@ -269,7 +285,7 @@ fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
     })
 }
 
-fn tab(calling: &str, g: &GenTab) -> TalentTab {
+fn tab(calling: &str, g: &GenTab, auras: &[GenAura]) -> TalentTab {
     let missing = |field: &str| -> ! {
         panic!(
             "server_spells.json {calling}/{}: the talent_tab row has no {field}",
@@ -283,13 +299,35 @@ fn tab(calling: &str, g: &GenTab) -> TalentTab {
             .background
             .clone()
             .unwrap_or_else(|| missing("background")),
-        talents: g.talents.iter().filter_map(talent).collect(),
+        talents: g.talents.iter().filter_map(|t| talent(t, auras)).collect(),
     }
 }
 
-/// The talent, or `None` for a row with no ranks.
-fn talent(g: &GenTalent) -> Option<TalentDef> {
+/// The talent, or `None` for a row with no ranks. A one-rank talent with a `target` is an active
+/// one: its rank's effects are the skill it teaches, under the rank's spell id.
+fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
     let first = g.ranks.first()?;
+    let teaches = match (&g.ranks[..], first.target) {
+        ([rank], Some(target)) => skill(
+            &GenSkill {
+                key: rank.key.clone(),
+                spell_id: rank.spell_id,
+                realm_cost: rank.realm_cost,
+                realm_cooldown_ms: rank.realm_cooldown_ms,
+                realm_gcd_ms: rank.realm_gcd_ms,
+                realm_range_min: rank.realm_range_min,
+                realm_range_max: rank.realm_range_max,
+                realm_radius_yd: rank.realm_radius_yd,
+                target: Some(target),
+                requires_out_of_combat: false,
+                client_visible: None,
+                effects: rank.effects.clone(),
+                meta: rank.meta.clone(),
+            },
+            auras,
+        ),
+        _ => None,
+    };
     Some(TalentDef {
         key: g.key.clone(),
         talent_id: first.talent_id,
@@ -301,8 +339,12 @@ fn talent(g: &GenTalent) -> Option<TalentDef> {
             rank: p.rank,
         }),
         exceptional: g.exceptional,
-        effects: talent_effects(&g.ranks),
-        skill: None,
+        effects: if teaches.is_some() {
+            Vec::new()
+        } else {
+            talent_effects(&g.ranks)
+        },
+        skill: teaches,
         client_spellmods: Vec::new(),
         rank_spellmods: g.ranks.iter().map(|r| r.meta.spellmods.clone()).collect(),
     })
@@ -355,7 +397,7 @@ mod tests {
             ],
         });
         let g: GenTab = serde_json::from_value(tab_json).expect("a tab reads");
-        let tab = tab("Warrior", &g);
+        let tab = tab("Warrior", &g, &[]);
         let keys: Vec<&str> = tab.talents.iter().map(|t| t.key.as_str()).collect();
         assert_eq!(keys, ["one"]);
     }

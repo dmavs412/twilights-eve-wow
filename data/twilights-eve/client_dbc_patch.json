@@ -1720,9 +1720,30 @@
    "fields": {
     "power_type": 1,
     "name": "Hammer of the Vanguard",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd."
+    "cost": 30.0,
+    "cooldown_ms": 6000,
+    "gcd_ms": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd.",
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "normal",
+       "weapon_pct": 150,
+       "bonus": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       },
+       "crit_if_target_in": "ground_effect",
+       "school": "holy"
+      }
+     }
+    ],
+    "range_index": 3,
+    "cast_time_index": 1
    }
   },
   {

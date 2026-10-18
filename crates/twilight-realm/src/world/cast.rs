@@ -152,7 +152,6 @@ struct Ground {
 
 impl Skills {
     /// Whether `position` is inside a patch `caster` left on the ground.
-    #[allow(dead_code)] // Hammer of the Vanguard asks it (#104).
     pub(super) fn in_ground_effect(&self, caster: u64, position: [f32; 3]) -> bool {
         self.grounds
             .iter()
@@ -1386,11 +1385,17 @@ impl InWorld {
     fn roll(&self, skill: &Skill, target: u64, opener: bool, c: &Char, rng: &mut Rng) -> Landed {
         let mut rolls = false;
         let mut unavoidable = false;
+        let mut crit_if = None;
         for e in &skill.effects {
             match *e {
-                Effect::WeaponStrike { unavoidable: u, .. } => {
+                Effect::WeaponStrike {
+                    unavoidable: u,
+                    crit_if_target_in,
+                    ..
+                } => {
                     rolls = true;
                     unavoidable |= u;
+                    crit_if = crit_if.or(crit_if_target_in);
                 }
                 Effect::SchoolDamage {
                     melee_hit_table: true,
@@ -1411,7 +1416,13 @@ impl InWorld {
         if !rolls {
             return Landed::Hit;
         }
-        if opener {
+        let stands_in = match crit_if {
+            Some(callings::CritIf::GroundEffect) => {
+                self.skills.in_ground_effect(self.guid, mob.position)
+            }
+            None => false,
+        };
+        if opener || stands_in {
             return Landed::Crit;
         }
         let stats = buffed(&self.player.stats, &self.skills);
@@ -1487,15 +1498,17 @@ impl InWorld {
                 weapon,
                 bonus,
                 per_combo: more,
+                weapon_pct,
+                school,
                 ..
             } => {
-                let raw =
-                    weapon_roll(&stats, weapon, rng) + (sized(bonus) + per_combo(more)) as f32;
+                let roll = weapon_roll(&stats, weapon, rng) * weapon_pct as f32 / 100.0;
+                let raw = roll + (sized(bonus) + per_combo(more)) as f32;
                 let dealt = self.strike(
                     skill.spell_id,
                     target,
                     raw as u32,
-                    School::Physical,
+                    school,
                     how,
                     c,
                     rng,
