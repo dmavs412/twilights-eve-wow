@@ -519,6 +519,16 @@ mod tests {
 
 fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     let mut object = ranks[0].effects.get(slot)?.params.clone();
+    // Each rank's own.
+    for key in ["cooldown_ms", "splash_pct"] {
+        if object.contains_key(key) {
+            let sizes: Option<Vec<Value>> = ranks
+                .iter()
+                .map(|r| r.effects.get(slot)?.params.get(key).cloned())
+                .collect();
+            object.insert(key.into(), Value::Array(sizes?));
+        }
+    }
     object.remove("heal_pct");
     object.remove("apply_aura");
     object.remove("chance");

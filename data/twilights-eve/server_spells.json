@@ -13264,8 +13264,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "snapshot",
+           "apply_aura": "aura_rhythmic_draw_1"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.1 seconds."
        },
        {
@@ -13289,8 +13299,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "snapshot",
+           "apply_aura": "aura_rhythmic_draw_2"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.2 seconds."
        },
        {
@@ -13314,8 +13334,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "snapshot",
+           "apply_aura": "aura_rhythmic_draw_3"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.3 seconds."
        },
        {
@@ -13339,8 +13369,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "snapshot",
+           "apply_aura": "aura_rhythmic_draw_4"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.4 seconds."
        },
        {
@@ -13364,8 +13404,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "snapshot",
+           "apply_aura": "aura_rhythmic_draw_5"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.5 seconds."
        }
       ]
@@ -13400,8 +13450,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "snapshot",
+           "chance": 10,
+           "repeat_cast": true
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Snapshot has a 10% chance to trigger a second, free Snapshot on the same target instantly."
        },
        {
@@ -13425,8 +13486,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "snapshot",
+           "chance": 20,
+           "repeat_cast": true
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Snapshot has a 20% chance to trigger a second, free Snapshot on the same target instantly."
        },
        {
@@ -13450,8 +13522,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "snapshot",
+           "chance": 30,
+           "repeat_cast": true
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Snapshot has a 30% chance to trigger a second, free Snapshot on the same target instantly."
        }
       ]
@@ -13547,8 +13630,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "crit",
+           "skill": "snapshot",
+           "cooldown_skill": "vault",
+           "cooldown_ms": -1000
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 1 seconds."
        },
        {
@@ -13572,8 +13666,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "crit",
+           "skill": "snapshot",
+           "cooldown_skill": "vault",
+           "cooldown_ms": -2000
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 2 seconds."
        },
        {
@@ -13597,8 +13702,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "crit",
+           "skill": "snapshot",
+           "cooldown_skill": "vault",
+           "cooldown_ms": -3000
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 3 seconds."
        }
       ]
@@ -13633,8 +13749,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "rapid_fire",
+           "apply_aura": "aura_flurry_1"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Activating Rapid Fire makes your next 1 Snapshot cost no mana and automatically critically strike."
        },
        {
@@ -13658,8 +13784,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "rapid_fire",
+           "apply_aura": "aura_flurry_2"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Activating Rapid Fire makes your next 2 Snapshots cost no mana and automatically critically strike."
        }
       ]
@@ -13681,6 +13817,9 @@
         "spell_id": 19263,
         "talent_id": 1308,
         "source_tab_id": 362,
+        "realm_cost": 0,
+        "realm_cooldown_ms": 180000,
+        "target": "self",
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -13694,8 +13833,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "grant_aura",
+          "params": {
+           "aura": "aura_rapid_assault"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "3 min cooldown. For the next 8 seconds, your Snapshot becomes an automatic volley, firing an additional free arrow at your target (dealing 50% weapon damage) every time you cast it."
        }
       ]
@@ -13960,8 +14107,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "barbed_arrow",
+           "chance": 4,
+           "apply_aura_target": "aura_sundered_1"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "When Barbed Arrow deals periodic damage, it has a 4% chance to sunder the target's armor, reducing it by 50 for 10 seconds. Stacks up to 3 times."
        },
        {
@@ -13985,8 +14143,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "barbed_arrow",
+           "chance": 8,
+           "apply_aura_target": "aura_sundered_2"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "When Barbed Arrow deals periodic damage, it has a 8% chance to sunder the target's armor, reducing it by 100 for 10 seconds. Stacks up to 3 times."
        },
        {
@@ -14010,8 +14179,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "barbed_arrow",
+           "chance": 12,
+           "apply_aura_target": "aura_sundered_3"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "When Barbed Arrow deals periodic damage, it has a 12% chance to sunder the target's armor, reducing it by 150 for 10 seconds. Stacks up to 3 times."
        },
        {
@@ -14035,8 +14215,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "barbed_arrow",
+           "chance": 16,
+           "apply_aura_target": "aura_sundered_4"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "When Barbed Arrow deals periodic damage, it has a 16% chance to sunder the target's armor, reducing it by 200 for 10 seconds. Stacks up to 3 times."
        },
        {
@@ -14060,8 +14251,19 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "barbed_arrow",
+           "chance": 20,
+           "apply_aura_target": "aura_sundered_5"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "When Barbed Arrow deals periodic damage, it has a 20% chance to sunder the target's armor, reducing it by 250 for 10 seconds. Stacks up to 3 times."
        }
       ]
@@ -14096,8 +14298,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "damage_done",
+           "skill": "puncturing_shaft",
+           "requires_target_aura": "aura_barbed_arrow",
+           "splash_pct": 10,
+           "radius_yd": 8
+          },
+          "realm_only": false
+         }
+        ],
         "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 10% of the impact damage to all other enemies within 8 yards."
        },
        {
@@ -14121,8 +14335,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "damage_done",
+           "skill": "puncturing_shaft",
+           "requires_target_aura": "aura_barbed_arrow",
+           "splash_pct": 20,
+           "radius_yd": 8
+          },
+          "realm_only": false
+         }
+        ],
         "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 20% of the impact damage to all other enemies within 8 yards."
        },
        {
@@ -14146,8 +14372,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "damage_done",
+           "skill": "puncturing_shaft",
+           "requires_target_aura": "aura_barbed_arrow",
+           "splash_pct": 30,
+           "radius_yd": 8
+          },
+          "realm_only": false
+         }
+        ],
         "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 30% of the impact damage to all other enemies within 8 yards."
        }
       ]
@@ -14263,8 +14501,24 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "damage_pct_vs_aura",
+          "params": {
+           "aura": [
+            "aura_sundered_1",
+            "aura_sundered_2",
+            "aura_sundered_3",
+            "aura_sundered_4",
+            "aura_sundered_5"
+           ],
+           "school": "physical",
+           "pct": 5
+          },
+          "realm_only": false
+         }
+        ],
         "description": "All of your physical damage is increased by 5% against targets with sundered armor (such as from Jagged Barbs)."
        },
        {
@@ -14288,8 +14542,24 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "damage_pct_vs_aura",
+          "params": {
+           "aura": [
+            "aura_sundered_1",
+            "aura_sundered_2",
+            "aura_sundered_3",
+            "aura_sundered_4",
+            "aura_sundered_5"
+           ],
+           "school": "physical",
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "All of your physical damage is increased by 10% against targets with sundered armor (such as from Jagged Barbs)."
        },
        {
@@ -14313,8 +14583,24 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "damage_pct_vs_aura",
+          "params": {
+           "aura": [
+            "aura_sundered_1",
+            "aura_sundered_2",
+            "aura_sundered_3",
+            "aura_sundered_4",
+            "aura_sundered_5"
+           ],
+           "school": "physical",
+           "pct": 15
+          },
+          "realm_only": false
+         }
+        ],
         "description": "All of your physical damage is increased by 15% against targets with sundered armor (such as from Jagged Barbs)."
        }
       ]
@@ -14774,6 +15060,436 @@
      }
     ],
     "description": "Ranged attack speed increased by 10% and ranged critical strike chance by 6%."
+   },
+   {
+    "key": "aura_rhythmic_draw_1",
+    "name": "Rhythmic Draw",
+    "spell_id": 19184,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 15,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "puncturing_shaft",
+       "cast_time_ms": -100,
+       "family_bits": [
+        17
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Puncturing Shaft casts 0.1 sec faster per stack."
+   },
+   {
+    "key": "aura_rhythmic_draw_2",
+    "name": "Rhythmic Draw",
+    "spell_id": 19387,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 15,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "puncturing_shaft",
+       "cast_time_ms": -200,
+       "family_bits": [
+        17
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Puncturing Shaft casts 0.2 sec faster per stack."
+   },
+   {
+    "key": "aura_rhythmic_draw_3",
+    "name": "Rhythmic Draw",
+    "spell_id": 19388,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 15,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "puncturing_shaft",
+       "cast_time_ms": -300,
+       "family_bits": [
+        17
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Puncturing Shaft casts 0.3 sec faster per stack."
+   },
+   {
+    "key": "aura_rhythmic_draw_4",
+    "name": "Rhythmic Draw",
+    "spell_id": 19389,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 15,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "puncturing_shaft",
+       "cast_time_ms": -400,
+       "family_bits": [
+        17
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Puncturing Shaft casts 0.4 sec faster per stack."
+   },
+   {
+    "key": "aura_rhythmic_draw_5",
+    "name": "Rhythmic Draw",
+    "spell_id": 19390,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 15,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "puncturing_shaft",
+       "cast_time_ms": -500,
+       "family_bits": [
+        17
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Puncturing Shaft casts 0.5 sec faster per stack."
+   },
+   {
+    "key": "aura_flurry_1",
+    "name": "Flurry",
+    "spell_id": 19376,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "snapshot",
+       "cost_pct": -100,
+       "family_bits": [
+        11
+       ]
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "snapshot",
+       "pct": 100
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next 1 Snapshot cost no mana and are critical strikes."
+   },
+   {
+    "key": "aura_flurry_2",
+    "name": "Flurry",
+    "spell_id": 19377,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 2,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "snapshot",
+       "cost_pct": -100,
+       "family_bits": [
+        11
+       ]
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "snapshot",
+       "pct": 100
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next 2 Snapshots cost no mana and are critical strikes."
+   },
+   {
+    "key": "aura_rapid_assault",
+    "name": "Rapid Assault",
+    "spell_id": 19263,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "extra_strike",
+      "params": {
+       "skill": "snapshot",
+       "weapon": "ranged",
+       "weapon_pct": 50
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Each Snapshot fires an extra arrow for 50% weapon damage."
+   },
+   {
+    "key": "aura_sundered_1",
+    "name": "Sundered",
+    "spell_id": 19464,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_armor",
+      "params": {
+       "amount": -50
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor reduced by 50 per stack."
+   },
+   {
+    "key": "aura_sundered_2",
+    "name": "Sundered",
+    "spell_id": 19465,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_armor",
+      "params": {
+       "amount": -100
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor reduced by 100 per stack."
+   },
+   {
+    "key": "aura_sundered_3",
+    "name": "Sundered",
+    "spell_id": 19466,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_armor",
+      "params": {
+       "amount": -150
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor reduced by 150 per stack."
+   },
+   {
+    "key": "aura_sundered_4",
+    "name": "Sundered",
+    "spell_id": 19467,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_armor",
+      "params": {
+       "amount": -200
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor reduced by 200 per stack."
+   },
+   {
+    "key": "aura_sundered_5",
+    "name": "Sundered",
+    "spell_id": 19468,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_armor",
+      "params": {
+       "amount": -250
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor reduced by 250 per stack."
    },
    {
     "key": "aura_explosive_payload",

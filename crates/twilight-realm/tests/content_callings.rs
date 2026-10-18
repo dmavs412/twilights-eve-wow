@@ -425,7 +425,7 @@ fn every_skill_id_is_listed_for_rank_blanking() {
         [
             75, 78, 100, 116, 133, 589, 689, 781, 845, 1752, 1776, 1784, 1943, 1953, 1978, 2061,
             2098, 2120, 2136, 2912, 3044, 3045, 5277, 6178, 8092, 8921, 10308, 11366, 12043, 12294,
-            12809, 15237, 15286, 19434, 19503, 20165, 20271, 20305, 20375, 25899
+            12809, 15237, 15286, 19263, 19434, 19503, 20165, 20271, 20305, 20375, 25899
         ]
     );
 }
@@ -456,13 +456,10 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Cutthroat's Tracker: nothing (Scent of Blood, Bloodletting, Predator's Step, Serrated
         // Strikes, Ruthlessness and Executioner's Toll are modelled now).
         // Initiate's Weaver and Channeler: nothing (every talent is modelled now).
-        // Ranger's Swiftbow: Rhythmic Draw, Twin Arrows, Parting Gift, Adrenaline Rush, Flurry,
-        // Rapid Assault (Guerilla Tactics is modelled now).
-        19184, 19387, 19388, 19389, 19390, 19151, 19152, 19153, 19239, 19245, 19290, 19294, 24283,
-        19376, 19377, 19263,
-        // Ranger's Arbalest: Jagged Barbs, Shrapnel Payload, Shattered Defenses (Piercing Force,
-        // Steadfast Aim, Point Blank and Explosive Payload are modelled now).
-        19464, 19465, 19466, 19467, 19468, 19461, 19462, 24691, 19498, 19499, 19500,
+        // Ranger's Swiftbow: Parting Gift (a trap left behind by Vault; every other talent is
+        // modelled now).
+        19239, 19245,
+        // Ranger's Arbalest: nothing (every talent is modelled now).
         // Acolyte's Rot-Weaver: nothing (every talent is modelled now).
         // Acolyte's Hemomancer: Blood Ties (the client cannot target an ally with Drain Life).
         27789, 27790,

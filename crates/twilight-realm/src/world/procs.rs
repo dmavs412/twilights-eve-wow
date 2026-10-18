@@ -151,6 +151,39 @@ impl InWorld {
                     self.put_aura(def, guid, c.level, events);
                 }
             }
+            if let Some((key, ms)) = proc.cooldown {
+                if let Some(skill) = crate::callings::of(c.calling).skill_by_key(key) {
+                    self.skills.change_cooldown(skill.spell_id, ms, events);
+                }
+            }
+            if let (true, Some(target)) = (proc.splash_pct > 0, happened.target) {
+                let share = happened.amount * proc.splash_pct / 100;
+                let Some(at) = self
+                    .mobs
+                    .iter()
+                    .find(|m| m.guid == target)
+                    .map(|m| m.position)
+                else {
+                    continue;
+                };
+                let around: Vec<u64> = self
+                    .mobs
+                    .iter()
+                    .filter(|m| {
+                        m.guid != target
+                            && m.alive()
+                            && crate::space::distance(m.position, at) <= proc.radius_yd
+                    })
+                    .map(|m| m.guid)
+                    .collect();
+                for guid in around {
+                    let school = happened.school.unwrap_or_default();
+                    self.bonus_hit(proc.spell_id, guid, share, school, c, rng, events, ticked);
+                }
+            }
+            if proc.repeat_cast {
+                self.repeat_cast(happened.skill, c, rng, events, ticked);
+            }
             if let (true, Some(target)) = (proc.spread > 0.0, happened.target) {
                 self.spread_consumed(target, proc.spread, events);
             }
@@ -190,7 +223,13 @@ impl InWorld {
             .iter()
             .find(|a| a.key == key)
             .map(|a| a.spell_id);
-        if happened.event == crate::callings::ProcEvent::Cast {
+        // A cast's own events read the target as it stood before the cast landed: a killing
+        // blow takes its auras with it.
+        let in_cast = happened.event == crate::callings::ProcEvent::Cast
+            || (happened.event == crate::callings::ProcEvent::DamageDone
+                && happened.target.is_some()
+                && self.skills.cast_target == happened.target);
+        if in_cast {
             return self.skills.before.as_ref().is_some_and(|(slowed, auras)| {
                 if key == "slowed" {
                     *slowed

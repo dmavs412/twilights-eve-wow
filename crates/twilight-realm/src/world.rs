@@ -722,6 +722,9 @@ impl InWorld {
             cast::white(&self.player.stats, &self.skills)
         };
         let opener = self.skills.break_stealth(events) == Some(true);
+        // The armour the player's debuffs took off it (Sundered).
+        let mut stats = stats;
+        stats.armor_pen += self.skills.armor_loss(target);
         let mut swing = combat::player_swing(&stats, &self.mobs[i], from_front, opener, rng);
         swing.off_hand = off_hand;
         swing.damage = self.dealt(c, swing.damage);

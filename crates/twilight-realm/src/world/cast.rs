@@ -135,6 +135,11 @@ pub(super) struct Skills {
     still_secs: f32,
     /// The player's auras that their next step takes off (`break_on=move`), by spell id.
     break_on_move: Vec<u32>,
+    /// The unit target of the cast under way, for a proc that repeats it or reads the target as
+    /// it stood before the cast.
+    pub(super) cast_target: Option<u64>,
+    /// A free repeat is under way (Twin Arrows): it pays nothing and repeats nothing.
+    repeating: bool,
     /// The channel under way, if any.
     channel: Option<Channel>,
     /// The ground areas up, and the point the cast under way was aimed at.
@@ -193,6 +198,15 @@ struct PendingBlink {
     orientation: f32,
     faces: f32,
     distance_yd: f32,
+}
+
+/// An aura row's most stacks: its `max_stacks` with `stack_rule=stack`, one otherwise.
+fn stack_limit(def: &callings::AuraDef) -> u32 {
+    if def.row.stack_rule.as_deref() == Some("stack") {
+        def.row.max_stacks.max(1)
+    } else {
+        1
+    }
 }
 
 /// How long after a step the player still counts as moving: the client reports a moving
@@ -397,6 +411,21 @@ enum AuraKind {
     NextCast {
         next: &'static callings::NextCast,
         group: Option<&'static str>,
+        /// Applications so far, each adding the buff's amounts again, and the most.
+        stacks: u32,
+        max_stacks: u32,
+    },
+    /// The unit's armour is `amount` lower for each stack (Sundered).
+    ArmorLoss {
+        amount: u32,
+        stacks: u32,
+        max_stacks: u32,
+    },
+    /// Each cast of `skill` also strikes for `weapon_pct` of a `weapon` roll (Rapid Assault).
+    ExtraStrike {
+        skill: &'static str,
+        weapon: Weapon,
+        weapon_pct: u32,
     },
     /// A count that grows with each new application; at `max` the aura row `then` replaces it.
     StackTo {
@@ -517,7 +546,9 @@ impl AuraKind {
             AuraKind::Stacks { count, .. } => count,
             AuraKind::PeriodicDamage { stacks, .. } => stacks,
             AuraKind::StackTo { count, .. } => count,
-            AuraKind::SkillAmount { stacks, .. } => stacks,
+            AuraKind::SkillAmount { stacks, .. }
+            | AuraKind::NextCast { stacks, .. }
+            | AuraKind::ArmorLoss { stacks, .. } => stacks,
             _ => 1,
         }
     }
@@ -733,13 +764,13 @@ impl Skills {
     fn next_casts<'a>(
         &'a self,
         skill: &'a str,
-    ) -> impl Iterator<Item = &'static callings::NextCast> + 'a {
+    ) -> impl Iterator<Item = (&'static callings::NextCast, i32)> + 'a {
         let me = self.me;
         self.auras.iter().filter_map(move |a| match a.kind {
-            AuraKind::NextCast { next, .. }
+            AuraKind::NextCast { next, stacks, .. }
                 if a.unit == me && next.skill.iter().any(|s| s == skill) =>
             {
-                Some(next)
+                Some((next, stacks as i32))
             }
             _ => None,
         })
@@ -748,10 +779,14 @@ impl Skills {
     /// How long `skill`'s cast bar runs now, the player's `next_cast` buffs applied.
     fn cast_time_ms(&self, skill: &Skill) -> u32 {
         let base = skill.meta.shape.cast_time_ms;
-        if base == 0 || self.next_casts(&skill.key).any(|n| n.instant) {
+        if base == 0 || self.next_casts(&skill.key).any(|(n, _)| n.instant) {
             return 0;
         }
-        let change: i32 = self.next_casts(&skill.key).map(|n| n.cast_time_ms).sum();
+        // Never below an instant cast.
+        let change: i32 = self
+            .next_casts(&skill.key)
+            .map(|(n, stacks)| n.cast_time_ms * stacks)
+            .sum();
         let ms = (base as i32 + change).max(0) as u32;
         ms * 100 / (100 + self.cast_speed_pct())
     }
@@ -771,14 +806,16 @@ impl Skills {
     /// The percent the player's `next_cast` buffs change `skill`'s cost by, -100 at least.
     fn next_cost_pct(&self, skill: &str) -> i32 {
         self.next_casts(skill)
-            .map(|n| n.cost_pct)
+            .map(|(n, stacks)| n.cost_pct * stacks)
             .sum::<i32>()
             .max(-100)
     }
 
     /// The milliseconds the player's `next_cast` buffs add to the auras `skill` applies.
     fn next_duration_ms(&self, skill: &str) -> i32 {
-        self.next_casts(skill).map(|n| n.duration_ms).sum()
+        self.next_casts(skill)
+            .map(|(n, stacks)| n.duration_ms * stacks)
+            .sum()
     }
 
     /// `skill` went off: each `next_cast` buff for it loses a charge (one with none lasts its
@@ -787,7 +824,7 @@ impl Skills {
         let me = self.me;
         let mut groups: Vec<&'static str> = Vec::new();
         for a in &mut self.auras {
-            let AuraKind::NextCast { next, group } = a.kind else {
+            let AuraKind::NextCast { next, group, .. } = a.kind else {
                 continue;
             };
             if a.unit != me || !next.skill.iter().any(|s| s == skill) {
@@ -829,21 +866,80 @@ impl Skills {
                     add(false, bit, SPELLMOD_CASTING_TIME, -shorter);
                 }
             }
-            let AuraKind::NextCast { next, .. } = a.kind else {
+            let AuraKind::NextCast { next, stacks, .. } = a.kind else {
                 continue;
             };
+            let stacks = stacks as i32;
             for &bit in &next.family_bits {
                 if next.instant {
                     add(false, bit, SPELLMOD_CASTING_TIME, -100);
                 } else if next.cast_time_ms != 0 {
-                    add(true, bit, SPELLMOD_CASTING_TIME, next.cast_time_ms);
+                    add(true, bit, SPELLMOD_CASTING_TIME, next.cast_time_ms * stacks);
                 }
                 if next.cost_pct != 0 {
-                    add(false, bit, SPELLMOD_COST, next.cost_pct);
+                    add(
+                        false,
+                        bit,
+                        SPELLMOD_COST,
+                        (next.cost_pct * stacks).max(-100),
+                    );
                 }
             }
         }
         cells
+    }
+
+    /// The armour `unit` has lost to the player's debuffs (Sundered).
+    pub(super) fn armor_loss(&self, unit: u64) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .map(|a| match a.kind {
+                AuraKind::ArmorLoss { amount, stacks, .. } => amount * stacks,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// The extra strikes the player's buffs add to each cast of `skill`: `(weapon, pct)`.
+    fn extra_strikes(&self, skill: &str) -> Vec<(Weapon, u32)> {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .filter_map(|a| match a.kind {
+                AuraKind::ExtraStrike {
+                    skill: s,
+                    weapon,
+                    weapon_pct,
+                } if s == skill => Some((weapon, weapon_pct)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// `spell_id`'s cooldown changes by `ms` (shorter when negative), and the client is told.
+    pub(super) fn change_cooldown(
+        &mut self,
+        spell_id: u32,
+        ms: i32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Some(at) = self.cooldowns.iter().position(|(id, _)| *id == spell_id) else {
+            return;
+        };
+        let left = (self.cooldowns[at].1 + ms as f32 / 1000.0).max(0.0);
+        self.cooldowns[at].1 = left;
+        events.push(if left > 0.0 {
+            SessionEvent::SpellCooldowns {
+                caster: self.me,
+                cooldowns: vec![(spell_id, clock::ms(left))],
+            }
+        } else {
+            SessionEvent::ClearCooldown {
+                spell_id,
+                caster: self.me,
+            }
+        });
     }
 
     /// The skill the player's next-cast buff turns their next `skill` into, if one does.
@@ -1185,6 +1281,18 @@ impl Skills {
             if let (
                 AuraKind::SkillAmount { stacks: held, .. },
                 AuraKind::SkillAmount {
+                    stacks, max_stacks, ..
+                },
+            )
+            | (
+                AuraKind::NextCast { stacks: held, .. },
+                AuraKind::NextCast {
+                    stacks, max_stacks, ..
+                },
+            )
+            | (
+                AuraKind::ArmorLoss { stacks: held, .. },
+                AuraKind::ArmorLoss {
                     stacks, max_stacks, ..
                 },
             ) = (old.kind, &mut aura.kind)
@@ -1564,6 +1672,34 @@ impl InWorld {
         self.go(skill, target, targets, true, c, rng, events)
     }
 
+    /// A proc's free repeat of `skill` at the cast's target, if it still stands in reach: no cost,
+    /// no cooldown, no global cooldown, and it repeats nothing itself (Twin Arrows).
+    pub(super) fn repeat_cast(
+        &mut self,
+        skill: Option<&str>,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let (Some(key), Some(target)) = (skill, self.skills.cast_target) else {
+            return;
+        };
+        if self.skills.repeating {
+            return;
+        }
+        let Some(skill) = callings::of(c.calling).skill_by_key(key) else {
+            return;
+        };
+        self.skills.repeating = true;
+        if let Ok(targets) = self.check(skill, Some(target), false, c) {
+            let done = self.go(skill, Some(target), targets, true, c, rng, events);
+            ticked.leveled |= done.leveled;
+            ticked.discovered |= done.discovered;
+        }
+        self.skills.repeating = false;
+    }
+
     /// The player stepped: they are moving, and their `break_on=move` auras come off.
     pub(crate) fn stepped(&mut self, events: &mut Vec<SessionEvent>) {
         let s = &mut self.skills;
@@ -1891,6 +2027,7 @@ impl InWorld {
         let mut ticked = Ticked::default();
         let spell_id = skill.spell_id;
         self.pay(skill, instant, c, events);
+        self.skills.cast_target = target;
         self.skills.cast_dealt = 0;
         self.skills.cast_healed = 0;
         // A cast that breaks stealth does so as it goes; its first blow from stealth is a crit.
@@ -1926,6 +2063,11 @@ impl InWorld {
             .iter()
             .filter(|(_, l)| !matches!(l, Landed::Missed(_)))
             .map(|(t, _)| *t)
+            .collect();
+        let crits: Vec<(u64, Landed)> = landed
+            .iter()
+            .filter(|(_, l)| *l == Landed::Crit)
+            .copied()
             .collect();
         let misses: Vec<(u64, u8)> = landed
             .iter()
@@ -2031,6 +2173,37 @@ impl InWorld {
                         &mut ticked,
                     );
                 }
+                // The player's buffs that add a strike to each cast of the skill (Rapid Assault).
+                for (weapon, weapon_pct) in self.skills.extra_strikes(&skill.key) {
+                    let strike = Effect::WeaponStrike {
+                        weapon,
+                        bonus: formulas::Linear {
+                            base: 0.0,
+                            per_level: 0.0,
+                            per_ap: 0.0,
+                            min: 0,
+                        },
+                        on_next_swing: false,
+                        unavoidable: false,
+                        per_combo: None,
+                        weapon_pct,
+                        school: School::Physical,
+                        crit_if_target_in: None,
+                        armor_ignore: None,
+                    };
+                    self.effect(
+                        skill,
+                        &strike,
+                        guid,
+                        how,
+                        level,
+                        combo,
+                        c,
+                        rng,
+                        events,
+                        &mut ticked,
+                    );
+                }
                 if skill.is_finisher() {
                     spent = true;
                     finisher_target.get_or_insert(guid);
@@ -2106,6 +2279,23 @@ impl InWorld {
         // The next-cast buffs this cast used, landed or not.
         let gone = self.skills.use_next_casts(&skill.key, events);
         self.faded(&gone, events);
+        if let Some(&(first, _)) = crits.first() {
+            self.proc(
+                crate::rules::procs::Happened {
+                    event: crate::callings::ProcEvent::Crit,
+                    skill: Some(&skill.key),
+                    yields_xp: false,
+                    target: Some(first),
+                    amount: 0,
+                    school: Some(skill_school(skill)),
+                    was_ms: 0,
+                },
+                c,
+                rng,
+                events,
+                &mut ticked,
+            );
+        }
         self.proc(
             crate::rules::procs::Happened {
                 was_ms: 0,
@@ -2149,6 +2339,7 @@ impl InWorld {
         ));
         self.update_aura_states(events);
         self.sync_next_cast_mods(c, events);
+        self.skills.cast_target = None;
         ticked
     }
 
@@ -2435,12 +2626,14 @@ impl InWorld {
         if !p.alive() {
             return Err(SPELL_FAILED_CASTER_DEAD);
         }
-        if self.skills.cooldown_left(skill.spell_id) > READY_SLACK_SECS
-            || (gcd && skill.gcd_ms > 0 && self.skills.gcd > READY_SLACK_SECS)
+        let free = self.skills.repeating;
+        if !free
+            && (self.skills.cooldown_left(skill.spell_id) > READY_SLACK_SECS
+                || (gcd && skill.gcd_ms > 0 && self.skills.gcd > READY_SLACK_SECS))
         {
             return Err(SPELL_FAILED_NOT_READY);
         }
-        if !p.power.has(self.power_cost(c, skill)) {
+        if !free && !p.power.has(self.power_cost(c, skill)) {
             return Err(SPELL_FAILED_NO_POWER);
         }
         // A health cost that would kill is refused.
@@ -2578,6 +2771,10 @@ impl InWorld {
 
     /// Takes the cast's costs and starts its cooldowns.
     fn pay(&mut self, skill: &Skill, gcd: bool, c: &Char, events: &mut Vec<SessionEvent>) {
+        // A free repeat pays nothing and starts no cooldown.
+        if self.skills.repeating {
+            return;
+        }
         let cost = self.power_cost(c, skill);
         self.skills.last_cost = cost;
         self.skills.was_full = self.player.power.current >= self.player.power.max;
@@ -3630,10 +3827,15 @@ impl InWorld {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
             return 0;
         };
+        let armor_ignore = armor_ignore + self.skills.armor_loss(target);
         let armor = mob
             .stats
             .armor
             .saturating_sub(self.player.stats.armor_pen + armor_ignore);
+        let more = crate::talents::damage_pct_vs(c, school, |key| {
+            callings::aura(key).is_some_and(|a| self.skills.on(target, a.spell_id))
+        });
+        let raw = scaled(raw, more);
         let mut damage = mitigated(school, raw, armor, self.player.stats.level);
         if how == Landed::Crit {
             let spell = crate::talents::skill(c, spell_id);
@@ -4683,11 +4885,7 @@ impl InWorld {
                     skill: skill.as_str(),
                     pct: *pct,
                     stacks: 1,
-                    max_stacks: if def.row.stack_rule.as_deref() == Some("stack") {
-                        def.row.max_stacks.max(1)
-                    } else {
-                        1
-                    },
+                    max_stacks: stack_limit(def),
                 },
                 callings::AuraEffect::ModRangedHastePct { pct } => {
                     AuraKind::RangedHaste { pct: *pct }
@@ -4698,6 +4896,22 @@ impl InWorld {
                 callings::AuraEffect::NextCast(next) => AuraKind::NextCast {
                     next,
                     group: def.row.exclusive_group.as_deref(),
+                    stacks: 1,
+                    max_stacks: stack_limit(def),
+                },
+                callings::AuraEffect::ModArmor { amount } => AuraKind::ArmorLoss {
+                    amount: amount.unsigned_abs(),
+                    stacks: 1,
+                    max_stacks: stack_limit(def),
+                },
+                callings::AuraEffect::ExtraStrike {
+                    skill,
+                    weapon,
+                    weapon_pct,
+                } => AuraKind::ExtraStrike {
+                    skill: skill.as_str(),
+                    weapon: *weapon,
+                    weapon_pct: *weapon_pct,
                 },
                 callings::AuraEffect::AtMaxStacks { becomes } => AuraKind::StackTo {
                     count: 1,

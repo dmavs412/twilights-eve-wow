@@ -202,6 +202,15 @@ pub enum AuraEffect {
     ModRangedHastePct { pct: u32 },
     /// The player's ranged attacks crit `pct` percent more often.
     ModRangedCritPct { pct: u32 },
+    /// The unit's armour changes by `amount` (a stacking Sunder when negative).
+    ModArmor { amount: i32 },
+    /// Each cast of `skill` also strikes its targets for `weapon_pct` percent of a `weapon`
+    /// roll (Rapid Assault).
+    ExtraStrike {
+        skill: String,
+        weapon: Weapon,
+        weapon_pct: u32,
+    },
     /// The unit's run speed changes by `pct` percent: faster when positive, a snare when negative.
     ModRunSpeed { pct: i32 },
     /// The player's dodge chance rises by `pct` percent.
@@ -524,6 +533,15 @@ pub enum TalentEffect {
     },
     /// The skill's strikes skip this much more of the target's armour.
     SkillArmorIgnore { skill: String, per_rank: Vec<u32> },
+    /// The character's `school` damage rises by this percent on a target wearing one of the
+    /// `aura` rows (Shattered Defenses).
+    DamagePctVsAura {
+        #[serde(deserialize_with = "one_or_many")]
+        aura: Vec<String>,
+        #[serde(default)]
+        school: School,
+        per_rank: Vec<u32>,
+    },
     /// The skill (`ranged`: every `defense_type=ranged` skill) has no minimum range.
     NoMinRange { skill: String, per_rank: Vec<u32> },
     /// The skill's rage gain rises by this many points.
@@ -587,6 +605,19 @@ pub enum TalentEffect {
         /// How long `moving_for` or `still_for` waits.
         #[serde(default)]
         ms: u32,
+        /// The triggering skill goes off again at once at the same target, free, off the global
+        /// cooldown; a repeat never repeats (Twin Arrows).
+        #[serde(default)]
+        repeat_cast: bool,
+        /// The skill whose cooldown each rank's `cooldown_ms` changes (Adrenaline Rush).
+        #[serde(default)]
+        cooldown_skill: Option<String>,
+        #[serde(default)]
+        cooldown_ms: Vec<i32>,
+        /// Each rank's percent of the damage done dealt again to every other enemy within
+        /// `radius_yd` of the target (Shrapnel Payload).
+        #[serde(default)]
+        splash_pct: Vec<u32>,
         /// Only for a cast of this skill.
         #[serde(default)]
         skill: Option<String>,
@@ -831,6 +862,8 @@ pub enum ProcEvent {
     MovingFor,
     /// The character has stood still for the proc's `ms`; once, until they move again.
     StillFor,
+    /// The character's cast lands a critical strike (once a cast).
+    Crit,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].
@@ -880,6 +913,7 @@ impl TalentEffect {
             | Self::SkillBonusCombo { per_rank, .. }
             | Self::SkillAmountPct { per_rank, .. }
             | Self::SkillArmorIgnore { per_rank, .. }
+            | Self::DamagePctVsAura { per_rank, .. }
             | Self::NoMinRange { per_rank, .. }
             | Self::SkillRage { per_rank, .. }
             | Self::SkillCritPct { per_rank, .. }

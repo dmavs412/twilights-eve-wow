@@ -165,6 +165,21 @@ pub(crate) fn skill_crit_damage_pct(c: &Char, skill: Option<&str>, builder: bool
     })
 }
 
+/// The percent `school` damage rises by on a target wearing one of a talent's aura rows, given
+/// `wears` (an aura row key).
+pub(crate) fn damage_pct_vs(
+    c: &Char,
+    school: crate::rules::school::School,
+    wears: impl Fn(&str) -> bool,
+) -> u32 {
+    sum(c, |e| match e {
+        TalentEffect::DamagePctVsAura {
+            aura, school: s, ..
+        } => *s == school && aura.iter().any(|k| wears(k)),
+        _ => false,
+    })
+}
+
 /// The armour a skill's strikes skip on top of their own (Piercing Force).
 pub(crate) fn skill_armor_ignore(c: &Char, skill: &str) -> u32 {
     sum(
@@ -518,6 +533,12 @@ const STATS: [Stat; 5] = [
 pub(crate) struct Proc {
     /// The spell its effects are logged under: the talent rank's, or the buff's.
     pub(crate) spell_id: u32,
+    /// The triggering skill goes off again, free.
+    pub(crate) repeat_cast: bool,
+    /// A skill's cooldown, changed by this many ms.
+    pub(crate) cooldown: Option<(&'static str, i32)>,
+    /// Percent of the damage done splashed on the enemies within `radius_yd` of the target.
+    pub(crate) splash_pct: u32,
     pub(crate) chance: u32,
     /// Percent of the maximum health healed.
     pub(crate) heal_pct: u32,
@@ -578,6 +599,10 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
             TalentEffect::Proc {
                 on,
                 ms,
+                repeat_cast,
+                cooldown_skill,
+                cooldown_ms,
+                splash_pct,
                 skill,
                 yields_xp,
                 chance,
@@ -618,6 +643,11 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 };
                 trigger.fires(happened).then(|| Proc {
                     spell_id: t.rank_spells.get(r).copied().unwrap_or(0),
+                    repeat_cast: *repeat_cast,
+                    cooldown: cooldown_skill
+                        .as_deref()
+                        .map(|k| (k, cooldown_ms.get(r).copied().unwrap_or(0))),
+                    splash_pct: splash_pct.get(r).copied().unwrap_or(0),
                     chance: chances.get(r).copied().unwrap_or(*chance),
                     heal_pct: per_rank[r],
                     auras: auras.get(r).cloned().unwrap_or_default(),
@@ -666,6 +696,9 @@ pub(crate) fn aura_proc(
     };
     trigger.fires(happened).then(|| Proc {
         spell_id,
+        repeat_cast: false,
+        cooldown: None,
+        splash_pct: 0,
         chance: p.chance,
         heal_pct: p.heal_pct,
         auras: p.apply_aura.iter().cloned().collect(),

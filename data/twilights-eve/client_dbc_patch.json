@@ -6944,7 +6944,17 @@
     "name": "Rhythmic Draw",
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.1 seconds."
+    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.1 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "snapshot",
+       "apply_aura": "aura_rhythmic_draw_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -6957,7 +6967,17 @@
     "name": "Rhythmic Draw",
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.2 seconds."
+    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.2 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "snapshot",
+       "apply_aura": "aura_rhythmic_draw_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -6970,7 +6990,17 @@
     "name": "Rhythmic Draw",
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.3 seconds."
+    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.3 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "snapshot",
+       "apply_aura": "aura_rhythmic_draw_3"
+      }
+     }
+    ]
    }
   },
   {
@@ -6983,7 +7013,17 @@
     "name": "Rhythmic Draw",
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.4 seconds."
+    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.4 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "snapshot",
+       "apply_aura": "aura_rhythmic_draw_4"
+      }
+     }
+    ]
    }
   },
   {
@@ -6996,7 +7036,17 @@
     "name": "Rhythmic Draw",
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.5 seconds."
+    "description": "Every time you cast Snapshot, the cast time of your next Puncturing Shaft is reduced by 0.5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "snapshot",
+       "apply_aura": "aura_rhythmic_draw_5"
+      }
+     }
+    ]
    }
   },
   {
@@ -7009,7 +7059,18 @@
     "name": "Twin Arrows",
     "school": 0,
     "prevention_type": 2,
-    "description": "Snapshot has a 10% chance to trigger a second, free Snapshot on the same target instantly."
+    "description": "Snapshot has a 10% chance to trigger a second, free Snapshot on the same target instantly.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "snapshot",
+       "chance": 10,
+       "repeat_cast": true
+      }
+     }
+    ]
    }
   },
   {
@@ -7022,7 +7083,18 @@
     "name": "Twin Arrows",
     "school": 0,
     "prevention_type": 2,
-    "description": "Snapshot has a 20% chance to trigger a second, free Snapshot on the same target instantly."
+    "description": "Snapshot has a 20% chance to trigger a second, free Snapshot on the same target instantly.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "snapshot",
+       "chance": 20,
+       "repeat_cast": true
+      }
+     }
+    ]
    }
   },
   {
@@ -7035,7 +7107,18 @@
     "name": "Twin Arrows",
     "school": 0,
     "prevention_type": 2,
-    "description": "Snapshot has a 30% chance to trigger a second, free Snapshot on the same target instantly."
+    "description": "Snapshot has a 30% chance to trigger a second, free Snapshot on the same target instantly.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "snapshot",
+       "chance": 30,
+       "repeat_cast": true
+      }
+     }
+    ]
    }
   },
   {
@@ -7074,7 +7157,18 @@
     "name": "Adrenaline Rush",
     "school": 0,
     "prevention_type": 2,
-    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 1 seconds."
+    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 1 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "crit",
+       "skill": "snapshot",
+       "cooldown_skill": "vault",
+       "cooldown_ms": -1000
+      }
+     }
+    ]
    }
   },
   {
@@ -7087,7 +7181,18 @@
     "name": "Adrenaline Rush",
     "school": 0,
     "prevention_type": 2,
-    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 2 seconds."
+    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 2 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "crit",
+       "skill": "snapshot",
+       "cooldown_skill": "vault",
+       "cooldown_ms": -2000
+      }
+     }
+    ]
    }
   },
   {
@@ -7100,7 +7205,18 @@
     "name": "Adrenaline Rush",
     "school": 0,
     "prevention_type": 2,
-    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 3 seconds."
+    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 3 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "crit",
+       "skill": "snapshot",
+       "cooldown_skill": "vault",
+       "cooldown_ms": -3000
+      }
+     }
+    ]
    }
   },
   {
@@ -7113,7 +7229,17 @@
     "name": "Flurry",
     "school": 0,
     "prevention_type": 2,
-    "description": "Activating Rapid Fire makes your next 1 Snapshot cost no mana and automatically critically strike."
+    "description": "Activating Rapid Fire makes your next 1 Snapshot cost no mana and automatically critically strike.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "rapid_fire",
+       "apply_aura": "aura_flurry_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -7126,7 +7252,17 @@
     "name": "Flurry",
     "school": 0,
     "prevention_type": 2,
-    "description": "Activating Rapid Fire makes your next 2 Snapshots cost no mana and automatically critically strike."
+    "description": "Activating Rapid Fire makes your next 2 Snapshots cost no mana and automatically critically strike.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "rapid_fire",
+       "apply_aura": "aura_flurry_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -7137,9 +7273,20 @@
    "fields": {
     "power_type": 0,
     "name": "Rapid Assault",
+    "cost": 0.0,
+    "cooldown_ms": 180000,
     "school": 0,
     "prevention_type": 2,
-    "description": "3 min cooldown. For the next 8 seconds, your Snapshot becomes an automatic volley, firing an additional free arrow at your target (dealing 50% weapon damage) every time you cast it."
+    "description": "3 min cooldown. For the next 8 seconds, your Snapshot becomes an automatic volley, firing an additional free arrow at your target (dealing 50% weapon damage) every time you cast it.",
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_rapid_assault"
+      }
+     }
+    ],
+    "cast_time_index": 1
    }
   },
   {
@@ -7297,7 +7444,18 @@
     "name": "Jagged Barbs",
     "school": 0,
     "prevention_type": 2,
-    "description": "When Barbed Arrow deals periodic damage, it has a 4% chance to sunder the target's armor, reducing it by 50 for 10 seconds. Stacks up to 3 times."
+    "description": "When Barbed Arrow deals periodic damage, it has a 4% chance to sunder the target's armor, reducing it by 50 for 10 seconds. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "barbed_arrow",
+       "chance": 4,
+       "apply_aura_target": "aura_sundered_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -7310,7 +7468,18 @@
     "name": "Jagged Barbs",
     "school": 0,
     "prevention_type": 2,
-    "description": "When Barbed Arrow deals periodic damage, it has a 8% chance to sunder the target's armor, reducing it by 100 for 10 seconds. Stacks up to 3 times."
+    "description": "When Barbed Arrow deals periodic damage, it has a 8% chance to sunder the target's armor, reducing it by 100 for 10 seconds. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "barbed_arrow",
+       "chance": 8,
+       "apply_aura_target": "aura_sundered_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -7323,7 +7492,18 @@
     "name": "Jagged Barbs",
     "school": 0,
     "prevention_type": 2,
-    "description": "When Barbed Arrow deals periodic damage, it has a 12% chance to sunder the target's armor, reducing it by 150 for 10 seconds. Stacks up to 3 times."
+    "description": "When Barbed Arrow deals periodic damage, it has a 12% chance to sunder the target's armor, reducing it by 150 for 10 seconds. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "barbed_arrow",
+       "chance": 12,
+       "apply_aura_target": "aura_sundered_3"
+      }
+     }
+    ]
    }
   },
   {
@@ -7336,7 +7516,18 @@
     "name": "Jagged Barbs",
     "school": 0,
     "prevention_type": 2,
-    "description": "When Barbed Arrow deals periodic damage, it has a 16% chance to sunder the target's armor, reducing it by 200 for 10 seconds. Stacks up to 3 times."
+    "description": "When Barbed Arrow deals periodic damage, it has a 16% chance to sunder the target's armor, reducing it by 200 for 10 seconds. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "barbed_arrow",
+       "chance": 16,
+       "apply_aura_target": "aura_sundered_4"
+      }
+     }
+    ]
    }
   },
   {
@@ -7349,7 +7540,18 @@
     "name": "Jagged Barbs",
     "school": 0,
     "prevention_type": 2,
-    "description": "When Barbed Arrow deals periodic damage, it has a 20% chance to sunder the target's armor, reducing it by 250 for 10 seconds. Stacks up to 3 times."
+    "description": "When Barbed Arrow deals periodic damage, it has a 20% chance to sunder the target's armor, reducing it by 250 for 10 seconds. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "barbed_arrow",
+       "chance": 20,
+       "apply_aura_target": "aura_sundered_5"
+      }
+     }
+    ]
    }
   },
   {
@@ -7362,7 +7564,19 @@
     "name": "Shrapnel Payload",
     "school": 0,
     "prevention_type": 2,
-    "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 10% of the impact damage to all other enemies within 8 yards."
+    "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 10% of the impact damage to all other enemies within 8 yards.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "skill": "puncturing_shaft",
+       "requires_target_aura": "aura_barbed_arrow",
+       "splash_pct": 10,
+       "radius_yd": 8
+      }
+     }
+    ]
    }
   },
   {
@@ -7375,7 +7589,19 @@
     "name": "Shrapnel Payload",
     "school": 0,
     "prevention_type": 2,
-    "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 20% of the impact damage to all other enemies within 8 yards."
+    "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 20% of the impact damage to all other enemies within 8 yards.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "skill": "puncturing_shaft",
+       "requires_target_aura": "aura_barbed_arrow",
+       "splash_pct": 20,
+       "radius_yd": 8
+      }
+     }
+    ]
    }
   },
   {
@@ -7388,7 +7614,19 @@
     "name": "Shrapnel Payload",
     "school": 0,
     "prevention_type": 2,
-    "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 30% of the impact damage to all other enemies within 8 yards."
+    "description": "If Puncturing Shaft strikes a target afflicted by Barbed Arrow, the shaft shatters inside them, dealing 30% of the impact damage to all other enemies within 8 yards.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "skill": "puncturing_shaft",
+       "requires_target_aura": "aura_barbed_arrow",
+       "splash_pct": 30,
+       "radius_yd": 8
+      }
+     }
+    ]
    }
   },
   {
@@ -7447,7 +7685,23 @@
     "name": "Shattered Defenses",
     "school": 0,
     "prevention_type": 2,
-    "description": "All of your physical damage is increased by 5% against targets with sundered armor (such as from Jagged Barbs)."
+    "description": "All of your physical damage is increased by 5% against targets with sundered armor (such as from Jagged Barbs).",
+    "effects": [
+     {
+      "kind": "damage_pct_vs_aura",
+      "params": {
+       "aura": [
+        "aura_sundered_1",
+        "aura_sundered_2",
+        "aura_sundered_3",
+        "aura_sundered_4",
+        "aura_sundered_5"
+       ],
+       "school": "physical",
+       "pct": 5
+      }
+     }
+    ]
    }
   },
   {
@@ -7460,7 +7714,23 @@
     "name": "Shattered Defenses",
     "school": 0,
     "prevention_type": 2,
-    "description": "All of your physical damage is increased by 10% against targets with sundered armor (such as from Jagged Barbs)."
+    "description": "All of your physical damage is increased by 10% against targets with sundered armor (such as from Jagged Barbs).",
+    "effects": [
+     {
+      "kind": "damage_pct_vs_aura",
+      "params": {
+       "aura": [
+        "aura_sundered_1",
+        "aura_sundered_2",
+        "aura_sundered_3",
+        "aura_sundered_4",
+        "aura_sundered_5"
+       ],
+       "school": "physical",
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -7473,7 +7743,23 @@
     "name": "Shattered Defenses",
     "school": 0,
     "prevention_type": 2,
-    "description": "All of your physical damage is increased by 15% against targets with sundered armor (such as from Jagged Barbs)."
+    "description": "All of your physical damage is increased by 15% against targets with sundered armor (such as from Jagged Barbs).",
+    "effects": [
+     {
+      "kind": "damage_pct_vs_aura",
+      "params": {
+       "aura": [
+        "aura_sundered_1",
+        "aura_sundered_2",
+        "aura_sundered_3",
+        "aura_sundered_4",
+        "aura_sundered_5"
+       ],
+       "school": "physical",
+       "pct": 15
+      }
+     }
+    ]
    }
   },
   {
