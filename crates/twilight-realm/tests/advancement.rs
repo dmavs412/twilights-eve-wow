@@ -756,8 +756,8 @@ fn at_fifty_templars_quest_is_offered_but_cannot_be_finished() {
 
 // ── The four Tier 1 trainers ────────────────────────────────────────────────────────────────────
 
-/// The Tier 1 trainers beside Uzzek, each with their line's Advancement Quest, which cannot be
-/// finished: those Callings have no kit yet.
+/// The Tier 1 trainers beside Uzzek, each with their line's Advancement Quest. Only the
+/// Cutthroat's can be finished: the other Callings have no kit yet.
 const CUTTHROAT_TRAINER: u32 = 190030;
 const INITIATE_TRAINER: u32 = 190031;
 const WITCH_HUNTER_TRAINER: u32 = 190032;
@@ -852,8 +852,37 @@ fn the_new_trainers_offer_nothing_below_the_cap_or_to_a_vanguard() {
 }
 
 #[test]
+fn the_cutthroats_mark_makes_a_level_1_cutthroat_on_energy() {
+    let (mut realm, me, mut events) = capped_warrior();
+    let npc = giver(&events, CUTTHROAT_TRAINER);
+    events.extend(take(&mut realm, npc, THE_CUTTHROATS_MARK));
+    let advanced = hand_in(&mut realm, npc, THE_CUTTHROATS_MARK);
+    assert!(completed(&advanced).is_some(), "it completes");
+    events.extend(advanced);
+
+    assert_eq!(realm.current_calling().unwrap().key, "cutthroat");
+    let now = descriptor(&events, me);
+    assert_eq!(now.unit_level(), Some(1));
+    assert_eq!(
+        spellbook(&events),
+        [1752, 1943, 2098].into_iter().collect(),
+        "Sinister Strike, Rupture and Eviscerate; Stealth and Evasion wait for their tickets"
+    );
+    let tabs: Vec<&str> = realm
+        .current_calling()
+        .unwrap()
+        .talent_tabs
+        .iter()
+        .map(|t| t.name.as_str())
+        .collect();
+    assert_eq!(tabs, ["The Skirmisher", "The Tracker"]);
+    assert_eq!(now.unit_shapeshift_form(), 0, "no stance");
+    assert_eq!(now.unit_power(3), Some(100), "a full energy bar");
+}
+
+#[test]
 fn the_new_lines_quests_are_offered_but_cannot_be_finished() {
-    for (entry, quest, title) in NEW_LINES {
+    for (entry, quest, title) in NEW_LINES.into_iter().filter(|l| l.1 != THE_CUTTHROATS_MARK) {
         let (mut realm, me, mut events) = questing(10, &[], 0, &[]);
         let npc = giver(&events, entry);
         events.extend(take(&mut realm, npc, quest));

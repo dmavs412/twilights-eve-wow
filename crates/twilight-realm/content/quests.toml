@@ -1641,20 +1641,18 @@ completion = "The Templars have not yet sent for you, $N. Patience."
 money = 0
 tokens = 0
 
-# Cutthroat (Tier 1) has no kit yet: its trainer offers the quest at Basic Warrior's cap, and it
-# never finishes.
 [[quest]]
 id = 64005
 kind = "advancement"
 giver = 190030
 level = 10
 zone_or_sort = -162
-advancement = { from = "basic_warrior", to = "cutthroat", completable = false }
+advancement = { from = "basic_warrior", to = "cutthroat" }
 title = "The Cutthroat's Mark"
-objectives = "Await the Cutthroats' summons."
-details = "You swing that blade like it owe you money, $N. Strength be fine, but da Cutthroats fight smarter: quick feet, a knife in da dark, and gone before da body fall.$B$BDa Cutthroats be watchin' you. When dey ready to take you in, I send word. Until den, keep your blade sharp and your mouth shut."
-progress = "Da Cutthroats not be ready for you yet, $N. Patience."
-completion = "Da Cutthroats not be ready for you yet, $N. Patience."
+objectives = "Speak with the Cutthroat Trainer at the Crossroads to take the Cutthroat's mark."
+details = "You swing that blade like it owe you money, $N. Strength be fine, but da Cutthroats fight smarter: quick feet, a knife in da dark, and gone before da body fall.$B$BTake da mark and you begin again, a novice among us. No more rage: you fight on Energy now, and every cut you land set up da one dat finish it.$B$BSay da word."
+progress = "Say da word, $N, and take da mark."
+completion = "It be done. Build your cuts, then finish dem, Cutthroat. You start over; let your feet be quicker dan your blade."
 money = 0
 tokens = 0
 

@@ -378,7 +378,7 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     ids.dedup();
     assert_eq!(
         ids,
-        [78, 100, 845, 1776, 2136, 6178, 10308, 12294, 20271, 20305, 20375]
+        [78, 100, 845, 1752, 1776, 1943, 2098, 2136, 6178, 10308, 12294, 20271, 20305, 20375]
     );
 }
 
@@ -409,6 +409,14 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Vanguard's Righteous: Wrathful Iron, Hallowed Ground, Zealous Restoration, Hammer of the
         // Vanguard.
         20224, 20225, 20330, 20331, 20332, 12287, 12665, 12666, 20237, 20238, 20239, 12809,
+        // Cutthroat's Skirmisher: Reflexive Strike, Lethality, Phantom Guile, Dual Wield
+        // Specialization, Flurry of Blades, Relentless Strikes.
+        13712, 13788, 13789, 13790, 13791, 14128, 14132, 14135, 14136, 14137, 13741, 13793, 13792,
+        13715, 13848, 13849, 13851, 13852, 18427, 18428, 18429, 14186, 14190, 14193, 14194, 14195,
+        // Cutthroat's Tracker: Bloodletting, Ruthlessness, Scent of Blood, Predator's Step,
+        // Executioner's Toll, Serrated Strikes.
+        30902, 30903, 30904, 30905, 30906, 14156, 14160, 14161, 14171, 14172, 14173, 13975, 14062,
+        14063, 14064, 14065, 13976, 13979, 13980, 14138, 14139, 14140, 14141, 14142,
     ];
     want.sort_unstable();
     assert_eq!(ids, want);
@@ -943,10 +951,10 @@ fn every_advancement_quest_matches_the_reference() {
     assert_eq!(have, named);
 }
 
-/// Cutthroat, Initiate and Witch Hunter are Tier 1 Callings with no kit and no Talent Tree yet:
-/// their quests are offered, and nothing can enter them.
+/// Initiate and Witch Hunter are Tier 1 Callings with no kit and no Talent Tree yet: their quests
+/// are offered, and nothing can enter them.
 #[test]
-fn the_three_new_tier_1_callings_are_locked_with_no_kit() {
+fn the_two_new_tier_1_callings_are_locked_with_no_kit() {
     let reference = reference();
     let callings = reference["callings"].as_object().unwrap();
     let mut tier_1: Vec<&str> = callings
@@ -959,11 +967,7 @@ fn the_three_new_tier_1_callings_are_locked_with_no_kit() {
         tier_1,
         ["cutthroat", "initiate", "vanguard", "witch_hunter"]
     );
-    for (key, name) in [
-        ("cutthroat", "Cutthroat"),
-        ("initiate", "Initiate"),
-        ("witch_hunter", "Witch Hunter"),
-    ] {
+    for (key, name) in [("initiate", "Initiate"), ("witch_hunter", "Witch Hunter")] {
         let c = &callings[key];
         assert_eq!(c["display_name"], name);
         assert_eq!(c["cap"], 30, "{key}");
