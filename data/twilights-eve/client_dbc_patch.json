@@ -5407,6 +5407,12 @@
        },
        "school": "frost"
       }
+     },
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "apply_aura": "aura_biting_cold"
+      }
      }
     ],
     "range_index": 4,

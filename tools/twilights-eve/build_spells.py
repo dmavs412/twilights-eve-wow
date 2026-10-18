@@ -138,7 +138,7 @@ SHAPE_COLUMNS = ("cost_kind", "cost_extra_max", "cast_kind", "channel_tick_ms", 
 AURA_ONLY_COLUMNS = ("max_stacks", "stack_rule", "unique_per", "exclusive_group", "group_scope", "dispel_type",
                      "mechanic", "aura_positive", "aura_hidden", "cancelable", "persist_death", "aura_description",
                      "break_on", "grants_form")
-STACK_RULES = ("refresh", "replace", "ignore", "independent")
+STACK_RULES = ("refresh", "replace", "ignore", "independent", "stack")
 AURA_SCOPES = ("caster", "target")
 # Spell.dbc Dispel.
 DISPEL_TYPES = {"none": 0, "magic": 1, "curse": 2, "disease": 3, "poison": 4}

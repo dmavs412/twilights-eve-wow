@@ -186,6 +186,9 @@ enum AuraKind {
         carry: u32,
         school: School,
         caster: u64,
+        /// Applications stacked so far, each tick dealing `per_tick` once for each, and the most.
+        stacks: u32,
+        max_stacks: u32,
     },
     Rage {
         per_tick: u32,
@@ -350,6 +353,7 @@ impl AuraKind {
     fn stacks(self) -> u32 {
         match self {
             AuraKind::Stacks { count, .. } => count,
+            AuraKind::PeriodicDamage { stacks, .. } => stacks,
             _ => 1,
         }
     }
@@ -542,13 +546,23 @@ impl Skills {
         })
     }
 
-    /// What `unit`'s run speed is multiplied by.
+    /// What `unit`'s run speed is multiplied by: its strongest snare only, and every sprint.
     fn speed_mul(&self, unit: u64) -> f32 {
-        self.multiplier(unit, |kind| match kind {
-            AuraKind::MoveSlow { pct } => Some(1.0 - pct as f32 / 100.0),
+        let snare = self
+            .auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .filter_map(|a| match a.kind {
+                AuraKind::MoveSlow { pct } => Some(pct),
+                _ => None,
+            })
+            .max()
+            .unwrap_or(0);
+        let sprint = self.multiplier(unit, |kind| match kind {
             AuraKind::RunSpeed { pct } => Some(1.0 + pct as f32 / 100.0),
             _ => None,
-        })
+        });
+        (1.0 - snare.min(100) as f32 / 100.0) * sprint
     }
 
     /// The extra critical strike chance, in percent, the player's buffs give `skill`.
@@ -700,13 +714,22 @@ impl Skills {
                 let count = match rule {
                     StackRule::Ignore => held,
                     StackRule::Replace => count,
-                    StackRule::Refresh | StackRule::Independent => held + count,
+                    StackRule::Refresh | StackRule::Independent | StackRule::Stack => held + count,
                 }
                 .min(max);
                 aura.kind = AuraKind::Stacks { count, max, rule };
                 if rule == StackRule::Ignore {
                     aura = *old;
                 }
+            }
+            if let (
+                AuraKind::PeriodicDamage { stacks: held, .. },
+                AuraKind::PeriodicDamage {
+                    stacks, max_stacks, ..
+                },
+            ) = (old.kind, &mut aura.kind)
+            {
+                *stacks = (held + *stacks).min(*max_stacks);
             }
             *old = aura;
         } else {
@@ -1562,6 +1585,7 @@ impl InWorld {
                 tick,
                 per_combo: more,
                 duration_per_combo: stretch,
+                max_stacks,
             } => {
                 let per_tick = sized(tick) + per_combo(more);
                 let duration_ms =
@@ -1572,6 +1596,8 @@ impl InWorld {
                         carry: 0,
                         school: School::Physical,
                         caster: self.guid,
+                        stacks: 1,
+                        max_stacks,
                     },
                     skill.spell_id,
                     duration_ms,
@@ -1684,6 +1710,12 @@ impl InWorld {
             }
             Effect::MovementSlow { pct, duration_ms } => {
                 let a = aura(AuraKind::MoveSlow { pct }, skill.spell_id, duration_ms, 0);
+                self.skills.apply(a, events);
+                self.update_speed(target, events);
+            }
+            Effect::ModRunSpeed { pct, duration_ms } => {
+                let kind = run_speed(pct);
+                let a = aura(kind, skill.spell_id, duration_ms, 0);
                 self.skills.apply(a, events);
                 self.update_speed(target, events);
             }
@@ -2361,6 +2393,8 @@ impl InWorld {
                     carry,
                     school: School::Physical,
                     caster: self.guid,
+                    stacks: 1,
+                    max_stacks: 1,
                 },
                 charges: 0,
             };
@@ -2660,8 +2694,10 @@ impl InWorld {
                     per_tick,
                     school,
                     caster,
+                    stacks,
                     ..
                 } => {
+                    let per_tick = per_tick * stacks;
                     let on_player = a.unit == self.guid;
                     let alive = if on_player {
                         self.player.alive()
@@ -2872,6 +2908,8 @@ impl InWorld {
                 carry: 0,
                 school: spell.school,
                 caster,
+                stacks: 1,
+                max_stacks: 1,
             },
             charges: 0,
         };
@@ -2891,7 +2929,7 @@ impl InWorld {
                     skill: skill.as_str(),
                     pct: *pct,
                 },
-                callings::AuraEffect::ModRunSpeed { pct } => AuraKind::RunSpeed { pct: *pct },
+                callings::AuraEffect::ModRunSpeed { pct } => run_speed(*pct),
                 callings::AuraEffect::DodgePct { pct } => AuraKind::Dodge { pct: *pct },
                 callings::AuraEffect::Proc(p) => AuraKind::Proc(p),
                 callings::AuraEffect::SkillCost { skill, amount } => AuraKind::SkillCost {
@@ -3113,5 +3151,16 @@ mod tests {
         // Granting one again refreshes it rather than adding a third.
         skills.apply(crit("cleave", 30), &mut events);
         assert_eq!(skills.auras.len(), 2);
+    }
+}
+
+/// The aura a run speed change of `pct` percent puts up: a sprint, or a snare when negative.
+fn run_speed(pct: i32) -> AuraKind {
+    if pct < 0 {
+        AuraKind::MoveSlow {
+            pct: pct.unsigned_abs(),
+        }
+    } else {
+        AuraKind::RunSpeed { pct: pct as u32 }
     }
 }

@@ -9871,6 +9871,13 @@
        "school": "frost"
       },
       "realm_only": false
+     },
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "apply_aura": "aura_biting_cold"
+      },
+      "realm_only": false
      }
     ],
     "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 5 seconds."
@@ -11236,8 +11243,8 @@
     "status": "placeholder",
     "school": "fire",
     "prevention": "silence",
-    "max_stacks": 1,
-    "stack_rule": "replace",
+    "max_stacks": 3,
+    "stack_rule": "stack",
     "unique_per": "caster",
     "group_scope": "caster",
     "dispel_type": "none",
@@ -11279,8 +11286,16 @@
     "cancelable": true,
     "persist_death": false,
     "duration_ms": 5000,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -50
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Movement speed slowed by 50%."
    }
   ],

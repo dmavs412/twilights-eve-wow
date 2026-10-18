@@ -184,8 +184,8 @@ pub struct SpellMeta {
 pub enum AuraEffect {
     /// The skill's critical strike chance rises by `pct` percent.
     SkillCritPct { skill: String, pct: u32 },
-    /// The player's run speed rises by `pct` percent.
-    ModRunSpeed { pct: u32 },
+    /// The unit's run speed changes by `pct` percent: faster when positive, a snare when negative.
+    ModRunSpeed { pct: i32 },
     /// The player's dodge chance rises by `pct` percent.
     DodgePct { pct: u32 },
     /// The player's parry chance rises by `pct` percent.
@@ -807,6 +807,11 @@ pub enum Effect {
         /// Milliseconds added to `duration_ms` once per combo point on the target: a finisher.
         #[serde(default)]
         duration_per_combo: Option<Linear>,
+        /// A new application adds a stack up to this many and starts the duration over; each
+        /// tick deals `tick` once per stack. From the aura row's `max_stacks` under `stack_rule`
+        /// `stack`.
+        #[serde(default = "one")]
+        max_stacks: u32,
     },
     /// `amount` combo points on the target, five at most; points on another target are lost.
     AddComboPoints { amount: u32 },
@@ -844,6 +849,9 @@ pub enum Effect {
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
     /// The target moves `pct`% slower, under the skill's spell id.
     MovementSlow { pct: u32, duration_ms: u32 },
+    /// The target's run speed changes by `pct` percent for `duration_ms`: a snare on an enemy
+    /// when negative, a sprint on the caster when positive.
+    ModRunSpeed { pct: i32, duration_ms: u32 },
     /// The caster's dodge chance rises by `pct` percent for `duration_ms`, under the skill's
     /// spell id (Evasion).
     DodgePct { pct: u32, duration_ms: u32 },
@@ -958,6 +966,9 @@ pub enum StackRule {
     Ignore,
     /// Each application is its own aura. Not modelled apart yet: it stacks like `Refresh`.
     Independent,
+    /// One more stack each application, up to the maximum, and the duration starts over (a
+    /// stacking damage over time).
+    Stack,
 }
 
 impl Effect {
