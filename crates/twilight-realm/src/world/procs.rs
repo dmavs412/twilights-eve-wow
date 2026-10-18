@@ -54,7 +54,15 @@ impl InWorld {
             if proc.absorb_at_full_power && self.skills.was_full {
                 continue;
             }
-            let refund = self.skills.last_cost * proc.refund_cost_pct / 100;
+            for key in &proc.target_auras {
+                if let (Some(def), Some(target)) = (crate::callings::aura(key), happened.target) {
+                    self.put_aura(def, target, c.level, events);
+                }
+            }
+            let s = &self.player.stats;
+            let refund = self.skills.last_cost * proc.refund_cost_pct / 100
+                + crate::rules::power::base_mana(s.class, s.level) * proc.energize_pct_of_base
+                    / 100;
             let p = &mut self.player;
             let kind = p.power.kind;
             if refund > 0 && p.alive() && p.power.gain(kind, refund) {

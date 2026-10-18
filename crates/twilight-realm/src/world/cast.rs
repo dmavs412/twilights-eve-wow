@@ -127,6 +127,9 @@ pub(super) struct Skills {
     blink: Option<PendingBlink>,
     /// The channel under way, if any.
     channel: Option<Channel>,
+    /// The ground areas up, and the point the cast under way was aimed at.
+    areas: Vec<Area>,
+    dest: Option<[f32; 3]>,
     /// The spell-mod cells the player's `next_cast` buffs last set on the client, with values.
     sent_mods: Vec<(bool, u8, u8, i32)>,
     /// What the cast under way has dealt and healed so far: a share of either (`pct_of`) reads it.
@@ -143,6 +146,20 @@ pub(super) struct Skills {
 /// The client's `SpellModOp`s a `next_cast` buff moves: the cast bar and the cost.
 const SPELLMOD_CASTING_TIME: u8 = 10;
 const SPELLMOD_COST: u8 = 14;
+
+/// A ground area: who cast it, where, how wide, seconds left, the aura rows it puts on the
+/// enemies and the friendly players inside, and who holds them now.
+#[derive(Debug, Clone)]
+struct Area {
+    caster: u64,
+    spell_id: u32,
+    centre: [f32; 3],
+    radius_yd: f32,
+    left: f32,
+    enemy_aura: Option<&'static callings::AuraDef>,
+    ally_aura: Option<&'static callings::AuraDef>,
+    inside: Vec<u64>,
+}
 
 /// A channelled skill under way: its spell and target, seconds left, and its tick clock.
 #[derive(Debug, Clone, Copy)]
@@ -306,6 +323,14 @@ enum AuraKind {
     Absorb {
         left: u32,
     },
+    /// The unit's chance to hit is `pct` points higher (lower when negative).
+    HitChance {
+        pct: i32,
+    },
+    /// The healing the unit receives is `pct` percent higher.
+    HealingTaken {
+        pct: u32,
+    },
     /// The amounts the player's `skill` deals are `pct` percent higher (a buff from a `proc`).
     SkillAmount {
         skill: &'static str,
@@ -420,6 +445,7 @@ impl AuraKind {
                 | AuraKind::RunSpeed { .. }
                 | AuraKind::Dodge { .. }
                 | AuraKind::Absorb { .. }
+                | AuraKind::HealingTaken { .. }
                 | AuraKind::SkillAmount { .. }
                 | AuraKind::SpellDamagePct { .. }
                 | AuraKind::Defense { .. }
@@ -780,6 +806,32 @@ impl Skills {
             events,
         );
         left
+    }
+
+    /// The points more of `unit`'s swings miss, from its hit-chance debuffs.
+    pub(super) fn miss_bonus(&self, unit: u64) -> u32 {
+        let pct: i32 = self
+            .auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .map(|a| match a.kind {
+                AuraKind::HitChance { pct } => pct,
+                _ => 0,
+            })
+            .sum();
+        (-pct).max(0) as u32
+    }
+
+    /// The percent more healing `unit` receives.
+    fn healing_taken_pct(&self, unit: u64) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == unit)
+            .map(|a| match a.kind {
+                AuraKind::HealingTaken { pct } => pct,
+                _ => 0,
+            })
+            .sum()
     }
 
     /// Whether `unit` wears an aura of `spell_id`.
@@ -1474,6 +1526,74 @@ impl InWorld {
         }
     }
 
+    /// The point a ground-targeted cast is aimed at, for the cast that follows.
+    pub(crate) fn set_dest(&mut self, dest: Option<[f32; 3]>) {
+        self.skills.dest = dest;
+    }
+
+    /// The ground areas' clock: whoever stepped in takes the area's aura for their side, whoever
+    /// left or outlived it loses it, and a spent area goes.
+    fn area_tick(&mut self, dt: f32, c: &Char, events: &mut Vec<SessionEvent>) {
+        let mut areas = std::mem::take(&mut self.skills.areas);
+        for area in &mut areas {
+            area.left -= dt;
+            let now: Vec<u64> = if area.left <= CLOCK_EPSILON {
+                Vec::new()
+            } else {
+                let mut now: Vec<u64> = self
+                    .mobs
+                    .iter()
+                    .filter(|m| m.alive() && distance(m.position, area.centre) <= area.radius_yd)
+                    .map(|m| m.guid)
+                    .collect();
+                now.extend(
+                    self.friendly_players(c)
+                        .into_iter()
+                        .filter(|(_, p, _)| distance(*p, area.centre) <= area.radius_yd)
+                        .map(|(guid, _, _)| guid),
+                );
+                now
+            };
+            let left: Vec<u64> = area
+                .inside
+                .iter()
+                .copied()
+                .filter(|u| !now.contains(u))
+                .collect();
+            self.leave_area(area, &left, events);
+            for &unit in now.iter().filter(|u| !area.inside.contains(u)) {
+                let row = if unit == self.guid {
+                    area.ally_aura
+                } else {
+                    area.enemy_aura
+                };
+                if let Some(def) = row {
+                    self.put_aura(def, unit, c.level, events);
+                }
+            }
+            area.inside = now;
+        }
+        areas.retain(|a| a.left > CLOCK_EPSILON);
+        self.skills.areas = areas;
+    }
+
+    /// `units` are out of `area`: its auras come off them.
+    fn leave_area(&mut self, area: &Area, units: &[u64], events: &mut Vec<SessionEvent>) {
+        for &unit in units {
+            let row = if unit == self.guid {
+                area.ally_aura
+            } else {
+                area.enemy_aura
+            };
+            if let Some(def) = row {
+                let gone = self
+                    .skills
+                    .remove_where(|a| a.unit == unit && a.spell_id == def.spell_id, events);
+                self.faded(&gone, events);
+            }
+        }
+    }
+
     /// Ends the channel under way, if any: `broken` when it stops short.
     pub(super) fn end_channel(&mut self, broken: bool, events: &mut Vec<SessionEvent>) {
         let Some(ch) = self.skills.channel.take() else {
@@ -1606,6 +1726,23 @@ impl InWorld {
             .any(|(_, how)| !matches!(how, Landed::Missed(_)));
         let mut spent = false;
         let mut finisher_target = None;
+        // A ground skill's effects happen at its point, once.
+        if skill.target == Target::Ground {
+            for effect in &skill.effects {
+                self.effect(
+                    skill,
+                    effect,
+                    self.guid,
+                    Landed::Hit,
+                    level,
+                    0,
+                    c,
+                    rng,
+                    events,
+                    &mut ticked,
+                );
+            }
+        }
         for (guid, how) in landed {
             if !matches!(how, Landed::Missed(_)) {
                 let combo = self.skills.combo.on(guid);
@@ -1679,6 +1816,22 @@ impl InWorld {
         if any_landed {
             let gone = self.skills.spend_charges(&skill.key, events);
             self.faded(&gone, events);
+        }
+        if self.skills.cast_dealt > 0 {
+            if let Some(&first) = hits.first() {
+                self.proc(
+                    crate::rules::procs::Happened {
+                        event: crate::callings::ProcEvent::DamageDone,
+                        skill: Some(&skill.key),
+                        yields_xp: false,
+                        target: Some(first),
+                    },
+                    c,
+                    rng,
+                    events,
+                    &mut ticked,
+                );
+            }
         }
         // The next-cast buffs this cast used, landed or not.
         let gone = self.skills.use_next_casts(&skill.key, events);
@@ -1768,6 +1921,7 @@ impl InWorld {
 
     /// Heals the player `amount` under `spell_id`, up to their maximum: what was healed.
     fn heal_player(&mut self, spell_id: u32, amount: u32, events: &mut Vec<SessionEvent>) -> u32 {
+        let amount = scaled(amount, self.skills.healing_taken_pct(self.guid));
         let max = buffed(&self.player.stats, &self.skills).max_health;
         let p = &mut self.player;
         if !p.alive() {
@@ -1876,7 +2030,15 @@ impl InWorld {
         }
         match skill.target {
             Target::Caster | Target::Ally => Ok(vec![self.guid]),
-            Target::Ground => Err(SPELL_FAILED_BAD_TARGETS),
+            // A point on the ground, within the skill's range.
+            Target::Ground => {
+                let dest = self.skills.dest.ok_or(SPELL_FAILED_BAD_TARGETS)?;
+                let [_, hi] = skill.range_yd;
+                if hi > 0.0 && distance(dest, c.position) > hi {
+                    return Err(SPELL_FAILED_OUT_OF_RANGE);
+                }
+                Ok(Vec::new())
+            }
             Target::SelfArea => Ok(self
                 .mobs
                 .iter()
@@ -2532,6 +2694,42 @@ impl InWorld {
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
+            Effect::GroundArea {
+                radius_yd,
+                duration_ms,
+                enemy_aura_spell_id,
+                ally_aura_spell_id,
+            } => {
+                let auras = &callings::of(c.calling).auras;
+                let row =
+                    |id: Option<u32>| id.and_then(|id| auras.iter().find(|a| a.spell_id == id));
+                let area = Area {
+                    caster: self.guid,
+                    spell_id: skill.spell_id,
+                    centre: self.skills.dest.unwrap_or(c.position),
+                    radius_yd,
+                    left: clock::secs(duration_ms),
+                    enemy_aura: row(enemy_aura_spell_id),
+                    ally_aura: row(ally_aura_spell_id),
+                    inside: Vec::new(),
+                };
+                // A new one from the same caster replaces the old.
+                let old: Vec<Area> = self
+                    .skills
+                    .areas
+                    .iter()
+                    .filter(|a| a.caster == area.caster && a.spell_id == area.spell_id)
+                    .cloned()
+                    .collect();
+                for gone in &old {
+                    self.leave_area(gone, &gone.inside, events);
+                }
+                self.skills
+                    .areas
+                    .retain(|a| !(a.caster == area.caster && a.spell_id == area.spell_id));
+                self.skills.areas.push(area);
+                self.area_tick(0.0, c, events);
+            }
             Effect::Drain {
                 amount,
                 heal_pct,
@@ -3466,6 +3664,7 @@ impl InWorld {
         c.item_cooldowns.retain(|&(_, ready)| ready > wall);
         self.timed_cast_tick(dt, wall, c, rng, events, ticked);
         self.channel_tick(dt, c, rng, events, ticked);
+        self.area_tick(dt, c, events);
         let s = &mut self.skills;
         if let Some((_, left)) = &mut s.dodged {
             *left -= dt;
@@ -3538,13 +3737,19 @@ impl InWorld {
                         self.player_takes(per_tick, events);
                     } else {
                         self.hurt(a.unit, per_tick, c, rng, events, ticked);
-                        // The caster's own damage over time ticked: its procs (Thermal Feedback).
+                        // The caster's own damage over time ticked: its procs (Thermal Feedback,
+                        // Morbid Fascination).
                         if caster == self.guid {
-                            if let Some(skill) = crate::talents::skill(c, a.spell_id) {
+                            let skill =
+                                crate::talents::skill(c, a.spell_id).map(|s| s.key.as_str());
+                            for event in [
+                                crate::callings::ProcEvent::PeriodicTick,
+                                crate::callings::ProcEvent::DamageDone,
+                            ] {
                                 self.proc(
                                     crate::rules::procs::Happened {
-                                        event: crate::callings::ProcEvent::PeriodicTick,
-                                        skill: Some(&skill.key),
+                                        event,
+                                        skill,
                                         yields_xp: false,
                                         target: Some(a.unit),
                                     },
@@ -3558,6 +3763,7 @@ impl InWorld {
                     }
                 }
                 AuraKind::Heal { per_tick } => {
+                    let per_tick = scaled(per_tick, self.skills.healing_taken_pct(self.guid));
                     let max = buffed(&self.player.stats, &self.skills).max_health;
                     let p = &mut self.player;
                     if !p.alive() {
@@ -3873,6 +4079,20 @@ impl InWorld {
                     AuraKind::SpellDamagePct { pct: *pct }
                 }
                 callings::AuraEffect::Root => AuraKind::Root,
+                callings::AuraEffect::PeriodicDamage { tick, school, .. } => {
+                    AuraKind::PeriodicDamage {
+                        per_tick: tick.at(level, 0),
+                        carry: 0,
+                        school: *school,
+                        caster: self.guid,
+                        stacks: 1,
+                        max_stacks: 1,
+                    }
+                }
+                callings::AuraEffect::ModHitChance { pct } => AuraKind::HitChance { pct: *pct },
+                callings::AuraEffect::ModHealingTakenPct { pct } => {
+                    AuraKind::HealingTaken { pct: *pct }
+                }
                 callings::AuraEffect::SkillAmountPct { skill, pct } => AuraKind::SkillAmount {
                     skill: skill.as_str(),
                     pct: *pct,
@@ -3915,6 +4135,10 @@ impl InWorld {
                     opener_crit: *opener_crit,
                 },
             };
+            let period = match effect {
+                callings::AuraEffect::PeriodicDamage { tick_ms, .. } => clock::secs(*tick_ms),
+                _ => 0.0,
+            };
             let aura = Aura {
                 unit,
                 spell_id: def.spell_id,
@@ -3925,8 +4149,8 @@ impl InWorld {
                 } else {
                     clock::secs(def.duration_ms)
                 },
-                period: 0.0,
-                next_tick: 0.0,
+                period,
+                next_tick: period,
                 kind,
                 charges: def.charges,
             };

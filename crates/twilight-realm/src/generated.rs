@@ -242,6 +242,15 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
             }
         }
     }
+    // A ground area's auras (`enemy_aura=key`, `ally_aura=key`) by their rows' spell ids.
+    for side in ["enemy_aura", "ally_aura"] {
+        if let Some(key) = object.remove(side) {
+            let aura = auras
+                .iter()
+                .find(|a| a.modelled && key.as_str() == Some(a.key.as_str()))?;
+            object.insert(format!("{side}_spell_id"), aura.spell_id.into());
+        }
+    }
     if let Some(key) = object.remove("apply_aura") {
         let aura = auras
             .iter()
@@ -512,7 +521,11 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     object.remove("block_value_pct");
     object.remove("apply_aura_area");
     object.remove("refund_cost_pct");
+    object.remove("energize_pct_of_base");
+    object.remove("apply_aura_target");
     let mut refunds = Vec::new();
+    let mut base_energize = Vec::new();
+    let mut target_auras = Vec::new();
     // The ring is always centred where the caster stood (`center=origin`, the build's only one).
     object.remove("center");
     let mut area_auras = Vec::new();
@@ -535,6 +548,17 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
             None => Value::Array(Vec::new()),
         });
         refunds.push(params.get("refund_cost_pct").cloned().unwrap_or(0.into()));
+        base_energize.push(
+            params
+                .get("energize_pct_of_base")
+                .cloned()
+                .unwrap_or(0.into()),
+        );
+        target_auras.push(match params.get("apply_aura_target") {
+            Some(Value::Array(keys)) => Value::Array(keys.clone()),
+            Some(key) => Value::Array(vec![key.clone()]),
+            None => Value::Array(Vec::new()),
+        });
         area_auras.push(match params.get("apply_aura_area") {
             Some(Value::Array(keys)) => Value::Array(keys.clone()),
             Some(key) => Value::Array(vec![key.clone()]),
@@ -543,6 +567,8 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     }
     object.insert("area_auras".into(), Value::Array(area_auras));
     object.insert("refund_cost_pct".into(), Value::Array(refunds));
+    object.insert("energize_pct_of_base".into(), Value::Array(base_energize));
+    object.insert("target_auras".into(), Value::Array(target_auras));
     object.insert("per_rank".into(), Value::Array(heals));
     object.insert("auras".into(), Value::Array(auras));
     object.insert("chances".into(), Value::Array(chances));

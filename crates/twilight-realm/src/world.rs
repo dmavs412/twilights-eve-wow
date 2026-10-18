@@ -759,7 +759,8 @@ impl InWorld {
                 }
                 let stats = cast::buffed(&self.player.stats, &self.skills);
                 let from_front = in_front(c.orientation, me, mob.position);
-                let swing = combat::mob_swing(mob, &stats, from_front, rng);
+                let miss = self.skills.miss_bonus(mob.guid);
+                let swing = combat::mob_swing(mob, &stats, from_front, miss, rng);
                 events.push(SessionEvent::AttackerState(
                     swing.report(mob.guid, self.guid),
                 ));

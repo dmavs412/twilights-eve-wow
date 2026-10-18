@@ -514,6 +514,10 @@ pub(crate) struct Proc {
     pub(crate) absorb_at_full_power: bool,
     /// Only when the target wore this aura row's aura (or, `slowed`, a snare) before the cast.
     pub(crate) requires_target_aura: Option<&'static str>,
+    /// Percent of the character's base mana given.
+    pub(crate) energize_pct_of_base: u32,
+    /// The keys of the auras put on the event's target.
+    pub(crate) target_auras: Vec<String>,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -547,6 +551,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 absorb_duration_ms,
                 at_full_power,
                 requires_target_aura,
+                energize_pct_of_base,
+                target_auras,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -574,6 +580,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     absorb_ms: *absorb_duration_ms,
                     absorb_at_full_power: at_full_power.as_deref() == Some("absorb"),
                     requires_target_aura: requires_target_aura.as_deref(),
+                    energize_pct_of_base: energize_pct_of_base.get(r).copied().unwrap_or(0),
+                    target_auras: target_auras.get(r).cloned().unwrap_or_default(),
                 })
             }
             _ => None,
@@ -613,6 +621,8 @@ pub(crate) fn aura_proc(
         absorb_ms: 0,
         absorb_at_full_power: false,
         requires_target_aura: None,
+        energize_pct_of_base: 0,
+        target_auras: Vec::new(),
     })
 }
 

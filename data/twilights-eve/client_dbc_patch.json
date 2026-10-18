@@ -7377,6 +7377,17 @@
     "school": 5,
     "prevention_type": 1,
     "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources.",
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 8,
+       "duration_ms": 10000,
+       "enemy_aura": "aura_miasma",
+       "ally_aura": "aura_miasma_ally"
+      }
+     }
+    ],
     "range_index": 4,
     "cast_time_index": 1
    }
@@ -7486,7 +7497,17 @@
     "name": "Noxious Vapors",
     "school": 0,
     "prevention_type": 2,
-    "description": "Enemies standing inside your Miasma have their chance to hit with melee and ranged attacks reduced by 5%."
+    "description": "Enemies standing inside your Miasma have their chance to hit with melee and ranged attacks reduced by 5%.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "miasma",
+       "apply_aura_target": "aura_noxious_vapors_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -7499,7 +7520,17 @@
     "name": "Noxious Vapors",
     "school": 0,
     "prevention_type": 2,
-    "description": "Enemies standing inside your Miasma have their chance to hit with melee and ranged attacks reduced by 10%."
+    "description": "Enemies standing inside your Miasma have their chance to hit with melee and ranged attacks reduced by 10%.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "periodic_tick",
+       "skill": "miasma",
+       "apply_aura_target": "aura_noxious_vapors_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -7551,7 +7582,17 @@
     "name": "Morbid Fascination",
     "school": 0,
     "prevention_type": 2,
-    "description": "Any damage you deal to targets standing inside your Miasma refunds 4% of your base mana."
+    "description": "Any damage you deal to targets standing inside your Miasma refunds 4% of your base mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "requires_target_aura": "aura_miasma",
+       "energize_pct_of_base": 4
+      }
+     }
+    ]
    }
   },
   {
@@ -7564,7 +7605,17 @@
     "name": "Morbid Fascination",
     "school": 0,
     "prevention_type": 2,
-    "description": "Any damage you deal to targets standing inside your Miasma refunds 8% of your base mana."
+    "description": "Any damage you deal to targets standing inside your Miasma refunds 8% of your base mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "requires_target_aura": "aura_miasma",
+       "energize_pct_of_base": 8
+      }
+     }
+    ]
    }
   },
   {
@@ -7577,7 +7628,17 @@
     "name": "Morbid Fascination",
     "school": 0,
     "prevention_type": 2,
-    "description": "Any damage you deal to targets standing inside your Miasma refunds 12% of your base mana."
+    "description": "Any damage you deal to targets standing inside your Miasma refunds 12% of your base mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "requires_target_aura": "aura_miasma",
+       "energize_pct_of_base": 12
+      }
+     }
+    ]
    }
   },
   {

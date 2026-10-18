@@ -124,7 +124,15 @@ pub(crate) fn player_swing(
 }
 
 /// `mob`'s swing at the player; `from_front` when the mob stands in the player's front arc.
-pub(crate) fn mob_swing(mob: &Mob, p: &CharacterStats, from_front: bool, rng: &mut Rng) -> Swing {
+/// `miss_pct` more points of misses (a hit-chance debuff on the mob, Noxious Vapors) come
+/// first, rolled only when there are any.
+pub(crate) fn mob_swing(
+    mob: &Mob,
+    p: &CharacterStats,
+    from_front: bool,
+    miss_pct: u32,
+    rng: &mut Rng,
+) -> Swing {
     let raw = rng.urand(mob.stats.min_damage as u32, mob.stats.max_damage as u32);
     let armored = armor_reduced(raw, p.armor, mob.level());
     let table = mob_vs_player(
@@ -138,7 +146,11 @@ pub(crate) fn mob_swing(mob: &Mob, p: &CharacterStats, from_front: bool, rng: &m
         },
         from_front,
     );
-    let outcome = table.outcome(rng.below(ROLL));
+    let outcome = if miss_pct > 0 && rng.below(ROLL) < miss_pct * 100 {
+        Outcome::Miss
+    } else {
+        table.outcome(rng.below(ROLL))
+    };
     land(outcome, armored, 0, p.block_value, rng, || (1.0, 1.0))
 }
 

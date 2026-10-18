@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "at_max_stacks", "drain", "heal", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "at_max_stacks", "drain", "ground_area", "heal", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -45,8 +45,8 @@ KNOWN_KINDS = {
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
-PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume", "periodic_tick")
-PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread", "apply_aura_area", "refund_cost_pct", "absorb_cost_pct")
+PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume", "periodic_tick", "damage_done")
+PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread", "apply_aura_area", "refund_cost_pct", "absorb_cost_pct", "energize_pct_of_base", "apply_aura_target")
 WEAPON_ROLLS = ("normal", "normalized")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
@@ -481,7 +481,7 @@ def check_proc(params: dict, auras: set[str], where: str) -> None:
         raise BuildError(f"{where}: a proc takes apply_aura or heal_pct, not both")
     if "while_aura" in params and params["while_aura"] not in auras:
         raise BuildError(f"{where}: while_aura {params['while_aura']!r} is not an aura row of this Calling")
-    for action in ("apply_aura", "apply_aura_area"):
+    for action in ("apply_aura", "apply_aura_area", "apply_aura_target"):
         if action not in params:
             continue
         keys = params[action] if isinstance(params[action], list) else [params[action]]
@@ -850,6 +850,14 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
         if kind in ("add_aura_stacks", "consume_aura_stacks", "grant_aura", "consume_aura"):
             if parsed.get("aura") not in auras:
                 raise BuildError(f"{here}: aura {parsed.get('aura')!r} is not an aura row of this Calling")
+        if kind == "ground_area":
+            for side in ("enemy_aura", "ally_aura"):
+                if side in parsed and parsed[side] not in auras:
+                    raise BuildError(f"{here}: {side} {parsed[side]!r} is not an aura row of this Calling")
+            for field in ("radius_yd", "duration_ms"):
+                value = parsed.get(field)
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+                    raise BuildError(f"{here}: ground_area needs a positive {field}, has {value!r}")
         if kind == "skill_amount_pct":
             if parsed.get("applies_to", "both") not in ("hit", "tick", "both"):
                 raise BuildError(f"{here}: applies_to is {parsed['applies_to']!r}, want hit, tick or both")

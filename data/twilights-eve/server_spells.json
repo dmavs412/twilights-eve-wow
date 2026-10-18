@@ -14327,8 +14327,19 @@
     "area_shape": "circle",
     "area_center": "ground",
     "max_targets": null,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 8,
+       "duration_ms": 10000,
+       "enemy_aura": "aura_miasma",
+       "ally_aura": "aura_miasma_ally"
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Drops a localized cloud of dark mist at the target location for 10 seconds. Enemies inside take Shadow damage; allies inside receive 15% increased healing from all sources."
    },
    {
@@ -14550,8 +14561,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "miasma",
+           "apply_aura_target": "aura_noxious_vapors_1"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Enemies standing inside your Miasma have their chance to hit with melee and ranged attacks reduced by 5%."
        },
        {
@@ -14575,8 +14596,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "miasma",
+           "apply_aura_target": "aura_noxious_vapors_2"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Enemies standing inside your Miasma have their chance to hit with melee and ranged attacks reduced by 10%."
        }
       ]
@@ -14697,8 +14728,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "damage_done",
+           "requires_target_aura": "aura_miasma",
+           "energize_pct_of_base": 4
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Any damage you deal to targets standing inside your Miasma refunds 4% of your base mana."
        },
        {
@@ -14722,8 +14763,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "damage_done",
+           "requires_target_aura": "aura_miasma",
+           "energize_pct_of_base": 8
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Any damage you deal to targets standing inside your Miasma refunds 8% of your base mana."
        },
        {
@@ -14747,8 +14798,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "damage_done",
+           "requires_target_aura": "aura_miasma",
+           "energize_pct_of_base": 12
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Any damage you deal to targets standing inside your Miasma refunds 12% of your base mana."
        }
       ]
@@ -15621,6 +15682,127 @@
      }
     ],
     "description": "Minor Shadow damage over time."
+   },
+   {
+    "key": "aura_miasma",
+    "name": "Miasma",
+    "spell_id": 2120,
+    "status": "placeholder",
+    "school": "shadow",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 1000,
+       "tick": {
+        "base": 4,
+        "per_level": 0.4
+       },
+       "school": "shadow"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Taking Shadow damage every second."
+   },
+   {
+    "key": "aura_miasma_ally",
+    "name": "Miasma",
+    "spell_id": 2121,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_healing_taken_pct",
+      "params": {
+       "pct": 15
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Healing received increased by 15%."
+   },
+   {
+    "key": "aura_noxious_vapors_1",
+    "name": "Noxious Vapors",
+    "spell_id": 15275,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 2000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_hit_chance",
+      "params": {
+       "pct": -5
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Chance to hit reduced by 5%."
+   },
+   {
+    "key": "aura_noxious_vapors_2",
+    "name": "Noxious Vapors",
+    "spell_id": 15317,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 2000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_hit_chance",
+      "params": {
+       "pct": -10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Chance to hit reduced by 10%."
    }
   ],
   "name": "Acolyte",

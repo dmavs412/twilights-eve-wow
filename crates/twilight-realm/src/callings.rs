@@ -200,6 +200,18 @@ pub enum AuraEffect {
     SkillAmountPct { skill: String, pct: u32 },
     /// The unit cannot move, though it still attacks and casts; damage does not break it.
     Root,
+    /// `tick` damage in `school` every `tick_ms` from the caster (a ground area's enemy aura).
+    PeriodicDamage {
+        tick_ms: u32,
+        tick: Linear,
+        #[serde(default)]
+        school: School,
+    },
+    /// The unit's chance to hit changes by `pct` points (Noxious Vapors: fewer of a mob's
+    /// swings land).
+    ModHitChance { pct: i32 },
+    /// The healing the unit receives rises by `pct` percent.
+    ModHealingTakenPct { pct: u32 },
     /// The player's next cast of one of the skills changes: see [`NextCast`].
     NextCast(NextCast),
     /// A count that grows by one each time the aura is put on again; at the row's `max_stacks`
@@ -571,6 +583,12 @@ pub enum TalentEffect {
         /// any snare.
         #[serde(default)]
         requires_target_aura: Option<String>,
+        /// Each rank's percent of the character's base mana given.
+        #[serde(default)]
+        energize_pct_of_base: Vec<u32>,
+        /// Each rank's aura keys put on the event's target.
+        #[serde(default)]
+        target_auras: Vec<Vec<String>>,
     },
     /// The armour from items rises by this many percent.
     #[serde(alias = "armor_items_pct")]
@@ -714,6 +732,8 @@ pub enum ProcEvent {
     Consume,
     /// A damage-over-time the character put on a target ticks.
     PeriodicTick,
+    /// The character's cast or damage-over-time tick damages a target (once a cast or tick).
+    DamageDone,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].
@@ -1064,6 +1084,18 @@ pub enum Effect {
     AttackSpeedSlow { pct: u32, duration_ms: u32 },
     /// The target moves `pct`% slower, under the skill's spell id.
     MovementSlow { pct: u32, duration_ms: u32 },
+    /// A ground area at the cast's destination: `radius_yd` across, for `duration_ms`. Every
+    /// enemy inside holds the aura row `enemy_aura_spell_id`, every friendly player inside
+    /// `ally_aura_spell_id`; leaving or the area's end takes them off. A new one from the same
+    /// caster replaces the old.
+    GroundArea {
+        radius_yd: f32,
+        duration_ms: u32,
+        #[serde(default)]
+        enemy_aura_spell_id: Option<u32>,
+        #[serde(default)]
+        ally_aura_spell_id: Option<u32>,
+    },
     /// The caster teleports `distance_yd` along their facing, as far as the ground lets them, and
     /// sheds their stuns and roots first.
     Blink { distance_yd: f32 },

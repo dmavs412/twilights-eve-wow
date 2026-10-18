@@ -126,6 +126,11 @@ pub enum RealmCommand {
         spell_id: u32,
         target: Option<u64>,
     },
+    /// Cast a ground-targeted skill at `dest`, WoW coordinates (`TARGET_FLAG_DEST_LOCATION`).
+    CastSpellAtDest {
+        spell_id: u32,
+        dest: [f32; 3],
+    },
     /// Click off one of the player's own buffs.
     CancelAura {
         spell_id: u32,
@@ -442,7 +447,10 @@ impl Realm {
                     w.stop_attack(&mut self.events);
                 }
             }
-            RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target),
+            RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target, None),
+            RealmCommand::CastSpellAtDest { spell_id, dest } => {
+                self.cast(spell_id, None, Some(dest))
+            }
             RealmCommand::UseItem { bag, slot } => {
                 if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {
@@ -621,13 +629,14 @@ impl Realm {
     }
 
     /// A skill cast: answered at once, as an instant is.
-    fn cast(&mut self, spell_id: u32, target: Option<u64>) {
+    fn cast(&mut self, spell_id: u32, target: Option<u64>, dest: Option<[f32; 3]>) {
         let Some(w) = &mut self.world else {
             return;
         };
         let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
+        w.set_dest(dest);
         let cast = w.cast(spell_id, target, c, &mut self.rng, &mut self.events);
         if cast.leveled {
             let guid = w.guid;

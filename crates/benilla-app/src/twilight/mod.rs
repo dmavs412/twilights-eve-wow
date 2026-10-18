@@ -303,6 +303,9 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::CastSpell { spell_id, target } => {
             Some(RealmCommand::CastSpell { spell_id, target })
         }
+        ClientCommand::CastSpellAtDest { spell_id, dest } => {
+            Some(RealmCommand::CastSpellAtDest { spell_id, dest })
+        }
         ClientCommand::CancelAura { spell_id } => Some(RealmCommand::CancelAura { spell_id }),
         ClientCommand::SetActionButton { button, packed } => Some(RealmCommand::SetActionButton {
             slot: button,
