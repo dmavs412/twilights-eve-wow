@@ -602,7 +602,7 @@ impl InWorld {
                 self.woken_by_damage(target, events);
             }
             if swing.outcome == Outcome::Crit {
-                self.crit_landed(target, c, events);
+                self.crit_landed(target, swing.damage, c, events);
             }
         }
         if swing.damage > 0 {

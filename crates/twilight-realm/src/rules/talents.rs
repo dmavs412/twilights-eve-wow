@@ -33,6 +33,11 @@ pub fn deep_wound_tick(min_damage: f32, max_damage: f32, pct: u32) -> u32 {
     ((total / 4.0).round() as u32).max(1)
 }
 
+/// `pct`% of `damage`, rounded half away from zero (Scent of Blood's bleed from a crit).
+pub fn scaled_share(damage: u32, pct: u32) -> u32 {
+    (f64::from(damage) * f64::from(pct) / 100.0).round() as u32
+}
+
 /// A melee crit on `damage` (after armour): 200%, times `bonus_pct`% more (`mod_crit_damage`, Impale)
 /// of the whole crit, so +30% makes 260%.
 pub fn crit_damage(damage: u32, bonus_pct: u32) -> u32 {

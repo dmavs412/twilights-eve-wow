@@ -432,9 +432,8 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         20224, 20225, 20330, 20331, 20332, 12809,
         // Cutthroat's Skirmisher: nothing (Lethality, Flurry of Blades, Reflexive Strike, Dual
         // Wield Specialization, Phantom Guile and Relentless Strikes are modelled now).
-        // Cutthroat's Tracker: Scent of Blood (Bloodletting, Predator's Step, Serrated Strikes,
-        // Ruthlessness and Executioner's Toll are modelled now).
-        14171, 14172, 14173,
+        // Cutthroat's Tracker: nothing (Scent of Blood, Bloodletting, Predator's Step, Serrated
+        // Strikes, Ruthlessness and Executioner's Toll are modelled now).
         // Initiate's Weaver: Thermal Feedback, Arcane Substrate, Thermal Shock, Shattered Blink,
         // Combustion Engine, Catalytic Chain, Elemental Convergence.
         11069, 12338, 12339, 12340, 12341, 11103, 12357, 12358, 12359, 12360, 11078, 11080, 12342,

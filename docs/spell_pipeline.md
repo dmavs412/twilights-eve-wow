@@ -65,7 +65,10 @@ them all. `periodic_damage` also takes `duration_per_combo` (a formula in millis
 (`skill=`, `amount=` flat power off the cost), `skill_extra_target` (`skill=`, `pct=` chance that
 the skill also strikes the nearest enemy in melee reach in front of the caster, for no combo
 point) and `skill_bonus_combo` (`skill=`, `pct=` chance of one more combo point, with
-`target_state=bleeding` only on a target the caster has a physical bleed on). There is no `finisher` kind or flag. A cost is paid in the Calling's power, read from
+`target_state=bleeding` only on a target the caster has a physical bleed on) and `crit_bleed`
+(`aura_spell_id=`, `tick_ms=`, `duration_ms=`, `pct=`: a melee crit leaves a bleed of `pct`% of
+the average swing, or with `of=crit_damage` of the crit's own damage, a new crit replacing it).
+There is no `finisher` kind or flag. A cost is paid in the Calling's power, read from
 its `class`; `realm_cost` and `client_cost` stay bare numbers.
 
 **Adding a column** changes both generated schemas and the realm loader, so it goes through

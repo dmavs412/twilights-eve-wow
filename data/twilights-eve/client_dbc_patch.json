@@ -4393,7 +4393,19 @@
     "name": "Scent of Blood",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your critical strikes cause the target to bleed for 10% of the damage dealt over 8 seconds."
+    "description": "Your critical strikes cause the target to bleed for 10% of the damage dealt over 8 seconds.",
+    "effects": [
+     {
+      "kind": "crit_bleed",
+      "params": {
+       "aura_spell_id": 9007,
+       "tick_ms": 2000,
+       "duration_ms": 8000,
+       "of": "crit_damage",
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -4406,7 +4418,19 @@
     "name": "Scent of Blood",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your critical strikes cause the target to bleed for 20% of the damage dealt over 8 seconds."
+    "description": "Your critical strikes cause the target to bleed for 20% of the damage dealt over 8 seconds.",
+    "effects": [
+     {
+      "kind": "crit_bleed",
+      "params": {
+       "aura_spell_id": 9007,
+       "tick_ms": 2000,
+       "duration_ms": 8000,
+       "of": "crit_damage",
+       "pct": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -4419,7 +4443,19 @@
     "name": "Scent of Blood",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your critical strikes cause the target to bleed for 30% of the damage dealt over 8 seconds."
+    "description": "Your critical strikes cause the target to bleed for 30% of the damage dealt over 8 seconds.",
+    "effects": [
+     {
+      "kind": "crit_bleed",
+      "params": {
+       "aura_spell_id": 9007,
+       "tick_ms": 2000,
+       "duration_ms": 8000,
+       "of": "crit_damage",
+       "pct": 30
+      }
+     }
+    ]
    }
   },
   {

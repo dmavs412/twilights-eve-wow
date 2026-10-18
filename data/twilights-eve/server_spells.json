@@ -8064,7 +8064,7 @@
         "key": "scent_of_blood",
         "name": "Scent of Blood",
         "rank": 1,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14171,
         "talent_id": 1123,
         "source_tab_id": 183,
@@ -8081,15 +8081,27 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "crit_bleed",
+          "params": {
+           "aura_spell_id": 9007,
+           "tick_ms": 2000,
+           "duration_ms": 8000,
+           "of": "crit_damage",
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your critical strikes cause the target to bleed for 10% of the damage dealt over 8 seconds."
        },
        {
         "key": "scent_of_blood",
         "name": "Scent of Blood",
         "rank": 2,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14172,
         "talent_id": 1123,
         "source_tab_id": 183,
@@ -8106,15 +8118,27 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "crit_bleed",
+          "params": {
+           "aura_spell_id": 9007,
+           "tick_ms": 2000,
+           "duration_ms": 8000,
+           "of": "crit_damage",
+           "pct": 20
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your critical strikes cause the target to bleed for 20% of the damage dealt over 8 seconds."
        },
        {
         "key": "scent_of_blood",
         "name": "Scent of Blood",
         "rank": 3,
-        "status": "placeholder",
+        "status": "wip",
         "spell_id": 14173,
         "talent_id": 1123,
         "source_tab_id": 183,
@@ -8131,8 +8155,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "crit_bleed",
+          "params": {
+           "aura_spell_id": 9007,
+           "tick_ms": 2000,
+           "duration_ms": 8000,
+           "of": "crit_damage",
+           "pct": 30
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your critical strikes cause the target to bleed for 30% of the damage dealt over 8 seconds."
        }
       ]

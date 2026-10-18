@@ -402,12 +402,15 @@ pub enum TalentEffect {
     },
     /// The armour from items rises by this many percent.
     ItemArmorPct { per_rank: Vec<u32> },
-    /// A melee critical strike makes the target bleed for this percent of the average swing,
-    /// under `aura_spell_id`, a tick every `tick_ms` for `duration_ms`.
+    /// A melee critical strike makes the target bleed for this percent of `of` (the average
+    /// swing, or the crit's own damage), under `aura_spell_id`, a tick every `tick_ms` for
+    /// `duration_ms`.
     CritBleed {
         aura_spell_id: u32,
         tick_ms: u32,
         duration_ms: u32,
+        #[serde(default)]
+        of: CritBleedOf,
         per_rank: Vec<u32>,
     },
     /// The physical damage the character deals rises by this percent while it wields `weapon`.
@@ -505,6 +508,17 @@ pub enum Wielded {
     Mace,
     /// A sword, one- or two-handed.
     Sword,
+}
+
+/// What a `crit_bleed`'s percent is a share of.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CritBleedOf {
+    /// The main hand's average swing, spread over four ticks (Deep Wounds).
+    #[default]
+    AverageSwing,
+    /// The damage of the crit that caused it (Scent of Blood).
+    CritDamage,
 }
 
 impl TalentEffect {

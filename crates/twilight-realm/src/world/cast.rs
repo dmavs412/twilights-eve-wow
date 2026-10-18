@@ -14,7 +14,7 @@ use benilla_protocol::SessionEvent;
 
 use super::power::Combo;
 use super::{in_front, melee_reach, InWorld, Ticked};
-use crate::callings::{self, Effect, Seal, Skill, StackRule, Target, Weapon};
+use crate::callings::{self, CritBleedOf, Effect, Seal, Skill, StackRule, Target, Weapon};
 use crate::characters::Char;
 use crate::clock;
 use crate::fields::*;
@@ -28,7 +28,7 @@ use crate::rules::school::{crit_scaled, mitigated, School};
 use crate::rules::seals;
 use crate::rules::skills::{self as formulas, ability_table};
 use crate::rules::stats::{CharacterStats, OFF_HAND_DAMAGE_PCT};
-use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled};
+use crate::rules::talents::{crit_damage, deep_wound_tick, heal_tick, scaled, scaled_share};
 use crate::space::distance;
 
 /// `UNIT_FIELD_BYTES_1`: stand state, loyalty, shapeshift form, visibility flags.
@@ -183,6 +183,8 @@ enum AuraKind {
     /// the player.
     PeriodicDamage {
         per_tick: u32,
+        /// The first ticks that deal one more, so a total that does not divide still adds up.
+        carry: u32,
         school: School,
         caster: u64,
     },
@@ -1400,6 +1402,7 @@ impl InWorld {
                 let a = aura(
                     AuraKind::PeriodicDamage {
                         per_tick,
+                        carry: 0,
                         school: School::Physical,
                         caster: self.guid,
                     },
@@ -1883,7 +1886,7 @@ impl InWorld {
         )));
         self.hurt(target, damage, c, rng, events, ticked);
         if how == Landed::Crit {
-            self.crit_landed(target, c, events);
+            self.crit_landed(target, damage, c, events);
         }
         // A blow at one enemy sweeps on; an area's blows do not.
         if !school.is_magic()
@@ -2086,33 +2089,51 @@ impl InWorld {
         ]
     }
 
-    /// A melee crit landed on `target`: the bleed a talent leaves (Deep Wounds), which each new
-    /// crit refreshes.
-    pub(super) fn crit_landed(&mut self, target: u64, c: &Char, events: &mut Vec<SessionEvent>) {
-        let Some((spell_id, tick_ms, duration_ms, pct)) = crate::talents::crit_bleed(c) else {
-            return;
-        };
-        if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
+    /// A melee crit of `damage` landed on `target`: the bleeds talents leave (Deep Wounds, Scent
+    /// of Blood), which each new crit refreshes, sized afresh.
+    pub(super) fn crit_landed(
+        &mut self,
+        target: u64,
+        damage: u32,
+        c: &Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let bleeds = crate::talents::crit_bleeds(c);
+        if bleeds.is_empty() || !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
             return;
         }
         let s = buffed(&self.player.stats, &self.skills);
-        let period = clock::secs(tick_ms);
-        let bleed = Aura {
-            unit: target,
-            spell_id,
-            slot: 0,
-            level: c.level,
-            left: clock::secs(duration_ms),
-            period,
-            next_tick: period,
-            kind: AuraKind::PeriodicDamage {
-                per_tick: deep_wound_tick(s.min_damage, s.max_damage, pct),
-                school: School::Physical,
-                caster: self.guid,
-            },
-            charges: 0,
-        };
-        self.skills.apply(bleed, events);
+        for (spell_id, tick_ms, duration_ms, pct, of) in bleeds {
+            let (per_tick, carry) = match of {
+                CritBleedOf::AverageSwing => (deep_wound_tick(s.min_damage, s.max_damage, pct), 0),
+                CritBleedOf::CritDamage => {
+                    let ticks = (duration_ms / tick_ms.max(1)).max(1);
+                    let total = scaled_share(damage, pct);
+                    (total / ticks, total % ticks)
+                }
+            };
+            if per_tick == 0 && carry == 0 {
+                continue;
+            }
+            let period = clock::secs(tick_ms);
+            let bleed = Aura {
+                unit: target,
+                spell_id,
+                slot: 0,
+                level: c.level,
+                left: clock::secs(duration_ms),
+                period,
+                next_tick: period,
+                kind: AuraKind::PeriodicDamage {
+                    per_tick,
+                    carry,
+                    school: School::Physical,
+                    caster: self.guid,
+                },
+                charges: 0,
+            };
+            self.skills.apply(bleed, events);
+        }
     }
 
     /// The mob `target` stops fighting the player, and the player it: the mob stands dazed until
@@ -2335,7 +2356,7 @@ impl InWorld {
             }));
             self.hurt(guid, swing.damage, c, rng, events, ticked);
             if swing.outcome == Outcome::Crit {
-                self.crit_landed(guid, c, events);
+                self.crit_landed(guid, swing.damage, c, events);
             }
             if guid == target {
                 self.sweep(guid, swing.damage, c, rng, events, ticked);
@@ -2379,7 +2400,19 @@ impl InWorld {
                 a.next_tick -= dt;
                 while a.next_tick <= CLOCK_EPSILON {
                     a.next_tick += a.period;
-                    due.push(*a);
+                    let mut tick = *a;
+                    if let AuraKind::PeriodicDamage {
+                        per_tick, carry, ..
+                    } = &mut a.kind
+                    {
+                        if *carry > 0 {
+                            *carry -= 1;
+                            if let AuraKind::PeriodicDamage { per_tick: p, .. } = &mut tick.kind {
+                                *p = *per_tick + 1;
+                            }
+                        }
+                    }
+                    due.push(tick);
                 }
             }
         }
@@ -2389,6 +2422,7 @@ impl InWorld {
                     per_tick,
                     school,
                     caster,
+                    ..
                 } => {
                     let on_player = a.unit == self.guid;
                     let alive = if on_player {
@@ -2597,6 +2631,7 @@ impl InWorld {
             next_tick: clock::secs(tick_ms),
             kind: AuraKind::PeriodicDamage {
                 per_tick: tick.at(level, 0),
+                carry: 0,
                 school: spell.school,
                 caster,
             },

@@ -8,7 +8,9 @@
 
 use benilla_protocol::SessionEvent;
 
-use crate::callings::{self, Skill, Stat, TalentDef, TalentEffect, TalentTab, Wielded};
+use crate::callings::{
+    self, CritBleedOf, Skill, Stat, TalentDef, TalentEffect, TalentTab, Wielded,
+};
 use crate::characters::Char;
 use crate::fields::values;
 use crate::rules::power::PowerKind;
@@ -333,25 +335,30 @@ pub(crate) fn ground_duration_ms(c: &Char, skill: &str) -> u32 {
     )
 }
 
-/// The bleed a melee crit leaves: `(aura spell, tick ms, duration ms, percent of the swing)`.
-pub(crate) fn crit_bleed(c: &Char) -> Option<(u32, u32, u32, u32)> {
-    c.talents.iter().find_map(|&(id, r)| {
-        let (_, t) = find(c, id)?;
-        t.effects.iter().find_map(|e| match e {
-            TalentEffect::CritBleed {
-                aura_spell_id,
-                tick_ms,
-                duration_ms,
-                per_rank,
-            } => Some((
-                *aura_spell_id,
-                *tick_ms,
-                *duration_ms,
-                per_rank[usize::from(r) - 1],
-            )),
-            _ => None,
+/// The bleeds a melee crit leaves: `(aura spell, tick ms, duration ms, percent, what of)`.
+pub(crate) fn crit_bleeds(c: &Char) -> Vec<(u32, u32, u32, u32, CritBleedOf)> {
+    c.talents
+        .iter()
+        .filter_map(|&(id, r)| {
+            let (_, t) = find(c, id)?;
+            t.effects.iter().find_map(|e| match e {
+                TalentEffect::CritBleed {
+                    aura_spell_id,
+                    tick_ms,
+                    duration_ms,
+                    of,
+                    per_rank,
+                } => Some((
+                    *aura_spell_id,
+                    *tick_ms,
+                    *duration_ms,
+                    per_rank[usize::from(r) - 1],
+                    *of,
+                )),
+                _ => None,
+            })
         })
-    })
+        .collect()
 }
 
 /// The character's stats: gear's, and the talents' on top.
