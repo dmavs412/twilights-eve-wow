@@ -254,6 +254,9 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         if e.kind == "incapacitate" && aura.row.break_on.contains_key("damage") {
             merged.insert("break_on_damage".into(), true.into());
         }
+        if matches!(e.kind.as_str(), "periodic_damage" | "mod_run_speed") {
+            merged.insert("aura_spell_id".into(), aura.spell_id.into());
+        }
         if e.kind == "periodic_damage" && aura.row.stack_rule.as_deref() == Some("stack") {
             merged.insert("max_stacks".into(), aura.row.max_stacks.into());
         }

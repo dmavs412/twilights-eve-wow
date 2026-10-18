@@ -289,7 +289,7 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             assert_eq!(kind, "charge", "{key}");
             assert_eq!(f64::from(speed_yd_s), want["speed_yd_s"].as_f64().unwrap());
         }
-        Effect::Energize { power, amount } => {
+        Effect::Energize { power, amount, .. } => {
             assert_eq!(kind, "energize", "{key}");
             assert_eq!(
                 power,
@@ -382,7 +382,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         }
         // The Initiate's snare and consume live in the master CSV only; tests/initiate_*.rs read
         // them.
-        Effect::ModRunSpeed { .. } | Effect::ConsumeAura { .. } | Effect::Blink { .. } => {
+        Effect::ModRunSpeed { .. }
+        | Effect::ConsumeAura { .. }
+        | Effect::Blink { .. }
+        | Effect::ResetCooldowns { .. } => {
             panic!("{key}: the reference has no realm half for a snare or a consume")
         }
         // Consecration lives in the master CSV only; tests/vanguard_consecration.rs reads it.
@@ -416,7 +419,7 @@ fn every_skill_id_is_listed_for_rank_blanking() {
         ids,
         [
             78, 100, 116, 133, 589, 845, 1752, 1776, 1784, 1943, 1953, 2098, 2136, 2912, 5277,
-            6178, 8921, 10308, 12294, 12809, 20165, 20271, 20305, 20375, 25899
+            6178, 8921, 10308, 11366, 12043, 12294, 12809, 20165, 20271, 20305, 20375, 25899
         ]
     );
 }
@@ -446,9 +449,7 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Wield Specialization, Phantom Guile and Relentless Strikes are modelled now).
         // Cutthroat's Tracker: nothing (Scent of Blood, Bloodletting, Predator's Step, Serrated
         // Strikes, Ruthlessness and Executioner's Toll are modelled now).
-        // Initiate's Weaver: Elemental Convergence.
-        11366, // Initiate's Channeler: Mana Surge.
-        12043,
+        // Initiate's Weaver and Channeler: nothing (every talent is modelled now).
         // Ranger's Swiftbow: Guerilla Tactics, Rhythmic Draw, Twin Arrows, Parting Gift, Adrenaline
         // Rush, Flurry, Rapid Assault.
         19295, 19297, 19298, 19301, 19300, 19184, 19387, 19388, 19389, 19390, 19151, 19152, 19153,

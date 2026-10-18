@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "at_max_stacks", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "at_max_stacks", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -892,6 +892,25 @@ def resolve_amount_of(calling: dict) -> None:
                 effect["params"]["school"] = hit["params"]["school"]
 
 
+def resolve_reset_cooldowns(calling: dict) -> None:
+    """A `reset_cooldowns`'s `skill=key|key` becomes the skills' spell ids, on a skill or an
+    active talent's rank."""
+    ids = {s["key"]: s["spell_id"] for s in calling["skills"]}
+    owners = [(s["key"], s) for s in calling["skills"]]
+    for tab in calling["talent_tabs"]:
+        for talent in tab["talents"]:
+            owners += [(talent["key"], rank) for rank in talent["ranks"]]
+    for key, owner in owners:
+        for effect in owner.get("effects", []):
+            if effect["kind"] != "reset_cooldowns":
+                continue
+            skills = effect["params"].pop("skill", None)
+            skills = skills if isinstance(skills, list) else [skills]
+            if not 1 <= len(skills) <= 4 or any(k not in ids for k in skills):
+                raise BuildError(f"{calling['key']}/{key} reset_cooldowns: skill {skills!r} must be one to four skills of {calling['key']}")
+            effect["params"]["spell_ids"] = [ids[k] for k in skills]
+
+
 def resolve_next_cast(calling: dict, masks: dict[str, int | None]) -> None:
     """A `next_cast` aura names skills of its Calling; the realm gets their `SpellFamilyFlags`
     bits as `family_bits`, for the client's cast bar: each its skill's lowest bit no other skill
@@ -1198,6 +1217,8 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
                     raise BuildError(f"{where}: prereq {prereq['key']!r} is not a talent in {tab['name']}")
                 if prereq["rank"] > len(target["ranks"]):
                     raise BuildError(f"{where}: prereq {prereq['key']} has no rank {prereq['rank']}")
+    for calling in callings.values():
+        resolve_reset_cooldowns(calling)
     seats = []
     for calling in callings.values():
         for tab in calling["talent_tabs"]:

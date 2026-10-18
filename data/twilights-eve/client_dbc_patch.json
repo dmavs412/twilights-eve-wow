@@ -5970,9 +5970,33 @@
    "fields": {
     "power_type": 0,
     "name": "Elemental Convergence",
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Instantly hurls a volatile orb that applies both Searing Ember and Biting Cold to the target simultaneously. Your next Catalyst cast within 6 seconds is guaranteed to critically strike."
+    "cooldown_ms": 30000,
+    "cost_percent": 10.0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Instantly hurls a volatile orb that applies both Searing Ember and Biting Cold to the target simultaneously. Your next Catalyst cast within 6 seconds is guaranteed to critically strike.",
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_searing_ember"
+      }
+     },
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "apply_aura": "aura_biting_cold"
+      }
+     },
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_elemental_convergence"
+      }
+     }
+    ],
+    "range_index": 4,
+    "cast_time_index": 1
    }
   },
   {
@@ -6569,9 +6593,41 @@
    "fields": {
     "power_type": 0,
     "name": "Mana Surge",
+    "cost": 0,
+    "cooldown_ms": 180000,
+    "gcd_ms": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Instantly restores 50% of your maximum mana and resets the cooldown of both Blink and Catalyst. For the next 10 seconds, Ley-Spark has no cast time."
+    "description": "Instantly restores 50% of your maximum mana and resets the cooldown of both Blink and Catalyst. For the next 10 seconds, Ley-Spark has no cast time.",
+    "effects": [
+     {
+      "kind": "energize",
+      "params": {
+       "power": "mana",
+       "amount": {
+        "base": 0,
+        "per_level": 0
+       },
+       "pct_of_max": 50
+      }
+     },
+     {
+      "kind": "reset_cooldowns",
+      "params": {
+       "spell_ids": [
+        1953,
+        8921
+       ]
+      }
+     },
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_mana_surge"
+      }
+     }
+    ],
+    "cast_time_index": 1
    }
   },
   {

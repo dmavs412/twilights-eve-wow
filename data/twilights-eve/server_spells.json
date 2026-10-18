@@ -10781,12 +10781,16 @@
         "spell_id": 11366,
         "talent_id": 29,
         "source_tab_id": 41,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
+        "realm_cost": 10,
+        "realm_cooldown_ms": 30000,
+        "realm_range_max": 30,
+        "target": "enemy",
+        "school": "fire",
+        "prevention": "silence",
+        "cost_kind": "pct_base",
         "cast_kind": "instant",
         "interrupt_on": [],
-        "defense_type": "none",
+        "defense_type": "magic",
         "on_cast": {
          "breaks_stealth": true,
          "starts_auto_attack": false,
@@ -10794,8 +10798,30 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "periodic_damage",
+          "params": {
+           "apply_aura": "aura_searing_ember"
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "mod_run_speed",
+          "params": {
+           "apply_aura": "aura_biting_cold"
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "grant_aura",
+          "params": {
+           "aura": "aura_elemental_convergence"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Instantly hurls a volatile orb that applies both Searing Ember and Biting Cold to the target simultaneously. Your next Catalyst cast within 6 seconds is guaranteed to critically strike."
        }
       ]
@@ -11759,6 +11785,10 @@
         "spell_id": 12043,
         "talent_id": 86,
         "source_tab_id": 81,
+        "realm_cost": 0,
+        "realm_cooldown_ms": 180000,
+        "realm_gcd_ms": 0,
+        "target": "self",
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -11772,8 +11802,38 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "energize",
+          "params": {
+           "power": "mana",
+           "amount": {
+            "base": 0,
+            "per_level": 0
+           },
+           "pct_of_max": 50
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "reset_cooldowns",
+          "params": {
+           "spell_ids": [
+            1953,
+            8921
+           ]
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "grant_aura",
+          "params": {
+           "aura": "aura_mana_surge"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Instantly restores 50% of your maximum mana and resets the cooldown of both Blink and Catalyst. For the next 10 seconds, Ley-Spark has no cast time."
        }
       ]
@@ -12287,6 +12347,37 @@
     "description": "Frozen in place."
    },
    {
+    "key": "aura_elemental_convergence",
+    "name": "Elemental Convergence",
+    "spell_id": 11366,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "catalyst",
+       "pct": 100
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Catalyst is a critical strike."
+   },
+   {
     "key": "aura_ley_line_attunement",
     "name": "Attunement",
     "spell_id": 18462,
@@ -12605,8 +12696,20 @@
     "cancelable": true,
     "persist_death": false,
     "duration_ms": 10000,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "ley_spark",
+       "instant": true,
+       "family_bits": [
+        2
+       ]
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Ley-Spark has no cast time."
    }
   ],

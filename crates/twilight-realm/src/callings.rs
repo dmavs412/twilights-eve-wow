@@ -276,6 +276,17 @@ pub struct NextCast {
     pub family_bits: Vec<u8>,
 }
 
+/// Up to four spell ids, the rest 0.
+fn up_to_four<'de, D: serde::Deserializer<'de>>(d: D) -> Result<[u32; 4], D::Error> {
+    let ids = Vec::<u32>::deserialize(d)?;
+    if ids.len() > 4 {
+        return Err(serde::de::Error::custom("at most four spell ids"));
+    }
+    let mut out = [0; 4];
+    out[..ids.len()].copy_from_slice(&ids);
+    Ok(out)
+}
+
 /// One string, or a list of them (`key` or `key|key` in a CSV cell).
 fn one_or_many<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
     #[derive(Deserialize)]
@@ -929,6 +940,10 @@ pub enum Effect {
         /// `stack`.
         #[serde(default = "one")]
         max_stacks: u32,
+        /// The aura row's spell id when `apply_aura` names one, so another skill applying it
+        /// (Elemental Convergence) puts on the same aura; the skill's own otherwise.
+        #[serde(default)]
+        aura_spell_id: Option<u32>,
     },
     /// `amount` combo points on the target, five at most; points on another target are lost.
     AddComboPoints { amount: u32 },
@@ -936,7 +951,19 @@ pub enum Effect {
     Charge { speed_yd_s: f32 },
     /// `amount` of `power` now, logged as an energize; nothing at all when the target's bar is
     /// of another kind.
-    Energize { power: PowerKind, amount: Linear },
+    Energize {
+        power: PowerKind,
+        amount: Linear,
+        /// Also this percent of the bar's maximum (Mana Surge).
+        #[serde(default)]
+        pct_of_max: u32,
+    },
+    /// The caster's cooldowns on these spells end now (Mana Surge). The build resolves
+    /// `skill=key|key` to the skills' spell ids; four at most.
+    ResetCooldowns {
+        #[serde(deserialize_with = "up_to_four")]
+        spell_ids: [u32; 4],
+    },
     /// Rage over time, under `aura_spell_id`.
     PeriodicRage {
         aura_spell_id: u32,
@@ -989,7 +1016,13 @@ pub enum Effect {
     },
     /// The target's run speed changes by `pct` percent for `duration_ms`: a snare on an enemy
     /// when negative, a sprint on the caster when positive.
-    ModRunSpeed { pct: i32, duration_ms: u32 },
+    ModRunSpeed {
+        pct: i32,
+        duration_ms: u32,
+        /// As `PeriodicDamage`'s: the aura row's spell id when `apply_aura` names one.
+        #[serde(default)]
+        aura_spell_id: Option<u32>,
+    },
     /// The caster's dodge chance rises by `pct` percent for `duration_ms`, under the skill's
     /// spell id (Evasion).
     DodgePct { pct: u32, duration_ms: u32 },

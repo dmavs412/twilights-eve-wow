@@ -1959,6 +1959,7 @@ impl InWorld {
                 per_combo: more,
                 duration_per_combo: stretch,
                 max_stacks,
+                aura_spell_id,
             } => {
                 let per_tick = scaled(tick.at(level, ap), tick_pct) + per_combo(more);
                 let duration_ms =
@@ -1972,7 +1973,7 @@ impl InWorld {
                         stacks: 1,
                         max_stacks,
                     },
-                    skill.spell_id,
+                    aura_spell_id.unwrap_or(skill.spell_id),
                     duration_ms,
                     tick_ms,
                 );
@@ -2004,12 +2005,18 @@ impl InWorld {
                     run_mode: true,
                 });
             }
-            Effect::Energize { power, amount } => {
+            Effect::Energize {
+                power,
+                amount,
+                pct_of_max,
+            } => {
                 // A power the caster's bar does not hold: nothing happens, nothing is logged.
                 if self.player.power.kind != power {
                     return;
                 }
-                let mut gained = amount.at(level, ap);
+                let bar = &self.player.power;
+                let mut gained =
+                    amount.at(level, ap) + bar.max / power.stored(1) * pct_of_max / 100;
                 if power == PowerKind::Rage {
                     gained += crate::talents::extra_rage(c, &skill.key);
                 }
@@ -2086,9 +2093,18 @@ impl InWorld {
                 self.skills.apply(a, events);
                 self.update_speed(target, events);
             }
-            Effect::ModRunSpeed { pct, duration_ms } => {
+            Effect::ModRunSpeed {
+                pct,
+                duration_ms,
+                aura_spell_id,
+            } => {
                 let kind = run_speed(pct);
-                let a = aura(kind, skill.spell_id, duration_ms, 0);
+                let a = aura(
+                    kind,
+                    aura_spell_id.unwrap_or(skill.spell_id),
+                    duration_ms,
+                    0,
+                );
                 self.skills.apply(a, events);
                 self.update_speed(target, events);
             }
@@ -2269,6 +2285,18 @@ impl InWorld {
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
             Effect::ConsumeAuraStacks { .. } => {}
+            Effect::ResetCooldowns { spell_ids } => {
+                for id in spell_ids.into_iter().filter(|&id| id != 0) {
+                    let s = &mut self.skills;
+                    if s.cooldowns.iter().any(|(s, _)| *s == id) {
+                        s.cooldowns.retain(|(s, _)| *s != id);
+                        events.push(SessionEvent::ClearCooldown {
+                            spell_id: id,
+                            caster: self.guid,
+                        });
+                    }
+                }
+            }
             Effect::Blink { distance_yd } => {
                 let me = self.guid;
                 self.skills.remove_where(
@@ -2303,12 +2331,23 @@ impl InWorld {
                 let more = crate::talents::consume_amount_pct(c, &skill.key);
                 if let Some(amount) = amount {
                     let raw = scaled_share(amount.at(level, ap), amount_pct);
+                    // The shatter crits on the caster's chance and the skill's own (Elemental
+                    // Convergence's buff).
+                    let chance = (stats.crit_pct * 100.0) as u32
+                        + (crate::talents::skill_crit_pct(c, &skill.key)
+                            + self.skills.skill_crit_pct(&skill.key))
+                            * 100;
+                    let how = if rng.below(ROLL) < chance {
+                        Landed::Crit
+                    } else {
+                        Landed::Hit
+                    };
                     self.strike(
                         skill.spell_id,
                         target,
                         scaled(raw, more),
                         school,
-                        Landed::Hit,
+                        how,
                         c,
                         rng,
                         events,
