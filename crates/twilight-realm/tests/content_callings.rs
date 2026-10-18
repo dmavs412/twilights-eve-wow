@@ -409,7 +409,7 @@ fn every_skill_id_is_listed_for_rank_blanking() {
         ids,
         [
             78, 100, 116, 133, 589, 845, 1752, 1776, 1784, 1943, 2098, 2136, 2912, 5277, 6178,
-            10308, 12294, 20271, 20305, 20375, 25899
+            10308, 12294, 20165, 20271, 20305, 20375, 25899
         ]
     );
 }
@@ -435,9 +435,8 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180, 20182,
         // Vanguard's Bastion: Iron Juggernaut (the rest are modelled now).
         12308, 12810, 12811,
-        // Vanguard's Righteous: Wrathful Iron, Hallowed Ground, Zealous Restoration, Hammer of the
-        // Vanguard.
-        20224, 20225, 20330, 20331, 20332, 12809,
+        // Vanguard's Righteous: Hammer of the Vanguard (the rest are modelled now).
+        12809,
         // Cutthroat's Skirmisher: nothing (Lethality, Flurry of Blades, Reflexive Strike, Dual
         // Wield Specialization, Phantom Guile and Relentless Strikes are modelled now).
         // Cutthroat's Tracker: nothing (Scent of Blood, Bloodletting, Predator's Step, Serrated
@@ -479,14 +478,14 @@ fn the_vanguard_plays_righteous_smash_bulwark_charge_and_zealous_cleave() {
         .iter()
         .map(|s| s.key.as_str())
         .collect();
-    // Seal of Iron is on the sheet but off the bar until modelled.
     assert_eq!(
         kit,
         [
             "righteous_smash",
             "bulwark_charge",
             "shield_of_penitent",
-            "zealous_cleave"
+            "zealous_cleave",
+            "seal_of_iron"
         ]
     );
 }

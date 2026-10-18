@@ -1266,8 +1266,16 @@
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_seal_of_iron"
+      },
+      "realm_only": false
+     }
+    ],
     "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike."
    }
   ],
@@ -2686,8 +2694,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "melee_hit",
+           "while_aura": "aura_seal_of_iron",
+           "chance": 10,
+           "weapon_pct": 25,
+           "school": "holy"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your Seal of Iron also gives your melee attacks a 10% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
        },
        {
@@ -2711,8 +2731,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "melee_hit",
+           "while_aura": "aura_seal_of_iron",
+           "chance": 20,
+           "weapon_pct": 25,
+           "school": "holy"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your Seal of Iron also gives your melee attacks a 20% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
        },
        {
@@ -2736,8 +2768,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "melee_hit",
+           "while_aura": "aura_seal_of_iron",
+           "chance": 30,
+           "weapon_pct": 25,
+           "school": "holy"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your Seal of Iron also gives your melee attacks a 30% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
        },
        {
@@ -2761,8 +2805,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "melee_hit",
+           "while_aura": "aura_seal_of_iron",
+           "chance": 40,
+           "weapon_pct": 25,
+           "school": "holy"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your Seal of Iron also gives your melee attacks a 40% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
        },
        {
@@ -2786,8 +2842,20 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "melee_hit",
+           "while_aura": "aura_seal_of_iron",
+           "chance": 50,
+           "weapon_pct": 25,
+           "school": "holy"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your Seal of Iron also gives your melee attacks a 50% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
        }
       ]
@@ -3519,9 +3587,57 @@
     "cancelable": true,
     "persist_death": false,
     "duration_ms": 30000,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 10,
+       "heal_pct": 2
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "chance": 10,
+       "apply_aura": "aura_seal_of_iron_armor"
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Melee attacks may heal you or raise your armor."
+   },
+   {
+    "key": "aura_seal_of_iron_armor",
+    "name": "Seal of Iron",
+    "spell_id": 10291,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "armor_items_pct",
+      "params": {
+       "pct": 20
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Armor from items increased by 20%."
    },
    {
     "key": "aura_reactive_strike_1",

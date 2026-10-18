@@ -214,8 +214,9 @@ pub enum AuraEffect {
 
 /// A proc an aura row carries: while the aura is on the player, when `on` happens, `chance`
 /// percent of the time: heal `heal_pct` of the maximum health, give `energize` of the player's
-/// power, put up the aura row `apply_aura`, and deal `damage_attacker` (a formula) or
-/// `block_value_pct` of the shield's Block Value in `school` to the event's target.
+/// power, put up the aura row `apply_aura`, and deal `damage_attacker` (a formula),
+/// `block_value_pct` of the shield's Block Value or `weapon_pct` of the average weapon swing in
+/// `school` to the event's target.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct AuraProc {
     pub on: ProcEvent,
@@ -231,6 +232,8 @@ pub struct AuraProc {
     pub damage_attacker: Option<Linear>,
     #[serde(default)]
     pub block_value_pct: u32,
+    #[serde(default)]
+    pub weapon_pct: u32,
     #[serde(default)]
     pub school: School,
     /// The skill whose `skill_amount_pct` talents raise the damage.
@@ -453,6 +456,12 @@ pub enum TalentEffect {
         /// The skill whose `skill_amount_pct` talents raise the damage.
         #[serde(default)]
         amount_skill: Option<String>,
+        /// Deal this percent of the average weapon swing in `school` to the event's target.
+        #[serde(default)]
+        weapon_pct: u32,
+        /// Only while the aura row of this key is on the character.
+        #[serde(default)]
+        while_aura: Option<String>,
     },
     /// The armour from items rises by this many percent.
     #[serde(alias = "armor_items_pct")]
@@ -544,6 +553,8 @@ pub enum ProcEvent {
     Parry,
     /// A melee attack crits the character.
     CritTaken,
+    /// The character lands a melee hit, a white swing or a weapon skill's.
+    MeleeHit,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].

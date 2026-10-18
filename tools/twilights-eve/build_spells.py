@@ -45,8 +45,8 @@ KNOWN_KINDS = {
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
-PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken")
-PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct")
+PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit")
+PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct")
 WEAPON_ROLLS = ("normal", "normalized")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
@@ -479,6 +479,8 @@ def check_proc(params: dict, auras: set[str], where: str) -> None:
         raise BuildError(f"{where}: a proc needs at least one of {', '.join(PROC_ACTIONS)}")
     if "apply_aura" in params and "heal_pct" in params:
         raise BuildError(f"{where}: a proc takes apply_aura or heal_pct, not both")
+    if "while_aura" in params and params["while_aura"] not in auras:
+        raise BuildError(f"{where}: while_aura {params['while_aura']!r} is not an aura row of this Calling")
     if "apply_aura" in params:
         keys = params["apply_aura"] if isinstance(params["apply_aura"], list) else [params["apply_aura"]]
         for key in keys:

@@ -2,7 +2,7 @@
 //! buff's while it is up ([`crate::callings::AuraProc`]), rolled and paid here for every event
 //! the world reports.
 
-use benilla_protocol::messages::SpellEnergizeLog;
+use benilla_protocol::messages::{SpellEnergizeLog, SpellHealLog};
 use benilla_protocol::SessionEvent;
 
 use super::{cast, InWorld, Ticked};
@@ -32,6 +32,9 @@ impl InWorld {
                 .filter_map(|(spell_id, p)| crate::talents::aura_proc(spell_id, p, &happened)),
         );
         for proc in procs {
+            if !proc.while_aura.is_none_or(|key| self.wears_aura(c, key)) {
+                continue;
+            }
             if proc.chance < 100 && rng.below(100) >= proc.chance {
                 continue;
             }
@@ -39,7 +42,15 @@ impl InWorld {
                 let max = cast::buffed(&self.player.stats, &self.skills).max_health;
                 let p = &mut self.player;
                 if p.alive() {
-                    p.health = (p.health + max * proc.heal_pct / 100).min(max);
+                    let amount = max * proc.heal_pct / 100;
+                    p.health = (p.health + amount).min(max);
+                    events.push(SessionEvent::SpellHealLog(SpellHealLog {
+                        target: self.guid,
+                        healer: self.guid,
+                        spell_id: proc.spell_id,
+                        amount,
+                        critical: false,
+                    }));
                     events.push(values(self.guid, &[(UNIT_FIELD_HEALTH, p.health)]));
                 }
             }
@@ -68,13 +79,17 @@ impl InWorld {
             }
             if let Some(target) = happened.target {
                 let stats = cast::buffed(&self.player.stats, &self.skills);
+                let swing = cast::white(&self.player.stats, &self.skills);
+                let average = (swing.min_damage + swing.max_damage) / 2.0;
                 let raw = proc.damage.map_or(0, |l| l.at(c.level, stats.attack_power))
-                    + stats.block_value * proc.block_value_pct / 100;
+                    + stats.block_value * proc.block_value_pct / 100
+                    + (average * proc.weapon_pct as f32 / 100.0).round() as u32;
                 let pct = proc
                     .amount_skill
                     .map_or(0, |skill| crate::talents::amount_pct(c, skill));
                 let raw = scaled(raw, pct);
-                if raw > 0 {
+                // The target may have died to the blow that set the proc off.
+                if raw > 0 && self.mobs.iter().any(|m| m.guid == target && m.alive()) {
                     self.bonus_hit(
                         proc.spell_id,
                         target,
@@ -88,5 +103,14 @@ impl InWorld {
                 }
             }
         }
+    }
+
+    /// Whether the player wears the aura row `key` of their Calling.
+    fn wears_aura(&self, c: &Char, key: &str) -> bool {
+        crate::callings::of(c.calling)
+            .auras
+            .iter()
+            .find(|a| a.key == key)
+            .is_some_and(|a| self.skills.wears(a.spell_id))
     }
 }

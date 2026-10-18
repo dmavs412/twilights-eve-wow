@@ -564,6 +564,13 @@ impl Skills {
             .sum()
     }
 
+    /// Whether the player has an aura of `spell_id` on them.
+    pub(super) fn wears(&self, spell_id: u32) -> bool {
+        self.auras
+            .iter()
+            .any(|a| a.unit == self.me && a.spell_id == spell_id)
+    }
+
     /// The power the player's buffs take off `skill`'s cost.
     pub(super) fn cost_less(&self, skill: &str) -> u32 {
         self.auras
@@ -1484,7 +1491,7 @@ impl InWorld {
             } => {
                 let raw =
                     weapon_roll(&stats, weapon, rng) + (sized(bonus) + per_combo(more)) as f32;
-                self.strike(
+                let dealt = self.strike(
                     skill.spell_id,
                     target,
                     raw as u32,
@@ -1495,6 +1502,9 @@ impl InWorld {
                     events,
                     ticked,
                 );
+                if dealt > 0 {
+                    self.melee_hit(target, c, rng, events, ticked);
+                }
             }
             Effect::SchoolDamage {
                 school,
@@ -1995,7 +2005,7 @@ impl InWorld {
         self.skills.apply(aura, events);
     }
 
-    /// `raw` physical damage at `target`, after its armour: logged, taken off, maybe a kill.
+    /// `raw` damage at `target`, after its armour: logged, taken off, maybe a kill; what landed.
     #[allow(clippy::too_many_arguments)]
     fn strike(
         &mut self,
@@ -2008,9 +2018,9 @@ impl InWorld {
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
-    ) {
+    ) -> u32 {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
-            return;
+            return 0;
         };
         let mut damage = mitigated(
             school,
@@ -2047,6 +2057,30 @@ impl InWorld {
         {
             self.sweep(target, damage, c, rng, events, ticked);
         }
+        damage
+    }
+
+    /// The player's melee blow landed on `target`: the procs on a melee hit.
+    pub(super) fn melee_hit(
+        &mut self,
+        target: u64,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        self.proc(
+            crate::rules::procs::Happened {
+                event: crate::callings::ProcEvent::MeleeHit,
+                skill: None,
+                yields_xp: false,
+                target: Some(target),
+            },
+            c,
+            rng,
+            events,
+            ticked,
+        );
     }
 
     /// `damage` the player deals, raised by their talents for the weapon in hand and by their
@@ -2529,6 +2563,9 @@ impl InWorld {
             }
             if guid == target {
                 self.sweep(guid, swing.damage, c, rng, events, ticked);
+            }
+            if swing.damage > 0 {
+                self.melee_hit(guid, c, rng, events, ticked);
             }
         }
         true

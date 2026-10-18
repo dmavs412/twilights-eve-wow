@@ -447,6 +447,10 @@ pub(crate) struct Proc {
     pub(crate) school: crate::rules::school::School,
     /// The skill whose `skill_amount_pct` talents raise the damage.
     pub(crate) amount_skill: Option<&'static str>,
+    /// Damage dealt to the event's target, a percent of the average weapon swing.
+    pub(crate) weapon_pct: u32,
+    /// Only while the aura row of this key is on the character.
+    pub(crate) while_aura: Option<&'static str>,
 }
 
 /// The procs of `c`'s talents that `happened` sets off.
@@ -470,6 +474,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 block_value_pct,
                 school,
                 amount_skill,
+                weapon_pct,
+                while_aura,
             } => {
                 let trigger = crate::rules::procs::Trigger {
                     on: *on,
@@ -487,6 +493,8 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     block_value_pct: block_value_pct.get(r).copied().unwrap_or(0),
                     school: *school,
                     amount_skill: amount_skill.as_deref(),
+                    weapon_pct: *weapon_pct,
+                    while_aura: while_aura.as_deref(),
                 })
             }
             _ => None,
@@ -516,6 +524,8 @@ pub(crate) fn aura_proc(
         block_value_pct: p.block_value_pct,
         school: p.school,
         amount_skill: p.amount_skill.as_deref(),
+        weapon_pct: p.weapon_pct,
+        while_aura: None,
     })
 }
 

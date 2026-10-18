@@ -334,6 +334,14 @@
     "school": 1,
     "prevention_type": 1,
     "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike.",
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_seal_of_iron"
+      }
+     }
+    ],
     "cast_time_index": 1,
     "duration_index": 2
    }
@@ -1205,7 +1213,19 @@
     "name": "Wrathful Iron",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Seal of Iron also gives your melee attacks a 10% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+    "description": "Your Seal of Iron also gives your melee attacks a 10% chance to sear the target for additional Holy damage equal to 25% of your weapon damage.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "while_aura": "aura_seal_of_iron",
+       "chance": 10,
+       "weapon_pct": 25,
+       "school": "holy"
+      }
+     }
+    ]
    }
   },
   {
@@ -1218,7 +1238,19 @@
     "name": "Wrathful Iron",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Seal of Iron also gives your melee attacks a 20% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+    "description": "Your Seal of Iron also gives your melee attacks a 20% chance to sear the target for additional Holy damage equal to 25% of your weapon damage.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "while_aura": "aura_seal_of_iron",
+       "chance": 20,
+       "weapon_pct": 25,
+       "school": "holy"
+      }
+     }
+    ]
    }
   },
   {
@@ -1231,7 +1263,19 @@
     "name": "Wrathful Iron",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Seal of Iron also gives your melee attacks a 30% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+    "description": "Your Seal of Iron also gives your melee attacks a 30% chance to sear the target for additional Holy damage equal to 25% of your weapon damage.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "while_aura": "aura_seal_of_iron",
+       "chance": 30,
+       "weapon_pct": 25,
+       "school": "holy"
+      }
+     }
+    ]
    }
   },
   {
@@ -1244,7 +1288,19 @@
     "name": "Wrathful Iron",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Seal of Iron also gives your melee attacks a 40% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+    "description": "Your Seal of Iron also gives your melee attacks a 40% chance to sear the target for additional Holy damage equal to 25% of your weapon damage.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "while_aura": "aura_seal_of_iron",
+       "chance": 40,
+       "weapon_pct": 25,
+       "school": "holy"
+      }
+     }
+    ]
    }
   },
   {
@@ -1257,7 +1313,19 @@
     "name": "Wrathful Iron",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Seal of Iron also gives your melee attacks a 50% chance to sear the target for additional Holy damage equal to 25% of your weapon damage."
+    "description": "Your Seal of Iron also gives your melee attacks a 50% chance to sear the target for additional Holy damage equal to 25% of your weapon damage.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "melee_hit",
+       "while_aura": "aura_seal_of_iron",
+       "chance": 50,
+       "weapon_pct": 25,
+       "school": "holy"
+      }
+     }
+    ]
    }
   },
   {
