@@ -34,6 +34,7 @@ mod discovery;
 mod dungeon;
 mod food;
 mod phase;
+pub(crate) use phase::creatures;
 mod procs;
 mod regen;
 mod rest;
@@ -153,8 +154,6 @@ pub(crate) struct InWorld {
     resting: bool,
     /// The open world, or the Phased Dungeon the player stands in.
     phase: crate::phased::Phase,
-    /// That dungeon's Run.
-    run: Option<crate::phased::Run>,
     /// The Phased Dungeons whose doorway portal the client has.
     portals: Vec<u32>,
     /// What each creature casts.
@@ -233,7 +232,6 @@ impl InWorld {
             transfer: false,
             resting: crate::rest::in_inn(c.map, c.position),
             phase: Default::default(),
-            run: None,
             portals: Vec::new(),
             casters: Default::default(),
         };
@@ -325,13 +323,14 @@ impl InWorld {
         }
     }
 
-    /// The map of the shard this player shares, when they stand in the open world: the realm lends
-    /// it its mobs and sends it what comes into view.
-    pub(crate) fn shard_map(&self) -> Option<u32> {
-        (!self.transfer
-            && content::open_world(self.map)
-            && self.phase == crate::phased::Phase::OpenWorld)
-            .then_some(self.map)
+    /// The shard this player shares, when they stand on an open-world map: its open world, or the
+    /// Run of the Phased Dungeon they stand in. The realm lends it its mobs and sends it what
+    /// comes into view.
+    pub(crate) fn shard_place(&self) -> Option<crate::shard::Place> {
+        (!self.transfer && content::open_world(self.map)).then_some(crate::shard::Place {
+            map: self.map,
+            phase: self.phase,
+        })
     }
 
     /// Whether this session runs mob `guid`'s fight and AI: every mob of its own, and the lent
@@ -381,9 +380,6 @@ impl InWorld {
         let me = c.position;
         self.cross_phase(c, events);
         self.show_portals(me, events);
-        if let Some(run) = &mut self.run {
-            run.elapsed += dt;
-        }
         if self.player.alive() {
             self.discover(host, c, events, &mut ticked);
         }

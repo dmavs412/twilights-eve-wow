@@ -32,7 +32,7 @@ const NOT_SELECTABLE: u32 = 0x10;
 const READY: u32 = 1;
 
 /// Which creatures a character or creature shares the world with.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub(crate) enum Phase {
     #[default]
     OpenWorld,

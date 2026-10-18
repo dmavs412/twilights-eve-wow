@@ -350,9 +350,9 @@ pub struct Realm {
     /// The last session id handed out.
     last_session: u32,
     /// The open-world maps someone stands on, each shared by every player there.
-    shards: std::collections::BTreeMap<u32, shard::Shard>,
+    shards: std::collections::BTreeMap<shard::Place, shard::Shard>,
     /// The shard whose mobs the served session holds, lent.
-    lent_from: Option<u32>,
+    lent_from: Option<shard::Place>,
     /// How many of the served session's events came before the lend: what follows is shown to
     /// the other players who see the units in it.
     lent_mark: usize,
@@ -494,10 +494,13 @@ impl Realm {
         let Some(w) = &mut self.world else {
             return;
         };
-        let Some(map) = w.shard_map() else {
+        let Some(map) = w.shard_place() else {
             return;
         };
-        let shard = self.shards.entry(map).or_default();
+        let shard = self
+            .shards
+            .entry(map)
+            .or_insert_with(|| shard::Shard::new(map));
         w.mobs = std::mem::take(&mut shard.mobs);
         w.lent = true;
         self.lent_from = Some(map);
@@ -510,7 +513,7 @@ impl Realm {
         let Some(map) = self.lent_from.take() else {
             // A player who came out into the open world left their own mobs behind.
             if let Some(w) = &mut self.world {
-                if w.shard_map().is_some() {
+                if w.shard_place().is_some() {
                     w.mobs.clear();
                 }
                 w.died.clear();
@@ -518,7 +521,10 @@ impl Realm {
             return;
         };
         let new: Vec<SessionEvent> = self.events[self.lent_mark.min(self.events.len())..].to_vec();
-        let shard = self.shards.entry(map).or_default();
+        let shard = self
+            .shards
+            .entry(map)
+            .or_insert_with(|| shard::Shard::new(map));
         if let Some(w) = &mut self.world {
             shard.mobs = if w.lent {
                 w.lent = false;
@@ -530,7 +536,7 @@ impl Realm {
                 shard.died(spawn, wait);
             }
             // What the session itself created or removed (a call for help's adds).
-            if w.shard_map() == Some(map) {
+            if w.shard_place() == Some(map) {
                 for e in &new {
                     match e {
                         SessionEvent::ObjectCreate { guid, .. } => {
@@ -556,12 +562,12 @@ impl Realm {
     }
 
     /// Shows `events` to every parked session on `map` whose client sees a unit in them.
-    fn show_others(&mut self, map: u32, events: &[SessionEvent]) {
+    fn show_others(&mut self, map: shard::Place, events: &[SessionEvent]) {
         for s in self.parked.values_mut() {
             let Some(w) = &s.world else {
                 continue;
             };
-            if w.shard_map() != Some(map) {
+            if w.shard_place() != Some(map) {
                 continue;
             }
             for e in events {
@@ -577,13 +583,13 @@ impl Realm {
     /// it this tick.
     fn tick_shards(&mut self, dt: f32, host: &dyn Host) {
         self.give_back();
-        let mut on: std::collections::BTreeMap<u32, Vec<shard::OnShard<SessionId>>> =
+        let mut on: std::collections::BTreeMap<shard::Place, Vec<shard::OnShard<SessionId>>> =
             Default::default();
         let worlds = std::iter::once((self.active, &self.world))
             .chain(self.parked.iter().map(|(id, s)| (*id, &s.world)));
         for (id, w) in worlds {
             let Some(w) = w else { continue };
-            let (Some(map), Some(c)) = (w.shard_map(), self.characters.get(w.guid)) else {
+            let (Some(map), Some(c)) = (w.shard_place(), self.characters.get(w.guid)) else {
                 continue;
             };
             on.entry(map).or_default().push(shard::OnShard {
@@ -595,9 +601,12 @@ impl Realm {
         }
         self.shards.retain(|map, _| on.contains_key(map));
         for (map, players) in &on {
-            let shard = self.shards.entry(*map).or_default();
+            let shard = self
+                .shards
+                .entry(*map)
+                .or_insert_with(|| shard::Shard::new(*map));
             let positions: Vec<[f32; 3]> = players.iter().map(|p| p.position).collect();
-            let made = shard.update(dt, &positions, *map, host);
+            let made = shard.update(dt, &positions, host);
             let mut owners = shard.owners(players);
             let shard = &self.shards[map];
             let sessions = std::iter::once((self.active, &mut self.world, &mut self.events)).chain(
@@ -888,16 +897,15 @@ impl Realm {
         let mut ids: Vec<SessionId> = self.parked.keys().copied().collect();
         ids.push(self.active);
         ids.sort();
-        // A dev teleport lands first, so the world streams in where it put the player.
+        // A dev teleport lands, and each player steps into the Phase where they stand, before
+        // the shards stream in around them.
         for &id in &ids {
-            let pending = if id == self.active {
-                self.dev_teleport.is_some()
-            } else {
-                self.parked[&id].dev_teleport.is_some()
-            };
-            if pending {
-                self.serve(id);
-                self.dev_teleport_served(host);
+            self.serve(id);
+            self.dev_teleport_served(host);
+            if let Some(w) = &mut self.world {
+                if let Some(c) = self.characters.get(w.guid) {
+                    w.step_into_phase(c, &mut self.events);
+                }
             }
         }
         self.tick_shards(dt, host);
@@ -1001,14 +1009,19 @@ impl Realm {
     /// Seconds into the Run of the Phased Dungeon the character in the world stands in; `None`
     /// outside every one.
     pub fn run_elapsed(&self) -> Option<f32> {
-        let world = if self.active == SessionId::DEFAULT {
+        self.run_elapsed_as(SessionId::DEFAULT)
+    }
+
+    /// Seconds into the Run of the Phased Dungeon `session`'s character stands in; `None`
+    /// outside every one.
+    pub fn run_elapsed_as(&self, session: SessionId) -> Option<f32> {
+        let world = if self.active == session {
             self.world.as_ref()
         } else {
-            self.parked
-                .get(&SessionId::DEFAULT)
-                .and_then(|s| s.world.as_ref())
+            self.parked.get(&session).and_then(|s| s.world.as_ref())
         };
-        world.and_then(|w| w.run_elapsed())
+        let place = world.and_then(|w| w.shard_place())?;
+        self.shards.get(&place)?.run_elapsed()
     }
 
     /// Keeps `guid` from ever being handed out: the host holds a save under it that it could not

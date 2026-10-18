@@ -28,16 +28,29 @@ pub struct Party {
     pub guids: Vec<u64>,
     /// Every event so far, by session.
     pub log: HashMap<SessionId, Vec<SessionEvent>>,
+    pub host: Box<dyn Host>,
 }
 
 const NAMES: [&str; 5] = ["Varian", "Anduin", "Jaina", "Rexxar", "Thrall"];
 
 impl Party {
     /// One warrior per entry of `levels`, each in their own session, in the world.
-    pub fn new(mut realm: Realm, levels: &[u8]) -> Self {
+    pub fn new(realm: Realm, levels: &[u8]) -> Self {
+        Self::starting(realm, levels, 0, Box::new(NoGround))
+    }
+
+    /// As [`Self::new`], the characters made at `start` (`CharCreateReq::start`), on `host`.
+    pub fn starting(mut realm: Realm, levels: &[u8], start: u8, host: Box<dyn Host>) -> Self {
         let mut maker = super::realm();
         for name in &NAMES[..levels.len()] {
-            assert_eq!(create(&mut maker, name, HUMAN, 0), CHAR_CREATE_SUCCESS);
+            let RealmCommand::CreateCharacter(mut req) =
+                super::create_cmd(name, HUMAN, 0, super::WARRIOR)
+            else {
+                unreachable!()
+            };
+            req.start = start;
+            maker.handle(RealmCommand::CreateCharacter(req));
+            assert_eq!(super::create_result(&mut maker), CHAR_CREATE_SUCCESS);
         }
         let mut guids = Vec::new();
         for (name, level) in NAMES.iter().zip(levels) {
@@ -66,6 +79,7 @@ impl Party {
             sessions,
             guids,
             log: HashMap::new(),
+            host,
         };
         party.run(0.0);
         party
@@ -107,7 +121,7 @@ impl Party {
         let mut t = -0.1;
         while t < secs - 1e-3 {
             let dt = if t < 0.0 { 0.0 } else { 0.1 };
-            self.realm.tick(dt, &NoGround);
+            self.realm.tick(dt, self.host.as_ref());
             for (s, events) in self.collect() {
                 if let Some(i) = self.sessions.iter().position(|&x| x == s) {
                     got[i].extend(events);
@@ -133,6 +147,30 @@ impl Party {
             t += 0.1;
         }
         false
+    }
+
+    /// The units player `i`'s client holds now.
+    pub fn units_held(&self, i: usize) -> std::collections::HashSet<u64> {
+        let mut held = std::collections::HashSet::new();
+        for e in self.seen(i) {
+            match e {
+                SessionEvent::ObjectCreate {
+                    guid,
+                    kind: EntityKind::Unit,
+                    ..
+                } => {
+                    held.insert(*guid);
+                }
+                SessionEvent::ObjectsRemoved(gone) => gone.iter().for_each(|g| {
+                    held.remove(g);
+                }),
+                SessionEvent::ObjectDestroyed(g) => {
+                    held.remove(g);
+                }
+                _ => {}
+            }
+        }
+        held
     }
 
     /// Everything player `i`'s client has been sent.

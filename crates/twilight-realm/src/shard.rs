@@ -1,7 +1,8 @@
-//! One copy of an open-world map, shared by every player on it: its mobs, which spawns are in the
-//! world and which wait to come back, and the Hub's NPCs. A player's own state (stats, auras,
-//! loot, quests) stays in their session; the realm lends a session the shard's mobs while it
-//! serves that session, and sends each client what comes into and leaves its view.
+//! One copy of a place, shared by every player in it: an open-world map's mobs, which spawns are
+//! in the world and which wait to come back, and the Hub's NPCs; or a Phased Dungeon's Run, its
+//! creatures and its clock (ADR 0006). A player's own state (stats, auras, loot, quests) stays in
+//! their session; the realm lends a session the shard's mobs while it serves that session, and
+//! sends each client what comes into and leaves its view.
 
 use std::collections::{HashMap, HashSet};
 
@@ -10,16 +11,27 @@ use benilla_protocol::SessionEvent;
 use crate::fields::values;
 use crate::looting::lootable_pair;
 use crate::mobs::{Mob, State};
+use crate::phased::{Phase, Run};
 use crate::population::{Population, VIEW_YD};
 use crate::space::flat_distance;
 use crate::Host;
 
-/// One open-world map's shared state.
-#[derive(Default)]
+/// Where a shard is: an open-world map, in the open world or one Phased Dungeon's Phase.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct Place {
+    pub(crate) map: u32,
+    pub(crate) phase: Phase,
+}
+
+/// One place's shared state.
 pub(crate) struct Shard {
+    place: Place,
     pub(crate) mobs: Vec<Mob>,
     population: Population,
     hub: crate::hub::InView,
+    /// A Phased Dungeon's Run: it starts with the shard, when the first player steps in, and
+    /// resets with it, once no living player is inside.
+    run: Option<Run>,
 }
 
 /// A player standing on a shard, as the realm sees them for a tick.
@@ -31,6 +43,28 @@ pub(crate) struct OnShard<S> {
 }
 
 impl Shard {
+    /// A fresh shard: an open world streams in around its players; a Phased Dungeon's Run starts
+    /// with all its creatures at full health.
+    pub(crate) fn new(place: Place) -> Self {
+        let dungeon = place.phase != Phase::OpenWorld;
+        Self {
+            place,
+            mobs: if dungeon {
+                crate::world::creatures(place.phase)
+            } else {
+                Vec::new()
+            },
+            population: Population::default(),
+            hub: Default::default(),
+            run: dungeon.then_some(Run { elapsed: 0.0 }),
+        }
+    }
+
+    /// Seconds into its Run, for a Phased Dungeon's.
+    pub(crate) fn run_elapsed(&self) -> Option<f32> {
+        self.run.as_ref().map(|r| r.elapsed)
+    }
+
     /// Streams spawns and Hub NPCs in around `players` and out once none is near, brings back
     /// the dead whose time is up, and walks the Hub's wanderers. The destroys and moves it makes;
     /// the creates go to each client as its view takes them in.
@@ -38,10 +72,14 @@ impl Shard {
         &mut self,
         dt: f32,
         players: &[[f32; 3]],
-        map: u32,
         host: &dyn Host,
     ) -> Vec<SessionEvent> {
         let mut events = Vec::new();
+        if let Some(run) = &mut self.run {
+            run.elapsed += dt;
+            return events;
+        }
+        let map = self.place.map;
         self.population
             .update(dt, players, map, host, &mut self.mobs, &mut events);
         self.hub.update(dt, players, map, host, &mut events);
@@ -56,8 +94,12 @@ impl Shard {
 
     /// Everything a player at `me` sees: each mob and Hub NPC within view, and its create.
     pub(crate) fn in_view(&self, me: [f32; 3]) -> Vec<(u64, SessionEvent)> {
+        // A Run is there all at once.
+        let dungeon = self.run.is_some();
         let near = |m: &&Mob| {
-            flat_distance(m.position, me) <= VIEW_YD || flat_distance(m.home, me) <= VIEW_YD
+            dungeon
+                || flat_distance(m.position, me) <= VIEW_YD
+                || flat_distance(m.home, me) <= VIEW_YD
         };
         let mut seen: Vec<(u64, SessionEvent)> = self
             .mobs
