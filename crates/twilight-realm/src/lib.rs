@@ -40,6 +40,7 @@
 mod areas;
 pub mod callings;
 mod characters;
+pub mod chat;
 mod clock;
 mod combat;
 mod content;
@@ -153,6 +154,22 @@ pub enum RealmCommand {
     Logout,
     /// Stand up from a pending logout (`CMSG_LOGOUT_CANCEL`).
     LogoutCancel,
+    /// A chat line (`CMSG_MESSAGECHAT`): its `CHAT_TYPE_*`, the whisper's addressee or the
+    /// channel, and the text.
+    Chat {
+        chat_type: u32,
+        target: Option<String>,
+        text: String,
+    },
+    /// A text emote (`CMSG_TEXT_EMOTE`): an `EmotesText.dbc` id at `target` (0 for none).
+    TextEmote {
+        text_id: u32,
+        target: u64,
+    },
+    /// A player's name, answered with [`SessionEvent::PlayerName`].
+    NameQuery {
+        guid: u64,
+    },
     /// An item template, answered with [`SessionEvent::ItemTemplate`].
     ItemQuery {
         entry: u32,
@@ -844,6 +861,13 @@ impl Realm {
                     hub::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
                 self.events.push(answer);
             }
+            RealmCommand::Chat {
+                chat_type,
+                target,
+                text,
+            } => self.chat(chat_type, target, text),
+            RealmCommand::TextEmote { text_id, target } => self.text_emote(text_id, target),
+            RealmCommand::NameQuery { guid } => self.name_query(guid),
             RealmCommand::Logout => self.ask_logout(),
             RealmCommand::LogoutCancel => {
                 if let Some(w) = &mut self.world {
@@ -1180,6 +1204,7 @@ impl Realm {
         let mut entry = world::InWorld::enter(c, self.dev, self.wall, &mut self.events);
         entry.casters = self.casters.clone();
         self.world = Some(entry);
+        self.events.push(chat::joined_world_channel());
     }
 
     /// A logout asked for: at once in an inn, solo, or out of the world; refused in combat;

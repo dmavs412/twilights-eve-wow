@@ -353,6 +353,17 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         }),
         ClientCommand::Logout => Some(RealmCommand::Logout),
         ClientCommand::LogoutCancel => Some(RealmCommand::LogoutCancel),
+        ClientCommand::Chat {
+            kind, target, text, ..
+        } => Some(RealmCommand::Chat {
+            chat_type: kind.chat_type(),
+            target,
+            text,
+        }),
+        ClientCommand::TextEmote { text_id, target } => {
+            Some(RealmCommand::TextEmote { text_id, target })
+        }
+        ClientCommand::NameQuery { guid } => Some(RealmCommand::NameQuery { guid }),
         ClientCommand::ItemQuery { entry, .. } => Some(RealmCommand::ItemQuery { entry }),
         ClientCommand::Loot { guid } => Some(RealmCommand::Loot { guid }),
         ClientCommand::LootMoney => Some(RealmCommand::LootMoney),
