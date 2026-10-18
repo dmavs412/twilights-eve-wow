@@ -40,7 +40,7 @@ KNOWN_KINDS = {
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
-    "skill_crit_pct", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike",
+    "skill_crit_pct", "skill_armor_ignore", "no_min_range", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
@@ -943,6 +943,7 @@ def resolve_next_cast(calling: dict, masks: dict[str, int | None]) -> None:
     bits as `family_bits`, for the client's cast bar: each its skill's lowest bit no other skill
     shares. A skill whose flags are unknown (no --data) or all shared adds none. An `at_max_stacks` aura names the aura row it becomes."""
     keys = {s["key"] for s in calling["skills"]}
+    hidden = {s["key"] for s in calling.get("hidden_skills", [])}
     auras = {a["key"] for a in calling["auras"]}
     for aura in calling["auras"]:
         where = f"{calling['key']}/{aura['key']}"
@@ -956,6 +957,8 @@ def resolve_next_cast(calling: dict, masks: dict[str, int | None]) -> None:
                 continue
             else:
                 skills = params.get("skill")
+                if "becomes" in params and params["becomes"] not in keys | hidden:
+                    raise BuildError(f"{where} next_cast: becomes {params['becomes']!r} is not a skill of {calling['key']}")
             skills = skills if isinstance(skills, list) else [skills]
             bits = []
             for key in skills:

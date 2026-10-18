@@ -6726,6 +6726,10 @@
         "base": 20,
         "per_level": 3.5,
         "per_ap": 0
+       },
+       "armor_ignore": {
+        "base": 100,
+        "per_level": 10
        }
       }
      }
@@ -6804,7 +6808,15 @@
     "cooldown_ms": 60000,
     "school": 0,
     "prevention_type": 2,
-    "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit."
+    "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit.",
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_rapid_fire"
+      }
+     }
+    ]
    }
   },
   {
@@ -7140,7 +7152,23 @@
     "name": "Piercing Force",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 10% and causes it to inherently ignore 100 of the target's armor."
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 10% and causes it to inherently ignore 100 of the target's armor.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "skill": "puncturing_shaft",
+       "pct": 5
+      }
+     },
+     {
+      "kind": "skill_armor_ignore",
+      "params": {
+       "skill": "puncturing_shaft",
+       "amount": 100
+      }
+     }
+    ]
    }
   },
   {
@@ -7153,7 +7181,23 @@
     "name": "Piercing Force",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 20% and causes it to inherently ignore 200 of the target's armor."
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 20% and causes it to inherently ignore 200 of the target's armor.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "skill": "puncturing_shaft",
+       "pct": 10
+      }
+     },
+     {
+      "kind": "skill_armor_ignore",
+      "params": {
+       "skill": "puncturing_shaft",
+       "amount": 200
+      }
+     }
+    ]
    }
   },
   {
@@ -7166,7 +7210,23 @@
     "name": "Piercing Force",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 30% and causes it to inherently ignore 300 of the target's armor."
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 30% and causes it to inherently ignore 300 of the target's armor.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "skill": "puncturing_shaft",
+       "pct": 15
+      }
+     },
+     {
+      "kind": "skill_armor_ignore",
+      "params": {
+       "skill": "puncturing_shaft",
+       "amount": 300
+      }
+     }
+    ]
    }
   },
   {
@@ -7179,7 +7239,23 @@
     "name": "Piercing Force",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 40% and causes it to inherently ignore 400 of the target's armor."
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 40% and causes it to inherently ignore 400 of the target's armor.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "skill": "puncturing_shaft",
+       "pct": 20
+      }
+     },
+     {
+      "kind": "skill_armor_ignore",
+      "params": {
+       "skill": "puncturing_shaft",
+       "amount": 400
+      }
+     }
+    ]
    }
   },
   {
@@ -7192,7 +7268,23 @@
     "name": "Piercing Force",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 50% and causes it to inherently ignore 500 of the target's armor."
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 50% and causes it to inherently ignore 500 of the target's armor.",
+    "effects": [
+     {
+      "kind": "skill_crit_damage_pct",
+      "params": {
+       "skill": "puncturing_shaft",
+       "pct": 25
+      }
+     },
+     {
+      "kind": "skill_armor_ignore",
+      "params": {
+       "skill": "puncturing_shaft",
+       "amount": 500
+      }
+     }
+    ]
    }
   },
   {
@@ -7394,7 +7486,23 @@
     "name": "Point Blank",
     "school": 0,
     "prevention_type": 2,
-    "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 10% more damage to targets within 8 yards."
+    "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 10% more damage to targets within 8 yards.",
+    "effects": [
+     {
+      "kind": "no_min_range",
+      "params": {
+       "skill": "ranged"
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "puncturing_shaft",
+       "pct": 10,
+       "max_distance_yd": 8
+      }
+     }
+    ]
    }
   },
   {
@@ -7407,7 +7515,23 @@
     "name": "Point Blank",
     "school": 0,
     "prevention_type": 2,
-    "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 20% more damage to targets within 8 yards."
+    "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 20% more damage to targets within 8 yards.",
+    "effects": [
+     {
+      "kind": "no_min_range",
+      "params": {
+       "skill": "ranged"
+      }
+     },
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "puncturing_shaft",
+       "pct": 20,
+       "max_distance_yd": 8
+      }
+     }
+    ]
    }
   },
   {
@@ -7418,9 +7542,20 @@
    "fields": {
     "power_type": 0,
     "name": "Explosive Payload",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
     "school": 0,
     "prevention_type": 2,
-    "description": "15-second cooldown. Instantly replaces your next auto-shot with a volatile explosive shell. On impact, it deals 150% weapon damage as Fire damage to the primary target and all enemies within 8 yards."
+    "description": "15-second cooldown. Instantly replaces your next auto-shot with a volatile explosive shell. On impact, it deals 150% weapon damage as Fire damage to the primary target and all enemies within 8 yards.",
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_explosive_payload"
+      }
+     }
+    ],
+    "cast_time_index": 1
    }
   },
   {

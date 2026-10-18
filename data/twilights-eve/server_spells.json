@@ -12864,6 +12864,10 @@
         "base": 20,
         "per_level": 3.5,
         "per_ap": 0
+       },
+       "armor_ignore": {
+        "base": 100,
+        "per_level": 10
        }
       },
       "realm_only": false
@@ -12973,9 +12977,68 @@
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "grant_aura",
+      "params": {
+       "aura": "aura_rapid_fire"
+      },
+      "realm_only": false
+     }
+    ],
     "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit."
+   },
+   {
+    "key": "explosive_shot",
+    "name": "Explosive Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1003001,
+    "client_visible": false,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 8,
+    "realm_range_max": 35,
+    "realm_radius_yd": 8,
+    "target": "enemy",
+    "school": "fire",
+    "prevention": "silence",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "ranged",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "area_shape": "circle",
+    "area_center": "target",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "weapon_pct": 150,
+       "bonus": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       },
+       "school": "fire"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "150% weapon damage as Fire to the target and all enemies within 8 yards."
    }
   ],
   "talent_tabs": [
@@ -13676,8 +13739,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_crit_damage_pct",
+          "params": {
+           "skill": "puncturing_shaft",
+           "pct": 5
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_armor_ignore",
+          "params": {
+           "skill": "puncturing_shaft",
+           "amount": 100
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 10% and causes it to inherently ignore 100 of the target's armor."
        },
        {
@@ -13701,8 +13781,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_crit_damage_pct",
+          "params": {
+           "skill": "puncturing_shaft",
+           "pct": 10
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_armor_ignore",
+          "params": {
+           "skill": "puncturing_shaft",
+           "amount": 200
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 20% and causes it to inherently ignore 200 of the target's armor."
        },
        {
@@ -13726,8 +13823,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_crit_damage_pct",
+          "params": {
+           "skill": "puncturing_shaft",
+           "pct": 15
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_armor_ignore",
+          "params": {
+           "skill": "puncturing_shaft",
+           "amount": 300
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 30% and causes it to inherently ignore 300 of the target's armor."
        },
        {
@@ -13751,8 +13865,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_crit_damage_pct",
+          "params": {
+           "skill": "puncturing_shaft",
+           "pct": 20
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_armor_ignore",
+          "params": {
+           "skill": "puncturing_shaft",
+           "amount": 400
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 40% and causes it to inherently ignore 400 of the target's armor."
        },
        {
@@ -13776,8 +13907,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_crit_damage_pct",
+          "params": {
+           "skill": "puncturing_shaft",
+           "pct": 25
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_armor_ignore",
+          "params": {
+           "skill": "puncturing_shaft",
+           "amount": 500
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 50% and causes it to inherently ignore 500 of the target's armor."
        }
       ]
@@ -14201,8 +14349,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "no_min_range",
+          "params": {
+           "skill": "ranged"
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "puncturing_shaft",
+           "pct": 10,
+           "max_distance_yd": 8
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 10% more damage to targets within 8 yards."
        },
        {
@@ -14226,8 +14391,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "no_min_range",
+          "params": {
+           "skill": "ranged"
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_amount_pct",
+          "params": {
+           "skill": "puncturing_shaft",
+           "pct": 20,
+           "max_distance_yd": 8
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 20% more damage to targets within 8 yards."
        }
       ]
@@ -14249,6 +14431,9 @@
         "spell_id": 19503,
         "talent_id": 1353,
         "source_tab_id": 363,
+        "realm_cost": 0,
+        "realm_cooldown_ms": 15000,
+        "target": "self",
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -14262,8 +14447,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "grant_aura",
+          "params": {
+           "aura": "aura_explosive_payload"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "15-second cooldown. Instantly replaces your next auto-shot with a volatile explosive shell. On impact, it deals 150% weapon damage as Fire damage to the primary target and all enemies within 8 yards."
        }
       ]
@@ -14330,8 +14523,25 @@
     "cancelable": true,
     "persist_death": false,
     "duration_ms": 10000,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 40
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "proc",
+      "params": {
+       "on": "damage_done",
+       "skill": "auto_shot",
+       "energize_pct_of_base": 1
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Ranged attack speed increased by 40%. Auto-shots refund mana."
    },
    {
@@ -14564,6 +14774,40 @@
      }
     ],
     "description": "Ranged attack speed increased by 10% and ranged critical strike chance by 6%."
+   },
+   {
+    "key": "aura_explosive_payload",
+    "name": "Explosive Payload",
+    "spell_id": 19503,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "auto_shot",
+       "becomes": "explosive_shot",
+       "family_bits": [
+        0
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Auto Shot explodes, dealing 150% weapon damage as Fire to the target and all enemies within 8 yards."
    }
   ],
   "name": "Ranger",

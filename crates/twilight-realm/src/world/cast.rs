@@ -846,6 +846,18 @@ impl Skills {
         cells
     }
 
+    /// The skill the player's next-cast buff turns their next `skill` into, if one does.
+    fn becomes(&self, skill: &str) -> Option<&'static str> {
+        self.auras.iter().find_map(|a| match a.kind {
+            AuraKind::NextCast { next, .. }
+                if a.unit == self.me && next.skill.iter().any(|s| s == skill) =>
+            {
+                next.becomes.as_deref()
+            }
+            _ => None,
+        })
+    }
+
     /// The percent the player's buffs make their ranged weapon shoot faster.
     fn ranged_haste_pct(&self) -> u32 {
         self.auras
@@ -1637,6 +1649,13 @@ impl InWorld {
         if self.player.shot_timer > 0.0 || self.skills.casting.is_some() {
             return;
         }
+        // A next-cast buff may make this shot another skill (Explosive Payload).
+        let auto = skill;
+        let skill = self
+            .skills
+            .becomes(&auto.key)
+            .and_then(|key| callings::of(c.calling).skill_by_key(key))
+            .unwrap_or(auto);
         let targets = match self.check(skill, Some(target), false, c) {
             Ok(targets) => targets,
             Err(SPELL_FAILED_UNIT_NOT_INFRONT) => return,
@@ -1651,6 +1670,10 @@ impl InWorld {
         let done = self.go(skill, Some(target), targets, true, c, rng, events);
         ticked.leveled |= done.leveled;
         ticked.discovered |= done.discovered;
+        if !std::ptr::eq(skill, auto) {
+            let gone = self.skills.use_next_casts(&auto.key, events);
+            self.faded(&gone, events);
+        }
         if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
             self.stop_shooting(events);
         }
@@ -2480,6 +2503,12 @@ impl InWorld {
                 }
                 let d = distance(mob.position, c.position);
                 let [min, max] = skill.range_yd;
+                let ranged = skill.meta.shape.defense_type.as_deref() == Some("ranged");
+                let min = if crate::talents::no_min_range(c, &skill.key, ranged) {
+                    0.0
+                } else {
+                    min
+                };
                 // A 5 yd skill is a melee one: it reaches as far as a swing does.
                 let max = if max <= 5.0 { melee_reach() } else { max };
                 if d > max {
@@ -2743,28 +2772,35 @@ impl InWorld {
                 per_combo: more,
                 weapon_pct,
                 school,
+                armor_ignore,
                 ..
             } => {
                 let roll = weapon_roll(&stats, weapon, rng) * weapon_pct as f32 / 100.0;
                 let shield =
                     stats.block_value * crate::talents::block_value_pct(c, &skill.key) / 100;
-                // Talents raise the bonus; a buff for the skill raises the whole strike
-                // (Guerilla Tactics).
-                let talents = crate::talents::amount_pct(c, &skill.key);
-                let bonus = scaled(bonus.at(level, ap), talents);
-                let raw = roll + (bonus + per_combo(more) + shield) as f32;
-                let raw = raw * (100 + self.skills.skill_amount_pct(&skill.key)) as f32 / 100.0;
-                let dealt = self.strike(
+                // The talents and buffs for the skill raise the whole strike (Guerilla
+                // Tactics), some only close in (Point Blank).
+                let near = self.mobs.iter().find(|m| m.guid == target).map_or(0, |m| {
+                    let d = distance(m.position, c.position);
+                    crate::talents::amount_pct_near(c, &skill.key, d)
+                });
+                let raw = roll + (bonus.at(level, ap) + per_combo(more) + shield) as f32;
+                let raw = raw * (100 + pct + near) as f32 / 100.0;
+                let ignore = armor_ignore.map_or(0, |l| l.at(level, ap))
+                    + crate::talents::skill_armor_ignore(c, &skill.key);
+                let dealt = self.strike_through(
                     skill.spell_id,
                     target,
                     raw as u32,
                     school,
                     how,
+                    ignore,
                     c,
                     rng,
                     events,
                     ticked,
                 );
+                self.skills.cast_dealt += dealt;
                 if dealt > 0 && weapon != Weapon::Ranged {
                     self.melee_hit(target, c, rng, events, ticked);
                 }
@@ -3571,22 +3607,41 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) -> u32 {
+        self.strike_through(
+            spell_id, target, raw, school, how, 0, c, rng, events, ticked,
+        )
+    }
+
+    /// [`Self::strike`] skipping `armor_ignore` more of the target's armour, never below none.
+    #[allow(clippy::too_many_arguments)]
+    fn strike_through(
+        &mut self,
+        spell_id: u32,
+        target: u64,
+        raw: u32,
+        school: School,
+        how: Landed,
+        armor_ignore: u32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) -> u32 {
         let Some(mob) = self.mobs.iter().find(|m| m.guid == target) else {
             return 0;
         };
-        let mut damage = mitigated(
-            school,
-            raw,
-            mob.stats.armor.saturating_sub(self.player.stats.armor_pen),
-            self.player.stats.level,
-        );
+        let armor = mob
+            .stats
+            .armor
+            .saturating_sub(self.player.stats.armor_pen + armor_ignore);
+        let mut damage = mitigated(school, raw, armor, self.player.stats.level);
         if how == Landed::Crit {
             let spell = crate::talents::skill(c, spell_id);
             let builder = spell.is_some_and(Skill::adds_combo_points);
             damage = crit_scaled(
                 school,
                 damage,
-                crate::talents::skill_crit_damage_pct(c, builder)
+                crate::talents::skill_crit_damage_pct(c, spell.map(|s| s.key.as_str()), builder)
                     + self.player.stats.crit_damage_pct,
             );
         }
@@ -4101,8 +4156,9 @@ impl InWorld {
             let gone = self.skills.spend_charges(&skill.key, events);
             self.faded(&gone, events);
         }
-        let impale = crate::talents::skill_crit_damage_pct(c, skill.adds_combo_points())
-            + self.player.stats.crit_damage_pct;
+        let impale =
+            crate::talents::skill_crit_damage_pct(c, Some(&skill.key), skill.adds_combo_points())
+                + self.player.stats.crit_damage_pct;
         for (guid, mut swing) in swings {
             if missed_by(swing.outcome).is_some() {
                 continue;

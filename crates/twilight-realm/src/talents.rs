@@ -158,11 +158,36 @@ pub(crate) fn weapon_damage_pct(c: &Char) -> u32 {
 
 /// The percent of the whole crit a skill's crit adds (Impale); a `builders` talent (Lethality)
 /// counts only when the skill is a combo point builder.
-pub(crate) fn skill_crit_damage_pct(c: &Char, builder: bool) -> u32 {
+pub(crate) fn skill_crit_damage_pct(c: &Char, skill: Option<&str>, builder: bool) -> u32 {
+    sum(c, |e| {
+        matches!(e, TalentEffect::SkillCritDamagePct { builders, skill: s, .. }
+            if (builder || !builders) && s.as_deref().is_none_or(|s| Some(s) == skill))
+    })
+}
+
+/// The armour a skill's strikes skip on top of their own (Piercing Force).
+pub(crate) fn skill_armor_ignore(c: &Char, skill: &str) -> u32 {
     sum(
         c,
-        |e| matches!(e, TalentEffect::SkillCritDamagePct { builders, .. } if builder || !builders),
+        |e| matches!(e, TalentEffect::SkillArmorIgnore { skill: s, .. } if s == skill),
     )
+}
+
+/// Whether a talent takes away `skill`'s minimum range; `ranged`: whether it is a shot.
+pub(crate) fn no_min_range(c: &Char, skill: &str, ranged: bool) -> bool {
+    sum(c, |e| {
+        matches!(e, TalentEffect::NoMinRange { skill: s, .. }
+            if s == skill || (ranged && s == "ranged"))
+    }) > 0
+}
+
+/// The percent a skill's amounts rise by on a target `distance` yards off, from the talents
+/// that only count close in (Point Blank).
+pub(crate) fn amount_pct_near(c: &Char, skill: &str, distance: f32) -> u32 {
+    sum(c, |e| {
+        matches!(e, TalentEffect::SkillAmountPct { skill: s, max_distance_yd, .. }
+            if s == skill && *max_distance_yd > 0.0 && distance <= *max_distance_yd)
+    })
 }
 
 /// The percent chance a skill also lands on one more enemy in front of the caster (Flurry of
@@ -307,8 +332,9 @@ pub(crate) fn amount_pct(c: &Char, skill: &str) -> u32 {
             skill: s,
             applies_to: callings::AppliesTo::Both,
             requires_target_aura: None,
+            max_distance_yd,
             ..
-        } if s == skill)
+        } if s == skill && *max_distance_yd == 0.0)
     })
 }
 
@@ -325,9 +351,11 @@ pub(crate) fn amount_pct_on(
             skill: s,
             applies_to,
             requires_target_aura,
+            max_distance_yd,
             ..
         } => {
-            s == skill
+            *max_distance_yd == 0.0
+                && s == skill
                 && (*applies_to == callings::AppliesTo::Both || *applies_to == part)
                 && requires_target_aura.as_deref().is_none_or(&wears)
         }
@@ -631,7 +659,7 @@ pub(crate) fn aura_proc(
 ) -> Option<Proc> {
     let trigger = crate::rules::procs::Trigger {
         on: p.on,
-        skill: None,
+        skill: p.skill.as_deref(),
         yields_xp: false,
         school: None,
         ms: 0,
@@ -657,7 +685,7 @@ pub(crate) fn aura_proc(
         absorb_ms: 0,
         absorb_at_full_power: false,
         requires_target_aura: None,
-        energize_pct_of_base: 0,
+        energize_pct_of_base: p.energize_pct_of_base,
         target_auras: Vec::new(),
         spread_aura: 0.0,
         heal_allies_pct: 0,

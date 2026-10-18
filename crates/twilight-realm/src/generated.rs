@@ -386,9 +386,15 @@ fn talent_effect(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
         return proc(ranks, slot);
     }
     let mut object = first.params.clone();
-    let key = ["pct", "amount"]
+    let Some(key) = ["pct", "amount"]
         .into_iter()
-        .find(|k| object.contains_key(*k))?;
+        .find(|k| object.contains_key(*k))
+    else {
+        // A switch with no size (`no_min_range`): on at every rank.
+        object.insert("per_rank".into(), vec![1; ranks.len()].into());
+        object.insert("kind".into(), first.kind.clone().into());
+        return serde_json::from_value(Value::Object(object)).ok();
+    };
     object.remove(key);
     // An effect that can be a percent or a flat amount (`mod_stat`) reads which it was.
     object.insert("flat".into(), (key == "amount").into());

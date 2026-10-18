@@ -46,6 +46,14 @@ pub struct CallingDef {
 }
 
 impl CallingDef {
+    /// The skill or hidden ability with this key.
+    pub fn skill_by_key(&self, key: &str) -> Option<&Skill> {
+        self.skills
+            .iter()
+            .chain(&self.hidden_skills)
+            .find(|s| s.key == key)
+    }
+
     /// The hidden ability with this `realm_spell_id`.
     pub fn hidden_skill(&self, realm_spell_id: u32) -> Option<&Skill> {
         self.hidden_skills
@@ -298,6 +306,12 @@ pub struct AuraProc {
     /// The skill whose `skill_amount_pct` talents raise the damage.
     #[serde(default)]
     pub amount_skill: Option<String>,
+    /// Only for this skill (Rapid Fire's refund on Auto Shot).
+    #[serde(default)]
+    pub skill: Option<String>,
+    /// Give this percent of the player's base mana.
+    #[serde(default)]
+    pub energize_pct_of_base: u32,
 }
 
 /// What a `next_cast` aura does to the next cast of one of `skill`: an instant cast, a cast bar
@@ -316,6 +330,10 @@ pub struct NextCast {
     pub cost_pct: i32,
     #[serde(default)]
     pub duration_ms: i32,
+    /// The next cast goes off as this skill of the Calling instead, hidden or not (Explosive
+    /// Payload's shot in place of an Auto Shot).
+    #[serde(default)]
+    pub becomes: Option<String>,
     /// The skills' `SpellFamilyFlags` bits, resolved by the build, for the client's cast bar.
     #[serde(default)]
     pub family_bits: Vec<u8>,
@@ -500,7 +518,14 @@ pub enum TalentEffect {
         /// Only while the caster's aura of this aura row is on the target as the blow lands.
         #[serde(default)]
         requires_target_aura: Option<String>,
+        /// Only on a target within this many yards of the caster (Point Blank); 0 for any.
+        #[serde(default)]
+        max_distance_yd: f32,
     },
+    /// The skill's strikes skip this much more of the target's armour.
+    SkillArmorIgnore { skill: String, per_rank: Vec<u32> },
+    /// The skill (`ranged`: every `defense_type=ranged` skill) has no minimum range.
+    NoMinRange { skill: String, per_rank: Vec<u32> },
     /// The skill's rage gain rises by this many points.
     SkillRage { skill: String, per_rank: Vec<u32> },
     /// The skill's critical strike chance rises by this many percent.
@@ -675,6 +700,9 @@ pub enum TalentEffect {
     SkillCritDamagePct {
         #[serde(default)]
         builders: bool,
+        /// Only this skill's crits; every skill's when unset.
+        #[serde(default)]
+        skill: Option<String>,
         per_rank: Vec<u32>,
     },
     /// The skill's auras last this percent longer.
@@ -851,6 +879,8 @@ impl TalentEffect {
             | Self::SkillExtraTarget { per_rank, .. }
             | Self::SkillBonusCombo { per_rank, .. }
             | Self::SkillAmountPct { per_rank, .. }
+            | Self::SkillArmorIgnore { per_rank, .. }
+            | Self::NoMinRange { per_rank, .. }
             | Self::SkillRage { per_rank, .. }
             | Self::SkillCritPct { per_rank, .. }
             | Self::ConsumeHealPct { per_rank, .. }
@@ -1029,6 +1059,9 @@ pub enum Effect {
         /// A guaranteed critical strike on a target standing in this of the caster's.
         #[serde(default)]
         crit_if_target_in: Option<CritIf>,
+        /// This much of the target's armour is skipped for this strike (Puncturing Shaft).
+        #[serde(default)]
+        armor_ignore: Option<Linear>,
     },
     /// Flat damage of a school. Physical goes against armour, and through the melee table when
     /// `melee_hit_table`; any other school ignores armour, rolls only the level-based miss, and
