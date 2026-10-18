@@ -6780,7 +6780,16 @@
     "cooldown_ms": 15000,
     "school": 0,
     "prevention_type": 2,
-    "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance."
+    "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance.",
+    "effects": [
+     {
+      "kind": "blink",
+      "params": {
+       "distance_yd": 15,
+       "backward": true
+      }
+     }
+    ]
    }
   },
   {
@@ -6808,7 +6817,17 @@
     "name": "Guerilla Tactics",
     "school": 0,
     "prevention_type": 2,
-    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 10%. Stacks up to 3 times."
+    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 10%. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "moving_for",
+       "ms": 2000,
+       "apply_aura": "aura_guerilla_tactics_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -6821,7 +6840,17 @@
     "name": "Guerilla Tactics",
     "school": 0,
     "prevention_type": 2,
-    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 20%. Stacks up to 3 times."
+    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 20%. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "moving_for",
+       "ms": 2000,
+       "apply_aura": "aura_guerilla_tactics_2"
+      }
+     }
+    ]
    }
   },
   {
@@ -6834,7 +6863,17 @@
     "name": "Guerilla Tactics",
     "school": 0,
     "prevention_type": 2,
-    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 30%. Stacks up to 3 times."
+    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 30%. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "moving_for",
+       "ms": 2000,
+       "apply_aura": "aura_guerilla_tactics_3"
+      }
+     }
+    ]
    }
   },
   {
@@ -6847,7 +6886,17 @@
     "name": "Guerilla Tactics",
     "school": 0,
     "prevention_type": 2,
-    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 40%. Stacks up to 3 times."
+    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 40%. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "moving_for",
+       "ms": 2000,
+       "apply_aura": "aura_guerilla_tactics_4"
+      }
+     }
+    ]
    }
   },
   {
@@ -6860,7 +6909,17 @@
     "name": "Guerilla Tactics",
     "school": 0,
     "prevention_type": 2,
-    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 50%. Stacks up to 3 times."
+    "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 50%. Stacks up to 3 times.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "moving_for",
+       "ms": 2000,
+       "apply_aura": "aura_guerilla_tactics_5"
+      }
+     }
+    ]
    }
   },
   {
@@ -7250,7 +7309,17 @@
     "name": "Steadfast Aim",
     "school": 0,
     "prevention_type": 2,
-    "description": "Standing perfectly still for 2 seconds grants Entrenched, increasing your ranged attack speed by 5% and your ranged critical strike chance by 3%. Moving instantly cancels this effect."
+    "description": "Standing perfectly still for 2 seconds grants Entrenched, increasing your ranged attack speed by 5% and your ranged critical strike chance by 3%. Moving instantly cancels this effect.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "still_for",
+       "ms": 2000,
+       "apply_aura": "aura_entrenched_1"
+      }
+     }
+    ]
    }
   },
   {
@@ -7263,7 +7332,17 @@
     "name": "Steadfast Aim",
     "school": 0,
     "prevention_type": 2,
-    "description": "Standing perfectly still for 2 seconds grants Entrenched, increasing your ranged attack speed by 10% and your ranged critical strike chance by 6%. Moving instantly cancels this effect."
+    "description": "Standing perfectly still for 2 seconds grants Entrenched, increasing your ranged attack speed by 10% and your ranged critical strike chance by 6%. Moving instantly cancels this effect.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "still_for",
+       "ms": 2000,
+       "apply_aura": "aura_entrenched_2"
+      }
+     }
+    ]
    }
   },
   {

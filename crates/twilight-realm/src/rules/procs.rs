@@ -14,6 +14,8 @@ pub struct Trigger<'a> {
     pub yields_xp: bool,
     /// Only damage in this school (`damage_school=`).
     pub school: Option<School>,
+    /// How long a `moving_for` or `still_for` waits.
+    pub ms: u32,
 }
 
 /// What just happened.
@@ -31,12 +33,24 @@ pub struct Happened<'a> {
     pub amount: u32,
     /// The school of that damage.
     pub school: Option<School>,
+    /// For `moving_for` and `still_for`: how long the player had been moving or still before
+    /// this tick; `amount` is how long after it, in ms.
+    pub was_ms: u32,
 }
 
 impl Trigger<'_> {
     /// Whether `happened` sets this trigger off.
     pub fn fires(&self, happened: &Happened) -> bool {
+        let waited = match self.on {
+            // Each further `ms` of moving, so the n-th crossing fires as the first did.
+            ProcEvent::MovingFor => {
+                self.ms > 0 && happened.amount / self.ms > happened.was_ms / self.ms
+            }
+            ProcEvent::StillFor => happened.was_ms < self.ms && happened.amount >= self.ms,
+            _ => true,
+        };
         self.on == happened.event
+            && waited
             && self.skill.is_none_or(|s| happened.skill == Some(s))
             && (!self.yields_xp || happened.yields_xp)
             && self.school.is_none_or(|s| happened.school == Some(s))

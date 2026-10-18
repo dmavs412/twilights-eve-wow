@@ -128,6 +128,13 @@ pub(super) struct Skills {
     consumed: Option<(Aura, u32)>,
     /// A Blink cast and not yet landed: the next tick, which has the ground, moves the caster.
     blink: Option<PendingBlink>,
+    /// Seconds since the player's last step; `None` before the first.
+    since_step: Option<f32>,
+    /// Seconds the player has been moving without stopping, or standing still.
+    moving_secs: f32,
+    still_secs: f32,
+    /// The player's auras that their next step takes off (`break_on=move`), by spell id.
+    break_on_move: Vec<u32>,
     /// The channel under way, if any.
     channel: Option<Channel>,
     /// The ground areas up, and the point the cast under way was aimed at.
@@ -182,9 +189,15 @@ struct Channel {
 #[derive(Debug, Clone, Copy)]
 struct PendingBlink {
     from: [f32; 3],
+    /// The way it goes, and the way the caster faces after.
     orientation: f32,
+    faces: f32,
     distance_yd: f32,
 }
+
+/// How long after a step the player still counts as moving: the client reports a moving
+/// player at least every half second.
+const MOVING_GRACE_SECS: f32 = 0.75;
 
 /// How far a Blink steps between ground checks, and the most the ground may rise or fall over one
 /// step before the Blink stops short.
@@ -362,6 +375,17 @@ enum AuraKind {
     SkillAmount {
         skill: &'static str,
         pct: u32,
+        /// Applications so far, each adding `pct`, and the most (the row's `max_stacks`).
+        stacks: u32,
+        max_stacks: u32,
+    },
+    /// The player's ranged weapon shoots `pct` percent faster.
+    RangedHaste {
+        pct: u32,
+    },
+    /// The player's ranged attacks crit `pct` percent more often.
+    RangedCrit {
+        pct: u32,
     },
     /// The player's non-physical skills deal `pct` percent more damage.
     SpellDamagePct {
@@ -493,6 +517,7 @@ impl AuraKind {
             AuraKind::Stacks { count, .. } => count,
             AuraKind::PeriodicDamage { stacks, .. } => stacks,
             AuraKind::StackTo { count, .. } => count,
+            AuraKind::SkillAmount { stacks, .. } => stacks,
             _ => 1,
         }
     }
@@ -821,13 +846,42 @@ impl Skills {
         cells
     }
 
+    /// The percent the player's buffs make their ranged weapon shoot faster.
+    fn ranged_haste_pct(&self) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::RangedHaste { pct } => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// The percent the player's buffs add to their ranged crit chance.
+    fn ranged_crit_pct(&self) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::RangedCrit { pct } => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
     /// The percent the player's buffs raise `skill`'s amounts by.
     pub(super) fn skill_amount_pct(&self, skill: &str) -> u32 {
         self.auras
             .iter()
             .filter(|a| a.unit == self.me)
             .map(|a| match a.kind {
-                AuraKind::SkillAmount { skill: s, pct } if s == skill => pct,
+                AuraKind::SkillAmount {
+                    skill: s,
+                    pct,
+                    stacks,
+                    ..
+                } if s == skill => pct * stacks,
                 _ => 0,
             })
             .sum()
@@ -1011,6 +1065,7 @@ impl Skills {
             let for_skill = matches!(
                 a.kind,
                 AuraKind::SkillCrit { skill: s, .. }
+                | AuraKind::SkillAmount { skill: s, .. }
                 | AuraKind::SkillCost { skill: s, .. }
                 | AuraKind::SkillStacks { skill: s, .. } if s == skill
             );
@@ -1114,6 +1169,15 @@ impl Skills {
                 (old.kind, &mut aura.kind)
             {
                 *count = (held + *count).min(*max);
+            }
+            if let (
+                AuraKind::SkillAmount { stacks: held, .. },
+                AuraKind::SkillAmount {
+                    stacks, max_stacks, ..
+                },
+            ) = (old.kind, &mut aura.kind)
+            {
+                *stacks = (held + *stacks).min(*max_stacks);
             }
             if let (
                 AuraKind::PeriodicDamage { stacks: held, .. },
@@ -1488,6 +1552,65 @@ impl InWorld {
         self.go(skill, target, targets, true, c, rng, events)
     }
 
+    /// The player stepped: they are moving, and their `break_on=move` auras come off.
+    pub(crate) fn stepped(&mut self, events: &mut Vec<SessionEvent>) {
+        let s = &mut self.skills;
+        s.since_step = Some(0.0);
+        let gone = std::mem::take(&mut s.break_on_move);
+        let me = self.guid;
+        if !gone.is_empty() {
+            let faded = s.remove_where(|a| a.unit == me && gone.contains(&a.spell_id), events);
+            self.faded(&faded, events);
+        }
+    }
+
+    /// The movement clocks: moving while a step came in the last [`MOVING_GRACE_SECS`], still
+    /// otherwise; `moving_for` and `still_for` procs as they run.
+    pub(super) fn movement_tick(
+        &mut self,
+        dt: f32,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let s = &mut self.skills;
+        let moving = s.since_step.is_some_and(|t| t < MOVING_GRACE_SECS);
+        s.since_step = s.since_step.map(|t| t + dt);
+        let (clock, other, event) = if moving {
+            (
+                &mut s.moving_secs,
+                &mut s.still_secs,
+                callings::ProcEvent::MovingFor,
+            )
+        } else {
+            (
+                &mut s.still_secs,
+                &mut s.moving_secs,
+                callings::ProcEvent::StillFor,
+            )
+        };
+        *other = 0.0;
+        let was = clock::ms(*clock);
+        *clock += dt;
+        let now = clock::ms(*clock);
+        self.proc(
+            crate::rules::procs::Happened {
+                event,
+                skill: None,
+                yields_xp: false,
+                target: None,
+                amount: now,
+                school: None,
+                was_ms: was,
+            },
+            c,
+            rng,
+            events,
+            ticked,
+        );
+    }
+
     /// `CMSG_CANCEL_AUTO_REPEAT_SPELL`, or a shot that cannot go on: the shooting stops.
     pub(crate) fn stop_shooting(&mut self, events: &mut Vec<SessionEvent>) {
         if self.player.shooting.take().is_some() {
@@ -1523,6 +1646,7 @@ impl InWorld {
             }
         };
         let speed = self.player.stats.ranged.map_or(0, |r| r.attack_time_ms);
+        let speed = hasted_attack_time(speed, self.skills.ranged_haste_pct());
         self.player.shot_timer = clock::secs(speed);
         let done = self.go(skill, Some(target), targets, true, c, rng, events);
         ticked.leveled |= done.leveled;
@@ -1941,6 +2065,7 @@ impl InWorld {
             if let Some(&first) = hits.first() {
                 self.proc(
                     crate::rules::procs::Happened {
+                        was_ms: 0,
                         event: crate::callings::ProcEvent::DamageDone,
                         skill: Some(&skill.key),
                         yields_xp: false,
@@ -1960,6 +2085,7 @@ impl InWorld {
         self.faded(&gone, events);
         self.proc(
             crate::rules::procs::Happened {
+                was_ms: 0,
                 event: crate::callings::ProcEvent::Cast,
                 skill: Some(&skill.key),
                 yields_xp: false,
@@ -1979,6 +2105,7 @@ impl InWorld {
             // Its procs come after, so a point they add survives the spend.
             self.proc(
                 crate::rules::procs::Happened {
+                    was_ms: 0,
                     event: crate::callings::ProcEvent::Finisher,
                     skill: Some(&skill.key),
                     yields_xp: false,
@@ -2524,10 +2651,12 @@ impl InWorld {
             from_front,
             unavoidable,
         );
-        let table = if skill.meta.shape.defense_type.as_deref() == Some("ranged") {
-            formulas::ranged_table(table, from_front)
+        let ranged = skill.meta.shape.defense_type.as_deref() == Some("ranged");
+        let (table, crit) = if ranged {
+            let more = self.skills.ranged_crit_pct() * 100;
+            (formulas::ranged_table(table, from_front), crit + more)
         } else {
-            table
+            (table, crit)
         };
         match table.outcome(rng.below(ROLL)) {
             Outcome::Miss => Landed::Missed(SPELL_MISS_MISS),
@@ -2619,7 +2748,12 @@ impl InWorld {
                 let roll = weapon_roll(&stats, weapon, rng) * weapon_pct as f32 / 100.0;
                 let shield =
                     stats.block_value * crate::talents::block_value_pct(c, &skill.key) / 100;
-                let raw = roll + (sized(bonus) + per_combo(more) + shield) as f32;
+                // Talents raise the bonus; a buff for the skill raises the whole strike
+                // (Guerilla Tactics).
+                let talents = crate::talents::amount_pct(c, &skill.key);
+                let bonus = scaled(bonus.at(level, ap), talents);
+                let raw = roll + (bonus + per_combo(more) + shield) as f32;
+                let raw = raw * (100 + self.skills.skill_amount_pct(&skill.key)) as f32 / 100.0;
                 let dealt = self.strike(
                     skill.spell_id,
                     target,
@@ -3139,7 +3273,10 @@ impl InWorld {
                     }
                 }
             }
-            Effect::Blink { distance_yd } => {
+            Effect::Blink {
+                distance_yd,
+                backward,
+            } => {
                 let me = self.guid;
                 self.skills.remove_where(
                     |a| {
@@ -3151,9 +3288,11 @@ impl InWorld {
                     },
                     events,
                 );
+                let back = if backward { std::f32::consts::PI } else { 0.0 };
                 self.skills.blink = Some(PendingBlink {
                     from: c.position,
-                    orientation: c.orientation,
+                    orientation: (c.orientation + back).rem_euclid(std::f32::consts::TAU),
+                    faces: c.orientation,
                     distance_yd,
                 });
             }
@@ -3231,6 +3370,7 @@ impl InWorld {
                 self.skills.consumed = Some((gone, duration_ms));
                 self.proc(
                     crate::rules::procs::Happened {
+                        was_ms: 0,
                         event: crate::callings::ProcEvent::Consume,
                         skill: Some(&skill.key),
                         yields_xp: false,
@@ -3486,6 +3626,7 @@ impl InWorld {
     ) {
         self.proc(
             crate::rules::procs::Happened {
+                was_ms: 0,
                 event: crate::callings::ProcEvent::MeleeHit,
                 skill: None,
                 yields_xp: false,
@@ -3593,6 +3734,7 @@ impl InWorld {
         if let Some((event, target)) = event {
             self.proc(
                 crate::rules::procs::Happened {
+                    was_ms: 0,
                     event,
                     skill: None,
                     yields_xp: false,
@@ -4108,6 +4250,7 @@ impl InWorld {
                             ] {
                                 self.proc(
                                     crate::rules::procs::Happened {
+                                        was_ms: 0,
                                         event,
                                         skill,
                                         yields_xp: false,
@@ -4393,7 +4536,7 @@ impl InWorld {
             }
             gone += step;
         }
-        self.teleport(c, at, b.orientation, events);
+        self.teleport(c, at, b.faces, events);
     }
 
     /// A shield on the player under `spell_id` that soaks `amount` for `duration_ms`; a new one
@@ -4483,7 +4626,19 @@ impl InWorld {
                 callings::AuraEffect::SkillAmountPct { skill, pct } => AuraKind::SkillAmount {
                     skill: skill.as_str(),
                     pct: *pct,
+                    stacks: 1,
+                    max_stacks: if def.row.stack_rule.as_deref() == Some("stack") {
+                        def.row.max_stacks.max(1)
+                    } else {
+                        1
+                    },
                 },
+                callings::AuraEffect::ModRangedHastePct { pct } => {
+                    AuraKind::RangedHaste { pct: *pct }
+                }
+                callings::AuraEffect::ModRangedCritPct { pct } => {
+                    AuraKind::RangedCrit { pct: *pct }
+                }
                 callings::AuraEffect::NextCast(next) => AuraKind::NextCast {
                     next,
                     group: def.row.exclusive_group.as_deref(),
@@ -4543,6 +4698,9 @@ impl InWorld {
                 charges: def.charges,
             };
             self.skills.apply(aura, events);
+            if unit == self.guid && def.row.break_on.contains_key("move") {
+                self.skills.break_on_move.push(def.spell_id);
+            }
             if matches!(kind, AuraKind::RunSpeed { .. } | AuraKind::MoveSlow { .. }) {
                 self.update_speed(unit, events);
             }

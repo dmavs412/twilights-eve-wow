@@ -12938,8 +12938,17 @@
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "blink",
+      "params": {
+       "distance_yd": 15,
+       "backward": true
+      },
+      "realm_only": false
+     }
+    ],
     "description": "You instantly leap backward 15 yards to escape melee range and maintain your firing distance."
    },
    {
@@ -13006,8 +13015,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "moving_for",
+           "ms": 2000,
+           "apply_aura": "aura_guerilla_tactics_1"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 10%. Stacks up to 3 times."
        },
        {
@@ -13031,8 +13050,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "moving_for",
+           "ms": 2000,
+           "apply_aura": "aura_guerilla_tactics_2"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 20%. Stacks up to 3 times."
        },
        {
@@ -13056,8 +13085,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "moving_for",
+           "ms": 2000,
+           "apply_aura": "aura_guerilla_tactics_3"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 30%. Stacks up to 3 times."
        },
        {
@@ -13081,8 +13120,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "moving_for",
+           "ms": 2000,
+           "apply_aura": "aura_guerilla_tactics_4"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 40%. Stacks up to 3 times."
        },
        {
@@ -13106,8 +13155,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "moving_for",
+           "ms": 2000,
+           "apply_aura": "aura_guerilla_tactics_5"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Moving continuously for 2 seconds grants a stacking buff that increases the damage of your next Snapshot by 50%. Stacks up to 3 times."
        }
       ]
@@ -13975,8 +14034,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "still_for",
+           "ms": 2000,
+           "apply_aura": "aura_entrenched_1"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Standing perfectly still for 2 seconds grants Entrenched, increasing your ranged attack speed by 5% and your ranged critical strike chance by 3%. Moving instantly cancels this effect."
        },
        {
@@ -14000,8 +14069,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "still_for",
+           "ms": 2000,
+           "apply_aura": "aura_entrenched_2"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Standing perfectly still for 2 seconds grants Entrenched, increasing your ranged attack speed by 10% and your ranged critical strike chance by 6%. Moving instantly cancels this effect."
        }
       ]
@@ -14254,6 +14333,237 @@
     "modelled": false,
     "effects": [],
     "description": "Ranged attack speed increased by 40%. Auto-shots refund mana."
+   },
+   {
+    "key": "aura_guerilla_tactics_1",
+    "name": "Guerilla Tactics",
+    "spell_id": 19295,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "snapshot",
+       "pct": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Snapshot deals 10% more damage per stack."
+   },
+   {
+    "key": "aura_guerilla_tactics_2",
+    "name": "Guerilla Tactics",
+    "spell_id": 19297,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "snapshot",
+       "pct": 20
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Snapshot deals 20% more damage per stack."
+   },
+   {
+    "key": "aura_guerilla_tactics_3",
+    "name": "Guerilla Tactics",
+    "spell_id": 19298,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "snapshot",
+       "pct": 30
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Snapshot deals 30% more damage per stack."
+   },
+   {
+    "key": "aura_guerilla_tactics_4",
+    "name": "Guerilla Tactics",
+    "spell_id": 19301,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "snapshot",
+       "pct": 40
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Snapshot deals 40% more damage per stack."
+   },
+   {
+    "key": "aura_guerilla_tactics_5",
+    "name": "Guerilla Tactics",
+    "spell_id": 19300,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "snapshot",
+       "pct": 50
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Snapshot deals 50% more damage per stack."
+   },
+   {
+    "key": "aura_entrenched_1",
+    "name": "Entrenched",
+    "spell_id": 19559,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "break_on": {
+     "move": true
+    },
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 5
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_ranged_crit_pct",
+      "params": {
+       "pct": 3
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ranged attack speed increased by 5% and ranged critical strike chance by 3%."
+   },
+   {
+    "key": "aura_entrenched_2",
+    "name": "Entrenched",
+    "spell_id": 19560,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "break_on": {
+     "move": true
+    },
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_ranged_haste_pct",
+      "params": {
+       "pct": 10
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_ranged_crit_pct",
+      "params": {
+       "pct": 6
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Ranged attack speed increased by 10% and ranged critical strike chance by 6%."
    }
   ],
   "name": "Ranger",

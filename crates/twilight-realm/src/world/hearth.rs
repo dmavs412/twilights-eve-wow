@@ -108,6 +108,7 @@ impl InWorld {
         }
         if crate::space::distance(from, to) > MOVE_EPSILON {
             self.interrupt_cast(events);
+            self.stepped(events);
         }
         true
     }

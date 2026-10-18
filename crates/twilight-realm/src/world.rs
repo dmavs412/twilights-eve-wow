@@ -529,6 +529,7 @@ impl InWorld {
             }
         }
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
+        self.movement_tick(dt, c, rng, events, &mut ticked);
         // A next-cast buff that ran out puts the client's cast bar back.
         self.sync_next_cast_mods(c, events);
         self.call_for_help(events);
@@ -1068,6 +1069,7 @@ impl InWorld {
         }
         self.proc(
             crate::rules::procs::Happened {
+                was_ms: 0,
                 event: crate::callings::ProcEvent::Kill,
                 skill: None,
                 yields_xp: base_xp > 0,

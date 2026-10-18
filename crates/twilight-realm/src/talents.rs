@@ -549,6 +549,7 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
         .filter_map(|(t, e, r)| match e {
             TalentEffect::Proc {
                 on,
+                ms,
                 skill,
                 yields_xp,
                 chance,
@@ -585,6 +586,7 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                     skill: skill.as_deref(),
                     yields_xp: *yields_xp,
                     school: *damage_school,
+                    ms: *ms,
                 };
                 trigger.fires(happened).then(|| Proc {
                     spell_id: t.rank_spells.get(r).copied().unwrap_or(0),
@@ -632,6 +634,7 @@ pub(crate) fn aura_proc(
         skill: None,
         yields_xp: false,
         school: None,
+        ms: 0,
     };
     trigger.fires(happened).then(|| Proc {
         spell_id,

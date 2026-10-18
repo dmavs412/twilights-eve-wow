@@ -190,6 +190,10 @@ pub struct SpellMeta {
 pub enum AuraEffect {
     /// The skill's critical strike chance rises by `pct` percent.
     SkillCritPct { skill: String, pct: u32 },
+    /// The player's ranged weapon shoots `pct` percent faster.
+    ModRangedHastePct { pct: u32 },
+    /// The player's ranged attacks crit `pct` percent more often.
+    ModRangedCritPct { pct: u32 },
     /// The unit's run speed changes by `pct` percent: faster when positive, a snare when negative.
     ModRunSpeed { pct: i32 },
     /// The player's dodge chance rises by `pct` percent.
@@ -555,6 +559,9 @@ pub enum TalentEffect {
     /// event's target.
     Proc {
         on: ProcEvent,
+        /// How long `moving_for` or `still_for` waits.
+        #[serde(default)]
+        ms: u32,
         /// Only for a cast of this skill.
         #[serde(default)]
         skill: Option<String>,
@@ -791,6 +798,11 @@ pub enum ProcEvent {
     PeriodicTick,
     /// The character's cast or damage-over-time tick damages a target (once a cast or tick).
     DamageDone,
+    /// The character has moved for the proc's `ms` without stopping, and again each further
+    /// `ms`.
+    MovingFor,
+    /// The character has stood still for the proc's `ms`; once, until they move again.
+    StillFor,
 }
 
 /// One of the five stats, in the order of [`crate::rules::stats::CharacterStats::base`].
@@ -1174,7 +1186,12 @@ pub enum Effect {
     },
     /// The caster teleports `distance_yd` along their facing, as far as the ground lets them, and
     /// sheds their stuns and roots first.
-    Blink { distance_yd: f32 },
+    Blink {
+        distance_yd: f32,
+        /// Straight back from the facing instead (Vault).
+        #[serde(default)]
+        backward: bool,
+    },
     /// Takes the caster's aura `aura_spell_id` off the target, then pays its outcome: damage of
     /// `amount_pct` percent of the hit `amount` of the skill `amount_of` names, in its `school`, and
     /// `energize_pct_of_max` percent of the caster's power bar. Nothing when the aura is absent.
