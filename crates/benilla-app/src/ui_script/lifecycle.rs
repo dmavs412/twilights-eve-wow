@@ -86,7 +86,8 @@ fn install_addon_asset_resolvers(world: &mut World, script: &mut UiScript) {
     let font_root = root.clone();
     script.set_texture_probe(Box::new(move |path| {
         benilla_assets::sprite_candidates(path).iter().any(|c| {
-            chain.lock_recover().contains(c)
+            benilla_assets::layer_image(c).is_some()
+                || chain.lock_recover().contains(c)
                 || root
                     .as_deref()
                     .is_some_and(|r| benilla_assets::loose_addon_file(r, c).is_some())

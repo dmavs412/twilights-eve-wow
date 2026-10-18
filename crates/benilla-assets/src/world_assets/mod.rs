@@ -118,8 +118,8 @@ pub fn set_layer_images(read: fn(&str) -> Option<&'static [u8]>) {
     let _ = LAYER_IMAGES.set(read);
 }
 
-/// A layer image's bytes for a normalized candidate path, if it is one.
-fn layer_image(candidate: &str) -> Option<&'static [u8]> {
+/// A layer image's bytes for a normalized candidate path ([`sprite_candidates`]), if it is one.
+pub fn layer_image(candidate: &str) -> Option<&'static [u8]> {
     let rel = candidate.strip_prefix(LAYER_PREFIX)?;
     (LAYER_IMAGES.get()?)(&rel.replace('\\', "/"))
 }
