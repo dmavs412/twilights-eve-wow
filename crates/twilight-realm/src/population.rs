@@ -177,9 +177,8 @@ impl Population {
         self.scanned_at = None;
     }
 
-    /// A mob of `spawn` died: it comes back once the player has been away long enough.
-    pub(crate) fn died(&mut self, spawn: u32, rank: u32) {
-        let wait = respawn::wait(rank);
+    /// A mob of `spawn` died: it comes back once the player has been away `wait` seconds.
+    pub(crate) fn died(&mut self, spawn: u32, wait: f32) {
         self.dead.push(Corpse {
             spawn,
             wait,

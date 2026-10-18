@@ -733,7 +733,11 @@ impl InWorld {
         drop_cast(mob, events);
         // A Phased Dungeon's dead stay down until its Run resets.
         if self.phase == crate::phased::Phase::OpenWorld {
-            self.population.died(mob.spawn, mob.template.rank);
+            let t = mob.template;
+            let wait = t
+                .respawn_secs
+                .unwrap_or_else(|| crate::rules::respawn::wait(t.rank));
+            self.population.died(mob.spawn, wait);
         }
         self.skills.target_died(mob.guid, events);
         if self.player.attacking == Some(mob.guid) {

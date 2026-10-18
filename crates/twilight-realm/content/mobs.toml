@@ -571,6 +571,54 @@ detection_range = 20
 # `guid` is the spawn's low guid (24 bits); a hand-written spawn is a camp of its own. `position`
 # is WoW `[x, y, z]`, z the terrain height there, which the host's ground replaces once it is
 # loaded. The low camps hold 9000001..=9000056 and the wild camps 9001001 up.
+# Echo Ridge Mine's end chamber (#85, #89), hand-written; their spawns are in
+# elwynn_overrides.toml's `added`.
+
+# A Twilight's Hammer cultist the kobolds dig for: melee only. Display 2882 is vmangos's Twilight
+# Acolyte's (entry 4809, Blackfathom Deeps), a robed human.
+[[template]]
+entry = 96001
+name = "Twilight Initiate"
+creature_type = 7
+display_id = 2882
+# Monster: hostile to every player race.
+faction_template = 14
+unit_class = "warrior"
+level_min = 6
+level_max = 7
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The elite at the mine's deepest point, who carries the Smoldering Twilight Idol: the Kobold
+# Geomancer's display (163) and faction (26). Tuned by tests/echo_ridge.rs, white swings only
+# against a human warrior with the starting Chest and the Stone Gnoll Hammer, over 40 seeds:
+# health 1.6, damage 1.1 lets a level 8 win 26 of 40 and a level 7 only 10.
+[[template]]
+entry = 96002
+name = "Geomancer Vurx"
+creature_type = 7
+rank = 1
+display_id = 163
+faction_template = 26
+unit_class = "mage"
+level_min = 7
+level_max = 7
+health_multiplier = 1.6
+damage_multiplier = 1.1
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+# Five minutes away before it comes back.
+respawn_secs = 300.0
+spells = ["corruption_creature"]
+
 [[spawn]]
 guid = 9000100
 entry = 3101

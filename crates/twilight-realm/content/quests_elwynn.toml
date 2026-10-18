@@ -1,1 +1,41 @@
 # Story Quests in Elwynn Forest (#85): the same schema as quests.toml, kind "story".
+
+# ── Echo Ridge Mine and the Idol (#85) ───────────────────────────────────────────────────────
+#
+# The spec named these 92001 and 92002; Wailing Caverns' quests in quests.toml already hold
+# those ids, so they are 94001 and 94002.
+
+# Begun by the Smoldering Twilight Idol, which Geomancer Vurx drops; Marshal McBride on the Abbey
+# steps takes it in.
+[[quest]]
+id = 94001
+kind = "story"
+giver = "item"
+ender = 197
+level = 7
+title = "The Idol in the Deep"
+objectives = "Bring the Smoldering Twilight Idol to Marshal McBride on the steps of Northshire Abbey."
+details = "The idol is warm to the touch, though no fire burns near it. Twilight wax has run down its sides and hardened, and something pulses beneath it like a slow heartbeat. The kobold who carried it wasn't digging for candles. Someone was paying him to dig. Marshal McBride at the Abbey should see this."
+progress = "You've got something there, haven't you? Out with it."
+completion = "Twilight's Hammer. I'd hoped never to see that mark this side of the mountains. Kobolds don't dig toward an abbey by chance. That mine runs under our feet, and whatever took the Abbey came up through the floor."
+money = 0
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 980001, count = 1 }]
+
+# McBride's next step: finding Brother Neals inside the Abbey is the task.
+[[quest]]
+id = 94002
+kind = "story"
+giver = 197
+ender = 952
+after = 94001
+level = 8
+title = "Into the Abbey"
+objectives = "Find Brother Neals inside Northshire Abbey."
+details = "We lost the Abbey in a night, and we never knew how. Now we do. Brother Neals was at vespers when it fell, and no one has seen him come out. If any of the brothers lived, he'd be the one stubborn enough to. Go in through the front doors, find him, and find out what's down there."
+progress = "-"
+completion = "Light be praised, a living face! They came up through the undercroft, chanting, and the candles never went out. I've hidden by this stair for days. Listen. What they're doing below isn't finished."
+money = 0
+tokens = 0
+zone_or_sort = 12

@@ -260,6 +260,12 @@ fn shipped() -> &'static [Quest] {
         }
         for q in &quests {
             check(q, &|id| quests.iter().any(|o| o.id == id));
+            assert_eq!(
+                quests.iter().filter(|o| o.id == q.id).count(),
+                1,
+                "quest id {} is used twice in the quest files",
+                q.id
+            );
         }
         for t in shipped_items().item.iter().filter(|t| t.start_quest != 0) {
             assert!(

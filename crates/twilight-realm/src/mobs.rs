@@ -74,6 +74,10 @@ pub(crate) struct Template {
     /// It carries a shield (`creature_equip_template`): a mob blocks only with one.
     #[serde(default)]
     pub(crate) shield: bool,
+    /// Seconds the player must be away before it respawns, in place of its rank's
+    /// (`rules::respawn`): a named elite's longer wait.
+    #[serde(default)]
+    pub(crate) respawn_secs: Option<f32>,
     /// The Creature Spells it casts in a fight (`content/creature_spells.toml` keys).
     #[serde(default)]
     pub(crate) spells: Vec<String>,
@@ -159,6 +163,20 @@ struct Overrides {
     /// Entries whose spawns are deleted.
     removed: Vec<u32>,
     moved: Vec<Moved>,
+    /// Spawns added by hand, each a camp of its own; they keep their own levels, past the Level
+    /// Bands.
+    #[serde(default)]
+    added: Vec<Added>,
+}
+
+#[derive(Deserialize)]
+struct Added {
+    guid: u32,
+    entry: u32,
+    level_min: u8,
+    level_max: u8,
+    position: [f32; 3],
+    orientation: f32,
 }
 
 #[derive(Deserialize)]
@@ -275,6 +293,25 @@ pub(crate) fn content() -> &'static Mobs {
             if let Some(c) = levels {
                 [s.level_min, s.level_max] = c.levels;
             }
+        }
+        for a in overrides.added {
+            let t = template
+                .iter()
+                .find(|t| t.entry == a.entry)
+                .unwrap_or_else(|| panic!("added spawn {} names no template", a.guid));
+            spawn.push(Spawn {
+                guid: a.guid,
+                entry: a.entry,
+                level_min: a.level_min,
+                level_max: a.level_max.max(a.level_min),
+                position: a.position,
+                orientation: a.orientation,
+                display_id: t.display_id,
+                wander_radius: 0.0,
+                camp: a.guid,
+                map: crate::content::EASTERN_KINGDOMS,
+                phase: Phase::OpenWorld,
+            });
         }
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
             .expect("content/wailing_caverns.toml parses");
@@ -707,11 +744,18 @@ mod tests {
             assert_eq!((s.level_min, s.level_max), (6, 8), "thug {}", s.guid);
         }
         // Kobold Laborer, all of them in Echo Ridge Mine at the valley's far end.
-        let laborers: Vec<_> = content().spawn.iter().filter(|s| s.entry == 80).collect();
+        let (added, laborers): (Vec<_>, Vec<_>) = content()
+            .spawn
+            .iter()
+            .filter(|s| s.entry == 80)
+            .partition(|s| s.guid >= 960_000);
         assert_eq!(laborers.len(), 25);
         assert!(laborers
             .iter()
             .all(|s| (s.level_min, s.level_max) == (6, 7)));
+        // The deep tunnels' hand-added ones (#89) keep their own levels, past the band.
+        assert!(!added.is_empty());
+        assert!(added.iter().all(|s| s.level_min >= 4 && s.level_max <= 6));
         // Young Wolf, which also roams outside the valley toward Goldshire.
         let wolves: Vec<_> = content().spawn.iter().filter(|s| s.entry == 299).collect();
         let (inside, outside): (Vec<_>, Vec<_>) =

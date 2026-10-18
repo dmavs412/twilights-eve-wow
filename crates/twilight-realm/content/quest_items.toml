@@ -29,4 +29,10 @@ item = [
   # so the bags show how many the character has. No vendor buys it (no sell price). Its display
   # is the amethyst's (INV_Misc_Gem_Amethyst_01). The entry is outside 1.12's item range.
   { entry = 90001, name = "Twilight Token", quality = 2, item_level = 1, class = 15, display_id = 7401, stackable = 100 },
+  # Echo Ridge Mine's Quest Starter (#85): it begins The Idol in the Deep. Its display is
+  # vmangos's Carved Stone Idol's (item 2636).
+  { entry = 980001, name = "Smoldering Twilight Idol", quality = 1, item_level = 7, class = 12, display_id = 2551, max_count = 1, start_quest = 94001 },
 ]
+
+# Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done.
+starter_drop = [{ item = 980001, from = [96002], chance = 100 }]
