@@ -141,6 +141,10 @@ struct Player {
     attacking: Option<u64>,
     /// The last swing refusal sent, so it is sent once and not every tick.
     refused: Option<AttackSwingError>,
+    /// An auto-repeat shot's `(spell id, target)`, from its cast until it stops.
+    shooting: Option<(u32, u64)>,
+    /// Seconds until the next auto-repeat shot; 0 is ready.
+    shot_timer: f32,
     /// Seconds into the current health-regeneration tick.
     regen: f32,
     in_combat: bool,
@@ -274,6 +278,8 @@ impl InWorld {
                 power: Power::fresh(&stats),
                 swing_timer: 0.0,
                 off_swing_timer: 0.0,
+                shooting: None,
+                shot_timer: 0.0,
                 attacking: None,
                 refused: None,
                 regen: 0.0,
@@ -496,6 +502,7 @@ impl InWorld {
         let p = &mut self.player;
         p.swing_timer = (p.swing_timer - dt).max(0.0);
         p.off_swing_timer = (p.off_swing_timer - dt).max(0.0);
+        p.shot_timer = (p.shot_timer - dt).max(0.0);
 
         // Hostile mobs notice a living player who comes too close, and bring their camp.
         if p.alive() {
@@ -515,6 +522,7 @@ impl InWorld {
 
         self.dazed_wake(c, host, events);
         self.player_swing(c, rng, events, &mut ticked);
+        self.auto_shot(c, rng, events, &mut ticked);
         for i in 0..self.mobs.len() {
             if self.runs(self.mobs[i].guid) {
                 self.mob_tick(i, dt, host, c, rng, events, &mut ticked);

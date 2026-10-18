@@ -6632,6 +6632,42 @@
    }
   },
   {
+   "spell_id": 75,
+   "calling": "ranger",
+   "key": "auto_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Auto Shot",
+    "cost": 0.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "auto_repeat": true,
+    "dmg_class": 3,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Automatically shoots the target with your ranged weapon until cancelled.",
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       }
+      }
+     }
+    ],
+    "range_index": 114,
+    "cast_time_index": 1
+   }
+  },
+  {
    "spell_id": 3044,
    "calling": "ranger",
    "key": "snapshot",
@@ -6648,7 +6684,20 @@
     "equipped_subclass_mask": 851980,
     "equipped_inventory_mask": 100696064,
     "description": "Instant cast. Low mana cost. Your primary mobile filler. Fires a quick physical arrow at the target.",
-    "range_index": 35,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 13,
+        "per_level": 1.3,
+        "per_ap": 0
+       }
+      }
+     }
+    ],
+    "range_index": 114,
     "cast_time_index": 1
    }
   },
@@ -6668,7 +6717,20 @@
     "equipped_subclass_mask": 851980,
     "equipped_inventory_mask": 100696064,
     "description": "Your heavy artillery. Deals massive physical damage and naturally ignores a flat amount of the target's armor.",
-    "range_index": 35,
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "bonus": {
+        "base": 20,
+        "per_level": 3.5,
+        "per_ap": 0
+       }
+      }
+     }
+    ],
+    "range_index": 114,
     "cast_time_index": 14
    }
   },
@@ -6688,7 +6750,21 @@
     "equipped_subclass_mask": 851980,
     "equipped_inventory_mask": 100696064,
     "description": "Sinks a jagged arrow into the target, dealing physical damage over time and slowing their movement speed by 30% for 8 seconds.",
-    "range_index": 35,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_barbed_arrow"
+      }
+     },
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "apply_aura": "aura_barbed_arrow"
+      }
+     }
+    ],
+    "range_index": 114,
     "cast_time_index": 1
    }
   },

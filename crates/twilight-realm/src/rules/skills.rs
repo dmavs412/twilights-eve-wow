@@ -53,6 +53,16 @@ pub fn ability_table(
     (table, white.crit)
 }
 
+/// [`ability_table`] for a shot: vanilla ranged attacks are never parried, and dodged only from
+/// the front.
+pub fn ranged_table(table: HitTable, from_front: bool) -> HitTable {
+    HitTable {
+        dodge: if from_front { table.dodge } else { 0 },
+        parry: 0,
+        ..table
+    }
+}
+
 /// A weapon roll's attack-power part: `AP / 14 × speed`.
 pub fn ap_damage(attack_power: i32, speed_secs: f32) -> f32 {
     attack_power.max(0) as f32 / 14.0 * speed_secs

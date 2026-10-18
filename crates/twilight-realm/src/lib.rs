@@ -129,6 +129,8 @@ pub enum RealmCommand {
     },
     /// Stop auto-attack.
     AttackStop,
+    /// Stop an auto-repeat shot (`CMSG_CANCEL_AUTO_REPEAT_SPELL`).
+    CancelAutoRepeat,
     /// Cast a skill; `target` is its unit target, `None` for a self or area skill.
     CastSpell {
         spell_id: u32,
@@ -901,6 +903,11 @@ impl Realm {
             RealmCommand::AttackStop => {
                 if let Some(w) = &mut self.world {
                     w.stop_attack(&mut self.events);
+                }
+            }
+            RealmCommand::CancelAutoRepeat => {
+                if let Some(w) = &mut self.world {
+                    w.stop_shooting(&mut self.events);
                 }
             }
             RealmCommand::CastSpell { spell_id, target } => self.cast(spell_id, target, None),

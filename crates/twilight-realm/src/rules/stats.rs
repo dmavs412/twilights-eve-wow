@@ -55,6 +55,9 @@ pub struct CharacterStats {
     pub off_hand: Option<OffHand>,
     /// The percent talents raise the off hand's damage by.
     pub offhand_damage_pct: u32,
+    /// The bow, gun, crossbow or thrown weapon in the ranged slot; `None` without one (a wand
+    /// is no ranged weapon here).
+    pub ranged: Option<Ranged>,
     pub weapon_skill: u16,
     pub defense: u16,
 }
@@ -66,6 +69,17 @@ pub struct OffHand {
     pub max_damage: f32,
     pub attack_time_ms: u32,
 }
+
+/// A ranged weapon's shot before armour, ranged attack power included.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Ranged {
+    pub min_damage: f32,
+    pub max_damage: f32,
+    pub attack_time_ms: u32,
+}
+
+/// Ranged weapon subclasses that shoot: bow, gun, thrown, crossbow (`ItemSubclassWeapon`).
+const SHOOTING_SUBCLASSES: [u32; 4] = [2, 3, 16, 18];
 
 /// The share of its damage an off-hand swing deals (vmangos `OFF_HAND` damage 50%).
 pub const OFF_HAND_DAMAGE_PCT: u32 = 50;
@@ -189,6 +203,8 @@ impl CharacterStats {
                         g.off_weapon = Some((min, max, t.speed_ms));
                     } else if main_hand {
                         g.weapon = Some((min, max, t.speed_ms));
+                    } else if SHOOTING_SUBCLASSES.contains(&t.subclass) {
+                        g.ranged = Some((min, max, t.speed_ms));
                     }
                 }
             }
@@ -245,6 +261,15 @@ impl CharacterStats {
                 }
             }),
             offhand_damage_pct: 0,
+            // Ranged attack power is agility, one for one, for now.
+            ranged: gear.ranged.map(|(min, max, time_ms)| {
+                let ap_damage = agi as f32 / 14.0 * time_ms as f32 / 1000.0;
+                Ranged {
+                    min_damage: min + ap_damage,
+                    max_damage: max + ap_damage,
+                    attack_time_ms: time_ms,
+                }
+            }),
             weapon_skill: skill,
             defense,
         }
@@ -276,6 +301,8 @@ struct Gear {
     weapon: Option<(f32, f32, u32)>,
     /// The off-hand weapon's `(min, max, speed ms)`.
     off_weapon: Option<(f32, f32, u32)>,
+    /// The shooting ranged weapon's `(min, max, speed ms)`.
+    ranged: Option<(f32, f32, u32)>,
     /// The shield's block value, when one is worn.
     shield_block: Option<u32>,
 }

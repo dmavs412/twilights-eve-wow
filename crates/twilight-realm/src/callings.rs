@@ -979,6 +979,8 @@ pub enum Weapon {
     Normal,
     /// Attack power at the normalized speed.
     Normalized,
+    /// The ranged weapon's shot, ranged attack power at its speed; nothing without one.
+    Ranged,
 }
 
 /// Where a target stands for a strike to be a guaranteed critical strike.

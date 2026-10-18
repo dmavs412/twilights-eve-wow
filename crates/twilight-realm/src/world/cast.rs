@@ -63,6 +63,7 @@ const SPELL_FAILED_AFFECTING_COMBAT: u8 = 0x00;
 const SPELL_FAILED_BAD_TARGETS: u8 = 0x0a;
 const SPELL_FAILED_CASTER_AURASTATE: u8 = 0x12;
 const SPELL_FAILED_CASTER_DEAD: u8 = 0x13;
+const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
 const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
 const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
@@ -1449,9 +1450,14 @@ impl InWorld {
             events.push(refused(spell_id, SPELL_FAILED_SPELL_IN_PROGRESS));
             return ticked;
         }
+        let shape = &skill.meta.shape;
+        // An auto-repeat shot starts shooting; each shot comes on its own timer.
+        if shape.cast_kind.as_deref() == Some("auto_repeat") {
+            self.player.shooting = target.map(|t| (spell_id, t));
+            return ticked;
+        }
         // A new cast ends a channel under way.
         self.end_channel(true, events);
-        let shape = &skill.meta.shape;
         if shape.cast_kind.as_deref() == Some("channel") && shape.channel_ms > 0 {
             self.start_channel(skill, target, &targets, c, events);
             return ticked;
@@ -1480,6 +1486,50 @@ impl InWorld {
             return ticked;
         }
         self.go(skill, target, targets, true, c, rng, events)
+    }
+
+    /// `CMSG_CANCEL_AUTO_REPEAT_SPELL`, or a shot that cannot go on: the shooting stops.
+    pub(crate) fn stop_shooting(&mut self, events: &mut Vec<SessionEvent>) {
+        if self.player.shooting.take().is_some() {
+            events.push(SessionEvent::CancelAutoRepeat);
+        }
+    }
+
+    /// The auto-repeat shot, when its timer is up: at the ranged weapon's speed, held while a cast
+    /// bar runs or the target is behind, stopped when the target dies or leaves the shot's range.
+    pub(super) fn auto_shot(
+        &mut self,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let Some((spell_id, target)) = self.player.shooting else {
+            return;
+        };
+        let Some(skill) = crate::talents::skill(c, spell_id) else {
+            self.stop_shooting(events);
+            return;
+        };
+        if self.player.shot_timer > 0.0 || self.skills.casting.is_some() {
+            return;
+        }
+        let targets = match self.check(skill, Some(target), false, c) {
+            Ok(targets) => targets,
+            Err(SPELL_FAILED_UNIT_NOT_INFRONT) => return,
+            Err(_) => {
+                self.stop_shooting(events);
+                return;
+            }
+        };
+        let speed = self.player.stats.ranged.map_or(0, |r| r.attack_time_ms);
+        self.player.shot_timer = clock::secs(speed);
+        let done = self.go(skill, Some(target), targets, true, c, rng, events);
+        ticked.leveled |= done.leveled;
+        ticked.discovered |= done.discovered;
+        if !self.mobs.iter().any(|m| m.guid == target && m.alive()) {
+            self.stop_shooting(events);
+        }
     }
 
     /// A channelled `skill` starts at its first target: paid now, its bar on the client, its
@@ -2248,6 +2298,16 @@ impl InWorld {
         if blood > 0 && blood >= p.health {
             return Err(SPELL_FAILED_NO_POWER);
         }
+        // A shot needs a bow, gun, crossbow or thrown weapon in the ranged slot.
+        let wants_ranged = skill
+            .meta
+            .gates
+            .requires_weapon
+            .iter()
+            .any(|w| w == "any_ranged");
+        if wants_ranged && p.stats.ranged.is_none() {
+            return Err(SPELL_FAILED_EQUIPPED_ITEM_CLASS);
+        }
         if skill.requires_out_of_combat && p.in_combat {
             return Err(SPELL_FAILED_AFFECTING_COMBAT);
         }
@@ -2464,6 +2524,11 @@ impl InWorld {
             from_front,
             unavoidable,
         );
+        let table = if skill.meta.shape.defense_type.as_deref() == Some("ranged") {
+            formulas::ranged_table(table, from_front)
+        } else {
+            table
+        };
         match table.outcome(rng.below(ROLL)) {
             Outcome::Miss => Landed::Missed(SPELL_MISS_MISS),
             Outcome::Dodge => Landed::Missed(SPELL_MISS_DODGE),
@@ -2566,7 +2631,7 @@ impl InWorld {
                     events,
                     ticked,
                 );
-                if dealt > 0 {
+                if dealt > 0 && weapon != Weapon::Ranged {
                     self.melee_hit(target, c, rng, events, ticked);
                 }
             }
@@ -4519,12 +4584,18 @@ impl InWorld {
 
 /// A weapon roll before armour: a white swing's, or a normalized one.
 fn weapon_roll(stats: &CharacterStats, weapon: Weapon, rng: &mut Rng) -> f32 {
+    if weapon == Weapon::Ranged {
+        return stats
+            .ranged
+            .map_or(0.0, |r| rng.frand(r.min_damage, r.max_damage));
+    }
     let roll = rng.frand(stats.min_damage, stats.max_damage);
     match weapon {
         Weapon::Normal => roll,
         Weapon::Normalized => {
             formulas::normalized_roll(roll, stats.attack_power, clock::secs(stats.attack_time_ms))
         }
+        Weapon::Ranged => unreachable!("rolled above"),
     }
 }
 
