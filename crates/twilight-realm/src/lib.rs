@@ -447,14 +447,17 @@ impl Realm {
                 if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {
                         let slot = inventory::Pos { bag, slot };
-                        // Food and drink are eaten at once; anything else casts its spell.
-                        match w.eat_or_drink(slot, c, &mut self.events) {
-                            Some(true) => {
-                                let guid = w.guid;
-                                self.save(guid);
+                        // A Quest Starter opens its quest; food and drink are eaten at once;
+                        // anything else casts its spell.
+                        if !quests::use_starter(c, slot, &mut self.events) {
+                            match w.eat_or_drink(slot, c, &mut self.events) {
+                                Some(true) => {
+                                    let guid = w.guid;
+                                    self.save(guid);
+                                }
+                                Some(false) => {}
+                                None => w.use_item(slot, c, self.wall, &mut self.events),
                             }
-                            Some(false) => {}
-                            None => w.use_item(slot, c, self.wall, &mut self.events),
                         }
                     }
                 }

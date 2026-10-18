@@ -4,6 +4,13 @@
 #
 # The drops are real 1.12 quest items (entry, name, display) from
 # data/twilights-eve/barrens_creature_loot.json's `quest_drops`. Class 12 is Quest.
+#
+# A Quest Starter (GLOSSARY.md) is an item with `start_quest = <quest id>`: the client shows
+# "This item begins a quest", and using it opens that quest's offer with the item as the giver.
+# Its quest says `giver = "item"` (content/quests.toml) and names an `ender`, and collects the
+# item x1, so taking the quest keeps it and handing the quest in takes it. Make it unique
+# (`max_count = 1`). It drops through a `starter_drop` row, `{ item, from = [creature entries],
+# chance }`, but only while the player has neither taken nor completed its quest and carries none.
 
 item = [
   { entry = 2925, name = "Crocolisk Skin", quality = 1, item_level = 1, class = 12, display_id = 3124, stackable = 20 },

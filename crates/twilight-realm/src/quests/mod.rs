@@ -19,7 +19,7 @@ use crate::fields::values;
 use crate::rng::Rng;
 
 pub(crate) use content::item_template;
-pub(crate) use dialogs::{gossip_rows, template_response};
+pub(crate) use dialogs::{gossip_rows, template_response, use_starter};
 
 /// The Token's item entry. Tokens are stacks of it in the bags: the quest dialogs pay them there
 /// and the Token vendor takes them from there.
@@ -302,6 +302,21 @@ pub(crate) fn drops(c: &Char, entry: u32, rng: &mut Rng) -> Vec<(u32, u32)> {
             {
                 out.push((o.item, 1));
             }
+        }
+    }
+    // A Quest Starter drops only while its quest is neither taken nor done, and none is carried.
+    for d in content::starter_drops() {
+        let Some(quest) = crate::items::template(d.item).map(|t| t.start_quest) else {
+            continue;
+        };
+        if d.from.contains(&entry)
+            && c.quests.get(quest).is_none()
+            && !c.quests.completed.contains(&quest)
+            && carried(c, d.item) == 0
+            && !out.iter().any(|&(item, _)| item == d.item)
+            && rng.below(100) < d.chance
+        {
+            out.push((d.item, 1));
         }
     }
     out

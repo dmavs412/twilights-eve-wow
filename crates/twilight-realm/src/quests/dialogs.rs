@@ -119,12 +119,14 @@ impl Realm {
                 }
             }
             RealmCommand::QuestGiverQueryQuest { npc, quest } => {
-                if let Some(q) = talking_to(c, w, npc).and_then(|g| offer(c, g, quest)) {
+                let offered = talking_to(c, w, npc).and_then(|g| offer(c, g, quest));
+                if let Some(q) = offered.or_else(|| starter_offer(c, npc, quest)) {
                     events.push(SessionEvent::QuestDetail(details(npc, q)));
                 }
             }
             RealmCommand::QuestGiverAcceptQuest { npc, quest } => {
-                if let Some(q) = talking_to(c, w, npc).and_then(|g| offer(c, g, quest)) {
+                let offered = talking_to(c, w, npc).and_then(|g| offer(c, g, quest));
+                if let Some(q) = offered.or_else(|| starter_offer(c, npc, quest)) {
                     done.save = accept(c, q, events);
                 }
             }
@@ -230,9 +232,59 @@ fn talking_to(c: &Char, w: &crate::world::InWorld, npc: u64) -> Option<Speaker> 
     field_speaker(w.friendly_within_reach(npc, c.position)?)
 }
 
+/// `quest`, if the Quest Starter the player carries as item `item` offers it now: the quest the
+/// item begins, theirs to take. The item is the giver, as vmangos makes it one.
+fn starter_offer(c: &Char, item: u64, quest: u32) -> Option<&'static Quest> {
+    let (_, carried) = c.inventory.iter().find(|(_, i)| i.guid == item)?;
+    items::template(carried.entry).filter(|t| t.start_quest == quest)?;
+    content::quest(quest).filter(|q| q.giver == content::Giver::Item && offered(c, q))
+}
+
+// `SMSG_QUESTGIVER_QUEST_INVALID` reasons (vmangos `QuestFailedReasons`).
+const INVALIDREASON_DONT_HAVE_REQ: u32 = 0;
+const INVALIDREASON_QUEST_FAILED_LOW_LEVEL: u32 = 1;
+/// "You have completed that quest." vmangos sends it; this client's handler shows its default
+/// text for it.
+const INVALIDREASON_QUEST_ALREADY_DONE: u32 = 7;
+const INVALIDREASON_QUEST_ALREADY_ON: u32 = 13;
+
+/// `CMSG_USE_ITEM` on the item at `slot`: a Quest Starter opens its quest's offer with the item as
+/// the giver, or says why not. Whether the item was one.
+pub(crate) fn use_starter(
+    c: &Char,
+    slot: crate::inventory::Pos,
+    events: &mut Vec<SessionEvent>,
+) -> bool {
+    let Some(item) = c.inventory.get(slot) else {
+        return false;
+    };
+    let Some(t) = items::template(item.entry).filter(|t| t.start_quest != 0) else {
+        return false;
+    };
+    let Some(q) = content::quest(t.start_quest) else {
+        return true;
+    };
+    let refusal = if c.quests.get(q.id).is_some() {
+        Some(INVALIDREASON_QUEST_ALREADY_ON)
+    } else if c.quests.completed.contains(&q.id) {
+        Some(INVALIDREASON_QUEST_ALREADY_DONE)
+    } else if c.level < q.min_level() {
+        Some(INVALIDREASON_QUEST_FAILED_LOW_LEVEL)
+    } else if !offered(c, q) {
+        Some(INVALIDREASON_DONT_HAVE_REQ)
+    } else {
+        None
+    };
+    events.push(match refusal {
+        Some(reason) => SessionEvent::QuestGiverInvalid { reason },
+        None => SessionEvent::QuestDetail(details(item.guid, q)),
+    });
+    true
+}
+
 /// `quest`, if `g` offers it to the player now: theirs to take, and not in the log already.
 fn offer(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
-    content::quest(quest).filter(|q| q.giver == g.entry && offered(c, q))
+    content::quest(quest).filter(|q| q.giver.npc() == Some(g.entry) && offered(c, q))
 }
 
 fn offered(c: &Char, q: &Quest) -> bool {

@@ -137,3 +137,7 @@ _Avoid_: field NPC, quest NPC
 **Story Quest**:
 A quest that tells part of the world's story, such as the Idol chain out of Echo Ridge Mine. It can be done once per character and Advancement never forgets it. It pays XP as a Hunting Quest does, and no Token.
 _Avoid_: main quest, campaign quest
+
+**Quest Starter**:
+An item that begins a quest when used, as the Smoldering Twilight Idol begins The Idol in the Deep. It drops only until its quest is taken or done, only one can be carried, and it stays in the bags until the quest is handed in.
+_Avoid_: quest item (any item a quest asks for)

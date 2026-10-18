@@ -63,6 +63,9 @@ pub(crate) struct Template {
     /// A Chest's Wardrobe (ADR 0007): the look template worn on each hidden body part, in
     /// [`WARDROBE_SLOTS`] order, 0 for bare. Empty on anything but a Chest.
     pub(crate) wardrobe: Vec<u32>,
+    /// The quest it begins (a Quest Starter), 0 for none: the client shows "This item begins a
+    /// quest", and using it opens the quest's offer.
+    pub(crate) start_quest: u32,
 }
 
 impl Default for Template {
@@ -94,6 +97,7 @@ impl Default for Template {
             buy_count: 0,
             bonding: 0,
             max_count: 0,
+            start_quest: 0,
             stackable: 0,
             container_slots: 0,
             sheath: 0,
@@ -332,7 +336,7 @@ pub(crate) fn info(t: &Template) -> ItemInfo {
         page_text: 0,
         language_id: 0,
         page_material: 0,
-        start_quest: 0,
+        start_quest: t.start_quest,
         lock_id: 0,
         material: t.material as u32,
         sheath: t.sheath,

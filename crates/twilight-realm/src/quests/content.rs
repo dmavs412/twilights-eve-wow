@@ -14,8 +14,21 @@ use crate::{items, rules};
 pub(crate) struct Collect {
     pub(crate) item: u32,
     pub(crate) count: u32,
+    /// None for a Quest Starter, whose own drop rule ([`StarterDrop`]) brings it.
+    #[serde(default)]
     pub(crate) chance: u32,
+    #[serde(default)]
     pub(crate) from: Vec<u32>,
+}
+
+/// A Quest Starter's drop (`content/quest_items.toml`'s `starter_drop`): `item` drops `from`
+/// these creatures at `chance` percent, but only while the player has neither taken nor
+/// completed the quest it starts and carries none already.
+#[derive(Deserialize)]
+pub(crate) struct StarterDrop {
+    pub(crate) item: u32,
+    pub(crate) from: Vec<u32>,
+    pub(crate) chance: u32,
 }
 
 /// An explore objective: a spot on a map, met when the player walks into it.
@@ -66,12 +79,48 @@ pub(crate) enum Kind {
     Story,
 }
 
+/// Who offers a quest: an NPC's creature entry (a Hub NPC or a Field Giver), or `"item"` for a
+/// Quest Starter's quest, which the item naming it in its `start_quest` offers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Giver {
+    Npc(u32),
+    Item,
+}
+
+impl<'de> Deserialize<'de> for Giver {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Written {
+            Npc(u32),
+            Word(String),
+        }
+        match Written::deserialize(d)? {
+            Written::Npc(entry) => Ok(Giver::Npc(entry)),
+            Written::Word(w) if w == "item" => Ok(Giver::Item),
+            Written::Word(w) => Err(serde::de::Error::custom(format!(
+                "a quest's giver is an NPC entry or \"item\", not {w:?}"
+            ))),
+        }
+    }
+}
+
+impl Giver {
+    /// The NPC entry that offers it; `None` for a Quest Starter's quest.
+    pub(crate) fn npc(self) -> Option<u32> {
+        match self {
+            Giver::Npc(entry) => Some(entry),
+            Giver::Item => None,
+        }
+    }
+}
+
 /// A quest.
 #[derive(Deserialize)]
 pub(crate) struct Quest {
     pub(crate) id: u32,
     pub(crate) kind: Kind,
-    pub(crate) giver: u32,
+    pub(crate) giver: Giver,
     /// Who takes it in, when not its giver: a person found in the field.
     #[serde(default)]
     ender: Option<u32>,
@@ -128,14 +177,16 @@ fn yes() -> bool {
 impl Quest {
     /// The NPC entry that takes it in.
     pub(crate) fn ender(&self) -> u32 {
-        self.ender.unwrap_or(self.giver)
+        self.ender
+            .or(self.giver.npc())
+            .expect("the content load checks a Quest Starter's quest names its ender")
     }
 
     /// The quest its ender offers next, once it is handed in (`NextQuestInChain`).
     pub(crate) fn next_in_chain(&self) -> Option<&'static Quest> {
         quests()
             .into_iter()
-            .find(|n| n.after == Some(self.id) && n.giver == self.ender())
+            .find(|n| n.after == Some(self.id) && n.giver.npc() == Some(self.ender()))
     }
 
     /// The quest log's header the quest goes under.
@@ -171,6 +222,11 @@ impl Quest {
 struct QuestFile {
     #[serde(default)]
     quest: Vec<Quest>,
+    /// Only through the test seam: quest items, as `content/quest_items.toml` writes them.
+    #[serde(default)]
+    item: Vec<items::Template>,
+    #[serde(default)]
+    starter_drop: Vec<StarterDrop>,
 }
 
 /// At most this many kill and this many collect objectives (`QUEST_OBJECTIVES_COUNT`).
@@ -205,6 +261,16 @@ fn shipped() -> &'static [Quest] {
         for q in &quests {
             check(q, &|id| quests.iter().any(|o| o.id == id));
         }
+        for t in shipped_items().item.iter().filter(|t| t.start_quest != 0) {
+            assert!(
+                quests
+                    .iter()
+                    .any(|q| q.id == t.start_quest && q.giver == Giver::Item),
+                "item {} starts quest {}, which is no quest with giver = \"item\"",
+                t.entry,
+                t.start_quest
+            );
+        }
         quests
     })
 }
@@ -219,6 +285,21 @@ fn added() -> &'static RwLock<Vec<&'static Quest>> {
 /// (`Realm::with_quests`), so a player script can try a quest the content does not ship.
 pub(crate) fn add(toml: &str) {
     let parsed: QuestFile = toml::from_str(toml).expect("the added quests parse");
+    {
+        // Looked up before the write lock, which a lookup would wait on.
+        let new: Vec<_> = parsed
+            .item
+            .into_iter()
+            .filter(|t| item_template(t.entry).is_none())
+            .collect();
+        let mut extra = added_items().write().unwrap();
+        for t in new {
+            extra.item.push(Box::leak(Box::new(t)));
+        }
+        for d in parsed.starter_drop {
+            extra.starter_drop.push(Box::leak(Box::new(d)));
+        }
+    }
     for q in parsed.quest {
         if quest(q.id).is_some() {
             continue;
@@ -230,7 +311,19 @@ pub(crate) fn add(toml: &str) {
 
 /// What the content load refuses in `q`; `known` says whether a quest id exists.
 fn check(q: &Quest, known: &dyn Fn(u32) -> bool) {
-    for npc in [q.giver, q.ender.unwrap_or(q.giver)] {
+    if q.giver == Giver::Item {
+        assert!(
+            q.ender.is_some(),
+            "quest {} starts from an item and names no ender",
+            q.id
+        );
+        assert!(
+            starter_of(q.id).is_some(),
+            "quest {} starts from an item, and no item in content/quest_items.toml starts it",
+            q.id
+        );
+    }
+    for npc in [q.giver.npc(), q.ender].into_iter().flatten() {
         let hub = crate::hub::npcs()
             .iter()
             .any(|n| n.entry == npc && n.gives_quests());
@@ -309,7 +402,9 @@ pub(crate) fn quest(id: u32) -> Option<&'static Quest> {
 
 /// The quests `giver` offers, in the content's order.
 pub(crate) fn offered_by(giver: u32) -> impl Iterator<Item = &'static Quest> {
-    quests().into_iter().filter(move |q| q.giver == giver)
+    quests()
+        .into_iter()
+        .filter(move |q| q.giver.npc() == Some(giver))
 }
 
 /// The quests `ender` takes in, in the content's order.
@@ -323,23 +418,68 @@ pub(crate) fn field_giver(entry: u32) -> bool {
     friendly_spawn(entry)
         && quests()
             .iter()
-            .any(|q| q.giver == entry || q.ender() == entry)
+            .any(|q| q.giver.npc() == Some(entry) || q.ender() == entry)
+}
+
+#[derive(Deserialize)]
+struct ItemTable {
+    item: Vec<items::Template>,
+    #[serde(default)]
+    starter_drop: Vec<StarterDrop>,
+}
+
+fn shipped_items() -> &'static ItemTable {
+    static ITEMS: OnceLock<ItemTable> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        toml::from_str(include_str!("../../content/quest_items.toml"))
+            .expect("content/quest_items.toml parses")
+    })
+}
+
+/// The quest items and starter drops a test added.
+#[derive(Default)]
+struct AddedItems {
+    item: Vec<&'static items::Template>,
+    starter_drop: Vec<&'static StarterDrop>,
+}
+
+fn added_items() -> &'static RwLock<AddedItems> {
+    static ADDED: OnceLock<RwLock<AddedItems>> = OnceLock::new();
+    ADDED.get_or_init(Default::default)
 }
 
 /// A quest item's (or the Token's) template.
 pub(crate) fn item_template(entry: u32) -> Option<&'static items::Template> {
-    #[derive(Deserialize)]
-    struct Table {
-        item: Vec<items::Template>,
-    }
-    static ITEMS: OnceLock<HashMap<u32, items::Template>> = OnceLock::new();
-    ITEMS
-        .get_or_init(|| {
-            let table: Table = toml::from_str(include_str!("../../content/quest_items.toml"))
-                .expect("content/quest_items.toml parses");
-            table.item.into_iter().map(|t| (t.entry, t)).collect()
-        })
+    static BY_ENTRY: OnceLock<HashMap<u32, &'static items::Template>> = OnceLock::new();
+    BY_ENTRY
+        .get_or_init(|| shipped_items().item.iter().map(|t| (t.entry, t)).collect())
         .get(&entry)
+        .copied()
+        .or_else(|| {
+            let added = added_items().read().unwrap();
+            added.item.iter().copied().find(|t| t.entry == entry)
+        })
+}
+
+/// The Quest Starter that begins `quest`.
+pub(crate) fn starter_of(quest: u32) -> Option<&'static items::Template> {
+    shipped_items()
+        .item
+        .iter()
+        .find(|t| t.start_quest == quest)
+        .or_else(|| {
+            let added = added_items().read().unwrap();
+            added.item.iter().copied().find(|t| t.start_quest == quest)
+        })
+}
+
+/// Every Quest Starter's drop.
+pub(crate) fn starter_drops() -> Vec<&'static StarterDrop> {
+    shipped_items()
+        .starter_drop
+        .iter()
+        .chain(added_items().read().unwrap().starter_drop.iter().copied())
+        .collect()
 }
 
 #[cfg(test)]
