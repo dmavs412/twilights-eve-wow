@@ -287,6 +287,14 @@ pub(crate) fn power_cost(c: &Char, skill: &callings::Skill) -> u32 {
     skill.power_cost.saturating_sub(less)
 }
 
+/// The percent of the shield's Block Value a skill's strike adds.
+pub(crate) fn block_value_pct(c: &Char, skill: &str) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::SkillBlockValuePct { skill: s, .. } if s == skill),
+    )
+}
+
 /// The percent a skill's damage and buff amounts rise by.
 pub(crate) fn amount_pct(c: &Char, skill: &str) -> u32 {
     sum(

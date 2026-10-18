@@ -2418,8 +2418,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_block_value_pct",
+          "params": {
+           "skill": "righteous_smash",
+           "pct": 10
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_block_value_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 10% of your shield's Block Value."
        },
        {
@@ -2443,8 +2460,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_block_value_pct",
+          "params": {
+           "skill": "righteous_smash",
+           "pct": 20
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_block_value_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 20
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 20% of your shield's Block Value."
        },
        {
@@ -2468,8 +2502,25 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "skill_block_value_pct",
+          "params": {
+           "skill": "righteous_smash",
+           "pct": 30
+          },
+          "realm_only": false
+         },
+         {
+          "kind": "skill_block_value_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 30
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 30% of your shield's Block Value."
        }
       ]

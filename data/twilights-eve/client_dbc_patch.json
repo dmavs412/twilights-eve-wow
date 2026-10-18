@@ -1064,7 +1064,23 @@
     "name": "Iron Juggernaut",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 10% of your shield's Block Value."
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 10% of your shield's Block Value.",
+    "effects": [
+     {
+      "kind": "skill_block_value_pct",
+      "params": {
+       "skill": "righteous_smash",
+       "pct": 10
+      }
+     },
+     {
+      "kind": "skill_block_value_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -1077,7 +1093,23 @@
     "name": "Iron Juggernaut",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 20% of your shield's Block Value."
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 20% of your shield's Block Value.",
+    "effects": [
+     {
+      "kind": "skill_block_value_pct",
+      "params": {
+       "skill": "righteous_smash",
+       "pct": 20
+      }
+     },
+     {
+      "kind": "skill_block_value_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -1090,7 +1122,23 @@
     "name": "Iron Juggernaut",
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 30% of your shield's Block Value."
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 30% of your shield's Block Value.",
+    "effects": [
+     {
+      "kind": "skill_block_value_pct",
+      "params": {
+       "skill": "righteous_smash",
+       "pct": 30
+      }
+     },
+     {
+      "kind": "skill_block_value_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 30
+      }
+     }
+    ]
    }
   },
   {

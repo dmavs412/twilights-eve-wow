@@ -434,8 +434,7 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         5923, 5924, 5925, 5926, 25829, 20262, 20263, 20264, 20265, 20266,
         // Precision, Redoubt, Reckoning.
         20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180, 20182,
-        // Vanguard's Bastion: Iron Juggernaut (the rest are modelled now).
-        12308, 12810, 12811,
+        // Vanguard's Bastion: nothing (every talent is modelled now).
         // Vanguard's Righteous: nothing (every talent is modelled now).
         // Cutthroat's Skirmisher: nothing (Lethality, Flurry of Blades, Reflexive Strike, Dual
         // Wield Specialization, Phantom Guile and Relentless Strikes are modelled now).

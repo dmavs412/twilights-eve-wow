@@ -498,6 +498,8 @@ pub enum TalentEffect {
     BlockPct { per_rank: Vec<u32> },
     /// The shield's Block Value rises by this many percent.
     BlockValuePct { per_rank: Vec<u32> },
+    /// The skill's strike deals this percent of the shield's Block Value more (Iron Juggernaut).
+    SkillBlockValuePct { skill: String, per_rank: Vec<u32> },
     /// A block gives 1 rage this percent of the time, logged under `spell_id`.
     BlockRagePct { spell_id: u32, per_rank: Vec<u32> },
     /// A white swing that lands gives 1 rage this percent of the time, logged under `spell_id`.
@@ -630,6 +632,7 @@ impl TalentEffect {
             | Self::ParryPct { per_rank }
             | Self::BlockPct { per_rank }
             | Self::BlockValuePct { per_rank }
+            | Self::SkillBlockValuePct { per_rank, .. }
             | Self::BlockRagePct { per_rank, .. }
             | Self::HitRagePct { per_rank, .. }
             | Self::ExtraSwingPct { per_rank, .. }

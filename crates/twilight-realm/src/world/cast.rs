@@ -1503,7 +1503,9 @@ impl InWorld {
                 ..
             } => {
                 let roll = weapon_roll(&stats, weapon, rng) * weapon_pct as f32 / 100.0;
-                let raw = roll + (sized(bonus) + per_combo(more)) as f32;
+                let shield =
+                    stats.block_value * crate::talents::block_value_pct(c, &skill.key) / 100;
+                let raw = roll + (sized(bonus) + per_combo(more) + shield) as f32;
                 let dealt = self.strike(
                     skill.spell_id,
                     target,
@@ -2466,7 +2468,8 @@ impl InWorld {
         // A yellow attack: the main hand's, with no dual-wield miss penalty.
         stats.off_hand = None;
         let pct = crate::talents::amount_pct(c, &skill.key);
-        let extra = scaled(bonus.at(c.level, stats.attack_power), pct) as f32;
+        let shield = stats.block_value * crate::talents::block_value_pct(c, &skill.key) / 100;
+        let extra = (scaled(bonus.at(c.level, stats.attack_power), pct) + shield) as f32;
         stats.min_damage += extra;
         stats.max_damage += extra;
         // The player's buffs for the skill (Cutthroat's Momentum) add crit chance.
