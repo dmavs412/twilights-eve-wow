@@ -630,7 +630,7 @@ impl InWorld {
                     return;
                 }
                 if self.skills.stunned(mob.guid) {
-                    drop_cast(mob, events);
+                    interrupt_cast(mob, events);
                     return;
                 }
                 if self.mob_cast(i, dt, me, host, rng, events) {
@@ -943,12 +943,23 @@ fn evade(
 }
 
 /// `mob`'s Creature Spell under way stops short, and lands nothing.
-fn drop_cast(mob: &mut Mob, events: &mut Vec<SessionEvent>) {
-    if let Some((spell, _)) = mob.casting.take() {
-        events.push(SessionEvent::SpellFailedOther {
-            caster: mob.guid,
-            spell_id: spell.client_spell_id,
-        });
+fn drop_cast(
+    mob: &mut Mob,
+    events: &mut Vec<SessionEvent>,
+) -> Option<&'static crate::creature_spells::CreatureSpell> {
+    let (spell, _) = mob.casting.take()?;
+    events.push(SessionEvent::SpellFailedOther {
+        caster: mob.guid,
+        spell_id: spell.client_spell_id,
+    });
+    Some(spell)
+}
+
+/// Crowd control lands on `mob`: its Creature Spell under way is cancelled and goes on cooldown.
+fn interrupt_cast(mob: &mut Mob, events: &mut Vec<SessionEvent>) {
+    if let Some(spell) = drop_cast(mob, events) {
+        mob.spell_cooldowns
+            .push((spell.key.as_str(), clock::secs(spell.cooldown_ms)));
     }
 }
 

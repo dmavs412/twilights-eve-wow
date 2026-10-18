@@ -5,6 +5,7 @@ mod common;
 
 use benilla_protocol::messages::{PeriodicAuraLog, PeriodicTick};
 use benilla_protocol::{EntityKind, SessionEvent};
+use common::fight;
 use common::*;
 
 /// The Vile Familiar near the Crossroads.
@@ -14,6 +15,11 @@ const CORRUPTION: &str = "corruption_creature";
 const CORRUPTION_LOOK: u32 = 172;
 /// The shadow school in a damage log.
 const SHADOW: u32 = 5;
+const GOUGE: u32 = 1776;
+/// Whole rage points Gouge costs.
+const GOUGE_RAGE: u32 = 15;
+/// Low enough that the warrior lives through the curse and builds rage, as in `gouge.rs`.
+const LEVEL: u8 = 3;
 
 #[test]
 fn a_caster_starts_its_cast_and_the_curse_ticks_shadow_damage_after_it() {
@@ -132,6 +138,138 @@ fn a_caster_killed_mid_cast_lands_nothing() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn a_gouge_mid_cast_cancels_it_and_the_spell_waits_out_its_cooldown() {
+    let mut gouged = 0;
+    for seed in 0..10 {
+        let realm = Realm::with_seed(seed).with_creature_spells(VILE_FAMILIAR, &[CORRUPTION]);
+        let (mut realm, me, mob) = warrior(realm, LEVEL);
+        stand_by(&mut realm, mob.1);
+        realm.handle(RealmCommand::AttackSwing { guid: mob.0 });
+        let mut view = fight::View::default();
+        let mut found = false;
+        for _ in 0..600 {
+            realm.tick(0.1, &FlatGround);
+            let events = view.drain(&mut realm);
+            if dead(&view, me) || dead(&view, mob.0) {
+                break;
+            }
+            let starts = events
+                .iter()
+                .any(|e| matches!(e, SessionEvent::SpellStart { caster, .. } if *caster == mob.0));
+            if starts && rage_of(&view, me) >= GOUGE_RAGE {
+                found = true;
+                break;
+            }
+        }
+        if !found {
+            continue;
+        }
+        gouged += 1;
+        realm.handle(RealmCommand::AttackStop);
+        realm.handle(fight::cast(GOUGE, Some(mob.0)));
+        let first = view.drain(&mut realm);
+        assert_eq!(
+            fight::refusal(&first, GOUGE),
+            None,
+            "seed {seed}: gouge cast"
+        );
+        let mut events: Vec<(f32, SessionEvent)> = first.into_iter().map(|e| (0.0, e)).collect();
+        for n in 1..=170 {
+            realm.tick(0.1, &FlatGround);
+            events.extend(drain(&mut realm).into_iter().map(|e| (n as f32 * 0.1, e)));
+        }
+        assert!(
+            events.iter().any(
+                |(_, e)| matches!(e, SessionEvent::SpellFailedOther { caster, spell_id }
+                if *caster == mob.0 && *spell_id == CORRUPTION_LOOK)
+            ),
+            "seed {seed}: the client sees the cast end"
+        );
+        assert!(
+            !events.iter().any(
+                |(_, e)| matches!(e, SessionEvent::SpellGo { caster, .. } if *caster == mob.0)
+            ),
+            "seed {seed}: the cancelled cast went off"
+        );
+        assert!(
+            !events.iter().any(|(t, e)| *t < 15.0
+                && matches!(e, SessionEvent::SpellStart { caster, .. } if *caster == mob.0)),
+            "seed {seed}: it cast again inside its cooldown"
+        );
+    }
+    assert!(gouged > 0, "some seed gouges the familiar mid-cast");
+}
+
+#[test]
+fn an_incapacitated_creature_starts_no_cast() {
+    for seed in 0..10 {
+        let realm = Realm::with_seed(seed).with_creature_spells(VILE_FAMILIAR, &[CORRUPTION]);
+        let (mut realm, me, mob) = warrior(realm, LEVEL);
+        stand_by(&mut realm, mob.1);
+        realm.handle(RealmCommand::AttackSwing { guid: mob.0 });
+        let mut view = fight::View::default();
+        // Swing until there is rage for Gouge and the familiar is between casts.
+        let mut ready = false;
+        for _ in 0..600 {
+            realm.tick(0.1, &FlatGround);
+            let events = view.drain(&mut realm);
+            if dead(&view, me) || dead(&view, mob.0) {
+                break;
+            }
+            let casting = events
+                .iter()
+                .any(|e| matches!(e, SessionEvent::SpellStart { caster, .. } if *caster == mob.0));
+            if rage_of(&view, me) >= GOUGE_RAGE && !casting {
+                ready = true;
+                break;
+            }
+        }
+        if !ready {
+            continue;
+        }
+        realm.handle(RealmCommand::AttackStop);
+        realm.handle(fight::cast(GOUGE, Some(mob.0)));
+        let mut events = view.drain(&mut realm);
+        assert_eq!(
+            fight::refusal(&events, GOUGE),
+            None,
+            "seed {seed}: gouge cast"
+        );
+        // Gouge lasts 4 s; the familiar thinks once a second, and starts no cast in it.
+        for _ in 0..38 {
+            realm.tick(0.1, &FlatGround);
+            events.extend(drain(&mut realm));
+        }
+        assert!(
+            !events
+                .iter()
+                .any(|e| matches!(e, SessionEvent::SpellStart { caster, .. } if *caster == mob.0)),
+            "seed {seed}: an incapacitated familiar began a cast"
+        );
+        return;
+    }
+    panic!("no seed leaves the familiar between casts with rage in hand");
+}
+
+/// Whether `guid` is known to be at 0 health; `warrior` drained the creates, so a unit not yet
+/// updated is unhurt.
+fn dead(view: &fight::View, guid: u64) -> bool {
+    view.objects
+        .get(&guid)
+        .and_then(|f| f.unit_health())
+        .is_some_and(|h| h == 0)
+}
+
+/// Whole rage points the view has seen on `guid`.
+fn rage_of(view: &fight::View, guid: u64) -> u32 {
+    view.objects
+        .get(&guid)
+        .and_then(|f| f.unit_power(1))
+        .unwrap_or(0)
+        / 10
+}
 
 /// A human warrior of `level` in `realm`, on flat ground, and the familiar's guid and position.
 fn warrior(mut realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3])) {

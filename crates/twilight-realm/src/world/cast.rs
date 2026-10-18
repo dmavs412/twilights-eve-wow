@@ -1179,6 +1179,7 @@ impl InWorld {
                 let duration_ms = duration_ms + per_combo(more);
                 self.skills
                     .apply(aura(AuraKind::Stun, aura_spell_id, duration_ms, 0), events);
+                self.interrupt_mob_cast(target, events);
             }
             Effect::Incapacitate {
                 duration_ms,
@@ -1190,6 +1191,7 @@ impl InWorld {
                     let kind = AuraKind::Incapacitate { break_on_damage };
                     self.skills
                         .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
+                    self.interrupt_mob_cast(target, events);
                     if drop_combat {
                         self.drop_combat(target, events);
                     }
@@ -1691,6 +1693,13 @@ impl InWorld {
                 attacker: self.guid,
                 victim: target,
             });
+        }
+    }
+
+    /// A stun or incapacitate landed on `target`: a mob of that guid loses the cast it is under way.
+    fn interrupt_mob_cast(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
+        if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == target && m.alive()) {
+            super::interrupt_cast(mob, events);
         }
     }
 
