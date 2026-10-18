@@ -319,6 +319,9 @@ pub enum TalentEffect {
     SkillRage { skill: String, per_rank: Vec<u32> },
     /// The skill's critical strike chance rises by this many percent.
     SkillCritPct { skill: String, per_rank: Vec<u32> },
+    /// A skill that consumes aura stacks heals the caster for this percent of the bonus damage
+    /// the stacks dealt.
+    ConsumeHealPct { skill: String, per_rank: Vec<u32> },
     /// Every melee strike's critical strike chance rises by this many percent.
     MeleeCritPct { per_rank: Vec<u32> },
     /// The Defense skill rises by this much.
@@ -458,6 +461,7 @@ impl TalentEffect {
             | Self::SkillAmountPct { per_rank, .. }
             | Self::SkillRage { per_rank, .. }
             | Self::SkillCritPct { per_rank, .. }
+            | Self::ConsumeHealPct { per_rank, .. }
             | Self::MeleeCritPct { per_rank }
             | Self::Defense { per_rank }
             | Self::ModStat { per_rank, .. }
@@ -699,6 +703,47 @@ pub enum Effect {
     /// Consumes the caster's active Seal for its judgement on the target. With no Seal active the
     /// cast fails and costs nothing.
     Judgement,
+    /// `stacks` more of the caster's aura `aura_spell_id` when the hit lands, held to the aura
+    /// row's `max_stacks` under its `stack_rule`, each application putting it back to
+    /// `duration_ms`.
+    AddAuraStacks {
+        aura_spell_id: u32,
+        #[serde(default = "one")]
+        stacks: u32,
+        duration_ms: u32,
+        #[serde(default = "one")]
+        max_stacks: u32,
+        #[serde(default)]
+        stack_rule: StackRule,
+    },
+    /// Takes every stack of the caster's aura `aura_spell_id`, and strikes each target the cast
+    /// hit for `per_stack` of `school` damage a stack. No stacks, no bonus.
+    ConsumeAuraStacks {
+        aura_spell_id: u32,
+        per_stack: Linear,
+        #[serde(default)]
+        school: School,
+    },
+}
+
+fn one() -> u32 {
+    1
+}
+
+/// What a new application of an aura does to the stacks it already holds (the `stack_rule`
+/// column).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StackRule {
+    /// The stacks add up to the maximum, and the duration starts over.
+    #[default]
+    Refresh,
+    /// The new application's stacks replace the old, and the duration starts over.
+    Replace,
+    /// The old aura stays exactly as it is.
+    Ignore,
+    /// Each application is its own aura. Not modelled apart yet: it stacks like `Refresh`.
+    Independent,
 }
 
 impl Effect {

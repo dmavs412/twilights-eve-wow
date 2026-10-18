@@ -178,6 +178,22 @@ class BuildSpells(unittest.TestCase):
             self.assert_fails([{**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": bad}],
                               "positive whole amount")
 
+    def test_aura_stacks_effects_name_an_aura_row_of_the_calling(self):
+        aura = {**AURA, "key": "conviction", "effect1_kind": "", "effect1_params": "", "modelled": "yes",
+                "max_stacks": "5"}
+        add = {**STRIKE, "effect1_kind": "add_aura_stacks", "effect1_params": "aura=conviction;stacks=2"}
+        done, data = self.run_build([CALLING, aura, add])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {"aura": "conviction", "stacks": 2})
+        consume = {**STRIKE, "effect1_kind": "consume_aura_stacks",
+                   "effect1_params": "aura=conviction;school=holy;per_stack.base=5;per_stack.per_level=1"}
+        done, _ = self.run_build([CALLING, aura, consume])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assert_fails([CALLING, aura, {**add, "effect1_params": "aura=nothing"}], "not an aura row")
+        self.assert_fails([CALLING, aura, {**add, "effect1_params": "aura=conviction;stacks=0"}],
+                          "positive whole stacks")
+        self.assert_fails([CALLING, aura, {**consume, "effect1_params": "aura=conviction"}], "per_stack formula")
+
     def test_per_combo_is_a_formula_block(self):
         row = {**STRIKE, "effect1_kind": "school_damage",
                "effect1_params": "amount.base=5;amount.per_level=0;per_combo.base=5;per_combo.per_level=0.5"}

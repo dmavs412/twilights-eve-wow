@@ -208,6 +208,21 @@ fn aura(g: &GenAura) -> Option<AuraDef> {
 /// itself (`per_combo`) win. An aura that is missing or unmodelled makes it `None`.
 fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
     let mut object = e.params.clone();
+    // An effect that works on stacks of an aura (`aura=key`) reads the aura row's spell id,
+    // duration and stack columns.
+    if let Some(key) = object.remove("aura") {
+        let aura = auras
+            .iter()
+            .find(|a| a.modelled && key.as_str() == Some(a.key.as_str()))?;
+        object.insert("aura_spell_id".into(), aura.spell_id.into());
+        if e.kind == "add_aura_stacks" {
+            object.insert("duration_ms".into(), aura.duration_ms.into());
+            object.insert("max_stacks".into(), aura.row.max_stacks.into());
+            if let Some(rule) = &aura.row.stack_rule {
+                object.insert("stack_rule".into(), rule.clone().into());
+            }
+        }
+    }
     if let Some(key) = object.remove("apply_aura") {
         let aura = auras
             .iter()

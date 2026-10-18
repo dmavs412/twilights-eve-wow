@@ -278,6 +278,14 @@ pub(crate) fn skill_crit_pct(c: &Char, skill: &str) -> u32 {
     )
 }
 
+/// The percent of the bonus damage its consumed stacks dealt that a skill heals the caster for.
+pub(crate) fn consume_heal_pct(c: &Char, skill: &str) -> u32 {
+    sum(
+        c,
+        |e| matches!(e, TalentEffect::ConsumeHealPct { skill: s, .. } if s == skill),
+    )
+}
+
 /// The bleed a melee crit leaves: `(aura spell, tick ms, duration ms, percent of the swing)`.
 pub(crate) fn crit_bleed(c: &Char) -> Option<(u32, u32, u32, u32)> {
     c.talents.iter().find_map(|&(id, r)| {

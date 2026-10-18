@@ -1069,6 +1069,14 @@
        }
       },
       "realm_only": false
+     },
+     {
+      "kind": "add_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "stacks": 1
+      },
+      "realm_only": false
      }
     ],
     "description": "Your next melee swing strikes the target for weapon damage plus a bonus. Every hit grants a stack of Conviction."
@@ -1191,6 +1199,18 @@
         "base": 6.5,
         "per_level": 1.3,
         "per_ap": 0
+       }
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "consume_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "school": "holy",
+       "per_stack": {
+        "base": 5,
+        "per_level": 1
        }
       },
       "realm_only": false
@@ -2609,8 +2629,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "consume_heal_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Consuming Conviction stacks with Zealous Cleave heals you for 10% of the bonus Holy damage dealt."
        },
        {
@@ -2634,8 +2663,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "consume_heal_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 20
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Consuming Conviction stacks with Zealous Cleave heals you for 20% of the bonus Holy damage dealt."
        },
        {
@@ -2659,8 +2697,17 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "consume_heal_pct",
+          "params": {
+           "skill": "zealous_cleave",
+           "pct": 30
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Consuming Conviction stacks with Zealous Cleave heals you for 30% of the bonus Holy damage dealt."
        }
       ]
@@ -2944,7 +2991,7 @@
     "cancelable": true,
     "persist_death": false,
     "duration_ms": 15000,
-    "modelled": false,
+    "modelled": true,
     "effects": [],
     "description": "Each stack adds Holy damage to your next Zealous Cleave."
    },

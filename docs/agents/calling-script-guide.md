@@ -168,8 +168,8 @@ Write `key=value` pairs joined by `;`, and lists joined by `|`:
 
 ## Effect vocabulary the game runs today (allowed on `modelled=yes`)
 
-`add_combo_points`, `aura_attack_power`, `charge`, `energize`, `healing_reduction`, `incapacitate`, `judgement`,
-`mod_crit_chance`, `mod_crit_damage`, `mod_health_regen_out_of_combat`, `mod_run_speed`, `mod_stat`,
+`add_aura_stacks`, `add_combo_points`, `aura_attack_power`, `charge`, `consume_aura_stacks`, `consume_heal_pct`, `energize`,
+`healing_reduction`, `incapacitate`, `judgement`, `mod_crit_chance`, `mod_crit_damage`, `mod_health_regen_out_of_combat`, `mod_run_speed`, `mod_stat`,
 `periodic_damage`, `proc`, `proc_on_cast`, `proc_on_kill`, `school_damage`, `seal`, `skill_amount_pct`,
 `skill_crit_pct`, `skill_rage`, `stun`, `weapon_strike`.
 
@@ -180,6 +180,10 @@ The params the build checks:
 - **`weapon_strike`:** `weapon=normal` or `normalized` (never `W`). Bonus damage is a `bonus.*` formula block.
 - **`energize`:** `power=rage|energy|mana` and an `amount.*` block.
 - **`add_combo_points`:** `amount=` a positive whole number (at most five points are held).
+- **`add_aura_stacks`:** `aura=` the key of an aura row of the Calling, `stacks=` a positive whole number (default 1). A landed hit
+  puts the stacks on the caster; the aura row's `duration_ms`, `max_stacks` and `stack_rule` govern them.
+- **`consume_aura_stacks`:** `aura=` as above, a `per_stack.*` block and `school=`. The cast takes every stack and strikes each target it hit
+  for the block a stack. **`consume_heal_pct`** (a talent effect): `skill=` the consuming skill, `pct=` per rank of the bonus damage healed.
 - **Finishers:** there is no finisher kind. A damage or duration effect with a `per_combo.*` block (`per_combo.base`,
   `per_combo.per_level`, `per_combo.per_ap`) is a finisher. It needs combo points and spends them all.
 - **`mod_stat`:** `stat=strength|agility|stamina|intellect|spirit` with `pct=` or `amount=`.

@@ -176,6 +176,13 @@
         "per_ap": 0
        }
       }
+     },
+     {
+      "kind": "add_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "stacks": 1
+      }
      }
     ],
     "range_index": 2,
@@ -271,6 +278,17 @@
         "base": 6.5,
         "per_level": 1.3,
         "per_ap": 0
+       }
+      }
+     },
+     {
+      "kind": "consume_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "school": "holy",
+       "per_stack": {
+        "base": 5,
+        "per_level": 1
        }
       }
      }
@@ -989,7 +1007,16 @@
     "name": "Zealous Restoration",
     "school": 0,
     "prevention_type": 2,
-    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 10% of the bonus Holy damage dealt."
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 10% of the bonus Holy damage dealt.",
+    "effects": [
+     {
+      "kind": "consume_heal_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -1002,7 +1029,16 @@
     "name": "Zealous Restoration",
     "school": 0,
     "prevention_type": 2,
-    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 20% of the bonus Holy damage dealt."
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 20% of the bonus Holy damage dealt.",
+    "effects": [
+     {
+      "kind": "consume_heal_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -1015,7 +1051,16 @@
     "name": "Zealous Restoration",
     "school": 0,
     "prevention_type": 2,
-    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 30% of the bonus Holy damage dealt."
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 30% of the bonus Holy damage dealt.",
+    "effects": [
+     {
+      "kind": "consume_heal_pct",
+      "params": {
+       "skill": "zealous_cleave",
+       "pct": 30
+      }
+     }
+    ]
    }
   },
   {

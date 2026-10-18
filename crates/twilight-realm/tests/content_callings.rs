@@ -368,6 +368,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::AuraMaxHealthPct { .. }
         | Effect::AuraDamagePct { .. }
         | Effect::SweepingStrikes { .. } => panic!("{key}: a talent's effect on a Calling skill"),
+        // The Vanguard's stacks live in the master CSV only; tests/vanguard_conviction.rs reads them.
+        Effect::AddAuraStacks { .. } | Effect::ConsumeAuraStacks { .. } => {
+            panic!("{key}: the reference has no realm half for stacks")
+        }
     }
 }
 
@@ -411,7 +415,7 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         12810, 12811,
         // Vanguard's Righteous: Wrathful Iron, Hallowed Ground, Zealous Restoration, Hammer of the
         // Vanguard.
-        20224, 20225, 20330, 20331, 20332, 12287, 12665, 12666, 20237, 20238, 20239, 12809,
+        20224, 20225, 20330, 20331, 20332, 12287, 12665, 12666, 12809,
         // Cutthroat's Skirmisher: Reflexive Strike, Lethality, Phantom Guile, Dual Wield
         // Specialization, Flurry of Blades, Relentless Strikes.
         13712, 13788, 13789, 13790, 13791, 14128, 14132, 14135, 14136, 14137, 13741, 13793, 13792,

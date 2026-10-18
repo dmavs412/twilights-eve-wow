@@ -14,7 +14,7 @@ use benilla_protocol::SessionEvent;
 
 use super::power::Combo;
 use super::{in_front, melee_reach, InWorld, Ticked};
-use crate::callings::{self, Effect, Seal, Skill, Target, Weapon};
+use crate::callings::{self, Effect, Seal, Skill, StackRule, Target, Weapon};
 use crate::characters::Char;
 use crate::clock;
 use crate::fields::*;
@@ -214,6 +214,13 @@ enum AuraKind {
     RunSpeed {
         pct: u32,
     },
+    /// A count of stacks that does nothing itself; a skill that consumes it reads the count
+    /// (Conviction). The aura row's `max_stacks` and `stack_rule` govern a new application.
+    Stacks {
+        count: u32,
+        max: u32,
+        rule: StackRule,
+    },
 }
 
 impl AuraKind {
@@ -238,7 +245,16 @@ impl AuraKind {
                 | AuraKind::Seal { .. }
                 | AuraKind::SkillCrit { .. }
                 | AuraKind::RunSpeed { .. }
+                | AuraKind::Stacks { .. }
         )
+    }
+
+    /// The stacks the aura shows on its icon.
+    fn stacks(self) -> u32 {
+        match self {
+            AuraKind::Stacks { count, .. } => count,
+            _ => 1,
+        }
     }
 }
 
@@ -477,6 +493,20 @@ impl Skills {
             a.unit == aura.unit && a.spell_id == aura.spell_id && a.kind.same_effect(aura.kind)
         }) {
             aura.slot = old.slot;
+            if let (AuraKind::Stacks { count: held, .. }, AuraKind::Stacks { count, max, rule }) =
+                (old.kind, aura.kind)
+            {
+                let count = match rule {
+                    StackRule::Ignore => held,
+                    StackRule::Replace => count,
+                    StackRule::Refresh | StackRule::Independent => held + count,
+                }
+                .min(max);
+                aura.kind = AuraKind::Stacks { count, max, rule };
+                if rule == StackRule::Ignore {
+                    aura = *old;
+                }
+            }
             *old = aura;
         } else {
             let range = if aura.kind.helpful() {
@@ -501,6 +531,26 @@ impl Skills {
         }
         events.push(self.slot_fields(aura.unit, aura.slot));
         Some(aura)
+    }
+
+    /// Takes every stack of `spell_id` off `unit`: the count it held.
+    pub(super) fn take_stacks(
+        &mut self,
+        unit: u64,
+        spell_id: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> u32 {
+        self.remove_where(
+            |a| {
+                a.unit == unit
+                    && a.spell_id == spell_id
+                    && matches!(a.kind, AuraKind::Stacks { .. })
+            },
+            events,
+        )
+        .iter()
+        .map(|a| a.kind.stacks())
+        .sum()
     }
 
     /// Takes every aura `keep` refuses off, clearing their slots.
@@ -540,6 +590,11 @@ impl Skills {
             let level = on_unit(byte_word * 4 + i).map_or(0, |a| u32::from(a.level));
             w | level << (8 * u32::from(i))
         });
+        // A byte a slot: stacks - 1.
+        let applications = (0..4).fold(0u32, |w, i| {
+            let stacks = on_unit(byte_word * 4 + i).map_or(1, |a| a.kind.stacks());
+            w | stacks.saturating_sub(1).min(0xFF) << (8 * u32::from(i))
+        });
         values(
             unit,
             &[
@@ -549,8 +604,10 @@ impl Skills {
                 ),
                 (UNIT_FIELD_AURAFLAGS + u16::from(flags_word), flags),
                 (UNIT_FIELD_AURALEVELS + u16::from(byte_word), levels),
-                // One stack each.
-                (UNIT_FIELD_AURAAPPLICATIONS + u16::from(byte_word), 0),
+                (
+                    UNIT_FIELD_AURAAPPLICATIONS + u16::from(byte_word),
+                    applications,
+                ),
             ],
         )
     }
@@ -823,6 +880,40 @@ impl InWorld {
             if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == guid) {
                 if mob.state == State::Idle {
                     super::engage(mob, self.guid, events);
+                }
+            }
+        }
+        for effect in &skill.effects {
+            if let Effect::ConsumeAuraStacks {
+                aura_spell_id,
+                per_stack,
+                school,
+            } = *effect
+            {
+                let stacks = self.skills.take_stacks(self.guid, aura_spell_id, events);
+                if stacks == 0 {
+                    continue;
+                }
+                let ap = buffed(&self.player.stats, &self.skills).attack_power;
+                let pct = crate::talents::amount_pct(c, &skill.key);
+                let each = scaled(per_stack.at(level, ap), pct) * stacks;
+                let mut dealt = 0;
+                for &guid in &hits {
+                    dealt += self.bonus_hit(
+                        skill.spell_id,
+                        guid,
+                        each,
+                        school,
+                        c,
+                        rng,
+                        events,
+                        &mut ticked,
+                    );
+                }
+                let heal = dealt * crate::talents::consume_heal_pct(c, &skill.key) / 100;
+                let max = buffed(&self.player.stats, &self.skills).max_health;
+                if heal > 0 && self.player.alive() {
+                    self.player.health = (self.player.health + heal).min(max);
                 }
             }
         }
@@ -1318,6 +1409,9 @@ impl InWorld {
                 let sheet = buff_sheet(&self.player.stats, &self.skills);
                 events.push(values(self.guid, &sheet));
             }
+            Effect::AddAuraStacks { .. } => self.add_aura_stacks(effect, level, events),
+            // Takes the stacks once for every target: `cast` does it after the loop.
+            Effect::ConsumeAuraStacks { .. } => {}
             Effect::Judgement => {
                 let me = self.guid;
                 let gone = self.skills.remove_where(
@@ -1412,6 +1506,65 @@ impl InWorld {
             self.guid, target, spell_id, damage, school, false,
         )));
         self.hurt(target, damage, c, rng, events, ticked);
+    }
+
+    /// A bonus hit of `raw` in `school` at `target` that cannot miss or crit, logged under
+    /// `spell_id`: the damage dealt.
+    #[allow(clippy::too_many_arguments)]
+    fn bonus_hit(
+        &mut self,
+        spell_id: u32,
+        target: u64,
+        raw: u32,
+        school: School,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) -> u32 {
+        let Some(mob) = self.mobs.iter().find(|m| m.guid == target && m.alive()) else {
+            return 0;
+        };
+        let mut damage = mitigated(school, raw, mob.stats.armor, self.player.stats.level);
+        if school == School::Holy {
+            damage = seals::holy_taken(damage, self.skills.holy_taken_pct(target));
+        }
+        let damage = self.dealt(c, damage);
+        events.push(SessionEvent::SpellDamageLog(damage_log(
+            self.guid, target, spell_id, damage, school, false,
+        )));
+        self.hurt(target, damage, c, rng, events, ticked);
+        damage
+    }
+
+    /// The landed hit of an `AddAuraStacks` effect: the caster's aura takes its stacks.
+    fn add_aura_stacks(&mut self, effect: &Effect, level: u8, events: &mut Vec<SessionEvent>) {
+        let Effect::AddAuraStacks {
+            aura_spell_id,
+            stacks,
+            duration_ms,
+            max_stacks,
+            stack_rule,
+        } = *effect
+        else {
+            return;
+        };
+        let aura = Aura {
+            unit: self.guid,
+            spell_id: aura_spell_id,
+            slot: 0,
+            level,
+            left: clock::secs(duration_ms),
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Stacks {
+                count: stacks,
+                max: max_stacks.max(1),
+                rule: stack_rule,
+            },
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
     }
 
     /// `raw` physical damage at `target`, after its armour: logged, taken off, maybe a kill.
@@ -1855,6 +2008,9 @@ impl InWorld {
         if missed_by(swings[0].1.outcome).is_none() {
             let gone = self.skills.spend_charges(&skill.key, events);
             self.faded(&gone, events);
+            for effect in &skill.effects {
+                self.add_aura_stacks(effect, c.level, events);
+            }
         }
         let impale = crate::talents::skill_crit_damage_pct(c) + self.player.stats.crit_damage_pct;
         for (guid, mut swing) in swings {
