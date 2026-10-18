@@ -549,6 +549,9 @@ impl Realm {
                 }
             }
         }
+        if let Some(w) = &self.world {
+            shard::note_attackers(&mut shard.mobs, w.guid, &new);
+        }
         self.show_others(map, &new);
     }
 
@@ -587,6 +590,7 @@ impl Realm {
                 session: id,
                 guid: w.guid,
                 position: c.position,
+                alive: w.alive(),
             });
         }
         self.shards.retain(|map, _| on.contains_key(map));
@@ -647,6 +651,11 @@ impl Realm {
                     }
                 }
                 w.runs = owners.remove(&id).unwrap_or_default();
+                w.others = players
+                    .iter()
+                    .filter(|o| o.alive && o.guid != w.guid)
+                    .map(|o| o.guid)
+                    .collect();
             }
         }
     }

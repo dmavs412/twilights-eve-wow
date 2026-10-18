@@ -130,6 +130,8 @@ pub(crate) struct InWorld {
     pub(crate) runs: std::collections::HashSet<u64>,
     /// The open-world spawns that died since the shard last heard: `(spawn, respawn wait)`.
     pub(crate) died: Vec<(u32, f32)>,
+    /// The other living players sharing this player's mobs, as of the tick's start.
+    pub(crate) others: Vec<u64>,
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
@@ -219,6 +221,7 @@ impl InWorld {
             seen: Default::default(),
             runs: Default::default(),
             died: Vec::new(),
+            others: Vec::new(),
             dev,
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
@@ -333,6 +336,10 @@ impl InWorld {
 
     /// Whether this session runs mob `guid`'s fight and AI: every mob of its own, and the lent
     /// ones the realm gave it this tick.
+    pub(crate) fn alive(&self) -> bool {
+        self.player.alive()
+    }
+
     pub(crate) fn runs(&self, guid: u64) -> bool {
         !self.lent || self.runs.contains(&guid)
     }
@@ -486,16 +493,17 @@ impl InWorld {
         }
     }
 
-    /// Everyone in `camp` that is fighting runs home together.
+    /// Everyone in `camp` fighting `target` runs home together.
     fn evade_camp(
         &mut self,
         camp: u32,
+        target: u64,
         route: Option<(&crate::dungeon::Route, u32, &dyn Host)>,
         events: &mut Vec<SessionEvent>,
     ) {
         for mob in &mut self.mobs {
-            if mob.camp == camp && mob.state == State::Engaged {
-                evade(mob, self.guid, route, events);
+            if mob.camp == camp && mob.state == State::Engaged && mob.target == target {
+                evade(mob, target, route, events);
             }
         }
     }
@@ -745,15 +753,31 @@ impl InWorld {
                     mob.state = State::Idle;
                     mob.orientation = mob.home_orientation;
                     mob.health = mob.stats.max_health;
+                    mob.attackers.clear();
                     events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
                 }
             }
-            // Another player's fight, handed over mid-tick: theirs to run from the next.
-            State::Engaged if mob.target != self.guid => {}
+            // Another living player's fight: theirs to run.
+            State::Engaged if mob.target != self.guid && self.others.contains(&mob.target) => {}
             State::Engaged => {
-                if !self.player.alive() || leash::beyond(mob.home, mob.position) {
+                let target = mob.target;
+                if target != self.guid || !self.player.alive() {
+                    // Its target died or left: the latest one who hurt it still standing.
+                    let me_alive = self.player.alive();
+                    let next = mob.attackers.iter().rev().copied().find(|&g| {
+                        g != target && (self.others.contains(&g) || (g == self.guid && me_alive))
+                    });
+                    if let Some(next) = next {
+                        engage(mob, next, events);
+                        return;
+                    }
+                }
+                if target != self.guid
+                    || !self.player.alive()
+                    || leash::beyond(mob.home, mob.position)
+                {
                     let camp = mob.camp;
-                    self.evade_camp(camp, route.map(|r| (r, map, host)), events);
+                    self.evade_camp(camp, target, route.map(|r| (r, map, host)), events);
                     return;
                 }
                 if self.skills.stunned(mob.guid) {

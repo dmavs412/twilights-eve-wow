@@ -27,6 +27,7 @@ pub(crate) struct OnShard<S> {
     pub(crate) session: S,
     pub(crate) guid: u64,
     pub(crate) position: [f32; 3],
+    pub(crate) alive: bool,
 }
 
 impl Shard {
@@ -99,6 +100,22 @@ impl Shard {
             }
         }
         owners
+    }
+}
+
+/// Notes `player` as the latest to hurt each mob `events` show them hurting.
+pub(crate) fn note_attackers(mobs: &mut [Mob], player: u64, events: &[SessionEvent]) {
+    for e in events {
+        let victim = match e {
+            SessionEvent::AttackerState(s) if s.attacker == player => s.victim,
+            SessionEvent::SpellDamageLog(l) if l.attacker == player => l.target,
+            SessionEvent::PeriodicAuraLog(l) if l.caster == player => l.target,
+            _ => continue,
+        };
+        if let Some(m) = mobs.iter_mut().find(|m| m.guid == victim) {
+            m.attackers.retain(|&g| g != player);
+            m.attackers.push(player);
+        }
     }
 }
 

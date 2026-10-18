@@ -2,6 +2,7 @@
 #![allow(dead_code, unused_imports)]
 
 pub mod fight;
+pub mod party;
 
 pub use benilla_protocol::messages::{
     CHAR_CREATE_NAME_IN_USE, CHAR_CREATE_SERVER_LIMIT, CHAR_CREATE_SUCCESS, CHAR_DELETE_SUCCESS,
