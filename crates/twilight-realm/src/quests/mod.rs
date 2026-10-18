@@ -295,12 +295,17 @@ pub(crate) fn drops(c: &Char, entry: u32, rng: &mut Rng) -> Vec<(u32, u32)> {
             continue;
         };
         for o in &q.collect {
-            if o.from.contains(&entry)
-                && carried(c, o.item) < o.count
+            let (chance, count) = match o.sources.iter().find(|s| s.from.contains(&entry)) {
+                Some(s) => (s.chance, s.count),
+                None if o.from.contains(&entry) => (o.chance, 1),
+                None => continue,
+            };
+            let have = carried(c, o.item);
+            if have < o.count
                 && !out.iter().any(|&(item, _)| item == o.item)
-                && rng.below(100) < o.chance
+                && rng.below(100) < chance
             {
-                out.push((o.item, 1));
+                out.push((o.item, count.min(o.count - have)));
             }
         }
     }

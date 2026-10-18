@@ -19,6 +19,24 @@ pub(crate) struct Collect {
     pub(crate) chance: u32,
     #[serde(default)]
     pub(crate) from: Vec<u32>,
+    /// Drops that differ by creature, each with its own chance and count; a creature named here
+    /// drops by its row instead of by `from` and `chance`.
+    #[serde(default)]
+    pub(crate) sources: Vec<Source>,
+}
+
+/// One kind of creature's drop of a collect objective's item.
+#[derive(Deserialize)]
+pub(crate) struct Source {
+    pub(crate) from: Vec<u32>,
+    pub(crate) chance: u32,
+    /// How many one corpse holds.
+    #[serde(default = "one")]
+    pub(crate) count: u32,
+}
+
+fn one() -> u32 {
+    1
 }
 
 /// A Quest Starter's drop (`content/quest_items.toml`'s `starter_drop`): `item` drops `from`
@@ -524,6 +542,46 @@ pub(crate) fn starter_drops() -> Vec<&'static StarterDrop> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn northshires_bounties_and_the_abbey_relics_have_their_range_giver_and_objective() {
+        // id, kind, giver, levels offered, kills, collected item.
+        let rows: [(u32, Kind, u32, (u8, u8), &[u32], Option<u32>); 5] = [
+            (94005, Kind::Bounty, 196, (1, 5), &[299, 69], None),
+            (94006, Kind::Bounty, 196, (2, 6), &[], Some(980002)),
+            (94007, Kind::Bounty, 823, (3, 7), &[6, 257], None),
+            (94008, Kind::Bounty, 197, (5, 9), &[38], None),
+            (94009, Kind::Repeatable, 197, (6, 15), &[], Some(980003)),
+        ];
+        for (id, kind, giver, (lo, hi), kills, item) in rows {
+            let q = super::quest(id).unwrap_or_else(|| panic!("no quest {id}"));
+            assert!(q.kind == kind, "{id}'s kind");
+            assert!(
+                matches!(q.giver, Giver::Npc(g) if g == giver),
+                "{id}'s giver"
+            );
+            assert!(!q.in_range(lo - 1) || lo == 1, "{id} offered below {lo}");
+            assert!(
+                q.in_range(lo) && q.in_range(hi),
+                "{id} not offered in {lo}-{hi}"
+            );
+            assert!(!q.in_range(hi + 1), "{id} offered above {hi}");
+            let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
+            assert_eq!(killed, kills, "{id}'s kills");
+            assert_eq!(q.collect.first().map(|c| c.item), item, "{id}'s item");
+        }
+        let relics = &super::quest(94009).unwrap().collect[0];
+        let source = |entry| {
+            relics
+                .sources
+                .iter()
+                .find(|s| s.from.contains(&entry))
+                .unwrap()
+        };
+        assert_eq!((source(96003).chance, source(96003).count), (35, 1));
+        assert_eq!((source(96004).chance, source(96004).count), (100, 1));
+        assert_eq!((source(96005).chance, source(96005).count), (100, 3));
+    }
 
     /// A quest of `kind` at level 10, as the content would write it.
     fn quest(kind: &str) -> Quest {

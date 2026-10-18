@@ -32,6 +32,10 @@ item = [
   # Echo Ridge Mine's Quest Starter (#85): it begins The Idol in the Deep. Its display is
   # vmangos's Carved Stone Idol's (item 2636).
   { entry = 980001, name = "Smoldering Twilight Idol", quality = 1, item_level = 7, class = 12, display_id = 2551, max_count = 1, start_quest = 94001 },
+  # Northshire's bounties and the Abbey Relics (#96, #98). The pelt shows vmangos's Ruined Pelt
+  # (item 4865), the relic its Highborne Relic (item 5360).
+  { entry = 980002, name = "Northshire Wolf Pelt", quality = 1, item_level = 4, class = 12, display_id = 7086, stackable = 20 },
+  { entry = 980003, name = "Twilight Relic", quality = 1, item_level = 10, class = 12, display_id = 7697, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done.

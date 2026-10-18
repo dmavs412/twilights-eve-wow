@@ -258,8 +258,8 @@ fn dying_inside_ends_the_run_and_the_monsters_come_back_at_full_health() {
 
 #[test]
 fn the_abbeys_npcs_are_gone_and_mcbride_waits_outside() {
-    let removed: [u64; 15] = [
-        198, 375, 911, 6373, 459, 925, 915, 152, 190, 1213, 78, 11940, 196, 951, 952,
+    let removed: [u64; 14] = [
+        198, 375, 911, 6373, 459, 925, 915, 152, 190, 1213, 78, 11940, 951, 952,
     ];
     let a = Abbey::new();
     let entries: HashSet<u64> = a.seen.iter().map(|g| g >> 24 & 0xFF_FFFF).collect();

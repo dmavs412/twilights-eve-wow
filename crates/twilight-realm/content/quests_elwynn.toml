@@ -79,3 +79,98 @@ money = 0
 tokens = 0
 zone_or_sort = 12
 kill = [[96005, 1]]
+
+# ── Northshire's bounties (#96, #98) ─────────────────────────────────────────────────────────
+#
+# Bounties: taken again as soon as they are handed in, offered only between `min_level` and
+# `max_level`, and paid half a level's XP, unshrunk anywhere in the range, a Token and a little
+# copper. The givers are the vanilla NPCs at their usual spots. Copper amounts are placeholders.
+
+[[quest]]
+id = 94005
+kind = "bounty"
+giver = 196
+level = 3
+min_level = 1
+max_level = 5
+title = "Wolves at the Fold"
+objectives = "Kill 10 Young Wolves or Timber Wolves in Northshire Valley, then return to Eagan Peltskinner."
+details = "The wolves have grown bold since the Abbey went dark. They come right up to the fences now, and my pens won't hold forever. I'll pay a bounty on every pack you thin. Young ones or timber, it makes no difference to me."
+progress = "The wolves still howling out there?"
+completion = "That'll quiet them for a night or two. They'll be back; they always come back. So will my coin, if you will."
+money = 50
+tokens = 1
+zone_or_sort = 12
+kill = [[299, 10], [69, 10]]
+
+[[quest]]
+id = 94006
+kind = "bounty"
+giver = 196
+level = 4
+min_level = 2
+max_level = 6
+title = "Pelts for Peltskinner"
+objectives = "Bring 8 Northshire Wolf Pelts to Eagan Peltskinner."
+details = "A pelt's a pelt, and the quartermaster in Goldshire pays for every one I send. Trouble is, I can't skin what I can't catch. Bring me wolf pelts, whole ones if you can manage it, and I'll pay you a fair cut."
+progress = "Got any pelts for me?"
+completion = "Good, thick hides. These'll keep someone warm come winter. Here's your share."
+money = 60
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980002, count = 8, from = [299, 69], chance = 50 }]
+
+[[quest]]
+id = 94007
+kind = "bounty"
+giver = 823
+level = 5
+min_level = 3
+max_level = 7
+title = "Vermin at Echo Ridge"
+objectives = "Kill 10 Kobold Vermin or Kobold Workers at Echo Ridge Mine, then return to Deputy Willem."
+details = "The kobolds at Echo Ridge are digging faster than ever, and now we know who's paying them. Every one you put down is one less shovel pointed at the Abbey. The Marshal's posted a standing bounty. Vermin or workers, they all count."
+progress = "Still digging out there, are they?"
+completion = "That'll slow them. It won't stop them, mind. Come back when they've dug a few more holes."
+money = 80
+tokens = 1
+zone_or_sort = 12
+kill = [[6, 10], [257, 10]]
+
+[[quest]]
+id = 94008
+kind = "bounty"
+giver = 197
+level = 7
+min_level = 5
+max_level = 9
+title = "Thugs in the Vineyards"
+objectives = "Kill 10 Defias Thugs in the Northshire Vineyards, then return to Marshal McBride."
+details = "The Defias in the vineyards think we're too busy with the Abbey to bother with them. They're half right. I can't spare the guards, but I can spare the coin. A bounty on every thug you bring down, as often as you care to collect."
+progress = "The vineyards still crawling with Defias?"
+completion = "Ten fewer thieves. Padfoot will find more; desperate men are never in short supply. Neither is my bounty."
+money = 120
+tokens = 1
+zone_or_sort = 12
+kill = [[38, 10]]
+
+# ── Abbey Relics (#96, #98) ──────────────────────────────────────────────────────────────────
+#
+# The Abbey's repeatable, levels 6 to 15, with no chain before it. Its relics drop by rank: a
+# Corrupted Brother's at 35%, a Twilight Disciple's always, and the Abbot carries three.
+[[quest]]
+id = 94009
+kind = "repeatable"
+giver = 197
+level = 10
+min_level = 6
+max_level = 15
+title = "Abbey Relics"
+objectives = "Recover 10 Twilight Relics from the Abbey's corrupted brothers and their masters, then return to Marshal McBride."
+details = "Every one of the brothers they turned carries some trinket of theirs, a wax-sealed charm, a carved stone, a candle that won't go out. The disciples carry more. I want them out of the Abbey and burned. Bring me what you find, and keep bringing it until that place is clean."
+progress = "More of their filth, I hope?"
+completion = "Into the fire with the rest. Each one we burn is one they can't use. Come back when the Abbey's filled up again."
+money = 200
+tokens = 3
+zone_or_sort = 12
+collect = [{ item = 980003, count = 10, sources = [{ from = [96003], chance = 35 }, { from = [96004], chance = 100 }, { from = [96005], chance = 100, count = 3 }] }]
