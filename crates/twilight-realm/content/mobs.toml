@@ -619,6 +619,29 @@ detection_range = 18.0
 respawn_secs = 300.0
 spells = ["corruption_creature"]
 
+# Garrick Padfoot, the Defias leader in the Northshire Vineyards, made elite for Padfoot's End
+# (quests_elwynn.toml). This template shadows content/elwynn.toml's generated one: a template
+# here is found first. His level 10 is the Level Band's (level_overrides.toml). Vurx's tuning,
+# untested against a level 10.
+[[template]]
+entry = 103
+name = "Garrick Padfoot"
+creature_type = 7
+rank = 1
+display_id = 2073
+faction_template = 17
+unit_class = "warrior"
+level_min = 5
+level_max = 5
+health_multiplier = 1.6
+damage_multiplier = 1.1
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 10.0
+respawn_secs = 300.0
+
 [[spawn]]
 guid = 9000100
 entry = 3101

@@ -427,3 +427,7 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 18610,Keen Machete,Weapon,Sword,MH,Common,6,1,,,,,,,,3,6,Physical,1.8,,,,,,,,,,,,,5139,36,Equip,30,Side,Metal,,,,,,,,
 900000,Recruit's Mail Vest,Chest,Mail,,Common,2,1,,,,,,12,,,,,,,,,,,,,,,,,,9891,6,,55,,Chain,,,,,,,9892,10141
 900001,Recruit's Plate Vest,Chest,Plate,,Common,2,1,,,,,,20,,,,,,,,,,,,,,,,,,9891,8,,65,,Plate,,,,,,,9892,10141
+900101,Padfoot's Ill-Gotten Staff,Weapon,Staff,2H,Uncommon,12,7,,,,4,3,,,18,28,Physical,3,,,,,,,,,,,,,20410,820,Pickup,60,Staff,Wood,,,,,,,,
+900102,Padfoot's Shiv,Weapon,Dagger,1H,Uncommon,12,7,,3,1,,,,,8,15,Physical,1.5,,,,,,,,,,,,,6472,810,Pickup,35,Side,Metal,,,,,,,,
+900103,Vineyard Poacher's Bow,Ranged,Bow,,Uncommon,12,7,,3,1,,,,,9,17,Physical,2.4,,,,,,,,,,,,,20712,800,Pickup,40,,Wood,,,,,,,,
+900104,Garrick's Vintner Cleaver,Weapon,Axe,2H,Uncommon,12,7,4,,2,,,,,24,37,Physical,3.2,,,,,,,,,,,,,19226,830,Pickup,60,Back,Metal,,,,,,,,

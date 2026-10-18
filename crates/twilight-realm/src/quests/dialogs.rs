@@ -48,7 +48,7 @@ pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
         src_item_id: 0,
         flags: 0,
         rewards,
-        choices: [(0, 0); 6],
+        choices: std::array::from_fn(|i| q.choices.get(i).map_or((0, 0), |&item| (item, 1))),
         point_map_id: 0,
         point_x: 0.0,
         point_y: 0.0,
@@ -142,13 +142,21 @@ impl Realm {
                     }
                 }
             }
-            RealmCommand::QuestGiverChooseReward { npc, quest, .. } => {
+            RealmCommand::QuestGiverChooseReward { npc, quest, choice } => {
                 if let Some(q) = talking_to(c, w, npc).and_then(|g| in_log(c, g, quest)) {
-                    if is_complete(c, q) && reward(c, q, events) {
+                    // A quest with choices takes one of them; vmangos refuses any other index.
+                    let chosen = q.choices.get(choice as usize).copied();
+                    if (q.choices.is_empty() || chosen.is_some())
+                        && is_complete(c, q)
+                        && reward(c, q, chosen, events)
+                    {
                         let gained = w.reward_xp(c, q.reward_xp(c.level), events);
                         let mut items = Vec::new();
                         if q.tokens > 0 {
                             items.push((TOKEN, q.tokens));
+                        }
+                        if let Some(item) = chosen {
+                            items.push((item, 1));
                         }
                         events.push(SessionEvent::QuestComplete(QuestComplete {
                             quest_id: q.id,
@@ -387,6 +395,18 @@ fn hello(c: &Char, g: Speaker, npc: u64, events: &mut Vec<SessionEvent>) {
     }
 }
 
+/// The items to choose one of.
+fn choice_rewards(q: &Quest) -> Vec<QuestRewardItem> {
+    q.choices
+        .iter()
+        .map(|&item| QuestRewardItem {
+            item_id: item,
+            count: 1,
+            display_id: display(item),
+        })
+        .collect()
+}
+
 /// The Token row, when the quest pays Tokens.
 fn token_rewards(q: &Quest) -> Vec<QuestRewardItem> {
     if q.tokens == 0 {
@@ -412,7 +432,7 @@ fn details(npc: u64, q: &Quest) -> QuestDetails {
         details: q.details.clone(),
         objectives: q.objectives.clone(),
         auto_finish: 0,
-        choices: Vec::new(),
+        choices: choice_rewards(q),
         rewards: token_rewards(q),
         money: q.money as i32,
         reward_spell: 0,
@@ -427,7 +447,7 @@ fn offer_reward(npc: u64, q: &Quest) -> QuestOfferReward {
         title: q.title.clone(),
         offer_text: q.completion.clone(),
         auto_finish: 0,
-        choices: Vec::new(),
+        choices: choice_rewards(q),
         rewards: token_rewards(q),
         money: q.money as i32,
         quest_flags: 0,
@@ -479,11 +499,14 @@ fn turn_in(c: &Char, npc: u64, q: &Quest, events: &mut Vec<SessionEvent>) {
     }));
 }
 
-/// The hand-in's goods: the collected items go, the money and Tokens come, and the slot clears.
-/// The XP is the world's to pay. Tokens that would not fit in the bags refuse the hand-in before
-/// anything changes, as vmangos `Player::CanRewardQuest` does; whether it went through.
-fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
-    if q.tokens > 0 && !c.inventory.fits(TOKEN, q.tokens) {
+/// The hand-in's goods: the collected items go, the money, Tokens and `chosen` item come, and the
+/// slot clears. The XP is the world's to pay. Goods that would not fit in the bags refuse the
+/// hand-in before anything changes, as vmangos `Player::CanRewardQuest` does; whether it went
+/// through.
+fn reward(c: &mut Char, q: &Quest, chosen: Option<u32>, events: &mut Vec<SessionEvent>) -> bool {
+    let tokens_fit = q.tokens == 0 || c.inventory.fits(TOKEN, q.tokens);
+    let chosen_fits = chosen.is_none_or(|item| c.inventory.fits(item, 1));
+    if !tokens_fit || !chosen_fits {
         events.push(equipment::inventory_failure(
             equipment::EQUIP_ERR_INVENTORY_FULL,
             0,
@@ -497,6 +520,10 @@ fn reward(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
     if q.tokens > 0 {
         // Checked above.
         let _ = equipment::receive_from(c, TOKEN, q.tokens, true, events);
+    }
+    if let Some(item) = chosen {
+        // Checked above.
+        let _ = equipment::receive_from(c, item, 1, true, events);
     }
     if !c.quests.completed.contains(&q.id) {
         c.quests.completed.push(q.id);

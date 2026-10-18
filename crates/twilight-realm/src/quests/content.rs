@@ -138,6 +138,10 @@ pub(crate) struct Quest {
     pub(crate) money: u32,
     /// Tokens on hand-in.
     pub(crate) tokens: u32,
+    /// The reward panel's "You will be able to choose one of these": item entries, one of the
+    /// chosen one on hand-in. At most six (`QUEST_REWARD_CHOICES_COUNT`).
+    #[serde(default)]
+    pub(crate) choices: Vec<u32>,
     /// `(creature entry, count)`.
     #[serde(default)]
     pub(crate) kill: Vec<(u32, u32)>,
@@ -338,6 +342,18 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool) {
             "quest {} names {npc}, who is no quest giver in content/hub.toml and no \
                      friendly spawn anywhere",
             q.id,
+        );
+    }
+    assert!(
+        q.choices.len() <= 6,
+        "quest {} offers more than six reward choices",
+        q.id
+    );
+    for &item in &q.choices {
+        assert!(
+            crate::items::template(item).is_some(),
+            "quest {} offers item {item}, which the content does not have",
+            q.id
         );
     }
     if let Some(p) = q.after {

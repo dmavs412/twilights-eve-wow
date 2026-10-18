@@ -39,3 +39,23 @@ completion = "Light be praised, a living face! They came up through the undercro
 money = 0
 tokens = 0
 zone_or_sort = 12
+
+# ── Garrick Padfoot ──────────────────────────────────────────────────────────────────────────
+#
+# Once per character: Marshal McBride wants the elite Defias leader in the vineyards dead, and
+# pays in one of Garrick's own weapons, one for each kind of fighter.
+[[quest]]
+id = 94003
+kind = "story"
+giver = 197
+level = 10
+title = "Padfoot's End"
+objectives = "Kill Garrick Padfoot in the Northshire Vineyards, then return to Marshal McBride."
+details = "The Defias in the vineyards answer to one man: Garrick Padfoot. He's no common cutpurse. He's put more of my guards in the infirmary than the kobolds have, and he keeps what he takes. Bring him down, and you can have your pick of his hoard. Don't go alone if you can help it."
+progress = "Padfoot still breathing?"
+completion = "Padfoot's dead? Then the vineyards are ours again. He kept a fine stash for a thief. Take whichever suits your hand. You've earned it."
+money = 500
+tokens = 0
+zone_or_sort = 12
+kill = [[103, 1]]
+choices = [900101, 900102, 900103, 900104]
