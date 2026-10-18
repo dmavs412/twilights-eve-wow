@@ -79,6 +79,8 @@ use benilla_protocol::{CharCreateReq, RealmInfo, SessionEvent};
 /// The realm's name, as the select screen's banner shows it.
 pub const REALM_NAME: &str = "Twilight's Eve";
 
+pub mod build_id;
+
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
 pub use save::{SaveError, Storage, SAVE_VERSION};
@@ -149,6 +151,8 @@ pub enum RealmCommand {
     },
     /// Back to character select.
     Logout,
+    /// Stand up from a pending logout (`CMSG_LOGOUT_CANCEL`).
+    LogoutCancel,
     /// An item template, answered with [`SessionEvent::ItemTemplate`].
     ItemQuery {
         entry: u32,
@@ -369,7 +373,12 @@ pub struct Realm {
     wall: f64,
     /// The Creature Spells a test gave creatures beyond their templates'.
     casters: creature_spells::Casters,
+    /// A logout away from an inn waits [`CAMP_SECS`], as on a server (#146); solo is instant.
+    camp_logout: bool,
 }
+
+/// How long a logout away from an inn takes when [`Realm::with_camp_logout`] is on.
+pub const CAMP_SECS: f32 = 20.0;
 
 impl Realm {
     /// A realm whose dice start from a fixed seed.
@@ -443,6 +452,13 @@ impl Realm {
             self.serve(SessionId::DEFAULT);
             self.parked.remove(&session);
         }
+    }
+
+    /// A realm whose logouts away from an inn take [`CAMP_SECS`], refused in combat and cancelled
+    /// by moving: the friends server's rule.
+    pub fn with_camp_logout(mut self) -> Self {
+        self.camp_logout = true;
+        self
     }
 
     /// Where every character in the world stands: `(map, position)`, for a host that loads the
@@ -737,6 +753,10 @@ impl Realm {
             } => {
                 if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
+                    // Walking off stands up from a pending logout.
+                    if from.is_some_and(|f| f != position) && w.logout_in.take().is_some() {
+                        self.events.push(SessionEvent::LogoutCancelled);
+                    }
                     if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
                         let guid = w.guid;
                         self.characters.set_position(guid, position, orientation);
@@ -824,9 +844,13 @@ impl Realm {
                     hub::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
                 self.events.push(answer);
             }
-            RealmCommand::Logout => {
-                self.dev_teleport = None;
-                self.logout();
+            RealmCommand::Logout => self.ask_logout(),
+            RealmCommand::LogoutCancel => {
+                if let Some(w) = &mut self.world {
+                    if w.logout_in.take().is_some() {
+                        self.events.push(SessionEvent::LogoutCancelled);
+                    }
+                }
             }
             RealmCommand::DevTeleport { x, y, facing } => {
                 if self.world.is_some() {
@@ -975,6 +999,14 @@ impl Realm {
         let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
+        if let Some(left) = &mut w.logout_in {
+            *left -= dt;
+            if *left <= 0.0 {
+                self.dev_teleport = None;
+                self.logout();
+                return;
+            }
+        }
         let map = c.map;
         if let Some(to) = self.dev_teleport.take() {
             w.dev_teleport(to, host, c, &mut self.events);
@@ -1148,6 +1180,37 @@ impl Realm {
         let mut entry = world::InWorld::enter(c, self.dev, self.wall, &mut self.events);
         entry.casters = self.casters.clone();
         self.world = Some(entry);
+    }
+
+    /// A logout asked for: at once in an inn, solo, or out of the world; refused in combat;
+    /// otherwise after [`CAMP_SECS`].
+    fn ask_logout(&mut self) {
+        let camps = self.camp_logout
+            && self.world.as_ref().is_some_and(|w| {
+                self.characters
+                    .get(w.guid)
+                    .is_some_and(|c| !rest::in_inn(c.map, c.position))
+            });
+        let Some(w) = self.world.as_mut().filter(|_| camps) else {
+            self.dev_teleport = None;
+            self.logout();
+            return;
+        };
+        if w.in_combat() {
+            // vmangos `LogoutRequest`: 1 is "You can't log out now." in combat.
+            self.events.push(SessionEvent::LogoutResponse {
+                reason: 1,
+                instant: false,
+            });
+            return;
+        }
+        if w.logout_in.is_none() {
+            w.logout_in = Some(CAMP_SECS);
+            self.events.push(SessionEvent::LogoutResponse {
+                reason: 0,
+                instant: false,
+            });
+        }
     }
 
     fn logout(&mut self) {

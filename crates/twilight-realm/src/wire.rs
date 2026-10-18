@@ -5,6 +5,16 @@ use std::io::{self, Read, Write};
 
 use serde::{de::DeserializeOwned, Serialize};
 
+/// A client's first frame (#143, #144): who it is, the server's join password, and its
+/// [`crate::build_id::build_id`]. A refusal is a lost `SessionEvent::Disconnected` and a close;
+/// an accepted client's next frames are [`crate::RealmCommand`]s.
+#[derive(Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Hello {
+    pub account: String,
+    pub join_password: String,
+    pub build_id: String,
+}
+
 /// The largest frame body either end writes or reads; a bigger one is a broken or hostile peer.
 pub const MAX_FRAME: usize = 16 * 1024 * 1024;
 

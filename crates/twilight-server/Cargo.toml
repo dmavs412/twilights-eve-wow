@@ -15,3 +15,8 @@ anyhow.workspace = true
 benilla-formats = { path = "../benilla-formats", default-features = false }
 benilla-wdt = { path = "../benilla-wdt" }
 parry3d = "0.26"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+[build-dependencies]
+benilla-buildstamp = { path = "../benilla-buildstamp" }

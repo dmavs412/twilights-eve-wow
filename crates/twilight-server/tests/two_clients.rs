@@ -1,5 +1,6 @@
 //! Two clients join one server over TCP: each creates a character, enters the world, and is sent
-//! the other once they stand together.
+//! the other once they stand together. Each account sees only its own roster, and a wrong
+//! join password or build is refused.
 
 use std::io::BufReader;
 use std::net::{TcpListener, TcpStream};
@@ -7,11 +8,13 @@ use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant};
 
 use benilla_protocol::{CharCreateReq, EntityKind, SessionEvent};
-use twilight_realm::wire::{read_frame, write_frame};
+use twilight_realm::wire::{read_frame, write_frame, Hello};
 use twilight_realm::{RealmCommand, CROSSROADS};
 
 const HUMAN: u8 = 1;
 const WARRIOR: u8 = 1;
+const PASSWORD: &str = "friends";
+const BUILD: &str = "test-build";
 /// Far out past The Barrens' camps: nothing else streams in.
 const FAR_AWAY: [f32; 3] = [CROSSROADS[0] + 3000.0, CROSSROADS[1], 0.0];
 
@@ -21,8 +24,18 @@ struct Client {
 }
 
 impl Client {
-    fn connect(addr: std::net::SocketAddr) -> Self {
-        let stream = TcpStream::connect(addr).expect("the server answers");
+    fn connect(addr: std::net::SocketAddr, account: &str) -> Self {
+        Self::hello(addr, account, PASSWORD, BUILD)
+    }
+
+    fn hello(addr: std::net::SocketAddr, account: &str, password: &str, build: &str) -> Self {
+        let mut stream = TcpStream::connect(addr).expect("the server answers");
+        let hello = Hello {
+            account: account.into(),
+            join_password: password.into(),
+            build_id: build.into(),
+        };
+        write_frame(&mut stream, &hello).unwrap();
         let mut reader = BufReader::new(stream.try_clone().unwrap());
         let (tx, events) = mpsc::channel();
         std::thread::spawn(move || {
@@ -90,11 +103,16 @@ fn two_clients_see_each_other_over_the_wire() {
     let _ = std::fs::remove_dir_all(&data_dir);
     let dir = data_dir.clone();
     std::thread::spawn(move || {
-        twilight_server::serve(listener, dir, Box::new(twilight_server::FlatHost))
+        let config = twilight_server::Config {
+            data_dir: dir,
+            join_password: PASSWORD.into(),
+            build_id: BUILD.into(),
+        };
+        twilight_server::serve(listener, config, Box::new(twilight_server::FlatHost))
     });
 
-    let mut a = Client::connect(addr);
-    let mut b = Client::connect(addr);
+    let mut a = Client::connect(addr, "anna");
+    let mut b = Client::connect(addr, "bo");
     let guid_a = a.create_and_enter("Aldren");
     let guid_b = b.create_and_enter("Brena");
     a.send(RealmCommand::Move {
@@ -114,6 +132,30 @@ fn two_clients_see_each_other_over_the_wire() {
     };
     a.wait_for("create of the other player", sees(guid_b));
     b.wait_for("create of the other player", sees(guid_a));
+
+    // Bo's roster holds Brena and not Aldren.
+    b.send(RealmCommand::ListCharacters);
+    let names = b.wait_for("roster", |e| match e {
+        SessionEvent::CharacterList { characters, .. } => Some(
+            characters
+                .iter()
+                .map(|c| c.name.clone())
+                .collect::<Vec<_>>(),
+        ),
+        _ => None,
+    });
+    assert_eq!(names, ["Brena"]);
+
+    let refused = |c: Client| {
+        c.wait_for("refusal", |e| match e {
+            SessionEvent::Disconnected { reason, .. } => Some(reason.clone()),
+            _ => None,
+        })
+    };
+    let why = refused(Client::hello(addr, "cy", "wrong", BUILD));
+    assert!(why.contains("join password"), "{why}");
+    let why = refused(Client::hello(addr, "cy", PASSWORD, "old-build"));
+    assert!(why.contains(BUILD) && why.contains("old-build"), "{why}");
 
     // Both characters were saved under the data dir when they were created.
     let saves = std::fs::read_dir(data_dir.join("characters")).map_or(0, |d| d.count());

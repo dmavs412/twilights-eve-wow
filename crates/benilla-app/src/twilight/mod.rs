@@ -61,7 +61,14 @@ impl Plugin for TwilightPlugin {
             .and_then(|mut link| link.0.take())
             .expect("Twilight's Eve needs the net layer's in-process backend");
         let backing = match remote::server_address() {
-            Some(address) => Backing::Remote(remote::RemoteLink::connect(&address)),
+            Some(address) => {
+                let commit = app
+                    .world()
+                    .get_resource::<crate::BuildId>()
+                    .map_or("", |b| b.sha);
+                let hello = remote::hello(twilight_realm::build_id::build_id(commit));
+                Backing::Remote(remote::RemoteLink::connect(&address, &hello))
+            }
             None => {
                 // Fresh dice every session; a test seeds its own.
                 let mut realm = Realm::with_seed(rand::random()).with_dev(dev_multipliers());
@@ -345,6 +352,7 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             packed,
         }),
         ClientCommand::Logout => Some(RealmCommand::Logout),
+        ClientCommand::LogoutCancel => Some(RealmCommand::LogoutCancel),
         ClientCommand::ItemQuery { entry, .. } => Some(RealmCommand::ItemQuery { entry }),
         ClientCommand::Loot { guid } => Some(RealmCommand::Loot { guid }),
         ClientCommand::LootMoney => Some(RealmCommand::LootMoney),

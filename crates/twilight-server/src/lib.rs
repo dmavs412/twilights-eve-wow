@@ -1,6 +1,7 @@
 //! **The friends server** (ADR 0009): one [`Realm`] on its own thread, ticked on a fixed clock,
 //! and a TCP connection per client. A connection is a realm session; its frames are
-//! [`RealmCommand`]s in and `SessionEvent`s out ([`twilight_realm::wire`]).
+//! [`RealmCommand`]s in and `SessionEvent`s out ([`twilight_realm::wire`]), after a first
+//! [`Hello`] frame that names the account and carries the join password and build id.
 
 use std::collections::HashMap;
 use std::io::{BufReader, BufWriter, Write};
@@ -9,8 +10,9 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use benilla_protocol::SessionEnd;
 use benilla_protocol::SessionEvent;
-use twilight_realm::wire::{read_frame, write_frame};
+use twilight_realm::wire::{read_frame, write_frame, Hello};
 use twilight_realm::{Host, Realm, RealmCommand, SessionId, Storage};
 
 /// Where the server listens unless `--listen` says otherwise.
@@ -19,8 +21,14 @@ pub const DEFAULT_LISTEN: &str = "0.0.0.0:3725";
 /// The realm's tick rate.
 const TICK: Duration = Duration::from_millis(50);
 
+/// How long a dropped connection's character stays in the world before it is saved and removed.
+const LINGER: Duration = Duration::from_secs(20);
+
+mod accounts;
 mod collision;
 mod terrain;
+
+use accounts::Accounts;
 
 pub use terrain::Terrain;
 
@@ -39,8 +47,9 @@ impl World for Terrain {
 
 impl World for FlatHost {}
 
-/// A world with no game data, for tests: no ground is known (a mob keeps its own height; the realm probes 2 yd above it, so
-/// echoing the probe would lift it every step), and nothing blocks a sight line.
+/// A world with no game data, for tests: no ground is known (a mob keeps its own height; the
+/// realm probes 2 yd above it, so echoing the probe would lift it every step), and nothing blocks
+/// a sight line.
 pub struct FlatHost;
 
 impl Host for FlatHost {
@@ -59,6 +68,7 @@ impl Host for FlatHost {
 enum Inbound {
     Open {
         conn: u64,
+        account: String,
         events: Sender<SessionEvent>,
     },
     Command {
@@ -70,20 +80,52 @@ enum Inbound {
     },
 }
 
-/// Serves `listener` forever in `world`, keeping saves under `data_dir`.
-pub fn serve(listener: TcpListener, data_dir: PathBuf, world: Box<dyn World>) {
+/// How the server is run.
+pub struct Config {
+    /// Where the saves and `accounts.toml` live.
+    pub data_dir: PathBuf,
+    /// What a client's [`Hello`] must carry to get in.
+    pub join_password: String,
+    /// This server's [`twilight_realm::build_id::build_id`]; a client of another is refused.
+    pub build_id: String,
+}
+
+/// Serves `listener` forever in `world`.
+pub fn serve(listener: TcpListener, config: Config, world: Box<dyn World>) {
     let (tx, rx) = mpsc::channel();
-    std::thread::spawn(move || run_realm(rx, &data_dir, world));
+    let gate = std::sync::Arc::new((config.join_password.clone(), config.build_id.clone()));
+    std::thread::spawn(move || run_realm(rx, &config.data_dir, world));
     for (conn, stream) in (1..).zip(listener.incoming()) {
         match stream {
-            Ok(stream) => accept(conn, stream, tx.clone()),
+            Ok(stream) => {
+                let (tx, gate) = (tx.clone(), gate.clone());
+                std::thread::spawn(move || accept(conn, stream, tx, &gate.0, &gate.1));
+            }
             Err(e) => eprintln!("twilight-server: accept failed: {e}"),
         }
     }
 }
 
-/// Starts a connection's reader and writer threads.
-fn accept(conn: u64, stream: TcpStream, tx: Sender<Inbound>) {
+/// Why `hello` may not come in, if it may not.
+fn refusal(hello: &Hello, join_password: &str, build_id: &str) -> Option<String> {
+    if hello.build_id != build_id {
+        return Some(format!(
+            "runs build {build_id}, and this client is build {}; get the server's client build",
+            hello.build_id
+        ));
+    }
+    if hello.join_password != join_password {
+        return Some("refused the join password".to_string());
+    }
+    if Accounts::key(&hello.account).is_empty() {
+        return Some("needs an account name (--account or WOW_ACCOUNT)".to_string());
+    }
+    None
+}
+
+/// Reads a connection's [`Hello`], then reads its commands on this thread and writes its events
+/// on another.
+fn accept(conn: u64, stream: TcpStream, tx: Sender<Inbound>, join_password: &str, build_id: &str) {
     let peer = stream
         .peer_addr()
         .map(|a| a.to_string())
@@ -93,10 +135,26 @@ fn accept(conn: u64, stream: TcpStream, tx: Sender<Inbound>) {
     let Ok(write_half) = stream.try_clone() else {
         return;
     };
+    let mut reader = BufReader::new(stream);
+    let Ok(hello) = read_frame::<_, Hello>(&mut reader) else {
+        eprintln!("twilight-server: connection {conn} sent no hello");
+        return;
+    };
+    if let Some(why) = refusal(&hello, join_password, build_id) {
+        eprintln!("twilight-server: connection {conn} refused: {why}");
+        let mut w = BufWriter::new(write_half);
+        let refused = SessionEvent::Disconnected {
+            reason: format!("the server {why}"),
+            end: SessionEnd::Lost,
+        };
+        let _ = write_frame(&mut w, &refused).and_then(|()| w.flush());
+        return;
+    }
     let (events_tx, events_rx) = mpsc::channel();
     if tx
         .send(Inbound::Open {
             conn,
+            account: Accounts::key(&hello.account),
             events: events_tx,
         })
         .is_err()
@@ -104,16 +162,13 @@ fn accept(conn: u64, stream: TcpStream, tx: Sender<Inbound>) {
         return;
     }
     std::thread::spawn(move || write_events(write_half, events_rx));
-    std::thread::spawn(move || {
-        let mut reader = BufReader::new(stream);
-        while let Ok(command) = read_frame::<_, RealmCommand>(&mut reader) {
-            if tx.send(Inbound::Command { conn, command }).is_err() {
-                return;
-            }
+    while let Ok(command) = read_frame::<_, RealmCommand>(&mut reader) {
+        if tx.send(Inbound::Command { conn, command }).is_err() {
+            return;
         }
-        eprintln!("twilight-server: connection {conn} closed");
-        let _ = tx.send(Inbound::Closed { conn });
-    });
+    }
+    eprintln!("twilight-server: connection {conn} closed");
+    let _ = tx.send(Inbound::Closed { conn });
 }
 
 /// Writes a connection's events as they come, flushing once the queue runs dry.
@@ -131,11 +186,21 @@ fn write_events(stream: TcpStream, events: Receiver<SessionEvent>) {
     }
 }
 
+/// A connection the realm serves.
+struct Conn {
+    session: SessionId,
+    account: String,
+    events: Sender<SessionEvent>,
+}
+
 /// The realm thread: applies commands as they arrive and ticks at [`TICK`].
 fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) {
-    let mut realm = Realm::with_seed(seed());
+    let mut realm = Realm::with_seed(seed()).with_camp_logout();
     load_saves(&mut realm, data_dir);
-    let mut sessions: HashMap<u64, (SessionId, Sender<SessionEvent>)> = HashMap::new();
+    let mut accounts = Accounts::load(data_dir);
+    let mut conns: HashMap<u64, Conn> = HashMap::new();
+    // Dropped connections whose characters stay in the world until their time is up.
+    let mut lingering: Vec<(Instant, String, SessionId)> = Vec::new();
     let mut last = Instant::now();
     let mut next = last + TICK;
     loop {
@@ -143,17 +208,52 @@ fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) 
         loop {
             let wait = next.saturating_duration_since(Instant::now());
             match rx.recv_timeout(wait) {
-                Ok(Inbound::Open { conn, events }) => {
-                    sessions.insert(conn, (realm.connect(), events));
+                Ok(Inbound::Open {
+                    conn,
+                    account,
+                    events,
+                }) => {
+                    accounts.register(&account);
+                    // Back before the linger ran out: the old character leaves now, saved.
+                    lingering.retain(|(_, a, session)| {
+                        let back = *a == account;
+                        if back {
+                            realm.disconnect(*session);
+                        }
+                        !back
+                    });
+                    let session = realm.connect();
+                    conns.insert(
+                        conn,
+                        Conn {
+                            session,
+                            account,
+                            events,
+                        },
+                    );
                 }
                 Ok(Inbound::Command { conn, command }) => {
-                    if let Some(&(session, _)) = sessions.get(&conn) {
-                        realm.handle_as(session, command);
+                    let Some(c) = conns.get(&conn) else {
+                        continue;
+                    };
+                    if !accounts.allows(&c.account, &command) {
+                        continue;
+                    }
+                    let creates = matches!(command, RealmCommand::CreateCharacter(_));
+                    realm.handle_as(c.session, command);
+                    if creates {
+                        // The new character's first save names its guid, which no one owns yet.
+                        for op in realm.drain_storage() {
+                            if let Storage::Write { guid, .. } = &op {
+                                accounts.claim(&c.account, *guid);
+                            }
+                            store(data_dir, op);
+                        }
                     }
                 }
                 Ok(Inbound::Closed { conn }) => {
-                    if let Some((session, _)) = sessions.remove(&conn) {
-                        realm.disconnect(session);
+                    if let Some(c) = conns.remove(&conn) {
+                        lingering.push((Instant::now() + LINGER, c.account, c.session));
                     }
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => break,
@@ -162,6 +262,13 @@ fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) 
         }
         let now = Instant::now();
         next = now + TICK;
+        lingering.retain(|&(until, _, session)| {
+            let due = now >= until;
+            if due {
+                realm.disconnect(session);
+            }
+            !due
+        });
         if let Ok(wall) = SystemTime::now().duration_since(UNIX_EPOCH) {
             realm.set_wall_clock(wall.as_millis() as u64);
         }
@@ -169,13 +276,17 @@ fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) 
         realm.tick((now - last).as_secs_f32(), &*world);
         last = now;
         for op in realm.drain_storage() {
+            if let Storage::Remove { guid } = op {
+                accounts.release(guid);
+            }
             store(data_dir, op);
         }
-        let by_session: HashMap<SessionId, &Sender<SessionEvent>> =
-            sessions.values().map(|(s, tx)| (*s, tx)).collect();
+        let by_session: HashMap<SessionId, &Conn> =
+            conns.values().map(|c| (c.session, c)).collect();
+        // A lingering session's events have no one to go to.
         for (session, event) in realm.drain_session_events() {
-            if let Some(tx) = by_session.get(&session) {
-                let _ = tx.send(event);
+            if let Some(c) = by_session.get(&session) {
+                let _ = c.events.send(accounts.filter(&c.account, event));
             }
         }
         for line in realm.drain_log() {
