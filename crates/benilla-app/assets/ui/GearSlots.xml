@@ -1,0 +1,39 @@
+<Ui>
+    <!--
+        The ten Gear Slots (ADR 0007): the character pane and the inspect window show only the
+        Weapon, Offhand, Ranged, Ammo, Ring, Trinket, Chest and Amulet buttons. The other body
+        parts hold no item; the model still wears the Chest's Wardrobe, which the realm writes
+        into their visible-item fields. The remaining buttons keep their stock places, gaps and
+        all.
+    -->
+    <Script><![CDATA[
+        -- The stock slot buttons' names (`PaperDollFrame.xml`, `Blizzard_InspectUI.xml`) for the
+        -- body parts outside the Gear Slots, after the window's prefix and before "Slot".
+        BENILLA_HIDDEN_GEAR_SLOTS = {
+            "Head", "Shoulder", "Back", "Shirt", "Tabard", "Wrist", "Hands", "Waist", "Legs",
+            "Feet",
+        }
+
+        local function BenillaGearSlots_Hide(prefix)
+            for _, part in ipairs(BENILLA_HIDDEN_GEAR_SLOTS) do
+                local button = getglobal(prefix .. part .. "Slot")
+                if button then
+                    button:Hide()
+                end
+            end
+        end
+
+        BenillaGearSlots_Hide("Character")
+        -- The inspect window is LoadOnDemand: hide its buttons when it loads, or now if it has.
+        if InspectFrame then
+            BenillaGearSlots_Hide("Inspect")
+        end
+        local loader = CreateFrame("Frame")
+        loader:RegisterEvent("ADDON_LOADED")
+        loader:SetScript("OnEvent", function()
+            if arg1 == "Blizzard_InspectUI" then
+                BenillaGearSlots_Hide("Inspect")
+            end
+        end)
+    ]]></Script>
+</Ui>

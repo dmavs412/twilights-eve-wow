@@ -21,3 +21,5 @@ SpellBookAdapters.xml
 ScriptLogFrame.xml
 # Our fixes to the stock Lua.
 FrameXMLFixes.xml
+# The character pane's and inspect window's buttons for the ten Gear Slots only (ADR 0007).
+GearSlots.xml

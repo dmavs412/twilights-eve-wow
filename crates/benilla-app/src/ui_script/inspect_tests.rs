@@ -101,6 +101,11 @@ fn drawn(s: &mut UiScript, needle: &str) -> bool {
 
 /// Everything the window needs to open on `"target"`, in range.
 fn armed() -> UiScript {
+    armed_with(&[])
+}
+
+/// [`armed`], with the `layer` files loaded before the window's addon.
+fn armed_with(layer: &[&str]) -> UiScript {
     let mut s = UiScript::new().unwrap();
     s.set_screen_size(1024.0, 768.0);
     // `PLAYER_LEVEL`, the template the stock level line formats through.
@@ -124,6 +129,9 @@ fn armed() -> UiScript {
     load_xml(&s, "Interface\\FrameXML\\HonorFrame.xml");
     // Our scroll kit.
     load_xml(&s, "ScrollTemplates.xml");
+    for f in layer {
+        load_xml(&s, f);
+    }
     // A LoadOnDemand addon, seated off the chain as a registry row and loaded by the stock
     // `InspectFrame_LoadUI` (`UIParent.lua:170`), which `InspectUnit` calls (`UIParent.lua:223`).
     super::test_ui::seat_chain_addon(&mut s, "Blizzard_InspectUI");
@@ -134,6 +142,27 @@ fn armed() -> UiScript {
     // 4 yards away (d² = 16), inside the 10-yard gate (100.0).
     s.set_unit_reach(HashMap::from([(TARGET, reach(16.0))]));
     s
+}
+
+/// The ten Gear Slots (ADR 0007): the inspect window shows the neck, chest, finger, trinket and
+/// hand buttons, and hides those for the parts the Chest's Wardrobe dresses.
+#[test]
+fn the_inspect_window_shows_only_the_gear_slot_buttons() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = armed_with(&["GearSlots.xml"]);
+    s.run(r#"InspectUnit("target")"#).unwrap();
+    assert!(s.errors().is_empty(), "errors: {:?}", s.errors());
+    assert!(s.eval::<bool>("return InspectFrame:IsVisible()").unwrap());
+    let visible = |s: &mut UiScript, part: &str| -> bool {
+        s.eval(&format!("return Inspect{part}Slot:IsVisible()"))
+            .unwrap()
+    };
+    for part in super::GEAR_SLOT_BUTTONS.iter().filter(|p| **p != "Ammo") {
+        assert!(visible(&mut s, part), "{part} shown");
+    }
+    for part in super::HIDDEN_SLOT_BUTTONS {
+        assert!(!visible(&mut s, part), "{part} hidden");
+    }
 }
 
 /// The window, its 19 slots and the model pane load with no errors.

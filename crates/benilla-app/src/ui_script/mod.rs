@@ -921,6 +921,29 @@ mod questlog_tests;
 #[cfg(test)]
 mod character_tests;
 
+/// The stock slot buttons' parts the ten Gear Slots keep (ADR 0007), between the window's prefix
+/// and "Slot"; the inspect window has no ammo button.
+#[cfg(test)]
+const GEAR_SLOT_BUTTONS: [&str; 10] = [
+    "Neck",
+    "Chest",
+    "Finger0",
+    "Finger1",
+    "Trinket0",
+    "Trinket1",
+    "MainHand",
+    "SecondaryHand",
+    "Ranged",
+    "Ammo",
+];
+
+/// The parts `assets/ui/GearSlots.xml` hides: what the Chest's Wardrobe dresses, the shirt and
+/// the tabard.
+#[cfg(test)]
+const HIDDEN_SLOT_BUTTONS: [&str; 10] = [
+    "Head", "Shoulder", "Back", "Shirt", "Tabard", "Wrist", "Hands", "Waist", "Legs", "Feet",
+];
+
 #[cfg(test)]
 mod skills_frame_tests;
 

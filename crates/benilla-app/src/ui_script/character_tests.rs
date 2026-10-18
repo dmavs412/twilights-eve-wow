@@ -126,6 +126,41 @@ fn shipped_character_frame_loads_clean() {
     );
 }
 
+/// The ten Gear Slots (ADR 0007): the character pane shows the Weapon, Offhand, Ranged, Ammo,
+/// Ring, Trinket, Chest and Amulet buttons, and hides those for the parts the Chest's Wardrobe
+/// dresses. The model pane stays.
+#[test]
+fn the_character_pane_shows_only_the_gear_slot_buttons() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = UiScript::new().unwrap();
+    s.set_screen_size(1024.0, 768.0);
+    for f in super::test_ui::CHARACTER_UI {
+        super::test_ui::load_ui_strict(&s, f);
+    }
+    super::test_ui::load_ui_strict(&s, "GearSlots.xml");
+    s.set_unit("player", Some(player_unit()));
+    s.set_player_combat_stats(Some(combat_stats()));
+    s.set_inventory_slots(inventory_with_head_item());
+    s.run(r#"ToggleCharacter("PaperDollFrame")"#).unwrap();
+    assert!(s.errors().is_empty(), "open errors: {:?}", s.errors());
+    let visible = |s: &mut UiScript, part: &str| -> bool {
+        s.eval(&format!("return Character{part}Slot:IsVisible()"))
+            .unwrap()
+    };
+    for part in super::GEAR_SLOT_BUTTONS {
+        assert!(visible(&mut s, part), "{part} shown");
+    }
+    for part in super::HIDDEN_SLOT_BUTTONS {
+        assert!(
+            !visible(&mut s, part),
+            "{part} hidden, even holding an item"
+        );
+    }
+    assert!(s
+        .eval::<bool>("return CharacterModelFrame:IsVisible()")
+        .unwrap());
+}
+
 /// Opens with `ToggleCharacter`, the `C` binding's entry point, reads the snapshot lines, hovers,
 /// rotates the model and closes again.
 #[test]
