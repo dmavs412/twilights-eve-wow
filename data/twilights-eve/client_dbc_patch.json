@@ -262,6 +262,14 @@
     "equipped_subclass_mask": 64,
     "equipped_inventory_mask": 16384,
     "description": "For 10 sec your chance to Block is increased by 75%. Every block deals 30 Holy damage to the attacker.",
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "apply_aura": "aura_shield_of_penitent"
+      }
+     }
+    ],
     "cast_time_index": 1
    }
   },
@@ -340,7 +348,15 @@
     "name": "Reactive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Parry chance by 1% and reduces the Rage cost of your next Righteous Smash after a parry by 2."
+    "description": "Increases your Parry chance by 1% and reduces the Rage cost of your next Righteous Smash after a parry by 2.",
+    "effects": [
+     {
+      "kind": "parry_pct",
+      "params": {
+       "pct": 1
+      }
+     }
+    ]
    }
   },
   {
@@ -353,7 +369,15 @@
     "name": "Reactive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Parry chance by 2% and reduces the Rage cost of your next Righteous Smash after a parry by 4."
+    "description": "Increases your Parry chance by 2% and reduces the Rage cost of your next Righteous Smash after a parry by 4.",
+    "effects": [
+     {
+      "kind": "parry_pct",
+      "params": {
+       "pct": 2
+      }
+     }
+    ]
    }
   },
   {
@@ -366,7 +390,15 @@
     "name": "Reactive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Parry chance by 3% and reduces the Rage cost of your next Righteous Smash after a parry by 6."
+    "description": "Increases your Parry chance by 3% and reduces the Rage cost of your next Righteous Smash after a parry by 6.",
+    "effects": [
+     {
+      "kind": "parry_pct",
+      "params": {
+       "pct": 3
+      }
+     }
+    ]
    }
   },
   {
@@ -379,7 +411,15 @@
     "name": "Reactive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Parry chance by 4% and reduces the Rage cost of your next Righteous Smash after a parry by 8."
+    "description": "Increases your Parry chance by 4% and reduces the Rage cost of your next Righteous Smash after a parry by 8.",
+    "effects": [
+     {
+      "kind": "parry_pct",
+      "params": {
+       "pct": 4
+      }
+     }
+    ]
    }
   },
   {
@@ -392,7 +432,15 @@
     "name": "Reactive Strike",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your Parry chance by 5% and reduces the Rage cost of your next Righteous Smash after a parry by 10."
+    "description": "Increases your Parry chance by 5% and reduces the Rage cost of your next Righteous Smash after a parry by 10.",
+    "effects": [
+     {
+      "kind": "parry_pct",
+      "params": {
+       "pct": 5
+      }
+     }
+    ]
    }
   },
   {
@@ -405,7 +453,15 @@
     "name": "Tempered Steel",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your armor value from items by 2%. When struck by a critical hit, your chance to Block is increased by 10% for 6 sec."
+    "description": "Increases your armor value from items by 2%. When struck by a critical hit, your chance to Block is increased by 10% for 6 sec.",
+    "effects": [
+     {
+      "kind": "armor_items_pct",
+      "params": {
+       "pct": 2
+      }
+     }
+    ]
    }
   },
   {
@@ -418,7 +474,15 @@
     "name": "Tempered Steel",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your armor value from items by 4%. When struck by a critical hit, your chance to Block is increased by 20% for 6 sec."
+    "description": "Increases your armor value from items by 4%. When struck by a critical hit, your chance to Block is increased by 20% for 6 sec.",
+    "effects": [
+     {
+      "kind": "armor_items_pct",
+      "params": {
+       "pct": 4
+      }
+     }
+    ]
    }
   },
   {
@@ -431,7 +495,15 @@
     "name": "Tempered Steel",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your armor value from items by 6%. When struck by a critical hit, your chance to Block is increased by 30% for 6 sec."
+    "description": "Increases your armor value from items by 6%. When struck by a critical hit, your chance to Block is increased by 30% for 6 sec.",
+    "effects": [
+     {
+      "kind": "armor_items_pct",
+      "params": {
+       "pct": 6
+      }
+     }
+    ]
    }
   },
   {
@@ -444,7 +516,15 @@
     "name": "Tempered Steel",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your armor value from items by 8%. When struck by a critical hit, your chance to Block is increased by 40% for 6 sec."
+    "description": "Increases your armor value from items by 8%. When struck by a critical hit, your chance to Block is increased by 40% for 6 sec.",
+    "effects": [
+     {
+      "kind": "armor_items_pct",
+      "params": {
+       "pct": 8
+      }
+     }
+    ]
    }
   },
   {
@@ -457,7 +537,15 @@
     "name": "Tempered Steel",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your armor value from items by 10%. When struck by a critical hit, your chance to Block is increased by 50% for 6 sec."
+    "description": "Increases your armor value from items by 10%. When struck by a critical hit, your chance to Block is increased by 50% for 6 sec.",
+    "effects": [
+     {
+      "kind": "armor_items_pct",
+      "params": {
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -470,7 +558,15 @@
     "name": "Shield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your chance to block by 1% and gives you a 20% chance to generate 2 Rage when a block occurs."
+    "description": "Increases your chance to block by 1% and gives you a 20% chance to generate 2 Rage when a block occurs.",
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 1
+      }
+     }
+    ]
    }
   },
   {
@@ -483,7 +579,15 @@
     "name": "Shield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your chance to block by 2% and gives you a 40% chance to generate 2 Rage when a block occurs."
+    "description": "Increases your chance to block by 2% and gives you a 40% chance to generate 2 Rage when a block occurs.",
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 2
+      }
+     }
+    ]
    }
   },
   {
@@ -496,7 +600,15 @@
     "name": "Shield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your chance to block by 3% and gives you a 60% chance to generate 2 Rage when a block occurs."
+    "description": "Increases your chance to block by 3% and gives you a 60% chance to generate 2 Rage when a block occurs.",
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 3
+      }
+     }
+    ]
    }
   },
   {
@@ -509,7 +621,15 @@
     "name": "Shield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your chance to block by 4% and gives you a 80% chance to generate 2 Rage when a block occurs."
+    "description": "Increases your chance to block by 4% and gives you a 80% chance to generate 2 Rage when a block occurs.",
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 4
+      }
+     }
+    ]
    }
   },
   {
@@ -522,7 +642,15 @@
     "name": "Shield Specialization",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your chance to block by 5% and gives you a 100% chance to generate 2 Rage when a block occurs."
+    "description": "Increases your chance to block by 5% and gives you a 100% chance to generate 2 Rage when a block occurs.",
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 5
+      }
+     }
+    ]
    }
   },
   {
@@ -616,7 +744,15 @@
     "name": "Iron Retribution",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 10% of your Block Value."
+    "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 10% of your Block Value.",
+    "effects": [
+     {
+      "kind": "block_value_pct",
+      "params": {
+       "pct": 5
+      }
+     }
+    ]
    }
   },
   {
@@ -629,7 +765,15 @@
     "name": "Iron Retribution",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 20% of your Block Value."
+    "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 20% of your Block Value.",
+    "effects": [
+     {
+      "kind": "block_value_pct",
+      "params": {
+       "pct": 10
+      }
+     }
+    ]
    }
   },
   {
@@ -642,7 +786,15 @@
     "name": "Iron Retribution",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 30% of your Block Value."
+    "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 30% of your Block Value.",
+    "effects": [
+     {
+      "kind": "block_value_pct",
+      "params": {
+       "pct": 15
+      }
+     }
+    ]
    }
   },
   {
@@ -655,7 +807,15 @@
     "name": "Iron Retribution",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 40% of your Block Value."
+    "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 40% of your Block Value.",
+    "effects": [
+     {
+      "kind": "block_value_pct",
+      "params": {
+       "pct": 20
+      }
+     }
+    ]
    }
   },
   {
@@ -668,7 +828,15 @@
     "name": "Iron Retribution",
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 50% of your Block Value."
+    "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 50% of your Block Value.",
+    "effects": [
+     {
+      "kind": "block_value_pct",
+      "params": {
+       "pct": 25
+      }
+     }
+    ]
    }
   },
   {

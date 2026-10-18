@@ -393,6 +393,9 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
     if s.block_value > 0 || s.block_pct > 0.0 {
         s.block_pct = crate::rules::stats::block_pct(s.defense, s.level)
             + f64::from(sum(c, |e| matches!(e, TalentEffect::BlockPct { .. })));
+        s.block_pct = s.block_pct.min(100.0);
+        let pct = sum(c, |e| matches!(e, TalentEffect::BlockValuePct { .. }));
+        s.block_value = crate::rules::talents::scaled(s.block_value, pct);
     }
     // Agility's armour is not the items'.
     let items_armor = s.armor.saturating_sub(2 * s.base[1]);

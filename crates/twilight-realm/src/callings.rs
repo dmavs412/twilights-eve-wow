@@ -188,6 +188,14 @@ pub enum AuraEffect {
     ModRunSpeed { pct: u32 },
     /// The player's dodge chance rises by `pct` percent.
     DodgePct { pct: u32 },
+    /// The player's parry chance rises by `pct` percent.
+    ParryPct { pct: u32 },
+    /// The player's block chance rises by `pct` percent while a shield is worn.
+    BlockPct { pct: u32 },
+    /// The player's shield Block Value rises by `pct` percent.
+    BlockValuePct { pct: u32 },
+    /// The player's armour from items rises by `pct` percent.
+    ArmorItemsPct { pct: u32 },
     /// The player is stealthed until it breaks; `opener_crit`: the first melee attack or skill
     /// from stealth is a guaranteed critical strike.
     Stealth {
@@ -401,6 +409,7 @@ pub enum TalentEffect {
         combo_points: Vec<u32>,
     },
     /// The armour from items rises by this many percent.
+    #[serde(alias = "armor_items_pct")]
     ItemArmorPct { per_rank: Vec<u32> },
     /// A melee critical strike makes the target bleed for this percent of `of` (the average
     /// swing, or the crit's own damage), under `aura_spell_id`, a tick every `tick_ms` for
@@ -432,6 +441,8 @@ pub enum TalentEffect {
     ParryPct { per_rank: Vec<u32> },
     /// The block chance with a shield rises by this many percent.
     BlockPct { per_rank: Vec<u32> },
+    /// The shield's Block Value rises by this many percent.
+    BlockValuePct { per_rank: Vec<u32> },
     /// A block gives 1 rage this percent of the time, logged under `spell_id`.
     BlockRagePct { spell_id: u32, per_rank: Vec<u32> },
     /// A white swing that lands gives 1 rage this percent of the time, logged under `spell_id`.
@@ -555,6 +566,7 @@ impl TalentEffect {
             | Self::SkillDurationMs { per_rank, .. }
             | Self::ParryPct { per_rank }
             | Self::BlockPct { per_rank }
+            | Self::BlockValuePct { per_rank }
             | Self::BlockRagePct { per_rank, .. }
             | Self::HitRagePct { per_rank, .. }
             | Self::ExtraSwingPct { per_rank, .. }
@@ -748,6 +760,15 @@ pub enum Effect {
     /// The caster's dodge chance rises by `pct` percent for `duration_ms`, under the skill's
     /// spell id (Evasion).
     DodgePct { pct: u32, duration_ms: u32 },
+    /// The caster's parry chance rises by `pct` percent for `duration_ms`.
+    ParryPct { pct: u32, duration_ms: u32 },
+    /// The caster's block chance rises by `pct` percent for `duration_ms`, with a shield worn
+    /// (Shield of the Penitent).
+    BlockPct { pct: u32, duration_ms: u32 },
+    /// The caster's shield Block Value rises by `pct` percent for `duration_ms`.
+    BlockValuePct { pct: u32, duration_ms: u32 },
+    /// The caster's armour from items rises by `pct` percent for `duration_ms`.
+    ArmorItemsPct { pct: u32, duration_ms: u32 },
     /// The caster is stealthed (Stealth) until it breaks, or for `duration_ms` when set, under the
     /// skill's spell id; see [`AuraEffect::Stealth`].
     Stealth {

@@ -251,6 +251,11 @@ enum AuraKind {
     Dodge {
         pct: u32,
     },
+    /// The player's `stat` is `pct` percent higher.
+    Defense {
+        stat: DefenseStat,
+        pct: u32,
+    },
     /// The player is stealthed; `opener_crit`: their first attack from it is a critical strike.
     Stealth {
         opener_crit: bool,
@@ -264,12 +269,41 @@ enum AuraKind {
     },
 }
 
+/// A defensive number an aura raises by a percent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum DefenseStat {
+    /// Parry chance, in points.
+    Parry,
+    /// Block chance with a shield worn, in points.
+    Block,
+    /// The shield's Block Value, in percent of it.
+    BlockValue,
+    /// The armour from items, in percent of it.
+    ArmorItems,
+}
+
 impl AuraKind {
+    /// The aura a defensive effect (talent-free: a skill's or an aura row's) puts up, if it is one.
+    fn defense(effect: &Effect) -> Option<(DefenseStat, u32, u32)> {
+        match *effect {
+            Effect::ParryPct { pct, duration_ms } => Some((DefenseStat::Parry, pct, duration_ms)),
+            Effect::BlockPct { pct, duration_ms } => Some((DefenseStat::Block, pct, duration_ms)),
+            Effect::BlockValuePct { pct, duration_ms } => {
+                Some((DefenseStat::BlockValue, pct, duration_ms))
+            }
+            Effect::ArmorItemsPct { pct, duration_ms } => {
+                Some((DefenseStat::ArmorItems, pct, duration_ms))
+            }
+            _ => None,
+        }
+    }
+
     /// Whether `other` is this same effect (a reapplication replaces it): the same kind, and for
     /// a skill's crit the same skill, since one spell may carry a crit effect per skill.
     fn same_effect(self, other: AuraKind) -> bool {
         match (self, other) {
             (AuraKind::SkillCrit { skill: a, .. }, AuraKind::SkillCrit { skill: b, .. }) => a == b,
+            (AuraKind::Defense { stat: a, .. }, AuraKind::Defense { stat: b, .. }) => a == b,
             _ => std::mem::discriminant(&self) == std::mem::discriminant(&other),
         }
     }
@@ -287,6 +321,7 @@ impl AuraKind {
                 | AuraKind::SkillCrit { .. }
                 | AuraKind::RunSpeed { .. }
                 | AuraKind::Dodge { .. }
+                | AuraKind::Defense { .. }
                 | AuraKind::Stealth { .. }
                 | AuraKind::Stacks { .. }
         )
@@ -377,6 +412,18 @@ impl Skills {
             .filter(|a| a.unit == self.me)
             .map(|a| match a.kind {
                 AuraKind::Dodge { pct } => pct,
+                _ => 0,
+            })
+            .sum()
+    }
+
+    /// The percent the player's buffs raise `stat` by.
+    fn defense_pct(&self, stat: DefenseStat) -> u32 {
+        self.auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::Defense { stat: s, pct } if s == stat => pct,
                 _ => 0,
             })
             .sum()
@@ -762,8 +809,17 @@ pub(super) fn buffed(stats: &CharacterStats, skills: &Skills) -> CharacterStats 
     let mut s = *stats;
     let (health_pct, _, armor_loss_pct) = skills.buff_pcts();
     s.max_health += s.max_health * health_pct / 100;
+    // Agility's armour is not the items'.
+    let items_armor = s.armor.saturating_sub(2 * s.base[1]);
+    s.armor += scaled(items_armor, skills.defense_pct(DefenseStat::ArmorItems)) - items_armor;
     s.armor -= s.armor * armor_loss_pct.min(100) / 100;
     s.dodge_pct = (s.dodge_pct + f64::from(skills.dodge_pct())).min(100.0);
+    s.parry_pct = (s.parry_pct + f64::from(skills.defense_pct(DefenseStat::Parry))).min(100.0);
+    // Blocking takes a shield; the roll table never passes 100%.
+    if s.shield_block.is_some() {
+        s.block_pct = (s.block_pct + f64::from(skills.defense_pct(DefenseStat::Block))).min(100.0);
+        s.block_value = scaled(s.block_value, skills.defense_pct(DefenseStat::BlockValue));
+    }
     if bonus > 0 {
         s.attack_power += bonus as i32;
         let extra = formulas::ap_damage(bonus as i32, clock::secs(s.attack_time_ms));
@@ -1536,6 +1592,17 @@ impl InWorld {
                 self.skills.apply(a, events);
                 events.push(values(self.guid, &self.sheet_now()));
             }
+            Effect::ParryPct { .. }
+            | Effect::BlockPct { .. }
+            | Effect::BlockValuePct { .. }
+            | Effect::ArmorItemsPct { .. } => {
+                let (stat, pct, duration_ms) = AuraKind::defense(effect).expect("a defense effect");
+                let kind = AuraKind::Defense { stat, pct };
+                let mut a = aura(kind, skill.spell_id, duration_ms, 0);
+                a.unit = self.guid;
+                self.skills.apply(a, events);
+                events.push(values(self.guid, &self.sheet_now()));
+            }
             Effect::Stealth {
                 duration_ms,
                 opener_crit,
@@ -2086,6 +2153,8 @@ impl InWorld {
             (UNIT_FIELD_RESISTANCES, s.armor),
             (UNIT_FIELD_HEALTH, self.player.health),
             (PLAYER_DODGE_PERCENTAGE, float(s.dodge_pct as f32)),
+            (PLAYER_PARRY_PERCENTAGE, float(s.parry_pct as f32)),
+            (PLAYER_BLOCK_PERCENTAGE, float(s.block_pct as f32)),
         ]
     }
 
@@ -2533,7 +2602,7 @@ impl InWorld {
                     let sheet = buff_sheet(&self.player.stats, &self.skills);
                     events.push(values(self.guid, &sheet));
                 }
-                AuraKind::Dodge { .. } => {
+                AuraKind::Dodge { .. } | AuraKind::Defense { .. } => {
                     events.push(values(self.guid, &self.sheet_now()));
                 }
                 AuraKind::MaxHealthPct(_) | AuraKind::DamagePct { .. } => {
@@ -2655,6 +2724,22 @@ impl InWorld {
                 },
                 callings::AuraEffect::ModRunSpeed { pct } => AuraKind::RunSpeed { pct: *pct },
                 callings::AuraEffect::DodgePct { pct } => AuraKind::Dodge { pct: *pct },
+                callings::AuraEffect::ParryPct { pct } => AuraKind::Defense {
+                    stat: DefenseStat::Parry,
+                    pct: *pct,
+                },
+                callings::AuraEffect::BlockPct { pct } => AuraKind::Defense {
+                    stat: DefenseStat::Block,
+                    pct: *pct,
+                },
+                callings::AuraEffect::BlockValuePct { pct } => AuraKind::Defense {
+                    stat: DefenseStat::BlockValue,
+                    pct: *pct,
+                },
+                callings::AuraEffect::ArmorItemsPct { pct } => AuraKind::Defense {
+                    stat: DefenseStat::ArmorItems,
+                    pct: *pct,
+                },
                 callings::AuraEffect::Stealth { opener_crit } => AuraKind::Stealth {
                     opener_crit: *opener_crit,
                 },
@@ -2678,7 +2763,7 @@ impl InWorld {
             if matches!(kind, AuraKind::RunSpeed { .. }) {
                 self.update_speed(self.guid, events);
             }
-            if matches!(kind, AuraKind::Dodge { .. }) {
+            if matches!(kind, AuraKind::Dodge { .. } | AuraKind::Defense { .. }) {
                 events.push(values(self.guid, &self.sheet_now()));
             }
         }

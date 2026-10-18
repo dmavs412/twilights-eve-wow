@@ -146,8 +146,8 @@ const JOUSTERS_CHESTPLATE: u32 = 8157;
 const SORT_WARRIOR: i32 = -81;
 
 /// Vanguard's skills (the master CSV): Righteous Smash and Bulwark Charge on Basic Warrior's spell
-/// ids, and Zealous Cleave. Shield of the Penitent and Seal of Iron are off the bar until modelled.
-const TIER_1_SKILLS: [u32; 3] = [78, 100, 845];
+/// ids, Zealous Cleave and Shield of the Penitent. Seal of Iron is off the bar until modelled.
+const TIER_1_SKILLS: [u32; 4] = [78, 100, 845, 25899];
 /// Zealot's: Seal of Command, Seal of the Crusader, Judgement, Hammer of Justice, Mortal Strike and
 /// Charge.
 const ZEALOT_SKILLS: [u32; 6] = [20375, 20305, 20271, 10308, 12294, 6178];

@@ -1171,8 +1171,16 @@
     },
     "weapon_hand": "main",
     "max_targets": 1,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "apply_aura": "aura_shield_of_penitent"
+      },
+      "realm_only": false
+     }
+    ],
     "description": "For 10 sec your chance to Block is increased by 75%. Every block deals 30 Holy damage to the attacker."
    },
    {
@@ -1300,8 +1308,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "parry_pct",
+          "params": {
+           "pct": 1
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Parry chance by 1% and reduces the Rage cost of your next Righteous Smash after a parry by 2."
        },
        {
@@ -1325,8 +1341,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "parry_pct",
+          "params": {
+           "pct": 2
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Parry chance by 2% and reduces the Rage cost of your next Righteous Smash after a parry by 4."
        },
        {
@@ -1350,8 +1374,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "parry_pct",
+          "params": {
+           "pct": 3
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Parry chance by 3% and reduces the Rage cost of your next Righteous Smash after a parry by 6."
        },
        {
@@ -1375,8 +1407,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "parry_pct",
+          "params": {
+           "pct": 4
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Parry chance by 4% and reduces the Rage cost of your next Righteous Smash after a parry by 8."
        },
        {
@@ -1400,8 +1440,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "parry_pct",
+          "params": {
+           "pct": 5
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your Parry chance by 5% and reduces the Rage cost of your next Righteous Smash after a parry by 10."
        }
       ]
@@ -1436,8 +1484,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_items_pct",
+          "params": {
+           "pct": 2
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your armor value from items by 2%. When struck by a critical hit, your chance to Block is increased by 10% for 6 sec."
        },
        {
@@ -1461,8 +1517,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_items_pct",
+          "params": {
+           "pct": 4
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your armor value from items by 4%. When struck by a critical hit, your chance to Block is increased by 20% for 6 sec."
        },
        {
@@ -1486,8 +1550,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_items_pct",
+          "params": {
+           "pct": 6
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your armor value from items by 6%. When struck by a critical hit, your chance to Block is increased by 30% for 6 sec."
        },
        {
@@ -1511,8 +1583,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_items_pct",
+          "params": {
+           "pct": 8
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your armor value from items by 8%. When struck by a critical hit, your chance to Block is increased by 40% for 6 sec."
        },
        {
@@ -1536,8 +1616,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "armor_items_pct",
+          "params": {
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your armor value from items by 10%. When struck by a critical hit, your chance to Block is increased by 50% for 6 sec."
        }
       ]
@@ -1572,8 +1660,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_pct",
+          "params": {
+           "pct": 1
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your chance to block by 1% and gives you a 20% chance to generate 2 Rage when a block occurs."
        },
        {
@@ -1597,8 +1693,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_pct",
+          "params": {
+           "pct": 2
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your chance to block by 2% and gives you a 40% chance to generate 2 Rage when a block occurs."
        },
        {
@@ -1622,8 +1726,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_pct",
+          "params": {
+           "pct": 3
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your chance to block by 3% and gives you a 60% chance to generate 2 Rage when a block occurs."
        },
        {
@@ -1647,8 +1759,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_pct",
+          "params": {
+           "pct": 4
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your chance to block by 4% and gives you a 80% chance to generate 2 Rage when a block occurs."
        },
        {
@@ -1672,8 +1792,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_pct",
+          "params": {
+           "pct": 5
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your chance to block by 5% and gives you a 100% chance to generate 2 Rage when a block occurs."
        }
       ]
@@ -1877,8 +2005,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_value_pct",
+          "params": {
+           "pct": 5
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 10% of your Block Value."
        },
        {
@@ -1902,8 +2038,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_value_pct",
+          "params": {
+           "pct": 10
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 20% of your Block Value."
        },
        {
@@ -1927,8 +2071,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_value_pct",
+          "params": {
+           "pct": 15
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 30% of your Block Value."
        },
        {
@@ -1952,8 +2104,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_value_pct",
+          "params": {
+           "pct": 20
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 40% of your Block Value."
        },
        {
@@ -1977,8 +2137,16 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "block_value_pct",
+          "params": {
+           "pct": 25
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 50% of your Block Value."
        }
       ]
@@ -3080,8 +3248,16 @@
     "cancelable": true,
     "persist_death": false,
     "duration_ms": 10000,
-    "modelled": false,
-    "effects": [],
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "block_pct",
+      "params": {
+       "pct": 75
+      },
+      "realm_only": false
+     }
+    ],
     "description": "Block chance increased by 75%."
    },
    {

@@ -381,6 +381,14 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         // Consecration lives in the master CSV only; tests/vanguard_consecration.rs reads it.
         Effect::GroundEffect { .. } => panic!("{key}: the reference has no realm half for a patch"),
         // Evasion lives in the master CSV only; tests/cutthroat_stats.rs reads it.
+        // Shield of the Penitent's and Seal of Iron's lasting stats live in the master CSV only;
+        // tests/vanguard_defense.rs reads them.
+        Effect::ParryPct { .. }
+        | Effect::BlockPct { .. }
+        | Effect::BlockValuePct { .. }
+        | Effect::ArmorItemsPct { .. } => {
+            panic!("{key}: the reference has no realm half for a defense aura")
+        }
         Effect::DodgePct { .. } => {
             panic!("{key}: the reference has no realm half for a dodge aura")
         }
@@ -398,7 +406,7 @@ fn every_skill_id_is_listed_for_rank_blanking() {
         ids,
         [
             78, 100, 116, 133, 589, 845, 1752, 1776, 1784, 1943, 2098, 2136, 2912, 5277, 6178,
-            10308, 12294, 20271, 20305, 20375
+            10308, 12294, 20271, 20305, 20375, 25899
         ]
     );
 }
@@ -422,11 +430,10 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         5923, 5924, 5925, 5926, 25829, 20262, 20263, 20264, 20265, 20266,
         // Precision, Redoubt, Reckoning.
         20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180, 20182,
-        // Vanguard's Bastion: Reactive Strike, Tempered Steel, Shield Specialization, Vengeful
-        // Conviction, Improved Shield of the Penitent, Iron Retribution, Iron Juggernaut.
-        16462, 16463, 16464, 16465, 16466, 20138, 20139, 20140, 20141, 20142, 12298, 12724, 12725,
-        12726, 12727, 12797, 12799, 12800, 12312, 12803, 12300, 12959, 12960, 12961, 12962, 12308,
-        12810, 12811,
+        // Vanguard's Bastion: Vengeful Conviction, Improved Shield of the Penitent, Iron
+        // Juggernaut (Reactive Strike, Tempered Steel, Shield Specialization and Iron Retribution
+        // are modelled now).
+        12797, 12799, 12800, 12312, 12803, 12308, 12810, 12811,
         // Vanguard's Righteous: Wrathful Iron, Hallowed Ground, Zealous Restoration, Hammer of the
         // Vanguard.
         20224, 20225, 20330, 20331, 20332, 12809,
@@ -471,8 +478,16 @@ fn the_vanguard_plays_righteous_smash_bulwark_charge_and_zealous_cleave() {
         .iter()
         .map(|s| s.key.as_str())
         .collect();
-    // Shield of the Penitent and Seal of Iron are on the sheet but off the bar until modelled.
-    assert_eq!(kit, ["righteous_smash", "bulwark_charge", "zealous_cleave"]);
+    // Seal of Iron is on the sheet but off the bar until modelled.
+    assert_eq!(
+        kit,
+        [
+            "righteous_smash",
+            "bulwark_charge",
+            "shield_of_penitent",
+            "zealous_cleave"
+        ]
+    );
 }
 
 #[test]
