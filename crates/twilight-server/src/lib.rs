@@ -20,12 +20,13 @@ pub const DEFAULT_LISTEN: &str = "0.0.0.0:3725";
 const TICK: Duration = Duration::from_millis(50);
 
 /// The world as the server sees it until the headless terrain (#141) and line of sight (#142)
-/// replace it: the ground is wherever the client says it stands, and nothing blocks a sight line.
+/// replace it: no ground is known (a mob keeps its own height; the realm probes 2 yd above it, so
+/// echoing the probe would lift it every step), and nothing blocks a sight line.
 pub struct FlatHost;
 
 impl Host for FlatHost {
-    fn ground_height(&self, _map: u32, _x: f32, _y: f32, z_hint: f32) -> Option<f32> {
-        Some(z_hint)
+    fn ground_height(&self, _map: u32, _x: f32, _y: f32, _z_hint: f32) -> Option<f32> {
+        None
     }
     fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
         true
