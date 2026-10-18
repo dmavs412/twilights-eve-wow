@@ -93,6 +93,30 @@ pub(crate) struct Credit {
     pub(crate) levels: Vec<u8>,
 }
 
+/// A friendly spell one player cast on another (#150): resolved by the caster, applied by the
+/// session of `to`.
+#[derive(Debug, Clone)]
+pub(crate) enum Help {
+    Heal {
+        to: u64,
+        healer: u64,
+        spell_id: u32,
+        amount: u32,
+    },
+    Aura {
+        to: u64,
+        aura: cast::Aura,
+    },
+}
+
+impl Help {
+    pub(crate) fn to(&self) -> u64 {
+        match self {
+            Help::Heal { to, .. } | Help::Aura { to, .. } => *to,
+        }
+    }
+}
+
 #[derive(Default)]
 pub(crate) struct Ticked {
     /// The character gained a level: save it.
@@ -164,6 +188,10 @@ pub(crate) struct InWorld {
     pub(crate) kills: Vec<Kill>,
     /// This player's parts in kills nearby, paid on the next tick.
     pub(crate) credits: Vec<Credit>,
+    /// The heals this session cast on other players (#150), for the realm to deliver.
+    pub(crate) helps: Vec<Help>,
+    /// What other players cast on this one, applied on the next tick.
+    pub(crate) helped: Vec<Help>,
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
@@ -259,6 +287,8 @@ impl InWorld {
             others: Vec::new(),
             kills: Vec::new(),
             credits: Vec::new(),
+            helps: Vec::new(),
+            helped: Vec::new(),
             dev,
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
@@ -435,6 +465,19 @@ impl InWorld {
         }
         for credit in std::mem::take(&mut self.credits) {
             self.take_credit(credit, c, rng, events, &mut ticked);
+        }
+        for help in std::mem::take(&mut self.helped) {
+            match help {
+                Help::Heal {
+                    healer,
+                    spell_id,
+                    amount,
+                    ..
+                } => {
+                    self.heal_from(healer, c, spell_id, amount, events);
+                }
+                Help::Aura { aura, .. } => self.wear(aura, events),
+            }
         }
         self.land_blink(host, c, events);
         let me = c.position;
@@ -1022,6 +1065,17 @@ impl InWorld {
             ticked,
         );
         self.auras_die_with(victim, events);
+    }
+
+    /// What this session cast on other players since it was last asked, to deliver.
+    pub(crate) fn take_helps(&mut self) -> Vec<Help> {
+        let auras = self.take_sent().into_iter().map(|aura| Help::Aura {
+            to: aura.unit(),
+            aura,
+        });
+        let mut helps = std::mem::take(&mut self.helps);
+        helps.extend(auras);
+        helps
     }
 
     /// The player's part in a kill: their own roll of its loot with their share of its money,

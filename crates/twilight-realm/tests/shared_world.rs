@@ -16,6 +16,8 @@ struct Two {
     realm: Realm,
     a: SessionId,
     b: SessionId,
+    /// Their players' guids.
+    guids: Vec<u64>,
     /// Every event so far, by session.
     log: HashMap<SessionId, Vec<SessionEvent>>,
 }
@@ -23,16 +25,30 @@ struct Two {
 impl Two {
     /// Two level 20 warriors in the world, each in their own session, standing at the Hub.
     fn at_the_hub() -> Self {
+        Self::of(None)
+    }
+
+    /// As [`Self::at_the_hub`], both of `calling` among the `callings` TOML when given.
+    fn of(callings: Option<(&str, &str)>) -> Self {
         let mut maker = realm();
         assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
         assert_eq!(create(&mut maker, "Anduin", HUMAN, 0), CHAR_CREATE_SUCCESS);
         let mut realm = Realm::with_seed(7);
+        if let Some((toml, _)) = callings {
+            realm = realm.with_callings(toml);
+        }
         let guids: Vec<u64> = roster(&mut maker).iter().map(|c| c.guid).collect();
         for &guid in &guids {
-            let blob = maker
+            let mut blob = maker
                 .export_character(guid)
                 .unwrap()
                 .replace("level = 1\n", "level = 20\n");
+            if let Some((_, calling)) = callings {
+                blob = blob.replace(
+                    "calling = \"basic_warrior\"",
+                    &format!("calling = \"{calling}\""),
+                );
+            }
             realm.import_character(&blob).unwrap();
         }
         let (a, b) = (realm.connect(), realm.connect());
@@ -42,6 +58,7 @@ impl Two {
             realm,
             a,
             b,
+            guids,
             log: HashMap::new(),
         };
         two.run(0.0);
@@ -251,4 +268,61 @@ fn walking_away_takes_the_view_with_the_player_alone() {
     assert!(removed(got.get(&b).map_or(&[][..], |e| e)).is_disjoint(&far));
     let a_seen: HashSet<u64> = creates(&two.seen(a)).into_keys().collect();
     assert!(a_seen.is_disjoint(&far), "never sent to the one at the Hub");
+}
+
+/// A Calling with one instant ally heal (#150).
+const HEALERS: &str = r#"
+[[calling]]
+key = "test_healer"
+name = "Test Healer"
+tier = 0
+class = 5
+cap = 20
+tier_bonus = { strength = 0, agility = 0, stamina = 0, intellect = 0, spirit = 0 }
+shapeshift_form = 0
+armour = ["cloth"]
+
+[[calling.skill]]
+key = "mend"
+spell_id = 2061
+power_cost = 0
+cooldown_ms = 0
+gcd_ms = 0
+target = "ally"
+range_yd = [0.0, 40.0]
+effects = [{ kind = "heal", amount = { base = 40.0 } }]
+"#;
+
+const MEND: u32 = 2061;
+
+fn healed_by(events: &[SessionEvent], target: u64, healer: u64) -> bool {
+    events.iter().any(
+        |e| matches!(e, SessionEvent::SpellHealLog(l) if l.target == target && l.healer == healer),
+    )
+}
+
+#[test]
+fn a_heal_lands_on_the_friend_targeted_and_else_on_the_caster() {
+    let mut two = Two::of(Some((HEALERS, "test_healer")));
+    let (a, b) = (two.a, two.b);
+    let (ga, gb) = (two.guids[0], two.guids[1]);
+    let cast = |two: &mut Two, target| {
+        two.realm.handle_as(
+            a,
+            RealmCommand::CastSpell {
+                spell_id: MEND,
+                target,
+            },
+        );
+        two.run(0.3)
+    };
+    let got = cast(&mut two, Some(gb));
+    assert!(
+        healed_by(&got[&b], gb, ga),
+        "the friend is healed by the caster"
+    );
+    assert!(!healed_by(&got[&a], ga, ga), "and the caster is not");
+
+    let got = cast(&mut two, None);
+    assert!(healed_by(&got[&a], ga, ga), "no target: auto self-cast");
 }

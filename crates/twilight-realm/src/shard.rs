@@ -177,9 +177,13 @@ impl Shard {
 pub(crate) fn note_threat(mobs: &mut [Mob], player: u64, events: &[SessionEvent]) {
     use benilla_protocol::messages::PeriodicTick;
     for e in events {
-        let (victim, damage, healed) = match e {
-            SessionEvent::AttackerState(s) if s.attacker == player => (s.victim, s.damage, 0),
-            SessionEvent::SpellDamageLog(l) if l.attacker == player => (l.target, l.damage, 0),
+        let (victim, damage, healed, who) = match e {
+            SessionEvent::AttackerState(s) if s.attacker == player => {
+                (s.victim, s.damage, 0, player)
+            }
+            SessionEvent::SpellDamageLog(l) if l.attacker == player => {
+                (l.target, l.damage, 0, player)
+            }
             SessionEvent::PeriodicAuraLog(l) if l.caster == player => {
                 let (mut damage, mut healed) = (0, 0);
                 for t in &l.ticks {
@@ -189,9 +193,10 @@ pub(crate) fn note_threat(mobs: &mut [Mob], player: u64, events: &[SessionEvent]
                         _ => {}
                     }
                 }
-                (l.target, damage, healed)
+                (l.target, damage, healed, player)
             }
-            SessionEvent::SpellHealLog(l) if l.healer == player => (l.target, 0, l.amount),
+            // A heal from another player is shown in the healed one's session.
+            SessionEvent::SpellHealLog(l) => (l.target, 0, l.amount, l.healer),
             _ => continue,
         };
         if let Some(m) = mobs.iter_mut().find(|m| m.guid == victim) {
@@ -203,7 +208,7 @@ pub(crate) fn note_threat(mobs: &mut [Mob], player: u64, events: &[SessionEvent]
             let hating = |m: &Mob| m.alive() && m.threat.contains(victim);
             let share = threat::heal_share(healed, mobs.iter().filter(|m| hating(m)).count());
             for m in mobs.iter_mut().filter(|m| hating(m)) {
-                m.threat.add(player, share);
+                m.threat.add(who, share);
             }
         }
     }

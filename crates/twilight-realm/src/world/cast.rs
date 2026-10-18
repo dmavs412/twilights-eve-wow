@@ -118,6 +118,8 @@ pub(super) struct Skills {
     low_health: Vec<u64>,
     /// The player's guid, for the aura packets only the player's own auras get.
     me: u64,
+    /// The auras put on other players (#150), for their own sessions to wear.
+    sent: Vec<Aura>,
     /// Speed changes sent to the client so far: the counter its ack echoes.
     speed_changes: u32,
     /// The aura a `consume_aura` just took, and its row's full duration in ms, while the consume
@@ -218,6 +220,13 @@ struct Ground {
     next_tick: f32,
 }
 
+impl Aura {
+    /// The unit that wears it.
+    pub(crate) fn unit(&self) -> u64 {
+        self.unit
+    }
+}
+
 impl Skills {
     /// Whether `position` is inside a patch `caster` left on the ground.
     pub(super) fn in_ground_effect(&self, caster: u64, position: [f32; 3]) -> bool {
@@ -229,7 +238,7 @@ impl Skills {
 
 /// One aura on a unit.
 #[derive(Debug, Clone, Copy)]
-pub(super) struct Aura {
+pub(crate) struct Aura {
     unit: u64,
     spell_id: u32,
     slot: u8,
@@ -1077,6 +1086,11 @@ impl Skills {
 
     /// Puts `aura` on its unit, in the slot its spell already holds there or a free one.
     fn apply(&mut self, mut aura: Aura, events: &mut Vec<SessionEvent>) -> Option<Aura> {
+        // Another player wears it in their own session.
+        if aura.unit != self.me && crate::shard::is_player(aura.unit) {
+            self.sent.push(aura);
+            return None;
+        }
         if let Some(old) = self.auras.iter_mut().find(|a| {
             a.unit == aura.unit && a.spell_id == aura.spell_id && a.kind.same_effect(aura.kind)
         }) {
@@ -2047,9 +2061,52 @@ impl InWorld {
         self.skills.apply(copy, events);
     }
 
+    /// Whom an ally skill lands on (#150): the other living player targeted, in its range; the
+    /// caster when nothing friendly is targeted (vanilla's auto self-cast).
+    fn ally(&self, skill: &Skill, target: Option<u64>, c: &Char) -> Result<u64, u8> {
+        let Some(g) = target.filter(|&g| g != self.guid && crate::shard::is_player(g)) else {
+            return Ok(self.guid);
+        };
+        let Some(&(_, at)) = self.others.iter().find(|o| o.0 == g) else {
+            return Err(SPELL_FAILED_TARGETS_DEAD);
+        };
+        let [_, hi] = skill.range_yd;
+        if hi > 0.0 && distance(c.position, at) > hi {
+            return Err(SPELL_FAILED_OUT_OF_RANGE);
+        }
+        Ok(g)
+    }
+
+    /// The auras this session put on other players since it was last asked.
+    pub(crate) fn take_sent(&mut self) -> Vec<Aura> {
+        std::mem::take(&mut self.skills.sent)
+    }
+
+    /// Wears an aura another player put on this one, and shows what it changes.
+    pub(crate) fn wear(&mut self, aura: Aura, events: &mut Vec<SessionEvent>) {
+        let mut aura = aura;
+        aura.unit = self.guid;
+        self.skills.apply(aura, events);
+        events.push(values(self.guid, &self.sheet_now()));
+        self.update_speed(self.guid, events);
+    }
+
     /// Heals the player `amount` under `spell_id`, up to their maximum: what was healed.
     fn heal_player(
         &mut self,
+        c: &Char,
+        spell_id: u32,
+        amount: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> u32 {
+        let healer = self.guid;
+        self.heal_from(healer, c, spell_id, amount, events)
+    }
+
+    /// Heals the player `amount` of `healer`'s `spell_id`, up to their maximum: what was healed.
+    pub(crate) fn heal_from(
+        &mut self,
+        healer: u64,
         c: &Char,
         spell_id: u32,
         amount: u32,
@@ -2066,7 +2123,7 @@ impl InWorld {
         events.push(SessionEvent::SpellHealLog(
             benilla_protocol::messages::SpellHealLog {
                 target: self.guid,
-                healer: self.guid,
+                healer,
                 spell_id,
                 amount: healed,
                 critical: false,
@@ -2168,7 +2225,8 @@ impl InWorld {
             return Err(SPELL_FAILED_CASTER_AURASTATE);
         }
         match skill.target {
-            Target::Caster | Target::Ally => Ok(vec![self.guid]),
+            Target::Caster => Ok(vec![self.guid]),
+            Target::Ally => self.ally(skill, target, c).map(|g| vec![g]),
             // A point on the ground, within the skill's range.
             Target::Ground => {
                 let dest = self.skills.dest.ok_or(SPELL_FAILED_BAD_TARGETS)?;
@@ -2918,6 +2976,13 @@ impl InWorld {
                 if target == self.guid {
                     let healed = self.heal_player(c, skill.spell_id, sized(amount), events);
                     self.skills.cast_healed += healed;
+                } else if crate::shard::is_player(target) {
+                    self.helps.push(super::Help::Heal {
+                        to: target,
+                        healer: self.guid,
+                        spell_id: skill.spell_id,
+                        amount: sized(amount),
+                    });
                 }
             }
             Effect::PeriodicHeal {
@@ -2944,7 +3009,7 @@ impl InWorld {
                         };
                         at.and_then(|at| self.lowest_health_ally(c, at, radius_yd))
                     }
-                    None => (target == self.guid).then_some(self.guid),
+                    None => crate::shard::is_player(target).then_some(target),
                 };
                 let Some(unit) = unit else {
                     return;

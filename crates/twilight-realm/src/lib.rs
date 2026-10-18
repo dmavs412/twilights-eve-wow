@@ -616,6 +616,25 @@ impl Realm {
         for kill in kills {
             self.share_kill(map, kill);
         }
+        self.deliver_helps();
+    }
+
+    /// Hands the served session's friendly spells on other players to those players' sessions.
+    fn deliver_helps(&mut self) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        for help in w.take_helps() {
+            let to = help.to();
+            let target = self
+                .parked
+                .values_mut()
+                .filter_map(|s| s.world.as_mut())
+                .find(|w| w.guid == to);
+            if let Some(t) = target {
+                t.helped.push(help);
+            }
+        }
     }
 
     /// Shares `kill` among every player on `map` within the credit range of it, alive or dead,
