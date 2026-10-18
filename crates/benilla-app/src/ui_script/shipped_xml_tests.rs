@@ -451,9 +451,12 @@ fn every_archive_path_a_shipped_lua_chunk_names_survives_its_own_escaping() {
         })
         .filter(|(_, raw, _)| {
             let real = raw.replace("\\\\", "\\");
-            !benilla_assets::sprite_candidates(&real)
-                .iter()
-                .any(|c| chain.contains(c))
+            // The layer's own art, compiled in, answers `Interface\Benilla\` paths.
+            !benilla_assets::sprite_candidates(&real).iter().any(|c| {
+                chain.contains(c)
+                    || c.strip_prefix(r"interface\benilla\")
+                        .is_some_and(|rel| super::content::image(&rel.replace('\\', "/")).is_some())
+            })
         })
         .map(|(file, raw, _)| format!("{file}: \"{raw}\""))
         .collect();
@@ -1938,6 +1941,9 @@ fn the_layer_does_not_grow() {
         "SpellBookAdapters.xml",
         "ScriptLogFrame.xml",
         "FrameXMLFixes.xml",
+        // The ten Gear Slots (ADR 0007): the character pane's own art and layout, which no stock
+        // file has.
+        "GearSlots.xml",
     ];
     assert_eq!(
         super::addons::Addon::layer().toc.files,
@@ -1953,9 +1959,10 @@ fn the_layer_does_not_grow() {
         .filter(|n| !n.starts_with('.'))
         .collect();
     found.sort();
+    // `paperdoll.tga` is the art `GearSlots.xml` names (`Interface\Benilla\paperdoll`).
     let mut shipped: Vec<String> = LAYER
         .iter()
-        .chain(&["layer.toc"])
+        .chain(&["layer.toc", "paperdoll.tga"])
         .map(|s| s.to_string())
         .collect();
     shipped.sort();

@@ -1,10 +1,11 @@
 <Ui>
     <!--
-        The ten Gear Slots (ADR 0007): the character pane and the inspect window show only the
-        Weapon, Offhand, Ranged, Ammo, Ring, Trinket, Chest and Amulet buttons. The other body
-        parts hold no item; the model still wears the Chest's Wardrobe, which the realm writes
-        into their visible-item fields. The remaining buttons keep their stock places, gaps and
-        all.
+        The ten Gear Slots (ADR 0007). The character pane's page wears our own background
+        (paperdoll.tga): a Chest box top left, an Amulet box top right, the Trinkets bottom
+        left, the Rings bottom right and the three hand slots along the bottom, round a tall model.
+        The stock buttons move onto its boxes; those for the other body parts hide, since they hold
+        no item and the model wears the Chest's Wardrobe in their place. The inspect window only
+        hides its other buttons and keeps its stock art.
     -->
     <Script><![CDATA[
         -- The stock slot buttons' names (`PaperDollFrame.xml`, `Blizzard_InspectUI.xml`) for the
@@ -12,6 +13,24 @@
         BENILLA_HIDDEN_GEAR_SLOTS = {
             "Head", "Shoulder", "Back", "Shirt", "Tabard", "Wrist", "Hands", "Waist", "Legs",
             "Feet",
+        }
+
+        -- Where the art sits on the page, and how big: paperdoll.tga holds it at its top
+        -- left, 372 by 425 of 512 by 512.
+        BENILLA_PAPERDOLL_ART = { x = 6, y = -8, w = 372, h = 425, file = 512 }
+
+        -- Each kept button's centre on the page, on its box in the art.
+        BENILLA_GEAR_SLOT_PLACES = {
+            Chest = { 53, -101 },
+            Neck = { 330, -101 },
+            Trinket0 = { 53, -339 },
+            Trinket1 = { 53, -378 },
+            Finger0 = { 330, -339 },
+            Finger1 = { 330, -378 },
+            MainHand = { 147, -401 },
+            SecondaryHand = { 191, -401 },
+            Ranged = { 237, -401 },
+            Ammo = { 274, -401 },
         }
 
         local function BenillaGearSlots_Hide(prefix)
@@ -23,7 +42,76 @@
             end
         end
 
-        BenillaGearSlots_Hide("Character")
+        -- The page's stock background is its four unnamed `UI-Character-CharacterTab` textures.
+        local function BenillaGearSlots_HideStockArt(frame)
+            local regions = { frame:GetRegions() }
+            for _, region in ipairs(regions) do
+                local file = region.GetTexture and region:GetTexture()
+                if file and string.find(string.lower(file), "ui%-character%-charactertab") then
+                    region:Hide()
+                end
+            end
+        end
+
+        local function BenillaGearSlots_Dress()
+            local art = BENILLA_PAPERDOLL_ART
+            BenillaGearSlots_HideStockArt(PaperDollFrame)
+            local bg = PaperDollFrame:CreateTexture("BenillaPaperDollArt", "BACKGROUND")
+            bg:SetTexture("Interface\\Benilla\\paperdoll")
+            bg:SetTexCoord(0, art.w / art.file, 0, art.h / art.file)
+            bg:SetWidth(art.w)
+            bg:SetHeight(art.h)
+            bg:SetPoint("TOPLEFT", "PaperDollFrame", "TOPLEFT", art.x, art.y)
+
+            for part, at in pairs(BENILLA_GEAR_SLOT_PLACES) do
+                local button = getglobal("Character" .. part .. "Slot")
+                if button then
+                    button:ClearAllPoints()
+                    button:SetPoint("CENTER", "PaperDollFrame", "TOPLEFT", at[1], at[2])
+                end
+            end
+
+            -- The model fills the art's inner panel; the stats sit over its foot, the
+            -- resistances down its right edge.
+            CharacterModelFrame:ClearAllPoints()
+            CharacterModelFrame:SetPoint("TOPLEFT", "PaperDollFrame", "TOPLEFT", 80, -82)
+            CharacterModelFrame:SetWidth(225)
+            CharacterModelFrame:SetHeight(300)
+            CharacterAttributesFrame:ClearAllPoints()
+            CharacterAttributesFrame:SetPoint("TOPLEFT", "PaperDollFrame", "TOPLEFT", 77, -298)
+            CharacterResistanceFrame:ClearAllPoints()
+            CharacterResistanceFrame:SetPoint("TOPRIGHT", "PaperDollFrame", "TOPLEFT", 302, -84)
+        end
+
+        -- The portrait and the close button belong to the whole window; on this page the art has
+        -- no portrait ring and its corner sits further out, so they change only while it shows.
+        local function BenillaGearSlots_OnPage(shown)
+            if shown then
+                CharacterFramePortrait:Hide()
+                CharacterFrameCloseButton:ClearAllPoints()
+                CharacterFrameCloseButton:SetPoint("CENTER", "CharacterFrame", "TOPLEFT", 358, -26)
+            else
+                CharacterFramePortrait:Show()
+                CharacterFrameCloseButton:ClearAllPoints()
+                CharacterFrameCloseButton:SetPoint("CENTER", "CharacterFrame", "TOPRIGHT", -44, -25)
+            end
+        end
+
+        if PaperDollFrame then
+            BenillaGearSlots_Hide("Character")
+            BenillaGearSlots_Dress()
+            local onShow = PaperDollFrame:GetScript("OnShow")
+            PaperDollFrame:SetScript("OnShow", function()
+                if onShow then onShow() end
+                BenillaGearSlots_OnPage(true)
+            end)
+            local onHide = PaperDollFrame:GetScript("OnHide")
+            PaperDollFrame:SetScript("OnHide", function()
+                if onHide then onHide() end
+                BenillaGearSlots_OnPage(false)
+            end)
+        end
+
         -- The inspect window is LoadOnDemand: hide its buttons when it loads, or now if it has.
         if InspectFrame then
             BenillaGearSlots_Hide("Inspect")

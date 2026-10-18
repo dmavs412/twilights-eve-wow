@@ -159,6 +159,54 @@ fn the_character_pane_shows_only_the_gear_slot_buttons() {
     assert!(s
         .eval::<bool>("return CharacterModelFrame:IsVisible()")
         .unwrap());
+
+    // The page wears our art, not the stock four pieces, and the Chest sits on its box.
+    let art: String = s
+        .eval("return BenillaPaperDollArt:IsVisible() and BenillaPaperDollArt:GetTexture()")
+        .unwrap();
+    assert!(art.to_lowercase().contains("benilla"), "{art}");
+    let stock_shown: i32 = s
+        .eval(
+            r#"local n = 0
+            for _, r in ipairs({ PaperDollFrame:GetRegions() }) do
+                local f = r.GetTexture and r:GetTexture()
+                if f and string.find(string.lower(f), "ui%-character%-charactertab") and r:IsVisible() then
+                    n = n + 1
+                end
+            end
+            return n"#,
+        )
+        .unwrap();
+    assert_eq!(stock_shown, 0, "the stock background hides");
+    let (dx, dy): (f32, f32) = s
+        .eval(
+            "local x, y = CharacterChestSlot:GetCenter()
+            return x - PaperDollFrame:GetLeft(), y - PaperDollFrame:GetTop()",
+        )
+        .unwrap();
+    assert_eq!((dx.round(), dy.round()), (53.0, -101.0));
+    assert!(!s
+        .eval::<bool>("return CharacterFramePortrait:IsVisible()")
+        .unwrap());
+
+    // Another page keeps the window's stock portrait.
+    s.run(r#"ToggleCharacter("ReputationFrame")"#).unwrap();
+    assert!(s.errors().is_empty(), "errors: {:?}", s.errors());
+    assert!(s
+        .eval::<bool>("return CharacterFramePortrait:IsVisible()")
+        .unwrap());
+}
+
+/// The paperdoll art ships in the binary and decodes: 512 by 512, the frame in its top left.
+#[test]
+fn the_paperdoll_art_is_compiled_in_and_decodes() {
+    let bytes = super::content::image("paperdoll.tga").expect("compiled in");
+    let (w, h, rgba) = benilla_formats::tga_to_rgba(bytes).expect("decodes");
+    assert_eq!((w, h), (512, 512));
+    // Opaque inside the frame, clear past its right edge.
+    let alpha = |x: u32, y: u32| rgba[((y * w + x) * 4 + 3) as usize];
+    assert_eq!(alpha(186, 200), 255);
+    assert_eq!(alpha(450, 200), 0);
 }
 
 /// Opens with `ToggleCharacter`, the `C` binding's entry point, reads the snapshot lines, hovers,

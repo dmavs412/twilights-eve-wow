@@ -78,6 +78,7 @@ fn install_addon_asset_resolvers(world: &mut World, script: &mut UiScript) {
         return;
     };
     assets.set_loose_addon_root(root.clone());
+    benilla_assets::set_layer_images(super::content::image);
     let chain = assets.chain.clone();
     let size_chain = chain.clone();
     let size_root = root.clone();

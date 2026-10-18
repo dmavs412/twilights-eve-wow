@@ -14,6 +14,13 @@ pub(super) fn read(req: &str) -> Option<String> {
     UI.get_file(req)?.contents_utf8().map(str::to_owned)
 }
 
+/// The bytes of a shipped image, by its lowercase file name: what an `Interface\Benilla\` art path
+/// reads (`benilla_assets::set_layer_images`). The names are lowercase so the lookup needs no
+/// folding.
+pub(crate) fn image(name: &str) -> Option<&'static [u8]> {
+    UI.get_file(name).map(include_dir::File::contents)
+}
+
 /// `assets/ui/<req>` on disk, or `None` in a player build, whose binary holds no source path.
 fn read_source_tree(req: &str) -> Option<String> {
     let dir = crate::run_mode::dev_source_dir()?.join("assets/ui");

@@ -104,8 +104,28 @@ pub fn sprite_dimensions(
     decode_sprite(chain, loose_root, path).map(|(w, h, _)| (w, h))
 }
 
-/// Decode the first of [`sprite_candidates`] that reads and decodes, from the chain and then the
-/// AddOns folder, as the reference's two loaders fail silently. A miss warns, once per key since
+/// Where an `Interface\Benilla\` art path reads from: the app's own UI layer, compiled into the
+/// binary. Set once at startup; unset (tests, captures), such paths miss like any other.
+static LAYER_IMAGES: std::sync::OnceLock<fn(&str) -> Option<&'static [u8]>> =
+    std::sync::OnceLock::new();
+
+/// The prefix of a normalized path the layer serves.
+const LAYER_PREFIX: &str = r"interface\benilla\";
+
+/// Install the UI layer's image reader: given the path below `Interface\Benilla\` with forward
+/// slashes, lowercased, the file's bytes. A second call is ignored.
+pub fn set_layer_images(read: fn(&str) -> Option<&'static [u8]>) {
+    let _ = LAYER_IMAGES.set(read);
+}
+
+/// A layer image's bytes for a normalized candidate path, if it is one.
+fn layer_image(candidate: &str) -> Option<&'static [u8]> {
+    let rel = candidate.strip_prefix(LAYER_PREFIX)?;
+    (LAYER_IMAGES.get()?)(&rel.replace('\\', "/"))
+}
+
+/// Decode the first of [`sprite_candidates`] that reads and decodes, from the UI layer, the chain
+/// and then the AddOns folder, as the reference's two loaders fail silently. A miss warns, once per key since
 /// every cache stores its misses: a missing sprite draws nothing, and nothing else says why.
 fn decode_sprite(
     chain: &Mutex<Chain>,
@@ -115,6 +135,9 @@ fn decode_sprite(
     let candidates = sprite_candidates(path);
     let mut chain = chain.lock_recover();
     for candidate in &candidates {
+        if let Some(Ok(decoded)) = layer_image(candidate).map(decode_sprite_bytes) {
+            return Some(decoded);
+        }
         if let Ok(bytes) = chain.read_file(candidate) {
             if let Ok(decoded) = decode_sprite_bytes(&bytes) {
                 return Some(decoded);
@@ -133,7 +156,8 @@ fn decode_sprite(
     let found_but_undecodable: Vec<&String> = candidates
         .iter()
         .filter(|c| {
-            chain.read_file(c).is_ok()
+            layer_image(c).is_some()
+                || chain.read_file(c).is_ok()
                 || loose_root.is_some_and(|root| loose_addon_file(root, c).is_some())
         })
         .collect();
