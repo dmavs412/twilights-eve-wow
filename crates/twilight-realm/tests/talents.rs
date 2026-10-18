@@ -564,13 +564,13 @@ impl View {
 
 impl View {
     /// The trainer who sells the respec, as the client has been shown him: Uzzek, the Vanguard
-    /// Trainer, one of the training yard's four.
+    /// Trainer, one of the training yard's five.
     fn trainer(&self) -> Mob {
         let mut trainers = self
             .objects
             .iter()
             .filter(|(_, f)| f.unit_npc_flags() & NPC_TRAINER != 0);
-        assert_eq!(trainers.clone().count(), 4, "the four Tier 1 trainers");
+        assert_eq!(trainers.clone().count(), 5, "the five Tier 1 trainers");
         let (&guid, _) = trainers
             .find(|(_, f)| f.object_entry() == Some(UZZEK))
             .expect("Uzzek in the world");

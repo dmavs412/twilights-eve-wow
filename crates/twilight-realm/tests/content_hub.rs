@@ -150,11 +150,11 @@ fn every_npcs_flags_fit_its_role() {
     }
 }
 
-/// The four Tier 1 trainers stand together in the training yard, and Uzzek alone sells the respec.
+/// The five Tier 1 trainers stand together in the training yard, and Uzzek alone sells the respec.
 #[test]
-fn four_trainers_stand_in_the_yard_and_one_sells_the_respec() {
+fn five_trainers_stand_in_the_yard_and_one_sells_the_respec() {
     let trainers: Vec<Npc> = hub().into_iter().filter(|n| n.role == "trainer").collect();
-    assert_eq!(trainers.len(), 4);
+    assert_eq!(trainers.len(), 5);
     for a in &trainers {
         for b in &trainers {
             let d = (a.position[0] - b.position[0]).hypot(a.position[1] - b.position[1]);

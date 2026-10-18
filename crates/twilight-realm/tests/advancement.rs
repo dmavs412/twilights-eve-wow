@@ -754,19 +754,20 @@ fn at_fifty_templars_quest_is_offered_but_cannot_be_finished() {
     assert_eq!(realm.current_calling().unwrap().key, "zealot");
 }
 
-// ── The four Tier 1 trainers ────────────────────────────────────────────────────────────────────
+// ── The Tier 1 trainers ────────────────────────────────────────────────────────────────────
 
-/// The Tier 1 trainers beside Uzzek, each with their line's Advancement Quest. The Cutthroat's
-/// and the Initiate's can be finished: the Witch Hunter has no kit yet.
+/// The Tier 1 trainers beside Uzzek, each with their line's Advancement Quest.
 const CUTTHROAT_TRAINER: u32 = 190030;
 const INITIATE_TRAINER: u32 = 190031;
-const WITCH_HUNTER_TRAINER: u32 = 190032;
+const RANGER_TRAINER: u32 = 190032;
+const ACOLYTE_TRAINER: u32 = 190033;
 const THE_CUTTHROATS_MARK: u32 = 64005;
 const THE_INITIATES_SPARK: u32 = 64006;
-const THE_WITCH_HUNTERS_CREED: u32 = 64007;
+const THE_RANGERS_DRAW: u32 = 64007;
+const THE_ACOLYTES_VEIN: u32 = 64008;
 
 /// Each new trainer, their quest and its title.
-const NEW_LINES: [(u32, u32, &str); 3] = [
+const NEW_LINES: [(u32, u32, &str); 4] = [
     (
         CUTTHROAT_TRAINER,
         THE_CUTTHROATS_MARK,
@@ -777,11 +778,8 @@ const NEW_LINES: [(u32, u32, &str); 3] = [
         THE_INITIATES_SPARK,
         "The Initiate's Spark",
     ),
-    (
-        WITCH_HUNTER_TRAINER,
-        THE_WITCH_HUNTERS_CREED,
-        "The Witch Hunter's Creed",
-    ),
+    (RANGER_TRAINER, THE_RANGERS_DRAW, "The Ranger's Draw"),
+    (ACOLYTE_TRAINER, THE_ACOLYTES_VEIN, "The Acolyte's Vein"),
 ];
 
 /// A trainer's gossip menu: its lines and its quests' `(quest, icon)`.
@@ -909,41 +907,53 @@ fn the_initiates_spark_makes_a_level_1_initiate_on_mana() {
     assert!(now.unit_power(0).is_some_and(|m| m > 0), "a mana bar");
 }
 
+/// The Ranger and the Acolyte take their quest at the cap and start over at level 1 on mana, with
+/// their talent tabs and whichever of their skills already play.
 #[test]
-fn the_new_lines_quests_are_offered_but_cannot_be_finished() {
-    for (entry, quest, title) in NEW_LINES
-        .into_iter()
-        .filter(|l| l.1 == THE_WITCH_HUNTERS_CREED)
-    {
-        let (mut realm, me, mut events) = questing(10, &[], 0, &[]);
+fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
+    for (entry, quest, key, skills, tab_names) in [
+        (
+            RANGER_TRAINER,
+            THE_RANGERS_DRAW,
+            "ranger",
+            vec![],
+            ["The Swiftbow", "The Arbalest"],
+        ),
+        (
+            ACOLYTE_TRAINER,
+            THE_ACOLYTES_VEIN,
+            "acolyte",
+            vec![589],
+            ["The Rot-Weaver", "The Hemomancer"],
+        ),
+    ] {
+        let (mut realm, me, mut events) = capped_warrior();
         let npc = giver(&events, entry);
         events.extend(take(&mut realm, npc, quest));
-        let log = quest_log(&events, me);
-        assert_eq!((log[0].1, log[0].3), (quest, 0), "{title}: never complete");
-        assert_eq!(
-            status(&mut realm, npc),
-            dialog_status::INCOMPLETE,
-            "{title}"
-        );
+        let advanced = hand_in(&mut realm, npc, quest);
+        assert!(completed(&advanced).is_some(), "{key}: it completes");
+        events.extend(advanced);
 
-        realm.handle(RealmCommand::QuestGiverCompleteQuest { npc, quest });
-        let progress = drain(&mut realm)
-            .into_iter()
-            .find_map(|e| match e {
-                SessionEvent::QuestProgress(p) => Some(p),
-                _ => None,
-            })
-            .expect("the progress panel");
-        assert!(!progress.is_complete, "{title}");
-        assert!(
-            completed(&hand_in(&mut realm, npc, quest)).is_none(),
-            "{title}"
-        );
-        assert_eq!(realm.current_calling().unwrap().key, "basic_warrior");
+        assert_eq!(realm.current_calling().unwrap().key, key);
+        let now = descriptor(&events, me);
+        assert_eq!(now.unit_level(), Some(1), "{key}");
         assert_eq!(
-            gossip_menu(&mut realm, trainer(&events)).1,
-            [(THE_WARRIORS_PATH, dialog_status::AVAILABLE)],
-            "{title}: Vanguard's still on offer"
+            spellbook(&events),
+            skills.into_iter().collect(),
+            "{key}: the Ranger's shots wait for ranged combat; the Acolyte has Creeping Blight"
+        );
+        let tabs: Vec<&str> = realm
+            .current_calling()
+            .unwrap()
+            .talent_tabs
+            .iter()
+            .map(|t| t.name.as_str())
+            .collect();
+        assert_eq!(tabs, tab_names, "{key}");
+        assert_eq!(now.unit_shapeshift_form(), 0, "{key}: no stance");
+        assert!(
+            now.unit_power(0).is_some_and(|m| m > 0),
+            "{key}: a mana bar"
         );
     }
 }

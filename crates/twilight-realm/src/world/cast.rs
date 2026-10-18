@@ -882,7 +882,8 @@ impl InWorld {
             return Err(SPELL_FAILED_CASTER_AURASTATE);
         }
         match skill.target {
-            Target::Caster => Ok(vec![self.guid]),
+            Target::Caster | Target::Ally => Ok(vec![self.guid]),
+            Target::Ground => Err(SPELL_FAILED_BAD_TARGETS),
             Target::SelfArea => Ok(self
                 .mobs
                 .iter()

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "about": "Twilight's Eve Callings: the Warrior line (Basic Warrior, Vanguard, Zealot, and Ironclad's and Templar's locked quests), and the other Tier 1 lines (Cutthroat, Initiate, Witch Hunter), locked with their quests alone. Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
+  "about": "Twilight's Eve Callings: the Warrior line (Basic Warrior, Vanguard, Zealot, and Ironclad's and Templar's locked quests), and the other Tier 1 lines (Acolyte, Cutthroat, Initiate, Ranger), whose kits live in the master CSV. Every spell, talent and tab id is a real 1.12.1 record, checked by tools/twilights-eve/extract_spells.py verify. Design notes: docs/reference/skills-and-talents.md.",
 
   "formula_conventions": {
     "L": "the character's level inside its current Tier (1..Tier Cap); it resets to 1 on Advancement",
@@ -40,7 +40,7 @@
       "class": 1,
       "display_name": "Basic Warrior",
       "cap": 10,
-      "branches": ["cutthroat", "initiate", "vanguard", "witch_hunter"],
+      "branches": ["acolyte", "cutthroat", "initiate", "ranger", "vanguard"],
       "armour": ["cloth", "leather", "mail", "shield"],
       "armour_note": "Gear follows the Calling, never the level: every Warrior weapon from level 1, this armour, and no item refused for level. Plate is for Vanguard and every Calling that branches from it.",
       "client_shapeshift_form": 17,
@@ -333,30 +333,54 @@
       }
     },
 
-    "witch_hunter": {
+    "ranger": {
       "tier": 1,
-      "display_name": "Witch Hunter",
+      "display_name": "Ranger",
       "cap": 30,
-      "locked": true,
       "power": "mana",
-      "about": "Tier 1, a melee Hunter on mana with Enhancement Shaman in it (Raptor Strike, Mongoose Bite and Wing Clip beside Stormstrike, Lightning Shield and the weapon imbues). No kit or Talent Tree yet (its own spec); its Advancement Quest is offered at Basic Warrior's cap and never finishes.",
+      "about": "Tier 1, the bow line on mana: a hunter's kit. Kit and Talent Tree live in the master CSV (Davis's design sheet, 2026-10-18); its Advancement Quest is offered at Basic Warrior's cap.",
       "skills": [],
       "talent_tree": null,
       "advancement_quest": {
         "quest_id": 64007,
         "synthesized": true,
-        "offered_by": "the Hub's Witch Hunter Trainer",
+        "offered_by": "the Hub's Ranger Trainer",
         "offered_to": { "calling": "basic_warrior", "level": 10 },
-        "advances_to": "witch_hunter",
-        "completable": false,
+        "advances_to": "ranger",
         "zone_or_sort": -261,
         "zone_or_sort_note": "QuestSort.dbc 261 'Hunter': the quest log's Hunter header.",
         "quest_level": 10,
-        "title": "The Witch Hunter's Creed",
-        "details": "The Twilight's witches hide behind beasts and storms, $N. Witch Hunters go in after them: a blade in hand, the storm in their weapons, the spirits at their backs.$B$BThe lodge is not ready to take you yet. When it is, I will send word. Until then, learn the wind.",
-        "objectives": "Await the Witch Hunters' summons.",
-        "objective": { "kind": "never", "note": "As The Ironclad's Oath: offered, never finished." },
-        "request_items_text": "The lodge has not yet sent for you, $N. Patience.",
+        "title": "The Ranger's Draw",
+        "details": "You fight close, $N, close enough to bleed. A Ranger chooses the distance: a quick arrow while moving, a heavy shaft when the feet are planted.$B$BAccept it and you begin again, a novice of the lodge. No more rage: you draw on mana now, and every step you keep between you and the blade is yours.$B$BSay the word.",
+        "objectives": "Speak with the Ranger Trainer at the Crossroads to take up the bow.",
+        "objective": { "kind": "talk", "note": "As The Warrior's Path: accept and complete at the trainer." },
+        "request_items_text": "Say the word, $N, and take up the bow.",
+        "flavour_source": "Synthesized; no text is copied."
+      }
+    },
+
+    "acolyte": {
+      "tier": 1,
+      "display_name": "Acolyte",
+      "cap": 30,
+      "power": "mana",
+      "about": "Tier 1, the dark mender line on mana: a priest's kit, with health costs. Kit and Talent Tree live in the master CSV (Davis's design sheet, 2026-10-18); its Advancement Quest is offered at Basic Warrior's cap.",
+      "skills": [],
+      "talent_tree": null,
+      "advancement_quest": {
+        "quest_id": 64008,
+        "synthesized": true,
+        "offered_by": "the Hub's Acolyte Trainer",
+        "offered_to": { "calling": "basic_warrior", "level": 10 },
+        "advances_to": "acolyte",
+        "zone_or_sort": -262,
+        "zone_or_sort_note": "QuestSort.dbc 262 'Priest': the quest log's Priest header.",
+        "quest_level": 10,
+        "title": "The Acolyte's Vein",
+        "details": "You have bled for every fight, $N, and never once made the blood work for you. An Acolyte does: we spend our own life to rot our foes, and drink theirs to mend our own.$B$BAccept it and you begin again, a novice of the order. No more rage: you draw on mana, and on your own veins when mana will not do.$B$BSay the word.",
+        "objectives": "Speak with the Acolyte Trainer at the Crossroads to open the vein.",
+        "objective": { "kind": "talk", "note": "As The Warrior's Path: accept and complete at the trainer." },
+        "request_items_text": "Say the word, $N, and open the vein.",
         "flavour_source": "Synthesized; no text is copied."
       }
     },

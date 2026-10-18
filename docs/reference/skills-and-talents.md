@@ -204,12 +204,12 @@ never credits. The tone comes from 1718, 1791 and 1712, and no text is copied. 6
 Zealot's Vow", is offered beside it at Vanguard 30 and advances into Zealot. 64004, "The Templar's
 Charge", is offered at Zealot 50 and never completes.
 
-The other Tier 1 lines (Cutthroat on energy, Initiate a mana caster, Witch Hunter a melee Hunter on
-mana with Enhancement Shaman in it) are locked Callings with no kit yet. Each has its own trainer
-in the Crossroads' training yard beside Uzzek, now the Vanguard Trainer, and each trainer offers a
-level 10 Basic Warrior only their own line's quest: 64005 "The Cutthroat's Mark" (QuestSort 162,
-Rogue), 64006 "The Initiate's Spark" (161, Mage) and 64007 "The Witch Hunter's Creed" (261,
-Hunter), which never complete, as Ironclad's.
+The other Tier 1 lines (Cutthroat on energy, Initiate a mana caster, Ranger a bow line on mana,
+Acolyte a dark mender on mana with health costs) have their kits in the master CSV. Each has its
+own trainer in the Crossroads' training yard beside Uzzek, now the Vanguard Trainer, and each
+trainer offers a level 10 Basic Warrior only their own line's quest: 64005 "The Cutthroat's Mark"
+(QuestSort 162, Rogue), 64006 "The Initiate's Spark" (161, Mage), 64007 "The Ranger's Draw" (261,
+Hunter) and 64008 "The Acolyte's Vein" (262, Priest).
 
 ## Checked against vmangos and the client code
 

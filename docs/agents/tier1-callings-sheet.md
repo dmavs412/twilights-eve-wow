@@ -8,18 +8,20 @@ Use this guide to collect the inputs, then hand them to an LLM along with the sc
 
 ## The four Tier 1 Callings
 
-Each one starts a Line (`GLOSSARY.md`). All four branch from Basic Warrior at level 10.
+Each one starts a Line (`GLOSSARY.md`). All five branch from Basic Warrior at level 10.
 
 | Calling key | Name | `class` | Power | Advancement Quest | Talent tabs it borrows from (`source_tab_id` · art) | Where it stands |
 |---|---|---|---|---|---|---|
 | `vanguard` | Vanguard | 1 Warrior | rage | 64001 | Arms 161 `WarriorArms`, Fury 164 `WarriorFury`, Protection 163 `WarriorProtection` | kit is in `content/callings.toml`; the CSV has only its `calling` row |
 | `cutthroat` | Cutthroat | 4 Rogue | energy | 64005 | Assassination 182 `RogueAssassination`, Combat 181 `RogueCombat`, Subtlety 183 `RogueSubtlety` | no kit; its trainer and quest exist |
 | `initiate` | Initiate | 8 Mage | mana | 64006 | Arcane 81 `MageArcane`, Fire 41 `MageFire`, Frost 61 `MageFrost` | no kit; its trainer and quest exist |
-| `witch_hunter` | Witch Hunter | 3 Hunter | mana | 64007 | Beast Mastery 361, Marksmanship 363, Survival 362 (`Hunter…`); Enhancement 263 `ShamanEnhancement` | no kit; its trainer and quest exist |
+| `ranger` | Ranger | 3 Hunter | mana | 64007 | Beast Mastery 361, Marksmanship 363 `HunterMarksmanship`, Survival 362 `HunterSurvival` | sheet in the CSV; plays once ranged combat lands |
+| `acolyte` | Acolyte | 5 Priest | mana | 64008 | Discipline 201, Holy 202 `PriestHoly`, Shadow 203 `PriestShadow` | sheet in the CSV; Creeping Blight plays |
 
 The tab ids and art names above come from the game's `TalentTab.dbc`. Every row of a Calling
-carries the same `class`, and that `class` decides the power bar. A Witch Hunter skill taken from
-Shaman stays `class=3`, sets `borrowed_from_class=7`, and needs a `borrowed_family_bit` (ADR 0003).
+carries the same `class`, and that `class` decides the power bar. A skill taken from another
+class keeps the Calling's `class`, sets `borrowed_from_class`, and needs a `borrowed_family_bit`
+(ADR 0003).
 
 ## Fixed for every Tier 1 Calling
 
@@ -87,9 +89,11 @@ written `modelled=no` with a descriptive kind, and it shows as WIP in the game. 
   Mana costs often use `cost_kind=pct_base`. Snares, roots, freezes, absorb shields, Polymorph and
   Blink have no kind yet. Spell power scaling does not exist, so formulas use `base` and
   `per_level` only.
-- **Witch Hunter.** Ranged attacks need `cast_kind=auto_repeat` and `requires_weapon=any_ranged`.
-  Weapon imbues borrowed from Enhancement (Rockbiter, Flametongue) and on-hit procs have no kind
-  yet. Pets are out of scope.
+- **Ranger.** Ranged attacks need `cast_kind=auto_repeat` and `requires_weapon=any_ranged`. The
+  realm has no Auto Shot or ranged weapon damage yet. Pets are out of scope.
+- **Acolyte.** Health costs use `cost_kind=health` (a share of max health, refused if it would
+  kill). Heals, drains, channels and ground areas have no kind yet. Ally effects reach friendly
+  players in range, the caster included.
 - **Vanguard.** Its kit already exists in `content/callings.toml`. Moving it into the CSV means
   copying the TOML's numbers row for row, which is a migration, not a design task. The TOML's
   inline params map to the CSV vocabulary: `unavoidable` becomes `outcomes=dodge=no;parry=no`,

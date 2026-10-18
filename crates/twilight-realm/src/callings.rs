@@ -567,6 +567,11 @@ pub enum Target {
     Caster,
     /// Every living enemy around the caster, within `radius_yd`, at most `max_targets`.
     SelfArea,
+    /// A friendly player: the caster, the only one until other players exist.
+    Ally,
+    /// A point on the ground the client picks. No ground area plays yet, so the cast is refused.
+    #[serde(rename = "dest")]
+    Ground,
 }
 
 /// Which roll a weapon strike starts from.

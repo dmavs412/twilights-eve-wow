@@ -115,13 +115,12 @@ orientation = 5.13
 text_id = 64017
 greeting = "I teach the Initiates, $C: those who trade rage for mana, and the blade for fire and frost cast from afar."
 
-# The Witch Hunter trainer, a melee Hunter on mana with Enhancement Shaman in it: Holt
-# Thunderhorn's tauren hunter model (display 2087).
+# The Ranger trainer, the bow line on mana: Holt Thunderhorn's tauren hunter model (display 2087).
 [[npc]]
 guid = 0xF00013
 entry = 190032
 name = "Hakan Mistwalker"
-subname = "Witch Hunter Trainer"
+subname = "Ranger Trainer"
 level = 40
 display_id = 2087
 faction_template = 35
@@ -130,7 +129,24 @@ npc_flags = 0x13
 position = [-430.6, -2681.1, 96.5]
 orientation = 5.13
 text_id = 64018
-greeting = "The Witch Hunters fight on mana, $C, and up close: a hunter's blade, the storm in our weapons, and the spirits at our backs."
+greeting = "Rangers keep their distance, $C. We fight on mana: a quick arrow on the move, a heavy shaft when our feet are planted."
+
+# The Acolyte trainer, the dark mender line: Dark Cleric Duesten's Forsaken priest model
+# (display 1579).
+[[npc]]
+guid = 0xF00014
+entry = 190033
+name = "Sister Vellune"
+subname = "Acolyte Trainer"
+level = 40
+display_id = 1579
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+position = [-427.4, -2679.6, 96.5]
+orientation = 5.13
+text_id = 64020
+greeting = "The Acolytes walk between life and death, $C. We spend our own blood to rot our foes and mend our own."
 
 # The Token vendor: the greens of the buyer's level band (content/token_vendor.toml), priced in
 # the Twilight Tokens in the bags. `tokens` says so; it has no `stock` of its own and no repairs.

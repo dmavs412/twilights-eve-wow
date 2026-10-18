@@ -1671,20 +1671,33 @@ completion = "It is done. Burn, chill, then shatter, Initiate. You start over; m
 money = 0
 tokens = 0
 
-# Witch Hunter (Tier 1) has no kit yet: its trainer offers the quest at Basic Warrior's cap, and it
-# never finishes.
 [[quest]]
 id = 64007
 kind = "advancement"
 giver = 190032
 level = 10
 zone_or_sort = -261
-advancement = { from = "basic_warrior", to = "witch_hunter", completable = false }
-title = "The Witch Hunter's Creed"
-objectives = "Await the Witch Hunters' summons."
-details = "The Twilight's witches hide behind beasts and storms, $N. Witch Hunters go in after them: a blade in hand, the storm in their weapons, the spirits at their backs.$B$BThe lodge is not ready to take you yet. When it is, I will send word. Until then, learn the wind."
-progress = "The lodge has not yet sent for you, $N. Patience."
-completion = "The lodge has not yet sent for you, $N. Patience."
+advancement = { from = "basic_warrior", to = "ranger" }
+title = "The Ranger's Draw"
+objectives = "Speak with the Ranger Trainer at the Crossroads to take up the bow."
+details = "You fight close, $N, close enough to bleed. A Ranger chooses the distance: a quick arrow while moving, a heavy shaft when the feet are planted.$B$BAccept it and you begin again, a novice of the lodge. No more rage: you draw on mana now, and every step you keep between you and the blade is yours.$B$BSay the word."
+progress = "Say the word, $N, and take up the bow."
+completion = "It is done. Keep your distance, Ranger. You start over; let the wind tell you where to stand."
+money = 0
+tokens = 0
+
+[[quest]]
+id = 64008
+kind = "advancement"
+giver = 190033
+level = 10
+zone_or_sort = -262
+advancement = { from = "basic_warrior", to = "acolyte" }
+title = "The Acolyte's Vein"
+objectives = "Speak with the Acolyte Trainer at the Crossroads to open the vein."
+details = "You have bled for every fight, $N, and never once made the blood work for you. An Acolyte does: we spend our own life to rot our foes, and drink theirs to mend our own.$B$BAccept it and you begin again, a novice of the order. No more rage: you draw on mana, and on your own veins when mana will not do.$B$BSay the word."
+progress = "Say the word, $N, and open the vein."
+completion = "It is done. Rot them, drink them, mend, Acolyte. You start over; your blood is a tool now, so spend it wisely."
 money = 0
 tokens = 0
 

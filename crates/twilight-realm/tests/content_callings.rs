@@ -379,8 +379,8 @@ fn every_skill_id_is_listed_for_rank_blanking() {
     assert_eq!(
         ids,
         [
-            78, 100, 116, 133, 845, 1752, 1776, 1943, 2098, 2136, 2912, 6178, 10308, 12294, 20271,
-            20305, 20375
+            78, 100, 116, 133, 589, 845, 1752, 1776, 1943, 2098, 2136, 2912, 6178, 10308, 12294,
+            20271, 20305, 20375
         ]
     );
 }
@@ -428,6 +428,22 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Conservation, Arcane Momentum, Catalytic Resonance, Mana Surge.
         11213, 12574, 12575, 12576, 12577, 11222, 12839, 12840, 12841, 12842, 18462, 18463, 18464,
         16757, 16758, 15058, 15059, 15060, 11237, 12463, 12464, 16769, 16770, 12043,
+        // Ranger's Swiftbow: Guerilla Tactics, Rhythmic Draw, Twin Arrows, Parting Gift, Adrenaline
+        // Rush, Flurry, Rapid Assault.
+        19295, 19297, 19298, 19301, 19300, 19184, 19387, 19388, 19389, 19390, 19151, 19152, 19153,
+        19239, 19245, 19290, 19294, 24283, 19376, 19377, 19263,
+        // Ranger's Arbalest: Piercing Force, Jagged Barbs, Shrapnel Payload, Steadfast Aim,
+        // Shattered Defenses, Point Blank, Explosive Payload.
+        19426, 19427, 19429, 19430, 19431, 19464, 19465, 19466, 19467, 19468, 19461, 19462, 24691,
+        19559, 19560, 19498, 19499, 19500, 19557, 19558, 19503,
+        // Acolyte's Rot-Weaver: Virulence, Noxious Vapors, Epidemic, Morbid Fascination, Symbiotic
+        // Rot, Festering Wounds, Necrotic Detonation.
+        15270, 15335, 15336, 15337, 15338, 15275, 15317, 15318, 15272, 15320, 17322, 17323, 17325,
+        27811, 27815, 27816, 15274, 15311, 15286,
+        // Acolyte's Hemomancer: Vitality, Masochism, Coagulation, Crimson Surge, Will to Survive,
+        // Blood Ties, Sanguine Shell.
+        14889, 15008, 15009, 15010, 15011, 14898, 15349, 15354, 15355, 15356, 14912, 15013, 15014,
+        14913, 15012, 14908, 15020, 17191, 27789, 27790, 15237,
     ];
     want.sort_unstable();
     assert_eq!(ids, want);
@@ -962,10 +978,10 @@ fn every_advancement_quest_matches_the_reference() {
     assert_eq!(have, named);
 }
 
-/// Witch Hunter is a Tier 1 Calling with no kit and no Talent Tree yet: its quest is offered, and
-/// nothing can enter it.
+/// Every Tier 1 Calling has a kit: none is locked, and each has its Advancement Quest at Basic
+/// Warrior's cap.
 #[test]
-fn the_last_new_tier_1_calling_is_locked_with_no_kit() {
+fn every_tier_1_calling_has_a_kit() {
     let reference = reference();
     let callings = reference["callings"].as_object().unwrap();
     let mut tier_1: Vec<&str> = callings
@@ -976,20 +992,19 @@ fn the_last_new_tier_1_calling_is_locked_with_no_kit() {
     tier_1.sort_unstable();
     assert_eq!(
         tier_1,
-        ["cutthroat", "initiate", "vanguard", "witch_hunter"]
+        ["acolyte", "cutthroat", "initiate", "ranger", "vanguard"]
     );
-    for (key, name) in [("witch_hunter", "Witch Hunter")] {
+    for key in tier_1 {
         let c = &callings[key];
-        assert_eq!(c["display_name"], name);
         assert_eq!(c["cap"], 30, "{key}");
-        assert_eq!(c["locked"], true, "{key}");
-        assert_eq!(c["skills"], serde_json::json!([]), "{key}");
-        assert!(c["talent_tree"].is_null(), "{key}");
-        assert!(callings::calling(key).is_none(), "{key} has no kit");
-        assert_eq!(
-            c["advancement_quest"]["offered_to"]["calling"], "basic_warrior",
-            "{key}"
-        );
+        assert!(c.get("locked").is_none(), "{key}");
+        assert!(callings::calling(key).is_some(), "{key} has a kit");
+        if key != "vanguard" {
+            assert_eq!(
+                c["advancement_quest"]["offered_to"]["calling"], "basic_warrior",
+                "{key}"
+            );
+        }
     }
 }
 
@@ -1024,7 +1039,7 @@ fn each_tier_1_line_has_its_own_trainer() {
     lines.sort();
     assert_eq!(
         lines,
-        ["cutthroat", "initiate", "vanguard", "witch_hunter"],
+        ["acolyte", "cutthroat", "initiate", "ranger", "vanguard"],
         "one trainer for each Tier 1 Calling"
     );
 }
