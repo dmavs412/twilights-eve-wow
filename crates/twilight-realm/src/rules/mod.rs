@@ -20,5 +20,6 @@ pub mod seals;
 pub mod skills;
 pub mod stats;
 pub mod talents;
+pub mod threat;
 pub mod tokens;
 pub mod xp;

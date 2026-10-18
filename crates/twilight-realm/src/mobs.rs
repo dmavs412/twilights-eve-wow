@@ -489,9 +489,8 @@ pub(crate) struct Mob {
     pub(crate) called: Vec<bool>,
     /// The player it fights, or last fought; 0 before any.
     pub(crate) target: u64,
-    /// The players who have hurt it this life, the most recent last: whom it turns on when its
-    /// target is gone.
-    pub(crate) attackers: Vec<u64>,
+    /// Its threat per player this life (#147): whom it fights.
+    pub(crate) threat: crate::rules::threat::Table,
 }
 
 /// The pause between one stroll and the next, in seconds.
@@ -541,7 +540,7 @@ impl Mob {
             think_in: 0.0,
             called: vec![false; spawn.on_health.len()],
             target: 0,
-            attackers: Vec::new(),
+            threat: Default::default(),
         })
     }
 

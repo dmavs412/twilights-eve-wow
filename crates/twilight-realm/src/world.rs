@@ -133,8 +133,9 @@ pub(crate) struct InWorld {
     pub(crate) runs: std::collections::HashSet<u64>,
     /// The open-world spawns that died since the shard last heard: `(spawn, respawn wait)`.
     pub(crate) died: Vec<(u32, f32)>,
-    /// The other living players sharing this player's mobs, as of the tick's start.
-    pub(crate) others: Vec<u64>,
+    /// The other living players sharing this player's mobs and where they stand, as of the
+    /// tick's start.
+    pub(crate) others: Vec<(u64, [f32; 3])>,
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
@@ -775,21 +776,29 @@ impl InWorld {
                     mob.state = State::Idle;
                     mob.orientation = mob.home_orientation;
                     mob.health = mob.stats.max_health;
-                    mob.attackers.clear();
+                    mob.threat.clear();
                     events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
                 }
             }
             // Another living player's fight: theirs to run.
-            State::Engaged if mob.target != self.guid && self.others.contains(&mob.target) => {}
+            State::Engaged
+                if mob.target != self.guid && self.others.iter().any(|o| o.0 == mob.target) => {}
             State::Engaged => {
                 let target = mob.target;
-                if target != self.guid || !self.player.alive() {
-                    // Its target died or left: the latest one who hurt it still standing.
-                    let me_alive = self.player.alive();
-                    let next = mob.attackers.iter().rev().copied().find(|&g| {
-                        g != target && (self.others.contains(&g) || (g == self.guid && me_alive))
-                    });
-                    if let Some(next) = next {
+                // Its threat table picks whom it fights; the dead and the gone leave it.
+                let (guid, others, at) = (self.guid, &self.others, mob.position);
+                let me_alive = self.player.alive();
+                let reach = |g: u64| {
+                    let p = if g == guid {
+                        me_alive.then_some(me)
+                    } else {
+                        others.iter().find(|o| o.0 == g).map(|o| o.1)
+                    };
+                    p.map(|p| distance(at, p) <= melee_reach())
+                };
+                mob.threat.retain(|g| reach(g).is_some());
+                if let Some(next) = mob.threat.pick(target, reach) {
+                    if next != target {
                         engage(mob, next, events);
                         return;
                     }
@@ -1092,9 +1101,12 @@ fn at_tier_rate(c: &Char, base: u32) -> u32 {
     base * xp::tier_rate(crate::callings::of(c.calling).tier)
 }
 
-/// `mob` turns on the player: `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
+/// `mob` turns on the player, who joins its threat table with the pull seed if not on it:
+/// `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
 /// flag.
 fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
+    let seed = mob.stats.max_health as f32 * crate::group::get().pull_threat_health_fraction;
+    mob.threat.seed(player, seed);
     mob.state = State::Engaged;
     mob.target = player;
     events.push(SessionEvent::AiReaction {

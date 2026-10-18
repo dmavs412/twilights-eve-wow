@@ -50,6 +50,7 @@ mod dungeon;
 mod equipment;
 mod fields;
 mod generated;
+mod group;
 mod hub;
 mod inn;
 mod inventory;
@@ -604,7 +605,7 @@ impl Realm {
             }
         }
         if let Some(w) = &self.world {
-            shard::note_attackers(&mut shard.mobs, w.guid, &new);
+            shard::note_threat(&mut shard.mobs, w.guid, &new);
         }
         self.show_others(map, &new);
     }
@@ -723,7 +724,7 @@ impl Realm {
                 w.others = players
                     .iter()
                     .filter(|o| o.alive && o.guid != w.guid)
-                    .map(|o| o.guid)
+                    .map(|o| (o.guid, o.position))
                     .collect();
             }
         }

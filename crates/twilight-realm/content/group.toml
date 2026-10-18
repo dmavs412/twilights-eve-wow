@@ -1,0 +1,5 @@
+# Playing together (#147, #148): the tunables of threat and shared credit.
+
+# The threat a player pulled onto a mob without hitting it starts with (aggro radius, a
+# campmate's call), as a share of the mob's max health: the puller keeps it for a while.
+pull_threat_health_fraction = 0.25

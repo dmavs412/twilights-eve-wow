@@ -13,6 +13,7 @@ use crate::looting::lootable_pair;
 use crate::mobs::{Mob, State};
 use crate::phased::{Phase, Run};
 use crate::population::{Population, VIEW_YD};
+use crate::rules::threat;
 use crate::space::flat_distance;
 use crate::Host;
 
@@ -171,18 +172,39 @@ impl Shard {
     }
 }
 
-/// Notes `player` as the latest to hurt each mob `events` show them hurting.
-pub(crate) fn note_attackers(mobs: &mut [Mob], player: u64, events: &[SessionEvent]) {
+/// Adds the threat `events` show `player` making (#147): their damage to each mob 1:1, and
+/// their heals at half, split across the living mobs that hate the one healed.
+pub(crate) fn note_threat(mobs: &mut [Mob], player: u64, events: &[SessionEvent]) {
+    use benilla_protocol::messages::PeriodicTick;
     for e in events {
-        let victim = match e {
-            SessionEvent::AttackerState(s) if s.attacker == player => s.victim,
-            SessionEvent::SpellDamageLog(l) if l.attacker == player => l.target,
-            SessionEvent::PeriodicAuraLog(l) if l.caster == player => l.target,
+        let (victim, damage, healed) = match e {
+            SessionEvent::AttackerState(s) if s.attacker == player => (s.victim, s.damage, 0),
+            SessionEvent::SpellDamageLog(l) if l.attacker == player => (l.target, l.damage, 0),
+            SessionEvent::PeriodicAuraLog(l) if l.caster == player => {
+                let (mut damage, mut healed) = (0, 0);
+                for t in &l.ticks {
+                    match t {
+                        PeriodicTick::Damage { amount, .. } => damage += amount,
+                        PeriodicTick::Heal { amount } => healed += amount,
+                        _ => {}
+                    }
+                }
+                (l.target, damage, healed)
+            }
+            SessionEvent::SpellHealLog(l) if l.healer == player => (l.target, 0, l.amount),
             _ => continue,
         };
         if let Some(m) = mobs.iter_mut().find(|m| m.guid == victim) {
-            m.attackers.retain(|&g| g != player);
-            m.attackers.push(player);
+            // Even a miss puts the attacker on the table.
+            m.threat.add(player, damage as f32);
+            continue;
+        }
+        if healed > 0 {
+            let hating = |m: &Mob| m.alive() && m.threat.contains(victim);
+            let share = threat::heal_share(healed, mobs.iter().filter(|m| hating(m)).count());
+            for m in mobs.iter_mut().filter(|m| hating(m)) {
+                m.threat.add(player, share);
+            }
         }
     }
 }

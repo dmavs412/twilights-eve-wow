@@ -13,6 +13,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/elwynn.toml"),
     include_str!("../content/elwynn_overrides.toml"),
     include_str!("../content/gear.toml"),
+    include_str!("../content/group.toml"),
     include_str!("../content/given_items.toml"),
     include_str!("../content/goods.toml"),
     include_str!("../content/hub.toml"),
