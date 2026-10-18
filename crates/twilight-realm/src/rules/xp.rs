@@ -87,11 +87,85 @@ pub fn kill_xp(player: u8, mob: u8, elite: Elite) -> u32 {
     round_half_even(num, den) as u32
 }
 
+/// The XP a player of level `me` earns for a kill credited to players of `levels`, theirs among
+/// them (vmangos `Group::RewardGroupAtKill`): the kill's XP for the highest level it is not gray
+/// to, times the group rate, halved when someone higher finds it gray, then shared by level.
+/// Nothing for a player above that level; alone, exactly [`kill_xp`].
+pub fn party_kill_xp(levels: &[u8], me: u8, mob: u8, elite: Elite) -> u32 {
+    if levels.len() < 2 {
+        return kill_xp(me, mob, elite);
+    }
+    let Some(top) = levels
+        .iter()
+        .copied()
+        .filter(|&l| kill_xp(l, mob, elite) > 0)
+        .max()
+    else {
+        return 0;
+    };
+    if me > top {
+        return 0;
+    }
+    let xp = f64::from(kill_xp(top, mob, elite)) * group_rate(levels.len());
+    let xp = if levels.iter().any(|&l| l > top) {
+        xp / 2.0 + 1.0
+    } else {
+        xp
+    } as u64;
+    let sum: u64 = levels.iter().map(|&l| u64::from(l)).sum();
+    (xp * u64::from(me) / sum.max(1)) as u32
+}
+
+/// The group's XP bonus (`MaNGOS::XP::xp_in_group_rate`, not a raid).
+fn group_rate(count: usize) -> f64 {
+    match count {
+        0..=2 => 1.0,
+        3 => 1.166,
+        4 => 1.3,
+        _ => 1.4,
+    }
+}
+
 fn round_half_even(num: u64, den: u64) -> u64 {
     let (q, r) = (num / den, num % den);
     match (2 * r).cmp(&den) {
         std::cmp::Ordering::Less => q,
         std::cmp::Ordering::Greater => q + 1,
         std::cmp::Ordering::Equal => q + (q & 1),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn alone_a_kill_pays_its_own_xp() {
+        assert_eq!(
+            party_kill_xp(&[10], 10, 10, Elite::No),
+            kill_xp(10, 10, Elite::No)
+        );
+    }
+
+    #[test]
+    fn a_group_splits_the_kill_by_level() {
+        let solo = kill_xp(10, 10, Elite::No);
+        // Two equal players: no bonus, half each.
+        assert_eq!(party_kill_xp(&[10, 10], 10, 10, Elite::No), solo / 2);
+        // Five: 1.4 times, a fifth each.
+        let five = [10; 5];
+        assert_eq!(
+            party_kill_xp(&five, 10, 10, Elite::No),
+            (f64::from(solo) * 1.4) as u32 / 5
+        );
+    }
+
+    #[test]
+    fn a_player_too_high_for_the_kill_gets_nothing() {
+        // The level 60 finds a level 10 mob gray; the level 10 gets half the bonus-free XP + 1,
+        // shared by level.
+        let low = party_kill_xp(&[10, 60], 10, 10, Elite::No);
+        assert_eq!(party_kill_xp(&[10, 60], 60, 10, Elite::No), 0);
+        assert_eq!(low, (kill_xp(10, 10, Elite::No) / 2 + 1) * 10 / 70);
     }
 }

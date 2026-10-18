@@ -6,6 +6,8 @@ use std::sync::OnceLock;
 pub(crate) struct Group {
     /// The pull seed's share of the mob's max health (#147).
     pub(crate) pull_threat_health_fraction: f32,
+    /// How near a dying mob a player shares its kill (#148).
+    pub(crate) credit_range_yd: f32,
 }
 
 pub(crate) fn get() -> &'static Group {

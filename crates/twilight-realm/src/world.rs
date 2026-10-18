@@ -69,6 +69,30 @@ const SKILL_DEFENSE: u32 = 95;
 const SKILL_UNARMED: u32 = 162;
 
 /// What a tick did that the realm acts on.
+/// A kill to share out among the players near it (#148).
+#[derive(Debug, Clone)]
+pub(crate) struct Kill {
+    pub(crate) mob: u64,
+    pub(crate) entry: u32,
+    pub(crate) level: u8,
+    pub(crate) elite: xp::Elite,
+    pub(crate) boss: bool,
+    /// The corpse's money, rolled once for everyone; 0 for a kill made alone, whose loot rolls
+    /// its own.
+    pub(crate) money: u32,
+    pub(crate) position: [f32; 3],
+}
+
+/// One player's part in a kill: their share of its money, and the levels of everyone credited
+/// (theirs among them) that divide its XP.
+#[derive(Debug, Clone)]
+pub(crate) struct Credit {
+    pub(crate) kill: Kill,
+    /// Their share of the money; `None` alone, when the loot rolls its own.
+    pub(crate) money: Option<u32>,
+    pub(crate) levels: Vec<u8>,
+}
+
 #[derive(Default)]
 pub(crate) struct Ticked {
     /// The character gained a level: save it.
@@ -136,6 +160,10 @@ pub(crate) struct InWorld {
     /// The other living players sharing this player's mobs and where they stand, as of the
     /// tick's start.
     pub(crate) others: Vec<(u64, [f32; 3])>,
+    /// The lent mobs this session killed, for the realm to share out (#148).
+    pub(crate) kills: Vec<Kill>,
+    /// This player's parts in kills nearby, paid on the next tick.
+    pub(crate) credits: Vec<Credit>,
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
@@ -229,6 +257,8 @@ impl InWorld {
             runs: Default::default(),
             died: Vec::new(),
             others: Vec::new(),
+            kills: Vec::new(),
+            credits: Vec::new(),
             dev,
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
@@ -402,6 +432,9 @@ impl InWorld {
         let mut ticked = Ticked::default();
         if self.transfer {
             return ticked;
+        }
+        for credit in std::mem::take(&mut self.credits) {
+            self.take_credit(credit, c, rng, events, &mut ticked);
         }
         self.land_blink(host, c, events);
         let me = c.position;
@@ -899,7 +932,8 @@ impl InWorld {
         self.interrupt_item_cast(events);
     }
 
-    /// `mob` dies at the player's hand: the fight ends and the kill's XP is paid.
+    /// `mob` dies at the player's hand: the fight ends, and the kill is credited, here and now
+    /// when alone, or by the realm to everyone near a shard's mob.
     fn kill(
         &mut self,
         i: usize,
@@ -911,16 +945,7 @@ impl InWorld {
         let elite_kind = self.elite_kind();
         let mob = &mut self.mobs[i];
         let entry = mob.template.entry;
-        let mut loot = if Self::is_boss(mob) {
-            let pool = crate::dungeon::boss_drops(c.level, c.race);
-            looting::Loot::boss(mob.level(), &pool, rng)
-        } else {
-            looting::Loot::roll(mob.level(), rng)
-        };
-        // The quest items the player's quests still want, after the corpse's own drop.
-        loot.items
-            .extend(crate::quests::drops(c, entry, rng).into_iter().map(Some));
-        let lootable = self.looting.drop(mob.guid, loot);
+        let boss = Self::is_boss(mob);
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
@@ -949,7 +974,6 @@ impl InWorld {
         }
         let mut pairs = vec![(UNIT_FIELD_HEALTH, 0), (UNIT_FIELD_FLAGS, 0)];
         pairs.extend(guid_pairs(UNIT_FIELD_TARGET, 0));
-        pairs.push(looting::lootable_pair(lootable));
         events.push(values(mob.guid, &pairs));
 
         let elite = if mob.template.elite() {
@@ -958,20 +982,30 @@ impl InWorld {
             xp::Elite::No
         };
         let (victim, base_xp) = (mob.guid, xp::kill_xp(c.level, mob.level(), elite));
-        let gained = self.scaled_xp(c, base_xp);
-        if gained > 0 {
-            // Rested XP doubles the kill, multiplied XP and all, while the pool lasts.
-            let rested = crate::rest::spend(c, gained);
-            events.push(SessionEvent::XpGain(XpGain {
-                victim,
-                total: gained + rested,
-                base: gained,
-                kill: true,
-            }));
-            if rested > 0 {
-                events.push(values(self.guid, &crate::rest::pairs(c)));
-            }
-            ticked.leveled |= self.give_xp(c, gained + rested, events);
+        let money = if self.lent {
+            let (lo, hi) = crate::rules::loot::money(mob.level());
+            rng.urand(lo, hi)
+        } else {
+            0
+        };
+        let kill = Kill {
+            mob: victim,
+            entry,
+            level: mob.level(),
+            elite,
+            boss,
+            money,
+            position: mob.position,
+        };
+        if self.lent {
+            self.kills.push(kill);
+        } else {
+            let credit = Credit {
+                money: None,
+                levels: vec![c.level],
+                kill,
+            };
+            self.take_credit(credit, c, rng, events, ticked);
         }
         self.proc(
             crate::rules::procs::Happened {
@@ -988,7 +1022,50 @@ impl InWorld {
             ticked,
         );
         self.auras_die_with(victim, events);
-        crate::quests::credit_kill(c, entry, events);
+    }
+
+    /// The player's part in a kill: their own roll of its loot with their share of its money,
+    /// their share of its XP by the party formula, and its quest credit.
+    pub(crate) fn take_credit(
+        &mut self,
+        credit: Credit,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
+    ) {
+        let k = &credit.kill;
+        let mut loot = if k.boss {
+            let pool = crate::dungeon::boss_drops(c.level, c.race);
+            looting::Loot::boss(k.level, &pool, rng)
+        } else {
+            looting::Loot::roll(k.level, rng)
+        };
+        if let Some(money) = credit.money {
+            loot.money = money;
+        }
+        // The quest items the player's quests still want, after the corpse's own drop.
+        loot.items
+            .extend(crate::quests::drops(c, k.entry, rng).into_iter().map(Some));
+        let lootable = self.looting.drop(k.mob, loot);
+        events.push(values(k.mob, &[looting::lootable_pair(lootable)]));
+        let base = xp::party_kill_xp(&credit.levels, c.level, k.level, k.elite);
+        let gained = self.scaled_xp(c, base);
+        if gained > 0 {
+            // Rested XP doubles the kill, multiplied XP and all, while the pool lasts.
+            let rested = crate::rest::spend(c, gained);
+            events.push(SessionEvent::XpGain(XpGain {
+                victim: k.mob,
+                total: gained + rested,
+                base: gained,
+                kill: true,
+            }));
+            if rested > 0 {
+                events.push(values(self.guid, &crate::rest::pairs(c)));
+            }
+            ticked.leveled |= self.give_xp(c, gained + rested, events);
+        }
+        crate::quests::credit_kill(c, k.entry, events);
     }
 
     /// Pays a quest's `base` XP, scaled by the Tier XP Rate and the dev multiplier as kill XP is;

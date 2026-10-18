@@ -189,14 +189,25 @@ fn a_kill_is_dead_for_both_and_comes_back_once_for_both() {
     }
     assert!(dead, "the other player sees the familiar die");
     assert!(died(&two.seen(a), guid), "and so does its killer");
-    // The loot is the killer's: the other client's corpse is not lootable.
-    let lootable = |s| {
-        two.seen(s).iter().any(|e| {
+    // Both stand in range, so both share the kill (#148): each their own loot and XP.
+    two.run(0.1);
+    let lootable = |events: &[SessionEvent]| {
+        events.iter().any(|e| {
             matches!(e, SessionEvent::ObjectValues { guid: g, fields }
                 if *g == guid && fields.unit_dynamic_flags() & 1 != 0)
         })
     };
-    assert!(lootable(a) && !lootable(b));
+    let xp = |events: &[SessionEvent]| {
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::XpGain(x) if x.victim == guid))
+    };
+    let (seen_a, seen_b) = (two.seen(a), two.seen(b));
+    assert!(
+        lootable(&seen_a) && lootable(&seen_b),
+        "each rolls their own loot"
+    );
+    assert_eq!(xp(&seen_a), xp(&seen_b), "and shares the XP");
 
     // Both stand 70 yd off, in view, for the minute it takes.
     two.go(a, north_of(imp, 70.0));

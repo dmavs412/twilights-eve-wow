@@ -608,6 +608,67 @@ impl Realm {
             shard::note_threat(&mut shard.mobs, w.guid, &new);
         }
         self.show_others(map, &new);
+        let kills = self
+            .world
+            .as_mut()
+            .map(|w| std::mem::take(&mut w.kills))
+            .unwrap_or_default();
+        for kill in kills {
+            self.share_kill(map, kill);
+        }
+    }
+
+    /// Shares `kill` among every player on `map` within the credit range of it, alive or dead,
+    /// fought or not (#148): its money split evenly with the remainder the killer's, and the rest
+    /// each their own.
+    fn share_kill(&mut self, map: shard::Place, kill: world::Kill) {
+        let range = group::get().credit_range_yd;
+        let killer = self.active;
+        let characters = &self.characters;
+        let sessions = std::iter::once((self.active, &mut self.world))
+            .chain(self.parked.iter_mut().map(|(id, s)| (*id, &mut s.world)));
+        let mut near = Vec::new();
+        for (id, w) in sessions {
+            let Some(w) = w.as_mut() else { continue };
+            let Some(c) = characters.get(w.guid) else {
+                continue;
+            };
+            if w.shard_place() == Some(map)
+                && space::flat_distance(c.position, kill.position) <= range
+            {
+                near.push((id, w, c.level));
+            }
+        }
+        let levels: Vec<u8> = near.iter().map(|n| n.2).collect();
+        let n = near.len().max(1) as u32;
+        let mut own = None;
+        for (id, w, _) in near {
+            let remainder = if id == killer { kill.money % n } else { 0 };
+            let credit = world::Credit {
+                kill: kill.clone(),
+                money: Some(kill.money / n + remainder),
+                levels: levels.clone(),
+            };
+            if id == killer {
+                own = Some(credit);
+            } else {
+                w.credits.push(credit);
+            }
+        }
+        // The killer's part is paid now, so the corpse sparkles for them as it falls; the others'
+        // on their next tick.
+        let (Some(credit), Some(w)) = (own, self.world.as_mut()) else {
+            return;
+        };
+        let guid = w.guid;
+        let Some(c) = self.characters.get_mut(guid) else {
+            return;
+        };
+        let mut ticked = world::Ticked::default();
+        w.take_credit(credit, c, &mut self.rng, &mut self.events, &mut ticked);
+        if ticked.leveled {
+            self.save(guid);
+        }
     }
 
     /// Shows `events` to every parked session on `map` whose client sees a unit in them.
