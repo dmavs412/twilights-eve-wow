@@ -372,6 +372,8 @@ impl InWorld {
             self.mob_tick(i, dt, host, c, rng, events, &mut ticked);
         }
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
+        // A next-cast buff that ran out puts the client's cast bar back.
+        self.sync_next_cast_mods(c, events);
         self.call_for_help(events);
         self.update_aura_states(events);
         if !self.player.alive() && !self.player.dead {
@@ -789,7 +791,7 @@ impl InWorld {
             self.guid,
             &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
         ));
-        self.interrupt_cast(events);
+        self.interrupt_item_cast(events);
     }
 
     /// `mob` dies at the player's hand: the fight ends and the kill's XP is paid.

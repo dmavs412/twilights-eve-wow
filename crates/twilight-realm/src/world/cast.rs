@@ -125,7 +125,13 @@ pub(super) struct Skills {
     consumed: Option<(Aura, u32)>,
     /// A Blink cast and not yet landed: the next tick, which has the ground, moves the caster.
     blink: Option<PendingBlink>,
+    /// The spell-mod cells the player's `next_cast` buffs last set on the client, with values.
+    sent_mods: Vec<(bool, u8, u8, i32)>,
 }
+
+/// The client's `SpellModOp`s a `next_cast` buff moves: the cast bar and the cost.
+const SPELLMOD_CASTING_TIME: u8 = 10;
+const SPELLMOD_COST: u8 = 14;
 
 /// Where a Blink starts, the way it faces, and how far it goes.
 #[derive(Debug, Clone, Copy)]
@@ -140,13 +146,15 @@ struct PendingBlink {
 const BLINK_STEP_YD: f32 = 1.0;
 const BLINK_MAX_CLIMB_YD: f32 = 1.5;
 
-/// A cast with a cast bar, from an item.
+/// A cast with a cast bar: an item's, or a skill's.
 #[derive(Debug, Clone, Copy)]
 struct TimedCast {
     spell_id: u32,
-    /// The item it is cast from, and that item's template entry.
+    /// The item it is cast from, and that item's template entry; 0 for a skill.
     item: u64,
     entry: u32,
+    /// A skill's cast, at this target, rather than an item's.
+    skill: Option<Option<u64>>,
     /// Seconds until it goes off.
     left: f32,
 }
@@ -279,6 +287,17 @@ enum AuraKind {
     },
     /// A buff's proc, live while the buff is (Shield of the Penitent's burst).
     Proc(&'static callings::AuraProc),
+    /// The player's next cast of a skill changes; the buffs of one `group` go together.
+    NextCast {
+        next: &'static callings::NextCast,
+        group: Option<&'static str>,
+    },
+    /// A count that grows with each new application; at `max` the aura row `then` replaces it.
+    StackTo {
+        count: u32,
+        max: u32,
+        then: &'static str,
+    },
     /// The player's `skill` costs `amount` less power (a buff from a `proc`).
     SkillCost {
         skill: &'static str,
@@ -347,6 +366,9 @@ impl AuraKind {
                 a == b
             }
             (AuraKind::Proc(a), AuraKind::Proc(b)) => std::ptr::eq(a, b),
+            (AuraKind::NextCast { next: a, .. }, AuraKind::NextCast { next: b, .. }) => {
+                std::ptr::eq(a, b)
+            }
             _ => std::mem::discriminant(&self) == std::mem::discriminant(&other),
         }
     }
@@ -367,6 +389,8 @@ impl AuraKind {
                 | AuraKind::SpellDamagePct { .. }
                 | AuraKind::Defense { .. }
                 | AuraKind::Proc(_)
+                | AuraKind::NextCast { .. }
+                | AuraKind::StackTo { .. }
                 | AuraKind::SkillCost { .. }
                 | AuraKind::SkillStacks { .. }
                 | AuraKind::Stealth { .. }
@@ -379,6 +403,7 @@ impl AuraKind {
         match self {
             AuraKind::Stacks { count, .. } => count,
             AuraKind::PeriodicDamage { stacks, .. } => stacks,
+            AuraKind::StackTo { count, .. } => count,
             _ => 1,
         }
     }
@@ -590,6 +615,103 @@ impl Skills {
         })
     }
 
+    /// The player's `next_cast` buffs for `skill`.
+    fn next_casts<'a>(
+        &'a self,
+        skill: &'a str,
+    ) -> impl Iterator<Item = &'static callings::NextCast> + 'a {
+        let me = self.me;
+        self.auras.iter().filter_map(move |a| match a.kind {
+            AuraKind::NextCast { next, .. }
+                if a.unit == me && next.skill.iter().any(|s| s == skill) =>
+            {
+                Some(next)
+            }
+            _ => None,
+        })
+    }
+
+    /// How long `skill`'s cast bar runs now, the player's `next_cast` buffs applied.
+    fn cast_time_ms(&self, skill: &Skill) -> u32 {
+        let base = skill.meta.shape.cast_time_ms;
+        if base == 0 || self.next_casts(&skill.key).any(|n| n.instant) {
+            return 0;
+        }
+        let change: i32 = self.next_casts(&skill.key).map(|n| n.cast_time_ms).sum();
+        (base as i32 + change).max(0) as u32
+    }
+
+    /// The percent the player's `next_cast` buffs change `skill`'s cost by, -100 at least.
+    fn next_cost_pct(&self, skill: &str) -> i32 {
+        self.next_casts(skill)
+            .map(|n| n.cost_pct)
+            .sum::<i32>()
+            .max(-100)
+    }
+
+    /// The milliseconds the player's `next_cast` buffs add to the auras `skill` applies.
+    fn next_duration_ms(&self, skill: &str) -> i32 {
+        self.next_casts(skill).map(|n| n.duration_ms).sum()
+    }
+
+    /// `skill` went off: each `next_cast` buff for it loses a charge (one with none lasts its
+    /// duration), and the buffs that share a group with one used go too. What went.
+    fn use_next_casts(&mut self, skill: &str, events: &mut Vec<SessionEvent>) -> Vec<Aura> {
+        let me = self.me;
+        let mut groups: Vec<&'static str> = Vec::new();
+        for a in &mut self.auras {
+            let AuraKind::NextCast { next, group } = a.kind else {
+                continue;
+            };
+            if a.unit != me || !next.skill.iter().any(|s| s == skill) {
+                continue;
+            }
+            groups.extend(group);
+            if a.charges > 0 {
+                a.charges -= 1;
+                if a.charges == 0 {
+                    a.left = 0.0;
+                }
+            }
+        }
+        for a in &mut self.auras {
+            if let AuraKind::NextCast { group: Some(g), .. } = a.kind {
+                if a.unit == me && groups.contains(&g) {
+                    a.left = 0.0;
+                }
+            }
+        }
+        self.remove_where(|a| a.left <= CLOCK_EPSILON, events)
+    }
+
+    /// The spell-mod cells the player's `next_cast` buffs set: `(flat, bit, op, value)`.
+    fn next_cast_mods(&self) -> Vec<(bool, u8, u8, i32)> {
+        let mut cells: Vec<(bool, u8, u8, i32)> = Vec::new();
+        let mut add = |flat: bool, bit: u8, op: u8, value: i32| match cells
+            .iter_mut()
+            .find(|(f, b, o, _)| (*f, *b, *o) == (flat, bit, op))
+        {
+            Some(cell) => cell.3 += value,
+            None => cells.push((flat, bit, op, value)),
+        };
+        for a in self.auras.iter().filter(|a| a.unit == self.me) {
+            let AuraKind::NextCast { next, .. } = a.kind else {
+                continue;
+            };
+            for &bit in &next.family_bits {
+                if next.instant {
+                    add(false, bit, SPELLMOD_CASTING_TIME, -100);
+                } else if next.cast_time_ms != 0 {
+                    add(true, bit, SPELLMOD_CASTING_TIME, next.cast_time_ms);
+                }
+                if next.cost_pct != 0 {
+                    add(false, bit, SPELLMOD_COST, next.cost_pct);
+                }
+            }
+        }
+        cells
+    }
+
     /// Whether `unit` is rooted.
     pub(super) fn rooted(&self, unit: u64) -> bool {
         self.auras
@@ -780,6 +902,11 @@ impl Skills {
                 if rule == StackRule::Ignore {
                     aura = *old;
                 }
+            }
+            if let (AuraKind::StackTo { count: held, .. }, AuraKind::StackTo { count, max, .. }) =
+                (old.kind, &mut aura.kind)
+            {
+                *count = (held + *count).min(*max);
             }
             if let (
                 AuraKind::PeriodicDamage { stacks: held, .. },
@@ -1087,12 +1214,12 @@ impl InWorld {
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) -> Ticked {
-        let mut ticked = Ticked::default();
+        let ticked = Ticked::default();
         let Some(skill) = crate::talents::skill(c, spell_id) else {
             events.push(refused(spell_id, SPELL_FAILED_NOT_KNOWN));
             return ticked;
         };
-        let mut targets = match self.check(skill, target, c) {
+        let targets = match self.check(skill, target, true, c) {
             Ok(targets) => targets,
             Err(reason) => {
                 events.push(refused(spell_id, reason));
@@ -1112,7 +1239,52 @@ impl InWorld {
             self.skills.queued = Some(spell_id);
             return ticked;
         }
-        self.pay(skill, c, events);
+        if self.skills.casting.is_some() {
+            events.push(refused(spell_id, SPELL_FAILED_SPELL_IN_PROGRESS));
+            return ticked;
+        }
+        let cast_ms = self.skills.cast_time_ms(skill);
+        if cast_ms > 0 {
+            // A cast bar: the global cooldown starts now, the rest when it fills.
+            if skill.gcd_ms > 0 {
+                self.skills.gcd = clock::secs(skill.gcd_ms);
+            }
+            self.skills.casting = Some(TimedCast {
+                spell_id,
+                item: 0,
+                entry: 0,
+                skill: Some(target),
+                left: clock::secs(cast_ms),
+            });
+            events.push(SessionEvent::SpellStart {
+                caster: self.guid,
+                spell_id,
+                cast_flags: 0,
+                cast_time_ms: cast_ms,
+                target,
+                ammo_display_id: None,
+            });
+            return ticked;
+        }
+        self.go(skill, target, targets, true, c, rng, events)
+    }
+
+    /// `skill` goes off at `targets` (`target` the client's pick): paid, rolled, landed. `instant`
+    /// for a cast with no bar, which starts the global cooldown and announces its own start.
+    #[allow(clippy::too_many_arguments)]
+    fn go(
+        &mut self,
+        skill: &'static Skill,
+        target: Option<u64>,
+        mut targets: Vec<u64>,
+        instant: bool,
+        c: &mut Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) -> Ticked {
+        let mut ticked = Ticked::default();
+        let spell_id = skill.spell_id;
+        self.pay(skill, instant, c, events);
         // A cast that breaks stealth does so as it goes; its first blow from stealth is a crit.
         let opener = self.skills.opens_from_stealth(skill, events);
 
@@ -1154,14 +1326,16 @@ impl InWorld {
                 _ => None,
             })
             .collect();
-        events.push(SessionEvent::SpellStart {
-            caster: self.guid,
-            spell_id,
-            cast_flags: 0,
-            cast_time_ms: 0,
-            target,
-            ammo_display_id: None,
-        });
+        if instant {
+            events.push(SessionEvent::SpellStart {
+                caster: self.guid,
+                spell_id,
+                cast_flags: 0,
+                cast_time_ms: 0,
+                target,
+                ammo_display_id: None,
+            });
+        }
         events.push(SessionEvent::CastResult {
             spell_id,
             success: true,
@@ -1275,6 +1449,9 @@ impl InWorld {
             let gone = self.skills.spend_charges(&skill.key, events);
             self.faded(&gone, events);
         }
+        // The next-cast buffs this cast used, landed or not.
+        let gone = self.skills.use_next_casts(&skill.key, events);
+        self.faded(&gone, events);
         self.proc(
             crate::rules::procs::Happened {
                 event: crate::callings::ProcEvent::Cast,
@@ -1311,22 +1488,57 @@ impl InWorld {
             &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
         ));
         self.update_aura_states(events);
+        self.sync_next_cast_mods(c, events);
         ticked
+    }
+
+    /// Sends the spell-mod cells the player's `next_cast` buffs move, each with the talents'
+    /// value added (a packet sets a cell outright), and puts back the ones they no longer move.
+    pub(super) fn sync_next_cast_mods(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        let now = self.skills.next_cast_mods();
+        if now == self.skills.sent_mods {
+            return;
+        }
+        let gone: Vec<(bool, u8, u8, i32)> = self
+            .skills
+            .sent_mods
+            .iter()
+            .filter(|(f, b, o, _)| !now.iter().any(|n| (n.0, n.1, n.2) == (*f, *b, *o)))
+            .map(|&(f, b, o, _)| (f, b, o, 0))
+            .collect();
+        for &(flat, mask_bit, op, value) in now.iter().chain(&gone) {
+            events.push(SessionEvent::SpellModifier {
+                flat,
+                mask_bit,
+                op,
+                value: value + crate::talents::spell_mod_value(c, flat, mask_bit, op),
+            });
+        }
+        self.skills.sent_mods = now;
     }
 
     /// What `skill` costs now: the talents' price, less what the player's buffs take off.
     fn power_cost(&self, c: &Char, skill: &Skill) -> u32 {
-        crate::talents::power_cost(c, skill).saturating_sub(self.skills.cost_less(&skill.key))
+        let cost =
+            crate::talents::power_cost(c, skill).saturating_sub(self.skills.cost_less(&skill.key));
+        (cost as i32 * (100 + self.skills.next_cost_pct(&skill.key)) / 100) as u32
     }
 
-    /// Whether `skill` can go off now at `target`, and on whom.
-    fn check(&self, skill: &Skill, target: Option<u64>, c: &Char) -> Result<Vec<u64>, u8> {
+    /// Whether `skill` can go off now at `target`, and on whom; `gcd`: whether the global
+    /// cooldown holds it back.
+    fn check(
+        &self,
+        skill: &Skill,
+        target: Option<u64>,
+        gcd: bool,
+        c: &Char,
+    ) -> Result<Vec<u64>, u8> {
         let p = &self.player;
         if !p.alive() {
             return Err(SPELL_FAILED_CASTER_DEAD);
         }
         if self.skills.cooldown_left(skill.spell_id) > READY_SLACK_SECS
-            || (skill.gcd_ms > 0 && self.skills.gcd > READY_SLACK_SECS)
+            || (gcd && skill.gcd_ms > 0 && self.skills.gcd > READY_SLACK_SECS)
         {
             return Err(SPELL_FAILED_NOT_READY);
         }
@@ -1437,7 +1649,7 @@ impl InWorld {
     }
 
     /// Takes the cast's costs and starts its cooldowns.
-    fn pay(&mut self, skill: &Skill, c: &Char, events: &mut Vec<SessionEvent>) {
+    fn pay(&mut self, skill: &Skill, gcd: bool, c: &Char, events: &mut Vec<SessionEvent>) {
         let cost = self.power_cost(c, skill);
         let p = &mut self.player;
         p.power.spend(cost);
@@ -1450,7 +1662,7 @@ impl InWorld {
             s.cooldowns
                 .push((skill.spell_id, clock::secs(skill.cooldown_ms)));
         }
-        if skill.gcd_ms > 0 {
+        if gcd && skill.gcd_ms > 0 {
             s.gcd = clock::secs(skill.gcd_ms);
         }
         if skill.puts_in_combat_ms > 0 {
@@ -1578,8 +1790,10 @@ impl InWorld {
         let per_combo = |l: Option<formulas::Linear>| l.map_or(0, |l| sized(l) * u32::from(combo));
         // Talents that make the skill's auras last longer (Booming Voice).
         let longer = crate::talents::duration_pct(c, &skill.key);
-        // ... and by a flat time (Bloodletting).
-        let later = crate::talents::duration_ms(c, &skill.key);
+        // ... and by a flat time (Bloodletting), and a next-cast buff's (Arcane Substrate).
+        let later = (crate::talents::duration_ms(c, &skill.key) as i32
+            + self.skills.next_duration_ms(&skill.key))
+        .max(0) as u32;
         let aura = |kind: AuraKind, spell_id: u32, duration_ms: u32, period_ms: u32| Aura {
             unit: target,
             spell_id,
@@ -2650,7 +2864,7 @@ impl InWorld {
         let Some(bonus) = bonus else {
             return false;
         };
-        self.pay(skill, c, events);
+        self.pay(skill, true, c, events);
         let opener = self.skills.opens_from_stealth(skill, events);
         // A next-swing strike rolls exactly as the white swing it replaces, its bonus added.
         let mut stats = buffed(&self.player.stats, &self.skills);
@@ -2794,7 +3008,7 @@ impl InWorld {
         }
         s.cooldowns.retain(|(_, left)| *left > 0.0);
         c.item_cooldowns.retain(|&(_, ready)| ready > wall);
-        self.timed_cast_tick(dt, wall, c, events);
+        self.timed_cast_tick(dt, wall, c, rng, events, ticked);
         let s = &mut self.skills;
         if let Some((_, left)) = &mut s.dodged {
             *left -= dt;
@@ -3152,6 +3366,15 @@ impl InWorld {
                     AuraKind::SpellDamagePct { pct: *pct }
                 }
                 callings::AuraEffect::Root => AuraKind::Root,
+                callings::AuraEffect::NextCast(next) => AuraKind::NextCast {
+                    next,
+                    group: def.row.exclusive_group.as_deref(),
+                },
+                callings::AuraEffect::AtMaxStacks { becomes } => AuraKind::StackTo {
+                    count: 1,
+                    max: def.row.max_stacks.max(1),
+                    then: becomes.as_str(),
+                },
                 callings::AuraEffect::Proc(p) => AuraKind::Proc(p),
                 callings::AuraEffect::SkillCost { skill, amount } => AuraKind::SkillCost {
                     skill: skill.as_str(),
@@ -3203,6 +3426,30 @@ impl InWorld {
             if kind == AuraKind::Root {
                 if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
                     events.extend(mob.halt());
+                }
+            }
+            // A count that reached its top gives way to the aura it builds to.
+            let full = self.skills.auras.iter().find_map(|a| match a.kind {
+                AuraKind::StackTo { count, max, then }
+                    if a.unit == unit && a.spell_id == def.spell_id && count >= max =>
+                {
+                    Some(then)
+                }
+                _ => None,
+            });
+            if let Some(then) = full {
+                let spell_id = def.spell_id;
+                let gone = self.skills.remove_where(
+                    |a| {
+                        a.unit == unit
+                            && a.spell_id == spell_id
+                            && matches!(a.kind, AuraKind::StackTo { .. })
+                    },
+                    events,
+                );
+                self.faded(&gone, events);
+                if let Some(next) = crate::callings::aura(then) {
+                    self.put_aura(next, unit, level, events);
                 }
             }
             if matches!(kind, AuraKind::Dodge { .. } | AuraKind::Defense { .. }) {
@@ -3277,6 +3524,7 @@ impl InWorld {
             spell_id,
             item: item.guid,
             entry: item.entry,
+            skill: None,
             left: clock::secs(cast_ms),
         });
         events.push(SessionEvent::SpellStart {
@@ -3287,6 +3535,14 @@ impl InWorld {
             target: None,
             ammo_display_id: None,
         });
+    }
+
+    /// An item's timed cast under way stops short, as damage taken does (a skill's bar is only
+    /// pushed back in vanilla, which the realm does not model).
+    pub(crate) fn interrupt_item_cast(&mut self, events: &mut Vec<SessionEvent>) {
+        if self.skills.casting.is_some_and(|c| c.skill.is_none()) {
+            self.interrupt_cast(events);
+        }
     }
 
     /// The timed cast under way stops short (`Spell::cancel`): the bar shows "Interrupted", and
@@ -3303,12 +3559,15 @@ impl InWorld {
     }
 
     /// The timed cast's clock: when it runs out the spell goes off.
+    #[allow(clippy::too_many_arguments)]
     fn timed_cast_tick(
         &mut self,
         dt: f32,
         wall: f64,
         c: &mut Char,
+        rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
+        ticked: &mut Ticked,
     ) {
         let Some(cast) = &mut self.skills.casting else {
             return;
@@ -3319,6 +3578,28 @@ impl InWorld {
         }
         let cast = *cast;
         self.skills.casting = None;
+        if let Some(target) = cast.skill {
+            // The bar filled: the cast goes off if it still can.
+            let Some(skill) = crate::talents::skill(c, cast.spell_id) else {
+                return;
+            };
+            // Its own global cooldown, started with the bar, does not hold it back.
+            match self.check(skill, target, false, c) {
+                Ok(targets) => {
+                    let done = self.go(skill, target, targets, false, c, rng, events);
+                    ticked.leveled |= done.leveled;
+                    ticked.discovered |= done.discovered;
+                }
+                Err(reason) => {
+                    events.push(SessionEvent::SpellFailedOther {
+                        caster: self.guid,
+                        spell_id: cast.spell_id,
+                    });
+                    events.push(refused(cast.spell_id, reason));
+                }
+            }
+            return;
+        }
         events.push(SessionEvent::CastResult {
             spell_id: cast.spell_id,
             success: true,

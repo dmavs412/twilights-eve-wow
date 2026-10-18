@@ -120,10 +120,13 @@ pub struct SpellGates {
     pub requires: serde_json::Map<String, serde_json::Value>,
 }
 
-/// What a cast does on the way: cost kind and cast shape. Loaded, not enforced yet.
+/// What a cast does on the way: cost kind and cast shape. The realm runs `cast_time_ms`; the rest
+/// is loaded, not enforced yet.
 #[derive(Debug, Clone, Default, PartialEq, Deserialize)]
 #[serde(default)]
 pub struct CastShape {
+    /// How long the cast bar runs (`client_cast_time_ms`, for a `cast`); 0 for instant.
+    pub cast_time_ms: u32,
     pub cost_kind: Option<String>,
     pub cost_extra_max: u32,
     pub cast_kind: Option<String>,
@@ -192,6 +195,11 @@ pub enum AuraEffect {
     ModSpellDamagePct { pct: u32 },
     /// The unit cannot move, though it still attacks and casts; damage does not break it.
     Root,
+    /// The player's next cast of one of the skills changes: see [`NextCast`].
+    NextCast(NextCast),
+    /// A count that grows by one each time the aura is put on again; at the row's `max_stacks`
+    /// the aura goes and the aura row `becomes` takes its place (Ley-Line Attunement).
+    AtMaxStacks { becomes: String },
     /// The player's parry chance rises by `pct` percent.
     ParryPct { pct: u32 },
     /// The player's block chance rises by `pct` percent while a shield is worn.
@@ -243,6 +251,41 @@ pub struct AuraProc {
     /// The skill whose `skill_amount_pct` talents raise the damage.
     #[serde(default)]
     pub amount_skill: Option<String>,
+}
+
+/// What a `next_cast` aura does to the next cast of one of `skill`: an instant cast, a cast bar
+/// `cast_time_ms` longer (negative: shorter), a cost `cost_pct` percent higher (negative: lower),
+/// and `duration_ms` more on the aura the skill applies. One of the aura's charges goes with each
+/// such cast; with none, it lasts its duration.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct NextCast {
+    #[serde(deserialize_with = "one_or_many")]
+    pub skill: Vec<String>,
+    #[serde(default)]
+    pub instant: bool,
+    #[serde(default)]
+    pub cast_time_ms: i32,
+    #[serde(default)]
+    pub cost_pct: i32,
+    #[serde(default)]
+    pub duration_ms: i32,
+    /// The skills' `SpellFamilyFlags` bits, resolved by the build, for the client's cast bar.
+    #[serde(default)]
+    pub family_bits: Vec<u8>,
+}
+
+/// One string, or a list of them (`key` or `key|key` in a CSV cell).
+fn one_or_many<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum OneOrMany {
+        One(String),
+        Many(Vec<String>),
+    }
+    Ok(match OneOrMany::deserialize(d)? {
+        OneOrMany::One(s) => vec![s],
+        OneOrMany::Many(v) => v,
+    })
 }
 
 /// An armour kind a Calling may wear.

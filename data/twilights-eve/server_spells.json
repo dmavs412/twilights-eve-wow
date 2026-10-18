@@ -9758,6 +9758,7 @@
     "prevention": "silence",
     "cost_kind": "pct_base",
     "cast_kind": "cast",
+    "cast_time_ms": 1500,
     "interrupt_on": [
      "move",
      "pushback",
@@ -9846,6 +9847,7 @@
     "prevention": "silence",
     "cost_kind": "pct_base",
     "cast_kind": "cast",
+    "cast_time_ms": 2500,
     "interrupt_on": [
      "move",
      "pushback",
@@ -10139,8 +10141,21 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "apply_aura": [
+            "aura_arcane_substrate_cold_1",
+            "aura_arcane_substrate_ember_1"
+           ]
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.1 seconds or increases the duration of your next Searing Ember by 1 seconds."
        },
        {
@@ -10164,8 +10179,21 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "apply_aura": [
+            "aura_arcane_substrate_cold_2",
+            "aura_arcane_substrate_ember_2"
+           ]
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.2 seconds or increases the duration of your next Searing Ember by 2 seconds."
        },
        {
@@ -10189,8 +10217,21 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "apply_aura": [
+            "aura_arcane_substrate_cold_3",
+            "aura_arcane_substrate_ember_3"
+           ]
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.3 seconds or increases the duration of your next Searing Ember by 3 seconds."
        },
        {
@@ -10214,8 +10255,21 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "apply_aura": [
+            "aura_arcane_substrate_cold_4",
+            "aura_arcane_substrate_ember_4"
+           ]
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.4 seconds or increases the duration of your next Searing Ember by 4 seconds."
        },
        {
@@ -10239,8 +10293,21 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "apply_aura": [
+            "aura_arcane_substrate_cold_5",
+            "aura_arcane_substrate_ember_5"
+           ]
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.5 seconds or increases the duration of your next Searing Ember by 5 seconds."
        }
       ]
@@ -10959,8 +11026,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "apply_aura": "aura_ley_line_attunement"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
        },
        {
@@ -10984,8 +11061,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "apply_aura": "aura_ley_line_attunement"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
        },
        {
@@ -11009,8 +11096,18 @@
         },
         "weapon_hand": "main",
         "max_targets": 1,
-        "modelled": false,
-        "effects": [],
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "cast",
+           "skill": "ley_spark",
+           "apply_aura": "aura_ley_line_attunement"
+          },
+          "realm_only": false
+         }
+        ],
         "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
        }
       ]
@@ -11452,6 +11549,378 @@
     "description": "Movement speed slowed by 50%."
    },
    {
+    "key": "aura_thermal_feedback",
+    "name": "Thermal Feedback",
+    "spell_id": 11069,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "Your next Biting Cold is instant and costs no mana."
+   },
+   {
+    "key": "aura_arcane_substrate_cold_1",
+    "name": "Arcane Substrate",
+    "spell_id": 12536,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "biting_cold",
+       "cast_time_ms": -100,
+       "family_bits": [
+        5
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Biting Cold casts 0.1 sec faster."
+   },
+   {
+    "key": "aura_arcane_substrate_cold_2",
+    "name": "Arcane Substrate",
+    "spell_id": 12536,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "biting_cold",
+       "cast_time_ms": -200,
+       "family_bits": [
+        5
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Biting Cold casts 0.2 sec faster."
+   },
+   {
+    "key": "aura_arcane_substrate_cold_3",
+    "name": "Arcane Substrate",
+    "spell_id": 12536,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "biting_cold",
+       "cast_time_ms": -300,
+       "family_bits": [
+        5
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Biting Cold casts 0.3 sec faster."
+   },
+   {
+    "key": "aura_arcane_substrate_cold_4",
+    "name": "Arcane Substrate",
+    "spell_id": 12536,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "biting_cold",
+       "cast_time_ms": -400,
+       "family_bits": [
+        5
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Biting Cold casts 0.4 sec faster."
+   },
+   {
+    "key": "aura_arcane_substrate_cold_5",
+    "name": "Arcane Substrate",
+    "spell_id": 12536,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "biting_cold",
+       "cast_time_ms": -500,
+       "family_bits": [
+        5
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Biting Cold casts 0.5 sec faster."
+   },
+   {
+    "key": "aura_arcane_substrate_ember_1",
+    "name": "Arcane Substrate",
+    "spell_id": 11129,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "searing_ember",
+       "duration_ms": 1000,
+       "family_bits": [
+        0
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Searing Ember burns 1 sec longer."
+   },
+   {
+    "key": "aura_arcane_substrate_ember_2",
+    "name": "Arcane Substrate",
+    "spell_id": 11129,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "searing_ember",
+       "duration_ms": 2000,
+       "family_bits": [
+        0
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Searing Ember burns 2 sec longer."
+   },
+   {
+    "key": "aura_arcane_substrate_ember_3",
+    "name": "Arcane Substrate",
+    "spell_id": 11129,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "searing_ember",
+       "duration_ms": 3000,
+       "family_bits": [
+        0
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Searing Ember burns 3 sec longer."
+   },
+   {
+    "key": "aura_arcane_substrate_ember_4",
+    "name": "Arcane Substrate",
+    "spell_id": 11129,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "searing_ember",
+       "duration_ms": 4000,
+       "family_bits": [
+        0
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Searing Ember burns 4 sec longer."
+   },
+   {
+    "key": "aura_arcane_substrate_ember_5",
+    "name": "Arcane Substrate",
+    "spell_id": 11129,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "exclusive_group": "arcane_substrate",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 15000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": "searing_ember",
+       "duration_ms": 5000,
+       "family_bits": [
+        0
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Searing Ember burns 5 sec longer."
+   },
+   {
     "key": "aura_shattered_blink_1",
     "name": "Shattered Blink",
     "spell_id": 122,
@@ -11506,6 +11975,73 @@
      }
     ],
     "description": "Frozen in place."
+   },
+   {
+    "key": "aura_ley_line_attunement",
+    "name": "Attunement",
+    "spell_id": 18462,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "at_max_stacks",
+      "params": {
+       "becomes": "aura_ley_line_attunement_ready"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Attunement charges. At 3, your next Biting Cold or Catalyst costs no mana."
+   },
+   {
+    "key": "aura_ley_line_attunement_ready",
+    "name": "Attuned",
+    "spell_id": 18463,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 30000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "next_cast",
+      "params": {
+       "skill": [
+        "biting_cold",
+        "catalyst"
+       ],
+       "cost_pct": -100,
+       "family_bits": [
+        5,
+        1
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next Biting Cold or Catalyst costs no mana."
    },
    {
     "key": "aura_catalytic_resonance_1",
@@ -11651,6 +12187,27 @@
      }
     ],
     "description": "Spell damage increased by 10%."
+   },
+   {
+    "key": "aura_mana_surge",
+    "name": "Mana Surge",
+    "spell_id": 12043,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": false,
+    "effects": [],
+    "description": "Ley-Spark has no cast time."
    }
   ],
   "name": "Initiate",
@@ -11718,6 +12275,7 @@
     ],
     "cost_kind": "pct_base",
     "cast_kind": "cast",
+    "cast_time_ms": 3000,
     "interrupt_on": [
      "move",
      "pushback",
@@ -13152,6 +13710,7 @@
     "prevention": "silence",
     "cost_kind": "health",
     "cast_kind": "cast",
+    "cast_time_ms": 1500,
     "interrupt_on": [
      "move",
      "pushback",

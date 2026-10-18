@@ -5554,7 +5554,20 @@
     "name": "Arcane Substrate",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.1 seconds or increases the duration of your next Searing Ember by 1 seconds."
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.1 seconds or increases the duration of your next Searing Ember by 1 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "apply_aura": [
+        "aura_arcane_substrate_cold_1",
+        "aura_arcane_substrate_ember_1"
+       ]
+      }
+     }
+    ]
    }
   },
   {
@@ -5567,7 +5580,20 @@
     "name": "Arcane Substrate",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.2 seconds or increases the duration of your next Searing Ember by 2 seconds."
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.2 seconds or increases the duration of your next Searing Ember by 2 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "apply_aura": [
+        "aura_arcane_substrate_cold_2",
+        "aura_arcane_substrate_ember_2"
+       ]
+      }
+     }
+    ]
    }
   },
   {
@@ -5580,7 +5606,20 @@
     "name": "Arcane Substrate",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.3 seconds or increases the duration of your next Searing Ember by 3 seconds."
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.3 seconds or increases the duration of your next Searing Ember by 3 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "apply_aura": [
+        "aura_arcane_substrate_cold_3",
+        "aura_arcane_substrate_ember_3"
+       ]
+      }
+     }
+    ]
    }
   },
   {
@@ -5593,7 +5632,20 @@
     "name": "Arcane Substrate",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.4 seconds or increases the duration of your next Searing Ember by 4 seconds."
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.4 seconds or increases the duration of your next Searing Ember by 4 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "apply_aura": [
+        "aura_arcane_substrate_cold_4",
+        "aura_arcane_substrate_ember_4"
+       ]
+      }
+     }
+    ]
    }
   },
   {
@@ -5606,7 +5658,20 @@
     "name": "Arcane Substrate",
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.5 seconds or increases the duration of your next Searing Ember by 5 seconds."
+    "description": "Casting Ley-Spark reduces the cast time of your next Biting Cold by 0.5 seconds or increases the duration of your next Searing Ember by 5 seconds.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "apply_aura": [
+        "aura_arcane_substrate_cold_5",
+        "aura_arcane_substrate_ember_5"
+       ]
+      }
+     }
+    ]
    }
   },
   {
@@ -5965,7 +6030,17 @@
     "name": "Ley-Line Attunement",
     "school": 0,
     "prevention_type": 2,
-    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "apply_aura": "aura_ley_line_attunement"
+      }
+     }
+    ]
    }
   },
   {
@@ -5978,7 +6053,17 @@
     "name": "Ley-Line Attunement",
     "school": 0,
     "prevention_type": 2,
-    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "apply_aura": "aura_ley_line_attunement"
+      }
+     }
+    ]
    }
   },
   {
@@ -5991,7 +6076,17 @@
     "name": "Ley-Line Attunement",
     "school": 0,
     "prevention_type": 2,
-    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana."
+    "description": "Each time you cast Ley-Spark, you gain a charge of Attunement. At 3 charges, your next Biting Cold or Catalyst costs zero mana.",
+    "effects": [
+     {
+      "kind": "proc",
+      "params": {
+       "on": "cast",
+       "skill": "ley_spark",
+       "apply_aura": "aura_ley_line_attunement"
+      }
+     }
+    ]
    }
   },
   {

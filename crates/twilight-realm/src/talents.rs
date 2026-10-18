@@ -669,6 +669,22 @@ pub(crate) fn wipe(c: &mut Char, events: &mut Vec<SessionEvent>) {
     events.push(values(c.guid, &[points_pair(c)]));
 }
 
+/// The value `c`'s talents give one spell-mod cell; 0 when none touches it.
+pub(crate) fn spell_mod_value(c: &Char, flat: bool, bit: u8, op: u8) -> i32 {
+    spell_mods(c)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::SpellModifier {
+                flat: f,
+                mask_bit,
+                op: o,
+                value,
+            } if (f, mask_bit, o) == (flat, bit, op) => Some(value),
+            _ => None,
+        })
+        .unwrap_or(0)
+}
+
 /// Every spell-mod cell the current tree can touch, at its value for what `c` has learned: sent at
 /// login and whenever one moves, since each packet sets a cell outright.
 pub(crate) fn spell_mods(c: &Char) -> Vec<SessionEvent> {

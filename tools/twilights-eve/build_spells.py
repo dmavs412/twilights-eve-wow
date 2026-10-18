@@ -36,7 +36,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "add_aura_stacks", "add_combo_points", "blink", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "add_aura_stacks", "add_combo_points", "at_max_stacks", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -734,6 +734,9 @@ def build_shape(row: dict, kind: str, school: str, hidden: bool, where: str) -> 
     cast_kind = out["cast_kind"] = one_of(row["cast_kind"] or "instant", CAST_KINDS, where, "cast_kind")
     if cast_kind == "cast" and not hidden and not (row["client_cast_time_ms"] and number(row["client_cast_time_ms"], where) > 0):
         raise BuildError(f"{where} cast_kind: cast needs a client_cast_time_ms above 0")
+    if cast_kind == "cast" and row["client_cast_time_ms"]:
+        # The realm runs the same bar the client shows.
+        out["cast_time_ms"] = int(number(row["client_cast_time_ms"], where))
     if cast_kind == "channel":
         if not hidden and not (row["client_duration_ms"] and number(row["client_duration_ms"], where) > 0):
             raise BuildError(f"{where} cast_kind: channel needs a client_duration_ms above 0")
@@ -876,6 +879,37 @@ def resolve_amount_of(calling: dict) -> None:
             effect["params"]["amount"] = hit["params"]["amount"]
             if "school" in hit["params"]:
                 effect["params"]["school"] = hit["params"]["school"]
+
+
+def resolve_next_cast(calling: dict, masks: dict[str, int | None]) -> None:
+    """A `next_cast` aura names skills of its Calling; the realm gets their `SpellFamilyFlags`
+    bits as `family_bits`, for the client's cast bar: each its skill's lowest bit no other skill
+    shares. A skill whose flags are unknown (no --data) or all shared adds none. An `at_max_stacks` aura names the aura row it becomes."""
+    keys = {s["key"] for s in calling["skills"]}
+    auras = {a["key"] for a in calling["auras"]}
+    for aura in calling["auras"]:
+        where = f"{calling['key']}/{aura['key']}"
+        for effect in aura.get("effects", []):
+            params = effect["params"]
+            if effect["kind"] == "at_max_stacks" and params.get("becomes") not in auras:
+                raise BuildError(f"{where} at_max_stacks: becomes {params.get("becomes")!r} is not an aura row")
+            if effect["kind"] != "next_cast":
+                continue
+            skills = params.get("skill")
+            skills = skills if isinstance(skills, list) else [skills]
+            bits = []
+            for key in skills:
+                if key not in keys:
+                    raise BuildError(f"{where} next_cast: skill {key!r} is not a skill of {calling['key']}")
+                # The lowest bit of the skill's mask that no other skill of the Calling shares.
+                others = 0
+                for other, other_mask in masks.items():
+                    if other != key and other_mask:
+                        others |= other_mask
+                own = (masks.get(key) or 0) & ~others
+                if own:
+                    bits.append((own & -own).bit_length() - 1)
+            params["family_bits"] = bits
 
 
 def skill_masks(rows: list[dict], spell_flags: dict | None) -> dict[str, dict[str, int | None]]:
@@ -1106,6 +1140,7 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
 
     for calling in callings.values():
         resolve_amount_of(calling)
+        resolve_next_cast(calling, masks.get(calling["key"], {}))
 
     for (calling_key, key), ranks in talent_rows.items():
         calling = callings[calling_key]
