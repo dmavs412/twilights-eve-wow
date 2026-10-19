@@ -6,6 +6,12 @@ hands, waist, legs, feet) do not exist: they never drop, sell or start in an out
 refuses to equip them. Bags stay as they are, and the hands keep vanilla rules (a two-hander fills
 both, dual wield by Calling).
 
+**Amended 2026-10-18 (#157): the Ammo slot is `PLAYER_AMMO_ID`.** As in vanilla, ammo is never
+worn: the arrows or bullets stay in the bags, and the Ammo Gear Slot is the field naming the
+entry the ranged weapon shoots, set by `CMSG_SET_AMMO` (the sheet's ammo slot) and saved with the
+character. Each ranged attack spends one from the bags, and the ammo's DPS times the weapon's
+speed adds to the shot. A bow or crossbow takes arrows, a gun bullets, a thrown weapon none.
+
 The look of the whole body comes from the Chest. Each Chest carries a Wardrobe, a display per
 hidden body part, which the realm writes into the 1.12 visible-item fields as if a full set were
 worn. Those pieces are never items: they are not in the inventory fields, and the client's

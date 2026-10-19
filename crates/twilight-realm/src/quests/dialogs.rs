@@ -28,10 +28,8 @@ pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
             text: String::new(),
         }
     });
-    let mut rewards = [(0, 0); 4];
-    if q.tokens > 0 {
-        rewards[0] = (TOKEN, q.tokens);
-    }
+    let given = fixed_rewards(q);
+    let rewards = std::array::from_fn(|i| given.get(i).copied().unwrap_or((0, 0)));
     Some(SessionEvent::QuestTemplate(Box::new(QuestTemplate {
         quest_id: q.id,
         // `QUEST_METHOD_ENABLED`.
@@ -151,10 +149,7 @@ impl Realm {
                         && reward(c, q, chosen, events)
                     {
                         let gained = w.reward_xp(c, q.reward_xp(c.level), events);
-                        let mut items = Vec::new();
-                        if q.tokens > 0 {
-                            items.push((TOKEN, q.tokens));
-                        }
+                        let mut items = fixed_rewards(q);
                         if let Some(item) = chosen {
                             items.push((item, 1));
                         }
@@ -407,16 +402,25 @@ fn choice_rewards(q: &Quest) -> Vec<QuestRewardItem> {
         .collect()
 }
 
-/// The Token row, when the quest pays Tokens.
+/// What every hand-in gives, `(entry, count)`: the Tokens, then the quest's reward items.
+fn fixed_rewards(q: &Quest) -> Vec<(u32, u32)> {
+    let tokens = (q.tokens > 0).then_some((TOKEN, q.tokens));
+    tokens
+        .into_iter()
+        .chain(q.rewards.iter().copied())
+        .collect()
+}
+
+/// The reward panel's "You will receive" rows.
 fn token_rewards(q: &Quest) -> Vec<QuestRewardItem> {
-    if q.tokens == 0 {
-        return Vec::new();
-    }
-    vec![QuestRewardItem {
-        item_id: TOKEN,
-        count: q.tokens,
-        display_id: display(TOKEN),
-    }]
+    fixed_rewards(q)
+        .into_iter()
+        .map(|(item_id, count)| QuestRewardItem {
+            item_id,
+            count,
+            display_id: display(item_id),
+        })
+        .collect()
 }
 
 fn display(item: u32) -> u32 {
@@ -504,9 +508,12 @@ fn turn_in(c: &Char, npc: u64, q: &Quest, events: &mut Vec<SessionEvent>) {
 /// hand-in before anything changes, as vmangos `Player::CanRewardQuest` does; whether it went
 /// through.
 fn reward(c: &mut Char, q: &Quest, chosen: Option<u32>, events: &mut Vec<SessionEvent>) -> bool {
-    let tokens_fit = q.tokens == 0 || c.inventory.fits(TOKEN, q.tokens);
-    let chosen_fits = chosen.is_none_or(|item| c.inventory.fits(item, 1));
-    if !tokens_fit || !chosen_fits {
+    let given: Vec<(u32, u32)> = fixed_rewards(q)
+        .into_iter()
+        .chain(chosen.map(|item| (item, 1)))
+        .collect();
+    let mut room = c.inventory.clone();
+    if given.iter().any(|&(e, n)| room.store(e, n).is_err()) {
         events.push(equipment::inventory_failure(
             equipment::EQUIP_ERR_INVENTORY_FULL,
             0,
@@ -517,13 +524,12 @@ fn reward(c: &mut Char, q: &Quest, chosen: Option<u32>, events: &mut Vec<Session
         equipment::take(c, o.item, o.count, events);
     }
     c.inventory.money = c.inventory.money.saturating_add(q.money);
-    if q.tokens > 0 {
+    for &(entry, count) in &given {
         // Checked above.
-        let _ = equipment::receive_from(c, TOKEN, q.tokens, true, events);
-    }
-    if let Some(item) = chosen {
-        // Checked above.
-        let _ = equipment::receive_from(c, item, 1, true, events);
+        let _ = equipment::receive_from(c, entry, count, true, events);
+        if c.inventory.ammo == 0 {
+            crate::ammo::set_quietly(c, entry, events);
+        }
     }
     if !c.quests.completed.contains(&q.id) {
         c.quests.completed.push(q.id);

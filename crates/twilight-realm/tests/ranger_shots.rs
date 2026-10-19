@@ -9,7 +9,7 @@ mod gear_common;
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight::{assert_on_time, cast, flat, refusal, stand_at, Mob, CAMP};
 use common::*;
-use gear_common::save_with;
+use gear_common::save_shooting;
 use twilight_realm::{Realm, RealmCommand};
 
 const RANGED: u8 = 17;
@@ -82,7 +82,7 @@ fn ranger(
     talents: &[(u32, u8)],
     seed: u64,
 ) -> (Realm, u64, Vec<Mob>) {
-    let (guid, mut blob) = save_with(10, 0, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+    let (guid, mut blob) = save_shooting(10, &[(RANGED, CRACKED_SHORTBOW, 1)]);
     blob = blob.replace(
         "calling = \"basic_warrior\"",
         &format!("calling = \"{calling}\""),
@@ -198,7 +198,7 @@ fn piercing_force_makes_the_shots_crits_250_pct() {
 fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
     // At the scorpid camp, where there are enemies to spare. (At level 1, 1% of base mana rounds
     // to nothing.)
-    let (guid, blob) = save_with(10, 0, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+    let (guid, blob) = save_shooting(10, &[(RANGED, CRACKED_SHORTBOW, 1)]);
     let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
     let mut realm = Realm::with_seed(0xC2_0001);
     realm.import_character(&blob).unwrap();
@@ -298,7 +298,8 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
             }
         }
     }
-    assert!(shots.len() >= 3, "shots at {shots:?}");
+    // The arrows' DPS (#157) kills the mob by the third shot.
+    assert!(shots.len() >= 2, "shots at {shots:?}");
     assert_on_time(&shots, &steps, 2.3 / 1.4);
     // A refund for each hit, until the bar is full again.
     assert!(
@@ -447,7 +448,7 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
 fn point_blank_sends_the_min_range_cell() {
     const SPELLMOD_MIN_RANGE: u8 = 29;
     let cells = |talents: &[(u32, u8)]| {
-        let (guid, mut blob) = save_with(60, 0, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+        let (guid, mut blob) = save_shooting(60, &[(RANGED, CRACKED_SHORTBOW, 1)]);
         blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
         if let [(t, r)] = talents {
             blob = blob.replace(

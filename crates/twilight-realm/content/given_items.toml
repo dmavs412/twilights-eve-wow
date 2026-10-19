@@ -1,4 +1,4 @@
-# The items the realm hands out itself and no mob ever drops, written by hand. Same fields as
+# The items the realm hands out or sells itself and no mob ever drops, written by hand. Same fields as
 # items.toml; they stay out of its loot pools. Gear the realm hands out (starting outfits) is in
 # data/twilights-eve/gear.csv.
 #
@@ -10,5 +10,9 @@
 item = [
   # The stock 1.12 Hearthstone, with its hour-long category cooldown cut to five minutes: the
   # spell's 10 s cast returns the player to the Crossroads (`hearth.rs`).
+  # Ammo (#157), as vmangos has it: 200 a stack, sold 200 for 10 copper. The roll is the ammo's
+  # damage per second, its middle added to each shot at the weapon's speed.
+  { entry = 2512, name = "Rough Arrow", quality = 1, item_level = 5, required_level = 1, class = 6, subclass = 2, inventory_type = 24, display_id = 5996, buy_price = 10, buy_count = 200, stackable = 200, material = 2, damage = [[1.0, 2.0, 0]] },
+  { entry = 2516, name = "Light Shot", quality = 1, item_level = 5, required_level = 1, class = 6, subclass = 3, inventory_type = 24, display_id = 5998, buy_price = 10, buy_count = 200, stackable = 200, material = 2, damage = [[1.0, 2.0, 0]] },
   { entry = 6948, name = "Hearthstone", quality = 1, item_level = 1, class = 15, display_id = 6418, bonding = 1, max_count = 1, stackable = 1, use_spell = 8690, use_spell_name = "Hearthstone", use_cooldown_ms = 300000, use_category_cooldown_ms = 0 },
 ]

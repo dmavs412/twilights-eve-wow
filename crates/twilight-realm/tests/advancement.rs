@@ -958,6 +958,25 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
     }
 }
 
+/// The Ranger's Draw hands a Cracked Shortbow and 200 Rough Arrows, set as the ammo (#157).
+#[test]
+fn the_rangers_draw_hands_a_bow_and_arrows_set_as_ammo() {
+    const CRACKED_SHORTBOW: u32 = 2773;
+    const ROUGH_ARROW: u32 = 2512;
+    let (mut realm, me, mut events) = capped_warrior();
+    let npc = giver(&events, RANGER_TRAINER);
+    events.extend(take(&mut realm, npc, THE_RANGERS_DRAW));
+    events.extend(hand_in(&mut realm, npc, THE_RANGERS_DRAW));
+    assert_eq!(descriptor(&events, me).player_ammo_id(), Some(ROUGH_ARROW));
+    let saved = realm.export_character(me).unwrap();
+    assert!(saved.contains(&format!("ammo = {ROUGH_ARROW}")));
+    assert!(saved.contains(&format!("entry = {CRACKED_SHORTBOW}")));
+    assert!(saved.contains(&format!(
+        "entry = {ROUGH_ARROW}
+count = 200"
+    )));
+}
+
 #[test]
 fn only_uzzek_sells_the_respec() {
     let (mut realm, _, events) = questing(10, &[], 0, &[]);

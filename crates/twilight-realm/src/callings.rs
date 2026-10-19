@@ -1466,6 +1466,16 @@ impl Effect {
 }
 
 impl Skill {
+    /// A shot: it needs a bow, gun, crossbow or thrown weapon in the ranged slot
+    /// (`requires_weapon=any_ranged`), and ammo for one that shoots it.
+    pub fn wants_ranged(&self) -> bool {
+        self.meta
+            .gates
+            .requires_weapon
+            .iter()
+            .any(|w| w == "any_ranged")
+    }
+
     /// A finisher: any effect carries a `per_combo` block. It needs combo points on the target
     /// to cast, and a cast that lands spends them all.
     pub fn is_finisher(&self) -> bool {

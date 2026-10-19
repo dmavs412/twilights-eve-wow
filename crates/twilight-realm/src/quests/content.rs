@@ -166,6 +166,10 @@ pub(crate) struct Quest {
     /// chosen one on hand-in. At most six (`QUEST_REWARD_CHOICES_COUNT`).
     #[serde(default)]
     pub(crate) choices: Vec<u32>,
+    /// The reward panel's "You will receive": `[item entry, count]`, all of them on hand-in, beside
+    /// any Tokens. Ammo among them is set as the ammo when none is (the Ranger's arrows).
+    #[serde(default)]
+    pub(crate) rewards: Vec<(u32, u32)>,
     /// `(creature entry, count)`.
     #[serde(default)]
     pub(crate) kill: Vec<(u32, u32)>,
@@ -384,7 +388,12 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool) {
         "quest {} offers more than six reward choices",
         q.id
     );
-    for &item in &q.choices {
+    assert!(
+        q.rewards.len() + usize::from(q.tokens > 0) <= 4,
+        "quest {} gives more than four reward items",
+        q.id
+    );
+    for &item in q.choices.iter().chain(q.rewards.iter().map(|(e, _)| e)) {
         assert!(
             crate::items::template(item).is_some(),
             "quest {} offers item {item}, which the content does not have",

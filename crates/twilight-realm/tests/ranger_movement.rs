@@ -9,7 +9,7 @@ mod gear_common;
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight::{cast, refusal, stand_at, Mob, View};
 use common::*;
-use gear_common::save_with;
+use gear_common::save_shooting;
 use twilight_realm::{Realm, RealmCommand};
 
 const RANGED: u8 = 17;
@@ -28,7 +28,7 @@ const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 /// A level 10 Ranger with a bow and `talents`, in the world at `seed`: the realm, its guid, the
 /// first mob in view, the client's view.
 fn ranger(talents: &[(u32, u8)], seed: u64) -> (Realm, u64, Mob, View) {
-    let (guid, mut blob) = save_with(10, 0, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+    let (guid, mut blob) = save_shooting(10, &[(RANGED, CRACKED_SHORTBOW, 1)]);
     blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
     if !talents.is_empty() {
         let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();

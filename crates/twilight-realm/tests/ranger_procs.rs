@@ -10,7 +10,7 @@ mod gear_common;
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight::{cast, flat, refusal, Mob, View, CAMP};
 use common::*;
-use gear_common::save_with;
+use gear_common::save_shooting;
 use twilight_realm::{Realm, RealmCommand};
 
 const RANGED: u8 = 17;
@@ -48,7 +48,7 @@ const STAND: [f32; 3] = [CAMP[0] + 15.0, CAMP[1], CAMP[2]];
 /// A level 10 Ranger with a bow, Point Blank and `talents`, at the scorpid camp on `seed`: the
 /// realm, its guid, the camp's mobs, the client's view.
 fn at_camp(talents: &[(u32, u8)], seed: u64) -> (Realm, u64, Vec<Mob>, View) {
-    let (guid, mut blob) = save_with(10, 0, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+    let (guid, mut blob) = save_shooting(10, &[(RANGED, CRACKED_SHORTBOW, 1)]);
     blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
     let mut rows = vec![format!("[{POINT_BLANK}, 2]")];
     rows.extend(talents.iter().map(|(t, r)| format!("[{t}, {r}]")));

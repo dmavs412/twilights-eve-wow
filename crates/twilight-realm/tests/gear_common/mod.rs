@@ -37,6 +37,29 @@ pub fn save_with(level: u8, money: u32, items: &[Carried]) -> (u64, String) {
     (guid, blob)
 }
 
+/// Rough Arrow: 200 a stack, 1.5 damage per second.
+pub const ROUGH_ARROW: u32 = 2512;
+/// The first backpack slot.
+pub const BACKPACK_1: u8 = 23;
+
+/// [`save_with`] for a shooter: `items`, and a stack of 200 Rough Arrows in the backpack set as
+/// the ammo (#157).
+pub fn save_shooting(level: u8, items: &[Carried]) -> (u64, String) {
+    let mut items = items.to_vec();
+    items.push((BACKPACK_1, ROUGH_ARROW, 200));
+    let (guid, blob) = save_with(level, 0, &items);
+    let blob = blob.replace(
+        "money = 0
+",
+        &format!(
+            "money = 0
+ammo = {ROUGH_ARROW}
+"
+        ),
+    );
+    (guid, blob)
+}
+
 /// One item a test puts inside an equipped bag: `(bag slot 19-22, slot in the bag, entry,
 /// count)`.
 pub type Bagged = (u8, u8, u32, u32);

@@ -76,6 +76,9 @@ struct Save {
     /// Respecs bought, which price the next. Added within version 1.
     #[serde(default)]
     talent_wipes: u32,
+    /// The ammo's entry, 0 for none (#157). Added within version 2: a save without it has none.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    ammo: u32,
     /// `[item entry, the Unix ms it is ready at]` per item cooling down after use, so the time
     /// between sessions counts. Optional within version 1.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -177,9 +180,10 @@ fn saved_items(inventory: &Inventory) -> Vec<SavedItem> {
 /// The inventory a save describes; an unknown item, a bad slot, a slot named twice or a bag slot
 /// holding what is no bag makes it unreadable. A bag's contents come after the bag. Gear the ten
 /// Gear Slots retired is left out.
-fn load_inventory(money: u32, saved: &[SavedItem]) -> Result<Inventory, SaveError> {
+fn load_inventory(money: u32, ammo: u32, saved: &[SavedItem]) -> Result<Inventory, SaveError> {
     let mut inventory = Inventory::default();
     inventory.money = money;
+    inventory.ammo = ammo;
     for s in saved.iter().filter(|s| !crate::items::retired(s.entry)) {
         let template = crate::items::template(s.entry).ok_or(SaveError::Unreadable)?;
         let at = s
@@ -196,6 +200,10 @@ fn load_inventory(money: u32, saved: &[SavedItem]) -> Result<Inventory, SaveErro
         inventory.put(at, item);
     }
     Ok(inventory)
+}
+
+fn is_zero(v: &u32) -> bool {
+    *v == 0
 }
 
 pub(crate) fn export(c: &Char) -> String {
@@ -217,6 +225,7 @@ pub(crate) fn export(c: &Char) -> String {
         money: c.inventory.money,
         talents: c.talents.clone(),
         talent_wipes: c.talent_wipes,
+        ammo: c.inventory.ammo,
         item_ready_at: c
             .item_cooldowns
             .iter()
@@ -262,7 +271,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         action_bar: s.action_bar,
         talents: s.talents,
         talent_wipes: s.talent_wipes,
-        inventory: load_inventory(s.money, &s.items)?,
+        inventory: load_inventory(s.money, s.ammo, &s.items)?,
         item_cooldowns: s
             .item_ready_at
             .iter()

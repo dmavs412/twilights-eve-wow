@@ -378,6 +378,7 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::LootMoney => Some(RealmCommand::LootMoney),
         ClientCommand::AutostoreLootItem { slot } => Some(RealmCommand::AutostoreLootItem { slot }),
         ClientCommand::LootRelease { guid } => Some(RealmCommand::LootRelease { guid }),
+        ClientCommand::SetAmmo { entry } => Some(RealmCommand::SetAmmo { entry }),
         ClientCommand::AutoEquipItem { bag_index, slot } => Some(RealmCommand::AutoEquipItem {
             bag: bag_index,
             slot,

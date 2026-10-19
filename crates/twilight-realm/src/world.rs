@@ -1413,6 +1413,7 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
             UNIT_FIELD_MAXRANGEDDAMAGE,
             float(s.ranged.map_or(0.0, |r| r.max_damage)),
         ),
+        (crate::ammo::PLAYER_AMMO_ID, c.inventory.ammo),
         (PLAYER_CRIT_PERCENTAGE, float(s.crit_pct as f32)),
         (PLAYER_DODGE_PERCENTAGE, float(s.dodge_pct as f32)),
         (PLAYER_PARRY_PERCENTAGE, float(s.parry_pct as f32)),

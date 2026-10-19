@@ -64,6 +64,8 @@ const SPELL_FAILED_BAD_TARGETS: u8 = 0x0a;
 const SPELL_FAILED_CASTER_AURASTATE: u8 = 0x12;
 const SPELL_FAILED_CASTER_DEAD: u8 = 0x13;
 const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
+/// No arrows or bullets for the ranged weapon (#157).
+const SPELL_FAILED_NO_AMMO: u8 = 0x43;
 const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
 const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
@@ -2038,6 +2040,18 @@ impl InWorld {
         let mut ticked = Ticked::default();
         let spell_id = skill.spell_id;
         self.pay(skill, instant, c, events);
+        // A ranged attack spends an arrow or bullet, and each extra ranged strike another.
+        if skill.wants_ranged() {
+            let extra = self
+                .skills
+                .extra_strikes(&skill.key)
+                .iter()
+                .filter(|(w, _)| *w == Weapon::Ranged)
+                .count() as u32;
+            if crate::ammo::spend(c, 1 + extra, events) {
+                self.refresh_gear(c, events);
+            }
+        }
         self.skills.cast_target = target;
         self.skills.cast_dealt = 0;
         self.skills.cast_healed = 0;
@@ -2653,14 +2667,12 @@ impl InWorld {
             return Err(SPELL_FAILED_NO_POWER);
         }
         // A shot needs a bow, gun, crossbow or thrown weapon in the ranged slot.
-        let wants_ranged = skill
-            .meta
-            .gates
-            .requires_weapon
-            .iter()
-            .any(|w| w == "any_ranged");
+        let wants_ranged = skill.wants_ranged();
         if wants_ranged && p.stats.ranged.is_none() {
             return Err(SPELL_FAILED_EQUIPPED_ITEM_CLASS);
+        }
+        if wants_ranged && !crate::ammo::ready(c) {
+            return Err(SPELL_FAILED_NO_AMMO);
         }
         if skill.requires_out_of_combat && p.in_combat {
             return Err(SPELL_FAILED_AFFECTING_COMBAT);

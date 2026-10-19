@@ -14,7 +14,7 @@ use common::fight::{
     assert_on_time, cast, refusal, stand_at, Mob, CROSSROADS_XY, MOVING_GRACE_SECS,
 };
 use common::*;
-use gear_common::{descriptor, save_with, Carried};
+use gear_common::{descriptor, save_shooting, Carried};
 use twilight_realm::{Realm, RealmCommand};
 
 const RANGED: u8 = 17;
@@ -32,7 +32,7 @@ const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;
 
 /// A level 1 Ranger carrying `items`, in the world at `seed`, beside a mob near the Crossroads.
 fn ranger(items: &[Carried], seed: u64) -> (Realm, Mob) {
-    let (guid, blob) = save_with(1, 0, items);
+    let (guid, blob) = save_shooting(1, items);
     let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
     let mut realm = Realm::with_seed(seed);
     realm.import_character(&blob).unwrap();
@@ -143,7 +143,8 @@ fn auto_shot_fires_at_the_bows_speed_from_20_yd() {
     stand_at(&mut realm, &mob, 20.0);
     drain(&mut realm);
     realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
-    let (events, steps) = kite(&mut realm, &mut mob, 12.0);
+    // Ten seconds: the arrows' DPS kills the mob not long after.
+    let (events, steps) = kite(&mut realm, &mut mob, 10.0);
     let shots: Vec<f32> = events
         .iter()
         .filter_map(|(t, e)| match e {
@@ -197,8 +198,8 @@ fn auto_shot_stops_on_cancel() {
 }
 
 /// Snapshot (+13, +1.3 a level) and Puncturing Shaft (+20, +3.5 a level) at level 1 deal the bow
-/// roll plus their bonus: every hit of either lands above Auto Shot's best roll (3-6 and ranged
-/// attack power / 14 x 2.3 s, #156) and no higher than the bow's top roll plus the bonus.
+/// roll plus their bonus: every hit of either lands above Auto Shot's best roll (3-6 and (ranged
+/// attack power / 14 + the arrows' 1.5 DPS) x 2.3 s, #156 and #157) and no higher than the bow's top roll plus the bonus.
 #[test]
 fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
     let (mut auto, mut snap, mut shaft) = (Vec::new(), Vec::new(), Vec::new());
@@ -225,7 +226,7 @@ fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
         !auto.is_empty() && !snap.is_empty() && !shaft.is_empty(),
         "{auto:?} {snap:?} {shaft:?}"
     );
-    let top = (6.0 + ranged_ap_damage()).ceil() as u32;
+    let top = (6.0 + shot_bonus()).ceil() as u32;
     let best_auto = *auto.iter().max().unwrap();
     assert!(best_auto <= top, "Auto Shot: {auto:?} over {top}");
     assert!(
@@ -330,7 +331,7 @@ fn auto_shot_holds_while_moving() {
 
 /// The level 1 Ranger's sheet as the client gets it on entering the world.
 fn sheet() -> benilla_protocol::ObjectFields {
-    let (guid, blob) = save_with(1, 0, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+    let (guid, blob) = save_shooting(1, &[(RANGED, CRACKED_SHORTBOW, 1)]);
     let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
     let mut realm = Realm::with_seed(0xA5_0001);
     realm.import_character(&blob).unwrap();
@@ -339,13 +340,16 @@ fn sheet() -> benilla_protocol::ObjectFields {
     descriptor(&drain(&mut realm), guid)
 }
 
-/// What ranged attack power adds to each shot: `AP / 14 x speed`.
-fn ranged_ap_damage() -> f32 {
-    sheet().unit_ranged_attack_power().unwrap() as f32 / 14.0 * BOW_SPEED_SECS
+/// Rough Arrow's damage per second (#157).
+const ARROW_DPS: f32 = 1.5;
+
+/// What ranged attack power and the arrows add to each shot: `(AP / 14 + ammo DPS) x speed`.
+fn shot_bonus() -> f32 {
+    (sheet().unit_ranged_attack_power().unwrap() as f32 / 14.0 + ARROW_DPS) * BOW_SPEED_SECS
 }
 
 /// The sheet's ranged block (#156): a level 1 Ranger's ranged attack power is the Hunter's
-/// `2L + 2Agi - 10`, and the bow's damage and speed ride beside it.
+/// `2L + 2Agi - 10`, and the bow's damage (the arrows' DPS in it) and speed ride beside it.
 #[test]
 fn the_sheet_shows_ranged_attack_power() {
     let sheet = sheet();
@@ -358,8 +362,8 @@ fn the_sheet_shows_ranged_attack_power() {
         sheet.unit_ranged_attack_time(),
         Some((BOW_SPEED_SECS * 1000.0) as u32)
     );
-    let ap = rap as f32 / 14.0 * BOW_SPEED_SECS;
-    // The Cracked Shortbow rolls 3-6.
+    let ap = (rap as f32 / 14.0 + ARROW_DPS) * BOW_SPEED_SECS;
+    // The Cracked Shortbow rolls 3-6, plus ranged AP and the arrows.
     let (min, max) = (
         sheet.unit_min_ranged_damage().unwrap(),
         sheet.unit_max_ranged_damage().unwrap(),

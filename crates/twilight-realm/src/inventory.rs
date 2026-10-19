@@ -96,6 +96,8 @@ pub(crate) struct Inventory {
     bags: [Vec<Option<Item>>; 4],
     /// Copper.
     pub(crate) money: u32,
+    /// The ammo's entry (`PLAYER_AMMO_ID`), 0 for none; the stacks stay in the bags.
+    pub(crate) ammo: u32,
     /// The last item guid counter handed out.
     last_guid: u64,
 }
@@ -106,6 +108,7 @@ impl Default for Inventory {
             slots: std::array::from_fn(|_| None),
             bags: std::array::from_fn(|_| Vec::new()),
             money: 0,
+            ammo: 0,
             last_guid: 0,
         }
     }

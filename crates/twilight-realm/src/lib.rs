@@ -37,6 +37,7 @@
 //! - **Identity**: the `Calling` enum (`content.rs`) is the save's key; a renamed Calling keeps its
 //!   old key as a serde alias. A skill two Callings share has identical data in both.
 
+mod ammo;
 mod areas;
 pub mod callings;
 mod characters;
@@ -191,6 +192,10 @@ pub enum RealmCommand {
     /// Close the loot window.
     LootRelease {
         guid: u64,
+    },
+    /// `CMSG_SET_AMMO`: shoot the arrows or bullets of this entry, wherever the bags hold them.
+    SetAmmo {
+        entry: u32,
     },
     /// Wear the item at a wire position (bag 255 is the player's own slots).
     AutoEquipItem {
@@ -1020,6 +1025,7 @@ impl Realm {
             RealmCommand::AutoEquipItem { bag, slot } => {
                 moved = equipment::auto_equip(c, bag, slot, events);
             }
+            RealmCommand::SetAmmo { entry } => moved.gear_changed = ammo::set(c, entry, events),
             RealmCommand::SwapInvItem { src, dst } => moved = equipment::swap(c, src, dst, events),
             RealmCommand::SwapItem {
                 src_bag,

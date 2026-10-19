@@ -1689,6 +1689,8 @@ progress = "Say the word, $N, and take up the bow."
 completion = "It is done. Keep your distance, Ranger. You start over; let the wind tell you where to stand."
 money = 0
 tokens = 0
+# A bow and a quiver's worth of arrows, set as the ammo (#157).
+rewards = [[2773, 1], [2512, 200]]
 
 [[quest]]
 id = 64008

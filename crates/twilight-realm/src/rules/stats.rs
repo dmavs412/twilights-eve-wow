@@ -137,6 +137,16 @@ impl CharacterStats {
         }
     }
 
+    /// Adds `dps` damage per second to the ranged shot, at the weapon's speed: the loaded ammo's
+    /// (vmangos `Player::UpdateDamagePhysical(RANGED_ATTACK)`).
+    pub fn add_ranged_dps(&mut self, dps: f32) {
+        if let Some(r) = &mut self.ranged {
+            let more = dps * r.attack_time_ms as f32 / 1000.0;
+            r.min_damage += more;
+            r.max_damage += more;
+        }
+    }
+
     /// A naked character of `class` and `race` (`ChrRaces.dbc` id) at `level`, on the race's
     /// base stats for that Class.
     pub fn naked(class: u8, race: u8, level: u8) -> Self {

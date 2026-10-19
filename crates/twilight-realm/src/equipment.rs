@@ -167,7 +167,9 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
     if let Some(at) = off_hand.and_then(|e| worn.iter().position(|w| *w == e)) {
         worn.remove(at);
     }
-    CharacterStats::geared_dual(c.class(), c.race, c.level, bonus, &worn, off_hand)
+    let mut s = CharacterStats::geared_dual(c.class(), c.race, c.level, bonus, &worn, off_hand);
+    s.add_ranged_dps(crate::ammo::dps(c));
+    s
 }
 
 /// The Calling's proficiencies the tooltips and the bag check against (`SMSG_SET_PROFICIENCY`):
