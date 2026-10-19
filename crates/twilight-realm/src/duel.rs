@@ -105,7 +105,6 @@ impl Duel {
 struct Duellist {
     session: SessionId,
     guid: u64,
-    name: String,
     map: u32,
     position: [f32; 3],
     alive: bool,
@@ -151,7 +150,6 @@ impl Realm {
                 Some(Duellist {
                     session,
                     guid: c.guid,
-                    name: c.name.clone(),
                     map: c.map,
                     position: c.position,
                     alive: w.alive(),
@@ -316,10 +314,10 @@ impl Realm {
         let started = duel.state == State::Fighting;
         if started {
             let all = self.duellists();
+            // From the roster: one who logged out has a name still.
             let name = |g: Option<u64>| {
-                all.iter()
-                    .find(|d| Some(d.guid) == g)
-                    .map(|d| d.name.clone())
+                g.and_then(|g| self.characters.get(g))
+                    .map(|c| c.name.clone())
                     .unwrap_or_default()
             };
             let loser = duel.players.into_iter().find(|&p| Some(p) != winner);
@@ -328,13 +326,11 @@ impl Realm {
                 winner: name(winner),
                 loser: name(loser),
             };
-            let map = all
-                .iter()
-                .find(|d| duel.side_of(d.guid).is_some())
-                .map(|d| d.map);
+            // Everyone on the flag's map, and both of them wherever they are.
+            let map = duel.flag.map(|(map, _)| map);
             let seen: Vec<SessionId> = all
                 .iter()
-                .filter(|d| Some(d.map) == map)
+                .filter(|d| Some(d.map) == map || duel.side_of(d.guid).is_some())
                 .map(|d| d.session)
                 .collect();
             for session in seen {
@@ -470,6 +466,24 @@ impl Realm {
             };
             match duel.state {
                 State::Requested if !in_range(a, b) => ended.push((i, None, false)),
+                // Death to anything but the foe, or leaving the map: called off before the
+                // fight, lost during it.
+                State::Countdown(_) if !a.alive || !b.alive || a.map != b.map => {
+                    ended.push((i, None, false));
+                }
+                State::Fighting if !a.alive || !b.alive => {
+                    let winner = if a.alive { a.guid } else { b.guid };
+                    ended.push((i, Some(winner), false));
+                }
+                State::Fighting if a.map != b.map => {
+                    let flag_map = duel.flag.map(|(map, _)| map);
+                    let winner = if Some(a.map) == flag_map {
+                        a.guid
+                    } else {
+                        b.guid
+                    };
+                    ended.push((i, Some(winner), true));
+                }
                 State::Countdown(left) if left <= dt => {
                     duel.state = State::Fighting;
                     fights.push(duel.players);

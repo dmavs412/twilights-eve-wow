@@ -477,3 +477,131 @@ fn staying_out_of_bounds_ten_seconds_loses_as_fled() {
     );
     assert_eq!(completes(party.seen(1)), [true]);
 }
+
+// ── Every other end (#183) ───────────────────────────────────────────────────────────────────
+
+/// Thorn Hill, whose Razormane camp (levels 11-12) kills a level 1.
+const THORN_HILL: [f32; 3] = [-38.801, -3234.81, 91.889];
+/// `AreaTrigger.dbc` 228, the Wailing Caverns' entrance on Kalimdor.
+const WC_ENTRANCE: u32 = 228;
+const WC_ENTRANCE_AT: [f32; 3] = [-753.596, -2212.78, 21.54];
+/// What every player wears to every other outside a duel (#160).
+const FRIENDLY: u32 = 2;
+
+/// The last faction template player `i`'s client was sent for `guid`.
+fn faction_seen(party: &Party, i: usize, guid: u64) -> Option<u32> {
+    party.seen(i).iter().rev().find_map(|e| match e {
+        SessionEvent::ObjectValues { guid: g, fields } if *g == guid => {
+            fields.unit_faction_template()
+        }
+        _ => None,
+    })
+}
+
+/// Players 0 and 1 side by side at `at`, fighting.
+fn fighting_at(levels: &[u8], at: [f32; 3]) -> (Party, u64) {
+    let mut party = players_at(levels, |_, blob| blob);
+    party.go(0, at, 0.0);
+    party.go(1, [at[0] + 2.0, at[1], at[2]], 0.0);
+    party.run(0.2);
+    let arbiter = fighting(&mut party);
+    (party, arbiter)
+}
+
+#[test]
+fn a_logout_in_the_countdown_calls_it_off() {
+    let mut party = players(2);
+    let arbiter = challenge(&mut party, 0, 1).unwrap();
+    party.cmd(1, RealmCommand::DuelAccept { arbiter });
+    party.run(1.0);
+    party.cmd(1, RealmCommand::Logout);
+    party.run(0.2);
+    assert_eq!(completes(party.seen(0)), [false]);
+    assert!(winners(party.seen(0)).is_empty());
+    assert!(
+        flag_destroyed(party.seen(0), arbiter),
+        "the flag comes down"
+    );
+}
+
+#[test]
+fn a_logout_in_the_fight_loses() {
+    let mut party = players(2);
+    let arbiter = fighting(&mut party);
+    let b = party.guids[1];
+    party.cmd(1, RealmCommand::Logout);
+    party.run(0.2);
+    assert_eq!(
+        winners(party.seen(0)),
+        [(false, "Varian".to_string(), "Anduin".to_string())]
+    );
+    assert_eq!(completes(party.seen(0)), [true]);
+    assert_eq!(
+        faction_seen(&party, 0, b),
+        Some(FRIENDLY),
+        "the cleanup ran"
+    );
+    assert!(flag_destroyed(party.seen(0), arbiter));
+}
+
+#[test]
+fn death_to_a_mob_in_the_fight_loses() {
+    // Out of the camp's reach, then the level 1 walks into it.
+    let start = [THORN_HILL[0] + 60.0, THORN_HILL[1], THORN_HILL[2]];
+    let (mut party, _) = fighting_at(&[20, 1], start);
+    let (a, b) = (party.guids[0], party.guids[1]);
+    party.go(1, THORN_HILL, 0.0);
+    let died = party.run_until(120.0, |got| died(&got[1], b));
+    assert!(died, "the camp kills player 1");
+    party.run(0.2);
+    assert_eq!(
+        winners(party.seen(0)),
+        [(false, "Varian".to_string(), "Anduin".to_string())]
+    );
+    assert_eq!(
+        faction_seen(&party, 1, a),
+        Some(FRIENDLY),
+        "the cleanup ran"
+    );
+}
+
+#[test]
+fn leaving_the_map_in_the_fight_loses_as_fled() {
+    let (mut party, _) = fighting_at(&[20, 20], WC_ENTRANCE_AT);
+    let b = party.guids[1];
+    party.go(1, WC_ENTRANCE_AT, 0.0);
+    party.cmd(1, RealmCommand::AreaTrigger { id: WC_ENTRANCE });
+    party.cmd(1, RealmCommand::WorldportAck);
+    party.run(0.3);
+    assert_eq!(
+        winners(party.seen(0)),
+        [(true, "Varian".to_string(), "Anduin".to_string())]
+    );
+    assert_eq!(completes(party.seen(1)), [true]);
+    assert_eq!(
+        faction_seen(&party, 0, b),
+        Some(FRIENDLY),
+        "the cleanup ran"
+    );
+}
+
+#[test]
+fn a_yield_in_the_fight_loses_and_frees_both() {
+    let mut party = players(2);
+    let arbiter = fighting(&mut party);
+    let a = party.guids[0];
+    party.cmd(0, RealmCommand::DuelCancel { arbiter });
+    assert_eq!(
+        winners(party.seen(1)),
+        [(false, "Anduin".to_string(), "Varian".to_string())]
+    );
+    assert_eq!(
+        faction_seen(&party, 1, a),
+        Some(FRIENDLY),
+        "the cleanup ran"
+    );
+    assert!(
+        challenge(&mut party, 1, 0).is_some(),
+        "no duel left on either"
+    );
+}
