@@ -76,6 +76,9 @@ impl SpellCatalog {
                 d.mana_per_second = (per_second * unit).round() as u32;
             }
             apply_gates(d, f);
+            // The sheet has no reagents: a borrowed row's own (Greater Blessing of Sanctuary's
+            // Symbol of Kings) would refuse the cast client-side.
+            d.reagents = [(0, 0); 8];
             if let Some(ms) = num("cooldown_ms") {
                 d.recovery_ms = ms as u32;
             }
@@ -408,6 +411,16 @@ mod tests {
         let hs = catalog.get(78).unwrap();
         assert_eq!(hs.equipped_item_class, -1);
         assert_eq!((hs.school, hs.attributes, hs.attributes_ex2), (0, 0, 0));
+    }
+
+    #[test]
+    fn a_patched_row_needs_no_reagent() {
+        let mut catalog = patch_catalog();
+        catalog.spells.get_mut(&78).unwrap().reagents[0] = (21177, 1);
+        catalog
+            .apply_dbc_patch(r#"{"spells": [{"spell_id": 78, "fields": {}}]}"#)
+            .unwrap();
+        assert_eq!(catalog.get(78).unwrap().reagents, [(0, 0); 8]);
     }
 
     /// Fire Blast as Spell.dbc has it: effect 1 is `SCHOOL_DAMAGE` (2), 8 to 10 fire damage.
