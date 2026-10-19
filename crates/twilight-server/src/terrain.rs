@@ -106,7 +106,12 @@ impl Terrain {
 
 impl Host for Terrain {
     fn ground_height(&self, map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32> {
-        terrain_height_at(&self.tile_under(map, x, y)?.chunks, [x, y, z_hint])
+        let terrain = || terrain_height_at(&self.tile_under(map, x, y)?.chunks, [x, y, z_hint]);
+        // The highest surface at or just below the hint, a building's stairs included; a hole
+        // in the terrain with nothing under it stays none.
+        self.collision
+            .ground_height(map, x, y, z_hint)
+            .or_else(terrain)
     }
     fn line_of_sight(&self, map: u32, from: [f32; 3], to: [f32; 3]) -> bool {
         self.collision.line_of_sight(map, from, to)
@@ -136,5 +141,22 @@ mod tests {
         assert!(!t.line_of_sight(0, [-8930.0, -190.0, z + 2.0], [-8890.0, -150.0, z + 2.0]));
         // High above it, nothing is.
         assert!(t.line_of_sight(0, [-8930.0, -190.0, z + 80.0], [-8890.0, -150.0, z + 80.0]));
+    }
+
+    /// Marshal McBride's spawn (-8902.59, -162.606, 82.022) is on the Abbey's stairs, a WMO
+    /// surface above the terrain under it.
+    #[test]
+    fn mcbride_stands_on_the_abbey_stairs_not_the_terrain_below() {
+        let Some(data) = std::env::var_os("WOW_DATA") else {
+            return;
+        };
+        let mut t = Terrain::open(Path::new(&data)).unwrap();
+        let (x, y, spawn_z) = (-8902.59, -162.606, 82.022);
+        t.refresh(&[(0, [x, y, spawn_z])]);
+        let z = t.ground_height(0, x, y, spawn_z).expect("ground");
+        assert!((z - spawn_z).abs() < 0.5, "{z}");
+        let terrain = terrain_height_at(&t.tile_under(0, x, y).unwrap().chunks, [x, y, spawn_z])
+            .expect("terrain");
+        assert!(z > terrain + 0.5, "stairs {z} vs terrain {terrain}");
     }
 }

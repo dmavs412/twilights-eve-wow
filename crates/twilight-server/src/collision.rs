@@ -18,10 +18,20 @@ use crate::terrain::TileKey;
 /// client's `SIGHT_END_YD`.
 const SIGHT_END_YD: f32 = 1.0;
 
+/// How far above a height hint a body may stand, in yards: the hint is where it was, and the
+/// stair it climbs onto is a little higher.
+const STEP_UP_YD: f32 = 2.0;
+
+/// The flattest a face may be, as its normal's upward share, to be stood on: stairs and ramps
+/// count, walls do not.
+const WALKABLE_NORMAL_Z: f32 = 0.5;
+
 /// The loaded tiles' collision, and the model hulls they share.
 #[derive(Default)]
 pub struct Collision {
     tiles: HashMap<TileKey, TriMesh>,
+    /// Each tile's standable surfaces alone: its terrain and WMO faces, without doodad hulls.
+    ground: HashMap<TileKey, TriMesh>,
     /// Model-local hulls by model path; an empty one for a model that does not collide.
     models: HashMap<String, CollisionMesh>,
 }
@@ -40,6 +50,7 @@ impl Collision {
                 |p| Vec3::from(p),
             );
         }
+        let (mut ground_verts, mut ground_tris) = (verts.clone(), tris.clone());
         for d in &tile.doodads {
             let hull = self.model(&d.model, |c, p| load_m2_collision_hull(c, p), chain);
             let place = Placement::new(d.position, d.rotation, d.scale);
@@ -50,13 +61,20 @@ impl Collision {
         for w in &tile.wmos {
             let faces = self.model(&w.model, |c, p| load_wmo_collision_tris(c, p), chain);
             let place = Placement::new(w.position, w.rotation, 1.0);
-            push(
-                &mut verts,
-                &mut tris,
-                &faces.positions,
-                &faces.indices,
-                |p| place.apply(p),
-            );
+            for (v, t) in [
+                (&mut verts, &mut tris),
+                (&mut ground_verts, &mut ground_tris),
+            ] {
+                push(v, t, &faces.positions, &faces.indices, |p| place.apply(p));
+            }
+        }
+        if !ground_tris.is_empty() {
+            match TriMesh::new(ground_verts, ground_tris) {
+                Ok(mesh) => {
+                    self.ground.insert(key, mesh);
+                }
+                Err(e) => eprintln!("twilight-server: ground for {key:?}: {e}"),
+            }
         }
         if tris.is_empty() {
             return;
@@ -71,6 +89,32 @@ impl Collision {
 
     pub(crate) fn drop_tile(&mut self, key: &TileKey) {
         self.tiles.remove(key);
+        self.ground.remove(key);
+    }
+
+    /// The highest surface to stand on at `(x, y)` on `map` that is at or below `z_hint` plus
+    /// [`STEP_UP_YD`]: terrain, or a building's floor or stair. None where nothing is loaded.
+    pub(crate) fn ground_height(&self, map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32> {
+        let down = Vec3::new(0.0, 0.0, -1.0);
+        let mut best: Option<f32> = None;
+        for (_, mesh) in self.ground.iter().filter(|((m, _, _), _)| *m == map) {
+            // A ray down through a stack of faces meets each; the first standable one is this
+            // mesh's highest.
+            let mut from = z_hint + STEP_UP_YD;
+            while let Some(hit) = mesh.cast_local_ray_and_get_normal(
+                &Ray::new(Vec3::new(x, y, from), down),
+                f32::MAX,
+                false,
+            ) {
+                let z = from - hit.time_of_impact;
+                if hit.normal.z.abs() >= WALKABLE_NORMAL_Z {
+                    best = Some(best.map_or(z, |b| b.max(z)));
+                    break;
+                }
+                from = z - 1e-3;
+            }
+        }
+        best
     }
 
     fn model(
