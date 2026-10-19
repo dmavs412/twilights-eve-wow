@@ -13,8 +13,9 @@ use crate::ui_talent::Talents;
 
 /// Every race's bit (`ChrRaces.dbc` 1..9), as the shipped tabs carry it.
 const ALL_RACES: u32 = 511;
-/// The Warrior's class bit.
-const WARRIOR: u32 = 1;
+/// Every class's bit (`ChrClasses.dbc` 1..11): the catalog holds the current Calling's tree
+/// alone, whatever Class that Calling sits on (a Cutthroat is a Rogue).
+const ALL_CLASSES: u32 = 2047;
 
 /// Puts the current Calling's tree in the talent catalog when it changes.
 pub(super) fn follow_calling(
@@ -50,7 +51,7 @@ fn catalog(calling: &CallingDef) -> TalentCatalog {
             id: tab.id,
             name: tab.name.clone(),
             race_mask: ALL_RACES,
-            class_mask: WARRIOR,
+            class_mask: ALL_CLASSES,
             background: tab.background.clone(),
         })
         .collect();
