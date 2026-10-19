@@ -1712,6 +1712,13 @@ impl InWorld {
         }
     }
 
+    /// Whether the caster is moving: a step came in the last [`MOVING_GRACE_SECS`].
+    fn moving(&self) -> bool {
+        self.skills
+            .since_step
+            .is_some_and(|t| t < MOVING_GRACE_SECS)
+    }
+
     /// The movement clocks: moving while a step came in the last [`MOVING_GRACE_SECS`], still
     /// otherwise; `moving_for` and `still_for` procs as they run.
     pub(super) fn movement_tick(
@@ -1722,8 +1729,8 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
         ticked: &mut Ticked,
     ) {
+        let moving = self.moving();
         let s = &mut self.skills;
-        let moving = s.since_step.is_some_and(|t| t < MOVING_GRACE_SECS);
         s.since_step = s.since_step.map(|t| t + dt);
         let (clock, other, event) = if moving {
             (
@@ -1767,7 +1774,8 @@ impl InWorld {
     }
 
     /// The auto-repeat shot, when its timer is up: at the ranged weapon's speed, held while a cast
-    /// bar runs or the target is behind, stopped when the target dies or leaves the shot's range.
+    /// bar runs, the target is behind or, for a skill interrupted on `move`, the caster moves (the
+    /// timer runs on, so a shot that came due goes as they stop), stopped when the target dies or leaves the shot's range.
     pub(super) fn auto_shot(
         &mut self,
         c: &mut Char,
@@ -1783,6 +1791,9 @@ impl InWorld {
             return;
         };
         if self.player.shot_timer > 0.0 || self.skills.casting.is_some() {
+            return;
+        }
+        if self.moving() && skill.meta.shape.interrupt_on.iter().any(|i| i == "move") {
             return;
         }
         // A next-cast buff may make this shot another skill (Explosive Payload).

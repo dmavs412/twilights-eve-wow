@@ -6643,6 +6643,7 @@
     "cooldown_ms": 0,
     "gcd_ms": 0,
     "auto_repeat": true,
+    "interrupt_flags": 1,
     "dmg_class": 3,
     "school": 0,
     "prevention_type": 2,

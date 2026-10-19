@@ -133,3 +133,20 @@ pub fn drop_slot(blob: &str, slot: u8) -> String {
     }
     out
 }
+
+/// How long a step keeps the caster moving, which holds an auto-repeat shot (`MOVING_GRACE_SECS`).
+pub const MOVING_GRACE_SECS: f32 = 0.75;
+
+/// Each gap between `shots` is the shot timer, or the shot came due while the caster moved and
+/// went as the hold lifted, a grace after the last step (within a tick).
+pub fn assert_on_time(shots: &[f32], steps: &[f32], every: f32) {
+    for pair in shots.windows(2) {
+        let gap = pair[1] - pair[0];
+        let last_step = steps.iter().rev().find(|&&t| t < pair[1]).copied();
+        let held = last_step.is_some_and(|t| (pair[1] - t - MOVING_GRACE_SECS).abs() < 0.11);
+        assert!(
+            (gap - every).abs() < 0.1 || (gap > every && held),
+            "a shot every {every} s or as the hold lifts: shots {shots:?}, steps {steps:?}"
+        );
+    }
+}

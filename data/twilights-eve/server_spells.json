@@ -12753,7 +12753,9 @@
     ],
     "cost_kind": "flat",
     "cast_kind": "auto_repeat",
-    "interrupt_on": [],
+    "interrupt_on": [
+     "move"
+    ],
     "defense_type": "ranged",
     "on_cast": {
      "breaks_stealth": true,

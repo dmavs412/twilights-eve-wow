@@ -1,15 +1,18 @@
 //! The Ranger's ranged combat (#124): Auto Shot at the bow's speed, Snapshot and Puncturing Shaft
 //! rolling the ranged weapon, the 8 yd minimum range, the bow gate, and Barbed Arrow's bleed.
 //! Played through the realm's seam by a level 1 Ranger with a Cracked Shortbow near the
-//! Crossroads. A mob runs at whoever shoots it, so the timed tests kite: each tick the Ranger
-//! steps back to 20 yd of where the mob's last move puts it.
+//! Crossroads. A mob runs at whoever shoots it, so the timed tests kite: the Ranger stands while
+//! it runs in and steps back to 30 yd once it heads inside 12. A step holds Auto Shot for 0.75 s
+//! (#155), so their shot gaps allow for the hold.
 
 mod common;
 mod gear_common;
 
 use benilla_protocol::messages::PeriodicTick;
 use benilla_protocol::{EntityKind, SessionEvent};
-use common::fight::{cast, refusal, stand_at, Mob};
+use common::fight::{
+    assert_on_time, cast, refusal, stand_at, Mob, CROSSROADS_XY, MOVING_GRACE_SECS,
+};
 use common::*;
 use gear_common::{save_with, Carried};
 use twilight_realm::{Realm, RealmCommand};
@@ -57,26 +60,68 @@ fn with_bow(seed: u64) -> (Realm, Mob) {
     ranger(&[(RANGED, CRACKED_SHORTBOW, 1)], seed)
 }
 
-/// Ticks `secs`, keeping the Ranger 20 yd from the mob as it runs in: the events, each with the
-/// second it came at.
-fn kite(realm: &mut Realm, mob: &mut Mob, secs: f32) -> Vec<(f32, SessionEvent)> {
-    let mut out = Vec::new();
+/// Ticks `secs`, kiting: the Ranger stands still while the mob runs in, and steps back to 30 yd of
+/// it once it is inside 12 yd. The events, each with the second it came at, and the
+/// seconds the Ranger stepped at.
+fn kite(realm: &mut Realm, mob: &mut Mob, secs: f32) -> (Vec<(f32, SessionEvent)>, Vec<f32>) {
+    let (mut out, mut steps) = (Vec::new(), Vec::new());
+    let mut me: Option<[f32; 3]> = None;
+    // The mob's last path: from, to, when it set off, how long it takes.
+    let mut way: Option<([f32; 3], [f32; 3], f32, f32)> = None;
     let mut now = 0.0;
     while now < secs {
+        if let Some((from, to, at, secs)) = way {
+            let k = if secs > 0.0 {
+                ((now - at) / secs).min(1.0)
+            } else {
+                1.0
+            };
+            let here: [f32; 3] = std::array::from_fn(|i| from[i] + (to[i] - from[i]) * k);
+            if me.is_none_or(|me| common::fight::flat(me, here) < 12.0) {
+                mob.position = here;
+                stand_at(realm, mob, 30.0);
+                me = Some(away(mob, 30.0));
+                steps.push(now);
+            }
+        }
         realm.tick(0.05, &FlatGround);
         now += 0.05;
         for e in drain(realm) {
-            if let SessionEvent::MonsterMove { guid, path, .. } = &e {
+            if let SessionEvent::MonsterMove {
+                guid,
+                start,
+                path,
+                duration_ms,
+                ..
+            } = &e
+            {
                 if *guid == mob.guid {
-                    // Where it heads; standing 20 yd from there keeps it out of melee.
-                    mob.position = *path.last().unwrap();
-                    stand_at(realm, mob, 20.0);
+                    way = Some((
+                        *start,
+                        *path.last().unwrap(),
+                        now,
+                        *duration_ms as f32 / 1000.0,
+                    ));
                 }
             }
             out.push((now, e));
         }
     }
-    out
+    (out, steps)
+}
+
+/// Where [`stand_at`] puts the Ranger `yards` from `mob`.
+fn away(mob: &Mob, yards: f32) -> [f32; 3] {
+    let (dx, dy) = (
+        CROSSROADS_XY[0] - mob.position[0],
+        CROSSROADS_XY[1] - mob.position[1],
+    );
+    let len = (dx * dx + dy * dy).sqrt();
+    [
+        mob.position[0] + dx / len * yards,
+        mob.position[1] + dy / len * yards,
+        mob.position[2],
+    ]
 }
 
 /// The damage each landed, non-critical hit of `spell_id` dealt.
@@ -98,7 +143,7 @@ fn auto_shot_fires_at_the_bows_speed_from_20_yd() {
     stand_at(&mut realm, &mob, 20.0);
     drain(&mut realm);
     realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
-    let events = kite(&mut realm, &mut mob, 10.0);
+    let (events, steps) = kite(&mut realm, &mut mob, 12.0);
     let shots: Vec<f32> = events
         .iter()
         .filter_map(|(t, e)| match e {
@@ -107,13 +152,7 @@ fn auto_shot_fires_at_the_bows_speed_from_20_yd() {
         })
         .collect();
     assert!(shots.len() >= 4, "shots at {shots:?}");
-    for pair in shots.windows(2) {
-        let gap = pair[1] - pair[0];
-        assert!(
-            (gap - BOW_SPEED_SECS).abs() < 0.1,
-            "a shot every {BOW_SPEED_SECS} s, got {shots:?}"
-        );
-    }
+    assert_on_time(&shots, &steps, BOW_SPEED_SECS);
     assert!(
         !events
             .iter()
@@ -130,7 +169,9 @@ fn auto_shot_stops_when_the_target_comes_inside_8_yd() {
     realm.tick(0.05, &FlatGround);
     drain(&mut realm);
     stand_at(&mut realm, &mob, 5.0);
+    // The step holds the shot a grace; the next tick tries it.
     realm.tick(BOW_SPEED_SECS, &FlatGround);
+    realm.tick(0.05, &FlatGround);
     let events = drain(&mut realm);
     assert!(events
         .iter()
@@ -175,7 +216,7 @@ fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
         stand_at(&mut realm, &mob, 20.0);
         realm.handle(cast(SNAPSHOT, Some(mob.guid)));
         realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
-        events.extend(kite(&mut realm, &mut mob, 3.0));
+        events.extend(kite(&mut realm, &mut mob, 3.0).0);
         auto.extend(hits(&events, AUTO_SHOT));
         snap.extend(hits(&events, SNAPSHOT));
         shaft.extend(hits(&events, PUNCTURING_SHAFT));
@@ -234,7 +275,7 @@ fn barbed_arrow_bleeds_4_times_over_8_seconds() {
         stand_at(&mut realm, &mob, 20.0);
         drain(&mut realm);
         realm.handle(cast(BARBED_ARROW, Some(mob.guid)));
-        let events = kite(&mut realm, &mut mob, 9.0);
+        let (events, _) = kite(&mut realm, &mut mob, 9.0);
         // Barbed Arrow rolls no hit table, so it always lands.
         let ticks = events
             .iter()
@@ -248,4 +289,40 @@ fn barbed_arrow_bleeds_4_times_over_8_seconds() {
             .count();
         assert_eq!(ticks, 4, "seed {seed}");
     }
+}
+
+/// Auto Shot holds while the Ranger moves (#155): steps every 0.1 s for 5 s let no shot go, and
+/// the timer runs on, so the first comes within a tick of the grace once they stop.
+#[test]
+fn auto_shot_holds_while_moving() {
+    let (mut realm, mob) = with_bow(0xA0_0004);
+    stand_at(&mut realm, &mob, 25.0);
+    realm.tick(1.0, &FlatGround);
+    drain(&mut realm);
+    realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+    let mut events = drain(&mut realm);
+    let shot = |e: &SessionEvent| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == AUTO_SHOT);
+    for i in 0..50 {
+        let yards = if i % 2 == 0 { 25.5 } else { 25.0 };
+        stand_at(&mut realm, &mob, yards);
+        realm.tick(0.1, &FlatGround);
+        events.extend(drain(&mut realm));
+    }
+    assert!(!events.iter().any(shot), "no shot while moving");
+    assert!(!events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::CancelAutoRepeat)));
+    let mut now = 0.0;
+    let fired = loop {
+        realm.tick(0.05, &FlatGround);
+        now += 0.05;
+        if drain(&mut realm).iter().any(shot) {
+            break now;
+        }
+        assert!(now < 2.0, "the shot never came");
+    };
+    assert!(
+        fired <= MOVING_GRACE_SECS + 0.05 + 0.1 + 1e-3,
+        "the shot came due long ago, so it goes as the hold lifts: {fired} s"
+    );
 }

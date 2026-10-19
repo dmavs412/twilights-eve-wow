@@ -7,7 +7,7 @@ mod common;
 mod gear_common;
 
 use benilla_protocol::{EntityKind, SessionEvent};
-use common::fight::{cast, flat, refusal, stand_at, Mob, CAMP};
+use common::fight::{assert_on_time, cast, flat, refusal, stand_at, Mob, CAMP};
 use common::*;
 use gear_common::save_with;
 use twilight_realm::{Realm, RealmCommand};
@@ -244,8 +244,10 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
     // The mob's last path: from, to, when it set off, how long it takes.
     let mut way: Option<([f32; 3], [f32; 3], f32, f32)> = None;
     let mut now = 0.0f32;
-    while now < 7.0 {
-        // 20 yd on from where the mob is along its way, each tick.
+    // Where the Ranger stands and when they stepped: a step holds the shot (#155).
+    let (mut me, mut steps): (Option<[f32; 3]>, Vec<f32>) = (None, Vec::new());
+    while now < 9.0 {
+        // Standing while the mob runs in, then 30 yd on from where it is along its way.
         if let Some((from, to, at, secs)) = way {
             let k = if secs > 0.0 {
                 ((now - at) / secs).min(1.0)
@@ -255,15 +257,18 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
             let here: [f32; 3] = std::array::from_fn(|i| from[i] + (to[i] - from[i]) * k);
             let (dx, dy) = (to[0] - from[0], to[1] - from[1]);
             let len = (dx * dx + dy * dy).sqrt();
-            if len > 0.01 {
+            if len > 0.01 && me.is_none_or(|me| flat(me, here) < 12.0) {
+                let at = [
+                    here[0] + dx / len * 30.0,
+                    here[1] + dy / len * 30.0,
+                    here[2],
+                ];
                 realm.handle(RealmCommand::Move {
-                    position: [
-                        here[0] + dx / len * 20.0,
-                        here[1] + dy / len * 20.0,
-                        here[2],
-                    ],
+                    position: at,
                     orientation: (-dy).atan2(-dx),
                 });
+                me = Some(at);
+                steps.push(now);
             }
         }
         realm.tick(0.05, &FlatGround);
@@ -294,12 +299,7 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
         }
     }
     assert!(shots.len() >= 3, "shots at {shots:?}");
-    for pair in shots.windows(2) {
-        assert!(
-            (pair[1] - pair[0] - 2.3 / 1.4).abs() < 0.1,
-            "a shot every 1.64 s: {shots:?}"
-        );
-    }
+    assert_on_time(&shots, &steps, 2.3 / 1.4);
     // A refund for each hit, until the bar is full again.
     assert!(
         refunds >= 1 && refunds <= hits,
@@ -407,8 +407,12 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
     realm.handle(cast(EXPLOSIVE_PAYLOAD, None));
     assert_eq!(refusal(&drain(&mut realm), EXPLOSIVE_PAYLOAD), None);
     realm.handle(cast(AUTO_SHOT, Some(target.0)));
-    realm.tick(0.05, &FlatGround);
-    let events = drain(&mut realm);
+    // The step back holds the shot for its grace (#155).
+    let mut events = Vec::new();
+    for _ in 0..18 {
+        realm.tick(0.05, &FlatGround);
+        events.extend(drain(&mut realm));
+    }
     let blast = events.iter().find_map(|e| match e {
         SessionEvent::SpellGo {
             spell_id,
