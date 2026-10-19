@@ -1087,7 +1087,7 @@
     "name": "Bulwark Charge",
     "rank": 1,
     "status": "placeholder",
-    "spell_id": 1738,
+    "spell_id": 11578,
     "icon_id": 457,
     "realm_cost": 0,
     "realm_cooldown_ms": 15000,

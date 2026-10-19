@@ -229,7 +229,7 @@ fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
 // ── What the Basic Warrior's two skills cannot show, on the Vanguard ──────────────────────
 
 // The Vanguard's skills (the master CSV).
-const T1_BULWARK_CHARGE: u32 = 1738;
+const T1_BULWARK_CHARGE: u32 = 11578;
 const T1_ZEALOUS_CLEAVE: u32 = 845;
 
 #[test]
