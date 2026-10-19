@@ -436,6 +436,10 @@ impl InWorld {
         self.player.alive()
     }
 
+    pub(crate) fn in_combat(&self) -> bool {
+        self.player.in_combat
+    }
+
     pub(crate) fn runs(&self, guid: u64) -> bool {
         !self.lent || self.runs.contains(&guid)
     }

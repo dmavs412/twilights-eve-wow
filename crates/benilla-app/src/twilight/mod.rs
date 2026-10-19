@@ -514,6 +514,26 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             Some(RealmCommand::AreaTrigger { id: trigger_id })
         }
         ClientCommand::WorldportAck => Some(RealmCommand::WorldportAck),
+        ClientCommand::InitiateTrade { target } => Some(RealmCommand::InitiateTrade { target }),
+        ClientCommand::BeginTrade => Some(RealmCommand::BeginTrade),
+        ClientCommand::BusyTrade => Some(RealmCommand::BusyTrade),
+        ClientCommand::IgnoreTrade => Some(RealmCommand::IgnoreTrade),
+        ClientCommand::AcceptTrade => Some(RealmCommand::AcceptTrade),
+        ClientCommand::UnacceptTrade => Some(RealmCommand::UnacceptTrade),
+        ClientCommand::CancelTrade => Some(RealmCommand::CancelTrade),
+        ClientCommand::SetTradeGold { copper } => Some(RealmCommand::SetTradeGold { copper }),
+        ClientCommand::SetTradeItem {
+            trade_slot,
+            bag,
+            slot,
+        } => Some(RealmCommand::SetTradeItem {
+            trade_slot,
+            bag,
+            slot,
+        }),
+        ClientCommand::ClearTradeItem { trade_slot } => {
+            Some(RealmCommand::ClearTradeItem { trade_slot })
+        }
         _ => None,
     }
 }

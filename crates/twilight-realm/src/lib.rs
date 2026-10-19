@@ -72,6 +72,7 @@ mod space;
 mod tables;
 mod talents;
 mod token_vendor;
+mod trade;
 mod trainer;
 mod vendor;
 mod wear;
@@ -355,6 +356,36 @@ pub enum RealmCommand {
     },
     /// The client has loaded the map a worldport sent it to.
     WorldportAck,
+    /// Ask the player `target` to trade (`CMSG_INITIATE_TRADE`).
+    InitiateTrade {
+        target: u64,
+    },
+    /// Accept the trade request made of the player: both windows open.
+    BeginTrade,
+    /// Turn a trade request down as busy.
+    BusyTrade,
+    /// Turn a trade request down as ignored.
+    IgnoreTrade,
+    /// The Trade button.
+    AcceptTrade,
+    /// Take back the accept, staying in the trade.
+    UnacceptTrade,
+    /// Close the trade window, or take back a request.
+    CancelTrade,
+    /// Offer `copper` in the trade.
+    SetTradeGold {
+        copper: u32,
+    },
+    /// Offer the item at the wire's (`bag`, `slot`) in trade slot `trade_slot`.
+    SetTradeItem {
+        trade_slot: u8,
+        bag: u8,
+        slot: u8,
+    },
+    /// Take the item out of trade slot `trade_slot`.
+    ClearTradeItem {
+        trade_slot: u8,
+    },
     /// A dev aid (`WOW_PROBE_GOTO`): on the next tick, teleport the player to `(x, y)` on its
     /// map, on the ground there, facing `facing` or its own way. A spot with no ground is refused
     /// with a notification.
@@ -391,6 +422,8 @@ pub struct Realm {
     characters: characters::Characters,
     /// Everyone in the world, as one party.
     party: party::Party,
+    /// The trades under way between players.
+    trades: trade::Trades,
     /// The served session's character in the world: `active`'s, swapped in by [`Self::serve`].
     world: Option<world::InWorld>,
     /// The served session's events.
@@ -1002,6 +1035,7 @@ impl Realm {
                 self.events.extend(quests::template_response(quest));
             }
             other if other.is_quest() => self.handle_quest(other),
+            other if other.is_trade() => self.handle_trade(other),
             other => self.handle_items(other),
         }
     }
@@ -1108,6 +1142,7 @@ impl Realm {
         }
         self.give_back();
         self.party_tick(dt);
+        self.tick_trades();
     }
 
     fn dev_teleport_served(&mut self, host: &dyn Host) {

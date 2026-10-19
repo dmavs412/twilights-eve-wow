@@ -40,7 +40,19 @@ impl Party {
     }
 
     /// As [`Self::new`], the characters made at `start` (`CharCreateReq::start`), on `host`.
-    pub fn starting(mut realm: Realm, levels: &[u8], start: u8, host: Box<dyn Host>) -> Self {
+    pub fn starting(realm: Realm, levels: &[u8], start: u8, host: Box<dyn Host>) -> Self {
+        Self::edited(realm, levels, start, host, |_, blob| blob)
+    }
+
+    /// As [`Self::starting`], each character's save passed through `edit` (its index and blob)
+    /// before it comes in.
+    pub fn edited(
+        mut realm: Realm,
+        levels: &[u8],
+        start: u8,
+        host: Box<dyn Host>,
+        edit: impl Fn(usize, String) -> String,
+    ) -> Self {
         let mut maker = super::realm();
         for name in &NAMES[..levels.len()] {
             let RealmCommand::CreateCharacter(mut req) =
@@ -53,7 +65,7 @@ impl Party {
             assert_eq!(super::create_result(&mut maker), CHAR_CREATE_SUCCESS);
         }
         let mut guids = Vec::new();
-        for (name, level) in NAMES.iter().zip(levels) {
+        for (i, (name, level)) in NAMES.iter().zip(levels).enumerate() {
             let guid = roster(&mut maker)
                 .into_iter()
                 .find(|c| c.name == *name)
@@ -63,7 +75,7 @@ impl Party {
                 .export_character(guid)
                 .unwrap()
                 .replace("level = 1\n", &format!("level = {level}\n"));
-            realm.import_character(&blob).unwrap();
+            realm.import_character(&edit(i, blob)).unwrap();
             guids.push(guid);
         }
         let sessions: Vec<SessionId> = guids
