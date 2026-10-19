@@ -514,6 +514,8 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
             Some(RealmCommand::AreaTrigger { id: trigger_id })
         }
         ClientCommand::WorldportAck => Some(RealmCommand::WorldportAck),
+        ClientCommand::DuelAccepted { arbiter } => Some(RealmCommand::DuelAccept { arbiter }),
+        ClientCommand::DuelCancelled { arbiter } => Some(RealmCommand::DuelCancel { arbiter }),
         ClientCommand::InitiateTrade { target } => Some(RealmCommand::InitiateTrade { target }),
         ClientCommand::BeginTrade => Some(RealmCommand::BeginTrade),
         ClientCommand::BusyTrade => Some(RealmCommand::BusyTrade),

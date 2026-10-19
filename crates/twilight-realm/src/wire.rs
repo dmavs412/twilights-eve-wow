@@ -269,7 +269,7 @@ mod tests {
     #[test]
     fn every_seam_variant_round_trips() {
         assert!(round_trip_every_variant::<SessionEvent>() > 200);
-        assert!(round_trip_every_variant::<RealmCommand>() > 40);
+        assert!(round_trip_every_variant::<RealmCommand>() > 60);
         assert_eq!(round_trip_every_variant::<Storage>(), 2);
     }
 

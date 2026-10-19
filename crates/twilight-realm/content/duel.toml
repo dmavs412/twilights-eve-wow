@@ -1,0 +1,13 @@
+# Duels (spec #152, `GLOSSARY.md`): vanilla's duel between two players, the only PvP there is
+# (#160). Hand-written, not from master.csv, and no build script.
+
+# The client's duel spell: a challenge is its `CMSG_CAST_SPELL` at a player (`SPELL_EFFECT_DUEL`,
+# Spell.dbc 7266 "Duel").
+challenge_spell = 7266
+
+# The countdown between the accept and the fight (`SMSG_DUEL_COUNTDOWN`), in seconds.
+countdown_secs = 3
+
+# How close the challenger must stand to challenge, and how far apart the two may stray before
+# an unanswered challenge lapses, in yards (vanilla's duel spell range).
+request_range_yd = 30.0

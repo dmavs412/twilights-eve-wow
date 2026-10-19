@@ -48,6 +48,7 @@ mod combat;
 mod content;
 mod creature_spells;
 mod dev;
+mod duel;
 mod dungeon;
 mod equipment;
 mod fields;
@@ -356,6 +357,14 @@ pub enum RealmCommand {
     },
     /// The client has loaded the map a worldport sent it to.
     WorldportAck,
+    /// Accept the duel whose flag is `arbiter` (`CMSG_DUEL_ACCEPTED`).
+    DuelAccept {
+        arbiter: u64,
+    },
+    /// Decline, call off or yield the duel whose flag is `arbiter` (`CMSG_DUEL_CANCELLED`).
+    DuelCancel {
+        arbiter: u64,
+    },
     /// Ask the player `target` to trade (`CMSG_INITIATE_TRADE`).
     InitiateTrade {
         target: u64,
@@ -424,6 +433,8 @@ pub struct Realm {
     party: party::Party,
     /// The trades under way between players.
     trades: trade::Trades,
+    /// The duels under way between players.
+    duels: duel::Duels,
     /// The served session's character in the world: `active`'s, swapped in by [`Self::serve`].
     world: Option<world::InWorld>,
     /// The served session's events.
@@ -1036,6 +1047,7 @@ impl Realm {
             }
             other if other.is_quest() => self.handle_quest(other),
             other if other.is_trade() => self.handle_trade(other),
+            other if other.is_duel() => self.handle_duel(other),
             other => self.handle_items(other),
         }
     }
@@ -1143,6 +1155,7 @@ impl Realm {
         self.give_back();
         self.party_tick(dt);
         self.tick_trades();
+        self.tick_duels(dt);
     }
 
     fn dev_teleport_served(&mut self, host: &dyn Host) {
@@ -1182,6 +1195,9 @@ impl Realm {
 
     /// A skill cast: answered at once, as an instant is.
     fn cast(&mut self, spell_id: u32, target: Option<u64>, dest: Option<[f32; 3]>) {
+        if spell_id == duel::content().challenge_spell {
+            return self.challenge(target);
+        }
         let Some(w) = &mut self.world else {
             return;
         };
