@@ -311,6 +311,33 @@ mod tests {
         );
     }
 
+    /// Point Blank's cell (Twilight op 29 at -100 on the shot's family bit, ADR 0010) lifts the
+    /// too-close refusal at 5 yd; without it the {8, 35} row refuses with `0x76`.
+    #[test]
+    fn min_range_modifier_lifts_too_close() {
+        let mut mods = SpellModifiers::default();
+        mods.set_class_family(9);
+        let shot = SpellDisplay {
+            range_index: 114,
+            spell_family: 9,
+            spell_family_flags: 1 << 4,
+            ..Default::default()
+        };
+        let row = SpellRange {
+            min: 8.0,
+            max: 35.0,
+            flags: 0,
+        };
+        let me = RangeUnit::still(1.5);
+        let reach = Some(RangeUnit::still(1.5));
+        let refuse = |mods: &SpellModifiers| {
+            cast_range_refusal(&shot, Some(&row), me, reach, Some(25.0), mods)
+        };
+        assert_eq!(refuse(&mods), Some(ERR_TOO_CLOSE));
+        mods.set(false, 4, super::super::mods::OP_MIN_RANGE, -100);
+        assert_eq!(refuse(&mods), None);
+    }
+
     /// A warrior running after a running mob presses Hamstring (the melee row) at 7 yards:
     /// `GetMinMaxRange` adds the moving bonus to the 5.0 floor (`0x6e3648`-`0x6e36a2`), so the
     /// press goes out to 7.667, and a standing pair is refused at the same distance.

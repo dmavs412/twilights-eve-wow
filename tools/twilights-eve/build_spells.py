@@ -79,6 +79,8 @@ SPELLMOD_OPS = (
     "ALL_EFFECTS", "NOT_LOSE_CASTING_TIME", "CASTING_TIME", "COOLDOWN", "EFFECT2", "COST",
     "CRIT_DAMAGE_BONUS", "RESIST_MISS_CHANCE", "JUMP_TARGETS", "CHANCE_OF_SUCCESS", "ACTIVATION_TIME",
     "EFFECT_PAST_FIRST", "CASTING_TIME_OLD", "DOT", "EFFECT3", "SPELL_BONUS_DAMAGE",
+    # Twilight ops past vanilla's (ADR 0010): only benilla reads them. MIN_RANGE is op 29.
+    "MIN_RANGE",
 )
 SCHOOLS = ("physical", "holy", "fire", "nature", "frost", "shadow", "arcane")
 # Spell.dbc PreventionType: 0 none, 1 silence, 2 pacify.

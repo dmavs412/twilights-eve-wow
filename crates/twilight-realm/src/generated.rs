@@ -11,8 +11,8 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 
 use crate::callings::{
-    Armour, AuraDef, AuraEffect, AuraRow, CallingDef, Effect, Prereq, Skill, SpellMeta, TalentDef,
-    TalentEffect, TalentTab, Target, TierBonus,
+    self, Armour, AuraDef, AuraEffect, AuraRow, CallingDef, ClientSpellMod, Effect, Prereq, Skill,
+    SpellMeta, TalentDef, TalentEffect, TalentTab, Target, TierBonus,
 };
 
 const SERVER_SPELLS: &str = include_str!("../../../data/twilights-eve/server_spells.json");
@@ -366,9 +366,46 @@ fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
             talent_effects(&g.ranks)
         },
         skill: teaches,
-        client_spellmods: Vec::new(),
+        client_spellmods: client_spellmods(&g.ranks),
         rank_spellmods: g.ranks.iter().map(|r| r.meta.spellmods.clone()).collect(),
     })
+}
+
+/// The cells the client's spell-mod tables take for each rank's spellmod groups: one per family
+/// bit a group reaches, its value at each rank (0 where a rank lacks the group). A group whose op
+/// has no number is skipped; the build refuses one.
+fn client_spellmods(ranks: &[GenRank]) -> Vec<ClientSpellMod> {
+    let groups = ranks
+        .iter()
+        .map(|r| r.meta.spellmods.len())
+        .max()
+        .unwrap_or(0);
+    let mut cells = Vec::new();
+    for i in 0..groups {
+        let Some(m) = ranks.iter().find_map(|r| r.meta.spellmods.get(i)) else {
+            continue;
+        };
+        let Some(op) = callings::spell_mod_op(&m.op) else {
+            continue;
+        };
+        let mask = m
+            .family_mask
+            .or(m.family_bit.map(|b| 1u64 << b))
+            .unwrap_or(0);
+        let per_rank: Vec<i32> = ranks
+            .iter()
+            .map(|r| r.meta.spellmods.get(i).map_or(0, |m| m.value as i32))
+            .collect();
+        for bit in (0..64u8).filter(|b| mask >> b & 1 == 1) {
+            cells.push(ClientSpellMod {
+                flat: m.kind == "flat",
+                op,
+                family_bit: bit,
+                per_rank: per_rank.clone(),
+            });
+        }
+    }
+    cells
 }
 
 /// What the talent does, one [`TalentEffect`] per effect slot with a value per rank; none at all

@@ -964,5 +964,22 @@ class ResolveRows(unittest.TestCase):
             self.resolved(duration_ms=999)
 
 
+class PointBlank(unittest.TestCase):
+    """Point Blank's ranks carry the Twilight MIN_RANGE cell (ADR 0010) on every ranged skill of
+    the Ranger the client can see; a hidden skill has no client row to modify."""
+
+    def test_every_rank_sends_min_range_on_every_ranged_skill(self):
+        with open(MASTER, encoding="utf-8", newline="") as f:
+            rows = list(csv.DictReader(f))
+        ranged = {r["key"] for r in rows if r["calling"] == "ranger" and r["kind"] == "skill"
+                  and r["defense_type"] == "ranged" and r["client_visible"] != "no"}
+        ranks = [r for r in rows if r["calling"] == "ranger" and r["key"] == "point_blank"]
+        self.assertEqual(len(ranks), 2)
+        for r in ranks:
+            self.assertEqual((r["spellmod1_type"], r["spellmod1_op"], r["spellmod1_value"]),
+                             ("pct", "MIN_RANGE", "-100"))
+            self.assertEqual(set(r["spellmod1_target"].split("|")), ranged)
+
+
 if __name__ == "__main__":
     unittest.main()

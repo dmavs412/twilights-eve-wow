@@ -14654,7 +14654,21 @@
           "realm_only": false
          }
         ],
-        "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 10% more damage to targets within 8 yards."
+        "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 10% more damage to targets within 8 yards.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "MIN_RANGE",
+          "family_mask": 149505,
+          "value": -100,
+          "target": [
+           "auto_shot",
+           "snapshot",
+           "puncturing_shaft",
+           "barbed_arrow"
+          ]
+         }
+        ]
        },
        {
         "key": "point_blank",
@@ -14696,7 +14710,21 @@
           "realm_only": false
          }
         ],
-        "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 20% more damage to targets within 8 yards."
+        "description": "Removes the minimum range requirement of your ranged weapons. In addition, Puncturing Shaft deals 20% more damage to targets within 8 yards.",
+        "spellmods": [
+         {
+          "type": "pct",
+          "op": "MIN_RANGE",
+          "family_mask": 149505,
+          "value": -100,
+          "target": [
+           "auto_shot",
+           "snapshot",
+           "puncturing_shaft",
+           "barbed_arrow"
+          ]
+         }
+        ]
        }
       ]
      },

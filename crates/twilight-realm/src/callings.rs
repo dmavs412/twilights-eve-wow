@@ -967,6 +967,43 @@ pub struct ClientSpellMod {
     pub per_rank: Vec<i32>,
 }
 
+/// A `SpellModOp` name's number: vmangos's for vanilla's ops (13 and 25 to 28 have none), and
+/// the Twilight ops past them (ADR 0010), which only benilla reads.
+pub fn spell_mod_op(name: &str) -> Option<u8> {
+    const VANILLA: [&str; 25] = [
+        "DAMAGE",
+        "DURATION",
+        "THREAT",
+        "EFFECT1",
+        "CHARGES",
+        "RANGE",
+        "RADIUS",
+        "CRITICAL_CHANCE",
+        "ALL_EFFECTS",
+        "NOT_LOSE_CASTING_TIME",
+        "CASTING_TIME",
+        "COOLDOWN",
+        "EFFECT2",
+        "",
+        "COST",
+        "CRIT_DAMAGE_BONUS",
+        "RESIST_MISS_CHANCE",
+        "JUMP_TARGETS",
+        "CHANCE_OF_SUCCESS",
+        "ACTIVATION_TIME",
+        "EFFECT_PAST_FIRST",
+        "CASTING_TIME_OLD",
+        "DOT",
+        "EFFECT3",
+        "SPELL_BONUS_DAMAGE",
+    ];
+    match name {
+        "" => None,
+        "MIN_RANGE" => Some(29),
+        _ => VANILLA.iter().position(|n| *n == name).map(|i| i as u8),
+    }
+}
+
 /// One skill: a 1.12.1 spell id, what it costs, what it needs and what it does.
 #[derive(Debug, Deserialize)]
 pub struct Skill {

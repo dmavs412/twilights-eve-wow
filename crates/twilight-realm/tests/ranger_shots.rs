@@ -434,3 +434,48 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
         "the blast took the Auto Shot's place"
     );
 }
+
+/// Point Blank tells the client: the Twilight op 29 (ADR 0010) at -100 on each ranged skill's
+/// family bit, so its range check lets the shot go inside 8 yd. Its tier needs ten points first,
+/// so the Ranger enters the world with it learned, the burst that sends every cell.
+#[test]
+fn point_blank_sends_the_min_range_cell() {
+    const SPELLMOD_MIN_RANGE: u8 = 29;
+    let cells = |talents: &[(u32, u8)]| {
+        let (guid, mut blob) = save_with(60, 0, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+        blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
+        if let [(t, r)] = talents {
+            blob = blob.replace(
+                "money = 0
+",
+                &format!(
+                    "money = 0
+talents = [[{t}, {r}]]
+"
+                ),
+            );
+        }
+        let mut realm = Realm::with_seed(0xC3_1000);
+        realm.import_character(&blob).unwrap();
+        realm.handle(RealmCommand::EnterWorld { guid });
+        realm.tick(0.0, &FlatGround);
+        let mut bits: Vec<(u8, i32)> = drain(&mut realm)
+            .iter()
+            .filter_map(|e| match *e {
+                SessionEvent::SpellModifier {
+                    flat: false,
+                    mask_bit,
+                    op: SPELLMOD_MIN_RANGE,
+                    value,
+                } => Some((mask_bit, value)),
+                _ => None,
+            })
+            .collect();
+        bits.sort_unstable();
+        bits
+    };
+    let learned = cells(&[(POINT_BLANK, 1)]);
+    assert_eq!(learned.len(), 4, "a cell per ranged skill: {learned:?}");
+    assert!(learned.iter().all(|&(_, v)| v == -100), "{learned:?}");
+    assert!(cells(&[]).iter().all(|&(_, v)| v == 0));
+}

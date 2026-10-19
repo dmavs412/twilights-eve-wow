@@ -7789,7 +7789,15 @@
       }
      }
     ]
-   }
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "MIN_RANGE",
+     "family_mask": 149505,
+     "value": -100
+    }
+   ]
   },
   {
    "spell_id": 19558,
@@ -7818,7 +7826,15 @@
       }
      }
     ]
-   }
+   },
+   "spellmods": [
+    {
+     "type": "pct",
+     "op": "MIN_RANGE",
+     "family_mask": 149505,
+     "value": -100
+    }
+   ]
   },
   {
    "spell_id": 19503,

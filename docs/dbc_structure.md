@@ -27,7 +27,7 @@ mirror:
 | 58 to 60 | EquippedItemClass, SubclassMask, InventoryTypeMask | refuses without the weapon kind |
 | 61 to 63 | Effect[3] | the three effect slots |
 | 157, 158 | StartRecoveryCategory, StartRecoveryTime | the global cooldown |
-| 160 to 162 | SpellFamilyName, SpellFamilyFlags | which talent spellmods reach the spell |
+| 160 to 162 | SpellFamilyName, SpellFamilyFlags | which talent spellmods reach the spell; Twilight adds op 29 `MIN_RANGE` past vanilla's ops (ADR 0010) |
 | 165 | PreventionType | silence or pacify |
 
 **Effects.** Every per-effect field is a `[3]` array in consecutive columns from `Effect` at 61:

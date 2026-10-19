@@ -15,8 +15,8 @@
 //! boolean, so a bare `(flat, pct)` pair would zero every unmodified spell; hence
 //! [`SpellModifiers::modifiers`] returns `Option` and [`SpellMod`] is private.
 //!
-//! All 29 ops are stored. Op 24 is the one the client routes aura 65 (casting speed) to,
-//! whatever vmangos names it.
+//! All 29 vanilla ops are stored, plus the Twilight op 29 ([`OP_MIN_RANGE`], ADR 0010). Op 24 is
+//! the one the client routes aura 65 (casting speed) to, whatever vmangos names it.
 
 use bevy::prelude::*;
 
@@ -25,11 +25,12 @@ use benilla_formats::{SpellDisplay, SpellRange};
 use crate::chr_classes::ChrClassTable;
 use crate::net::{ObjectStore, SelfPlayer};
 
-/// SpellModOps per row: the index stride (`imul eax,eax,0x1d`; the reader's `add edx,0x74`).
-const OPS: usize = 29;
+/// SpellModOps per row. Deviation: the reference's stride is 29 (`imul eax,eax,0x1d`; the reader's
+/// `add edx,0x74`); ours carries one Twilight op past vanilla's (ADR 0010).
+const OPS: usize = 30;
 /// `SpellFamilyFlags` bits: the row count (`cmp eax,0x40`).
 const BITS: usize = 64;
-/// `0x740` dwords per table (`6e72ba: mov ecx,0x740` before each `rep stosd`).
+/// The reference's `0x740` dwords per table (`6e72ba: mov ecx,0x740`), plus the Twilight column.
 const CELLS: usize = BITS * OPS;
 
 /// `SPELLMOD_COST`, read by [`crate::spell::usable::power_cost`] (`GetPowerCost 0x6e31b0` at
@@ -45,6 +46,9 @@ pub(crate) const OP_RADIUS: u8 = 6;
 pub(crate) const OP_GCD: u8 = 21;
 /// `StartCooldown 0x6e2c60` and the tooltip apply op 11 to both recovery columns.
 pub(crate) const OP_COOLDOWN: u8 = 11;
+/// Twilight op 29 (ADR 0010): a percent of the minimum range, -100 removing it. Not in vanilla;
+/// a stock 1.12 client drops it.
+pub(crate) const OP_MIN_RANGE: u8 = 29;
 
 /// `SPELL_ATTR_EX3_IGNORE_CASTER_MODIFIERS` (vmangos `SpellDefines.h:940`): a spell carrying it
 /// takes no modifier (`0x6e6b52`).
@@ -110,7 +114,7 @@ impl SpellModifiers {
         if usize::from(mask_bit) >= BITS || usize::from(op) >= OPS {
             warn!(
                 "spell_mods: dropping an out-of-range {} modifier — mask bit {mask_bit} \
-                 (0..=63), op {op} (0..=28), value {value}",
+                 (0..=63), op {op} (0..=29), value {value}",
                 if flat { "flat" } else { "pct" }
             );
             return;
@@ -229,7 +233,8 @@ impl SpellModifiers {
 
     /// `GetMinMaxRange` modifies only the maximum at its common tail, after the moving bonus
     /// (`0x6e3648`-`0x6e36a2`, then op 5 at `0x6e3746`). The on-next-swing `Attributes & 0x404` arm
-    /// returns before that tail (`0x6e350f`).
+    /// returns before that tail (`0x6e350f`). Deviation (ADR 0010): the same tail applies the
+    /// Twilight op [`OP_MIN_RANGE`] to the minimum, so Point Blank's shots fire inside 8 yd.
     pub(crate) fn min_max_range(
         &self,
         d: &SpellDisplay,
@@ -238,13 +243,12 @@ impl SpellModifiers {
         targets: benilla_formats::RangeTargets,
     ) -> Option<(f32, f32)> {
         let (min, max) = benilla_formats::min_max_range(d, row, caster, targets)?;
+        if d.on_next_swing() {
+            return Some((min, max));
+        }
         Some((
-            min,
-            if d.on_next_swing() {
-                max
-            } else {
-                self.apply_float(d, OP_RANGE, max)
-            },
+            self.apply_float(d, OP_MIN_RANGE, min).max(0.0),
+            self.apply_float(d, OP_RANGE, max),
         ))
     }
 }
@@ -318,11 +322,11 @@ mod tests {
 
     /// Uses the asymmetric pair (5, 14): a transposed index would serve bit 14's spell instead.
     #[test]
-    fn the_index_is_mask_bit_times_29_plus_op() {
-        assert_eq!(index(5, 14), 5 * 29 + 14);
+    fn the_index_is_mask_bit_times_ops_plus_op() {
+        assert_eq!(index(5, 14), 5 * OPS + 14);
         assert_ne!(
             index(5, 14),
-            14 * 29 + 5,
+            14 * OPS + 5,
             "the transposed form is a different cell"
         );
 
@@ -418,7 +422,7 @@ mod tests {
         mods.set(true, 64, 19, 999);
         // `(65, 23)` lands on PCT element 0 there.
         mods.set(true, 65, 23, 999);
-        mods.set(true, 0, 29, 999);
+        mods.set(true, 0, 30, 999);
         mods.set(true, 255, 255, 999);
 
         assert_eq!(mods.class_family, 3, "the class family is untouched");
