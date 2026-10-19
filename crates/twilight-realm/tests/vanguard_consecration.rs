@@ -74,6 +74,7 @@ fn scene(talents: &[(u32, u8)], spot: [f32; 3]) -> (Realm, View, u64, Mob, Optio
     view.drain(&mut realm);
     view.run(&mut realm, 1.0);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [spot[0] - 25.0, spot[1], 0.0],
         orientation: 0.0,
     });

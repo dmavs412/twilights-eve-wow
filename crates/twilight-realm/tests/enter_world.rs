@@ -88,6 +88,7 @@ fn logging_out_returns_to_the_roster_where_the_character_stood() {
     let mut realm = realm();
     enter_new(&mut realm, "Baine", TAUREN);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [-400.0, -2600.0, 92.0],
         orientation: 0.5,
     });

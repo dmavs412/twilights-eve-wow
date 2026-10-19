@@ -53,6 +53,7 @@ fn townsfolk() -> Vec<(String, u64, String, f32)> {
 /// Walks the player to `at` and lets the town stream in around them.
 fn walk_to(realm: &mut Realm, at: [f32; 3]) -> Vec<SessionEvent> {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: 0.0,
     });

@@ -374,6 +374,7 @@ fn turn_around(realm: &mut Realm, mob: &Mob, yards: f32) {
         mob.position[2],
     ];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: dy.atan2(dx),
     });

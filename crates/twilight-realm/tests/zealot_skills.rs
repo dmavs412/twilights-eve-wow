@@ -468,6 +468,7 @@ fn tanking_as(rage: u32, edit: &dyn Fn(String) -> String) -> (Realm, u64, Mob, V
     let (mut realm, me, mut view, _) = zealot_at_as(SEED, edit);
     // Out of reach of the four neutral scorpids, then each of them in turn.
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],
         orientation: std::f32::consts::PI,
     });

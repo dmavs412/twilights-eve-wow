@@ -153,6 +153,7 @@ fn away(realm: &mut Realm, me: u64, hours: u64) -> Vec<SessionEvent> {
 
 fn walk_to(realm: &mut Realm, position: [f32; 3]) -> Vec<SessionEvent> {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position,
         orientation: 0.0,
     });

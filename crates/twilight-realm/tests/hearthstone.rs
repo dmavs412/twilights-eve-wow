@@ -44,6 +44,7 @@ fn far_from_home(realm: &mut Realm) -> (u64, u64) {
         .player_pack_slot(0)
         .expect("something in the first backpack slot");
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: FAR_AWAY,
         orientation: 0.0,
     });
@@ -191,6 +192,7 @@ fn a_move_sent_before_the_client_saw_the_teleport_does_not_undo_it() {
 
     // The client's movement from before the snap, then its ack.
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: FAR_AWAY,
         orientation: 0.0,
     });
@@ -211,6 +213,7 @@ fn moving_interrupts_the_cast() {
     run(&mut realm, 3.0);
 
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [FAR_AWAY[0] + 1.0, FAR_AWAY[1], FAR_AWAY[2]],
         orientation: 0.0,
     });
@@ -234,6 +237,7 @@ fn turning_on_the_spot_does_not_interrupt_the_cast() {
     realm.handle(use_hearthstone());
     run(&mut realm, 3.0);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: FAR_AWAY,
         orientation: 2.0,
     });
@@ -247,6 +251,7 @@ fn an_interrupted_cast_puts_nothing_on_cooldown() {
     realm.handle(use_hearthstone());
     run(&mut realm, 1.0);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [FAR_AWAY[0] + 1.0, FAR_AWAY[1], FAR_AWAY[2]],
         orientation: 0.0,
     });
@@ -404,6 +409,7 @@ fn time_spent_offline_counts_toward_the_cooldown() {
     let (mut back, events) = log_in_at(T0 + 10_200 + 360_000, me, &blob);
     assert_eq!(hearth_cooldown_at_login(&events), None);
     back.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: FAR_AWAY,
         orientation: 0.0,
     });
@@ -481,6 +487,7 @@ fn bind_point(events: &[SessionEvent]) -> Option<u32> {
 /// Walks far off, hearths and waits out the cast: where the teleport put the player.
 fn hearth_home(realm: &mut Realm) -> ([f32; 3], f32) {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: FAR_AWAY,
         orientation: 0.0,
     });
@@ -561,6 +568,7 @@ fn an_innkeeper_out_of_reach_binds_nothing() {
     let innkeeper = hub_guid(INNKEEPER);
     ask_to_bind(&mut realm, innkeeper);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: FAR_AWAY,
         orientation: 0.0,
     });

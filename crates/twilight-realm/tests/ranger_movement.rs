@@ -65,6 +65,7 @@ fn walk(realm: &mut Realm, view: &mut View, from: [f32; 3], secs: f32) -> [f32; 
     for _ in 0..(secs / 0.1).round() as u32 {
         at[0] += 0.7;
         realm.handle(RealmCommand::Move {
+            motion: Default::default(),
             position: at,
             orientation: 0.0,
         });
@@ -86,6 +87,7 @@ fn vault_leaps_15_yards_back_and_waits_15_seconds() {
     let (mut realm, _, _, mut view) = ranger(&[], 0xB0_0001);
     let start = [-441.8, -2648.6, 0.0];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: start,
         orientation: 0.0,
     });

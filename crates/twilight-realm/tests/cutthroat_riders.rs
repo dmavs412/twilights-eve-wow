@@ -83,6 +83,7 @@ const WEST: [f32; 3] = [CAMP[0] - 25.0, CAMP[1], 0.0];
 fn pulled(seed: u64, talents: &[(u32, u8)]) -> Pack {
     let (mut realm, me, mut view) = cutthroat(seed, talents, false);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: WEST,
         orientation: 0.0,
     });
@@ -202,6 +203,7 @@ fn flurry_of_blades_never_strikes_a_dummy_behind_the_caster() {
             pack.mobs[1].position[2],
         ];
         pack.realm.handle(RealmCommand::Move {
+            motion: Default::default(),
             position: at,
             orientation: 0.0,
         });
@@ -229,6 +231,7 @@ fn flurry_of_blades_never_strikes_a_dummy_behind_the_caster() {
 fn last_strike_points(seed: u64, talents: &[(u32, u8)], rupture: bool) -> Option<u8> {
     let (mut realm, me, mut view) = cutthroat(seed, talents, true);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],
         orientation: std::f32::consts::PI,
     });

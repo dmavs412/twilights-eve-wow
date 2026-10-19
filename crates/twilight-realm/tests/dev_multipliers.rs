@@ -122,6 +122,7 @@ fn the_realm_keeps_up_with_a_faster_player() {
     let [x, y, z, _] = CROSSROADS;
     let there = [x + 21.0, y, z];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: there,
         orientation: 0.0,
     });
@@ -225,6 +226,7 @@ fn kill(realm: &mut Realm, mob: Mob) -> Vec<SessionEvent> {
         mob.position[2],
     ];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: (-dy).atan2(-dx),
     });

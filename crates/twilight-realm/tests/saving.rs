@@ -22,6 +22,7 @@ fn an_exported_character_imports_into_a_fresh_realm_unchanged() {
     let mut realm = realm();
     let (guid, _) = enter_new(&mut realm, "Cairne", TAUREN);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [-500.0, -2700.0, 91.5],
         orientation: 2.0,
     });
@@ -50,6 +51,7 @@ fn an_imported_character_enters_the_world_where_it_was_saved() {
     let mut realm = realm();
     let (guid, _) = enter_new(&mut realm, "Baine", TAUREN);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [-321.0, -2500.0, 93.0],
         orientation: 1.0,
     });
@@ -98,6 +100,7 @@ fn logging_out_writes_the_save_with_the_last_position() {
     let (guid, _) = enter_new(&mut realm, "Rokhan", ORC);
     realm.drain_storage();
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [-10.0, -20.0, 30.0],
         orientation: 0.0,
     });

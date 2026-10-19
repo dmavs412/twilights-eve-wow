@@ -88,6 +88,7 @@ pub fn quest_log(events: &[SessionEvent], me: u64) -> Vec<(u8, u32, [u8; 4], u8)
 /// The player walks to `to` on flat ground, returning what the step brought.
 pub fn walk_to(realm: &mut Realm, to: [f32; 3]) -> Vec<SessionEvent> {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: to,
         orientation: 0.0,
     });

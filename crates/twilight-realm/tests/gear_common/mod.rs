@@ -145,6 +145,7 @@ pub fn stand_by(realm: &mut Realm, mob: &Mob) {
     ];
     let facing = (mob.position[1] - at[1]).atan2(mob.position[0] - at[0]);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: facing,
     });

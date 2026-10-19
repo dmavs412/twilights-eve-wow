@@ -221,6 +221,7 @@ fn the_vendor_stands_on_the_ground_and_streams_with_the_view_as_every_hub_npc() 
 
     // Far off, it leaves the world; back at the Hub, it comes back.
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [
             twilight_realm::CROSSROADS[0] + 300.0,
             twilight_realm::CROSSROADS[1],
@@ -233,6 +234,7 @@ fn the_vendor_stands_on_the_ground_and_streams_with_the_view_as_every_hub_npc() 
         .iter()
         .any(|e| matches!(e, SessionEvent::ObjectsRemoved(gone) if gone.contains(&vendor))));
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [
             twilight_realm::CROSSROADS[0],
             twilight_realm::CROSSROADS[1],
@@ -309,6 +311,7 @@ fn the_vendor_sells_only_its_own_stock_and_only_within_reach() {
         Some(benilla_protocol::messages::buy_result::CANT_FIND_ITEM)
     );
     shop.send(RealmCommand::Move {
+        motion: Default::default(),
         position: [
             twilight_realm::CROSSROADS[0] + 30.0,
             twilight_realm::CROSSROADS[1],

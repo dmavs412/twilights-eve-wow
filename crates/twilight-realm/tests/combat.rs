@@ -180,6 +180,7 @@ fn a_mob_that_notices_the_player_runs_at_them_and_attacks() {
     // 10 yd away: inside a level-3 mob's 12 yd notice radius for a level-1 player.
     let at = toward(mob.position, CROSSROADS_XY, 10.0);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: 0.0,
     });
@@ -223,6 +224,7 @@ fn a_swing_out_of_reach_is_refused_once_until_the_mob_closes_in() {
     let at = toward(mob.position, CROSSROADS_XY, 8.0);
     let facing = (mob.position[1] - at[1]).atan2(mob.position[0] - at[0]);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: facing,
     });
@@ -251,6 +253,7 @@ fn a_swing_facing_away_is_refused_once() {
     let away = toward(mob.position, CROSSROADS_XY, 2.0);
     let facing_away = (away[1] - mob.position[1]).atan2(away[0] - mob.position[0]);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: away,
         orientation: facing_away,
     });
@@ -446,6 +449,7 @@ fn stand_by(realm: &mut Realm, mob: &Mob) {
     let at = toward(mob.position, CROSSROADS_XY, 2.0);
     let facing = (mob.position[1] - at[1]).atan2(mob.position[0] - at[0]);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: facing,
     });

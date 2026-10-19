@@ -145,6 +145,7 @@ fn tanking(rage: u32) -> (Realm, u64, Mob, View) {
     // Out of reach of the four level 3 scorpids south of the Crossroads, then each of them in
     // turn: neutral, they come only when attacked themselves.
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],
         orientation: std::f32::consts::PI,
     });
@@ -197,6 +198,7 @@ fn stand_at(realm: &mut Realm, mob: &Mob, yards: f32) {
         mob.position[2],
     ];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: (mob.position[1] - at[1]).atan2(mob.position[0] - at[0]),
     });

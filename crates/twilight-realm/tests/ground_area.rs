@@ -145,6 +145,7 @@ fn world(talents: &[(u32, u8)]) -> (Realm, u64, Vec<Mob>, View) {
     view.drain(&mut realm);
     view.run(&mut realm, 1.0);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: STAND,
         orientation: std::f32::consts::PI,
     });

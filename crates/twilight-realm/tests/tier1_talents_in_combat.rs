@@ -217,6 +217,7 @@ fn pulled(
     // Out of reach of the four level 3 scorpids south of the Crossroads, then each of them in
     // turn: neutral, they come only when attacked themselves.
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],
         orientation: std::f32::consts::PI,
     });

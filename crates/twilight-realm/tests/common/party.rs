@@ -90,6 +90,7 @@ impl Party {
         self.cmd(
             i,
             RealmCommand::Move {
+                motion: Default::default(),
                 position: at,
                 orientation: facing,
             },

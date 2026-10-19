@@ -134,6 +134,7 @@ fn walking_around_the_crossroads_meets_nothing_above_level_10() {
                 92.0,
             ];
             realm.handle(RealmCommand::Move {
+                motion: Default::default(),
                 position: at,
                 orientation: a,
             });
@@ -203,6 +204,7 @@ fn the_way_from_the_crossroads_to_a_low_camp_passes_no_red_mob() {
                 92.0,
             ];
             realm.handle(RealmCommand::Move {
+                motion: Default::default(),
                 position: at,
                 orientation: 0.0,
             });
@@ -353,6 +355,7 @@ fn a_mob_dragged_past_its_leash_runs_home_and_heals() {
     while d < 90.0 {
         d += 2.0;
         realm.handle(RealmCommand::Move {
+            motion: Default::default(),
             position: north_of(home, d),
             orientation: 0.0,
         });
@@ -518,6 +521,7 @@ impl Host for NoGround {
 /// Moves the player to `at` (facing north) and ticks once.
 fn teleport(realm: &mut Realm, at: [f32; 3]) -> Vec<SessionEvent> {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: 0.0,
     });
@@ -653,6 +657,7 @@ fn north_of(p: [f32; 3], yards: f32) -> [f32; 3] {
 /// Turns the player standing at `at` toward `target`.
 fn face(realm: &mut Realm, at: [f32; 3], target: [f32; 3]) {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: (target[1] - at[1]).atan2(target[0] - at[0]),
     });

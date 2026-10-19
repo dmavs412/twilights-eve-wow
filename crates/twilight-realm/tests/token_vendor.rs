@@ -302,6 +302,7 @@ fn only_the_buyers_band_is_for_sale_and_only_within_reach() {
     // Walk away and the vendor is out of reach.
     let legguards = shop.row_of("Gnoll Skull Basher");
     shop.send(RealmCommand::Move {
+        motion: Default::default(),
         position: [
             twilight_realm::CROSSROADS[0] + 40.0,
             twilight_realm::CROSSROADS[1],

@@ -20,6 +20,7 @@ fn out_of_the_inn() -> (Realm, [f32; 3]) {
         .expect("a login worldport");
     let away = [spawn[0] + 300.0, spawn[1], spawn[2]];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: away,
         orientation: 0.0,
     });
@@ -64,6 +65,7 @@ fn moving_cancels_a_pending_logout() {
     let (mut realm, at) = out_of_the_inn();
     realm.handle(RealmCommand::Logout);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [at[0] + 2.0, at[1], at[2]],
         orientation: 0.0,
     });

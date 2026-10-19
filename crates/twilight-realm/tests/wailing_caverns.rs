@@ -253,6 +253,7 @@ fn leaving_through_the_exit_returns_the_player_to_the_entrance_outside() {
     let mut s = Script::at_the_entrance(20, 0, &[]);
     s.enter();
     s.send(RealmCommand::Move {
+        motion: Default::default(),
         position: EXIT_AT,
         orientation: 0.0,
     });
@@ -267,6 +268,7 @@ fn leaving_through_the_exit_returns_the_player_to_the_entrance_outside() {
     let mut events = s.tick(0.0);
     // The oasis round the skull is quiet ground; a little way out, The Barrens stream back in.
     s.send(RealmCommand::Move {
+        motion: Default::default(),
         position: [-831.0, -2100.0, OUTSIDE[2]],
         orientation: 0.0,
     });
@@ -322,6 +324,7 @@ fn a_chasing_mob_follows_the_route_round_a_wall_instead_of_through_it() {
         .line_of_sight(WAILING_CAVERNS, RAVAGER_AT, ROUND_THE_BEND));
     s.enter();
     s.send(RealmCommand::Move {
+        motion: Default::default(),
         position: ROUND_THE_BEND,
         orientation: 3.6,
     });
@@ -410,6 +413,7 @@ fn last_health(events: &[SessionEvent], guid: u64) -> Option<u32> {
 fn stand_by(s: &mut Script, at: [f32; 3]) {
     let here = [at[0] - 1.5, at[1] - 1.5, at[2]];
     s.send(RealmCommand::Move {
+        motion: Default::default(),
         position: here,
         orientation: (at[1] - here[1]).atan2(at[0] - here[0]),
     });
@@ -571,6 +575,7 @@ fn dying_inside_comes_back_at_the_entrance_with_the_toll_taken_and_the_kills_kep
     // Walking back in, the Guardian still lies dead; the rest still stand.
     let mark = s.events.len();
     s.send(RealmCommand::Move {
+        motion: Default::default(),
         position: GUARDIAN_AT,
         orientation: 0.0,
     });
@@ -593,6 +598,7 @@ fn leaving_and_coming_back_starts_a_fresh_run() {
     kill(&mut s, GUARDIAN, GUARDIAN_AT);
 
     s.send(RealmCommand::Move {
+        motion: Default::default(),
         position: EXIT_AT,
         orientation: 0.0,
     });
@@ -600,6 +606,7 @@ fn leaving_and_coming_back_starts_a_fresh_run() {
     s.send(RealmCommand::WorldportAck);
     s.tick(0.0);
     s.send(RealmCommand::Move {
+        motion: Default::default(),
         position: ENTRANCE_AT,
         orientation: 0.0,
     });
@@ -705,6 +712,7 @@ impl Script {
             .find(|g| g.1 == entry)
             .unwrap_or_else(|| panic!("Disciple {entry} stands on the skull"));
         self.send(RealmCommand::Move {
+            motion: Default::default(),
             position: at,
             orientation: 0.0,
         });
@@ -715,6 +723,7 @@ impl Script {
     /// Walks out through the exit, back to The Barrens.
     fn leave(&mut self) {
         self.send(RealmCommand::Move {
+            motion: Default::default(),
             position: EXIT_AT,
             orientation: 0.0,
         });
@@ -759,6 +768,7 @@ impl Script {
     /// Goes down the tunnels to the entrance and into the Caverns.
     fn go_in(&mut self) {
         self.send(RealmCommand::Move {
+            motion: Default::default(),
             position: ENTRANCE_AT,
             orientation: 0.0,
         });

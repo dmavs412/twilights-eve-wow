@@ -80,6 +80,7 @@ impl Two {
         self.realm.handle_as(
             s,
             RealmCommand::Move {
+                motion: Default::default(),
                 position: at,
                 orientation: 0.0,
             },
@@ -194,6 +195,7 @@ fn a_kill_is_dead_for_both_and_comes_back_once_for_both() {
     two.realm.handle_as(
         a,
         RealmCommand::Move {
+            motion: Default::default(),
             position: at,
             orientation: std::f32::consts::PI,
         },
@@ -370,4 +372,59 @@ fn everyone_is_one_party_led_by_the_first_in() {
         })
     };
     assert!(heard(a) && heard(b), "/p reaches the whole party");
+}
+
+#[test]
+fn a_move_reaches_the_other_player_as_reported() {
+    use benilla_protocol::messages::{JumpInfo, RelayVerb};
+    let mut two = Two::at_the_hub();
+    let (a, b) = (two.a, two.b);
+    let motion = twilight_realm::Motion {
+        verb: RelayVerb::Pose,
+        flags: 0x1 | 0x2000, // FORWARD | JUMPING
+        time: 123_456,
+        pitch: 0.0,
+        fall_time: 250,
+        jump: Some(JumpInfo {
+            zspeed: -7.955_547,
+            sin_angle: 0.0,
+            cos_angle: 1.0,
+            xy_speed: 7.0,
+        }),
+        transport: None,
+    };
+    two.realm.handle_as(
+        a,
+        RealmCommand::Move {
+            position: north_of(HUB, 1.0),
+            orientation: 0.0,
+            motion,
+        },
+    );
+    let got = two.run(0.1);
+    let relayed = got[&b]
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::UnitMove {
+                guid,
+                verb,
+                flags,
+                time,
+                fall_time,
+                jump,
+                ..
+            } if *guid == two.guids[0] => Some((*verb, *flags, *time, *fall_time, *jump)),
+            _ => None,
+        })
+        .expect("the other player sees the move");
+    assert_eq!(
+        relayed,
+        (
+            motion.verb,
+            motion.flags,
+            motion.time,
+            motion.fall_time,
+            motion.jump
+        )
+    );
 }

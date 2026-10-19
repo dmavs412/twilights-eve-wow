@@ -79,6 +79,7 @@ fn a_corpse_is_in_reach_as_far_as_an_npc_is() {
     let (mut realm, _, mob, _) = after_a_kill();
     let step_back = |realm: &mut Realm, yards: f32| {
         realm.handle(RealmCommand::Move {
+            motion: Default::default(),
             position: [mob.position[0] + yards, mob.position[1], mob.position[2]],
             orientation: std::f32::consts::PI,
         });

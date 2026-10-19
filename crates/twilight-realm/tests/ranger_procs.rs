@@ -61,6 +61,7 @@ fn at_camp(talents: &[(u32, u8)], seed: u64) -> (Realm, u64, Vec<Mob>, View) {
     let mut view = View::default();
     view.drain(&mut realm);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: STAND,
         orientation: std::f32::consts::PI,
     });
@@ -93,6 +94,7 @@ fn shoot(
     mob: &Mob,
 ) -> Option<Vec<SessionEvent>> {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: STAND,
         orientation: (mob.position[1] - STAND[1]).atan2(mob.position[0] - STAND[0]),
     });

@@ -83,6 +83,7 @@ fn crit_and_bleed(talents: &[(u32, u8)]) -> Option<(u32, Vec<u32>)> {
     for seed in 0..200 {
         let (mut realm, mut view) = cutthroat(seed, talents);
         realm.handle(RealmCommand::Move {
+            motion: Default::default(),
             position: [CAMP[0] + 40.0, CAMP[1], 0.0],
             orientation: std::f32::consts::PI,
         });

@@ -113,6 +113,7 @@ fn at_the_camp(talents: &[(u32, u8)]) -> (Realm, u64, Vec<Mob>, View) {
     view.drain(&mut realm);
     view.run(&mut realm, 1.0);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],
         orientation: std::f32::consts::PI,
     });
@@ -171,11 +172,13 @@ fn strike_camp(realm: &mut Realm, view: &mut View, me: u64, camp: &[Mob]) -> Vec
         }
         // Away past the respawn distance for the respawn time, and back.
         realm.handle(RealmCommand::Move {
+            motion: Default::default(),
             position: [CAMP[0] + 100.0, CAMP[1], 0.0],
             orientation: std::f32::consts::PI,
         });
         seen.extend(view.run(realm, 65.0));
         realm.handle(RealmCommand::Move {
+            motion: Default::default(),
             position: [CAMP[0] + 40.0, CAMP[1], 0.0],
             orientation: std::f32::consts::PI,
         });

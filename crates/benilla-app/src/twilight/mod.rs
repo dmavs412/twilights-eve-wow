@@ -339,10 +339,26 @@ fn label_callings(keys: &CallingKeys, labels: &mut ResMut<crate::char_select::Cl
 fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
     match command {
         ClientCommand::Move {
-            pos, orientation, ..
+            kind,
+            flags,
+            pos,
+            orientation,
+            pitch,
+            fall_time,
+            jump,
+            transport,
         } => Some(RealmCommand::Move {
             position: pos,
             orientation,
+            motion: twilight_realm::Motion {
+                verb: benilla_protocol::messages::RelayVerb::of(kind.opcode()),
+                flags,
+                time: benilla_protocol::world::client_uptime_ms(),
+                pitch,
+                fall_time,
+                jump,
+                transport,
+            },
         }),
         ClientCommand::SetSelection { guid } => Some(RealmCommand::SetSelection { guid }),
         ClientCommand::AttackSwing { guid } => Some(RealmCommand::AttackSwing { guid }),

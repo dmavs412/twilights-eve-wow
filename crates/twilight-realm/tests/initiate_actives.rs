@@ -181,6 +181,7 @@ fn world(seed: u64) -> (Realm, u64, Mob, View) {
     view.drain(&mut realm);
     view.run(&mut realm, 1.0);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [CAMP[0] + 40.0, CAMP[1], 0.0],
         orientation: 0.0,
     });

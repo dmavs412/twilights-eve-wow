@@ -86,6 +86,7 @@ impl Script {
             mob.position[2],
         ];
         self.send(RealmCommand::Move {
+            motion: Default::default(),
             position: away,
             orientation: 0.0,
         });
@@ -195,6 +196,7 @@ fn standing_up_ends_the_meal() {
     let mut at = twilight_realm::CROSSROADS;
     at[0] += 3.0;
     s.send(RealmCommand::Move {
+        motion: Default::default(),
         position: [at[0], at[1], at[2]],
         orientation: 0.0,
     });

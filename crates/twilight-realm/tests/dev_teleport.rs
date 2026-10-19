@@ -80,6 +80,7 @@ fn without_a_facing_the_player_keeps_its_own() {
     let mut realm = realm();
     enter_new(&mut realm, "Thrall", ORC);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [0.0, 0.0, 0.0],
         orientation: 1.25,
     });
@@ -137,6 +138,7 @@ fn the_teleport_lands_once_the_client_acknowledges_it() {
 
     // A report from before the ack is from where the player stood, and is ignored.
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [0.0, 0.0, 0.0],
         orientation: 0.0,
     });

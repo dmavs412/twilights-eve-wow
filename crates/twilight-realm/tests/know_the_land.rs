@@ -101,6 +101,7 @@ fn in_world(level: u8, discovered: &[u32]) -> (Realm, u64, Vec<SessionEvent>) {
 /// Moves the player to `to` and ticks once on the scripted map: the events.
 fn step(realm: &mut Realm, to: [f32; 3]) -> Vec<SessionEvent> {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: to,
         orientation: 0.0,
     });

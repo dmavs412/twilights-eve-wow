@@ -111,6 +111,7 @@ fn world(seed: u64, talents: &[(u32, u8)]) -> (Realm, u64, Vec<Mob>, View) {
     view.drain(&mut realm);
     view.run(&mut realm, 1.0);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: STAND,
         orientation: std::f32::consts::PI,
     });
@@ -194,6 +195,7 @@ fn shattered_blink_roots_a_mob_by_the_start_and_not_one_further_off() {
     );
     // Face away from the camp and blink.
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: STAND,
         orientation: 0.0,
     });

@@ -448,6 +448,7 @@ fn warrior_seen(mut realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3]), fi
 fn stand_by(realm: &mut Realm, mob: [f32; 3]) {
     let at = [mob[0] + 2.0, mob[1], mob[2]];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: std::f32::consts::PI,
     });

@@ -116,10 +116,12 @@ fn two_clients_see_each_other_over_the_wire() {
     let guid_a = a.create_and_enter("Aldren");
     let guid_b = b.create_and_enter("Brena");
     a.send(RealmCommand::Move {
+        motion: Default::default(),
         position: FAR_AWAY,
         orientation: 0.0,
     });
     b.send(RealmCommand::Move {
+        motion: Default::default(),
         position: [FAR_AWAY[0] + 3.0, FAR_AWAY[1], FAR_AWAY[2]],
         orientation: 0.0,
     });
@@ -132,6 +134,25 @@ fn two_clients_see_each_other_over_the_wire() {
     };
     a.wait_for("create of the other player", sees(guid_b));
     b.wait_for("create of the other player", sees(guid_a));
+
+    // Aldren starts running; Brena is sent the start with its flag and clock, not a bare pose.
+    let run = twilight_realm::Motion {
+        flags: 0x1, // FORWARD
+        time: 4242,
+        ..Default::default()
+    };
+    a.send(RealmCommand::Move {
+        position: [FAR_AWAY[0] + 0.5, FAR_AWAY[1], FAR_AWAY[2]],
+        orientation: 0.0,
+        motion: run,
+    });
+    let relayed = b.wait_for("the relayed start", |e| match e {
+        SessionEvent::UnitMove {
+            guid, flags, time, ..
+        } if *guid == guid_a && *flags & 0x1 != 0 => Some(*time),
+        _ => None,
+    });
+    assert_eq!(relayed, run.time);
 
     // Bo's roster holds Brena and not Aldren.
     b.send(RealmCommand::ListCharacters);

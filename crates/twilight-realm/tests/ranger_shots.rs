@@ -205,6 +205,7 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [CAMP[0] + 30.0, CAMP[1], CAMP[2]],
         orientation: std::f32::consts::PI,
     });
@@ -264,6 +265,7 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
                     here[2],
                 ];
                 realm.handle(RealmCommand::Move {
+                    motion: Default::default(),
                     position: at,
                     orientation: (-dy).atan2(-dx),
                 });
@@ -356,6 +358,7 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
     let (mut realm, _, _) = ranger("ranger", None, &[(EXPLOSIVE_PAYLOAD_TALENT, 1)], 0xC4_0001);
     let stand = [CAMP[0] + 20.0, CAMP[1], CAMP[2]];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: stand,
         orientation: std::f32::consts::PI,
     });
@@ -381,6 +384,7 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
     };
     for mob in &camp[..3] {
         realm.handle(RealmCommand::Move {
+            motion: Default::default(),
             position: stand,
             orientation: (mob.position[1] - stand[1]).atan2(mob.position[0] - stand[0]),
         });
@@ -402,6 +406,7 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
     assert!(packed >= 3, "three mobs packed on the Ranger: {heading:?}");
 
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [stand[0] + 20.0, stand[1], stand[2]],
         orientation: std::f32::consts::PI,
     });

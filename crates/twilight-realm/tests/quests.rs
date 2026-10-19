@@ -124,6 +124,7 @@ fn a_giver_far_away_does_not_talk() {
     walk_up_to(&mut realm, grezz);
     let [x, y, _] = hub_home(grezz);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [x + 40.0, y, 0.0],
         orientation: 0.0,
     });
@@ -448,6 +449,7 @@ fn clear_the_scorpids(with_quest: bool) -> (Vec<u32>, Vec<SessionEvent>, u64) {
         all.extend(accept(&mut realm, giver(&events, GREZZ), SCORPID_VENOM));
     }
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: SCORPID_CAMP,
         orientation: 0.0,
     });
@@ -526,6 +528,7 @@ fn the_last_quest_item_looted_completes_the_quest() {
     let sacs: &[Carried] = &[(23, VENOM_SAC, 5)];
     let (mut realm, me, mut events) = questing(8, sacs, 0, &[(SCORPID_VENOM, [0; 4])]);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: SCORPID_CAMP,
         orientation: 0.0,
     });

@@ -106,6 +106,7 @@ fn in_northshire() -> (Realm, u64) {
 /// Moves the player 2 yd east of `at` and lets the world catch up.
 fn go(realm: &mut Realm, at: [f32; 3]) -> Vec<SessionEvent> {
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [at[0] + 2.0, at[1], at[2]],
         orientation: std::f32::consts::PI,
     });
@@ -241,6 +242,7 @@ fn an_explore_spot_on_the_eastern_kingdoms_is_met_there_and_not_on_kalimdor() {
     realm.tick(0.0, &FlatGround);
     drain(&mut realm);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [SPOT[0], SPOT[1], 0.0],
         orientation: 0.0,
     });

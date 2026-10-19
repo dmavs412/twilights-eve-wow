@@ -57,6 +57,7 @@ fn pulled() -> Pack {
     view.run(&mut realm, 1.0);
     let west = [CAMP[0] - 25.0, CAMP[1], 0.0];
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: west,
         orientation: 0.0,
     });
@@ -176,6 +177,7 @@ fn an_enemy_behind_the_caster_is_not_hit() {
         pack.mobs[1].position[2],
     ];
     pack.realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: at,
         orientation: 0.0,
     });

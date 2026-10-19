@@ -101,6 +101,21 @@ pub trait Host {
     fn area_at(&self, map: u32, x: f32, y: f32) -> Option<u32>;
 }
 
+/// A movement report's state beyond its pose: what an observer animates and extrapolates from.
+/// The default is a still body, as a test or a scripted pose reports it.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, Default, PartialEq)]
+pub struct Motion {
+    /// The opcode's verb: heartbeat, teleport and root are told apart by it, not the flags.
+    pub verb: benilla_protocol::messages::RelayVerb,
+    pub flags: u32,
+    /// The mover's own clock (ms); 0 lets the realm stamp its own.
+    pub time: u32,
+    pub pitch: f32,
+    pub fall_time: u32,
+    pub jump: Option<benilla_protocol::messages::JumpInfo>,
+    pub transport: Option<benilla_protocol::messages::TransportPose>,
+}
+
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
 /// and drops the rest.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -119,6 +134,8 @@ pub enum RealmCommand {
     Move {
         position: [f32; 3],
         orientation: f32,
+        /// The rest of the report, relayed as sent to the others who see the mover.
+        motion: Motion,
     },
     /// The player's target; 0 clears it.
     SetSelection {
@@ -859,6 +876,7 @@ impl Realm {
             RealmCommand::Move {
                 position,
                 orientation,
+                motion,
             } => {
                 if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
@@ -875,13 +893,16 @@ impl Realm {
                                 guid,
                                 position,
                                 orientation,
-                                flags: 0,
-                                pitch: 0.0,
-                                time: (self.wall * 1000.0) as u32,
-                                verb: benilla_protocol::messages::RelayVerb::Heartbeat,
-                                fall_time: 0,
-                                jump: None,
-                                transport: None,
+                                flags: motion.flags,
+                                pitch: motion.pitch,
+                                time: match motion.time {
+                                    0 => (self.wall * 1000.0) as u32,
+                                    t => t,
+                                },
+                                verb: motion.verb,
+                                fall_time: motion.fall_time,
+                                jump: motion.jump,
+                                transport: motion.transport,
                             };
                             self.show_others(place, &[moved]);
                         }

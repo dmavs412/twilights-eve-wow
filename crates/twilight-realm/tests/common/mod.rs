@@ -161,6 +161,7 @@ pub fn hub_home(npc: u64) -> [f32; 3] {
 pub fn walk_up_to(realm: &mut Realm, npc: u64) {
     let [x, y, _] = hub_home(npc);
     realm.handle(RealmCommand::Move {
+        motion: Default::default(),
         position: [x + 1.5, y, 0.0],
         orientation: std::f32::consts::PI,
     });
