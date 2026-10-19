@@ -39,6 +39,34 @@ fn entering_announces_the_character_then_ports_it_to_the_crossroads() {
     assert!(!needs_ack, "the login worldport is not acked");
 }
 
+/// Twilight's Eve is co-op: every race reports the one player faction template, so the client
+/// reads a player of the other faction as friendly.
+#[test]
+fn every_race_reports_one_player_faction_template() {
+    let mut templates = Vec::new();
+    for (name, race) in ["Ra", "Rb", "Rc", "Rd", "Re", "Rf", "Rg", "Rh"]
+        .into_iter()
+        .zip([HUMAN, ORC, 3, 4, 5, TAUREN, 7, 8])
+    {
+        let mut realm = realm();
+        let (guid, events) = enter_new(&mut realm, name, race);
+        let template = events
+            .iter()
+            .find_map(|e| match e {
+                SessionEvent::ObjectCreate {
+                    guid: g, fields, ..
+                } if *g == guid => fields.unit_faction_template(),
+                _ => None,
+            })
+            .expect("our own player's create");
+        templates.push(template);
+    }
+    assert!(
+        templates.iter().all(|&t| t == templates[0]),
+        "{templates:?}"
+    );
+}
+
 #[test]
 fn the_entered_character_streams_in_as_a_level_1_warrior_of_its_race() {
     let mut realm = realm();
@@ -62,8 +90,8 @@ fn the_entered_character_streams_in_as_a_level_1_warrior_of_its_race() {
     // Tauren male's native display (`ChrRaces.dbc`).
     assert_eq!(display_id, Some(59));
     assert_eq!(fields.unit_level(), Some(1));
-    // Tauren's player faction template.
-    assert_eq!(fields.unit_faction_template(), Some(6));
+    // Every player reports the one co-op faction template, Tauren included.
+    assert_eq!(fields.unit_faction_template(), Some(2));
     assert_eq!(fields.unit_race(), Some(TAUREN));
     assert_eq!(fields.unit_class(), Some(WARRIOR));
     assert_eq!(fields.unit_gender(), Some(0));

@@ -55,6 +55,7 @@ fn say_carries_25_yards_and_yell_300() {
     assert_eq!(heard.len(), 1);
     assert_eq!(heard[0].chat_type, m::CHAT_MSG_SAY);
     assert_eq!(heard[0].sender_guid, party.guids[0]);
+    assert_eq!(heard[0].language, 0, "universal: no race garbles it");
     assert!(lines(&party, 2).is_empty(), "100 yd is out of earshot");
 
     say(&mut party, 0, m::CHAT_TYPE_YELL, None, "HELLO");

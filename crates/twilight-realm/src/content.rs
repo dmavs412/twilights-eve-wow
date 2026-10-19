@@ -129,16 +129,8 @@ pub(crate) fn display_id(race: u8, gender: u8) -> u32 {
     }
 }
 
-/// A race's player `FactionTemplate.dbc` id (`ChrRaces.dbc`).
-pub(crate) fn faction_template(race: u8) -> u32 {
-    match race {
-        1 => 1,
-        2 => 2,
-        3 => 3,
-        4 => 4,
-        5 => 5,
-        6 => 6,
-        7 => 115,
-        _ => 116,
-    }
-}
+/// The `FactionTemplate.dbc` id every player reports, whatever its race: Orc (Horde). Twilight's
+/// Eve is co-op, so players of both factions are one side to each other, and the client reads a
+/// player's reaction to another from the two templates. The mob spawns are hostile to either
+/// side, so mobs react the same to every race.
+pub(crate) const PLAYER_FACTION_TEMPLATE: u32 = 2;

@@ -1449,10 +1449,7 @@ fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectField
             UNIT_FIELD_MAXPOWER1 + PowerKind::Energy.id() as u16,
             power_rules::ENERGY_MAX + stats.max_energy_bonus,
         ),
-        (
-            UNIT_FIELD_FACTIONTEMPLATE,
-            content::faction_template(c.race),
-        ),
+        (UNIT_FIELD_FACTIONTEMPLATE, content::PLAYER_FACTION_TEMPLATE),
         (
             UNIT_FIELD_BYTES_0,
             u32::from(c.race)
