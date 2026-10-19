@@ -11,7 +11,7 @@ use common::*;
 use twilight_realm::rules::notoriety::{
     blood_coin, coin_drop, heat_level, hunter_secs, marked_secs, marked_stat_pct,
 };
-use twilight_realm::{Host, CROSSROADS};
+use twilight_realm::{Host, SessionId, CROSSROADS};
 
 /// Notoriety that stays at Heat 4 through every drain here.
 const HOT: f32 = 5000.0;
@@ -73,9 +73,11 @@ fn outfit(blob: &str, level: u8, notoriety: f32, armed: bool) -> String {
         + &format!("\n[[items]]\nslot = {MAIN_HAND}\nentry = {MEGACHOPPER}\ncount = 1\n")
 }
 
-/// One player in a realm of their own, and what their client has been told.
+/// One player in a realm, and what their client has been told.
 struct Quarry {
     realm: Realm,
+    /// Their session: `None` for the realm's default one.
+    session: Option<SessionId>,
     me: u64,
     /// Where the player last stood.
     at: [f32; 3],
@@ -93,6 +95,7 @@ impl Quarry {
         realm.handle(RealmCommand::EnterWorld { guid: me });
         let mut q = Self {
             realm,
+            session: None,
             me,
             at: [CROSSROADS[0], CROSSROADS[1], FLOOR],
             events: Vec::new(),
@@ -101,6 +104,45 @@ impl Quarry {
         };
         q.run(0.1);
         q
+    }
+
+    /// `me` from `blob` joins `realm` in a session of their own, beside whoever is there.
+    fn join(mut realm: Realm, me: u64, blob: &str) -> Self {
+        realm.import_character(blob).unwrap();
+        let session = realm.connect();
+        realm.handle_as(session, RealmCommand::EnterWorld { guid: me });
+        let mut q = Self {
+            realm,
+            session: Some(session),
+            me,
+            at: [CROSSROADS[0], CROSSROADS[1], FLOOR],
+            events: Vec::new(),
+            clock: 0.0,
+            moves: Default::default(),
+        };
+        q.run(0.1);
+        q
+    }
+
+    fn send(&mut self, command: RealmCommand) {
+        match self.session {
+            Some(s) => self.realm.handle_as(s, command),
+            None => self.realm.handle(command),
+        }
+    }
+
+    /// This player's events since the last drain; anyone else's are dropped.
+    fn take(&mut self) -> Vec<SessionEvent> {
+        match self.session {
+            Some(me) => self
+                .realm
+                .drain_session_events()
+                .into_iter()
+                .filter(|(s, _)| *s == me)
+                .map(|(_, e)| e)
+                .collect(),
+            None => drain(&mut self.realm),
+        }
     }
 
     fn run(&mut self, secs: f32) {
@@ -112,7 +154,7 @@ impl Quarry {
         for _ in 0..(secs / dt).round().max(1.0) as u32 {
             self.realm.tick(dt, &Floor);
             self.clock += dt;
-            let got = drain(&mut self.realm);
+            let got = self.take();
             self.note(got);
         }
     }
@@ -121,8 +163,7 @@ impl Quarry {
     fn note(&mut self, events: Vec<SessionEvent>) {
         for e in &events {
             if let SessionEvent::Teleport { counter, .. } = e {
-                self.realm
-                    .handle(RealmCommand::TeleportAck { counter: *counter });
+                self.send(RealmCommand::TeleportAck { counter: *counter });
             }
             if let SessionEvent::MonsterMove {
                 guid,
@@ -139,8 +180,8 @@ impl Quarry {
     }
 
     fn cmd(&mut self, command: RealmCommand) -> Vec<SessionEvent> {
-        self.realm.handle(command);
-        let got = drain(&mut self.realm);
+        self.send(command);
+        let got = self.take();
         self.note(got.clone());
         got
     }
@@ -579,4 +620,44 @@ fn a_save_brings_the_victor_back_at_its_home_spot() {
         .iter()
         .any(|e| matches!(e, SessionEvent::GossipPoi(p) if (p.pos[0] - home[0]).abs() < 50.0));
     assert!(flagged, "a map flag on it");
+}
+
+#[test]
+fn another_players_kill_of_the_victor_ends_the_mark() {
+    let mut maker = realm();
+    assert_eq!(create(&mut maker, "Quarry", HUMAN, 0), CHAR_CREATE_SUCCESS);
+    assert_eq!(create(&mut maker, "Helper", HUMAN, 0), CHAR_CREATE_SUCCESS);
+    let guid = |maker: &mut Realm, name: &str| {
+        roster(maker)
+            .into_iter()
+            .find(|c| c.name == name)
+            .unwrap()
+            .guid
+    };
+    let (owner, helper) = (guid(&mut maker, "Quarry"), guid(&mut maker, "Helper"));
+    let owner_blob = outfit(&maker.export_character(owner).unwrap(), 1, HOT, false);
+    let helper_blob = outfit(&maker.export_character(helper).unwrap(), 60, 0.0, true);
+
+    let mut q = Quarry::enter(owner, &owner_blob);
+    q.die_to_a_hunter();
+    q.release();
+    // The owner stays near, so the victor stays in the world.
+    q.go(OUT);
+    assert!(q.marked_left().is_some());
+
+    let mut h = Quarry::join(q.realm, helper, &helper_blob);
+    h.go(OUT);
+    h.run(1.0);
+    let victor = *h.hunters().first().expect("the helper sees the victor");
+    // Now the helper keeps it in the world, the owner goes home, out of the kill's credit.
+    h.realm.handle(RealmCommand::DevTeleport {
+        x: CROSSROADS[0],
+        y: CROSSROADS[1],
+        facing: None,
+    });
+    h.run(1.0);
+    h.kill(victor);
+    h.run(1.0);
+    let saved = h.realm.export_character(owner).unwrap();
+    assert!(!saved.contains("[marked]"), "the owner's mark ended");
 }

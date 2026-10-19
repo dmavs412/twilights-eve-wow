@@ -712,6 +712,13 @@ impl Realm {
     /// fought or not (#148): its money split evenly with the remainder the killer's, and the rest
     /// each their own.
     fn share_kill(&mut self, map: shard::Place, kill: world::Kill) {
+        // A Marked player's victor fell, at anyone's hand: their mark ends, logged in or not.
+        if let Some(b) = kill.bounty.filter(|b| b.victor) {
+            if let Some(owner) = self.characters.get_mut(b.owner) {
+                owner.marked = None;
+                self.save(b.owner);
+            }
+        }
         let range = group::get().credit_range_yd;
         let killer = self.active;
         let characters = &self.characters;

@@ -1190,7 +1190,8 @@ impl InWorld {
         loot.items
             .extend(k.drops.iter().map(|&item| Some((item, 1))));
         // A Bounty Hunter pays everyone it credits in Blood Coin; its owner's Bounty Rank rises,
-        // or, if it was the victor they are Marked by, the mark lifts.
+        // or, if it was the victor they are Marked by, the mark lifts (the realm lifts it too when
+        // someone else kills it).
         if let Some(b) = k.bounty {
             let coin = crate::rules::notoriety::blood_coin();
             loot.items
