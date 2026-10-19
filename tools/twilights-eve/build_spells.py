@@ -192,6 +192,38 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
         raise BuildError(f"{len(bad)} ids not in the DBCs:\n" + "\n".join(bad))
 
 
+def check_unique_ids(rows: list[dict]) -> None:
+    """Fail when two talents or skills claim one client_spell_id or talent_id: the client keeps one
+    Spell.dbc / Talent.dbc row per id, so the patch would overwrite one with the other. An aura of
+    the same Calling may share its skill's or talent's spell id (it joins that row's override);
+    icons are shared through icon_id instead."""
+    spells: dict[str, list[tuple[str, str, str, str]]] = {}
+    talents: dict[str, list[tuple[str, str, str]]] = {}
+    bad = []
+    for line, row in enumerate(rows, start=2):
+        who = (row["calling"], row["key"])
+        where = f"line {line} ({row['calling']}/{row['key']})"
+        if row["kind"] in ("skill", "talent", "aura") and row["client_spell_id"]:
+            text = row["client_spell_id"].strip()
+            claims = spells.setdefault(text, [])
+            for other in claims:
+                if other[:2] != who and not (other[0] == who[0] and "aura" in (other[2], row["kind"])):
+                    bad.append(f"{where}: client_spell_id {text} is already claimed by {other[3]}")
+                    break
+            claims.append((*who, row["kind"], where))
+        if row["kind"] == "talent" and row["talent_id"]:
+            text = row["talent_id"].strip()
+            claims = talents.setdefault(text, [])
+            for other in claims:
+                if other[:2] != who:
+                    bad.append(f"{where}: talent_id {text} is already claimed by {other[2]}")
+                    break
+            claims.append((*who, where))
+    if bad:
+        raise BuildError(f"{len(bad)} ids claimed by more than one row; give the later row its own id "
+                         "and keep its icon through icon_id:\n" + "\n".join(bad))
+
+
 def read_spell_flags(data_dir: str | None, flags_path: str | None, rows: list[dict]) -> dict | None:
     """SpellFamilyFlags of each stock skill's client_spell_id, from a JSON file or Spell.dbc; None
     when neither is given."""
@@ -1122,6 +1154,7 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
         raise BuildError("column client_on_next_swing is gone; write cast_kind=next_swing in the cast_kind column")
     if rows and "requires_out_of_combat" in rows[0]:
         raise BuildError("column requires_out_of_combat is gone; write `requires: combat=out` in the requires column")
+    check_unique_ids(rows)
     masks = skill_masks(rows, spell_flags)
     # Each cooldown_category name gets a number in order of first appearance; every row sharing a
     # name must carry the same category_cooldown_ms.

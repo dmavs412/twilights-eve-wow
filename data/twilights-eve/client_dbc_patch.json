@@ -147,7 +147,7 @@
    }
   },
   {
-   "spell_id": 78,
+   "spell_id": 284,
    "calling": "vanguard",
    "key": "righteous_smash",
    "rank": 1,
@@ -190,7 +190,7 @@
    }
   },
   {
-   "spell_id": 100,
+   "spell_id": 1738,
    "calling": "vanguard",
    "key": "bulwark_charge",
    "rank": 1,
@@ -3660,7 +3660,7 @@
    }
   },
   {
-   "spell_id": 11078,
+   "spell_id": 4835,
    "calling": "basic_warrior",
    "key": "initiates_spark",
    "rank": 1,
@@ -3697,7 +3697,7 @@
    ]
   },
   {
-   "spell_id": 11080,
+   "spell_id": 4836,
    "calling": "basic_warrior",
    "key": "initiates_spark",
    "rank": 2,
@@ -3734,7 +3734,7 @@
    ]
   },
   {
-   "spell_id": 12342,
+   "spell_id": 4837,
    "calling": "basic_warrior",
    "key": "initiates_spark",
    "rank": 3,
@@ -9049,11 +9049,11 @@
    "tab": "Recruit",
    "row": 1,
    "column": 2,
-   "talent_id": 27,
+   "talent_id": 31,
    "rank_spell_ids": [
-    11078,
-    11080,
-    12342
+    4835,
+    4836,
+    4837
    ]
   },
   {

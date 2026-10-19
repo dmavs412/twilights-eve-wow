@@ -8,7 +8,7 @@ use common::fight::*;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
-const INITIATES_SPARK: u32 = 27;
+const INITIATES_SPARK: u32 = 31;
 const CHARGE: u32 = 100;
 const FIRE_BLAST: u32 = 2136;
 

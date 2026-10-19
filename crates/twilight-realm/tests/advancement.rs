@@ -147,7 +147,7 @@ const SORT_WARRIOR: i32 = -81;
 
 /// Vanguard's skills (the master CSV): Righteous Smash and Bulwark Charge on Basic Warrior's spell
 /// ids, Zealous Cleave, Shield of the Penitent and Seal of Iron.
-const TIER_1_SKILLS: [u32; 5] = [78, 100, 845, 25899, 20165];
+const TIER_1_SKILLS: [u32; 5] = [284, 1738, 845, 25899, 20165];
 /// Zealot's: Seal of Command, Seal of the Crusader, Judgement, Hammer of Justice, Mortal Strike and
 /// Charge.
 const ZEALOT_SKILLS: [u32; 6] = [20375, 20305, 20271, 10308, 12294, 6178];

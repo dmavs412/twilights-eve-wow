@@ -278,7 +278,7 @@ fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
     };
     assert_eq!(
         (aura_spell_id, stacks, duration_ms, max_stacks, stack_rule),
-        (78, 1, 15000, 5, StackRule::Refresh)
+        (284, 1, 15000, 5, StackRule::Refresh)
     );
 
     let cleave = vanguard
@@ -290,7 +290,7 @@ fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
         Effect::ConsumeAuraStacks { aura_spell_id, .. } => Some(*aura_spell_id),
         _ => None,
     });
-    assert_eq!(consumed, Some(78));
+    assert_eq!(consumed, Some(284));
 }
 
 #[test]

@@ -131,7 +131,7 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "realm_cost": "10"}], "below client_cost")
 
     def test_a_callings_rows_must_agree_on_class(self):
-        self.assert_fails([STRIKE, {**STRIKE, "key": "stab", "class": "4"}], "disagree on class")
+        self.assert_fails([STRIKE, {**STRIKE, "key": "stab", "class": "4", "client_spell_id": "79"}], "disagree on class")
 
     def test_a_missing_or_unknown_class_fails(self):
         self.assert_fails([{**STRIKE, "class": ""}], "class is required")
@@ -439,6 +439,20 @@ class BuildSpells(unittest.TestCase):
     def test_duplicate_realm_spell_id_fails(self):
         self.assert_fails([self.hidden(), self.hidden(key="bleed2")], "realm_spell_id 1000001 is already used")
 
+    def test_two_skills_on_one_client_spell_id_fail(self):
+        self.assert_fails([STRIKE, {**STRIKE, "key": "smash", "name": "Smash"}], "client_spell_id 78 is already claimed")
+
+    def test_two_callings_on_one_client_spell_id_fail(self):
+        self.assert_fails([STRIKE, {**STRIKE, "calling": "zealot"}], "client_spell_id 78 is already claimed")
+
+    def test_an_aura_may_share_its_callings_client_spell_id(self):
+        done, _ = self.run_build([STRIKE, {**AURA, "client_spell_id": "78"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+    def test_two_talents_on_one_talent_id_fail(self):
+        rows = [talent("a", 1, 0, 0, talent_id="27"), talent("b", 1, 0, 1, talent_id="27")]
+        self.assert_fails([CALLING, TAB, *rows], "talent_id 27 is already claimed")
+
     def test_realm_spell_id_on_a_visible_row_fails(self):
         self.assert_fails([{**STRIKE, "realm_spell_id": "1000001"}], "realm_spell_id is set on a row that is visible")
 
@@ -705,10 +719,11 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "requires_weapon": "shield|dagger"}], "requires_weapon: shield")
 
     def test_cooldown_category_numbers_names_and_shares_the_cooldown(self):
-        other = {**STRIKE, "key": "other", "cooldown_category": "poison", "category_cooldown_ms": "6000"}
+        other = {**STRIKE, "key": "other", "client_spell_id": "79", "cooldown_category": "poison",
+                 "category_cooldown_ms": "6000"}
         done, data = self.run_build([{**STRIKE, "cooldown_category": "poison", "category_cooldown_ms": "6000"},
-                                     other, {**STRIKE, "key": "third", "cooldown_category": "blind",
-                                             "category_cooldown_ms": "9000"}])
+                                     other, {**STRIKE, "key": "third", "client_spell_id": "80",
+                                             "cooldown_category": "blind", "category_cooldown_ms": "9000"}])
         self.assertEqual(done.returncode, 0, done.stderr)
         first, second, third = (s["fields"] for s in self.patch["spells"])
         self.assertEqual(first["category"], second["category"])
@@ -722,7 +737,8 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "category_cooldown_ms": "6000"}], "vanguard/strike) cooldown_category")
         self.assert_fails([{**STRIKE, "cooldown_category": "p", "category_cooldown_ms": "0"}], "category_cooldown_ms")
         self.assert_fails([{**STRIKE, "cooldown_category": "p", "category_cooldown_ms": "6000"},
-                           {**STRIKE, "key": "b", "cooldown_category": "p", "category_cooldown_ms": "7000"}],
+                           {**STRIKE, "key": "b", "client_spell_id": "79", "cooldown_category": "p",
+                            "category_cooldown_ms": "7000"}],
                           "vanguard/b) category_cooldown_ms")
 
     def test_school_and_prevention_defaults(self):

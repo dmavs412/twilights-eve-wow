@@ -12,8 +12,8 @@ use twilight_realm::DevMultipliers;
 // The Recruit tree's borrowed `Talent.dbc` ids and their rank spells (`master.csv`).
 const FIELD_MEDIC: u32 = 140;
 const FIELD_MEDIC_RANKS: [u32; 5] = [12299, 12761, 12762, 12763, 12764];
-const INITIATES_SPARK: u32 = 27;
-const INITIATES_SPARK_RANKS: [u32; 3] = [11078, 11080, 12342];
+const INITIATES_SPARK: u32 = 31;
+const INITIATES_SPARK_RANKS: [u32; 3] = [4835, 4836, 4837];
 const SAVAGE_STRIKES: u32 = 272;
 const SAVAGE_STRIKES_RANKS: [u32; 2] = [14144, 14148];
 const VANGUARDS_RESOLVE: u32 = 382;
