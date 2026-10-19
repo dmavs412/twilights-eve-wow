@@ -167,8 +167,6 @@ impl Player {
 /// The session of the character that is in the world.
 pub(crate) struct InWorld {
     pub(crate) guid: u64,
-    /// Seconds left before a logout away from an inn (#146); `None` with no logout pending.
-    pub(crate) logout_in: Option<f32>,
     /// Seconds since the last autosave.
     pub(crate) since_save: f32,
     map: u32,
@@ -226,11 +224,6 @@ pub(crate) struct InWorld {
 }
 
 impl InWorld {
-    /// Whether the player is fighting, as its `UNIT_FLAG_IN_COMBAT` shows.
-    pub(crate) fn in_combat(&self) -> bool {
-        self.player.in_combat
-    }
-
     /// Logs `c` in: what vmangos sends from `CMSG_PLAYER_LOGIN` to the player's own create.
     pub(crate) fn enter(
         c: &Char,
@@ -305,7 +298,6 @@ impl InWorld {
             wear: Rng::new(c.guid ^ 0xD0_4AB1_1170),
             respawn: death::Respawn::home(c.map),
             meal: None,
-            logout_in: None,
             transfer: false,
             resting: crate::rest::in_inn(c.map, c.position),
             phase: Default::default(),

@@ -67,6 +67,9 @@ impl LogoutState {
             return;
         }
         if instant {
+            // Answered and out: the latch must not outlive the request, or the next press is
+            // dropped (#159) should the completion never reach this resource.
+            self.pending = false;
             return;
         }
         self.signals.push(if self.quitting {
@@ -251,9 +254,16 @@ mod tests {
 
     #[test]
     fn the_response_decides_which_dialog_if_any() {
-        let mut s = LogoutState::default();
+        let mut s = LogoutState {
+            pending: true,
+            ..Default::default()
+        };
         s.apply_response(0, true);
         assert!(s.signals.is_empty(), "an instant logout shows no dialog");
+        assert!(
+            !s.pending,
+            "an instant logout is answered, so the next press goes out"
+        );
 
         s.apply_response(0, false);
         assert_eq!(s.signals, vec![LogoutSignal::Camping]);

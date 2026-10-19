@@ -195,7 +195,7 @@ struct Conn {
 
 /// The realm thread: applies commands as they arrive and ticks at [`TICK`].
 fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) {
-    let mut realm = Realm::with_seed(seed()).with_camp_logout();
+    let mut realm = Realm::with_seed(seed());
     load_saves(&mut realm, data_dir);
     let mut accounts = Accounts::load(data_dir);
     let mut conns: HashMap<u64, Conn> = HashMap::new();
