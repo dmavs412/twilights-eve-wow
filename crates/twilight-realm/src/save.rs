@@ -104,6 +104,9 @@ struct Save {
     left_at: Option<u64>,
     #[serde(default)]
     left_in_inn: bool,
+    /// Notoriety (#176). Added within version 2: a save without it has none.
+    #[serde(default, skip_serializing_if = "is_nothing")]
+    notoriety: f32,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -206,6 +209,10 @@ fn is_zero(v: &u32) -> bool {
     *v == 0
 }
 
+fn is_nothing(v: &f32) -> bool {
+    *v == 0.0
+}
+
 pub(crate) fn export(c: &Char) -> String {
     let save = Save {
         version: SAVE_VERSION,
@@ -237,6 +244,7 @@ pub(crate) fn export(c: &Char) -> String {
         rested: (c.rest.pool > 0.0).then_some(c.rest.pool),
         left_at: c.rest.left.map(|l| (l.at * 1000.0).round() as u64),
         left_in_inn: c.rest.left.is_some_and(|l| l.in_inn),
+        notoriety: c.notoriety,
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -290,6 +298,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
                 in_inn: s.left_in_inn,
             }),
         },
+        notoriety: s.notoriety.max(0.0),
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);

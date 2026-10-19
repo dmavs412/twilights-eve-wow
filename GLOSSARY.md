@@ -141,3 +141,26 @@ _Avoid_: main quest, campaign quest
 **Quest Starter**:
 An item that begins a quest when used, as the Smoldering Twilight Idol begins The Idol in the Deep. It drops only until its quest is taken or done, only one can be carried, and it stays in the bags until the quest is handed in.
 _Avoid_: quest item (any item a quest asks for)
+
+**Notoriety**:
+How much the underworld has noticed a character. Everything the character achieves raises it: kills, quest hand-ins, Dungeon clears and rare drops. It drains slowly while the character rests in a Hub, falls to zero on any death, and is halved by Advancement. Every character has their own.
+_Avoid_: heat (the meter), infamy, wanted level
+
+**Heat Level**:
+One of a few steps of Notoriety. Each sets a multiplier on all XP, applied on top of the Tier XP Rate, and how often a Bounty Hunter comes. The character sees their Heat Level as an aura.
+_Avoid_: tier (Advancement's), notoriety tier
+
+**Bounty Hunter**:
+A hard elite sent after a character once their Heat Level is above zero, one at a time, at the character's own level. It tracks its target across the open world and gives up only when the target enters a Hub or a Phased Dungeon. Each comes from one of a few archetypes. It is not a bounty quest, and not WoW's Hunter class.
+_Avoid_: hunter, stalker, assassin
+
+**Bounty Rank**:
+How many Bounty Hunters a character has killed since their last death. Each rank makes the next Bounty Hunter much stronger and pays more Blood Coin. Any death sets it back to zero.
+
+**Blood Coin**:
+The currency only Bounty Hunters drop, more at a higher Bounty Rank. It is never lost on death and buys consumables, cosmetics and titles from a single vendor. It is not a Token.
+_Avoid_: token, mark, spoils
+
+**Marked**:
+The state of a character a Bounty Hunter has killed: their stats are 10% lower until they kill that Bounty Hunter or two hours of play pass. The Bounty Hunter stays in that zone, roaming near where it won and shown on the map, and no other Bounty Hunter comes meanwhile. Being killed by it again does not deepen the loss. Killing it pays the Blood Coin of the rank it had, but does not raise the character's Bounty Rank.
+_Avoid_: debuff, death penalty, nemesis

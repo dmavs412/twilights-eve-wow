@@ -33,6 +33,7 @@ mod death;
 mod discovery;
 mod dungeon;
 mod food;
+mod notoriety;
 mod phase;
 pub(crate) use phase::creatures;
 mod procs;
@@ -221,6 +222,8 @@ pub(crate) struct InWorld {
     portals: Vec<u32>,
     /// What each creature casts.
     pub(crate) casters: crate::creature_spells::Casters,
+    /// The Heat Level whose aura the player wears; 0 for none.
+    heat_shown: u8,
 }
 
 impl InWorld {
@@ -303,6 +306,7 @@ impl InWorld {
             phase: Default::default(),
             portals: Vec::new(),
             casters: Default::default(),
+            heat_shown: 0,
         };
         events.push(w.player_create(c));
         w
@@ -487,6 +491,7 @@ impl InWorld {
             self.discover(host, c, events, &mut ticked);
         }
         self.rest(dt, c, events);
+        self.notoriety_tick(dt, c, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting
@@ -1116,6 +1121,15 @@ impl InWorld {
         // The quest items the player's quests still want, after the corpse's own drop.
         loot.items
             .extend(crate::quests::drops(c, k.entry, rng).into_iter().map(Some));
+        let gain = crate::rules::notoriety::kill_gain(c.level, k.level, k.elite, k.boss)
+            + loot
+                .items
+                .iter()
+                .flatten()
+                .filter_map(|&(item, _)| crate::items::template(item))
+                .map(|t| crate::rules::notoriety::drop_gain(t.quality))
+                .sum::<f32>();
+        self.notorious(c, gain);
         let lootable = self.looting.drop(k.mob, loot);
         events.push(values(k.mob, &[looting::lootable_pair(lootable)]));
         let base = xp::party_kill_xp(&credit.levels, c.level, k.level, k.elite);
@@ -1152,13 +1166,17 @@ impl InWorld {
         gained
     }
 
-    /// What an award of `base` XP pays `c`: times the Tier XP Rate, then the dev multiplier;
-    /// nothing at the Tier Cap.
+    /// What an award of `base` XP pays `c`: times the Tier XP Rate, then the Heat Level's
+    /// multiplier, then the dev multiplier; nothing at the Tier Cap.
     fn scaled_xp(&self, c: &Char, base: u32) -> u32 {
         if at_tier_cap(c) {
             0
         } else {
-            self.dev.xp(at_tier_rate(c, base))
+            let heat = crate::rules::notoriety::heat_level(c.notoriety);
+            self.dev.xp(crate::rules::notoriety::with_heat(
+                at_tier_rate(c, base),
+                heat,
+            ))
         }
     }
 

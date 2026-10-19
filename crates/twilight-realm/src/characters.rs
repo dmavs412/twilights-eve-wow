@@ -62,6 +62,8 @@ pub(crate) struct Char {
     pub(crate) bind: crate::inn::Bind,
     /// Rested XP, and when they last left.
     pub(crate) rest: crate::rest::Rest,
+    /// **Notoriety** (`GLOSSARY.md`): how much the underworld has noticed them.
+    pub(crate) notoriety: f32,
 }
 
 #[derive(Default)]
@@ -133,6 +135,7 @@ impl Characters {
             discovered: Vec::new(),
             bind,
             rest: crate::rest::Rest::default(),
+            notoriety: 0.0,
         });
         CHAR_CREATE_SUCCESS
     }

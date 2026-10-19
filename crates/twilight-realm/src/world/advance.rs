@@ -29,6 +29,7 @@ impl InWorld {
         });
         c.level = 1;
         c.xp = 0;
+        c.notoriety = crate::rules::notoriety::advanced(c.notoriety);
         // The respec's price starts over with the new tree.
         c.talent_wipes = 0;
         c.action_bar = None;

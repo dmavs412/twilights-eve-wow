@@ -1010,3 +1010,28 @@ fn the_select_screen_names_each_characters_calling() {
     assert_eq!(realm.calling_name(me), Some("Vanguard"));
     assert_eq!(realm.calling_name(me + 1), None, "nobody");
 }
+
+// ── Notoriety ───────────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn advancement_halves_notoriety() {
+    let (guid, blob) = save_with_quests(10, &[], 0, &[]);
+    let blob = blob.replacen("xp = 0\n", "xp = 0\nnotoriety = 1001.0\n", 1);
+    let mut realm = Realm::with_seed(SEED);
+    realm.import_character(&blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    let events = drain(&mut realm);
+    advance(&mut realm, trainer(&events));
+    let saved = realm.export_character(guid).unwrap();
+    let left: f32 = saved
+        .lines()
+        .find_map(|l| l.strip_prefix("notoriety = "))
+        .expect("some Notoriety left")
+        .parse()
+        .unwrap();
+    // Half of what the Hub's drain left of 1001, rounded down, plus the hand-in's own gain.
+    let quest = twilight_realm::rules::notoriety::quest_gain();
+    assert!((490.0..=500.0).contains(&(left - quest)), "{left}");
+    assert_eq!((left - quest).fract(), 0.0, "rounded down: {left}");
+}

@@ -461,6 +461,11 @@ enum AuraKind {
         max: u32,
         rule: StackRule,
     },
+    /// Does nothing: it shows a state the realm keeps elsewhere (a Heat Level, Marked), a buff
+    /// when `helpful`, a debuff otherwise.
+    Marker {
+        helpful: bool,
+    },
 }
 
 /// A defensive number an aura raises by a percent.
@@ -539,6 +544,7 @@ impl AuraKind {
                 | AuraKind::SkillStacks { .. }
                 | AuraKind::Stealth { .. }
                 | AuraKind::Stacks { .. }
+                | AuraKind::Marker { helpful: true }
         )
     }
 
@@ -4660,6 +4666,36 @@ impl InWorld {
     }
 
     /// `unit` died: its auras go with it.
+    /// Puts a [`AuraKind::Marker`] of `spell_id` on the player, held until taken off.
+    pub(super) fn show_marker(
+        &mut self,
+        spell_id: u32,
+        helpful: bool,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let aura = Aura {
+            unit: self.guid,
+            spell_id,
+            slot: 0,
+            level: 0,
+            left: UNTIL_BROKEN_SECS,
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Marker { helpful },
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
+    }
+
+    /// Takes the player's [`AuraKind::Marker`] of `spell_id` off.
+    pub(super) fn hide_marker(&mut self, spell_id: u32, events: &mut Vec<SessionEvent>) {
+        let me = self.guid;
+        self.skills.remove_where(
+            |a| a.unit == me && a.spell_id == spell_id && matches!(a.kind, AuraKind::Marker { .. }),
+            events,
+        );
+    }
+
     pub(super) fn auras_die_with(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
         let gone = self.skills.remove_where(|a| a.unit == unit, events);
         self.faded(&gone, events);

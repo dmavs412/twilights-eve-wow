@@ -1,0 +1,46 @@
+# Notoriety (spec #175, `GLOSSARY.md`): doing well makes the world dangerous. Hand-written, not
+# from master.csv, and no build script. Every number is a placeholder Davis tunes in play.
+
+# What raises it. A kill is worth `kill` at the character's own level, `kill_per_level` more for
+# each level the mob stands above them (less below), never under `kill_min`; a gray mob is worth
+# nothing. An elite multiplies it by `elite`, a Dungeon boss by `boss`, and a boss kill (the
+# Dungeon's clear) adds `dungeon_clear` on top. A quest hand-in adds `quest`, and each item of
+# rare quality (blue) or better in a corpse's loot adds `rare_drop`.
+[gain]
+kill = 1.0
+kill_per_level = 0.2
+kill_min = 0.2
+elite = 3.0
+boss = 5.0
+dungeon_clear = 50.0
+quest = 10.0
+rare_drop = 15.0
+
+# It falls `per_second` while the character stands in the Hub out of combat, never below 0. The
+# Hub is everything within `hub_radius` yards (flat) of the Crossroads.
+[drain]
+per_second = 0.5
+hub_radius = 100.0
+
+# The Heat Levels, lowest first: from `at` Notoriety, every XP award is multiplied by `xp` on top
+# of the Tier XP Rate, and the character wears `aura`, a stock 1.12 spell borrowed for its icon and
+# tooltip (Hunter's Mark, ranks 1-4: a mark, one more rank for each level).
+[[heat]]
+at = 100
+xp = 1.1
+aura = 1130
+
+[[heat]]
+at = 300
+xp = 1.25
+aura = 14323
+
+[[heat]]
+at = 600
+xp = 1.5
+aura = 14324
+
+[[heat]]
+at = 1000
+xp = 2.0
+aura = 14325

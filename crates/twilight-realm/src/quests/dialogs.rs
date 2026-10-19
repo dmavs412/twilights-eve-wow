@@ -149,6 +149,7 @@ impl Realm {
                         && reward(c, q, chosen, events)
                     {
                         let gained = w.reward_xp(c, q.reward_xp(c.level), events);
+                        w.notorious(c, crate::rules::notoriety::quest_gain());
                         let mut items = fixed_rewards(q);
                         if let Some(item) = chosen {
                             items.push((item, 1));
