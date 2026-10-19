@@ -550,6 +550,9 @@ pub(crate) struct Mob {
     pub(crate) hunts: Option<u64>,
     /// It gives up a chase that strays past its leash (`rules::leash`).
     pub(crate) leashes: bool,
+    /// Another session's player, stood in for (a duel opponent): it never acts and never dies,
+    /// its health stopping at 1, and what lands on it is delivered to that session.
+    pub(crate) remote: bool,
 }
 
 /// The spawn index of a mob that no spawn placed.
@@ -605,6 +608,7 @@ impl Mob {
             threat: Default::default(),
             hunts: None,
             leashes: true,
+            remote: false,
         })
     }
 
@@ -648,7 +652,44 @@ impl Mob {
             threat: Default::default(),
             hunts: Some(hunts),
             leashes: false,
+            remote: false,
         }
+    }
+
+    /// The stand-in for another session's player `guid` in a fight with `foe`: their level,
+    /// health and armour where they stand. It is in the fight from the start.
+    pub(crate) fn stand_in(
+        guid: u64,
+        stats: MobStats,
+        health: u32,
+        position: [f32; 3],
+        orientation: f32,
+        foe: u64,
+    ) -> Self {
+        static TEMPLATE: OnceLock<Template> = OnceLock::new();
+        let template = TEMPLATE.get_or_init(|| {
+            let mut t = Template::hunter(
+                0,
+                String::new(),
+                String::new(),
+                0,
+                0,
+                UnitClass::Warrior,
+                2000,
+                7.0,
+                Vec::new(),
+                Vec::new(),
+            );
+            t.rank = 0;
+            t
+        });
+        let mut mob = Self::hunter(guid, template, stats, position, orientation, foe);
+        mob.hunts = None;
+        mob.remote = true;
+        mob.health = health.max(1);
+        mob.state = State::Engaged;
+        mob.target = foe;
+        mob
     }
 
     /// The spawn that placed it; `None` for one no spawn placed.

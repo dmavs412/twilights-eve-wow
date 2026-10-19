@@ -255,6 +255,10 @@ impl Aura {
     pub(crate) fn unit(&self) -> u64 {
         self.unit
     }
+
+    pub(crate) fn spell_id(&self) -> u32 {
+        self.spell_id
+    }
 }
 
 impl Skills {
@@ -2406,6 +2410,51 @@ impl InWorld {
     }
 
     /// The share of the player's health they have left.
+    /// This player as their stand-in in a foe's session shows them: level, health and armour.
+    pub(crate) fn stand_in_stats(&self) -> (crate::rules::stats::MobStats, u32) {
+        let s = buffed(&self.player.stats, &self.skills);
+        let stats = crate::rules::stats::MobStats {
+            level: self.player.stats.level,
+            max_health: s.max_health,
+            armor: s.armor,
+            min_damage: 0.0,
+            max_damage: 0.0,
+        };
+        (stats, self.player.health)
+    }
+
+    /// The fight with the player `foe` is over: this player stops swinging at them and casting
+    /// at them, the auras of `spells` that `foe` put on this player come off, and `foe`'s
+    /// stand-in goes.
+    pub(crate) fn part_from(&mut self, foe: u64, spells: &[u32], events: &mut Vec<SessionEvent>) {
+        if self.player.attacking == Some(foe) {
+            self.player.attacking = None;
+            events.push(SessionEvent::AttackStop {
+                attacker: self.guid,
+                victim: foe,
+            });
+        }
+        if self
+            .skills
+            .casting
+            .is_some_and(|c| c.skill == Some(Some(foe)))
+        {
+            self.interrupt_cast(events);
+        }
+        let me = self.guid;
+        let gone = self
+            .skills
+            .remove_where(|a| a.unit == me && spells.contains(&a.spell_id), events);
+        self.faded(&gone, events);
+        if !gone.is_empty() {
+            events.push(values(me, &self.sheet_now()));
+            self.update_speed(me, events);
+        }
+        self.mobs.retain(|m| !(m.remote && m.guid == foe));
+        self.foe = None;
+        self.beaten_by = None;
+    }
+
     pub(crate) fn health_share(&self) -> f32 {
         let max = buffed(&self.player.stats, &self.skills).max_health.max(1);
         self.player.health as f32 / max as f32
@@ -4223,8 +4272,14 @@ impl InWorld {
             return;
         };
         let mob = &mut self.mobs[i];
-        mob.health = mob.health.saturating_sub(damage);
-        events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+        super::wound(
+            mob,
+            damage,
+            self.guid,
+            crate::rules::school::School::Physical,
+            &mut self.harms,
+            events,
+        );
         if mob.state == State::Idle {
             super::engage(mob, self.guid, events);
         }
@@ -4484,7 +4539,7 @@ impl InWorld {
                         } else {
                             per_tick
                         };
-                        self.player_takes(per_tick, school, events);
+                        self.player_takes_from(caster, per_tick, school, events);
                     } else {
                         self.hurt(a.unit, per_tick, c, rng, events, ticked);
                         // The caster's own damage over time ticked: its leech, and its procs

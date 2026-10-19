@@ -595,8 +595,14 @@ impl Realm {
         self.lend();
     }
 
-    /// Lends the served session its shard's mobs, when its player stands in the open world.
+    /// Lends the served session its shard's mobs, when its player stands in the open world, and
+    /// seats its duel foe among them.
     fn lend(&mut self) {
+        self.lend_shard();
+        self.seat_foes();
+    }
+
+    fn lend_shard(&mut self) {
         if self.lent_from.is_some() {
             return;
         }
@@ -619,6 +625,7 @@ impl Realm {
     /// Takes the lent mobs back into their shard, with the deaths the served session saw, and
     /// shows the other players there what it did to the units they see.
     fn give_back(&mut self) {
+        self.unseat_foes();
         let Some(map) = self.lent_from.take() else {
             // A player who came out into the open world left their own mobs behind.
             if let Some(w) = &mut self.world {
@@ -684,8 +691,12 @@ impl Realm {
         let Some(w) = &mut self.world else {
             return;
         };
+        let from = w.guid;
         for help in w.take_helps() {
             let to = help.to();
+            if let world::Help::Aura { aura, .. } = &help {
+                self.duels.note_worn(from, to, aura.spell_id());
+            }
             let target = self
                 .parked
                 .values_mut()

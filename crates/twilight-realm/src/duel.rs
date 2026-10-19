@@ -12,6 +12,10 @@ use std::sync::OnceLock;
 use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
+use crate::content::PLAYER_FACTION_TEMPLATE;
+use crate::fields::{values, UNIT_FIELD_FACTIONTEMPLATE};
+use crate::mobs::Mob;
+use crate::world::InWorld;
 use crate::{Realm, RealmCommand, SessionId};
 
 /// `HIGHGUID_GAMEOBJECT`, in the duel flag's guid's top 16 bits.
@@ -34,6 +38,7 @@ pub(crate) struct Content {
     pub(crate) challenge_spell: u32,
     pub(crate) countdown_secs: u32,
     pub(crate) request_range_yd: f32,
+    pub(crate) hostile_faction: u32,
 }
 
 pub(crate) fn content() -> &'static Content {
@@ -55,6 +60,9 @@ pub(crate) struct Duel {
     pub(crate) players: [u64; 2],
     pub(crate) arbiter: u64,
     pub(crate) state: State,
+    /// The spells of the auras each player wears from the other, by wearer: what comes off when
+    /// it ends.
+    worn: [Vec<u32>; 2],
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -86,6 +94,27 @@ impl Duels {
     /// The duel `guid` is in, by index.
     fn of(&self, guid: u64) -> Option<usize> {
         self.duels.iter().position(|d| d.side_of(guid).is_some())
+    }
+
+    /// The player `guid` fights in a duel, once the countdown is over.
+    pub(crate) fn foe_of(&self, guid: u64) -> Option<u64> {
+        let duel = &self.duels[self.of(guid)?];
+        (duel.state == State::Fighting).then(|| duel.players.into_iter().find(|&p| p != guid))?
+    }
+
+    /// `from` put an aura of `spell` on `to`: when they are fighting each other, it comes off at
+    /// the end.
+    pub(crate) fn note_worn(&mut self, from: u64, to: u64, spell: u32) {
+        if self.foe_of(to) != Some(from) {
+            return;
+        }
+        let Some(i) = self.of(to) else {
+            return;
+        };
+        let duel = &mut self.duels[i];
+        if let Some(side) = duel.side_of(to) {
+            duel.worn[side].push(spell);
+        }
     }
 }
 
@@ -158,6 +187,7 @@ impl Realm {
             players: [me, target],
             arbiter,
             state: State::Requested,
+            worn: Default::default(),
         });
         let requested = SessionEvent::DuelRequested {
             arbiter,
@@ -235,9 +265,85 @@ impl Realm {
             for session in seen {
                 self.send_to(session, line.clone());
             }
+            // Vanilla's cleanup: each stops fighting the other, the auras each put on the other
+            // come off, and each sees the other friendly again. Health, power and cooldowns stay.
+            for (side, &p) in duel.players.iter().enumerate() {
+                let foe = duel.players[1 - side];
+                let worn = &duel.worn[side];
+                self.on_world(p, |w, events| {
+                    w.part_from(foe, worn, events);
+                    events.push(values(
+                        foe,
+                        &[(UNIT_FIELD_FACTIONTEMPLATE, PLAYER_FACTION_TEMPLATE)],
+                    ));
+                });
+            }
         }
         for p in duel.players {
             self.send_to_player(p, SessionEvent::DuelComplete { started });
+        }
+    }
+
+    /// Runs `f` on the world of the player `guid`, served or parked, with that session's events.
+    fn on_world(&mut self, guid: u64, f: impl FnOnce(&mut InWorld, &mut Vec<SessionEvent>)) {
+        if let Some(w) = self.world.as_mut().filter(|w| w.guid == guid) {
+            return f(w, &mut self.events);
+        }
+        for s in self.parked.values_mut() {
+            if let Some(w) = s.world.as_mut().filter(|w| w.guid == guid) {
+                return f(w, &mut s.events);
+            }
+        }
+    }
+
+    /// The served player fights a duel: their foe stands in their world, as they stand now, so
+    /// every blow and spell lands on them as on a mob (`Mob::remote`).
+    pub(crate) fn seat_foes(&mut self) {
+        let Some(me) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let foe = self.duels.foe_of(me);
+        let stand_in = foe.and_then(|foe| {
+            let w = self
+                .parked
+                .values()
+                .filter_map(|s| s.world.as_ref())
+                .find(|w| w.guid == foe)?;
+            let c = self.characters.get(foe)?;
+            let (stats, health) = w.stand_in_stats();
+            Some(Mob::stand_in(
+                foe,
+                stats,
+                health,
+                c.position,
+                c.orientation,
+                me,
+            ))
+        });
+        let Some(w) = self.world.as_mut() else {
+            return;
+        };
+        w.mobs.retain(|m| !m.remote);
+        w.foe = foe;
+        w.mobs.extend(stand_in);
+    }
+
+    /// The served session is parked or hands its mobs back: its foe's stand-in goes, and the
+    /// damage dealt to it goes to the foe's session, to take on its next tick.
+    pub(crate) fn unseat_foes(&mut self) {
+        let Some(w) = self.world.as_mut() else {
+            return;
+        };
+        w.mobs.retain(|m| !m.remote);
+        for harm in std::mem::take(&mut w.harms) {
+            let target = self
+                .parked
+                .values_mut()
+                .filter_map(|s| s.world.as_mut())
+                .find(|w| w.guid == harm.to);
+            if let Some(t) = target {
+                t.harmed.push(harm);
+            }
         }
     }
 
@@ -245,8 +351,24 @@ impl Realm {
     /// stray out of range, and a duel ends when one of its players is gone: called off before
     /// the fight, lost by the one who left during it.
     pub(crate) fn tick_duels(&mut self, dt: f32) {
+        // A foe's blow left a player at 1 health: the foe wins.
+        let worlds = std::iter::once(&mut self.world)
+            .chain(self.parked.values_mut().map(|s| &mut s.world))
+            .flatten();
+        let beaten: Vec<(u64, u64)> = worlds
+            .filter_map(|w| w.beaten_by.take().map(|by| (w.guid, by)))
+            .collect();
+        for (loser, winner) in beaten {
+            if self.duels.foe_of(loser) == Some(winner) {
+                if let Some(i) = self.duels.of(loser) {
+                    self.end_duel(i, Some(winner), false);
+                }
+            }
+        }
+
         let all = self.duellists();
         let mut ended: Vec<(usize, Option<u64>)> = Vec::new();
+        let mut fights: Vec<[u64; 2]> = Vec::new();
         for (i, duel) in self.duels.duels.iter_mut().enumerate() {
             let [a, b] = duel.players.map(|g| all.iter().find(|d| d.guid == g));
             let (Some(a), Some(b)) = (a, b) else {
@@ -256,9 +378,20 @@ impl Realm {
             };
             match duel.state {
                 State::Requested if !in_range(a, b) => ended.push((i, None)),
-                State::Countdown(left) if left <= dt => duel.state = State::Fighting,
+                State::Countdown(left) if left <= dt => {
+                    duel.state = State::Fighting;
+                    fights.push(duel.players);
+                }
                 State::Countdown(left) => duel.state = State::Countdown(left - dt),
                 _ => {}
+            }
+        }
+        // The fight is on: each client sees the other hostile.
+        let hostile = content().hostile_faction;
+        for [a, b] in fights {
+            for (p, foe) in [(a, b), (b, a)] {
+                let seen_hostile = values(foe, &[(UNIT_FIELD_FACTIONTEMPLATE, hostile)]);
+                self.send_to_player(p, seen_hostile);
             }
         }
         // Highest first, so each index still names its duel.

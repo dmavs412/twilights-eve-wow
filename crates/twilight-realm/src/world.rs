@@ -120,6 +120,16 @@ impl Help {
     }
 }
 
+/// Damage one player dealt another's stand-in: resolved by the attacker, taken by the session
+/// of `to`.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Harm {
+    pub(crate) to: u64,
+    pub(crate) from: u64,
+    pub(crate) amount: u32,
+    pub(crate) school: crate::rules::school::School,
+}
+
 #[derive(Default)]
 pub(crate) struct Ticked {
     /// The character gained a level: save it.
@@ -197,6 +207,15 @@ pub(crate) struct InWorld {
     pub(crate) helps: Vec<Help>,
     /// What other players cast on this one, applied on the next tick.
     pub(crate) helped: Vec<Help>,
+    /// The damage this session dealt to other players' stand-ins, for the realm to deliver.
+    pub(crate) harms: Vec<Harm>,
+    /// The damage other players dealt this one, taken on the next tick.
+    pub(crate) harmed: Vec<Harm>,
+    /// The player whose damage stops at 1 health (a duel opponent): their blow that would kill
+    /// beats this one instead.
+    pub(crate) foe: Option<u64>,
+    /// The foe whose blow left this player at 1 health, for the realm to settle.
+    pub(crate) beaten_by: Option<u64>,
     dev: DevMultipliers,
     /// The corpses with loot on them.
     pub(crate) looting: Looting,
@@ -297,6 +316,10 @@ impl InWorld {
             credits: Vec::new(),
             helps: Vec::new(),
             helped: Vec::new(),
+            harms: Vec::new(),
+            harmed: Vec::new(),
+            foe: None,
+            beaten_by: None,
             dev,
             looting: Looting::default(),
             skills: cast::Skills::new(c.guid),
@@ -480,6 +503,14 @@ impl InWorld {
         for credit in std::mem::take(&mut self.credits) {
             self.take_credit(credit, c, rng, events, &mut ticked);
         }
+        // Damage first: a cast's own hit lands before the aura it puts on, so it does not wake
+        // the one it incapacitates.
+        for harm in std::mem::take(&mut self.harmed) {
+            if self.player.alive() {
+                self.player_takes_from(harm.from, harm.amount, harm.school, events);
+                self.woken_by_damage(self.guid, events);
+            }
+        }
         for help in std::mem::take(&mut self.helped) {
             match help {
                 Help::Heal {
@@ -533,7 +564,8 @@ impl InWorld {
         self.player_swing(c, rng, events, &mut ticked);
         self.auto_shot(c, rng, events, &mut ticked);
         for i in 0..self.mobs.len() {
-            if self.runs(self.mobs[i].guid) {
+            // A stand-in's player acts in their own session.
+            if self.runs(self.mobs[i].guid) && !self.mobs[i].remote {
                 self.mob_tick(i, dt, host, c, rng, events, &mut ticked);
             }
         }
@@ -731,10 +763,14 @@ impl InWorld {
         }
 
         let mob = &mut self.mobs[i];
-        mob.health = mob.health.saturating_sub(swing.damage);
-        if swing.damage > 0 {
-            events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
-        }
+        wound(
+            mob,
+            swing.damage,
+            self.guid,
+            crate::rules::school::School::Physical,
+            &mut self.harms,
+            events,
+        );
         let idle = mob.state == State::Idle;
         if swing.damage > 0 && crate::wear::on_hit(c, &mut self.wear, events) {
             self.refresh_gear(c, events);
@@ -970,6 +1006,27 @@ impl InWorld {
             &[(UNIT_FIELD_HEALTH, p.health), p.power.field()],
         ));
         self.interrupt_item_cast(events);
+    }
+
+    /// The player loses `damage` from `from`: as [`Self::player_takes`], save that the foe's
+    /// blow that would kill leaves them at 1 health, beaten.
+    pub(crate) fn player_takes_from(
+        &mut self,
+        from: u64,
+        damage: u32,
+        school: crate::rules::school::School,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let spared = Some(from) == self.foe;
+        let damage = if spared {
+            damage.min(self.player.health.saturating_sub(1))
+        } else {
+            damage
+        };
+        self.player_takes(damage, school, events);
+        if spared && self.player.health <= 1 {
+            self.beaten_by = Some(from);
+        }
     }
 
     /// `mob` dies at the player's hand: the fight ends, and the kill is credited, here and now
@@ -1273,6 +1330,34 @@ fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
     let mut pairs = vec![(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT)];
     pairs.extend(guid_pairs(UNIT_FIELD_TARGET, player));
     events.push(values(mob.guid, &pairs));
+}
+
+/// `mob` loses `damage` of `school` from the player `from`. A stand-in's health stops at 1 and
+/// the damage goes into `harms`, for the session whose player it stands in for.
+pub(crate) fn wound(
+    mob: &mut Mob,
+    damage: u32,
+    from: u64,
+    school: crate::rules::school::School,
+    harms: &mut Vec<Harm>,
+    events: &mut Vec<SessionEvent>,
+) {
+    if mob.remote {
+        mob.health = mob.health.saturating_sub(damage).max(1);
+        if damage > 0 {
+            harms.push(Harm {
+                to: mob.guid,
+                from,
+                amount: damage,
+                school,
+            });
+        }
+        return;
+    }
+    mob.health = mob.health.saturating_sub(damage);
+    if damage > 0 {
+        events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+    }
 }
 
 /// `mob` gives up the fight and runs home, where it heals; inside a Dungeon, along its route.

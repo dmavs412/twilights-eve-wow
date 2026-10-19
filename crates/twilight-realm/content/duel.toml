@@ -11,3 +11,8 @@ countdown_secs = 3
 # How close the challenger must stand to challenge, and how far apart the two may stray before
 # an unanswered challenge lapses, in yards (vanilla's duel spell range).
 request_range_yd = 30.0
+
+# The faction template each duellist's client sees the other wear while they fight, so it shows
+# them hostile and lets the attack through (`FactionTemplate.dbc` 14, Monster, hostile to all).
+# Everyone else keeps seeing both friendly (#160).
+hostile_faction = 14
