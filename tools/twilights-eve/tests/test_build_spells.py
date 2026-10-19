@@ -297,6 +297,17 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([self.borrowed("a", 33, "20375"), shared, self.mod_talent("a")],
                           "spellmod1_target 'a' also reaches 'b'")
 
+    def test_spellbook_no_keeps_a_visible_skill_off_the_book(self):
+        done, data = self.run_build([{**STRIKE, "spellbook": "no"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        skill = data[0]["skills"][0]
+        self.assertEqual((skill["spell_id"], skill["spellbook"]), (78, False))
+        self.assertIn(78, [o["spell_id"] for o in self.patch["spells"]])
+
+    def test_spellbook_on_a_talent_fails(self):
+        self.assert_fails([talent("boon", 1, 0, 0, client_spell_id="12320", talent_id="138", spellbook="no")],
+                          "spellbook is set on a talent row")
+
     def test_an_unknown_op_fails(self):
         row = {**self.mod_talent("a"), "spellmod1_op": "MAKE_BIGGER"}
         self.assert_fails([self.borrowed("a", 33, "20375"), row], "spellmod1_op is 'MAKE_BIGGER'")

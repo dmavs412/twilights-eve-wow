@@ -7794,7 +7794,7 @@
     {
      "type": "pct",
      "op": "MIN_RANGE",
-     "family_mask": 149505,
+     "family_mask": 149509,
      "value": -100
     }
    ]
@@ -7831,7 +7831,7 @@
     {
      "type": "pct",
      "op": "MIN_RANGE",
-     "family_mask": 149505,
+     "family_mask": 149509,
      "value": -100
     }
    ]
@@ -7857,6 +7857,42 @@
       }
      }
     ],
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 13812,
+   "calling": "ranger",
+   "key": "explosive_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Explosive Shot",
+    "cost": 0,
+    "cooldown_ms": 0,
+    "dmg_class": 3,
+    "school": 2,
+    "prevention_type": 1,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "150% weapon damage as Fire to the target and all enemies within 8 yards.",
+    "effects": [
+     {
+      "kind": "weapon_strike",
+      "params": {
+       "weapon": "ranged",
+       "weapon_pct": 150,
+       "bonus": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       },
+       "school": "fire"
+      }
+     }
+    ],
+    "range_index": 114,
     "cast_time_index": 1
    }
   },

@@ -83,6 +83,9 @@ struct GenSkill {
     requires_out_of_combat: bool,
     /// `Some(false)` for a hidden ability, whose `spell_id` is its `realm_spell_id`.
     client_visible: Option<bool>,
+    /// `Some(false)` for a visible skill kept off the spell book (`spellbook=no`), cast only as
+    /// another's `becomes=`.
+    spellbook: Option<bool>,
     #[serde(default)]
     effects: Vec<GenEffect>,
     #[serde(flatten)]
@@ -181,18 +184,25 @@ fn calling(g: GenCalling) -> CallingDef {
         skills: g
             .skills
             .iter()
-            .filter(|s| s.client_visible != Some(false))
+            .filter(|s| !s.off_the_spell_book())
             .filter_map(|s| skill(s, &g.auras))
             .collect(),
         hidden_skills: g
             .skills
             .iter()
-            .filter(|s| s.client_visible == Some(false))
+            .filter(|s| s.off_the_spell_book())
             .filter_map(|s| skill(s, &g.auras))
             .collect(),
         talent_tabs: tabs.into_iter().map(|t| tab(&g.key, t, &g.auras)).collect(),
         auras: g.auras.iter().filter_map(aura).collect(),
         key: g.key.clone(),
+    }
+}
+
+impl GenSkill {
+    /// A hidden ability or a `spellbook=no` skill: loaded among the hidden skills, found by key.
+    fn off_the_spell_book(&self) -> bool {
+        self.client_visible == Some(false) || self.spellbook == Some(false)
     }
 }
 
@@ -342,6 +352,7 @@ fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
                 target: Some(target),
                 requires_out_of_combat: false,
                 client_visible: None,
+                spellbook: None,
                 effects: rank.effects.clone(),
                 meta: rank.meta.clone(),
             },

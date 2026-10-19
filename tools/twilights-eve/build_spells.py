@@ -597,6 +597,19 @@ def client_visible(row: dict, where: str) -> bool:
     return False
 
 
+def spellbook(row: dict, hidden: bool, where: str) -> bool:
+    """The row's `spellbook` (empty means yes): `no` keeps a visible skill off the spell book and
+    the trainer, cast only as another's `becomes=`. A hidden row is off both already."""
+    flag = row.get("spellbook", "")
+    if flag not in ("", "yes", "no"):
+        raise BuildError(f"{where}: spellbook is {flag!r}, want yes or no")
+    if flag and row["kind"] != "skill":
+        raise BuildError(f"{where}: spellbook is set on a {row['kind']} row; only skill rows take it")
+    if flag == "no" and hidden:
+        raise BuildError(f"{where}: spellbook=no on a client_visible=no row, which is never in the spell book")
+    return flag != "no"
+
+
 def max_rank(row: dict, where: str) -> int:
     """A talent rank row's `max_rank`: a whole number from 1 to 5."""
     if not row["max_rank"]:
@@ -831,6 +844,8 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
         # A hidden row's one number is its realm id; the realm reads it as `spell_id`.
         out["spell_id"] = whole(row["realm_spell_id"], f"{where} realm_spell_id")
         out["client_visible"] = False
+    if spellbook(row, hidden, where) is False:
+        out["spellbook"] = False
     for column in REALM_NUMBERS:
         if row[column]:
             out[column] = number(row[column], f"{where} {column}")

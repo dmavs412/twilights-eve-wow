@@ -39,8 +39,9 @@ pub struct CallingDef {
     /// The buffs its skills and talents grant by key (a `proc`'s `apply_aura`).
     #[serde(default, rename = "aura")]
     pub auras: Vec<AuraDef>,
-    /// Hidden abilities (`client_visible=no` rows): skills the client never sees, keyed by their
-    /// realm spell id. They are not on the bar or in the spell book.
+    /// Hidden abilities (`client_visible=no` rows, found by their realm spell id) and visible skills
+    /// kept off the spell book (`spellbook=no`, found by key). Neither is on the bar, in the spell
+    /// book or at the trainer.
     #[serde(default)]
     pub hidden_skills: Vec<Skill>,
 }

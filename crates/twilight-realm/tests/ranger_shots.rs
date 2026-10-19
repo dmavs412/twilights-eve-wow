@@ -20,9 +20,10 @@ const SNAPSHOT: u32 = 3044;
 const PUNCTURING_SHAFT: u32 = 19434;
 const BARBED_ARROW: u32 = 1978;
 const RAPID_FIRE: u32 = 3045;
-/// The active talent's spell, and its hidden shot's realm id.
+/// The active talent's spell, and the shot it fires.
 const EXPLOSIVE_PAYLOAD: u32 = 19503;
-const EXPLOSIVE_SHOT: u32 = 1_003_001;
+/// Borrowed Explosive Trap Effect, a Fire hunter spell (#154).
+const EXPLOSIVE_SHOT: u32 = 13812;
 /// `Talent.dbc` ids.
 const PIERCING_FORCE: u32 = 1344;
 const POINT_BLANK: u32 = 1624;
@@ -475,7 +476,7 @@ talents = [[{t}, {r}]]
         bits
     };
     let learned = cells(&[(POINT_BLANK, 1)]);
-    assert_eq!(learned.len(), 4, "a cell per ranged skill: {learned:?}");
+    assert_eq!(learned.len(), 5, "a cell per ranged skill: {learned:?}");
     assert!(learned.iter().all(|&(_, v)| v == -100), "{learned:?}");
     assert!(cells(&[]).iter().all(|&(_, v)| v == 0));
 }

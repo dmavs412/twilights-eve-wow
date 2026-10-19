@@ -12994,8 +12994,8 @@
     "name": "Explosive Shot",
     "rank": 1,
     "status": "placeholder",
-    "spell_id": 1003001,
-    "client_visible": false,
+    "spell_id": 13812,
+    "spellbook": false,
     "realm_cost": 0,
     "realm_cooldown_ms": 0,
     "realm_gcd_ms": 0,
@@ -14659,13 +14659,14 @@
          {
           "type": "pct",
           "op": "MIN_RANGE",
-          "family_mask": 149505,
+          "family_mask": 149509,
           "value": -100,
           "target": [
            "auto_shot",
            "snapshot",
            "puncturing_shaft",
-           "barbed_arrow"
+           "barbed_arrow",
+           "explosive_shot"
           ]
          }
         ]
@@ -14715,13 +14716,14 @@
          {
           "type": "pct",
           "op": "MIN_RANGE",
-          "family_mask": 149505,
+          "family_mask": 149509,
           "value": -100,
           "target": [
            "auto_shot",
            "snapshot",
            "puncturing_shaft",
-           "barbed_arrow"
+           "barbed_arrow",
+           "explosive_shot"
           ]
          }
         ]
