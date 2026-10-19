@@ -160,9 +160,6 @@
     "on_next_swing": true,
     "school": 0,
     "prevention_type": 2,
-    "equipped_item_class": 2,
-    "equipped_subclass_mask": 42483,
-    "equipped_inventory_mask": 6430720,
     "description": "Your next melee swing strikes the target for weapon damage plus a bonus. Every hit grants a stack of Conviction.",
     "effects": [
      {
@@ -286,9 +283,6 @@
     "gcd_ms": 1500,
     "school": 0,
     "prevention_type": 2,
-    "equipped_item_class": 2,
-    "equipped_subclass_mask": 42483,
-    "equipped_inventory_mask": 6430720,
     "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage.",
     "effects": [
      {
@@ -3912,9 +3906,6 @@
     "cost": 40.0,
     "school": 0,
     "prevention_type": 2,
-    "equipped_item_class": 2,
-    "equipped_subclass_mask": 42483,
-    "equipped_inventory_mask": 6430720,
     "description": "Your primary 40-Energy combo point builder: weapon damage plus a bonus, and 1 combo point.",
     "effects": [
      {
@@ -3949,9 +3940,6 @@
     "cost": 35.0,
     "school": 0,
     "prevention_type": 2,
-    "equipped_item_class": 2,
-    "equipped_subclass_mask": 42483,
-    "equipped_inventory_mask": 6430720,
     "description": "Finishing move: Physical damage that grows with each combo point.",
     "effects": [
      {
@@ -3983,9 +3971,6 @@
     "cost": 25.0,
     "school": 0,
     "prevention_type": 2,
-    "equipped_item_class": 2,
-    "equipped_subclass_mask": 42483,
-    "equipped_inventory_mask": 6430720,
     "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point.",
     "effects": [
      {

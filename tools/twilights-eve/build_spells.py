@@ -1121,8 +1121,12 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
     fields["school"] = SCHOOLS.index(built["school"])
     fields["prevention_type"] = PREVENTIONS[built["prevention"]]
     if row["requires_weapon"]:
-        for key, value in weapon_requirement(row["requires_weapon"], where)[1].items():
-            fields["equipped_" + key] = value
+        requirement = weapon_requirement(row["requires_weapon"], where)[1]
+        # Every melee weapon allowed: the tooltip's 'Requires ...' line would list them all, so the
+        # DBC says nothing and the realm alone enforces 'needs a melee weapon'.
+        if requirement != weapon_requirement("any_melee", where)[1]:
+            for key, value in requirement.items():
+                fields["equipped_" + key] = value
     if row["cooldown_category"]:
         fields["category"] = CATEGORY_BASE + categories[row["cooldown_category"]]
         fields["category_cooldown_ms"] = built["category_cooldown_ms"]
