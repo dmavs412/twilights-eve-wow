@@ -18,5 +18,14 @@ item = [
   # only. Their equip spell Haste (14824, aura 141 at 9 + 1d1) is the 10% `ranged_haste_pct`.
   { entry = 5439, name = "Small Quiver", quality = 1, item_level = 5, required_level = 1, class = 11, subclass = 2, inventory_type = 18, display_id = 21318, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, container_slots = 8, equip_spells = [14824], equip_spell_names = ["Haste"], ranged_haste_pct = 10 },
   { entry = 7279, name = "Small Leather Ammo Pouch", quality = 1, item_level = 5, required_level = 1, class = 11, subclass = 3, inventory_type = 18, display_id = 1816, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, container_slots = 8, equip_spells = [14824], equip_spell_names = ["Haste"], ranged_haste_pct = 10 },
+  # Blood Coin (#178): only Bounty Hunters drop it, and the Blood Coin vendor takes it. No vendor
+  # buys it, and death never takes it. Its display is vmangos's Bloodscalp Coin's (item 19706).
+  { entry = 90002, name = "Blood Coin", quality = 2, item_level = 1, class = 15, display_id = 32277, stackable = 200 },
+  # The healing potions, as vmangos has them, for the Blood Coin vendor: used at once, in a fight
+  # or out, restoring their spell's middle roll, two minutes apart.
+  { entry = 118, name = "Minor Healing Potion", quality = 1, item_level = 5, required_level = 1, display_id = 15710, sell_price = 5, stackable = 5, use_spell = 439, use_spell_name = "Healing Potion", use_cooldown_ms = 120000, restores_health = 80 },
+  { entry = 858, name = "Lesser Healing Potion", quality = 1, item_level = 13, required_level = 3, display_id = 15711, sell_price = 25, stackable = 5, use_spell = 440, use_spell_name = "Healing Potion", use_cooldown_ms = 120000, restores_health = 160 },
+  { entry = 929, name = "Healing Potion", quality = 1, item_level = 22, required_level = 12, display_id = 15712, sell_price = 75, stackable = 5, use_spell = 441, use_spell_name = "Healing Potion", use_cooldown_ms = 120000, restores_health = 320 },
+  { entry = 1710, name = "Greater Healing Potion", quality = 1, item_level = 31, required_level = 21, display_id = 15713, sell_price = 125, stackable = 5, use_spell = 2024, use_spell_name = "Healing Potion", use_cooldown_ms = 120000, restores_health = 520 },
   { entry = 6948, name = "Hearthstone", quality = 1, item_level = 1, class = 15, display_id = 6418, bonding = 1, max_count = 1, stackable = 1, use_spell = 8690, use_spell_name = "Hearthstone", use_cooldown_ms = 300000, use_category_cooldown_ms = 0 },
 ]

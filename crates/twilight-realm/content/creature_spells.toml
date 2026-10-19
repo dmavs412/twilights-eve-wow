@@ -12,8 +12,9 @@
 # range_max        yards; the cast is interrupted if the target leaves it (0 for a self-cast)
 # chance           percent per decision (one a second) while fighting and off cooldown
 # below_health_pct optional: cast only while the caster's health is under this percent of its max
-# effect           periodic_damage (a curse on the player, in the skills' own terms), or
-#                  heal { pct_max_health } (the caster, no range or line of sight to check)
+# effect           periodic_damage (a curse on the player, in the skills' own terms),
+#                  heal { pct_max_health } (the caster, no range or line of sight to check), or
+#                  snare { pct, duration_ms } (the player runs pct percent slower)
 
 # Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
 [[spell]]
@@ -88,3 +89,15 @@ cooldown_ms = 15000
 range_max = 30.0
 chance = 100
 effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 15000, tick = { base = 8 } }
+
+# The Snaring affix's snare (`notoriety.toml`). Looks like Hamstring rank 1 (client_spell_id 1715).
+# Placeholders: 50% slower for 15 s, every 20 s, from melee range.
+[[spell]]
+key = "hunter_hamstring"
+client_spell_id = 1715
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 20000
+range_max = 5.0
+chance = 100
+effect = { kind = "snare", pct = 50, duration_ms = 15000 }

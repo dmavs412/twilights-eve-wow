@@ -13,13 +13,14 @@ use crate::items;
 use crate::rules::durability;
 
 /// `CMSG_LIST_INVENTORY`: the vendor's rows, numbered from 1, or the Token vendor's for the
-/// buyer's level; nothing for an NPC out of reach or that is no vendor.
+/// buyer's level, or the Blood Coin vendor's; nothing for an NPC out of reach or that is no
+/// vendor.
 pub(crate) fn list(vendor: u64, c: &Char, events: &mut Vec<SessionEvent>) {
     let Some(npc) = reachable(vendor, c) else {
         return;
     };
-    if npc.tokens {
-        let items = crate::token_vendor::rows(c.level);
+    if let Some(currency) = npc.currency() {
+        let items = currency.rows(c.level);
         events.push(SessionEvent::VendorInventory { vendor, items });
         return;
     }
@@ -69,8 +70,8 @@ pub(crate) fn buy(
     let Some(npc) = reachable(vendor, c) else {
         return fail(buy_result::DISTANCE_TOO_FAR, events);
     };
-    if npc.tokens {
-        return crate::token_vendor::buy(vendor, entry, count, c, events);
+    if let Some(currency) = npc.currency() {
+        return currency.buy(vendor, entry, count, c, events);
     }
     let Some(row) = npc.stock.iter().position(|e| *e == entry) else {
         return fail(buy_result::CANT_FIND_ITEM, events);

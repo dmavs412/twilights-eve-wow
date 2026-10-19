@@ -989,7 +989,7 @@ impl Realm {
                         // A Quest Starter opens its quest; food and drink are eaten at once;
                         // anything else casts its spell.
                         if !quests::use_starter(c, slot, &mut self.events) {
-                            match w.eat_or_drink(slot, c, &mut self.events) {
+                            match w.eat_or_drink(slot, c, self.wall, &mut self.events) {
                                 Some(true) => {
                                     let guid = w.guid;
                                     self.save(guid);

@@ -64,6 +64,8 @@ pub(crate) struct Char {
     pub(crate) rest: crate::rest::Rest,
     /// **Notoriety** (`GLOSSARY.md`): how much the underworld has noticed them.
     pub(crate) notoriety: f32,
+    /// **Bounty Rank**: the Bounty Hunters they have killed since they last died.
+    pub(crate) bounty_rank: u32,
 }
 
 #[derive(Default)]
@@ -136,6 +138,7 @@ impl Characters {
             bind,
             rest: crate::rest::Rest::default(),
             notoriety: 0.0,
+            bounty_rank: 0,
         });
         CHAR_CREATE_SUCCESS
     }

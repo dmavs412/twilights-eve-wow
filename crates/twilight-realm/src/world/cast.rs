@@ -67,7 +67,7 @@ const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
 /// No arrows or bullets for the ranged weapon (#157).
 const SPELL_FAILED_NO_AMMO: u8 = 0x43;
 const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
-const SPELL_FAILED_NOT_READY: u8 = 0x3c;
+pub(super) const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
 const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
@@ -89,7 +89,7 @@ const SPELL_HIT_TYPE_CRIT: u32 = 0x2;
 const DODGE_WINDOW_SECS: f32 = 5.0;
 /// A cooldown counts as over this close to its end: the client's clock and the realm's tick
 /// differ by up to a frame, and the client sends the cast the moment its own clock says ready.
-const READY_SLACK_SECS: f32 = 0.1;
+pub(super) const READY_SLACK_SECS: f32 = 0.1;
 /// Seconds of float drift an aura clock forgives, so a tick and the fade due on the same tick
 /// both land.
 const CLOCK_EPSILON: f32 = 1e-3;
@@ -4814,7 +4814,24 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         // A heal lands on its caster in `mob_cast`, which holds the mob.
-        let crate::creature_spells::CreatureEffect::PeriodicDamage {
+        use crate::creature_spells::CreatureEffect;
+        if let CreatureEffect::Snare { pct, duration_ms } = spell.effect {
+            let aura = Aura {
+                unit: self.guid,
+                spell_id: spell.client_spell_id,
+                slot: 0,
+                level,
+                left: clock::secs(duration_ms),
+                period: 0.0,
+                next_tick: 0.0,
+                kind: AuraKind::MoveSlow { pct },
+                charges: 0,
+            };
+            self.skills.apply(aura, events);
+            self.update_speed(self.guid, events);
+            return;
+        }
+        let CreatureEffect::PeriodicDamage {
             tick_ms,
             duration_ms,
             tick,

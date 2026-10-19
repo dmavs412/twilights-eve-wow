@@ -553,6 +553,19 @@ pub(crate) struct Mob {
     /// Another session's player, stood in for (a duel opponent): it never acts and never dies,
     /// its health stopping at 1, and what lands on it is delivered to that session.
     pub(crate) remote: bool,
+    /// The Bounty it is: whose hunter, and at what Bounty Rank. Its kill pays Blood Coin.
+    pub(crate) bounty: Option<Bounty>,
+    /// What its swing time is multiplied by: below 1 swings faster.
+    pub(crate) attack_time_mul: f32,
+    /// Creature Spells it casts besides its template's.
+    pub(crate) extra_spells: Vec<&'static CreatureSpell>,
+}
+
+/// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Bounty {
+    pub(crate) owner: u64,
+    pub(crate) rank: u32,
 }
 
 /// The spawn index of a mob that no spawn placed.
@@ -609,6 +622,9 @@ impl Mob {
             hunts: None,
             leashes: true,
             remote: false,
+            bounty: None,
+            attack_time_mul: 1.0,
+            extra_spells: Vec::new(),
         })
     }
 
@@ -653,6 +669,9 @@ impl Mob {
             hunts: Some(hunts),
             leashes: false,
             remote: false,
+            bounty: None,
+            attack_time_mul: 1.0,
+            extra_spells: Vec::new(),
         }
     }
 

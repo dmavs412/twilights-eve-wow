@@ -165,6 +165,23 @@ position = [-432.0, -2644.5, 96.3]
 orientation = 3.30
 tokens = true
 
+# The Blood Coin vendor (#178): potions for the Blood Coin only Bounty Hunters drop
+# (content/notoriety.toml's `coin_stock`). `blood_coin` says so; it has no `stock` of its own and
+# no repairs. The display is the Southsea Cutthroat's: a bounty broker. Placeholders: name, spot.
+[[npc]]
+guid = 0xF00218
+entry = 190046
+name = "Rusk Ninefingers"
+subname = "Blood Coin Broker"
+level = 30
+display_id = 4640
+faction_template = 35
+role = "blood_coin"
+npc_flags = 0x4
+position = [-437.0, -2650.0, 96.3]
+orientation = 0.80
+blood_coin = true
+
 # The quest givers, one for each Hunting Ground (their quests are in content/quests.toml). 0x2 is
 # quest giver; each `greeting` opens its quest list.
 

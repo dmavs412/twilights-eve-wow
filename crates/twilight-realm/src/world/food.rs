@@ -2,6 +2,7 @@
 //! sits under the item's spell and is restored evenly over its duration, every two seconds as
 //! vanilla's regeneration ticks (vmangos `SPELL_AURA_MOD_REGEN`, `Player::RegenerateHealth`).
 //! Standing up, a hit or a fight ends the meal. A Warrior has no mana, so drink restores nothing.
+//! A potion (no duration) restores at once, in a fight or out, and then cools down.
 
 use benilla_protocol::SessionEvent;
 
@@ -41,18 +42,77 @@ pub(super) struct Meal {
 }
 
 impl InWorld {
-    /// `CMSG_USE_ITEM` on the item in player slot `slot`, if it is food or drink: `None` for any
-    /// other item, else whether one was eaten.
+    /// `CMSG_USE_ITEM` on the item in player slot `slot`, if it is food, drink or a potion:
+    /// `None` for any other item, else whether one was used up.
     pub(crate) fn eat_or_drink(
         &mut self,
         slot: crate::inventory::Pos,
         c: &mut Char,
+        wall: f64,
         events: &mut Vec<SessionEvent>,
     ) -> Option<bool> {
         let item = c.inventory.get(slot)?;
         let t = items::template(item.entry)
             .filter(|t| t.use_spell != 0 && (t.restores_health > 0 || t.restores_mana > 0))?;
+        if t.duration_ms == 0 {
+            return Some(self.quaff(slot, t, c, wall, events));
+        }
         Some(self.sit_and_eat(slot, t, c, events))
+    }
+
+    /// A potion: one of the stack restores its health at once, and the item cools down.
+    fn quaff(
+        &mut self,
+        slot: crate::inventory::Pos,
+        t: &items::Template,
+        c: &mut Char,
+        wall: f64,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        if self.dead() {
+            return false;
+        }
+        let cooling = c.item_cooldowns.iter().any(|&(e, ready)| {
+            e == t.entry && ready - wall > f64::from(super::cast::READY_SLACK_SECS)
+        });
+        if cooling {
+            events.push(SessionEvent::CastResult {
+                spell_id: t.use_spell,
+                success: false,
+                reason: Some(super::cast::SPELL_FAILED_NOT_READY),
+                arg: None,
+            });
+            return false;
+        }
+        let Some(item_guid) = use_up_one(slot, c, events) else {
+            return false;
+        };
+        events.push(SessionEvent::CastResult {
+            spell_id: t.use_spell,
+            success: true,
+            reason: None,
+            arg: None,
+        });
+        events.push(SessionEvent::SpellGo {
+            caster: self.guid,
+            spell_id: t.use_spell,
+            cast_flags: 0,
+            hits: vec![self.guid],
+            misses: Vec::new(),
+            target: Some(self.guid),
+            go_target: None,
+            dest: None,
+            ammo_display_id: None,
+            item_caster: Some(item_guid),
+        });
+        if t.use_cooldown_ms > 0 {
+            c.item_cooldowns.retain(|&(e, _)| e != t.entry);
+            let rest = f64::from(clock::secs(t.use_cooldown_ms as u32));
+            c.item_cooldowns.push((t.entry, wall + rest));
+        }
+        let me = self.guid;
+        self.heal_from(me, c, t.use_spell, t.restores_health, events);
+        true
     }
 
     fn sit_and_eat(
@@ -65,9 +125,9 @@ impl InWorld {
         if self.dead() {
             return false;
         }
-        let Some(item) = c.inventory.get(slot) else {
+        if c.inventory.get(slot).is_none() {
             return false;
-        };
+        }
         // Any level eats anything: the level resets with each Tier.
         if self.player.in_combat {
             events.push(SessionEvent::CastResult {
@@ -78,21 +138,9 @@ impl InWorld {
             });
             return false;
         }
-        let item_guid = item.guid;
-        // One of the stack is eaten.
-        if item.count > 1 {
-            if let Some(item) = c.inventory.get_mut(slot) {
-                item.count -= 1;
-                events.push(values(
-                    item.guid,
-                    &[(equipment::ITEM_FIELD_STACK_COUNT, item.count)],
-                ));
-            }
-        } else {
-            c.inventory.take(slot);
-            equipment::send_slots(c, &[slot], events);
-            events.push(SessionEvent::ObjectDestroyed(item_guid));
-        }
+        let Some(item_guid) = use_up_one(slot, c, events) else {
+            return false;
+        };
         self.stop_eating(events);
         events.push(SessionEvent::CastResult {
             spell_id: t.use_spell,
@@ -185,4 +233,28 @@ impl InWorld {
             ],
         ));
     }
+}
+
+/// Takes one of the stack in `slot` out of the bags, telling the client: the item's guid.
+fn use_up_one(
+    slot: crate::inventory::Pos,
+    c: &mut Char,
+    events: &mut Vec<SessionEvent>,
+) -> Option<u64> {
+    let item = c.inventory.get(slot)?;
+    let item_guid = item.guid;
+    if item.count > 1 {
+        if let Some(item) = c.inventory.get_mut(slot) {
+            item.count -= 1;
+            events.push(values(
+                item.guid,
+                &[(equipment::ITEM_FIELD_STACK_COUNT, item.count)],
+            ));
+        }
+    } else {
+        c.inventory.take(slot);
+        equipment::send_slots(c, &[slot], events);
+        events.push(SessionEvent::ObjectDestroyed(item_guid));
+    }
+    Some(item_guid)
 }

@@ -7,10 +7,12 @@ use benilla_protocol::SessionEvent;
 use super::{engage, eye, InWorld};
 use crate::bounty::{self, Draw};
 use crate::characters::Char;
-use crate::mobs::{self, Mob};
+use crate::creature_spells;
+use crate::mobs::{self, Bounty, Mob};
 use crate::phased::Phase;
 use crate::rng::Rng;
 use crate::rules::notoriety;
+use crate::rules::stats::MobStats;
 use crate::Host;
 
 /// The low guids of Bounty Hunters start here, clear of the spawns' and a call for help's.
@@ -61,11 +63,12 @@ impl InWorld {
         self.heat_shown = level;
     }
 
-    /// Whether a living Bounty Hunter of this player's is out.
+    /// Whether a living Bounty Hunter of this player's is out (its adds aside).
     fn hunter_out(&self) -> bool {
+        let me = self.guid;
         self.mobs
             .iter()
-            .any(|m| m.hunts == Some(self.guid) && m.alive())
+            .any(|m| m.bounty.is_some_and(|b| b.owner == me) && m.alive())
     }
 
     /// Counts the Heat Level's time down while the player is alive in the open world with no
@@ -97,8 +100,9 @@ impl InWorld {
         self.send_hunter(host, c, rng, events);
     }
 
-    /// A Bounty Hunter comes for `c`: an elite of a rolled archetype, out of their sight a little
-    /// way off, already on their trail.
+    /// A Bounty Hunter comes for `c`: an elite of a rolled archetype, as strong as their Bounty
+    /// Rank makes it and with its affixes, out of their sight a little way off, already on their
+    /// trail.
     fn send_hunter(
         &mut self,
         host: &dyn Host,
@@ -111,21 +115,58 @@ impl InWorld {
         };
         let draw = Draw::roll(rng);
         let level = c.level.saturating_add(bounty::hunter().level_above);
+        let rank = c.bounty_rank;
+        let affixes = bounty::roll_affixes(rank, rng);
+        let mut stats = draw.stats(level, rank);
+        for a in &affixes {
+            stats.armor += stats.armor * a.armor_pct / 100;
+        }
+        let mut hunter = self.made_hunter(draw, stats, at, c.position);
+        hunter.bounty = Some(Bounty {
+            owner: self.guid,
+            rank,
+        });
+        hunter.attack_time_mul = affixes
+            .iter()
+            .map(|a| 100.0 / (100.0 + a.attack_speed_pct as f32))
+            .product();
+        hunter.extra_spells = affixes
+            .iter()
+            .flat_map(|a| creature_spells::resolve(&a.spells))
+            .collect();
+        let mut pack = vec![hunter];
+        for adds in affixes.iter().filter_map(|a| a.adds) {
+            for k in 0..adds.count {
+                let mut s = stats;
+                s.max_health = (s.max_health * adds.pct / 100).max(1);
+                s.min_damage *= adds.pct as f32 / 100.0;
+                s.max_damage *= adds.pct as f32 / 100.0;
+                // Beside it, a couple of yards to either side.
+                let side = if k % 2 == 0 { 1.0 } else { -1.0 } * (2.0 + k as f32);
+                let by = [at[0] + side, at[1] + side, at[2]];
+                pack.push(self.made_hunter(draw, s, by, c.position));
+            }
+        }
+        for mut mob in pack {
+            events.push(mob.create());
+            engage(&mut mob, self.guid, events);
+            self.mobs.push(mob);
+        }
+    }
+
+    /// One hunter of `draw` with `stats` at `at`, facing `me`, with a guid of its own.
+    fn made_hunter(&mut self, draw: Draw, stats: MobStats, at: [f32; 3], me: [f32; 3]) -> Mob {
         self.hunters_sent = self.hunters_sent.wrapping_add(1);
         let low = HUNTER_GUID_BASE | (self.guid as u32 & 0xFFF) << 8 | self.hunters_sent & 0xFF;
-        let me = c.position;
         let facing = (me[1] - at[1]).atan2(me[0] - at[0]);
-        let mut mob = Mob::hunter(
+        Mob::hunter(
             mobs::unit_guid(draw.entry(), low),
             draw.template(),
-            draw.stats(level),
+            stats,
             at,
             facing,
             self.guid,
-        );
-        events.push(mob.create());
-        engage(&mut mob, self.guid, events);
-        self.mobs.push(mob);
+        )
     }
 
     /// Where a hunter comes in: on the ground within its spawn range of `me`, never in the Hub,

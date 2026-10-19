@@ -32,7 +32,8 @@ impl InWorld {
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) -> bool {
-        let spells = self.casters.of(self.mobs[i].template.entry);
+        let mut spells = self.casters.of(self.mobs[i].template.entry);
+        spells.extend(self.mobs[i].extra_spells.iter().copied());
         if spells.is_empty() {
             return false;
         }

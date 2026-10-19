@@ -36,10 +36,32 @@ struct Heat {
 }
 
 #[derive(Deserialize)]
+struct Rank {
+    step: f32,
+    affix_every: u32,
+}
+
+#[derive(Deserialize)]
+struct Coin {
+    item: u32,
+    base: u32,
+    per_rank: u32,
+}
+
+#[derive(Deserialize)]
+struct CoinRow {
+    entry: u32,
+    coins: u32,
+}
+
+#[derive(Deserialize)]
 struct File {
     gain: Gain,
     drain: Drain,
     heat: Vec<Heat>,
+    rank: Rank,
+    coin: Coin,
+    coin_stock: Vec<CoinRow>,
 }
 
 fn file() -> &'static File {
@@ -150,4 +172,45 @@ pub fn in_hub(map: u32, position: [f32; 3]) -> bool {
     map == KALIMDOR
         && (position[0] - CROSSROADS[0]).hypot(position[1] - CROSSROADS[1])
             <= file().drain.hub_radius
+}
+
+/// What a Bounty Hunter's health and damage are multiplied by when its owner's Bounty Rank is
+/// `rank`.
+pub fn rank_multiplier(rank: u32) -> f32 {
+    1.0 + file().rank.step * rank as f32
+}
+
+/// How many affixes a Bounty Hunter carries at Bounty Rank `rank`, before the pool's size caps
+/// it.
+pub fn affix_count(rank: u32) -> usize {
+    (rank / file().rank.affix_every.max(1)) as usize
+}
+
+/// The Blood Coin item.
+pub fn blood_coin() -> u32 {
+    file().coin.item
+}
+
+/// The Blood Coin a hunter of Bounty Rank `rank` drops into each credited player's loot.
+pub fn coin_drop(rank: u32) -> u32 {
+    let c = &file().coin;
+    c.base + c.per_rank * rank
+}
+
+/// The Blood Coin vendor's stock, `(item entry, Blood Coin)`, in the merchant window's order.
+pub fn coin_stock() -> Vec<(u32, u32)> {
+    file()
+        .coin_stock
+        .iter()
+        .map(|r| (r.entry, r.coins))
+        .collect()
+}
+
+/// The Blood Coin price of `entry`, if the Blood Coin vendor sells it.
+pub fn coin_price(entry: u32) -> Option<u32> {
+    file()
+        .coin_stock
+        .iter()
+        .find(|r| r.entry == entry)
+        .map(|r| r.coins)
 }

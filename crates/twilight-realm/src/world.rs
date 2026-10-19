@@ -84,6 +84,8 @@ pub(crate) struct Kill {
     /// its own.
     pub(crate) money: u32,
     pub(crate) position: [f32; 3],
+    /// A Bounty Hunter's tag: its kill pays Blood Coin and raises its owner's Bounty Rank.
+    pub(crate) bounty: Option<crate::mobs::Bounty>,
 }
 
 /// One player's part in a kill: their share of its money, and the levels of everyone credited
@@ -972,6 +974,7 @@ impl InWorld {
                     swing.report(mob.guid, self.guid),
                 ));
                 mob.swing_timer = clock::secs(mob.template.base_attack_time)
+                    * mob.attack_time_mul
                     * self.skills.attack_time_mul(mob.guid);
                 if swing.damage > 0 {
                     self.player_takes(swing.damage, crate::rules::school::School::Physical, events);
@@ -1101,6 +1104,7 @@ impl InWorld {
             drops,
             money,
             position: mob.position,
+            bounty: mob.bounty,
         };
         if self.lent {
             self.kills.push(kill);
@@ -1163,6 +1167,15 @@ impl InWorld {
         }
         loot.items
             .extend(k.drops.iter().map(|&item| Some((item, 1))));
+        // A Bounty Hunter pays everyone it credits in Blood Coin; its owner's Bounty Rank rises.
+        if let Some(b) = k.bounty {
+            let coin = crate::rules::notoriety::blood_coin();
+            loot.items
+                .push(Some((coin, crate::rules::notoriety::coin_drop(b.rank))));
+            if b.owner == c.guid {
+                c.bounty_rank += 1;
+            }
+        }
         // The quest items the player's quests still want, after the corpse's own drop.
         loot.items
             .extend(crate::quests::drops(c, k.entry, rng).into_iter().map(Some));

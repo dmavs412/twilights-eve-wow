@@ -22,6 +22,8 @@ pub(crate) enum CreatureEffect {
     /// Restores the caster's health by `pct_max_health` percent of its maximum. The format stays
     /// open to a flat `base` later.
     Heal { pct_max_health: u32 },
+    /// The player runs `pct` percent slower for `duration_ms`.
+    Snare { pct: u32, duration_ms: u32 },
 }
 
 /// One Creature Spell.

@@ -49,6 +49,9 @@ pub(crate) struct Npc {
     /// The Token vendor: it sells the buyer's band of greens for Tokens (`crate::token_vendor`).
     #[serde(default)]
     pub(crate) tokens: bool,
+    /// The Blood Coin vendor: it sells its stock for Blood Coin (`crate::token_vendor`).
+    #[serde(default)]
+    pub(crate) blood_coin: bool,
     /// What its quest list, or its gossip menu, opens with.
     #[serde(default)]
     pub(crate) greeting: String,
@@ -78,6 +81,17 @@ pub(crate) fn npcs() -> &'static [Npc] {
 }
 
 impl Npc {
+    /// What it takes in place of copper, if it is a vendor of that kind.
+    pub(crate) fn currency(&self) -> Option<&'static crate::token_vendor::Currency> {
+        if self.tokens {
+            Some(&crate::token_vendor::TOKENS)
+        } else if self.blood_coin {
+            Some(&crate::token_vendor::BLOOD_COIN)
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn guid(&self) -> u64 {
         HIGHGUID_UNIT << 48
             | u64::from(self.entry & 0xFF_FFFF) << 24

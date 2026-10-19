@@ -40,10 +40,39 @@ pub(crate) struct Archetype {
     epithet: Vec<String>,
 }
 
+/// One affix: what a Bounty Hunter of a high enough Bounty Rank gains, as data.
+#[derive(Deserialize, Debug)]
+pub(crate) struct Affix {
+    /// The row's name, for whoever reads the file and the tests.
+    #[allow(dead_code)]
+    pub(crate) key: String,
+    /// Swings this much percent faster.
+    #[serde(default)]
+    pub(crate) attack_speed_pct: u32,
+    /// This much percent more armour.
+    #[serde(default)]
+    pub(crate) armor_pct: u32,
+    /// More Creature Spells.
+    #[serde(default)]
+    pub(crate) spells: Vec<String>,
+    /// More hunters with it.
+    #[serde(default)]
+    pub(crate) adds: Option<Adds>,
+}
+
+/// An affix's company: `count` more of the hunter's archetype at `pct` percent of its health and
+/// damage.
+#[derive(Deserialize, Debug, Clone, Copy)]
+pub(crate) struct Adds {
+    pub(crate) count: u32,
+    pub(crate) pct: u32,
+}
+
 #[derive(Deserialize)]
 struct File {
     hunter: Hunter,
     archetype: Vec<Archetype>,
+    affix: Vec<Affix>,
 }
 
 fn file() -> &'static File {
@@ -62,6 +91,23 @@ pub(crate) fn hunter() -> &'static Hunter {
 /// The archetypes, in the file's order.
 pub(crate) fn archetypes() -> &'static [Archetype] {
     &file().archetype
+}
+
+/// The affix pool, in the file's order.
+pub(crate) fn affixes() -> &'static [Affix] {
+    &file().affix
+}
+
+/// The affixes a hunter of Bounty Rank `rank` carries, rolled from the pool without repeats.
+pub(crate) fn roll_affixes(rank: u32, rng: &mut Rng) -> Vec<&'static Affix> {
+    let mut pool: Vec<&'static Affix> = affixes().iter().collect();
+    let n = crate::rules::notoriety::affix_count(rank).min(pool.len());
+    (0..n)
+        .map(|_| {
+            let i = (rng.frand(0.0, pool.len() as f32) as usize).min(pool.len() - 1);
+            pool.swap_remove(i)
+        })
+        .collect()
 }
 
 /// The most first names or epithets an archetype may list: the entry's room for each.
@@ -117,16 +163,22 @@ impl Draw {
         (draw.first < a.first.len() && draw.epithet < a.epithet.len()).then_some(draw)
     }
 
-    /// Its stats at `level`: its class's, made hard.
-    pub(crate) fn stats(self, level: u8) -> MobStats {
+    /// Its stats at `level` for an owner of Bounty Rank `rank`: its class's, made hard, then
+    /// the rank's multiple of its health and damage.
+    pub(crate) fn stats(self, level: u8, rank: u32) -> MobStats {
         let h = hunter();
-        MobStats::new(
+        let mut stats = MobStats::new(
             self.archetype().unit_class,
             level,
             h.health,
             h.damage,
             h.armor,
-        )
+        );
+        let mul = crate::rules::notoriety::rank_multiplier(rank);
+        stats.max_health = (stats.max_health as f32 * mul).round() as u32;
+        stats.min_damage *= mul;
+        stats.max_damage *= mul;
+        stats
     }
 
     /// Its creature template, made once per name and kept.
@@ -178,6 +230,35 @@ mod tests {
             }
         }
         assert!(Draw::of_entry(hunter().entry_base - 1).is_none());
+    }
+
+    #[test]
+    fn affixes_come_one_per_two_ranks_without_repeats_up_to_the_pool() {
+        let mut rng = Rng::new(7);
+        for rank in 0..20 {
+            let rolled = roll_affixes(rank, &mut rng);
+            let want = (rank as usize / 2).min(affixes().len());
+            assert_eq!(rolled.len(), want, "rank {rank}");
+            let mut keys: Vec<&str> = rolled.iter().map(|a| a.key.as_str()).collect();
+            keys.sort();
+            keys.dedup();
+            assert_eq!(keys.len(), want, "no repeats at rank {rank}");
+        }
+    }
+
+    #[test]
+    fn health_and_damage_grow_by_a_quarter_a_rank() {
+        let d = Draw {
+            archetype: 0,
+            first: 0,
+            epithet: 0,
+        };
+        let (base, at_3) = (d.stats(20, 0), d.stats(20, 3));
+        let want = (base.max_health as f32 * 1.75).round() as u32;
+        assert_eq!(at_3.max_health, want);
+        assert!((at_3.max_damage - base.max_damage * 1.75).abs() < 1e-3);
+        assert!((at_3.min_damage - base.min_damage * 1.75).abs() < 1e-3);
+        assert_eq!(at_3.armor, base.armor, "armour comes from affixes alone");
     }
 
     #[test]

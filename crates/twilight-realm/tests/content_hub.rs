@@ -19,6 +19,8 @@ struct Npc {
     #[serde(default)]
     tokens: bool,
     #[serde(default)]
+    blood_coin: bool,
+    #[serde(default)]
     greeting: String,
     text_id: Option<u32>,
     #[serde(default)]
@@ -120,6 +122,9 @@ fn every_npcs_flags_fit_its_role() {
                     && n.area.is_some()
             }
             "tokens" => n.npc_flags == VENDOR && n.tokens && n.stock.is_empty(),
+            "blood_coin" => {
+                n.npc_flags == VENDOR && n.blood_coin && !n.tokens && n.stock.is_empty()
+            }
             "trainer" => n.npc_flags == GOSSIP | QUEST_GIVER | TRAINER && talks,
             // The flight master only stands there: no flags, no menu, no words.
             "flight" => n.npc_flags == 0 && n.text_id.is_none() && n.stock.is_empty() && !n.tokens,

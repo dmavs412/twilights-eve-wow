@@ -108,3 +108,55 @@ base_attack_time = 1500
 spells = ["hunter_rend"]
 first = ["Silk", "Corvin", "Jessa", "Rook", "Tibbet", "Mara", "Shade", "Wren"]
 epithet = ["the Knife", "Cutpurse", "the Whisper", "Nightstep", "the Smiling", "Quickblade"]
+
+# Bounty Rank (#178): the hunters a character has killed since they last died. The next hunter's
+# health and damage are multiplied by `1 + step x rank`, and it carries one affix for every
+# `affix_every` ranks, rolled from the pool below without repeats.
+[rank]
+step = 0.25
+affix_every = 2
+
+# Blood Coin (#178): a hunter of rank N drops `base + per_rank x N` of `item` into the loot of
+# everyone it credits. Never lost on death.
+[coin]
+item = 90002
+base = 1
+per_rank = 1
+
+# The affixes. Each is data the hunter's spawn applies: `attack_speed_pct` faster swings,
+# `armor_pct` more armour, `spells` more Creature Spells (`creature_spells.toml`), and `adds`:
+# `count` more hunters of its archetype at `pct` percent of its health and damage, hunting the same
+# owner but paying nothing.
+[[affix]]
+key = "frenzied"
+attack_speed_pct = 30
+
+[[affix]]
+key = "armored"
+armor_pct = 50
+
+[[affix]]
+key = "snaring"
+spells = ["hunter_hamstring"]
+
+[[affix]]
+key = "summoner"
+adds = { count = 2, pct = 50 }
+
+# The Blood Coin vendor's stock (#178), in the merchant window's order: an item entry
+# (`given_items.toml`) and its price in Blood Coin. Placeholders: the four healing potions.
+[[coin_stock]]
+entry = 118
+coins = 1
+
+[[coin_stock]]
+entry = 858
+coins = 2
+
+[[coin_stock]]
+entry = 929
+coins = 3
+
+[[coin_stock]]
+entry = 1710
+coins = 5
