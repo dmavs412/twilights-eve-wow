@@ -552,11 +552,25 @@ struct TerrainHost<'a, 'w, 's, 'cw, 'cs> {
 /// How much of each end a sight line leaves out, in yards: the two bodies it joins.
 const SIGHT_END_YD: f32 = 1.0;
 
+/// How far below a spawn's own height its floor is looked for, in yards.
+const GROUND_RAY_YD: f32 = 40.0;
+
+/// How far terrain may rise above a spawn's own height and still be its floor, in yards: past
+/// this the terrain is the hill over a tunnel.
+const ROOF_SLACK_YD: f32 = 4.0;
+
 impl Host for TerrainHost<'_, '_, '_, '_, '_> {
+    /// The first floor below `z_hint`: a WMO's (a mine's tunnels, a building's storeys) before
+    /// the terrain's. Terrain above the hint is a roof, not a floor, so the hint stands instead.
     fn ground_height(&self, _map: u32, x: f32, y: f32, z_hint: f32) -> Option<f32> {
+        let from = wow_to_bevy([x, y, z_hint]);
+        if let Some(hit) = self.collision.ray_body(from, Dir3::NEG_Y, GROUND_RAY_YD) {
+            return Some(z_hint - hit.distance);
+        }
         self.world
-            .terrain_height_under(wow_to_bevy([x, y, z_hint]))
+            .terrain_height_under(from)
             .or_else(|| self.goto.height(self.adts, x, y))
+            .filter(|&z| z <= z_hint + ROOF_SLACK_YD)
     }
 
     /// A ray through what a body collides with: terrain, doodads and WMO walls (a Dungeon's
