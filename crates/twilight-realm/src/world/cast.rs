@@ -3162,7 +3162,6 @@ impl InWorld {
             Effect::Incapacitate {
                 duration_ms,
                 break_on_damage,
-                drop_combat,
             } => {
                 // Damage in the same cast came first, so it does not wake the target.
                 if self.mobs.iter().any(|m| m.guid == target && m.alive()) {
@@ -3170,9 +3169,6 @@ impl InWorld {
                     self.skills
                         .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
                     self.interrupt_mob_cast(target, events);
-                    if drop_combat {
-                        self.drop_combat(target, events);
-                    }
                 }
             }
             Effect::AddComboPoints { amount } => {
@@ -4189,34 +4185,6 @@ impl InWorld {
         }
     }
 
-    /// The mob `target` stops fighting the player, and the player it: the mob stands dazed until
-    /// its hold is over (`State::Dazed`).
-    fn drop_combat(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
-        let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == target && m.alive()) else {
-            return;
-        };
-        let was_engaged = mob.state == State::Engaged;
-        mob.state = State::Dazed;
-        if !was_engaged {
-            return;
-        }
-        mob.walk = None;
-        events.push(SessionEvent::AttackStop {
-            attacker: mob.guid,
-            victim: self.guid,
-        });
-        let mut pairs = vec![(UNIT_FIELD_FLAGS, 0)];
-        pairs.extend(guid_pairs(UNIT_FIELD_TARGET, 0));
-        events.push(values(mob.guid, &pairs));
-        if self.player.attacking == Some(target) {
-            self.player.attacking = None;
-            events.push(SessionEvent::AttackStop {
-                attacker: self.guid,
-                victim: target,
-            });
-        }
-    }
-
     /// A stun or incapacitate landed on `target`: a mob of that guid loses the cast it is under way.
     fn interrupt_mob_cast(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
         if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == target && m.alive()) {
@@ -4257,7 +4225,7 @@ impl InWorld {
         let mob = &mut self.mobs[i];
         mob.health = mob.health.saturating_sub(damage);
         events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
-        if matches!(mob.state, State::Idle | State::Dazed) {
+        if mob.state == State::Idle {
             super::engage(mob, self.guid, events);
         }
         if mob.health == 0 {

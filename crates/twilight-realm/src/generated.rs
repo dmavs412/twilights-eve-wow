@@ -508,7 +508,7 @@ mod tests {
         serde_json::from_value(serde_json::json!([
             {"key": "sleep", "spell_id": 1776, "duration_ms": 4000, "modelled": true,
              "break_on": {"damage": true},
-             "effects": [{"kind": "incapacitate", "params": {"drop_combat": true}}]},
+             "effects": [{"kind": "incapacitate", "params": {}}]},
             {"key": "unbuilt", "spell_id": 1, "duration_ms": 1000, "modelled": false,
              "effects": [{"kind": "stun", "params": {"aura_spell_id": 1}}]},
         ]))
@@ -551,7 +551,6 @@ mod tests {
             [Effect::Incapacitate {
                 duration_ms: 4000,
                 break_on_damage: true,
-                drop_combat: true,
             }]
         );
     }

@@ -4,6 +4,7 @@
 mod common;
 
 use benilla_protocol::SessionEvent;
+use common::fight::{cast, refusal, View};
 use common::party::*;
 use common::*;
 
@@ -11,6 +12,9 @@ use common::*;
 const HUNTER: u32 = 3265;
 const THORN_HILL: [f32; 3] = [-38.801, -3234.81, 91.889];
 const CORRUPTION: &str = "corruption_creature";
+const GOUGE: u32 = 1776;
+/// Whole rage points Gouge costs.
+const GOUGE_RAGE: u32 = 15;
 
 fn north_of(p: [f32; 3], yd: f32) -> [f32; 3] {
     [p[0] + yd, p[1], p[2]]
@@ -100,6 +104,106 @@ fn with_no_one_else_who_hurt_it_a_mob_runs_home() {
             if *guid == hunter && fields.unit_health() == Some(max))
     });
     assert!(healed, "it runs home and heals");
+}
+
+/// Player 0, level 20 and fighting the hunter at the camp, builds Gouge's rage and gouges it; the
+/// hunter's guid and its max health.
+fn gouged(seed: u64) -> (Party, u64, u32) {
+    let (mut party, hunter) = pulled_at(Realm::with_seed(seed), 20, 60.0);
+    let max = max_health(party.seen(0), hunter);
+    party.cmd(0, RealmCommand::AttackSwing { guid: hunter });
+    for _ in 0..600 {
+        if rage_of(&party, 0) >= GOUGE_RAGE {
+            break;
+        }
+        party.run(0.1);
+    }
+    assert!(rage_of(&party, 0) >= GOUGE_RAGE, "rage for Gouge");
+    party.cmd(0, RealmCommand::AttackStop);
+    party.cmd(0, cast(GOUGE, Some(hunter)));
+    assert_eq!(refusal(party.seen(0), GOUGE), None, "gouge is cast");
+    (party, hunter, max)
+}
+
+#[test]
+fn a_gouged_mob_hit_by_a_second_player_stays_in_the_fight_unhealed() {
+    let (mut party, hunter, max) = gouged(3);
+    let b = party.guids[1];
+    let at = party.unit(1, HUNTER, THORN_HILL).1;
+    party.go_facing(1, north_of(at, 1.5), at);
+    party.cmd(1, RealmCommand::AttackSwing { guid: hunter });
+    let hit = party.run_until(20.0, |got| swung_at(&got[1], b).contains(&hunter));
+    assert!(hit, "the second player hurts the hunter");
+    let after = party.run(10.0);
+    // Until the two of them kill it.
+    let all: Vec<&SessionEvent> = after[0]
+        .iter()
+        .take_while(|e| !died(std::slice::from_ref(*e), hunter))
+        .collect();
+    assert!(
+        !all.iter().any(|e| matches!(e,
+            SessionEvent::AttackStop { attacker, .. } if *attacker == hunter)),
+        "it never leaves the fight"
+    );
+    assert!(
+        !all.iter()
+            .any(|e| matches!(e, SessionEvent::ObjectValues { guid, fields }
+            if *guid == hunter && fields.unit_health() == Some(max))),
+        "it never resets to full health"
+    );
+    assert!(died(&after[0], hunter), "and they fight it to the death");
+}
+
+#[test]
+fn a_mob_resets_only_once_both_players_are_out_of_leash_range() {
+    let (mut party, hunter, max) = gouged(3);
+    let b = party.guids[1];
+    let at = party.unit(1, HUNTER, THORN_HILL).1;
+    party.go_facing(1, north_of(at, 1.5), at);
+    party.cmd(1, RealmCommand::AttackSwing { guid: hunter });
+    assert!(party.run_until(20.0, |got| swung_at(&got[1], b).contains(&hunter)));
+    party.cmd(1, RealmCommand::AttackStop);
+
+    // Player 0 runs off past the leash: the hunter turns on player 1 and stays in the fight.
+    party.cmd(0, RealmCommand::AttackStop);
+    party.go(0, north_of(THORN_HILL, -200.0), 0.0);
+    // Long enough for Gouge to end and the hunter to chase player 0 out to its leash.
+    let first = party.run(25.0);
+    assert!(
+        !first.iter().flatten().any(|e| matches!(e,
+            SessionEvent::AttackStop { attacker, .. } if *attacker == hunter)),
+        "one player left in reach holds it"
+    );
+
+    // Now player 1 runs off too: it gives up, runs home and heals.
+    party.go(1, north_of(THORN_HILL, 200.0), 0.0);
+    let healed = party.run_until(60.0, |got| {
+        got.iter().flatten().any(|e| {
+            matches!(e, SessionEvent::ObjectValues { guid, fields }
+            if *guid == hunter && fields.unit_health() == Some(max))
+        })
+    });
+    assert!(healed, "with no one in reach it resets");
+}
+
+/// `hunter`'s max health from its create in `events`.
+fn max_health(events: &[SessionEvent], hunter: u64) -> u32 {
+    events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::ObjectCreate { guid, fields, .. } if *guid == hunter => {
+                fields.unit_max_health()
+            }
+            _ => None,
+        })
+        .unwrap()
+}
+
+/// Player `i`'s rage, in whole points, as their client has it.
+fn rage_of(party: &Party, i: usize) -> u32 {
+    let mut view = View::default();
+    view.see(party.seen(i));
+    view.rage(party.guids[i])
 }
 
 #[test]

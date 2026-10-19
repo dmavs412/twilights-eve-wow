@@ -998,9 +998,7 @@
     "effects": [
      {
       "kind": "incapacitate",
-      "params": {
-       "drop_combat": true
-      },
+      "params": {},
       "realm_only": false
      }
     ],

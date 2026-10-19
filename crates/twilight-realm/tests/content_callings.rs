@@ -323,12 +323,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         Effect::Incapacitate {
             duration_ms,
             break_on_damage,
-            drop_combat,
         } => {
             assert_eq!(kind, "incapacitate", "{key}");
             assert_eq!(duration_ms, ms(want, "duration_ms"));
             assert_eq!(break_on_damage, want["break_on_damage"] == true);
-            assert_eq!(drop_combat, want["drop_combat"] == true);
         }
         Effect::AttackSpeedSlow { pct, duration_ms } => {
             assert_eq!(kind, "attack_speed_slow", "{key}");

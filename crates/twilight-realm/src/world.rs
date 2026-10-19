@@ -526,7 +526,6 @@ impl InWorld {
             }
         }
 
-        self.dazed_wake(c, host, events);
         self.player_swing(c, rng, events, &mut ticked);
         self.auto_shot(c, rng, events, &mut ticked);
         for i in 0..self.mobs.len() {
@@ -557,33 +556,6 @@ impl InWorld {
             r.min(aggro::stealth_radius(player_level, mob.level()))
         } else {
             r
-        }
-    }
-
-    /// A dazed mob whose hold is over: it notices the player as any idle mob does, or goes home.
-    fn dazed_wake(&mut self, c: &Char, host: &dyn Host, events: &mut Vec<SessionEvent>) {
-        let me = c.position;
-        let route = crate::dungeon::route_on(self.map);
-        for i in 0..self.mobs.len() {
-            let mob = &self.mobs[i];
-            if mob.state != State::Dazed || self.skills.stunned(mob.guid) || !self.runs(mob.guid) {
-                continue;
-            }
-            let r = self.notice_radius(mob, c.level);
-            let notices = mob.template.hostile
-                && distance(mob.position, me) <= r
-                && host.line_of_sight(self.map, eye(mob.position), eye(me));
-            if notices {
-                self.pull(i, events);
-            } else {
-                let map = self.map;
-                evade(
-                    &mut self.mobs[i],
-                    self.guid,
-                    route.map(|r| (r, map, host)),
-                    events,
-                );
-            }
         }
     }
 
@@ -759,7 +731,7 @@ impl InWorld {
         if swing.damage > 0 {
             events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
         }
-        let idle = matches!(mob.state, State::Idle | State::Dazed);
+        let idle = mob.state == State::Idle;
         if swing.damage > 0 && crate::wear::on_hit(c, &mut self.wear, events) {
             self.refresh_gear(c, events);
         }
@@ -866,7 +838,7 @@ impl InWorld {
                     mob.stroll(dt, map, host, rng, events);
                 }
             }
-            State::Dead | State::Dazed => {}
+            State::Dead => {}
             State::Evading => {
                 if mob.walk.is_none() {
                     mob.state = State::Idle;
@@ -881,8 +853,11 @@ impl InWorld {
                 if mob.target != self.guid && self.others.iter().any(|o| o.0 == mob.target) => {}
             State::Engaged => {
                 let target = mob.target;
-                // Its threat table picks whom it fights; the dead and the gone leave it.
+                // Its threat table picks whom it fights; the dead and the gone leave it, and once
+                // it strays past its leash, so do those it was dragged after past it (#165).
                 let (guid, others, at) = (self.guid, &self.others, mob.position);
+                let home = mob.home;
+                let strayed = mob.leashes && leash::beyond(home, at);
                 let me_alive = self.player.alive();
                 let reach = |g: u64| {
                     let p = if g == guid {
@@ -890,19 +865,17 @@ impl InWorld {
                     } else {
                         others.iter().find(|o| o.0 == g).map(|o| o.1)
                     };
-                    p.map(|p| distance(at, p) <= melee_reach())
+                    p.filter(|&p| !strayed || !leash::beyond(home, p))
+                        .map(|p| distance(at, p) <= melee_reach())
                 };
                 mob.threat.retain(|g| reach(g).is_some());
-                if let Some(next) = mob.threat.pick(target, reach) {
-                    if next != target {
-                        engage(mob, next, events);
-                        return;
-                    }
+                let next = mob.threat.pick(target, reach);
+                if let Some(next) = next.filter(|&n| n != target) {
+                    engage(mob, next, events);
+                    return;
                 }
-                if target != self.guid
-                    || !self.player.alive()
-                    || (mob.leashes && leash::beyond(mob.home, mob.position))
-                {
+                // It gives up only with no one left on its table.
+                if next.is_none() {
                     let camp = mob.camp;
                     self.evade_camp(camp, target, route.map(|r| (r, map, host)), events);
                     return;

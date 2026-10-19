@@ -14,7 +14,7 @@ impl InWorld {
         let content = mobs::content();
         let mut made = Vec::new();
         for mob in &mut self.mobs {
-            if !matches!(mob.state, State::Engaged | State::Dazed) {
+            if mob.state != State::Engaged {
                 continue;
             }
             let Some(spawn) = mob.spawn_row() else {

@@ -163,7 +163,7 @@ impl Shard {
     ) -> HashMap<S, HashSet<u64>> {
         let mut owners: HashMap<S, HashSet<u64>> = HashMap::new();
         for m in &self.mobs {
-            let fighting = matches!(m.state, State::Engaged | State::Dazed | State::Evading);
+            let fighting = matches!(m.state, State::Engaged | State::Evading);
             let owner = players
                 .iter()
                 .find(|p| fighting && p.guid == m.target)

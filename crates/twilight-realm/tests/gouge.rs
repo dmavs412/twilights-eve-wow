@@ -1,6 +1,5 @@
-//! Gouge, the first incapacitate: a stun that any damage after the cast ends, and that drops the
-//! target out of combat with the caster. Played through the realm's seam by a level 1 Basic
-//! Warrior at a level 3 mob.
+//! Gouge, the first incapacitate: a stun that any damage after the cast ends. The target stays in
+//! the fight (#165). Played through the realm's seam by a level 1 Basic Warrior at a level 3 mob.
 
 mod common;
 
@@ -55,39 +54,62 @@ fn gouges_own_damage_does_not_break_it_but_later_damage_does() {
 }
 
 #[test]
-fn the_caster_leaves_combat_while_the_target_is_incapacitated() {
+fn the_target_stays_in_combat_while_incapacitated() {
     let (mut realm, me, mob, mut view) = ready();
-    gouge(&mut realm, &mut view, &mob);
-    view.run(&mut realm, 1.0);
+    let events = gouge(&mut realm, &mut view, &mob);
+    assert!(
+        !stopped(&events, &mob),
+        "the cast drops no one from the fight"
+    );
+    let during = view.run(&mut realm, 1.0);
     assert!(view.aura(mob.guid, GOUGE).is_some());
-    assert_eq!(view.fields(me).unit_flags() & UNIT_FLAG_IN_COMBAT, 0);
+    assert!(!stopped(&during, &mob));
+    assert_ne!(view.fields(mob.guid).unit_flags() & UNIT_FLAG_IN_COMBAT, 0);
+    assert_ne!(view.fields(me).unit_flags() & UNIT_FLAG_IN_COMBAT, 0);
 }
 
 #[test]
-fn waking_out_of_aggro_range_the_target_leashes_home() {
-    let (mut realm, _, mob, mut view) = ready();
+fn waking_with_the_caster_away_the_target_chases_instead_of_going_home() {
+    let (mut realm, me, mob, mut view) = ready();
     gouge(&mut realm, &mut view, &mob);
-    stand_at(&mut realm, &mob, 60.0);
+    stand_at(&mut realm, &mob, 30.0);
     let during = view.run(&mut realm, 3.0);
-    assert!(!started_on_player(&during, &mob), "held while it sleeps");
-    let after = view.run(&mut realm, 3.0);
-    assert!(!started_on_player(&after, &mob), "too far to notice");
-    assert!(
-        after
-            .iter()
-            .any(|e| matches!(e, SessionEvent::MonsterMove { guid, .. } if *guid == mob.guid)),
-        "it runs home"
-    );
+    assert!(swung(&during, &mob).is_empty(), "held while it sleeps");
+    let after = view.run(&mut realm, 10.0);
+    assert!(!stopped(&after, &mob), "it never gives up the fight");
+    assert!(swung(&after, &mob).contains(&me), "it runs the caster down");
 }
 
 #[test]
 fn waking_with_the_caster_close_the_target_fights_again() {
-    let (mut realm, _, mob, mut view) = ready();
+    let (mut realm, me, mob, mut view) = ready();
     gouge(&mut realm, &mut view, &mob);
     let during = view.run(&mut realm, 3.0);
-    assert!(!started_on_player(&during, &mob), "held while it sleeps");
+    assert!(swung(&during, &mob).is_empty(), "held while it sleeps");
+    assert!(
+        !started_on_player(&during, &mob),
+        "still the caster's fight"
+    );
     let after = view.run(&mut realm, 3.0);
-    assert!(started_on_player(&after, &mob), "it turns on the caster");
+    assert!(swung(&after, &mob).contains(&me), "it swings at the caster");
+}
+
+/// Whether `mob` stopped fighting in `events`: an evade starts with its `AttackStop`.
+fn stopped(events: &[SessionEvent], mob: &Mob) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::AttackStop { attacker, .. } if *attacker == mob.guid))
+}
+
+/// The victims of `mob`'s melee swings in `events`.
+fn swung(events: &[SessionEvent], mob: &Mob) -> Vec<u64> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::AttackerState(s) if s.attacker == mob.guid => Some(s.victim),
+            _ => None,
+        })
+        .collect()
 }
 
 /// A human warrior of `level` in the world at the Crossroads, the mob near it, and what the
