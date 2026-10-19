@@ -42,6 +42,8 @@ const EQUIP_ERR_BAG_IN_BAG: u8 = 5;
 const EQUIP_ERR_ONLY_EMPTY_BAGS: u8 = 31;
 const EQUIP_ERR_CANT_EQUIP_WITH_TWOHANDED: u8 = 13;
 const EQUIP_ERR_ITEM_NOT_FOUND: u8 = 23;
+/// `EQUIP_ERR_ITEM_DOESNT_GO_INTO_BAG`: not arrows in a quiver, not bullets in an ammo pouch.
+const EQUIP_ERR_WRONG_BAG_TYPE: u8 = 15;
 pub(crate) const EQUIP_ERR_INVENTORY_FULL: u8 = 50;
 
 /// The object of `item`, at `at`: owned by the player, contained by the player or by the bag it
@@ -169,6 +171,7 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
     }
     let mut s = CharacterStats::geared_dual(c.class(), c.race, c.level, bonus, &worn, off_hand);
     s.add_ranged_dps(crate::ammo::dps(c));
+    s.quiver_haste_pct = c.inventory.quiver_haste_pct();
     s
 }
 
@@ -518,7 +521,7 @@ pub(crate) fn swap(
                 // The two-hander's own slot frees up as it leaves.
                 Some(src)
             } else {
-                c.inventory.free_slot()
+                c.inventory.free_slot(off.entry)
             };
             let Some(room) = room else {
                 refuse(EQUIP_ERR_INVENTORY_FULL, off.guid, events);
@@ -641,7 +644,11 @@ fn is_two_hander(entry: u32) -> bool {
 /// `InventoryResult` of a refusal.
 fn check_place(c: &Char, item: &Item, to: Pos) -> Result<(), u8> {
     if to.is_storage() {
-        return Ok(());
+        return if c.inventory.takes(to, item.entry) {
+            Ok(())
+        } else {
+            Err(EQUIP_ERR_WRONG_BAG_TYPE)
+        };
     }
     if to.is_bag_slot() {
         return if bag_size(item.entry) > 0 {

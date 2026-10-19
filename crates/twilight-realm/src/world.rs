@@ -1403,7 +1403,9 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
         ),
         (
             UNIT_FIELD_RANGEDATTACKTIME,
-            s.ranged.map_or(0, |r| r.attack_time_ms),
+            s.ranged.map_or(0, |r| {
+                crate::rules::haste::hasted_attack_time(r.attack_time_ms, s.quiver_haste_pct)
+            }),
         ),
         (
             UNIT_FIELD_MINRANGEDDAMAGE,

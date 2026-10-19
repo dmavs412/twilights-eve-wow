@@ -1814,6 +1814,8 @@ impl InWorld {
             }
         };
         let speed = self.player.stats.ranged.map_or(0, |r| r.attack_time_ms);
+        // A quiver's haste and the buffs' multiply.
+        let speed = hasted_attack_time(speed, self.player.stats.quiver_haste_pct);
         let speed = hasted_attack_time(speed, self.skills.ranged_haste_pct());
         self.player.shot_timer = clock::secs(speed);
         let done = self.go(skill, Some(target), targets, true, c, rng, events);

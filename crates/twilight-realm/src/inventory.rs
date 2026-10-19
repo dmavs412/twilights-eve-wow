@@ -84,6 +84,26 @@ impl Item {
     }
 }
 
+/// `ITEM_CLASS_QUIVER`: a quiver (subclass 2) or an ammo pouch (3).
+const CLASS_QUIVER: u32 = 11;
+/// `ITEM_CLASS_PROJECTILE`, whose subclass 2 is arrows and 3 bullets.
+const CLASS_PROJECTILE: u32 = 6;
+
+/// Whether the bag `bag` (an entry) takes `entry`: a quiver only arrows, an ammo pouch only
+/// bullets (vmangos `ItemCanGoIntoBag`), any other bag anything.
+pub(crate) fn bag_holds(bag: u32, entry: u32) -> bool {
+    match items::template(bag) {
+        Some(b) if b.class == CLASS_QUIVER => items::template(entry)
+            .is_some_and(|t| t.class == CLASS_PROJECTILE && t.subclass == b.subclass),
+        _ => true,
+    }
+}
+
+/// Whether the bag `bag` is a quiver or ammo pouch, which ammo goes into first.
+fn special(bag: u32) -> bool {
+    items::template(bag).is_some_and(|b| b.class == CLASS_QUIVER)
+}
+
 /// How many items a bag of `entry` holds, 0 for an item that is not a bag.
 pub(crate) fn bag_size(entry: u32) -> u8 {
     items::template(entry).map_or(0, |t| t.container_slots.min(36) as u8)
@@ -239,9 +259,33 @@ impl Inventory {
         places
     }
 
-    /// The first empty storage place: the backpack first, then the bags in order.
-    pub(crate) fn free_slot(&self) -> Option<Pos> {
-        self.storage().into_iter().find(|p| self.get(*p).is_none())
+    /// The first empty storage place that takes `entry`: the backpack first, then the bags in
+    /// order.
+    pub(crate) fn free_slot(&self, entry: u32) -> Option<Pos> {
+        self.storage()
+            .into_iter()
+            .find(|p| self.get(*p).is_none() && self.takes(*p, entry))
+    }
+
+    /// Whether the storage place `at` may hold `entry`: anything in the backpack, what its bag
+    /// holds in a bag.
+    pub(crate) fn takes(&self, at: Pos, entry: u32) -> bool {
+        if !BAG_SLOTS.contains(&at.bag) {
+            return true;
+        }
+        self.get(Pos::own(at.bag))
+            .is_none_or(|bag| bag_holds(bag.entry, entry))
+    }
+
+    /// The best ranged haste of the quivers and ammo pouches in the bag slots: one counts, as in
+    /// vanilla.
+    pub(crate) fn quiver_haste_pct(&self) -> u32 {
+        BAG_SLOTS
+            .filter_map(|slot| self.get(slot))
+            .filter_map(|bag| items::template(bag.entry))
+            .map(|t| t.ranged_haste_pct)
+            .max()
+            .unwrap_or(0)
     }
 
     /// The first empty slot of the bag in bag slot `bag`.
@@ -257,7 +301,16 @@ impl Inventory {
     /// it changed, and whether each now holds a new item.
     pub(crate) fn store(&mut self, entry: u32, count: u32) -> Result<Vec<(Pos, bool)>, Full> {
         let stack = items::template(entry).map_or(1, |t| t.stack_size());
-        let places = self.storage();
+        // Where it may go, a quiver or ammo pouch first (vmangos `CanStoreItem`'s special bags).
+        let mut places: Vec<Pos> = self
+            .storage()
+            .into_iter()
+            .filter(|at| self.takes(*at, entry))
+            .collect();
+        places.sort_by_key(|at| {
+            !(BAG_SLOTS.contains(&at.bag)
+                && self.get(Pos::own(at.bag)).is_some_and(|b| special(b.entry)))
+        });
         // Plan first, so a store that does not fit changes nothing.
         let mut left = count;
         let mut plan = Vec::new();

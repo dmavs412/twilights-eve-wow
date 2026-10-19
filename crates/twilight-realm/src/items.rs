@@ -35,6 +35,10 @@ pub(crate) struct Template {
     pub(crate) attack_power: i32,
     /// Defense skill from the equip spells.
     pub(crate) defense: u16,
+    /// A quiver's or ammo pouch's ranged haste from its equip spell (aura 141,
+    /// `SPELL_AURA_MOD_RANGED_AMMO_HASTE`): the percent the ranged weapon shoots faster while it is
+    /// in a bag slot.
+    pub(crate) ranged_haste_pct: u32,
     pub(crate) armor: u32,
     pub(crate) block: u32,
     pub(crate) speed_ms: u32,
@@ -88,6 +92,7 @@ impl Default for Template {
             equip_spells: Vec::new(),
             attack_power: 0,
             defense: 0,
+            ranged_haste_pct: 0,
             armor: 0,
             block: 0,
             speed_ms: 0,

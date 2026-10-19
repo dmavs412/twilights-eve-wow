@@ -33,7 +33,7 @@ role = "goods"
 npc_flags = 0x4004
 position = [-411.0, -2639.0, 96.0]
 orientation = 4.71
-stock = [4496, 2512, 2516]
+stock = [4496, 2512, 2516, 5439, 7279]
 
 # The innkeeper: Innkeeper Boorand Plainswind, creature 3934, the Crossroads' own, lends his name;
 # the display is a tauren man. 0x85 is gossip, vendor and innkeeper: his gossip binds the
@@ -790,7 +790,7 @@ role = "goods"
 npc_flags = 0x4004
 position = [-2384.0, -1938.0, 95.8]
 orientation = 5.35
-stock = [4496, 2512, 2516]
+stock = [4496, 2512, 2516, 5439, 7279]
 
 # The townsfolk: braves on watch, and the refugees down from Thousand Needles.
 

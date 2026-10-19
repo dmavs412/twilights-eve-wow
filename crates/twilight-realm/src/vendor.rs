@@ -264,7 +264,7 @@ pub(crate) fn buy_back(
         });
         return Traded::default();
     }
-    let Some(dst) = c.inventory.free_slot() else {
+    let Some(dst) = c.inventory.free_slot(sold.item.entry) else {
         events.push(equipment::inventory_failure(
             equipment::EQUIP_ERR_INVENTORY_FULL,
             sold.item.guid,

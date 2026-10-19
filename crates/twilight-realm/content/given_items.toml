@@ -14,5 +14,9 @@ item = [
   # damage per second, its middle added to each shot at the weapon's speed.
   { entry = 2512, name = "Rough Arrow", quality = 1, item_level = 5, required_level = 1, class = 6, subclass = 2, inventory_type = 24, display_id = 5996, buy_price = 10, buy_count = 200, stackable = 200, material = 2, damage = [[1.0, 2.0, 0]] },
   { entry = 2516, name = "Light Shot", quality = 1, item_level = 5, required_level = 1, class = 6, subclass = 3, inventory_type = 24, display_id = 5998, buy_price = 10, buy_count = 200, stackable = 200, material = 2, damage = [[1.0, 2.0, 0]] },
+  # The level 5 quiver and ammo pouch (#158), as vmangos has them: 8 slots, arrows or bullets
+  # only. Their equip spell Haste (14824, aura 141 at 9 + 1d1) is the 10% `ranged_haste_pct`.
+  { entry = 5439, name = "Small Quiver", quality = 1, item_level = 5, required_level = 1, class = 11, subclass = 2, inventory_type = 18, display_id = 21318, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, container_slots = 8, equip_spells = [14824], equip_spell_names = ["Haste"], ranged_haste_pct = 10 },
+  { entry = 7279, name = "Small Leather Ammo Pouch", quality = 1, item_level = 5, required_level = 1, class = 11, subclass = 3, inventory_type = 18, display_id = 1816, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, container_slots = 8, equip_spells = [14824], equip_spell_names = ["Haste"], ranged_haste_pct = 10 },
   { entry = 6948, name = "Hearthstone", quality = 1, item_level = 1, class = 15, display_id = 6418, bonding = 1, max_count = 1, stackable = 1, use_spell = 8690, use_spell_name = "Hearthstone", use_cooldown_ms = 300000, use_category_cooldown_ms = 0 },
 ]

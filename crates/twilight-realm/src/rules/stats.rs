@@ -60,6 +60,8 @@ pub struct CharacterStats {
     /// The bow, gun, crossbow or thrown weapon in the ranged slot; `None` without one (a wand
     /// is no ranged weapon here).
     pub ranged: Option<Ranged>,
+    /// The percent a quiver or ammo pouch in a bag slot makes the ranged weapon shoot faster.
+    pub quiver_haste_pct: u32,
     pub weapon_skill: u16,
     pub defense: u16,
 }
@@ -293,6 +295,7 @@ impl CharacterStats {
                     attack_time_ms: time_ms,
                 }
             }),
+            quiver_haste_pct: 0,
             weapon_skill: skill,
             defense,
         }

@@ -1066,7 +1066,8 @@ impl Realm {
         }
         moved.gear_changed |= traded.gear_changed;
         looted.took |= traded.changed;
-        if moved.gear_changed {
+        // A quiver in a bag slot moves the ranged speed (#158).
+        if moved.gear_changed || moved.bags_changed {
             w.refresh_gear(c, events);
         }
         if let Some((corpse, lootable)) = looted.flag {
