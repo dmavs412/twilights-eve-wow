@@ -74,8 +74,12 @@ impl InWorld {
             self.guid,
             &[equipment::money_pair(&c.inventory), (UNIT_FIELD_POWER2, 0)],
         ));
-        // Death takes every aura off the player, a creature's curse with the rest.
+        // Killed by their own Bounty Hunter, they are Marked.
+        self.marked_by_death(c, events);
+        // Death takes every aura off the player, a creature's curse with the rest; the Marked
+        // debuff comes back after release.
         self.auras_die_with(self.guid, events);
+        self.marked_shown = false;
         // Notoriety falls to nothing, so the Heat aura is rightly gone with the rest.
         c.notoriety = 0.0;
         self.heat_shown = 0;

@@ -559,6 +559,8 @@ pub(crate) struct Mob {
     pub(crate) attack_time_mul: f32,
     /// Creature Spells it casts besides its template's.
     pub(crate) extra_spells: Vec<&'static CreatureSpell>,
+    /// A Bounty Hunter's affixes, by key.
+    pub(crate) affixes: Vec<&'static str>,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -566,6 +568,9 @@ pub(crate) struct Mob {
 pub(crate) struct Bounty {
     pub(crate) owner: u64,
     pub(crate) rank: u32,
+    /// It killed its owner, who is **Marked** until it falls (#179): it roams where it won, and
+    /// its kill lifts the mark instead of raising their rank.
+    pub(crate) victor: bool,
 }
 
 /// The spawn index of a mob that no spawn placed.
@@ -625,6 +630,7 @@ impl Mob {
             bounty: None,
             attack_time_mul: 1.0,
             extra_spells: Vec::new(),
+            affixes: Vec::new(),
         })
     }
 
@@ -672,6 +678,20 @@ impl Mob {
             bounty: None,
             attack_time_mul: 1.0,
             extra_spells: Vec::new(),
+            affixes: Vec::new(),
+        }
+    }
+
+    /// A Bounty Hunter that killed its owner (#179): it stops hunting and roams `roam` yards
+    /// around where it stands, giving up a chase that strays from there.
+    pub(crate) fn settle(&mut self, roam: f32) {
+        self.hunts = None;
+        self.leashes = true;
+        self.home = self.position;
+        self.home_orientation = self.orientation;
+        self.wander_radius = roam;
+        if let Some(b) = &mut self.bounty {
+            b.victor = true;
         }
     }
 

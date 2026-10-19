@@ -249,6 +249,14 @@ pub(crate) struct InWorld {
     hunter_in: Option<f32>,
     /// Bounty Hunters sent this session, for their guids.
     hunters_sent: u32,
+    /// The unit whose damage last landed on the player, for who killed them.
+    last_hit_by: Option<u64>,
+    /// Whether the Marked debuff is up.
+    marked_shown: bool,
+    /// Whether the stats carry the Marked penalty.
+    marked_applied: bool,
+    /// Where the Marked victor's map flag was last put.
+    victor_flag: Option<[f32; 2]>,
 }
 
 impl InWorld {
@@ -338,6 +346,10 @@ impl InWorld {
             heat_shown: 0,
             hunter_in: None,
             hunters_sent: 0,
+            last_hit_by: None,
+            marked_shown: false,
+            marked_applied: c.marked.is_some(),
+            victor_flag: None,
         };
         events.push(w.player_create(c));
         w
@@ -977,7 +989,13 @@ impl InWorld {
                     * mob.attack_time_mul
                     * self.skills.attack_time_mul(mob.guid);
                 if swing.damage > 0 {
-                    self.player_takes(swing.damage, crate::rules::school::School::Physical, events);
+                    let attacker = mob.guid;
+                    self.player_takes(
+                        attacker,
+                        swing.damage,
+                        crate::rules::school::School::Physical,
+                        events,
+                    );
                     if crate::wear::on_hit(c, &mut self.wear, events) {
                         self.refresh_gear(c, events);
                     }
@@ -992,10 +1010,14 @@ impl InWorld {
     /// broken (the Hearthstone's interrupts on damage).
     fn player_takes(
         &mut self,
+        from: u64,
         damage: u32,
         school: crate::rules::school::School,
         events: &mut Vec<SessionEvent>,
     ) {
+        if damage > 0 {
+            self.last_hit_by = Some(from);
+        }
         self.skills.break_stealth(events);
         let damage = self.skills.absorb(damage, school, events);
         let p = &mut self.player;
@@ -1026,7 +1048,7 @@ impl InWorld {
         } else {
             damage
         };
-        self.player_takes(damage, school, events);
+        self.player_takes(from, damage, school, events);
         if spared && self.player.health <= 1 {
             self.beaten_by = Some(from);
         }
@@ -1167,12 +1189,15 @@ impl InWorld {
         }
         loot.items
             .extend(k.drops.iter().map(|&item| Some((item, 1))));
-        // A Bounty Hunter pays everyone it credits in Blood Coin; its owner's Bounty Rank rises.
+        // A Bounty Hunter pays everyone it credits in Blood Coin; its owner's Bounty Rank rises,
+        // or, if it was the victor they are Marked by, the mark lifts.
         if let Some(b) = k.bounty {
             let coin = crate::rules::notoriety::blood_coin();
             loot.items
                 .push(Some((coin, crate::rules::notoriety::coin_drop(b.rank))));
-            if b.owner == c.guid {
+            if b.owner == c.guid && b.victor {
+                c.marked = None;
+            } else if b.owner == c.guid {
                 c.bounty_rank += 1;
             }
         }

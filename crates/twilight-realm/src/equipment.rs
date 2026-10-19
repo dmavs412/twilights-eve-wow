@@ -169,7 +169,13 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
     if let Some(at) = off_hand.and_then(|e| worn.iter().position(|w| *w == e)) {
         worn.remove(at);
     }
-    let mut s = CharacterStats::geared_dual(c.class(), c.race, c.level, bonus, &worn, off_hand);
+    // Marked (#179) takes a share of the base stats.
+    let base_pct = c
+        .marked
+        .as_ref()
+        .map_or(100, |_| crate::rules::notoriety::marked_stat_pct());
+    let mut s =
+        CharacterStats::geared_scaled(c.class(), c.race, c.level, bonus, &worn, off_hand, base_pct);
     s.add_ranged_dps(crate::ammo::dps(c));
     s.quiver_haste_pct = c.inventory.quiver_haste_pct();
     s

@@ -55,6 +55,14 @@ struct CoinRow {
 }
 
 #[derive(Deserialize)]
+struct Marked {
+    penalty_pct: u32,
+    minutes: f32,
+    roam_yd: f32,
+    aura: u32,
+}
+
+#[derive(Deserialize)]
 struct File {
     gain: Gain,
     drain: Drain,
@@ -62,6 +70,7 @@ struct File {
     rank: Rank,
     coin: Coin,
     coin_stock: Vec<CoinRow>,
+    marked: Marked,
 }
 
 fn file() -> &'static File {
@@ -213,4 +222,24 @@ pub fn coin_price(entry: u32) -> Option<u32> {
         .iter()
         .find(|r| r.entry == entry)
         .map(|r| r.coins)
+}
+
+/// The percent of their base stats a Marked character keeps.
+pub fn marked_stat_pct() -> u32 {
+    100u32.saturating_sub(file().marked.penalty_pct)
+}
+
+/// The logged-in seconds being Marked lasts.
+pub fn marked_secs() -> f32 {
+    file().marked.minutes * 60.0
+}
+
+/// How far from where it won a Marked character's victor roams.
+pub fn marked_roam_yd() -> f32 {
+    file().marked.roam_yd
+}
+
+/// The client spell a Marked character wears as a debuff.
+pub fn marked_aura() -> u32 {
+    file().marked.aura
 }

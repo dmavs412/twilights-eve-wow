@@ -191,8 +191,23 @@ impl CharacterStats {
         gear: &[u32],
         off_hand: Option<u32>,
     ) -> Self {
+        Self::geared_scaled(class, race, level, tier_bonus, gear, off_hand, 100)
+    }
+
+    /// [`Self::geared_dual`] keeping only `base_pct` percent of the base stats, rounded down (a
+    /// Marked character's); the gear's stats are whole.
+    pub fn geared_scaled(
+        class: u8,
+        race: u8,
+        level: u8,
+        tier_bonus: [u32; 5],
+        gear: &[u32],
+        off_hand: Option<u32>,
+        base_pct: u32,
+    ) -> Self {
         let race_base = tables::at(tables::levels().class(class).race_stats.of(race), level);
-        let base: [u32; 5] = std::array::from_fn(|i| race_base[i] + tier_bonus[i]);
+        let base: [u32; 5] =
+            std::array::from_fn(|i| (race_base[i] + tier_bonus[i]) * base_pct / 100);
         let mut g = Gear::default();
         let worn = gear.iter().map(|e| (*e, false));
         let worn = worn.chain(off_hand.map(|e| (e, true)));

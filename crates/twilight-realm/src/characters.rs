@@ -66,6 +66,25 @@ pub(crate) struct Char {
     pub(crate) notoriety: f32,
     /// **Bounty Rank**: the Bounty Hunters they have killed since they last died.
     pub(crate) bounty_rank: u32,
+    /// **Marked** (#179): their own Bounty Hunter killed them and is still out there.
+    pub(crate) marked: Option<Marked>,
+}
+
+/// What being **Marked** holds (#179): the logged-in time left, and the hunter that won, as
+/// much of it as brings it back at its home spot after a login.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct Marked {
+    pub(crate) secs_left: f32,
+    /// Its draw: archetype, first name and epithet, as indexes into `notoriety.toml`.
+    pub(crate) draw: [u32; 3],
+    pub(crate) level: u8,
+    /// The Bounty Rank it came at.
+    pub(crate) rank: u32,
+    /// Its affixes' keys.
+    pub(crate) affixes: Vec<String>,
+    pub(crate) map: u32,
+    /// Where it won, which it roams around.
+    pub(crate) home: [f32; 3],
 }
 
 #[derive(Default)]
@@ -139,6 +158,7 @@ impl Characters {
             rest: crate::rest::Rest::default(),
             notoriety: 0.0,
             bounty_rank: 0,
+            marked: None,
         });
         CHAR_CREATE_SUCCESS
     }

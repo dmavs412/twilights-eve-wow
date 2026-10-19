@@ -98,6 +98,11 @@ pub(crate) fn affixes() -> &'static [Affix] {
     &file().affix
 }
 
+/// The affix keyed `key`.
+pub(crate) fn affix(key: &str) -> Option<&'static Affix> {
+    affixes().iter().find(|a| a.key == key)
+}
+
 /// The affixes a hunter of Bounty Rank `rank` carries, rolled from the pool without repeats.
 pub(crate) fn roll_affixes(rank: u32, rng: &mut Rng) -> Vec<&'static Affix> {
     let mut pool: Vec<&'static Affix> = affixes().iter().collect();
@@ -152,7 +157,7 @@ impl Draw {
     }
 
     /// The draw `entry` stands for, if it is a hunter's.
-    fn of_entry(entry: u32) -> Option<Self> {
+    pub(crate) fn of_entry(entry: u32) -> Option<Self> {
         let n = entry.checked_sub(hunter().entry_base)? as usize;
         let draw = Self {
             archetype: n / 1000,

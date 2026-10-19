@@ -160,3 +160,14 @@ coins = 3
 [[coin_stock]]
 entry = 1710
 coins = 5
+
+# Marked (#179): dying to your own Bounty Hunter. While Marked the character's base stats (and the
+# health, mana and attack power from them) are `penalty_pct` percent lower, no new hunter comes,
+# and they wear `aura`, a stock 1.12 spell borrowed for its icon (Resurrection Sickness; its
+# tooltip's own numbers are not this penalty's). The victor stays, roaming `roam_yd` around where
+# it won, until the character's side kills it or `minutes` of logged-in play pass.
+[marked]
+penalty_pct = 10
+minutes = 120.0
+roam_yd = 40.0
+aura = 15007
