@@ -459,31 +459,37 @@ def build_aura_columns(row: dict, where: str) -> dict:
 
 
 def aura_override(row: dict, built: dict, where: str) -> dict | None:
-    """The Spell.dbc fields an aura row sets on its borrowed spell: dispel type, mechanic and aura
-    description, each only when its cell is set. None when it sets none, or is hidden."""
+    """The Spell.dbc fields an aura row sets on its borrowed spell: its name, the buff tooltip (the
+    `aura_description` cell, else the row's `description`), and dispel type and mechanic when their
+    cells are set; the borrowed spell's own name and tooltip never show. None when it is hidden."""
     if "spell_id" not in built or built.get("client_visible") is False:
         return None
-    fields: dict = {}
+    fields: dict = {"name": built["name"]}
+    # Defaults a skill on the same spell id keeps its own value over.
+    soft = {"name"}
     if row["dispel_type"]:
         fields["dispel_type"] = DISPEL_TYPES[built["dispel_type"]]
     if row["mechanic"]:
         fields["mechanic"] = MECHANICS[built["mechanic"]]
     if row["aura_description"]:
         fields["aura_description"] = row["aura_description"]
-    if not fields:
-        return None
+    elif row["description"]:
+        fields["aura_description"] = row["description"]
+        soft.add("aura_description")
     return {"spell_id": built["spell_id"], "calling": row["calling"], "key": row["key"],
-            "rank": number(row["rank"], f"{where} rank"), "fields": fields}
+            "rank": number(row["rank"], f"{where} rank"), "fields": fields, "soft": soft}
 
 
 def merge_override(overrides: list[dict], extra: dict, where: str) -> None:
     """Add an aura's override, folding it into the override of the same spell id (a skill that is
     also the spell its aura shows as): one Spell.dbc row, one override. Two rows that set one field
-    to different values fail."""
+    to different values fail, unless the aura's value is only a default (`soft`): then the first
+    row's stands."""
+    soft = extra.pop("soft", set())
     for entry in overrides:
         if entry["spell_id"] == extra["spell_id"]:
             for field, value in extra["fields"].items():
-                if entry["fields"].setdefault(field, value) != value:
+                if entry["fields"].setdefault(field, value) != value and field not in soft:
                     raise BuildError(f"{where}: {field} {value!r} differs from {entry['fields'][field]!r} on "
                                      f"{entry['calling']}/{entry['key']}, which also overrides spell {extra['spell_id']}")
             return

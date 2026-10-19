@@ -497,7 +497,8 @@ class BuildSpells(unittest.TestCase):
                          ("buff", 14177, 10000, 1))
         self.assertEqual(aura["modelled"], False)
         self.assertEqual(aura["effects"], [])
-        self.assertEqual(self.patch["spells"], [])
+        # Only its name reaches the borrowed spell.
+        self.assertEqual(self.patch["spells"], [{"spell_id": 14177, "calling": "vanguard", "key": "buff", "rank": 1, "fields": {"name": "Buff"}}])
 
     def test_modelled_aura_effects_are_checked(self):
         self.assert_fails([{**AURA, "modelled": "yes", "effect1_kind": "nonsense"}], "unknown effect kind")
@@ -902,12 +903,13 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(self.patch["spells"], [{
             "spell_id": 14177, "calling": "vanguard", "key": "buff", "rank": 1,
-            "fields": {"dispel_type": 4, "mechanic": 12, "aura_description": "Poisoned."}}])
+            "fields": {"name": "Buff", "dispel_type": 4, "mechanic": 12, "aura_description": "Poisoned."}}])
 
-    def test_an_aura_that_sets_none_of_them_adds_no_override(self):
-        done, _ = self.run_build([CALLING, {**AURA, "max_stacks": "3"}])
+    def test_an_aura_names_its_borrowed_spell_and_its_description_is_the_tooltip(self):
+        # The borrowed spell's own name and buff tooltip (Revenge Stun's "Stunned.") never show.
+        done, _ = self.run_build([CALLING, {**AURA, "description": "Empowered."}])
         self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual(self.patch["spells"], [])
+        self.assertEqual(self.patch["spells"][0]["fields"], {"name": "Buff", "aura_description": "Empowered."})
 
     def test_an_aura_on_a_skills_spell_joins_the_skills_override(self):
         aura = {**AURA, "client_spell_id": STRIKE["client_spell_id"], "mechanic": "incapacitate"}

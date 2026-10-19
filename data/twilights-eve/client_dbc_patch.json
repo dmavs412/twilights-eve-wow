@@ -112,6 +112,7 @@
      }
     ],
     "mechanic": 14,
+    "aura_description": "Incapacitated. Any later damage ends it.",
     "range_index": 2,
     "duration_index": 35
    }
@@ -182,6 +183,7 @@
       }
      }
     ],
+    "aura_description": "Each stack adds Holy damage to your next Zealous Cleave.",
     "range_index": 2,
     "cast_time_index": 1
    }
@@ -267,6 +269,7 @@
       }
      }
     ],
+    "aura_description": "Block chance increased by 75%.",
     "cast_time_index": 1
    }
   },
@@ -336,6 +339,7 @@
       }
      }
     ],
+    "aura_description": "Melee attacks may heal you or raise your armor.",
     "cast_time_index": 1,
     "duration_index": 2
    }
@@ -4016,7 +4020,8 @@
        "apply_aura": "aura_evasion"
       }
      }
-    ]
+    ],
+    "aura_description": "Dodge chance increased by 50%."
    }
   },
   {
@@ -4039,7 +4044,8 @@
        "apply_aura": "aura_stealth"
       }
      }
-    ]
+    ],
+    "aura_description": "Stealthed."
    }
   },
   {
@@ -5366,6 +5372,7 @@
       }
      }
     ],
+    "aura_description": "Burning for Fire damage every 3 sec.",
     "range_index": 4,
     "cast_time_index": 1
    }
@@ -5400,6 +5407,7 @@
       }
      }
     ],
+    "aura_description": "Movement speed slowed by 50%.",
     "range_index": 4,
     "cast_time_index": 19
    }
@@ -5486,7 +5494,8 @@
        "apply_aura": "aura_thermal_feedback"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Biting Cold is instant and costs no mana."
    }
   },
   {
@@ -5981,6 +5990,7 @@
       }
      }
     ],
+    "aura_description": "Your next Catalyst is a critical strike.",
     "range_index": 4,
     "cast_time_index": 1
    }
@@ -6290,7 +6300,8 @@
        "apply_aura": "aura_ley_line_attunement"
       }
      }
-    ]
+    ],
+    "aura_description": "Attunement charges. At 3, your next Biting Cold or Catalyst costs no mana."
    }
   },
   {
@@ -6313,7 +6324,8 @@
        "apply_aura": "aura_ley_line_attunement"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Biting Cold or Catalyst costs no mana."
    }
   },
   {
@@ -6407,7 +6419,8 @@
        "apply_aura": "aura_arcane_momentum_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Ley-Spark deals 15% more damage."
    }
   },
   {
@@ -6430,7 +6443,8 @@
        "apply_aura": "aura_arcane_momentum_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Ley-Spark deals 30% more damage."
    }
   },
   {
@@ -6453,7 +6467,8 @@
        "apply_aura": "aura_arcane_momentum_3"
       }
      }
-    ]
+    ],
+    "aura_description": "Ley-Spark deals 45% more damage."
    }
   },
   {
@@ -6613,6 +6628,7 @@
       }
      }
     ],
+    "aura_description": "Ley-Spark has no cast time.",
     "cast_time_index": 1
    }
   },
@@ -6754,6 +6770,7 @@
       }
      }
     ],
+    "aura_description": "Physical damage over time. Movement speed slowed by 30%.",
     "range_index": 114,
     "cast_time_index": 1
    }
@@ -6802,7 +6819,8 @@
        "aura": "aura_rapid_fire"
       }
      }
-    ]
+    ],
+    "aura_description": "Ranged attack speed increased by 40%. Auto-shots refund mana."
    }
   },
   {
@@ -6825,7 +6843,8 @@
        "apply_aura": "aura_guerilla_tactics_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Snapshot deals 10% more damage per stack."
    }
   },
   {
@@ -6848,7 +6867,8 @@
        "apply_aura": "aura_guerilla_tactics_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Snapshot deals 20% more damage per stack."
    }
   },
   {
@@ -6871,7 +6891,8 @@
        "apply_aura": "aura_guerilla_tactics_3"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Snapshot deals 30% more damage per stack."
    }
   },
   {
@@ -6894,7 +6915,8 @@
        "apply_aura": "aura_guerilla_tactics_4"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Snapshot deals 40% more damage per stack."
    }
   },
   {
@@ -6917,7 +6939,8 @@
        "apply_aura": "aura_guerilla_tactics_5"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Snapshot deals 50% more damage per stack."
    }
   },
   {
@@ -6940,7 +6963,8 @@
        "apply_aura": "aura_rhythmic_draw_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Puncturing Shaft casts 0.1 sec faster per stack."
    }
   },
   {
@@ -6963,7 +6987,8 @@
        "apply_aura": "aura_rhythmic_draw_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Puncturing Shaft casts 0.2 sec faster per stack."
    }
   },
   {
@@ -6986,7 +7011,8 @@
        "apply_aura": "aura_rhythmic_draw_3"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Puncturing Shaft casts 0.3 sec faster per stack."
    }
   },
   {
@@ -7009,7 +7035,8 @@
        "apply_aura": "aura_rhythmic_draw_4"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Puncturing Shaft casts 0.4 sec faster per stack."
    }
   },
   {
@@ -7032,7 +7059,8 @@
        "apply_aura": "aura_rhythmic_draw_5"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Puncturing Shaft casts 0.5 sec faster per stack."
    }
   },
   {
@@ -7225,7 +7253,8 @@
        "apply_aura": "aura_flurry_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next 1 Snapshot cost no mana and are critical strikes."
    }
   },
   {
@@ -7248,7 +7277,8 @@
        "apply_aura": "aura_flurry_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next 2 Snapshots cost no mana and are critical strikes."
    }
   },
   {
@@ -7272,6 +7302,7 @@
       }
      }
     ],
+    "aura_description": "Each Snapshot fires an extra arrow for 50% weapon damage.",
     "cast_time_index": 1
    }
   },
@@ -7441,7 +7472,8 @@
        "apply_aura_target": "aura_sundered_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Armor reduced by 50 per stack."
    }
   },
   {
@@ -7465,7 +7497,8 @@
        "apply_aura_target": "aura_sundered_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Armor reduced by 100 per stack."
    }
   },
   {
@@ -7489,7 +7522,8 @@
        "apply_aura_target": "aura_sundered_3"
       }
      }
-    ]
+    ],
+    "aura_description": "Armor reduced by 150 per stack."
    }
   },
   {
@@ -7513,7 +7547,8 @@
        "apply_aura_target": "aura_sundered_4"
       }
      }
-    ]
+    ],
+    "aura_description": "Armor reduced by 200 per stack."
    }
   },
   {
@@ -7537,7 +7572,8 @@
        "apply_aura_target": "aura_sundered_5"
       }
      }
-    ]
+    ],
+    "aura_description": "Armor reduced by 250 per stack."
    }
   },
   {
@@ -7635,7 +7671,8 @@
        "apply_aura": "aura_entrenched_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Ranged attack speed increased by 5% and ranged critical strike chance by 3%."
    }
   },
   {
@@ -7658,7 +7695,8 @@
        "apply_aura": "aura_entrenched_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Ranged attack speed increased by 10% and ranged critical strike chance by 6%."
    }
   },
   {
@@ -7843,6 +7881,7 @@
       }
      }
     ],
+    "aura_description": "Your next Auto Shot explodes, dealing 150% weapon damage as Fire to the target and all enemies within 8 yards.",
     "cast_time_index": 1
    }
   },
@@ -7902,6 +7941,7 @@
       }
      }
     ],
+    "aura_description": "Taking Shadow damage over time.",
     "range_index": 4,
     "cast_time_index": 1
    }
@@ -7975,6 +8015,7 @@
       }
      }
     ],
+    "aura_description": "Minor Shadow damage over time.",
     "range_index": 5,
     "cast_time_index": 1
    }
@@ -8003,6 +8044,7 @@
       }
      }
     ],
+    "aura_description": "Taking Shadow damage every second.",
     "range_index": 4,
     "cast_time_index": 1
    }
@@ -8058,7 +8100,8 @@
        "apply_aura": "aura_virulence"
       }
      }
-    ]
+    ],
+    "aura_description": "Your next Blood Lance casts 0.5 sec faster."
    }
   },
   {
@@ -8177,7 +8220,8 @@
        "apply_aura_target": "aura_noxious_vapors_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Chance to hit reduced by 5%."
    }
   },
   {
@@ -8200,7 +8244,8 @@
        "apply_aura_target": "aura_noxious_vapors_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Chance to hit reduced by 10%."
    }
   },
   {
@@ -8436,7 +8481,8 @@
        "apply_aura_target": "aura_festering_wounds_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Physical damage taken from others increased by 5%."
    }
   },
   {
@@ -8459,7 +8505,8 @@
        "apply_aura_target": "aura_festering_wounds_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Physical damage taken from others increased by 10%."
    }
   },
   {
@@ -8655,7 +8702,8 @@
        "apply_aura": "aura_masochism_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Recovering 10% of the health spent over 5 sec."
    }
   },
   {
@@ -8678,7 +8726,8 @@
        "apply_aura": "aura_masochism_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Recovering 20% of the health spent over 5 sec."
    }
   },
   {
@@ -8701,7 +8750,8 @@
        "apply_aura": "aura_masochism_3"
       }
      }
-    ]
+    ],
+    "aura_description": "Recovering 30% of the health spent over 5 sec."
    }
   },
   {
@@ -8724,7 +8774,8 @@
        "apply_aura": "aura_masochism_4"
       }
      }
-    ]
+    ],
+    "aura_description": "Recovering 40% of the health spent over 5 sec."
    }
   },
   {
@@ -8747,7 +8798,8 @@
        "apply_aura": "aura_masochism_5"
       }
      }
-    ]
+    ],
+    "aura_description": "Recovering 50% of the health spent over 5 sec."
    }
   },
   {
@@ -8848,7 +8900,8 @@
        "apply_aura": "aura_crimson_surge_1"
       }
      }
-    ]
+    ],
+    "aura_description": "Casting speed increased by 10%."
    }
   },
   {
@@ -8871,7 +8924,8 @@
        "apply_aura": "aura_crimson_surge_2"
       }
      }
-    ]
+    ],
+    "aura_description": "Casting speed increased by 20%."
    }
   },
   {
@@ -8994,12 +9048,94 @@
    }
   },
   {
+   "spell_id": 10291,
+   "calling": "vanguard",
+   "key": "aura_seal_of_iron_armor",
+   "rank": 1,
+   "fields": {
+    "name": "Seal of Iron",
+    "aura_description": "Armor from items increased by 20%."
+   }
+  },
+  {
+   "spell_id": 6572,
+   "calling": "vanguard",
+   "key": "aura_reactive_strike_1",
+   "rank": 1,
+   "fields": {
+    "name": "Reactive Strike",
+    "aura_description": "Your next Righteous Smash costs 2 less Rage."
+   }
+  },
+  {
+   "spell_id": 10290,
+   "calling": "vanguard",
+   "key": "aura_tempered_steel_1",
+   "rank": 1,
+   "fields": {
+    "name": "Tempered Steel",
+    "aura_description": "Block chance increased by 10%."
+   }
+  },
+  {
+   "spell_id": 12798,
+   "calling": "vanguard",
+   "key": "aura_vengeful_conviction",
+   "rank": 1,
+   "fields": {
+    "name": "Vengeful Conviction",
+    "aura_description": "Your next Righteous Smash grants 2 stacks of Conviction."
+   }
+  },
+  {
+   "spell_id": 14177,
+   "calling": "basic_warrior",
+   "key": "momentum_crit_1",
+   "rank": 1,
+   "fields": {
+    "name": "Momentum (crit)",
+    "aura_description": "Your next Heroic Strike has +50% critical strike chance."
+   }
+  },
+  {
+   "spell_id": 2983,
+   "calling": "basic_warrior",
+   "key": "momentum_speed_1",
+   "rank": 1,
+   "fields": {
+    "name": "Momentum (speed)",
+    "aura_description": "Run speed increased by 15%."
+   }
+  },
+  {
    "spell_id": 7922,
    "calling": "basic_warrior",
    "key": "charge_stun",
    "rank": 1,
    "fields": {
-    "mechanic": 12
+    "name": "Charge (stun)",
+    "mechanic": 12,
+    "aura_description": "Stunned."
+   }
+  },
+  {
+   "spell_id": 12536,
+   "calling": "initiate",
+   "key": "aura_arcane_substrate_cold_1",
+   "rank": 1,
+   "fields": {
+    "name": "Arcane Substrate",
+    "aura_description": "Your next Biting Cold casts 0.1 sec faster."
+   }
+  },
+  {
+   "spell_id": 11129,
+   "calling": "initiate",
+   "key": "aura_arcane_substrate_ember_1",
+   "rank": 1,
+   "fields": {
+    "name": "Arcane Substrate",
+    "aura_description": "Your next Searing Ember burns 1 sec longer."
    }
   },
   {
@@ -9008,7 +9144,29 @@
    "key": "aura_shattered_blink_1",
    "rank": 1,
    "fields": {
-    "mechanic": 7
+    "name": "Shattered Blink",
+    "mechanic": 7,
+    "aura_description": "Frozen in place."
+   }
+  },
+  {
+   "spell_id": 12042,
+   "calling": "initiate",
+   "key": "aura_catalytic_resonance_1",
+   "rank": 1,
+   "fields": {
+    "name": "Catalytic Resonance",
+    "aura_description": "Spell damage increased by 2%."
+   }
+  },
+  {
+   "spell_id": 2121,
+   "calling": "acolyte",
+   "key": "aura_miasma_ally",
+   "rank": 1,
+   "fields": {
+    "name": "Miasma",
+    "aura_description": "Healing received increased by 15%."
    }
   }
  ],
