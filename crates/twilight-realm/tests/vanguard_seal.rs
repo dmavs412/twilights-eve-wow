@@ -301,3 +301,17 @@ fn the_vanguards_rows_carry_the_seal_and_wrathful_iron() {
             if a == "aura_seal_of_iron" && chances == &[10, 20, 30, 40, 50]
     ));
 }
+
+/// The seal's two procs are one buff on the bar, not two.
+#[test]
+fn the_seal_is_one_buff() {
+    let (mut realm, me, _camp, mut view) = at_the_camp(&[]);
+    seal_up(&mut realm, &mut view);
+    view.run(&mut realm, 0.5);
+    let slots = view
+        .fields(me)
+        .unit_auras()
+        .filter(|a| a.spell_id == SEAL)
+        .count();
+    assert_eq!(slots, 1);
+}

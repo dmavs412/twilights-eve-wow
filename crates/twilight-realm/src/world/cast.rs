@@ -1321,6 +1321,15 @@ impl Skills {
                 *stacks = (held + *stacks).min(*max_stacks);
             }
             *old = aura;
+        } else if let Some(sibling) = self
+            .auras
+            .iter()
+            .find(|a| a.unit == aura.unit && a.spell_id == aura.spell_id)
+        {
+            // Another effect of the same spell: one buff on the bar, as a Spell.dbc aura with
+            // several effects is (Seal of Iron's two procs).
+            aura.slot = sibling.slot;
+            self.auras.push(aura);
         } else {
             let range = if aura.kind.helpful() {
                 0..POSITIVE_SLOTS
