@@ -13,7 +13,7 @@ use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
 use crate::content::PLAYER_FACTION_TEMPLATE;
-use crate::fields::{values, UNIT_FIELD_FACTIONTEMPLATE};
+use crate::fields::{guid_pairs, values, UNIT_FIELD_FACTIONTEMPLATE};
 use crate::mobs::Mob;
 use crate::world::InWorld;
 use crate::{Realm, RealmCommand, SessionId};
@@ -22,6 +22,10 @@ use crate::{Realm, RealmCommand, SessionId};
 const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
 /// Where the duel flags' guid counters start, clear of the Phases' GameObjects.
 const ARBITER_BASE: u64 = 0x00F0_0000;
+/// `PLAYER_DUEL_ARBITER` (a guid) and `PLAYER_DUEL_TEAM` (1 the challenger, 2 the challenged,
+/// once the fight is on).
+const PLAYER_DUEL_ARBITER: u16 = 188;
+const PLAYER_DUEL_TEAM: u16 = 196;
 
 // `SpellCastResult` codes a refused challenge answers with.
 const SPELL_FAILED_BAD_TARGETS: u8 = 0x0a;
@@ -39,6 +43,19 @@ pub(crate) struct Content {
     pub(crate) countdown_secs: u32,
     pub(crate) request_range_yd: f32,
     pub(crate) hostile_faction: u32,
+    pub(crate) flag: Flag,
+}
+
+/// `content/duel.toml`'s `[flag]`.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Flag {
+    pub(crate) entry: u32,
+    pub(crate) display_id: u32,
+    pub(crate) type_id: u32,
+    pub(crate) faction: u32,
+    pub(crate) bounds_yd: f32,
+    pub(crate) out_of_bounds_secs: f32,
 }
 
 pub(crate) fn content() -> &'static Content {
@@ -63,6 +80,10 @@ pub(crate) struct Duel {
     /// The spells of the auras each player wears from the other, by wearer: what comes off when
     /// it ends.
     worn: [Vec<u32>; 2],
+    /// Where its flag stands, and on which map, once raised.
+    flag: Option<(u32, [f32; 3])>,
+    /// Seconds each player has left out of bounds before they lose, while they are out.
+    out: [Option<f32>; 2],
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -188,6 +209,8 @@ impl Realm {
             arbiter,
             state: State::Requested,
             worn: Default::default(),
+            flag: None,
+            out: [None; 2],
         });
         let requested = SessionEvent::DuelRequested {
             arbiter,
@@ -195,6 +218,57 @@ impl Realm {
         };
         self.send_to_player(me, requested.clone());
         self.send_to_player(target, requested);
+        // Both carry the flag's guid from the challenge on (vmangos `Spell::EffectDuel`).
+        for p in [me, target] {
+            self.show_player_fields(p, &guid_pairs(PLAYER_DUEL_ARBITER, arbiter));
+        }
+    }
+
+    /// Sends the player `guid`'s `pairs` to every client on their map: their own, and every other
+    /// that may see them.
+    fn show_player_fields(&mut self, guid: u64, pairs: &[(u16, u32)]) {
+        let all = self.duellists();
+        let Some(map) = all.iter().find(|d| d.guid == guid).map(|d| d.map) else {
+            return;
+        };
+        let event = values(guid, pairs);
+        for d in all.iter().filter(|d| d.map == map) {
+            self.send_to(d.session, event.clone());
+        }
+    }
+
+    /// Duel `i` was accepted: its flag goes up midway between the two, seen by everyone near.
+    fn raise_flag(&mut self, i: usize) {
+        let all = self.duellists();
+        let duel = &self.duels.duels[i];
+        let [Some(a), Some(b)] = duel.players.map(|g| all.iter().find(|d| d.guid == g)) else {
+            return;
+        };
+        let mid = std::array::from_fn(|k| (a.position[k] + b.position[k]) / 2.0);
+        let f = &content().flag;
+        let create = crate::phased::gameobject_create(&crate::phased::GameObject {
+            guid: duel.arbiter,
+            entry: f.entry,
+            display_id: f.display_id,
+            type_id: f.type_id,
+            flags: 0,
+            faction: f.faction,
+            position: mid,
+            orientation: 0.0,
+        });
+        let map = a.map;
+        self.duels.duels[i].flag = Some((map, mid));
+        let near: Vec<SessionId> = all
+            .iter()
+            .filter(|d| {
+                d.map == map
+                    && crate::space::flat_distance(d.position, mid) <= crate::population::VIEW_YD
+            })
+            .map(|d| d.session)
+            .collect();
+        for session in near {
+            self.send_to(session, create.clone());
+        }
     }
 
     /// A duel window command from the served player.
@@ -218,6 +292,7 @@ impl Realm {
                 let secs = content().countdown_secs;
                 duel.state = State::Countdown(secs as f32);
                 let players = duel.players;
+                self.raise_flag(i);
                 for p in players {
                     self.send_to_player(p, SessionEvent::DuelCountdown { seconds: secs });
                 }
@@ -279,7 +354,22 @@ impl Realm {
                 });
             }
         }
+        // The flag comes down, and neither carries it, or a side, any more.
+        if let Some((map, _)) = duel.flag {
+            let gone = SessionEvent::ObjectDestroyed(duel.arbiter);
+            let on_map: Vec<SessionId> = self
+                .duellists()
+                .iter()
+                .filter(|d| d.map == map)
+                .map(|d| d.session)
+                .collect();
+            for session in on_map {
+                self.send_to(session, gone.clone());
+            }
+        }
         for p in duel.players {
+            let [lo, hi] = guid_pairs(PLAYER_DUEL_ARBITER, 0);
+            self.show_player_fields(p, &[lo, hi, (PLAYER_DUEL_TEAM, 0)]);
             self.send_to_player(p, SessionEvent::DuelComplete { started });
         }
     }
@@ -367,36 +457,70 @@ impl Realm {
         }
 
         let all = self.duellists();
-        let mut ended: Vec<(usize, Option<u64>)> = Vec::new();
+        let mut ended: Vec<(usize, Option<u64>, bool)> = Vec::new();
         let mut fights: Vec<[u64; 2]> = Vec::new();
+        let mut bounds: Vec<(u64, SessionEvent)> = Vec::new();
+        let f = &content().flag;
         for (i, duel) in self.duels.duels.iter_mut().enumerate() {
             let [a, b] = duel.players.map(|g| all.iter().find(|d| d.guid == g));
             let (Some(a), Some(b)) = (a, b) else {
                 let stayed = [a, b].into_iter().flatten().map(|d| d.guid).next();
-                ended.push((i, stayed));
+                ended.push((i, stayed, false));
                 continue;
             };
             match duel.state {
-                State::Requested if !in_range(a, b) => ended.push((i, None)),
+                State::Requested if !in_range(a, b) => ended.push((i, None, false)),
                 State::Countdown(left) if left <= dt => {
                     duel.state = State::Fighting;
                     fights.push(duel.players);
                 }
                 State::Countdown(left) => duel.state = State::Countdown(left - dt),
+                State::Fighting => {
+                    // Out of the flag's bounds: warned, and beaten as fled once the time is up.
+                    let Some((map, at)) = duel.flag else {
+                        continue;
+                    };
+                    for (side, d) in [a, b].into_iter().enumerate() {
+                        let away = d.map != map
+                            || crate::space::flat_distance(d.position, at) > f.bounds_yd;
+                        match (away, duel.out[side]) {
+                            (true, None) => {
+                                duel.out[side] = Some(f.out_of_bounds_secs);
+                                bounds.push((d.guid, SessionEvent::DuelOutOfBounds));
+                            }
+                            (true, Some(left)) if left <= dt => {
+                                let winner = duel.players[1 - side];
+                                ended.push((i, Some(winner), true));
+                                break;
+                            }
+                            (true, Some(left)) => duel.out[side] = Some(left - dt),
+                            (false, Some(_)) => {
+                                duel.out[side] = None;
+                                bounds.push((d.guid, SessionEvent::DuelInBounds));
+                            }
+                            (false, None) => {}
+                        }
+                    }
+                }
                 _ => {}
             }
         }
-        // The fight is on: each client sees the other hostile.
+        for (p, event) in bounds {
+            self.send_to_player(p, event);
+        }
+        // The fight is on: each client sees the other hostile, and both on their sides.
         let hostile = content().hostile_faction;
         for [a, b] in fights {
             for (p, foe) in [(a, b), (b, a)] {
                 let seen_hostile = values(foe, &[(UNIT_FIELD_FACTIONTEMPLATE, hostile)]);
                 self.send_to_player(p, seen_hostile);
             }
+            self.show_player_fields(a, &[(PLAYER_DUEL_TEAM, 1)]);
+            self.show_player_fields(b, &[(PLAYER_DUEL_TEAM, 2)]);
         }
         // Highest first, so each index still names its duel.
-        for (i, winner) in ended.into_iter().rev() {
-            self.end_duel(i, winner, false);
+        for (i, winner, fled) in ended.into_iter().rev() {
+            self.end_duel(i, winner, fled);
         }
     }
 }

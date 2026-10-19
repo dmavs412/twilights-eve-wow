@@ -371,3 +371,109 @@ fn an_ember_burns_the_opponent_and_stops_at_the_end() {
         "the burn comes off"
     );
 }
+
+// ── The flag and the bounds (#182) ───────────────────────────────────────────────────────────
+
+fn flag_created(events: &[SessionEvent], arbiter: u64) -> bool {
+    events.iter().any(|e| {
+        matches!(e, SessionEvent::ObjectCreate { guid, kind: benilla_protocol::EntityKind::GameObject, .. }
+            if *guid == arbiter)
+    })
+}
+
+fn flag_destroyed(events: &[SessionEvent], arbiter: u64) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == arbiter))
+}
+
+/// The last `PLAYER_DUEL_ARBITER` and `PLAYER_DUEL_TEAM` player `i`'s client has for `guid`.
+fn duel_fields(party: &Party, i: usize, guid: u64) -> (u64, u32) {
+    let view = view_of(party, i);
+    let f = view.fields(guid);
+    (f.player_duel_arbiter(), f.player_duel_team())
+}
+
+fn bounds(events: &[SessionEvent]) -> Vec<bool> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::DuelOutOfBounds => Some(false),
+            SessionEvent::DuelInBounds => Some(true),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn the_flag_goes_up_on_the_accept_and_comes_down_at_the_end() {
+    let mut party = players(3);
+    let (a, b) = (party.guids[0], party.guids[1]);
+    let arbiter = challenge(&mut party, 0, 1).unwrap();
+    for i in 0..2 {
+        assert!(
+            !flag_created(party.seen(i), arbiter),
+            "no flag before the accept"
+        );
+    }
+    assert_eq!(duel_fields(&party, 0, a).0, arbiter, "both carry its guid");
+    assert_eq!(duel_fields(&party, 0, b).0, arbiter);
+    party.cmd(1, RealmCommand::DuelAccept { arbiter });
+    for i in 0..3 {
+        assert!(
+            flag_created(party.seen(i), arbiter),
+            "player {i} sees the flag"
+        );
+    }
+    party.run(3.2);
+    assert_eq!(
+        duel_fields(&party, 1, a),
+        (arbiter, 1),
+        "the challenger's side"
+    );
+    assert_eq!(
+        duel_fields(&party, 0, b),
+        (arbiter, 2),
+        "the challenged's side"
+    );
+    party.cmd(1, RealmCommand::DuelCancel { arbiter });
+    for i in 0..3 {
+        assert!(
+            flag_destroyed(party.seen(i), arbiter),
+            "player {i} sees it go"
+        );
+    }
+    assert_eq!(duel_fields(&party, 0, b), (0, 0), "no flag, no side");
+}
+
+#[test]
+fn leaving_the_bounds_warns_and_coming_back_clears_it() {
+    let mut party = players(2);
+    fighting(&mut party);
+    let here = position_of(&party, 1);
+    party.go(1, [here[0] + 120.0, here[1], here[2]], 0.0);
+    party.run(2.0);
+    assert_eq!(bounds(party.seen(1)), [false], "warned");
+    party.go(1, here, 0.0);
+    party.run(0.3);
+    assert_eq!(bounds(party.seen(1)), [false, true], "cleared");
+    party.run(10.0);
+    assert!(winners(party.seen(1)).is_empty(), "still fighting");
+}
+
+#[test]
+fn staying_out_of_bounds_ten_seconds_loses_as_fled() {
+    let mut party = players(2);
+    fighting(&mut party);
+    let here = position_of(&party, 1);
+    party.go(1, [here[0] + 150.0, here[1], here[2]], 0.0);
+    party.run(9.5);
+    assert!(winners(party.seen(0)).is_empty(), "not yet");
+    party.run(1.0);
+    assert_eq!(
+        winners(party.seen(0)),
+        [(true, "Varian".to_string(), "Anduin".to_string())],
+        "player 1 fled"
+    );
+    assert_eq!(completes(party.seen(1)), [true]);
+}

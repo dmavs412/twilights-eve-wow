@@ -16,3 +16,16 @@ request_range_yd = 30.0
 # them hostile and lets the attack through (`FactionTemplate.dbc` 14, Monster, hostile to all).
 # Everyone else keeps seeing both friendly (#160).
 hostile_faction = 14
+
+# The duel flag, raised midway between the two on the accept (vmangos `gameobject_template`
+# 21680 "Duel Flag": `GAMEOBJECT_TYPE_DUEL_ARBITER` 16, display 787, faction 5).
+[flag]
+entry = 21680
+display_id = 787
+type_id = 16
+faction = 5
+
+# A duellist more than `bounds_yd` from the flag is warned (`SMSG_DUEL_OUTOFBOUNDS`), and loses,
+# as fled, after `out_of_bounds_secs` outside.
+bounds_yd = 100.0
+out_of_bounds_secs = 10.0

@@ -108,44 +108,70 @@ impl Dungeon {
 
     /// The portal's create: a GameObject that only shows, never clicked.
     pub(crate) fn portal_create(&self) -> SessionEvent {
-        let Portal {
-            position: [x, y, z],
-            orientation,
-        } = self.portal;
-        let (sin, cos) = (orientation / 2.0).sin_cos();
-        let mut pairs = vec![
-            (OBJECT_FIELD_TYPE, TYPE_GAMEOBJECT),
-            (OBJECT_FIELD_ENTRY, self.id),
-            (OBJECT_FIELD_SCALE_X, float(1.0)),
-            (GAMEOBJECT_DISPLAYID, PORTAL_DISPLAY),
-            (GAMEOBJECT_FLAGS, NOT_SELECTABLE),
-            (GAMEOBJECT_ROTATION + 2, float(sin)),
-            (GAMEOBJECT_ROTATION + 3, float(cos)),
-            (GAMEOBJECT_STATE, READY),
-            (GAMEOBJECT_POS_X, float(x)),
-            (GAMEOBJECT_POS_X + 1, float(y)),
-            (GAMEOBJECT_POS_X + 2, float(z)),
-            (GAMEOBJECT_POS_X + 3, float(orientation)),
-            (GAMEOBJECT_TYPE_ID, GENERIC),
-        ];
-        pairs.extend(guid_pairs(
-            crate::fields::OBJECT_FIELD_GUID,
-            self.portal_guid(),
-        ));
-        SessionEvent::ObjectCreate {
+        gameobject_create(&GameObject {
             guid: self.portal_guid(),
-            kind: EntityKind::GameObject,
-            display_id: Some(PORTAL_DISPLAY),
+            entry: self.id,
+            display_id: PORTAL_DISPLAY,
+            type_id: GENERIC,
+            flags: NOT_SELECTABLE,
+            faction: 0,
             position: self.portal.position,
-            orientation,
-            scale: 1.0,
-            speeds: None,
-            mover: None,
-            transport_progress: None,
-            transport: None,
-            spline: None,
-            fields: ObjectFields::from_pairs(&pairs).into_created(ObjectType::GameObject),
-        }
+            orientation: self.portal.orientation,
+        })
+    }
+}
+
+/// A GameObject as its create shows it, standing in `GO_STATE_READY`.
+pub(crate) struct GameObject {
+    pub(crate) guid: u64,
+    pub(crate) entry: u32,
+    pub(crate) display_id: u32,
+    /// `GameobjectTypes`.
+    pub(crate) type_id: u32,
+    pub(crate) flags: u32,
+    pub(crate) faction: u32,
+    pub(crate) position: [f32; 3],
+    pub(crate) orientation: f32,
+}
+
+/// `GAMEOBJECT_FACTION`.
+const GAMEOBJECT_FACTION: u16 = 20;
+
+/// `object`'s create.
+pub(crate) fn gameobject_create(object: &GameObject) -> SessionEvent {
+    let [x, y, z] = object.position;
+    let orientation = object.orientation;
+    let (sin, cos) = (orientation / 2.0).sin_cos();
+    let mut pairs = vec![
+        (OBJECT_FIELD_TYPE, TYPE_GAMEOBJECT),
+        (OBJECT_FIELD_ENTRY, object.entry),
+        (OBJECT_FIELD_SCALE_X, float(1.0)),
+        (GAMEOBJECT_DISPLAYID, object.display_id),
+        (GAMEOBJECT_FLAGS, object.flags),
+        (GAMEOBJECT_ROTATION + 2, float(sin)),
+        (GAMEOBJECT_ROTATION + 3, float(cos)),
+        (GAMEOBJECT_STATE, READY),
+        (GAMEOBJECT_POS_X, float(x)),
+        (GAMEOBJECT_POS_X + 1, float(y)),
+        (GAMEOBJECT_POS_X + 2, float(z)),
+        (GAMEOBJECT_POS_X + 3, float(orientation)),
+        (GAMEOBJECT_FACTION, object.faction),
+        (GAMEOBJECT_TYPE_ID, object.type_id),
+    ];
+    pairs.extend(guid_pairs(crate::fields::OBJECT_FIELD_GUID, object.guid));
+    SessionEvent::ObjectCreate {
+        guid: object.guid,
+        kind: EntityKind::GameObject,
+        display_id: Some(object.display_id),
+        position: object.position,
+        orientation,
+        scale: 1.0,
+        speeds: None,
+        mover: None,
+        transport_progress: None,
+        transport: None,
+        spline: None,
+        fields: ObjectFields::from_pairs(&pairs).into_created(ObjectType::GameObject),
     }
 }
 
