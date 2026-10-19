@@ -21,6 +21,7 @@ pub(crate) const UNIT_FIELD_FACTIONTEMPLATE: u16 = 35;
 pub(crate) const UNIT_FIELD_BYTES_0: u16 = 36;
 pub(crate) const UNIT_FIELD_FLAGS: u16 = 46;
 pub(crate) const UNIT_FIELD_BASEATTACKTIME: u16 = 126;
+pub(crate) const UNIT_FIELD_RANGEDATTACKTIME: u16 = 128;
 pub(crate) const UNIT_FIELD_BOUNDINGRADIUS: u16 = 129;
 pub(crate) const UNIT_FIELD_COMBATREACH: u16 = 130;
 pub(crate) const UNIT_FIELD_DISPLAYID: u16 = 131;
@@ -32,6 +33,9 @@ pub(crate) const UNIT_FIELD_STAT0: u16 = 150;
 pub(crate) const UNIT_FIELD_RESISTANCES: u16 = 155;
 pub(crate) const UNIT_FIELD_BASE_HEALTH: u16 = 163;
 pub(crate) const UNIT_FIELD_ATTACK_POWER: u16 = 165;
+pub(crate) const UNIT_FIELD_RANGED_ATTACK_POWER: u16 = 168;
+pub(crate) const UNIT_FIELD_MINRANGEDDAMAGE: u16 = 171;
+pub(crate) const UNIT_FIELD_MAXRANGEDDAMAGE: u16 = 172;
 
 pub(crate) const PLAYER_FLAGS: u16 = 190;
 pub(crate) const PLAYER_BYTES: u16 = 193;

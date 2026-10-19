@@ -1396,6 +1396,23 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
             UNIT_FIELD_BASEATTACKTIME + 1,
             s.off_hand.map_or(s.attack_time_ms, |o| o.attack_time_ms),
         ),
+        // The ranged block; a character without a bow, gun or crossbow shows zero damage.
+        (
+            UNIT_FIELD_RANGED_ATTACK_POWER,
+            s.ranged_attack_power.max(0) as u32,
+        ),
+        (
+            UNIT_FIELD_RANGEDATTACKTIME,
+            s.ranged.map_or(0, |r| r.attack_time_ms),
+        ),
+        (
+            UNIT_FIELD_MINRANGEDDAMAGE,
+            float(s.ranged.map_or(0.0, |r| r.min_damage)),
+        ),
+        (
+            UNIT_FIELD_MAXRANGEDDAMAGE,
+            float(s.ranged.map_or(0.0, |r| r.max_damage)),
+        ),
         (PLAYER_CRIT_PERCENTAGE, float(s.crit_pct as f32)),
         (PLAYER_DODGE_PERCENTAGE, float(s.dodge_pct as f32)),
         (PLAYER_PARRY_PERCENTAGE, float(s.parry_pct as f32)),

@@ -28,6 +28,8 @@ pub struct CharacterStats {
     pub attack_power: i32,
     /// The flat part of `attack_power` from equip spells.
     pub attack_power_bonus: i32,
+    /// Ranged attack power, by Class ([`ranged_attack_power`]); gear carries none yet.
+    pub ranged_attack_power: i32,
     pub crit_pct: f64,
     /// The percent a crit's whole damage grows by (talents): 30 makes a melee crit 200% x 1.3 = 260%.
     pub crit_damage_pct: u32,
@@ -110,6 +112,16 @@ impl CharacterStats {
                 let ap = gain as f32 / 14.0 * self.attack_time_ms as f32 / 1000.0;
                 self.min_damage += ap;
                 self.max_damage += ap;
+                if i == 1 {
+                    let gain = ranged_attack_power(self.class, self.level, agi)
+                        - ranged_attack_power(self.class, self.level, old);
+                    self.ranged_attack_power += gain;
+                    if let Some(r) = &mut self.ranged {
+                        let ap = gain as f32 / 14.0 * r.attack_time_ms as f32 / 1000.0;
+                        r.min_damage += ap;
+                        r.max_damage += ap;
+                    }
+                }
                 if i == 0 {
                     if let Some(block) = self.shield_block {
                         self.block_value = block_value(block, self.base[0]);
@@ -222,6 +234,7 @@ impl CharacterStats {
         // The first 20 stamina give 1 health each, the rest 10.
         let max_health = base_health + stamina_health(sta);
         let attack_power = attack_power(class, level, str, agi) + gear.attack_power;
+        let ranged_attack_power = ranged_attack_power(class, level, agi);
         let skill = 5 * u16::from(level);
         let defense = skill + gear.defense;
         let (min, max, attack_time_ms) = gear.weapon.unwrap_or(UNARMED);
@@ -237,6 +250,7 @@ impl CharacterStats {
             mana_regen: power::mana_per_tick(class, spi),
             attack_power,
             attack_power_bonus: gear.attack_power,
+            ranged_attack_power,
             // Skill sits at the maximum, so its `(skill - 5L) × 0.04` terms are zero.
             crit_pct: f64::from(agi) / tables::at(&t.agi_per_crit, level),
             crit_damage_pct: 0,
@@ -261,9 +275,8 @@ impl CharacterStats {
                 }
             }),
             offhand_damage_pct: 0,
-            // Ranged attack power is agility, one for one, for now.
             ranged: gear.ranged.map(|(min, max, time_ms)| {
-                let ap_damage = agi as f32 / 14.0 * time_ms as f32 / 1000.0;
+                let ap_damage = ranged_attack_power.max(0) as f32 / 14.0 * time_ms as f32 / 1000.0;
                 Ranged {
                     min_damage: min + ap_damage,
                     max_damage: max + ap_damage,
@@ -286,6 +299,17 @@ fn attack_power(class: u8, level: u8, str: u32, agi: u32) -> i32 {
         class::SHAMAN => 2 * level + 2 * str - 20,
         class::DRUID => 2 * str - 20,
         _ => str - 10,
+    }
+}
+
+/// Ranged attack power before gear, by Class (vmangos `Player::UpdateAttackPowerAndDamage(true)`):
+/// a Hunter's `2L + 2Agi - 10`, a Warrior's or Rogue's `L + Agi - 10`, everyone else's `Agi - 10`.
+fn ranged_attack_power(class: u8, level: u8, agi: u32) -> i32 {
+    let (level, agi) = (i32::from(level), agi as i32);
+    match class {
+        class::HUNTER => 2 * level + 2 * agi - 10,
+        class::WARRIOR | class::ROGUE => level + agi - 10,
+        _ => agi - 10,
     }
 }
 
@@ -369,4 +393,56 @@ pub fn block_pct(defense: u16, level: u8) -> f64 {
 /// `Player::GetShieldBlockValue`).
 pub fn block_value(shield_block: u32, strength: u32) -> u32 {
     (f64::from(shield_block) + f64::from(strength) / 20.0 - 1.0).max(0.0) as u32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Cracked Shortbow, 2.3 s.
+    const CRACKED_SHORTBOW: u32 = 2773;
+    const ORC: u8 = 2;
+
+    /// A level 10 Hunter's ranged attack power is `2L + 2Agi - 10`, and the bow's roll carries
+    /// it at `AP / 14 x speed`.
+    #[test]
+    fn a_hunters_ranged_attack_power_follows_the_formula() {
+        let s = CharacterStats::geared(class::HUNTER, ORC, 10, &[CRACKED_SHORTBOW]);
+        let agi = s.base[1] as i32;
+        let want = 2 * 10 + 2 * agi - 10;
+        assert_eq!(s.ranged_attack_power, want);
+        let bow = crate::items::template(CRACKED_SHORTBOW).unwrap();
+        let [min, max, _] = bow.damage[0];
+        let r = s.ranged.expect("the bow shoots");
+        let ap = want as f32 / 14.0 * r.attack_time_ms as f32 / 1000.0;
+        assert_eq!(r.attack_time_ms, bow.speed_ms);
+        assert!((r.min_damage - (min + ap)).abs() < 1e-4, "{r:?}");
+        assert!((r.max_damage - (max + ap)).abs() < 1e-4, "{r:?}");
+    }
+
+    /// Agility raised later moves ranged attack power and the shot as the build would have.
+    #[test]
+    fn raised_agility_moves_ranged_attack_power() {
+        let mut s = CharacterStats::geared(class::HUNTER, ORC, 10, &[CRACKED_SHORTBOW]);
+        s.raise_stat(1, 7);
+        let built = CharacterStats::geared_at_tier(
+            class::HUNTER,
+            ORC,
+            10,
+            [0, 7, 0, 0, 0],
+            &[CRACKED_SHORTBOW],
+        );
+        assert_eq!(s.ranged_attack_power, built.ranged_attack_power);
+        let (a, b) = (s.ranged.unwrap(), built.ranged.unwrap());
+        assert!((a.min_damage - b.min_damage).abs() < 1e-3, "{a:?} {b:?}");
+    }
+
+    /// Warriors and Rogues get `L + Agi - 10`, everyone else `Agi - 10`.
+    #[test]
+    fn other_classes_ranged_attack_power() {
+        let w = CharacterStats::from_base(class::WARRIOR, 10, [20, 15, 20, 20, 20]);
+        assert_eq!(w.ranged_attack_power, 10 + 15 - 10);
+        let m = CharacterStats::from_base(class::MAGE, 10, [20, 15, 20, 20, 20]);
+        assert_eq!(m.ranged_attack_power, 15 - 10);
+    }
 }

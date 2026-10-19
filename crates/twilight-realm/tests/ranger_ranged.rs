@@ -14,7 +14,7 @@ use common::fight::{
     assert_on_time, cast, refusal, stand_at, Mob, CROSSROADS_XY, MOVING_GRACE_SECS,
 };
 use common::*;
-use gear_common::{save_with, Carried};
+use gear_common::{descriptor, save_with, Carried};
 use twilight_realm::{Realm, RealmCommand};
 
 const RANGED: u8 = 17;
@@ -197,8 +197,8 @@ fn auto_shot_stops_on_cancel() {
 }
 
 /// Snapshot (+13, +1.3 a level) and Puncturing Shaft (+20, +3.5 a level) at level 1 deal the bow
-/// roll plus their bonus: every hit of either lands above Auto Shot's best roll (3-6 and agility
-/// / 14 x 2.3 s) and no higher than the bow's top roll plus the bonus.
+/// roll plus their bonus: every hit of either lands above Auto Shot's best roll (3-6 and ranged
+/// attack power / 14 x 2.3 s, #156) and no higher than the bow's top roll plus the bonus.
 #[test]
 fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
     let (mut auto, mut snap, mut shaft) = (Vec::new(), Vec::new(), Vec::new());
@@ -225,14 +225,15 @@ fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
         !auto.is_empty() && !snap.is_empty() && !shaft.is_empty(),
         "{auto:?} {snap:?} {shaft:?}"
     );
+    let top = (6.0 + ranged_ap_damage()).ceil() as u32;
     let best_auto = *auto.iter().max().unwrap();
-    assert!(best_auto <= 12, "Auto Shot: {auto:?}");
+    assert!(best_auto <= top, "Auto Shot: {auto:?} over {top}");
     assert!(
-        snap.iter().all(|&d| d > best_auto && d <= 6 + 6 + 15),
+        snap.iter().all(|&d| d > best_auto && d <= top + 15),
         "Snapshot {snap:?} against Auto Shot {auto:?}"
     );
     assert!(
-        shaft.iter().all(|&d| d > best_auto && d <= 6 + 6 + 24),
+        shaft.iter().all(|&d| d > best_auto && d <= top + 24),
         "Puncturing Shaft {shaft:?} against Auto Shot {auto:?}"
     );
 }
@@ -324,5 +325,47 @@ fn auto_shot_holds_while_moving() {
     assert!(
         fired <= MOVING_GRACE_SECS + 0.05 + 0.1 + 1e-3,
         "the shot came due long ago, so it goes as the hold lifts: {fired} s"
+    );
+}
+
+/// The level 1 Ranger's sheet as the client gets it on entering the world.
+fn sheet() -> benilla_protocol::ObjectFields {
+    let (guid, blob) = save_with(1, 0, &[(RANGED, CRACKED_SHORTBOW, 1)]);
+    let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
+    let mut realm = Realm::with_seed(0xA5_0001);
+    realm.import_character(&blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    descriptor(&drain(&mut realm), guid)
+}
+
+/// What ranged attack power adds to each shot: `AP / 14 x speed`.
+fn ranged_ap_damage() -> f32 {
+    sheet().unit_ranged_attack_power().unwrap() as f32 / 14.0 * BOW_SPEED_SECS
+}
+
+/// The sheet's ranged block (#156): a level 1 Ranger's ranged attack power is the Hunter's
+/// `2L + 2Agi - 10`, and the bow's damage and speed ride beside it.
+#[test]
+fn the_sheet_shows_ranged_attack_power() {
+    let sheet = sheet();
+    let agi = sheet.unit_stat(1).expect("agility") as i32;
+    let rap = sheet
+        .unit_ranged_attack_power()
+        .expect("ranged attack power");
+    assert_eq!(rap, 2 + 2 * agi - 10);
+    assert_eq!(
+        sheet.unit_ranged_attack_time(),
+        Some((BOW_SPEED_SECS * 1000.0) as u32)
+    );
+    let ap = rap as f32 / 14.0 * BOW_SPEED_SECS;
+    // The Cracked Shortbow rolls 3-6.
+    let (min, max) = (
+        sheet.unit_min_ranged_damage().unwrap(),
+        sheet.unit_max_ranged_damage().unwrap(),
+    );
+    assert!(
+        (min - (3.0 + ap)).abs() < 0.01 && (max - (6.0 + ap)).abs() < 0.01,
+        "{min}-{max}"
     );
 }
