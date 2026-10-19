@@ -461,6 +461,17 @@ fn the_repair_tables_match_the_reference() {
     assert_eq!(floats(&table["quality"]), want);
 }
 
+/// Items never bind: an item that is Bind on Equip in the data (Dragonmaw Shortsword, Riverpaw
+/// Leather Vest) is queried with bonding 0, so no tooltip bind line and no bind popup.
+#[test]
+fn item_queries_always_report_bonding_zero() {
+    let mut realm = twilight_realm::Realm::new();
+    for entry in [753, 821] {
+        let info = queried(&mut realm, entry).unwrap_or_else(|| panic!("{entry} has no template"));
+        assert_eq!(info.bonding, 0, "{entry} reports bonding 0");
+    }
+}
+
 /// The item template the realm answers `entry`'s query with.
 fn queried(realm: &mut twilight_realm::Realm, entry: u32) -> Option<ItemInfo> {
     realm.handle(twilight_realm::RealmCommand::ItemQuery { entry });

@@ -336,7 +336,8 @@ pub(crate) fn info(t: &Template) -> ItemInfo {
         spell_charges_0: spells.first().map_or(0, |s| s.charges),
         spells,
         use_spell,
-        bonding: t.bonding,
+        // Items never bind, so every item can be traded: no tooltip bind line, no bind popup.
+        bonding: 0,
         description: String::new(),
         page_text: 0,
         language_id: 0,
