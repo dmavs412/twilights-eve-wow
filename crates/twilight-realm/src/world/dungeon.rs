@@ -111,8 +111,9 @@ impl InWorld {
 
     /// Whether `mob` is the Dungeon's boss.
     pub(super) fn is_boss(mob: &Mob) -> bool {
-        let spawn = &mobs::content().spawn[mob.spawn as usize];
-        spawn.map == dungeon::content().map && spawn.guid == dungeon::content().boss
+        mob.spawn_row().is_some_and(|spawn| {
+            spawn.map == dungeon::content().map && spawn.guid == dungeon::content().boss
+        })
     }
 
     /// What an elite's kill XP counts as here.

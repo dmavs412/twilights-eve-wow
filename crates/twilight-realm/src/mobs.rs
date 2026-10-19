@@ -36,6 +36,11 @@ pub(crate) const COMBAT_REACH: f32 = 1.5;
 /// The first low guid given to a creature a call for help brings in.
 const CALLED_GUID_BASE: u32 = 0x90_0000;
 
+/// A creature guid: `entry` and the low guid `low` under `HIGHGUID_UNIT`.
+pub(crate) fn unit_guid(entry: u32, low: u32) -> u64 {
+    HIGHGUID_UNIT << 48 | u64::from(entry & 0xFF_FFFF) << 24 | u64::from(low & 0xFF_FFFF)
+}
+
 fn yes() -> bool {
     true
 }
@@ -84,6 +89,10 @@ pub(crate) struct Template {
     /// The Creature Spells it casts in a fight (`content/creature_spells.toml` keys).
     #[serde(default)]
     pub(crate) spells: Vec<String>,
+    /// The item entries it shows in its main hand, off hand and ranged slots, 0 for none
+    /// (`UNIT_VIRTUAL_ITEM_SLOT_DISPLAY`).
+    #[serde(default)]
+    pub(crate) equip: Vec<u32>,
 }
 
 /// `CREATURE_FLAG_EXTRA_NO_PARRY` and `CREATURE_FLAG_EXTRA_NO_BLOCK` (vmangos).
@@ -91,6 +100,50 @@ const FLAG_EXTRA_NO_PARRY: u32 = 0x4;
 const FLAG_EXTRA_NO_BLOCK: u32 = 0x10;
 
 impl Template {
+    /// A Bounty Hunter's template (`crate::bounty`): a hostile humanoid elite named for one
+    /// hunter, at whatever level it is made.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn hunter(
+        entry: u32,
+        name: String,
+        subname: String,
+        display_id: u32,
+        faction_template: u32,
+        unit_class: UnitClass,
+        base_attack_time: u32,
+        speed_run: f32,
+        spells: Vec<String>,
+        equip: Vec<u32>,
+    ) -> Self {
+        Self {
+            entry,
+            name,
+            subname,
+            // `CREATURE_TYPE_HUMANOID`.
+            creature_type: 7,
+            rank: 1,
+            display_id,
+            faction_template,
+            hostile: true,
+            friendly: false,
+            unit_class,
+            level_min: 1,
+            level_max: 63,
+            health_multiplier: 1.0,
+            damage_multiplier: 1.0,
+            armor_multiplier: 1.0,
+            base_attack_time,
+            speed_walk: 1.0,
+            speed_run,
+            detection_range: 20.0,
+            flags_extra: 0,
+            shield: false,
+            respawn_secs: None,
+            spells,
+            equip,
+        }
+    }
+
     /// Elite and boss ranks, which kill XP pays double for.
     pub(crate) fn elite(&self) -> bool {
         matches!(self.rank, 1..=3)
@@ -404,7 +457,11 @@ pub(crate) fn content() -> &'static Mobs {
 }
 
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
-    content().template.iter().find(|t| t.entry == entry)
+    content()
+        .template
+        .iter()
+        .find(|t| t.entry == entry)
+        .or_else(|| crate::bounty::template(entry))
 }
 
 /// `SMSG_CREATURE_QUERY_RESPONSE` for `entry`; an unknown entry answers with no name.
@@ -491,7 +548,15 @@ pub(crate) struct Mob {
     pub(crate) target: u64,
     /// Its threat per player this life (#147): whom it fights.
     pub(crate) threat: crate::rules::threat::Table,
+    /// The player it hunts (a Bounty Hunter's owner): it notices no one else, though it fights
+    /// back whoever attacks it.
+    pub(crate) hunts: Option<u64>,
+    /// It gives up a chase that strays past its leash (`rules::leash`).
+    pub(crate) leashes: bool,
 }
+
+/// The spawn index of a mob that no spawn placed.
+pub(crate) const NO_SPAWN: u32 = u32::MAX;
 
 /// The pause between one stroll and the next, in seconds.
 const WANDER_PAUSE: (f32, f32) = (6.0, 16.0);
@@ -541,7 +606,57 @@ impl Mob {
             called: vec![false; spawn.on_health.len()],
             target: 0,
             threat: Default::default(),
+            hunts: None,
+            leashes: true,
         })
+    }
+
+    /// A mob no spawn placed, of `template` with `stats`, standing at `position`: it hunts
+    /// `hunts` and never leashes. Its home is where it stands.
+    pub(crate) fn hunter(
+        guid: u64,
+        template: &'static Template,
+        stats: MobStats,
+        position: [f32; 3],
+        orientation: f32,
+        hunts: u64,
+    ) -> Self {
+        Self {
+            guid,
+            template,
+            stats,
+            health: stats.max_health,
+            position,
+            orientation,
+            home: position,
+            home_orientation: orientation,
+            state: State::Idle,
+            walk: None,
+            swing_timer: 0.0,
+            repath_timer: 0.0,
+            speed_mul: 1.0,
+            next_spline_id: 1,
+            spawn: NO_SPAWN,
+            // A camp of its own: no other mob evades with it.
+            camp: guid as u32 | 1 << 31,
+            assist_in: None,
+            wander_radius: 0.0,
+            wander_in: WANDER_PAUSE.0,
+            display_id: template.display_id,
+            casting: None,
+            spell_cooldowns: Vec::new(),
+            think_in: 0.0,
+            called: Vec::new(),
+            target: 0,
+            threat: Default::default(),
+            hunts: Some(hunts),
+            leashes: false,
+        }
+    }
+
+    /// The spawn that placed it; `None` for one no spawn placed.
+    pub(crate) fn spawn_row(&self) -> Option<&'static Spawn> {
+        content().spawn.get(self.spawn as usize)
     }
 
     /// An idle mob's stroll: after a pause it walks to a spot within its wander of home, and
@@ -650,6 +765,7 @@ impl Mob {
             (UNIT_FIELD_MAXDAMAGE, float(self.stats.max_damage)),
             (UNIT_FIELD_RESISTANCES, self.stats.armor),
         ];
+        pairs.extend(equip_pairs(&t.equip));
         // A Field Giver shows the quest giver flag, so the client asks for its `!` and `?`.
         if t.friendly && crate::quests::content::field_giver(t.entry) {
             pairs.push((UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER));
@@ -848,4 +964,31 @@ mod tests {
         let i = content().spawn.iter().position(|s| s.entry == 6).unwrap();
         assert!(Mob::spawn(i as u32, 1, 0.0).unwrap().attackable());
     }
+}
+
+/// `UNIT_VIRTUAL_ITEM_SLOT_DISPLAY` and `UNIT_VIRTUAL_ITEM_INFO`: what a creature shows in its
+/// hands, three slots.
+const UNIT_VIRTUAL_ITEM_SLOT_DISPLAY: u16 = 37;
+const UNIT_VIRTUAL_ITEM_INFO: u16 = 40;
+
+/// The fields that show `equip`'s items in a creature's hands: each slot's display, and its
+/// class, subclass, material, inventory type and sheath.
+fn equip_pairs(equip: &[u32]) -> Vec<(u16, u32)> {
+    let mut pairs = Vec::new();
+    for (slot, &entry) in equip.iter().take(3).enumerate() {
+        let Some(item) = crate::items::template(entry) else {
+            continue;
+        };
+        let slot = slot as u16;
+        pairs.push((UNIT_VIRTUAL_ITEM_SLOT_DISPLAY + slot, item.display_id));
+        pairs.push((
+            UNIT_VIRTUAL_ITEM_INFO + 2 * slot,
+            item.class
+                | item.subclass << 8
+                | (item.material.max(0) as u32 & 0xFF) << 16
+                | item.inventory_type << 24,
+        ));
+        pairs.push((UNIT_VIRTUAL_ITEM_INFO + 2 * slot + 1, item.sheath));
+    }
+    pairs
 }

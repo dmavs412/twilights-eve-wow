@@ -32,6 +32,7 @@ struct Heat {
     at: f32,
     xp: f32,
     aura: u32,
+    hunter_minutes: f32,
 }
 
 #[derive(Deserialize)]
@@ -87,6 +88,15 @@ pub fn heat_aura(level: u8) -> Option<u32> {
         .checked_sub(1)
         .and_then(|i| file().heat.get(usize::from(i)))
         .map(|h| h.aura)
+}
+
+/// The seconds of open-world play between Bounty Hunters at Heat Level `level`; `None` at
+/// level 0, which sends none.
+pub fn hunter_secs(level: u8) -> Option<f32> {
+    level
+        .checked_sub(1)
+        .and_then(|i| file().heat.get(usize::from(i)))
+        .map(|h| h.hunter_minutes * 60.0)
 }
 
 /// The Notoriety a `player`-level character earns killing a `mob`-level creature: nothing for a

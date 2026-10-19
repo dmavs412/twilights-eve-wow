@@ -63,3 +63,28 @@ cooldown_ms = 25000
 range_max = 30.0
 chance = 100
 effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = { base = 18 } }
+
+# A Bounty Hunter's bleed (`notoriety.toml`'s bruiser and rogue). Looks like Rend rank 1
+# (client_spell_id 772). Placeholders: 5 ticks of 6, 30 physical damage over 15 s.
+[[spell]]
+key = "hunter_rend"
+client_spell_id = 772
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 15000
+range_max = 5.0
+chance = 50
+effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 15000, tick = { base = 6 } }
+
+# A Bounty Hunter's poisoned arrow (`notoriety.toml`'s archer). Looks like Serpent Sting rank 1
+# (client_spell_id 1978); physical, since Creature Spells have no nature school yet.
+# Placeholders: 5 ticks of 8, 40 damage over 15 s, from 30 yd.
+[[spell]]
+key = "hunter_sting"
+client_spell_id = 1978
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 15000
+range_max = 30.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 15000, tick = { base = 8 } }

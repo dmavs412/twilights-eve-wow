@@ -116,6 +116,13 @@ impl Shard {
         events
     }
 
+    /// Every mob hunting a player who is not on this shard gives up and leaves: its owner went
+    /// into a Phase or a Dungeon, or out of the world.
+    pub(crate) fn drop_hunts(&mut self, present: &[u64]) {
+        self.mobs
+            .retain(|m| m.hunts.is_none_or(|owner| present.contains(&owner)));
+    }
+
     /// A mob of `spawn` died: it comes back once every player has been away `wait` seconds.
     pub(crate) fn died(&mut self, spawn: u32, wait: f32) {
         self.population.died(spawn, wait);

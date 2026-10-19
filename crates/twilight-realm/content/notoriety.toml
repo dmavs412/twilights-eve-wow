@@ -24,23 +24,87 @@ hub_radius = 100.0
 
 # The Heat Levels, lowest first: from `at` Notoriety, every XP award is multiplied by `xp` on top
 # of the Tier XP Rate, and the character wears `aura`, a stock 1.12 spell borrowed for its icon and
-# tooltip (Hunter's Mark, ranks 1-4: a mark, one more rank for each level).
+# tooltip (Hunter's Mark, ranks 1-4: a mark, one more rank for each level). A Bounty Hunter comes
+# after `hunter_minutes` of open-world play.
 [[heat]]
 at = 100
 xp = 1.1
 aura = 1130
+hunter_minutes = 15.0
 
 [[heat]]
 at = 300
 xp = 1.25
 aura = 14323
+hunter_minutes = 10.0
 
 [[heat]]
 at = 600
 xp = 1.5
 aura = 14324
+hunter_minutes = 6.0
 
 [[heat]]
 at = 1000
 xp = 2.0
 aura = 14325
+hunter_minutes = 4.0
+
+# Bounty Hunters (#177): a hard elite `level_above` the character's level, its class's
+# `mob_class_stats.toml` numbers times `health`, `damage` and `armor`. It comes `spawn_yd` away,
+# out of the character's sight, hostile to everyone (`faction_template` 14) but hunting only its
+# owner. Each hunter's creature entry is `entry_base + 1000 x archetype + 32 x first + epithet`, a
+# realm-range entry for its generated name, so no stock creature is renamed.
+[hunter]
+entry_base = 980000
+level_above = 1
+health = 2.5
+damage = 1.5
+armor = 1.5
+spawn_yd = [40.0, 60.0]
+faction_template = 14
+speed_run = 1.143
+subname = "Bounty Hunter"
+
+# The archetypes. `display_id` is a stock creature model; `equip` the item entries in its main
+# hand, off hand and ranged slots (0 for none), shown on it; `spells` its Creature Spells
+# (`creature_spells.toml`). Its name is one of `first` and one of `epithet`: "Vask the Red".
+[[archetype]]
+key = "bruiser"
+unit_class = "warrior"
+display_id = 4199
+equip = [2227]
+base_attack_time = 3000
+spells = ["hunter_rend"]
+first = ["Vask", "Grul", "Morka", "Brannoc", "Thadd", "Ugra", "Korv", "Sela"]
+epithet = ["the Red", "Bonebreaker", "the Anvil", "Skullsplitter", "the Mauler", "Ironjaw"]
+
+[[archetype]]
+key = "archer"
+unit_class = "warrior"
+display_id = 4639
+equip = [0, 0, 3021]
+base_attack_time = 2000
+spells = ["hunter_sting"]
+first = ["Lira", "Fenn", "Darro", "Ysolde", "Kesh", "Tamsin", "Orrin", "Vey"]
+epithet = ["Longshot", "the Hawk", "Quickdraw", "the Patient", "Farsight", "the Quiet"]
+
+[[archetype]]
+key = "caster"
+unit_class = "mage"
+display_id = 4197
+equip = [3227]
+base_attack_time = 2000
+spells = ["corruption_creature", "shadow_word_pain_creature"]
+first = ["Malgrim", "Isra", "Voth", "Celene", "Druun", "Askar", "Nyx", "Pell"]
+epithet = ["the Hexer", "Duskcaller", "the Withering", "Ashtongue", "the Grim", "Soulrender"]
+
+[[archetype]]
+key = "rogue"
+unit_class = "warrior"
+display_id = 4640
+equip = [1935, 1935]
+base_attack_time = 1500
+spells = ["hunter_rend"]
+first = ["Silk", "Corvin", "Jessa", "Rook", "Tibbet", "Mara", "Shade", "Wren"]
+epithet = ["the Knife", "Cutpurse", "the Whisper", "Nightstep", "the Smiling", "Quickblade"]

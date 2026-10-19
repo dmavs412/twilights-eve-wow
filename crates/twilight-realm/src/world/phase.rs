@@ -30,7 +30,8 @@ impl InWorld {
             return;
         }
         // The client is sent only the creatures of its own Phase: the old ones go, with the
-        // fight and every aura on them.
+        // fight and every aura on them. A Bounty Hunter gives up the chase.
+        self.recall_hunter(events);
         self.stop_attack(events);
         let units: Vec<u64> = self.mobs.iter().map(|m| m.guid).collect();
         for &unit in &units {

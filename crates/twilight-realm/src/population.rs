@@ -142,7 +142,9 @@ impl Population {
                 matches!(m.state, State::Idle | State::Dead) && nearest(m.home) > FORGET_YD;
             if leaves {
                 gone.push(m.guid);
-                self.present[m.spawn as usize] = false;
+                if let Some(present) = self.present.get_mut(m.spawn as usize) {
+                    *present = false;
+                }
             }
             !leaves
         });

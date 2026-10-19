@@ -224,6 +224,10 @@ pub(crate) struct InWorld {
     pub(crate) casters: crate::creature_spells::Casters,
     /// The Heat Level whose aura the player wears; 0 for none.
     heat_shown: u8,
+    /// Seconds of open-world play until the next Bounty Hunter; `None` before the count starts.
+    hunter_in: Option<f32>,
+    /// Bounty Hunters sent this session, for their guids.
+    hunters_sent: u32,
 }
 
 impl InWorld {
@@ -307,6 +311,8 @@ impl InWorld {
             portals: Vec::new(),
             casters: Default::default(),
             heat_shown: 0,
+            hunter_in: None,
+            hunters_sent: 0,
         };
         events.push(w.player_create(c));
         w
@@ -491,7 +497,7 @@ impl InWorld {
             self.discover(host, c, events, &mut ticked);
         }
         self.rest(dt, c, events);
-        self.notoriety_tick(dt, c, events);
+        self.notoriety_tick(dt, host, c, rng, events);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting
@@ -505,7 +511,10 @@ impl InWorld {
         if p.alive() {
             for i in 0..self.mobs.len() {
                 let mob = &self.mobs[i];
-                if mob.state != State::Idle || !mob.template.hostile {
+                if mob.state != State::Idle
+                    || !mob.template.hostile
+                    || mob.hunts.is_some_and(|owner| owner != self.guid)
+                {
                     continue;
                 }
                 let r = self.notice_radius(mob, c.level);
@@ -892,7 +901,7 @@ impl InWorld {
                 }
                 if target != self.guid
                     || !self.player.alive()
-                    || leash::beyond(mob.home, mob.position)
+                    || (mob.leashes && leash::beyond(mob.home, mob.position))
                 {
                     let camp = mob.camp;
                     self.evade_camp(camp, target, route.map(|r| (r, map, host)), events);
@@ -1000,17 +1009,19 @@ impl InWorld {
         let mob = &mut self.mobs[i];
         let entry = mob.template.entry;
         let boss = Self::is_boss(mob);
-        let spawn = &crate::mobs::content().spawn[mob.spawn as usize];
-        let drops = match spawn.phase {
-            crate::phased::Phase::Dungeon(_) => crate::phased::drops(spawn.map, spawn.guid),
-            crate::phased::Phase::OpenWorld => &[],
+        let drops = match mob.spawn_row() {
+            Some(spawn) if matches!(spawn.phase, crate::phased::Phase::Dungeon(_)) => {
+                crate::phased::drops(spawn.map, spawn.guid)
+            }
+            _ => &[],
         };
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
         drop_cast(mob, events);
-        // A Phased Dungeon's dead stay down until its Run resets.
-        if self.phase == crate::phased::Phase::OpenWorld {
+        // A Phased Dungeon's dead stay down until its Run resets; a mob no spawn placed never
+        // comes back.
+        if self.phase == crate::phased::Phase::OpenWorld && mob.spawn_row().is_some() {
             let t = mob.template;
             let wait = t
                 .respawn_secs

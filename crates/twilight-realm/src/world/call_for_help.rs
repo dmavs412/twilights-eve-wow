@@ -17,7 +17,9 @@ impl InWorld {
             if !matches!(mob.state, State::Engaged | State::Dazed) {
                 continue;
             }
-            let spawn = &content.spawn[mob.spawn as usize];
+            let Some(spawn) = mob.spawn_row() else {
+                continue;
+            };
             for (k, call) in spawn.on_health.iter().enumerate() {
                 if !mob.called[k] && call.reached(mob.health, mob.stats.max_health) {
                     mob.called[k] = true;
