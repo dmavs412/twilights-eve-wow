@@ -30,8 +30,9 @@ pub(crate) enum CreatureEffect {
 #[derive(Deserialize, Debug)]
 pub(crate) struct CreatureSpell {
     pub(crate) key: String,
-    /// What the client shows: the cast bar, the icon, the debuff.
-    pub(crate) client_spell_id: u32,
+    /// Its own spell id (ADR 0011), whose client row `build_spells.py` writes from the same
+    /// file's `name`, `icon`, `visual` and `aura_description`: the cast bar, the icon, the debuff.
+    pub(crate) spell_id: u32,
     pub(crate) school: School,
     pub(crate) cast_time_ms: u32,
     pub(crate) cooldown_ms: u32,
@@ -66,7 +67,19 @@ pub(crate) fn healed(health: u32, max: u32, pct: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::healed;
+    use super::{all, healed};
+
+    #[test]
+    fn every_creature_spell_is_a_spell_of_its_own() {
+        let mut ids: Vec<u32> = all().iter().map(|s| s.spell_id).collect();
+        assert!(
+            ids.iter().all(|&id| id >= 1_000_000),
+            "from-scratch ids: {ids:?}"
+        );
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), all().len(), "one id per spell");
+    }
 
     #[test]
     fn a_heal_restores_its_percent_and_never_overheals() {

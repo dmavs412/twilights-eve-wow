@@ -30,6 +30,10 @@ shows), and Davis tunes their numbers by hand while testing.
 
 ## Consequences
 
+- ADR 0011 amends this: a row no longer shows a stock client spell. It is a spell of its own
+  (`spell_id`, 1,900,000 up, beside `name`, `icon`, `visual` for the look and an optional
+  `aura_description`), and `tools/twilights-eve/build_spells.py` reads the file to write its client
+  row into the DBC patch. The numbers stay hand-tuned here; the realm still reads the file itself.
 - Only `periodic_damage` is cast by creatures so far; the loader refuses any other effect until
   the system learns it. Direct damage, heals and buffs come as rows need them.
 - The aura store's periodic damage carries its caster and school, so a tick on the player names

@@ -4843,7 +4843,7 @@ impl InWorld {
         if let CreatureEffect::Snare { pct, duration_ms } = spell.effect {
             let aura = Aura {
                 unit: self.guid,
-                spell_id: spell.client_spell_id,
+                spell_id: spell.spell_id,
                 slot: 0,
                 level,
                 left: clock::secs(duration_ms),
@@ -4866,7 +4866,7 @@ impl InWorld {
         };
         let aura = Aura {
             unit: self.guid,
-            spell_id: spell.client_spell_id,
+            spell_id: spell.spell_id,
             slot: 0,
             level,
             left: clock::secs(duration_ms),

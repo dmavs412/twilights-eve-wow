@@ -1456,7 +1456,7 @@ fn drop_cast(
     let (spell, _) = mob.casting.take()?;
     events.push(SessionEvent::SpellFailedOther {
         caster: mob.guid,
-        spell_id: spell.client_spell_id,
+        spell_id: spell.spell_id,
     });
     Some(spell)
 }

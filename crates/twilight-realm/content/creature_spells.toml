@@ -1,11 +1,18 @@
-# Creature Spells (ADR 0008): what creatures cast in a fight. Hand-written, not from master.csv,
-# and no build script: Davis tunes these numbers by hand while testing.
+# Creature Spells (ADR 0008, ADR 0011): what creatures cast in a fight. Hand-written, not from
+# master.csv: Davis tunes these numbers by hand while testing. Each is a spell of its own, as a
+# Calling's are: tools/twilights-eve/build_spells.py reads this file and writes each one's client
+# row into client_dbc_patch.json, so after an edit to an id or a look, run it again.
 #
 # A creature template in mobs.toml (or any template source) names its spells with
 # `spells = ["key", ...]`; one without casts nothing.
 #
 # key              the name a template uses
-# client_spell_id  what the client shows: cast bar, icon, debuff (from the stock Spell.dbc)
+# spell_id         its own id, 1,900,000 up (1,000,000 up is from-scratch; the sheet's sit
+#                  below 1,900,000), unique across this file and master.csv
+# name             the cast bar's and the debuff's name
+# icon             a stock icon path, or a PNG in data/twilights-eve/art/
+# visual           the stock spell whose look (SpellVisual) it takes; nothing else is read from it
+# aura_description optional: the debuff's tooltip, in Spell.dbc's $s1/$t1 terms
 # school           physical, holy, fire or shadow
 # cast_time_ms     the cast bar; the creature stops swinging for it
 # cooldown_ms      from the cast's end
@@ -19,7 +26,11 @@
 # Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
 [[spell]]
 key = "corruption_creature"
-client_spell_id = 172
+spell_id = 1900001
+name = "Corruption"
+icon = 'Interface\Icons\Spell_Shadow_AbominationExplosion'
+visual = 172
+aura_description = "$s1 Shadow damage every $t1 seconds."
 school = "shadow"
 cast_time_ms = 2000
 cooldown_ms = 15000
@@ -27,12 +38,15 @@ range_max = 30.0
 chance = 100
 effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = { base = 10 } }
 
-# The Abbot's self-heal. Looks like Lesser Heal rank 1 (client_spell_id 2050). All placeholders:
+# The Abbot's self-heal. Looks like Lesser Heal rank 1 (visual 2050). All placeholders:
 # 15% of max health after a 3 s cast, every 20 s, and only once the caster is under 80% health,
 # since a heal at full health wastes the cast (the decision code makes that a one-line check).
 [[spell]]
 key = "abbot_heal"
-client_spell_id = 2050
+spell_id = 1900002
+name = "Lesser Heal"
+icon = 'Interface\Icons\Spell_Holy_LesserHeal'
+visual = 2050
 school = "holy"
 cast_time_ms = 3000
 cooldown_ms = 20000
@@ -41,11 +55,15 @@ chance = 100
 below_health_pct = 80
 effect = { kind = "heal", pct_max_health = 15 }
 
-# The Twilight Disciple's. Looks like Shadow Word: Pain rank 1 (client_spell_id 589): instant.
+# The Twilight Disciple's. Looks like Shadow Word: Pain rank 1 (visual 589): instant.
 # Placeholders: 6 ticks of 5, 30 shadow damage over 18 s, every 12 s.
 [[spell]]
 key = "shadow_word_pain_creature"
-client_spell_id = 589
+spell_id = 1900003
+name = "Shadow Word: Pain"
+icon = 'Interface\Icons\Spell_Shadow_ShadowWordPain'
+visual = 589
+aura_description = "$s1 Shadow damage every $t1 seconds."
 school = "shadow"
 cast_time_ms = 0
 cooldown_ms = 12000
@@ -53,11 +71,15 @@ range_max = 30.0
 chance = 100
 effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = { base = 5 } }
 
-# The Abbot's heavy curse. Looks like Corruption rank 2 (client_spell_id 6222). Placeholders:
+# The Abbot's heavy curse. Looks like Corruption rank 2 (visual 6222). Placeholders:
 # 6 ticks of 18, 108 shadow damage over 18 s, every 25 s.
 [[spell]]
 key = "abbot_corruption"
-client_spell_id = 6222
+spell_id = 1900004
+name = "Corruption"
+icon = 'Interface\Icons\Spell_Shadow_AbominationExplosion'
+visual = 6222
+aura_description = "$s1 Shadow damage every $t1 seconds."
 school = "shadow"
 cast_time_ms = 2000
 cooldown_ms = 25000
@@ -66,10 +88,14 @@ chance = 100
 effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = { base = 18 } }
 
 # A Bounty Hunter's bleed (`notoriety.toml`'s bruiser and rogue). Looks like Rend rank 1
-# (client_spell_id 772). Placeholders: 5 ticks of 6, 30 physical damage over 15 s.
+# (visual 772). Placeholders: 5 ticks of 6, 30 physical damage over 15 s.
 [[spell]]
 key = "hunter_rend"
-client_spell_id = 772
+spell_id = 1900005
+name = "Rend"
+icon = 'Interface\Icons\Ability_Gouge'
+visual = 772
+aura_description = "Bleeding for $s1 damage every $t1 seconds."
 school = "physical"
 cast_time_ms = 0
 cooldown_ms = 15000
@@ -78,11 +104,15 @@ chance = 50
 effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 15000, tick = { base = 6 } }
 
 # A Bounty Hunter's poisoned arrow (`notoriety.toml`'s archer). Looks like Serpent Sting rank 1
-# (client_spell_id 1978); physical, since Creature Spells have no nature school yet.
+# (visual 1978); physical, since Creature Spells have no nature school yet.
 # Placeholders: 5 ticks of 8, 40 damage over 15 s, from 30 yd.
 [[spell]]
 key = "hunter_sting"
-client_spell_id = 1978
+spell_id = 1900006
+name = "Serpent Sting"
+icon = 'Interface\Icons\Ability_Hunter_Quickshot'
+visual = 1978
+aura_description = "$s1 damage every $t1 seconds."
 school = "physical"
 cast_time_ms = 0
 cooldown_ms = 15000
@@ -90,11 +120,15 @@ range_max = 30.0
 chance = 100
 effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 15000, tick = { base = 8 } }
 
-# The Snaring affix's snare (`notoriety.toml`). Looks like Hamstring rank 1 (client_spell_id 1715).
+# The Snaring affix's snare (`notoriety.toml`). Looks like Hamstring rank 1 (visual 1715).
 # Placeholders: 50% slower for 15 s, every 20 s, from melee range.
 [[spell]]
 key = "hunter_hamstring"
-client_spell_id = 1715
+spell_id = 1900007
+name = "Hamstring"
+icon = 'Interface\Icons\Ability_ShockWave'
+visual = 1715
+aura_description = "Movement slowed by $s1%."
 school = "physical"
 cast_time_ms = 0
 cooldown_ms = 20000

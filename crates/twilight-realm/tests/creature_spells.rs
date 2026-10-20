@@ -11,13 +11,13 @@ use common::*;
 /// The Vile Familiar near the Crossroads.
 const VILE_FAMILIAR: u32 = 3101;
 const CORRUPTION: &str = "corruption_creature";
-/// What the client shows for it: Corruption rank 1.
-const CORRUPTION_LOOK: u32 = 172;
+/// Its own spell id, which the cast bar, the debuff and the damage log name.
+static CORRUPTION_SPELL: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| creature_spell(CORRUPTION));
 /// The shadow school in a damage log.
 const SHADOW: u32 = 5;
 const HEAL: &str = "abbot_heal";
-/// What the client shows for it: Lesser Heal rank 1.
-const HEAL_LOOK: u32 = 2050;
+static HEAL_SPELL: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| creature_spell(HEAL));
 static GOUGE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("basic_warrior", "gouge"));
 /// Whole rage points Gouge costs.
@@ -45,11 +45,11 @@ fn a_caster_starts_its_cast_and_the_curse_ticks_shadow_damage_after_it() {
     };
     let starts = at(&|e| {
         matches!(e, SessionEvent::SpellStart { caster, spell_id, cast_time_ms: 2000, target: Some(t), .. }
-            if *caster == mob.0 && *spell_id == CORRUPTION_LOOK && *t == me)
+            if *caster == mob.0 && *spell_id == *CORRUPTION_SPELL && *t == me)
     });
     let goes = at(&|e| {
         matches!(e, SessionEvent::SpellGo { caster, spell_id, hits, .. }
-            if *caster == mob.0 && *spell_id == CORRUPTION_LOOK && hits.contains(&me))
+            if *caster == mob.0 && *spell_id == *CORRUPTION_SPELL && hits.contains(&me))
     });
     assert!(!starts.is_empty(), "the familiar casts");
     assert_eq!(goes.len(), 1, "and the cast goes off, once before it dies");
@@ -60,7 +60,7 @@ fn a_caster_starts_its_cast_and_the_curse_ticks_shadow_damage_after_it() {
     let shown = events.iter().any(|(t, e)| {
         *t >= goes[0]
             && matches!(e, SessionEvent::ObjectValues { guid, fields }
-                if *guid == me && (0..48).any(|s| fields.unit_aura(s).is_some_and(|a| a.spell_id == CORRUPTION_LOOK)))
+                if *guid == me && (0..48).any(|s| fields.unit_aura(s).is_some_and(|a| a.spell_id == *CORRUPTION_SPELL)))
     });
     assert!(shown, "the player wears the curse");
 
@@ -73,7 +73,7 @@ fn a_caster_starts_its_cast_and_the_curse_ticks_shadow_damage_after_it() {
                 caster,
                 spell_id,
                 ticks,
-            }) if *target == me && *caster == mob.0 && *spell_id == CORRUPTION_LOOK => {
+            }) if *target == me && *caster == mob.0 && *spell_id == *CORRUPTION_SPELL => {
                 match ticks[..] {
                     [PeriodicTick::Damage { amount, school, .. }] => {
                         assert_eq!(school, SHADOW);
@@ -187,7 +187,7 @@ fn a_gouge_mid_cast_cancels_it_and_the_spell_waits_out_its_cooldown() {
         assert!(
             events.iter().any(
                 |(_, e)| matches!(e, SessionEvent::SpellFailedOther { caster, spell_id }
-                if *caster == mob.0 && *spell_id == CORRUPTION_LOOK)
+                if *caster == mob.0 && *spell_id == *CORRUPTION_SPELL)
             ),
             "seed {seed}: the client sees the cast end"
         );
@@ -289,7 +289,7 @@ fn a_hurt_creature_heals_fifteen_percent_of_its_max_health_after_the_cast_time()
             _ => None,
         });
         let log = log.unwrap_or_else(|| panic!("seed {seed}: the heal is logged"));
-        assert_eq!((log.healer, log.spell_id), (mob, HEAL_LOOK));
+        assert_eq!((log.healer, log.spell_id), (mob, *HEAL_SPELL));
         assert_eq!(log.amount, max * 15 / 100, "seed {seed}");
         assert_eq!(
             view.objects[&mob].unit_health(),
@@ -322,7 +322,7 @@ fn heal_go(e: &SessionEvent, mob: u64) -> bool {
             spell_id,
             hits,
             ..
-        } => *caster == mob && *spell_id == HEAL_LOOK && hits == &[mob],
+        } => *caster == mob && *spell_id == *HEAL_SPELL && hits == &[mob],
         _ => false,
     }
 }
@@ -331,7 +331,7 @@ fn heal_go(e: &SessionEvent, mob: u64) -> bool {
 fn heal_failed(e: &SessionEvent, mob: u64) -> bool {
     match e {
         SessionEvent::SpellFailedOther { caster, spell_id } => {
-            *caster == mob && *spell_id == HEAL_LOOK
+            *caster == mob && *spell_id == *HEAL_SPELL
         }
         _ => false,
     }

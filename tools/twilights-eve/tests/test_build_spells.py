@@ -74,6 +74,8 @@ class BuildSpells(unittest.TestCase):
         self.extra_art: dict[str, bytes] = {}
         # callings.csv cells by Calling key, over PROFILE; None leaves the Calling's row out.
         self.profiles: dict[str, dict | None] = {}
+        # The creature_spells.toml `run_build` hands the script: none, unless a test sets it.
+        self.creature_spells = ""
 
     def run_build(self, rows: list[dict],
                   extra_columns: tuple = ()) -> tuple[subprocess.CompletedProcess, list | None]:
@@ -103,6 +105,9 @@ class BuildSpells(unittest.TestCase):
                     continue
                 writer.writerow({"calling": key, "name": names.get(key, key.title()),
                                  **PROFILE, **self.profiles.get(key, {})})
+        creature_path = os.path.join(tmp, "creature_spells.toml")
+        with open(creature_path, "w", encoding="utf-8") as f:
+            f.write(self.creature_spells)
         art_dir = os.path.join(tmp, "art")
         os.mkdir(art_dir)
         for name, data in {"ember_lash.png": PNG, **getattr(self, "extra_art", {})}.items():
@@ -110,7 +115,7 @@ class BuildSpells(unittest.TestCase):
                 f.write(data)
         self.out_dir = tmp
         command = [sys.executable, SCRIPT, "--csv", path, "--callings", callings_path, "--out-dir", tmp,
-                   "--art-dir", art_dir, "--no-dbc-check"]
+                   "--art-dir", art_dir, "--creature-spells", creature_path, "--no-dbc-check"]
         done = subprocess.run(command, capture_output=True, text=True)
         self.patch = None
         data = None
@@ -147,6 +152,52 @@ class BuildSpells(unittest.TestCase):
         self.assertNotIn("art", self.patch)
         with open(os.path.join(self.out_dir, "client_art.json"), encoding="utf-8") as f:
             self.assertEqual(base64.b64decode(json.load(f)["ember_lash"]), PNG)
+
+    def creature(self, spell_id: int = 1900001, key: str = "curse") -> str:
+        """A Creature Spell as creature_spells.toml writes one: Corruption's look, 6 ticks of 10."""
+        return f"""
+[[spell]]
+key = "{key}"
+spell_id = {spell_id}
+name = "Corruption"
+icon = 'Interface\\Icons\\Spell_Shadow_AbominationExplosion'
+visual = 172
+aura_description = "$s1 Shadow damage every $t1 seconds."
+school = "shadow"
+cast_time_ms = 2000
+cooldown_ms = 15000
+range_max = 30.0
+chance = 100
+effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick = {{ base = 10 }} }}
+"""
+
+    def test_a_creature_spell_is_a_client_row_of_its_own(self):
+        self.creature_spells = self.creature()
+        done, data = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        entry = next(e for e in self.patch["spells"] if e["spell_id"] == 1900001)
+        self.assertEqual(entry["creature"], "curse")
+        self.assertEqual(entry["fields"], {
+            "name": "Corruption", "icon": "Interface\\Icons\\Spell_Shadow_AbominationExplosion",
+            "school": 5, "visual_spell": 172, "implicit_targets": [6, 0], "cast_time_ms": 2000,
+            "range_min": 0, "range_max": 30.0, "duration_ms": 18000,
+            "aura_description": "$s1 Shadow damage every $t1 seconds.",
+            "dbc_effects": [{"effect": 6, "aura": 3, "base": 10, "per_level": 0, "amplitude_ms": 3000}],
+        })
+        # The realm reads the file itself; the server JSON is the Callings' alone.
+        self.assertNotIn("curse", json.dumps(data))
+
+    def test_a_creature_spell_on_a_sheet_id_fails(self):
+        self.creature_spells = self.creature(spell_id=1000078)
+        self.assert_fails([STRIKE], "curse: spell_id 1000078 is already claimed by line 2 (vanguard/strike)")
+
+    def test_two_creature_spells_on_one_id_fail(self):
+        self.creature_spells = self.creature() + self.creature(key="hex")
+        self.assert_fails([STRIKE], "hex: spell_id 1900001 is already claimed by creature_spells.toml curse")
+
+    def test_a_creature_spell_on_a_stock_id_fails(self):
+        self.creature_spells = self.creature(spell_id=172)
+        self.assert_fails([STRIKE], "curse: spell_id 172 is not its own (1,000,000 up)")
 
     def test_a_missing_png_fails_the_build(self):
         self.assert_fails([{**EMBER, "icon": "nothing.png"}], "icon: 'nothing.png' is not in")

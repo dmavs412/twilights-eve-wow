@@ -64,6 +64,21 @@ pub fn spell(calling: &str, key: &str) -> u32 {
     id_of(row, &format!("{calling}/{key}"))
 }
 
+/// The spell id of the Creature Spell `key` (`content/creature_spells.toml`, ADR 0011).
+pub fn creature_spell(key: &str) -> u32 {
+    static FILE: std::sync::LazyLock<toml::Value> = std::sync::LazyLock::new(|| {
+        toml::from_str(include_str!("../../content/creature_spells.toml")).unwrap()
+    });
+    FILE["spell"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|s| s["key"].as_str() == Some(key))
+        .unwrap_or_else(|| panic!("{key} is not a creature spell"))["spell_id"]
+        .as_integer()
+        .unwrap() as u32
+}
+
 /// The spell ids of `calling`'s skills or auras `keys`, in order.
 pub fn spells(calling: &str, keys: &[&str]) -> Vec<u32> {
     keys.iter().map(|key| spell(calling, key)).collect()

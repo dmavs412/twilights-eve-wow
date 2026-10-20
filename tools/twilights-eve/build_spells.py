@@ -25,6 +25,7 @@ tools/twilights-eve/fixtures/.
 from __future__ import annotations
 
 import argparse
+import tomllib
 import base64
 import csv
 import json
@@ -35,6 +36,7 @@ import sys
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DEFAULT_CSV = os.path.join(REPO, "data", "twilights-eve", "master.csv")
 DEFAULT_CALLINGS = os.path.join(REPO, "data", "twilights-eve", "callings.csv")
+DEFAULT_CREATURE_SPELLS = os.path.join(REPO, "crates", "twilight-realm", "content", "creature_spells.toml")
 DEFAULT_OUT_DIR = os.path.join(REPO, "data", "twilights-eve")
 MAX_EFFECTS = 5
 CLIENT_EFFECTS = 3
@@ -119,6 +121,8 @@ CLIENT_EFFECTS_OF = {
     "periodic_damage": (6, 3), "periodic_heal": (6, 8), "stun": (6, 12), "absorb": (6, 69),
 }
 DUMMY_EFFECT = (3, 0)
+# The same numbers for a Creature Spell's effect kinds: a curse, a heal, a snare.
+CREATURE_EFFECTS_OF = {"periodic_damage": (6, 3), "heal": (10, 0), "snare": (6, 33)}
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms",
@@ -264,6 +268,72 @@ def check_seam(server: list[dict], patch: dict) -> None:
         raise BuildError(f"{len(bad)} rows break the client/realm seam:\n" + "\n".join(bad))
 
 
+def icon_path(icon: str, art: list[str], art_dir: str, where: str) -> str:
+    """The client path of an icon cell: a PNG of `art_dir`, checked and noted in `art` for the
+    embed, or a stock icon path as it is."""
+    if not icon.lower().endswith(".png"):
+        return icon
+    if not os.path.isfile(os.path.join(art_dir, icon)):
+        raise BuildError(f"{where} icon: {icon!r} is not in {art_dir}")
+    stem = icon[:-4]
+    if stem not in art:
+        art.append(stem)
+    return ART_ICON_DIR + stem
+
+
+def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], art_dir: str) -> list[dict]:
+    """The client rows of `creature_spells.toml` (ADR 0008, 0011). Each is a spell of its own, with
+    an id from 1,000,000 up that no master.csv row and no other creature spell claims, its name,
+    icon and school, the stock spell whose look it takes, and its cast time, range, duration and
+    effect as Spell.dbc numbers. The realm reads the file itself and decides what happens."""
+    taken = {int(r["spell_id"]): f"line {line} ({r['calling']}/{r['key']})"
+             for line, r in enumerate(rows, start=2) if r["spell_id"].strip().isdigit()}
+    entries, bad = [], []
+    for spell in spells:
+        key = spell.get("key", "?")
+        where = f"creature_spells.toml {key}"
+        sid = spell.get("spell_id")
+        if not isinstance(sid, int) or sid < FROM_SCRATCH_MIN_ID:
+            bad.append(f"{where}: spell_id {sid!r} is not its own (1,000,000 up)")
+            continue
+        if sid in taken:
+            bad.append(f"{where}: spell_id {sid} is already claimed by {taken[sid]}")
+            continue
+        taken[sid] = where
+        for column in ("name", "icon", "visual", "school"):
+            if not spell.get(column):
+                raise BuildError(f"{where}: {column} is required")
+        effect = spell["effect"]
+        if effect.get("kind") not in CREATURE_EFFECTS_OF:
+            raise BuildError(f"{where}: effect kind {effect.get('kind')!r}, want one of "
+                             f"{', '.join(CREATURE_EFFECTS_OF)}")
+        number_, aura = CREATURE_EFFECTS_OF[effect["kind"]]
+        row_effect = {"effect": number_, "base": 0, "per_level": 0}
+        if aura:
+            row_effect["aura"] = aura
+        if effect["kind"] == "periodic_damage":
+            row_effect["base"] = effect["tick"].get("base", 0)
+            row_effect["per_level"] = effect["tick"].get("per_level", 0)
+            row_effect["amplitude_ms"] = effect["tick_ms"]
+        elif effect["kind"] == "snare":
+            row_effect["base"] = -effect["pct"]
+        fields = {"name": spell["name"], "icon": icon_path(spell["icon"], art, art_dir, where),
+                  "school": SCHOOLS.index(one_of(spell["school"], SCHOOLS, where, "school")),
+                  "visual_spell": spell["visual"],
+                  # A heal is the caster's own; a curse or snare lands on the player it fights.
+                  "implicit_targets": list(IMPLICIT_TARGETS["self" if effect["kind"] == "heal" else "enemy"]),
+                  "cast_time_ms": spell["cast_time_ms"], "range_min": 0, "range_max": spell["range_max"],
+                  "dbc_effects": [row_effect]}
+        if "duration_ms" in effect:
+            fields["duration_ms"] = effect["duration_ms"]
+        if spell.get("aura_description"):
+            fields["aura_description"] = spell["aura_description"]
+        entries.append({"spell_id": sid, "creature": key, "fields": fields})
+    if bad:
+        raise BuildError(f"{len(bad)} creature spell ids are not their own:\n" + "\n".join(bad))
+    return entries
+
+
 def check_unique_ids(rows: list[dict]) -> None:
     """Fail when two talents or skills claim one spell_id or talent_id: the client keeps one
     Spell.dbc / Talent.dbc row per id, so the patch would overwrite one with the other. An aura of
@@ -329,7 +399,8 @@ def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: lis
     id and, for a missile, its speed: both are that spell's look."""
     for entry in patch["spells"]:
         fields = entry["fields"]
-        where = f"{entry['calling']}/{entry['key']}" if "key" in entry else str(entry["spell_id"])
+        where = (f"{entry['calling']}/{entry['key']}" if "key" in entry
+                 else f"creature/{entry['creature']}" if "creature" in entry else str(entry["spell_id"]))
         if "visual_spell" in fields:
             stock = fields.pop("visual_spell")
             if stock not in (spell_looks or {}):
@@ -1198,16 +1269,8 @@ def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, wh
     if family:
         fields["spell_family"] = SPELL_FAMILY
         fields["family_flags"] = family
-    icon = row["icon"]
-    if icon.lower().endswith(".png"):
-        if not os.path.isfile(os.path.join(art_dir, icon)):
-            raise BuildError(f"{where} icon: {icon!r} is not in {art_dir}")
-        stem = icon[:-4]
-        fields["icon"] = ART_ICON_DIR + stem
-        if stem not in art:
-            art.append(stem)
-    elif icon:
-        fields["icon"] = icon
+    if row["icon"]:
+        fields["icon"] = icon_path(row["icon"], art, art_dir, where)
     if row["visual"]:
         fields["visual_spell"] = whole(row["visual"], f"{where} visual")
     if row["needs_facing"]:
@@ -1326,7 +1389,8 @@ def tab_background(tab: dict, calling: str, art: list[str], art_dir: str) -> str
 
 
 def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
-          calling_rows: list[dict] | None = None) -> tuple[list[dict], dict]:
+          calling_rows: list[dict] | None = None,
+          creature_spells: list[dict] | None = None) -> tuple[list[dict], dict]:
     for column in (rows[0] if rows else {}):
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
         if found and int(found.group(1)) > MAX_SPELLMODS:
@@ -1511,6 +1575,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
                 if "prereq" in talent:
                     seat["prereq"] = talent["prereq"]
                 seats.append(seat)
+    overrides.extend(build_creature_spells(creature_spells or [], rows, art, art_dir))
     patch: dict = {"callings": [client_calling(c, profiles[c["key"]]["name"]) for c in callings.values()],
                    "spells": overrides,
                    "talent_tabs": tabs, "talents": seats}
@@ -1524,6 +1589,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--csv", default=DEFAULT_CSV)
     parser.add_argument("--callings", default=DEFAULT_CALLINGS, help="callings.csv, one row per Calling")
+    parser.add_argument("--creature-spells", default=DEFAULT_CREATURE_SPELLS,
+                        help="the realm's creature_spells.toml, whose client rows the patch carries")
     parser.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
     parser.add_argument("--art-dir", default=DEFAULT_ART_DIR, help="folder of the PNG icons the icon cells name")
     parser.add_argument("--data", default=os.environ.get("WOW_DATA"), help="game Data folder for the DBC check")
@@ -1536,7 +1603,12 @@ def main(argv: list[str] | None = None) -> int:
     try:
         with open(args.callings, newline="", encoding="utf-8") as f:
             calling_rows = [{k: v or "" for k, v in row.items() if k is not None} for row in csv.DictReader(f)]
-        server, patch = build(rows, args.art_dir, calling_rows)
+        try:
+            with open(args.creature_spells, "rb") as f:
+                creature_spells = tomllib.load(f).get("spell", [])
+        except (OSError, tomllib.TOMLDecodeError) as error:
+            raise BuildError(f"cannot read {args.creature_spells}: {error}") from error
+        server, patch = build(rows, args.art_dir, calling_rows, creature_spells)
         art = patch.pop("art", [])
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)

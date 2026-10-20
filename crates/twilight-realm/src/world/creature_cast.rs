@@ -62,7 +62,7 @@ impl InWorld {
             let target = if self_cast { guid } else { player };
             events.push(SessionEvent::SpellGo {
                 caster: guid,
-                spell_id: spell.client_spell_id,
+                spell_id: spell.spell_id,
                 cast_flags: 0,
                 hits: vec![target],
                 misses: Vec::new(),
@@ -79,7 +79,7 @@ impl InWorld {
                 events.push(SessionEvent::SpellHealLog(SpellHealLog {
                     target: guid,
                     healer: guid,
-                    spell_id: spell.client_spell_id,
+                    spell_id: spell.spell_id,
                     amount: healed,
                     critical: false,
                 }));
@@ -125,7 +125,7 @@ impl InWorld {
         mob.casting = Some((spell, clock::secs(spell.cast_time_ms)));
         events.push(SessionEvent::SpellStart {
             caster: mob.guid,
-            spell_id: spell.client_spell_id,
+            spell_id: spell.spell_id,
             cast_flags: 0,
             cast_time_ms: spell.cast_time_ms,
             target: Some(if self_cast { mob.guid } else { player }),

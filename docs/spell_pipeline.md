@@ -150,7 +150,12 @@ values), so the patch carries `range_index`, `cast_time_index` and `duration_ind
 client writes over the row's own. Cost is an amount of the row's power (rage is stored in tenths).
 A patch entry whose `spell_id` the catalog lacks and is at least 1,000,000 is inserted as a
 complete row (name, icon, look, cost, school, cast shape, targets, family, effects); a stock id
-the catalog lacks is skipped. The PNGs the `icon` cells name are written,
+the catalog lacks is skipped. The script also reads the realm's
+`crates/twilight-realm/content/creature_spells.toml` (`--creature-spells`) and adds one such row
+per Creature Spell, `{spell_id, creature, fields}`: its own id (1,900,000 up; one any master.csv
+row or another creature spell claims fails the build), `name`, `icon`, `school`, `visual`, cast
+time, range, duration, `aura_description` and its effect (a curse, a heal or a snare) as Spell.dbc
+numbers (ADR 0008, 0011). The PNGs the `icon` cells name are written,
 base64 by name, to `client_art.json`, which the client embeds like the patch: an icon at
 `Interface\Icons\Twilight\<name>` is served from there before the MPQs, and the BLP decoders
 accept PNG bytes. When a real server plays to a stock client,

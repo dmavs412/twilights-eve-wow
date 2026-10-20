@@ -24,8 +24,9 @@ const NEALS_AT: [f32; 3] = [-8891.8, -186.8, 82.4];
 const IDOL: u32 = 980001;
 const THE_IDOL_IN_THE_DEEP: u32 = 94001;
 const INTO_THE_ABBEY: u32 = 94002;
-/// Corruption rank 1's look, which Vurx casts.
-const CORRUPTION_LOOK: u32 = 172;
+/// The Creature Spell Vurx casts.
+static CORRUPTION_SPELL: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| creature_spell("corruption_creature"));
 /// The Stone Gnoll Hammer (item level 9): a level 8's weapon.
 const HAMMER: u32 = 781;
 /// The starting Worn Shortsword it replaces.
@@ -168,7 +169,7 @@ fn vurx_casts_corruption() {
     let (_, events) = fight_vurx(&mut realm, me);
     assert!(events.iter().any(|e| matches!(e,
         SessionEvent::SpellStart { caster, spell_id, .. }
-            if *caster == VURX && *spell_id == CORRUPTION_LOOK)));
+            if *caster == VURX && *spell_id == *CORRUPTION_SPELL)));
 }
 
 #[test]

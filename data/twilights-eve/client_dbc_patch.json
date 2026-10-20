@@ -11433,6 +11433,191 @@
     "aura_description": "Healing received increased by 15%.",
     "visual": 33
    }
+  },
+  {
+   "spell_id": 1900001,
+   "creature": "corruption_creature",
+   "fields": {
+    "name": "Corruption",
+    "icon": "Interface\\Icons\\Spell_Shadow_AbominationExplosion",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 10,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "aura_description": "$s1 Shadow damage every $t1 seconds.",
+    "visual": 381,
+    "range_index": 4,
+    "cast_time_index": 5,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1900002,
+   "creature": "abbot_heal",
+   "fields": {
+    "name": "Lesser Heal",
+    "icon": "Interface\\Icons\\Spell_Holy_LesserHeal",
+    "school": 1,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 285,
+    "range_index": 1,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1900003,
+   "creature": "shadow_word_pain_creature",
+   "fields": {
+    "name": "Shadow Word: Pain",
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 5,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "aura_description": "$s1 Shadow damage every $t1 seconds.",
+    "visual": 71,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1900004,
+   "creature": "abbot_corruption",
+   "fields": {
+    "name": "Corruption",
+    "icon": "Interface\\Icons\\Spell_Shadow_AbominationExplosion",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 18,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "aura_description": "$s1 Shadow damage every $t1 seconds.",
+    "visual": 381,
+    "range_index": 4,
+    "cast_time_index": 5,
+    "duration_index": 85
+   }
+  },
+  {
+   "spell_id": 1900005,
+   "creature": "hunter_rend",
+   "fields": {
+    "name": "Rend",
+    "icon": "Interface\\Icons\\Ability_Gouge",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 6,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "aura_description": "Bleeding for $s1 damage every $t1 seconds.",
+    "visual": 372,
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1900006,
+   "creature": "hunter_sting",
+   "fields": {
+    "name": "Serpent Sting",
+    "icon": "Interface\\Icons\\Ability_Hunter_Quickshot",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 8,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "aura_description": "$s1 damage every $t1 seconds.",
+    "visual": 3179,
+    "speed": 40.0,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1900007,
+   "creature": "hunter_hamstring",
+   "fields": {
+    "name": "Hamstring",
+    "icon": "Interface\\Icons\\Ability_ShockWave",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": -50,
+      "per_level": 0,
+      "aura": 33
+     }
+    ],
+    "aura_description": "Movement slowed by $s1%.",
+    "visual": 3443,
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
   }
  ],
  "talent_tabs": [
