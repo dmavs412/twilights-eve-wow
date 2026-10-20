@@ -55,3 +55,6 @@ __pycache__/
 /tools/wasi-sdk/
 /tools/binaryen/
 server-data/
+
+# Copies Davis plays from (scripts/publish-play.ps1); a running exe cannot be overwritten.
+/play/
