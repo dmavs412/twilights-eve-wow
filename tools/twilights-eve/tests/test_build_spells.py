@@ -1010,5 +1010,31 @@ class PointBlank(unittest.TestCase):
             self.assertEqual(set(r["spellmod1_target"].split("|")), ranged)
 
 
+class SeamChecks(unittest.TestCase):
+    """The fixtures under fixtures/ each rebuild one bug from the client/realm seam."""
+
+    def build(self, fixture: str, *flags: str) -> subprocess.CompletedProcess:
+        with tempfile.TemporaryDirectory() as tmp:
+            return subprocess.run([sys.executable, SCRIPT, "--csv", os.path.join(HERE, "..", "fixtures", fixture),
+                                   "--out-dir", tmp, *flags], capture_output=True, text=True)
+
+    def assert_refused(self, fixture: str, message: str, *flags: str) -> None:
+        done = self.build(fixture, *flags)
+        self.assertEqual(done.returncode, 1, done.stdout)
+        self.assertIn(message, done.stderr)
+
+    def test_effects_of_one_aura_need_a_spell_id_to_share_a_slot(self):
+        self.assert_refused("seam_buff_slot.csv", "vanguard/aura_seal_of_iron: 2 effects and no spell id",
+                            "--no-dbc-check")
+
+    @unittest.skipUnless(os.environ.get("WOW_DATA"), "needs WOW_DATA")
+    def test_a_patched_spell_with_a_reagent_is_refused(self):
+        self.assert_refused("seam_reagent.csv", "basic_warrior/heroic_strike (spell 23028): the stock 'Arcane Brilliance' needs item(s)")
+
+    @unittest.skipUnless(os.environ.get("WOW_DATA"), "needs WOW_DATA")
+    def test_a_target_the_client_never_asks_for_is_refused(self):
+        self.assert_refused("seam_target.csv", "vanguard/bulwark_charge (spell 1738): target is enemy")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -16,6 +16,12 @@ docs/spell_pipeline.md.
 Exits non-zero, writing nothing, on malformed params, a bad formula, realm_cost below
 client_cost, a prereq or seat that does not resolve, a duplicate key, or an unknown effect kind on
 a modelled row.
+
+It also refuses rows that break the client/realm seam (`check_seam`): a patched spell whose stock
+row needs a reagent or tool, a multi-effect aura with no spell id for its buff slot, a target the
+stock row never asks the client for, a talent rank with no spell, and talent ranks that borrow
+differently named or misordered spells. The ones that read Spell.dbc (reagent, target, rank
+spells) are skipped by --no-dbc-check. Fixtures for each bug are in tools/twilights-eve/fixtures/.
 """
 
 from __future__ import annotations
@@ -190,6 +196,84 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
                 bad.append(f"line {line} ({row.get('calling')}/{row.get('key')}): {column} {text} is not in {table}")
     if bad:
         raise BuildError(f"{len(bad)} ids not in the DBCs:\n" + "\n".join(bad))
+
+
+# Spell.dbc columns the seam checks read (extract_spells.py has the rest).
+SPELL_TOTEM, SPELL_REAGENT = 40, 42  # Totem[2], Reagent[8]
+SPELL_IMPLICIT_A, SPELL_IMPLICIT_B = 82, 85  # ImplicitTargetA/B, three effects each
+SPELL_NAME, SPELL_RANK = 120, 129
+# Implicit target numbers (vmangos `Targets`) of a stock effect that takes a target the player
+# selected: 6 enemy, 21 friendly, 25 any. A realm effect on another unit needs the client to ask
+# for one, which an effect with none of these never does (Bulwark Charge on Learn Spell, 2a6bf0d).
+CLIENT_TARGET_TAKES = {"enemy": (6, 25), "ally": (21, 25)}
+# Borrowed spells whose stock reagent the client patch clears on apply
+# (benilla-formats `apply_dbc_patch`, 7774c8e); any other borrowed reagent or tool fails the build.
+REAGENTS_CLEARED = {25899: "Greater Blessing of Sanctuary's Symbol of Kings"}
+
+
+def check_seam(rows: list[dict], server: list[dict], patch: dict, data_dir: str | None) -> None:
+    """Fail on a row that would break the client/realm seam, naming each on its own line. The
+    DBC-backed checks run only with data_dir (--no-dbc-check passes None)."""
+    bad = []
+    lines = {(r["calling"], r["key"], r["kind"], r["rank"]): f"line {n} ({r['calling']}/{r['key']})"
+             for n, r in enumerate(rows, start=2)}
+    by_rank = {}
+    for r in rows:
+        if r["kind"] in ("skill", "talent") and r["rank"]:
+            by_rank[(r["calling"], r["key"], number(r["rank"], ""))] = r
+
+    # The effects of one aura share one buff slot, keyed by the aura's spell id; with none they
+    # would each take their own (Seal of Iron, 0a96886).
+    for calling in server:
+        for aura in calling["auras"]:
+            if len(aura["effects"]) > 1 and "spell_id" not in aura:
+                bad.append(f"{calling['key']}/{aura['key']}: {len(aura['effects'])} effects and no spell id "
+                           "(client_spell_id or realm_spell_id) to share one buff slot")
+    # A talent with a seat on the client names a spell for every rank.
+    for seat in patch["talents"]:
+        if "talent_id" in seat and None in seat["rank_spell_ids"]:
+            bad.append(f"{seat['calling']}/{seat['key']}: rank {seat['rank_spell_ids'].index(None) + 1} "
+                       "resolves to no spell (no client_spell_id)")
+
+    if data_dir:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from wowdata import Chain, load_dbc
+
+        try:
+            spells = load_dbc(Chain(data_dir), "Spell.dbc")
+        except (OSError, KeyError, ValueError) as error:
+            raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
+        for entry in patch["spells"]:
+            r = spells.row(entry["spell_id"])
+            if r is None:
+                continue  # check_dbc_ids names it
+            who = f"{entry['calling']}/{entry['key']} (spell {entry['spell_id']})"
+            required = [i for i in (*(spells.u32(r, SPELL_TOTEM + k) for k in range(2)),
+                                    *(spells.u32(r, SPELL_REAGENT + k) for k in range(8))) if i]
+            if required and entry["spell_id"] not in REAGENTS_CLEARED:
+                bad.append(f"{who}: the stock {spells.str(r, SPELL_NAME)!r} needs item(s) "
+                           f"{', '.join(map(str, required))} and the sheet asks for none")
+            row = by_rank.get((entry["calling"], entry["key"], entry["rank"]))
+            take = CLIENT_TARGET_TAKES.get(row["target"]) if row else None
+            area = row and (row["area_shape"] or number(row["realm_radius_yd"] or "0", "") > 0)
+            if take and not area:
+                implicit = [spells.u32(r, col + k) for col in (SPELL_IMPLICIT_A, SPELL_IMPLICIT_B) for k in range(3)]
+                if not set(implicit) & set(take):
+                    bad.append(f"{who}: target is {row['target']} but the stock "
+                               f"{spells.str(r, SPELL_NAME)!r} takes none (implicit targets {implicit})")
+        # The ranks of one talent borrow one spell, named the same and ranked in order.
+        for seat in patch["talents"]:
+            found = [(rank, spells.row(sid)) for rank, sid in enumerate(seat["rank_spell_ids"], start=1) if sid]
+            found = [(rank, r) for rank, r in found if r is not None]
+            where = lines.get((seat["calling"], seat["key"], "talent", "1"), f"{seat['calling']}/{seat['key']}")
+            names = {spells.str(r, SPELL_NAME) for _, r in found}
+            if len(names) > 1:
+                bad.append(f"{where}: talent ranks borrow differently named spells ({', '.join(sorted(names))})")
+            numbers = [int(m.group(1)) for _, r in found if (m := re.fullmatch(r"Rank (\d+)", spells.str(r, SPELL_RANK)))]
+            if len(numbers) == len(found) and numbers != sorted(set(numbers)):
+                bad.append(f"{where}: talent rank spells are ranked {numbers}, not in rank order")
+    if bad:
+        raise BuildError(f"{len(bad)} rows break the client/realm seam:\n" + "\n".join(bad))
 
 
 def check_unique_ids(rows: list[dict]) -> None:
@@ -1342,6 +1426,8 @@ def main(argv: list[str] | None = None) -> int:
         server, patch = build(rows, read_spell_flags(args.data, args.spell_flags, rows))
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)
+        check_seam(rows, server, patch, None if args.no_dbc_check else args.data)
+        if not args.no_dbc_check:
             resolve_dbc_rows(patch, **read_row_tables(args.data))
             print(f"DBC check: every id is in the DBCs in {args.data}")
     except BuildError as error:
