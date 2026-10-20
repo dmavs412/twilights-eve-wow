@@ -21,5 +21,16 @@
       "Bash(gh pr merge:*)", "Bash(gh pr create:*)", "Bash(gh issue delete:*)"
     ],
     "deny": ["Agent"]
+  },
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash|PowerShell", "hooks": [ { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/scripts/build-lock.ps1\" -Mode acquire" } ] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Bash|PowerShell", "hooks": [ { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/scripts/build-lock.ps1\" -Mode release" } ] }
+    ],
+    "PostToolUseFailure": [
+      { "matcher": "Bash|PowerShell", "hooks": [ { "type": "command", "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/scripts/build-lock.ps1\" -Mode release" } ] }
+    ]
   }
 }
