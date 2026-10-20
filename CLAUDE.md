@@ -28,9 +28,12 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   rules in `docs/agents/unattended.md`. An evening grill ends by writing those tickets: each
   one fully specified, with its assumptions allowed and its acceptance stated, so the night
   session can pick a reading and record it instead of asking.
-- **Two lanes.** The **Build** lane (this checkout, interactive or overnight) is the only one
+- **Three lanes.** A chat learns its lane from `/build`, `/pipeline` or `/smoke`; with none
+  given, ask. The **Build** lane (this checkout, interactive or overnight) is the only one
   that builds or edits code, the CSV or generated JSON. **Lane 2** writes no code: it smoke-runs
-  from a `play/` copy, reproduces Davis's bugs and writes issues. Every `cargo` command takes
+  from a `play/` copy, reproduces Davis's bugs and writes issues. The **Pipeline** lane edits
+  only `scripts/`, `docs/`, `.claude/` and issues, runs no `cargo`, and files an issue when its
+  work needs code. Every lane commits only the files it touched. Every `cargo` command takes
   the build lock `target/.claude-build.lock`; a refusal names the holder, so wait or stop.
   Davis plays from `play/<short-commit>/`, made by `scripts/publish-play.ps1`, never from
   `target`. Rules: `docs/agents/unattended.md`.
