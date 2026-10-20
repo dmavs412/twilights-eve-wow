@@ -215,9 +215,13 @@ fn take(realm: &mut Realm, npc: u64, quest: u32) -> Vec<SessionEvent> {
 fn capped_warrior() -> (Realm, u64, Vec<SessionEvent>) {
     let items: &[Carried] = &[(15, 25, 1), (23, 6948, 1), (24, CROCOLISK_SKIN, 3)];
     let (guid, blob) = save_with_quests(10, items, 7, &[(THINNING_THE_HERDS, [1, 2, 0, 0])]);
-    let blob = blob
-        .replace("money = 0\n", "money = 12345\n")
-        .replace("xp = 0\n", "xp = 0\ntalents = [[157, 3]]\n");
+    let blob = blob.replace("money = 0\n", "money = 12345\n").replace(
+        "xp = 0\n",
+        &format!(
+            "xp = 0\ntalents = [[{}, 3]]\n",
+            talent("vanguard", "righteous_fury")
+        ),
+    );
     let mut realm = Realm::with_seed(SEED);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -478,9 +482,10 @@ fn a_talent_respec_leaves_the_quests_alone() {
         .replace(
             "xp = 0
 ",
-            "xp = 0
-talents = [[140, 3]]
-",
+            &format!(
+                "xp = 0\ntalents = [[{}, 3]]\n",
+                talent("basic_warrior", "field_medic")
+            ),
         );
     let (mut realm, me, mut events) = enter_saved(guid, &blob);
     let zunjin = giver(&events, ZUNJIN);
@@ -569,11 +574,17 @@ fn the_calling_survives_the_save() {
 
 #[test]
 fn a_save_from_before_the_rename_loads_as_a_vanguard() {
-    // Tier 1 was saved as "warrior" before it was Vanguard; Cruelty's talent (157) is Righteous Fury now.
+    // Tier 1 was saved as "warrior" before it was Vanguard; Cruelty's talent is Righteous Fury now.
     let (guid, blob) = save_with(12, 0, &[]);
     let blob = blob
         .replace("calling = \"basic_warrior\"", "calling = \"warrior\"")
-        .replace("money = 0\n", "money = 0\ntalents = [[157, 3]]\n");
+        .replace(
+            "money = 0\n",
+            &format!(
+                "money = 0\ntalents = [[{}, 3]]\n",
+                talent("vanguard", "righteous_fury")
+            ),
+        );
     let mut realm = Realm::with_seed(SEED);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
@@ -671,7 +682,13 @@ fn capped_vanguard() -> (Realm, u64, Vec<SessionEvent>) {
     let (guid, blob) = save_with_quests(30, &[(4, JOUSTERS_CHESTPLATE, 1)], 0, &[]);
     let blob = blob
         .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"")
-        .replace("xp = 0\n", "xp = 0\ntalents = [[157, 3]]\n");
+        .replace(
+            "xp = 0\n",
+            &format!(
+                "xp = 0\ntalents = [[{}, 3]]\n",
+                talent("vanguard", "righteous_fury")
+            ),
+        );
     let mut realm = Realm::with_seed(SEED);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });

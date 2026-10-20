@@ -343,8 +343,13 @@ fn holy_damage_at_a_judged_target_rises_by_a_fifth() {
 #[test]
 fn improved_seal_of_the_crusader_raises_its_attack_power_and_judgement() {
     let improved = |blob: String| {
-        blob.replace("level = 1\n", "level = 4\n")
-            .replace("xp = 0\n", "xp = 0\ntalents = [[1464, 3]]\n")
+        blob.replace("level = 1\n", "level = 4\n").replace(
+            "xp = 0\n",
+            &format!(
+                "xp = 0\ntalents = [[{}, 3]]\n",
+                talent("zealot", "improved_seal_of_the_crusader")
+            ),
+        )
     };
     let (mut realm, me, _, mut view) = tanking_as(12, &improved);
     realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
@@ -364,8 +369,13 @@ fn improved_seal_of_the_crusader_raises_its_attack_power_and_judgement() {
 #[test]
 fn improved_seal_of_the_crusader_tells_the_client_the_seals_attack_power_is_higher() {
     let (_, _, _, entry) = zealot_at_as(SEED, &|blob: String| {
-        blob.replace("level = 1\n", "level = 4\n")
-            .replace("xp = 0\n", "xp = 0\ntalents = [[1464, 2]]\n")
+        blob.replace("level = 1\n", "level = 4\n").replace(
+            "xp = 0\n",
+            &format!(
+                "xp = 0\ntalents = [[{}, 2]]\n",
+                talent("zealot", "improved_seal_of_the_crusader")
+            ),
+        )
     });
     let cell = entry
         .iter()

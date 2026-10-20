@@ -12,7 +12,8 @@ use twilight_realm::rules::procs::{Happened, Trigger};
 use twilight_realm::{Realm, RealmCommand};
 
 /// The Recruit tree's Vanguard's Resolve: its borrowed `Talent.dbc` id.
-const VANGUARDS_RESOLVE: u32 = 382;
+static VANGUARDS_RESOLVE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "vanguards_resolve"));
 
 /// How much health the killing blow's step gave back, and the maximum.
 fn health_at_the_kill(level: u8, talents: &[(u32, u8)]) -> (u32, u32) {
@@ -26,7 +27,7 @@ fn health_at_the_kill(level: u8, talents: &[(u32, u8)]) -> (u32, u32) {
 
 #[test]
 fn an_experience_yielding_kill_heals_a_tenth_of_max_health() {
-    let (gain, max) = health_at_the_kill(6, &[(VANGUARDS_RESOLVE, 1)]);
+    let (gain, max) = health_at_the_kill(6, &[(*VANGUARDS_RESOLVE, 1)]);
     assert!(gain >= max / 10, "healed {gain} of {max}");
     let (plain, _) = health_at_the_kill(6, &[]);
     assert!(plain < max / 10, "without the talent {plain} came back");
@@ -35,7 +36,7 @@ fn an_experience_yielding_kill_heals_a_tenth_of_max_health() {
 #[test]
 fn a_kill_that_yields_no_experience_heals_nothing() {
     // A level 10 warrior finds the level 3 mob gray.
-    let (gain, max) = health_at_the_kill(10, &[(VANGUARDS_RESOLVE, 1)]);
+    let (gain, max) = health_at_the_kill(10, &[(*VANGUARDS_RESOLVE, 1)]);
     assert!(gain < max / 10, "healed {gain} of {max}");
 }
 

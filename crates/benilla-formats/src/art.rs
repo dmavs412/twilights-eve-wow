@@ -8,16 +8,20 @@ use std::sync::OnceLock;
 /// `{name: base64 PNG}`, written by `build_spells.py` from the PNGs the master CSV's `icon` cells name.
 const CLIENT_ART: &str = include_str!("../../../data/twilights-eve/client_art.json");
 
-/// The folder, lowercased with `/`, an embedded icon's path lives under.
-const ICON_DIR: &str = "interface/icons/twilight/";
+/// The folders, lowercased with `/`, embedded art lives under: a spell's icon, and the four
+/// quarters of a talent tab's background (`<stem>-TopLeft` and the rest).
+const ART_DIRS: [&str; 2] = [
+    "interface/icons/twilight/",
+    "interface/talentframe/twilight/",
+];
 
-/// The PNG bytes behind an icon path (any case, `/` or `\`, with or without `.blp`), or `None`
-/// when the path is not an embedded icon.
+/// The PNG bytes behind an art path (any case, `/` or `\`, with or without `.blp`), or `None`
+/// when the path is not embedded art.
 pub fn embedded_icon_png(path: &str) -> Option<Vec<u8>> {
     static ART: OnceLock<HashMap<String, Vec<u8>>> = OnceLock::new();
     let art = ART.get_or_init(|| parse_art(CLIENT_ART));
     let lower = path.replace('\\', "/").to_ascii_lowercase();
-    let name = lower.strip_prefix(ICON_DIR)?;
+    let name = ART_DIRS.iter().find_map(|dir| lower.strip_prefix(dir))?;
     let name = name.strip_suffix(".blp").unwrap_or(name);
     art.get(name).cloned()
 }

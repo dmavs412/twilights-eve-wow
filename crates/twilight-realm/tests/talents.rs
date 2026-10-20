@@ -10,16 +10,20 @@ use common::*;
 use twilight_realm::DevMultipliers;
 
 // The Recruit tree's borrowed `Talent.dbc` ids and their rank spells (`master.csv`).
-const FIELD_MEDIC: u32 = 140;
+static FIELD_MEDIC: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "field_medic"));
 static FIELD_MEDIC_RANKS: std::sync::LazyLock<Vec<u32>> =
     std::sync::LazyLock::new(|| talent_spells("basic_warrior", "field_medic"));
-const INITIATES_SPARK: u32 = 31;
+static INITIATES_SPARK: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "initiates_spark"));
 static INITIATES_SPARK_RANKS: std::sync::LazyLock<Vec<u32>> =
     std::sync::LazyLock::new(|| talent_spells("basic_warrior", "initiates_spark"));
-const SAVAGE_STRIKES: u32 = 272;
+static SAVAGE_STRIKES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "savage_strikes"));
 static SAVAGE_STRIKES_RANKS: std::sync::LazyLock<Vec<u32>> =
     std::sync::LazyLock::new(|| talent_spells("basic_warrior", "savage_strikes"));
-const VANGUARDS_RESOLVE: u32 = 382;
+static VANGUARDS_RESOLVE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "vanguards_resolve"));
 static VANGUARDS_RESOLVE_RANKS: std::sync::LazyLock<Vec<u32>> =
     std::sync::LazyLock::new(|| talent_spells("basic_warrior", "vanguards_resolve"));
 /// A real Warrior talent that is not in the Recruit tree: Mortal Strike.
@@ -88,7 +92,7 @@ fn a_level_up_brings_a_talent_point() {
 #[test]
 fn learning_a_talent_spends_a_point_and_teaches_its_rank_spell() {
     let (mut realm, me, _, mut view) = warrior_at(4);
-    learn(&mut realm, FIELD_MEDIC, 0);
+    learn(&mut realm, *FIELD_MEDIC, 0);
     let events = view.drain(&mut realm);
     assert!(events.iter().any(
         |e| matches!(e, SessionEvent::SpellLearned { spell_id } if *spell_id == FIELD_MEDIC_RANKS[0])
@@ -96,7 +100,7 @@ fn learning_a_talent_spends_a_point_and_teaches_its_rank_spell() {
     assert_eq!(view.points(me), 2);
     assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 1);
 
-    learn(&mut realm, FIELD_MEDIC, 1);
+    learn(&mut realm, *FIELD_MEDIC, 1);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 1);
     assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 2);
@@ -105,8 +109,8 @@ fn learning_a_talent_spends_a_point_and_teaches_its_rank_spell() {
 #[test]
 fn a_talent_cannot_be_learned_without_a_point() {
     let (mut realm, me, _, mut view) = warrior_at(2);
-    learn(&mut realm, FIELD_MEDIC, 0);
-    learn(&mut realm, FIELD_MEDIC, 1);
+    learn(&mut realm, *FIELD_MEDIC, 0);
+    learn(&mut realm, *FIELD_MEDIC, 1);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 0);
     assert_eq!(
@@ -131,7 +135,7 @@ fn only_the_callings_own_tree_can_be_learned() {
 fn a_talent_has_no_rank_past_its_last() {
     let (mut realm, me, _, mut view) = warrior_at(10);
     for rank in 0..4 {
-        learn(&mut realm, INITIATES_SPARK, rank);
+        learn(&mut realm, *INITIATES_SPARK, rank);
     }
     view.drain(&mut realm);
     assert_eq!(view.talent_rank(&*INITIATES_SPARK_RANKS), 3);
@@ -141,21 +145,21 @@ fn a_talent_has_no_rank_past_its_last() {
 #[test]
 fn the_second_row_opens_after_five_points_in_the_tab() {
     let (mut realm, me, _, mut view) = warrior_at(10);
-    for second_row in [SAVAGE_STRIKES, VANGUARDS_RESOLVE] {
+    for second_row in [*SAVAGE_STRIKES, *VANGUARDS_RESOLVE] {
         learn(&mut realm, second_row, 0);
     }
     view.drain(&mut realm);
     assert_eq!(view.points(me), 9, "row 2 is shut with nothing spent");
 
     for rank in 0..4 {
-        learn(&mut realm, FIELD_MEDIC, rank);
+        learn(&mut realm, *FIELD_MEDIC, rank);
     }
-    learn(&mut realm, SAVAGE_STRIKES, 0);
+    learn(&mut realm, *SAVAGE_STRIKES, 0);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 5, "still shut at four");
 
-    learn(&mut realm, FIELD_MEDIC, 4);
-    learn(&mut realm, SAVAGE_STRIKES, 0);
+    learn(&mut realm, *FIELD_MEDIC, 4);
+    learn(&mut realm, *SAVAGE_STRIKES, 0);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 3, "open at five");
     assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 5);
@@ -166,7 +170,7 @@ fn the_second_row_opens_after_five_points_in_the_tab() {
 fn a_talent_the_realm_does_not_model_yet_is_still_learned() {
     let (mut realm, me, _, mut view) = warrior_at(10);
     open_the_second_row(&mut realm);
-    learn(&mut realm, VANGUARDS_RESOLVE, 0);
+    learn(&mut realm, *VANGUARDS_RESOLVE, 0);
     view.drain(&mut realm);
     assert_eq!(view.talent_rank(&*VANGUARDS_RESOLVE_RANKS), 1);
     assert_eq!(view.points(me), 3);
@@ -249,7 +253,7 @@ fn the_trainer_offers_to_unlearn_talents() {
 #[test]
 fn asking_to_unlearn_closes_the_menu_and_names_the_price() {
     let (mut realm, _, _, mut view) = warrior_at(4);
-    learn(&mut realm, FIELD_MEDIC, 0);
+    learn(&mut realm, *FIELD_MEDIC, 0);
     let trainer = view.trainer();
     let events = ask_for_respec(&mut realm, &mut view, trainer.guid);
     assert!(events
@@ -278,7 +282,7 @@ fn a_respec_costs_gold_returns_every_point_and_clears_the_talents() {
     );
     open_the_second_row(&mut realm);
     for rank in 0..2 {
-        learn(&mut realm, SAVAGE_STRIKES, rank);
+        learn(&mut realm, *SAVAGE_STRIKES, rank);
     }
     view.drain(&mut realm);
     assert_eq!(view.points(me), 2);
@@ -309,7 +313,7 @@ fn a_respec_costs_gold_returns_every_point_and_clears_the_talents() {
     assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 0);
 
     // The next one costs 5 gold.
-    learn(&mut realm, FIELD_MEDIC, 0);
+    learn(&mut realm, *FIELD_MEDIC, 0);
     let events = ask_for_respec(&mut realm, &mut view, trainer.guid);
     assert_eq!(wipe_price(&events, trainer.guid), Some(50_000));
 }
@@ -321,7 +325,7 @@ fn a_respec_without_the_gold_changes_nothing() {
         DevMultipliers::default(),
         &[("money = 0", "money = 9999")],
     );
-    learn(&mut realm, FIELD_MEDIC, 0);
+    learn(&mut realm, *FIELD_MEDIC, 0);
     let trainer = view.trainer();
     ask_for_respec(&mut realm, &mut view, trainer.guid);
     realm.handle(RealmCommand::TalentWipeConfirm {
@@ -340,7 +344,7 @@ fn the_trainer_must_be_close_to_respec() {
         DevMultipliers::default(),
         &[("money = 0", "money = 20000")],
     );
-    learn(&mut realm, FIELD_MEDIC, 0);
+    learn(&mut realm, *FIELD_MEDIC, 0);
     let trainer = view.trainer();
     ask_for_respec(&mut realm, &mut view, trainer.guid);
     // Off to the mob, out of the trainer's reach.
@@ -360,7 +364,7 @@ fn the_respec_price_is_saved() {
         DevMultipliers::default(),
         &[("money = 0", "money = 20000")],
     );
-    learn(&mut realm, FIELD_MEDIC, 0);
+    learn(&mut realm, *FIELD_MEDIC, 0);
     let trainer = view.trainer();
     ask_for_respec(&mut realm, &mut view, trainer.guid);
     realm.handle(RealmCommand::TalentWipeConfirm {
@@ -376,7 +380,7 @@ fn the_respec_price_is_saved() {
     let mut view = View::default();
     view.drain(&mut other);
     assert_eq!(view.points(me), 3);
-    learn(&mut other, FIELD_MEDIC, 0);
+    learn(&mut other, *FIELD_MEDIC, 0);
     let events = ask_for_respec(&mut other, &mut view, trainer.guid);
     assert_eq!(wipe_price(&events, trainer.guid), Some(50_000));
 }
@@ -387,7 +391,7 @@ fn the_respec_price_is_saved() {
 fn learning_a_talent_saves_the_character() {
     let (mut realm, me, _, _) = warrior_at(4);
     realm.drain_storage();
-    learn(&mut realm, FIELD_MEDIC, 0);
+    learn(&mut realm, *FIELD_MEDIC, 0);
     let writes: Vec<_> = realm
         .drain_storage()
         .into_iter()
@@ -400,7 +404,7 @@ fn learning_a_talent_saves_the_character() {
 fn talents_and_points_come_back_from_the_save() {
     let (mut realm, me, _, mut view) = warrior_at(7);
     open_the_second_row(&mut realm);
-    learn(&mut realm, SAVAGE_STRIKES, 0);
+    learn(&mut realm, *SAVAGE_STRIKES, 0);
     view.drain(&mut realm);
     let blob = realm.export_character(me).unwrap();
 
@@ -431,7 +435,8 @@ fn a_save_from_before_talents_loads_with_none() {
 
 // ── A talent the Recruit tree dropped, on the Zealot ──────────────────────────────────────────
 
-const T1_DEEP_WOUNDS: u32 = 121;
+static T1_DEEP_WOUNDS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "deep_wounds"));
 
 /// Deep Wounds' bleed (vmangos 12721, "Deep Wound").
 const DEEP_WOUND: u32 = 12721;
@@ -440,7 +445,7 @@ const DEEP_WOUND: u32 = 12721;
 fn deep_wounds_bleeds_the_target_after_a_melee_crit() {
     // The first seeded fight whose crit leaves the mob standing.
     for seed in 0..100 {
-        let (mut realm, me, mob, mut view) = tier1_at(10, seed, &[(T1_DEEP_WOUNDS, 1)]);
+        let (mut realm, me, mob, mut view) = tier1_at(10, seed, &[(*T1_DEEP_WOUNDS, 1)]);
         stand_at(&mut realm, &mob, 2.0);
         realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
         let mut critted = false;
@@ -697,7 +702,7 @@ fn warrior_from(
 /// Five points in the Recruit tree's first row: Field Medic 5/5.
 fn open_the_second_row(realm: &mut Realm) {
     for rank in 0..5 {
-        learn(realm, FIELD_MEDIC, rank);
+        learn(realm, *FIELD_MEDIC, rank);
     }
 }
 

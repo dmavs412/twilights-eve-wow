@@ -11,13 +11,19 @@ use gear_common::*;
 
 // `Talent.dbc` ids in the Vanguard tree (the master CSV).
 // The Righteous.
-const DIVINE_STRENGTH: u32 = 1401;
+static DIVINE_STRENGTH: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("vanguard", "divine_strength"));
 /// WIP: no effect yet.
-const WRATHFUL_IRON: u32 = 1463;
-const HALLOWED_GROUND: u32 = 128;
-const SPIRITUAL_FOCUS: u32 = 1405;
-const RIGHTEOUS_FURY: u32 = 157;
-const HAMMER_OF_THE_VANGUARD: u32 = 152;
+static WRATHFUL_IRON: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("vanguard", "wrathful_iron"));
+static HALLOWED_GROUND: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("vanguard", "hallowed_ground"));
+static SPIRITUAL_FOCUS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("vanguard", "spiritual_focus"));
+static RIGHTEOUS_FURY: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("vanguard", "righteous_fury"));
+static HAMMER_OF_THE_VANGUARD: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("vanguard", "hammer_of_vanguard"));
 static HAMMER_RANKS: std::sync::LazyLock<Vec<u32>> =
     std::sync::LazyLock::new(|| talent_spells("vanguard", "hammer_of_vanguard"));
 /// A Basic Warrior talent the Vanguard tree does not have.
@@ -61,10 +67,10 @@ fn knows_any(events: &[SessionEvent], ranks: &[u32]) -> bool {
 
 /// Fifteen points down The Righteous: enough for Hammer of the Vanguard's row.
 fn fifteen_in_righteous(realm: &mut Realm, events: &mut Vec<SessionEvent>) {
-    learn(realm, events, DIVINE_STRENGTH, 5);
-    learn(realm, events, WRATHFUL_IRON, 5);
-    learn(realm, events, HALLOWED_GROUND, 3);
-    learn(realm, events, SPIRITUAL_FOCUS, 2);
+    learn(realm, events, *DIVINE_STRENGTH, 5);
+    learn(realm, events, *WRATHFUL_IRON, 5);
+    learn(realm, events, *HALLOWED_GROUND, 3);
+    learn(realm, events, *SPIRITUAL_FOCUS, 2);
 }
 
 #[test]
@@ -75,9 +81,9 @@ fn a_vanguard_at_the_cap_has_29_points_across_two_tabs() {
     learn(&mut realm, &mut events, IMPROVED_HEROIC_STRIKE, 1);
     assert_eq!(points(&events, me), Some(29));
     // Hammer of the Vanguard sits in The Righteous' fourth row: 15 points there first.
-    learn(&mut realm, &mut events, HAMMER_OF_THE_VANGUARD, 1);
+    learn(&mut realm, &mut events, *HAMMER_OF_THE_VANGUARD, 1);
     assert_eq!(points(&events, me), Some(29));
-    learn(&mut realm, &mut events, DIVINE_STRENGTH, 5);
+    learn(&mut realm, &mut events, *DIVINE_STRENGTH, 5);
     assert_eq!(points(&events, me), Some(24));
 }
 
@@ -86,7 +92,7 @@ fn fifteen_points_in_righteous_reach_the_hammer() {
     let (mut realm, me, mut events) = vanguard(30);
     fifteen_in_righteous(&mut realm, &mut events);
     assert_eq!(points(&events, me), Some(14));
-    learn(&mut realm, &mut events, HAMMER_OF_THE_VANGUARD, 1);
+    learn(&mut realm, &mut events, *HAMMER_OF_THE_VANGUARD, 1);
     assert_eq!(points(&events, me), Some(13));
     assert!(knows_any(&events, &*HAMMER_RANKS));
 }
@@ -94,11 +100,11 @@ fn fifteen_points_in_righteous_reach_the_hammer() {
 #[test]
 fn a_wip_talent_is_learnable_and_opens_the_next_tier() {
     let (mut realm, me, mut events) = vanguard(30);
-    learn(&mut realm, &mut events, DIVINE_STRENGTH, 5);
-    learn(&mut realm, &mut events, HALLOWED_GROUND, 3);
-    learn(&mut realm, &mut events, WRATHFUL_IRON, 1);
+    learn(&mut realm, &mut events, *DIVINE_STRENGTH, 5);
+    learn(&mut realm, &mut events, *HALLOWED_GROUND, 3);
+    learn(&mut realm, &mut events, *WRATHFUL_IRON, 1);
     assert_eq!(points(&events, me), Some(20));
-    learn(&mut realm, &mut events, RIGHTEOUS_FURY, 1);
+    learn(&mut realm, &mut events, *RIGHTEOUS_FURY, 1);
     assert_eq!(
         points(&events, me),
         Some(20),
@@ -107,11 +113,11 @@ fn a_wip_talent_is_learnable_and_opens_the_next_tier() {
     // Wrathful Iron does nothing yet, but takes its point and counts toward the row.
     // Its second rank.
     realm.handle(RealmCommand::LearnTalent {
-        talent_id: WRATHFUL_IRON,
+        talent_id: *WRATHFUL_IRON,
         rank: 1,
     });
     events.extend(drain(&mut realm));
     assert_eq!(points(&events, me), Some(19));
-    learn(&mut realm, &mut events, RIGHTEOUS_FURY, 1);
+    learn(&mut realm, &mut events, *RIGHTEOUS_FURY, 1);
     assert_eq!(points(&events, me), Some(18));
 }

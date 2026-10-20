@@ -9,7 +9,8 @@ use common::fight::*;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
-const SAVAGE_STRIKES: u32 = 272;
+static SAVAGE_STRIKES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "savage_strikes"));
 static CHARGE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("basic_warrior", "charge"));
 static FIRE_BLAST: std::sync::LazyLock<u32> =
@@ -76,7 +77,7 @@ fn fire_blast(talents: &[(u32, u8)], seed: u64) -> Vec<(bool, u32)> {
 #[test]
 fn savage_strikes_raises_the_sheets_crit_chance_by_its_percent() {
     let (_, plain, _, mut p_view) = warrior(&[], 1);
-    let (_, savage, _, mut s_view) = warrior(&[(SAVAGE_STRIKES, 2)], 1);
+    let (_, savage, _, mut s_view) = warrior(&[(*SAVAGE_STRIKES, 2)], 1);
     let before = p_view.fields(plain).player_crit_percentage().unwrap();
     let after = s_view.fields(savage).player_crit_percentage().unwrap();
     assert!((after - before - 6.0).abs() < 1e-3, "{before} -> {after}");
@@ -91,7 +92,7 @@ fn savage_strikes_crits_fire_blast_more_often_and_harder() {
             base_crits += u32::from(crit);
             assert_eq!(damage, if crit { 67 } else { 45 }, "150% of 45");
         }
-        for (crit, damage) in fire_blast(&[(SAVAGE_STRIKES, 2)], seed) {
+        for (crit, damage) in fire_blast(&[(*SAVAGE_STRIKES, 2)], seed) {
             savage_crits += u32::from(crit);
             // 150% of 45, times 1.3: 87.75, rounded down.
             assert_eq!(damage, if crit { 87 } else { 45 });

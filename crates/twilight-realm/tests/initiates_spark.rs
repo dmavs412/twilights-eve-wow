@@ -8,7 +8,8 @@ use common::fight::*;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
-const INITIATES_SPARK: u32 = 31;
+static INITIATES_SPARK: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "initiates_spark"));
 static CHARGE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("basic_warrior", "charge"));
 static FIRE_BLAST: std::sync::LazyLock<u32> =
@@ -28,7 +29,7 @@ fn fire_blast(rank: u8) -> (u32, u32) {
         if rank > 0 {
             blob = blob.replace(
                 "money = 0\n",
-                &format!("money = 0\ntalents = [[{INITIATES_SPARK}, {rank}]]\n"),
+                &format!("money = 0\ntalents = [[{}, {rank}]]\n", *INITIATES_SPARK),
             );
         }
         let mut realm = Realm::with_seed(seed);

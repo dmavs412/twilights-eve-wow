@@ -19,10 +19,12 @@ static VAULT: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| spell("rang
 static SNAPSHOT: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("ranger", "snapshot"));
 /// `Talent.dbc` ids, and the auras' spell ids (each rank's own).
-const GUERILLA_TACTICS: u32 = 1311;
+static GUERILLA_TACTICS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "guerilla_tactics"));
 static GUERILLA_TACTICS_2: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| talent_spell("ranger", "guerilla_tactics", 2));
-const STEADFAST_AIM: u32 = 1384;
+static STEADFAST_AIM: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "steadfast_aim"));
 static ENTRENCHED_1: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| talent_spell("ranger", "steadfast_aim", 1));
 
@@ -117,7 +119,7 @@ fn vault_leaps_15_yards_back_and_waits_15_seconds() {
 /// Guerilla Tactics rank 2: 2 s of moving put one stack on (20%), 6 s three, and no more.
 #[test]
 fn guerilla_tactics_stacks_every_2_seconds_of_moving() {
-    let (mut realm, me, _, mut view) = ranger(&[(GUERILLA_TACTICS, 2)], 0xB0_0002);
+    let (mut realm, me, _, mut view) = ranger(&[(*GUERILLA_TACTICS, 2)], 0xB0_0002);
     let at = walk(&mut realm, &mut view, [-441.8, -2648.6, 0.0], 1.8);
     assert!(
         view.aura(me, *GUERILLA_TACTICS_2).is_none(),
@@ -137,7 +139,7 @@ fn the_next_snapshot_after_moving_deals_more_and_uses_the_buff() {
     let mut compared = 0;
     for seed in 0..20 {
         let mut dealt = Vec::new();
-        for talents in [&[][..], &[(GUERILLA_TACTICS, 2)][..]] {
+        for talents in [&[][..], &[(*GUERILLA_TACTICS, 2)][..]] {
             let (mut realm, me, mob, mut view) = ranger(talents, 0xB1_0000 + seed);
             walk(&mut realm, &mut view, [-441.8, -2648.6, 0.0], 2.2);
             stand_at(&mut realm, &mob, 20.0);
@@ -174,7 +176,7 @@ fn the_next_snapshot_after_moving_deals_more_and_uses_the_buff() {
 
 #[test]
 fn entrenched_goes_on_after_2_seconds_still_and_off_at_the_first_step() {
-    let (mut realm, me, _, mut view) = ranger(&[(STEADFAST_AIM, 1)], 0xB0_0003);
+    let (mut realm, me, _, mut view) = ranger(&[(*STEADFAST_AIM, 1)], 0xB0_0003);
     let at = walk(&mut realm, &mut view, [-441.8, -2648.6, 0.0], 0.5);
     view.run(&mut realm, 2.0);
     assert!(

@@ -11342,6 +11342,120 @@
    }
   }
  ],
+ "talent_tabs": [
+  {
+   "calling": "basic_warrior",
+   "key": "recruit",
+   "id": 900,
+   "name": "Recruit",
+   "background": "WarriorArms",
+   "order": 0
+  },
+  {
+   "calling": "vanguard",
+   "key": "bastion",
+   "id": 901,
+   "name": "The Bastion",
+   "background": "WarriorProtection",
+   "order": 1
+  },
+  {
+   "calling": "vanguard",
+   "key": "righteous",
+   "id": 902,
+   "name": "The Righteous",
+   "background": "WarriorArms",
+   "order": 2
+  },
+  {
+   "calling": "zealot",
+   "key": "crusade",
+   "id": 903,
+   "name": "Crusade",
+   "background": "PaladinCombat",
+   "order": 1
+  },
+  {
+   "calling": "zealot",
+   "key": "blade",
+   "id": 912,
+   "name": "Blade",
+   "background": "WarriorArms",
+   "order": 2
+  },
+  {
+   "calling": "zealot",
+   "key": "faith",
+   "id": 913,
+   "name": "Faith",
+   "background": "PaladinProtection",
+   "order": 3
+  },
+  {
+   "calling": "cutthroat",
+   "key": "skirmisher",
+   "id": 904,
+   "name": "The Skirmisher",
+   "background": "RogueCombat",
+   "order": 1
+  },
+  {
+   "calling": "cutthroat",
+   "key": "tracker",
+   "id": 905,
+   "name": "The Tracker",
+   "background": "RogueSubtlety",
+   "order": 2
+  },
+  {
+   "calling": "initiate",
+   "key": "weaver",
+   "id": 906,
+   "name": "The Weaver",
+   "background": "MageFire",
+   "order": 1
+  },
+  {
+   "calling": "initiate",
+   "key": "channeler",
+   "id": 907,
+   "name": "The Channeler",
+   "background": "MageArcane",
+   "order": 2
+  },
+  {
+   "calling": "ranger",
+   "key": "swiftbow",
+   "id": 908,
+   "name": "The Swiftbow",
+   "background": "HunterSurvival",
+   "order": 1
+  },
+  {
+   "calling": "ranger",
+   "key": "arbalest",
+   "id": 909,
+   "name": "The Arbalest",
+   "background": "HunterMarksmanship",
+   "order": 2
+  },
+  {
+   "calling": "acolyte",
+   "key": "rot_weaver",
+   "id": 910,
+   "name": "The Rot-Weaver",
+   "background": "PriestShadow",
+   "order": 1
+  },
+  {
+   "calling": "acolyte",
+   "key": "hemomancer",
+   "id": 911,
+   "name": "The Hemomancer",
+   "background": "PriestHoly",
+   "order": 2
+  }
+ ],
  "talents": [
   {
    "calling": "basic_warrior",
@@ -11349,7 +11463,8 @@
    "tab": "Recruit",
    "row": 1,
    "column": 1,
-   "talent_id": 140,
+   "tab_id": 900,
+   "talent_id": 1000041,
    "rank_spell_ids": [
     1000175,
     1000176,
@@ -11364,7 +11479,8 @@
    "tab": "Recruit",
    "row": 1,
    "column": 2,
-   "talent_id": 31,
+   "tab_id": 900,
+   "talent_id": 1000042,
    "rank_spell_ids": [
     1000180,
     1000181,
@@ -11377,7 +11493,8 @@
    "tab": "Recruit",
    "row": 1,
    "column": 3,
-   "talent_id": 222,
+   "tab_id": 900,
+   "talent_id": 1000043,
    "rank_spell_ids": [
     1000183,
     1000184
@@ -11389,7 +11506,8 @@
    "tab": "Recruit",
    "row": 2,
    "column": 1,
-   "talent_id": 272,
+   "tab_id": 900,
+   "talent_id": 1000044,
    "rank_spell_ids": [
     1000185,
     1000186
@@ -11401,7 +11519,8 @@
    "tab": "Recruit",
    "row": 2,
    "column": 2,
-   "talent_id": 382,
+   "tab_id": 900,
+   "talent_id": 1000045,
    "rank_spell_ids": [
     1000187
    ]
@@ -11412,7 +11531,8 @@
    "tab": "The Bastion",
    "row": 1,
    "column": 2,
-   "talent_id": 130,
+   "tab_id": 901,
+   "talent_id": 1000000,
    "rank_spell_ids": [
     1000013,
     1000014,
@@ -11427,7 +11547,8 @@
    "tab": "The Bastion",
    "row": 1,
    "column": 4,
-   "talent_id": 1422,
+   "tab_id": 901,
+   "talent_id": 1000001,
    "rank_spell_ids": [
     1000018,
     1000019,
@@ -11442,7 +11563,8 @@
    "tab": "The Bastion",
    "row": 2,
    "column": 1,
-   "talent_id": 1601,
+   "tab_id": 901,
+   "talent_id": 1000002,
    "rank_spell_ids": [
     1000023,
     1000024,
@@ -11457,7 +11579,8 @@
    "tab": "The Bastion",
    "row": 2,
    "column": 3,
-   "talent_id": 147,
+   "tab_id": 901,
+   "talent_id": 1000003,
    "rank_spell_ids": [
     1000028,
     1000029,
@@ -11470,7 +11593,8 @@
    "tab": "The Bastion",
    "row": 3,
    "column": 4,
-   "talent_id": 150,
+   "tab_id": 901,
+   "talent_id": 1000004,
    "rank_spell_ids": [
     1000031,
     1000032
@@ -11482,7 +11606,8 @@
    "tab": "The Bastion",
    "row": 3,
    "column": 2,
-   "talent_id": 141,
+   "tab_id": 901,
+   "talent_id": 1000005,
    "rank_spell_ids": [
     1000033,
     1000034,
@@ -11497,7 +11622,8 @@
    "tab": "The Bastion",
    "row": 4,
    "column": 3,
-   "talent_id": 146,
+   "tab_id": 901,
+   "talent_id": 1000006,
    "rank_spell_ids": [
     1000038,
     1000039,
@@ -11510,7 +11636,8 @@
    "tab": "The Righteous",
    "row": 1,
    "column": 1,
-   "talent_id": 1401,
+   "tab_id": 902,
+   "talent_id": 1000007,
    "rank_spell_ids": [
     1000041,
     1000042,
@@ -11525,7 +11652,8 @@
    "tab": "The Righteous",
    "row": 1,
    "column": 3,
-   "talent_id": 1463,
+   "tab_id": 902,
+   "talent_id": 1000008,
    "rank_spell_ids": [
     1000046,
     1000047,
@@ -11540,7 +11668,8 @@
    "tab": "The Righteous",
    "row": 2,
    "column": 4,
-   "talent_id": 128,
+   "tab_id": 902,
+   "talent_id": 1000009,
    "rank_spell_ids": [
     1000051,
     1000052,
@@ -11553,7 +11682,8 @@
    "tab": "The Righteous",
    "row": 2,
    "column": 2,
-   "talent_id": 1405,
+   "tab_id": 902,
+   "talent_id": 1000010,
    "rank_spell_ids": [
     1000054,
     1000055
@@ -11565,7 +11695,8 @@
    "tab": "The Righteous",
    "row": 3,
    "column": 1,
-   "talent_id": 1444,
+   "tab_id": 902,
+   "talent_id": 1000011,
    "rank_spell_ids": [
     1000056,
     1000057,
@@ -11578,7 +11709,8 @@
    "tab": "The Righteous",
    "row": 3,
    "column": 3,
-   "talent_id": 157,
+   "tab_id": 902,
+   "talent_id": 1000012,
    "rank_spell_ids": [
     1000059,
     1000060,
@@ -11593,7 +11725,8 @@
    "tab": "The Righteous",
    "row": 4,
    "column": 2,
-   "talent_id": 152,
+   "tab_id": 902,
+   "talent_id": 1000013,
    "rank_spell_ids": [
     1000064
    ]
@@ -11604,7 +11737,8 @@
    "tab": "Crusade",
    "row": 1,
    "column": 2,
-   "talent_id": 1464,
+   "tab_id": 903,
+   "talent_id": 1000014,
    "rank_spell_ids": [
     1000071,
     1000072,
@@ -11617,7 +11751,8 @@
    "tab": "Crusade",
    "row": 1,
    "column": 3,
-   "talent_id": 1407,
+   "tab_id": 903,
+   "talent_id": 1000015,
    "rank_spell_ids": [
     1000074,
     1000075,
@@ -11632,7 +11767,8 @@
    "tab": "Crusade",
    "row": 2,
    "column": 1,
-   "talent_id": 1631,
+   "tab_id": 903,
+   "talent_id": 1000016,
    "rank_spell_ids": [
     1000079,
     1000080
@@ -11644,7 +11780,8 @@
    "tab": "Crusade",
    "row": 2,
    "column": 3,
-   "talent_id": 1403,
+   "tab_id": 903,
+   "talent_id": 1000017,
    "rank_spell_ids": [
     1000081,
     1000082,
@@ -11659,7 +11796,8 @@
    "tab": "Crusade",
    "row": 3,
    "column": 1,
-   "talent_id": 1633,
+   "tab_id": 903,
+   "talent_id": 1000018,
    "rank_spell_ids": [
     1000086,
     1000087,
@@ -11672,7 +11810,8 @@
    "tab": "Crusade",
    "row": 3,
    "column": 2,
-   "talent_id": 1411,
+   "tab_id": 903,
+   "talent_id": 1000019,
    "rank_spell_ids": [
     1000089,
     1000090,
@@ -11687,7 +11826,8 @@
    "tab": "Crusade",
    "row": 4,
    "column": 1,
-   "talent_id": 1632,
+   "tab_id": 903,
+   "talent_id": 1000020,
    "rank_spell_ids": [
     1000094,
     1000095
@@ -11699,7 +11839,8 @@
    "tab": "Crusade",
    "row": 4,
    "column": 4,
-   "talent_id": 1634,
+   "tab_id": 903,
+   "talent_id": 1000021,
    "rank_spell_ids": [
     1000096,
     1000097
@@ -11711,7 +11852,8 @@
    "tab": "Crusade",
    "row": 5,
    "column": 1,
-   "talent_id": 1410,
+   "tab_id": 903,
+   "talent_id": 1000022,
    "rank_spell_ids": [
     1000098,
     1000099,
@@ -11724,7 +11866,8 @@
    "tab": "Crusade",
    "row": 5,
    "column": 3,
-   "talent_id": 1521,
+   "tab_id": 903,
+   "talent_id": 1000023,
    "rank_spell_ids": [
     1000101,
     1000102,
@@ -11737,7 +11880,8 @@
    "tab": "Crusade",
    "row": 6,
    "column": 2,
-   "talent_id": 1402,
+   "tab_id": 903,
+   "talent_id": 1000024,
    "rank_spell_ids": [
     1000104,
     1000105,
@@ -11756,7 +11900,8 @@
    "tab": "Crusade",
    "row": 7,
    "column": 3,
-   "talent_id": 1627,
+   "tab_id": 903,
+   "talent_id": 1000025,
    "rank_spell_ids": [
     1000109,
     1000110,
@@ -11771,7 +11916,8 @@
    "tab": "Blade",
    "row": 1,
    "column": 1,
-   "talent_id": 126,
+   "tab_id": 912,
+   "talent_id": 1000026,
    "rank_spell_ids": [
     1000114,
     1000115
@@ -11783,10 +11929,12 @@
    "tab": "Blade",
    "row": 1,
    "column": 2,
-   "talent_id": 137,
+   "tab_id": 912,
+   "talent_id": 1000027,
    "rank_spell_ids": [
     1000116
-   ]
+   ],
+   "exceptional": true
   },
   {
    "calling": "zealot",
@@ -11794,7 +11942,8 @@
    "tab": "Blade",
    "row": 1,
    "column": 4,
-   "talent_id": 662,
+   "tab_id": 912,
+   "talent_id": 1000028,
    "rank_spell_ids": [
     1000117,
     1000118
@@ -11806,7 +11955,8 @@
    "tab": "Blade",
    "row": 1,
    "column": 3,
-   "talent_id": 121,
+   "tab_id": 912,
+   "talent_id": 1000029,
    "rank_spell_ids": [
     1000119,
     1000120,
@@ -11819,7 +11969,8 @@
    "tab": "Blade",
    "row": 2,
    "column": 1,
-   "talent_id": 132,
+   "tab_id": 912,
+   "talent_id": 1000030,
    "rank_spell_ids": [
     1000122,
     1000123,
@@ -11834,7 +11985,8 @@
    "tab": "Blade",
    "row": 2,
    "column": 3,
-   "talent_id": 125,
+   "tab_id": 912,
+   "talent_id": 1000031,
    "rank_spell_ids": [
     1000127,
     1000128,
@@ -11849,7 +12001,8 @@
    "tab": "Blade",
    "row": 2,
    "column": 4,
-   "talent_id": 123,
+   "tab_id": 912,
+   "talent_id": 1000032,
    "rank_spell_ids": [
     1000132,
     1000133,
@@ -11864,7 +12017,8 @@
    "tab": "Blade",
    "row": 3,
    "column": 3,
-   "talent_id": 156,
+   "tab_id": 912,
+   "talent_id": 1000033,
    "rank_spell_ids": [
     1000137,
     1000138,
@@ -11879,7 +12033,8 @@
    "tab": "Faith",
    "row": 1,
    "column": 2,
-   "talent_id": 1450,
+   "tab_id": 913,
+   "talent_id": 1000034,
    "rank_spell_ids": [
     1000142,
     1000143,
@@ -11894,7 +12049,8 @@
    "tab": "Faith",
    "row": 1,
    "column": 4,
-   "talent_id": 1423,
+   "tab_id": 913,
+   "talent_id": 1000035,
    "rank_spell_ids": [
     1000147,
     1000148,
@@ -11909,7 +12065,8 @@
    "tab": "Faith",
    "row": 2,
    "column": 1,
-   "talent_id": 1630,
+   "tab_id": 913,
+   "talent_id": 1000036,
    "rank_spell_ids": [
     1000152,
     1000153,
@@ -11922,7 +12079,8 @@
    "tab": "Faith",
    "row": 2,
    "column": 3,
-   "talent_id": 1421,
+   "tab_id": 913,
+   "talent_id": 1000037,
    "rank_spell_ids": [
     1000155,
     1000156,
@@ -11937,7 +12095,8 @@
    "tab": "Faith",
    "row": 3,
    "column": 3,
-   "talent_id": 1429,
+   "tab_id": 913,
+   "talent_id": 1000038,
    "rank_spell_ids": [
     1000160,
     1000161,
@@ -11952,7 +12111,8 @@
    "tab": "Faith",
    "row": 3,
    "column": 4,
-   "talent_id": 1629,
+   "tab_id": 913,
+   "talent_id": 1000039,
    "rank_spell_ids": [
     1000165,
     1000166,
@@ -11967,7 +12127,8 @@
    "tab": "Faith",
    "row": 4,
    "column": 3,
-   "talent_id": 1426,
+   "tab_id": 913,
+   "talent_id": 1000040,
    "rank_spell_ids": [
     1000170,
     1000171,
@@ -11982,7 +12143,8 @@
    "tab": "The Skirmisher",
    "row": 1,
    "column": 1,
-   "talent_id": 186,
+   "tab_id": 904,
+   "talent_id": 1000046,
    "rank_spell_ids": [
     1000196,
     1000197,
@@ -11997,7 +12159,8 @@
    "tab": "The Skirmisher",
    "row": 1,
    "column": 2,
-   "talent_id": 269,
+   "tab_id": 904,
+   "talent_id": 1000047,
    "rank_spell_ids": [
     1000201,
     1000202,
@@ -12012,7 +12175,8 @@
    "tab": "The Skirmisher",
    "row": 2,
    "column": 1,
-   "talent_id": 203,
+   "tab_id": 904,
+   "talent_id": 1000048,
    "rank_spell_ids": [
     1000206,
     1000207,
@@ -12025,7 +12189,8 @@
    "tab": "The Skirmisher",
    "row": 2,
    "column": 2,
-   "talent_id": 221,
+   "tab_id": 904,
+   "talent_id": 1000049,
    "rank_spell_ids": [
     1000209,
     1000210,
@@ -12040,7 +12205,8 @@
    "tab": "The Skirmisher",
    "row": 3,
    "column": 1,
-   "talent_id": 1122,
+   "tab_id": 904,
+   "talent_id": 1000050,
    "rank_spell_ids": [
     1000214,
     1000215,
@@ -12053,7 +12219,8 @@
    "tab": "The Skirmisher",
    "row": 4,
    "column": 1,
-   "talent_id": 283,
+   "tab_id": 904,
+   "talent_id": 1000051,
    "rank_spell_ids": [
     1000217,
     1000218,
@@ -12068,7 +12235,8 @@
    "tab": "The Tracker",
    "row": 1,
    "column": 1,
-   "talent_id": 1702,
+   "tab_id": 905,
+   "talent_id": 1000052,
    "rank_spell_ids": [
     1000222,
     1000223,
@@ -12083,7 +12251,8 @@
    "tab": "The Tracker",
    "row": 1,
    "column": 2,
-   "talent_id": 273,
+   "tab_id": 905,
+   "talent_id": 1000053,
    "rank_spell_ids": [
     1000227,
     1000228,
@@ -12096,7 +12265,8 @@
    "tab": "The Tracker",
    "row": 2,
    "column": 1,
-   "talent_id": 1123,
+   "tab_id": 905,
+   "talent_id": 1000054,
    "rank_spell_ids": [
     1000230,
     1000231,
@@ -12109,7 +12279,8 @@
    "tab": "The Tracker",
    "row": 2,
    "column": 2,
-   "talent_id": 244,
+   "tab_id": 905,
+   "talent_id": 1000055,
    "rank_spell_ids": [
     1000233,
     1000234,
@@ -12124,7 +12295,8 @@
    "tab": "The Tracker",
    "row": 3,
    "column": 1,
-   "talent_id": 245,
+   "tab_id": 905,
+   "talent_id": 1000056,
    "rank_spell_ids": [
     1000238,
     1000239,
@@ -12137,7 +12309,8 @@
    "tab": "The Tracker",
    "row": 4,
    "column": 1,
-   "talent_id": 270,
+   "tab_id": 905,
+   "talent_id": 1000057,
    "rank_spell_ids": [
     1000241,
     1000242,
@@ -12152,7 +12325,8 @@
    "tab": "The Weaver",
    "row": 1,
    "column": 1,
-   "talent_id": 26,
+   "tab_id": 906,
+   "talent_id": 1000058,
    "rank_spell_ids": [
     1000251,
     1000252,
@@ -12167,7 +12341,8 @@
    "tab": "The Weaver",
    "row": 1,
    "column": 2,
-   "talent_id": 30,
+   "tab_id": 906,
+   "talent_id": 1000059,
    "rank_spell_ids": [
     1000256,
     1000257,
@@ -12182,7 +12357,8 @@
    "tab": "The Weaver",
    "row": 2,
    "column": 1,
-   "talent_id": 27,
+   "tab_id": 906,
+   "talent_id": 1000060,
    "rank_spell_ids": [
     1000263,
     1000264,
@@ -12195,7 +12371,8 @@
    "tab": "The Weaver",
    "row": 2,
    "column": 2,
-   "talent_id": 62,
+   "tab_id": 906,
+   "talent_id": 1000061,
    "rank_spell_ids": [
     1000266,
     1000267
@@ -12207,7 +12384,8 @@
    "tab": "The Weaver",
    "row": 3,
    "column": 1,
-   "talent_id": 25,
+   "tab_id": 906,
+   "talent_id": 1000062,
    "rank_spell_ids": [
     1000269,
     1000270,
@@ -12220,7 +12398,8 @@
    "tab": "The Weaver",
    "row": 3,
    "column": 2,
-   "talent_id": 23,
+   "tab_id": 906,
+   "talent_id": 1000063,
    "rank_spell_ids": [
     1000272,
     1000273
@@ -12232,7 +12411,8 @@
    "tab": "The Weaver",
    "row": 4,
    "column": 1,
-   "talent_id": 29,
+   "tab_id": 906,
+   "talent_id": 1000064,
    "rank_spell_ids": [
     1000274
    ]
@@ -12243,7 +12423,8 @@
    "tab": "The Channeler",
    "row": 1,
    "column": 1,
-   "talent_id": 75,
+   "tab_id": 907,
+   "talent_id": 1000065,
    "rank_spell_ids": [
     1000275,
     1000276,
@@ -12258,7 +12439,8 @@
    "tab": "The Channeler",
    "row": 1,
    "column": 2,
-   "talent_id": 76,
+   "tab_id": 907,
+   "talent_id": 1000066,
    "rank_spell_ids": [
     1000280,
     1000281,
@@ -12273,7 +12455,8 @@
    "tab": "The Channeler",
    "row": 2,
    "column": 1,
-   "talent_id": 1142,
+   "tab_id": 907,
+   "talent_id": 1000067,
    "rank_spell_ids": [
     1000285,
     1000286,
@@ -12286,7 +12469,8 @@
    "tab": "The Channeler",
    "row": 2,
    "column": 2,
-   "talent_id": 741,
+   "tab_id": 907,
+   "talent_id": 1000068,
    "rank_spell_ids": [
     1000288,
     1000289
@@ -12298,7 +12482,8 @@
    "tab": "The Channeler",
    "row": 3,
    "column": 1,
-   "talent_id": 421,
+   "tab_id": 907,
+   "talent_id": 1000069,
    "rank_spell_ids": [
     1000290,
     1000291,
@@ -12311,7 +12496,8 @@
    "tab": "The Channeler",
    "row": 3,
    "column": 2,
-   "talent_id": 80,
+   "tab_id": 907,
+   "talent_id": 1000070,
    "rank_spell_ids": [
     1000293,
     1000294,
@@ -12326,7 +12512,8 @@
    "tab": "The Channeler",
    "row": 4,
    "column": 1,
-   "talent_id": 86,
+   "tab_id": 907,
+   "talent_id": 1000071,
    "rank_spell_ids": [
     1000299
    ]
@@ -12337,7 +12524,8 @@
    "tab": "The Swiftbow",
    "row": 1,
    "column": 1,
-   "talent_id": 1311,
+   "tab_id": 908,
+   "talent_id": 1000072,
    "rank_spell_ids": [
     1000306,
     1000307,
@@ -12352,7 +12540,8 @@
    "tab": "The Swiftbow",
    "row": 1,
    "column": 2,
-   "talent_id": 1304,
+   "tab_id": 908,
+   "talent_id": 1000073,
    "rank_spell_ids": [
     1000311,
     1000312,
@@ -12367,7 +12556,8 @@
    "tab": "The Swiftbow",
    "row": 2,
    "column": 1,
-   "talent_id": 1301,
+   "tab_id": 908,
+   "talent_id": 1000074,
    "rank_spell_ids": [
     1000316,
     1000317,
@@ -12380,7 +12570,8 @@
    "tab": "The Swiftbow",
    "row": 2,
    "column": 2,
-   "talent_id": 1306,
+   "tab_id": 908,
+   "talent_id": 1000075,
    "rank_spell_ids": [
     1000319,
     1000320
@@ -12392,7 +12583,8 @@
    "tab": "The Swiftbow",
    "row": 3,
    "column": 1,
-   "talent_id": 1310,
+   "tab_id": 908,
+   "talent_id": 1000076,
    "rank_spell_ids": [
     1000321,
     1000322,
@@ -12405,7 +12597,8 @@
    "tab": "The Swiftbow",
    "row": 3,
    "column": 2,
-   "talent_id": 1322,
+   "tab_id": 908,
+   "talent_id": 1000077,
    "rank_spell_ids": [
     1000324,
     1000325
@@ -12417,7 +12610,8 @@
    "tab": "The Swiftbow",
    "row": 4,
    "column": 1,
-   "talent_id": 1308,
+   "tab_id": 908,
+   "talent_id": 1000078,
    "rank_spell_ids": [
     1000326
    ]
@@ -12428,7 +12622,8 @@
    "tab": "The Arbalest",
    "row": 1,
    "column": 1,
-   "talent_id": 1344,
+   "tab_id": 909,
+   "talent_id": 1000079,
    "rank_spell_ids": [
     1000327,
     1000328,
@@ -12443,7 +12638,8 @@
    "tab": "The Arbalest",
    "row": 1,
    "column": 2,
-   "talent_id": 1348,
+   "tab_id": 909,
+   "talent_id": 1000080,
    "rank_spell_ids": [
     1000332,
     1000333,
@@ -12458,7 +12654,8 @@
    "tab": "The Arbalest",
    "row": 2,
    "column": 1,
-   "talent_id": 1347,
+   "tab_id": 909,
+   "talent_id": 1000081,
    "rank_spell_ids": [
     1000337,
     1000338,
@@ -12471,7 +12668,8 @@
    "tab": "The Arbalest",
    "row": 2,
    "column": 2,
-   "talent_id": 1384,
+   "tab_id": 909,
+   "talent_id": 1000082,
    "rank_spell_ids": [
     1000340,
     1000341
@@ -12483,7 +12681,8 @@
    "tab": "The Arbalest",
    "row": 3,
    "column": 1,
-   "talent_id": 1352,
+   "tab_id": 909,
+   "talent_id": 1000083,
    "rank_spell_ids": [
     1000342,
     1000343,
@@ -12496,7 +12695,8 @@
    "tab": "The Arbalest",
    "row": 3,
    "column": 2,
-   "talent_id": 1624,
+   "tab_id": 909,
+   "talent_id": 1000084,
    "rank_spell_ids": [
     1000345,
     1000346
@@ -12508,7 +12708,8 @@
    "tab": "The Arbalest",
    "row": 4,
    "column": 1,
-   "talent_id": 1353,
+   "tab_id": 909,
+   "talent_id": 1000085,
    "rank_spell_ids": [
     1000347
    ]
@@ -12519,7 +12720,8 @@
    "tab": "The Rot-Weaver",
    "row": 1,
    "column": 1,
-   "talent_id": 465,
+   "tab_id": 910,
+   "talent_id": 1000086,
    "rank_spell_ids": [
     1000355,
     1000356,
@@ -12534,7 +12736,8 @@
    "tab": "The Rot-Weaver",
    "row": 1,
    "column": 2,
-   "talent_id": 482,
+   "tab_id": 910,
+   "talent_id": 1000087,
    "rank_spell_ids": [
     1000360,
     1000361
@@ -12546,7 +12749,8 @@
    "tab": "The Rot-Weaver",
    "row": 2,
    "column": 1,
-   "talent_id": 466,
+   "tab_id": 910,
+   "talent_id": 1000088,
    "rank_spell_ids": [
     1000362,
     1000363,
@@ -12559,7 +12763,8 @@
    "tab": "The Rot-Weaver",
    "row": 2,
    "column": 2,
-   "talent_id": 881,
+   "tab_id": 910,
+   "talent_id": 1000089,
    "rank_spell_ids": [
     1000365,
     1000366,
@@ -12572,7 +12777,8 @@
    "tab": "The Rot-Weaver",
    "row": 3,
    "column": 1,
-   "talent_id": 1636,
+   "tab_id": 910,
+   "talent_id": 1000090,
    "rank_spell_ids": [
     1000368,
     1000369,
@@ -12585,7 +12791,8 @@
    "tab": "The Rot-Weaver",
    "row": 3,
    "column": 2,
-   "talent_id": 483,
+   "tab_id": 910,
+   "talent_id": 1000091,
    "rank_spell_ids": [
     1000371,
     1000372
@@ -12597,7 +12804,8 @@
    "tab": "The Rot-Weaver",
    "row": 4,
    "column": 1,
-   "talent_id": 484,
+   "tab_id": 910,
+   "talent_id": 1000092,
    "rank_spell_ids": [
     1000373
    ]
@@ -12608,7 +12816,8 @@
    "tab": "The Hemomancer",
    "row": 1,
    "column": 1,
-   "talent_id": 401,
+   "tab_id": 911,
+   "talent_id": 1000093,
    "rank_spell_ids": [
     1000374,
     1000375,
@@ -12623,7 +12832,8 @@
    "tab": "The Hemomancer",
    "row": 1,
    "column": 2,
-   "talent_id": 404,
+   "tab_id": 911,
+   "talent_id": 1000094,
    "rank_spell_ids": [
     1000379,
     1000380,
@@ -12638,7 +12848,8 @@
    "tab": "The Hemomancer",
    "row": 2,
    "column": 1,
-   "talent_id": 408,
+   "tab_id": 911,
+   "talent_id": 1000095,
    "rank_spell_ids": [
     1000384,
     1000385,
@@ -12651,7 +12862,8 @@
    "tab": "The Hemomancer",
    "row": 2,
    "column": 2,
-   "talent_id": 410,
+   "tab_id": 911,
+   "talent_id": 1000096,
    "rank_spell_ids": [
     1000387,
     1000388
@@ -12663,7 +12875,8 @@
    "tab": "The Hemomancer",
    "row": 3,
    "column": 1,
-   "talent_id": 406,
+   "tab_id": 911,
+   "talent_id": 1000097,
    "rank_spell_ids": [
     1000389,
     1000390,
@@ -12676,7 +12889,8 @@
    "tab": "The Hemomancer",
    "row": 3,
    "column": 2,
-   "talent_id": 1635,
+   "tab_id": 911,
+   "talent_id": 1000098,
    "rank_spell_ids": [
     1000392,
     1000393
@@ -12688,7 +12902,8 @@
    "tab": "The Hemomancer",
    "row": 4,
    "column": 1,
-   "talent_id": 442,
+   "tab_id": 911,
+   "talent_id": 1000099,
    "rank_spell_ids": [
     1000394
    ]

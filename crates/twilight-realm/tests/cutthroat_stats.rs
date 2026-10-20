@@ -13,9 +13,12 @@ const SEED: u64 = 0x5EED_0107;
 const LEVEL: u8 = 10;
 
 /// `Talent.dbc` ids of the Cutthroat talents under test.
-const REFLEXIVE_STRIKE: u32 = 186;
-const PREDATORS_STEP: u32 = 244;
-const SERRATED_STRIKES: u32 = 270;
+static REFLEXIVE_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "reflexive_strike"));
+static PREDATORS_STEP: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "predators_step"));
+static SERRATED_STRIKES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "serrated_strikes"));
 static EVASION: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("cutthroat", "evasion"));
 /// A player's run speed, yd/s.
@@ -86,7 +89,7 @@ fn crit(view: &View, me: u64) -> f32 {
 #[test]
 fn reflexive_strike_adds_dodge_and_crit_to_the_sheet() {
     let (_, me, _, bare, _) = cutthroat(&[]);
-    let (_, me2, _, trained, _) = cutthroat(&[(REFLEXIVE_STRIKE, 5)]);
+    let (_, me2, _, trained, _) = cutthroat(&[(*REFLEXIVE_STRIKE, 5)]);
     assert!(
         (dodge(&trained, me2) - dodge(&bare, me) - 5.0).abs() < 1e-3,
         "dodge {} -> {}",
@@ -120,7 +123,7 @@ fn evasion_adds_fifty_percent_dodge_for_fifteen_seconds() {
 #[test]
 fn predators_step_raises_run_speed_and_max_energy() {
     let (_, me, _, bare, run_bare) = cutthroat(&[]);
-    let (_, me2, _, trained, run) = cutthroat(&[(PREDATORS_STEP, 5)]);
+    let (_, me2, _, trained, run) = cutthroat(&[(*PREDATORS_STEP, 5)]);
     assert!((run_bare - RUN).abs() < 1e-3, "{run_bare}");
     assert!((run - RUN * 1.15).abs() < 1e-3, "{run}");
     assert_eq!(bare.fields(me).unit_max_power(ENERGY), Some(100));
@@ -147,7 +150,7 @@ fn first_swing(talents: &[(u32, u8)]) -> u32 {
 #[test]
 fn serrated_strikes_ignore_armor() {
     let plain = first_swing(&[]);
-    let serrated = first_swing(&[(SERRATED_STRIKES, 5)]);
+    let serrated = first_swing(&[(*SERRATED_STRIKES, 5)]);
     assert!(plain > 0, "the seed lands a swing");
     assert!(serrated > plain, "{plain} -> {serrated}");
 }

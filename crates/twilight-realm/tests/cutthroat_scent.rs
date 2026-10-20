@@ -16,7 +16,8 @@ static SINISTER_STRIKE: std::sync::LazyLock<u32> =
 /// The stock bleed (Pounce Bleed) the talent's rows apply.
 const SCENT_BLEED: u32 = 9007;
 /// `Talent.dbc` id of Scent of Blood (borrowed Improved Rupture).
-const SCENT_OF_BLOOD: u32 = 1123;
+static SCENT_OF_BLOOD: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "scent_of_blood"));
 
 /// A level 10 Cutthroat, fists only, with `talents` in its save, in the world at `seed`.
 fn cutthroat(seed: u64, talents: &[(u32, u8)]) -> (Realm, View) {
@@ -117,7 +118,7 @@ fn a_hundred_damage_crit_at_thirty_percent_is_thirty_in_all() {
 
 #[test]
 fn scent_of_blood_3_of_3_bleeds_thirty_percent_of_the_crit_over_four_ticks() {
-    let (damage, ticks) = crit_and_bleed(&[(SCENT_OF_BLOOD, 3)]).expect("a survivable crit");
+    let (damage, ticks) = crit_and_bleed(&[(*SCENT_OF_BLOOD, 3)]).expect("a survivable crit");
     let total = scaled_share(damage, 30);
     // Four ticks, a tick every 2 s for 8 s, the remainder on the first ticks.
     let schedule: Vec<u32> = (0..4)

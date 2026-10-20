@@ -9,22 +9,35 @@ use crate::dungeon::Place;
 use crate::inn::Bind;
 use crate::inventory::{bag_size, Inventory, Pos};
 
-/// The save format this realm writes. It also reads versions 1 and 2, which have the same layout;
-/// a save from any other version is refused. Version 3's spell ids are the sheet's own (ADR
-/// 0011): an older save's action bar names stock spell ids, remapped on load through
-/// [`OLD_SPELL_IDS`].
-pub const SAVE_VERSION: u32 = 3;
+/// The save format this realm writes. It also reads versions 1 to 3, which have the same layout;
+/// a save from any other version is refused. From version 3 the spell ids are the sheet's own,
+/// from version 4 the talent ids too (ADR 0011): an older save's action bar and talents name
+/// stock ids, remapped on load through [`OLD_IDS`].
+pub const SAVE_VERSION: u32 = 4;
 
 /// The oldest save version the realm still reads. Version 2's quests are Hunting Quests, done once
 /// per Tier; version 1's are read the same way.
 const OLDEST_VERSION: u32 = 1;
 
 /// The last version whose spell ids were stock 1.12.1 ones.
-const LAST_STOCK_IDS_VERSION: u32 = 2;
+const LAST_STOCK_SPELLS_VERSION: u32 = 2;
+/// The last version whose talent ids were stock `Talent.dbc` ones.
+const LAST_STOCK_TALENTS_VERSION: u32 = 3;
 
-/// The one-time table of stock spell ids to the sheet's own, written by
-/// `tools/twilights-eve/migrate_from_scratch.py` (#204).
-const OLD_SPELL_IDS: &str = include_str!("../../../data/twilights-eve/spell_id_remap.json");
+/// The one-time tables of stock spell and talent ids to the sheet's own, `{spells, talents}`,
+/// written by `tools/twilights-eve/migrate_from_scratch.py` (#204) and `migrate_talent_ids.py`
+/// (#205).
+const OLD_IDS: &str = include_str!("../../../data/twilights-eve/spell_id_remap.json");
+
+/// One of [`OLD_IDS`]'s tables, `spells` or `talents`.
+fn old_ids(table: &str) -> std::collections::HashMap<u32, u32> {
+    let tables: std::collections::HashMap<String, std::collections::HashMap<String, u32>> =
+        serde_json::from_str(OLD_IDS).expect("spell_id_remap.json parses");
+    tables[table]
+        .iter()
+        .map(|(old, &new)| (old.parse().expect("an old id"), new))
+        .collect()
+}
 
 /// Action button kind 0: a spell.
 const ACTION_SPELL: u32 = 0;
@@ -32,12 +45,7 @@ const ACTION_SPELL: u32 = 0;
 /// A stock-id save's action bar with each spell button's id remapped; a spell the table lacks
 /// leaves its button empty. Other buttons (macros, items) stay.
 fn remap_action_bar(bar: Vec<(u8, u32)>) -> Vec<(u8, u32)> {
-    let table: std::collections::HashMap<u32, u32> =
-        serde_json::from_str::<std::collections::HashMap<String, u32>>(OLD_SPELL_IDS)
-            .expect("spell_id_remap.json parses")
-            .into_iter()
-            .map(|(old, new)| (old.parse().expect("an old spell id"), new))
-            .collect();
+    let table = old_ids("spells");
     bar.into_iter()
         .filter_map(|(slot, packed)| {
             if packed >> 24 != ACTION_SPELL {
@@ -46,6 +54,16 @@ fn remap_action_bar(bar: Vec<(u8, u32)>) -> Vec<(u8, u32)> {
             let new = table.get(&(packed & 0x00FF_FFFF))?;
             Some((slot, ACTION_SPELL << 24 | new))
         })
+        .collect()
+}
+
+/// A stock-id save's talents with each `Talent.dbc` id remapped; a talent the table lacks is
+/// dropped, and its points come back, since points are counted from the level.
+fn remap_talents(talents: Vec<(u32, u8)>) -> Vec<(u32, u8)> {
+    let table = old_ids("talents");
+    talents
+        .into_iter()
+        .filter_map(|(id, rank)| Some((*table.get(&id)?, rank)))
         .collect()
 }
 
@@ -316,12 +334,16 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         zone: s.zone,
         position: s.position,
         orientation: s.orientation,
-        action_bar: if header.version <= LAST_STOCK_IDS_VERSION {
+        action_bar: if header.version <= LAST_STOCK_SPELLS_VERSION {
             s.action_bar.map(remap_action_bar)
         } else {
             s.action_bar
         },
-        talents: s.talents,
+        talents: if header.version <= LAST_STOCK_TALENTS_VERSION {
+            remap_talents(s.talents)
+        } else {
+            s.talents
+        },
         talent_wipes: s.talent_wipes,
         inventory: load_inventory(s.money, s.ammo, &s.items)?,
         item_cooldowns: s

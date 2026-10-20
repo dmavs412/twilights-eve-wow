@@ -10,7 +10,8 @@ use twilight_realm::rules::regen;
 use twilight_realm::{Realm, RealmCommand};
 
 /// The Recruit tree's Field Medic: its borrowed `Talent.dbc` id.
-const FIELD_MEDIC: u32 = 140;
+static FIELD_MEDIC: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "field_medic"));
 const STAMINA: u8 = 2;
 
 #[test]
@@ -42,7 +43,7 @@ fn health_regenerates_out_of_combat_and_not_in_it() {
 #[test]
 fn field_medic_raises_regen_and_stamina_by_its_percents() {
     let (mut plain, p_me, p_mob, mut p_view) = warrior_at(6, &[]);
-    let (mut medic, m_me, m_mob, mut m_view) = warrior_at(6, &[(FIELD_MEDIC, 5)]);
+    let (mut medic, m_me, m_mob, mut m_view) = warrior_at(6, &[(*FIELD_MEDIC, 5)]);
     let sta = p_view.fields(p_me).unit_stat(STAMINA).unwrap();
     assert_eq!(
         m_view.fields(m_me).unit_stat(STAMINA).unwrap(),
@@ -73,7 +74,7 @@ fn learning_a_stamina_percent_raises_current_health_with_max_health() {
     let (hp, max) = (view.health(me), view.fields(me).unit_max_health().unwrap());
     for rank in 0..5 {
         realm.handle(RealmCommand::LearnTalent {
-            talent_id: FIELD_MEDIC,
+            talent_id: *FIELD_MEDIC,
             rank,
         });
     }

@@ -17,21 +17,37 @@ fn reference() -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 
+/// The one-time stock-to-sheet tables (#204, #205): `spells` and `talents`.
+fn old_ids() -> &'static std::collections::HashMap<String, std::collections::HashMap<u64, u64>> {
+    static TABLES: std::sync::OnceLock<
+        std::collections::HashMap<String, std::collections::HashMap<u64, u64>>,
+    > = std::sync::OnceLock::new();
+    TABLES.get_or_init(|| {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/twilights-eve/spell_id_remap.json");
+        let raw: std::collections::HashMap<String, std::collections::HashMap<String, u64>> =
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        raw.into_iter()
+            .map(|(name, table)| {
+                let table = table
+                    .into_iter()
+                    .map(|(old, new)| (old.parse().unwrap(), new))
+                    .collect();
+                (name, table)
+            })
+            .collect()
+    })
+}
+
 /// A stock spell id the reference names, as the content names it now: the sheet's own id through
 /// the one-time table (#204), or the stock id where the sheet has no row for it.
 fn ours(stock: u64) -> u64 {
-    static TABLE: std::sync::OnceLock<std::collections::HashMap<u64, u64>> =
-        std::sync::OnceLock::new();
-    let table = TABLE.get_or_init(|| {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../data/twilights-eve/spell_id_remap.json");
-        let raw: std::collections::HashMap<String, u64> =
-            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-        raw.into_iter()
-            .map(|(old, new)| (old.parse().unwrap(), new))
-            .collect()
-    });
-    table.get(&stock).copied().unwrap_or(stock)
+    old_ids()["spells"].get(&stock).copied().unwrap_or(stock)
+}
+
+/// A stock `Talent.dbc` id the reference names, as the content names it now (#205).
+fn our_talent(stock: u64) -> u64 {
+    old_ids()["talents"].get(&stock).copied().unwrap_or(stock)
 }
 
 /// The stock id the content's `id` stands for, for a lookup in the stock dump.
@@ -617,7 +633,7 @@ fn the_basic_warrior_talent_tree_is_the_sheets() {
             assert_eq!(t.key, key);
             assert_eq!(
                 u64::from(t.talent_id),
-                ranks[0]["talent_id"].as_u64().unwrap(),
+                our_talent(ranks[0]["talent_id"].as_u64().unwrap()),
                 "{key}"
             );
             assert_eq!(u64::from(t.tier), want["seat"]["row"].as_u64().unwrap());
@@ -827,7 +843,7 @@ fn check_tree(calling: &str, unmodelled: &[&str]) {
             assert_eq!(t.key, key);
             assert_eq!(
                 u64::from(t.talent_id),
-                want["talent_id"].as_u64().unwrap(),
+                our_talent(want["talent_id"].as_u64().unwrap()),
                 "{key}"
             );
             assert_eq!(u64::from(t.tier), want["tier"].as_u64().unwrap(), "{key}");

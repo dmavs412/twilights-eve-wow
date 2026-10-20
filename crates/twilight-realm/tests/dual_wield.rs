@@ -20,7 +20,8 @@ const OFF_HAND: u8 = 16;
 const BACKPACK: u8 = 255;
 const PACK_1: u8 = 23;
 /// `Talent.dbc` id of Dual Wield Specialization, 5 ranks.
-const DUAL_WIELD_SPECIALIZATION: u32 = 221;
+static DUAL_WIELD_SPECIALIZATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "dual_wield_specialization"));
 /// 1H dagger, 6-12 every 1.5 s.
 const SMALL_HAND_BLADE: u32 = 816;
 /// 1H dagger, 7-14 every 1.4 s.
@@ -224,7 +225,7 @@ fn the_off_hand_deals_about_half_the_main_hands_damage() {
 #[test]
 fn dual_wield_specialization_raises_the_off_hands_damage() {
     let bare = opening_swings(&two_daggers(&[]), 300);
-    let talents = [(DUAL_WIELD_SPECIALIZATION, 5)];
+    let talents = [(*DUAL_WIELD_SPECIALIZATION, 5)];
     let trained = opening_swings(&two_daggers(&talents), 300);
     let ratio = mean_plain_hit(&trained, true) / mean_plain_hit(&bare, true);
     assert!(ratio > 1.4 && ratio < 1.6, "5/5 deals {ratio:.2}x of 0/5");

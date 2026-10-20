@@ -22,11 +22,16 @@ static EVASION: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("cutthroat", "evasion"));
 
 /// `Talent.dbc` ids of the talents under test, and Reflexive Strike for more dodges.
-const REFLEXIVE_STRIKE: u32 = 186;
-const PHANTOM_GUILE: u32 = 203;
-const EXECUTIONERS_TOLL: u32 = 245;
-const RUTHLESSNESS: u32 = 273;
-const RELENTLESS_STRIKES: u32 = 283;
+static REFLEXIVE_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "reflexive_strike"));
+static PHANTOM_GUILE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "phantom_guile"));
+static EXECUTIONERS_TOLL: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "executioners_toll"));
+static RUTHLESSNESS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "ruthlessness"));
+static RELENTLESS_STRIKES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "relentless_strikes"));
 
 /// A Cutthroat of `level` with `talents` in its save, in the world: the realm, its guid, the mobs
 /// in view (those at the scorpid camp south of the Crossroads when `camp`, else those at entry)
@@ -134,7 +139,7 @@ fn drain_energy(realm: &mut Realm, view: &mut View, mob: &Mob) {
 #[test]
 fn phantom_guile_gives_a_point_and_ten_energy_on_each_dodge() {
     // Evasion and Reflexive Strike make most of the mob's swings miss the player.
-    let talents = [(PHANTOM_GUILE, 3), (REFLEXIVE_STRIKE, 5)];
+    let talents = [(*PHANTOM_GUILE, 3), (*REFLEXIVE_STRIKE, 5)];
     let (mut realm, me, camp, mut view) = cutthroat(10, &talents, true, true);
     let mob = &camp[0];
     stand_at(&mut realm, mob, 2.0);
@@ -173,7 +178,7 @@ fn phantom_guile_gives_a_point_and_ten_energy_on_each_dodge() {
 
 #[test]
 fn a_cutthroat_without_the_talent_gets_nothing_from_a_dodge() {
-    let (mut realm, me, camp, mut view) = cutthroat(10, &[(REFLEXIVE_STRIKE, 5)], true, true);
+    let (mut realm, me, camp, mut view) = cutthroat(10, &[(*REFLEXIVE_STRIKE, 5)], true, true);
     let mob = &camp[0];
     stand_at(&mut realm, mob, 2.0);
     cast_at(&mut realm, &mut view, *EVASION, mob);
@@ -220,7 +225,7 @@ fn three_eviscerates(talents: &[(u32, u8)]) -> Vec<(u32, u32, (u8, u64))> {
 
 #[test]
 fn relentless_strikes_refunds_twenty_five_energy_on_every_eviscerate() {
-    for (before, after, _) in three_eviscerates(&[(RELENTLESS_STRIKES, 5)]) {
+    for (before, after, _) in three_eviscerates(&[(*RELENTLESS_STRIKES, 5)]) {
         assert_eq!(after, before - 35 + 25);
     }
     for (before, after, _) in three_eviscerates(&[]) {
@@ -230,7 +235,7 @@ fn relentless_strikes_refunds_twenty_five_energy_on_every_eviscerate() {
 
 #[test]
 fn ruthlessness_leaves_one_point_after_every_finisher() {
-    let rounds = three_eviscerates(&[(RUTHLESSNESS, 3)]);
+    let rounds = three_eviscerates(&[(*RUTHLESSNESS, 3)]);
     for (i, (_, _, (points, _))) in rounds.iter().enumerate() {
         assert_eq!(*points, 1, "round {i}");
     }
@@ -286,7 +291,7 @@ fn kill_gains(level: u8, talents: &[(u32, u8)]) -> (u32, u32, u32, u32) {
 
 #[test]
 fn executioners_toll_heals_and_refunds_energy_on_an_experience_kill() {
-    let (health, power, max, missing) = kill_gains(5, &[(EXECUTIONERS_TOLL, 3)]);
+    let (health, power, max, missing) = kill_gains(5, &[(*EXECUTIONERS_TOLL, 3)]);
     let heal = max * 15 / 100;
     assert!(missing >= heal, "only {missing} of {max} was missing");
     assert!(health >= heal - 10, "healed {health} of {max}");
@@ -295,7 +300,7 @@ fn executioners_toll_heals_and_refunds_energy_on_an_experience_kill() {
 
 #[test]
 fn executioners_toll_does_nothing_on_a_grey_kill() {
-    let (health, power, max, _) = kill_gains(10, &[(EXECUTIONERS_TOLL, 3)]);
+    let (health, power, max, _) = kill_gains(10, &[(*EXECUTIONERS_TOLL, 3)]);
     assert!(health < max * 15 / 100, "healed {health} of {max}");
     assert!(power < 60, "refunded {power}");
 }

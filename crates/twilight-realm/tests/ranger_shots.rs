@@ -35,8 +35,10 @@ static EXPLOSIVE_SHOT: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("ranger", "explosive_shot"));
 /// `Talent.dbc` ids.
 const PIERCING_FORCE: u32 = 1344;
-const POINT_BLANK: u32 = 1624;
-const EXPLOSIVE_PAYLOAD_TALENT: u32 = 1353;
+static POINT_BLANK: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "point_blank"));
+static EXPLOSIVE_PAYLOAD_TALENT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "explosive_payload"));
 
 const SPELL_SCHOOL_FIRE: u8 = 2;
 const SPELL_HIT_TYPE_CRIT: u32 = 0x2;
@@ -339,7 +341,7 @@ fn point_blank_shoots_at_5_yards_with_its_bonus() {
         let mut shafts = Vec::new();
         for rank in [1, 2] {
             let (mut realm, _, mobs) =
-                ranger("ranger", None, &[(POINT_BLANK, rank)], 0xC3_0000 + seed);
+                ranger("ranger", None, &[(*POINT_BLANK, rank)], 0xC3_0000 + seed);
             stand_at(&mut realm, &mobs[0], 5.0);
             drain(&mut realm);
             realm.handle(cast(*PUNCTURING_SHAFT, Some(mobs[0].guid)));
@@ -366,7 +368,7 @@ fn point_blank_shoots_at_5_yards_with_its_bonus() {
 /// bunch up on the Ranger, who steps 20 yd back and shoots.
 #[test]
 fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
-    let (mut realm, _, _) = ranger("ranger", None, &[(EXPLOSIVE_PAYLOAD_TALENT, 1)], 0xC4_0001);
+    let (mut realm, _, _) = ranger("ranger", None, &[(*EXPLOSIVE_PAYLOAD_TALENT, 1)], 0xC4_0001);
     let stand = [CAMP[0] + 20.0, CAMP[1], CAMP[2]];
     realm.handle(RealmCommand::Move {
         motion: Default::default(),
@@ -496,7 +498,7 @@ talents = [[{t}, {r}]]
         bits.sort_unstable();
         bits
     };
-    let learned = cells(&[(POINT_BLANK, 1)]);
+    let learned = cells(&[(*POINT_BLANK, 1)]);
     assert_eq!(learned.len(), 5, "a cell per ranged skill: {learned:?}");
     assert!(learned.iter().all(|&(_, v)| v == -100), "{learned:?}");
     assert!(cells(&[]).iter().all(|&(_, v)| v == 0));

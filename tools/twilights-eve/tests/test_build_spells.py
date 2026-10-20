@@ -67,6 +67,9 @@ AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "nam
 
 
 class BuildSpells(unittest.TestCase):
+    def setUp(self):
+        self.extra_art: dict[str, bytes] = {}
+
     def run_build(self, rows: list[dict],
                   extra_columns: tuple = ()) -> tuple[subprocess.CompletedProcess, list | None]:
         tmp = tempfile.mkdtemp()
@@ -86,8 +89,9 @@ class BuildSpells(unittest.TestCase):
             writer.writerows(rows)
         art_dir = os.path.join(tmp, "art")
         os.mkdir(art_dir)
-        with open(os.path.join(art_dir, "ember_lash.png"), "wb") as f:
-            f.write(PNG)
+        for name, data in {"ember_lash.png": PNG, **getattr(self, "extra_art", {})}.items():
+            with open(os.path.join(art_dir, name), "wb") as f:
+                f.write(data)
         self.out_dir = tmp
         command = [sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp, "--art-dir", art_dir, "--no-dbc-check"]
         done = subprocess.run(command, capture_output=True, text=True)
@@ -300,8 +304,8 @@ class BuildSpells(unittest.TestCase):
     def test_patch_emits_spellmods_and_seats_per_rank(self):
         mod = {"spellmod1_type": "flat", "spellmod1_op": "COST", "spellmod1_target": "shout"}
         rows = [{**STRIKE, "key": "shout", "spell_id": "1006192"},
-                talent("cruelty", 1, 0, 1, spell_id="1012320", talent_id="138", spellmod1_value="-1", **mod),
-                talent("cruelty", 2, 0, 1, spell_id="1012852", talent_id="138", spellmod1_value="-2", **mod),
+                talent("cruelty", 1, 0, 1, spell_id="1012320", talent_id="1000138", spellmod1_value="-1", **mod),
+                talent("cruelty", 2, 0, 1, spell_id="1012852", talent_id="1000138", spellmod1_value="-2", **mod),
                 talent("fury", 1, 1, 1, spell_id="1012300", prereq_key="cruelty", prereq_rank="2")]
         done, _ = self.run_build(rows)
         self.assertEqual(done.returncode, 0, done.stderr)
@@ -311,14 +315,14 @@ class BuildSpells(unittest.TestCase):
         self.assertIsNone(mods[1012300])
         cruelty, fury = self.patch["talents"]
         self.assertEqual(cruelty, {"calling": "vanguard", "key": "cruelty", "tab": "Arms", "row": 0, "column": 1,
-                                   "talent_id": 138, "rank_spell_ids": [1012320, 1012852]})
+                                   "tab": "Arms", "talent_id": 1000138, "rank_spell_ids": [1012320, 1012852]})
         self.assertEqual(fury["prereq"], {"key": "cruelty", "rank": 2})
 
     def skill(self, key: str, spell_id: int) -> dict:
         return {**STRIKE, "key": key, "spell_id": str(spell_id)}
 
     def mod_talent(self, target: str, **extra: str) -> dict:
-        return talent("boon", 1, 0, 0, spell_id="1012320", talent_id="138", spellmod1_type="pct",
+        return talent("boon", 1, 0, 0, spell_id="1012320", talent_id="1000138", spellmod1_type="pct",
                       spellmod1_op="DAMAGE", spellmod1_target=target, spellmod1_value="10", **extra)
 
     def test_each_skill_takes_its_own_family_bit_in_sheet_order(self):
@@ -351,7 +355,7 @@ class BuildSpells(unittest.TestCase):
         self.assertIn(1000078, [o["spell_id"] for o in self.patch["spells"]])
 
     def test_spellbook_on_a_talent_fails(self):
-        self.assert_fails([talent("boon", 1, 0, 0, spell_id="1012320", talent_id="138", spellbook="no")],
+        self.assert_fails([talent("boon", 1, 0, 0, spell_id="1012320", talent_id="1000138", spellbook="no")],
                           "spellbook is set on a talent row")
 
     def test_an_unknown_op_fails(self):
@@ -492,8 +496,39 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
 
     def test_two_talents_on_one_talent_id_fail(self):
-        rows = [talent("a", 1, 0, 0, talent_id="27"), talent("b", 1, 0, 1, talent_id="27")]
-        self.assert_fails([CALLING, TAB, *rows], "talent_id 27 is already claimed")
+        rows = [talent("a", 1, 0, 0, talent_id="1000027"), talent("b", 1, 0, 1, talent_id="1000027")]
+        self.assert_fails([CALLING, TAB, *rows], "talent_id 1000027 is already claimed")
+
+    def test_a_stock_talent_id_fails(self):
+        self.assert_fails([talent("a", 1, 0, 0, talent_id="27")], "talent_id 27 is not the sheet's own")
+
+    def test_the_patch_carries_each_callings_tabs_and_full_seats(self):
+        rows = [CALLING, {**TAB, "key": "arms", "name": "Arms", "tab_order": "2"},
+                {**TAB, "key": "fury", "name": "Fury", "tab_id": "903", "tab_order": "1"},
+                talent("a", 1, 1, 2, tab="arms", talent_id="1000001", spell_id="1000101", exceptional="yes"),
+                talent("b", 1, 2, 2, tab="arms", talent_id="1000002", spell_id="1000102", prereq_key="a")]
+        done, _ = self.run_build(rows)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual([t["key"] for t in self.patch["talent_tabs"]], ["fury", "arms"], "in order")
+        arms = self.patch["talent_tabs"][1]
+        self.assertEqual(arms, {"calling": "vanguard", "key": "arms", "id": 900, "name": "Arms",
+                                "background": "WarriorArms", "order": 2})
+        a, b = self.patch["talents"]
+        self.assertEqual((a["tab_id"], a["row"], a["column"], a["exceptional"]), (900, 1, 2, True))
+        self.assertEqual((b["talent_id"], b["prereq"]), (1000002, {"key": "a", "rank": 1}))
+        self.assertNotIn("exceptional", b)
+
+    def test_a_png_tab_background_embeds_its_four_quarters(self):
+        rows = [CALLING, {**TAB, "background": "dusk.png"}, talent("a", 1, 1, 1, tab="arms")]
+        self.assert_fails(rows, "dusk-TopLeft.png is not in")
+        for quarter in ("TopLeft", "TopRight", "BottomLeft", "BottomRight"):
+            self.extra_art[f"dusk-{quarter}.png"] = PNG
+        done, _ = self.run_build(rows)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.patch["talent_tabs"][0]["background"], "Twilight\\dusk")
+        with open(os.path.join(self.out_dir, "client_art.json"), encoding="utf-8") as f:
+            self.assertEqual(sorted(json.load(f)), [f"dusk-{q}" for q in sorted(("TopLeft", "TopRight",
+                                                                                   "BottomLeft", "BottomRight"))])
 
     def test_max_rank_is_required_on_a_talent(self):
         self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="")], "cruelty): a talent rank row needs max_rank")

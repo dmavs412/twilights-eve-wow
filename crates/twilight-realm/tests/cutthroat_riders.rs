@@ -20,8 +20,10 @@ static RUPTURE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("cutthroat", "rupture"));
 
 /// `Talent.dbc` ids of the talents under test.
-const FLURRY_OF_BLADES: u32 = 1122;
-const SERRATED_STRIKES: u32 = 270;
+static FLURRY_OF_BLADES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "flurry_of_blades"));
+static SERRATED_STRIKES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "serrated_strikes"));
 
 /// A level 10 Cutthroat with `talents` in its save, in the world at `seed`, `unarmed` to make the
 /// fight last: the realm, its guid and what the client has seen.
@@ -164,7 +166,7 @@ fn flurry_of_blades_3_of_3_strikes_a_second_dummy_about_three_strikes_in_ten() {
     const RUNS: u64 = 120;
     let mut doubled = 0;
     for seed in FIRST_SEED..FIRST_SEED + RUNS {
-        let mut pack = pulled(seed, &[(FLURRY_OF_BLADES, 3)]);
+        let mut pack = pulled(seed, &[(*FLURRY_OF_BLADES, 3)]);
         let primary = pack.mobs[0].clone();
         let landed = strike(&mut pack, &primary);
         assert!(landed.contains(&primary.guid), "the target is struck");
@@ -195,7 +197,7 @@ fn without_the_talent_sinister_strike_hits_one_dummy() {
 fn flurry_of_blades_never_strikes_a_dummy_behind_the_caster() {
     let mut doubled = 0;
     for seed in FIRST_SEED..FIRST_SEED + 40 {
-        let mut pack = pulled(seed, &[(FLURRY_OF_BLADES, 3)]);
+        let mut pack = pulled(seed, &[(*FLURRY_OF_BLADES, 3)]);
         // Step into the pack, between its two eastern and its two western mobs, still facing east.
         pack.mobs
             .sort_by(|a, b| a.position[0].total_cmp(&b.position[0]));
@@ -272,7 +274,7 @@ fn last_strike_points(seed: u64, talents: &[(u32, u8)], rupture: bool) -> Option
 
 #[test]
 fn serrated_strikes_5_of_5_gives_two_points_on_a_ruptured_dummy_and_one_on_a_clean_one() {
-    let talents = [(SERRATED_STRIKES, 5)];
+    let talents = [(*SERRATED_STRIKES, 5)];
     let (mut bleeding, mut clean) = (0, 0);
     for seed in FIRST_SEED..FIRST_SEED + 40 {
         if let Some(points) = last_strike_points(seed, &talents, true) {

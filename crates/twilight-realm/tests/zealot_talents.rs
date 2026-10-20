@@ -13,16 +13,26 @@ use gear_common::{descriptor, save_with, SEED};
 
 // `Talent.dbc` ids in the Zealot tree (`content/callings.toml`).
 // Crusade.
-const BENEDICTION: u32 = 1407;
-const DEFLECTION: u32 = 1403;
-const CONVICTION: u32 = 1411;
-const VINDICATION: u32 = 1633;
-const PURSUIT_OF_JUSTICE: u32 = 1634;
-const EYE_FOR_AN_EYE: u32 = 1632;
-const TWO_HANDED_WEAPON_SPECIALIZATION: u32 = 1410;
-const IMPROVED_HAMMER_OF_JUSTICE: u32 = 1521;
-const VENGEANCE: u32 = 1402;
-const HOLY_POWER: u32 = 1627;
+static BENEDICTION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "benediction"));
+static DEFLECTION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "deflection"));
+static CONVICTION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "conviction"));
+static VINDICATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "vindication"));
+static PURSUIT_OF_JUSTICE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "pursuit_of_justice"));
+static EYE_FOR_AN_EYE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "eye_for_an_eye"));
+static TWO_HANDED_WEAPON_SPECIALIZATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "two_handed_weapon_specialization"));
+static IMPROVED_HAMMER_OF_JUSTICE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "improved_hammer_of_justice"));
+static VENGEANCE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "vengeance"));
+static HOLY_POWER: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "holy_power"));
 static HOLY_POWER_RANKS: std::sync::LazyLock<Vec<u32>> =
     std::sync::LazyLock::new(|| talent_spells("zealot", "holy_power"));
 
@@ -64,15 +74,15 @@ fn knows_any(events: &[SessionEvent], ranks: &[u32]) -> bool {
 
 /// Twenty-nine points down Crusade's first six rows: one short of Holy Power's.
 fn twenty_nine_in_crusade(realm: &mut Realm, events: &mut Vec<SessionEvent>) {
-    learn(realm, events, BENEDICTION, 5);
-    learn(realm, events, DEFLECTION, 5);
-    learn(realm, events, CONVICTION, 5);
-    learn(realm, events, VINDICATION, 3);
-    learn(realm, events, PURSUIT_OF_JUSTICE, 2);
-    learn(realm, events, EYE_FOR_AN_EYE, 2);
-    learn(realm, events, TWO_HANDED_WEAPON_SPECIALIZATION, 3);
-    learn(realm, events, IMPROVED_HAMMER_OF_JUSTICE, 3);
-    learn(realm, events, VENGEANCE, 1);
+    learn(realm, events, *BENEDICTION, 5);
+    learn(realm, events, *DEFLECTION, 5);
+    learn(realm, events, *CONVICTION, 5);
+    learn(realm, events, *VINDICATION, 3);
+    learn(realm, events, *PURSUIT_OF_JUSTICE, 2);
+    learn(realm, events, *EYE_FOR_AN_EYE, 2);
+    learn(realm, events, *TWO_HANDED_WEAPON_SPECIALIZATION, 3);
+    learn(realm, events, *IMPROVED_HAMMER_OF_JUSTICE, 3);
+    learn(realm, events, *VENGEANCE, 1);
 }
 
 // ── Benediction ──────────────────────────────────────────────────────────────────────────────
@@ -104,7 +114,7 @@ fn cost_mod(events: &[SessionEvent], bit: u8) -> Option<i32> {
 #[test]
 fn benediction_tells_the_client_the_seals_and_judgement_cost_less() {
     let (mut realm, _, mut events) = zealot(50);
-    learn(&mut realm, &mut events, BENEDICTION, 1);
+    learn(&mut realm, &mut events, *BENEDICTION, 1);
     assert_eq!(cost_mod(&events, SEAL_OF_COMMAND_BIT), Some(-10));
     assert_eq!(cost_mod(&events, SEAL_OF_THE_CRUSADER_BIT), Some(-10));
     assert_eq!(
@@ -112,7 +122,7 @@ fn benediction_tells_the_client_the_seals_and_judgement_cost_less() {
         Some(-10),
         "every rank lowers Judgement"
     );
-    learn(&mut realm, &mut events, BENEDICTION, 5);
+    learn(&mut realm, &mut events, *BENEDICTION, 5);
     // 3 rage off the Seals' 10, 2 off Judgement's 5, in tenths.
     assert_eq!(cost_mod(&events, SEAL_OF_COMMAND_BIT), Some(-30));
     assert_eq!(cost_mod(&events, SEAL_OF_THE_CRUSADER_BIT), Some(-30));
@@ -122,7 +132,7 @@ fn benediction_tells_the_client_the_seals_and_judgement_cost_less() {
 
 #[test]
 fn benediction_takes_rage_off_the_seals_and_judgement() {
-    let (mut realm, me, mob, mut view) = tanking(6, &[(BENEDICTION, 5)], 20);
+    let (mut realm, me, mob, mut view) = tanking(6, &[(*BENEDICTION, 5)], 20);
     stand_at(&mut realm, &mob, 2.0);
     let rage = view.rage(me);
     realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
@@ -146,7 +156,7 @@ fn benediction_takes_rage_off_the_seals_and_judgement() {
 
 #[test]
 fn one_rank_of_benediction_takes_rage_off_judgement() {
-    let (mut realm, me, mob, mut view) = tanking(6, &[(BENEDICTION, 1)], 20);
+    let (mut realm, me, mob, mut view) = tanking(6, &[(*BENEDICTION, 1)], 20);
     stand_at(&mut realm, &mob, 2.0);
     realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
     assert_eq!(
@@ -162,32 +172,35 @@ fn one_rank_of_benediction_takes_rage_off_judgement() {
 
 #[test]
 fn a_benediction_from_the_save_reaches_the_client_at_login() {
-    let (_, _, _, view) = zealot_at(10, SEED, &[(BENEDICTION, 2)], &[]);
+    let (_, _, _, view) = zealot_at(10, SEED, &[(*BENEDICTION, 2)], &[]);
     assert_eq!(cost_mod(&view.entry, SEAL_OF_COMMAND_BIT), Some(-10));
     assert_eq!(cost_mod(&view.entry, JUDGEMENT_BIT), Some(-10));
 }
 
 // Blade.
-const IMPROVED_CHARGE: u32 = 126;
-const IMPALE: u32 = 662;
-const DEEP_WOUNDS: u32 = 121;
-const SWORD_SPECIALIZATION: u32 = 123;
-const FLURRY: u32 = 156;
+static IMPROVED_CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "improved_charge"));
+static IMPALE: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| talent("zealot", "impale"));
+static DEEP_WOUNDS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "deep_wounds"));
+static SWORD_SPECIALIZATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "sword_specialization"));
+static FLURRY: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| talent("zealot", "flurry"));
 
 #[test]
 fn blade_opens_its_second_row_from_its_first_and_flurry_at_ten() {
     let (mut realm, me, mut events) = zealot(50);
-    learn(&mut realm, &mut events, IMPROVED_CHARGE, 2);
-    learn(&mut realm, &mut events, IMPALE, 2);
-    learn(&mut realm, &mut events, SWORD_SPECIALIZATION, 1);
+    learn(&mut realm, &mut events, *IMPROVED_CHARGE, 2);
+    learn(&mut realm, &mut events, *IMPALE, 2);
+    learn(&mut realm, &mut events, *SWORD_SPECIALIZATION, 1);
     assert_eq!(points(&events, me), Some(45), "the second row needs 5");
-    learn(&mut realm, &mut events, DEEP_WOUNDS, 1);
-    learn(&mut realm, &mut events, SWORD_SPECIALIZATION, 4);
+    learn(&mut realm, &mut events, *DEEP_WOUNDS, 1);
+    learn(&mut realm, &mut events, *SWORD_SPECIALIZATION, 4);
     assert_eq!(points(&events, me), Some(40));
-    learn(&mut realm, &mut events, FLURRY, 1);
+    learn(&mut realm, &mut events, *FLURRY, 1);
     assert_eq!(points(&events, me), Some(40), "Flurry's row needs 10");
-    learn(&mut realm, &mut events, SWORD_SPECIALIZATION, 5);
-    learn(&mut realm, &mut events, FLURRY, 1);
+    learn(&mut realm, &mut events, *SWORD_SPECIALIZATION, 5);
+    learn(&mut realm, &mut events, *FLURRY, 1);
     assert_eq!(points(&events, me), Some(38));
 }
 
@@ -197,11 +210,11 @@ fn a_zealot_at_the_cap_has_49_points_and_the_31st_in_crusade_reaches_holy_power(
     assert_eq!(points(&events, me), Some(49));
     twenty_nine_in_crusade(&mut realm, &mut events);
     assert_eq!(points(&events, me), Some(20));
-    learn(&mut realm, &mut events, HOLY_POWER, 1);
+    learn(&mut realm, &mut events, *HOLY_POWER, 1);
     assert_eq!(points(&events, me), Some(20), "Holy Power's row needs 30");
-    learn(&mut realm, &mut events, VENGEANCE, 2);
+    learn(&mut realm, &mut events, *VENGEANCE, 2);
     assert_eq!(points(&events, me), Some(19));
-    learn(&mut realm, &mut events, HOLY_POWER, 5);
+    learn(&mut realm, &mut events, *HOLY_POWER, 5);
     assert_eq!(points(&events, me), Some(14));
     assert!(knows_any(&events, &*HOLY_POWER_RANKS));
 }
@@ -209,9 +222,12 @@ fn a_zealot_at_the_cap_has_49_points_and_the_31st_in_crusade_reaches_holy_power(
 // ── The sheet and the swings ─────────────────────────────────────────────────────────────────
 
 // Faith.
-const TOUGHNESS: u32 = 1423;
-const ANTICIPATION: u32 = 1629;
-const ONE_HANDED_WEAPON_SPECIALIZATION: u32 = 1429;
+static TOUGHNESS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "toughness"));
+static ANTICIPATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "anticipation"));
+static ONE_HANDED_WEAPON_SPECIALIZATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "one_handed_weapon_specialization"));
 
 /// Gnoll War Harness: 70 armour, worn in the chest slot.
 const GNOLL_WAR_HARNESS: u32 = 1211;
@@ -239,9 +255,9 @@ fn deflection_gives_a_parry_chance_and_conviction_a_crit_chance() {
     };
     let (parry, crit) = sheet(&[]);
     assert_eq!(parry, 0.0, "no Parry skill");
-    let (parry, _) = sheet(&[(DEFLECTION, 5)]);
+    let (parry, _) = sheet(&[(*DEFLECTION, 5)]);
     assert!((parry - 5.0).abs() < 1e-4, "{parry}");
-    let (_, convicted) = sheet(&[(CONVICTION, 5)]);
+    let (_, convicted) = sheet(&[(*CONVICTION, 5)]);
     assert!(
         (convicted - crit - 5.0).abs() < 1e-4,
         "{crit} -> {convicted}"
@@ -252,12 +268,12 @@ fn deflection_gives_a_parry_chance_and_conviction_a_crit_chance() {
 fn anticipation_raises_defense_and_toughness_the_armour_of_items() {
     let harness = [(CHEST, GNOLL_WAR_HARNESS)];
     let (_, me, _, plain) = zealot_at(10, SEED, &[], &harness);
-    let (_, _, _, anticipating) = zealot_at(10, SEED, &[(ANTICIPATION, 5)], &harness);
+    let (_, _, _, anticipating) = zealot_at(10, SEED, &[(*ANTICIPATION, 5)], &harness);
     assert_eq!(
         defense_bonus(&anticipating, me),
         defense_bonus(&plain, me) + 10
     );
-    let (_, _, _, tough) = zealot_at(10, SEED, &[(TOUGHNESS, 5)], &harness);
+    let (_, _, _, tough) = zealot_at(10, SEED, &[(*TOUGHNESS, 5)], &harness);
     let armor = |v: &View| v.fields(me).unit_resistance(0).unwrap();
     // 10% more of the harness's 70: 7.
     assert_eq!(armor(&tough), armor(&plain) + 7);
@@ -272,8 +288,8 @@ fn the_weapon_specializations_add_to_the_damage_of_their_weapons() {
         first_swing(&mut realm, &mut view, me, &mob)
     };
     let axe = [(MAIN_HAND, LARGE_AXE)];
-    let one = [(ONE_HANDED_WEAPON_SPECIALIZATION, 5)];
-    let two = [(TWO_HANDED_WEAPON_SPECIALIZATION, 3)];
+    let one = [(*ONE_HANDED_WEAPON_SPECIALIZATION, 5)];
+    let two = [(*TWO_HANDED_WEAPON_SPECIALIZATION, 3)];
     let mut checked = 0;
     for seed in 0..20 {
         let (sword, axe_swing) = (first(seed, &[], &[]), first(seed, &[], &axe));
@@ -334,9 +350,9 @@ fn a_respec_at_the_trainer_wipes_the_zealot_tree() {
             _ => None,
         })
         .expect("the trainer stands by");
-    learn(&mut realm, &mut events, BENEDICTION, 5);
-    learn(&mut realm, &mut events, DEFLECTION, 5);
-    learn(&mut realm, &mut events, IMPROVED_CHARGE, 2);
+    learn(&mut realm, &mut events, *BENEDICTION, 5);
+    learn(&mut realm, &mut events, *DEFLECTION, 5);
+    learn(&mut realm, &mut events, *IMPROVED_CHARGE, 2);
     assert_eq!(points(&events, guid), Some(37));
 
     walk_up_to(&mut realm, trainer);

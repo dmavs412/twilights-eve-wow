@@ -26,8 +26,10 @@ const TEST_STRIKE: u32 = 1752;
 const TEST_RUPTURE: u32 = 1943;
 
 /// `Talent.dbc` ids of the talents under test.
-const LETHALITY: u32 = 269;
-const FLURRY_OF_BLADES: u32 = 1122;
+static LETHALITY: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "lethality"));
+static FLURRY_OF_BLADES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("cutthroat", "flurry_of_blades"));
 const BLOODLETTING: u32 = 1702;
 
 /// A Rogue-Class Calling whose builder always lands and deals nothing, with Rupture as the
@@ -209,7 +211,7 @@ fn lethality_raises_sinister_strike_crits_by_thirty_percent() {
         let Some((plain, true)) = hit(&bare, *SINISTER_STRIKE) else {
             continue;
         };
-        let (mut realm, _, mob, mut view) = cutthroat(seed, &[(LETHALITY, 5)]);
+        let (mut realm, _, mob, mut view) = cutthroat(seed, &[(*LETHALITY, 5)]);
         let trained = cast_all(&mut realm, &mut view, &mob, &[*SINISTER_STRIKE]).unwrap();
         let (more, crit) = hit(&trained, *SINISTER_STRIKE).unwrap();
         assert!(crit, "the same swing crits");
@@ -238,7 +240,7 @@ fn lethality_leaves_eviscerate_crits_as_they_were() {
         let Some((plain, true)) = hit(&bare, *EVISCERATE) else {
             continue;
         };
-        let (mut realm, _, mob, mut view) = cutthroat(seed, &[(LETHALITY, 5)]);
+        let (mut realm, _, mob, mut view) = cutthroat(seed, &[(*LETHALITY, 5)]);
         let trained = cast_all(&mut realm, &mut view, &mob, &spells).unwrap();
         assert_eq!(
             hit(&trained, *EVISCERATE),
@@ -261,8 +263,8 @@ fn flurry_of_blades_cuts_sinister_strikes_cost() {
         100 - view.fields(me).unit_power(ENERGY).unwrap()
     };
     assert_eq!(cost(&[]), 40);
-    assert_eq!(cost(&[(FLURRY_OF_BLADES, 1)]), 38);
-    assert_eq!(cost(&[(FLURRY_OF_BLADES, 3)]), 34);
+    assert_eq!(cost(&[(*FLURRY_OF_BLADES, 1)]), 38);
+    assert_eq!(cost(&[(*FLURRY_OF_BLADES, 3)]), 34);
 }
 
 /// Builds `points` on a camp mob, casts Rupture, and watches it for half a minute: each tick's

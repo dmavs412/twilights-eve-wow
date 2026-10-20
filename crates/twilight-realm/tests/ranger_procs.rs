@@ -29,15 +29,23 @@ static RAPID_ASSAULT: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| talent_spell("ranger", "rapid_assault", 1));
 
 /// `Talent.dbc` ids.
-const POINT_BLANK: u32 = 1624;
-const RHYTHMIC_DRAW: u32 = 1304;
-const TWIN_ARROWS: u32 = 1301;
-const ADRENALINE_RUSH: u32 = 1310;
-const FLURRY: u32 = 1322;
-const RAPID_ASSAULT_TALENT: u32 = 1308;
-const JAGGED_BARBS: u32 = 1348;
-const SHRAPNEL_PAYLOAD: u32 = 1347;
-const SHATTERED_DEFENSES: u32 = 1352;
+static POINT_BLANK: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "point_blank"));
+static RHYTHMIC_DRAW: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "rhythmic_draw"));
+static TWIN_ARROWS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "twin_arrows"));
+static ADRENALINE_RUSH: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "adrenaline_rush"));
+static FLURRY: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| talent("ranger", "flurry"));
+static RAPID_ASSAULT_TALENT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "rapid_assault"));
+static JAGGED_BARBS: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "jagged_barbs"));
+static SHRAPNEL_PAYLOAD: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "shrapnel_payload"));
+static SHATTERED_DEFENSES: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("ranger", "shattered_defenses"));
 
 /// Aura and proc spell ids at the top ranks.
 static RHYTHMIC_DRAW_5: std::sync::LazyLock<u32> =
@@ -59,7 +67,7 @@ const STAND: [f32; 3] = [CAMP[0] + 15.0, CAMP[1], CAMP[2]];
 fn at_camp(talents: &[(u32, u8)], seed: u64) -> (Realm, u64, Vec<Mob>, View) {
     let (guid, mut blob) = save_shooting(10, &[(RANGED, CRACKED_SHORTBOW, 1)]);
     blob = blob.replace("calling = \"basic_warrior\"", "calling = \"ranger\"");
-    let mut rows = vec![format!("[{POINT_BLANK}, 2]")];
+    let mut rows = vec![format!("[{}, 2]", *POINT_BLANK)];
     rows.extend(talents.iter().map(|(t, r)| format!("[{t}, {r}]")));
     let line = format!("money = 0\ntalents = [{}]\n", rows.join(", "));
     blob = blob.replace("money = 0\n", &line);
@@ -153,7 +161,7 @@ fn bar(events: &[SessionEvent], spell_id: u32) -> Option<u32> {
 #[test]
 fn rhythmic_draw_shortens_the_shaft_down_to_instant() {
     for (snapshots, want) in [(2, Some(2000)), (6, None)] {
-        let (mut realm, me, camp, mut view) = at_camp(&[(RHYTHMIC_DRAW, 5)], 0xD0_0001);
+        let (mut realm, me, camp, mut view) = at_camp(&[(*RHYTHMIC_DRAW, 5)], 0xD0_0001);
         let mut cast = 0;
         while cast < snapshots {
             if shoot_any(&mut realm, &mut view, *SNAPSHOT, &camp).is_some() {
@@ -191,7 +199,7 @@ fn rhythmic_draw_shortens_the_shaft_down_to_instant() {
 fn twin_arrows_repeats_a_snapshot_30_pct_of_the_time() {
     let (mut twice, mut casts) = (0, 0);
     for seed in 0..60 {
-        let (mut realm, _, camp, mut view) = at_camp(&[(TWIN_ARROWS, 3)], 0xD1_0000 + seed);
+        let (mut realm, _, camp, mut view) = at_camp(&[(*TWIN_ARROWS, 3)], 0xD1_0000 + seed);
         let Some((_, events)) = shoot_any(&mut realm, &mut view, *SNAPSHOT, &camp) else {
             continue;
         };
@@ -214,7 +222,7 @@ fn twin_arrows_repeats_a_snapshot_30_pct_of_the_time() {
 fn adrenaline_rush_cuts_vaults_cooldown_on_a_snapshot_crit() {
     let mut seen = 0;
     for seed in 0..80 {
-        let (mut realm, _, camp, mut view) = at_camp(&[(ADRENALINE_RUSH, 3)], 0xD2_0000 + seed);
+        let (mut realm, _, camp, mut view) = at_camp(&[(*ADRENALINE_RUSH, 3)], 0xD2_0000 + seed);
         realm.handle(cast(*VAULT, None));
         view.run(&mut realm, 1.6);
         let Some((_, events)) = shoot_any(&mut realm, &mut view, *SNAPSHOT, &camp) else {
@@ -243,7 +251,7 @@ fn adrenaline_rush_cuts_vaults_cooldown_on_a_snapshot_crit() {
 /// Flurry 2/2: after Rapid Fire, two Snapshots cost no mana and crit; the third is plain.
 #[test]
 fn flurry_gives_two_free_certain_crit_snapshots_after_rapid_fire() {
-    let (mut realm, me, camp, mut view) = at_camp(&[(FLURRY, 2)], 0xD3_0001);
+    let (mut realm, me, camp, mut view) = at_camp(&[(*FLURRY, 2)], 0xD3_0001);
     realm.handle(cast(*RAPID_FIRE, None));
     view.run(&mut realm, 1.6);
     for n in 0..3 {
@@ -270,7 +278,7 @@ fn rapid_assault_adds_a_half_strike_to_each_snapshot() {
     let mut doubled = 0;
     for seed in 0..10 {
         let (mut realm, _, camp, mut view) =
-            at_camp(&[(RAPID_ASSAULT_TALENT, 1)], 0xD4_0000 + seed);
+            at_camp(&[(*RAPID_ASSAULT_TALENT, 1)], 0xD4_0000 + seed);
         realm.handle(cast(*RAPID_ASSAULT, None));
         view.run(&mut realm, 1.6);
         let Some((_, events)) = shoot_any(&mut realm, &mut view, *SNAPSHOT, &camp) else {
@@ -294,7 +302,7 @@ fn rapid_assault_adds_a_half_strike_to_each_snapshot() {
 fn jagged_barbs_sunders_the_bleeding_target() {
     let mut sundered = 0;
     for seed in 0..10 {
-        let (mut realm, _, camp, mut view) = at_camp(&[(JAGGED_BARBS, 5)], 0xD5_0000 + seed);
+        let (mut realm, _, camp, mut view) = at_camp(&[(*JAGGED_BARBS, 5)], 0xD5_0000 + seed);
         let (mob, _) = shoot_any(&mut realm, &mut view, *BARBED_ARROW, &camp).expect("a bleed");
         let mut most = 0;
         for _ in 0..90 {
@@ -319,7 +327,7 @@ fn jagged_barbs_sunders_the_bleeding_target() {
 fn shrapnel_payload_splashes_a_share_of_the_shaft() {
     let mut splashed = 0;
     for seed in 0..10 {
-        let (mut realm, _, camp, mut view) = at_camp(&[(SHRAPNEL_PAYLOAD, 3)], 0xD6_0000 + seed);
+        let (mut realm, _, camp, mut view) = at_camp(&[(*SHRAPNEL_PAYLOAD, 3)], 0xD6_0000 + seed);
         // Three bleed and come running.
         for mob in &camp[..3] {
             shoot(&mut realm, &mut view, *BARBED_ARROW, mob);
@@ -352,8 +360,8 @@ fn shattered_defenses_hits_sundered_targets_harder() {
     for seed in 0..30 {
         let mut dealt = Vec::new();
         for talents in [
-            &[(JAGGED_BARBS, 4)][..],
-            &[(JAGGED_BARBS, 4), (SHATTERED_DEFENSES, 3)][..],
+            &[(*JAGGED_BARBS, 4)][..],
+            &[(*JAGGED_BARBS, 4), (*SHATTERED_DEFENSES, 3)][..],
         ] {
             let (mut realm, _, camp, mut view) = at_camp(talents, 0xD7_0000 + seed);
             let (mob, _) = shoot_any(&mut realm, &mut view, *BARBED_ARROW, &camp).expect("a bleed");

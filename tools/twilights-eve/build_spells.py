@@ -86,6 +86,10 @@ TARGET_FLAG_DEST_LOCATION = 0x40
 DEFAULT_ART_DIR = os.path.join(REPO, "data", "twilights-eve", "art")
 # Where the client finds an embedded PNG icon (benilla-formats `embedded_icon_png`).
 ART_ICON_DIR = "Interface\\Icons\\Twilight\\"
+# A talent tab's PNG background: the four quarters the talent frame draws, named
+# `<stem>-<quarter>.png`; the client finds them under `Interface\TalentFrame\Twilight\`.
+TAB_ART_PREFIX = "Twilight\\"
+TAB_ART_QUARTERS = ("TopLeft", "TopRight", "BottomLeft", "BottomRight")
 # Spell.dbc effect and aura numbers of the effect kinds a from-scratch row can show; any other
 # kind, a realm-only one, is a dummy effect (3) so `$sN` still reads its number.
 CLIENT_EFFECTS_OF = {
@@ -188,7 +192,6 @@ class BuildError(Exception):
 
 # The id columns the DBC check verifies, and the table each one must exist in.
 DBC_ID_COLUMNS = {
-    "talent_id": "Talent.dbc",
     "icon_id": "SpellIcon.dbc",
     "source_tab_id": "TalentTab.dbc",
 }
@@ -242,7 +245,8 @@ def check_seam(server: list[dict], patch: dict) -> None:
 def check_unique_ids(rows: list[dict]) -> None:
     """Fail when two talents or skills claim one spell_id or talent_id: the client keeps one
     Spell.dbc / Talent.dbc row per id, so the patch would overwrite one with the other. An aura of
-    the same Calling may share its skill's or talent's spell id (it joins that row's override)."""
+    the same Calling may share its skill's or talent's spell id (it joins that row's override). A
+    talent id is the sheet's own (ADR 0011), 1,000,000 up."""
     spells: dict[str, list[tuple[str, str, str, str]]] = {}
     talents: dict[str, list[tuple[str, str, str]]] = {}
     bad = []
@@ -259,6 +263,8 @@ def check_unique_ids(rows: list[dict]) -> None:
             claims.append((*who, row["kind"], where))
         if row["kind"] == "talent" and row["talent_id"]:
             text = row["talent_id"].strip()
+            if not text.isdigit() or int(text) < FROM_SCRATCH_MIN_ID:
+                bad.append(f"{where}: talent_id {text} is not the sheet's own (1,000,000 up)")
             claims = talents.setdefault(text, [])
             for other in claims:
                 if other[:2] != who:
@@ -1252,6 +1258,22 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
     return out
 
 
+def tab_background(tab: dict, calling: str, art: list[str], art_dir: str) -> str:
+    """A tab's art as the talent frame names it: a stock `Interface\\TalentFrame\\` base, or for
+    `<stem>.png` the four embedded quarters `<stem>-TopLeft.png` and the rest, each checked."""
+    background = tab["background"]
+    if not background.lower().endswith(".png"):
+        return background
+    stem = background[:-4]
+    for quarter in TAB_ART_QUARTERS:
+        name = f"{stem}-{quarter}"
+        if not os.path.isfile(os.path.join(art_dir, name + ".png")):
+            raise BuildError(f"{calling}/{tab['key']} background: {name}.png is not in {art_dir}")
+        if name not in art:
+            art.append(name)
+    return TAB_ART_PREFIX + stem
+
+
 def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict], dict]:
     for column in (rows[0] if rows else {}):
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
@@ -1411,17 +1433,26 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict],
     for calling in callings.values():
         resolve_reset_cooldowns(calling)
     seats = []
+    tabs = []
     for calling in callings.values():
-        for tab in calling["talent_tabs"]:
+        for tab in sorted(calling["talent_tabs"], key=lambda t: t.get("order", 0)):
+            if "id" in tab:
+                tabs.append({"calling": calling["key"], "key": tab["key"], "id": tab["id"], "name": tab["name"],
+                             "background": tab_background(tab, calling["key"], art, art_dir),
+                             "order": tab["order"]})
             for talent in tab["talents"]:
                 seat = {"calling": calling["key"], "key": talent["key"], "tab": tab["name"], **talent["seat"]}
+                if "id" in tab:
+                    seat["tab_id"] = tab["id"]
                 if "talent_id" in talent["ranks"][0]:
                     seat["talent_id"] = talent["ranks"][0]["talent_id"]
                 seat["rank_spell_ids"] = [r.get("spell_id") for r in talent["ranks"]]
+                if talent["exceptional"]:
+                    seat["exceptional"] = True
                 if "prereq" in talent:
                     seat["prereq"] = talent["prereq"]
                 seats.append(seat)
-    patch: dict = {"spells": overrides, "talents": seats}
+    patch: dict = {"spells": overrides, "talent_tabs": tabs, "talents": seats}
     if art:
         # The PNG stems the patch names; `main` embeds them in client_art.json and drops the key.
         patch["art"] = art

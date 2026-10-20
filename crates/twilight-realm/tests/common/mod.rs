@@ -84,6 +84,21 @@ pub fn talent_spell(calling: &str, key: &str, rank: usize) -> u32 {
     )
 }
 
+/// The talent id of `calling`'s talent `key` on the sheet (ADR 0011: the sheet's own, 1,000,000
+/// up), as `CMSG_LEARN_TALENT` and the save name it.
+pub fn talent(calling: &str, key: &str) -> u32 {
+    let talent = sheet_calling(calling)["talent_tabs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|tab| tab["talents"].as_array().unwrap())
+        .find(|t| t["key"] == key)
+        .unwrap_or_else(|| panic!("{calling}/{key} is not a talent of the sheet"));
+    talent["ranks"][0]["talent_id"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("{calling}/{key} has no talent id")) as u32
+}
+
 /// Every rank's spell id of `calling`'s talent `key`, rank 1 first.
 pub fn talent_spells(calling: &str, key: &str) -> Vec<u32> {
     let talent = sheet_calling(calling)["talent_tabs"]

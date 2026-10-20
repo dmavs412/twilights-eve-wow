@@ -11,7 +11,8 @@ use common::fight::*;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
-const MOMENTUM: u32 = 222;
+static MOMENTUM: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("basic_warrior", "cutthroats_momentum"));
 static HEROIC_STRIKE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("basic_warrior", "heroic_strike"));
 static CHARGE: std::sync::LazyLock<u32> =
@@ -115,7 +116,7 @@ fn strike_after_charge(talents: &[(u32, u8)], seed: u64) -> Option<(bool, bool)>
 fn the_next_heroic_strike_after_charge_crits_and_uses_the_charge_up() {
     let mut landed = 0;
     for seed in 0..12 {
-        let Some((crit, aura_left)) = strike_after_charge(&[(MOMENTUM, 2)], seed) else {
+        let Some((crit, aura_left)) = strike_after_charge(&[(*MOMENTUM, 2)], seed) else {
             continue;
         };
         landed += 1;
@@ -136,14 +137,14 @@ fn without_the_talent_heroic_strike_after_charge_does_not_always_crit() {
 
 #[test]
 fn white_swings_do_not_use_the_crit_charge() {
-    let (mut realm, me, mob, mut view) = warrior(&[(MOMENTUM, 2)], 3);
+    let (mut realm, me, mob, mut view) = warrior(&[(*MOMENTUM, 2)], 3);
     charge_and_build_rage(&mut realm, &mut view, me, &mob);
     assert!(view.aura(me, *CRIT_AURA).is_some());
 }
 
 #[test]
 fn charge_speeds_the_warrior_up_for_the_auras_duration_then_back() {
-    let (mut realm, me, mob, mut view) = warrior(&[(MOMENTUM, 2)], 3);
+    let (mut realm, me, mob, mut view) = warrior(&[(*MOMENTUM, 2)], 3);
     stand_at(&mut realm, &mob, 15.0);
     realm.handle(cast(*CHARGE, Some(mob.guid)));
     let at_cast = run_speeds(&view.drain(&mut realm), me);
@@ -160,7 +161,7 @@ fn charge_speeds_the_warrior_up_for_the_auras_duration_then_back() {
 
 #[test]
 fn rank_one_grants_its_smaller_speed() {
-    let (mut realm, me, mob, mut view) = warrior(&[(MOMENTUM, 1)], 3);
+    let (mut realm, me, mob, mut view) = warrior(&[(*MOMENTUM, 1)], 3);
     stand_at(&mut realm, &mob, 15.0);
     realm.handle(cast(*CHARGE, Some(mob.guid)));
     let at_cast = run_speeds(&view.drain(&mut realm), me);

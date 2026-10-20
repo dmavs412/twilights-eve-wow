@@ -10,10 +10,13 @@ use common::*;
 
 // ── Weapons and the sheet ────────────────────────────────────────────────────────────────────
 
-const AXE_SPECIALIZATION: u32 = 132;
-const IMPALE: u32 = 662;
-const SWORD_SPECIALIZATION: u32 = 123;
-const MACE_SPECIALIZATION: u32 = 125;
+static AXE_SPECIALIZATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "axe_specialization"));
+static IMPALE: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| talent("zealot", "impale"));
+static SWORD_SPECIALIZATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "sword_specialization"));
+static MACE_SPECIALIZATION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent("zealot", "mace_specialization"));
 const MACE_STUN: u32 = 5530;
 
 static MORTAL_STRIKE: std::sync::LazyLock<u32> =
@@ -37,7 +40,7 @@ fn axe_specialization_raises_the_crit_chance_with_an_axe_only() {
         crit_chance(&view, me)
     };
     let axe = [(MAIN_HAND, LARGE_AXE)];
-    let spec = [(AXE_SPECIALIZATION, 5)];
+    let spec = [(*AXE_SPECIALIZATION, 5)];
     assert!((crit(&spec, &axe) - crit(&[], &axe) - 5.0).abs() < 1e-4);
     assert!((crit(&spec, &[]) - crit(&[], &[])).abs() < 1e-4, "a sword");
 }
@@ -46,7 +49,7 @@ fn axe_specialization_raises_the_crit_chance_with_an_axe_only() {
 fn impale_raises_a_skills_crit() {
     // The same Mortal Strike with and without Impale, on fights that go the same.
     let strike = |seed: u64, impale: bool| {
-        let talents: &[(u32, u8)] = if impale { &[(IMPALE, 2)] } else { &[] };
+        let talents: &[(u32, u8)] = if impale { &[(*IMPALE, 2)] } else { &[] };
         let (mut realm, me, mob, mut view) = pulled(seed, 3, talents, &[]);
         while view.rage(me) < 30 {
             view.run(&mut realm, 0.1);
@@ -120,13 +123,13 @@ fn sword_specialization_swings_again_now_and_then() {
         n
     };
     assert_eq!(doubled(&[]), 0);
-    assert!(doubled(&[(SWORD_SPECIALIZATION, 5)]) > 0);
+    assert!(doubled(&[(*SWORD_SPECIALIZATION, 5)]) > 0);
 }
 
 #[test]
 fn mace_specialization_stuns_now_and_then_with_a_mace() {
     let stunned = |items: &[(u8, u32)]| {
-        fights(0..80, 6, &[(MACE_SPECIALIZATION, 5)], items, 8.0)
+        fights(0..80, 6, &[(*MACE_SPECIALIZATION, 5)], items, 8.0)
             .iter()
             .filter(|(_, mob, events)| {
                 events.iter().any(|e| match e {
