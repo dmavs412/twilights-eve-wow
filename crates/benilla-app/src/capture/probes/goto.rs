@@ -19,11 +19,18 @@ pub(crate) struct ProbeGotoPlugin;
 
 impl Plugin for ProbeGotoPlugin {
     fn build(&self, app: &mut App) {
-        let spec = std::env::var("WOW_PROBE_GOTO").unwrap_or_default();
         if !crate::twilight::active() {
             warn!("probe-goto: WOW_PROBE_GOTO needs the twilights-eve launcher — ignored");
             return;
         }
+        // `WOW_PROBE_TEST_GROUNDS`: the same teleport to the Test Grounds' start, inside the
+        // Phase and facing its dummies.
+        let spec = if std::env::var("WOW_PROBE_TEST_GROUNDS").is_ok() {
+            let [x, y, facing] = twilight_realm::test_grounds_start();
+            format!("{x},{y},{facing}")
+        } else {
+            std::env::var("WOW_PROBE_GOTO").unwrap_or_default()
+        };
         let Some(goto) = parse(&spec) else {
             warn!("probe-goto: unparseable {spec:?} (want x,y[,facing][@secs]) — ignored");
             return;

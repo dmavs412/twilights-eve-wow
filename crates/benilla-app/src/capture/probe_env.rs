@@ -95,6 +95,12 @@ pub(crate) const PROBE_VARS: &[ProbeVar] = &[
         wall_clock: true,
     },
     ProbeVar {
+        name: "WOW_PROBE_TEST_GROUNDS",
+        purpose: "1 — Twilight's Eve: the realm teleports the player into the Test Grounds Phase, facing its training dummies (rides WOW_PROBE_GOTO's schedule; wins over it)",
+        // Rides `WOW_PROBE_GOTO`'s default schedule.
+        wall_clock: true,
+    },
+    ProbeVar {
         name: "WOW_PROBE_HOVER",
         purpose: "\"<frame>[;<frame>…]\" — sweep the real pointer across the named frames' centres, pressing nothing",
         // Starts at `_AT`, one move per `_STEP` seconds, alternating on `_DUTY`, in wall seconds.

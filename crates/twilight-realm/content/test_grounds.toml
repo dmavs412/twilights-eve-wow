@@ -1,0 +1,59 @@
+# The Test Grounds (#199): a Phased Dungeon of training dummies, where a smoke run or a person
+# casts every spell a Calling has and reads what it did. Hand-written.
+#
+# The footprint is an open-air 40x40 yd box centred on (-9650, 255) in Elwynn, chosen because
+# the nearest generated spawns are 40+ yd from its edge. Terrain flatness and nearby quests are
+# unchecked; the z values below are guesses, since the dummies take the host's ground in play,
+# and the box reaches far enough up and down to hold any ground there.
+
+id = 3
+map = 0
+origin = [-9650.0, 255.0, 0.0]
+yaw = 0.0
+# Where `WOW_PROBE_TEST_GROUNDS=1` drops a character: the box's south side, facing north
+# (+x) at the dummies.
+start = [-9662.0, 255.0, 0.0]
+
+[[footprint]]
+x = [-20.0, 20.0]
+y = [-20.0, 20.0]
+z = [-200.0, 400.0]
+
+[portal]
+position = [-9668.0, 255.0, 70.0]
+orientation = 0.0
+
+# The dummies, in a row along the north side, 6 yd apart, facing the start. The guids are this
+# file's own (79xxxx), clear of the generated spawns and the Abbey's 78xxxx.
+
+# Training Dummy, level 5.
+[[creature]]
+guid = 790001
+entry = 97001
+level = 5
+position = [-9640.0, 264.0, 70.0]
+orientation = 3.14
+
+# Training Dummy, level 15.
+[[creature]]
+guid = 790002
+entry = 97001
+level = 15
+position = [-9640.0, 258.0, 70.0]
+orientation = 3.14
+
+# Training Dummy, level 25.
+[[creature]]
+guid = 790003
+entry = 97001
+level = 25
+position = [-9640.0, 252.0, 70.0]
+orientation = 3.14
+
+# Elite Training Dummy, level 30.
+[[creature]]
+guid = 790004
+entry = 97002
+level = 30
+position = [-9640.0, 246.0, 70.0]
+orientation = 3.14

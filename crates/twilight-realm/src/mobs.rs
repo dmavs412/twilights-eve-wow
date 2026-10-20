@@ -93,7 +93,14 @@ pub(crate) struct Template {
     /// (`UNIT_VIRTUAL_ITEM_SLOT_DISPLAY`).
     #[serde(default)]
     pub(crate) equip: Vec<u32>,
+    /// A training dummy: it never moves or fights, takes damage and auras normally, and rather
+    /// than dying it heals to full [`INERT_RESET_SECS`] after it last took damage.
+    #[serde(default)]
+    pub(crate) inert: bool,
 }
+
+/// Seconds after an inert creature last took damage before it is whole again.
+pub(crate) const INERT_RESET_SECS: f32 = 10.0;
 
 /// `CREATURE_FLAG_EXTRA_NO_PARRY` and `CREATURE_FLAG_EXTRA_NO_BLOCK` (vmangos).
 const FLAG_EXTRA_NO_PARRY: u32 = 0x4;
@@ -141,6 +148,7 @@ impl Template {
             respawn_secs: None,
             spells,
             equip,
+            inert: false,
         }
     }
 
@@ -561,6 +569,8 @@ pub(crate) struct Mob {
     pub(crate) extra_spells: Vec<&'static CreatureSpell>,
     /// A Bounty Hunter's affixes, by key.
     pub(crate) affixes: Vec<&'static str>,
+    /// An inert creature's seconds since it last took damage; `None` while it is whole.
+    pub(crate) since_hurt: Option<f32>,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -631,6 +641,7 @@ impl Mob {
             attack_time_mul: 1.0,
             extra_spells: Vec::new(),
             affixes: Vec::new(),
+            since_hurt: None,
         })
     }
 
@@ -679,6 +690,7 @@ impl Mob {
             attack_time_mul: 1.0,
             extra_spells: Vec::new(),
             affixes: Vec::new(),
+            since_hurt: None,
         }
     }
 

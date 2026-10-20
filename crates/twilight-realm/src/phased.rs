@@ -186,6 +186,9 @@ pub(crate) struct Dungeon {
     yaw: f32,
     footprint: Vec<Footprint>,
     pub(crate) portal: Portal,
+    /// Where a probe drops a character into the dungeon: `[x, y, facing]`.
+    #[serde(default)]
+    start: Option<[f32; 3]>,
     pub(crate) creature: Vec<Creature>,
 }
 
@@ -212,11 +215,27 @@ impl Dungeon {
 pub(crate) fn content() -> &'static [Dungeon] {
     static DUNGEONS: OnceLock<Vec<Dungeon>> = OnceLock::new();
     DUNGEONS.get_or_init(|| {
-        [include_str!("../content/northshire_abbey.toml")]
-            .into_iter()
-            .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
-            .collect()
+        [
+            include_str!("../content/northshire_abbey.toml"),
+            include_str!("../content/test_grounds.toml"),
+        ]
+        .into_iter()
+        .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
+        .collect()
     })
+}
+
+/// The id of the Test Grounds, the Phased Dungeon of training dummies.
+pub(crate) const TEST_GROUNDS: u32 = 3;
+
+/// Where the Test Grounds probe puts a character: `[x, y, facing]`, inside the Phase and
+/// facing the dummies.
+pub fn test_grounds_start() -> [f32; 3] {
+    content()
+        .iter()
+        .find(|d| d.id == TEST_GROUNDS)
+        .and_then(|d| d.start)
+        .expect("the Test Grounds has a start")
 }
 
 /// The items a Phased Dungeon creature of `guid` on `map` always drops; none for any other.

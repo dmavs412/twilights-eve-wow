@@ -876,6 +876,18 @@ impl InWorld {
         }
         mob.swing_timer = (mob.swing_timer - dt).max(0.0);
         mob.repath_timer = (mob.repath_timer - dt).max(0.0);
+        if mob.template.inert {
+            if let Some(t) = mob.since_hurt {
+                if t + dt >= crate::mobs::INERT_RESET_SECS {
+                    mob.since_hurt = None;
+                    mob.health = mob.stats.max_health;
+                    events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+                } else {
+                    mob.since_hurt = Some(t + dt);
+                }
+            }
+            return;
+        }
         if let Some(t) = mob.assist_in {
             if mob.state != State::Idle || !self.player.alive() {
                 mob.assist_in = None;
@@ -1353,6 +1365,10 @@ fn at_tier_rate(c: &Char, base: u32) -> u32 {
 /// `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
 /// flag.
 fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
+    // A dummy never turns on anyone.
+    if mob.template.inert {
+        return;
+    }
     let seed = mob.stats.max_health as f32 * crate::group::get().pull_threat_health_fraction;
     mob.threat.seed(player, seed);
     mob.state = State::Engaged;
@@ -1381,6 +1397,15 @@ pub(crate) fn wound(
     harms: &mut Vec<Harm>,
     events: &mut Vec<SessionEvent>,
 ) {
+    // A dummy's health stops at 1; the clock to its reset starts over with every hit.
+    if mob.template.inert {
+        mob.health = mob.health.saturating_sub(damage).max(1);
+        if damage > 0 {
+            mob.since_hurt = Some(0.0);
+            events.push(values(mob.guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+        }
+        return;
+    }
     if mob.remote {
         mob.health = mob.health.saturating_sub(damage).max(1);
         if damage > 0 {

@@ -90,6 +90,7 @@ pub mod build_id;
 
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
+pub use phased::test_grounds_start;
 pub use save::{SaveError, Storage, SAVE_VERSION};
 
 /// What the realm asks of whoever runs it. Coordinates are WoW's (`x` north, `y` west, `z` up).

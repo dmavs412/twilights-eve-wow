@@ -713,3 +713,45 @@ speed_walk = 1.0
 speed_run = 0.857
 detection_range = 18.0
 spells = ["abbot_corruption", "abbot_heal"]
+
+# The Test Grounds' training dummies (test_grounds.toml): `inert`, so they never move or fight and
+# heal to full 10 s after the last hit. Faction 14 shows them attackable; display 3277 (the
+# Corrupted Brother's) is a placeholder body.
+[[template]]
+entry = 97001
+name = "Training Dummy"
+creature_type = 7
+display_id = 3277
+faction_template = 14
+hostile = false
+inert = true
+unit_class = "warrior"
+level_min = 1
+level_max = 30
+health_multiplier = 1.0
+damage_multiplier = 0.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 0.0
+speed_run = 0.0
+detection_range = 0.0
+
+[[template]]
+entry = 97002
+name = "Elite Training Dummy"
+creature_type = 7
+rank = 1
+display_id = 3277
+faction_template = 14
+hostile = false
+inert = true
+unit_class = "warrior"
+level_min = 30
+level_max = 30
+health_multiplier = 2.0
+damage_multiplier = 0.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 0.0
+speed_run = 0.0
+detection_range = 0.0
