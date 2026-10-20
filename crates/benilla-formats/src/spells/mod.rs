@@ -26,7 +26,7 @@ mod twilight;
 
 pub use cast_times::{load_spell_cast_times, SpellCastTime, SpellCastTimeCatalog};
 pub use dispel_types::{load_spell_dispel_types, SpellDispelTypes};
-pub use display::{FormRefusal, LearnAnnouncement, OpenLock, SpellDisplay};
+pub use display::{EffectRow, FormRefusal, LearnAnnouncement, OpenLock, SpellDisplay};
 pub use duration::{load_spell_durations, SpellDuration, SpellDurationCatalog};
 pub use forms::{load_shapeshift_forms, ShapeshiftForm};
 mod immunity;
@@ -651,6 +651,8 @@ pub fn load_spell_catalog(chain: &mut Chain) -> Result<SpellCatalog> {
                 effect_misc_value: std::array::from_fn(|i| {
                     i32_at(r, COL_EFFECT_MISC_1 + i).unwrap_or(0)
                 }),
+                extra_effects: Vec::new(),
+                needs_facing: false,
             },
         );
     }

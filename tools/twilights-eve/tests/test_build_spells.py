@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import base64
 import csv
 import json
 import os
@@ -26,6 +27,23 @@ STRIKE = {
     "effect1_params": "weapon=normal;bonus.base=9.5;bonus.per_level=1.4;bonus.per_ap=0;tags=a|b",
     "effect4_kind": "stun", "effect4_params": "duration_ms=1000",
     "modelled": "yes", "description": "Hits.",
+}
+
+
+# A 1x1 PNG, standing in for a sheet's custom icon.
+PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==")
+
+# A from-scratch row: its own id, a stock spell's visual, a PNG icon and four effects.
+EMBER = {
+    "kind": "skill", "calling": "vanguard", "class": "1", "key": "ember_lash", "name": "Ember Lash", "rank": "1",
+    "spell_id": "1000001", "visual": "133", "icon": "ember_lash.png", "school": "fire", "needs_facing": "yes",
+    "client_cost": "30", "realm_cost": "30", "target": "enemy",
+    "effect1_kind": "school_damage", "effect1_params": "amount.base=10;amount.per_level=1.5",
+    "effect2_kind": "periodic_damage", "effect2_params": "amount.base=4;amount.per_level=0;tick_ms=3000;duration_ms=9000",
+    "effect3_kind": "stun", "effect3_params": "duration_ms=1000",
+    "effect4_kind": "stun", "effect4_params": "duration_ms=2000",
+    "modelled": "yes", "description": "Lashes.",
 }
 
 
@@ -66,7 +84,12 @@ class BuildSpells(unittest.TestCase):
             writer = csv.DictWriter(f, [*COLUMNS, *extra_columns], restval="")
             writer.writeheader()
             writer.writerows(rows)
-        command = [sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp, "--no-dbc-check"]
+        art_dir = os.path.join(tmp, "art")
+        os.mkdir(art_dir)
+        with open(os.path.join(art_dir, "ember_lash.png"), "wb") as f:
+            f.write(PNG)
+        self.out_dir = tmp
+        command = [sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp, "--art-dir", art_dir, "--no-dbc-check"]
         if flags is not None:
             flags_path = os.path.join(tmp, "flags.json")
             with open(flags_path, "w", encoding="utf-8") as f:
@@ -91,6 +114,31 @@ class BuildSpells(unittest.TestCase):
         self.assertIn(message, done.stderr)
         self.assertIsNone(data)
         self.assertIsNone(self.patch)
+
+    def test_a_from_scratch_row_makes_a_patch_entry_and_embeds_its_png(self):
+        done, _ = self.run_build([EMBER])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        entry = next(e for e in self.patch["spells"] if e["spell_id"] == 1000001)
+        fields = entry["fields"]
+        self.assertEqual(fields["name"], "Ember Lash")
+        self.assertEqual(fields["cost"], 30)
+        self.assertEqual(fields["icon"], "Interface\\Icons\\Twilight\\ember_lash")
+        self.assertEqual(fields["visual_spell"], 133)
+        self.assertEqual(fields["school"], 2)
+        self.assertTrue(fields["needs_facing"])
+        self.assertEqual(len(fields["dbc_effects"]), 4)
+        self.assertEqual(fields["dbc_effects"][0], {"effect": 2, "base": 10, "per_level": 1.5})
+        self.assertNotIn("art", self.patch)
+        with open(os.path.join(self.out_dir, "client_art.json"), encoding="utf-8") as f:
+            self.assertEqual(base64.b64decode(json.load(f)["ember_lash"]), PNG)
+
+    def test_a_missing_png_fails_the_build(self):
+        self.assert_fails([{**EMBER, "icon": "nothing.png"}], "icon: 'nothing.png' is not in")
+
+    def test_a_from_scratch_id_is_unique_and_not_borrowed(self):
+        self.assert_fails([EMBER, {**EMBER, "key": "other", "name": "Other"}], "spell_id 1000001 is already claimed")
+        self.assert_fails([{**EMBER, "client_spell_id": "78"}], "spell_id and client_spell_id are both set")
+        self.assert_fails([{**EMBER, "spell_id": "999"}], "is below 1000000")
 
     def test_skill_carries_realm_columns_and_effects(self):
         done, data = self.run_build([STRIKE])

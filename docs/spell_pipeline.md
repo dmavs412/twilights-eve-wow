@@ -30,6 +30,7 @@ and tab that declares them. Columns, in groups:
 | off the spell book | `spellbook` | `spellbook=no` (empty means yes) on a visible skill row keeps it off the spell book, the bar and the trainer: it is cast only as another's `becomes=`, and the realm loads it among `hidden_skills`, found by key. The client still has its row, so its `SpellGo` and damage log name a real spell (Explosive Shot on 13812, #154). Skill rows only; a `client_visible=no` row may not set it |
 | assumptions | `assumptions` | every guess beside the row it affects: placeholders, durations, borrowed ids, unmodelled parts. Every build prints the rows that carry one; the realm and client never see it |
 | ids | `client_spell_id`, `talent_id`, `source_tab_id`, `icon_id` | real 1.12.1 records; the build fails on an id the DBCs do not hold. `client_spell_id` reaches both JSON files as `spell_id` |
+| from scratch | `spell_id`, `visual`, `icon`, `needs_facing` | a row with `spell_id` (a whole number of at least 1,000,000, unique across the sheet, never beside `client_spell_id`) is its own Spell.dbc row, not a borrowed one (ADR 0011); the old `client_spell_id` rows still borrow. `visual` is a stock spell id: the build reads that spell's SpellVisual from Spell.dbc (it needs `--data`). `icon` is a PNG name in `data/twilights-eve/art/` (a missing file fails the build) or a stock icon path (`Interface\Icons\...`). `needs_facing` `yes`/`no`. A from-scratch row also reads `school`, `cast_kind`, `dispel_type` and `mechanic` (the last two are otherwise aura-only), `client_cost` and the other `client_*` cells, and every effect it has: the patch's `dbc_effects` lists them all, as `{effect, aura, base, per_level, amplitude_ms}` with the Spell.dbc effect number of the kind (an unlisted kind is a dummy effect, 3). Only the first three are in the DBC patch's `effects`; the client holds the rest as extra effects, so `$s4` to `$s9` read them |
 | talent seat | `tab`, `tab_row`, `tab_column`, `prereq_key`, `prereq_rank`, `exceptional`, `max_rank` | where the talent sits on the Calling's grid; `exceptional` marks a one-rank talent that still counts toward the row; `max_rank` (1 to 5, equal across a talent's ranks, every rank 1..`max_rank` present) is required on every talent rank row and empty on a skill |
 | borrowed | `borrowed_from_class`, `borrowed_family_bit` | set when a Calling casts another class's spell (ADR 0003) |
 | client | `client_cost`, `client_cooldown_ms`, `client_gcd_ms`, `client_cast_time_ms`, `client_range_min`, `client_range_max`, `client_duration_ms`, `client_stances`, `client_not_in_combat` | what the stock client shows and enforces before it sends a cast, as Spell.dbc stores it. The old `client_on_next_swing` column is gone: it is `cast_kind=next_swing` (the build refuses a sheet that still has the column) |
@@ -119,7 +120,12 @@ values), so the patch carries `range_index`, `cast_time_index` and `duration_ind
 client writes over the row's own. The client keeps the borrowed spell's stock effects; a sheet
 `school_damage` or `weapon_strike` only overwrites the numbers of the stock damage effect it lines
 up with, so `$s1` and spell mods read the sheet's damage. Cost is an amount of the row's power
-(rage is stored in tenths). When a real server plays to a stock client,
+(rage is stored in tenths). A patch entry whose `spell_id` the catalog lacks and is at least
+1,000,000 is inserted as a complete row (name, icon, visual, cost, school, cast shape, effects);
+a stock id the catalog lacks is still skipped. The PNGs the `icon` cells name are written,
+base64 by name, to `client_art.json`, which the client embeds like the patch: an icon at
+`Interface\Icons\Twilight\<name>` is served from there before the MPQs, and the BLP decoders
+accept PNG bytes. When a real server plays to a stock client,
 the same file feeds an MPQ writer.
 
 ## Where it stands

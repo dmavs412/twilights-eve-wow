@@ -6,7 +6,8 @@
 //! spells a Calling borrows from another Class.
 
 use super::{
-    SpellCatalog, SpellDisplay, ATTR_EX2_AUTO_REPEAT, ATTR_EX_CHANNELED, ATTR_ON_NEXT_SWING,
+    EffectRow, SpellCatalog, SpellDisplay, ATTR_EX2_AUTO_REPEAT, ATTR_EX_CHANNELED,
+    ATTR_ON_NEXT_SWING,
 };
 
 /// What a WIP talent's rank spells add to their names.
@@ -37,15 +38,24 @@ impl SpellCatalog {
     /// Applies the compiled-in client patch (`client_dbc_patch.json`, ADR 0003) to the rows it
     /// lists: power type, cost, cooldown, global cooldown, stances, the borrowed family, and the
     /// sheet's name and description (an empty description keeps the borrowed text). A field the patch lacks leaves
-    /// the row's own value; an id the catalog lacks is skipped. Returns how many rows changed.
+    /// the row's own value; a stock id the catalog lacks is skipped, while an id from
+    /// [`FROM_SCRATCH_MIN_ID`] up is inserted as a complete row (name, icon, visual, cost, school,
+    /// cast shape and every effect from the entry). Returns how many rows changed.
     pub fn apply_dbc_patch(&mut self, json: &str) -> Result<usize, serde_json::Error> {
         let patch: serde_json::Value = serde_json::from_str(json)?;
         let mut applied = 0;
         for entry in patch["spells"].as_array().into_iter().flatten() {
-            let Some(d) = entry["spell_id"]
-                .as_u64()
-                .and_then(|id| self.spells.get_mut(&(id as u32)))
-            else {
+            let Some(id) = entry["spell_id"].as_u64().map(|id| id as u32) else {
+                continue;
+            };
+            // A from-scratch row (ADR 0011) has no stock row to borrow: it starts from safe
+            // defaults and the entry sets every field the client reads.
+            if id >= FROM_SCRATCH_MIN_ID {
+                self.spells
+                    .entry(id)
+                    .or_insert_with(|| from_scratch_display(id));
+            }
+            let Some(d) = self.spells.get_mut(&id) else {
                 continue;
             };
             let f = &entry["fields"];
@@ -127,9 +137,63 @@ impl SpellCatalog {
             if let Some(text) = f["description"].as_str().filter(|t| !t.is_empty()) {
                 d.description = Some(text.to_owned());
             }
+            if let Some(icon) = f["icon"].as_str().filter(|i| !i.is_empty()) {
+                d.icon = Some(icon.to_owned());
+            }
+            if let Some(visual) = num("visual") {
+                d.visual = visual as u32;
+            }
+            if let Some(facing) = f["needs_facing"].as_bool() {
+                d.needs_facing = facing;
+            }
+            // A from-scratch row's effects, as many as the sheet has; slots past three are the
+            // display's extras.
+            for (slot, effect) in f["dbc_effects"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .enumerate()
+            {
+                d.set_effect_row(slot, effect_row(effect));
+            }
             applied += 1;
         }
         Ok(applied)
+    }
+}
+
+/// The lowest id of a from-scratch row (ADR 0011); stock Spell.dbc ids stay far below it.
+const FROM_SCRATCH_MIN_ID: u32 = 1_000_000;
+
+/// A from-scratch row before its patch entry: instant, on the global cooldown, no stock
+/// requirements.
+fn from_scratch_display(id: u32) -> SpellDisplay {
+    SpellDisplay {
+        id,
+        casting_time_index: 1,
+        start_recovery_category: 133,
+        start_recovery_ms: 1500,
+        proc_chance: 101,
+        ..SpellDisplay::default()
+    }
+}
+
+/// One `dbc_effects` entry: the effect and aura numbers, then the roll as `apply_dbc_patch`
+/// writes a sheet damage number (a one-sided die on `base - 1`, plus the per-level term).
+fn effect_row(effect: &serde_json::Value) -> EffectRow {
+    let unsigned = |key: &str| effect[key].as_u64().unwrap_or(0) as u32;
+    EffectRow {
+        effect: unsigned("effect"),
+        apply_aura: unsigned("aura"),
+        amplitude: unsigned("amplitude_ms"),
+        mechanic: unsigned("mechanic"),
+        misc_value: effect["misc_value"].as_i64().unwrap_or(0) as i32,
+        implicit_target_a: unsigned("target_a"),
+        base_points: effect["base"].as_f64().unwrap_or(0.0).round() as i32 - 1,
+        base_dice: 1,
+        die_sides: 1,
+        real_points_per_level: effect["per_level"].as_f64().unwrap_or(0.0) as f32,
+        ..EffectRow::default()
     }
 }
 
@@ -483,5 +547,55 @@ mod tests {
             gouge.effect_base_points[0], 4,
             "no stock damage effect: left alone"
         );
+    }
+
+    #[test]
+    fn a_from_scratch_entry_adds_a_complete_row_with_four_effects() {
+        let mut catalog = patch_catalog();
+        let applied = catalog
+            .apply_dbc_patch(
+                r#"{"spells": [{"spell_id": 1000001, "fields": {
+                "name": "Ember Lash", "power_type": 0, "cost": 30, "cooldown_ms": 8000,
+                "icon": "Interface\\Icons\\Twilight\\ember_lash", "visual": 4321,
+                "school": 2, "channeled": true, "needs_facing": true, "description": "Lashes.",
+                "dbc_effects": [
+                    {"effect": 2, "base": 10, "per_level": 1.5},
+                    {"effect": 6, "aura": 3, "base": 4, "amplitude_ms": 3000},
+                    {"effect": 3, "base": 1},
+                    {"effect": 3, "base": 7, "per_level": 0.5}]}}]}"#,
+            )
+            .unwrap();
+        assert_eq!(applied, 1);
+        let d = catalog.get(1_000_001).expect("the patch adds the id");
+        assert_eq!(d.id, 1_000_001);
+        assert_eq!(d.name, "Ember Lash");
+        assert_eq!((d.power_type, d.mana_cost, d.recovery_ms), (0, 30, 8000));
+        assert_eq!(
+            d.icon.as_deref(),
+            Some("Interface\\Icons\\Twilight\\ember_lash")
+        );
+        assert_eq!((d.visual, d.school, d.needs_facing), (4321, 2, true));
+        assert_eq!(d.effect_count(), 4);
+        assert_eq!(d.effect_row(0).effect, 2);
+        assert_eq!(d.effect_row(1).apply_aura, 3);
+        let fourth = d.effect_row(3);
+        assert_eq!((fourth.effect, fourth.base_points), (3, 6));
+        assert_eq!(fourth.real_points_per_level, 0.5);
+        assert!(d.equipped_item_class == -1, "no item requirement");
+    }
+
+    #[test]
+    fn effect_slots_past_the_last_read_as_empty() {
+        let mut catalog = patch_catalog();
+        catalog
+            .apply_dbc_patch(
+                r#"{"spells": [{"spell_id": 1000002, "fields": {"name": "Four",
+                "dbc_effects": [{"effect": 3, "base": 1}, {"effect": 3, "base": 2},
+                                {"effect": 3, "base": 3}, {"effect": 3, "base": 4}]}}]}"#,
+            )
+            .unwrap();
+        let d = catalog.get(1_000_002).unwrap();
+        assert_eq!(d.effect_row(3).base_points, 3);
+        assert_eq!(d.effect_row(9), EffectRow::default());
     }
 }

@@ -27,6 +27,7 @@ spells) are skipped by --no-dbc-check. Fixtures for each bug are in tools/twilig
 from __future__ import annotations
 
 import argparse
+import base64
 import csv
 import json
 import os
@@ -72,6 +73,19 @@ JSON_KEY = {"client_spell_id": "spell_id"}
 STATUSES = ("placeholder", "wip", "done")
 MIN_REALM_SPELL_ID = 1_000_000
 MAX_TALENT_RANKS = 5
+# A from-scratch row (ADR 0011): its own spell id, no borrowed stock row.
+FROM_SCRATCH_MIN_ID = 1_000_000
+FROM_SCRATCH_COLUMNS = ("spell_id", "visual", "icon", "needs_facing")
+DEFAULT_ART_DIR = os.path.join(REPO, "data", "twilights-eve", "art")
+# Where the client finds an embedded PNG icon (benilla-formats `embedded_icon_png`).
+ART_ICON_DIR = "Interface\\Icons\\Twilight\\"
+# Spell.dbc effect and aura numbers of the effect kinds a from-scratch row can show; any other
+# kind, a realm-only one, is a dummy effect (3) so `$sN` still reads its number.
+CLIENT_EFFECTS_OF = {
+    "school_damage": (2, 0), "weapon_strike": (58, 0), "heal": (10, 0), "energize": (30, 0),
+    "periodic_damage": (6, 3), "periodic_heal": (6, 8), "stun": (6, 12), "absorb": (6, 69),
+}
+DUMMY_EFFECT = (3, 0)
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms", "borrowed_from_class", "borrowed_family_bit",
@@ -202,6 +216,7 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
 SPELL_TOTEM, SPELL_REAGENT = 40, 42  # Totem[2], Reagent[8]
 SPELL_IMPLICIT_A, SPELL_IMPLICIT_B = 82, 85  # ImplicitTargetA/B, three effects each
 SPELL_NAME, SPELL_RANK = 120, 129
+SPELL_VISUAL = 115
 # Implicit target numbers (vmangos `Targets`) of a stock effect that takes a target the player
 # selected: 6 enemy, 21 friendly, 25 any. A realm effect on another unit needs the client to ask
 # for one, which an effect with none of these never does (Bulwark Charge on Learn Spell, 2a6bf0d).
@@ -283,6 +298,7 @@ def check_unique_ids(rows: list[dict]) -> None:
     icons are shared through icon_id instead."""
     spells: dict[str, list[tuple[str, str, str, str]]] = {}
     talents: dict[str, list[tuple[str, str, str]]] = {}
+    scratch: dict[str, list[tuple[str, str, str]]] = {}
     bad = []
     for line, row in enumerate(rows, start=2):
         who = (row["calling"], row["key"])
@@ -295,6 +311,14 @@ def check_unique_ids(rows: list[dict]) -> None:
                     bad.append(f"{where}: client_spell_id {text} is already claimed by {other[3]}")
                     break
             claims.append((*who, row["kind"], where))
+        if row["spell_id"]:
+            text = row["spell_id"].strip()
+            claims = scratch.setdefault(text, [])
+            for other in claims:
+                if other[:2] != who:
+                    bad.append(f"{where}: spell_id {text} is already claimed by {other[2]}")
+                    break
+            claims.append((*who, where))
         if row["kind"] == "talent" and row["talent_id"]:
             text = row["talent_id"].strip()
             claims = talents.setdefault(text, [])
@@ -343,23 +367,31 @@ def read_row_tables(data_dir: str | None) -> dict:
 
     try:
         chain = Chain(data_dir)
-        ranges, times, durations = (load_dbc(chain, n) for n in ("SpellRange.dbc", "SpellCastTimes.dbc", "SpellDuration.dbc"))
+        ranges, times, durations, spells = (load_dbc(chain, n) for n in ("SpellRange.dbc", "SpellCastTimes.dbc", "SpellDuration.dbc", "Spell.dbc"))
     except (OSError, KeyError, ValueError) as error:
         raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
     return {
         "ranges": [(ranges.u32(i, 0), ranges.f32(i, 1), ranges.f32(i, 2)) for i in range(ranges.nrec)],
         "cast_times": [(times.u32(i, 0), times.i32(i, 1), times.i32(i, 2)) for i in range(times.nrec)],
         "durations": [(durations.u32(i, 0), durations.i32(i, 1)) for i in range(durations.nrec)],
+        "spell_visuals": {spells.u32(i, 0): spells.u32(i, SPELL_VISUAL) for i in range(spells.nrec)},
     }
 
 
-def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: list) -> None:
+def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: list,
+                     spell_visuals: dict[int, int] | None = None) -> None:
     """Replace each override's range, cast time and duration values with the index of the stock
     row that holds them (the lowest id on a tie). The client overwrites the index. A value no
-    stock row holds fails the build."""
+    stock row holds fails the build. A from-scratch row's `visual_spell` becomes the stock
+    spell's SpellVisual id."""
     for entry in patch["spells"]:
         fields = entry["fields"]
         where = f"{entry['calling']}/{entry['key']}" if "key" in entry else str(entry["spell_id"])
+        if "visual_spell" in fields:
+            stock = fields.pop("visual_spell")
+            if stock not in (spell_visuals or {}):
+                raise BuildError(f"{where}: visual {stock} is not a spell in Spell.dbc")
+            fields["visual"] = spell_visuals[stock]
         if "range_min" in fields or "range_max" in fields:
             low, high = float(fields.pop("range_min", 0)), float(fields.pop("range_max", 0))
             fields["range_index"] = _lowest(
@@ -962,6 +994,14 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             out[key] = number(row[column], f"{where} {column}")
             if not isinstance(out[key], int):
                 raise BuildError(f"{where} {column}: {row[column]!r} is not a whole id")
+    if row["spell_id"]:
+        if row["client_spell_id"]:
+            raise BuildError(f"{where}: spell_id and client_spell_id are both set; a row borrows or is from scratch")
+        out["spell_id"] = whole(row["spell_id"], f"{where} spell_id")
+        if out["spell_id"] < FROM_SCRATCH_MIN_ID:
+            raise BuildError(f"{where} spell_id: {out['spell_id']} is below {FROM_SCRATCH_MIN_ID}")
+    elif row["visual"] or row["icon"] or row["needs_facing"]:
+        raise BuildError(f"{where}: visual, icon and needs_facing belong to a from-scratch row (set spell_id)")
     if hidden:
         # A hidden row's one number is its realm id; the realm reads it as `spell_id`.
         out["spell_id"] = whole(row["realm_spell_id"], f"{where} realm_spell_id")
@@ -1172,7 +1212,48 @@ def build_spellmods(row: dict, where: str, masks: dict[str, int | None], flags_k
     return spellmods
 
 
-def client_override(row: dict, built: dict, where: str, categories: dict[str, int]) -> dict | None:
+def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, where: str) -> dict:
+    """What a from-scratch row (ADR 0011) adds to its patch entry: the icon, the stock spell whose
+    SpellVisual it borrows (`resolve_dbc_rows` turns it into the id), facing, dispel type,
+    mechanic, and every effect with its Spell.dbc effect and aura numbers. A PNG icon is checked
+    against `art_dir` and noted in `art` for the embed."""
+    fields: dict = {}
+    icon = row["icon"]
+    if icon.lower().endswith(".png"):
+        if not os.path.isfile(os.path.join(art_dir, icon)):
+            raise BuildError(f"{where} icon: {icon!r} is not in {art_dir}")
+        stem = icon[:-4]
+        fields["icon"] = ART_ICON_DIR + stem
+        if stem not in art:
+            art.append(stem)
+    elif icon:
+        fields["icon"] = icon
+    if row["visual"]:
+        fields["visual_spell"] = whole(row["visual"], f"{where} visual")
+    if row["needs_facing"]:
+        fields["needs_facing"] = yes_no(row["needs_facing"], where, "needs_facing")
+    if row["dispel_type"]:
+        fields["dispel_type"] = DISPEL_TYPES[one_of(row["dispel_type"], DISPEL_TYPES, where, "dispel_type")]
+    if row["mechanic"]:
+        fields["mechanic"] = MECHANICS[one_of(row["mechanic"], MECHANICS, where, "mechanic")]
+    effects = []
+    for e in built["effects"]:
+        number_, aura = CLIENT_EFFECTS_OF.get(e["kind"], DUMMY_EFFECT)
+        params = e["params"]
+        formula = next((params[k] for k in ("amount", "bonus") if isinstance(params.get(k), dict)), {})
+        entry = {"effect": number_, "base": formula.get("base", 0), "per_level": formula.get("per_level", 0)}
+        if aura:
+            entry["aura"] = aura
+        if isinstance(params.get("tick_ms"), int):
+            entry["amplitude_ms"] = params["tick_ms"]
+        effects.append(entry)
+    if effects:
+        fields["dbc_effects"] = effects
+    return fields
+
+
+def client_override(row: dict, built: dict, where: str, categories: dict[str, int],
+                    art: list[str], art_dir: str) -> dict | None:
     """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
     if "spell_id" not in built or built.get("client_visible") is False:
         return None
@@ -1230,6 +1311,8 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
     # No effects key on an unmodelled row: the client keeps the stock row's effects.
     if built["modelled"]:
         fields["effects"] = [{"kind": e["kind"], "params": e["params"]} for e in built["effects"] if not e["realm_only"]]
+    if row["spell_id"]:
+        fields.update(from_scratch_fields(row, built, art, art_dir, where))
     # The client's mods name no skill keys; the realm's do.
     spellmods = [{k: v for k, v in m.items() if k != "target"} for m in built.get("spellmods", [])]
     out = {"spell_id": built["spell_id"], "calling": row["calling"], "key": row["key"], "rank": built["rank"],
@@ -1239,7 +1322,7 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
     return out
 
 
-def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict], dict]:
+def build(rows: list[dict], spell_flags: dict | None = None, art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict], dict]:
     for column in (rows[0] if rows else {}):
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
         if found and int(found.group(1)) > MAX_SPELLMODS:
@@ -1248,6 +1331,10 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
         raise BuildError("column client_on_next_swing is gone; write cast_kind=next_swing in the cast_kind column")
     if rows and "requires_out_of_combat" in rows[0]:
         raise BuildError("column requires_out_of_combat is gone; write `requires: combat=out` in the requires column")
+    # A sheet older than the from-scratch columns reads them as empty.
+    for row in rows:
+        for column in FROM_SCRATCH_COLUMNS:
+            row.setdefault(column, "")
     check_unique_ids(rows)
     masks = skill_masks(rows, spell_flags)
     # Each cooldown_category name gets a number in order of first appearance; every row sharing a
@@ -1266,6 +1353,7 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
                              f"which shares cooldown_category {name!r}")
     callings: dict[str, dict] = {}
     overrides: list[dict] = []
+    art: list[str] = []
     aura_overrides: list[tuple[dict, str]] = []
     seen: set[tuple] = set()
     realm_ids: dict[str, str] = {}
@@ -1286,7 +1374,8 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
             raise BuildError(f"{where}: status is {row['status']!r}, want one of {', '.join(STATUSES)}")
         if kind != "aura":
             for column in AURA_ONLY_COLUMNS:
-                if row[column]:
+                # A from-scratch row shows its own dispel type and mechanic on the client.
+                if row[column] and not (row["spell_id"] and column in ("dispel_type", "mechanic")):
                     raise BuildError(f"{where} {column}: set on a {kind} row; only aura rows carry it")
         row_class = class_id(row["class"], where)
         calling = callings.setdefault(row["calling"], {"key": row["calling"], "class": row_class, "skills": [],
@@ -1332,7 +1421,7 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
             raise BuildError(f"{where}: spellmod cells are set on an aura row; only skill and talent rows carry them")
         if spellmods:
             built["spellmods"] = spellmods
-        override = client_override(row, built, where, categories)
+        override = client_override(row, built, where, categories, art, art_dir)
         if override:
             overrides.append(override)
         del built["class"]
@@ -1407,13 +1496,18 @@ def build(rows: list[dict], spell_flags: dict | None = None) -> tuple[list[dict]
                 if "prereq" in talent:
                     seat["prereq"] = talent["prereq"]
                 seats.append(seat)
-    return list(callings.values()), {"spells": overrides, "talents": seats}
+    patch: dict = {"spells": overrides, "talents": seats}
+    if art:
+        # The PNG stems the patch names; `main` embeds them in client_art.json and drops the key.
+        patch["art"] = art
+    return list(callings.values()), patch
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--csv", default=DEFAULT_CSV)
     parser.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
+    parser.add_argument("--art-dir", default=DEFAULT_ART_DIR, help="folder of the PNG icons the icon cells name")
     parser.add_argument("--data", default=os.environ.get("WOW_DATA"), help="game Data folder for the DBC check")
     parser.add_argument("--no-dbc-check", action="store_true", help="skip checking ids against the DBCs")
     parser.add_argument("--spell-flags", help="JSON {spell id: SpellFamilyFlags} standing in for Spell.dbc")
@@ -1423,7 +1517,8 @@ def main(argv: list[str] | None = None) -> int:
         # A row shorter than the header (columns added at the end) reads its missing cells as empty.
         rows = [{k: v or "" for k, v in row.items() if k is not None} for row in csv.DictReader(f)]
     try:
-        server, patch = build(rows, read_spell_flags(args.data, args.spell_flags, rows))
+        server, patch = build(rows, read_spell_flags(args.data, args.spell_flags, rows), args.art_dir)
+        art = patch.pop("art", [])
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)
         check_seam(rows, server, patch, None if args.no_dbc_check else args.data)
@@ -1444,7 +1539,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{len(carried)} rows carry assumptions:")
     for who, text in carried:
         print(f"  {who}: {text}")
-    for name, data in (("server_spells.json", server), ("client_dbc_patch.json", patch)):
+    # The PNGs the patch names, base64 by stem: the client embeds this file like the patch.
+    embedded = {}
+    for stem in art:
+        with open(os.path.join(args.art_dir, stem + ".png"), "rb") as f:
+            embedded[stem] = base64.b64encode(f.read()).decode("ascii")
+    for name, data in (("server_spells.json", server), ("client_dbc_patch.json", patch), ("client_art.json", embedded)):
         with open(os.path.join(args.out_dir, name), "w", encoding="utf-8", newline="\n") as f:
             json.dump(data, f, indent=1, ensure_ascii=False)
             f.write("\n")

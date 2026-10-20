@@ -92,6 +92,10 @@ impl AssetReader for MpqAssetReader {
         // The sampler-mode marker (`texture_url`) names the asset, not the archive file.
         let stripped = strip_sampler_marker(raw);
         let internal = stripped.as_deref().unwrap_or(raw);
+        // The sheet's own PNG icons are embedded; they win over the archives (ADR 0011).
+        if let Some(png) = benilla_formats::embedded_icon_png(internal) {
+            return Ok(VecReader::new(png));
+        }
         if !self.chain.contains(internal) {
             return Err(AssetReaderError::NotFound(path.to_path_buf()));
         }

@@ -204,6 +204,102 @@ pub struct SpellDisplay {
     /// `EffectRealPointsPerLevel[3]` (columns 73-75): the float per-level term (`0x6e3889`); 5.0
     /// on Pick Lock, Mining and Herb Gathering, so the skill they provide tracks the player's.
     pub effect_real_points_per_level: [f32; 3],
+    /// Effects 4 and up, a from-scratch row's only: slot `3 + i`. Every per-effect field above
+    /// stops at three, the width of `Spell.dbc`; the client patch (ADR 0011) is not bound by it.
+    pub extra_effects: Vec<EffectRow>,
+    /// The sheet's `needs_facing`: the spell wants the caster turned to its target.
+    pub needs_facing: bool,
+}
+
+/// One effect's per-effect columns, as a slot of any number reads them.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct EffectRow {
+    pub effect: u32,
+    pub base_points: i32,
+    pub die_sides: i32,
+    pub base_dice: i32,
+    pub dice_per_level: i32,
+    pub real_points_per_level: f32,
+    pub amplitude: u32,
+    pub apply_aura: u32,
+    pub mechanic: u32,
+    pub radius_index: u32,
+    pub chain_targets: u32,
+    pub multiple_value: f32,
+    pub damage_multiplier: f32,
+    pub points_per_combo_point: f32,
+    pub trigger_spell: u32,
+    pub item_type: u32,
+    pub misc_value: i32,
+    pub implicit_target_a: u32,
+    pub implicit_target_b: u32,
+}
+
+impl SpellDisplay {
+    /// How many effect slots the spell holds: the three of `Spell.dbc` plus any extras.
+    pub fn effect_count(&self) -> usize {
+        3 + self.extra_effects.len()
+    }
+
+    /// Effect `slot`'s columns (0-based); a slot past the last reads as an empty effect.
+    pub fn effect_row(&self, slot: usize) -> EffectRow {
+        if slot >= 3 {
+            return self
+                .extra_effects
+                .get(slot - 3)
+                .copied()
+                .unwrap_or_default();
+        }
+        EffectRow {
+            effect: self.effects[slot],
+            base_points: self.effect_base_points[slot],
+            die_sides: self.effect_die_sides[slot],
+            base_dice: self.effect_base_dice[slot],
+            dice_per_level: self.effect_dice_per_level[slot],
+            real_points_per_level: self.effect_real_points_per_level[slot],
+            amplitude: self.effect_amplitude[slot],
+            apply_aura: self.effect_apply_aura[slot],
+            mechanic: self.effect_mechanic[slot],
+            radius_index: self.effect_radius_index[slot],
+            chain_targets: self.effect_chain_targets[slot],
+            multiple_value: self.effect_multiple_value[slot],
+            damage_multiplier: self.damage_multiplier[slot],
+            points_per_combo_point: self.effect_points_per_combo_point[slot],
+            trigger_spell: self.effect_trigger_spell[slot],
+            item_type: self.effect_item_type[slot],
+            misc_value: self.effect_misc_value[slot],
+            implicit_target_a: self.effect_implicit_target_a[slot],
+            implicit_target_b: self.effect_implicit_target_b[slot],
+        }
+    }
+
+    /// Writes `row` into effect `slot`, growing the extras to reach it.
+    pub fn set_effect_row(&mut self, slot: usize, row: EffectRow) {
+        if slot >= 3 {
+            self.extra_effects.resize(slot - 2, EffectRow::default());
+            self.extra_effects[slot - 3] = row;
+            return;
+        }
+        self.effects[slot] = row.effect;
+        self.effect_base_points[slot] = row.base_points;
+        self.effect_die_sides[slot] = row.die_sides;
+        self.effect_base_dice[slot] = row.base_dice;
+        self.effect_dice_per_level[slot] = row.dice_per_level;
+        self.effect_real_points_per_level[slot] = row.real_points_per_level;
+        self.effect_amplitude[slot] = row.amplitude;
+        self.effect_apply_aura[slot] = row.apply_aura;
+        self.effect_mechanic[slot] = row.mechanic;
+        self.effect_radius_index[slot] = row.radius_index;
+        self.effect_chain_targets[slot] = row.chain_targets;
+        self.effect_multiple_value[slot] = row.multiple_value;
+        self.damage_multiplier[slot] = row.damage_multiplier;
+        self.effect_points_per_combo_point[slot] = row.points_per_combo_point;
+        self.effect_trigger_spell[slot] = row.trigger_spell;
+        self.effect_item_type[slot] = row.item_type;
+        self.effect_misc_value[slot] = row.misc_value;
+        self.effect_implicit_target_a[slot] = row.implicit_target_a;
+        self.effect_implicit_target_b[slot] = row.implicit_target_b;
+    }
 }
 
 /// Written out so `equipped_item_class` defaults to -1, no requirement: 0 is a real class.
@@ -282,6 +378,8 @@ impl Default for SpellDisplay {
             effect_base_dice: [0; 3],
             effect_dice_per_level: [0; 3],
             effect_real_points_per_level: [0.0; 3],
+            extra_effects: Vec::new(),
+            needs_facing: false,
             effect_amplitude: [0; 3],
             effect_apply_aura: [0; 3],
             effect_implicit_target_a: [0; 3],

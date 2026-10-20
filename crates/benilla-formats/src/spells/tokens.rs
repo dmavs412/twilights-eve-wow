@@ -102,21 +102,20 @@ fn effect_points(d: &SpellDisplay, slot: usize, ctx: &TokenContext, level: u32) 
         level
     }
     .max(0);
-    let base = d.effect_base_points[slot];
-    let dice =
-        d.effect_base_dice[slot].wrapping_add(d.effect_dice_per_level[slot].wrapping_mul(delta));
-    let sides = d.effect_die_sides[slot];
-    let real = soft_float::mul_f32(
-        d.effect_real_points_per_level[slot],
-        soft_float::int_to_float(delta),
-    );
+    let row = d.effect_row(slot);
+    let base = row.base_points;
+    let dice = row
+        .base_dice
+        .wrapping_add(row.dice_per_level.wrapping_mul(delta));
+    let sides = row.die_sides;
+    let real = soft_float::mul_f32(row.real_points_per_level, soft_float::int_to_float(delta));
     let mut min = soft_float::add_f32(soft_float::int_to_float(base.wrapping_add(dice)), real);
     let mut max = soft_float::add_f32(
         soft_float::int_to_float(base.wrapping_add(sides.wrapping_mul(dice))),
         real,
     );
-    let aura = d.effect_apply_aura[slot];
-    let (rounds, damage) = classify(d.effects[slot], aura);
+    let aura = row.apply_aura;
+    let (rounds, damage) = classify(row.effect, aura);
     if let Some(mods) = ctx.mods.filter(|_| !ctx.unmodified_points) {
         let damage_op = damage.then_some(if aura == 3 { 22 } else { 0 });
         for op in [Some(8), damage_op, aura_op(d, slot)].into_iter().flatten() {
@@ -136,7 +135,7 @@ fn effect_points(d: &SpellDisplay, slot: usize, ctx: &TokenContext, level: u32) 
 /// by `aura − 10`): 10/103/183 op 2 (`6e3996`), the speed auras op 12 (`6e39a6`), 138 op 23
 /// (`6e39b6`), 65 op 24 (`6e39c6`), 99 op 3 (`6e39d6`).
 fn aura_op(d: &SpellDisplay, slot: usize) -> Option<u8> {
-    match d.effect_apply_aura[slot] {
+    match d.effect_row(slot).apply_aura {
         10 | 103 | 183 => Some(2),
         31 | 32 | 33 | 58 | 129 | 130 | 171 | 172 => Some(12),
         138 => Some(23),
@@ -238,7 +237,7 @@ fn points_text(
     // the aura tooltip's stack count; no caller passes a count.
     let (mut min, mut max) = effect_points(d, slot, ctx, level);
     if letter.eq_ignore_ascii_case(&'o') {
-        let amplitude = d.effect_amplitude[slot] as i32;
+        let amplitude = d.effect_row(slot).amplitude as i32;
         let period = if amplitude == 0 { 5000 } else { amplitude };
         let duration = if period > 0 { duration_ms(d, ctx) } else { 0 };
         (min, max) = if duration > 0 {
@@ -306,12 +305,12 @@ fn token_value(
         's' | 'm' | 'o' => points_text(letter, slot, d, ctx, scale, level),
         'b' => {
             // `507ed4`: `EffectPointsPerComboPoint`, truncated toward zero by `0x40a2b0`.
-            let v = d.effect_points_per_combo_point[slot].trunc() as i32;
+            let v = d.effect_row(slot).points_per_combo_point.trunc() as i32;
             Some((v.to_string(), f64::from(v)))
         }
         'f' => {
             // `507ff7` / `508025`: the scale times `DmgMultiplier`, exact at the x87's PC_53.
-            let v = f64::from(scale) * f64::from(d.damage_multiplier[slot]);
+            let v = f64::from(scale) * f64::from(d.effect_row(slot).damage_multiplier);
             if letter == 'F' {
                 // ±0.5 by the sign, then chopped by `0x40a2b0` (`50802f`-`50804a`).
                 let n = v.round() as i32;
@@ -327,7 +326,7 @@ fn token_value(
         }
         'q' => {
             // `50806e`: the slot's `EffectMiscValue` through `"%d"`.
-            let v = d.effect_misc_value[slot];
+            let v = d.effect_row(slot).misc_value;
             Some((v.to_string(), f64::from(v)))
         }
         'u' => {
@@ -351,14 +350,14 @@ fn token_value(
             let ms = if d.proc_flags & 1 != 0 {
                 5000
             } else {
-                modify_int(ctx, d, 19, d.effect_amplitude[slot] as i32)
+                modify_int(ctx, d, 19, d.effect_row(slot).amplitude as i32)
             };
             let secs = ms / 1000;
             Some((secs.to_string(), f64::from(secs)))
         }
         'a' => {
             // `507c74`: the SpellRadius row's radius truncated, then op 6; no row is 0.
-            let r = ctx.radii.get(d.effect_radius_index[slot]);
+            let r = ctx.radii.get(d.effect_row(slot).radius_index);
             let v = r.map_or(0, |r| modify_int(ctx, d, 6, r.radius as i32));
             Some((v.to_string(), f64::from(v)))
         }
@@ -367,13 +366,13 @@ fn token_value(
             Some((v.to_string(), f64::from(v)))
         }
         'x' => {
-            let v = *d.effect_chain_targets.get(slot).unwrap_or(&0);
+            let v = d.effect_row(slot).chain_targets;
             let v = modify_int(ctx, d, 17, v as i32);
             Some((v.to_string(), f64::from(v)))
         }
         'e' => {
             // `507f83`: EffectMultipleValue through op 27, always one decimal.
-            let v = modify_float(ctx, d, 27, d.effect_multiple_value[slot]);
+            let v = modify_float(ctx, d, 27, d.effect_row(slot).multiple_value);
             Some((tenths(ctx, v), f64::from(v)))
         }
         'n' => {
@@ -520,7 +519,7 @@ pub fn substitute(text: &str, spell: &SpellDisplay, ctx: &TokenContext) -> Strin
             // `$s0` is a 1-based slot below 1: saturate to slot 0 rather than wrap.
             let s = bytes[i].saturating_sub(b'1') as usize;
             i += 1;
-            s.min(2)
+            s
         } else {
             0
         };

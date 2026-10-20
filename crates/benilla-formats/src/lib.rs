@@ -13,6 +13,9 @@ pub use benilla_blp::BlpTexels;
 
 mod chain;
 pub use chain::{Chain, ChainEntry};
+/// The PNG art the sheet names, embedded in the binary (ADR 0011).
+mod art;
+pub use art::{embedded_icon_png, is_png, png_to_rgba};
 /// Loose `.tga` art, as addon folders ship it.
 mod tga;
 pub use tga::tga_to_rgba;
@@ -454,6 +457,10 @@ pub fn blp_mips_to_png(blp_bytes: &[u8], out: &Path) -> Result<Vec<BlpMipStats>>
 
 /// Decode a BLP's level 0 to RGBA8: `(width, height, pixels)`.
 pub fn blp_to_rgba(blp_bytes: &[u8]) -> Result<(u32, u32, Vec<u8>)> {
+    // An embedded PNG icon rides the `.blp` asset path (`art::embedded_icon_png`).
+    if is_png(blp_bytes) {
+        return png_to_rgba(blp_bytes);
+    }
     let decoded =
         benilla_blp::decode(blp_bytes).map_err(|e| anyhow::anyhow!("decoding BLP: {e}"))?;
     let level0 = decoded
@@ -540,6 +547,15 @@ pub fn read_texture_native_chain(chain: &mut Chain, path: &str) -> Result<BlpMip
 
 /// Decode every authored level of an in-memory BLP to `Rgba8Unorm`, as stored.
 pub fn blp_bytes_to_mip_chain(bytes: &[u8]) -> Result<BlpMipChain> {
+    if is_png(bytes) {
+        let (width, height, rgba) = png_to_rgba(bytes)?;
+        return Ok(BlpMipChain {
+            width,
+            height,
+            texels: BlpTexels::Rgba8Unorm,
+            mips: vec![rgba],
+        });
+    }
     let decoded = benilla_blp::decode(bytes).map_err(|e| anyhow::anyhow!("decoding BLP: {e}"))?;
     // A no-mipmaps BLP counts 0 levels, yet `decode` always fills `mips[0]`: take at least one.
     let (width, height, count) = (
@@ -565,6 +581,15 @@ pub fn blp_bytes_to_mip_chain(bytes: &[u8]) -> Result<BlpMipChain> {
 /// them (`glCompressedTexImage2DARB`, `0x59f5b0`). Raw1 and Raw3 come back decoded; levels are
 /// padded to whole blocks.
 pub fn blp_bytes_to_native_chain(bytes: &[u8]) -> Result<BlpMipChain> {
+    if is_png(bytes) {
+        let (width, height, rgba) = png_to_rgba(bytes)?;
+        return Ok(BlpMipChain {
+            width,
+            height,
+            texels: BlpTexels::Rgba8Unorm,
+            mips: vec![rgba],
+        });
+    }
     let decoded =
         benilla_blp::decode_native(bytes).map_err(|e| anyhow::anyhow!("decoding BLP: {e}"))?;
     // At least one level, as in `blp_bytes_to_mip_chain`.
