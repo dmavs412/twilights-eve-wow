@@ -8,11 +8,16 @@ use benilla_protocol::SessionEvent;
 use common::fight::*;
 use common::*;
 
-const HAMMER_OF_JUSTICE: u32 = 10308;
-const SEAL_OF_COMMAND: u32 = 20375;
-const SEAL_OF_THE_CRUSADER: u32 = 20305;
-const JUDGEMENT: u32 = 20271;
-const MORTAL_STRIKE: u32 = 12294;
+static HAMMER_OF_JUSTICE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "hammer_of_justice"));
+static SEAL_OF_COMMAND: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "seal_of_command"));
+static SEAL_OF_THE_CRUSADER: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "seal_of_the_crusader"));
+static JUDGEMENT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "judgement"));
+static MORTAL_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "mortal_strike"));
 const MAIN_HAND: u8 = 15;
 /// A two-handed axe.
 const LARGE_AXE: u32 = 2491;
@@ -30,32 +35,32 @@ fn hammer_of_justice_stuns_for_six_seconds_and_the_mob_does_not_swing() {
     let (mut realm, me, mob, mut view) = tanking(20);
     stand_at(&mut realm, &mob, 8.0);
     let rage = view.rage(me);
-    realm.handle(cast(HAMMER_OF_JUSTICE, Some(mob.guid)));
+    realm.handle(cast(*HAMMER_OF_JUSTICE, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, HAMMER_OF_JUSTICE), None, "in 10 yd reach");
+    assert_eq!(refusal(&events, *HAMMER_OF_JUSTICE), None, "in 10 yd reach");
     assert_eq!(view.rage(me), rage - 15, "15 rage");
-    let hits = go_hits(&events, HAMMER_OF_JUSTICE).expect("it went off");
+    let hits = go_hits(&events, *HAMMER_OF_JUSTICE).expect("it went off");
     assert!(hits.contains(&mob.guid), "{hits:?}");
     let stun = view
-        .aura(mob.guid, HAMMER_OF_JUSTICE)
+        .aura(mob.guid, *HAMMER_OF_JUSTICE)
         .expect("the stun shows");
     assert!(stun.slot >= 32, "a debuff");
 
     stand_at(&mut realm, &mob, 2.0);
     let stunned = view.run(&mut realm, 5.8);
     assert!(!swings(&stunned, mob.guid), "a stunned mob does not swing");
-    assert!(view.aura(mob.guid, HAMMER_OF_JUSTICE).is_some());
+    assert!(view.aura(mob.guid, *HAMMER_OF_JUSTICE).is_some());
     view.run(&mut realm, 0.4);
     assert!(
-        view.aura(mob.guid, HAMMER_OF_JUSTICE).is_none(),
+        view.aura(mob.guid, *HAMMER_OF_JUSTICE).is_none(),
         "six seconds"
     );
     let after = view.run(&mut realm, 3.0);
     assert!(swings(&after, mob.guid), "and swings again after");
 
-    realm.handle(cast(HAMMER_OF_JUSTICE, Some(mob.guid)));
+    realm.handle(cast(*HAMMER_OF_JUSTICE, Some(mob.guid)));
     assert!(
-        refusal(&view.drain(&mut realm), HAMMER_OF_JUSTICE).is_some(),
+        refusal(&view.drain(&mut realm), *HAMMER_OF_JUSTICE).is_some(),
         "a 60 s cooldown"
     );
 }
@@ -64,17 +69,17 @@ fn hammer_of_justice_stuns_for_six_seconds_and_the_mob_does_not_swing() {
 fn a_seal_costs_ten_rage_in_battle_stance() {
     let (mut realm, me, _, mut view) = tanking(12);
     let rage = view.rage(me);
-    realm.handle(cast(SEAL_OF_COMMAND, None));
-    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_COMMAND), None);
+    realm.handle(cast(*SEAL_OF_COMMAND, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *SEAL_OF_COMMAND), None);
     assert_eq!(view.rage(me), rage - 10);
 }
 
 #[test]
 fn seal_of_command_makes_landed_swings_proc_holy_damage() {
     let (mut realm, me, mob, mut view) = tanking(12);
-    realm.handle(cast(SEAL_OF_COMMAND, None));
+    realm.handle(cast(*SEAL_OF_COMMAND, None));
     view.drain(&mut realm);
-    let seal = view.aura(me, SEAL_OF_COMMAND).expect("the Seal shows");
+    let seal = view.aura(me, *SEAL_OF_COMMAND).expect("the Seal shows");
     assert!(seal.slot < 32, "a buff");
 
     stand_at(&mut realm, &mob, 2.0);
@@ -113,18 +118,21 @@ fn seal_of_command_makes_landed_swings_proc_holy_damage() {
 #[test]
 fn casting_another_seal_removes_seal_of_command() {
     let (mut realm, me, _, mut view) = tanking(20);
-    realm.handle(cast(SEAL_OF_COMMAND, None));
+    realm.handle(cast(*SEAL_OF_COMMAND, None));
     view.drain(&mut realm);
-    assert!(view.aura(me, SEAL_OF_COMMAND).is_some());
+    assert!(view.aura(me, *SEAL_OF_COMMAND).is_some());
     // Past the global cooldown.
     view.run(&mut realm, 1.6);
-    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
-    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_THE_CRUSADER), None);
+    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), *SEAL_OF_THE_CRUSADER),
+        None
+    );
     assert!(
-        view.aura(me, SEAL_OF_COMMAND).is_none(),
+        view.aura(me, *SEAL_OF_COMMAND).is_none(),
         "one Seal at a time"
     );
-    assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_some());
+    assert!(view.aura(me, *SEAL_OF_THE_CRUSADER).is_some());
 }
 
 #[test]
@@ -132,30 +140,30 @@ fn judgement_with_no_seal_fails_and_spends_no_rage() {
     let (mut realm, me, mob, mut view) = tanking(10);
     stand_at(&mut realm, &mob, 5.0);
     let rage = view.rage(me);
-    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    realm.handle(cast(*JUDGEMENT, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert!(refusal(&events, JUDGEMENT).is_some(), "no Seal to judge");
-    assert_eq!(go_hits(&events, JUDGEMENT), None);
+    assert!(refusal(&events, *JUDGEMENT).is_some(), "no Seal to judge");
+    assert_eq!(go_hits(&events, *JUDGEMENT), None);
     assert_eq!(view.rage(me), rage, "nothing spent");
 }
 
 #[test]
 fn judging_seal_of_command_consumes_it_for_a_holy_hit() {
     let (mut realm, me, mob, mut view) = tanking(15);
-    realm.handle(cast(SEAL_OF_COMMAND, None));
+    realm.handle(cast(*SEAL_OF_COMMAND, None));
     view.drain(&mut realm);
     stand_at(&mut realm, &mob, 5.0);
     let rage = view.rage(me);
     let health = view.health(mob.guid);
     let ap = view.fields(me).unit_attack_power().unwrap() as f64;
 
-    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    realm.handle(cast(*JUDGEMENT, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, JUDGEMENT), None);
-    assert!(go_hits(&events, JUDGEMENT).is_some_and(|h| h.contains(&mob.guid)));
+    assert_eq!(refusal(&events, *JUDGEMENT), None);
+    assert!(go_hits(&events, *JUDGEMENT).is_some_and(|h| h.contains(&mob.guid)));
     assert_eq!(view.rage(me), rage - 5, "5 rage");
     assert!(
-        view.aura(me, SEAL_OF_COMMAND).is_none(),
+        view.aura(me, *SEAL_OF_COMMAND).is_none(),
         "the Seal is spent"
     );
     let hit = events
@@ -179,9 +187,11 @@ fn seal_of_the_crusader_quickens_swings_and_raises_attack_power_until_it_fades()
     let speed = view.fields(me).unit_base_attack_time(0).unwrap();
     assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
 
-    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
     view.drain(&mut realm);
-    let seal = view.aura(me, SEAL_OF_THE_CRUSADER).expect("the Seal shows");
+    let seal = view
+        .aura(me, *SEAL_OF_THE_CRUSADER)
+        .expect("the Seal shows");
     assert!(seal.slot < 32, "a buff");
     // A level 1 Zealot: 20 + 4 attack power, and 40% faster.
     assert_eq!(view.fields(me).unit_attack_power_mods(), (24, 0));
@@ -217,9 +227,9 @@ fn seal_of_the_crusader_quickens_swings_and_raises_attack_power_until_it_fades()
 
     // Thirty seconds on, it fades and the sheet is as it was.
     view.run(&mut realm, 30.0 - 6.0 - 0.2);
-    assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_some());
+    assert!(view.aura(me, *SEAL_OF_THE_CRUSADER).is_some());
     view.run(&mut realm, 0.4);
-    assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_none(), "30 s");
+    assert!(view.aura(me, *SEAL_OF_THE_CRUSADER).is_none(), "30 s");
     assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
     assert_eq!(view.fields(me).unit_base_attack_time(0), Some(speed));
 }
@@ -240,20 +250,20 @@ fn mortal_strike_under_seal_of_the_crusader_keeps_its_full_weapon_roll() {
         assert_eq!(refusal(&view.drain(&mut realm), seal), None);
         view.run(&mut realm, 1.6);
         let ap = view.fields(me).unit_attack_power_mods();
-        realm.handle(cast(MORTAL_STRIKE, Some(mob.guid)));
+        realm.handle(cast(*MORTAL_STRIKE, Some(mob.guid)));
         let events = view.drain(&mut realm);
-        assert_eq!(refusal(&events, MORTAL_STRIKE), None);
+        assert_eq!(refusal(&events, *MORTAL_STRIKE), None);
         let hit = events
             .iter()
             .find_map(|e| match e {
-                SessionEvent::SpellDamageLog(s) if s.spell_id == MORTAL_STRIKE => Some(s.damage),
+                SessionEvent::SpellDamageLog(s) if s.spell_id == *MORTAL_STRIKE => Some(s.damage),
                 _ => None,
             })
             .expect("Mortal Strike's hit");
         (hit, ap)
     };
-    let (plain, plain_mods) = strike(SEAL_OF_COMMAND);
-    let (sealed, sealed_mods) = strike(SEAL_OF_THE_CRUSADER);
+    let (plain, plain_mods) = strike(*SEAL_OF_COMMAND);
+    let (sealed, sealed_mods) = strike(*SEAL_OF_THE_CRUSADER);
     assert!(plain > 0, "the yardstick strike landed");
     assert_eq!(plain_mods, (0, 0));
     assert_eq!(sealed_mods, (24, 0), "the Seal's 20 + 4 attack power");
@@ -265,14 +275,14 @@ fn mortal_strike_under_seal_of_the_crusader_keeps_its_full_weapon_roll() {
 fn seal_of_command_replaces_seal_of_the_crusader_and_its_haste() {
     let (mut realm, me, _, mut view) = tanking(20);
     let speed = view.fields(me).unit_base_attack_time(0).unwrap();
-    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
     view.drain(&mut realm);
     assert!(view.fields(me).unit_base_attack_time(0).unwrap() < speed);
     view.run(&mut realm, 1.6);
-    realm.handle(cast(SEAL_OF_COMMAND, None));
-    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_COMMAND), None);
-    assert!(view.aura(me, SEAL_OF_THE_CRUSADER).is_none());
-    assert!(view.aura(me, SEAL_OF_COMMAND).is_some());
+    realm.handle(cast(*SEAL_OF_COMMAND, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *SEAL_OF_COMMAND), None);
+    assert!(view.aura(me, *SEAL_OF_THE_CRUSADER).is_none());
+    assert!(view.aura(me, *SEAL_OF_COMMAND).is_some());
     assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
     assert_eq!(view.fields(me).unit_base_attack_time(0), Some(speed));
 }
@@ -281,18 +291,18 @@ fn seal_of_command_replaces_seal_of_the_crusader_and_its_haste() {
 fn judging_seal_of_the_crusader_consumes_it_for_a_holy_damage_taken_debuff() {
     let (mut realm, me, mob, mut view) = tanking(15);
     let speed = view.fields(me).unit_base_attack_time(0).unwrap();
-    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
     view.drain(&mut realm);
     stand_at(&mut realm, &mob, 5.0);
     let rage = view.rage(me);
 
-    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    realm.handle(cast(*JUDGEMENT, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, JUDGEMENT), None);
-    assert!(go_hits(&events, JUDGEMENT).is_some_and(|h| h.contains(&mob.guid)));
+    assert_eq!(refusal(&events, *JUDGEMENT), None);
+    assert!(go_hits(&events, *JUDGEMENT).is_some_and(|h| h.contains(&mob.guid)));
     assert_eq!(view.rage(me), rage - 5, "5 rage");
     assert!(
-        view.aura(me, SEAL_OF_THE_CRUSADER).is_none(),
+        view.aura(me, *SEAL_OF_THE_CRUSADER).is_none(),
         "the Seal is spent"
     );
     assert_eq!(view.fields(me).unit_attack_power_mods(), (0, 0));
@@ -337,7 +347,7 @@ fn improved_seal_of_the_crusader_raises_its_attack_power_and_judgement() {
             .replace("xp = 0\n", "xp = 0\ntalents = [[1464, 3]]\n")
     };
     let (mut realm, me, _, mut view) = tanking_as(12, &improved);
-    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
     view.drain(&mut realm);
     // A level 4 Zealot: 20 + 4·4 = 36, 15% more is 41.4.
     assert_eq!(view.fields(me).unit_attack_power_mods(), (41, 0));
@@ -379,15 +389,15 @@ fn improved_seal_of_the_crusader_tells_the_client_the_seals_attack_power_is_high
 fn judged_judgement_of_command(
     (mut realm, me, mob, mut view): (Realm, u64, Mob, View),
 ) -> (u32, f64) {
-    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
+    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
     view.drain(&mut realm);
     view.run(&mut realm, 1.6);
     stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), JUDGEMENT), None);
+    realm.handle(cast(*JUDGEMENT, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(&mut realm), *JUDGEMENT), None);
     assert!(view.aura(mob.guid, JUDGEMENT_OF_THE_CRUSADER).is_some());
-    realm.handle(cast(SEAL_OF_COMMAND, None));
-    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_COMMAND), None);
+    realm.handle(cast(*SEAL_OF_COMMAND, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *SEAL_OF_COMMAND), None);
 
     // "Your melee strikes will refresh the spell's duration": one landed swing near its end.
     view.run(&mut realm, 8.0);
@@ -414,9 +424,9 @@ fn judged_judgement_of_command(
     );
 
     let ap = view.fields(me).unit_attack_power().unwrap() as f64;
-    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
+    realm.handle(cast(*JUDGEMENT, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, JUDGEMENT), None);
+    assert_eq!(refusal(&events, *JUDGEMENT), None);
     let hit = events
         .iter()
         .find_map(|e| match e {

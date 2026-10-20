@@ -593,21 +593,15 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     }
 }
 
-/// The spell rewrites of ADR 0003, made once the client has loaded its spell data, from the
-/// realm's content:
-/// - a Calling skill has no ranks: the spellbook, tooltip and learn line show none, even though
-///   each borrows a ranked 1.12 spell;
-/// - a WIP talent's rank spells read "<Name> (WIP)" in the talent frame and its tooltips;
-/// - a skill borrowed from another Class (Zealot's Paladin spells) costs the realm's rage in any
-///   stance, as a Warrior spell, so its button is lit and its tooltip shows rage.
+/// The spell rewrites of ADR 0011, made once the client has loaded its spell data:
+/// - the compiled-in patch inserts every Calling spell as a row of its own;
+/// - then a WIP talent's rank spells read "<Name> (WIP)" in the talent frame and its tooltips.
 fn rewrite_spells(mut spells: ResMut<crate::ui_action::Spells>) {
     let catalog = &mut spells.catalog;
-    catalog.clear_ranks(twilight_realm::callings::skill_spell_ids());
-    catalog.mark_wip(twilight_realm::callings::wip_rank_spell_ids());
-    // The compiled-in patch comes last, so the sheet's cost, power, cooldown and text win.
     if let Err(err) = catalog.apply_dbc_patch(benilla_formats::CLIENT_DBC_PATCH) {
         error!("client_dbc_patch.json does not parse: {err}");
     }
+    catalog.mark_wip(twilight_realm::callings::wip_rank_spell_ids());
 }
 
 /// Basic Warrior is the only Calling a character starts as, so create offers only Warrior.

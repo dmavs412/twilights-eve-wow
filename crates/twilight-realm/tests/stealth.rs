@@ -12,8 +12,10 @@ use twilight_realm::{Realm, RealmCommand};
 const SEED: u64 = 0x5EED_0109;
 const LEVEL: u8 = 10;
 
-const STEALTH: u32 = 1784;
-const SINISTER_STRIKE: u32 = 1752;
+static STEALTH: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "stealth"));
+static SINISTER_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "sinister_strike"));
 /// `SPELL_FAILED_AFFECTING_COMBAT`.
 const AFFECTING_COMBAT: u8 = 0x00;
 
@@ -53,7 +55,7 @@ fn cutthroat(seed: u64) -> (Realm, u64, Mob, View) {
 }
 
 fn stealthed(view: &View, me: u64) -> bool {
-    view.aura(me, STEALTH).is_some()
+    view.aura(me, *STEALTH).is_some()
 }
 
 /// Whether the mob went for the player in `events`.
@@ -66,9 +68,9 @@ fn aggroed(events: &[SessionEvent], mob: &Mob, me: u64) -> bool {
 
 /// Casts Stealth out of combat; the aura is up.
 fn go_stealthed(realm: &mut Realm, view: &mut View, me: u64) {
-    realm.handle(cast(STEALTH, None));
+    realm.handle(cast(*STEALTH, None));
     let events = view.drain(realm);
-    assert_eq!(refusal(&events, STEALTH), None, "the cast");
+    assert_eq!(refusal(&events, *STEALTH), None, "the cast");
     assert!(stealthed(view, me), "the aura is up");
 }
 
@@ -114,17 +116,17 @@ fn the_first_sinister_strike_from_stealth_crits_on_every_seed_and_breaks_it() {
         view.run(&mut realm, 1.0);
         // Next to it, the move and the strike in one go: the mob has not had a tick to notice.
         stand_at(&mut realm, &mob, 2.0);
-        realm.handle(cast(SINISTER_STRIKE, Some(mob.guid)));
+        realm.handle(cast(*SINISTER_STRIKE, Some(mob.guid)));
         let events = view.drain(&mut realm);
         assert_eq!(
-            refusal(&events, SINISTER_STRIKE),
+            refusal(&events, *SINISTER_STRIKE),
             None,
             "seed {seed}: the cast"
         );
         let hits: Vec<bool> = events
             .iter()
             .filter_map(|e| match e {
-                SessionEvent::SpellDamageLog(l) if l.spell_id == SINISTER_STRIKE => {
+                SessionEvent::SpellDamageLog(l) if l.spell_id == *SINISTER_STRIKE => {
                     Some(l.hit_info != 0)
                 }
                 _ => None,
@@ -146,10 +148,10 @@ fn the_second_strike_is_rolled_on_the_table() {
     for seed in 0..40 {
         let (mut realm, _, mob, mut view) = cutthroat(SEED + seed);
         stand_at(&mut realm, &mob, 2.0);
-        realm.handle(cast(SINISTER_STRIKE, Some(mob.guid)));
+        realm.handle(cast(*SINISTER_STRIKE, Some(mob.guid)));
         for e in view.drain(&mut realm) {
             if let SessionEvent::SpellDamageLog(l) = e {
-                if l.spell_id == SINISTER_STRIKE {
+                if l.spell_id == *SINISTER_STRIKE {
                     blows += 1;
                     crits += u32::from(l.hit_info != 0);
                 }
@@ -204,8 +206,8 @@ fn taking_damage_breaks_stealth() {
 fn stealth_cannot_be_cast_in_combat() {
     let (mut realm, me, mob, mut view) = cutthroat(SEED);
     assert!(approach(&mut realm, &mut view, &mob, me, 2.0), "pulled");
-    realm.handle(cast(STEALTH, None));
+    realm.handle(cast(*STEALTH, None));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, STEALTH), Some(AFFECTING_COMBAT));
+    assert_eq!(refusal(&events, *STEALTH), Some(AFFECTING_COMBAT));
     assert!(!stealthed(&view, me));
 }

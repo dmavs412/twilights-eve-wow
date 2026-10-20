@@ -1,6 +1,9 @@
 //! The Basic Warrior's skill numbers against `docs/reference/skills-and-talents.md` (its Tier 0
 //! table's L1/5/10 column): each skill's rage cost, cooldown, and an effect that grows with level.
 
+mod common;
+
+use common::spell;
 use twilight_realm::callings::{self, Effect};
 use twilight_realm::rules::skills::Linear;
 
@@ -55,18 +58,20 @@ fn amounts_round_half_away_from_zero_and_respect_their_floor() {
 
 #[test]
 fn heroic_strike_costs_15_rage_and_adds_11_17_24() {
-    let s = callings::skill(78).unwrap();
+    let id = spell("basic_warrior", "heroic_strike");
+    let s = callings::skill(id).unwrap();
     assert_eq!((s.power_cost, s.cooldown_ms, s.gcd_ms), (15, 0, 0));
-    assert_eq!(at_levels(78, 0), [11, 17, 24]);
+    assert_eq!(at_levels(id, 0), [11, 17, 24]);
 }
 
 #[test]
 fn charge_is_free_on_15_s_and_gives_9_9_10_rage() {
-    let s = callings::skill(100).unwrap();
+    let id = spell("basic_warrior", "charge");
+    let s = callings::skill(id).unwrap();
     assert_eq!((s.power_cost, s.cooldown_ms), (0, 15_000));
     assert_eq!(s.range_yd, [8.0, 25.0]);
     assert!(s.requires_out_of_combat);
-    assert_eq!(at_levels(100, 0), [9, 9, 10]);
+    assert_eq!(at_levels(id, 0), [9, 9, 10]);
 }
 
 /// `vanilla-combat-rules.md` §1.5's worked two-roll vector: a level-10 player's ability at a
@@ -102,7 +107,10 @@ fn an_ability_rolls_avoidance_without_glancing_then_crit_on_its_own() {
 
 #[test]
 fn every_skill_is_stronger_at_level_10_than_at_level_1() {
-    for id in [78, 100] {
+    for id in [
+        spell("basic_warrior", "heroic_strike"),
+        spell("basic_warrior", "charge"),
+    ] {
         let a = amount(id);
         assert!(a.at(10, 50) > a.at(1, 50), "spell {id}");
     }

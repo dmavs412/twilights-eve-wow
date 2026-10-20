@@ -328,27 +328,28 @@ fn the_shipped_actives_name_the_real_auras_and_cooldowns() {
             .and_then(|t| t.skill.as_ref())
             .unwrap_or_else(|| panic!("{key} teaches a skill"))
     };
+    let id = |key: &str| spell("initiate", key);
     let surge = &skill("mana_surge").effects;
     assert!(surge
         .iter()
         .any(|e| matches!(e, Effect::Energize { pct_of_max: 50, .. })));
     assert!(surge.iter().any(
-        |e| matches!(e, Effect::ResetCooldowns { spell_ids } if spell_ids[..2] == [1953, 8921])
+        |e| matches!(e, Effect::ResetCooldowns { spell_ids } if spell_ids[..2] == [id("blink"), id("catalyst")])
     ));
     let convergence = &skill("elemental_convergence").effects;
     assert!(convergence.iter().any(|e| matches!(
         e,
         Effect::PeriodicDamage {
-            aura_spell_id: Some(133),
+            aura_spell_id: Some(a),
             max_stacks: 3,
             ..
-        }
+        } if *a == id("aura_searing_ember")
     )));
     assert!(convergence.iter().any(|e| matches!(
         e,
         Effect::ModRunSpeed {
-            aura_spell_id: Some(116),
+            aura_spell_id: Some(a),
             ..
-        }
+        } if *a == id("aura_biting_cold")
     )));
 }

@@ -15,8 +15,10 @@ const RANGED: u8 = 17;
 const CRACKED_SHORTBOW: u32 = 2773;
 const BOW_SPEED_SECS: f32 = 2.3;
 const LIGHT_SHOT: u32 = 2516;
-const AUTO_SHOT: u32 = 75;
-const SNAPSHOT: u32 = 3044;
+static AUTO_SHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "auto_shot"));
+static SNAPSHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "snapshot"));
 const SPELL_FAILED_NO_AMMO: u8 = 0x43;
 /// `EQUIP_ERR_ONLY_AMMO_CAN_GO_HERE`.
 const EQUIP_ERR_AMMO_ONLY: u8 = 7;
@@ -72,9 +74,9 @@ fn without_arrows_snapshot_is_refused_and_auto_shot_stops() {
     let (mut realm, _, mob, _) = unloaded(&[]);
     stand_at(&mut realm, &mob, 20.0);
     drain(&mut realm);
-    realm.handle(cast(SNAPSHOT, Some(mob.guid)));
+    realm.handle(cast(*SNAPSHOT, Some(mob.guid)));
     assert_eq!(
-        refusal(&drain(&mut realm), SNAPSHOT),
+        refusal(&drain(&mut realm), *SNAPSHOT),
         Some(SPELL_FAILED_NO_AMMO)
     );
 
@@ -85,7 +87,7 @@ fn without_arrows_snapshot_is_refused_and_auto_shot_stops() {
     stand_at(&mut realm, &mob, 20.0);
     realm.tick(1.0, &FlatGround);
     drain(&mut realm);
-    realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+    realm.handle(cast(*AUTO_SHOT, Some(mob.guid)));
     let mut events = Vec::new();
     for _ in 0..60 {
         realm.tick(0.1, &FlatGround);
@@ -93,7 +95,7 @@ fn without_arrows_snapshot_is_refused_and_auto_shot_stops() {
     }
     let shots = events
         .iter()
-        .filter(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == AUTO_SHOT))
+        .filter(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == *AUTO_SHOT))
         .count();
     assert_eq!(shots, 1, "one arrow, one shot");
     assert!(events
@@ -114,10 +116,10 @@ fn each_shot_spends_one_arrow() {
     stand_at(&mut realm, &mob, 20.0);
     realm.tick(1.0, &FlatGround);
     drain(&mut realm);
-    realm.handle(cast(SNAPSHOT, Some(mob.guid)));
-    assert_eq!(refusal(&drain(&mut realm), SNAPSHOT), None);
+    realm.handle(cast(*SNAPSHOT, Some(mob.guid)));
+    assert_eq!(refusal(&drain(&mut realm), *SNAPSHOT), None);
     assert_eq!(arrows_left(&realm, me), 199);
-    realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+    realm.handle(cast(*AUTO_SHOT, Some(mob.guid)));
     realm.tick(0.05, &FlatGround);
     drain(&mut realm);
     assert_eq!(arrows_left(&realm, me), 198);
@@ -137,9 +139,9 @@ fn bullets_do_not_fit_a_bow() {
     )));
     stand_at(&mut realm, &mob, 20.0);
     drain(&mut realm);
-    realm.handle(cast(SNAPSHOT, Some(mob.guid)));
+    realm.handle(cast(*SNAPSHOT, Some(mob.guid)));
     assert_eq!(
-        refusal(&drain(&mut realm), SNAPSHOT),
+        refusal(&drain(&mut realm), *SNAPSHOT),
         Some(SPELL_FAILED_NO_AMMO)
     );
 }

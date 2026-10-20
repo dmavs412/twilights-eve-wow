@@ -26,6 +26,78 @@ pub const MAGE: u8 = 8;
 pub const KALIMDOR: u32 = 1;
 pub const THE_BARRENS: u32 = 17;
 
+/// The master sheet's realm data (`server_spells.json`): a test names a sheet spell by its
+/// Calling and key and reads its id here, never a number (ADR 0011).
+fn sheet() -> &'static serde_json::Value {
+    static SHEET: std::sync::OnceLock<serde_json::Value> = std::sync::OnceLock::new();
+    SHEET.get_or_init(|| {
+        serde_json::from_str(include_str!(
+            "../../../../data/twilights-eve/server_spells.json"
+        ))
+        .expect("server_spells.json parses")
+    })
+}
+
+fn sheet_calling(calling: &str) -> &'static serde_json::Value {
+    sheet()
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["key"] == calling)
+        .unwrap_or_else(|| panic!("{calling} is not a Calling of the sheet"))
+}
+
+fn id_of(row: &serde_json::Value, what: &str) -> u32 {
+    row["spell_id"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("{what} has no spell id")) as u32
+}
+
+/// The spell id of `calling`'s skill or aura `key` on the sheet.
+pub fn spell(calling: &str, key: &str) -> u32 {
+    let c = sheet_calling(calling);
+    let row = ["skills", "auras"]
+        .iter()
+        .flat_map(|list| c[*list].as_array().unwrap())
+        .find(|r| r["key"] == key)
+        .unwrap_or_else(|| panic!("{calling}/{key} is not a skill or aura of the sheet"));
+    id_of(row, &format!("{calling}/{key}"))
+}
+
+/// The spell ids of `calling`'s skills or auras `keys`, in order.
+pub fn spells(calling: &str, keys: &[&str]) -> Vec<u32> {
+    keys.iter().map(|key| spell(calling, key)).collect()
+}
+
+/// The spell id of rank `rank` (from 1) of `calling`'s talent `key` on the sheet.
+pub fn talent_spell(calling: &str, key: &str, rank: usize) -> u32 {
+    let talent = sheet_calling(calling)["talent_tabs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|tab| tab["talents"].as_array().unwrap())
+        .find(|t| t["key"] == key)
+        .unwrap_or_else(|| panic!("{calling}/{key} is not a talent of the sheet"));
+    id_of(
+        &talent["ranks"][rank - 1],
+        &format!("{calling}/{key} rank {rank}"),
+    )
+}
+
+/// Every rank's spell id of `calling`'s talent `key`, rank 1 first.
+pub fn talent_spells(calling: &str, key: &str) -> Vec<u32> {
+    let talent = sheet_calling(calling)["talent_tabs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|tab| tab["talents"].as_array().unwrap())
+        .find(|t| t["key"] == key)
+        .unwrap_or_else(|| panic!("{calling}/{key} is not a talent of the sheet"));
+    (1..=talent["ranks"].as_array().unwrap().len())
+        .map(|rank| talent_spell(calling, key, rank))
+        .collect()
+}
+
 /// Flat ground at `z = 0` with nothing in the way, and no area anywhere: nothing to discover.
 pub struct FlatGround;
 

@@ -2,6 +2,9 @@
 //! Seal of Command's proc chance and damage, and Judgement of Command's holy hit by level and
 //! attack power.
 
+mod common;
+
+use common::spell;
 use twilight_realm::callings::{self, Effect, Seal};
 use twilight_realm::rules::school::{mitigated, School};
 
@@ -47,7 +50,7 @@ fn seal_of_command_deals_seventy_percent_of_weapon_damage() {
 
 /// The Zealot's Seal of Command, as its content says.
 fn seal_of_command() -> Seal {
-    let skill = callings::skill(20375).expect("Seal of Command");
+    let skill = callings::skill(spell("zealot", "seal_of_command")).expect("Seal of Command");
     skill
         .effects
         .iter()
@@ -60,7 +63,7 @@ fn seal_of_command() -> Seal {
 
 #[test]
 fn seal_of_command_is_a_thirty_second_seal_of_seven_procs_a_minute_at_seventy_percent() {
-    let skill = callings::skill(20375).unwrap();
+    let skill = callings::skill(spell("zealot", "seal_of_command")).unwrap();
     assert!(skill.effects.contains(&Effect::Seal {
         duration_ms: 30_000,
         seal: seal_of_command()
@@ -112,7 +115,8 @@ fn judgement_of_the_crusader_raises_holy_damage_taken() {
 
 /// The Zealot's Seal of the Crusader, as its content says.
 fn seal_of_the_crusader() -> Seal {
-    let skill = callings::skill(20305).expect("Seal of the Crusader");
+    let skill =
+        callings::skill(spell("zealot", "seal_of_the_crusader")).expect("Seal of the Crusader");
     assert!(skill.effects.iter().any(|e| matches!(
         e,
         Effect::Seal {

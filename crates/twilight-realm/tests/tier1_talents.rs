@@ -18,7 +18,8 @@ const HALLOWED_GROUND: u32 = 128;
 const SPIRITUAL_FOCUS: u32 = 1405;
 const RIGHTEOUS_FURY: u32 = 157;
 const HAMMER_OF_THE_VANGUARD: u32 = 152;
-const HAMMER_RANKS: [u32; 1] = [12809];
+static HAMMER_RANKS: std::sync::LazyLock<Vec<u32>> =
+    std::sync::LazyLock::new(|| talent_spells("vanguard", "hammer_of_vanguard"));
 /// A Basic Warrior talent the Vanguard tree does not have.
 const IMPROVED_HEROIC_STRIKE: u32 = 124;
 
@@ -87,7 +88,7 @@ fn fifteen_points_in_righteous_reach_the_hammer() {
     assert_eq!(points(&events, me), Some(14));
     learn(&mut realm, &mut events, HAMMER_OF_THE_VANGUARD, 1);
     assert_eq!(points(&events, me), Some(13));
-    assert!(knows_any(&events, &HAMMER_RANKS));
+    assert!(knows_any(&events, &*HAMMER_RANKS));
 }
 
 #[test]

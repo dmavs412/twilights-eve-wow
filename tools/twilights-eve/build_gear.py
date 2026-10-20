@@ -169,13 +169,12 @@ def ids(value: str, column: str, where: str) -> list[int]:
 
 
 def known_spells(master_path: str) -> dict[int, str]:
-    """Every spell id master.csv names, client or realm side, with its row's name."""
+    """Every spell id master.csv names, with its row's name."""
     spells = {}
     with open(master_path, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            for column in ("client_spell_id", "realm_spell_id"):
-                if row.get(column):
-                    spells.setdefault(int(row[column]), row["name"])
+            if row.get("spell_id"):
+                spells.setdefault(int(row["spell_id"]), row["name"])
     return spells
 
 

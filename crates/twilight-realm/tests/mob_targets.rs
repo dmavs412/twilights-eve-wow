@@ -12,7 +12,8 @@ use common::*;
 const HUNTER: u32 = 3265;
 const THORN_HILL: [f32; 3] = [-38.801, -3234.81, 91.889];
 const CORRUPTION: &str = "corruption_creature";
-const GOUGE: u32 = 1776;
+static GOUGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "gouge"));
 /// Whole rage points Gouge costs.
 const GOUGE_RAGE: u32 = 15;
 
@@ -120,8 +121,8 @@ fn gouged(seed: u64) -> (Party, u64, u32) {
     }
     assert!(rage_of(&party, 0) >= GOUGE_RAGE, "rage for Gouge");
     party.cmd(0, RealmCommand::AttackStop);
-    party.cmd(0, cast(GOUGE, Some(hunter)));
-    assert_eq!(refusal(party.seen(0), GOUGE), None, "gouge is cast");
+    party.cmd(0, cast(*GOUGE, Some(hunter)));
+    assert_eq!(refusal(party.seen(0), *GOUGE), None, "gouge is cast");
     (party, hunter, max)
 }
 

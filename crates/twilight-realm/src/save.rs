@@ -9,13 +9,45 @@ use crate::dungeon::Place;
 use crate::inn::Bind;
 use crate::inventory::{bag_size, Inventory, Pos};
 
-/// The save format this realm writes. It also reads version 1, which has the same layout; a save
-/// from any other version is refused.
-pub const SAVE_VERSION: u32 = 2;
+/// The save format this realm writes. It also reads versions 1 and 2, which have the same layout;
+/// a save from any other version is refused. Version 3's spell ids are the sheet's own (ADR
+/// 0011): an older save's action bar names stock spell ids, remapped on load through
+/// [`OLD_SPELL_IDS`].
+pub const SAVE_VERSION: u32 = 3;
 
 /// The oldest save version the realm still reads. Version 2's quests are Hunting Quests, done once
 /// per Tier; version 1's are read the same way.
 const OLDEST_VERSION: u32 = 1;
+
+/// The last version whose spell ids were stock 1.12.1 ones.
+const LAST_STOCK_IDS_VERSION: u32 = 2;
+
+/// The one-time table of stock spell ids to the sheet's own, written by
+/// `tools/twilights-eve/migrate_from_scratch.py` (#204).
+const OLD_SPELL_IDS: &str = include_str!("../../../data/twilights-eve/spell_id_remap.json");
+
+/// Action button kind 0: a spell.
+const ACTION_SPELL: u32 = 0;
+
+/// A stock-id save's action bar with each spell button's id remapped; a spell the table lacks
+/// leaves its button empty. Other buttons (macros, items) stay.
+fn remap_action_bar(bar: Vec<(u8, u32)>) -> Vec<(u8, u32)> {
+    let table: std::collections::HashMap<u32, u32> =
+        serde_json::from_str::<std::collections::HashMap<String, u32>>(OLD_SPELL_IDS)
+            .expect("spell_id_remap.json parses")
+            .into_iter()
+            .map(|(old, new)| (old.parse().expect("an old spell id"), new))
+            .collect();
+    bar.into_iter()
+        .filter_map(|(slot, packed)| {
+            if packed >> 24 != ACTION_SPELL {
+                return Some((slot, packed));
+            }
+            let new = table.get(&(packed & 0x00FF_FFFF))?;
+            Some((slot, ACTION_SPELL << 24 | new))
+        })
+        .collect()
+}
 
 /// Seconds between the in-world autosaves.
 pub(crate) const AUTOSAVE_SECS: f32 = 60.0;
@@ -284,7 +316,11 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         zone: s.zone,
         position: s.position,
         orientation: s.orientation,
-        action_bar: s.action_bar,
+        action_bar: if header.version <= LAST_STOCK_IDS_VERSION {
+            s.action_bar.map(remap_action_bar)
+        } else {
+            s.action_bar
+        },
         talents: s.talents,
         talent_wipes: s.talent_wipes,
         inventory: load_inventory(s.money, s.ammo, &s.items)?,

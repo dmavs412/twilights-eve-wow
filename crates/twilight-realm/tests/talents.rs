@@ -11,13 +11,17 @@ use twilight_realm::DevMultipliers;
 
 // The Recruit tree's borrowed `Talent.dbc` ids and their rank spells (`master.csv`).
 const FIELD_MEDIC: u32 = 140;
-const FIELD_MEDIC_RANKS: [u32; 5] = [12299, 12761, 12762, 12763, 12764];
+static FIELD_MEDIC_RANKS: std::sync::LazyLock<Vec<u32>> =
+    std::sync::LazyLock::new(|| talent_spells("basic_warrior", "field_medic"));
 const INITIATES_SPARK: u32 = 31;
-const INITIATES_SPARK_RANKS: [u32; 3] = [4835, 4836, 4837];
+static INITIATES_SPARK_RANKS: std::sync::LazyLock<Vec<u32>> =
+    std::sync::LazyLock::new(|| talent_spells("basic_warrior", "initiates_spark"));
 const SAVAGE_STRIKES: u32 = 272;
-const SAVAGE_STRIKES_RANKS: [u32; 2] = [14144, 14148];
+static SAVAGE_STRIKES_RANKS: std::sync::LazyLock<Vec<u32>> =
+    std::sync::LazyLock::new(|| talent_spells("basic_warrior", "savage_strikes"));
 const VANGUARDS_RESOLVE: u32 = 382;
-const VANGUARDS_RESOLVE_RANKS: [u32; 1] = [14983];
+static VANGUARDS_RESOLVE_RANKS: std::sync::LazyLock<Vec<u32>> =
+    std::sync::LazyLock::new(|| talent_spells("basic_warrior", "vanguards_resolve"));
 /// A real Warrior talent that is not in the Recruit tree: Mortal Strike.
 const MORTAL_STRIKE: u32 = 135;
 
@@ -90,12 +94,12 @@ fn learning_a_talent_spends_a_point_and_teaches_its_rank_spell() {
         |e| matches!(e, SessionEvent::SpellLearned { spell_id } if *spell_id == FIELD_MEDIC_RANKS[0])
     ));
     assert_eq!(view.points(me), 2);
-    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 1);
+    assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 1);
 
     learn(&mut realm, FIELD_MEDIC, 1);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 1);
-    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 2);
+    assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 2);
 }
 
 #[test]
@@ -106,7 +110,7 @@ fn a_talent_cannot_be_learned_without_a_point() {
     view.drain(&mut realm);
     assert_eq!(view.points(me), 0);
     assert_eq!(
-        view.talent_rank(&FIELD_MEDIC_RANKS),
+        view.talent_rank(&*FIELD_MEDIC_RANKS),
         1,
         "one point, one rank"
     );
@@ -130,7 +134,7 @@ fn a_talent_has_no_rank_past_its_last() {
         learn(&mut realm, INITIATES_SPARK, rank);
     }
     view.drain(&mut realm);
-    assert_eq!(view.talent_rank(&INITIATES_SPARK_RANKS), 3);
+    assert_eq!(view.talent_rank(&*INITIATES_SPARK_RANKS), 3);
     assert_eq!(view.points(me), 6);
 }
 
@@ -154,8 +158,8 @@ fn the_second_row_opens_after_five_points_in_the_tab() {
     learn(&mut realm, SAVAGE_STRIKES, 0);
     view.drain(&mut realm);
     assert_eq!(view.points(me), 3, "open at five");
-    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 5);
-    assert_eq!(view.talent_rank(&SAVAGE_STRIKES_RANKS), 1);
+    assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 5);
+    assert_eq!(view.talent_rank(&*SAVAGE_STRIKES_RANKS), 1);
 }
 
 #[test]
@@ -164,7 +168,7 @@ fn a_talent_the_realm_does_not_model_yet_is_still_learned() {
     open_the_second_row(&mut realm);
     learn(&mut realm, VANGUARDS_RESOLVE, 0);
     view.drain(&mut realm);
-    assert_eq!(view.talent_rank(&VANGUARDS_RESOLVE_RANKS), 1);
+    assert_eq!(view.talent_rank(&*VANGUARDS_RESOLVE_RANKS), 1);
     assert_eq!(view.points(me), 3);
 }
 
@@ -295,13 +299,14 @@ fn a_respec_costs_gold_returns_every_point_and_clears_the_talents() {
         })
         .collect();
     let mut every_rank: Vec<u32> = SAVAGE_STRIKES_RANKS
-        .into_iter()
-        .chain(FIELD_MEDIC_RANKS)
+        .iter()
+        .chain(FIELD_MEDIC_RANKS.iter())
+        .copied()
         .collect();
     every_rank.sort_unstable();
     assert_eq!(removed.into_iter().collect::<Vec<_>>(), every_rank);
-    assert_eq!(view.talent_rank(&SAVAGE_STRIKES_RANKS), 0);
-    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 0);
+    assert_eq!(view.talent_rank(&*SAVAGE_STRIKES_RANKS), 0);
+    assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 0);
 
     // The next one costs 5 gold.
     learn(&mut realm, FIELD_MEDIC, 0);
@@ -324,7 +329,7 @@ fn a_respec_without_the_gold_changes_nothing() {
     });
     view.drain(&mut realm);
     assert_eq!(view.money(me), 9999);
-    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 1);
+    assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 1);
     assert_eq!(view.points(me), 2);
 }
 
@@ -345,7 +350,7 @@ fn the_trainer_must_be_close_to_respec() {
     });
     view.drain(&mut realm);
     assert_eq!(view.money(me), 20_000);
-    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 1);
+    assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 1);
 }
 
 #[test]
@@ -406,8 +411,8 @@ fn talents_and_points_come_back_from_the_save() {
     let mut view = View::default();
     view.drain(&mut other);
     assert_eq!(view.points(me), 0);
-    assert_eq!(view.talent_rank(&FIELD_MEDIC_RANKS), 5);
-    assert_eq!(view.talent_rank(&SAVAGE_STRIKES_RANKS), 1);
+    assert_eq!(view.talent_rank(&*FIELD_MEDIC_RANKS), 5);
+    assert_eq!(view.talent_rank(&*SAVAGE_STRIKES_RANKS), 1);
 }
 
 #[test]

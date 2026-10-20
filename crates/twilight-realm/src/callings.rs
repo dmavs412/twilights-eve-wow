@@ -1617,12 +1617,6 @@ pub fn skill(spell_id: u32) -> Option<&'static Skill> {
         .find(|s| s.spell_id == spell_id)
 }
 
-/// Every Calling skill's spell id, active talents' included: the spells whose rank text the
-/// client blanks.
-pub fn skill_spell_ids() -> impl Iterator<Item = u32> {
-    all().into_iter().flat_map(every_skill).map(|s| s.spell_id)
-}
-
 /// Every skill borrowed from another Class, once each: the spells the client rewrites to cost
 /// rage (ADR 0003).
 pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {

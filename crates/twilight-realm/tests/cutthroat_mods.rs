@@ -17,9 +17,13 @@ const ENERGY: u8 = 3;
 const SEEDS: u64 = 400;
 const FIRST_SEED: u64 = 0x5EED_0111;
 
-const SINISTER_STRIKE: u32 = 1752;
-const EVISCERATE: u32 = 2098;
-const RUPTURE: u32 = 1943;
+static SINISTER_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "sinister_strike"));
+static EVISCERATE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "eviscerate"));
+/// The test Calling's builder and Rupture, as `TEST_CALLINGS` numbers them.
+const TEST_STRIKE: u32 = 1752;
+const TEST_RUPTURE: u32 = 1943;
 
 /// `Talent.dbc` ids of the talents under test.
 const LETHALITY: u32 = 269;
@@ -199,15 +203,15 @@ fn ticks(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
 fn lethality_raises_sinister_strike_crits_by_thirty_percent() {
     for seed in FIRST_SEED..FIRST_SEED + SEEDS {
         let (mut realm, _, mob, mut view) = cutthroat(seed, &[]);
-        let Some(bare) = cast_all(&mut realm, &mut view, &mob, &[SINISTER_STRIKE]) else {
+        let Some(bare) = cast_all(&mut realm, &mut view, &mob, &[*SINISTER_STRIKE]) else {
             continue;
         };
-        let Some((plain, true)) = hit(&bare, SINISTER_STRIKE) else {
+        let Some((plain, true)) = hit(&bare, *SINISTER_STRIKE) else {
             continue;
         };
         let (mut realm, _, mob, mut view) = cutthroat(seed, &[(LETHALITY, 5)]);
-        let trained = cast_all(&mut realm, &mut view, &mob, &[SINISTER_STRIKE]).unwrap();
-        let (more, crit) = hit(&trained, SINISTER_STRIKE).unwrap();
+        let trained = cast_all(&mut realm, &mut view, &mob, &[*SINISTER_STRIKE]).unwrap();
+        let (more, crit) = hit(&trained, *SINISTER_STRIKE).unwrap();
         assert!(crit, "the same swing crits");
         // 200% of the hit becomes 260%.
         assert!(
@@ -223,21 +227,21 @@ fn lethality_raises_sinister_strike_crits_by_thirty_percent() {
 fn lethality_leaves_eviscerate_crits_as_they_were() {
     for seed in FIRST_SEED..FIRST_SEED + SEEDS {
         let (mut realm, _, mob, mut view) = cutthroat(seed, &[]);
-        let spells = [SINISTER_STRIKE, EVISCERATE];
+        let spells = [*SINISTER_STRIKE, *EVISCERATE];
         let Some(bare) = cast_all(&mut realm, &mut view, &mob, &spells) else {
             continue;
         };
         // The builder's own crit would change the mob's health, not the roll after it.
-        if matches!(hit(&bare, SINISTER_STRIKE), Some((_, true))) {
+        if matches!(hit(&bare, *SINISTER_STRIKE), Some((_, true))) {
             continue;
         }
-        let Some((plain, true)) = hit(&bare, EVISCERATE) else {
+        let Some((plain, true)) = hit(&bare, *EVISCERATE) else {
             continue;
         };
         let (mut realm, _, mob, mut view) = cutthroat(seed, &[(LETHALITY, 5)]);
         let trained = cast_all(&mut realm, &mut view, &mob, &spells).unwrap();
         assert_eq!(
-            hit(&trained, EVISCERATE),
+            hit(&trained, *EVISCERATE),
             Some((plain, true)),
             "seed {seed:#x}: Eviscerate's crit"
         );
@@ -251,9 +255,9 @@ fn flurry_of_blades_cuts_sinister_strikes_cost() {
     let cost = |talents: &[(u32, u8)]| {
         let (mut realm, me, mob, mut view) = cutthroat(FIRST_SEED, talents);
         stand_at(&mut realm, &mob, 2.0);
-        realm.handle(cast(SINISTER_STRIKE, Some(mob.guid)));
+        realm.handle(cast(*SINISTER_STRIKE, Some(mob.guid)));
         let events = view.drain(&mut realm);
-        assert_eq!(refusal(&events, SINISTER_STRIKE), None);
+        assert_eq!(refusal(&events, *SINISTER_STRIKE), None);
         100 - view.fields(me).unit_power(ENERGY).unwrap()
     };
     assert_eq!(cost(&[]), 40);
@@ -269,13 +273,13 @@ fn rupture(points: u32, talents: &[(u32, u8)]) -> Vec<u32> {
     let mob = &camp[0];
     stand_at(&mut realm, mob, 2.0);
     for _ in 0..points {
-        realm.handle(cast(SINISTER_STRIKE, Some(mob.guid)));
+        realm.handle(cast(TEST_STRIKE, Some(mob.guid)));
     }
-    realm.handle(cast(RUPTURE, Some(mob.guid)));
+    realm.handle(cast(TEST_RUPTURE, Some(mob.guid)));
     let mut seen = view.drain(&mut realm);
-    assert_eq!(refusal(&seen, RUPTURE), None);
+    assert_eq!(refusal(&seen, TEST_RUPTURE), None);
     seen.extend(view.run(&mut realm, 30.0));
-    ticks(&seen, RUPTURE)
+    ticks(&seen, TEST_RUPTURE)
 }
 
 #[test]

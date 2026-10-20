@@ -15,13 +15,16 @@ use twilight_realm::{Realm, RealmCommand};
 const RANGED: u8 = 17;
 const CRACKED_SHORTBOW: u32 = 2773;
 
-const VAULT: u32 = 781;
-const SNAPSHOT: u32 = 3044;
+static VAULT: std::sync::LazyLock<u32> = std::sync::LazyLock::new(|| spell("ranger", "vault"));
+static SNAPSHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "snapshot"));
 /// `Talent.dbc` ids, and the auras' spell ids (each rank's own).
 const GUERILLA_TACTICS: u32 = 1311;
-const GUERILLA_TACTICS_2: u32 = 19297;
+static GUERILLA_TACTICS_2: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent_spell("ranger", "guerilla_tactics", 2));
 const STEADFAST_AIM: u32 = 1384;
-const ENTRENCHED_1: u32 = 19559;
+static ENTRENCHED_1: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent_spell("ranger", "steadfast_aim", 1));
 
 const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 
@@ -92,23 +95,23 @@ fn vault_leaps_15_yards_back_and_waits_15_seconds() {
         orientation: 0.0,
     });
     view.run(&mut realm, 1.0);
-    realm.handle(cast(VAULT, None));
+    realm.handle(cast(*VAULT, None));
     let events = view.run(&mut realm, 0.1);
-    assert_eq!(refusal(&events, VAULT), None);
+    assert_eq!(refusal(&events, *VAULT), None);
     let to = teleported(&events).expect("Vault moves the Ranger");
     // Facing east (orientation 0), so straight back is west.
     assert!((to[0] - (start[0] - 15.0)).abs() < 0.01, "to {to:?}");
     assert!((to[1] - start[1]).abs() < 0.01, "to {to:?}");
 
     view.run(&mut realm, 14.0);
-    realm.handle(cast(VAULT, None));
+    realm.handle(cast(*VAULT, None));
     assert_eq!(
-        refusal(&view.drain(&mut realm), VAULT),
+        refusal(&view.drain(&mut realm), *VAULT),
         Some(SPELL_FAILED_NOT_READY)
     );
     view.run(&mut realm, 1.0);
-    realm.handle(cast(VAULT, None));
-    assert_eq!(refusal(&view.drain(&mut realm), VAULT), None);
+    realm.handle(cast(*VAULT, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *VAULT), None);
 }
 
 /// Guerilla Tactics rank 2: 2 s of moving put one stack on (20%), 6 s three, and no more.
@@ -117,14 +120,14 @@ fn guerilla_tactics_stacks_every_2_seconds_of_moving() {
     let (mut realm, me, _, mut view) = ranger(&[(GUERILLA_TACTICS, 2)], 0xB0_0002);
     let at = walk(&mut realm, &mut view, [-441.8, -2648.6, 0.0], 1.8);
     assert!(
-        view.aura(me, GUERILLA_TACTICS_2).is_none(),
+        view.aura(me, *GUERILLA_TACTICS_2).is_none(),
         "not before 2 s"
     );
     let at = walk(&mut realm, &mut view, at, 0.4);
-    let one = view.aura(me, GUERILLA_TACTICS_2).expect("on at 2 s");
+    let one = view.aura(me, *GUERILLA_TACTICS_2).expect("on at 2 s");
     assert_eq!(one.stacks, 1);
     walk(&mut realm, &mut view, at, 6.0);
-    assert_eq!(view.aura(me, GUERILLA_TACTICS_2).unwrap().stacks, 3);
+    assert_eq!(view.aura(me, *GUERILLA_TACTICS_2).unwrap().stacks, 3);
 }
 
 /// The next Snapshot after 2 s of moving deals 20% more with rank 2, then the buff is gone. The
@@ -139,20 +142,20 @@ fn the_next_snapshot_after_moving_deals_more_and_uses_the_buff() {
             walk(&mut realm, &mut view, [-441.8, -2648.6, 0.0], 2.2);
             stand_at(&mut realm, &mob, 20.0);
             view.drain(&mut realm);
-            realm.handle(cast(SNAPSHOT, Some(mob.guid)));
+            realm.handle(cast(*SNAPSHOT, Some(mob.guid)));
             let events = view.run(&mut realm, 0.1);
             dealt.push(events.iter().find_map(|e| match e {
-                SessionEvent::SpellDamageLog(l) if l.spell_id == SNAPSHOT && l.hit_info == 0 => {
+                SessionEvent::SpellDamageLog(l) if l.spell_id == *SNAPSHOT && l.hit_info == 0 => {
                     Some(l.damage)
                 }
                 _ => None,
             }));
             let landed = events
                 .iter()
-                .any(|e| matches!(e, SessionEvent::SpellDamageLog(l) if l.spell_id == SNAPSHOT));
+                .any(|e| matches!(e, SessionEvent::SpellDamageLog(l) if l.spell_id == *SNAPSHOT));
             if !talents.is_empty() && landed {
                 assert!(
-                    view.aura(me, GUERILLA_TACTICS_2).is_none(),
+                    view.aura(me, *GUERILLA_TACTICS_2).is_none(),
                     "Snapshot used it"
                 );
             }
@@ -175,14 +178,14 @@ fn entrenched_goes_on_after_2_seconds_still_and_off_at_the_first_step() {
     let at = walk(&mut realm, &mut view, [-441.8, -2648.6, 0.0], 0.5);
     view.run(&mut realm, 2.0);
     assert!(
-        view.aura(me, ENTRENCHED_1).is_none(),
+        view.aura(me, *ENTRENCHED_1).is_none(),
         "not before 2 s still"
     );
     view.run(&mut realm, 1.0);
-    assert!(view.aura(me, ENTRENCHED_1).is_some(), "on after 2 s still");
+    assert!(view.aura(me, *ENTRENCHED_1).is_some(), "on after 2 s still");
     walk(&mut realm, &mut view, at, 0.1);
     assert!(
-        view.aura(me, ENTRENCHED_1).is_none(),
+        view.aura(me, *ENTRENCHED_1).is_none(),
         "the first step takes it off"
     );
 }

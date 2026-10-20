@@ -12,11 +12,15 @@ use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
 const MOMENTUM: u32 = 222;
-const HEROIC_STRIKE: u32 = 78;
-const CHARGE: u32 = 100;
+static HEROIC_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "heroic_strike"));
+static CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "charge"));
 /// The borrowed spell the crit aura shows as (Cold Blood), and the speed aura (Sprint).
-const CRIT_AURA: u32 = 14177;
-const SPEED_AURA: u32 = 2983;
+static CRIT_AURA: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "momentum_crit_1"));
+static SPEED_AURA: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "momentum_speed_1"));
 /// A player's run speed, yd/s.
 const RUN: f32 = 7.0;
 
@@ -80,8 +84,8 @@ fn run_speeds(events: &[SessionEvent], me: u64) -> Vec<f32> {
 /// Strike. The aura's 10 s are not yet up.
 fn charge_and_build_rage(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob) {
     stand_at(realm, mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(realm), CHARGE), None, "the charge");
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(realm), *CHARGE), None, "the charge");
     stand_at(realm, mob, 2.0);
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
     for _ in 0..80 {
@@ -98,13 +102,13 @@ fn charge_and_build_rage(realm: &mut Realm, view: &mut View, me: u64, mob: &Mob)
 fn strike_after_charge(talents: &[(u32, u8)], seed: u64) -> Option<(bool, bool)> {
     let (mut realm, me, mob, mut view) = warrior(talents, seed);
     charge_and_build_rage(&mut realm, &mut view, me, &mob);
-    realm.handle(cast(HEROIC_STRIKE, Some(mob.guid)));
+    realm.handle(cast(*HEROIC_STRIKE, Some(mob.guid)));
     let events = view.run(&mut realm, 3.0);
     let crit = events.iter().find_map(|e| match e {
-        SessionEvent::SpellDamageLog(l) if l.spell_id == HEROIC_STRIKE => Some(l.hit_info != 0),
+        SessionEvent::SpellDamageLog(l) if l.spell_id == *HEROIC_STRIKE => Some(l.hit_info != 0),
         _ => None,
     })?;
-    Some((crit, view.aura(me, CRIT_AURA).is_some()))
+    Some((crit, view.aura(me, *CRIT_AURA).is_some()))
 }
 
 #[test]
@@ -134,31 +138,31 @@ fn without_the_talent_heroic_strike_after_charge_does_not_always_crit() {
 fn white_swings_do_not_use_the_crit_charge() {
     let (mut realm, me, mob, mut view) = warrior(&[(MOMENTUM, 2)], 3);
     charge_and_build_rage(&mut realm, &mut view, me, &mob);
-    assert!(view.aura(me, CRIT_AURA).is_some());
+    assert!(view.aura(me, *CRIT_AURA).is_some());
 }
 
 #[test]
 fn charge_speeds_the_warrior_up_for_the_auras_duration_then_back() {
     let (mut realm, me, mob, mut view) = warrior(&[(MOMENTUM, 2)], 3);
     stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
     let at_cast = run_speeds(&view.drain(&mut realm), me);
     assert_eq!(at_cast.len(), 1, "{at_cast:?}");
     assert!((at_cast[0] - RUN * 1.3).abs() < 1e-3, "{at_cast:?}");
-    assert!(view.aura(me, SPEED_AURA).is_some());
+    assert!(view.aura(me, *SPEED_AURA).is_some());
 
     let during = run_speeds(&view.run(&mut realm, 3.0), me);
     assert!(during.is_empty(), "still fast: {during:?}");
     let after = run_speeds(&view.run(&mut realm, 1.5), me);
     assert_eq!(after, vec![RUN]);
-    assert_eq!(view.aura(me, SPEED_AURA), None);
+    assert_eq!(view.aura(me, *SPEED_AURA), None);
 }
 
 #[test]
 fn rank_one_grants_its_smaller_speed() {
     let (mut realm, me, mob, mut view) = warrior(&[(MOMENTUM, 1)], 3);
     stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
     let at_cast = run_speeds(&view.drain(&mut realm), me);
     assert!((at_cast[0] - RUN * 1.15).abs() < 1e-3, "{at_cast:?}");
 }
@@ -167,7 +171,7 @@ fn rank_one_grants_its_smaller_speed() {
 fn without_the_talent_charge_changes_no_speed() {
     let (mut realm, me, mob, mut view) = warrior(&[], 3);
     stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
     assert!(run_speeds(&view.drain(&mut realm), me).is_empty());
-    assert_eq!(view.aura(me, CRIT_AURA), None);
+    assert_eq!(view.aura(me, *CRIT_AURA), None);
 }

@@ -293,13 +293,17 @@ fn morbid_fascination_refunds_base_mana_on_each_damaging_tick() {
 fn the_shipped_miasma_is_a_ground_area_with_both_auras() {
     let acolyte = callings::calling("acolyte").unwrap();
     let miasma = acolyte.skills.iter().find(|s| s.key == "miasma").unwrap();
+    let (enemy, ally) = (
+        spell("acolyte", "aura_miasma"),
+        spell("acolyte", "aura_miasma_ally"),
+    );
     assert!(matches!(
         miasma.effects[..],
         [Effect::GroundArea {
-            enemy_aura_spell_id: Some(2120),
-            ally_aura_spell_id: Some(2121),
+            enemy_aura_spell_id: Some(e),
+            ally_aura_spell_id: Some(a),
             ..
-        }]
+        }] if (e, a) == (enemy, ally)
     ));
     assert!(
         callings::aura("aura_miasma").is_some(),

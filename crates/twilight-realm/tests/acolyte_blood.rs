@@ -12,8 +12,13 @@ use common::fight::*;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
-const BLOOD_LANCE: u32 = 8092;
-const DARK_MENDING: u32 = 2061;
+static BLOOD_LANCE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("acolyte", "blood_lance"));
+static DARK_MENDING: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("acolyte", "dark_mending"));
+/// The test Calling's own spells, as `TEST_CALLINGS` numbers them.
+const TEST_BLEED: u32 = 2061;
+const TEST_LANCE: u32 = 8092;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
 
 /// A Priest-Class Calling: `bleed` spends 96% of max health, `lance` 5%, both instant.
@@ -107,13 +112,13 @@ fn blood_lance_costs_5_percent_of_max_health_and_its_hot_lands_on_the_caster() {
     let (mut realm, me, mob, mut view) = world("acolyte", None);
     let max = max_health(&view, me);
     assert_eq!(view.health(me), max);
-    realm.handle(cast(BLOOD_LANCE, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), BLOOD_LANCE), None);
+    realm.handle(cast(*BLOOD_LANCE, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(&mut realm), *BLOOD_LANCE), None);
     let landed = view.run(&mut realm, 1.6);
     let hit = landed
         .iter()
         .find_map(|e| match e {
-            SessionEvent::SpellDamageLog(l) if l.spell_id == BLOOD_LANCE => Some(l.damage),
+            SessionEvent::SpellDamageLog(l) if l.spell_id == *BLOOD_LANCE => Some(l.damage),
             _ => None,
         })
         .expect("Blood Lance lands after its bar");
@@ -123,7 +128,7 @@ fn blood_lance_costs_5_percent_of_max_health_and_its_hot_lands_on_the_caster() {
         .run(&mut realm, 6.1)
         .iter()
         .filter_map(|e| match e {
-            SessionEvent::PeriodicAuraLog(l) if l.spell_id == BLOOD_LANCE => {
+            SessionEvent::PeriodicAuraLog(l) if l.spell_id == *BLOOD_LANCE => {
                 assert_eq!(l.target, me, "the HoT is on the caster");
                 match l.ticks[0] {
                     PeriodicTick::Heal { amount } => Some(amount),
@@ -144,12 +149,12 @@ fn blood_lance_costs_5_percent_of_max_health_and_its_hot_lands_on_the_caster() {
 fn a_health_cost_at_or_above_the_health_left_is_refused() {
     let (mut realm, me, _, mut view) = world("test_priest", Some(TEST_CALLINGS));
     let max = max_health(&view, me);
-    realm.handle(cast(DARK_MENDING, None));
+    realm.handle(cast(TEST_BLEED, None));
     view.drain(&mut realm);
     assert_eq!(view.health(me), max - max * 96 / 100, "4% left");
-    realm.handle(cast(BLOOD_LANCE, None));
+    realm.handle(cast(TEST_LANCE, None));
     assert_eq!(
-        refusal(&view.drain(&mut realm), BLOOD_LANCE),
+        refusal(&view.drain(&mut realm), TEST_LANCE),
         Some(SPELL_FAILED_NO_POWER),
         "5% of max is more than is left"
     );
@@ -159,13 +164,13 @@ fn a_health_cost_at_or_above_the_health_left_is_refused() {
 fn dark_mending_heals_up_to_max_then_takes_15_percent_of_it_back() {
     let (mut realm, me, _, mut view) = world("acolyte", None);
     let max = max_health(&view, me);
-    realm.handle(cast(DARK_MENDING, None));
+    realm.handle(cast(*DARK_MENDING, None));
     let mending = view.drain(&mut realm);
-    assert_eq!(refusal(&mending, DARK_MENDING), None);
+    assert_eq!(refusal(&mending, *DARK_MENDING), None);
     let healed = mending
         .iter()
         .find_map(|e| match e {
-            SessionEvent::SpellHealLog(l) if l.spell_id == DARK_MENDING => Some(l.amount),
+            SessionEvent::SpellHealLog(l) if l.spell_id == *DARK_MENDING => Some(l.amount),
             _ => None,
         })
         .expect("a heal");
@@ -176,7 +181,7 @@ fn dark_mending_heals_up_to_max_then_takes_15_percent_of_it_back() {
         .run(&mut realm, 6.1)
         .iter()
         .filter_map(|e| match e {
-            SessionEvent::PeriodicAuraLog(l) if l.spell_id == DARK_MENDING && l.target == me => {
+            SessionEvent::PeriodicAuraLog(l) if l.spell_id == *DARK_MENDING && l.target == me => {
                 match l.ticks[0] {
                     PeriodicTick::Damage { amount, .. } => Some(amount),
                     _ => None,

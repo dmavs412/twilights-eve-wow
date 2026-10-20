@@ -10,8 +10,10 @@ use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
 const SAVAGE_STRIKES: u32 = 272;
-const CHARGE: u32 = 100;
-const FIRE_BLAST: u32 = 2136;
+static CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "charge"));
+static FIRE_BLAST: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "fire_blast"));
 
 /// A level 10 human warrior with `talents` in its save, in the world, the mob near it.
 fn warrior(talents: &[(u32, u8)], seed: u64) -> (Realm, u64, Mob, View) {
@@ -57,13 +59,13 @@ fn warrior(talents: &[(u32, u8)], seed: u64) -> (Realm, u64, Mob, View) {
 fn fire_blast(talents: &[(u32, u8)], seed: u64) -> Vec<(bool, u32)> {
     let (mut realm, _, mob, mut view) = warrior(talents, seed);
     stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
     view.drain(&mut realm);
-    realm.handle(cast(FIRE_BLAST, Some(mob.guid)));
+    realm.handle(cast(*FIRE_BLAST, Some(mob.guid)));
     view.drain(&mut realm)
         .iter()
         .filter_map(|e| match e {
-            SessionEvent::SpellDamageLog(l) if l.spell_id == FIRE_BLAST => {
+            SessionEvent::SpellDamageLog(l) if l.spell_id == *FIRE_BLAST => {
                 Some((l.hit_info != 0, l.damage))
             }
             _ => None,

@@ -1,28 +1,17 @@
 //! Twilight's Eve's rewrites of the spell catalog, made when the client loads its spell data
-//! (ADR 0003). The realm's content names the spells; each function here is one kind of rewrite.
-//! A Calling skill is one 1.12.1 spell with no ranks, so the spellbook, the tooltip and the learn
-//! line must not show the borrowed spell's "Rank 1". A talent the realm does not model yet reads
-//! "<Name> (WIP)". The compiled-in client patch rewrites the rows it lists, among them the
-//! spells a Calling borrows from another Class.
+//! (ADR 0011). The compiled-in client patch inserts every Calling spell as a complete row of its
+//! own, under an id no stock spell uses. A talent the realm does not model yet reads
+//! "<Name> (WIP)".
 
 use super::{
-    EffectRow, SpellCatalog, SpellDisplay, ATTR_EX2_AUTO_REPEAT, ATTR_EX_CHANNELED,
-    ATTR_ON_NEXT_SWING,
+    EffectRow, SpellCatalog, SpellDisplay, ATTR_EX2_AUTO_REPEAT, ATTR_EX3_NORMAL_RANGED_ATTACK,
+    ATTR_EX_CHANNELED, ATTR_NOT_IN_COMBAT, ATTR_ON_NEXT_SWING, ATTR_PASSIVE, ATTR_RANGED,
 };
 
 /// What a WIP talent's rank spells add to their names.
 const WIP_SUFFIX: &str = " (WIP)";
 
 impl SpellCatalog {
-    /// Blanks the rank text of every spell in `ids`; an id the catalog lacks is skipped.
-    pub fn clear_ranks(&mut self, ids: impl IntoIterator<Item = u32>) {
-        for id in ids {
-            if let Some(display) = self.spells.get_mut(&id) {
-                display.rank = None;
-            }
-        }
-    }
-
     /// Appends [`WIP_SUFFIX`] to the name of every spell in `ids`, once; an id the catalog lacks
     /// is skipped.
     pub fn mark_wip(&mut self, ids: impl IntoIterator<Item = u32>) {
@@ -35,12 +24,11 @@ impl SpellCatalog {
         }
     }
 
-    /// Applies the compiled-in client patch (`client_dbc_patch.json`, ADR 0003) to the rows it
-    /// lists: power type, cost, cooldown, global cooldown, stances, the borrowed family, and the
-    /// sheet's name and description (an empty description keeps the borrowed text). A field the patch lacks leaves
-    /// the row's own value; a stock id the catalog lacks is skipped, while an id from
-    /// [`FROM_SCRATCH_MIN_ID`] up is inserted as a complete row (name, icon, visual, cost, school,
-    /// cast shape and every effect from the entry). Returns how many rows changed.
+    /// Applies the compiled-in client patch (`client_dbc_patch.json`, ADR 0011) to the rows it
+    /// lists. An id from [`FROM_SCRATCH_MIN_ID`] up is inserted as a complete row: name, icon,
+    /// look, cost, cooldowns, stances, family, school, cast shape, targets and every effect from
+    /// the entry. A field the patch lacks leaves the row's own value; a stock id the catalog lacks
+    /// is skipped. Returns how many rows changed.
     pub fn apply_dbc_patch(&mut self, json: &str) -> Result<usize, serde_json::Error> {
         let patch: serde_json::Value = serde_json::from_str(json)?;
         let mut applied = 0;
@@ -86,9 +74,6 @@ impl SpellCatalog {
                 d.mana_per_second = (per_second * unit).round() as u32;
             }
             apply_gates(d, f);
-            // The sheet has no reagents: a borrowed row's own (Greater Blessing of Sanctuary's
-            // Symbol of Kings) would refuse the cast client-side.
-            d.reagents = [(0, 0); 8];
             if let Some(ms) = num("cooldown_ms") {
                 d.recovery_ms = ms as u32;
             }
@@ -103,13 +88,12 @@ impl SpellCatalog {
                     .fold(0, |mask, form| mask | 1 << (form - 1));
                 d.stances_not = 0;
             }
-            if f["borrowed_from_class"].is_number() {
-                d.stances = 0;
-                d.stances_not = 0;
-                d.spell_family = CLASS_SPELL_FAMILY;
-                if let Some(bit) = num("borrowed_family_bit") {
-                    d.spell_family_flags = 1 << bit as u32;
-                }
+            // The family a Calling's spell mods name its skills by.
+            if let Some(family) = f["spell_family"].as_u64() {
+                d.spell_family = family as u32;
+            }
+            if let Some(flags) = f["family_flags"].as_u64() {
+                d.spell_family_flags = flags;
             }
             // The stock Spell.dbc rows the sheet's range, cast time and duration select.
             for (key, slot) in [
@@ -120,11 +104,6 @@ impl SpellCatalog {
                 if let Some(index) = f[key].as_u64() {
                     *slot = index as u32;
                 }
-            }
-            // The stock effects stay; a sheet effect only sets the numbers of the stock effect
-            // it lines up with, so `$s1` and the spell mods read the sheet's damage.
-            for effect in f["effects"].as_array().into_iter().flatten() {
-                overwrite_damage(d, effect);
             }
             // The sheet's name replaces the borrowed one; a WIP mark made before stays on it.
             if let Some(name) = f["name"].as_str().filter(|n| !n.is_empty()) {
@@ -143,6 +122,9 @@ impl SpellCatalog {
             if let Some(visual) = num("visual") {
                 d.visual = visual as u32;
             }
+            if let Some(speed) = num("speed") {
+                d.speed = speed as f32;
+            }
             if let Some(facing) = f["needs_facing"].as_bool() {
                 d.needs_facing = facing;
             }
@@ -155,6 +137,14 @@ impl SpellCatalog {
                 .enumerate()
             {
                 d.set_effect_row(slot, effect_row(effect));
+            }
+            // Every effect takes the row's implicit targets: the cast asks for a unit, a ground
+            // spot or nothing by them.
+            if let Some(targets) = f["implicit_targets"].as_array() {
+                let at = |i: usize| targets.get(i).and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                d.implicit_target_a1 = at(0);
+                d.effect_implicit_target_a = [at(0); 3];
+                d.effect_implicit_target_b = [at(1); 3];
             }
             applied += 1;
         }
@@ -197,18 +187,15 @@ fn effect_row(effect: &serde_json::Value) -> EffectRow {
     }
 }
 
-/// `SPELLFAMILY_WARRIOR`: every Calling is of the Warrior line.
-const CLASS_SPELL_FAMILY: u32 = 4;
-
 /// The compiled-in client patch the build script wrote from the master CSV.
 pub const CLIENT_DBC_PATCH: &str =
     include_str!("../../../../data/twilights-eve/client_dbc_patch.json");
 
 /// Writes the patch's gate, cast-shape and aura columns into their `Spell.dbc` columns: equipped
-/// item class and masks, category, school, prevention, aura states, interrupt flags, the
-/// channeled, on-next-swing and auto-repeat attribute bits, and the dispel type, mechanic and
-/// aura description. A key the patch lacks leaves the row's own value. The patch writes no
-/// implicit targets or radius yet, so none is applied here.
+/// item class and masks, category, school, prevention, aura states, `Targets`, interrupt flags,
+/// the channeled, on-next-swing, auto-repeat, passive, ranged and out-of-combat attribute bits,
+/// and the dispel type, mechanic and aura description. A key the patch lacks leaves the row's
+/// own value.
 fn apply_gates(d: &mut SpellDisplay, f: &serde_json::Value) {
     let unsigned = |key: &str| f[key].as_u64().map(|v| v as u32);
     if let Some(class) = f["equipped_item_class"].as_i64() {
@@ -230,53 +217,35 @@ fn apply_gates(d: &mut SpellDisplay, f: &serde_json::Value) {
         ("channel_interrupt_flags", &mut d.channel_interrupt_flags),
         ("dispel_type", &mut d.dispel),
         ("mechanic", &mut d.mechanic),
+        ("targets", &mut d.targets),
     ] {
         if let Some(v) = unsigned(key) {
             *slot = v;
         }
     }
-    for (key, word, bits) in [
-        ("channeled", &mut d.attributes_ex, ATTR_EX_CHANNELED),
-        ("on_next_swing", &mut d.attributes, ATTR_ON_NEXT_SWING),
-        ("auto_repeat", &mut d.attributes_ex2, ATTR_EX2_AUTO_REPEAT),
+    let set = |word: &mut u32, key: &str, bits: u32| match f[key].as_bool() {
+        Some(true) => *word |= bits,
+        Some(false) => *word &= !bits,
+        None => {}
+    };
+    set(&mut d.attributes_ex, "channeled", ATTR_EX_CHANNELED);
+    set(&mut d.attributes_ex2, "auto_repeat", ATTR_EX2_AUTO_REPEAT);
+    for (key, bits) in [
+        ("on_next_swing", ATTR_ON_NEXT_SWING),
+        ("passive", ATTR_PASSIVE),
+        ("ranged", ATTR_RANGED),
+        ("not_in_combat", ATTR_NOT_IN_COMBAT),
     ] {
-        match f[key].as_bool() {
-            Some(true) => *word |= bits,
-            Some(false) => *word &= !bits,
-            None => {}
-        }
+        set(&mut d.attributes, key, bits);
+    }
+    d.passive = d.attributes & ATTR_PASSIVE != 0;
+    // An auto-repeat shot floats white damage, as Auto Shot does.
+    if f["ranged"].as_bool() == Some(true) && f["auto_repeat"].as_bool() == Some(true) {
+        d.attributes_ex3 |= ATTR_EX3_NORMAL_RANGED_ATTACK;
     }
     if let Some(text) = f["aura_description"].as_str().filter(|t| !t.is_empty()) {
         d.aura_description = Some(text.to_owned());
     }
-}
-
-/// `SPELL_EFFECT_SCHOOL_DAMAGE`.
-const EFFECT_SCHOOL_DAMAGE: u32 = 2;
-/// `SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL`, `WEAPON_DAMAGE` and `NORMALIZED_WEAPON_DMG`: the flat
-/// bonus on top of a weapon swing.
-const EFFECTS_WEAPON_BONUS: [u32; 3] = [17, 58, 121];
-
-/// Sets the first stock effect a sheet damage effect lines up with (`school_damage` with a school
-/// damage effect, `weapon_strike` with a weapon bonus) to the sheet's number: a one-sided die on
-/// `base - 1`, and the per-level term. No stock effect of that kind leaves the row alone.
-fn overwrite_damage(d: &mut SpellDisplay, effect: &serde_json::Value) {
-    let (stock, formula): (&[u32], _) = match effect["kind"].as_str() {
-        Some("school_damage") => (&[EFFECT_SCHOOL_DAMAGE], &effect["params"]["amount"]),
-        Some("weapon_strike") => (&EFFECTS_WEAPON_BONUS, &effect["params"]["bonus"]),
-        _ => return,
-    };
-    let (Some(base), Some(slot)) = (
-        formula["base"].as_f64(),
-        d.effects.iter().position(|e| stock.contains(e)),
-    ) else {
-        return;
-    };
-    d.effect_base_points[slot] = base.round() as i32 - 1;
-    d.effect_base_dice[slot] = 1;
-    d.effect_die_sides[slot] = 1;
-    d.effect_dice_per_level[slot] = 0;
-    d.effect_real_points_per_level[slot] = formula["per_level"].as_f64().unwrap_or(0.0) as f32;
 }
 
 /// A warrior stance by its sheet name: its `SpellShapeshiftForm.dbc` id.
@@ -295,21 +264,6 @@ mod tests {
 
     use super::*;
     use crate::SpellDisplay;
-
-    #[test]
-    fn clear_ranks_blanks_only_the_named_spells() {
-        let ranked = |rank: &str| SpellDisplay {
-            rank: Some(rank.into()),
-            ..SpellDisplay::default()
-        };
-        let mut catalog = SpellCatalog::from_displays(HashMap::from([
-            (78, ranked("Rank 1")),
-            (284, ranked("Rank 2")),
-        ]));
-        catalog.clear_ranks([78, 999]);
-        assert_eq!(catalog.get(78).unwrap().rank, None);
-        assert_eq!(catalog.get(284).unwrap().rank.as_deref(), Some("Rank 2"));
-    }
 
     #[test]
     fn mark_wip_names_only_the_named_spells_once() {
@@ -348,7 +302,7 @@ mod tests {
 
     const PATCH: &str = r#"{"spells": [
         {"spell_id": 2136, "fields": {"cost": 10, "power_type": 1, "cooldown_ms": 6000,
-         "gcd_ms": 1500, "borrowed_from_class": 8, "borrowed_family_bit": 37,
+         "gcd_ms": 1500, "spell_family": 4, "family_flags": 137438953472, "stances": [],
          "name": "Scorch", "description": "Blasts the enemy."}},
         {"spell_id": 78, "fields": {"cost": 15, "power_type": 1, "stances": ["Battle Stance", "Berserker Stance"],
          "description": ""}},
@@ -373,10 +327,37 @@ mod tests {
         assert_eq!((fb.recovery_ms, fb.start_recovery_ms), (6000, 1500));
         assert_eq!((fb.spell_family, fb.spell_family_flags), (4, 1 << 37));
         assert_eq!(fb.description.as_deref(), Some("Blasts the enemy."));
-        assert_eq!(
-            fb.name, "Scorch",
-            "the sheet's name replaces the borrowed one"
+        assert_eq!(fb.name, "Scorch", "the sheet's name replaces the row's");
+    }
+
+    #[test]
+    fn targets_and_attribute_bits_land_on_a_from_scratch_row() {
+        let mut catalog = patch_catalog();
+        catalog
+            .apply_dbc_patch(
+                r#"{"spells": [
+                {"spell_id": 1000003, "fields": {"implicit_targets": [6, 0], "ranged": true,
+                 "auto_repeat": true, "speed": 40, "dbc_effects": [{"effect": 58}]}},
+                {"spell_id": 1000004, "fields": {"implicit_targets": [16, 28], "targets": 64,
+                 "not_in_combat": true}},
+                {"spell_id": 1000005, "fields": {"implicit_targets": [1, 0], "passive": true}}]}"#,
+            )
+            .unwrap();
+        let shot = catalog.get(1_000_003).unwrap();
+        assert_eq!(shot.implicit_target_a1, 6);
+        assert_eq!(shot.effect_implicit_target_a, [6; 3]);
+        assert!(shot.ranged_attack() && shot.ranged_icon_substitution());
+        assert!(
+            shot.melee_white_damage(),
+            "an auto-repeat shot floats white damage"
         );
+        assert_eq!(shot.speed, 40.0);
+        let ground = catalog.get(1_000_004).unwrap();
+        assert_eq!((ground.implicit_target_a1, ground.targets), (16, 64));
+        assert_eq!(ground.effect_implicit_target_b, [28; 3]);
+        assert_ne!(ground.attributes & ATTR_NOT_IN_COMBAT, 0);
+        let talent = catalog.get(1_000_005).unwrap();
+        assert!(talent.passive && !talent.ranged_attack());
     }
 
     #[test]
@@ -475,78 +456,6 @@ mod tests {
         let hs = catalog.get(78).unwrap();
         assert_eq!(hs.equipped_item_class, -1);
         assert_eq!((hs.school, hs.attributes, hs.attributes_ex2), (0, 0, 0));
-    }
-
-    #[test]
-    fn a_patched_row_needs_no_reagent() {
-        let mut catalog = patch_catalog();
-        catalog.spells.get_mut(&78).unwrap().reagents[0] = (21177, 1);
-        catalog
-            .apply_dbc_patch(r#"{"spells": [{"spell_id": 78, "fields": {}}]}"#)
-            .unwrap();
-        assert_eq!(catalog.get(78).unwrap().reagents, [(0, 0); 8]);
-    }
-
-    /// Fire Blast as Spell.dbc has it: effect 1 is `SCHOOL_DAMAGE` (2), 8 to 10 fire damage.
-    fn stock_fire_blast() -> SpellDisplay {
-        SpellDisplay {
-            effects: [2, 0, 0],
-            effect_base_points: [7, 0, 0],
-            effect_base_dice: [1, 0, 0],
-            effect_die_sides: [3, 0, 0],
-            ..SpellDisplay::default()
-        }
-    }
-
-    #[test]
-    fn the_sheets_damage_overwrites_the_stock_effect_it_lines_up_with() {
-        let mut catalog = SpellCatalog::from_displays(HashMap::from([
-            (2136, stock_fire_blast()),
-            (
-                78,
-                SpellDisplay {
-                    effects: [17, 0, 0],
-                    ..SpellDisplay::default()
-                },
-            ),
-            (
-                1776,
-                SpellDisplay {
-                    effects: [6, 0, 0],
-                    effect_base_points: [4, 0, 0],
-                    ..SpellDisplay::default()
-                },
-            ),
-        ]));
-        catalog
-            .apply_dbc_patch(
-                r#"{"spells": [
-                {"spell_id": 2136, "fields": {"effects": [{"kind": "school_damage",
-                    "params": {"school": "fire", "amount": {"base": 20, "per_level": 2.5}}}]}},
-                {"spell_id": 78, "fields": {"effects": [{"kind": "weapon_strike",
-                    "params": {"bonus": {"base": 9.5, "per_level": 1.4}}}]}},
-                {"spell_id": 1776, "fields": {"effects": [{"kind": "school_damage",
-                    "params": {"amount": {"base": 10, "per_level": 1.5}}}]}}
-            ]}"#,
-            )
-            .unwrap();
-        let fb = catalog.get(2136).unwrap();
-        // Value = base points + one one-sided die: 19 + 1 = 20, plus 2.5 per level.
-        assert_eq!(
-            (
-                fb.effect_base_points[0],
-                fb.effect_base_dice[0],
-                fb.effect_die_sides[0]
-            ),
-            (19, 1, 1)
-        );
-        assert_eq!(fb.effect_real_points_per_level[0], 2.5);
-        assert_eq!(catalog.get(78).unwrap().effect_base_points[0], 9);
-        let gouge = catalog.get(1776).unwrap();
-        assert_eq!(
-            gouge.effect_base_points[0], 4,
-            "no stock damage effect: left alone"
-        );
     }
 
     #[test]

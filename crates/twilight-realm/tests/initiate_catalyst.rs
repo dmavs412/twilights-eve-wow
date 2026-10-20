@@ -335,16 +335,16 @@ fn the_shipped_catalyst_shatters_for_twice_biting_colds_frost_hit() {
     let consumes: Vec<&Effect> = skill("catalyst").effects.iter().collect();
     assert!(matches!(
         consumes[0],
-        Effect::ConsumeAura { aura_spell_id: 116, amount: Some(a), school: School::Frost, amount_pct: 200, .. }
-            if *a == cold
+        Effect::ConsumeAura { aura_spell_id, amount: Some(a), school: School::Frost, amount_pct: 200, .. }
+            if *a == cold && *aura_spell_id == spell("initiate", "aura_biting_cold")
     ));
     assert!(matches!(
         consumes[1],
         Effect::ConsumeAura {
-            aura_spell_id: 133,
+            aura_spell_id,
             amount: None,
             energize_pct_of_max: 20,
             ..
-        }
+        } if *aura_spell_id == spell("initiate", "aura_searing_ember")
     ));
 }

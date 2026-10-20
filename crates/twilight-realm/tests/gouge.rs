@@ -8,23 +8,25 @@ use common::fight::*;
 use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
-const CHARGE: u32 = 100;
-const GOUGE: u32 = 1776;
+static CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "charge"));
+static GOUGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "gouge"));
 /// `UNIT_FLAG_IN_COMBAT`.
 const UNIT_FLAG_IN_COMBAT: u32 = 0x0008_0000;
 
 /// A warrior with Gouge's 15 rage in hand, 2 yd from the mob it has just stopped hitting.
 fn ready() -> (Realm, u64, Mob, View) {
     let (mut realm, me, mob, mut view) = warrior_at(1);
-    rage_up(&mut realm, &mut view, me, &mob, CHARGE, 15);
+    rage_up(&mut realm, &mut view, me, &mob, *CHARGE, 15);
     (realm, me, mob, view)
 }
 
 /// Gouges the mob; the events of the cast.
 fn gouge(realm: &mut Realm, view: &mut View, mob: &Mob) -> Vec<SessionEvent> {
-    realm.handle(cast(GOUGE, Some(mob.guid)));
+    realm.handle(cast(*GOUGE, Some(mob.guid)));
     let events = view.drain(realm);
-    assert_eq!(refusal(&events, GOUGE), None, "gouge is cast");
+    assert_eq!(refusal(&events, *GOUGE), None, "gouge is cast");
     events
 }
 
@@ -40,17 +42,17 @@ fn gouges_own_damage_does_not_break_it_but_later_damage_does() {
     let events = gouge(&mut realm, &mut view, &mob);
     assert!(
         events.iter().any(
-            |e| matches!(e, SessionEvent::SpellDamageLog(l) if l.spell_id == GOUGE && l.damage > 0)
+            |e| matches!(e, SessionEvent::SpellDamageLog(l) if l.spell_id == *GOUGE && l.damage > 0)
         ),
         "gouge hurts"
     );
-    assert!(view.aura(mob.guid, GOUGE).is_some(), "incapacitated");
+    assert!(view.aura(mob.guid, *GOUGE).is_some(), "incapacitated");
     view.run(&mut realm, 2.0);
-    assert!(view.aura(mob.guid, GOUGE).is_some(), "still, 2 s on");
+    assert!(view.aura(mob.guid, *GOUGE).is_some(), "still, 2 s on");
 
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
     view.run(&mut realm, 3.0);
-    assert!(view.aura(mob.guid, GOUGE).is_none(), "a swing woke it");
+    assert!(view.aura(mob.guid, *GOUGE).is_none(), "a swing woke it");
 }
 
 #[test]
@@ -62,7 +64,7 @@ fn the_target_stays_in_combat_while_incapacitated() {
         "the cast drops no one from the fight"
     );
     let during = view.run(&mut realm, 1.0);
-    assert!(view.aura(mob.guid, GOUGE).is_some());
+    assert!(view.aura(mob.guid, *GOUGE).is_some());
     assert!(!stopped(&during, &mob));
     assert_ne!(view.fields(mob.guid).unit_flags() & UNIT_FLAG_IN_COMBAT, 0);
 }
@@ -72,7 +74,7 @@ fn the_caster_is_out_of_combat_while_the_target_is_incapacitated() {
     let (mut realm, me, mob, mut view) = ready();
     gouge(&mut realm, &mut view, &mob);
     view.run(&mut realm, 1.0);
-    assert!(view.aura(mob.guid, GOUGE).is_some());
+    assert!(view.aura(mob.guid, *GOUGE).is_some());
     assert_eq!(view.fields(me).unit_flags() & UNIT_FLAG_IN_COMBAT, 0);
     // A swing wakes it and the fight is on again.
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });

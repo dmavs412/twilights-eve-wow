@@ -9,8 +9,10 @@ use common::*;
 use twilight_realm::{Realm, RealmCommand};
 
 const INITIATES_SPARK: u32 = 31;
-const CHARGE: u32 = 100;
-const FIRE_BLAST: u32 = 2136;
+static CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "charge"));
+static FIRE_BLAST: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "fire_blast"));
 
 /// Fire Blast's `(damage, rage left after the cast)` for a warrior with `rank` of the talent.
 /// The dice are seeded; only non-crit casts are compared, so the damage is the row's plain number.
@@ -51,12 +53,12 @@ fn fire_blast(rank: u8) -> (u32, u32) {
             })
             .expect("a mob near the Crossroads");
         stand_at(&mut realm, &mob, 15.0);
-        realm.handle(cast(CHARGE, Some(mob.guid)));
+        realm.handle(cast(*CHARGE, Some(mob.guid)));
         view.drain(&mut realm);
-        realm.handle(cast(FIRE_BLAST, Some(mob.guid)));
+        realm.handle(cast(*FIRE_BLAST, Some(mob.guid)));
         let events = view.drain(&mut realm);
         let hit = events.iter().find_map(|e| match e {
-            SessionEvent::SpellDamageLog(l) if l.spell_id == FIRE_BLAST && l.hit_info == 0 => {
+            SessionEvent::SpellDamageLog(l) if l.spell_id == *FIRE_BLAST && l.hit_info == 0 => {
                 Some(l.damage)
             }
             _ => None,

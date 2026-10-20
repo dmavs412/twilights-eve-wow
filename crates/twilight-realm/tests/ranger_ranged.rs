@@ -22,10 +22,14 @@ const RANGED: u8 = 17;
 const CRACKED_SHORTBOW: u32 = 2773;
 const BOW_SPEED_SECS: f32 = 2.3;
 
-const AUTO_SHOT: u32 = 75;
-const SNAPSHOT: u32 = 3044;
-const PUNCTURING_SHAFT: u32 = 19434;
-const BARBED_ARROW: u32 = 1978;
+static AUTO_SHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "auto_shot"));
+static SNAPSHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "snapshot"));
+static PUNCTURING_SHAFT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "puncturing_shaft"));
+static BARBED_ARROW: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "barbed_arrow"));
 
 const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
 const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;
@@ -142,13 +146,13 @@ fn auto_shot_fires_at_the_bows_speed_from_20_yd() {
     let (mut realm, mut mob) = with_bow(0xA0_0001);
     stand_at(&mut realm, &mob, 20.0);
     drain(&mut realm);
-    realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+    realm.handle(cast(*AUTO_SHOT, Some(mob.guid)));
     // Ten seconds: the arrows' DPS kills the mob not long after.
     let (events, steps) = kite(&mut realm, &mut mob, 10.0);
     let shots: Vec<f32> = events
         .iter()
         .filter_map(|(t, e)| match e {
-            SessionEvent::SpellGo { spell_id, .. } if *spell_id == AUTO_SHOT => Some(*t),
+            SessionEvent::SpellGo { spell_id, .. } if *spell_id == *AUTO_SHOT => Some(*t),
             _ => None,
         })
         .collect();
@@ -166,7 +170,7 @@ fn auto_shot_fires_at_the_bows_speed_from_20_yd() {
 fn auto_shot_stops_when_the_target_comes_inside_8_yd() {
     let (mut realm, mob) = with_bow(0xA0_0002);
     stand_at(&mut realm, &mob, 20.0);
-    realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+    realm.handle(cast(*AUTO_SHOT, Some(mob.guid)));
     realm.tick(0.05, &FlatGround);
     drain(&mut realm);
     stand_at(&mut realm, &mob, 5.0);
@@ -183,7 +187,7 @@ fn auto_shot_stops_when_the_target_comes_inside_8_yd() {
 fn auto_shot_stops_on_cancel() {
     let (mut realm, mob) = with_bow(0xA0_0003);
     stand_at(&mut realm, &mob, 20.0);
-    realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+    realm.handle(cast(*AUTO_SHOT, Some(mob.guid)));
     realm.tick(0.05, &FlatGround);
     realm.handle(RealmCommand::CancelAutoRepeat);
     drain(&mut realm);
@@ -194,7 +198,7 @@ fn auto_shot_stops_on_cancel() {
     }
     assert!(!later
         .iter()
-        .any(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == AUTO_SHOT)));
+        .any(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == *AUTO_SHOT)));
 }
 
 /// Snapshot (+13, +1.3 a level) and Puncturing Shaft (+20, +3.5 a level) at level 1 deal the bow
@@ -208,19 +212,19 @@ fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
         // The Shaft's bar breaks on a step, so it goes first, standing still before the pull.
         stand_at(&mut realm, &mob, 30.0);
         drain(&mut realm);
-        realm.handle(cast(PUNCTURING_SHAFT, Some(mob.guid)));
+        realm.handle(cast(*PUNCTURING_SHAFT, Some(mob.guid)));
         let mut events = Vec::new();
         for _ in 0..62 {
             realm.tick(0.05, &FlatGround);
             events.extend(drain(&mut realm).into_iter().map(|e| (0.0, e)));
         }
         stand_at(&mut realm, &mob, 20.0);
-        realm.handle(cast(SNAPSHOT, Some(mob.guid)));
-        realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+        realm.handle(cast(*SNAPSHOT, Some(mob.guid)));
+        realm.handle(cast(*AUTO_SHOT, Some(mob.guid)));
         events.extend(kite(&mut realm, &mut mob, 3.0).0);
-        auto.extend(hits(&events, AUTO_SHOT));
-        snap.extend(hits(&events, SNAPSHOT));
-        shaft.extend(hits(&events, PUNCTURING_SHAFT));
+        auto.extend(hits(&events, *AUTO_SHOT));
+        snap.extend(hits(&events, *SNAPSHOT));
+        shaft.extend(hits(&events, *PUNCTURING_SHAFT));
     }
     assert!(
         !auto.is_empty() && !snap.is_empty() && !shaft.is_empty(),
@@ -241,7 +245,7 @@ fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
 
 #[test]
 fn the_shots_are_refused_inside_8_yd() {
-    for shot in [SNAPSHOT, PUNCTURING_SHAFT, BARBED_ARROW, AUTO_SHOT] {
+    for shot in [*SNAPSHOT, *PUNCTURING_SHAFT, *BARBED_ARROW, *AUTO_SHOT] {
         let (mut realm, mob) = with_bow(0xA2_0000);
         stand_at(&mut realm, &mob, 5.0);
         drain(&mut realm);
@@ -257,7 +261,7 @@ fn the_shots_are_refused_inside_8_yd() {
 
 #[test]
 fn the_shots_are_refused_without_a_bow() {
-    for shot in [SNAPSHOT, PUNCTURING_SHAFT, BARBED_ARROW, AUTO_SHOT] {
+    for shot in [*SNAPSHOT, *PUNCTURING_SHAFT, *BARBED_ARROW, *AUTO_SHOT] {
         let (mut realm, mob) = ranger(&[], 0xA3_0000);
         stand_at(&mut realm, &mob, 20.0);
         drain(&mut realm);
@@ -276,14 +280,14 @@ fn barbed_arrow_bleeds_4_times_over_8_seconds() {
         let (mut realm, mut mob) = with_bow(0xA4_0000 + seed);
         stand_at(&mut realm, &mob, 20.0);
         drain(&mut realm);
-        realm.handle(cast(BARBED_ARROW, Some(mob.guid)));
+        realm.handle(cast(*BARBED_ARROW, Some(mob.guid)));
         let (events, _) = kite(&mut realm, &mut mob, 9.0);
         // Barbed Arrow rolls no hit table, so it always lands.
         let ticks = events
             .iter()
             .filter(|(_, e)| match e {
                 SessionEvent::PeriodicAuraLog(l) => {
-                    l.spell_id == BARBED_ARROW
+                    l.spell_id == *BARBED_ARROW
                         && matches!(l.ticks[0], PeriodicTick::Damage { amount, .. } if amount > 0)
                 }
                 _ => false,
@@ -301,9 +305,9 @@ fn auto_shot_holds_while_moving() {
     stand_at(&mut realm, &mob, 25.0);
     realm.tick(1.0, &FlatGround);
     drain(&mut realm);
-    realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+    realm.handle(cast(*AUTO_SHOT, Some(mob.guid)));
     let mut events = drain(&mut realm);
-    let shot = |e: &SessionEvent| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == AUTO_SHOT);
+    let shot = |e: &SessionEvent| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == *AUTO_SHOT);
     for i in 0..50 {
         let yards = if i % 2 == 0 { 25.5 } else { 25.0 };
         stand_at(&mut realm, &mob, yards);

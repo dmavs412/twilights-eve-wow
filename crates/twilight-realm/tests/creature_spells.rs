@@ -18,7 +18,8 @@ const SHADOW: u32 = 5;
 const HEAL: &str = "abbot_heal";
 /// What the client shows for it: Lesser Heal rank 1.
 const HEAL_LOOK: u32 = 2050;
-const GOUGE: u32 = 1776;
+static GOUGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "gouge"));
 /// Whole rage points Gouge costs.
 const GOUGE_RAGE: u32 = 15;
 /// Low enough that the warrior lives through the curse and builds rage, as in `gouge.rs`.
@@ -171,10 +172,10 @@ fn a_gouge_mid_cast_cancels_it_and_the_spell_waits_out_its_cooldown() {
         }
         gouged += 1;
         realm.handle(RealmCommand::AttackStop);
-        realm.handle(fight::cast(GOUGE, Some(mob.0)));
+        realm.handle(fight::cast(*GOUGE, Some(mob.0)));
         let first = view.drain(&mut realm);
         assert_eq!(
-            fight::refusal(&first, GOUGE),
+            fight::refusal(&first, *GOUGE),
             None,
             "seed {seed}: gouge cast"
         );
@@ -233,10 +234,10 @@ fn an_incapacitated_creature_starts_no_cast() {
             continue;
         }
         realm.handle(RealmCommand::AttackStop);
-        realm.handle(fight::cast(GOUGE, Some(mob.0)));
+        realm.handle(fight::cast(*GOUGE, Some(mob.0)));
         let mut events = view.drain(&mut realm);
         assert_eq!(
-            fight::refusal(&events, GOUGE),
+            fight::refusal(&events, *GOUGE),
             None,
             "seed {seed}: gouge cast"
         );
@@ -343,7 +344,7 @@ fn a_gouge_mid_heal_cancels_it() {
         let Some((mut realm, _, mob, mut view)) = hurt_and_healing(seed, GOUGE_RAGE) else {
             continue;
         };
-        realm.handle(fight::cast(GOUGE, Some(mob)));
+        realm.handle(fight::cast(*GOUGE, Some(mob)));
         let mut events = view.drain(&mut realm);
         for _ in 0..34 {
             realm.tick(0.1, &FlatGround);

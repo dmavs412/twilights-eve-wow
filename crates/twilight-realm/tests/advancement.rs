@@ -145,14 +145,34 @@ const JOUSTERS_CHESTPLATE: u32 = 8157;
 /// QuestSort.dbc 81, "Warrior": the quest log's header, as a negative `ZoneOrSort`.
 const SORT_WARRIOR: i32 = -81;
 
-/// Vanguard's skills (the master CSV): Righteous Smash and Bulwark Charge on Basic Warrior's spell
-/// ids, Zealous Cleave, Shield of the Penitent and Seal of Iron.
-const TIER_1_SKILLS: [u32; 5] = [284, 11578, 845, 25899, 20165];
+/// Vanguard's skills (the master CSV), in sheet order: Righteous Smash, Bulwark Charge, Zealous
+/// Cleave, Shield of the Penitent and Seal of Iron.
+static TIER_1_SKILLS: std::sync::LazyLock<Vec<u32>> = std::sync::LazyLock::new(|| {
+    let keys = [
+        "righteous_smash",
+        "bulwark_charge",
+        "zealous_cleave",
+        "shield_of_penitent",
+    ];
+    spells("vanguard", &[&keys[..], &["seal_of_iron"]].concat())
+});
 /// Zealot's: Seal of Command, Seal of the Crusader, Judgement, Hammer of Justice, Mortal Strike and
 /// Charge.
-const ZEALOT_SKILLS: [u32; 6] = [20375, 20305, 20271, 10308, 12294, 6178];
-/// Three of Cruelty's Recruit ranks.
-const CRUELTY_RANKS: [u32; 3] = [12320, 12852, 12853];
+static ZEALOT_SKILLS: std::sync::LazyLock<Vec<u32>> = std::sync::LazyLock::new(|| {
+    let keys = [
+        "seal_of_command",
+        "seal_of_the_crusader",
+        "judgement",
+        "hammer_of_justice",
+    ];
+    spells(
+        "zealot",
+        &[&keys[..], &["mortal_strike", "charge"]].concat(),
+    )
+});
+/// Three of Cruelty's Recruit ranks, Righteous Fury's now.
+static CRUELTY_RANKS: std::sync::LazyLock<Vec<u32>> =
+    std::sync::LazyLock::new(|| talent_spells("vanguard", "righteous_fury")[..3].to_vec());
 
 /// The trainer's guid, from the entry burst.
 fn trainer(events: &[SessionEvent]) -> u64 {
@@ -326,10 +346,10 @@ fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
     let known = spellbook(&events);
     assert_eq!(
         known,
-        TIER_1_SKILLS.into_iter().collect(),
+        TIER_1_SKILLS.iter().copied().collect(),
         "exactly the kit"
     );
-    for s in &CRUELTY_RANKS {
+    for s in CRUELTY_RANKS.iter() {
         assert!(!known.contains(s), "spell {s} forgotten");
     }
     let tabs: Vec<&str> = realm
@@ -682,7 +702,7 @@ fn the_zealots_vow_makes_a_level_1_zealot_with_six_skills_in_the_same_plate() {
     assert_eq!(now.player_xp(), Some(0));
     assert_eq!(
         spellbook(&events),
-        ZEALOT_SKILLS.into_iter().collect(),
+        ZEALOT_SKILLS.iter().copied().collect(),
         "exactly the six, Cruelty and the Vanguard kit forgotten"
     );
     assert_eq!(now.player_inv_slot(4), chest, "the plate stays worn");
@@ -717,7 +737,7 @@ fn a_zealot_save_round_trips_and_names_the_calling() {
     reloaded.handle(RealmCommand::EnterWorld { guid: me });
     reloaded.tick(0.0, &FlatGround);
     let events = drain(&mut reloaded);
-    assert_eq!(spellbook(&events), ZEALOT_SKILLS.into_iter().collect());
+    assert_eq!(spellbook(&events), ZEALOT_SKILLS.iter().copied().collect());
     assert_eq!(
         reloaded.export_character(me).unwrap(),
         blob,
@@ -863,7 +883,18 @@ fn the_cutthroats_mark_makes_a_level_1_cutthroat_on_energy() {
     assert_eq!(now.unit_level(), Some(1));
     assert_eq!(
         spellbook(&events),
-        [1752, 1784, 1943, 2098, 5277].into_iter().collect(),
+        spells(
+            "cutthroat",
+            &[
+                "sinister_strike",
+                "stealth",
+                "rupture",
+                "eviscerate",
+                "evasion"
+            ]
+        )
+        .into_iter()
+        .collect(),
         "Sinister Strike, Stealth, Rupture, Eviscerate and Evasion"
     );
     let tabs: Vec<&str> = realm
@@ -892,7 +923,18 @@ fn the_initiates_spark_makes_a_level_1_initiate_on_mana() {
     assert_eq!(now.unit_level(), Some(1));
     assert_eq!(
         spellbook(&events),
-        [116, 133, 1953, 2912, 8921].into_iter().collect(),
+        spells(
+            "initiate",
+            &[
+                "biting_cold",
+                "searing_ember",
+                "blink",
+                "ley_spark",
+                "catalyst"
+            ]
+        )
+        .into_iter()
+        .collect(),
         "Biting Cold, Searing Ember, Blink, Ley-Spark and Catalyst"
     );
     let tabs: Vec<&str> = realm
@@ -916,14 +958,33 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
             RANGER_TRAINER,
             THE_RANGERS_DRAW,
             "ranger",
-            vec![75, 781, 1978, 3044, 3045, 19434],
+            spells(
+                "ranger",
+                &[
+                    "auto_shot",
+                    "vault",
+                    "barbed_arrow",
+                    "snapshot",
+                    "rapid_fire",
+                    "puncturing_shaft",
+                ],
+            ),
             ["The Swiftbow", "The Arbalest"],
         ),
         (
             ACOLYTE_TRAINER,
             THE_ACOLYTES_VEIN,
             "acolyte",
-            vec![589, 689, 2061, 2120, 8092],
+            spells(
+                "acolyte",
+                &[
+                    "creeping_blight",
+                    "siphon_life",
+                    "dark_mending",
+                    "miasma",
+                    "blood_lance",
+                ],
+            ),
             ["The Rot-Weaver", "The Hemomancer"],
         ),
     ] {

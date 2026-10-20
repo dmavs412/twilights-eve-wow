@@ -22,7 +22,7 @@ with open(MASTER, newline="", encoding="utf-8") as _f:
 
 STRIKE = {
     "kind": "skill", "calling": "vanguard", "class": "1", "key": "strike", "name": "Strike", "rank": "1",
-    "client_spell_id": "78", "client_cost": "15", "realm_cost": "15", "target": "enemy",
+    "spell_id": "1000078", "client_cost": "15", "realm_cost": "15", "target": "enemy",
     "effect1_kind": "weapon_strike",
     "effect1_params": "weapon=normal;bonus.base=9.5;bonus.per_level=1.4;bonus.per_ap=0;tags=a|b",
     "effect4_kind": "stun", "effect4_params": "duration_ms=1000",
@@ -61,13 +61,13 @@ CALLING = {
 }
 TAB = {"kind": "talent_tab", "calling": "vanguard", "class": "1", "key": "arms", "name": "Arms", "tab_id": "900",
        "background": "WarriorArms", "tab_order": "0"}
-AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "name": "Buff", "rank": "1", "client_spell_id": "14177",
+AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "name": "Buff", "rank": "1", "spell_id": "1014177",
         "duration_ms": "10000", "charges": "1", "effect1_kind": "skill_crit_pct",
         "effect1_params": "skill=strike;pct=50", "modelled": "no"}
 
 
 class BuildSpells(unittest.TestCase):
-    def run_build(self, rows: list[dict], flags: dict | None = None,
+    def run_build(self, rows: list[dict],
                   extra_columns: tuple = ()) -> tuple[subprocess.CompletedProcess, list | None]:
         tmp = tempfile.mkdtemp()
         path = os.path.join(tmp, "master.csv")
@@ -90,11 +90,6 @@ class BuildSpells(unittest.TestCase):
             f.write(PNG)
         self.out_dir = tmp
         command = [sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp, "--art-dir", art_dir, "--no-dbc-check"]
-        if flags is not None:
-            flags_path = os.path.join(tmp, "flags.json")
-            with open(flags_path, "w", encoding="utf-8") as f:
-                json.dump(flags, f)
-            command += ["--spell-flags", flags_path]
         done = subprocess.run(command, capture_output=True, text=True)
         self.patch = None
         data = None
@@ -135,9 +130,12 @@ class BuildSpells(unittest.TestCase):
     def test_a_missing_png_fails_the_build(self):
         self.assert_fails([{**EMBER, "icon": "nothing.png"}], "icon: 'nothing.png' is not in")
 
-    def test_a_from_scratch_id_is_unique_and_not_borrowed(self):
+    def test_a_spell_id_is_unique_and_the_borrowing_columns_are_gone(self):
         self.assert_fails([EMBER, {**EMBER, "key": "other", "name": "Other"}], "spell_id 1000001 is already claimed")
-        self.assert_fails([{**EMBER, "client_spell_id": "78"}], "spell_id and client_spell_id are both set")
+        for column in ("client_spell_id", "realm_spell_id", "borrowed_from_class", "borrowed_family_bit"):
+            done, _ = self.run_build([EMBER], extra_columns=(column,))
+            self.assertNotEqual(done.returncode, 0)
+            self.assertIn(f"column {column} is gone", done.stderr)
         self.assert_fails([{**EMBER, "spell_id": "999"}], "is below 1000000")
 
     def test_skill_carries_realm_columns_and_effects(self):
@@ -179,7 +177,7 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "realm_cost": "10"}], "below client_cost")
 
     def test_a_callings_rows_must_agree_on_class(self):
-        self.assert_fails([STRIKE, {**STRIKE, "key": "stab", "class": "4", "client_spell_id": "79"}], "disagree on class")
+        self.assert_fails([STRIKE, {**STRIKE, "key": "stab", "class": "4", "spell_id": "1000079"}], "disagree on class")
 
     def test_a_missing_or_unknown_class_fails(self):
         self.assert_fails([{**STRIKE, "class": ""}], "class is required")
@@ -188,7 +186,7 @@ class BuildSpells(unittest.TestCase):
 
     def test_every_patch_row_carries_the_power_type_of_its_class(self):
         for cls, power_type in (("1", 1), ("4", 3), ("8", 0)):
-            rows = [{**STRIKE, "class": cls}, talent("cruelty", 1, 0, 1, **{"class": cls, "client_spell_id": "12320"})]
+            rows = [{**STRIKE, "class": cls}, talent("cruelty", 1, 0, 1, **{"class": cls, "spell_id": "1012320"})]
             done, data = self.run_build(rows)
             self.assertEqual(done.returncode, 0, done.stderr)
             self.assertEqual(data[0]["class"], int(cls))
@@ -281,7 +279,7 @@ class BuildSpells(unittest.TestCase):
     def test_missing_seat_fails(self):
         self.assert_fails([talent("cruelty", 1, 0, 1, tab_row="")], "tab_row")
 
-    def test_patch_carries_client_columns_and_only_effects_1_to_3(self):
+    def test_patch_carries_client_columns_and_every_effect(self):
         row = {**STRIKE, "client_cost": "10", "client_stances": "Battle Stance|Defensive Stance",
                "cast_kind": "next_swing", "effect2_kind": "stun", "effect2_params": "duration_ms=500",
                "effect3_kind": "stun", "effect3_params": "duration_ms=700",
@@ -290,93 +288,88 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(len(data[0]["skills"][0]["effects"]), 5)
         override = self.patch["spells"][0]
-        self.assertEqual(override["spell_id"], 78)
+        self.assertEqual(override["spell_id"], 1000078)
         fields = override["fields"]
         self.assertEqual(fields["cost"], 10)
         self.assertEqual(fields["stances"], ["Battle Stance", "Defensive Stance"])
         self.assertTrue(fields["on_next_swing"])
-        self.assertEqual([e["params"].get("duration_ms") for e in fields["effects"]], [None, 500, 700])
+        self.assertEqual([e["effect"] for e in fields["dbc_effects"]], [58, 6, 6, 6, 6])
+        self.assertEqual(fields["implicit_targets"], [6, 0])
         self.assertNotIn("realm_cost", fields)
 
     def test_patch_emits_spellmods_and_seats_per_rank(self):
         mod = {"spellmod1_type": "flat", "spellmod1_op": "COST", "spellmod1_target": "shout"}
-        rows = [{**STRIKE, "key": "shout", "client_spell_id": "6192"},
-                talent("cruelty", 1, 0, 1, client_spell_id="12320", talent_id="138", spellmod1_value="-1", **mod),
-                talent("cruelty", 2, 0, 1, client_spell_id="12852", talent_id="138", spellmod1_value="-2", **mod),
-                talent("fury", 1, 1, 1, client_spell_id="12300", prereq_key="cruelty", prereq_rank="2")]
-        done, _ = self.run_build(rows, flags={"6192": 1 << 16})
+        rows = [{**STRIKE, "key": "shout", "spell_id": "1006192"},
+                talent("cruelty", 1, 0, 1, spell_id="1012320", talent_id="138", spellmod1_value="-1", **mod),
+                talent("cruelty", 2, 0, 1, spell_id="1012852", talent_id="138", spellmod1_value="-2", **mod),
+                talent("fury", 1, 1, 1, spell_id="1012300", prereq_key="cruelty", prereq_rank="2")]
+        done, _ = self.run_build(rows)
         self.assertEqual(done.returncode, 0, done.stderr)
         mods = {o["spell_id"]: o.get("spellmods") for o in self.patch["spells"]}
-        self.assertEqual(mods[12320], [{"type": "flat", "op": "COST", "family_bit": 16, "value": -1}])
-        self.assertEqual(mods[12852][0]["value"], -2)
-        self.assertIsNone(mods[12300])
+        self.assertEqual(mods[1012320], [{"type": "flat", "op": "COST", "family_bit": 33, "value": -1}])
+        self.assertEqual(mods[1012852][0]["value"], -2)
+        self.assertIsNone(mods[1012300])
         cruelty, fury = self.patch["talents"]
         self.assertEqual(cruelty, {"calling": "vanguard", "key": "cruelty", "tab": "Arms", "row": 0, "column": 1,
-                                   "talent_id": 138, "rank_spell_ids": [12320, 12852]})
+                                   "talent_id": 138, "rank_spell_ids": [1012320, 1012852]})
         self.assertEqual(fury["prereq"], {"key": "cruelty", "rank": 2})
 
-    def borrowed(self, key: str, bit: int, spell_id: str) -> dict:
-        return {**STRIKE, "key": key, "client_spell_id": spell_id, "borrowed_from_class": "2",
-                "borrowed_family_bit": str(bit)}
+    def skill(self, key: str, spell_id: int) -> dict:
+        return {**STRIKE, "key": key, "spell_id": str(spell_id)}
 
     def mod_talent(self, target: str, **extra: str) -> dict:
-        return talent("boon", 1, 0, 0, client_spell_id="12320", talent_id="138", spellmod1_type="pct",
+        return talent("boon", 1, 0, 0, spell_id="1012320", talent_id="138", spellmod1_type="pct",
                       spellmod1_op="DAMAGE", spellmod1_target=target, spellmod1_value="10", **extra)
 
-    def test_spellmod_mask_is_built_from_skill_keys_for_both_outputs(self):
-        rows = [self.borrowed("a", 33, "20375"), self.borrowed("b", 34, "20305"),
-                {**STRIKE, "key": "c", "client_spell_id": "6546"}, self.mod_talent("a|c")]
-        done, data = self.run_build(rows, flags={"6546": 1 << 5})
+    def test_each_skill_takes_its_own_family_bit_in_sheet_order(self):
+        rows = [self.skill("a", 1020375), self.skill("b", 1020305), self.skill("c", 1006546), self.mod_talent("a|c")]
+        done, data = self.run_build(rows)
         self.assertEqual(done.returncode, 0, done.stderr)
-        want = {"type": "pct", "op": "DAMAGE", "family_mask": (1 << 33) | (1 << 5), "value": 10}
-        client = next(o for o in self.patch["spells"] if o["spell_id"] == 12320)
+        want = {"type": "pct", "op": "DAMAGE", "family_mask": (1 << 33) | (1 << 35), "value": 10}
+        client = next(o for o in self.patch["spells"] if o["spell_id"] == 1012320)
         self.assertEqual(client["spellmods"], [want])
         rank = data[0]["talent_tabs"][0]["talents"][0]["ranks"][0]
         self.assertEqual(rank["spellmods"], [{**want, "target": ["a", "c"]}])
+        b = next(o for o in self.patch["spells"] if o["spell_id"] == 1020305)["fields"]
+        self.assertEqual((b["spell_family"], b["family_flags"]), (4, 1 << 34))
 
     def test_a_single_skill_is_a_bit_index(self):
-        done, _ = self.run_build([self.borrowed("a", 33, "20375"), self.mod_talent("a")], flags={})
+        done, _ = self.run_build([self.skill("a", 1020375), self.mod_talent("a")])
         self.assertEqual(done.returncode, 0, done.stderr)
-        client = next(o for o in self.patch["spells"] if o["spell_id"] == 12320)
+        client = next(o for o in self.patch["spells"] if o["spell_id"] == 1012320)
         self.assertEqual(client["spellmods"][0]["family_bit"], 33)
 
-    def test_a_mask_reaching_an_unnamed_skill_fails(self):
-        shared = {**self.borrowed("b", 33, "20305")}
-        self.assert_fails([self.borrowed("a", 33, "20375"), shared, self.mod_talent("a")],
-                          "spellmod1_target 'a' also reaches 'b'")
+    def test_more_skills_than_family_bits_fails(self):
+        rows = [self.skill(f"s{i}", 1000100 + i) for i in range(32)]
+        self.assert_fails(rows, "vanguard has more than 31 skills")
 
     def test_spellbook_no_keeps_a_visible_skill_off_the_book(self):
         done, data = self.run_build([{**STRIKE, "spellbook": "no"}])
         self.assertEqual(done.returncode, 0, done.stderr)
         skill = data[0]["skills"][0]
-        self.assertEqual((skill["spell_id"], skill["spellbook"]), (78, False))
-        self.assertIn(78, [o["spell_id"] for o in self.patch["spells"]])
+        self.assertEqual((skill["spell_id"], skill["spellbook"]), (1000078, False))
+        self.assertIn(1000078, [o["spell_id"] for o in self.patch["spells"]])
 
     def test_spellbook_on_a_talent_fails(self):
-        self.assert_fails([talent("boon", 1, 0, 0, client_spell_id="12320", talent_id="138", spellbook="no")],
+        self.assert_fails([talent("boon", 1, 0, 0, spell_id="1012320", talent_id="138", spellbook="no")],
                           "spellbook is set on a talent row")
 
     def test_an_unknown_op_fails(self):
         row = {**self.mod_talent("a"), "spellmod1_op": "MAKE_BIGGER"}
-        self.assert_fails([self.borrowed("a", 33, "20375"), row], "spellmod1_op is 'MAKE_BIGGER'")
+        self.assert_fails([self.skill("a", 1020375), row], "spellmod1_op is 'MAKE_BIGGER'")
 
     def test_an_unknown_target_key_fails(self):
-        self.assert_fails([self.borrowed("a", 33, "20375"), self.mod_talent("zz")], "'zz' is not a skill")
-
-    def test_a_stock_target_without_flags_fails(self):
-        self.assert_fails([{**STRIKE, "key": "c", "client_spell_id": "6546"}, self.mod_talent("c")],
-                          "needs --data or --spell-flags")
+        self.assert_fails([self.skill("a", 1020375), self.mod_talent("zz")], "'zz' is not a skill")
 
     def test_five_groups_are_read_and_a_sixth_column_fails(self):
-        rows = [self.borrowed(k, b, str(i)) for i, (k, b) in enumerate(
-            [("a", 33), ("b", 34), ("c", 35), ("d", 36), ("e", 37)], start=100)]
+        rows = [self.skill(k, 1000100 + i) for i, k in enumerate("abcde")]
         groups = {}
         for n, key in enumerate("abcde", start=1):
             groups |= {f"spellmod{n}_type": "pct", f"spellmod{n}_op": "DAMAGE", f"spellmod{n}_target": key,
                        f"spellmod{n}_value": str(n)}
-        done, _ = self.run_build(rows + [talent("boon", 1, 0, 0, client_spell_id="12320", **groups)], flags={})
+        done, _ = self.run_build(rows + [talent("boon", 1, 0, 0, spell_id="1012320", **groups)])
         self.assertEqual(done.returncode, 0, done.stderr)
-        client = next(o for o in self.patch["spells"] if o["spell_id"] == 12320)
+        client = next(o for o in self.patch["spells"] if o["spell_id"] == 1012320)
         self.assertEqual([m["family_bit"] for m in client["spellmods"]], [33, 34, 35, 36, 37])
         done, _ = self.run_build([STRIKE], extra_columns=("spellmod6_type",))
         self.assertNotEqual(done.returncode, 0)
@@ -386,7 +379,7 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "spellmod1_type": "pct"}], "spellmod1 needs")
 
     def test_fractional_id_fails(self):
-        self.assert_fails([{**STRIKE, "client_spell_id": "78.0"}], "not a whole id")
+        self.assert_fails([{**STRIKE, "spell_id": "1000078.0"}], "not a whole")
 
     def test_dbc_check_without_data_fails(self):
         tmp = tempfile.mkdtemp()
@@ -403,7 +396,7 @@ class BuildSpells(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(tmp, "server_spells.json")))
 
     def test_build_prints_rows_that_carry_assumptions(self):
-        guessed = {**STRIKE, "key": "guess", "client_spell_id": "79", "assumptions": "damage is a placeholder"}
+        guessed = {**STRIKE, "key": "guess", "spell_id": "1000079", "assumptions": "damage is a placeholder"}
         done, _ = self.run_build([STRIKE, guessed])
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("vanguard/guess", done.stdout)
@@ -458,51 +451,49 @@ class BuildSpells(unittest.TestCase):
 
     def test_client_visible_no_emits_the_realm_id_and_nothing_to_the_patch(self):
         hidden = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "bleed", "name": "Bleed", "rank": "1",
-                  "client_visible": "no", "realm_spell_id": "1000001", "modelled": "no"}
+                  "client_visible": "no", "spell_id": "1000001", "modelled": "no"}
         done, data = self.run_build([CALLING, hidden])
         self.assertEqual(done.returncode, 0, done.stderr)
         aura = data[0]["auras"][0]
         self.assertEqual((aura["spell_id"], aura["status"]), (1000001, "placeholder"))
         self.assertEqual(self.patch["spells"], [])
 
-    def test_a_visible_row_emits_its_client_spell_id_as_spell_id(self):
+    def test_a_visible_row_emits_its_spell_id_to_both_outputs(self):
         done, data = self.run_build([{**STRIKE, "client_visible": "yes"}])
         self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual(data[0]["skills"][0]["spell_id"], 78)
-        self.assertEqual(self.patch["spells"][0]["spell_id"], 78)
+        self.assertEqual(data[0]["skills"][0]["spell_id"], 1000078)
+        self.assertEqual(self.patch["spells"][0]["spell_id"], 1000078)
 
     def hidden(self, **extra: str) -> dict:
         return {"kind": "skill", "calling": "vanguard", "class": "1", "key": "bleed", "name": "Bleed", "rank": "1",
-                "client_visible": "no", "realm_spell_id": "1000001", "modelled": "no", **extra}
+                "client_visible": "no", "spell_id": "1000001", "modelled": "no", **extra}
 
     def test_a_client_cell_on_a_hidden_row_fails(self):
         self.assert_fails([self.hidden(client_cost="5")], "bleed): a client_visible=no row sets client_cost")
+        self.assert_fails([self.hidden(icon="x.png")], "bleed): a client_visible=no row sets icon")
 
-    def test_realm_spell_id_below_range_fails(self):
-        self.assert_fails([self.hidden(realm_spell_id="999999")], "realm_spell_id 999999 is below")
+    def test_a_spell_id_below_range_fails(self):
+        self.assert_fails([self.hidden(spell_id="999999")], "spell_id: 999999 is below")
 
-    def test_a_hidden_row_needs_a_realm_spell_id(self):
-        self.assert_fails([self.hidden(realm_spell_id="")], "needs realm_spell_id")
+    def test_a_hidden_row_needs_a_spell_id(self):
+        self.assert_fails([self.hidden(spell_id="")], "a client_visible=no row needs spell_id")
 
-    def test_duplicate_realm_spell_id_fails(self):
-        self.assert_fails([self.hidden(), self.hidden(key="bleed2")], "realm_spell_id 1000001 is already used")
+    def test_duplicate_hidden_spell_id_fails(self):
+        self.assert_fails([self.hidden(), self.hidden(key="bleed2")], "spell_id 1000001 is already claimed")
 
-    def test_two_skills_on_one_client_spell_id_fail(self):
-        self.assert_fails([STRIKE, {**STRIKE, "key": "smash", "name": "Smash"}], "client_spell_id 78 is already claimed")
+    def test_two_skills_on_one_spell_id_fail(self):
+        self.assert_fails([STRIKE, {**STRIKE, "key": "smash", "name": "Smash"}], "spell_id 1000078 is already claimed")
 
-    def test_two_callings_on_one_client_spell_id_fail(self):
-        self.assert_fails([STRIKE, {**STRIKE, "calling": "zealot"}], "client_spell_id 78 is already claimed")
+    def test_two_callings_on_one_spell_id_fail(self):
+        self.assert_fails([STRIKE, {**STRIKE, "calling": "zealot"}], "spell_id 1000078 is already claimed")
 
-    def test_an_aura_may_share_its_callings_client_spell_id(self):
-        done, _ = self.run_build([STRIKE, {**AURA, "client_spell_id": "78"}])
+    def test_an_aura_may_share_its_callings_spell_id(self):
+        done, _ = self.run_build([STRIKE, {**AURA, "spell_id": "1000078"}])
         self.assertEqual(done.returncode, 0, done.stderr)
 
     def test_two_talents_on_one_talent_id_fail(self):
         rows = [talent("a", 1, 0, 0, talent_id="27"), talent("b", 1, 0, 1, talent_id="27")]
         self.assert_fails([CALLING, TAB, *rows], "talent_id 27 is already claimed")
-
-    def test_realm_spell_id_on_a_visible_row_fails(self):
-        self.assert_fails([{**STRIKE, "realm_spell_id": "1000001"}], "realm_spell_id is set on a row that is visible")
 
     def test_max_rank_is_required_on_a_talent(self):
         self.assert_fails([talent("cruelty", 1, 0, 1, max_rank="")], "cruelty): a talent rank row needs max_rank")
@@ -526,7 +517,7 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "status": "finished"}], "status is 'finished'")
 
     def test_status_counts_and_wip_rows_are_printed(self):
-        done, _ = self.run_build([STRIKE, {**STRIKE, "key": "other", "client_spell_id": "79", "status": "wip"}])
+        done, _ = self.run_build([STRIKE, {**STRIKE, "key": "other", "spell_id": "1000079", "status": "wip"}])
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("status: 1 placeholder, 1 wip, 0 done", done.stdout)
         self.assertIn("wip: vanguard/other", done.stdout)
@@ -542,11 +533,12 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         aura = data[0]["auras"][0]
         self.assertEqual((aura["key"], aura["spell_id"], aura["duration_ms"], aura["charges"]),
-                         ("buff", 14177, 10000, 1))
+                         ("buff", 1014177, 10000, 1))
         self.assertEqual(aura["modelled"], False)
         self.assertEqual(aura["effects"], [])
-        # Only its name reaches the borrowed spell.
-        self.assertEqual(self.patch["spells"], [{"spell_id": 14177, "calling": "vanguard", "key": "buff", "rank": 1, "fields": {"name": "Buff"}}])
+        # Its name and its targets reach the client.
+        self.assertEqual(self.patch["spells"], [{"spell_id": 1014177, "calling": "vanguard", "key": "buff", "rank": 1,
+                                                 "fields": {"implicit_targets": [1, 0], "name": "Buff"}}])
 
     def test_modelled_aura_effects_are_checked(self):
         self.assert_fails([{**AURA, "modelled": "yes", "effect1_kind": "nonsense"}], "unknown effect kind")
@@ -584,11 +576,11 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**bare, "tier": "1"}], "tier_cap")
 
     def test_patch_carries_the_description_only_when_the_row_has_one(self):
-        done, _ = self.run_build([STRIKE, {**STRIKE, "key": "plain", "client_spell_id": "79", "description": ""}])
+        done, _ = self.run_build([STRIKE, {**STRIKE, "key": "plain", "spell_id": "1000079", "description": ""}])
         self.assertEqual(done.returncode, 0, done.stderr)
         fields = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
-        self.assertEqual(fields[78]["description"], "Hits.")
-        self.assertNotIn("description", fields[79])
+        self.assertEqual(fields[1000078]["description"], "Hits.")
+        self.assertNotIn("description", fields[1000079])
 
     def test_seats_are_whole_numbers(self):
         done, data = self.run_build([talent("cruelty", 1, 0, 1, tab_row="2", tab_column="3")])
@@ -611,7 +603,6 @@ class BuildSpells(unittest.TestCase):
         self.assertIs(skill["effects"][0]["params"]["unavoidable"], True)
         self.assertEqual(list(skill["effects"][0]["params"])[:2], ["weapon", "unavoidable"])
         self.assertEqual(skill["outcomes"], {"dodge": False, "parry": False})
-        self.assertIs(self.patch["spells"][0]["fields"]["effects"][0]["params"]["unavoidable"], True)
         skill = self.built_skill(effect1_params=params, outcomes="crit=no")
         self.assertNotIn("unavoidable", skill["effects"][0]["params"])
 
@@ -666,7 +657,7 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(self.built_skill(cast_kind="next_swing")["interrupt_on"], [])
         cast = {"cast_kind": "cast", "client_cast_time_ms": "2000"}
         self.assertEqual(self.built_skill(**cast)["interrupt_on"], ["move", "pushback", "kick"])
-        self.assertNotIn("interrupt_flags", self.patch["spells"][0]["fields"])
+        self.assertEqual(self.patch["spells"][0]["fields"]["interrupt_flags"], 0x01 | 0x02 | 0x08)
         channel = {"cast_kind": "channel", "client_duration_ms": "5000", "channel_tick_ms": "1000"}
         self.assertEqual(self.built_skill(**channel)["interrupt_on"], ["move", "pushback", "kick"])
         self.assertEqual(self.built_skill(**cast, interrupt_on="none")["interrupt_on"], [])
@@ -683,7 +674,7 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(self.built_skill(school="fire")["defense_type"], "magic")
         self.assertEqual(self.built_skill(target="self")["defense_type"], "none")
         self.assertEqual(self.built_skill(target="friend", school="holy")["defense_type"], "none")
-        self.assertNotIn("dmg_class", self.patch["spells"][0]["fields"])
+        self.assertEqual(self.patch["spells"][0]["fields"]["dmg_class"], 0)
         self.assertEqual(self.built_skill(defense_type="ranged")["defense_type"], "ranged")
         self.assertEqual(self.patch["spells"][0]["fields"]["dmg_class"], 3)
         self.assert_fails([{**STRIKE, "defense_type": "psychic"}], "vanguard/strike) defense_type: 'psychic' is not one of")
@@ -768,10 +759,10 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "requires_weapon": "shield|dagger"}], "requires_weapon: shield")
 
     def test_cooldown_category_numbers_names_and_shares_the_cooldown(self):
-        other = {**STRIKE, "key": "other", "client_spell_id": "79", "cooldown_category": "poison",
+        other = {**STRIKE, "key": "other", "spell_id": "1000079", "cooldown_category": "poison",
                  "category_cooldown_ms": "6000"}
         done, data = self.run_build([{**STRIKE, "cooldown_category": "poison", "category_cooldown_ms": "6000"},
-                                     other, {**STRIKE, "key": "third", "client_spell_id": "80",
+                                     other, {**STRIKE, "key": "third", "spell_id": "1000080",
                                              "cooldown_category": "blind", "category_cooldown_ms": "9000"}])
         self.assertEqual(done.returncode, 0, done.stderr)
         first, second, third = (s["fields"] for s in self.patch["spells"])
@@ -786,7 +777,7 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "category_cooldown_ms": "6000"}], "vanguard/strike) cooldown_category")
         self.assert_fails([{**STRIKE, "cooldown_category": "p", "category_cooldown_ms": "0"}], "category_cooldown_ms")
         self.assert_fails([{**STRIKE, "cooldown_category": "p", "category_cooldown_ms": "6000"},
-                           {**STRIKE, "key": "b", "client_spell_id": "79", "cooldown_category": "p",
+                           {**STRIKE, "key": "b", "spell_id": "1000079", "cooldown_category": "p",
                             "category_cooldown_ms": "7000"}],
                           "vanguard/b) category_cooldown_ms")
 
@@ -939,6 +930,8 @@ class BuildSpells(unittest.TestCase):
         for column, value in values.items():
             for row, kind in ((STRIKE, "skill"), (talent("rage", 1, 0, 0), "talent"), (CALLING, "calling"),
                               (TAB, "talent_tab")):
+                if column in ("dispel_type", "mechanic") and "spell_id" in row:
+                    continue  # a row with its own spell shows its dispel type and mechanic
                 with self.subTest(column=column, kind=kind):
                     done, data = self.run_build([{**row, column: value}])
                     self.assertNotEqual(done.returncode, 0)
@@ -950,30 +943,34 @@ class BuildSpells(unittest.TestCase):
                                             "aura_description": "Poisoned."}])
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(self.patch["spells"], [{
-            "spell_id": 14177, "calling": "vanguard", "key": "buff", "rank": 1,
-            "fields": {"name": "Buff", "dispel_type": 4, "mechanic": 12, "aura_description": "Poisoned."}}])
+            "spell_id": 1014177, "calling": "vanguard", "key": "buff", "rank": 1,
+            "fields": {"implicit_targets": [1, 0], "dispel_type": 4, "mechanic": 12, "name": "Buff",
+                       "aura_description": "Poisoned."}}])
 
-    def test_an_aura_names_its_borrowed_spell_and_its_description_is_the_tooltip(self):
-        # The borrowed spell's own name and buff tooltip (Revenge Stun's "Stunned.") never show.
-        done, _ = self.run_build([CALLING, {**AURA, "description": "Empowered."}])
+    def test_an_aura_shows_its_name_and_its_description_is_the_tooltip(self):
+        done, _ = self.run_build([CALLING, {**AURA, "description": "Empowered.", "icon": "Interface\Icons\X"}])
         self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual(self.patch["spells"][0]["fields"], {"name": "Buff", "aura_description": "Empowered."})
+        self.assertEqual(self.patch["spells"][0]["fields"], {"implicit_targets": [1, 0], "icon": "Interface\Icons\X",
+                                                             "name": "Buff", "aura_description": "Empowered."})
 
     def test_an_aura_on_a_skills_spell_joins_the_skills_override(self):
-        aura = {**AURA, "client_spell_id": STRIKE["client_spell_id"], "mechanic": "incapacitate"}
+        aura = {**AURA, "spell_id": STRIKE["spell_id"], "mechanic": "incapacitate", "icon": "Interface\Icons\Aura"}
         for rows in ([CALLING, STRIKE, aura], [CALLING, aura, STRIKE]):
             done, _ = self.run_build(rows)
             self.assertEqual(done.returncode, 0, done.stderr)
             self.assertEqual(len(self.patch["spells"]), 1)
             entry = self.patch["spells"][0]
             self.assertEqual((entry["key"], entry["fields"]["mechanic"], entry["fields"]["cost"]), ("strike", 14, 15))
+            # The aura's look and targets are defaults; the skill's stand.
+            self.assertEqual((entry["fields"]["icon"], entry["fields"]["implicit_targets"]),
+                             ("Interface\Icons\Aura", [6, 0]))
 
     def test_two_auras_disagreeing_on_one_spell_fail(self):
         other = {**AURA, "key": "other", "mechanic": "snare"}
         self.assert_fails([CALLING, {**AURA, "mechanic": "stun"}, other], "(vanguard/other): mechanic 11 differs from 12")
 
     def test_a_hidden_aura_adds_no_override(self):
-        hidden = {**AURA, "client_visible": "no", "realm_spell_id": "1000001", "client_spell_id": "", "duration_ms": "",
+        hidden = {**AURA, "client_visible": "no", "spell_id": "1000001", "duration_ms": "",
                   "mechanic": "stun"}
         done, data = self.run_build([CALLING, hidden])
         self.assertEqual(done.returncode, 0, done.stderr)
@@ -1074,14 +1071,6 @@ class SeamChecks(unittest.TestCase):
     def test_effects_of_one_aura_need_a_spell_id_to_share_a_slot(self):
         self.assert_refused("seam_buff_slot.csv", "vanguard/aura_seal_of_iron: 2 effects and no spell id",
                             "--no-dbc-check")
-
-    @unittest.skipUnless(os.environ.get("WOW_DATA"), "needs WOW_DATA")
-    def test_a_patched_spell_with_a_reagent_is_refused(self):
-        self.assert_refused("seam_reagent.csv", "basic_warrior/heroic_strike (spell 23028): the stock 'Arcane Brilliance' needs item(s)")
-
-    @unittest.skipUnless(os.environ.get("WOW_DATA"), "needs WOW_DATA")
-    def test_a_target_the_client_never_asks_for_is_refused(self):
-        self.assert_refused("seam_target.csv", "vanguard/bulwark_charge (spell 1738): target is enemy")
 
 
 if __name__ == "__main__":

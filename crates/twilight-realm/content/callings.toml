@@ -54,7 +54,7 @@ armour = ["cloth", "leather", "mail", "plate", "shield"]
 # white swing at the target putting it back to its full 10 s, as the tooltip says.
 [[calling.skill]]
 key = "seal_of_command"
-spell_id = 20375
+spell_id = 1000065
 spell_name = "Seal of Command"
 power_cost = 10
 cooldown_ms = 0
@@ -67,7 +67,7 @@ effects = [
 
 [[calling.skill]]
 key = "seal_of_the_crusader"
-spell_id = 20305
+spell_id = 1000066
 spell_name = "Seal of the Crusader"
 power_cost = 10
 cooldown_ms = 0
@@ -80,7 +80,7 @@ effects = [
 
 [[calling.skill]]
 key = "judgement"
-spell_id = 20271
+spell_id = 1000067
 spell_name = "Judgement"
 power_cost = 5
 cooldown_ms = 10000
@@ -93,7 +93,7 @@ effects = [{ kind = "judgement" }]
 # Rank 4, the one whose tooltip says six seconds.
 [[calling.skill]]
 key = "hammer_of_justice"
-spell_id = 10308
+spell_id = 1000068
 spell_name = "Hammer of Justice"
 power_cost = 15
 cooldown_ms = 60000
@@ -101,12 +101,12 @@ gcd_ms = 1500
 target = "enemy"
 range_yd = [0.0, 10.0]
 borrowed = { family_bit = 36 }
-effects = [{ kind = "stun", aura_spell_id = 10308, aura_spell_name = "Hammer of Justice", duration_ms = 6000 }]
+effects = [{ kind = "stun", aura_spell_id = 1000068, aura_spell_name = "Hammer of Justice", duration_ms = 6000 }]
 
 # Carried over from Vanguard with the same data: `callings::skill` finds a spell's first table.
 [[calling.skill]]
 key = "mortal_strike"
-spell_id = 12294
+spell_id = 1000069
 spell_name = "Mortal Strike"
 power_cost = 30
 cooldown_ms = 6000
@@ -120,7 +120,7 @@ effects = [
 
 [[calling.skill]]
 key = "charge"
-spell_id = 6178
+spell_id = 1000070
 spell_name = "Charge"
 power_cost = 0
 cooldown_ms = 15000
@@ -131,7 +131,7 @@ requires_out_of_combat = true
 effects = [
     { kind = "charge", speed_yd_s = 24.0 },
     { kind = "energize", power = "rage", amount = { base = 11.0, per_level = 0.1 } },
-    { kind = "stun", aura_spell_id = 7922, aura_spell_name = "Charge Stun", duration_ms = 1000 },
+    { kind = "stun", aura_spell_id = 1000190, aura_spell_name = "Charge (stun)", duration_ms = 1000 },
 ]
 
 # Zealot's tree: Crusade (seven rows of Paladin Retribution, Holy Power behind 30 points in the
@@ -163,7 +163,7 @@ key = "improved_seal_of_the_crusader"
 talent_id = 1464
 tier = 1
 column = 2
-rank_spells = [20335, 20336, 20337]
+rank_spells = [1000071, 1000072, 1000073]
 spell_name = "Improved Seal of the Crusader"
 effects = [{ kind = "skill_amount_pct", skill = "seal_of_the_crusader", per_rank = [5, 10, 15] }]
 client_spellmods = [{ flat = false, op = 3, family_bit = 34, per_rank = [5, 10, 15] }]
@@ -175,7 +175,7 @@ key = "benediction"
 talent_id = 1407
 tier = 1
 column = 3
-rank_spells = [20101, 20102, 20103, 20104, 20105]
+rank_spells = [1000074, 1000075, 1000076, 1000077, 1000078]
 spell_name = "Benediction"
 effects = [
     { kind = "skill_cost", skill = "seal_of_command", per_rank = [1, 1, 2, 2, 3] },
@@ -195,7 +195,7 @@ key = "improved_judgement"
 talent_id = 1631
 tier = 2
 column = 1
-rank_spells = [25956, 25957]
+rank_spells = [1000079, 1000080]
 spell_name = "Improved Judgement"
 effects = []
 
@@ -204,7 +204,7 @@ key = "deflection"
 talent_id = 1403
 tier = 2
 column = 3
-rank_spells = [20060, 20061, 20062, 20063, 20064]
+rank_spells = [1000081, 1000082, 1000083, 1000084, 1000085]
 spell_name = "Deflection"
 effects = [{ kind = "parry_pct", per_rank = [1, 2, 3, 4, 5] }]
 
@@ -213,7 +213,7 @@ key = "vindication"
 talent_id = 1633
 tier = 3
 column = 1
-rank_spells = [9452, 26016, 26021]
+rank_spells = [1000086, 1000087, 1000088]
 spell_name = "Vindication"
 effects = []
 
@@ -222,7 +222,7 @@ key = "conviction"
 talent_id = 1411
 tier = 3
 column = 2
-rank_spells = [20117, 20118, 20119, 20120, 20121]
+rank_spells = [1000089, 1000090, 1000091, 1000092, 1000093]
 spell_name = "Conviction"
 effects = [{ kind = "melee_crit_pct", per_rank = [1, 2, 3, 4, 5] }]
 
@@ -231,7 +231,7 @@ key = "eye_for_an_eye"
 talent_id = 1632
 tier = 4
 column = 1
-rank_spells = [9799, 25988]
+rank_spells = [1000094, 1000095]
 spell_name = "Eye for an Eye"
 effects = []
 
@@ -240,7 +240,7 @@ key = "pursuit_of_justice"
 talent_id = 1634
 tier = 4
 column = 4
-rank_spells = [26022, 26023]
+rank_spells = [1000096, 1000097]
 spell_name = "Pursuit of Justice"
 effects = []
 
@@ -249,7 +249,7 @@ key = "two_handed_weapon_specialization"
 talent_id = 1410
 tier = 5
 column = 1
-rank_spells = [20111, 20112, 20113]
+rank_spells = [1000098, 1000099, 1000100]
 spell_name = "Two-Handed Weapon Specialization"
 effects = [{ kind = "weapon_damage_pct", weapon = "two_hand", per_rank = [2, 4, 6] }]
 
@@ -258,7 +258,7 @@ key = "improved_hammer_of_justice"
 talent_id = 1521
 tier = 5
 column = 3
-rank_spells = [20487, 20488, 20489]
+rank_spells = [1000101, 1000102, 1000103]
 spell_name = "Improved Hammer of Justice"
 effects = []
 
@@ -267,7 +267,7 @@ key = "vengeance"
 talent_id = 1402
 tier = 6
 column = 2
-rank_spells = [20049, 20056, 20057, 20058, 20059]
+rank_spells = [1000104, 1000105, 1000106, 1000107, 1000108]
 spell_name = "Vengeance"
 prereq = { key = "conviction", rank = 5 }
 effects = []
@@ -277,7 +277,7 @@ key = "holy_power"
 talent_id = 1627
 tier = 7
 column = 3
-rank_spells = [5923, 5924, 5925, 5926, 25829]
+rank_spells = [1000109, 1000110, 1000111, 1000112, 1000113]
 spell_name = "Holy Power"
 effects = []
 
@@ -291,7 +291,7 @@ key = "improved_charge"
 talent_id = 126
 tier = 1
 column = 1
-rank_spells = [12285, 12697]
+rank_spells = [1000114, 1000115]
 spell_name = "Improved Charge"
 effects = [{ kind = "skill_rage", skill = "charge", per_rank = [3, 6] }]
 
@@ -300,7 +300,7 @@ key = "anger_management"
 talent_id = 137
 tier = 1
 column = 2
-rank_spells = [12296]
+rank_spells = [1000116]
 spell_name = "Anger Management"
 # Talent.dbc flags it active, though the spell is a passive aura.
 exceptional = true
@@ -311,7 +311,7 @@ key = "impale"
 talent_id = 662
 tier = 1
 column = 4
-rank_spells = [16493, 16494]
+rank_spells = [1000117, 1000118]
 spell_name = "Impale"
 effects = [{ kind = "skill_crit_damage_pct", per_rank = [10, 20] }]
 
@@ -320,7 +320,7 @@ key = "deep_wounds"
 talent_id = 121
 tier = 1
 column = 3
-rank_spells = [12834, 12849, 12867]
+rank_spells = [1000119, 1000120, 1000121]
 spell_name = "Deep Wounds"
 effects = [{ kind = "crit_bleed", aura_spell_id = 12721, aura_spell_name = "Deep Wound", tick_ms = 3000, duration_ms = 12000, per_rank = [20, 40, 60] }]
 
@@ -329,7 +329,7 @@ key = "axe_specialization"
 talent_id = 132
 tier = 2
 column = 1
-rank_spells = [12700, 12781, 12783, 12784, 12785]
+rank_spells = [1000122, 1000123, 1000124, 1000125, 1000126]
 spell_name = "Axe Specialization"
 effects = [{ kind = "weapon_crit_pct", weapon = "axe", per_rank = [1, 2, 3, 4, 5] }]
 
@@ -338,7 +338,7 @@ key = "mace_specialization"
 talent_id = 125
 tier = 2
 column = 3
-rank_spells = [12284, 12701, 12702, 12703, 12704]
+rank_spells = [1000127, 1000128, 1000129, 1000130, 1000131]
 spell_name = "Mace Specialization"
 effects = [
     { kind = "hit_stun_pct", weapon = "mace", aura_spell_id = 5530, aura_spell_name = "Mace Stun Effect", duration_ms = 3000, per_rank = [1, 2, 3, 4, 6] },
@@ -349,7 +349,7 @@ key = "sword_specialization"
 talent_id = 123
 tier = 2
 column = 4
-rank_spells = [12281, 12812, 12813, 12814, 12815]
+rank_spells = [1000132, 1000133, 1000134, 1000135, 1000136]
 spell_name = "Sword Specialization"
 effects = [{ kind = "extra_swing_pct", weapon = "sword", per_rank = [1, 2, 3, 4, 5] }]
 
@@ -358,7 +358,7 @@ key = "flurry"
 talent_id = 156
 tier = 3
 column = 3
-rank_spells = [12319, 12971, 12972, 12973, 12974]
+rank_spells = [1000137, 1000138, 1000139, 1000140, 1000141]
 spell_name = "Flurry"
 effects = []
 
@@ -372,7 +372,7 @@ key = "divine_strength"
 talent_id = 1450
 tier = 1
 column = 2
-rank_spells = [20262, 20263, 20264, 20265, 20266]
+rank_spells = [1000142, 1000143, 1000144, 1000145, 1000146]
 spell_name = "Divine Strength"
 effects = []
 
@@ -381,7 +381,7 @@ key = "toughness"
 talent_id = 1423
 tier = 1
 column = 4
-rank_spells = [20143, 20144, 20145, 20146, 20147]
+rank_spells = [1000147, 1000148, 1000149, 1000150, 1000151]
 spell_name = "Toughness"
 effects = [{ kind = "item_armor_pct", per_rank = [2, 4, 6, 8, 10] }]
 
@@ -390,7 +390,7 @@ key = "precision"
 talent_id = 1630
 tier = 2
 column = 1
-rank_spells = [20189, 20192, 20193]
+rank_spells = [1000152, 1000153, 1000154]
 spell_name = "Precision"
 effects = []
 
@@ -399,7 +399,7 @@ key = "redoubt"
 talent_id = 1421
 tier = 2
 column = 3
-rank_spells = [20127, 20130, 20135, 20136, 20137]
+rank_spells = [1000155, 1000156, 1000157, 1000158, 1000159]
 spell_name = "Redoubt"
 effects = []
 
@@ -408,7 +408,7 @@ key = "one_handed_weapon_specialization"
 talent_id = 1429
 tier = 3
 column = 3
-rank_spells = [20196, 20197, 20198, 20199, 20200]
+rank_spells = [1000160, 1000161, 1000162, 1000163, 1000164]
 spell_name = "One-Handed Weapon Specialization"
 effects = [{ kind = "weapon_damage_pct", weapon = "one_hand", per_rank = [2, 4, 6, 8, 10] }]
 
@@ -417,7 +417,7 @@ key = "anticipation"
 talent_id = 1629
 tier = 3
 column = 4
-rank_spells = [20096, 20097, 20098, 20099, 20100]
+rank_spells = [1000165, 1000166, 1000167, 1000168, 1000169]
 spell_name = "Anticipation"
 effects = [{ kind = "defense", per_rank = [2, 4, 6, 8, 10] }]
 
@@ -426,6 +426,6 @@ key = "reckoning"
 talent_id = 1426
 tier = 4
 column = 3
-rank_spells = [20177, 20179, 20181, 20180, 20182]
+rank_spells = [1000170, 1000171, 1000172, 1000173, 1000174]
 spell_name = "Reckoning"
 effects = []

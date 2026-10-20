@@ -23,7 +23,8 @@ const TWO_HANDED_WEAPON_SPECIALIZATION: u32 = 1410;
 const IMPROVED_HAMMER_OF_JUSTICE: u32 = 1521;
 const VENGEANCE: u32 = 1402;
 const HOLY_POWER: u32 = 1627;
-const HOLY_POWER_RANKS: [u32; 5] = [5923, 5924, 5925, 5926, 25829];
+static HOLY_POWER_RANKS: std::sync::LazyLock<Vec<u32>> =
+    std::sync::LazyLock::new(|| talent_spells("zealot", "holy_power"));
 
 /// A human Zealot of `level` in the world, with the entry burst.
 fn zealot(level: u8) -> (Realm, u64, Vec<SessionEvent>) {
@@ -124,19 +125,22 @@ fn benediction_takes_rage_off_the_seals_and_judgement() {
     let (mut realm, me, mob, mut view) = tanking(6, &[(BENEDICTION, 5)], 20);
     stand_at(&mut realm, &mob, 2.0);
     let rage = view.rage(me);
-    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
-    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_THE_CRUSADER), None);
+    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), *SEAL_OF_THE_CRUSADER),
+        None
+    );
     assert_eq!(view.rage(me), rage - 7, "10 rage, less 3");
     // The global cooldown.
     view.run(&mut realm, 1.6);
     let rage = view.rage(me);
-    realm.handle(cast(SEAL_OF_COMMAND, None));
-    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_COMMAND), None);
+    realm.handle(cast(*SEAL_OF_COMMAND, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *SEAL_OF_COMMAND), None);
     assert_eq!(view.rage(me), rage - 7, "10 rage, less 3");
     view.run(&mut realm, 1.6);
     let rage = view.rage(me);
-    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), JUDGEMENT), None);
+    realm.handle(cast(*JUDGEMENT, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(&mut realm), *JUDGEMENT), None);
     assert_eq!(view.rage(me), rage - 3, "5 rage, less 2");
 }
 
@@ -144,12 +148,15 @@ fn benediction_takes_rage_off_the_seals_and_judgement() {
 fn one_rank_of_benediction_takes_rage_off_judgement() {
     let (mut realm, me, mob, mut view) = tanking(6, &[(BENEDICTION, 1)], 20);
     stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(SEAL_OF_THE_CRUSADER, None));
-    assert_eq!(refusal(&view.drain(&mut realm), SEAL_OF_THE_CRUSADER), None);
+    realm.handle(cast(*SEAL_OF_THE_CRUSADER, None));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), *SEAL_OF_THE_CRUSADER),
+        None
+    );
     view.run(&mut realm, 1.6);
     let rage = view.rage(me);
-    realm.handle(cast(JUDGEMENT, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), JUDGEMENT), None);
+    realm.handle(cast(*JUDGEMENT, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(&mut realm), *JUDGEMENT), None);
     assert_eq!(view.rage(me), rage - 4, "5 rage, less 1");
 }
 
@@ -196,7 +203,7 @@ fn a_zealot_at_the_cap_has_49_points_and_the_31st_in_crusade_reaches_holy_power(
     assert_eq!(points(&events, me), Some(19));
     learn(&mut realm, &mut events, HOLY_POWER, 5);
     assert_eq!(points(&events, me), Some(14));
-    assert!(knows_any(&events, &HOLY_POWER_RANKS));
+    assert!(knows_any(&events, &*HOLY_POWER_RANKS));
 }
 
 // ── The sheet and the swings ─────────────────────────────────────────────────────────────────
@@ -361,7 +368,11 @@ fn a_respec_at_the_trainer_wipes_the_zealot_tree() {
         })
         .collect();
     // Benediction's, Deflection's and Improved Charge's top ranks among them.
-    for spell in [20105, 20064, 12697] {
+    for spell in [
+        talent_spell("zealot", "benediction", 5),
+        talent_spell("zealot", "deflection", 5),
+        talent_spell("zealot", "improved_charge", 2),
+    ] {
         assert!(removed.contains(&spell), "{spell}: {removed:?}");
     }
     for bit in [SEAL_OF_COMMAND_BIT, SEAL_OF_THE_CRUSADER_BIT, JUDGEMENT_BIT] {
@@ -371,9 +382,12 @@ fn a_respec_at_the_trainer_wipes_the_zealot_tree() {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────
 
-const SEAL_OF_COMMAND: u32 = 20375;
-const SEAL_OF_THE_CRUSADER: u32 = 20305;
-const JUDGEMENT: u32 = 20271;
+static SEAL_OF_COMMAND: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "seal_of_command"));
+static SEAL_OF_THE_CRUSADER: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "seal_of_the_crusader"));
+static JUDGEMENT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "judgement"));
 
 const OFF_HAND: u8 = 16;
 

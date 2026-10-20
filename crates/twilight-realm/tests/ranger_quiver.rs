@@ -14,7 +14,8 @@ use twilight_realm::{Realm, RealmCommand};
 const RANGED: u8 = 17;
 const CRACKED_SHORTBOW: u32 = 2773;
 const BOW_SPEED_MS: u32 = 2300;
-const AUTO_SHOT: u32 = 75;
+static AUTO_SHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "auto_shot"));
 /// Small Quiver: 8 slots, 10% ranged haste.
 const SMALL_QUIVER: u32 = 5439;
 const QUIVER_HASTE_PCT: f32 = 10.0;
@@ -115,14 +116,14 @@ fn a_quiver_speeds_the_bow_until_taken_off() {
     stand_at(&mut realm, &mob, 34.0);
     realm.tick(1.0, &FlatGround);
     drain(&mut realm);
-    realm.handle(cast(AUTO_SHOT, Some(mob.guid)));
+    realm.handle(cast(*AUTO_SHOT, Some(mob.guid)));
     let mut shots = Vec::new();
     let mut now = 0.0f32;
     while shots.len() < 2 && now < 5.0 {
         realm.tick(0.01, &FlatGround);
         now += 0.01;
         for e in drain(&mut realm) {
-            if matches!(e, SessionEvent::SpellGo { spell_id, .. } if spell_id == AUTO_SHOT) {
+            if matches!(e, SessionEvent::SpellGo { spell_id, .. } if spell_id == *AUTO_SHOT) {
                 shots.push(now);
             }
         }

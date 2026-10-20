@@ -161,33 +161,65 @@ fn garbage_is_unreadable() {
 }
 
 #[test]
-fn the_save_is_version_2_and_a_version_1_save_still_loads() {
-    assert_eq!(twilight_realm::SAVE_VERSION, 2);
+fn the_save_is_version_3_and_older_saves_still_load() {
+    assert_eq!(twilight_realm::SAVE_VERSION, 3);
     let mut realm = realm();
     let (guid, _) = enter_new(&mut realm, "Vol", TAUREN);
     let blob = realm.export_character(guid).unwrap();
-    assert!(
-        blob.starts_with(
-            "version = 2
-"
-        ),
-        "{blob}"
-    );
+    assert!(blob.starts_with("version = 3\n"), "{blob}");
 
-    let old = blob.replacen(
-        "version = 2
-",
-        "version = 1
-",
-        1,
-    );
+    for version in [1, 2] {
+        let old = blob.replacen("version = 3\n", &format!("version = {version}\n"), 1);
+        let mut fresh = Realm::new();
+        assert_eq!(fresh.import_character(&old), Ok(guid));
+        assert_eq!(
+            fresh.export_character(guid),
+            Some(blob.clone()),
+            "version {version} written back as version 3"
+        );
+    }
+}
+
+/// The one-time stock-to-sheet spell id table the migration wrote (#204).
+fn old_spell_ids() -> std::collections::HashMap<u32, u32> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/twilights-eve/spell_id_remap.json");
+    let table: std::collections::HashMap<String, u32> =
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    table
+        .into_iter()
+        .map(|(old, new)| (old.parse().unwrap(), new))
+        .collect()
+}
+
+#[test]
+fn an_older_saves_stock_spell_ids_on_the_bar_load_as_the_sheets_own() {
+    let table = old_spell_ids();
+    let (&stock, &own) = table.iter().min().unwrap();
+    let unknown = (1..).find(|id| !table.contains_key(id)).unwrap();
+    let item = 0x80 << 24 | 6948;
+    let mut realm = realm();
+    let (guid, _) = enter_new(&mut realm, "Vol", TAUREN);
+    for (slot, packed) in [(1, stock), (2, unknown), (3, item)] {
+        realm.handle(RealmCommand::SetActionButton { slot, packed });
+    }
+    let blob = realm.export_character(guid).unwrap();
+    let old = blob.replacen("version = 3\n", "version = 2\n", 1);
+
     let mut fresh = Realm::new();
-    assert_eq!(fresh.import_character(&old), Ok(guid));
-    assert_eq!(
-        fresh.export_character(guid),
-        Some(blob),
-        "written back as version 2"
+    fresh.import_character(&old).unwrap();
+    let again = fresh.export_character(guid).unwrap();
+    let bar = format!("action_bar = [[1, {own}], [3, {item}]]");
+    assert!(
+        again.contains(&bar),
+        "the stock id remapped, the unknown spell cleared, the item kept:\n{again}"
     );
+    assert!(!again.contains(&format!("[2, {unknown}]")));
+
+    // A version 3 save is the sheet's already: the same ids load untouched.
+    let mut current = Realm::new();
+    current.import_character(&blob).unwrap();
+    assert_eq!(current.export_character(guid), Some(blob));
 }
 
 #[test]
@@ -195,7 +227,7 @@ fn a_save_from_another_format_version_is_refused() {
     let mut realm = realm();
     let (guid, _) = enter_new(&mut realm, "Vol", TAUREN);
     let blob = realm.export_character(guid).unwrap();
-    let future = blob.replacen("version = 2\n", "version = 999\n", 1);
+    let future = blob.replacen("version = 3\n", "version = 999\n", 1);
     assert_ne!(blob, future, "the save names its version");
 
     let mut fresh = Realm::new();

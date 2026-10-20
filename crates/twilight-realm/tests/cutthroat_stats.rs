@@ -16,7 +16,8 @@ const LEVEL: u8 = 10;
 const REFLEXIVE_STRIKE: u32 = 186;
 const PREDATORS_STEP: u32 = 244;
 const SERRATED_STRIKES: u32 = 270;
-const EVASION: u32 = 5277;
+static EVASION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "evasion"));
 /// A player's run speed, yd/s.
 const RUN: f32 = 7.0;
 const ENERGY: u8 = 3;
@@ -104,8 +105,8 @@ fn reflexive_strike_adds_dodge_and_crit_to_the_sheet() {
 fn evasion_adds_fifty_percent_dodge_for_fifteen_seconds() {
     let (mut realm, me, _, mut view, _) = cutthroat(&[]);
     let base = dodge(&view, me);
-    realm.handle(cast(EVASION, None));
-    assert_eq!(refusal(&view.drain(&mut realm), EVASION), None, "the cast");
+    realm.handle(cast(*EVASION, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *EVASION), None, "the cast");
     assert!((dodge(&view, me) - base - 50.0).abs() < 1e-3, "on");
     view.run(&mut realm, 10.0);
     assert!(

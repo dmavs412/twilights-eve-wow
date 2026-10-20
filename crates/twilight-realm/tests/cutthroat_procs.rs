@@ -14,9 +14,12 @@ const ENERGY: u8 = 3;
 /// `VictimState` of a dodged swing.
 const DODGED: u32 = 2;
 
-const SINISTER_STRIKE: u32 = 1752;
-const EVISCERATE: u32 = 2098;
-const EVASION: u32 = 5277;
+static SINISTER_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "sinister_strike"));
+static EVISCERATE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "eviscerate"));
+static EVASION: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "evasion"));
 
 /// `Talent.dbc` ids of the talents under test, and Reflexive Strike for more dodges.
 const REFLEXIVE_STRIKE: u32 = 186;
@@ -122,7 +125,7 @@ fn cast_at(realm: &mut Realm, view: &mut View, spell_id: u32, mob: &Mob) {
 /// refund shows under the bar's cap.
 fn drain_energy(realm: &mut Realm, view: &mut View, mob: &Mob) {
     for _ in 0..2 {
-        cast_at(realm, view, SINISTER_STRIKE, mob);
+        cast_at(realm, view, *SINISTER_STRIKE, mob);
         realm.handle(RealmCommand::AttackStop);
         view.run(realm, 1.5);
     }
@@ -135,13 +138,13 @@ fn phantom_guile_gives_a_point_and_ten_energy_on_each_dodge() {
     let (mut realm, me, camp, mut view) = cutthroat(10, &talents, true, true);
     let mob = &camp[0];
     stand_at(&mut realm, mob, 2.0);
-    cast_at(&mut realm, &mut view, EVASION, mob);
+    cast_at(&mut realm, &mut view, *EVASION, mob);
     // Two strikes at another mob spend the Energy, one at this mob puts a real point on it, and
     // the player's fists leave it alive for the dodges.
     stand_at(&mut realm, &camp[1], 2.0);
     drain_energy(&mut realm, &mut view, &camp[1]);
     stand_at(&mut realm, mob, 2.0);
-    cast_at(&mut realm, &mut view, SINISTER_STRIKE, mob);
+    cast_at(&mut realm, &mut view, *SINISTER_STRIKE, mob);
     // The whole camp turns on the player, for dodges enough; the point lands on the mob the
     // player is fighting.
     for other in camp.iter().rev() {
@@ -173,7 +176,7 @@ fn a_cutthroat_without_the_talent_gets_nothing_from_a_dodge() {
     let (mut realm, me, camp, mut view) = cutthroat(10, &[(REFLEXIVE_STRIKE, 5)], true, true);
     let mob = &camp[0];
     stand_at(&mut realm, mob, 2.0);
-    cast_at(&mut realm, &mut view, EVASION, mob);
+    cast_at(&mut realm, &mut view, *EVASION, mob);
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
     let mut seen = 0;
     for _ in 0..300 {
@@ -196,7 +199,7 @@ fn three_eviscerates(talents: &[(u32, u8)]) -> Vec<(u32, u32, (u8, u64))> {
             while energy(&view, me) < 75 {
                 view.run(&mut realm, 0.5);
             }
-            cast_at(&mut realm, &mut view, SINISTER_STRIKE, mob);
+            cast_at(&mut realm, &mut view, *SINISTER_STRIKE, mob);
             realm.handle(RealmCommand::AttackStop);
             view.run(&mut realm, 1.5);
             if combo(&view, me).0 > 0 {
@@ -206,7 +209,7 @@ fn three_eviscerates(talents: &[(u32, u8)]) -> Vec<(u32, u32, (u8, u64))> {
         }
         assert!(built, "Sinister Strike never landed");
         let before = energy(&view, me);
-        cast_at(&mut realm, &mut view, EVISCERATE, mob);
+        cast_at(&mut realm, &mut view, *EVISCERATE, mob);
         rounds.push((before, energy(&view, me), combo(&view, me)));
         realm.handle(RealmCommand::AttackStop);
         view.run(&mut realm, 1.5);
@@ -261,8 +264,8 @@ fn kill_gains(level: u8, talents: &[(u32, u8)]) -> (u32, u32, u32, u32) {
         // A paid cast takes 40 off the step's Energy.
         let mut cost = 0;
         if e0 >= 40 {
-            realm.handle(cast(SINISTER_STRIKE, Some(mob.guid)));
-            if refusal(&view.drain(&mut realm), SINISTER_STRIKE).is_none() {
+            realm.handle(cast(*SINISTER_STRIKE, Some(mob.guid)));
+            if refusal(&view.drain(&mut realm), *SINISTER_STRIKE).is_none() {
                 cost = 40;
             }
         }

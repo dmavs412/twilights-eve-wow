@@ -12,13 +12,19 @@ use benilla_protocol::SessionEvent;
 use common::fight::*;
 use common::*;
 
-const HEROIC_STRIKE: u32 = 78;
-const CHARGE: u32 = 100;
-const GOUGE: u32 = 1776;
-const FIRE_BLAST: u32 = 2136;
+static HEROIC_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "heroic_strike"));
+static CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "charge"));
+static GOUGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "gouge"));
+static FIRE_BLAST: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "fire_blast"));
 
 /// The Basic Warrior's kit.
-const KIT: [u32; 4] = [HEROIC_STRIKE, CHARGE, GOUGE, FIRE_BLAST];
+fn kit() -> [u32; 4] {
+    [*HEROIC_STRIKE, *CHARGE, *GOUGE, *FIRE_BLAST]
+}
 
 #[test]
 fn a_new_basic_warriors_spellbook_holds_exactly_its_kit() {
@@ -38,7 +44,7 @@ fn a_new_basic_warriors_spellbook_holds_exactly_its_kit() {
     assert_eq!(books.len(), 1, "one spellbook at login");
     let (mut ids, cooldowns) = books[0].clone();
     ids.sort_unstable();
-    let mut want = KIT.to_vec();
+    let mut want = kit().to_vec();
     want.sort_unstable();
     assert_eq!(ids, want);
     assert_eq!(cooldowns, 0, "a fresh character has nothing cooling down");
@@ -61,7 +67,7 @@ fn a_new_character_finds_its_kit_on_its_battle_stance_bar() {
     let buttons = action_buttons(&events);
     // Battle Stance pages the main bar to slots 73-84 (0-based 72-83).
     let on_bar: Vec<(u8, u32)> = buttons.iter().map(|b| (b.slot, b.action)).collect();
-    let want: Vec<(u8, u32)> = (72..).zip(KIT).collect();
+    let want: Vec<(u8, u32)> = (72..).zip(kit()).collect();
     assert_eq!(on_bar, want);
     assert!(buttons.iter().all(|b| b.kind == 0), "spell buttons");
 }
@@ -73,7 +79,7 @@ fn the_bar_the_player_arranges_comes_back_at_the_next_login() {
     // Charge moved to button 1 of the stance bar; Heroic Strike's old button cleared.
     realm.handle(RealmCommand::SetActionButton {
         slot: 72,
-        packed: CHARGE,
+        packed: *CHARGE,
     });
     for slot in [73, 74, 75] {
         realm.handle(RealmCommand::SetActionButton { slot, packed: 0 });
@@ -85,7 +91,7 @@ fn the_bar_the_player_arranges_comes_back_at_the_next_login() {
         .iter()
         .map(|b| (b.slot, b.action))
         .collect();
-    assert_eq!(on_bar, [(72, CHARGE)]);
+    assert_eq!(on_bar, [(72, *CHARGE)]);
 
     // And it survives the save.
     let blob = realm.export_character(guid).unwrap();
@@ -93,7 +99,7 @@ fn the_bar_the_player_arranges_comes_back_at_the_next_login() {
     other.import_character(&blob).unwrap();
     other.handle(RealmCommand::EnterWorld { guid });
     let events = drain(&mut other);
-    assert_eq!(action_buttons(&events)[0].action, CHARGE);
+    assert_eq!(action_buttons(&events)[0].action, *CHARGE);
 }
 
 #[test]
@@ -101,8 +107,8 @@ fn a_skill_grows_with_level_without_being_relearned() {
     let charge = |level| {
         let (mut realm, _, mob, mut view) = warrior_at(level);
         stand_at(&mut realm, &mob, 15.0);
-        realm.handle(cast(CHARGE, Some(mob.guid)));
-        energized(&view.drain(&mut realm), CHARGE)
+        realm.handle(cast(*CHARGE, Some(mob.guid)));
+        energized(&view.drain(&mut realm), *CHARGE)
     };
     // 8.5 + 0.14 rage a level.
     assert_eq!(charge(1), vec![9]);
@@ -112,13 +118,13 @@ fn a_skill_grows_with_level_without_being_relearned() {
 #[test]
 fn a_skill_at_an_enemy_needs_a_target_in_front() {
     let (mut realm, _, mob, mut view) = warrior_at(10);
-    realm.handle(cast(CHARGE, None));
-    assert_eq!(refusal(&view.drain(&mut realm), CHARGE), Some(BAD_TARGETS));
+    realm.handle(cast(*CHARGE, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *CHARGE), Some(BAD_TARGETS));
 
     turn_around(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
     assert_eq!(
-        refusal(&view.drain(&mut realm), CHARGE),
+        refusal(&view.drain(&mut realm), *CHARGE),
         Some(UNIT_NOT_INFRONT)
     );
 
@@ -131,16 +137,19 @@ fn a_skill_at_an_enemy_needs_a_target_in_front() {
 fn charge_runs_the_warrior_to_the_mob_for_rage_and_a_stun() {
     let (mut realm, me, mob, mut view) = warrior_at(1);
     stand_at(&mut realm, &mob, 3.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), CHARGE), Some(TOO_CLOSE));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(&mut realm), *CHARGE), Some(TOO_CLOSE));
     stand_at(&mut realm, &mob, 30.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), CHARGE), Some(OUT_OF_RANGE));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), *CHARGE),
+        Some(OUT_OF_RANGE)
+    );
 
     stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, CHARGE), None);
+    assert_eq!(refusal(&events, *CHARGE), None);
     let path = events
         .iter()
         .find_map(|e| match e {
@@ -150,7 +159,7 @@ fn charge_runs_the_warrior_to_the_mob_for_rage_and_a_stun() {
         .expect("the charge's run");
     let end = *path.last().unwrap();
     assert!(dist(end, mob.position) < 2.5, "ends at the mob");
-    assert_eq!(energized(&events, CHARGE), vec![9]);
+    assert_eq!(energized(&events, *CHARGE), vec![9]);
     assert_eq!(view.rage(me), 9);
     assert!(view.aura(mob.guid, 7922).is_some(), "stunned");
 
@@ -159,8 +168,8 @@ fn charge_runs_the_warrior_to_the_mob_for_rage_and_a_stun() {
     assert!(first >= 1.0, "swung {first} s in");
 
     // In combat now, and on cooldown anyway.
-    realm.handle(cast(CHARGE, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), CHARGE), Some(NOT_READY));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
+    assert_eq!(refusal(&view.drain(&mut realm), *CHARGE), Some(NOT_READY));
 }
 
 #[test]
@@ -170,9 +179,9 @@ fn charge_is_refused_in_combat() {
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
     view.run(&mut realm, 0.5);
     stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
     assert_eq!(
-        refusal(&view.drain(&mut realm), CHARGE),
+        refusal(&view.drain(&mut realm), *CHARGE),
         Some(AFFECTING_COMBAT)
     );
 }
@@ -181,9 +190,9 @@ fn charge_is_refused_in_combat() {
 fn heroic_strike_needs_its_rage() {
     let (mut realm, _, mob, mut view) = warrior_at(10);
     stand_at(&mut realm, &mob, 2.0);
-    realm.handle(cast(HEROIC_STRIKE, Some(mob.guid)));
+    realm.handle(cast(*HEROIC_STRIKE, Some(mob.guid)));
     assert_eq!(
-        refusal(&view.drain(&mut realm), HEROIC_STRIKE),
+        refusal(&view.drain(&mut realm), *HEROIC_STRIKE),
         Some(NO_POWER)
     );
 }
@@ -191,12 +200,12 @@ fn heroic_strike_needs_its_rage() {
 #[test]
 fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
     let (mut realm, me, mob, mut view) = warrior_at(1);
-    rage_up(&mut realm, &mut view, me, &mob, CHARGE, 15);
+    rage_up(&mut realm, &mut view, me, &mob, *CHARGE, 15);
     // The swing timer comes round again.
     view.run(&mut realm, 2.0);
     let rage = view.rage(me);
 
-    realm.handle(cast(HEROIC_STRIKE, Some(mob.guid)));
+    realm.handle(cast(*HEROIC_STRIKE, Some(mob.guid)));
     let events = view.drain(&mut realm);
     assert!(
         events.iter().all(|e| cast_packet(e).is_none()),
@@ -206,8 +215,8 @@ fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
 
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
     let events = view.run(&mut realm, 0.1);
-    assert_eq!(go_hits(&events, HEROIC_STRIKE), Some(vec![mob.guid]));
-    let damage = spell_damage(&events, HEROIC_STRIKE);
+    assert_eq!(go_hits(&events, *HEROIC_STRIKE), Some(vec![mob.guid]));
+    let damage = spell_damage(&events, *HEROIC_STRIKE);
     // The white roll plus 9.5 + 1.4, through a level-3 mob's armour: a white swing tops out at 7.
     assert!(damage[0] >= 11, "{damage:?}");
     assert!(
@@ -223,28 +232,30 @@ fn heroic_strike_waits_for_the_next_swing_and_replaces_it() {
     assert!(events
         .iter()
         .any(|e| matches!(e, SessionEvent::AttackerState(s) if s.attacker == me)));
-    assert_eq!(go_hits(&events, HEROIC_STRIKE), None);
+    assert_eq!(go_hits(&events, *HEROIC_STRIKE), None);
 }
 
 // ── What the Basic Warrior's two skills cannot show, on the Vanguard ──────────────────────
 
 // The Vanguard's skills (the master CSV).
-const T1_BULWARK_CHARGE: u32 = 11578;
-const T1_ZEALOUS_CLEAVE: u32 = 845;
+static T1_BULWARK_CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("vanguard", "bulwark_charge"));
+static T1_ZEALOUS_CLEAVE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("vanguard", "zealous_cleave"));
 
 #[test]
 fn a_melee_skill_needs_a_target_in_reach() {
     let (mut realm, me, mob, mut view) = tier1_seeded(1, SEED);
-    rage_up(&mut realm, &mut view, me, &mob, T1_BULWARK_CHARGE, 20);
-    realm.handle(cast(T1_ZEALOUS_CLEAVE, None));
+    rage_up(&mut realm, &mut view, me, &mob, *T1_BULWARK_CHARGE, 20);
+    realm.handle(cast(*T1_ZEALOUS_CLEAVE, None));
     assert_eq!(
-        refusal(&view.drain(&mut realm), T1_ZEALOUS_CLEAVE),
+        refusal(&view.drain(&mut realm), *T1_ZEALOUS_CLEAVE),
         Some(BAD_TARGETS)
     );
     stand_at(&mut realm, &mob, 7.0);
-    realm.handle(cast(T1_ZEALOUS_CLEAVE, Some(mob.guid)));
+    realm.handle(cast(*T1_ZEALOUS_CLEAVE, Some(mob.guid)));
     assert_eq!(
-        refusal(&view.drain(&mut realm), T1_ZEALOUS_CLEAVE),
+        refusal(&view.drain(&mut realm), *T1_ZEALOUS_CLEAVE),
         Some(OUT_OF_RANGE)
     );
 }

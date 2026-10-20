@@ -253,6 +253,7 @@ fn without_the_talent_the_cleave_heals_nothing() {
 #[test]
 fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
     let vanguard = callings::calling("vanguard").unwrap();
+    let conviction_id = common::spell("vanguard", "conviction");
     let conviction = vanguard.auras.iter().find(|a| a.key == "conviction");
     // The aura row carries no effect of its own, so it is not a granted buff.
     assert!(conviction.is_none());
@@ -278,7 +279,7 @@ fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
     };
     assert_eq!(
         (aura_spell_id, stacks, duration_ms, max_stacks, stack_rule),
-        (284, 1, 15000, 5, StackRule::Refresh)
+        (conviction_id, 1, 15000, 5, StackRule::Refresh)
     );
 
     let cleave = vanguard
@@ -290,7 +291,7 @@ fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
         Effect::ConsumeAuraStacks { aura_spell_id, .. } => Some(*aura_spell_id),
         _ => None,
     });
-    assert_eq!(consumed, Some(284));
+    assert_eq!(consumed, Some(conviction_id));
 }
 
 #[test]

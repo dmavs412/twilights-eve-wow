@@ -30,9 +30,9 @@
 //! - **Reference**: `data/twilights-eve/callings.json` is the design data and
 //!   `tests/content_callings.rs` fails when the two drift. `tools/twilights-eve/extract_spells.py
 //!   verify` checks every spell, talent and tab id against the DBCs (the `spell-data` gate).
-//! - **Client**: `benilla-app/src/twilight/mod.rs`'s `rewrite_spells` rewrites the spell catalog
-//!   once it loads, from [`callings::skill_spell_ids`] and [`callings::wip_rank_spell_ids`], then applies the
-//!   compiled-in `client_dbc_patch.json` (ADR 0003); `twilight/talents.rs` builds the talent
+//! - **Client**: `benilla-app/src/twilight/mod.rs`'s `rewrite_spells` applies the compiled-in
+//!   `client_dbc_patch.json` once the spell catalog loads (ADR 0011), then marks the talents of
+//!   [`callings::wip_rank_spell_ids`]; `twilight/talents.rs` builds the talent
 //!   frame's catalog from the current Calling's tree.
 //! - **Identity**: the `Calling` enum (`content.rs`) is the save's key; a renamed Calling keeps its
 //!   old key as a serde alias. A skill two Callings share has identical data in both.

@@ -15,15 +15,24 @@ use twilight_realm::{Realm, RealmCommand};
 const RANGED: u8 = 17;
 const CRACKED_SHORTBOW: u32 = 2773;
 
-const AUTO_SHOT: u32 = 75;
-const SNAPSHOT: u32 = 3044;
-const PUNCTURING_SHAFT: u32 = 19434;
-const BARBED_ARROW: u32 = 1978;
-const RAPID_FIRE: u32 = 3045;
+static AUTO_SHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "auto_shot"));
+static SNAPSHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "snapshot"));
+/// The test Ranger's shot, as `TEST_CALLINGS` numbers it.
+const TEST_SNAPSHOT: u32 = 3044;
+static PUNCTURING_SHAFT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "puncturing_shaft"));
+static BARBED_ARROW: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "barbed_arrow"));
+static RAPID_FIRE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "rapid_fire"));
 /// The active talent's spell, and the shot it fires.
-const EXPLOSIVE_PAYLOAD: u32 = 19503;
+static EXPLOSIVE_PAYLOAD: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| talent_spell("ranger", "explosive_payload", 1));
 /// Borrowed Explosive Trap Effect, a Fire hunter spell (#154).
-const EXPLOSIVE_SHOT: u32 = 13812;
+static EXPLOSIVE_SHOT: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("ranger", "explosive_shot"));
 /// `Talent.dbc` ids.
 const PIERCING_FORCE: u32 = 1344;
 const POINT_BLANK: u32 = 1624;
@@ -140,9 +149,9 @@ fn test_shot(armor_ignore: &str, talents: &[(u32, u8)], seed: u64) -> Option<(u3
     let (mut realm, _, mobs) = ranger(&key, Some(&callings), talents, seed);
     stand_at(&mut realm, &mobs[0], 20.0);
     drain(&mut realm);
-    realm.handle(cast(SNAPSHOT, Some(mobs[0].guid)));
+    realm.handle(cast(TEST_SNAPSHOT, Some(mobs[0].guid)));
     realm.tick(0.05, &FlatGround);
-    dealt(&drain(&mut realm), SNAPSHOT)
+    dealt(&drain(&mut realm), TEST_SNAPSHOT)
 }
 
 /// The same shot through the same roll: skipping 8 of the mob's 16 armour deals more than skipping
@@ -223,20 +232,20 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
     let bled = enemies
         .find(|m| {
             stand_at(&mut realm, m, 20.0);
-            realm.handle(cast(BARBED_ARROW, Some(m.guid)));
-            refusal(&drain(&mut realm), BARBED_ARROW).is_none()
+            realm.handle(cast(*BARBED_ARROW, Some(m.guid)));
+            refusal(&drain(&mut realm), *BARBED_ARROW).is_none()
         })
         .expect("an enemy at the camp");
     realm.tick(1.6, &FlatGround);
     // Rapid Fire, then Auto Shot at another.
-    realm.handle(cast(RAPID_FIRE, None));
+    realm.handle(cast(*RAPID_FIRE, None));
     drain(&mut realm);
     let mob = enemies
         .find(|m| {
             m.guid != bled.guid && {
                 stand_at(&mut realm, m, 20.0);
-                realm.handle(cast(AUTO_SHOT, Some(m.guid)));
-                refusal(&drain(&mut realm), AUTO_SHOT).is_none()
+                realm.handle(cast(*AUTO_SHOT, Some(m.guid)));
+                refusal(&drain(&mut realm), *AUTO_SHOT).is_none()
             }
         })
         .expect("another enemy at the camp");
@@ -291,11 +300,13 @@ fn rapid_fire_shoots_40_pct_faster_and_refunds_mana_on_hits() {
                         *duration_ms as f32 / 1000.0,
                     ));
                 }
-                SessionEvent::SpellGo { spell_id, .. } if *spell_id == AUTO_SHOT => shots.push(now),
-                SessionEvent::SpellDamageLog(l) if l.spell_id == AUTO_SHOT && l.damage > 0 => {
+                SessionEvent::SpellGo { spell_id, .. } if *spell_id == *AUTO_SHOT => {
+                    shots.push(now)
+                }
+                SessionEvent::SpellDamageLog(l) if l.spell_id == *AUTO_SHOT && l.damage > 0 => {
                     hits += 1
                 }
-                SessionEvent::SpellEnergizeLog(l) if l.spell_id == RAPID_FIRE => refunds += 1,
+                SessionEvent::SpellEnergizeLog(l) if l.spell_id == *RAPID_FIRE => refunds += 1,
                 _ => {}
             }
         }
@@ -317,9 +328,9 @@ fn point_blank_shoots_at_5_yards_with_its_bonus() {
     let (mut realm, _, mobs) = ranger("ranger", None, &[], 0xC3_0000);
     stand_at(&mut realm, &mobs[0], 5.0);
     drain(&mut realm);
-    realm.handle(cast(SNAPSHOT, Some(mobs[0].guid)));
+    realm.handle(cast(*SNAPSHOT, Some(mobs[0].guid)));
     assert_eq!(
-        refusal(&drain(&mut realm), SNAPSHOT),
+        refusal(&drain(&mut realm), *SNAPSHOT),
         Some(SPELL_FAILED_TOO_CLOSE)
     );
 
@@ -331,12 +342,12 @@ fn point_blank_shoots_at_5_yards_with_its_bonus() {
                 ranger("ranger", None, &[(POINT_BLANK, rank)], 0xC3_0000 + seed);
             stand_at(&mut realm, &mobs[0], 5.0);
             drain(&mut realm);
-            realm.handle(cast(PUNCTURING_SHAFT, Some(mobs[0].guid)));
+            realm.handle(cast(*PUNCTURING_SHAFT, Some(mobs[0].guid)));
             let mut events = drain(&mut realm);
-            assert_eq!(refusal(&events, PUNCTURING_SHAFT), None, "seed {seed}");
+            assert_eq!(refusal(&events, *PUNCTURING_SHAFT), None, "seed {seed}");
             realm.tick(3.1, &FlatGround);
             events.extend(drain(&mut realm));
-            shafts.push(dealt(&events, PUNCTURING_SHAFT));
+            shafts.push(dealt(&events, *PUNCTURING_SHAFT));
         }
         if let [Some((one, false)), Some((two, false))] = shafts[..] {
             let want = one as f32 * 120.0 / 110.0;
@@ -388,7 +399,7 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
             position: stand,
             orientation: (mob.position[1] - stand[1]).atan2(mob.position[0] - stand[0]),
         });
-        realm.handle(cast(BARBED_ARROW, Some(mob.guid)));
+        realm.handle(cast(*BARBED_ARROW, Some(mob.guid)));
         for _ in 0..32 {
             realm.tick(0.05, &FlatGround);
             follow(drain(&mut realm));
@@ -410,9 +421,9 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
         position: [stand[0] + 20.0, stand[1], stand[2]],
         orientation: std::f32::consts::PI,
     });
-    realm.handle(cast(EXPLOSIVE_PAYLOAD, None));
-    assert_eq!(refusal(&drain(&mut realm), EXPLOSIVE_PAYLOAD), None);
-    realm.handle(cast(AUTO_SHOT, Some(target.0)));
+    realm.handle(cast(*EXPLOSIVE_PAYLOAD, None));
+    assert_eq!(refusal(&drain(&mut realm), *EXPLOSIVE_PAYLOAD), None);
+    realm.handle(cast(*AUTO_SHOT, Some(target.0)));
     // The step back holds the shot for its grace (#155).
     let mut events = Vec::new();
     for _ in 0..18 {
@@ -425,7 +436,7 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
             hits,
             misses,
             ..
-        } if *spell_id == EXPLOSIVE_SHOT => Some(hits.len() + misses.len()),
+        } if *spell_id == *EXPLOSIVE_SHOT => Some(hits.len() + misses.len()),
         _ => None,
     });
     assert!(
@@ -433,15 +444,15 @@ fn explosive_payload_turns_the_next_auto_shot_into_a_fire_blast() {
         "the target and its packmates: {blast:?}"
     );
     assert!(events.iter().all(|e| match e {
-        SessionEvent::SpellDamageLog(l) if l.spell_id == EXPLOSIVE_SHOT => {
+        SessionEvent::SpellDamageLog(l) if l.spell_id == *EXPLOSIVE_SHOT => {
             l.school == SPELL_SCHOOL_FIRE
         }
         _ => true,
     }));
     assert!(
-        !events
-            .iter()
-            .any(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == AUTO_SHOT)),
+        !events.iter().any(
+            |e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == *AUTO_SHOT)
+        ),
         "the blast took the Auto Shot's place"
     );
 }

@@ -11,8 +11,10 @@ use benilla_protocol::SessionEvent;
 use common::fight::*;
 use common::*;
 
-const CHARGE: u32 = 100;
-const FIRE_BLAST: u32 = 2136;
+static CHARGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "charge"));
+static FIRE_BLAST: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "fire_blast"));
 const FIRE_SCHOOL: u8 = 2;
 const SPELL_MISS_MISS: u8 = 1;
 
@@ -48,11 +50,15 @@ fn fire_blast(seed: u64) -> Vec<SessionEvent> {
         })
         .expect("a mob near the Crossroads");
     stand_at(&mut realm, &mob, 15.0);
-    realm.handle(cast(CHARGE, Some(mob.guid)));
-    assert_eq!(refusal(&view.drain(&mut realm), CHARGE), None, "the charge");
-    realm.handle(cast(FIRE_BLAST, Some(mob.guid)));
+    realm.handle(cast(*CHARGE, Some(mob.guid)));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), *CHARGE),
+        None,
+        "the charge"
+    );
+    realm.handle(cast(*FIRE_BLAST, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, FIRE_BLAST), None, "fire blast is cast");
+    assert_eq!(refusal(&events, *FIRE_BLAST), None, "fire blast is cast");
     events
 }
 
@@ -62,7 +68,7 @@ fn fire_blast_ignores_armour_is_never_avoided_and_crits_for_150_percent() {
     for seed in 0..300 {
         for e in &fire_blast(seed) {
             match e {
-                SessionEvent::SpellDamageLog(l) if l.spell_id == FIRE_BLAST => {
+                SessionEvent::SpellDamageLog(l) if l.spell_id == *FIRE_BLAST => {
                     assert_eq!(l.school, FIRE_SCHOOL, "shown as fire");
                     if l.hit_info == 0 {
                         hits.push(l.damage);
@@ -71,10 +77,8 @@ fn fire_blast_ignores_armour_is_never_avoided_and_crits_for_150_percent() {
                     }
                 }
                 SessionEvent::SpellGo {
-                    spell_id: FIRE_BLAST,
-                    misses,
-                    ..
-                } => {
+                    spell_id, misses, ..
+                } if *spell_id == *FIRE_BLAST => {
                     for (_, why) in misses {
                         assert_eq!(*why, SPELL_MISS_MISS, "not a dodge, parry or block");
                     }

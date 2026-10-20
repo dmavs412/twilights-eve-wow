@@ -14,8 +14,10 @@ const FIRST_SEED: u64 = 0x5EED_0112;
 /// Melee reach, with room for a mob that stopped a step short.
 const REACH: f32 = 5.0;
 
-const SINISTER_STRIKE: u32 = 1752;
-const RUPTURE: u32 = 1943;
+static SINISTER_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "sinister_strike"));
+static RUPTURE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "rupture"));
 
 /// `Talent.dbc` ids of the talents under test.
 const FLURRY_OF_BLADES: u32 = 1122;
@@ -122,9 +124,9 @@ fn pulled(seed: u64, talents: &[(u32, u8)]) -> Pack {
 
 /// Casts Sinister Strike at `target`: the guids it landed on or missed, sorted.
 fn strike(pack: &mut Pack, target: &Mob) -> Vec<u64> {
-    pack.realm.handle(cast(SINISTER_STRIKE, Some(target.guid)));
+    pack.realm.handle(cast(*SINISTER_STRIKE, Some(target.guid)));
     let events = pack.view.drain(&mut pack.realm);
-    assert_eq!(refusal(&events, SINISTER_STRIKE), None, "Sinister Strike");
+    assert_eq!(refusal(&events, *SINISTER_STRIKE), None, "Sinister Strike");
     let mut landed: Vec<u64> = events
         .iter()
         .filter_map(|e| match e {
@@ -133,7 +135,7 @@ fn strike(pack: &mut Pack, target: &Mob) -> Vec<u64> {
                 hits,
                 misses,
                 ..
-            } if *spell_id == SINISTER_STRIKE => Some(
+            } if *spell_id == *SINISTER_STRIKE => Some(
                 hits.iter()
                     .copied()
                     .chain(misses.iter().map(|(g, _)| *g))
@@ -238,9 +240,9 @@ fn last_strike_points(seed: u64, talents: &[(u32, u8)], rupture: bool) -> Option
     let mob = camp_mobs(&view.run(&mut realm, 1.0)).swap_remove(0);
     stand_at(&mut realm, &mob, 2.0);
     let spells: &[u32] = if rupture {
-        &[SINISTER_STRIKE, RUPTURE, SINISTER_STRIKE]
+        &[*SINISTER_STRIKE, *RUPTURE, *SINISTER_STRIKE]
     } else {
-        &[SINISTER_STRIKE]
+        &[*SINISTER_STRIKE]
     };
     for (i, &spell_id) in spells.iter().enumerate() {
         realm.handle(cast(spell_id, Some(mob.guid)));
@@ -258,10 +260,10 @@ fn last_strike_points(seed: u64, talents: &[(u32, u8)], rupture: bool) -> Option
         view.run(&mut realm, 1.5);
         let (points, _) = combo(&view, me);
         // A strike that landed left a point; a Rupture that landed spent it.
-        if (spell_id == SINISTER_STRIKE) != (points == 1) {
+        if (spell_id == *SINISTER_STRIKE) != (points == 1) {
             return None;
         }
-        if spell_id == RUPTURE && view.aura(mob.guid, RUPTURE).is_none() {
+        if spell_id == *RUPTURE && view.aura(mob.guid, *RUPTURE).is_none() {
             return None;
         }
     }

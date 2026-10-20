@@ -6,23 +6,24 @@ mod common;
 use benilla_protocol::SessionEvent;
 use common::*;
 
-const MORTAL_STRIKE: u32 = 12294;
+static MORTAL_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "mortal_strike"));
 
 #[test]
 fn mortal_strike_strikes_and_wounds_the_target() {
     let (mut realm, _, mob, mut view) = tanking(30);
-    realm.handle(cast(MORTAL_STRIKE, Some(mob.guid)));
+    realm.handle(cast(*MORTAL_STRIKE, Some(mob.guid)));
     let events = view.drain(&mut realm);
-    assert_eq!(refusal(&events, MORTAL_STRIKE), None);
-    let landed = go_hits(&events, MORTAL_STRIKE).expect("it went off");
+    assert_eq!(refusal(&events, *MORTAL_STRIKE), None);
+    let landed = go_hits(&events, *MORTAL_STRIKE).expect("it went off");
     if landed.is_empty() {
         return; // A miss or a dodge wounds nothing.
     }
-    assert_eq!(spell_damage(&events, MORTAL_STRIKE).len(), 1);
-    let wound = view.aura(mob.guid, MORTAL_STRIKE).expect("the wound");
+    assert_eq!(spell_damage(&events, *MORTAL_STRIKE).len(), 1);
+    let wound = view.aura(mob.guid, *MORTAL_STRIKE).expect("the wound");
     assert!(wound.slot >= 32, "a debuff");
-    realm.handle(cast(MORTAL_STRIKE, Some(mob.guid)));
-    let refused = refusal(&view.drain(&mut realm), MORTAL_STRIKE);
+    realm.handle(cast(*MORTAL_STRIKE, Some(mob.guid)));
+    let refused = refusal(&view.drain(&mut realm), *MORTAL_STRIKE);
     assert!(refused.is_some(), "a 6 s cooldown, or no rage left");
 }
 

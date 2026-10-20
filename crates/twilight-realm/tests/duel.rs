@@ -248,11 +248,13 @@ fn a_logout_in_the_challenge_calls_it_off() {
 // ── The fight (#181) ─────────────────────────────────────────────────────────────────────────
 
 /// Gouge, the Basic Warrior's incapacitate.
-const GOUGE: u32 = 1776;
+static GOUGE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("basic_warrior", "gouge"));
 /// Whole rage points Gouge costs.
 const GOUGE_RAGE: u32 = 15;
 /// Searing Ember, the Initiate's burn.
-const EMBER: u32 = 133;
+static EMBER: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("initiate", "searing_ember"));
 
 /// Player 0 swings at player 1 until `done` holds for what player 1's client has, at most `secs`.
 fn swing_until(party: &mut Party, secs: f32, done: impl Fn(&Party) -> bool) -> bool {
@@ -335,15 +337,15 @@ fn a_gouge_lands_on_the_opponent_and_comes_off_at_the_end() {
     });
     assert!(raged, "rage for Gouge");
     party.cmd(0, RealmCommand::AttackStop);
-    party.cmd(0, cast(GOUGE, Some(b)));
+    party.cmd(0, cast(*GOUGE, Some(b)));
     party.run(0.3);
     assert!(
-        view_of(&party, 1).aura(b, GOUGE).is_some(),
+        view_of(&party, 1).aura(b, *GOUGE).is_some(),
         "player 1 is gouged"
     );
     party.cmd(1, RealmCommand::DuelCancel { arbiter });
     party.run(0.2);
-    assert!(view_of(&party, 1).aura(b, GOUGE).is_none(), "it comes off");
+    assert!(view_of(&party, 1).aura(b, *GOUGE).is_none(), "it comes off");
 }
 
 #[test]
@@ -358,16 +360,16 @@ fn an_ember_burns_the_opponent_and_stops_at_the_end() {
     let arbiter = fighting(&mut party);
     let b = party.guids[1];
     let full = view_of(&party, 1).health(b);
-    party.cmd(0, cast(EMBER, Some(b)));
+    party.cmd(0, cast(*EMBER, Some(b)));
     let burning = party.run(4.0);
     assert!(ticks_on(&burning[1], b) > 0, "it ticks on player 1");
     assert!(view_of(&party, 1).health(b) < full);
-    assert!(view_of(&party, 1).aura(b, EMBER).is_some());
+    assert!(view_of(&party, 1).aura(b, *EMBER).is_some());
     party.cmd(1, RealmCommand::DuelCancel { arbiter });
     let after = party.run(5.0);
     assert_eq!(ticks_on(&after[1], b), 0, "no more ticks");
     assert!(
-        view_of(&party, 1).aura(b, EMBER).is_none(),
+        view_of(&party, 1).aura(b, *EMBER).is_none(),
         "the burn comes off"
     );
 }

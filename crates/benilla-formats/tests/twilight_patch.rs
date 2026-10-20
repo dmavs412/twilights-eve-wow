@@ -1,28 +1,43 @@
-//! The compiled-in client patch applied to the real `Spell.dbc` (ADR 0003): Fire Blast, a Mage
-//! spell that costs mana in the stock data, costs the sheet's 10 rage.
+//! The compiled-in client patch applied to the real `Spell.dbc` (ADR 0011): every Calling spell is
+//! a row of its own, inserted beside the stock ones, never a rewrite of one.
 
-use benilla_formats::{load_spell_catalog, open_chain, CLIENT_DBC_PATCH};
+use benilla_formats::{load_spell_catalog, open_chain, SpellCatalog, CLIENT_DBC_PATCH};
 
-#[test]
-fn fire_blast_costs_ten_rage_once_the_patch_is_applied() {
-    let data = benilla_formats::wow_data_or_skip!();
+/// The real catalog with the patch applied, and the patch; `None` with no WoW install.
+fn patched() -> Option<(SpellCatalog, serde_json::Value)> {
+    let data = benilla_formats::wow_data_or_skip!(None);
     let mut chain = open_chain(&data).expect("open vanilla patch chain");
     let mut catalog = load_spell_catalog(&mut chain).expect("load spell catalog");
-    assert_eq!(
-        catalog.get(2136).expect("Fire Blast").power_type,
-        0,
-        "mana in the stock data"
-    );
-
+    let stock = catalog.len();
     let rows = catalog
         .apply_dbc_patch(CLIENT_DBC_PATCH)
         .expect("patch parses");
-    assert!(
-        rows > 100,
-        "the patch lists about 200 rows, {rows} found in Spell.dbc"
-    );
+    let patch: serde_json::Value = serde_json::from_str(CLIENT_DBC_PATCH).unwrap();
+    assert_eq!(rows, patch["spells"].as_array().unwrap().len());
+    assert_eq!(catalog.len(), stock + rows, "every row is a new one");
+    Some((catalog, patch))
+}
 
-    let fire_blast = catalog.get(2136).unwrap();
+/// The patch entry of a Calling's spell, found by its sheet key.
+fn entry<'a>(patch: &'a serde_json::Value, calling: &str, key: &str) -> &'a serde_json::Value {
+    patch["spells"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["calling"] == calling && e["key"] == key)
+        .unwrap_or_else(|| panic!("{calling}/{key} in the patch"))
+}
+
+#[test]
+fn fire_blast_is_its_own_row_and_costs_ten_rage() {
+    let Some((catalog, patch)) = patched() else {
+        return;
+    };
+    let id = entry(&patch, "basic_warrior", "fire_blast")["spell_id"]
+        .as_u64()
+        .unwrap() as u32;
+    assert!(id >= 1_000_000);
+    let fire_blast = catalog.get(id).unwrap();
     assert_eq!(
         (fire_blast.power_type, fire_blast.mana_cost),
         (1, 100),
@@ -36,22 +51,23 @@ fn fire_blast_costs_ten_rage_once_the_patch_is_applied() {
     );
 }
 
-/// Zealot's Paladin spells, formerly rewritten from the realm's content: now the patch does it.
+/// Zealot's spells, once borrowed from the Paladin, cost rage and carry a family bit of their own.
 #[test]
-fn zealots_borrowed_spells_cost_rage_as_warrior_spells() {
-    let data = benilla_formats::wow_data_or_skip!();
-    let mut chain = open_chain(&data).expect("open vanilla patch chain");
-    let mut catalog = load_spell_catalog(&mut chain).expect("load spell catalog");
-    catalog
-        .apply_dbc_patch(CLIENT_DBC_PATCH)
-        .expect("patch parses");
-    for (id, tenths, bit) in [
-        (20375, 100, 33),
-        (20305, 100, 34),
-        (20271, 50, 35),
-        (10308, 150, 36),
+fn zealots_spells_cost_rage_as_warrior_spells() {
+    let Some((catalog, patch)) = patched() else {
+        return;
+    };
+    for (key, tenths) in [
+        ("seal_of_command", 100),
+        ("seal_of_the_crusader", 100),
+        ("judgement", 50),
+        ("hammer_of_justice", 150),
     ] {
-        let d = catalog.get(id).expect("borrowed spell");
+        let e = entry(&patch, "zealot", key);
+        let d = catalog.get(e["spell_id"].as_u64().unwrap() as u32).unwrap();
+        let flags = e["fields"]["family_flags"].as_u64().unwrap();
+        assert_eq!(flags.count_ones(), 1, "{key}: one bit");
+        assert!(flags >= 1 << 33, "{key}: above every stock Warrior bit");
         assert_eq!(
             (
                 d.power_type,
@@ -60,8 +76,8 @@ fn zealots_borrowed_spells_cost_rage_as_warrior_spells() {
                 d.spell_family_flags,
                 d.stances
             ),
-            (1, tenths, 4, 1u64 << bit, 0),
-            "spell {id}"
+            (1, tenths, 4, flags, 0),
+            "{key}"
         );
     }
 }
@@ -69,13 +85,9 @@ fn zealots_borrowed_spells_cost_rage_as_warrior_spells() {
 /// Every gate field the patch lists lands in its Spell.dbc column on the real catalog.
 #[test]
 fn every_patched_gate_field_lands_in_the_real_catalog() {
-    let data = benilla_formats::wow_data_or_skip!();
-    let mut chain = open_chain(&data).expect("open vanilla patch chain");
-    let mut catalog = load_spell_catalog(&mut chain).expect("load spell catalog");
-    catalog
-        .apply_dbc_patch(CLIENT_DBC_PATCH)
-        .expect("patch parses");
-    let patch: serde_json::Value = serde_json::from_str(CLIENT_DBC_PATCH).unwrap();
+    let Some((catalog, patch)) = patched() else {
+        return;
+    };
     let mut checked = 0;
     for entry in patch["spells"].as_array().unwrap() {
         let f = &entry["fields"];

@@ -1,5 +1,5 @@
-//! Every spell id the realm's content names is a row of the client's `Spell.dbc`, under the name
-//! the content gives it beside the id. An id chosen from memory that is off by one names some
+//! Every spell id the realm's content names is a row of the client's spell catalog (`Spell.dbc`
+//! with the client patch applied, ADR 0011), under the name the content gives it beside the id. An id chosen from memory that is off by one names some
 //! other spell, and the client shows that spell's name, icon and tooltip; this is what catches it.
 //!
 //! Each id key has its name key in the same table ([`ID_KEYS`]); a new key with "spell" in it
@@ -25,6 +25,9 @@ const ID_KEYS: &[(&str, &str, Ids)] = &[
     ("rank_spells", "spell_name", Ids::Ranks),
     ("equip_spells", "equip_spell_names", Ids::Parallel),
 ];
+
+/// The lowest id of a spell the client patch inserts.
+const FROM_SCRATCH_MIN_ID: u32 = 1_000_000;
 
 /// Keys with "spell" in them that hold no spell id.
 const NOT_IDS: &[&str] = &["client_spellmods"];
@@ -53,7 +56,10 @@ struct Named {
 fn every_content_spell_id_is_the_spell_its_name_says() {
     let data = benilla_formats::wow_data_or_skip!();
     let mut chain = benilla_formats::open_chain(&data).expect("open the patch chain");
-    let spells = benilla_formats::load_spell_catalog(&mut chain).expect("load Spell.dbc");
+    let mut spells = benilla_formats::load_spell_catalog(&mut chain).expect("load Spell.dbc");
+    spells
+        .apply_dbc_patch(benilla_formats::CLIENT_DBC_PATCH)
+        .expect("the client patch parses");
 
     let named = content_spell_ids();
     let ids: BTreeSet<u32> = named.iter().map(|n| n.id).collect();
@@ -83,6 +89,8 @@ fn mismatch(n: &Named, spells: &SpellCatalog) -> Option<String> {
         ));
     }
     match &n.rank {
+        // A row of the sheet's own (ADR 0011) has no rank text: its ranks are its talent's.
+        Some(_) if n.id >= FROM_SCRATCH_MIN_ID => None,
         Some(want) if want != rank => Some(format!(
             "{}: {} is {:?} {rank:?} in Spell.dbc, not {want:?}",
             n.at, n.id, row.name

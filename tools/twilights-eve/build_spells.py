@@ -8,20 +8,18 @@ Callings, each with its skills and talent tabs, every row carrying its realm col
 flag and its effects as {kind, params, realm_only}. Effects 4 and 5 are realm-only. A row with
 modelled=no carries no effects.
 
-It also writes client_dbc_patch.json, {spells, talents}: `spells` holds one Spell.dbc override per
-row with a spell_id (its client columns, effects 1 to 3 only, and its spellmods), `talents` each
-talent's seat, talent_id, prereq and per-rank spell ids. The column set and the formula fields are in
-docs/spell_pipeline.md.
+It also writes client_dbc_patch.json, {spells, talents}: `spells` holds one complete Spell.dbc row
+per row with a spell_id (ADR 0011: its client columns, every effect, its spellmods), `talents`
+each talent's seat, talent_id, prereq and per-rank spell ids. The column set and the formula
+fields are in docs/spell_pipeline.md.
 
 Exits non-zero, writing nothing, on malformed params, a bad formula, realm_cost below
 client_cost, a prereq or seat that does not resolve, a duplicate key, or an unknown effect kind on
 a modelled row.
 
-It also refuses rows that break the client/realm seam (`check_seam`): a patched spell whose stock
-row needs a reagent or tool, a multi-effect aura with no spell id for its buff slot, a target the
-stock row never asks the client for, a talent rank with no spell, and talent ranks that borrow
-differently named or misordered spells. The ones that read Spell.dbc (reagent, target, rank
-spells) are skipped by --no-dbc-check. Fixtures for each bug are in tools/twilights-eve/fixtures/.
+It also refuses rows that break the client/realm seam (`check_seam`): a multi-effect aura with no
+spell id for its buff slot, and a talent rank with no spell. Fixtures for each bug are in
+tools/twilights-eve/fixtures/.
 """
 
 from __future__ import annotations
@@ -67,15 +65,24 @@ REALM_NUMBERS = (
     "realm_cost", "realm_cooldown_ms", "realm_gcd_ms", "realm_range_min", "realm_range_max",
     "realm_radius_yd",
 )
-ID_COLUMNS = ("client_spell_id", "talent_id", "source_tab_id", "icon_id")
-# The CSV's `client_spell_id` is the JSON's `spell_id`, so realm and client code read the same key.
-JSON_KEY = {"client_spell_id": "spell_id"}
+ID_COLUMNS = ("talent_id", "source_tab_id", "icon_id")
 STATUSES = ("placeholder", "wip", "done")
-MIN_REALM_SPELL_ID = 1_000_000
 MAX_TALENT_RANKS = 5
-# A from-scratch row (ADR 0011): its own spell id, no borrowed stock row.
+# Every spell row is from scratch (ADR 0011): its own spell id, no borrowed stock row.
 FROM_SCRATCH_MIN_ID = 1_000_000
-FROM_SCRATCH_COLUMNS = ("spell_id", "visual", "icon", "needs_facing")
+# Columns of the borrowing era, refused by name so an old sheet fails loudly.
+GONE_COLUMNS = ("client_spell_id", "realm_spell_id", "borrowed_from_class", "borrowed_family_bit")
+# The SpellFamilyFlags bits a Calling's skills take, one each in sheet order: no stock Warrior
+# spell uses a bit from 33 up, so a spellmod on one reaches that skill alone.
+FAMILY_BIT_FLOOR = 33
+# `SPELLFAMILY_WARRIOR`: every Calling's spells are of the Warrior line, so the client applies
+# their spellmods.
+SPELL_FAMILY = 4
+# Spell.dbc implicit target numbers (vmangos `Targets`) by the row's target, and the `Targets`
+# flag of a ground cast.
+IMPLICIT_TARGETS = {"enemy": (6, 0), "ally": (21, 0), "self": (1, 0), "dest": (16, 28), "": (1, 0)}
+CASTER_AREA_TARGETS = (22, 15)
+TARGET_FLAG_DEST_LOCATION = 0x40
 DEFAULT_ART_DIR = os.path.join(REPO, "data", "twilights-eve", "art")
 # Where the client finds an embedded PNG icon (benilla-formats `embedded_icon_png`).
 ART_ICON_DIR = "Interface\\Icons\\Twilight\\"
@@ -88,7 +95,7 @@ CLIENT_EFFECTS_OF = {
 DUMMY_EFFECT = (3, 0)
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
-    "client_range_max", "client_duration_ms", "borrowed_from_class", "borrowed_family_bit",
+    "client_range_max", "client_duration_ms",
 )
 CLIENT_FLAGS = ("client_not_in_combat",)
 SPELLMOD_COLUMNS = ("type", "op", "target", "value")
@@ -173,8 +180,6 @@ MECHANICS = {"charm": 1, "disoriented": 2, "disarm": 3, "distract": 4, "fear": 5
              "shackle": 20, "mount": 21, "infected": 22, "turn": 23, "horror": 24, "invulnerability": 25,
              "interrupt": 26, "daze": 27, "discovery": 28, "immune_shield": 29, "sapped": 30, "enraged": 31}
 BREAK_ON_FLAGS = ("damage", "attack", "move", "stealth_break", "leave_combat")
-# Spell.dbc columns of SpellFamilyFlags (low, high 32 bits), as extract_spells.py reads them.
-SPELL_FAMILY_FLAGS_COLUMNS = (161, 162)
 
 
 class BuildError(Exception):
@@ -183,7 +188,6 @@ class BuildError(Exception):
 
 # The id columns the DBC check verifies, and the table each one must exist in.
 DBC_ID_COLUMNS = {
-    "client_spell_id": "Spell.dbc",
     "talent_id": "Talent.dbc",
     "icon_id": "SpellIcon.dbc",
     "source_tab_id": "TalentTab.dbc",
@@ -212,113 +216,47 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
         raise BuildError(f"{len(bad)} ids not in the DBCs:\n" + "\n".join(bad))
 
 
-# Spell.dbc columns the seam checks read (extract_spells.py has the rest).
-SPELL_TOTEM, SPELL_REAGENT = 40, 42  # Totem[2], Reagent[8]
-SPELL_IMPLICIT_A, SPELL_IMPLICIT_B = 82, 85  # ImplicitTargetA/B, three effects each
-SPELL_NAME, SPELL_RANK = 120, 129
-SPELL_VISUAL = 115
-# Implicit target numbers (vmangos `Targets`) of a stock effect that takes a target the player
-# selected: 6 enemy, 21 friendly, 25 any. A realm effect on another unit needs the client to ask
-# for one, which an effect with none of these never does (Bulwark Charge on Learn Spell, 2a6bf0d).
-CLIENT_TARGET_TAKES = {"enemy": (6, 25), "ally": (21, 25)}
-# Borrowed spells whose stock reagent the client patch clears on apply
-# (benilla-formats `apply_dbc_patch`, 7774c8e); any other borrowed reagent or tool fails the build.
-REAGENTS_CLEARED = {25899: "Greater Blessing of Sanctuary's Symbol of Kings"}
+# Spell.dbc columns `read_row_tables` reads for a row's look.
+SPELL_VISUAL, SPELL_SPEED = 115, 37
 
 
-def check_seam(rows: list[dict], server: list[dict], patch: dict, data_dir: str | None) -> None:
-    """Fail on a row that would break the client/realm seam, naming each on its own line. The
-    DBC-backed checks run only with data_dir (--no-dbc-check passes None)."""
+def check_seam(server: list[dict], patch: dict) -> None:
+    """Fail on a row that would break the client/realm seam, naming each on its own line."""
     bad = []
-    lines = {(r["calling"], r["key"], r["kind"], r["rank"]): f"line {n} ({r['calling']}/{r['key']})"
-             for n, r in enumerate(rows, start=2)}
-    by_rank = {}
-    for r in rows:
-        if r["kind"] in ("skill", "talent") and r["rank"]:
-            by_rank[(r["calling"], r["key"], number(r["rank"], ""))] = r
-
     # The effects of one aura share one buff slot, keyed by the aura's spell id; with none they
     # would each take their own (Seal of Iron, 0a96886).
     for calling in server:
         for aura in calling["auras"]:
             if len(aura["effects"]) > 1 and "spell_id" not in aura:
                 bad.append(f"{calling['key']}/{aura['key']}: {len(aura['effects'])} effects and no spell id "
-                           "(client_spell_id or realm_spell_id) to share one buff slot")
+                           "to share one buff slot")
     # A talent with a seat on the client names a spell for every rank.
     for seat in patch["talents"]:
         if "talent_id" in seat and None in seat["rank_spell_ids"]:
             bad.append(f"{seat['calling']}/{seat['key']}: rank {seat['rank_spell_ids'].index(None) + 1} "
-                       "resolves to no spell (no client_spell_id)")
-
-    if data_dir:
-        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        from wowdata import Chain, load_dbc
-
-        try:
-            spells = load_dbc(Chain(data_dir), "Spell.dbc")
-        except (OSError, KeyError, ValueError) as error:
-            raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
-        for entry in patch["spells"]:
-            r = spells.row(entry["spell_id"])
-            if r is None:
-                continue  # check_dbc_ids names it
-            who = f"{entry['calling']}/{entry['key']} (spell {entry['spell_id']})"
-            required = [i for i in (*(spells.u32(r, SPELL_TOTEM + k) for k in range(2)),
-                                    *(spells.u32(r, SPELL_REAGENT + k) for k in range(8))) if i]
-            if required and entry["spell_id"] not in REAGENTS_CLEARED:
-                bad.append(f"{who}: the stock {spells.str(r, SPELL_NAME)!r} needs item(s) "
-                           f"{', '.join(map(str, required))} and the sheet asks for none")
-            row = by_rank.get((entry["calling"], entry["key"], entry["rank"]))
-            take = CLIENT_TARGET_TAKES.get(row["target"]) if row else None
-            area = row and (row["area_shape"] or number(row["realm_radius_yd"] or "0", "") > 0)
-            if take and not area:
-                implicit = [spells.u32(r, col + k) for col in (SPELL_IMPLICIT_A, SPELL_IMPLICIT_B) for k in range(3)]
-                if not set(implicit) & set(take):
-                    bad.append(f"{who}: target is {row['target']} but the stock "
-                               f"{spells.str(r, SPELL_NAME)!r} takes none (implicit targets {implicit})")
-        # The ranks of one talent borrow one spell, named the same and ranked in order.
-        for seat in patch["talents"]:
-            found = [(rank, spells.row(sid)) for rank, sid in enumerate(seat["rank_spell_ids"], start=1) if sid]
-            found = [(rank, r) for rank, r in found if r is not None]
-            where = lines.get((seat["calling"], seat["key"], "talent", "1"), f"{seat['calling']}/{seat['key']}")
-            names = {spells.str(r, SPELL_NAME) for _, r in found}
-            if len(names) > 1:
-                bad.append(f"{where}: talent ranks borrow differently named spells ({', '.join(sorted(names))})")
-            numbers = [int(m.group(1)) for _, r in found if (m := re.fullmatch(r"Rank (\d+)", spells.str(r, SPELL_RANK)))]
-            if len(numbers) == len(found) and numbers != sorted(set(numbers)):
-                bad.append(f"{where}: talent rank spells are ranked {numbers}, not in rank order")
+                       "resolves to no spell (no spell_id)")
     if bad:
         raise BuildError(f"{len(bad)} rows break the client/realm seam:\n" + "\n".join(bad))
 
 
 def check_unique_ids(rows: list[dict]) -> None:
-    """Fail when two talents or skills claim one client_spell_id or talent_id: the client keeps one
+    """Fail when two talents or skills claim one spell_id or talent_id: the client keeps one
     Spell.dbc / Talent.dbc row per id, so the patch would overwrite one with the other. An aura of
-    the same Calling may share its skill's or talent's spell id (it joins that row's override);
-    icons are shared through icon_id instead."""
+    the same Calling may share its skill's or talent's spell id (it joins that row's override)."""
     spells: dict[str, list[tuple[str, str, str, str]]] = {}
     talents: dict[str, list[tuple[str, str, str]]] = {}
-    scratch: dict[str, list[tuple[str, str, str]]] = {}
     bad = []
     for line, row in enumerate(rows, start=2):
         who = (row["calling"], row["key"])
         where = f"line {line} ({row['calling']}/{row['key']})"
-        if row["kind"] in ("skill", "talent", "aura") and row["client_spell_id"]:
-            text = row["client_spell_id"].strip()
+        if row["kind"] in ("skill", "talent", "aura") and row["spell_id"]:
+            text = row["spell_id"].strip()
             claims = spells.setdefault(text, [])
             for other in claims:
                 if other[:2] != who and not (other[0] == who[0] and "aura" in (other[2], row["kind"])):
-                    bad.append(f"{where}: client_spell_id {text} is already claimed by {other[3]}")
+                    bad.append(f"{where}: spell_id {text} is already claimed by {other[3]}")
                     break
             claims.append((*who, row["kind"], where))
-        if row["spell_id"]:
-            text = row["spell_id"].strip()
-            claims = scratch.setdefault(text, [])
-            for other in claims:
-                if other[:2] != who:
-                    bad.append(f"{where}: spell_id {text} is already claimed by {other[2]}")
-                    break
-            claims.append((*who, where))
         if row["kind"] == "talent" and row["talent_id"]:
             text = row["talent_id"].strip()
             claims = talents.setdefault(text, [])
@@ -328,37 +266,13 @@ def check_unique_ids(rows: list[dict]) -> None:
                     break
             claims.append((*who, where))
     if bad:
-        raise BuildError(f"{len(bad)} ids claimed by more than one row; give the later row its own id "
-                         "and keep its icon through icon_id:\n" + "\n".join(bad))
-
-
-def read_spell_flags(data_dir: str | None, flags_path: str | None, rows: list[dict]) -> dict | None:
-    """SpellFamilyFlags of each stock skill's client_spell_id, from a JSON file or Spell.dbc; None
-    when neither is given."""
-    if flags_path:
-        with open(flags_path, encoding="utf-8") as f:
-            return {str(k): int(v) for k, v in json.load(f).items()}
-    if not data_dir:
-        return None
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from wowdata import Chain, load_dbc
-
-    try:
-        spells = load_dbc(Chain(data_dir), "Spell.dbc")
-    except (OSError, KeyError, ValueError) as error:
-        raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
-    flags = {}
-    low, high = SPELL_FAMILY_FLAGS_COLUMNS
-    for row in rows:
-        text = row["client_spell_id"]
-        if row["kind"] == "skill" and text.isdigit() and spells.row(int(text)) is not None:
-            r = spells.row(int(text))
-            flags[text] = (spells.u32(r, high) << 32) | spells.u32(r, low)
-    return flags
+        raise BuildError(f"{len(bad)} ids claimed by more than one row; give the later row its own "
+                         "id:\n" + "\n".join(bad))
 
 
 def read_row_tables(data_dir: str | None) -> dict:
-    """SpellRange, SpellCastTimes and SpellDuration as plain tuples, for `resolve_dbc_rows`."""
+    """SpellRange, SpellCastTimes and SpellDuration as plain tuples, and each stock spell's
+    SpellVisual and missile speed, for `resolve_dbc_rows`."""
     if not data_dir:
         raise BuildError("resolving range, cast time and duration needs --data or WOW_DATA; "
                          "pass --no-dbc-check to leave them as values")
@@ -374,24 +288,27 @@ def read_row_tables(data_dir: str | None) -> dict:
         "ranges": [(ranges.u32(i, 0), ranges.f32(i, 1), ranges.f32(i, 2)) for i in range(ranges.nrec)],
         "cast_times": [(times.u32(i, 0), times.i32(i, 1), times.i32(i, 2)) for i in range(times.nrec)],
         "durations": [(durations.u32(i, 0), durations.i32(i, 1)) for i in range(durations.nrec)],
-        "spell_visuals": {spells.u32(i, 0): spells.u32(i, SPELL_VISUAL) for i in range(spells.nrec)},
+        "spell_looks": {spells.u32(i, 0): (spells.u32(i, SPELL_VISUAL), spells.f32(i, SPELL_SPEED))
+                        for i in range(spells.nrec)},
     }
 
 
 def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: list,
-                     spell_visuals: dict[int, int] | None = None) -> None:
+                     spell_looks: dict[int, tuple[int, float]] | None = None) -> None:
     """Replace each override's range, cast time and duration values with the index of the stock
     row that holds them (the lowest id on a tie). The client overwrites the index. A value no
-    stock row holds fails the build. A from-scratch row's `visual_spell` becomes the stock
-    spell's SpellVisual id."""
+    stock row holds fails the build. A row's `visual_spell` becomes the stock spell's SpellVisual
+    id and, for a missile, its speed: both are that spell's look."""
     for entry in patch["spells"]:
         fields = entry["fields"]
         where = f"{entry['calling']}/{entry['key']}" if "key" in entry else str(entry["spell_id"])
         if "visual_spell" in fields:
             stock = fields.pop("visual_spell")
-            if stock not in (spell_visuals or {}):
+            if stock not in (spell_looks or {}):
                 raise BuildError(f"{where}: visual {stock} is not a spell in Spell.dbc")
-            fields["visual"] = spell_visuals[stock]
+            fields["visual"], speed = spell_looks[stock]
+            if speed > 0:
+                fields["speed"] = round(speed, 3)
         if "range_min" in fields or "range_max" in fields:
             low, high = float(fields.pop("range_min", 0)), float(fields.pop("range_max", 0))
             fields["range_index"] = _lowest(
@@ -574,15 +491,16 @@ def build_aura_columns(row: dict, where: str) -> dict:
     return out
 
 
-def aura_override(row: dict, built: dict, where: str) -> dict | None:
-    """The Spell.dbc fields an aura row sets on its borrowed spell: its name, the buff tooltip (the
-    `aura_description` cell, else the row's `description`), and dispel type and mechanic when their
-    cells are set; the borrowed spell's own name and tooltip never show. None when it is hidden."""
+def aura_override(row: dict, built: dict, where: str, art: list[str], art_dir: str) -> dict | None:
+    """The Spell.dbc row an aura shows as: its name, the buff tooltip (the `aura_description` cell,
+    else the row's `description`), dispel type and mechanic when their cells are set, and its look
+    and effects. None when it is hidden."""
     if "spell_id" not in built or built.get("client_visible") is False:
         return None
-    fields: dict = {"name": built["name"]}
-    # Defaults a skill on the same spell id keeps its own value over.
-    soft = {"name"}
+    # The look and effects are defaults a skill on the same spell id keeps its own value over.
+    fields: dict = from_scratch_fields(row, built, art, art_dir, where)
+    soft = {"name", *(k for k in fields if k not in ("dispel_type", "mechanic"))}
+    fields["name"] = built["name"]
     if row["dispel_type"]:
         fields["dispel_type"] = DISPEL_TYPES[built["dispel_type"]]
     if row["mechanic"]:
@@ -613,7 +531,7 @@ def merge_override(overrides: list[dict], extra: dict, where: str) -> None:
 
 
 def build_aura(row: dict, built: dict, where: str) -> dict:
-    """An aura row: a borrowed spell id, a duration, charges and effects, granted by key."""
+    """An aura row: its spell id, a duration, charges and effects, granted by key."""
     out = {"key": built["key"], "name": built["name"]}
     for column in ("spell_id", "client_visible", "icon_id", "status", "school", "prevention", "target"):
         if column in built:
@@ -737,14 +655,12 @@ def client_visible(row: dict, where: str) -> bool:
     if flag not in ("", "yes", "no"):
         raise BuildError(f"{where}: client_visible is {flag!r}, want yes or no")
     if flag != "no":
-        if row["realm_spell_id"]:
-            raise BuildError(f"{where}: realm_spell_id is set on a row that is visible to the client")
         return True
-    if not row["realm_spell_id"]:
-        raise BuildError(f"{where}: a client_visible=no row needs realm_spell_id")
-    realm = whole(row["realm_spell_id"], f"{where} realm_spell_id")
-    if realm < MIN_REALM_SPELL_ID:
-        raise BuildError(f"{where}: realm_spell_id {realm} is below {MIN_REALM_SPELL_ID}")
+    if not row["spell_id"]:
+        raise BuildError(f"{where}: a client_visible=no row needs spell_id")
+    for column in ("visual", "icon", "needs_facing"):
+        if row[column]:
+            raise BuildError(f"{where}: a client_visible=no row sets {column}")
     for column in row:
         if column.startswith("client_") and column != "client_visible" and row[column]:
             raise BuildError(f"{where}: a client_visible=no row sets {column}")
@@ -990,21 +906,16 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
     hidden = not client_visible(row, where)
     for column in ID_COLUMNS:
         if row[column]:
-            key = JSON_KEY.get(column, column)
-            out[key] = number(row[column], f"{where} {column}")
-            if not isinstance(out[key], int):
+            out[column] = number(row[column], f"{where} {column}")
+            if not isinstance(out[column], int):
                 raise BuildError(f"{where} {column}: {row[column]!r} is not a whole id")
     if row["spell_id"]:
-        if row["client_spell_id"]:
-            raise BuildError(f"{where}: spell_id and client_spell_id are both set; a row borrows or is from scratch")
         out["spell_id"] = whole(row["spell_id"], f"{where} spell_id")
         if out["spell_id"] < FROM_SCRATCH_MIN_ID:
             raise BuildError(f"{where} spell_id: {out['spell_id']} is below {FROM_SCRATCH_MIN_ID}")
     elif row["visual"] or row["icon"] or row["needs_facing"]:
-        raise BuildError(f"{where}: visual, icon and needs_facing belong to a from-scratch row (set spell_id)")
+        raise BuildError(f"{where}: visual, icon and needs_facing belong to a row with a spell_id")
     if hidden:
-        # A hidden row's one number is its realm id; the realm reads it as `spell_id`.
-        out["spell_id"] = whole(row["realm_spell_id"], f"{where} realm_spell_id")
         out["client_visible"] = False
     if spellbook(row, hidden, where) is False:
         out["spellbook"] = False
@@ -1120,7 +1031,7 @@ def resolve_reset_cooldowns(calling: dict) -> None:
 def resolve_next_cast(calling: dict, masks: dict[str, int | None]) -> None:
     """A `next_cast` aura names skills of its Calling; the realm gets their `SpellFamilyFlags`
     bits as `family_bits`, for the client's cast bar: each its skill's lowest bit no other skill
-    shares. A skill whose flags are unknown (no --data) or all shared adds none. An `at_max_stacks` aura names the aura row it becomes."""
+    shares. A skill whose bits are all shared adds none. An `at_max_stacks` aura names the aura row it becomes."""
     keys = {s["key"] for s in calling["skills"]}
     hidden = {s["key"] for s in calling.get("hidden_skills", [])}
     auras = {a["key"] for a in calling["auras"]}
@@ -1154,27 +1065,25 @@ def resolve_next_cast(calling: dict, masks: dict[str, int | None]) -> None:
             params["family_bits"] = bits
 
 
-def skill_masks(rows: list[dict], spell_flags: dict | None) -> dict[str, dict[str, int | None]]:
-    """Per calling, each skill key's SpellFamilyFlags mask: a borrowed skill's own bit, a stock
-    skill's from its Spell.dbc row. None where the flags are unknown (no --data or --spell-flags)."""
-    masks: dict[str, dict[str, int | None]] = {}
+def skill_masks(rows: list[dict]) -> dict[str, dict[str, int]]:
+    """Per calling, each skill key's SpellFamilyFlags mask: its own bit, from FAMILY_BIT_FLOOR up
+    in sheet order. The bits are not saved, so reordering the sheet moves them harmlessly."""
+    masks: dict[str, dict[str, int]] = {}
     for line, row in enumerate(rows, start=2):
         if row["kind"] != "skill":
             continue
         mine = masks.setdefault(row["calling"], {})
-        if mine.get(row["key"]):
+        if row["key"] in mine:
             continue
-        if row["borrowed_family_bit"]:
-            bit = whole(row["borrowed_family_bit"], f"line {line} ({row['calling']}/{row['key']}) borrowed_family_bit")
-            mine[row["key"]] = 1 << bit
-        elif spell_flags is not None and row["client_spell_id"]:
-            mine[row["key"]] = spell_flags.get(row["client_spell_id"])
-        else:
-            mine.setdefault(row["key"], None)
+        bit = FAMILY_BIT_FLOOR + len(mine)
+        if bit > 63:
+            raise BuildError(f"line {line} ({row['calling']}/{row['key']}): {row['calling']} has more than "
+                             f"{64 - FAMILY_BIT_FLOOR} skills, one per SpellFamilyFlags bit")
+        mine[row["key"]] = 1 << bit
     return masks
 
 
-def build_spellmods(row: dict, where: str, masks: dict[str, int | None], flags_known: bool) -> list[dict]:
+def build_spellmods(row: dict, where: str, masks: dict[str, int]) -> list[dict]:
     """The row's spellmod groups, each target resolved from skill keys to a family mask."""
     spellmods = []
     for i in range(1, MAX_SPELLMODS + 1):
@@ -1192,9 +1101,6 @@ def build_spellmods(row: dict, where: str, masks: dict[str, int | None], flags_k
         for key in keys:
             if key not in masks:
                 raise BuildError(f"{where}: spellmod{i}_target {key!r} is not a skill of {row['calling']}")
-            if not masks[key]:
-                why = "has no family flags" if flags_known else "needs --data or --spell-flags for its Spell.dbc flags"
-                raise BuildError(f"{where}: spellmod{i}_target {key!r} {why}")
             mask |= masks[key]
         for other, other_mask in masks.items():
             if other not in keys and other_mask and other_mask & mask:
@@ -1212,12 +1118,43 @@ def build_spellmods(row: dict, where: str, masks: dict[str, int | None], flags_k
     return spellmods
 
 
-def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, where: str) -> dict:
-    """What a from-scratch row (ADR 0011) adds to its patch entry: the icon, the stock spell whose
-    SpellVisual it borrows (`resolve_dbc_rows` turns it into the id), facing, dispel type,
-    mechanic, and every effect with its Spell.dbc effect and aura numbers. A PNG icon is checked
-    against `art_dir` and noted in `art` for the embed."""
-    fields: dict = {}
+def implicit_targets(row: dict) -> tuple[int, int]:
+    """The Spell.dbc ImplicitTargetA and B every effect of the row takes, from its `target` and
+    area: the client asks for a unit, a ground spot or nothing by them."""
+    if row["area_center"] == "caster":
+        return CASTER_AREA_TARGETS
+    if row["area_center"] == "ground":
+        return IMPLICIT_TARGETS["dest"]
+    return IMPLICIT_TARGETS.get(row["target"], IMPLICIT_TARGETS[""])
+
+
+def ranged(row: dict) -> bool:
+    """A shot: auto-repeat, or a cast that needs a ranged weapon (the client's ranged-slot bit)."""
+    if row["cast_kind"] == "auto_repeat":
+        return True
+    names = [n for name in row["requires_weapon"].split("|") if name
+             for n in WEAPON_ALIASES.get(name, (name,))]
+    return bool(names) and all(n in WEAPON_ALIASES["any_ranged"] for n in names)
+
+
+def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, where: str,
+                        family: int | None = None) -> dict:
+    """What a row's patch entry needs beyond its client columns to be a complete Spell.dbc row
+    (ADR 0011): the icon, the stock spell whose look it takes (`resolve_dbc_rows` turns it into a
+    SpellVisual id), facing, implicit targets, the passive and ranged bits, a skill's own family
+    bit, dispel type, mechanic, and every effect with its Spell.dbc effect and aura numbers. A PNG
+    icon is checked against `art_dir` and noted in `art` for the embed."""
+    fields: dict = {"implicit_targets": list(implicit_targets(row))}
+    if row["target"] == "dest" or row["area_center"] == "ground":
+        fields["targets"] = TARGET_FLAG_DEST_LOCATION
+    # A talent rank with nothing to cast is a passive spell: the spell book greys it.
+    if row["kind"] == "talent" and not row["target"]:
+        fields["passive"] = True
+    if row["kind"] != "aura" and ranged(row):
+        fields["ranged"] = True
+    if family:
+        fields["spell_family"] = SPELL_FAMILY
+        fields["family_flags"] = family
     icon = row["icon"]
     if icon.lower().endswith(".png"):
         if not os.path.isfile(os.path.join(art_dir, icon)):
@@ -1253,13 +1190,12 @@ def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, wh
 
 
 def client_override(row: dict, built: dict, where: str, categories: dict[str, int],
-                    art: list[str], art_dir: str) -> dict | None:
-    """The row's Spell.dbc override: its client columns, effects 1 to 3 and its spellmods."""
+                    art: list[str], art_dir: str, family: int | None) -> dict | None:
+    """The row's Spell.dbc row: its client columns, every effect and its spellmods."""
     if "spell_id" not in built or built.get("client_visible") is False:
         return None
-    # The Calling's power, so a borrowed spell gates against the right bar.
+    # The Calling's power, so the spell gates against the right bar.
     fields: dict = {"power_type": CLASS_POWER_TYPE[built["class"]]}
-    # The sheet's name replaces the borrowed spell's, so a talent reads as the sheet calls it.
     if row["name"]:
         fields["name"] = row["name"]
     for column in CLIENT_NUMBERS:
@@ -1275,8 +1211,8 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
         fields["cost_per_second"] = fields.pop("cost")
     elif built["cost_kind"] in ("health", "health_current"):
         fields["power_type"] = HEALTH_POWER_TYPE
-    # Cast shape: the attribute bits; interrupt flags and DmgClass only when the cell is set, so a
-    # default leaves the borrowed row's own values.
+    # Cast shape: the attribute bits, interrupt flags and DmgClass, defaults included, so the
+    # client's bar breaks as the realm's does.
     cast_kind = built["cast_kind"]
     if cast_kind == "next_swing":
         fields["on_next_swing"] = True
@@ -1284,11 +1220,9 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
         fields["channeled"] = True
     elif cast_kind == "auto_repeat":
         fields["auto_repeat"] = True
-    if row["interrupt_on"]:
-        flags = sum(INTERRUPT_FLAGS[name] for name in built["interrupt_on"])
-        fields["channel_interrupt_flags" if cast_kind == "channel" else "interrupt_flags"] = flags
-    if row["defense_type"]:
-        fields["dmg_class"] = DEFENSE_TYPES[built["defense_type"]]
+    flags = sum(INTERRUPT_FLAGS[name] for name in built["interrupt_on"])
+    fields["channel_interrupt_flags" if cast_kind == "channel" else "interrupt_flags"] = flags
+    fields["dmg_class"] = DEFENSE_TYPES[built["defense_type"]]
     fields["school"] = SCHOOLS.index(built["school"])
     fields["prevention_type"] = PREVENTIONS[built["prevention"]]
     if row["requires_weapon"]:
@@ -1308,11 +1242,7 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
         fields["description"] = row["description"]
     if row["client_stances"]:
         fields["stances"] = row["client_stances"].split("|")
-    # No effects key on an unmodelled row: the client keeps the stock row's effects.
-    if built["modelled"]:
-        fields["effects"] = [{"kind": e["kind"], "params": e["params"]} for e in built["effects"] if not e["realm_only"]]
-    if row["spell_id"]:
-        fields.update(from_scratch_fields(row, built, art, art_dir, where))
+    fields.update(from_scratch_fields(row, built, art, art_dir, where, family))
     # The client's mods name no skill keys; the realm's do.
     spellmods = [{k: v for k, v in m.items() if k != "target"} for m in built.get("spellmods", [])]
     out = {"spell_id": built["spell_id"], "calling": row["calling"], "key": row["key"], "rank": built["rank"],
@@ -1322,7 +1252,7 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
     return out
 
 
-def build(rows: list[dict], spell_flags: dict | None = None, art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict], dict]:
+def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict], dict]:
     for column in (rows[0] if rows else {}):
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
         if found and int(found.group(1)) > MAX_SPELLMODS:
@@ -1331,12 +1261,12 @@ def build(rows: list[dict], spell_flags: dict | None = None, art_dir: str = DEFA
         raise BuildError("column client_on_next_swing is gone; write cast_kind=next_swing in the cast_kind column")
     if rows and "requires_out_of_combat" in rows[0]:
         raise BuildError("column requires_out_of_combat is gone; write `requires: combat=out` in the requires column")
-    # A sheet older than the from-scratch columns reads them as empty.
-    for row in rows:
-        for column in FROM_SCRATCH_COLUMNS:
-            row.setdefault(column, "")
+    for column in GONE_COLUMNS:
+        if rows and column in rows[0]:
+            raise BuildError(f"column {column} is gone: every row is its own spell_id (ADR 0011); "
+                             "run migrate_from_scratch.py")
     check_unique_ids(rows)
-    masks = skill_masks(rows, spell_flags)
+    masks = skill_masks(rows)
     # Each cooldown_category name gets a number in order of first appearance; every row sharing a
     # name must carry the same category_cooldown_ms.
     categories: dict[str, int] = {}
@@ -1356,7 +1286,6 @@ def build(rows: list[dict], spell_flags: dict | None = None, art_dir: str = DEFA
     art: list[str] = []
     aura_overrides: list[tuple[dict, str]] = []
     seen: set[tuple] = set()
-    realm_ids: dict[str, str] = {}
     talent_rows: dict[tuple, list[tuple[dict, dict, str]]] = {}
     # A calling's aura keys, each with the effect kinds it holds, are read before any row, so row
     # order never matters.
@@ -1397,11 +1326,6 @@ def build(rows: list[dict], spell_flags: dict | None = None, art_dir: str = DEFA
             calling["talent_tabs"].append(tab)
             continue
         built = build_row(row, where, auras[row["calling"]])
-        if row["realm_spell_id"]:
-            if row["realm_spell_id"] in realm_ids:
-                raise BuildError(f"{where}: realm_spell_id {row['realm_spell_id']} is already used by "
-                                 f"{realm_ids[row['realm_spell_id']]}")
-            realm_ids[row["realm_spell_id"]] = where
         if kind == "talent":
             built["max_rank"] = max_rank(row, where)
         elif row["max_rank"]:
@@ -1413,15 +1337,16 @@ def build(rows: list[dict], spell_flags: dict | None = None, art_dir: str = DEFA
         if kind == "aura":
             aura = build_aura(row, built, where)
             calling["auras"].append(aura)
-            if override := aura_override(row, aura, where):
+            if override := aura_override(row, aura, where, art, art_dir):
                 aura_overrides.append((override, where))
             continue
-        spellmods = build_spellmods(row, where, masks.get(row["calling"], {}), spell_flags is not None)
+        spellmods = build_spellmods(row, where, masks.get(row["calling"], {}))
         if spellmods and kind == "aura":
             raise BuildError(f"{where}: spellmod cells are set on an aura row; only skill and talent rows carry them")
         if spellmods:
             built["spellmods"] = spellmods
-        override = client_override(row, built, where, categories, art, art_dir)
+        family = masks.get(row["calling"], {}).get(row["key"]) if kind == "skill" else None
+        override = client_override(row, built, where, categories, art, art_dir, family)
         if override:
             overrides.append(override)
         del built["class"]
@@ -1510,18 +1435,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--art-dir", default=DEFAULT_ART_DIR, help="folder of the PNG icons the icon cells name")
     parser.add_argument("--data", default=os.environ.get("WOW_DATA"), help="game Data folder for the DBC check")
     parser.add_argument("--no-dbc-check", action="store_true", help="skip checking ids against the DBCs")
-    parser.add_argument("--spell-flags", help="JSON {spell id: SpellFamilyFlags} standing in for Spell.dbc")
     args = parser.parse_args(argv)
 
     with open(args.csv, newline="", encoding="utf-8") as f:
         # A row shorter than the header (columns added at the end) reads its missing cells as empty.
         rows = [{k: v or "" for k, v in row.items() if k is not None} for row in csv.DictReader(f)]
     try:
-        server, patch = build(rows, read_spell_flags(args.data, args.spell_flags, rows), args.art_dir)
+        server, patch = build(rows, args.art_dir)
         art = patch.pop("art", [])
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)
-        check_seam(rows, server, patch, None if args.no_dbc_check else args.data)
+        check_seam(server, patch)
         if not args.no_dbc_check:
             resolve_dbc_rows(patch, **read_row_tables(args.data))
             print(f"DBC check: every id is in the DBCs in {args.data}")

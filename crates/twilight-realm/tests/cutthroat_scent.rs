@@ -11,7 +11,8 @@ use common::*;
 use twilight_realm::rules::talents::scaled_share;
 use twilight_realm::{Realm, RealmCommand};
 
-const SINISTER_STRIKE: u32 = 1752;
+static SINISTER_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("cutthroat", "sinister_strike"));
 /// The stock bleed (Pounce Bleed) the talent's rows apply.
 const SCENT_BLEED: u32 = 9007;
 /// `Talent.dbc` id of Scent of Blood (borrowed Improved Rupture).
@@ -89,10 +90,12 @@ fn crit_and_bleed(talents: &[(u32, u8)]) -> Option<(u32, Vec<u32>)> {
         });
         let mob = camp_mob(&view.run(&mut realm, 1.0));
         stand_at(&mut realm, &mob, 2.0);
-        realm.handle(cast(SINISTER_STRIKE, Some(mob.guid)));
+        realm.handle(cast(*SINISTER_STRIKE, Some(mob.guid)));
         let events = view.drain(&mut realm);
         let crit = events.iter().find_map(|e| match e {
-            SessionEvent::SpellDamageLog(l) if l.spell_id == SINISTER_STRIKE && l.hit_info != 0 => {
+            SessionEvent::SpellDamageLog(l)
+                if l.spell_id == *SINISTER_STRIKE && l.hit_info != 0 =>
+            {
                 Some(l.damage)
             }
             _ => None,

@@ -16,7 +16,8 @@ const SWORD_SPECIALIZATION: u32 = 123;
 const MACE_SPECIALIZATION: u32 = 125;
 const MACE_STUN: u32 = 5530;
 
-const MORTAL_STRIKE: u32 = 12294;
+static MORTAL_STRIKE: std::sync::LazyLock<u32> =
+    std::sync::LazyLock::new(|| spell("zealot", "mortal_strike"));
 
 const MAIN_HAND: u8 = 15;
 const OFF_HAND: u8 = 16;
@@ -53,10 +54,10 @@ fn impale_raises_a_skills_crit() {
                 return None;
             }
         }
-        realm.handle(cast(MORTAL_STRIKE, Some(mob.guid)));
+        realm.handle(cast(*MORTAL_STRIKE, Some(mob.guid)));
         let events = view.drain(&mut realm);
         events.iter().find_map(|e| match e {
-            SessionEvent::SpellDamageLog(l) if l.spell_id == MORTAL_STRIKE => {
+            SessionEvent::SpellDamageLog(l) if l.spell_id == *MORTAL_STRIKE => {
                 Some((l.damage, l.hit_info & 0x2 != 0))
             }
             _ => None,

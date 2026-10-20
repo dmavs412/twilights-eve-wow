@@ -2,6 +2,8 @@
 //! of every skill the TOML carries, the JSON being the checked research (`extract_spells.py
 //! verify`).
 
+mod common;
+
 use std::path::PathBuf;
 
 use serde_json::Value;
@@ -13,6 +15,29 @@ fn reference() -> Value {
     let path =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/twilights-eve/callings.json");
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+/// A stock spell id the reference names, as the content names it now: the sheet's own id through
+/// the one-time table (#204), or the stock id where the sheet has no row for it.
+fn ours(stock: u64) -> u64 {
+    static TABLE: std::sync::OnceLock<std::collections::HashMap<u64, u64>> =
+        std::sync::OnceLock::new();
+    let table = TABLE.get_or_init(|| {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/twilights-eve/spell_id_remap.json");
+        let raw: std::collections::HashMap<String, u64> =
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        raw.into_iter()
+            .map(|(old, new)| (old.parse().unwrap(), new))
+            .collect()
+    });
+    table.get(&stock).copied().unwrap_or(stock)
+}
+
+/// The stock id the content's `id` stands for, for a lookup in the stock dump.
+fn stock(id: u32) -> u64 {
+    let id = u64::from(id);
+    (1..100_000).find(|&s| ours(s) == id).unwrap_or(id)
 }
 
 fn linear(v: &Value) -> Linear {
@@ -57,7 +82,7 @@ fn every_skill_borrowed_from_another_class_is_marked() {
     // The Basic Warrior's borrowed spells are the client patch's, not marked here.
     for key in ["zealot"] {
         for s in &callings::calling(key).unwrap().skills {
-            let row = &dbc[s.spell_id.to_string()];
+            let row = &dbc[stock(s.spell_id).to_string()];
             let family = row["family"]
                 .as_u64()
                 .unwrap_or_else(|| panic!("{key}.{}: not in the dump", s.key));
@@ -90,7 +115,17 @@ fn the_borrowed_skills_are_zealots_four_at_their_rage_costs() {
     let got: Vec<(u32, u32)> = callings::borrowed_skills()
         .map(|s| (s.spell_id, s.power_cost))
         .collect();
-    assert_eq!(got, [(20375, 10), (20305, 10), (20271, 5), (10308, 15)]);
+    let keys = [
+        "seal_of_command",
+        "seal_of_the_crusader",
+        "judgement",
+        "hammer_of_justice",
+    ];
+    let want: Vec<(u32, u32)> = common::spells("zealot", &keys)
+        .into_iter()
+        .zip([10, 10, 5, 15])
+        .collect();
+    assert_eq!(got, want);
 }
 
 fn check_calling(calling: &str) {
@@ -128,7 +163,7 @@ fn check_calling(calling: &str) {
         assert_eq!(got.key, key);
         assert_eq!(
             u64::from(got.spell_id),
-            want["spell_id"].as_u64().unwrap(),
+            ours(want["spell_id"].as_u64().unwrap()),
             "{key}"
         );
         let realm = &want["realm"];
@@ -305,7 +340,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
             duration_ms,
         } => {
             assert_eq!(kind, "periodic_rage", "{key}");
-            assert_eq!(aura_spell_id, ms(want, "aura_spell_id"));
+            assert_eq!(
+                u64::from(aura_spell_id),
+                ours(want["aura_spell_id"].as_u64().unwrap())
+            );
             assert_eq!(per_tick, ms(want, "per_tick"));
             assert_eq!(tick_ms, ms(want, "tick_ms"));
             assert_eq!(duration_ms, ms(want, "duration_ms"));
@@ -317,7 +355,10 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         } => {
             assert_eq!(kind, "stun", "{key}");
             assert_eq!(per_combo, want.get("per_combo").map(linear), "{key}");
-            assert_eq!(aura_spell_id, ms(want, "aura_spell_id"));
+            assert_eq!(
+                u64::from(aura_spell_id),
+                ours(want["aura_spell_id"].as_u64().unwrap())
+            );
             assert_eq!(duration_ms, ms(want, "duration_ms"));
         }
         Effect::Incapacitate {
@@ -413,22 +454,6 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
     }
 }
 
-#[test]
-fn every_skill_id_is_listed_for_rank_blanking() {
-    let mut ids: Vec<u32> = callings::skill_spell_ids().collect();
-    ids.sort_unstable();
-    ids.dedup();
-    assert_eq!(
-        ids,
-        [
-            75, 78, 100, 116, 133, 284, 589, 689, 781, 845, 1752, 1776, 1784, 1943, 1953, 1978,
-            2061, 2098, 2120, 2136, 2912, 3044, 3045, 5277, 6178, 8092, 8921, 10308, 11366, 11578,
-            12043, 12294, 12809, 15237, 15286, 19263, 19434, 19503, 20165, 20271, 20305, 20375,
-            25899
-        ]
-    );
-}
-
 /// The client names these " (WIP)": the rank spells of every talent with no effect and no skill,
 /// Anger Management's and Flurry's (in every tree that has them), the Zealot's unmodelled
 /// Paladin talents' and the Vanguard's unmodelled talents'.
@@ -437,17 +462,21 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
     let mut ids: Vec<u32> = callings::wip_rank_spell_ids().collect();
     ids.sort_unstable();
     ids.dedup();
-    let mut want = vec![
-        // Anger Management, Flurry.
-        12296, 12319, 12971, 12972, 12973, 12974,
-        // Improved Judgement, Vindication, Eye for an Eye.
-        25956, 25957, 9452, 26016, 26021, 9799, 25988,
-        // Pursuit of Justice, Improved Hammer of Justice, Vengeance.
-        26022, 26023, 20487, 20488, 20489, 20049, 20056, 20057, 20058, 20059,
-        // Holy Power, Divine Strength.
-        5923, 5924, 5925, 5926, 25829, 20262, 20263, 20264, 20265, 20266,
-        // Precision, Redoubt, Reckoning.
-        20189, 20192, 20193, 20127, 20130, 20135, 20136, 20137, 20177, 20179, 20181, 20180, 20182,
+    let mut want: Vec<u32> = [
+        // The Zealot's Paladin talents.
+        ("zealot", "anger_management"),
+        ("zealot", "flurry"),
+        ("zealot", "improved_judgement"),
+        ("zealot", "vindication"),
+        ("zealot", "eye_for_an_eye"),
+        ("zealot", "pursuit_of_justice"),
+        ("zealot", "improved_hammer_of_justice"),
+        ("zealot", "vengeance"),
+        ("zealot", "holy_power"),
+        ("zealot", "divine_strength"),
+        ("zealot", "precision"),
+        ("zealot", "redoubt"),
+        ("zealot", "reckoning"),
         // Vanguard's Bastion: nothing (every talent is modelled now).
         // Vanguard's Righteous: nothing (every talent is modelled now).
         // Cutthroat's Skirmisher: nothing (Lethality, Flurry of Blades, Reflexive Strike, Dual
@@ -457,12 +486,15 @@ fn the_wip_rank_spells_are_the_talents_with_no_effect() {
         // Initiate's Weaver and Channeler: nothing (every talent is modelled now).
         // Ranger's Swiftbow: Parting Gift (a trap left behind by Vault; every other talent is
         // modelled now).
-        19239, 19245,
+        ("ranger", "parting_gift"),
         // Ranger's Arbalest: nothing (every talent is modelled now).
         // Acolyte's Rot-Weaver: nothing (every talent is modelled now).
         // Acolyte's Hemomancer: Blood Ties (the client cannot target an ally with Drain Life).
-        27789, 27790,
-    ];
+        ("acolyte", "blood_ties"),
+    ]
+    .into_iter()
+    .flat_map(|(calling, key)| common::talent_spells(calling, key))
+    .collect();
     want.sort_unstable();
     assert_eq!(ids, want);
 }
@@ -528,7 +560,10 @@ fn the_schema_fields_reach_the_content() {
         .find(|a| a.key == "momentum_crit_1")
         .unwrap();
     assert!(!buff.row.is_hidden());
-    assert_eq!(buff.spell_id, 14177);
+    assert_eq!(
+        buff.spell_id,
+        common::spell("basic_warrior", "momentum_crit_1")
+    );
     assert_eq!(buff.row.max_stacks, 1);
     assert_eq!(buff.row.stack_rule.as_deref(), Some("refresh"));
     assert_eq!(buff.row.unique_per.as_deref(), Some("caster"));
@@ -545,7 +580,8 @@ fn the_schema_fields_reach_the_content() {
     assert_eq!(spark.rank_spellmods.len(), spark.rank_spells.len());
     let first = &spark.rank_spellmods[0][0];
     assert_eq!((first.kind.as_str(), first.op.as_str()), ("pct", "DAMAGE"));
-    assert_eq!(first.family_bit, Some(37));
+    // Fire Blast is the Basic Warrior's fourth skill on the sheet: bit 33 + 3.
+    assert_eq!(first.family_bit, Some(36));
     assert_eq!(first.value, 10.0);
     assert_eq!(first.target, ["fire_blast"]);
 }
@@ -591,7 +627,7 @@ fn the_basic_warrior_talent_tree_is_the_sheets() {
             );
             let spells: Vec<u64> = ranks
                 .iter()
-                .map(|r| r["spell_id"].as_u64().unwrap())
+                .map(|r| ours(r["spell_id"].as_u64().unwrap()))
                 .collect();
             let got_spells: Vec<u64> = t.rank_spells.iter().map(|&s| u64::from(s)).collect();
             assert_eq!(got_spells, spells, "{key}");
@@ -804,7 +840,7 @@ fn check_tree(calling: &str, unmodelled: &[&str]) {
                 .as_array()
                 .unwrap()
                 .iter()
-                .map(|v| v.as_u64().unwrap() as u32)
+                .map(|v| ours(v.as_u64().unwrap()) as u32)
                 .collect();
             assert_eq!(t.rank_spells, ranks, "{key}");
             assert_eq!(
