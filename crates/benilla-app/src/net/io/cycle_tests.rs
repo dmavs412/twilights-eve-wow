@@ -223,8 +223,8 @@ fn an_empty_account_parks_at_select_without_creating_a_character() {
 
     let (events_tx, events) = crossbeam_channel::unbounded();
     let (writer_tx, _writer_rx) = crossbeam_channel::unbounded::<WorldWriter>();
-    // The parks are async channels: the sequencer awaits them (the browser build has no thread
-    // to park), and `block_on` turns it over here as the native net thread does.
+    // The parks are async channels: the sequencer awaits them, and `block_on` turns it over here
+    // as the net thread does.
     let (login_tx, login_rx) = async_channel::unbounded();
     let (realm_tx, realm_rx) = async_channel::unbounded();
     let (pick_tx, pick_rx) = async_channel::unbounded();

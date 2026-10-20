@@ -7,19 +7,7 @@ use bevy::prelude::*;
 use crate::thread_qos;
 
 /// `DefaultPlugins` with benilla's engine tuning applied, around the caller's primary window.
-#[cfg_attr(not(target_arch = "wasm32"), allow(unused_mut))]
-pub fn tuned_default_plugins(mut primary_window: Window) -> PluginGroupBuilder {
-    // The web build's canvas binding: with no `canvas` selector winit creates its own `<canvas>`
-    // and appends it to `<body>` at a fixed size, ignoring the full-viewport element
-    // `web/index.html` already gives it — so bind to that one by id instead and let it own the
-    // surface. `prevent_default_event_handling` stops the page from scrolling/zooming under our
-    // own keyboard and touch/wheel input (the browser's defaults for those events).
-    #[cfg(target_arch = "wasm32")]
-    {
-        primary_window.canvas = Some("#benilla".into());
-        primary_window.fit_canvas_to_parent = true;
-        primary_window.prevent_default_event_handling = true;
-    }
+pub fn tuned_default_plugins(primary_window: Window) -> PluginGroupBuilder {
     DefaultPlugins
         .set(WindowPlugin {
             primary_window: Some(primary_window),

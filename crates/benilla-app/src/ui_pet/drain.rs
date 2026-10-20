@@ -3,7 +3,7 @@
 //! (`PetHandler.cpp:203-300`), and sends `SMSG_PET_MODE` only from `Pet::SetEnabled`
 //! (`Pet.cpp:2362-2377`), so the client applies them itself until the next `SMSG_PET_SPELLS`.
 
-// std's `Instant` panics on wasm32; this flows into `crate::cooldowns`, which takes bevy's.
+// Bevy's `Instant`: the type `crate::ui_script::UiClock` and `crate::cooldowns` trade in.
 use bevy::platform::time::Instant;
 
 use bevy::prelude::*;

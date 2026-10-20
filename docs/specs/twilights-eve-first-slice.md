@@ -145,7 +145,7 @@ Crossroads as the Hub and the Wailing Caverns as the one Dungeon. Vocabulary fol
     death and saving. It depends on the protocol crate for event types.
   - **The Twilight's Eve glue module** (new, inside the app crate). It holds the boot flag,
     turns client commands into realm commands and realm events into the net layer's event
-    stream, ticks the realm once per frame on the main thread (wasm-safe, no threads), answers
+    stream, ticks the realm once per frame on the main thread, answers
     the host trait from the client's terrain and collision, and reads and writes save blobs
     through the existing local-state module.
 - **The realm's interface** is the main seam, roughly:
@@ -214,7 +214,7 @@ Crossroads as the Hub and the Wailing Caverns as the one Dungeon. Vocabulary fol
 - **Boot:** the Twilight's Eve flag starts the client at character select with no login, the
   net layer's IO threads off, and the glue attached. The dev multipliers `speed` and `xp` are
   read only at boot, default to 1 and are never saved.
-- **Repository rules:** wasm rules apply (no threads, no `std::time::Instant`). Edits to upstream
+- **Repository rules:** edits to upstream
   app files are kept minimal and gated so upstream merges stay clean. Twilight's Eve lives in
   new files.
 
@@ -242,8 +242,8 @@ Crossroads as the Hub and the Wailing Caverns as the one Dungeon. Vocabulary fol
   - death penalty and respawn location
   - Dungeon kill state persisting across a death and resetting on leave
   - save round trip
-- **Not unit-tested:** the glue module. It's covered by the wasm `cargo check` and by playing the
-  full loop by hand with `?speed=` and `?xp=`.
+- **Not unit-tested:** the glue module. It's covered by `cargo check` and by playing the
+  full loop by hand with `WOW_DEV_SPEED` and `WOW_DEV_XP`.
 - **Prior art:** the protocol crate's integration tests (one per message family: character
   enum, gossip and vendor, chat, group…) for asserting on protocol-shaped values, and the app's
   talent-window code, whose comments already cite vmangos behaviour, as the model for

@@ -28,8 +28,8 @@ pub const WORLD_PORT: u16 = 8085;
 /// Read one server packet from `stream`: decrypt the 4-byte header, read the body, parse by opcode.
 /// `decrypter` is `None` for the (single) unencrypted `SMSG_AUTH_CHALLENGE`.
 ///
-/// Awaited rather than blocking (see [`crate::transport`]): on the web the bytes arrive through the
-/// event loop, and natively the future is ready the instant it is polled.
+/// Awaited rather than blocking (see [`crate::transport`]): the future is ready the instant it is
+/// polled.
 pub(super) async fn recv_packet(
     stream: &mut impl ReadExactAsync,
     decrypter: Option<&mut DecrypterHalf>,

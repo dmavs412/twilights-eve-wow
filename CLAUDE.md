@@ -3,8 +3,7 @@
 A single-player offline WoW ORPG prototype on a from-scratch 1.12.1 client in Rust + Bevy. The
 client (`crates/benilla-*`) renders the game and speaks the 1.12.1 protocol. The Local Realm
 (`crates/twilight-realm`) is the game's rules: in-process today, behind a socket for friends
-later. The launcher binary is `crates/twilights-eve`. The browser build is being removed, so
-`crates/wenilla*` and `web/` are dead weight, never a target.
+later. The launcher binary is `crates/twilights-eve`.
 
 Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla reference notes:
 `docs/reference/`. Judgement-call coding rules: `CODING_STANDARDS.md`.

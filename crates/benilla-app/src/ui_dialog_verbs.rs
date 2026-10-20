@@ -4,8 +4,7 @@
 //! A meeting stone's click runs the stone's own use slot, which refuses a join client-side or
 //! sends `CMSG_MEETINGSTONE_JOIN`, never the shared `CMSG_GAMEOBJ_USE`.
 
-// `std::time::Instant` has no monotonic clock behind it in a browser and panics there;
-// bevy's re-export is std's natively and `web_time`'s on wasm32.
+// Bevy's `Instant`: the type `crate::ui_script::UiClock` and `crate::cooldowns` trade in.
 use bevy::platform::time::Instant;
 
 use benilla_protocol::messages::{BattlefieldStatus, MeetingStoneNotice};

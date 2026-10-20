@@ -1,4 +1,4 @@
-//! Wenilla's reusable composition workspace; keep the math in sync with compose::rig_worlds.
+//! The reusable composition workspace; keep the math in sync with compose::rig_worlds.
 use super::{billboard_basis, parent_arm_matrix, RigPose};
 use bevy::prelude::*;
 

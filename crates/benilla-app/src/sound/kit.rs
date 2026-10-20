@@ -10,7 +10,6 @@
 
 use std::collections::HashMap;
 
-#[cfg(not(target_arch = "wasm32"))]
 use anyhow::Context;
 use anyhow::{anyhow, Result};
 use bevy::prelude::*;
@@ -24,11 +23,6 @@ use benilla_world::dev_state::DebugState;
 use super::math;
 use super::mixer::{self, StaticSoundData};
 use super::{AudioListener, SoundConfig, SoundOutput};
-
-/// wasm32: the decode cache's misses go to the browser instead of blocking the frame (`sfx`'s
-/// wasm arm), and the plays that asked replay when the file lands. Our carry; see its header.
-#[cfg(target_arch = "wasm32")]
-mod deferred;
 
 /// The volume slider that scales a channel (master is global). Set by the caller, as the
 /// reference's play drivers set channel flag 0x2 for music, 0x8 for ambience and SFX otherwise
@@ -66,14 +60,7 @@ impl Rng {
 pub(crate) struct SoundKits {
     catalog: SoundKitCatalog,
     /// Decoded SFX by lowercased path, cloned per play with shared frames (SoundFileDataCache).
-    #[cfg(not(target_arch = "wasm32"))]
     cache: HashMap<String, StaticSoundData>,
-    #[cfg(target_arch = "wasm32")]
-    cache: deferred::SfxCache,
-    /// wasm32: the files the browser is fetching and decoding for this cache, by the same key,
-    /// with the plays waiting on each (`deferred`). Native fills the cache inline and has none.
-    #[cfg(target_arch = "wasm32")]
-    pending: HashMap<String, deferred::PendingSfx>,
     pick: HashMap<u32, PickState>,
     rng: Rng,
 }
@@ -497,22 +484,7 @@ pub(super) fn play_kit_ext(
         .clone();
 
     // Decode (cached).
-    let Some(data) = kits.sfx(assets, &path)? else {
-        // wasm32 only: the file is on its way from the browser (`deferred`). The shot — with
-        // the variation already drawn — replays when it lands, if it lands soon enough.
-        #[cfg(target_arch = "wasm32")]
-        kits.defer(
-            &path.to_ascii_lowercase(),
-            deferred::Deferred::Kit {
-                kit: id,
-                variant: pick,
-                pos,
-                category,
-                extras,
-            },
-        );
-        return Ok(false);
-    };
+    let data = kits.sfx(assets, &path)?;
 
     // Per-shot variation: 0x800 volume (`0x458c60`), 0x400 pitch (`0x458da0`). No 1.12 kit sets
     // 0x800.
@@ -740,18 +712,7 @@ pub(crate) fn play_file(
     if config.world_hold {
         return Ok(());
     }
-    let Some(data) = kits.sfx(assets, path)? else {
-        // wasm32 only: in flight — replayed when it lands (`deferred`).
-        #[cfg(target_arch = "wasm32")]
-        kits.defer(
-            &path.to_ascii_lowercase(),
-            deferred::Deferred::File {
-                path: path.to_string(),
-                category,
-            },
-        );
-        return Ok(());
-    };
+    let data = kits.sfx(assets, path)?;
     let amp = config.category_amp(category);
     let data = data.volume(mixer::amp_to_db(amp));
     if !claim_voice(out, amp) {
@@ -808,12 +769,7 @@ impl SoundKits {
     pub(crate) fn new(catalog: SoundKitCatalog) -> Self {
         Self {
             catalog,
-            #[cfg(not(target_arch = "wasm32"))]
             cache: HashMap::new(),
-            #[cfg(target_arch = "wasm32")]
-            cache: deferred::SfxCache::default(),
-            #[cfg(target_arch = "wasm32")]
-            pending: HashMap::new(),
             pick: HashMap::new(),
             rng: Rng(0x9e37_79b9),
         }
@@ -868,32 +824,23 @@ impl SoundKits {
         st.remaining.len() - 1
     }
 
-    /// A decoded kit file, read and decoded whole on a cache miss. `None` is wasm32 only: the
-    /// miss has started a browser-side load and the sound is not here yet (`deferred`).
-    fn sfx(&mut self, assets: &WorldAssets, path: &str) -> Result<Option<StaticSoundData>> {
+    /// A decoded kit file, read and decoded whole on a cache miss.
+    fn sfx(&mut self, assets: &WorldAssets, path: &str) -> Result<StaticSoundData> {
         let key = path.to_ascii_lowercase();
         if let Some(d) = self.cache.get(&key) {
-            return Ok(Some(d.clone()));
+            return Ok(d.clone());
         }
-        #[cfg(target_arch = "wasm32")]
-        {
-            self.sfx_or_begin(assets, &key, path)
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            // **Two stores, one rule** — the chain, then an addon's own loose file
-            // ([`benilla_assets::read_chain_or_loose`], decision 1322's resolver): `PlaySoundFile`
-            // is a by-path verb, and the audio an addon ships lives on disk, never in an MPQ.
-            let bytes = assets
-                .read_file_or_loose(path)
-                .with_context(|| format!("reading {path}"))?;
-            let data = mixer::sfx_from_bytes(bytes)?;
-            self.cache.insert(key, data.clone());
-            // Counted on this arm only: `DECODES` is about a decode that costs *this* frame, and
-            // the wasm32 arm's whole point is that its decode does not happen on one.
-            DECODES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            Ok(Some(data))
-        }
+        // **Two stores, one rule** — the chain, then an addon's own loose file
+        // ([`benilla_assets::read_chain_or_loose`], decision 1322's resolver): `PlaySoundFile`
+        // is a by-path verb, and the audio an addon ships lives on disk, never in an MPQ.
+        let bytes = assets
+            .read_file_or_loose(path)
+            .with_context(|| format!("reading {path}"))?;
+        let data = mixer::sfx_from_bytes(bytes)?;
+        self.cache.insert(key, data.clone());
+        // `DECODES` counts a decode that costs *this* frame.
+        DECODES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        Ok(data)
     }
 }
 
@@ -1072,9 +1019,6 @@ fn evict_kit_cache(
     changes.clear();
     if let Some(mut k) = kits {
         k.cache.clear();
-        // The loads in flight and the plays waiting on them belong to the old map too.
-        #[cfg(target_arch = "wasm32")]
-        k.pending.clear();
     }
 }
 
@@ -1093,16 +1037,6 @@ pub(super) fn plugin(app: &mut App) {
             OnExit(crate::char_select::ClientState::InWorld),
             stop_all_channels,
         );
-    // wasm32: land the browser's finished loads ahead of the pump, and start a creature's vocal
-    // loads when it appears (`deferred`).
-    #[cfg(target_arch = "wasm32")]
-    app.add_systems(
-        Update,
-        (
-            deferred::land_sfx_loads.before(pump_channels),
-            deferred::prewarm_creature_voices,
-        ),
-    );
 }
 
 #[cfg(test)]

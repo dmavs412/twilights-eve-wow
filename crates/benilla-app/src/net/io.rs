@@ -14,7 +14,6 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-#[cfg(not(target_arch = "wasm32"))]
 use std::thread;
 use std::time::Duration;
 
@@ -47,8 +46,8 @@ fn note_inbound() {
 
 /// Wall-clock unix ms, the clock two processes' traces share (the trace header's `t0`).
 fn unix_ms() -> u64 {
-    web_time::SystemTime::now()
-        .duration_since(web_time::UNIX_EPOCH)
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| d.as_millis() as u64)
 }
 
@@ -204,16 +203,6 @@ enum Cycle {
     LoginRefused,
 }
 
-/// What [`spawn_net`] hands back: the write half's two inputs, **web only**. A page has no
-/// threads, so what [`writer_loop`] owns natively is owned instead by `crate::net`'s per-frame
-/// pump, and these are how it gets hold of them. Natively the write thread took them.
-pub(super) struct IoEnds {
-    #[cfg(target_arch = "wasm32")]
-    pub(super) writer_rx: Receiver<WorldWriter>,
-    #[cfg(target_arch = "wasm32")]
-    pub(super) commands_rx: Receiver<ClientCommand>,
-}
-
 /// The IO backend ([`super::backend`]): spawns the read thread with its park and cycle loop, and
 /// the one long-lived write thread, on the far ends of the app's channels.
 pub(super) fn spawn_net(
@@ -221,7 +210,7 @@ pub(super) fn spawn_net(
     far: FarEnds,
     login_abandon: &Arc<AtomicU64>,
     ping_clock: &Arc<Mutex<PingClock>>,
-) -> IoEnds {
+) {
     let FarEnds {
         events: events_tx,
         commands: cmd_rx,
@@ -237,67 +226,44 @@ pub(super) fn spawn_net(
             realm_rx,
             pick_rx,
         };
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let clock = Arc::clone(ping_clock);
-            // The sequencer's own handle: `SMSG_PONG` is measured where it lands, not where it is
-            // drained (B346 — see [`PingClock`]).
-            let read_clock = Arc::clone(ping_clock);
-            let abandon = Arc::clone(login_abandon);
-            thread::Builder::new()
-                .name("wow-net-write".into())
-                .spawn(move || {
-                    // Latency-sensitive: movement packets queue here (thread QoS, decision 0609).
-                    benilla_world::thread_qos::promote_current_thread(
-                        benilla_world::thread_qos::QosClass::UserInitiated,
-                    );
-                    writer_loop(&cmd_rx, writer_rx, &clock)
-                })
-                .expect("spawn wow-net-write thread");
-            thread::Builder::new()
-                .name("wow-net".into())
-                .spawn(move || {
-                    benilla_world::thread_qos::promote_current_thread(
-                        benilla_world::thread_qos::QosClass::UserInitiated,
-                    );
-                    // The same dedicated thread as ever, now turning the sequencer future over:
-                    // every await inside it is a blocking socket read, so this is the old loop with
-                    // an `.await` written where the call used to be.
-                    futures_lite::future::block_on(sequencer(
-                        events_tx, writer_tx, parks, abandon, read_clock,
-                    ));
-                })
-                .expect("spawn wow-net thread");
-            return IoEnds {};
-        }
-        #[cfg(target_arch = "wasm32")]
-        {
-            // No threads in a page: the sequencer is one task on the browser's own event loop, and
-            // the writer is drained by a Bevy system instead of a sibling thread (`crate::net`).
-            let abandon = Arc::clone(login_abandon);
-            let read_clock = Arc::clone(ping_clock);
-            wasm_bindgen_futures::spawn_local(sequencer(
-                events_tx, writer_tx, parks, abandon, read_clock,
-            ));
-        }
+        let clock = Arc::clone(ping_clock);
+        // The sequencer's own handle: `SMSG_PONG` is measured where it lands, not where it is
+        // drained (B346 — see [`PingClock`]).
+        let read_clock = Arc::clone(ping_clock);
+        let abandon = Arc::clone(login_abandon);
+        thread::Builder::new()
+            .name("wow-net-write".into())
+            .spawn(move || {
+                // Latency-sensitive: movement packets queue here (thread QoS, decision 0609).
+                benilla_world::thread_qos::promote_current_thread(
+                    benilla_world::thread_qos::QosClass::UserInitiated,
+                );
+                writer_loop(&cmd_rx, writer_rx, &clock)
+            })
+            .expect("spawn wow-net-write thread");
+        thread::Builder::new()
+            .name("wow-net".into())
+            .spawn(move || {
+                benilla_world::thread_qos::promote_current_thread(
+                    benilla_world::thread_qos::QosClass::UserInitiated,
+                );
+                // The same dedicated thread as ever, now turning the sequencer future over:
+                // every await inside it is a blocking socket read, so this is the old loop with
+                // an `.await` written where the call used to be.
+                futures_lite::future::block_on(sequencer(
+                    events_tx, writer_tx, parks, abandon, read_clock,
+                ));
+            })
+            .expect("spawn wow-net thread");
+        return;
     }
     // Not connecting (capture mode): the far ends drop here, sends become ignored `Err`s and the
     // event stream stays empty.
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        drop((writer_rx, cmd_rx));
-        IoEnds {}
-    }
-    #[cfg(target_arch = "wasm32")]
-    IoEnds {
-        writer_rx,
-        commands_rx: cmd_rx,
-    }
+    drop((writer_rx, cmd_rx));
 }
 
-/// The sequencer's outer loop: run one connection cycle, say how it ended, park again. Shared by
-/// both spawns — a thread under `block_on` natively, a `spawn_local` task on the web — so the two
-/// targets cannot drift on what a lost connection or a clean logout means.
+/// The sequencer's outer loop: run one connection cycle, say how it ended, park again. It runs on
+/// its own thread under `block_on`.
 async fn sequencer(
     events_tx: Sender<SessionEvent>,
     writer_tx: Sender<WorldWriter>,
@@ -884,7 +850,6 @@ pub(super) fn trace_sends(w: &mut WorldWriter) {
 /// (no writer yet, or the socket died under the current one), commands drop with a capped warn and
 /// the tick no-ops — they are meaningless without a live session, and the server re-syncs our state
 /// from the reconnect handshake anyway. Ends when the app drops every command sender.
-#[cfg(not(target_arch = "wasm32"))]
 fn writer_loop(
     cmd_rx: &Receiver<ClientCommand>,
     mut writer_rx: Receiver<WorldWriter>,

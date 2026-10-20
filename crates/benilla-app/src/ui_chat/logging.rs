@@ -102,21 +102,6 @@ fn local_now() -> [u32; 6] {
 }
 
 /// `[month, day, hour, minute, second, millisecond]` of now, in the process's time zone.
-/// `[month, day, hour, minute, second, millisecond]` of now, in the browser's time zone: wasm32
-/// has neither `GetLocalTime` nor `localtime_r`, and std's clock panics there.
-#[cfg(target_arch = "wasm32")]
-fn local_now() -> [u32; 6] {
-    let d = js_sys::Date::new_0();
-    [
-        d.get_month() + 1,
-        d.get_date(),
-        d.get_hours(),
-        d.get_minutes(),
-        d.get_seconds(),
-        d.get_milliseconds(),
-    ]
-}
-
 #[cfg(unix)]
 fn local_now() -> [u32; 6] {
     let now = std::time::SystemTime::now()

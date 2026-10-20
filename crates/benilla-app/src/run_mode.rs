@@ -41,12 +41,9 @@ pub(crate) fn capture_ui_opted_in() -> bool {
 /// "log in without typing" and nothing about who is present; [`unattended`] answers that. One
 /// credential alone is a typed login, and `$WOW_CHAR` alone is only the roster's fast path.
 pub(crate) fn env_login() -> bool {
-    // Through `webenv`, not `std::env`: in a browser these arrive as the page's env object or
-    // query string (`?user=…&pass=…`), and this answer decides the start screen before any
-    // plugin runs.
     ["WOW_USER", "WOW_PASS"]
         .iter()
-        .all(|k| crate::webenv::var(k).is_some())
+        .all(|k| std::env::var(k).is_ok())
 }
 
 /// Is nobody at the keyboard? `false` unless the run declares itself with `$WOW_UNATTENDED`, or is

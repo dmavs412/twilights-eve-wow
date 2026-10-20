@@ -55,8 +55,7 @@ pub(crate) struct Realmlist {
 
 impl Default for Realmlist {
     fn default() -> Self {
-        // Through `webenv`: on the page `?host=` is the pin.
-        match crate::webenv::var("WOW_HOST").ok_or(()) {
+        match std::env::var("WOW_HOST") {
             // Verbatim, not normalized.
             Ok(host) if !host.trim().is_empty() => Realmlist {
                 address: host,
@@ -141,17 +140,9 @@ fn strip_prefix_ci<'a>(s: &'a str, prefix: &str) -> Option<&'a str> {
         .map(|_| &s[prefix.len()..])
 }
 
-/// The address a fresh install dials: [`DEFAULT_REALMLIST`] natively; on the page, the origin
-/// that served it (see `crate::webenv::default_wow_host`).
+/// The address a fresh install dials.
 fn default_realmlist() -> String {
-    #[cfg(target_arch = "wasm32")]
-    {
-        crate::webenv::default_wow_host()
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        DEFAULT_REALMLIST.to_string()
-    }
+    DEFAULT_REALMLIST.to_string()
 }
 
 #[cfg(test)]

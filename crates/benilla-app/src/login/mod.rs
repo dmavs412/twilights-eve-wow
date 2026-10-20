@@ -386,8 +386,8 @@ fn drive_policy(
     if !attempt.intent.env_read {
         attempt.intent.env_read = true;
         if crate::run_mode::env_login() && std::env::var_os("WOW_LOGIN_SMOKE").is_none() {
-            let user = crate::webenv::var("WOW_USER").unwrap_or_default();
-            let pass = crate::webenv::var("WOW_PASS").unwrap_or_default();
+            let user = std::env::var("WOW_USER").unwrap_or_default();
+            let pass = std::env::var("WOW_PASS").unwrap_or_default();
             // A vmangos login kicks whoever holds the account, so the automated path logs in
             // only as the checkout's declared account (`.probe-identity`); a typed login is not
             // gated.

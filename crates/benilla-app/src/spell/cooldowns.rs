@@ -16,10 +16,7 @@
 
 use std::time::Duration;
 
-// `bevy::platform::time::Instant`, not `std::time::Instant`: every `Instant` in this file
-// eventually meets `UiClock::anchor` in `ui_triple` (`crate::ui_script::UiClock`'s own doc has
-// the full reason) — on wasm32 those are genuinely different types, so this whole store has to
-// speak the one that's correct there too. A plain alias for `std::time::Instant` everywhere else.
+// Bevy's `Instant`: the type `crate::ui_script::UiClock` and `crate::cooldowns` trade in.
 use bevy::platform::time::Instant;
 
 use bevy::prelude::*;

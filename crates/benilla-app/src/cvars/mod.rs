@@ -19,17 +19,14 @@
 //! Env overrides (`WOW_UI_SCALE`, `WOW_FARCLIP`, …) win for the session and never touch the file
 //! ([`Cvars::own_for_session`]).
 
-use std::collections::{BTreeMap, HashMap, HashSet};
-// std's `Instant` panics on wasm32; bevy's is `web_time` there.
 use bevy::platform::time::Instant;
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use bevy::prelude::*;
 
 use crate::ui_script::VmMemo;
 use benilla_ui::script::{SeededCvar, UiScript};
 
-#[cfg(any(target_arch = "wasm32", test))]
-mod browser;
 mod table;
 #[cfg(test)]
 use table::Reference;
@@ -622,13 +619,6 @@ fn load_config(world: &mut World) {
         // `gxApi` is the render backend, a fact about the machine that `sync_cvars` pushes live, so
         // it is never persisted.
         cvars.own_for_session("gxApi", None);
-        // The page's URL settings are session-owned, before the saved file loads.
-        #[cfg(target_arch = "wasm32")]
-        for row in REGISTERED {
-            if let Some(value) = crate::webenv::var(&format!("WOW_{}", row.name)) {
-                browser::apply_override(&mut cvars, row.name, &value);
-            }
-        }
         match stored {
             StoredConfig::Absent => {} // no file, hermetic capture, or no install
             StoredConfig::Bad(msg) => {

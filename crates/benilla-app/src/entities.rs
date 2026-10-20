@@ -87,13 +87,10 @@ pub(crate) use chain_beam::ChainHops;
 use chain_beam::{simulate_chain_beams, spawn_chain_beams};
 // `equip_slot` is the one InventoryType → slot table; the dressing room places items by it.
 pub(crate) use attach::equip_slot;
-// Read by native-only consumers.
-#[cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 pub(crate) use attach::BodyPartsDesc;
 pub(crate) use equipment::ItemDisplays;
 pub(crate) use equipment::{BoneAttach, Equipment};
 // For the `WOW_DRESS_CENSUS` instrument: what a body wears against what it resolved.
-#[cfg_attr(target_arch = "wasm32", allow(unused_imports))]
 pub(crate) use equipment::ATTACH_SLOT_NAMES;
 pub(crate) use equipment::{attach_id, DressKey, HeldAttached};
 // Only the tests that build a `DressKey` name this type.

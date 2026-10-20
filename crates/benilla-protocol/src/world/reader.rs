@@ -7,8 +7,7 @@ use crate::transport::{ConnReader, ReadExactAsync};
 use super::recv_packet;
 
 /// Read half of a split [`WorldSession`](super::WorldSession) — owns the read half of the
-/// connection + the decrypter. Lives on the network thread (native) or in the sequencer task
-/// (web), streaming decoded [`crate::SessionEvent`]s (via [`Self::poll_async`]).
+/// connection + the decrypter. Lives on the network thread, streaming decoded [`crate::SessionEvent`]s (via [`Self::poll_async`]).
 pub struct WorldReader {
     pub(super) reader: ConnReader,
     pub(super) decrypter: DecrypterHalf,
@@ -16,7 +15,6 @@ pub struct WorldReader {
 
 impl WorldReader {
     /// Read + decrypt one server packet (blocking) — the native twin of [`Self::recv_async`].
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn recv(&mut self) -> Result<ServerPacket> {
         futures_lite::future::block_on(self.recv_async())
     }
@@ -28,7 +26,6 @@ impl WorldReader {
 
     /// Read one packet and decode it into a [`crate::Poll`] (blocking) — the native twin of
     /// [`Self::poll_async`].
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn poll(&mut self) -> Result<crate::Poll> {
         futures_lite::future::block_on(self.poll_async())
     }

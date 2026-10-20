@@ -13,9 +13,8 @@ use crate::RealmInfo;
 
 // ── The awaited wire readers ──────────────────────────────────────────────────────────────────────
 //
-// [`crate::wire`]'s readers take `impl Read`, which the browser cannot supply: a WebSocket frame
-// arrives on the very event loop a blocking read would be sitting on. These are the same four
-// encodings this protocol needs, byte for byte, over [`ReadExactAsync`] instead — every login field
+// [`crate::wire`]'s readers take `impl Read`. These are the same four encodings this protocol
+// needs, byte for byte, over [`ReadExactAsync`] instead — every login field
 // is fixed-width or length-prefixed, so each one is a `read_exact` and the parsing below is
 // unchanged. Private: the world protocol reads its bodies out of a buffer, so this is the only
 // place that decodes straight off the wire.
@@ -344,8 +343,7 @@ pub async fn read_realm_list(r: &mut impl ReadExactAsync) -> Result<Vec<RealmInf
 mod tests {
     use super::*;
 
-    /// The login readers are awaited (a browser reads its WebSocket off the event loop, never out
-    /// of a blocking call), so a fixture that hands them a `&[u8]` takes the same shape — the
+    /// The login readers are awaited, so a fixture that hands them a `&[u8]` takes the same shape — the
     /// carry's twin of the one in `tests/auth.rs`.
     struct Cursor<'a>(&'a [u8]);
 

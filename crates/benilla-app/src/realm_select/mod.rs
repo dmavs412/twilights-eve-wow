@@ -275,11 +275,9 @@ fn apply_realm_policy(
 ) {
     if !realms.env_read {
         realms.env_read = true;
-        // Through `webenv`, like every other `WOW_*` fast path this crate ships to wasm: a page
-        // has no process environment, so the realm-side twin of `WOW_CHAR` reads `?realm=` (or
-        // the host's `__wenilla_env`) there and `std::env::var` natively — otherwise a hosted
-        // single-realm player meets a dialog the realm already knows the answer to.
-        realms.env_realm = crate::webenv::var("WOW_REALM").filter(|s| !s.is_empty());
+        // The realm-side twin of `WOW_CHAR`: a single-realm player skips a dialog the realm
+        // already knows the answer to.
+        realms.env_realm = std::env::var("WOW_REALM").ok().filter(|s| !s.is_empty());
     }
     for msg in msgs.read() {
         realms.realms = msg.realms.clone();

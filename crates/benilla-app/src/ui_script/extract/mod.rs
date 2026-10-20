@@ -495,10 +495,7 @@ pub(super) fn tick_script(
     // The VM's clock anchored at `Time<Real>`'s last update, whose deltas it accumulates; every
     // `Instant` to `GetTime` conversion goes through this pair, never `Instant::now()`.
     *ui_clock = super::UiClock {
-        // `Time<Real>::last_update()` returns `bevy_platform::time::Instant`, which on wasm32 is
-        // `web_time::Instant` (the `web` Bevy feature default_platform pulls in) — a distinct
-        // type from `bevy::platform::time::Instant` there, unlike on native where they're the same type by
-        // alias. Fall back with Bevy's own `Instant::now` so this compiles on both.
+        // `None` before `Time<Real>`'s first update.
         anchor: time
             .last_update()
             .unwrap_or_else(bevy::platform::time::Instant::now),

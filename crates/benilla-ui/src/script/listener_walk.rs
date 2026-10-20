@@ -1,4 +1,4 @@
-//! Wenilla carry: stable listener walks are linear; mutation retains saved-handle semantics.
+//! Stable listener walks are linear; mutation retains saved-handle semantics.
 pub(super) fn position<T: PartialEq>(list: &[T], saved: &T, hint: usize) -> Option<usize> {
     if list.get(hint) == Some(saved) {
         Some(hint)

@@ -11,21 +11,9 @@ use benilla_assets::{AssetSet, WorldAssets};
 /// The map before the server names one: Eastern Kingdoms (`Map.dbc` id 0).
 pub(crate) const DEFAULT_MAP_ID: u32 = 0;
 
-static START_MAP: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(u32::MAX);
-
-/// The `Map.dbc` id a server-less run starts on, set by a launcher before the app builds.
-pub fn set_start_map(id: u32) {
-    START_MAP.store(id, std::sync::atomic::Ordering::Relaxed);
-}
-
 /// `$WOW_MAP`: the `Map.dbc` id a server-less run starts on (`0` Azeroth, `1` Kalimdor), unset
 /// giving [`DEFAULT_MAP_ID`]. A value that does not parse panics rather than falling back.
 fn map_id_from_env() -> u32 {
-    // A launcher's pick (`set_start_map`) wins: wasm32 has no process env to `set_var` into.
-    let forced = START_MAP.load(std::sync::atomic::Ordering::Relaxed);
-    if forced != u32::MAX {
-        return forced;
-    }
     match std::env::var("WOW_MAP") {
         Err(_) => DEFAULT_MAP_ID,
         Ok(v) => v.trim().parse().unwrap_or_else(|_| {

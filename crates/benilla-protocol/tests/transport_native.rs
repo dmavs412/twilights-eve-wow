@@ -1,12 +1,10 @@
 //! The native body of the transport seam, over a real loopback socket.
 //!
-//! What this pins is the contract the browser body has to match: an awaited `read_exact_async`
+//! What this pins: an awaited `read_exact_async`
 //! fills the buffer exactly, a synchronous `write_all` reaches the peer, and a split `Conn` keeps
 //! both of those working through the two halves independently. It is deliberately a socket test
 //! rather than a mock — the whole point of the seam is that the native side is still a `TcpStream`
 //! doing what it always did.
-
-#![cfg(not(target_arch = "wasm32"))]
 
 use std::io::{Read, Write};
 use std::net::TcpListener;

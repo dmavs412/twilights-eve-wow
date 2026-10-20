@@ -5,7 +5,7 @@
 
 use std::time::Duration;
 
-// Bevy's `Instant`, not std's: std's panics on wasm32, and these stores trade with `UiClock::anchor`.
+// Bevy's `Instant`: the type `crate::ui_script::UiClock` and `crate::cooldowns` trade in.
 use bevy::platform::time::Instant;
 
 use bevy::prelude::*;

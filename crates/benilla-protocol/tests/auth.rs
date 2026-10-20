@@ -5,8 +5,7 @@ use benilla_protocol::auth;
 use benilla_protocol::transport::ReadExactAsync;
 use futures_lite::future::block_on;
 
-/// The login readers are awaited now — a browser reads its WebSocket off the event loop, never out
-/// of a blocking call — so the fixture's byte cursor takes the same shape. It reads off the front
+/// The login readers are awaited, so the fixture's byte cursor takes the same shape. It reads off the front
 /// of the slice and leaves the remainder behind, which is what the alignment assertion at the end
 /// of the test inspects.
 struct Cursor<'a>(&'a [u8]);

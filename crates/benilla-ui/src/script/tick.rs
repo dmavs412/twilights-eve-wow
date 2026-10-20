@@ -63,8 +63,8 @@ impl UiScript {
 }
 
 #[cfg(not(target_os = "macos"))]
-#[path = "wenilla_listener.rs"]
-mod wenilla_listener;
+#[path = "listener_walk.rs"]
+mod listener_walk;
 
 /// [`UiScript::fire_event`] for a caller holding `&Lua`, such as a Lua binding.
 pub(crate) fn fire_event_into(lua: &Lua, event: &str, args: Vec<ScriptValue>) {
@@ -94,7 +94,7 @@ pub(crate) fn fire_event_into(lua: &Lua, event: &str, args: Vec<ScriptValue>) {
                 }
                 #[cfg(not(target_os = "macos"))]
                 {
-                    wenilla_listener::position(l, &h, next_index)
+                    listener_walk::position(l, &h, next_index)
                 }
             }) else {
                 break;

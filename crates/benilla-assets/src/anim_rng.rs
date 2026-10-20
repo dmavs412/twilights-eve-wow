@@ -43,10 +43,7 @@ impl AnimRng {
             return;
         }
         // `GetTickCount` counts milliseconds since boot; wall-clock milliseconds stand in for it.
-        #[cfg(not(target_arch = "wasm32"))]
         use std::time::SystemTime;
-        #[cfg(target_arch = "wasm32")]
-        use web_time::SystemTime;
         self.0 = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .map_or(1, |d| d.as_millis() as u32);

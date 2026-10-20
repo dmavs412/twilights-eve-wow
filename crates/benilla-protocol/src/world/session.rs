@@ -75,7 +75,6 @@ pub struct WorldSession {
 impl WorldSession {
     /// Connect to the world server and complete the auth handshake (blocking) — the native twin of
     /// [`Self::connect_async`], for the CLIs/probes and the native net thread.
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn connect(
         addr: &str,
         username: &str,
@@ -84,7 +83,7 @@ impl WorldSession {
         Self::connect_queued(addr, username, session_key, &mut |_| true)
     }
 
-    /// [`Self::connect`] as a future — the browser build's lane (no thread to block).
+    /// [`Self::connect`] as a future, for the sequencer.
     pub async fn connect_async(
         addr: &str,
         username: &str,
@@ -252,7 +251,6 @@ impl WorldSession {
 
     /// Read + decrypt + parse one server packet (blocking) — the native twin of
     /// [`Self::recv_async`].
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn recv(&mut self) -> Result<ServerPacket> {
         futures_lite::future::block_on(self.recv_async())
     }
@@ -284,7 +282,6 @@ impl WorldSession {
     }
 
     /// Request the character list (blocking) — the native twin of [`Self::char_enum_async`].
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn char_enum(&mut self) -> Result<Vec<Character>> {
         futures_lite::future::block_on(self.char_enum_async())
     }
@@ -317,7 +314,6 @@ impl WorldSession {
     /// Create a character (the create screen's request, or the create-if-empty starter that unblocks
     /// `PLAYER_LOGIN` on a fresh account). Returns the `SMSG_CHAR_CREATE` result byte (`WorldResult`)
     /// for the caller to inspect ([`messages::CHAR_CREATE_SUCCESS`], a `CHAR_NAME_*` code, …).
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn create_character(&mut self, req: &messages::CharCreateReq) -> Result<u8> {
         futures_lite::future::block_on(self.create_character_async(req))
     }
@@ -336,7 +332,6 @@ impl WorldSession {
     /// Delete a character (`CMSG_CHAR_DELETE`, full u64 guid — only valid at character select,
     /// never while in-world). Returns the `SMSG_CHAR_DELETE` result byte
     /// ([`messages::CHAR_DELETE_SUCCESS`] on success) for the caller to inspect.
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn delete_character(&mut self, guid: u64) -> Result<u8> {
         futures_lite::future::block_on(self.delete_character_async(guid))
     }
@@ -876,10 +871,8 @@ impl WorldSession {
     /// so a follow-up [`Self::char_enum`] reflects the saved position. Requires a read timeout (so the
     /// poll loop can give up); returns once logged out or `timeout` elapses.
     ///
-    /// Native only: the deadline is a `std::time::Instant`, which a browser has no clock for, and
-    /// the in-app logout is the writer's `CMSG_LOGOUT_REQUEST` + the streamed `SMSG_LOGOUT_COMPLETE`
+    /// The in-app logout is the writer's `CMSG_LOGOUT_REQUEST` + the streamed `SMSG_LOGOUT_COMPLETE`
     /// rather than this synchronous wait. The CLIs and probes are its only callers.
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn logout(&mut self, timeout: std::time::Duration) -> Result<()> {
         self.send(opcode::CMSG_LOGOUT_REQUEST, &[])?;
         let deadline = std::time::Instant::now() + timeout;

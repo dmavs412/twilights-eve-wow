@@ -3,7 +3,7 @@
 //! the player's red line but not its message tables: the reference maps them in their own handlers
 //! (`0x4bdb70`, `0x6e8eb0`) to say "your pet" where the player's say "you".
 
-// std's `Instant` panics on wasm32; this flows into `crate::cooldowns`, which takes bevy's.
+// Bevy's `Instant`: the type `crate::ui_script::UiClock` and `crate::cooldowns` trade in.
 use bevy::platform::time::Instant;
 
 use bevy::prelude::*;

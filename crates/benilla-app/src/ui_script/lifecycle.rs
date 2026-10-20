@@ -135,12 +135,9 @@ fn ui_wanted(world: &World) -> bool {
 /// whole duration. The wait is [`crate::loading_screen::EntryCover`]'s, and the loading
 /// screen does not clear while this exists, so the reveal never precedes the UI.
 ///
-/// **wenilla: the load is sliced across frames** ([`run_pending_entry_load`]). In the browser the
-/// whole edge — the toc's rows through the wasm Lua VM, positions, addons, saved variables — was
-/// one main-thread task of 3.0–3.4 s warm, and on a cold WAN cache (every UI sprite the first draw
-/// resolves is a synchronous XHR) minutes: Chrome's "page unresponsive" dialog at every Enter
-/// World. Sliced, the same work runs [`ENTRY_LOAD_FRAME_BUDGET`] per frame, at least one step
-/// each, so the cover keeps presenting and its bar moves ([`Self::fraction`]). The latch's other
+/// **The load is sliced across frames** ([`run_pending_entry_load`]): the whole edge — the toc's
+/// rows, positions, addons, saved variables — runs [`ENTRY_LOAD_FRAME_BUDGET`] per frame, at
+/// least one step each, so the cover keeps presenting and its bar moves ([`Self::fraction`]). The latch's other
 /// contracts are unchanged: it exists until the interface is built.
 #[derive(Resource, Default)]
 pub(crate) struct PendingEntryUiLoad {

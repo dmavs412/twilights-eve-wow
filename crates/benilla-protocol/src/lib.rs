@@ -81,30 +81,25 @@ impl std::error::Error for DialFailure {}
 /// `127.0.0.1` case on a machine whose server binds only IPv4.
 async fn dial(host: &str, port: u16) -> Result<Conn> {
     let address = format!("{host}:{port}");
-    // Resolution is a separate step natively so the two failures stay apart. On the web the
-    // page never resolves anything — the host proxies the dial — so a failure there can only be
-    // "nothing answered".
-    #[cfg(not(target_arch = "wasm32"))]
+    // Resolution is a separate step so the two failures stay apart.
+    use std::net::ToSocketAddrs;
+    match (host, port)
+        .to_socket_addrs()
+        .map(|mut a| a.next().is_some())
     {
-        use std::net::ToSocketAddrs;
-        match (host, port)
-            .to_socket_addrs()
-            .map(|mut a| a.next().is_some())
-        {
-            Ok(true) => {}
-            Ok(false) => {
-                return Err(anyhow::Error::new(DialFailure {
-                    address,
-                    unresolved: true,
-                }))
-            }
-            Err(e) => {
-                return Err(anyhow::Error::new(DialFailure {
-                    address,
-                    unresolved: true,
-                })
-                .context(format!("resolving {host}: {e}")))
-            }
+        Ok(true) => {}
+        Ok(false) => {
+            return Err(anyhow::Error::new(DialFailure {
+                address,
+                unresolved: true,
+            }))
+        }
+        Err(e) => {
+            return Err(anyhow::Error::new(DialFailure {
+                address,
+                unresolved: true,
+            })
+            .context(format!("resolving {host}: {e}")))
         }
     }
     Conn::connect(host, port).await.map_err(|e| {
@@ -148,8 +143,7 @@ pub struct Logon {
     /// `None` once a refresh has failed — the list we hold is then the last word, and we stop
     /// asking rather than retrying a dead socket every five seconds.
     ///
-    /// A [`Conn`](transport::Conn), not a `TcpStream`: the realmd connection is a WebSocket in a
-    /// page, and it is kept for exactly one reason — [`Self::refresh_realms`].
+    /// The realmd connection, kept for exactly one reason — [`Self::refresh_realms`].
     stream: Option<Conn>,
 }
 
@@ -196,7 +190,6 @@ impl Logon {
 
 /// Perform the full SRP6 logon against a vanilla `realmd` and fetch the realm list — the blocking
 /// twin of [`logon_async`], for the CLIs/probes and the native net thread.
-#[cfg(not(target_arch = "wasm32"))]
 pub fn logon(host: &str, username: &str, password: &str) -> Result<Logon> {
     futures_lite::future::block_on(logon_async(host, username, password))
 }

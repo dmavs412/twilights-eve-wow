@@ -336,7 +336,7 @@ fn apply_roster_policy(
                 None
             }
             // `WOW_CHAR`, or the login smoke's optional third field.
-            None => crate::webenv::var("WOW_CHAR").or_else(|| {
+            None => std::env::var("WOW_CHAR").ok().or_else(|| {
                 std::env::var("WOW_LOGIN_SMOKE")
                     .ok()
                     .and_then(|s| crate::login::smoke_character(&s))

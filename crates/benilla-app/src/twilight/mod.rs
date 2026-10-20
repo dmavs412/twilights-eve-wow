@@ -33,16 +33,10 @@ pub(crate) fn active() -> bool {
     ACTIVE.load(std::sync::atomic::Ordering::Relaxed)
 }
 
-/// The dev multipliers, read once at boot: `?speed=` / `?xp=` in the browser, `WOW_DEV_SPEED`
-/// / `WOW_DEV_XP` natively. They live only in this run's realm, never in a save.
+/// The dev multipliers, read once at boot from `WOW_DEV_SPEED` / `WOW_DEV_XP`. They live only in
+/// this run's realm, never in a save.
 fn dev_multipliers() -> DevMultipliers {
-    let flag = |name: &str| {
-        // The browser's short form first; `webenv` maps `WOW_<NAME>` to `?<name>=` there.
-        let short = cfg!(target_arch = "wasm32")
-            .then(|| crate::webenv::var(&format!("WOW_{name}")))
-            .flatten();
-        short.or_else(|| crate::webenv::var(&format!("WOW_DEV_{name}")))
-    };
+    let flag = |name: &str| std::env::var(format!("WOW_DEV_{name}")).ok();
     let dev = DevMultipliers::from_flags(flag("SPEED").as_deref(), flag("XP").as_deref());
     if dev != DevMultipliers::default() {
         info!(
@@ -279,7 +273,7 @@ fn pump(
         Backing::Local { realm, saved } => {
             // The wall clock an item's cooldown runs on, so time between sessions counts.
             // `web-time`: std's `SystemTime` panics in a browser.
-            if let Ok(now) = web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH) {
+            if let Ok(now) = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
                 realm.set_wall_clock(now.as_millis() as u64);
             }
             let host = TerrainHost {

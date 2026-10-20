@@ -51,18 +51,9 @@ pub fn background_run() -> bool {
     env_names().any(|name| BG_ENV_PREFIXES.iter().any(|p| name.starts_with(p)))
 }
 
-/// Every environment variable name — or none in a browser, where `std::env::vars_os` does not
-/// return an empty list but *panics* ("not supported on this platform"), and a page has no
-/// instrumented-run env to detect anyway.
+/// Every environment variable name.
 fn env_names() -> impl Iterator<Item = String> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        std::iter::empty()
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        std::env::vars_os().filter_map(|(name, _)| name.to_str().map(str::to_owned))
-    }
+    std::env::vars_os().filter_map(|(name, _)| name.to_str().map(str::to_owned))
 }
 
 /// Background envs whose run reads no pixels, so its window may be small; [`no_pixel_run`] needs
