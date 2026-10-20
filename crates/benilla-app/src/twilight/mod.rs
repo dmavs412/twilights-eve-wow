@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use bevy::prelude::*;
 use twilight_realm::{DevMultipliers, Host, Realm, RealmCommand, Storage};
 
-use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink};
+use crate::net::{CharRequest, ClientCommand, FarEnds, InProcessLink, SelfGuid};
 
 mod goto;
 mod remote;
@@ -74,7 +74,8 @@ impl Plugin for TwilightPlugin {
             }
         };
         app.init_resource::<crate::char_select::ClassLabels>()
-            .init_resource::<CallingKeys>();
+            .init_resource::<CallingKeys>()
+            .init_resource::<SelfCalling>();
         app.add_message::<DevGoto>()
             .init_resource::<goto::GotoGround>();
         app.insert_resource(LocalRealm {
@@ -101,6 +102,7 @@ impl Plugin for TwilightPlugin {
             Update,
             (
                 talents::follow_calling.after(pump),
+                track_self_calling.after(pump),
                 crate::ui_twilight::unlock_talent_frame,
             ),
         );
@@ -310,14 +312,48 @@ fn pump(
     }
 }
 
-/// Each character's Calling key, as the realm last said (`SessionEvent::Callings`).
+/// Each character's Calling key, as the realm last said (`SessionEvent::Callings`): its own
+/// characters', and every other player's as they come into view.
 #[derive(Resource, Default)]
 pub(crate) struct CallingKeys(pub(crate) std::collections::HashMap<u64, String>);
 
 impl CallingKeys {
-    /// The Calling of the character `guid`, if the realm named one this client knows.
-    pub(crate) fn of(&self, guid: u64) -> Option<&'static twilight_realm::callings::CallingDef> {
-        twilight_realm::callings::calling(self.0.get(&guid)?)
+    /// The Calling of the character `guid`, if the realm named one the client patch knows: what
+    /// the client reads in place of the unit's class byte (ADR 0011, #207).
+    pub(crate) fn of(&self, guid: u64) -> Option<&'static benilla_formats::CallingInfo> {
+        benilla_formats::twilight_calling(self.0.get(&guid)?)
+    }
+}
+
+/// The local player's Calling, or `None` until the realm names it.
+#[derive(Resource, Default, Clone, Copy, PartialEq)]
+pub(crate) struct SelfCalling(pub(crate) Option<&'static benilla_formats::CallingInfo>);
+
+impl SelfCalling {
+    /// The Calling of `calling`, a system's `Option<Res<SelfCalling>>` (`None` in an app built
+    /// without this plugin).
+    pub(crate) fn get(
+        calling: Option<&SelfCalling>,
+    ) -> Option<&'static benilla_formats::CallingInfo> {
+        calling.and_then(|c| c.0)
+    }
+}
+
+/// The self Calling for the pure helpers that read the self descriptor deep in a call (the
+/// reaction colours' reputation base); systems read [`SelfCalling`].
+static SELF_CALLING: std::sync::RwLock<Option<&'static benilla_formats::CallingInfo>> =
+    std::sync::RwLock::new(None);
+
+/// The local player's Calling, as [`track_self_calling`] last saw it.
+pub(crate) fn self_calling() -> Option<&'static benilla_formats::CallingInfo> {
+    *SELF_CALLING.read().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Keeps [`SelfCalling`] (and [`self_calling`]) on the self guid's Calling.
+fn track_self_calling(keys: Res<CallingKeys>, me: Res<SelfGuid>, mut current: ResMut<SelfCalling>) {
+    let calling = me.0.and_then(|guid| keys.of(guid));
+    if current.set_if_neq(SelfCalling(calling)) {
+        *SELF_CALLING.write().unwrap_or_else(|e| e.into_inner()) = calling;
     }
 }
 

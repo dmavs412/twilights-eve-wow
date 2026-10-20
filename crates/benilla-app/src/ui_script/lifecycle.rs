@@ -535,15 +535,24 @@ fn entry_prepare(world: &mut World, script: &mut UiScript) -> EntryInputs {
     // `UnitName`/`UnitRace`/`UnitClass`/`UnitSex` read only a copy of the char-enum row made at the
     // Enter World commit (`0x5abd9e`) and never cleared, and each rebuilt VM is told once. The
     // snapshot stands in for the descriptor until that streams in.
+    // The pick's Calling, which the realm named with the roster, stands where the class was.
+    let calling = world
+        .get_resource::<crate::char_select::Roster>()
+        .and_then(|r| r.pending_row().map(|row| row.guid))
+        .and_then(|guid| {
+            world
+                .get_resource::<crate::twilight::CallingKeys>()?
+                .of(guid)
+        });
     if let Some(record) = world
         .get_resource::<crate::char_select::Roster>()
-        .and_then(record_from_roster)
+        .and_then(|r| record_from_roster(r, calling))
     {
         script.set_player_record(record);
     }
     if let Some(seat) = world
         .get_resource::<crate::char_select::Roster>()
-        .and_then(seat_from_roster)
+        .and_then(|r| seat_from_roster(r, calling))
     {
         script.set_unit("player", Some(seat));
     }
@@ -657,10 +666,12 @@ fn roster_sex(gender: u8) -> u8 {
 /// the descriptor.
 pub(crate) fn record_from_roster(
     roster: &crate::char_select::Roster,
+    calling: Option<&'static benilla_formats::CallingInfo>,
 ) -> Option<benilla_ui::script::PlayerRecord> {
     let row = roster.pending_row()?;
     let race = crate::ui_unit::race_names(row.race);
-    let class = crate::ui_unit::class_names(row.class);
+    // The Calling's name and its class table's token, never the row's class byte (ADR 0011).
+    let class = calling.map(|c| (c.name.as_str(), c.class_token()));
     Some(benilla_ui::script::PlayerRecord {
         name: row.name.clone(),
         race: race.map(|(n, f)| (n.to_string(), f.to_string())),
@@ -676,10 +687,11 @@ pub(crate) fn record_from_roster(
 /// to say.
 pub(crate) fn seat_from_roster(
     roster: &crate::char_select::Roster,
+    calling: Option<&'static benilla_formats::CallingInfo>,
 ) -> Option<benilla_ui::script::UnitState> {
     let row = roster.pending_row()?;
     let race = crate::ui_unit::race_names(row.race);
-    let class = crate::ui_unit::class_names(row.class);
+    let class = calling.map(|c| (c.name.as_str(), c.class_token()));
     let sex = roster_sex(row.gender);
     Some(benilla_ui::script::UnitState {
         // Before the player object exists the reference answers `UnitExists("player")`

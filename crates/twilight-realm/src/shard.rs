@@ -45,6 +45,8 @@ pub(crate) struct OnShard<S> {
     pub(crate) health: f32,
     /// Their create as other clients are sent it.
     pub(crate) create: SessionEvent,
+    /// Their Calling's key, which other clients read in place of the class byte (#207).
+    pub(crate) calling: String,
     /// Stealthed: other clients are not shown them.
     pub(crate) hidden: bool,
 }

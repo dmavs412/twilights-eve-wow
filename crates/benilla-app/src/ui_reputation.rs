@@ -86,6 +86,7 @@ type ReputationInputs = Option<(u8, u8, Option<u32>)>;
 /// move, and the equality check behind it keeps a change to no listed row quiet. The first push
 /// fires too: the stock watch bar initializes off `UPDATE_FACTION` at login.
 fn feed_reputation(
+    calling: Option<Res<crate::twilight::SelfCalling>>,
     script: Option<NonSendMut<UiScript>>,
     self_store: Query<&ObjectStore, With<SelfPlayer>>,
     reputations: Res<Reputations>,
@@ -102,9 +103,10 @@ fn feed_reputation(
         return;
     };
     let catalog = factions_res.catalog();
+    // The Calling's class table, not the class byte (ADR 0011).
     let (race, class) = (
         store.0.unit_race().unwrap_or(0),
-        store.0.unit_class().unwrap_or(0),
+        crate::twilight::SelfCalling::get(calling.as_deref()).map_or(0, |c| c.class),
     );
     let watched = store
         .0

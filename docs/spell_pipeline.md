@@ -89,14 +89,21 @@ wrote it once from the old `class` and `armour` cells.
 | `calling`, `name` | the Calling's key and name (the `calling` row's `name` must match) |
 | `icon` | the Calling's icon, a stock path (the first skill's icon to begin with) |
 | `power` | `rage`, `energy`, `focus` or `mana`: the bar it runs on, the patch's `power_type` (mana 0, rage 1, focus 2, energy 3) on each of its spells. Focus fills 10 a 2 s tick to 100, like a vanilla pet's |
-| `stat_profile` | the vanilla class table its per-level base stats, health and mana, crit and dodge from agility, attack power and mana regen follow: `warrior`, `paladin`, `hunter`, `rogue`, `priest`, `shaman`, `mage`, `warlock`, `druid`. The wire's class byte is still the profile's until the client reads the Calling (#207) |
+| `stat_profile` | the vanilla class table its per-level base stats, health and mana, crit and dodge from agility, attack power and mana regen follow: `warrior`, `paladin`, `hunter`, `rogue`, `priest`, `shaman`, `mage`, `warlock`, `druid`. The client's class-keyed tables (skill-line gates, reputation bases, the relic slot, the pet book, the combo-point refusal, the ranged-weapon tutorial) read it too; the wire still carries its class byte, which the client ignores |
+| `item_class` | the vanilla class whose `AllowableClass` bit an item it equips must carry, realm and client alike; empty = `warrior`, as every Calling is today |
 | `health_pct`, `mana_pct` | percent of the profile's base health and base mana (empty = 100); stamina's and intellect's parts stay whole |
 | `armor` | armour kinds joined by `\|`: `cloth`, `leather`, `mail`, `plate`, `shield` |
 | `weapons` | weapon kinds joined by `\|` (`one_hand_axe`, `two_hand_axe`, `bow`, `gun`, `one_hand_mace`, `two_hand_mace`, `polearm`, `one_hand_sword`, `two_hand_sword`, `staff`, `fist`, `misc`, `dagger`, `thrown`, `crossbow`, `wand`, `fishing_pole`), and `dual_wield` for a one-hander in the off hand too |
 | `spellbook` | the spell book tab's name |
 
-Both JSON files' Callings carry these as `power`, `stat_profile`, `health_pct`, `mana_pct`,
-`armour`, `weapons`, `icon` and `spellbook`. A TOML Calling writes `power` and `stat_profile` (a
+Both JSON files' Callings carry these as `power`, `stat_profile`, `item_class`, `health_pct`,
+`mana_pct`, `armour`, `weapons`, `icon` and `spellbook`. The client patch also has a `callings`
+table, `{key, name, icon, spellbook, power_type, class, item_class, spell_family, weapon_mask,
+armor_mask, dual_wield}`, which the client (`benilla_formats::twilight_calling`) reads in place of
+every class byte (#207): the realm names each character's Calling by key, its own at the roster
+and every other player's as they come into view. `UnitClass` answers the Calling's name and its
+profile's token, the power bar is its `power`, the spell book files the sheet's spells on a tab
+named by `spellbook` with its `icon`, and items are judged on `item_class` and the two masks. A TOML Calling writes `power` and `stat_profile` (a
 test Calling may still write `class = N` for both, the vanilla class's table and power).
 
 ## The script

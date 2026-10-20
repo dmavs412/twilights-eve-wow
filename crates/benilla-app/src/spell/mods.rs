@@ -22,9 +22,6 @@ use bevy::prelude::*;
 
 use benilla_formats::{SpellDisplay, SpellRange};
 
-use crate::chr_classes::ChrClassTable;
-use crate::net::{ObjectStore, SelfPlayer};
-
 /// SpellModOps per row. Deviation: the reference's stride is 29 (`imul eax,eax,0x1d`; the reader's
 /// `add edx,0x74`); ours carries one Twilight op past vanilla's (ADR 0010).
 const OPS: usize = 30;
@@ -281,19 +278,18 @@ pub(super) fn clear_on_world_enter(mut mods: ResMut<SpellModifiers>) {
     mods.clear();
 }
 
-/// Keep the class family in step with the avatar (`0x6e6ca0`, called from `0x5debcc`: byte 1, the
-/// class, of `UNIT_FIELD_BYTES_0` into `ChrClasses` field 15). An absent avatar keeps the last
-/// value, as a cross-map worldport drops the entity mid-session; only world-enter zeroes it.
+/// Keep the class family in step with the avatar's Calling: the family its spells are filed
+/// under (ADR 0011), where the reference reads byte 1 of `UNIT_FIELD_BYTES_0` into `ChrClasses`
+/// field 15 (`0x6e6ca0`, from `0x5debcc`). No Calling yet keeps the last value; only world-enter
+/// zeroes it.
 pub(super) fn track_class_family(
     mut mods: ResMut<SpellModifiers>,
-    classes: Option<Res<ChrClassTable>>,
-    self_q: Query<&ObjectStore, With<SelfPlayer>>,
+    calling: Option<Res<crate::twilight::SelfCalling>>,
 ) {
-    let Some(classes) = classes else { return };
-    let Some(class) = self_q.iter().next().and_then(|s| s.0.unit_class()) else {
+    let Some(calling) = crate::twilight::SelfCalling::get(calling.as_deref()) else {
         return;
     };
-    let family = classes.0.spell_family(u32::from(class));
+    let family = calling.spell_family;
     // Guarded: the tooltip feed diffs the tables whenever the resource is marked changed.
     if mods.class_family != family {
         mods.set_class_family(family);

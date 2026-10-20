@@ -1,4 +1,97 @@
 {
+ "callings": [
+  {
+   "key": "basic_warrior",
+   "name": "Basic Warrior",
+   "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
+   "spellbook": "Basic Warrior",
+   "power_type": 1,
+   "class": 1,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 110,
+   "dual_wield": false
+  },
+  {
+   "key": "vanguard",
+   "name": "Vanguard",
+   "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
+   "spellbook": "Vanguard",
+   "power_type": 1,
+   "class": 1,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 126,
+   "dual_wield": false
+  },
+  {
+   "key": "zealot",
+   "name": "Zealot",
+   "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
+   "spellbook": "Zealot",
+   "power_type": 1,
+   "class": 1,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 0,
+   "dual_wield": false
+  },
+  {
+   "key": "cutthroat",
+   "name": "Cutthroat",
+   "icon": "Interface\\Icons\\Spell_Shadow_RitualOfSacrifice",
+   "spellbook": "Cutthroat",
+   "power_type": 3,
+   "class": 4,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 6,
+   "dual_wield": true
+  },
+  {
+   "key": "initiate",
+   "name": "Initiate",
+   "icon": "Interface\\Icons\\Spell_Arcane_StarFire",
+   "spellbook": "Initiate",
+   "power_type": 0,
+   "class": 8,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 2,
+   "dual_wield": false
+  },
+  {
+   "key": "ranger",
+   "name": "Ranger",
+   "icon": "Interface\\Icons\\Ability_Whirlwind",
+   "spellbook": "Ranger",
+   "power_type": 0,
+   "class": 3,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 12,
+   "dual_wield": false
+  },
+  {
+   "key": "acolyte",
+   "name": "Acolyte",
+   "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
+   "spellbook": "Acolyte",
+   "power_type": 0,
+   "class": 5,
+   "item_class": 1,
+   "spell_family": 4,
+   "weapon_mask": 1435135,
+   "armor_mask": 2,
+   "dual_wield": false
+  }
+ ],
  "spells": [
   {
    "spell_id": 1000000,

@@ -42,7 +42,7 @@ pub(crate) const CLASS_ARMOR: u32 = 4;
 /// Level" and no move is refused for one. A template keeps its own level for the loot bands.
 pub(crate) const SHOWN_REQUIRED_LEVEL: u32 = 0;
 
-/// `CLASSMASK_WARRIOR`.
+/// `CLASSMASK_WARRIOR`: the dungeon pool's vanilla Warrior.
 const WARRIOR_MASK: i32 = 1;
 
 /// Whether a weapon subclass is one no Warrior ever wields: wands, and the unused spears,
@@ -62,14 +62,15 @@ pub(crate) fn knows(calling: &CallingDef, class: u32, subclass: u32) -> bool {
     }
 }
 
-/// Who an item is for and whether it is equipment at all, ahead of proficiency.
-fn usable(entry: u32, race: u8) -> Result<&'static items::Template, Refusal> {
+/// Who an item is for and whether it is equipment at all, ahead of proficiency: `class_mask` is
+/// the `AllowableClass` bit it must carry.
+fn usable(entry: u32, race: u8, class_mask: i32) -> Result<&'static items::Template, Refusal> {
     let t = items::template(entry).ok_or(Refusal::NotEquippable)?;
     if !is_gear_slot(t.inventory_type) {
         return Err(slotless(t.inventory_type));
     }
     let race_mask = 1i32 << (race.max(1) - 1);
-    if t.allowable_class & WARRIOR_MASK == 0 || t.allowable_race & race_mask == 0 {
+    if t.allowable_class & class_mask == 0 || t.allowable_race & race_mask == 0 {
         return Err(Refusal::NeverUsable);
     }
     Ok(t)
@@ -78,7 +79,7 @@ fn usable(entry: u32, race: u8) -> Result<&'static items::Template, Refusal> {
 /// Whether a character of `race` in `calling` may equip item `entry`, in vmangos's order: who it
 /// is for, then proficiency. Never the level.
 pub fn can_equip(entry: u32, race: u8, calling: &CallingDef) -> Result<(), Refusal> {
-    let t = usable(entry, race)?;
+    let t = usable(entry, race, 1i32 << (calling.item_class.class() - 1))?;
     if !knows(calling, t.class, t.subclass) {
         return Err(Refusal::Proficiency);
     }
@@ -103,7 +104,7 @@ fn vanilla_level(class: u32, subclass: u32) -> Option<u8> {
 /// Whether a vanilla Warrior of `race` could wear item `entry` once it reaches the item's level:
 /// the Dungeon boss's blue pool, which follows the run's level band and not the Calling.
 pub(crate) fn vanilla_wearable(entry: u32, race: u8, level: u8) -> bool {
-    usable(entry, race).is_ok_and(|t| {
+    usable(entry, race, WARRIOR_MASK).is_ok_and(|t| {
         vanilla_level(t.class, t.subclass).is_some_and(|l| t.required_level.max(level) >= l)
     })
 }

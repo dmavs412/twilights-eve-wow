@@ -38,6 +38,26 @@ const NO_LINE: u32 = 0;
 
 /// Hardcoded in the reference (`0x8468f0`), extensionless for the loader; key 0 has no DBC row.
 const GENERAL_TAB_ICON: &str = "Interface\\Icons\\Ability_Kick";
+/// The tab a Calling's own spells sit on (ADR 0011): no skill line holds them, so they would
+/// fall to General; the book names it by the Calling's `spellbook` and shows its icon.
+const CALLING_LINE: u32 = u32::MAX;
+/// The lowest spell id of the sheet's own (`benilla_formats` patch rows).
+const FROM_SCRATCH_MIN_ID: u32 = 1_000_000;
+
+/// `spell_id`'s tab: the Calling's for a spell of the sheet's own, else its skill line's after
+/// the General collapse (`spell_tab`); with no skill-line catalog, General.
+fn tab_of(
+    spell_id: u32,
+    skill_lines: Option<&SkillLineCatalog>,
+    race: u8,
+    class: u8,
+    calling: Option<&benilla_formats::CallingInfo>,
+) -> u32 {
+    if calling.is_some() && spell_id >= FROM_SCRATCH_MIN_ID {
+        return CALLING_LINE;
+    }
+    skill_lines.map_or(NO_LINE, |c| c.spell_tab(spell_id, race, class))
+}
 
 /// Spells learned mid-session, queued for `LEARNED_SPELL_IN_TAB` (event 510). Filled by the learn
 /// and rank-up arms (`crate::spell::net`), never the `SMSG_INITIAL_SPELLS` load, which the
@@ -171,9 +191,10 @@ fn feed_spellbook(
     };
     // Race and class drive the General collapse; 0/0 before the descriptor skips it.
     let store = inv.self_store.single().ok();
-    let (race, class) = store
-        .map(|s| (s.0.unit_race().unwrap_or(0), s.0.unit_class().unwrap_or(0)))
-        .unwrap_or((0, 0));
+    // The Calling's class table, not the class byte (ADR 0011).
+    let calling = crate::twilight::self_calling();
+    let race = store.map_or(0, |s| s.0.unit_race().unwrap_or(0));
+    let class = calling.map_or(0, |c| c.class);
     // The melee auto-attack shows the main-hand weapon, or Spell-Reset unarmed, not its `Temp`.
     let attack_icon = store.map(|s| {
         melee_auto_attack_icon(
@@ -188,7 +209,7 @@ fn feed_spellbook(
     // Auto Shot and wand Shoot show the ranged weapon; without one, their own icon.
     let ranged_icon = store
         .and_then(|s| ranged_weapon_icon(s, &inv.objects, &items, icons.as_deref(), &commands));
-    let (mut fresh, tab_lines) = build_book(
+    let (mut fresh, tab_lines) = build_book_for(
         &actions.spells,
         &spells.catalog,
         skill_lines.as_deref().map(|s| &s.catalog),
@@ -196,6 +217,7 @@ fn feed_spellbook(
         class,
         attack_icon,
         ranged_icon,
+        calling,
     );
     // The book's `IsCurrentCast` is `0x4b3600`, not the action bar's `0x4e53a0`, with two arms: a
     // form spell is current while the form byte is its form, and the open trade-skill window, not
@@ -297,13 +319,20 @@ fn tab_flash_index(
     {
         return None;
     }
-    let tab = skill_lines.map_or(NO_LINE, |c| c.spell_tab(spell_id, race, class));
+    let tab = tab_of(
+        spell_id,
+        skill_lines,
+        race,
+        class,
+        crate::twilight::self_calling(),
+    );
     let index = tab_lines.iter().position(|&l| l == tab)?;
     Some(index as i64 + 1)
 }
 
 /// Build the book, and the skill-line id behind each published tab in order, for
 /// [`LearnedInTab`]'s index: one tab ordering, never recomputed.
+#[cfg(test)]
 fn build_book(
     known: &BTreeSet<u32>,
     catalog: &SpellCatalog,
@@ -313,16 +342,37 @@ fn build_book(
     attack_icon: Option<String>,
     ranged_icon: Option<String>,
 ) -> (SpellBookState, Vec<u32>) {
+    build_book_for(
+        known,
+        catalog,
+        skill_lines,
+        race,
+        class,
+        attack_icon,
+        ranged_icon,
+        None,
+    )
+}
+
+/// [`build_book`] for a character of `calling`, whose own spells sit on its tab.
+#[allow(clippy::too_many_arguments)]
+fn build_book_for(
+    known: &BTreeSet<u32>,
+    catalog: &SpellCatalog,
+    skill_lines: Option<&SkillLineCatalog>,
+    race: u8,
+    class: u8,
+    attack_icon: Option<String>,
+    ranged_icon: Option<String>,
+    calling: Option<&benilla_formats::CallingInfo>,
+) -> (SpellBookState, Vec<u32>) {
     let mut by_line: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
     for &spell_id in known {
         // The add-gate (module doc); a spell missing from `Spell.dbc` is dropped too.
         if !catalog.get(spell_id).is_some_and(|d| d.in_spellbook()) {
             continue;
         }
-        // The tab after the General collapse; with no skill-line catalog, General.
-        let tab = skill_lines
-            .map(|c| c.spell_tab(spell_id, race, class))
-            .unwrap_or(NO_LINE);
+        let tab = tab_of(spell_id, skill_lines, race, class, calling);
         by_line.entry(tab).or_default().push(spell_id);
     }
 
@@ -333,6 +383,11 @@ fn build_book(
         .map(|(line_id, spell_ids)| {
             let (name, texture) = if line_id == NO_LINE {
                 ("General".to_string(), Some(GENERAL_TAB_ICON.to_string()))
+            } else if let Some(c) = calling.filter(|_| line_id == CALLING_LINE) {
+                (
+                    c.spellbook.clone(),
+                    Some(c.icon.clone()).filter(|i| !i.is_empty()),
+                )
             } else {
                 match skill_lines.and_then(|c| c.line(line_id)) {
                     Some(info) => (info.name.clone(), info.icon.clone()),
@@ -342,7 +397,8 @@ fn build_book(
             (line_id, name, texture, spell_ids)
         })
         .collect();
-    lines.sort_by(|a, b| (a.0 != NO_LINE).cmp(&(b.0 != NO_LINE)).then(a.1.cmp(&b.1)));
+    // General, then the Calling's own, then the skill lines by name.
+    lines.sort_by_key(|l| (l.0 != NO_LINE, l.0 != CALLING_LINE, l.1.clone()));
 
     let mut tabs = Vec::with_capacity(lines.len());
     let mut tab_lines = Vec::with_capacity(lines.len());
@@ -469,6 +525,56 @@ pub(crate) fn cast_spell(cast: &mut crate::spell::ScriptCast, spell_id: u32, on_
 mod tests {
     use super::*;
     use benilla_formats::SpellDisplay;
+
+    /// A Calling with a mana bar whose class table is the Warrior's: the byte the wire carries.
+    fn mana_calling() -> benilla_formats::CallingInfo {
+        benilla_formats::CallingInfo {
+            key: "test_mana".into(),
+            name: "Hedge Mage".into(),
+            icon: "Interface\\Icons\\Spell_Arcane_StarFire".into(),
+            spellbook: "Hedge Magic".into(),
+            power_type: 0,
+            class: 1,
+            item_class: 1,
+            spell_family: 4,
+            weapon_mask: 0,
+            armor_mask: 0,
+            dual_wield: false,
+        }
+    }
+
+    #[test]
+    fn a_callings_own_spells_sit_on_its_own_tab_after_general() {
+        let mut map = HashMap::new();
+        map.insert(6603, spell("Attack", None, 0x0));
+        map.insert(1_000_002, spell("Ember Lash", None, 0x0));
+        map.insert(1_000_001, spell("Arc", None, 0x0));
+        let catalog = SpellCatalog::from_displays(map);
+        let known: BTreeSet<u32> = [6603, 1_000_001, 1_000_002].into_iter().collect();
+        let calling = mana_calling();
+        let (book, lines) =
+            build_book_for(&known, &catalog, None, 1, 1, None, None, Some(&calling));
+        let tabs: Vec<(&str, Option<&str>, u32)> = book
+            .tabs
+            .iter()
+            .map(|t| (t.name.as_str(), t.texture.as_deref(), t.num_spells))
+            .collect();
+        assert_eq!(
+            tabs,
+            [
+                ("General", Some(GENERAL_TAB_ICON), 1),
+                (
+                    "Hedge Magic",
+                    Some("Interface\\Icons\\Spell_Arcane_StarFire"),
+                    2
+                ),
+            ]
+        );
+        assert_eq!(lines, [NO_LINE, CALLING_LINE]);
+        // Without a Calling the sheet's spells fall to General, as a stock book would file them.
+        let bare = build_book(&known, &catalog, None, 1, 1, None, None).0;
+        assert_eq!(bare.tabs.len(), 1);
+    }
     use std::collections::HashMap;
 
     #[test]

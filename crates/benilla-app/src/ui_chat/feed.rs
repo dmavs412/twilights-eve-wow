@@ -629,6 +629,8 @@ pub(super) fn feed_chat(
     items: Res<crate::items::Items>,
     // The spam and profanity filters, which run in the reference's display function `0x49a870`.
     mut text_filter: crate::text_filter::ChatTextFilter,
+    // Each player's Calling, which `$C` names.
+    callings: Option<Res<crate::twilight::CallingKeys>>,
 ) {
     let Some(mut script) = script else {
         return;
@@ -690,6 +692,7 @@ pub(super) fn feed_chat(
                         &stores,
                         &names,
                         &commands,
+                        callings.as_deref(),
                     );
                     let (text, clean) = crate::npc_text::substitute_checked(
                         &msg.text,

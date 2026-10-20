@@ -775,7 +775,7 @@ mod tests {
         let player = crate::npc_text::Subject {
             name: "Tri".into(),
             race: 1,
-            class: 1,
+            calling: None,
             gender: 0,
         };
         let snap = snapshot(

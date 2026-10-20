@@ -59,7 +59,8 @@ CALLING = {
     "tier_cap": "10", "tier_bonus": "strength=1;stamina=2", "shapeshift_form": "17",
 }
 # Every callings.csv cell a test leaves out (`run_build` writes one row per Calling it sees).
-PROFILE = {"icon": "", "power": "rage", "stat_profile": "warrior", "health_pct": "100", "mana_pct": "100",
+PROFILE = {"icon": "", "power": "rage", "stat_profile": "warrior", "item_class": "warrior", "health_pct": "100",
+           "mana_pct": "100",
            "armor": "cloth|mail", "weapons": "one_hand_sword|dagger", "spellbook": ""}
 TAB = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms", "tab_id": "900",
        "background": "WarriorArms", "tab_order": "0"}
@@ -458,6 +459,10 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual((calling["power"], calling["stat_profile"]), ("rage", "warrior"))
         self.assertEqual((calling["health_pct"], calling["mana_pct"]), (100, 100))
         self.assertEqual(calling["weapons"], ["one_hand_sword", "dagger"])
+        self.assertEqual(self.patch["callings"], [{
+            "key": "vanguard", "name": "Vanguard", "icon": "", "spellbook": "", "power_type": 1, "class": 1,
+            "item_class": 1, "spell_family": 4, "weapon_mask": (1 << 7) | (1 << 15),
+            "armor_mask": (1 << 1) | (1 << 3), "dual_wield": False}])
         self.assertEqual(len(calling["skills"]), 1)
 
     def test_calling_row_needs_tier_and_cap(self):

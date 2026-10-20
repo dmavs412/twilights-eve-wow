@@ -12,7 +12,7 @@ use crate::sound::GlueSound;
 
 use super::dialog::DeleteDialog;
 use super::screen::SelectAction;
-use super::{class_name, send_pick, ClientState, Roster};
+use super::{send_pick, ClientState, Roster};
 
 use crate::glue::{drag_yaw, ROTATE_RATE};
 
@@ -37,6 +37,7 @@ pub(super) fn select_input(
     mut intent: ResMut<crate::login::LoginIntent>,
     glue_dialog: Res<crate::glue::dialog::GlueDialog>,
     time: Res<Time>,
+    labels: Option<Res<super::ClassLabels>>,
     mut last_click: Local<Option<(usize, f32)>>,
 ) {
     // A modal owns the input while it is up: the delete confirm, the AddOns list, the realm list
@@ -71,7 +72,9 @@ pub(super) fn select_input(
                 // With no selection the click only plays the sound (`selectedIndex > 0` gate).
                 sounds.write(GlueSound("gsCharacterSelectionDelCharacter"));
                 if let Some(c) = roster.selected_char() {
-                    dialog.open_for(c.guid, c.name.clone(), c.level, class_name(c.class));
+                    // The Calling the realm named, never the roster's class byte (ADR 0011).
+                    let calling = super::ClassLabels::label(labels.as_deref(), c.guid, "");
+                    dialog.open_for(c.guid, c.name.clone(), c.level, calling.to_string());
                 }
             }
             SelectAction::CreateChar => {

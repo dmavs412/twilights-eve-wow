@@ -56,6 +56,7 @@ pub(crate) struct FeedMemory {
 }
 
 pub(crate) fn feed_pet_book(
+    calling: Option<Res<crate::twilight::SelfCalling>>,
     script: Option<NonSendMut<UiScript>>,
     bar: Res<PetBar>,
     spells: Option<Res<Spells>>,
@@ -83,9 +84,9 @@ pub(crate) fn feed_pet_book(
 
     let mut fresh = PetBookState {
         // `HasPetSpells`'s token is the player's class, not the pet's (`0x4b4463` reads
-        // `player.fields + 0x79`), named by `ChrClasses.dbc` field 4.
-        token: self_q.single().ok().and_then(|s| {
-            let class = u32::from(s.0.unit_class()?);
+        // `player.fields + 0x79`), named by `ChrClasses.dbc` field 4: the Calling's class table.
+        token: self_q.single().ok().and_then(|_| {
+            let class = u32::from(crate::twilight::SelfCalling::get(calling.as_deref())?.class);
             classes
                 .as_deref()
                 .map(|t| t.0.pet_name_token(class).to_string())

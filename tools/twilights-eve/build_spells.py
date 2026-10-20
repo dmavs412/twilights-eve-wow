@@ -62,14 +62,25 @@ POWERS = ("rage", "energy", "focus", "mana")
 # it as `power_type`.
 POWER_TYPES = {"mana": 0, "rage": 1, "focus": 2, "energy": 3}
 # callings.csv (ADR 0011): one row per Calling.
-CALLING_COLUMNS = ("calling", "name", "icon", "power", "stat_profile", "health_pct", "mana_pct", "armor",
-                   "weapons", "spellbook")
+CALLING_COLUMNS = ("calling", "name", "icon", "power", "stat_profile", "item_class", "health_pct", "mana_pct",
+                   "armor", "weapons", "spellbook")
 # The vanilla class tables a `stat_profile` may name (the realm's `StatProfile`).
 STAT_PROFILES = ("warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid")
+# `ChrClasses.dbc` ids of the profiles, the class byte the client's class-keyed tables read.
+PROFILE_CLASS = {"warrior": 1, "paladin": 2, "hunter": 3, "rogue": 4, "priest": 5, "shaman": 7, "mage": 8,
+                 "warlock": 9, "druid": 11}
 # The weapon kinds a `weapons` cell may list (the realm's `WeaponKind`), `dual_wield` among them.
 WEAPON_KINDS = ("one_hand_axe", "two_hand_axe", "bow", "gun", "one_hand_mace", "two_hand_mace", "polearm",
                 "one_hand_sword", "two_hand_sword", "staff", "fist", "misc", "dagger", "thrown", "crossbow",
                 "wand", "fishing_pole", "dual_wield")
+# Each weapon kind's ITEM_CLASS_WEAPON subclass, and each armour kind's ITEM_CLASS_ARMOR ones.
+WEAPON_SUBCLASS = {"one_hand_axe": 0, "two_hand_axe": 1, "bow": 2, "gun": 3, "one_hand_mace": 4,
+                   "two_hand_mace": 5, "polearm": 6, "one_hand_sword": 7, "two_hand_sword": 8, "staff": 10,
+                   "fist": 13, "misc": 14, "dagger": 15, "thrown": 16, "crossbow": 18, "wand": 19,
+                   "fishing_pole": 20}
+ARMOUR_SUBCLASSES = {"cloth": (1,), "leather": (2,), "mail": (3,), "plate": (4,), "shield": (5, 6)}
+# `SPELLFAMILY_WARRIOR`, the family every Calling's spells are filed under (`SPELL_FAMILY` below).
+CALLING_SPELL_FAMILY = 4
 
 REALM_NUMBERS = (
     "realm_cost", "realm_cooldown_ms", "realm_gcd_ms", "realm_range_min", "realm_range_max",
@@ -431,6 +442,7 @@ def build_profiles(rows: list[dict]) -> dict[str, dict]:
         profile: dict = {"name": row["name"]}
         profile["power"] = one_of(row["power"], POWER_TYPES, where, "power")
         profile["stat_profile"] = one_of(row["stat_profile"], STAT_PROFILES, where, "stat_profile")
+        profile["item_class"] = one_of(row["item_class"] or "warrior", STAT_PROFILES, where, "item_class")
         for column in ("health_pct", "mana_pct"):
             profile[column] = positive_whole(row[column], where, column) if row[column] else 100
         armour = [a for a in row["armor"].split("|") if a]
@@ -1283,6 +1295,20 @@ def client_override(row: dict, built: dict, where: str, categories: dict[str, in
     return out
 
 
+def client_calling(calling: dict, name: str) -> dict:
+    """What the client reads of a Calling in place of the class byte (ADR 0011, #207): its name,
+    icon and spell book tab, its bar, the class tables it follows (`stat_profile`) and the one
+    its items are checked against (`item_class`), its spells' family, and its proficiency masks."""
+    return {
+        "key": calling["key"], "name": name, "icon": calling["icon"], "spellbook": calling["spellbook"],
+        "power_type": POWER_TYPES[calling["power"]], "class": PROFILE_CLASS[calling["stat_profile"]],
+        "item_class": PROFILE_CLASS[calling["item_class"]], "spell_family": CALLING_SPELL_FAMILY,
+        "weapon_mask": sum(1 << WEAPON_SUBCLASS[w] for w in calling["weapons"] if w in WEAPON_SUBCLASS),
+        "armor_mask": sum(1 << sub for a in calling["armour"] for sub in ARMOUR_SUBCLASSES[a]),
+        "dual_wield": "dual_wield" in calling["weapons"],
+    }
+
+
 def tab_background(tab: dict, calling: str, art: list[str], art_dir: str) -> str:
     """A tab's art as the talent frame names it: a stock `Interface\\TalentFrame\\` base, or for
     `<stem>.png` the four embedded quarters `<stem>-TopLeft.png` and the rest, each checked."""
@@ -1485,7 +1511,9 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
                 if "prereq" in talent:
                     seat["prereq"] = talent["prereq"]
                 seats.append(seat)
-    patch: dict = {"spells": overrides, "talent_tabs": tabs, "talents": seats}
+    patch: dict = {"callings": [client_calling(c, profiles[c["key"]]["name"]) for c in callings.values()],
+                   "spells": overrides,
+                   "talent_tabs": tabs, "talents": seats}
     if art:
         # The PNG stems the patch names; `main` embeds them in client_art.json and drops the key.
         patch["art"] = art

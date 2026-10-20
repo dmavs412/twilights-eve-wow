@@ -3,6 +3,7 @@
   "key": "basic_warrior",
   "power": "rage",
   "stat_profile": "warrior",
+  "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
   "armour": [
@@ -1050,6 +1051,7 @@
   "key": "vanguard",
   "power": "rage",
   "stat_profile": "warrior",
+  "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
   "armour": [
@@ -4114,6 +4116,7 @@
   "key": "zealot",
   "power": "rage",
   "stat_profile": "warrior",
+  "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
   "armour": [],
@@ -7492,6 +7495,7 @@
   "key": "cutthroat",
   "power": "energy",
   "stat_profile": "rogue",
+  "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
   "armour": [
@@ -9852,6 +9856,7 @@
   "key": "initiate",
   "power": "mana",
   "stat_profile": "mage",
+  "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
   "armour": [
@@ -12864,6 +12869,7 @@
   "key": "ranger",
   "power": "mana",
   "stat_profile": "hunter",
+  "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
   "armour": [
@@ -15731,6 +15737,7 @@
   "key": "acolyte",
   "power": "mana",
   "stat_profile": "priest",
+  "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
   "armour": [

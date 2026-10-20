@@ -32,6 +32,8 @@ pub(super) struct HeldUnits<'a> {
     pub(super) self_store: Option<&'a ObjectStore>,
     pub(super) classes: Option<&'a ChrClasses>,
     pub(super) types: CreatureTypeSources<'a>,
+    /// Each player's Calling, read in place of the class byte.
+    pub(super) callings: &'a super::SnapshotTables<'a>,
 }
 
 impl HeldUnits<'_> {
@@ -45,6 +47,9 @@ impl HeldUnits<'_> {
             .map(str::to_string);
         let reaction = unit_reaction(self.factions, self.reputations, store, self.self_store);
         let mut s = snapshot(store, guid, name, reaction, self.classes, self.types);
+        if let Some(calling) = self.callings.calling(guid) {
+            super::apply_calling(&mut s, store, calling);
+        }
         s.raid_target = self.group.raid_target_index(guid);
         s.faction_group = faction_group(store, self.factions);
         s.faction_group_localized = faction_group_localized(store, self.factions);
@@ -143,6 +148,7 @@ pub(super) fn feed_chain_units(
         self_store: self_q.iter().next(),
         classes: tables.classes(),
         types: tables.types(&names),
+        callings: &tables,
     };
     let built: HashMap<u64, UnitState> = ends
         .iter()

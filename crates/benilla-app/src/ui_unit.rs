@@ -808,9 +808,16 @@ pub(crate) struct UnitStores<'w, 's> {
 pub(crate) struct SnapshotTables<'w> {
     classes: Option<Res<'w, crate::chr_classes::ChrClassTable>>,
     spells: Option<Res<'w, crate::ui_action::Spells>>,
+    /// Each player's Calling, which a player unit reads in place of its class byte.
+    callings: Option<Res<'w, crate::twilight::CallingKeys>>,
 }
 
 impl SnapshotTables<'_> {
+    /// The Calling of the player `guid`, when the realm has named it.
+    pub(crate) fn calling(&self, guid: u64) -> Option<&'static benilla_formats::CallingInfo> {
+        self.callings.as_deref()?.of(guid)
+    }
+
     /// `ChrClasses.dbc`; without it no class has a relic slot, the reference's bounds leg.
     pub(crate) fn classes(&self) -> Option<&ChrClasses> {
         self.classes.as_deref().map(|t| &t.0)
@@ -820,6 +827,23 @@ impl SnapshotTables<'_> {
     pub(crate) fn types<'a>(&'a self, names: &'a NameCache) -> CreatureTypeSources<'a> {
         CreatureTypeSources::of_resources(names, self.spells.as_deref())
     }
+}
+
+/// A player unit as its Calling makes it (ADR 0011): `UnitClass` answers the Calling's name and
+/// its class table's token, and the bar is the Calling's power, whatever the class byte says.
+pub(crate) fn apply_calling(
+    s: &mut UnitState,
+    store: &ObjectStore,
+    calling: &benilla_formats::CallingInfo,
+) {
+    s.class = Some(calling.name.clone());
+    s.class_file = Some(calling.class_token().to_string());
+    s.power_type = calling.power_type;
+    s.power = store.0.unit_shown_power(calling.power_type).unwrap_or(0);
+    s.max_power = store
+        .0
+        .unit_shown_max_power(calling.power_type)
+        .unwrap_or(0);
 }
 
 /// `UnitReaction(unit, "player")` (`0x5167e0`): [`ring_reaction`] plus one (`0x51683e`), so
@@ -847,7 +871,10 @@ pub(crate) fn snapshot(
 ) -> UnitState {
     let power_type = store.0.unit_power_type();
     let race = store.0.unit_race().and_then(race_names);
-    let class_id = store.0.unit_class();
+    // A player's class is its Calling's ([`apply_calling`]), never the class byte (ADR 0011); a
+    // creature keeps its unit class. Guid 0 is a bare descriptor (a test, the type resolver).
+    let player = guid != 0 && guid >> 32 == 0;
+    let class_id = (!player).then(|| store.0.unit_class()).flatten();
     let class = class_id.and_then(class_names);
     UnitState {
         exists: true,
@@ -971,7 +998,8 @@ pub(crate) fn enrich_unit(
             let info = catalog.reputation_faction(faction_id)?;
             let self_store = self_store?;
             let race = self_store.0.unit_race().unwrap_or(0);
-            let class = self_store.0.unit_class().unwrap_or(0);
+            // The Calling's class table, not the class byte (ADR 0011).
+            let class = crate::twilight::self_calling().map_or(0, |c| c.class);
             info.tooltip_shows_for(race, class)
                 .then(|| catalog.faction_name(faction_id).map(str::to_string))
                 .flatten()
@@ -1267,6 +1295,9 @@ fn feed_units(
             .resolve_unit(guid.0, Some(store), &commands)
             .map(str::to_string);
         let mut s = snapshot(store, guid.0, name, 0, chr, types);
+        if let Some(calling) = tables.calling(guid.0) {
+            apply_calling(&mut s, store, calling);
+        }
         s.is_player = true;
         s.raid_target = group.raid_target_index(guid.0);
         s.faction_group = faction_group(store, factions.as_deref());
@@ -1300,6 +1331,7 @@ fn feed_units(
         self_store: self_pair.map(|(s, _)| s),
         classes: chr,
         types,
+        callings: &tables,
     };
     let target = selection.target.zip(selection.guid).and_then(|(e, guid)| {
         let store = stores.all.get(e).ok()?;
@@ -1621,6 +1653,52 @@ fn combo_edge(last: Option<(u8, u64)>, now: (u8, u64)) -> Option<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A Calling with a mana bar whose class table is the Warrior's: the byte the wire carries.
+    fn mana_calling() -> benilla_formats::CallingInfo {
+        benilla_formats::CallingInfo {
+            key: "test_mana".into(),
+            name: "Hedge Mage".into(),
+            icon: "Interface\\Icons\\Spell_Arcane_StarFire".into(),
+            spellbook: "Hedge Magic".into(),
+            power_type: 0,
+            class: 1,
+            item_class: 1,
+            spell_family: 4,
+            weapon_mask: 0,
+            armor_mask: 0,
+            dual_wield: false,
+        }
+    }
+
+    #[test]
+    fn a_mana_calling_on_a_warrior_byte_gets_a_mana_bar_and_its_own_name() {
+        use benilla_protocol::ObjectFields;
+        const POWER1: u16 = 23;
+        const MAXPOWER1: u16 = 29;
+        const BYTES_0: u16 = 36;
+        // Human, class byte 1 (Warrior), power byte 1 (rage); 30 rage and 50 of 120 mana held.
+        let store = ObjectStore(ObjectFields::from_pairs(&[
+            (BYTES_0, 1 | 1 << 8 | 1 << 24),
+            (POWER1, 50),
+            (POWER1 + 1, 300),
+            (MAXPOWER1, 120),
+            (MAXPOWER1 + 1, 1000),
+        ]));
+        let player_guid = 0x0000_0000_0000_0042;
+        let bare = snapshot(&store, player_guid, None, 0, None, Default::default());
+        assert_eq!(bare.class, None, "a player's class byte is never read");
+        let mut s = bare;
+        apply_calling(&mut s, &store, &mana_calling());
+        assert_eq!(s.power_type, 0, "mana: the blue bar");
+        assert_eq!((s.power, s.max_power), (50, 120));
+        assert_eq!(s.class.as_deref(), Some("Hedge Mage"));
+        assert_eq!(
+            s.class_file.as_deref(),
+            Some("WARRIOR"),
+            "its class table's token"
+        );
+    }
 
     /// `"mouseover"` resolves through the pick the tooltip publishes: the hovered unit, until a
     /// nearer GameObject wins it and the resolver rejects the GameObject's guid (`0x515bd9 je`).

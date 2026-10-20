@@ -111,8 +111,9 @@ fn feed_talents(
     let Ok(store) = self_q.single() else {
         return;
     };
+    // The Calling's tabs: its catalog's masks admit any class table (ADR 0011).
     let race = store.0.unit_race().unwrap_or(0);
-    let class = store.0.unit_class().unwrap_or(0);
+    let class = crate::twilight::self_calling().map_or(0, |c| c.class);
     let points = (
         store.0.player_talent_points().unwrap_or(0),
         store.0.player_free_professions().unwrap_or(0),
@@ -307,8 +308,9 @@ fn drain_talent_learns(
     let Ok(store) = self_q.single() else {
         return;
     };
+    // The Calling's tabs: its catalog's masks admit any class table (ADR 0011).
     let race = store.0.unit_race().unwrap_or(0);
-    let class = store.0.unit_class().unwrap_or(0);
+    let class = crate::twilight::self_calling().map_or(0, |c| c.class);
     let tabs = talents.catalog.tabs_for_class(race, class);
     for (tab, index) in clicks {
         // 1-based Lua-facing pair; a 0 from a stray script is a miss, never an underflow.

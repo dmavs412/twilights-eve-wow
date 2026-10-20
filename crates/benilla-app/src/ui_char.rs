@@ -158,10 +158,11 @@ fn watch_skill_ups(
             if *prev_map == cur {
                 return;
             }
-            // The `0x402` gate reads the player's own race and class row, as `skills_row` does.
+            // The `0x402` gate reads the player's own race and class row, as `skills_row` does:
+            // the Calling's class table (ADR 0011).
             let (race, class) = (
                 store.0.unit_race().unwrap_or(0),
-                store.0.unit_class().unwrap_or(0),
+                crate::twilight::self_calling().map_or(0, |c| c.class),
             );
             for (&id, &value) in &cur {
                 let line_id = u32::from(id);
@@ -241,9 +242,10 @@ fn feed_skills(
     if last.is_some() && !store.is_changed() && !lines_moved {
         return;
     }
+    // The Calling's class table, not the class byte (ADR 0011).
     let (race, class) = (
         store.0.unit_race().unwrap_or(0),
-        store.0.unit_class().unwrap_or(0),
+        crate::twilight::self_calling().map_or(0, |c| c.class),
     );
     let level = store.0.unit_level().unwrap_or(0);
     let mut entries = Vec::new();
@@ -636,10 +638,9 @@ fn inventory_slots(
     sub_classes: Option<&crate::ui_items::ItemSubClasses>,
     classes: Option<&benilla_formats::ChrClasses>,
 ) -> InventorySlots {
-    let has_relic_slot = store
-        .0
-        .unit_class()
-        .is_some_and(|c| classes.is_some_and(|t| t.has_relic_slot(u32::from(c))));
+    // The Calling's class table, not the class byte (ADR 0011).
+    let has_relic_slot = crate::twilight::self_calling()
+        .is_some_and(|c| classes.is_some_and(|t| t.has_relic_slot(u32::from(c.class))));
     let mut inv: InventorySlots = Default::default();
     let ammo_id = store.0.player_ammo_id().unwrap_or(0);
     if ammo_id != 0 {

@@ -235,11 +235,8 @@ fn report_session(
         .unit_race()
         .and_then(|r| crate::ui_unit::race_names(r).map(|(d, _)| d))
         .unwrap_or("?");
-    let class = store
-        .0
-        .unit_class()
-        .and_then(|c| crate::ui_unit::class_names(c).map(|(d, _)| d))
-        .unwrap_or("?");
+    // The Calling the realm named, never the class byte (ADR 0011).
+    let class = crate::twilight::self_calling().map_or("?", |c| c.name.as_str());
     let zone = zone.unwrap_or_default();
     // The raw WoW triple, as `.go xyz <x> <y> <z> <map>` takes it.
     let [wx, wy, wz] = benilla_assets::coords::bevy_to_wow(transform.translation);

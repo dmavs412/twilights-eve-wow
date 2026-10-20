@@ -24,6 +24,7 @@ struct GenCalling {
     /// Its `callings.csv` row, on every Calling in the file.
     power: PowerKind,
     stat_profile: StatProfile,
+    item_class: StatProfile,
     health_pct: u32,
     mana_pct: u32,
     #[serde(default)]
@@ -186,6 +187,7 @@ fn calling(g: GenCalling) -> CallingDef {
         tier,
         power: g.power,
         stat_profile: g.stat_profile,
+        item_class: g.item_class,
         health_pct: g.health_pct,
         mana_pct: g.mana_pct,
         weapons: g.weapons.clone(),
@@ -498,7 +500,7 @@ mod tests {
     #[test]
     fn a_hidden_skill_loads_by_its_realm_spell_id() {
         let g: GenCalling = serde_json::from_value(serde_json::json!({
-            "key": "test", "power": "rage", "stat_profile": "warrior", "health_pct": 100, "mana_pct": 100, "name": "Test", "tier": 0, "tier_cap": 10,
+            "key": "test", "power": "rage", "stat_profile": "warrior", "item_class": "warrior", "health_pct": 100, "mana_pct": 100, "name": "Test", "tier": 0, "tier_cap": 10,
             "tier_bonus": {"strength": 0, "agility": 0, "stamina": 0, "intellect": 0, "spirit": 0},
             "shapeshift_form": 17,
             "skills": [

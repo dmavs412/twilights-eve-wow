@@ -20,10 +20,12 @@ use crate::net::{Guid, GuidIndex, NetCommands, ObjectStore, SelfPlayer};
 /// chat sites.
 pub(crate) struct Subject {
     pub name: String,
-    /// `UNIT_FIELD_BYTES_0` bytes 0 and 1, into `ChrRaces` and `ChrClasses`, which the reference
-    /// reads at the client's locale column; we read [`crate::ui_unit`]'s rows, the enUS column's.
+    /// `UNIT_FIELD_BYTES_0` byte 0, into `ChrRaces`, which the reference reads at the client's
+    /// locale column; we read [`crate::ui_unit`]'s rows, the enUS column's.
     pub race: u8,
-    pub class: u8,
+    /// `$C` names the subject's Calling (ADR 0011), where the reference reads byte 1 into
+    /// `ChrClasses`; `None` for a creature or a player the realm has not named.
+    pub calling: Option<&'static benilla_formats::CallingInfo>,
     /// `UNIT_FIELD_BYTES_0` byte 2; `$G` takes the first arm on 0, the second on anything else.
     pub gender: u8,
 }
@@ -101,7 +103,7 @@ pub(crate) fn substitute_checked(text: &str, ctx: &MacroContext) -> (String, boo
                     let name = if matches!(tok, 'R' | 'r') {
                         crate::ui_unit::race_names(s.race).map_or("", |(display, _)| display)
                     } else {
-                        crate::ui_unit::class_names(s.class).map_or("", |(display, _)| display)
+                        s.calling.map_or("", |c| c.name.as_str())
                     };
                     if tok.is_ascii_lowercase() {
                         out.push_str(&name.to_ascii_lowercase());
@@ -175,7 +177,7 @@ pub(crate) fn player_identity(
     Some(Subject {
         name: names.resolve(guid.0, commands)?.to_string(),
         race: store.0.unit_race().unwrap_or(0),
-        class: store.0.unit_class().unwrap_or(0),
+        calling: crate::twilight::self_calling(),
         gender: store.0.unit_gender().unwrap_or(0),
     })
 }
@@ -188,27 +190,29 @@ pub(crate) fn subject_for_guid(
     stores: &Query<&ObjectStore>,
     names: &NameCache,
     commands: &NetCommands,
+    callings: Option<&crate::twilight::CallingKeys>,
 ) -> Option<Subject> {
     if guid == 0 {
         return None;
     }
+    let calling = callings.and_then(|k| k.of(guid));
     let store = index.0.get(&guid).and_then(|e| stores.get(*e).ok());
     let name = names.resolve_unit(guid, store, commands)?.to_string();
     if let Some(store) = store {
         return Some(Subject {
             name,
             race: store.0.unit_race().unwrap_or(0),
-            class: store.0.unit_class().unwrap_or(0),
+            calling,
             gender: store.0.unit_gender().unwrap_or(0),
         });
     }
     // A creature lands on zeros, so `$R` and `$C` emit nothing; the reference's non-player arm
     // emits the unit's name (`0x50716b`, `0x5071f7`), which is not built.
-    let (race, class, gender) = names.player_traits(guid).unwrap_or((0, 0, 0));
+    let (race, _, gender) = names.player_traits(guid).unwrap_or((0, 0, 0));
     Some(Subject {
         name,
         race,
-        class,
+        calling,
         gender,
     })
 }
@@ -218,12 +222,12 @@ mod tests {
     use super::{substitute, substitute_checked, MacroContext, Subject};
     use crate::world_state::WorldStates;
 
-    /// Race 4, class 5: both real rows.
+    /// Race 4, a real row, and the Acolyte.
     fn subject(gender: u8) -> Subject {
         Subject {
             name: "Thrall".into(),
             race: 4,
-            class: 5,
+            calling: benilla_formats::twilight_calling("acolyte"),
             gender,
         }
     }
@@ -280,12 +284,12 @@ mod tests {
     }
 
     #[test]
-    fn race_and_class_follow_the_token_case() {
+    fn race_and_calling_follow_the_token_case() {
         let s = subject(0);
-        assert_eq!(expand("A $C of $R", Some(&s)), "A Priest of Night Elf");
-        assert_eq!(expand("a $c of $r", Some(&s)), "a priest of night elf");
+        assert_eq!(expand("An $C of $R", Some(&s)), "An Acolyte of Night Elf");
+        assert_eq!(expand("an $c of $r", Some(&s)), "an acolyte of night elf");
         let unknown = Subject {
-            class: 6,
+            calling: None,
             ..subject(0)
         };
         assert_eq!(expand("[$C]", Some(&unknown)), "[]");

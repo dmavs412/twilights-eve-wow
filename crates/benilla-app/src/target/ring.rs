@@ -435,7 +435,8 @@ pub(crate) fn ring_reaction(
                 .get(info.rep_index as usize)
                 .map_or(0, |&(_flags, s)| s);
             let race = self_store.0.unit_race().unwrap_or(0);
-            let class = self_store.0.unit_class().unwrap_or(0);
+            // The Calling's class table, not the class byte (ADR 0011).
+            let class = crate::twilight::self_calling().map_or(0, |c| c.class);
             return Some(reputation_rank(info.base_for(race, class) + standing));
         }
         // The template comparator: 1, 3 or 4 on the rank scale.

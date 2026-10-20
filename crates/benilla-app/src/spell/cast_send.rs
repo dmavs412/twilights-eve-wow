@@ -408,15 +408,12 @@ fn send_spell_cast(
     }
     // The finisher rung (`6e4e50`–`6e4ecd`), above the attack pick: a finishing move
     // (`AttributesEx & 0x500000`) with the combo-point byte at 0 refuses 0x46 "That ability
-    // requires combo points" for a rogue (class byte 4, `6e4e98`), else 0x12. Like the button
-    // greying, it reads no target.
+    // requires combo points" for a rogue (class byte 4, `6e4e98`; here the Calling's class
+    // table), else 0x12. Like the button greying, it reads no target.
     if let (Some(d), Some(store)) = (def, ctx.rel.self_store) {
         if d.needs_combo_points() && store.0.player_combo_points().unwrap_or(0) == 0 {
-            let reason = if store.0.unit_class() == Some(CLASS_ROGUE) {
-                0x46
-            } else {
-                0x12
-            };
+            let rogue = crate::twilight::self_calling().is_some_and(|c| c.class == CLASS_ROGUE);
+            let reason = if rogue { 0x46 } else { 0x12 };
             debug!("ui_action: cast {spell_id} refused locally — no combo points ({reason:#x})");
             cast_errors.push_local(spell_id, reason);
             return;

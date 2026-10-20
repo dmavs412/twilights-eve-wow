@@ -546,7 +546,9 @@ pub(super) fn feed_player_req(
         }
     }
     let race = store.0.unit_race().unwrap_or(0);
-    let class = store.0.unit_class().unwrap_or(0);
+    // The Calling's class table, not the class byte (ADR 0011).
+    let calling = crate::twilight::self_calling();
+    let class = calling.map_or(0, |c| c.class);
     let mut rep_ranks = std::collections::HashMap::new();
     if let Some(cat) = factions.as_deref().map(|f| f.catalog()) {
         for (id, info) in cat.reputation_factions() {
@@ -561,19 +563,36 @@ pub(super) fn feed_player_req(
             );
         }
     }
-    // The reference's `0xc4d770`: a known spell whose Effect[0] is 40 (`SPELL_EFFECT_DUAL_WIELD`).
-    let can_dual_wield = spells.as_deref().is_some_and(|s| {
-        actions
-            .spells
-            .iter()
-            .any(|&id| s.catalog.get(id).is_some_and(|sd| sd.effects[0] == 40))
-    });
+    // The reference's `0xc4d770` is a known spell whose Effect[0] is 40 (`SPELL_EFFECT_DUAL_WIELD`);
+    // a Calling dual wields by its `weapons` (ADR 0011). Without a Calling yet, the spell decides.
+    let can_dual_wield = calling.map_or_else(
+        || {
+            spells.as_deref().is_some_and(|s| {
+                actions
+                    .spells
+                    .iter()
+                    .any(|&id| s.catalog.get(id).is_some_and(|sd| sd.effects[0] == 40))
+            })
+        },
+        |c| c.dual_wield,
+    );
+    // Items are checked against the Calling's `item_class` and its own armour and weapon kinds,
+    // not the class byte or `SMSG_SET_PROFICIENCY` (callings.csv, #207).
+    let proficiency = calling.map_or_else(
+        || proficiencies.0.clone(),
+        |c| {
+            [2, 4]
+                .into_iter()
+                .map(|class| (class, c.proficiency(class)))
+                .collect()
+        },
+    );
     let state = benilla_ui::script::PlayerReqState {
         level: store.0.unit_level().unwrap_or(0),
-        class_id: u32::from(class),
+        class_id: u32::from(calling.map_or(0, |c| c.item_class)),
         race_id: u32::from(race),
         skills,
-        proficiency: proficiencies.0.clone(),
+        proficiency,
         rep_ranks,
         can_dual_wield,
         honor_rank: store.0.player_honor_rank().unwrap_or(0),
@@ -935,13 +954,13 @@ pub(crate) fn feed_containers(
 
     let mut fresh: HashMap<i64, ContainerState> = HashMap::new();
     // The class's relic flag; without client data it is false, an ordinary ranged slot.
-    let has_relic_slot = player.is_some_and(|p| {
-        p.0.unit_class().is_some_and(|c| {
+    // The Calling's class table, not the class byte (ADR 0011).
+    let has_relic_slot = player.is_some()
+        && crate::twilight::self_calling().is_some_and(|c| {
             classes
                 .as_deref()
-                .is_some_and(|t| t.0.has_relic_slot(u32::from(c)))
-        })
-    });
+                .is_some_and(|t| t.0.has_relic_slot(u32::from(c.class)))
+        });
     if let Some(store) = player {
         let mut slots = HashMap::new();
         for i in 0..PACK_SLOTS {

@@ -269,10 +269,10 @@ const KEYRING_SLOTS: std::ops::RangeInclusive<u32> = 0x51..=0x70;
 /// Before the script tick: the sites' asks, the descriptor edges, the timers, the cue and the
 /// event, and the acknowledged bank's push to whichever VM is live.
 fn feed_tutorials(
+    calling: Option<Res<crate::twilight::SelfCalling>>,
     script: Option<NonSendMut<UiScript>>,
     mut tutorials: ResMut<Tutorials>,
     mut asks: MessageReader<TutorialEvent>,
-    self_q: Query<&ObjectStore, With<SelfPlayer>>,
     items: Res<crate::items::Items>,
     mut sounds: ResMut<crate::sound::MessageSounds>,
     mut told: Local<crate::ui_script::VmMemo<Option<Vec<u8>>>>,
@@ -289,7 +289,8 @@ fn feed_tutorials(
     // (the reference's 23-bit mask `0x809200` is not decoded); Hearthstones by entry; Ranged
     // Weapons for a ranged type on a non-hunter; Keyrings by the slot band.
     let pushes = std::mem::take(&mut tutorials.pushes);
-    let class = self_q.single().ok().and_then(|s| s.0.unit_class());
+    // The Calling's class table, not the class byte (ADR 0011).
+    let class = crate::twilight::SelfCalling::get(calling.as_deref()).map(|c| c.class);
     for (entry, bag, slot) in pushes {
         tutorials.trigger(id::BACKPACK, 0, now);
         if let Some(info) = items.template_cached(entry) {

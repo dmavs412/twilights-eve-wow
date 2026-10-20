@@ -27,6 +27,10 @@ pub struct CallingDef {
     /// The vanilla class table its per-level stats, attack power and mana regen read, and the
     /// class byte the wire still carries.
     pub stat_profile: StatProfile,
+    /// The vanilla class whose `AllowableClass` bit an item it equips must carry; the Warrior's
+    /// unless it says.
+    #[serde(default = "warrior")]
+    pub item_class: StatProfile,
     /// Percent of the profile's base health and base mana it has (100 is the vanilla class's).
     #[serde(default = "full")]
     pub health_pct: u32,
@@ -63,6 +67,10 @@ pub struct CallingDef {
 
 fn full() -> u32 {
     100
+}
+
+fn warrior() -> StatProfile {
+    StatProfile::Warrior
 }
 
 impl CallingDef {

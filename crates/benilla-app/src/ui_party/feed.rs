@@ -278,7 +278,7 @@ pub(super) fn feed_party(
         level: store.0.unit_level().unwrap_or(0),
         area: here.area(),
         dead: store.0.unit_is_dead(),
-        class: store.0.unit_class(),
+        calling: tables.calling(g.0),
     });
     let zone_name = |area: u32| {
         let areas = areas.as_ref()?;
@@ -289,7 +289,8 @@ pub(super) fn feed_party(
             .name(areas.0.top_zone(area).unwrap_or(area))
             .map(str::to_string)
     };
-    let raid = raid_roster(&group, me.as_ref(), &names, &zone_name);
+    let calling_of = |guid: u64| tables.calling(guid);
+    let raid = raid_roster(&group, me.as_ref(), &names, &zone_name, &calling_of);
     // The `RAID_ROSTER_UPDATE` key, taken before the roster moves into the snapshot.
     let raid_key: Vec<(u64, u32, u32, bool)> = raid
         .iter()
@@ -594,9 +595,8 @@ pub(super) struct RaidSelf {
     /// Return 9's live-object arm, health 0 or below: `unit_is_dead`, not `unit_reads_dead`, so
     /// a feigning hunter does not read dead.
     pub(super) dead: bool,
-    /// Our class byte, off our descriptor: the login seeds our own name without traits
-    /// (`net::session::connected`), so the name cache never has our class.
-    pub(super) class: Option<u8>,
+    /// Our Calling, which the roster names in place of the class byte (ADR 0011).
+    pub(super) calling: Option<&'static benilla_formats::CallingInfo>,
 }
 
 /// The raid rows as guids, in the order [`raid_roster`] builds them, which the RaidFrame's drag,
@@ -677,6 +677,7 @@ fn raid_roster(
     me: Option<&RaidSelf>,
     names: &NameCache,
     zone_name: &dyn Fn(u32) -> Option<String>,
+    calling_of: &dyn Fn(u64) -> Option<&'static benilla_formats::CallingInfo>,
 ) -> Vec<RaidMemberInfo> {
     if group.group_type != GROUPTYPE_RAID {
         return Vec::new();
@@ -692,7 +693,7 @@ fn raid_roster(
             0
         }
     };
-    // The class byte comes from the name cache for a member, from our descriptor for us.
+    // Each row names its player's Calling and its class table's token, never a class byte.
     let row = |guid: u64,
                name: String,
                flags: u8,
@@ -700,8 +701,8 @@ fn raid_roster(
                zone: Option<String>,
                online: bool,
                ninth: bool,
-               class_byte: Option<u8>| {
-        let class = class_byte.and_then(crate::ui_unit::class_names);
+               calling: Option<&'static benilla_formats::CallingInfo>| {
+        let class = calling.map(|c| (c.name.as_str(), c.class_token()));
         RaidMemberInfo {
             name,
             guid,
@@ -727,7 +728,7 @@ fn raid_roster(
             me.area.and_then(zone_name),
             true,
             me.dead,
-            me.class,
+            me.calling,
         ));
     }
     for m in &group.members {
@@ -745,7 +746,7 @@ fn raid_roster(
             // Return 9's cached arm needs both `0x4` and `0x1` in `[edi+0x18]`, vmangos's `DEAD`
             // and `ONLINE` (`Group/Group.cpp:45-63`): an offline dead member answers nil.
             online && m.status & member_status::DEAD != 0,
-            names.player_traits(m.guid).map(|(_, class, _)| class),
+            calling_of(m.guid),
         ));
     }
     roster
@@ -2166,11 +2167,17 @@ mod tests {
             level: 60,
             area: Some(1537),
             dead: false,
-            // Off our descriptor, the only source of it for us. 11 is Druid.
-            class: Some(11),
+            // Our Calling: the Initiate's table is the Mage's.
+            calling: benilla_formats::twilight_calling("initiate"),
+        };
+        // The assistant's Calling is the Vanguard; the offline member's is not known.
+        let calling_of = |guid: u64| {
+            (guid == 0xA11CE)
+                .then(|| benilla_formats::twilight_calling("vanguard"))
+                .flatten()
         };
 
-        let roster = raid_roster(&group, Some(&me), &names, &zone);
+        let roster = raid_roster(&group, Some(&me), &names, &zone, &calling_of);
         assert_eq!(roster.len(), 3, "the player is spliced back in");
 
         // Row 1, us: leader (rank 2), subgroup stored 0, class off the descriptor.
@@ -2181,7 +2188,8 @@ mod tests {
             "stored 0-based; the BINDING adds one"
         );
         assert_eq!(roster[0].level, 60);
-        assert_eq!(roster[0].class_file.as_deref(), Some("DRUID"));
+        assert_eq!(roster[0].class.as_deref(), Some("Initiate"));
+        assert_eq!(roster[0].class_file.as_deref(), Some("MAGE"));
         assert_eq!(roster[0].zone.as_deref(), Some("Ironforge"));
         assert!(roster[0].online && !roster[0].ninth);
 
@@ -2200,7 +2208,7 @@ mod tests {
         // A party is not a raid: the list is empty, so `GetNumRaidMembers()` answers 0, while
         // `IsRaidLeader()` still answers 1.
         group.group_type = 0;
-        assert!(raid_roster(&group, Some(&me), &names, &zone).is_empty());
+        assert!(raid_roster(&group, Some(&me), &names, &zone, &calling_of).is_empty());
     }
 
     #[test]

@@ -62,13 +62,14 @@ fn resolve_board(
     log: &PvpLogData,
     names: &NameCache,
     commands: &NetCommands,
+    callings: Option<&crate::twilight::CallingKeys>,
 ) -> Option<Vec<BattlefieldScoreRow>> {
     let mut rows = Vec::with_capacity(log.rows.len());
     for r in &log.rows {
         let name = names.resolve(r.guid, commands)?.to_string();
-        let (race, class) = names
-            .player_traits(r.guid)
-            .map_or((0, 0), |(race, class, _)| (race, class));
+        let race = names.player_traits(r.guid).map_or(0, |(race, _, _)| race);
+        // The player's Calling, never the class byte (ADR 0011).
+        let calling = callings.and_then(|k| k.of(r.guid));
         // The team comes from race, never the wire (`0x4aa200`, `0x5efe00`'s walk): 0 Horde,
         // 1 Alliance, -1 neither.
         let faction = i32::from(crate::ui_unit::race_pvp_team(race));
@@ -85,7 +86,7 @@ fn resolve_board(
             faction,
             rank: i32::try_from(r.rank).unwrap_or(i32::MAX),
             race: crate::ui_unit::race_names(race).map(|(n, _)| n.to_string()),
-            class: crate::ui_unit::class_names(class).map(|(n, _)| n.to_string()),
+            class: calling.map(|c| c.name.clone()),
             stats,
         });
     }
@@ -99,6 +100,7 @@ pub(crate) fn feed_battlefield_score(
     catalog: Option<Res<WorldStateUiRes>>,
     names: Res<NameCache>,
     commands: Res<NetCommands>,
+    callings: Option<Res<crate::twilight::CallingKeys>>,
     mut last: Local<crate::ui_script::VmMemo<Option<BattlefieldScores>>>,
 ) {
     let Some(mut script) = script else {
@@ -108,7 +110,7 @@ pub(crate) fn feed_battlefield_score(
     script.set_battlefield_run_time_ms(queue.run_time_ms(now));
 
     let fresh = board.log.as_ref().and_then(|log| {
-        let rows = resolve_board(log, &names, &commands)?;
+        let rows = resolve_board(log, &names, &commands, callings.as_deref())?;
         let columns = queue
             .active_map()
             .zip(catalog.as_deref())

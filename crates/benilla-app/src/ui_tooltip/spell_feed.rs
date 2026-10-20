@@ -604,7 +604,8 @@ pub(super) fn feed_spell_tooltips(
     // Every rank of the class's talents: a talent tooltip reads the current and the next rank.
     if let (Some(talents), Ok(store)) = (talents.as_deref(), self_q.single()) {
         let race = store.0.unit_race().unwrap_or(0);
-        let class = store.0.unit_class().unwrap_or(0);
+        // The Calling's tabs: its catalog's masks admit any class table (ADR 0011).
+        let class = crate::twilight::self_calling().map_or(0, |c| c.class);
         for tab in talents.catalog.tabs_for_class(race, class) {
             for t in talents.catalog.talents_in_tab(tab.id) {
                 wanted.extend(

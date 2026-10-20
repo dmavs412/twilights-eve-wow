@@ -778,8 +778,8 @@ fn debug_select_dialog(
     let Some(c) = roster.selected_char() else {
         return;
     };
-    let (guid, name, level, class) = (c.guid, c.name.clone(), c.level, class_name(c.class));
-    dialog.open_for(guid, name, level, class);
+    let (guid, name, level) = (c.guid, c.name.clone(), c.level);
+    dialog.open_for(guid, name, level, String::new());
     dialog.typed.set_text(&typed);
     info!("char select: dialog instrument opened the delete confirm");
     *done = true;

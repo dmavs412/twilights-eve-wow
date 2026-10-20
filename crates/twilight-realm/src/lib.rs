@@ -807,6 +807,7 @@ impl Realm {
                 alive: w.alive(),
                 health: w.health_share(),
                 create: w.remote_create(c),
+                calling: callings::of(c.calling).key.clone(),
                 hidden: w.hidden(),
             });
         }
@@ -879,6 +880,12 @@ impl Realm {
                 }
                 for (guid, create) in view {
                     if w.seen.insert(guid) {
+                        // A player first seen: the client names them by their Calling.
+                        if let Some(o) = players.iter().find(|o| o.guid == guid) {
+                            events.push(SessionEvent::Callings {
+                                by_guid: vec![(guid, o.calling.clone())],
+                            });
+                        }
                         events.push(create);
                     }
                 }
