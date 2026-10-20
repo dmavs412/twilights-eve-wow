@@ -114,8 +114,8 @@ pub(crate) use probes::{
     JitterMeterPlugin, LiftCensusPlugin, LiveFpsPlugin, NodeProbePlugin, ParticleCensusPlugin,
     ProbeChatPlugin, ProbeClock, ProbeDragPlugin, ProbeExitPlugin, ProbeFocusPlugin,
     ProbeGotoPlugin, ProbeHoverPlugin, ProbeInteractPlugin, ProbeKeyPlugin, ProbeLuaPlugin,
-    ProbeResizePlugin, RevealAuditPlugin, SchedCensusPlugin, StallPlugin, TrailCensusPlugin,
-    UnitVisualsPlugin,
+    ProbeResizePlugin, ProbeSpellsPlugin, RevealAuditPlugin, SchedCensusPlugin, StallPlugin,
+    TrailCensusPlugin, UnitVisualsPlugin,
 };
 pub(crate) use scenarios::ui_opted_in;
 use scenarios::GlueScreen;

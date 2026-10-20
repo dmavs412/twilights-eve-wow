@@ -259,6 +259,34 @@ if ((git rev-parse HEAD).Trim() -ne $startSha) {
     if ($LASTEXITCODE -ne 0) { $failures += "publish-play.ps1 failed" }
 }
 
+# The smoke run against the copy just published (#200). Report only: one bug per failing spell,
+# never a reset or a block.
+$smoke = @("- not run")
+if ($published -like "play/*") {
+    Write-Log "smoke run against $published"
+    & (Join-Path $PSScriptRoot "smoke.ps1") -Play (Join-Path $Root $published) *>&1 | ForEach-Object { Write-Log "$_" }
+    $smokeDir = Get-ChildItem (Join-Path $Root ".claude\smoke") -Directory | Sort-Object Name | Select-Object -Last 1
+    $smokeReport = Join-Path $smokeDir.FullName "smoke-report.jsonl"
+    $rows = if (Test-Path $smokeReport) { @(Get-Content $smokeReport | ForEach-Object { $_ | ConvertFrom-Json }) } else { @() }
+    $casts = @($rows | Where-Object { $null -ne $_.spell_id })
+    $bad = @($casts | Where-Object { -not $_.ok })
+    $smoke = @()
+    foreach ($b in $bad) {
+        $title = "Smoke: $($b.calling) $($b.name) ($($b.spell_id)) fails"
+        $open = (gh issue list -R $Repo --state open --search "in:title `"$title`"" --json number,title) -join "`n" | ConvertFrom-Json
+        $issue = @($open | Where-Object { $_.title -eq $title }) | Select-Object -First 1
+        if ($issue) { $no = $issue.number } else {
+            $body = "The overnight smoke run ($published, ``scripts/smoke.ps1``) cast $($b.name) ($($b.spell_id)) as a $($b.calling) on a Test Grounds dummy and the client answered:`n`n> $($b.error)`n`nReport: ``$smokeReport``."
+            $url = gh issue create -R $Repo --title $title --label bug --body $body
+            $no = ($url -split '/')[-1]
+        }
+        $smoke += "- $($b.calling) $($b.name) ($($b.spell_id)): $($b.error) (#$no)"
+    }
+    $late = @($rows | Where-Object { $_.timed_out_at })
+    foreach ($t in $late) { $smoke += "- timed out at Calling $($t.timed_out_at)" }
+    if (-not $smoke.Count) { $smoke = @("- clean, $($casts.Count) spells") }
+}
+
 # One comment per night on the pinned "Overnight log" issue; format in docs/agents/unattended.md.
 $assumed = @(git log --format=%B "$startSha..HEAD" | Where-Object { $_ -match '^Assumed:' })
 # Built with `+=`, which flattens: a nested array inside `@(a, b, c)` stays one element, and
@@ -267,7 +295,9 @@ $lines = @("## Night of $stamp", "", "### Tickets")
 $lines += @(Get-Content $summary)
 $lines += @("", "### Assumptions")
 $lines += $(if ($assumed.Count) { @($assumed | ForEach-Object { "- $_" }) } else { @("- none") })
-$lines += @("", "### Play copy", "- $published", "", "### Failures")
+$lines += @("", "### Play copy", "- $published", "", "### Smoke")
+$lines += $smoke
+$lines += @("", "### Failures")
 $lines += $(if ($failures.Count) { @($failures | ForEach-Object { "- $_" }) } else { @("- none") })
 $body = $lines -join "`n"
 $bodyFile = Join-Path $script:LogDir "overnight-log.md"

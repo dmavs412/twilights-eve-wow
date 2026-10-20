@@ -30,7 +30,7 @@ struct Ground;
 
 impl Host for Ground {
     fn ground_height(&self, _: u32, _: f32, _: f32, _: f32) -> Option<f32> {
-        Some(70.0)
+        Some(47.2)
     }
     fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
         true

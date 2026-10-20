@@ -26,8 +26,11 @@ failed.
   tickets done, assumptions taken, the `play/` copy published, and failures. Its format:
   `## Night of <yyyy-MM-dd_HHmm>`, then `### Tickets` (the summary table: issue, title,
   result, commits, cost), `### Assumptions` (every `Assumed:` line in the night's commits),
-  `### Play copy` (`play/<short-commit>` or none) and `### Failures` (blocked or rolled-back
-  tickets, a failed publish), each `- none` when empty. The script holds the build lock all
+  `### Play copy` (`play/<short-commit>` or none), `### Smoke` (`scripts/smoke.ps1` against
+  that copy: `- clean, <n> spells`, one `- <calling> <spell> (<id>): <error>` per failed cast with
+  its bug issue, a `- timed out at Calling <X>` line, or `- not run` with no copy) and
+  `### Failures` (blocked or rolled-back tickets, a failed publish), each `- none` when empty.
+  The smoke is report only: it never resets or blocks a commit. The script holds the build lock all
   night and names itself in `CLAUDE_BUILD_LOCK_HOLDER`, so the sessions it starts pass the hook.
 - **`unplayed`**: a spec closes when its tickets land and gets `unplayed`; Davis's play note
   removes it. No feature waits on play. Bugs reference the spec they break.

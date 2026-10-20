@@ -112,6 +112,10 @@ impl Plugin for DevProbesPlugin {
             {
                 app.add_plugins(crate::capture::ProbeGotoPlugin);
             }
+            // `WOW_PROBE_SPELLS=<report.jsonl>`: every spellbook spell cast on a dummy.
+            if std::env::var("WOW_PROBE_SPELLS").is_ok() {
+                app.add_plugins(crate::capture::ProbeSpellsPlugin);
+            }
             // `WOW_PROBE_DRAG="A>B"`: drags frame A onto B through the real pointer path.
             if std::env::var("WOW_PROBE_DRAG").is_ok() {
                 app.add_plugins(crate::capture::ProbeDragPlugin);

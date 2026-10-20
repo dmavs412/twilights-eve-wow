@@ -101,6 +101,17 @@ pub(crate) const PROBE_VARS: &[ProbeVar] = &[
         wall_clock: true,
     },
     ProbeVar {
+        name: "WOW_PROBE_SPELLS",
+        purpose: "<report.jsonl> — Twilight's Eve: casts every spellbook spell on a Training Dummy (pair with WOW_PROBE_TEST_GROUNDS), one JSON line each, then exits (error status on any failed cast)",
+        // `START_AFTER_SECS` after world entry, on `ProbeClock`.
+        wall_clock: true,
+    },
+    ProbeVar {
+        name: "WOW_PROBE_SPELLS_CALLING",
+        purpose: "<calling key> — the `calling` field WOW_PROBE_SPELLS writes on each line",
+        wall_clock: false,
+    },
+    ProbeVar {
         name: "WOW_PROBE_HOVER",
         purpose: "\"<frame>[;<frame>…]\" — sweep the real pointer across the named frames' centres, pressing nothing",
         // Starts at `_AT`, one move per `_STEP` seconds, alternating on `_DUTY`, in wall seconds.
