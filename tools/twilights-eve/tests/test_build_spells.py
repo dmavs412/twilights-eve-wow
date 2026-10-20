@@ -21,7 +21,7 @@ with open(MASTER, newline="", encoding="utf-8") as _f:
     COLUMNS = next(csv.reader(_f))
 
 STRIKE = {
-    "kind": "skill", "calling": "vanguard", "class": "1", "key": "strike", "name": "Strike", "rank": "1",
+    "kind": "skill", "calling": "vanguard", "key": "strike", "name": "Strike", "rank": "1",
     "spell_id": "1000078", "client_cost": "15", "realm_cost": "15", "target": "enemy",
     "effect1_kind": "weapon_strike",
     "effect1_params": "weapon=normal;bonus.base=9.5;bonus.per_level=1.4;bonus.per_ap=0;tags=a|b",
@@ -36,7 +36,7 @@ PNG = base64.b64decode(
 
 # A from-scratch row: its own id, a stock spell's visual, a PNG icon and four effects.
 EMBER = {
-    "kind": "skill", "calling": "vanguard", "class": "1", "key": "ember_lash", "name": "Ember Lash", "rank": "1",
+    "kind": "skill", "calling": "vanguard", "key": "ember_lash", "name": "Ember Lash", "rank": "1",
     "spell_id": "1000001", "visual": "133", "icon": "ember_lash.png", "school": "fire", "needs_facing": "yes",
     "client_cost": "30", "realm_cost": "30", "target": "enemy",
     "effect1_kind": "school_damage", "effect1_params": "amount.base=10;amount.per_level=1.5",
@@ -48,20 +48,22 @@ EMBER = {
 
 
 def talent(key: str, rank: int, row: int, column: int, **extra: str) -> dict:
-    return {"kind": "talent", "calling": "vanguard", "class": "1", "key": key, "name": key.title(),
+    return {"kind": "talent", "calling": "vanguard", "key": key, "name": key.title(),
             "rank": str(rank), "tab": "Arms", "tab_row": str(row), "tab_column": str(column),
             "modelled": "yes", **extra}
 
 
 CALLING = {
-    "kind": "calling", "calling": "vanguard", "class": "1", "key": "vanguard", "name": "Vanguard",
+    "kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard",
     "tier": "0",
     "tier_cap": "10", "tier_bonus": "strength=1;stamina=2", "shapeshift_form": "17",
-    "armour": "cloth|mail",
 }
-TAB = {"kind": "talent_tab", "calling": "vanguard", "class": "1", "key": "arms", "name": "Arms", "tab_id": "900",
+# Every callings.csv cell a test leaves out (`run_build` writes one row per Calling it sees).
+PROFILE = {"icon": "", "power": "rage", "stat_profile": "warrior", "health_pct": "100", "mana_pct": "100",
+           "armor": "cloth|mail", "weapons": "one_hand_sword|dagger", "spellbook": ""}
+TAB = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms", "tab_id": "900",
        "background": "WarriorArms", "tab_order": "0"}
-AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "name": "Buff", "rank": "1", "spell_id": "1014177",
+AURA = {"kind": "aura", "calling": "vanguard", "key": "buff", "name": "Buff", "rank": "1", "spell_id": "1014177",
         "duration_ms": "10000", "charges": "1", "effect1_kind": "skill_crit_pct",
         "effect1_params": "skill=strike;pct=50", "modelled": "no"}
 
@@ -69,6 +71,8 @@ AURA = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "buff", "nam
 class BuildSpells(unittest.TestCase):
     def setUp(self):
         self.extra_art: dict[str, bytes] = {}
+        # callings.csv cells by Calling key, over PROFILE; None leaves the Calling's row out.
+        self.profiles: dict[str, dict | None] = {}
 
     def run_build(self, rows: list[dict],
                   extra_columns: tuple = ()) -> tuple[subprocess.CompletedProcess, list | None]:
@@ -87,13 +91,25 @@ class BuildSpells(unittest.TestCase):
             writer = csv.DictWriter(f, [*COLUMNS, *extra_columns], restval="")
             writer.writeheader()
             writer.writerows(rows)
+        callings_path = os.path.join(tmp, "callings.csv")
+        names = {r["calling"]: r["name"] for r in rows if r["kind"] == "calling"}
+        keys = list(dict.fromkeys([r["calling"] for r in rows if r.get("calling")] + list(self.profiles)))
+        with open(callings_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, ["calling", "name", *PROFILE], restval="")
+            writer.writeheader()
+            for key in keys:
+                if self.profiles.get(key, {}) is None:
+                    continue
+                writer.writerow({"calling": key, "name": names.get(key, key.title()),
+                                 **PROFILE, **self.profiles.get(key, {})})
         art_dir = os.path.join(tmp, "art")
         os.mkdir(art_dir)
         for name, data in {"ember_lash.png": PNG, **getattr(self, "extra_art", {})}.items():
             with open(os.path.join(art_dir, name), "wb") as f:
                 f.write(data)
         self.out_dir = tmp
-        command = [sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp, "--art-dir", art_dir, "--no-dbc-check"]
+        command = [sys.executable, SCRIPT, "--csv", path, "--callings", callings_path, "--out-dir", tmp,
+                   "--art-dir", art_dir, "--no-dbc-check"]
         done = subprocess.run(command, capture_output=True, text=True)
         self.patch = None
         data = None
@@ -180,24 +196,37 @@ class BuildSpells(unittest.TestCase):
     def test_realm_cost_below_client_cost_fails(self):
         self.assert_fails([{**STRIKE, "realm_cost": "10"}], "below client_cost")
 
-    def test_a_callings_rows_must_agree_on_class(self):
-        self.assert_fails([STRIKE, {**STRIKE, "key": "stab", "class": "4", "spell_id": "1000079"}], "disagree on class")
+    def test_every_calling_has_one_callings_csv_row_and_the_csv_names_no_other(self):
+        self.profiles = {"vanguard": None}
+        self.assert_fails([STRIKE], "vanguard: no callings.csv row")
+        self.profiles = {"ghost": {}}
+        self.assert_fails([STRIKE], "callings.csv ghost: not a Calling of master.csv")
 
-    def test_a_missing_or_unknown_class_fails(self):
-        self.assert_fails([{**STRIKE, "class": ""}], "class is required")
-        self.assert_fails([{**STRIKE, "class": "6"}], "is not one of")
-        self.assert_fails([{**STRIKE, "class": "1.5"}], "is not one of")
+    def test_a_callings_csv_row_names_known_powers_profiles_armour_and_weapons(self):
+        for cell, value in (("power", "fury"), ("stat_profile", "monk"), ("armor", "cloth|robe"),
+                            ("weapons", "dagger|whip"), ("health_pct", "0")):
+            self.profiles = {"vanguard": {cell: value}}
+            done, _ = self.run_build([STRIKE])
+            self.assertNotEqual(done.returncode, 0, cell)
+            self.assertIn(cell, done.stderr)
 
-    def test_every_patch_row_carries_the_power_type_of_its_class(self):
-        for cls, power_type in (("1", 1), ("4", 3), ("8", 0)):
-            rows = [{**STRIKE, "class": cls}, talent("cruelty", 1, 0, 1, **{"class": cls, "spell_id": "1012320"})]
+    def test_the_class_and_armour_columns_are_gone(self):
+        for column in ("class", "armour"):
+            done, _ = self.run_build([STRIKE], extra_columns=(column,))
+            self.assertNotEqual(done.returncode, 0)
+            self.assertIn(f"column {column} is gone", done.stderr)
+
+    def test_every_patch_row_carries_the_power_type_of_its_calling(self):
+        for power, power_type in (("rage", 1), ("energy", 3), ("mana", 0), ("focus", 2)):
+            self.profiles = {"vanguard": {"power": power}}
+            rows = [STRIKE, talent("cruelty", 1, 0, 1, spell_id="1012320")]
             done, data = self.run_build(rows)
             self.assertEqual(done.returncode, 0, done.stderr)
-            self.assertEqual(data[0]["class"], int(cls))
-            self.assertNotIn("class", data[0]["skills"][0])
+            self.assertEqual(data[0]["power"], power)
+            self.assertNotIn("class", data[0])
             self.assertEqual(len(self.patch["spells"]), 2)
             for override in self.patch["spells"]:
-                self.assertEqual(override["fields"]["power_type"], power_type, cls)
+                self.assertEqual(override["fields"]["power_type"], power_type, power)
 
     def test_energize_names_its_power(self):
         row = {**STRIKE, "effect1_kind": "energize",
@@ -210,7 +239,7 @@ class BuildSpells(unittest.TestCase):
         self.assert_fails([{**STRIKE, "effect1_kind": "energize",
                             "effect1_params": "amount.base=20;amount.per_level=0"}], "energize needs power")
         self.assert_fails([{**STRIKE, "effect1_kind": "energize",
-                            "effect1_params": "power=focus;amount.base=20;amount.per_level=0"}],
+                            "effect1_params": "power=happiness;amount.base=20;amount.per_level=0"}],
                           "energize needs power")
         self.assert_fails([{**STRIKE, "effect1_kind": "energize", "effect1_params": "power=rage"}],
                           "lacks an amount")
@@ -392,8 +421,13 @@ class BuildSpells(unittest.TestCase):
             writer = csv.DictWriter(f, COLUMNS, restval="")
             writer.writeheader()
             writer.writerow({**STRIKE, "status": "placeholder"})
+        callings = os.path.join(tmp, "callings.csv")
+        with open(callings, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, ["calling", "name", *PROFILE])
+            writer.writeheader()
+            writer.writerow({"calling": "vanguard", "name": "Vanguard", **PROFILE})
         env = {k: v for k, v in os.environ.items() if k != "WOW_DATA"}
-        done = subprocess.run([sys.executable, SCRIPT, "--csv", path, "--out-dir", tmp],
+        done = subprocess.run([sys.executable, SCRIPT, "--csv", path, "--callings", callings, "--out-dir", tmp],
                               capture_output=True, text=True, env=env)
         self.assertNotEqual(done.returncode, 0)
         self.assertIn("needs --data", done.stderr)
@@ -412,7 +446,7 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertNotIn("secret guess", json.dumps(data) + json.dumps(self.patch))
 
-    def test_calling_row_carries_tier_stats_form_armour_and_class(self):
+    def test_calling_row_carries_tier_stats_and_form_and_its_callings_csv_row(self):
         done, data = self.run_build([CALLING, STRIKE])
         self.assertEqual(done.returncode, 0, done.stderr)
         calling = data[0]
@@ -421,16 +455,19 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(calling["tier_bonus"], {"strength": 1, "stamina": 2})
         self.assertEqual(calling["shapeshift_form"], 17)
         self.assertEqual(calling["armour"], ["cloth", "mail"])
-        self.assertEqual(calling["class"], 1)
+        self.assertEqual((calling["power"], calling["stat_profile"]), ("rage", "warrior"))
+        self.assertEqual((calling["health_pct"], calling["mana_pct"]), (100, 100))
+        self.assertEqual(calling["weapons"], ["one_hand_sword", "dagger"])
         self.assertEqual(len(calling["skills"]), 1)
 
     def test_calling_row_needs_tier_and_cap(self):
         self.assert_fails([{**CALLING, "tier_cap": ""}], "tier_cap")
         self.assert_fails([{**CALLING, "tier": ""}], "tier")
 
-    def test_calling_row_rejects_unknown_armour_and_stat(self):
-        self.assert_fails([{**CALLING, "armour": "cloth|robe"}], "armour")
+    def test_calling_row_rejects_an_unknown_stat_and_a_name_unlike_callings_csv(self):
         self.assert_fails([{**CALLING, "tier_bonus": "luck=1"}], "tier_bonus")
+        self.profiles = {"vanguard": {"name": "Guard"}}
+        self.assert_fails([CALLING], "differs from callings.csv's 'Guard'")
 
     def test_second_calling_row_fails(self):
         self.assert_fails([CALLING, {**CALLING, "key": "again"}], "second calling row")
@@ -454,7 +491,7 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(data[0]["talent_tabs"][0]["name"], "Arms")
 
     def test_client_visible_no_emits_the_realm_id_and_nothing_to_the_patch(self):
-        hidden = {"kind": "aura", "calling": "vanguard", "class": "1", "key": "bleed", "name": "Bleed", "rank": "1",
+        hidden = {"kind": "aura", "calling": "vanguard", "key": "bleed", "name": "Bleed", "rank": "1",
                   "client_visible": "no", "spell_id": "1000001", "modelled": "no"}
         done, data = self.run_build([CALLING, hidden])
         self.assertEqual(done.returncode, 0, done.stderr)
@@ -469,7 +506,7 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(self.patch["spells"][0]["spell_id"], 1000078)
 
     def hidden(self, **extra: str) -> dict:
-        return {"kind": "skill", "calling": "vanguard", "class": "1", "key": "bleed", "name": "Bleed", "rank": "1",
+        return {"kind": "skill", "calling": "vanguard", "key": "bleed", "name": "Bleed", "rank": "1",
                 "client_visible": "no", "spell_id": "1000001", "modelled": "no", **extra}
 
     def test_a_client_cell_on_a_hidden_row_fails(self):
@@ -600,12 +637,11 @@ class BuildSpells(unittest.TestCase):
             done, _ = self.run_build([CALLING, {**base, "effect1_params": params}])
             self.assertEqual(done.returncode, 0, done.stderr)
 
-    def test_calling_row_with_only_a_name_and_class_gives_the_class_and_no_tier(self):
-        bare = {"kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard",
-                "class": "1"}
+    def test_calling_row_with_only_a_name_gives_its_power_and_no_tier(self):
+        bare = {"kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard"}
         done, data = self.run_build([bare, STRIKE])
         self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual(data[0]["class"], 1)
+        self.assertEqual(data[0]["power"], "rage")
         self.assertNotIn("tier", data[0])
         self.assertEqual(self.patch["spells"][0]["fields"]["power_type"], 1)
         self.assert_fails([{**bare, "tier": "1"}], "tier_cap")
@@ -1095,7 +1131,9 @@ class SeamChecks(unittest.TestCase):
 
     def build(self, fixture: str, *flags: str) -> subprocess.CompletedProcess:
         with tempfile.TemporaryDirectory() as tmp:
-            return subprocess.run([sys.executable, SCRIPT, "--csv", os.path.join(HERE, "..", "fixtures", fixture),
+            fixtures = os.path.join(HERE, "..", "fixtures")
+            return subprocess.run([sys.executable, SCRIPT, "--csv", os.path.join(fixtures, fixture),
+                                   "--callings", os.path.join(fixtures, "seam_callings.csv"),
                                    "--out-dir", tmp, *flags], capture_output=True, text=True)
 
     def assert_refused(self, fixture: str, message: str, *flags: str) -> None:

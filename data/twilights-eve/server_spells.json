@@ -1,7 +1,36 @@
 [
  {
   "key": "basic_warrior",
-  "class": 1,
+  "power": "rage",
+  "stat_profile": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "cloth",
+   "leather",
+   "mail",
+   "shield"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
+  "spellbook": "Basic Warrior",
   "skills": [
    {
     "key": "heroic_strike",
@@ -1015,17 +1044,41 @@
    "intellect": 0,
    "spirit": 0
   },
-  "shapeshift_form": 17,
+  "shapeshift_form": 17
+ },
+ {
+  "key": "vanguard",
+  "power": "rage",
+  "stat_profile": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
   "armour": [
    "cloth",
    "leather",
    "mail",
+   "plate",
    "shield"
-  ]
- },
- {
-  "key": "vanguard",
-  "class": 1,
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
+  "spellbook": "Vanguard",
   "skills": [
    {
     "key": "righteous_smash",
@@ -4055,18 +4108,35 @@
    "intellect": 0,
    "spirit": 3
   },
-  "shapeshift_form": 17,
-  "armour": [
-   "cloth",
-   "leather",
-   "mail",
-   "plate",
-   "shield"
-  ]
+  "shapeshift_form": 17
  },
  {
   "key": "zealot",
-  "class": 1,
+  "power": "rage",
+  "stat_profile": "warrior",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Ability_Warrior_InnerRage",
+  "spellbook": "Zealot",
   "skills": [
    {
     "key": "seal_of_command",
@@ -7420,7 +7490,35 @@
  },
  {
   "key": "cutthroat",
-  "class": 4,
+  "power": "energy",
+  "stat_profile": "rogue",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "cloth",
+   "leather"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole",
+   "dual_wield"
+  ],
+  "icon": "Interface\\Icons\\Spell_Shadow_RitualOfSacrifice",
+  "spellbook": "Cutthroat",
   "skills": [
    {
     "key": "sinister_strike",
@@ -9748,15 +9846,37 @@
    "spirit": 3,
    "intellect": 0
   },
-  "shapeshift_form": 0,
-  "armour": [
-   "cloth",
-   "leather"
-  ]
+  "shapeshift_form": 0
  },
  {
   "key": "initiate",
-  "class": 8,
+  "power": "mana",
+  "stat_profile": "mage",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "cloth"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Spell_Arcane_StarFire",
+  "spellbook": "Initiate",
   "skills": [
    {
     "key": "ley_spark",
@@ -12738,14 +12858,38 @@
    "strength": 0,
    "agility": 0
   },
-  "shapeshift_form": 0,
-  "armour": [
-   "cloth"
-  ]
+  "shapeshift_form": 0
  },
  {
   "key": "ranger",
-  "class": 3,
+  "power": "mana",
+  "stat_profile": "hunter",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "leather",
+   "mail"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Ability_Whirlwind",
+  "spellbook": "Ranger",
   "skills": [
    {
     "key": "auto_shot",
@@ -15581,15 +15725,37 @@
    "strength": 0,
    "spirit": 0
   },
-  "shapeshift_form": 0,
-  "armour": [
-   "leather",
-   "mail"
-  ]
+  "shapeshift_form": 0
  },
  {
   "key": "acolyte",
-  "class": 5,
+  "power": "mana",
+  "stat_profile": "priest",
+  "health_pct": 100,
+  "mana_pct": 100,
+  "armour": [
+   "cloth"
+  ],
+  "weapons": [
+   "one_hand_axe",
+   "two_hand_axe",
+   "bow",
+   "gun",
+   "one_hand_mace",
+   "two_hand_mace",
+   "polearm",
+   "one_hand_sword",
+   "two_hand_sword",
+   "staff",
+   "fist",
+   "misc",
+   "dagger",
+   "thrown",
+   "crossbow",
+   "fishing_pole"
+  ],
+  "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
+  "spellbook": "Acolyte",
   "skills": [
    {
     "key": "creeping_blight",
@@ -17952,9 +18118,6 @@
    "strength": 0,
    "agility": 0
   },
-  "shapeshift_form": 0,
-  "armour": [
-   "cloth"
-  ]
+  "shapeshift_form": 0
  }
 ]

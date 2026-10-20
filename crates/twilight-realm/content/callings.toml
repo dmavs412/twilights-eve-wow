@@ -17,13 +17,13 @@
 # `radius_yd`, at most `max_targets`). `range_yd` is `[min, max]`; a max of 5 is melee reach.
 #
 # A Calling: its save `key`, the `name` the select screen shows, its `tier` and Tier Cap (`cap`),
-# its `class` (the 1.12.1 class id: 1 Warrior, 4 Rogue, 8 Mage ...; the power kind follows it),
-# the `tier_bonus` it adds to base stats (cumulative per Tier, on top of the race table), its
-# stance, the `armour` it may wear, skills and Talent Tree. The Advancement Quests into a Calling
+# its `power` (rage, energy, focus or mana) and `stat_profile` (the vanilla class table its stats
+# follow: warrior, rogue, mage ...; a test Calling may write `class = N` for both), the
+# `tier_bonus` it adds to base stats (cumulative per Tier, on top of the race table), its stance, the `armour` it may wear, skills and Talent Tree. The Advancement Quests into a Calling
 # are quests (content/quests.toml).
 #
-# Gear follows the Calling, never the level: every Calling of the Warrior line wields every
-# Warrior weapon, and wears the `armour` kinds it lists ("cloth", "leather", "mail", "plate",
+# Gear follows the Calling, never the level: it wields the `weapons` it lists (every Warrior weapon
+# when it lists none), and wears the `armour` kinds it lists ("cloth", "leather", "mail", "plate",
 # "shield"). No item is refused for level.
 
 # Basic Warrior and Vanguard are not here: the master CSV defines them (data/twilights-eve/server_spells.json,
@@ -34,7 +34,8 @@
 key = "zealot"
 name = "Zealot"
 tier = 2
-class = 1
+power = "rage"
+stat_profile = "warrior"
 cap = 50
 tier_bonus = { strength = 28, agility = 14, stamina = 28, intellect = 0, spirit = 7 }
 # Still a rage bar and Battle Stance: the borrowed Paladin spells need no stance once rewritten.

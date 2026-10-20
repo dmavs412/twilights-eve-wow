@@ -1,13 +1,13 @@
-//! The player's one power bar in the world: the kind its Calling's Class runs on, what it holds,
-//! and its regeneration on the two-second tick every kind shares (the rules are
-//! `rules::power` and `rules::rage`).
+//! The player's one power bar in the world: the kind its Calling runs on, what it holds, and its
+//! regeneration on the two-second tick every kind shares (the rules are `rules::power` and
+//! `rules::rage`).
 
 use crate::fields::UNIT_FIELD_POWER1;
 use crate::rules::power::{self, PowerKind};
 use crate::rules::rage;
 use crate::rules::stats::CharacterStats;
 
-/// One bar, stored as its client field carries it: rage in tenths, energy and mana whole.
+/// One bar, stored as its client field carries it: rage in tenths, energy, focus and mana whole.
 pub(super) struct Power {
     pub(super) kind: PowerKind,
     pub(super) current: u32,
@@ -21,10 +21,9 @@ pub(super) struct Power {
 }
 
 impl Power {
-    /// A bar for `stats`' Class at login or after Advancement: rage empty, energy and mana full
-    /// (vmangos `Player::InitStatsForLevel`, `ResurrectPlayer`).
-    pub(super) fn fresh(stats: &CharacterStats) -> Self {
-        let kind = PowerKind::of_class(stats.class);
+    /// A bar of the Calling's `kind` for `stats` at login or after Advancement: rage empty, the
+    /// rest full (vmangos `Player::InitStatsForLevel`, `ResurrectPlayer`).
+    pub(super) fn fresh(stats: &CharacterStats, kind: PowerKind) -> Self {
         let max = power::cap(kind, stats.max_mana, stats.max_energy_bonus);
         Self {
             kind,
@@ -90,8 +89,8 @@ impl Power {
         points
     }
 
-    /// `dt` seconds pass: rage decays out of combat, energy fills, mana fills from spirit at
-    /// `mana_per_tick` outside the five-second pause. Whether the value changed.
+    /// `dt` seconds pass: rage decays out of combat, energy and focus fill, mana fills from spirit
+    /// at `mana_per_tick` outside the five-second pause. Whether the value changed.
     pub(super) fn regenerate(&mut self, dt: f32, in_combat: bool, mana_per_tick: f64) -> bool {
         let was = self.current;
         self.pause = (self.pause - dt).max(0.0);
@@ -113,6 +112,9 @@ impl Power {
                 }
                 PowerKind::Energy => {
                     self.current = (self.current + power::ENERGY_PER_TICK).min(self.max);
+                }
+                PowerKind::Focus => {
+                    self.current = (self.current + power::FOCUS_PER_TICK).min(self.max);
                 }
                 PowerKind::Mana => {
                     if self.pause > 0.0 {

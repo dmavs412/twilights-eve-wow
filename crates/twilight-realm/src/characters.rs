@@ -235,9 +235,10 @@ impl Characters {
 }
 
 impl Char {
-    /// The Class of the current Calling (`ChrClasses.dbc` id).
+    /// The class byte of the current Calling: its stat profile's `ChrClasses.dbc` id, which the wire
+    /// carries until the client reads the Calling (#207).
     pub(crate) fn class(&self) -> u8 {
-        crate::callings::of(self.calling).class
+        crate::callings::of(self.calling).class()
     }
 
     fn roster_entry(&self) -> Character {

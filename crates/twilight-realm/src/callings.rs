@@ -22,15 +22,30 @@ pub struct CallingDef {
     pub tier: u8,
     /// The Tier Cap: the highest level inside the Tier.
     pub cap: u8,
-    /// The Class it sits on (`ChrClasses.dbc` id, `rules::power::class`): its power kind, its
-    /// per-level tables and the client's class byte follow it.
-    pub class: u8,
+    /// The power its bar runs on (ADR 0011).
+    pub power: PowerKind,
+    /// The vanilla class table its per-level stats, attack power and mana regen read, and the
+    /// class byte the wire still carries.
+    pub stat_profile: StatProfile,
+    /// Percent of the profile's base health and base mana it has (100 is the vanilla class's).
+    #[serde(default = "full")]
+    pub health_pct: u32,
+    #[serde(default = "full")]
+    pub mana_pct: u32,
     /// The Tier Bonus: flat base stats on top of the race table, cumulative per Tier.
     pub tier_bonus: TierBonus,
     /// `UNIT_FIELD_BYTES_1` byte 2 while this Calling is current (17, Battle Stance).
     pub shapeshift_form: u8,
-    /// The armour it may wear. Every Calling of the Warrior line wields every Warrior weapon.
+    /// The armour it may wear.
     pub armour: Vec<Armour>,
+    /// The weapons it may wield, and whether it dual wields; every Warrior weapon unless it says.
+    #[serde(default = "WeaponKind::warrior")]
+    pub weapons: Vec<WeaponKind>,
+    /// Its icon and its spell book tab's name (`callings.csv`); empty for a TOML Calling.
+    #[serde(default)]
+    pub icon: String,
+    #[serde(default)]
+    pub spellbook: String,
     #[serde(rename = "skill")]
     pub skills: Vec<Skill>,
     /// The Talent Tree: its tabs, as the stock talent frame shows them.
@@ -46,7 +61,22 @@ pub struct CallingDef {
     pub hidden_skills: Vec<Skill>,
 }
 
+fn full() -> u32 {
+    100
+}
+
 impl CallingDef {
+    /// `ChrClasses.dbc` id of its stat profile: the table the rules read, and the class byte the
+    /// wire carries until the client reads the Calling (#207).
+    pub fn class(&self) -> u8 {
+        self.stat_profile.class()
+    }
+
+    /// Whether it wears a one-hander in the off hand too.
+    pub fn dual_wields(&self) -> bool {
+        self.weapons.contains(&WeaponKind::DualWield)
+    }
+
     /// The skill or hidden ability with this key.
     pub fn skill_by_key(&self, key: &str) -> Option<&Skill> {
         self.skills
@@ -407,6 +437,128 @@ impl Armour {
             Armour::Plate => 293,
             Armour::Shield => 433,
         }
+    }
+}
+
+/// The vanilla class table a Calling's stats follow, by name (`warrior`, `rogue`, `mage` ...).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StatProfile {
+    Warrior,
+    Paladin,
+    Hunter,
+    Rogue,
+    Priest,
+    Shaman,
+    Mage,
+    Warlock,
+    Druid,
+}
+
+impl StatProfile {
+    /// Its `ChrClasses.dbc` id (`rules::power::class`).
+    pub fn class(self) -> u8 {
+        use crate::rules::power::class;
+        match self {
+            Self::Warrior => class::WARRIOR,
+            Self::Paladin => class::PALADIN,
+            Self::Hunter => class::HUNTER,
+            Self::Rogue => class::ROGUE,
+            Self::Priest => class::PRIEST,
+            Self::Shaman => class::SHAMAN,
+            Self::Mage => class::MAGE,
+            Self::Warlock => class::WARLOCK,
+            Self::Druid => class::DRUID,
+        }
+    }
+
+    /// The profile of a `ChrClasses.dbc` id; `None` for one with no table.
+    pub fn of_class(class: u8) -> Option<Self> {
+        [
+            Self::Warrior,
+            Self::Paladin,
+            Self::Hunter,
+            Self::Rogue,
+            Self::Priest,
+            Self::Shaman,
+            Self::Mage,
+            Self::Warlock,
+            Self::Druid,
+        ]
+        .into_iter()
+        .find(|p| p.class() == class)
+    }
+}
+
+/// A weapon kind a Calling may wield, or `dual_wield`: a one-hander in the off hand too.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WeaponKind {
+    OneHandAxe,
+    TwoHandAxe,
+    Bow,
+    Gun,
+    OneHandMace,
+    TwoHandMace,
+    Polearm,
+    OneHandSword,
+    TwoHandSword,
+    Staff,
+    Fist,
+    Misc,
+    Dagger,
+    Thrown,
+    Crossbow,
+    Wand,
+    FishingPole,
+    DualWield,
+}
+
+impl WeaponKind {
+    /// Its `ITEM_CLASS_WEAPON` subclass; `None` for `dual_wield`.
+    pub fn subclass(self) -> Option<u32> {
+        Some(match self {
+            Self::OneHandAxe => 0,
+            Self::TwoHandAxe => 1,
+            Self::Bow => 2,
+            Self::Gun => 3,
+            Self::OneHandMace => 4,
+            Self::TwoHandMace => 5,
+            Self::Polearm => 6,
+            Self::OneHandSword => 7,
+            Self::TwoHandSword => 8,
+            Self::Staff => 10,
+            Self::Fist => 13,
+            Self::Misc => 14,
+            Self::Dagger => 15,
+            Self::Thrown => 16,
+            Self::Crossbow => 18,
+            Self::Wand => 19,
+            Self::FishingPole => 20,
+            Self::DualWield => return None,
+        })
+    }
+
+    /// Every weapon a vanilla Warrior wields, the default of a Calling that names none.
+    pub fn warrior() -> Vec<Self> {
+        vec![
+            Self::OneHandAxe,
+            Self::TwoHandAxe,
+            Self::Bow,
+            Self::Gun,
+            Self::OneHandMace,
+            Self::TwoHandMace,
+            Self::Polearm,
+            Self::OneHandSword,
+            Self::TwoHandSword,
+            Self::Staff,
+            Self::Fist,
+            Self::Misc,
+            Self::Dagger,
+            Self::Thrown,
+            Self::Crossbow,
+            Self::FishingPole,
+        ]
     }
 }
 
@@ -1534,11 +1686,46 @@ fn shipped() -> &'static [CallingDef] {
     static CALLINGS: OnceLock<Vec<CallingDef>> = OnceLock::new();
     CALLINGS.get_or_init(|| {
         let mut all = crate::generated::callings();
-        let tables: Callings = toml::from_str(include_str!("../content/callings.toml"))
+        let tables = parse_toml(include_str!("../content/callings.toml"))
             .expect("content/callings.toml parses");
         all.extend(tables.calling);
         all
     })
+}
+
+/// Callings in the shape of `content/callings.toml`. A TOML Calling may still write `class = N`
+/// for its `stat_profile` and that vanilla class's power (Warrior rage, Rogue energy, the rest
+/// mana): the test seam's shorthand. `power` or `stat_profile` written beside it win.
+fn parse_toml(text: &str) -> Result<Callings, toml::de::Error> {
+    let mut value: toml::Value = toml::from_str(text)?;
+    for calling in value
+        .get_mut("calling")
+        .and_then(toml::Value::as_array_mut)
+        .into_iter()
+        .flatten()
+    {
+        let Some(table) = calling.as_table_mut() else {
+            continue;
+        };
+        let Some(class) = table.remove("class").and_then(|c| c.as_integer()) else {
+            continue;
+        };
+        let class = u8::try_from(class).unwrap_or(0);
+        let profile = StatProfile::of_class(class).unwrap_or(StatProfile::Warrior);
+        let power = match profile {
+            StatProfile::Warrior => "rage",
+            StatProfile::Rogue => "energy",
+            _ => "mana",
+        };
+        let name = format!("{profile:?}").to_lowercase();
+        table
+            .entry("stat_profile")
+            .or_insert(toml::Value::String(name));
+        table
+            .entry("power")
+            .or_insert(toml::Value::String(power.into()));
+    }
+    value.try_into()
 }
 
 /// The Callings tests added ([`add`]), for the rest of the process.
@@ -1549,9 +1736,9 @@ fn added() -> &'static RwLock<Vec<&'static CallingDef>> {
 
 /// Adds the Callings in `toml` (the shape of `content/callings.toml`) alongside the shipped
 /// ones, for the rest of the process; a key already present is left as it is. A test seam
-/// (`Realm::with_callings`), so a player script can run on a Class no shipped Calling sits on.
+/// (`Realm::with_callings`), so a player script can run on a power or profile no shipped Calling has.
 pub(crate) fn add(toml: &str) {
-    let parsed: Callings = toml::from_str(toml).expect("the added Callings parse");
+    let parsed = parse_toml(toml).expect("the added Callings parse");
     let mut added = added().write().unwrap();
     for def in parsed.calling {
         if shipped()

@@ -144,7 +144,7 @@ pub(crate) struct Ticked {
 struct Player {
     stats: CharacterStats,
     health: u32,
-    /// The Calling's Class's bar: rage, energy or mana.
+    /// The Calling's own bar: rage, energy, focus or mana.
     power: Power,
     /// Seconds until the next swing; 0 is ready.
     swing_timer: f32,
@@ -304,7 +304,7 @@ impl InWorld {
             player: Player {
                 stats,
                 health: stats.max_health,
-                power: Power::fresh(&stats),
+                power: Power::fresh(&stats, crate::callings::of(c.calling).power),
                 swing_timer: 0.0,
                 off_swing_timer: 0.0,
                 shooting: None,
@@ -1592,7 +1592,7 @@ fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
 fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectFields {
     let display = content::display_id(c.race, c.gender);
     let [skin, face, hair_style, hair_color, _] = c.look.map(u32::from);
-    let kind = PowerKind::of_class(c.class());
+    let kind = crate::callings::of(c.calling).power;
     let mut pairs = vec![
         (OBJECT_FIELD_TYPE, TYPE_PLAYER),
         (OBJECT_FIELD_SCALE_X, float(1.0)),
@@ -1600,6 +1600,10 @@ fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectField
         power.field(),
         (UNIT_FIELD_MAXPOWER1, stats.max_mana),
         (UNIT_FIELD_MAXPOWER2, rage::MAX),
+        (
+            UNIT_FIELD_MAXPOWER1 + PowerKind::Focus.id() as u16,
+            power_rules::FOCUS_MAX,
+        ),
         (
             UNIT_FIELD_MAXPOWER1 + PowerKind::Energy.id() as u16,
             power_rules::ENERGY_MAX + stats.max_energy_bonus,

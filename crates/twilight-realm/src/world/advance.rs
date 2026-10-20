@@ -49,8 +49,8 @@ impl InWorld {
         let p = &mut self.player;
         p.stats = crate::talents::stats(c);
         p.health = p.stats.max_health;
-        // The new Calling's Class: its bar (rage empty, energy and mana full) and class byte.
-        p.power = Power::fresh(&p.stats);
+        // The new Calling's bar (rage empty, the rest full) and its profile's class byte.
+        p.power = Power::fresh(&p.stats, callings::of(c.calling).power);
         let mut pairs = vec![
             (PLAYER_XP, c.xp),
             (PLAYER_NEXT_LEVEL_XP, xp::xp_to_next(c.level).unwrap_or(0)),

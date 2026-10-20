@@ -34,6 +34,7 @@ import sys
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DEFAULT_CSV = os.path.join(REPO, "data", "twilights-eve", "master.csv")
+DEFAULT_CALLINGS = os.path.join(REPO, "data", "twilights-eve", "callings.csv")
 DEFAULT_OUT_DIR = os.path.join(REPO, "data", "twilights-eve")
 MAX_EFFECTS = 5
 CLIENT_EFFECTS = 3
@@ -56,10 +57,19 @@ WEAPON_ROLLS = ("normal", "normalized", "ranged")
 FORMULA_FIELDS = ("base", "per_level")
 OPTIONAL_FORMULA_FIELDS = ("per_ap", "min")
 # What an `energize` may name in `power`.
-POWERS = ("rage", "energy", "mana")
-# A Calling's `class` (ChrClasses.dbc id) and the `Powers` value its bar uses: Warrior rage (1),
-# Rogue energy (3), every other Class mana (0). The client patch carries it as `power_type`.
-CLASS_POWER_TYPE = {1: 1, 2: 0, 3: 0, 4: 3, 5: 0, 7: 0, 8: 0, 9: 0, 11: 0}
+POWERS = ("rage", "energy", "focus", "mana")
+# A Calling's `power` (callings.csv) and the `Powers` value its bar uses; the client patch carries
+# it as `power_type`.
+POWER_TYPES = {"mana": 0, "rage": 1, "focus": 2, "energy": 3}
+# callings.csv (ADR 0011): one row per Calling.
+CALLING_COLUMNS = ("calling", "name", "icon", "power", "stat_profile", "health_pct", "mana_pct", "armor",
+                   "weapons", "spellbook")
+# The vanilla class tables a `stat_profile` may name (the realm's `StatProfile`).
+STAT_PROFILES = ("warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid")
+# The weapon kinds a `weapons` cell may list (the realm's `WeaponKind`), `dual_wield` among them.
+WEAPON_KINDS = ("one_hand_axe", "two_hand_axe", "bow", "gun", "one_hand_mace", "two_hand_mace", "polearm",
+                "one_hand_sword", "two_hand_sword", "staff", "fist", "misc", "dagger", "thrown", "crossbow",
+                "wand", "fishing_pole", "dual_wield")
 
 REALM_NUMBERS = (
     "realm_cost", "realm_cooldown_ms", "realm_gcd_ms", "realm_range_min", "realm_range_max",
@@ -71,7 +81,8 @@ MAX_TALENT_RANKS = 5
 # Every spell row is from scratch (ADR 0011): its own spell id, no borrowed stock row.
 FROM_SCRATCH_MIN_ID = 1_000_000
 # Columns of the borrowing era, refused by name so an old sheet fails loudly.
-GONE_COLUMNS = ("client_spell_id", "realm_spell_id", "borrowed_from_class", "borrowed_family_bit")
+GONE_COLUMNS = ("client_spell_id", "realm_spell_id", "borrowed_from_class", "borrowed_family_bit", "class",
+                "armour")
 # The SpellFamilyFlags bits a Calling's skills take, one each in sheet order: no stock Warrior
 # spell uses a bit from 33 up, so a spellmod on one reaches that skill alone.
 FAMILY_BIT_FLOOR = 33
@@ -405,8 +416,39 @@ def whole(text: str, where: str) -> int:
     return value
 
 
+def build_profiles(rows: list[dict]) -> dict[str, dict]:
+    """callings.csv by Calling key: each row's power, stat profile, multipliers, armour, weapons,
+    icon and spell book tab, checked (ADR 0011)."""
+    out: dict[str, dict] = {}
+    for line, row in enumerate(rows, start=2):
+        where = f"callings.csv line {line} ({row.get('calling')})"
+        for column in CALLING_COLUMNS:
+            if column not in row:
+                raise BuildError(f"{where}: no {column} column")
+        key = row["calling"]
+        if not key or key in out:
+            raise BuildError(f"{where}: a Calling needs one row, keyed by calling")
+        profile: dict = {"name": row["name"]}
+        profile["power"] = one_of(row["power"], POWER_TYPES, where, "power")
+        profile["stat_profile"] = one_of(row["stat_profile"], STAT_PROFILES, where, "stat_profile")
+        for column in ("health_pct", "mana_pct"):
+            profile[column] = positive_whole(row[column], where, column) if row[column] else 100
+        armour = [a for a in row["armor"].split("|") if a]
+        for kind in armour:
+            one_of(kind, ARMOUR_KINDS, where, "armor")
+        profile["armour"] = armour
+        weapons = [w for w in row["weapons"].split("|") if w]
+        for kind in weapons:
+            one_of(kind, WEAPON_KINDS, where, "weapons")
+        profile["weapons"] = weapons
+        profile["icon"] = row["icon"]
+        profile["spellbook"] = row["spellbook"]
+        out[key] = profile
+    return out
+
+
 def build_calling(row: dict, where: str) -> dict:
-    """A calling row: the Calling's name, tier, Tier Cap, Tier Bonus, form and armour."""
+    """A calling row: the Calling's name, tier, Tier Cap, Tier Bonus and form."""
     out: dict = {"name": row["name"]}
     # A row with no tier only names the Calling; the realm reads the Calling's rest elsewhere.
     if row["tier"] or row["tier_cap"]:
@@ -423,12 +465,6 @@ def build_calling(row: dict, where: str) -> dict:
         out["tier_bonus"] = bonus
     if row["shapeshift_form"]:
         out["shapeshift_form"] = whole(row["shapeshift_form"], f"{where} shapeshift_form")
-    if row["armour"]:
-        kinds = row["armour"].split("|")
-        for kind in kinds:
-            if kind not in ARMOUR_KINDS:
-                raise BuildError(f"{where}: armour {kind!r} is not one of {', '.join(ARMOUR_KINDS)}")
-        out["armour"] = kinds
     return out
 
 
@@ -643,16 +679,6 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
     for block in ("per_combo", "duration_per_combo"):
         if block in params and not isinstance(params[block], dict):
             raise BuildError(f"{where}: {block} is a formula block ({block}.base, {block}.per_level)")
-
-
-def class_id(text: str, where: str) -> int:
-    """The row's `class`: a 1.12.1 class id the realm has tables for."""
-    if not text:
-        raise BuildError(f"{where}: class is required (the Calling's 1.12.1 class id)")
-    value = number(text, f"{where} class")
-    if not isinstance(value, int) or value not in CLASS_POWER_TYPE:
-        raise BuildError(f"{where}: class {text!r} is not one of {sorted(CLASS_POWER_TYPE)}")
-    return value
 
 
 def client_visible(row: dict, where: str) -> bool:
@@ -904,8 +930,7 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
     modelled = row["modelled"]
     if modelled not in ("yes", "no"):
         raise BuildError(f"{where}: modelled is {modelled!r}, want yes or no")
-    out: dict = {"key": row["key"], "name": row["name"], "rank": number(row["rank"], f"{where} rank"),
-                 "class": class_id(row["class"], where)}
+    out: dict = {"key": row["key"], "name": row["name"], "rank": number(row["rank"], f"{where} rank")}
     if row["status"] not in STATUSES:
         raise BuildError(f"{where}: status is {row['status']!r}, want one of {', '.join(STATUSES)}")
     out["status"] = row["status"]
@@ -1196,12 +1221,12 @@ def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, wh
 
 
 def client_override(row: dict, built: dict, where: str, categories: dict[str, int],
-                    art: list[str], art_dir: str, family: int | None) -> dict | None:
+                    art: list[str], art_dir: str, family: int | None, power: str) -> dict | None:
     """The row's Spell.dbc row: its client columns, every effect and its spellmods."""
     if "spell_id" not in built or built.get("client_visible") is False:
         return None
     # The Calling's power, so the spell gates against the right bar.
-    fields: dict = {"power_type": CLASS_POWER_TYPE[built["class"]]}
+    fields: dict = {"power_type": POWER_TYPES[power]}
     if row["name"]:
         fields["name"] = row["name"]
     for column in CLIENT_NUMBERS:
@@ -1274,7 +1299,8 @@ def tab_background(tab: dict, calling: str, art: list[str], art_dir: str) -> str
     return TAB_ART_PREFIX + stem
 
 
-def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict], dict]:
+def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
+          calling_rows: list[dict] | None = None) -> tuple[list[dict], dict]:
     for column in (rows[0] if rows else {}):
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
         if found and int(found.group(1)) > MAX_SPELLMODS:
@@ -1285,10 +1311,17 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict],
         raise BuildError("column requires_out_of_combat is gone; write `requires: combat=out` in the requires column")
     for column in GONE_COLUMNS:
         if rows and column in rows[0]:
-            raise BuildError(f"column {column} is gone: every row is its own spell_id (ADR 0011); "
-                             "run migrate_from_scratch.py")
+            raise BuildError(f"column {column} is gone (ADR 0011): a row is its own spell_id and a Calling's "
+                             "power and armour are its callings.csv row; tools/twilights-eve/migrate_*.py "
+                             "moved the sheet once")
     check_unique_ids(rows)
     masks = skill_masks(rows)
+    profiles = build_profiles(calling_rows or [])
+    named = {r["calling"] for r in rows if r["calling"]}
+    for key in sorted(named - set(profiles)):
+        raise BuildError(f"{key}: no callings.csv row; every Calling of master.csv needs one")
+    for key in sorted(set(profiles) - named):
+        raise BuildError(f"callings.csv {key}: not a Calling of master.csv")
     # Each cooldown_category name gets a number in order of first appearance; every row sharing a
     # name must carry the same category_cooldown_ms.
     categories: dict[str, int] = {}
@@ -1328,16 +1361,17 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict],
                 # A from-scratch row shows its own dispel type and mechanic on the client.
                 if row[column] and not (row["spell_id"] and column in ("dispel_type", "mechanic")):
                     raise BuildError(f"{where} {column}: set on a {kind} row; only aura rows carry it")
-        row_class = class_id(row["class"], where)
-        calling = callings.setdefault(row["calling"], {"key": row["calling"], "class": row_class, "skills": [],
+        profile = profiles[row["calling"]]
+        calling = callings.setdefault(row["calling"], {"key": row["calling"],
+                                                      **{k: v for k, v in profile.items() if k != "name"},
+                                                      "skills": [],
                                                       "talent_tabs": [], "auras": []})
-        if calling["class"] != row_class:
-            raise BuildError(f"{where}: rows of {row['calling']} disagree on class "
-                             f"({calling['class']} and {row_class})")
         if kind == "calling":
             if "name" in calling:
                 raise BuildError(f"{where}: second calling row for {row['calling']}")
             calling.update(build_calling(row, where))
+            if calling["name"] != profile["name"]:
+                raise BuildError(f"{where}: name {calling['name']!r} differs from callings.csv's {profile['name']!r}")
             continue
         if kind == "talent_tab":
             tab = build_talent_tab(row, where)
@@ -1368,10 +1402,9 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict],
         if spellmods:
             built["spellmods"] = spellmods
         family = masks.get(row["calling"], {}).get(row["key"]) if kind == "skill" else None
-        override = client_override(row, built, where, categories, art, art_dir, family)
+        override = client_override(row, built, where, categories, art, art_dir, family, profile["power"])
         if override:
             overrides.append(override)
-        del built["class"]
         if kind == "skill":
             calling["skills"].append(built)
         else:
@@ -1462,6 +1495,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR) -> tuple[list[dict],
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--csv", default=DEFAULT_CSV)
+    parser.add_argument("--callings", default=DEFAULT_CALLINGS, help="callings.csv, one row per Calling")
     parser.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
     parser.add_argument("--art-dir", default=DEFAULT_ART_DIR, help="folder of the PNG icons the icon cells name")
     parser.add_argument("--data", default=os.environ.get("WOW_DATA"), help="game Data folder for the DBC check")
@@ -1472,7 +1506,9 @@ def main(argv: list[str] | None = None) -> int:
         # A row shorter than the header (columns added at the end) reads its missing cells as empty.
         rows = [{k: v or "" for k, v in row.items() if k is not None} for row in csv.DictReader(f)]
     try:
-        server, patch = build(rows, args.art_dir)
+        with open(args.callings, newline="", encoding="utf-8") as f:
+            calling_rows = [{k: v or "" for k, v in row.items() if k is not None} for row in csv.DictReader(f)]
+        server, patch = build(rows, args.art_dir, calling_rows)
         art = patch.pop("art", [])
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)

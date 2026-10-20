@@ -20,8 +20,8 @@ and tab that declares them. Columns, in groups:
 
 | group | columns | meaning |
 |---|---|---|
-| identity | `kind`, `calling`, `class`, `key`, `name`, `rank` | `kind` is `skill`, `talent`, `calling`, `talent_tab` or `aura`; `class` is the Calling's 1.12.1 class id (1 Warrior, 4 Rogue, 8 Mage ...), the same on every row of a Calling, and decides its power kind (ADR 0004); `key` is the save and content name; `rank` is 1 for a skill or aura |
-| calling row | `tier`, `tier_cap`, `tier_bonus`, `shapeshift_form`, `armour` | a Calling's Tier, Tier Cap, Tier Bonus (`strength=1;stamina=2`), form id and armour kinds joined by `\|`; a row without `tier` leaves the rest of the Calling to the TOML. Its power is its `class`'s |
+| identity | `kind`, `calling`, `key`, `name`, `rank` | `kind` is `skill`, `talent`, `calling`, `talent_tab` or `aura`; `key` is the save and content name; `rank` is 1 for a skill or aura. The `class` column is gone (ADR 0011): a Calling's power and stats are its `callings.csv` row (below) |
+| calling row | `tier`, `tier_cap`, `tier_bonus`, `shapeshift_form` | a Calling's Tier, Tier Cap, Tier Bonus (`strength=1;stamina=2`) and form id; a row without `tier` leaves the rest of the Calling to the TOML. Its `name` must be its `callings.csv` row's. The `armour` column moved to `callings.csv` as `armor` |
 | progress | `status` | `placeholder`, `wip` or `done`, required on every row; `done` means Davis played it. The build prints a count per status and lists the `wip` rows |
 | talent_tab row | `tab_id`, `background`, `tab_order` | the tab's id, art and order; `key` is what talent rows put in `tab` (not the display `name`). Once a Calling has a `talent_tab` row, every talent's `tab` must be one of its keys; a Calling with none keeps the bare tab name and no tab reaches the client. `background` is a stock `Interface\TalentFrame\` base (`WarriorArms`) or `<stem>.png`, four PNGs `<stem>-TopLeft.png`, `-TopRight`, `-BottomLeft`, `-BottomRight` in `data/twilights-eve/art/` (a missing one fails the build), embedded and served at `Interface\TalentFrame\Twilight\` |
 | aura row | `spell_id`, `duration_ms`, `charges`, `effect1_kind`… | every lasting effect (a buff, a stun, a bleed, a slow) is its own aura row, granted by key; `spell_id` is the spell the client shows it as (its own row, or its skill's when they share the id). A `proc` effect names auras in `apply_aura=key\|key`; any other effect (`stun`, `incapacitate`, …) names exactly one in `apply_aura=key`, and the aura must hold an effect of the same kind. The realm reads that effect's params from the aura row, plus its `duration_ms` and `break_on` (so `apply_aura` replaces the inline `duration_ms` and `break_on_damage`); params the skill's effect adds (`per_combo`) win. Basic Warrior's Charge stun and Gouge incapacitate are aura rows (`charge_stun`, `gouge_incapacitate`); Zealot's rows are still inline, since its tables are the TOML's |
@@ -77,6 +77,27 @@ its `class`; `realm_cost` and `client_cost` stay bare numbers.
 
 **Adding a column** changes both generated schemas and the realm loader, so it goes through
 `/grill-me` first (`CLAUDE.md`).
+
+## callings.csv
+
+`data/twilights-eve/callings.csv` holds one row per Calling (ADR 0011, #206); every Calling with
+rows in `master.csv` needs exactly one, and the file names no other. `migrate_callings_csv.py`
+wrote it once from the old `class` and `armour` cells.
+
+| column | meaning |
+|---|---|
+| `calling`, `name` | the Calling's key and name (the `calling` row's `name` must match) |
+| `icon` | the Calling's icon, a stock path (the first skill's icon to begin with) |
+| `power` | `rage`, `energy`, `focus` or `mana`: the bar it runs on, the patch's `power_type` (mana 0, rage 1, focus 2, energy 3) on each of its spells. Focus fills 10 a 2 s tick to 100, like a vanilla pet's |
+| `stat_profile` | the vanilla class table its per-level base stats, health and mana, crit and dodge from agility, attack power and mana regen follow: `warrior`, `paladin`, `hunter`, `rogue`, `priest`, `shaman`, `mage`, `warlock`, `druid`. The wire's class byte is still the profile's until the client reads the Calling (#207) |
+| `health_pct`, `mana_pct` | percent of the profile's base health and base mana (empty = 100); stamina's and intellect's parts stay whole |
+| `armor` | armour kinds joined by `\|`: `cloth`, `leather`, `mail`, `plate`, `shield` |
+| `weapons` | weapon kinds joined by `\|` (`one_hand_axe`, `two_hand_axe`, `bow`, `gun`, `one_hand_mace`, `two_hand_mace`, `polearm`, `one_hand_sword`, `two_hand_sword`, `staff`, `fist`, `misc`, `dagger`, `thrown`, `crossbow`, `wand`, `fishing_pole`), and `dual_wield` for a one-hander in the off hand too |
+| `spellbook` | the spell book tab's name |
+
+Both JSON files' Callings carry these as `power`, `stat_profile`, `health_pct`, `mana_pct`,
+`armour`, `weapons`, `icon` and `spellbook`. A TOML Calling writes `power` and `stat_profile` (a
+test Calling may still write `class = N` for both, the vanilla class's table and power).
 
 ## The script
 

@@ -139,6 +139,20 @@ impl CharacterStats {
         }
     }
 
+    /// Keeps `health_pct` percent of the base health and `mana_pct` percent of the base mana,
+    /// rounded down: a Calling's multipliers on its stat profile. Stamina's and intellect's parts
+    /// stay whole; 100 changes nothing.
+    pub fn scale_base_pools(&mut self, health_pct: u32, mana_pct: u32) {
+        let scaled = |base: u32, pct: u32| (u64::from(base) * u64::from(pct) / 100) as u32;
+        let health = scaled(self.base_health, health_pct);
+        self.max_health = self.max_health - self.base_health + health;
+        self.base_health = health;
+        let base_mana = power::base_mana(self.class, self.level);
+        if self.max_mana > 0 {
+            self.max_mana = self.max_mana - base_mana + scaled(base_mana, mana_pct);
+        }
+    }
+
     /// Adds `dps` damage per second to the ranged shot, at the weapon's speed: the loaded ammo's
     /// (vmangos `Player::UpdateDamagePhysical(RANGED_ATTACK)`).
     pub fn add_ranged_dps(&mut self, dps: f32) {

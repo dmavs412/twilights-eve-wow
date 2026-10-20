@@ -51,10 +51,10 @@ fn never_warrior_weapon(subclass: u32) -> bool {
     matches!(subclass, 9 | 11 | 12 | 17 | 19)
 }
 
-/// Whether `calling` knows a weapon or armour subclass.
+/// Whether `calling` knows a weapon or armour subclass: its `weapons` and `armour` lists.
 pub(crate) fn knows(calling: &CallingDef, class: u32, subclass: u32) -> bool {
     match (class, subclass) {
-        (CLASS_WEAPON, sub) => !never_warrior_weapon(sub),
+        (CLASS_WEAPON, sub) => calling.weapons.iter().any(|w| w.subclass() == Some(sub)),
         // Rings, necks, trinkets, shirts and the like.
         (CLASS_ARMOR, 0) => true,
         (CLASS_ARMOR, sub) => calling.armour.iter().any(|a| a.subclasses().contains(&sub)),

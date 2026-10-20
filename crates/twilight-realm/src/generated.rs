@@ -12,16 +12,26 @@ use serde_json::{Map, Value};
 
 use crate::callings::{
     self, Armour, AuraDef, AuraEffect, AuraRow, CallingDef, ClientSpellMod, Effect, Prereq, Skill,
-    SpellMeta, TalentDef, TalentEffect, TalentTab, Target, TierBonus,
+    SpellMeta, StatProfile, TalentDef, TalentEffect, TalentTab, Target, TierBonus, WeaponKind,
 };
+use crate::rules::power::PowerKind;
 
 const SERVER_SPELLS: &str = include_str!("../../../data/twilights-eve/server_spells.json");
 
 #[derive(Deserialize)]
 struct GenCalling {
     key: String,
-    /// `ChrClasses.dbc` id, on every Calling in the file.
-    class: u8,
+    /// Its `callings.csv` row, on every Calling in the file.
+    power: PowerKind,
+    stat_profile: StatProfile,
+    health_pct: u32,
+    mana_pct: u32,
+    #[serde(default)]
+    weapons: Vec<WeaponKind>,
+    #[serde(default)]
+    icon: String,
+    #[serde(default)]
+    spellbook: String,
     name: Option<String>,
     tier: Option<u8>,
     tier_cap: Option<u8>,
@@ -174,7 +184,13 @@ fn calling(g: GenCalling) -> CallingDef {
     CallingDef {
         name: g.name.clone().unwrap_or_else(|| missing("name")),
         tier,
-        class: g.class,
+        power: g.power,
+        stat_profile: g.stat_profile,
+        health_pct: g.health_pct,
+        mana_pct: g.mana_pct,
+        weapons: g.weapons.clone(),
+        icon: g.icon.clone(),
+        spellbook: g.spellbook.clone(),
         cap: g.tier_cap.unwrap_or_else(|| missing("tier_cap")),
         tier_bonus: g.tier_bonus.unwrap_or_else(|| missing("tier_bonus")),
         shapeshift_form: g
@@ -482,7 +498,7 @@ mod tests {
     #[test]
     fn a_hidden_skill_loads_by_its_realm_spell_id() {
         let g: GenCalling = serde_json::from_value(serde_json::json!({
-            "key": "test", "class": 1, "name": "Test", "tier": 0, "tier_cap": 10,
+            "key": "test", "power": "rage", "stat_profile": "warrior", "health_pct": 100, "mana_pct": 100, "name": "Test", "tier": 0, "tier_cap": 10,
             "tier_bonus": {"strength": 0, "agility": 0, "stamina": 0, "intellect": 0, "spirit": 0},
             "shapeshift_form": 17,
             "skills": [

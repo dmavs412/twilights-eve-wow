@@ -9,21 +9,33 @@ const HUMAN: u8 = 1;
 const ORC: u8 = 2;
 const TAUREN: u8 = 6;
 
+/// A Calling's bar is its own `power` (callings.csv, ADR 0011), not its Class's; the shipped ones
+/// keep the kind and table their old Class gave them.
 #[test]
-fn the_power_kind_follows_the_class() {
-    assert_eq!(PowerKind::of_class(class::WARRIOR), PowerKind::Rage);
-    assert_eq!(PowerKind::of_class(class::ROGUE), PowerKind::Energy);
-    for mana in [
-        class::PALADIN,
-        class::HUNTER,
-        class::PRIEST,
-        class::SHAMAN,
-        class::MAGE,
-        class::WARLOCK,
-        class::DRUID,
+fn each_shipped_calling_runs_on_its_own_power_and_profile() {
+    use twilight_realm::callings::{self, StatProfile};
+    for (key, power, profile) in [
+        ("basic_warrior", PowerKind::Rage, StatProfile::Warrior),
+        ("vanguard", PowerKind::Rage, StatProfile::Warrior),
+        ("zealot", PowerKind::Rage, StatProfile::Warrior),
+        ("cutthroat", PowerKind::Energy, StatProfile::Rogue),
+        ("initiate", PowerKind::Mana, StatProfile::Mage),
+        ("ranger", PowerKind::Mana, StatProfile::Hunter),
+        ("acolyte", PowerKind::Mana, StatProfile::Priest),
     ] {
-        assert_eq!(PowerKind::of_class(mana), PowerKind::Mana, "class {mana}");
+        let c = callings::calling(key).unwrap();
+        assert_eq!((c.power, c.stat_profile), (power, profile), "{key}");
+        assert_eq!((c.health_pct, c.mana_pct), (100, 100), "{key}");
     }
+    assert_eq!(StatProfile::Rogue.class(), class::ROGUE);
+}
+
+#[test]
+fn focus_caps_at_a_hundred_and_fills_like_a_pets() {
+    assert_eq!(power::cap(PowerKind::Focus, 0, 0), 100);
+    assert_eq!(PowerKind::Focus.id(), 2, "the client's POWER_FOCUS");
+    assert_eq!(PowerKind::Focus.stored(7), 7, "whole points");
+    assert_eq!(power::FOCUS_PER_TICK, 10, "five a second");
 }
 
 #[test]

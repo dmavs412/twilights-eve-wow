@@ -176,6 +176,8 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
         .map_or(100, |_| crate::rules::notoriety::marked_stat_pct());
     let mut s =
         CharacterStats::geared_scaled(c.class(), c.race, c.level, bonus, &worn, off_hand, base_pct);
+    let calling = crate::callings::of(c.calling);
+    s.scale_base_pools(calling.health_pct, calling.mana_pct);
     s.add_ranged_dps(crate::ammo::dps(c));
     s.quiver_haste_pct = c.inventory.quiver_haste_pct();
     s
@@ -625,14 +627,11 @@ pub(crate) fn may_leave(c: &Char, at: Pos) -> bool {
     !(at.is_bag_slot() && c.inventory.bag_holds_items(at.slot))
 }
 
-/// The `CLASS_ROGUE` of `ChrClasses.dbc`: a Cutthroat's Class.
-const CLASS_ROGUE: u8 = 4;
-
-/// [`equip_slots`] for `c`: a Cutthroat (class 4) also wears a one-hander in the off hand, since
-/// it dual wields. Every other Calling keeps one-handers in the main hand only.
+/// [`equip_slots`] for `c`: a Calling that dual wields (the Cutthroat's `weapons` list it) also
+/// wears a one-hander in the off hand. Every other Calling keeps one-handers in the main hand.
 fn slots_for(c: &Char, inventory_type: u32) -> Vec<u8> {
     let mut slots = equip_slots(inventory_type).to_vec();
-    if inventory_type == ONE_HAND && c.class() == CLASS_ROGUE {
+    if inventory_type == ONE_HAND && callings::of(c.calling).dual_wields() {
         slots.push(gear::SLOT_OFF_HAND);
     }
     slots
