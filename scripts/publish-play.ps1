@@ -23,7 +23,7 @@ $me = "publish-play-$PID"
 if (Test-Path $lock) {
     $holder = Get-Content $lock -Raw | ConvertFrom-Json
     $age = [DateTimeOffset]::UtcNow - [DateTimeOffset]::Parse($holder.started)
-    if ($env:CLAUDE_CODE_SESSION_ID -ne $holder.session -and $age.TotalHours -lt 2) {
+    if ($env:CLAUDE_BUILD_LOCK_HOLDER -ne $holder.session -and $age.TotalHours -lt 2) {
         Write-Host ("build lock held by {0} for {1:N0} min; wait for it" -f $holder.session, $age.TotalMinutes)
         exit 1
     }

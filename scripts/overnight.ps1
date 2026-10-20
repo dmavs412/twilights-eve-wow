@@ -132,9 +132,10 @@ if ($Issues) {
 } else {
     # Filter here, not in --jq: PowerShell 5.1 strips the double quotes a jq string needs.
     $raw = (gh issue list -R $Repo --state open --label $Label --limit 100 --json number,title,labels) -join "`n" | ConvertFrom-Json
+    # Bugs first, oldest first; then everything else, oldest first.
     $queue = @($raw |
         Where-Object { @($_.labels | Where-Object { $_.name -eq "blocked" }).Count -eq 0 } |
-        Sort-Object number |
+        Sort-Object @{ e = { if (@($_.labels | Where-Object { $_.name -eq "bug" }).Count -gt 0) { 0 } else { 1 } } }, @{ e = { [int]$_.number } } |
         ForEach-Object { @{ number = [int]$_.number; title = $_.title } })
 }
 if ($queue.Count -gt $Max) { $queue = $queue[0..($Max - 1)] }
@@ -144,7 +145,22 @@ Write-Log ("queue: {0} ticket(s): {1}" -f $queue.Count, (($queue | ForEach-Objec
 if ($DryRun) { $queue | ForEach-Object { "#{0}  {1}" -f $_.number, $_.title }; exit 0 }
 if ($queue.Count -eq 0) { Write-Log "nothing to do"; exit 0 }
 
+# Hold the build lock all night (same 2 h stale rule as scripts/build-lock.ps1). The sessions
+# below inherit CLAUDE_BUILD_LOCK_HOLDER, so their own cargo hook lets them through.
+$lock = Join-Path $Root "target\.claude-build.lock"
+if (Test-Path $lock) {
+    $holder = Get-Content $lock -Raw | ConvertFrom-Json
+    $age = [DateTimeOffset]::UtcNow - [DateTimeOffset]::Parse($holder.started)
+    if ($age.TotalHours -lt 2) { throw ("build lock held by {0} for {1:N0} min" -f $holder.session, $age.TotalMinutes) }
+}
+$env:CLAUDE_BUILD_LOCK_HOLDER = "overnight-$PID"
+New-Item -ItemType Directory -Force (Split-Path $lock) | Out-Null
+# Re-stamped before each ticket, so a long night never looks stale.
+function Set-Lock { @{ session = $env:CLAUDE_BUILD_LOCK_HOLDER; started = (Get-Date).ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress | Set-Content $lock -Encoding utf8 }
+Set-Lock
+
 $startSha = (git rev-parse HEAD).Trim()
+$failures = @()
 $settings = Join-Path $Root "scripts\overnight-settings.json"
 $rules = Join-Path $Root "docs\agents\unattended.md"
 
@@ -155,6 +171,7 @@ foreach ($t in $queue) {
     if ($stopTime -and (Get-Date) -ge $stopTime) { Write-Log "stop time $StopAt reached before #$n"; break }
 
     Write-Log "==== #$n $title"
+    Set-Lock
     $before = (git rev-parse HEAD).Trim()
     $prompt = "Unattended run, nobody is at the keyboard. Read $rules first and follow it. " +
               "Then implement GitHub issue #$n ($title) on $Repo."
@@ -193,6 +210,7 @@ foreach ($t in $queue) {
             $tail = $text.Substring([Math]::Max(0, $text.Length - 1500))
             Set-Blocked $n "Overnight run produced no commit (exit $exit, $turns turns). Last words of the session:`n`n$tail"
         }
+        $failures += "#${n}: blocked, no commit"
         Write-Log "#${n}: no commit; labelled blocked"
         Add-Content $summary ("| #{0} | {1} | blocked, no commit | | {2} |" -f $n, $title, $cost) -Encoding utf8
         continue
@@ -204,6 +222,7 @@ foreach ($t in $queue) {
         git reset --hard $before | Out-Null
         $fence = '```'
         Set-Blocked $n "Overnight run: commits $range failed ``$($gate.what)`` and were rolled back.`n`n${fence}text`n$($gate.out)`n${fence}"
+        $failures += "#${n}: rolled back, $($gate.what) failed"
         Write-Log "#${n}: gate failed ($($gate.what)); rolled back to $($before.Substring(0,7))"
         Add-Content $summary ("| #{0} | {1} | rolled back: {2} | | {3} |" -f $n, $title, $gate.what, $cost) -Encoding utf8
         continue
@@ -220,6 +239,45 @@ foreach ($t in $queue) {
 
 # ---- morning report --------------------------------------------------------------------------
 Write-Log "==== finished"
+Remove-Item $lock -Force -ErrorAction SilentlyContinue
+
+$published = "none (no commit landed)"
+if ((git rev-parse HEAD).Trim() -ne $startSha) {
+    Write-Log "publishing a play copy"
+    & (Join-Path $PSScriptRoot "publish-play.ps1") | ForEach-Object { Write-Log $_ }
+    $published = if ($LASTEXITCODE -eq 0) { "play/" + (git rev-parse --short HEAD).Trim() } else { "failed, see run.log" }
+    if ($LASTEXITCODE -ne 0) { $failures += "publish-play.ps1 failed" }
+}
+
+# One comment per night on the pinned "Overnight log" issue; format in docs/agents/unattended.md.
+$assumed = @(git log --format=%B "$startSha..HEAD" | Where-Object { $_ -match '^Assumed:' })
+$body = @(
+    "## Night of $stamp",
+    "",
+    "### Tickets",
+    (Get-Content $summary),
+    "",
+    "### Assumptions",
+    $(if ($assumed.Count) { $assumed | ForEach-Object { "- $_" } } else { "- none" }),
+    "",
+    "### Play copy",
+    "- $published",
+    "",
+    "### Failures",
+    $(if ($failures.Count) { $failures | ForEach-Object { "- $_" } } else { "- none" })
+) -join "`n"
+$bodyFile = Join-Path $script:LogDir "overnight-log.md"
+$body | Set-Content $bodyFile -Encoding utf8
+$raw = (gh issue list -R $Repo --state open --search "in:title Overnight log" --json number,title) -join "`n" | ConvertFrom-Json
+$logIssue = @($raw | Where-Object { $_.title -eq "Overnight log" }) | Select-Object -First 1
+if ($logIssue) { $logNo = $logIssue.number } else {
+    $url = gh issue create -R $Repo --title "Overnight log" --body "One comment per overnight run (scripts/overnight.ps1)."
+    $logNo = ($url -split '/')[-1]
+    gh issue pin -R $Repo $logNo | Out-Null
+}
+gh issue comment -R $Repo $logNo --body-file $bodyFile | Out-Null
+Write-Log "morning log posted on #$logNo"
+
 Get-Content $summary | Write-Host
 Write-Host ""
 Write-Host "commits since start:"

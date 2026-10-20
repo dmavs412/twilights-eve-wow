@@ -23,7 +23,12 @@ failed.
   one whose exe is running. It runs when Davis asks, and once at the end of a night that landed
   a commit. Davis plays only from `play/`.
 - **Morning log**: overnight posts one comment per night on the pinned "Overnight log" issue:
-  tickets done, assumptions taken, the `play/` copy published, and failures.
+  tickets done, assumptions taken, the `play/` copy published, and failures. Its format:
+  `## Night of <yyyy-MM-dd_HHmm>`, then `### Tickets` (the summary table: issue, title,
+  result, commits, cost), `### Assumptions` (every `Assumed:` line in the night's commits),
+  `### Play copy` (`play/<short-commit>` or none) and `### Failures` (blocked or rolled-back
+  tickets, a failed publish), each `- none` when empty. The script holds the build lock all
+  night and names itself in `CLAUDE_BUILD_LOCK_HOLDER`, so the sessions it starts pass the hook.
 - **`unplayed`**: a spec closes when its tickets land and gets `unplayed`; Davis's play note
   removes it. No feature waits on play. Bugs reference the spec they break.
 

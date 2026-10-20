@@ -27,6 +27,9 @@ if ($Mode -eq 'release') {
 }
 
 $holder = Read-Holder
+# A script holding the lock for a whole run (overnight.ps1) names itself in CLAUDE_BUILD_LOCK_HOLDER;
+# the sessions it starts inherit that and pass without touching its lock.
+if ($holder -and $env:CLAUDE_BUILD_LOCK_HOLDER -and $holder.session -eq $env:CLAUDE_BUILD_LOCK_HOLDER) { exit 0 }
 if ($holder -and $holder.session -ne $me) {
     $age = [DateTimeOffset]::UtcNow - [DateTimeOffset]::Parse($holder.started)
     if ($age.TotalHours -lt $StaleHours) {
