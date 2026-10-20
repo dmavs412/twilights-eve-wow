@@ -54,6 +54,10 @@ failed.
 
 - After every edit: `cargo check -q -p <crate> 2>&1 | tail -40`. When the realm, `data/` or
   `tools/` changed: `cargo test -q -p twilight-realm 2>&1 | tail -40`.
+- Run every cargo command in the foreground and wait, with a 600000 ms timeout. Never
+  `run_in_background`: background commands die at 10 minutes and leave corrupt rlibs.
+- Before `git commit`, run `rustfmt --edition 2021 <file>...` on every `.rs` file you changed.
+  The pre-commit hook refuses code that is not rustfmt-clean; never `--no-verify`.
 - Commit on `main` only when the gate passes. One commit per coherent change, message saying
   what changed, which check ran, and any `Assumed:` lines.
 - After the session ends the script re-runs the gate on every crate the commits touched and
