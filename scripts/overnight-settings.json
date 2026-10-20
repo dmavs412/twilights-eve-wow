@@ -10,7 +10,7 @@
       "Bash(~/.local/bin/python3.15:*)",
       "Bash(cd:*)", "Bash(ls:*)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)",
       "Bash(grep:*)", "Bash(rg:*)", "Bash(find:*)", "Bash(sed:*)", "Bash(awk:*)", "Bash(cut:*)",
-      "Bash(sort:*)", "Bash(uniq:*)", "Bash(diff:*)", "Bash(echo:*)", "Bash(sqlite3:*)", "Bash(rustfmt:*)", "Bash(mkdir:*)", "Bash(cp:*)", "Bash(mv:*)", "Bash(cmp:*)",
+      "Bash(sort:*)", "Bash(git restore:*)", "Bash(uniq:*)", "Bash(diff:*)", "Bash(echo:*)", "Bash(sqlite3:*)", "Bash(rustfmt:*)", "Bash(mkdir:*)", "Bash(cp:*)", "Bash(mv:*)", "Bash(cmp:*)",
 "Bash(tr:*)", "Bash(printf:*)", "Bash(test:*)", "Bash(xargs:*)", "Bash(tee:*)", "Bash(jq:*)"
     ],
     "deny": [
