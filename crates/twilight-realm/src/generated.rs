@@ -478,6 +478,43 @@ fn talent_effect(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
 mod tests {
     use super::*;
 
+    /// Every passive talent the sheet gives effects loads with them: a talent that silently
+    /// loads as WIP, because one slot is a kind the realm lacks, does nothing when learned.
+    #[test]
+    fn every_passive_talent_with_effects_loads_them() {
+        let all: Vec<Value> = serde_json::from_str(SERVER_SPELLS).expect("server_spells parses");
+        let mut lost = Vec::new();
+        for c in all.into_iter().filter(|c| c.get("tier").is_some()) {
+            let g: GenCalling = serde_json::from_value(c).expect("a calling reads");
+            for t in g.talent_tabs.iter().flat_map(|tab| &tab.talents) {
+                let Some(first) = t.ranks.first() else {
+                    continue;
+                };
+                if first.effects.is_empty() || (t.ranks.len() == 1 && first.target.is_some()) {
+                    continue;
+                }
+                if talent_effects(&t.ranks).is_empty() {
+                    let kinds: Vec<String> = (0..first.effects.len())
+                        .filter(|s| talent_effect(&t.ranks, *s).is_none())
+                        .map(|s| {
+                            format!(
+                                "{} {:?}",
+                                first.effects[s].kind,
+                                first.effects[s].params.keys().collect::<Vec<_>>()
+                            )
+                        })
+                        .collect();
+                    lost.push(format!("{}/{}: {}", g.key, t.key, kinds.join(", ")));
+                }
+            }
+        }
+        assert!(
+            lost.is_empty(),
+            "talents with no effects:\n{}",
+            lost.join("\n")
+        );
+    }
+
     /// A talent row with no ranks is dropped; the tab still reads.
     #[test]
     fn a_talent_with_no_ranks_is_dropped() {
