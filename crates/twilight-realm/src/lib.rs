@@ -90,7 +90,7 @@ pub mod build_id;
 
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
-pub use phased::test_grounds_start;
+pub use phased::{test_grounds_start, GameObjectUse, UseKind};
 pub use save::{SaveError, Storage, SAVE_VERSION};
 
 /// What the realm asks of whoever runs it. Coordinates are WoW's (`x` north, `y` west, `z` up).
@@ -171,6 +171,11 @@ pub enum RealmCommand {
     SetActionButton {
         slot: u8,
         packed: u32,
+    },
+    /// Click a GameObject (`CMSG_GAMEOBJ_USE`). A Phased Dungeon's GameObject with a use queues a
+    /// [`GameObjectUse`] for [`Realm::drain_uses`]; any other guid does nothing.
+    UseGameObject {
+        guid: u64,
     },
     /// A creature template's name, answered with [`SessionEvent::CreatureName`].
     CreatureQuery {
@@ -464,6 +469,8 @@ pub struct Realm {
     wall: f64,
     /// The Creature Spells a test gave creatures beyond their templates'.
     casters: creature_spells::Casters,
+    /// The dungeon GameObject clicks since the last drain.
+    uses: Vec<GameObjectUse>,
 }
 
 impl Realm {
@@ -1031,6 +1038,11 @@ impl Realm {
                     self.characters.set_action_button(w.guid, slot, packed);
                 }
             }
+            RealmCommand::UseGameObject { guid } => {
+                if let Some(used) = self.world.as_ref().and_then(|w| w.use_gameobject(guid)) {
+                    self.uses.push(used);
+                }
+            }
             RealmCommand::CreatureQuery { entry } => {
                 let answer =
                     hub::creature_name(entry).unwrap_or_else(|| mobs::creature_name(entry));
@@ -1244,6 +1256,11 @@ impl Realm {
         self.serve(SessionId::DEFAULT);
         self.lent_mark = 0;
         std::mem::take(&mut self.events)
+    }
+
+    /// The dungeon GameObject clicks since the last drain, oldest first.
+    pub fn drain_uses(&mut self) -> Vec<GameObjectUse> {
+        std::mem::take(&mut self.uses)
     }
 
     /// The saves to write or remove since the last drain, oldest first.

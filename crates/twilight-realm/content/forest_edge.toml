@@ -1,0 +1,1108 @@
+# Forest's Edge, the Phased Dungeon of Hogger's siege (spec #169, issue #170). Hand-written
+# The palisade rows were generated along the rim; the rest is authored.
+#
+# One box in the world frame, the hollow around vanilla Hogger's spawn (-9946, 604, 38) out to
+# the Westfall hills on the south and west and the rim on the north and east. The one way in
+# and out is the Portal on the north-east rim, toward Westbrook Garrison, where the walkable
+# approach from the Maclure vineyards meets the hollow.
+# The guids are this file's own (79xxxx).
+
+id = 2
+map = 0
+origin = [0.0, 0.0, 0.0]
+yaw = 0.0
+
+[[footprint]]
+x = [-10080.0, -9910.0]
+y = [530.0, 680.0]
+z = [12.0, 63.0]
+
+[portal]
+position = [-9911.0, 556.0, 37.7]
+orientation = 0.0
+
+
+# Hiding spots (#170): inside the Phase only, spaced along the routes from the Portal past
+# Hogger's camps. Displays: 6133 WestfallHayStack01 and 461 DuskwoodHayStack (large haystacks),
+# 6145 and 6146 HayBail01/02, 3678 WestfallWagon01. No hollow-log GameObject exists in the 1.12
+# display set. The Noise ticket gives them their effect.
+
+[[gameobject]]
+guid = 790001
+display = 6133
+position = [-9928.0, 570.0, 38.0]
+orientation = 0.6
+sides = "inside"
+use = "hide"
+
+
+[[gameobject]]
+guid = 790002
+display = 461
+position = [-9950.0, 585.0, 38.0]
+orientation = 2.1
+sides = "inside"
+use = "hide"
+
+
+[[gameobject]]
+guid = 790003
+display = 6145
+position = [-9972.0, 575.0, 38.0]
+orientation = 4.0
+sides = "inside"
+use = "hide"
+
+
+[[gameobject]]
+guid = 790004
+display = 3678
+position = [-9965.0, 625.0, 38.0]
+orientation = 1.2
+sides = "inside"
+use = "hide"
+
+
+[[gameobject]]
+guid = 790005
+display = 6146
+position = [-9990.0, 600.0, 38.0]
+orientation = 3.3
+sides = "inside"
+use = "hide"
+
+
+[[gameobject]]
+guid = 790006
+display = 6133
+position = [-10005.0, 640.0, 38.0]
+orientation = 5.5
+sides = "inside"
+use = "hide"
+
+
+# The palisade (#170): display 6151 ElwynnWoodFence01 (14 hull triangles, 4.3 yd) end to end
+# along the rim, visible from the open world and from the Phase, with a gap for the Portal.
+# Assumed: a flat z of 38.0 (no ground lookup offline) and a yaw along each side.
+
+[[gameobject]]
+guid = 790101
+display = 6151
+position = [-10077.85, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790102
+display = 6151
+position = [-10073.55, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790103
+display = 6151
+position = [-10069.25, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790104
+display = 6151
+position = [-10064.95, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790105
+display = 6151
+position = [-10060.65, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790106
+display = 6151
+position = [-10056.35, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790107
+display = 6151
+position = [-10052.05, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790108
+display = 6151
+position = [-10047.75, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790109
+display = 6151
+position = [-10043.45, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790110
+display = 6151
+position = [-10039.15, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790111
+display = 6151
+position = [-10034.85, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790112
+display = 6151
+position = [-10030.55, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790113
+display = 6151
+position = [-10026.25, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790114
+display = 6151
+position = [-10021.95, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790115
+display = 6151
+position = [-10017.65, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790116
+display = 6151
+position = [-10013.35, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790117
+display = 6151
+position = [-10009.05, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790118
+display = 6151
+position = [-10004.75, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790119
+display = 6151
+position = [-10000.45, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790120
+display = 6151
+position = [-9996.15, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790121
+display = 6151
+position = [-9991.85, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790122
+display = 6151
+position = [-9987.55, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790123
+display = 6151
+position = [-9983.25, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790124
+display = 6151
+position = [-9978.95, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790125
+display = 6151
+position = [-9974.65, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790126
+display = 6151
+position = [-9970.35, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790127
+display = 6151
+position = [-9966.05, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790128
+display = 6151
+position = [-9961.75, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790129
+display = 6151
+position = [-9957.45, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790130
+display = 6151
+position = [-9953.15, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790131
+display = 6151
+position = [-9948.85, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790132
+display = 6151
+position = [-9944.55, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790133
+display = 6151
+position = [-9940.25, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790134
+display = 6151
+position = [-9935.95, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790135
+display = 6151
+position = [-9931.65, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790136
+display = 6151
+position = [-9927.35, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790137
+display = 6151
+position = [-9923.05, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790138
+display = 6151
+position = [-9918.75, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790139
+display = 6151
+position = [-9914.45, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790140
+display = 6151
+position = [-9910.15, 530.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790141
+display = 6151
+position = [-10077.85, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790142
+display = 6151
+position = [-10073.55, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790143
+display = 6151
+position = [-10069.25, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790144
+display = 6151
+position = [-10064.95, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790145
+display = 6151
+position = [-10060.65, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790146
+display = 6151
+position = [-10056.35, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790147
+display = 6151
+position = [-10052.05, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790148
+display = 6151
+position = [-10047.75, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790149
+display = 6151
+position = [-10043.45, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790150
+display = 6151
+position = [-10039.15, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790151
+display = 6151
+position = [-10034.85, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790152
+display = 6151
+position = [-10030.55, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790153
+display = 6151
+position = [-10026.25, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790154
+display = 6151
+position = [-10021.95, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790155
+display = 6151
+position = [-10017.65, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790156
+display = 6151
+position = [-10013.35, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790157
+display = 6151
+position = [-10009.05, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790158
+display = 6151
+position = [-10004.75, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790159
+display = 6151
+position = [-10000.45, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790160
+display = 6151
+position = [-9996.15, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790161
+display = 6151
+position = [-9991.85, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790162
+display = 6151
+position = [-9987.55, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790163
+display = 6151
+position = [-9983.25, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790164
+display = 6151
+position = [-9978.95, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790165
+display = 6151
+position = [-9974.65, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790166
+display = 6151
+position = [-9970.35, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790167
+display = 6151
+position = [-9966.05, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790168
+display = 6151
+position = [-9961.75, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790169
+display = 6151
+position = [-9957.45, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790170
+display = 6151
+position = [-9953.15, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790171
+display = 6151
+position = [-9948.85, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790172
+display = 6151
+position = [-9944.55, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790173
+display = 6151
+position = [-9940.25, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790174
+display = 6151
+position = [-9935.95, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790175
+display = 6151
+position = [-9931.65, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790176
+display = 6151
+position = [-9927.35, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790177
+display = 6151
+position = [-9923.05, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790178
+display = 6151
+position = [-9918.75, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790179
+display = 6151
+position = [-9914.45, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790180
+display = 6151
+position = [-9910.15, 680.00, 38.0]
+orientation = 0.0
+sides = "both"
+
+[[gameobject]]
+guid = 790181
+display = 6151
+position = [-10080.00, 532.15, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790182
+display = 6151
+position = [-10080.00, 536.45, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790183
+display = 6151
+position = [-10080.00, 540.75, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790184
+display = 6151
+position = [-10080.00, 545.05, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790185
+display = 6151
+position = [-10080.00, 549.35, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790186
+display = 6151
+position = [-10080.00, 553.65, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790187
+display = 6151
+position = [-10080.00, 557.95, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790188
+display = 6151
+position = [-10080.00, 562.25, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790189
+display = 6151
+position = [-10080.00, 566.55, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790190
+display = 6151
+position = [-10080.00, 570.85, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790191
+display = 6151
+position = [-10080.00, 575.15, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790192
+display = 6151
+position = [-10080.00, 579.45, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790193
+display = 6151
+position = [-10080.00, 583.75, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790194
+display = 6151
+position = [-10080.00, 588.05, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790195
+display = 6151
+position = [-10080.00, 592.35, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790196
+display = 6151
+position = [-10080.00, 596.65, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790197
+display = 6151
+position = [-10080.00, 600.95, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790198
+display = 6151
+position = [-10080.00, 605.25, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790199
+display = 6151
+position = [-10080.00, 609.55, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790200
+display = 6151
+position = [-10080.00, 613.85, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790201
+display = 6151
+position = [-10080.00, 618.15, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790202
+display = 6151
+position = [-10080.00, 622.45, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790203
+display = 6151
+position = [-10080.00, 626.75, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790204
+display = 6151
+position = [-10080.00, 631.05, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790205
+display = 6151
+position = [-10080.00, 635.35, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790206
+display = 6151
+position = [-10080.00, 639.65, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790207
+display = 6151
+position = [-10080.00, 643.95, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790208
+display = 6151
+position = [-10080.00, 648.25, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790209
+display = 6151
+position = [-10080.00, 652.55, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790210
+display = 6151
+position = [-10080.00, 656.85, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790211
+display = 6151
+position = [-10080.00, 661.15, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790212
+display = 6151
+position = [-10080.00, 665.45, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790213
+display = 6151
+position = [-10080.00, 669.75, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790214
+display = 6151
+position = [-10080.00, 674.05, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790215
+display = 6151
+position = [-10080.00, 678.35, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790216
+display = 6151
+position = [-9910.00, 532.15, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790217
+display = 6151
+position = [-9910.00, 536.45, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790218
+display = 6151
+position = [-9910.00, 540.75, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790219
+display = 6151
+position = [-9910.00, 545.05, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790220
+display = 6151
+position = [-9910.00, 566.55, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790221
+display = 6151
+position = [-9910.00, 570.85, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790222
+display = 6151
+position = [-9910.00, 575.15, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790223
+display = 6151
+position = [-9910.00, 579.45, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790224
+display = 6151
+position = [-9910.00, 583.75, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790225
+display = 6151
+position = [-9910.00, 588.05, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790226
+display = 6151
+position = [-9910.00, 592.35, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790227
+display = 6151
+position = [-9910.00, 596.65, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790228
+display = 6151
+position = [-9910.00, 600.95, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790229
+display = 6151
+position = [-9910.00, 605.25, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790230
+display = 6151
+position = [-9910.00, 609.55, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790231
+display = 6151
+position = [-9910.00, 613.85, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790232
+display = 6151
+position = [-9910.00, 618.15, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790233
+display = 6151
+position = [-9910.00, 622.45, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790234
+display = 6151
+position = [-9910.00, 626.75, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790235
+display = 6151
+position = [-9910.00, 631.05, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790236
+display = 6151
+position = [-9910.00, 635.35, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790237
+display = 6151
+position = [-9910.00, 639.65, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790238
+display = 6151
+position = [-9910.00, 643.95, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790239
+display = 6151
+position = [-9910.00, 648.25, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790240
+display = 6151
+position = [-9910.00, 652.55, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790241
+display = 6151
+position = [-9910.00, 656.85, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790242
+display = 6151
+position = [-9910.00, 661.15, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790243
+display = 6151
+position = [-9910.00, 665.45, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790244
+display = 6151
+position = [-9910.00, 669.75, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790245
+display = 6151
+position = [-9910.00, 674.05, 38.0]
+orientation = 1.5708
+sides = "both"
+
+[[gameobject]]
+guid = 790246
+display = 6151
+position = [-9910.00, 678.35, 38.0]
+orientation = 1.5708
+sides = "both"

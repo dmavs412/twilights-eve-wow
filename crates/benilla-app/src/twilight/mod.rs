@@ -397,6 +397,7 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         ClientCommand::AttackSwing { guid } => Some(RealmCommand::AttackSwing { guid }),
         ClientCommand::AttackStop => Some(RealmCommand::AttackStop),
         ClientCommand::CancelAutoRepeat => Some(RealmCommand::CancelAutoRepeat),
+        ClientCommand::GameObjUse { guid } => Some(RealmCommand::UseGameObject { guid }),
         ClientCommand::CreatureQuery { entry, .. } => Some(RealmCommand::CreatureQuery { entry }),
         ClientCommand::CastSpell { spell_id, target } => {
             Some(RealmCommand::CastSpell { spell_id, target })

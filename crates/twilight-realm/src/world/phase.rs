@@ -7,7 +7,7 @@ use benilla_protocol::SessionEvent;
 use super::InWorld;
 use crate::characters::Char;
 use crate::mobs::{self, Mob};
-use crate::phased::{self, Phase};
+use crate::phased::{self, GameObjectUse, Phase};
 use crate::population::VIEW_YD;
 use crate::space::flat_distance;
 
@@ -58,7 +58,54 @@ impl InWorld {
                 self.portals.retain(|&id| id != d.id);
                 events.push(SessionEvent::ObjectsRemoved(vec![d.portal_guid()]));
             }
+            self.show_dungeon_objects(d, me, events);
         }
+    }
+
+    /// Streams `d`'s GameObjects in and out with the view, those for the Phase only while the
+    /// player is in it.
+    fn show_dungeon_objects(
+        &mut self,
+        d: &phased::Dungeon,
+        me: [f32; 3],
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let mut gone = Vec::new();
+        for o in &d.gameobject {
+            let d_yd = if d.map == self.map {
+                flat_distance(o.position, me)
+            } else {
+                f32::INFINITY
+            };
+            let guid = o.object_guid();
+            let seen = o.seen_from(self.phase, d.id);
+            if !self.dungeon_objects.contains(&guid) {
+                if seen && d_yd <= VIEW_YD {
+                    self.dungeon_objects.insert(guid);
+                    events.push(o.create());
+                }
+            } else if !seen || d_yd > VIEW_YD + 10.0 {
+                self.dungeon_objects.remove(&guid);
+                gone.push(guid);
+            }
+        }
+        if !gone.is_empty() {
+            events.push(SessionEvent::ObjectsRemoved(gone));
+        }
+    }
+
+    /// The player clicks the GameObject of `guid`: what it asks for, if it is one of the Phase's
+    /// to use.
+    pub(crate) fn use_gameobject(&self, guid: u64) -> Option<GameObjectUse> {
+        let (d, (_, kind)) = phased::content()
+            .iter()
+            .filter(|d| d.map == self.map && self.phase == Phase::Dungeon(d.id))
+            .find_map(|d| d.usable(guid).map(|u| (d, u)))?;
+        Some(GameObjectUse {
+            dungeon: d.id,
+            guid,
+            kind,
+        })
     }
 }
 

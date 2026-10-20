@@ -241,6 +241,8 @@ pub(crate) struct InWorld {
     phase: crate::phased::Phase,
     /// The Phased Dungeons whose doorway portal the client has.
     portals: Vec<u32>,
+    /// The guids of the dungeon GameObjects the client has.
+    dungeon_objects: std::collections::HashSet<u64>,
     /// What each creature casts.
     pub(crate) casters: crate::creature_spells::Casters,
     /// The Heat Level whose aura the player wears; 0 for none.
@@ -342,6 +344,7 @@ impl InWorld {
             resting: crate::rest::in_inn(c.map, c.position),
             phase: Default::default(),
             portals: Vec::new(),
+            dungeon_objects: Default::default(),
             casters: Default::default(),
             heat_shown: 0,
             hunter_in: None,

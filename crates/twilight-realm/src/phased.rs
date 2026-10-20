@@ -100,7 +100,82 @@ pub(crate) struct Portal {
     pub(crate) orientation: f32,
 }
 
+/// Who sees a dungeon GameObject.
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum Sides {
+    /// From the open world and from the Phase.
+    Both,
+    /// Only from the Phase.
+    Inside,
+}
+
+/// What clicking a dungeon GameObject asks for.
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum UseKind {
+    Hide,
+}
+
+/// A click on a dungeon GameObject with a use, for whatever listens for it.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct GameObjectUse {
+    /// The id of the Phased Dungeon it stands in.
+    pub dungeon: u32,
+    pub guid: u64,
+    pub kind: UseKind,
+}
+
+/// A GameObject of a Phased Dungeon: scenery, or something to click when it has a `use`.
+#[derive(Deserialize)]
+pub(crate) struct DungeonObject {
+    pub(crate) guid: u32,
+    pub(crate) display: u32,
+    pub(crate) position: [f32; 3],
+    pub(crate) orientation: f32,
+    pub(crate) sides: Sides,
+    #[serde(default, rename = "use")]
+    pub(crate) use_kind: Option<UseKind>,
+}
+
+impl DungeonObject {
+    pub(crate) fn object_guid(&self) -> u64 {
+        HIGHGUID_GAMEOBJECT << 48 | u64::from(self.guid)
+    }
+
+    /// Its create: shown only, unless it has a use to click.
+    pub(crate) fn create(&self) -> SessionEvent {
+        gameobject_create(&GameObject {
+            guid: self.object_guid(),
+            entry: self.guid,
+            display_id: self.display,
+            type_id: GENERIC,
+            flags: if self.use_kind.is_some() {
+                0
+            } else {
+                NOT_SELECTABLE
+            },
+            faction: 0,
+            position: self.position,
+            orientation: self.orientation,
+        })
+    }
+
+    /// Whether a character in `phase` sees it.
+    pub(crate) fn seen_from(&self, phase: Phase, dungeon: u32) -> bool {
+        self.sides == Sides::Both || phase == Phase::Dungeon(dungeon)
+    }
+}
+
 impl Dungeon {
+    /// The dungeon GameObject of this guid that has a use, if any.
+    pub(crate) fn usable(&self, guid: u64) -> Option<(&DungeonObject, UseKind)> {
+        self.gameobject
+            .iter()
+            .find(|o| o.object_guid() == guid)
+            .and_then(|o| o.use_kind.map(|k| (o, k)))
+    }
+
     /// The portal's guid: one per dungeon.
     pub(crate) fn portal_guid(&self) -> u64 {
         HIGHGUID_GAMEOBJECT << 48 | u64::from(self.id)
@@ -189,7 +264,10 @@ pub(crate) struct Dungeon {
     /// Where a probe drops a character into the dungeon: `[x, y, facing]`.
     #[serde(default)]
     start: Option<[f32; 3]>,
+    #[serde(default)]
     pub(crate) creature: Vec<Creature>,
+    #[serde(default)]
+    pub(crate) gameobject: Vec<DungeonObject>,
 }
 
 impl Dungeon {
@@ -218,6 +296,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
         [
             include_str!("../content/northshire_abbey.toml"),
             include_str!("../content/test_grounds.toml"),
+            include_str!("../content/forest_edge.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
@@ -352,6 +431,49 @@ mod tests {
             .find(|s| s.entry == 197)
             .unwrap();
         assert_eq!(at(mcbride.map, mcbride.position), Phase::OpenWorld);
+    }
+
+    #[test]
+    fn forest_edge_holds_hoggers_spawn_and_its_portal_and_hides_a_palisade_and_spots() {
+        let edge = content().iter().find(|d| d.id == 2).unwrap();
+        assert_eq!(at(0, [-9946.0, 604.27, 38.3]), Phase::Dungeon(2));
+        assert!(edge.holds(0, edge.portal.position), "portal outside");
+        // A step inside the portal, and a step out onto the approach.
+        let [x, y, z] = edge.portal.position;
+        let (sin, cos) = edge.portal.orientation.sin_cos();
+        assert!(edge.holds(0, [x - 2.0 * cos, y - 2.0 * sin, z]));
+        assert!(!edge.holds(0, [x + 2.0 * cos, y + 2.0 * sin, z]));
+        let hides = edge
+            .gameobject
+            .iter()
+            .filter(|o| o.use_kind == Some(UseKind::Hide))
+            .count();
+        assert!(hides >= 5, "{hides} hiding spots");
+        for o in edge.gameobject.iter().filter(|o| o.use_kind.is_some()) {
+            assert_eq!(o.sides, Sides::Inside, "spot {} shows outside", o.guid);
+            assert!(edge.holds(0, o.position), "spot {} is outside", o.guid);
+        }
+        let mut guids: Vec<_> = edge.gameobject.iter().map(|o| o.guid).collect();
+        guids.sort_unstable();
+        guids.dedup();
+        assert_eq!(guids.len(), edge.gameobject.len(), "a guid repeats");
+        // Only a Phase character sees the hiding spots; the palisade shows from both sides.
+        let spot = edge
+            .gameobject
+            .iter()
+            .find(|o| o.use_kind.is_some())
+            .unwrap();
+        let fence = edge
+            .gameobject
+            .iter()
+            .find(|o| o.use_kind.is_none())
+            .unwrap();
+        assert!(!spot.seen_from(Phase::OpenWorld, 2));
+        assert!(spot.seen_from(Phase::Dungeon(2), 2));
+        assert!(fence.seen_from(Phase::OpenWorld, 2));
+        // Only a spot with a use is clickable.
+        assert!(edge.usable(spot.object_guid()).is_some());
+        assert!(edge.usable(fence.object_guid()).is_none());
     }
 
     #[test]
