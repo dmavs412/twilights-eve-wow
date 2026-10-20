@@ -772,6 +772,13 @@ impl Skills {
         })
     }
 
+    /// Whether `unit` is incapacitated.
+    pub(super) fn incapacitated(&self, unit: u64) -> bool {
+        self.auras
+            .iter()
+            .any(|a| a.unit == unit && matches!(a.kind, AuraKind::Incapacitate { .. }))
+    }
+
     /// The player's `next_cast` buffs for `skill`.
     fn next_casts<'a>(
         &'a self,
@@ -3227,6 +3234,15 @@ impl InWorld {
                     self.skills
                         .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
                     self.interrupt_mob_cast(target, events);
+                    // The caster stops swinging at it; the mob stays in the fight (#165) but
+                    // cannot act on the caster, so the caster is out of combat (#184).
+                    if self.player.attacking == Some(target) {
+                        self.player.attacking = None;
+                        events.push(SessionEvent::AttackStop {
+                            attacker: self.guid,
+                            victim: target,
+                        });
+                    }
                 }
             }
             Effect::AddComboPoints { amount } => {

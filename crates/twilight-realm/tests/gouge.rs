@@ -65,6 +65,18 @@ fn the_target_stays_in_combat_while_incapacitated() {
     assert!(view.aura(mob.guid, GOUGE).is_some());
     assert!(!stopped(&during, &mob));
     assert_ne!(view.fields(mob.guid).unit_flags() & UNIT_FLAG_IN_COMBAT, 0);
+}
+
+#[test]
+fn the_caster_is_out_of_combat_while_the_target_is_incapacitated() {
+    let (mut realm, me, mob, mut view) = ready();
+    gouge(&mut realm, &mut view, &mob);
+    view.run(&mut realm, 1.0);
+    assert!(view.aura(mob.guid, GOUGE).is_some());
+    assert_eq!(view.fields(me).unit_flags() & UNIT_FLAG_IN_COMBAT, 0);
+    // A swing wakes it and the fight is on again.
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    view.run(&mut realm, 0.5);
     assert_ne!(view.fields(me).unit_flags() & UNIT_FLAG_IN_COMBAT, 0);
 }
 

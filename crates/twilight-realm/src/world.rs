@@ -1322,10 +1322,10 @@ impl InWorld {
         let attacking = p
             .attacking
             .is_some_and(|t| self.mobs.iter().any(|m| m.guid == t && m.alive()));
-        let attacked = self
-            .mobs
-            .iter()
-            .any(|m| m.state == State::Engaged && m.target == self.guid);
+        // A mob held by an incapacitate is still in the fight but is no threat to the player.
+        let attacked = self.mobs.iter().any(|m| {
+            m.state == State::Engaged && m.target == self.guid && !self.skills.incapacitated(m.guid)
+        });
         let in_combat = p.alive() && (attacking || attacked || self.skills.holds_combat());
         if in_combat != p.in_combat {
             p.in_combat = in_combat;
