@@ -18,3 +18,19 @@ items = [900001, 25, 2362, 3111]
 [zealot]
 # Recruit's Plate Vest, Worn Shortsword, Worn Wooden Shield, Crude Throwing Axe.
 items = [900001, 25, 2362, 3111]
+
+[cutthroat]
+# Frostmane Leather Vest, Simple Dagger, Crude Throwing Axe.
+items = [2108, 4565, 3111]
+
+[initiate]
+# Light Magesmith Robe, Crooked Staff.
+items = [2110, 1388]
+
+[ranger]
+# Frostmane Chain Vest, Worn Axe, Cadet's Bow. Arrows have no equip slot, so none come with it.
+items = [2109, 37, 8179]
+
+[acolyte]
+# Scarlet Initiate Robes, Small Wooden Hammer, Ashworth's Black Psalter.
+items = [3260, 2055, 900105]
