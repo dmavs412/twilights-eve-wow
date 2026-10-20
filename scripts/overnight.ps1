@@ -68,7 +68,9 @@ function Write-Log([string]$msg) {
 # Runs cargo via cmd so stderr merges cleanly under PowerShell 5.1. Returns @{ok; what; out}.
 function Invoke-Gate([string]$Before, [string]$After) {
     $files = @(git diff --name-only $Before $After)
-    $crates = @($files | ForEach-Object { if ($_ -match '^crates/([^/]+)/') { $Matches[1] } } | Sort-Object -Unique)
+    # A crate the commits deleted has nothing left to check.
+    $crates = @($files | ForEach-Object { if ($_ -match '^crates/([^/]+)/') { $Matches[1] } } | Sort-Object -Unique |
+        Where-Object { Test-Path (Join-Path $Root "crates\$_\Cargo.toml") })
     $realm = @($files | Where-Object { $_ -match '^(crates/twilight-realm/|data/|tools/)' }).Count -gt 0
     $ran = @()
     foreach ($c in $crates) {
