@@ -252,30 +252,27 @@ Remove-Item $lock -Force -ErrorAction SilentlyContinue
 $published = "none (no commit landed)"
 if ((git rev-parse HEAD).Trim() -ne $startSha) {
     Write-Log "publishing a play copy"
-    & (Join-Path $PSScriptRoot "publish-play.ps1") | ForEach-Object { Write-Log $_ }
+    # `*>&1`: publish-play reports through Write-Host, which skips the pipeline, so without it a
+    # refusal or a failed build reached run.log as nothing at all.
+    & (Join-Path $PSScriptRoot "publish-play.ps1") *>&1 | ForEach-Object { Write-Log "$_" }
     $published = if ($LASTEXITCODE -eq 0) { "play/" + (git rev-parse --short HEAD).Trim() } else { "failed, see run.log" }
     if ($LASTEXITCODE -ne 0) { $failures += "publish-play.ps1 failed" }
 }
 
 # One comment per night on the pinned "Overnight log" issue; format in docs/agents/unattended.md.
 $assumed = @(git log --format=%B "$startSha..HEAD" | Where-Object { $_ -match '^Assumed:' })
-$body = @(
-    "## Night of $stamp",
-    "",
-    "### Tickets",
-    (Get-Content $summary),
-    "",
-    "### Assumptions",
-    $(if ($assumed.Count) { $assumed | ForEach-Object { "- $_" } } else { "- none" }),
-    "",
-    "### Play copy",
-    "- $published",
-    "",
-    "### Failures",
-    $(if ($failures.Count) { $failures | ForEach-Object { "- $_" } } else { "- none" })
-) -join "`n"
+# Built with `+=`, which flattens: a nested array inside `@(a, b, c)` stays one element, and
+# `-join` then prints it as `System.Object[]`.
+$lines = @("## Night of $stamp", "", "### Tickets")
+$lines += @(Get-Content $summary)
+$lines += @("", "### Assumptions")
+$lines += $(if ($assumed.Count) { @($assumed | ForEach-Object { "- $_" }) } else { @("- none") })
+$lines += @("", "### Play copy", "- $published", "", "### Failures")
+$lines += $(if ($failures.Count) { @($failures | ForEach-Object { "- $_" }) } else { @("- none") })
+$body = $lines -join "`n"
 $bodyFile = Join-Path $script:LogDir "overnight-log.md"
-$body | Set-Content $bodyFile -Encoding utf8
+# No BOM: PowerShell 5.1's `Set-Content -Encoding utf8` writes one, and it lands in the comment.
+[IO.File]::WriteAllText($bodyFile, $body, (New-Object Text.UTF8Encoding $false))
 $raw = (gh issue list -R $Repo --state open --search "in:title Overnight log" --json number,title) -join "`n" | ConvertFrom-Json
 $logIssue = @($raw | Where-Object { $_.title -eq "Overnight log" }) | Select-Object -First 1
 if ($logIssue) { $logNo = $logIssue.number } else {
