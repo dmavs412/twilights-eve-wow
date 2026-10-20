@@ -56,6 +56,12 @@ failed.
   `tools/` changed: `cargo test -q -p twilight-realm 2>&1 | tail -40`.
 - Run every cargo command in the foreground and wait, with a 600000 ms timeout. Never
   `run_in_background`: background commands die at 10 minutes and leave corrupt rlibs.
+- One plain command per Bash call. Headless permission matching refuses chains (`;`, `&&`),
+  `$(...)`, heredocs and redirects into files, even when each part is allowed; only a trailing
+  `2>&1 | tail -40` or `| head` is safe. Write scripts and comment bodies with the Write tool
+  inside the repo's `target/agent/` folder, then run `python3.15 -I target/agent/x.py` or
+  `gh issue comment <n> --body-file target/agent/c.md`.
+- To undo your own edit to a file, use `git restore <path>`; `git checkout` is denied.
 - Before `git commit`, run `rustfmt --edition 2021 <file>...` on every `.rs` file you changed.
   The pre-commit hook refuses code that is not rustfmt-clean; never `--no-verify`.
 - Commit on `main` only when the gate passes. One commit per coherent change, message saying
