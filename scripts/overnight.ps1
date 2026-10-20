@@ -97,7 +97,7 @@ function Set-Blocked([int]$n, [string]$why) {
     $tmp = Join-Path $script:LogDir "$n.blocked.md"
     $why | Set-Content -Path $tmp -Encoding utf8
     gh issue reopen -R $Repo $n 2>$null | Out-Null
-    gh issue edit -R $Repo $n --add-label blocked | Out-Null
+    gh issue edit -R $Repo $n --add-label blocked --remove-label ready-for-agent | Out-Null
     gh issue comment -R $Repo $n --body-file $tmp | Out-Null
 }
 
@@ -190,6 +190,10 @@ foreach ($t in $queue) {
         if ($null -ne $res.total_cost_usd) { $cost = ("{0:N2}" -f $res.total_cost_usd) }
         if ($null -ne $res.num_turns) { $turns = $res.num_turns }
         if ($res.result) { $text = $res.result }
+        if ($res.permission_denials) {
+            $res.permission_denials | ConvertTo-Json -Depth 6 |
+                Set-Content (Join-Path $script:LogDir "$n.denials.json") -Encoding utf8
+        }
     } catch { }
     $text | Set-Content (Join-Path $script:LogDir "$n.log") -Encoding utf8
     Write-Log "session exit $exit, $turns turns, `$$cost"
@@ -198,10 +202,12 @@ foreach ($t in $queue) {
     $dirty = @(git status --porcelain)
     if ($dirty.Count -gt 0) {
         $diffFile = Join-Path $script:LogDir "$n.discarded.diff"
-        git diff | Set-Content $diffFile -Encoding utf8
-        $dirty | Add-Content $diffFile -Encoding utf8
-        git checkout -- . | Out-Null
-        git clean -fd | Out-Null
+        # Stage everything first so the diff keeps staged edits and new files, then reset:
+        # `git checkout -- .` left staged work behind for the next ticket to trip on.
+        git add -A | Out-Null
+        git diff --cached --binary | Set-Content $diffFile -Encoding utf8
+        git reset --hard -q | Out-Null
+        git clean -fdq | Out-Null
         Write-Log "discarded $($dirty.Count) uncommitted path(s); see $n.discarded.diff"
     }
 
