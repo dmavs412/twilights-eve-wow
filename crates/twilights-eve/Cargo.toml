@@ -1,9 +1,9 @@
 [package]
-name = "warcraft-survivors"
+name = "twilights-eve"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Warcraft Survivors: the benilla client booted server-less into a top-down survival mode on ten battlegrounds"
+description = "Twilight's Eve: Callings, the benilla client booted into the Local Realm"
 
 [lints]
 workspace = true
@@ -19,6 +19,6 @@ benilla-app = { path = "../benilla-app", default-features = false }
 benilla-buildstamp = { path = "../benilla-buildstamp" }
 
 [[bin]]
-name = "warcraft-survivors"
+name = "twilights-eve"
 path = "src/main.rs"
 test = false

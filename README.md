@@ -11,8 +11,7 @@ is now ours. The game data is a WoW 1.12.1 client's `Data` folder, which is neve
 
 ```powershell
 $env:WOW_DATA = 'C:\path\to\WoW\Data'
-$env:WOW_TWILIGHT = '1'
-cargo run --release -p warcraft-survivors
+cargo run --release -p twilights-eve
 ```
 
 `run.ps1 native` does the same with this machine's defaults.

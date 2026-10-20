@@ -25,7 +25,7 @@ Crossroads as the Hub and the Wailing Caverns as the one Dungeon. Vocabulary fol
 
 ### Starting out
 
-1. As a player, I want to launch Twilight's Eve with its own flag (`?twilight=1` in the browser, `WOW_TWILIGHT` natively), so that it starts without going through Survivors or a login screen.
+1. As a player, I want to launch Twilight's Eve from its own launcher (`twilights-eve.exe`), so that it starts without a login screen.
 2. As a player, I want the client to boot straight to the stock character select screen, so that it feels like logging in to a WoW realm.
 3. As a player, I want to create a character on the stock create screen, picking name, race, gender and appearance, so that my hero is my own.
 4. As a player, I want every race to be available, so that I'm not limited by faction.
@@ -83,7 +83,7 @@ Crossroads as the Hub and the Wailing Caverns as the one Dungeon. Vocabulary fol
 41. As a player, I want vanilla kill XP (more for mobs above me, none for grey mobs), so that hunting up pays.
 42. As a player, I want quests to also give some gold and sometimes Tokens, so that quests feed gear.
 43. As a player, I want the stock XP bar, level-up flash and level-up message, so that progress feels like WoW.
-44. As a tester, I want `?xp=N` / `WOW_TWILIGHT_XP` to multiply XP, so that I can reach Tier Caps fast.
+44. As a tester, I want `?xp=N` / `WOW_DEV_XP` to multiply XP, so that I can reach Tier Caps fast.
 
 ### Tiers and Advancement
 
@@ -129,7 +129,7 @@ Crossroads as the Hub and the Wailing Caverns as the one Dungeon. Vocabulary fol
 
 ### Testing and future
 
-72. As a tester, I want `?speed=N` / `WOW_TWILIGHT_SPEED` to multiply my run speed, so that I can cross The Barrens fast.
+72. As a tester, I want `?speed=N` / `WOW_DEV_SPEED` to multiply my run speed, so that I can cross The Barrens fast.
 73. As a tester, I want the dev multipliers off by default, read only from the boot flags and never saved, so that they can't leak into a real save.
 74. As the developer, I want the game rules in a crate free of Bevy, with tests that need no window, GPU or game data, so that I can grow content with confidence.
 75. As the developer, I want a future real server to reuse the Local Realm's rules behind a socket, so that multiplayer grouping becomes possible without a rewrite.

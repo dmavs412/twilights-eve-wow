@@ -44,8 +44,8 @@ use motion::{
 // `pub(crate)`: `creature_anim` reads the shuffle latch it produces, and a test runs both.
 pub(crate) use motion::drive_display_facing;
 pub(crate) use motion::{
-    grounded_y, jump_seed, CreatureSwimming, FacingStep, RemoteMotion, ScriptedFacing, Spline,
-    SplineStopped, UnitMoveModes,
+    grounded_y, jump_seed, CreatureSwimming, FacingStep, RemoteMotion, Spline, SplineStopped,
+    UnitMoveModes,
 };
 // The ground-census probe's, which the wasm build does not have.
 #[cfg_attr(target_arch = "wasm32", allow(unused_imports))]

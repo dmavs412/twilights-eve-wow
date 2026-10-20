@@ -8,13 +8,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 /// Per-file budgets of re-typed sentences, which may only go down. A one-word value is not
-/// checked: it collides with ordinary program text. The two Survivors rows were found the first
-/// time this test ran to its end on an enUS install; Survivors is being removed, and the rows go
-/// with it.
-const ALLOWED: &[(&str, usize)] = &[
-    ("benilla-app/src/survivors/hud.rs", 10),
-    ("benilla-app/src/survivors/menu.rs", 3),
-];
+/// checked: it collides with ordinary program text.
+const ALLOWED: &[(&str, usize)] = &[];
 
 /// Paths that are never player-facing: dev instruments, probes, capture harnesses and benches.
 /// `resolve_bench` is a `#[cfg(test)]` module in its own file, which [`strip_test_modules`] cannot

@@ -29,7 +29,7 @@ switch ($Mode) {
     }
     'native' {
         $env:WOW_DATA = $Data
-        cargo run --release -p warcraft-survivors
+        cargo run --release -p twilights-eve
     }
 }
 exit $LASTEXITCODE

@@ -25,20 +25,23 @@ pub(crate) mod vanilla_player;
 
 pub(crate) use goto::DevGoto;
 
-/// `WOW_TWILIGHT` natively, `?twilight=1` in the browser: boot Twilight's Eve.
+/// Set by [`crate::run_twilight`] before the app builds: the `twilights-eve` launcher boots
+/// Twilight's Eve, the plain `benilla` client does not.
+pub(crate) static ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 pub(crate) fn active() -> bool {
-    crate::webenv::var("WOW_TWILIGHT").is_some_and(|v| v != "0")
+    ACTIVE.load(std::sync::atomic::Ordering::Relaxed)
 }
 
-/// The dev multipliers, read once at boot: `?speed=` / `?xp=` in the browser, `WOW_TWILIGHT_SPEED`
-/// / `WOW_TWILIGHT_XP` natively. They live only in this run's realm, never in a save.
+/// The dev multipliers, read once at boot: `?speed=` / `?xp=` in the browser, `WOW_DEV_SPEED`
+/// / `WOW_DEV_XP` natively. They live only in this run's realm, never in a save.
 fn dev_multipliers() -> DevMultipliers {
     let flag = |name: &str| {
         // The browser's short form first; `webenv` maps `WOW_<NAME>` to `?<name>=` there.
         let short = cfg!(target_arch = "wasm32")
             .then(|| crate::webenv::var(&format!("WOW_{name}")))
             .flatten();
-        short.or_else(|| crate::webenv::var(&format!("WOW_TWILIGHT_{name}")))
+        short.or_else(|| crate::webenv::var(&format!("WOW_DEV_{name}")))
     };
     let dev = DevMultipliers::from_flags(flag("SPEED").as_deref(), flag("XP").as_deref());
     if dev != DevMultipliers::default() {

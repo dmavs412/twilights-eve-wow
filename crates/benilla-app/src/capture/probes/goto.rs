@@ -21,7 +21,7 @@ impl Plugin for ProbeGotoPlugin {
     fn build(&self, app: &mut App) {
         let spec = std::env::var("WOW_PROBE_GOTO").unwrap_or_default();
         if !crate::twilight::active() {
-            warn!("probe-goto: WOW_PROBE_GOTO needs Twilight's Eve (WOW_TWILIGHT=1) — ignored");
+            warn!("probe-goto: WOW_PROBE_GOTO needs the twilights-eve launcher — ignored");
             return;
         }
         let Some(goto) = parse(&spec) else {

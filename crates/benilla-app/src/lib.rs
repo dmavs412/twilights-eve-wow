@@ -106,8 +106,6 @@ mod sound;
 /// The two talent spell-modifier tables (`SMSG_SET_FLAT_/PCT_SPELL_MODIFIER`) and the read that
 /// puts them on a number.
 mod spell;
-/// Warcraft Survivors: the top-down survival mode the `warcraft-survivors` launcher boots.
-mod survivors;
 /// The melee swing refusal's latch + 4 s repeat (`SMSG_ATTACKSWING_*`).
 mod swing_refusal;
 mod target;
@@ -228,10 +226,10 @@ pub fn run_with(build: BuildId, extend: impl FnOnce(&mut App)) -> AppExit {
     launch(build, Some(Box::new(extend)))
 }
 
-/// Warcraft Survivors: the client booted server-less into a top-down survival mode on a picked
-/// battleground ([`survivors`]), called by the `warcraft-survivors` launcher.
-pub fn run_survivors(build: BuildId) -> AppExit {
-    survivors::ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
+/// Twilight's Eve: the client booted into the Local Realm ([`twilight`]), called by the
+/// `twilights-eve` launcher.
+pub fn run_twilight(build: BuildId) -> AppExit {
+    twilight::ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
     launch(build, None)
 }
 
@@ -304,13 +302,8 @@ fn launch(build: BuildId, extend: Option<Extension<'_>>) -> AppExit {
     // With `$WOW_CAPTURE` set the app runs a deterministic, server-less capture (net off, so no
     // NPCs stream in) and exits.
     let capturing = run_mode::scenario_active();
-    // Survivors runs server-less too, on Kalimdor; `world_map` reads the map at `Startup`.
-    // Twilight's Eve outranks Survivors, which every launcher turns on.
+    // Only the `twilights-eve` launcher boots the Local Realm; `benilla` stays the plain client.
     let twilight = twilight::active();
-    let survivors = survivors::active() && !twilight;
-    if survivors {
-        benilla_world::world_map::set_start_map(1);
-    }
     // Every instrumented run, captures and live probes, opens in the background so it never takes
     // over a person's screen; `WOW_BG` overrides.
     let background = benilla_world::bgwin::background_run();
@@ -348,8 +341,6 @@ fn launch(build: BuildId, extend: Option<Extension<'_>>) -> AppExit {
     app.add_plugins(benilla_world::boot::tuned_default_plugins(Window {
         title: if twilight {
             "Twilight's Eve"
-        } else if survivors {
-            "Warcraft Survivors"
         } else {
             "benilla"
         }
@@ -440,25 +431,20 @@ fn launch(build: BuildId, extend: Option<Extension<'_>>) -> AppExit {
     // The game as one group on top of the engine; `game_plugins.rs` has its members, its
     // load-bearing ordering edges and the test that builds it headless.
     .add_plugins(game_plugins::GamePlugins {
-        net: if capturing || survivors {
+        net: if capturing {
             net::NetBackend::Offline
         } else if twilight {
             net::NetBackend::InProcess
         } else {
             net::NetBackend::Io
         },
-        start: if survivors {
-            char_select::ClientState::InWorld
-        } else if twilight {
+        start: if twilight {
             // No login: the Local Realm's roster is the first screen.
             char_select::ClientState::CharSelect
         } else {
             run_mode::start_state()
         },
     });
-    if survivors {
-        app.add_plugins(survivors::SurvivorsPlugin);
-    }
     if twilight {
         app.add_plugins(twilight::TwilightPlugin);
     }

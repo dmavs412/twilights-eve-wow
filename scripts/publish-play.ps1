@@ -34,7 +34,7 @@ if ($ownLock) {
     @{ session = $me; started = (Get-Date).ToUniversalTime().ToString('o') } | ConvertTo-Json -Compress | Set-Content $lock -Encoding utf8
 }
 try {
-    cargo build --release -q -p warcraft-survivors
+    cargo build --release -q -p twilights-eve
     if ($LASTEXITCODE -ne 0) { Write-Host 'release build failed'; exit 1 }
 } finally {
     if ($ownLock) { Remove-Item $lock -Force -ErrorAction SilentlyContinue }
@@ -42,26 +42,25 @@ try {
 
 $commit = git rev-parse --short HEAD
 $dest = Join-Path $Root "play\$commit"
-$running = Get-Process warcraft-survivors -ErrorAction SilentlyContinue | ForEach-Object { $_.Path }
+$running = Get-Process twilights-eve -ErrorAction SilentlyContinue | ForEach-Object { $_.Path }
 New-Item -ItemType Directory -Force $dest | Out-Null
-if ($running -contains (Join-Path $dest 'warcraft-survivors.exe')) {
+if ($running -contains (Join-Path $dest 'twilights-eve.exe')) {
     Write-Host "play\$commit is running; left as it is"
 } else {
-    Copy-Item 'target\release\warcraft-survivors.exe' $dest -Force
+    Copy-Item 'target\release\twilights-eve.exe' $dest -Force
 }
 @'
 # Play this copy. Game data defaults to this machine's client; override with -Data or $env:WOW_DATA.
 param([string]$Data = $(if ($env:WOW_DATA) { $env:WOW_DATA } else { 'C:\Users\davis\wow-data\Data' }))
 $env:WOW_DATA = $Data
-$env:WOW_TWILIGHT = '1'
-& "$PSScriptRoot\warcraft-survivors.exe"
+& "$PSScriptRoot\twilights-eve.exe"
 '@ | Set-Content (Join-Path $dest 'run.ps1') -Encoding utf8
 Write-Host "published play\$commit"
 
 # Keep the newest $Keep copies; skip any whose exe is running.
 Get-ChildItem (Join-Path $Root 'play') -Directory | Sort-Object LastWriteTime -Descending |
     Select-Object -Skip $Keep | ForEach-Object {
-        $exe = Join-Path $_.FullName 'warcraft-survivors.exe'
+        $exe = Join-Path $_.FullName 'twilights-eve.exe'
         if ($running -contains $exe) { Write-Host "kept $($_.Name): its exe is running" }
         else { Remove-Item $_.FullName -Recurse -Force }
     }

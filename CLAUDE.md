@@ -3,8 +3,8 @@
 A single-player offline WoW ORPG prototype on a from-scratch 1.12.1 client in Rust + Bevy. The
 client (`crates/benilla-*`) renders the game and speaks the 1.12.1 protocol. The Local Realm
 (`crates/twilight-realm`) is the game's rules: in-process today, behind a socket for friends
-later. The Survivors mode and the browser build are being removed, so `crates/warcraft-survivors`
-(still the launcher binary), `crates/wenilla*` and `web/` are dead weight, never a target.
+later. The launcher binary is `crates/twilights-eve`. The browser build is being removed, so
+`crates/wenilla*` and `web/` are dead weight, never a target.
 
 Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla reference notes:
 `docs/reference/`. Judgement-call coding rules: `CODING_STANDARDS.md`.
@@ -70,8 +70,7 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 - Build in this checkout's `target` only; a worktree's own `target` is 18 GB and fills C:.
   `CARGO_BUILD_JOBS=4` is in the user environment. Davis plays from a `play/` copy
   (gitignored, newest 3 kept), because a running exe cannot be overwritten.
-- `WOW_TWILIGHT=1` picks Twilight's Eve in the launcher. `WOW_PROBE=list` lists the variables
-  that drive a run with no one at the keyboard.
+- `WOW_PROBE=list` lists the variables that drive a run with no one at the keyboard.
 
 ## Issue tracker
 
