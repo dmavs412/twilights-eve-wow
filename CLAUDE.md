@@ -29,6 +29,14 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   rules in `docs/agents/unattended.md`. An evening grill ends by writing those tickets: each
   one fully specified, with its assumptions allowed and its acceptance stated, so the night
   session can pick a reading and record it instead of asking.
+- **Two lanes.** The **Build** lane (this checkout, interactive or overnight) is the only one
+  that builds or edits code, the CSV or generated JSON. **Lane 2** writes no code: it smoke-runs
+  from a `play/` copy, reproduces Davis's bugs and writes issues. Every `cargo` command takes
+  the build lock `target/.claude-build.lock`; a refusal names the holder, so wait or stop.
+  Davis plays from `play/<short-commit>/`, made by `scripts/publish-play.ps1`, never from
+  `target`. Rules: `docs/agents/unattended.md`.
+- **`unplayed`.** A spec closes when its tickets land and gets the `unplayed` label; Davis's
+  play note removes it. Bugs name the spec they break.
 - **Grill before architecture.** Run `/grill-me` first for: a new crate or a new `twilight-realm`
   dependency; a new ECS component family or system ordering in the realm; a column added or
   changed in the master CSV, or a schema change in a generated file; anything crossing the
@@ -60,9 +68,8 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   it. The repo's `wow-data` is a git symlink that Windows checks out as a text file.
 - Python is `~/.local/bin/python3.15`; `python3` on PATH is the Microsoft Store stub. No Node.
 - Build in this checkout's `target` only; a worktree's own `target` is 18 GB and fills C:.
-  `CARGO_BUILD_JOBS=4` is in the user environment. Davis plays from
-  `.claude/worktrees/integration/target/release/warcraft-survivors.exe`, and a running exe cannot
-  be overwritten.
+  `CARGO_BUILD_JOBS=4` is in the user environment. Davis plays from a `play/` copy
+  (gitignored, newest 3 kept), because a running exe cannot be overwritten.
 - `WOW_TWILIGHT=1` picks Twilight's Eve in the launcher. `WOW_PROBE=list` lists the variables
   that drive a run with no one at the keyboard.
 

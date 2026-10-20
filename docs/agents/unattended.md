@@ -1,10 +1,31 @@
 # Unattended runs
 
-`scripts/overnight.ps1` works through open issues labelled `ready-for-agent`, oldest first, with
-no one at the keyboard. Each ticket gets a fresh `claude -p` session on Sonnet with
+`scripts/overnight.ps1` works through open issues labelled `ready-for-agent` with no one at the
+keyboard: every one labelled `bug` first, at any age, oldest first, then features oldest first. Each ticket gets a fresh `claude -p` session on Sonnet with
 `scripts/overnight-settings.json` layered over the shared settings. These rules apply to that
 session on top of `CLAUDE.md`. Nobody will answer a question; a session that asks one has
 failed.
+
+## Two lanes
+
+- **Build lane**: the main checkout, one session at a time, interactive or overnight. It is the
+  only lane that builds or edits code, `data/`, or generated JSON. Overnight is a Build lane.
+- **Lane 2**: a second session that writes no code. It smoke-runs from a `play/` copy, and it
+  triages bugs: for each rough bug Davis files, it reproduces it from the note and the logs,
+  writes the reproduction and a failing-test outline into the issue, then adds
+  `ready-for-agent`. The Build lane then fixes it test-first, one bug per session.
+- **Build lock**: a PreToolUse hook makes every `cargo` command take `target/.claude-build.lock`
+  (session id, start time) and release it after. If someone else holds it, the hook refuses at
+  once and names the holder; wait or stop, never work around it. A lock older than 2 h is
+  stale and is taken over. `overnight.ps1` holds it for the whole run.
+- **Play copies**: `scripts/publish-play.ps1` builds release under the lock and copies the exe
+  and data patch to `play/<short-commit>/` (gitignored), keeping the newest 3 and never deleting
+  one whose exe is running. It runs when Davis asks, and once at the end of a night that landed
+  a commit. Davis plays only from `play/`.
+- **Morning log**: overnight posts one comment per night on the pinned "Overnight log" issue:
+  tickets done, assumptions taken, the `play/` copy published, and failures.
+- **`unplayed`**: a spec closes when its tickets land and gets `unplayed`; Davis's play note
+  removes it. No feature waits on play. Bugs reference the spec they break.
 
 ## The ticket is the spec
 
