@@ -1084,17 +1084,25 @@ impl Realm {
                 let mut credited = None;
                 if let Some(w) = &mut self.world {
                     let player = w.guid;
-                    let quest_object = self
+                    let giver = self
                         .characters
-                        .get_mut(player)
-                        .is_some_and(|c| w.use_quest_object(guid, c, &mut self.events));
-                    if quest_object {
-                        credited = Some(player);
-                    } else if let Some(used) = w.use_gameobject(guid) {
-                        if let Some(c) = self.characters.get(w.guid) {
-                            w.begin_hide(used, c);
+                        .get(player)
+                        .and_then(|c| Some((c, w.giver_object_within_reach(guid, c.position)?)));
+                    if let Some((c, entry)) = giver {
+                        quests::object_hello(c, entry, guid, &mut self.events);
+                    } else {
+                        let quest_object = self
+                            .characters
+                            .get_mut(player)
+                            .is_some_and(|c| w.use_quest_object(guid, c, &mut self.events));
+                        if quest_object {
+                            credited = Some(player);
+                        } else if let Some(used) = w.use_gameobject(guid) {
+                            if let Some(c) = self.characters.get(w.guid) {
+                                w.begin_hide(used, c);
+                            }
+                            self.uses.push(used);
                         }
-                        self.uses.push(used);
                     }
                 }
                 if let Some(player) = credited {

@@ -122,7 +122,11 @@ impl Realm {
             }
             RealmCommand::QuestGiverHello { npc } => {
                 if let Some(g) = talking_to(c, w, npc) {
-                    hello(c, g, npc, events);
+                    if g.object {
+                        object_hello(c, g.entry, npc, events);
+                    } else {
+                        hello(c, g, npc, events);
+                    }
                 }
             }
             RealmCommand::QuestGiverQueryQuest { npc, quest } => {
@@ -261,6 +265,8 @@ impl Realm {
 struct Speaker {
     entry: u32,
     greeting: &'static str,
+    /// `entry` is an outdoor quest GameObject's, not a creature's. It gives quests and takes none.
+    object: bool,
 }
 
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits, which carries its entry in bits 24-47.
@@ -275,6 +281,7 @@ fn field_speaker(entry: u32) -> Option<Speaker> {
     content::field_giver(entry).then_some(Speaker {
         entry,
         greeting: "",
+        object: false,
     })
 }
 
@@ -284,6 +291,7 @@ fn any_speaker(npc: u64) -> Option<Speaker> {
         return Some(Speaker {
             entry: n.entry,
             greeting: &n.greeting,
+            object: false,
         });
     }
     if npc >> 48 != HIGHGUID_UNIT {
@@ -300,6 +308,15 @@ fn talking_to(c: &Char, w: &crate::world::InWorld, npc: u64) -> Option<Speaker> 
         return near.then_some(Speaker {
             entry: n.entry,
             greeting: &n.greeting,
+            object: false,
+        });
+    }
+    if npc >> 48 == crate::phased::HIGHGUID_GAMEOBJECT {
+        let entry = w.giver_object_within_reach(npc, c.position)?;
+        return Some(Speaker {
+            entry,
+            greeting: "",
+            object: true,
         });
     }
     field_speaker(w.friendly_within_reach(npc, c.position)?)
@@ -357,7 +374,46 @@ pub(crate) fn use_starter(
 
 /// `quest`, if `g` offers it to the player now: theirs to take, and not in the log already.
 fn offer(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
-    content::quest(quest).filter(|q| q.giver.npc() == Some(g.entry) && offered(c, q))
+    let gives = |q: &Quest| {
+        if g.object {
+            q.giver_object == Some(g.entry)
+        } else {
+            q.giver.npc() == Some(g.entry)
+        }
+    };
+    content::quest(quest).filter(|q| gives(q) && offered(c, q))
+}
+
+/// The click on the giver GameObject `guid`: the quest panel, or the list of its quests when it
+/// has several, or nothing when it has none for the player.
+pub(crate) fn object_hello(c: &Char, entry: u32, guid: u64, events: &mut Vec<SessionEvent>) {
+    let g = Speaker {
+        entry,
+        greeting: "",
+        object: true,
+    };
+    let open: Vec<_> = content::offered_by_object(entry)
+        .filter(|q| offered(c, q))
+        .collect();
+    match open.as_slice() {
+        [] => {}
+        [q] => events.push(SessionEvent::QuestDetail(details(guid, q))),
+        open => events.push(SessionEvent::QuestGreeting(QuestGiverList {
+            npc: guid,
+            greeting: g.greeting.to_string(),
+            emote_delay: 0,
+            emote: 0,
+            quests: open
+                .iter()
+                .map(|q| QuestListEntry {
+                    quest_id: q.id,
+                    icon: dialog_status::AVAILABLE,
+                    level: u32::from(q.level),
+                    title: q.title.clone(),
+                })
+                .collect(),
+        })),
+    }
 }
 
 fn offered(c: &Char, q: &Quest) -> bool {
@@ -383,7 +439,8 @@ fn after_met(c: &Char, q: &Quest) -> bool {
 
 /// `quest`, if it is in the player's log and `g` takes it in.
 fn in_log(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
-    content::quest(quest).filter(|q| q.ender() == g.entry && c.quests.get(q.id).is_some())
+    content::quest(quest)
+        .filter(|q| !g.object && q.ender() == g.entry && c.quests.get(q.id).is_some())
 }
 
 fn is_complete(c: &Char, q: &Quest) -> bool {

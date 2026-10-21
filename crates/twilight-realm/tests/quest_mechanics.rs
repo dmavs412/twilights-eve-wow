@@ -99,7 +99,45 @@ completion = "-"
 money = 0
 tokens = 0
 use = [[990001, 2]]
+
+[[gameobject]]
+guid = 990002
+entry = 990002
+display = 1
+map = 0
+position = [-8911.0, -139.5, 82.0]
+
+[[quest]]
+id = 99206
+kind = "story"
+giver_object = 990002
+ender = 197
+level = 5
+title = "Posted"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+tokens = 0
+
+[[quest]]
+id = 99207
+kind = "story"
+giver_object = 990002
+ender = 197
+after = 99206
+level = 5
+title = "Posted Again"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+tokens = 0
 "#;
+
+const NOTICE: u64 = HIGHGUID_GAMEOBJECT << 48 | 990002;
 
 /// The Abbey's floor everywhere.
 struct AbbeyFloor;
@@ -430,4 +468,89 @@ talk = [{ npc = 197, option = "a", reply = "b" }]
 use = [[990001, 1], [990001, 2]]
 "#,
     );
+}
+
+fn click_notice(realm: &mut Realm) -> Vec<SessionEvent> {
+    realm.handle(RealmCommand::UseGameObject { guid: NOTICE });
+    drain(realm)
+}
+
+fn accept_from_notice(realm: &mut Realm, quest: u32) {
+    realm.handle(RealmCommand::QuestGiverAcceptQuest { npc: NOTICE, quest });
+    drain(realm);
+}
+
+#[test]
+fn clicking_a_giver_object_offers_its_quest_and_accepting_puts_it_in_the_log() {
+    let mut realm = in_northshire();
+    let clicked = click_notice(&mut realm);
+    assert!(
+        clicked.iter().any(
+            |e| matches!(e, SessionEvent::QuestDetail(d) if d.quest_id == 99206 && d.npc == NOTICE)
+        ),
+        "{clicked:?}"
+    );
+    // The quest after it is not offered yet.
+    assert!(!detail_of(&clicked, 99207));
+    accept_from_notice(&mut realm, 99206);
+    let me = roster(&mut realm)[0].guid;
+    let blob = realm.export_character(me).unwrap();
+    assert!(blob.contains("99206"), "{blob}");
+    // The object stays, and a turn-in at the ender works.
+    assert!(completed(&turn_in(&mut realm, 99206)).is_some());
+}
+
+#[test]
+fn a_giver_object_offers_nothing_for_a_quest_in_the_log_or_done_or_before_its_after() {
+    let mut realm = in_northshire();
+    // 99207 waits for 99206, so accepting it does nothing.
+    accept_from_notice(&mut realm, 99207);
+    let me = roster(&mut realm)[0].guid;
+    assert!(!realm.export_character(me).unwrap().contains("99207"));
+
+    accept_from_notice(&mut realm, 99206);
+    // In the log: nothing to offer, and the click does nothing.
+    assert!(click_notice(&mut realm).is_empty());
+
+    // Done: the follow-up is offered, and then nothing is left.
+    assert!(completed(&turn_in(&mut realm, 99206)).is_some());
+    let after = click_notice(&mut realm);
+    assert!(detail_of(&after, 99207), "{after:?}");
+    accept_from_notice(&mut realm, 99207);
+    assert!(completed(&turn_in(&mut realm, 99207)).is_some());
+    assert!(click_notice(&mut realm).is_empty());
+}
+
+const BAD_QUEST: &str = r#"
+[[quest]]
+id = 99298
+kind = "story"
+level = 5
+title = "Bad"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+tokens = 0
+"#;
+
+#[test]
+#[should_panic(expected = "exactly one of `giver` and `giver_object`")]
+fn a_quest_with_both_giver_and_giver_object_fails_validation() {
+    let _ = Realm::new().with_quests(&format!(
+        "{BAD_QUEST}giver = 197\ngiver_object = 990002\nender = 197\n"
+    ));
+}
+
+#[test]
+#[should_panic(expected = "exactly one of `giver` and `giver_object`")]
+fn a_quest_with_neither_giver_nor_giver_object_fails_validation() {
+    let _ = Realm::new().with_quests(BAD_QUEST);
+}
+
+#[test]
+#[should_panic(expected = "no `gameobject` row declares")]
+fn a_giver_object_that_no_gameobject_row_declares_fails_validation() {
+    let _ = Realm::new().with_quests(&format!("{BAD_QUEST}giver_object = 990777\nender = 197\n"));
 }

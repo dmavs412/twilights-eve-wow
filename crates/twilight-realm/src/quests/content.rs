@@ -102,10 +102,13 @@ pub(crate) enum Kind {
 
 /// Who offers a quest: an NPC's creature entry (a Hub NPC or a Field Giver), or `"item"` for a
 /// Quest Starter's quest, which the item naming it in its `start_quest` offers.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum Giver {
     Npc(u32),
     Item,
+    /// Written as no `giver`: the quest names a `giver_object` instead.
+    #[default]
+    Unset,
 }
 
 impl<'de> Deserialize<'de> for Giver {
@@ -131,7 +134,7 @@ impl Giver {
     pub(crate) fn npc(self) -> Option<u32> {
         match self {
             Giver::Npc(entry) => Some(entry),
-            Giver::Item => None,
+            Giver::Item | Giver::Unset => None,
         }
     }
 }
@@ -217,7 +220,12 @@ impl QuestObject {
 pub(crate) struct Quest {
     pub(crate) id: u32,
     pub(crate) kind: Kind,
+    #[serde(default)]
     pub(crate) giver: Giver,
+    /// The entry of an outdoor quest GameObject that offers it, in place of `giver`. It must name
+    /// a `gameobject` row, and the quest names its `ender`.
+    #[serde(default)]
+    pub(crate) giver_object: Option<u32>,
     /// Who takes it in, when not its giver: a person found in the field.
     #[serde(default)]
     ender: Option<u32>,
@@ -297,7 +305,7 @@ impl Quest {
     pub(crate) fn ender(&self) -> u32 {
         self.ender
             .or(self.giver.npc())
-            .expect("the content load checks a Quest Starter's quest names its ender")
+            .expect("the content load checks an item's or a GameObject's quest names its ender")
     }
 
     /// The quests its ender may offer next, once it is handed in: those with this quest among
@@ -479,11 +487,15 @@ pub(crate) fn add(toml: &str) {
         }
     }
     for o in parsed.gameobject {
-        if objects().iter().all(|known| known.guid != o.guid) {
-            added_objects()
-                .write()
-                .unwrap()
-                .push(Box::leak(Box::new(o)));
+        shipped();
+        let shipped_here = SHIPPED_OBJECTS
+            .get()
+            .into_iter()
+            .flatten()
+            .any(|s| s.guid == o.guid);
+        let mut extra = added_objects().write().unwrap();
+        if !shipped_here && extra.iter().all(|known| known.guid != o.guid) {
+            extra.push(Box::leak(Box::new(o)));
         }
     }
     for q in parsed.quest {
@@ -493,13 +505,34 @@ pub(crate) fn add(toml: &str) {
         check(&q, &|id| quest(id).is_some() || id == q.id, &|entry| {
             objects().iter().any(|o| o.entry == entry)
         });
-        added().write().unwrap().push(Box::leak(Box::new(q)));
+        // Parallel tests add the same quests; the check and the push share one lock.
+        let mut extra = added().write().unwrap();
+        if extra.iter().all(|a| a.id != q.id) {
+            extra.push(Box::leak(Box::new(q)));
+        }
     }
 }
 
 /// What the content load refuses in `q`; `known` says whether a quest id exists and `object`
 /// whether a use objective's GameObject entry is declared.
 fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
+    assert!(
+        (q.giver == Giver::Unset) != q.giver_object.is_none(),
+        "quest {} needs exactly one of `giver` and `giver_object`",
+        q.id
+    );
+    if let Some(entry) = q.giver_object {
+        assert!(
+            object(entry),
+            "quest {} is given by GameObject {entry}, which no `gameobject` row declares",
+            q.id
+        );
+        assert!(
+            q.ender.is_some(),
+            "quest {} is given by a GameObject and names no ender",
+            q.id
+        );
+    }
     if q.giver == Giver::Item {
         assert!(
             q.ender.is_some(),
@@ -636,6 +669,13 @@ pub(crate) fn offered_by(giver: u32) -> impl Iterator<Item = &'static Quest> {
     quests()
         .into_iter()
         .filter(move |q| q.giver.npc() == Some(giver))
+}
+
+/// The quests the GameObject with entry `object` offers, in the content's order.
+pub(crate) fn offered_by_object(object: u32) -> impl Iterator<Item = &'static Quest> {
+    quests()
+        .into_iter()
+        .filter(move |q| q.giver_object == Some(object))
 }
 
 /// The quests `ender` takes in, in the content's order.
