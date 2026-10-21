@@ -134,6 +134,18 @@ pub(crate) struct Harm {
     pub(crate) school: crate::rules::school::School,
 }
 
+/// A gaze that went off: `damage` of `school` to everyone within `radius` of `at` who is not
+/// behind cover.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Gaze {
+    pub(crate) caster: u64,
+    pub(crate) spell_id: u32,
+    pub(crate) at: [f32; 3],
+    pub(crate) radius: f32,
+    pub(crate) damage: u32,
+    pub(crate) school: crate::rules::school::School,
+}
+
 #[derive(Default)]
 pub(crate) struct Ticked {
     /// The character gained a level: save it.
@@ -261,6 +273,10 @@ pub(crate) struct InWorld {
     noise_drain: u32,
     /// The hiding spot the player is crouched at.
     hiding: Option<phase::Hide>,
+    /// Gazes that went off here this tick, for the realm to land on everyone in the Phase.
+    gazes: Vec<Gaze>,
+    /// Raid warnings of casts that began here this tick, for the realm to send to the Phase.
+    warnings: Vec<String>,
     /// What each creature casts.
     pub(crate) casters: crate::creature_spells::Casters,
     /// The Heat Level whose aura the player wears; 0 for none.
@@ -375,6 +391,8 @@ impl InWorld {
             noise_gain: 0,
             noise_drain: 0,
             hiding: None,
+            gazes: Vec::new(),
+            warnings: Vec::new(),
             casters: Default::default(),
             heat_shown: 0,
             hunter_in: None,
@@ -946,12 +964,14 @@ impl InWorld {
         }
         match mob.state {
             State::Idle => {
+                mob.engaged_secs = 0.0;
                 if mob.assist_in.is_none() {
                     mob.stroll(dt, map, host, rng, events);
                 }
             }
-            State::Dead => {}
+            State::Dead => mob.engaged_secs = 0.0,
             State::Evading => {
+                mob.engaged_secs = 0.0;
                 if mob.walk.is_none() {
                     mob.state = State::Idle;
                     mob.orientation = mob.home_orientation;
@@ -992,6 +1012,7 @@ impl InWorld {
                     self.evade_camp(camp, target, route.map(|r| (r, map, host)), events);
                     return;
                 }
+                mob.engaged_secs += dt;
                 if self.skills.stunned(mob.guid) {
                     interrupt_cast(mob, events);
                     return;
@@ -1062,6 +1083,47 @@ impl InWorld {
                 self.struck(swing.outcome, attacker, c, rng, events, ticked);
             }
         }
+    }
+
+    /// The gazes that went off here since the realm last asked, and the raid warnings of the
+    /// casts that began.
+    pub(crate) fn take_gazes(&mut self) -> (Vec<Gaze>, Vec<String>) {
+        (
+            std::mem::take(&mut self.gazes),
+            std::mem::take(&mut self.warnings),
+        )
+    }
+
+    /// A gaze from the Phase lands on the player standing at `at`: `damage` unless they are
+    /// dead, beyond its radius or behind one of the dungeon's `cover` pillars.
+    pub(crate) fn gazed(
+        &mut self,
+        gaze: &Gaze,
+        at: Option<[f32; 3]>,
+        cover: &[crate::phased::Cover],
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Some(at) = at.filter(|_| self.player.alive()) else {
+            return;
+        };
+        if distance(gaze.at, at) > gaze.radius || crate::phased::covered(cover, gaze.at, at) {
+            return;
+        }
+        events.push(SessionEvent::SpellDamageLog(
+            benilla_protocol::messages::SpellDamageLog {
+                target: self.guid,
+                attacker: gaze.caster,
+                spell_id: gaze.spell_id,
+                damage: gaze.damage,
+                school: gaze.school.index(),
+                absorb: 0,
+                resist: 0,
+                periodic: false,
+                blocked: 0,
+                hit_info: 0,
+            },
+        ));
+        self.player_takes(gaze.caster, gaze.damage, gaze.school, events);
     }
 
     /// The player loses `damage` to a creature's blow or spell: rage from it, and a timed cast

@@ -953,6 +953,57 @@ impl Realm {
         }
     }
 
+    /// Each gaze that went off this tick lands on every character in its caster's Phase, and each
+    /// cast that began with a warning sends it to them as a raid warning.
+    fn tick_gazes(&mut self) {
+        let mut cast = Vec::new();
+        let worlds = std::iter::once(&mut self.world)
+            .chain(self.parked.values_mut().map(|s| &mut s.world))
+            .flatten();
+        for w in worlds {
+            let (gazes, warnings) = w.take_gazes();
+            if let (Some(place), false) = (w.shard_place(), gazes.is_empty() && warnings.is_empty())
+            {
+                cast.push((place, gazes, warnings));
+            }
+        }
+        let characters = &self.characters;
+        for (place, gazes, warnings) in cast {
+            let cover = match place.phase {
+                phased::Phase::Dungeon(id) => phased::dungeon(id).map_or(&[][..], |d| &d.cover[..]),
+                phased::Phase::OpenWorld => &[][..],
+            };
+            let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
+                self.parked
+                    .values_mut()
+                    .map(|s| (&mut s.world, &mut s.events)),
+            );
+            for (w, events) in sessions {
+                let Some(w) = w.as_mut().filter(|w| w.shard_place() == Some(place)) else {
+                    continue;
+                };
+                for text in &warnings {
+                    events.push(SessionEvent::Chat(
+                        benilla_protocol::messages::ChatMessage {
+                            chat_type: benilla_protocol::messages::CHAT_MSG_RAID_WARNING,
+                            language: 0,
+                            sender_guid: 0,
+                            target_guid: 0,
+                            sender_name: None,
+                            channel: None,
+                            text: text.clone(),
+                            chat_tag: 0,
+                        },
+                    ));
+                }
+                let at = characters.get(w.guid).map(|c| c.position);
+                for gaze in &gazes {
+                    w.gazed(gaze, at, cover, events);
+                }
+            }
+        }
+    }
+
     /// Applies one command from the default session; its answers queue for
     /// [`Self::drain_events`].
     pub fn handle(&mut self, command: RealmCommand) {
@@ -1281,6 +1332,7 @@ impl Realm {
         }
         self.give_back();
         self.tick_noise();
+        self.tick_gazes();
         self.party_tick(dt);
         self.tick_trades();
         self.tick_duels(dt);

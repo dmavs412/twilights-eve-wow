@@ -366,6 +366,62 @@ pub(crate) struct Dungeon {
     /// The Run-wide stacking debuff its fights build and its hiding spots drain.
     #[serde(default)]
     pub(crate) meter: Option<Meter>,
+    /// Pillars a gaze cannot see past.
+    #[serde(default)]
+    pub(crate) cover: Vec<Cover>,
+}
+
+/// A cover pillar: a vertical cylinder standing on `position`, in the dungeon file's frame like
+/// its creatures'.
+#[derive(Deserialize)]
+pub(crate) struct Cover {
+    pub(crate) position: [f32; 3],
+    pub(crate) radius: f32,
+    pub(crate) height: f32,
+}
+
+impl Cover {
+    /// Whether the straight line from `from` to `to` passes through the cylinder.
+    pub(crate) fn blocks(&self, from: [f32; 3], to: [f32; 3]) -> bool {
+        let [cx, cy, base] = self.position;
+        let d = [to[0] - from[0], to[1] - from[1], to[2] - from[2]];
+        let (fx, fy) = (from[0] - cx, from[1] - cy);
+        // The parameters t of the segment (0 at `from`, 1 at `to`) inside the cylinder's disc.
+        let a = d[0] * d[0] + d[1] * d[1];
+        let c = fx * fx + fy * fy - self.radius * self.radius;
+        let (mut lo, mut hi) = (0.0_f32, 1.0_f32);
+        if a < 1e-6 {
+            if c > 0.0 {
+                return false;
+            }
+        } else {
+            let b = 2.0 * (fx * d[0] + fy * d[1]);
+            let disc = b * b - 4.0 * a * c;
+            if disc < 0.0 {
+                return false;
+            }
+            let root = disc.sqrt();
+            lo = lo.max((-b - root) / (2.0 * a));
+            hi = hi.min((-b + root) / (2.0 * a));
+        }
+        // And between its base and its top.
+        let top = base + self.height;
+        if d[2].abs() < 1e-6 {
+            if from[2] < base || from[2] > top {
+                return false;
+            }
+        } else {
+            let (t0, t1) = ((base - from[2]) / d[2], (top - from[2]) / d[2]);
+            lo = lo.max(t0.min(t1));
+            hi = hi.min(t0.max(t1));
+        }
+        lo <= hi
+    }
+}
+
+/// Whether any of `cover` blocks the line from `from` to `to`.
+pub(crate) fn covered(cover: &[Cover], from: [f32; 3], to: [f32; 3]) -> bool {
+    cover.iter().any(|c| c.blocks(from, to))
 }
 
 /// A Phased Dungeon's meter (spec #169): stacks on the Run, shown as a debuff on every character
@@ -441,6 +497,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/test_grounds.toml"),
             include_str!("../content/forest_edge.toml"),
             include_str!("../content/sealed_yard.toml"),
+            include_str!("../content/gaze_hall.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
@@ -527,6 +584,37 @@ impl Run {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_pillar_blocks_a_line_through_it_and_no_other() {
+        let pillar = Cover {
+            position: [5.0, 0.0, 0.0],
+            radius: 2.5,
+            height: 8.0,
+        };
+        assert!(
+            pillar.blocks([0.0; 3], [12.0, 0.0, 0.0]),
+            "straight through"
+        );
+        assert!(
+            pillar.blocks([0.0; 3], [12.0, 1.0, 0.0]),
+            "through its edge"
+        );
+        assert!(!pillar.blocks([0.0; 3], [12.0, 12.0, 0.0]), "wide of it");
+        assert!(
+            !pillar.blocks([0.0; 3], [2.0, 0.0, 0.0]),
+            "stops short of it"
+        );
+        assert!(!pillar.blocks([0.0; 3], [0.0, 9.0, 0.0]), "the other way");
+        assert!(
+            !pillar.blocks([0.0, 0.0, 9.0], [12.0, 0.0, 9.0]),
+            "over its top"
+        );
+        assert!(
+            pillar.blocks([5.0, 0.0, 1.0], [5.0, 0.0, 3.0]),
+            "a line inside it"
+        );
+    }
 
     #[test]
     fn a_call_at_half_health_is_reached_at_half_and_not_above() {

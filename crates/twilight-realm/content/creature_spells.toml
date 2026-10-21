@@ -19,9 +19,15 @@
 # range_max        yards; the cast is interrupted if the target leaves it (0 for a self-cast)
 # chance           percent per decision (one a second) while fighting and off cooldown
 # below_health_pct optional: cast only while the caster's health is under this percent of its max
+# first_cast_ms    optional: not cast until this long after the creature enters combat
+# warning          optional: sent as a raid warning to every character in the caster's Phase
+#                  when the cast starts
 # effect           periodic_damage (a curse on the player, in the skills' own terms),
-#                  heal { pct_max_health } (the caster, no range or line of sight to check), or
-#                  snare { pct, duration_ms } (the player runs pct percent slower)
+#                  heal { pct_max_health } (the caster, no range or line of sight to check),
+#                  snare { pct, duration_ms } (the player runs pct percent slower), or
+#                  gaze { damage, radius } (when the cast lands, flat damage of the school to
+#                  every character in the Phase within radius yards, except those behind a
+#                  [[cover]] pillar of the dungeon file)
 
 # Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
 [[spell]]
@@ -187,3 +193,22 @@ range_max = 0.0
 chance = 100
 corpse_within = 10.0
 effect = { kind = "heal", pct_max_health = 25 }
+
+# A gaze (#235), for the Gaze Hall's test creature (`content/gaze_hall.toml`) until a boss takes
+# the effect. Looks like Shadow Bolt rank 1 (visual 686). Placeholders: 20 shadow damage to every
+# character within 15 yd and out from behind cover, after a 2 s cast, from 5 s into the fight, then
+# every 10 s.
+[[spell]]
+key = "test_gaze"
+spell_id = 1900011
+name = "Baleful Gaze"
+icon = 'Interface\Icons\Spell_Shadow_ShadowBolt'
+visual = 686
+school = "shadow"
+cast_time_ms = 2000
+cooldown_ms = 10000
+first_cast_ms = 5000
+range_max = 60.0
+chance = 100
+warning = "Baleful Gaze! Get behind cover!"
+effect = { kind = "gaze", damage = 20, radius = 15.0 }

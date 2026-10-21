@@ -1,0 +1,35 @@
+# The Gaze Hall (#235): a Phased Dungeon with one cover pillar and one creature, where the gaze
+# tests (`tests/creature_gaze.rs`) try the mechanic. Hand-written.
+#
+# A 40x40 yd open-air box centred on (-9650, 20) in Elwynn, 130 yd south of the Test Grounds.
+# Terrain flatness and nearby spawns are unchecked; the ground there is taken as about z 47.
+# The test realm gives entry 3101 the `test_gaze` spell; in the shipped game the creature casts
+# nothing.
+
+id = 5
+map = 0
+origin = [-9650.0, 20.0, 0.0]
+yaw = 0.0
+
+[[footprint]]
+x = [-20.0, 20.0]
+y = [-20.0, 20.0]
+z = [-200.0, 400.0]
+
+[portal]
+position = [-9672.0, 20.0, 47.2]
+orientation = 0.0
+
+# The pillar, 5 yd east of the creature.
+[[cover]]
+position = [-9645.0, 20.0, 47.2]
+radius = 2.5
+height = 8.0
+
+# A Vile Familiar, level 3, at the box's centre.
+[[creature]]
+guid = 800001
+entry = 3101
+level = 3
+position = [-9650.0, 20.0, 47.2]
+orientation = 0.0

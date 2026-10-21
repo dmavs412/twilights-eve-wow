@@ -11633,7 +11633,7 @@
     "dbc_effects": [
      {
       "effect": 6,
-      "base": 12,
+      "base": 16,
       "per_level": 0,
       "aura": 3,
       "amplitude_ms": 2000
@@ -11691,6 +11691,30 @@
     "visual": 285,
     "range_index": 1,
     "cast_time_index": 6
+   }
+  },
+  {
+   "spell_id": 1900011,
+   "creature": "test_gaze",
+   "fields": {
+    "name": "Baleful Gaze",
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowBolt",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 64,
+    "speed": 20.0,
+    "range_index": 14,
+    "cast_time_index": 5
    }
   }
  ],

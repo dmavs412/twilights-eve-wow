@@ -6,7 +6,7 @@
 use benilla_protocol::messages::SpellHealLog;
 use benilla_protocol::SessionEvent;
 
-use super::{cast, eye, in_front, melee_reach, InWorld};
+use super::{cast, eye, in_front, melee_reach, Gaze, InWorld};
 use crate::clock;
 use crate::combat;
 use crate::creature_spells::{charge_dest, CreatureEffect};
@@ -101,6 +101,15 @@ impl InWorld {
             } = spell.effect
             {
                 self.creature_charges(i, speed_yd_s, bonus_pct, me, facing, rng, events);
+            } else if let CreatureEffect::Gaze { damage, radius } = spell.effect {
+                self.gazes.push(Gaze {
+                    caster: guid,
+                    spell_id: spell.spell_id,
+                    at: mob.position,
+                    radius,
+                    damage,
+                    school: spell.school,
+                });
             } else {
                 self.creature_spell_lands(guid, level, spell, events);
             }
@@ -122,7 +131,11 @@ impl InWorld {
             let fed = s
                 .corpse_within
                 .is_none_or(|yd| corpse_within(&corpses, mob.position, yd));
+            let begun = s
+                .first_cast_ms
+                .is_none_or(|ms| mob.engaged_secs >= clock::secs(ms) - CLOCK_EPSILON);
             in_reach
+                && begun
                 && d >= s.range_min
                 && hurt
                 && fed
@@ -147,6 +160,9 @@ impl InWorld {
             .atan2(me[0] - mob.position[0])
             .rem_euclid(std::f32::consts::TAU);
         mob.casting = Some((spell, clock::secs(spell.cast_time_ms)));
+        if let Some(text) = &spell.warning {
+            self.warnings.push(text.clone());
+        }
         events.push(SessionEvent::SpellStart {
             caster: mob.guid,
             spell_id: spell.spell_id,

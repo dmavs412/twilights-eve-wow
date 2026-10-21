@@ -27,6 +27,9 @@ pub(crate) enum CreatureEffect {
     /// The caster runs to its target at `speed_yd_s` along the floor, then lands one weapon hit
     /// worth `bonus_pct` percent more than a white swing.
     Charge { speed_yd_s: f32, bonus_pct: u32 },
+    /// When the cast lands, every character in the caster's Phase within `radius` yards takes
+    /// `damage` of the spell's school, unless a cover pillar stands in the line to the caster.
+    Gaze { damage: u32, radius: f32 },
 }
 
 /// One Creature Spell.
@@ -55,6 +58,12 @@ pub(crate) struct CreatureSpell {
     /// The stacks each cast adds to its Phased Dungeon's meter.
     #[serde(default)]
     pub(crate) noise_on_cast: u32,
+    /// The spell can't be cast until this long after the creature enters combat.
+    #[serde(default)]
+    pub(crate) first_cast_ms: Option<u32>,
+    /// Sent as a raid warning to every character in the caster's Phase when the cast starts.
+    #[serde(default)]
+    pub(crate) warning: Option<String>,
     pub(crate) effect: CreatureEffect,
 }
 
