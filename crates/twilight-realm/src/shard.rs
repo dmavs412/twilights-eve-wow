@@ -138,9 +138,28 @@ impl Shard {
     }
 
     /// The Run's creatures come and go on its facts: a death is recorded, a creature whose
+    /// Stands the Run's starting creatures on `host`'s ground, once: [`Shard::new`] has no host,
+    /// and the first tick comes before any client is shown them.
+    fn ground_run(&mut self, host: &dyn Host) {
+        let Some(run) = &mut self.run else {
+            return;
+        };
+        if run.grounded {
+            return;
+        }
+        run.grounded = true;
+        let map = self.place.map;
+        for m in &mut self.mobs {
+            let Some(s) = m.spawn_row() else {
+                continue;
+            };
+            m.ground_to(crate::ground::grounded_z(host, map, s.position, s.grounded));
+        }
+    }
+
     /// `until_dead` has died is gone, and one whose `after_pinned` or `after_dead` has come true
-    /// appears, once.
-    fn run_changes(&mut self) {
+    /// appears, once, standing on `host`'s ground.
+    fn run_changes(&mut self, host: &dyn Host) {
         let Phase::Dungeon(_) = self.place.phase else {
             return;
         };
@@ -172,7 +191,8 @@ impl Shard {
                 && a.met(&run.pinned, &run.dead)
             {
                 run.appeared.push(s.guid);
-                if let Some(mob) = Mob::spawn(i as u32, s.level_min, s.position[2]) {
+                let z = crate::ground::grounded_z(host, s.map, s.position, s.grounded);
+                if let Some(mob) = Mob::spawn(i as u32, s.level_min, z) {
                     self.mobs.push(mob);
                 }
             }
@@ -221,7 +241,8 @@ impl Shard {
         let mut events = Vec::new();
         if let Some(run) = &mut self.run {
             run.elapsed += dt;
-            self.run_changes();
+            self.ground_run(host);
+            self.run_changes(host);
             return events;
         }
         let map = self.place.map;

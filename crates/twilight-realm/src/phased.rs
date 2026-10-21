@@ -12,6 +12,8 @@ use serde::Deserialize;
 use crate::fields::{
     float, guid_pairs, OBJECT_FIELD_ENTRY, OBJECT_FIELD_SCALE_X, OBJECT_FIELD_TYPE,
 };
+use crate::ground::grounded_at;
+use crate::Host;
 
 /// `HIGHGUID_GAMEOBJECT`, in a GameObject guid's top 16 bits.
 pub(crate) const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
@@ -118,6 +120,9 @@ pub(crate) struct Creature {
     pub(crate) entry: u32,
     pub(crate) level: u8,
     pub(crate) position: [f32; 3],
+    /// It stands on the host's ground (`crate::ground`); `false` keeps its written Z.
+    #[serde(default = "crate::ground::yes")]
+    pub(crate) grounded: bool,
     pub(crate) orientation: f32,
     /// Calls for help, each made once per life.
     #[serde(default)]
@@ -237,8 +242,9 @@ impl Door {
         HIGHGUID_GAMEOBJECT << 48 | u64::from(self.entry)
     }
 
-    /// Its create, in the closed state: a door anyone can click.
-    pub(crate) fn create(&self) -> SessionEvent {
+    /// Its create, in the closed state: a door anyone can click, standing on `host`'s ground on
+    /// `map`.
+    pub(crate) fn create(&self, host: &dyn Host, map: u32) -> SessionEvent {
         gameobject_create(&GameObject {
             guid: self.guid(),
             entry: self.entry,
@@ -246,7 +252,7 @@ impl Door {
             type_id: GAMEOBJECT_TYPE_DOOR,
             flags: 0,
             faction: 0,
-            position: self.position,
+            position: grounded_at(host, map, self.position, true),
             orientation: self.orientation,
         })
     }
@@ -327,6 +333,9 @@ pub(crate) struct DungeonObject {
     pub(crate) guid: u32,
     pub(crate) display: u32,
     pub(crate) position: [f32; 3],
+    /// It stands on the host's ground (`crate::ground`); `false` keeps its written Z.
+    #[serde(default = "crate::ground::yes")]
+    pub(crate) grounded: bool,
     pub(crate) orientation: f32,
     pub(crate) sides: Sides,
     #[serde(default, rename = "use")]
@@ -346,8 +355,9 @@ impl DungeonObject {
         HIGHGUID_GAMEOBJECT << 48 | u64::from(self.guid)
     }
 
-    /// Its create: shown only, unless it has a use to click.
-    pub(crate) fn create(&self) -> SessionEvent {
+    /// Its create, standing on `host`'s ground on `map`: shown only, unless it has a use to
+    /// click.
+    pub(crate) fn create(&self, host: &dyn Host, map: u32) -> SessionEvent {
         gameobject_create(&GameObject {
             guid: self.object_guid(),
             entry: self.guid,
@@ -359,7 +369,7 @@ impl DungeonObject {
                 NOT_SELECTABLE
             },
             faction: 0,
-            position: self.position,
+            position: grounded_at(host, map, self.position, self.grounded),
             orientation: self.orientation,
         })
     }
@@ -395,8 +405,9 @@ impl Dungeon {
         HIGHGUID_GAMEOBJECT << 48 | u64::from(self.id)
     }
 
-    /// The portal's create: a GameObject that only shows, never clicked.
-    pub(crate) fn portal_create(&self) -> SessionEvent {
+    /// The portal's create: a GameObject that only shows, never clicked, standing on `host`'s
+    /// ground.
+    pub(crate) fn portal_create(&self, host: &dyn Host) -> SessionEvent {
         gameobject_create(&GameObject {
             guid: self.portal_guid(),
             entry: self.id,
@@ -404,7 +415,7 @@ impl Dungeon {
             type_id: GENERIC,
             flags: NOT_SELECTABLE,
             faction: 0,
-            position: self.portal.position,
+            position: grounded_at(host, self.map, self.portal.position, true),
             orientation: self.portal.orientation,
         })
     }
@@ -793,6 +804,9 @@ pub(crate) struct Run {
     pub(crate) dead: Vec<u32>,
     /// The guids of the creatures that came into the Run after its start.
     pub(crate) appeared: Vec<u32>,
+    /// Whether the creatures it started with stand on the host's ground: the shard makes them
+    /// before it has a host, and grounds them on its first tick, before any client is shown them.
+    pub(crate) grounded: bool,
 }
 
 impl Run {
@@ -806,6 +820,7 @@ impl Run {
             pinned: Vec::new(),
             dead: Vec::new(),
             appeared: Vec::new(),
+            grounded: false,
         }
     }
 

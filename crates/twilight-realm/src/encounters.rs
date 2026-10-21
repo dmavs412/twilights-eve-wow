@@ -262,8 +262,12 @@ impl Encounters {
                         let Some(spawn) = mobs::content().spawn.get(row as usize) else {
                             continue;
                         };
-                        let [x, y, z] = spawn.position;
-                        let z = host.ground_height(spawn.map, x, y, z + 2.0).unwrap_or(z);
+                        let z = crate::ground::grounded_z(
+                            host,
+                            spawn.map,
+                            spawn.position,
+                            spawn.grounded,
+                        );
                         let Some(mut mob) = Mob::spawn(row, spawn.level_min, z) else {
                             continue;
                         };

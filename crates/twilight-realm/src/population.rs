@@ -191,8 +191,7 @@ impl Population {
                     {
                         continue;
                     }
-                    let [x, y, z] = spawn.position;
-                    let z = host.ground_height(map, x, y, z + 2.0).unwrap_or(z);
+                    let z = crate::ground::grounded_z(host, map, spawn.position, spawn.grounded);
                     let level = self.level(spawn.guid, spawn.level_min, spawn.level_max);
                     if let Some(mob) = Mob::spawn(i, level, z) {
                         events.push(mob.create());

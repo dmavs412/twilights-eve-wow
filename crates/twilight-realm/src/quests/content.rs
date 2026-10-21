@@ -239,6 +239,9 @@ pub(crate) struct QuestObject {
     #[serde(default = "kalimdor")]
     pub(crate) map: u32,
     pub(crate) position: [f32; 3],
+    /// It stands on the host's ground (`crate::ground`); `false` keeps its written Z.
+    #[serde(default = "crate::ground::yes")]
+    pub(crate) grounded: bool,
     #[serde(default)]
     pub(crate) orientation: f32,
     /// Seconds until it returns once used.
@@ -255,7 +258,8 @@ impl QuestObject {
         crate::phased::HIGHGUID_GAMEOBJECT << 48 | u64::from(self.guid)
     }
 
-    pub(crate) fn create(&self) -> benilla_protocol::SessionEvent {
+    /// Its create, standing on `host`'s ground.
+    pub(crate) fn create(&self, host: &dyn crate::Host) -> benilla_protocol::SessionEvent {
         crate::phased::gameobject_create(&crate::phased::GameObject {
             guid: self.object_guid(),
             entry: self.entry,
@@ -263,7 +267,7 @@ impl QuestObject {
             type_id: crate::phased::GENERIC,
             flags: 0,
             faction: 0,
-            position: self.position,
+            position: crate::ground::grounded_at(host, self.map, self.position, self.grounded),
             orientation: self.orientation,
         })
     }

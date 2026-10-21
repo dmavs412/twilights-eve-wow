@@ -7,11 +7,13 @@ use benilla_protocol::SessionEvent;
 use super::InWorld;
 use crate::characters::Char;
 use crate::dungeon::Place;
+use crate::ground::grounded_at;
 use crate::mobs::{self, Mob};
 use crate::phased::{self, GameObjectUse, Phase, StopPortal, UseKind};
 use crate::population::VIEW_YD;
 use crate::quests;
 use crate::space::flat_distance;
+use crate::Host;
 
 /// How near a hiding spot a character must stand to crouch at it.
 const HIDE_REACH_YD: f32 = 5.0;
@@ -235,10 +237,12 @@ impl InWorld {
         &mut self,
         d: &phased::Dungeon,
         me: [f32; 3],
+        host: &dyn Host,
         events: &mut Vec<SessionEvent>,
     ) {
         let mut gone = Vec::new();
-        for o in d.stop_objects() {
+        for mut o in d.stop_objects() {
+            o.object.position = grounded_at(host, d.map, o.object.position, true);
             let open = o
                 .gate
                 .is_none_or(|key| self.inner_open.iter().any(|k| k == key));
@@ -354,8 +358,15 @@ impl InWorld {
         }
     }
 
-    /// Streams each Phased Dungeon's doorway portal in and out with the view, in every Phase.
-    pub(super) fn show_portals(&mut self, me: [f32; 3], events: &mut Vec<SessionEvent>) {
+    /// Streams each Phased Dungeon's doorway portal in and out with the view, in every Phase,
+    /// and with it the dungeon's GameObjects, stop portals and door, each standing on `host`'s
+    /// ground.
+    pub(super) fn show_portals(
+        &mut self,
+        me: [f32; 3],
+        host: &dyn Host,
+        events: &mut Vec<SessionEvent>,
+    ) {
         for d in phased::content() {
             let d_yd = if d.map == self.map {
                 flat_distance(d.portal.position, me)
@@ -365,15 +376,15 @@ impl InWorld {
             let shown = self.portals.contains(&d.id);
             if !shown && d_yd <= VIEW_YD {
                 self.portals.push(d.id);
-                events.push(d.portal_create());
+                events.push(d.portal_create(host));
             } else if shown && d_yd > VIEW_YD + 10.0 {
                 self.portals.retain(|&id| id != d.id);
                 events.push(SessionEvent::ObjectsRemoved(vec![d.portal_guid()]));
             }
-            self.show_dungeon_objects(d, me, events);
-            self.show_stop_portals(d, me, events);
+            self.show_dungeon_objects(d, me, host, events);
+            self.show_stop_portals(d, me, host, events);
             if let Some(door) = &d.portal.door {
-                self.show_door(d, door, me, events);
+                self.show_door(d, door, me, host, events);
             }
         }
     }
@@ -385,6 +396,7 @@ impl InWorld {
         d: &phased::Dungeon,
         door: &phased::Door,
         me: [f32; 3],
+        host: &dyn Host,
         events: &mut Vec<SessionEvent>,
     ) {
         let d_yd = if d.map == self.map {
@@ -395,7 +407,7 @@ impl InWorld {
         let open = self.doors_open.contains(&d.id);
         match self.doors_shown.get(&d.id).copied() {
             None if d_yd <= VIEW_YD => {
-                events.push(door.create());
+                events.push(door.create(host, d.map));
                 self.doors_shown.insert(d.id, false);
             }
             Some(_) if d_yd > VIEW_YD + 10.0 => {
@@ -454,6 +466,7 @@ impl InWorld {
         &mut self,
         d: &phased::Dungeon,
         me: [f32; 3],
+        host: &dyn Host,
         events: &mut Vec<SessionEvent>,
     ) {
         let mut gone = Vec::new();
@@ -469,7 +482,7 @@ impl InWorld {
             if !self.dungeon_objects.contains(&guid) {
                 if seen && d_yd <= VIEW_YD {
                     self.dungeon_objects.insert(guid);
-                    events.push(o.create());
+                    events.push(o.create(host, d.map));
                 }
             } else if !seen || d_yd > VIEW_YD + 10.0 {
                 self.dungeon_objects.remove(&guid);
@@ -487,6 +500,7 @@ impl InWorld {
         &mut self,
         dt: f32,
         me: [f32; 3],
+        host: &dyn Host,
         events: &mut Vec<SessionEvent>,
     ) {
         for (_, left) in &mut self.quest_spent {
@@ -505,7 +519,7 @@ impl InWorld {
             if !self.quest_objects.contains(&guid) {
                 if !spent && d_yd <= VIEW_YD {
                     self.quest_objects.insert(guid);
-                    events.push(o.create());
+                    events.push(o.create(host));
                 }
             } else if spent || d_yd > VIEW_YD + 10.0 {
                 self.quest_objects.remove(&guid);
@@ -585,7 +599,9 @@ impl InWorld {
     }
 }
 
-/// A fresh set of `phase`'s creatures, at full health where their content file puts them.
+/// A fresh set of `phase`'s creatures, at full health where their content file puts them, at
+/// their written heights: the shard stands them on the ground on its first tick with a host
+/// (`crate::ground`).
 pub(crate) fn creatures(phase: Phase) -> Vec<Mob> {
     mobs::content()
         .spawn
@@ -593,9 +609,6 @@ pub(crate) fn creatures(phase: Phase) -> Vec<Mob> {
         .enumerate()
         .filter(|(_, s)| s.phase == phase && s.called_by.is_none() && s.timed_by.is_none())
         .filter(|(_, s)| s.appears.is_none_or(|a| a.met(&[], &[])))
-        .filter_map(|(i, s)| {
-            // The authored height: the ground lookup finds the terrain under a building's floor.
-            Mob::spawn(i as u32, s.level_min, s.position[2])
-        })
+        .filter_map(|(i, s)| Mob::spawn(i as u32, s.level_min, s.position[2]))
         .collect()
 }

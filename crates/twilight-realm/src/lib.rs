@@ -55,6 +55,7 @@ mod encounters;
 mod equipment;
 mod fields;
 mod generated;
+mod ground;
 mod group;
 mod hub;
 mod inn;

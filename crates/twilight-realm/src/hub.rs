@@ -10,6 +10,7 @@ use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
 use crate::fields::*;
+use crate::ground::ground_under;
 use crate::rng::Rng;
 use crate::space::flat_distance;
 use crate::Host;
@@ -36,6 +37,9 @@ pub(crate) struct Npc {
     #[serde(default = "kalimdor")]
     pub(crate) map: u32,
     pub(crate) position: [f32; 3],
+    /// It stands on the host's ground (`crate::ground`); `false` keeps its written Z.
+    #[serde(default = "crate::ground::yes")]
+    grounded: bool,
     orientation: f32,
     /// A spot (`[x, y]`) it stands facing; when set, it replaces `orientation`.
     #[serde(default)]
@@ -354,12 +358,13 @@ impl InView {
             match present {
                 None if d <= VIEW_YD => {
                     let [x, y, z] = npc.position;
-                    let ground = host.ground_height(map, x, y, z + 2.0);
+                    let ground = ground_under(host, map, npc.position, npc.grounded);
                     let at = [x, y, ground.unwrap_or(z)];
                     events.push(npc.create(at, npc.facing()));
                     *present = Some(Standing {
                         at,
-                        grounded: ground.is_some(),
+                        // One that keeps its written Z has nothing to settle onto.
+                        grounded: ground.is_some() || !npc.grounded,
                         walk: None,
                         idle: rng.frand(WANDER_PAUSE.0, WANDER_PAUSE.1),
                     });
@@ -404,7 +409,7 @@ impl Standing {
             return;
         }
         let [x, y, z] = self.at;
-        let Some(ground) = host.ground_height(map, x, y, z + 2.0) else {
+        let Some(ground) = ground_under(host, map, self.at, true) else {
             return;
         };
         self.grounded = true;

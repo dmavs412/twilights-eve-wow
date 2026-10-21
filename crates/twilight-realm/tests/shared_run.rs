@@ -15,12 +15,18 @@ const BROTHER_NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
 const INSIDE: [f32; 2] = [-8890.0, -172.0];
 const OUTSIDE: [f32; 2] = [-8950.0, -120.0];
 
-/// The Abbey's floor everywhere, so a teleport lands inside the footprint's height.
+/// The Abbey's floor everywhere, so a teleport lands inside the footprint's height, and an
+/// upper storey under a creature placed on one (#253): a flat 82 would put the Abbot in the nave
+/// beside the pilgrims.
 struct AbbeyFloor;
 
 impl Host for AbbeyFloor {
-    fn ground_height(&self, _: u32, _: f32, _: f32, _: f32) -> Option<f32> {
-        Some(82.0)
+    fn ground_height(&self, _: u32, _: f32, _: f32, z_hint: f32) -> Option<f32> {
+        Some(if (100.0..130.0).contains(&z_hint) {
+            z_hint - 2.0
+        } else {
+            82.0
+        })
     }
     fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
         true

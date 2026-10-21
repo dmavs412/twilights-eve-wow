@@ -659,8 +659,8 @@ impl InWorld {
         self.land_blink(host, c, events);
         let me = c.position;
         self.cross_phase(c, events);
-        self.show_portals(me, events);
-        self.show_quest_objects(dt, me, events);
+        self.show_portals(me, host, events);
+        self.show_quest_objects(dt, me, host, events);
         if self.player.alive() {
             self.discover(host, c, events, &mut ticked);
         }
@@ -713,8 +713,8 @@ impl InWorld {
         self.patch_tick(dt);
         // A next-cast buff that ran out puts the client's cast bar back.
         self.sync_next_cast_mods(c, events);
-        self.call_for_help(events);
-        self.timed_calls(events);
+        self.call_for_help(host, events);
+        self.timed_calls(host, events);
         self.update_aura_states(events);
         if !self.player.alive() && !self.player.dead {
             self.die(c, events);

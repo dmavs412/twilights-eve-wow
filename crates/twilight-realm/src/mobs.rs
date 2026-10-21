@@ -197,8 +197,11 @@ pub(crate) struct Spawn {
     pub(crate) level_min: u8,
     pub(crate) level_max: u8,
     /// WoW `[x, y, z]`; z the spawn's height in the data, which the host's ground replaces once
-    /// it is loaded.
+    /// it is loaded, while `grounded`.
     pub(crate) position: [f32; 3],
+    /// Whether it stands on the host's ground (`crate::ground`); a row says `grounded = false`
+    /// to stand exactly at its written Z.
+    pub(crate) grounded: bool,
     pub(crate) orientation: f32,
     pub(crate) display_id: u32,
     /// How far from its spawn point it strolls while idle, in yards; 0 stands still.
@@ -240,6 +243,8 @@ struct HandSpawn {
     entry: u32,
     level: u8,
     position: [f32; 3],
+    #[serde(default = "crate::ground::yes")]
+    grounded: bool,
     orientation: f32,
 }
 
@@ -279,6 +284,8 @@ struct DungeonSpawn {
     level_min: u8,
     level_max: u8,
     position: [f32; 3],
+    #[serde(default = "crate::ground::yes")]
+    grounded: bool,
     orientation: f32,
     camp: u32,
 }
@@ -305,6 +312,8 @@ struct Added {
     level_min: u8,
     level_max: u8,
     position: [f32; 3],
+    #[serde(default = "crate::ground::yes")]
+    grounded: bool,
     orientation: f32,
 }
 
@@ -312,6 +321,8 @@ struct Added {
 struct Moved {
     entry: u32,
     position: [f32; 3],
+    #[serde(default = "crate::ground::yes")]
+    grounded: bool,
     orientation: f32,
 }
 
@@ -378,12 +389,6 @@ pub(crate) fn content() -> &'static Mobs {
         elwynn.spawns.retain(|r| {
             !overrides.removed.contains(&r.1) && !overrides.removed_guids.contains(&r.0)
         });
-        for m in &overrides.moved {
-            for r in elwynn.spawns.iter_mut().filter(|r| r.1 == m.entry) {
-                [r.4, r.5, r.6] = m.position;
-                r.7 = m.orientation;
-            }
-        }
         let difficulty = hand.difficulty;
         let mut template = hand.template;
         template.extend(barrens.template);
@@ -405,6 +410,7 @@ pub(crate) fn content() -> &'static Mobs {
                     level_min: s.level,
                     level_max: s.level,
                     position: s.position,
+                    grounded: s.grounded,
                     orientation: s.orientation,
                     display_id,
                     wander_radius: 0.0,
@@ -429,6 +435,7 @@ pub(crate) fn content() -> &'static Mobs {
                     level_min: lmin,
                     level_max: lmax.max(lmin),
                     position: [x, y, z],
+                    grounded: true,
                     orientation: o,
                     display_id,
                     wander_radius: wander,
@@ -440,6 +447,18 @@ pub(crate) fn content() -> &'static Mobs {
                     ..Default::default()
                 },
             ));
+        }
+        // The hand-written moves of generated Elwynn spawns, before the Level Bands read where
+        // each stands.
+        for m in &overrides.moved {
+            for s in spawn
+                .iter_mut()
+                .filter(|s| s.map == crate::content::EASTERN_KINGDOMS && s.entry == m.entry)
+            {
+                s.position = m.position;
+                s.grounded = m.grounded;
+                s.orientation = m.orientation;
+            }
         }
         let bands: BandFile = toml::from_str(include_str!("../content/level_overrides.toml"))
             .expect("content/level_overrides.toml parses");
@@ -476,6 +495,7 @@ pub(crate) fn content() -> &'static Mobs {
                 level_min: a.level_min,
                 level_max: a.level_max.max(a.level_min),
                 position: a.position,
+                grounded: a.grounded,
                 orientation: a.orientation,
                 display_id: t.display_id,
                 wander_radius: 0.0,
@@ -500,6 +520,7 @@ pub(crate) fn content() -> &'static Mobs {
                 level_min: s.level_min,
                 level_max: s.level_max.max(s.level_min),
                 position: s.position,
+                grounded: s.grounded,
                 orientation: s.orientation,
                 display_id: t.display_id,
                 wander_radius: 0.0,
@@ -524,6 +545,7 @@ pub(crate) fn content() -> &'static Mobs {
                     level_min: c.level,
                     level_max: c.level,
                     position: c.position,
+                    grounded: c.grounded,
                     orientation: c.orientation,
                     display_id: t.display_id,
                     wander_radius: c.wander,
@@ -553,6 +575,7 @@ pub(crate) fn content() -> &'static Mobs {
                             level_min: call.level,
                             level_max: call.level,
                             position: call.position,
+                            grounded: true,
                             orientation: c.orientation,
                             display_id: t.display_id,
                             wander_radius: 0.0,
@@ -581,6 +604,7 @@ pub(crate) fn content() -> &'static Mobs {
                             level_min: call.level,
                             level_max: call.level,
                             position: call.position,
+                            grounded: true,
                             orientation: c.orientation,
                             display_id: t.display_id,
                             camp: c.guid,
@@ -611,6 +635,7 @@ pub(crate) fn content() -> &'static Mobs {
                             level_min: c.level,
                             level_max: c.level,
                             position: c.position,
+                            grounded: true,
                             display_id: t.display_id,
                             camp: ENCOUNTER_GUID_BASE + encounter_guids,
                             map: crate::content::EASTERN_KINGDOMS,
@@ -787,6 +812,12 @@ impl Mob {
     /// spawn point).
     pub(crate) fn spawn(index: u32, level: u8, z: f32) -> Option<Self> {
         Self::from_spawn(content().spawn.get(index as usize)?, index, level, z)
+    }
+
+    /// Stands it, and its home, at height `z`: for one made before its ground was known.
+    pub(crate) fn ground_to(&mut self, z: f32) {
+        self.position[2] = z;
+        self.home[2] = z;
     }
 
     /// The mob of `spawn`, which is `content().spawn[index]`, at `level`.

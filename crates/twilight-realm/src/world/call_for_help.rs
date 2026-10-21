@@ -7,7 +7,9 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use benilla_protocol::SessionEvent;
 
 use super::{engage, InWorld};
+use crate::ground::grounded_z;
 use crate::mobs::{self, Mob, State};
+use crate::Host;
 
 /// Counts the creatures timed calls have brought in, for a guid of each.
 static TIMED_SEQ: AtomicU32 = AtomicU32::new(0);
@@ -16,7 +18,7 @@ impl InWorld {
     /// Makes each timed call that a fighting creature's clock has come to, and takes away the
     /// creatures of the calls of one that died, left combat, or is gone. The clock is the time
     /// since the pull, so a creature that fights again starts it over.
-    pub(super) fn timed_calls(&mut self, events: &mut Vec<SessionEvent>) {
+    pub(super) fn timed_calls(&mut self, host: &dyn Host, events: &mut Vec<SessionEvent>) {
         let mut made = Vec::new();
         let mut ended = Vec::new();
         for mob in &mut self.mobs {
@@ -72,11 +74,10 @@ impl InWorld {
                 .iter()
                 .enumerate()
                 .filter(|(_, s)| s.timed_by == Some((caller_spawn.guid, k)));
-            for (i, _) in adds {
+            for (i, s) in adds {
                 let wave = TIMED_SEQ.fetch_add(1, Ordering::Relaxed);
-                let Some(mut add) =
-                    Mob::timed(i as u32, call.level, call.position[2], wave, caller)
-                else {
+                let z = grounded_z(host, s.map, s.position, s.grounded);
+                let Some(mut add) = Mob::timed(i as u32, call.level, z, wave, caller) else {
                     continue;
                 };
                 events.push(add.create());
@@ -88,7 +89,7 @@ impl InWorld {
 
     /// Makes each call for help that a creature's health has just reached, once per life: it
     /// lives on the [`Mob`], which a Run's reset replaces.
-    pub(super) fn call_for_help(&mut self, events: &mut Vec<SessionEvent>) {
+    pub(super) fn call_for_help(&mut self, host: &dyn Host, events: &mut Vec<SessionEvent>) {
         let content = mobs::content();
         let mut made = Vec::new();
         for mob in &mut self.mobs {
@@ -126,10 +127,11 @@ impl InWorld {
                 .iter()
                 .enumerate()
                 .filter(|(_, s)| s.called_by == Some((caller_spawn.guid, k)));
-            for (i, _) in adds {
+            for (i, s) in adds {
                 let level = crate::mobs::banded(call.entry, caller_spawn.map, call.position)
                     .map_or(call.level, |range| crate::bands::pick(i as u32, range));
-                let Some(mut add) = Mob::spawn(i as u32, level, call.position[2]) else {
+                let z = grounded_z(host, s.map, s.position, s.grounded);
+                let Some(mut add) = Mob::spawn(i as u32, level, z) else {
                     continue;
                 };
                 events.push(add.create());
