@@ -20,6 +20,9 @@ removed_guids = [
   # it, and the stock level 35 to 44 spawns (958, 959, 11072) on its upper floors. 80928 and 80936
   # stand outside its boxes and stay.
   80924, 80925, 80926, 80927, 80929, 80930, 80931, 80932, 80933, 80934, 80935, 80937,
+  # Eyes on the Ridge (#247): four stock wolf and boar spawns (Prowlers 81234, 81368, 81408 and the
+  # Young Forest Bear 81235) stand within 45 yd of an overlook or the route between them.
+  81234, 81235, 81368, 81408,
 ]
 
 # Spawns moved. Marshal McBride stood just inside the Abbey's front doors, in its footprint
@@ -441,3 +444,321 @@ level_min = 17
 level_max = 19
 position = [-9020.0, -1140.0, 70.0]
 orientation = 1.8
+
+# Eastvale and Ridgepoint (#247). Guids 960401 on. Hadrik stands in the lumber mill, the looters
+# around the mill and the camp, the bears on the ridge between the camp and the tower, Vael on
+# the tower's top floor with Twilight Acolytes on each floor and at its foot. Every z but the
+# camp's is a guess, and the tower's floor heights (58, 78, 98) are estimates. None of these
+# stands within 45 yd of the three overlooks of Eyes on the Ridge or of the route between them.
+
+[[added]]
+guid = 960401
+entry = 96039
+level_min = 22
+level_max = 22
+position = [-9425.0, -1318.0, 41.0]
+orientation = 1.57
+
+[[added]]
+guid = 960402
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9417.2, -1376.3, 41.0]
+orientation = 5.43
+
+[[added]]
+guid = 960403
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9385.8, -1298.5, 41.0]
+orientation = 3.9
+
+[[added]]
+guid = 960404
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9437.0, -1307.0, 41.0]
+orientation = 4.11
+
+[[added]]
+guid = 960405
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9405.6, -1308.8, 41.0]
+orientation = 6.09
+
+[[added]]
+guid = 960406
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9419.9, -1333.4, 41.0]
+orientation = 1.82
+
+[[added]]
+guid = 960407
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9383.8, -1334.9, 41.0]
+orientation = 4.78
+
+[[added]]
+guid = 960408
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9431.8, -1342.8, 41.0]
+orientation = 0.89
+
+[[added]]
+guid = 960409
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9424.9, -1325.2, 41.0]
+orientation = 5.97
+
+[[added]]
+guid = 960410
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9394.2, -1298.2, 41.0]
+orientation = 4.02
+
+[[added]]
+guid = 960411
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9448.5, -1305.8, 41.0]
+orientation = 4.16
+
+[[added]]
+guid = 960412
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9450.9, -1332.6, 41.0]
+orientation = 0.04
+
+[[added]]
+guid = 960413
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9443.9, -1361.6, 41.0]
+orientation = 3.85
+
+[[added]]
+guid = 960414
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9389.5, -1317.5, 41.0]
+orientation = 5.61
+
+[[added]]
+guid = 960415
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9432.6, -1327.0, 41.0]
+orientation = 4.04
+
+[[added]]
+guid = 960416
+entry = 96041
+level_min = 20
+level_max = 23
+position = [-9399.8, -1372.8, 41.0]
+orientation = 1.86
+
+[[added]]
+guid = 960417
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9588.1, -1339.5, 42.0]
+orientation = 1.72
+
+[[added]]
+guid = 960418
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9575.3, -1332.1, 42.0]
+orientation = 3.56
+
+[[added]]
+guid = 960419
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9576.1, -1318.3, 42.0]
+orientation = 5.45
+
+[[added]]
+guid = 960420
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9589.1, -1347.1, 42.0]
+orientation = 4.87
+
+[[added]]
+guid = 960421
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9568.2, -1325.8, 42.0]
+orientation = 3.4
+
+[[added]]
+guid = 960422
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9583.4, -1306.8, 42.0]
+orientation = 1.46
+
+[[added]]
+guid = 960423
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9573.1, -1339.3, 42.0]
+orientation = 2.38
+
+[[added]]
+guid = 960424
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9567.2, -1304.8, 42.0]
+orientation = 3.76
+
+[[added]]
+guid = 960425
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9581.2, -1349.1, 42.0]
+orientation = 5.66
+
+[[added]]
+guid = 960426
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9582.7, -1315.7, 42.0]
+orientation = 4.46
+
+[[added]]
+guid = 960427
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9574.3, -1301.8, 42.0]
+orientation = 2.97
+
+[[added]]
+guid = 960428
+entry = 96042
+level_min = 20
+level_max = 23
+position = [-9588.8, -1311.7, 42.0]
+orientation = 4.06
+
+[[added]]
+guid = 960429
+entry = 96040
+level_min = 24
+level_max = 24
+position = [-9777.0, -1398.0, 100.0]
+orientation = 0.0
+
+[[added]]
+guid = 960430
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9795.0, -1385.0, 58.0]
+orientation = 5.07
+
+[[added]]
+guid = 960431
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9755.0, -1412.0, 58.0]
+orientation = 5.12
+
+[[added]]
+guid = 960432
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9800.0, -1415.0, 78.0]
+orientation = 1.34
+
+[[added]]
+guid = 960433
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9760.0, -1380.0, 78.0]
+orientation = 0.31
+
+[[added]]
+guid = 960434
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9790.0, -1380.0, 98.0]
+orientation = 6.04
+
+[[added]]
+guid = 960435
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9762.0, -1414.0, 98.0]
+orientation = 4.96
+
+[[added]]
+guid = 960436
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9832.0, -1384.0, 57.0]
+orientation = 1.57
+
+[[added]]
+guid = 960437
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9832.0, -1424.0, 57.0]
+orientation = 2.69
+
+[[added]]
+guid = 960438
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9790.0, -1452.0, 57.0]
+orientation = 6.22
+
+[[added]]
+guid = 960439
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9770.0, -1346.0, 57.0]
+orientation = 5.13

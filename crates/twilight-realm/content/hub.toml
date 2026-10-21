@@ -1170,3 +1170,40 @@ map = 0
 position = [-9545.0, -712.0, 62.0]
 orientation = 3.14
 greeting = "I stay outside. The master's experiments do not agree with me, and the door is thick."
+
+# ── Eastvale and Ridgepoint's quest givers (#247) ────────────────────────────────────────────────
+# Lumberjack Tomas stands in the logging camp beside Supervisor Raelen (-9469, -1289), wearing the
+# Eastvale Lumberjack's body (5034) and Stormwind's faction (35). Toren (Ridgepoint) is a second
+# Toren so that his quest list stays apart from Azora's: same name and body (3346), on Ridgepoint
+# Tower's ground floor beside Toren's Pack. The tower's floor height (58) is a guess. No kneeling
+# stand state exists for an NPC, so he stands. Guids 93000xx.
+
+[[npc]]
+guid = 9300021
+entry = 190063
+name = "Lumberjack Tomas"
+subname = "Eastvale Logging Camp"
+level = 22
+display_id = 5034
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9476.0, -1296.0, 41.2]
+orientation = 3.9
+greeting = "The bears came down the ridge when the cult moved into the tower. They've taken two of my men and half the camp's meat. I pay for every one you put down."
+
+[[npc]]
+guid = 9300022
+entry = 190064
+name = "Toren"
+subname = "Prisoner of the Tower"
+level = 20
+display_id = 3346
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9780.0, -1398.0, 58.0]
+orientation = 0.0
+greeting = "They fed me and they kept me. I thought you were another of them."

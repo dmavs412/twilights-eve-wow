@@ -1154,3 +1154,230 @@ map = 0
 position = [-9116.0, -1146.0, 70.0]
 orientation = 2.9
 respawn = 90.0
+
+# ── Eastvale and Ridgepoint (#226) ───────────────────────────────────────────────────────────
+#
+# Where the cult stops hiding. Defias looters strip the logging camp for scaffolding timber, and
+# Ridgepoint Tower flies the black-sun banner in daylight. Open world: no Phase, no Portal.
+
+# Raelen sends the player after the overseer who ships the camp's timber. 600 copper.
+[[quest]]
+id = 94701
+kind = "story"
+giver = 10616
+level = 21
+title = "Timber for the Pit"
+objectives = "Kill Defias Overseer Hadrik at the lumber mill and bring his manifest back to Supervisor Raelen."
+details = "Every plank the camp cuts goes out on a Defias cart, and I have stopped asking why. The loads are cut to scaffold lengths, which is no use to a farmer or a ship. Their overseer, Hadrik, works the east sawmill and keeps a manifest of every load. Kill him and bring me that paper."
+progress = "Has Hadrik's manifest come to hand?"
+completion = "Scaffold lengths, every one, addressed to the Landing, for the pit. A pit with scaffolding is a dig, and a dig at Jerod's Landing is no Defias business. Here is your coin. Keep your eyes on the ridge."
+money = 600
+tokens = 0
+zone_or_sort = 12
+kill = [[96039, 1]]
+collect = [{ item = 980023, count = 1, from = [96039], chance = 100 }]
+
+# Raelen wants the tower counted from a distance. No kills: a creature that fights the player
+# fails it. XP only.
+[[quest]]
+id = 94702
+kind = "story"
+giver = 10616
+after = 94604
+level = 22
+title = "Eyes on the Ridge"
+objectives = "Reach the three overlooks above Ridgepoint Tower without being seen, then return to Supervisor Raelen with Dughan's letter."
+details = "Dughan's letter says the signpost points at Ridgepoint Tower, the old Alliance watch. I need to know what flies from it. Go up to the north, east and south overlooks and look. Do not fight anything on the way. If they see you, the cult will know we know, and the whole ridge will be shut to us."
+progress = "What do you see on the tower?"
+completion = "Black-sun banners on the walls, in daylight, on an Alliance watchtower. Three or four I can count from your account, and no one on the road thought to look up. Thank you for not being seen."
+money = 0
+tokens = 0
+zone_or_sort = 12
+explore = [
+  { place = "The North Overlook", position = [-9695.0, -1305.0], radius = 10.0, map = 0 },
+  { place = "The East Overlook", position = [-9670.0, -1405.0], radius = 10.0, map = 0 },
+  { place = "The South Overlook", position = [-9695.0, -1520.0], radius = 10.0, map = 0 },
+]
+fail_if_seen = "You were seen."
+
+# The assault. An item quest with placeholder rewards until the gear pass: 1000 copper and
+# 3 Tokens, no choices. Vael's last words are in Raelen's reading of his notes.
+[[quest]]
+id = 94703
+kind = "story"
+giver = 10616
+after = 94702
+level = 23
+title = "Ridgepoint Falls"
+objectives = "Kill Speaker Vael on the top floor of Ridgepoint Tower and bring his notes to Supervisor Raelen."
+details = "Now we know what holds the tower. Speaker Vael speaks for the cult on this ridge, and he sits on the top floor behind his acolytes. Go in, fight your way up, and put him down. Bring me whatever he carries."
+progress = "Is Vael dead?"
+completion = "Vael's notes. The hand is shaky, written as he went down: the gnoll was promised power; he digs for us. The gnoll at the pit is no ally and no thief, only a tool they promised the world to. That's worth more than the tower. Here is your reward."
+money = 1000
+tokens = 3
+zone_or_sort = 12
+kill = [[96040, 1]]
+
+# Toren's Pack lies on the tower's ground floor. Toren takes it. XP only.
+[[quest]]
+id = 94704
+kind = "story"
+giver_object = 980106
+ender = 190064
+after = [94602, 94703]
+level = 23
+title = "Toren's Trail"
+objectives = "Take Toren's Pack to Toren in Ridgepoint Tower."
+details = "A pack lies on the floor with its straps cut. Toren's name is sewn into the flap, Theocritus's apprentice, who stayed outside the Tower of Azora. He is here somewhere, on this floor. Find him."
+progress = "Is that my pack?"
+completion = "My pack, and you are not one of them. The cult did not pay me. They kept me, and I did not know why until I saw what they had taken from the pack. You have freed me, as far as the door goes. Tell Dughan I am alive, and that I will say the rest to him myself."
+money = 0
+tokens = 0
+zone_or_sort = 12
+
+# Toren's Pack, on the tower's ground floor. The display is a placeholder.
+[[gameobject]]
+guid = 790601
+entry = 980106
+display = 1011
+map = 0
+position = [-9776.0, -1396.0, 58.0]
+orientation = 0.0
+respawn = 60.0
+
+# The black-sun banners: three on the tower's walls and one on its east gable. The display is the
+# same placeholder; counting them is in the text only.
+[[gameobject]]
+guid = 790602
+entry = 980107
+display = 1011
+map = 0
+position = [-9795.0, -1362.0, 85.0]
+orientation = 1.57
+respawn = 60.0
+
+[[gameobject]]
+guid = 790603
+entry = 980107
+display = 1011
+map = 0
+position = [-9758.0, -1362.0, 85.0]
+orientation = 1.57
+respawn = 60.0
+
+[[gameobject]]
+guid = 790604
+entry = 980107
+display = 1011
+map = 0
+position = [-9737.0, -1398.0, 85.0]
+orientation = 0.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790605
+entry = 980107
+display = 1011
+map = 0
+position = [-9820.0, -1398.0, 62.0]
+orientation = 3.14
+respawn = 60.0
+
+# The shackles beside Toren. No stock chain or shackle display was checked, so this is the same
+# placeholder.
+[[gameobject]]
+guid = 790606
+entry = 980108
+display = 1011
+map = 0
+position = [-9783.0, -1399.0, 58.0]
+orientation = 0.0
+respawn = 60.0
+
+# ── Eastvale and Ridgepoint's bounties (#247) ────────────────────────────────────────────────
+
+[[quest]]
+id = 94705
+kind = "bounty"
+giver = 10616
+level = 22
+min_level = 20
+max_level = 24
+title = "Looters in the Camp"
+objectives = "Kill 10 Defias Looters, then return to Supervisor Raelen."
+details = "The looters are back in the camp, stripping the stacks and the sheds. I can't spare a man to guard the lumber. Put down ten of them and I'll pay for it, and again whenever you come back."
+progress = "Are the looters thinned?"
+completion = "Ten fewer. They send more, but the camp breathes. Take your coin."
+money = 400
+tokens = 1
+zone_or_sort = 12
+kill = [[96041, 10]]
+
+[[quest]]
+id = 94706
+kind = "bounty"
+giver = 10616
+level = 22
+min_level = 20
+max_level = 24
+title = "Lumber Recovery"
+objectives = "Bring 8 Eastvale Lumber to Supervisor Raelen."
+details = "The looters carry off cut lumber, and some of it they drop. Bring me eight lengths of Eastvale Lumber, and I'll pay a fair price for each batch."
+progress = "Got the lumber?"
+completion = "Sound lumber, cut straight. The camp can use it. Come back when they have stolen more."
+money = 420
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980024, count = 8, from = [96041], chance = 50 }]
+
+[[quest]]
+id = 94707
+kind = "bounty"
+giver = 190063
+level = 23
+min_level = 21
+max_level = 25
+title = "Bears on the Ridge"
+objectives = "Kill 10 Grizzled Bears, then return to Lumberjack Tomas."
+details = "The grizzlies came down from the ridge when the tower woke, and they are too bold. We can't cut near the slope. Kill ten of them and I'll pay you, and again each time you do."
+progress = "Are the bears thinned?"
+completion = "Ten fewer on the ridge. The men will cut on the slope again. Take your coin."
+money = 430
+tokens = 1
+zone_or_sort = 12
+kill = [[96042, 10]]
+
+[[quest]]
+id = 94708
+kind = "bounty"
+giver = 190063
+level = 23
+min_level = 21
+max_level = 25
+title = "Hides for Tomas"
+objectives = "Bring 8 Grizzled Hides to Lumberjack Tomas."
+details = "A grizzly hide makes the best apron a sawyer can wear. Bring me eight of them and I'll pay for the lot."
+progress = "Got the hides?"
+completion = "Thick hides, good ones. The men will stop complaining about the splinters. Come back for more."
+money = 440
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980025, count = 8, from = [96042], chance = 50 }]
+
+[[quest]]
+id = 94709
+kind = "bounty"
+giver = 10616
+after = 94702
+level = 24
+min_level = 22
+max_level = 26
+title = "Acolytes at Ridgepoint"
+objectives = "Kill 10 Twilight Acolytes at Ridgepoint Tower, then return to Supervisor Raelen."
+details = "Now we know what the tower holds, I'll pay to see it emptied. Kill ten acolytes on the ridge and I'll give you a bounty, and again whenever you like."
+progress = "Are the acolytes thinned?"
+completion = "Ten acolytes fewer. The tower grows quiet. Take your coin."
+money = 480
+tokens = 1
+zone_or_sort = 12
+kill = [[96031, 10]]
