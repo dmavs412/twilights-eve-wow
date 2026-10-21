@@ -1,0 +1,56 @@
+# Encounters (#238): waves of creatures that come at a point in the open world when a quest step
+# starts them. Hand-written. Nothing here is named after one quest; a quest's content points at an
+# encounter by the `quest` id below. `src/encounters.rs` runs them.
+#
+# key               the encounter's name; one runs at a time per key
+# quest             the quest id whose holders start it, fight in it and keep it alive
+# start             "accepted": a character holding the quest comes within `start_radius` of the
+#                   anchor while the encounter is idle (accepting it there counts as coming
+#                   within); standing inside after a win or a fail starts nothing until they leave
+#                   and come back. "use_done": the moment a character's last use objective of the
+#                   quest completes, wherever they stand.
+# anchor            [x, y, z] on map 0 (Eastern Kingdoms), world coordinates
+# start_radius      yards; used by "accepted" only
+# leash             yards from the anchor. The encounter fails on a tick when no living character
+#                   holding the quest is within it.
+# warning           optional; sent as a raid warning to every character within `leash` when it starts
+# first_wave_after_s  seconds from the start to the first wave
+# next_wave_after_s   seconds from a wave's arrival to the next, if that wave is not dead sooner
+#
+# [[encounter.wave]]  one per wave, in order
+# creatures         [{ entry, level, count, position = [x, y, z] }, ...]. `entry` is a template
+#                   in mobs.toml (so the Level Bands leave its level alone). Every creature falls on
+#                   the nearest living character holding the quest.
+#
+# The two below belong to tests/encounters.rs, whose quests are added with `Realm::with_quests`;
+# the shipped quests name neither id, so neither can start in the game.
+
+[[encounter]]
+key = "test_defense"
+quest = 99801
+start = "accepted"
+anchor = [-9720.0, 20.0, 47.2]
+start_radius = 30.0
+leash = 60.0
+warning = "The test is coming!"
+first_wave_after_s = 10.0
+next_wave_after_s = 60.0
+
+[[encounter.wave]]
+creatures = [{ entry = 2958, level = 5, count = 2, position = [-9715.0, 20.0, 47.2] }]
+
+[[encounter.wave]]
+creatures = [{ entry = 2958, level = 5, count = 1, position = [-9720.0, 25.0, 47.2] }]
+
+[[encounter]]
+key = "test_rite"
+quest = 99802
+start = "use_done"
+anchor = [-9720.0, 120.0, 47.2]
+start_radius = 30.0
+leash = 60.0
+first_wave_after_s = 5.0
+next_wave_after_s = 60.0
+
+[[encounter.wave]]
+creatures = [{ entry = 2958, level = 5, count = 1, position = [-9715.0, 120.0, 47.2] }]

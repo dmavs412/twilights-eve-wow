@@ -45,7 +45,9 @@ fn grid() -> &'static Grid {
         let world = mobs::content().spawn.iter().enumerate();
         // A Phased Dungeon's creatures come with its Run, not the view.
         let open = |s: &mobs::Spawn| {
-            crate::content::open_world(s.map) && s.phase == crate::phased::Phase::OpenWorld
+            crate::content::open_world(s.map)
+                && s.phase == crate::phased::Phase::OpenWorld
+                && s.encounter.is_none()
         };
         for (i, s) in world.filter(|(_, s)| open(s)) {
             let (cx, cy) = cell(s.position[0], s.position[1]);

@@ -173,6 +173,17 @@ fn complete(c: &Char, a: &Active) -> bool {
             .all(|id| c.discovered.binary_search(id).is_ok())
 }
 
+/// Whether `a`'s quest has use objectives and every one is met.
+pub(crate) fn uses_done(a: &Active) -> bool {
+    content::quest(a.id).is_some_and(|q| {
+        !q.use_object.is_empty()
+            && q.use_object
+                .iter()
+                .enumerate()
+                .all(|(i, &(_, count))| u32::from(a.kills[q.use_slot(i)]) >= count)
+    })
+}
+
 /// One slot's three fields: `a`'s quest, or empty.
 fn slot_pairs(slot: u8, a: Option<&Active>) -> [(u16, u32); 3] {
     let base = PLAYER_QUEST_LOG_1_1 + 3 * u16::from(slot);

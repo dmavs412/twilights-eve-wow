@@ -10,7 +10,7 @@ use benilla_protocol::SessionEvent;
 
 use crate::fields::values;
 use crate::looting::lootable_pair;
-use crate::mobs::{Mob, State};
+use crate::mobs::{self, Mob, State};
 use crate::phased::{Meter, Phase, Run};
 use crate::population::{Population, VIEW_YD};
 use crate::rules::threat;
@@ -152,6 +152,14 @@ impl Shard {
 
     /// A mob of `spawn` died: it comes back once every player has been away `wait` seconds.
     pub(crate) fn died(&mut self, spawn: u32, wait: f32) {
+        // An Encounter's creatures never come back by themselves.
+        if mobs::content()
+            .spawn
+            .get(spawn as usize)
+            .is_some_and(|s| s.encounter.is_some())
+        {
+            return;
+        }
         self.population.died(spawn, wait);
     }
 

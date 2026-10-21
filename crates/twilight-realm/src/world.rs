@@ -1476,7 +1476,7 @@ fn at_tier_rate(c: &Char, base: u32) -> u32 {
 /// `mob` turns on the player, who joins its threat table with the pull seed if not on it:
 /// `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
 /// flag.
-fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
+pub(crate) fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
     // A dummy never turns on anyone.
     if mob.template.inert {
         return;

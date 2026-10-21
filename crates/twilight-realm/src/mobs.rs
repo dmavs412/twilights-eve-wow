@@ -38,6 +38,9 @@ pub(crate) const COMBAT_REACH: f32 = 1.5;
 /// The first low guid given to a creature a call for help brings in.
 const CALLED_GUID_BASE: u32 = 0x90_0000;
 
+/// The first low guid given to a creature an Encounter's wave brings in.
+const ENCOUNTER_GUID_BASE: u32 = 0xA0_0000;
+
 /// A creature guid: `entry` and the low guid `low` under `HIGHGUID_UNIT`.
 pub(crate) fn unit_guid(entry: u32, low: u32) -> u64 {
     HIGHGUID_UNIT << 48 | u64::from(entry & 0xFF_FFFF) << 24 | u64::from(low & 0xFF_FFFF)
@@ -204,6 +207,9 @@ pub(crate) struct Spawn {
     /// A creature a call for help brings in, not one the Run starts with: the caller's guid and
     /// which of its calls.
     pub(crate) called_by: Option<(u32, usize)>,
+    /// A creature an Encounter's wave brings in, not one the Population streams: the encounter's
+    /// index in `content/encounters.toml` and the wave's.
+    pub(crate) encounter: Option<(usize, usize)>,
     /// It starts each life asleep: no aggro, no movement, until something wakes it.
     pub(crate) asleep: bool,
     /// Yards added to the distance at which a character wakes it.
@@ -512,6 +518,7 @@ pub(crate) fn content() -> &'static Mobs {
                     phase: Phase::Dungeon(d.id),
                     on_health: &c.on_health,
                     called_by: None,
+                    encounter: None,
                     asleep: c.asleep,
                     wake_radius_mod: c.wake_radius_mod,
                 });
@@ -540,6 +547,35 @@ pub(crate) fn content() -> &'static Mobs {
                             ..Default::default()
                         });
                         called_guids += 1;
+                    }
+                }
+            }
+        }
+        // The creatures an Encounter's waves bring in: rows the Population never streams, each
+        // with a guid of its own above every called one.
+        let mut encounter_guids = 0;
+        for (e, enc) in crate::encounters::content().iter().enumerate() {
+            for (w, wave) in enc.wave.iter().enumerate() {
+                for c in &wave.creatures {
+                    let t = template
+                        .iter()
+                        .find(|t| t.entry == c.entry)
+                        .unwrap_or_else(|| panic!("encounter {} names no template", enc.key));
+                    for _ in 0..c.count {
+                        spawn.push(Spawn {
+                            guid: ENCOUNTER_GUID_BASE + encounter_guids,
+                            entry: c.entry,
+                            level_min: c.level,
+                            level_max: c.level,
+                            position: c.position,
+                            display_id: t.display_id,
+                            camp: ENCOUNTER_GUID_BASE + encounter_guids,
+                            map: crate::content::EASTERN_KINGDOMS,
+                            phase: Phase::OpenWorld,
+                            encounter: Some((e, w)),
+                            ..Default::default()
+                        });
+                        encounter_guids += 1;
                     }
                 }
             }
