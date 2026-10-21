@@ -12,8 +12,10 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 
 - **Verify with `cargo check -q -p <crate> 2>&1 | tail -40`** in the foreground after every
   edit; the pipe keeps warnings out of the context. When a realm rule changes, also
-  `cargo test -q -p twilight-realm` (seconds, no game data). That is the whole gate; a commit
-  needs nothing else. A full build or a game run happens only when Davis asks for one.
+  `cargo test -q -p twilight-realm` (seconds, no game data). An edit under `tools/twilights-eve/`
+  or to the CSV also runs the unittest line in `docs/spell_pipeline.md` and regenerates the
+  outputs. That is the whole gate; a commit needs nothing else. A full build or a game run
+  happens only when Davis asks for one.
 - **Every command runs in the foreground, and you wait for it.** Let each cargo command finish:
   one stopped mid-compile leaves rlibs with corrupt MSVC debug info, and later links fail with
   `LNK1103` on a crate you never touched. The cure is `cargo clean -p <crate>` for each crate the

@@ -1,5 +1,6 @@
-# The backstop: the same `cargo check` and realm tests a session runs by hand, on every push to
-# main and every pull request. Nothing here needs the game data or a display.
+# The backstop: the same `cargo check`, realm tests and spell-pipeline tests a session runs by
+# hand, on every push to main and every pull request. Nothing here needs the game data or a
+# display; the generated-output check skips the DBC-resolved fields for that reason.
 name: CI
 
 on:
@@ -38,3 +39,7 @@ jobs:
         run: cargo check --workspace
       - name: realm tests
         run: cargo test -p twilight-realm --features wire
+      - name: spell pipeline tests
+        run: python3 -m unittest discover tools/twilights-eve/tests
+      - name: generated spell outputs match the CSV
+        run: python3 tools/twilights-eve/build_spells.py --no-dbc-check --check

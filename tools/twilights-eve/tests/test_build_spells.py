@@ -1100,13 +1100,13 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
                        "aura_description": "Poisoned."}}])
 
     def test_an_aura_shows_its_name_and_its_description_is_the_tooltip(self):
-        done, _ = self.run_build([CALLING, {**AURA, "description": "Empowered.", "icon": "Interface\Icons\X"}])
+        done, _ = self.run_build([CALLING, {**AURA, "description": "Empowered.", "icon": r"Interface\Icons\X"}])
         self.assertEqual(done.returncode, 0, done.stderr)
-        self.assertEqual(self.patch["spells"][0]["fields"], {"implicit_targets": [1, 0], "icon": "Interface\Icons\X",
+        self.assertEqual(self.patch["spells"][0]["fields"], {"implicit_targets": [1, 0], "icon": r"Interface\Icons\X",
                                                              "name": "Buff", "aura_description": "Empowered."})
 
     def test_an_aura_on_a_skills_spell_joins_the_skills_override(self):
-        aura = {**AURA, "spell_id": STRIKE["spell_id"], "mechanic": "incapacitate", "icon": "Interface\Icons\Aura"}
+        aura = {**AURA, "spell_id": STRIKE["spell_id"], "mechanic": "incapacitate", "icon": r"Interface\Icons\Aura"}
         for rows in ([CALLING, STRIKE, aura], [CALLING, aura, STRIKE]):
             done, _ = self.run_build(rows)
             self.assertEqual(done.returncode, 0, done.stderr)
@@ -1115,7 +1115,7 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
             self.assertEqual((entry["key"], entry["fields"]["mechanic"], entry["fields"]["cost"]), ("strike", 14, 15))
             # The aura's look and targets are defaults; the skill's stand.
             self.assertEqual((entry["fields"]["icon"], entry["fields"]["implicit_targets"]),
-                             ("Interface\Icons\Aura", [6, 0]))
+                             (r"Interface\Icons\Aura", [6, 0]))
 
     def test_two_auras_disagreeing_on_one_spell_fail(self):
         other = {**AURA, "key": "other", "mechanic": "snare"}
@@ -1205,6 +1205,31 @@ class PointBlank(unittest.TestCase):
             self.assertEqual((r["spellmod1_type"], r["spellmod1_op"], r["spellmod1_value"]),
                              ("pct", "MIN_RANGE", "-100"))
             self.assertEqual(set(r["spellmod1_target"].split("|")), ranged)
+
+
+class CheckOutputs(unittest.TestCase):
+    """`--check` compares the committed outputs with a fresh build and writes nothing."""
+
+    def test_check_passes_on_fresh_outputs_and_fails_on_a_stale_one(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = [sys.executable, SCRIPT, "--csv", MASTER, "--out-dir", tmp, "--no-dbc-check"]
+            done = subprocess.run(base, capture_output=True, text=True)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            done = subprocess.run([*base, "--check"], capture_output=True, text=True)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertIn("matches the CSV", done.stdout)
+            patch_path = os.path.join(tmp, "client_dbc_patch.json")
+            with open(patch_path, encoding="utf-8") as f:
+                patch = json.load(f)
+            patch["spells"][0]["fields"]["implicit_targets"] = [22, 15]
+            with open(patch_path, "w", encoding="utf-8") as f:
+                json.dump(patch, f)
+            done = subprocess.run([*base, "--check"], capture_output=True, text=True)
+            self.assertEqual(done.returncode, 1, done.stdout)
+            self.assertIn("client_dbc_patch.json", done.stderr)
+            self.assertNotIn("server_spells.json", done.stderr)
+            with open(patch_path, encoding="utf-8") as f:
+                self.assertEqual(json.load(f), patch, "--check must write nothing")
 
 
 class SeamChecks(unittest.TestCase):

@@ -1606,6 +1606,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--art-dir", default=DEFAULT_ART_DIR, help="folder of the PNG icons the icon cells name")
     parser.add_argument("--data", default=os.environ.get("WOW_DATA"), help="game Data folder for the DBC check")
     parser.add_argument("--no-dbc-check", action="store_true", help="skip checking ids against the DBCs")
+    parser.add_argument("--check", action="store_true",
+                        help="write nothing; fail if the files in --out-dir differ from what this run builds")
     args = parser.parse_args(argv)
 
     with open(args.csv, newline="", encoding="utf-8") as f:
@@ -1646,13 +1648,52 @@ def main(argv: list[str] | None = None) -> int:
     for stem in art:
         with open(os.path.join(args.art_dir, stem + ".png"), "rb") as f:
             embedded[stem] = base64.b64encode(f.read()).decode("ascii")
-    for name, data in (("server_spells.json", server), ("client_dbc_patch.json", patch), ("client_art.json", embedded)):
+    outputs = (("server_spells.json", server), ("client_dbc_patch.json", patch), ("client_art.json", embedded))
+    if args.check:
+        stale = check_outputs(args.out_dir, outputs, resolved=not args.no_dbc_check)
+        if stale:
+            print(f"build_spells: {', '.join(stale)} in {args.out_dir} differ from the CSV; "
+                  f"rerun build_spells.py and commit the outputs", file=sys.stderr)
+            return 1
+        print(f"check: {args.out_dir} matches the CSV")
+        return 0
+    for name, data in outputs:
         with open(os.path.join(args.out_dir, name), "w", encoding="utf-8", newline="\n") as f:
             json.dump(data, f, indent=1, ensure_ascii=False)
             f.write("\n")
     print(f"wrote {args.out_dir}: {len(server)} Callings, {len(rows)} rows, "
           f"{len(patch['spells'])} spell overrides, {len(patch['talents'])} talent seats")
     return 0
+
+
+# The patch fields `resolve_dbc_rows` rewrites from the DBCs: a run without the DBCs cannot
+# reproduce them, so `--check --no-dbc-check` compares the patch with these dropped on both sides.
+DBC_RESOLVED_FIELDS = frozenset({"visual_spell", "visual", "speed", "range_min", "range_max", "range_index",
+                                 "cast_time_ms", "cast_time_index", "duration_ms", "duration_index"})
+
+
+def check_outputs(out_dir: str, outputs: tuple, resolved: bool) -> list[str]:
+    """The names of the committed outputs in `out_dir` that differ from what this run built. With
+    `resolved` false the patch is compared without its DBC-resolved fields."""
+    stale = []
+    for name, built in outputs:
+        try:
+            with open(os.path.join(out_dir, name), encoding="utf-8") as f:
+                committed = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            stale.append(name)
+            continue
+        if name == "client_dbc_patch.json" and not resolved:
+            built, committed = _without_resolved(built), _without_resolved(committed)
+        if built != committed:
+            stale.append(name)
+    return stale
+
+
+def _without_resolved(patch: dict) -> dict:
+    spells = [{**entry, "fields": {k: v for k, v in entry["fields"].items() if k not in DBC_RESOLVED_FIELDS}}
+              for entry in patch.get("spells", [])]
+    return {**patch, "spells": spells}
 
 
 if __name__ == "__main__":

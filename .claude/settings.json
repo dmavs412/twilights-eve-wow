@@ -20,7 +20,7 @@
       "Bash(git worktree remove:*)", "Bash(rm -rf:*)", "Bash(rm -r:*)",
       "Bash(gh pr merge:*)", "Bash(gh pr create:*)", "Bash(gh issue delete:*)"
     ],
-    "deny": ["Agent"]
+    "deny": ["Agent", "Bash(python3)", "Bash(python3 *)", "Bash(python)", "Bash(python *)"]
   },
   "hooks": {
     "PreToolUse": [

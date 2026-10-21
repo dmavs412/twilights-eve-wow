@@ -118,7 +118,9 @@ a modelled row (an `energize` without a known `power`, an `add_combo_points` wit
 whole `amount`, a `per_combo` that is not a formula block), a half-filled spellmod, or a talent
 seat that is missing, shared or has an unresolved prereq. The DBC check needs `--data` or `WOW_DATA`; `--no-dbc-check`
 skips it (the tests use that). Run it by hand after a CSV edit and commit the CSV and both outputs
-together, so a diff shows what a cell changed. Tests:
+together, so a diff shows what a cell changed. `--check` writes nothing and exits 1 when the
+committed outputs differ from a fresh build; CI runs it with `--no-dbc-check`, which compares the
+patch without the fields the DBCs resolve (visual, range, cast time and duration indexes). Tests:
 `~/.local/bin/python3.15 -m unittest discover tools/twilights-eve/tests`.
 
 ```
