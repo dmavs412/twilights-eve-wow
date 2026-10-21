@@ -13,8 +13,9 @@ const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
 /// The first hiding spot, and where it stands (`content/forest_edge.toml`).
 const SPOT: u64 = HIGHGUID_GAMEOBJECT << 48 | 790001;
 const SPOT_AT: [f32; 3] = [-9928.0, 570.0, 38.0];
-/// Inside the hollow, and out on the road beyond its west edge.
-const INSIDE: [f32; 3] = [-9990.0, 600.0, 38.0];
+/// Inside the hollow by the Portal, far from the Riverpaw camp (#173), and out on the road beyond
+/// its west edge.
+const INSIDE: [f32; 3] = [-9925.0, 560.0, 38.0];
 const OUTSIDE: [f32; 3] = [-10200.0, 600.0, 38.0];
 /// The meter's debuff (`[meter] client_spell`).
 const NOISE_SPELL: u32 = 12323;

@@ -714,6 +714,86 @@ speed_run = 0.857
 detection_range = 18.0
 spells = ["abbot_corruption", "abbot_heal"]
 
+# The Riverpaw camp of Forest's Edge (forest_edge.toml, #173): gnolls at 20-21 with stock displays
+# from vmangos creature_template. All numbers are placeholders; the level is on each row.
+# Light sleepers are the Outrunner (+3 yd) and deep ones the Brute (-2 yd): `wake_radius_mod` is
+# on the rows.
+
+# A fast scout. Display 512 is a Riverpaw Gnoll's. Awake, it wakes sleepers it passes.
+[[template]]
+entry = 96006
+name = "Riverpaw Outrunner"
+creature_type = 7
+display_id = 512
+faction_template = 14
+unit_class = "warrior"
+level_min = 20
+level_max = 20
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+wakes_sleepers = 5.0
+
+# The camp's caster. Display 502 is a Riverpaw Mystic's.
+[[template]]
+entry = 96007
+name = "Riverpaw Mystic"
+creature_type = 7
+display_id = 502
+faction_template = 14
+unit_class = "mage"
+level_min = 21
+level_max = 21
+health_multiplier = 0.8
+damage_multiplier = 0.8
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["lightning_bolt_gnoll"]
+
+# Slow and hard-hitting: a swing every 3.2 s for half again as much. Display 383.
+[[template]]
+entry = 96008
+name = "Riverpaw Brute"
+creature_type = 7
+display_id = 383
+faction_template = 14
+unit_class = "warrior"
+level_min = 21
+level_max = 21
+health_multiplier = 1.5
+damage_multiplier = 1.8
+armor_multiplier = 1.0
+base_attack_time = 3200
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
+# A pup with little health, one or two hits; its death is heard (2 stacks of Noise). Display 10791.
+[[template]]
+entry = 96009
+name = "Riverpaw Runt"
+creature_type = 7
+display_id = 10791
+faction_template = 14
+unit_class = "warrior"
+level_min = 20
+level_max = 20
+health_multiplier = 0.15
+damage_multiplier = 0.6
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+noise_on_death = 2
+
 # The Test Grounds' training dummies (test_grounds.toml): `inert`, so they never move or fight and
 # heal to full 10 s after the last hit. Faction 14 shows them attackable; display 3277 (the
 # Corrupted Brother's) is a placeholder body.

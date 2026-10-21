@@ -11618,6 +11618,34 @@
     "cast_time_index": 1,
     "duration_index": 8
    }
+  },
+  {
+   "spell_id": 1900008,
+   "creature": "lightning_bolt_gnoll",
+   "fields": {
+    "name": "Lightning Bolt",
+    "icon": "Interface\\Icons\\Spell_Nature_Lightning",
+    "school": 3,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 12,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "aura_description": "$s1 Nature damage every $t1 seconds.",
+    "visual": 173,
+    "speed": 20.0,
+    "range_index": 4,
+    "cast_time_index": 5,
+    "duration_index": 35
+   }
   }
  ],
  "talent_tabs": [

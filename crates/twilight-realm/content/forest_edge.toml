@@ -1123,3 +1123,261 @@ display = 6151
 position = [-9910.00, 678.35, 38.0]
 orientation = 1.5708
 sides = "both"
+
+
+# The Riverpaw camp (#173): 24 sleepers in six Camps along the hollow from the Portal toward
+# Hogger's tent at the back (about (-10050, 655)), and two awake patrols. The Camps lie across the
+# straight line from the Portal to the tent, within their wake radii at 0 stacks (3 yd, plus
+# Outrunner +3, Brute -2), and clear of the legs between the hiding spots. All points are
+# hand-picked; z is the same flat 38.0 as the palisade.
+
+# Camp 1: the first dip past the haystacks, about (-9966, 597).
+[[creature]]
+guid = 790301
+entry = 96006
+level = 20
+position = [-9969.0, 599.0, 38.0]
+orientation = 5.50
+asleep = true
+camp = 1
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790302
+entry = 96007
+level = 21
+position = [-9963.0, 598.0, 38.0]
+orientation = 6.20
+asleep = true
+camp = 1
+
+[[creature]]
+guid = 790303
+entry = 96009
+level = 20
+position = [-9966.0, 594.0, 38.0]
+orientation = 0.62
+asleep = true
+camp = 1
+
+[[creature]]
+guid = 790304
+entry = 96009
+level = 20
+position = [-9964.0, 600.0, 38.0]
+orientation = 1.32
+asleep = true
+camp = 1
+
+# Camp 2: under the south wall of the hollow's middle, about (-9981, 609).
+[[creature]]
+guid = 790305
+entry = 96008
+level = 21
+position = [-9983.0, 611.0, 38.0]
+orientation = 2.02
+asleep = true
+camp = 2
+wake_radius_mod = -2.0
+
+[[creature]]
+guid = 790306
+entry = 96006
+level = 20
+position = [-9978.0, 608.0, 38.0]
+orientation = 2.72
+asleep = true
+camp = 2
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790307
+entry = 96009
+level = 20
+position = [-9984.0, 607.0, 38.0]
+orientation = 3.42
+asleep = true
+camp = 2
+
+[[creature]]
+guid = 790308
+entry = 96007
+level = 21
+position = [-9979.0, 612.0, 38.0]
+orientation = 4.12
+asleep = true
+camp = 2
+
+# Camp 3: the lean-to beside the north haystack, about (-9993, 622).
+[[creature]]
+guid = 790309
+entry = 96006
+level = 20
+position = [-9991.0, 624.0, 38.0]
+orientation = 4.82
+asleep = true
+camp = 3
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790310
+entry = 96008
+level = 21
+position = [-9996.0, 622.0, 38.0]
+orientation = 5.52
+asleep = true
+camp = 3
+wake_radius_mod = -2.0
+
+[[creature]]
+guid = 790311
+entry = 96007
+level = 21
+position = [-9993.0, 619.0, 38.0]
+orientation = 6.22
+asleep = true
+camp = 3
+
+[[creature]]
+guid = 790312
+entry = 96009
+level = 20
+position = [-9990.0, 620.0, 38.0]
+orientation = 0.64
+asleep = true
+camp = 3
+
+# Camp 4: the wagon yard, north of the last hiding spot, about (-10012, 618).
+[[creature]]
+guid = 790313
+entry = 96008
+level = 21
+position = [-10010.0, 620.0, 38.0]
+orientation = 1.34
+asleep = true
+camp = 4
+wake_radius_mod = -2.0
+
+[[creature]]
+guid = 790314
+entry = 96006
+level = 20
+position = [-10015.0, 619.0, 38.0]
+orientation = 2.04
+asleep = true
+camp = 4
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790315
+entry = 96007
+level = 21
+position = [-10009.0, 616.0, 38.0]
+orientation = 2.74
+asleep = true
+camp = 4
+
+[[creature]]
+guid = 790316
+entry = 96009
+level = 20
+position = [-10013.0, 615.0, 38.0]
+orientation = 3.44
+asleep = true
+camp = 4
+
+# Camp 5: the ditch before the tent, about (-10027, 636).
+[[creature]]
+guid = 790317
+entry = 96006
+level = 20
+position = [-10027.0, 639.0, 38.0]
+orientation = 4.14
+asleep = true
+camp = 5
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790318
+entry = 96007
+level = 21
+position = [-10030.0, 635.0, 38.0]
+orientation = 4.84
+asleep = true
+camp = 5
+
+[[creature]]
+guid = 790319
+entry = 96008
+level = 21
+position = [-10024.0, 636.0, 38.0]
+orientation = 5.54
+asleep = true
+camp = 5
+wake_radius_mod = -2.0
+
+[[creature]]
+guid = 790320
+entry = 96009
+level = 20
+position = [-10027.0, 633.0, 38.0]
+orientation = 6.24
+asleep = true
+camp = 5
+
+# Camp 6: the tent's front yard, about (-10040, 648).
+[[creature]]
+guid = 790321
+entry = 96006
+level = 20
+position = [-10037.0, 650.0, 38.0]
+orientation = 0.66
+asleep = true
+camp = 6
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790322
+entry = 96007
+level = 21
+position = [-10043.0, 650.0, 38.0]
+orientation = 1.36
+asleep = true
+camp = 6
+
+[[creature]]
+guid = 790323
+entry = 96009
+level = 20
+position = [-10040.0, 645.0, 38.0]
+orientation = 2.06
+asleep = true
+camp = 6
+
+[[creature]]
+guid = 790324
+entry = 96008
+level = 21
+position = [-10037.0, 645.0, 38.0]
+orientation = 2.76
+asleep = true
+camp = 6
+wake_radius_mod = -2.0
+
+# Two awake Outrunners drift about the middle of the hollow, between the first and second Camps
+# and the west wall (wander 8).
+[[creature]]
+guid = 790325
+entry = 96006
+level = 20
+position = [-9958.0, 606.0, 38.0]
+orientation = 5.7
+wander = 8.0
+
+[[creature]]
+guid = 790326
+entry = 96006
+level = 20
+position = [-10004.0, 603.0, 38.0]
+orientation = 2.4
+wander = 8.0

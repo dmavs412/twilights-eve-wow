@@ -558,6 +558,104 @@ mod tests {
     }
 
     #[test]
+    fn forest_edge_holds_the_riverpaw_camp_in_six_camps_and_two_patrols() {
+        let edge = content().iter().find(|d| d.id == 2).unwrap();
+        let meter = edge.meter.as_ref().unwrap();
+        let template = |entry| {
+            crate::mobs::content()
+                .template
+                .iter()
+                .find(|t| t.entry == entry)
+                .unwrap_or_else(|| panic!("no template {entry}"))
+        };
+        for c in &edge.creature {
+            assert!(edge.holds(0, c.position), "creature {} is outside", c.guid);
+            template(c.entry);
+        }
+        let sleepers: Vec<_> = edge.creature.iter().filter(|c| c.asleep).collect();
+        assert!(
+            (21..=27).contains(&sleepers.len()),
+            "{} sleepers",
+            sleepers.len()
+        );
+        let mut camps: Vec<_> = sleepers.iter().filter_map(|c| c.camp).collect();
+        assert!(sleepers.iter().all(|c| c.camp.is_some()), "a sleeper alone");
+        camps.sort_unstable();
+        camps.dedup();
+        assert_eq!(camps.len(), 6, "camps {camps:?}");
+        for camp in camps {
+            let size = sleepers.iter().filter(|c| c.camp == Some(camp)).count();
+            assert!((3..=5).contains(&size), "camp {camp} has {size}");
+        }
+        let awake: Vec<_> = edge.creature.iter().filter(|c| !c.asleep).collect();
+        assert_eq!(awake.len(), 2);
+        assert!(awake.iter().all(|c| c.wander == 8.0));
+        // The four roles, in the levels the ticket sets.
+        for (entry, name, levels) in [
+            (96006, "Riverpaw Outrunner", 20..=20),
+            (96007, "Riverpaw Mystic", 21..=21),
+            (96008, "Riverpaw Brute", 21..=21),
+            (96009, "Riverpaw Runt", 20..=20),
+        ] {
+            assert_eq!(template(entry).name, name);
+            assert!(edge.creature.iter().any(|c| c.entry == entry), "no {name}");
+            for c in edge.creature.iter().filter(|c| c.entry == entry) {
+                assert!(levels.contains(&c.level), "{name} at {}", c.level);
+            }
+        }
+        // The Mystic's spell resolves, and is heard.
+        let spells = crate::creature_spells::resolve(&template(96007).spells);
+        assert_eq!(spells.len(), 1);
+        assert_eq!(spells[0].noise_on_cast, 2);
+        assert_eq!(template(96009).noise_on_death, Some(2));
+        // No straight line from the Portal to Hogger's tent at the back misses every wake radius at
+        // 0 stacks.
+        let (from, to) = (edge.portal.position, [-10050.0f32, 655.0, 38.0]);
+        let radius = |c: &Creature| meter.wake_radius(0, c.wake_radius_mod);
+        let blocked = |t: f32| {
+            let p = [
+                from[0] + (to[0] - from[0]) * t,
+                from[1] + (to[1] - from[1]) * t,
+            ];
+            sleepers
+                .iter()
+                .any(|c| (c.position[0] - p[0]).hypot(c.position[1] - p[1]) <= radius(c))
+        };
+        let free = (0..=200).filter(|i| !blocked(*i as f32 / 200.0)).count();
+        assert!(free < 201, "the straight path is clear");
+        // But the Portal reaches the last hiding spot by legs from spot to spot, each clear of every
+        // radius at 0 stacks.
+        let mut nodes = vec![from];
+        nodes.extend(
+            edge.gameobject
+                .iter()
+                .filter(|o| o.use_kind == Some(UseKind::Hide))
+                .map(|o| o.position),
+        );
+        let clear = |a: [f32; 3], b: [f32; 3]| {
+            (0..=40).all(|i| {
+                let t = i as f32 / 40.0;
+                let p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+                sleepers
+                    .iter()
+                    .all(|c| (c.position[0] - p[0]).hypot(c.position[1] - p[1]) > radius(c))
+            })
+        };
+        let mut reached = vec![false; nodes.len()];
+        reached[0] = true;
+        for _ in 0..nodes.len() {
+            for i in 0..nodes.len() {
+                for j in 0..nodes.len() {
+                    if reached[i] && !reached[j] && clear(nodes[i], nodes[j]) {
+                        reached[j] = true;
+                    }
+                }
+            }
+        }
+        assert!(reached.last().unwrap(), "no hiding route {reached:?}");
+    }
+
+    #[test]
     fn the_abbey_holds_its_creatures_and_its_doorway_but_not_its_lawn() {
         let abbey = &content()[0];
         for c in &abbey.creature {

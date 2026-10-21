@@ -135,3 +135,22 @@ cooldown_ms = 20000
 range_max = 5.0
 chance = 100
 effect = { kind = "snare", pct = 50, duration_ms = 15000 }
+
+# The Riverpaw Mystic's bolt (`forest_edge.toml`, #173). Looks like Lightning Bolt rank 1 (visual
+# 403). Creature Spells have no direct damage yet, so it lands as a short nature curse.
+# Placeholders: 2 ticks of 12, 24 nature damage over 4 s, from 30 yd; each cast is heard (2 stacks
+# of Noise).
+[[spell]]
+key = "lightning_bolt_gnoll"
+spell_id = 1900008
+name = "Lightning Bolt"
+icon = 'Interface\Icons\Spell_Nature_Lightning'
+visual = 403
+aura_description = "$s1 Nature damage every $t1 seconds."
+school = "nature"
+cast_time_ms = 2000
+cooldown_ms = 6000
+range_max = 30.0
+chance = 100
+noise_on_cast = 2
+effect = { kind = "periodic_damage", tick_ms = 2000, duration_ms = 4000, tick = { base = 12 } }

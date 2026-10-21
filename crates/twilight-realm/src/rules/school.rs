@@ -1,5 +1,5 @@
 //! Damage schools: what a blow's school takes off it, and how the client numbers it
-//! (`SpellSchools`, `SPELL_SCHOOL0_CAP`..: 0 physical, 1 holy, 2 fire, 4 frost, 5 shadow, 6 arcane).
+//! (`SpellSchools`, `SPELL_SCHOOL0_CAP`..: 0 physical, 1 holy, 2 fire, 3 nature, 4 frost, 5 shadow, 6 arcane).
 
 use serde::Deserialize;
 
@@ -17,6 +17,8 @@ pub enum School {
     /// Magic, like holy: armour does not touch it.
     Fire,
     /// Magic: armour does not touch it.
+    Nature,
+    /// Magic: armour does not touch it.
     Frost,
     /// Magic: armour does not touch it.
     Shadow,
@@ -31,6 +33,7 @@ impl School {
             School::Physical => 0,
             School::Holy => 1,
             School::Fire => 2,
+            School::Nature => 3,
             School::Frost => 4,
             School::Shadow => 5,
             School::Arcane => 6,
@@ -43,7 +46,12 @@ impl School {
 pub fn mitigated(school: School, raw: u32, armor: u32, attacker_level: u8) -> u32 {
     match school {
         School::Physical => armor_reduced(raw, armor, attacker_level),
-        School::Holy | School::Fire | School::Frost | School::Shadow | School::Arcane => raw,
+        School::Holy
+        | School::Fire
+        | School::Nature
+        | School::Frost
+        | School::Shadow
+        | School::Arcane => raw,
     }
 }
 
