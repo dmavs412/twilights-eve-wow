@@ -1707,6 +1707,88 @@ completion = "It is done. Rot them, drink them, mend, Acolyte. You start over; y
 money = 0
 tokens = 0
 
+# The Northshire trainers' own Tier 1 Advancement Quests (#216). Each mirrors the Crossroads
+# quest of its Line (same `level`, `zone_or_sort` and `advancement`) with a Northshire trainer
+# as `giver` and its own wording. A character takes whichever trainer is near; the Crossroads
+# quests above are untouched. Tier 2 stays at the Crossroads.
+
+[[quest]]
+id = 64009
+kind = "advancement"
+giver = 190050
+level = 10
+zone_or_sort = -81
+advancement = { from = "basic_warrior", to = "vanguard" }
+title = "The Warrior's Path"
+objectives = "Speak with Sergeant Willem Hale in the Northshire Abbey yard to take up the warrior's path."
+details = "Stormwind sent me to Northshire to drill recruits, $N, and you have outlasted every drill I know. A Basic Warrior has nothing left to learn from me.$B$BThe Vanguard hold the front of the line, in plate, on rage. Take up the path and you begin again, the greenest recruit in the yard. But your body remembers the work, and your arm is stronger for it.$B$BSay the word."
+progress = "Say the word, $N, and the drill begins again."
+completion = "Then fall in, Vanguard. You start over, and so did every soldier I ever trusted. Hold the line, and the rest of us live."
+money = 0
+tokens = 0
+
+[[quest]]
+id = 64010
+kind = "advancement"
+giver = 190051
+level = 10
+zone_or_sort = -162
+advancement = { from = "basic_warrior", to = "cutthroat" }
+title = "The Cutthroat's Mark"
+objectives = "Speak with Jorik Vane at the Northshire Vineyards to take the Cutthroat's mark."
+details = "Keep your voice down, $N. You swing that blade like the whole valley should hear it. I ran with the Brotherhood until I saw what they do to their own, and the one thing they taught me worth keeping is how to fight quiet.$B$BTake the mark and you begin again, a novice at my fence. No more rage: you fight on Energy, and every cut you land sets up the one that finishes it.$B$BSay the word."
+progress = "Quietly, $N. Say the word, and take the mark."
+completion = "Done. Build your cuts, then finish them, Cutthroat. You start over; let your hands be quicker than your name."
+money = 0
+tokens = 0
+
+[[quest]]
+id = 64011
+kind = "advancement"
+giver = 190052
+level = 10
+zone_or_sort = -161
+advancement = { from = "basic_warrior", to = "initiate" }
+title = "The Initiate's Spark"
+objectives = "Speak with Elsa Brightwood in the Northshire Abbey garden to fan the spark."
+details = "Put the sword down a moment, $N. I have copied these old texts for weeks, and I know the look of someone the words are written for. There is more in you than a strong arm.$B$BThe Tower of Azora taught me the first lesson, and I will teach it to you. Accept it and you begin again, a novice of the circle. No more rage: you draw on mana, you strike from afar with fire and frost, then break what you have woven.$B$BSay the word."
+progress = "Say the word, $N, and let the spark catch."
+completion = "Then it is begun. Burn, chill, then shatter, Initiate. You start over; mind your mana as you once minded your blade."
+money = 0
+tokens = 0
+
+[[quest]]
+id = 64012
+kind = "advancement"
+giver = 190053
+level = 10
+zone_or_sort = -261
+advancement = { from = "basic_warrior", to = "ranger" }
+title = "The Ranger's Draw"
+objectives = "Speak with Thalyssa Windbough on the Northshire Abbey lawn to take up the bow."
+details = "You fight close enough to bleed, $N. I have watched you from the tree line. Darnassus sent me to learn why the wolves here run so thin, and what I have learned is that a good shot never lets the wolf near.$B$BAccept the bow and you begin again, a novice of the lodge. No more rage: you draw on mana, and every step you keep between you and the blade is yours.$B$BSay the word."
+progress = "Say the word, $N, and take up the bow."
+completion = "Good. Keep your distance, Ranger. You start over; let the wind tell you where to stand."
+money = 0
+tokens = 0
+# A bow and a quiver's worth of arrows, set as the ammo, as at the Crossroads (#157).
+rewards = [[2773, 1], [2512, 200]]
+
+[[quest]]
+id = 64013
+kind = "advancement"
+giver = 190054
+level = 10
+zone_or_sort = -262
+advancement = { from = "basic_warrior", to = "acolyte" }
+title = "The Acolyte's Vein"
+objectives = "Speak with Brother Corwin Ashgrave outside Echo Ridge Mine in Northshire to open the vein."
+details = "The brothers turned me out for asking how the dying cross over, $N, and I have asked it here, among the kobolds, ever since. You have bled for every fight and never once made the blood work for you.$B$BThe Acolyte spends their own life to rot a foe, and drinks the foe's to mend. It is not a gentle road. Accept it and you begin again, a novice of the order. No more rage: you draw on mana, and on your own veins when mana will not do.$B$BSay the word."
+progress = "Say the word, $N, and open the vein."
+completion = "It is open. Rot them, drink them, mend, Acolyte. You start over; your blood is a tool now, so spend it wisely."
+money = 0
+tokens = 0
+
 # ── The Wailing Caverns (Dungeon, levels 18-20) ─────────────────────────────────────────────────
 # The Disciples of Naralex on the skull above the Caverns' mouth (content/hub.toml) give the
 # Dungeon's Repeatable Quests, from level 16. Every target is in the run (content/wailing_caverns.toml):

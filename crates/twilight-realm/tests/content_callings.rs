@@ -977,7 +977,7 @@ fn advancement_quests() -> Vec<Quest> {
         .collect()
 }
 
-fn trainers() -> Vec<Npc> {
+fn trainers_on(map: u32) -> Vec<Npc> {
     #[derive(serde::Deserialize)]
     struct File {
         npc: Vec<Npc>,
@@ -986,8 +986,12 @@ fn trainers() -> Vec<Npc> {
         .expect("hub.toml parses")
         .npc
         .into_iter()
-        .filter(|n| n.role == "trainer" && n.map == kalimdor())
+        .filter(|n| n.role == "trainer" && n.map == map)
         .collect()
+}
+
+fn trainers() -> Vec<Npc> {
+    trainers_on(kalimdor())
 }
 
 /// The Tier 1 Calling an Advancement Quest's Calling `to` branches from: its Line.
@@ -1005,12 +1009,16 @@ fn line_of(quests: &[Quest], to: &str) -> String {
     }
 }
 
-/// Every Advancement Quest the reference names is in the content as it says, and the content has
-/// no other.
+/// Every Advancement Quest the reference names is in the content as it says, and the Crossroads
+/// has no other. Northshire's trainers' quests (#216) are checked against the Hub's own below.
 #[test]
 fn every_advancement_quest_matches_the_reference() {
     let reference = reference();
-    let quests = advancement_quests();
+    let crossroads: Vec<u32> = trainers().iter().map(|t| t.entry).collect();
+    let quests: Vec<Quest> = advancement_quests()
+        .into_iter()
+        .filter(|q| crossroads.contains(&q.giver))
+        .collect();
     let mut named = Vec::new();
     for (key, calling) in reference["callings"].as_object().unwrap() {
         let want = &calling["advancement_quest"];
@@ -1127,4 +1135,43 @@ fn each_tier_1_line_has_its_own_trainer() {
         ["acolyte", "cutthroat", "initiate", "ranger", "vanguard"],
         "one trainer for each Tier 1 Calling"
     );
+}
+
+/// Each Northshire trainer (#216) has one Advancement Quest, the Tier 1 quest of their Line as the
+/// Crossroads trainer gives it, in their own words and naming Northshire. There is no Tier 2 row.
+#[test]
+fn each_northshire_trainer_has_their_lines_tier_1_quest() {
+    let quests = advancement_quests();
+    let crossroads: Vec<u32> = trainers().iter().map(|t| t.entry).collect();
+    let northshire = trainers_on(0);
+    assert_eq!(northshire.len(), 5, "one trainer for each Tier 1 Calling");
+    for t in &northshire {
+        let mine: Vec<&Quest> = quests.iter().filter(|q| q.giver == t.entry).collect();
+        let [q] = mine[..] else {
+            panic!("{}: expected one quest, found {}", t.name, mine.len());
+        };
+        let adv = q.advancement.as_ref().unwrap();
+        assert_eq!(adv.from, "basic_warrior", "{}: a Tier 1 quest", t.name);
+        assert_ne!(adv.completable, Some(false), "{}", t.name);
+        let hub = quests
+            .iter()
+            .find(|h| {
+                crossroads.contains(&h.giver)
+                    && h.advancement.as_ref().is_some_and(|a| a.to == adv.to)
+            })
+            .unwrap_or_else(|| panic!("{}: the Crossroads has no quest into {}", t.name, adv.to));
+        assert_eq!(
+            (q.level, q.zone_or_sort),
+            (hub.level, hub.zone_or_sort),
+            "{}",
+            t.name
+        );
+        assert_ne!(q.id, hub.id, "{}: a row of its own", t.name);
+        assert_ne!(
+            q.details, hub.details,
+            "{}: the trainer's own voice",
+            t.name
+        );
+        assert!(q.objectives.contains("Northshire"), "{}", t.name);
+    }
 }

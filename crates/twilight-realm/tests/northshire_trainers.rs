@@ -3,9 +3,12 @@
 //! the reverse. Sergeant Hale sells the respec.
 
 mod common;
+mod gear_common;
+mod quest_common;
 
 use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
 use common::*;
+use quest_common::{accept, completed, hand_in, on_offer};
 
 const HALE: u32 = 190050;
 const NORTHSHIRE_TRAINERS: [u32; 5] = [190050, 190051, 190052, 190053, 190054];
@@ -139,6 +142,49 @@ fn hales_unlearn_line_opens_the_talent_wipe_confirm() {
         )),
         "{events:?}"
     );
+}
+
+/// Each trainer, their quest (#216) and the Calling it makes.
+const TIER_1_QUESTS: [(u32, u32, &str); 5] = [
+    (190050, 64009, "vanguard"),
+    (190051, 64010, "cutthroat"),
+    (190052, 64011, "initiate"),
+    (190053, 64012, "ranger"),
+    (190054, 64013, "acolyte"),
+];
+
+#[test]
+fn a_basic_warrior_at_the_cap_advances_at_each_northshire_trainer() {
+    for (entry, quest, calling) in TIER_1_QUESTS {
+        let (mut realm, _, _) = enter(START_ELWYNN, true);
+        walk_to(&mut realm, entry);
+        let npc = hub_guid(entry);
+        assert_eq!(on_offer(&mut realm, npc), [quest], "{entry} offers {quest}");
+        accept(&mut realm, npc, quest);
+        let done = hand_in(&mut realm, npc, quest);
+        assert!(completed(&done).is_some(), "{quest} completes at {entry}");
+        assert_eq!(realm.current_calling().unwrap().key, calling, "{entry}");
+    }
+}
+
+#[test]
+fn a_northshire_trainer_offers_nothing_below_the_cap_and_only_its_own_line() {
+    let (mut realm, _, _) = enter(START_ELWYNN, false);
+    for (entry, _, _) in TIER_1_QUESTS {
+        walk_to(&mut realm, entry);
+        assert!(on_offer(&mut realm, hub_guid(entry)).is_empty(), "{entry}");
+    }
+}
+
+#[test]
+fn the_hubs_advancement_quest_still_works_for_a_kalimdor_character() {
+    let (mut realm, _, _) = enter(0, true);
+    walk_to(&mut realm, 5810);
+    let uzzek = hub_guid(5810);
+    assert_eq!(on_offer(&mut realm, uzzek), [64001]);
+    accept(&mut realm, uzzek, 64001);
+    assert!(completed(&hand_in(&mut realm, uzzek, 64001)).is_some());
+    assert_eq!(realm.current_calling().unwrap().key, "vanguard");
 }
 
 #[test]
