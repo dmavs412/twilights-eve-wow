@@ -120,6 +120,7 @@ fn feed_spellbook(
     actions: Res<PlayerActions>,
     spells: Option<Res<Spells>>,
     skill_lines: Option<Res<SkillLines>>,
+    talents: Option<Res<crate::ui_talent::Talents>>,
     mut inv: crate::items::Inventory,
     items: Res<Items>,
     icons: Option<Res<ItemDisplays>>,
@@ -147,6 +148,7 @@ fn feed_spellbook(
     let actions_changed = actions.is_changed();
     let spells_changed = spells.as_ref().is_some_and(|r| r.is_changed());
     let lines_changed = skill_lines.as_ref().is_some_and(|r| r.is_changed());
+    let talents_changed = talents.as_ref().is_some_and(|r| r.is_changed());
     // `is_added`: only the load-once icon column is read; the model cache churns every frame.
     let icons_added = icons.as_ref().is_some_and(|r| r.is_added());
     gate::trace(
@@ -162,6 +164,7 @@ fn feed_spellbook(
             ("actions", actions_changed),
             ("spells", spells_changed),
             ("skill_lines", lines_changed),
+            ("talents", talents_changed),
             ("icons", icons_added),
             // A queued learn never waits behind a skipped frame.
             ("learned", !learned.0.is_empty()),
@@ -178,6 +181,7 @@ fn feed_spellbook(
             || actions_changed
             || spells_changed
             || lines_changed
+            || talents_changed
             || icons_added
             || !learned.0.is_empty(),
     );
@@ -209,8 +213,16 @@ fn feed_spellbook(
     // Auto Shot and wand Shoot show the ranged weapon; without one, their own icon.
     let ranged_icon = store
         .and_then(|s| ranged_weapon_icon(s, &inv.objects, &items, icons.as_deref(), &commands));
-    let (mut fresh, tab_lines) = build_book_for(
+    // The realm keeps sending every rank spell, as the talent pane reads its ranks from them; a
+    // passive talent's never reaches the book.
+    let known = without_passive_talents(
         &actions.spells,
+        talents.as_deref().map(|t| &t.catalog),
+        race,
+        class,
+    );
+    let (mut fresh, tab_lines) = build_book_for(
+        &known,
         &spells.catalog,
         skill_lines.as_deref().map(|s| &s.catalog),
         race,
@@ -279,6 +291,27 @@ fn feed_spellbook(
         race,
         class,
     );
+}
+
+/// `known` less the rank spells of the class's passive talents. Only an exceptional talent (an
+/// activatable ability) is booked; with no talent catalog, nothing is dropped.
+fn without_passive_talents(
+    known: &BTreeSet<u32>,
+    talents: Option<&benilla_formats::TalentCatalog>,
+    race: u8,
+    class: u8,
+) -> BTreeSet<u32> {
+    let Some(talents) = talents else {
+        return known.clone();
+    };
+    let passive: BTreeSet<u32> = talents
+        .tabs_for_class(race, class)
+        .into_iter()
+        .flat_map(|tab| talents.talents_in_tab(tab.id))
+        .filter(|t| !t.exceptional)
+        .flat_map(|t| t.ranks.iter().copied().filter(|&s| s != 0))
+        .collect();
+    known.difference(&passive).copied().collect()
 }
 
 /// Fire `LEARNED_SPELL_IN_TAB` with the 1-based index of each learned spell's tab in the strip
@@ -576,6 +609,63 @@ mod tests {
         assert_eq!(bare.tabs.len(), 1);
     }
     use std::collections::HashMap;
+
+    #[test]
+    fn a_passive_talents_rank_spells_stay_out_of_the_book() {
+        let talent = |id, ranks: [u32; 5], exceptional| benilla_formats::Talent {
+            id,
+            tab: 1,
+            row: 0,
+            col: 0,
+            ranks,
+            prereq_talent: 0,
+            prereq_rank: 0,
+            required_spell: 0,
+            exceptional,
+        };
+        let tab = benilla_formats::TalentTabInfo {
+            id: 1,
+            name: "Blood".into(),
+            race_mask: 511,
+            class_mask: 1,
+            background: String::new(),
+        };
+        let talents = benilla_formats::TalentCatalog::from_parts(
+            vec![tab],
+            vec![
+                talent(10, [1_000_101, 1_000_102, 1_000_103, 0, 0], false),
+                talent(11, [1_000_201, 0, 0, 0, 0], true),
+            ],
+        );
+        let known: BTreeSet<u32> = [1_000_101, 1_000_102, 1_000_103, 1_000_201, 6603]
+            .into_iter()
+            .collect();
+        let shown = without_passive_talents(&known, Some(&talents), 1, 1);
+        assert_eq!(shown, [6603, 1_000_201].into_iter().collect());
+        // A fourth rank learned in play adds nothing to the book.
+        let mut later = known.clone();
+        later.insert(1_000_104);
+        let talents = benilla_formats::TalentCatalog::from_parts(
+            vec![benilla_formats::TalentTabInfo {
+                id: 1,
+                name: "Blood".into(),
+                race_mask: 511,
+                class_mask: 1,
+                background: String::new(),
+            }],
+            vec![talent(
+                10,
+                [1_000_101, 1_000_102, 1_000_103, 1_000_104, 0],
+                false,
+            )],
+        );
+        assert_eq!(
+            without_passive_talents(&later, Some(&talents), 1, 1),
+            [6603, 1_000_201].into_iter().collect()
+        );
+        // With no catalog nothing is dropped.
+        assert_eq!(without_passive_talents(&known, None, 1, 1), known);
+    }
 
     #[test]
     fn leading_number_scans_the_first_digit_run() {
