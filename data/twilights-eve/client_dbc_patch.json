@@ -11821,6 +11821,82 @@
     "range_index": 14,
     "cast_time_index": 7
    }
+  },
+  {
+   "spell_id": 1900016,
+   "creature": "test_nova",
+   "fields": {
+    "name": "Shadow Nova",
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowBolt",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 64,
+    "speed": 20.0,
+    "range_index": 14,
+    "cast_time_index": 4
+   }
+  },
+  {
+   "spell_id": 1900017,
+   "creature": "test_fear",
+   "fields": {
+    "name": "Terrify",
+    "icon": "Interface\\Icons\\Spell_Shadow_PsychicScream",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 7
+     }
+    ],
+    "aura_description": "Running in fear.",
+    "visual": 107,
+    "range_index": 14,
+    "cast_time_index": 4,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1900018,
+   "creature": "test_snare_random",
+   "fields": {
+    "name": "Creeping Dread",
+    "icon": "Interface\\Icons\\Spell_Frost_FrostNova",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": -50,
+      "per_level": 0,
+      "aura": 33
+     }
+    ],
+    "aura_description": "Movement speed reduced by $s1%.",
+    "visual": 3057,
+    "range_index": 7,
+    "cast_time_index": 4,
+    "duration_index": 39
+   }
   }
  ],
  "talent_tabs": [

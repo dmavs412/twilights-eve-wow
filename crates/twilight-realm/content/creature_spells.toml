@@ -22,12 +22,19 @@
 # first_cast_ms    optional: not cast until this long after the creature enters combat
 # warning          optional: sent as a raid warning to every character in the caster's Phase
 #                  when the cast starts
+# target           optional: "current" (the default, the character the creature fights) or
+#                  "random" (a random living character in the caster's Phase within range_max;
+#                  the creature keeps fighting the same character)
 # effect           periodic_damage (a curse on the player, in the skills' own terms),
 #                  heal { pct_max_health } (the caster, no range or line of sight to check),
-#                  snare { pct, duration_ms } (the player runs pct percent slower), or
+#                  snare { pct, duration_ms } (the player runs pct percent slower),
 #                  gaze { damage, radius } (when the cast lands, flat damage of the school to
 #                  every character in the Phase within radius yards, except those behind a
-#                  [[cover]] pillar of the dungeon file)
+#                  [[cover]] pillar of the dungeon file),
+#                  nova { damage, radius } (a gaze that cover does not stop, centred on the
+#                  caster), or
+#                  fear { duration_ms } (the target flees from the caster for duration_ms, cannot
+#                  act, and gets control back; damage does not break it)
 
 # Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
 [[spell]]
@@ -280,3 +287,52 @@ range_max = 60.0
 chance = 100
 warning = "The Eye Below turns its gaze upon you! Hide!"
 effect = { kind = "gaze", damage = 500, radius = 60.0 }
+
+# A nova (#239), for the Gaze Hall's test creature until a boss takes the effect. Looks like Shadow
+# Bolt rank 1. Placeholders: 30 shadow damage to every character within 10 yd of the caster after
+# a 1 s cast, then every 8 s.
+[[spell]]
+key = "test_nova"
+spell_id = 1900016
+name = "Shadow Nova"
+icon = 'Interface\Icons\Spell_Shadow_ShadowBolt'
+visual = 686
+school = "shadow"
+cast_time_ms = 1000
+cooldown_ms = 8000
+range_max = 60.0
+chance = 100
+effect = { kind = "nova", damage = 30, radius = 10.0 }
+
+# A fear (#239), for the Gaze Hall's test creature. Looks like Psychic Scream (visual 3046).
+# Placeholders: the target flees for 6 s after a 1 s cast, then every 20 s.
+[[spell]]
+key = "test_fear"
+spell_id = 1900017
+name = "Terrify"
+icon = 'Interface\Icons\Spell_Shadow_PsychicScream'
+visual = 3046
+aura_description = "Running in fear."
+school = "shadow"
+cast_time_ms = 1000
+cooldown_ms = 20000
+range_max = 60.0
+chance = 100
+effect = { kind = "fear", duration_ms = 6000 }
+
+# A snare on a random character within 10 yd of the caster (#239), for the tests of the `target`
+# field. Looks like Frost Nova's chill (visual 8092 stands in).
+[[spell]]
+key = "test_snare_random"
+spell_id = 1900018
+name = "Creeping Dread"
+icon = 'Interface\Icons\Spell_Frost_FrostNova'
+visual = 8092
+aura_description = "Movement speed reduced by $s1%."
+school = "shadow"
+cast_time_ms = 1000
+cooldown_ms = 3000
+range_max = 10.0
+chance = 100
+target = "random"
+effect = { kind = "snare", pct = 50, duration_ms = 2000 }

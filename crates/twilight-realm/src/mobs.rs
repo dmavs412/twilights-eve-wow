@@ -678,6 +678,8 @@ pub(crate) struct Mob {
     pub(crate) spell_cooldowns: Vec<(&'static str, f32)>,
     /// Seconds it has been in combat; 0 out of it.
     pub(crate) engaged_secs: f32,
+    /// The character of another session its cast under way goes on; none for the one it fights.
+    pub(crate) cast_at: Option<u64>,
     /// Seconds until it next decides whether to cast.
     pub(crate) think_in: f32,
     /// Which of its spawn's calls for help it has made, this life.
@@ -790,6 +792,7 @@ impl Mob {
             casting: None,
             spell_cooldowns: Vec::new(),
             engaged_secs: 0.0,
+            cast_at: None,
             think_in: 0.0,
             called: vec![false; spawn.on_health.len()],
             asleep: spawn.asleep,
@@ -845,6 +848,7 @@ impl Mob {
             casting: None,
             spell_cooldowns: Vec::new(),
             engaged_secs: 0.0,
+            cast_at: None,
             think_in: 0.0,
             called: Vec::new(),
             asleep: false,

@@ -32,6 +32,7 @@ use power::Power;
 mod death;
 mod discovery;
 mod dungeon;
+mod fear;
 mod food;
 mod notoriety;
 mod phase;
@@ -144,6 +145,18 @@ pub(crate) struct Gaze {
     pub(crate) radius: f32,
     pub(crate) damage: u32,
     pub(crate) school: crate::rules::school::School,
+    /// A nova: cover does not stop it.
+    pub(crate) through_cover: bool,
+}
+
+/// A Creature Spell cast at a character of another session: the realm lands it there.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Foreign {
+    pub(crate) target: u64,
+    pub(crate) caster: u64,
+    pub(crate) level: u8,
+    pub(crate) from: [f32; 3],
+    pub(crate) spell: &'static crate::creature_spells::CreatureSpell,
 }
 
 #[derive(Default)]
@@ -277,6 +290,13 @@ pub(crate) struct InWorld {
     gazes: Vec<Gaze>,
     /// Raid warnings of casts that began here this tick, for the realm to send to the Phase.
     warnings: Vec<String>,
+    /// Creature Spells cast here at characters of other sessions, for the realm to land.
+    foreign: Vec<Foreign>,
+    /// The other living characters in this player's Phase and where they stand, as of this tick:
+    /// whom a Creature Spell with a random target may pick.
+    pub(crate) phase_mates: Vec<(u64, [f32; 3])>,
+    /// The fear the player runs under.
+    fear: Option<fear::Fear>,
     /// What each creature casts.
     pub(crate) casters: crate::creature_spells::Casters,
     /// The Heat Level whose aura the player wears; 0 for none.
@@ -393,6 +413,9 @@ impl InWorld {
             hiding: None,
             gazes: Vec::new(),
             warnings: Vec::new(),
+            foreign: Vec::new(),
+            phase_mates: Vec::new(),
+            fear: None,
             casters: Default::default(),
             heat_shown: 0,
             hunter_in: None,
@@ -459,6 +482,12 @@ impl InWorld {
             return;
         };
         if !self.player.alive() {
+            return;
+        }
+        if self.fear.is_some() {
+            events.push(SessionEvent::AttackSwingError(
+                AttackSwingError::DeadOrUnattackable,
+            ));
             return;
         }
         if let Some(old) = self.player.attacking.replace(target) {
@@ -641,6 +670,7 @@ impl InWorld {
         }
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
         self.movement_tick(dt, c, rng, events, &mut ticked);
+        self.fear_tick(dt, host, c, rng, events);
         // A next-cast buff that ran out puts the client's cast bar back.
         self.sync_next_cast_mods(c, events);
         self.call_for_help(events);
@@ -718,7 +748,7 @@ impl InWorld {
         let Some(target) = p.attacking else {
             return;
         };
-        if !p.alive() {
+        if !p.alive() || self.fear.is_some() {
             return;
         }
         // The off hand swings on its own timer, at the main hand's target and under its reach and
@@ -1091,11 +1121,19 @@ impl InWorld {
 
     /// The gazes that went off here since the realm last asked, and the raid warnings of the
     /// casts that began.
-    pub(crate) fn take_gazes(&mut self) -> (Vec<Gaze>, Vec<String>) {
+    pub(crate) fn take_gazes(&mut self) -> (Vec<Gaze>, Vec<String>, Vec<Foreign>) {
         (
             std::mem::take(&mut self.gazes),
             std::mem::take(&mut self.warnings),
+            std::mem::take(&mut self.foreign),
         )
+    }
+
+    /// A Creature Spell from another session's creature lands on the player.
+    pub(crate) fn spell_from_afar(&mut self, cast: &Foreign, events: &mut Vec<SessionEvent>) {
+        if self.player.alive() {
+            self.creature_spell_lands(cast.caster, cast.level, cast.from, cast.spell, events);
+        }
     }
 
     /// A gaze from the Phase lands on the player standing at `at`: `damage` unless they are
@@ -1110,7 +1148,8 @@ impl InWorld {
         let Some(at) = at.filter(|_| self.player.alive()) else {
             return;
         };
-        if distance(gaze.at, at) > gaze.radius || crate::phased::covered(cover, gaze.at, at) {
+        let shielded = !gaze.through_cover && crate::phased::covered(cover, gaze.at, at);
+        if distance(gaze.at, at) > gaze.radius || shielded {
             return;
         }
         events.push(SessionEvent::SpellDamageLog(
@@ -1453,9 +1492,13 @@ impl InWorld {
         let in_combat = p.alive() && (attacking || attacked || self.skills.holds_combat());
         if in_combat != p.in_combat {
             p.in_combat = in_combat;
-            let combat = if in_combat { UNIT_FLAG_IN_COMBAT } else { 0 };
-            let flags = UNIT_FLAG_PVP_ATTACKABLE | combat;
-            events.push(values(self.guid, &[(UNIT_FIELD_FLAGS, flags)]));
+            events.push(values(
+                self.guid,
+                &[(
+                    UNIT_FIELD_FLAGS,
+                    fear::unit_flags(in_combat, self.fear.is_some()),
+                )],
+            ));
         }
         if p.power.regenerate(dt, in_combat, p.stats.mana_regen) {
             events.push(values(self.guid, &[p.power.field()]));
@@ -1566,6 +1609,7 @@ fn drop_cast(
     events: &mut Vec<SessionEvent>,
 ) -> Option<&'static crate::creature_spells::CreatureSpell> {
     let (spell, _) = mob.casting.take()?;
+    mob.cast_at = None;
     events.push(SessionEvent::SpellFailedOther {
         caster: mob.guid,
         spell_id: spell.spell_id,

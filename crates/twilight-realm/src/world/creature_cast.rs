@@ -6,10 +6,10 @@
 use benilla_protocol::messages::SpellHealLog;
 use benilla_protocol::SessionEvent;
 
-use super::{cast, eye, in_front, melee_reach, Gaze, InWorld};
+use super::{cast, eye, in_front, melee_reach, Foreign, Gaze, InWorld};
 use crate::clock;
 use crate::combat;
-use crate::creature_spells::{charge_dest, CreatureEffect};
+use crate::creature_spells::{charge_dest, CreatureEffect, SpellTarget};
 use crate::fields::{values, UNIT_FIELD_HEALTH};
 use crate::mobs::State;
 use crate::rng::Rng;
@@ -48,6 +48,7 @@ impl InWorld {
             .map(|m| m.position)
             .collect();
         let (map, player, player_alive) = (self.map, self.guid, self.player.alive());
+        let mates = self.phase_mates.clone();
         let mob = &mut self.mobs[i];
         for (_, left) in &mut mob.spell_cooldowns {
             *left -= dt;
@@ -57,7 +58,17 @@ impl InWorld {
         if let Some((spell, left)) = &mut mob.casting {
             let spell = *spell;
             let self_cast = matches!(spell.effect, CreatureEffect::Heal { .. });
-            if !player_alive || (!self_cast && distance(mob.position, me) > spell.range_max) {
+            let lost = match mob.cast_at {
+                // A character of another session: still in the Phase, alive and in range?
+                Some(guid) => mates
+                    .iter()
+                    .find(|(g, _)| *g == guid)
+                    .is_none_or(|(_, at)| distance(mob.position, *at) > spell.range_max),
+                None => {
+                    !player_alive || (!self_cast && distance(mob.position, me) > spell.range_max)
+                }
+            };
+            if lost {
                 super::drop_cast(mob, events);
                 return false;
             }
@@ -69,7 +80,12 @@ impl InWorld {
             mob.spell_cooldowns
                 .push((spell.key.as_str(), clock::secs(spell.cooldown_ms)));
             let (guid, level) = (mob.guid, mob.level());
-            let target = if self_cast { guid } else { player };
+            let victim = mob.cast_at.take();
+            let target = if self_cast {
+                guid
+            } else {
+                victim.unwrap_or(player)
+            };
             events.push(SessionEvent::SpellGo {
                 caster: guid,
                 spell_id: spell.spell_id,
@@ -109,9 +125,29 @@ impl InWorld {
                     radius,
                     damage,
                     school: spell.school,
+                    through_cover: false,
+                });
+            } else if let CreatureEffect::Nova { damage, radius } = spell.effect {
+                self.gazes.push(Gaze {
+                    caster: guid,
+                    spell_id: spell.spell_id,
+                    at: mob.position,
+                    radius,
+                    damage,
+                    school: spell.school,
+                    through_cover: true,
+                });
+            } else if let Some(target) = victim {
+                self.foreign.push(Foreign {
+                    target,
+                    caster: guid,
+                    level,
+                    from: mob.position,
+                    spell,
                 });
             } else {
-                self.creature_spell_lands(guid, level, spell, events);
+                let from = mob.position;
+                self.creature_spell_lands(guid, level, from, spell, events);
             }
             return true;
         }
@@ -124,7 +160,12 @@ impl InWorld {
         let d = distance(mob.position, me);
         let (health, max_health) = (mob.health, mob.stats.max_health);
         let ready = spells.into_iter().find(|s| {
-            let in_reach = matches!(s.effect, CreatureEffect::Heal { .. }) || d <= s.range_max;
+            let in_reach = matches!(s.effect, CreatureEffect::Heal { .. })
+                || d <= s.range_max
+                || (s.target == SpellTarget::Random
+                    && mates
+                        .iter()
+                        .any(|(_, at)| distance(mob.position, *at) <= s.range_max));
             let hurt = s
                 .below_health_pct
                 .is_none_or(|pct| health * 100 < max_health * pct);
@@ -145,10 +186,27 @@ impl InWorld {
             return false;
         };
         let self_cast = matches!(spell.effect, CreatureEffect::Heal { .. });
+        let random = spell.target == SpellTarget::Random;
         if rng.below(100) >= spell.chance
-            || (!self_cast && !host.line_of_sight(map, eye(mob.position), eye(me)))
+            || (!self_cast && !random && !host.line_of_sight(map, eye(mob.position), eye(me)))
         {
             return false;
+        }
+        // A random target: any living character in the Phase within range, the fighter included.
+        // The creature keeps fighting the same character.
+        let (mut chosen, mut aim) = (player, me);
+        mob.cast_at = None;
+        if random && !self_cast {
+            let mut pool: Vec<(u64, [f32; 3])> = mates
+                .iter()
+                .filter(|(_, at)| distance(mob.position, *at) <= spell.range_max)
+                .copied()
+                .collect();
+            if distance(mob.position, me) <= spell.range_max {
+                pool.push((player, me));
+            }
+            (chosen, aim) = pool[rng.below(pool.len() as u32) as usize];
+            mob.cast_at = (chosen != player).then_some(chosen);
         }
         // It stands where it is for the cast, facing its target.
         if mob.walk.is_some() {
@@ -156,8 +214,8 @@ impl InWorld {
             events.push(stop);
             mob.walk = None;
         }
-        mob.orientation = (me[1] - mob.position[1])
-            .atan2(me[0] - mob.position[0])
+        mob.orientation = (aim[1] - mob.position[1])
+            .atan2(aim[0] - mob.position[0])
             .rem_euclid(std::f32::consts::TAU);
         mob.casting = Some((spell, clock::secs(spell.cast_time_ms)));
         if let Some(text) = &spell.warning {
@@ -168,7 +226,7 @@ impl InWorld {
             spell_id: spell.spell_id,
             cast_flags: 0,
             cast_time_ms: spell.cast_time_ms,
-            target: Some(if self_cast { mob.guid } else { player }),
+            target: Some(if self_cast { mob.guid } else { chosen }),
             ammo_display_id: None,
         });
         true

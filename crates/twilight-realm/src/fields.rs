@@ -71,6 +71,8 @@ pub(crate) const UNIT_FLAG_IN_COMBAT: u32 = 0x0008_0000;
 /// `UNIT_FLAG_PVP_ATTACKABLE`: player-controlled. Every player carries it; without it the
 /// client's `CanAttack` lets the player attack hostile mobs only, never neutral ones.
 pub(crate) const UNIT_FLAG_PVP_ATTACKABLE: u32 = 0x8;
+/// `UNIT_FLAG_FLEEING`: the server drives the unit's movement.
+pub(crate) const UNIT_FLAG_FLEEING: u32 = 0x0080_0000;
 
 /// The two dwords of a guid field.
 pub(crate) fn guid_pairs(field: u16, guid: u64) -> [(u16, u32); 2] {

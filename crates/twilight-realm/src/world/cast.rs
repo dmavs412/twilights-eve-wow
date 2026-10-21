@@ -64,6 +64,7 @@ const SPELL_FAILED_BAD_TARGETS: u8 = 0x0a;
 const SPELL_FAILED_CASTER_AURASTATE: u8 = 0x12;
 const SPELL_FAILED_CASTER_DEAD: u8 = 0x13;
 const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
+const SPELL_FAILED_FLEEING: u8 = 0x1e;
 /// No arrows or bullets for the ranged weapon (#157).
 const SPELL_FAILED_NO_AMMO: u8 = 0x43;
 const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
@@ -314,6 +315,9 @@ enum AuraKind {
         pct: u32,
     },
     Stun,
+    /// The player flees a creature's fear (`fear.rs` moves them); this is the debuff the client
+    /// shows. Damage does not break it.
+    Fear,
     /// The unit cannot move; it still attacks and casts, and damage does not break it.
     Root,
     /// A stun that damage ends when `break_on_damage` (Gouge).
@@ -1113,7 +1117,7 @@ impl Skills {
     }
 
     /// What `unit`'s run speed is multiplied by: its strongest snare only, and every sprint.
-    fn speed_mul(&self, unit: u64) -> f32 {
+    pub(super) fn speed_mul(&self, unit: u64) -> f32 {
         let snare = self
             .auras
             .iter()
@@ -1636,6 +1640,10 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) -> Ticked {
         let ticked = Ticked::default();
+        if self.fear.is_some() {
+            events.push(refused(spell_id, SPELL_FAILED_FLEEING));
+            return ticked;
+        }
         // Casting ends a hide.
         self.hiding = None;
         let Some(skill) = crate::talents::skill(c, spell_id) else {
@@ -1822,7 +1830,7 @@ impl InWorld {
             self.stop_shooting(events);
             return;
         };
-        if self.player.shot_timer > 0.0 || self.skills.casting.is_some() {
+        if self.player.shot_timer > 0.0 || self.skills.casting.is_some() || self.fear.is_some() {
             return;
         }
         if self.moving() && skill.meta.shape.interrupt_on.iter().any(|i| i == "move") {
@@ -4841,11 +4849,28 @@ impl InWorld {
         &mut self,
         caster: u64,
         level: u8,
+        from: [f32; 3],
         spell: &crate::creature_spells::CreatureSpell,
         events: &mut Vec<SessionEvent>,
     ) {
         // A heal lands on its caster in `mob_cast`, which holds the mob.
         use crate::creature_spells::CreatureEffect;
+        if let CreatureEffect::Fear { duration_ms } = spell.effect {
+            let aura = Aura {
+                unit: self.guid,
+                spell_id: spell.spell_id,
+                slot: 0,
+                level,
+                left: clock::secs(duration_ms),
+                period: 0.0,
+                next_tick: 0.0,
+                kind: AuraKind::Fear,
+                charges: 0,
+            };
+            self.skills.apply(aura, events);
+            self.start_fear(from, duration_ms, events);
+            return;
+        }
         if let CreatureEffect::Snare { pct, duration_ms } = spell.effect {
             let aura = Aura {
                 unit: self.guid,

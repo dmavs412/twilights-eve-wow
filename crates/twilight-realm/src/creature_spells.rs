@@ -30,6 +30,22 @@ pub(crate) enum CreatureEffect {
     /// When the cast lands, every character in the caster's Phase within `radius` yards takes
     /// `damage` of the spell's school, unless a cover pillar stands in the line to the caster.
     Gaze { damage: u32, radius: f32 },
+    /// When the cast lands, every character in the caster's Phase within `radius` yards of the
+    /// caster takes `damage` of the spell's school, cover or not.
+    Nova { damage: u32, radius: f32 },
+    /// The target flees from the caster for `duration_ms` and then gets control back.
+    Fear { duration_ms: u32 },
+}
+
+/// Whom a Creature Spell is cast at.
+#[derive(Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum SpellTarget {
+    /// The character the creature fights.
+    #[default]
+    Current,
+    /// A random living character in the caster's Phase within `range_max`.
+    Random,
 }
 
 /// One Creature Spell.
@@ -64,6 +80,9 @@ pub(crate) struct CreatureSpell {
     /// Sent as a raid warning to every character in the caster's Phase when the cast starts.
     #[serde(default)]
     pub(crate) warning: Option<String>,
+    /// Whom the cast goes on; the creature keeps fighting the same character either way.
+    #[serde(default)]
+    pub(crate) target: SpellTarget,
     pub(crate) effect: CreatureEffect,
 }
 

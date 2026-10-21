@@ -106,6 +106,10 @@ impl InWorld {
         if self.teleports.pending || self.transferring() {
             return false;
         }
+        // The client has no control while feared; the realm moves the player.
+        if self.fear.is_some() {
+            return false;
+        }
         if crate::space::distance(from, to) > MOVE_EPSILON {
             self.interrupt_cast(events);
             self.stepped(events);

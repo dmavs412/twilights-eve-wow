@@ -964,14 +964,14 @@ impl Realm {
             .chain(self.parked.values_mut().map(|s| &mut s.world))
             .flatten();
         for w in worlds {
-            let (gazes, warnings) = w.take_gazes();
-            if let (Some(place), false) = (w.shard_place(), gazes.is_empty() && warnings.is_empty())
-            {
-                cast.push((place, gazes, warnings));
+            let (gazes, warnings, foreign) = w.take_gazes();
+            let nothing = gazes.is_empty() && warnings.is_empty() && foreign.is_empty();
+            if let (Some(place), false) = (w.shard_place(), nothing) {
+                cast.push((place, gazes, warnings, foreign));
             }
         }
         let characters = &self.characters;
-        for (place, gazes, warnings) in cast {
+        for (place, gazes, warnings, foreign) in cast {
             let cover = match place.phase {
                 phased::Phase::Dungeon(id) => phased::dungeon(id).map_or(&[][..], |d| &d.cover[..]),
                 phased::Phase::OpenWorld => &[][..],
@@ -1003,7 +1003,36 @@ impl Realm {
                 for gaze in &gazes {
                     w.gazed(gaze, at, cover, events);
                 }
+                let me = w.guid;
+                for cast in foreign.iter().filter(|f| f.target == me) {
+                    w.spell_from_afar(cast, events);
+                }
             }
+        }
+    }
+
+    /// Tells each session who else stands in its player's Phase and where, so a creature's spell
+    /// with a random target can pick among them.
+    fn refresh_phase_mates(&mut self) {
+        let worlds = std::iter::once(&self.world)
+            .chain(self.parked.values().map(|s| &s.world))
+            .flatten();
+        let mut standing = Vec::new();
+        for w in worlds.filter(|w| w.alive()) {
+            if let (Some(place), Some(c)) = (w.shard_place(), self.characters.get(w.guid)) {
+                standing.push((place, w.guid, c.position));
+            }
+        }
+        let worlds = std::iter::once(&mut self.world)
+            .chain(self.parked.values_mut().map(|s| &mut s.world))
+            .flatten();
+        for w in worlds {
+            let mine = w.shard_place();
+            w.phase_mates = standing
+                .iter()
+                .filter(|(place, guid, _)| Some(*place) == mine && *guid != w.guid)
+                .map(|&(_, guid, at)| (guid, at))
+                .collect();
         }
     }
 
@@ -1373,6 +1402,7 @@ impl Realm {
             }
         }
         self.tick_shards(dt, host);
+        self.refresh_phase_mates();
         for id in ids {
             self.serve(id);
             self.tick_served(dt, host);
