@@ -110,7 +110,12 @@ impl InWorld {
         if self.fear.is_some() {
             return false;
         }
-        if crate::space::distance(from, to) > MOVE_EPSILON {
+        let stepped = crate::space::distance(from, to) > MOVE_EPSILON;
+        // A rooted client sends turns but no steps.
+        if stepped && self.is_rooted() {
+            return false;
+        }
+        if stepped {
             self.interrupt_cast(events);
             self.stepped(events);
         }

@@ -1027,7 +1027,17 @@ impl Skills {
         school: School,
         events: &mut Vec<SessionEvent>,
     ) -> u32 {
-        let me = self.me;
+        self.absorb_on(self.me, damage, school, events)
+    }
+
+    /// `damage` coming at `unit`, less what its shields soak; a spent shield breaks.
+    pub(super) fn absorb_on(
+        &mut self,
+        me: u64,
+        damage: u32,
+        school: School,
+        events: &mut Vec<SessionEvent>,
+    ) -> u32 {
         let mut left = damage;
         for a in &mut self.auras {
             if let AuraKind::Absorb {
@@ -4309,6 +4319,12 @@ impl InWorld {
             return;
         };
         let mob = &mut self.mobs[i];
+        let damage = self.skills.absorb_on(
+            mob.guid,
+            damage,
+            crate::rules::school::School::Physical,
+            events,
+        );
         super::wound(
             mob,
             damage,
@@ -4917,6 +4933,54 @@ impl InWorld {
         self.skills.apply(aura, events);
     }
 
+    /// The debuff a creature's root puts on the player, under the spell's client row.
+    pub(super) fn show_root(
+        &mut self,
+        spell_id: u32,
+        duration_ms: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let aura = Aura {
+            unit: self.guid,
+            spell_id,
+            slot: 0,
+            level: self.player.stats.level,
+            left: clock::secs(duration_ms),
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Root,
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
+    }
+
+    /// The shield of a creature's absorb spell goes up on `mob`, under the spell's client row.
+    pub(super) fn mob_shield(
+        &mut self,
+        mob: u64,
+        level: u8,
+        spell_id: u32,
+        amount: u32,
+        duration_ms: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let aura = Aura {
+            unit: mob,
+            spell_id,
+            slot: 0,
+            level,
+            left: clock::secs(duration_ms),
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Absorb {
+                left: amount,
+                school: None,
+            },
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
+    }
+
     /// Puts the buff `def` on the player, one aura per effect.
     pub(super) fn grant_aura(
         &mut self,
@@ -5376,6 +5440,39 @@ mod tests {
         );
         assert!(!skills.on(1, 12577), "spent, it breaks");
         assert_eq!(skills.absorb(30, School::Physical, &mut events), 30);
+    }
+
+    /// A creature's shield soaks what hits that creature, and the player's shields stay theirs.
+    #[test]
+    fn a_creatures_shield_soaks_blows_at_it_and_lets_the_overflow_through() {
+        // A creature's guid, not a player's (`HIGHGUID_PLAYER` is 0).
+        const MOB: u64 = 0xF130 << 48 | 99;
+        let mut skills = Skills::new(1);
+        let mut events = Vec::new();
+        let shield = Aura {
+            unit: MOB,
+            spell_id: 1900021,
+            slot: 0,
+            level: 10,
+            left: 10.0,
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Absorb {
+                left: 50,
+                school: None,
+            },
+            charges: 0,
+        };
+        skills.apply(shield, &mut events);
+        assert_eq!(skills.absorb(30, School::Physical, &mut events), 30);
+        assert_eq!(skills.absorb_on(MOB, 30, School::Physical, &mut events), 0);
+        assert_eq!(
+            skills.absorb_on(MOB, 30, School::Fire, &mut events),
+            10,
+            "20 left to soak"
+        );
+        assert!(!skills.on(MOB, 1900021), "spent, it breaks");
+        assert_eq!(skills.absorb_on(MOB, 30, School::Physical, &mut events), 30);
     }
 
     /// A physical-only shield lets other schools through untouched.

@@ -35,6 +35,28 @@ pub(crate) enum CreatureEffect {
     Nova { damage: u32, radius: f32 },
     /// The target flees from the caster for `duration_ms` and then gets control back.
     Fear { duration_ms: u32 },
+    /// When the cast lands, every character in the caster's Phase within `radius` yards of the
+    /// caster can't move for `duration_ms`. They can still cast and swing.
+    Root { radius: f32, duration_ms: u32 },
+    /// When the cast lands, a patch of `radius` yards appears at the target's position. Every
+    /// `tick_ms` for `duration_ms`, each character in the Phase within it takes `tick` damage of
+    /// the spell's school.
+    GroundPatch {
+        radius: f32,
+        duration_ms: u32,
+        tick_ms: u32,
+        tick: Linear,
+    },
+    /// A self-cast: the caster gains a shield of `amount` that damage comes off first, for
+    /// `duration_ms`.
+    Absorb { amount: u32, duration_ms: u32 },
+}
+
+impl CreatureEffect {
+    /// Whether the spell lands on its caster, so it has no range or line of sight to check.
+    pub(crate) fn on_caster(&self) -> bool {
+        matches!(self, Self::Heal { .. } | Self::Absorb { .. })
+    }
 }
 
 /// Whom a Creature Spell is cast at.

@@ -964,14 +964,15 @@ impl Realm {
             .chain(self.parked.values_mut().map(|s| &mut s.world))
             .flatten();
         for w in worlds {
-            let (gazes, warnings, foreign) = w.take_gazes();
-            let nothing = gazes.is_empty() && warnings.is_empty() && foreign.is_empty();
+            let (gazes, warnings, foreign, scenery) = w.take_gazes();
+            let nothing =
+                gazes.is_empty() && warnings.is_empty() && foreign.is_empty() && scenery.is_empty();
             if let (Some(place), false) = (w.shard_place(), nothing) {
-                cast.push((place, gazes, warnings, foreign));
+                cast.push((place, gazes, warnings, foreign, scenery));
             }
         }
         let characters = &self.characters;
-        for (place, gazes, warnings, foreign) in cast {
+        for (place, gazes, warnings, foreign, scenery) in cast {
             let cover = match place.phase {
                 phased::Phase::Dungeon(id) => phased::dungeon(id).map_or(&[][..], |d| &d.cover[..]),
                 phased::Phase::OpenWorld => &[][..],
@@ -998,6 +999,12 @@ impl Realm {
                             chat_tag: 0,
                         },
                     ));
+                }
+                for s in &scenery {
+                    events.push(match s {
+                        world::Scenery::Show(create) => create.clone(),
+                        world::Scenery::Hide(guid) => SessionEvent::ObjectDestroyed(*guid),
+                    });
                 }
                 let at = characters.get(w.guid).map(|c| c.position);
                 for gaze in &gazes {

@@ -1,0 +1,317 @@
+//! A root, a ground patch and an absorb shield (#240), tried on the Gaze Hall's Vile Familiar
+//! (`content/gaze_hall.toml`), which each test gives one Creature Spell.
+
+mod common;
+
+use benilla_protocol::messages::MoveMode;
+use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
+use common::party::*;
+use common::*;
+
+/// The Vile Familiar's entry, which the Gaze Hall places at (-9650, 20).
+const FAMILIAR: u32 = 3101;
+/// In melee reach of the familiar, so it never leaves its spot.
+const EXPOSED: [f32; 3] = [-9650.0, 21.5, 47.2];
+/// 8 yd south of the familiar.
+const NEAR: [f32; 3] = [-9650.0, 12.0, 47.2];
+/// In the Phase but 16 yd north.
+const FAR: [f32; 3] = [-9650.0, 36.0, 47.2];
+/// 3 yd from `EXPOSED`.
+const BESIDE: [f32; 3] = [-9650.0, 24.5, 47.2];
+/// Out in Elwynn, clear of the box.
+const OUTSIDE: [f32; 3] = [-9720.0, 20.0, 47.2];
+/// The first entry a ground patch's GameObject takes, clear of the dungeons' own.
+const PATCH_ENTRY: u64 = 0x00f0_0000;
+/// `UNIT_FIELD_AURA`, the first of the aura slots.
+const UNIT_FIELD_AURA: u16 = 47;
+
+struct Seen {
+    at: f32,
+    player: usize,
+    event: SessionEvent,
+}
+
+struct Fight {
+    party: Party,
+    log: Vec<Seen>,
+}
+
+impl Fight {
+    fn of(&self, i: usize) -> impl Iterator<Item = &Seen> {
+        self.log.iter().filter(move |s| s.player == i)
+    }
+
+    /// When player `i` was rooted (`true`) or let go (`false`).
+    fn roots(&self, i: usize) -> Vec<(f32, bool)> {
+        let guid = self.party.guids[i];
+        self.of(i)
+            .filter_map(|s| match &s.event {
+                SessionEvent::MoveMode {
+                    guid: g,
+                    mode: MoveMode::Root,
+                    apply,
+                    ..
+                } if *g == guid => Some((s.at, *apply)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The damage, with the time, the spell `id` did to player `i`.
+    fn hits(&self, i: usize, id: u32) -> Vec<(f32, u32)> {
+        let guid = self.party.guids[i];
+        self.of(i)
+            .filter_map(|s| match &s.event {
+                SessionEvent::SpellDamageLog(l) if l.target == guid && l.spell_id == id => {
+                    Some((s.at, l.damage))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// Whether player `i` was told that character `of` stands at `to`.
+    fn saw_move(&self, i: usize, of: usize, to: [f32; 3]) -> bool {
+        let guid = self.party.guids[of];
+        self.party.seen(i).iter().any(|e| {
+            matches!(e, SessionEvent::UnitMove { guid: g, position, .. }
+                if *g == guid && *position == to)
+        })
+    }
+
+    /// When player `i` was shown a GameObject, and its guid and position.
+    fn scenery(&self, i: usize) -> Vec<(f32, u64, [f32; 3])> {
+        self.of(i)
+            .filter_map(|s| match &s.event {
+                SessionEvent::ObjectCreate {
+                    guid,
+                    kind: EntityKind::GameObject,
+                    position,
+                    ..
+                } if *guid & 0xffff_ffff >= PATCH_ENTRY => Some((s.at, *guid, *position)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// When player `i` was told that `guid` is gone.
+    fn destroyed(&self, i: usize, guid: u64) -> Option<f32> {
+        self.of(i).find_map(|s| match &s.event {
+            SessionEvent::ObjectDestroyed(g) if *g == guid => Some(s.at),
+            _ => None,
+        })
+    }
+}
+
+/// One character per place, the first pulling the familiar, which `spell` it casts. `act` is
+/// called before every 0.1 s step with the party and the seconds into the fight.
+fn fight(
+    spell: &str,
+    places: &[[f32; 3]],
+    secs: f32,
+    mut act: impl FnMut(&mut Party, f32),
+) -> Fight {
+    let realm = realm().with_creature_spells(FAMILIAR, &[spell]);
+    let mut party = Party::starting(
+        realm,
+        &vec![20; places.len()],
+        START_ELWYNN,
+        Box::new(NoGround),
+    );
+    let mut log = Vec::new();
+    let mut at = 0.0;
+    party.go(0, places[0], 0.0);
+    let step = |party: &mut Party, log: &mut Vec<Seen>, at: &mut f32| {
+        for (player, events) in party.run(0.1).into_iter().enumerate() {
+            log.extend(events.into_iter().map(|event| Seen {
+                at: *at,
+                player,
+                event,
+            }));
+        }
+        *at += 0.1;
+    };
+    for _ in 0..2 {
+        step(&mut party, &mut log, &mut at);
+    }
+    for (i, &place) in places.iter().enumerate().skip(1) {
+        party.go(i, place, 0.0);
+    }
+    let start = at;
+    while at - start < secs {
+        act(&mut party, at - start);
+        step(&mut party, &mut log, &mut at);
+    }
+    // Times in the log are seconds into the fight.
+    for s in &mut log {
+        s.at -= start;
+    }
+    Fight { party, log }
+}
+
+#[test]
+fn a_root_holds_every_character_in_its_radius_and_no_one_beyond() {
+    let rooted_step = [-9650.0, 22.5, 47.2];
+    let free_step = [-9650.0, 38.0, 47.2];
+    let near_step = [-9650.0, 10.0, 47.2];
+    let after_step = [-9650.0, 22.0, 47.2];
+    let (mut rooted_at, mut tried, mut after) = (None, false, false);
+    let f = fight(
+        "test_root",
+        &[EXPOSED, NEAR, FAR, OUTSIDE],
+        14.0,
+        |p, at| {
+            let hit = p.seen(0).iter().any(|e| {
+                matches!(
+                    e,
+                    SessionEvent::MoveMode {
+                        apply: true,
+                        mode: MoveMode::Root,
+                        ..
+                    }
+                )
+            });
+            if hit && rooted_at.is_none() {
+                rooted_at = Some(at);
+            }
+            let Some(r) = rooted_at else {
+                return;
+            };
+            if !tried && at >= r + 1.0 {
+                tried = true;
+                p.go(0, rooted_step, 0.0);
+                p.go(1, near_step, 0.0);
+                p.go(2, free_step, 0.0);
+            }
+            if !after && at >= r + 6.0 {
+                after = true;
+                p.go(0, after_step, 0.0);
+            }
+        },
+    );
+    for (i, what) in [(0, "in reach"), (1, "8 yd off")] {
+        let roots = f.roots(i);
+        let [(rooted, true), (freed, false)] = roots[..] else {
+            panic!("{what}: rooted once and let go once: {roots:?}");
+        };
+        assert!(
+            (freed - rooted - 4.0).abs() < 0.3,
+            "{what}: 4 s of root, {rooted} to {freed}"
+        );
+    }
+    assert!(f.roots(2).is_empty(), "16 yd out: {:?}", f.roots(2));
+    assert!(f.roots(3).is_empty(), "outside the Phase");
+    assert!(
+        !f.saw_move(1, 0, rooted_step),
+        "a rooted character's step is not taken"
+    );
+    assert!(
+        !f.saw_move(0, 1, near_step),
+        "a rooted character's step is not taken"
+    );
+    assert!(f.saw_move(0, 2, free_step), "one outside the radius moves");
+    assert!(f.saw_move(1, 0, after_step), "and the root wears off");
+}
+
+#[test]
+fn a_ground_patch_hurts_those_standing_in_it_until_its_time_is_up() {
+    let patch = creature_spell("test_ground_patch");
+    let mut shown = None;
+    let mut stepped = false;
+    let f = fight(
+        "test_ground_patch",
+        &[EXPOSED, NEAR, BESIDE, OUTSIDE],
+        18.0,
+        |p, at| {
+            let hit = p.seen(2).iter().any(|e| {
+                matches!(
+                    e,
+                    SessionEvent::ObjectCreate {
+                        kind: EntityKind::GameObject,
+                        ..
+                    }
+                )
+            });
+            if hit && shown.is_none() {
+                shown = Some(at);
+            }
+            if let Some(s) = shown {
+                if !stepped && at >= s + 4.5 {
+                    stepped = true;
+                    p.go(2, FAR, 0.0);
+                }
+            }
+        },
+    );
+    for i in 0..3 {
+        let made = f.scenery(i);
+        assert_eq!(made.len(), 1, "player {i} sees one patch: {made:?}");
+        let (_, _, at) = made[0];
+        assert!(
+            flat_distance(at, EXPOSED) < 0.1,
+            "at the target's feet: {at:?}"
+        );
+    }
+    assert!(f.scenery(3).is_empty(), "not outside the Phase");
+    let (shown, guid, _) = f.scenery(0)[0];
+    let gone = f.destroyed(0, guid).expect("the patch goes");
+    assert!(
+        (gone - shown - 10.0).abs() < 0.3,
+        "10 s on the ground: {shown} to {gone}"
+    );
+
+    let standing = f.hits(0, patch);
+    assert!(
+        (9..=10).contains(&standing.len()),
+        "a tick a second for 10 s: {standing:?}"
+    );
+    assert!(standing.iter().all(|&(_, d)| d == 5), "{standing:?}");
+    assert!(standing.iter().all(|&(at, _)| at <= gone + 0.2));
+    assert!(f.hits(1, patch).is_empty(), "9.5 yd from it");
+    assert!(f.hits(3, patch).is_empty(), "outside the Phase");
+
+    let stepped_out = f.hits(2, patch);
+    assert!(
+        (3..=5).contains(&stepped_out.len()),
+        "ticks until they step out at 4.5 s: {stepped_out:?}"
+    );
+    assert!(
+        stepped_out.iter().all(|&(at, _)| at <= shown + 5.0),
+        "none after: {stepped_out:?}"
+    );
+}
+
+#[test]
+fn an_absorb_shield_goes_up_on_the_caster_for_its_duration() {
+    let shield = creature_spell("test_absorb");
+    let f = fight("test_absorb", &[EXPOSED], 16.0, |_, _| {});
+    let caster = f
+        .log
+        .iter()
+        .find_map(|s| match &s.event {
+            SessionEvent::SpellGo {
+                caster, spell_id, ..
+            } if *spell_id == shield => Some(*caster),
+            _ => None,
+        })
+        .expect("the familiar casts it");
+    assert_ne!(caster, f.party.guids[0]);
+    // The shield is a buff on the familiar, in an aura slot, until it times out.
+    let slots: Vec<(f32, bool)> = f
+        .of(0)
+        .filter_map(|s| match &s.event {
+            SessionEvent::ObjectValues { guid, fields } if *guid == caster => fields
+                .raw_fields()
+                .find(|&(field, _)| (UNIT_FIELD_AURA..UNIT_FIELD_AURA + 56).contains(&field))
+                .map(|(_, spell)| (s.at, spell == shield)),
+            _ => None,
+        })
+        .collect();
+    let [(up, true), (down, false)] = slots[..] else {
+        panic!("up once and down once: {slots:?}");
+    };
+    assert!(
+        (down - up - 10.0).abs() < 0.3,
+        "10 s of shield: {up} to {down}"
+    );
+}

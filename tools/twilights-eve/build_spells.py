@@ -123,7 +123,8 @@ CLIENT_EFFECTS_OF = {
 DUMMY_EFFECT = (3, 0)
 # The same numbers for a Creature Spell's effect kinds: a curse, a heal, a snare.
 CREATURE_EFFECTS_OF = {"periodic_damage": (6, 3), "heal": (10, 0), "snare": (6, 33), "charge": DUMMY_EFFECT,
-                       "gaze": DUMMY_EFFECT, "nova": DUMMY_EFFECT, "fear": (6, 7)}
+                       "gaze": DUMMY_EFFECT, "nova": DUMMY_EFFECT, "fear": (6, 7), "root": (6, 26),
+                       "ground_patch": DUMMY_EFFECT, "absorb": (6, 69)}
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms",
@@ -318,11 +319,13 @@ def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], 
             row_effect["amplitude_ms"] = effect["tick_ms"]
         elif effect["kind"] == "snare":
             row_effect["base"] = -effect["pct"]
+        elif effect["kind"] == "absorb":
+            row_effect["base"] = effect["amount"]
         fields = {"name": spell["name"], "icon": icon_path(spell["icon"], art, art_dir, where),
                   "school": SCHOOLS.index(one_of(spell["school"], SCHOOLS, where, "school")),
                   "visual_spell": spell["visual"],
-                  # A heal is the caster's own; a curse or snare lands on the player it fights.
-                  "implicit_targets": list(IMPLICIT_TARGETS["self" if effect["kind"] == "heal" else "enemy"]),
+                  # A heal or a shield is the caster's own; a curse or snare lands on the player it fights.
+                  "implicit_targets": list(IMPLICIT_TARGETS["self" if effect["kind"] in ("heal", "absorb") else "enemy"]),
                   "cast_time_ms": spell["cast_time_ms"], "range_min": spell.get("range_min", 0), "range_max": spell["range_max"],
                   "dbc_effects": [row_effect]}
         if "duration_ms" in effect:

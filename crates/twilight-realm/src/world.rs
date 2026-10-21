@@ -34,8 +34,10 @@ mod discovery;
 mod dungeon;
 mod fear;
 mod food;
+mod ground;
 mod notoriety;
 mod phase;
+mod root;
 pub(crate) use phase::DoorClick;
 mod sleep;
 pub(crate) use phase::creatures;
@@ -147,6 +149,15 @@ pub(crate) struct Gaze {
     pub(crate) school: crate::rules::school::School,
     /// A nova: cover does not stop it.
     pub(crate) through_cover: bool,
+    /// Not damage but a root of this many milliseconds; 0 for damage.
+    pub(crate) root_ms: u32,
+}
+
+/// A GameObject the Phase sees appear or go: a creature spell's ground patch.
+#[derive(Debug, Clone)]
+pub(crate) enum Scenery {
+    Show(SessionEvent),
+    Hide(u64),
 }
 
 /// A Creature Spell cast at a character of another session: the realm lands it there.
@@ -297,6 +308,16 @@ pub(crate) struct InWorld {
     pub(crate) phase_mates: Vec<(u64, [f32; 3])>,
     /// The fear the player runs under.
     fear: Option<fear::Fear>,
+    /// The root the player is held by.
+    root: Option<root::Root>,
+    /// Root and unroot orders sent so far: the counter the client acks.
+    move_modes: u32,
+    /// The ground patches this session's creatures put down, burning until their time is up.
+    patches: Vec<ground::Patch>,
+    /// Patches put down so far, which numbers the next one's GameObject.
+    patch_serial: u32,
+    /// Patches that appeared or went this tick, for the realm to show the Phase.
+    scenery: Vec<Scenery>,
     /// What each creature casts.
     pub(crate) casters: crate::creature_spells::Casters,
     /// The Heat Level whose aura the player wears; 0 for none.
@@ -416,6 +437,11 @@ impl InWorld {
             foreign: Vec::new(),
             phase_mates: Vec::new(),
             fear: None,
+            root: None,
+            move_modes: 0,
+            patches: Vec::new(),
+            patch_serial: 0,
+            scenery: Vec::new(),
             casters: Default::default(),
             heat_shown: 0,
             hunter_in: None,
@@ -671,6 +697,8 @@ impl InWorld {
         self.skills_tick(dt, wall, c, rng, events, &mut ticked);
         self.movement_tick(dt, c, rng, events, &mut ticked);
         self.fear_tick(dt, host, c, rng, events);
+        self.root_tick(dt, events);
+        self.patch_tick(dt);
         // A next-cast buff that ran out puts the client's cast bar back.
         self.sync_next_cast_mods(c, events);
         self.call_for_help(events);
@@ -867,9 +895,15 @@ impl InWorld {
         }
 
         let mob = &mut self.mobs[i];
+        let through = self.skills.absorb_on(
+            mob.guid,
+            swing.damage,
+            crate::rules::school::School::Physical,
+            events,
+        );
         wound(
             mob,
-            swing.damage,
+            through,
             self.guid,
             crate::rules::school::School::Physical,
             &mut self.harms,
@@ -1121,11 +1155,12 @@ impl InWorld {
 
     /// The gazes that went off here since the realm last asked, and the raid warnings of the
     /// casts that began.
-    pub(crate) fn take_gazes(&mut self) -> (Vec<Gaze>, Vec<String>, Vec<Foreign>) {
+    pub(crate) fn take_gazes(&mut self) -> (Vec<Gaze>, Vec<String>, Vec<Foreign>, Vec<Scenery>) {
         (
             std::mem::take(&mut self.gazes),
             std::mem::take(&mut self.warnings),
             std::mem::take(&mut self.foreign),
+            std::mem::take(&mut self.scenery),
         )
     }
 
@@ -1150,6 +1185,10 @@ impl InWorld {
         };
         let shielded = !gaze.through_cover && crate::phased::covered(cover, gaze.at, at);
         if distance(gaze.at, at) > gaze.radius || shielded {
+            return;
+        }
+        if gaze.root_ms > 0 {
+            self.start_root(gaze.spell_id, gaze.root_ms, events);
             return;
         }
         events.push(SessionEvent::SpellDamageLog(

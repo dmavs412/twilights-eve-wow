@@ -34,7 +34,15 @@
 #                  nova { damage, radius } (a gaze that cover does not stop, centred on the
 #                  caster), or
 #                  fear { duration_ms } (the target flees from the caster for duration_ms, cannot
-#                  act, and gets control back; damage does not break it)
+#                  act, and gets control back; damage does not break it),
+#                  root { radius, duration_ms } (every character in the Phase within radius yards
+#                  of the caster can't move for duration_ms; they can still cast and swing),
+#                  ground_patch { radius, duration_ms, tick_ms, tick } (a fire patch at the
+#                  target's position, shown to the Phase; every tick_ms for duration_ms each
+#                  character within radius yards of it takes tick damage of the school; it does
+#                  not follow anyone and outlasts its caster), or
+#                  absorb { amount, duration_ms } (a self-cast, range_max = 0: a shield that
+#                  damage comes off first and that ends early once amount is used up)
 
 # Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
 [[spell]]
@@ -336,3 +344,53 @@ range_max = 10.0
 chance = 100
 target = "random"
 effect = { kind = "snare", pct = 50, duration_ms = 2000 }
+
+# A root (#240), for the Gaze Hall's test creature. Looks like Entangling Roots (visual 1316).
+# Placeholders: every character within 10 yd of the caster can't move for 4 s after a 1 s cast,
+# then every 60 s.
+[[spell]]
+key = "test_root"
+spell_id = 1900019
+name = "Binding Grasp"
+icon = 'Interface\Icons\Spell_Nature_StrangleVines'
+visual = 339
+aura_description = "Unable to move."
+school = "physical"
+cast_time_ms = 1000
+cooldown_ms = 60000
+range_max = 60.0
+chance = 100
+effect = { kind = "root", radius = 10.0, duration_ms = 4000 }
+
+# A ground patch (#240), for the Gaze Hall's test creature. Looks like Flamestrike rank 1 (visual 2120).
+# Placeholders: a patch of 5 yd at the target's feet after a 1 s cast, 5 fire damage a second to
+# each character in it for 10 s, then every 60 s.
+[[spell]]
+key = "test_ground_patch"
+spell_id = 1900020
+name = "Flame Patch"
+icon = 'Interface\Icons\Spell_Fire_SelfDestruct'
+visual = 2120
+school = "fire"
+cast_time_ms = 1000
+cooldown_ms = 60000
+range_max = 60.0
+chance = 100
+effect = { kind = "ground_patch", radius = 5.0, duration_ms = 10000, tick_ms = 1000, tick = { base = 5 } }
+
+# An absorb shield (#240), for the Gaze Hall's test creature. Looks like Power Word: Shield
+# rank 1 (visual 17). Placeholders: soaks 50 damage of any school for 10 s after a 1 s cast, then every
+# 60 s.
+[[spell]]
+key = "test_absorb"
+spell_id = 1900021
+name = "Void Shield"
+icon = 'Interface\Icons\Spell_Holy_PowerWordShield'
+visual = 17
+aura_description = "Absorbs $s1 damage."
+school = "shadow"
+cast_time_ms = 1000
+cooldown_ms = 60000
+range_max = 0.0
+chance = 100
+effect = { kind = "absorb", amount = 50, duration_ms = 10000 }

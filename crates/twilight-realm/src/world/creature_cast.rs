@@ -57,7 +57,7 @@ impl InWorld {
 
         if let Some((spell, left)) = &mut mob.casting {
             let spell = *spell;
-            let self_cast = matches!(spell.effect, CreatureEffect::Heal { .. });
+            let self_cast = spell.effect.on_caster();
             let lost = match mob.cast_at {
                 // A character of another session: still in the Phase, alive and in range?
                 Some(guid) => mates
@@ -126,6 +126,7 @@ impl InWorld {
                     damage,
                     school: spell.school,
                     through_cover: false,
+                    root_ms: 0,
                 });
             } else if let CreatureEffect::Nova { damage, radius } = spell.effect {
                 self.gazes.push(Gaze {
@@ -136,7 +137,51 @@ impl InWorld {
                     damage,
                     school: spell.school,
                     through_cover: true,
+                    root_ms: 0,
                 });
+            } else if let CreatureEffect::Root {
+                radius,
+                duration_ms,
+            } = spell.effect
+            {
+                self.gazes.push(Gaze {
+                    caster: guid,
+                    spell_id: spell.spell_id,
+                    at: mob.position,
+                    radius,
+                    damage: 0,
+                    school: spell.school,
+                    through_cover: true,
+                    root_ms: duration_ms,
+                });
+            } else if let CreatureEffect::GroundPatch {
+                radius,
+                duration_ms,
+                tick_ms,
+                tick,
+            } = spell.effect
+            {
+                // Where the target stands as the cast lands.
+                let at = victim
+                    .and_then(|v| mates.iter().find(|(g, _)| *g == v))
+                    .map_or(me, |(_, at)| *at);
+                let damage = tick.at(level, 0);
+                self.put_patch(
+                    guid,
+                    spell.spell_id,
+                    at,
+                    radius,
+                    duration_ms,
+                    tick_ms,
+                    damage,
+                    spell.school,
+                );
+            } else if let CreatureEffect::Absorb {
+                amount,
+                duration_ms,
+            } = spell.effect
+            {
+                self.mob_shield(guid, level, spell.spell_id, amount, duration_ms, events);
             } else if let Some(target) = victim {
                 self.foreign.push(Foreign {
                     target,
@@ -160,7 +205,7 @@ impl InWorld {
         let d = distance(mob.position, me);
         let (health, max_health) = (mob.health, mob.stats.max_health);
         let ready = spells.into_iter().find(|s| {
-            let in_reach = matches!(s.effect, CreatureEffect::Heal { .. })
+            let in_reach = s.effect.on_caster()
                 || d <= s.range_max
                 || (s.target == SpellTarget::Random
                     && mates
@@ -185,7 +230,7 @@ impl InWorld {
         let Some(spell) = ready else {
             return false;
         };
-        let self_cast = matches!(spell.effect, CreatureEffect::Heal { .. });
+        let self_cast = spell.effect.on_caster();
         let random = spell.target == SpellTarget::Random;
         if rng.below(100) >= spell.chance
             || (!self_cast && !random && !host.line_of_sight(map, eye(mob.position), eye(me)))
