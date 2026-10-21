@@ -44,3 +44,12 @@ of mismatched pieces, at the cost of mixing and matching looks.
 The realm's armour, health and mob tuning drift from vanilla until the Chest budget is tuned.
 Item queries are answered from the sheet, so a custom item needs no DBC patch, only a
 `display_id` the client's ItemDisplayInfo has.
+
+**Amended 2026-10-21 (#272): two columns, `spell_power` and `budget`.** `spell_power` is the
+flat Spell Power a Weapon, a held Offhand or a Wand carries; no other slot may have it. The realm
+adds it to spell damage and healing by vanilla's cast-time coefficient. `budget` is the stat
+points a hand-authored row may spend (1 point = +1 Str, Agi, Sta, Int or Spi; Spell Power costs
+half a point; weapon damage and armour are free), and the tool refuses a row over it; blank
+means unchecked, as on the vanilla-seeded rows. The budget per Loot Source and slot is spec #272's
+table. Northshire's loot is hand-authored under it; the vanilla-seeded rows of pool level 12 and
+under no longer drop.
