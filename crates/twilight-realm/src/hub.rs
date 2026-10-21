@@ -32,6 +32,9 @@ pub(crate) struct Npc {
     display_id: u32,
     faction_template: u32,
     npc_flags: u32,
+    /// The map it stands on: Kalimdor unless the content says otherwise.
+    #[serde(default = "kalimdor")]
+    pub(crate) map: u32,
     pub(crate) position: [f32; 3],
     orientation: f32,
     /// A spot (`[x, y]`) it stands facing; when set, it replaces `orientation`.
@@ -64,6 +67,10 @@ pub(crate) struct Npc {
     /// An innkeeper's inn as a rest area: the yards around `position` it covers.
     #[serde(default)]
     pub(crate) rest_radius: Option<f32>,
+}
+
+fn kalimdor() -> u32 {
+    crate::KALIMDOR
 }
 
 #[derive(Deserialize)]
@@ -267,7 +274,7 @@ impl crate::Realm {
         self.world
             .as_ref()
             .and_then(|w| self.characters.get(w.guid))
-            .is_some_and(|c| c.map == crate::KALIMDOR && within_reach(npc, c.position))
+            .is_some_and(|c| c.map == npc.map && within_reach(npc, c.position))
     }
 }
 
@@ -310,7 +317,7 @@ struct Walk {
 impl InView {
     /// Brings the NPCs within view of any of `players` into the world, standing on the host's
     /// ground, lets go those far from them all, and walks the wanderers in view on by `dt`
-    /// seconds. They stand on Kalimdor only.
+    /// seconds. Each stands on its own map only.
     pub(crate) fn update(
         &mut self,
         dt: f32,
@@ -324,7 +331,7 @@ impl InView {
         self.present.resize_with(all.len(), || None);
         let mut gone = Vec::new();
         for (npc, present) in all.iter().zip(&mut self.present) {
-            let d = if map == crate::KALIMDOR {
+            let d = if map == npc.map {
                 players
                     .iter()
                     .map(|&p| flat_distance(npc.position, p))

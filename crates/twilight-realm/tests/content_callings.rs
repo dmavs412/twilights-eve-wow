@@ -953,8 +953,15 @@ struct Npc {
     #[serde(default)]
     subname: String,
     role: String,
+    /// The map it stands on: Kalimdor (1) unless written.
+    #[serde(default = "kalimdor")]
+    map: u32,
     #[serde(default)]
     greeting: String,
+}
+
+fn kalimdor() -> u32 {
+    1
 }
 
 fn advancement_quests() -> Vec<Quest> {
@@ -979,7 +986,7 @@ fn trainers() -> Vec<Npc> {
         .expect("hub.toml parses")
         .npc
         .into_iter()
-        .filter(|n| n.role == "trainer")
+        .filter(|n| n.role == "trainer" && n.map == kalimdor())
         .collect()
 }
 

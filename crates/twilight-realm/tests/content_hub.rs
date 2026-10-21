@@ -10,8 +10,13 @@ struct Npc {
     guid: u32,
     entry: u32,
     name: String,
+    #[serde(default)]
+    subname: String,
     role: String,
     npc_flags: u32,
+    /// The map it stands on: Kalimdor (1) unless written.
+    #[serde(default = "kalimdor")]
+    map: u32,
     position: [f32; 3],
     orientation: f32,
     #[serde(default)]
@@ -31,6 +36,13 @@ struct Npc {
     area: Option<u32>,
     /// An innkeeper's rest area, in yards.
     rest_radius: Option<f32>,
+}
+
+const KALIMDOR: u32 = 1;
+const EASTERN_KINGDOMS: u32 = 0;
+
+fn kalimdor() -> u32 {
+    KALIMDOR
 }
 
 #[derive(Deserialize)]
@@ -158,7 +170,10 @@ fn every_npcs_flags_fit_its_role() {
 /// The five Tier 1 trainers stand together in the training yard, and Uzzek alone sells the respec.
 #[test]
 fn five_trainers_stand_in_the_yard_and_one_sells_the_respec() {
-    let trainers: Vec<Npc> = hub().into_iter().filter(|n| n.role == "trainer").collect();
+    let trainers: Vec<Npc> = hub()
+        .into_iter()
+        .filter(|n| n.role == "trainer" && n.map == KALIMDOR)
+        .collect();
     assert_eq!(trainers.len(), 5);
     for a in &trainers {
         for b in &trainers {
@@ -168,10 +183,50 @@ fn five_trainers_stand_in_the_yard_and_one_sells_the_respec() {
     }
     let respec: Vec<(String, String)> = hub()
         .into_iter()
-        .filter(|n| n.respec)
+        .filter(|n| n.respec && n.map == KALIMDOR)
         .map(|n| (n.name, n.role))
         .collect();
     assert_eq!(respec, [("Uzzek".to_string(), "trainer".to_string())]);
+}
+
+/// Northshire's five Tier 1 trainers stand in the valley on the Eastern Kingdoms, one for each
+/// Line, and Sergeant Hale alone sells the respec there.
+#[test]
+fn five_trainers_stand_in_northshire_and_hale_sells_the_respec() {
+    let trainers: Vec<Npc> = hub()
+        .into_iter()
+        .filter(|n| n.role == "trainer" && n.map == EASTERN_KINGDOMS)
+        .collect();
+    let mut lines: Vec<&str> = trainers
+        .iter()
+        .map(|n| n.subname.trim_end_matches(" Trainer"))
+        .collect();
+    lines.sort_unstable();
+    assert_eq!(
+        lines,
+        ["Acolyte", "Cutthroat", "Initiate", "Ranger", "Vanguard"]
+    );
+    for n in &trainers {
+        assert!(
+            n.greeting.contains(n.subname.trim_end_matches(" Trainer")),
+            "{}: the greeting names the Line",
+            n.name
+        );
+        // Northshire Valley: between the Abbey and Echo Ridge, well clear of the Crossroads.
+        assert!(
+            (-9100.0..-8600.0).contains(&n.position[0])
+                && (-400.0..-100.0).contains(&n.position[1]),
+            "{} at {:?}",
+            n.name,
+            n.position
+        );
+    }
+    let respec: Vec<&str> = trainers
+        .iter()
+        .filter(|n| n.respec)
+        .map(|n| n.name.as_str())
+        .collect();
+    assert_eq!(respec, ["Sergeant Willem Hale"]);
 }
 
 /// The middle of the Crossroads and of Camp Taurajo, and how far each town reaches from it.

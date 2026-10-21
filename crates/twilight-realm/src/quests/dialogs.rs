@@ -226,8 +226,8 @@ fn any_speaker(npc: u64) -> Option<Speaker> {
 /// The quest giver `npc`, if the player stands near enough to talk to it.
 fn talking_to(c: &Char, w: &crate::world::InWorld, npc: u64) -> Option<Speaker> {
     if let Some(n) = hub_speaker(npc) {
-        // The Hub stands on Kalimdor only, not in a Dungeon.
-        let near = c.map == crate::KALIMDOR && crate::hub::within_reach(n, c.position);
+        // A Hub NPC stands on its own map only, not in a Dungeon.
+        let near = c.map == n.map && crate::hub::within_reach(n, c.position);
         return near.then_some(Speaker {
             entry: n.entry,
             greeting: &n.greeting,

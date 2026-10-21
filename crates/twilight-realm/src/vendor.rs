@@ -336,5 +336,5 @@ pub(crate) fn repair(
 
 /// The vendor `guid`, if the character stands within reach of it.
 fn reachable(guid: u64, c: &Char) -> Option<&'static Npc> {
-    hub::find(guid).filter(|n| n.is_vendor() && hub::within_reach(n, c.position))
+    hub::find(guid).filter(|n| n.is_vendor() && c.map == n.map && hub::within_reach(n, c.position))
 }

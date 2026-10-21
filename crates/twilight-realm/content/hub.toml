@@ -1007,3 +1007,113 @@ npc_flags = 0x2
 position = [-2700.0, -2150.0, 94.0]
 orientation = 6.23
 greeting = "Quiet. The herds hear everything, and so do I."
+
+# ── Northshire's Calling trainers (#214, #215) ───────────────────────────────────────────────────
+# Five Tier 1 trainers on the Eastern Kingdoms (`map = 0`, Northshire Valley), one for each Line,
+# each at a spot that fits it. They stream in with the valley, not the Crossroads. Positions are
+# approximate, picked off the mob spawns in content/elwynn.toml and the Abbey's footprint
+# (content/northshire_abbey.toml); z is the nearest spawn's height, and the host's ground replaces
+# it. Davis moves any that land wrong. The displays are Northshire's own class trainers' models.
+# Their guids are 93000xx, below the called adds' base (0x900000, src/mobs.rs). Their Advancement
+# Quests come with #216.
+
+# Sergeant Willem Hale, the Vanguard Trainer: in the Abbey yard beside Marshal McBride, a Second
+# War veteran sent from Stormwind to drill recruits. He sells the respec. The display is Llane
+# Beshere's, the stock human warrior trainer.
+[[npc]]
+guid = 9300001
+entry = 190050
+name = "Sergeant Willem Hale"
+subname = "Vanguard Trainer"
+level = 40
+display_id = 3343
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+map = 0
+position = [-8906.0, -136.0, 82.0]
+orientation = 4.7
+faces = [-8912.0, -150.0]
+text_id = 64030
+respec = true
+greeting = "I fought the Horde in the Second War, $C, and Stormwind sent me here to drill recruits like you. The Vanguard fight on rage, in plate, at the front of the line. Hold it, and the rest of us live. If the road you took was the wrong one, I can help you forget it, for a price."
+
+# Jorik Vane, the Cutthroat Trainer: at the Northshire Vineyards' fence, outside the Defias' aggro
+# range. An ex-Defias who turned on the Brotherhood. The display is Jorik Kerridan's, the stock
+# human rogue trainer.
+[[npc]]
+guid = 9300002
+entry = 190051
+name = "Jorik Vane"
+subname = "Cutthroat Trainer"
+level = 40
+display_id = 3351
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+map = 0
+position = [-8915.0, -318.0, 77.7]
+orientation = 3.3
+faces = [-8960.0, -330.0]
+text_id = 64031
+greeting = "Keep your voice down, $C. I ran with the Brotherhood until I saw what they do to their own. Now I teach the Cutthroat way: energy, not rage. Quick hands, a knife where it is not expected, and gone before anyone looks."
+
+# Elsa Brightwood, the Initiate Trainer: in the Abbey garden, clear of the Phased Dungeon's
+# footprint. A student of the Tower of Azora, copying the Abbey's old texts. The display is
+# Priestess Anetta's, the stock human robed trainer.
+[[npc]]
+guid = 9300003
+entry = 190052
+name = "Elsa Brightwood"
+subname = "Initiate Trainer"
+level = 40
+display_id = 3344
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+map = 0
+position = [-8928.0, -190.0, 82.0]
+orientation = 0.0
+faces = [-8900.0, -190.0]
+text_id = 64032
+greeting = "The Abbey's old texts are crumbling, $C, and I am copying what I can before they go. The Tower of Azora taught me what they teach: the Initiate draws on mana and shapes it into spells. Sit down, and I will show you the first of them."
+
+# Thalyssa Windbough, the Ranger Trainer: on the east lawn beside Eagan Peltskinner, facing the
+# wolf woods. A night elf scout out of Darnassus, tracking the wolves. The display is the Disciple
+# of Naralex's, a night elf (the Crossroads' skull NPCs use it).
+[[npc]]
+guid = 9300004
+entry = 190053
+name = "Thalyssa Windbough"
+subname = "Ranger Trainer"
+level = 40
+display_id = 1941
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+map = 0
+position = [-8865.0, -158.0, 81.0]
+orientation = 4.71
+faces = [-8865.0, -200.0]
+text_id = 64033
+greeting = "Darnassus sent me to find out why the wolves here run so thin, $C. The Ranger's way is the bow and the patience to use it, and mana to keep the arrows true. Watch the tree line with me, and I will teach you."
+
+# Brother Corwin Ashgrave, the Acolyte Trainer: outside Echo Ridge Mine's mouth, clear of the
+# kobolds. A monk turned out of the Abbey for studying how the dying cross over. The display is
+# Brother Sammuel's, the stock human robed monk.
+[[npc]]
+guid = 9300005
+entry = 190054
+name = "Brother Corwin Ashgrave"
+subname = "Acolyte Trainer"
+level = 40
+display_id = 3346
+faction_template = 35
+role = "trainer"
+npc_flags = 0x13
+map = 0
+position = [-8700.0, -128.0, 91.0]
+orientation = 0.14
+faces = [-8672.0, -124.0]
+text_id = 64034
+greeting = "The brothers turned me out for asking how the dying cross over, $C, so I ask it here, where the kobolds dig. The Acolyte tends the dark: a mender who draws strength from blood and from loss. It is not a gentle road, but I will show you the way."
