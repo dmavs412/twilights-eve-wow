@@ -1,0 +1,1108 @@
+{
+  "zone": "Elwynn Forest",
+  "levelRange": [
+    10,
+    30
+  ],
+  "format": "Northshire (story / bounty / dungeon repeatable)",
+  "rules": {
+    "bounty": "takeable only inside level range; half a level's XP flat; 1 Token; copper (placeholder)",
+    "repeatable": "10 drops: 35% trash, 100% named cult mobs, boss drops 3; available dungeon level -4 to +4",
+    "item": "ITEM quests give a choice of one piece per fighter kind, like 900101-900104"
+  },
+  "subzones": [
+    {
+      "name": "Goldshire",
+      "levelMin": 10,
+      "levelMax": 13,
+      "type": "outdoor",
+      "storyQuests": [
+        {
+          "id": 94101,
+          "title": "McBride's Report",
+          "level": 10,
+          "requires": [
+            94004
+          ],
+          "requiresNote": "94004 (The Abbot's Fall)",
+          "giver": "McBride gives it.",
+          "task": "carry the sealed report to Marshal Dughan in Goldshire.",
+          "story": "McBride writes down what happened in the Abbey; Dughan is the one who has to act on it.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94102,
+          "title": "The Marshal's Doubt",
+          "level": 11,
+          "requires": [
+            94101
+          ],
+          "requiresNote": "94101",
+          "giver": "Dughan gives it.",
+          "task": "ask Innkeeper Farley, Smith Argus and Remy \"Two Times\" whether anyone in Goldshire has seen the hammer-and-black-sun mark.",
+          "story": "Dughan will not raise an alarm over one idol. Farley saw the mark on a crate from a wrecked cart; Argus has had strangers buying ore in bulk; Remy's biggest debtor skipped town the night the Abbey fell.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94103,
+          "title": "The Wrecked Cart",
+          "level": 12,
+          "requires": [
+            94102
+          ],
+          "requiresNote": "94102",
+          "giver": "Farley gives it.",
+          "task": "recover the Sealed Strongbox from the Defias Highwayman at the wrecked cart on the Stormwind road.",
+          "story": "the strongbox holds Twilight coin and a letter addressed to \"the Collector, Brackwell.\" Dughan still calls it a Defias matter, but he sends you south.",
+          "reward": "4 silver.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [
+        {
+          "id": 94105,
+          "title": "Prowlers on the Road",
+          "giver": "Deputy Rainer",
+          "levelMin": 10,
+          "levelMax": 14,
+          "task": "Kill 10 Prowlers or Forest Spiders",
+          "copper": 150,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94106,
+          "title": "Silk for the Smith",
+          "giver": "Smith Argus",
+          "levelMin": 10,
+          "levelMax": 14,
+          "task": "Bring 8 Forest Spider Silk (50% drop)",
+          "copper": 170,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94107,
+          "title": "Bandits on the Stormwind Road",
+          "giver": "Deputy Rainer",
+          "levelMin": 11,
+          "levelMax": 15,
+          "task": "Kill 10 Defias Bandits",
+          "copper": 200,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94108,
+          "title": "Gold Dust for Remy",
+          "giver": "Remy \"Two Times\"",
+          "levelMin": 10,
+          "levelMax": 14,
+          "task": "Bring 8 Gold Dust (50% drop from Kobold Vermin and Tunnelers at the edge of Fargodeep)",
+          "copper": 180,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        }
+      ],
+      "repeatable": null
+    },
+    {
+      "name": "The Farmlands",
+      "levelMin": 11,
+      "levelMax": 14,
+      "type": "outdoor",
+      "storyQuests": [
+        {
+          "id": 94201,
+          "title": "The Collector's Letter",
+          "level": 12,
+          "requires": [
+            94103
+          ],
+          "requiresNote": "94103",
+          "giver": "Dughan gives it.",
+          "task": "show the letter to Guard Thomas at the Stonefield–Maclure crossroads.",
+          "story": "Thomas knows the name: Morgan has been buying up both families' debt for a year.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94202,
+          "title": "Princess",
+          "level": 12,
+          "requires": [],
+          "requiresNote": "nothing before it",
+          "giver": "Ma Stonefield gives it.",
+          "task": "kill Princess, the elite boar wrecking the Maclure vineyard, and bring back her collar.",
+          "story": "the collar is stamped with Morgan's mark. The pig was a gift to the Maclures, then let loose on Stonefield land.",
+          "reward": "3 silver. Optional ITEM: a small trinket; Princess is the first elite after Padfoot.",
+          "item": false,
+          "optionalItem": true
+        },
+        {
+          "id": 94203,
+          "title": "Mend the Fence",
+          "level": 13,
+          "requires": [
+            94201,
+            94202
+          ],
+          "requiresNote": "94201 and 94202",
+          "giver": "Guard Thomas gives it.",
+          "task": "show the collar to Ma Stonefield and Joshua Maclure, then bring both to Thomas.",
+          "story": "the feud was bought. Both farms open as vendors.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94204,
+          "title": "Morgan the Collector",
+          "level": 14,
+          "requires": [
+            94203
+          ],
+          "requiresNote": "94203",
+          "giver": "Dughan gives it.",
+          "task": "kill Morgan the Collector, elite, in Brackwell manor, and bring his ledger.",
+          "story": "the ledger lists Defias wages paid in Twilight coin, and \"road to the Landing: keep clear.\"",
+          "reward": "8 silver, plus a choice of one of Morgan's items, one for each kind of fighter. ITEM.",
+          "item": true,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [
+        {
+          "id": 94205,
+          "title": "Thugs in the Pumpkin Patch",
+          "giver": "Guard Thomas",
+          "levelMin": 11,
+          "levelMax": 15,
+          "task": "Kill 10 Defias Thugs or Defias Pillagers at Brackwell",
+          "copper": 200,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94206,
+          "title": "Boars in the Vineyard",
+          "giver": "Joshua Maclure",
+          "levelMin": 11,
+          "levelMax": 15,
+          "task": "Kill 10 Stonetusk Boars",
+          "copper": 170,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94207,
+          "title": "Pumpkins for Bernice",
+          "giver": "Bernice Stonefield",
+          "levelMin": 11,
+          "levelMax": 15,
+          "task": "Gather 8 Ripe Pumpkins from the Brackwell patch (guarded)",
+          "copper": 180,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94208,
+          "title": "Boar Ribs for the Inn",
+          "giver": "Innkeeper Farley",
+          "levelMin": 12,
+          "levelMax": 16,
+          "task": "Bring 8 Boar Ribs (50% drop from Stonetusk Boars)",
+          "copper": 190,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        }
+      ],
+      "repeatable": null
+    },
+    {
+      "name": "Crystal Lake & Fargodeep",
+      "levelMin": 13,
+      "levelMax": 16,
+      "type": "outdoor",
+      "storyQuests": [
+        {
+          "id": 94301,
+          "title": "Narg's Orders",
+          "level": 14,
+          "requires": [
+            94204
+          ],
+          "requiresNote": "94204",
+          "giver": "Dughan gives it.",
+          "task": "kill Narg the Taskmaster, elite, at the bottom of Fargodeep and bring his journal.",
+          "story": "Morgan's ledger listed ore from Fargodeep. Narg's journal says the kobolds fled Jasperlode because \"the ones who dig down, not across\" took it from them.",
+          "reward": "6 silver, plus a choice of one of Narg's items. ITEM.",
+          "item": true,
+          "optionalItem": false
+        },
+        {
+          "id": 94302,
+          "title": "The Dead Courier",
+          "level": 14,
+          "requires": [],
+          "requiresNote": "nothing before it",
+          "giver": "Starts from the Courier's Satchel on the dead gryphon at the lake's north shore.",
+          "task": "bring the satchel to Marshal Dughan.",
+          "story": "inside is a Stormwind dispatch: cult activity confirmed in Redridge, Elwynn considered clear. Dughan now knows Stormwind is wrong.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94303,
+          "title": "The Keystone",
+          "level": 15,
+          "requires": [
+            94301
+          ],
+          "requiresNote": "94301",
+          "giver": "Foreman Gorn at the Fargodeep entrance gives it.",
+          "task": "recover the rune-marked keystone from Gllrg the Tidecaller, the named murloc at Crystal Lake.",
+          "story": "the murlocs looted the sealed Jasperlode entrance; the keystone opens its inner door.",
+          "reward": "XP only. Opens Jasperlode.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [
+        {
+          "id": 94305,
+          "title": "Kobolds in Fargodeep",
+          "giver": "Foreman Gorn",
+          "levelMin": 13,
+          "levelMax": 17,
+          "task": "Kill 10 Kobold Tunnelers or Kobold Geomancers",
+          "copper": 250,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94306,
+          "title": "Candles for Gorn",
+          "giver": "Foreman Gorn",
+          "levelMin": 13,
+          "levelMax": 17,
+          "task": "Bring 8 Kobold Candles (50% drop)",
+          "copper": 260,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94307,
+          "title": "Murlocs on the Shore",
+          "giver": "Fisherman Lee Brown",
+          "levelMin": 13,
+          "levelMax": 17,
+          "task": "Kill 10 Murloc Foragers or Murloc Lurkers",
+          "copper": 280,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94308,
+          "title": "Fins for Lee Brown",
+          "giver": "Fisherman Lee Brown",
+          "levelMin": 14,
+          "levelMax": 18,
+          "task": "Bring 8 Murloc Fins (50% drop)",
+          "copper": 270,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        }
+      ],
+      "repeatable": null
+    },
+    {
+      "name": "Jasperlode Mine",
+      "levelMin": 15,
+      "levelMax": 18,
+      "type": "dungeon",
+      "storyQuests": [
+        {
+          "id": 94401,
+          "title": "Into Jasperlode",
+          "level": 15,
+          "requires": [
+            94303
+          ],
+          "requiresNote": "94303",
+          "giver": "Dughan gives it.",
+          "task": "open the sealed door with the keystone and find Chieftain Grik's camp inside.",
+          "story": "the mine is split: kobolds above, cult diggers below.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94402,
+          "title": "The Kobold King's Plea",
+          "level": 17,
+          "requires": [
+            94401
+          ],
+          "requiresNote": "94401",
+          "giver": "Chieftain Grik gives it and takes it back.",
+          "task": "kill the Deep Overseer at the bottom of the mine.",
+          "story": "Grik swears his people will leave Elwynn if the thing below dies. Players can honor that or wipe the camp on the way out.",
+          "reward": "10 silver, plus a choice of one of the Overseer's items. ITEM.",
+          "item": true,
+          "optionalItem": false
+        },
+        {
+          "id": 94403,
+          "title": "What Narg Feared",
+          "level": 18,
+          "requires": [
+            94402
+          ],
+          "requiresNote": "94402",
+          "giver": "Dughan gives it.",
+          "task": "bring Dughan the Overseer's orders.",
+          "story": "the orders carry the same mark as the idol from Echo Ridge, in the same hand. Dughan stops calling it a Defias matter.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [],
+      "repeatable": {
+        "id": 94404,
+        "title": "Resonant Ore",
+        "level": 17,
+        "availableMin": 13,
+        "availableMax": 22,
+        "giver": "Smith Argus in Goldshire",
+        "task": "bring back 10 Resonant Ore.",
+        "dropRates": "Deep Kobolds 35%, Twilight Diggers always, the Deep Overseer always drops three.",
+        "reward": "4 silver and 3 Tokens."
+      }
+    },
+    {
+      "name": "Stone Cairn Lake & Heroes' Vigil",
+      "levelMin": 16,
+      "levelMax": 19,
+      "type": "outdoor",
+      "storyQuests": [
+        {
+          "id": 94501,
+          "title": "The Vigil Defaced",
+          "level": 16,
+          "requires": [],
+          "requiresNote": "nothing before it",
+          "giver": "Grave-tender Ilsa at Heroes' Vigil gives it.",
+          "task": "clean 5 cairn stones of the painted mark, then kill the 6 Twilight Daubers who come back at dusk.",
+          "story": "low-level cultists, and they run when hit. The mark is the one from Echo Ridge.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94502,
+          "title": "Rites at the Stone",
+          "level": 18,
+          "requires": [
+            94501,
+            94403
+          ],
+          "requiresNote": "94501 and 94403",
+          "giver": "Ilsa gives it.",
+          "task": "hold the cairn through one night against three waves of cultists, then kill Ritualist Serane, elite, who leads the last one.",
+          "story": "Serane's orders read \"the tower is ready; the tribute moves by water.\"",
+          "reward": "8 silver, plus a choice of one of Serane's items. ITEM.",
+          "item": true,
+          "optionalItem": false
+        },
+        {
+          "id": 94503,
+          "title": "An Echo in the Ore",
+          "level": 19,
+          "requires": [
+            94502
+          ],
+          "requiresNote": "94502",
+          "giver": "Starts from the Resonant Shard that Serane drops.",
+          "task": "bring the shard to Toren, Theocritus's apprentice, at the base of the Tower of Azora.",
+          "story": "Toren recognizes it from the tower's experiments and goes pale.",
+          "reward": "XP only. Opens Azora.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [
+        {
+          "id": 94505,
+          "title": "Murlocs at the Cairn",
+          "giver": "Guard Pell (Vigil post)",
+          "levelMin": 16,
+          "levelMax": 20,
+          "task": "Kill 10 Murloc Nestguards or Murloc Tidehunters",
+          "copper": 320,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94506,
+          "title": "Nests to Burn",
+          "giver": "Guard Pell",
+          "levelMin": 16,
+          "levelMax": 20,
+          "task": "Burn 6 Murloc Nests on the island",
+          "copper": 330,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94507,
+          "title": "Riverpaw Scouts",
+          "giver": "Guard Pell",
+          "levelMin": 17,
+          "levelMax": 21,
+          "task": "Kill 10 Riverpaw Scouts",
+          "copper": 350,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94508,
+          "title": "Scout Markings",
+          "giver": "Grave-tender Ilsa",
+          "levelMin": 17,
+          "levelMax": 21,
+          "task": "Bring 8 Riverpaw Scout Marks (50% drop)",
+          "copper": 340,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        }
+      ],
+      "repeatable": null
+    },
+    {
+      "name": "Tower of Azora",
+      "levelMin": 19,
+      "levelMax": 22,
+      "type": "dungeon",
+      "storyQuests": [
+        {
+          "id": 94601,
+          "title": "The Tower Is Open",
+          "level": 19,
+          "requires": [
+            94503
+          ],
+          "requiresNote": "94503",
+          "giver": "Toren gives it.",
+          "task": "enter the tower and re-attune the 4 ward stones, one through each floor's portal.",
+          "story": "each ward you fix pins one portal in place. Toren admits Theocritus has not been seen in a week, and that the portals \"keep opening on Redridge.\"",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94602,
+          "title": "The Apprentice's Secret",
+          "level": 21,
+          "requires": [
+            94601
+          ],
+          "requiresNote": "94601",
+          "giver": "Starts from Toren's Sale Note, found on the third floor.",
+          "task": "confront Toren at the tower base.",
+          "story": "the buyer signed as \"M., Ilgalar.\" Toren knew exactly who that was. Hand him to Dughan or let him run; if he runs he turns up at Ridgepoint (94704).",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94603,
+          "title": "Theocritus Unbound",
+          "level": 22,
+          "requires": [
+            94601
+          ],
+          "requiresNote": "94601",
+          "giver": "Theocritus gives it from the top chamber.",
+          "task": "kill the Shadow of Morganth and close the master portal.",
+          "story": "the projection breaks and the tower is Theocritus's again. He is furious in a way the player has not seen from him.",
+          "reward": "12 silver, plus a choice of one of the Shadow's items, and a one-use Azora teleport scroll. ITEM.",
+          "item": true,
+          "optionalItem": false
+        },
+        {
+          "id": 94604,
+          "title": "Where It Pointed",
+          "level": 22,
+          "requires": [
+            94603
+          ],
+          "requiresNote": "94603",
+          "giver": "Theocritus gives it.",
+          "task": "tell Dughan what the portals showed.",
+          "story": "the cult's people went to Ridgepoint Tower on the Eastvale ridge; Morganth himself never left Ilgalar. Dughan writes a letter for Supervisor Raelen and tells Theocritus that Redridge is not his jurisdiction. Theocritus does not agree.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [],
+      "repeatable": {
+        "id": 94605,
+        "title": "Ward Shards",
+        "level": 21,
+        "availableMin": 17,
+        "availableMax": 26,
+        "giver": "Theocritus (after 94603) or Toren before that",
+        "task": "bring back 10 Ward Shards.",
+        "dropRates": "Shadowhide Gnolls 35%, Twilight Portalists and Voidwalkers always, the Shadow of Morganth always drops three.",
+        "reward": "5 silver and 3 Tokens."
+      }
+    },
+    {
+      "name": "Eastvale & Ridgepoint Tower",
+      "levelMin": 20,
+      "levelMax": 24,
+      "type": "outdoor",
+      "storyQuests": [
+        {
+          "id": 94701,
+          "title": "Timber for the Pit",
+          "level": 21,
+          "requires": [],
+          "requiresNote": "nothing before it",
+          "giver": "Supervisor Raelen gives it.",
+          "task": "kill Defias Overseer Hadrik at the east sawmill and take his manifest.",
+          "story": "the timber is cut to scaffold lengths and addressed to \"the Landing, for the pit.\"",
+          "reward": "6 silver.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94702,
+          "title": "Eyes on the Ridge",
+          "level": 22,
+          "requires": [
+            94604
+          ],
+          "requiresNote": "94604",
+          "giver": "Raelen gives it, with Dughan's letter.",
+          "task": "reach the three overlooks above Ridgepoint and count the banners without being seen.",
+          "story": "no kills; the cult holds an Alliance watchtower in daylight.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94703,
+          "title": "Ridgepoint Falls",
+          "level": 23,
+          "requires": [
+            94702
+          ],
+          "requiresNote": "94702",
+          "giver": "Raelen gives it.",
+          "task": "storm the tower and kill Speaker Vael, elite, at the top.",
+          "story": "Vael's last words: \"the gnoll was promised power; he digs for us.\"",
+          "reward": "10 silver, plus a choice of one of Vael's items. ITEM.",
+          "item": true,
+          "optionalItem": false
+        },
+        {
+          "id": 94704,
+          "title": "Toren's Trail",
+          "level": 23,
+          "requires": [
+            94602
+          ],
+          "requiresNote": "94602, and only if Toren was let go",
+          "giver": "Starts from Toren's Pack in the Ridgepoint cellar.",
+          "task": "find Toren chained in the cellar and decide: free him, or leave him for Dughan.",
+          "story": "the cult did not pay him; they kept him.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [
+        {
+          "id": 94705,
+          "title": "Looters in the Camp",
+          "giver": "Supervisor Raelen",
+          "levelMin": 20,
+          "levelMax": 24,
+          "task": "Kill 10 Defias Looters",
+          "copper": 400,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94706,
+          "title": "Lumber Recovery",
+          "giver": "Supervisor Raelen",
+          "levelMin": 20,
+          "levelMax": 24,
+          "task": "Bring 8 Eastvale Lumber (50% drop from Looters)",
+          "copper": 420,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94707,
+          "title": "Bears on the Ridge",
+          "giver": "Lumberjack Tomas",
+          "levelMin": 21,
+          "levelMax": 25,
+          "task": "Kill 10 Grizzled Bears",
+          "copper": 430,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94708,
+          "title": "Hides for Tomas",
+          "giver": "Lumberjack Tomas",
+          "levelMin": 21,
+          "levelMax": 25,
+          "task": "Bring 8 Grizzled Hides (50% drop)",
+          "copper": 440,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94709,
+          "title": "Acolytes at Ridgepoint",
+          "giver": "Supervisor Raelen (after 94702)",
+          "levelMin": 22,
+          "levelMax": 26,
+          "task": "Kill 10 Twilight Acolytes",
+          "copper": 480,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        }
+      ],
+      "repeatable": null
+    },
+    {
+      "name": "Mirror Lake & Jerod's Landing",
+      "levelMin": 23,
+      "levelMax": 26,
+      "type": "outdoor",
+      "storyQuests": [
+        {
+          "id": 94801,
+          "title": "Remy's Last Debtor",
+          "level": 23,
+          "requires": [
+            94102
+          ],
+          "requiresNote": "94102",
+          "giver": "Remy \"Two Times\" gives it.",
+          "task": "find Dobbs, the debtor who skipped town, at Jerod's Landing.",
+          "story": "Dobbs keeps the smugglers' ledger now. He trades the shipping schedule for his life and Remy's forgiveness.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94802,
+          "title": "The Smugglers' Ledger",
+          "level": 24,
+          "requires": [
+            94801,
+            94703
+          ],
+          "requiresNote": "94801 and 94703",
+          "giver": "Dughan gives it.",
+          "task": "destroy 6 Twilight supply caches along the docks.",
+          "story": "each cache is a different stolen Elwynn good: ore, timber, pumpkins, relics.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94803,
+          "title": "The Pit",
+          "level": 25,
+          "requires": [
+            94802
+          ],
+          "requiresNote": "94802",
+          "giver": "Sergeant Keane at the Mirror Lake outpost gives it.",
+          "task": "go down into the Landing's cellar and kill Acolyte Marren, elite, at the dig.",
+          "story": "Marren's orders: \"Hogger's camp is the staging ground. Move at the new moon.\"",
+          "reward": "10 silver, plus a choice of one of Marren's items. ITEM.",
+          "item": true,
+          "optionalItem": false
+        },
+        {
+          "id": 94804,
+          "title": "Burn the Boats",
+          "level": 26,
+          "requires": [
+            94803
+          ],
+          "requiresNote": "94803",
+          "giver": "Keane gives it.",
+          "task": "torch the 3 smuggler skiffs before they go upriver toward Lake Everstill.",
+          "story": "the supply line is cut and the finale is a race to the new moon.",
+          "reward": "5 silver. Opens Westbrook.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [
+        {
+          "id": 94805,
+          "title": "Riverpaw at Mirror Lake",
+          "giver": "Sergeant Keane",
+          "levelMin": 23,
+          "levelMax": 27,
+          "task": "Kill 10 Riverpaw Brutes or Riverpaw Shamans",
+          "copper": 500,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94806,
+          "title": "Twilight Fetishes",
+          "giver": "Sergeant Keane",
+          "levelMin": 23,
+          "levelMax": 27,
+          "task": "Bring 8 Twilight Fetishes (50% drop from Shamans)",
+          "copper": 520,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94807,
+          "title": "Smugglers on the Docks",
+          "giver": "Dobbs (after 94801)",
+          "levelMin": 24,
+          "levelMax": 28,
+          "task": "Kill 10 Defias Smugglers",
+          "copper": 540,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94808,
+          "title": "Contraband",
+          "giver": "Dobbs (after 94801)",
+          "levelMin": 24,
+          "levelMax": 28,
+          "task": "Bring 8 Smuggled Goods (50% drop)",
+          "copper": 550,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        }
+      ],
+      "repeatable": null
+    },
+    {
+      "name": "Forest's Edge & Westbrook Garrison",
+      "levelMin": 25,
+      "levelMax": 28,
+      "type": "outdoor",
+      "storyQuests": [
+        {
+          "id": 94901,
+          "title": "Reinforce Westbrook",
+          "level": 25,
+          "requires": [
+            94804
+          ],
+          "requiresNote": "94804",
+          "giver": "Dughan gives it.",
+          "task": "escort a supply wagon from Goldshire to Westbrook through two gnoll ambushes.",
+          "story": "Westbrook is the forward hub from here on.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94902,
+          "title": "Ragtooth",
+          "level": 26,
+          "requires": [
+            94901
+          ],
+          "requiresNote": "94901",
+          "giver": "Commander Vance gives it.",
+          "task": "kill Ragtooth, elite, the gnoll captain at the river crossing, and take his horn.",
+          "story": "the horn is how Hogger's camp calls its gnolls to a gate.",
+          "reward": "8 silver, plus a choice of one of Ragtooth's items. ITEM. The horn is a separate quest item kept for the raid.",
+          "item": true,
+          "optionalItem": false
+        },
+        {
+          "id": 94903,
+          "title": "The Camp by Daylight",
+          "level": 27,
+          "requires": [
+            94901
+          ],
+          "requiresNote": "94901",
+          "giver": "Scout Perrin gives it.",
+          "task": "reach three vantage points on the ridge above Hogger's camp.",
+          "story": "the player gets a sketch map marking the gates, the kennels and the Twilight tent.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94904,
+          "title": "Poison the Dogs",
+          "level": 27,
+          "requires": [
+            94903
+          ],
+          "requiresNote": "94903",
+          "giver": "Alchemist Mira gives it.",
+          "task": "gather 6 Nightshade on the riverbank and bring them back for Tainted Meat.",
+          "story": "optional; the camp's wolves sleep through the raid if the meat is used.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94905,
+          "title": "The Night Watch",
+          "level": 27,
+          "requires": [
+            94903
+          ],
+          "requiresNote": "94903",
+          "giver": "Vance gives it.",
+          "task": "subdue a Riverpaw Nightwatch and bring him back alive.",
+          "story": "he gives up the sentry rotation; the player learns the safest hour to go in.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 94906,
+          "title": "New Moon",
+          "level": 28,
+          "requires": [
+            94902,
+            94905
+          ],
+          "requiresNote": "94902 and 94905",
+          "giver": "Vance gives it.",
+          "task": "report ready.",
+          "story": "the raid is set for the night the cultists named.",
+          "reward": "XP only. Opens Hogger's Camp.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [
+        {
+          "id": 94907,
+          "title": "Mongrels on the Road",
+          "giver": "Commander Vance",
+          "levelMin": 25,
+          "levelMax": 29,
+          "task": "Kill 10 Riverpaw Mongrels or Riverpaw Outrunners",
+          "copper": 600,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94908,
+          "title": "Riverpaw Collars",
+          "giver": "Commander Vance",
+          "levelMin": 25,
+          "levelMax": 29,
+          "task": "Bring 8 Riverpaw Collars (50% drop)",
+          "copper": 620,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94909,
+          "title": "Nightshade",
+          "giver": "Alchemist Mira",
+          "levelMin": 26,
+          "levelMax": 30,
+          "task": "Gather 8 Nightshade on the riverbank",
+          "copper": 640,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        },
+        {
+          "id": 94910,
+          "title": "Hogger's Patrols",
+          "giver": "Scout Perrin",
+          "levelMin": 26,
+          "levelMax": 30,
+          "task": "Kill 10 Riverpaw Raiders on the Forest's Edge trail",
+          "copper": 660,
+          "tokens": 1,
+          "xp": "half a level, flat across range"
+        }
+      ],
+      "repeatable": null
+    },
+    {
+      "name": "Hogger's Camp",
+      "levelMin": 28,
+      "levelMax": 30,
+      "type": "dungeon",
+      "storyQuests": [
+        {
+          "id": 95001,
+          "title": "Into the Camp",
+          "level": 28,
+          "requires": [
+            94906
+          ],
+          "requiresNote": "94906",
+          "giver": "Commander Vance gives it.",
+          "task": "get inside Hogger's camp after dark and reach the Twilight tent.",
+          "story": "the whole camp is awake and waiting for the new moon.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 95002,
+          "title": "The Tribute",
+          "level": 29,
+          "requires": [
+            95001
+          ],
+          "requiresNote": "95001",
+          "giver": "Dughan's letter, carried from 94906, gives it.",
+          "task": "take the sealed Tribute crate from the Twilight tent before it leaves.",
+          "story": "the crate is marked for the Tower of Ilgalar; what is inside is the hook into Redridge.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 95003,
+          "title": "Free the Prisoners",
+          "level": 29,
+          "requires": [],
+          "requiresNote": "nothing before it",
+          "giver": "Starts from Scout Hale, caged in the camp.",
+          "task": "free the 4 captured Westbrook scouts and Eastvale lumberjacks.",
+          "story": "optional; the freed NPCs turn up at the garrison afterward.",
+          "reward": "5 silver.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 95004,
+          "title": "Hogger",
+          "level": 30,
+          "requires": [
+            95001
+          ],
+          "requiresNote": "95001",
+          "giver": "Vance gives it.",
+          "task": "kill Hogger, elite.",
+          "story": "the zone's capstone. If the Stockades exist, capture is the alternate turn-in.",
+          "reward": "20 silver, plus a choice of one of Hogger's items, one for each kind of fighter. ITEM: the big one.",
+          "item": true,
+          "optionalItem": false
+        },
+        {
+          "id": 95005,
+          "title": "Marshal Dughan's Report",
+          "level": 30,
+          "requires": [
+            95002,
+            95004
+          ],
+          "requiresNote": "95002 and 95004",
+          "giver": "Dughan gives it in Goldshire.",
+          "task": "return with the Tribute and word of Hogger.",
+          "story": "Dughan writes to Magistrate Solomon in Lakeshire; the exit quests carry it.",
+          "reward": "10 silver and the zone title.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [],
+      "repeatable": {
+        "id": 95006,
+        "title": "Twilight Relics of the Camp",
+        "level": 29,
+        "availableMin": 25,
+        "availableMax": 35,
+        "giver": "Commander Vance",
+        "task": "bring back 10 Twilight Relics.",
+        "dropRates": "Riverpaw Cultists 35%, Twilight Zealots always, Hogger always drops three.",
+        "reward": "8 silver and 3 Tokens."
+      }
+    },
+    {
+      "name": "Exit quests into Redridge",
+      "levelMin": 30,
+      "levelMax": 30,
+      "type": "outdoor",
+      "storyQuests": [
+        {
+          "id": 95101,
+          "title": "A Letter for Lakeshire",
+          "level": 30,
+          "requires": [
+            95005
+          ],
+          "requiresNote": "95005",
+          "giver": "Dughan gives it.",
+          "task": "carry Dughan's letter over the Lakeridge Highway to Magistrate Solomon in Lakeshire.",
+          "story": "Dughan has written down everything from the Abbey to Hogger's camp. Solomon reads it and says Redridge has worse problems than a cult, and he means the Blackrock orcs.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 95102,
+          "title": "Theocritus's Grudge",
+          "level": 30,
+          "requires": [
+            94604,
+            95005
+          ],
+          "requiresNote": "94604 and 95005",
+          "giver": "Theocritus gives it.",
+          "task": "take his sealed challenge to the foot of the Tower of Ilgalar and leave it on the door.",
+          "story": "Theocritus will not let Morganth keep what he stole. Shadowhide gnolls watch the player do it and do not attack; Morganth wants it delivered.",
+          "reward": "XP only.",
+          "item": false,
+          "optionalItem": false
+        },
+        {
+          "id": 95103,
+          "title": "What the Tribute Was For",
+          "level": 30,
+          "requires": [
+            95002,
+            95102
+          ],
+          "requiresNote": "95002 and 95102",
+          "giver": "Starts from the Tribute crate once Theocritus has examined it.",
+          "task": "bring Theocritus's findings to Magistrate Solomon.",
+          "story": "whatever is in the crate, Morganth was paying the cult to dig it up under Elwynn and float it up the river to Everstill. Solomon finally takes the cult seriously; the Redridge arc opens from here.",
+          "reward": "10 silver.",
+          "item": false,
+          "optionalItem": false
+        }
+      ],
+      "bounties": [],
+      "repeatable": null
+    }
+  ]
+}

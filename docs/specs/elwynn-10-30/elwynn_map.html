@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Elwynn Forest 1–30 Zone Map</title>
+</head>
+<body>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#e7c56a}a:hover{color:#fff}
+.card{position:absolute;width:216px;box-sizing:border-box;padding:10px 12px 10px 12px;background:#f3e9cf;border:2px solid #8a6a2e;border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.45);font-family:'Source Sans 3',system-ui,sans-serif;color:#2b2416}
+.card .name{font-family:Cinzel,serif;font-weight:700;font-size:14px;line-height:1.2;color:#2b2416;margin:0}
+.card .lv{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:999px;background:#2f5d3a;color:#f3e9cf;font-weight:700;font-size:12px;letter-spacing:.03em}
+.card .meta{margin:6px 0 0 0;font-size:12px;line-height:1.35;color:#4a3f2a}
+.card .num{position:absolute;top:-14px;left:-14px;width:28px;height:28px;border-radius:50%;background:#8a6a2e;color:#f3e9cf;font-family:Cinzel,serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;border:2px solid #f3e9cf}
+.dungeon{background:#2a2118;border-color:#e7c56a;color:#f3e9cf}
+.dungeon .name{color:#f3e9cf}
+.dungeon .lv{background:#e7c56a;color:#2a2118}
+.dungeon .meta{color:#d9cdb0}
+.dungeon .num{background:#e7c56a;color:#2a2118;border-color:#2a2118}
+.done{opacity:.78}
+.tag{display:inline-block;margin-top:6px;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:600;background:#e2d2a5;color:#5a4420}
+.dungeon .tag{background:#4a3a24;color:#e7c56a}
+.hook{display:inline-block;margin-top:6px;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:600;background:#4b3566;color:#efe6ff}
+.place{position:absolute;font-family:Cinzel,serif;font-weight:600;font-size:11px;letter-spacing:.06em;color:#d7e3c9;text-shadow:0 1px 3px rgba(0,0,0,.8);white-space:nowrap}
+.legend{position:absolute;left:24px;bottom:22px;display:flex;flex-direction:column;gap:6px;padding:12px 14px;background:rgba(20,32,24,.85);border:1px solid #8a6a2e;border-radius:6px;font-family:'Source Sans 3',system-ui,sans-serif;font-size:12px;color:#e8e0c8}
+.legend .row{display:flex;align-items:center;gap:8px}
+.sw{width:16px;height:12px;border-radius:3px;border:1px solid rgba(255,255,255,.3)}
+</style>
+
+<div style="position: relative; width: 1440px; height: 1000px; overflow: hidden; background: #16281d; font-family: 'Source Sans 3', system-ui, sans-serif">
+
+<svg aria-hidden="true" viewBox="0 0 1440 1000" width="1440" height="1000" style="position: absolute; left: 0; top: 0">
+<defs>
+<pattern id="trees" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="9" cy="9" r="2.2" fill="#2b4a33"/></pattern>
+</defs>
+<rect x="0" y="0" width="1440" height="1000" fill="#1d3426"/>
+<rect x="0" y="0" width="1440" height="1000" fill="url(#trees)" opacity=".7"/>
+<path d="M0 0 L1440 0 L1440 60 Q1200 110 980 70 Q760 40 520 95 Q300 140 0 60 Z" fill="#3b4a4f" opacity=".9"/>
+<path d="M0 930 Q180 900 330 950 Q520 1000 760 960 Q1000 920 1200 975 Q1320 1000 1440 960 L1440 1000 L0 1000 Z" fill="#2a4d6b"/>
+<path d="M0 930 Q180 900 330 950 Q520 1000 760 960 Q1000 920 1200 975 Q1320 1000 1440 960" fill="none" stroke="#5f93b8" stroke-width="3"/>
+<ellipse cx="540" cy="200" rx="150" ry="95" fill="#2f6b43" opacity=".55"/>
+<path d="M395 175 Q420 110 540 105 Q660 110 690 180" fill="none" stroke="#4e5c57" stroke-width="22" stroke-linecap="round" opacity=".9"/>
+<ellipse cx="450" cy="470" rx="140" ry="95" fill="#c7a84a" opacity=".22"/>
+<ellipse cx="560" cy="760" rx="190" ry="110" fill="#b7903c" opacity=".2"/>
+<ellipse cx="690" cy="520" rx="150" ry="110" fill="#2f6b43" opacity=".45"/>
+<ellipse cx="690" cy="520" rx="72" ry="48" fill="#2f6f9a"/>
+<ellipse cx="690" cy="520" rx="72" ry="48" fill="none" stroke="#6fb0d9" stroke-width="2" opacity=".8"/>
+<ellipse cx="990" cy="310" rx="170" ry="115" fill="#2f6b43" opacity=".45"/>
+<ellipse cx="990" cy="320" rx="92" ry="58" fill="#2f6f9a"/>
+<ellipse cx="990" cy="320" rx="92" ry="58" fill="none" stroke="#6fb0d9" stroke-width="2" opacity=".8"/>
+<ellipse cx="1010" cy="305" rx="14" ry="9" fill="#2f6b43"/>
+<ellipse cx="940" cy="530" rx="110" ry="80" fill="#5a4a8a" opacity=".3"/>
+<ellipse cx="1240" cy="560" rx="170" ry="190" fill="#7a6a2e" opacity=".3"/>
+<ellipse cx="820" cy="880" rx="150" ry="70" fill="#5a4a8a" opacity=".3"/>
+<ellipse cx="270" cy="760" rx="120" ry="80" fill="#5a4a8a" opacity=".25"/>
+<ellipse cx="280" cy="765" rx="62" ry="40" fill="#2f6f9a"/>
+<ellipse cx="280" cy="765" rx="62" ry="40" fill="none" stroke="#6fb0d9" stroke-width="2" opacity=".8"/>
+<ellipse cx="180" cy="620" rx="130" ry="120" fill="#7a3a2e" opacity=".3"/>
+<ellipse cx="130" cy="830" rx="110" ry="80" fill="#7a2e2e" opacity=".45"/>
+<path d="M120 70 Q280 180 400 220 Q470 260 450 340 Q440 420 450 470" fill="none" stroke="#c9b27a" stroke-width="5" opacity=".7" stroke-dasharray="1 0"/>
+<path d="M450 470 Q600 460 700 440 Q850 420 940 460 Q1100 510 1240 520 Q1330 525 1440 500" fill="none" stroke="#c9b27a" stroke-width="5" opacity=".7"/>
+<path d="M450 470 Q400 560 340 640 Q260 700 180 720 Q120 760 60 860" fill="none" stroke="#c9b27a" stroke-width="5" opacity=".7"/>
+<path d="M560 740 Q700 800 820 870" fill="none" stroke="#c9b27a" stroke-width="4" opacity=".55"/>
+<path d="M1240 560 Q1200 650 1180 720" fill="none" stroke="#c9b27a" stroke-width="4" opacity=".55"/>
+<path d="M540 230 L450 470 L560 740 L690 520 L760 400 L990 330 L940 530 L1240 520 L1180 720 L820 880 L280 765 L180 620 L130 830" fill="none" stroke="#e7c56a" stroke-width="2.5" stroke-dasharray="7 6" opacity=".85"/>
+</svg>
+
+<div style="position: absolute; left: 0; top: 0; width: 1440px; padding: 16px 28px; box-sizing: border-box; display: flex; align-items: baseline; gap: 18px; background: linear-gradient(rgba(10,18,13,.9), rgba(10,18,13,0))">
+<h1 style="margin: 0; font-family: Cinzel, serif; font-weight: 700; font-size: 30px; color: #e7c56a; letter-spacing: .04em">Elwynn Forest</h1>
+<div style="font-family: Cinzel, serif; font-weight: 600; font-size: 15px; color: #d7e3c9; letter-spacing: .08em">Levels 1–30 · 12 sub-zones · 3 dungeons + the Abbey</div>
+<div style="margin-left: auto; font-size: 13px; color: #b8c4ad">Follow the gold dashed line for the intended order. Purple tags mark Twilight's Hammer hooks.</div>
+</div>
+
+<div class="place" style="left: 60px; top: 78px">STORMWIND CITY GATE</div>
+<div class="place" style="left: 455px; top: 112px">NORTHSHIRE VALLEY</div>
+<div class="place" style="left: 640px; top: 585px">CRYSTAL LAKE</div>
+<div class="place" style="left: 934px; top: 392px">STONE CAIRN LAKE</div>
+<div class="place" style="left: 228px; top: 818px">MIRROR LAKE</div>
+<div class="place" style="left: 1288px; top: 606px">EASTVALE</div>
+<div class="place" style="left: 150px; top: 540px">WESTBROOK GARRISON</div>
+<div class="place" style="left: 30px; top: 740px">FOREST'S EDGE</div>
+<div class="place" style="left: 560px; top: 964px">THE SOUTHERN RIVER · UPSTREAM TO LAKE EVERSTILL AND REDRIDGE</div>
+
+<div class="card done" style="left: 432px; top: 140px">
+<div class="num">1</div>
+<p class="name">Northshire Valley</p>
+<span class="lv">Lv 1–10</span><span class="tag">Done</span>
+<p class="meta">~5 quests · kobolds, wolves, Defias scouts</p>
+</div>
+
+<div class="card dungeon done" style="left: 600px; top: 215px; width: 190px">
+<div class="num">2</div>
+<p class="name">Northshire Abbey</p>
+<span class="lv">Lv 9–12</span><span class="tag">Dungeon · done</span>
+<p class="meta">Breadcrumb out: Report to Goldshire</p>
+</div>
+
+<div class="card" style="left: 330px; top: 395px">
+<div class="num">3</div>
+<p class="name">Goldshire</p>
+<span class="lv">Lv 10–13</span><span class="tag">Hub</span><span class="hook">Hook</span>
+<p class="meta">7 quests · Marshal Dughan's board, Lion's Pride Inn, the unknown black-sun seal</p>
+</div>
+
+<div class="card" style="left: 470px; top: 700px">
+<div class="num">4</div>
+<p class="name">The Farmlands</p>
+<span class="lv">Lv 11–14</span><span class="hook">Hook</span>
+<p class="meta">7 quests · Stonefield, Maclure, Brackwell · the feud, Princess, Defias thugs, Morgan the Collector</p>
+</div>
+
+<div class="card" style="left: 596px; top: 452px">
+<div class="num">5</div>
+<p class="name">Crystal Lake &amp; Fargodeep</p>
+<span class="lv">Lv 13–16</span><span class="hook">Hook</span>
+<p class="meta">7 quests · murlocs, kobold warmup, the dead courier, sunken Defias crates</p>
+</div>
+
+<div class="card dungeon" style="left: 700px; top: 330px; width: 196px">
+<div class="num">6</div>
+<p class="name">Jasperlode Mine</p>
+<span class="lv">Lv 15–18</span><span class="tag">Dungeon</span>
+<p class="meta">5 quests · kobold warren, the Kobold King's truce, Resonant Ore</p>
+</div>
+
+<div class="card" style="left: 1070px; top: 220px">
+<div class="num">7</div>
+<p class="name">Stone Cairn &amp; Heroes' Vigil</p>
+<span class="lv">Lv 16–19</span><span class="hook">Hook</span>
+<p class="meta">6 quests · murloc nests, Riverpaw scouts, the defaced cairn, a night held against cultists</p>
+</div>
+
+<div class="card dungeon" style="left: 848px; top: 560px; width: 196px">
+<div class="num">8</div>
+<p class="name">Tower of Azora</p>
+<span class="lv">Lv 19–22</span><span class="tag">Dungeon</span><span class="hook">Hook</span>
+<p class="meta">6 quests · wild portals, the apprentice's secret, Theocritus unbound</p>
+</div>
+
+<div class="card" style="left: 1200px; top: 420px">
+<div class="num">9</div>
+<p class="name">Eastvale &amp; Ridgepoint Tower</p>
+<span class="lv">Lv 20–24</span><span class="hook">Hook</span>
+<p class="meta">7 quests · Defias looters, the overseer's manifest, storming Ridgepoint, Speaker Vael</p>
+</div>
+
+<div class="card" style="left: 760px; top: 820px; width: 230px">
+<div class="num">10</div>
+<p class="name">Mirror Lake &amp; Jerod's Landing</p>
+<span class="lv">Lv 23–26</span><span class="hook">Hook</span>
+<p class="meta">6 quests · Riverpaw shamans, the smugglers' ledger, the pit, burn the boats</p>
+</div>
+
+<div class="card" style="left: 60px; top: 590px; width: 210px">
+<div class="num">11</div>
+<p class="name">Forest's Edge &amp; Westbrook</p>
+<span class="lv">Lv 25–28</span>
+<p class="meta">7 quests · raid prep: thin the patrols, Ragtooth's horn, poison the dogs, the sentry rotation</p>
+</div>
+
+<div class="card dungeon" style="left: 48px; top: 800px; width: 200px">
+<div class="num">12</div>
+<p class="name">Hogger's Camp</p>
+<span class="lv">Lv 28–30</span><span class="tag">Night raid</span><span class="hook">Hook</span>
+<p class="meta">5 quests · the Twilight tent, free the prisoners, Hogger, Dughan's report</p>
+</div>
+
+<div class="legend" style="left: 296px; bottom: 22px">
+<div class="row"><div class="sw" style="background: #f3e9cf"></div><span>Outdoor sub-zone (numbered in play order)</span></div>
+<div class="row"><div class="sw" style="background: #2a2118; border-color: #e7c56a"></div><span>Dungeon</span></div>
+<div class="row"><div class="sw" style="background: #4b3566"></div><span>Twilight's Hammer hook in this sub-zone</span></div>
+<div class="row"><div class="sw" style="background: #2f6f9a"></div><span>Lake</span></div>
+<div class="row"><div class="sw" style="background: #c9b27a"></div><span>Road</span></div>
+</div>
+
+</div>
+
+</body>
+</html>
