@@ -42,7 +42,7 @@ An area around the Hub where a character levels by killing mobs and doing Huntin
 _Avoid_: zone (a WoW map area, which a Hunting Ground may only partly cover)
 
 **Level Band**:
-The range of character levels a Hunting Ground is built for, such as 1–10 for Northshire Valley. Its mobs' levels are set to fit the band, not taken from vanilla.
+The range of Power Levels a Hunting Ground is built for, such as 1–10 for Northshire Valley. Its mobs' levels are set to fit the band, not taken from vanilla.
 _Avoid_: zone level, level range (of a single mob)
 
 **Camp**:
@@ -77,11 +77,11 @@ Moving from a Calling to one of the Callings it branches into at the next Tier. 
 _Avoid_: upgrade, promotion, prestige
 
 **Hunting Quest**:
-A quest from a Hunting Ground's giver, about the mobs or places of that Hunting Ground. It can be done once per Tier: Advancement forgets every completed Hunting Quest and drops any still in the log, so each Tier does them again from level 1.
+A quest from a Hunting Ground's giver, about the mobs or places of that Hunting Ground. It can be done once per character, from the Tier its level falls in or any later Tier. Advancement leaves completed quests and the quest log alone.
 _Avoid_: repeatable quest, daily
 
 **Repeatable Quest**:
-A quest tied to a Dungeon that can be taken again as soon as it is handed in. At its own level it is worth about one level of XP; the reward shrinks as the character outlevels it.
+A quest tied to a Dungeon that can be taken again as soon as it is handed in. It is worth about one level of the character's own XP, at any level.
 _Avoid_: daily
 
 **Token**:
@@ -114,10 +114,18 @@ _Avoid_: max level
 A quest from a Calling's trainer, offered at the Tier Cap. Completing it advances the character into that Calling, so choosing which one to finish is how a player chooses their branch.
 
 **Tier Bonus**:
-A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. It is what makes a character stronger after Advancement resets their level. Gear and gold carry over, completed Hunting Quests do not; skills and talents are replaced by the new Calling's.
+A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. With the Power Level, it is what makes a character stronger after Advancement resets their level. Gear, gold and completed quests carry over; skills and talents are replaced by the new Calling's.
+
+**Power Level**:
+The level a character's body and combat count as: each Tier's levels mapped in a straight line onto the band that Tier's content is built for, 1–10 for Tier 0, 10–30 for Tier 1, 30–50 for Tier 2 and 50–60 for Tier 3. A Tier 1 character at level 1 has Power Level 10. Base stats and combat formulas use it; XP, Talent Points, the Tier Cap and the level the client shows use the real level. ADR 0012.
+_Avoid_: effective level, item level
+
+**Zone Factor**:
+A multiplier on the health and damage of every mob in one area, set in `mobs.toml` per `AreaTable.dbc` area. A subzone without its own takes its parent zone's. It is what makes a new zone feel hostile: Northshire Valley is ×1, the rest of Elwynn Forest is harsher.
+_Avoid_: zone difficulty, zone level
 
 **Tier XP Rate**:
-How much more XP a character earns from everything, set by their Tier: ×1 at Tier 0, ×3 at Tier 1, ×5 at Tier 2 and ×7 at Tier 3. It makes replaying the low levels after an Advancement quick.
+How much more XP a character earns from everything, set by their Tier: ×1 at Tier 0, ×3 at Tier 1, ×5 at Tier 2 and ×7 at Tier 3. With kill and quest XP paid by the mob's or quest's own level, it makes the first levels after an Advancement go by in a few hand-ins.
 _Avoid_: XP bonus, rested XP (WoW's own, which is separate)
 
 **Talent Point**:
@@ -151,7 +159,7 @@ One of a few steps of Notoriety. Each sets a multiplier on all XP, applied on to
 _Avoid_: tier (Advancement's), notoriety tier
 
 **Bounty Hunter**:
-A hard elite sent after a character once their Heat Level is above zero, one at a time, at the character's own level. It tracks its target across the open world and gives up only when the target enters a Hub or a Phased Dungeon. Each comes from one of a few archetypes. It is not a bounty quest, and not WoW's Hunter class.
+A hard elite sent after a character once their Heat Level is above zero, one at a time, at the character's own Power Level. It tracks its target across the open world and gives up only when the target enters a Hub or a Phased Dungeon. Each comes from one of a few archetypes. It is not a bounty quest, and not WoW's Hunter class.
 _Avoid_: hunter, stalker, assassin
 
 **Bounty Rank**:
