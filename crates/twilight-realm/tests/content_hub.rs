@@ -89,6 +89,22 @@ fn quests() -> Vec<Quest> {
         .quest
 }
 
+/// The creature entries that give or take in a quest of `quests_elwynn.toml`, whose quests may
+/// instead name a GameObject or an item as the giver.
+fn elwynn_givers() -> Vec<u32> {
+    let file: toml::Table = include_str!("../content/quests_elwynn.toml")
+        .parse()
+        .expect("quests_elwynn.toml parses");
+    file["quest"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|q| [q.get("giver"), q.get("ender")])
+        .filter_map(|v| v?.as_integer())
+        .map(|g| g as u32)
+        .collect()
+}
+
 /// Every creature spawn in The Barrens, `(entry, x, y)`. A Wailing Caverns creature counts as
 /// standing at the Caverns' entrance: its Hunting Ground, seen from Kalimdor, is that mouth.
 fn spawns() -> Vec<(u32, f32, f32)> {
@@ -120,8 +136,9 @@ fn spawns() -> Vec<(u32, f32, f32)> {
 #[test]
 fn every_npcs_flags_fit_its_role() {
     let quests = quests();
+    let elwynn = elwynn_givers();
     for n in hub() {
-        let gives = quests.iter().any(|q| q.giver == n.entry);
+        let gives = quests.iter().any(|q| q.giver == n.entry) || elwynn.contains(&n.entry);
         let talks = n.text_id.is_some() && !n.greeting.is_empty();
         let ok = match n.role.as_str() {
             "goods" => n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty() && !n.tokens,

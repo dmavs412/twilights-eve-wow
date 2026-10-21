@@ -1173,3 +1173,123 @@ speed_run = 0.0
 detection_range = 40.0
 melee = false
 spells = ["eye_beam", "eye_mind_flay", "eye_dark_glare"]
+
+# Stone Cairn Lake and Heroes' Vigil (#243). Every multiplier is a placeholder, untested against
+# a level 16 to 19. Display 2882 is the Twilight Acolyte's (vmangos entry 4809) and faction 14 is
+# the Abbey cultists'. Templates have no flee-at-low-health field, so the Daubers do not run.
+
+# The Vigil's painters, one wave for The Vigil Defaced (encounters.toml). Melee.
+[[template]]
+entry = 96023
+name = "Twilight Dauber"
+creature_type = 7
+display_id = 2882
+faction_template = 14
+unit_class = "warrior"
+level_min = 16
+level_max = 16
+health_multiplier = 0.9
+damage_multiplier = 0.9
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The cultists of Rites at the Stone's three waves (encounters.toml). Melee.
+[[template]]
+entry = 96024
+name = "Twilight Cultist"
+creature_type = 7
+display_id = 2882
+faction_template = 14
+unit_class = "warrior"
+level_min = 17
+level_max = 18
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# Ritualist Serane, who leads the last wave: elite, with the Twilight Disciple's Shadow Word:
+# Pain, and always carrying the Resonant Shard (quest_items.toml).
+[[template]]
+entry = 96025
+name = "Ritualist Serane"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 18
+level_max = 18
+health_multiplier = 1.6
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+spells = ["shadow_word_pain_creature"]
+
+# The lake's murlocs for the Vigil post's bounties; no stock Nestguard or Tidehunter exists in
+# Elwynn. Displays 617 (the Murloc's) and 527 (the Streamrunner's) and faction 18 are the lake
+# murlocs'. Spawns are in elwynn_overrides.toml.
+[[template]]
+entry = 96026
+name = "Murloc Nestguard"
+creature_type = 7
+display_id = 617
+faction_template = 18
+unit_class = "warrior"
+level_min = 17
+level_max = 18
+health_multiplier = 1.1
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 14.0
+respawn_secs = 120.0
+
+[[template]]
+entry = 96027
+name = "Murloc Tidehunter"
+creature_type = 7
+display_id = 527
+faction_template = 18
+unit_class = "warrior"
+level_min = 16
+level_max = 17
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 14.0
+respawn_secs = 120.0
+
+# The gnoll scouts on the lake's shore. Display 512 and faction 20 are the Riverpaw Outrunner's
+# (entry 478).
+[[template]]
+entry = 96028
+name = "Riverpaw Scout"
+creature_type = 7
+display_id = 512
+faction_template = 20
+unit_class = "warrior"
+level_min = 17
+level_max = 19
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 16.0
+respawn_secs = 120.0

@@ -58,6 +58,10 @@ item = [
   # Argus takes the ore; Dughan takes the orders.
   { entry = 980017, name = "Resonant Ore", quality = 1, item_level = 17, class = 12, display_id = 6477, stackable = 20 },
   { entry = 980018, name = "Dig Orders", quality = 1, item_level = 18, class = 12, display_id = 6270, max_count = 1 },
+  # Stone Cairn Lake (#243). The displays are placeholders borrowed from stock quest items. The
+  # Resonant Shard is Quest Starter of An Echo in the Ore; Toren takes it. Ilsa takes the marks.
+  { entry = 980019, name = "Resonant Shard", quality = 1, item_level = 19, class = 12, display_id = 7697, max_count = 1, start_quest = 94503 },
+  { entry = 980020, name = "Riverpaw Scout Mark", quality = 1, item_level = 18, class = 12, display_id = 7255, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye
@@ -66,4 +70,6 @@ item = [
 starter_drop = [
   { item = 980001, from = [96002], chance = 100 },
   { item = 980018, from = [96022], chance = 100, until_done = 94403 },
+  # Ritualist Serane always carries the Resonant Shard, until An Echo in the Ore is taken or done.
+  { item = 980019, from = [96025], chance = 100 },
 ]

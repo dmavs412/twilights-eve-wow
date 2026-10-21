@@ -853,6 +853,82 @@ mod tests {
     }
 
     #[test]
+    fn stone_cairns_story_quests_chain_and_serane_drops_the_shard() {
+        let q = |id| super::quest(id).unwrap();
+        assert!(q(94501).after.ids().is_empty());
+        assert_eq!(q(94501).use_object, [(980104, 5)]);
+        assert_eq!(q(94501).kill, [(96023, 6)]);
+        assert_eq!(q(94502).after.ids(), [94501, 94403]);
+        assert_eq!(q(94502).kill, [(96025, 1)]);
+        assert_eq!((q(94502).money, q(94502).tokens), (800, 3));
+        assert!(q(94502).choices.is_empty());
+        assert_eq!(q(94503).after.ids(), [94502]);
+        assert!(matches!(q(94503).giver, Giver::Item));
+        assert_eq!(q(94503).ender(), 190062);
+        let shard = starter_drops()
+            .into_iter()
+            .find(|d| d.item == 980019)
+            .expect("the Resonant Shard drops");
+        assert_eq!((shard.from.as_slice(), shard.chance), (&[96025][..], 100));
+        assert_eq!(crate::items::template(980019).unwrap().start_quest, 94503);
+    }
+
+    #[test]
+    fn stone_cairns_encounters_have_their_waves() {
+        let all = crate::encounters::content();
+        let by = |key: &str| all.iter().find(|e| e.key == key).unwrap();
+        let daubers = by("vigil_daubers");
+        assert_eq!(daubers.quest, 94501);
+        assert!(matches!(daubers.start, crate::encounters::Start::UseDone));
+        assert_eq!(daubers.wave.len(), 1);
+        assert_eq!(daubers.wave[0].creatures[0].count, 6);
+        let rites = by("cairn_rites");
+        assert_eq!(rites.quest, 94502);
+        assert!(matches!(rites.start, crate::encounters::Start::Accepted));
+        assert_eq!(rites.wave.len(), 3);
+        let last: Vec<u32> = rites.wave[2].creatures.iter().map(|c| c.entry).collect();
+        assert!(last.contains(&96025), "Serane leads the last wave");
+        assert_eq!(rites.wave[0].creatures[0].count, 3);
+    }
+
+    #[test]
+    fn stone_cairns_bounties_have_their_range_giver_and_objective() {
+        // id, giver, levels offered, kills, uses, collected item.
+        let rows: [(u32, u32, (u8, u8), &[u32], &[u32], Option<u32>); 4] = [
+            (94505, 190061, (16, 20), &[96026, 96027], &[], None),
+            (94506, 190061, (16, 20), &[], &[980105], None),
+            (94507, 190061, (17, 21), &[96028], &[], None),
+            (94508, 190060, (17, 21), &[], &[], Some(980020)),
+        ];
+        for (id, giver, (lo, hi), kills, uses, item) in rows {
+            let q = super::quest(id).unwrap_or_else(|| panic!("no quest {id}"));
+            assert!(q.kind == Kind::Bounty, "{id}'s kind");
+            assert!(
+                matches!(q.giver, Giver::Npc(g) if g == giver),
+                "{id}'s giver"
+            );
+            assert!(!q.in_range(lo - 1), "{id} offered below {lo}");
+            assert!(
+                q.in_range(lo) && q.in_range(hi),
+                "{id} not offered in {lo}-{hi}"
+            );
+            assert!(!q.in_range(hi + 1), "{id} offered above {hi}");
+            assert_eq!(q.tokens, 1, "{id}'s Token");
+            let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
+            assert_eq!(killed, kills, "{id}'s kills");
+            let used: Vec<u32> = q.use_object.iter().map(|&(e, _)| e).collect();
+            assert_eq!(used, uses, "{id}'s uses");
+            assert_eq!(q.collect.first().map(|c| c.item), item, "{id}'s item");
+        }
+        assert_eq!(super::quest(94506).unwrap().use_object, [(980105, 6)]);
+        let marks = &super::quest(94508).unwrap().collect[0];
+        assert_eq!(
+            (marks.count, marks.chance, marks.from.as_slice()),
+            (8, 50, &[96028][..])
+        );
+    }
+
+    #[test]
     fn goldshires_bounties_and_wrecked_cart_have_their_range_giver_and_objective() {
         // id, giver, levels offered, kills, collected item.
         let rows: [(u32, u32, (u8, u8), &[u32], Option<u32>); 4] = [

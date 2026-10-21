@@ -1117,3 +1117,56 @@ orientation = 0.14
 faces = [-8672.0, -124.0]
 text_id = 64034
 greeting = "The brothers turned me out for asking how the dying cross over, $C, so I ask it here, where the kobolds dig. The Acolyte tends the dark: a mender who draws strength from blood and from loss. It is not a gentle road, but I will show you the way."
+
+# ── Stone Cairn Lake's quest givers (#243) ───────────────────────────────────────────────────────
+# Three quest givers on the Eastern Kingdoms (`map = 0`). Heroes' Vigil's position is a guess in
+# the Stone Cairn Lake band south of the Defias wizards, and Toren's is outside the Tower of Azora's
+# door by Theocritus (-9553, -728); Davis moves any that land wrong. The displays are stock human
+# models already in content/elwynn.toml: Grave-tender Ilsa wears Drusilla La Salle's (3345), Guard
+# Pell Guard Thomas's (1984) and Toren Brother Sammuel's (3346, as Brother Corwin above). Their
+# guids are 93000xx, below the called adds' base.
+
+[[npc]]
+guid = 9300011
+entry = 190060
+name = "Grave-tender Ilsa"
+subname = "Heroes' Vigil"
+level = 20
+display_id = 3345
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9268.0, -1096.0, 72.0]
+orientation = 1.57
+greeting = "The Vigil keeps those who held the line at the Dark Portal. I tend their stones. Someone has been painting on them, and I will not rest until it is gone."
+
+[[npc]]
+guid = 9300012
+entry = 190061
+name = "Guard Pell"
+subname = "Heroes' Vigil Post"
+level = 20
+display_id = 1984
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9262.0, -1103.0, 72.0]
+orientation = 3.9
+greeting = "Murlocs from the lake, gnolls from the east. The post is two men and a bell. If you will walk the shore for us, I pay by the head."
+
+[[npc]]
+guid = 9300013
+entry = 190062
+name = "Toren"
+subname = "Theocritus's Apprentice"
+level = 20
+display_id = 3346
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9545.0, -712.0, 62.0]
+orientation = 3.14
+greeting = "I stay outside. The master's experiments do not agree with me, and the door is thick."

@@ -273,3 +273,167 @@ level_min = 15
 level_max = 15
 position = [-9478.0, -428.0, 56.0]
 orientation = 1.57
+
+# Stone Cairn Lake (#243): the bounty creatures, which no stock spawn in the band supplies. Six
+# Murloc Nestguards and six Tidehunters on the shore and island south of the lake's Defias camp,
+# and eight Riverpaw Scouts along the east shore. Positions are guesses near the murloc spawns at
+# (-9250, -1200) and need a look in game; the island is assumed to lie around (-9130, -1130).
+[[added]]
+guid = 960301
+entry = 96026
+level_min = 17
+level_max = 18
+position = [-9135.0, -1125.0, 70.0]
+orientation = 0.5
+
+[[added]]
+guid = 960302
+entry = 96026
+level_min = 17
+level_max = 18
+position = [-9122.0, -1135.0, 70.0]
+orientation = 1.5
+
+[[added]]
+guid = 960303
+entry = 96026
+level_min = 17
+level_max = 18
+position = [-9145.0, -1140.0, 70.0]
+orientation = 2.5
+
+[[added]]
+guid = 960304
+entry = 96026
+level_min = 17
+level_max = 18
+position = [-9110.0, -1120.0, 70.0]
+orientation = 3.5
+
+[[added]]
+guid = 960305
+entry = 96026
+level_min = 17
+level_max = 18
+position = [-9150.0, -1118.0, 70.0]
+orientation = 4.5
+
+[[added]]
+guid = 960306
+entry = 96026
+level_min = 17
+level_max = 18
+position = [-9128.0, -1150.0, 70.0]
+orientation = 5.5
+
+[[added]]
+guid = 960307
+entry = 96027
+level_min = 16
+level_max = 17
+position = [-9200.0, -1180.0, 68.0]
+orientation = 0.2
+
+[[added]]
+guid = 960308
+entry = 96027
+level_min = 16
+level_max = 17
+position = [-9185.0, -1195.0, 68.0]
+orientation = 1.2
+
+[[added]]
+guid = 960309
+entry = 96027
+level_min = 16
+level_max = 17
+position = [-9170.0, -1185.0, 68.0]
+orientation = 2.2
+
+[[added]]
+guid = 960310
+entry = 96027
+level_min = 16
+level_max = 17
+position = [-9210.0, -1200.0, 68.0]
+orientation = 3.2
+
+[[added]]
+guid = 960311
+entry = 96027
+level_min = 16
+level_max = 17
+position = [-9160.0, -1205.0, 68.0]
+orientation = 4.2
+
+[[added]]
+guid = 960312
+entry = 96027
+level_min = 16
+level_max = 17
+position = [-9195.0, -1215.0, 68.0]
+orientation = 5.2
+
+[[added]]
+guid = 960313
+entry = 96028
+level_min = 17
+level_max = 19
+position = [-9040.0, -1060.0, 70.0]
+orientation = 0.3
+
+[[added]]
+guid = 960314
+entry = 96028
+level_min = 17
+level_max = 19
+position = [-9030.0, -1075.0, 70.0]
+orientation = 1.3
+
+[[added]]
+guid = 960315
+entry = 96028
+level_min = 17
+level_max = 19
+position = [-9050.0, -1085.0, 70.0]
+orientation = 2.3
+
+[[added]]
+guid = 960316
+entry = 96028
+level_min = 17
+level_max = 19
+position = [-9025.0, -1095.0, 70.0]
+orientation = 3.3
+
+[[added]]
+guid = 960317
+entry = 96028
+level_min = 17
+level_max = 19
+position = [-9045.0, -1105.0, 70.0]
+orientation = 4.3
+
+[[added]]
+guid = 960318
+entry = 96028
+level_min = 17
+level_max = 19
+position = [-9035.0, -1120.0, 70.0]
+orientation = 5.3
+
+[[added]]
+guid = 960319
+entry = 96028
+level_min = 17
+level_max = 19
+position = [-9055.0, -1130.0, 70.0]
+orientation = 0.8
+
+[[added]]
+guid = 960320
+entry = 96028
+level_min = 17
+level_max = 19
+position = [-9020.0, -1140.0, 70.0]
+orientation = 1.8

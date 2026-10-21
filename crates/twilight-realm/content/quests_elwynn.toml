@@ -800,3 +800,250 @@ money = 400
 tokens = 3
 zone_or_sort = 12
 collect = [{ item = 980017, count = 10, sources = [{ from = [96017, 96018], chance = 35 }, { from = [96019], chance = 100 }, { from = [96022], chance = 100, count = 3 }] }]
+
+# ── Stone Cairn Lake (#225) ──────────────────────────────────────────────────────────────────────
+#
+# Heroes' Vigil, the lake and the road to the Tower of Azora. The cultists come out in the open
+# here for the first time. Ids and ranges follow docs/specs/elwynn-10-30. Dusk and night are in the
+# text only; the encounters (encounters.toml) run whenever the quest says.
+
+# Five Defaced Cairns are cleaned, and the fifth starts the Daubers (encounters.toml
+# `vigil_daubers`). XP only.
+[[quest]]
+id = 94501
+kind = "story"
+giver = 190060
+level = 16
+title = "The Vigil Defaced"
+objectives = "Clean 5 defaced cairns at Heroes' Vigil, then kill the 6 Twilight Daubers who return at dusk, and report to Grave-tender Ilsa."
+details = "Someone has painted the cairn stones, and the paint will not wash. It is the same mark as the one on the idol they found at Echo Ridge. Scrub the five stones while the light lasts. Whoever painted them comes back at dusk to see their work, and they are fools who run when hit. Put them down."
+progress = "Are the stones clean? Is it done?"
+completion = "The stones are clean, and the painters are down. Low cultists, and they ran at the first blow. But they came to my graves with a brush, and that is the cult's work: they mark a place before they take it."
+money = 0
+tokens = 0
+zone_or_sort = 12
+kill = [[96023, 6]]
+use = [[980104, 5]]
+
+# Hold the cairn against three waves, then kill Serane. An item quest with placeholder rewards
+# until the gear pass: 800 copper and 3 Tokens, no choices. Serane carries the Resonant Shard.
+[[quest]]
+id = 94502
+kind = "story"
+giver = 190060
+after = [94501, 94403]
+level = 18
+title = "Rites at the Stone"
+objectives = "Hold Heroes' Vigil's cairn against the cultists who come up from the shore, kill Ritualist Serane, and return to Grave-tender Ilsa."
+details = "The dead at the Vigil are quiet no longer. The marks on the cairns were a summons, and the cult will come tonight to finish the rite. Stand at the stone. They come in three waves, and the last has a ritualist at its head. Kill her before she finishes."
+progress = "Is the ritualist dead? Is the stone still ours?"
+completion = "Serane's orders were in her hand when she fell: the tower is ready; the tribute moves by water. The tower can only be Azora's, and the water is the lake. They were not here for the Vigil's dead. They were using the Vigil to hide a boat."
+money = 800
+tokens = 3
+zone_or_sort = 12
+kill = [[96025, 1]]
+
+# The Resonant Shard starts it; Toren takes it. XP only. Opens Azora.
+[[quest]]
+id = 94503
+kind = "story"
+giver = "item"
+ender = 190062
+after = 94502
+level = 19
+title = "An Echo in the Ore"
+objectives = "Bring the Resonant Shard to Toren, Theocritus's apprentice, outside the Tower of Azora."
+details = "The shard hums against your palm, a note too low to hear and too steady to be a trick of the ear. It rang like this in the mine at Jasperlode. Someone at the Tower of Azora will know what it is. Theocritus's apprentice waits outside the door."
+progress = "Is that a shard of resonant ore? Let me see it."
+completion = "I know this. The master put a rod of this ore into the tower's heart, and it hummed just as this does. Where did you find it? No. Do not tell me. If the cult has the ore, then the tower is not the master's any more."
+money = 0
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 980019, count = 1 }]
+
+[[gameobject]]
+guid = 790501
+entry = 980104
+display = 1011
+map = 0
+position = [-9270.0, -1100.0, 72.0]
+orientation = 0.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790502
+entry = 980104
+display = 1011
+map = 0
+position = [-9262.0, -1094.0, 72.0]
+orientation = 1.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790503
+entry = 980104
+display = 1011
+map = 0
+position = [-9278.0, -1094.0, 72.0]
+orientation = 2.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790504
+entry = 980104
+display = 1011
+map = 0
+position = [-9262.0, -1107.0, 72.0]
+orientation = 3.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790505
+entry = 980104
+display = 1011
+map = 0
+position = [-9278.0, -1107.0, 72.0]
+orientation = 4.0
+respawn = 60.0
+
+# ── Stone Cairn Lake's bounties (#243) ───────────────────────────────────────────────────────────
+
+[[quest]]
+id = 94505
+kind = "bounty"
+giver = 190061
+level = 18
+min_level = 16
+max_level = 20
+title = "Murlocs at the Cairn"
+objectives = "Kill 10 Murloc Nestguards or Murloc Tidehunters, then return to Guard Pell."
+details = "The murlocs come up from the lake at night and sniff round the Vigil, and the post cannot spare a man to chase them. Kill ten of the nestguards or the tidehunters and I'll pay a bounty, and another every time you come back."
+progress = "Are the murlocs thinned?"
+completion = "Ten fewer at the water's edge. They'll be back, so I'll pay for those too."
+money = 320
+tokens = 1
+zone_or_sort = 12
+kill = [[96026, 10], [96027, 10]]
+
+[[quest]]
+id = 94506
+kind = "bounty"
+giver = 190061
+level = 18
+min_level = 16
+max_level = 20
+title = "Nests to Burn"
+objectives = "Burn 6 Murloc Nests on the lake's island, then return to Guard Pell."
+details = "The murlocs breed on the island, and every nest we leave is ten more by spring. Go out to the island and burn six of their nests. I'll pay for each lot, and they'll have built more by the time you're back."
+progress = "Are the nests burned?"
+completion = "Six nests gone. The island will smoke for a day. Here's your coin, and there will be more nests."
+money = 330
+tokens = 1
+zone_or_sort = 12
+use = [[980105, 6]]
+
+[[quest]]
+id = 94507
+kind = "bounty"
+giver = 190061
+level = 19
+min_level = 17
+max_level = 21
+title = "Riverpaw Scouts"
+objectives = "Kill 10 Riverpaw Scouts, then return to Guard Pell."
+details = "Riverpaw gnolls have been watching the lake from the east shore. They are scouts, and a scout who comes back tells a chief where to strike. Kill ten of them and I'll pay a bounty, and again whenever you like."
+progress = "Are the scouts dead?"
+completion = "Ten scouts who won't report. The chief will send more, so I'll pay for those too."
+money = 350
+tokens = 1
+zone_or_sort = 12
+kill = [[96028, 10]]
+
+[[quest]]
+id = 94508
+kind = "bounty"
+giver = 190060
+level = 19
+min_level = 17
+max_level = 21
+title = "Scout Markings"
+objectives = "Bring 8 Riverpaw Scout Marks to Grave-tender Ilsa."
+details = "The gnolls mark the graves they pass with a daub of paint, and I scrub every one. Their scouts wear a token of the same paint. Bring me eight of those marks, and I'll know how many walk among the stones. I'll pay for each lot."
+progress = "Have you got the marks?"
+completion = "The same daub, on every one. Whoever they report to, it's not the cult. Thank you, and bring me more if you find them."
+money = 340
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980020, count = 8, from = [96028], chance = 50 }]
+
+[[gameobject]]
+guid = 790511
+entry = 980105
+display = 1011
+map = 0
+position = [-9132.0, -1128.0, 70.0]
+orientation = 0.5
+respawn = 90.0
+
+[[gameobject]]
+guid = 790512
+entry = 980105
+display = 1011
+map = 0
+position = [-9124.0, -1138.0, 70.0]
+orientation = 1.5
+respawn = 90.0
+
+[[gameobject]]
+guid = 790513
+entry = 980105
+display = 1011
+map = 0
+position = [-9142.0, -1141.0, 70.0]
+orientation = 2.5
+respawn = 90.0
+
+[[gameobject]]
+guid = 790514
+entry = 980105
+display = 1011
+map = 0
+position = [-9114.0, -1124.0, 70.0]
+orientation = 3.5
+respawn = 90.0
+
+[[gameobject]]
+guid = 790515
+entry = 980105
+display = 1011
+map = 0
+position = [-9148.0, -1122.0, 70.0]
+orientation = 4.5
+respawn = 90.0
+
+[[gameobject]]
+guid = 790516
+entry = 980105
+display = 1011
+map = 0
+position = [-9126.0, -1150.0, 70.0]
+orientation = 5.5
+respawn = 90.0
+
+[[gameobject]]
+guid = 790517
+entry = 980105
+display = 1011
+map = 0
+position = [-9138.0, -1152.0, 70.0]
+orientation = 0.9
+respawn = 90.0
+
+[[gameobject]]
+guid = 790518
+entry = 980105
+display = 1011
+map = 0
+position = [-9116.0, -1146.0, 70.0]
+orientation = 2.9
+respawn = 90.0

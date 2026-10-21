@@ -54,3 +54,47 @@ next_wave_after_s = 60.0
 
 [[encounter.wave]]
 creatures = [{ entry = 2958, level = 5, count = 1, position = [-9715.0, 120.0, 47.2] }]
+
+# Stone Cairn Lake and Heroes' Vigil (#243). Both are anchored on the Vigil's centre cairn
+# (guess; see the cairns in quests_elwynn.toml). "Dusk" and "night" are in the quest text only.
+
+# The Vigil Defaced (94501): the fifth cleaned cairn brings six Twilight Daubers up the path.
+[[encounter]]
+key = "vigil_daubers"
+quest = 94501
+start = "use_done"
+anchor = [-9270.0, -1100.0, 72.0]
+start_radius = 30.0
+leash = 60.0
+first_wave_after_s = 3.0
+next_wave_after_s = 60.0
+
+[[encounter.wave]]
+creatures = [{ entry = 96023, level = 16, count = 6, position = [-9285.0, -1115.0, 72.0] }]
+
+# Rites at the Stone (94502): three waves from the shore, Ritualist Serane with the last.
+[[encounter]]
+key = "cairn_rites"
+quest = 94502
+start = "accepted"
+anchor = [-9270.0, -1100.0, 72.0]
+start_radius = 30.0
+leash = 60.0
+warning = "Cultists are coming up from the shore!"
+first_wave_after_s = 10.0
+next_wave_after_s = 60.0
+
+[[encounter.wave]]
+creatures = [{ entry = 96024, level = 17, count = 3, position = [-9290.0, -1120.0, 72.0] }]
+
+[[encounter.wave]]
+creatures = [
+  { entry = 96024, level = 17, count = 2, position = [-9290.0, -1120.0, 72.0] },
+  { entry = 96024, level = 18, count = 2, position = [-9292.0, -1112.0, 72.0] },
+]
+
+[[encounter.wave]]
+creatures = [
+  { entry = 96024, level = 18, count = 3, position = [-9290.0, -1120.0, 72.0] },
+  { entry = 96025, level = 18, count = 1, position = [-9295.0, -1116.0, 72.0] },
+]

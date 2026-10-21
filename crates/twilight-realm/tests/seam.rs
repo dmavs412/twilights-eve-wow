@@ -315,6 +315,20 @@ fn shipped_creatures() -> Creatures {
                 .push((format!("{file} guid {}", int(&s, "guid")), int(&s, "entry")));
         }
     }
+    // An Encounter's waves bring creatures in when a quest step starts it (#238).
+    for e in entries(
+        &toml_file(include_str!("../content/encounters.toml")),
+        "encounter",
+    ) {
+        for wave in e["wave"].as_array().unwrap() {
+            for creature in wave["creatures"].as_array().unwrap() {
+                c.spawns.push((
+                    format!("encounters.toml {}", e["key"].as_str().unwrap()),
+                    int(creature, "entry"),
+                ));
+            }
+        }
+    }
     c
 }
 
