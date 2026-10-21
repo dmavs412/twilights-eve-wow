@@ -1242,11 +1242,14 @@ def build_spellmods(row: dict, where: str, masks: dict[str, int]) -> list[dict]:
 
 def implicit_targets(row: dict) -> tuple[int, int]:
     """The Spell.dbc ImplicitTargetA and B every effect of the row takes, from its `target` and
-    area: the client asks for a unit, a ground spot or nothing by them."""
-    if row["area_center"] == "caster":
-        return CASTER_AREA_TARGETS
+    area: the client asks for a unit, a ground spot or nothing by them. A row with a unit target
+    keeps it whatever its area: a cone on the caster with `target = enemy` still needs the unit
+    the client sends, as vanilla Cleave (845) does, or the realm refuses the cast with no target
+    (#249). Only a row with no unit target and `area_center = caster` is a caster-area cast."""
     if row["area_center"] == "ground":
         return IMPLICIT_TARGETS["dest"]
+    if row["area_center"] == "caster" and row["target"] in ("", "self"):
+        return CASTER_AREA_TARGETS
     return IMPLICIT_TARGETS.get(row["target"], IMPLICIT_TARGETS[""])
 
 

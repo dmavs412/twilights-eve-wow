@@ -403,8 +403,8 @@
     "prevention_type": 2,
     "description": "A sweeping attack that hits up to 3 targets in front of you for weapon damage plus a bonus. Consumes all Conviction stacks to add bonus Holy damage.",
     "implicit_targets": [
-     22,
-     15
+     6,
+     0
     ],
     "spell_family": 4,
     "family_flags": 68719476736,

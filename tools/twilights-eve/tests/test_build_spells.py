@@ -840,6 +840,14 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
                               ("dodge", "malformed pair"), ("dodge=no;dodge=no", "'dodge' given twice")):
             self.assert_fails([{**STRIKE, "outcomes": cell}], f"vanguard/strike) outcomes: {message}")
 
+    def test_a_caster_cone_with_an_enemy_target_keeps_the_enemy_implicit_targets(self):
+        # #249: Zealous Cleave is a cone on the caster that still takes the enemy the client
+        # sends; caster-area implicit targets made the client cast it with no unit target.
+        self.built_skill(area_shape="cone", area_center="caster", max_targets="3")
+        self.assertEqual(self.patch["spells"][0]["fields"]["implicit_targets"], [6, 0])
+        self.built_skill(target="", area_shape="circle", area_center="caster", realm_radius_yd="8")
+        self.assertEqual(self.patch["spells"][0]["fields"]["implicit_targets"], [22, 15])
+
     def test_weapon_hand_default_and_failure(self):
         self.assertEqual(self.built_skill()["weapon_hand"], "main")
         self.assertEqual(self.built_skill(weapon_hand="both")["weapon_hand"], "both")
