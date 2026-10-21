@@ -75,8 +75,28 @@ fn max_mana_is_the_class_base_for_the_level_plus_intellect() {
 }
 
 #[test]
-fn energy_gains_twenty_every_two_second_tick() {
-    assert_eq!(power::ENERGY_PER_TICK, 20);
+fn energy_regen_is_the_callings_own_per_two_second_tick() {
+    use twilight_realm::callings;
+    assert_eq!(callings::calling("cutthroat").unwrap().energy_regen(), 25);
+    assert_eq!(
+        callings::calling("cutthroat").unwrap().energy_per_tick,
+        Some(25)
+    );
+    for key in [
+        "basic_warrior",
+        "vanguard",
+        "zealot",
+        "initiate",
+        "ranger",
+        "acolyte",
+    ] {
+        assert_eq!(
+            callings::calling(key).unwrap().energy_per_tick,
+            None,
+            "{key}"
+        );
+    }
+    assert_eq!(power::ENERGY_PER_TICK, 20, "the vanilla fallback");
     assert_eq!(power::REGEN_TICK_SECS, 2.0);
     assert_eq!(
         power::REGEN_TICK_SECS,

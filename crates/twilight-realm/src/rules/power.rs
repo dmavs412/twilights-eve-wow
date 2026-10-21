@@ -54,7 +54,8 @@ impl PowerKind {
 /// A full energy bar.
 pub const ENERGY_MAX: u32 = 100;
 
-/// Energy gained every regen tick, in and out of combat (vmangos `Regenerate(POWER_ENERGY)`).
+/// Energy gained every regen tick when a Calling's `callings.csv` row sets none, in and out of
+/// combat (vmangos `Regenerate(POWER_ENERGY)`).
 pub const ENERGY_PER_TICK: u32 = 20;
 
 /// A full focus bar, as a vanilla pet's.

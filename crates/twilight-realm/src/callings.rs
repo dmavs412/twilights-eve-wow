@@ -36,6 +36,10 @@ pub struct CallingDef {
     pub health_pct: u32,
     #[serde(default = "full")]
     pub mana_pct: u32,
+    /// Energy gained every regen tick (`callings.csv`); none means the vanilla
+    /// [`power::ENERGY_PER_TICK`]. Only an energy Calling sets it.
+    #[serde(default)]
+    pub energy_per_tick: Option<u32>,
     /// The Tier Bonus: flat base stats on top of the race table, cumulative per Tier.
     pub tier_bonus: TierBonus,
     /// `UNIT_FIELD_BYTES_1` byte 2 while this Calling is current (17, Battle Stance).
@@ -74,6 +78,12 @@ fn warrior() -> StatProfile {
 }
 
 impl CallingDef {
+    /// Energy this Calling gains every regen tick.
+    pub fn energy_regen(&self) -> u32 {
+        self.energy_per_tick
+            .unwrap_or(crate::rules::power::ENERGY_PER_TICK)
+    }
+
     /// `ChrClasses.dbc` id of its stat profile: the table the rules read, and the class byte the
     /// wire carries until the client reads the Calling (#207).
     pub fn class(&self) -> u8 {

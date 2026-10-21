@@ -7498,6 +7498,7 @@
   "item_class": "warrior",
   "health_pct": 100,
   "mana_pct": 100,
+  "energy_per_tick": 25,
   "armour": [
    "cloth",
    "leather"

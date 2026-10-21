@@ -315,7 +315,11 @@ impl InWorld {
             player: Player {
                 stats,
                 health: stats.max_health,
-                power: Power::fresh(&stats, crate::callings::of(c.calling).power),
+                power: Power::fresh(
+                    &stats,
+                    crate::callings::of(c.calling).power,
+                    crate::callings::of(c.calling).energy_regen(),
+                ),
                 swing_timer: 0.0,
                 off_swing_timer: 0.0,
                 shooting: None,

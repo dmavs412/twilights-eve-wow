@@ -60,7 +60,7 @@ CALLING = {
 }
 # Every callings.csv cell a test leaves out (`run_build` writes one row per Calling it sees).
 PROFILE = {"icon": "", "power": "rage", "stat_profile": "warrior", "item_class": "warrior", "health_pct": "100",
-           "mana_pct": "100",
+           "mana_pct": "100", "energy_per_tick": "",
            "armor": "cloth|mail", "weapons": "one_hand_sword|dagger", "spellbook": ""}
 TAB = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms", "tab_id": "900",
        "background": "WarriorArms", "tab_order": "0"}
@@ -261,6 +261,21 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
             done, _ = self.run_build([STRIKE])
             self.assertNotEqual(done.returncode, 0, cell)
             self.assertIn(cell, done.stderr)
+
+    def test_energy_per_tick_is_for_energy_callings_only(self):
+        self.profiles = {"vanguard": {"power": "energy", "energy_per_tick": "25"}}
+        done, data = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["energy_per_tick"], 25)
+        self.profiles = {"vanguard": {"power": "energy"}}
+        done, data = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("energy_per_tick", data[0])
+        for power in ("rage", "mana", "focus"):
+            self.profiles = {"vanguard": {"power": power, "energy_per_tick": "25"}}
+            done, _ = self.run_build([STRIKE])
+            self.assertNotEqual(done.returncode, 0, power)
+            self.assertIn("energy_per_tick", done.stderr)
 
     def test_the_class_and_armour_columns_are_gone(self):
         for column in ("class", "armour"):

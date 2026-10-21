@@ -27,6 +27,7 @@ struct GenCalling {
     item_class: StatProfile,
     health_pct: u32,
     mana_pct: u32,
+    energy_per_tick: Option<u32>,
     #[serde(default)]
     weapons: Vec<WeaponKind>,
     #[serde(default)]
@@ -190,6 +191,7 @@ fn calling(g: GenCalling) -> CallingDef {
         item_class: g.item_class,
         health_pct: g.health_pct,
         mana_pct: g.mana_pct,
+        energy_per_tick: g.energy_per_tick,
         weapons: g.weapons.clone(),
         icon: g.icon.clone(),
         spellbook: g.spellbook.clone(),

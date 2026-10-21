@@ -104,7 +104,8 @@ impl InWorld {
         let p = &mut self.player;
         p.dead = false;
         p.health = p.stats.max_health;
-        p.power = Power::fresh(&p.stats, crate::callings::of(c.calling).power);
+        let def = crate::callings::of(c.calling);
+        p.power = Power::fresh(&p.stats, def.power, def.energy_regen());
         p.swing_timer = 0.0;
         p.off_swing_timer = 0.0;
         p.refused = None;

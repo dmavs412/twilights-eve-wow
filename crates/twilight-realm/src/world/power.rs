@@ -20,12 +20,15 @@ pub(super) struct Power {
     pause: f32,
     /// The multiplier on every rage gained ([`rage::gain`]).
     rage_gain: f64,
+    /// Energy gained every regen tick (the Calling's `energy_per_tick`).
+    energy_per_tick: u32,
 }
 
 impl Power {
     /// A bar of the Calling's `kind` for `stats` at login or after Advancement: rage empty, the
-    /// rest full (vmangos `Player::InitStatsForLevel`, `ResurrectPlayer`).
-    pub(super) fn fresh(stats: &CharacterStats, kind: PowerKind) -> Self {
+    /// rest full (vmangos `Player::InitStatsForLevel`, `ResurrectPlayer`). An energy bar gains
+    /// `energy_per_tick` every tick.
+    pub(super) fn fresh(stats: &CharacterStats, kind: PowerKind, energy_per_tick: u32) -> Self {
         let max = power::cap(kind, stats.max_mana, stats.max_energy_bonus);
         Self {
             kind,
@@ -35,6 +38,7 @@ impl Power {
             fraction: 0.0,
             pause: 0.0,
             rage_gain: rage::gain(),
+            energy_per_tick,
         }
     }
 
@@ -128,7 +132,7 @@ impl Power {
                     }
                 }
                 PowerKind::Energy => {
-                    self.current = (self.current + power::ENERGY_PER_TICK).min(self.max);
+                    self.current = (self.current + self.energy_per_tick).min(self.max);
                 }
                 PowerKind::Focus => {
                     self.current = (self.current + power::FOCUS_PER_TICK).min(self.max);
@@ -189,7 +193,7 @@ mod tests {
 
     fn warrior_bar(gain: f64) -> Power {
         let stats = CharacterStats::naked(1, 1, 10);
-        let mut bar = Power::fresh(&stats, PowerKind::Rage);
+        let mut bar = Power::fresh(&stats, PowerKind::Rage, 0);
         bar.rage_gain = gain;
         bar
     }
@@ -199,6 +203,22 @@ mod tests {
         let mut bar = warrior_bar(gain);
         bar.gain_stored(PowerKind::Rage, earned);
         bar.current
+    }
+
+    #[test]
+    fn a_cutthroat_gains_twenty_five_energy_a_tick_up_to_the_cap() {
+        let per_tick = crate::callings::calling("cutthroat")
+            .unwrap()
+            .energy_regen();
+        let stats = CharacterStats::naked(1, 1, 10);
+        let mut bar = Power::fresh(&stats, PowerKind::Energy, per_tick);
+        bar.current = 0;
+        bar.regenerate(power::REGEN_TICK_SECS, false, 0.0);
+        assert_eq!(bar.current, 25);
+        bar.regenerate(power::REGEN_TICK_SECS * 2.0, true, 0.0);
+        assert_eq!(bar.current, 75);
+        bar.regenerate(power::REGEN_TICK_SECS * 2.0, false, 0.0);
+        assert_eq!(bar.current, bar.max, "capped at a full bar");
     }
 
     #[test]

@@ -92,12 +92,13 @@ wrote it once from the old `class` and `armour` cells.
 | `stat_profile` | the vanilla class table its per-level base stats, health and mana, crit and dodge from agility, attack power and mana regen follow: `warrior`, `paladin`, `hunter`, `rogue`, `priest`, `shaman`, `mage`, `warlock`, `druid`. The client's class-keyed tables (skill-line gates, reputation bases, the relic slot, the pet book, the combo-point refusal, the ranged-weapon tutorial) read it too; the wire still carries its class byte, which the client ignores |
 | `item_class` | the vanilla class whose `AllowableClass` bit an item it equips must carry, realm and client alike; empty = `warrior`, as every Calling is today |
 | `health_pct`, `mana_pct` | percent of the profile's base health and base mana (empty = 100); stamina's and intellect's parts stay whole |
+| `energy_per_tick` | energy gained every 2 s regen tick, on an `energy` Calling only (Cutthroat 25); empty = the vanilla 20. Set on any other power, the build fails |
 | `armor` | armour kinds joined by `\|`: `cloth`, `leather`, `mail`, `plate`, `shield` |
 | `weapons` | weapon kinds joined by `\|` (`one_hand_axe`, `two_hand_axe`, `bow`, `gun`, `one_hand_mace`, `two_hand_mace`, `polearm`, `one_hand_sword`, `two_hand_sword`, `staff`, `fist`, `misc`, `dagger`, `thrown`, `crossbow`, `wand`, `fishing_pole`), and `dual_wield` for a one-hander in the off hand too |
 | `spellbook` | the spell book tab's name |
 
 Both JSON files' Callings carry these as `power`, `stat_profile`, `item_class`, `health_pct`,
-`mana_pct`, `armour`, `weapons`, `icon` and `spellbook`. The client patch also has a `callings`
+`mana_pct`, `energy_per_tick` (only when set), `armour`, `weapons`, `icon` and `spellbook`. The client patch also has a `callings`
 table, `{key, name, icon, spellbook, power_type, class, item_class, spell_family, weapon_mask,
 armor_mask, dual_wield}`, which the client (`benilla_formats::twilight_calling`) reads in place of
 every class byte (#207): the realm names each character's Calling by key, its own at the roster

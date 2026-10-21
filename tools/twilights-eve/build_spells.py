@@ -65,7 +65,7 @@ POWERS = ("rage", "energy", "focus", "mana")
 POWER_TYPES = {"mana": 0, "rage": 1, "focus": 2, "energy": 3}
 # callings.csv (ADR 0011): one row per Calling.
 CALLING_COLUMNS = ("calling", "name", "icon", "power", "stat_profile", "item_class", "health_pct", "mana_pct",
-                   "armor", "weapons", "spellbook")
+                   "energy_per_tick", "armor", "weapons", "spellbook")
 # The vanilla class tables a `stat_profile` may name (the realm's `StatProfile`).
 STAT_PROFILES = ("warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid")
 # `ChrClasses.dbc` ids of the profiles, the class byte the client's class-keyed tables read.
@@ -516,6 +516,10 @@ def build_profiles(rows: list[dict]) -> dict[str, dict]:
         profile["item_class"] = one_of(row["item_class"] or "warrior", STAT_PROFILES, where, "item_class")
         for column in ("health_pct", "mana_pct"):
             profile[column] = positive_whole(row[column], where, column) if row[column] else 100
+        if row["energy_per_tick"]:
+            if profile["power"] != "energy":
+                raise BuildError(f"{where}: energy_per_tick is set on a {profile['power']} Calling; only energy takes it")
+            profile["energy_per_tick"] = positive_whole(row["energy_per_tick"], where, "energy_per_tick")
         armour = [a for a in row["armor"].split("|") if a]
         for kind in armour:
             one_of(kind, ARMOUR_KINDS, where, "armor")

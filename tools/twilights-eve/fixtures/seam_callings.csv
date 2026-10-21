@@ -1,2 +1,2 @@
-calling,name,icon,power,stat_profile,item_class,health_pct,mana_pct,armor,weapons,spellbook
-vanguard,Vanguard,,rage,warrior,warrior,100,100,cloth|leather|mail|plate|shield,one_hand_sword,Vanguard
+calling,name,icon,power,stat_profile,item_class,health_pct,mana_pct,energy_per_tick,armor,weapons,spellbook
+vanguard,Vanguard,,rage,warrior,warrior,100,100,,cloth|leather|mail|plate|shield,one_hand_sword,Vanguard
