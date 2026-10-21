@@ -103,6 +103,10 @@ pub(crate) struct Template {
     /// It wakes the sleepers within this many yards of it as it passes.
     #[serde(default)]
     pub(crate) wakes_sleepers: Option<f32>,
+    /// When its Phased Dungeon's meter is at its maximum it wakes and hunts the nearest character,
+    /// waking the sleepers within this many yards of it as it goes.
+    #[serde(default)]
+    pub(crate) hunts_at_meter_max: Option<f32>,
 }
 
 /// Seconds after an inert creature last took damage before it is whole again.
@@ -157,6 +161,7 @@ impl Template {
             inert: false,
             noise_on_death: None,
             wakes_sleepers: None,
+            hunts_at_meter_max: None,
         }
     }
 
@@ -604,6 +609,8 @@ pub(crate) struct Mob {
     pub(crate) asleep: bool,
     /// Yards added to the distance at which a character wakes it.
     pub(crate) wake_radius_mod: f32,
+    /// It has woken to hunt at its dungeon's meter maximum, and wakes the sleepers it passes.
+    pub(crate) hunting: bool,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -671,6 +678,7 @@ impl Mob {
             called: vec![false; spawn.on_health.len()],
             asleep: spawn.asleep,
             wake_radius_mod: spawn.wake_radius_mod,
+            hunting: false,
             target: 0,
             threat: Default::default(),
             hunts: None,
@@ -724,6 +732,7 @@ impl Mob {
             called: Vec::new(),
             asleep: false,
             wake_radius_mod: 0.0,
+            hunting: false,
             target: 0,
             threat: Default::default(),
             hunts: Some(hunts),
@@ -934,6 +943,28 @@ impl Mob {
     /// Starts a straight run to `to` (ground walk: the client takes Z from its terrain).
     pub(crate) fn run_to(&mut self, to: [f32; 3], aimed_at: [f32; 3]) -> SessionEvent {
         self.run_path(vec![self.position, to], aimed_at)
+    }
+
+    /// Charges to `to` at `speed` yards a second, facing `target`: it stands there at once, as a
+    /// player's charge does, and the client sees the run.
+    pub(crate) fn charge_to(&mut self, to: [f32; 3], speed: f32, target: u64) -> SessionEvent {
+        let from = self.position;
+        self.position = to;
+        self.walk = None;
+        let spline_id = self.next_spline_id;
+        self.next_spline_id += 1;
+        SessionEvent::MonsterMove {
+            guid: self.guid,
+            transport: None,
+            start: from,
+            spline_id,
+            path: vec![from, to],
+            facing: MonsterMoveFacing::Target(target),
+            stop: false,
+            duration_ms: clock::ms(distance(from, to) / speed),
+            flying: false,
+            run_mode: true,
+        }
     }
 
     /// Starts a run along `path`, which begins where the mob stands: one spline through every

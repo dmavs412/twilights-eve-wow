@@ -975,7 +975,7 @@ impl InWorld {
                     interrupt_cast(mob, events);
                     return;
                 }
-                if self.mob_cast(i, dt, me, host, rng, events) {
+                if self.mob_cast(i, dt, me, c.orientation, host, rng, events) {
                     return;
                 }
                 let mob = &mut self.mobs[i];

@@ -3,7 +3,7 @@
 
 mod common;
 
-use benilla_protocol::messages::{PeriodicAuraLog, PeriodicTick};
+use benilla_protocol::messages::{MonsterMoveFacing, PeriodicAuraLog, PeriodicTick};
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight;
 use common::*;
@@ -91,6 +91,39 @@ fn a_caster_starts_its_cast_and_the_curse_ticks_shadow_damage_after_it() {
         let due = goes[0] + 3.0 * (n + 1) as f32;
         assert!((t - due).abs() < 0.15, "{ticks:?}");
     }
+}
+
+#[test]
+fn a_charge_carries_its_caster_to_the_player_and_lands_a_blow() {
+    let realm = Realm::with_seed(1).with_creature_spells(VILE_FAMILIAR, &["rushing_charge"]);
+    let (mut realm, me, mob) = warrior(realm, 10);
+    stand_by(&mut realm, mob.1);
+    run(&mut realm, 0.5);
+    // Out past the charge's 8 yd minimum, within its 25 yd.
+    let away = [mob.1[0] + 15.0, mob.1[1], mob.1[2]];
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: away,
+        orientation: std::f32::consts::PI,
+    });
+    let events = run(&mut realm, 4.0);
+    let rush = events.iter().position(|(_, e)| {
+        matches!(e, SessionEvent::MonsterMove { guid, path, facing: MonsterMoveFacing::Target(t), .. }
+            if *guid == mob.0 && *t == me && path.len() == 2)
+    });
+    let rush = rush.expect("the familiar charges");
+    let SessionEvent::MonsterMove { path, .. } = &events[rush].1 else {
+        unreachable!()
+    };
+    let end = path[1];
+    let gap = ((end[0] - away[0]).powi(2) + (end[1] - away[1]).powi(2)).sqrt();
+    assert!(gap < 5.0, "it ends in melee reach of the player: {gap}");
+    assert!(
+        events[rush..].iter().any(|(_, e)| matches!(
+            e, SessionEvent::AttackerState(a) if a.attacker == mob.0 && a.victim == me
+        )),
+        "and lands a blow"
+    );
 }
 
 #[test]

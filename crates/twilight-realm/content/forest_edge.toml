@@ -1364,6 +1364,25 @@ asleep = true
 camp = 6
 wake_radius_mod = -2.0
 
+# Hogger (#174), asleep in his tent at the back of the hollow (-10050, 655): a deep sleeper, so he
+# stays down at 19 stacks (3 + 1.5 x 19 - 15 = 16.5 yd) and hunts at the maximum. At 30% health he
+# calls two Brutes to the tent mouth.
+[[creature]]
+guid = 790327
+entry = 96010
+level = 22
+position = [-10050.0, 655.0, 38.0]
+orientation = 5.2
+asleep = true
+wake_radius_mod = -15.0
+
+[[creature.on_health]]
+pct = 30
+entry = 96008
+level = 21
+count = 2
+position = [-10046.0, 649.0, 38.0]
+
 # Two awake Outrunners drift about the middle of the hollow, between the first and second Camps
 # and the west wall (wander 8).
 [[creature]]

@@ -154,3 +154,36 @@ range_max = 30.0
 chance = 100
 noise_on_cast = 2
 effect = { kind = "periodic_damage", tick_ms = 2000, duration_ms = 4000, tick = { base = 12 } }
+
+# Hogger's charge (#174). Looks like Charge rank 1 (visual 1090). Placeholders: from 8 to 25 yd at
+# 25 yd a second, then one blow worth 50% more than a swing, every 15 s. `charge` is a realm effect
+# kind only; the client row is a dummy effect.
+[[spell]]
+key = "rushing_charge"
+spell_id = 1900009
+name = "Rushing Charge"
+icon = 'Interface\Icons\Ability_Warrior_Charge'
+visual = 1090
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 15000
+range_min = 8.0
+range_max = 25.0
+chance = 100
+effect = { kind = "charge", speed_yd_s = 25.0, bonus_pct = 50 }
+
+# Hogger's meal (#174). Looks like Lesser Heal rank 1 (visual 2050). Placeholders: 25% of max
+# health after a 5 s cast, every 30 s, and only with a dead creature within 10 yd of him.
+[[spell]]
+key = "eat"
+spell_id = 1900010
+name = "Eat"
+icon = 'Interface\Icons\INV_Misc_Food_15'
+visual = 2050
+school = "physical"
+cast_time_ms = 5000
+cooldown_ms = 30000
+range_max = 0.0
+chance = 100
+corpse_within = 10.0
+effect = { kind = "heal", pct_max_health = 25 }

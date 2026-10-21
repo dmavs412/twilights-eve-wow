@@ -24,6 +24,9 @@ pub(crate) enum CreatureEffect {
     Heal { pct_max_health: u32 },
     /// The player runs `pct` percent slower for `duration_ms`.
     Snare { pct: u32, duration_ms: u32 },
+    /// The caster runs to its target at `speed_yd_s` along the floor, then lands one weapon hit
+    /// worth `bonus_pct` percent more than a white swing.
+    Charge { speed_yd_s: f32, bonus_pct: u32 },
 }
 
 /// One Creature Spell.
@@ -38,6 +41,12 @@ pub(crate) struct CreatureSpell {
     pub(crate) cooldown_ms: u32,
     /// Yards to the player; a self-cast (heal) has no range to check.
     pub(crate) range_max: f32,
+    /// Yards the player must be beyond: a charge is not cast from melee reach.
+    #[serde(default)]
+    pub(crate) range_min: f32,
+    /// The spell is cast only while a dead creature lies within this many yards of the caster.
+    #[serde(default)]
+    pub(crate) corpse_within: Option<f32>,
     /// Percent per decision while the creature fights and the spell is ready.
     pub(crate) chance: u32,
     /// The spell is cast only while the caster's health is under this percent of its maximum.
@@ -68,9 +77,27 @@ pub(crate) fn healed(health: u32, max: u32, pct: u32) -> u32 {
     (max * pct / 100).min(max.saturating_sub(health))
 }
 
+/// Where a charge from `from` at `to` ends: `stop` yards short of its target, or where it began
+/// when it starts closer than that.
+pub(crate) fn charge_dest(from: [f32; 3], to: [f32; 3], stop: f32) -> [f32; 3] {
+    let d = crate::space::distance(from, to);
+    if d <= stop {
+        return from;
+    }
+    let t = (d - stop) / d;
+    std::array::from_fn(|i| from[i] + (to[i] - from[i]) * t)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{all, healed};
+    use super::{all, charge_dest, healed};
+
+    #[test]
+    fn a_charge_ends_short_of_its_target_and_never_backs_away() {
+        let end = charge_dest([0.0; 3], [20.0, 0.0, 0.0], 5.0);
+        assert!((end[0] - 15.0).abs() < 1e-4, "{end:?}");
+        assert_eq!(charge_dest([0.0; 3], [3.0, 0.0, 0.0], 5.0), [0.0; 3]);
+    }
 
     #[test]
     fn every_creature_spell_is_a_spell_of_its_own() {

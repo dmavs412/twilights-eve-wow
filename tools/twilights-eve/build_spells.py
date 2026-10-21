@@ -122,7 +122,7 @@ CLIENT_EFFECTS_OF = {
 }
 DUMMY_EFFECT = (3, 0)
 # The same numbers for a Creature Spell's effect kinds: a curse, a heal, a snare.
-CREATURE_EFFECTS_OF = {"periodic_damage": (6, 3), "heal": (10, 0), "snare": (6, 33)}
+CREATURE_EFFECTS_OF = {"periodic_damage": (6, 3), "heal": (10, 0), "snare": (6, 33), "charge": DUMMY_EFFECT}
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms",
@@ -322,7 +322,7 @@ def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], 
                   "visual_spell": spell["visual"],
                   # A heal is the caster's own; a curse or snare lands on the player it fights.
                   "implicit_targets": list(IMPLICIT_TARGETS["self" if effect["kind"] == "heal" else "enemy"]),
-                  "cast_time_ms": spell["cast_time_ms"], "range_min": 0, "range_max": spell["range_max"],
+                  "cast_time_ms": spell["cast_time_ms"], "range_min": spell.get("range_min", 0), "range_max": spell["range_max"],
                   "dbc_effects": [row_effect]}
         if "duration_ms" in effect:
             fields["duration_ms"] = effect["duration_ms"]

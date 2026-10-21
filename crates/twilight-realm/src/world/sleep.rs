@@ -4,7 +4,7 @@
 
 use benilla_protocol::SessionEvent;
 
-use super::InWorld;
+use super::{engage, InWorld};
 use crate::fields::{values, UNIT_NPC_EMOTESTATE};
 use crate::mobs::{Mob, State};
 use crate::phased::Meter;
@@ -24,7 +24,42 @@ impl InWorld {
             watchers.push(me);
         }
         let meter = self.meter();
+        let mut characters: Vec<(u64, [f32; 3])> = self.others.iter().map(|o| (o.0, o.1)).collect();
+        if self.player.alive() {
+            characters.push((self.guid, me));
+        }
+        hunt(&mut self.mobs, &characters, meter, self.noise_shown, events);
         wake(&mut self.mobs, &watchers, meter, self.noise_shown, events);
+    }
+}
+
+/// At `stacks` of the Run's `meter` at its maximum, wakes each asleep creature that hunts there
+/// and sets it on the nearest of `characters`. Below the maximum it sleeps by the ordinary rules.
+fn hunt(
+    mobs: &mut [Mob],
+    characters: &[(u64, [f32; 3])],
+    meter: Option<&Meter>,
+    stacks: u32,
+    events: &mut Vec<SessionEvent>,
+) {
+    if !meter.is_some_and(|meter| stacks >= meter.max) {
+        return;
+    }
+    for m in mobs
+        .iter_mut()
+        .filter(|m| m.asleep && m.alive() && m.template.hunts_at_meter_max.is_some())
+    {
+        let at = m.position;
+        let Some(&(guid, _)) = characters
+            .iter()
+            .min_by(|a, b| distance(at, a.1).total_cmp(&distance(at, b.1)))
+        else {
+            continue;
+        };
+        m.asleep = false;
+        m.hunting = true;
+        events.push(values(m.guid, &[(UNIT_NPC_EMOTESTATE, 0)]));
+        engage(m, guid, events);
     }
 }
 
@@ -53,11 +88,11 @@ fn wake(
             watchers.iter().any(|&w| distance(m.position, w) <= radius)
         });
         let passed = mobs.iter().any(|w| {
-            !w.asleep
-                && w.alive()
-                && w.template
-                    .wakes_sleepers
-                    .is_some_and(|r| distance(w.position, m.position) <= r)
+            let radius = w
+                .template
+                .wakes_sleepers
+                .or(w.hunting.then_some(w.template.hunts_at_meter_max).flatten());
+            !w.asleep && w.alive() && radius.is_some_and(|r| distance(w.position, m.position) <= r)
         });
         woken[i] = near || passed;
     }
@@ -222,6 +257,85 @@ mod tests {
         woke(&mut mobs, &[], 0);
         assert!(!mobs[1].asleep, "10 yd from the waker");
         assert!(mobs[2].asleep, "20 yd from the waker");
+    }
+
+    /// Forest's Edge's creatures, Hogger among them.
+    fn forest_edge() -> (Vec<Mob>, usize) {
+        let shard = Shard::new(Place {
+            map: 0,
+            phase: Phase::Dungeon(2),
+        });
+        let hogger = shard
+            .mobs
+            .iter()
+            .position(|m| m.template.entry == 96010)
+            .expect("Hogger is in the hollow");
+        (shard.mobs, hogger)
+    }
+
+    #[test]
+    fn hogger_sleeps_through_a_character_at_19_stacks_and_hunts_at_20() {
+        let (mut mobs, h) = forest_edge();
+        assert!(mobs[h].asleep);
+        let near = (1, east_of(&mobs[h], 20.0));
+        let far = (2, east_of(&mobs[h], 60.0));
+        let mut events = Vec::new();
+        hunt(&mut mobs, &[near, far], Some(&meter()), 19, &mut events);
+        woke(&mut mobs, &[near.1], 19);
+        assert!(mobs[h].asleep, "a character at 20 yd, 19 stacks");
+        hunt(&mut mobs, &[far, near], Some(&meter()), 20, &mut events);
+        assert!(!mobs[h].asleep && mobs[h].hunting, "20 stacks");
+        assert_eq!(mobs[h].state, State::Engaged);
+        assert_eq!(mobs[h].target, 1, "the nearest character");
+    }
+
+    #[test]
+    fn a_creature_that_does_not_hunt_sleeps_on_at_max_stacks() {
+        let (mut mobs, h) = forest_edge();
+        let other = mobs
+            .iter()
+            .position(|m| m.asleep && m.template.hunts_at_meter_max.is_none());
+        let other = other.expect("a plain sleeper");
+        assert_ne!(other, h);
+        hunt(
+            &mut mobs,
+            &[(1, [0.0; 3])],
+            Some(&meter()),
+            20,
+            &mut Vec::new(),
+        );
+        assert!(mobs[other].asleep);
+    }
+
+    #[test]
+    fn hogger_on_the_hunt_wakes_the_sleeper_ten_yards_off_his_path() {
+        let (mut mobs, h) = forest_edge();
+        let sleeper = mobs
+            .iter()
+            .position(|m| m.asleep && m.template.hunts_at_meter_max.is_none())
+            .unwrap();
+        mobs[sleeper].camp = 9_999;
+        let at = east_of(&mobs[sleeper], 10.0);
+        mobs[h].position = at;
+        woke(&mut mobs, &[], 0);
+        assert!(mobs[sleeper].asleep, "Hogger asleep wakes no one");
+        mobs[h].asleep = false;
+        woke(&mut mobs, &[], 0);
+        assert!(mobs[sleeper].asleep, "awake but not hunting");
+        mobs[h].hunting = true;
+        woke(&mut mobs, &[], 0);
+        assert!(!mobs[sleeper].asleep, "10 yd from a hunting Hogger");
+    }
+
+    #[test]
+    fn hogger_calls_two_brutes_at_30_percent() {
+        let (mobs, h) = forest_edge();
+        let spawn = mobs[h].spawn_row().expect("a dungeon row");
+        let [call] = spawn.on_health else {
+            panic!("one call for help");
+        };
+        assert_eq!((call.pct, call.entry, call.count), (30, 96008, 2));
+        assert!(call.reached(30, 100) && !call.reached(31, 100));
     }
 
     #[test]

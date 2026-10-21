@@ -572,7 +572,12 @@ mod tests {
             assert!(edge.holds(0, c.position), "creature {} is outside", c.guid);
             template(c.entry);
         }
-        let sleepers: Vec<_> = edge.creature.iter().filter(|c| c.asleep).collect();
+        // Hogger (#174) sleeps alone in his tent, apart from the Camps.
+        let sleepers: Vec<_> = edge
+            .creature
+            .iter()
+            .filter(|c| c.asleep && c.entry != 96010)
+            .collect();
         assert!(
             (21..=27).contains(&sleepers.len()),
             "{} sleepers",

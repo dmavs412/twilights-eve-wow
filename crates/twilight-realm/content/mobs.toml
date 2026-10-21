@@ -794,6 +794,29 @@ speed_run = 1.143
 detection_range = 18.0
 noise_on_death = 2
 
+# Hogger (#174), the Riverpaw chief, asleep in his tent at the back of the hollow. At the meter's
+# maximum he wakes and hunts the nearest character, waking the sleepers within 15 yd as he goes.
+# Display 384 is vmangos's Hogger's. Placeholders: health x3, damage x1.5.
+[[template]]
+entry = 96010
+name = "Hogger"
+creature_type = 7
+rank = 1
+display_id = 384
+faction_template = 14
+unit_class = "warrior"
+level_min = 22
+level_max = 22
+health_multiplier = 3.0
+damage_multiplier = 1.5
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+spells = ["eat", "rushing_charge"]
+hunts_at_meter_max = 15.0
+
 # The Test Grounds' training dummies (test_grounds.toml): `inert`, so they never move or fight and
 # heal to full 10 s after the last hit. Faction 14 shows them attackable; display 3277 (the
 # Corrupted Brother's) is a placeholder body.

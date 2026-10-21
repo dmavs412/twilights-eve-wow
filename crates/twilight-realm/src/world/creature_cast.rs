@@ -6,11 +6,14 @@
 use benilla_protocol::messages::SpellHealLog;
 use benilla_protocol::SessionEvent;
 
-use super::{eye, InWorld};
+use super::{cast, eye, in_front, melee_reach, InWorld};
 use crate::clock;
-use crate::creature_spells::CreatureEffect;
+use crate::combat;
+use crate::creature_spells::{charge_dest, CreatureEffect};
 use crate::fields::{values, UNIT_FIELD_HEALTH};
+use crate::mobs::State;
 use crate::rng::Rng;
+use crate::rules::school::School;
 use crate::space::distance;
 use crate::Host;
 
@@ -28,6 +31,7 @@ impl InWorld {
         i: usize,
         dt: f32,
         me: [f32; 3],
+        facing: f32,
         host: &dyn Host,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
@@ -37,6 +41,12 @@ impl InWorld {
         if spells.is_empty() {
             return false;
         }
+        let corpses: Vec<[f32; 3]> = self
+            .mobs
+            .iter()
+            .filter(|m| m.state == State::Dead)
+            .map(|m| m.position)
+            .collect();
         let (map, player, player_alive) = (self.map, self.guid, self.player.alive());
         let mob = &mut self.mobs[i];
         for (_, left) in &mut mob.spell_cooldowns {
@@ -85,6 +95,12 @@ impl InWorld {
                     critical: false,
                 }));
                 events.push(values(guid, &[(UNIT_FIELD_HEALTH, mob.health)]));
+            } else if let CreatureEffect::Charge {
+                speed_yd_s,
+                bonus_pct,
+            } = spell.effect
+            {
+                self.creature_charges(i, speed_yd_s, bonus_pct, me, facing, rng, events);
             } else {
                 self.creature_spell_lands(guid, level, spell, events);
             }
@@ -103,7 +119,14 @@ impl InWorld {
             let hurt = s
                 .below_health_pct
                 .is_none_or(|pct| health * 100 < max_health * pct);
-            in_reach && hurt && !mob.spell_cooldowns.iter().any(|(k, _)| *k == s.key)
+            let fed = s
+                .corpse_within
+                .is_none_or(|yd| corpse_within(&corpses, mob.position, yd));
+            in_reach
+                && d >= s.range_min
+                && hurt
+                && fed
+                && !mob.spell_cooldowns.iter().any(|(k, _)| *k == s.key)
         });
         let Some(spell) = ready else {
             return false;
@@ -133,5 +156,57 @@ impl InWorld {
             ammo_display_id: None,
         });
         true
+    }
+
+    /// Mob `i`'s charge goes off: it stands `melee_reach` short of the player at `me`, then lands
+    /// one blow with `bonus_pct` percent added to what a swing does.
+    #[allow(clippy::too_many_arguments)]
+    fn creature_charges(
+        &mut self,
+        i: usize,
+        speed_yd_s: f32,
+        bonus_pct: u32,
+        me: [f32; 3],
+        facing: f32,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let mob = &mut self.mobs[i];
+        let dest = charge_dest(mob.position, me, melee_reach() * 0.9);
+        events.push(mob.charge_to(dest, speed_yd_s, self.guid));
+        mob.orientation = (me[1] - dest[1])
+            .atan2(me[0] - dest[0])
+            .rem_euclid(std::f32::consts::TAU);
+        let stats = cast::buffed(&self.player.stats, &self.skills);
+        let from_front = in_front(facing, me, dest);
+        let miss = self.skills.miss_bonus(mob.guid);
+        let swing = combat::mob_swing(mob, &stats, from_front, miss, rng);
+        mob.swing_timer = clock::secs(mob.template.base_attack_time) * mob.attack_time_mul;
+        let attacker = mob.guid;
+        events.push(SessionEvent::AttackerState(
+            swing.report(attacker, self.guid),
+        ));
+        if swing.damage > 0 {
+            let damage = swing.damage * (100 + bonus_pct) / 100;
+            self.player_takes(attacker, damage, School::Physical, events);
+        }
+    }
+}
+
+/// Whether a corpse of `corpses` lies within `yd` yards of `at`.
+fn corpse_within(corpses: &[[f32; 3]], at: [f32; 3], yd: f32) -> bool {
+    corpses.iter().any(|&c| distance(c, at) <= yd)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::corpse_within;
+
+    #[test]
+    fn a_corpse_counts_only_within_range() {
+        let corpses = [[20.0, 0.0, 0.0]];
+        assert!(!corpse_within(&[], [0.0; 3], 10.0), "no corpse at all");
+        assert!(!corpse_within(&corpses, [0.0; 3], 10.0), "20 yd off");
+        assert!(corpse_within(&corpses, [12.0, 0.0, 0.0], 10.0), "8 yd off");
     }
 }
