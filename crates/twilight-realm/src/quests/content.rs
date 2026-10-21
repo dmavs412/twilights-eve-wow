@@ -84,6 +84,56 @@ impl Explore {
     }
 }
 
+/// A quest's explore objectives: one spot (`explore = { ... }`), whose credit is the quest's
+/// `explored` flag, or a list (`explore = [{ ... }, { ... }]`), each spot a log row of its own
+/// with a credit in the counter after the use objectives.
+#[derive(Default)]
+pub(crate) struct Explores {
+    spots: Vec<Explore>,
+    listed: bool,
+}
+
+impl<'de> Deserialize<'de> for Explores {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Written {
+            One(Explore),
+            Many(Vec<Explore>),
+        }
+        Ok(match Written::deserialize(d)? {
+            Written::One(e) => Explores {
+                spots: vec![e],
+                listed: false,
+            },
+            Written::Many(spots) => Explores {
+                spots,
+                listed: true,
+            },
+        })
+    }
+}
+
+impl Explores {
+    pub(crate) fn is_empty(&self) -> bool {
+        self.spots.is_empty()
+    }
+
+    /// The lone spot of the unlisted form.
+    pub(crate) fn single(&self) -> Option<&Explore> {
+        self.spots.first().filter(|_| !self.listed)
+    }
+
+    /// The spots of the list form; none for the single form.
+    pub(crate) fn listed(&self) -> &[Explore] {
+        if self.listed {
+            &self.spots
+        } else {
+            &[]
+        }
+    }
+}
+
 /// How often a quest can be done (`GLOSSARY.md`).
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -278,7 +328,7 @@ pub(crate) struct Quest {
     #[serde(default)]
     pub(crate) collect: Vec<Collect>,
     #[serde(default)]
-    pub(crate) explore: Option<Explore>,
+    pub(crate) explore: Explores,
     /// A discover objective: these `AreaTable.dbc` areas (content/areas.toml), met once the
     /// character has discovered every one.
     #[serde(default)]
@@ -339,6 +389,11 @@ impl Quest {
         self.kill.len() + self.talk.len() + i
     }
 
+    /// The log slot of listed explore spot `i`.
+    pub(crate) fn explore_slot(&self, i: usize) -> usize {
+        self.use_slot(self.use_object.len()) + i
+    }
+
     /// The quest log's header the quest goes under.
     pub(crate) fn zone_or_sort(&self) -> i32 {
         self.zone_or_sort.unwrap_or(crate::THE_BARRENS as i32)
@@ -393,8 +448,8 @@ struct QuestFile {
     gameobject: Vec<QuestObject>,
 }
 
-/// At most this many kill, talk and use objectives together, and as many collect objectives
-/// (`QUEST_OBJECTIVES_COUNT`).
+/// At most this many kill, talk, use and listed explore objectives together, and as many collect
+/// objectives (`QUEST_OBJECTIVES_COUNT`).
 const OBJECTIVES: usize = 4;
 
 /// Whether the creature `entry` is a Field Giver's: a friendly spawn the realm places anywhere,
@@ -628,16 +683,17 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
                 && q.talk.is_empty()
                 && q.use_object.is_empty()
                 && q.collect.is_empty()
-                && q.explore.is_none()
+                && q.explore.is_empty()
                 && q.discover.is_empty(),
             "Advancement Quest {} asks for more than a word",
             q.id
         );
     }
     assert!(
-        q.kill.len() + q.talk.len() + q.use_object.len() <= OBJECTIVES
+        q.kill.len() + q.talk.len() + q.use_object.len() + q.explore.listed().len() <= OBJECTIVES
             && q.collect.len() <= OBJECTIVES,
-        "quest {} has more than {OBJECTIVES} kill, talk and use objectives, or collect objectives",
+        "quest {} has more than {OBJECTIVES} kill, talk and use objectives (listed explore \
+         spots count too), or collect objectives",
         q.id
     );
     for &area in &q.discover {

@@ -167,7 +167,8 @@ fn complete(c: &Char, a: &Active) -> bool {
             .enumerate()
             .all(|(i, &(_, count))| u32::from(a.kills[q.use_slot(i)]) >= count)
         && q.collect.iter().all(|o| carried(c, o.item) >= o.count)
-        && (q.explore.is_none() || a.explored)
+        && (q.explore.single().is_none() || a.explored)
+        && (0..q.explore.listed().len()).all(|i| a.kills[q.explore_slot(i)] >= 1)
         && q.discover
             .iter()
             .all(|id| c.discovered.binary_search(id).is_ok())
@@ -352,17 +353,43 @@ pub(crate) fn credit_use(c: &mut Char, entry: u32, events: &mut Vec<SessionEvent
     any
 }
 
+/// The creature-or-GameObject field of a listed explore row in log slot `slot`: a GameObject id
+/// no content uses, so the client shows the row's `ObjectiveText` (the spot's place).
+pub(crate) fn spot_entry(slot: usize) -> u32 {
+    (-(slot as i32 + 1)) as u32
+}
+
 /// The player moved: every quest whose explore spot they now stand in has it explored. Whether
 /// any was.
 pub(crate) fn explore(c: &mut Char, events: &mut Vec<SessionEvent>) -> bool {
     let mut any = false;
     for i in 0..c.quests.active.len() {
         let a = &c.quests.active[i];
-        let inside = content::quest(a.id)
-            .and_then(|q| q.explore.as_ref())
+        let Some(q) = content::quest(a.id) else {
+            continue;
+        };
+        let mut changed = q
+            .explore
+            .single()
             .is_some_and(|e| !a.explored && e.contains(c.map, c.position));
-        if inside {
+        if changed {
             c.quests.active[i].explored = true;
+        }
+        for (s, spot) in q.explore.listed().iter().enumerate() {
+            let slot = q.explore_slot(s);
+            let a = &mut c.quests.active[i];
+            if a.kills[slot] == 0 && spot.contains(c.map, c.position) {
+                a.kills[slot] = 1;
+                events.push(SessionEvent::QuestObjectiveKill {
+                    quest_id: a.id,
+                    entry: spot_entry(slot),
+                    count: 1,
+                    required: 1,
+                });
+                changed = true;
+            }
+        }
+        if changed {
             update_slot(c, i, events);
             any = true;
         }

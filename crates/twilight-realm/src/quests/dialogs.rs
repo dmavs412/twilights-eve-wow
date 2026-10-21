@@ -23,18 +23,28 @@ pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
             q.kill[i]
         } else if i < q.use_slot(0) {
             (q.talk[i - q.kill.len()].npc, 1)
+        } else if i < q.explore_slot(0) {
+            let (entry, count) = q.use_object[i - q.use_slot(0)];
+            ((-(entry as i32)) as u32, count)
+        } else if i - q.explore_slot(0) < q.explore.listed().len() {
+            (super::spot_entry(i), 1)
         } else {
-            q.use_object
-                .get(i - q.use_slot(0))
-                .map_or((0, 0), |&(entry, count)| ((-(entry as i32)) as u32, count))
+            (0, 0)
         };
+        // A listed explore row names its place in the objective text.
+        let text = q
+            .explore
+            .listed()
+            .get(i.wrapping_sub(q.explore_slot(0)))
+            .map(|e| e.place.clone())
+            .unwrap_or_default();
         let (item, items) = q.collect.get(i).map_or((0, 0), |o| (o.item, o.count));
         QuestObjective {
             creature_or_go: creature,
             required_count: kills,
             item_id: item,
             item_count: items,
-            text: String::new(),
+            text,
         }
     });
     let given = fixed_rewards(q);
@@ -64,7 +74,7 @@ pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
         objectives_text: q.objectives.clone(),
         details: q.details.clone(),
         // The log's exploration line.
-        end_text: q.explore.as_ref().map(|e| e.text()).unwrap_or_default(),
+        end_text: q.explore.single().map(|e| e.text()).unwrap_or_default(),
         objectives,
     })))
 }
