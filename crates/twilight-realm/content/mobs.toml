@@ -897,6 +897,77 @@ speed_run = 0.857
 detection_range = 10.0
 respawn_secs = 300.0
 
+# Narg the Taskmaster (#236), the kobold at the bottom of Fargodeep Mine, a level 14 elite for
+# Narg's Orders (quests_elwynn.toml) and always carrying Narg's Journal. This template shadows
+# content/elwynn.toml's rare; his vanilla spawn stays and takes level 14 from level_overrides.toml.
+# His display 774 and faction 26 are vanilla's. Placeholder multipliers.
+[[template]]
+entry = 79
+name = "Narg the Taskmaster"
+creature_type = 7
+rank = 1
+display_id = 774
+faction_template = 26
+unit_class = "warrior"
+level_min = 14
+level_max = 14
+health_multiplier = 1.6
+damage_multiplier = 1.1
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 10.0
+respawn_secs = 300.0
+
+# Foreman Gorn (#236), who stands at the Fargodeep Mine entrance and gives The Keystone and two
+# bounties. Display 3272 (Lee Brown's human body) is a placeholder for a miner; faction 12 is
+# Stormwind's. His spawn is in elwynn_overrides.toml.
+[[template]]
+entry = 96013
+name = "Foreman Gorn"
+subname = ""
+creature_type = 7
+rank = 0
+display_id = 3272
+faction_template = 12
+hostile = false
+unit_class = "warrior"
+level_min = 15
+level_max = 15
+health_multiplier = 1.0
+damage_multiplier = 0.75
+armor_multiplier = 1.0
+base_attack_time = 1500
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+friendly = true
+
+# Gllrg the Tidecaller (#236), the murloc caster at Crystal Lake who looted the Jasperlode
+# keystone, an elite that always carries the Rune-marked Keystone. Display 983 (the Murloc
+# Lurker's) is a placeholder for a caster body; faction 18 is the murlocs'. He casts the gnoll
+# mystics' Lightning Bolt. His spawn is in elwynn_overrides.toml. Placeholder multipliers.
+[[template]]
+entry = 96014
+name = "Gllrg the Tidecaller"
+creature_type = 7
+rank = 1
+display_id = 983
+faction_template = 18
+unit_class = "mage"
+level_min = 15
+level_max = 15
+health_multiplier = 1.4
+damage_multiplier = 0.9
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+respawn_secs = 300.0
+spells = ["lightning_bolt_gnoll"]
+
 # The Test Grounds' training dummies (test_grounds.toml): `inert`, so they never move or fight and
 # heal to full 10 s after the last hit. Faction 14 shows them attackable; display 3277 (the
 # Corrupted Brother's) is a placeholder body.

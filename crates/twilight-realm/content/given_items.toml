@@ -28,4 +28,7 @@ item = [
   { entry = 929, name = "Healing Potion", quality = 1, item_level = 22, required_level = 12, display_id = 15712, sell_price = 75, stackable = 5, use_spell = 441, use_spell_name = "Healing Potion", use_cooldown_ms = 120000, restores_health = 320 },
   { entry = 1710, name = "Greater Healing Potion", quality = 1, item_level = 31, required_level = 21, display_id = 15713, sell_price = 125, stackable = 5, use_spell = 2024, use_spell_name = "Healing Potion", use_cooldown_ms = 120000, restores_health = 520 },
   { entry = 6948, name = "Hearthstone", quality = 1, item_level = 1, class = 15, display_id = 6418, bonding = 1, max_count = 1, stackable = 1, use_spell = 8690, use_spell_name = "Hearthstone", use_cooldown_ms = 300000, use_category_cooldown_ms = 0 },
+  # The Keystone's reward (#236), kept for good: the item that opens the sealed door in Jasperlode
+  # Mine. The display is the Twilight Relic's, a placeholder.
+  { entry = 980013, name = "Jasperlode Keystone", quality = 1, item_level = 15, class = 15, display_id = 7697, max_count = 1, description = "Opens the sealed door in Jasperlode Mine." },
 ]

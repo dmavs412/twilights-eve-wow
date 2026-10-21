@@ -70,6 +70,8 @@ pub(crate) struct Template {
     /// The quest it begins (a Quest Starter), 0 for none: the client shows "This item begins a
     /// quest", and using it opens the quest's offer.
     pub(crate) start_quest: u32,
+    /// The tooltip's yellow flavor line; empty for none.
+    pub(crate) description: String,
 }
 
 impl Default for Template {
@@ -103,6 +105,7 @@ impl Default for Template {
             bonding: 0,
             max_count: 0,
             start_quest: 0,
+            description: String::new(),
             stackable: 0,
             container_slots: 0,
             sheath: 0,
@@ -338,7 +341,7 @@ pub(crate) fn info(t: &Template) -> ItemInfo {
         use_spell,
         // Items never bind, so every item can be traded: no tooltip bind line, no bind popup.
         bonding: 0,
-        description: String::new(),
+        description: t.description.clone(),
         page_text: 0,
         language_id: 0,
         page_material: 0,

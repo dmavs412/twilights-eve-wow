@@ -19,3 +19,14 @@ creature = [
   { entry = 94, levels = [8, 9] },    # Defias Cutpurse
   { entry = 103, levels = [10, 10] }, # Garrick Padfoot
 ]
+
+# Narg the Taskmaster (#236): his vanilla spawn takes the level 14 elite template in mobs.toml.
+[[area]]
+name = "Narg's Chamber"
+band = [14, 14]
+map = 0
+x = [-9740.0, -9728.0]
+y = [110.0, 120.0]
+creature = [
+  { entry = 79, levels = [14, 14] },
+]

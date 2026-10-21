@@ -578,3 +578,146 @@ money = 190
 tokens = 1
 zone_or_sort = 12
 collect = [{ item = 980010, count = 8, from = [113], chance = 50 }]
+
+# ── Crystal Lake and Fargodeep (#224) ────────────────────────────────────────────────────────
+#
+# Fargodeep's kobolds were driven out of Jasperlode Mine by the cult. Narg's journal says so, and
+# the murlocs at Crystal Lake looted the sealed door's keystone. Ids and ranges follow
+# docs/specs/elwynn-10-30.
+
+# Morgan's ledger listed ore from Fargodeep. An item quest with placeholder rewards until the gear
+# pass: 600 copper and 3 Tokens, no choices.
+[[quest]]
+id = 94301
+kind = "story"
+giver = 240
+after = 94204
+level = 14
+title = "Narg's Orders"
+objectives = "Kill Narg the Taskmaster at the bottom of Fargodeep Mine and bring his journal to Marshal Dughan."
+details = "Morgan's ledger lists ore from Fargodeep, shipped to the Defias by the cartload. The kobolds there answer to a taskmaster called Narg, who keeps his orders in a journal and his pick at the bottom of the mine. Kill him and bring me the journal. I want to know who told a kobold to dig for the Defias."
+progress = "Has Narg's journal come into your hands yet?"
+completion = "Narg did not write this for the Defias. He writes of the kobolds fleeing Jasperlode, because the ones who dig down, not across, took the mine from them. They did not come to Fargodeep to work. They came to hide. Whatever is digging in Jasperlode is no kobold."
+money = 600
+tokens = 3
+zone_or_sort = 12
+kill = [[79, 1]]
+collect = [{ item = 980011, count = 1, from = [79], chance = 100 }]
+
+# A Stormwind courier lies dead on the lake's north shore. The satchel's quest is given by the
+# satchel itself, and Dughan takes it. XP only.
+[[quest]]
+id = 94302
+kind = "story"
+giver_object = 980103
+ender = 240
+level = 14
+title = "The Dead Courier"
+objectives = "Bring the Courier's Satchel to Marshal Dughan in Goldshire."
+details = "A Stormwind courier lies dead beside his satchel. His wounds are not a wolf's. The satchel is sealed with the king's mark, and it was meant for the Marshal at Goldshire. Take it to him."
+progress = "Is that the courier's satchel?"
+completion = "A dispatch from Stormwind: cult activity confirmed in Redridge, Elwynn considered clear. Considered clear! The courier died a day's walk from Goldshire, and Stormwind thinks we have nothing to fear. They are wrong, and now I know it."
+money = 0
+tokens = 0
+zone_or_sort = 12
+gives = [[980012, 1]]
+collect = [{ item = 980012, count = 1 }]
+
+# The murlocs looted the sealed door's keystone. The reward is the Jasperlode Keystone, which the
+# character keeps. XP only otherwise.
+[[quest]]
+id = 94303
+kind = "story"
+giver = 96013
+after = 94301
+level = 15
+title = "The Keystone"
+objectives = "Kill Gllrg the Tidecaller at Crystal Lake and bring the Rune-marked Keystone to Foreman Gorn."
+details = "Narg's journal tells me what we feared. The inner door of Jasperlode is sealed, and the sealing stone belongs in the old mine entrance. The murlocs at Crystal Lake carried it off, and Gllrg the Tidecaller wears it. Kill him and bring me the keystone. The door opens for no one without it."
+progress = "The keystone, if you please."
+completion = "Rune-marked, and the runes still glow. Gllrg's stone is the key to the sealed door in Jasperlode. Keep it, and what is behind that door is no business for a foreman."
+money = 0
+tokens = 0
+rewards = [[980013, 1]]
+zone_or_sort = 12
+kill = [[96014, 1]]
+collect = [{ item = 980014, count = 1, from = [96014], chance = 100 }]
+
+[[gameobject]]
+guid = 790401
+entry = 980103
+display = 1011
+map = 0
+position = [-9400.0, -300.0, 56.0]
+orientation = 0.0
+respawn = 60.0
+
+# ── Crystal Lake and Fargodeep's bounties (#236) ─────────────────────────────────────────────
+
+[[quest]]
+id = 94305
+kind = "bounty"
+giver = 96013
+level = 15
+min_level = 13
+max_level = 17
+title = "Kobolds in Fargodeep"
+objectives = "Kill 10 Kobold Tunnelers or Kobold Geomancers, then return to Foreman Gorn."
+details = "The tunnelers dig where I tell them not to, and the geomancers chant over the holes. I cannot send my own men in. Put down ten of either and I'll pay a bounty, and another every time you come back."
+progress = "Are the tunnels any quieter?"
+completion = "Ten fewer holes to mind. They will dig more, so I'll pay for those too."
+money = 250
+tokens = 1
+zone_or_sort = 12
+kill = [[475, 10], [476, 10]]
+
+[[quest]]
+id = 94306
+kind = "bounty"
+giver = 96013
+level = 15
+min_level = 13
+max_level = 17
+title = "Candles for Gorn"
+objectives = "Bring 8 Kobold Candles to Foreman Gorn."
+details = "A kobold works by candlelight, and a mine needs light more than a kobold does. Bring me eight of their candles and I'll pay for each lot. Take them off the kobolds of Fargodeep."
+progress = "Got my candles?"
+completion = "Tallow and wick, and still lit. My men will see their picks now. Bring more when you can."
+money = 260
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980015, count = 8, from = [40, 475, 476], chance = 50 }]
+
+[[quest]]
+id = 94307
+kind = "bounty"
+giver = 1651
+level = 15
+min_level = 13
+max_level = 17
+title = "Murlocs on the Shore"
+objectives = "Kill 10 Murloc Foragers or Murloc Lurkers, then return to Fisherman Lee Brown."
+details = "The murlocs are scaring the fish off, and my nets come up empty. I have no time for a fight. Kill ten of the foragers or the lurkers and I'll pay you, and again as often as you like."
+progress = "Any murlocs left on my shore?"
+completion = "Ten fewer on the shore. The fish may come back. Here's your coin."
+money = 280
+tokens = 1
+zone_or_sort = 12
+kill = [[46, 10], [732, 10]]
+
+[[quest]]
+id = 94308
+kind = "bounty"
+giver = 1651
+level = 16
+min_level = 14
+max_level = 18
+title = "Fins for Lee Brown"
+objectives = "Bring 8 Murloc Fins to Fisherman Lee Brown."
+details = "A murloc's fin makes good bait and better stew. Bring me eight from the lake's murlocs and I'll pay a fair price for them, whenever you have more."
+progress = "Got my fins?"
+completion = "Fresh fins, and a good lot. The stew will be fine tonight. Come back for more."
+money = 270
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980016, count = 8, from = [285, 735], chance = 50 }]

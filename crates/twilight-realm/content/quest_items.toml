@@ -46,6 +46,14 @@ item = [
   { entry = 980008, name = "Princess's Collar", quality = 1, item_level = 12, class = 12, display_id = 6470, max_count = 1 },
   { entry = 980009, name = "Morgan's Ledger", quality = 1, item_level = 14, class = 12, display_id = 6270, max_count = 1 },
   { entry = 980010, name = "Boar Ribs", quality = 1, item_level = 12, class = 12, display_id = 6682, stackable = 20 },
+  # Crystal Lake and Fargodeep (#236). The displays are placeholders borrowed from stock quest
+  # items. Dughan takes the journal and the satchel; Gorn takes the keystone's quest item and the
+  # candles; Lee Brown takes the fins.
+  { entry = 980011, name = "Narg's Journal", quality = 1, item_level = 14, class = 12, display_id = 6270, max_count = 1 },
+  { entry = 980012, name = "Courier's Satchel", quality = 1, item_level = 14, class = 12, display_id = 1252, max_count = 1 },
+  { entry = 980014, name = "Rune-marked Keystone", quality = 1, item_level = 15, class = 12, display_id = 7697, max_count = 1 },
+  { entry = 980015, name = "Kobold Candle", quality = 1, item_level = 14, class = 12, display_id = 6477, stackable = 20 },
+  { entry = 980016, name = "Murloc Fin", quality = 1, item_level = 14, class = 12, display_id = 7255, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done.

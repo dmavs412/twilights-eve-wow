@@ -244,3 +244,22 @@ level_min = 14
 level_max = 14
 position = [-9265.0, 330.0, 62.0]
 orientation = 3.14
+
+# Crystal Lake and Fargodeep (#236). Foreman Gorn stands at the mine entrance and Gllrg at the
+# lake's murloc camp (Murloc spawns near -9474, -431). Both positions are guesses and need a look
+# in game.
+[[added]]
+guid = 960203
+entry = 96013
+level_min = 15
+level_max = 15
+position = [-9800.0, 165.0, 40.0]
+orientation = 3.14
+
+[[added]]
+guid = 960204
+entry = 96014
+level_min = 15
+level_max = 15
+position = [-9478.0, -428.0, 56.0]
+orientation = 1.57
