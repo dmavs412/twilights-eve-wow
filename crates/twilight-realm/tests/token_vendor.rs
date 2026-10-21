@@ -1,5 +1,6 @@
-//! The Crossroads' Token vendor through the stock merchant window: greens by level band, each
-//! row naming its Token price, bought with the Tokens in the bags.
+//! The Crossroads' Token vendor through the stock merchant window: the Token whites for levels 1
+//! to 10 and greens by level band above, each row naming its Token price, bought with the Tokens
+//! in the bags.
 
 mod common;
 mod gear_common;
@@ -14,9 +15,9 @@ const TOKEN_VENDOR: u32 = 190002;
 /// The Twilight Token.
 const TOKEN: u32 = 90001;
 
-const WARRIORS_TUNIC: u32 = 2965; // 1-10, 2 Tokens, the band's first row
+const NOVICES_WOOLEN_VEST: u32 = 900200; // 1-10, 3 Tokens, the band's first row
 const GNOLL_SKULL_BASHER: u32 = 1440; // 11-20, 4 Tokens, the band's first row
-const ROW_ARMOR_OF_WARRIORS_TUNIC: u32 = 115;
+const ROW_ARMOR_OF_NOVICES_WOOLEN_VEST: u32 = 26;
 
 /// `UNIT_NPC_FLAG_VENDOR` and `UNIT_NPC_FLAG_REPAIR`.
 const NPC_FLAG_VENDOR: u32 = 0x4;
@@ -150,10 +151,10 @@ fn the_token_vendor_stands_in_the_crossroads_and_sells_without_repairing() {
 fn the_list_is_the_buyers_band_with_each_rows_token_price_in_its_name() {
     let mut shop = Shop::new(5, 0, &[]);
     let rows = shop.list();
-    assert_eq!(rows.len(), 8, "the 1-10 band");
+    assert_eq!(rows.len(), 22, "the 1-10 band: the Token whites");
     assert_eq!(
         rows.iter().map(|r| r.slot).collect::<Vec<_>>(),
-        (1..=8).collect::<Vec<_>>()
+        (1..=22).collect::<Vec<_>>()
     );
     assert!(
         rows.iter().all(|r| r.price == 0),
@@ -163,17 +164,17 @@ fn the_list_is_the_buyers_band_with_each_rows_token_price_in_its_name() {
         .iter()
         .all(|r| r.buy_count == 1 && r.current_count == u32::MAX));
 
-    // The first row reads as the Warrior's Tunic at 2 Tokens, with the tunic's own stats.
-    let tunic = shop.query(rows[0].entry);
-    assert_eq!(tunic.name, "2 Tokens: Warrior's Tunic");
-    assert_eq!(tunic.armor, ROW_ARMOR_OF_WARRIORS_TUNIC);
-    assert_eq!(tunic.quality, 2);
-    assert_eq!(tunic.buy_price, 0);
-    assert_eq!(rows[0].display_id, tunic.display_info_id);
-    // The third row, the Hunting Bow, costs one Token.
-    assert_eq!(shop.query(rows[2].entry).name, "1 Token: Hunting Bow");
-    // The tunic itself keeps their name.
-    assert_eq!(shop.query(WARRIORS_TUNIC).name, "Warrior's Tunic");
+    // The first row reads as the Novice's Woolen Vest at 3 Tokens, with the vest's own stats.
+    let vest = shop.query(rows[0].entry);
+    assert_eq!(vest.name, "3 Tokens: Novice's Woolen Vest");
+    assert_eq!(vest.armor, ROW_ARMOR_OF_NOVICES_WOOLEN_VEST);
+    assert_eq!(vest.quality, 1);
+    assert_eq!(vest.buy_price, 0);
+    assert_eq!(rows[0].display_id, vest.display_info_id);
+    // The thirteenth row, the Pendant of Brawn, costs one Token.
+    assert_eq!(shop.query(rows[12].entry).name, "1 Token: Pendant of Brawn");
+    // The vest itself keeps their name.
+    assert_eq!(shop.query(NOVICES_WOOLEN_VEST).name, "Novice's Woolen Vest");
 }
 
 #[test]
@@ -190,14 +191,14 @@ fn a_higher_level_sees_the_next_band() {
 #[test]
 fn buying_spends_the_tokens_and_puts_the_green_in_the_bags() {
     let mut shop = Shop::new(5, 0, &[(23, TOKEN, 5)]);
-    let tunic = shop.row_of("Warrior's Tunic");
-    let events = shop.buy(&tunic);
+    let vest = shop.row_of("Novice's Woolen Vest");
+    let events = shop.buy(&vest);
     assert_eq!(buy_failure(&events), None);
-    assert_eq!(shop.carried(TOKEN), 3);
-    assert_eq!(shop.carried(WARRIORS_TUNIC), 1);
+    assert_eq!(shop.carried(TOKEN), 2);
+    assert_eq!(shop.carried(NOVICES_WOOLEN_VEST), 1);
     assert!(events.iter().any(|e| matches!(
         e,
-        SessionEvent::ItemPushResult(p) if p.from_npc && p.item_entry == WARRIORS_TUNIC
+        SessionEvent::ItemPushResult(p) if p.from_npc && p.item_entry == NOVICES_WOOLEN_VEST
     )));
     assert!(events.iter().any(|e| matches!(
         e,
@@ -210,35 +211,35 @@ fn buying_spends_the_tokens_and_puts_the_green_in_the_bags() {
     // The purchase is saved.
     let blob = shop.realm.export_character(shop.me).unwrap();
     assert!(
-        blob.contains(&format!("entry = {WARRIORS_TUNIC}")),
+        blob.contains(&format!("entry = {NOVICES_WOOLEN_VEST}")),
         "{blob}"
     );
 }
 
 #[test]
 fn the_tokens_can_come_from_several_stacks_and_the_last_one_goes() {
-    let mut shop = Shop::new(5, 0, &[(23, TOKEN, 1), (30, TOKEN, 1)]);
-    let tunic = shop.row_of("Warrior's Tunic");
-    shop.buy(&tunic);
+    let mut shop = Shop::new(5, 0, &[(23, TOKEN, 2), (30, TOKEN, 1)]);
+    let vest = shop.row_of("Novice's Woolen Vest");
+    shop.buy(&vest);
     assert_eq!(shop.carried(TOKEN), 0);
-    assert_eq!(shop.carried(WARRIORS_TUNIC), 1);
+    assert_eq!(shop.carried(NOVICES_WOOLEN_VEST), 1);
 }
 
 #[test]
 fn buying_without_enough_tokens_is_refused_with_the_stock_message() {
     let mut shop = Shop::new(5, 0, &[(23, TOKEN, 1)]);
-    let tunic = shop.row_of("Warrior's Tunic");
-    let events = shop.buy(&tunic);
+    let vest = shop.row_of("Novice's Woolen Vest");
+    let events = shop.buy(&vest);
     assert_eq!(buy_failure(&events), Some(buy_result::NOT_ENOUGH_MONEY));
     assert_eq!(shop.carried(TOKEN), 1);
-    assert_eq!(shop.carried(WARRIORS_TUNIC), 0);
+    assert_eq!(shop.carried(NOVICES_WOOLEN_VEST), 0);
 
     // Money is not Tokens.
     let mut rich = Shop::new(5, 100_000, &[]);
-    let tunic = rich.row_of("Warrior's Tunic");
-    let events = rich.buy(&tunic);
+    let vest = rich.row_of("Novice's Woolen Vest");
+    let events = rich.buy(&vest);
     assert_eq!(buy_failure(&events), Some(buy_result::NOT_ENOUGH_MONEY));
-    assert_eq!(rich.carried(WARRIORS_TUNIC), 0);
+    assert_eq!(rich.carried(NOVICES_WOOLEN_VEST), 0);
 }
 
 #[test]
@@ -246,8 +247,8 @@ fn a_full_backpack_keeps_the_tokens() {
     let mut items: Vec<Carried> = (24..39).map(|s| (s, 4560, 1)).collect();
     items.push((23, TOKEN, 5));
     let mut shop = Shop::new(5, 0, &items);
-    let tunic = shop.row_of("Warrior's Tunic");
-    let events = shop.buy(&tunic);
+    let vest = shop.row_of("Novice's Woolen Vest");
+    let events = shop.buy(&vest);
     assert!(events
         .iter()
         .any(|e| matches!(e, SessionEvent::InventoryFailure { reason: 50, .. })));
@@ -259,9 +260,9 @@ fn tokens_in_a_bag_pay_and_the_green_finds_room_in_it() {
     // The backpack is full; the Tokens and the room are in the Small Red Pouch.
     let mut items: Vec<Carried> = (23..39).map(|s| (s, 4560, 1)).collect();
     items.push((19, 805, 1));
-    let mut shop = Shop::with_bagged(5, 0, &items, &[(19, 0, TOKEN, 3)]);
-    let tunic = shop.row_of("Warrior's Tunic");
-    let events = shop.buy(&tunic);
+    let mut shop = Shop::with_bagged(5, 0, &items, &[(19, 0, TOKEN, 4)]);
+    let vest = shop.row_of("Novice's Woolen Vest");
+    let events = shop.buy(&vest);
     assert_eq!(buy_failure(&events), None);
     assert!(
         !events
@@ -271,7 +272,7 @@ fn tokens_in_a_bag_pay_and_the_green_finds_room_in_it() {
     );
     let blob = shop.realm.export_character(shop.me).unwrap();
     assert!(
-        blob.contains(&format!("entry = {WARRIORS_TUNIC}")),
+        blob.contains(&format!("entry = {NOVICES_WOOLEN_VEST}")),
         "{blob}"
     );
     assert!(
@@ -286,16 +287,16 @@ count = 1"
 #[test]
 fn only_the_buyers_band_is_for_sale_and_only_within_reach() {
     let mut shop = Shop::new(15, 0, &[(23, TOKEN, 20)]);
-    // The tunic is the band below, and the real entry is no row at all.
+    // The vest is the band below, and the real entry is no row at all.
     let first = shop.list()[0];
     let events = shop.buy(&VendorItem {
-        entry: WARRIORS_TUNIC,
+        entry: NOVICES_WOOLEN_VEST,
         ..first
     });
     assert_eq!(buy_failure(&events), Some(buy_result::CANT_FIND_ITEM));
     let mut low = Shop::new(5, 0, &[(23, TOKEN, 20)]);
-    let tunic = low.row_of("Warrior's Tunic");
-    let events = shop.buy(&tunic);
+    let vest = low.row_of("Novice's Woolen Vest");
+    let events = shop.buy(&vest);
     assert_eq!(buy_failure(&events), Some(buy_result::CANT_FIND_ITEM));
     assert_eq!(shop.carried(TOKEN), 20);
 

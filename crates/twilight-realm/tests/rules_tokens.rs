@@ -1,21 +1,35 @@
 //! The Token vendor's prices and level bands (`docs/reference/items-and-vendors.md`, "Token
-//! vendor"): greens priced `max(1, round(item_level / 4 * slot_mod))` Tokens, listed by the band
-//! of required levels the buyer's level falls in.
+//! vendor"): the 1 to 10 band is the Token whites at spec #272's prices (Chest and two-hander
+//! 3, every other weapon 2, amulet and ring 1); from 11 up, greens priced
+//! `max(1, round(item_level / 4 * slot_mod))` Tokens. Each band is listed to the buyer whose
+//! level falls in it.
 
 use twilight_realm::rules::tokens::{band, price, stock};
 
-const WARRIORS_TUNIC: u32 = 2965; // chest, item level 11: 11 / 4 * 0.9 = 2.475
-const HUNTING_BOW: u32 = 8180; // ranged, item level 11: 11 / 4 * 0.5 = 1.375
-const CORAL_CLAYMORE: u32 = 3188; // two-hander, item level 15: 15 / 4 * 1.0 = 3.75
+const NOVICES_WOOLEN_VEST: u32 = 900200; // a Token white Chest: 3
+const MILITIA_CLAYMORE: u32 = 900204; // a Token white two-hander: 3
+const MILITIA_SHORTSWORD: u32 = 900205; // a Token white one-hander: 2
+const PENDANT_OF_BRAWN: u32 = 900212; // a Token white amulet: 1
+const SHADOWHIDE_TWO_HANDED_SWORD: u32 = 1460; // two-hander, item level 20: 20 / 4 * 1.0 = 5
+const BURNISHED_TUNIC: u32 = 2989; // chest, item level 21: 21 / 4 * 0.9 = 4.725
+const LIGHT_BOW: u32 = 4576; // ranged, item level 21: 21 / 4 * 0.5 = 2.625
 const TUNNEL_PICK: u32 = 756; // two-hander, item level 29: 29 / 4 * 1.0 = 7.25
 const GLIMMERING_MAIL_BREASTPLATE: u32 = 4071; // chest, item level 31: 31 / 4 * 0.9 = 6.975
 const TOUGH_JERKY: u32 = 117; // the goods vendor's
 
 #[test]
+fn a_token_white_costs_what_the_spec_says_for_its_slot() {
+    assert_eq!(price(NOVICES_WOOLEN_VEST), Some(3));
+    assert_eq!(price(MILITIA_CLAYMORE), Some(3));
+    assert_eq!(price(MILITIA_SHORTSWORD), Some(2));
+    assert_eq!(price(PENDANT_OF_BRAWN), Some(1));
+}
+
+#[test]
 fn a_green_costs_its_item_level_over_four_scaled_by_its_slot() {
-    assert_eq!(price(WARRIORS_TUNIC), Some(2));
-    assert_eq!(price(HUNTING_BOW), Some(1));
-    assert_eq!(price(CORAL_CLAYMORE), Some(4));
+    assert_eq!(price(SHADOWHIDE_TWO_HANDED_SWORD), Some(5));
+    assert_eq!(price(BURNISHED_TUNIC), Some(5));
+    assert_eq!(price(LIGHT_BOW), Some(3));
     assert_eq!(price(TUNNEL_PICK), Some(7));
     assert_eq!(price(GLIMMERING_MAIL_BREASTPLATE), Some(7));
 }
@@ -40,11 +54,11 @@ fn levels_fall_in_bands_of_ten_and_the_last_band_takes_everything_above() {
 #[test]
 fn the_stock_is_the_buyers_band() {
     let first = stock(1);
-    assert_eq!(first.len(), 8);
-    assert_eq!(first[0], (WARRIORS_TUNIC, 2));
+    assert_eq!(first.len(), 22, "the Token whites");
+    assert_eq!(first[0], (NOVICES_WOOLEN_VEST, 3));
     assert_eq!(stock(10), first);
     assert_eq!(stock(15).len(), 12);
     assert_eq!(stock(25).len(), 13);
     assert!(stock(25).contains(&(GLIMMERING_MAIL_BREASTPLATE, 7)));
-    assert!(!stock(25).iter().any(|&(e, _)| e == WARRIORS_TUNIC));
+    assert!(!stock(25).iter().any(|&(e, _)| e == NOVICES_WOOLEN_VEST));
 }

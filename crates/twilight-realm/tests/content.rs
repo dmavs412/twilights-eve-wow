@@ -298,6 +298,11 @@ fn the_seeded_gear_keeps_the_references_numbers() {
                 None => continue,
             }
         }
+        // The vanilla rows of pool level 12 and under left the drop file (spec #272:
+        // Northshire's loot is hand-authored); their numbers stay.
+        if item["pool_level"].as_i64().is_some_and(|l| l <= 12) {
+            item["pool_level"] = 0.into();
+        }
         assert_eq!(
             sheet_fields(row),
             sheet_fields(&expected_item(&item)),

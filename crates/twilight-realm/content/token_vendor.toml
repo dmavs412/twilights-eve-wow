@@ -1,24 +1,39 @@
-# The Token vendor's greens, by band of required levels: a character is offered the band its
-# level falls in, and the last band also serves every level above it. Copied from
-# data/twilights-eve/token_vendor.json (`bands`, `token_cost`); see
-# docs/reference/items-and-vendors.md, "Token vendor". tests/content_tokens.rs checks that the
-# two agree. Every entry is a row of data/twilights-eve/gear.csv; the research's greens for a
-# body part outside the ten Gear Slots (ADR 0007) are left out.
-#
-# `tokens` is the price in Twilight Tokens: max(1, round(item_level / 4 * slot_mod)), with the
-# slot multipliers the research proposes. The rows are the merchant window's order.
+# The Token vendor's stock, by band of required levels: a character is offered the band its
+# level falls in, and the last band also serves every level above it. The 1 to 10 band is
+# hand-authored: the 22 Token whites of spec #272 (Chest and two-hander 3 Tokens, every other
+# weapon 2, amulet and ring 1), nothing else. The later bands are still the research's, copied
+# from data/twilights-eve/token_vendor.json (`bands`, `token_cost`; see
+# docs/reference/items-and-vendors.md, "Token vendor"), where `tokens` is
+# max(1, round(item_level / 4 * slot_mod)) with the slot multipliers the research proposes.
+# tests/content_tokens.rs checks both. Every entry is a row of data/twilights-eve/gear.csv; the
+# research's greens for a body part outside the ten Gear Slots (ADR 0007) are left out. The
+# rows are the merchant window's order.
 
 [[band]]
 levels = [1, 10]
 item = [
-  { entry = 2965, tokens = 2 }, # Warrior's Tunic, chest, required level 6
-  { entry = 3223, tokens = 2 }, # Frostmane Scepter, one_hand, required level 6
-  { entry = 8180, tokens = 1 }, # Hunting Bow, ranged, required level 6
-  { entry = 6195, tokens = 3 }, # Wax-polished Armor, chest, required level 10
-  { entry = 826, tokens = 3 }, # Brutish Riverpaw Axe, one_hand, required level 10
-  { entry = 3036, tokens = 2 }, # Heavy Shortbow, ranged, required level 10
-  { entry = 3651, tokens = 3 }, # Veteran Shield, shield, required level 10
-  { entry = 3188, tokens = 4 }, # Coral Claymore, two_hand, required level 10
+  { entry = 900200, tokens = 3 }, # Novice's Woolen Vest, chest
+  { entry = 900201, tokens = 3 }, # Novice's Leather Jerkin, chest
+  { entry = 900202, tokens = 3 }, # Novice's Chain Vest, chest
+  { entry = 900203, tokens = 3 }, # Novice's Plate Vest, chest
+  { entry = 900204, tokens = 3 }, # Militia Claymore, two_hand
+  { entry = 900205, tokens = 2 }, # Militia Shortsword, one_hand
+  { entry = 900206, tokens = 2 }, # Militia Dirk, one_hand
+  { entry = 900207, tokens = 3 }, # Pilgrim's Staff, two_hand
+  { entry = 900208, tokens = 2 }, # Militia Shortbow, ranged
+  { entry = 900209, tokens = 2 }, # Pilgrim's Wand, ranged
+  { entry = 900210, tokens = 2 }, # Militia Buckler, offhand
+  { entry = 900211, tokens = 2 }, # Pilgrim's Candle, offhand
+  { entry = 900212, tokens = 1 }, # Pendant of Brawn, amulet
+  { entry = 900213, tokens = 1 }, # Pendant of Quickness, amulet
+  { entry = 900214, tokens = 1 }, # Pendant of Endurance, amulet
+  { entry = 900215, tokens = 1 }, # Pendant of Wit, amulet
+  { entry = 900216, tokens = 1 }, # Pendant of Calm, amulet
+  { entry = 900217, tokens = 1 }, # Band of Brawn, ring
+  { entry = 900218, tokens = 1 }, # Band of Quickness, ring
+  { entry = 900219, tokens = 1 }, # Band of Endurance, ring
+  { entry = 900220, tokens = 1 }, # Band of Wit, ring
+  { entry = 900221, tokens = 1 }, # Band of Calm, ring
 ]
 
 [[band]]

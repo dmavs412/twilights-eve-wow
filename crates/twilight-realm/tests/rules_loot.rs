@@ -36,13 +36,14 @@ fn a_level_20_mob_drops_items_of_levels_18_to_22() {
 
 #[test]
 fn the_pool_is_every_item_of_the_window_at_that_quality() {
-    // Level 3 greys: the reference's pools at levels 1 to 5.
+    // Level 3 greys: the reference's pools at levels 1 to 5, less the grey Gear (2210, 1380 and
+    // 2211): every Gear row of pool level 12 and under left the drop file (spec #272).
     let mut items = pool(3, Quality::Poor).to_vec();
     items.sort_unstable();
     let mut want = vec![
-        1366, 1378, 2210, 2649, 2654, 5364, // level 2
+        1366, 1378, 2649, 2654, 5364, // level 2
         755, 1367, 1372, 1377, 2650, 3363, 4865, 7098, // level 3
-        1368, 1370, 1374, 1380, 2211, 2651, 2653, 7073, 7074, 7099, 7100, 7101, // level 4
+        1368, 1370, 1374, 2651, 2653, 7073, 7074, 7099, 7100, 7101, // level 4
     ];
     // Gear for a body part outside the ten Gear Slots is in no pool (ADR 0007).
     want.retain(|e| pool_level(*e).is_some());
@@ -56,17 +57,28 @@ fn the_pool_is_every_item_of_the_window_at_that_quality() {
 
 #[test]
 fn a_window_with_none_of_a_quality_widens_up_to_six_levels() {
-    // The lowest world-drop green is level 10: a level 5 mob's window widens to 0..=10 for it.
-    let greens = pool(5, Quality::Uncommon);
+    // No Gear row under pool level 13 is in the drop file (spec #272: Northshire's loot is
+    // hand-authored and rolls on its own at level 10 and under). A level 10 mob's green window
+    // widens to 4..=16 for the level 13 greens; its white window finds no white Gear between 8
+    // and 12 either, only the bags of items.toml below and the level 15 whites above.
+    let greens = pool(10, Quality::Uncommon);
     assert!(!greens.is_empty());
     for entry in greens {
-        assert_eq!(pool_level(*entry), Some(10), "{entry}");
+        let level = pool_level(*entry).unwrap();
+        assert!((13..=16).contains(&level), "{entry} is level {level}");
+    }
+    let whites = pool(10, Quality::Common);
+    assert!(whites.iter().any(|e| pool_level(*e) == Some(15)));
+    for entry in whites {
+        let level = pool_level(*entry).unwrap();
+        assert!(!(8..=12).contains(&level), "{entry} is level {level}");
     }
 }
 
 #[test]
 fn a_quality_with_none_near_the_level_falls_back_to_the_next_one_down() {
-    // Six levels either side of 3 still reach no green, so the green roll drops a white.
+    // Six levels either side of 3 still reach no green, so the green roll drops a white: with no
+    // white Gear under pool level 13 (spec #272), the bags of items.toml.
     assert_eq!(pool(3, Quality::Uncommon), pool(3, Quality::Common));
 }
 
