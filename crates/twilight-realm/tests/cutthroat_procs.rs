@@ -142,6 +142,10 @@ fn phantom_guile_gives_a_point_and_ten_energy_on_each_dodge() {
     let talents = [(*PHANTOM_GUILE, 3), (*REFLEXIVE_STRIKE, 5)];
     let (mut realm, me, camp, mut view) = cutthroat(10, &talents, true, true);
     let mob = &camp[0];
+    // The rest of the camp turns on the player, for dodges enough.
+    for other in camp[1..].iter().rev() {
+        pull(&mut realm, &mut view, other);
+    }
     stand_at(&mut realm, mob, 2.0);
     cast_at(&mut realm, &mut view, *EVASION, mob);
     // Two strikes at another mob spend the Energy, one at this mob puts a real point on it, and
@@ -150,11 +154,7 @@ fn phantom_guile_gives_a_point_and_ten_energy_on_each_dodge() {
     drain_energy(&mut realm, &mut view, &camp[1]);
     stand_at(&mut realm, mob, 2.0);
     cast_at(&mut realm, &mut view, *SINISTER_STRIKE, mob);
-    // The whole camp turns on the player, for dodges enough; the point lands on the mob the
-    // player is fighting.
-    for other in camp.iter().rev() {
-        realm.handle(RealmCommand::AttackSwing { guid: other.guid });
-    }
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
     assert_eq!(combo(&view, me).1, mob.guid);
     let mut seen = 0;
     for _ in 0..600 {
@@ -251,9 +251,8 @@ fn kill_gains(level: u8, talents: &[(u32, u8)]) -> (u32, u32, u32, u32) {
     let (mut realm, me, camp, mut view) = cutthroat(level, talents, true, false);
     let max = view.fields(me).unit_max_health().unwrap();
     for other in camp.iter().rev() {
-        realm.handle(RealmCommand::AttackSwing { guid: other.guid });
+        pull(&mut realm, &mut view, other);
     }
-    realm.handle(RealmCommand::AttackStop);
     for _ in 0..600 {
         view.run(&mut realm, 0.1);
         assert!(view.health(me) > 0, "died waiting to be hurt");

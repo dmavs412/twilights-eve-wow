@@ -323,12 +323,14 @@ fn a_chasing_mob_follows_the_route_round_a_wall_instead_of_through_it() {
         .host
         .line_of_sight(WAILING_CAVERNS, RAVAGER_AT, ROUND_THE_BEND));
     s.enter();
+    // The Ravager notices the warrior beside it, who then runs round the bend.
+    stand_by(&mut s, RAVAGER_AT);
+    s.run(0.5);
     s.send(RealmCommand::Move {
         motion: Default::default(),
         position: ROUND_THE_BEND,
         orientation: 3.6,
     });
-    s.send(RealmCommand::AttackSwing { guid: RAVAGER });
     let events = s.run(15.0);
 
     let runs = runs(&events, RAVAGER);

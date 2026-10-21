@@ -208,9 +208,9 @@ fn with_no_stacks_there_is_no_bonus_and_the_cast_still_goes_off() {
 fn worn_down(realm: &mut Realm, me: u64, camp: &[Mob], view: &mut View, missing: u32) -> u32 {
     let full = view.health(me);
     for other in camp.iter().rev() {
-        realm.handle(RealmCommand::AttackSwing { guid: other.guid });
+        pull(realm, view, other);
     }
-    realm.handle(RealmCommand::AttackStop);
+    stand_at(realm, &camp[0], 2.0);
     for _ in 0..600 {
         view.run(realm, 0.1);
         let health = view.health(me);

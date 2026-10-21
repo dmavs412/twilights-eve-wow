@@ -128,8 +128,8 @@ fn click(p: &mut Party, i: usize, guid: u64) {
     p.run(0.3);
 }
 
-/// Player `i` stands at `at` facing `toward` and fights `target`, swinging again after a fear, until
-/// it dies.
+/// Player `i` stands at `at` facing `toward` and fights `target`, stepping up and swinging again
+/// after a fear or a root, until it dies.
 fn kill(p: &mut Party, i: usize, at: [f32; 3], toward: [f32; 3], target: u64) {
     for j in 0..PLAYERS {
         p.go_facing(j, at, toward);
@@ -137,9 +137,11 @@ fn kill(p: &mut Party, i: usize, at: [f32; 3], toward: [f32; 3], target: u64) {
     p.run(0.2);
     for round in 0..240 {
         // A fresh swing command restarts the swing, so it is sent only every ten rounds, to take
-        // a fear's loser back into the fight.
+        // a fear's loser back into the fight. The step goes with it: a root from the last fight
+        // (Gresh's Drowning Grasp) may still have held when the first one was sent.
         if round % 10 == 0 {
             for j in 0..PLAYERS {
+                p.go_facing(j, at, toward);
                 p.cmd(j, RealmCommand::AttackSwing { guid: target });
             }
         }
@@ -172,8 +174,34 @@ fn kill(p: &mut Party, i: usize, at: [f32; 3], toward: [f32; 3], target: u64) {
         .iter()
         .filter(|e| matches!(e, SessionEvent::AttackerState(s) if s.victim == target))
         .count();
+    let refusals: Vec<String> = p
+        .seen(i)
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::AttackSwingError(r) => Some(format!("{r:?}")),
+            _ => None,
+        })
+        .collect();
+    let created: Vec<[f32; 3]> = p
+        .seen(i)
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::ObjectCreate { guid, position, .. } if *guid == target => Some(*position),
+            _ => None,
+        })
+        .collect();
+    let ports: Vec<(u32, [f32; 3])> = p
+        .seen(i)
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::Teleport {
+                counter, position, ..
+            } => Some((*counter, *position)),
+            _ => None,
+        })
+        .collect();
     panic!(
-        "{target:#x} did not die, last health {health:?}, {own_death} death events, {hits} blows at it, health {:?}",
+        "{target:#x} did not die, last health {health:?}, {own_death} death events, {hits} blows at it,          created at {created:?} (the player stands at {at:?}), teleports {ports:?}, swings refused          {refusals:?}, health {:?}",
         &series[..series.len().min(40)]
     );
 }

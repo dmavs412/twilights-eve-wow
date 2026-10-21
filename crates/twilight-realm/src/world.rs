@@ -509,16 +509,12 @@ impl InWorld {
 
     /// `CMSG_ATTACKSWING`: start auto-attack on `target`, echoed as `SMSG_ATTACKSTART`.
     pub(crate) fn attack(&mut self, target: u64, events: &mut Vec<SessionEvent>) {
-        let Some(i) = self
-            .mobs
-            .iter()
-            .position(|m| m.guid == target && m.attackable())
-        else {
+        if !self.mobs.iter().any(|m| m.guid == target && m.attackable()) {
             events.push(SessionEvent::AttackSwingError(
                 AttackSwingError::DeadOrUnattackable,
             ));
             return;
-        };
+        }
         if !self.player.alive() {
             return;
         }
@@ -541,10 +537,9 @@ impl InWorld {
             attacker: self.guid,
             victim: target,
         });
-        // Being attacked turns a mob on its attacker (`CreatureAI::AttackedBy`).
-        if self.mobs[i].state == State::Idle {
-            self.pull(i, None, events);
-        }
+        // Starting auto-attack pulls nothing (#185): the mob turns on the player when the first
+        // swing resolves (`player_swing`) or when the player comes too close (the notice loop
+        // in `tick`).
     }
 
     /// `CMSG_ATTACKSTOP`.

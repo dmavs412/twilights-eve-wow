@@ -242,10 +242,9 @@ fn pulled(
         })
         .collect();
     let mob = camp.first().cloned().expect("the scorpid camp streams in");
-    stand_at(&mut realm, &mob, 2.0);
     for other in camp.iter().rev() {
-        realm.handle(RealmCommand::AttackSwing { guid: other.guid });
+        pull(&mut realm, &mut view, other);
     }
-    realm.handle(RealmCommand::AttackStop);
+    stand_at(&mut realm, &mob, 2.0);
     (realm, me, mob, view)
 }

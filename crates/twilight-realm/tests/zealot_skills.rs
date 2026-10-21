@@ -509,11 +509,10 @@ fn tanking_as(rage: u32, edit: &dyn Fn(String) -> String) -> (Realm, u64, Mob, V
         })
         .collect();
     let mob = camp.first().cloned().expect("the scorpid camp streams in");
-    stand_at(&mut realm, &mob, 2.0);
     for other in camp.iter().rev() {
-        realm.handle(RealmCommand::AttackSwing { guid: other.guid });
+        pull(&mut realm, &mut view, other);
     }
-    realm.handle(RealmCommand::AttackStop);
+    stand_at(&mut realm, &mob, 2.0);
     for _ in 0..1800 {
         view.run(&mut realm, 0.1);
         assert!(view.health(me) > 0, "died waiting for {rage} rage");

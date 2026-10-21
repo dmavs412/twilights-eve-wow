@@ -260,9 +260,13 @@ fn epidemic_spreads_the_blight_to_a_mob_that_lacks_it() {
     mobs.truncate(2);
     // Pull both onto the caster, so they stand side by side.
     for m in &mobs {
-        realm.handle(RealmCommand::AttackSwing { guid: m.guid });
+        pull(&mut realm, &mut view, m);
     }
-    realm.handle(RealmCommand::AttackStop);
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: [CAMP[0] + 40.0, CAMP[1], 0.0],
+        orientation: std::f32::consts::PI,
+    });
     view.run(&mut realm, 8.0);
     go(&mut realm, &mut view, BLIGHT, mobs[0].guid);
     let spread = (0..60).any(|_| {

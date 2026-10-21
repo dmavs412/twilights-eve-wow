@@ -237,8 +237,12 @@ fn miasma_raises_the_healing_its_caster_receives_by_15_percent_inside() {
 fn noxious_vapors_makes_the_mobs_inside_miss() {
     let (mut realm, me, mobs, mut view) = world(&[(NOXIOUS_VAPORS, 2)]);
     // Draw a mob in, then put Miasma under the caster's feet.
-    realm.handle(RealmCommand::AttackSwing { guid: mobs[0].guid });
-    realm.handle(RealmCommand::AttackStop);
+    pull(&mut realm, &mut view, &mobs[0]);
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: STAND,
+        orientation: std::f32::consts::PI,
+    });
     view.run(&mut realm, 6.0);
     miasma(&mut realm, &mut view, STAND);
     view.run(&mut realm, 1.05);

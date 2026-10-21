@@ -270,6 +270,40 @@ fn a_swing_facing_away_is_refused_once() {
 }
 
 #[test]
+fn starting_auto_attack_does_not_pull_the_mob_before_a_swing() {
+    // Found in play (#185): a right-click from range brought the camp before any hit landed.
+    let (mut realm, me, mob) = warrior_at(1, 0);
+    // 40 yd away: well outside the mob's notice radius, and out of reach of a swing.
+    let at = toward(mob.position, CROSSROADS_XY, 40.0);
+    let facing = (mob.position[1] - at[1]).atan2(mob.position[0] - at[0]);
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: at,
+        orientation: facing,
+    });
+    realm.handle(RealmCommand::SetSelection { guid: mob.guid });
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let events = run(&mut realm, 3.0);
+
+    assert!(events.iter().any(
+        |e| matches!(e, SessionEvent::AttackStart { attacker, victim } if *attacker == me && *victim == mob.guid)
+    ));
+    assert!(
+        !events.iter().any(
+            |e| matches!(e, SessionEvent::AttackStart { attacker, .. } if *attacker == mob.guid)
+        ),
+        "the mob stays idle until a swing lands or the player comes close"
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::MonsterMove { guid, .. } if *guid == mob.guid)),
+        "it does not run in"
+    );
+    assert_eq!(swings(&events, me).count(), 0);
+}
+
+#[test]
 fn killing_the_mob_pays_vanilla_kill_xp() {
     let (mut realm, me, mob) = warrior_at(5, 0);
     stand_by(&mut realm, &mob);

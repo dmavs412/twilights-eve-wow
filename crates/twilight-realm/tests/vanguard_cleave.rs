@@ -79,9 +79,13 @@ fn pulled() -> Pack {
         .collect();
     assert_eq!(mobs.len(), 4, "the scorpid camp streams in");
     for mob in &mobs {
-        realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+        pull(&mut realm, &mut view, mob);
     }
-    realm.handle(RealmCommand::AttackStop);
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: west,
+        orientation: 0.0,
+    });
     for _ in 0..600 {
         for e in view.run(&mut realm, 0.1) {
             if let SessionEvent::MonsterMove { guid, path, .. } = e {
@@ -95,6 +99,9 @@ fn pulled() -> Pack {
         assert!(view.health(me) > 0, "died waiting for the camp");
         let close = mobs.iter().all(|m| flat(m.position, west) <= REACH - 1.0);
         if close && view.rage(me) >= RAGE {
+            // The paths end in reach; the mobs have still to walk them.
+            view.run(&mut realm, 10.0);
+            assert!(view.health(me) > 0, "died waiting for the camp");
             return Pack {
                 realm,
                 view,

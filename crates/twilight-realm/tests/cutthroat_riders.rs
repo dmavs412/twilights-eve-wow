@@ -95,9 +95,13 @@ fn pulled(seed: u64, talents: &[(u32, u8)]) -> Pack {
     let mut mobs = camp_mobs(&streamed);
     assert_eq!(mobs.len(), 4, "the scorpid camp streams in");
     for mob in &mobs {
-        realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+        pull(&mut realm, &mut view, mob);
     }
-    realm.handle(RealmCommand::AttackStop);
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: WEST,
+        orientation: 0.0,
+    });
     for _ in 0..600 {
         for e in view.run(&mut realm, 0.1) {
             if let SessionEvent::MonsterMove { guid, path, .. } = e {

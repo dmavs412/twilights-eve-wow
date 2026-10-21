@@ -103,6 +103,27 @@ pub fn stand_at(realm: &mut Realm, mob: &Mob, yards: f32) {
     });
 }
 
+/// Pulls `mob` with a swing: stands 2 yd from it, starts auto-attack, ticks until the mob turns
+/// on the player (a swing that resolves, hit or miss, pulls an idle mob; the click alone pulls
+/// nothing since #185), then stops attacking. Returns what the client saw meanwhile.
+pub fn pull(realm: &mut Realm, view: &mut View, mob: &Mob) -> Vec<SessionEvent> {
+    stand_at(realm, mob, 2.0);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
+    let mut events = Vec::new();
+    for _ in 0..100 {
+        events.extend(view.run(realm, 0.1));
+        let engaged = events.iter().any(
+            |e| matches!(e, SessionEvent::AttackStart { attacker, .. } if *attacker == mob.guid),
+        );
+        if engaged {
+            break;
+        }
+    }
+    realm.handle(RealmCommand::AttackStop);
+    events.extend(view.drain(realm));
+    events
+}
+
 /// The distance from `a` to `b` on the ground, heights aside.
 pub fn flat(a: [f32; 3], b: [f32; 3]) -> f32 {
     ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2)).sqrt()
