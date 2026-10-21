@@ -121,6 +121,13 @@ or 26-30 mob should borrow whites from a neighbouring band. The realm's roll sho
 from `pools_by_level` at L-2..L+2 for a mob of level L and widen the window when a quality's list
 is empty.
 
+Since spec #272 the pools start at level 13: every Gear row of pool level 12 and under left
+`data/twilights-eve/gear_drops.csv`. Northshire's loot is hand-authored instead
+(`crates/twilight-realm/content/northshire_loot.toml`): a kill on Eastern Kingdoms of a mob at
+level 10 or under rolls once, 8% a Token white and 4% a World green within a level of the mob's,
+and never the vanilla pool, so it drops no grey vendor trash. Kills above level 10, and every kill
+on Kalimdor, roll the pools as before.
+
 ### Random-enchant greens ("of the Bear")
 
 446 world-drop greens (4 in 6-10, 54 in 11-15, 96 in 16-20, 97 in 21-25, 132 in 26-30, 63 in

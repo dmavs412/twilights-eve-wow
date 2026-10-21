@@ -81,6 +81,8 @@ pub(crate) struct Kill {
     pub(crate) mob: u64,
     pub(crate) entry: u32,
     pub(crate) level: u8,
+    /// The map the mob stood on; one with no spawn row counts as Eastern Kingdoms (map 0).
+    pub(crate) map: u32,
     pub(crate) elite: xp::Elite,
     pub(crate) boss: bool,
     /// Items the corpse always holds (a Phased Dungeon creature's `drop`).
@@ -1343,6 +1345,9 @@ impl InWorld {
             mob: victim,
             entry,
             level: mob.level(),
+            map: mob
+                .spawn_row()
+                .map_or(crate::content::EASTERN_KINGDOMS, |s| s.map),
             elite,
             boss,
             drops,
@@ -1403,6 +1408,11 @@ impl InWorld {
         let mut loot = if k.boss {
             let pool = crate::dungeon::boss_drops(c.level, c.race);
             looting::Loot::boss(k.level, &pool, rng)
+        } else if k.map == crate::content::EASTERN_KINGDOMS
+            && k.level <= crate::rules::loot::NORTHSHIRE_MAX_LEVEL
+        {
+            // Northshire's own roll (spec #272); the vanilla pools above level 10 and elsewhere.
+            looting::Loot::northshire(k.level, rng)
         } else {
             looting::Loot::roll(k.level, rng)
         };

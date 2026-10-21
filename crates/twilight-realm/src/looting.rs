@@ -10,7 +10,7 @@ use crate::characters::Char;
 use crate::equipment;
 use crate::items;
 use crate::rng::Rng;
-use crate::rules::loot::{money, pool, quality, QUALITY_ROLL};
+use crate::rules::loot::{money, pool, quality, NORTHSHIRE_ROLL, QUALITY_ROLL};
 
 /// `UNIT_DYNAMIC_FLAGS`, and its `UNIT_DYNFLAG_LOOTABLE` bit: the sparkle, the loot cursor and
 /// right-click looting.
@@ -49,6 +49,26 @@ impl Loot {
             money: rng.urand(lo, hi),
             items,
         }
+    }
+
+    /// What a Northshire mob of `level` drops (spec #272): its money, then one roll for Gear,
+    /// 8% a Token white, 4% a World green within a level of the mob's, else nothing. The vanilla
+    /// pool never runs here, so there is no grey vendor trash either.
+    pub(crate) fn northshire(level: u8, rng: &mut Rng) -> Self {
+        use crate::rules::loot::{northshire_greens, northshire_roll, northshire_whites, Pick};
+        let (lo, hi) = money(level);
+        let money = rng.urand(lo, hi);
+        let list: &[u32] = match northshire_roll(level, rng.below(NORTHSHIRE_ROLL)) {
+            Some(Pick::White) => northshire_whites(),
+            Some(Pick::Green) => northshire_greens(level),
+            None => &[],
+        };
+        let items = if list.is_empty() {
+            Vec::new()
+        } else {
+            vec![Some((list[rng.below(list.len() as u32) as usize], 1))]
+        };
+        Self { money, items }
     }
 
     /// What a Dungeon boss of `level` drops: her money and always one of the blues in `pool`.

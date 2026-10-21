@@ -1,10 +1,16 @@
-//! What a kill drops (spec #1, "Loot"): real 1.12 world-drop items near the mob's level, mostly
-//! grey and white with a green now and then, and some copper. The item pools are the reference's
-//! (`docs/reference/items-and-vendors.md`): every world-drop item, grouped by the level it drops
-//! at and its quality. The spread and the money are this slice's tuning, not vanilla's.
+//! What a kill drops (spec #1, "Loot"), and some copper. Above level 10, or off Eastern
+//! Kingdoms: real 1.12 world-drop items near the mob's level, mostly grey and white with a green
+//! now and then. The item pools are the reference's (`docs/reference/items-and-vendors.md`):
+//! every world-drop item, grouped by the level it drops at and its quality; the Gear rows of
+//! pool level 12 and under have left them. On Eastern Kingdoms at level 10 and under, the
+//! Northshire roll instead (spec #272, `content/northshire_loot.toml`): 8% a Token white, 4% a
+//! World green within a level of the mob's, nothing else and no grey. The spread and the money
+//! are this slice's tuning, not vanilla's.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
+
+use serde::Deserialize;
 
 use crate::items;
 use crate::tables::MAX_LEVEL;
@@ -99,6 +105,96 @@ fn build_pool(level: u8, quality: Quality) -> Vec<u32> {
         q = quality.lower();
     }
     Vec::new()
+}
+
+/// What the Northshire roll picks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Pick {
+    /// One of the 22 Token whites.
+    White,
+    /// A World green within a level of the mob's.
+    Green,
+}
+
+/// The Northshire roll is out of this.
+pub const NORTHSHIRE_ROLL: u32 = 100;
+/// The highest mob level the Northshire roll runs at; above it, the pools.
+pub const NORTHSHIRE_MAX_LEVEL: u8 = 10;
+/// The share of kills that drop a Token white, in hundredths.
+const WHITE_PCT: u32 = 8;
+/// The share of kills that drop a World green, in hundredths.
+const GREEN_PCT: u32 = 4;
+/// The World greens run from level 5 to 8: a mob's level is clamped into that before the
+/// within-one match.
+const GREEN_LEVELS: (u8, u8) = (5, 8);
+
+/// The Northshire roll for a mob of `level` and a roll in `0..NORTHSHIRE_ROLL`: 8% a white,
+/// 4% a green, else nothing; nothing at all above level 10, where the pools roll.
+pub fn northshire_roll(level: u8, roll: u32) -> Option<Pick> {
+    if level > NORTHSHIRE_MAX_LEVEL {
+        return None;
+    }
+    if roll < WHITE_PCT {
+        Some(Pick::White)
+    } else if roll < WHITE_PCT + GREEN_PCT {
+        Some(Pick::Green)
+    } else {
+        None
+    }
+}
+
+#[derive(Deserialize)]
+struct NorthshireFile {
+    white: Vec<u32>,
+    green: Vec<GreenRow>,
+}
+
+#[derive(Deserialize)]
+struct GreenRow {
+    entry: u32,
+    level: u8,
+}
+
+fn northshire() -> &'static NorthshireFile {
+    static FILE: OnceLock<NorthshireFile> = OnceLock::new();
+    FILE.get_or_init(|| {
+        toml::from_str(include_str!("../../content/northshire_loot.toml"))
+            .expect("content/northshire_loot.toml parses")
+    })
+}
+
+/// The 22 Token whites the Northshire roll draws from.
+pub fn northshire_whites() -> &'static [u32] {
+    &northshire().white
+}
+
+/// Every World green with its level, as the content lists them.
+pub fn northshire_green_rows() -> Vec<(u32, u8)> {
+    northshire()
+        .green
+        .iter()
+        .map(|g| (g.entry, g.level))
+        .collect()
+}
+
+/// The World greens a mob of `level` may drop: those within one level of the mob's, the mob's
+/// level first clamped to the greens' 5 to 8.
+pub fn northshire_greens(level: u8) -> &'static [u32] {
+    static BY_LEVEL: OnceLock<Vec<Vec<u32>>> = OnceLock::new();
+    let by_level = BY_LEVEL.get_or_init(|| {
+        (0..=NORTHSHIRE_MAX_LEVEL)
+            .map(|level| {
+                let l = level.clamp(GREEN_LEVELS.0, GREEN_LEVELS.1);
+                northshire()
+                    .green
+                    .iter()
+                    .filter(|g| g.level.abs_diff(l) <= 1)
+                    .map(|g| g.entry)
+                    .collect()
+            })
+            .collect()
+    });
+    by_level.get(usize::from(level)).map_or(&[], Vec::as_slice)
 }
 
 /// The level an item drops at, for the items any pool holds.

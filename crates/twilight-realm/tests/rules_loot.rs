@@ -1,6 +1,9 @@
 //! What a kill drops: the quality spread, the items near the mob's level, and the money.
 
-use twilight_realm::rules::loot::{money, pool, pool_level, quality, Quality, QUALITY_ROLL};
+use twilight_realm::rules::loot::{
+    money, northshire_green_rows, northshire_greens, northshire_roll, pool, pool_level, quality,
+    Pick, Quality, NORTHSHIRE_ROLL, QUALITY_ROLL,
+};
 
 #[test]
 fn most_drops_are_grey_or_white_and_one_in_ten_is_green() {
@@ -105,4 +108,47 @@ fn a_boss_drops_from_the_band_of_the_five_levels_up_to_the_runners() {
     // Above every band: the highest, five levels down from its last blue.
     assert_eq!(boss_band(40, &blues), [5, 6]);
     assert!(boss_band(20, &[]).is_empty());
+}
+
+#[test]
+fn the_northshire_roll_is_8_white_4_green_and_nothing_else() {
+    let picks: Vec<Option<Pick>> = (0..NORTHSHIRE_ROLL)
+        .map(|roll| northshire_roll(6, roll))
+        .collect();
+    assert_eq!(picks.iter().filter(|p| **p == Some(Pick::White)).count(), 8);
+    assert_eq!(picks.iter().filter(|p| **p == Some(Pick::Green)).count(), 4);
+    assert_eq!(picks.iter().filter(|p| p.is_none()).count(), 88);
+    assert_eq!(northshire_roll(10, 0), Some(Pick::White));
+    // Above level 10 the pools roll instead.
+    assert_eq!(northshire_roll(11, 0), None);
+}
+
+#[test]
+fn northshire_greens_come_from_within_a_level_of_the_mobs_clamped_to_5_to_8() {
+    let rows = northshire_green_rows();
+    assert_eq!(rows.len(), 21);
+    let levels = |level: u8| -> Vec<u8> {
+        let greens = northshire_greens(level);
+        assert!(!greens.is_empty(), "level {level}");
+        let mut levels: Vec<u8> = greens
+            .iter()
+            .map(|e| rows.iter().find(|(entry, _)| entry == e).unwrap().1)
+            .collect();
+        levels.sort_unstable();
+        levels.dedup();
+        levels
+    };
+    // A level 2 mob clamps to 5 and draws the level 5 and 6 greens; a level 10 mob clamps to 8
+    // and draws 7 and 8.
+    assert_eq!(levels(2), [5, 6]);
+    assert_eq!(levels(10), [7, 8]);
+    // A level 6 mob draws levels 5, 6 and 7.
+    assert_eq!(levels(6), [5, 6, 7]);
+    // Every green of those levels is in the list.
+    let want: Vec<u32> = rows
+        .iter()
+        .filter(|(_, l)| (5..=7).contains(l))
+        .map(|(e, _)| *e)
+        .collect();
+    assert_eq!(northshire_greens(6), want);
 }
