@@ -318,3 +318,263 @@ money = 180
 tokens = 1
 zone_or_sort = 12
 collect = [{ item = 980007, count = 8, from = [6, 475], chance = 50 }]
+
+# ── The Farmlands (#223) ─────────────────────────────────────────────────────────────────────
+#
+# The feud between the Stonefields and the Maclures is a setup: Morgan the Collector pays the
+# Defias in Twilight coin to keep the farmers fighting. Ids and ranges follow
+# docs/specs/elwynn-10-30.
+
+# Dughan sends the Collector's letter, found in the strongbox, to Guard Thomas. XP only.
+[[quest]]
+id = 94201
+kind = "story"
+giver = 240
+ender = 261
+after = 94103
+level = 12
+title = "The Collector's Letter"
+objectives = "Show the Collector's letter to Guard Thomas at the Stonefield and Maclure crossroads."
+details = "The letter from the strongbox is addressed to the Collector, at Brackwell. I don't know the name, but a man who patrols the farm roads all day might. Guard Thomas stands at the crossroads between the Stonefield and Maclure farms. Show him the letter and hear what he says."
+progress = "-"
+completion = "Morgan. Aye, I know the name. He's been buying up the Stonefields' debt and the Maclures' both for a year, quietly, a note at a time. Neither family knows the other owes him too. Let me think on that."
+money = 0
+tokens = 0
+zone_or_sort = 12
+
+# Ma Stonefield wants her neighbours' boar dead. No quest comes before it. 300 copper.
+[[quest]]
+id = 94202
+kind = "story"
+giver = 244
+level = 12
+title = "Princess"
+objectives = "Kill Princess in the Maclure vineyard and bring her collar back to Ma Stonefield."
+details = "That sow of the Maclures has been rooting up my fields since spring, and no one will do a thing about it. They call her Princess, as if she were a pet. She is the size of a calf and she gores anyone who comes near. Kill her and bring me her collar, so the Maclures can't pretend they didn't know."
+progress = "Is the pig dead yet?"
+completion = "Look at the collar. That isn't a Maclure stamp. It's a mark I've seen on letters the postman wouldn't leave with me. The pig was a gift to the Maclures, and someone let her loose on my land. I'd like to know who."
+money = 300
+tokens = 0
+zone_or_sort = 12
+kill = [[330, 1]]
+collect = [{ item = 980008, count = 1, from = [330], chance = 100 }]
+
+# Thomas has the player carry the collar to both farms. Their replies carry the story.
+# XP only.
+[[quest]]
+id = 94203
+kind = "story"
+giver = 261
+after = [94201, 94202]
+level = 13
+title = "Mend the Fence"
+objectives = "Show Princess's collar to Ma Stonefield and to Joshua Maclure, then return to Guard Thomas."
+details = "Morgan holds both families' debts, and the pig wore his mark. I think someone has been keeping these two farms at each other's throats on purpose. Take the collar to Ma Stonefield and to Joshua Maclure, and watch what they say when they see it. If I'm right, they'll find they have more in common than a fence."
+progress = "Did they see the collar?"
+completion = "So the feud was bought. Each of them thought the other did it. Now they know better. I'll tell them to mend that fence together, and I'll hold Morgan to account if I can."
+money = 0
+tokens = 0
+zone_or_sort = 12
+talk = [
+  { npc = 244, option = "Do you know this collar, Ma Stonefield?", reply = "That's Princess's collar, with the same stamp I found on it. Joshua Maclure's pig, I thought, and a spiteful thing to do. But the stamp isn't his. Whoever sold him that sow wanted her loose on my land. Joshua may know more than he thinks." },
+  { npc = 258, option = "Do you know this collar, Joshua?", reply = "Princess's collar. I never wanted that sow. Someone gave her to me and said she'd be a fine pet, and then she broke out and tore up Ma Stonefield's fields. I paid for that, and I never knew why she ran. Whoever stamped this collar owes both of us an apology." },
+]
+
+# The moneylender's end. An item quest with placeholder rewards until the gear pass:
+# 800 copper and 3 Tokens, no choices.
+[[quest]]
+id = 94204
+kind = "story"
+giver = 240
+after = 94203
+level = 14
+title = "Morgan the Collector"
+objectives = "Kill Morgan the Collector in Brackwell manor and bring his ledger to Marshal Dughan."
+details = "Thomas tells me the farms have stopped fighting, and Morgan's the reason they started. He keeps his books in the manor at Brackwell, behind Defias guards he pays with Twilight coin. Kill him and bring me his ledger. I want to see who else is on his list."
+progress = "Is the Collector's ledger yours yet?"
+completion = "Defias wages, paid in Twilight coin, line after line. And here: road to the Landing, keep clear. They paid the Defias to keep the farmers fighting so nobody watched the road to Jerod's Landing. This is no Defias matter any more."
+money = 800
+tokens = 3
+zone_or_sort = 12
+kill = [[96012, 1]]
+collect = [{ item = 980009, count = 1, from = [96012], chance = 100 }]
+
+# The pumpkin patch's ripe pumpkins: a use-GameObject objective, placed among the Defias at
+# Brackwell. They return 60 s after they are used. The display is a placeholder.
+[[gameobject]]
+guid = 790201
+entry = 980102
+display = 1011
+map = 0
+position = [-9330.0, 255.0, 62.0]
+orientation = 0.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790202
+entry = 980102
+display = 1011
+map = 0
+position = [-9318.0, 262.0, 62.0]
+orientation = 1.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790203
+entry = 980102
+display = 1011
+map = 0
+position = [-9305.0, 258.0, 62.0]
+orientation = 2.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790204
+entry = 980102
+display = 1011
+map = 0
+position = [-9292.0, 266.0, 62.0]
+orientation = 3.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790205
+entry = 980102
+display = 1011
+map = 0
+position = [-9335.0, 275.0, 62.0]
+orientation = 4.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790206
+entry = 980102
+display = 1011
+map = 0
+position = [-9322.0, 281.0, 62.0]
+orientation = 5.0
+respawn = 60.0
+
+[[gameobject]]
+guid = 790207
+entry = 980102
+display = 1011
+map = 0
+position = [-9308.0, 277.0, 62.0]
+orientation = 0.5
+respawn = 60.0
+
+[[gameobject]]
+guid = 790208
+entry = 980102
+display = 1011
+map = 0
+position = [-9295.0, 285.0, 62.0]
+orientation = 1.5
+respawn = 60.0
+
+[[gameobject]]
+guid = 790209
+entry = 980102
+display = 1011
+map = 0
+position = [-9332.0, 297.0, 62.0]
+orientation = 2.5
+respawn = 60.0
+
+[[gameobject]]
+guid = 790210
+entry = 980102
+display = 1011
+map = 0
+position = [-9319.0, 303.0, 62.0]
+orientation = 3.5
+respawn = 60.0
+
+[[gameobject]]
+guid = 790211
+entry = 980102
+display = 1011
+map = 0
+position = [-9306.0, 299.0, 62.0]
+orientation = 4.5
+respawn = 60.0
+
+[[gameobject]]
+guid = 790212
+entry = 980102
+display = 1011
+map = 0
+position = [-9293.0, 307.0, 62.0]
+orientation = 5.5
+respawn = 60.0
+
+# ── The Farmlands' bounties (#232) ───────────────────────────────────────────────────────────
+
+[[quest]]
+id = 94205
+kind = "bounty"
+giver = 261
+level = 13
+min_level = 11
+max_level = 15
+title = "Thugs in the Pumpkin Patch"
+objectives = "Kill 10 Defias Thugs, then return to Guard Thomas."
+details = "The Defias have made a camp of the Brackwell pumpkin patch, and the Bridenbeckers can't tend their own field. I can't leave the crossroads. You can. Put down ten thugs and I'll pay a bounty, and another each time you come back."
+progress = "Still thugs in the patch?"
+completion = "Ten fewer in the pumpkins. They'll send more, but I'll pay for those too."
+money = 200
+tokens = 1
+zone_or_sort = 12
+kill = [[38, 10]]
+
+[[quest]]
+id = 94206
+kind = "bounty"
+giver = 258
+level = 13
+min_level = 11
+max_level = 15
+title = "Boars in the Vineyard"
+objectives = "Kill 10 Stonetusk Boars, then return to Joshua Maclure."
+details = "The boars come down to the vines every night, and they take more than they can eat. A vineyard doesn't pay if the grapes go to the pigs. Kill ten Stonetusk boars and I'll pay you for it, and again whenever you like."
+progress = "Are the boars thinned?"
+completion = "Ten boars fewer. The vines may live through the season yet. Here's your coin."
+money = 170
+tokens = 1
+zone_or_sort = 12
+kill = [[113, 10]]
+
+[[quest]]
+id = 94207
+kind = "bounty"
+giver = 246
+level = 13
+min_level = 11
+max_level = 15
+title = "Pumpkins for Bernice"
+objectives = "Gather 8 Ripe Pumpkins from the Brackwell patch, then return to Bernice Stonefield."
+details = "The Brackwell patch grows the best pumpkins in Elwynn, and the Defias have driven off the people who pick them. I'll pay for every one you bring me, ripe and whole. Mind the thugs. They don't like company in the patch."
+progress = "Got my pumpkins?"
+completion = "Fat and orange, just as they should be. I'll make pies for the whole farm. Come back when the patch has grown more."
+money = 180
+tokens = 1
+zone_or_sort = 12
+use = [[980102, 8]]
+
+[[quest]]
+id = 94208
+kind = "bounty"
+giver = 295
+level = 14
+min_level = 12
+max_level = 16
+title = "Boar Ribs for the Inn"
+objectives = "Bring 8 Boar Ribs to Innkeeper Farley."
+details = "My travellers ask for boar ribs, and my cellar's empty of them. The Stonetusk boars in the farmlands are plentiful and fat. Bring me their ribs, eight at a time, and I'll pay a fair price."
+progress = "Got those ribs?"
+completion = "Good, meaty ribs. My guests will eat well tonight. Come back with more."
+money = 190
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980010, count = 8, from = [113], chance = 50 }]

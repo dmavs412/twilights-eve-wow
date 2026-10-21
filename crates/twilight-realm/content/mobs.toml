@@ -851,6 +851,52 @@ level = 12
 position = [-9290.0, 22.0, 62.0]
 orientation = 1.57
 
+# Princess (#232), the Stonefields' boar made an elite for the quest of her name
+# (quests_elwynn.toml). This template shadows content/elwynn.toml's generated friendly one; her
+# spawn is in elwynn_overrides.toml. Display 503 and faction 189 are the Stonetusk Boar's. Always
+# carries Princess's Collar. Placeholder multipliers, untested against a level 12.
+[[template]]
+entry = 330
+name = "Princess"
+creature_type = 1
+rank = 1
+display_id = 503
+faction_template = 189
+unit_class = "warrior"
+level_min = 12
+level_max = 12
+health_multiplier = 1.6
+damage_multiplier = 1.1
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 10.0
+respawn_secs = 300.0
+
+# Morgan the Collector (#232), the moneylender in Brackwell manor who pays the Defias in Twilight
+# coin, elite, and always carries Morgan's Ledger. Display 2360 (the Defias Rogue Wizard's robed
+# body) and faction 17 are placeholders for a well-dressed Defias. His spawn is in
+# elwynn_overrides.toml. Placeholder multipliers.
+[[template]]
+entry = 96012
+name = "Morgan the Collector"
+creature_type = 7
+rank = 1
+display_id = 2360
+faction_template = 17
+unit_class = "warrior"
+level_min = 14
+level_max = 14
+health_multiplier = 1.6
+damage_multiplier = 1.1
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 10.0
+respawn_secs = 300.0
+
 # The Test Grounds' training dummies (test_grounds.toml): `inert`, so they never move or fight and
 # heal to full 10 s after the last hit. Faction 14 shows them attackable; display 3277 (the
 # Corrupted Brother's) is a placeholder body.

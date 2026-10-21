@@ -4,8 +4,9 @@
 # (#78), and these NPCs left it with no replacements. The seven class trainers, then Brother
 # Danil, Dermot Johns, Godric Rothgar, Janos Hammerknuckle, Merissa Stilwell, Brother Paxton and
 # Brother Neals. Eagan Peltskinner stays: his spot on the east lawn is outside the footprint, and
-# he gives two of Northshire's bounties (#98).
-removed = [198, 375, 911, 6373, 459, 925, 915, 152, 190, 1213, 78, 11940, 951, 952]
+# he gives two of Northshire's bounties (#98). Last, Princess (330), whose friendly vanilla spawn
+# the elite one below replaces (#232).
+removed = [198, 375, 911, 6373, 459, 925, 915, 152, 190, 1213, 78, 11940, 951, 952, 330]
 
 # Spawns moved. Marshal McBride stood just inside the Abbey's front doors, in its footprint
 # (content/northshire_abbey.toml); he now stands on the steps a few yards outside them, clear
@@ -224,3 +225,22 @@ level_min = 6
 level_max = 7
 position = [-8544.0, -213.0, 83.85]
 orientation = 1.2
+
+# The Farmlands' elites (#232). Princess stands where her friendly vanilla spawn (guid 80849) did;
+# Morgan the Collector stands inside Brackwell manor. Morgan's position is a guess inside the
+# Farmlands' Brackwell box and needs a look in game.
+[[added]]
+guid = 960201
+entry = 330
+level_min = 12
+level_max = 12
+position = [-9782.72, -884.563, 39.786]
+orientation = 3.1416
+
+[[added]]
+guid = 960202
+entry = 96012
+level_min = 14
+level_max = 14
+position = [-9265.0, 330.0, 62.0]
+orientation = 3.14

@@ -42,6 +42,10 @@ item = [
   { entry = 980005, name = "Sealed Strongbox", quality = 1, item_level = 12, class = 12, display_id = 1252, max_count = 1 },
   { entry = 980006, name = "Forest Spider Silk", quality = 1, item_level = 10, class = 12, display_id = 7255, stackable = 20 },
   { entry = 980007, name = "Gold Dust", quality = 1, item_level = 10, class = 12, display_id = 6477, stackable = 20 },
+  # The Farmlands' quests (#232). The displays are placeholders borrowed from stock quest items.
+  { entry = 980008, name = "Princess's Collar", quality = 1, item_level = 12, class = 12, display_id = 6470, max_count = 1 },
+  { entry = 980009, name = "Morgan's Ledger", quality = 1, item_level = 14, class = 12, display_id = 6270, max_count = 1 },
+  { entry = 980010, name = "Boar Ribs", quality = 1, item_level = 12, class = 12, display_id = 6682, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done.
