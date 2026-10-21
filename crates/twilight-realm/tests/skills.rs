@@ -110,9 +110,9 @@ fn a_skill_grows_with_level_without_being_relearned() {
         realm.handle(cast(*CHARGE, Some(mob.guid)));
         energized(&view.drain(&mut realm), *CHARGE)
     };
-    // 8.5 + 0.14 rage a level.
-    assert_eq!(charge(1), vec![9]);
-    assert_eq!(charge(10), vec![10]);
+    // 8.5 + 0.14 rage a level, doubled by rage_gain 2.0.
+    assert_eq!(charge(1), vec![18]);
+    assert_eq!(charge(10), vec![20]);
 }
 
 #[test]
@@ -159,8 +159,9 @@ fn charge_runs_the_warrior_to_the_mob_for_rage_and_a_stun() {
         .expect("the charge's run");
     let end = *path.last().unwrap();
     assert!(dist(end, mob.position) < 2.5, "ends at the mob");
-    assert_eq!(energized(&events, *CHARGE), vec![9]);
-    assert_eq!(view.rage(me), 9);
+    // Charge's 9 rage doubles under rage_gain 2.0.
+    assert_eq!(energized(&events, *CHARGE), vec![18]);
+    assert_eq!(view.rage(me), 18);
     assert!(view.aura(mob.guid, 7922).is_some(), "stunned");
 
     // Stunned for a second: the mob does not swing until it is over.

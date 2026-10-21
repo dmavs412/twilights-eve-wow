@@ -73,10 +73,10 @@ fn fire_blast(rank: u8) -> (u32, u32) {
 
 #[test]
 fn each_rank_of_initiates_spark_raises_fire_blasts_damage_and_rage() {
-    // The row's 45 damage, plus 10% per rank (rounded); the Charge's 10 rage is spent, the talent gives
-    // 2 per rank back.
-    assert_eq!(fire_blast(0), (45, 0));
-    assert_eq!(fire_blast(1), (50, 2));
-    assert_eq!(fire_blast(2), (54, 4));
-    assert_eq!(fire_blast(3), (59, 6));
+    // The row's 45 damage, plus 10% per rank (rounded). The Charge's 10 rage doubles to 20 under
+    // rage_gain 2.0 and Fire Blast spends 10; the talent gives 2 per rank back, doubled to 4.
+    assert_eq!(fire_blast(0), (45, 10));
+    assert_eq!(fire_blast(1), (50, 14));
+    assert_eq!(fire_blast(2), (54, 18));
+    assert_eq!(fire_blast(3), (59, 22));
 }

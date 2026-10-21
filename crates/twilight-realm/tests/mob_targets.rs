@@ -135,7 +135,7 @@ fn a_gouged_mob_hit_by_a_second_player_stays_in_the_fight_unhealed() {
     party.cmd(1, RealmCommand::AttackSwing { guid: hunter });
     let hit = party.run_until(20.0, |got| swung_at(&got[1], b).contains(&hunter));
     assert!(hit, "the second player hurts the hunter");
-    let after = party.run(10.0);
+    let after = party.run(20.0);
     // Until the two of them kill it.
     let all: Vec<&SessionEvent> = after[0]
         .iter()

@@ -18,6 +18,8 @@ pub(super) struct Power {
     fraction: f64,
     /// Seconds left of the pause a cast that spent mana started.
     pause: f32,
+    /// The multiplier on every rage gained ([`rage::gain`]).
+    rage_gain: f64,
 }
 
 impl Power {
@@ -32,6 +34,7 @@ impl Power {
             tick: 0.0,
             fraction: 0.0,
             pause: 0.0,
+            rage_gain: rage::gain(),
         }
     }
 
@@ -69,11 +72,25 @@ impl Power {
         self.gain_stored(kind, kind.stored(points))
     }
 
+    /// The whole points [`Self::gain`] of `points` adds before the cap, for the combat log.
+    pub(super) fn earned(&self, kind: PowerKind, points: u32) -> u32 {
+        if kind == PowerKind::Rage {
+            rage::scaled(kind.stored(points), self.rage_gain) / kind.stored(1)
+        } else {
+            points
+        }
+    }
+
     /// [`Self::gain`] in stored units (tenths of rage).
     pub(super) fn gain_stored(&mut self, kind: PowerKind, stored: u32) -> bool {
         if kind != self.kind || stored == 0 {
             return false;
         }
+        let stored = if kind == PowerKind::Rage {
+            rage::scaled(stored, self.rage_gain)
+        } else {
+            stored
+        };
         let was = self.current;
         self.current = (self.current + stored).min(self.max);
         self.current != was
@@ -163,5 +180,64 @@ impl Combo {
 
     pub(super) fn clear(&mut self) {
         *self = Self::default();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn warrior_bar(gain: f64) -> Power {
+        let stats = CharacterStats::naked(1, 1, 10);
+        let mut bar = Power::fresh(&stats, PowerKind::Rage);
+        bar.rage_gain = gain;
+        bar
+    }
+
+    /// The tenths `earned` leaves on an empty bar at `gain`.
+    fn held(gain: f64, earned: u32) -> u32 {
+        let mut bar = warrior_bar(gain);
+        bar.gain_stored(PowerKind::Rage, earned);
+        bar.current
+    }
+
+    #[test]
+    fn the_data_knob_is_two() {
+        assert_eq!(rage::gain(), 2.0);
+    }
+
+    #[test]
+    fn every_rage_source_yields_twice_at_two() {
+        // Damage dealt, damage taken and a dodged swing: the formula outputs.
+        for earned in [
+            rage::from_damage_dealt(40, 10),
+            rage::from_damage_taken(40, 10),
+            rage::from_avoided(40, 10),
+        ] {
+            assert!(earned > 0);
+            assert_eq!(held(2.0, earned), 2 * held(1.0, earned));
+        }
+        // A talent or skill energize (Bloodrage, Charge, Shield Specialization) is whole points.
+        let mut one = warrior_bar(1.0);
+        let mut two = warrior_bar(2.0);
+        assert!(one.gain(PowerKind::Rage, 5));
+        assert!(two.gain(PowerKind::Rage, 5));
+        assert_eq!(one.current, 50);
+        assert_eq!(two.current, 100);
+    }
+
+    #[test]
+    fn a_gain_still_stops_at_the_cap() {
+        assert_eq!(held(2.0, 900), warrior_bar(2.0).max);
+    }
+
+    #[test]
+    fn decay_per_tick_ignores_the_knob() {
+        for gain in [1.0, 2.0] {
+            let mut bar = warrior_bar(gain);
+            bar.current = 500;
+            bar.regenerate(power::REGEN_TICK_SECS, false, 0.0);
+            assert_eq!(bar.current, 500 - rage::DECAY_PER_TICK);
+        }
     }
 }

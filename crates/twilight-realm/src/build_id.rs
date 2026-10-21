@@ -35,6 +35,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/token_vendor.toml"),
     include_str!("../content/wailing_caverns.toml"),
     include_str!("../../../data/twilights-eve/server_spells.json"),
+    include_str!("../../../data/twilights-eve/tuning.json"),
 ];
 
 /// FNV-1a over [`CONTENT`], each file's length first so moving text between files counts.
@@ -69,7 +70,7 @@ mod tests {
         let on_disk = std::fs::read_dir(dir).unwrap().count();
         assert_eq!(
             super::CONTENT.len(),
-            on_disk + 1,
+            on_disk + 2,
             "a content file is missing from CONTENT"
         );
     }

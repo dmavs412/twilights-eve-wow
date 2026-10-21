@@ -3201,7 +3201,7 @@ impl InWorld {
                     caster: self.guid,
                     spell_id: skill.spell_id,
                     power: power.id(),
-                    amount: gained,
+                    amount: self.player.power.earned(power, gained),
                 }));
             }
             Effect::PeriodicRage {
@@ -4171,7 +4171,7 @@ impl InWorld {
             caster: self.guid,
             spell_id,
             power: POWER_RAGE,
-            amount,
+            amount: p.power.earned(PowerKind::Rage, amount),
         }));
         events.push(values(self.guid, &[p.power.field()]));
     }
