@@ -47,6 +47,10 @@ pub(crate) struct StarterDrop {
     pub(crate) item: u32,
     pub(crate) from: Vec<u32>,
     pub(crate) chance: u32,
+    /// An item that is no Quest Starter but a quest's own to hold ahead of time (the Dig Orders):
+    /// it drops while this quest is not done and none is carried, taken or not.
+    #[serde(default)]
+    pub(crate) until_done: Option<u32>,
 }
 
 /// An explore objective: a spot on a map, met when the player walks into it.
@@ -803,6 +807,49 @@ mod tests {
         assert_eq!((source(96003).chance, source(96003).count), (35, 1));
         assert_eq!((source(96004).chance, source(96004).count), (100, 1));
         assert_eq!((source(96005).chance, source(96005).count), (100, 3));
+    }
+
+    #[test]
+    fn the_eyes_corpse_holds_three_resonant_ore_and_the_dig_orders() {
+        let ore = &super::quest(94404).unwrap().collect[0];
+        let source = |entry| {
+            ore.sources
+                .iter()
+                .find(|s| s.from.contains(&entry))
+                .unwrap()
+        };
+        assert_eq!(ore.item, 980017);
+        assert_eq!((source(96017).chance, source(96017).count), (35, 1));
+        assert_eq!((source(96018).chance, source(96018).count), (35, 1));
+        assert_eq!((source(96019).chance, source(96019).count), (100, 1));
+        assert_eq!((source(96022).chance, source(96022).count), (100, 3));
+        let orders = starter_drops()
+            .into_iter()
+            .find(|d| d.item == 980018)
+            .expect("the Dig Orders drop");
+        assert_eq!((orders.from.as_slice(), orders.chance), (&[96022][..], 100));
+        assert_eq!(orders.until_done, Some(94403));
+        let wanted = &super::quest(94403).unwrap().collect;
+        assert_eq!((wanted[0].item, wanted[0].count), (980018, 1));
+    }
+
+    #[test]
+    fn jasperlodes_quests_chain_from_the_keystone_to_the_orders() {
+        let q = |id| super::quest(id).unwrap();
+        assert_eq!(q(94401).after.ids(), [94303]);
+        assert_eq!(q(94401).use_object, [(98002, 1)]);
+        assert_eq!(q(94401).ender(), 96015);
+        assert_eq!(q(94402).after.ids(), [94401]);
+        assert_eq!(q(94402).kill, [(96022, 1)]);
+        assert_eq!((q(94402).money, q(94402).tokens), (1000, 3));
+        assert!(q(94402).choices.is_empty());
+        assert_eq!(q(94403).after.ids(), [94402]);
+        assert!(matches!(q(94403).giver, Giver::Npc(240)));
+        let ore = q(94404);
+        assert!(matches!(ore.giver, Giver::Npc(514)));
+        assert!(ore.after.ids().is_empty());
+        assert!(ore.in_range(13) && ore.in_range(22) && !ore.in_range(23));
+        assert_eq!((ore.money, ore.tokens), (400, 3));
     }
 
     #[test]

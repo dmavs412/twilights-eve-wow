@@ -54,7 +54,16 @@ item = [
   { entry = 980014, name = "Rune-marked Keystone", quality = 1, item_level = 15, class = 12, display_id = 7697, max_count = 1 },
   { entry = 980015, name = "Kobold Candle", quality = 1, item_level = 14, class = 12, display_id = 6477, stackable = 20 },
   { entry = 980016, name = "Murloc Fin", quality = 1, item_level = 14, class = 12, display_id = 7255, stackable = 20 },
+  # Jasperlode Mine (#237). The displays are placeholders borrowed from stock quest items. Smith
+  # Argus takes the ore; Dughan takes the orders.
+  { entry = 980017, name = "Resonant Ore", quality = 1, item_level = 17, class = 12, display_id = 6477, stackable = 20 },
+  { entry = 980018, name = "Dig Orders", quality = 1, item_level = 18, class = 12, display_id = 6270, max_count = 1 },
 ]
 
-# Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done.
-starter_drop = [{ item = 980001, from = [96002], chance = 100 }]
+# Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye
+# Below always carries the Dig Orders until What Narg Feared is done (`until_done`: the orders are
+# held before the quest is taken).
+starter_drop = [
+  { item = 980001, from = [96002], chance = 100 },
+  { item = 980018, from = [96022], chance = 100, until_done = 94403 },
+]

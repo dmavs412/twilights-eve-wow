@@ -721,3 +721,82 @@ money = 270
 tokens = 1
 zone_or_sort = 12
 collect = [{ item = 980016, count = 8, from = [285, 735], chance = 50 }]
+
+# ── Jasperlode Mine (#224) ───────────────────────────────────────────────────────────────────
+#
+# The Phased Dungeon behind the sealed door (content/jasperlode.toml). The boss is the Eye Below.
+# Chieftain Grik's camp inside cannot be attacked. Ids and ranges follow docs/specs/elwynn-10-30.
+
+# Dughan sends the character through the door with the keystone; Grik takes the quest at the camp
+# inside. The objective is the door's first opening. XP only.
+[[quest]]
+id = 94401
+kind = "story"
+giver = 240
+ender = 96015
+after = 94303
+level = 15
+title = "Into Jasperlode"
+objectives = "Open the sealed door in Jasperlode Mine with the keystone and find Chieftain Grik's camp inside."
+details = "You have the keystone, and the door in Jasperlode is the door it fits. The mine is split. The kobolds who would not leave are above, and the cult's diggers are below. Open the door and find Chieftain Grik. If anyone in there will talk, he will."
+progress = "You have not opened the door yet."
+completion = "You are the first of the big folk to come through that door. Sit, but keep your voice down. The thing below hears loud voices."
+money = 0
+tokens = 0
+zone_or_sort = 12
+use = [[98002, 1]]
+
+# Grik gives and takes it. An item quest with placeholder rewards until the gear pass: 1000 copper
+# and 3 Tokens, no choices.
+[[quest]]
+id = 94402
+kind = "story"
+giver = 96015
+after = 94401
+level = 17
+title = "The Kobold King's Plea"
+objectives = "Kill the Eye Below at the bottom of Jasperlode Mine and return to Chieftain Grik."
+details = "The big folk's diggers came down with the dark robes, and then the Eye opened in the pit. It does not move. It watches, and when it watches long enough, the ground goes quiet and the ones it looks at stop being ours. Kill it, and my people will leave Elwynn and trouble nobody. I swear it on the mine."
+progress = "Is it dead? I still hear the hum."
+completion = "The hum has stopped. My people will not forget it, and we will keep our word. Take this, and tell your Marshal that what dug here dug for something older than a mine."
+money = 1000
+tokens = 3
+zone_or_sort = 12
+kill = [[96022, 1]]
+
+# The orders come off the Eye's corpse for anyone who has not done this quest, so the kill for 94402
+# gives them. With them in the bags the objective is complete as the quest is taken.
+[[quest]]
+id = 94403
+kind = "story"
+giver = 240
+after = 94402
+level = 18
+title = "What Narg Feared"
+objectives = "Bring the Dig Orders from the Eye Below to Marshal Dughan."
+details = "Narg wrote that the ones who dig down, not across, took the mine. If that is so, someone gave them orders, and orders get written down. They would be on whatever commands the pit. Search the Eye's remains for them and bring me what you find."
+progress = "Did the Eye keep any orders?"
+completion = "The same mark as the idol from Echo Ridge, in the same hand. I called this a Defias matter for far too long. It was never the Defias. Forgive an old soldier, and let us see what else this hand has signed."
+money = 0
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 980018, count = 1 }]
+
+# A repeatable. Smith Argus buys the ore the dig brought up, 35% from each Deep Kobold, always from
+# a Twilight Digger, and three from the Eye's corpse.
+[[quest]]
+id = 94404
+kind = "bounty"
+giver = 514
+level = 17
+min_level = 13
+max_level = 22
+title = "Resonant Ore"
+objectives = "Bring 10 Resonant Ore to Smith Argus in Goldshire."
+details = "Strangers have bought my ore in bulk, and now I hear the kobolds in Jasperlode are digging up something that rings when you strike it. Resonant ore, they call it. It rings, and it hums, and I want to know why. Bring me ten pieces, and again whenever you find more."
+progress = "Does it still ring?"
+completion = "It rings all right. Hold it up to your ear. I do not like what I hear, but I will pay for more of it."
+money = 400
+tokens = 3
+zone_or_sort = 12
+collect = [{ item = 980017, count = 10, sources = [{ from = [96017, 96018], chance = 35 }, { from = [96019], chance = 100 }, { from = [96022], chance = 100, count = 3 }] }]

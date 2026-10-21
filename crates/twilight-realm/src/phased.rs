@@ -498,6 +498,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/forest_edge.toml"),
             include_str!("../content/sealed_yard.toml"),
             include_str!("../content/gaze_hall.toml"),
+            include_str!("../content/jasperlode.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
@@ -680,6 +681,65 @@ mod tests {
         assert!(matches!(q.giver, crate::quests::content::Giver::Npc(952)));
         assert_eq!(q.after.ids(), [94002]);
         assert_eq!(q.kill, [(96005, 1)]);
+    }
+
+    #[test]
+    fn jasperlodes_portal_stands_behind_a_door_the_keystone_opens() {
+        let d = content().iter().find(|d| d.id == 6).expect("Jasperlode");
+        let door = d.portal.door.as_ref().expect("a door");
+        assert_eq!(door.opens_with, 980013, "the Jasperlode Keystone");
+        assert_eq!(door.open_secs, 15.0);
+        assert!(!d.footprint.is_empty() && !d.creature.is_empty());
+    }
+
+    #[test]
+    fn the_eye_below_never_moves_or_swings_and_calls_two_tentacles_at_66_and_33() {
+        let template = |entry| crate::mobs::template(entry).expect("a template");
+        let d = content().iter().find(|d| d.id == 6).expect("Jasperlode");
+        let eyes: Vec<_> = d
+            .creature
+            .iter()
+            .filter(|c| template(c.entry).name == "The Eye Below")
+            .collect();
+        let [eye] = eyes[..] else {
+            panic!("{} eyes", eyes.len())
+        };
+        let t = template(eye.entry);
+        assert_eq!((t.speed_walk, t.speed_run, t.melee), (0.0, 0.0, false));
+        assert_eq!(eye.level, 18);
+        let calls: Vec<_> = eye.on_health.iter().map(|c| (c.pct, c.count)).collect();
+        assert_eq!(calls, [(66, 2), (33, 2)]);
+        assert!(eye
+            .on_health
+            .iter()
+            .all(|c| template(c.entry).name == "Eye Tentacle"));
+        assert!(!eye.drop.is_empty());
+        let covers = d.cover.len();
+        assert_eq!(covers, 4);
+        let boulders = d.gameobject.len();
+        assert_eq!(boulders, covers, "a boulder marks each pillar");
+        assert!(d
+            .cover
+            .iter()
+            .zip(&d.gameobject)
+            .all(|(c, o)| c.position == o.position));
+    }
+
+    #[test]
+    fn jasperlodes_mines_hold_kobolds_and_diggers_led_by_delvers() {
+        let template = |entry| crate::mobs::template(entry).expect("a template");
+        let d = content().iter().find(|d| d.id == 6).expect("Jasperlode");
+        let named = |name: &'static str| {
+            d.creature
+                .iter()
+                .filter(move |c| template(c.entry).name == name)
+                .count()
+        };
+        assert_eq!(named("Chieftain Grik"), 1);
+        assert!((3..=4).contains(&named("Frightened Kobold")));
+        assert!(named("Deep Kobold Miner") > 0 && named("Deep Kobold Geomancer") > 0);
+        assert_eq!(named("Twilight Delver") * 3, named("Twilight Digger"));
+        assert!(template(d.creature[0].entry).friendly);
     }
 
     #[test]

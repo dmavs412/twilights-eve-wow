@@ -212,3 +212,71 @@ range_max = 60.0
 chance = 100
 warning = "Baleful Gaze! Get behind cover!"
 effect = { kind = "gaze", damage = 20, radius = 15.0 }
+
+# The Deep Kobold Geomancer's bolt (`jasperlode.toml`, #237). Looks like Fireball rank 1 (visual
+# 133). Creature Spells have no direct damage, so it lands as a short fire curse, as Lightning Bolt
+# does. Placeholders: 2 ticks of 14, 28 fire damage over 4 s, from 30 yd.
+[[spell]]
+key = "fire_bolt_creature"
+spell_id = 1900012
+name = "Fire Bolt"
+icon = 'Interface\Icons\Spell_Fire_FlameBolt'
+visual = 133
+aura_description = "$s1 Fire damage every $t1 seconds."
+school = "fire"
+cast_time_ms = 1500
+cooldown_ms = 4000
+range_max = 30.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 2000, duration_ms = 4000, tick = { base = 14 } }
+
+# The Eye Below's steady beam at its target. Looks like Shadow Bolt rank 1 (visual 686).
+# Placeholders: 2 ticks of 12, 24 shadow damage over 2 s, every 3 s, from 40 yd.
+[[spell]]
+key = "eye_beam"
+spell_id = 1900013
+name = "Eye Beam"
+icon = 'Interface\Icons\Spell_Shadow_ShadowBolt'
+visual = 686
+aura_description = "$s1 Shadow damage every $t1 seconds."
+school = "shadow"
+cast_time_ms = 0
+cooldown_ms = 3000
+range_max = 40.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 1000, duration_ms = 2000, tick = { base = 12 } }
+
+# The Eye Below's snare. Looks like Mind Flay rank 1 (visual 15407). Placeholders: 50% slower for
+# 8 s, every 12 s, from 40 yd.
+[[spell]]
+key = "eye_mind_flay"
+spell_id = 1900014
+name = "Mind Flay"
+icon = 'Interface\Icons\Spell_Shadow_SiphonMana'
+visual = 15407
+aura_description = "Movement slowed by $s1%."
+school = "shadow"
+cast_time_ms = 0
+cooldown_ms = 12000
+range_max = 40.0
+chance = 100
+effect = { kind = "snare", pct = 50, duration_ms = 8000 }
+
+# The Eye Below's gaze (#237). Looks like Mind Blast rank 1 (visual 8092). A 10 s cast, first at 15 s
+# into the fight, then every 20 s. The radius covers the whole pit, so only cover saves a character.
+# Damage: the highest base max health of any Calling at level 18 with no gear is the mage's 237
+# (levels.toml, base_health[17]); doubled it is 474, and rounded up to the next 100 it is 500.
+[[spell]]
+key = "eye_dark_glare"
+spell_id = 1900015
+name = "Dark Glare"
+icon = 'Interface\Icons\Spell_Shadow_UnholyFrenzy'
+visual = 8092
+school = "shadow"
+cast_time_ms = 10000
+cooldown_ms = 20000
+first_cast_ms = 15000
+range_max = 60.0
+chance = 100
+warning = "The Eye Below turns its gaze upon you! Hide!"
+effect = { kind = "gaze", damage = 500, radius = 60.0 }

@@ -8,6 +8,16 @@
 # the elite one below replaces (#232).
 removed = [198, 375, 911, 6373, 459, 925, 915, 152, 190, 1213, 78, 11940, 951, 952, 330]
 
+# Spawns deleted by guid, for entries that also spawn elsewhere in Elwynn (#237). Jasperlode Mine
+# became a Phased Dungeon (content/jasperlode.toml) and its cave is emptied: the 23 stock spawns in
+# the tunnel from the cave mouth and in the interior, guids 80973 to 80995 (Kobold Miners and
+# Geomancers, Mine Spiders, Mother Fang), each found by placing the spawn in the WMO's frame. The
+# wolves, bears and miners outside the mouth stay.
+removed_guids = [
+  80973, 80974, 80975, 80976, 80977, 80978, 80979, 80980, 80981, 80982, 80983, 80984,
+  80985, 80986, 80987, 80988, 80989, 80990, 80991, 80992, 80993, 80994, 80995,
+]
+
 # Spawns moved. Marshal McBride stood just inside the Abbey's front doors, in its footprint
 # (content/northshire_abbey.toml); he now stands on the steps a few yards outside them, clear
 # of the doorway's portal, facing the yard.

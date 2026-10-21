@@ -1009,3 +1009,167 @@ base_attack_time = 2000
 speed_walk = 0.0
 speed_run = 0.0
 detection_range = 0.0
+
+# Jasperlode Mine (#237, jasperlode.toml). Displays are stock ones from vmangos creature_template.
+# Every multiplier is a placeholder, untested against a level 15 to 18.
+
+# Chieftain Grik, the kobolds' leader, who gives The Kobold King's Plea from the camp inside the
+# door. Friendly, so nothing may attack him. Display 774 is Narg the Taskmaster's (vmangos entry
+# 79), a kobold; faction 12 is Stormwind's, as Foreman Gorn's.
+[[template]]
+entry = 96015
+name = "Chieftain Grik"
+creature_type = 7
+display_id = 774
+faction_template = 12
+hostile = false
+unit_class = "warrior"
+level_min = 17
+level_max = 17
+health_multiplier = 1.0
+damage_multiplier = 0.75
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 10.0
+friendly = true
+
+# The kobolds who stayed, in Grik's camp: friendly and quest-less, so a character can neither
+# attack nor talk to them. Display 373 is the Kobold Miner's (vmangos entry 40).
+[[template]]
+entry = 96016
+name = "Frightened Kobold"
+creature_type = 7
+display_id = 373
+faction_template = 12
+hostile = false
+unit_class = "warrior"
+level_min = 15
+level_max = 15
+health_multiplier = 1.0
+damage_multiplier = 0.75
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 10.0
+friendly = true
+
+# The Passages' kobolds the Eye has taken: melee. Display 373 is the Kobold Miner's.
+[[template]]
+entry = 96017
+name = "Deep Kobold Miner"
+creature_type = 7
+display_id = 373
+faction_template = 14
+unit_class = "warrior"
+level_min = 15
+level_max = 16
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+
+# The passages' casters: a Fire Bolt. Display 163 is the Kobold Geomancer's (vmangos entry 476).
+[[template]]
+entry = 96018
+name = "Deep Kobold Geomancer"
+creature_type = 7
+display_id = 163
+faction_template = 14
+unit_class = "mage"
+level_min = 16
+level_max = 16
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["fire_bolt_creature"]
+
+# The dig's cultists: melee. Display 2882 is the Twilight Acolyte's (vmangos entry 4809).
+[[template]]
+entry = 96019
+name = "Twilight Digger"
+creature_type = 7
+display_id = 2882
+faction_template = 14
+unit_class = "warrior"
+level_min = 17
+level_max = 17
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The Digger's leader: elite, with the Twilight Disciple's Shadow Word: Pain. Display 2882.
+[[template]]
+entry = 96020
+name = "Twilight Delver"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 17
+level_max = 17
+health_multiplier = 1.4
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+spells = ["shadow_word_pain_creature"]
+
+# What the Eye Below calls at 66% and 33% health: melee. Display 15788 is vmangos's Eye Tentacle
+# (entry 15726, Ahn'Qiraj).
+[[template]]
+entry = 96021
+name = "Eye Tentacle"
+creature_type = 7
+display_id = 15788
+faction_template = 14
+unit_class = "warrior"
+level_min = 17
+level_max = 17
+health_multiplier = 0.6
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+
+# The Eye Below, Jasperlode's boss at the bottom of the pit: it never moves and never swings
+# (`melee = false`), and casts a beam, a snare and a gaze that only cover stops. Display 15556 is
+# vmangos's Eye of C'Thun (entry 15589). Templates have no scale, so the model is not shrunk to the
+# pit.
+[[template]]
+entry = 96022
+name = "The Eye Below"
+creature_type = 7
+rank = 1
+display_id = 15556
+faction_template = 14
+unit_class = "mage"
+level_min = 18
+level_max = 18
+health_multiplier = 3.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 0.0
+speed_run = 0.0
+detection_range = 40.0
+melee = false
+spells = ["eye_beam", "eye_mind_flay", "eye_dark_glare"]

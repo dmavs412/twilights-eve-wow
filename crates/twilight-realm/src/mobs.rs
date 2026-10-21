@@ -109,6 +109,10 @@ pub(crate) struct Template {
     /// waking the sleepers within this many yards of it as it goes.
     #[serde(default)]
     pub(crate) hunts_at_meter_max: Option<f32>,
+    /// False for a creature that never swings and never closes to melee, such as one that only
+    /// casts from where it stands.
+    #[serde(default = "yes")]
+    pub(crate) melee: bool,
 }
 
 /// Seconds after an inert creature last took damage before it is whole again.
@@ -164,6 +168,7 @@ impl Template {
             noise_on_death: None,
             wakes_sleepers: None,
             hunts_at_meter_max: None,
+            melee: true,
         }
     }
 
@@ -264,6 +269,9 @@ struct DungeonSpawn {
 struct Overrides {
     /// Entries whose spawns are deleted.
     removed: Vec<u32>,
+    /// Spawns deleted by guid, where their entry also spawns elsewhere and must stay there.
+    #[serde(default)]
+    removed_guids: Vec<u32>,
     moved: Vec<Moved>,
     /// Spawns added by hand, each a camp of its own; they keep their own levels, past the Level
     /// Bands.
@@ -348,7 +356,9 @@ pub(crate) fn content() -> &'static Mobs {
             .expect("content/elwynn.toml parses");
         let overrides: Overrides = toml::from_str(include_str!("../content/elwynn_overrides.toml"))
             .expect("content/elwynn_overrides.toml parses");
-        elwynn.spawns.retain(|r| !overrides.removed.contains(&r.1));
+        elwynn.spawns.retain(|r| {
+            !overrides.removed.contains(&r.1) && !overrides.removed_guids.contains(&r.0)
+        });
         for m in &overrides.moved {
             for r in elwynn.spawns.iter_mut().filter(|r| r.1 == m.entry) {
                 [r.4, r.5, r.6] = m.position;

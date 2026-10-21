@@ -1021,6 +1021,10 @@ impl InWorld {
                     return;
                 }
                 let mob = &mut self.mobs[i];
+                // A creature with no melee casts from where it stands and never swings.
+                if !mob.template.melee {
+                    return;
+                }
                 let d = distance(mob.position, me);
                 if d > melee_reach() && rooted {
                     return;

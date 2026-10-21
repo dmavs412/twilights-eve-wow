@@ -1,0 +1,411 @@
+# Jasperlode Mine, the Phased Dungeon behind the sealed door (spec #224, issue #237). Hand-written.
+#
+# The mine is the stock md_spidermine.wmo, placed by the ADT's MODF at (-9154.65, -594.39, 62.90)
+# with heading 8.5, so `origin` is that point and `yaw` is -171.5 (heading less 180), as the Abbey's
+# is. The footprint is the WMO's own interior groups (its MOGI table, in the model's frame), minus
+# the entrance: groups 4 (gnollgarrison01) and 6 (interior02) are the tunnel from the cave mouth,
+# which stays open world, and every other group is inside the door. The door stands where the tunnel
+# meets the first chamber (group 5, smallroom04), at model x 14, on the tunnel's axis (y 2.4, the
+# line of the stock Kobold Miner that stood in the tunnel). The boxes stop at model x 12 so the door
+# and the Portal, at x 14 and 12.6, stand outside them. Terrain heights are the stock spawns' (the
+# floor is about 5 yd under the tunnel's in the first chamber and about 10 yd under it at the pit);
+# the cover pillars, camp and packs are hand-placed on that floor, and each position needs a look in
+# game. The Eye's pit is the deepest floor (model z -9.9), where the stock Mother Fang stood.
+# The guids are this file's own (82xxxx).
+
+id = 6
+map = 0
+origin = [-9154.65, -594.39, 62.9]
+yaw = -171.5
+
+# Group 0.
+[[footprint]]
+x = [-135.4, -86.5]
+y = [0.3, 53.2]
+z = [-10.9, 6.2]
+
+# Group 1.
+[[footprint]]
+x = [-106.4, -81.1]
+y = [11.6, 22.9]
+z = [-5.8, 5.2]
+
+# Group 2.
+[[footprint]]
+x = [-46.4, -12.1]
+y = [-22.4, 14.3]
+z = [-6.7, 6.5]
+
+# Group 3.
+[[footprint]]
+x = [-6.0, 12.0]
+y = [-32.5, -8.8]
+z = [-5.2, 4.9]
+
+# Group 5.
+[[footprint]]
+x = [-16.3, 12.0]
+y = [-10.0, 12.7]
+z = [-5.8, 7.0]
+
+# Group 7.
+[[footprint]]
+x = [-97.9, -70.5]
+y = [-45.3, -26.6]
+z = [-4.5, 6.6]
+
+# Group 8.
+[[footprint]]
+x = [-79.0, -36.1]
+y = [-37.3, -12.9]
+z = [-4.2, 7.2]
+
+# Group 9.
+[[footprint]]
+x = [-126.6, -90.9]
+y = [-42.1, -12.9]
+z = [-8.0, 9.5]
+
+# Group 10.
+[[footprint]]
+x = [-142.5, -116.9]
+y = [-26.7, 10.1]
+z = [-9.0, 0.8]
+
+# Group 11.
+[[footprint]]
+x = [-87.7, -40.1]
+y = [-16.3, 21.1]
+z = [-6.7, 10.7]
+
+[portal]
+position = [-9166.8, -598.6, 62.9]
+orientation = 0.15
+
+# The inner door: display 4791 is vmangos's Stone Door (gameobject 177444). Entry 98002, the Sealed
+# Yard's neighbour. The Jasperlode Keystone (#236) opens it; `outside` is 4 yd up the tunnel.
+[portal.door]
+entry = 98002
+display = 4791
+position = [-9168.1, -598.8, 62.9]
+orientation = 3.29
+outside = [-9172.1, -599.4, 62.9]
+open_secs = 15.0
+opens_with = 980013
+sealed_text = "The door is sealed. A rune-marked keystone would fit it."
+
+# Grik's camp (the first chamber): Chieftain Grik, who gives and takes The Kobold King's Plea, and
+# four frightened kobolds. All friendly.
+
+# Chieftain Grik.
+[[creature]]
+guid = 820001
+entry = 96015
+level = 17
+position = [-9142.7, -597.7, 58.1]
+orientation = 0.40
+
+# A frightened kobold.
+[[creature]]
+guid = 820002
+entry = 96016
+level = 15
+position = [-9140.7, -593.3, 57.9]
+orientation = 1.00
+
+# A frightened kobold.
+[[creature]]
+guid = 820003
+entry = 96016
+level = 15
+position = [-9146.3, -596.2, 58.1]
+orientation = 2.00
+
+# A frightened kobold.
+[[creature]]
+guid = 820004
+entry = 96016
+level = 15
+position = [-9143.4, -601.8, 58.1]
+orientation = 3.50
+
+# A frightened kobold.
+[[creature]]
+guid = 820005
+entry = 96016
+level = 15
+position = [-9147.7, -600.4, 58.2]
+orientation = 4.50
+
+# The passages (15-16): four packs of two Deep Kobold Miners and a Deep Kobold Geomancer.
+
+# Passage pack 1.
+[[creature]]
+guid = 820006
+entry = 96017
+level = 15
+position = [-9127.3, -588.3, 57.5]
+orientation = 1.30
+
+# Passage pack 1.
+[[creature]]
+guid = 820007
+entry = 96017
+level = 15
+position = [-9124.4, -593.9, 57.5]
+orientation = 1.30
+
+# Passage pack 1.
+[[creature]]
+guid = 820008
+entry = 96018
+level = 16
+position = [-9122.0, -589.5, 57.5]
+orientation = 1.30
+
+# Passage pack 2.
+[[creature]]
+guid = 820009
+entry = 96017
+level = 15
+position = [-9117.4, -579.7, 57.5]
+orientation = 2.60
+
+# Passage pack 2.
+[[creature]]
+guid = 820010
+entry = 96017
+level = 16
+position = [-9115.0, -575.3, 57.5]
+orientation = 2.60
+
+# Passage pack 2.
+[[creature]]
+guid = 820011
+entry = 96018
+level = 16
+position = [-9120.1, -575.1, 57.5]
+orientation = 2.60
+
+# Passage pack 3.
+[[creature]]
+guid = 820012
+entry = 96017
+level = 16
+position = [-9094.4, -586.5, 58.0]
+orientation = 3.90
+
+# Passage pack 3.
+[[creature]]
+guid = 820013
+entry = 96017
+level = 16
+position = [-9087.9, -589.6, 58.4]
+orientation = 3.90
+
+# Passage pack 3.
+[[creature]]
+guid = 820014
+entry = 96018
+level = 16
+position = [-9092.3, -582.0, 58.0]
+orientation = 3.90
+
+# Passage pack 4.
+[[creature]]
+guid = 820015
+entry = 96017
+level = 16
+position = [-9085.4, -576.1, 61.9]
+orientation = 5.20
+
+# Passage pack 4.
+[[creature]]
+guid = 820016
+entry = 96017
+level = 16
+position = [-9078.9, -582.3, 62.2]
+orientation = 5.20
+
+# Passage pack 4.
+[[creature]]
+guid = 820017
+entry = 96018
+level = 16
+position = [-9088.7, -573.7, 62.6]
+orientation = 5.20
+
+# The dig (17): three groups, each a Twilight Delver with three Twilight Diggers.
+
+# Dig group 1: the Delver.
+[[creature]]
+guid = 820018
+entry = 96020
+level = 17
+position = [-9030.0, -613.7, 56.6]
+orientation = 3.00
+
+# Dig group 1: a Digger.
+[[creature]]
+guid = 820019
+entry = 96019
+level = 17
+position = [-9027.0, -609.7, 56.4]
+orientation = 2.00
+
+# Dig group 1: a Digger.
+[[creature]]
+guid = 820020
+entry = 96019
+level = 17
+position = [-9026.0, -616.6, 56.4]
+orientation = 2.00
+
+# Dig group 1: a Digger.
+[[creature]]
+guid = 820021
+entry = 96019
+level = 17
+position = [-9034.0, -616.8, 55.9]
+orientation = 2.00
+
+# Dig group 2: the Delver.
+[[creature]]
+guid = 820022
+entry = 96020
+level = 17
+position = [-9033.9, -585.5, 56.3]
+orientation = 4.00
+
+# Dig group 2: a Digger.
+[[creature]]
+guid = 820023
+entry = 96019
+level = 17
+position = [-9038.0, -583.0, 56.3]
+orientation = 3.00
+
+# Dig group 2: a Digger.
+[[creature]]
+guid = 820024
+entry = 96019
+level = 17
+position = [-9031.1, -582.0, 56.3]
+orientation = 3.00
+
+# Dig group 2: a Digger.
+[[creature]]
+guid = 820025
+entry = 96019
+level = 17
+position = [-9034.0, -589.5, 56.3]
+orientation = 3.00
+
+# Dig group 3: the Delver.
+[[creature]]
+guid = 820026
+entry = 96020
+level = 17
+position = [-9024.8, -564.4, 54.9]
+orientation = 5.00
+
+# Dig group 3: a Digger.
+[[creature]]
+guid = 820027
+entry = 96019
+level = 17
+position = [-9029.0, -562.5, 54.9]
+orientation = 4.00
+
+# Dig group 3: a Digger.
+[[creature]]
+guid = 820028
+entry = 96019
+level = 17
+position = [-9022.1, -561.4, 54.9]
+orientation = 4.00
+
+# Dig group 3: a Digger.
+[[creature]]
+guid = 820029
+entry = 96019
+level = 17
+position = [-9024.0, -568.8, 54.9]
+orientation = 4.00
+
+# The Eye Below, at the bottom of the pit. It always drops the Dig Orders and, three Resonant Ore, a
+# blue (900105, Ashworth's Black Psalter, the Abbot's placeholder until the gear pass).
+[[creature]]
+guid = 820030
+entry = 96022
+level = 18
+position = [-9049.5, -621.1, 53.4]
+orientation = 3.50
+drop = [900105]
+
+# At 66% and again at 33% health it calls two Eye Tentacles at the pit's edge.
+[[creature.on_health]]
+pct = 66
+entry = 96021
+level = 17
+count = 2
+position = [-9038.8, -607.1, 53.4]
+
+[[creature.on_health]]
+pct = 33
+entry = 96021
+level = 17
+count = 2
+position = [-9038.8, -607.1, 53.4]
+
+# Cover (the Dark Glare, #235): four pillars round the pit, each shown by a boulder (display 2230,
+# vmangos's Cave In) at the same spot. No farther than 35 yd, five seconds' run, from any point
+# in the pit, inside the glare's 10 s cast. The positions are guesses at the rock columns.
+
+[[cover]]
+position = [-9038.8, -625.6, 53.4]
+radius = 2.5
+height = 8.0
+
+[[gameobject]]
+guid = 820101
+display = 2230
+position = [-9038.8, -625.6, 53.4]
+orientation = 1.50
+sides = "inside"
+
+[[cover]]
+position = [-9056.7, -627.3, 53.4]
+radius = 2.5
+height = 8.0
+
+[[gameobject]]
+guid = 820102
+display = 2230
+position = [-9056.7, -627.3, 53.4]
+orientation = 3.00
+sides = "inside"
+
+[[cover]]
+position = [-9043.1, -610.1, 53.4]
+radius = 2.5
+height = 8.0
+
+[[gameobject]]
+guid = 820103
+display = 2230
+position = [-9043.1, -610.1, 53.4]
+orientation = 4.50
+sides = "inside"
+
+[[cover]]
+position = [-9058.9, -612.4, 53.4]
+radius = 2.5
+height = 8.0
+
+[[gameobject]]
+guid = 820104
+display = 2230
+position = [-9058.9, -612.4, 53.4]
+orientation = 6.00
+sides = "inside"
