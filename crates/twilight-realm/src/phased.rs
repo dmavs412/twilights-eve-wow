@@ -597,10 +597,10 @@ mod tests {
         assert!(awake.iter().all(|c| c.wander == 8.0));
         // The four roles, in the levels the ticket sets.
         for (entry, name, levels) in [
-            (96006, "Riverpaw Outrunner", 20..=20),
-            (96007, "Riverpaw Mystic", 21..=21),
-            (96008, "Riverpaw Brute", 21..=21),
-            (96009, "Riverpaw Runt", 20..=20),
+            (96006, "Riverpaw Outrunner", 27..=27),
+            (96007, "Riverpaw Mystic", 28..=28),
+            (96008, "Riverpaw Brute", 28..=28),
+            (96009, "Riverpaw Runt", 27..=27),
         ] {
             assert_eq!(template(entry).name, name);
             assert!(edge.creature.iter().any(|c| c.entry == entry), "no {name}");

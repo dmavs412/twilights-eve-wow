@@ -138,7 +138,7 @@ effect = { kind = "snare", pct = 50, duration_ms = 15000 }
 
 # The Riverpaw Mystic's bolt (`forest_edge.toml`, #173). Looks like Lightning Bolt rank 1 (visual
 # 403). Creature Spells have no direct damage yet, so it lands as a short nature curse.
-# Placeholders: 2 ticks of 12, 24 nature damage over 4 s, from 30 yd; each cast is heard (2 stacks
+# Placeholders: 2 ticks of 16, 32 nature damage over 4 s, from 30 yd; each cast is heard (2 stacks
 # of Noise).
 [[spell]]
 key = "lightning_bolt_gnoll"
@@ -153,7 +153,7 @@ cooldown_ms = 6000
 range_max = 30.0
 chance = 100
 noise_on_cast = 2
-effect = { kind = "periodic_damage", tick_ms = 2000, duration_ms = 4000, tick = { base = 12 } }
+effect = { kind = "periodic_damage", tick_ms = 2000, duration_ms = 4000, tick = { base = 16 } }
 
 # Hogger's charge (#174). Looks like Charge rank 1 (visual 1090). Placeholders: from 8 to 25 yd at
 # 25 yd a second, then one blow worth 50% more than a swing, every 15 s. `charge` is a realm effect

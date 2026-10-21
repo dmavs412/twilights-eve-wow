@@ -721,7 +721,7 @@ speed_run = 0.857
 detection_range = 18.0
 spells = ["abbot_corruption", "abbot_heal"]
 
-# The Riverpaw camp of Forest's Edge (forest_edge.toml, #173): gnolls at 20-21 with stock displays
+# The Riverpaw camp of Forest's Edge (forest_edge.toml, #173): gnolls at 27-28 with stock displays
 # from vmangos creature_template. All numbers are placeholders; the level is on each row.
 # Light sleepers are the Outrunner (+3 yd) and deep ones the Brute (-2 yd): `wake_radius_mod` is
 # on the rows.
@@ -734,8 +734,8 @@ creature_type = 7
 display_id = 512
 faction_template = 14
 unit_class = "warrior"
-level_min = 20
-level_max = 20
+level_min = 27
+level_max = 27
 health_multiplier = 1.0
 damage_multiplier = 1.0
 armor_multiplier = 1.0
@@ -753,8 +753,8 @@ creature_type = 7
 display_id = 502
 faction_template = 14
 unit_class = "mage"
-level_min = 21
-level_max = 21
+level_min = 28
+level_max = 28
 health_multiplier = 0.8
 damage_multiplier = 0.8
 armor_multiplier = 1.0
@@ -772,8 +772,8 @@ creature_type = 7
 display_id = 383
 faction_template = 14
 unit_class = "warrior"
-level_min = 21
-level_max = 21
+level_min = 28
+level_max = 28
 health_multiplier = 1.5
 damage_multiplier = 1.8
 armor_multiplier = 1.0
@@ -790,8 +790,8 @@ creature_type = 7
 display_id = 10791
 faction_template = 14
 unit_class = "warrior"
-level_min = 20
-level_max = 20
+level_min = 27
+level_max = 27
 health_multiplier = 0.15
 damage_multiplier = 0.6
 armor_multiplier = 1.0
@@ -812,8 +812,8 @@ rank = 1
 display_id = 384
 faction_template = 14
 unit_class = "warrior"
-level_min = 22
-level_max = 22
+level_min = 30
+level_max = 30
 health_multiplier = 3.0
 damage_multiplier = 1.5
 armor_multiplier = 1.0
