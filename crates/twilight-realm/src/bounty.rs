@@ -172,11 +172,12 @@ impl Draw {
     /// the rank's multiple of its health and damage.
     pub(crate) fn stats(self, level: u8, rank: u32) -> MobStats {
         let h = hunter();
+        let (health_mul, damage_mul) = crate::mobs::difficulty_muls();
         let mut stats = MobStats::new(
             self.archetype().unit_class,
             level,
-            h.health,
-            h.damage,
+            h.health * health_mul,
+            h.damage * damage_mul,
             h.armor,
         );
         let mul = crate::rules::notoriety::rank_multiplier(rank);

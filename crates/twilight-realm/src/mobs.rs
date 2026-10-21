@@ -222,8 +222,17 @@ struct HandSpawn {
 #[derive(Deserialize)]
 struct Row(u32, u32, u8, u8, f32, f32, f32, f32, u32, f32, u32);
 
+/// `[difficulty]` in `mobs.toml`: factors on every non-inert creature's health and melee damage,
+/// laid over its template's own multipliers.
+#[derive(Deserialize, Clone, Copy)]
+pub(crate) struct Difficulty {
+    pub(crate) health: f32,
+    pub(crate) damage: f32,
+}
+
 #[derive(Deserialize)]
 struct HandFile {
+    difficulty: Difficulty,
     template: Vec<Template>,
     spawn: Vec<HandSpawn>,
 }
@@ -304,6 +313,7 @@ struct BandCreature {
 }
 
 pub(crate) struct Mobs {
+    pub(crate) difficulty: Difficulty,
     pub(crate) template: Vec<Template>,
     pub(crate) spawn: Vec<Spawn>,
 }
@@ -326,6 +336,7 @@ pub(crate) fn content() -> &'static Mobs {
                 r.7 = m.orientation;
             }
         }
+        let difficulty = hand.difficulty;
         let mut template = hand.template;
         template.extend(barrens.template);
         template.extend(elwynn.template);
@@ -489,8 +500,18 @@ pub(crate) fn content() -> &'static Mobs {
                 }
             }
         }
-        Mobs { template, spawn }
+        Mobs {
+            difficulty,
+            template,
+            spawn,
+        }
     })
+}
+
+/// The global health and damage factors from `mobs.toml`'s `[difficulty]`.
+pub(crate) fn difficulty_muls() -> (f32, f32) {
+    let d = content().difficulty;
+    (d.health, d.damage)
 }
 
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
@@ -639,13 +660,24 @@ impl Mob {
     /// The mob of `spawn`, which is `content().spawn[index]`, at `level`.
     pub(crate) fn from_spawn(spawn: &'static Spawn, index: u32, level: u8, z: f32) -> Option<Self> {
         let template = template(spawn.entry)?;
-        let stats = MobStats::new(
-            template.unit_class,
-            level,
-            template.health_multiplier,
-            template.damage_multiplier,
-            template.armor_multiplier,
-        );
+        let (health_mul, damage_mul) = difficulty_muls();
+        let stats = if template.inert {
+            MobStats::new(
+                template.unit_class,
+                level,
+                template.health_multiplier,
+                template.damage_multiplier,
+                template.armor_multiplier,
+            )
+        } else {
+            MobStats::new(
+                template.unit_class,
+                level,
+                template.health_multiplier * health_mul,
+                template.damage_multiplier * damage_mul,
+                template.armor_multiplier,
+            )
+        };
         let guid = HIGHGUID_UNIT << 48
             | u64::from(spawn.entry & 0xFF_FFFF) << 24
             | u64::from(spawn.guid & 0xFF_FFFF);
@@ -1131,6 +1163,39 @@ mod tests {
         assert!(guard.alive() && !guard.attackable());
         let i = content().spawn.iter().position(|s| s.entry == 6).unwrap();
         assert!(Mob::spawn(i as u32, 1, 0.0).unwrap().attackable());
+    }
+
+    /// The mob of `entry` at `level` and its template's stats before the global difficulty.
+    fn mob_and_vanilla(entry: u32, level: u8) -> (MobStats, MobStats) {
+        let spawn: &'static Spawn = Box::leak(Box::new(Spawn {
+            entry,
+            ..Default::default()
+        }));
+        let t = template(entry).unwrap();
+        let vanilla = MobStats::new(
+            t.unit_class,
+            level,
+            t.health_multiplier,
+            t.damage_multiplier,
+            t.armor_multiplier,
+        );
+        (
+            Mob::from_spawn(spawn, 0, level, 0.0).unwrap().stats,
+            vanilla,
+        )
+    }
+
+    #[test]
+    fn difficulty_doubles_health_and_raises_damage_by_half_except_for_dummies() {
+        // Defias Thug.
+        let (hard, vanilla) = mob_and_vanilla(38, 8);
+        assert_eq!(hard.max_health, vanilla.max_health * 2);
+        assert!((hard.min_damage - vanilla.min_damage * 1.5).abs() < 1e-3);
+        assert!((hard.max_damage - vanilla.max_damage * 1.5).abs() < 1e-3);
+        assert_eq!(hard.armor, vanilla.armor);
+        // Training Dummy.
+        let (dummy, vanilla) = mob_and_vanilla(97001, 10);
+        assert_eq!(dummy, vanilla);
     }
 }
 

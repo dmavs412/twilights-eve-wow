@@ -140,13 +140,16 @@ fn a_creature_with_no_spells_never_casts() {
 #[test]
 fn a_caster_killed_mid_cast_lands_nothing() {
     let mut mid_cast = 0;
-    for seed in 0..40 {
+    for seed in 0..400 {
         let realm = Realm::with_seed(seed).with_creature_spells(VILE_FAMILIAR, &[CORRUPTION]);
         let (mut realm, me, mob) = warrior(realm, 60);
         stand_by(&mut realm, mob.1);
-        let mut events = run(&mut realm, 0.5);
+        // The familiar has twice the health it had, so the kill takes more swings; vary when the
+        // first one lands so some seed still ends the cast.
+        let lead = 0.1 * (seed % 20) as f32;
+        let mut events = run(&mut realm, lead);
         realm.handle(RealmCommand::AttackSwing { guid: mob.0 });
-        events.extend(run(&mut realm, 3.0));
+        events.extend(run(&mut realm, 4.0));
         let started = events
             .iter()
             .any(|(_, e)| matches!(e, SessionEvent::SpellStart { caster, .. } if *caster == mob.0));

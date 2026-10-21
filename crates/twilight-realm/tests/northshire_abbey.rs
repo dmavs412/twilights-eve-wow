@@ -271,7 +271,7 @@ fn the_abbeys_npcs_are_gone_and_mcbride_waits_outside() {
 
 #[test]
 fn the_abbots_bell_calls_two_brothers_and_they_fall_on_his_attacker() {
-    let mut a = Abbey::at_level(20);
+    let mut a = Abbey::at_level(40);
     a.go(INSIDE, 0.1);
     assert!(a.called.is_empty(), "the adds were there from the start");
     a.fight_the_abbot();
@@ -286,7 +286,7 @@ fn the_abbots_bell_calls_two_brothers_and_they_fall_on_his_attacker() {
 
 #[test]
 fn a_call_is_made_once_a_life() {
-    let mut a = Abbey::at_level(20);
+    let mut a = Abbey::at_level(40);
     a.go(INSIDE, 0.1);
     a.fight_the_abbot();
     assert_eq!(a.called.len(), 2);
@@ -297,7 +297,7 @@ fn a_call_is_made_once_a_life() {
 
 #[test]
 fn a_reset_run_lets_the_call_fire_again() {
-    let mut a = Abbey::at_level(20);
+    let mut a = Abbey::at_level(40);
     a.go(INSIDE, 0.1);
     a.fight_the_abbot();
     assert_eq!(a.called.len(), 2);

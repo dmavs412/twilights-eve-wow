@@ -8,6 +8,12 @@
 # `shield` (default false): the creature carries one, the only way a mob blocks. The dumps hold no
 # equipment, so no template sets it yet.
 
+# Global difficulty: factors on every creature's health and melee damage, on top of its own
+# multipliers. Armour is unchanged. `inert` training dummies keep vanilla stats.
+[difficulty]
+health = 2.0
+damage = 1.5
+
 [[template]]
 entry = 3101
 name = "Vile Familiar"
@@ -597,7 +603,8 @@ detection_range = 18.0
 # The elite at the mine's deepest point, who carries the Smoldering Twilight Idol: the Kobold
 # Geomancer's display (163) and faction (26). Tuned by tests/echo_ridge.rs, white swings only
 # against a human warrior with the starting Chest and the Stone Gnoll Hammer, over 40 seeds:
-# health 1.6, damage 1.1 lets a level 8 win 26 of 40 and a level 7 only 10.
+# health 1.6, damage 1.1 lets a level 8 win 26 of 40 and a level 7 only 10. Those are the numbers
+# after [difficulty] (health x2, damage x1.5), so the row holds 0.8 and 0.7333.
 [[template]]
 entry = 96002
 name = "Geomancer Vurx"
@@ -608,8 +615,8 @@ faction_template = 26
 unit_class = "mage"
 level_min = 7
 level_max = 7
-health_multiplier = 1.6
-damage_multiplier = 1.1
+health_multiplier = 0.8
+damage_multiplier = 0.7333
 armor_multiplier = 1.0
 base_attack_time = 2000
 speed_walk = 1.0

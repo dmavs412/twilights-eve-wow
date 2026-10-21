@@ -547,7 +547,9 @@ fn die_at_the_boss(s: &mut Script) {
 
 #[test]
 fn dying_inside_comes_back_at_the_entrance_with_the_toll_taken_and_the_kills_kept() {
-    let mut s = Script::at_the_entrance(25, 1000, &[(MAIN_HAND, PROSPECTOR_AXE, 1)]);
+    // Level 60: the Guardian has twice the health and hits half again as hard, and a level 25
+    // warrior with an axe no longer outlasts him.
+    let mut s = Script::at_the_entrance(60, 1000, &[(MAIN_HAND, PROSPECTOR_AXE, 1)]);
     s.enter();
     kill(&mut s, GUARDIAN, GUARDIAN_AT);
     die_at_the_boss(&mut s);
@@ -593,7 +595,7 @@ fn dying_inside_comes_back_at_the_entrance_with_the_toll_taken_and_the_kills_kep
 
 #[test]
 fn leaving_and_coming_back_starts_a_fresh_run() {
-    let mut s = Script::at_the_entrance(40, 0, &[(MAIN_HAND, PROSPECTOR_AXE, 1)]);
+    let mut s = Script::at_the_entrance(60, 0, &[(MAIN_HAND, PROSPECTOR_AXE, 1)]);
     s.enter();
     kill(&mut s, GUARDIAN, GUARDIAN_AT);
 
@@ -858,7 +860,7 @@ fn a_deviate_killed_inside_counts_toward_nalpaks_quest() {
     // Five Ravagers and both Guardians down already: the sixth Ravager finishes it.
     let mut s = questing_at_the_skull(
         7,
-        25,
+        60,
         &[(MAIN_HAND, PROSPECTOR_AXE, 1)],
         &[(THE_NIGHTMARES_BROOD, [5, 2, 0, 0])],
     );

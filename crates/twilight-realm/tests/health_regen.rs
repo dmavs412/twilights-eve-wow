@@ -24,7 +24,8 @@ fn the_tick_is_spirit_based_and_a_regen_percent_raises_it() {
 
 #[test]
 fn health_regenerates_out_of_combat_and_not_in_it() {
-    let (mut realm, me, mob, mut view) = warrior_at(1, &[]);
+    // Level 6: creatures hit half again as hard now, and a level 1 warrior dies to this one.
+    let (mut realm, me, mob, mut view) = warrior_at(6, &[]);
     hurt(&mut realm, &mut view, &mob);
     // In combat, nothing healed: health only fell.
     let fight = fight_until_dead(&mut realm, &mut view, me, &mob);

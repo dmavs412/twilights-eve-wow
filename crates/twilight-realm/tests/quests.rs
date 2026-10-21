@@ -443,7 +443,9 @@ fn where_now(events: &[SessionEvent], mob: &Mob) -> [f32; 3] {
 /// A level 8 warrior, with Scorpid Venom or without, kills the Scorpid Workers' camp and takes
 /// every quest item their corpses offer. The loot windows' item rows, and every event.
 fn clear_the_scorpids(with_quest: bool) -> (Vec<u32>, Vec<SessionEvent>, u64) {
-    let (mut realm, me, events) = warrior_with(8, 0, &[]);
+    // Level 14: the four workers have twice the health and hit half again as hard, and a level 8
+    // warrior no longer lives through the camp.
+    let (mut realm, me, events) = warrior_with(14, 0, &[]);
     let mut all = events.clone();
     if with_quest {
         all.extend(accept(&mut realm, giver(&events, GREZZ), SCORPID_VENOM));
