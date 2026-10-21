@@ -7,6 +7,7 @@
 # nothing.
 
 id = 5
+name = "the Gaze Hall"
 map = 0
 origin = [-9650.0, 20.0, 0.0]
 yaw = 0.0

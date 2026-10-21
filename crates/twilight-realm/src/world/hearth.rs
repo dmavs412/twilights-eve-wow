@@ -38,7 +38,8 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) {
         if spell_id == HEARTH_SPELL {
-            // From another map, a worldport.
+            // From another map, a worldport. A stop's pull does not hold a character who hearths.
+            self.in_stop = None;
             let home = c.bind.place;
             self.move_to(c, home, events);
         }
@@ -78,6 +79,7 @@ impl InWorld {
         let crate::dev::DevTeleport { x, y, facing } = to;
         match host.ground_height(self.map, x, y, crate::dev::DEV_TELEPORT_Z_HINT) {
             Some(z) => {
+                self.in_stop = None;
                 let facing = facing.unwrap_or(c.orientation);
                 self.teleport(c, [x, y, z], facing, events);
             }

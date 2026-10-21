@@ -8,6 +8,7 @@
 # The guids are this file's own (79xxxx).
 
 id = 2
+name = "Forest's Edge"
 map = 0
 origin = [0.0, 0.0, 0.0]
 yaw = 0.0

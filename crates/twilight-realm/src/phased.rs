@@ -59,6 +59,58 @@ impl Footprint {
     }
 }
 
+/// A stop: a piece of a dungeon's Phase far from its building, reached through an inner portal.
+/// Its box is in world coordinates on the dungeon's map, not turned with the building.
+#[derive(Deserialize)]
+pub(crate) struct Stop {
+    pub(crate) key: String,
+    x: [f32; 2],
+    y: [f32; 2],
+    z: [f32; 2],
+    /// Where a character lands: `[x, y, z, facing]`.
+    pub(crate) arrival: [f32; 4],
+    /// Where the stop's way back stands, a few yards from the arrival.
+    pub(crate) return_portal: [f32; 4],
+}
+
+impl Stop {
+    pub(crate) fn holds(&self, [x, y, z]: [f32; 3]) -> bool {
+        (self.x[0]..=self.x[1]).contains(&x)
+            && (self.y[0]..=self.y[1]).contains(&y)
+            && (self.z[0]..=self.z[1]).contains(&z)
+    }
+}
+
+/// The portal inside a dungeon's building that leads to a stop. Its position is in the same
+/// frame as the dungeon's other positions (the map's).
+#[derive(Deserialize)]
+pub(crate) struct InnerPortal {
+    pub(crate) stop: String,
+    pub(crate) position: [f32; 3],
+    pub(crate) orientation: f32,
+    /// Where a character comes back to, in front of the portal: `[x, y, z, facing]`.
+    pub(crate) back: [f32; 4],
+    /// Open when a Run starts.
+    #[serde(default)]
+    pub(crate) open: bool,
+}
+
+/// Which side of a stop's portal pair a GameObject is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum StopPortal {
+    /// In the building: leads to the stop while it is open.
+    Inner,
+    /// At the stop: leads back to the building, always open.
+    Return,
+}
+
+/// A stop portal as the client is shown it.
+pub(crate) struct StopObject<'a> {
+    pub(crate) object: GameObject,
+    /// The stop it belongs to when it shows only while that stop's inner portal is open.
+    pub(crate) gate: Option<&'a str>,
+}
+
 /// A creature of a Phased Dungeon, there from the Run's start at full health.
 #[derive(Deserialize)]
 pub(crate) struct Creature {
@@ -349,6 +401,8 @@ pub(crate) fn gameobject_create(object: &GameObject) -> SessionEvent {
 #[derive(Deserialize)]
 pub(crate) struct Dungeon {
     pub(crate) id: u32,
+    /// What the dungeon is called in the text players read.
+    pub(crate) name: String,
     pub(crate) map: u32,
     /// Where the building stands: the footprint's frame starts here...
     origin: [f32; 3],
@@ -369,6 +423,12 @@ pub(crate) struct Dungeon {
     /// Pillars a gaze cannot see past.
     #[serde(default)]
     pub(crate) cover: Vec<Cover>,
+    /// Pieces of the Phase far from the building.
+    #[serde(default)]
+    pub(crate) stop: Vec<Stop>,
+    /// The portals in the building that lead to the stops.
+    #[serde(default)]
+    pub(crate) inner_portal: Vec<InnerPortal>,
 }
 
 /// A cover pillar: a vertical cylinder standing on `position`, in the dungeon file's frame like
@@ -464,7 +524,95 @@ impl Dungeon {
             return false;
         }
         let local = self.local(position);
-        self.footprint.iter().any(|b| b.holds(local))
+        self.footprint.iter().any(|b| b.holds(local)) || self.stop_at(map, position).is_some()
+    }
+
+    /// The index of the stop whose box holds `position` on `map`.
+    pub(crate) fn stop_at(&self, map: u32, position: [f32; 3]) -> Option<usize> {
+        if map != self.map {
+            return None;
+        }
+        self.stop.iter().position(|s| s.holds(position))
+    }
+
+    /// The inner portal that leads to the stop `key`.
+    pub(crate) fn inner_portal_of(&self, key: &str) -> Option<&InnerPortal> {
+        self.inner_portal.iter().find(|p| p.stop == key)
+    }
+
+    /// The Run's inner portals that are open as it starts: the keys of their stops.
+    pub(crate) fn portals_open_at_start(&self) -> Vec<String> {
+        self.inner_portal
+            .iter()
+            .filter(|p| p.open)
+            .map(|p| p.stop.clone())
+            .collect()
+    }
+
+    /// The guid of stop `stop`'s inner portal (`Inner`) or return portal (`Return`). The entry
+    /// is above every authored GameObject's.
+    fn stop_portal_guid(&self, stop: usize, kind: StopPortal) -> u64 {
+        let side = u32::from(kind == StopPortal::Return);
+        let entry = 0x0F00_0000 | self.id << 8 | (stop as u32) << 1 | side;
+        HIGHGUID_GAMEOBJECT << 48 | u64::from(entry)
+    }
+
+    /// The dungeon with a stop portal of this guid, which stop, and which side of the pair.
+    pub(crate) fn with_stop_portal(guid: u64) -> Option<(&'static Dungeon, usize, StopPortal)> {
+        content().iter().find_map(|d| {
+            (0..d.stop.len()).find_map(|i| {
+                [StopPortal::Inner, StopPortal::Return]
+                    .into_iter()
+                    .find(|&k| d.stop_portal_guid(i, k) == guid)
+                    .map(|k| (d, i, k))
+            })
+        })
+    }
+
+    /// The GameObjects the stops put in the Phase: each stop's return portal, and the inner
+    /// portal that leads to it, shown only while open. An open portal is the instance swirl; a
+    /// shut one is not shown, as no stock unlit ring display is known.
+    pub(crate) fn stop_objects(&self) -> Vec<StopObject<'_>> {
+        let mut out = Vec::new();
+        for (i, stop) in self.stop.iter().enumerate() {
+            let [x, y, z, facing] = stop.return_portal;
+            out.push(StopObject {
+                object: self.stop_portal_object(i, StopPortal::Return, [x, y, z], facing),
+                gate: None,
+            });
+            if let Some(p) = self.inner_portal_of(&stop.key) {
+                out.push(StopObject {
+                    object: self.stop_portal_object(
+                        i,
+                        StopPortal::Inner,
+                        p.position,
+                        p.orientation,
+                    ),
+                    gate: Some(&stop.key),
+                });
+            }
+        }
+        out
+    }
+
+    fn stop_portal_object(
+        &self,
+        stop: usize,
+        kind: StopPortal,
+        position: [f32; 3],
+        orientation: f32,
+    ) -> GameObject {
+        let guid = self.stop_portal_guid(stop, kind);
+        GameObject {
+            guid,
+            entry: guid as u32,
+            display_id: PORTAL_DISPLAY,
+            type_id: GENERIC,
+            flags: 0,
+            faction: 0,
+            position,
+            orientation,
+        }
     }
 
     /// `position` in the building's frame.
@@ -537,6 +685,13 @@ pub(crate) fn at(map: u32, position: [f32; 3]) -> Phase {
         .map_or(Phase::OpenWorld, |d| Phase::Dungeon(d.id))
 }
 
+/// The dungeon and stop whose box holds `position` on `map`.
+pub(crate) fn stop_at(map: u32, position: [f32; 3]) -> Option<(u32, usize)> {
+    content()
+        .iter()
+        .find_map(|d| d.stop_at(map, position).map(|i| (d.id, i)))
+}
+
 /// Where a creature of `phase` chasing toward `to` may run: on the dungeon's own floor, not
 /// the terrain the ground lookup finds under it, and nowhere past its walls.
 pub(crate) fn chase_within(phase: Phase, map: u32, to: [f32; 3], me: [f32; 3]) -> Option<[f32; 3]> {
@@ -557,14 +712,31 @@ pub(crate) struct Run {
     pub(crate) noise: u32,
     /// How many of the meter's clock stacks the Run has had.
     clock_stacks: u32,
+    /// The stops whose inner portal is open.
+    portals_open: Vec<String>,
 }
 
 impl Run {
-    pub(crate) fn new() -> Self {
+    /// A Run of dungeon `dungeon`, its inner portals as the content opens them.
+    pub(crate) fn new(dungeon: u32) -> Self {
         Self {
             elapsed: 0.0,
             noise: 0,
             clock_stacks: 0,
+            portals_open: self::dungeon(dungeon).map_or(Vec::new(), |d| d.portals_open_at_start()),
+        }
+    }
+
+    /// The stops whose inner portal is open.
+    pub(crate) fn portals_open(&self) -> &[String] {
+        &self.portals_open
+    }
+
+    /// Opens or closes the inner portal of stop `key`.
+    pub(crate) fn set_portal(&mut self, key: &str, open: bool) {
+        self.portals_open.retain(|k| k != key);
+        if open {
+            self.portals_open.push(key.to_string());
         }
     }
 
@@ -740,6 +912,36 @@ mod tests {
         assert!(named("Deep Kobold Miner") > 0 && named("Deep Kobold Geomancer") > 0);
         assert_eq!(named("Twilight Delver") * 3, named("Twilight Digger"));
         assert!(template(d.creature[0].entry).friendly);
+    }
+
+    #[test]
+    fn every_stop_has_one_inner_portal_and_lands_inside_its_own_box() {
+        for d in content() {
+            for (i, s) in d.stop.iter().enumerate() {
+                let portals = d.inner_portal.iter().filter(|p| p.stop == s.key).count();
+                assert_eq!(
+                    portals, 1,
+                    "{} stop {} has {portals} portals",
+                    d.name, s.key
+                );
+                let at = |p: [f32; 4]| [p[0], p[1], p[2]];
+                assert!(
+                    s.holds(at(s.arrival)),
+                    "{} arrives outside {}",
+                    d.name,
+                    s.key
+                );
+                assert!(s.holds(at(s.return_portal)), "{} return outside", d.name);
+                let back = at(d.inner_portal_of(&s.key).unwrap().back);
+                assert!(d.holds(d.map, back) && d.stop_at(d.map, back).is_none());
+                // Round trip through the guids the client clicks.
+                for k in [StopPortal::Inner, StopPortal::Return] {
+                    let guid = d.stop_portal_guid(i, k);
+                    let (found, stop, kind) = Dungeon::with_stop_portal(guid).unwrap();
+                    assert_eq!((found.id, stop, kind), (d.id, i, k));
+                }
+            }
+        }
     }
 
     #[test]

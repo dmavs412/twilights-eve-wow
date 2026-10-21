@@ -5,6 +5,7 @@
 # Terrain flatness and nearby spawns are unchecked; the ground there is taken as about z 47.
 
 id = 4
+name = "the Sealed Yard"
 map = 0
 origin = [-9650.0, 150.0, 0.0]
 yaw = 0.0

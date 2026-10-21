@@ -78,6 +78,10 @@ impl Shard {
     /// with all its creatures at full health.
     pub(crate) fn new(place: Place) -> Self {
         let dungeon = place.phase != Phase::OpenWorld;
+        let run = match place.phase {
+            Phase::Dungeon(id) => Some(Run::new(id)),
+            Phase::OpenWorld => None,
+        };
         Self {
             place,
             mobs: if dungeon {
@@ -87,7 +91,21 @@ impl Shard {
             },
             population: Population::default(),
             hub: Default::default(),
-            run: dungeon.then(Run::new),
+            run,
+        }
+    }
+
+    /// The stops whose inner portal is open in the Run; none with no Run.
+    pub(crate) fn portals_open(&self) -> Vec<String> {
+        self.run
+            .as_ref()
+            .map_or(Vec::new(), |r| r.portals_open().to_vec())
+    }
+
+    /// Opens or closes the inner portal of stop `key` in the Run.
+    pub(crate) fn set_portal(&mut self, key: &str, open: bool) {
+        if let Some(run) = &mut self.run {
+            run.set_portal(key, open);
         }
     }
 

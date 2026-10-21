@@ -60,6 +60,7 @@ impl InWorld {
             self.auras_die_with(unit, events);
         }
         self.drop_view(&mut Vec::new());
+        self.in_stop = None;
         self.map = to.map;
         c.map = to.map;
         c.position = to.position;

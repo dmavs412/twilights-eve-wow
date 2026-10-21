@@ -5,8 +5,15 @@
 # the nearest generated spawns are 40+ yd from its edge. Terrain flatness and nearby quests are
 # unchecked. The ground there is about z 47 (measured from the dev teleport's grounding, 2026-10-20),
 # and creatures stand at their content z, so theirs is set to it; the box reaches well past it.
+#
+# It also has one stop (#241), a 20x40 yd box 100 yd north of the building's centre, reached through an
+# inner portal. Frames: the footprint boxes are in the building's frame (`origin`, `yaw`); a stop's
+# box and its `arrival` and `return_portal` are world coordinates, not turned with the building;
+# every position (`portal`, `inner_portal`, `back`, creatures, GameObjects) is a world coordinate.
+# This building has no turn, so its footprint's frame and the world's differ only by `origin`.
 
 id = 3
+name = "the Test Grounds"
 map = 0
 origin = [-9650.0, 255.0, 0.0]
 yaw = 0.0
@@ -22,6 +29,22 @@ z = [-200.0, 400.0]
 [portal]
 position = [-9668.0, 255.0, 47.2]
 orientation = 0.0
+
+# The stop, with the portal into it standing in the building's north end.
+[[stop]]
+key = "east"
+x = [-9560.0, -9540.0]
+y = [235.0, 275.0]
+z = [-200.0, 400.0]
+arrival = [-9550.0, 255.0, 47.2, 0.0]
+return_portal = [-9547.0, 255.0, 47.2, 3.14]
+
+[[inner_portal]]
+stop = "east"
+position = [-9660.0, 265.0, 47.2]
+orientation = 0.0
+back = [-9658.0, 265.0, 47.2, 0.0]
+open = true
 
 # The dummies, in a row along the north side, 6 yd apart, facing the start. The guids are this
 # file's own (79xxxx), clear of the generated spawns and the Abbey's 78xxxx.
@@ -56,4 +79,12 @@ guid = 790004
 entry = 97002
 level = 30
 position = [-9640.0, 246.0, 47.2]
+orientation = 3.14
+
+# Training Dummy, level 5, at the stop.
+[[creature]]
+guid = 790005
+entry = 97001
+level = 5
+position = [-9545.0, 262.0, 47.2]
 orientation = 3.14

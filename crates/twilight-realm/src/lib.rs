@@ -906,6 +906,7 @@ impl Realm {
                     }
                 }
                 w.runs = owners.remove(&id).unwrap_or_default();
+                w.inner_open = shard.portals_open();
                 w.others = players
                     .iter()
                     .filter(|o| o.alive && o.guid != w.guid)
@@ -1253,6 +1254,12 @@ impl Realm {
                             // A door that stays shut.
                         } else if quest_object {
                             credited = Some(player);
+                        } else if self
+                            .characters
+                            .get_mut(player)
+                            .is_some_and(|c| w.click_stop_portal(guid, c, &mut self.events))
+                        {
+                            // A stop's portal, taken or dark.
                         } else if let Some(used) = w.use_gameobject(guid) {
                             if let Some(c) = self.characters.get(w.guid) {
                                 w.begin_hide(used, c);
@@ -1483,6 +1490,44 @@ impl Realm {
         self.serve(SessionId::DEFAULT);
         self.lent_mark = 0;
         std::mem::take(&mut self.events)
+    }
+
+    /// Opens or closes the inner portal to stop `stop` of Phased Dungeon `dungeon` in its Run.
+    /// Nothing happens while no one is in the dungeon, since its next Run opens its portals as
+    /// the content says.
+    pub fn set_inner_portal(&mut self, dungeon: u32, stop: &str, open: bool) {
+        let Some(d) = phased::dungeon(dungeon) else {
+            return;
+        };
+        let place = shard::Place {
+            map: d.map,
+            phase: phased::Phase::Dungeon(dungeon),
+        };
+        if let Some(shard) = self.shards.get_mut(&place) {
+            shard.set_portal(stop, open);
+        }
+    }
+
+    /// Teleports every character standing in stop `stop` of Phased Dungeon `dungeon` to its
+    /// inner portal's `back`, still in the Run.
+    pub fn recall_from_stop(&mut self, dungeon: u32, stop: &str) {
+        let Some(d) = phased::dungeon(dungeon) else {
+            return;
+        };
+        let Some(i) = d.stop.iter().position(|s| s.key == stop) else {
+            return;
+        };
+        let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
+            self.parked
+                .values_mut()
+                .map(|s| (&mut s.world, &mut s.events)),
+        );
+        for (w, events) in sessions {
+            let Some(w) = w.as_mut() else { continue };
+            if let Some(c) = self.characters.get_mut(w.guid) {
+                w.recall_from_stop(d, i, c, events);
+            }
+        }
     }
 
     /// The dungeon GameObject clicks since the last drain, oldest first.

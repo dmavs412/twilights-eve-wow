@@ -6,8 +6,9 @@ use benilla_protocol::SessionEvent;
 
 use super::InWorld;
 use crate::characters::Char;
+use crate::dungeon::Place;
 use crate::mobs::{self, Mob};
-use crate::phased::{self, GameObjectUse, Phase, UseKind};
+use crate::phased::{self, GameObjectUse, Phase, StopPortal, UseKind};
 use crate::population::VIEW_YD;
 use crate::quests;
 use crate::space::flat_distance;
@@ -58,6 +59,19 @@ impl InWorld {
         } else {
             Phase::OpenWorld
         };
+        // A character who walks out of a stop's box into no other box is dragged back to the
+        // building. The dead are free of it, so Release Spirit works from a stop.
+        if !self.player.alive() {
+            self.in_stop = None;
+        } else if now == Phase::OpenWorld {
+            if let Some((id, i)) = self.in_stop.take() {
+                if self.drag_back(id, i, c, events) {
+                    return;
+                }
+            }
+        } else {
+            self.in_stop = phased::stop_at(self.map, c.position);
+        }
         if now == self.phase {
             return;
         }
@@ -90,6 +104,152 @@ impl InWorld {
             self.noise_shown = 0;
         }
         self.phase = now;
+    }
+
+    /// Puts the player at the `back` of stop `stop`'s inner portal, in the same Phase and Run.
+    /// Whether the stop has one.
+    fn send_back(
+        &mut self,
+        dungeon: u32,
+        stop: usize,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let Some(d) = phased::dungeon(dungeon) else {
+            return false;
+        };
+        let Some(portal) = d.stop.get(stop).and_then(|s| d.inner_portal_of(&s.key)) else {
+            return false;
+        };
+        let [x, y, z, orientation] = portal.back;
+        let to = Place {
+            map: d.map,
+            position: [x, y, z],
+            orientation,
+        };
+        self.in_stop = None;
+        self.move_to(c, to, events);
+        true
+    }
+
+    /// The pull of the portal: the player stepped out of a stop's box and goes back to the
+    /// building.
+    fn drag_back(
+        &mut self,
+        dungeon: u32,
+        stop: usize,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        if !self.send_back(dungeon, stop, c, events) {
+            return false;
+        }
+        let name = phased::dungeon(dungeon).map_or("", |d| d.name.as_str());
+        events.push(SessionEvent::Notification {
+            text: format!("The portal's pull drags you back to {name}."),
+        });
+        true
+    }
+
+    /// Puts the player at the stop `stop` of `d` if they stand in its box: a ward stone's recall.
+    pub(crate) fn recall_from_stop(
+        &mut self,
+        d: &phased::Dungeon,
+        stop: usize,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        if self.map == d.map
+            && self.phase == Phase::Dungeon(d.id)
+            && self.player.alive()
+            && d.stop[stop].holds(c.position)
+        {
+            self.send_back(d.id, stop, c, events);
+        }
+    }
+
+    /// The player clicks the GameObject of `guid`, which may be one of a stop's two portals. An
+    /// open inner portal takes them to the stop's arrival and a return portal to the inner
+    /// portal's back; a dark one, or one out of reach, does nothing. Whether the GameObject was a
+    /// stop portal.
+    pub(crate) fn click_stop_portal(
+        &mut self,
+        guid: u64,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let Some((d, stop, kind)) = phased::Dungeon::with_stop_portal(guid) else {
+            return false;
+        };
+        let Some(object) = d
+            .stop_objects()
+            .into_iter()
+            .map(|o| o.object)
+            .find(|o| o.guid == guid)
+        else {
+            return true;
+        };
+        if d.map != self.map
+            || self.phase != Phase::Dungeon(d.id)
+            || !self.player.alive()
+            || flat_distance(object.position, c.position) > crate::space::INTERACTION_YD
+        {
+            return true;
+        }
+        match kind {
+            StopPortal::Inner => {
+                let key = &d.stop[stop].key;
+                if self.inner_open.contains(key) {
+                    let [x, y, z, orientation] = d.stop[stop].arrival;
+                    let to = Place {
+                        map: d.map,
+                        position: [x, y, z],
+                        orientation,
+                    };
+                    self.in_stop = Some((d.id, stop));
+                    self.move_to(c, to, events);
+                }
+            }
+            StopPortal::Return => {
+                self.send_back(d.id, stop, c, events);
+            }
+        }
+        true
+    }
+
+    /// Streams `d`'s stop portals in and out with the view, only while the player is in its
+    /// Phase, and an inner portal only while its stop is open.
+    fn show_stop_portals(
+        &mut self,
+        d: &phased::Dungeon,
+        me: [f32; 3],
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let mut gone = Vec::new();
+        for o in d.stop_objects() {
+            let open = o
+                .gate
+                .is_none_or(|key| self.inner_open.iter().any(|k| k == key));
+            let seen = d.map == self.map && self.phase == Phase::Dungeon(d.id) && open;
+            let d_yd = if seen {
+                flat_distance(o.object.position, me)
+            } else {
+                f32::INFINITY
+            };
+            let guid = o.object.guid;
+            if !self.dungeon_objects.contains(&guid) {
+                if d_yd <= VIEW_YD {
+                    self.dungeon_objects.insert(guid);
+                    events.push(phased::gameobject_create(&o.object));
+                }
+            } else if !seen || d_yd > VIEW_YD + 10.0 {
+                self.dungeon_objects.remove(&guid);
+                gone.push(guid);
+            }
+        }
+        if !gone.is_empty() {
+            events.push(SessionEvent::ObjectsRemoved(gone));
+        }
     }
 
     /// The meter of the Phase the player is in, if it has one.
@@ -199,6 +359,7 @@ impl InWorld {
                 events.push(SessionEvent::ObjectsRemoved(vec![d.portal_guid()]));
             }
             self.show_dungeon_objects(d, me, events);
+            self.show_stop_portals(d, me, events);
             if let Some(door) = &d.portal.door {
                 self.show_door(d, door, me, events);
             }

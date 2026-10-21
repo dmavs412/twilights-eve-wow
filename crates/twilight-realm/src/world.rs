@@ -285,6 +285,11 @@ pub(crate) struct InWorld {
     doors_shown: std::collections::HashMap<u32, bool>,
     /// The guids of the dungeon GameObjects the client has.
     dungeon_objects: std::collections::HashSet<u64>,
+    /// The stops whose inner portal is open in the Run the player is in, as of the realm's last
+    /// sync.
+    pub(crate) inner_open: Vec<String>,
+    /// The dungeon and stop whose box the player stood in at the last Phase check.
+    in_stop: Option<(u32, usize)>,
     /// The guids of the open-world quest GameObjects the client has.
     quest_objects: std::collections::HashSet<u64>,
     /// The quest GameObjects the player used, each with the seconds until it returns.
@@ -426,6 +431,8 @@ impl InWorld {
             doors_open: Vec::new(),
             doors_shown: Default::default(),
             dungeon_objects: Default::default(),
+            inner_open: Vec::new(),
+            in_stop: None,
             quest_objects: Default::default(),
             quest_spent: Vec::new(),
             noise_shown: 0,
