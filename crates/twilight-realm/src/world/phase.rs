@@ -67,7 +67,7 @@ impl InWorld {
     }
 
     /// The meter of the Phase the player is in, if it has one.
-    fn meter(&self) -> Option<&'static phased::Meter> {
+    pub(super) fn meter(&self) -> Option<&'static phased::Meter> {
         match self.phase {
             Phase::Dungeon(id) => phased::dungeon(id)?.meter.as_ref(),
             Phase::OpenWorld => None,

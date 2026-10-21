@@ -100,6 +100,9 @@ pub(crate) struct Template {
     /// The stacks its death adds to its Phased Dungeon's meter, in place of the meter's own.
     #[serde(default)]
     pub(crate) noise_on_death: Option<u32>,
+    /// It wakes the sleepers within this many yards of it as it passes.
+    #[serde(default)]
+    pub(crate) wakes_sleepers: Option<f32>,
 }
 
 /// Seconds after an inert creature last took damage before it is whole again.
@@ -153,6 +156,7 @@ impl Template {
             equip,
             inert: false,
             noise_on_death: None,
+            wakes_sleepers: None,
         }
     }
 
@@ -163,6 +167,7 @@ impl Template {
 }
 
 /// Where a mob stands when it (re)spawns.
+#[derive(Default)]
 pub(crate) struct Spawn {
     /// The spawn's low guid (24 bits).
     pub(crate) guid: u32,
@@ -187,7 +192,15 @@ pub(crate) struct Spawn {
     /// A creature a call for help brings in, not one the Run starts with: the caller's guid and
     /// which of its calls.
     pub(crate) called_by: Option<(u32, usize)>,
+    /// It starts each life asleep: no aggro, no movement, until something wakes it.
+    pub(crate) asleep: bool,
+    /// Yards added to the distance at which a character wakes it.
+    pub(crate) wake_radius_mod: f32,
 }
+
+/// The high bits of a Camp number a dungeon file names, apart from every creature guid and from
+/// a Bounty Hunter's own camp.
+const DUNGEON_CAMP: u32 = 1 << 30;
 
 /// A hand-written spawn in `mobs.toml`, a camp of its own.
 #[derive(Deserialize)]
@@ -330,6 +343,7 @@ pub(crate) fn content() -> &'static Mobs {
                     phase: Phase::OpenWorld,
                     on_health: &[],
                     called_by: None,
+                    ..Default::default()
                 })
             })
             .collect();
@@ -353,6 +367,7 @@ pub(crate) fn content() -> &'static Mobs {
                     phase: Phase::OpenWorld,
                     on_health: &[],
                     called_by: None,
+                    ..Default::default()
                 },
             ));
         }
@@ -390,6 +405,7 @@ pub(crate) fn content() -> &'static Mobs {
                 phase: Phase::OpenWorld,
                 on_health: &[],
                 called_by: None,
+                ..Default::default()
             });
         }
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
@@ -413,6 +429,7 @@ pub(crate) fn content() -> &'static Mobs {
                 phase: Phase::OpenWorld,
                 on_health: &[],
                 called_by: None,
+                ..Default::default()
             });
         }
         let mut called_guids = 0;
@@ -429,12 +446,14 @@ pub(crate) fn content() -> &'static Mobs {
                     position: c.position,
                     orientation: c.orientation,
                     display_id: t.display_id,
-                    wander_radius: 0.0,
-                    camp: c.guid,
+                    wander_radius: c.wander,
+                    camp: c.camp.map_or(c.guid, |n| DUNGEON_CAMP | d.id << 16 | n),
                     map: d.map,
                     phase: Phase::Dungeon(d.id),
                     on_health: &c.on_health,
                     called_by: None,
+                    asleep: c.asleep,
+                    wake_radius_mod: c.wake_radius_mod,
                 });
                 // The creatures its calls bring in: rows the Run does not start with, each
                 // with a guid of its own above every authored one.
@@ -458,6 +477,7 @@ pub(crate) fn content() -> &'static Mobs {
                             phase: Phase::Dungeon(d.id),
                             on_health: &[],
                             called_by: Some((c.guid, k)),
+                            ..Default::default()
                         });
                         called_guids += 1;
                     }
@@ -579,6 +599,11 @@ pub(crate) struct Mob {
     pub(crate) noised: bool,
     /// Its death has been heard by its dungeon's meter.
     pub(crate) death_noised: bool,
+    /// Asleep: no aggro, no threat, no movement, lying down on the client, until woken for the
+    /// rest of its life.
+    pub(crate) asleep: bool,
+    /// Yards added to the distance at which a character wakes it.
+    pub(crate) wake_radius_mod: f32,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -601,7 +626,11 @@ impl Mob {
     /// The mob of `content().spawn[index]` at `level`, standing at `z` (the ground under its
     /// spawn point).
     pub(crate) fn spawn(index: u32, level: u8, z: f32) -> Option<Self> {
-        let spawn = content().spawn.get(index as usize)?;
+        Self::from_spawn(content().spawn.get(index as usize)?, index, level, z)
+    }
+
+    /// The mob of `spawn`, which is `content().spawn[index]`, at `level`.
+    pub(crate) fn from_spawn(spawn: &'static Spawn, index: u32, level: u8, z: f32) -> Option<Self> {
         let template = template(spawn.entry)?;
         let stats = MobStats::new(
             template.unit_class,
@@ -640,6 +669,8 @@ impl Mob {
             spell_cooldowns: Vec::new(),
             think_in: 0.0,
             called: vec![false; spawn.on_health.len()],
+            asleep: spawn.asleep,
+            wake_radius_mod: spawn.wake_radius_mod,
             target: 0,
             threat: Default::default(),
             hunts: None,
@@ -691,6 +722,8 @@ impl Mob {
             spell_cooldowns: Vec::new(),
             think_in: 0.0,
             called: Vec::new(),
+            asleep: false,
+            wake_radius_mod: 0.0,
             target: 0,
             threat: Default::default(),
             hunts: Some(hunts),
@@ -870,6 +903,9 @@ impl Mob {
         // A Field Giver shows the quest giver flag, so the client asks for its `!` and `?`.
         if t.friendly && crate::quests::content::field_giver(t.entry) {
             pairs.push((UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER));
+        }
+        if self.asleep {
+            pairs.push((UNIT_NPC_EMOTESTATE, EMOTE_STATE_SLEEP));
         }
         pairs.extend(guid_pairs(OBJECT_FIELD_GUID, self.guid));
         SessionEvent::ObjectCreate {

@@ -33,6 +33,10 @@ clock_stack_every_s = 30.0
 on_first_damage = 1
 on_death = 1
 hide_drain_every_s = 2.0
+# A sleeper (#172) wakes when a character is within base + per_stack x stacks yards (plus its own
+# wake_radius_mod).
+wake_base_yd = 3.0
+wake_per_stack_yd = 1.5
 
 
 # Hiding spots (#170): inside the Phase only, spaced along the routes from the Portal past

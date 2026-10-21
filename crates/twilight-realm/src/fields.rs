@@ -28,6 +28,9 @@ pub(crate) const UNIT_FIELD_DISPLAYID: u16 = 131;
 pub(crate) const UNIT_FIELD_NATIVEDISPLAYID: u16 = 132;
 pub(crate) const UNIT_FIELD_MINDAMAGE: u16 = 134;
 pub(crate) const UNIT_FIELD_MAXDAMAGE: u16 = 135;
+/// `UNIT_NPC_EMOTESTATE`: the looping `Emotes.dbc` state a unit stands in, and `EMOTE_STATE_SLEEP`.
+pub(crate) const UNIT_NPC_EMOTESTATE: u16 = 148;
+pub(crate) const EMOTE_STATE_SLEEP: u32 = 3;
 pub(crate) const UNIT_FIELD_STAT0: u16 = 150;
 /// Seven schools; `[0]` is armour.
 pub(crate) const UNIT_FIELD_RESISTANCES: u16 = 155;

@@ -70,6 +70,19 @@ pub(crate) struct Creature {
     /// Items its corpse always holds, on top of the rolled loot.
     #[serde(default)]
     pub(crate) drop: Vec<u32>,
+    /// It starts each life asleep.
+    #[serde(default)]
+    pub(crate) asleep: bool,
+    /// Rows sharing a camp number are a Camp: damage to one wakes the rest.
+    #[serde(default)]
+    pub(crate) camp: Option<u32>,
+    /// Yards added to the distance at which a character wakes it (a light sleeper +, a deep
+    /// sleeper -).
+    #[serde(default)]
+    pub(crate) wake_radius_mod: f32,
+    /// How far from its point it strolls while awake and idle, in yards.
+    #[serde(default)]
+    pub(crate) wander: f32,
 }
 
 /// A creature's call for help: the first time its health is at or below `pct`% of its maximum
@@ -291,6 +304,19 @@ pub(crate) struct Meter {
     pub(crate) on_death: u32,
     /// A hiding character takes a stack off every this many seconds.
     pub(crate) hide_drain_every_s: f32,
+    /// A sleeper wakes when a character comes within this many yards, plus
+    /// `wake_per_stack_yd` for every stack, plus its own `wake_radius_mod`.
+    #[serde(default)]
+    pub(crate) wake_base_yd: f32,
+    #[serde(default)]
+    pub(crate) wake_per_stack_yd: f32,
+}
+
+impl Meter {
+    /// How near a character wakes a sleeper with this `wake_radius_mod` at `stacks`.
+    pub(crate) fn wake_radius(&self, stacks: u32, wake_radius_mod: f32) -> f32 {
+        (self.wake_base_yd + self.wake_per_stack_yd * stacks as f32 + wake_radius_mod).max(0.0)
+    }
 }
 
 impl Dungeon {

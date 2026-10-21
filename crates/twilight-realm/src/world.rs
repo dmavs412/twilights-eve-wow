@@ -35,6 +35,7 @@ mod dungeon;
 mod food;
 mod notoriety;
 mod phase;
+mod sleep;
 pub(crate) use phase::creatures;
 mod procs;
 mod regen;
@@ -572,11 +573,14 @@ impl InWorld {
         p.off_swing_timer = (p.off_swing_timer - dt).max(0.0);
         p.shot_timer = (p.shot_timer - dt).max(0.0);
 
+        self.wake_sleepers(me, events);
         // Hostile mobs notice a living player who comes too close, and bring their camp.
+        let p = &mut self.player;
         if p.alive() {
             for i in 0..self.mobs.len() {
                 let mob = &self.mobs[i];
                 if mob.state != State::Idle
+                    || mob.asleep
                     || !mob.template.hostile
                     || mob.hunts.is_some_and(|owner| owner != self.guid)
                 {
@@ -639,6 +643,7 @@ impl InWorld {
             let d = distance(mob.position, at);
             if mob.camp == camp
                 && mob.state == State::Idle
+                && !mob.asleep
                 && mob.assist_in.is_none()
                 && d <= aggro::SOCIAL_RANGE_YD
             {
@@ -902,6 +907,10 @@ impl InWorld {
                     mob.since_hurt = Some(t + dt);
                 }
             }
+            return;
+        }
+        // Asleep: no aggro, no threat, no movement, until `wake_sleepers` wakes it.
+        if mob.asleep {
             return;
         }
         if let Some(t) = mob.assist_in {

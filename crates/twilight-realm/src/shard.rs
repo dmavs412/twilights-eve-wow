@@ -318,6 +318,8 @@ mod tests {
             on_first_damage: 1,
             on_death: 1,
             hide_drain_every_s: 2.0,
+            wake_base_yd: 3.0,
+            wake_per_stack_yd: 1.5,
         }
     }
 
