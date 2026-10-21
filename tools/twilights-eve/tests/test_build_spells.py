@@ -898,9 +898,11 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         self.built_skill(requires_weapon="any_ranged")
         self.assertEqual(self.patch["spells"][0]["fields"]["equipped_subclass_mask"],
                          (1 << 2) | (1 << 3) | (1 << 16) | (1 << 18) | (1 << 19))
+        self.built_skill(requires_weapon="two_hand")
+        self.assertEqual(self.patch["spells"][0]["fields"]["equipped_inventory_mask"], 1 << 17)
+        # Every melee weapon, spelled as two aliases: no DBC gate, as for any_melee (#168).
         self.built_skill(requires_weapon="one_hand|two_hand")
-        self.assertEqual(self.patch["spells"][0]["fields"]["equipped_inventory_mask"],
-                         (1 << 13) | (1 << 17) | (1 << 21) | (1 << 22))
+        self.assertNotIn("equipped_item_class", self.patch["spells"][0]["fields"])
         self.built_skill()
         self.assertNotIn("equipped_item_class", self.patch["spells"][0]["fields"])
 
