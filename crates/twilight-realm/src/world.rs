@@ -441,7 +441,7 @@ impl InWorld {
         });
         // Being attacked turns a mob on its attacker (`CreatureAI::AttackedBy`).
         if self.mobs[i].state == State::Idle {
-            self.pull(i, events);
+            self.pull(i, None, events);
         }
     }
 
@@ -590,7 +590,7 @@ impl InWorld {
                 if distance(mob.position, me) <= r
                     && host.line_of_sight(self.map, eye(mob.position), eye(me))
                 {
-                    self.pull(i, events);
+                    self.pull(i, Some(host), events);
                 }
             }
         }
@@ -631,10 +631,12 @@ impl InWorld {
 
     /// Mob `i` turns on the player. A hostile mob calls the idle campmates within earshot, each
     /// of whom joins after a short delay (social aggro); a neutral one comes alone. The call
-    /// goes one hop: a mob that joins calls no one.
-    fn pull(&mut self, i: usize, events: &mut Vec<SessionEvent>) {
+    /// goes one hop: a mob that joins calls no one. With a `host`, a campmate joins only when it
+    /// has line of sight to the pulled mob; an attack passes none and calls through walls.
+    fn pull(&mut self, i: usize, host: Option<&dyn Host>, events: &mut Vec<SessionEvent>) {
         let camp = self.mobs[i].camp;
         let at = self.mobs[i].position;
+        let map = self.map;
         engage(&mut self.mobs[i], self.guid, events);
         if !self.mobs[i].template.hostile {
             return;
@@ -646,6 +648,7 @@ impl InWorld {
                 && !mob.asleep
                 && mob.assist_in.is_none()
                 && d <= aggro::SOCIAL_RANGE_YD
+                && host.map_or(true, |h| h.line_of_sight(map, eye(mob.position), eye(at)))
             {
                 mob.assist_in = Some(aggro::social_delay(d));
             }
@@ -811,7 +814,7 @@ impl InWorld {
             self.refresh_gear(c, events);
         }
         if idle {
-            self.pull(i, events);
+            self.pull(i, None, events);
         }
         if self.mobs[i].health == 0 {
             self.kill(i, c, rng, events, ticked);

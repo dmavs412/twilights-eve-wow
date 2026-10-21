@@ -276,6 +276,25 @@ fn a_mob_notices_a_player_by_level_difference_and_brings_its_camp() {
 }
 
 #[test]
+fn a_campmate_behind_a_wall_from_the_pulled_mob_stays_idle() {
+    let (mut realm, _) = warrior_at(1);
+    let wolves = camp_units(&mut realm, "low-6");
+    let wolf = northernmost(&wolves);
+    let r = 18.0 + (wolf.1.level as f32 - 1.0);
+    let at = north_of(wolf.1.position, r - 1.0);
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: at,
+        orientation: 0.0,
+    });
+    let mut events = run_in(&mut realm, 0.0, &Walled);
+    events.extend(run_in(&mut realm, 3.0, &Walled));
+    let pulled: HashSet<u64> = attackers(&events).collect();
+    assert!(pulled.contains(&wolf.0), "the wolf sees the player");
+    assert_eq!(pulled, HashSet::from([wolf.0]), "no campmate sees the wolf");
+}
+
+#[test]
 fn a_neutral_mob_waits_to_be_attacked_and_leaves_its_campmates_idle() {
     // The Plainstriders (1–2, neutral).
     let (mut realm, me) = warrior_at(1);
@@ -518,6 +537,22 @@ impl Host for NoGround {
     }
 }
 
+/// A host with a wall between every two bodies within 8.5 yd of each other: the campmates cannot
+/// see each other, while the player, who notices from farther out, is seen.
+struct Walled;
+
+impl Host for Walled {
+    fn ground_height(&self, _map: u32, _x: f32, _y: f32, _z_hint: f32) -> Option<f32> {
+        None
+    }
+    fn line_of_sight(&self, _map: u32, from: [f32; 3], to: [f32; 3]) -> bool {
+        distance2(from, to) > 8.5
+    }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
+}
+
 /// Moves the player to `at` (facing north) and ticks once.
 fn teleport(realm: &mut Realm, at: [f32; 3]) -> Vec<SessionEvent> {
     realm.handle(RealmCommand::Move {
@@ -530,12 +565,17 @@ fn teleport(realm: &mut Realm, at: [f32; 3]) -> Vec<SessionEvent> {
 
 /// Ticks `secs` in 0.1 s steps (the first tick at once), collecting the events.
 fn run(realm: &mut Realm, secs: f32) -> Vec<SessionEvent> {
+    run_in(realm, secs, &NoGround)
+}
+
+/// [`run`] on `host`.
+fn run_in(realm: &mut Realm, secs: f32, host: &dyn Host) -> Vec<SessionEvent> {
     let mut events = Vec::new();
-    realm.tick(0.0, &NoGround);
+    realm.tick(0.0, host);
     events.extend(drain(realm));
     let mut t = 0.0;
     while t < secs - 1e-3 {
-        realm.tick(0.1, &NoGround);
+        realm.tick(0.1, host);
         events.extend(drain(realm));
         t += 0.1;
     }
