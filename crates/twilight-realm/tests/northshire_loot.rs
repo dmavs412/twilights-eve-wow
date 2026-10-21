@@ -5,9 +5,10 @@
 mod common;
 mod gear_common;
 
-use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
+use benilla_protocol::{SessionEvent, START_ELWYNN};
+use common::fight::unit_of_level;
 use common::*;
-use gear_common::{descriptor, last_health};
+use gear_common::last_health;
 use twilight_realm::rules::loot::{northshire_green_rows, northshire_whites};
 use twilight_realm::{Realm, RealmCommand};
 
@@ -50,7 +51,7 @@ fn the_whites_are_the_22_token_whites_and_the_greens_the_21_world_greens_at_thei
 
 /// Kobold Laborer, level 6 to 7 in Echo Ridge Mine at Northshire's far end; the level of each
 /// spawn is a hash of its guid, the same in every world.
-const KOBOLD_LABORER: u64 = 80;
+const KOBOLD_LABORER: u32 = 80;
 /// The mine's mouth, among the laborers.
 const MINE_AT: [f32; 2] = [-8630.0, -143.0];
 /// Tunneler's Maul, so the fight is short.
@@ -80,30 +81,6 @@ fn warrior_blob() -> (u64, String) {
     (guid, blob)
 }
 
-fn entry_of(unit: u64) -> u64 {
-    (unit >> 24) & 0xFF_FFFF
-}
-
-/// The nearest level 6 laborer in view: its guid and position.
-fn a_level_6_laborer(events: &[SessionEvent]) -> Option<(u64, [f32; 3])> {
-    events
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::ObjectCreate {
-                guid,
-                kind: EntityKind::Unit,
-                position,
-                ..
-            } if entry_of(*guid) == KOBOLD_LABORER => Some((*guid, *position)),
-            _ => None,
-        })
-        .filter(|(guid, _)| descriptor(events, *guid).unit_level() == Some(6))
-        .min_by(|(_, a), (_, b)| {
-            let d = |p: &[f32; 3]| (p[0] - MINE_AT[0]).powi(2) + (p[1] - MINE_AT[1]).powi(2);
-            d(a).total_cmp(&d(b))
-        })
-}
-
 /// One kill of a level 6 laborer in a fresh world at `seed`: what its corpse holds, or `None`
 /// when the warrior fell or the fight ran long.
 fn kill_a_laborer(seed: u64, guid: u64, blob: &str) -> Option<Vec<u32>> {
@@ -122,7 +99,8 @@ fn kill_a_laborer(seed: u64, guid: u64, blob: &str) -> Option<Vec<u32>> {
         realm.tick(0.1, &FlatGround);
         events.extend(drain(&mut realm));
     }
-    let (mob, at) = a_level_6_laborer(&events).expect("a level 6 laborer at the mine's mouth");
+    let (mob, at) = unit_of_level(&events, KOBOLD_LABORER, 6, MINE_AT)
+        .expect("a level 6 laborer at the mine's mouth");
     realm.handle(RealmCommand::DevTeleport {
         x: at[0] + 1.5,
         y: at[1],

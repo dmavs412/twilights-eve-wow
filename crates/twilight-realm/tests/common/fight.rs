@@ -2,7 +2,7 @@
 //! steps a fight repeats (stand by a mob, cast at it, read a refusal).
 
 use benilla_protocol::messages::UnitAuraSlot;
-use benilla_protocol::{ObjectFields, SessionEvent};
+use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 use twilight_realm::{Realm, RealmCommand};
 
 use super::{drain, FlatGround};
@@ -11,6 +11,38 @@ use super::{drain, FlatGround};
 pub const CROSSROADS_XY: [f32; 3] = [-441.8, -2648.6, 0.0];
 /// A camp of four level 3 mobs south of the Crossroads (`content/barrens.toml`, 9000011).
 pub const CAMP: [f32; 3] = [-376.0, -2837.0, 0.0];
+
+/// The unit of creature `entry` at `level` nearest `at` among the creates in `events`: its guid
+/// and position. A spawn's level is a hash of its guid (`population.rs`), the same in every
+/// world, so a script that needs a mob of one level picks it from the view rather than seeding
+/// for it.
+pub fn unit_of_level(
+    events: &[SessionEvent],
+    entry: u32,
+    level: u32,
+    at: [f32; 2],
+) -> Option<(u64, [f32; 3])> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: EntityKind::Unit,
+                position,
+                fields,
+                ..
+            } if (guid >> 24) & 0xFF_FFFF == u64::from(entry)
+                && fields.unit_level() == Some(level) =>
+            {
+                Some((*guid, *position))
+            }
+            _ => None,
+        })
+        .min_by(|(_, a), (_, b)| {
+            let d = |p: &[f32; 3]| (p[0] - at[0]).powi(2) + (p[1] - at[1]).powi(2);
+            d(a).total_cmp(&d(b))
+        })
+}
 
 /// A mob, as its create shows it.
 #[derive(Clone)]

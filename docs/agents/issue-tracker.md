@@ -14,6 +14,8 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 **Always pass `-R dmavs412/twilights-eve-wow`.** This clone is a fork of `OutThisLife/azeroth-survivors-re`; without `-R`, `gh` targets the parent repository, not ours.
 
+**A ticket's numbers come from its own lists.** Count the rows a ticket summarises before writing the count in its title or body, and compute every worked example from the rule the ticket states. A Build lane session takes the ticket's words as the contract; a count that disagrees with the list, or an example that disagrees with the rule, costs it a cycle and a judgement call it then records in the issue.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_

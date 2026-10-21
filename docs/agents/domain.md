@@ -49,3 +49,10 @@ If the concept you need isn't in the glossary yet, that's a signal: either you'r
 If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
 
 > _Contradicts ADR-0007 (event-sourced orders), but worth reopening because…_
+
+## World tests that need a mob of one level
+
+A spawn's level is a hash of its guid (`crates/twilight-realm/src/population.rs`), the same in
+every world, after the Elwynn Level Bands and `level_overrides.toml` have set its range. Seeding
+never changes it. Pick the mob from the entry burst with `unit_of_level` in
+`crates/twilight-realm/tests/common/fight.rs`, as `tests/northshire_loot.rs` does.

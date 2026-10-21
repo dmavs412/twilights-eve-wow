@@ -75,6 +75,13 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   `CARGO_BUILD_JOBS=4` is in the user environment. Davis plays from a `play/` copy
   (gitignored, newest 3 kept), because a running exe cannot be overwritten.
 - `WOW_PROBE=list` lists the variables that drive a run with no one at the keyboard.
+- Files on disk are CRLF (`core.autocrlf=true`). An edit script converts its anchors to the
+  file's line ending before matching; a count of 0 means the ending, not the text. Write a
+  script with the Write tool and run it by path: a heredoc or a `-c` string turns `\r\n` into
+  real newlines on the way through the shell.
+- The vmangos world DB is a sqlite dump at
+  `C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite`; Python opens that
+  path, never the Git Bash `/tmp/vmangos/...` form.
 
 ## Issue tracker
 
