@@ -70,6 +70,9 @@ pub(crate) struct Template {
     /// The quest it begins (a Quest Starter), 0 for none: the client shows "This item begins a
     /// quest", and using it opens the quest's offer.
     pub(crate) start_quest: u32,
+    /// A teleport scroll: where its use spell (the Hearthstone's) takes the reader on the same map,
+    /// `[x, y, z, facing]`, using the scroll up. None for any other item.
+    pub(crate) teleport_to: Option<[f32; 4]>,
     /// The tooltip's yellow flavor line; empty for none.
     pub(crate) description: String,
 }
@@ -105,6 +108,7 @@ impl Default for Template {
             bonding: 0,
             max_count: 0,
             start_quest: 0,
+            teleport_to: None,
             description: String::new(),
             stackable: 0,
             container_slots: 0,

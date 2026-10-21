@@ -985,6 +985,113 @@ position = [-9132.0, -1128.0, 70.0]
 orientation = 0.5
 respawn = 90.0
 
+# ── Tower of Azora (#225) ──
+# The Phased Dungeon of content/azora.toml. Theocritus stands bound in the top chamber in every Run
+# and gives and takes his quests there; Toren stays at the tower's base (hub.toml). Three wards,
+# not four. All rewards are placeholders.
+
+[[quest]]
+id = 94601
+kind = "story"
+giver = 190062
+after = 94503
+level = 19
+title = "The Tower Is Open"
+objectives = "Pin the three ward stones of the Tower of Azora, at the lake, the foothills and the old tower, and report to Toren."
+details = "The master put three wards on the tower, and the cult has hung them out where I cannot reach: one in the shallows of the lake, one up in the Blackrock foothills, one at the foot of the Ilgalar tower. Each is held by a guard the cult left behind. The portals inside the tower lead to them, the lake's first. Kill the guard, put your hand on the stone, and the next portal opens."
+progress = "Are the wards pinned? Which are left?"
+completion = "Three stones, three pins. I felt the tower sigh from out here. The way up is open. Mind the top: the master is up there, and he is not alone."
+money = 0
+tokens = 0
+zone_or_sort = 12
+use = [[975001, 1], [975002, 1], [975003, 1]]
+
+[[quest]]
+id = 94602
+kind = "story"
+giver_object = 975004
+ender = 190062
+after_taken = 94601
+level = 21
+title = "The Apprentice's Secret"
+objectives = "Take the note from Morganth's ore cache to Toren, outside the Tower of Azora."
+details = "The cache is lined with the same humming ore as the shard. Under the lid there is a note, in a careful hand, signed M., Ilgalar. It says the rod in the tower's heart was never the master's work, and that the one who set it there is bound to the stone. Toren should read this."
+progress = "You have something from the cache?"
+completion = "M. Ilgalar. Morganth. I thought he died, and that was the whole sorrow of it. If this is true, then the master was not the first to lean on the tower. I will run the note to the town myself. Go on up and finish what you started."
+money = 0
+tokens = 0
+zone_or_sort = 12
+
+[[quest]]
+id = 94603
+kind = "once"
+giver = 313
+after = 94601
+level = 22
+title = "Theocritus Unbound"
+objectives = "Kill the Shadow of Morganth in the top chamber of the Tower of Azora, and report to Theocritus."
+details = "Do you see the cord? It is not rope. I have been bound to this floor since the dusk the rod went in, and the thing that stands where my work table was has Morganth's old face and none of his mind. Put it down, and the cord will let go of me. Take this scroll when it does. It will bring you back to my door whenever you need it."
+progress = "It still stands. I can feel it through the cord."
+completion = "The cord is gone. Dear gods, the air. Take the scroll and the coin; there is more I owe you than either."
+money = 1200
+tokens = 3
+zone_or_sort = 12
+kill = [[96037, 1]]
+rewards = [[980022, 1]]
+
+[[quest]]
+id = 94604
+kind = "story"
+giver = 313
+ender = 240
+after = 94603
+level = 22
+title = "Where It Pointed"
+objectives = "Take Theocritus's letter to Marshal Dughan in Goldshire."
+details = "The rod pointed at something when Morganth set it, and the ore carries the direction in its hum. Dughan keeps the maps. Take him this letter, and tell him the tower was a signpost, not a prize."
+progress = "Have you seen the marshal yet?"
+completion = "A signpost. Aye, I can see what it points at, and I do not like it. Thank you for this. Go and rest; you have earned it."
+money = 0
+tokens = 0
+zone_or_sort = 12
+
+# Ward Shards fall from the tower's gnolls, acolytes and voidwalkers. Toren and Theocritus each
+# give the bounty, and the quest model has one giver, so Theocritus's is 94606: the same objective,
+# the same item and the same pay.
+[[quest]]
+id = 94605
+kind = "bounty"
+giver = 190062
+level = 21
+min_level = 17
+max_level = 26
+title = "Ward Shards"
+objectives = "Bring 10 Ward Shards to Toren."
+details = "Whatever the cult's wards are made of, it breaks off the creatures that carry them in chips like glass. I can grind a chip down into something safe to hold. Bring me ten from the tower's gnolls, its acolytes and the voidwalkers, and I will pay for the lot."
+progress = "How many shards have you got?"
+completion = "Ten. That is a good handful; the tower is a little quieter for it. Here is the pay, and come back with more if you can."
+money = 500
+tokens = 3
+zone_or_sort = 12
+collect = [{ item = 980021, count = 10, from = [96029], chance = 35, sources = [{ from = [96031, 96033], chance = 100 }] }]
+
+[[quest]]
+id = 94606
+kind = "bounty"
+giver = 313
+level = 21
+min_level = 17
+max_level = 26
+title = "Ward Shards"
+objectives = "Bring 10 Ward Shards to Theocritus."
+details = "My wards are broken glass now, and the glass is on the floor of my tower. Bring me ten shards from the gnolls, the acolytes and the voidwalkers, and I will find a use for them. I will pay for the lot."
+progress = "How many shards have you got?"
+completion = "Ten. I will melt them down and set the wards again, properly this time. The pay is yours."
+money = 500
+tokens = 3
+zone_or_sort = 12
+collect = [{ item = 980021, count = 10, from = [96029], chance = 35, sources = [{ from = [96031, 96033], chance = 100 }] }]
+
 [[gameobject]]
 guid = 790512
 entry = 980105

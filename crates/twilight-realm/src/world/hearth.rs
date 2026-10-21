@@ -45,6 +45,26 @@ impl InWorld {
         }
     }
 
+    /// A teleport scroll goes off: the carried item of guid `item` is used up and the reader is
+    /// teleported to `[x, y, z, facing]`. A stop's pull does not hold a reader.
+    pub(super) fn read_scroll(
+        &mut self,
+        item: u64,
+        [x, y, z, facing]: [f32; 4],
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let slot = c
+            .inventory
+            .iter()
+            .find_map(|(slot, i)| (i.guid == item).then_some(slot));
+        if let Some(slot) = slot {
+            super::food::use_up_one(slot, c, events);
+        }
+        self.in_stop = None;
+        self.teleport(c, [x, y, z], facing, events);
+    }
+
     /// Moves the player on its own map: the fight ends, and the client snaps there.
     pub(super) fn teleport(
         &mut self,

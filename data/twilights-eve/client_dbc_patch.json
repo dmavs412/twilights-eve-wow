@@ -11973,6 +11973,183 @@
     "cast_time_index": 4,
     "duration_index": 1
    }
+  },
+  {
+   "spell_id": 1900022,
+   "creature": "shadow_bolt_creature",
+   "fields": {
+    "name": "Shadow Bolt",
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowBolt",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 18,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "aura_description": "$s1 Shadow damage every $t1 seconds.",
+    "visual": 64,
+    "speed": 20.0,
+    "range_index": 4,
+    "cast_time_index": 19,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1900023,
+   "creature": "drowning_grasp",
+   "fields": {
+    "name": "Drowning Grasp",
+    "icon": "Interface\\Icons\\Spell_Nature_StrangleVines",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 26
+     }
+    ],
+    "aura_description": "Unable to move.",
+    "visual": 38,
+    "range_index": 4,
+    "cast_time_index": 16,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1900024,
+   "creature": "flame_patch_creature",
+   "fields": {
+    "name": "Flame Patch",
+    "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
+    "school": 2,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 33,
+    "range_index": 4,
+    "cast_time_index": 16,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1900025,
+   "creature": "void_shield_creature",
+   "fields": {
+    "name": "Void Shield",
+    "icon": "Interface\\Icons\\Spell_Holy_PowerWordShield",
+    "school": 5,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 60,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "aura_description": "Absorbs $s1 damage.",
+    "visual": 784,
+    "range_index": 1,
+    "cast_time_index": 4,
+    "duration_index": 1
+   }
+  },
+  {
+   "spell_id": 1900026,
+   "creature": "kept_heal",
+   "fields": {
+    "name": "Lesser Heal",
+    "icon": "Interface\\Icons\\Spell_Holy_LesserHeal",
+    "school": 1,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 285,
+    "range_index": 1,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1900027,
+   "creature": "shadow_nova_creature",
+   "fields": {
+    "name": "Shadow Nova",
+    "icon": "Interface\\Icons\\Spell_Shadow_ShadowBolt",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 64,
+    "speed": 20.0,
+    "range_index": 14,
+    "cast_time_index": 14
+   }
+  },
+  {
+   "spell_id": 1900028,
+   "creature": "terrify_creature",
+   "fields": {
+    "name": "Fear",
+    "icon": "Interface\\Icons\\Spell_Shadow_PsychicScream",
+    "school": 5,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 7
+     }
+    ],
+    "aura_description": "Running in fear.",
+    "visual": 107,
+    "range_index": 4,
+    "cast_time_index": 16,
+    "duration_index": 32
+   }
   }
  ],
  "talent_tabs": [

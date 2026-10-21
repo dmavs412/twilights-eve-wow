@@ -5404,7 +5404,10 @@ impl InWorld {
                 c.item_cooldowns.push((cast.entry, wall + rest));
             }
         }
-        self.item_spell_effect(cast.spell_id, c, events);
+        match items::template(cast.entry).and_then(|t| t.teleport_to) {
+            Some(to) => self.read_scroll(cast.item, to, c, events),
+            None => self.item_spell_effect(cast.spell_id, c, events),
+        }
     }
 }
 

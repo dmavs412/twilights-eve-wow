@@ -435,6 +435,8 @@ fn done_for_now(c: &Char, q: &Quest) -> bool {
 /// Whether every quest `q` comes after is handed in.
 fn after_met(c: &Char, q: &Quest) -> bool {
     q.after.ids().iter().all(|p| c.quests.completed.contains(p))
+        && q.after_taken
+            .is_none_or(|p| c.quests.get(p).is_some() || c.quests.completed.contains(&p))
 }
 
 /// `quest`, if it is in the player's log and `g` takes it in.

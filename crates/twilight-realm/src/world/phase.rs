@@ -549,14 +549,25 @@ impl InWorld {
     /// The entry of the quest GameObject `guid` when it gives quests, is in the player's view and
     /// stands within `at`'s interaction range.
     pub(crate) fn giver_object_within_reach(&self, guid: u64, at: [f32; 3]) -> Option<u32> {
-        let o = quests::content::objects()
+        let (entry, position, in_view) = match quests::content::objects()
             .into_iter()
-            .find(|o| o.object_guid() == guid)?;
-        (self.quest_objects.contains(&guid)
+            .find(|o| o.object_guid() == guid)
+        {
+            Some(o) => (o.entry, o.position, self.quest_objects.contains(&guid)),
+            None => {
+                // A Phased Dungeon's GameObject that gives quests, in the Run's view.
+                let o = phased::content()
+                    .iter()
+                    .flat_map(|d| &d.gameobject)
+                    .find(|o| o.gives_quests && o.object_guid() == guid)?;
+                (o.guid, o.position, self.dungeon_objects.contains(&guid))
+            }
+        };
+        (in_view
             && self.player.alive()
-            && flat_distance(o.position, at) <= crate::space::INTERACTION_YD
-            && quests::content::offered_by_object(o.entry).next().is_some())
-        .then_some(o.entry)
+            && flat_distance(position, at) <= crate::space::INTERACTION_YD
+            && quests::content::offered_by_object(entry).next().is_some())
+        .then_some(entry)
     }
 
     /// The player clicks the GameObject of `guid`: what it asks for, if it is one of the Phase's

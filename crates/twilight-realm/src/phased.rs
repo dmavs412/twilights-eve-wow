@@ -334,6 +334,9 @@ pub(crate) struct DungeonObject {
     /// What a `use = "ward"` does.
     #[serde(default)]
     pub(crate) ward: Option<Ward>,
+    /// A quest's `giver_object` names this GameObject's guid as its entry: a click offers it.
+    #[serde(default)]
+    pub(crate) gives_quests: bool,
     #[serde(flatten)]
     pub(crate) appears: Appears,
 }
@@ -350,7 +353,7 @@ impl DungeonObject {
             entry: self.guid,
             display_id: self.display,
             type_id: GENERIC,
-            flags: if self.use_kind.is_some() {
+            flags: if self.use_kind.is_some() || self.gives_quests {
                 0
             } else {
                 NOT_SELECTABLE
@@ -695,7 +698,7 @@ pub(crate) fn is_door(entry: u32) -> bool {
         d.portal.door.as_ref().is_some_and(|o| o.entry == entry)
             || d.gameobject
                 .iter()
-                .any(|o| o.guid == entry && o.use_kind == Some(UseKind::Ward))
+                .any(|o| o.guid == entry && (o.use_kind == Some(UseKind::Ward) || o.gives_quests))
     })
 }
 
@@ -716,6 +719,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/gaze_hall.toml"),
             include_str!("../content/jasperlode.toml"),
             include_str!("../content/ward_test.toml"),
+            include_str!("../content/azora.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))

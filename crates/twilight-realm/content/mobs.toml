@@ -968,6 +968,209 @@ detection_range = 18.0
 respawn_secs = 300.0
 spells = ["lightning_bolt_gnoll"]
 
+# The Tower of Azora (#244, azora.toml). Every multiplier is a placeholder, untested against a
+# level 19 to 22. The displays are the nearest stock ones this session could name without the
+# vmangos dump (it could not be opened): 512 is the Riverpaw Gnoll's and 502 the Riverpaw Mystic's
+# (both already in this file), 2882 is the Twilight Acolyte's (vmangos entry 4809), 1132 is the
+# Voidwalker's. Faction 14 is the cultists'. Davis checks every display in game.
+
+# The leaked packs and the water stop: melee gnolls, normal.
+[[template]]
+entry = 96029
+name = "Shadowhide Gnoll"
+creature_type = 7
+display_id = 512
+faction_template = 14
+unit_class = "warrior"
+level_min = 19
+level_max = 19
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
+# The water stop's casters: the Twilight Disciple's Shadow Word: Pain.
+[[template]]
+entry = 96030
+name = "Shadowhide Darkweaver"
+creature_type = 7
+display_id = 502
+faction_template = 14
+unit_class = "mage"
+level_min = 19
+level_max = 19
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["shadow_word_pain_creature"]
+
+# The floor 75 pack and the fire stop: elite acolytes with Shadow Word: Pain.
+[[template]]
+entry = 96031
+name = "Twilight Acolyte"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 20
+level_max = 20
+health_multiplier = 1.2
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["shadow_word_pain_creature"]
+
+# The fire stop's imps: melee, elite.
+[[template]]
+entry = 96032
+name = "Lesser Voidwalker"
+creature_type = 7
+rank = 1
+display_id = 1132
+faction_template = 14
+unit_class = "warrior"
+level_min = 20
+level_max = 20
+health_multiplier = 1.2
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+
+# The floor 90 pack and the shadow stop: melee, elite.
+[[template]]
+entry = 96033
+name = "Voidwalker"
+creature_type = 7
+rank = 1
+display_id = 1132
+faction_template = 14
+unit_class = "warrior"
+level_min = 21
+level_max = 21
+health_multiplier = 1.3
+damage_multiplier = 0.4
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+
+# The water stop's mini-boss: Shadow Bolt, the Corruption curse and Drowning Grasp.
+[[template]]
+entry = 96034
+name = "Gresh the Drowned"
+creature_type = 7
+rank = 1
+display_id = 502
+faction_template = 14
+unit_class = "mage"
+level_min = 20
+level_max = 20
+health_multiplier = 2.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["shadow_bolt_creature", "corruption_creature", "drowning_grasp"]
+
+# The fire stop's mini-boss: Shadow Bolt, the Eye's Mind Flay snare (the only ranged snare) and
+# Flame Patch.
+[[template]]
+entry = 96035
+name = "Speaker Thane"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 21
+level_max = 21
+health_multiplier = 2.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["shadow_bolt_creature", "eye_mind_flay", "flame_patch_creature"]
+
+# The shadow stop's mini-boss: melee, a self-heal under 50% and Void Shield.
+[[template]]
+entry = 96036
+name = "The Kept"
+creature_type = 7
+rank = 1
+display_id = 1132
+faction_template = 14
+unit_class = "warrior"
+level_min = 22
+level_max = 22
+health_multiplier = 2.5
+damage_multiplier = 0.5
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 18.0
+spells = ["kept_heal", "void_shield_creature"]
+
+# The top chamber's boss. Morganth's model is not known: the Twilight Acolyte's body stands in. It
+# never swings (`melee = false`), casts a bolt, a nova and a fear, and never walks.
+[[template]]
+entry = 96037
+name = "Shadow of Morganth"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 22
+level_max = 22
+health_multiplier = 4.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 0.0
+speed_run = 0.0
+detection_range = 40.0
+melee = false
+spells = ["shadow_bolt_creature", "shadow_nova_creature", "terrify_creature"]
+
+# What the Shadow's clock brings every 20 s: the gnoll again, level 21, elite.
+[[template]]
+entry = 96038
+name = "Shadowhide Gnoll"
+creature_type = 7
+rank = 1
+display_id = 512
+faction_template = 14
+unit_class = "warrior"
+level_min = 21
+level_max = 21
+health_multiplier = 1.2
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 18.0
+
 # The Test Grounds' training dummies (test_grounds.toml): `inert`, so they never move or fight and
 # heal to full 10 s after the last hit. Faction 14 shows them attackable; display 3277 (the
 # Corrupted Brother's) is a placeholder body.

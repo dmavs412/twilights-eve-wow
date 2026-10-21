@@ -62,6 +62,11 @@ item = [
   # Resonant Shard is Quest Starter of An Echo in the Ore; Toren takes it. Ilsa takes the marks.
   { entry = 980019, name = "Resonant Shard", quality = 1, item_level = 19, class = 12, display_id = 7697, max_count = 1, start_quest = 94503 },
   { entry = 980020, name = "Riverpaw Scout Mark", quality = 1, item_level = 18, class = 12, display_id = 7255, stackable = 20 },
+  # The Tower of Azora (#244). Displays are placeholders borrowed from stock quest items. Ward
+  # Shards are 94605's; the scroll is 94603's reward: it reads with the Hearthstone's spell (8690,
+  # a 10 s cast), is used up, and puts the reader at the tower's door outside.
+  { entry = 980021, name = "Ward Shard", quality = 1, item_level = 21, class = 12, display_id = 7697, stackable = 20 },
+  { entry = 980022, name = "Azora Teleport Scroll", quality = 1, item_level = 22, class = 0, display_id = 6270, stackable = 1, use_spell = 8690, teleport_to = [-9547.0, -716.0, 62.0, 3.14], description = "Teleports you to the door of the Tower of Azora." },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

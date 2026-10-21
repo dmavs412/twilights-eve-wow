@@ -236,7 +236,7 @@ impl InWorld {
 }
 
 /// Takes one of the stack in `slot` out of the bags, telling the client: the item's guid.
-fn use_up_one(
+pub(super) fn use_up_one(
     slot: crate::inventory::Pos,
     c: &mut Char,
     events: &mut Vec<SessionEvent>,

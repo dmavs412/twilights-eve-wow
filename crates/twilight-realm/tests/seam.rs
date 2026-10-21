@@ -309,6 +309,7 @@ fn shipped_creatures() -> Creatures {
             "jasperlode.toml",
             include_str!("../content/jasperlode.toml"),
         ),
+        ("azora.toml", include_str!("../content/azora.toml")),
     ] {
         for s in entries(&toml_file(src), "creature") {
             c.spawns

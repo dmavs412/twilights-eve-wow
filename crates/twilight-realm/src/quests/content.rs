@@ -236,6 +236,10 @@ pub(crate) struct Quest {
     /// The quests that must all be handed in before this one is offered.
     #[serde(default)]
     pub(crate) after: After,
+    /// A quest that must be in the log or handed in before this one is offered: `after` asks for
+    /// the hand-in alone.
+    #[serde(default)]
+    pub(crate) after_taken: Option<u32>,
     pub(crate) level: u8,
     min_level: Option<u8>,
     /// The highest level it is offered at; none by default.
