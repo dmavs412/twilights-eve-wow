@@ -719,6 +719,18 @@ impl InWorld {
         if !self.player.alive() && !self.player.dead {
             self.die(c, events);
         }
+        // A creature in combat with the character, or the character attacking one, fails a quest
+        // that asks not to be seen.
+        if crate::quests::watches_for_sight(c) {
+            let fighting = self.player.attacking.is_some()
+                || self
+                    .mobs
+                    .iter()
+                    .any(|m| m.state == State::Engaged && m.target == self.guid && !m.remote);
+            if fighting {
+                crate::quests::seen(c, events);
+            }
+        }
         self.update_combat(dt, events);
         self.eat(dt, c, events);
         self.regenerate(dt, c, events);

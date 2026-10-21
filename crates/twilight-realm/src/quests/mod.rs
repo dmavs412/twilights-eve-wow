@@ -12,6 +12,7 @@
 pub(crate) mod content;
 mod dialogs;
 
+use benilla_protocol::messages::ChatMessage;
 use benilla_protocol::SessionEvent;
 
 use crate::characters::Char;
@@ -32,6 +33,10 @@ pub(crate) const LOG_SLOTS: u8 = 20;
 const PLAYER_QUEST_LOG_1_1: u16 = 198;
 /// `QUEST_STATE_COMPLETE`, in the slot's state byte.
 const QUEST_STATE_COMPLETE: u32 = 0x01;
+/// `QUEST_STATE_FAILED`, in the slot's state byte.
+const QUEST_STATE_FAILED: u32 = 0x02;
+/// The system chat line type (`CHAT_MSG_SYSTEM`).
+const CHAT_MSG_SYSTEM: u8 = 0x0A;
 
 /// A quest in the character's log.
 #[derive(Debug, Clone, PartialEq)]
@@ -45,6 +50,8 @@ pub(crate) struct Active {
     pub(crate) explored: bool,
     /// Whether the client was last told it is complete; worked out again at load.
     done: bool,
+    /// Whether it has failed: it gains no credit and cannot be handed in, until it is abandoned.
+    pub(crate) failed: bool,
 }
 
 impl Active {
@@ -55,6 +62,7 @@ impl Active {
             kills,
             explored: false,
             done: false,
+            failed: false,
         }
     }
 }
@@ -90,6 +98,9 @@ pub(crate) struct SavedQuest {
     /// Its explore objective met.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     explored: bool,
+    /// Its `fail_if_seen` tripped.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    failed: bool,
 }
 
 /// The log as a save writes it, in slot order.
@@ -102,6 +113,7 @@ pub(crate) fn saved(log: &QuestLog) -> Vec<SavedQuest> {
             slot: a.slot,
             kills: a.kills,
             explored: a.explored,
+            failed: a.failed,
         })
         .collect();
     out.sort_by_key(|q| q.slot);
@@ -124,6 +136,7 @@ pub(crate) fn load(
         if content::quest(s.id).is_some() {
             let mut a = Active::new(s.id, s.slot, s.kills);
             a.explored = s.explored;
+            a.failed = s.failed;
             log.active.push(a);
         } else {
             dropped.push(s.id);
@@ -153,6 +166,9 @@ fn complete(c: &Char, a: &Active) -> bool {
     let Some(q) = content::quest(a.id) else {
         return false;
     };
+    if a.failed {
+        return false;
+    }
     // An Advancement into a Calling with no kit: offered, and never finished.
     if q.advancement.as_ref().is_some_and(|adv| !adv.completable) {
         return false;
@@ -194,7 +210,9 @@ fn slot_pairs(slot: u8, a: Option<&Active>) -> [(u16, u32); 3] {
             .iter()
             .enumerate()
             .fold(0, |acc, (i, &k)| acc | u32::from(k.min(63)) << (6 * i));
-        if a.done {
+        if a.failed {
+            counters |= QUEST_STATE_FAILED << 24;
+        } else if a.done {
             counters |= QUEST_STATE_COMPLETE << 24;
         }
         (a.id, counters)
@@ -223,7 +241,7 @@ pub(crate) fn settle(c: &mut Char) {
 pub(crate) fn credit_kill(c: &mut Char, entry: u32, events: &mut Vec<SessionEvent>) {
     for i in 0..c.quests.active.len() {
         let a = &c.quests.active[i];
-        let Some(q) = content::quest(a.id) else {
+        let Some(q) = content::quest(a.id).filter(|_| !a.failed) else {
             continue;
         };
         let Some(o) = q
@@ -257,7 +275,7 @@ const REPLY_TEXT: u32 = 0x5000_0000;
 /// a talk objective with that NPC whose credit is not given.
 fn talk_lines(c: &Char, entry: u32) -> Vec<(&'static content::Quest, usize)> {
     let mut out = Vec::new();
-    for a in &c.quests.active {
+    for a in c.quests.active.iter().filter(|a| !a.failed) {
         let Some(q) = content::quest(a.id) else {
             continue;
         };
@@ -326,7 +344,7 @@ pub(crate) fn credit_use(c: &mut Char, entry: u32, events: &mut Vec<SessionEvent
     let mut any = false;
     for i in 0..c.quests.active.len() {
         let a = &c.quests.active[i];
-        let Some(q) = content::quest(a.id) else {
+        let Some(q) = content::quest(a.id).filter(|_| !a.failed) else {
             continue;
         };
         let Some(o) = q
@@ -365,7 +383,7 @@ pub(crate) fn explore(c: &mut Char, events: &mut Vec<SessionEvent>) -> bool {
     let mut any = false;
     for i in 0..c.quests.active.len() {
         let a = &c.quests.active[i];
-        let Some(q) = content::quest(a.id) else {
+        let Some(q) = content::quest(a.id).filter(|_| !a.failed) else {
             continue;
         };
         let mut changed = q
@@ -395,6 +413,46 @@ pub(crate) fn explore(c: &mut Char, events: &mut Vec<SessionEvent>) -> bool {
         }
     }
     any
+}
+
+/// A creature is in combat with the character: every active quest with a `fail_if_seen` text
+/// fails, and its text goes to the character once.
+pub(crate) fn seen(c: &mut Char, events: &mut Vec<SessionEvent>) {
+    for i in 0..c.quests.active.len() {
+        let a = &c.quests.active[i];
+        let Some(text) = content::quest(a.id).and_then(|q| q.fail_if_seen.as_ref()) else {
+            continue;
+        };
+        if a.failed {
+            continue;
+        }
+        let a = &mut c.quests.active[i];
+        a.failed = true;
+        a.done = false;
+        events.push(SessionEvent::QuestFailed {
+            quest_id: a.id,
+            timed: false,
+        });
+        events.push(SessionEvent::Chat(ChatMessage {
+            chat_type: CHAT_MSG_SYSTEM,
+            language: 0,
+            sender_guid: 0,
+            target_guid: 0,
+            sender_name: None,
+            channel: None,
+            text: text.clone(),
+            chat_tag: 0,
+        }));
+        events.push(values(c.guid, &slot_pairs(a.slot, Some(a))));
+    }
+}
+
+/// Whether the character holds a quest with a `fail_if_seen` text that has not failed.
+pub(crate) fn watches_for_sight(c: &Char) -> bool {
+    c.quests
+        .active
+        .iter()
+        .any(|a| !a.failed && content::quest(a.id).is_some_and(|q| q.fail_if_seen.is_some()))
 }
 
 /// A new Tier begins: every Hunting Quest is forgotten, done or under way, so each is offered
@@ -440,7 +498,7 @@ fn update_slot(c: &mut Char, i: usize, events: &mut Vec<SessionEvent>) {
 /// log still wants, at its chance.
 pub(crate) fn drops(c: &Char, entry: u32, rng: &mut Rng) -> Vec<(u32, u32)> {
     let mut out: Vec<(u32, u32)> = Vec::new();
-    for a in &c.quests.active {
+    for a in c.quests.active.iter().filter(|a| !a.failed) {
         let Some(q) = content::quest(a.id) else {
             continue;
         };

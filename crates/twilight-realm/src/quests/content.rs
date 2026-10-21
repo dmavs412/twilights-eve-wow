@@ -333,6 +333,10 @@ pub(crate) struct Quest {
     /// character has discovered every one.
     #[serde(default)]
     pub(crate) discover: Vec<u32>,
+    /// The quest fails, and this text goes to the character as a system message, when a creature
+    /// enters combat with them while it is active.
+    #[serde(default)]
+    pub(crate) fail_if_seen: Option<String>,
     /// The quest log's header: a negative `QuestSort.dbc` id, or a zone; The Barrens by default.
     #[serde(default)]
     zone_or_sort: Option<i32>,

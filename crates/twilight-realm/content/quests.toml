@@ -38,6 +38,11 @@
 #   own, labelled with its `place`, with a count of 1; the quest is met once every spot is
 #   reached, in any order. Each listed spot takes one of the four objective slots with the
 #   `kill`, `talk` and `use` entries.
+# - `fail_if_seen`: a text. While the quest is active, if a creature enters combat with the
+#   character (it aggroes on them, or they attack it), the quest fails: the log shows it Failed,
+#   the text goes to the character as a system message, and it gains no credit and cannot be
+#   handed in. A groupmate's combat does not count. Abandoning it from the log lets the giver
+#   offer it again with all credit reset.
 # - `ender`: the Hub NPC or Field Giver who takes the quest in, when it is not the giver: a
 #   person found out in a Hunting Ground. A quest with no other objective is met on accepting,
 #   and finding them is the task.
