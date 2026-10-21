@@ -161,6 +161,11 @@ fn complete(c: &Char, a: &Active) -> bool {
         .iter()
         .zip(a.kills)
         .all(|(&(_, count), killed)| u32::from(killed) >= count)
+        && (0..q.talk.len()).all(|i| a.kills[q.talk_slot(i)] >= 1)
+        && q.use_object
+            .iter()
+            .enumerate()
+            .all(|(i, &(_, count))| u32::from(a.kills[q.use_slot(i)]) >= count)
         && q.collect.iter().all(|o| carried(c, o.item) >= o.count)
         && (q.explore.is_none() || a.explored)
         && q.discover
@@ -227,6 +232,113 @@ pub(crate) fn credit_kill(c: &mut Char, entry: u32, events: &mut Vec<SessionEven
         });
         update_slot(c, i, events);
     }
+}
+
+/// The first talk-line index in a gossip menu; the trainer's and the innkeeper's lines sit below.
+pub(crate) const TALK_OPTION: u32 = 100;
+/// `NpcText` ids for a talk NPC's greeting (`GREETING_TEXT` + its entry) and a talk reply
+/// (`REPLY_TEXT` + quest id x 4 + talk index), answered by [`talk_text`].
+const GREETING_TEXT: u32 = 0x4000_0000;
+const REPLY_TEXT: u32 = 0x5000_0000;
+
+/// The talk lines NPC `entry` offers `c` now: `(quest, talk index)` of each active quest that has
+/// a talk objective with that NPC whose credit is not given.
+fn talk_lines(c: &Char, entry: u32) -> Vec<(&'static content::Quest, usize)> {
+    let mut out = Vec::new();
+    for a in &c.quests.active {
+        let Some(q) = content::quest(a.id) else {
+            continue;
+        };
+        for (t, talk) in q.talk.iter().enumerate() {
+            if talk.npc == entry && a.kills[q.talk_slot(t)] == 0 {
+                out.push((q, t));
+            }
+        }
+    }
+    out
+}
+
+/// The gossip lines of NPC `entry` that give talk credit, indexed from [`TALK_OPTION`].
+pub(crate) fn talk_options(c: &Char, entry: u32) -> Vec<benilla_protocol::messages::GossipOption> {
+    talk_lines(c, entry)
+        .into_iter()
+        .zip(TALK_OPTION..)
+        .map(|((q, t), index)| benilla_protocol::messages::GossipOption {
+            index,
+            icon: 0,
+            coded: false,
+            message: q.talk[t].option.clone(),
+        })
+        .collect()
+}
+
+/// The text a talk NPC's greeting or reply shows, for `CMSG_NPC_TEXT_QUERY`.
+pub(crate) fn talk_text(text_id: u32) -> Option<String> {
+    if text_id >= REPLY_TEXT {
+        let n = text_id - REPLY_TEXT;
+        let q = content::quest(n / 4)?;
+        return Some(q.talk.get((n % 4) as usize)?.reply.clone());
+    }
+    (text_id >= GREETING_TEXT).then(|| "Greetings.".to_string())
+}
+
+/// The text id of the greeting of the NPC `entry`.
+pub(crate) fn greeting_text(entry: u32) -> u32 {
+    GREETING_TEXT + entry
+}
+
+/// The player chose gossip line `option` of NPC `entry`: if it is a talk line, the credit is
+/// given. The reply's text id.
+pub(crate) fn credit_talk(
+    c: &mut Char,
+    entry: u32,
+    option: u32,
+    events: &mut Vec<SessionEvent>,
+) -> Option<u32> {
+    let (q, t) = *talk_lines(c, entry).get(option.checked_sub(TALK_OPTION)? as usize)?;
+    let i = c.quests.active.iter().position(|a| a.id == q.id)?;
+    c.quests.active[i].kills[q.talk_slot(t)] = 1;
+    events.push(SessionEvent::QuestObjectiveKill {
+        quest_id: q.id,
+        entry,
+        count: 1,
+        required: 1,
+    });
+    update_slot(c, i, events);
+    Some(REPLY_TEXT + q.id * 4 + t as u32)
+}
+
+/// The player used a GameObject of `entry`: every quest that wants one more counts it. Whether
+/// any did.
+pub(crate) fn credit_use(c: &mut Char, entry: u32, events: &mut Vec<SessionEvent>) -> bool {
+    let mut any = false;
+    for i in 0..c.quests.active.len() {
+        let a = &c.quests.active[i];
+        let Some(q) = content::quest(a.id) else {
+            continue;
+        };
+        let Some(o) = q
+            .use_object
+            .iter()
+            .enumerate()
+            .position(|(o, &(e, count))| e == entry && u32::from(a.kills[q.use_slot(o)]) < count)
+        else {
+            continue;
+        };
+        let slot = q.use_slot(o);
+        let a = &mut c.quests.active[i];
+        a.kills[slot] += 1;
+        events.push(SessionEvent::QuestObjectiveKill {
+            quest_id: a.id,
+            // A GameObject is `(-entry)|0x80000000` in the announce line.
+            entry: (-(entry as i32)) as u32 | 0x8000_0000,
+            count: u32::from(a.kills[slot]),
+            required: q.use_object[o].1,
+        });
+        update_slot(c, i, events);
+        any = true;
+    }
+    any
 }
 
 /// The player moved: every quest whose explore spot they now stand in has it explored. Whether

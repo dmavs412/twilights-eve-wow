@@ -136,6 +136,82 @@ impl Giver {
     }
 }
 
+/// The quests that must be handed in before a quest is offered: one id (`after = 94001`) or a
+/// list (`after = [94201, 94202]`), none by default.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub(crate) struct After(Vec<u32>);
+
+impl<'de> Deserialize<'de> for After {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Written {
+            One(u32),
+            Many(Vec<u32>),
+        }
+        Ok(After(match Written::deserialize(d)? {
+            Written::One(id) => vec![id],
+            Written::Many(ids) => ids,
+        }))
+    }
+}
+
+impl After {
+    pub(crate) fn ids(&self) -> &[u32] {
+        &self.0
+    }
+}
+
+/// A talk-to objective: while the quest is active and the credit not yet given, `npc`'s gossip
+/// menu shows `option`; choosing it shows `reply` and gives the credit.
+#[derive(Deserialize)]
+pub(crate) struct Talk {
+    pub(crate) npc: u32,
+    pub(crate) option: String,
+    pub(crate) reply: String,
+}
+
+/// A GameObject standing out in the open world for a use objective: it despawns for a character
+/// who uses it and returns `respawn` seconds later.
+#[derive(Deserialize)]
+pub(crate) struct QuestObject {
+    /// Distinguishes this placement from every other GameObject's guid.
+    pub(crate) guid: u32,
+    pub(crate) entry: u32,
+    pub(crate) display: u32,
+    #[serde(default = "kalimdor")]
+    pub(crate) map: u32,
+    pub(crate) position: [f32; 3],
+    #[serde(default)]
+    pub(crate) orientation: f32,
+    /// Seconds until it returns once used.
+    #[serde(default = "a_minute")]
+    pub(crate) respawn: f32,
+}
+
+fn a_minute() -> f32 {
+    60.0
+}
+
+impl QuestObject {
+    pub(crate) fn object_guid(&self) -> u64 {
+        crate::phased::HIGHGUID_GAMEOBJECT << 48 | u64::from(self.guid)
+    }
+
+    pub(crate) fn create(&self) -> benilla_protocol::SessionEvent {
+        crate::phased::gameobject_create(&crate::phased::GameObject {
+            guid: self.object_guid(),
+            entry: self.entry,
+            display_id: self.display,
+            type_id: crate::phased::GENERIC,
+            flags: 0,
+            faction: 0,
+            position: self.position,
+            orientation: self.orientation,
+        })
+    }
+}
+
 /// A quest.
 #[derive(Deserialize)]
 pub(crate) struct Quest {
@@ -145,9 +221,9 @@ pub(crate) struct Quest {
     /// Who takes it in, when not its giver: a person found in the field.
     #[serde(default)]
     ender: Option<u32>,
-    /// The quest that must be handed in before this one is offered.
+    /// The quests that must all be handed in before this one is offered.
     #[serde(default)]
-    pub(crate) after: Option<u32>,
+    pub(crate) after: After,
     pub(crate) level: u8,
     min_level: Option<u8>,
     /// The highest level it is offered at; none by default.
@@ -173,6 +249,12 @@ pub(crate) struct Quest {
     /// `(creature entry, count)`.
     #[serde(default)]
     pub(crate) kill: Vec<(u32, u32)>,
+    /// Talk-to objectives, after the kills in the log's four creature/GameObject slots.
+    #[serde(default)]
+    pub(crate) talk: Vec<Talk>,
+    /// Use-GameObject objectives, `(GameObject entry, count)`, after the talk objectives.
+    #[serde(default, rename = "use")]
+    pub(crate) use_object: Vec<(u32, u32)>,
     #[serde(default)]
     pub(crate) collect: Vec<Collect>,
     #[serde(default)]
@@ -214,11 +296,27 @@ impl Quest {
             .expect("the content load checks a Quest Starter's quest names its ender")
     }
 
-    /// The quest its ender offers next, once it is handed in (`NextQuestInChain`).
-    pub(crate) fn next_in_chain(&self) -> Option<&'static Quest> {
+    /// The quests its ender may offer next, once it is handed in: those with this quest among
+    /// their `after` ids. Whether the others are done is the offer's check.
+    pub(crate) fn followers(&self) -> impl Iterator<Item = &'static Quest> + '_ {
         quests()
             .into_iter()
-            .find(|n| n.after == Some(self.id) && n.giver.npc() == Some(self.ender()))
+            .filter(|n| n.after.ids().contains(&self.id) && n.giver.npc() == Some(self.ender()))
+    }
+
+    /// The quest its ender offers next, once it is handed in (`NextQuestInChain`).
+    pub(crate) fn next_in_chain(&self) -> Option<&'static Quest> {
+        self.followers().next()
+    }
+
+    /// The log slot of talk objective `i`.
+    pub(crate) fn talk_slot(&self, i: usize) -> usize {
+        self.kill.len() + i
+    }
+
+    /// The log slot of use objective `i`.
+    pub(crate) fn use_slot(&self, i: usize) -> usize {
+        self.kill.len() + self.talk.len() + i
     }
 
     /// The quest log's header the quest goes under.
@@ -270,9 +368,13 @@ struct QuestFile {
     item: Vec<items::Template>,
     #[serde(default)]
     starter_drop: Vec<StarterDrop>,
+    /// The GameObjects the file's use objectives click.
+    #[serde(default)]
+    gameobject: Vec<QuestObject>,
 }
 
-/// At most this many kill and this many collect objectives (`QUEST_OBJECTIVES_COUNT`).
+/// At most this many kill, talk and use objectives together, and as many collect objectives
+/// (`QUEST_OBJECTIVES_COUNT`).
 const OBJECTIVES: usize = 4;
 
 /// Whether the creature `entry` is a Field Giver's: a friendly spawn the realm places anywhere,
@@ -290,6 +392,7 @@ fn shipped() -> &'static [Quest] {
     static FILE: OnceLock<Vec<Quest>> = OnceLock::new();
     FILE.get_or_init(|| {
         let mut quests = Vec::new();
+        let mut objects = Vec::new();
         for (name, text) in [
             ("quests.toml", include_str!("../../content/quests.toml")),
             (
@@ -300,9 +403,12 @@ fn shipped() -> &'static [Quest] {
             let file: QuestFile =
                 toml::from_str(text).unwrap_or_else(|e| panic!("content/{name} parses: {e}"));
             quests.extend(file.quest);
+            objects.extend(file.gameobject);
         }
         for q in &quests {
-            check(q, &|id| quests.iter().any(|o| o.id == id));
+            check(q, &|id| quests.iter().any(|o| o.id == id), &|entry| {
+                objects.iter().any(|o| o.entry == entry)
+            });
             assert_eq!(
                 quests.iter().filter(|o| o.id == q.id).count(),
                 1,
@@ -320,8 +426,27 @@ fn shipped() -> &'static [Quest] {
                 t.start_quest
             );
         }
+        let _ = SHIPPED_OBJECTS.set(objects);
         quests
     })
+}
+
+static SHIPPED_OBJECTS: OnceLock<Vec<QuestObject>> = OnceLock::new();
+
+fn added_objects() -> &'static RwLock<Vec<&'static QuestObject>> {
+    static ADDED: RwLock<Vec<&'static QuestObject>> = RwLock::new(Vec::new());
+    &ADDED
+}
+
+/// Every GameObject the use objectives click: the shipped ones, then any a test added.
+pub(crate) fn objects() -> Vec<&'static QuestObject> {
+    shipped();
+    SHIPPED_OBJECTS
+        .get()
+        .into_iter()
+        .flatten()
+        .chain(added_objects().read().unwrap().iter().copied())
+        .collect()
 }
 
 fn added() -> &'static RwLock<Vec<&'static Quest>> {
@@ -349,17 +474,28 @@ pub(crate) fn add(toml: &str) {
             extra.starter_drop.push(Box::leak(Box::new(d)));
         }
     }
+    for o in parsed.gameobject {
+        if objects().iter().all(|known| known.guid != o.guid) {
+            added_objects()
+                .write()
+                .unwrap()
+                .push(Box::leak(Box::new(o)));
+        }
+    }
     for q in parsed.quest {
         if quest(q.id).is_some() {
             continue;
         }
-        check(&q, &|id| quest(id).is_some() || id == q.id);
+        check(&q, &|id| quest(id).is_some() || id == q.id, &|entry| {
+            objects().iter().any(|o| o.entry == entry)
+        });
         added().write().unwrap().push(Box::leak(Box::new(q)));
     }
 }
 
-/// What the content load refuses in `q`; `known` says whether a quest id exists.
-fn check(q: &Quest, known: &dyn Fn(u32) -> bool) {
+/// What the content load refuses in `q`; `known` says whether a quest id exists and `object`
+/// whether a use objective's GameObject entry is declared.
+fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
     if q.giver == Giver::Item {
         assert!(
             q.ender.is_some(),
@@ -400,10 +536,28 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool) {
             q.id
         );
     }
-    if let Some(p) = q.after {
+    for &p in q.after.ids() {
         assert!(
             known(p),
             "quest {} comes after quest {p}, which the content does not have",
+            q.id
+        );
+    }
+    for t in &q.talk {
+        let hub = crate::hub::npcs()
+            .iter()
+            .any(|n| n.entry == t.npc && n.gossips());
+        assert!(
+            hub || friendly_spawn(t.npc),
+            "quest {} talks to {}, who is no gossiping Hub NPC and no friendly spawn",
+            q.id,
+            t.npc
+        );
+    }
+    for &(entry, count) in &q.use_object {
+        assert!(
+            count > 0 && object(entry),
+            "quest {} uses GameObject {entry}, which no `gameobject` row declares (or asks for 0)",
             q.id
         );
     }
@@ -422,6 +576,8 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool) {
         );
         assert!(
             q.kill.is_empty()
+                && q.talk.is_empty()
+                && q.use_object.is_empty()
                 && q.collect.is_empty()
                 && q.explore.is_none()
                 && q.discover.is_empty(),
@@ -430,8 +586,9 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool) {
         );
     }
     assert!(
-        q.kill.len() <= OBJECTIVES && q.collect.len() <= OBJECTIVES,
-        "quest {} has more than {OBJECTIVES} objectives of a kind",
+        q.kill.len() + q.talk.len() + q.use_object.len() <= OBJECTIVES
+            && q.collect.len() <= OBJECTIVES,
+        "quest {} has more than {OBJECTIVES} kill, talk and use objectives, or collect objectives",
         q.id
     );
     for &area in &q.discover {
@@ -485,6 +642,14 @@ pub(crate) fn field_giver(entry: u32) -> bool {
         && quests()
             .iter()
             .any(|q| q.giver.npc() == Some(entry) || q.ender() == entry)
+}
+
+/// Whether any quest has a talk objective with the creature `entry`.
+pub(crate) fn talk_target(entry: u32) -> bool {
+    friendly_spawn(entry)
+        && quests()
+            .iter()
+            .any(|q| q.talk.iter().any(|t| t.npc == entry))
 }
 
 #[derive(Deserialize)]

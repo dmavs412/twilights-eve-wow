@@ -9,6 +9,7 @@ use crate::characters::Char;
 use crate::mobs::{self, Mob};
 use crate::phased::{self, GameObjectUse, Phase, UseKind};
 use crate::population::VIEW_YD;
+use crate::quests;
 use crate::space::flat_distance;
 
 /// How near a hiding spot a character must stand to crouch at it.
@@ -206,6 +207,71 @@ impl InWorld {
         if !gone.is_empty() {
             events.push(SessionEvent::ObjectsRemoved(gone));
         }
+    }
+
+    /// Streams the open world's quest GameObjects in and out with the view, brings back those
+    /// whose respawn has run out, and shows none while the player is inside a Phased Dungeon.
+    pub(super) fn show_quest_objects(
+        &mut self,
+        dt: f32,
+        me: [f32; 3],
+        events: &mut Vec<SessionEvent>,
+    ) {
+        for (_, left) in &mut self.quest_spent {
+            *left -= dt;
+        }
+        self.quest_spent.retain(|&(_, left)| left > 0.0);
+        let mut gone = Vec::new();
+        for o in quests::content::objects() {
+            let guid = o.object_guid();
+            let d_yd = if o.map == self.map && self.phase == Phase::OpenWorld {
+                flat_distance(o.position, me)
+            } else {
+                f32::INFINITY
+            };
+            let spent = self.quest_spent.iter().any(|&(g, _)| g == guid);
+            if !self.quest_objects.contains(&guid) {
+                if !spent && d_yd <= VIEW_YD {
+                    self.quest_objects.insert(guid);
+                    events.push(o.create());
+                }
+            } else if spent || d_yd > VIEW_YD + 10.0 {
+                self.quest_objects.remove(&guid);
+                gone.push(guid);
+            }
+        }
+        if !gone.is_empty() {
+            events.push(SessionEvent::ObjectsRemoved(gone));
+        }
+    }
+
+    /// The player clicks the quest GameObject of `guid`: if it stands in reach, in view and not
+    /// used, and a quest wants one, the quest counts it and the object leaves the player's view
+    /// until its `respawn` runs out. Whether the click was a quest object's.
+    pub(crate) fn use_quest_object(
+        &mut self,
+        guid: u64,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let Some(o) = quests::content::objects()
+            .into_iter()
+            .find(|o| o.object_guid() == guid)
+        else {
+            return false;
+        };
+        if !self.quest_objects.contains(&guid)
+            || !self.player.alive()
+            || flat_distance(o.position, c.position) > crate::space::INTERACTION_YD
+        {
+            return true;
+        }
+        if quests::credit_use(c, o.entry, events) {
+            self.quest_spent.push((guid, o.respawn));
+            self.quest_objects.remove(&guid);
+            events.push(SessionEvent::ObjectsRemoved(vec![guid]));
+        }
+        true
     }
 
     /// The player clicks the GameObject of `guid`: what it asks for, if it is one of the Phase's

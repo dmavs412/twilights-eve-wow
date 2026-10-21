@@ -14,7 +14,7 @@ use crate::fields::{
 };
 
 /// `HIGHGUID_GAMEOBJECT`, in a GameObject guid's top 16 bits.
-const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
+pub(crate) const HIGHGUID_GAMEOBJECT: u64 = 0xF110;
 /// `TYPEMASK_OBJECT | TYPEMASK_GAMEOBJECT`.
 const TYPE_GAMEOBJECT: u32 = 0x01 | 0x20;
 /// The GameObject fields a portal sets (`UpdateFields.h`, 1.12.1).
@@ -27,7 +27,7 @@ const GAMEOBJECT_TYPE_ID: u16 = 21;
 /// `GameObjectDisplayInfo` 672: `InstancePortal.mdx`, the swirl in every dungeon's doorway.
 const PORTAL_DISPLAY: u32 = 672;
 /// `GAMEOBJECT_TYPE_GENERIC`, flagged `GO_FLAG_NOT_SELECTABLE`, in `GO_STATE_READY`.
-const GENERIC: u32 = 5;
+pub(crate) const GENERIC: u32 = 5;
 const NOT_SELECTABLE: u32 = 0x10;
 const READY: u32 = 1;
 
@@ -500,7 +500,7 @@ mod tests {
     fn neals_offers_the_abbots_fall_after_into_the_abbey() {
         let q = crate::quests::content::quest(94004).unwrap();
         assert!(matches!(q.giver, crate::quests::content::Giver::Npc(952)));
-        assert_eq!(q.after, Some(94002));
+        assert_eq!(q.after.ids(), [94002]);
         assert_eq!(q.kill, [(96005, 1)]);
     }
 

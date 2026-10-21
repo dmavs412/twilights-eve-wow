@@ -223,12 +223,15 @@ pub(crate) fn within_reach(npc: &Npc, at: [f32; 3]) -> bool {
 
 /// A Hub NPC's gossip greeting, for `CMSG_NPC_TEXT_QUERY`; `None` for any other text.
 pub(crate) fn greeting(text_id: u32) -> Option<SessionEvent> {
-    let npc = npcs().iter().find(|n| n.text_id == Some(text_id))?;
+    let text = match npcs().iter().find(|n| n.text_id == Some(text_id)) {
+        Some(npc) => npc.greeting.clone(),
+        None => crate::quests::talk_text(text_id)?,
+    };
     let mut blocks = vec![NpcTextBlock::default(); NPC_TEXT_BLOCKS];
     blocks[0] = NpcTextBlock {
         probability: 1.0,
-        male: npc.greeting.clone(),
-        female: npc.greeting.clone(),
+        male: text.clone(),
+        female: text,
     };
     Some(SessionEvent::NpcGreeting { text_id, blocks })
 }
@@ -240,22 +243,26 @@ impl crate::Realm {
     pub(crate) fn gossip_hello(&mut self, guid: u64) {
         let Some(npc) = find(guid).filter(|n| n.gossips() && n.text_id.is_some() && self.near(n))
         else {
+            self.field_gossip_hello(guid);
             return;
         };
-        let quests = self
+        let player = self
             .world
             .as_ref()
-            .and_then(|w| self.characters.get(w.guid))
+            .and_then(|w| self.characters.get(w.guid));
+        let quests = player
             .map(|c| crate::quests::gossip_rows(c, npc.entry))
             .unwrap_or_default();
+        let mut options = if npc.is_innkeeper() {
+            crate::inn::options()
+        } else {
+            crate::trainer::options(npc)
+        };
+        options.extend(player.map_or_else(Vec::new, |c| crate::quests::talk_options(c, npc.entry)));
         self.events.push(SessionEvent::GossipMenu {
             npc: npc.guid(),
             text_id: npc.text_id.unwrap_or_default(),
-            options: if npc.is_innkeeper() {
-                crate::inn::options()
-            } else {
-                crate::trainer::options(npc)
-            },
+            options,
             quests,
         });
     }
@@ -263,9 +270,14 @@ impl crate::Realm {
     /// `CMSG_GOSSIP_SELECT_OPTION`: a line of a trainer's or an innkeeper's menu.
     pub(crate) fn gossip_select(&mut self, guid: u64, option: u32) {
         match find(guid) {
+            Some(npc) if option >= crate::quests::TALK_OPTION => {
+                if self.near(npc) {
+                    self.talk_select(guid, npc.entry, option);
+                }
+            }
             Some(npc) if npc.is_innkeeper() => self.inn_select(npc, option),
             Some(_) => self.trainer_select(guid, option),
-            None => {}
+            None => self.field_gossip_select(guid, option),
         }
     }
 

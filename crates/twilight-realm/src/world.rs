@@ -244,6 +244,10 @@ pub(crate) struct InWorld {
     portals: Vec<u32>,
     /// The guids of the dungeon GameObjects the client has.
     dungeon_objects: std::collections::HashSet<u64>,
+    /// The guids of the open-world quest GameObjects the client has.
+    quest_objects: std::collections::HashSet<u64>,
+    /// The quest GameObjects the player used, each with the seconds until it returns.
+    quest_spent: Vec<(u64, f32)>,
     /// The stacks of the Phase's meter the player's aura shows; 0 for none.
     noise_shown: u32,
     /// Stacks the player's doings added to the Run's meter since the shard last took them.
@@ -358,6 +362,8 @@ impl InWorld {
             phase: Default::default(),
             portals: Vec::new(),
             dungeon_objects: Default::default(),
+            quest_objects: Default::default(),
+            quest_spent: Vec::new(),
             noise_shown: 0,
             noise_gain: 0,
             noise_drain: 0,
@@ -562,6 +568,7 @@ impl InWorld {
         let me = c.position;
         self.cross_phase(c, events);
         self.show_portals(me, events);
+        self.show_quest_objects(dt, me, events);
         if self.player.alive() {
             self.discover(host, c, events, &mut ticked);
         }

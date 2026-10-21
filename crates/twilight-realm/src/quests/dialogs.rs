@@ -18,7 +18,16 @@ use crate::{equipment, items, Realm, RealmCommand};
 pub(crate) fn template_response(id: u32) -> Option<SessionEvent> {
     let q = content::quest(id)?;
     let objectives = std::array::from_fn(|i| {
-        let (creature, kills) = q.kill.get(i).copied().unwrap_or((0, 0));
+        // Kills, then talk targets (count 1), then GameObjects (a negative entry).
+        let (creature, kills) = if i < q.kill.len() {
+            q.kill[i]
+        } else if i < q.use_slot(0) {
+            (q.talk[i - q.kill.len()].npc, 1)
+        } else {
+            q.use_object
+                .get(i - q.use_slot(0))
+                .map_or((0, 0), |&(entry, count)| ((-(entry as i32)) as u32, count))
+        };
         let (item, items) = q.collect.get(i).map_or((0, 0), |o| (o.item, o.count));
         QuestObjective {
             creature_or_go: creature,
@@ -167,8 +176,8 @@ impl Realm {
                         }
                         // The next in the chain opens at once (vmangos `GetNextQuest`).
                         if let Some(next) = q
-                            .next_in_chain()
-                            .and_then(|n| talking_to(c, w, npc).and_then(|g| offer(c, g, n.id)))
+                            .followers()
+                            .find_map(|n| talking_to(c, w, npc).and_then(|g| offer(c, g, n.id)))
                         {
                             events.push(SessionEvent::QuestDetail(details(npc, next)));
                         }
@@ -182,6 +191,66 @@ impl Realm {
             let guid = w.guid;
             self.save(guid);
         }
+    }
+}
+
+impl Realm {
+    /// `CMSG_GOSSIP_HELLO` at a friendly creature in the field: a menu of its talk lines and
+    /// quests, when it has any.
+    pub(crate) fn field_gossip_hello(&mut self, guid: u64) {
+        let Some(w) = &self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get(w.guid) else {
+            return;
+        };
+        let Some(entry) = w.friendly_within_reach(guid, c.position) else {
+            return;
+        };
+        let options = super::talk_options(c, entry);
+        let quests = gossip_rows(c, entry);
+        if options.is_empty() && quests.is_empty() {
+            return;
+        }
+        self.events.push(SessionEvent::GossipMenu {
+            npc: guid,
+            text_id: super::greeting_text(entry),
+            options,
+            quests,
+        });
+    }
+
+    /// `CMSG_GOSSIP_SELECT_OPTION` at a friendly creature in the field.
+    pub(crate) fn field_gossip_select(&mut self, guid: u64, option: u32) {
+        let entry = self.world.as_ref().and_then(|w| {
+            let c = self.characters.get(w.guid)?;
+            w.friendly_within_reach(guid, c.position)
+        });
+        if let Some(entry) = entry {
+            self.talk_select(guid, entry, option);
+        }
+    }
+
+    /// A talk line of NPC `entry` (guid `guid`, in reach) was chosen: it gives its credit and the
+    /// menu shows the reply.
+    pub(crate) fn talk_select(&mut self, guid: u64, entry: u32, option: u32) {
+        let Some(w) = &self.world else {
+            return;
+        };
+        let player = w.guid;
+        let Some(c) = self.characters.get_mut(player) else {
+            return;
+        };
+        let Some(reply) = super::credit_talk(c, entry, option, &mut self.events) else {
+            return;
+        };
+        self.events.push(SessionEvent::GossipMenu {
+            npc: guid,
+            text_id: reply,
+            options: Vec::new(),
+            quests: Vec::new(),
+        });
+        self.save(player);
     }
 }
 
@@ -307,9 +376,9 @@ fn done_for_now(c: &Char, q: &Quest) -> bool {
     !q.retakable() && c.quests.completed.contains(&q.id)
 }
 
-/// Whether the quest `q` comes after, if any, is handed in.
+/// Whether every quest `q` comes after is handed in.
 fn after_met(c: &Char, q: &Quest) -> bool {
-    q.after.is_none_or(|p| c.quests.completed.contains(&p))
+    q.after.ids().iter().all(|p| c.quests.completed.contains(p))
 }
 
 /// `quest`, if it is in the player's log and `g` takes it in.

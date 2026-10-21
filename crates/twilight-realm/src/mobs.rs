@@ -24,6 +24,8 @@ const HIGHGUID_UNIT: u64 = 0xF130;
 /// `UNIT_NPC_FLAGS`, and its `UNIT_NPC_FLAG_QUESTGIVER` bit.
 const UNIT_NPC_FLAGS: u16 = 147;
 const UNIT_NPC_FLAG_QUESTGIVER: u32 = 0x2;
+/// `UNIT_NPC_FLAG_GOSSIP`.
+const UNIT_NPC_FLAG_GOSSIP: u32 = 0x1;
 
 /// vanilla's base movement speeds, yd/s, which a template's multipliers scale.
 const BASE_WALK: f32 = 2.5;
@@ -975,8 +977,15 @@ impl Mob {
         ];
         pairs.extend(equip_pairs(&t.equip));
         // A Field Giver shows the quest giver flag, so the client asks for its `!` and `?`.
-        if t.friendly && crate::quests::content::field_giver(t.entry) {
-            pairs.push((UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER));
+        // A talk-to target shows the gossip flag, so the client opens its menu.
+        let flags = if t.friendly {
+            u32::from(crate::quests::content::talk_target(t.entry)) * UNIT_NPC_FLAG_GOSSIP
+                | u32::from(crate::quests::content::field_giver(t.entry)) * UNIT_NPC_FLAG_QUESTGIVER
+        } else {
+            0
+        };
+        if flags != 0 {
+            pairs.push((UNIT_NPC_FLAGS, flags));
         }
         if self.asleep {
             pairs.push((UNIT_NPC_EMOTESTATE, EMOTE_STATE_SLEEP));

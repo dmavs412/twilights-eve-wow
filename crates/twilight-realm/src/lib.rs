@@ -1081,13 +1081,24 @@ impl Realm {
                 }
             }
             RealmCommand::UseGameObject { guid } => {
+                let mut credited = None;
                 if let Some(w) = &mut self.world {
-                    if let Some(used) = w.use_gameobject(guid) {
+                    let player = w.guid;
+                    let quest_object = self
+                        .characters
+                        .get_mut(player)
+                        .is_some_and(|c| w.use_quest_object(guid, c, &mut self.events));
+                    if quest_object {
+                        credited = Some(player);
+                    } else if let Some(used) = w.use_gameobject(guid) {
                         if let Some(c) = self.characters.get(w.guid) {
                             w.begin_hide(used, c);
                         }
                         self.uses.push(used);
                     }
+                }
+                if let Some(player) = credited {
+                    self.save(player);
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
