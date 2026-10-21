@@ -152,20 +152,32 @@ impl InWorld {
     }
 
     /// Puts the player at the stop `stop` of `d` if they stand in its box: a ward stone's recall.
+    /// Whether they were sent.
     pub(crate) fn recall_from_stop(
         &mut self,
         d: &phased::Dungeon,
         stop: usize,
         c: &mut Char,
         events: &mut Vec<SessionEvent>,
-    ) {
-        if self.map == d.map
+    ) -> bool {
+        self.map == d.map
             && self.phase == Phase::Dungeon(d.id)
             && self.player.alive()
             && d.stop[stop].holds(c.position)
-        {
-            self.send_back(d.id, stop, c, events);
-        }
+            && self.send_back(d.id, stop, c, events)
+    }
+
+    /// The player clicks the ward stone `used`: whether the click is theirs to make, in reach of a
+    /// stone they see.
+    pub(crate) fn ward_click(&self, used: GameObjectUse, c: &Char) -> bool {
+        let stone = phased::dungeon(used.dungeon).and_then(|d| d.usable(used.guid));
+        let Some((stone, UseKind::Ward)) = stone else {
+            return false;
+        };
+        self.player.alive()
+            && self.phase == Phase::Dungeon(used.dungeon)
+            && self.dungeon_objects.contains(&used.guid)
+            && flat_distance(stone.position, c.position) <= crate::space::INTERACTION_YD
     }
 
     /// The player clicks the GameObject of `guid`, which may be one of a stop's two portals. An
@@ -452,7 +464,8 @@ impl InWorld {
                 f32::INFINITY
             };
             let guid = o.object_guid();
-            let seen = o.seen_from(self.phase, d.id);
+            let seen =
+                o.seen_from(self.phase, d.id) && o.appears.met(&self.run_pinned, &self.run_dead);
             if !self.dungeon_objects.contains(&guid) {
                 if seen && d_yd <= VIEW_YD {
                     self.dungeon_objects.insert(guid);
@@ -567,7 +580,8 @@ pub(crate) fn creatures(phase: Phase) -> Vec<Mob> {
         .spawn
         .iter()
         .enumerate()
-        .filter(|(_, s)| s.phase == phase && s.called_by.is_none())
+        .filter(|(_, s)| s.phase == phase && s.called_by.is_none() && s.timed_by.is_none())
+        .filter(|(_, s)| s.appears.is_none_or(|a| a.met(&[], &[])))
         .filter_map(|(i, s)| {
             // The authored height: the ground lookup finds the terrain under a building's floor.
             Mob::spawn(i as u32, s.level_min, s.position[2])

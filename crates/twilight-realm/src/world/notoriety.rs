@@ -394,7 +394,7 @@ impl InWorld {
     }
 
     /// Takes `units` out of the world: their auras with them, the player's swing at one stopped.
-    fn remove_units(&mut self, units: &[u64], events: &mut Vec<SessionEvent>) {
+    pub(super) fn remove_units(&mut self, units: &[u64], events: &mut Vec<SessionEvent>) {
         if units.is_empty() {
             return;
         }

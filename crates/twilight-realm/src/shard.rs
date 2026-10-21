@@ -109,6 +109,76 @@ impl Shard {
         }
     }
 
+    /// The stops pinned and the creatures dead in the Run; none with no Run.
+    pub(crate) fn run_facts(&self) -> (Vec<String>, Vec<u32>) {
+        self.run.as_ref().map_or((Vec::new(), Vec::new()), |r| {
+            (r.pinned.clone(), r.dead.clone())
+        })
+    }
+
+    /// Whether the dungeon creature of `guid` has died in the Run.
+    pub(crate) fn is_dead(&self, guid: u32) -> bool {
+        self.run.as_ref().is_some_and(|r| r.dead.contains(&guid))
+    }
+
+    /// Pins stop `key` in the Run, darkens its inner portal and opens the one of `opens`. Whether
+    /// the stop was newly pinned.
+    pub(crate) fn pin(&mut self, key: &str, opens: Option<&str>) -> bool {
+        let Some(run) = &mut self.run else {
+            return false;
+        };
+        if !run.pin(key) {
+            return false;
+        }
+        run.set_portal(key, false);
+        if let Some(next) = opens {
+            run.set_portal(next, true);
+        }
+        true
+    }
+
+    /// The Run's creatures come and go on its facts: a death is recorded, a creature whose
+    /// `until_dead` has died is gone, and one whose `after_pinned` or `after_dead` has come true
+    /// appears, once.
+    fn run_changes(&mut self) {
+        let Phase::Dungeon(_) = self.place.phase else {
+            return;
+        };
+        let Some(run) = &mut self.run else {
+            return;
+        };
+        let content = mobs::content();
+        for m in &self.mobs {
+            if m.state == State::Dead {
+                if let Some(s) = m.spawn_row().filter(|s| s.appears.is_some()) {
+                    if !run.dead.contains(&s.guid) {
+                        run.dead.push(s.guid);
+                    }
+                }
+            }
+        }
+        let gone = |s: &mobs::Spawn| {
+            s.appears
+                .is_some_and(|a| a.until_dead.is_some_and(|g| run.dead.contains(&g)))
+        };
+        self.mobs
+            .retain(|m| !m.spawn_row().is_some_and(|s| gone(s)));
+        for (i, s) in content.spawn.iter().enumerate() {
+            let Some(a) = s.appears.filter(|_| s.phase == self.place.phase) else {
+                continue;
+            };
+            if (a.after_pinned.is_some() || a.after_dead.is_some())
+                && !run.appeared.contains(&s.guid)
+                && a.met(&run.pinned, &run.dead)
+            {
+                run.appeared.push(s.guid);
+                if let Some(mob) = Mob::spawn(i as u32, s.level_min, s.position[2]) {
+                    self.mobs.push(mob);
+                }
+            }
+        }
+    }
+
     /// The stacks on the Run's meter; 0 with none.
     pub(crate) fn noise(&self) -> u32 {
         self.run.as_ref().map_or(0, |r| r.noise)
@@ -151,6 +221,7 @@ impl Shard {
         let mut events = Vec::new();
         if let Some(run) = &mut self.run {
             run.elapsed += dt;
+            self.run_changes();
             return events;
         }
         let map = self.place.map;

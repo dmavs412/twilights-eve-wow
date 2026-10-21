@@ -41,6 +41,13 @@ const CALLED_GUID_BASE: u32 = 0x90_0000;
 /// The first low guid given to a creature an Encounter's wave brings in.
 const ENCOUNTER_GUID_BASE: u32 = 0xA0_0000;
 
+/// The first low guid given to a creature row a timed call brings in.
+const TIMED_GUID_BASE: u32 = 0xB0_0000;
+
+/// The first low guid of a creature a timed call has brought in: one for every wave, so a wave
+/// never shares a guid with the one before.
+const TIMED_LIVE_BASE: u32 = 0xC0_0000;
+
 /// A creature guid: `entry` and the low guid `low` under `HIGHGUID_UNIT`.
 pub(crate) fn unit_guid(entry: u32, low: u32) -> u64 {
     HIGHGUID_UNIT << 48 | u64::from(entry & 0xFF_FFFF) << 24 | u64::from(low & 0xFF_FFFF)
@@ -207,6 +214,12 @@ pub(crate) struct Spawn {
     /// A creature a call for help brings in, not one the Run starts with: the caller's guid and
     /// which of its calls.
     pub(crate) called_by: Option<(u32, usize)>,
+    /// The timed calls it makes in a fight.
+    pub(crate) every: &'static [phased::Every],
+    /// A creature a timed call brings in: the caller's guid and which of its timed calls.
+    pub(crate) timed_by: Option<(u32, usize)>,
+    /// When a dungeon creature is in the Run; none for any other spawn.
+    pub(crate) appears: Option<&'static phased::Appears>,
     /// A creature an Encounter's wave brings in, not one the Population streams: the encounter's
     /// index in `content/encounters.toml` and the wave's.
     pub(crate) encounter: Option<(usize, usize)>,
@@ -499,6 +512,7 @@ pub(crate) fn content() -> &'static Mobs {
             });
         }
         let mut called_guids = 0;
+        let mut timed_guids = 0;
         for d in phased::content() {
             for c in &d.creature {
                 let Some(t) = template.iter().find(|t| t.entry == c.entry) else {
@@ -518,6 +532,9 @@ pub(crate) fn content() -> &'static Mobs {
                     phase: Phase::Dungeon(d.id),
                     on_health: &c.on_health,
                     called_by: None,
+                    every: &c.every,
+                    timed_by: None,
+                    appears: Some(&c.appears),
                     encounter: None,
                     asleep: c.asleep,
                     wake_radius_mod: c.wake_radius_mod,
@@ -547,6 +564,32 @@ pub(crate) fn content() -> &'static Mobs {
                             ..Default::default()
                         });
                         called_guids += 1;
+                    }
+                }
+                // And those its timed calls bring in, one row per creature of a wave.
+                for (k, call) in c.every.iter().enumerate() {
+                    let t = template
+                        .iter()
+                        .find(|t| t.entry == call.entry)
+                        .unwrap_or_else(|| {
+                            panic!("creature {}'s timed call names no template", c.guid)
+                        });
+                    for _ in 0..call.count {
+                        spawn.push(Spawn {
+                            guid: TIMED_GUID_BASE + timed_guids,
+                            entry: call.entry,
+                            level_min: call.level,
+                            level_max: call.level,
+                            position: call.position,
+                            orientation: c.orientation,
+                            display_id: t.display_id,
+                            camp: c.guid,
+                            map: d.map,
+                            phase: Phase::Dungeon(d.id),
+                            timed_by: Some((c.guid, k)),
+                            ..Default::default()
+                        });
+                        timed_guids += 1;
                     }
                 }
             }
@@ -717,6 +760,10 @@ pub(crate) struct Mob {
     pub(crate) wake_radius_mod: f32,
     /// It has woken to hunt at its dungeon's meter maximum, and wakes the sleepers it passes.
     pub(crate) hunting: bool,
+    /// How many times it has made each of its spawn's timed calls since the pull.
+    pub(crate) timed_made: Vec<u32>,
+    /// The creature whose timed call brought it in.
+    pub(crate) brought_by: Option<u64>,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -798,6 +845,8 @@ impl Mob {
             asleep: spawn.asleep,
             wake_radius_mod: spawn.wake_radius_mod,
             hunting: false,
+            timed_made: vec![0; spawn.every.len()],
+            brought_by: None,
             target: 0,
             threat: Default::default(),
             hunts: None,
@@ -811,6 +860,16 @@ impl Mob {
             noised: false,
             death_noised: false,
         })
+    }
+
+    /// The mob of the timed-call row `index` for wave `wave` of `brought_by`: its own guid, since
+    /// the row's repeats as the fight goes on.
+    pub(crate) fn timed(index: u32, level: u8, z: f32, wave: u32, brought_by: u64) -> Option<Self> {
+        let mut mob = Self::spawn(index, level, z)?;
+        let low = TIMED_LIVE_BASE + (wave & 0x3F_FFFF);
+        mob.guid = unit_guid(mob.template.entry, low);
+        mob.brought_by = Some(brought_by);
+        Some(mob)
     }
 
     /// A mob no spawn placed, of `template` with `stats`, standing at `position`: it hunts
@@ -854,6 +913,8 @@ impl Mob {
             asleep: false,
             wake_radius_mod: 0.0,
             hunting: false,
+            timed_made: Vec::new(),
+            brought_by: None,
             target: 0,
             threat: Default::default(),
             hunts: Some(hunts),

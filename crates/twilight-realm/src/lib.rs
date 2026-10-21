@@ -672,7 +672,11 @@ impl Realm {
             if w.shard_place() == Some(map) {
                 for e in &new {
                     match e {
-                        SessionEvent::ObjectCreate { guid, .. } if *guid != w.guid => {
+                        // A GameObject is the session's own to stream, not the shard's view.
+                        SessionEvent::ObjectCreate { guid, kind, .. }
+                            if *guid != w.guid
+                                && *kind != benilla_protocol::EntityKind::GameObject =>
+                        {
                             w.seen.insert(*guid);
                         }
                         SessionEvent::ObjectDestroyed(guid) => {
@@ -907,6 +911,7 @@ impl Realm {
                 }
                 w.runs = owners.remove(&id).unwrap_or_default();
                 w.inner_open = shard.portals_open();
+                (w.run_pinned, w.run_dead) = shard.run_facts();
                 w.others = players
                     .iter()
                     .filter(|o| o.alive && o.guid != w.guid)
@@ -1222,6 +1227,7 @@ impl Realm {
             }
             RealmCommand::UseGameObject { guid } => {
                 let mut credited = None;
+                let mut ward = None;
                 if let Some(w) = &mut self.world {
                     let player = w.guid;
                     let giver = self
@@ -1263,10 +1269,16 @@ impl Realm {
                         } else if let Some(used) = w.use_gameobject(guid) {
                             if let Some(c) = self.characters.get(w.guid) {
                                 w.begin_hide(used, c);
+                                if w.ward_click(used, c) {
+                                    ward = Some(used);
+                                }
                             }
                             self.uses.push(used);
                         }
                     }
+                }
+                if let Some(used) = ward {
+                    self.use_ward(used);
                 }
                 if let Some(player) = credited {
                     self.save(player);
@@ -1511,6 +1523,12 @@ impl Realm {
     /// Teleports every character standing in stop `stop` of Phased Dungeon `dungeon` to its
     /// inner portal's `back`, still in the Run.
     pub fn recall_from_stop(&mut self, dungeon: u32, stop: &str) {
+        self.recall_stop(dungeon, stop, None);
+    }
+
+    /// Sends everyone in stop `stop` of dungeon `dungeon` back, and gives each one use credit
+    /// for the GameObject of entry `credit`, if any.
+    fn recall_stop(&mut self, dungeon: u32, stop: &str, credit: Option<u32>) {
         let Some(d) = phased::dungeon(dungeon) else {
             return;
         };
@@ -1522,11 +1540,50 @@ impl Realm {
                 .values_mut()
                 .map(|s| (&mut s.world, &mut s.events)),
         );
+        let mut sent = Vec::new();
         for (w, events) in sessions {
             let Some(w) = w.as_mut() else { continue };
             if let Some(c) = self.characters.get_mut(w.guid) {
-                w.recall_from_stop(d, i, c, events);
+                if w.recall_from_stop(d, i, c, events) {
+                    if let Some(entry) = credit {
+                        quests::credit_use(c, entry, events);
+                    }
+                    sent.push(w.guid);
+                }
             }
+        }
+        if credit.is_some() {
+            sent.into_iter().for_each(|guid| self.save(guid));
+        }
+    }
+
+    /// The active session clicks the ward stone `used`, in reach. While the creature it needs
+    /// lives, they are told it holds; once it is dead, the first click pins the stone's stop in
+    /// the Run, sends everyone in the stop back, and credits each of them with a use of it.
+    fn use_ward(&mut self, used: GameObjectUse) {
+        let Some((d, (stone, _))) =
+            phased::dungeon(used.dungeon).and_then(|d| Some((d, d.usable(used.guid)?)))
+        else {
+            return;
+        };
+        let Some(ward) = &stone.ward else {
+            return;
+        };
+        let place = shard::Place {
+            map: d.map,
+            phase: phased::Phase::Dungeon(d.id),
+        };
+        let Some(shard) = self.shards.get_mut(&place) else {
+            return;
+        };
+        if !shard.is_dead(ward.needs_dead) {
+            self.events.push(SessionEvent::Notification {
+                text: ward.held_text.clone(),
+            });
+            return;
+        }
+        if shard.pin(&ward.stop, ward.opens.as_deref()) {
+            self.recall_stop(d.id, &ward.stop, Some(stone.guid));
         }
     }
 

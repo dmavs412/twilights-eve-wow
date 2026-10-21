@@ -288,6 +288,9 @@ pub(crate) struct InWorld {
     /// The stops whose inner portal is open in the Run the player is in, as of the realm's last
     /// sync.
     pub(crate) inner_open: Vec<String>,
+    /// The stops a ward stone has pinned in the Run, and the creatures dead in it.
+    pub(crate) run_pinned: Vec<String>,
+    pub(crate) run_dead: Vec<u32>,
     /// The dungeon and stop whose box the player stood in at the last Phase check.
     in_stop: Option<(u32, usize)>,
     /// The guids of the open-world quest GameObjects the client has.
@@ -432,6 +435,8 @@ impl InWorld {
             doors_shown: Default::default(),
             dungeon_objects: Default::default(),
             inner_open: Vec::new(),
+            run_pinned: Vec::new(),
+            run_dead: Vec::new(),
             in_stop: None,
             quest_objects: Default::default(),
             quest_spent: Vec::new(),
@@ -709,6 +714,7 @@ impl InWorld {
         // A next-cast buff that ran out puts the client's cast bar back.
         self.sync_next_cast_mods(c, events);
         self.call_for_help(events);
+        self.timed_calls(events);
         self.update_aura_states(events);
         if !self.player.alive() && !self.player.dead {
             self.die(c, events);

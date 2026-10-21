@@ -122,6 +122,11 @@ pub(crate) struct Creature {
     /// Calls for help, each made once per life.
     #[serde(default)]
     pub(crate) on_health: Vec<OnHealth>,
+    /// Calls for help made on a clock while it fights.
+    #[serde(default)]
+    pub(crate) every: Vec<Every>,
+    #[serde(flatten)]
+    pub(crate) appears: Appears,
     /// Items its corpse always holds, on top of the rolled loot.
     #[serde(default)]
     pub(crate) drop: Vec<u32>,
@@ -158,6 +163,46 @@ impl OnHealth {
     /// Whether `health` of `max` has fallen to the threshold.
     pub(crate) fn reached(&self, health: u32, max: u32) -> bool {
         u64::from(health) * 100 <= u64::from(max) * u64::from(self.pct)
+    }
+}
+
+/// A creature's timed call for help: while it is in combat, every `every_s` seconds counted from
+/// the pull, `count` creatures of `entry` appear at `position` and fall on its target.
+#[derive(Deserialize)]
+pub(crate) struct Every {
+    pub(crate) every_s: f32,
+    pub(crate) entry: u32,
+    pub(crate) level: u8,
+    pub(crate) count: u32,
+    pub(crate) position: [f32; 3],
+    /// A cast the client shows as the call goes out.
+    #[serde(default)]
+    pub(crate) client_spell_id: Option<u32>,
+}
+
+/// When a creature or GameObject of a Phased Dungeon is in the Run: from the start, unless one of
+/// these says otherwise.
+#[derive(Deserialize, Default, Debug)]
+pub(crate) struct Appears {
+    /// Out of the Run until this stop is pinned.
+    #[serde(default)]
+    pub(crate) after_pinned: Option<String>,
+    /// Out of the Run until the creature of this guid has died in it.
+    #[serde(default)]
+    pub(crate) after_dead: Option<u32>,
+    /// In the Run until the creature of this guid has died in it.
+    #[serde(default)]
+    pub(crate) until_dead: Option<u32>,
+}
+
+impl Appears {
+    /// Whether it is in a Run with these stops `pinned` and creatures `dead`.
+    pub(crate) fn met(&self, pinned: &[String], dead: &[u32]) -> bool {
+        self.after_pinned
+            .as_ref()
+            .is_none_or(|key| pinned.contains(key))
+            && self.after_dead.is_none_or(|guid| dead.contains(&guid))
+            && self.until_dead.is_none_or(|guid| !dead.contains(&guid))
     }
 }
 
@@ -251,6 +296,20 @@ pub(crate) enum Sides {
 #[serde(rename_all = "lowercase")]
 pub enum UseKind {
     Hide,
+    /// A ward stone: see [`Ward`].
+    Ward,
+}
+
+/// What a ward stone does. While the creature `needs_dead` lives in the Run, a click shows
+/// `held_text`. After, the first click pins stop `stop`: its inner portal goes dark, everyone in
+/// its box is sent back, and the inner portal of stop `opens` opens.
+#[derive(Deserialize)]
+pub(crate) struct Ward {
+    pub(crate) stop: String,
+    pub(crate) needs_dead: u32,
+    pub(crate) held_text: String,
+    #[serde(default)]
+    pub(crate) opens: Option<String>,
 }
 
 /// A click on a dungeon GameObject with a use, for whatever listens for it.
@@ -272,6 +331,11 @@ pub(crate) struct DungeonObject {
     pub(crate) sides: Sides,
     #[serde(default, rename = "use")]
     pub(crate) use_kind: Option<UseKind>,
+    /// What a `use = "ward"` does.
+    #[serde(default)]
+    pub(crate) ward: Option<Ward>,
+    #[serde(flatten)]
+    pub(crate) appears: Appears,
 }
 
 impl DungeonObject {
@@ -624,11 +688,15 @@ impl Dungeon {
     }
 }
 
-/// Whether a Phased Dungeon's door has this GameObject entry.
+/// Whether a Phased Dungeon's door or ward stone has this GameObject entry: a use objective may
+/// name either.
 pub(crate) fn is_door(entry: u32) -> bool {
-    content()
-        .iter()
-        .any(|d| d.portal.door.as_ref().is_some_and(|o| o.entry == entry))
+    content().iter().any(|d| {
+        d.portal.door.as_ref().is_some_and(|o| o.entry == entry)
+            || d.gameobject
+                .iter()
+                .any(|o| o.guid == entry && o.use_kind == Some(UseKind::Ward))
+    })
 }
 
 /// The Phased Dungeon of this id.
@@ -647,6 +715,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/sealed_yard.toml"),
             include_str!("../content/gaze_hall.toml"),
             include_str!("../content/jasperlode.toml"),
+            include_str!("../content/ward_test.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
@@ -714,6 +783,12 @@ pub(crate) struct Run {
     clock_stacks: u32,
     /// The stops whose inner portal is open.
     portals_open: Vec<String>,
+    /// The stops a ward stone has pinned.
+    pub(crate) pinned: Vec<String>,
+    /// The guids of the dungeon's creatures that have died in it.
+    pub(crate) dead: Vec<u32>,
+    /// The guids of the creatures that came into the Run after its start.
+    pub(crate) appeared: Vec<u32>,
 }
 
 impl Run {
@@ -724,12 +799,24 @@ impl Run {
             noise: 0,
             clock_stacks: 0,
             portals_open: self::dungeon(dungeon).map_or(Vec::new(), |d| d.portals_open_at_start()),
+            pinned: Vec::new(),
+            dead: Vec::new(),
+            appeared: Vec::new(),
         }
     }
 
     /// The stops whose inner portal is open.
     pub(crate) fn portals_open(&self) -> &[String] {
         &self.portals_open
+    }
+
+    /// Pins stop `key` for the rest of the Run. Whether it was not pinned already.
+    pub(crate) fn pin(&mut self, key: &str) -> bool {
+        let new = !self.pinned.iter().any(|k| k == key);
+        if new {
+            self.pinned.push(key.to_string());
+        }
+        new
     }
 
     /// Opens or closes the inner portal of stop `key`.

@@ -18,6 +18,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/forest_edge.toml"),
     include_str!("../content/gear.toml"),
     include_str!("../content/jasperlode.toml"),
+    include_str!("../content/ward_test.toml"),
     include_str!("../content/group.toml"),
     include_str!("../content/given_items.toml"),
     include_str!("../content/goods.toml"),

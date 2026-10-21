@@ -1,0 +1,129 @@
+# The Ward Test: a Phased Dungeon with two stops, for the ward stone, appears-after and timed
+# call scripts (#242) to try their mechanics where the shipped dungeons have none. Hand-written.
+#
+# A 40x40 yd open-air box centred on (-9800, 555) in Elwynn, 300 yd north of the Test Grounds.
+# Terrain flatness and nearby spawns are unchecked; the ground there is taken as about z 47.
+# Every position is a world coordinate. The stops are two 20x40 yd boxes east of the building.
+
+id = 90
+name = "the Ward Test"
+map = 0
+origin = [-9800.0, 555.0, 0.0]
+yaw = 0.0
+
+[[footprint]]
+x = [-20.0, 20.0]
+y = [-20.0, 20.0]
+z = [-200.0, 400.0]
+
+[portal]
+position = [-9818.0, 555.0, 47.2]
+orientation = 0.0
+
+# "water" is open from the start; "fire" opens when the ward stone at "water" is used.
+[[stop]]
+key = "water"
+x = [-9700.0, -9680.0]
+y = [535.0, 575.0]
+z = [-200.0, 400.0]
+arrival = [-9690.0, 555.0, 47.2, 0.0]
+return_portal = [-9687.0, 555.0, 47.2, 3.14]
+
+[[stop]]
+key = "fire"
+x = [-9600.0, -9580.0]
+y = [535.0, 575.0]
+z = [-200.0, 400.0]
+arrival = [-9590.0, 555.0, 47.2, 0.0]
+return_portal = [-9587.0, 555.0, 47.2, 3.14]
+
+[[inner_portal]]
+stop = "water"
+position = [-9790.0, 565.0, 47.2]
+orientation = 0.0
+back = [-9788.0, 565.0, 47.2, 0.0]
+open = true
+
+[[inner_portal]]
+stop = "fire"
+position = [-9790.0, 545.0, 47.2]
+orientation = 0.0
+back = [-9788.0, 545.0, 47.2, 0.0]
+
+# The water stop's guard, a level 1 Corrupted Brother: the ward stone holds until it is dead.
+[[creature]]
+guid = 800001
+entry = 96003
+level = 1
+position = [-9690.0, 545.0, 47.2]
+orientation = 3.14
+
+# In the building from the moment the water stop is pinned.
+[[creature]]
+guid = 800002
+entry = 96003
+level = 1
+position = [-9795.0, 545.0, 47.2]
+orientation = 3.14
+after_pinned = "water"
+
+# In the building from the moment the guard is dead.
+[[creature]]
+guid = 800003
+entry = 96003
+level = 1
+position = [-9795.0, 560.0, 47.2]
+orientation = 3.14
+after_dead = 800001
+
+# A level 10 Brother that calls two level 1 Brothers every 20 seconds of a fight.
+[[creature]]
+guid = 800004
+entry = 96003
+level = 10
+position = [-9810.0, 570.0, 47.2]
+orientation = 3.14
+
+[[creature.every]]
+every_s = 20
+entry = 96003
+level = 1
+count = 2
+position = [-9805.0, 565.0, 47.2]
+
+# The ward stone at the water stop.
+[[gameobject]]
+guid = 810001
+display = 461
+position = [-9692.0, 562.0, 47.2]
+orientation = 0.0
+sides = "inside"
+use = "ward"
+ward = { stop = "water", needs_dead = 800001, held_text = "Gresh's magic holds the stone.", opens = "fire" }
+
+# Scenery in the building that appears once the water stop is pinned.
+[[gameobject]]
+guid = 810002
+display = 461
+position = [-9795.0, 550.0, 47.2]
+orientation = 0.0
+sides = "inside"
+after_pinned = "water"
+
+# Scenery that appears once the guard is dead.
+[[gameobject]]
+guid = 810003
+display = 461
+position = [-9795.0, 555.0, 47.2]
+orientation = 0.0
+sides = "inside"
+after_dead = 800001
+
+# Scenery that stands until the guard is dead.
+[[gameobject]]
+guid = 810004
+display = 461
+position = [-9795.0, 560.0, 47.2]
+orientation = 0.0
+sides = "inside"
+until_dead = 800001
