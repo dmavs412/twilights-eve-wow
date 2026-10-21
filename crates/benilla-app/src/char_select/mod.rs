@@ -88,12 +88,16 @@ impl Plugin for CharSelectPlugin {
                 Update,
                 (
                     // Runs in every state: the reconnect auto-answer and the logout edge arrive
-                    // `InWorld`. `back_on_disconnect` runs after the entry: a session that died
+                    // `InWorld`. `back_on_logout` runs before the roster policy: the Local Realm
+                    // answers a logout with the completion and the fresh roster in one burst, so
+                    // both land in one frame, and the in-world pick must be gone before that
+                    // roster is read, or it is auto-answered and the player walks straight back in
+                    // (#159). `back_on_disconnect` runs after the entry: a session that died
                     // during entry queues both edges into one frame, and the dead one must win.
                     (
+                        back_on_logout,
                         apply_roster_policy,
                         enter_on_connected,
-                        back_on_logout,
                         back_on_login_refused,
                         back_on_disconnect,
                         // Last and ungated: it mirrors the pick the frame ended with, and world
@@ -975,6 +979,46 @@ mod tests {
             None,
             "and the reconnect's pending pick goes with it, or the next roster walks straight \
              back into the world the player was just thrown out of",
+        );
+    }
+
+    /// The Local Realm's logout burst: the completion and the fresh roster land in one frame. The
+    /// pick kept in-world for a reconnect must be cleared before that roster is answered, or the
+    /// player is logged straight back in and the logout seems to need two presses (#159).
+    #[test]
+    fn the_roster_behind_a_logout_is_not_auto_answered() {
+        let (tx, rx) = async_channel::unbounded();
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::state::app::StatesPlugin))
+            .insert_state(ClientState::InWorld)
+            .init_resource::<Roster>()
+            .init_resource::<crate::cvars::Cvars>()
+            .insert_resource(CharPick(tx))
+            .add_message::<CharListMessage>()
+            .add_message::<LoggedOutMessage>()
+            .add_message::<AppExit>()
+            .add_systems(
+                Update,
+                (back_on_logout, apply_roster_policy, persist_last_character).chain(),
+            );
+        app.world_mut().resource_mut::<Roster>().pending_pick = Some(7);
+
+        app.world_mut().write_message(LoggedOutMessage);
+        app.world_mut().write_message(CharListMessage {
+            characters: vec![character(7, "Kerwind")],
+            realm: None,
+        });
+        app.update();
+        app.update(); // `StateTransition` applies the pending state at the next frame
+
+        assert!(
+            rx.try_recv().is_err(),
+            "the roster that follows a logout is shown, never answered with the pick the              player just logged out of",
+        );
+        assert_eq!(app.world().resource::<Roster>().pending_pick, None);
+        assert_eq!(
+            *app.world().resource::<State<ClientState>>().get(),
+            ClientState::CharSelect,
         );
     }
 
