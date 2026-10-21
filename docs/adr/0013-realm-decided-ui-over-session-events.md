@@ -2,7 +2,7 @@
 
 The 1.12 protocol carries what vanilla's interface shows. A boss health bar is not in it: the
 stock interface has no boss frame, and the wire has no message that says "this fight matters".
-The first case is the Boss Bar (spec #273): rows at the top of the screen for the significant
+The first case is the Boss Bar (spec #280): rows at the top of the screen for the significant
 creatures a character can see in a fight. The realm alone knows whether a creature is
 significant (a key on its template), whether it is in a fight (its threat table) and who has it
 in view (its stream radius and Phase). This ADR settles how such a realm decision reaches the
