@@ -7,9 +7,25 @@ use benilla_protocol::SessionEvent;
 use super::InWorld;
 use crate::characters::Char;
 use crate::mobs::{self, Mob};
-use crate::phased::{self, GameObjectUse, Phase};
+use crate::phased::{self, GameObjectUse, Phase, UseKind};
 use crate::population::VIEW_YD;
 use crate::space::flat_distance;
+
+/// How near a hiding spot a character must stand to crouch at it.
+const HIDE_REACH_YD: f32 = 5.0;
+/// How far a hiding character may drift before the hide ends.
+const HIDE_DRIFT_YD: f32 = 1.0;
+
+/// A character crouched at a hiding spot of a Phased Dungeon.
+pub(super) struct Hide {
+    dungeon: u32,
+    /// Where they crouched.
+    at: [f32; 3],
+    /// Their health a moment ago: a drop ends the hide.
+    health: u32,
+    /// Seconds since the meter last lost a stack to them.
+    timer: f32,
+}
 
 impl InWorld {
     /// Puts the player in the Phase where they stand, unless a worldport is under way.
@@ -39,7 +55,105 @@ impl InWorld {
         }
         // The new Phase's creatures are its Run's, in its shard: they come with the view.
         self.drop_view(events);
+        // The Phase's meter and the hiding spot stay behind.
+        self.hiding = None;
+        if self.noise_shown > 0 {
+            if let Some(meter) = self.meter() {
+                self.hide_marker(meter.client_spell, events);
+            }
+            self.noise_shown = 0;
+        }
         self.phase = now;
+    }
+
+    /// The meter of the Phase the player is in, if it has one.
+    fn meter(&self) -> Option<&'static phased::Meter> {
+        match self.phase {
+            Phase::Dungeon(id) => phased::dungeon(id)?.meter.as_ref(),
+            Phase::OpenWorld => None,
+        }
+    }
+
+    /// The player's aura shows `stacks` of the Phase's meter: put up, raised or lowered in
+    /// place, and taken off at 0.
+    pub(crate) fn show_noise(&mut self, stacks: u32, events: &mut Vec<SessionEvent>) {
+        let Some(meter) = self.meter() else {
+            return;
+        };
+        if stacks == self.noise_shown {
+            return;
+        }
+        if stacks == 0 {
+            self.hide_marker(meter.client_spell, events);
+        } else {
+            self.show_marker(meter.client_spell, false, stacks, events);
+        }
+        self.noise_shown = stacks;
+    }
+
+    /// What the player did to the Run's meter since it last asked: stacks added and drained.
+    pub(crate) fn take_noise(&mut self) -> (u32, u32) {
+        (
+            std::mem::take(&mut self.noise_gain),
+            std::mem::take(&mut self.noise_drain),
+        )
+    }
+
+    /// The player clicks a hiding spot: they crouch there if it is within reach and they are
+    /// out of combat.
+    pub(crate) fn begin_hide(&mut self, used: GameObjectUse, c: &Char) {
+        if used.kind != UseKind::Hide
+            || !self.player.alive()
+            || self.player.in_combat
+            || self.phase != Phase::Dungeon(used.dungeon)
+        {
+            return;
+        }
+        let spot = phased::dungeon(used.dungeon).and_then(|d| d.usable(used.guid));
+        let Some((spot, _)) = spot else {
+            return;
+        };
+        if flat_distance(spot.position, c.position) > HIDE_REACH_YD {
+            return;
+        }
+        self.hiding = Some(Hide {
+            dungeon: used.dungeon,
+            at: c.position,
+            health: self.player.health,
+            timer: 0.0,
+        });
+    }
+
+    /// A hiding player takes a stack off the Run's meter every drain period; moving, attacking,
+    /// taking damage or a fight ends it.
+    pub(super) fn hide_tick(&mut self, dt: f32, c: &Char) {
+        let Some(hide) = &mut self.hiding else {
+            return;
+        };
+        let still = flat_distance(c.position, hide.at) <= HIDE_DRIFT_YD;
+        let hurt = self.player.health < hide.health;
+        if !self.player.alive()
+            || self.player.in_combat
+            || self.player.attacking.is_some()
+            || hurt
+            || !still
+        {
+            self.hiding = None;
+            return;
+        }
+        hide.health = self.player.health;
+        let Some(every) = phased::dungeon(hide.dungeon)
+            .and_then(|d| d.meter.as_ref())
+            .map(|m| m.hide_drain_every_s)
+            .filter(|every| *every > 0.0)
+        else {
+            return;
+        };
+        hide.timer += dt;
+        while hide.timer >= every {
+            hide.timer -= every;
+            self.noise_drain += 1;
+        }
     }
 
     /// Streams each Phased Dungeon's doorway portal in and out with the view, in every Phase.

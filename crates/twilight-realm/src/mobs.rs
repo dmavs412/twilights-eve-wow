@@ -97,6 +97,9 @@ pub(crate) struct Template {
     /// than dying it heals to full [`INERT_RESET_SECS`] after it last took damage.
     #[serde(default)]
     pub(crate) inert: bool,
+    /// The stacks its death adds to its Phased Dungeon's meter, in place of the meter's own.
+    #[serde(default)]
+    pub(crate) noise_on_death: Option<u32>,
 }
 
 /// Seconds after an inert creature last took damage before it is whole again.
@@ -149,6 +152,7 @@ impl Template {
             spells,
             equip,
             inert: false,
+            noise_on_death: None,
         }
     }
 
@@ -571,6 +575,10 @@ pub(crate) struct Mob {
     pub(crate) affixes: Vec<&'static str>,
     /// An inert creature's seconds since it last took damage; `None` while it is whole.
     pub(crate) since_hurt: Option<f32>,
+    /// A player has hurt it this life, and its dungeon's meter has heard.
+    pub(crate) noised: bool,
+    /// Its death has been heard by its dungeon's meter.
+    pub(crate) death_noised: bool,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -642,6 +650,8 @@ impl Mob {
             extra_spells: Vec::new(),
             affixes: Vec::new(),
             since_hurt: None,
+            noised: false,
+            death_noised: false,
         })
     }
 
@@ -691,6 +701,8 @@ impl Mob {
             extra_spells: Vec::new(),
             affixes: Vec::new(),
             since_hurt: None,
+            noised: false,
+            death_noised: false,
         }
     }
 

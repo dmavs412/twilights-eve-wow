@@ -21,6 +21,19 @@ z = [12.0, 63.0]
 position = [-9911.0, 556.0, 37.7]
 orientation = 0.0
 
+# The Noise meter (#171): a stacking debuff on the Run, shown on every character in the Phase.
+# The debuff borrows Piercing Howl (12323, spell_shadow_deathscream) for its alarm icon and name;
+# its stock tooltip text still talks of slowing, which a later ticket can replace with a row of
+# its own.
+[meter]
+name = "Noise"
+max = 20
+client_spell = 12323
+clock_stack_every_s = 30.0
+on_first_damage = 1
+on_death = 1
+hide_drain_every_s = 2.0
+
 
 # Hiding spots (#170): inside the Phase only, spaced along the routes from the Portal past
 # Hogger's camps. Displays: 6133 WestfallHayStack01 and 461 DuskwoodHayStack (large haystacks),

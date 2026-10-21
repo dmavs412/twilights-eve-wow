@@ -72,6 +72,7 @@ impl InWorld {
                 ammo_display_id: None,
                 item_caster: None,
             });
+            self.noise_gain += spell.noise_on_cast;
             if let CreatureEffect::Heal { pct_max_health } = spell.effect {
                 let max = mob.stats.max_health;
                 let healed = crate::creature_spells::healed(mob.health, max, pct_max_health);

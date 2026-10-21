@@ -83,6 +83,9 @@ impl InWorld {
         // Notoriety falls to nothing, so the Heat aura is rightly gone with the rest.
         c.notoriety = 0.0;
         self.heat_shown = 0;
+        // ...and so is the Phase's meter, which the dead are not in.
+        self.noise_shown = 0;
+        self.hiding = None;
         c.bounty_rank = 0;
         let broke = wear::on_death(c, events);
         events.push(SessionEvent::DurabilityDamageDeath);

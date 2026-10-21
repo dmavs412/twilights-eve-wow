@@ -43,6 +43,9 @@ pub(crate) struct CreatureSpell {
     /// The spell is cast only while the caster's health is under this percent of its maximum.
     #[serde(default)]
     pub(crate) below_health_pct: Option<u32>,
+    /// The stacks each cast adds to its Phased Dungeon's meter.
+    #[serde(default)]
+    pub(crate) noise_on_cast: u32,
     pub(crate) effect: CreatureEffect,
 }
 

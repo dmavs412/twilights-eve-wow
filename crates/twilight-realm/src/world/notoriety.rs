@@ -67,7 +67,7 @@ impl InWorld {
             self.hide_marker(old, events);
         }
         if let Some(new) = notoriety::heat_aura(level) {
-            self.show_marker(new, true, events);
+            self.show_marker(new, true, 1, events);
         }
         self.heat_shown = level;
     }
@@ -315,7 +315,7 @@ impl InWorld {
         let show = marked && self.player.alive();
         if show != self.marked_shown {
             if show {
-                self.show_marker(notoriety::marked_aura(), false, events);
+                self.show_marker(notoriety::marked_aura(), false, 1, events);
             } else {
                 self.hide_marker(notoriety::marked_aura(), events);
             }

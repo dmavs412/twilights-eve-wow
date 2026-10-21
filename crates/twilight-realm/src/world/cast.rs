@@ -465,10 +465,11 @@ enum AuraKind {
         max: u32,
         rule: StackRule,
     },
-    /// Does nothing: it shows a state the realm keeps elsewhere (a Heat Level, Marked), a buff
-    /// when `helpful`, a debuff otherwise.
+    /// Does nothing: it shows a state the realm keeps elsewhere (a Heat Level, Marked, a
+    /// dungeon's Noise), a buff when `helpful`, a debuff otherwise, with `stacks` on its icon.
     Marker {
         helpful: bool,
+        stacks: u32,
     },
 }
 
@@ -548,7 +549,7 @@ impl AuraKind {
                 | AuraKind::SkillStacks { .. }
                 | AuraKind::Stealth { .. }
                 | AuraKind::Stacks { .. }
-                | AuraKind::Marker { helpful: true }
+                | AuraKind::Marker { helpful: true, .. }
         )
     }
 
@@ -560,7 +561,8 @@ impl AuraKind {
             AuraKind::StackTo { count, .. } => count,
             AuraKind::SkillAmount { stacks, .. }
             | AuraKind::NextCast { stacks, .. }
-            | AuraKind::ArmorLoss { stacks, .. } => stacks,
+            | AuraKind::ArmorLoss { stacks, .. }
+            | AuraKind::Marker { stacks, .. } => stacks,
             _ => 1,
         }
     }
@@ -1634,6 +1636,8 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) -> Ticked {
         let ticked = Ticked::default();
+        // Casting ends a hide.
+        self.hiding = None;
         let Some(skill) = crate::talents::skill(c, spell_id) else {
             events.push(refused(spell_id, SPELL_FAILED_NOT_KNOWN));
             return ticked;
@@ -4714,11 +4718,13 @@ impl InWorld {
     }
 
     /// `unit` died: its auras go with it.
-    /// Puts a [`AuraKind::Marker`] of `spell_id` on the player, held until taken off.
+    /// Puts a [`AuraKind::Marker`] of `spell_id` on the player with `stacks`, held until taken
+    /// off; one already up is replaced.
     pub(super) fn show_marker(
         &mut self,
         spell_id: u32,
         helpful: bool,
+        stacks: u32,
         events: &mut Vec<SessionEvent>,
     ) {
         let aura = Aura {
@@ -4729,7 +4735,7 @@ impl InWorld {
             left: UNTIL_BROKEN_SECS,
             period: 0.0,
             next_tick: 0.0,
-            kind: AuraKind::Marker { helpful },
+            kind: AuraKind::Marker { helpful, stacks },
             charges: 0,
         };
         self.skills.apply(aura, events);

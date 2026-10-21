@@ -11,7 +11,7 @@ use benilla_protocol::SessionEvent;
 use crate::fields::values;
 use crate::looting::lootable_pair;
 use crate::mobs::{Mob, State};
-use crate::phased::{Phase, Run};
+use crate::phased::{Meter, Phase, Run};
 use crate::population::{Population, VIEW_YD};
 use crate::rules::threat;
 use crate::space::flat_distance;
@@ -87,8 +87,33 @@ impl Shard {
             },
             population: Population::default(),
             hub: Default::default(),
-            run: dungeon.then_some(Run { elapsed: 0.0 }),
+            run: dungeon.then(Run::new),
         }
+    }
+
+    /// The stacks on the Run's meter; 0 with none.
+    pub(crate) fn noise(&self) -> u32 {
+        self.run.as_ref().map_or(0, |r| r.noise)
+    }
+
+    /// The Run's meter hears what happened this tick: the creatures first hurt or dead since it
+    /// last looked, `gain` more from casts and `drain` from hiding, and the clock.
+    pub(crate) fn hear_noise(&mut self, meter: &Meter, gain: u32, drain: u32) {
+        let Some(run) = &mut self.run else {
+            return;
+        };
+        let mut gain = gain;
+        for m in &mut self.mobs {
+            if !m.noised && m.health < m.stats.max_health {
+                m.noised = true;
+                gain += meter.on_first_damage;
+            }
+            if !m.death_noised && m.state == State::Dead {
+                m.death_noised = true;
+                gain += m.template.noise_on_death.unwrap_or(meter.on_death);
+            }
+        }
+        run.hear(meter, gain, drain);
     }
 
     /// Seconds into its Run, for a Phased Dungeon's.
@@ -275,5 +300,89 @@ pub(crate) fn as_seen_by_others(e: &SessionEvent) -> Option<SessionEvent> {
             (!pairs.is_empty()).then(|| values(*guid, &pairs))
         }
         other => Some(other.clone()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mobs::Template;
+    use crate::rules::stats::UnitClass;
+
+    fn meter() -> Meter {
+        Meter {
+            name: "Noise".into(),
+            max: 20,
+            client_spell: 1,
+            clock_stack_every_s: 30.0,
+            on_first_damage: 1,
+            on_death: 1,
+            hide_drain_every_s: 2.0,
+        }
+    }
+
+    /// The Abbey's Run, a Phased Dungeon with creatures in it.
+    fn run() -> Shard {
+        let shard = Shard::new(Place {
+            map: 0,
+            phase: Phase::Dungeon(1),
+        });
+        assert!(shard.mobs.len() >= 2, "the Abbey holds creatures");
+        shard
+    }
+
+    #[test]
+    fn damage_to_a_sleeper_adds_one_stack_once() {
+        let mut shard = run();
+        shard.hear_noise(&meter(), 0, 0);
+        assert_eq!(shard.noise(), 0, "an untouched Run is quiet");
+        shard.mobs[0].health -= 1;
+        shard.hear_noise(&meter(), 0, 0);
+        assert_eq!(shard.noise(), 1);
+        shard.mobs[0].health -= 1;
+        shard.hear_noise(&meter(), 0, 0);
+        assert_eq!(shard.noise(), 1, "a second blow to the same creature");
+        shard.mobs[1].health -= 1;
+        shard.hear_noise(&meter(), 0, 0);
+        assert_eq!(shard.noise(), 2, "the next creature's first blow");
+    }
+
+    #[test]
+    fn a_death_adds_the_meters_stack_or_the_creatures_own() {
+        let mut shard = run();
+        let mut runt = Template::hunter(
+            1,
+            "Runt".into(),
+            String::new(),
+            1,
+            1,
+            UnitClass::Warrior,
+            2000,
+            1.0,
+            Vec::new(),
+            Vec::new(),
+        );
+        runt.noise_on_death = Some(2);
+        shard.mobs[0].template = Box::leak(Box::new(runt));
+        for i in [0, 1] {
+            shard.mobs[i].noised = true;
+            shard.mobs[i].health = 0;
+            shard.mobs[i].state = State::Dead;
+        }
+        shard.hear_noise(&meter(), 0, 0);
+        assert_eq!(shard.noise(), 3, "the Runt's 2 and the meter's 1");
+        shard.hear_noise(&meter(), 0, 0);
+        assert_eq!(shard.noise(), 3, "a death is heard once");
+    }
+
+    #[test]
+    fn the_meter_clamps_at_its_max_and_drains_to_nothing() {
+        let mut shard = run();
+        shard.hear_noise(&meter(), 50, 0);
+        assert_eq!(shard.noise(), 20);
+        shard.hear_noise(&meter(), 0, 3);
+        assert_eq!(shard.noise(), 17);
+        shard.hear_noise(&meter(), 0, 99);
+        assert_eq!(shard.noise(), 0);
     }
 }

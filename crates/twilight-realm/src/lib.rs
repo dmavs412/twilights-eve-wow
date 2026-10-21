@@ -906,6 +906,47 @@ impl Realm {
         }
     }
 
+    /// Each Phased Dungeon's meter hears what its Run's characters and creatures did this tick
+    /// (stacks from casts, stacks drained by hiding, the creatures first hurt or dead and the
+    /// clock), and every character in the Phase is shown the stacks it now holds.
+    fn tick_noise(&mut self) {
+        let mut heard: std::collections::BTreeMap<shard::Place, (u32, u32)> = Default::default();
+        let worlds = std::iter::once(&mut self.world)
+            .chain(self.parked.values_mut().map(|s| &mut s.world))
+            .flatten();
+        for w in worlds {
+            let (gain, drain) = w.take_noise();
+            let Some(place) = w.shard_place() else {
+                continue;
+            };
+            let total = heard.entry(place).or_default();
+            total.0 += gain;
+            total.1 += drain;
+        }
+        for (place, (gain, drain)) in heard {
+            let (phased::Phase::Dungeon(id), Some(shard)) =
+                (place.phase, self.shards.get_mut(&place))
+            else {
+                continue;
+            };
+            let Some(meter) = phased::dungeon(id).and_then(|d| d.meter.as_ref()) else {
+                continue;
+            };
+            shard.hear_noise(meter, gain, drain);
+            let stacks = shard.noise();
+            let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
+                self.parked
+                    .values_mut()
+                    .map(|s| (&mut s.world, &mut s.events)),
+            );
+            for (w, events) in sessions {
+                if let Some(w) = w.as_mut().filter(|w| w.shard_place() == Some(place)) {
+                    w.show_noise(stacks, events);
+                }
+            }
+        }
+    }
+
     /// Applies one command from the default session; its answers queue for
     /// [`Self::drain_events`].
     pub fn handle(&mut self, command: RealmCommand) {
@@ -1039,8 +1080,13 @@ impl Realm {
                 }
             }
             RealmCommand::UseGameObject { guid } => {
-                if let Some(used) = self.world.as_ref().and_then(|w| w.use_gameobject(guid)) {
-                    self.uses.push(used);
+                if let Some(w) = &mut self.world {
+                    if let Some(used) = w.use_gameobject(guid) {
+                        if let Some(c) = self.characters.get(w.guid) {
+                            w.begin_hide(used, c);
+                        }
+                        self.uses.push(used);
+                    }
                 }
             }
             RealmCommand::CreatureQuery { entry } => {
@@ -1191,6 +1237,7 @@ impl Realm {
             self.tick_served(dt, host);
         }
         self.give_back();
+        self.tick_noise();
         self.party_tick(dt);
         self.tick_trades();
         self.tick_duels(dt);

@@ -243,6 +243,14 @@ pub(crate) struct InWorld {
     portals: Vec<u32>,
     /// The guids of the dungeon GameObjects the client has.
     dungeon_objects: std::collections::HashSet<u64>,
+    /// The stacks of the Phase's meter the player's aura shows; 0 for none.
+    noise_shown: u32,
+    /// Stacks the player's doings added to the Run's meter since the shard last took them.
+    pub(crate) noise_gain: u32,
+    /// Stacks the player's hiding took off it since the shard last took them.
+    noise_drain: u32,
+    /// The hiding spot the player is crouched at.
+    hiding: Option<phase::Hide>,
     /// What each creature casts.
     pub(crate) casters: crate::creature_spells::Casters,
     /// The Heat Level whose aura the player wears; 0 for none.
@@ -345,6 +353,10 @@ impl InWorld {
             phase: Default::default(),
             portals: Vec::new(),
             dungeon_objects: Default::default(),
+            noise_shown: 0,
+            noise_gain: 0,
+            noise_drain: 0,
+            hiding: None,
             casters: Default::default(),
             heat_shown: 0,
             hunter_in: None,
@@ -550,6 +562,7 @@ impl InWorld {
         }
         self.rest(dt, c, events);
         self.notoriety_tick(dt, host, c, rng, events);
+        self.hide_tick(dt, c);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
         self.looting

@@ -268,6 +268,29 @@ pub(crate) struct Dungeon {
     pub(crate) creature: Vec<Creature>,
     #[serde(default)]
     pub(crate) gameobject: Vec<DungeonObject>,
+    /// The Run-wide stacking debuff its fights build and its hiding spots drain.
+    #[serde(default)]
+    pub(crate) meter: Option<Meter>,
+}
+
+/// A Phased Dungeon's meter (spec #169): stacks on the Run, shown as a debuff on every character
+/// in the Phase, fed by combat and the Run's clock and drained by hiding.
+#[derive(Deserialize)]
+pub(crate) struct Meter {
+    #[allow(dead_code)]
+    pub(crate) name: String,
+    /// The most stacks it holds.
+    pub(crate) max: u32,
+    /// The Spell.dbc row whose icon and name the debuff borrows.
+    pub(crate) client_spell: u32,
+    /// A stack comes with every this many seconds of the Run.
+    pub(crate) clock_stack_every_s: f32,
+    /// Stacks the first damage a player does to a creature in its life adds.
+    pub(crate) on_first_damage: u32,
+    /// Stacks a creature's death adds, unless its template says its own.
+    pub(crate) on_death: u32,
+    /// A hiding character takes a stack off every this many seconds.
+    pub(crate) hide_drain_every_s: f32,
 }
 
 impl Dungeon {
@@ -287,6 +310,11 @@ impl Dungeon {
         let (dx, dy) = (x - ox, y - oy);
         [dx * cos + dy * sin, dy * cos - dx * sin, z - oz]
     }
+}
+
+/// The Phased Dungeon of this id.
+pub(crate) fn dungeon(id: u32) -> Option<&'static Dungeon> {
+    content().iter().find(|d| d.id == id)
 }
 
 /// Every Phased Dungeon: one content file each.
@@ -351,6 +379,33 @@ pub(crate) fn chase_within(phase: Phase, map: u32, to: [f32; 3], me: [f32; 3]) -
 pub(crate) struct Run {
     /// Seconds since it started, for the timed events to come.
     pub(crate) elapsed: f32,
+    /// The stacks on its dungeon's meter; they never fall but by hiding.
+    pub(crate) noise: u32,
+    /// How many of the meter's clock stacks the Run has had.
+    clock_stacks: u32,
+}
+
+impl Run {
+    pub(crate) fn new() -> Self {
+        Self {
+            elapsed: 0.0,
+            noise: 0,
+            clock_stacks: 0,
+        }
+    }
+
+    /// Adds `gain` stacks and the clock's due, then takes `drain` off, within `0..=max`.
+    pub(crate) fn hear(&mut self, meter: &Meter, gain: u32, drain: u32) {
+        let mut gain = gain;
+        while meter.clock_stack_every_s > 0.0
+            && (self.clock_stacks + 1) as f32 * meter.clock_stack_every_s <= self.elapsed
+        {
+            self.clock_stacks += 1;
+            gain += 1;
+        }
+        self.noise = (self.noise + gain).min(meter.max);
+        self.noise = self.noise.saturating_sub(drain);
+    }
 }
 
 #[cfg(test)]
