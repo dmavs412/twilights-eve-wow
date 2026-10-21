@@ -174,3 +174,147 @@ money = 200
 tokens = 3
 zone_or_sort = 12
 collect = [{ item = 980003, count = 10, sources = [{ from = [96003], chance = 35 }, { from = [96004], chance = 100 }, { from = [96005], chance = 100, count = 3 }] }]
+
+# ── Goldshire (#223) ─────────────────────────────────────────────────────────────────────────
+#
+# Marshal Dughan does not yet believe McBride's cult story, so the story quests send the player
+# to talk before they send it to fight. Ids and ranges follow docs/specs/elwynn-10-30.
+
+# McBride writes down what happened in the Abbey and hands the player the sealed report when the
+# quest is taken; Dughan takes it. XP only.
+[[quest]]
+id = 94101
+kind = "story"
+giver = 197
+ender = 240
+after = 94004
+level = 10
+title = "McBride's Report"
+objectives = "Carry Marshal McBride's sealed report to Marshal Dughan in Goldshire."
+details = "I've written down everything: the idol, the undercroft, the Abbot at the bell. Dughan keeps the peace in Goldshire, and he's the one who has to act on this. Take the road south and put the report in his hands and no one else's. He won't thank you for the news."
+progress = "Have you got the report for Marshal Dughan?"
+completion = "McBride's seal. So he finally put it all on paper. A cult under the Abbey and an Abbot turned traitor. I'll read every word. Don't expect me to believe all of it."
+money = 0
+tokens = 0
+zone_or_sort = 12
+gives = [[980004, 1]]
+collect = [{ item = 980004, count = 1 }]
+
+# Dughan wants proof before he raises an alarm: three townsfolk asked about the hammer-and-black-sun
+# mark. Each reply carries one clue. XP only.
+[[quest]]
+id = 94102
+kind = "story"
+giver = 240
+after = 94101
+level = 11
+title = "The Marshal's Doubt"
+objectives = "Ask Innkeeper Farley, Smith Argus and Remy \"Two Times\" whether they have seen the hammer-and-black-sun mark, then return to Marshal Dughan."
+details = "One idol and one frightened marshal's word. That's not enough to rouse the Stormwind garrison, and it's not enough for me. Go and ask around Goldshire. Farley hears everything that passes through the inn, Argus sees who buys his ore, and Remy knows who owes what. If that mark has been seen here, one of them has seen it."
+progress = "Well? Did anyone in town see that mark?"
+completion = "A crate off a wrecked cart. Strangers buying ore by the cartload. A debtor who left the very night the Abbey fell. Three things I can't wave away. It's still a Defias matter, mind. But it's a matter."
+money = 0
+tokens = 0
+zone_or_sort = 12
+talk = [
+  { npc = 295, option = "Have you seen a hammer-and-black-sun mark?", reply = "That mark? Aye, I saw it. On a crate off a cart that wrecked itself on the Stormwind road, a week back. Nobody came for the crate, and nobody wants to say what was in it." },
+  { npc = 514, option = "Has anyone been buying ore with a strange mark on it?", reply = "Strangers, buying ore in bulk and paying in coin I've never seen the like of. They won't say what they're building. I don't ask, and I don't sell them my good iron." },
+  { npc = 241, option = "Have you seen a hammer-and-black-sun mark, Remy?", reply = "A mark like that? Can't say I have. But my biggest debtor skipped town the night the Abbey fell, and he left without his coat. I don't take that for a coincidence." },
+]
+
+# Farley sends the player to the cart; Dughan takes the strongbox in. 4 silver.
+[[quest]]
+id = 94103
+kind = "story"
+giver = 295
+ender = 240
+after = 94102
+level = 12
+title = "The Wrecked Cart"
+objectives = "Recover the Sealed Strongbox from the Defias Highwayman at the wrecked cart on the Stormwind road, then take it to Marshal Dughan."
+details = "That crate I told the Marshal about came off a cart that wrecked itself north on the Stormwind road. Now a Defias highwayman has taken up camp beside it, and he's guarding something. Crates don't need guarding unless there's something in them. Bring me what he's sitting on, or rather, bring it to the Marshal."
+progress = "Did you find that strongbox?"
+completion = "Twilight coin, and a letter addressed to the Collector, Brackwell. The Defias don't pay in this coin. South, then. I'll have my eye on Brackwell."
+money = 400
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 980005, count = 1, from = [96011], chance = 100 }]
+
+# The cart itself: nothing to click and nothing to take. It stands beside the Highwayman. Its
+# display is a placeholder.
+[[gameobject]]
+guid = 790101
+entry = 980101
+display = 1011
+position = [-9293.0, 24.0, 62.0]
+orientation = 0.8
+
+# ── Goldshire's bounties (#231) ──────────────────────────────────────────────────────────────
+
+[[quest]]
+id = 94105
+kind = "bounty"
+giver = 963
+level = 12
+min_level = 10
+max_level = 14
+title = "Prowlers on the Road"
+objectives = "Kill 10 Prowlers or Forest Spiders near Goldshire, then return to Deputy Rainer."
+details = "Prowlers drag off our cattle, and the forest spiders make the road unsafe after dark. I can't spare a guard for every mile of it. Thin them out and I'll pay a bounty each time. Prowlers or spiders, it makes no difference to me."
+progress = "The road still dangerous?"
+completion = "Ten fewer teeth on the road. They'll creep back, they always do. So will my coin, as long as you do."
+money = 150
+tokens = 1
+zone_or_sort = 12
+kill = [[118, 10], [30, 10]]
+
+[[quest]]
+id = 94106
+kind = "bounty"
+giver = 514
+level = 12
+min_level = 10
+max_level = 14
+title = "Silk for the Smith"
+objectives = "Bring 8 Forest Spider Silk to Smith Argus."
+details = "Spider silk makes a better bellows rope than hemp ever did, and the forest is full of the beasts. Bring me silk, eight at a time, and I'll pay you fair for the trouble. Mind the bites."
+progress = "Got that silk?"
+completion = "Strong stuff. That'll see my forge through the week. Come back when you've more."
+money = 170
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980006, count = 8, from = [30], chance = 50 }]
+
+[[quest]]
+id = 94107
+kind = "bounty"
+giver = 963
+level = 13
+min_level = 11
+max_level = 15
+title = "Bandits on the Stormwind Road"
+objectives = "Kill 10 Defias Bandits, then return to Deputy Rainer."
+details = "The Defias bandits have grown bold since the Marshal's attention turned to the Abbey. Every one you put down is one fewer robbing a cart on the Stormwind road. The bounty stands as long as there are bandits to hunt."
+progress = "Still plenty of bandits about?"
+completion = "Ten bandits fewer. If only there weren't always ten more. Here's your share."
+money = 200
+tokens = 1
+zone_or_sort = 12
+kill = [[116, 10]]
+
+[[quest]]
+id = 94108
+kind = "bounty"
+giver = 241
+level = 12
+min_level = 10
+max_level = 14
+title = "Gold Dust for Remy"
+objectives = "Bring 8 Gold Dust from Kobold Vermin and Kobold Tunnelers to Remy \"Two Times\"."
+details = "The kobolds at the edge of Fargodeep dig up flecks of gold and don't know what to do with it. I do. Bring me the dust, eight at a time, and I'll make it worth your while. Twice, if you're quick about it."
+progress = "Got my dust?"
+completion = "Pure enough. Don't ask where it goes. Come back when you've more, and I'll pay you again."
+money = 180
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980007, count = 8, from = [6, 475], chance = 50 }]

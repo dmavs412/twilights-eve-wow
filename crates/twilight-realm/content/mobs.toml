@@ -824,6 +824,33 @@ detection_range = 18.0
 spells = ["eat", "rushing_charge"]
 hunts_at_meter_max = 15.0
 
+# The Defias Highwayman (#231) who guards the wrecked cart on the Stormwind road north of
+# Goldshire and always carries the Sealed Strongbox for The Wrecked Cart (quests_elwynn.toml).
+# Display 2358 and faction 17 are the Defias Bandit's. Placeholder multipliers.
+[[template]]
+entry = 96011
+name = "Defias Highwayman"
+creature_type = 7
+display_id = 2358
+faction_template = 17
+unit_class = "warrior"
+level_min = 12
+level_max = 12
+health_multiplier = 1.0
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+
+[[spawn]]
+guid = 9000101
+entry = 96011
+level = 12
+position = [-9290.0, 22.0, 62.0]
+orientation = 1.57
+
 # The Test Grounds' training dummies (test_grounds.toml): `inert`, so they never move or fight and
 # heal to full 10 s after the last hit. Faction 14 shows them attackable; display 3277 (the
 # Corrupted Brother's) is a placeholder body.

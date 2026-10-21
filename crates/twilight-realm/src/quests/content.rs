@@ -246,6 +246,10 @@ pub(crate) struct Quest {
     /// any Tokens. Ammo among them is set as the ammo when none is (the Ranger's arrows).
     #[serde(default)]
     pub(crate) rewards: Vec<(u32, u32)>,
+    /// `[item entry, count]` the giver hands over when the quest is taken: a quest item to carry
+    /// to the ender, which a `collect` objective then takes at the hand-in.
+    #[serde(default)]
+    pub(crate) gives: Vec<(u32, u32)>,
     /// `(creature entry, count)`.
     #[serde(default)]
     pub(crate) kill: Vec<(u32, u32)>,
@@ -529,7 +533,11 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
         "quest {} gives more than four reward items",
         q.id
     );
-    for &item in q.choices.iter().chain(q.rewards.iter().map(|(e, _)| e)) {
+    for &item in q
+        .choices
+        .iter()
+        .chain(q.rewards.iter().chain(&q.gives).map(|(e, _)| e))
+    {
         assert!(
             crate::items::template(item).is_some(),
             "quest {} offers item {item}, which the content does not have",
@@ -755,6 +763,44 @@ mod tests {
         assert_eq!((source(96003).chance, source(96003).count), (35, 1));
         assert_eq!((source(96004).chance, source(96004).count), (100, 1));
         assert_eq!((source(96005).chance, source(96005).count), (100, 3));
+    }
+
+    #[test]
+    fn goldshires_bounties_and_wrecked_cart_have_their_range_giver_and_objective() {
+        // id, giver, levels offered, kills, collected item.
+        let rows: [(u32, u32, (u8, u8), &[u32], Option<u32>); 4] = [
+            (94105, 963, (10, 14), &[118, 30], None),
+            (94106, 514, (10, 14), &[], Some(980006)),
+            (94107, 963, (11, 15), &[116], None),
+            (94108, 241, (10, 14), &[], Some(980007)),
+        ];
+        for (id, giver, (lo, hi), kills, item) in rows {
+            let q = super::quest(id).unwrap_or_else(|| panic!("no quest {id}"));
+            assert!(q.kind == Kind::Bounty, "{id}'s kind");
+            assert!(
+                matches!(q.giver, Giver::Npc(g) if g == giver),
+                "{id}'s giver"
+            );
+            assert!(!q.in_range(lo - 1), "{id} offered below {lo}");
+            assert!(
+                q.in_range(lo) && q.in_range(hi),
+                "{id} not offered in {lo}-{hi}"
+            );
+            assert!(!q.in_range(hi + 1), "{id} offered above {hi}");
+            assert_eq!(q.tokens, 1, "{id}'s Token");
+            let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
+            assert_eq!(killed, kills, "{id}'s kills");
+            assert_eq!(q.collect.first().map(|c| c.item), item, "{id}'s item");
+        }
+        let cart = super::quest(94103).unwrap();
+        assert_eq!(
+            (cart.giver, cart.ender(), cart.money),
+            (Giver::Npc(295), 240, 400)
+        );
+        assert_eq!(cart.collect[0].from, [96011]);
+        assert_eq!(cart.collect[0].chance, 100);
+        assert!(crate::mobs::template(96011).is_some_and(|t| t.rank == 0));
+        assert_eq!(super::quest(94101).unwrap().gives, [(980004, 1)]);
     }
 
     /// A quest of `kind` at level 10, as the content would write it.

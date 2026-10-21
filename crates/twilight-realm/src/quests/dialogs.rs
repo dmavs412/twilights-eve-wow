@@ -536,6 +536,18 @@ fn accept(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
         events.push(SessionEvent::QuestLogFull);
         return false;
     };
+    let mut room = c.inventory.clone();
+    if q.gives.iter().any(|&(e, n)| room.store(e, n).is_err()) {
+        events.push(equipment::inventory_failure(
+            equipment::EQUIP_ERR_INVENTORY_FULL,
+            0,
+        ));
+        return false;
+    }
+    for &(entry, count) in &q.gives {
+        // Checked above.
+        let _ = equipment::receive_from(c, entry, count, true, events);
+    }
     c.quests.active.push(Active::new(q.id, slot, [0; 4]));
     let i = c.quests.active.len() - 1;
     // The bags may already hold what it asks for.
