@@ -68,6 +68,8 @@ pub(crate) struct Char {
     pub(crate) bounty_rank: u32,
     /// **Marked** (#179): their own Bounty Hunter killed them and is still out there.
     pub(crate) marked: Option<Marked>,
+    /// The entries of the Phased Dungeon doors they have opened, ascending: kept for good.
+    pub(crate) doors_opened: Vec<u32>,
 }
 
 /// What being **Marked** holds (#179): the logged-in time left, and the hunter that won, as
@@ -159,6 +161,7 @@ impl Characters {
             notoriety: 0.0,
             bounty_rank: 0,
             marked: None,
+            doors_opened: Vec::new(),
         });
         CHAR_CREATE_SUCCESS
     }

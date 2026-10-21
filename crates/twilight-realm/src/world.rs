@@ -35,6 +35,7 @@ mod dungeon;
 mod food;
 mod notoriety;
 mod phase;
+pub(crate) use phase::DoorClick;
 mod sleep;
 pub(crate) use phase::creatures;
 mod procs;
@@ -242,6 +243,10 @@ pub(crate) struct InWorld {
     phase: crate::phased::Phase,
     /// The Phased Dungeons whose doorway portal the client has.
     portals: Vec<u32>,
+    /// The dungeons whose door is open, as of the realm's last sync.
+    pub(crate) doors_open: Vec<u32>,
+    /// The doors the client has, by dungeon, each with the state it was last shown in.
+    doors_shown: std::collections::HashMap<u32, bool>,
     /// The guids of the dungeon GameObjects the client has.
     dungeon_objects: std::collections::HashSet<u64>,
     /// The guids of the open-world quest GameObjects the client has.
@@ -361,6 +366,8 @@ impl InWorld {
             resting: crate::rest::in_inn(c.map, c.position),
             phase: Default::default(),
             portals: Vec::new(),
+            doors_open: Vec::new(),
+            doors_shown: Default::default(),
             dungeon_objects: Default::default(),
             quest_objects: Default::default(),
             quest_spent: Vec::new(),

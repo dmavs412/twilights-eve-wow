@@ -17,6 +17,20 @@ const HIDE_REACH_YD: f32 = 5.0;
 /// How far a hiding character may drift before the hide ends.
 const HIDE_DRIFT_YD: f32 = 1.0;
 
+/// What a click on a GameObject did with a Phased Dungeon's door.
+pub(crate) enum DoorClick {
+    /// The GameObject is no door.
+    NotADoor,
+    /// A door that stays as it is: out of reach, or the character has no key.
+    Ignored,
+    /// The door of `dungeon` opens for `secs`; `first` when it is the character's first time.
+    Opened {
+        dungeon: u32,
+        secs: f32,
+        first: bool,
+    },
+}
+
 /// A character crouched at a hiding spot of a Phased Dungeon.
 pub(super) struct Hide {
     dungeon: u32,
@@ -30,14 +44,15 @@ pub(super) struct Hide {
 
 impl InWorld {
     /// Puts the player in the Phase where they stand, unless a worldport is under way.
-    pub(crate) fn step_into_phase(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+    pub(crate) fn step_into_phase(&mut self, c: &mut Char, events: &mut Vec<SessionEvent>) {
         if !self.transfer {
             self.cross_phase(c, events);
         }
     }
 
-    /// Puts the player in the Phase where they stand; the dead are in none of a dungeon's.
-    pub(super) fn cross_phase(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+    /// Puts the player in the Phase where they stand; the dead are in none of a dungeon's. A
+    /// shut door keeps out a player who is not already in the Phase: they are put outside it.
+    pub(super) fn cross_phase(&mut self, c: &mut Char, events: &mut Vec<SessionEvent>) {
         let now = if self.player.alive() {
             phased::at(self.map, c.position)
         } else {
@@ -45,6 +60,16 @@ impl InWorld {
         };
         if now == self.phase {
             return;
+        }
+        if let Phase::Dungeon(id) = now {
+            let door = phased::dungeon(id).and_then(|d| d.portal.door.as_ref());
+            if let Some(door) = door.filter(|_| !self.doors_open.contains(&id)) {
+                events.push(SessionEvent::Notification {
+                    text: door.sealed_text.clone(),
+                });
+                self.teleport(c, door.outside, c.orientation, events);
+                return;
+            }
         }
         // The client is sent only the creatures of its own Phase: the old ones go, with the
         // fight and every aura on them. A Bounty Hunter gives up the chase.
@@ -174,6 +199,79 @@ impl InWorld {
                 events.push(SessionEvent::ObjectsRemoved(vec![d.portal_guid()]));
             }
             self.show_dungeon_objects(d, me, events);
+            if let Some(door) = &d.portal.door {
+                self.show_door(d, door, me, events);
+            }
+        }
+    }
+
+    /// Streams `door` in and out with the view, in every Phase, and shows it open or shut as the
+    /// world has it.
+    fn show_door(
+        &mut self,
+        d: &phased::Dungeon,
+        door: &phased::Door,
+        me: [f32; 3],
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let d_yd = if d.map == self.map {
+            flat_distance(door.position, me)
+        } else {
+            f32::INFINITY
+        };
+        let open = self.doors_open.contains(&d.id);
+        match self.doors_shown.get(&d.id).copied() {
+            None if d_yd <= VIEW_YD => {
+                events.push(door.create());
+                self.doors_shown.insert(d.id, false);
+            }
+            Some(_) if d_yd > VIEW_YD + 10.0 => {
+                self.doors_shown.remove(&d.id);
+                events.push(SessionEvent::ObjectsRemoved(vec![door.guid()]));
+                return;
+            }
+            Some(_) => {}
+            None => return,
+        }
+        if self.doors_shown.insert(d.id, open) != Some(open) {
+            events.push(door.state(open));
+        }
+    }
+
+    /// The player clicks the GameObject of `guid`, which may be a Phased Dungeon's door. A door
+    /// opens for a character who has opened it before, or who has its key in their bags; the
+    /// first opening is remembered for good and counted for the quests that want a use of it.
+    pub(crate) fn click_door(
+        &mut self,
+        guid: u64,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> DoorClick {
+        let Some((d, door)) = phased::Dungeon::with_door(guid) else {
+            return DoorClick::NotADoor;
+        };
+        if d.map != self.map
+            || !self.player.alive()
+            || flat_distance(door.position, c.position) > crate::space::INTERACTION_YD
+        {
+            return DoorClick::Ignored;
+        }
+        let opened = c.doors_opened.contains(&door.entry);
+        if !opened && c.inventory.count(door.opens_with) == 0 {
+            events.push(SessionEvent::Notification {
+                text: door.sealed_text.clone(),
+            });
+            return DoorClick::Ignored;
+        }
+        if !opened {
+            c.doors_opened.push(door.entry);
+            c.doors_opened.sort_unstable();
+            quests::credit_use(c, door.entry, events);
+        }
+        DoorClick::Opened {
+            dungeon: d.id,
+            secs: door.open_secs,
+            first: !opened,
         }
     }
 

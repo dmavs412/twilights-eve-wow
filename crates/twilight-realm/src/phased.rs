@@ -30,6 +30,9 @@ const PORTAL_DISPLAY: u32 = 672;
 pub(crate) const GENERIC: u32 = 5;
 const NOT_SELECTABLE: u32 = 0x10;
 const READY: u32 = 1;
+/// `GAMEOBJECT_TYPE_DOOR`, and `GO_STATE_ACTIVE`, an open door.
+const GAMEOBJECT_TYPE_DOOR: u32 = 0;
+const ACTIVE: u32 = 0;
 
 /// Which creatures a character or creature shares the world with.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -111,6 +114,74 @@ impl OnHealth {
 pub(crate) struct Portal {
     pub(crate) position: [f32; 3],
     pub(crate) orientation: f32,
+    /// A sealed door in front of the portal.
+    #[serde(default)]
+    pub(crate) door: Option<Door>,
+}
+
+/// A sealed door in front of a Phased Dungeon's portal. It is shut by default, opens for a
+/// character with the key (or one who opened it before), and shuts again `open_secs` later.
+#[derive(Deserialize)]
+pub(crate) struct Door {
+    pub(crate) entry: u32,
+    pub(crate) display: u32,
+    pub(crate) position: [f32; 3],
+    pub(crate) orientation: f32,
+    /// Where a refused character is put, on the open-world side.
+    pub(crate) outside: [f32; 3],
+    pub(crate) open_secs: f32,
+    /// The item a character needs in their bags for their first opening.
+    pub(crate) opens_with: u32,
+    pub(crate) sealed_text: String,
+}
+
+impl Door {
+    pub(crate) fn guid(&self) -> u64 {
+        HIGHGUID_GAMEOBJECT << 48 | u64::from(self.entry)
+    }
+
+    /// Its create, in the closed state: a door anyone can click.
+    pub(crate) fn create(&self) -> SessionEvent {
+        gameobject_create(&GameObject {
+            guid: self.guid(),
+            entry: self.entry,
+            display_id: self.display,
+            type_id: GAMEOBJECT_TYPE_DOOR,
+            flags: 0,
+            faction: 0,
+            position: self.position,
+            orientation: self.orientation,
+        })
+    }
+
+    /// The update that puts the door in its open or closed state.
+    pub(crate) fn state(&self, open: bool) -> SessionEvent {
+        let state = if open { ACTIVE } else { READY };
+        crate::fields::values(self.guid(), &[(GAMEOBJECT_STATE, state)])
+    }
+}
+
+/// The open doors of the Phased Dungeons: world state, the same for every character and apart
+/// from any Run. Each open door is listed with the seconds until it shuts.
+#[derive(Default)]
+pub(crate) struct Doors(std::collections::BTreeMap<u32, f32>);
+
+impl Doors {
+    /// Opens the door of dungeon `id` for `secs`, or restarts the time it has left.
+    pub(crate) fn open(&mut self, id: u32, secs: f32) {
+        self.0.insert(id, secs);
+    }
+
+    /// Time passes: doors whose time is up shut.
+    pub(crate) fn tick(&mut self, dt: f32) {
+        self.0.values_mut().for_each(|left| *left -= dt);
+        self.0.retain(|_, left| *left > 0.0);
+    }
+
+    /// The ids of the dungeons whose door is open.
+    pub(crate) fn ids(&self) -> Vec<u32> {
+        self.0.keys().copied().collect()
+    }
 }
 
 /// Who sees a dungeon GameObject.
@@ -187,6 +258,17 @@ impl Dungeon {
             .iter()
             .find(|o| o.object_guid() == guid)
             .and_then(|o| o.use_kind.map(|k| (o, k)))
+    }
+
+    /// The dungeon whose door has this guid, in the content.
+    pub(crate) fn with_door(guid: u64) -> Option<(&'static Dungeon, &'static Door)> {
+        content().iter().find_map(|d| {
+            d.portal
+                .door
+                .as_ref()
+                .filter(|o| o.guid() == guid)
+                .map(|o| (d, o))
+        })
     }
 
     /// The portal's guid: one per dungeon.
@@ -338,6 +420,13 @@ impl Dungeon {
     }
 }
 
+/// Whether a Phased Dungeon's door has this GameObject entry.
+pub(crate) fn is_door(entry: u32) -> bool {
+    content()
+        .iter()
+        .any(|d| d.portal.door.as_ref().is_some_and(|o| o.entry == entry))
+}
+
 /// The Phased Dungeon of this id.
 pub(crate) fn dungeon(id: u32) -> Option<&'static Dungeon> {
     content().iter().find(|d| d.id == id)
@@ -351,6 +440,7 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/northshire_abbey.toml"),
             include_str!("../content/test_grounds.toml"),
             include_str!("../content/forest_edge.toml"),
+            include_str!("../content/sealed_yard.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))

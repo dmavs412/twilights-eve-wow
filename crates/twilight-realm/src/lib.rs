@@ -472,6 +472,8 @@ pub struct Realm {
     casters: creature_spells::Casters,
     /// The dungeon GameObject clicks since the last drain.
     uses: Vec<GameObjectUse>,
+    /// The Phased Dungeon doors that are open: world state, in no Run.
+    doors: phased::Doors,
 }
 
 impl Realm {
@@ -607,6 +609,9 @@ impl Realm {
     /// Lends the served session its shard's mobs, when its player stands in the open world, and
     /// seats its duel foe among them.
     fn lend(&mut self) {
+        if let Some(w) = &mut self.world {
+            w.doors_open = self.doors.ids();
+        }
         self.lend_shard();
         self.seat_foes();
     }
@@ -1095,7 +1100,24 @@ impl Realm {
                             .characters
                             .get_mut(player)
                             .is_some_and(|c| w.use_quest_object(guid, c, &mut self.events));
-                        if quest_object {
+                        let door = match self.characters.get_mut(player) {
+                            Some(c) if !quest_object => w.click_door(guid, c, &mut self.events),
+                            _ => world::DoorClick::NotADoor,
+                        };
+                        if let world::DoorClick::Opened {
+                            dungeon,
+                            secs,
+                            first,
+                        } = door
+                        {
+                            self.doors.open(dungeon, secs);
+                            w.doors_open = self.doors.ids();
+                            if first {
+                                credited = Some(player);
+                            }
+                        } else if !matches!(door, world::DoorClick::NotADoor) {
+                            // A door that stays shut.
+                        } else if quest_object {
                             credited = Some(player);
                         } else if let Some(used) = w.use_gameobject(guid) {
                             if let Some(c) = self.characters.get(w.guid) {
@@ -1237,6 +1259,7 @@ impl Realm {
     /// Advances the world by `dt` seconds: every session's, in session order.
     pub fn tick(&mut self, dt: f32, host: &dyn Host) {
         self.wall += f64::from(dt);
+        self.doors.tick(dt);
         let mut ids: Vec<SessionId> = self.parked.keys().copied().collect();
         ids.push(self.active);
         ids.sort();
@@ -1246,7 +1269,7 @@ impl Realm {
             self.serve(id);
             self.dev_teleport_served(host);
             if let Some(w) = &mut self.world {
-                if let Some(c) = self.characters.get(w.guid) {
+                if let Some(c) = self.characters.get_mut(w.guid) {
                     w.step_into_phase(c, &mut self.events);
                 }
             }

@@ -1,0 +1,31 @@
+# The Sealed Yard: an empty Phased Dungeon behind a sealed door, for the door scripts
+# (#234) to try the mechanic where the shipped dungeons have none. Hand-written.
+#
+# A 20x20 yd open-air box centred on (-9650, 150) in Elwynn, 100 yd south of the Test Grounds.
+# Terrain flatness and nearby spawns are unchecked; the ground there is taken as about z 47.
+
+id = 4
+map = 0
+origin = [-9650.0, 150.0, 0.0]
+yaw = 0.0
+
+[[footprint]]
+x = [-10.0, 10.0]
+y = [-10.0, 10.0]
+z = [-200.0, 400.0]
+
+[portal]
+position = [-9661.0, 150.0, 47.2]
+orientation = 0.0
+
+# Outside the box on its west side, between the open world and the portal. The key is a
+# Crocolisk Skin, an ordinary quest item.
+[portal.door]
+entry = 98001
+display = 1
+position = [-9664.0, 150.0, 47.2]
+orientation = 0.0
+outside = [-9668.0, 150.0, 47.2]
+open_secs = 15.0
+opens_with = 2925
+sealed_text = "The door is sealed. A rune-marked keystone would fit it."

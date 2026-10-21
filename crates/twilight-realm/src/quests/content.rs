@@ -419,7 +419,7 @@ fn shipped() -> &'static [Quest] {
         }
         for q in &quests {
             check(q, &|id| quests.iter().any(|o| o.id == id), &|entry| {
-                objects.iter().any(|o| o.entry == entry)
+                objects.iter().any(|o| o.entry == entry) || crate::phased::is_door(entry)
             });
             assert_eq!(
                 quests.iter().filter(|o| o.id == q.id).count(),
@@ -503,7 +503,7 @@ pub(crate) fn add(toml: &str) {
             continue;
         }
         check(&q, &|id| quest(id).is_some() || id == q.id, &|entry| {
-            objects().iter().any(|o| o.entry == entry)
+            objects().iter().any(|o| o.entry == entry) || crate::phased::is_door(entry)
         });
         // Parallel tests add the same quests; the check and the push share one lock.
         let mut extra = added().write().unwrap();
