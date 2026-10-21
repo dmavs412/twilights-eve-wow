@@ -316,6 +316,23 @@ pub(crate) struct Mobs {
     pub(crate) difficulty: Difficulty,
     pub(crate) template: Vec<Template>,
     pub(crate) spawn: Vec<Spawn>,
+    /// Entries whose template comes from `elwynn.toml` and no hand-written one overrides.
+    vanilla: Vec<u32>,
+}
+
+/// Whether `entry`'s template is vanilla Elwynn's, not one `mobs.toml` defines.
+pub(crate) fn is_vanilla(entry: u32) -> bool {
+    content().vanilla.contains(&entry)
+}
+
+/// The Level Band range for a creature of `entry` standing at `position` on `map`, when its
+/// template is vanilla and the point is in a band. For a creature spawned at runtime; the
+/// static spawns take theirs when the content loads.
+pub(crate) fn banded(entry: u32, map: u32, position: [f32; 3]) -> Option<[u8; 2]> {
+    if map != crate::content::EASTERN_KINGDOMS || !is_vanilla(entry) {
+        return None;
+    }
+    crate::bands::range_at(position[0], position[1])
 }
 
 pub(crate) fn content() -> &'static Mobs {
@@ -339,6 +356,12 @@ pub(crate) fn content() -> &'static Mobs {
         let difficulty = hand.difficulty;
         let mut template = hand.template;
         template.extend(barrens.template);
+        let vanilla: Vec<u32> = elwynn
+            .template
+            .iter()
+            .map(|t| t.entry)
+            .filter(|e| !template.iter().any(|t| t.entry == *e))
+            .collect();
         template.extend(elwynn.template);
         let mut spawn: Vec<Spawn> = hand
             .spawn
@@ -400,6 +423,15 @@ pub(crate) fn content() -> &'static Mobs {
                 .find(|c| c.entry == s.entry);
             if let Some(c) = levels {
                 [s.level_min, s.level_max] = c.levels;
+            }
+        }
+        // The Level Bands: a vanilla Elwynn spawn takes its sub-zone's levels.
+        for s in &mut spawn {
+            if s.map != crate::content::EASTERN_KINGDOMS || !vanilla.contains(&s.entry) {
+                continue;
+            }
+            if let Some(range) = crate::bands::range_at(s.position[0], s.position[1]) {
+                [s.level_min, s.level_max] = range;
             }
         }
         for a in overrides.added {
@@ -504,6 +536,7 @@ pub(crate) fn content() -> &'static Mobs {
             difficulty,
             template,
             spawn,
+            vanilla,
         }
     })
 }
@@ -1149,7 +1182,8 @@ mod tests {
             wolves.into_iter().partition(|s| s.position[0] > -9160.0);
         assert!(!inside.is_empty() && !outside.is_empty());
         assert!(inside.iter().all(|s| (s.level_min, s.level_max) == (1, 2)));
-        assert!(outside.iter().all(|s| (s.level_min, s.level_max) == (1, 1)));
+        // Outside it they take their sub-zone's Elwynn Level Band (#228).
+        assert!(outside.iter().all(|s| s.level_min >= 10));
     }
 
     #[test]

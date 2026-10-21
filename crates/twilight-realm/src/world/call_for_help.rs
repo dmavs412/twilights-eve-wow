@@ -49,7 +49,9 @@ impl InWorld {
                 .enumerate()
                 .filter(|(_, s)| s.called_by == Some((caller_spawn.guid, k)));
             for (i, _) in adds {
-                let Some(mut add) = Mob::spawn(i as u32, call.level, call.position[2]) else {
+                let level = crate::mobs::banded(call.entry, caller_spawn.map, call.position)
+                    .map_or(call.level, |range| crate::bands::pick(i as u32, range));
+                let Some(mut add) = Mob::spawn(i as u32, level, call.position[2]) else {
                     continue;
                 };
                 events.push(add.create());

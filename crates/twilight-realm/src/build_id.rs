@@ -12,6 +12,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/duel.toml"),
     include_str!("../content/durability.toml"),
     include_str!("../content/elwynn.toml"),
+    include_str!("../content/elwynn_bands.toml"),
     include_str!("../content/elwynn_overrides.toml"),
     include_str!("../content/forest_edge.toml"),
     include_str!("../content/gear.toml"),

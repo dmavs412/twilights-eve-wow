@@ -39,6 +39,7 @@
 
 mod ammo;
 mod areas;
+mod bands;
 mod bounty;
 pub mod callings;
 mod characters;

@@ -1,0 +1,116 @@
+# Hand-written. Elwynn Level Bands (#228, decision 11 of docs/specs/elwynn-10-30): each sub-zone
+# gives the vanilla creatures that spawn in it a level from its band, in place of the template's
+# own levels. Boxes are [x0, y0, x1, y1] in WoW coordinates on map 0 (x runs north, y runs west).
+# A point inside `bounds` and outside every `exclude` box takes the band of the box that holds it,
+# or of the nearest box when none does. Templates defined in mobs.toml keep their own levels.
+
+# Elwynn Forest outside Northshire, from the Maclure farm in the south-west to Dead-Tooth Jack's
+# camp in the east and Hogger's hollow in the north-west.
+bounds = [[-10200.0, -1700.0, -9000.0, 830.0]]
+
+# Never touched: Northshire Valley with Echo Ridge Mine and the Abbey (the same rectangle
+# level_overrides.toml uses), and Forest's Edge, the one Phased Dungeon footprint in Elwynn
+# (forest_edge.toml, x -10080..-9910, y 530..680).
+exclude = [
+  [-9160.0, -480.0, -8500.0, 120.0],
+  [-10080.0, 530.0, -9910.0, 680.0],
+]
+
+# Goldshire: the town (Innkeeper Farley -9462,16; Marshal Dughan -9465,74; Smith Argus
+# -9456,87), the road north to Northshire's gate (Donni Anthania's cats -9175,0), and the road
+# west to the Westbrook turn (Deputy Rainer's Westbrook side starts at y 640).
+[[band]]
+name = "Goldshire"
+level_min = 10
+level_max = 13
+boxes = [
+  [-9560.0, -60.0, -9380.0, 160.0],
+  [-9380.0, -40.0, -9160.0, 120.0],
+  [-9560.0, 160.0, -9400.0, 560.0],
+]
+
+# The Farmlands: Stonefield (Ma Stonefield -9895,332; Homer -9858,365), Maclure Vineyards
+# (Pa Maclure -10005,52; Gerard Tiller -9918,39) and Brackwell Pumpkin Patch (the
+# Bridenbecker family -9319,272).
+[[band]]
+name = "The Farmlands"
+level_min = 11
+level_max = 14
+boxes = [
+  [-9990.0, 260.0, -9780.0, 520.0],
+  [-10200.0, -20.0, -9880.0, 130.0],
+  [-9400.0, 220.0, -9200.0, 420.0],
+]
+
+# Crystal Lake and Fargodeep: the lake's murlocs (Murloc -9530..-9448, -439..-194; Murloc
+# Streamrunner -9560..-9381, -487..-215) and Fargodeep's kobolds (Kobold Tunneler
+# -9954..-9734, 85..282; Narg the Taskmaster -9733,115).
+[[band]]
+name = "Crystal Lake & Fargodeep"
+level_min = 13
+level_max = 16
+boxes = [
+  [-9620.0, -520.0, -9380.0, -150.0],
+  [-9960.0, 60.0, -9700.0, 300.0],
+]
+
+# Jasperlode: the mine and its approach (Kobold Geomancer -9289..-9088, -711..-573; Mine
+# Spider -9066..-9024, -616..-548; Mother Fang -9051,-621; Ruklar the Trapper -9250,-708).
+[[band]]
+name = "Jasperlode"
+level_min = 15
+level_max = 18
+boxes = [[-9320.0, -740.0, -9000.0, -540.0]]
+
+# Stone Cairn Lake and its shore (Henze Faulk -9129,-984; Defias Rogue Wizard
+# -9200..-9012, -1200..-1000).
+[[band]]
+name = "Stone Cairn Lake"
+level_min = 16
+level_max = 19
+boxes = [[-9300.0, -1260.0, -9000.0, -880.0]]
+
+# Tower of Azora and Brackwell's eastern woods up to Eastvale (Theocritus -9553,-728; Morley
+# Eberlein -9548,-709; Servant of Azora -9574..-9522, -735..-685; Gray Forest Wolf
+# -9590..-9268, -1039..-493).
+[[band]]
+name = "Tower of Azora"
+level_min = 19
+level_max = 22
+boxes = [[-9650.0, -1130.0, -9300.0, -520.0]]
+
+# Eastvale Logging Camp (Supervisor Raelen -9469,-1289; Marshal Haggard -9545,-1401; Eastvale
+# Lumberjack -9411..-9400, -1347..-1331) and Ridgepoint Tower to its south-west (Dead-Tooth
+# Jack -9768,-1565).
+[[band]]
+name = "Eastvale & Ridgepoint"
+level_min = 20
+level_max = 24
+boxes = [
+  [-9620.0, -1460.0, -9380.0, -1180.0],
+  [-9900.0, -1700.0, -9650.0, -1460.0],
+]
+
+# Mirror Lake, Mirror Lake Orchard (Morgan the Collector -9806,-932; Surena Caledon
+# -9809,-929) and Jerod's Landing on the shore (Murloc Lurker -9958..-8960, -1645..-1097).
+[[band]]
+name = "Mirror Lake & Jerod's Landing"
+level_min = 23
+level_max = 26
+boxes = [
+  [-9900.0, -1020.0, -9700.0, -840.0],
+  [-9780.0, -1300.0, -9640.0, -1020.0],
+]
+
+# Westbrook Garrison (Deputy Rainer -9662,694; Sergeant De Vries -9633,699; Quartermaster
+# Hudson -9653,659) and the hills round Forest's Edge outside the camp footprint (Longsnout
+# -9957..-9788, 646..688; Riverpaw Outrunner at y 600..715).
+[[band]]
+name = "Forest's Edge & Westbrook"
+level_min = 25
+level_max = 28
+boxes = [
+  [-9760.0, 560.0, -9560.0, 830.0],
+  [-10200.0, 380.0, -9910.0, 830.0],
+  [-10080.0, 680.0, -9760.0, 830.0],
+]
