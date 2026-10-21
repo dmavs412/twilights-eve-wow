@@ -762,3 +762,232 @@ level_min = 22
 level_max = 23
 position = [-9770.0, -1346.0, 57.0]
 orientation = 5.13
+
+# Mirror Lake and Jerod's Landing (#248). Guids 960440 on. Marren and three Twilight Acolytes in the
+# barn at the pit, six Riverpaw Brutes and six Shamans in a camp on Mirror Lake's shore about
+# 180 yd from Keane's outpost, and twelve Defias Smugglers around the dock and farmhouse, outside
+# the barn. Every z is a guess.
+
+[[added]]
+guid = 960440
+entry = 96043
+level_min = 26
+level_max = 26
+position = [-9910.0, 22.0, 31.0]
+orientation = 4.71
+
+[[added]]
+guid = 960441
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9917.0, 18.0, 31.0]
+orientation = 1.57
+
+[[added]]
+guid = 960442
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9903.0, 18.0, 31.0]
+orientation = 1.57
+
+[[added]]
+guid = 960443
+entry = 96031
+level_min = 22
+level_max = 23
+position = [-9910.0, 30.0, 31.0]
+orientation = 1.57
+
+[[added]]
+guid = 960444
+entry = 96044
+level_min = 23
+level_max = 25
+position = [-9288.9, 506.7, 44.0]
+orientation = 5.01
+
+[[added]]
+guid = 960445
+entry = 96044
+level_min = 23
+level_max = 25
+position = [-9304.2, 504.7, 44.0]
+orientation = 4.3
+
+[[added]]
+guid = 960446
+entry = 96044
+level_min = 23
+level_max = 25
+position = [-9311.0, 546.7, 44.0]
+orientation = 4.34
+
+[[added]]
+guid = 960447
+entry = 96044
+level_min = 23
+level_max = 25
+position = [-9306.1, 525.3, 44.0]
+orientation = 3.84
+
+[[added]]
+guid = 960448
+entry = 96044
+level_min = 23
+level_max = 25
+position = [-9284.7, 537.3, 44.0]
+orientation = 5.94
+
+[[added]]
+guid = 960449
+entry = 96044
+level_min = 23
+level_max = 25
+position = [-9324.4, 512.5, 44.0]
+orientation = 4.26
+
+[[added]]
+guid = 960450
+entry = 96045
+level_min = 23
+level_max = 25
+position = [-9299.7, 535.7, 44.0]
+orientation = 3.63
+
+[[added]]
+guid = 960451
+entry = 96045
+level_min = 23
+level_max = 25
+position = [-9308.8, 510.2, 44.0]
+orientation = 3.87
+
+[[added]]
+guid = 960452
+entry = 96045
+level_min = 23
+level_max = 25
+position = [-9314.5, 528.9, 44.0]
+orientation = 3.61
+
+[[added]]
+guid = 960453
+entry = 96045
+level_min = 23
+level_max = 25
+position = [-9305.7, 528.6, 44.0]
+orientation = 3.03
+
+[[added]]
+guid = 960454
+entry = 96045
+level_min = 23
+level_max = 25
+position = [-9275.5, 533.7, 44.0]
+orientation = 0.21
+
+[[added]]
+guid = 960455
+entry = 96045
+level_min = 23
+level_max = 25
+position = [-9301.6, 532.1, 44.0]
+orientation = 3.95
+
+[[added]]
+guid = 960456
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9955.0, -161.7, 40.0]
+orientation = 0.48
+
+[[added]]
+guid = 960457
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9984.0, -127.4, 40.0]
+orientation = 2.65
+
+[[added]]
+guid = 960458
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9987.5, -125.0, 40.0]
+orientation = 0.5
+
+[[added]]
+guid = 960459
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9936.8, -179.6, 40.0]
+orientation = 5.26
+
+[[added]]
+guid = 960460
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9994.2, -171.5, 40.0]
+orientation = 5.62
+
+[[added]]
+guid = 960461
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9961.6, -152.1, 40.0]
+orientation = 2.26
+
+[[added]]
+guid = 960462
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9977.9, -179.1, 40.0]
+orientation = 5.27
+
+[[added]]
+guid = 960463
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9986.0, -124.2, 40.0]
+orientation = 2.63
+
+[[added]]
+guid = 960464
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9949.9, -149.7, 40.0]
+orientation = 1.51
+
+[[added]]
+guid = 960465
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9993.4, -162.6, 40.0]
+orientation = 5.82
+
+[[added]]
+guid = 960466
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9997.3, -134.9, 40.0]
+orientation = 4.47
+
+[[added]]
+guid = 960467
+entry = 96046
+level_min = 24
+level_max = 26
+position = [-9975.9, -156.7, 40.0]
+orientation = 1.38

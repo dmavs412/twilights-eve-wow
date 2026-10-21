@@ -1582,3 +1582,90 @@ speed_walk = 1.0
 speed_run = 0.857
 detection_range = 14.0
 respawn_secs = 120.0
+
+# ── Mirror Lake and Jerod's Landing (#248). Spawns are in elwynn_overrides.toml. ──────────────────
+
+# Acolyte Marren, who runs the dig in the barn (The Pit). Elite. Display 2882 (the Twilight
+# Acolyte's robed body) and faction 14 are the other Twilight mobs'. Shadow Bolt is the existing
+# Creature Spell.
+
+[[template]]
+entry = 96043
+name = "Acolyte Marren"
+creature_type = 7
+rank = 1
+display_id = 2882
+faction_template = 14
+unit_class = "mage"
+level_min = 26
+level_max = 26
+health_multiplier = 1.4
+damage_multiplier = 0.9
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 16.0
+respawn_secs = 120.0
+spells = ["shadow_bolt_creature"]
+
+# The Mirror Lake Riverpaw. Their displays are the Forest's Edge Brute's (383) and Mystic's (502),
+# which stay as they are for Hogger's camp. Faction 14 is theirs. Levels 23 to 25.
+
+[[template]]
+entry = 96044
+name = "Riverpaw Brute"
+creature_type = 7
+display_id = 383
+faction_template = 14
+unit_class = "warrior"
+level_min = 23
+level_max = 25
+health_multiplier = 1.5
+damage_multiplier = 1.8
+armor_multiplier = 1.0
+base_attack_time = 3200
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 16.0
+respawn_secs = 120.0
+
+[[template]]
+entry = 96045
+name = "Riverpaw Shaman"
+creature_type = 7
+display_id = 502
+faction_template = 14
+unit_class = "mage"
+level_min = 23
+level_max = 25
+health_multiplier = 0.8
+damage_multiplier = 0.8
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 16.0
+respawn_secs = 120.0
+spells = ["lightning_bolt_gnoll"]
+
+# The smugglers around Jerod's Landing. Not in the vmangos-derived content, so a new template with
+# the Defias Bandit's display (2358) and faction 17. Levels 24 to 26.
+
+[[template]]
+entry = 96046
+name = "Defias Smuggler"
+creature_type = 7
+display_id = 2358
+faction_template = 17
+unit_class = "warrior"
+level_min = 24
+level_max = 26
+health_multiplier = 1.1
+damage_multiplier = 1.0
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.143
+detection_range = 16.0
+respawn_secs = 120.0

@@ -1207,3 +1207,39 @@ map = 0
 position = [-9780.0, -1398.0, 58.0]
 orientation = 0.0
 greeting = "They fed me and they kept me. I thought you were another of them."
+
+# ── Mirror Lake and Jerod's Landing's quest givers (#248) ────────────────────────────────────────
+# Sergeant Keane holds a small outpost on Mirror Lake's south shore (a tent and a campfire in
+# quests_elwynn.toml), with the Stormwind guard body 3343 (the Vanguard Trainer's) and Stormwind's
+# faction (35). Dobbs, Remy's debtor, wears the commoner body 5034 (Lumberjack Tomas's) and stands
+# on the dock at Jerod's Landing. Both z are guesses. Guids 93000xx.
+
+[[npc]]
+guid = 9300023
+entry = 190065
+name = "Dobbs"
+subname = "Smugglers' Bookkeeper"
+level = 20
+display_id = 5034
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9970.0, -146.0, 40.0]
+orientation = 1.57
+greeting = "Keep your voice down. They think I'm only counting."
+
+[[npc]]
+guid = 9300024
+entry = 190066
+name = "Sergeant Keane"
+subname = "Mirror Lake Outpost"
+level = 28
+display_id = 3343
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-9349.0, 340.0, 44.0]
+orientation = 3.9
+greeting = "I have nine men and a thousand yards of lake to watch. Tell me you came to help."

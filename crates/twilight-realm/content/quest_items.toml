@@ -72,6 +72,9 @@ item = [
   { entry = 980023, name = "Hadrik's Manifest", quality = 1, item_level = 21, class = 12, display_id = 6270, max_count = 1 },
   { entry = 980024, name = "Eastvale Lumber", quality = 1, item_level = 21, class = 12, display_id = 6477, stackable = 20 },
   { entry = 980025, name = "Grizzled Hide", quality = 1, item_level = 22, class = 12, display_id = 7255, stackable = 20 },
+  # Mirror Lake and Jerod's Landing (#248). Placeholder displays borrowed from stock quest items.
+  { entry = 980026, name = "Twilight Fetish", quality = 1, item_level = 24, class = 12, display_id = 6270, stackable = 20 },
+  { entry = 980027, name = "Smuggled Goods", quality = 1, item_level = 25, class = 12, display_id = 6477, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

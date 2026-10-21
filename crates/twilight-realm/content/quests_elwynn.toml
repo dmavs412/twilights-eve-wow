@@ -1381,3 +1381,336 @@ money = 480
 tokens = 1
 zone_or_sort = 12
 kill = [[96031, 10]]
+
+# ── Mirror Lake and Jerod's Landing (#226) ───────────────────────────────────────────────────
+#
+# Jerod's Landing is the cult's supply line out of Elwynn, and the pit in its barn is their second
+# dig. Mirror Lake is the approach, held by Riverpaw gnolls. Open world: no Phase, no Portal.
+
+# Remy's biggest debtor skipped town the night the Abbey fell. Dobbs takes it. XP only.
+[[quest]]
+id = 94801
+kind = "story"
+giver = 241
+ender = 190065
+after = 94102
+level = 23
+title = "Remy's Last Debtor"
+objectives = "Find Dobbs, Remy's debtor, on the dock at Jerod's Landing."
+details = "The man who owes me most skipped town the night the Abbey fell. Dobbs, his name is, and he left his coat on my counter. I hear he's south of here at Jerod's Landing, on the dock, among men I would not drink with. I don't want the money now. I want to know what he's mixed up in. Find him."
+progress = "Did you find Dobbs?"
+completion = "Remy sent you? Then I'm already dead, or I'm forgiven, and I don't know which. I keep the smugglers' ledger now. They pay me to write down every crate and every boat, and they never ask what I think of it. Take what I know. The ledger is no secret to me, but it is to Dughan."
+money = 0
+tokens = 0
+zone_or_sort = 12
+
+# Dughan sends the player to destroy six of the smugglers' stolen caches. XP only.
+[[quest]]
+id = 94802
+kind = "story"
+giver = 240
+after = [94801, 94703]
+level = 24
+title = "The Smugglers' Ledger"
+objectives = "Destroy 6 Twilight Supply Caches around the dock, the farmhouse and the silo at Jerod's Landing, then return to Marshal Dughan."
+details = "Dobbs' ledger and Vael's notes say the same thing from two ends. Jerod's Landing is where the cult stores what it takes out of Elwynn before it goes upriver. Ore from Fargodeep. Timber from Eastvale. Pumpkins from the Farmlands and relics from the Abbey. Each cache is a day of someone's work. Go to the Landing and break open six of them, and be quick, for the smugglers rebuild."
+progress = "Are the caches broken?"
+completion = "Ore, timber, pumpkins and relics, every one of them stolen from a farm I know by name. Six caches fewer, and the dock goes quiet for a night. Thank you."
+money = 0
+tokens = 0
+zone_or_sort = 12
+use = [[980109, 6]]
+
+# The assault on the pit. An item quest with placeholder rewards until the gear pass: 1000 copper
+# and 3 Tokens, no choices. Marren's orders are in Keane's reading of them.
+[[quest]]
+id = 94803
+kind = "story"
+giver = 190066
+after = 94802
+level = 25
+title = "The Pit"
+objectives = "Kill Acolyte Marren at the dig in the barn at Jerod's Landing and bring his orders to Sergeant Keane."
+details = "I hold this post at the lake and I see the carts go by in the dark. The Landing is theirs, and the barn is where they dig. Acolyte Marren runs the digging. He has three more beside him, and I do not have the men to take the barn. Kill him and bring me whatever orders he carries."
+progress = "Is Marren dead?"
+completion = "Marren's orders. They read: \"Hogger's camp is the staging ground. Move at the new moon.\" That is the gnolls' camp in the Forest's Edge, and the new moon is soon. The dig in the barn was the second of theirs, not the last. Here is your reward."
+money = 1000
+tokens = 3
+zone_or_sort = 12
+kill = [[96043, 1]]
+
+# The supply line. Keane wants the skiffs burned. 500 copper. Spec 5's Westbrook quests name 94804
+# in their `after`.
+[[quest]]
+id = 94804
+kind = "story"
+giver = 190066
+after = 94803
+level = 26
+title = "Burn the Boats"
+objectives = "Burn 3 Smuggler Skiffs moored along the dock at Jerod's Landing, then return to Sergeant Keane."
+details = "The cult moves its goods upriver by skiff, and it will move them faster now that Marren is dead. Cut the line. Go to the Landing's dock and burn three of the skiffs before they cast off. The smugglers will be there, so go in ready."
+progress = "Are the boats burning?"
+completion = "Three skiffs gone. The dock has no way out now but the road, and the road has us. You have given us a month."
+money = 500
+tokens = 0
+zone_or_sort = 12
+use = [[980110, 3]]
+
+# ── Mirror Lake and Jerod's Landing's bounties (#248) ────────────────────────────────────────
+
+[[quest]]
+id = 94805
+kind = "bounty"
+giver = 190066
+level = 25
+min_level = 23
+max_level = 27
+title = "Riverpaw at the Lake"
+objectives = "Kill 10 Riverpaw Brutes or Riverpaw Shamans, then return to Sergeant Keane."
+details = "The Riverpaw have a camp on the lake's shore, and they have grown bold since the cult paid them. Put down ten of the brutes and shamans and I'll pay you, and again whenever you come back."
+progress = "Are the gnolls thinned?"
+completion = "Ten fewer on the shore. They breed fast, so there will be more. Take your coin."
+money = 500
+tokens = 1
+zone_or_sort = 12
+kill = [[96044, 10], [96045, 10]]
+
+[[quest]]
+id = 94806
+kind = "bounty"
+giver = 190066
+level = 25
+min_level = 23
+max_level = 27
+title = "Fetishes for the Sergeant"
+objectives = "Bring 8 Twilight Fetishes to Sergeant Keane."
+details = "The Riverpaw shamans carry black fetishes that did not come from any gnoll. They are the cult's. I want eight of them to send to Stormwind as proof. I'll pay for each lot."
+progress = "Have you got the fetishes?"
+completion = "The same black work on every one. Stormwind will want to see these. Take your coin, and bring more."
+money = 520
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980026, count = 8, from = [96045], chance = 50 }]
+
+[[quest]]
+id = 94807
+kind = "bounty"
+giver = 190065
+after = 94801
+level = 26
+min_level = 24
+max_level = 28
+title = "Smugglers on the Dock"
+objectives = "Kill 10 Defias Smugglers, then return to Dobbs."
+details = "The smugglers watch me write, and they watch me not write. I would sleep better with fewer of them. Kill ten and I'll pay out of what Remy forgave me, and again whenever you like."
+progress = "Are the smugglers thinned?"
+completion = "Ten fewer men to watch me. I breathe easier. Take your coin."
+money = 540
+tokens = 1
+zone_or_sort = 12
+kill = [[96046, 10]]
+
+[[quest]]
+id = 94808
+kind = "bounty"
+giver = 190065
+after = 94801
+level = 26
+min_level = 24
+max_level = 28
+title = "Smuggled Goods"
+objectives = "Bring 8 Smuggled Goods to Dobbs."
+details = "The smugglers carry samples of what they ship. I need eight of them to check against the ledger. Bring them to me and I'll pay for the lot."
+progress = "Have you got the goods?"
+completion = "Every one matches a line in the ledger. Good, now I know what is still missing. Come back for more."
+money = 550
+tokens = 1
+zone_or_sort = 12
+collect = [{ item = 980027, count = 8, from = [96046], chance = 50 }]
+
+# Twilight Supply Caches (94802), eight around the dock, the farmhouse and the silo. The display
+# is a placeholder for a stock crate. Each holds one stolen good: ore, timber, pumpkins or relics.
+[[gameobject]]
+guid = 790701
+entry = 980109
+display = 1011
+map = 0
+position = [-9985.0, -150.0, 40.0]
+orientation = 5.32
+respawn = 60.0
+
+[[gameobject]]
+guid = 790702
+entry = 980109
+display = 1011
+map = 0
+position = [-9972.0, -128.0, 40.0]
+orientation = 2.35
+respawn = 60.0
+
+[[gameobject]]
+guid = 790703
+entry = 980109
+display = 1011
+map = 0
+position = [-9962.0, -168.0, 40.0]
+orientation = 0.39
+respawn = 60.0
+
+[[gameobject]]
+guid = 790704
+entry = 980109
+display = 1011
+map = 0
+position = [-9955.0, -150.0, 40.0]
+orientation = 3.8
+respawn = 60.0
+
+[[gameobject]]
+guid = 790705
+entry = 980109
+display = 1011
+map = 0
+position = [-9980.0, -118.0, 40.0]
+orientation = 6.12
+respawn = 60.0
+
+[[gameobject]]
+guid = 790706
+entry = 980109
+display = 1011
+map = 0
+position = [-9938.0, -128.0, 40.0]
+orientation = 5.14
+respawn = 60.0
+
+[[gameobject]]
+guid = 790707
+entry = 980109
+display = 1011
+map = 0
+position = [-9890.0, -12.0, 38.0]
+orientation = 4.45
+respawn = 60.0
+
+[[gameobject]]
+guid = 790708
+entry = 980109
+display = 1011
+map = 0
+position = [-9872.0, 6.0, 38.0]
+orientation = 0.9
+respawn = 60.0
+
+# Smuggler Skiffs (94804), moored along the dock. The display is a placeholder for a stock rowboat.
+[[gameobject]]
+guid = 790709
+entry = 980110
+display = 1011
+map = 0
+position = [-9990.0, -157.0, 38.0]
+orientation = 1.57
+respawn = 60.0
+
+[[gameobject]]
+guid = 790710
+entry = 980110
+display = 1011
+map = 0
+position = [-9990.0, -148.0, 38.0]
+orientation = 1.57
+respawn = 60.0
+
+[[gameobject]]
+guid = 790711
+entry = 980110
+display = 1011
+map = 0
+position = [-9990.0, -139.0, 38.0]
+orientation = 1.57
+respawn = 60.0
+
+[[gameobject]]
+guid = 790712
+entry = 980110
+display = 1011
+map = 0
+position = [-9990.0, -133.0, 38.0]
+orientation = 1.57
+respawn = 60.0
+
+# Keane's outpost on the south shore of Mirror Lake: a tent and a campfire. Placeholder displays.
+[[gameobject]]
+guid = 790713
+entry = 980111
+display = 1011
+map = 0
+position = [-9352.0, 336.0, 44.0]
+orientation = 0.8
+respawn = 120.0
+
+[[gameobject]]
+guid = 790714
+entry = 980112
+display = 1011
+map = 0
+position = [-9346.0, 344.0, 44.0]
+orientation = 0.0
+respawn = 120.0
+
+# The pit in the barn at Jerod's Landing: dirt mounds, a timber scaffold and two lanterns.
+# Placeholder displays.
+[[gameobject]]
+guid = 790715
+entry = 980113
+display = 1011
+map = 0
+position = [-9918.0, 14.0, 30.5]
+orientation = 0.0
+respawn = 120.0
+
+[[gameobject]]
+guid = 790716
+entry = 980113
+display = 1011
+map = 0
+position = [-9902.0, 14.0, 30.5]
+orientation = 0.0
+respawn = 120.0
+
+[[gameobject]]
+guid = 790717
+entry = 980113
+display = 1011
+map = 0
+position = [-9912.0, 30.0, 30.5]
+orientation = 0.0
+respawn = 120.0
+
+[[gameobject]]
+guid = 790718
+entry = 980114
+display = 1011
+map = 0
+position = [-9910.0, 22.0, 30.5]
+orientation = 0.0
+respawn = 120.0
+
+[[gameobject]]
+guid = 790719
+entry = 980115
+display = 1011
+map = 0
+position = [-9924.0, 8.0, 30.5]
+orientation = 0.0
+respawn = 120.0
+
+[[gameobject]]
+guid = 790720
+entry = 980115
+display = 1011
+map = 0
+position = [-9896.0, 36.0, 30.5]
+orientation = 0.0
+respawn = 120.0
