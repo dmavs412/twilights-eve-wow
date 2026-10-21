@@ -5,7 +5,8 @@
 # The fields and defaults of content/items.toml. `pool_level` comes from
 # data/twilights-eve/gear_drops.csv. A Chest's `wardrobe` is the look template worn on
 # each hidden body part (head, shoulders, back, wrists, hands, waist, legs, feet), 0 for
-# bare; the look templates, from 990000 up, close the table.
+# bare; the look templates, from 990000 up, close the table. `spell_power` is the flat
+# Spell Power the realm adds to spells; its tooltip spell is among `equip_spells`.
 
 item = [
   { entry = 25, name = "Worn Shortsword", quality = 1, item_level = 2, required_level = 1, class = 2, subclass = 7, inventory_type = 21, display_id = 1542, speed_ms = 1900, durability = 20, sell_price = 7, stackable = 1, sheath = 3, material = 1, damage = [[1.0, 3.0, 0]] },

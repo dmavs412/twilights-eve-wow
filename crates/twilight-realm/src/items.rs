@@ -35,6 +35,9 @@ pub(crate) struct Template {
     pub(crate) attack_power: i32,
     /// Defense skill from the equip spells.
     pub(crate) defense: u16,
+    /// Flat Spell Power from the sheet's `spell_power` column (ADR 0007); the "Increase Spell
+    /// Dam N" spell among `equip_spells` is the client's tooltip, never the realm's number.
+    pub(crate) spell_power: u32,
     /// A quiver's or ammo pouch's ranged haste from its equip spell (aura 141,
     /// `SPELL_AURA_MOD_RANGED_AMMO_HASTE`): the percent the ranged weapon shoots faster while it is
     /// in a bag slot.
@@ -97,6 +100,7 @@ impl Default for Template {
             equip_spells: Vec::new(),
             attack_power: 0,
             defense: 0,
+            spell_power: 0,
             ranged_haste_pct: 0,
             armor: 0,
             block: 0,

@@ -23,6 +23,12 @@ entry is no Gear.
 Columns besides the words: `speed` in seconds; `dmg_min`, `dmg_max` and `dmg_school` hold one
 value per damage line, `;`-separated (a weapon with a bonus school hit has two); `equip`, `use`
 and `on_hit` are `;`-separated spell ids.
+
+`spell_power` (#272) is the flat Spell Power a Weapon, a held Offhand or a Wand carries; any
+other slot with one is refused. The realm reads the column; the client sees it as the vanilla
+"Increase Spell Dam N" item spell appended to `equip`, so the tooltip shows the line. `budget` is
+the stat points a hand-authored row may spend (str + agi + sta + int + spi + ceil(spell_power / 2));
+a row over it is refused, and a blank is unchecked. It is not written to gear.toml.
 """
 
 from __future__ import annotations
@@ -42,7 +48,8 @@ COLUMNS = (
     "entry", "name", "slot", "type", "hand", "quality", "item_level", "required_level",
     "str", "agi", "sta", "int", "spi", "armor", "block", "dmg_min", "dmg_max", "dmg_school",
     "speed", "res_holy", "res_fire", "res_nature", "res_frost", "res_shadow", "res_arcane",
-    "attack_power", "crit", "defense", "equip", "use", "on_hit", "display_id", "sell_price",
+    "attack_power", "crit", "defense", "spell_power", "budget", "equip", "use", "on_hit",
+    "display_id", "sell_price",
     "bonding", "durability", "sheath", "material", "wardrobe_head", "wardrobe_shoulders",
     "wardrobe_back", "wardrobe_wrists", "wardrobe_hands", "wardrobe_waist", "wardrobe_legs",
     "wardrobe_feet",
@@ -92,6 +99,20 @@ VANILLA_SPELLS = {
     13674: "Increased Block 1",
     18369: "Increased Defense",
 }
+
+# The vanilla "+N Spell Damage and Healing" item spells by N, from vmangos's spell_template
+# (`Increase Spell Dam N`: aura 13 `SPELL_AURA_MOD_DAMAGE_DONE` on every magic school plus aura
+# 135 `SPELL_AURA_MOD_HEALING_DONE`, both N). Only the tooltip uses them; the realm reads
+# `spell_power`. No spell exists for 3, 10 or 17: such a row takes the nearest lower one.
+SPELL_POWER_SPELLS = {
+    1: 9392, 2: 9393, 4: 9394, 5: 9395, 6: 9396, 7: 9397, 8: 9398, 9: 9415, 11: 9416,
+    12: 9417, 13: 9342, 14: 9343, 15: 9344, 16: 9345, 18: 9346, 19: 14254, 20: 14799,
+    21: 14248, 22: 15714, 23: 14047, 24: 24595, 25: 15715, 26: 18049, 27: 14054, 28: 14127,
+    29: 13881, 30: 14798,
+}
+SPELL_POWER_NAMES = {spell: f"Increase Spell Dam {n}" for n, spell in SPELL_POWER_SPELLS.items()}
+# The slots and types that may carry Spell Power: `(slot, type)`, `None` for any type.
+SPELL_POWER_SLOTS = (("Weapon", None), ("Offhand", "Held"), ("Ranged", "Wand"))
 
 
 class SheetError(Exception):
@@ -168,6 +189,23 @@ def ids(value: str, column: str, where: str) -> list[int]:
     return [integer(v, column, where) for v in value.split(";")] if value else []
 
 
+def spell_power_spell(n: int, where: str) -> int:
+    """The item spell whose tooltip says "+N Spell Damage and Healing", or the nearest lower."""
+    top = max(SPELL_POWER_SPELLS)
+    if n > top:
+        raise SheetError(f"{where}: spell_power {n} is above {top}, the last tooltip spell")
+    if n not in SPELL_POWER_SPELLS:
+        lower = max(k for k in SPELL_POWER_SPELLS if k < n)
+        print(f"build_gear: {where}: no tooltip spell for spell_power {n}; the tooltip says {lower}",
+              file=sys.stderr)
+        n = lower
+    return SPELL_POWER_SPELLS[n]
+
+
+def spell_name(spell: int, spells: dict[int, str]) -> str:
+    return spells.get(spell) or VANILLA_SPELLS.get(spell) or SPELL_POWER_NAMES[spell]
+
+
 def known_spells(master_path: str) -> dict[int, str]:
     """Every spell id master.csv names, with its row's name."""
     spells = {}
@@ -202,6 +240,16 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
             raise SheetError(f"{where}: the realm applies no crit from gear yet")
         if row["on_hit"]:
             raise SheetError(f"{where}: the realm models no chance-on-hit effects yet")
+        spell_power = integer(row["spell_power"], "spell_power", where)
+        if spell_power and not any(row["slot"] == slot and kind in (None, row["type"])
+                                   for slot, kind in SPELL_POWER_SLOTS):
+            raise SheetError(f"{where}: spell_power on a {row['slot']} of type {row['type']!r}; "
+                             "only a Weapon, a held Offhand or a Wand carries it")
+        if row["budget"]:
+            budget = integer(row["budget"], "budget", where)
+            spent = sum(integer(row[col], col, where) for col, _ in STATS) + -(-spell_power // 2)
+            if spent > budget:
+                raise SheetError(f"{where}: spends {spent} stat points of a budget of {budget}")
         cells = {part: integer(row[f"wardrobe_{part}"], f"wardrobe_{part}", where)
                  for part, _ in WARDROBE}
         if row["slot"] != "Chest" and any(cells.values()):
@@ -230,6 +278,7 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
         items.append({
             "entry": entry, "row": row, "class": cls, "subclass": sub, "inventory_type": inv,
             "damage": damage, "speed_ms": speed_ms, "use": uses, "where": where,
+            "spell_power": spell_power,
         })
 
     pool_level = {}
@@ -254,7 +303,8 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
         "# The fields and defaults of content/items.toml. `pool_level` comes from\n"
         "# data/twilights-eve/gear_drops.csv. A Chest's `wardrobe` is the look template worn on\n"
         "# each hidden body part (head, shoulders, back, wrists, hands, waist, legs, feet), 0 for\n"
-        "# bare; the look templates, from 990000 up, close the table.\n\n"
+        "# bare; the look templates, from 990000 up, close the table. `spell_power` is the flat\n"
+        "# Spell Power the realm adds to spells; its tooltip spell is among `equip_spells`.\n\n"
         "item = [\n"
     ]
     for item in items:
@@ -306,17 +356,19 @@ def row_line(item: dict, spells: dict[int, str], pool: int, wardrobe: dict | Non
         damage = ", ".join(f"[{fmt_float(lo)}, {fmt_float(hi)}, {s}]" for lo, hi, s in item["damage"])
         parts.append(f"damage = [{damage}]")
     equip = ids(row["equip"], "equip", where)
+    if item["spell_power"]:
+        equip.append(spell_power_spell(item["spell_power"], where))
     if equip:
-        names = [toml_string(spells.get(s) or VANILLA_SPELLS[s]) for s in equip]
+        names = [toml_string(spell_name(s, spells)) for s in equip]
         parts.append(f"equip_spells = [{', '.join(map(str, equip))}]")
         parts.append(f"equip_spell_names = [{', '.join(names)}]")
-    for column in ("attack_power", "defense"):
+    for column in ("attack_power", "defense", "spell_power"):
         if num(column):
             parts.append(f"{column} = {num(column)}")
     if item["use"]:
         spell = item["use"][0]
         parts.append(f"use_spell = {spell}")
-        parts.append(f"use_spell_name = {toml_string(spells.get(spell) or VANILLA_SPELLS[spell])}")
+        parts.append(f"use_spell_name = {toml_string(spell_name(spell, spells))}")
     if wardrobe is not None:
         looks = [str(look_entry.get((i, wardrobe[part]), 0)) for i, (part, _) in enumerate(WARDROBE)]
         parts.append(f"wardrobe = [{', '.join(looks)}]")

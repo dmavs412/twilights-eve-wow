@@ -29,6 +29,18 @@ _Avoid_: equipment, loot (loot is what a mob drops, Gear or not)
 The whole-body look a Chest carries: what the character's head, shoulders, back, wrists, hands, waist, legs and feet show while that Chest is worn. With no Chest, the character shows underclothes.
 _Avoid_: transmog, set (an item set with bonuses)
 
+**Loot Source**:
+Where a piece of Gear comes from: Token, World, Quest or Dungeon. Each has its own stat Budget per slot. The word is never Tier. Spec #272.
+_Avoid_: tier, pool
+
+**Flavour**:
+The stat mix a piece of Gear carries: Might, Swift or Mind. Spec #272.
+_Avoid_: archetype, role
+
+**Budget**:
+The stat points a piece of Gear may spend, set by its Loot Source and slot: 1 point is +1 Str, Agi, Sta, Int or Spi, and Spell Power costs half a point. Weapon damage and armour are free. The gear sheet's `budget` column holds it and the tool refuses a row over it. Spec #272.
+_Avoid_: item level, stat weight
+
 **Hub**:
 The town at the centre of the world where the trainers, the innkeeper and most quest givers stand: the Crossroads.
 _Avoid_: base, city
