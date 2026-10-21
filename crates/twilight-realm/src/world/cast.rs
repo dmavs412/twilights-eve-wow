@@ -3061,6 +3061,34 @@ impl InWorld {
             part_pct(crate::callings::AppliesTo::Hit),
             part_pct(crate::callings::AppliesTo::Tick),
         );
+        // Worn Spell Power (#272): a direct magic hit or heal takes the cast-time share, a
+        // periodic one the duration share per tick. A skill with both parts gives the direct
+        // part the whole direct share and the periodic part half its own.
+        let direct_bonus = crate::rules::spell_power::spell_power_bonus(
+            stats.spell_power,
+            skill.meta.shape.cast_time_ms,
+        );
+        let has_direct = skill.effects.iter().any(|e| {
+            matches!(e, Effect::Heal { .. })
+                || matches!(e, Effect::SchoolDamage { school, .. } if school.is_magic())
+        });
+        let periodic_bonus = |duration_ms: u32, tick_ms: u32| {
+            let ticks = if tick_ms == 0 {
+                0
+            } else {
+                duration_ms / tick_ms
+            };
+            let bonus = crate::rules::spell_power::periodic_spell_power_bonus(
+                stats.spell_power,
+                duration_ms,
+                ticks,
+            );
+            if has_direct {
+                bonus / 2
+            } else {
+                bonus
+            }
+        };
         // A finisher's block, once per combo point held on the target.
         let per_combo = |l: Option<formulas::Linear>| l.map_or(0, |l| sized(l) * u32::from(combo));
         // Talents that make the skill's auras last longer (Booming Voice).
@@ -3126,7 +3154,9 @@ impl InWorld {
                 per_combo: more,
                 ..
             } => {
-                let raw = scaled(amount.at(level, ap), hit_pct) + per_combo(more);
+                let raw = scaled(amount.at(level, ap), hit_pct)
+                    + per_combo(more)
+                    + if school.is_magic() { direct_bonus } else { 0 };
                 self.skills.cast_dealt += self.strike(
                     skill.spell_id,
                     target,
@@ -3155,7 +3185,14 @@ impl InWorld {
                 let duration_ms =
                     duration_ms + stretch.map_or(0, |l| l.at(level, ap) * u32::from(combo));
                 let share = self.share(pct_of, pct, duration_ms, tick_ms);
-                let per_tick = scaled(tick.at(level, ap), tick_pct) + per_combo(more) + share;
+                let per_tick = scaled(tick.at(level, ap), tick_pct)
+                    + per_combo(more)
+                    + share
+                    + if school.is_magic() {
+                        periodic_bonus(duration_ms, tick_ms)
+                    } else {
+                        0
+                    };
                 let a = aura(
                     AuraKind::PeriodicDamage {
                         per_tick,
@@ -3562,15 +3599,16 @@ impl InWorld {
                 }
             }
             Effect::Heal { amount } => {
+                let amount = sized(amount) + direct_bonus;
                 if target == self.guid {
-                    let healed = self.heal_player(c, skill.spell_id, sized(amount), events);
+                    let healed = self.heal_player(c, skill.spell_id, amount, events);
                     self.skills.cast_healed += healed;
                 } else if crate::shard::is_player(target) {
                     self.helps.push(super::Help::Heal {
                         to: target,
                         healer: self.guid,
                         spell_id: skill.spell_id,
-                        amount: sized(amount),
+                        amount,
                     });
                 }
             }
@@ -3604,7 +3642,8 @@ impl InWorld {
                     return;
                 };
                 let per_tick = tick.map_or(0, sized)
-                    + self.share(pct_of, pct, scaled(duration_ms + later, longer), tick_ms);
+                    + self.share(pct_of, pct, scaled(duration_ms + later, longer), tick_ms)
+                    + periodic_bonus(duration_ms, tick_ms);
                 if per_tick == 0 {
                     return;
                 }

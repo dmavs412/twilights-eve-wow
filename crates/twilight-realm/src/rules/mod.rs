@@ -19,6 +19,7 @@ pub mod respawn;
 pub mod school;
 pub mod seals;
 pub mod skills;
+pub mod spell_power;
 pub mod stats;
 pub mod talents;
 pub mod threat;

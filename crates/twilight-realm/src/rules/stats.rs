@@ -30,6 +30,9 @@ pub struct CharacterStats {
     pub attack_power_bonus: i32,
     /// Ranged attack power, by Class ([`ranged_attack_power`]); gear carries none yet.
     pub ranged_attack_power: i32,
+    /// Flat Spell Power worn, the gear sheet's `spell_power` summed; what
+    /// [`spell_power`](crate::rules::spell_power) adds to spells.
+    pub spell_power: u32,
     pub crit_pct: f64,
     /// The percent a crit's whole damage grows by (talents): 30 makes a melee crit 200% x 1.3 = 260%.
     pub crit_damage_pct: u32,
@@ -243,6 +246,7 @@ impl CharacterStats {
             }
             g.armor += t.armor;
             g.attack_power += t.attack_power;
+            g.spell_power += t.spell_power;
             if t.class == crate::rules::gear::CLASS_ARMOR && t.subclass == SUBCLASS_SHIELD {
                 g.shield_block = Some(t.block);
             }
@@ -292,6 +296,7 @@ impl CharacterStats {
             attack_power,
             attack_power_bonus: gear.attack_power,
             ranged_attack_power,
+            spell_power: gear.spell_power,
             // Skill sits at the maximum, so its `(skill - 5L) × 0.04` terms are zero.
             crit_pct: f64::from(agi) / tables::at(&t.agi_per_crit, level),
             crit_damage_pct: 0,
@@ -363,6 +368,7 @@ struct Gear {
     armor: u32,
     attack_power: i32,
     defense: u16,
+    spell_power: u32,
     /// The main hand's `(min, max, speed ms)`.
     weapon: Option<(f32, f32, u32)>,
     /// The off-hand weapon's `(min, max, speed ms)`.
