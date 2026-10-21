@@ -162,6 +162,18 @@ _Avoid_: main quest, campaign quest
 An item that begins a quest when used, as the Smoldering Twilight Idol begins The Idol in the Deep. It drops only until its quest is taken or done, only one can be carried, and it stays in the bags until the quest is handed in.
 _Avoid_: quest item (any item a quest asks for)
 
+**Rumour**:
+A quest chain that a kill in a Hunting Ground drops by chance (spec #284). The drop spawns a Field Giver at one of the Rumour's listed points for its Audience, and a note for the looter that names the place. Its steps are ordinary quests from that giver; a step may spawn a named creature or a GameObject for the Audience. A timer from the drop ends it: the giver and everything it spawned despawn and the quest fails. Its Grade (easy, hard, deadly) sets the XP and the chest at the end. An ordinary Rumour can be found and done again; a Calling Rumour has no timer, leads to a trainer and is done once per character.
+_Avoid_: event, world quest, random quest
+
+**Audience**:
+The characters who can see, fight, click and loot what a Rumour spawned: everyone within the kill credit range of the corpse when the Rumour dropped, fixed then (ADR 0014). An entity with no Audience is seen by everyone in its Phase.
+_Avoid_: owners, party, group
+
+**Calling Rumour**:
+A Rumour that drops only for a character at their Tier Cap whose Calling advances into the Calling it names, and leads to that Calling's trainer. It has no timer, pays no chest and never drops again for a character who finished it.
+_Avoid_: trainer quest, rumour quest
+
 **Notoriety**:
 How much the underworld has noticed a character. Everything the character achieves raises it: kills, quest hand-ins, Dungeon clears and rare drops. It drains slowly while the character rests in a Hub, falls to zero on any death, and is halved by Advancement. Every character has their own.
 _Avoid_: heat (the meter), infamy, wanted level
