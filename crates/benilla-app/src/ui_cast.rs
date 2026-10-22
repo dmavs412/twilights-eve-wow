@@ -41,7 +41,7 @@ pub(crate) struct CastBarFeed(pub(crate) Vec<CastBarEdge>);
 /// `SPELLCAST_START`'s name argument: empty for an unknown spell, or when `AttributesEx3 & 0x4`
 /// is set, where the reference pushes `""` (`0x6e7a2d`) and still fires, so the bar is a
 /// full-length untitled one. The channel bar names differently ([`channel_start_args`]).
-fn cast_bar_label(spells: Option<&crate::ui_action::Spells>, id: u32) -> String {
+pub(crate) fn cast_bar_label(spells: Option<&crate::ui_action::Spells>, id: u32) -> String {
     spells
         .and_then(|s| s.catalog.get(id))
         .filter(|d| !d.no_casting_bar_text())

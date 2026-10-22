@@ -107,7 +107,15 @@ fn base_of(token: &[u8]) -> Option<(Base, usize)> {
 /// Whether the resolver recognises the token, not whether it names a unit: `"party5"` solo is
 /// recognised and answers nil, and only a token none of its nine compares match raises.
 pub(crate) fn token_recognised(token: &str) -> bool {
-    token.eq_ignore_ascii_case("npc") || base_of(token.as_bytes()).is_some()
+    token.eq_ignore_ascii_case("npc") || is_boss_token(token) || base_of(token.as_bytes()).is_some()
+}
+
+/// Our Boss Bar's `boss1` to `boss3` (ADR 0013), which the 1.12 resolver does not have: exact
+/// compares, pushed by the app under their own names.
+pub fn is_boss_token(token: &str) -> bool {
+    ["boss1", "boss2", "boss3"]
+        .iter()
+        .any(|t| token.eq_ignore_ascii_case(t))
 }
 
 /// The inline base-10 parse after `party`, `partypet`, `raid` and `raidpet`, then `dec` to a

@@ -75,6 +75,7 @@ impl Plugin for TwilightPlugin {
         };
         app.init_resource::<crate::char_select::ClassLabels>()
             .init_resource::<CallingKeys>()
+            .init_resource::<BossFightList>()
             .init_resource::<SelfCalling>();
         app.add_message::<DevGoto>()
             .init_resource::<goto::GotoGround>();
@@ -238,6 +239,7 @@ fn pump(
     collision: WorldCollision,
     mut labels: ResMut<crate::char_select::ClassLabels>,
     mut keys: ResMut<CallingKeys>,
+    mut boss: ResMut<BossFightList>,
     mut goto: ResMut<goto::GotoGround>,
     adts: Res<Assets<benilla_assets::AdtTile>>,
 ) {
@@ -300,7 +302,15 @@ fn pump(
             label_callings(&keys, &mut labels);
             continue;
         }
+        // The Boss Bar's list, whole on every change; an empty one clears it.
+        if let SessionEvent::BossFight { guids } = event {
+            boss.set_if_neq(BossFightList(guids));
+            continue;
+        }
         let logged_out = matches!(event, SessionEvent::LoggedOut);
+        if logged_out {
+            boss.set_if_neq(BossFightList::default());
+        }
         let _ = far.events.send(event);
         // The IO thread ends the session after a logout, which tears the streamed world down.
         if logged_out {
@@ -324,6 +334,11 @@ impl CallingKeys {
         benilla_formats::twilight_calling(self.0.get(&guid)?)
     }
 }
+
+/// The Boss Bar's fights, oldest first, as the realm last sent them (`SessionEvent::BossFight`).
+/// Only the first three show as `boss1` to `boss3`; the rest wait.
+#[derive(Resource, Default, Clone, PartialEq)]
+pub(crate) struct BossFightList(pub(crate) Vec<u64>);
 
 /// The local player's Calling, or `None` until the realm names it.
 #[derive(Resource, Default, Clone, Copy, PartialEq)]

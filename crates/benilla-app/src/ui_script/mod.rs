@@ -695,6 +695,8 @@ mod combat_text_tests;
 mod combo_frame_tests;
 
 #[cfg(test)]
+mod boss_bar_tests;
+#[cfg(test)]
 mod unit_frame_tests;
 
 #[cfg(test)]

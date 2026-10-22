@@ -1944,6 +1944,8 @@ fn the_layer_does_not_grow() {
         // The ten Gear Slots (ADR 0007): the character pane's own art and layout, which no stock
         // file has.
         "GearSlots.xml",
+        // The Boss Bar (ADR 0013): the realm's `BossFight` list as `boss1` to `boss3` rows.
+        "BossBar.xml",
     ];
     assert_eq!(
         super::addons::Addon::layer().toc.files,

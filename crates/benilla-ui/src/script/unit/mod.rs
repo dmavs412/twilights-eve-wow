@@ -526,6 +526,6 @@ mod resolve;
 #[cfg(test)]
 mod tests;
 
-pub use resolve::{parse_unit_token, UnitBase, UnitGuids, UnitTokenParse};
+pub use resolve::{is_boss_token, parse_unit_token, UnitBase, UnitGuids, UnitTokenParse};
 
 pub(super) use bindings::install;

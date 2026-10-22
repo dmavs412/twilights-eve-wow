@@ -23,3 +23,5 @@ ScriptLogFrame.xml
 FrameXMLFixes.xml
 # The character pane's and inspect window's buttons for the ten Gear Slots only (ADR 0007).
 GearSlots.xml
+# The Boss Bar: boss1 to boss3 top centre with cast bars and the kill linger (ADR 0013).
+BossBar.xml

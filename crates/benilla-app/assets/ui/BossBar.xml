@@ -1,0 +1,240 @@
+<Ui>
+    <!--
+        The Boss Bar (ADR 0013): up to three fights from the `boss1` to `boss3` unit tokens, top
+        centre. Each row has the boss's name, a health bar with the percentage on it and a thin cast
+        bar with the spell name on it. The app feeds the tokens from the realm's `BossFight` list
+        and fires `BENILLA_BOSS_CAST(token, spell name, duration in ms)` when a shown boss starts a
+        cast (a duration of 0 ends it). A boss that goes away dead stays two seconds at 0%; one that
+        goes away alive hides at once.
+    -->
+    <Script><![CDATA[
+        BENILLA_BOSS_ROWS = 3
+        -- Seconds a dead boss's row stays after its token clears.
+        BENILLA_BOSS_LINGER = 2
+
+        local function BenillaBossRow_Percent(token)
+            local max = UnitHealthMax(token)
+            if not max or max <= 0 or UnitIsDead(token) then
+                return 0
+            end
+            return math.floor(UnitHealth(token) / max * 100)
+        end
+
+        function BenillaBossRow_Paint(row, name, percent)
+            local rowName = row:GetName()
+            getglobal(rowName .. "Name"):SetText(name or "")
+            local bar = getglobal(rowName .. "Health")
+            bar:SetMinMaxValues(0, 100)
+            bar:SetValue(percent)
+            getglobal(rowName .. "HealthText"):SetText(percent .. "%")
+        end
+
+        function BenillaBossRow_UpdateCast(row)
+            local cast = getglobal(row:GetName() .. "Cast")
+            local now = GetTime()
+            if row.castEnd and now < row.castEnd then
+                cast:SetMinMaxValues(0, row.castEnd - row.castStart)
+                cast:SetValue(now - row.castStart)
+                getglobal(row:GetName() .. "CastText"):SetText(row.castName or "")
+                cast:Show()
+            else
+                row.castEnd = nil
+                cast:Hide()
+            end
+        end
+
+        -- The row follows its token. A token that clears keeps the last dead snapshot for the
+        -- linger and hides at once otherwise.
+        function BenillaBossRow_Update(row)
+            local token = "boss" .. row:GetID()
+            if UnitExists(token) then
+                row.dead = UnitIsDead(token)
+                row.lingerEnd = nil
+                row.lastName = UnitName(token)
+                BenillaBossRow_Paint(row, row.lastName, BenillaBossRow_Percent(token))
+                row:Show()
+                BenillaBossRow_UpdateCast(row)
+            elseif row:IsShown() then
+                if row.dead and not row.lingerEnd then
+                    row.lingerEnd = GetTime() + BENILLA_BOSS_LINGER
+                end
+                row.castEnd = nil
+                if row.lingerEnd and GetTime() < row.lingerEnd then
+                    BenillaBossRow_Paint(row, row.lastName, 0)
+                    BenillaBossRow_UpdateCast(row)
+                else
+                    row.dead = nil
+                    row.lingerEnd = nil
+                    row:Hide()
+                end
+            end
+        end
+
+        function BenillaBossBar_UpdateAll()
+            for i = 1, BENILLA_BOSS_ROWS do
+                BenillaBossRow_Update(getglobal("BenillaBossRow" .. i))
+            end
+        end
+
+        function BenillaBossBar_OnEvent()
+            if event == "BENILLA_BOSS_CAST" then
+                local row = getglobal("BenillaBossRow" .. string.sub(arg1, 5))
+                if row then
+                    if arg3 and arg3 > 0 then
+                        row.castName = arg2
+                        row.castStart = GetTime()
+                        row.castEnd = row.castStart + arg3 / 1000
+                    else
+                        row.castEnd = nil
+                    end
+                    BenillaBossRow_Update(row)
+                end
+            elseif arg1 and string.find(arg1, "^boss%d$") then
+                local row = getglobal("BenillaBossRow" .. string.sub(arg1, 5))
+                if row then
+                    BenillaBossRow_Update(row)
+                end
+            end
+        end
+    ]]></Script>
+
+    <Button name="BenillaBossRowTemplate" virtual="true" hidden="true">
+        <Size>
+            <AbsDimension x="260" y="40"/>
+        </Size>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT">
+                    <Size>
+                        <AbsDimension x="260" y="12"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <StatusBar name="$parentHealth">
+                <Size>
+                    <AbsDimension x="260" y="14"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-13"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parentBack">
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                                <Anchor point="BOTTOMRIGHT"/>
+                            </Anchors>
+                            <Color r="0" g="0" b="0" a="0.6"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+                <BarColor r="0.8" g="0.1" b="0.1"/>
+            </StatusBar>
+            <StatusBar name="$parentCast" hidden="true">
+                <Size>
+                    <AbsDimension x="260" y="10"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-28"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture name="$parentBack">
+                            <Anchors>
+                                <Anchor point="TOPLEFT"/>
+                                <Anchor point="BOTTOMRIGHT"/>
+                            </Anchors>
+                            <Color r="0" g="0" b="0" a="0.6"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                            <Anchors>
+                                <Anchor point="CENTER"/>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+                <BarColor r="1" g="0.7" b="0"/>
+            </StatusBar>
+        </Frames>
+        <Scripts>
+            <OnClick>
+                TargetUnit("boss" .. this:GetID())
+            </OnClick>
+        </Scripts>
+    </Button>
+
+    <Frame name="BenillaBossBar" parent="UIParent" frameStrata="LOW">
+        <Size>
+            <AbsDimension x="260" y="128"/>
+        </Size>
+        <Anchors>
+            <Anchor point="TOP" relativeTo="UIParent" relativePoint="TOP">
+                <Offset>
+                    <AbsDimension x="0" y="-40"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+        <Frames>
+            <Button name="BenillaBossRow1" inherits="BenillaBossRowTemplate" id="1">
+                <Anchors>
+                    <Anchor point="TOPLEFT"/>
+                </Anchors>
+            </Button>
+            <Button name="BenillaBossRow2" inherits="BenillaBossRowTemplate" id="2">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="BenillaBossRow1" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-4"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="BenillaBossRow3" inherits="BenillaBossRowTemplate" id="3">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="BenillaBossRow2" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                            <AbsDimension x="0" y="-4"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                this:RegisterEvent("UNIT_HEALTH")
+                this:RegisterEvent("UNIT_MAXHEALTH")
+                this:RegisterEvent("BENILLA_BOSS_CAST")
+            </OnLoad>
+            <OnEvent>
+                BenillaBossBar_OnEvent()
+            </OnEvent>
+            <OnUpdate>
+                BenillaBossBar_UpdateAll()
+            </OnUpdate>
+        </Scripts>
+    </Frame>
+</Ui>

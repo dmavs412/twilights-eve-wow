@@ -152,6 +152,7 @@ impl Plugin for UiUnitPlugin {
                 // raises for the same port.
                 fire_leaving_world_on_worldport,
                 feed_units,
+                feed_boss_casts,
                 // After the aura feed, whose resolver inputs it measures.
                 feed_unit_reach.after(crate::ui_aura::AuraEvents),
                 // After the same feed, whose guids it covers.
@@ -592,6 +593,7 @@ pub(crate) struct UnitTokens<'w, 's> {
     pet: Option<Res<'w, crate::ui_pet::PetBar>>,
     hovered: Option<Res<'w, crate::target::Hovered>>,
     hovered_go: Option<Res<'w, crate::target::HoveredObject>>,
+    boss: Option<Res<'w, crate::twilight::BossFightList>>,
     group: Res<'w, crate::ui_party::GroupState>,
     pub(crate) stores: Query<'w, 's, &'static ObjectStore>,
     me: Query<'w, 's, (Entity, &'static Guid), With<SelfPlayer>>,
@@ -612,6 +614,12 @@ impl UnitTokens<'_, '_> {
     /// tokens; a token that names nobody, or a base or hop the object manager does not hold, is
     /// `None`.
     pub(crate) fn resolve(&self, token: &str, selection: &Selection) -> Option<(Entity, u64)> {
+        // `boss1` to `boss3` are the Boss Bar list's first three guids, with no hops.
+        if benilla_ui::script::is_boss_token(token) {
+            let row = token.as_bytes()[4] - b'1';
+            let guid = *self.boss.as_ref()?.0.get(usize::from(row))?;
+            return self.held(guid);
+        }
         let UnitTokenParse::Unit { base, hops } = parse_unit_token(token) else {
             return None;
         };
@@ -799,6 +807,67 @@ pub(crate) struct UnitStores<'w, 's> {
     removed: RemovedComponents<'w, 's, Guid>,
     /// This run's per-field edges, which [`fire_transitions`]' watch-bridge arms fire off.
     edges: MessageReader<'w, 's, FieldChanged>,
+    /// The Boss Bar's list, whose first three guids are `boss1` to `boss3`. Absent without the
+    /// Twilight plugin.
+    boss: Option<Res<'w, crate::twilight::BossFightList>>,
+}
+
+/// The tokens the Boss Bar's fights fill, in list order.
+const BOSS_TOKENS: [&str; 3] = ["boss1", "boss2", "boss3"];
+
+/// The event the Boss Bar frame hears when a boss starts, changes or ends a cast:
+/// `(token, spell name, duration in ms)`, a duration of 0 meaning the cast ended.
+const BOSS_CAST_EVENT: &str = "BENILLA_BOSS_CAST";
+
+/// Pushes each shown boss's cast as [`BOSS_CAST_EVENT`] on the edge, from the `Casting` that
+/// `SMSG_SPELL_START` puts on any caster in view.
+fn feed_boss_casts(
+    script: Option<NonSendMut<UiScript>>,
+    boss: Option<Res<crate::twilight::BossFightList>>,
+    index: Option<Res<crate::net::GuidIndex>>,
+    casting: Query<&crate::creature_anim::Casting>,
+    spells: Option<Res<crate::ui_action::Spells>>,
+    mut last: Local<[Option<(u64, u32)>; 3]>,
+) {
+    let Some(mut script) = script else {
+        return;
+    };
+    for (i, token) in BOSS_TOKENS.iter().enumerate() {
+        let cast = (|| {
+            let guid = *boss.as_deref()?.0.get(i)?;
+            let entity = *index.as_deref()?.0.get(&guid)?;
+            let cast = casting.get(entity).ok()?;
+            Some((guid, *cast))
+        })();
+        let now = cast.map(|(guid, c)| (guid, c.spell_id));
+        if last[i] == now {
+            continue;
+        }
+        last[i] = now;
+        let args = match cast {
+            Some((_, c)) => {
+                let ms = c.until.map_or(0, |u| {
+                    u.saturating_duration_since(bevy::platform::time::Instant::now())
+                        .as_millis() as i64
+                });
+                vec![
+                    ScriptValue::Str((*token).to_string()),
+                    ScriptValue::Str(crate::ui_cast::cast_bar_label(
+                        spells.as_deref(),
+                        c.spell_id,
+                    )),
+                    // A cast with no deadline still shows, as a bar that fills at once.
+                    ScriptValue::Int(ms.max(1)),
+                ]
+            }
+            None => vec![
+                ScriptValue::Str((*token).to_string()),
+                ScriptValue::Str(String::new()),
+                ScriptValue::Int(0),
+            ],
+        };
+        script.fire_event(BOSS_CAST_EVENT, args);
+    }
 }
 
 /// The client tables [`snapshot`] reads beside a descriptor, as one parameter for the feeders that
@@ -1256,6 +1325,7 @@ fn feed_units(
     let factions_changed = factions.as_ref().is_some_and(|r| r.is_changed());
     // The interaction NPC moves when nothing else does, and `MERCHANT_SHOW` reads `"npc"`.
     let interact_changed = interact.as_ref().is_some_and(|r| r.is_changed());
+    let boss_changed = stores.boss.as_ref().is_some_and(|r| r.is_changed());
     gate::trace(
         "feed_units",
         &[
@@ -1269,6 +1339,7 @@ fn feed_units(
             ("reputations", reps_changed),
             ("factions", factions_changed),
             ("interact", interact_changed),
+            ("boss", boss_changed),
         ],
     );
     let gate = gate::Gate::new(
@@ -1281,7 +1352,8 @@ fn feed_units(
             || group_changed
             || reps_changed
             || factions_changed
-            || interact_changed,
+            || interact_changed
+            || boss_changed,
     );
     stores.removed.clear();
     if gate.skip() {
@@ -1377,6 +1449,25 @@ fn feed_units(
     if tot_dirty {
         gate.audit("feed_units", "the target-of-target snapshot");
         script.set_unit("targettarget", tot.clone());
+    }
+
+    // `"boss1"` to `"boss3"`: the Boss Bar list's first three guids, through the same held-unit
+    // path. A position with no guid, or whose unit the object store lacks, clears its token.
+    let bosses: [Option<UnitState>; 3] = std::array::from_fn(|i| {
+        let guid = *stores.boss.as_deref()?.0.get(i)?;
+        let entity = *index.as_ref()?.0.get(&guid)?;
+        Some(held.state(stores.all.get(entity).ok()?, guid))
+    });
+    for (token, boss) in BOSS_TOKENS.iter().zip(&bosses) {
+        let dirty = match (boss, memo.last.get(*token)) {
+            (Some(cur), Some(prev)) => cur != prev,
+            (None, None) => false,
+            _ => true,
+        };
+        if dirty {
+            gate.audit("feed_units", "a boss snapshot");
+            script.set_unit(token, boss.clone());
+        }
     }
 
     // `"npc"`: the interaction NPC, the reference's `[0xb4e2d0]` that `CGGameUI::SetInteractNPC`
@@ -1532,11 +1623,13 @@ fn feed_units(
         memo.action_bar_toggles = None;
     }
 
-    for (token, snap) in [
+    let mut held_tokens = vec![
         ("player", &player),
         ("target", &target),
         ("targettarget", &tot),
-    ] {
+    ];
+    held_tokens.extend(BOSS_TOKENS.iter().copied().zip(&bosses));
+    for (token, snap) in held_tokens {
         match snap {
             Some(cur) => {
                 let prev = memo.last.get(token);
@@ -3506,6 +3599,77 @@ mod tests {
             !exists(&mut app),
             "the window closed, yet UnitExists(\"npc\")"
         );
+    }
+
+    /// The Boss Bar list feeds `boss1` to `boss3` in order, the fourth guid waits, and an empty
+    /// list clears all three.
+    #[test]
+    fn the_boss_tokens_follow_the_first_three_guids_of_the_list() {
+        use crate::twilight::BossFightList;
+        use benilla_protocol::messages::ObjectFields;
+
+        const FIELD_UNIT_LEVEL: u16 = 34;
+
+        let mut app = App::new();
+        app.init_resource::<UnitFeedState>()
+            .init_resource::<Selection>()
+            .init_resource::<NameCache>()
+            .init_resource::<Reputations>()
+            .init_resource::<crate::ui_party::GroupState>()
+            .init_resource::<crate::ui_chat::ChatLog>()
+            .init_resource::<crate::sound::MessageSounds>()
+            .init_resource::<crate::ui_guild::GuildState>()
+            .init_resource::<BossFightList>();
+        app.add_message::<FieldChanged>();
+        let (tx, _rx) = crossbeam_channel::unbounded();
+        app.insert_resource(NetCommands(tx));
+        app.insert_non_send_resource(UiScript::new().unwrap());
+        app.add_systems(Update, feed_units);
+        // Four bosses, told apart by level alone (levels 11 to 14, guids 1 to 4).
+        let mut index = crate::net::GuidIndex::default();
+        for guid in 1..=4u64 {
+            let e = app
+                .world_mut()
+                .spawn(ObjectStore(ObjectFields::from_pairs(&[(
+                    FIELD_UNIT_LEVEL,
+                    10 + guid as u32,
+                )])))
+                .id();
+            index.0.insert(guid, e);
+        }
+        app.insert_resource(index);
+        let level = |app: &mut App, token: &str| -> Option<i64> {
+            let script = app.world_mut().non_send_resource_mut::<UiScript>();
+            let exists: bool = script
+                .eval(&format!(
+                    r#"return UnitExists("{token}") and true or false"#
+                ))
+                .unwrap();
+            exists.then(|| {
+                script
+                    .eval::<i64>(&format!(r#"return UnitLevel("{token}")"#))
+                    .unwrap()
+            })
+        };
+
+        app.update();
+        assert_eq!(level(&mut app, "boss1"), None, "no fight, yet a boss1");
+
+        app.world_mut().resource_mut::<BossFightList>().0 = vec![2, 1, 4, 3];
+        app.update();
+        assert_eq!(level(&mut app, "boss1"), Some(12));
+        assert_eq!(level(&mut app, "boss2"), Some(11));
+        assert_eq!(level(&mut app, "boss3"), Some(14));
+
+        app.world_mut().resource_mut::<BossFightList>().0 = vec![3];
+        app.update();
+        assert_eq!(level(&mut app, "boss1"), Some(13));
+        assert_eq!(level(&mut app, "boss2"), None, "boss2 left the list");
+        assert_eq!(level(&mut app, "boss3"), None);
+
+        app.world_mut().resource_mut::<BossFightList>().0 = Vec::new();
+        app.update();
+        assert_eq!(level(&mut app, "boss1"), None, "an empty list clears boss1");
     }
 
     /// `UnitCreatureType` through the real feed (`0x51a280`, resolver `0x605570`): a shapeshifted
