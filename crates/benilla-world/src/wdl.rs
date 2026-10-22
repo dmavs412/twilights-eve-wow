@@ -183,9 +183,22 @@ fn stream_wdl(
         .take(WDL_LOADS_PER_FRAME)
         .collect();
     for coords in missing {
-        let Some(tile) = streamer.wdl.tile_mesh(coords.0, coords.1) else {
+        let Some(mut tile) = streamer.wdl.tile_mesh(coords.0, coords.1) else {
             continue;
         };
+        // Closed Zones (ADR 0015): a cell over a closed chunk drops its 12 indices, judged at
+        // its centre vertex, which follows the 17 × 17 outer grid.
+        let map_id = streamer.map_id;
+        tile.indices = tile
+            .indices
+            .chunks(12)
+            .enumerate()
+            .filter(|&(cell, _)| {
+                let [x, y, _] = tile.positions[289 + cell];
+                !benilla_formats::closed_zones::closed_at(map_id, x, y)
+            })
+            .flat_map(|(_, fan)| fan.iter().copied())
+            .collect();
         let positions: Vec<[f32; 3]> = tile
             .positions
             .iter()

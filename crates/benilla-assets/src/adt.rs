@@ -7,9 +7,10 @@
 
 use std::collections::HashMap;
 
+use benilla_formats::closed_zones::closed_at;
 use benilla_formats::{
-    adt_to_tile_mesh, blp_bytes_to_native_chain, ChunkMesh, Doodad, WmoInstance, ALPHA_MAP_SIZE,
-    SHADOW_MAP_SIZE,
+    adt_to_tile_mesh, blp_bytes_to_native_chain, ChunkMesh, Doodad, TileMesh, WmoInstance,
+    ALPHA_MAP_SIZE, CHUNK_SIZE, SHADOW_MAP_SIZE,
 };
 use bevy::asset::io::Reader;
 use bevy::asset::{Asset, AssetLoader, LoadContext, RenderAssetUsages};
@@ -143,7 +144,10 @@ impl AssetLoader for AdtLoader {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
         let to_io = |e: anyhow::Error| std::io::Error::other(format!("{e:#}"));
-        let tile = adt_to_tile_mesh(&bytes).map_err(to_io)?;
+        let mut tile = adt_to_tile_mesh(&bytes).map_err(to_io)?;
+        if let Some(map) = map_of_adt(&ctx.path().to_string()) {
+            cut_closed(map, &mut tile);
+        }
 
         // Layer array: a solid-green fallback at index 0, then each unique layer texture, packed
         // once the whole tile is read.
@@ -290,4 +294,137 @@ fn computed_normals(positions: &[[f32; 3]], indices: &[u32]) -> Vec<[f32; 3]> {
     acc.into_iter()
         .map(|n| n.normalize_or_zero().to_array())
         .collect()
+}
+
+/// Azeroth (Eastern Kingdoms), the map `closed_chunks.json` covers.
+const AZEROTH: u32 = 0;
+
+/// The map an ADT asset path's tile belongs to, from its file name (`Azeroth_32_48.adt`); `None`
+/// for a map the closed list never covers.
+fn map_of_adt(path: &str) -> Option<u32> {
+    let name = path.rsplit(['/', '\\']).next()?.to_ascii_lowercase();
+    name.starts_with("azeroth_").then_some(AZEROTH)
+}
+
+/// Cuts the Closed Zones (ADR 0015) out of a decoded tile of `map`: a chunk whose centre is
+/// closed draws no terrain, water or clutter, welds no collision and is fenced in as impassable,
+/// and a doodad or WMO placed on a closed chunk goes.
+fn cut_closed(map: u32, tile: &mut TileMesh) {
+    for chunk in &mut tile.chunks {
+        // `positions[0]` is the chunk's north-west corner; its centre is half a chunk in.
+        let Some(&[x, y, _]) = chunk.positions.first() else {
+            continue;
+        };
+        if !closed_at(map, x - CHUNK_SIZE / 2.0, y - CHUNK_SIZE / 2.0) {
+            continue;
+        }
+        chunk.indices.clear();
+        chunk.holes = 0xFFFF;
+        chunk.liquids.clear();
+        chunk.no_effect_doodad = [true; 64];
+        chunk.impassable = true;
+    }
+    tile.doodads
+        .retain(|d| !closed_at(map, d.position[0], d.position[1]));
+    tile.wmos
+        .retain(|w| !closed_at(map, w.position[0], w.position[1]));
+}
+
+#[cfg(test)]
+mod closed_tests {
+    use super::*;
+
+    /// Gryan Stoutmantle's spot on Sentinel Hill, on a closed chunk, and Marshal Dughan's in
+    /// Goldshire, on an open one.
+    const SENTINEL_HILL: [f32; 2] = [-10508.8, 1045.23];
+    const GOLDSHIRE: [f32; 2] = [-9465.52, 74.0069];
+
+    /// A chunk with corner `nw`: its 145 vertices, some indices and a pool of water.
+    fn chunk(nw: [f32; 2]) -> ChunkMesh {
+        ChunkMesh {
+            positions: vec![[nw[0], nw[1], 10.0]; 145],
+            normals: Vec::new(),
+            uvs: Vec::new(),
+            indices: vec![0, 1, 2],
+            holes: 0,
+            base_texture: None,
+            layer_textures: Vec::new(),
+            layer_effect_ids: Vec::new(),
+            alpha_map: None,
+            shadow: None,
+            pred_tex: [0; 64],
+            no_effect_doodad: [false; 64],
+            index_x: 0,
+            index_y: 0,
+            area_id: 0,
+            impassable: false,
+            liquids: vec![benilla_formats::LiquidMesh {
+                grid: [2, 2],
+                wet: vec![true],
+                shared: vec![false],
+                positions: vec![[nw[0], nw[1], 5.0]; 4],
+                uvs: vec![[0.0; 2]; 4],
+                depths: vec![0.0; 4],
+                indices: vec![0, 1, 2, 1, 3, 2],
+                sound_nibble: 0,
+                material_id: None,
+                kind: benilla_formats::LiquidKind::Still,
+            }],
+        }
+    }
+
+    /// The north-west corner of the chunk holding `at`.
+    fn corner_of(at: [f32; 2]) -> [f32; 2] {
+        let edge = |v: f32| {
+            let o = 32.0 * benilla_formats::TILE_SIZE;
+            o - ((o - v) / CHUNK_SIZE).floor() * CHUNK_SIZE
+        };
+        [edge(at[0]), edge(at[1])]
+    }
+
+    fn doodad(at: [f32; 2], unique_id: u32) -> Doodad {
+        Doodad {
+            model: String::new(),
+            position: [at[0], at[1], 0.0],
+            rotation: [0.0; 3],
+            scale: 1.0,
+            unique_id,
+        }
+    }
+
+    #[test]
+    fn a_closed_chunk_is_emptied_and_only_the_open_doodad_stays() {
+        let mut tile = TileMesh {
+            chunks: vec![chunk(corner_of(SENTINEL_HILL)), chunk(corner_of(GOLDSHIRE))],
+            doodads: vec![doodad(SENTINEL_HILL, 1), doodad(GOLDSHIRE, 2)],
+            wmos: Vec::new(),
+        };
+        cut_closed(AZEROTH, &mut tile);
+        let [closed, open] = &tile.chunks[..] else {
+            unreachable!()
+        };
+        assert!(closed.indices.is_empty());
+        assert_eq!(closed.holes, 0xFFFF);
+        assert!(closed.liquids.is_empty());
+        assert_eq!(closed.no_effect_doodad, [true; 64]);
+        assert!(closed.impassable);
+        assert_eq!(
+            open.indices,
+            vec![0, 1, 2],
+            "the open chunk keeps its terrain"
+        );
+        assert!(!open.impassable && open.liquids.len() == 1);
+        let left: Vec<u32> = tile.doodads.iter().map(|d| d.unique_id).collect();
+        assert_eq!(left, vec![2]);
+    }
+
+    #[test]
+    fn only_azeroth_tiles_are_cut() {
+        assert_eq!(map_of_adt("World/Maps/Azeroth/Azeroth_32_48.adt"), Some(0));
+        assert_eq!(
+            map_of_adt("world\\maps\\azeroth\\azeroth_32_48.adt"),
+            Some(0)
+        );
+        assert_eq!(map_of_adt("World/Maps/Kalimdor/Kalimdor_32_48.adt"), None);
+    }
 }
