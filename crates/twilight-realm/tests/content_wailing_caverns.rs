@@ -253,3 +253,17 @@ fn the_caverns_quests_are_repeatable_from_sixteen_given_on_the_skull_for_the_run
     }
     assert!(boss, "one asks for Lady Anacondra");
 }
+
+/// Lady Anacondra is the one Wailing Caverns template flagged `boss` (#280); the Deviate
+/// Guardian, the Deviate Ravager and the Druid of the Fang are not.
+#[test]
+fn only_lady_anacondra_is_flagged_a_boss() {
+    let caverns = content("wailing_caverns.toml");
+    let mut flagged = Vec::new();
+    for t in caverns["template"].as_array().unwrap() {
+        if t.get("boss").and_then(|b| b.as_bool()) == Some(true) {
+            flagged.push(t["name"].as_str().unwrap());
+        }
+    }
+    assert_eq!(flagged, ["Lady Anacondra"]);
+}

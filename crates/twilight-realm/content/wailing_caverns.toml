@@ -102,6 +102,7 @@ name = "Lady Anacondra"
 subname = "Fanglord"
 creature_type = 7
 rank = 1
+boss = true
 display_id = 4313
 faction_template = 270
 unit_class = "paladin"

@@ -577,3 +577,52 @@ fn nothing_hands_out_gear_outside_the_ten_slots() {
         );
     }
 }
+
+/// The templates `mobs.toml` flags `boss`: the significant creatures whose fights raise the Boss
+/// Bar (#280), and none of the ten the spec leaves out.
+#[test]
+fn the_flagged_bosses_in_mobs_toml_are_exactly_the_spec_s() {
+    let mobs = toml_table("mobs.toml");
+    let templates = mobs["template"].as_array().unwrap();
+    let mut flagged: Vec<&str> = templates
+        .iter()
+        .filter(|t| t.get("boss").and_then(|b| b.as_bool()) == Some(true))
+        .map(|t| t["name"].as_str().unwrap())
+        .collect();
+    flagged.sort_unstable();
+    flagged.dedup();
+    let mut want = vec![
+        "Hogger",
+        "Abbot Ashworth",
+        "Garrick Padfoot",
+        "Ghost Howl",
+        "The Rake",
+        "Bloodtalon Scythemaw",
+        "Morgan the Collector",
+        "Narg the Taskmaster",
+        "Gllrg the Tidecaller",
+        "Gresh the Drowned",
+        "Speaker Thane",
+        "The Kept",
+        "Shadow of Morganth",
+        "The Eye Below",
+        "Ritualist Serane",
+        "Speaker Vael",
+        "Acolyte Marren",
+        "Geomancer Vurx",
+        "Princess",
+    ];
+    want.sort_unstable();
+    assert_eq!(flagged, want);
+    for name in [
+        "Twilight Disciple",
+        "Twilight Acolyte",
+        "Lesser Voidwalker",
+        "Voidwalker",
+        "Shadowhide Gnoll",
+        "Twilight Delver",
+        "Elite Training Dummy",
+    ] {
+        assert!(!flagged.contains(&name), "{name} must not be a boss");
+    }
+}
