@@ -235,6 +235,8 @@ pub(crate) struct InWorld {
     pub(crate) handed_back: Option<Vec<Mob>>,
     /// The mobs and Hub NPCs whose create the client has been sent, in the open world.
     pub(crate) seen: std::collections::HashSet<u64>,
+    /// The Boss Bar list the client was last sent (`SessionEvent::BossFight`).
+    boss_sent: Vec<u64>,
     /// The lent mobs whose fight this session runs this tick; every other is another
     /// session's to run.
     pub(crate) runs: std::collections::HashSet<u64>,
@@ -414,6 +416,7 @@ impl InWorld {
             lent: false,
             handed_back: None,
             seen: Default::default(),
+            boss_sent: Vec::new(),
             runs: Default::default(),
             died: Vec::new(),
             others: Vec::new(),
@@ -618,6 +621,36 @@ impl InWorld {
         }
         self.mobs.clear();
         self.seen.clear();
+        if !self.boss_sent.is_empty() {
+            self.boss_sent.clear();
+            events.push(SessionEvent::BossFight { guids: Vec::new() });
+        }
+    }
+
+    /// The flagged creatures in a fight and in view, oldest fight first, sent when it changed.
+    /// A fight begins on the tick its threat table goes from empty to non-empty and ends when it
+    /// empties or the creature dies.
+    fn boss_fight_tick(&mut self, events: &mut Vec<SessionEvent>) {
+        let mut fights: Vec<(u64, u64)> = Vec::new();
+        for m in &mut self.mobs {
+            if !m.template.raises_boss_bar() {
+                continue;
+            }
+            if m.threat.is_empty() || !m.alive() {
+                m.fight_no = None;
+                continue;
+            }
+            let no = *m.fight_no.get_or_insert_with(crate::mobs::next_fight);
+            if !self.lent || self.seen.contains(&m.guid) {
+                fights.push((no, m.guid));
+            }
+        }
+        fights.sort_unstable();
+        let guids: Vec<u64> = fights.into_iter().map(|(_, g)| g).collect();
+        if guids != self.boss_sent {
+            self.boss_sent.clone_from(&guids);
+            events.push(SessionEvent::BossFight { guids });
+        }
     }
 
     /// Advances the world by `dt` seconds around `c`, to the wall clock's `wall`.
@@ -736,6 +769,7 @@ impl InWorld {
         self.update_combat(dt, events);
         self.eat(dt, c, events);
         self.regenerate(dt, c, events);
+        self.boss_fight_tick(events);
         ticked
     }
 

@@ -239,6 +239,17 @@ mod tests {
     }
 
     #[test]
+    fn a_hunters_template_raises_the_boss_bar() {
+        let d = Draw {
+            archetype: 0,
+            first: 0,
+            epithet: 0,
+        };
+        assert!(d.template().boss);
+        assert!(d.template().raises_boss_bar());
+    }
+
+    #[test]
     fn affixes_come_one_per_two_ranks_without_repeats_up_to_the_pool() {
         let mut rng = Rng::new(7);
         for rank in 0..20 {

@@ -138,6 +138,10 @@ pub enum SessionEvent {
     /// Twilight's Eve, not 1.12: each listed character's Calling key, with the roster and after
     /// an Advancement, for the select labels and the talent frame. Never wire-decoded.
     Callings { by_guid: Vec<(u64, String)> },
+    /// Twilight's Eve, not 1.12: the guids of the flagged creatures in a fight and in this
+    /// character's view, oldest fight first. Complete on every change; empty clears the bar.
+    /// Never wire-decoded.
+    BossFight { guids: Vec<u64> },
     /// `SMSG_CHAR_CREATE`/`_DELETE`'s raw `WorldResult`; on success a fresh roster comes first.
     CharActionResult { action: CharAction, code: u8 },
     /// We are in the world; the IO thread emits this before any object update.

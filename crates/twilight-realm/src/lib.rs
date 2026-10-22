@@ -523,6 +523,14 @@ impl Realm {
         self
     }
 
+    /// This realm with creatures `entries` flagged as bosses (the template's `boss` key), for the
+    /// rest of the process: a test seam, so a player script can fight a boss where the content
+    /// flags none.
+    pub fn with_bosses(self, entries: &[u32]) -> Self {
+        mobs::add_bosses(entries);
+        self
+    }
+
     /// Sets the wall clock to `unix_ms`, milliseconds since the Unix epoch. Ticks advance it in
     /// between; a host without one leaves it running from 0. An item's cooldown runs on it, so
     /// the time between two sessions counts.

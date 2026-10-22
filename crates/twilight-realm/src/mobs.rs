@@ -67,6 +67,9 @@ pub(crate) struct Template {
     /// `CreatureEliteType`: 0 normal, 1 elite, 2 rare elite, 3 world boss, 4 rare.
     #[serde(default)]
     pub(crate) rank: u32,
+    /// Its fights raise the Boss Bar (#280); independent of `rank`.
+    #[serde(default)]
+    pub(crate) boss: bool,
     pub(crate) display_id: u32,
     pub(crate) faction_template: u32,
     /// Attacks a player who comes too close; a neutral creature only fights back.
@@ -128,6 +131,22 @@ pub(crate) struct Template {
     pub(crate) melee: bool,
 }
 
+/// The creature entries a test flagged as bosses, for the rest of the process.
+static EXTRA_BOSSES: std::sync::Mutex<Vec<u32>> = std::sync::Mutex::new(Vec::new());
+
+/// Flags creature `entry`s as bosses, as the template's `boss` key does.
+pub(crate) fn add_bosses(entries: &[u32]) {
+    if let Ok(mut flagged) = EXTRA_BOSSES.lock() {
+        flagged.extend_from_slice(entries);
+    }
+}
+
+/// The number the next fight to begin takes, so fights sort in the order they began.
+pub(crate) fn next_fight() -> u64 {
+    static FIGHTS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+    FIGHTS.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+}
+
 /// Seconds after an inert creature last took damage before it is whole again.
 pub(crate) const INERT_RESET_SECS: f32 = 10.0;
 
@@ -158,6 +177,7 @@ impl Template {
             // `CREATURE_TYPE_HUMANOID`.
             creature_type: 7,
             rank: 1,
+            boss: true,
             display_id,
             faction_template,
             hostile: true,
@@ -184,6 +204,15 @@ impl Template {
             hunts_at_meter_max: None,
             melee: true,
         }
+    }
+
+    /// Its fights raise the Boss Bar: the template says so, or a test named its entry
+    /// ([`add_bosses`]).
+    pub(crate) fn raises_boss_bar(&self) -> bool {
+        self.boss
+            || EXTRA_BOSSES
+                .lock()
+                .is_ok_and(|entries| entries.contains(&self.entry))
     }
 
     /// Elite and boss ranks, which kill XP pays double for.
@@ -798,6 +827,9 @@ pub(crate) struct Mob {
     pub(crate) timed_made: Vec<u32>,
     /// The creature whose timed call brought it in.
     pub(crate) brought_by: Option<u64>,
+    /// The number of the fight its threat table began (`next_fight`); none while the table is
+    /// empty. The Boss Bar lists fights in this order.
+    pub(crate) fight_no: Option<u64>,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -887,6 +919,7 @@ impl Mob {
             hunting: false,
             timed_made: vec![0; spawn.every.len()],
             brought_by: None,
+            fight_no: None,
             target: 0,
             threat: Default::default(),
             hunts: None,
@@ -955,6 +988,7 @@ impl Mob {
             hunting: false,
             timed_made: Vec::new(),
             brought_by: None,
+            fight_no: None,
             target: 0,
             threat: Default::default(),
             hunts: Some(hunts),
