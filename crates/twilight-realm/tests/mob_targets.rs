@@ -135,8 +135,8 @@ fn a_gouged_mob_hit_by_a_second_player_stays_in_the_fight_unhealed() {
     party.cmd(1, RealmCommand::AttackSwing { guid: hunter });
     let hit = party.run_until(20.0, |got| swung_at(&got[1], b).contains(&hunter));
     assert!(hit, "the second player hurts the hunter");
-    // The hunter has twice the health, so the two of them take longer to kill it.
-    let after = party.run(40.0);
+    // The hunter has twice the health, so the two of them take longer to kill it, and the flat table (ADR 0012) gives it no level-gap miss.
+    let after = party.run(120.0);
     // Until the two of them kill it.
     let all: Vec<&SessionEvent> = after[0]
         .iter()

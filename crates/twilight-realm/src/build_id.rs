@@ -8,6 +8,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/areas.toml"),
     include_str!("../content/barrens.toml"),
     include_str!("../content/callings.toml"),
+    include_str!("../content/combat.toml"),
     include_str!("../content/creature_spells.toml"),
     include_str!("../content/duel.toml"),
     include_str!("../content/encounters.toml"),

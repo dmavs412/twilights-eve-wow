@@ -21,7 +21,21 @@ const PLAIN_AT: [f32; 3] = [-9751.72, -603.903, 39.734];
 
 fn party(levels: &[u8]) -> Party {
     let realm = realm().with_bosses(&[FLAGGED]);
-    Party::starting(realm, levels, START_ELWYNN, Box::new(NoGround))
+    // Every character carries a Megachopper (9490) in the main hand: the flat table (ADR 0012)
+    // gives the flagged creatures no level-gap miss against a high level character.
+    Party::edited(
+        realm,
+        levels,
+        START_ELWYNN,
+        Box::new(NoGround),
+        |_, blob| {
+            let mut blob = blob;
+            if let Some(at) = blob.find("[[items]]") {
+                blob.truncate(at);
+            }
+            blob.replace("items = []\n", "") + "\n[[items]]\nslot = 15\nentry = 9490\ncount = 1\n"
+        },
+    )
 }
 
 /// Yards from `at` toward `from`'s side, so a character stands in reach of a creature.

@@ -6,18 +6,16 @@ use benilla_protocol::messages::AttackerState;
 use crate::mobs::Mob;
 use crate::rng::Rng;
 use crate::rules::melee::{
-    armor_reduced, glancing_range, mob_vs_player, player_vs_mob, Outcome, PlayerDefense,
+    armor_reduced, dual_wield_miss_bp, mob_vs_player, player_vs_mob, Outcome, PlayerDefense,
     PlayerOffense, ROLL,
 };
-use crate::rules::stats::{CharacterStats, DUAL_WIELD_MISS_BP};
+use crate::rules::stats::CharacterStats;
 
 // `HitInfo` bits (vmangos `Unit.h`), as the client reads them.
 const HITINFO_AFFECTS_VICTIM: u32 = 0x2;
 const HITINFO_LEFTSWING: u32 = 0x4;
 const HITINFO_MISS: u32 = 0x10;
 const HITINFO_CRITICALHIT: u32 = 0x80;
-const HITINFO_GLANCING: u32 = 0x4000;
-const HITINFO_CRUSHING: u32 = 0x8000;
 
 // `VictimState`.
 const VICTIMSTATE_UNAFFECTED: u32 = 0;
@@ -48,16 +46,8 @@ impl Swing {
             Outcome::Parry => (0, VICTIMSTATE_PARRY),
             Outcome::Block if self.damage == 0 => (0, VICTIMSTATE_BLOCKS),
             Outcome::Block | Outcome::Hit => (HITINFO_AFFECTS_VICTIM, VICTIMSTATE_NORMAL),
-            Outcome::Glancing => (
-                HITINFO_AFFECTS_VICTIM | HITINFO_GLANCING,
-                VICTIMSTATE_NORMAL,
-            ),
             Outcome::Crit => (
                 HITINFO_AFFECTS_VICTIM | HITINFO_CRITICALHIT,
-                VICTIMSTATE_NORMAL,
-            ),
-            Outcome::Crushing => (
-                HITINFO_AFFECTS_VICTIM | HITINFO_CRUSHING,
                 VICTIMSTATE_NORMAL,
             ),
         };
@@ -93,34 +83,24 @@ pub(crate) fn player_swing(
     let armored = armor_reduced(raw, mob.stats.armor.saturating_sub(p.armor_pen), p.level);
     let table = player_vs_mob(
         PlayerOffense {
-            level: p.level,
-            weapon_skill: p.weapon_skill,
             crit_pct: p.crit_pct,
         },
         mob.defense(),
         from_front,
     );
     let mut table = table;
-    // Two weapons worn: every white swing, either hand, misses 19% more.
+    // Two weapons worn: every white swing, either hand, misses more (`content/combat.toml`).
     if p.off_hand.is_some() {
-        table.miss = (table.miss + DUAL_WIELD_MISS_BP).min(6000);
+        table.miss += dual_wield_miss_bp();
     }
     let outcome = if opener {
         Outcome::Crit
     } else {
         table.outcome(rng.below(ROLL))
     };
-    let mob_defense = 5 * u16::from(mob.level());
     // `Creature::GetShieldBlockValue`: level / 2 + str / 20, the strength term 1 at these levels.
     let block_value = u32::from(mob.level()) / 2 + 1;
-    land(
-        outcome,
-        armored,
-        p.crit_damage_pct,
-        block_value,
-        rng,
-        || glancing_range(mob_defense, p.weapon_skill),
-    )
+    land(outcome, armored, p.crit_damage_pct, block_value)
 }
 
 /// `mob`'s swing at the player; `from_front` when the mob stands in the player's front arc.
@@ -136,10 +116,7 @@ pub(crate) fn mob_swing(
     let raw = rng.urand(mob.stats.min_damage as u32, mob.stats.max_damage as u32);
     let armored = armor_reduced(raw, p.armor, mob.level());
     let table = mob_vs_player(
-        mob.level(),
         PlayerDefense {
-            level: p.level,
-            defense: p.defense,
             dodge_pct: p.dodge_pct,
             parry_pct: p.parry_pct,
             block_pct: p.block_pct,
@@ -151,17 +128,10 @@ pub(crate) fn mob_swing(
     } else {
         table.outcome(rng.below(ROLL))
     };
-    land(outcome, armored, 0, p.block_value, rng, || (1.0, 1.0))
+    land(outcome, armored, 0, p.block_value)
 }
 
-fn land(
-    outcome: Outcome,
-    armored: u32,
-    crit_damage_pct: u32,
-    block_value: u32,
-    rng: &mut Rng,
-    glancing: impl FnOnce() -> (f32, f32),
-) -> Swing {
+fn land(outcome: Outcome, armored: u32, crit_damage_pct: u32, block_value: u32) -> Swing {
     let (damage, blocked) = match outcome {
         Outcome::Miss | Outcome::Dodge | Outcome::Parry => (0, 0),
         Outcome::Hit => (armored, 0),
@@ -169,11 +139,6 @@ fn land(
             crate::rules::talents::crit_damage(armored, crit_damage_pct),
             0,
         ),
-        Outcome::Crushing => (armored + armored / 2, 0),
-        Outcome::Glancing => {
-            let (lo, hi) = glancing();
-            ((armored as f32 * rng.frand(lo, hi)) as u32, 0)
-        }
         Outcome::Block => {
             let blocked = block_value.min(armored);
             (armored - blocked, blocked)

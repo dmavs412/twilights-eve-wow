@@ -1153,7 +1153,6 @@ impl Mob {
     pub(crate) fn defense(&self) -> MobDefense {
         let flags = self.template.flags_extra;
         MobDefense {
-            level: self.level(),
             parries: flags & FLAG_EXTRA_NO_PARRY == 0,
             blocks: self.template.shield && flags & FLAG_EXTRA_NO_BLOCK == 0,
         }

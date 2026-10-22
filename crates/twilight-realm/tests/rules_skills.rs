@@ -74,35 +74,27 @@ fn charge_is_free_on_15_s_and_gives_9_9_10_rage() {
     assert_eq!(at_levels(id, 0), [9, 9, 10]);
 }
 
-/// `vanilla-combat-rules.md` §1.5's worked two-roll vector: a level-10 player's ability at a
-/// level-12 mob, from the front: miss 600 + dodge 600 + parry 700, no glancing, no block.
+/// An ability from the front at a mob that parries: miss 500 + dodge 500 + parry 500 (the flat
+/// table), no block.
 #[test]
-fn an_ability_rolls_avoidance_without_glancing_then_crit_on_its_own() {
+fn an_ability_rolls_avoidance_then_crit_on_its_own() {
     use twilight_realm::rules::melee::{player_vs_mob, MobDefense, PlayerOffense};
     use twilight_realm::rules::skills::ability_table;
-    let p = PlayerOffense {
-        level: 10,
-        weapon_skill: 50,
-        crit_pct: 5.0,
-    };
-    let m12 = MobDefense {
-        level: 12,
+    let p = PlayerOffense { crit_pct: 5.0 };
+    let mob = MobDefense {
         parries: true,
         blocks: true,
     };
-    let (table, crit) = ability_table(p, m12, true, false);
-    assert_eq!((table.miss, table.dodge, table.parry), (600, 600, 700));
-    assert_eq!(
-        (table.glancing, table.block, table.crit, table.crushing),
-        (0, 0, 0, 0)
-    );
-    // The crit chance is the white table's: 5% less 0.2% per point of skill short, 10 points.
-    assert_eq!(crit, 300);
-    assert_eq!(crit, player_vs_mob(p, m12, true).crit);
+    let (table, crit) = ability_table(p, mob, true, false);
+    assert_eq!((table.miss, table.dodge, table.parry), (500, 500, 500));
+    assert_eq!((table.block, table.crit), (0, 0));
+    // The crit chance is the white table's.
+    assert_eq!(crit, 500);
+    assert_eq!(crit, player_vs_mob(p, mob, true).crit);
 
     // Overpower cannot be dodged or parried: it only misses.
-    let (table, _) = ability_table(p, m12, true, true);
-    assert_eq!((table.miss, table.dodge, table.parry), (600, 0, 0));
+    let (table, _) = ability_table(p, mob, true, true);
+    assert_eq!((table.miss, table.dodge, table.parry), (500, 0, 0));
 }
 
 #[test]

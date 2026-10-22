@@ -3011,8 +3011,6 @@ impl InWorld {
         };
         let (table, crit) = ability_table(
             PlayerOffense {
-                level: stats.level,
-                weapon_skill: stats.weapon_skill,
                 crit_pct: stats.crit_pct,
             },
             mob.defense(),

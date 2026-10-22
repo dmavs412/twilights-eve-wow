@@ -1,0 +1,14 @@
+# The attack table (ADR 0012). Every chance is flat: the level gap and the weapon skill never
+# enter it. Percent.
+[hit_table]
+# A white swing or a spell, either way.
+miss = 5.0
+# A mob's avoidance of a player's swing. Parry needs the mob to parry and a swing from the front,
+# block needs a shield and a swing from the front.
+mob_dodge = 5.0
+mob_parry = 5.0
+mob_block = 5.0
+# A mob's critical strike on a player.
+mob_crit = 5.0
+# Added to the miss of every white swing, either hand, while two weapons are worn.
+dual_wield_miss = 19.0

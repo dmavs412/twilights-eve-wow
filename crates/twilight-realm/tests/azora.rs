@@ -98,6 +98,14 @@ fn party(n: usize) -> Party {
         Box::new(NoGround),
         |i, blob| {
             let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"test_champion\"");
+            // The flat table (ADR 0012) lets a level 25 elite hit a level 60 as often as an equal,
+            // so each champion carries a Megachopper (9490) in the main hand.
+            let mut blob = blob;
+            if let Some(at) = blob.find("[[items]]") {
+                blob.truncate(at);
+            }
+            let blob = blob.replace("items = []\n", "")
+                + "\n[[items]]\nslot = 15\nentry = 9490\ncount = 1\n";
             if i == 0 {
                 format!("{blob}\n[[quests]]\nid = {THE_TOWER_IS_OPEN}\nslot = 0\nkills = [0, 0, 0, 0]\n")
             } else {

@@ -84,7 +84,7 @@ fn seal_of_command_makes_landed_swings_proc_holy_damage() {
 
     stand_at(&mut realm, &mob, 2.0);
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
-    let events = view.run(&mut realm, 20.0);
+    let events = view.run(&mut realm, 60.0);
     let procs: Vec<&SpellDamageLog> = events
         .iter()
         .filter_map(|e| match e {
@@ -92,7 +92,7 @@ fn seal_of_command_makes_landed_swings_proc_holy_damage() {
             _ => None,
         })
         .collect();
-    assert!(!procs.is_empty(), "seven procs a minute: some in 20 s");
+    assert!(!procs.is_empty(), "seven procs a minute: some in 60 s");
     for p in &procs {
         assert_eq!(p.school, HOLY, "logged as holy");
         assert_eq!((p.attacker, p.target), (me, mob.guid));

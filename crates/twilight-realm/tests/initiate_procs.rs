@@ -237,11 +237,18 @@ fn thermal_feedback_fires_on_a_tenth_of_ticks_and_makes_biting_cold_instant_and_
             let before = mana(&view, me);
             realm.handle(cast(BITING_COLD, Some(mob.guid)));
             let cold = view.drain(&mut realm);
+            // The flat table (ADR 0012) misses a spell 5% of the time, at any level gap.
             assert!(
-                cold.iter().any(
-                    |e| matches!(e, SessionEvent::SpellDamageLog(l) if l.spell_id == BITING_COLD)
-                ),
-                "instant: it lands at once"
+                cold.iter().any(|e| match e {
+                    SessionEvent::SpellDamageLog(l) => l.spell_id == BITING_COLD,
+                    SessionEvent::SpellGo {
+                        spell_id, misses, ..
+                    } => {
+                        *spell_id == BITING_COLD && !misses.is_empty()
+                    }
+                    _ => false,
+                }),
+                "instant: it lands or misses at once"
             );
             assert_eq!(mana(&view, me), before, "free");
             assert!(view.aura(me, FEEDBACK).is_none(), "used up");

@@ -886,12 +886,18 @@ fn a_deviate_killed_inside_counts_toward_nalpaks_quest() {
 
 #[test]
 fn the_deviates_inside_drop_their_hides_for_ebrus_quest() {
-    // At 80% a hide falls from most Guardians; over three runs, one does.
+    // At 80% a hide falls from most Guardians; over three runs, one does. The warrior wears the
+    // run's chest and shield: the flat table (ADR 0012) gives a Guardian no level-gap miss.
     let dropped = [1, 2, 3].into_iter().any(|seed| {
         let mut s = questing_at_the_skull(
             seed,
             25,
-            &[(MAIN_HAND, PROSPECTOR_AXE, 1), (23, DEVIATE_HIDE, 4)],
+            &[
+                (4, 8157, 1),
+                (MAIN_HAND, PROSPECTOR_AXE, 1),
+                (16, 13245, 1),
+                (23, DEVIATE_HIDE, 4),
+            ],
             &[(DEVIATE_HIDES, [0; 4])],
         );
         s.go_in();

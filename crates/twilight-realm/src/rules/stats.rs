@@ -110,10 +110,6 @@ const SHOOTING_SUBCLASSES: [u32; 4] = [2, 3, 16, 18];
 /// The share of its damage an off-hand swing deals (vmangos `OFF_HAND` damage 50%).
 pub const OFF_HAND_DAMAGE_PCT: u32 = 50;
 
-/// What a white swing's miss chance gains while two weapons are worn, in basis points (vmangos
-/// `Unit::MeleeMissChanceCalc`: +19%).
-pub const DUAL_WIELD_MISS_BP: u32 = 1900;
-
 /// The health Stamina gives: the first 20 points 1 each, the rest 10.
 fn stamina_health(sta: u32) -> u32 {
     sta.min(20) + sta.saturating_sub(20) * 10
