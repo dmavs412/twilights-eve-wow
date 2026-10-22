@@ -24,8 +24,8 @@ const HOUR_MS: u64 = 3_600_000;
 const EVENING_MS: u64 = 1_790_000_000_000;
 /// Far out past The Barrens' camps, nowhere near an inn.
 const FAR_AWAY: [f32; 3] = [CROSSROADS[0] + 3000.0, CROSSROADS[1], 0.0];
-/// Level 5 kills level 3: 70 × 3/5 = 42 XP at ×1.
-const KILL_XP: u32 = 42;
+/// The level 3 mob pays 3 × 5 + 45 = 60 XP at ×1.
+const KILL_XP: u32 = 60;
 
 #[test]
 fn eight_hours_logged_out_in_the_inn_bank_five_percent_of_a_level() {

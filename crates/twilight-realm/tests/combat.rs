@@ -321,26 +321,30 @@ fn killing_the_mob_pays_vanilla_kill_xp() {
             _ => None,
         })
         .expect("kill XP");
-    // Level 5 kills level 3: 70 × 3/5.
-    assert_eq!((gain.victim, gain.total, gain.kill), (mob.guid, 42, true));
+    // The mob is level 3: 3 × 5 + 45.
+    assert_eq!((gain.victim, gain.total, gain.kill), (mob.guid, 60, true));
     assert_eq!(
         own_values(&events, me).filter_map(|f| f.player_xp()).last(),
-        Some(42)
+        Some(60)
     );
 }
 
 #[test]
-fn a_gray_mob_pays_nothing() {
+fn a_mob_far_below_the_character_still_pays() {
     let (mut realm, _, mob) = warrior_at(9, 0);
     stand_by(&mut realm, &mob);
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
     let events = run_until_dead(&mut realm, &mob);
-    assert!(!events.iter().any(|e| matches!(e, SessionEvent::XpGain(_))));
+    let total = events.iter().find_map(|e| match e {
+        SessionEvent::XpGain(x) => Some(x.total),
+        _ => None,
+    });
+    assert_eq!(total, Some(60), "a level 3 mob pays 3 × 5 + 45");
 }
 
 #[test]
 fn enough_xp_levels_the_character_up() {
-    // 52 XP for the kill takes a level-4 warrior from 2060 past the 2100 to level 5.
+    // 60 XP for the kill takes a level-4 warrior from 2060 past the 2100 to level 5.
     let (mut realm, me, mob) = warrior_at(4, 2060);
     stand_by(&mut realm, &mob);
     realm.handle(RealmCommand::AttackSwing { guid: mob.guid });
@@ -363,7 +367,7 @@ fn enough_xp_levels_the_character_up() {
         sheet.merge(f.clone());
     }
     assert_eq!(sheet.unit_level(), Some(5));
-    assert_eq!(sheet.player_xp(), Some(12));
+    assert_eq!(sheet.player_xp(), Some(20));
     assert_eq!(sheet.player_next_level_xp(), Some(2800));
     assert_eq!(sheet.unit_max_health(), Some(136));
     assert_eq!(sheet.unit_health(), Some(136), "a level-up heals");

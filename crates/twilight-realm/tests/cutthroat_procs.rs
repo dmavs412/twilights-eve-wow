@@ -296,10 +296,3 @@ fn executioners_toll_heals_and_refunds_energy_on_an_experience_kill() {
     assert!(health >= heal - 10, "healed {health} of {max}");
     assert!(power >= 60, "refunded {power}");
 }
-
-#[test]
-fn executioners_toll_does_nothing_on_a_grey_kill() {
-    let (health, power, max, _) = kill_gains(10, &[(*EXECUTIONERS_TOLL, 3)]);
-    assert!(health < max * 15 / 100, "healed {health} of {max}");
-    assert!(power < 60, "refunded {power}");
-}

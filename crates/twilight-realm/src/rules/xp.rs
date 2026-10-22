@@ -1,9 +1,9 @@
-//! Kill XP and the level table (vmangos `Formulas.h` `MaNGOS::XP`, `player_xp_for_level`).
+//! Kill XP and the level table (`player_xp_for_level`; kill XP is the Power Level rule, ADR 0012).
 
 use crate::tables::{self, MAX_LEVEL};
 
-/// Whether a kill is an elite's, and where: vmangos doubles an elite's XP, and gives 2.5× inside
-/// a (non-raid) dungeon.
+/// Whether a kill is an elite's, and where: an elite pays double, and 2.5× inside a (non-raid)
+/// dungeon.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Elite {
     No,
@@ -44,76 +44,27 @@ pub fn gray_level(level: u8) -> u8 {
     }
 }
 
-/// `GetZeroDifference`: how many levels below the player a mob's XP reaches zero.
-fn zero_difference(level: u8) -> u32 {
-    match level {
-        0..=7 => 5,
-        8..=9 => 6,
-        10..=11 => 7,
-        12..=15 => 8,
-        16..=19 => 9,
-        20..=29 => 11,
-        30..=39 => 12,
-        40..=44 => 13,
-        45..=49 => 14,
-        50..=54 => 15,
-        55..=59 => 16,
-        _ => 17,
-    }
-}
-
-/// The XP a player of level `player` earns for killing a mob of level `mob` (`MaNGOS::XP::Gain`):
-/// 5% more per level above (up to +4), shrinking to nothing at the gray level. Rounded half to
-/// even, as `nearbyint` does, from exact integer arithmetic.
-pub fn kill_xp(player: u8, mob: u8, elite: Elite) -> u32 {
-    let base = u64::from(player) * 5 + 45;
-    // xp = num / den, exactly.
-    let (mut num, mut den) = if mob >= player {
-        (base * (100 + 5 * u64::from((mob - player).min(4))), 100)
-    } else if mob > gray_level(player) {
-        let zd = u64::from(zero_difference(player));
-        (base * (zd - u64::from(player - mob)), zd)
-    } else {
-        return 0;
+/// The XP a kill of a mob of level `mob` pays, whoever kills it: `mob × 5 + 45`, doubled for an
+/// open-world elite and ×2.5 in a dungeon. Rounded half to even, as `nearbyint` does, from exact
+/// integer arithmetic.
+pub fn kill_xp(mob: u8, elite: Elite) -> u32 {
+    let base = u64::from(mob) * 5 + 45;
+    let (num, den) = match elite {
+        Elite::No => (base, 1),
+        Elite::OpenWorld => (base * 2, 1),
+        Elite::Dungeon => (base * 5, 2),
     };
-    match elite {
-        Elite::No => {}
-        Elite::OpenWorld => num *= 2,
-        Elite::Dungeon => {
-            num *= 5;
-            den *= 2;
-        }
-    }
     round_half_even(num, den) as u32
 }
 
-/// The XP a player of level `me` earns for a kill credited to players of `levels`, theirs among
-/// them (vmangos `Group::RewardGroupAtKill`): the kill's XP for the highest level it is not gray
-/// to, times the group rate, halved when someone higher finds it gray, then shared by level.
-/// Nothing for a player above that level; alone, exactly [`kill_xp`].
-pub fn party_kill_xp(levels: &[u8], me: u8, mob: u8, elite: Elite) -> u32 {
-    if levels.len() < 2 {
-        return kill_xp(me, mob, elite);
+/// The XP each of `count` credited players earns for a kill: the kill's XP times the group rate,
+/// shared equally. Alone, exactly [`kill_xp`].
+pub fn party_kill_xp(count: usize, mob: u8, elite: Elite) -> u32 {
+    let xp = kill_xp(mob, elite);
+    if count < 2 {
+        return xp;
     }
-    let Some(top) = levels
-        .iter()
-        .copied()
-        .filter(|&l| kill_xp(l, mob, elite) > 0)
-        .max()
-    else {
-        return 0;
-    };
-    if me > top {
-        return 0;
-    }
-    let xp = f64::from(kill_xp(top, mob, elite)) * group_rate(levels.len());
-    let xp = if levels.iter().any(|&l| l > top) {
-        xp / 2.0 + 1.0
-    } else {
-        xp
-    } as u64;
-    let sum: u64 = levels.iter().map(|&l| u64::from(l)).sum();
-    (xp * u64::from(me) / sum.max(1)) as u32
+    (f64::from(xp) * group_rate(count) / count as f64) as u32
 }
 
 /// The group's XP bonus (`MaNGOS::XP::xp_in_group_rate`, not a raid).
@@ -140,32 +91,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn alone_a_kill_pays_its_own_xp() {
-        assert_eq!(
-            party_kill_xp(&[10], 10, 10, Elite::No),
-            kill_xp(10, 10, Elite::No)
-        );
+    fn the_mobs_level_sets_the_kill() {
+        // A level 1 character killing a level 15 mob, and a level 40 killing a level 5 one.
+        assert_eq!(kill_xp(15, Elite::No), 120);
+        assert_eq!(kill_xp(5, Elite::No), 70);
+        assert_eq!(kill_xp(1, Elite::No), 50);
     }
 
     #[test]
-    fn a_group_splits_the_kill_by_level() {
-        let solo = kill_xp(10, 10, Elite::No);
-        // Two equal players: no bonus, half each.
-        assert_eq!(party_kill_xp(&[10, 10], 10, 10, Elite::No), solo / 2);
+    fn elites_pay_double_in_the_open_world_and_more_in_a_dungeon() {
+        assert_eq!(kill_xp(22, Elite::OpenWorld), 310);
+        assert_eq!(kill_xp(20, Elite::Dungeon), 362); // 362.5, half to even
+    }
+
+    #[test]
+    fn alone_a_kill_pays_its_own_xp() {
+        assert_eq!(party_kill_xp(1, 10, Elite::No), kill_xp(10, Elite::No));
+    }
+
+    #[test]
+    fn a_group_splits_the_kill_equally() {
+        let solo = kill_xp(10, Elite::No);
+        // Two players: no bonus, half each.
+        assert_eq!(party_kill_xp(2, 10, Elite::No), solo / 2);
         // Five: 1.4 times, a fifth each.
-        let five = [10; 5];
         assert_eq!(
-            party_kill_xp(&five, 10, 10, Elite::No),
+            party_kill_xp(5, 10, Elite::No),
             (f64::from(solo) * 1.4) as u32 / 5
         );
-    }
-
-    #[test]
-    fn a_player_too_high_for_the_kill_gets_nothing() {
-        // The level 60 finds a level 10 mob gray; the level 10 gets half the bonus-free XP + 1,
-        // shared by level.
-        let low = party_kill_xp(&[10, 60], 10, 10, Elite::No);
-        assert_eq!(party_kill_xp(&[10, 60], 60, 10, Elite::No), 0);
-        assert_eq!(low, (kill_xp(10, 10, Elite::No) / 2 + 1) * 10 / 70);
     }
 }

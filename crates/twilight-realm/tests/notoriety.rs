@@ -88,11 +88,11 @@ fn a_kill_raises_notoriety_and_a_gray_one_does_not() {
 
 #[test]
 fn kill_xp_is_base_times_the_tier_rate_times_the_heat_multiplier() {
-    // Level 5 kills the level 3 scorpid: 42 at ×1, ×3 for a Vanguard. 650 stays at Heat 3
+    // The level 3 scorpid pays 60 at ×1, ×3 for a Vanguard. 650 stays at Heat 3
     // through the fight's drain.
     let heat = heat_level(650.0);
     assert_eq!(heat, 3);
-    for (notoriety, want) in [(0.0, 3 * 42), (650.0, with_heat(3 * 42, heat))] {
+    for (notoriety, want) in [(0.0, 3 * 60), (650.0, with_heat(3 * 60, heat))] {
         let (guid, blob) = with_notoriety(save_with(5, 0, &[]), notoriety);
         let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
         let (mut realm, _, events) = enter_saved(guid, &blob);

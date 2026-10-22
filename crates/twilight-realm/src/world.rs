@@ -1337,7 +1337,7 @@ impl InWorld {
         } else {
             xp::Elite::No
         };
-        let (victim, base_xp) = (mob.guid, xp::kill_xp(c.level, mob.level(), elite));
+        let (victim, base_xp) = (mob.guid, xp::kill_xp(mob.level(), elite));
         let money = if self.lent {
             let (lo, hi) = crate::rules::loot::money(mob.level());
             rng.urand(lo, hi)
@@ -1451,7 +1451,7 @@ impl InWorld {
         self.notorious(c, gain);
         let lootable = self.looting.drop(k.mob, loot);
         events.push(values(k.mob, &[looting::lootable_pair(lootable)]));
-        let base = xp::party_kill_xp(&credit.levels, c.level, k.level, k.elite);
+        let base = xp::party_kill_xp(credit.levels.len(), k.level, k.elite);
         let gained = self.scaled_xp(c, base);
         if gained > 0 {
             // Rested XP doubles the kill, multiplied XP and all, while the pool lasts.

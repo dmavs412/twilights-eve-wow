@@ -1,43 +1,19 @@
-//! Kill XP and the level table against vmangos's values (`docs/reference/vanilla-combat-rules.md`
-//! §8 and §9).
+//! Kill XP and the level table (`docs/reference/vanilla-combat-rules.md` §9; kill XP follows
+//! ADR 0012).
 
 use twilight_realm::rules::xp::{gray_level, kill_xp, xp_to_next, Elite};
 
 #[test]
-fn kill_xp_matches_vmangos_by_level_difference() {
-    // (player, mob, xp), §8's vector table.
-    let vectors = [
-        (1, 1, 50),
-        (1, 2, 52), // 52.5 rounds half to even
-        (1, 3, 55),
-        (1, 5, 60),
-        (1, 6, 60), // capped at +4
-        (5, 3, 42),
-        (5, 1, 14), // gray level 0: still green
-        (6, 2, 15),
-        (10, 10, 95),
-        (10, 8, 68),
-        (10, 5, 27),
-        (10, 14, 114),
-        (10, 20, 114),
-        (20, 20, 145),
-        (20, 15, 79),
-        (25, 19, 77),
-        (30, 30, 195),
-        (30, 23, 81),
-        (60, 60, 345),
-        (60, 48, 101),
-    ];
-    for (player, mob, xp) in vectors {
-        assert_eq!(kill_xp(player, mob, Elite::No), xp, "P{player} vs M{mob}");
+fn kill_xp_comes_from_the_mobs_level_alone() {
+    // (mob, xp): mob × 5 + 45.
+    let vectors = [(1, 50), (5, 70), (10, 95), (15, 120), (20, 145), (60, 345)];
+    for (mob, xp) in vectors {
+        assert_eq!(kill_xp(mob, Elite::No), xp, "M{mob}");
     }
 }
 
 #[test]
-fn gray_mobs_give_no_xp() {
-    for (player, mob) in [(6, 1), (10, 4), (20, 13), (25, 18), (60, 47)] {
-        assert_eq!(kill_xp(player, mob, Elite::No), 0, "P{player} vs M{mob}");
-    }
+fn gray_level_is_vanillas() {
     assert_eq!(gray_level(5), 0);
     assert_eq!(gray_level(10), 4);
     assert_eq!(gray_level(20), 13);
@@ -47,8 +23,8 @@ fn gray_mobs_give_no_xp() {
 
 #[test]
 fn elites_give_double_in_the_open_world_and_more_in_a_dungeon() {
-    assert_eq!(kill_xp(20, 22, Elite::OpenWorld), 319);
-    assert_eq!(kill_xp(20, 20, Elite::Dungeon), 362); // 362.5, half to even
+    assert_eq!(kill_xp(22, Elite::OpenWorld), 310);
+    assert_eq!(kill_xp(20, Elite::Dungeon), 362); // 362.5, half to even
 }
 
 #[test]

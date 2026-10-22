@@ -34,13 +34,6 @@ fn an_experience_yielding_kill_heals_a_tenth_of_max_health() {
 }
 
 #[test]
-fn a_kill_that_yields_no_experience_heals_nothing() {
-    // A level 10 warrior finds the level 3 mob gray.
-    let (gain, max) = health_at_the_kill(10, &[(*VANGUARDS_RESOLVE, 1)]);
-    assert!(gain < max / 10, "healed {gain} of {max}");
-}
-
-#[test]
 fn a_cast_proc_filtered_to_one_skill_fires_only_for_that_skill() {
     let trigger = Trigger {
         on: ProcEvent::Cast,

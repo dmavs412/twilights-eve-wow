@@ -15,9 +15,9 @@ fn the_xp_multiplier_multiplies_kill_xp() {
     let (mut realm, me, mob) = warrior_at(5, dev);
     let events = kill(&mut realm, mob);
 
-    // Level 5 kills level 3: 70 × 3/5 = 42, ten times over.
-    assert_eq!(kill_xp(&events), Some(420));
-    assert_eq!(xp_shown(&events, me), Some(420));
+    // The mob is level 3: 3 × 5 + 45 = 60, ten times over.
+    assert_eq!(kill_xp(&events), Some(600));
+    assert_eq!(xp_shown(&events, me), Some(600));
 }
 
 #[test]
@@ -31,13 +31,13 @@ fn without_the_flags_xp_is_vanillas() {
     );
     let (mut realm, me, mob) = warrior_at(5, DevMultipliers::default());
     let events = kill(&mut realm, mob);
-    assert_eq!(kill_xp(&events), Some(42));
-    assert_eq!(xp_shown(&events, me), Some(42));
+    assert_eq!(kill_xp(&events), Some(60));
+    assert_eq!(xp_shown(&events, me), Some(60));
 }
 
 #[test]
 fn multiplied_xp_levels_the_character_up() {
-    // 42 × 100 = 4200 XP: a level-5 warrior's 2800 to level 6, and 1400 of level 6's 3600.
+    // 60 × 100 = 6000 XP: a level-5 warrior's 2800 to level 6, and 3200 of level 6's 3600.
     let dev = DevMultipliers {
         xp: 100.0,
         ..DevMultipliers::default()
@@ -52,7 +52,7 @@ fn multiplied_xp_levels_the_character_up() {
         })
         .collect();
     assert_eq!(levels, [6]);
-    assert_eq!(xp_shown(&events, me), Some(1400));
+    assert_eq!(xp_shown(&events, me), Some(3200));
 }
 
 #[test]
@@ -82,8 +82,8 @@ fn no_save_carries_a_multiplier() {
     let before = own_xp(&events, me);
     let mob = the_mob(&events);
     let events = kill(&mut plain, mob);
-    assert_eq!(kill_xp(&events), Some(42));
-    assert_eq!(xp_shown(&events, me), Some(before + 42));
+    assert_eq!(kill_xp(&events), Some(60));
+    assert_eq!(xp_shown(&events, me), Some(before + 60));
 }
 
 #[test]
