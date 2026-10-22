@@ -805,7 +805,7 @@ guid = 960444
 entry = 96044
 level_min = 23
 level_max = 25
-position = [-9288.9, 506.7, 44.0]
+position = [-9288.9, 506.7, 80.77]
 orientation = 5.01
 
 [[added]]
@@ -813,7 +813,7 @@ guid = 960445
 entry = 96044
 level_min = 23
 level_max = 25
-position = [-9304.2, 504.7, 44.0]
+position = [-9304.2, 504.7, 76.63]
 orientation = 4.3
 
 [[added]]
@@ -821,7 +821,7 @@ guid = 960446
 entry = 96044
 level_min = 23
 level_max = 25
-position = [-9311.0, 546.7, 44.0]
+position = [-9311.0, 546.7, 84.12]
 orientation = 4.34
 
 [[added]]
@@ -829,7 +829,7 @@ guid = 960447
 entry = 96044
 level_min = 23
 level_max = 25
-position = [-9306.1, 525.3, 44.0]
+position = [-9306.1, 525.3, 78.16]
 orientation = 3.84
 
 [[added]]
@@ -837,7 +837,7 @@ guid = 960448
 entry = 96044
 level_min = 23
 level_max = 25
-position = [-9284.7, 537.3, 44.0]
+position = [-9284.7, 537.3, 95.17]
 orientation = 5.94
 
 [[added]]
@@ -845,7 +845,7 @@ guid = 960449
 entry = 96044
 level_min = 23
 level_max = 25
-position = [-9324.4, 512.5, 44.0]
+position = [-9324.4, 512.5, 66.45]
 orientation = 4.26
 
 [[added]]
@@ -853,7 +853,7 @@ guid = 960450
 entry = 96045
 level_min = 23
 level_max = 25
-position = [-9299.7, 535.7, 44.0]
+position = [-9299.7, 535.7, 85.59]
 orientation = 3.63
 
 [[added]]
@@ -861,7 +861,7 @@ guid = 960451
 entry = 96045
 level_min = 23
 level_max = 25
-position = [-9308.8, 510.2, 44.0]
+position = [-9308.8, 510.2, 76.20]
 orientation = 3.87
 
 [[added]]
@@ -869,7 +869,7 @@ guid = 960452
 entry = 96045
 level_min = 23
 level_max = 25
-position = [-9314.5, 528.9, 44.0]
+position = [-9314.5, 528.9, 75.02]
 orientation = 3.61
 
 [[added]]
@@ -877,7 +877,7 @@ guid = 960453
 entry = 96045
 level_min = 23
 level_max = 25
-position = [-9305.7, 528.6, 44.0]
+position = [-9305.7, 528.6, 79.14]
 orientation = 3.03
 
 [[added]]
@@ -885,7 +885,7 @@ guid = 960454
 entry = 96045
 level_min = 23
 level_max = 25
-position = [-9275.5, 533.7, 44.0]
+position = [-9275.5, 533.7, 104.65]
 orientation = 0.21
 
 [[added]]
@@ -893,7 +893,7 @@ guid = 960455
 entry = 96045
 level_min = 23
 level_max = 25
-position = [-9301.6, 532.1, 44.0]
+position = [-9301.6, 532.1, 82.34]
 orientation = 3.95
 
 [[added]]
