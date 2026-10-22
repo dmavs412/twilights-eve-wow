@@ -4,10 +4,10 @@
 
 mod common;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use benilla_protocol::messages::AttackSwingError;
-use benilla_protocol::{SessionEvent, START_ELWYNN};
+use benilla_protocol::{ObjectFields, SessionEvent, START_ELWYNN};
 use common::*;
 
 /// `HIGHGUID_UNIT`, in a creature guid's top 16 bits.
@@ -21,7 +21,13 @@ const FRIENDLY_TO_ALL: u32 = 35;
 /// The Abbot at the top of the bell tower, whose bell calls two Corrupted Brothers at half health.
 const ABBOT: u64 = HIGHGUID_UNIT << 48 | 96005 << 24 | 780015;
 /// Where the Abbot stands, in the test's flat Abbey.
-const ABBOT_AT: [f32; 2] = [-8897.0, -172.9];
+const ABBOT_AT: [f32; 2] = [-8900.5, -181.8];
+/// The middle of the bell tower's top platform (#315): the floor where the tower stair comes up,
+/// the south arm of the cross-shaped floor at nsabbey.wmo's z 33.1 (group 10), model x -7 to 3
+/// and y -9 to 0, whose middle (-2, -4.5) goes through the content file's transform.
+const PLATFORM_MIDDLE: [f32; 2] = [-8900.5, -181.8];
+/// Staff of the Friar (item 3415), in his main hand.
+const STAFF_OF_THE_FRIAR_DISPLAY: u32 = 20339;
 /// The first low guid of a creature a call for help brings in.
 const CALLED_GUID_BASE: u64 = 0x90_0000;
 /// Inside the nave, and out in the yard before the front doors.
@@ -80,8 +86,8 @@ struct Abbey {
     called: HashSet<u64>,
     /// Everything that has turned on the character.
     attackers: HashSet<u64>,
-    /// Brother Neals' latest create: where he stands and his faction template.
-    neals: Option<([f32; 3], Option<u32>)>,
+    /// Each creature's latest create: where it stands and its fields.
+    created: HashMap<u64, ([f32; 3], ObjectFields)>,
 }
 
 impl Abbey {
@@ -126,7 +132,7 @@ impl Abbey {
             me,
             called: HashSet::new(),
             attackers: HashSet::new(),
-            neals: None,
+            created: HashMap::new(),
         };
         a.go(OUTSIDE, 1.0);
         a
@@ -149,9 +155,7 @@ impl Abbey {
                     ..
                 } if is_unit(guid) => {
                     self.seen.insert(guid);
-                    if guid == BROTHER_NEALS {
-                        self.neals = Some((position, fields.unit_faction_template()));
-                    }
+                    self.created.insert(guid, (position, fields.clone()));
                     if guid & 0xFF_FFFF >= CALLED_GUID_BASE {
                         self.called.insert(guid);
                     }
@@ -237,16 +241,55 @@ fn outside_sees_no_monster_and_inside_sees_only_the_abbeys_own() {
 #[test]
 fn brother_neals_waits_friendly_at_the_foot_of_the_tower_stair() {
     let mut a = Abbey::new();
-    assert_eq!(a.neals, None, "Brother Neals shows outside the Abbey");
+    assert!(
+        !a.created.contains_key(&BROTHER_NEALS),
+        "Brother Neals shows outside the Abbey"
+    );
     a.go(INSIDE, 0.5);
     assert!(a.realm.run_elapsed().is_some(), "no Run");
-    let (at, faction) = a.neals.expect("Brother Neals is not in the Abbey's Phase");
-    let off = ((at[0] - NEALS_AT[0]).powi(2) + (at[1] - NEALS_AT[1]).powi(2)).sqrt();
+    let (at, fields) = &a.created[&BROTHER_NEALS];
+    let off = flat_off(*at, NEALS_AT);
     assert!(
         off <= 0.5,
         "Brother Neals stands at {at:?}, {off} yd off his row"
     );
-    assert_eq!(faction, Some(FRIENDLY_TO_ALL));
+    assert_eq!(fields.unit_faction_template(), Some(FRIENDLY_TO_ALL));
+}
+
+fn flat_off(at: [f32; 3], to: [f32; 2]) -> f32 {
+    ((at[0] - to[0]).powi(2) + (at[1] - to[1]).powi(2)).sqrt()
+}
+
+#[test]
+fn the_abbot_stands_in_the_middle_of_the_tower_top() {
+    let mut a = Abbey::new();
+    a.go(INSIDE, 0.5);
+    let (at, _) = &a.created[&ABBOT];
+    let off = flat_off(*at, PLATFORM_MIDDLE);
+    assert!(
+        off <= 1.0,
+        "the Abbot stands at {at:?}, {off} yd off the platform's middle"
+    );
+}
+
+#[test]
+fn the_abbot_carries_a_staff_and_nothing_else() {
+    let mut a = Abbey::new();
+    a.go(INSIDE, 0.5);
+    let (_, fields) = &a.created[&ABBOT];
+    assert_eq!(
+        fields.unit_virtual_item_display(0),
+        Some(STAFF_OF_THE_FRIAR_DISPLAY)
+    );
+    // Item class 2 (weapon), subclass 10 (staff).
+    let (class, subclass, ..) = fields.unit_virtual_item_info(0).expect("a main hand");
+    assert_eq!((class, subclass), (2, 10));
+    for slot in [1, 2] {
+        assert!(
+            matches!(fields.unit_virtual_item_display(slot), None | Some(0)),
+            "slot {slot} holds something"
+        );
+    }
 }
 
 #[test]

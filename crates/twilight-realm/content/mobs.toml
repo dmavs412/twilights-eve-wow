@@ -775,6 +775,8 @@ speed_walk = 1.0
 speed_run = 0.857
 detection_range = 18.0
 spells = ["abbot_corruption", "abbot_heal"]
+# Staff of the Friar (3415), a stock staff, in his main hand (#315).
+equip = [3415, 0, 0]
 
 # The Riverpaw camp of Forest's Edge (forest_edge.toml, #173): gnolls at 27-28 with stock displays
 # from vmangos creature_template. All numbers are placeholders; the level is on each row.
