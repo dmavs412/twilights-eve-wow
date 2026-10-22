@@ -889,7 +889,7 @@ impl Realm {
 
     /// The shards' own tick: each streams around its players, and every client there is sent
     /// what came into its view and what left it; then each mob is given to the player who runs
-    /// it this tick.
+    /// it this tick. `docs/realm_view.md` walks through what reaches which client.
     fn tick_shards(&mut self, dt: f32, host: &dyn Host) {
         self.give_back();
         let mut on: std::collections::BTreeMap<shard::Place, Vec<shard::OnShard<SessionId>>> =

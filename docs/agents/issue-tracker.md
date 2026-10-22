@@ -23,6 +23,15 @@ The Build lane writes `0.0` and runs `python3.15 tools/twilights-eve/ground_chec
 which computes the Z. A ticket for an interior unit names the building, so the session can take
 the Z from the nearest existing row in it.
 
+## Writing a ready-for-agent ticket
+
+- Name every place the change touches by file, function and line ("`effect_row` in
+  `crates/benilla-formats/src/spells/twilight.rs`, line 172"). The Build session goes straight to
+  code from these. A ticket without them sends the session exploring.
+- A "Failing tests first" step names the test file to extend, and is written to match that
+  file's setup. Read the file once: if its tests run on a test Calling with its own spell ids,
+  the step uses that Calling, not the shipped row's id.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_

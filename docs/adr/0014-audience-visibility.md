@@ -51,3 +51,6 @@ per character, so the next feature that spawns something for a few people follow
   and its despawn, as it owns Phased Dungeon state.
 - The client changes nothing: it shows what it is streamed, and the stock loot window already
   handles a chest.
+
+The view code that applies this rule, and how a new kind of object reaches other clients:
+`docs/realm_view.md`.

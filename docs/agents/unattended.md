@@ -56,7 +56,9 @@ failed.
 ## The gate
 
 - After every edit: `cargo check -q -p <crate> 2>&1 | tail -40`. When the realm, `data/` or
-  `tools/` changed: `cargo test -q -p twilight-realm 2>&1 | tail -40`.
+  `tools/` changed: `cargo test -q -p twilight-realm 2>&1 | grep -E "FAILED|panicked"; echo "exit ${PIPESTATUS[0]}"`.
+  Before each commit, `rustfmt --edition 2021` the `.rs` files you touched; the pre-commit hook
+  refuses unformatted ones.
 - When a commit touches `crates/twilight-realm/content/`, also run
   `python3.15 -I tools/twilights-eve/ground_check.py`. A flagged row fails the gate, and
   `--fix` writes the answer. Never type a placed unit's Z by hand: write `0.0`, run `--fix`, and

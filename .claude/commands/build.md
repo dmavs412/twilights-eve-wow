@@ -11,8 +11,8 @@ If no task is given, take the oldest open issue labelled `ready-for-agent`
 1. Read the issue and only the code it touches.
 2. If it hits a "Grill before architecture" trigger and is not labelled `ready-for-agent`, stop:
    write the open question as an issue comment and tell Davis to grill it in a pipeline chat.
-3. Edit, then `cargo check -q -p <crate> 2>&1 | tail -40`; add `cargo test -q -p twilight-realm`
-   when a realm rule changed. A content edit (`crates/twilight-realm/content/`) also runs
+3. Edit, then `cargo check -q -p <crate> 2>&1 | tail -40`; add the realm test line from
+   CLAUDE.md when a realm rule changed, and `rustfmt --edition 2021` the `.rs` files you touched. A content edit (`crates/twilight-realm/content/`) also runs
    `python3.15 tools/twilights-eve/ground_check.py`; a flagged row is a failed gate, and `--fix`
    writes the Z. Wait for every command. A build-lock refusal means wait or stop.
 4. Commit only the files you touched, saying what changed and which check ran. Comment on and

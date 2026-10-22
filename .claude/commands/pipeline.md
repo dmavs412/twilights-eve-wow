@@ -11,6 +11,8 @@ Task: $ARGUMENTS
   labelled `ready-for-agent` for the Build lane instead.
 - Grills follow the grill rules: one question per turn via AskUserQuestion. A grill ends in
   tickets the overnight run can finish without asking (`docs/agents/unattended.md`).
-- A ticket that places a unit gives x and y and never a Z; the Build lane runs
-  `ground_check.py --fix` for it. Rules: `docs/agents/issue-tracker.md`, "Placing units".
+- A ticket names every place it touches by file, function and line, and its failing-test step
+  names the test file to extend. A ticket that places a unit gives x and y and never a Z; the
+  Build lane runs `ground_check.py --fix` for it. Rules: `docs/agents/issue-tracker.md`,
+  "Writing a ready-for-agent ticket" and "Placing units".
 - Commit only the files you touched. Report in a few lines and tell Davis to `/clear`.

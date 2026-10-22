@@ -35,3 +35,5 @@ it, so the next ground patch follows the same path.
   for free.
 - **A realm entity for every patch.** Not needed yet: a patch lives in its caster's skills state,
   like the rest of the cast, and the view reads it from there each tick.
+
+How the view streams a patch to other clients: `docs/realm_view.md`.
