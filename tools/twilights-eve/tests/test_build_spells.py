@@ -401,6 +401,13 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         miasma = next(s for s in patch["spells"] if s.get("key") == "miasma")
         self.assertEqual(miasma["fields"]["dbc_effects"][0]["radius_index"], 14)
 
+    def test_the_committed_blood_lance_flies_as_corrupted_blood(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            patch = json.load(f)
+        lance = next(s for s in patch["spells"] if s["spell_id"] == 1000350)
+        self.assertEqual(lance["fields"]["visual"], 7273, "Corrupted Blood's red bolt")
+
     def test_per_combo_is_a_formula_block(self):
         row = {**STRIKE, "effect1_kind": "school_damage",
                "effect1_params": "amount.base=5;amount.per_level=0;per_combo.base=5;per_combo.per_level=0.5"}

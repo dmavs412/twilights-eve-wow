@@ -9980,7 +9980,8 @@
       "amplitude_ms": 2000
      }
     ],
-    "visual": 3057,
+    "visual": 7273,
+    "speed": 30.0,
     "range_index": 4,
     "cast_time_index": 16
    }
