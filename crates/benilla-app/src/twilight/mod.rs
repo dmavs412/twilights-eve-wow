@@ -439,6 +439,9 @@ fn realm_command(command: ClientCommand) -> Option<RealmCommand> {
         }
         ClientCommand::NameQuery { guid } => Some(RealmCommand::NameQuery { guid }),
         ClientCommand::ItemQuery { entry, .. } => Some(RealmCommand::ItemQuery { entry }),
+        ClientCommand::PageTextQuery { page_id, .. } => {
+            Some(RealmCommand::PageTextQuery { page_id })
+        }
         ClientCommand::Loot { guid } => Some(RealmCommand::Loot { guid }),
         ClientCommand::LootMoney => Some(RealmCommand::LootMoney),
         ClientCommand::AutostoreLootItem { slot } => Some(RealmCommand::AutostoreLootItem { slot }),
@@ -664,6 +667,20 @@ fn only_warriors(mut catalog: ResMut<crate::entities::CharCreate>) {
 #[cfg(test)]
 mod tests {
     use benilla_formats::{area_id_at, load_area_table_catalog, load_tile_mesh, world_to_tile};
+
+    #[test]
+    fn a_page_text_query_maps_to_the_realm_command_with_the_same_page_id() {
+        use crate::net::ClientCommand;
+        use twilight_realm::RealmCommand;
+        let mapped = super::realm_command(ClientCommand::PageTextQuery {
+            page_id: 15840,
+            guid: 7,
+        });
+        assert!(matches!(
+            mapped,
+            Some(RealmCommand::PageTextQuery { page_id: 15840 })
+        ));
+    }
 
     /// The host's `area_at` reads the streamed tile's MCNK `areaId` through
     /// [`benilla_formats::area_id_at`]: on the game data, it names the Barrens subzones the realm's

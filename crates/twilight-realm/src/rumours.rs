@@ -332,10 +332,23 @@ fn check(d: &Def, all: &[&Def]) {
         let note = quest_content::item_template(p.note)
             .or_else(|| crate::items::template(p.note))
             .unwrap_or_else(|| panic!("Rumour {id}'s note {} is no item", p.note));
-        // TODO(#290): require non-empty `pages` as well once readable items land.
         assert_eq!(
             note.max_count, 1,
             "Rumour {id}'s note {} needs max_count = 1",
+            p.note
+        );
+        assert!(
+            !note.pages.is_empty(),
+            "Rumour {id}'s note {} needs pages",
+            p.note
+        );
+        assert_eq!(
+            all.iter()
+                .flat_map(|o| o.points.iter())
+                .filter(|o| o.note == p.note)
+                .count(),
+            1,
+            "note {} is the note of more than one point",
             p.note
         );
         assert!(

@@ -213,6 +213,11 @@ pub enum RealmCommand {
     ItemQuery {
         entry: u32,
     },
+    /// A readable item's pages from `page_id` on, answered with one [`SessionEvent::PageText`] per
+    /// page.
+    PageTextQuery {
+        page_id: u32,
+    },
     /// Open a corpse's loot window.
     Loot {
         guid: u64,
@@ -520,6 +525,13 @@ impl Realm {
     /// the shipped ones, for the rest of the process: a test seam, so a player script can try a
     /// quest the content does not ship.
     pub fn with_quests(self, toml: &str) -> Self {
+        quests::content::add(toml);
+        self
+    }
+
+    /// This realm with the quest items in `toml` (`[[item]]` rows, as `content/quest_items.toml`
+    /// writes them) added, for the rest of the process: a test seam beside [`Self::with_quests`].
+    pub fn with_items(self, toml: &str) -> Self {
         quests::content::add(toml);
         self
     }
@@ -1383,6 +1395,9 @@ impl Realm {
                 }
             }
             RealmCommand::ItemQuery { entry } => self.events.push(items::query_response(entry)),
+            RealmCommand::PageTextQuery { page_id } => {
+                self.events.extend(items::page_chain(page_id));
+            }
             RealmCommand::LearnTalent { talent_id, rank } => self.learn_talent(talent_id, rank),
             RealmCommand::GossipHello { guid } => self.gossip_hello(guid),
             RealmCommand::GossipSelectOption { guid, option } => self.gossip_select(guid, option),

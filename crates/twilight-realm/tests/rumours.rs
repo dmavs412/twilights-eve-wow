@@ -60,6 +60,7 @@ class = 12
 display_id = 6270
 max_count = 1
 description = "{GIVER_NAME} waits at {landmark}."
+pages = ["{GIVER_NAME} waits at {landmark}."]
 "#
             );
         }

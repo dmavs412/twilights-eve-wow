@@ -78,6 +78,9 @@ pub(crate) struct Template {
     pub(crate) teleport_to: Option<[f32; 4]>,
     /// The tooltip's yellow flavor line; empty for none.
     pub(crate) description: String,
+    /// A readable item's pages, one string each. The client's reader expands `$N`, `$B` and the
+    /// other macros; the realm sends the text as written.
+    pub(crate) pages: Vec<String>,
 }
 
 impl Default for Template {
@@ -114,6 +117,7 @@ impl Default for Template {
             start_quest: 0,
             teleport_to: None,
             description: String::new(),
+            pages: Vec::new(),
             stackable: 0,
             container_slots: 0,
             sheath: 0,
@@ -135,6 +139,55 @@ impl Template {
     pub(crate) fn stack_size(&self) -> u32 {
         self.stackable.max(1)
     }
+
+    /// What the content load refuses in the item's `pages`.
+    pub(crate) fn check_pages(&self) {
+        let entry = self.entry;
+        assert!(
+            self.pages.len() <= MAX_PAGES,
+            "item {entry} has more than {MAX_PAGES} pages"
+        );
+        for (i, page) in self.pages.iter().enumerate() {
+            assert!(
+                !page.is_empty() && page.len() <= MAX_PAGE_BYTES,
+                "item {entry}'s page {i} must be 1 to {MAX_PAGE_BYTES} bytes"
+            );
+        }
+    }
+}
+
+/// At most this many pages per item (the page id formula leaves room for 16).
+const MAX_PAGES: usize = 10;
+/// The longest page body, in bytes.
+const MAX_PAGE_BYTES: usize = 2000;
+/// `PageTextMaterial.dbc` id 1, Parchment.
+const PARCHMENT: u32 = 1;
+
+/// The id of page `index` (0-based) of item `entry`. `entry * 16 + index` never collides across
+/// items, since an item has at most 16 pages.
+pub(crate) fn page_id(entry: u32, index: usize) -> u32 {
+    entry * 16 + index as u32
+}
+
+/// The `PageText` events for the chain that starts at `page_id`, in order: one per page to the last,
+/// each pointing at the next (0 on the last), as vmangos answers a first query. An unknown page id
+/// answers nothing.
+pub(crate) fn page_chain(page_id: u32) -> Vec<SessionEvent> {
+    let (entry, first) = (page_id / 16, (page_id % 16) as usize);
+    let Some(t) = template(entry) else {
+        return Vec::new();
+    };
+    (first..t.pages.len())
+        .map(|i| SessionEvent::PageText {
+            page_id: self::page_id(entry, i),
+            text: t.pages[i].clone(),
+            next_page_id: if i + 1 < t.pages.len() {
+                self::page_id(entry, i + 1)
+            } else {
+                0
+            },
+        })
+        .collect()
 }
 
 #[derive(Deserialize)]
@@ -350,9 +403,13 @@ pub(crate) fn info(t: &Template) -> ItemInfo {
         // Items never bind, so every item can be traded: no tooltip bind line, no bind popup.
         bonding: 0,
         description: t.description.clone(),
-        page_text: 0,
+        page_text: if t.pages.is_empty() {
+            0
+        } else {
+            page_id(t.entry, 0)
+        },
         language_id: 0,
-        page_material: 0,
+        page_material: if t.pages.is_empty() { 0 } else { PARCHMENT },
         start_quest: t.start_quest,
         lock_id: 0,
         material: t.material as u32,

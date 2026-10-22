@@ -21,9 +21,8 @@
 #   quests = [94901]                # the steps, in order; each a `kind = "rumour"` quest
 #   timer_min = 30                  # optional; 30 + 15 per extra step by default; none for calling
 #
-# Each point's `note` is a quest item with `max_count = 1` whose `description` names the landmark.
-# TODO(#290): the note also needs non-empty `pages` once readable items land; the loader checks
-# `max_count` alone until then.
+# Each point's `note` is a quest item with `max_count = 1`, non-empty `pages` and a `description`
+# that names the landmark. One note belongs to one point only.
 
 # What a kill's chance is multiplied by, by the creature's rank: rank 0 is normal, 1 and 2 are
 # elite, 3 is a boss.

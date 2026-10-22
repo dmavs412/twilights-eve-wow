@@ -86,6 +86,7 @@ class = 12
 display_id = 6270
 max_count = 1
 description = "Corina Steele waits at {landmark}."
+pages = ["Corina Steele waits at {landmark}."]
 "#
         );
     }

@@ -542,6 +542,7 @@ fn added() -> &'static RwLock<Vec<&'static Quest>> {
 /// (`Realm::with_quests`), so a player script can try a quest the content does not ship.
 pub(crate) fn add(toml: &str) {
     let parsed: QuestFile = toml::from_str(toml).expect("the added quests parse");
+    parsed.item.iter().for_each(items::Template::check_pages);
     {
         // Looked up before the write lock, which a lookup would wait on.
         let new: Vec<_> = parsed
@@ -793,8 +794,10 @@ struct ItemTable {
 fn shipped_items() -> &'static ItemTable {
     static ITEMS: OnceLock<ItemTable> = OnceLock::new();
     ITEMS.get_or_init(|| {
-        toml::from_str(include_str!("../../content/quest_items.toml"))
-            .expect("content/quest_items.toml parses")
+        let table: ItemTable = toml::from_str(include_str!("../../content/quest_items.toml"))
+            .expect("content/quest_items.toml parses");
+        table.item.iter().for_each(items::Template::check_pages);
+        table
     })
 }
 
