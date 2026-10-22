@@ -2018,6 +2018,10 @@ impl InWorld {
             spell_id: skill.spell_id,
             duration_ms: shape.channel_ms,
         });
+        // The caster's channel fields: every client that sees them draws the beam to `at`.
+        let mut pairs = vec![(UNIT_CHANNEL_SPELL, skill.spell_id)];
+        pairs.extend(guid_pairs(UNIT_FIELD_CHANNEL_OBJECT, at));
+        events.push(values(self.guid, &pairs));
         if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == at) {
             if mob.state == State::Idle {
                 super::engage(mob, self.guid, events);
@@ -2178,6 +2182,9 @@ impl InWorld {
             });
         }
         events.push(SessionEvent::ChannelUpdate { remaining_ms: 0 });
+        let mut pairs = vec![(UNIT_CHANNEL_SPELL, 0)];
+        pairs.extend(guid_pairs(UNIT_FIELD_CHANNEL_OBJECT, 0));
+        events.push(values(self.guid, &pairs));
     }
 
     /// `skill` goes off at `targets` (`target` the client's pick): paid, rolled, landed. `instant`

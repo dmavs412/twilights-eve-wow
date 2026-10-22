@@ -8,6 +8,10 @@ pub(crate) const OBJECT_FIELD_ENTRY: u16 = 3;
 pub(crate) const OBJECT_FIELD_SCALE_X: u16 = 4;
 
 pub(crate) const UNIT_FIELD_TARGET: u16 = 16;
+/// What a channel is aimed at: the client draws the channel's beam to it.
+pub(crate) const UNIT_FIELD_CHANNEL_OBJECT: u16 = 20;
+/// The spell being channelled, 0 for none.
+pub(crate) const UNIT_CHANNEL_SPELL: u16 = 144;
 pub(crate) const UNIT_FIELD_HEALTH: u16 = 22;
 /// `UNIT_FIELD_POWER1 + Powers`: mana, rage (+1), energy (+3); the maxima sit at the same offsets
 /// from `UNIT_FIELD_MAXPOWER1`.

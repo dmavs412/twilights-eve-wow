@@ -108,12 +108,36 @@ fn drained(events: &[SessionEvent]) -> (Vec<u32>, Vec<u32>) {
     (dealt, healed)
 }
 
+/// `UNIT_FIELD_CHANNEL_OBJECT` and `UNIT_CHANNEL_SPELL`: the client draws a channel's beam from
+/// them.
+const CHANNEL_OBJECT: u16 = 20;
+const CHANNEL_SPELL: u16 = 144;
+
+/// The caster's channel spell and object, from the last values update in `events` that sets them.
+fn channel_fields(events: &[SessionEvent], caster: u64) -> Option<(u32, u64)> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::ObjectValues { guid, fields } if *guid == caster => {
+            let raw: Vec<(u16, u32)> = fields.raw_fields().collect();
+            let get = |f: u16| raw.iter().find(|(k, _)| *k == f).map(|(_, v)| *v);
+            let object =
+                u64::from(get(CHANNEL_OBJECT)?) | u64::from(get(CHANNEL_OBJECT + 1)?) << 32;
+            Some((get(CHANNEL_SPELL)?, object))
+        }
+        _ => None,
+    })
+}
+
 #[test]
 fn siphon_life_ticks_five_times_over_five_seconds_and_heals_what_it_deals() {
-    let (mut realm, _, mob, mut view) = world(1);
+    let (mut realm, me, mob, mut view) = world(1);
     realm.handle(cast(SIPHON_LIFE, Some(mob.guid)));
     let started = view.drain(&mut realm);
     assert_eq!(refusal(&started, SIPHON_LIFE), None);
+    assert_eq!(
+        channel_fields(&started, me),
+        Some((SIPHON_LIFE, mob.guid)),
+        "the caster's channel fields name the spell and the mob, for the beam"
+    );
     assert!(started.iter().any(|e| matches!(
         e,
         SessionEvent::ChannelStart {
@@ -135,6 +159,11 @@ fn siphon_life_ticks_five_times_over_five_seconds_and_heals_what_it_deals() {
     assert!(events
         .iter()
         .any(|e| matches!(e, SessionEvent::ChannelUpdate { remaining_ms: 0 })));
+    assert_eq!(
+        channel_fields(&events, me),
+        Some((0, 0)),
+        "both cleared at the end"
+    );
     assert!(
         drained(&view.run(&mut realm, 2.0)).0.is_empty(),
         "then it is over"
@@ -143,13 +172,19 @@ fn siphon_life_ticks_five_times_over_five_seconds_and_heals_what_it_deals() {
 
 #[test]
 fn a_step_after_two_ticks_ends_the_channel() {
-    let (mut realm, _, mob, mut view) = world(2);
+    let (mut realm, me, mob, mut view) = world(2);
     realm.handle(cast(SIPHON_LIFE, Some(mob.guid)));
-    view.drain(&mut realm);
+    let started = view.drain(&mut realm);
+    assert_eq!(channel_fields(&started, me), Some((SIPHON_LIFE, mob.guid)));
     let two = view.run(&mut realm, 2.1);
     assert_eq!(drained(&two).0.len(), 2);
     stand_at(&mut realm, &mob, 25.0);
     let broken = view.drain(&mut realm);
+    assert_eq!(
+        channel_fields(&broken, me),
+        Some((0, 0)),
+        "a broken channel clears both"
+    );
     assert!(broken.iter().any(|e| matches!(
         e,
         SessionEvent::SpellFailedOther {
