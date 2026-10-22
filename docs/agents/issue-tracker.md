@@ -16,6 +16,13 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 **A ticket's numbers come from its own lists.** Count the rows a ticket summarises before writing the count in its title or body, and compute every worked example from the rule the ticket states. A Build lane session takes the ticket's words as the contract; a count that disagrees with the list, or an example that disagrees with the rule, costs it a cycle and a judgement call it then records in the issue.
 
+## Placing units
+
+A ticket gives x and y for every placed unit, and the map when it is not 0. It never gives a Z.
+The Build lane writes `0.0` and runs `python3.15 tools/twilights-eve/ground_check.py --fix`,
+which computes the Z. A ticket for an interior unit names the building, so the session can take
+the Z from the nearest existing row in it.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_

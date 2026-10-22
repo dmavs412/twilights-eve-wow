@@ -89,6 +89,14 @@ function Invoke-Gate([string]$Before, [string]$After) {
             return @{ ok = $false; what = "cargo test -p twilight-realm"; out = (($out | Select-Object -Last 60) -join "`n") }
         }
     }
+    if (@($files | Where-Object { $_ -match '^crates/twilight-realm/content/' }).Count -gt 0) {
+        Write-Log "gate: ground_check.py"
+        $out = cmd /c "`"$HOME\.local\bin\python3.15`" tools\twilights-eve\ground_check.py 2>&1"
+        $ran += "ground_check.py"
+        if ($LASTEXITCODE -ne 0) {
+            return @{ ok = $false; what = "ground_check.py"; out = (($out | Select-Object -Last 60) -join "`n") }
+        }
+    }
     if ($ran.Count -eq 0) { $ran = @("no crate touched, no cargo gate") }
     return @{ ok = $true; what = ($ran -join "; "); out = "" }
 }

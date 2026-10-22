@@ -14,7 +14,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   edit; the pipe keeps warnings out of the context. When a realm rule changes, also
   `cargo test -q -p twilight-realm` (seconds, no game data). An edit under `tools/twilights-eve/`
   or to the CSV also runs the unittest line in `docs/spell_pipeline.md` and regenerates the
-  outputs. That is the whole gate; a commit needs nothing else. A full build or a game run
+  outputs. When a commit touches `crates/twilight-realm/content/`, also run
+  `python3.15 tools/twilights-eve/ground_check.py`; a flagged row is a failed gate, and `--fix`
+  writes the answer. That is the whole gate; a commit needs nothing else. A full build or a game run
   happens only when Davis asks for one.
 - **Every command runs in the foreground, and you wait for it.** Let each cargo command finish:
   one stopped mid-compile leaves rlibs with corrupt MSVC debug info, and later links fail with

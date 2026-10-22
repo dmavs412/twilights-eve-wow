@@ -57,6 +57,11 @@ failed.
 
 - After every edit: `cargo check -q -p <crate> 2>&1 | tail -40`. When the realm, `data/` or
   `tools/` changed: `cargo test -q -p twilight-realm 2>&1 | tail -40`.
+- When a commit touches `crates/twilight-realm/content/`, also run
+  `python3.15 -I tools/twilights-eve/ground_check.py`. A flagged row fails the gate, and
+  `--fix` writes the answer. Never type a placed unit's Z by hand: write `0.0`, run `--fix`, and
+  commit what it wrote. An interior unit takes its Z from the nearest existing row in the same
+  building.
 - Run every cargo command in the foreground and wait, with a 600000 ms timeout. Never
   `run_in_background`: background commands die at 10 minutes and leave corrupt rlibs.
 - One plain command per Bash call. Headless permission matching refuses chains (`;`, `&&`),

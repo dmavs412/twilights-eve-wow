@@ -196,3 +196,7 @@ _Avoid_: token, mark, spoils
 **Marked**:
 The state of a character a Bounty Hunter has killed: their stats are 10% lower until they kill that Bounty Hunter or two hours of play pass. The Bounty Hunter stays in that zone, roaming near where it won and shown on the map, and no other Bounty Hunter comes meanwhile. Being killed by it again does not deepen the loss. Killing it pays the Blood Coin of the rank it had, but does not raise the character's Bounty Rank.
 _Avoid_: debuff, death penalty, nemesis
+
+**Grounded**:
+A placed unit whose Z the realm snaps to the ground under it at create time; the default. `grounded = false` on a content row keeps the written Z, for a unit meant to hover or hang. A ticket never gives a Z: the Build lane writes `0.0` and `tools/twilights-eve/ground_check.py --fix` computes it.
+_Avoid_: snapped, clamped (the client's own ground clamp is a different mechanism)
