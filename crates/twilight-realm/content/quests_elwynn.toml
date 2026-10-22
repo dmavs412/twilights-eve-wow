@@ -648,7 +648,7 @@ guid = 790401
 entry = 980103
 display = 1011
 map = 0
-position = [-9400.0, -300.0, 56.0]
+position = [-9400.0, -300.0, 62.63]
 orientation = 0.0
 respawn = 60.0
 
@@ -866,7 +866,7 @@ guid = 790501
 entry = 980104
 display = 1011
 map = 0
-position = [-9270.0, -1100.0, 72.0]
+position = [-9270.0, -1100.0, 58.58]
 orientation = 0.0
 respawn = 60.0
 
@@ -875,7 +875,7 @@ guid = 790502
 entry = 980104
 display = 1011
 map = 0
-position = [-9262.0, -1094.0, 72.0]
+position = [-9262.0, -1094.0, 63.24]
 orientation = 1.0
 respawn = 60.0
 
@@ -884,7 +884,7 @@ guid = 790503
 entry = 980104
 display = 1011
 map = 0
-position = [-9278.0, -1094.0, 72.0]
+position = [-9278.0, -1094.0, 56.43]
 orientation = 2.0
 respawn = 60.0
 
@@ -893,7 +893,7 @@ guid = 790504
 entry = 980104
 display = 1011
 map = 0
-position = [-9262.0, -1107.0, 72.0]
+position = [-9262.0, -1107.0, 56.56]
 orientation = 3.0
 respawn = 60.0
 
@@ -902,7 +902,7 @@ guid = 790505
 entry = 980104
 display = 1011
 map = 0
-position = [-9278.0, -1107.0, 72.0]
+position = [-9278.0, -1107.0, 58.33]
 orientation = 4.0
 respawn = 60.0
 
@@ -981,7 +981,7 @@ guid = 790511
 entry = 980105
 display = 1011
 map = 0
-position = [-9132.0, -1128.0, 70.0]
+position = [-9132.0, -1128.0, 73.67]
 orientation = 0.5
 respawn = 90.0
 
@@ -1097,7 +1097,7 @@ guid = 790512
 entry = 980105
 display = 1011
 map = 0
-position = [-9124.0, -1138.0, 70.0]
+position = [-9124.0, -1138.0, 71.56]
 orientation = 1.5
 respawn = 90.0
 
@@ -1106,7 +1106,7 @@ guid = 790513
 entry = 980105
 display = 1011
 map = 0
-position = [-9142.0, -1141.0, 70.0]
+position = [-9142.0, -1141.0, 70.54]
 orientation = 2.5
 respawn = 90.0
 
@@ -1115,7 +1115,7 @@ guid = 790514
 entry = 980105
 display = 1011
 map = 0
-position = [-9114.0, -1124.0, 70.0]
+position = [-9114.0, -1124.0, 74.49]
 orientation = 3.5
 respawn = 90.0
 
@@ -1124,7 +1124,7 @@ guid = 790515
 entry = 980105
 display = 1011
 map = 0
-position = [-9148.0, -1122.0, 70.0]
+position = [-9148.0, -1122.0, 77.55]
 orientation = 4.5
 respawn = 90.0
 
@@ -1151,7 +1151,7 @@ guid = 790518
 entry = 980105
 display = 1011
 map = 0
-position = [-9116.0, -1146.0, 70.0]
+position = [-9116.0, -1146.0, 70.74]
 orientation = 2.9
 respawn = 90.0
 
@@ -1536,7 +1536,7 @@ guid = 790701
 entry = 980109
 display = 1011
 map = 0
-position = [-9985.0, -150.0, 40.0]
+position = [-9985.0, -150.0, 17.97]
 orientation = 5.32
 respawn = 60.0
 
@@ -1545,7 +1545,7 @@ guid = 790702
 entry = 980109
 display = 1011
 map = 0
-position = [-9972.0, -128.0, 40.0]
+position = [-9972.0, -128.0, 24.31]
 orientation = 2.35
 respawn = 60.0
 
@@ -1554,7 +1554,7 @@ guid = 790703
 entry = 980109
 display = 1011
 map = 0
-position = [-9962.0, -168.0, 40.0]
+position = [-9962.0, -168.0, 22.25]
 orientation = 0.39
 respawn = 60.0
 
@@ -1563,7 +1563,7 @@ guid = 790704
 entry = 980109
 display = 1011
 map = 0
-position = [-9955.0, -150.0, 40.0]
+position = [-9955.0, -150.0, 23.60]
 orientation = 3.8
 respawn = 60.0
 
@@ -1572,7 +1572,7 @@ guid = 790705
 entry = 980109
 display = 1011
 map = 0
-position = [-9980.0, -118.0, 40.0]
+position = [-9980.0, -118.0, 23.97]
 orientation = 6.12
 respawn = 60.0
 
@@ -1581,7 +1581,7 @@ guid = 790706
 entry = 980109
 display = 1011
 map = 0
-position = [-9938.0, -128.0, 40.0]
+position = [-9938.0, -128.0, 24.98]
 orientation = 5.14
 respawn = 60.0
 
@@ -1590,7 +1590,7 @@ guid = 790707
 entry = 980109
 display = 1011
 map = 0
-position = [-9890.0, -12.0, 38.0]
+position = [-9890.0, -12.0, 29.25]
 orientation = 4.45
 respawn = 60.0
 
@@ -1599,7 +1599,7 @@ guid = 790708
 entry = 980109
 display = 1011
 map = 0
-position = [-9872.0, 6.0, 38.0]
+position = [-9872.0, 6.0, 28.87]
 orientation = 0.9
 respawn = 60.0
 
@@ -1609,7 +1609,7 @@ guid = 790709
 entry = 980110
 display = 1011
 map = 0
-position = [-9990.0, -157.0, 38.0]
+position = [-9990.0, -157.0, 15.98]
 orientation = 1.57
 respawn = 60.0
 
@@ -1618,7 +1618,7 @@ guid = 790710
 entry = 980110
 display = 1011
 map = 0
-position = [-9990.0, -148.0, 38.0]
+position = [-9990.0, -148.0, 16.96]
 orientation = 1.57
 respawn = 60.0
 
@@ -1627,7 +1627,7 @@ guid = 790711
 entry = 980110
 display = 1011
 map = 0
-position = [-9990.0, -139.0, 38.0]
+position = [-9990.0, -139.0, 18.31]
 orientation = 1.57
 respawn = 60.0
 
@@ -1636,7 +1636,7 @@ guid = 790712
 entry = 980110
 display = 1011
 map = 0
-position = [-9990.0, -133.0, 38.0]
+position = [-9990.0, -133.0, 19.23]
 orientation = 1.57
 respawn = 60.0
 

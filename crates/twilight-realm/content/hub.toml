@@ -723,7 +723,7 @@ display_id = 1312
 faction_template = 35
 role = "giver"
 npc_flags = 0x2
-position = [-1000.0, -2400.0, 92.0]
+position = [-1000.0, -2400.0, 96.38]
 orientation = 4.10
 greeting = "Keep low. The Kolkar have sharp eyes, and sharper spears."
 
@@ -1004,7 +1004,7 @@ display_id = 2112
 faction_template = 35
 role = "giver"
 npc_flags = 0x2
-position = [-2700.0, -2150.0, 94.0]
+position = [-2700.0, -2150.0, 91.67]
 orientation = 6.23
 greeting = "Quiet. The herds hear everything, and so do I."
 
@@ -1052,7 +1052,7 @@ faction_template = 35
 role = "trainer"
 npc_flags = 0x13
 map = 0
-position = [-8915.0, -318.0, 77.7]
+position = [-8915.0, -318.0, 70.63]
 orientation = 3.3
 faces = [-8960.0, -330.0]
 text_id = 64031
@@ -1137,7 +1137,7 @@ faction_template = 35
 role = "giver"
 npc_flags = 0x2
 map = 0
-position = [-9268.0, -1096.0, 72.0]
+position = [-9268.0, -1096.0, 61.33]
 orientation = 1.57
 greeting = "The Vigil keeps those who held the line at the Dark Portal. I tend their stones. Someone has been painting on them, and I will not rest until it is gone."
 
@@ -1152,7 +1152,7 @@ faction_template = 35
 role = "giver"
 npc_flags = 0x2
 map = 0
-position = [-9262.0, -1103.0, 72.0]
+position = [-9262.0, -1103.0, 58.69]
 orientation = 3.9
 greeting = "Murlocs from the lake, gnolls from the east. The post is two men and a bell. If you will walk the shore for us, I pay by the head."
 
@@ -1225,7 +1225,7 @@ faction_template = 35
 role = "giver"
 npc_flags = 0x2
 map = 0
-position = [-9970.0, -146.0, 40.0]
+position = [-9970.0, -146.0, 22.26]
 orientation = 1.57
 greeting = "Keep your voice down. They think I'm only counting."
 

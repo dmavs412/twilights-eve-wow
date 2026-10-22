@@ -128,28 +128,28 @@ orientation = 0.8
 guid = 970011
 entry = 96029
 level = 19
-position = [-9185.0, -2025.0, 43.0]
+position = [-9185.0, -2025.0, 116.49]
 orientation = 3.14
 
 [[creature]]
 guid = 970012
 entry = 96029
 level = 19
-position = [-9185.0, -2015.0, 43.0]
+position = [-9185.0, -2015.0, 114.54]
 orientation = 3.14
 
 [[creature]]
 guid = 970013
 entry = 96030
 level = 19
-position = [-9182.0, -2010.0, 43.0]
+position = [-9182.0, -2010.0, 112.93]
 orientation = 3.14
 
 [[creature]]
 guid = 970014
 entry = 96030
 level = 19
-position = [-9182.0, -2030.0, 43.0]
+position = [-9182.0, -2030.0, 113.32]
 orientation = 3.14
 
 # Gresh the Drowned, Shadowhide Warlock. He drops the placeholder blue, as the Abbot does.
@@ -157,14 +157,14 @@ orientation = 3.14
 guid = 970015
 entry = 96034
 level = 20
-position = [-9178.0, -2015.0, 43.0]
+position = [-9178.0, -2015.0, 116.06]
 orientation = 3.14
 drop = [900105]
 
 [[gameobject]]
 guid = 975001
 display = 461
-position = [-9176.0, -2024.0, 43.0]
+position = [-9176.0, -2024.0, 119.33]
 orientation = 3.14
 sides = "inside"
 use = "ward"
@@ -197,28 +197,28 @@ orientation = 1.5
 guid = 970031
 entry = 96031
 level = 20
-position = [-8987.0, -2388.0, 100.0]
+position = [-8987.0, -2388.0, 136.28]
 orientation = 3.14
 
 [[creature]]
 guid = 970032
 entry = 96031
 level = 20
-position = [-8987.0, -2372.0, 100.0]
+position = [-8987.0, -2372.0, 135.09]
 orientation = 3.14
 
 [[creature]]
 guid = 970033
 entry = 96032
 level = 20
-position = [-8981.0, -2380.0, 100.0]
+position = [-8981.0, -2380.0, 141.52]
 orientation = 3.14
 
 [[creature]]
 guid = 970034
 entry = 96032
 level = 20
-position = [-8981.0, -2392.0, 100.0]
+position = [-8981.0, -2392.0, 140.46]
 orientation = 3.14
 
 # Speaker Thane, Twilight Geolord.
@@ -226,14 +226,14 @@ orientation = 3.14
 guid = 970035
 entry = 96035
 level = 21
-position = [-8975.0, -2375.0, 100.0]
+position = [-8975.0, -2375.0, 145.82]
 orientation = 3.14
 drop = [900105]
 
 [[gameobject]]
 guid = 975002
 display = 461
-position = [-8972.0, -2385.0, 100.0]
+position = [-8972.0, -2385.0, 151.94]
 orientation = 3.14
 sides = "inside"
 use = "ward"
@@ -259,28 +259,28 @@ orientation = 5.0
 guid = 970051
 entry = 96033
 level = 21
-position = [-9230.0, -2706.0, 60.0]
+position = [-9230.0, -2706.0, 88.80]
 orientation = 3.14
 
 [[creature]]
 guid = 970052
 entry = 96033
 level = 21
-position = [-9230.0, -2694.0, 60.0]
+position = [-9230.0, -2694.0, 88.80]
 orientation = 3.14
 
 [[creature]]
 guid = 970053
 entry = 96030
 level = 21
-position = [-9226.0, -2686.0, 60.0]
+position = [-9226.0, -2686.0, 88.80]
 orientation = 3.14
 
 [[creature]]
 guid = 970054
 entry = 96030
 level = 21
-position = [-9226.0, -2714.0, 60.0]
+position = [-9226.0, -2714.0, 88.80]
 orientation = 3.14
 
 # The Kept, a Voidwalker.
@@ -288,7 +288,7 @@ orientation = 3.14
 guid = 970055
 entry = 96036
 level = 22
-position = [-9222.0, -2699.0, 60.0]
+position = [-9222.0, -2699.0, 88.80]
 orientation = 3.14
 drop = [900105]
 
@@ -296,7 +296,7 @@ drop = [900105]
 [[gameobject]]
 guid = 975003
 display = 461
-position = [-9219.0, -2706.0, 60.0]
+position = [-9219.0, -2706.0, 88.80]
 orientation = 3.14
 sides = "inside"
 use = "ward"
@@ -307,7 +307,7 @@ ward = { stop = "shadow", needs_dead = 970055, held_text = "The Kept's magic hol
 [[gameobject]]
 guid = 975004
 display = 1011
-position = [-9219.0, -2701.0, 60.0]
+position = [-9219.0, -2701.0, 88.80]
 orientation = 3.14
 sides = "inside"
 gives_quests = true

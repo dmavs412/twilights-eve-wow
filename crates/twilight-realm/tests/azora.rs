@@ -41,17 +41,17 @@ const BY_INNER_FIRE: [f32; 3] = [-9550.5, -709.5, 75.06];
 const BY_INNER_SHADOW: [f32; 3] = [-9552.5, -707.5, 90.41];
 const ARRIVAL_FIRE: [f32; 3] = [-8995.0, -2380.0, 100.0];
 /// Beside each mini-boss in its stop, and each mini-boss's spot.
-const BY_GRESH: [f32; 3] = [-9179.5, -2015.0, 43.0];
-const GRESH_AT: [f32; 3] = [-9178.0, -2015.0, 43.0];
-const BY_THANE: [f32; 3] = [-8976.5, -2375.0, 100.0];
-const THANE_AT: [f32; 3] = [-8975.0, -2375.0, 100.0];
-const BY_KEPT: [f32; 3] = [-9223.5, -2699.0, 60.0];
-const KEPT_AT: [f32; 3] = [-9222.0, -2699.0, 60.0];
+const BY_GRESH: [f32; 3] = [-9179.5, -2015.0, 116.06];
+const GRESH_AT: [f32; 3] = [-9178.0, -2015.0, 116.06];
+const BY_THANE: [f32; 3] = [-8976.5, -2375.0, 145.82];
+const THANE_AT: [f32; 3] = [-8975.0, -2375.0, 145.82];
+const BY_KEPT: [f32; 3] = [-9223.5, -2699.0, 88.8];
+const KEPT_AT: [f32; 3] = [-9222.0, -2699.0, 88.8];
 /// Beside each ward stone, and beside the ore cache.
-const BY_WARD_WATER: [f32; 3] = [-9177.5, -2023.0, 43.0];
-const BY_WARD_FIRE: [f32; 3] = [-8973.5, -2384.0, 100.0];
-const BY_WARD_SHADOW: [f32; 3] = [-9220.5, -2705.0, 60.0];
-const BY_CACHE: [f32; 3] = [-9220.5, -2701.0, 60.0];
+const BY_WARD_WATER: [f32; 3] = [-9177.5, -2023.0, 119.33];
+const BY_WARD_FIRE: [f32; 3] = [-8973.5, -2384.0, 151.94];
+const BY_WARD_SHADOW: [f32; 3] = [-9220.5, -2705.0, 88.8];
+const BY_CACHE: [f32; 3] = [-9220.5, -2701.0, 88.8];
 /// In the top chamber, beside the Shadow of Morganth.
 const BY_SHADOW: [f32; 3] = [-9546.5, -721.0, 99.27];
 const SHADOW_AT: [f32; 3] = [-9545.0, -720.0, 99.27];
@@ -210,10 +210,10 @@ fn kill(p: &mut Party, i: usize, at: [f32; 3], toward: [f32; 3], target: u64) {
 /// five characters of the test's weak kind do not outlast all of them at once.
 fn kill_kept(p: &mut Party) {
     for (entry, low, at) in [
-        (96033, 970051, [-9230.0, -2706.0, 60.0]),
-        (96033, 970052, [-9230.0, -2694.0, 60.0]),
-        (96030, 970053, [-9226.0, -2686.0, 60.0]),
-        (96030, 970054, [-9226.0, -2714.0, 60.0]),
+        (96033, 970051, [-9230.0, -2706.0, 88.8]),
+        (96033, 970052, [-9230.0, -2694.0, 88.8]),
+        (96030, 970053, [-9226.0, -2686.0, 88.8]),
+        (96030, 970054, [-9226.0, -2714.0, 88.8]),
     ] {
         let by = [at[0] - 1.5, at[1], at[2]];
         kill(p, 0, by, at, unit_at(entry, low));
