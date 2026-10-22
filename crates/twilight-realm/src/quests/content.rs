@@ -152,6 +152,9 @@ pub(crate) enum Kind {
     /// A Story Quest: once per character, Advancement never forgets it, and it pays XP as a
     /// Hunting Quest does, with no Token.
     Story,
+    /// A step of a Rumour (`content/rumours.toml`): once per Rumour instance, offered only by that
+    /// instance's giver to its Audience, and failed when the Rumour ends.
+    Rumour,
 }
 
 /// Who offers a quest: an NPC's creature entry (a Hub NPC or a Field Giver), or `"item"` for a
@@ -414,7 +417,8 @@ impl Quest {
                 rules::quest::hunting_reward_xp(player, self.level)
             }
             Kind::Repeatable => rules::quest::reward_xp(player),
-            Kind::Advancement | Kind::Once => 0,
+            // The Grade's XP is the next ticket's.
+            Kind::Advancement | Kind::Once | Kind::Rumour => 0,
         }
     }
 
@@ -465,7 +469,7 @@ fn friendly_spawn(entry: u32) -> bool {
 }
 
 /// The shipped quests: `content/quests.toml`, then `content/quests_elwynn.toml`.
-fn shipped() -> &'static [Quest] {
+pub(crate) fn shipped() -> &'static [Quest] {
     static FILE: OnceLock<Vec<Quest>> = OnceLock::new();
     FILE.get_or_init(|| {
         let mut quests = Vec::new();
@@ -614,6 +618,15 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
         let hub = crate::hub::npcs()
             .iter()
             .any(|n| n.entry == npc && n.gives_quests());
+        // A Rumour's giver is made at run time: any friendly template will do.
+        if q.kind == Kind::Rumour {
+            assert!(
+                !hub && crate::mobs::template(npc).is_some_and(|t| t.friendly),
+                "rumour quest {} names {npc}, who is no friendly creature template or is a Hub NPC",
+                q.id,
+            );
+            continue;
+        }
         assert!(
             hub || friendly_spawn(npc),
             "quest {} names {npc}, who is no quest giver in content/hub.toml and no \
@@ -752,10 +765,10 @@ pub(crate) fn ended_by(ender: u32) -> impl Iterator<Item = &'static Quest> {
 /// Whether the creature `entry` gives or takes in any quest: a Field Giver, whose create carries
 /// the quest giver flag.
 pub(crate) fn field_giver(entry: u32) -> bool {
-    friendly_spawn(entry)
-        && quests()
-            .iter()
-            .any(|q| q.giver.npc() == Some(entry) || q.ender() == entry)
+    let gives = |q: &&Quest| q.giver.npc() == Some(entry) || q.ender() == entry;
+    // A Rumour's giver has no spawn row: the realm makes it at run time.
+    (friendly_spawn(entry) || quests().iter().any(|q| q.kind == Kind::Rumour && gives(q)))
+        && quests().iter().any(gives)
 }
 
 /// Whether any quest has a talk objective with the creature `entry`.

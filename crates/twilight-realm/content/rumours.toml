@@ -1,0 +1,33 @@
+# Rumours (spec #284, ADR 0014). A kill inside a Rumour's `bounds` (or of one of its `droppers`)
+# rolls it; the winner's loot gains a note and the Audience (the credited players) is told where
+# a giver waits. The rows are the data ticket's; the rank factors are here.
+#
+# One Rumour:
+#
+#   [[rumour]]
+#   id = 1
+#   name = "A Hermit's Request"
+#   grade = "easy"                  # easy, hard or deadly
+#   kind = "ordinary"               # or "calling", with calling = { from = "...", to = "..." }
+#   map = 0
+#   bounds = [[-9160.0, -480.0, -8500.0, 120.0]]   # [x0, y0, x1, y1] boxes on `map`
+#   chance = 0.5                    # percent per kill, times the mob's rank factor
+#   droppers = [{ entry = 69, chance = 3.0 }]       # their own percent replaces `chance`
+#   giver = 97010                   # a friendly mob template; needs no spawn row
+#   points = [                      # two to four spots for the giver; x and y only
+#     { x = -8975.0, y = -185.0, landmark = "the river bank below the Abbey", note = 980030 },
+#     { x = -8835.0, y = -160.0, landmark = "the wolf glade east of the Abbey", note = 980031 },
+#   ]
+#   quests = [94901]                # the steps, in order; each a `kind = "rumour"` quest
+#   timer_min = 30                  # optional; 30 + 15 per extra step by default; none for calling
+#
+# Each point's `note` is a quest item with `max_count = 1` whose `description` names the landmark.
+# TODO(#290): the note also needs non-empty `pages` once readable items land; the loader checks
+# `max_count` alone until then.
+
+# What a kill's chance is multiplied by, by the creature's rank: rank 0 is normal, 1 and 2 are
+# elite, 3 is a boss.
+[rank_factor]
+normal = 1.0
+elite = 3.0
+boss = 3.0

@@ -105,6 +105,8 @@ pub(crate) struct Credit {
     /// Their share of the money; `None` alone, when the loot rolls its own.
     pub(crate) money: Option<u32>,
     pub(crate) levels: Vec<u8>,
+    /// A Rumour's note this player finds in the loot (spec #284).
+    pub(crate) note: Option<u32>,
 }
 
 /// A friendly spell one player cast on another (#150): resolved by the caster, applied by the
@@ -510,7 +512,7 @@ impl InWorld {
     pub(crate) fn friendly_within_reach(&self, guid: u64, at: [f32; 3]) -> Option<u32> {
         self.mobs
             .iter()
-            .find(|m| m.guid == guid && m.alive() && m.template.friendly)
+            .find(|m| m.guid == guid && m.alive() && m.template.friendly && m.admits(self.guid))
             .filter(|m| crate::space::within_interaction(m.position, at))
             .map(|m| m.template.entry)
     }
@@ -1418,6 +1420,7 @@ impl InWorld {
             let credit = Credit {
                 money: None,
                 levels: vec![c.level],
+                note: None,
                 kill,
             };
             self.take_credit(credit, c, rng, events, ticked);
@@ -1480,6 +1483,9 @@ impl InWorld {
             .extend(k.drops.iter().map(|&item| Some((item, 1))));
         if let Some(item) = crate::rules::loot::first_roll(k.rolls, rng) {
             loot.items.push(Some((item, 1)));
+        }
+        if let Some(note) = credit.note {
+            loot.items.push(Some((note, 1)));
         }
         // A Bounty Hunter pays everyone it credits in Blood Coin; its owner's Bounty Rank rises,
         // or, if it was the victor they are Marked by, the mark lifts (the realm lifts it too when
@@ -1636,7 +1642,7 @@ impl InWorld {
 }
 
 /// Whether `c` stands at their Calling's Tier Cap, where XP stops until they advance.
-fn at_tier_cap(c: &Char) -> bool {
+pub(crate) fn at_tier_cap(c: &Char) -> bool {
     c.level >= crate::callings::of(c.calling).cap
 }
 

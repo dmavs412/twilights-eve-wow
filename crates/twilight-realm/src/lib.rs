@@ -72,6 +72,7 @@ mod quests;
 mod rest;
 mod rng;
 pub mod rules;
+mod rumours;
 mod save;
 mod shard;
 mod space;
@@ -484,6 +485,8 @@ pub struct Realm {
     doors: phased::Doors,
     /// The GameObjects made at run time for an Audience.
     objects: objects::Objects,
+    /// The Rumours under way: not saved.
+    rumours: rumours::Rumours,
 }
 
 impl Realm {
@@ -519,6 +522,19 @@ impl Realm {
     pub fn with_quests(self, toml: &str) -> Self {
         quests::content::add(toml);
         self
+    }
+
+    /// This realm with the Rumours in `toml` (the shape of `content/rumours.toml`) added alongside
+    /// the shipped ones, for the rest of the process: a test seam. Add the quests and notes they
+    /// name with [`Self::with_quests`] first.
+    pub fn with_rumours(self, toml: &str) -> Self {
+        rumours::add(toml);
+        self
+    }
+
+    /// The guids of the Rumour givers standing in the world.
+    pub fn rumour_givers(&self) -> Vec<u64> {
+        self.rumours.givers()
     }
 
     /// This realm with creature `entry` casting the Creature Spells `keys`
@@ -774,6 +790,20 @@ impl Realm {
         }
         let levels: Vec<u8> = near.iter().map(|n| n.2).collect();
         let n = near.len().max(1) as u32;
+        // The kill may roll a Rumour for the players it credits (spec #284).
+        let credited: Vec<&characters::Char> = near
+            .iter()
+            .filter_map(|n| characters.get(n.1.guid))
+            .collect();
+        let killer_guid = near.iter().find(|n| n.0 == killer).map_or(0, |n| n.1.guid);
+        let found = self.rumours.roll(
+            &credited,
+            killer_guid,
+            &kill,
+            map.map,
+            self.wall,
+            &mut self.rng,
+        );
         let mut own = None;
         for (id, w, _) in near {
             let remainder = if id == killer { kill.money % n } else { 0 };
@@ -781,11 +811,30 @@ impl Realm {
                 kill: kill.clone(),
                 money: Some(kill.money / n + remainder),
                 levels: levels.clone(),
+                note: found
+                    .as_ref()
+                    .filter(|f| f.looter == w.guid)
+                    .map(|f| f.note),
             };
             if id == killer {
                 own = Some(credit);
             } else {
                 w.credits.push(credit);
+            }
+        }
+        // The rest of the Audience is told where the giver waits.
+        if let Some(f) = &found {
+            let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
+                self.parked
+                    .values_mut()
+                    .map(|s| (&mut s.world, &mut s.events)),
+            );
+            for (w, events) in sessions {
+                if w.as_ref()
+                    .is_some_and(|w| w.guid != f.looter && f.audience.contains(&w.guid))
+                {
+                    events.push(quests::system_line(f.line.clone()));
+                }
             }
         }
         // The killer's part is paid now, so the corpse sparkles for them as it falls; the others'
@@ -1471,12 +1520,70 @@ impl Realm {
             self.tick_served(dt, host);
         }
         self.give_back();
+        self.tick_rumours(host);
         self.tick_noise();
         self.tick_gazes();
         self.tick_encounters(dt, host);
         self.party_tick(dt);
         self.tick_trades();
         self.tick_duels(dt);
+    }
+
+    /// The Rumours' tick: a giver is made for each new one, and each that ran out of time or was
+    /// handed in by everyone ends.
+    fn tick_rumours(&mut self, host: &dyn Host) {
+        for i in self.rumours.unspawned() {
+            let r = self.rumours.get(i);
+            let Some(d) = rumours::def(r.id) else {
+                continue;
+            };
+            let p = &d.points[r.point];
+            let (level, audience) = (r.level, r.audience.clone());
+            let guid = self.spawn_for(
+                host,
+                d.giver,
+                level,
+                [p.x, p.y, 0.0],
+                d.map,
+                audience.clone(),
+            );
+            // Every instance is offered afresh: the steps an earlier one finished are forgotten.
+            if d.kind == rumours::Class::Ordinary {
+                for &g in &audience.0 {
+                    if let Some(c) = self.characters.get_mut(g) {
+                        c.quests.completed.retain(|q| !d.quests.contains(q));
+                    }
+                }
+            }
+            // A giver the realm cannot make leaves the Rumour with nobody to talk to; it still
+            // times out.
+            self.rumours.set_giver(i, guid.unwrap_or(u64::MAX));
+        }
+        for r in self.rumours.take_ended(self.wall) {
+            let (quests, notes) = rumours::leftovers(r.id);
+            self.despawn_audience(&r.audience);
+            let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
+                self.parked
+                    .values_mut()
+                    .map(|s| (&mut s.world, &mut s.events)),
+            );
+            let mut changed = Vec::new();
+            for (w, events) in sessions {
+                let Some(w) = w else { continue };
+                let Some(c) = self
+                    .characters
+                    .get_mut(w.guid)
+                    .filter(|_| r.audience.admits(w.guid))
+                else {
+                    continue;
+                };
+                quests::end_rumour(c, &quests, &notes, events);
+                changed.push(w.guid);
+            }
+            for guid in changed {
+                self.save(guid);
+            }
+        }
     }
 
     fn dev_teleport_served(&mut self, host: &dyn Host) {

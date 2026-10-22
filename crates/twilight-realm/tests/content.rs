@@ -626,3 +626,12 @@ fn the_flagged_bosses_in_mobs_toml_are_exactly_the_spec_s() {
         assert!(!flagged.contains(&name), "{name} must not be a boss");
     }
 }
+
+#[test]
+fn rumours_toml_has_its_rank_factors() {
+    let table = toml_table("rumours.toml");
+    let factors = table["rank_factor"].as_table().unwrap();
+    for key in ["normal", "elite", "boss"] {
+        assert!(factors[key].as_float().unwrap() > 0.0, "{key}");
+    }
+}

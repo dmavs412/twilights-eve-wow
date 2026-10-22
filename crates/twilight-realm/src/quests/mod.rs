@@ -415,6 +415,46 @@ pub(crate) fn explore(c: &mut Char, events: &mut Vec<SessionEvent>) -> bool {
     any
 }
 
+/// A system chat line.
+pub(crate) fn system_line(text: String) -> SessionEvent {
+    SessionEvent::Chat(ChatMessage {
+        chat_type: CHAT_MSG_SYSTEM,
+        language: 0,
+        sender_guid: 0,
+        target_guid: 0,
+        sender_name: None,
+        channel: None,
+        text,
+        chat_tag: 0,
+    })
+}
+
+/// A Rumour ended: its `quests` in the log fail and leave it, and its `notes` leave the bags.
+pub(crate) fn end_rumour(
+    c: &mut Char,
+    quests: &[u32],
+    notes: &[u32],
+    events: &mut Vec<SessionEvent>,
+) {
+    for &id in quests {
+        if let Some(i) = c.quests.active.iter().position(|a| a.id == id) {
+            let a = c.quests.active.remove(i);
+            events.push(SessionEvent::QuestFailed {
+                quest_id: id,
+                timed: true,
+            });
+            events.push(values(c.guid, &slot_pairs(a.slot, None)));
+        }
+    }
+    for &note in notes {
+        let held = carried(c, note);
+        if held > 0 {
+            crate::equipment::take(c, note, held, events);
+        }
+    }
+    refresh(c, events);
+}
+
 /// A creature is in combat with the character: every active quest with a `fail_if_seen` text
 /// fails, and its text goes to the character once.
 pub(crate) fn seen(c: &mut Char, events: &mut Vec<SessionEvent>) {

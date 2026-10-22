@@ -101,6 +101,8 @@ impl RealmCommand {
 struct Done {
     /// The log or the purse changed: save.
     save: bool,
+    /// The quest handed in, for a Rumour to count.
+    handed_in: Option<u32>,
 }
 
 impl Realm {
@@ -196,10 +198,14 @@ impl Realm {
                             events.push(SessionEvent::QuestDetail(details(npc, next)));
                         }
                         done.save = true;
+                        done.handed_in = Some(q.id);
                     }
                 }
             }
             _ => {}
+        }
+        if let Some(quest) = done.handed_in {
+            self.rumours.hand_in(w.guid, quest);
         }
         if done.save {
             let guid = w.guid;
