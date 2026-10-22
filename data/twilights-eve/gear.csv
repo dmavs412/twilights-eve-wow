@@ -432,10 +432,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 900103,Vineyard Poacher's Bow,Ranged,Bow,,Uncommon,10,7,,2,,,,,,8,12,Physical,2.4,,,,,,,,,,,2,,,,20712,800,Pickup,40,,Wood,,,,,,,,
 900104,Garrick's Vintner Cleaver,Weapon,Axe,2H,Uncommon,10,7,3,,1,,,,,18,27,Physical,3.2,,,,,,,,,,,4,,,,19226,830,Pickup,60,Back,Metal,,,,,,,,
 900105,Ashworth's Black Psalter,Offhand,Held,,Rare,10,8,,,,1,,,,,,,,,,,,,,,,,4,3,,,,23322,900,Pickup,,Hip,,,,,,,,,
-900200,Novice's Woolen Vest,Chest,Cloth,,Common,3,1,,,1,,,26,,,,,,,,,,,,,,,,1,,,,16575,10,,40,,Cloth,,,,,,,,
-900201,Novice's Leather Jerkin,Chest,Leather,,Common,3,1,,,1,,,45,,,,,,,,,,,,,,,,1,,,,8662,8,,45,,Leather,,,,,,,,
-900202,Novice's Chain Vest,Chest,Mail,,Common,3,1,,,1,,,77,,,,,,,,,,,,,,,,1,,,,977,14,,55,,Chain,,,,,,,,
-900203,Novice's Plate Vest,Chest,Plate,,Common,3,1,,,1,,,96,,,,,,,,,,,,,,,,1,,,,26654,14,,55,,Plate,,,,,,,,
+900200,Novice's Woolen Vest,Chest,Cloth,,Common,3,1,,,1,,,26,,,,,,,,,,,,,,,,1,,,,14499,10,,40,,Cloth,,,15061,14423,14497,9907,14498,14525
+900201,Novice's Leather Jerkin,Chest,Leather,,Common,3,1,,,1,,,45,,,,,,,,,,,,,,,,1,,,,2106,8,,45,,Leather,,,,17170,17068,17126,22972,22973
+900202,Novice's Chain Vest,Chest,Mail,,Common,3,1,,,1,,,77,,,,,,,,,,,,,,,,1,,,,1019,14,,55,,Chain,,,,13617,6871,6864,697,6869
+900203,Novice's Plate Vest,Chest,Plate,,Common,3,1,,,1,,,96,,,,,,,,,,,,,,,,1,,,,27356,14,,55,,Plate,25839,27361,,27362,27358,27359,27360,27357
 900204,Militia Claymore,Weapon,Sword,2H,Common,3,1,,,,,,,,8,12,Physical,3.2,,,,,,,,,,,0,,,,20117,13,,25,Back,Metal,,,,,,,,
 900205,Militia Shortsword,Weapon,Sword,1H,Common,3,1,,,,,,,,3,5,Physical,2.0,,,,,,,,,,,0,,,,1546,11,,20,Side,Metal,,,,,,,,
 900206,Militia Dirk,Weapon,Dagger,1H,Common,3,1,,,,,,,,3,4,Physical,1.6,,,,,,,,,,,0,,,,20534,10,,18,Side,Metal,,,,,,,,
@@ -454,10 +454,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 900219,Band of Endurance,Ring,Misc,,Common,3,1,,,1,,,,,,,,,,,,,,,,,,,1,,,,9833,10,,,,,,,,,,,,
 900220,Band of Wit,Ring,Misc,,Common,3,1,,,,1,,,,,,,,,,,,,,,,,,1,,,,9833,10,,,,,,,,,,,,
 900221,Band of Calm,Ring,Misc,,Common,3,1,,,,,1,,,,,,,,,,,,,,,,,1,,,,9833,10,,,,,,,,,,,,
-900300,Vineyard Wool Tunic,Chest,Cloth,,Uncommon,6,1,,,1,1,,60,,,,,,,,,,,,,,,,2,,,,16585,65,Equip,45,,Cloth,,,,,,,,
-900301,Trapper's Leather Jerkin,Chest,Leather,,Uncommon,7,1,,2,1,,,123,,,,,,,,,,,,,,,,3,,,,16883,81,Equip,55,,Leather,,,,,,,,
-900302,Echo Ridge Chain Vest,Chest,Mail,,Uncommon,8,1,2,,1,,,240,,,,,,,,,,,,,,,,3,,,,2967,137,Equip,65,,Chain,,,,,,,,
-900303,Stonefield Plate Vest,Chest,Plate,,Uncommon,8,1,2,,1,,,300,,,,,,,,,,,,,,,,3,,,,27340,137,Equip,65,,Plate,,,,,,,,
+900300,Vineyard Wool Tunic,Chest,Cloth,,Uncommon,6,1,,,1,1,,60,,,,,,,,,,,,,,,,2,,,,14499,65,Equip,45,,Cloth,,,15061,14423,14497,9907,14498,14525
+900301,Trapper's Leather Jerkin,Chest,Leather,,Uncommon,7,1,,2,1,,,123,,,,,,,,,,,,,,,,3,,,,2106,81,Equip,55,,Leather,,,,17170,17068,17126,22972,22973
+900302,Echo Ridge Chain Vest,Chest,Mail,,Uncommon,8,1,2,,1,,,240,,,,,,,,,,,,,,,,3,,,,1019,137,Equip,65,,Chain,,,,13617,6871,6864,697,6869
+900303,Stonefield Plate Vest,Chest,Plate,,Uncommon,8,1,2,,1,,,300,,,,,,,,,,,,,,,,3,,,,27356,137,Equip,65,,Plate,25839,27361,,27362,27358,27359,27360,27357
 900304,Tunneler's Maul,Weapon,Mace,2H,Uncommon,7,1,2,,1,,,,,13,19,Physical,3.2,,,,,,,,,,,3,,,,19612,295,Equip,50,Back,Wood,,,,,,,,
 900305,Thug's Cutlass,Weapon,Sword,1H,Uncommon,6,1,1,,,,,,,5,7,Physical,2.0,,,,,,,,,,,1,,,,8279,193,Equip,40,Side,Metal,,,,,,,,
 900306,Spider Fang,Weapon,Dagger,1H,Uncommon,8,1,,2,,,,,,5,7,Physical,1.5,,,,,,,,,,,2,,,,20435,201,Equip,25,Side,Metal,,,,,,,,
@@ -475,10 +475,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 900318,Scribe's Pendant,Amulet,Misc,,Uncommon,8,1,,,,2,1,,,,,,,,,,,,,,,,,3,,,,9854,408,Equip,,,,,,,,,,,
 900319,Scribe's Band,Ring,Misc,,Uncommon,6,1,,,1,1,,,,,,,,,,,,,,,,,,2,,,,9836,240,Equip,,,,,,,,,,,
 900320,Scribe's Signet,Ring,Misc,,Uncommon,7,1,,,,1,1,,,,,,,,,,,,,,,,,2,,,,10530,280,Equip,,,,,,,,,,,
-900400,Abbey Scholar's Robe,Chest,Cloth,,Uncommon,10,1,,,1,2,1,100,,,,,,,,,,,,,,,,4,,,,14499,119,Pickup,45,,Cloth,,,,,,,,
-900401,Abbey Warden's Jerkin,Chest,Leather,,Uncommon,10,1,,2,2,,,175,,,,,,,,,,,,,,,,4,,,,30171,115,Pickup,55,,Leather,,,,,,,,
-900402,Abbey Guard's Chain Vest,Chest,Mail,,Uncommon,10,1,2,,2,,,300,,,,,,,,,,,,,,,,4,,,,22677,189,Pickup,65,,Chain,,,,,,,,
-900403,Abbey Guard's Plate Vest,Chest,Plate,,Uncommon,10,1,2,,2,,,375,,,,,,,,,,,,,,,,4,,,,26811,189,Pickup,65,,Plate,,,,,,,,
+900400,Abbey Scholar's Robe,Chest,Cloth,,Uncommon,10,1,,,1,2,1,100,,,,,,,,,,,,,,,,4,,,,16560,119,Pickup,45,,Cloth,,,23104,16566,16562,16565,16561,16563
+900401,Abbey Warden's Jerkin,Chest,Leather,,Uncommon,10,1,,2,2,,,175,,,,,,,,,,,,,,,,4,,,,14278,115,Pickup,55,,Leather,,,,14282,14475,16914,14476,14474
+900402,Abbey Guard's Chain Vest,Chest,Mail,,Uncommon,10,1,2,,2,,,300,,,,,,,,,,,,,,,,4,,,,977,189,Pickup,65,,Chain,,6914,,6904,6905,6902,687,6903
+900403,Abbey Guard's Plate Vest,Chest,Plate,,Uncommon,10,1,2,,2,,,375,,,,,,,,,,,,,,,,4,,,,27340,189,Pickup,65,,Plate,27347,27346,,27345,27341,27342,27344,27343
 900404,Padfoot's Cutlass,Weapon,Sword,1H,Uncommon,10,1,1,,1,,,,,8,12,Physical,2.0,,,,,,,,,,,2,,,,8279,322,Equip,40,Side,Metal,,,,,,,,
 900405,Padfoot's Buckler,Offhand,Shield,,Uncommon,10,1,,,2,,,135,3,,,,,,,,,,,,,,,2,,,,2052,290,Equip,55,Shield,Metal,,,,,,,,
 900406,Vintner's Locket,Amulet,Misc,,Uncommon,10,1,3,,1,,,,,,,,,,,,,,,,,,,4,,,,6539,510,Equip,,,,,,,,,,,
@@ -492,10 +492,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 900414,Idol-Bearer's Band,Ring,Misc,,Uncommon,10,1,2,,1,,,,,,,,,,,,,,,,,,,3,,,,9834,400,Pickup,,,,,,,,,,,
 900415,Idol-Bearer's Loop,Ring,Misc,,Uncommon,10,1,,2,1,,,,,,,,,,,,,,,,,,,3,,,,3666,400,Pickup,,,,,,,,,,,
 900416,Idol-Bearer's Circle,Ring,Misc,,Uncommon,10,1,,,,2,1,,,,,,,,,,,,,,,,,3,,,,10530,400,Pickup,,,,,,,,,,,
-900500,Abbot's Vestments,Chest,Cloth,,Rare,10,1,,,1,3,2,115,,,,,,,,,,,,,,,,6,,,,9889,357,Equip,75,,Cloth,,,,,,,,
-900501,Corrupted Brother's Jerkin,Chest,Leather,,Rare,10,1,,4,2,,,201,,,,,,,,,,,,,,,,6,,,,28375,345,Equip,90,,Leather,,,,,,,,
-900502,Abbey Vanguard's Hauberk,Chest,Mail,,Rare,10,1,4,,2,,,345,,,,,,,,,,,,,,,,6,,,,12632,567,Equip,105,,Chain,,,,,,,,
-900503,Abbey Vanguard's Breastplate,Chest,Plate,,Rare,10,1,3,,3,,,431,,,,,,,,,,,,,,,,6,,,,28694,567,Equip,105,,Plate,,,,,,,,
+900500,Abbot's Vestments,Chest,Cloth,,Rare,10,1,,,1,3,2,115,,,,,,,,,,,,,,,,6,,,,14646,357,Equip,75,,Cloth,16825,14589,15175,14647,16651,14648,14644,14645
+900501,Corrupted Brother's Jerkin,Chest,Leather,,Rare,10,1,,4,2,,,201,,,,,,,,,,,,,,,,6,,,,28430,345,Equip,90,,Leather,,17195,,28427,28428,28177,28431,16981
+900502,Abbey Vanguard's Hauberk,Chest,Mail,,Rare,10,1,4,,2,,,345,,,,,,,,,,,,,,,,6,,,,25801,567,Equip,105,,Chain,15517,25806,,25800,25802,25803,25805,25804
+900503,Abbey Vanguard's Breastplate,Chest,Plate,,Rare,10,1,3,,3,,,431,,,,,,,,,,,,,,,,6,,,,26811,567,Equip,105,,Plate,27182,26818,,26815,26812,26810,26814,26813
 900504,Bell-Ringer's Greatmace,Weapon,Mace,2H,Rare,10,1,4,,2,,,,,22,32,Physical,3.2,,,,,,,,,,,6,,,,19622,1260,Equip,75,Back,Wood,,,,,,,,
 900505,Disciple's Sacrificial Blade,Weapon,Sword,1H,Rare,10,1,2,,1,,,,,10,14,Physical,2.0,,,,,,,,,,,3,,,,8274,966,Equip,65,Side,Metal,,,,,,,,
 900506,Twilight Kris,Weapon,Dagger,1H,Rare,10,1,,3,,,,,,7,11,Physical,1.5,,,,,,,,,,,3,,,,20590,753,Equip,50,Side,Metal,,,,,,,,

@@ -12,9 +12,9 @@ use twilight_realm::RealmCommand;
 
 /// The Basic Warrior's starter Chest: the Recruit's pants on the legs, the boots on the feet.
 const RECRUITS_MAIL_VEST: u32 = 900000;
-/// Its look templates (`content/gear.toml`).
-const LOOK_LEGS: u32 = 990000;
-const LOOK_FEET: u32 = 990001;
+/// Its look templates' displays: the Recruit's Pants and Boots.
+const DISPLAY_LEGS: u32 = 9892;
+const DISPLAY_FEET: u32 = 10141;
 /// A Chest with no Wardrobe: bare everywhere else.
 const KNITTED_TUNIC: u32 = 795;
 
@@ -36,6 +36,25 @@ fn shown(events: &[SessionEvent], me: u64) -> Vec<(u8, u32)> {
         .collect()
 }
 
+/// The look template (`content/gear.toml`, entries 990000 up) that shows `display`. The sheet
+/// numbers the templates by body part and display, so a new Chest moves them.
+fn look(display: u32) -> u32 {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("content/gear.toml");
+    let gear: toml::Table = std::fs::read_to_string(path).unwrap().parse().unwrap();
+    let found: Vec<u32> = gear["item"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|t| {
+            let entry = u32::try_from(t["entry"].as_integer()?).ok()?;
+            let shown = u32::try_from(t["display_id"].as_integer()?).ok()?;
+            (entry >= 990_000 && shown == display).then_some(entry)
+        })
+        .collect();
+    assert_eq!(found.len(), 1, "one look shows display {display}");
+    found[0]
+}
+
 /// Whether any hidden part has an item guid in its inventory field.
 fn any_hidden_guid(events: &[SessionEvent], me: u64) -> bool {
     let me = descriptor(events, me);
@@ -47,11 +66,22 @@ fn any_hidden_guid(events: &[SessionEvent], me: u64) -> bool {
 #[test]
 fn login_shows_the_worn_chests_wardrobe() {
     let (_, me, events) = warrior_with(1, 0, &[(CHEST, RECRUITS_MAIL_VEST, 1)]);
-    assert_eq!(shown(&events, me), [(LEGS, LOOK_LEGS), (FEET, LOOK_FEET)]);
+    assert_eq!(
+        shown(&events, me),
+        [(LEGS, look(DISPLAY_LEGS)), (FEET, look(DISPLAY_FEET))]
+    );
     assert!(
         !any_hidden_guid(&events, me),
         "no item stands behind a look"
     );
+}
+
+/// The first Dungeon Chest (Look C1, the Twilight family) has all eight parts.
+#[test]
+fn a_dungeon_chest_shows_a_full_body_look() {
+    let (_, me, events) = warrior_with(1, 0, &[(CHEST, 900500, 1)]);
+    let parts: Vec<u8> = shown(&events, me).into_iter().map(|(s, _)| s).collect();
+    assert_eq!(parts, HIDDEN);
 }
 
 #[test]
@@ -84,7 +114,10 @@ fn unequipping_the_chest_bares_the_body_and_wearing_it_again_dresses_it() {
         dst: CHEST,
     });
     events.extend(drain(&mut realm));
-    assert_eq!(shown(&events, me), [(LEGS, LOOK_LEGS), (FEET, LOOK_FEET)]);
+    assert_eq!(
+        shown(&events, me),
+        [(LEGS, look(DISPLAY_LEGS)), (FEET, look(DISPLAY_FEET))]
+    );
     assert!(!any_hidden_guid(&events, me));
 }
 
@@ -126,7 +159,10 @@ fn the_select_screen_doll_wears_the_wardrobe() {
 #[test]
 fn the_look_templates_answer_the_item_query_and_are_never_gear() {
     let mut realm = realm();
-    for (entry, display, inventory_type) in [(LOOK_LEGS, 9892, 7), (LOOK_FEET, 10141, 8)] {
+    for (entry, display, inventory_type) in [
+        (look(DISPLAY_LEGS), 9892, 7),
+        (look(DISPLAY_FEET), 10141, 8),
+    ] {
         realm.handle(RealmCommand::ItemQuery { entry });
         let info = drain(&mut realm)
             .into_iter()
