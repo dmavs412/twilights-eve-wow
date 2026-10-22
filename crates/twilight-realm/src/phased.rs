@@ -726,6 +726,28 @@ impl Dungeon {
         }
     }
 
+    /// World `[x, y]` points at most `step` yards apart over the footprint's boxes and its
+    /// stops' boxes, edges included.
+    pub(crate) fn footprint_points(&self, step: f32) -> Vec<[f32; 2]> {
+        use crate::world::closed::steps;
+        let (sin, cos) = self.yaw.to_radians().sin_cos();
+        let [ox, oy, _] = self.origin;
+        let mut out = Vec::new();
+        for b in &self.footprint {
+            for lx in steps(b.x, step) {
+                for ly in steps(b.y, step) {
+                    out.push([ox + lx * cos - ly * sin, oy + lx * sin + ly * cos]);
+                }
+            }
+        }
+        for s in &self.stop {
+            for x in steps(s.x, step) {
+                out.extend(steps(s.y, step).into_iter().map(|y| [x, y]));
+            }
+        }
+        out
+    }
+
     /// `position` in the building's frame.
     fn local(&self, [x, y, z]: [f32; 3]) -> [f32; 3] {
         let (sin, cos) = self.yaw.to_radians().sin_cos();

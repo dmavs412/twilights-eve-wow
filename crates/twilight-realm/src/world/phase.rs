@@ -24,6 +24,9 @@ const HIDE_DRIFT_YD: f32 = 1.0;
 /// teleport, which the wall lets through.
 const WALK_STEP_YD: f32 = 40.0;
 
+/// Seconds of realm time between two "You cannot go that way." messages to one character.
+pub(super) const CLOSED_HUSH_SECS: f32 = 3.0;
+
 /// What a click on a GameObject did with a Phased Dungeon's door.
 pub(crate) enum DoorClick {
     /// The GameObject is no door.
@@ -134,6 +137,34 @@ impl InWorld {
             return false;
         }
         self.snap_client(from, orientation, events);
+        true
+    }
+
+    /// The player's report of a step from `from` to `to`: if it ends on a Closed Zone's chunk
+    /// (ADR 0015), the client is snapped back to `from`, told so at most once every
+    /// [`CLOSED_HUSH_SECS`], and the step is refused. Unlike [`Self::walled_off`], it holds the
+    /// dead too and any step length; only the realm's own teleports pass. Whether the step was
+    /// refused.
+    pub(crate) fn closed_off(
+        &mut self,
+        from: [f32; 3],
+        to: [f32; 3],
+        orientation: f32,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        if self.teleport_pending()
+            || self.transferring()
+            || !super::closed::closed_at(self.map, to[0], to[1])
+        {
+            return false;
+        }
+        self.snap_client(from, orientation, events);
+        if self.closed_hush <= 0.0 {
+            self.closed_hush = CLOSED_HUSH_SECS;
+            events.push(SessionEvent::Notification {
+                text: "You cannot go that way.".to_string(),
+            });
+        }
         true
     }
 

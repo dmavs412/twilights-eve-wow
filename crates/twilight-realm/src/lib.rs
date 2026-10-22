@@ -100,6 +100,7 @@ pub use dev::DevMultipliers;
 pub use objects::{ObjectKind, ObjectSpec, CHEST_DISPLAY};
 pub use phased::{test_grounds_start, GameObjectUse, UseKind};
 pub use save::{SaveError, Storage, SAVE_VERSION};
+pub use world::closed::{closed_at, placed, Placed};
 
 /// What the realm asks of whoever runs it. Coordinates are WoW's (`x` north, `y` west, `z` up).
 pub trait Host {
@@ -1228,7 +1229,8 @@ impl Realm {
                 if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
                     let walled = from.is_some_and(|from| {
-                        w.walled_off(from, position, orientation, &mut self.events)
+                        w.closed_off(from, position, orientation, &mut self.events)
+                            || w.walled_off(from, position, orientation, &mut self.events)
                     });
                     if !walled && from.is_none_or(|from| w.moved(from, position, &mut self.events))
                     {

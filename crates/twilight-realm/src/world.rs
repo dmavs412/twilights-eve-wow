@@ -4,6 +4,7 @@
 mod advance;
 mod call_for_help;
 mod cast;
+pub(crate) mod closed;
 mod creature_cast;
 mod hearth;
 mod power;
@@ -354,6 +355,8 @@ pub(crate) struct InWorld {
     marked_applied: bool,
     /// Where the Marked victor's map flag was last put.
     victor_flag: Option<[f32; 2]>,
+    /// Seconds until a refused step onto a Closed Zone is told again.
+    closed_hush: f32,
 }
 
 impl InWorld {
@@ -477,6 +480,7 @@ impl InWorld {
             marked_shown: false,
             marked_applied: c.marked.is_some(),
             victor_flag: None,
+            closed_hush: 0.0,
         };
         events.push(w.player_create(c));
         w
@@ -684,6 +688,7 @@ impl InWorld {
         events: &mut Vec<SessionEvent>,
     ) -> Ticked {
         let mut ticked = Ticked::default();
+        self.closed_hush = (self.closed_hush - dt).max(0.0);
         if self.transfer {
             return ticked;
         }

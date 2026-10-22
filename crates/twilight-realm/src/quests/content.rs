@@ -60,7 +60,7 @@ pub(crate) struct Explore {
     pub(crate) place: String,
     /// The map the spot is on: Kalimdor unless the content says otherwise.
     #[serde(default = "kalimdor")]
-    map: u32,
+    pub(crate) map: u32,
     /// WoW `[x, y]`.
     pub(crate) position: [f32; 2],
     /// Yards.
