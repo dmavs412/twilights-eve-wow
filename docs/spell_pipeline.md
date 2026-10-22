@@ -112,7 +112,9 @@ test Calling may still write `class = N` for both, the vanilla class's table and
 `tools/twilights-eve/build_spells.py` reads the CSV, checks that every `talent_id`, `icon_id` and
 `source_tab_id` is a row in `Talent.dbc`, `SpellIcon.dbc` and `TalentTab.dbc` through `tools/twilights-eve/wowdata.py`, and writes both outputs in one pass. It
 exits non-zero, writing nothing, on an id the DBCs do not hold, an id that is not a whole number,
-a duplicate rank within a Calling, a `realm_cost` below `client_cost`, a missing or unknown
+a duplicate rank within a Calling, a `realm_cost` below `client_cost`, a visible skill row whose
+`client_cooldown_ms` differs from its `realm_cooldown_ms` (an empty cell is 0) unless its `notes`
+say `cooldowns differ` and why, since the client draws the sweep from its own value, a missing or unknown
 `class` or rows of one Calling that disagree on it, an unknown effect kind or malformed params on
 a modelled row (an `energize` without a known `power`, an `add_combo_points` without a positive
 whole `amount`, a `per_combo` that is not a formula block), a half-filled spellmod, or a talent

@@ -251,6 +251,22 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
     def test_realm_cost_below_client_cost_fails(self):
         self.assert_fails([{**STRIKE, "realm_cost": "10"}], "below client_cost")
 
+    def test_a_skill_whose_client_and_realm_cooldowns_differ_fails(self):
+        self.assert_fails([{**STRIKE, "client_cooldown_ms": "0", "realm_cooldown_ms": "15000"}],
+                          "client_cooldown_ms 0 differs from realm_cooldown_ms 15000")
+
+    def test_a_skill_whose_notes_say_the_cooldowns_differ_builds(self):
+        done, _ = self.run_build([{**STRIKE, "client_cooldown_ms": "0", "realm_cooldown_ms": "15000",
+                                   "notes": "cooldowns differ: the realm alone holds it"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+    def test_the_committed_bulwark_charge_has_a_15_s_cooldown(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            patch = json.load(f)
+        charge = next(s for s in patch["spells"] if s["spell_id"] == 1000005)
+        self.assertEqual(charge["fields"]["cooldown_ms"], 15000)
+
     def test_every_calling_has_one_callings_csv_row_and_the_csv_names_no_other(self):
         self.profiles = {"vanguard": None}
         self.assert_fails([STRIKE], "vanguard: no callings.csv row")

@@ -1097,6 +1097,14 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
         realm, client = number(row["realm_cost"], where), number(row["client_cost"], where)
         if realm < client:
             raise BuildError(f"{where}: realm_cost {realm} is below client_cost {client}")
+    # The client draws the cooldown sweep from its own value, so a skill whose two cooldowns
+    # differ shows no sweep, or the wrong one, unless its notes say the difference is meant.
+    if row["kind"] == "skill" and not hidden and "cooldowns differ" not in row["notes"]:
+        client = number(row["client_cooldown_ms"] or "0", f"{where} client_cooldown_ms")
+        realm = number(row["realm_cooldown_ms"] or "0", f"{where} realm_cooldown_ms")
+        if client != realm:
+            raise BuildError(f"{where}: client_cooldown_ms {client} differs from realm_cooldown_ms {realm}; "
+                             "set them equal, or write 'cooldowns differ' and the reason in notes")
 
     effects = []
     for i in range(1, MAX_EFFECTS + 1):
