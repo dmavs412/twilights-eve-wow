@@ -13,6 +13,7 @@ use std::sync::OnceLock;
 use serde::Deserialize;
 
 use crate::items;
+use crate::rng::Rng;
 use crate::tables::MAX_LEVEL;
 
 /// An item's quality (`ItemQualities`), which colours its name.
@@ -44,6 +45,41 @@ impl Quality {
             Self::Rare => Some(Self::Uncommon),
         }
     }
+}
+
+/// A creature's loot roll as data: `chance` percent to drop one entry of `one_of`.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Roll {
+    pub chance: u8,
+    pub one_of: Vec<u32>,
+}
+
+impl Roll {
+    /// Panics when the roll is not content-valid: `chance` 1 to 100, `one_of` not empty and
+    /// every entry an item. `what` names the owner in the message.
+    pub(crate) fn check(&self, what: &str) {
+        assert!(
+            (1..=100).contains(&self.chance),
+            "{what}: a roll's chance is {}, not 1 to 100",
+            self.chance
+        );
+        assert!(!self.one_of.is_empty(), "{what}: a roll has no items");
+        for &item in &self.one_of {
+            assert!(
+                items::template(item).is_some(),
+                "{what}: a roll names item {item}, which the content does not have"
+            );
+        }
+    }
+}
+
+/// The item of the first roll in `rolls` that succeeds. Each roll in order draws `0..100`; a draw
+/// under its `chance` returns one of its `one_of` drawn evenly, and none succeeding gives `None`.
+pub(crate) fn first_roll(rolls: &[Roll], rng: &mut Rng) -> Option<u32> {
+    rolls.iter().find_map(|roll| {
+        (rng.below(100) < u32::from(roll.chance))
+            .then(|| roll.one_of[rng.below(roll.one_of.len() as u32) as usize])
+    })
 }
 
 /// The quality roll is out of this.
@@ -250,4 +286,70 @@ pub fn boss_band(level: u8, blues: &[(u32, u8)]) -> Vec<u32> {
     required().max().map_or_else(Vec::new, |highest| {
         within(highest.saturating_sub(BOSS_BAND - 1), highest)
     })
+}
+
+#[cfg(test)]
+mod roll_tests {
+    use super::*;
+
+    fn creature_rolls(guid: u32) -> &'static [Roll] {
+        crate::phased::rolls(crate::content::EASTERN_KINGDOMS, guid)
+    }
+
+    #[test]
+    fn a_chance_of_100_always_drops_one_of_its_items_and_none_drops_nothing() {
+        let sure = [Roll {
+            chance: 100,
+            one_of: vec![7, 8],
+        }];
+        let mut rng = Rng::new(1);
+        assert!((0..50).all(|_| matches!(first_roll(&sure, &mut rng), Some(7 | 8))));
+        assert_eq!(first_roll(&[], &mut rng), None);
+    }
+
+    #[test]
+    fn the_abbots_200_kills_each_drop_one_of_22_and_the_epic_comes_3_to_25_times() {
+        let rolls = creature_rolls(780015);
+        let epic = 900599;
+        let mut epics = 0;
+        for seed in 0..200 {
+            let item = first_roll(rolls, &mut Rng::new(seed)).expect("the Abbot always drops");
+            assert!(
+                item == epic || rolls[1].one_of.contains(&item),
+                "item {item} is not among his 22"
+            );
+            epics += usize::from(item == epic);
+        }
+        assert_eq!(rolls.iter().flat_map(|r| &r.one_of).count(), 22);
+        assert!((3..=25).contains(&epics), "{epics} epics in 200 kills");
+    }
+
+    #[test]
+    fn a_disciple_drops_one_of_the_21_about_1_percent_of_the_time() {
+        let rolls = creature_rolls(780010);
+        assert_eq!(rolls.iter().flat_map(|r| &r.one_of).count(), 21);
+        let drops = (0..1000)
+            .filter_map(|seed| first_roll(rolls, &mut Rng::new(seed)))
+            .inspect(|item| assert!(rolls[0].one_of.contains(item)))
+            .count();
+        assert!((3..=25).contains(&drops), "{drops} drops in 1000 kills");
+    }
+
+    #[test]
+    fn padfoot_drops_one_of_his_five_half_the_time_and_never_two() {
+        let rolls = &crate::mobs::template(103).expect("Padfoot").rolls;
+        let five = [900404, 900405, 900406, 900407, 900408];
+        let drops = (0..200)
+            .filter_map(|seed| first_roll(rolls, &mut Rng::new(seed)))
+            .inspect(|item| assert!(five.contains(item)))
+            .count();
+        assert!((70..=130).contains(&drops), "{drops} drops in 200 kills");
+    }
+
+    #[test]
+    fn vurx_rolls_one_of_his_five() {
+        let rolls = &crate::mobs::template(96002).expect("Vurx").rolls;
+        assert_eq!(rolls.len(), 1);
+        assert_eq!(rolls[0].one_of, [900409, 900410, 900411, 900412, 900413]);
+    }
 }

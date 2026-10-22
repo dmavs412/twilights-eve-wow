@@ -98,6 +98,9 @@ pub(crate) struct Template {
     /// (`rules::respawn`): a named elite's longer wait.
     #[serde(default)]
     pub(crate) respawn_secs: Option<f32>,
+    /// Loot rolls on top of the ordinary one: the first to succeed adds one of its items.
+    #[serde(default)]
+    pub(crate) rolls: Vec<crate::rules::loot::Roll>,
     /// The Creature Spells it casts in a fight (`content/creature_spells.toml` keys).
     #[serde(default)]
     pub(crate) spells: Vec<String>,
@@ -172,6 +175,7 @@ impl Template {
             flags_extra: 0,
             shield: false,
             respawn_secs: None,
+            rolls: Vec::new(),
             spells,
             equip,
             inert: false,
@@ -510,6 +514,11 @@ pub(crate) fn content() -> &'static Mobs {
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
             .expect("content/wailing_caverns.toml parses");
         template.extend(dungeon.template);
+        for t in &template {
+            for roll in &t.rolls {
+                roll.check(&t.name);
+            }
+        }
         for s in dungeon.spawn {
             let Some(t) = template.iter().find(|t| t.entry == s.entry) else {
                 continue;

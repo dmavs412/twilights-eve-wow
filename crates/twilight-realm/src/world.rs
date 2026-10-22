@@ -87,6 +87,8 @@ pub(crate) struct Kill {
     pub(crate) boss: bool,
     /// Items the corpse always holds (a Phased Dungeon creature's `drop`).
     pub(crate) drops: &'static [u32],
+    /// Loot rolls: the first to succeed adds one item to each looter's corpse.
+    pub(crate) rolls: &'static [crate::rules::loot::Roll],
     /// The corpse's money, rolled once for everyone; 0 for a kill made alone, whose loot rolls
     /// its own.
     pub(crate) money: u32,
@@ -1295,11 +1297,12 @@ impl InWorld {
         let mob = &mut self.mobs[i];
         let entry = mob.template.entry;
         let boss = Self::is_boss(mob);
-        let drops = match mob.spawn_row() {
-            Some(spawn) if matches!(spawn.phase, crate::phased::Phase::Dungeon(_)) => {
-                crate::phased::drops(spawn.map, spawn.guid)
-            }
-            _ => &[],
+        let (drops, rolls) = match mob.spawn_row() {
+            Some(spawn) if matches!(spawn.phase, crate::phased::Phase::Dungeon(_)) => (
+                crate::phased::drops(spawn.map, spawn.guid),
+                crate::phased::rolls(spawn.map, spawn.guid),
+            ),
+            _ => (&[][..], &mob.template.rolls[..]),
         };
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
@@ -1354,6 +1357,7 @@ impl InWorld {
             elite,
             boss,
             drops,
+            rolls,
             money,
             position: mob.position,
             bounty: mob.bounty,
@@ -1424,6 +1428,9 @@ impl InWorld {
         }
         loot.items
             .extend(k.drops.iter().map(|&item| Some((item, 1))));
+        if let Some(item) = crate::rules::loot::first_roll(k.rolls, rng) {
+            loot.items.push(Some((item, 1)));
+        }
         // A Bounty Hunter pays everyone it credits in Blood Coin; its owner's Bounty Rank rises,
         // or, if it was the victor they are Marked by, the mark lifts (the realm lifts it too when
         // someone else kills it).

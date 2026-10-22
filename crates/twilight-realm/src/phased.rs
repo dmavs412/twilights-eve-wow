@@ -136,6 +136,9 @@ pub(crate) struct Creature {
     /// Items its corpse always holds, on top of the rolled loot.
     #[serde(default)]
     pub(crate) drop: Vec<u32>,
+    /// Loot rolls on top of the ordinary one: the first to succeed adds one of its items.
+    #[serde(default)]
+    pub(crate) rolls: Vec<crate::rules::loot::Roll>,
     /// It starts each life asleep.
     #[serde(default)]
     pub(crate) asleep: bool,
@@ -759,6 +762,13 @@ pub(crate) fn content() -> &'static [Dungeon] {
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
+        .inspect(|d: &Dungeon| {
+            for c in &d.creature {
+                for roll in &c.rolls {
+                    roll.check(&format!("creature {}", c.guid));
+                }
+            }
+        })
         .collect()
     })
 }
@@ -784,6 +794,16 @@ pub(crate) fn drops(map: u32, guid: u32) -> &'static [u32] {
         .flat_map(|d| &d.creature)
         .find(|c| c.guid == guid)
         .map_or(&[], |c| &c.drop)
+}
+
+/// The loot rolls a Phased Dungeon creature of `guid` on `map` makes; none for any other.
+pub(crate) fn rolls(map: u32, guid: u32) -> &'static [crate::rules::loot::Roll] {
+    content()
+        .iter()
+        .filter(|d| d.map == map)
+        .flat_map(|d| &d.creature)
+        .find(|c| c.guid == guid)
+        .map_or(&[], |c| &c.rolls)
 }
 
 /// The Phase of a character standing at `position` on `map`.
@@ -971,10 +991,13 @@ mod tests {
             .iter()
             .any(|s| s == "abbot_heal"));
         assert!(abbot.on_health.iter().any(|call| call.pct == 50));
-        assert!(!abbot.drop.is_empty(), "the Abbot drops no blue");
-        for &item in &abbot.drop {
-            let blue = crate::items::template(item).expect("the Abbot's drop is an item");
-            assert_eq!(blue.quality, 3);
+        assert!(abbot.drop.is_empty() && !abbot.rolls.is_empty());
+        for &item in abbot.rolls.iter().flat_map(|r| &r.one_of) {
+            let gear = crate::items::template(item).expect("the Abbot's roll names an item");
+            assert!(
+                matches!(gear.quality, 3 | 4),
+                "item {item} is not Rare or Epic"
+            );
         }
     }
 
@@ -984,6 +1007,14 @@ mod tests {
         assert!(matches!(q.giver, crate::quests::content::Giver::Npc(952)));
         assert_eq!(q.after.ids(), [94002]);
         assert_eq!(q.kill, [(96005, 1)]);
+    }
+
+    #[test]
+    fn the_idol_the_abbey_and_the_abbots_fall_each_offer_their_choices() {
+        let choices = |id| crate::quests::content::quest(id).unwrap().choices.clone();
+        assert_eq!(choices(94001), [900414, 900415, 900416]);
+        assert_eq!(choices(94002), [900400, 900401, 900402, 900403]);
+        assert_eq!(choices(94004), [900520, 900521, 900522]);
     }
 
     #[test]

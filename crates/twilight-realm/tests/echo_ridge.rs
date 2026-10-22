@@ -218,7 +218,7 @@ fn the_idol_chain_from_vurx_to_brother_neals() {
         "taken: {blob}"
     );
 
-    // McBride takes it in for XP only, and opens Into the Abbey.
+    // McBride takes it in for XP and a choice of three, and opens Into the Abbey.
     let seen = stand(
         &mut realm,
         [MCBRIDE_AT[0] + 2.0, MCBRIDE_AT[1], 82.0],
@@ -234,7 +234,7 @@ fn the_idol_chain_from_vurx_to_brother_neals() {
     let c = completed(&done).expect("McBride takes the idol");
     assert_eq!(c.xp, hunting_reward_xp(9, 7));
     assert_eq!(c.money, 0);
-    assert!(c.items.is_empty(), "XP only: {:?}", c.items);
+    assert_eq!(c.items, [(900414, 1)], "the first of its three choices");
     assert!(done
         .iter()
         .any(|e| matches!(e, SessionEvent::QuestDetail(d) if d.quest_id == INTO_THE_ABBEY)));

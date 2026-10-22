@@ -14,6 +14,7 @@ giver = "item"
 ender = 197
 level = 7
 title = "The Idol in the Deep"
+choices = [900414, 900415, 900416]
 objectives = "Bring the Smoldering Twilight Idol to Marshal McBride on the steps of Northshire Abbey."
 details = "The idol is warm to the touch, though no fire burns near it. Twilight wax has run down its sides and hardened, and something pulses beneath it like a slow heartbeat. The kobold who carried it wasn't digging for candles. Someone was paying him to dig. Marshal McBride at the Abbey should see this."
 progress = "You've got something there, haven't you? Out with it."
@@ -32,6 +33,7 @@ ender = 952
 after = 94001
 level = 8
 title = "Into the Abbey"
+choices = [900400, 900401, 900402, 900403]
 objectives = "Find Brother Neals inside Northshire Abbey."
 details = "We lost the Abbey in a night, and we never knew how. Now we do. Brother Neals was at vespers when it fell, and no one has seen him come out. If any of the brothers lived, he'd be the one stubborn enough to. Go in through the front doors, find him, and find out what's down there."
 progress = "-"
@@ -62,7 +64,7 @@ choices = [900101, 900102, 900103, 900104]
 
 # ── The Abbot's Fall (#94) ───────────────────────────────────────────────────────────────────
 #
-# Brother Neals's next step after Into the Abbey: the Abbot at the top of the bell tower. XP only.
+# Brother Neals's next step after Into the Abbey: the Abbot at the top of the bell tower. Pays one of three choices.
 [[quest]]
 id = 94004
 kind = "story"
@@ -71,6 +73,7 @@ ender = 952
 after = 94002
 level = 10
 title = "The Abbot's Fall"
+choices = [900520, 900521, 900522]
 objectives = "Kill Abbot Ashworth at the top of the bell tower, then return to Brother Neals."
 details = "It was the Abbot who let them in. He opened the undercroft himself and stood with them while they chanted. Now he keeps the bell tower, and when he rings that bell the brothers he turned come running. Climb the stair and end him. I'll pray for what's left of him."
 progress = "The bell. I keep hearing the bell."

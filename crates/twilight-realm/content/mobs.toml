@@ -608,6 +608,7 @@ detection_range = 18.0
 [[template]]
 entry = 96002
 name = "Geomancer Vurx"
+rolls = [{ chance = 50, one_of = [900409, 900410, 900411, 900412, 900413] }]
 creature_type = 7
 rank = 1
 display_id = 163
@@ -633,6 +634,7 @@ spells = ["corruption_creature"]
 [[template]]
 entry = 103
 name = "Garrick Padfoot"
+rolls = [{ chance = 50, one_of = [900404, 900405, 900406, 900407, 900408] }]
 creature_type = 7
 rank = 1
 display_id = 2073

@@ -121,6 +121,7 @@ orientation = 1.2
 [[creature]]
 guid = 780010
 entry = 96004
+rolls = [{ chance = 1, one_of = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 900509, 900510, 900105, 900511, 900512, 900513, 900514, 900515, 900516, 900517, 900518, 900519] }]
 level = 9
 position = [-8858.0, -188.3, 82.4]
 orientation = 3.6
@@ -137,6 +138,7 @@ orientation = 1.2
 [[creature]]
 guid = 780012
 entry = 96004
+rolls = [{ chance = 1, one_of = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 900509, 900510, 900105, 900511, 900512, 900513, 900514, 900515, 900516, 900517, 900518, 900519] }]
 level = 9
 position = [-8909.1, -209.0, 82.4]
 orientation = 1.2
@@ -153,18 +155,19 @@ orientation = 1.2
 [[creature]]
 guid = 780014
 entry = 96004
+rolls = [{ chance = 1, one_of = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 900509, 900510, 900105, 900511, 900512, 900513, 900514, 900515, 900516, 900517, 900518, 900519] }]
 level = 9
 position = [-8894.4, -182.6, 104.4]
 orientation = 2.0
 
-# The Abbot: the top of the bell tower, model (-2, 5, 34). He always drops Ashworth's Black Psalter.
+# The Abbot: the top of the bell tower, model (-2, 5, 34). He rolls the Abbey's gear (`rolls`).
 [[creature]]
 guid = 780015
 entry = 96005
 level = 10
 position = [-8897.0, -172.9, 116.4]
 orientation = 5.0
-drop = [900105]
+rolls = [{ chance = 5, one_of = [900599] }, { chance = 100, one_of = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 900509, 900510, 900105, 900511, 900512, 900513, 900514, 900515, 900516, 900517, 900518, 900519] }]
 
 # The bell: at half health he rings it, and two Corrupted Brothers come up the tower stair below
 # him, model (6, -7, 22).
