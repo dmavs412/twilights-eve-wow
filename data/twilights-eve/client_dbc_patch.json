@@ -5102,13 +5102,13 @@
    "fields": {
     "power_type": 3,
     "name": "Sinister Strike",
-    "cost": 40.0,
+    "cost": 35.0,
     "gcd_ms": 1000,
     "interrupt_flags": 0,
     "dmg_class": 2,
     "school": 0,
     "prevention_type": 2,
-    "description": "Your primary 40-Energy combo point builder: weapon damage plus a bonus, and 1 combo point.",
+    "description": "Your primary 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point.",
     "implicit_targets": [
      6,
      0
@@ -5119,8 +5119,8 @@
     "dbc_effects": [
      {
       "effect": 58,
-      "base": 3.9,
-      "per_level": 1.7
+      "base": 8,
+      "per_level": 2
      },
      {
       "effect": 3,
@@ -5179,7 +5179,7 @@
     "dmg_class": 2,
     "school": 0,
     "prevention_type": 2,
-    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point.",
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals.",
     "implicit_targets": [
      6,
      0
@@ -5210,7 +5210,7 @@
     "power_type": 3,
     "name": "Evasion",
     "cost": 0.0,
-    "cooldown_ms": 300000,
+    "cooldown_ms": 120000,
     "gcd_ms": 0,
     "interrupt_flags": 0,
     "dmg_class": 0,
@@ -5448,7 +5448,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 6%.",
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 10%.",
     "implicit_targets": [
      1,
      0
@@ -5476,7 +5476,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 12%.",
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 20%.",
     "implicit_targets": [
      1,
      0
@@ -5504,7 +5504,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 18%.",
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 30%.",
     "implicit_targets": [
      1,
      0
@@ -5532,7 +5532,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 24%.",
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 40%.",
     "implicit_targets": [
      1,
      0
@@ -5560,7 +5560,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 30%.",
+    "description": "Increases the critical strike damage bonus of your combo-generating abilities by 50%.",
     "implicit_targets": [
      1,
      0
@@ -6387,7 +6387,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 3% and increases your maximum Energy by 10.",
+    "description": "Increases your passive movement speed by 3% and increases your maximum Energy by 5.",
     "implicit_targets": [
      1,
      0
@@ -6420,7 +6420,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 6% and increases your maximum Energy by 20.",
+    "description": "Increases your passive movement speed by 6% and increases your maximum Energy by 10.",
     "implicit_targets": [
      1,
      0
@@ -6453,7 +6453,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 9% and increases your maximum Energy by 30.",
+    "description": "Increases your passive movement speed by 9% and increases your maximum Energy by 15.",
     "implicit_targets": [
      1,
      0
@@ -6486,7 +6486,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 12% and increases your maximum Energy by 40.",
+    "description": "Increases your passive movement speed by 12% and increases your maximum Energy by 20.",
     "implicit_targets": [
      1,
      0
@@ -6519,7 +6519,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your passive movement speed by 15% and increases your maximum Energy by 50.",
+    "description": "Increases your passive movement speed by 15% and increases your maximum Energy by 25.",
     "implicit_targets": [
      1,
      0
@@ -6552,7 +6552,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Landing a killing blow that yields experience instantly heals you for 5% of your total health and refunds 20 Energy.",
+    "description": "Landing a killing blow that yields experience instantly heals you for 10% of your total health and refunds 40 Energy.",
     "implicit_targets": [
      1,
      0
@@ -6580,7 +6580,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Landing a killing blow that yields experience instantly heals you for 10% of your total health and refunds 40 Energy.",
+    "description": "Landing a killing blow that yields experience instantly heals you for 15% of your total health and refunds 60 Energy.",
     "implicit_targets": [
      1,
      0
@@ -6608,7 +6608,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Landing a killing blow that yields experience instantly heals you for 15% of your total health and refunds 60 Energy.",
+    "description": "Landing a killing blow that yields experience instantly heals you for 20% of your total health and refunds 80 Energy.",
     "implicit_targets": [
      1,
      0
@@ -13059,8 +13059,8 @@
    "calling": "cutthroat",
    "key": "ruthlessness",
    "tab": "The Tracker",
-   "row": 1,
-   "column": 2,
+   "row": 3,
+   "column": 1,
    "tab_id": 905,
    "talent_id": 1000053,
    "rank_spell_ids": [
@@ -13103,8 +13103,8 @@
    "calling": "cutthroat",
    "key": "executioners_toll",
    "tab": "The Tracker",
-   "row": 3,
-   "column": 1,
+   "row": 1,
+   "column": 2,
    "tab_id": 905,
    "talent_id": 1000056,
    "rank_spell_ids": [

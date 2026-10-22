@@ -7,6 +7,7 @@ use benilla_protocol::{CharEnumItem, ObjectFields, SessionEvent};
 
 use crate::callings;
 use crate::characters::Char;
+use crate::content::Calling;
 use crate::fields::*;
 use crate::inventory::{bag_size, Inventory, Item, Pos, PACK, PLAYER_BAG};
 use crate::items;
@@ -637,8 +638,13 @@ pub(crate) fn may_leave(c: &Char, at: Pos) -> bool {
 /// [`equip_slots`] for `c`: a Calling that dual wields (the Cutthroat's `weapons` list it) also
 /// wears a one-hander in the off hand. Every other Calling keeps one-handers in the main hand.
 fn slots_for(c: &Char, inventory_type: u32) -> Vec<u8> {
+    slots_for_calling(c.calling, inventory_type)
+}
+
+/// [`slots_for`] for a Calling before it has a character, in the order an item tries them.
+pub(crate) fn slots_for_calling(calling: Calling, inventory_type: u32) -> Vec<u8> {
     let mut slots = equip_slots(inventory_type).to_vec();
-    if inventory_type == ONE_HAND && callings::of(c.calling).dual_wields() {
+    if inventory_type == ONE_HAND && callings::of(calling).dual_wields() {
         slots.push(gear::SLOT_OFF_HAND);
     }
     slots

@@ -202,7 +202,7 @@ fn ticks(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
 }
 
 #[test]
-fn lethality_raises_sinister_strike_crits_by_thirty_percent() {
+fn lethality_raises_sinister_strike_crits_by_fifty_percent() {
     for seed in FIRST_SEED..FIRST_SEED + SEEDS {
         let (mut realm, _, mob, mut view) = cutthroat(seed, &[]);
         let Some(bare) = cast_all(&mut realm, &mut view, &mob, &[*SINISTER_STRIKE]) else {
@@ -215,9 +215,9 @@ fn lethality_raises_sinister_strike_crits_by_thirty_percent() {
         let trained = cast_all(&mut realm, &mut view, &mob, &[*SINISTER_STRIKE]).unwrap();
         let (more, crit) = hit(&trained, *SINISTER_STRIKE).unwrap();
         assert!(crit, "the same swing crits");
-        // 200% of the hit becomes 260%.
+        // 200% of the hit becomes 250%.
         assert!(
-            more.abs_diff(plain * 13 / 10) <= 1,
+            more.abs_diff(plain * 15 / 10) <= 1,
             "seed {seed:#x}: crit {plain} -> {more}"
         );
         return;
@@ -262,9 +262,9 @@ fn flurry_of_blades_cuts_sinister_strikes_cost() {
         assert_eq!(refusal(&events, *SINISTER_STRIKE), None);
         100 - view.fields(me).unit_power(ENERGY).unwrap()
     };
-    assert_eq!(cost(&[]), 40);
-    assert_eq!(cost(&[(*FLURRY_OF_BLADES, 1)]), 38);
-    assert_eq!(cost(&[(*FLURRY_OF_BLADES, 3)]), 34);
+    assert_eq!(cost(&[]), 35);
+    assert_eq!(cost(&[(*FLURRY_OF_BLADES, 1)]), 33);
+    assert_eq!(cost(&[(*FLURRY_OF_BLADES, 3)]), 29);
 }
 
 /// Builds `points` on a camp mob, casts Rupture, and watches it for half a minute: each tick's
@@ -320,19 +320,23 @@ fn the_sheets_rupture_totals_hold_near_the_old_ones() {
     let tick_ms = n(&params["tick_ms"]);
     let base = n(&params["duration_ms"]);
     let stretch = n(&params["duration_per_combo"]["base"]);
-    let tick = n(&params["tick"]["base"]);
-    let more = n(&params["per_combo"]["base"]);
+    // At level 10, where the retune was balanced.
+    let at_10 = |v: &serde_json::Value| n(&v["base"]) + 10.0 * v["per_level"].as_f64().unwrap();
+    let tick = at_10(&params["tick"]);
+    let more = params["per_combo"]["base"].as_f64().unwrap()
+        + 10.0 * params["per_combo"]["per_level"].as_f64().unwrap();
     let total = |p: f64| ((base + stretch * p) / tick_ms).floor() * (tick + more * p);
-    // Today's totals: 52 for one point and 146 for five.
+    // 52 for one point and 140 for five, which the leech heals back 40% of.
     assert!(
         (48.0..=60.0).contains(&total(1.0)),
         "1 point: {}",
         total(1.0)
     );
     assert!(
-        (136.0..=156.0).contains(&total(5.0)),
+        (130.0..=150.0).contains(&total(5.0)),
         "5 points: {}",
         total(5.0)
     );
+    assert_eq!(params["leech_pct"].as_f64(), Some(40.0));
     assert!(total(1.0) < total(5.0));
 }

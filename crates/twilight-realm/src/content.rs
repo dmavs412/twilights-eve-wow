@@ -54,10 +54,10 @@ pub(crate) fn starting_inventory(calling: Calling) -> crate::inventory::Inventor
         let Some(t) = crate::items::template(entry) else {
             continue;
         };
-        let slot = crate::rules::gear::equip_slots(t.inventory_type)
-            .first()
-            .copied();
-        if let Some(slot) = slot.filter(|s| inventory.get(*s).is_none()) {
+        let slot = crate::equipment::slots_for_calling(calling, t.inventory_type)
+            .into_iter()
+            .find(|s| inventory.get(*s).is_none());
+        if let Some(slot) = slot {
             let item = inventory.new_item(entry, t.stack_size());
             inventory.put(slot, item);
         }
@@ -134,3 +134,20 @@ pub(crate) fn display_id(race: u8, gender: u8) -> u32 {
 /// player's reaction to another from the two templates. The mob spawns are hostile to either
 /// side, so mobs react the same to every race.
 pub(crate) const PLAYER_FACTION_TEMPLATE: u32 = 2;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::rules::gear::{SLOT_MAIN_HAND, SLOT_OFF_HAND};
+
+    const WORN_AXE: u32 = 37;
+    const SIMPLE_DAGGER: u32 = 4565;
+
+    #[test]
+    fn a_new_cutthroat_wears_the_axe_in_the_main_hand_and_the_dagger_in_the_off_hand() {
+        let inventory = starting_inventory(Calling::from_key("cutthroat").unwrap());
+        let worn = |slot| inventory.get(slot).map(|i| i.entry);
+        assert_eq!(worn(SLOT_MAIN_HAND), Some(WORN_AXE));
+        assert_eq!(worn(SLOT_OFF_HAND), Some(SIMPLE_DAGGER));
+    }
+}

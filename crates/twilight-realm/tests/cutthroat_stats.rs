@@ -127,7 +127,7 @@ fn predators_step_raises_run_speed_and_max_energy() {
     assert!((run_bare - RUN).abs() < 1e-3, "{run_bare}");
     assert!((run - RUN * 1.15).abs() < 1e-3, "{run}");
     assert_eq!(bare.fields(me).unit_max_power(ENERGY), Some(100));
-    assert_eq!(trained.fields(me2).unit_max_power(ENERGY), Some(150));
+    assert_eq!(trained.fields(me2).unit_max_power(ENERGY), Some(125));
 }
 
 /// The first white swing's damage at the mob, with `talents`, from the same seed; 0 for a miss.

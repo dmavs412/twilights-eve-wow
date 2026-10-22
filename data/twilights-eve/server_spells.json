@@ -7531,7 +7531,7 @@
     "rank": 1,
     "status": "placeholder",
     "spell_id": 1000191,
-    "realm_cost": 40,
+    "realm_cost": 35,
     "realm_range_max": 5,
     "target": "enemy",
     "school": "physical",
@@ -7556,9 +7556,10 @@
       "kind": "weapon_strike",
       "params": {
        "weapon": "normal",
+       "weapon_pct": 110,
        "bonus": {
-        "base": 3.9,
-        "per_level": 1.7,
+        "base": 8,
+        "per_level": 2,
         "per_ap": 0
        }
       },
@@ -7572,7 +7573,7 @@
       "realm_only": false
      }
     ],
-    "description": "Your primary 40-Energy combo point builder: weapon damage plus a bonus, and 1 combo point."
+    "description": "Your primary 35-Energy combo point builder: 110% weapon damage plus a bonus, and 1 combo point."
    },
    {
     "key": "eviscerate",
@@ -7609,8 +7610,8 @@
         "per_level": 1.3
        },
        "per_combo": {
-        "base": 5.2,
-        "per_level": 1.0
+        "base": 6,
+        "per_level": 1.3
        },
        "melee_hit_table": true
       },
@@ -7656,18 +7657,19 @@
         "per_level": 0
        },
        "tick": {
-        "base": 13,
-        "per_level": 0.15
+        "base": 6,
+        "per_level": 0.6
        },
        "per_combo": {
-        "base": 1,
-        "per_level": 0.1
-       }
+        "base": 0.6,
+        "per_level": 0.05
+       },
+       "leech_pct": 40
       },
       "realm_only": false
      }
     ],
-    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point."
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals."
    },
    {
     "key": "evasion",
@@ -7676,7 +7678,7 @@
     "status": "placeholder",
     "spell_id": 1000194,
     "realm_cost": 0,
-    "realm_cooldown_ms": 300000,
+    "realm_cooldown_ms": 120000,
     "target": "self",
     "school": "physical",
     "prevention": "pacify",
@@ -7995,13 +7997,13 @@
          {
           "kind": "skill_crit_damage_pct",
           "params": {
-           "pct": 6,
+           "pct": 10,
            "builders": true
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 6%."
+        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 10%."
        },
        {
         "key": "lethality",
@@ -8029,13 +8031,13 @@
          {
           "kind": "skill_crit_damage_pct",
           "params": {
-           "pct": 12,
+           "pct": 20,
            "builders": true
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 12%."
+        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 20%."
        },
        {
         "key": "lethality",
@@ -8063,13 +8065,13 @@
          {
           "kind": "skill_crit_damage_pct",
           "params": {
-           "pct": 18,
+           "pct": 30,
            "builders": true
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 18%."
+        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 30%."
        },
        {
         "key": "lethality",
@@ -8097,13 +8099,13 @@
          {
           "kind": "skill_crit_damage_pct",
           "params": {
-           "pct": 24,
+           "pct": 40,
            "builders": true
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 24%."
+        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 40%."
        },
        {
         "key": "lethality",
@@ -8131,13 +8133,13 @@
          {
           "kind": "skill_crit_damage_pct",
           "params": {
-           "pct": 30,
+           "pct": 50,
            "builders": true
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 30%."
+        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 50%."
        }
       ]
      },
@@ -8993,8 +8995,8 @@
       "key": "ruthlessness",
       "name": "Ruthlessness",
       "seat": {
-       "row": 1,
-       "column": 2
+       "row": 3,
+       "column": 1
       },
       "exceptional": false,
       "ranks": [
@@ -9269,12 +9271,12 @@
          {
           "kind": "max_power",
           "params": {
-           "amount": 10
+           "amount": 5
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your passive movement speed by 3% and increases your maximum Energy by 10."
+        "description": "Increases your passive movement speed by 3% and increases your maximum Energy by 5."
        },
        {
         "key": "predators_step",
@@ -9309,12 +9311,12 @@
          {
           "kind": "max_power",
           "params": {
-           "amount": 20
+           "amount": 10
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your passive movement speed by 6% and increases your maximum Energy by 20."
+        "description": "Increases your passive movement speed by 6% and increases your maximum Energy by 10."
        },
        {
         "key": "predators_step",
@@ -9349,12 +9351,12 @@
          {
           "kind": "max_power",
           "params": {
-           "amount": 30
+           "amount": 15
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your passive movement speed by 9% and increases your maximum Energy by 30."
+        "description": "Increases your passive movement speed by 9% and increases your maximum Energy by 15."
        },
        {
         "key": "predators_step",
@@ -9389,12 +9391,12 @@
          {
           "kind": "max_power",
           "params": {
-           "amount": 40
+           "amount": 20
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your passive movement speed by 12% and increases your maximum Energy by 40."
+        "description": "Increases your passive movement speed by 12% and increases your maximum Energy by 20."
        },
        {
         "key": "predators_step",
@@ -9429,12 +9431,12 @@
          {
           "kind": "max_power",
           "params": {
-           "amount": 50
+           "amount": 25
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your passive movement speed by 15% and increases your maximum Energy by 50."
+        "description": "Increases your passive movement speed by 15% and increases your maximum Energy by 25."
        }
       ]
      },
@@ -9442,8 +9444,8 @@
       "key": "executioners_toll",
       "name": "Executioner's Toll",
       "seat": {
-       "row": 3,
-       "column": 1
+       "row": 1,
+       "column": 2
       },
       "exceptional": false,
       "ranks": [
@@ -9475,13 +9477,13 @@
           "params": {
            "on": "kill",
            "yields_xp": true,
-           "heal_pct": 5,
-           "energize": 20
+           "heal_pct": 10,
+           "energize": 40
           },
           "realm_only": false
          }
         ],
-        "description": "Landing a killing blow that yields experience instantly heals you for 5% of your total health and refunds 20 Energy."
+        "description": "Landing a killing blow that yields experience instantly heals you for 10% of your total health and refunds 40 Energy."
        },
        {
         "key": "executioners_toll",
@@ -9511,13 +9513,13 @@
           "params": {
            "on": "kill",
            "yields_xp": true,
-           "heal_pct": 10,
-           "energize": 40
+           "heal_pct": 15,
+           "energize": 60
           },
           "realm_only": false
          }
         ],
-        "description": "Landing a killing blow that yields experience instantly heals you for 10% of your total health and refunds 40 Energy."
+        "description": "Landing a killing blow that yields experience instantly heals you for 15% of your total health and refunds 60 Energy."
        },
        {
         "key": "executioners_toll",
@@ -9547,13 +9549,13 @@
           "params": {
            "on": "kill",
            "yields_xp": true,
-           "heal_pct": 15,
-           "energize": 60
+           "heal_pct": 20,
+           "energize": 80
           },
           "realm_only": false
          }
         ],
-        "description": "Landing a killing blow that yields experience instantly heals you for 15% of your total health and refunds 60 Energy."
+        "description": "Landing a killing blow that yields experience instantly heals you for 20% of your total health and refunds 80 Energy."
        }
       ]
      },
