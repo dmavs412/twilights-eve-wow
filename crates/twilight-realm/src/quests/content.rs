@@ -6,7 +6,7 @@ use std::sync::{OnceLock, RwLock};
 
 use serde::Deserialize;
 
-use crate::{items, rules};
+use crate::{items, rules, rumours};
 
 /// A collect objective: `count` of `item`, dropping `from` these creatures at `chance` percent
 /// while the quest wants more.
@@ -417,8 +417,10 @@ impl Quest {
                 rules::quest::hunting_reward_xp(player, self.level)
             }
             Kind::Repeatable => rules::quest::reward_xp(player),
-            // The Grade's XP is the next ticket's.
-            Kind::Advancement | Kind::Once | Kind::Rumour => 0,
+            Kind::Rumour => {
+                rules::quest::hunting_reward_xp(player, self.level) * rumours::xp_factor(self.id)
+            }
+            Kind::Advancement | Kind::Once => 0,
         }
     }
 
@@ -618,10 +620,12 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
         let hub = crate::hub::npcs()
             .iter()
             .any(|n| n.entry == npc && n.gives_quests());
-        // A Rumour's giver is made at run time: any friendly template will do.
+        // A Rumour's giver is made at run time: any friendly template will do. Its ender may be
+        // a Hub quest giver instead (a calling Rumour ends at a trainer; `rumours` checks which).
         if q.kind == Kind::Rumour {
+            let made = !hub && crate::mobs::template(npc).is_some_and(|t| t.friendly);
             assert!(
-                !hub && crate::mobs::template(npc).is_some_and(|t| t.friendly),
+                made || (hub && q.ender == Some(npc)),
                 "rumour quest {} names {npc}, who is no friendly creature template or is a Hub NPC",
                 q.id,
             );

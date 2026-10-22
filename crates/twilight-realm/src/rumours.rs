@@ -63,7 +63,6 @@ pub(crate) struct Def {
     pub(crate) id: u32,
     #[allow(dead_code)]
     pub(crate) name: String,
-    #[allow(dead_code)]
     pub(crate) grade: Grade,
     #[serde(default)]
     pub(crate) kind: Class,
@@ -82,6 +81,70 @@ pub(crate) struct Def {
     pub(crate) quests: Vec<u32>,
     #[serde(default)]
     timer_min: Option<u32>,
+    #[serde(default)]
+    pub(crate) spawn: Vec<Spawn>,
+}
+
+/// A spot a step's spawn may stand at.
+#[derive(Deserialize)]
+pub(crate) struct Spot {
+    pub(crate) x: f32,
+    pub(crate) y: f32,
+}
+
+/// A thing to use that a step spawns.
+#[derive(Deserialize)]
+pub(crate) struct UseObject {
+    pub(crate) entry: u32,
+    pub(crate) display: u32,
+}
+
+/// What accepting a step makes for the Audience: `count` of a creature or of a use object at one
+/// of `points`, rolled once.
+#[derive(Deserialize)]
+pub(crate) struct Spawn {
+    pub(crate) quest: u32,
+    #[serde(default)]
+    pub(crate) creature: Option<u32>,
+    #[serde(default)]
+    pub(crate) object: Option<UseObject>,
+    #[serde(default = "one")]
+    pub(crate) count: u32,
+    /// The creature's level, when not the giver's.
+    #[serde(default)]
+    pub(crate) level: Option<u8>,
+    pub(crate) points: Vec<Spot>,
+}
+
+fn one() -> u32 {
+    1
+}
+
+/// The quest XP multiplier by Grade.
+#[derive(Deserialize, Clone, Copy)]
+struct GradeXp {
+    easy: u32,
+    hard: u32,
+    deadly: u32,
+}
+
+impl Default for GradeXp {
+    fn default() -> Self {
+        Self {
+            easy: 1,
+            hard: 2,
+            deadly: 3,
+        }
+    }
+}
+
+/// Where the chest's items come from.
+#[derive(Deserialize)]
+struct ChestPools {
+    /// Names the green pool; only `"northshire_world"` exists.
+    green: String,
+    /// The Dungeon pool: gear rows.
+    blue: Vec<u32>,
 }
 
 impl Def {
@@ -134,6 +197,11 @@ struct File {
     #[serde(default)]
     rank_factor: RankFactor,
     #[serde(default)]
+    grade_xp: GradeXp,
+    /// Required in the shipped file; a test's added Rumours leave it out.
+    #[serde(default)]
+    chest_pools: Option<ChestPools>,
+    #[serde(default)]
     rumour: Vec<Def>,
 }
 
@@ -142,6 +210,22 @@ fn shipped() -> &'static File {
     FILE.get_or_init(|| {
         let file: File = toml::from_str(include_str!("../content/rumours.toml"))
             .expect("content/rumours.toml parses");
+        let pools = file
+            .chest_pools
+            .as_ref()
+            .expect("content/rumours.toml has a [chest_pools] table");
+        assert_eq!(
+            pools.green, "northshire_world",
+            "[chest_pools] green names a pool the realm does not have"
+        );
+        assert!(
+            pools.blue.len() >= 2
+                && pools
+                    .blue
+                    .iter()
+                    .all(|&e| crate::items::template(e).is_some()),
+            "[chest_pools] blue needs two or more gear rows"
+        );
         let all: Vec<&Def> = file.rumour.iter().collect();
         for d in &file.rumour {
             check(d, &all);
@@ -269,8 +353,18 @@ fn check(d: &Def, all: &[&Def]) {
             q.kind == Kind::Rumour,
             "quest {qid} of Rumour {id} is no rumour quest"
         );
+        // A calling Rumour's last quest may be handed in to the trainer who gives the Advancement
+        // into `calling.to`.
+        let trainer = d.kind == Class::Calling
+            && qid == *d.quests.last().expect("checked above")
+            && d.calling.as_ref().is_some_and(|span| {
+                quest_content::quests().iter().any(|a| {
+                    a.advancement.as_ref().is_some_and(|adv| adv.to == span.to)
+                        && a.giver.npc() == Some(q.ender())
+                })
+            });
         assert!(
-            q.giver == Giver::Npc(d.giver) && q.ender() == d.giver,
+            q.giver == Giver::Npc(d.giver) && (q.ender() == d.giver || trainer),
             "quest {qid} of Rumour {id} must have the Rumour's giver as giver and ender"
         );
         assert_eq!(
@@ -279,6 +373,36 @@ fn check(d: &Def, all: &[&Def]) {
             "quest {qid} of Rumour {id} must come after the step before it"
         );
         after = vec![qid];
+    }
+    for s in &d.spawn {
+        assert!(
+            d.quests.contains(&s.quest),
+            "a spawn of Rumour {id} names quest {}, which is not one of its quests",
+            s.quest
+        );
+        assert!(
+            s.creature.is_some() != s.object.is_some(),
+            "a spawn of Rumour {id} needs exactly one of `creature` and `object`"
+        );
+        assert!(
+            !s.points.is_empty() && s.count > 0,
+            "a spawn of Rumour {id} needs points and a count"
+        );
+        if let Some(entry) = s.creature {
+            assert!(
+                crate::mobs::template(entry).is_some(),
+                "a spawn of Rumour {id} names creature {entry}, which is no template"
+            );
+        }
+        if let Some(o) = &s.object {
+            let wanted = quest_content::quest(s.quest)
+                .is_some_and(|q| q.use_object.iter().any(|&(e, _)| e == o.entry));
+            assert!(
+                wanted,
+                "a spawn of Rumour {id} makes object {}, which quest {} does not ask to use",
+                o.entry, s.quest
+            );
+        }
     }
     let mine = |o: &&Def| o.id != id && o.quests.iter().any(|q| d.quests.contains(q));
     assert!(
@@ -304,11 +428,78 @@ pub(crate) struct Rumour {
     /// How many steps someone has handed in so far, at most.
     pub(crate) step: usize,
     pub(crate) handed_in: HashSet<u64>,
+    /// The step quests whose spawns were made already.
+    spawned: HashSet<u32>,
+    /// The guids of the chests its hand-ins made.
+    chests: Vec<u64>,
 }
 
 impl Rumour {
+    pub(crate) fn chests(&self) -> &[u64] {
+        &self.chests
+    }
+
     fn done(&self) -> bool {
         self.audience.0.iter().all(|g| self.handed_in.contains(g))
+    }
+}
+
+/// The GameObject entry of a Rumour's chest. It has no template: the display is the chest's.
+pub(crate) const CHEST_ENTRY: u32 = 980199;
+
+/// What the realm makes on its next tick, for the instance at an index of the list.
+pub(crate) enum Order {
+    /// The spawns of step quest `quest`, which someone accepted first.
+    Step { rumour: usize, quest: u32 },
+    /// A chest for `guid` alone, who handed in the last step.
+    Chest { rumour: usize, guid: u64 },
+}
+
+/// The XP multiplier of the Rumour that owns quest `quest`: its Grade's, or 1 for a calling
+/// Rumour or a quest that is none's.
+pub(crate) fn xp_factor(quest: u32) -> u32 {
+    let table = shipped().grade_xp;
+    match defs().into_iter().find(|d| d.quests.contains(&quest)) {
+        Some(d) if d.kind == Class::Ordinary => match d.grade {
+            Grade::Easy => table.easy,
+            Grade::Hard => table.hard,
+            Grade::Deadly => table.deadly,
+        },
+        _ => 1,
+    }
+}
+
+/// Draws `n` distinct entries of `pool`.
+fn draw(pool: &[u32], n: usize, rng: &mut Rng) -> Vec<u32> {
+    let mut left = pool.to_vec();
+    (0..n.min(left.len()))
+        .map(|_| left.swap_remove(rng.below(left.len() as u32) as usize))
+        .collect()
+}
+
+/// What a Rumour's chest holds for a giver of `level`: an easy one a World green, a hard one a
+/// Dungeon blue and a deadly one two. A calling Rumour has no chest.
+pub(crate) fn chest_items(d: &Def, level: u8, rng: &mut Rng) -> Vec<u32> {
+    let blue = || {
+        &shipped()
+            .chest_pools
+            .as_ref()
+            .expect("checked on load")
+            .blue[..]
+    };
+    if d.kind == Class::Calling {
+        return Vec::new();
+    }
+    match d.grade {
+        Grade::Easy => draw(
+            crate::rules::loot::northshire_greens(
+                level.min(crate::rules::loot::NORTHSHIRE_MAX_LEVEL),
+            ),
+            1,
+            rng,
+        ),
+        Grade::Hard => draw(blue(), 1, rng),
+        Grade::Deadly => draw(blue(), 2, rng),
     }
 }
 
@@ -326,6 +517,7 @@ pub(crate) struct Found {
 #[derive(Default)]
 pub(crate) struct Rumours {
     list: Vec<Rumour>,
+    orders: Vec<Order>,
 }
 
 impl Rumours {
@@ -400,6 +592,8 @@ impl Rumours {
                 ends: d.minutes().map(|m| now + f64::from(m) * 60.0),
                 step: 0,
                 handed_in: HashSet::new(),
+                spawned: HashSet::new(),
+                chests: Vec::new(),
             });
             return Some(Found {
                 audience,
@@ -426,7 +620,7 @@ impl Rumours {
             (Class::Calling, Some(span)) => {
                 c.calling.key() == span.from
                     && crate::world::at_tier_cap(c)
-                    && !d.quests.iter().all(|q| c.quests.completed.contains(q))
+                    && !c.finished_rumours.contains(&d.id)
             }
             _ => self.held(c.guid) < ACTIVE_LIMIT,
         }
@@ -447,9 +641,25 @@ impl Rumours {
         self.list[i].giver_guid = guid;
     }
 
-    /// Notes that `guid` handed in quest `quest`; the last step of a Rumour counts them in.
-    pub(crate) fn hand_in(&mut self, guid: u64, quest: u32) {
-        for r in &mut self.list {
+    /// Notes that `c` accepted quest `quest`; the first of an Audience to take a step has its
+    /// spawns made.
+    pub(crate) fn accept(&mut self, guid: u64, quest: u32) {
+        for (i, r) in self.list.iter_mut().enumerate() {
+            let Some(d) = def(r.id) else { continue };
+            if d.spawn.iter().any(|s| s.quest == quest)
+                && r.audience.admits(guid)
+                && r.spawned.insert(quest)
+            {
+                self.orders.push(Order::Step { rumour: i, quest });
+            }
+        }
+    }
+
+    /// Notes that `c` handed in quest `quest`. The last step of a Rumour counts them in: an
+    /// ordinary one orders them a chest, a calling one is written on their save.
+    pub(crate) fn hand_in(&mut self, c: &mut Char, quest: u32) {
+        let guid = c.guid;
+        for (i, r) in self.list.iter_mut().enumerate() {
             let Some(d) = def(r.id) else { continue };
             let Some(step) = d.quests.iter().position(|&q| q == quest) else {
                 continue;
@@ -458,17 +668,35 @@ impl Rumours {
                 continue;
             }
             r.step = r.step.max(step + 1);
-            if step + 1 == d.quests.len() {
-                r.handed_in.insert(guid);
+            if step + 1 == d.quests.len() && r.handed_in.insert(guid) {
+                match d.kind {
+                    Class::Ordinary => self.orders.push(Order::Chest { rumour: i, guid }),
+                    Class::Calling if !c.finished_rumours.contains(&d.id) => {
+                        c.finished_rumours.push(d.id);
+                        c.finished_rumours.sort_unstable();
+                    }
+                    Class::Calling => {}
+                }
             }
         }
     }
 
-    /// Removes and returns the instances that ended: the timer ran out or everyone handed in.
-    pub(crate) fn take_ended(&mut self, now: f64) -> Vec<Rumour> {
-        let (ended, kept) = std::mem::take(&mut self.list)
-            .into_iter()
-            .partition(|r| r.done() || r.ends.is_some_and(|t| now >= t));
+    /// The orders the accepts and hand-ins since the last call left.
+    pub(crate) fn take_orders(&mut self) -> Vec<Order> {
+        std::mem::take(&mut self.orders)
+    }
+
+    /// Records that chest `guid` was made for the instance at `i`.
+    pub(crate) fn add_chest(&mut self, i: usize, guid: u64) {
+        self.list[i].chests.push(guid);
+    }
+
+    /// Removes and returns the instances that ended: the timer ran out, or everyone handed in
+    /// and no chest it made (`holds` says which) still has items in it.
+    pub(crate) fn take_ended(&mut self, now: f64, holds: impl Fn(u64) -> bool) -> Vec<Rumour> {
+        let (ended, kept) = std::mem::take(&mut self.list).into_iter().partition(|r| {
+            (r.done() && !r.chests.iter().any(|&g| holds(g))) || r.ends.is_some_and(|t| now >= t)
+        });
         self.list = kept;
         ended
     }

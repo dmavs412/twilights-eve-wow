@@ -1559,9 +1559,22 @@ impl Realm {
             // times out.
             self.rumours.set_giver(i, guid.unwrap_or(u64::MAX));
         }
-        for r in self.rumours.take_ended(self.wall) {
+        for order in self.rumours.take_orders() {
+            self.fill_order(host, order);
+        }
+        let objects = &self.objects;
+        let holds = |guid| {
+            objects
+                .get(guid)
+                .and_then(|o| o.loot.as_ref())
+                .is_some_and(|l| l.items.iter().any(Option::is_some))
+        };
+        for r in self.rumours.take_ended(self.wall, holds) {
             let (quests, notes) = rumours::leftovers(r.id);
             self.despawn_audience(&r.audience);
+            for &chest in r.chests() {
+                self.objects.remove(chest);
+            }
             let sessions = std::iter::once((&mut self.world, &mut self.events)).chain(
                 self.parked
                     .values_mut()
@@ -1582,6 +1595,59 @@ impl Realm {
             }
             for guid in changed {
                 self.save(guid);
+            }
+        }
+    }
+
+    /// Makes what a step accept or a last-step hand-in ordered: the step's spawns for the whole
+    /// Audience, or a chest for the one who handed in.
+    fn fill_order(&mut self, host: &dyn Host, order: rumours::Order) {
+        match order {
+            rumours::Order::Step { rumour, quest } => {
+                let r = self.rumours.get(rumour);
+                let Some(d) = rumours::def(r.id) else {
+                    return;
+                };
+                let (level, audience) = (r.level, r.audience.clone());
+                for s in d.spawn.iter().filter(|s| s.quest == quest) {
+                    let at = &s.points[self.rng.below(s.points.len() as u32) as usize];
+                    let position = [at.x, at.y, 0.0];
+                    for _ in 0..s.count {
+                        if let Some(entry) = s.creature {
+                            let level = s.level.unwrap_or(level);
+                            self.spawn_for(host, entry, level, position, d.map, audience.clone());
+                        } else if let Some(o) = &s.object {
+                            let spec = ObjectSpec {
+                                entry: o.entry,
+                                display: o.display,
+                                kind: ObjectKind::Use,
+                                map: d.map,
+                                position,
+                                orientation: 0.0,
+                            };
+                            self.spawn_object(host, spec, audience.clone());
+                        }
+                    }
+                }
+            }
+            rumours::Order::Chest { rumour, guid } => {
+                let r = self.rumours.get(rumour);
+                let Some(d) = rumours::def(r.id) else {
+                    return;
+                };
+                let items = rumours::chest_items(d, r.level, &mut self.rng);
+                // Two yards from the giver's point, which the ground then settles.
+                let p = &d.points[r.point];
+                let spec = ObjectSpec {
+                    entry: rumours::CHEST_ENTRY,
+                    display: CHEST_DISPLAY,
+                    kind: ObjectKind::Chest(items),
+                    map: d.map,
+                    position: [p.x + 2.0, p.y, 0.0],
+                    orientation: 0.0,
+                };
+                let chest = self.spawn_object(host, spec, Audience::of(&[guid]));
+                self.rumours.add_chest(rumour, chest);
             }
         }
     }

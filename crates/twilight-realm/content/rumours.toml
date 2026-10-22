@@ -31,3 +31,32 @@
 normal = 1.0
 elite = 3.0
 boss = 3.0
+
+# What a `kind = "rumour"` quest's own XP is multiplied by, by its Rumour's Grade (a calling
+# Rumour pays at 1). The Tier XP Rate and Heat Level apply after, as for every quest.
+[grade_xp]
+easy = 1
+hard = 2
+deadly = 3
+
+# Where a last-step chest draws from: an easy Rumour one row of `green`, a hard one a row of
+# `blue`, a deadly one two. `green` names the World greens of `northshire_loot.toml`; `blue` lists
+# gear rows (the Dungeon pool of the Abbey's Abbot).
+[chest_pools]
+green = "northshire_world"
+blue = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 900509, 900510, 900105, 900511, 900512, 900513, 900514, 900515, 900516, 900517, 900518, 900519]
+
+# A step's spawns, keyed by the quest id, written after the Rumour they belong to. Each rolls one
+# of its own points; `count` places that many at the same point (1 by default); a creature's
+# level is the giver's unless `level` is set.
+#
+#   [[rumour.spawn]]
+#   quest = 94903
+#   creature = 97013                # a mob template
+#   points = [{ x = -8992.0, y = -325.0 }, { x = -9010.0, y = -300.0 }]
+#
+#   [[rumour.spawn]]
+#   quest = 94905
+#   object = { entry = 980120, display = 1011 }   # an entry in that quest's `use`
+#   count = 3
+#   points = [{ x = -8788.0, y = -170.0 }, { x = -8762.0, y = -140.0 }]

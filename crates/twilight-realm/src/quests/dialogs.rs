@@ -103,6 +103,8 @@ struct Done {
     save: bool,
     /// The quest handed in, for a Rumour to count.
     handed_in: Option<u32>,
+    /// The quest taken, for a Rumour's spawns.
+    accepted: Option<u32>,
 }
 
 impl Realm {
@@ -151,6 +153,9 @@ impl Realm {
                 let offered = talking_to(c, w, npc).and_then(|g| offer(c, g, quest));
                 if let Some(q) = offered.or_else(|| starter_offer(c, npc, quest)) {
                     done.save = accept(c, q, events);
+                    if done.save {
+                        done.accepted = Some(q.id);
+                    }
                 }
             }
             RealmCommand::QuestGiverCompleteQuest { npc, quest } => {
@@ -204,8 +209,13 @@ impl Realm {
             }
             _ => {}
         }
+        if let Some(quest) = done.accepted {
+            self.rumours.accept(w.guid, quest);
+        }
         if let Some(quest) = done.handed_in {
-            self.rumours.hand_in(w.guid, quest);
+            if let Some(c) = self.characters.get_mut(w.guid) {
+                self.rumours.hand_in(c, quest);
+            }
         }
         if done.save {
             let guid = w.guid;

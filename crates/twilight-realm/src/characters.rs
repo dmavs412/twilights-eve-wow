@@ -70,6 +70,9 @@ pub(crate) struct Char {
     pub(crate) marked: Option<Marked>,
     /// The entries of the Phased Dungeon doors they have opened, ascending: kept for good.
     pub(crate) doors_opened: Vec<u32>,
+    /// The ids of the Calling Rumours they have finished, ascending: kept for good, Advancement
+    /// leaves them alone.
+    pub(crate) finished_rumours: Vec<u32>,
 }
 
 /// What being **Marked** holds (#179): the logged-in time left, and the hunter that won, as
@@ -162,6 +165,7 @@ impl Characters {
             bounty_rank: 0,
             marked: None,
             doors_opened: Vec::new(),
+            finished_rumours: Vec::new(),
         });
         CHAR_CREATE_SUCCESS
     }

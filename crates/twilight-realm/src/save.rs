@@ -167,6 +167,10 @@ struct Save {
     /// without it has opened none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     doors_opened: Vec<u32>,
+    /// The ids of the Calling Rumours they have finished. Added within version 4: a save without
+    /// it has finished none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    finished_rumours: Vec<u32>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -308,6 +312,7 @@ pub(crate) fn export(c: &Char) -> String {
         bounty_rank: c.bounty_rank,
         marked: c.marked.clone(),
         doors_opened: c.doors_opened.clone(),
+        finished_rumours: c.finished_rumours.clone(),
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -373,6 +378,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         bounty_rank: s.bounty_rank,
         marked: s.marked,
         doors_opened: s.doors_opened,
+        finished_rumours: s.finished_rumours,
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);

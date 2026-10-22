@@ -394,5 +394,24 @@ fn every_audience_member_handing_in_ends_a_one_step_rumour() {
     );
     hand_in(&mut party, 1);
     party.run(1.0);
+    // Each hand-in left a chest, and the Rumour stays until both are emptied (#288).
+    assert_eq!(party.realm.rumour_givers(), vec![giver], "chests are full");
+    for i in [0, 1] {
+        let chest = party
+            .seen(i)
+            .iter()
+            .find_map(|e| match e {
+                SessionEvent::ObjectCreate {
+                    guid,
+                    kind: benilla_protocol::EntityKind::GameObject,
+                    ..
+                } => Some(*guid),
+                _ => None,
+            })
+            .expect("a chest");
+        party.cmd(i, RealmCommand::UseGameObject { guid: chest });
+        party.cmd(i, RealmCommand::AutostoreLootItem { slot: 0 });
+    }
+    party.run(1.0);
     assert!(party.realm.rumour_givers().is_empty(), "both handed in");
 }
