@@ -124,6 +124,22 @@ impl Looting {
         }
     }
 
+    /// The corpse or chest whose window is open.
+    pub(crate) fn open_guid(&self) -> Option<u64> {
+        self.open
+    }
+
+    /// What is left on `corpse`.
+    pub(crate) fn loot_of(&self, corpse: u64) -> Option<&Loot> {
+        self.corpses.get(&corpse)
+    }
+
+    /// A click on a chest holding `loot`: the stock window opens on it as on a corpse.
+    pub(crate) fn offer(&mut self, chest: u64, loot: Loot, events: &mut Vec<SessionEvent>) {
+        self.corpses.insert(chest, loot);
+        self.open(chest, true, events);
+    }
+
     /// `CMSG_LOOT` on `corpse`, which `near` says is in reach.
     pub(crate) fn open(&mut self, corpse: u64, near: bool, events: &mut Vec<SessionEvent>) {
         let Some(loot) = self.corpses.get(&corpse) else {

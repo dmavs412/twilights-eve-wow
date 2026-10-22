@@ -305,6 +305,8 @@ pub(crate) struct InWorld {
     quest_settling: std::collections::HashSet<u64>,
     /// The quest GameObjects the player used, each with the seconds until it returns.
     quest_spent: Vec<(u64, f32)>,
+    /// The guids of the run-time GameObjects (`crate::objects`) the client has.
+    runtime_objects: std::collections::HashSet<u64>,
     /// The stacks of the Phase's meter the player's aura shows; 0 for none.
     noise_shown: u32,
     /// Stacks the player's doings added to the Run's meter since the shard last took them.
@@ -448,6 +450,7 @@ impl InWorld {
             run_dead: Vec::new(),
             in_stop: None,
             quest_objects: Default::default(),
+            runtime_objects: Default::default(),
             quest_settling: Default::default(),
             quest_spent: Vec::new(),
             noise_shown: 0,
@@ -713,8 +716,10 @@ impl InWorld {
         self.hide_tick(dt, c);
         // A corpse that respawned or streamed out takes its loot with it.
         let mobs = &self.mobs;
-        self.looting
-            .retain(|corpse| mobs.iter().any(|m| m.guid == corpse && !m.alive()));
+        let chests = &self.runtime_objects;
+        self.looting.retain(|corpse| {
+            chests.contains(&corpse) || mobs.iter().any(|m| m.guid == corpse && !m.alive())
+        });
         let p = &mut self.player;
         p.swing_timer = (p.swing_timer - dt).max(0.0);
         p.off_swing_timer = (p.off_swing_timer - dt).max(0.0);

@@ -64,6 +64,7 @@ mod inventory;
 mod items;
 mod looting;
 mod mobs;
+mod objects;
 mod party;
 mod phased;
 mod population;
@@ -95,6 +96,7 @@ pub mod build_id;
 pub use audience::Audience;
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
+pub use objects::{ObjectKind, ObjectSpec, CHEST_DISPLAY};
 pub use phased::{test_grounds_start, GameObjectUse, UseKind};
 pub use save::{SaveError, Storage, SAVE_VERSION};
 
@@ -480,6 +482,8 @@ pub struct Realm {
     uses: Vec<GameObjectUse>,
     /// The Phased Dungeon doors that are open: world state, in no Run.
     doors: phased::Doors,
+    /// The GameObjects made at run time for an Audience.
+    objects: objects::Objects,
 }
 
 impl Realm {
@@ -1239,6 +1243,9 @@ impl Realm {
                     self.characters.set_action_button(w.guid, slot, packed);
                 }
             }
+            RealmCommand::UseGameObject { guid } if self.objects.get(guid).is_some() => {
+                self.use_runtime_object(guid);
+            }
             RealmCommand::UseGameObject { guid } => {
                 let mut credited = None;
                 let mut ward = None;
@@ -1354,6 +1361,10 @@ impl Realm {
             return;
         };
         let events = &mut self.events;
+        let open_chest = w
+            .looting
+            .open_guid()
+            .filter(|&g| self.objects.get(g).is_some());
         let mut moved = equipment::Moved::default();
         let mut looted = looting::Looted::default();
         let mut traded = vendor::Traded::default();
@@ -1405,6 +1416,18 @@ impl Realm {
             }
             RealmCommand::RepopRequest => traded.changed = w.release(c, events),
             _ => return,
+        }
+        // A chest keeps what is left in it; the last item taken removes it.
+        if let Some(chest) = open_chest {
+            if let Some(loot) = w.looting.loot_of(chest).cloned() {
+                if loot.is_empty() {
+                    w.looting.release(events);
+                    self.objects.remove(chest);
+                } else {
+                    self.objects.set_loot(chest, loot);
+                }
+            }
+            looted.flag = None;
         }
         moved.gear_changed |= traded.gear_changed;
         looted.took |= traded.changed;
@@ -1477,6 +1500,7 @@ impl Realm {
             w.dev_teleport(to, host, c, &mut self.events);
         }
         let ticked = w.tick(dt, self.wall, host, c, &mut self.rng, &mut self.events);
+        w.show_runtime_objects(&self.objects, c, &mut self.events);
         w.since_save += dt;
         // Zoning saves (a hearth out of the Dungeon); the dead are saved once they release.
         let zoned = c.map != map;
@@ -1693,6 +1717,46 @@ impl Realm {
         self.give_back();
         for shard in self.shards.values_mut() {
             shard.despawn_audience(audience);
+        }
+        self.objects.despawn_audience(audience);
+    }
+
+    /// Spawns a GameObject for `audience` alone (ADR 0014), at `spec.position` grounded on
+    /// `host`'s ground. Its guid. A click from anyone else does nothing and they never see it.
+    pub fn spawn_object(
+        &mut self,
+        host: &dyn Host,
+        mut spec: ObjectSpec,
+        audience: Audience,
+    ) -> u64 {
+        spec.position = ground::grounded_at(host, spec.map, spec.position, true);
+        self.objects.spawn(spec, audience)
+    }
+
+    /// The served session clicks the run-time GameObject `guid`, which `Self::objects` holds.
+    fn use_runtime_object(&mut self, guid: u64) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let Some(o) = self.objects.get(guid) else {
+            return;
+        };
+        if !o.audience.admits(w.guid)
+            || !w.sees_runtime_object(guid)
+            || space::flat_distance(o.spec.position, c.position) > space::INTERACTION_YD
+        {
+            return;
+        }
+        match &o.loot {
+            None => {
+                if quests::credit_use(c, o.spec.entry, &mut self.events) {
+                    self.objects.remove(guid);
+                }
+            }
+            Some(loot) => w.looting.offer(guid, loot.clone(), &mut self.events),
         }
     }
 

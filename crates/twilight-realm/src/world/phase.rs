@@ -610,6 +610,48 @@ impl InWorld {
         true
     }
 
+    /// Streams the run-time GameObjects this character is admitted to in and out with the view,
+    /// and destroys those that were removed.
+    pub(crate) fn show_runtime_objects(
+        &mut self,
+        objects: &crate::objects::Objects,
+        c: &Char,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let mut gone: Vec<u64> = self
+            .runtime_objects
+            .iter()
+            .copied()
+            .filter(|&g| objects.get(g).is_none_or(|o| !o.audience.admits(self.guid)))
+            .collect();
+        for o in objects.iter().filter(|o| o.audience.admits(self.guid)) {
+            let d_yd = if o.spec.map == c.map && self.phase == Phase::OpenWorld {
+                flat_distance(o.spec.position, c.position)
+            } else {
+                f32::INFINITY
+            };
+            if !self.runtime_objects.contains(&o.guid) {
+                if d_yd <= VIEW_YD {
+                    self.runtime_objects.insert(o.guid);
+                    events.push(o.create());
+                }
+            } else if d_yd > VIEW_YD + 10.0 {
+                gone.push(o.guid);
+            }
+        }
+        for g in &gone {
+            self.runtime_objects.remove(g);
+        }
+        if !gone.is_empty() {
+            events.push(SessionEvent::ObjectsRemoved(gone));
+        }
+    }
+
+    /// Whether the client has the run-time GameObject `guid` and the player is alive to click it.
+    pub(crate) fn sees_runtime_object(&self, guid: u64) -> bool {
+        self.player.alive() && self.runtime_objects.contains(&guid)
+    }
+
     /// The entry of the quest GameObject `guid` when it gives quests, is in the player's view and
     /// stands within `at`'s interaction range.
     pub(crate) fn giver_object_within_reach(&self, guid: u64, at: [f32; 3]) -> Option<u32> {

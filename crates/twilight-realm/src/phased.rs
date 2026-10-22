@@ -32,6 +32,8 @@ const PORTAL_DISPLAY: u32 = 672;
 /// `GAMEOBJECT_TYPE_GENERIC`, flagged `GO_FLAG_NOT_SELECTABLE`, in `GO_STATE_READY`.
 pub(crate) const GENERIC: u32 = 5;
 const NOT_SELECTABLE: u32 = 0x10;
+/// `GAMEOBJECT_TYPE_CHEST`.
+pub(crate) const CHEST: u32 = 3;
 const READY: u32 = 1;
 /// `GAMEOBJECT_TYPE_DOOR`, and `GO_STATE_ACTIVE`, an open door.
 const GAMEOBJECT_TYPE_DOOR: u32 = 0;
