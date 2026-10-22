@@ -106,7 +106,7 @@ use = "hide"
 
 # The palisade (#170): display 6151 ElwynnWoodFence01 (14 hull triangles, 4.3 yd) end to end
 # along the rim, visible from the open world and from the Phase, with a gap for the Portal.
-# Assumed: a flat z of 38.0 (no ground lookup offline) and a yaw along each side.
+# Each z is the terrain height from tools/twilights-eve/ground_check.py, and each yaw runs along its side.
 
 [[gameobject]]
 guid = 790101
@@ -1135,7 +1135,7 @@ sides = "both"
 # Hogger's tent at the back (about (-10050, 655)), and two awake patrols. The Camps lie across the
 # straight line from the Portal to the tent, within their wake radii at 0 stacks (3 yd, plus
 # Outrunner +3, Brute -2), and clear of the legs between the hiding spots. All points are
-# hand-picked; z is the same flat 38.0 as the palisade.
+# hand-picked; z is the terrain height from ground_check.py.
 
 # Camp 1: the first dip past the haystacks, about (-9966, 597).
 [[creature]]
