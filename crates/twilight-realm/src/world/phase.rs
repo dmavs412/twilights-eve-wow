@@ -271,7 +271,10 @@ impl InWorld {
     ) {
         let mut gone = Vec::new();
         for mut o in d.stop_objects() {
-            o.object.position = grounded_at(host, d.map, o.object.position, true);
+            // A return portal stands on the stop's ground. An inner portal stands on a floor of
+            // the building, whose Z the row wrote; the terrain under the tower is lower and would
+            // bury it.
+            o.object.position = grounded_at(host, d.map, o.object.position, o.gate.is_none());
             let open = o
                 .gate
                 .is_none_or(|key| self.inner_open.iter().any(|k| k == key));

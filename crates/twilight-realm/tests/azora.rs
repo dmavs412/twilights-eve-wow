@@ -270,6 +270,39 @@ fn the_water_portal_is_open_and_the_fire_and_shadow_portals_are_closed() {
     );
 }
 
+/// Terrain 2.3 yd under the tower's ground floor, as the game's ground lookup finds it there.
+struct Terrain;
+
+impl Host for Terrain {
+    fn ground_height(&self, _: u32, _: f32, _: f32, _: f32) -> Option<f32> {
+        Some(62.4)
+    }
+    fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
+        true
+    }
+    fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
+        None
+    }
+}
+
+#[test]
+fn the_water_portal_stands_on_the_floor_not_the_terrain_under_the_tower() {
+    let mut p = Party::starting(Realm::with_seed(1), &[60], START_ELWYNN, Box::new(Terrain));
+    p.run(1.0);
+    p.go(0, BY_INNER_WATER, 0.0);
+    p.run(0.5);
+    let z = p.seen(0).iter().find_map(|e| match e {
+        SessionEvent::ObjectCreate { guid, position, .. } if *guid == INNER_WATER => {
+            Some(position[2])
+        }
+        _ => None,
+    });
+    assert_eq!(z, Some(64.74), "the portal is buried or never shown");
+    let from = p.seen(0).len();
+    click(&mut p, 0, INNER_WATER);
+    assert_eq!(teleports(&p, 0, from), [[-9200.0, -2020.0, 43.0]]);
+}
+
 #[test]
 fn pinning_water_opens_fire_and_pinning_shadow_brings_the_shadow_of_morganth() {
     let mut p = party(PLAYERS);
