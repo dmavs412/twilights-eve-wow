@@ -138,7 +138,7 @@ impl Explores {
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Kind {
-    /// Once per Tier: Advancement forgets it.
+    /// A Hub giver's: once per character, like [`Kind::Once`]; the kind names where it comes from.
     Hunting,
     /// A Dungeon's: taken again as soon as it is handed in.
     Repeatable,
@@ -295,10 +295,9 @@ pub(crate) struct Quest {
     #[serde(default)]
     pub(crate) after_taken: Option<u32>,
     pub(crate) level: u8,
-    min_level: Option<u8>,
-    /// The highest level it is offered at; none by default.
+    /// The lowest Tier it is offered at, when the Tier of its `level` is not the one.
     #[serde(default)]
-    max_level: Option<u8>,
+    min_tier: Option<u8>,
     pub(crate) title: String,
     pub(crate) objectives: String,
     pub(crate) details: String,
@@ -410,35 +409,30 @@ impl Quest {
     /// The XP a player of level `player` earns handing it in, before the multipliers: an
     /// Advancement Quest pays in a new Calling instead.
     pub(crate) fn reward_xp(&self, player: u8) -> u32 {
-        // A quest with a range pays its whole rate anywhere in it.
-        if self.max_level.is_some() && matches!(self.kind, Kind::Hunting | Kind::Bounty) {
-            return rules::quest::bounty_reward_xp(player, self.level);
-        }
         match self.kind {
-            Kind::Bounty => rules::quest::hunting_reward_xp(player, self.level),
-            Kind::Hunting => rules::quest::hunting_reward_xp(player, self.level),
-            Kind::Repeatable => rules::quest::reward_xp(player, self.level),
-            // Once per character, at the Hunting Quest's rate.
-            Kind::Story => rules::quest::hunting_reward_xp(player, self.level),
+            Kind::Bounty | Kind::Hunting | Kind::Story => {
+                rules::quest::hunting_reward_xp(player, self.level)
+            }
+            Kind::Repeatable => rules::quest::reward_xp(player),
             Kind::Advancement | Kind::Once => 0,
         }
     }
 
-    /// Whether a character who has handed it in this Tier may take it again.
+    /// Whether a character who has handed it in may take it again.
     pub(crate) fn retakable(&self) -> bool {
         matches!(self.kind, Kind::Repeatable | Kind::Bounty)
     }
 
-    /// Whether the quest is offered at level `level`: from its lowest level to its `max_level`.
-    /// A copy accepted earlier is handed in at any level.
-    pub(crate) fn in_range(&self, level: u8) -> bool {
-        level >= self.min_level() && self.max_level.is_none_or(|max| level <= max)
+    /// Whether the quest is offered to a character whose Calling is at Tier `tier`: from its
+    /// minimum Tier up, with no maximum. A copy accepted earlier is handed in at any Tier.
+    pub(crate) fn offered_at_tier(&self, tier: u8) -> bool {
+        tier >= self.min_tier()
     }
 
-    /// The lowest level it is offered at: four below its own unless the content says otherwise.
-    pub(crate) fn min_level(&self) -> u8 {
-        self.min_level
-            .unwrap_or_else(|| self.level.saturating_sub(4).max(1))
+    /// The lowest Tier it is offered at: the content's `min_tier`, else the Tier of its level.
+    pub(crate) fn min_tier(&self) -> u8 {
+        self.min_tier
+            .unwrap_or_else(|| rules::quest::min_tier_for_level(self.level))
     }
 }
 
@@ -839,27 +833,22 @@ mod tests {
 
     #[test]
     fn northshires_bounties_and_the_abbey_relics_have_their_range_giver_and_objective() {
-        // id, kind, giver, levels offered, kills, collected item.
-        let rows: [(u32, Kind, u32, (u8, u8), &[u32], Option<u32>); 5] = [
-            (94005, Kind::Bounty, 196, (1, 5), &[299, 69], None),
-            (94006, Kind::Bounty, 196, (2, 6), &[], Some(980002)),
-            (94007, Kind::Bounty, 823, (3, 7), &[6, 257], None),
-            (94008, Kind::Bounty, 197, (5, 9), &[38], None),
-            (94009, Kind::Repeatable, 197, (6, 15), &[], Some(980003)),
+        // id, kind, giver, Tier offered from, kills, collected item.
+        let rows: [(u32, Kind, u32, u8, &[u32], Option<u32>); 5] = [
+            (94005, Kind::Bounty, 196, 0, &[299, 69], None),
+            (94006, Kind::Bounty, 196, 0, &[], Some(980002)),
+            (94007, Kind::Bounty, 823, 0, &[6, 257], None),
+            (94008, Kind::Bounty, 197, 0, &[38], None),
+            (94009, Kind::Repeatable, 197, 1, &[], Some(980003)),
         ];
-        for (id, kind, giver, (lo, hi), kills, item) in rows {
+        for (id, kind, giver, tier, kills, item) in rows {
             let q = super::quest(id).unwrap_or_else(|| panic!("no quest {id}"));
             assert!(q.kind == kind, "{id}'s kind");
             assert!(
                 matches!(q.giver, Giver::Npc(g) if g == giver),
                 "{id}'s giver"
             );
-            assert!(!q.in_range(lo - 1) || lo == 1, "{id} offered below {lo}");
-            assert!(
-                q.in_range(lo) && q.in_range(hi),
-                "{id} not offered in {lo}-{hi}"
-            );
-            assert!(!q.in_range(hi + 1), "{id} offered above {hi}");
+            assert_eq!(q.min_tier(), tier, "{id}'s Tier");
             let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
             assert_eq!(killed, kills, "{id}'s kills");
             assert_eq!(q.collect.first().map(|c| c.item), item, "{id}'s item");
@@ -916,7 +905,7 @@ mod tests {
         let ore = q(94404);
         assert!(matches!(ore.giver, Giver::Npc(514)));
         assert!(ore.after.ids().is_empty());
-        assert!(ore.in_range(13) && ore.in_range(22) && !ore.in_range(23));
+        assert!(!ore.offered_at_tier(0) && ore.offered_at_tier(1) && ore.offered_at_tier(3));
         assert_eq!((ore.money, ore.tokens), (400, 3));
     }
 
@@ -961,26 +950,21 @@ mod tests {
 
     #[test]
     fn stone_cairns_bounties_have_their_range_giver_and_objective() {
-        // id, giver, levels offered, kills, uses, collected item.
-        let rows: [(u32, u32, (u8, u8), &[u32], &[u32], Option<u32>); 4] = [
-            (94505, 190061, (16, 20), &[96026, 96027], &[], None),
-            (94506, 190061, (16, 20), &[], &[980105], None),
-            (94507, 190061, (17, 21), &[96028], &[], None),
-            (94508, 190060, (17, 21), &[], &[], Some(980020)),
+        // id, giver, kills, uses, collected item; all offered from Tier 1.
+        let rows: [(u32, u32, &[u32], &[u32], Option<u32>); 4] = [
+            (94505, 190061, &[96026, 96027], &[], None),
+            (94506, 190061, &[], &[980105], None),
+            (94507, 190061, &[96028], &[], None),
+            (94508, 190060, &[], &[], Some(980020)),
         ];
-        for (id, giver, (lo, hi), kills, uses, item) in rows {
+        for (id, giver, kills, uses, item) in rows {
             let q = super::quest(id).unwrap_or_else(|| panic!("no quest {id}"));
             assert!(q.kind == Kind::Bounty, "{id}'s kind");
             assert!(
                 matches!(q.giver, Giver::Npc(g) if g == giver),
                 "{id}'s giver"
             );
-            assert!(!q.in_range(lo - 1), "{id} offered below {lo}");
-            assert!(
-                q.in_range(lo) && q.in_range(hi),
-                "{id} not offered in {lo}-{hi}"
-            );
-            assert!(!q.in_range(hi + 1), "{id} offered above {hi}");
+            assert_eq!(q.min_tier(), 1, "{id}'s Tier");
             assert_eq!(q.tokens, 1, "{id}'s Token");
             let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
             assert_eq!(killed, kills, "{id}'s kills");
@@ -998,26 +982,21 @@ mod tests {
 
     #[test]
     fn goldshires_bounties_and_wrecked_cart_have_their_range_giver_and_objective() {
-        // id, giver, levels offered, kills, collected item.
-        let rows: [(u32, u32, (u8, u8), &[u32], Option<u32>); 4] = [
-            (94105, 963, (10, 14), &[118, 30], None),
-            (94106, 514, (10, 14), &[], Some(980006)),
-            (94107, 963, (11, 15), &[116], None),
-            (94108, 241, (10, 14), &[], Some(980007)),
+        // id, giver, kills, collected item; all offered from Tier 1.
+        let rows: [(u32, u32, &[u32], Option<u32>); 4] = [
+            (94105, 963, &[118, 30], None),
+            (94106, 514, &[], Some(980006)),
+            (94107, 963, &[116], None),
+            (94108, 241, &[], Some(980007)),
         ];
-        for (id, giver, (lo, hi), kills, item) in rows {
+        for (id, giver, kills, item) in rows {
             let q = super::quest(id).unwrap_or_else(|| panic!("no quest {id}"));
             assert!(q.kind == Kind::Bounty, "{id}'s kind");
             assert!(
                 matches!(q.giver, Giver::Npc(g) if g == giver),
                 "{id}'s giver"
             );
-            assert!(!q.in_range(lo - 1), "{id} offered below {lo}");
-            assert!(
-                q.in_range(lo) && q.in_range(hi),
-                "{id} not offered in {lo}-{hi}"
-            );
-            assert!(!q.in_range(hi + 1), "{id} offered above {hi}");
+            assert_eq!(q.min_tier(), 1, "{id}'s Tier");
             assert_eq!(q.tokens, 1, "{id}'s Token");
             let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
             assert_eq!(killed, kills, "{id}'s kills");
@@ -1077,15 +1056,26 @@ mod tests {
     }
 
     #[test]
-    fn a_quest_is_not_offered_above_its_max_level() {
-        let q: Quest = toml::from_str(&format!(
-            "kind = \"bounty\"\nmax_level = 12\n{}",
+    fn a_quest_is_offered_from_its_levels_tier_up_unless_the_content_sets_one() {
+        let q: Quest =
+            toml::from_str(&format!("kind = \"bounty\"\n{}", quest_body())).expect("a quest");
+        // Level 10 is Tier 1; there is no maximum.
+        assert!(!q.offered_at_tier(0) && q.offered_at_tier(1) && q.offered_at_tier(3));
+        let later: Quest = toml::from_str(&format!(
+            "kind = \"bounty\"\nmin_tier = 2\n{}",
             quest_body()
         ))
         .expect("a quest");
-        assert!(!q.in_range(5) && q.in_range(6) && q.in_range(12) && !q.in_range(13));
-        // Unshrunk anywhere in its range.
-        assert_eq!(q.reward_xp(6), q.reward_xp(12));
+        assert!(!later.offered_at_tier(1) && later.offered_at_tier(2));
+        // A Tier 2 character is offered a level 3 quest.
+        let low: Quest = toml::from_str(&format!(
+            "kind = \"hunting\"\n{}",
+            quest_body().replace("level = 10", "level = 3")
+        ))
+        .expect("a quest");
+        assert!(low.offered_at_tier(0) && low.offered_at_tier(2));
+        // Unshrunk however far above it the player stands.
+        assert_eq!(q.reward_xp(11), q.reward_xp(40));
     }
 
     fn quest_body() -> &'static str {

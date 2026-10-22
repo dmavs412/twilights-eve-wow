@@ -46,7 +46,7 @@ fn objectives_complete(events: &[SessionEvent], quest: u32) -> bool {
 
 #[test]
 fn walking_into_the_spot_explores_it() {
-    let (mut realm, me, mut events) = questing(11, &[], 0, &[]);
+    let (mut realm, me, mut events) = questing_as("warrior", 11, &[], 0, &[]);
     let zunjin = giver(&events, ZUNJIN);
     assert!(on_offer(&mut realm, zunjin).contains(&SCOUTING_THORN_HILL));
     events.extend(accept(&mut realm, zunjin, SCOUTING_THORN_HILL));
@@ -92,7 +92,7 @@ fn walking_into_the_spot_explores_it() {
 
 #[test]
 fn an_explored_spot_stays_explored_through_a_save() {
-    let (mut realm, me, _) = questing(11, &[], 0, &[(SCOUTING_THORN_HILL, [0; 4])]);
+    let (mut realm, me, _) = questing_as("warrior", 11, &[], 0, &[(SCOUTING_THORN_HILL, [0; 4])]);
     walk_to(&mut realm, THORN_HILL);
     let blob = realm.export_character(me).expect("a save");
 
@@ -109,7 +109,7 @@ fn an_explored_spot_stays_explored_through_a_save() {
 
 #[test]
 fn a_find_quest_is_handed_in_to_the_person_found_and_she_offers_the_next_step() {
-    let (mut realm, _, events) = questing(14, &[], 0, &[]);
+    let (mut realm, _, events) = questing_as("warrior", 14, &[], 0, &[]);
     let garosh = giver(&events, GAROSH);
     assert!(on_offer(&mut realm, garosh).contains(&THE_KOLKAR_WATCH));
     accept(&mut realm, garosh, THE_KOLKAR_WATCH);
@@ -137,7 +137,7 @@ fn a_find_quest_is_handed_in_to_the_person_found_and_she_offers_the_next_step() 
 
 #[test]
 fn the_person_found_offers_nothing_before_the_find() {
-    let (mut realm, _, _) = questing(15, &[], 0, &[]);
+    let (mut realm, _, _) = questing_as("warrior", 15, &[], 0, &[]);
     let there = walk_to(&mut realm, OUTRIDER_AT);
     let outrider = giver(&there, OUTRIDER);
     assert_eq!(status(&mut realm, outrider), dialog_status::NONE);
@@ -146,7 +146,7 @@ fn the_person_found_offers_nothing_before_the_find() {
 
 #[test]
 fn the_giver_lists_no_row_for_a_quest_another_takes_in() {
-    let (mut realm, _, events) = questing(14, &[], 0, &[(THE_KOLKAR_WATCH, [0; 4])]);
+    let (mut realm, _, events) = questing_as("warrior", 14, &[], 0, &[(THE_KOLKAR_WATCH, [0; 4])]);
     let garosh = giver(&events, GAROSH);
     let rows: Vec<u32> = talk(&mut realm, garosh)
         .into_iter()

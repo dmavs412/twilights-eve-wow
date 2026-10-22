@@ -4,6 +4,7 @@
 //! quests carry a character from 1 to 10.
 
 use std::collections::{HashMap, HashSet};
+use twilight_realm::rules::quest::min_tier_for_level;
 
 const CROSSROADS: [f64; 2] = [-441.0, -2596.0];
 const INNER_RADIUS: f64 = 600.0;
@@ -180,10 +181,7 @@ fn the_inner_rings_hunting_quests_carry_a_character_from_one_to_ten() {
             .filter(|q| q["kind"].as_str() == Some("hunting"))
             .filter(|q| {
                 let l = int(q, "level");
-                let min = q
-                    .get("min_level")
-                    .map_or((l - 4).max(1), |m| m.as_integer().unwrap());
-                min <= level && l >= level
+                min_tier_for_level(l as u8) <= min_tier_for_level(level as u8) && l >= level
             })
             .count();
         assert!(

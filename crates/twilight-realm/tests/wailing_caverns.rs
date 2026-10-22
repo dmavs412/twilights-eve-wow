@@ -785,7 +785,7 @@ fn flat_yd(a: [f32; 3], b: [f32; 3]) -> f32 {
 }
 
 #[test]
-fn the_disciples_stand_on_the_skull_and_offer_the_caverns_quests_from_level_sixteen() {
+fn the_disciples_stand_on_the_skull_and_offer_the_caverns_quests_from_tier_one() {
     let mut s = questing_at_the_skull(7, 16, &[], &[]);
     let disciples: Vec<_> = givers(&s.events)
         .into_iter()
@@ -810,11 +810,11 @@ fn the_disciples_stand_on_the_skull_and_offer_the_caverns_quests_from_level_sixt
     offered.sort_unstable();
     assert_eq!(offered, [THE_NIGHTMARES_BROOD, DEVIATE_HIDES, THE_FANGLORD]);
 
-    // A level below, they have nothing for the player yet.
-    let mut s = questing_at_the_skull(7, 15, &[], &[]);
+    // A Tier 0 character at its cap has nothing from them yet.
+    let mut s = questing_at_the_skull_as("basic_warrior", 7, 10, &[], &[]);
     for entry in [NALPAK, EBRU] {
         let npc = s.go_to_disciple(entry);
-        assert!(on_offer(&mut s.realm, npc).is_empty(), "{entry} at 15");
+        assert!(on_offer(&mut s.realm, npc).is_empty(), "{entry} at Tier 0");
     }
 }
 

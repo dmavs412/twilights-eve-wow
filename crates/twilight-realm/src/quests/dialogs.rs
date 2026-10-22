@@ -368,7 +368,7 @@ pub(crate) fn use_starter(
         Some(INVALIDREASON_QUEST_ALREADY_ON)
     } else if c.quests.completed.contains(&q.id) {
         Some(INVALIDREASON_QUEST_ALREADY_DONE)
-    } else if c.level < q.min_level() {
+    } else if !q.offered_at_tier(crate::callings::of(c.calling).tier) {
         Some(INVALIDREASON_QUEST_FAILED_LOW_LEVEL)
     } else if !offered(c, q) {
         Some(INVALIDREASON_DONT_HAVE_REQ)
@@ -433,11 +433,11 @@ fn offered(c: &Char, q: &Quest) -> bool {
     match &q.advancement {
         // At the Tier Cap of the Calling it advances from.
         Some(a) => c.calling.key() == a.from && c.level >= crate::callings::of(c.calling).cap,
-        None => q.in_range(c.level),
+        None => q.offered_at_tier(crate::callings::of(c.calling).tier),
     }
 }
 
-/// Whether the player has handed `q` in and may not take it again: a Hunting Quest this Tier.
+/// Whether the player has handed `q` in and may not take it again.
 fn done_for_now(c: &Char, q: &Quest) -> bool {
     !q.retakable() && c.quests.completed.contains(&q.id)
 }

@@ -33,7 +33,7 @@ impl Host for Floor {
     }
 }
 
-/// A level 13 human warrior in Elwynn who has handed in the quests in `done`.
+/// A level 13 human warrior of Tier 1 in Elwynn who has handed in the quests in `done`.
 fn having_done(done: &[u32]) -> Realm {
     let mut maker = realm();
     let RealmCommand::CreateCharacter(mut req) = create_cmd("Farmhand", HUMAN, 0, WARRIOR) else {
@@ -47,6 +47,7 @@ fn having_done(done: &[u32]) -> Realm {
         .export_character(me)
         .unwrap()
         .replace("level = 1\n", "level = 13\n")
+        .replace("calling = \"basic_warrior\"", "calling = \"warrior\"")
         .replace(
             "xp = 0\n",
             &format!("xp = 0\ncompleted = [{}]\n", list.join(", ")),

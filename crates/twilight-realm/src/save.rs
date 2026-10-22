@@ -16,7 +16,7 @@ use crate::inventory::{bag_size, Inventory, Pos};
 pub const SAVE_VERSION: u32 = 4;
 
 /// The oldest save version the realm still reads. Version 2's quests are Hunting Quests, done once
-/// per Tier; version 1's are read the same way.
+/// per character; version 1's are read the same way.
 const OLDEST_VERSION: u32 = 1;
 
 /// The last version whose spell ids were stock 1.12.1 ones.

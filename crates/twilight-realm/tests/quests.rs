@@ -1,4 +1,4 @@
-//! Hunting Quests: the Hub's givers, accepting, progress and hand-in, once per Tier, through the
+//! Hunting Quests: the Hub's givers, accepting, progress and hand-in, once per character, through the
 //! stock quest dialogs and the `PLAYER_QUEST_LOG` slots.
 
 mod common;
@@ -61,7 +61,20 @@ fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
         .iter()
         .map(|q| (q.quest_id, q.level))
         .collect();
-    assert_eq!(rows, [(THINNING_THE_HERDS, 2), (SCORPID_VENOM, 3)]);
+    // Every Tier 0 quest of the giver, whatever its level.
+    assert_eq!(
+        rows,
+        [
+            (THINNING_THE_HERDS, 2),
+            (SCORPID_VENOM, 3),
+            (91003, 4),
+            (91004, 5),
+            (91005, 6),
+            (91052, 3),
+            (91053, 4),
+            (91051, 4)
+        ]
+    );
     assert!(greeting
         .quests
         .iter()
@@ -92,7 +105,8 @@ fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
     // A yellow `!` for the other quest outranks the grey `?` of the one under way.
     assert_eq!(status(&mut realm, grezz), dialog_status::AVAILABLE);
     accept(&mut realm, grezz, SCORPID_VENOM);
-    assert_eq!(status(&mut realm, grezz), dialog_status::INCOMPLETE);
+    // Grezz's other quests are still on offer.
+    assert_eq!(status(&mut realm, grezz), dialog_status::AVAILABLE);
 
     // The log asks for the template: kill five of each, in The Barrens.
     realm.handle(RealmCommand::QuestQuery {
@@ -242,7 +256,7 @@ fn a_hunting_quest_at_its_own_level_gives_half_a_level_and_a_token_and_is_not_of
 }
 
 #[test]
-fn a_giver_whose_hunting_quests_for_now_are_all_done_shows_only_the_grey_mark() {
+fn a_giver_does_not_offer_the_hunting_quests_a_character_has_done() {
     let (mut realm, _, events) = questing(
         1,
         &[(23, VENOM_SAC, 6)],
@@ -252,9 +266,10 @@ fn a_giver_whose_hunting_quests_for_now_are_all_done_shows_only_the_grey_mark() 
     let grezz = giver(&events, GREZZ);
     hand_in(&mut realm, grezz, THINNING_THE_HERDS);
     hand_in(&mut realm, grezz, SCORPID_VENOM);
-    assert!(on_offer(&mut realm, grezz).is_empty());
-    // Grezz's later quests are still to come, but too high to mark.
-    assert_eq!(status(&mut realm, grezz), dialog_status::NONE);
+    let offered = on_offer(&mut realm, grezz);
+    assert!(!offered.contains(&THINNING_THE_HERDS) && !offered.contains(&SCORPID_VENOM));
+    // Grezz's later quests are offered at any level of the Tier.
+    assert_eq!(status(&mut realm, grezz), dialog_status::AVAILABLE);
 }
 
 #[test]
@@ -376,16 +391,15 @@ fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
 }
 
 #[test]
-fn outlevelling_a_quest_shrinks_its_xp() {
-    // A level 16 Vanguard on a level 10 quest: 80% of half of level 10's 7600, at the Tier XP
-    // Rate's ×3.
+fn outlevelling_a_quest_does_not_shrink_its_xp() {
+    // A level 16 Vanguard on a level 10 quest: half of level 10's 7600, at the Tier XP Rate's ×3.
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 8)];
     let (mut realm, _, events) =
         questing_as("vanguard", 16, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
     walk_up_to(&mut realm, zunjin);
     let done = completed(&hand_in(&mut realm, zunjin, CROCOLISK_SKINS)).unwrap();
-    assert_eq!(done.xp, 3 * 3040);
+    assert_eq!(done.xp, 3 * 3800);
 }
 
 #[test]
@@ -576,4 +590,26 @@ fn the_last_quest_item_looted_completes_the_quest() {
     }
     assert!(done, "one of the four workers drops a sac");
     assert_eq!(quest_log(&events, me), [(0, SCORPID_VENOM, [0; 4], 1)]);
+}
+
+#[test]
+fn a_giver_offers_a_quest_by_tier_not_level() {
+    // Zun'jin's Crocolisk Skins is level 10: a Tier 1 level 1 character is offered it, a Tier 0
+    // level 9 one is not.
+    let (mut realm, _, events) = questing_as("warrior", 1, &[], 0, &[]);
+    let zunjin = giver(&events, ZUNJIN);
+    assert!(on_offer(&mut realm, zunjin).contains(&CROCOLISK_SKINS));
+    let (mut realm, _, events) = questing(9, &[], 0, &[]);
+    let zunjin = giver(&events, ZUNJIN);
+    assert!(!on_offer(&mut realm, zunjin).contains(&CROCOLISK_SKINS));
+}
+
+#[test]
+fn a_level_25_character_handing_in_a_level_10_quest_earns_half_its_levels_xp() {
+    // Half of level 10's 7600 XP at the Tier XP Rate's x3, with no falloff.
+    let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 8)];
+    let (mut realm, _, events) = questing_as("warrior", 25, skins, 0, &[(CROCOLISK_SKINS, [0; 4])]);
+    let zunjin = giver(&events, ZUNJIN);
+    let done = completed(&hand_in(&mut realm, zunjin, CROCOLISK_SKINS)).unwrap();
+    assert_eq!(done.xp, 3 * 3800);
 }

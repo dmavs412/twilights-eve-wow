@@ -71,8 +71,8 @@ impl Active {
 #[derive(Debug, Clone, Default)]
 pub(crate) struct QuestLog {
     pub(crate) active: Vec<Active>,
-    /// The quests handed in, once each, in the order first finished: every Advancement,
-    /// Repeatable and once-per-character quest ever, and the Hunting Quests of this Tier.
+    /// The quests handed in, once each, in the order first finished: every quest the character
+    /// has finished, Advancement leaves it alone.
     pub(crate) completed: Vec<u32>,
 }
 
@@ -453,24 +453,6 @@ pub(crate) fn watches_for_sight(c: &Char) -> bool {
         .active
         .iter()
         .any(|a| !a.failed && content::quest(a.id).is_some_and(|q| q.fail_if_seen.is_some()))
-}
-
-/// A new Tier begins: every Hunting Quest is forgotten, done or under way, so each is offered
-/// again. Repeatable, Advancement and once-per-character quests stay as they are.
-pub(crate) fn new_tier(c: &mut Char, events: &mut Vec<SessionEvent>) {
-    let hunting = |id: u32| content::quest(id).is_some_and(|q| q.kind == content::Kind::Hunting);
-    c.quests.completed.retain(|&id| !hunting(id));
-    let mut cleared = Vec::new();
-    c.quests.active.retain(|a| {
-        let drop = hunting(a.id);
-        if drop {
-            cleared.extend(slot_pairs(a.slot, None));
-        }
-        !drop
-    });
-    if !cleared.is_empty() {
-        events.push(values(c.guid, &cleared));
-    }
 }
 
 /// The bags changed: tell the client which quests that completed or undid.

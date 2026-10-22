@@ -238,10 +238,7 @@ fn taurajos_hunting_quests_carry_a_character_from_twenty_to_thirty() {
             .filter(|q| q["kind"].as_str() == Some("hunting"))
             .filter(|q| {
                 let l = int(q, "level");
-                let min = q
-                    .get("min_level")
-                    .map_or((l - 4).max(1), |m| m.as_integer().unwrap());
-                min <= level && l >= level
+                l - 4 <= level && l >= level
             })
             .count();
         assert!(

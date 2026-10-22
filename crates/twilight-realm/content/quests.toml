@@ -1,8 +1,7 @@
 # The Hub's quest givers and their quests (GLOSSARY.md). Each giver stands in the Crossroads for
 # one Hunting Ground and offers its quests. A quest's `kind` says how often it can be done:
 #
-# - "hunting": a Hunting Quest, once per Tier. Advancement forgets it, so the next Tier does it
-#   again. It pays 1 Token.
+# - "hunting": a Hunting Quest, once per character. Advancement never forgets it. It pays 1 Token.
 # - "repeatable": a Dungeon's Repeatable Quest, taken again as soon as it is handed in. It pays
 #   3 Tokens.
 # - "bounty": a Field Giver's bounty, taken again as soon as it is handed in. It pays half a
@@ -22,10 +21,9 @@
 # Dungeon's (content/northshire_abbey.toml). A quest names its giver's `entry`; the content load
 # fails on an entry that is neither.
 #
-# A quest: `id`, its `kind`, its `giver`, `level`, `min_level` (the lowest level it is offered at;
-# by default four below its level, and at least 1), an optional `max_level` (the highest level
-# it is offered at; a copy accepted earlier is still handed in above it, and a hunting or bounty
-# quest with one pays its XP unshrunk anywhere in its range),
+# A quest: `id`, its `kind`, its `giver`, `level`, an optional `min_tier` (the lowest Tier it is
+# offered at; by default the Tier of its level: below 10 is 0, 10 to 29 is 1, 30 to 49 is 2, 50
+# and up is 3; there is no maximum, and a copy accepted earlier is handed in at any Tier),
 # the dialog texts, `money` (copper) and `tokens` on hand-in, and its objectives: `kill` rows of
 # `[creature entry, count]`, and `collect` rows of an `item` (content/quest_items.toml), its
 # `count`, and the creatures it drops `from` at `chance` percent while the quest wants more.
@@ -86,7 +84,6 @@ id = 91003
 kind = "hunting"
 giver = 90101
 level = 4
-min_level = 3
 title = "The Familiar Threat"
 objectives = "Kill 5 Vile Familiars, then return to Grezz Plainswatcher at the Crossroads."
 details = "Some warlock's imps have slipped their leash south of town, and they burn whatever they touch. Put them down."
@@ -101,7 +98,6 @@ id = 91004
 kind = "hunting"
 giver = 90101
 level = 5
-min_level = 3
 title = "Bristleback Tusks"
 objectives = "Bring 6 Bristleback Quilboar Tusks to Grezz Plainswatcher at the Crossroads."
 details = "The Bristleback have dug in north-west of town. Every tusk you take is a quilboar that will not raid us."
@@ -116,7 +112,6 @@ id = 91005
 kind = "hunting"
 giver = 90101
 level = 6
-min_level = 4
 title = "Prairie Wolf Paws"
 objectives = "Bring 5 Prairie Wolf Paws to Grezz Plainswatcher at the Crossroads."
 details = "The prairie wolves south-east of here have taken to stalking our scouts. Bring me their paws as proof."
@@ -131,7 +126,6 @@ id = 91052
 kind = "hunting"
 giver = 90101
 level = 3
-min_level = 3
 title = "Thistle Boars"
 objectives = "Kill 4 Young Thistle Boars and 4 Thistle Boars, then return to Grezz Plainswatcher at the Crossroads."
 details = "Young and grown, the thistle boars root up the grass to the west, south, south-east, east and north-east of town. They crowd the trail for every wagon that comes in. Thin them."
@@ -146,7 +140,6 @@ id = 91053
 kind = "hunting"
 giver = 90101
 level = 4
-min_level = 3
 title = "Battleboars"
 objectives = "Kill 5 Battleboars, then return to Grezz Plainswatcher at the Crossroads."
 details = "The battleboars are the boars that fight back: bigger, angrier, and happy to charge a scout on the trail. They run to the east and north-east of town. Put them down."
@@ -161,7 +154,6 @@ id = 91051
 kind = "hunting"
 giver = 90101
 level = 4
-min_level = 3
 title = "The Bristleback Diggings"
 objectives = "Find the Bristleback diggings, then return to Grezz Plainswatcher at the Crossroads."
 details = "The Bristleback came up out of Mulgore and started digging, north-west of town, a short walk past the well. Go and see what they dig for. Look, and come back."
@@ -1569,7 +1561,7 @@ id = 93001
 kind = "once"
 giver = 90112
 level = 10
-min_level = 1
+min_tier = 0
 title = "Know the Land"
 objectives = "Discover every part of The Barrens, then return to Scout Ahanu in the Crossroads watchtower."
 details = "From up here I can name every hill and hollow between the Mor'shan Rampart and the Great Lift. Naming them is not knowing them.$B$BWalk them all, $N: the oases, the Dry Hills, the Merchant Coast, the Razorfen in the south. Come back when there is no fog left on your map."
@@ -1808,7 +1800,6 @@ id = 92001
 kind = "repeatable"
 giver = 5767
 level = 20
-min_level = 16
 zone_or_sort = 718
 title = "The Nightmare's Brood"
 objectives = "Kill 6 Deviate Ravagers and 2 Deviate Guardians in the Wailing Caverns, then return to Nalpak on the skull."
@@ -1824,7 +1815,6 @@ id = 92002
 kind = "repeatable"
 giver = 5768
 level = 20
-min_level = 16
 zone_or_sort = 718
 title = "Deviate Hides"
 objectives = "Bring 5 Deviate Hides from the Deviates of the Wailing Caverns to Ebru on the skull."
@@ -1840,7 +1830,6 @@ id = 92003
 kind = "repeatable"
 giver = 5767
 level = 20
-min_level = 16
 zone_or_sort = 718
 title = "The Fanglord"
 objectives = "Slay Lady Anacondra in the Wailing Caverns, then return to Nalpak on the skull."

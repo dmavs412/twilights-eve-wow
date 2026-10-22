@@ -1,7 +1,7 @@
 //! **Advancement** (`GLOSSARY.md`), in the world: the character becomes level 1 of the Calling it
 //! advanced into. Its skills, talents and Talent Points are replaced by the new Calling's, and
-//! that Calling's Tier Bonus lifts its base stats, and its proficiency is sent again. Every Hunting
-//! Quest is forgotten, done or under way. Gear, bags, gold, Tokens and the other quests stay.
+//! //! that Calling's Tier Bonus lifts its base stats, and its proficiency is sent again. Gear, bags,
+//! gold, Tokens and every quest, done or under way, stay.
 
 use benilla_protocol::SessionEvent;
 
@@ -42,7 +42,6 @@ impl InWorld {
         // The new Calling's armour, for the client's equip checks and tooltips.
         crate::equipment::proficiency(c, events);
         events.push(cast::action_buttons(c));
-        crate::quests::new_tier(c, events);
         // An old skill queued on the next swing goes with it.
         self.skills.take_queued();
 

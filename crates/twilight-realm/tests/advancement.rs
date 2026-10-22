@@ -420,24 +420,24 @@ count = 3"
 }
 
 #[test]
-fn advancement_drops_the_hunting_quests_under_way() {
+fn advancement_keeps_the_hunting_quests_under_way() {
     let (mut realm, me, mut events) = capped_warrior();
     assert_eq!(
         quest_log(&events, me),
         [(0, THINNING_THE_HERDS, [1, 2, 0, 0], 0)]
     );
     events.extend(advance(&mut realm, trainer(&events)));
+    let blob = realm.export_character(me).unwrap();
     assert!(
-        quest_log(&events, me).is_empty(),
-        "{:?}",
-        quest_log(&events, me)
+        blob.contains(&format!("id = {THINNING_THE_HERDS}")),
+        "{blob}"
     );
-    // Offered afresh to the level 1 Vanguard.
-    assert!(on_offer(&mut realm, giver(&events, GREZZ)).contains(&THINNING_THE_HERDS));
+    // Under way, so it is not offered a second time.
+    assert!(!on_offer(&mut realm, giver(&events, GREZZ)).contains(&THINNING_THE_HERDS));
 }
 
 #[test]
-fn after_advancement_every_hunting_quest_is_offered_again() {
+fn after_advancement_a_hunting_quest_done_at_tier_0_stays_done() {
     let herds_done: &[Underway] = &[(THINNING_THE_HERDS, [5, 5, 0, 0])];
     let (mut realm, me, events) = questing(10, &[(23, VENOM_SAC, 6)], 0, herds_done);
     let grezz = giver(&events, GREZZ);
@@ -447,22 +447,24 @@ fn after_advancement_every_hunting_quest_is_offered_again() {
     let offered = on_offer(&mut realm, grezz);
     assert!(
         !offered.contains(&THINNING_THE_HERDS) && !offered.contains(&SCORPID_VENOM),
-        "done this Tier: {offered:?}"
+        "done at Tier 0: {offered:?}"
     );
 
     advance(&mut realm, trainer(&events));
-    assert_eq!(status(&mut realm, grezz), dialog_status::AVAILABLE);
     let offered = on_offer(&mut realm, grezz);
     assert!(
-        offered.contains(&THINNING_THE_HERDS) && offered.contains(&SCORPID_VENOM),
-        "{offered:?}"
+        !offered.contains(&THINNING_THE_HERDS) && !offered.contains(&SCORPID_VENOM),
+        "still done: {offered:?}"
     );
-    // The Advancement Quest stays done.
+    // Every hand-in stays on the record, with the Advancement Quest.
     let blob = realm.export_character(me).unwrap();
-    assert!(
-        blob.contains(&format!("completed = [{THE_WARRIORS_PATH}]")),
-        "{blob}"
-    );
+    for id in [THINNING_THE_HERDS, SCORPID_VENOM, THE_WARRIORS_PATH] {
+        let completed = blob
+            .lines()
+            .find(|l| l.starts_with("completed = "))
+            .unwrap();
+        assert!(completed.contains(&id.to_string()), "{id} in {completed}");
+    }
 }
 
 #[test]

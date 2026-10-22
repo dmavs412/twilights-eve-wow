@@ -45,6 +45,7 @@ fn having_done(done: &[u32]) -> Realm {
         .export_character(me)
         .unwrap()
         .replace("level = 1\n", "level = 24\n")
+        .replace("calling = \"basic_warrior\"", "calling = \"warrior\"")
         .replace(
             "xp = 0\n",
             &format!("xp = 0\ncompleted = [{}]\n", list.join(", ")),

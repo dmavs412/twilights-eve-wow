@@ -62,7 +62,8 @@ const THE_TOWER_IS_OPEN: u32 = 94601;
 const APPRENTICES_SECRET: u32 = 94602;
 const WARD_SHARD: u32 = 980021;
 
-/// Level 60 warriors, the first with The Tower Is Open under way.
+/// Level 60 warriors of Tier 1 (the quests here are level 21 and up), the first with The Tower Is
+/// Open under way.
 fn party(n: usize) -> Party {
     let mut p = Party::edited(
         Realm::with_seed(1)
@@ -72,6 +73,7 @@ fn party(n: usize) -> Party {
         START_ELWYNN,
         Box::new(NoGround),
         |i, blob| {
+            let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"warrior\"");
             if i == 0 {
                 format!("{blob}\n[[quests]]\nid = {THE_TOWER_IS_OPEN}\nslot = 0\nkills = [0, 0, 0, 0]\n")
             } else {

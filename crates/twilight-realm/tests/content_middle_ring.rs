@@ -4,6 +4,7 @@
 //! each quest's level is its targets'.
 
 use std::collections::{HashMap, HashSet};
+use twilight_realm::rules::quest::min_tier_for_level;
 
 /// North of this (WoW x, yards) is the middle ring; south of it, the outer ring.
 const OUTER_EDGE_X: f64 = -2250.0;
@@ -335,10 +336,7 @@ fn the_middle_rings_quests_carry_a_character_from_ten_to_twenty() {
             .iter()
             .filter(|q| {
                 let l = int(q, "level");
-                let min = q
-                    .get("min_level")
-                    .map_or((l - 4).max(1), |m| m.as_integer().unwrap());
-                min <= level && l >= level
+                min_tier_for_level(l as u8) <= min_tier_for_level(level as u8) && l >= level
             })
             .count();
         assert!(

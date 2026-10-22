@@ -58,6 +58,7 @@ fn after_the_abbot() -> Realm {
         .export_character(me)
         .unwrap()
         .replace("level = 1\n", "level = 9\n")
+        .replace("calling = \"basic_warrior\"", "calling = \"warrior\"")
         .replace("xp = 0\n", "xp = 0\ncompleted = [94001, 94002, 94004]\n");
     let mut realm = Realm::with_seed(1);
     realm
