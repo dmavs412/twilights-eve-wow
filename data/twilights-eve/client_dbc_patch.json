@@ -12637,7 +12637,8 @@
    "talent_id": 1000013,
    "rank_spell_ids": [
     1000064
-   ]
+   ],
+   "exceptional": true
   },
   {
    "calling": "zealot",
@@ -13323,7 +13324,8 @@
    "talent_id": 1000064,
    "rank_spell_ids": [
     1000274
-   ]
+   ],
+   "exceptional": true
   },
   {
    "calling": "initiate",
@@ -13424,7 +13426,8 @@
    "talent_id": 1000071,
    "rank_spell_ids": [
     1000299
-   ]
+   ],
+   "exceptional": true
   },
   {
    "calling": "ranger",
@@ -13522,7 +13525,8 @@
    "talent_id": 1000078,
    "rank_spell_ids": [
     1000326
-   ]
+   ],
+   "exceptional": true
   },
   {
    "calling": "ranger",
@@ -13620,7 +13624,8 @@
    "talent_id": 1000085,
    "rank_spell_ids": [
     1000347
-   ]
+   ],
+   "exceptional": true
   },
   {
    "calling": "acolyte",
@@ -13716,7 +13721,8 @@
    "talent_id": 1000092,
    "rank_spell_ids": [
     1000373
-   ]
+   ],
+   "exceptional": true
   },
   {
    "calling": "acolyte",
@@ -13814,7 +13820,8 @@
    "talent_id": 1000099,
    "rank_spell_ids": [
     1000394
-   ]
+   ],
+   "exceptional": true
   }
  ]
 }

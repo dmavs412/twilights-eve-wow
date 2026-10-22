@@ -399,8 +399,27 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertNotIn("visual_spell", self.patch["spells"][0]["fields"])
         active = talent("rush", 1, 0, 0, spell_id="1012320", talent_id="1000138", target="enemy",
-                        cast_kind="instant", visual="")
+                        cast_kind="instant", visual="", exceptional="yes")
         self.assert_fails([CALLING, active], "rush): a castable row needs a visual")
+
+    def test_an_active_talent_that_is_not_exceptional_fails(self):
+        # The client lists only an exceptional talent's spell in the spell book (#257), so an
+        # active one left passive cannot be cast (#317).
+        for active in ({"target": "self", "cast_kind": "instant"}, {"target": "enemy"}):
+            rush = talent("rush", 1, 0, 0, spell_id="1012320", talent_id="1000138", visual="none", **active)
+            self.assert_fails([CALLING, rush], "rush): an active talent needs exceptional=yes")
+            done, _ = self.run_build([CALLING, {**rush, "exceptional": "yes"}])
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertTrue(self.patch["talents"][0]["exceptional"])
+
+    def test_the_committed_active_talents_are_exceptional(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            patch = json.load(f)
+        exceptional = {t["key"] for t in patch["talents"] if t.get("exceptional")}
+        for key in ("sanguine_shell", "elemental_convergence", "mana_surge", "rapid_assault",
+                    "explosive_payload", "necrotic_detonation", "hammer_of_vanguard"):
+            self.assertIn(key, exceptional)
 
     def test_a_ground_patch_needs_a_row_with_a_real_visual(self):
         area = {**STRIKE, "target": "dest", "realm_radius_yd": "8", "client_radius_index": "14",

@@ -3605,7 +3605,7 @@
        "row": 4,
        "column": 2
       },
-      "exceptional": false,
+      "exceptional": true,
       "ranks": [
        {
         "key": "hammer_of_vanguard",
@@ -10974,7 +10974,7 @@
        "row": 4,
        "column": 1
       },
-      "exceptional": false,
+      "exceptional": true,
       "ranks": [
        {
         "key": "elemental_convergence",
@@ -11978,7 +11978,7 @@
        "row": 4,
        "column": 1
       },
-      "exceptional": false,
+      "exceptional": true,
       "ranks": [
        {
         "key": "mana_surge",
@@ -14073,7 +14073,7 @@
        "row": 4,
        "column": 1
       },
-      "exceptional": false,
+      "exceptional": true,
       "ranks": [
        {
         "key": "rapid_assault",
@@ -15003,7 +15003,7 @@
        "row": 4,
        "column": 1
       },
-      "exceptional": false,
+      "exceptional": true,
       "ranks": [
        {
         "key": "explosive_payload",
@@ -16808,7 +16808,7 @@
        "row": 4,
        "column": 1
       },
-      "exceptional": false,
+      "exceptional": true,
       "ranks": [
        {
         "key": "necrotic_detonation",
@@ -17655,7 +17655,7 @@
        "row": 4,
        "column": 1
       },
-      "exceptional": false,
+      "exceptional": true,
       "ranks": [
        {
         "key": "sanguine_shell",

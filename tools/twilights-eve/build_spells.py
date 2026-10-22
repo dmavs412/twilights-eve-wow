@@ -1097,6 +1097,11 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
         realm, client = number(row["realm_cost"], where), number(row["client_cost"], where)
         if realm < client:
             raise BuildError(f"{where}: realm_cost {realm} is below client_cost {client}")
+    # The client lists a learned talent's spell in the spell book only when the talent is
+    # exceptional (#257), so an active talent left passive cannot be cast (#317).
+    if row["kind"] == "talent" and row["rank"] == "1" and (row["target"] or row["cast_kind"]) \
+            and row["exceptional"] != "yes":
+        raise BuildError(f"{where}: an active talent needs exceptional=yes, or its spell never reaches the spell book")
     # The client draws the cooldown sweep from its own value, so a skill whose two cooldowns
     # differ shows no sweep, or the wrong one, unless its notes say the difference is meant.
     if row["kind"] == "skill" and not hidden and "cooldowns differ" not in row["notes"]:
