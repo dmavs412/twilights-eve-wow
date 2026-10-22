@@ -60,7 +60,8 @@ const MINE_AT: [f32; 2] = [-8630.0, -143.0];
 const MAUL: u32 = 900304;
 const SLOT_MAIN_HAND: u8 = 15;
 
-/// A level 20 Northshire warrior's save, holding the maul.
+/// A level 10 Northshire Champion's save (`common::as_champion`), holding the maul: the loot is
+/// what this file checks, not the fight.
 fn warrior_blob() -> (u64, String) {
     let mut maker = realm();
     let RealmCommand::CreateCharacter(mut req) = create_cmd("Miner", HUMAN, 0, WARRIOR) else {
@@ -75,18 +76,18 @@ fn warrior_blob() -> (u64, String) {
         blob.truncate(at);
     }
     let mut blob = blob
-        .replace("level = 1\n", "level = 20\n")
+        .replace("level = 1\n", "level = 10\n")
         .replace("items = []\n", "");
     blob.push_str(&format!(
         "\n[[items]]\nslot = {SLOT_MAIN_HAND}\nentry = {MAUL}\ncount = 1\n"
     ));
-    (guid, blob)
+    (guid, as_champion(&blob))
 }
 
 /// One kill of a level 6 laborer in a fresh world at `seed`: what its corpse holds, or `None`
 /// when the warrior fell or the fight ran long.
 fn kill_a_laborer(seed: u64, guid: u64, blob: &str) -> Option<Vec<u32>> {
-    let mut realm = Realm::with_seed(seed);
+    let mut realm = Realm::with_seed(seed).with_callings(CHAMPION_CALLINGS);
     realm.import_character(blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);

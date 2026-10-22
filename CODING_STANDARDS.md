@@ -22,6 +22,10 @@ Read at review time. Mechanical rules live in checks instead: rustfmt (`.githook
 - **One test harness.** A player-script helper (a view of the fields, a drain, a cast, a fight
   setup) lives in `tests/common/`, `gear_common/` or `quest_common/`; a test file defines only
   what is unique to it. A helper copied into a second test file is a finding.
+- **Flow tests fight as the Champion.** A test that fights only to reach what it checks (a
+  quest's credit, a loot roll, a call for help) plays `common::as_champion`. A test of a fight's
+  outcome plays a shipped Calling. A flow test that raises a level or a stat to win its fight is a
+  finding.
 
 ## Everywhere
 

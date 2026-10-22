@@ -62,43 +62,19 @@ const THE_TOWER_IS_OPEN: u32 = 94601;
 const APPRENTICES_SECRET: u32 = 94602;
 const WARD_SHARD: u32 = 980021;
 
-/// A Warrior-Class Calling in Tier 3, whose Power Level at level 60 is 60 (no shipped Calling is
-/// past Tier 2). Its Tier Bonus carries the five through every stop's elites and bosses, whose
-/// health and damage grow per level and per rank (#269).
-const TEST_CALLINGS: &str = r#"
-[[calling]]
-key = "test_champion"
-name = "Test Champion"
-tier = 3
-class = 1
-cap = 60
-tier_bonus = { strength = 2000, agility = 0, stamina = 2000, intellect = 0, spirit = 0 }
-shapeshift_form = 17
-armour = ["cloth", "leather", "mail", "plate"]
-
-[[calling.skill]]
-key = "none"
-spell_id = 2061
-power_cost = 0
-cooldown_ms = 0
-gcd_ms = 0
-target = "self"
-effects = []
-"#;
-
 /// Level 60 champions of Tier 3 (the quests here are level 21 and up), the first with The Tower
 /// Is Open under way.
 fn party(n: usize) -> Party {
     let mut p = Party::edited(
         Realm::with_seed(1)
-            .with_callings(TEST_CALLINGS)
+            .with_callings(CHAMPION_CALLINGS)
             .with_creature_spells(96030, &[])
             .with_creature_spells(96036, &[]),
         &vec![60; n],
         START_ELWYNN,
         Box::new(NoGround),
         |i, blob| {
-            let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"test_champion\"");
+            let blob = as_champion(&blob);
             // The flat table (ADR 0012) lets a level 25 elite hit a level 60 as often as an equal,
             // so each champion carries a Megachopper (9490) in the main hand.
             let mut blob = blob;

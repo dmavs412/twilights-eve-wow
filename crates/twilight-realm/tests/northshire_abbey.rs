@@ -85,6 +85,15 @@ impl Abbey {
 
     /// A human warrior of `level` in the yard.
     fn at_level(level: u8) -> Self {
+        Self::made(level, false)
+    }
+
+    /// A Champion of `level` (`common::as_champion`), for a fight the test only passes through.
+    fn champion(level: u8) -> Self {
+        Self::made(level, true)
+    }
+
+    fn made(level: u8, champion: bool) -> Self {
         let mut maker = realm();
         let RealmCommand::CreateCharacter(mut req) = create_cmd("Pilgrim", HUMAN, 0, WARRIOR)
         else {
@@ -97,7 +106,11 @@ impl Abbey {
             .export_character(me)
             .unwrap()
             .replace("level = 1\n", &format!("level = {level}\n"));
-        let mut realm = realm();
+        let (mut realm, blob) = if champion {
+            (realm().with_callings(CHAMPION_CALLINGS), as_champion(&blob))
+        } else {
+            (realm(), blob)
+        };
         realm.import_character(&blob).unwrap();
         realm.handle(RealmCommand::EnterWorld { guid: me });
         let mut a = Self {
@@ -271,7 +284,7 @@ fn the_abbeys_npcs_are_gone_and_mcbride_waits_outside() {
 
 #[test]
 fn the_abbots_bell_calls_two_brothers_and_they_fall_on_his_attacker() {
-    let mut a = Abbey::at_level(60);
+    let mut a = Abbey::champion(40);
     a.go(INSIDE, 0.1);
     assert!(a.called.is_empty(), "the adds were there from the start");
     a.fight_the_abbot();
@@ -286,7 +299,7 @@ fn the_abbots_bell_calls_two_brothers_and_they_fall_on_his_attacker() {
 
 #[test]
 fn a_call_is_made_once_a_life() {
-    let mut a = Abbey::at_level(60);
+    let mut a = Abbey::champion(40);
     a.go(INSIDE, 0.1);
     a.fight_the_abbot();
     assert_eq!(a.called.len(), 2);
@@ -297,7 +310,7 @@ fn a_call_is_made_once_a_life() {
 
 #[test]
 fn a_reset_run_lets_the_call_fire_again() {
-    let mut a = Abbey::at_level(60);
+    let mut a = Abbey::champion(40);
     a.go(INSIDE, 0.1);
     a.fight_the_abbot();
     assert_eq!(a.called.len(), 2);

@@ -14,6 +14,39 @@ pub fn tier_0_zealot() -> String {
         .replacen("cap = 50", "cap = 10", 1)
 }
 
+/// The **Champion**, "test_champion": a Warrior-Class Calling in Tier 3 whose Tier Bonus wins any
+/// fight a flow test takes on the way to what it checks (a quest's kill, a loot roll, a call for
+/// help), however hard creatures get. A test of a fight's balance uses a shipped Calling instead,
+/// so a balance change breaks only the tests about balance. Pass `CHAMPION_CALLINGS` to
+/// `Realm::with_callings` and put a save on it with [`as_champion`].
+pub const CHAMPION_CALLINGS: &str = r#"
+[[calling]]
+key = "test_champion"
+name = "Test Champion"
+tier = 3
+class = 1
+cap = 60
+tier_bonus = { strength = 2000, agility = 0, stamina = 2000, intellect = 0, spirit = 0 }
+shapeshift_form = 17
+armour = ["cloth", "leather", "mail", "plate"]
+
+[[calling.skill]]
+key = "none"
+spell_id = 2061
+power_cost = 0
+cooldown_ms = 0
+gcd_ms = 0
+target = "self"
+effects = []
+"#;
+
+/// `blob`, a new warrior's save, on the Champion Calling.
+pub fn as_champion(blob: &str) -> String {
+    let champion = blob.replace("calling = \"basic_warrior\"", "calling = \"test_champion\"");
+    assert_ne!(champion, blob, "a Basic Warrior's save");
+    champion
+}
+
 pub use benilla_protocol::messages::{
     CHAR_CREATE_NAME_IN_USE, CHAR_CREATE_SERVER_LIMIT, CHAR_CREATE_SUCCESS, CHAR_DELETE_SUCCESS,
 };
