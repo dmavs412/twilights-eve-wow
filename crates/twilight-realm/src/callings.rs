@@ -1832,6 +1832,11 @@ pub fn skill(spell_id: u32) -> Option<&'static Skill> {
         .find(|s| s.spell_id == spell_id)
 }
 
+/// Whether a dodge opens a skill of `calling`'s (Overpower), so the client needs the marker.
+pub(crate) fn opens_on_dodge(calling: Calling) -> bool {
+    every_skill(of(calling)).any(|s| s.requires_target_dodged)
+}
+
 /// Every skill borrowed from another Class, once each: the spells the client rewrites to cost
 /// rage (ADR 0003).
 pub fn borrowed_skills() -> impl Iterator<Item = &'static Skill> {

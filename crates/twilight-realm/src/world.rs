@@ -960,7 +960,8 @@ impl InWorld {
         }
         events.push(SessionEvent::AttackerState(swing.report(self.guid, target)));
         if swing.outcome == Outcome::Dodge {
-            self.skills.dodged_by(target, events);
+            self.skills
+                .dodged_by(target, crate::callings::opens_on_dodge(c.calling), events);
         }
 
         // Rage from what landed, or from three quarters of what a dodge or parry stopped.

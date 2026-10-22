@@ -109,6 +109,8 @@ pub(super) struct Skills {
     queued: Option<u32>,
     /// The mob that last dodged, and the seconds Overpower stays open on it.
     dodged: Option<(u64, f32)>,
+    /// Whether that dodge shows the client its marker point.
+    dodge_marked: bool,
     /// The combo points a builder put on a target; the finisher that lands spends them.
     pub(super) combo: Combo,
     /// Seconds the caster is held in combat (Bloodrage).
@@ -1244,14 +1246,19 @@ impl Skills {
         self.queued.take()
     }
 
-    /// `mob` dodged the player: Overpower opens on it, marked with a combo point.
-    pub(super) fn dodged_by(&mut self, mob: u64, events: &mut Vec<SessionEvent>) {
+    /// `mob` dodged the player: Overpower opens on it, marked with a combo point when the
+    /// player's Calling has a skill that needs the dodge. Any other Calling's client would show
+    /// the marker as a combo point the realm never added.
+    pub(super) fn dodged_by(&mut self, mob: u64, marked: bool, events: &mut Vec<SessionEvent>) {
         self.dodged = Some((mob, DODGE_WINDOW_SECS));
-        self.send_combo(events);
+        self.dodge_marked = marked;
+        if marked {
+            self.send_combo(events);
+        }
     }
 
     fn close_dodge_window(&mut self, events: &mut Vec<SessionEvent>) {
-        if self.dodged.take().is_some() {
+        if self.dodged.take().is_some() && self.dodge_marked {
             self.send_combo(events);
         }
     }
@@ -1261,7 +1268,7 @@ impl Skills {
     fn combo_pairs(&self) -> Vec<(u16, u32)> {
         let (count, target) = if self.combo.count > 0 {
             (u32::from(self.combo.count), self.combo.target)
-        } else if let Some((mob, _)) = self.dodged {
+        } else if let Some((mob, _)) = self.dodged.filter(|_| self.dodge_marked) {
             (1, mob)
         } else {
             (0, 0)
@@ -2200,7 +2207,8 @@ impl InWorld {
         });
         for &(guid, why) in &misses {
             if why == SPELL_MISS_DODGE {
-                self.skills.dodged_by(guid, events);
+                self.skills
+                    .dodged_by(guid, crate::callings::opens_on_dodge(c.calling), events);
             }
         }
         // Talents that give rage back on a skill with no rage effect of its own.
@@ -4516,7 +4524,8 @@ impl InWorld {
         events.push(values(self.guid, &[self.player.power.field()]));
         // The first target's dodge opens Overpower, as a white swing's would.
         if missed_by(swings[0].1.outcome) == Some(SPELL_MISS_DODGE) {
-            self.skills.dodged_by(target, events);
+            self.skills
+                .dodged_by(target, crate::callings::opens_on_dodge(c.calling), events);
         }
         if missed_by(swings[0].1.outcome).is_none() {
             // A buff that raises the stacks is spent by this same hit.
@@ -5478,6 +5487,31 @@ impl InWorld {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A dodge shows the client no combo point unless the Calling has a skill that needs it.
+    #[test]
+    fn an_unmarked_dodge_sends_and_shows_no_combo_point() {
+        const MOB: u64 = 0xF130 << 48 | 99;
+        let mut skills = Skills::new(1);
+        let mut events = Vec::new();
+        skills.dodged_by(MOB, false, &mut events);
+        assert!(events.is_empty(), "no combo update for a dodge");
+        assert_eq!(skills.combo_pairs()[0], (PLAYER_FIELD_BYTES, 0));
+        assert!(skills.dodged.is_some(), "the window still opens");
+        skills.close_dodge_window(&mut events);
+        assert!(events.is_empty(), "nor when it closes");
+    }
+
+    /// Overpower's Calling still gets the marker point for the window.
+    #[test]
+    fn a_marked_dodge_shows_one_combo_point_on_the_mob() {
+        const MOB: u64 = 0xF130 << 48 | 99;
+        let mut skills = Skills::new(1);
+        let mut events = Vec::new();
+        skills.dodged_by(MOB, true, &mut events);
+        assert_eq!(events.len(), 1);
+        assert_eq!(skills.combo_pairs()[0], (PLAYER_FIELD_BYTES, 1 << 8));
+    }
 
     /// A shield soaks blows up to its size, then breaks; the overflow comes through.
     #[test]
