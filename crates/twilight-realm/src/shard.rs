@@ -52,6 +52,9 @@ pub(crate) struct OnShard<S> {
     pub(crate) calling: String,
     /// Stealthed: other clients are not shown them.
     pub(crate) hidden: bool,
+    /// Their patches on the ground: each DynamicObject's guid, centre and create. Another client
+    /// sees one in view of its centre, stealthed caster or not.
+    pub(crate) patches: Vec<(u64, [f32; 3], SessionEvent)>,
 }
 
 /// Whether `guid` is a player's: `HIGHGUID_PLAYER` is 0.

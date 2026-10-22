@@ -7,7 +7,7 @@
 
 mod common;
 
-use benilla_protocol::SessionEvent;
+use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight::*;
 use common::*;
 use twilight_realm::callings;
@@ -31,6 +31,39 @@ fn charge_id() -> u32 {
         .find(|s| s.key == "bulwark_charge")
         .expect("the Vanguard has Bulwark Charge")
         .spell_id
+}
+
+/// Consecration's spell id: the row the patch is named after, which its object and ticks carry.
+fn consecration_id() -> u32 {
+    spell("vanguard", "consecration")
+}
+
+/// The DynamicObjects `events` create: guid, spell id, centre and radius.
+fn patch_objects(events: &[SessionEvent]) -> Vec<(u64, u32, [f32; 3], f32)> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: EntityKind::DynamicObject,
+                position,
+                fields,
+                ..
+            } => Some((
+                *guid,
+                fields.dynamicobject_spell_id()?,
+                *position,
+                fields.dynamicobject_radius()?,
+            )),
+            _ => None,
+        })
+        .collect()
+}
+
+fn destroyed(events: &[SessionEvent], guid: u64) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == guid))
 }
 
 /// Hallowed Ground's talent id.
@@ -122,7 +155,7 @@ fn charge(talents: &[(u32, u8)], spot: [f32; 3]) -> Ticks {
             .iter()
             .filter_map(|e| match e {
                 SessionEvent::SpellDamageLog(l)
-                    if l.spell_id == id && l.target == guid && l.school == 1 =>
+                    if l.spell_id == consecration_id() && l.target == guid && l.school == 1 =>
                 {
                     Some(l.damage)
                 }
@@ -155,6 +188,37 @@ fn an_enemy_ten_yards_away_takes_none() {
         Some(Vec::new()),
         "the far mob is in view and untouched"
     );
+}
+
+/// The patch is a DynamicObject named Consecration, 8 yd wide where the charge ended, two yards
+/// short of the mob; it is destroyed as the patch ends, Hallowed Ground's seconds included.
+#[test]
+fn the_patch_is_a_consecration_object_at_the_destination_until_it_ends() {
+    for (talents, secs) in [(vec![], 8.0), (vec![(hallowed_ground(), 3)], 14.0)] {
+        let (mut realm, mut view, _, near, _) = scene(&talents, STURDY);
+        realm.handle(cast(charge_id(), Some(near.guid)));
+        let events = view.drain(&mut realm);
+        realm.handle(RealmCommand::AttackStop);
+        let objects = patch_objects(&events);
+        let [(guid, spell_id, centre, radius)] = objects[..] else {
+            panic!("one object for the patch, has {objects:?}");
+        };
+        assert_eq!(spell_id, consecration_id());
+        assert_eq!(radius, 8.0);
+        assert!(
+            (flat(centre, near.position) - 2.0).abs() < 0.5,
+            "{centre:?} is where the charge ended, beside {:?}",
+            near.position
+        );
+        assert!(
+            !destroyed(&view.run(&mut realm, secs - 0.5), guid),
+            "still up"
+        );
+        assert!(
+            destroyed(&view.run(&mut realm, 1.0), guid),
+            "gone at {secs} s"
+        );
+    }
 }
 
 #[test]

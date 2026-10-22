@@ -94,6 +94,53 @@ fn a_cast_is_seen_and_leaving_view_takes_the_player_away() {
     assert!(removed(party.seen(1), a), "the other's client lets them go");
 }
 
+/// A patch on the ground is in the world: a player who comes into view of it mid-patch is sent
+/// its DynamicObject, and is told when the patch ends.
+#[test]
+fn a_player_who_comes_into_view_mid_patch_is_sent_its_object() {
+    let mut party = Party::edited(realm(), &[10, 10], 0, Box::new(NoGround), |i, blob| {
+        if i == 0 {
+            blob.replace("calling = \"basic_warrior\"", "calling = \"acolyte\"")
+        } else {
+            blob
+        }
+    });
+    party.go(0, FAR_AWAY, 0.0);
+    party.go(1, [FAR_AWAY[0] + 500.0, FAR_AWAY[1], 0.0], 0.0);
+    party.run(0.5);
+    let miasma = spell("acolyte", "miasma");
+    let dest = [FAR_AWAY[0] + 10.0, FAR_AWAY[1], 0.0];
+    party.cmd(
+        0,
+        RealmCommand::CastSpellAtDest {
+            spell_id: miasma,
+            dest,
+        },
+    );
+    let early = party.run(3.0);
+    let patch = |events: &[SessionEvent]| {
+        events.iter().find_map(|e| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: EntityKind::DynamicObject,
+                fields,
+                ..
+            } if fields.dynamicobject_spell_id() == Some(miasma) => Some(*guid),
+            _ => None,
+        })
+    };
+    assert!(
+        patch(party.seen(0)).is_some(),
+        "the caster sees their Miasma"
+    );
+    assert_eq!(patch(&early[1]), None, "out of view, the other sees none");
+    party.go(1, [FAR_AWAY[0] + 20.0, FAR_AWAY[1], 0.0], 0.0);
+    let came = party.run(0.5);
+    let guid = patch(&came[1]).expect("the other is sent the Miasma on coming into view");
+    let ended = party.run(7.5);
+    assert!(removed(&ended[1], guid), "the other's client lets it go");
+}
+
 #[test]
 fn logging_out_takes_the_player_away() {
     let mut party = together();

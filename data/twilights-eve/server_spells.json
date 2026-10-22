@@ -1194,12 +1194,37 @@
        "amount": {
         "base": 4,
         "per_level": 0.6
-       }
+       },
+       "ground_spell_id": 1000397
       },
       "realm_only": false
      }
     ],
     "description": "Charge an enemy, generating 15 Rage and leaving Consecration at the destination: for 8 sec, each second every enemy within 8 yd takes Holy damage. Usable in combat."
+   },
+   {
+    "key": "consecration",
+    "name": "Consecration",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000397,
+    "spellbook": false,
+    "school": "holy",
+    "prevention": "silence",
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": false,
+    "effects": [],
+    "description": "The holy ground Bulwark Charge leaves at its destination."
    },
    {
     "key": "shield_of_penitent",
@@ -2165,7 +2190,7 @@
          {
           "type": "flat",
           "op": "COST",
-          "family_bit": 35,
+          "family_bit": 36,
           "value": -50,
           "target": [
            "shield_of_penitent"
@@ -2218,7 +2243,7 @@
          {
           "type": "flat",
           "op": "COST",
-          "family_bit": 35,
+          "family_bit": 36,
           "value": -100,
           "target": [
            "shield_of_penitent"
@@ -3158,7 +3183,7 @@
          {
           "type": "flat",
           "op": "COST",
-          "family_bit": 35,
+          "family_bit": 36,
           "value": -20,
           "target": [
            "shield_of_penitent"
@@ -3167,7 +3192,7 @@
          {
           "type": "flat",
           "op": "COST",
-          "family_bit": 37,
+          "family_bit": 38,
           "value": -20,
           "target": [
            "seal_of_iron"
@@ -3220,7 +3245,7 @@
          {
           "type": "flat",
           "op": "COST",
-          "family_bit": 35,
+          "family_bit": 36,
           "value": -40,
           "target": [
            "shield_of_penitent"
@@ -3229,7 +3254,7 @@
          {
           "type": "flat",
           "op": "COST",
-          "family_bit": 37,
+          "family_bit": 38,
           "value": -40,
           "target": [
            "seal_of_iron"

@@ -6,11 +6,12 @@
 //! fields). A refusal is a lone failed `SMSG_CAST_RESULT` with the stock reason. An on-next-swing
 //! skill answers nothing until the swing it replaces.
 
+use benilla_protocol::messages::ObjectType;
 use benilla_protocol::messages::{
     ActionButton, MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpeedKind, SpellCooldown,
     SpellDamageLog, SpellEnergizeLog,
 };
-use benilla_protocol::SessionEvent;
+use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 
 use super::power::Combo;
 use super::{in_front, melee_reach, InWorld, Ticked};
@@ -150,6 +151,8 @@ pub(super) struct Skills {
     /// The ground areas up, and the point the cast under way was aimed at.
     areas: Vec<Area>,
     dest: Option<[f32; 3]>,
+    /// Patches put on the ground so far, which numbers their DynamicObjects.
+    patches_made: u16,
     /// The spell-mod cells the player's `next_cast` buffs last set on the client, with values.
     sent_mods: Vec<(bool, u8, u8, i32)>,
     /// The aura whose tick is running its procs: what a spread copies.
@@ -175,6 +178,8 @@ const SPELLMOD_COST: u8 = 14;
 /// enemies and the friendly players inside, and who holds them now.
 #[derive(Debug, Clone)]
 struct Area {
+    /// The DynamicObject that shows it.
+    object: u64,
     caster: u64,
     spell_id: u32,
     centre: [f32; 3],
@@ -239,8 +244,10 @@ struct TimedCast {
 /// A patch on the ground (a `GroundEffect`): each tick it strikes every enemy inside it.
 #[derive(Debug, Clone, Copy)]
 struct Ground {
+    /// The DynamicObject that shows it.
+    object: u64,
     caster: u64,
-    /// The spell its damage is logged under.
+    /// The spell its DynamicObject and its damage are logged under.
     spell_id: u32,
     centre: [f32; 3],
     radius_yd: f32,
@@ -270,6 +277,84 @@ impl Skills {
         self.grounds
             .iter()
             .any(|g| g.caster == caster && distance(g.centre, position) <= g.radius_yd)
+    }
+
+    /// A new patch's DynamicObject guid: the caster's low guid and a count, so no two sessions'
+    /// patches share one, and a re-cast is a new object.
+    fn next_patch(&mut self, caster: u64) -> u64 {
+        self.patches_made = self.patches_made.wrapping_add(1);
+        HIGHGUID_DYNAMICOBJECT << 48 | (caster & 0xFFFF_FFFF) << 16 | u64::from(self.patches_made)
+    }
+
+    /// Every patch on the ground as its DynamicObject's guid, centre and create: what another
+    /// client in view of it is sent.
+    pub(super) fn patches(&self) -> Vec<(u64, [f32; 3], SessionEvent)> {
+        let grounds = self
+            .grounds
+            .iter()
+            .map(|g| (g.object, g.caster, g.spell_id, g.centre, g.radius_yd));
+        let areas = self
+            .areas
+            .iter()
+            .map(|a| (a.object, a.caster, a.spell_id, a.centre, a.radius_yd));
+        grounds
+            .chain(areas)
+            .map(|(guid, caster, spell_id, centre, radius_yd)| {
+                let create = patch_create(guid, caster, spell_id, centre, radius_yd);
+                (guid, centre, create)
+            })
+            .collect()
+    }
+}
+
+/// `HIGHGUID_DYNAMICOBJECT`, `TYPEMASK_OBJECT | TYPEMASK_DYNAMICOBJECT`, and the
+/// `DYNAMICOBJECT_*` fields (`UpdateFields_1_12_1.h`).
+const HIGHGUID_DYNAMICOBJECT: u64 = 0xF100;
+const TYPE_DYNAMICOBJECT: u32 = 0x01 | 0x40;
+const DYNAMICOBJECT_CASTER: u16 = 6;
+const DYNAMICOBJECT_BYTES: u16 = 8;
+const DYNAMICOBJECT_SPELLID: u16 = 9;
+const DYNAMICOBJECT_RADIUS: u16 = 10;
+const DYNAMICOBJECT_POS_X: u16 = 11;
+/// `DYNAMIC_OBJECT_AREA_SPELL`, the bytes' type.
+const DYNAMIC_OBJECT_AREA_SPELL: u32 = 1;
+
+/// The DynamicObject that shows a patch on the ground, its fields as vmangos's
+/// `DynamicObject::Create` fills them: the client draws `spell_id`'s area visual at `centre`.
+fn patch_create(
+    guid: u64,
+    caster: u64,
+    spell_id: u32,
+    centre: [f32; 3],
+    radius_yd: f32,
+) -> SessionEvent {
+    let [x, y, z] = centre;
+    let mut pairs = vec![
+        (OBJECT_FIELD_TYPE, TYPE_DYNAMICOBJECT),
+        (OBJECT_FIELD_ENTRY, spell_id),
+        (OBJECT_FIELD_SCALE_X, float(1.0)),
+        (DYNAMICOBJECT_BYTES, DYNAMIC_OBJECT_AREA_SPELL),
+        (DYNAMICOBJECT_SPELLID, spell_id),
+        (DYNAMICOBJECT_RADIUS, float(radius_yd)),
+        (DYNAMICOBJECT_POS_X, float(x)),
+        (DYNAMICOBJECT_POS_X + 1, float(y)),
+        (DYNAMICOBJECT_POS_X + 2, float(z)),
+    ];
+    pairs.extend(guid_pairs(OBJECT_FIELD_GUID, guid));
+    pairs.extend(guid_pairs(DYNAMICOBJECT_CASTER, caster));
+    SessionEvent::ObjectCreate {
+        guid,
+        kind: EntityKind::DynamicObject,
+        display_id: None,
+        position: centre,
+        orientation: 0.0,
+        scale: 1.0,
+        speeds: None,
+        mover: None,
+        transport_progress: None,
+        transport: None,
+        spline: None,
+        fields: ObjectFields::from_pairs(&pairs).into_created(ObjectType::DynamicObject),
     }
 }
 
@@ -2056,6 +2141,9 @@ impl InWorld {
                 }
             }
             area.inside = now;
+            if area.left <= CLOCK_EPSILON {
+                events.push(SessionEvent::ObjectDestroyed(area.object));
+            }
         }
         areas.retain(|a| a.left > CLOCK_EPSILON);
         self.skills.areas = areas;
@@ -3533,13 +3621,15 @@ impl InWorld {
                 duration_ms,
                 school,
                 amount,
+                ground_spell_id,
             } => {
                 // Where the cast ended: after a Charge, the caster stands at its destination.
                 let more = crate::talents::ground_amount_pct(c, &skill.key);
                 let longer = crate::talents::ground_duration_ms(c, &skill.key);
                 let ground = Ground {
+                    object: self.skills.next_patch(self.guid),
                     caster: self.guid,
-                    spell_id: skill.spell_id,
+                    spell_id: ground_spell_id.unwrap_or(skill.spell_id),
                     centre: c.position,
                     radius_yd,
                     school,
@@ -3548,7 +3638,22 @@ impl InWorld {
                     period: clock::secs(tick_ms),
                     next_tick: clock::secs(tick_ms),
                 };
+                for old in self
+                    .skills
+                    .grounds
+                    .iter()
+                    .filter(|g| g.caster == ground.caster)
+                {
+                    events.push(SessionEvent::ObjectDestroyed(old.object));
+                }
                 self.skills.grounds.retain(|g| g.caster != ground.caster);
+                events.push(patch_create(
+                    ground.object,
+                    ground.caster,
+                    ground.spell_id,
+                    ground.centre,
+                    ground.radius_yd,
+                ));
                 self.skills.grounds.push(ground);
             }
             // Takes the stacks once for every target: `cast` does it after the loop.
@@ -3584,6 +3689,7 @@ impl InWorld {
                 let row =
                     |id: Option<u32>| id.and_then(|id| auras.iter().find(|a| a.spell_id == id));
                 let area = Area {
+                    object: self.skills.next_patch(self.guid),
                     caster: self.guid,
                     spell_id: skill.spell_id,
                     centre: self.skills.dest.unwrap_or(c.position),
@@ -3603,10 +3709,18 @@ impl InWorld {
                     .collect();
                 for gone in &old {
                     self.leave_area(gone, &gone.inside, events);
+                    events.push(SessionEvent::ObjectDestroyed(gone.object));
                 }
                 self.skills
                     .areas
                     .retain(|a| !(a.caster == area.caster && a.spell_id == area.spell_id));
+                events.push(patch_create(
+                    area.object,
+                    area.caster,
+                    area.spell_id,
+                    area.centre,
+                    area.radius_yd,
+                ));
                 self.skills.areas.push(area);
                 self.area_tick(0.0, c, events);
             }
@@ -4770,6 +4884,9 @@ impl InWorld {
             while g.next_tick <= CLOCK_EPSILON {
                 g.next_tick += g.period;
                 due.push(*g);
+            }
+            if g.left <= CLOCK_EPSILON {
+                events.push(SessionEvent::ObjectDestroyed(g.object));
             }
         }
         self.skills.grounds.retain(|g| g.left > CLOCK_EPSILON);

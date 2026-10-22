@@ -1598,6 +1598,10 @@ pub enum Effect {
         #[serde(default)]
         school: School,
         amount: Linear,
+        /// The row the patch is named after (`ground_spell=key`): its DynamicObject and its tick
+        /// logs carry this id. `None` names the skill that cast it.
+        #[serde(default)]
+        ground_spell_id: Option<u32>,
     },
 }
 

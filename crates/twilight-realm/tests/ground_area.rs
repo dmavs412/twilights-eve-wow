@@ -188,6 +188,49 @@ fn ticks_on(events: &[SessionEvent], mob: u64) -> usize {
         .count()
 }
 
+/// The DynamicObjects `events` create: guid, spell id and centre.
+fn patch_objects(events: &[SessionEvent]) -> Vec<(u64, u32, [f32; 3])> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: EntityKind::DynamicObject,
+                position,
+                fields,
+                ..
+            } => Some((*guid, fields.dynamicobject_spell_id()?, *position)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Each Miasma shows as a DynamicObject at its point; a second one elsewhere destroys the first.
+#[test]
+fn a_second_miasma_takes_the_first_ones_object_away() {
+    let (mut realm, _, _, mut view) = world(&[]);
+    let here = [STAND[0] - 10.0, STAND[1], 0.0];
+    let there = [STAND[0] - 10.0, STAND[1] + 12.0, 0.0];
+    let first = patch_objects(&miasma(&mut realm, &mut view, here));
+    let [(old, MIASMA, at)] = first[..] else {
+        panic!("one Miasma object, has {first:?}");
+    };
+    assert_eq!(at, here);
+    let events = miasma(&mut realm, &mut view, there);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::ObjectDestroyed(g) if *g == old)),
+        "the first object goes"
+    );
+    let second = patch_objects(&events);
+    let [(new, MIASMA, at)] = second[..] else {
+        panic!("one new Miasma object, has {second:?}");
+    };
+    assert_ne!(new, old, "a re-cast is a new object");
+    assert_eq!(at, there);
+}
+
 #[test]
 fn miasma_ticks_on_a_mob_inside_and_not_on_one_outside() {
     let (mut realm, _, mobs, mut view) = world(&[]);

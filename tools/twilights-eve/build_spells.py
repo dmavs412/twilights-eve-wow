@@ -1152,6 +1152,25 @@ def resolve_reset_cooldowns(calling: dict) -> None:
             effect["params"]["spell_ids"] = [ids[k] for k in skills]
 
 
+def resolve_ground_spell(calling: dict) -> None:
+    """A `ground_effect`'s `ground_spell=key` becomes that skill's spell id: the patch's
+    DynamicObject and its tick logs name it. The client draws the object from its own row, so the
+    skill must be client visible."""
+    for skill in calling["skills"]:
+        for effect in skill["effects"]:
+            key = effect["params"].pop("ground_spell", None) if effect["kind"] == "ground_effect" else None
+            if key is None:
+                continue
+            where = f"{calling['key']}/{skill['key']} ground_effect"
+            named = next((s for s in calling["skills"] if s["key"] == key), None)
+            if named is None:
+                raise BuildError(f"{where}: ground_spell {key!r} is not a skill of {calling['key']}")
+            if named.get("client_visible") is False:
+                raise BuildError(f"{where}: ground_spell {key!r} is client_visible=no; the client draws "
+                                 "the patch from its row")
+            effect["params"]["ground_spell_id"] = named["spell_id"]
+
+
 def resolve_next_cast(calling: dict, masks: dict[str, int | None]) -> None:
     """A `next_cast` aura names skills of its Calling; the realm gets their `SpellFamilyFlags`
     bits as `family_bits`, for the client's cast bar: each its skill's lowest bit no other skill
@@ -1519,6 +1538,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
 
     for calling in callings.values():
         resolve_amount_of(calling)
+        resolve_ground_spell(calling)
         resolve_next_cast(calling, masks.get(calling["key"], {}))
 
     for (calling_key, key), ranks in talent_rows.items():

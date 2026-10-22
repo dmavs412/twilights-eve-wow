@@ -340,6 +340,22 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
                           "positive whole stacks")
         self.assert_fails([CALLING, aura, {**consume, "effect1_params": "aura=conviction"}], "per_stack formula")
 
+    def test_a_ground_effect_names_its_ground_spell_by_id(self):
+        ground = {**STRIKE, "effect1_kind": "ground_effect",
+                  "effect1_params": "radius_yd=8;tick_ms=1000;duration_ms=8000;amount.base=4;amount.per_level=0;"
+                                    "ground_spell=holy_patch"}
+        patch = {"kind": "skill", "calling": "vanguard", "key": "holy_patch", "name": "Holy Patch", "rank": "1",
+                 "spell_id": "1000079", "spellbook": "no", "school": "holy", "modelled": "no",
+                 "description": "Burns."}
+        done, data = self.run_build([CALLING, ground, patch])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        params = data[0]["skills"][0]["effects"][0]["params"]
+        self.assertEqual(params["ground_spell_id"], 1000079)
+        self.assertNotIn("ground_spell", params)
+        self.assert_fails([CALLING, ground], "ground_spell 'holy_patch' is not a skill of vanguard")
+        self.assert_fails([CALLING, ground, {**patch, "client_visible": "no", "spellbook": ""}],
+                          "ground_spell 'holy_patch' is client_visible=no")
+
     def test_per_combo_is_a_formula_block(self):
         row = {**STRIKE, "effect1_kind": "school_damage",
                "effect1_params": "amount.base=5;amount.per_level=0;per_combo.base=5;per_combo.per_level=0.5"}

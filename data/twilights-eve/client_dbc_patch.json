@@ -347,6 +347,29 @@
    }
   },
   {
+   "spell_id": 1000397,
+   "calling": "vanguard",
+   "key": "consecration",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Consecration",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "The holy ground Bulwark Charge leaves at its destination.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Spell_Holy_InnerFire",
+    "visual": 5600
+   }
+  },
+  {
    "spell_id": 1000006,
    "calling": "vanguard",
    "key": "shield_of_penitent",
@@ -370,7 +393,7 @@
      0
     ],
     "spell_family": 4,
-    "family_flags": 34359738368,
+    "family_flags": 68719476736,
     "icon": "Interface\\Icons\\Spell_Holy_GreaterBlessingofSanctuary",
     "dbc_effects": [
      {
@@ -407,7 +430,7 @@
      0
     ],
     "spell_family": 4,
-    "family_flags": 68719476736,
+    "family_flags": 137438953472,
     "icon": "Interface\\Icons\\Ability_Warrior_Cleave",
     "dbc_effects": [
      {
@@ -447,7 +470,7 @@
      0
     ],
     "spell_family": 4,
-    "family_flags": 137438953472,
+    "family_flags": 274877906944,
     "icon": "Interface\\Icons\\Spell_Holy_HealingAura",
     "dbc_effects": [
      {
@@ -1077,7 +1100,7 @@
     {
      "type": "flat",
      "op": "COST",
-     "family_bit": 35,
+     "family_bit": 36,
      "value": -50
     }
    ]
@@ -1118,7 +1141,7 @@
     {
      "type": "flat",
      "op": "COST",
-     "family_bit": 35,
+     "family_bit": 36,
      "value": -100
     }
    ]
@@ -1802,13 +1825,13 @@
     {
      "type": "flat",
      "op": "COST",
-     "family_bit": 35,
+     "family_bit": 36,
      "value": -20
     },
     {
      "type": "flat",
      "op": "COST",
-     "family_bit": 37,
+     "family_bit": 38,
      "value": -20
     }
    ]
@@ -1849,13 +1872,13 @@
     {
      "type": "flat",
      "op": "COST",
-     "family_bit": 35,
+     "family_bit": 36,
      "value": -40
     },
     {
      "type": "flat",
      "op": "COST",
-     "family_bit": 37,
+     "family_bit": 38,
      "value": -40
     }
    ]
@@ -10034,7 +10057,7 @@
      }
     ],
     "aura_description": "Taking Shadow damage every second.",
-    "visual": 33,
+    "visual": 2255,
     "range_index": 4,
     "cast_time_index": 1,
     "duration_index": 31

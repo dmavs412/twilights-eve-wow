@@ -715,10 +715,15 @@ impl Realm {
             if w.shard_place() == Some(map) {
                 for e in &new {
                     match e {
-                        // A GameObject is the session's own to stream, not the shard's view.
+                        // A GameObject, or the player's own patch on the ground, is the
+                        // session's own to stream, not the shard's view.
                         SessionEvent::ObjectCreate { guid, kind, .. }
                             if *guid != w.guid
-                                && *kind != benilla_protocol::EntityKind::GameObject =>
+                                && !matches!(
+                                    kind,
+                                    benilla_protocol::EntityKind::GameObject
+                                        | benilla_protocol::EntityKind::DynamicObject
+                                ) =>
                         {
                             w.seen.insert(*guid);
                         }
@@ -905,6 +910,7 @@ impl Realm {
                 create: w.remote_create(c),
                 calling: callings::of(c.calling).key.clone(),
                 hidden: w.hidden(),
+                patches: w.patches(),
             });
         }
         self.shards.retain(|map, _| on.contains_key(map));
@@ -960,6 +966,17 @@ impl Realm {
                             space::flat_distance(o.position, p.position) <= population::VIEW_YD
                         })
                         .map(|o| (o.guid, o.create.clone())),
+                );
+                // The other players' patches on the ground; a player's own are their session's.
+                view.extend(
+                    players
+                        .iter()
+                        .filter(|o| o.guid != p.guid)
+                        .flat_map(|o| &o.patches)
+                        .filter(|(_, centre, _)| {
+                            space::flat_distance(*centre, p.position) <= population::VIEW_YD
+                        })
+                        .map(|(guid, _, create)| (*guid, create.clone())),
                 );
                 let gone: Vec<u64> = w
                     .seen

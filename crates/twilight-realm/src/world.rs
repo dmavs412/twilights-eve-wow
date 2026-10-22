@@ -601,6 +601,12 @@ impl InWorld {
         create
     }
 
+    /// The player's patches on the ground as other clients are sent them: each DynamicObject's
+    /// guid, centre and create.
+    pub(crate) fn patches(&self) -> Vec<(u64, [f32; 3], SessionEvent)> {
+        self.skills.patches()
+    }
+
     /// Whether other clients are kept from seeing the player: stealthed.
     pub(crate) fn hidden(&self) -> bool {
         self.skills.stealthed()
