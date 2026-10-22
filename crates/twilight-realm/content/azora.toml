@@ -101,7 +101,7 @@ position = [-9554.0, -706.0, 90.41]
 orientation = 5.5
 back = [-9552.5, -707.5, 90.41, 5.5]
 
-# ── Ground floor: a leaked pack of Shadowhide Gnolls by the Water portal ─────────────────────────
+# ── Ground floor: a leaked pack of two Shadowhide Gnolls by the Water portal ─────────────────────────
 [[creature]]
 guid = 970001
 entry = 96029
@@ -114,13 +114,6 @@ guid = 970002
 entry = 96029
 level = 19
 position = [-9553.5, -713.0, 64.74]
-orientation = 0.8
-
-[[creature]]
-guid = 970003
-entry = 96029
-level = 19
-position = [-9557.5, -712.0, 64.74]
 orientation = 0.8
 
 # ── Water stop: gnolls and darkweavers, and Gresh the Drowned ────────────────────────────────────
@@ -170,7 +163,7 @@ sides = "inside"
 use = "ward"
 ward = { stop = "water", needs_dead = 970015, held_text = "Gresh the Drowned's magic holds the stone.", opens = "fire" }
 
-# ── Floor 75: a leaked pack of Twilight Acolytes by the Fire portal ──────────────────────────────
+# ── Floor 75: a leaked pack of two Twilight Acolytes by the Fire portal ──────────────────────────────
 [[creature]]
 guid = 970021
 entry = 96031
@@ -184,13 +177,6 @@ entry = 96031
 level = 20
 position = [-9548.0, -715.0, 75.06]
 orientation = 2.0
-
-[[creature]]
-guid = 970023
-entry = 96031
-level = 20
-position = [-9552.0, -716.5, 75.06]
-orientation = 1.5
 
 # ── Fire stop: acolytes and Lesser Voidwalkers, and Speaker Thane ────────────────────────────────
 [[creature]]
@@ -239,19 +225,12 @@ sides = "inside"
 use = "ward"
 ward = { stop = "fire", needs_dead = 970035, held_text = "Speaker Thane's magic holds the stone.", opens = "shadow" }
 
-# ── Floor 90: a leaked pack of Voidwalkers by the Shadow portal ──────────────────────────────────
+# ── Floor 90: a lone leaked Voidwalker by the Shadow portal ──────────────────────────────────
 [[creature]]
 guid = 970041
 entry = 96033
 level = 21
 position = [-9552.0, -713.0, 90.5]
-orientation = 5.0
-
-[[creature]]
-guid = 970042
-entry = 96033
-level = 21
-position = [-9556.0, -710.0, 90.5]
 orientation = 5.0
 
 # ── Shadow stop: Voidwalkers and darkweavers, and the Kept ───────────────────────────────────────

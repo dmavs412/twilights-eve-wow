@@ -411,3 +411,46 @@ fn the_shadow_of_morganths_corpse_holds_three_ward_shards() {
     let shards = drop.iter().filter(|&&i| i == i64::from(WARD_SHARD)).count();
     assert_eq!(shards, 3, "the Shadow's drop list {drop:?}");
 }
+
+fn floats(v: &toml::Value) -> Vec<f64> {
+    v.as_array()
+        .unwrap()
+        .iter()
+        .map(|n| n.as_float().unwrap())
+        .collect()
+}
+
+/// Two gnolls, two acolytes, one Voidwalker and Theocritus stand in the tower at the start of a
+/// Run (#262). The Shadow of Morganth, held back by its ward, is not one of them.
+#[test]
+fn six_creatures_stand_in_the_tower_at_the_start_of_a_run() {
+    let file: toml::Table = include_str!("../content/azora.toml").parse().unwrap();
+    let origin = floats(&file["origin"]);
+    let (sin, cos) = file["yaw"].as_float().unwrap().to_radians().sin_cos();
+    let boxes: Vec<[Vec<f64>; 3]> = file["footprint"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|b| [floats(&b["x"]), floats(&b["y"]), floats(&b["z"])])
+        .collect();
+    let inside = |p: Vec<f64>| {
+        let (dx, dy) = (p[0] - origin[0], p[1] - origin[1]);
+        let local = [dx * cos + dy * sin, dy * cos - dx * sin, p[2] - origin[2]];
+        boxes
+            .iter()
+            .any(|b| (0..3).all(|k| b[k][0] <= local[k] && local[k] < b[k][1]))
+    };
+    let standing: Vec<i64> = file["creature"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| inside(floats(&c["position"])))
+        .filter(|c| c.get("after_pinned").is_none())
+        .map(|c| c["guid"].as_integer().unwrap())
+        .collect();
+    assert_eq!(
+        standing,
+        [970001, 970002, 970021, 970022, 970041, 970061],
+        "the tower's creatures at the start"
+    );
+}
