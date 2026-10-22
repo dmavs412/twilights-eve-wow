@@ -76,8 +76,8 @@ fn fire_blast(talents: &[(u32, u8)], seed: u64) -> Vec<(bool, u32)> {
 
 #[test]
 fn savage_strikes_raises_the_sheets_crit_chance_by_its_percent() {
-    let (_, plain, _, mut p_view) = warrior(&[], 1);
-    let (_, savage, _, mut s_view) = warrior(&[(*SAVAGE_STRIKES, 2)], 1);
+    let (_, plain, _, p_view) = warrior(&[], 1);
+    let (_, savage, _, s_view) = warrior(&[(*SAVAGE_STRIKES, 2)], 1);
     let before = p_view.fields(plain).player_crit_percentage().unwrap();
     let after = s_view.fields(savage).player_crit_percentage().unwrap();
     assert!((after - before - 6.0).abs() < 1e-3, "{before} -> {after}");

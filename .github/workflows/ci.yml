@@ -37,6 +37,9 @@ jobs:
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: cargo check
         run: cargo check --workspace
+      # A warning in the realm or its tests fails the run, so `cargo test` output stays readable.
+      - name: realm builds without warnings
+        run: "! cargo test -p twilight-realm --features wire --no-run --message-format short 2>&1 | grep -E '^crates.twilight-realm.*warning:'"
       - name: realm tests
         run: cargo test -p twilight-realm --features wire
       - name: spell pipeline tests

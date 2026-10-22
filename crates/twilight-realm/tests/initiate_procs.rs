@@ -329,7 +329,7 @@ fn ley_line_tap_at_full_mana_gives_a_shield_that_soaks_twice_the_cost() {
 fn frigid_conservation_refunds_half_only_on_a_target_already_slowed() {
     let (mut realm, me, mob, mut view) = world(3, &[(FRIGID_CONSERVATION, 2)]);
     go(&mut realm, &mut view, DRAIN, None);
-    let mut cold = |realm: &mut Realm, view: &mut View| {
+    let cold = |realm: &mut Realm, view: &mut View| {
         go(realm, view, BITING_COLD, Some(mob.guid));
         view.run(realm, 2.6)
     };

@@ -54,7 +54,6 @@ const BY_WARD_SHADOW: [f32; 3] = [-9220.5, -2705.0, 88.8];
 const BY_CACHE: [f32; 3] = [-9220.5, -2701.0, 88.8];
 /// In the top chamber, beside the Shadow of Morganth.
 const BY_SHADOW: [f32; 3] = [-9546.5, -721.0, 99.27];
-const SHADOW_AT: [f32; 3] = [-9545.0, -720.0, 99.27];
 
 /// Five fight together: a stop's elites are too many for one.
 const PLAYERS: usize = 5;

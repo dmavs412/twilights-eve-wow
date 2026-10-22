@@ -57,7 +57,7 @@ fn gouges_own_damage_does_not_break_it_but_later_damage_does() {
 
 #[test]
 fn the_target_stays_in_combat_while_incapacitated() {
-    let (mut realm, me, mob, mut view) = ready();
+    let (mut realm, _, mob, mut view) = ready();
     let events = gouge(&mut realm, &mut view, &mob);
     assert!(
         !stopped(&events, &mob),

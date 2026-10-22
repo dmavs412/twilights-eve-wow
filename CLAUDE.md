@@ -12,7 +12,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 
 - **Verify with `cargo check -q -p <crate> 2>&1 | tail -40`** in the foreground after every
   edit; the pipe keeps warnings out of the context. When a realm rule changes, also
-  `cargo test -q -p twilight-realm` (seconds, no game data). An edit under `tools/twilights-eve/`
+  `cargo test -q -p twilight-realm 2>&1 | grep -E "FAILED|panicked"; echo "exit ${PIPESTATUS[0]}"`
+  (seconds, no game data). Before a commit, `rustfmt --edition 2021` the `.rs` files you touched;
+  the pre-commit hook refuses unformatted ones. An edit under `tools/twilights-eve/`
   or to the CSV also runs the unittest line in `docs/spell_pipeline.md` and regenerates the
   outputs. When a commit touches `crates/twilight-realm/content/`, also run
   `python3.15 tools/twilights-eve/ground_check.py`; a flagged row is a failed gate, and `--fix`
@@ -77,10 +79,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   `CARGO_BUILD_JOBS=4` is in the user environment. Davis plays from a `play/` copy
   (gitignored, newest 3 kept), because a running exe cannot be overwritten.
 - `WOW_PROBE=list` lists the variables that drive a run with no one at the keyboard.
-- Files on disk are CRLF (`core.autocrlf=true`). An edit script converts its anchors to the
-  file's line ending before matching; a count of 0 means the ending, not the text. Write a
-  script with the Write tool and run it by path: a heredoc or a `-c` string turns `\r\n` into
-  real newlines on the way through the shell.
+- Text is LF in every checkout (`.gitattributes` `eol=lf` overrides `core.autocrlf`); only
+  `third_party/kira` keeps CRLF. Write an edit script with the Write tool and run it by path: a
+  heredoc or a `-c` string mangles `\r\n` and quotes on the way through the shell.
 - The vmangos world DB is a sqlite dump at
   `C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite`; Python opens that
   path, never the Git Bash `/tmp/vmangos/...` form.
