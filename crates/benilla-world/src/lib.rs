@@ -126,6 +126,7 @@ pub mod layout_keys;
 pub mod lighting;
 pub mod liquid;
 pub mod log_ring;
+pub mod mist;
 
 /// macOS `Cmd+Q`, re-pointed at the window close so the shutdown systems run.
 pub mod mac_quit;

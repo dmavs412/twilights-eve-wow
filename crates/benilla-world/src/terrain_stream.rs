@@ -108,6 +108,14 @@ impl TerrainStreamer {
     }
 }
 
+/// A loaded tile's terrain root: its ADT and its map, for what builds off the tile after it
+/// spawns (`crate::mist`). Children of the root despawn with the tile.
+#[derive(Component)]
+pub(crate) struct TerrainTileRoot {
+    pub(crate) adt: Handle<AdtTile>,
+    pub(crate) map: u32,
+}
+
 /// One loaded tile and everything it owns.
 struct TileState {
     handle: Handle<AdtTile>,
@@ -734,7 +742,14 @@ fn stream_terrain(
         // The root draws nothing: it carries the collider and surface roles, and its cells of
         // 4×4 chunks are children, a unit small enough for the exterior and frustum culls.
         // `furnish_tile_cells` spawns them a few per frame; the root keeps the visibility chain.
-        let mut tile_ent = commands.spawn((Transform::IDENTITY, Visibility::default()));
+        let mut tile_ent = commands.spawn((
+            Transform::IDENTITY,
+            Visibility::default(),
+            TerrainTileRoot {
+                adt: tile.handle.clone(),
+                map: map_id,
+            },
+        ));
         tile_ent.vis_chain_only();
         if let Some((verts, tris)) = collider_data {
             // Terrain takes the selection ring and clamps the pick (the reference's world trace).

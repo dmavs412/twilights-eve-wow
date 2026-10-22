@@ -85,6 +85,8 @@ impl PluginGroup for WorldPlugins {
             .add(crate::skybox::SkyboxPlugin)
             // Clouds: the reference's procedural field, glare occlusion and the visible layer.
             .add(crate::clouds::CloudsPlugin)
+            // The Closed Zones' mist curtain on every open/closed chunk edge, in the fog colour.
+            .add(crate::mist::MistPlugin)
             // Weather (`SMSG_WEATHER`): the storm light blend and precipitation.
             .add(crate::weather::WeatherPlugin)
             // The sun disc and glow halo (`CSky::Render`).
