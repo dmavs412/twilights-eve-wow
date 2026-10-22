@@ -17,7 +17,7 @@ const MCBRIDE: u64 = HIGHGUID_UNIT << 48 | 197 << 24 | 79970;
 const MCBRIDE_AT: [f32; 3] = [-8912.0, -140.5, 82.0];
 /// Brother Neals inside the Abbey, a Phased Dungeon creature (content/northshire_abbey.toml).
 const NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
-const NEALS_AT: [f32; 3] = [-8891.8, -186.8, 82.4];
+const NEALS_AT: [f32; 3] = [-8903.4, -184.9, 82.4];
 /// An explore spot in Northshire valley, on the Eastern Kingdoms.
 const SPOT: [f32; 2] = [-8920.0, -120.0];
 
@@ -68,7 +68,9 @@ tokens = 0
 explore = { place = "The Abbey Yard", position = [-8920.0, -120.0], radius = 5.0, map = 0 }
 "#;
 
-/// The Abbey's floor everywhere, so every spot here stands at its height.
+/// The Abbey's floor everywhere, so every spot here stands at its height, and walls everywhere:
+/// flat, the tower's monsters would stand beside Brother Neals, and no monster here sees the
+/// character, so a hand-in is never a fight.
 struct AbbeyFloor;
 
 impl Host for AbbeyFloor {
@@ -76,7 +78,7 @@ impl Host for AbbeyFloor {
         Some(82.0)
     }
     fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
-        true
+        false
     }
     fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
         None

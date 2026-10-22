@@ -20,7 +20,7 @@ const VURX_AT: [f32; 3] = [-8533.0, -204.0, 83.85];
 const MCBRIDE: u64 = HIGHGUID_UNIT << 48 | 197 << 24 | 79970;
 const MCBRIDE_AT: [f32; 3] = [-8912.0, -140.5, 82.0];
 const NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
-const NEALS_AT: [f32; 3] = [-8891.8, -186.8, 82.4];
+const NEALS_AT: [f32; 3] = [-8903.4, -184.9, 82.4];
 const IDOL: u32 = 980001;
 const THE_IDOL_IN_THE_DEEP: u32 = 94001;
 const INTO_THE_ABBEY: u32 = 94002;
@@ -43,6 +43,21 @@ impl Host for Floor {
     }
     fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
         true
+    }
+    fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
+        None
+    }
+}
+
+/// The same floor with walls everywhere: no monster sees the character.
+struct Unseen;
+
+impl Host for Unseen {
+    fn ground_height(&self, _: u32, _: f32, _: f32, _: f32) -> Option<f32> {
+        Some(83.0)
+    }
+    fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
+        false
     }
     fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
         None
@@ -244,13 +259,18 @@ fn the_idol_chain_from_vurx_to_brother_neals() {
     });
     drain(&mut realm);
 
-    // Brother Neals takes it in, inside the Abbey.
-    stand(
-        &mut realm,
-        [NEALS_AT[0] + 2.0, NEALS_AT[1], 82.4],
-        NEALS_AT,
-        0.5,
-    );
+    // Brother Neals takes it in, inside the Abbey. A player reaches him by clearing the nave; the
+    // flat floor would also bring the tower's monsters down beside him, so here none sees the
+    // character, and the step is the hand-in alone.
+    realm.handle(RealmCommand::DevTeleport {
+        x: NEALS_AT[0] + 2.0,
+        y: NEALS_AT[1],
+        facing: Some(std::f32::consts::PI),
+    });
+    for _ in 0..5 {
+        realm.tick(0.1, &Unseen);
+    }
+    drain(&mut realm);
     let done = turn_in(&mut realm, NEALS, INTO_THE_ABBEY);
     assert_eq!(
         completed(&done).map(|c| c.quest_id),

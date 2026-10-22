@@ -14,6 +14,10 @@ use common::*;
 const HIGHGUID_UNIT: u64 = 0xF130;
 /// The Abbey's survivor, a Field Giver (#85).
 const BROTHER_NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
+/// His row's x and y: the nave floor at the foot of the tower stair, model (-3.5, -8.5) (#314).
+const NEALS_AT: [f32; 2] = [-8903.4, -184.9];
+/// `FactionTemplate.dbc` 35, friendly to every race.
+const FRIENDLY_TO_ALL: u32 = 35;
 /// The Abbot at the top of the bell tower, whose bell calls two Corrupted Brothers at half health.
 const ABBOT: u64 = HIGHGUID_UNIT << 48 | 96005 << 24 | 780015;
 /// Where the Abbot stands, in the test's flat Abbey.
@@ -76,6 +80,8 @@ struct Abbey {
     called: HashSet<u64>,
     /// Everything that has turned on the character.
     attackers: HashSet<u64>,
+    /// Brother Neals' latest create: where he stands and his faction template.
+    neals: Option<([f32; 3], Option<u32>)>,
 }
 
 impl Abbey {
@@ -120,6 +126,7 @@ impl Abbey {
             me,
             called: HashSet::new(),
             attackers: HashSet::new(),
+            neals: None,
         };
         a.go(OUTSIDE, 1.0);
         a
@@ -135,8 +142,16 @@ impl Abbey {
     fn read(&mut self) {
         for e in drain(&mut self.realm) {
             match e {
-                SessionEvent::ObjectCreate { guid, fields, .. } if is_unit(guid) => {
+                SessionEvent::ObjectCreate {
+                    guid,
+                    position,
+                    fields,
+                    ..
+                } if is_unit(guid) => {
                     self.seen.insert(guid);
+                    if guid == BROTHER_NEALS {
+                        self.neals = Some((position, fields.unit_faction_template()));
+                    }
                     if guid & 0xFF_FFFF >= CALLED_GUID_BASE {
                         self.called.insert(guid);
                     }
@@ -217,6 +232,21 @@ fn outside_sees_no_monster_and_inside_sees_only_the_abbeys_own() {
         "inside holds the Abbey's monsters and Brother Neals, and nothing else"
     );
     assert!(!a.refused(brother), "a monster is not attackable inside");
+}
+
+#[test]
+fn brother_neals_waits_friendly_at_the_foot_of_the_tower_stair() {
+    let mut a = Abbey::new();
+    assert_eq!(a.neals, None, "Brother Neals shows outside the Abbey");
+    a.go(INSIDE, 0.5);
+    assert!(a.realm.run_elapsed().is_some(), "no Run");
+    let (at, faction) = a.neals.expect("Brother Neals is not in the Abbey's Phase");
+    let off = ((at[0] - NEALS_AT[0]).powi(2) + (at[1] - NEALS_AT[1]).powi(2)).sqrt();
+    assert!(
+        off <= 0.5,
+        "Brother Neals stands at {at:?}, {off} yd off his row"
+    );
+    assert_eq!(faction, Some(FRIENDLY_TO_ALL));
 }
 
 #[test]

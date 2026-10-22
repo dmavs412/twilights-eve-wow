@@ -179,12 +179,13 @@ count = 2
 position = [-8894.0, -187.0, 104.4]
 
 # Brother Neals (#85), the Abbey's one survivor and the ender of Into the Abbey: friendly, quest
-# flags only. He hides at the foot of the bell tower stair, past the nave, in the group of
-# "the stairs and rooms between it and the nave" above, at its model-frame point (8, -6) on the
-# floor.
+# flags only. He hides at the foot of the stair to the bell tower, in the nave's south-east
+# corner, at model point (-3.5, -8.5) on the nave's floor (z 1.87, ceiling 6.7), facing back up
+# the nave. The stair's first step is 1.5 yd east. The old point (8, -6) was inside the boxes but
+# outside the walls (#314); a vertical ray through the groups' meshes finds no floor there.
 [[creature]]
 guid = 780005
 entry = 952
 level = 50
-position = [-8891.8, -186.8, 82.4]
-orientation = 2.0
+position = [-8903.4, -184.9, 82.4]
+orientation = 1.46
