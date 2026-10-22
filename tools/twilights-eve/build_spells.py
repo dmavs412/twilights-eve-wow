@@ -373,8 +373,8 @@ def check_unique_ids(rows: list[dict]) -> None:
 
 
 def read_row_tables(data_dir: str | None) -> dict:
-    """SpellRange, SpellCastTimes and SpellDuration as plain tuples, and each stock spell's
-    SpellVisual and missile speed, for `resolve_dbc_rows`."""
+    """SpellRange, SpellCastTimes, SpellDuration and SpellRadius as plain tuples, and each stock
+    spell's SpellVisual and missile speed, for `resolve_dbc_rows`."""
     if not data_dir:
         raise BuildError("resolving range, cast time and duration needs --data or WOW_DATA; "
                          "pass --no-dbc-check to leave them as values")
@@ -383,7 +383,8 @@ def read_row_tables(data_dir: str | None) -> dict:
 
     try:
         chain = Chain(data_dir)
-        ranges, times, durations, spells = (load_dbc(chain, n) for n in ("SpellRange.dbc", "SpellCastTimes.dbc", "SpellDuration.dbc", "Spell.dbc"))
+        ranges, times, durations, spells, radii = (load_dbc(chain, n) for n in (
+            "SpellRange.dbc", "SpellCastTimes.dbc", "SpellDuration.dbc", "Spell.dbc", "SpellRadius.dbc"))
     except (OSError, KeyError, ValueError) as error:
         raise BuildError(f"cannot read the DBCs in {data_dir}: {error}") from error
     return {
@@ -392,19 +393,31 @@ def read_row_tables(data_dir: str | None) -> dict:
         "durations": [(durations.u32(i, 0), durations.i32(i, 1)) for i in range(durations.nrec)],
         "spell_looks": {spells.u32(i, 0): (spells.u32(i, SPELL_VISUAL), spells.f32(i, SPELL_SPEED))
                         for i in range(spells.nrec)},
+        "radii": [(radii.u32(i, 0), radii.f32(i, 1)) for i in range(radii.nrec)],
     }
 
 
 def resolve_dbc_rows(patch: dict, ranges: list, cast_times: list, durations: list,
-                     spell_looks: dict[int, tuple[int, float]] | None = None) -> None:
+                     spell_looks: dict[int, tuple[int, float]] | None = None,
+                     radii: list | None = None) -> None:
     """Replace each override's range, cast time and duration values with the index of the stock
     row that holds them (the lowest id on a tie). The client overwrites the index. A value no
     stock row holds fails the build. A row's `visual_spell` becomes the stock spell's SpellVisual
-    id and, for a missile, its speed: both are that spell's look."""
+    id and, for a missile, its speed: both are that spell's look. An effect's SpellRadius index
+    must be a row whose yards are the realm's `radius_yd`."""
     for entry in patch["spells"]:
         fields = entry["fields"]
         where = (f"{entry['calling']}/{entry['key']}" if "key" in entry
                  else f"creature/{entry['creature']}" if "creature" in entry else str(entry["spell_id"]))
+        yards = fields.pop("radius_yd", None)
+        index = next((e["radius_index"] for e in fields.get("dbc_effects", []) if "radius_index" in e), None)
+        if index is not None and radii is not None:
+            found = next((r for i, r in radii if i == index), None)
+            if found is None:
+                raise BuildError(f"{where}: radius index {index} is not a SpellRadius.dbc row")
+            if yards is not None and abs(found - float(yards)) > 1e-3:
+                raise BuildError(f"{where}: radius index {index} is {round(found, 3)} yd, "
+                                 f"the realm's radius is {yards}")
         if "visual_spell" in fields:
             stock = fields.pop("visual_spell")
             if stock not in (spell_looks or {}):
@@ -1322,6 +1335,23 @@ def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, wh
         if isinstance(params.get("tick_ms"), int):
             entry["amplitude_ms"] = params["tick_ms"]
         effects.append(entry)
+    radius_index = row.get("client_radius_index", "")
+    if radius_index:
+        # The reticle's size: the client reads it off the first effect.
+        if not effects:
+            raise BuildError(f"{where}: client_radius_index is set on a row with no DBC effect")
+        effects[0]["radius_index"] = whole(radius_index, f"{where} client_radius_index")
+        yards = [number(row["realm_radius_yd"], f"{where} realm_radius_yd")] if row["realm_radius_yd"] else []
+        yards += [e["params"]["radius_yd"] for e in built["effects"] if "radius_yd" in e["params"]]
+        for other in yards[1:]:
+            if float(other) != float(yards[0]):
+                raise BuildError(f"{where}: realm_radius_yd {yards[0]} and an effect's radius_yd {other} disagree")
+        if yards:
+            # `resolve_dbc_rows` holds the index to these yards and drops the field.
+            fields["radius_yd"] = yards[0]
+    elif row["target"] == "dest":
+        raise BuildError(f"{where}: a ground-targeted row needs client_radius_index (a SpellRadius.dbc id), "
+                         "or its targeting circle is the client's default size")
     if effects:
         fields["dbc_effects"] = effects
     return fields
@@ -1691,7 +1721,8 @@ def main(argv: list[str] | None = None) -> int:
 # The patch fields `resolve_dbc_rows` rewrites from the DBCs: a run without the DBCs cannot
 # reproduce them, so `--check --no-dbc-check` compares the patch with these dropped on both sides.
 DBC_RESOLVED_FIELDS = frozenset({"visual_spell", "visual", "speed", "range_min", "range_max", "range_index",
-                                 "cast_time_ms", "cast_time_index", "duration_ms", "duration_index"})
+                                 "cast_time_ms", "cast_time_index", "duration_ms", "duration_index",
+                                 "radius_yd"})
 
 
 def check_outputs(out_dir: str, outputs: tuple, resolved: bool) -> list[str]:

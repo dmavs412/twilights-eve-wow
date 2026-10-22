@@ -10053,7 +10053,8 @@
      {
       "effect": 3,
       "base": 0,
-      "per_level": 0
+      "per_level": 0,
+      "radius_index": 14
      }
     ],
     "aura_description": "Taking Shadow damage every second.",

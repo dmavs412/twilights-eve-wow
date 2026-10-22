@@ -231,6 +231,34 @@ fn a_second_miasma_takes_the_first_ones_object_away() {
     assert_eq!(at, there);
 }
 
+/// The circle the client draws is the circle the realm uses: 8 yd from the point.
+#[test]
+fn miasma_reaches_a_mob_at_7_5_yards_and_not_one_at_8_5() {
+    for (yards, inside) in [(7.5, true), (8.5, false)] {
+        let (mut realm, _, mobs, mut view) = world(&[]);
+        let mob = &mobs[0];
+        stand_at(&mut realm, mob, 20.0);
+        view.drain(&mut realm);
+        // Toward the caster, who stands toward the Crossroads.
+        let (dx, dy) = (
+            CROSSROADS_XY[0] - mob.position[0],
+            CROSSROADS_XY[1] - mob.position[1],
+        );
+        let len = (dx * dx + dy * dy).sqrt();
+        let dest = [
+            mob.position[0] + dx / len * yards,
+            mob.position[1] + dy / len * yards,
+            mob.position[2],
+        ];
+        miasma(&mut realm, &mut view, dest);
+        assert_eq!(
+            view.aura(mob.guid, MIASMA).is_some(),
+            inside,
+            "a mob {yards} yd from the point"
+        );
+    }
+}
+
 #[test]
 fn miasma_ticks_on_a_mob_inside_and_not_on_one_outside() {
     let (mut realm, _, mobs, mut view) = world(&[]);

@@ -356,6 +356,29 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         self.assert_fails([CALLING, ground, {**patch, "client_visible": "no", "spellbook": ""}],
                           "ground_spell 'holy_patch' is client_visible=no")
 
+    def test_a_ground_cast_sends_its_radius_index_on_its_first_effect(self):
+        ground = {**STRIKE, "target": "dest", "realm_radius_yd": "8", "client_radius_index": "14",
+                  "effect1_kind": "school_damage", "effect1_params": "amount.base=5;amount.per_level=0"}
+        done, _ = self.run_build([ground])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        fields = self.patch["spells"][0]["fields"]
+        self.assertEqual(fields["dbc_effects"][0]["radius_index"], 14)
+        self.assertNotIn("radius_index", fields["dbc_effects"][1])
+        # The yards the DBC check holds the index to.
+        self.assertEqual(fields["radius_yd"], 8)
+        self.assert_fails([{**ground, "client_radius_index": ""}],
+                          "a ground-targeted row needs client_radius_index")
+        self.assert_fails([{**ground, "effect1_kind": "ground_area",
+                            "effect1_params": "radius_yd=10;duration_ms=1000"}],
+                          "realm_radius_yd 8 and an effect's radius_yd 10 disagree")
+
+    def test_the_committed_miasma_row_has_radius_index_14(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
+                  encoding="utf-8") as f:
+            patch = json.load(f)
+        miasma = next(s for s in patch["spells"] if s.get("key") == "miasma")
+        self.assertEqual(miasma["fields"]["dbc_effects"][0]["radius_index"], 14)
+
     def test_per_combo_is_a_formula_block(self):
         row = {**STRIKE, "effect1_kind": "school_damage",
                "effect1_params": "amount.base=5;amount.per_level=0;per_combo.base=5;per_combo.per_level=0.5"}
@@ -1196,6 +1219,20 @@ class ResolveRows(unittest.TestCase):
     def test_a_missing_minimum_is_zero_and_an_instant_cast_is_row_one(self):
         fields = self.resolved(range_min=0, range_max=20, cast_time_ms=0)
         self.assertEqual((fields["range_index"], fields["cast_time_index"]), (3, 1))
+
+    def test_a_radius_index_must_hold_the_realms_yards(self):
+        radii = [(13, 10.0), (14, 8.0)]
+        patch = {"spells": [{"spell_id": 1, "fields": {"radius_yd": 8, "dbc_effects": [{"radius_index": 14}]}}],
+                 "talents": []}
+        self.module.resolve_dbc_rows(patch, **self.tables, radii=radii)
+        self.assertNotIn("radius_yd", patch["spells"][0]["fields"])
+        bad = {"spells": [{"spell_id": 1, "fields": {"radius_yd": 8, "dbc_effects": [{"radius_index": 13}]}}],
+               "talents": []}
+        with self.assertRaisesRegex(self.module.BuildError, "radius index 13 is 10.0 yd, the realm's radius is 8"):
+            self.module.resolve_dbc_rows(bad, **self.tables, radii=radii)
+        unknown = {"spells": [{"spell_id": 1, "fields": {"dbc_effects": [{"radius_index": 99}]}}], "talents": []}
+        with self.assertRaisesRegex(self.module.BuildError, "radius index 99 is not a SpellRadius.dbc row"):
+            self.module.resolve_dbc_rows(unknown, **self.tables, radii=radii)
 
     def test_no_matching_row_fails_naming_the_value(self):
         with self.assertRaisesRegex(self.module.BuildError, "range 3.0-7.0"):

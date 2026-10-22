@@ -179,6 +179,7 @@ fn effect_row(effect: &serde_json::Value) -> EffectRow {
         mechanic: unsigned("mechanic"),
         misc_value: effect["misc_value"].as_i64().unwrap_or(0) as i32,
         implicit_target_a: unsigned("target_a"),
+        radius_index: unsigned("radius_index"),
         base_points: effect["base"].as_f64().unwrap_or(0.0).round() as i32 - 1,
         base_dice: 1,
         die_sides: 1,
@@ -506,5 +507,18 @@ mod tests {
         let d = catalog.get(1_000_002).unwrap();
         assert_eq!(d.effect_row(3).base_points, 3);
         assert_eq!(d.effect_row(9), EffectRow::default());
+    }
+
+    #[test]
+    fn an_effects_radius_index_reaches_the_row() {
+        let mut catalog = patch_catalog();
+        catalog
+            .apply_dbc_patch(
+                r#"{"spells": [{"spell_id": 1000003, "fields": {"name": "Cloud",
+                "dbc_effects": [{"effect": 3, "radius_index": 14}, {"effect": 3}]}}]}"#,
+            )
+            .unwrap();
+        let d = catalog.get(1_000_003).unwrap();
+        assert_eq!(d.effect_radius_index, [14, 0, 0]);
     }
 }
