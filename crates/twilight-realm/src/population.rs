@@ -199,7 +199,8 @@ impl Population {
                     let ground = ground_under(host, map, spawn.position, spawn.grounded);
                     let z = ground.unwrap_or(spawn.position[2]);
                     let level = self.level(spawn.guid, spawn.level_min, spawn.level_max);
-                    if let Some(mob) = Mob::spawn(i, level, z) {
+                    let zone = mobs::zone_factor_at(host, spawn.phase, map, spawn.position);
+                    if let Some(mob) = Mob::spawn(i, level, z, zone) {
                         events.push(mob.create());
                         mobs.push(mob);
                         self.present[i as usize] = true;

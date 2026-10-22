@@ -2,6 +2,7 @@
 //! and `content/elwynn.toml` generated from the research dumps by `examples/import_barrens.rs`
 //! and `examples/import_elwynn.rs`), and each one's state in the world.
 
+use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use benilla_protocol::messages::{MonsterMoveFacing, ObjectType};
@@ -295,11 +296,66 @@ struct Row(u32, u32, u8, u8, f32, f32, f32, f32, u32, f32, u32);
 pub(crate) struct Difficulty {
     pub(crate) health: f32,
     pub(crate) damage: f32,
+    /// Each level past 1 multiplies health by `1 + health_per_level` (ADR 0012).
+    health_per_level: f32,
+    damage_per_level: f32,
+    rank: RankFactors,
+}
+
+/// `[difficulty.rank]`: `[health, damage]` factors for each rank above normal.
+#[derive(Deserialize, Clone, Copy)]
+struct RankFactors {
+    elite: [f32; 2],
+    rare_elite: [f32; 2],
+    boss: [f32; 2],
+    rare: [f32; 2],
+}
+
+impl Difficulty {
+    /// The health and damage factors on a non-inert creature of `rank` at `level` in `zone`.
+    fn muls(&self, rank: u32, level: u8, zone: ZoneFactor) -> (f32, f32) {
+        let [rank_health, rank_damage] = match rank {
+            1 => self.rank.elite,
+            2 => self.rank.rare_elite,
+            3 => self.rank.boss,
+            4 => self.rank.rare,
+            _ => [1.0, 1.0],
+        };
+        let steps = i32::from(level.max(1)) - 1;
+        (
+            self.health * (1.0 + self.health_per_level).powi(steps) * rank_health * zone.health,
+            self.damage * (1.0 + self.damage_per_level).powi(steps) * rank_damage * zone.damage,
+        )
+    }
+}
+
+/// A creature's **Zone Factor** (ADR 0012): health and damage factors for the area it stands in.
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq)]
+pub(crate) struct ZoneFactor {
+    pub(crate) health: f32,
+    pub(crate) damage: f32,
+}
+
+impl ZoneFactor {
+    /// An area with no row, nor a parent with one.
+    pub(crate) const NONE: Self = Self {
+        health: 1.0,
+        damage: 1.0,
+    };
+}
+
+/// A `[[zone]]` row of `mobs.toml`: the Zone Factor of the `AreaTable.dbc` area `area`.
+#[derive(Deserialize)]
+struct ZoneRow {
+    area: u32,
+    health: f32,
+    damage: f32,
 }
 
 #[derive(Deserialize)]
 struct HandFile {
     difficulty: Difficulty,
+    zone: Vec<ZoneRow>,
     template: Vec<Template>,
     spawn: Vec<HandSpawn>,
 }
@@ -390,6 +446,8 @@ struct BandCreature {
 
 pub(crate) struct Mobs {
     pub(crate) difficulty: Difficulty,
+    /// Each `[[zone]]` row's factor, by area.
+    zones: HashMap<u32, ZoneFactor>,
     pub(crate) template: Vec<Template>,
     pub(crate) spawn: Vec<Spawn>,
     /// Entries whose template comes from `elwynn.toml` and no hand-written one overrides.
@@ -426,6 +484,17 @@ pub(crate) fn content() -> &'static Mobs {
             !overrides.removed.contains(&r.1) && !overrides.removed_guids.contains(&r.0)
         });
         let difficulty = hand.difficulty;
+        let zone_factors = hand
+            .zone
+            .iter()
+            .map(|z| {
+                let factor = ZoneFactor {
+                    health: z.health,
+                    damage: z.damage,
+                };
+                (z.area, factor)
+            })
+            .collect();
         let mut template = hand.template;
         template.extend(barrens.template);
         let vanilla: Vec<u32> = elwynn
@@ -691,6 +760,7 @@ pub(crate) fn content() -> &'static Mobs {
         }
         Mobs {
             difficulty,
+            zones: zone_factors,
             template,
             spawn,
             vanilla,
@@ -702,6 +772,50 @@ pub(crate) fn content() -> &'static Mobs {
 pub(crate) fn difficulty_muls() -> (f32, f32) {
     let d = content().difficulty;
     (d.health, d.damage)
+}
+
+/// The Zone Factor of `area`: its own `[[zone]]` row, else its parent zone's
+/// (`content/area_parents.toml`), else none.
+pub(crate) fn zone_factor(area: Option<u32>) -> ZoneFactor {
+    let zones = &content().zones;
+    area.and_then(|a| zones.get(&a).or_else(|| zones.get(area_parent(a)?)))
+        .copied()
+        .unwrap_or(ZoneFactor::NONE)
+}
+
+/// The Zone Factor of a creature made at `position` on `map` in `phase`: a Phased Dungeon's
+/// comes from its file's `zone`, the open world's from the host's area under the point.
+pub(crate) fn zone_factor_at(
+    host: &dyn crate::Host,
+    phase: Phase,
+    map: u32,
+    position: [f32; 3],
+) -> ZoneFactor {
+    zone_factor(match phase {
+        Phase::OpenWorld => host.area_at(map, position[0], position[1]),
+        Phase::Dungeon(_) => phased::zone(phase),
+    })
+}
+
+/// The zone `area` is a subzone of, from `content/area_parents.toml`.
+fn area_parent(area: u32) -> Option<&'static u32> {
+    #[derive(Deserialize)]
+    struct Row {
+        id: u32,
+        zone: u32,
+    }
+    #[derive(Deserialize)]
+    struct File {
+        area: Vec<Row>,
+    }
+    static PARENTS: OnceLock<HashMap<u32, u32>> = OnceLock::new();
+    PARENTS
+        .get_or_init(|| {
+            let file: File = toml::from_str(include_str!("../content/area_parents.toml"))
+                .expect("content/area_parents.toml parses");
+            file.area.into_iter().map(|r| (r.id, r.zone)).collect()
+        })
+        .get(&area)
 }
 
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
@@ -856,9 +970,9 @@ const WANDER_PAUSE: (f32, f32) = (6.0, 16.0);
 
 impl Mob {
     /// The mob of `content().spawn[index]` at `level`, standing at `z` (the ground under its
-    /// spawn point).
-    pub(crate) fn spawn(index: u32, level: u8, z: f32) -> Option<Self> {
-        Self::from_spawn(content().spawn.get(index as usize)?, index, level, z)
+    /// spawn point), under the Zone Factor `zone`.
+    pub(crate) fn spawn(index: u32, level: u8, z: f32, zone: ZoneFactor) -> Option<Self> {
+        Self::from_spawn(content().spawn.get(index as usize)?, index, level, z, zone)
     }
 
     /// Stands it, and its home, at height `z`: for one made before its ground was known.
@@ -867,9 +981,10 @@ impl Mob {
         self.home[2] = z;
     }
 
-    /// `template`'s stats at `level`, under the creature difficulty.
-    pub(crate) fn stats_for(template: &Template, level: u8) -> MobStats {
-        let (health_mul, damage_mul) = difficulty_muls();
+    /// `template`'s stats at `level`, under the creature difficulty: its level, its rank and
+    /// the Zone Factor `zone`.
+    pub(crate) fn stats_for(template: &Template, level: u8, zone: ZoneFactor) -> MobStats {
+        let (health_mul, damage_mul) = content().difficulty.muls(template.rank, level, zone);
         if template.inert {
             MobStats::new(
                 template.unit_class,
@@ -898,8 +1013,9 @@ impl Mob {
         level: u8,
         position: [f32; 3],
         audience: crate::audience::Audience,
+        zone: ZoneFactor,
     ) -> Self {
-        let stats = Self::stats_for(template, level);
+        let stats = Self::stats_for(template, level, zone);
         let mut mob = Self::hunter(guid, template, stats, position, 0.0, 0);
         mob.hunts = None;
         mob.leashes = true;
@@ -907,10 +1023,17 @@ impl Mob {
         mob
     }
 
-    /// The mob of `spawn`, which is `content().spawn[index]`, at `level`.
-    pub(crate) fn from_spawn(spawn: &'static Spawn, index: u32, level: u8, z: f32) -> Option<Self> {
+    /// The mob of `spawn`, which is `content().spawn[index]`, at `level` under the Zone Factor
+    /// `zone`.
+    pub(crate) fn from_spawn(
+        spawn: &'static Spawn,
+        index: u32,
+        level: u8,
+        z: f32,
+        zone: ZoneFactor,
+    ) -> Option<Self> {
         let template = template(spawn.entry)?;
-        let stats = Self::stats_for(template, level);
+        let stats = Self::stats_for(template, level, zone);
         let guid = HIGHGUID_UNIT << 48
             | u64::from(spawn.entry & 0xFF_FFFF) << 24
             | u64::from(spawn.guid & 0xFF_FFFF);
@@ -967,8 +1090,15 @@ impl Mob {
 
     /// The mob of the timed-call row `index` for wave `wave` of `brought_by`: its own guid, since
     /// the row's repeats as the fight goes on.
-    pub(crate) fn timed(index: u32, level: u8, z: f32, wave: u32, brought_by: u64) -> Option<Self> {
-        let mut mob = Self::spawn(index, level, z)?;
+    pub(crate) fn timed(
+        index: u32,
+        level: u8,
+        z: f32,
+        zone: ZoneFactor,
+        wave: u32,
+        brought_by: u64,
+    ) -> Option<Self> {
+        let mut mob = Self::spawn(index, level, z, zone)?;
         let low = TIMED_LIVE_BASE + (wave & 0x3F_FFFF);
         mob.guid = unit_guid(mob.template.entry, low);
         mob.brought_by = Some(brought_by);
@@ -1431,14 +1561,17 @@ mod tests {
             .iter()
             .position(|s| s.entry == 1642)
             .unwrap();
-        let guard = Mob::spawn(i as u32, 10, 0.0).unwrap();
+        let guard = Mob::spawn(i as u32, 10, 0.0, ZoneFactor::NONE).unwrap();
         assert!(guard.alive() && !guard.attackable());
         let i = content().spawn.iter().position(|s| s.entry == 6).unwrap();
-        assert!(Mob::spawn(i as u32, 1, 0.0).unwrap().attackable());
+        assert!(Mob::spawn(i as u32, 1, 0.0, ZoneFactor::NONE)
+            .unwrap()
+            .attackable());
     }
 
-    /// The mob of `entry` at `level` and its template's stats before the global difficulty.
-    fn mob_and_vanilla(entry: u32, level: u8) -> (MobStats, MobStats) {
+    /// The mob of `entry` at `level` in `zone` and its template's stats before the global
+    /// difficulty.
+    fn mob_and_vanilla(entry: u32, level: u8, zone: ZoneFactor) -> (MobStats, MobStats) {
         let spawn: &'static Spawn = Box::leak(Box::new(Spawn {
             entry,
             ..Default::default()
@@ -1452,22 +1585,95 @@ mod tests {
             t.armor_multiplier,
         );
         (
-            Mob::from_spawn(spawn, 0, level, 0.0).unwrap().stats,
+            Mob::from_spawn(spawn, 0, level, 0.0, zone).unwrap().stats,
             vanilla,
         )
     }
 
     #[test]
-    fn difficulty_doubles_health_and_raises_damage_by_half_except_for_dummies() {
-        // Defias Thug.
-        let (hard, vanilla) = mob_and_vanilla(38, 8);
-        assert_eq!(hard.max_health, vanilla.max_health * 2);
-        assert!((hard.min_damage - vanilla.min_damage * 1.5).abs() < 1e-3);
-        assert!((hard.max_damage - vanilla.max_damage * 1.5).abs() < 1e-3);
+    fn difficulty_scales_health_and_damage_by_level_except_for_dummies() {
+        // Defias Thug, a normal mob: x2 health and x1.5 damage, and 5% and 4% a level past 1.
+        let (hard, vanilla) = mob_and_vanilla(38, 8, ZoneFactor::NONE);
+        let (health, damage) = (2.0 * 1.05f32.powi(7), 1.5 * 1.04f32.powi(7));
+        let want = (vanilla.max_health as f32 * health).round() as u32;
+        assert!(
+            hard.max_health.abs_diff(want) <= 1,
+            "{} vs {want}",
+            hard.max_health
+        );
+        assert!((hard.min_damage - vanilla.min_damage * damage).abs() < 1e-3);
+        assert!((hard.max_damage - vanilla.max_damage * damage).abs() < 1e-3);
         assert_eq!(hard.armor, vanilla.armor);
-        // Training Dummy.
-        let (dummy, vanilla) = mob_and_vanilla(97001, 10);
+        // Training Dummy, even in Elwynn Forest.
+        let (dummy, vanilla) = mob_and_vanilla(97001, 10, zone(ELWYNN_FOREST));
         assert_eq!(dummy, vanilla);
+    }
+
+    const ELWYNN_FOREST: u32 = 12;
+    const NORTHSHIRE_VALLEY: u32 = 9;
+
+    fn zone(area: u32) -> ZoneFactor {
+        zone_factor(Some(area))
+    }
+
+    /// A warrior-class template of `rank` with no multipliers of its own.
+    fn warrior(rank: u32) -> Template {
+        let mut t = Template::hunter(
+            0,
+            String::new(),
+            String::new(),
+            0,
+            0,
+            UnitClass::Warrior,
+            2000,
+            7.0,
+            Vec::new(),
+            Vec::new(),
+        );
+        t.rank = rank;
+        t
+    }
+
+    #[test]
+    fn a_level_12_warrior_in_elwynn_forest_has_half_again_northshires_health() {
+        let t = warrior(0);
+        let northshire = Mob::stats_for(&t, 12, zone(NORTHSHIRE_VALLEY));
+        let elwynn = Mob::stats_for(&t, 12, zone(ELWYNN_FOREST));
+        let vanilla = MobStats::new(UnitClass::Warrior, 12, 1.0, 1.0, 1.0);
+        let want = (vanilla.max_health as f32 * 2.0 * 1.05f32.powi(11)).round() as u32;
+        assert_eq!(northshire.max_health, want);
+        let half_again = (northshire.max_health as f32 * 1.5).round() as u32;
+        assert!(elwynn.max_health.abs_diff(half_again) <= 1);
+        // About 1,270 health and a 59 swing on average.
+        assert_eq!(elwynn.max_health, 1267);
+        let swing = (elwynn.min_damage + elwynn.max_damage) / 2.0;
+        assert!((swing - 59.05).abs() < 0.05, "{swing}");
+    }
+
+    #[test]
+    fn rank_multiplies_health_and_damage_over_a_normal_mob() {
+        let normal = Mob::stats_for(&warrior(0), 12, ZoneFactor::NONE);
+        for (rank, health, damage) in [(1, 2.0, 1.5), (2, 2.5, 1.75), (3, 3.0, 2.0), (4, 1.5, 1.25)]
+        {
+            let ranked = Mob::stats_for(&warrior(rank), 12, ZoneFactor::NONE);
+            let want = (normal.max_health as f32 * health).round() as u32;
+            assert!(ranked.max_health.abs_diff(want) <= 1, "rank {rank}");
+            assert!((ranked.max_damage - normal.max_damage * damage).abs() < 1e-3);
+        }
+    }
+
+    #[test]
+    fn a_subzone_with_no_row_takes_its_parent_zones_factor() {
+        // Goldshire, a subzone of Elwynn Forest.
+        assert_eq!(zone(87), zone(ELWYNN_FOREST));
+        assert_eq!(zone(ELWYNN_FOREST).health, 1.5);
+        // Northshire Abbey's DBC parent is Elwynn Forest; its own row keeps it at Valley strength.
+        assert_eq!(zone(24), ZoneFactor::NONE);
+        // The Wailing Caverns: no row, no parent.
+        assert_eq!(zone(718), ZoneFactor::NONE);
+        assert_eq!(zone_factor(None), ZoneFactor::NONE);
+        // Forest's Edge's creatures stand in its file's zone.
+        assert_eq!(phased::zone(Phase::Dungeon(2)), Some(ELWYNN_FOREST));
     }
 }
 

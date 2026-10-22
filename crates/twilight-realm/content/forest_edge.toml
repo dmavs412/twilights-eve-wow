@@ -10,6 +10,8 @@
 id = 2
 name = "Forest's Edge"
 map = 0
+# Elwynn Forest, for its creatures' Zone Factor.
+zone = 12
 origin = [0.0, 0.0, 0.0]
 yaw = 0.0
 

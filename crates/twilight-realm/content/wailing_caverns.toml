@@ -37,6 +37,9 @@ to = { map = 1, position = [-738.462, -2217.8, 16.919], orientation = 6.021 }
 # health and 1.7x damage (the boss 5x and 2.5x), sized for a party of five; this slice is run
 # alone, so health is halved and damage cut to about a normal mob's (the boss's packs two
 # druids beside her). They stay elite (`rank` 1): the dragon on the portrait, and dungeon kill XP.
+# The numbers below are those tuned numbers divided by mobs.toml's [difficulty], the elite rank
+# (x2, x1.5) and the growth to the row's lowest level (x1.05 and x1.04 a level past 1, #269),
+# so the run plays as it was tuned; a creature at its row's higher level is 5% and 4% tougher.
 
 [[template]]
 entry = 3637
@@ -49,8 +52,8 @@ faction_template = 270
 unit_class = "warrior"
 level_min = 18
 level_max = 19
-health_multiplier = 1.5
-damage_multiplier = 0.8
+health_multiplier = 0.3272
+damage_multiplier = 0.2738
 armor_multiplier = 1.0
 base_attack_time = 2000
 speed_walk = 1.0
@@ -67,8 +70,8 @@ faction_template = 270
 unit_class = "warrior"
 level_min = 18
 level_max = 19
-health_multiplier = 1.5
-damage_multiplier = 0.8
+health_multiplier = 0.3272
+damage_multiplier = 0.2738
 armor_multiplier = 1.0
 base_attack_time = 2000
 speed_walk = 1.0
@@ -87,9 +90,9 @@ unit_class = "paladin"
 level_min = 19
 level_max = 20
 # Solo-tuned 1.5 and 0.8 after mobs.toml's [difficulty], like Lady Anacondra's, whose two druids
-# these are.
-health_multiplier = 0.75
-damage_multiplier = 0.5333
+# these are, at level 19.
+health_multiplier = 0.1558
+damage_multiplier = 0.1755
 armor_multiplier = 1.0
 base_attack_time = 2000
 speed_walk = 1.0
@@ -111,8 +114,8 @@ level_max = 20
 # Her solo tuning (health 2.5, damage 1.0) is the number after mobs.toml's [difficulty] (health
 # x2, damage x1.5), so the row holds 1.25 and 0.6667. The loot tests need a level 25 warrior to
 # beat her alone.
-health_multiplier = 1.25
-damage_multiplier = 0.6667
+health_multiplier = 0.2473
+damage_multiplier = 0.211
 armor_multiplier = 1.0
 base_attack_time = 2000
 speed_walk = 1.0

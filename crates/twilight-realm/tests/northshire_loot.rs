@@ -60,7 +60,7 @@ const MINE_AT: [f32; 2] = [-8630.0, -143.0];
 const MAUL: u32 = 900304;
 const SLOT_MAIN_HAND: u8 = 15;
 
-/// A level 10 Northshire warrior's save, holding the maul.
+/// A level 20 Northshire warrior's save, holding the maul.
 fn warrior_blob() -> (u64, String) {
     let mut maker = realm();
     let RealmCommand::CreateCharacter(mut req) = create_cmd("Miner", HUMAN, 0, WARRIOR) else {
@@ -75,7 +75,7 @@ fn warrior_blob() -> (u64, String) {
         blob.truncate(at);
     }
     let mut blob = blob
-        .replace("level = 1\n", "level = 10\n")
+        .replace("level = 1\n", "level = 20\n")
         .replace("items = []\n", "");
     blob.push_str(&format!(
         "\n[[items]]\nslot = {SLOT_MAIN_HAND}\nentry = {MAUL}\ncount = 1\n"

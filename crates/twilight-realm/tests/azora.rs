@@ -63,7 +63,8 @@ const APPRENTICES_SECRET: u32 = 94602;
 const WARD_SHARD: u32 = 980021;
 
 /// A Warrior-Class Calling in Tier 3, whose Power Level at level 60 is 60 (no shipped Calling is
-/// past Tier 2).
+/// past Tier 2). Its Tier Bonus carries the five through every stop's elites and bosses, whose
+/// health and damage grow per level and per rank (#269).
 const TEST_CALLINGS: &str = r#"
 [[calling]]
 key = "test_champion"
@@ -71,7 +72,7 @@ name = "Test Champion"
 tier = 3
 class = 1
 cap = 60
-tier_bonus = { strength = 0, agility = 0, stamina = 0, intellect = 0, spirit = 0 }
+tier_bonus = { strength = 2000, agility = 0, stamina = 2000, intellect = 0, spirit = 0 }
 shapeshift_form = 17
 armour = ["cloth", "leather", "mail", "plate"]
 

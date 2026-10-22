@@ -488,6 +488,9 @@ pub(crate) struct Dungeon {
     /// What the dungeon is called in the text players read.
     pub(crate) name: String,
     pub(crate) map: u32,
+    /// The `AreaTable.dbc` area its creatures' Zone Factor comes from; none takes 1.0.
+    #[serde(default)]
+    pub(crate) zone: Option<u32>,
     /// Where the building stands: the footprint's frame starts here...
     origin: [f32; 3],
     /// ...turned this many degrees about +Z.
@@ -746,6 +749,14 @@ pub(crate) fn is_door(entry: u32) -> bool {
 /// The Phased Dungeon of this id.
 pub(crate) fn dungeon(id: u32) -> Option<&'static Dungeon> {
     content().iter().find(|d| d.id == id)
+}
+
+/// The area `phase`'s creatures take their Zone Factor from: its dungeon file's `zone`.
+pub(crate) fn zone(phase: Phase) -> Option<u32> {
+    match phase {
+        Phase::OpenWorld => None,
+        Phase::Dungeon(id) => dungeon(id)?.zone,
+    }
 }
 
 /// Every Phased Dungeon: one content file each.

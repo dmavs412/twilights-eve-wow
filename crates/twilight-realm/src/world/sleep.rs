@@ -119,7 +119,7 @@ fn wake(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mobs::{Spawn, Template};
+    use crate::mobs::{Spawn, Template, ZoneFactor};
     use crate::phased::Phase;
     use crate::rules::school::School;
     use crate::rules::stats::UnitClass;
@@ -346,11 +346,15 @@ mod tests {
             asleep: true,
             ..Default::default()
         }));
-        let mut mob = Mob::from_spawn(spawn, 0, 1, 0.0).unwrap();
+        let mut mob = Mob::from_spawn(spawn, 0, 1, 0.0, ZoneFactor::NONE).unwrap();
         assert!(mob.asleep);
         mob.asleep = false;
         // A Run's reset builds its creatures from their rows again.
-        assert!(Mob::from_spawn(spawn, 0, 1, 0.0).unwrap().asleep);
+        assert!(
+            Mob::from_spawn(spawn, 0, 1, 0.0, ZoneFactor::NONE)
+                .unwrap()
+                .asleep
+        );
     }
 
     #[test]

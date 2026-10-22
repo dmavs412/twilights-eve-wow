@@ -268,7 +268,9 @@ impl Encounters {
                             spawn.position,
                             spawn.grounded,
                         );
-                        let Some(mut mob) = Mob::spawn(row, spawn.level_min, z) else {
+                        let zone =
+                            mobs::zone_factor_at(host, spawn.phase, spawn.map, spawn.position);
+                        let Some(mut mob) = Mob::spawn(row, spawn.level_min, z, zone) else {
                             continue;
                         };
                         mob.guid =

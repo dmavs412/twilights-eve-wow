@@ -16,6 +16,8 @@
 id = 6
 name = "Jasperlode Mine"
 map = 0
+# Elwynn Forest, for its creatures' Zone Factor.
+zone = 12
 origin = [-9154.65, -594.39, 62.9]
 yaw = -171.5
 

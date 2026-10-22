@@ -14,6 +14,51 @@
 [difficulty]
 health = 2.0
 damage = 1.5
+# Each level past 1 multiplies health by (1 + health_per_level) and damage by
+# (1 + damage_per_level) (ADR 0012).
+health_per_level = 0.05
+damage_per_level = 0.04
+
+# [health, damage] for each rank above normal, on top of the template's own multipliers.
+[difficulty.rank]
+elite = [2.0, 1.5]
+rare_elite = [2.5, 1.75]
+boss = [3.0, 2.0]
+rare = [1.5, 1.25]
+
+# Zone Factor (ADR 0012): health and damage for a creature standing in AreaTable.dbc's `area`.
+# An area with no row takes its parent zone's (content/area_parents.toml), else 1.0. A Phased
+# Dungeon's creatures stand in its file's `zone`.
+[[zone]]
+area = 12 # Elwynn Forest
+health = 1.5
+damage = 1.3
+
+[[zone]]
+area = 9 # Northshire Valley
+health = 1.0
+damage = 1.0
+
+# Northshire's subzones whose DBC parent is Elwynn Forest, not Northshire Valley.
+[[zone]]
+area = 23 # Northshire River
+health = 1.0
+damage = 1.0
+
+[[zone]]
+area = 24 # Northshire Abbey
+health = 1.0
+damage = 1.0
+
+[[zone]]
+area = 34 # Echo Ridge Mine
+health = 1.0
+damage = 1.0
+
+[[zone]]
+area = 59 # Northshire Vineyards
+health = 1.0
+damage = 1.0
 
 [[template]]
 entry = 3101
@@ -608,7 +653,8 @@ detection_range = 18.0
 # Geomancer's display (163) and faction (26). Tuned by tests/echo_ridge.rs, white swings only
 # against a human warrior with the starting Chest and the Stone Gnoll Hammer, over 40 seeds:
 # health 1.6, damage 1.1 lets a level 8 win 26 of 40 and a level 7 only 10. Those are the numbers
-# after [difficulty] (health x2, damage x1.5), so the row holds 0.8 and 0.7333.
+# after [difficulty] (health x2, damage x1.5), its level 7 growth (x1.05^6, x1.04^6) and the elite
+# rank (x2, x1.5), so the row holds 0.2985 and 0.3864 (#269).
 [[template]]
 entry = 96002
 name = "Geomancer Vurx"
@@ -621,8 +667,8 @@ faction_template = 26
 unit_class = "mage"
 level_min = 7
 level_max = 7
-health_multiplier = 0.8
-damage_multiplier = 0.7333
+health_multiplier = 0.2985
+damage_multiplier = 0.3864
 armor_multiplier = 1.0
 base_attack_time = 2000
 speed_walk = 1.0

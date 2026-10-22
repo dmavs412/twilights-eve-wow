@@ -113,8 +113,9 @@ impl Shard {
         let low = mobs::AUDIENCE_GUID_BASE | self.audience_spawned & 0xF_FFFF;
         let guid = mobs::unit_guid(template.entry, low);
         let at = crate::ground::grounded_at(host, self.place.map, position, true);
+        let zone = mobs::zone_factor_at(host, self.place.phase, self.place.map, at);
         self.mobs
-            .push(Mob::for_audience(guid, template, level, at, audience));
+            .push(Mob::for_audience(guid, template, level, at, audience, zone));
         guid
     }
 
@@ -221,7 +222,8 @@ impl Shard {
             {
                 run.appeared.push(s.guid);
                 let z = crate::ground::grounded_z(host, s.map, s.position, s.grounded);
-                if let Some(mob) = Mob::spawn(i as u32, s.level_min, z) {
+                let zone = mobs::zone_factor_at(host, s.phase, s.map, s.position);
+                if let Some(mob) = Mob::spawn(i as u32, s.level_min, z, zone) {
                     self.mobs.push(mob);
                 }
             }

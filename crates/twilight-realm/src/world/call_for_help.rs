@@ -77,7 +77,8 @@ impl InWorld {
             for (i, s) in adds {
                 let wave = TIMED_SEQ.fetch_add(1, Ordering::Relaxed);
                 let z = grounded_z(host, s.map, s.position, s.grounded);
-                let Some(mut add) = Mob::timed(i as u32, call.level, z, wave, caller) else {
+                let zone = crate::mobs::zone_factor_at(host, s.phase, s.map, s.position);
+                let Some(mut add) = Mob::timed(i as u32, call.level, z, zone, wave, caller) else {
                     continue;
                 };
                 add.audience = self.audience_of(caller);
@@ -140,7 +141,8 @@ impl InWorld {
                 let level = crate::mobs::banded(call.entry, caller_spawn.map, call.position)
                     .map_or(call.level, |range| crate::bands::pick(i as u32, range));
                 let z = grounded_z(host, s.map, s.position, s.grounded);
-                let Some(mut add) = Mob::spawn(i as u32, level, z) else {
+                let zone = crate::mobs::zone_factor_at(host, s.phase, s.map, s.position);
+                let Some(mut add) = Mob::spawn(i as u32, level, z, zone) else {
                     continue;
                 };
                 add.audience = self.audience_of(caller);

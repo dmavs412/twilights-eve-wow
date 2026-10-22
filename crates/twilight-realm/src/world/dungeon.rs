@@ -127,8 +127,9 @@ impl InWorld {
     }
 }
 
-/// A fresh copy of `map`'s mobs, each at a level from its range.
+/// A fresh copy of `map`'s mobs, each at a level from its range, under the Dungeon's Zone Factor.
 fn instance(map: u32) -> Vec<Mob> {
+    let zone = mobs::zone_factor(Some(crate::dungeon::content().zone));
     mobs::content()
         .spawn
         .iter()
@@ -136,7 +137,7 @@ fn instance(map: u32) -> Vec<Mob> {
         .filter(|(_, s)| s.map == map)
         .filter_map(|(i, s)| {
             let level = s.level_min + (s.guid % u32::from(s.level_max - s.level_min + 1)) as u8;
-            Mob::spawn(i as u32, level, s.position[2])
+            Mob::spawn(i as u32, level, s.position[2], zone)
         })
         .collect()
 }

@@ -107,10 +107,10 @@ fn with_no_one_else_who_hurt_it_a_mob_runs_home() {
     assert!(healed, "it runs home and heals");
 }
 
-/// Player 0, level 20 and fighting the hunter at the camp, builds Gouge's rage and gouges it; the
+/// Player 0, level 60 and fighting the hunter at the camp, builds Gouge's rage and gouges it; the
 /// hunter's guid and its max health.
 fn gouged(seed: u64) -> (Party, u64, u32) {
-    let (mut party, hunter) = pulled_at(Realm::with_seed(seed), 20, 60.0);
+    let (mut party, hunter) = pulled_at(Realm::with_seed(seed), 60, 60.0);
     let max = max_health(party.seen(0), hunter);
     party.cmd(0, RealmCommand::AttackSwing { guid: hunter });
     for _ in 0..600 {
