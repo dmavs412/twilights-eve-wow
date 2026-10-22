@@ -147,6 +147,40 @@ mod tests {
     }
 
     #[test]
+    fn the_shore_north_of_stone_cairn_lake_takes_a_band() {
+        // Fedfennel's point, and the strip's Prowlers and Murloc Foragers (#260).
+        let [lo, _] = range_at(-8978.21, -829.324).unwrap();
+        assert!(lo >= 15);
+        let mut checked = 0;
+        for s in &mobs::content().spawn {
+            let [x, y, _] = s.position;
+            if s.map != EASTERN_KINGDOMS || !(-8996.0..=-8804.0).contains(&x) {
+                continue;
+            }
+            if !(-1252.0..=-732.0).contains(&y) || !mobs::is_vanilla(s.entry) {
+                continue;
+            }
+            let hostile = mobs::template(s.entry).is_some_and(|t| t.hostile);
+            if hostile {
+                checked += 1;
+                assert!(s.level_min >= 15, "spawn {} at {x}, {y}", s.guid);
+            }
+        }
+        assert!(checked >= 50, "only {checked} strip spawns checked");
+    }
+
+    #[test]
+    fn no_friendly_npc_changes_level_north_of_the_old_edge() {
+        for s in &mobs::content().spawn {
+            let [x, y, _] = s.position;
+            let friendly = mobs::template(s.entry).is_some_and(|t| t.friendly);
+            if s.map == EASTERN_KINGDOMS && friendly && x > -9000.0 && range_at(x, y).is_some() {
+                panic!("friendly {} ({}) at {x}, {y} takes a band", s.entry, s.guid);
+            }
+        }
+    }
+
+    #[test]
     fn forest_edge_is_excluded() {
         assert!(range_at(-10000.0, 600.0).is_none());
     }

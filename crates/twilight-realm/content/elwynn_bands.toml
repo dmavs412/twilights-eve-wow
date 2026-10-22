@@ -6,7 +6,13 @@
 
 # Elwynn Forest outside Northshire, from the Maclure farm in the south-west to Dead-Tooth Jack's
 # camp in the east and Hogger's hollow in the north-west.
-bounds = [[-10200.0, -1700.0, -9000.0, 830.0]]
+# The second box adds the shore north of Stone Cairn Lake (#260), x -8996..-8804, y -1252..-732.
+# It covers only that strip, so friendly NPCs north of x -9000 elsewhere (entry 7207 at
+# -8805, 332) keep their levels.
+bounds = [
+  [-10200.0, -1700.0, -9000.0, 830.0],
+  [-9000.0, -1300.0, -8780.0, -700.0],
+]
 
 # Never touched: Northshire Valley with Echo Ridge Mine and the Abbey (the same rectangle
 # level_overrides.toml uses), and Forest's Edge, the one Phased Dungeon footprint in Elwynn
