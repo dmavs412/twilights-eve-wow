@@ -90,6 +90,11 @@ pub(crate) struct Template {
     pub(crate) health_multiplier: f32,
     pub(crate) damage_multiplier: f32,
     pub(crate) armor_multiplier: f32,
+    /// What a hand-tuned row was tuned to; its multipliers above are this divided by the creature
+    /// difficulty. Read by the content test that fails when the difficulty moves it.
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub(crate) tuned: Option<Tuned>,
     pub(crate) base_attack_time: u32,
     pub(crate) speed_walk: f32,
     pub(crate) speed_run: f32,
@@ -207,6 +212,7 @@ impl Template {
             wakes_sleepers: None,
             hunts_at_meter_max: None,
             melee: true,
+            tuned: None,
         }
     }
 
@@ -327,6 +333,15 @@ impl Difficulty {
             self.damage * (1.0 + self.damage_per_level).powi(steps) * rank_damage * zone.damage,
         )
     }
+}
+
+/// A hand-tuned row's `tuned`: its final health and damage multipliers on the vanilla class
+/// table at `level_min`, in an area with no Zone Factor, after every creature difficulty factor.
+#[derive(Debug, Deserialize, Clone, Copy)]
+#[allow(dead_code)]
+pub(crate) struct Tuned {
+    pub(crate) health: f32,
+    pub(crate) damage: f32,
 }
 
 /// A creature's **Zone Factor** (ADR 0012): health and damage factors for the area it stands in.
@@ -1660,6 +1675,40 @@ mod tests {
             assert!(ranked.max_health.abs_diff(want) <= 1, "rank {rank}");
             assert!((ranked.max_damage - normal.max_damage * damage).abs() < 1e-3);
         }
+    }
+
+    #[test]
+    fn every_tuned_row_plays_as_it_was_tuned() {
+        let mut checked = 0;
+        for t in &content().template {
+            let Some(tuned) = t.tuned else {
+                continue;
+            };
+            let got = Mob::stats_for(t, t.level_min, ZoneFactor::NONE);
+            let want = MobStats::new(
+                t.unit_class,
+                t.level_min,
+                tuned.health,
+                tuned.damage,
+                t.armor_multiplier,
+            );
+            assert!(
+                got.max_health.abs_diff(want.max_health) <= 1
+                    && (got.max_damage / want.max_damage - 1.0).abs() < 1e-3,
+                "{} ({}) has {} health and {:.2} max damage at level {}, tuned to {} and {:.2}: \
+                 divide its multipliers by the creature difficulty again",
+                t.name,
+                t.entry,
+                got.max_health,
+                got.max_damage,
+                t.level_min,
+                want.max_health,
+                want.max_damage,
+            );
+            checked += 1;
+        }
+        // Geomancer Vurx and the Wailing Caverns' four.
+        assert!(checked >= 5, "{checked} tuned rows");
     }
 
     #[test]

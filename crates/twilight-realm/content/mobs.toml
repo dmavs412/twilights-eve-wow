@@ -652,9 +652,8 @@ detection_range = 18.0
 # The elite at the mine's deepest point, who carries the Smoldering Twilight Idol: the Kobold
 # Geomancer's display (163) and faction (26). Tuned by tests/echo_ridge.rs, white swings only
 # against a human warrior with the starting Chest and the Stone Gnoll Hammer, over 40 seeds:
-# health 1.6, damage 1.1 lets a level 8 win 26 of 40 and a level 7 only 10. Those are the numbers
-# after [difficulty] (health x2, damage x1.5), its level 7 growth (x1.05^6, x1.04^6) and the elite
-# rank (x2, x1.5), so the row holds 0.2985 and 0.3864 (#269).
+# health 1.6, damage 1.1 (`tuned`) lets a level 8 win 26 of 40 and a level 7 only 10. The row's
+# multipliers are those divided by [difficulty], its level 7 growth and the elite rank.
 [[template]]
 entry = 96002
 name = "Geomancer Vurx"
@@ -670,6 +669,7 @@ level_max = 7
 health_multiplier = 0.2985
 damage_multiplier = 0.3864
 armor_multiplier = 1.0
+tuned = { health = 1.6, damage = 1.1 }
 base_attack_time = 2000
 speed_walk = 1.0
 speed_run = 0.857
