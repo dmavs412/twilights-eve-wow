@@ -81,14 +81,17 @@ class BuildSpells(unittest.TestCase):
                   extra_columns: tuple = ()) -> tuple[subprocess.CompletedProcess, list | None]:
         tmp = tempfile.mkdtemp()
         path = os.path.join(tmp, "master.csv")
-        # A fixture that leaves `status` or a talent's `max_rank` out gets the usual value; one that
-        # sets the cell, even to "", keeps it, so a test can aim at the missing case.
+        # A fixture that leaves `status`, a talent's `max_rank` or a visible skill or talent's `visual`
+        # out gets the usual value (`visual=none`); one that sets the cell, even to "", keeps it, so a
+        # test can aim at the missing case.
         ranks: dict[tuple, int] = {}
         for row in rows:
             if row["kind"] == "talent":
                 ranks[(row["calling"], row["key"])] = ranks.get((row["calling"], row["key"]), 0) + 1
         rows = [{"status": "placeholder",
                  **({"max_rank": str(ranks[(row["calling"], row["key"])])} if row["kind"] == "talent" else {}),
+                 **({"visual": "none"} if (row["kind"] == "skill" or row.get("cast_kind"))
+                    and row.get("client_visible") != "no" else {}),
                  **row} for row in rows]
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, [*COLUMNS, *extra_columns], restval="")
@@ -346,15 +349,17 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
                                     "ground_spell=holy_patch"}
         patch = {"kind": "skill", "calling": "vanguard", "key": "holy_patch", "name": "Holy Patch", "rank": "1",
                  "spell_id": "1000079", "spellbook": "no", "school": "holy", "modelled": "no",
-                 "description": "Burns."}
+                 "visual": "133", "description": "Burns."}
         done, data = self.run_build([CALLING, ground, patch])
         self.assertEqual(done.returncode, 0, done.stderr)
         params = data[0]["skills"][0]["effects"][0]["params"]
         self.assertEqual(params["ground_spell_id"], 1000079)
         self.assertNotIn("ground_spell", params)
         self.assert_fails([CALLING, ground], "ground_spell 'holy_patch' is not a skill of vanguard")
-        self.assert_fails([CALLING, ground, {**patch, "client_visible": "no", "spellbook": ""}],
+        self.assert_fails([CALLING, ground, {**patch, "client_visible": "no", "spellbook": "", "visual": ""}],
                           "ground_spell 'holy_patch' is client_visible=no")
+        self.assert_fails([CALLING, ground, {**patch, "visual": "none"}],
+                          "the ground patch is drawn from holy_patch's visual, which is none")
 
     def test_a_ground_cast_sends_its_radius_index_on_its_first_effect(self):
         ground = {**STRIKE, "target": "dest", "realm_radius_yd": "8", "client_radius_index": "14",
@@ -371,6 +376,23 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         self.assert_fails([{**ground, "effect1_kind": "ground_area",
                             "effect1_params": "radius_yd=10;duration_ms=1000"}],
                           "realm_radius_yd 8 and an effect's radius_yd 10 disagree")
+
+    def test_a_castable_row_needs_a_visual_or_none(self):
+        self.assert_fails([{**STRIKE, "visual": ""}], "strike): a castable row needs a visual")
+        done, _ = self.run_build([{**STRIKE, "visual": "none"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("visual_spell", self.patch["spells"][0]["fields"])
+        active = talent("rush", 1, 0, 0, spell_id="1012320", talent_id="1000138", target="enemy",
+                        cast_kind="instant", visual="")
+        self.assert_fails([CALLING, active], "rush): a castable row needs a visual")
+
+    def test_a_ground_patch_needs_a_row_with_a_real_visual(self):
+        area = {**STRIKE, "target": "dest", "realm_radius_yd": "8", "client_radius_index": "14",
+                "effect1_kind": "ground_area", "effect1_params": "radius_yd=8;duration_ms=1000",
+                "effect4_kind": "", "effect4_params": ""}
+        self.assert_fails([{**area, "visual": "none"}], "the ground patch is drawn from strike's visual")
+        done, _ = self.run_build([{**area, "visual": "133"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
 
     def test_the_committed_miasma_row_has_radius_index_14(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
@@ -526,7 +548,7 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, COLUMNS, restval="")
             writer.writeheader()
-            writer.writerow({**STRIKE, "status": "placeholder"})
+            writer.writerow({**STRIKE, "status": "placeholder", "visual": "none"})
         callings = os.path.join(tmp, "callings.csv")
         with open(callings, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, ["calling", "name", *PROFILE])

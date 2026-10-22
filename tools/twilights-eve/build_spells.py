@@ -372,6 +372,37 @@ def check_unique_ids(rows: list[dict]) -> None:
                          "id:\n" + "\n".join(bad))
 
 
+# The `visual` cell of a row that shows no spell visual on purpose: a weapon shot, whose arrow
+# is the ammo's (stock Auto Shot and Shoot have SpellVisual 0).
+NO_VISUAL = "none"
+
+
+def check_visuals(rows: list[dict]) -> None:
+    """Every castable row names its visual: a client-visible skill, or an active talent (one with
+    a `cast_kind`). `visual=none` opts out. A ground patch is drawn from the row it is named after
+    (its `ground_spell`, else the casting row), so that row needs a real visual."""
+    visuals = {(r["calling"], r["key"]): r["visual"] for r in rows
+               if r["kind"] == "skill" and r["client_visible"] != "no"}
+    for line, row in enumerate(rows, start=2):
+        where = f"line {line} ({row['calling']}/{row['key']})"
+        castable = row["client_visible"] != "no" and (
+            row["kind"] == "skill" or (row["kind"] == "talent" and row["cast_kind"]))
+        if castable and not row["visual"]:
+            raise BuildError(f"{where}: a castable row needs a visual (a Spell.dbc id whose look it "
+                             f"takes), or visual={NO_VISUAL} to show none on purpose")
+        for i in range(1, MAX_EFFECTS + 1):
+            kind = row[f"effect{i}_kind"]
+            if kind not in ("ground_effect", "ground_area"):
+                continue
+            params = parse_params(row[f"effect{i}_params"], f"{where} effect{i}")
+            named = params.get("ground_spell", row["key"]) if kind == "ground_effect" else row["key"]
+            visual = visuals.get((row["calling"], named))
+            # A ground_spell naming no visible skill is `resolve_ground_spell`'s to report.
+            if visual is not None and visual in ("", NO_VISUAL):
+                raise BuildError(f"{where} effect{i}: the ground patch is drawn from {named}'s visual, "
+                                 f"which is {visual or 'empty'}; name a row with a Spell.dbc visual")
+
+
 def read_row_tables(data_dir: str | None) -> dict:
     """SpellRange, SpellCastTimes, SpellDuration and SpellRadius as plain tuples, and each stock
     spell's SpellVisual and missile speed, for `resolve_dbc_rows`."""
@@ -1316,7 +1347,7 @@ def from_scratch_fields(row: dict, built: dict, art: list[str], art_dir: str, wh
         fields["family_flags"] = family
     if row["icon"]:
         fields["icon"] = icon_path(row["icon"], art, art_dir, where)
-    if row["visual"]:
+    if row["visual"] and row["visual"] != NO_VISUAL:
         fields["visual_spell"] = whole(row["visual"], f"{where} visual")
     if row["needs_facing"]:
         fields["needs_facing"] = yes_no(row["needs_facing"], where, "needs_facing")
@@ -1562,6 +1593,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
         else:
             talent_rows.setdefault((row["calling"], row["key"]), []).append((row, built, where))
 
+    check_visuals(rows)
     # An aura's Spell.dbc fields join the override of a skill that is the same spell, whatever the row order.
     for extra, where in aura_overrides:
         merge_override(overrides, extra, where)
