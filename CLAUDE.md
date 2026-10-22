@@ -60,7 +60,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 - **Content is data.** Spell ids, talent trees, costs, formulas and ability effects live in
   `data/twilights-eve/master.csv` and flow through `tools/twilights-eve/build_spells.py` into
   `server_spells.json` for the realm and `client_dbc_patch.json` for the client. A spell id or a
-  talent's numbers in a `.rs` file is a bug. `docs/spell_pipeline.md`.
+  talent's numbers in a `.rs` file is a bug. `docs/spell_pipeline.md`. Read and edit sheet rows
+  with `tools/twilights-eve/sheet.py` (`get`, `set`, `add-row`, `add-column`), not grep or a
+  one-off script: a row is hundreds of cells.
 - **Compose in `bevy_ecs`.** The realm uses `bevy_ecs` alone: no Bevy app, renderer or window.
   An ability is a bundle of generic components (`ProcOnCrit`, `CleaveOnHit`, `PeriodicDamage`)
   driven by generic systems. A system or match arm named after one spell is a bug.

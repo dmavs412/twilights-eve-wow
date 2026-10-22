@@ -127,6 +127,17 @@ patch without the fields the DBCs resolve (visual, range, cast time and duration
 ~/.local/bin/python3.15 tools/twilights-eve/build_spells.py --data "$WOW_DATA"
 ```
 
+`tools/twilights-eve/sheet.py` reads and edits the CSV by `calling/key`. `get` prints a row's
+non-empty cells, `set column=value` changes cells, `add-row` writes a new row after another, and
+`add-column` extends the header. It rewrites only the records it touches, so the diff shows only
+the cells you changed. `--kind` and `--rank` narrow a key shared by several rows (a talent's
+ranks). Its docstring has the full usage.
+
+```
+~/.local/bin/python3.15 tools/twilights-eve/sheet.py get acolyte/miasma visual spell_id
+~/.local/bin/python3.15 tools/twilights-eve/sheet.py set acolyte/blood_lance visual=24328
+```
+
 ## The outputs
 
 `server_spells.json` is what the realm loads into its content resource at boot: a list of
