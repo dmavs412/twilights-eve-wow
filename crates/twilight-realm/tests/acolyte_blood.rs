@@ -20,6 +20,7 @@ static DARK_MENDING: std::sync::LazyLock<u32> =
 const TEST_BLEED: u32 = 2061;
 const TEST_LANCE: u32 = 8092;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
+const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 
 /// A Priest-Class Calling: `bleed` spends 96% of max health, `lance` 5%, both instant.
 const TEST_CALLINGS: &str = r#"
@@ -108,7 +109,7 @@ fn max_health(view: &View, me: u64) -> u32 {
 }
 
 #[test]
-fn blood_lance_costs_5_percent_of_max_health_and_its_hot_lands_on_the_caster() {
+fn blood_lance_costs_3_percent_of_max_health_and_its_hot_lands_on_the_caster() {
     let (mut realm, me, mob, mut view) = world("acolyte", None);
     let max = max_health(&view, me);
     assert_eq!(view.health(me), max);
@@ -122,7 +123,7 @@ fn blood_lance_costs_5_percent_of_max_health_and_its_hot_lands_on_the_caster() {
             _ => None,
         })
         .expect("Blood Lance lands after its bar");
-    assert_eq!(view.health(me), max - max * 5 / 100, "5% of max health");
+    assert_eq!(view.health(me), max - max * 3 / 100, "3% of max health");
 
     let hot: Vec<u32> = view
         .run(&mut realm, 6.1)
@@ -174,8 +175,8 @@ fn dark_mending_heals_up_to_max_then_takes_15_percent_of_it_back() {
             _ => None,
         })
         .expect("a heal");
-    // It paid 10% of max health, so it can heal no more than that back.
-    assert_eq!(healed, max * 10 / 100, "capped at max health");
+    // It paid 15% of max health, so it can heal no more than that back.
+    assert_eq!(healed, max * 15 / 100, "capped at max health");
     assert_eq!(view.health(me), max);
     let toll: u32 = view
         .run(&mut realm, 6.1)
@@ -192,4 +193,21 @@ fn dark_mending_heals_up_to_max_then_takes_15_percent_of_it_back() {
         .sum();
     let tick = (healed as f32 * 0.15 / 3.0).round() as u32;
     assert_eq!(toll, tick * 3, "15% of the heal over 6 s, rounded per tick");
+}
+
+#[test]
+fn dark_mending_cast_twice_inside_8_seconds_is_refused_for_cooldown() {
+    let (mut realm, _, _, mut view) = world("acolyte", None);
+    realm.handle(cast(*DARK_MENDING, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *DARK_MENDING), None);
+    view.run(&mut realm, 2.0);
+    realm.handle(cast(*DARK_MENDING, None));
+    assert_eq!(
+        refusal(&view.drain(&mut realm), *DARK_MENDING),
+        Some(SPELL_FAILED_NOT_READY),
+        "the 8 s cooldown is still running"
+    );
+    view.run(&mut realm, 7.0);
+    realm.handle(cast(*DARK_MENDING, None));
+    assert_eq!(refusal(&view.drain(&mut realm), *DARK_MENDING), None);
 }

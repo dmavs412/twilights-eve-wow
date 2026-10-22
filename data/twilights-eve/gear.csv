@@ -431,7 +431,7 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 900102,Padfoot's Shiv,Weapon,Dagger,1H,Uncommon,10,7,,2,,,,,,6,9,Physical,1.5,,,,,,,,,,,2,,,,6472,810,Pickup,35,Side,Metal,,,,,,,,
 900103,Vineyard Poacher's Bow,Ranged,Bow,,Uncommon,10,7,,2,,,,,,8,12,Physical,2.4,,,,,,,,,,,2,,,,20712,800,Pickup,40,,Wood,,,,,,,,
 900104,Garrick's Vintner Cleaver,Weapon,Axe,2H,Uncommon,10,7,3,,1,,,,,18,27,Physical,3.2,,,,,,,,,,,4,,,,19226,830,Pickup,60,Back,Metal,,,,,,,,
-900105,Ashworth's Black Psalter,Offhand,Held,,Rare,10,8,,,,1,,,,,,,,,,,,,,,,,4,3,,,,23322,900,Pickup,,Hip,,,,,,,,,
+900105,Ashworth's Black Psalter,Offhand,Held,,Rare,10,1,,,,1,,,,,,,,,,,,,,,,,4,3,,,,23322,900,Pickup,,Hip,,,,,,,,,
 900200,Novice's Woolen Vest,Chest,Cloth,,Common,3,1,,,1,,,26,,,,,,,,,,,,,,,,1,,,,14499,10,,40,,Cloth,,,15061,14423,14497,9907,14498,14525
 900201,Novice's Leather Jerkin,Chest,Leather,,Common,3,1,,,1,,,45,,,,,,,,,,,,,,,,1,,,,2106,8,,45,,Leather,,,,17170,17068,17126,22972,22973
 900202,Novice's Chain Vest,Chest,Mail,,Common,3,1,,,1,,,77,,,,,,,,,,,,,,,,1,,,,1019,14,,55,,Chain,,,,13617,6871,6864,697,6869

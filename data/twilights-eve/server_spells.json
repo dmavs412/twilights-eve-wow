@@ -15846,7 +15846,7 @@
     "rank": 1,
     "status": "placeholder",
     "spell_id": 1000349,
-    "realm_cost": 3,
+    "realm_cost": 5,
     "realm_range_max": 30,
     "target": "enemy",
     "school": "shadow",
@@ -15880,7 +15880,7 @@
     "rank": 1,
     "status": "placeholder",
     "spell_id": 1000350,
-    "realm_cost": 5,
+    "realm_cost": 3,
     "realm_range_max": 30,
     "target": "enemy",
     "school": "shadow",
@@ -15936,7 +15936,8 @@
     "rank": 1,
     "status": "placeholder",
     "spell_id": 1000351,
-    "realm_cost": 10,
+    "realm_cost": 15,
+    "realm_cooldown_ms": 8000,
     "realm_range_max": 40,
     "target": "ally",
     "school": "holy",
@@ -15972,7 +15973,7 @@
       "realm_only": false
      }
     ],
-    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds."
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown."
    },
    {
     "key": "miasma",
@@ -15980,7 +15981,7 @@
     "rank": 1,
     "status": "placeholder",
     "spell_id": 1000352,
-    "realm_cost": 12,
+    "realm_cost": 15,
     "realm_cooldown_ms": 15000,
     "realm_range_max": 30,
     "realm_radius_yd": 8,
@@ -16049,8 +16050,8 @@
       "kind": "drain",
       "params": {
        "amount": {
-        "base": 13,
-        "per_level": 0.6
+        "base": 15,
+        "per_level": 0.8
        },
        "heal_pct": 100,
        "school": "shadow"
@@ -16105,13 +16106,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "creeping_blight",
-           "chance": 4,
+           "chance": 3,
            "apply_aura": "aura_virulence"
           },
           "realm_only": false
          }
         ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 4% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+        "description": "Every time Creeping Blight deals periodic damage, you have a 3% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
        },
        {
         "key": "virulence",
@@ -16141,13 +16142,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "creeping_blight",
-           "chance": 8,
+           "chance": 6,
            "apply_aura": "aura_virulence"
           },
           "realm_only": false
          }
         ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 8% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+        "description": "Every time Creeping Blight deals periodic damage, you have a 6% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
        },
        {
         "key": "virulence",
@@ -16157,6 +16158,42 @@
         "talent_id": 1000086,
         "source_tab_id": 203,
         "spell_id": 1000357,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "creeping_blight",
+           "chance": 9,
+           "apply_aura": "aura_virulence"
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Every time Creeping Blight deals periodic damage, you have a 9% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+       },
+       {
+        "key": "virulence",
+        "name": "Virulence",
+        "rank": 4,
+        "status": "placeholder",
+        "talent_id": 1000086,
+        "source_tab_id": 203,
+        "spell_id": 1000358,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -16188,42 +16225,6 @@
        {
         "key": "virulence",
         "name": "Virulence",
-        "rank": 4,
-        "status": "placeholder",
-        "talent_id": 1000086,
-        "source_tab_id": 203,
-        "spell_id": 1000358,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "proc",
-          "params": {
-           "on": "periodic_tick",
-           "skill": "creeping_blight",
-           "chance": 16,
-           "apply_aura": "aura_virulence"
-          },
-          "realm_only": false
-         }
-        ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 16% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
-       },
-       {
-        "key": "virulence",
-        "name": "Virulence",
         "rank": 5,
         "status": "placeholder",
         "talent_id": 1000086,
@@ -16249,13 +16250,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "creeping_blight",
-           "chance": 20,
+           "chance": 15,
            "apply_aura": "aura_virulence"
           },
           "realm_only": false
          }
         ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 20% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+        "description": "Every time Creeping Blight deals periodic damage, you have a 15% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
        }
       ]
      },
@@ -16496,12 +16497,12 @@
           "params": {
            "on": "damage_done",
            "requires_target_aura": "aura_miasma",
-           "energize_pct_of_base": 4
+           "energize_pct_of_base": 1
           },
           "realm_only": false
          }
         ],
-        "description": "Any damage you deal to targets standing inside your Miasma refunds 4% of your base mana."
+        "description": "Any damage you deal to targets standing inside your Miasma refunds 1% of your base mana."
        },
        {
         "key": "morbid_fascination",
@@ -16531,12 +16532,12 @@
           "params": {
            "on": "damage_done",
            "requires_target_aura": "aura_miasma",
-           "energize_pct_of_base": 8
+           "energize_pct_of_base": 2
           },
           "realm_only": false
          }
         ],
-        "description": "Any damage you deal to targets standing inside your Miasma refunds 8% of your base mana."
+        "description": "Any damage you deal to targets standing inside your Miasma refunds 2% of your base mana."
        },
        {
         "key": "morbid_fascination",
@@ -16566,12 +16567,12 @@
           "params": {
            "on": "damage_done",
            "requires_target_aura": "aura_miasma",
-           "energize_pct_of_base": 12
+           "energize_pct_of_base": 3
           },
           "realm_only": false
          }
         ],
-        "description": "Any damage you deal to targets standing inside your Miasma refunds 12% of your base mana."
+        "description": "Any damage you deal to targets standing inside your Miasma refunds 3% of your base mana."
        }
       ]
      },
@@ -17098,7 +17099,7 @@
           "realm_only": false
          }
         ],
-        "description": "Casting spells that cost Health grants you a buff that regenerates 10% of the Health spent over the next 5 seconds."
+        "description": "Casting spells that cost Health grants you a buff that regenerates 6% of the Health spent over the next 5 seconds."
        },
        {
         "key": "masochism",
@@ -17133,7 +17134,7 @@
           "realm_only": false
          }
         ],
-        "description": "Casting spells that cost Health grants you a buff that regenerates 20% of the Health spent over the next 5 seconds."
+        "description": "Casting spells that cost Health grants you a buff that regenerates 12% of the Health spent over the next 5 seconds."
        },
        {
         "key": "masochism",
@@ -17168,7 +17169,7 @@
           "realm_only": false
          }
         ],
-        "description": "Casting spells that cost Health grants you a buff that regenerates 30% of the Health spent over the next 5 seconds."
+        "description": "Casting spells that cost Health grants you a buff that regenerates 18% of the Health spent over the next 5 seconds."
        },
        {
         "key": "masochism",
@@ -17203,7 +17204,7 @@
           "realm_only": false
          }
         ],
-        "description": "Casting spells that cost Health grants you a buff that regenerates 40% of the Health spent over the next 5 seconds."
+        "description": "Casting spells that cost Health grants you a buff that regenerates 24% of the Health spent over the next 5 seconds."
        },
        {
         "key": "masochism",
@@ -17238,7 +17239,7 @@
           "realm_only": false
          }
         ],
-        "description": "Casting spells that cost Health grants you a buff that regenerates 50% of the Health spent over the next 5 seconds."
+        "description": "Casting spells that cost Health grants you a buff that regenerates 30% of the Health spent over the next 5 seconds."
        }
       ]
      },
@@ -17693,7 +17694,7 @@
     "aura_hidden": false,
     "cancelable": true,
     "persist_death": false,
-    "duration_ms": 15000,
+    "duration_ms": 18000,
     "modelled": true,
     "effects": [
      {
@@ -17987,12 +17988,12 @@
       "params": {
        "tick_ms": 1000,
        "pct_of": "health_cost",
-       "pct": 10
+       "pct": 6
       },
       "realm_only": false
      }
     ],
-    "description": "Recovering 10% of the health spent over 5 sec."
+    "description": "Recovering 6% of the health spent over 5 sec."
    },
    {
     "key": "aura_masochism_2",
@@ -18018,17 +18019,79 @@
       "params": {
        "tick_ms": 1000,
        "pct_of": "health_cost",
-       "pct": 20
+       "pct": 12
       },
       "realm_only": false
      }
     ],
-    "description": "Recovering 20% of the health spent over 5 sec."
+    "description": "Recovering 12% of the health spent over 5 sec."
    },
    {
     "key": "aura_masochism_3",
     "name": "Masochism",
     "spell_id": 1000381,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "pct_of": "health_cost",
+       "pct": 18
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Recovering 18% of the health spent over 5 sec."
+   },
+   {
+    "key": "aura_masochism_4",
+    "name": "Masochism",
+    "spell_id": 1000382,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 1000,
+       "pct_of": "health_cost",
+       "pct": 24
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Recovering 24% of the health spent over 5 sec."
+   },
+   {
+    "key": "aura_masochism_5",
+    "name": "Masochism",
+    "spell_id": 1000383,
     "status": "placeholder",
     "school": "physical",
     "prevention": "pacify",
@@ -18055,68 +18118,6 @@
      }
     ],
     "description": "Recovering 30% of the health spent over 5 sec."
-   },
-   {
-    "key": "aura_masochism_4",
-    "name": "Masochism",
-    "spell_id": 1000382,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 5000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "periodic_heal",
-      "params": {
-       "tick_ms": 1000,
-       "pct_of": "health_cost",
-       "pct": 40
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Recovering 40% of the health spent over 5 sec."
-   },
-   {
-    "key": "aura_masochism_5",
-    "name": "Masochism",
-    "spell_id": 1000383,
-    "status": "placeholder",
-    "school": "physical",
-    "prevention": "pacify",
-    "max_stacks": 1,
-    "stack_rule": "refresh",
-    "unique_per": "caster",
-    "group_scope": "caster",
-    "dispel_type": "none",
-    "aura_positive": true,
-    "aura_hidden": false,
-    "cancelable": true,
-    "persist_death": false,
-    "duration_ms": 5000,
-    "modelled": true,
-    "effects": [
-     {
-      "kind": "periodic_heal",
-      "params": {
-       "tick_ms": 1000,
-       "pct_of": "health_cost",
-       "pct": 50
-      },
-      "realm_only": false
-     }
-    ],
-    "description": "Recovering 50% of the health spent over 5 sec."
    },
    {
     "key": "aura_crimson_surge_1",

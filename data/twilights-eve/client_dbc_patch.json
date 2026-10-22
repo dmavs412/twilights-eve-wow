@@ -9894,7 +9894,7 @@
    "fields": {
     "power_type": 0,
     "name": "Creeping Blight",
-    "cost_percent": 3.0,
+    "cost_percent": 5.0,
     "interrupt_flags": 0,
     "dmg_class": 1,
     "school": 5,
@@ -9930,7 +9930,7 @@
    "fields": {
     "power_type": 4294967294,
     "name": "Blood Lance",
-    "cost": 5.0,
+    "cost": 3.0,
     "interrupt_flags": 11,
     "dmg_class": 1,
     "school": 5,
@@ -9970,12 +9970,13 @@
    "fields": {
     "power_type": 4294967294,
     "name": "Dark Mending",
-    "cost": 10.0,
+    "cost": 15.0,
+    "cooldown_ms": 8000,
     "interrupt_flags": 0,
     "dmg_class": 0,
     "school": 1,
     "prevention_type": 1,
-    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds.",
+    "description": "Instantly heals the target ally for a massive amount, but applies a minor Shadow DoT to them that ticks away 15% of the healed amount over 6 seconds. Costs 15% of your health. 8 second cooldown.",
     "implicit_targets": [
      21,
      0
@@ -10011,7 +10012,7 @@
     "power_type": 0,
     "name": "Miasma",
     "cooldown_ms": 15000,
-    "cost_percent": 12.0,
+    "cost_percent": 15.0,
     "interrupt_flags": 0,
     "dmg_class": 0,
     "school": 5,
@@ -10064,8 +10065,8 @@
     "dbc_effects": [
      {
       "effect": 3,
-      "base": 13,
-      "per_level": 0.6
+      "base": 15,
+      "per_level": 0.8
      }
     ],
     "visual": 177,
@@ -10085,7 +10086,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 4% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 3% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10114,7 +10115,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 8% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 6% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10142,7 +10143,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 12% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 9% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10170,7 +10171,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 16% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 12% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10198,7 +10199,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 20% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 15% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10368,7 +10369,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Any damage you deal to targets standing inside your Miasma refunds 4% of your base mana.",
+    "description": "Any damage you deal to targets standing inside your Miasma refunds 1% of your base mana.",
     "implicit_targets": [
      1,
      0
@@ -10396,7 +10397,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Any damage you deal to targets standing inside your Miasma refunds 8% of your base mana.",
+    "description": "Any damage you deal to targets standing inside your Miasma refunds 2% of your base mana.",
     "implicit_targets": [
      1,
      0
@@ -10424,7 +10425,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Any damage you deal to targets standing inside your Miasma refunds 12% of your base mana.",
+    "description": "Any damage you deal to targets standing inside your Miasma refunds 3% of your base mana.",
     "implicit_targets": [
      1,
      0
@@ -10792,7 +10793,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 10% of the Health spent over the next 5 seconds.",
+    "description": "Casting spells that cost Health grants you a buff that regenerates 6% of the Health spent over the next 5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10806,7 +10807,7 @@
       "per_level": 0
      }
     ],
-    "aura_description": "Recovering 10% of the health spent over 5 sec."
+    "aura_description": "Recovering 6% of the health spent over 5 sec."
    }
   },
   {
@@ -10821,7 +10822,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 20% of the Health spent over the next 5 seconds.",
+    "description": "Casting spells that cost Health grants you a buff that regenerates 12% of the Health spent over the next 5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10835,7 +10836,7 @@
       "per_level": 0
      }
     ],
-    "aura_description": "Recovering 20% of the health spent over 5 sec."
+    "aura_description": "Recovering 12% of the health spent over 5 sec."
    }
   },
   {
@@ -10843,6 +10844,64 @@
    "calling": "acolyte",
    "key": "masochism",
    "rank": 3,
+   "fields": {
+    "power_type": 0,
+    "name": "Masochism",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting spells that cost Health grants you a buff that regenerates 18% of the Health spent over the next 5 seconds.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Recovering 18% of the health spent over 5 sec."
+   }
+  },
+  {
+   "spell_id": 1000382,
+   "calling": "acolyte",
+   "key": "masochism",
+   "rank": 4,
+   "fields": {
+    "power_type": 0,
+    "name": "Masochism",
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Casting spells that cost Health grants you a buff that regenerates 24% of the Health spent over the next 5 seconds.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "passive": true,
+    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Recovering 24% of the health spent over 5 sec."
+   }
+  },
+  {
+   "spell_id": 1000383,
+   "calling": "acolyte",
+   "key": "masochism",
+   "rank": 5,
    "fields": {
     "power_type": 0,
     "name": "Masochism",
@@ -10865,64 +10924,6 @@
      }
     ],
     "aura_description": "Recovering 30% of the health spent over 5 sec."
-   }
-  },
-  {
-   "spell_id": 1000382,
-   "calling": "acolyte",
-   "key": "masochism",
-   "rank": 4,
-   "fields": {
-    "power_type": 0,
-    "name": "Masochism",
-    "interrupt_flags": 0,
-    "dmg_class": 0,
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 40% of the Health spent over the next 5 seconds.",
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "passive": true,
-    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "aura_description": "Recovering 40% of the health spent over 5 sec."
-   }
-  },
-  {
-   "spell_id": 1000383,
-   "calling": "acolyte",
-   "key": "masochism",
-   "rank": 5,
-   "fields": {
-    "power_type": 0,
-    "name": "Masochism",
-    "interrupt_flags": 0,
-    "dmg_class": 0,
-    "school": 0,
-    "prevention_type": 2,
-    "description": "Casting spells that cost Health grants you a buff that regenerates 50% of the Health spent over the next 5 seconds.",
-    "implicit_targets": [
-     1,
-     0
-    ],
-    "passive": true,
-    "icon": "Interface\\Icons\\Spell_Nature_MoonGlow",
-    "dbc_effects": [
-     {
-      "effect": 3,
-      "base": 0,
-      "per_level": 0
-     }
-    ],
-    "aura_description": "Recovering 50% of the health spent over 5 sec."
    }
   },
   {
