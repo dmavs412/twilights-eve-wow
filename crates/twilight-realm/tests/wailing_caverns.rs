@@ -843,9 +843,9 @@ fn slaying_lady_anacondra_pays_a_full_level_and_three_tokens_and_is_offered_agai
     let turned_in = hand_in(&mut s.realm, nalpak, THE_FANGLORD);
     let turned_in = s.keep(turned_in);
     let done = completed(&turned_in).expect("the quest completes");
-    // Level 25's whole 34000 XP, times the Calling's Tier XP Rate of 5: a Repeatable Quest pays
+    // Level 25's whole 131900 XP, times the Calling's Tier XP Rate of 5: a Repeatable Quest pays
     // the player's next level.
-    assert_eq!((done.quest_id, done.xp), (THE_FANGLORD, 170000));
+    assert_eq!((done.quest_id, done.xp), (THE_FANGLORD, 659500));
     assert_eq!(done.items, [(TOKEN, 3)]);
     assert_eq!(carried(&s.events, s.me, TOKEN), 3);
     assert_eq!(s.quest_state(THE_FANGLORD), None, "the slot clears");
@@ -917,7 +917,7 @@ fn the_deviates_inside_drop_their_hides_for_ebrus_quest() {
     );
     let ebru = s.go_to_disciple(EBRU);
     let done = completed(&hand_in(&mut s.realm, ebru, DEVIATE_HIDES)).expect("it completes");
-    // Level 20's whole 23200 XP, times the Tier XP Rate of 3.
-    assert_eq!(done.xp, 69600);
+    // Level 20's whole 57300 XP, times the Tier XP Rate of 3.
+    assert_eq!(done.xp, 171900);
     assert_eq!(done.items, [(TOKEN, 3)]);
 }

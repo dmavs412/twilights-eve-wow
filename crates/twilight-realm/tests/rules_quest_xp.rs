@@ -6,7 +6,7 @@ use twilight_realm::rules::quest::{hunting_reward_xp, min_tier_for_level, reward
 #[test]
 fn a_repeatable_quest_is_worth_the_players_next_level() {
     // (player, xp), the level table.
-    let vectors = [(10, 7600), (8, 5400), (15, 14400), (2, 900), (9, 6500)];
+    let vectors = [(10, 7600), (8, 5400), (15, 22600), (2, 900), (9, 6500)];
     for (player, xp) in vectors {
         assert_eq!(reward_xp(player), xp, "player {player}");
     }
@@ -41,10 +41,11 @@ fn a_hunting_quest_is_worth_half_of_its_own_levels_xp() {
 fn an_outlevelled_hunting_quest_pays_in_full() {
     assert_eq!(
         hunting_reward_xp(25, 12),
-        twilight_realm::rules::xp::xp_to_next(12)
+        twilight_realm::rules::xp::quest_xp_basis(12)
             .unwrap()
             .div_ceil(2)
     );
+    assert_eq!(hunting_reward_xp(25, 12), 5050);
     assert_eq!(hunting_reward_xp(16, 10), 3800);
     assert_eq!(hunting_reward_xp(25, 3), 700);
     assert_eq!(hunting_reward_xp(60, 50), 0);

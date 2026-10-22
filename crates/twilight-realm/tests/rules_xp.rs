@@ -1,7 +1,7 @@
 //! Kill XP and the level table (`docs/reference/vanilla-combat-rules.md` §9; kill XP follows
 //! ADR 0012).
 
-use twilight_realm::rules::xp::{gray_level, kill_xp, xp_to_next, Elite};
+use twilight_realm::rules::xp::{gray_level, kill_xp, quest_xp_basis, xp_to_next, Elite};
 
 #[test]
 fn kill_xp_comes_from_the_mobs_level_alone() {
@@ -28,11 +28,20 @@ fn elites_give_double_in_the_open_world_and_more_in_a_dungeon() {
 }
 
 #[test]
-fn the_level_table_is_vanillas() {
+fn the_level_table_is_vanilla_to_nine_then_steeper() {
     assert_eq!(xp_to_next(1), Some(400));
+    assert_eq!(xp_to_next(9), Some(6500));
     assert_eq!(xp_to_next(10), Some(7600));
-    assert_eq!(xp_to_next(30), Some(47400));
-    assert_eq!(xp_to_next(59), Some(209_800));
+    assert_eq!(xp_to_next(20), Some(57_300));
+    assert_eq!(xp_to_next(29), Some(246_700));
+    let to_29: u32 = (1..=29).map(|l| xp_to_next(l).unwrap()).sum();
+    assert!(to_29.abs_diff(1_600_000) < 16_000, "sum {to_29}");
+    // The quest basis stays vanilla.
+    assert_eq!(quest_xp_basis(1), Some(400));
+    assert_eq!(quest_xp_basis(20), Some(23_200));
+    assert_eq!(quest_xp_basis(30), Some(47400));
+    assert_eq!(quest_xp_basis(59), Some(209_800));
+    assert_eq!(quest_xp_basis(60), None);
     // 60 is the end of the game.
     assert_eq!(xp_to_next(60), None);
     assert_eq!(xp_to_next(0), None);
@@ -41,10 +50,10 @@ fn the_level_table_is_vanillas() {
 #[test]
 fn a_discovery_pays_an_eighth_of_the_xp_to_the_next_level() {
     use twilight_realm::rules::xp::discovery_xp;
-    // 400, 7600 and 47400 to the next level.
+    // 400, 7600 and 264000 to the next level.
     assert_eq!(
         [1, 10, 30].map(discovery_xp),
-        [50, 950, 5925],
+        [50, 950, 33000],
         "level 1, 10 and 30"
     );
     assert_eq!(discovery_xp(60), 0, "nothing past the end of the game");

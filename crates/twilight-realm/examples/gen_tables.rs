@@ -71,6 +71,26 @@ fn column(rows: &Value, field: &str) -> String {
     format!("[{}]", cells.join(", "))
 }
 
+/// The cost of each level as a TOML array: vanilla `xp_to_next` steepened from level 10.
+fn level_costs(rows: &Value) -> String {
+    let cells: Vec<String> = rows
+        .as_array()
+        .expect("rows")
+        .iter()
+        .map(|row| {
+            let level = row["level"].as_i64().expect("level");
+            let vanilla = row["xp_to_next"].as_f64().expect("xp_to_next");
+            let cost = match level {
+                1..=9 | 60.. => vanilla,
+                10..=29 => vanilla * 1.0946_f64.powi(level as i32 - 10),
+                _ => vanilla * 1.0946_f64.powi(19),
+            };
+            ((cost / 100.0).round() as i64 * 100).to_string()
+        })
+        .collect();
+    format!("[{}]", cells.join(", "))
+}
+
 fn levels(data: &Path) -> String {
     let xp = json(data, "xp_table.json");
     let mut out = String::from(
@@ -79,9 +99,15 @@ fn levels(data: &Path) -> String {
          # by `cargo run -p twilight-realm --example gen_tables`. tests/content.rs checks that the\n\
          # two agree. Every array is indexed by level - 1.\n\
          \n\
-         # player_xp_for_level: XP from a level to the next.\n",
+         # player_xp_for_level: XP from a level to the next. Quest pay reads this vanilla column.\n",
     );
-    out += &format!("xp_to_next = {}\n", column(&xp["levels"], "xp_to_next"));
+    out += &format!("quest_xp_basis = {}\n", column(&xp["levels"], "xp_to_next"));
+    out += "\n\
+         # The XP each level costs (ADR 0012). Levels 1 to 9 are vanilla. Levels 10 to 29 are\n\
+         # vanilla(level) * 1.0946^(level - 10), rounded to the nearest 100. Levels 30 to 59 are\n\
+         # vanilla(level) * 1.0946^19, rounded to the nearest 100 (provisional until a Tier 2\n\
+         # band exists). The last entry is vanilla and unused.\n";
+    out += &format!("xp_to_next = {}\n", level_costs(&xp["levels"]));
     for class in CLASSES {
         let stats = json(data, &format!("{class}_level_stats.json"));
         let per_level = &stats["per_level"];

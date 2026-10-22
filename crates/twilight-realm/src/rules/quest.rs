@@ -2,7 +2,7 @@
 //! pays the XP the player needs for their next level, any other quest half the XP from its own
 //! level to the next. Neither shrinks as the player outlevels the quest.
 
-use super::xp::xp_to_next;
+use super::xp::{quest_xp_basis, xp_to_next};
 
 /// The lowest Tier a character's Calling must be at to be offered a quest of level `level`:
 /// below 10 is Tier 0, 10 to 29 Tier 1, 30 to 49 Tier 2, 50 and up Tier 3.
@@ -27,5 +27,5 @@ pub fn hunting_reward_xp(player: u8, quest: u8) -> u32 {
     if xp_to_next(player).is_none() {
         return 0;
     }
-    xp_to_next(quest).map_or(0, |full| full.div_ceil(2))
+    quest_xp_basis(quest).map_or(0, |full| full.div_ceil(2))
 }

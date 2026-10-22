@@ -10,7 +10,9 @@ pub(crate) const MAX_LEVEL: u8 = 60;
 
 #[derive(Deserialize)]
 pub(crate) struct Levels {
-    /// Indexed by level - 1.
+    /// Vanilla XP from a level to the next, which quest pay is a share of. Indexed by level - 1.
+    pub(crate) quest_xp_basis: Vec<u32>,
+    /// What each level costs. Indexed by level - 1.
     pub(crate) xp_to_next: Vec<u32>,
     pub(crate) warrior: ClassLevels,
     pub(crate) paladin: ClassLevels,

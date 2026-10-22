@@ -11,7 +11,19 @@ pub enum Elite {
     Dungeon,
 }
 
-/// XP from `level` to the next; `None` at the end of the game (or for level 0).
+/// The vanilla XP from `level` to the next, which quest pay is a share of; `None` at the end of
+/// the game (or for level 0).
+pub fn quest_xp_basis(level: u8) -> Option<u32> {
+    if level == 0 || level >= MAX_LEVEL {
+        return None;
+    }
+    tables::levels()
+        .quest_xp_basis
+        .get(usize::from(level) - 1)
+        .copied()
+}
+
+/// What `level` costs: the XP from it to the next; `None` at the end of the game (or for level 0).
 pub fn xp_to_next(level: u8) -> Option<u32> {
     if level == 0 || level >= MAX_LEVEL {
         return None;

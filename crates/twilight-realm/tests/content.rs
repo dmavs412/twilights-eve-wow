@@ -46,7 +46,7 @@ fn floats(v: &toml::Value) -> Vec<f64> {
 fn the_level_tables_match_the_reference() {
     let levels = toml_table("levels.toml");
     assert_eq!(
-        floats(&levels["xp_to_next"]),
+        floats(&levels["quest_xp_basis"]),
         column(&json("xp_table.json")["levels"], "xp_to_next")
     );
 

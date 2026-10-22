@@ -1037,8 +1037,8 @@ mod tests {
     fn a_repeatable_quest_can_be_retaken_and_pays_a_full_level() {
         let q = quest("repeatable");
         assert!(q.retakable());
-        // Level 10's whole 7600 XP; level 15's 14400 for a level 15 player.
-        assert_eq!((q.reward_xp(10), q.reward_xp(15)), (7600, 14400));
+        // Level 10's whole 7600 XP; level 15's 22600 for a level 15 player.
+        assert_eq!((q.reward_xp(10), q.reward_xp(15)), (7600, 22600));
     }
 
     #[test]
