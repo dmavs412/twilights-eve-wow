@@ -364,7 +364,7 @@
     "equipped_item_class": 4,
     "equipped_subclass_mask": 64,
     "equipped_inventory_mask": 16384,
-    "description": "For 10 sec your chance to Block is increased by 75%. Every block deals 30 Holy damage to the attacker.",
+    "description": "For 10 sec your chance to Block is increased by 50%. Every block deals 12 Holy damage to the attacker.",
     "implicit_targets": [
      1,
      0
@@ -379,7 +379,7 @@
       "per_level": 0
      }
     ],
-    "aura_description": "Block chance increased by 75%.",
+    "aura_description": "Block chance increased by 50%.",
     "visual": 7323,
     "range_index": 5,
     "cast_time_index": 1,
@@ -1135,7 +1135,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 10% of your Block Value.",
+    "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 100% of your Block Value.",
     "implicit_targets": [
      1,
      0
@@ -1168,7 +1168,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 20% of your Block Value.",
+    "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 200% of your Block Value.",
     "implicit_targets": [
      1,
      0
@@ -1201,7 +1201,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 30% of your Block Value.",
+    "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 300% of your Block Value.",
     "implicit_targets": [
      1,
      0
@@ -1234,7 +1234,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 40% of your Block Value.",
+    "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 400% of your Block Value.",
     "implicit_targets": [
      1,
      0
@@ -1267,7 +1267,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 50% of your Block Value.",
+    "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 500% of your Block Value.",
     "implicit_targets": [
      1,
      0
@@ -1300,7 +1300,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 10% of your shield's Block Value.",
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 50% of your shield's Block Value.",
     "implicit_targets": [
      1,
      0
@@ -1333,7 +1333,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 20% of your shield's Block Value.",
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 100% of your shield's Block Value.",
     "implicit_targets": [
      1,
      0
@@ -1366,7 +1366,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 30% of your shield's Block Value.",
+    "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 150% of your shield's Block Value.",
     "implicit_targets": [
      1,
      0
@@ -1872,7 +1872,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 10% of the bonus Holy damage dealt.",
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 25% of the bonus Holy damage dealt.",
     "implicit_targets": [
      1,
      0
@@ -1900,7 +1900,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 20% of the bonus Holy damage dealt.",
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 50% of the bonus Holy damage dealt.",
     "implicit_targets": [
      1,
      0
@@ -1928,7 +1928,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 30% of the bonus Holy damage dealt.",
+    "description": "Consuming Conviction stacks with Zealous Cleave heals you for 75% of the bonus Holy damage dealt.",
     "implicit_targets": [
      1,
      0
@@ -2124,7 +2124,7 @@
     "dmg_class": 1,
     "school": 1,
     "prevention_type": 1,
-    "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd.",
+    "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage plus 10 (and 1 per level) as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd.",
     "implicit_targets": [
      6,
      0
@@ -2133,8 +2133,8 @@
     "dbc_effects": [
      {
       "effect": 58,
-      "base": 0,
-      "per_level": 0
+      "base": 10,
+      "per_level": 1
      }
     ],
     "visual": 2719,

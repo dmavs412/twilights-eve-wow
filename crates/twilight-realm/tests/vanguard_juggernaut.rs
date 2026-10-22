@@ -144,8 +144,8 @@ fn the_vanguards_iron_juggernaut_feeds_both_strikes() {
     assert_eq!(
         skills,
         [
-            ("righteous_smash", &[10, 20, 30][..]),
-            ("zealous_cleave", &[10, 20, 30][..])
+            ("righteous_smash", &[50, 100, 150][..]),
+            ("zealous_cleave", &[50, 100, 150][..])
         ]
     );
 }

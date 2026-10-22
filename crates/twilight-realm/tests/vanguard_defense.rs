@@ -122,7 +122,7 @@ fn reactive_strike_adds_parry() {
 }
 
 #[test]
-fn shield_of_the_penitent_adds_seventy_five_block_for_ten_seconds() {
+fn shield_of_the_penitent_adds_fifty_block_for_ten_seconds() {
     let penitent = skill("shield_of_penitent");
     let (mut realm, me, mob, mut view) = vanguard_in_world(&[], true);
     let base = block(&view, me);
@@ -137,10 +137,10 @@ fn shield_of_the_penitent_adds_seventy_five_block_for_ten_seconds() {
     }
     realm.handle(cast(penitent, None));
     assert_eq!(refusal(&view.drain(&mut realm), penitent), None, "the cast");
-    assert!((block(&view, me) - base - 75.0).abs() < 1e-3, "on");
+    assert!((block(&view, me) - base - 50.0).abs() < 1e-3, "on");
     view.run(&mut realm, 9.0);
     assert!(
-        (block(&view, me) - base - 75.0).abs() < 1e-3,
+        (block(&view, me) - base - 50.0).abs() < 1e-3,
         "still on at 9 s"
     );
     view.run(&mut realm, 2.0);
@@ -235,9 +235,9 @@ fn a_block_under_shield_of_the_penitent_burns_the_attacker() {
     let burns = dealt(&seen, me, penitent);
     assert!(blocks > 0, "the seed blocks under the aura");
     assert_eq!(burns.len(), blocks, "one burn a block");
-    // 30 + 3 a level, Holy: no armour, no roll.
+    // 12 + 1.2 a level, Holy: no armour, no roll.
     // The Power Level of a Tier 1 level 10 is 16.
-    let want = 30 + 3 * 16;
+    let want = 31;
     assert!(burns.iter().all(|&d| d == want), "{burns:?}, want {want}");
 }
 

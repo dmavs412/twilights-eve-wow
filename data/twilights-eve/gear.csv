@@ -497,7 +497,7 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 900502,Abbey Vanguard's Hauberk,Chest,Mail,,Rare,10,1,4,,2,,,345,,,,,,,,,,,,,,,,6,,,,25801,567,Equip,105,,Chain,15517,25806,,25800,25802,25803,25805,25804
 900503,Abbey Vanguard's Breastplate,Chest,Plate,,Rare,10,1,3,,3,,,431,,,,,,,,,,,,,,,,6,,,,26811,567,Equip,105,,Plate,27182,26818,,26815,26812,26810,26814,26813
 900504,Bell-Ringer's Greatmace,Weapon,Mace,2H,Rare,10,1,4,,2,,,,,22,32,Physical,3.2,,,,,,,,,,,6,,,,19622,1260,Equip,75,Back,Wood,,,,,,,,
-900505,Disciple's Sacrificial Blade,Weapon,Sword,1H,Rare,10,1,2,,1,,,,,10,14,Physical,2.0,,,,,,,,,,,3,,,,8274,966,Equip,65,Side,Metal,,,,,,,,
+900505,Disciple's Sacrificial Blade,Weapon,Sword,1H,Rare,10,1,2,,1,,,,,14,24,Physical,2.4,,,,,,,,,,,3,,,,8274,966,Equip,65,Side,Metal,,,,,,,,
 900506,Twilight Kris,Weapon,Dagger,1H,Rare,10,1,,3,,,,,,7,11,Physical,1.5,,,,,,,,,,,3,,,,20590,753,Equip,50,Side,Metal,,,,,,,,
 900507,Staff of the Black Psalm,Weapon,Staff,2H,Rare,10,1,,,,2,,,,20,30,Physical,3.0,,,,,,,,,,8,6,,,,20346,750,Equip,80,Staff,Wood,,,,,,,,
 900508,Belltower Longbow,Ranged,Bow,,Rare,10,1,,3,,,,,,9,14,Physical,2.4,,,,,,,,,,,3,,,,20652,654,Equip,65,,Wood,,,,,,,,

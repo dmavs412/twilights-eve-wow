@@ -12,8 +12,8 @@
 items = [900000, 25, 2362, 3111]
 
 [vanguard]
-# Recruit's Plate Vest, Worn Shortsword, Worn Wooden Shield, Crude Throwing Axe.
-items = [900001, 25, 2362, 3111]
+# Recruit's Plate Vest, Worn Axe, Worn Wooden Shield, Crude Throwing Axe.
+items = [900001, 37, 2362, 3111]
 
 [zealot]
 # Recruit's Plate Vest, Worn Shortsword, Worn Wooden Shield, Crude Throwing Axe.

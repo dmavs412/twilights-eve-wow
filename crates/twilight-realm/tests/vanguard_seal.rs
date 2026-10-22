@@ -283,8 +283,8 @@ fn the_vanguards_rows_carry_the_seal_and_wrathful_iron() {
     assert_eq!(procs.len(), 2);
     assert!(procs
         .iter()
-        .all(|p| p.on == ProcEvent::MeleeHit && p.chance == 10));
-    assert_eq!(procs[0].heal_pct, 2);
+        .all(|p| p.on == ProcEvent::MeleeHit && p.chance == 25));
+    assert_eq!(procs[0].heal_pct, 4);
     assert_eq!(
         procs[1].apply_aura.as_deref(),
         Some("aura_seal_of_iron_armor")

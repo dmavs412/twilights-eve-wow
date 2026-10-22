@@ -1237,7 +1237,7 @@
       "realm_only": false
      }
     ],
-    "description": "For 10 sec your chance to Block is increased by 75%. Every block deals 30 Holy damage to the attacker."
+    "description": "For 10 sec your chance to Block is increased by 50%. Every block deals 12 Holy damage to the attacker."
    },
    {
     "key": "zealous_cleave",
@@ -2271,12 +2271,12 @@
           "kind": "proc",
           "params": {
            "on": "block",
-           "block_value_pct": 10
+           "block_value_pct": 100
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 10% of your Block Value."
+        "description": "Increases your shield's Block Value by 5%. Every time you successfully Block, you deal Physical damage to the attacker equal to 100% of your Block Value."
        },
        {
         "key": "iron_retribution",
@@ -2312,12 +2312,12 @@
           "kind": "proc",
           "params": {
            "on": "block",
-           "block_value_pct": 20
+           "block_value_pct": 200
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 20% of your Block Value."
+        "description": "Increases your shield's Block Value by 10%. Every time you successfully Block, you deal Physical damage to the attacker equal to 200% of your Block Value."
        },
        {
         "key": "iron_retribution",
@@ -2353,12 +2353,12 @@
           "kind": "proc",
           "params": {
            "on": "block",
-           "block_value_pct": 30
+           "block_value_pct": 300
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 30% of your Block Value."
+        "description": "Increases your shield's Block Value by 15%. Every time you successfully Block, you deal Physical damage to the attacker equal to 300% of your Block Value."
        },
        {
         "key": "iron_retribution",
@@ -2394,12 +2394,12 @@
           "kind": "proc",
           "params": {
            "on": "block",
-           "block_value_pct": 40
+           "block_value_pct": 400
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 40% of your Block Value."
+        "description": "Increases your shield's Block Value by 20%. Every time you successfully Block, you deal Physical damage to the attacker equal to 400% of your Block Value."
        },
        {
         "key": "iron_retribution",
@@ -2435,12 +2435,12 @@
           "kind": "proc",
           "params": {
            "on": "block",
-           "block_value_pct": 50
+           "block_value_pct": 500
           },
           "realm_only": false
          }
         ],
-        "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 50% of your Block Value."
+        "description": "Increases your shield's Block Value by 25%. Every time you successfully Block, you deal Physical damage to the attacker equal to 500% of your Block Value."
        }
       ]
      },
@@ -2480,7 +2480,7 @@
           "kind": "skill_block_value_pct",
           "params": {
            "skill": "righteous_smash",
-           "pct": 10
+           "pct": 50
           },
           "realm_only": false
          },
@@ -2488,12 +2488,12 @@
           "kind": "skill_block_value_pct",
           "params": {
            "skill": "zealous_cleave",
-           "pct": 10
+           "pct": 50
           },
           "realm_only": false
          }
         ],
-        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 10% of your shield's Block Value."
+        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 50% of your shield's Block Value."
        },
        {
         "key": "iron_juggernaut",
@@ -2522,7 +2522,7 @@
           "kind": "skill_block_value_pct",
           "params": {
            "skill": "righteous_smash",
-           "pct": 20
+           "pct": 100
           },
           "realm_only": false
          },
@@ -2530,12 +2530,12 @@
           "kind": "skill_block_value_pct",
           "params": {
            "skill": "zealous_cleave",
-           "pct": 20
+           "pct": 100
           },
           "realm_only": false
          }
         ],
-        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 20% of your shield's Block Value."
+        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 100% of your shield's Block Value."
        },
        {
         "key": "iron_juggernaut",
@@ -2564,7 +2564,7 @@
           "kind": "skill_block_value_pct",
           "params": {
            "skill": "righteous_smash",
-           "pct": 30
+           "pct": 150
           },
           "realm_only": false
          },
@@ -2572,12 +2572,12 @@
           "kind": "skill_block_value_pct",
           "params": {
            "skill": "zealous_cleave",
-           "pct": 30
+           "pct": 150
           },
           "realm_only": false
          }
         ],
-        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 30% of your shield's Block Value."
+        "description": "Your Righteous Smash and Zealous Cleave deal additional Physical damage equal to 150% of your shield's Block Value."
        }
       ]
      }
@@ -3275,12 +3275,12 @@
           "kind": "consume_heal_pct",
           "params": {
            "skill": "zealous_cleave",
-           "pct": 10
+           "pct": 25
           },
           "realm_only": false
          }
         ],
-        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 10% of the bonus Holy damage dealt."
+        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 25% of the bonus Holy damage dealt."
        },
        {
         "key": "zealous_restoration",
@@ -3309,12 +3309,12 @@
           "kind": "consume_heal_pct",
           "params": {
            "skill": "zealous_cleave",
-           "pct": 20
+           "pct": 50
           },
           "realm_only": false
          }
         ],
-        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 20% of the bonus Holy damage dealt."
+        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 50% of the bonus Holy damage dealt."
        },
        {
         "key": "zealous_restoration",
@@ -3343,12 +3343,12 @@
           "kind": "consume_heal_pct",
           "params": {
            "skill": "zealous_cleave",
-           "pct": 30
+           "pct": 75
           },
           "realm_only": false
          }
         ],
-        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 30% of the bonus Holy damage dealt."
+        "description": "Consuming Conviction stacks with Zealous Cleave heals you for 75% of the bonus Holy damage dealt."
        }
       ]
      },
@@ -3617,8 +3617,8 @@
            "weapon": "normal",
            "weapon_pct": 150,
            "bonus": {
-            "base": 0,
-            "per_level": 0,
+            "base": 10,
+            "per_level": 1,
             "per_ap": 0
            },
            "crit_if_target_in": "ground_effect",
@@ -3627,7 +3627,7 @@
           "realm_only": false
          }
         ],
-        "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd."
+        "description": "Hurls a light-infused hammer at the target, dealing 150% weapon damage plus 10 (and 1 per level) as Holy damage. Always crits against a target in your Consecration. 30 Rage, 6 sec cooldown, 20 yd."
        }
       ]
      }
@@ -3679,7 +3679,7 @@
      {
       "kind": "block_pct",
       "params": {
-       "pct": 75
+       "pct": 50
       },
       "realm_only": false
      },
@@ -3688,8 +3688,8 @@
       "params": {
        "on": "block",
        "damage_attacker": {
-        "base": 30,
-        "per_level": 3
+        "base": 12,
+        "per_level": 1.2
        },
        "school": "holy",
        "amount_skill": "shield_of_penitent"
@@ -3697,7 +3697,7 @@
       "realm_only": false
      }
     ],
-    "description": "Block chance increased by 75%."
+    "description": "Block chance increased by 50%."
    },
    {
     "key": "aura_seal_of_iron",
@@ -3722,8 +3722,8 @@
       "kind": "proc",
       "params": {
        "on": "melee_hit",
-       "chance": 10,
-       "heal_pct": 2
+       "chance": 25,
+       "heal_pct": 4
       },
       "realm_only": false
      },
@@ -3731,7 +3731,7 @@
       "kind": "proc",
       "params": {
        "on": "melee_hit",
-       "chance": 10,
+       "chance": 25,
        "apply_aura": "aura_seal_of_iron_armor"
       },
       "realm_only": false

@@ -295,7 +295,7 @@ fn righteous_smash_adds_a_stack_and_zealous_cleave_takes_them() {
 }
 
 #[test]
-fn zealous_restoration_heals_ten_twenty_thirty_percent() {
+fn zealous_restoration_heals_twenty_five_fifty_seventy_five_percent() {
     let vanguard = callings::calling("vanguard").unwrap();
     let talent = vanguard
         .talent_tabs
@@ -307,7 +307,7 @@ fn zealous_restoration_heals_ten_twenty_thirty_percent() {
         talent.effects,
         [TalentEffect::ConsumeHealPct {
             skill: "zealous_cleave".into(),
-            per_rank: vec![10, 20, 30]
+            per_rank: vec![25, 50, 75]
         }]
     );
 }

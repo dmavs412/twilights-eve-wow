@@ -16,7 +16,7 @@ a character is created a Basic Warrior, so that outfit is the one worn.
 | Calling | Chest | weapon | off hand | ranged |
 |---|---|---|---|---|
 | Basic Warrior | 900000 Recruit's Mail Vest | 25 Worn Shortsword | 2362 Worn Wooden Shield | 3111 Crude Throwing Axe (200) |
-| Vanguard | 900001 Recruit's Plate Vest | 25 Worn Shortsword | 2362 Worn Wooden Shield | 3111 Crude Throwing Axe (200) |
+| Vanguard | 900001 Recruit's Plate Vest | 37 Worn Axe | 2362 Worn Wooden Shield | 3111 Crude Throwing Axe (200) |
 | Zealot | 900001 Recruit's Plate Vest | 25 Worn Shortsword | 2362 Worn Wooden Shield | 3111 Crude Throwing Axe (200) |
 
 Callings that share an armour type share a starter Chest. Each Chest's look and Wardrobe come
