@@ -1195,7 +1195,7 @@ mod tests {
     }
 
     #[test]
-    fn forest_edge_holds_the_riverpaw_camp_in_six_camps_and_two_patrols() {
+    fn forest_edge_holds_the_riverpaw_camp_in_nine_camps_and_three_patrols() {
         let edge = content().iter().find(|d| d.id == 2).unwrap();
         let meter = edge.meter.as_ref().unwrap();
         let template = |entry| {
@@ -1216,7 +1216,7 @@ mod tests {
             .filter(|c| c.asleep && c.entry != 96010)
             .collect();
         assert!(
-            (21..=27).contains(&sleepers.len()),
+            (33..=40).contains(&sleepers.len()),
             "{} sleepers",
             sleepers.len()
         );
@@ -1224,13 +1224,13 @@ mod tests {
         assert!(sleepers.iter().all(|c| c.camp.is_some()), "a sleeper alone");
         camps.sort_unstable();
         camps.dedup();
-        assert_eq!(camps.len(), 6, "camps {camps:?}");
+        assert_eq!(camps.len(), 9, "camps {camps:?}");
         for camp in camps {
             let size = sleepers.iter().filter(|c| c.camp == Some(camp)).count();
             assert!((3..=5).contains(&size), "camp {camp} has {size}");
         }
         let awake: Vec<_> = edge.creature.iter().filter(|c| !c.asleep).collect();
-        assert_eq!(awake.len(), 2);
+        assert_eq!(awake.len(), 3);
         assert!(awake.iter().all(|c| c.wander == 8.0));
         // The four roles, in the levels the ticket sets.
         for (entry, name, levels) in [

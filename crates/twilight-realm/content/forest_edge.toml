@@ -1133,18 +1133,20 @@ orientation = 1.5708
 sides = "both"
 
 
-# The Riverpaw camp (#173): 24 sleepers in six Camps along the hollow from the Portal toward
-# Hogger's tent at the back (about (-10050, 655)), and two awake patrols. The Camps lie across the
-# straight line from the Portal to the tent, within their wake radii at 0 stacks (3 yd, plus
-# Outrunner +3, Brute -2), and clear of the legs between the hiding spots. All points are
-# hand-picked; z is the terrain height from ground_check.py.
+# The Riverpaw camp (#173, spread over the hollow by #316): 36 sleepers in nine Camps of four,
+# three awake patrols and Hogger, 40 in all. The Camps cover the whole footprint, the south and
+# west included, each centre at least 27 yd from the next and 69 yd from the Portal. Each sits
+# at least 15 yd off the legs Portal, hiding spots 1, 2, 3, 5, 6, tent, so that route stays
+# quiet at 0 stacks (3 yd, plus Outrunner +3, Brute -2). Two Camps hold a second 96009 in place
+# of a Brute, as the first Camp did. All points are hand-picked; z is the terrain height from
+# ground_check.py.
 
-# Camp 1: the first dip past the haystacks, about (-9966, 597).
+# Camp 1: the first dip past the haystacks, north of the second hiding spot, about (-9958, 607).
 [[creature]]
 guid = 790301
 entry = 96006
 level = 27
-position = [-9969.0, 599.0, 39.20]
+position = [-9961.0, 609.0, 37.71]
 orientation = 5.50
 asleep = true
 camp = 1
@@ -1154,7 +1156,7 @@ wake_radius_mod = 3.0
 guid = 790302
 entry = 96007
 level = 28
-position = [-9963.0, 598.0, 38.76]
+position = [-9955.0, 608.0, 37.23]
 orientation = 6.20
 asleep = true
 camp = 1
@@ -1163,7 +1165,7 @@ camp = 1
 guid = 790303
 entry = 96009
 level = 27
-position = [-9966.0, 594.0, 38.97]
+position = [-9958.0, 604.0, 37.37]
 orientation = 0.62
 asleep = true
 camp = 1
@@ -1172,56 +1174,58 @@ camp = 1
 guid = 790304
 entry = 96009
 level = 27
-position = [-9964.0, 600.0, 38.76]
+position = [-9956.0, 610.0, 37.21]
 orientation = 1.32
 asleep = true
 camp = 1
 
-# Camp 2: under the south wall of the hollow's middle, about (-9981, 609).
+
+# Camp 2: the flat south of the third hiding spot, about (-9985, 558).
 [[creature]]
 guid = 790305
-entry = 96008
-level = 28
-position = [-9983.0, 611.0, 39.55]
-orientation = 2.02
-asleep = true
-camp = 2
-wake_radius_mod = -2.0
-
-[[creature]]
-guid = 790306
 entry = 96006
 level = 27
-position = [-9978.0, 608.0, 39.79]
-orientation = 2.72
+position = [-9988.0, 560.0, 37.70]
+orientation = 2.02
 asleep = true
 camp = 2
 wake_radius_mod = 3.0
 
 [[creature]]
-guid = 790307
-entry = 96009
-level = 27
-position = [-9984.0, 607.0, 39.76]
-orientation = 3.42
+guid = 790306
+entry = 96007
+level = 28
+position = [-9982.0, 559.0, 37.66]
+orientation = 2.72
 asleep = true
 camp = 2
 
 [[creature]]
-guid = 790308
-entry = 96007
+guid = 790307
+entry = 96008
 level = 28
-position = [-9979.0, 612.0, 39.62]
+position = [-9985.0, 555.0, 37.75]
+orientation = 3.42
+asleep = true
+camp = 2
+wake_radius_mod = -2.0
+
+[[creature]]
+guid = 790308
+entry = 96009
+level = 27
+position = [-9983.0, 561.0, 37.66]
 orientation = 4.12
 asleep = true
 camp = 2
 
-# Camp 3: the lean-to beside the north haystack, about (-9993, 622).
+
+# Camp 3: the lean-to between the north haystack and the wagon, about (-9983, 625).
 [[creature]]
 guid = 790309
 entry = 96006
 level = 27
-position = [-9991.0, 624.0, 38.0]
+position = [-9986.0, 627.0, 38.33]
 orientation = 4.82
 asleep = true
 camp = 3
@@ -1229,77 +1233,79 @@ wake_radius_mod = 3.0
 
 [[creature]]
 guid = 790310
-entry = 96008
+entry = 96007
 level = 28
-position = [-9996.0, 622.0, 38.0]
+position = [-9980.0, 626.0, 38.36]
 orientation = 5.52
 asleep = true
 camp = 3
-wake_radius_mod = -2.0
 
 [[creature]]
 guid = 790311
-entry = 96007
+entry = 96008
 level = 28
-position = [-9993.0, 619.0, 38.54]
+position = [-9983.0, 622.0, 38.51]
 orientation = 6.22
 asleep = true
 camp = 3
+wake_radius_mod = -2.0
 
 [[creature]]
 guid = 790312
 entry = 96009
 level = 27
-position = [-9990.0, 620.0, 38.0]
+position = [-9981.0, 628.0, 38.26]
 orientation = 0.64
 asleep = true
 camp = 3
 
-# Camp 4: the wagon yard, north of the last hiding spot, about (-10012, 618).
+
+# Camp 4: the wagon yard, west of the fifth hiding spot, about (-10020, 612).
 [[creature]]
 guid = 790313
-entry = 96008
-level = 28
-position = [-10010.0, 620.0, 39.25]
-orientation = 1.34
-asleep = true
-camp = 4
-wake_radius_mod = -2.0
-
-[[creature]]
-guid = 790314
 entry = 96006
 level = 27
-position = [-10015.0, 619.0, 39.61]
-orientation = 2.04
+position = [-10023.0, 614.0, 39.20]
+orientation = 1.34
 asleep = true
 camp = 4
 wake_radius_mod = 3.0
 
 [[creature]]
-guid = 790315
+guid = 790314
 entry = 96007
 level = 28
-position = [-10009.0, 616.0, 39.22]
+position = [-10017.0, 613.0, 39.20]
+orientation = 2.04
+asleep = true
+camp = 4
+
+[[creature]]
+guid = 790315
+entry = 96008
+level = 28
+position = [-10020.0, 609.0, 38.68]
 orientation = 2.74
 asleep = true
 camp = 4
+wake_radius_mod = -2.0
 
 [[creature]]
 guid = 790316
 entry = 96009
 level = 27
-position = [-10013.0, 615.0, 39.33]
+position = [-10018.0, 615.0, 39.38]
 orientation = 3.44
 asleep = true
 camp = 4
 
-# Camp 5: the ditch before the tent, about (-10027, 636).
+
+# Camp 5: the ditch before the tent, about (-10025, 642).
 [[creature]]
 guid = 790317
 entry = 96006
 level = 27
-position = [-10027.0, 639.0, 39.36]
+position = [-10028.0, 644.0, 38.82]
 orientation = 4.14
 asleep = true
 camp = 5
@@ -1309,7 +1315,7 @@ wake_radius_mod = 3.0
 guid = 790318
 entry = 96007
 level = 28
-position = [-10030.0, 635.0, 39.40]
+position = [-10022.0, 643.0, 38.98]
 orientation = 4.84
 asleep = true
 camp = 5
@@ -1318,7 +1324,7 @@ camp = 5
 guid = 790319
 entry = 96008
 level = 28
-position = [-10024.0, 636.0, 39.81]
+position = [-10025.0, 639.0, 39.52]
 orientation = 5.54
 asleep = true
 camp = 5
@@ -1328,17 +1334,18 @@ wake_radius_mod = -2.0
 guid = 790320
 entry = 96009
 level = 27
-position = [-10027.0, 633.0, 39.84]
+position = [-10023.0, 645.0, 38.76]
 orientation = 6.24
 asleep = true
 camp = 5
 
-# Camp 6: the tent's front yard, about (-10040, 648).
+
+# Camp 6: behind the tent, under the north rim, about (-10042, 664).
 [[creature]]
 guid = 790321
 entry = 96006
 level = 27
-position = [-10037.0, 650.0, 38.0]
+position = [-10045.0, 666.0, 37.75]
 orientation = 0.66
 asleep = true
 camp = 6
@@ -1348,29 +1355,148 @@ wake_radius_mod = 3.0
 guid = 790322
 entry = 96007
 level = 28
-position = [-10043.0, 650.0, 38.0]
+position = [-10039.0, 665.0, 37.42]
 orientation = 1.36
 asleep = true
 camp = 6
 
 [[creature]]
 guid = 790323
-entry = 96009
-level = 27
-position = [-10040.0, 645.0, 38.0]
+entry = 96008
+level = 28
+position = [-10042.0, 661.0, 37.98]
 orientation = 2.06
 asleep = true
 camp = 6
+wake_radius_mod = -2.0
 
 [[creature]]
 guid = 790324
-entry = 96008
-level = 28
-position = [-10037.0, 645.0, 38.0]
+entry = 96009
+level = 27
+position = [-10040.0, 667.0, 37.26]
 orientation = 2.76
 asleep = true
 camp = 6
+
+
+# Camp 7: the south-west slope toward the Westfall hills, about (-10035, 560).
+[[creature]]
+guid = 790328
+entry = 96006
+level = 27
+position = [-10038.0, 562.0, 34.79]
+orientation = 3.46
+asleep = true
+camp = 7
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790329
+entry = 96007
+level = 28
+position = [-10032.0, 561.0, 36.65]
+orientation = 4.16
+asleep = true
+camp = 7
+
+[[creature]]
+guid = 790330
+entry = 96009
+level = 27
+position = [-10035.0, 557.0, 35.67]
+orientation = 4.86
+asleep = true
+camp = 7
+
+[[creature]]
+guid = 790331
+entry = 96009
+level = 27
+position = [-10033.0, 563.0, 36.30]
+orientation = 5.56
+asleep = true
+camp = 7
+
+
+# Camp 8: under the west wall, about (-10063, 595).
+[[creature]]
+guid = 790332
+entry = 96006
+level = 27
+position = [-10066.0, 597.0, 39.29]
+orientation = 6.26
+asleep = true
+camp = 8
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790333
+entry = 96007
+level = 28
+position = [-10060.0, 596.0, 38.78]
+orientation = 0.68
+asleep = true
+camp = 8
+
+[[creature]]
+guid = 790334
+entry = 96008
+level = 28
+position = [-10063.0, 592.0, 39.03]
+orientation = 1.38
+asleep = true
+camp = 8
 wake_radius_mod = -2.0
+
+[[creature]]
+guid = 790335
+entry = 96009
+level = 27
+position = [-10061.0, 598.0, 38.95]
+orientation = 2.08
+asleep = true
+camp = 8
+
+
+# Camp 9: the north-east corner, under the rim, about (-9935, 645).
+[[creature]]
+guid = 790336
+entry = 96006
+level = 27
+position = [-9938.0, 647.0, 33.69]
+orientation = 2.78
+asleep = true
+camp = 9
+wake_radius_mod = 3.0
+
+[[creature]]
+guid = 790337
+entry = 96007
+level = 28
+position = [-9932.0, 646.0, 34.04]
+orientation = 3.48
+asleep = true
+camp = 9
+
+[[creature]]
+guid = 790338
+entry = 96008
+level = 28
+position = [-9935.0, 642.0, 34.48]
+orientation = 4.18
+asleep = true
+camp = 9
+wake_radius_mod = -2.0
+
+[[creature]]
+guid = 790339
+entry = 96009
+level = 27
+position = [-9933.0, 648.0, 33.69]
+orientation = 4.88
+asleep = true
+camp = 9
 
 # Hogger (#174), asleep in his tent at the back of the hollow (-10050, 655): a deep sleeper, so he
 # stays down at 19 stacks (3 + 1.5 x 19 - 15 = 16.5 yd) and hunts at the maximum. At 30% health he
@@ -1391,20 +1517,30 @@ level = 28
 count = 2
 position = [-10046.0, 649.0, 38.0]
 
-# Two awake Outrunners drift about the middle of the hollow, between the first and second Camps
-# and the west wall (wander 8).
+# Three awake Outrunners drift about the hollow (wander 8).
+# Between the first two Camps and the third hiding spot.
 [[creature]]
 guid = 790325
 entry = 96006
 level = 27
-position = [-9958.0, 606.0, 38.0]
-orientation = 5.7
+position = [-9965.0, 590.0, 38.81]
+orientation = 5.58
 wander = 8.0
 
+# Between the wagon yard and the fifth hiding spot.
 [[creature]]
 guid = 790326
 entry = 96006
 level = 27
 position = [-10004.0, 603.0, 39.65]
-orientation = 2.4
+orientation = 1.20
+wander = 8.0
+
+# Between the west wall's Camp and the wagon yard.
+[[creature]]
+guid = 790340
+entry = 96006
+level = 27
+position = [-10050.0, 610.0, 40.50]
+orientation = 3.10
 wander = 8.0
