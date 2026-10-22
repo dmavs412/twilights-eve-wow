@@ -48,6 +48,9 @@ const TIMED_GUID_BASE: u32 = 0xB0_0000;
 /// never shares a guid with the one before.
 const TIMED_LIVE_BASE: u32 = 0xC0_0000;
 
+/// The first low guid of a creature made at run time for an Audience.
+pub(crate) const AUDIENCE_GUID_BASE: u32 = 0xD0_0000;
+
 /// A creature guid: `entry` and the low guid `low` under `HIGHGUID_UNIT`.
 pub(crate) fn unit_guid(entry: u32, low: u32) -> u64 {
     HIGHGUID_UNIT << 48 | u64::from(entry & 0xFF_FFFF) << 24 | u64::from(low & 0xFF_FFFF)
@@ -830,6 +833,9 @@ pub(crate) struct Mob {
     /// The number of the fight its threat table began (`next_fight`); none while the table is
     /// empty. The Boss Bar lists fights in this order.
     pub(crate) fight_no: Option<u64>,
+    /// The characters that see it and that it acts on; none for every mob a spawn row or a
+    /// Phased Dungeon places. Fixed at spawn.
+    pub(crate) audience: Option<crate::audience::Audience>,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -861,11 +867,10 @@ impl Mob {
         self.home[2] = z;
     }
 
-    /// The mob of `spawn`, which is `content().spawn[index]`, at `level`.
-    pub(crate) fn from_spawn(spawn: &'static Spawn, index: u32, level: u8, z: f32) -> Option<Self> {
-        let template = template(spawn.entry)?;
+    /// `template`'s stats at `level`, under the creature difficulty.
+    pub(crate) fn stats_for(template: &Template, level: u8) -> MobStats {
         let (health_mul, damage_mul) = difficulty_muls();
-        let stats = if template.inert {
+        if template.inert {
             MobStats::new(
                 template.unit_class,
                 level,
@@ -881,7 +886,31 @@ impl Mob {
                 template.damage_multiplier * damage_mul,
                 template.armor_multiplier,
             )
-        };
+        }
+    }
+
+    /// A mob no spawn placed, made at run time for `audience` (ADR 0014): it is seen by and acts
+    /// on those characters only, and nothing respawns it. Built as a hunter is, then freed of
+    /// the hunt.
+    pub(crate) fn for_audience(
+        guid: u64,
+        template: &'static Template,
+        level: u8,
+        position: [f32; 3],
+        audience: crate::audience::Audience,
+    ) -> Self {
+        let stats = Self::stats_for(template, level);
+        let mut mob = Self::hunter(guid, template, stats, position, 0.0, 0);
+        mob.hunts = None;
+        mob.leashes = true;
+        mob.audience = Some(audience);
+        mob
+    }
+
+    /// The mob of `spawn`, which is `content().spawn[index]`, at `level`.
+    pub(crate) fn from_spawn(spawn: &'static Spawn, index: u32, level: u8, z: f32) -> Option<Self> {
+        let template = template(spawn.entry)?;
+        let stats = Self::stats_for(template, level);
         let guid = HIGHGUID_UNIT << 48
             | u64::from(spawn.entry & 0xFF_FFFF) << 24
             | u64::from(spawn.guid & 0xFF_FFFF);
@@ -920,6 +949,7 @@ impl Mob {
             timed_made: vec![0; spawn.every.len()],
             brought_by: None,
             fight_no: None,
+            audience: None,
             target: 0,
             threat: Default::default(),
             hunts: None,
@@ -989,6 +1019,7 @@ impl Mob {
             timed_made: Vec::new(),
             brought_by: None,
             fight_no: None,
+            audience: None,
             target: 0,
             threat: Default::default(),
             hunts: Some(hunts),
@@ -1135,6 +1166,16 @@ impl Mob {
     /// Alive and not friendly: what an attack or a spell may hit.
     pub(crate) fn attackable(&self) -> bool {
         self.alive() && !self.template.friendly
+    }
+
+    /// Whether `viewer`'s character is an Audience of it (or it has none).
+    pub(crate) fn admits(&self, viewer: u64) -> bool {
+        crate::audience::admits(&self.audience, viewer)
+    }
+
+    /// [`Self::attackable`], and `viewer` can see it.
+    pub(crate) fn attackable_by(&self, viewer: u64) -> bool {
+        self.attackable() && self.admits(viewer)
     }
 
     pub(crate) fn run_speed(&self) -> f32 {

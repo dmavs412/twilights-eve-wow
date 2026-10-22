@@ -525,6 +525,15 @@ impl InWorld {
             ));
             return;
         }
+        // A creature this character is not an Audience of is out of reach, as if far off.
+        if self
+            .mobs
+            .iter()
+            .any(|m| m.guid == target && !m.admits(self.guid))
+        {
+            events.push(SessionEvent::AttackSwingError(AttackSwingError::NotInRange));
+            return;
+        }
         if !self.player.alive() {
             return;
         }
@@ -721,6 +730,7 @@ impl InWorld {
                     || mob.asleep
                     || !mob.template.hostile
                     || mob.hunts.is_some_and(|owner| owner != self.guid)
+                    || !mob.admits(self.guid)
                 {
                     continue;
                 }
@@ -854,13 +864,14 @@ impl InWorld {
             return;
         };
         let mob = &self.mobs[i];
-        let refusal = if distance(mob.position, c.position) > melee_reach() {
-            Some(AttackSwingError::NotInRange)
-        } else if !in_front(c.orientation, c.position, mob.position) {
-            Some(AttackSwingError::BadFacing)
-        } else {
-            None
-        };
+        let refusal =
+            if !mob.admits(self.guid) || distance(mob.position, c.position) > melee_reach() {
+                Some(AttackSwingError::NotInRange)
+            } else if !in_front(c.orientation, c.position, mob.position) {
+                Some(AttackSwingError::BadFacing)
+            } else {
+                None
+            };
         if let Some(refusal) = refusal {
             if p.refused != Some(refusal) {
                 p.refused = Some(refusal);

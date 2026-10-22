@@ -2125,7 +2125,7 @@ impl InWorld {
                 .mobs
                 .iter()
                 .filter(|m| {
-                    m.attackable()
+                    m.attackable_by(self.guid)
                         && !targets.contains(&m.guid)
                         && distance(m.position, c.position) <= melee_reach()
                         && in_front(c.orientation, c.position, m.position)
@@ -2803,7 +2803,10 @@ impl InWorld {
             Target::SelfArea => Ok(self
                 .mobs
                 .iter()
-                .filter(|m| m.attackable() && distance(m.position, c.position) <= skill.radius_yd)
+                .filter(|m| {
+                    m.attackable_by(self.guid)
+                        && distance(m.position, c.position) <= skill.radius_yd
+                })
                 .take(skill.max_targets as usize)
                 .map(|m| m.guid)
                 .collect()),
@@ -2820,6 +2823,10 @@ impl InWorld {
                 }
                 if !mob.alive() {
                     return Err(SPELL_FAILED_TARGETS_DEAD);
+                }
+                // A creature this character is not an Audience of is out of reach, as if far off.
+                if !mob.admits(self.guid) {
+                    return Err(SPELL_FAILED_OUT_OF_RANGE);
                 }
                 let d = distance(mob.position, c.position);
                 let [min, max] = skill.range_yd;
@@ -2883,7 +2890,7 @@ impl InWorld {
             .enumerate()
             .filter(|&(j, m)| {
                 j != first
-                    && m.attackable()
+                    && m.attackable_by(self.guid)
                     && distance(m.position, centre) <= radius
                     && (area != "cone" || in_front(c.orientation, c.position, m.position))
             })
@@ -4107,7 +4114,7 @@ impl InWorld {
         let other = self
             .mobs
             .iter()
-            .filter(|m| m.guid != from && m.attackable())
+            .filter(|m| m.guid != from && m.attackable_by(self.guid))
             .map(|m| (m.guid, distance(m.position, c.position)))
             .filter(|(_, d)| *d <= radius_yd)
             .min_by(|a, b| a.1.total_cmp(&b.1))
@@ -4752,7 +4759,9 @@ impl InWorld {
             let inside: Vec<u64> = self
                 .mobs
                 .iter()
-                .filter(|m| m.attackable() && distance(g.centre, m.position) <= g.radius_yd)
+                .filter(|m| {
+                    m.attackable_by(self.guid) && distance(g.centre, m.position) <= g.radius_yd
+                })
                 .map(|m| m.guid)
                 .collect();
             for guid in inside {

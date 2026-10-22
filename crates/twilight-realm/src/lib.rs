@@ -39,6 +39,7 @@
 
 mod ammo;
 mod areas;
+mod audience;
 mod bands;
 mod bounty;
 pub mod callings;
@@ -91,6 +92,7 @@ pub const REALM_NAME: &str = "Twilight's Eve";
 
 pub mod build_id;
 
+pub use audience::Audience;
 pub use content::{CROSSROADS, KALIMDOR, THE_BARRENS};
 pub use dev::DevMultipliers;
 pub use phased::{test_grounds_start, GameObjectUse, UseKind};
@@ -884,8 +886,7 @@ impl Realm {
                     }
                 }
                 // The view: what came within it is created, what left it removed.
-                let mut view = shard.in_view(p.position);
-                // The other players in view.
+                let mut view = shard.in_view(p.guid, p.position); // The other players in view.
                 view.extend(
                     players
                         .iter()
@@ -1658,6 +1659,41 @@ impl Realm {
     /// import, and a new character must not overwrite it.
     pub fn reserve_guid(&mut self, guid: u64) {
         self.characters.reserve(guid);
+    }
+
+    /// Spawns the creature of mob template `entry` at `level` on `map`'s open world, at
+    /// `position` grounded on `host`'s ground, for `audience` alone (ADR 0014). No spawn timer
+    /// revives it. Its guid, or `None` when `entry` is no mob template.
+    pub fn spawn_for(
+        &mut self,
+        host: &dyn Host,
+        entry: u32,
+        level: u8,
+        position: [f32; 3],
+        map: u32,
+        audience: Audience,
+    ) -> Option<u64> {
+        let template = mobs::template(entry)?;
+        let place = shard::Place {
+            map,
+            phase: phased::Phase::OpenWorld,
+        };
+        // The served session may hold the shard's mobs on loan; they come back first.
+        self.give_back();
+        let shard = self
+            .shards
+            .entry(place)
+            .or_insert_with(|| shard::Shard::new(place));
+        Some(shard.spawn_for(host, template, level, position, audience))
+    }
+
+    /// Removes every creature made for exactly `audience` on any shard; each admitted client
+    /// that had one in view is sent its destroy on the next tick.
+    pub fn despawn_audience(&mut self, audience: &Audience) {
+        self.give_back();
+        for shard in self.shards.values_mut() {
+            shard.despawn_audience(audience);
+        }
     }
 
     fn save(&mut self, guid: u64) {

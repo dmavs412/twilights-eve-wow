@@ -8,6 +8,7 @@ use std::collections::{HashMap, HashSet};
 
 use benilla_protocol::SessionEvent;
 
+use crate::audience::Audience;
 use crate::fields::values;
 use crate::looting::lootable_pair;
 use crate::mobs::{self, Mob, State};
@@ -33,6 +34,8 @@ pub(crate) struct Shard {
     /// A Phased Dungeon's Run: it starts with the shard, when the first player steps in, and
     /// resets with it, once no living player is inside.
     run: Option<Run>,
+    /// How many creatures have been made here for an Audience, which numbers their guids.
+    audience_spawned: u32,
 }
 
 /// A player standing on a shard, as the realm sees them for a tick.
@@ -92,7 +95,33 @@ impl Shard {
             population: Population::default(),
             hub: Default::default(),
             run,
+            audience_spawned: 0,
         }
+    }
+
+    /// A creature of `template` at `level`, made at `position` for `audience` (ADR 0014): it
+    /// stands on the ground under the point, and no spawn timer ever revives it. Its guid.
+    pub(crate) fn spawn_for(
+        &mut self,
+        host: &dyn Host,
+        template: &'static mobs::Template,
+        level: u8,
+        position: [f32; 3],
+        audience: Audience,
+    ) -> u64 {
+        self.audience_spawned = self.audience_spawned.wrapping_add(1);
+        let low = mobs::AUDIENCE_GUID_BASE | self.audience_spawned & 0xF_FFFF;
+        let guid = mobs::unit_guid(template.entry, low);
+        let at = crate::ground::grounded_at(host, self.place.map, position, true);
+        self.mobs
+            .push(Mob::for_audience(guid, template, level, at, audience));
+        guid
+    }
+
+    /// Removes every creature made for exactly `audience`. Each admitted client has it destroyed
+    /// when its view next lacks it.
+    pub(crate) fn despawn_audience(&mut self, audience: &Audience) {
+        self.mobs.retain(|m| m.audience.as_ref() != Some(audience));
     }
 
     /// The stops whose inner portal is open in the Run; none with no Run.
@@ -274,13 +303,15 @@ impl Shard {
     }
 
     /// Everything a player at `me` sees: each mob and Hub NPC within view, and its create.
-    pub(crate) fn in_view(&self, me: [f32; 3]) -> Vec<(u64, SessionEvent)> {
+    /// A mob whose Audience does not admit `viewer` is never in it.
+    pub(crate) fn in_view(&self, viewer: u64, me: [f32; 3]) -> Vec<(u64, SessionEvent)> {
         // A Run is there all at once.
         let dungeon = self.run.is_some();
         let near = |m: &&Mob| {
-            dungeon
-                || flat_distance(m.position, me) <= VIEW_YD
-                || flat_distance(m.home, me) <= VIEW_YD
+            m.admits(viewer)
+                && (dungeon
+                    || flat_distance(m.position, me) <= VIEW_YD
+                    || flat_distance(m.home, me) <= VIEW_YD)
         };
         let mut seen: Vec<(u64, SessionEvent)> = self
             .mobs
@@ -309,11 +340,12 @@ impl Shard {
         let mut owners: HashMap<S, HashSet<u64>> = HashMap::new();
         for m in &self.mobs {
             let fighting = matches!(m.state, State::Engaged | State::Evading);
+            // Only a character its Audience admits runs it.
             let owner = players
                 .iter()
-                .find(|p| fighting && p.guid == m.target)
+                .find(|p| fighting && p.guid == m.target && m.admits(p.guid))
                 .or_else(|| {
-                    players.iter().min_by(|a, b| {
+                    players.iter().filter(|p| m.admits(p.guid)).min_by(|a, b| {
                         flat_distance(a.position, m.position)
                             .total_cmp(&flat_distance(b.position, m.position))
                     })

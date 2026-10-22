@@ -80,11 +80,20 @@ impl InWorld {
                 let Some(mut add) = Mob::timed(i as u32, call.level, z, wave, caller) else {
                     continue;
                 };
+                add.audience = self.audience_of(caller);
                 events.push(add.create());
                 engage(&mut add, target, events);
                 self.mobs.push(add);
             }
         }
+    }
+
+    /// The Audience of the creature `guid`, which a creature it calls in inherits.
+    fn audience_of(&self, guid: u64) -> Option<crate::audience::Audience> {
+        self.mobs
+            .iter()
+            .find(|m| m.guid == guid)
+            .and_then(|m| m.audience.clone())
     }
 
     /// Makes each call for help that a creature's health has just reached, once per life: it
@@ -134,6 +143,7 @@ impl InWorld {
                 let Some(mut add) = Mob::spawn(i as u32, level, z) else {
                     continue;
                 };
+                add.audience = self.audience_of(caller);
                 events.push(add.create());
                 engage(&mut add, self.guid, events);
                 self.mobs.push(add);
