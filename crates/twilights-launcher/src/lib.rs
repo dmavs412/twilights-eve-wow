@@ -8,7 +8,9 @@ pub mod launch;
 pub mod manifest;
 pub mod plan;
 pub mod settings;
+pub mod status;
 pub mod swap;
+pub mod update;
 
 use std::fmt;
 
