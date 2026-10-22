@@ -635,3 +635,75 @@ fn rumours_toml_has_its_rank_factors() {
         assert!(factors[key].as_float().unwrap() > 0.0, "{key}");
     }
 }
+
+/// The three Northshire Rumours (#289): Grade, step count, timer, droppers, three points each with
+/// its own readable note, steps that are `rumour` quests, and spawns that name one of those steps.
+#[test]
+fn rumours_toml_has_the_three_northshire_rumours() {
+    let rumours = toml_table("rumours.toml");
+    let items = toml_table("quest_items.toml");
+    let quests = toml_table("quests_elwynn.toml");
+    let items = items["item"].as_array().unwrap();
+    let quests = quests["quest"].as_array().unwrap();
+    let want = [
+        (1, "easy", 1, 30, vec![69, 299], 3.0, 97010),
+        (2, "hard", 2, 45, vec![38], 3.0, 97011),
+        (3, "deadly", 3, 60, vec![6, 257], 2.0, 97012),
+    ];
+    let list = rumours["rumour"].as_array().unwrap();
+    assert_eq!(list.len(), want.len());
+    for (r, (id, grade, steps, minutes, droppers, chance, giver)) in list.iter().zip(want) {
+        assert_eq!(r["id"].as_integer(), Some(id));
+        assert_eq!(r["grade"].as_str(), Some(grade), "Rumour {id}");
+        assert_eq!(r["quests"].as_array().unwrap().len(), steps, "Rumour {id}");
+        assert_eq!(r["timer_min"].as_integer(), Some(minutes), "Rumour {id}");
+        assert_eq!(r["giver"].as_integer(), Some(giver), "Rumour {id}");
+        assert_eq!(r["chance"].as_float(), Some(0.5), "Rumour {id}");
+        let dropped: Vec<i64> = r["droppers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|d| d["entry"].as_integer().unwrap())
+            .collect();
+        assert_eq!(dropped, droppers, "Rumour {id}");
+        assert!(r["droppers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|d| d["chance"].as_float() == Some(chance)));
+        let points = r["points"].as_array().unwrap();
+        assert_eq!(points.len(), 3, "Rumour {id}");
+        for p in points {
+            let note = p["note"].as_integer().unwrap();
+            let item = items
+                .iter()
+                .find(|i| i["entry"].as_integer() == Some(note))
+                .unwrap_or_else(|| panic!("note {note} is no quest item"));
+            let pages = item["pages"].as_array().unwrap();
+            assert!((2..=3).contains(&pages.len()), "note {note}'s pages");
+            let landmark = p["landmark"].as_str().unwrap();
+            assert!(
+                pages.last().unwrap().as_str().unwrap().contains(landmark),
+                "note {note}'s last page names {landmark}"
+            );
+            assert!(item["description"].as_str().unwrap().contains(landmark));
+        }
+        for q in r["quests"].as_array().unwrap() {
+            let row = quests
+                .iter()
+                .find(|row| row["id"] == *q)
+                .unwrap_or_else(|| panic!("quest {q} is missing"));
+            assert_eq!(row["kind"].as_str(), Some("rumour"), "quest {q}");
+        }
+        for s in r
+            .get("spawn")
+            .and_then(|s| s.as_array())
+            .into_iter()
+            .flatten()
+        {
+            assert!(r["quests"].as_array().unwrap().contains(&s["quest"]));
+        }
+    }
+    let blue = rumours["chest_pools"]["blue"].as_array().unwrap();
+    assert_eq!(blue.len(), 21, "the Abbot's Dungeon rows");
+}

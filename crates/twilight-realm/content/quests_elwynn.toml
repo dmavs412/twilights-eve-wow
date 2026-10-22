@@ -1650,3 +1650,122 @@ map = 0
 position = [-9896.0, 36.0, 30.5]
 orientation = 0.0
 respawn = 120.0
+
+# ── Northshire's Rumours (#289, rumours.toml) ────────────────────────────────────────────────
+# No Token and no money: a Rumour pays the Grade's quest XP and its last step's chest. Each step
+# is handed in to the giver who offered it.
+
+# A Hermit's Request, easy (Rumour 1).
+[[quest]]
+id = 94901
+kind = "rumour"
+giver = 97010
+ender = 97010
+level = 5
+title = "A Hermit's Request"
+objectives = "Kill 8 Timber Wolves for Hermit Oswin."
+details = "My goats are gone, every one, and the wolves grow bolder each night. I would not ask a stranger, but I cannot hold a blade like you can. Thin them for me, and I will be in your debt."
+progress = "Are the wolves still about?"
+completion = "The hills will be quieter now. I thank you, stranger, and so would my goats."
+money = 0
+tokens = 0
+zone_or_sort = 12
+kill = [[69, 8]]
+
+# The Vintner's Ledger, hard (Rumour 2). The pages drop from Defias Thugs while the quest is held,
+# as the Northshire Wolf Pelt (980002) does.
+[[quest]]
+id = 94902
+kind = "rumour"
+giver = 97011
+ender = 97011
+level = 7
+title = "The Vintner's Ledger"
+objectives = "Collect 5 Stolen Ledger Pages from Defias Thugs for Overseer Maren Tolle."
+details = "The Defias took the vineyard's ledger and tore it into pages. They carry the pages with them, or so my pickers tell me. Bring back five, and I may learn who has been keeping our books."
+progress = "Have you found my pages?"
+completion = "These are in the Defias' own hand. Someone is keeping their accounts, and he is no thug."
+money = 0
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 980039, count = 5, from = [38], chance = 60 }]
+
+[[quest]]
+id = 94903
+kind = "rumour"
+giver = 97011
+ender = 97011
+after = 94902
+level = 8
+title = "The Bookkeeper"
+objectives = "Kill the Defias Bookkeeper for Overseer Maren Tolle."
+details = "The pages name a man who keeps the Defias' ledgers, and he is close. Find him and end his bookkeeping. Be careful, because he is not as soft as he looks."
+progress = "Is the bookkeeper dealt with?"
+completion = "No more sums for the Defias. The vineyard owes you more than I can write down."
+money = 0
+tokens = 0
+zone_or_sort = 12
+kill = [[97013, 1]]
+
+# What the Kobolds Dug Up, deadly (Rumour 3).
+[[quest]]
+id = 94904
+kind = "rumour"
+giver = 97012
+ender = 97012
+level = 7
+title = "What the Kobolds Dug Up"
+objectives = "Kill 8 Kobold Workers for Prospector Hale."
+details = "Those kobolds are digging under my claim and burying whatever they find. I want them stopped, and I want to know what they are hiding. Start with the workers."
+progress = "Are the workers dead?"
+completion = "Good. With the diggers gone, I can find what they buried."
+money = 0
+tokens = 0
+zone_or_sort = 12
+kill = [[257, 8]]
+
+[[quest]]
+id = 94905
+kind = "rumour"
+giver = 97012
+ender = 97012
+after = 94904
+level = 8
+title = "Unearthed Caches"
+objectives = "Use 3 Unearthed Caches for Prospector Hale."
+details = "The workers left caches in the ground, three of them near the diggings. Open them and see what the kobolds thought worth burying. Bring me nothing, only your word."
+progress = "What was in the caches?"
+completion = "Twilight coin and a foreman's mark. Someone is paying these kobolds, and his name is Grubhollow."
+money = 0
+tokens = 0
+zone_or_sort = 12
+use = [[980120, 3]]
+
+[[quest]]
+id = 94906
+kind = "rumour"
+giver = 97012
+ender = 97012
+after = 94905
+level = 9
+title = "Foreman Grubhollow"
+objectives = "Kill Foreman Grubhollow for Prospector Hale."
+details = "Grubhollow runs the diggings, and he does not work alone. Go and put him down. His diggers will fight for him."
+progress = "Is Grubhollow dead?"
+completion = "The claim is mine again. Take what the Foreman guarded, and my thanks."
+money = 0
+tokens = 0
+zone_or_sort = 12
+kill = [[97014, 1]]
+
+# The Unearthed Cache (Rumour 3's use object, 94905). The realm makes its three at run time for
+# the Audience; this row declares the entry, as the quest check wants one, and stands one idle
+# cache by the mine. The display is the placeholder Goldshire's objects use.
+[[gameobject]]
+guid = 790801
+entry = 980120
+display = 1011
+map = 0
+position = [-8790.0, -175.0, 81.38]
+orientation = 0.0
+respawn = 60.0

@@ -282,6 +282,21 @@ fn shipped_creatures() -> Creatures {
             c.spawns.push((format!("{file} guid {guid}"), entry));
         }
     }
+    // A Rumour makes its step creatures and its giver at run time (rumours.toml).
+    let rumours = toml_file(include_str!("../content/rumours.toml"));
+    for r in entries(&rumours, "rumour") {
+        let made = entries(r.as_table().unwrap(), "spawn")
+            .iter()
+            .filter_map(|s| s.get("creature").and_then(toml::Value::as_integer))
+            .chain(r.get("giver").and_then(toml::Value::as_integer))
+            .collect::<Vec<_>>();
+        for entry in made {
+            c.spawns.push((
+                format!("rumours.toml rumour {}", int(&r, "id")),
+                entry as u64,
+            ));
+        }
+    }
     for (file, rows, key) in [
         ("mobs.toml", &hand, "spawn"),
         ("elwynn_overrides.toml", &overrides, "added"),

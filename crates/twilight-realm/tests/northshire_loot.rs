@@ -52,6 +52,8 @@ fn the_whites_are_the_22_token_whites_and_the_greens_the_21_world_greens_at_thei
 /// Kobold Laborer, level 6 to 7 in Echo Ridge Mine at Northshire's far end; the level of each
 /// spawn is a hash of its guid, the same in every world.
 const KOBOLD_LABORER: u32 = 80;
+/// The notes of the three Northshire Rumours' points (`content/rumours.toml`).
+const RUMOUR_NOTES: std::ops::RangeInclusive<u32> = 980030..=980038;
 /// The mine's mouth, among the laborers.
 const MINE_AT: [f32; 2] = [-8630.0, -143.0];
 /// Tunneler's Maul, so the fight is short.
@@ -151,6 +153,11 @@ fn a_thousand_kills_of_a_level_6_northshire_mob_drop_8_percent_whites_and_4_perc
         let Some(items) = kill_a_laborer(0x6E00_0000 + seed, guid, &blob) else {
             continue;
         };
+        // A kill inside Northshire may also roll a Rumour (0.5%), whose note is no loot row.
+        let items: Vec<u32> = items
+            .into_iter()
+            .filter(|item| !RUMOUR_NOTES.contains(item))
+            .collect();
         kills += 1;
         assert!(items.len() <= 1, "one roll a kill: {items:?}");
         for item in items {

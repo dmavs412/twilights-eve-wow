@@ -75,6 +75,23 @@ item = [
   # Mirror Lake and Jerod's Landing (#248). Placeholder displays borrowed from stock quest items.
   { entry = 980026, name = "Twilight Fetish", quality = 1, item_level = 24, class = 12, display_id = 6270, stackable = 20 },
   { entry = 980027, name = "Smuggled Goods", quality = 1, item_level = 25, class = 12, display_id = 6477, stackable = 20 },
+  # The Northshire Rumours (#289, rumours.toml). One note per point, three per Rumour, in point
+  # order; each reads in its giver's voice and its last page names the point's landmark. The
+  # displays are placeholders borrowed from stock quest items (6270, a letter). The ledger page is
+  # 980039, since the amendment on #289 took 980033 for a note.
+  # Rumour 1, A Hermit's Request: Hermit Oswin.
+  { entry = 980030, name = "Hermit's Scrawled Plea", quality = 1, item_level = 5, class = 12, display_id = 6270, max_count = 1, description = "A plea from Hermit Oswin, who waits on the river bank below the Abbey.", pages = ["My goats are gone. Every one of them, since the wolves came down from the hills.", "I am no fighter, and I will not leave my herd to rot. If you can hold a blade, come to me on the river bank below the Abbey."] },
+  { entry = 980031, name = "Hermit's Scrawled Plea", quality = 1, item_level = 5, class = 12, display_id = 6270, max_count = 1, description = "A plea from Hermit Oswin, who waits in the wolf glade east of the Abbey.", pages = ["The wolves took my goats and they are growing bold. They no longer wait for dark.", "Thin them for me. I will be in the wolf glade east of the Abbey."] },
+  { entry = 980032, name = "Hermit's Scrawled Plea", quality = 1, item_level = 5, class = 12, display_id = 6270, max_count = 1, description = "A plea from Hermit Oswin, who waits on the hillside north of the Abbey.", pages = ["I counted forty goats at the spring thaw. I count none now.", "The wolves grow bold, and I need someone to thin them. Find me on the hillside north of the Abbey."] },
+  # Rumour 2, The Vintner's Ledger: Overseer Maren Tolle.
+  { entry = 980033, name = "Torn Ledger Cover", quality = 1, item_level = 7, class = 12, display_id = 6270, max_count = 1, description = "A torn ledger cover. Overseer Maren Tolle waits in the vineyard rows south of the Abbey.", pages = ["The Defias Thugs took my ledger, and they tore it to pages as they ran.", "Without those pages I cannot prove what the vineyard is owed. I will be in the vineyard rows south of the Abbey."] },
+  { entry = 980034, name = "Torn Ledger Cover", quality = 1, item_level = 7, class = 12, display_id = 6270, max_count = 1, description = "A torn ledger cover. Overseer Maren Tolle waits at the western vineyard wall.", pages = ["This is all that is left of the vineyard's ledger. The thugs have the rest.", "Bring me the pages and I will make it worth your while. Look for me at the western vineyard wall."] },
+  { entry = 980035, name = "Torn Ledger Cover", quality = 1, item_level = 7, class = 12, display_id = 6270, max_count = 1, description = "A torn ledger cover. Overseer Maren Tolle waits at the press house at the vineyard's edge.", pages = ["Someone is keeping the Defias' books, and someone is keeping mine in pieces.", "Come to the press house at the vineyard's edge and I will tell you the rest."] },
+  # Rumour 3, What the Kobolds Dug Up: Prospector Hale.
+  { entry = 980036, name = "Hale's Claim Marker", quality = 1, item_level = 7, class = 12, display_id = 6270, max_count = 1, description = "A claim marker. Prospector Hale waits at the mouth of Echo Ridge Mine.", pages = ["This claim is mine by right. The kobolds dug up what lay under it.", "Come to the mouth of Echo Ridge Mine, and bring a strong arm."] },
+  { entry = 980037, name = "Hale's Claim Marker", quality = 1, item_level = 7, class = 12, display_id = 6270, max_count = 1, description = "A claim marker. Prospector Hale waits at the kobold diggings north of the mine.", pages = ["The kobolds have been burying caches all over my claim.", "There is a foreman behind it, I am sure of it. I will be at the kobold diggings north of the mine."] },
+  { entry = 980038, name = "Hale's Claim Marker", quality = 1, item_level = 7, class = 12, display_id = 6270, max_count = 1, description = "A claim marker. Prospector Hale waits at the stream below the mine.", pages = ["Thirty years I have prospected, and no kobold has ever beaten me to a vein.", "Find me at the stream below the mine, and we will take back what they dug up."] },
+  { entry = 980039, name = "Stolen Ledger Page", quality = 1, item_level = 7, class = 12, display_id = 6270, stackable = 20 },
 ]
 
 # Geomancer Vurx always carries the idol, until The Idol in the Deep is taken or done. The Eye

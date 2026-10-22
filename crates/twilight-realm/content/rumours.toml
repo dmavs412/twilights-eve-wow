@@ -59,3 +59,89 @@ blue = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 
 #   object = { entry = 980120, display = 1011 }   # an entry in that quest's `use`
 #   count = 3
 #   points = [{ x = -8788.0, y = -170.0 }, { x = -8762.0, y = -140.0 }]
+
+# The three Northshire Rumours (#289), one per Grade. Northshire is the Level Band's exclude box,
+# [-9160, -480, -8500, 120] on map 0. Every point was run against the terrain with
+# tools/twilights-eve/ground_check.py's height and WMO-box test; one moved, noted in its row.
+# Each point's note is a readable item in quest_items.toml, three per Rumour in point order.
+
+# Easy, one step, 30 minutes. Oswin's displays and rows are in mobs.toml.
+[[rumour]]
+id = 1
+name = "A Hermit's Request"
+grade = "easy"
+kind = "ordinary"
+map = 0
+bounds = [[-9160.0, -480.0, -8500.0, 120.0]]
+chance = 0.5
+droppers = [{ entry = 69, chance = 3.0 }, { entry = 299, chance = 3.0 }]
+giver = 97010
+points = [
+  { x = -8975.0, y = -185.0, landmark = "the river bank below the Abbey", note = 980030 },
+  # Moved 6 yards west from (-8835, -160), which stands inside the Abbey's WMO box.
+  { x = -8829.0, y = -160.0, landmark = "the wolf glade east of the Abbey", note = 980031 },
+  { x = -8870.0, y = -60.0, landmark = "the hillside north of the Abbey", note = 980032 },
+]
+quests = [94901]
+timer_min = 30
+
+# Hard, two steps, 45 minutes.
+[[rumour]]
+id = 2
+name = "The Vintner's Ledger"
+grade = "hard"
+kind = "ordinary"
+map = 0
+bounds = [[-9160.0, -480.0, -8500.0, 120.0]]
+chance = 0.5
+droppers = [{ entry = 38, chance = 3.0 }]
+giver = 97011
+points = [
+  { x = -8985.0, y = -330.0, landmark = "the vineyard rows south of the Abbey", note = 980033 },
+  { x = -9020.0, y = -300.0, landmark = "the western vineyard wall", note = 980034 },
+  { x = -8960.0, y = -350.0, landmark = "the press house at the vineyard's edge", note = 980035 },
+]
+quests = [94902, 94903]
+timer_min = 45
+
+[[rumour.spawn]]
+quest = 94903
+creature = 97013
+points = [{ x = -8992.0, y = -325.0 }, { x = -9010.0, y = -300.0 }, { x = -8970.0, y = -345.0 }]
+
+# Deadly, three steps, 60 minutes.
+[[rumour]]
+id = 3
+name = "What the Kobolds Dug Up"
+grade = "deadly"
+kind = "ordinary"
+map = 0
+bounds = [[-9160.0, -480.0, -8500.0, 120.0]]
+chance = 0.5
+droppers = [{ entry = 6, chance = 2.0 }, { entry = 257, chance = 2.0 }]
+giver = 97012
+points = [
+  { x = -8790.0, y = -175.0, landmark = "the mouth of Echo Ridge Mine", note = 980036 },
+  { x = -8760.0, y = -140.0, landmark = "the kobold diggings north of the mine", note = 980037 },
+  { x = -8800.0, y = -200.0, landmark = "the stream below the mine", note = 980038 },
+]
+quests = [94904, 94905, 94906]
+timer_min = 60
+
+[[rumour.spawn]]
+quest = 94905
+object = { entry = 980120, display = 1011 }
+count = 3
+points = [{ x = -8788.0, y = -170.0 }, { x = -8762.0, y = -140.0 }, { x = -8798.0, y = -198.0 }]
+
+[[rumour.spawn]]
+quest = 94906
+creature = 97014
+points = [{ x = -8775.0, y = -160.0 }, { x = -8766.0, y = -136.0 }]
+
+# Foreman Grubhollow's diggers.
+[[rumour.spawn]]
+quest = 94906
+creature = 257
+count = 2
+points = [{ x = -8775.0, y = -160.0 }, { x = -8766.0, y = -136.0 }]

@@ -1691,3 +1691,116 @@ speed_walk = 1.0
 speed_run = 1.143
 detection_range = 16.0
 respawn_secs = 120.0
+
+# The Northshire Rumours' creatures (#289, rumours.toml). None has a spawn row; the realm makes
+# each at run time. The three givers are friendly level 10s. Their displays come from vmangos's
+# creature_template: Hermit Oswin wears Farmer Saldean's (entry 233, display 1943, a human man),
+# Overseer Maren Tolle Maybell Maclure's (entry 251, display 3323, a human woman) and Prospector
+# Hale Prospector Ironband's (entry 1344, display 3437, a dwarf man). Faction 12 is Stormwind's.
+[[template]]
+entry = 97010
+name = "Hermit Oswin"
+subname = ""
+creature_type = 7
+rank = 0
+display_id = 1943
+faction_template = 12
+hostile = false
+unit_class = "warrior"
+level_min = 10
+level_max = 10
+health_multiplier = 1.0
+damage_multiplier = 0.75
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 10.0
+friendly = true
+
+[[template]]
+entry = 97011
+name = "Overseer Maren Tolle"
+subname = ""
+creature_type = 7
+rank = 0
+display_id = 3323
+faction_template = 12
+hostile = false
+unit_class = "warrior"
+level_min = 10
+level_max = 10
+health_multiplier = 1.0
+damage_multiplier = 0.75
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 10.0
+friendly = true
+
+[[template]]
+entry = 97012
+name = "Prospector Hale"
+subname = ""
+creature_type = 7
+rank = 0
+display_id = 3437
+faction_template = 12
+hostile = false
+unit_class = "warrior"
+level_min = 10
+level_max = 10
+health_multiplier = 1.0
+damage_multiplier = 0.75
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 10.0
+friendly = true
+
+# The Defias Bookkeeper of The Bookkeeper (94903): the Defias Magician's display (2321, vmangos
+# entry 1726) and faction 17. Garrick Padfoot's health 1.6 and damage 1.1 halved, because the
+# Grade is hard, not deadly. Level 8, rank 1, no loot rolls and no spells (melee only).
+[[template]]
+entry = 97013
+name = "Defias Bookkeeper"
+creature_type = 7
+rank = 1
+display_id = 2321
+faction_template = 17
+unit_class = "mage"
+level_min = 8
+level_max = 8
+health_multiplier = 0.8
+damage_multiplier = 0.55
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 10.0
+respawn_secs = 300.0
+
+# Foreman Grubhollow of Foreman Grubhollow (94906): the Kobold Geomancer's display (163) and
+# faction (26), with Geomancer Vurx's health 0.8 and damage 0.7333 and his Corruption. Level 9,
+# rank 1, no loot rolls.
+[[template]]
+entry = 97014
+name = "Foreman Grubhollow"
+creature_type = 7
+rank = 1
+display_id = 163
+faction_template = 26
+unit_class = "mage"
+level_min = 9
+level_max = 9
+health_multiplier = 0.8
+damage_multiplier = 0.7333
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 0.857
+detection_range = 18.0
+respawn_secs = 300.0
+spells = ["corruption_creature"]
