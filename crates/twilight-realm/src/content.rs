@@ -27,6 +27,8 @@ pub const CROSSROADS: [f32; 4] = [-417.0, -2646.0, 96.0, 0.0];
 pub(crate) const HEARTHSTONE: u32 = 6948;
 /// `INVENTORY_SLOT_ITEM_START`: the backpack's first slot.
 const FIRST_PACK_SLOT: u8 = 23;
+/// `INVTYPE_AMMO`.
+const INVTYPE_AMMO: u32 = 24;
 
 /// A Calling's starting outfit (`content/starting_outfits.toml`): one starter Chest and its
 /// weapons, ranged weapon and ammo, all Gear.
@@ -60,6 +62,12 @@ pub(crate) fn starting_inventory(calling: Calling) -> crate::inventory::Inventor
         if let Some(slot) = slot {
             let item = inventory.new_item(entry, t.stack_size());
             inventory.put(slot, item);
+        } else if t.inventory_type == INVTYPE_AMMO {
+            // Ammo is not equipment here: the stack sits in the backpack after the Hearthstone
+            // and is the loaded ammo.
+            let item = inventory.new_item(entry, t.stack_size());
+            inventory.put(FIRST_PACK_SLOT + 1, item);
+            inventory.ammo = entry;
         }
     }
     let stone = inventory.new_item(HEARTHSTONE, 1);
@@ -142,6 +150,7 @@ mod tests {
 
     const WORN_AXE: u32 = 37;
     const SIMPLE_DAGGER: u32 = 4565;
+    const ROUGH_ARROW: u32 = 2512;
 
     #[test]
     fn a_new_cutthroat_wears_the_axe_in_the_main_hand_and_the_dagger_in_the_off_hand() {
@@ -149,5 +158,12 @@ mod tests {
         let worn = |slot| inventory.get(slot).map(|i| i.entry);
         assert_eq!(worn(SLOT_MAIN_HAND), Some(WORN_AXE));
         assert_eq!(worn(SLOT_OFF_HAND), Some(SIMPLE_DAGGER));
+    }
+
+    #[test]
+    fn a_new_ranger_carries_a_stack_of_rough_arrows_as_its_ammo() {
+        let inventory = starting_inventory(Calling::from_key("ranger").unwrap());
+        assert_eq!(inventory.ammo, ROUGH_ARROW);
+        assert_eq!(inventory.count(ROUGH_ARROW), 200);
     }
 }

@@ -238,8 +238,8 @@ fn adrenaline_rush_cuts_vaults_cooldown_on_a_snapshot_crit() {
         });
         if crit {
             let ms = cut.expect("a crit cuts Vault's cooldown");
-            // 15 s, less the 1.6 s gone and the 3 s cut.
-            assert!((10_300..=10_500).contains(&ms), "{ms} ms left");
+            // 15 s, less the 1.6 s gone and the 6 s cut.
+            assert!((7_300..=7_500).contains(&ms), "{ms} ms left");
             seen += 1;
         } else {
             assert_eq!(cut, None, "only a crit cuts it");

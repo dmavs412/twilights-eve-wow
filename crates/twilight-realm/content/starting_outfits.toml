@@ -28,8 +28,9 @@ items = [2108, 37, 4565, 3111]
 items = [2110, 1388]
 
 [ranger]
-# Frostmane Chain Vest, Worn Axe, Cadet's Bow. Arrows have no equip slot, so none come with it.
-items = [2109, 37, 8179]
+# Frostmane Chain Vest, Worn Axe, Cadet's Bow, Rough Arrow (a stack of 200 in the backpack, set
+# as the loaded ammo, since arrows have no equip slot).
+items = [2109, 37, 8179, 2512]
 
 [acolyte]
 # Scarlet Initiate Robes, Small Wooden Hammer, Ashworth's Black Psalter.

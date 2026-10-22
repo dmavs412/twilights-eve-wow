@@ -12989,7 +12989,7 @@
     "rank": 1,
     "status": "placeholder",
     "spell_id": 1000301,
-    "realm_cost": 2,
+    "realm_cost": 5,
     "realm_cooldown_ms": 0,
     "realm_range_min": 8,
     "realm_range_max": 35,
@@ -13065,8 +13065,8 @@
       "params": {
        "weapon": "ranged",
        "bonus": {
-        "base": 20,
-        "per_level": 3.5,
+        "base": 45,
+        "per_level": 5,
         "per_ap": 0
        },
        "armor_ignore": {
@@ -13192,6 +13192,43 @@
      }
     ],
     "description": "For 10 seconds, your ranged attack speed is increased by 40%, and your auto-shots refund a small amount of mana on hit."
+   },
+   {
+    "key": "field_dressing",
+    "name": "Field Dressing",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000396,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 45000,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_heal",
+      "params": {
+       "tick_ms": 2000,
+       "duration_ms": 10000,
+       "pct_of": "max_health",
+       "pct": 20
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Binds your wounds, healing 20% of your maximum health over 10 sec."
    },
    {
     "key": "explosive_shot",
@@ -13842,12 +13879,12 @@
            "on": "crit",
            "skill": "snapshot",
            "cooldown_skill": "vault",
-           "cooldown_ms": -1000
+           "cooldown_ms": -2000
           },
           "realm_only": false
          }
         ],
-        "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 1 seconds."
+        "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 2 seconds."
        },
        {
         "key": "adrenaline_rush",
@@ -13878,12 +13915,12 @@
            "on": "crit",
            "skill": "snapshot",
            "cooldown_skill": "vault",
-           "cooldown_ms": -2000
+           "cooldown_ms": -4000
           },
           "realm_only": false
          }
         ],
-        "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 2 seconds."
+        "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 4 seconds."
        },
        {
         "key": "adrenaline_rush",
@@ -13914,12 +13951,12 @@
            "on": "crit",
            "skill": "snapshot",
            "cooldown_skill": "vault",
-           "cooldown_ms": -3000
+           "cooldown_ms": -6000
           },
           "realm_only": false
          }
         ],
-        "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 3 seconds."
+        "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 6 seconds."
        }
       ]
      },
@@ -14104,12 +14141,12 @@
           "kind": "skill_armor_ignore",
           "params": {
            "skill": "puncturing_shaft",
-           "amount": 100
+           "amount": 50
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 10% and causes it to inherently ignore 100 of the target's armor."
+        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 10% and causes it to inherently ignore 50 of the target's armor."
        },
        {
         "key": "piercing_force",
@@ -14146,12 +14183,12 @@
           "kind": "skill_armor_ignore",
           "params": {
            "skill": "puncturing_shaft",
-           "amount": 200
+           "amount": 100
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 20% and causes it to inherently ignore 200 of the target's armor."
+        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 20% and causes it to inherently ignore 100 of the target's armor."
        },
        {
         "key": "piercing_force",
@@ -14188,12 +14225,12 @@
           "kind": "skill_armor_ignore",
           "params": {
            "skill": "puncturing_shaft",
-           "amount": 300
+           "amount": 150
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 30% and causes it to inherently ignore 300 of the target's armor."
+        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 30% and causes it to inherently ignore 150 of the target's armor."
        },
        {
         "key": "piercing_force",
@@ -14230,12 +14267,12 @@
           "kind": "skill_armor_ignore",
           "params": {
            "skill": "puncturing_shaft",
-           "amount": 400
+           "amount": 200
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 40% and causes it to inherently ignore 400 of the target's armor."
+        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 40% and causes it to inherently ignore 200 of the target's armor."
        },
        {
         "key": "piercing_force",
@@ -14272,12 +14309,12 @@
           "kind": "skill_armor_ignore",
           "params": {
            "skill": "puncturing_shaft",
-           "amount": 500
+           "amount": 250
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 50% and causes it to inherently ignore 500 of the target's armor."
+        "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 50% and causes it to inherently ignore 250 of the target's armor."
        }
       ]
      },
@@ -14863,7 +14900,7 @@
          {
           "type": "pct",
           "op": "MIN_RANGE",
-          "family_mask": 678604832768,
+          "family_mask": 1228360646656,
           "value": -100,
           "target": [
            "auto_shot",
@@ -14920,7 +14957,7 @@
          {
           "type": "pct",
           "op": "MIN_RANGE",
-          "family_mask": 678604832768,
+          "family_mask": 1228360646656,
           "value": -100,
           "target": [
            "auto_shot",
@@ -15010,8 +15047,8 @@
       "params": {
        "tick_ms": 2000,
        "tick": {
-        "base": 5,
-        "per_level": 0.4
+        "base": 6,
+        "per_level": 0.5
        }
       },
       "realm_only": false

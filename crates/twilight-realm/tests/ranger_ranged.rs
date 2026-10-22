@@ -201,7 +201,7 @@ fn auto_shot_stops_on_cancel() {
         .any(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == *AUTO_SHOT)));
 }
 
-/// Snapshot (+13, +1.3 a level) and Puncturing Shaft (+20, +3.5 a level) at Power Level 10 (a
+/// Snapshot (+13, +1.3 a level) and Puncturing Shaft (+45, +5 a level) at Power Level 10 (a
 /// Tier 1 Ranger's level 1) deal the bow
 /// roll plus their bonus: every hit of either lands above Auto Shot's best roll (3-6 and (ranged
 /// attack power / 14 + the arrows' 1.5 DPS) x 2.3 s, #156 and #157) and no higher than the bow's top roll plus the bonus.
@@ -239,7 +239,7 @@ fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
         "Snapshot {snap:?} against Auto Shot {auto:?}"
     );
     assert!(
-        shaft.iter().all(|&d| d > best_auto && d <= top + 56),
+        shaft.iter().all(|&d| d > best_auto && d <= top + 96),
         "Puncturing Shaft {shaft:?} against Auto Shot {auto:?}"
     );
 }

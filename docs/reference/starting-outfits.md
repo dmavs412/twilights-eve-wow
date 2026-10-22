@@ -19,6 +19,11 @@ a character is created a Basic Warrior, so that outfit is the one worn.
 | Vanguard | 900001 Recruit's Plate Vest | 37 Worn Axe | 2362 Worn Wooden Shield | 3111 Crude Throwing Axe (200) |
 | Zealot | 900001 Recruit's Plate Vest | 25 Worn Shortsword | 2362 Worn Wooden Shield | 3111 Crude Throwing Axe (200) |
 | Cutthroat | 2108 Frostmane Leather Vest | 37 Worn Axe | 4565 Simple Dagger | 3111 Crude Throwing Axe (200) |
+| Ranger | 2109 Frostmane Chain Vest | 37 Worn Axe | none | 8179 Cadet's Bow, 2512 Rough Arrow (200) |
+
+The Ranger's arrows have no equip slot. They start as a stack of 200 in the backpack's second
+slot, after the Hearthstone, and are set as the loaded ammo (`PLAYER_AMMO_ID`). Rough Arrow is a
+row of `content/given_items.toml`, not `gear.csv`.
 
 Callings that share an armour type share a starter Chest. Each Chest's look and Wardrobe come
 from the vanilla Warrior's human outfit in the client's `CharStartOutfit.dbc` (class 1, sex 0):

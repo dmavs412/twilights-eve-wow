@@ -992,6 +992,7 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
                     "snapshot",
                     "rapid_fire",
                     "puncturing_shaft",
+                    "field_dressing",
                 ],
             ),
             ["The Swiftbow", "The Arbalest"],
@@ -1026,7 +1027,7 @@ fn the_rangers_draw_and_the_acolytes_vein_make_level_1_casters_on_mana() {
         assert_eq!(
             spellbook(&events),
             skills.into_iter().collect(),
-            "{key}: the Ranger's six skills; the Acolyte's five"
+            "{key}: the Ranger's seven skills; the Acolyte's five"
         );
         let tabs: Vec<&str> = realm
             .current_calling()

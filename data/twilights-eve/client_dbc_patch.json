@@ -8383,7 +8383,7 @@
     "power_type": 0,
     "name": "Snapshot",
     "cooldown_ms": 0,
-    "cost_percent": 2.0,
+    "cost_percent": 5.0,
     "interrupt_flags": 0,
     "dmg_class": 3,
     "school": 0,
@@ -8441,8 +8441,8 @@
     "dbc_effects": [
      {
       "effect": 58,
-      "base": 20,
-      "per_level": 3.5
+      "base": 45,
+      "per_level": 5
      }
     ],
     "visual": 3180,
@@ -8564,6 +8564,42 @@
     "visual": 3301,
     "speed": 40.0,
     "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1000396,
+   "calling": "ranger",
+   "key": "field_dressing",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Field Dressing",
+    "cooldown_ms": 45000,
+    "gcd_ms": 0,
+    "cost_percent": 10.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Binds your wounds, healing 20% of your maximum health over 10 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\INV_Misc_Bandage_15",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 8,
+      "amplitude_ms": 2000
+     }
+    ],
+    "visual": 100,
+    "duration_index": 1
    }
   },
   {
@@ -8994,7 +9030,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 1 seconds.",
+    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 2 seconds.",
     "implicit_targets": [
      1,
      0
@@ -9022,7 +9058,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 2 seconds.",
+    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 4 seconds.",
     "implicit_targets": [
      1,
      0
@@ -9050,7 +9086,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 3 seconds.",
+    "description": "Critical strikes with Snapshot reduce the cooldown of Vault by 6 seconds.",
     "implicit_targets": [
      1,
      0
@@ -9170,7 +9206,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 10% and causes it to inherently ignore 100 of the target's armor.",
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 10% and causes it to inherently ignore 50 of the target's armor.",
     "implicit_targets": [
      1,
      0
@@ -9203,7 +9239,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 20% and causes it to inherently ignore 200 of the target's armor.",
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 20% and causes it to inherently ignore 100 of the target's armor.",
     "implicit_targets": [
      1,
      0
@@ -9236,7 +9272,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 30% and causes it to inherently ignore 300 of the target's armor.",
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 30% and causes it to inherently ignore 150 of the target's armor.",
     "implicit_targets": [
      1,
      0
@@ -9269,7 +9305,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 40% and causes it to inherently ignore 400 of the target's armor.",
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 40% and causes it to inherently ignore 200 of the target's armor.",
     "implicit_targets": [
      1,
      0
@@ -9302,7 +9338,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 50% and causes it to inherently ignore 500 of the target's armor.",
+    "description": "Increases the critical strike damage multiplier of Puncturing Shaft by 50% and causes it to inherently ignore 250 of the target's armor.",
     "implicit_targets": [
      1,
      0
@@ -9730,7 +9766,7 @@
     {
      "type": "pct",
      "op": "MIN_RANGE",
-     "family_mask": 678604832768,
+     "family_mask": 1228360646656,
      "value": -100
     }
    ]
@@ -9771,7 +9807,7 @@
     {
      "type": "pct",
      "op": "MIN_RANGE",
-     "family_mask": 678604832768,
+     "family_mask": 1228360646656,
      "value": -100
     }
    ]
@@ -9835,7 +9871,7 @@
     ],
     "ranged": true,
     "spell_family": 4,
-    "family_flags": 549755813888,
+    "family_flags": 1099511627776,
     "icon": "Interface\\Icons\\Spell_Fire_SelfDestruct",
     "dbc_effects": [
      {
