@@ -2,7 +2,7 @@
 
 Each one stands in the Test Grounds facing the dummies, wears its Calling's outfit
 (crates/twilight-realm/content/starting_outfits.toml, worn by the same slot rule the realm
-uses), carries a hearthstone (and arrows for a bow), and has its Calling's talents at every
+uses; an entry that is not gear, such as arrows, is a stack in the backpack), carries a hearthstone, and has its Calling's talents at every
 rank, as many as a level-60 save's 59 points hold. The save folder is backed up first.
 
     ~/.local/bin/python3.15 scripts/test-characters.py [save-folder]
@@ -36,7 +36,6 @@ NAMES = {
     "acolyte": "Acolyte",
 }
 HEARTHSTONE = 6948
-ROUGH_ARROW = 2512
 # Equipment slots, as `rules::gear::equip_slots` places gear.csv's slot column.
 EQUIP = {"Chest": 4, "Weapon": 15, "Offhand": 16, "Ranged": 17}
 # The backpack's first slot.
@@ -46,13 +45,15 @@ BACKPACK = 23
 def items_for(calling, outfits, gear):
     rows, bag = [], BACKPACK
     for entry in outfits.get(calling, {}).get("items", []):
-        g = gear[str(entry)]
+        g = gear.get(str(entry))
+        if g is None:
+            # Not gear: an ammo stack (Rough Arrow) that goes in the backpack.
+            rows.append((bag, entry, 200, 0))
+            bag += 1
+            continue
         slot = EQUIP[g["slot"]]
         count = 200 if g["type"] == "Thrown" else 1
         rows.append((slot, entry, count, int(g["durability"] or 0)))
-        if g["type"] == "Bow":
-            rows.append((bag, ROUGH_ARROW, 200, 0))
-            bag += 1
     rows.append((bag, HEARTHSTONE, 1, 0))
     return rows
 
