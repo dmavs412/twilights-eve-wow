@@ -124,7 +124,7 @@ impl InWorld {
             return;
         };
         let draw = Draw::roll(rng);
-        let level = c.level.saturating_add(bounty::hunter().level_above);
+        let level = c.power_level().saturating_add(bounty::hunter().level_above);
         let rank = c.bounty_rank;
         let affixes = bounty::roll_affixes(rank, rng);
         let (hunter, stats) = self.armed_hunter(draw, level, rank, &affixes, at, c.position);

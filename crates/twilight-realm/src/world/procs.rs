@@ -60,7 +60,7 @@ impl InWorld {
                     amount,
                     proc.absorb_ms,
                     proc.absorb_school,
-                    c.level,
+                    c.power_level(),
                     events,
                 );
             }
@@ -76,7 +76,7 @@ impl InWorld {
             }
             for key in &proc.target_auras {
                 if let (Some(def), Some(target)) = (crate::callings::aura(key), happened.target) {
-                    self.put_aura(def, target, c.level, events);
+                    self.put_aura(def, target, c.power_level(), events);
                 }
             }
             let s = &self.player.stats;
@@ -131,7 +131,7 @@ impl InWorld {
             }
             for key in &proc.auras {
                 if let Some(def) = crate::callings::aura(key) {
-                    self.grant_aura(def, c.level, events);
+                    self.grant_aura(def, c.power_level(), events);
                 }
             }
             for key in &proc.area_auras {
@@ -148,7 +148,7 @@ impl InWorld {
                     .map(|m| m.guid)
                     .collect();
                 for guid in around {
-                    self.put_aura(def, guid, c.level, events);
+                    self.put_aura(def, guid, c.power_level(), events);
                 }
             }
             if let Some((key, ms)) = proc.cooldown {
@@ -191,7 +191,9 @@ impl InWorld {
                 let stats = cast::buffed(&self.player.stats, &self.skills);
                 let swing = cast::white(&self.player.stats, &self.skills);
                 let average = (swing.min_damage + swing.max_damage) / 2.0;
-                let raw = proc.damage.map_or(0, |l| l.at(c.level, stats.attack_power))
+                let raw = proc
+                    .damage
+                    .map_or(0, |l| l.at(c.power_level(), stats.attack_power))
                     + stats.block_value * proc.block_value_pct / 100
                     + (average * proc.weapon_pct as f32 / 100.0).round() as u32;
                 let pct = proc

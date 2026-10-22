@@ -190,5 +190,6 @@ fn dark_mending_heals_up_to_max_then_takes_15_percent_of_it_back() {
             _ => None,
         })
         .sum();
-    assert_eq!(toll, healed * 15 / 100 / 3 * 3, "15% of the heal over 6 s");
+    let tick = (healed as f32 * 0.15 / 3.0).round() as u32;
+    assert_eq!(toll, tick * 3, "15% of the heal over 6 s, rounded per tick");
 }

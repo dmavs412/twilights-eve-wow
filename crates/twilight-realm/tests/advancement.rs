@@ -112,7 +112,8 @@ fn a_vanguard_levels_past_ten_and_stops_at_thirty() {
 
 #[test]
 fn a_vanguard_has_the_tier_bonus_on_its_sheet() {
-    let (_, me, basic) = questing(1, &[], 0, &[]);
+    // A Tier 1 level 1 body is a level 10 body (its Power Level), plus the Tier Bonus.
+    let (_, me, basic) = questing(10, &[], 0, &[]);
     let (_, _, tier1) = questing_as("vanguard", 1, &[], 0, &[]);
     let (basic, tier1) = (descriptor(&basic, me), descriptor(&tier1, me));
     let stats = |f: &benilla_protocol::ObjectFields| -> [u32; 5] {
@@ -128,6 +129,9 @@ fn a_vanguard_has_the_tier_bonus_on_its_sheet() {
         tier1.unit_attack_power().unwrap(),
         basic.unit_attack_power().unwrap() + 24
     );
+    // The client still sees the real levels.
+    assert_eq!(basic.unit_level(), Some(10));
+    assert_eq!(tier1.unit_level(), Some(1));
 }
 
 // ── The Advancement Quest ───────────────────────────────────────────────────────────────────────
@@ -385,8 +389,8 @@ fn advancement_makes_a_level_1_vanguard_with_the_new_skills_and_tree() {
     assert!(now.unit_stat(0) > fresh.unit_stat(0));
     assert!(now.unit_max_health() > fresh.unit_max_health());
     assert!(
-        now.unit_max_health() < before.unit_max_health(),
-        "but not a level 10's"
+        now.unit_max_health() > before.unit_max_health(),
+        "on a level 10's body (its Power Level), plus the bonus"
     );
 }
 
@@ -731,7 +735,8 @@ fn the_zealots_vow_makes_a_level_1_zealot_with_six_skills_in_the_same_plate() {
 
 #[test]
 fn a_zealot_has_the_tier_2_bonus_on_its_sheet() {
-    let (_, me, basic) = questing(1, &[], 0, &[]);
+    // A Tier 2 level 1 body is a level 30 body (its Power Level), plus the Tier Bonus.
+    let (_, me, basic) = questing(30, &[], 0, &[]);
     let (_, _, zealot) = questing_as("zealot", 1, &[], 0, &[]);
     let (basic, zealot) = (descriptor(&basic, me), descriptor(&zealot, me));
     let stats = |f: &benilla_protocol::ObjectFields| -> [u32; 5] {

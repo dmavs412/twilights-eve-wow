@@ -423,7 +423,7 @@ fn zealot_at(
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", &format!("level = {level}\n"))
-        .replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
+        .replace("calling = \"basic_warrior\"", "calling = \"test_zealot\"");
     // The human's starting Worn Wooden Shield is set aside: a test that wants a shield gives one.
     blob = drop_slot(&blob, OFF_HAND);
     if !talents.is_empty() {
@@ -440,7 +440,7 @@ fn zealot_at(
             "\n[[items]]\nslot = {slot}\nentry = {entry}\ncount = 1\n"
         ));
     }
-    let mut realm = Realm::with_seed(seed);
+    let mut realm = Realm::with_seed(seed).with_callings(&tier_0_zealot());
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);

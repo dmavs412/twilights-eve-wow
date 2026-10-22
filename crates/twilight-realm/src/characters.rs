@@ -244,6 +244,12 @@ impl Char {
         crate::callings::of(self.calling).class()
     }
 
+    /// The level the character's body and combat run on: `level` mapped onto its Tier's band
+    /// (ADR 0012). `level` stays the real one, for progress and what the client shows.
+    pub(crate) fn power_level(&self) -> u8 {
+        crate::rules::stats::power_level(crate::callings::of(self.calling).tier, self.level)
+    }
+
     fn roster_entry(&self) -> Character {
         let [skin, face, hair_style, hair_color, facial_hair] = self.look;
         let [x, y, z] = self.position;

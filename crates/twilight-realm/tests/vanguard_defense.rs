@@ -236,7 +236,8 @@ fn a_block_under_shield_of_the_penitent_burns_the_attacker() {
     assert!(blocks > 0, "the seed blocks under the aura");
     assert_eq!(burns.len(), blocks, "one burn a block");
     // 30 + 3 a level, Holy: no armour, no roll.
-    let want = 30 + 3 * u32::from(LEVEL);
+    // The Power Level of a Tier 1 level 10 is 16.
+    let want = 30 + 3 * 16;
     assert!(burns.iter().all(|&d| d == want), "{burns:?}, want {want}");
 }
 

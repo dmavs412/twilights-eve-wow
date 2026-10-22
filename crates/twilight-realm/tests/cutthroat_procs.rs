@@ -294,5 +294,6 @@ fn executioners_toll_heals_and_refunds_energy_on_an_experience_kill() {
     let heal = max * 15 / 100;
     assert!(missing >= heal, "only {missing} of {max} was missing");
     assert!(health >= heal - 10, "healed {health} of {max}");
-    assert!(power >= 60, "refunded {power}");
+    // 60 Energy, less what a nearly full bar clips.
+    assert!(power >= 40, "refunded {power}");
 }

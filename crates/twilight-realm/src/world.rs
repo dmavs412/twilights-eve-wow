@@ -689,7 +689,7 @@ impl InWorld {
                 {
                     continue;
                 }
-                let r = self.notice_radius(mob, c.level);
+                let r = self.notice_radius(mob, c.power_level());
                 if distance(mob.position, me) <= r
                     && host.line_of_sight(self.map, eye(mob.position), eye(me))
                 {
@@ -984,7 +984,7 @@ impl InWorld {
                     self.mobs[i].guid,
                     aura_spell_id,
                     duration_ms,
-                    c.level,
+                    c.power_level(),
                     events,
                 );
             }
@@ -1750,7 +1750,7 @@ fn eye(p: [f32; 3]) -> [f32; 3] {
 fn sheet_pairs(c: &Char, s: &CharacterStats) -> Vec<(u16, u32)> {
     let skill = u32::from(s.weapon_skill);
     let mut pairs = vec![
-        (UNIT_FIELD_LEVEL, u32::from(s.level)),
+        (UNIT_FIELD_LEVEL, u32::from(c.level)),
         (UNIT_FIELD_MAXHEALTH, s.max_health),
         (UNIT_FIELD_BASE_HEALTH, s.base_health),
         (UNIT_FIELD_MAXPOWER1, s.max_mana),

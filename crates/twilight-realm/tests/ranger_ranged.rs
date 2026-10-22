@@ -201,7 +201,8 @@ fn auto_shot_stops_on_cancel() {
         .any(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == *AUTO_SHOT)));
 }
 
-/// Snapshot (+13, +1.3 a level) and Puncturing Shaft (+20, +3.5 a level) at level 1 deal the bow
+/// Snapshot (+13, +1.3 a level) and Puncturing Shaft (+20, +3.5 a level) at Power Level 10 (a
+/// Tier 1 Ranger's level 1) deal the bow
 /// roll plus their bonus: every hit of either lands above Auto Shot's best roll (3-6 and (ranged
 /// attack power / 14 + the arrows' 1.5 DPS) x 2.3 s, #156 and #157) and no higher than the bow's top roll plus the bonus.
 #[test]
@@ -234,11 +235,11 @@ fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
     let best_auto = *auto.iter().max().unwrap();
     assert!(best_auto <= top, "Auto Shot: {auto:?} over {top}");
     assert!(
-        snap.iter().all(|&d| d > best_auto && d <= top + 15),
+        snap.iter().all(|&d| d > best_auto && d <= top + 27),
         "Snapshot {snap:?} against Auto Shot {auto:?}"
     );
     assert!(
-        shaft.iter().all(|&d| d > best_auto && d <= top + 24),
+        shaft.iter().all(|&d| d > best_auto && d <= top + 56),
         "Puncturing Shaft {shaft:?} against Auto Shot {auto:?}"
     );
 }
@@ -361,7 +362,8 @@ fn the_sheet_shows_ranged_attack_power() {
     let rap = sheet
         .unit_ranged_attack_power()
         .expect("ranged attack power");
-    assert_eq!(rap, 2 + 2 * agi - 10);
+    // On the Power Level 10 body of a Tier 1 level 1.
+    assert_eq!(rap, 2 * 10 + 2 * agi - 10);
     assert_eq!(
         sheet.unit_ranged_attack_time(),
         Some((BOW_SPEED_SECS * 1000.0) as u32)

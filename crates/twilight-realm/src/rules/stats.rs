@@ -8,6 +8,25 @@ use crate::tables;
 /// Unarmed: 1–2 damage every 2 s (`BASE_MINDAMAGE`, `BASE_MAXDAMAGE`, `BASE_ATTACK_TIME`).
 const UNARMED: (f32, f32, u32) = (1.0, 2.0, 2000);
 
+/// The Power Level (`GLOSSARY.md`, ADR 0012) of a character at `level` inside `tier`: the level
+/// mapped in a straight line onto the Tier's band, which runs from the previous Tier Cap (1 for
+/// Tier 0) to this Tier's Cap, rounded to nearest. Tier 1 level 1 is 10, Tier 1 level 30 is 30.
+/// With no Calling in `tier` to give a Cap, the level itself.
+pub fn power_level(tier: u8, level: u8) -> u8 {
+    let cap = crate::callings::tier_cap(tier);
+    let floor = match tier {
+        0 => 1,
+        _ => crate::callings::tier_cap(tier - 1),
+    };
+    if cap <= 1 || floor == 0 || level == 0 {
+        return level;
+    }
+    let (floor, cap, step) = (u32::from(floor), u32::from(cap), u32::from(level) - 1);
+    let span = cap - floor;
+    let denom = cap - 1;
+    ((floor * denom + step * span + denom / 2) / denom) as u8
+}
+
 /// A character's derived stats: what the character sheet shows and the attack table reads.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CharacterStats {
@@ -450,6 +469,20 @@ mod tests {
     /// Cracked Shortbow, 2.3 s.
     const CRACKED_SHORTBOW: u32 = 2773;
     const ORC: u8 = 2;
+
+    /// The band runs from the previous Tier Cap to this Tier's: Tier 0 is the level itself.
+    #[test]
+    fn the_power_level_maps_a_tiers_levels_onto_its_band() {
+        assert_eq!(power_level(0, 1), 1);
+        assert_eq!(power_level(0, 7), 7);
+        assert_eq!(power_level(0, 10), 10);
+        assert_eq!(power_level(1, 1), 10);
+        assert_eq!(power_level(1, 30), 30);
+        assert_eq!(power_level(2, 1), 30);
+        assert_eq!(power_level(2, 50), 50);
+        // 10 + 14 * 20 / 29, rounded to nearest.
+        assert_eq!(power_level(1, 15), 20);
+    }
 
     /// A level 10 Hunter's ranged attack power is `2L + 2Agi - 10`, and the bow's roll carries
     /// it at `AP / 14 x speed`.

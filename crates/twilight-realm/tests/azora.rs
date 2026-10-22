@@ -62,18 +62,42 @@ const THE_TOWER_IS_OPEN: u32 = 94601;
 const APPRENTICES_SECRET: u32 = 94602;
 const WARD_SHARD: u32 = 980021;
 
-/// Level 60 warriors of Tier 1 (the quests here are level 21 and up), the first with The Tower Is
-/// Open under way.
+/// A Warrior-Class Calling in Tier 3, whose Power Level at level 60 is 60 (no shipped Calling is
+/// past Tier 2).
+const TEST_CALLINGS: &str = r#"
+[[calling]]
+key = "test_champion"
+name = "Test Champion"
+tier = 3
+class = 1
+cap = 60
+tier_bonus = { strength = 0, agility = 0, stamina = 0, intellect = 0, spirit = 0 }
+shapeshift_form = 17
+armour = ["cloth", "leather", "mail", "plate"]
+
+[[calling.skill]]
+key = "none"
+spell_id = 2061
+power_cost = 0
+cooldown_ms = 0
+gcd_ms = 0
+target = "self"
+effects = []
+"#;
+
+/// Level 60 champions of Tier 3 (the quests here are level 21 and up), the first with The Tower
+/// Is Open under way.
 fn party(n: usize) -> Party {
     let mut p = Party::edited(
         Realm::with_seed(1)
+            .with_callings(TEST_CALLINGS)
             .with_creature_spells(96030, &[])
             .with_creature_spells(96036, &[]),
         &vec![60; n],
         START_ELWYNN,
         Box::new(NoGround),
         |i, blob| {
-            let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"warrior\"");
+            let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"test_champion\"");
             if i == 0 {
                 format!("{blob}\n[[quests]]\nid = {THE_TOWER_IS_OPEN}\nslot = 0\nkills = [0, 0, 0, 0]\n")
             } else {

@@ -99,7 +99,7 @@ fn a_level_25_vanguard_knows_every_line_at_125() {
     let (_, me, events) = questing_as("vanguard", 25, &[], 0, &[]);
     assert_eq!(
         skill_lines(&descriptor(&events, me)),
-        at_max(25, &PLATE_ARMOUR)
+        at_max(27, &PLATE_ARMOUR)
     );
 }
 
@@ -110,12 +110,12 @@ fn a_level_up_raises_every_line_to_the_new_maximum() {
     let (mut realm, me, mut events) = with_dev_xp(10, "vanguard", 2.0);
     assert_eq!(
         skill_lines(&descriptor(&events, me)),
-        at_max(10, &PLATE_ARMOUR)
+        at_max(16, &PLATE_ARMOUR)
     );
     events.extend(hand_in(&mut realm, giver(&events, ZUNJIN), CROCOLISK_SKINS));
     let now = descriptor(&events, me);
     assert_eq!(now.unit_level(), Some(12));
-    assert_eq!(skill_lines(&now), at_max(12, &PLATE_ARMOUR));
+    assert_eq!(skill_lines(&now), at_max(18, &PLATE_ARMOUR));
 }
 
 #[test]
@@ -136,7 +136,7 @@ fn advancement_brings_every_line_back_to_five_and_adds_plate() {
     events.extend(hand_in(&mut realm, uzzek, THE_WARRIORS_PATH));
     let now = descriptor(&events, me);
     assert_eq!(now.unit_level(), Some(1));
-    assert_eq!(skill_lines(&now), at_max(1, &PLATE_ARMOUR));
+    assert_eq!(skill_lines(&now), at_max(10, &PLATE_ARMOUR));
 }
 
 #[test]

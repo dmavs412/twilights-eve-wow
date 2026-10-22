@@ -464,9 +464,9 @@ fn zealot_at_as(
     let blob = maker
         .export_character(guid)
         .unwrap()
-        .replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
+        .replace("calling = \"basic_warrior\"", "calling = \"test_zealot\"");
     let blob = edit(blob);
-    let mut realm = Realm::with_seed(seed);
+    let mut realm = Realm::with_seed(seed).with_callings(&tier_0_zealot());
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);

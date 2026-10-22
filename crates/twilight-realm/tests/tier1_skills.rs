@@ -106,8 +106,8 @@ fn tier1_at(level: u8, seed: u64) -> (Realm, u64, Vec<Mob>, View) {
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", &format!("level = {level}\n"))
-        .replace("calling = \"basic_warrior\"", "calling = \"zealot\"");
-    let mut realm = Realm::with_seed(seed);
+        .replace("calling = \"basic_warrior\"", "calling = \"test_zealot\"");
+    let mut realm = Realm::with_seed(seed).with_callings(&tier_0_zealot());
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);

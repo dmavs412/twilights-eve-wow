@@ -174,8 +174,15 @@ pub(crate) fn stats(c: &Char) -> CharacterStats {
         .marked
         .as_ref()
         .map_or(100, |_| crate::rules::notoriety::marked_stat_pct());
-    let mut s =
-        CharacterStats::geared_scaled(c.class(), c.race, c.level, bonus, &worn, off_hand, base_pct);
+    let mut s = CharacterStats::geared_scaled(
+        c.class(),
+        c.race,
+        c.power_level(),
+        bonus,
+        &worn,
+        off_hand,
+        base_pct,
+    );
     let calling = crate::callings::of(c.calling);
     s.scale_base_pools(calling.health_pct, calling.mana_pct);
     s.add_ranged_dps(crate::ammo::dps(c));

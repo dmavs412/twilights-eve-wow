@@ -4,6 +4,16 @@
 pub mod fight;
 pub mod party;
 
+/// The Zealot as a Tier 0 Calling, "test_zealot", for a fight a weak body has to take hits in:
+/// a Tier 2 level 1 Zealot has Power Level 30 and no longer builds rage from level 3 mobs. Pass
+/// it to `Realm::with_callings`.
+pub fn tier_0_zealot() -> String {
+    include_str!("../../content/callings.toml")
+        .replacen("key = \"zealot\"", "key = \"test_zealot\"", 1)
+        .replacen("tier = 2", "tier = 0", 1)
+        .replacen("cap = 50", "cap = 10", 1)
+}
+
 pub use benilla_protocol::messages::{
     CHAR_CREATE_NAME_IN_USE, CHAR_CREATE_SERVER_LIMIT, CHAR_CREATE_SUCCESS, CHAR_DELETE_SUCCESS,
 };

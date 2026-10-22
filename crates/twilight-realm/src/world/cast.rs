@@ -1982,7 +1982,16 @@ impl InWorld {
             if !matches!(how, Landed::Missed(_)) {
                 for effect in &skill.effects {
                     self.effect(
-                        skill, effect, ch.target, how, c.level, 0, c, rng, events, ticked,
+                        skill,
+                        effect,
+                        ch.target,
+                        how,
+                        c.power_level(),
+                        0,
+                        c,
+                        rng,
+                        events,
+                        ticked,
                     );
                 }
             }
@@ -2034,7 +2043,7 @@ impl InWorld {
                     area.enemy_aura
                 };
                 if let Some(def) = row {
-                    self.put_aura(def, unit, c.level, events);
+                    self.put_aura(def, unit, c.power_level(), events);
                 }
             }
             area.inside = now;
@@ -2129,7 +2138,7 @@ impl InWorld {
         }
 
         // Roll who it lands on first: `SMSG_SPELL_GO` lists the misses.
-        let level = c.level;
+        let level = c.power_level();
         let landed: Vec<(u64, Landed)> = targets
             .iter()
             .map(|&t| (t, self.roll(skill, t, opener, c, rng)))
@@ -4180,7 +4189,14 @@ impl InWorld {
                     let max = buffed(&self.player.stats, &self.skills).max_health;
                     let per_tick = heal_tick(max, pct, duration_ms / tick_ms.max(1));
                     let kind = AuraKind::Heal { per_tick };
-                    self.buff_self(kind, spell_id, c.level, duration_ms, tick_ms, events);
+                    self.buff_self(
+                        kind,
+                        spell_id,
+                        c.power_level(),
+                        duration_ms,
+                        tick_ms,
+                        events,
+                    );
                 }
                 if let Some((spell_id, duration_ms, swings, pct)) = on.crit_damage {
                     let kind = AuraKind::DamagePct {
@@ -4188,7 +4204,7 @@ impl InWorld {
                         armor_loss_pct: 0,
                         swings: Some(swings),
                     };
-                    self.buff_self(kind, spell_id, c.level, duration_ms, 0, events);
+                    self.buff_self(kind, spell_id, c.power_level(), duration_ms, 0, events);
                 }
             }
             _ => {}
@@ -4301,7 +4317,7 @@ impl InWorld {
                 unit: target,
                 spell_id,
                 slot: 0,
-                level: c.level,
+                level: c.power_level(),
                 left: clock::secs(duration_ms),
                 period,
                 next_tick: period,
@@ -4421,7 +4437,7 @@ impl InWorld {
         stats.off_hand = None;
         let pct = crate::talents::amount_pct(c, &skill.key);
         let shield = stats.block_value * crate::talents::block_value_pct(c, &skill.key) / 100;
-        let extra = (scaled(bonus.at(c.level, stats.attack_power), pct) + shield) as f32;
+        let extra = (scaled(bonus.at(c.power_level(), stats.attack_power), pct) + shield) as f32;
         stats.min_damage += extra;
         stats.max_damage += extra;
         // The player's buffs for the skill (Cutthroat's Momentum) add crit chance.
@@ -4499,7 +4515,7 @@ impl InWorld {
             // A buff that raises the stacks is spent by this same hit.
             let more = self.skills.skill_stacks(&skill.key);
             for effect in &skill.effects {
-                self.add_aura_stacks(effect, more, c.level, events);
+                self.add_aura_stacks(effect, more, c.power_level(), events);
             }
             let gone = self.skills.spend_charges(&skill.key, events);
             self.faded(&gone, events);

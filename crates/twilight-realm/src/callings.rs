@@ -1777,6 +1777,16 @@ fn all() -> Vec<&'static CallingDef> {
         .collect()
 }
 
+/// The Tier Cap of `tier`: the highest Cap among its Callings; 0 when no Calling is in it.
+pub(crate) fn tier_cap(tier: u8) -> u8 {
+    all()
+        .into_iter()
+        .filter(|c| c.tier == tier)
+        .map(|c| c.cap)
+        .max()
+        .unwrap_or(0)
+}
+
 /// A Calling by its save key (`basic_warrior`).
 pub fn calling(key: &str) -> Option<&'static CallingDef> {
     all().into_iter().find(|c| c.key == key)
