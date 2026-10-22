@@ -9988,7 +9988,7 @@
     "prevention": "silence",
     "cost_kind": "pct_base",
     "cast_kind": "cast",
-    "cast_time_ms": 2500,
+    "cast_time_ms": 2000,
     "interrupt_on": [
      "move",
      "pushback",
@@ -10008,8 +10008,8 @@
       "kind": "school_damage",
       "params": {
        "amount": {
-        "base": 18,
-        "per_level": 1.7
+        "base": 15,
+        "per_level": 1.5
        },
        "school": "frost"
       },
@@ -10023,7 +10023,7 @@
       "realm_only": false
      }
     ],
-    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 5 seconds."
+    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds."
    },
    {
     "key": "catalyst",
@@ -10057,8 +10057,8 @@
        "amount_pct": 200,
        "school": "frost",
        "amount": {
-        "base": 18,
-        "per_level": 1.7
+        "base": 15,
+        "per_level": 1.5
        }
       },
       "realm_only": false
@@ -10067,13 +10067,13 @@
       "kind": "consume_aura",
       "params": {
        "aura": "aura_searing_ember",
-       "energize_pct_of_max": 20,
+       "energize_pct_of_max": 10,
        "school": "arcane"
       },
       "realm_only": false
      }
     ],
-    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds a large chunk of Mana. If it consumes a Cold, it deals a massive burst of shatter damage."
+    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 10% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage."
    },
    {
     "key": "blink",
@@ -10108,6 +10108,42 @@
      }
     ],
     "description": "Teleports you forward 20 yards and frees you from stuns and roots."
+   },
+   {
+    "key": "ley_ward",
+    "name": "Ley Ward",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000395,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 30000,
+    "target": "self",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "absorb",
+      "params": {
+       "pct": 10,
+       "pct_of": "max_mana",
+       "duration_ms": 20000
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec."
    }
   ],
   "talent_tabs": [
@@ -10154,42 +10190,6 @@
           "params": {
            "on": "periodic_tick",
            "skill": "searing_ember",
-           "chance": 2,
-           "apply_aura": "aura_thermal_feedback"
-          },
-          "realm_only": false
-         }
-        ],
-        "description": "Whenever your Searing Ember deals periodic damage, you have a 2% chance to make your next Biting Cold instant cast and cost no mana."
-       },
-       {
-        "key": "thermal_feedback",
-        "name": "Thermal Feedback",
-        "rank": 2,
-        "status": "placeholder",
-        "talent_id": 1000058,
-        "source_tab_id": 41,
-        "spell_id": 1000252,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "proc",
-          "params": {
-           "on": "periodic_tick",
-           "skill": "searing_ember",
            "chance": 4,
            "apply_aura": "aura_thermal_feedback"
           },
@@ -10201,47 +10201,11 @@
        {
         "key": "thermal_feedback",
         "name": "Thermal Feedback",
-        "rank": 3,
+        "rank": 2,
         "status": "placeholder",
         "talent_id": 1000058,
         "source_tab_id": 41,
-        "spell_id": 1000253,
-        "school": "physical",
-        "prevention": "pacify",
-        "cost_kind": "flat",
-        "cast_kind": "instant",
-        "interrupt_on": [],
-        "defense_type": "none",
-        "on_cast": {
-         "breaks_stealth": true,
-         "starts_auto_attack": false,
-         "resets_swing": false
-        },
-        "weapon_hand": "main",
-        "max_targets": 1,
-        "modelled": true,
-        "effects": [
-         {
-          "kind": "proc",
-          "params": {
-           "on": "periodic_tick",
-           "skill": "searing_ember",
-           "chance": 6,
-           "apply_aura": "aura_thermal_feedback"
-          },
-          "realm_only": false
-         }
-        ],
-        "description": "Whenever your Searing Ember deals periodic damage, you have a 6% chance to make your next Biting Cold instant cast and cost no mana."
-       },
-       {
-        "key": "thermal_feedback",
-        "name": "Thermal Feedback",
-        "rank": 4,
-        "status": "placeholder",
-        "talent_id": 1000058,
-        "source_tab_id": 41,
-        "spell_id": 1000254,
+        "spell_id": 1000252,
         "school": "physical",
         "prevention": "pacify",
         "cost_kind": "flat",
@@ -10273,6 +10237,78 @@
        {
         "key": "thermal_feedback",
         "name": "Thermal Feedback",
+        "rank": 3,
+        "status": "placeholder",
+        "talent_id": 1000058,
+        "source_tab_id": 41,
+        "spell_id": 1000253,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "searing_ember",
+           "chance": 12,
+           "apply_aura": "aura_thermal_feedback"
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Whenever your Searing Ember deals periodic damage, you have a 12% chance to make your next Biting Cold instant cast and cost no mana."
+       },
+       {
+        "key": "thermal_feedback",
+        "name": "Thermal Feedback",
+        "rank": 4,
+        "status": "placeholder",
+        "talent_id": 1000058,
+        "source_tab_id": 41,
+        "spell_id": 1000254,
+        "school": "physical",
+        "prevention": "pacify",
+        "cost_kind": "flat",
+        "cast_kind": "instant",
+        "interrupt_on": [],
+        "defense_type": "none",
+        "on_cast": {
+         "breaks_stealth": true,
+         "starts_auto_attack": false,
+         "resets_swing": false
+        },
+        "weapon_hand": "main",
+        "max_targets": 1,
+        "modelled": true,
+        "effects": [
+         {
+          "kind": "proc",
+          "params": {
+           "on": "periodic_tick",
+           "skill": "searing_ember",
+           "chance": 16,
+           "apply_aura": "aura_thermal_feedback"
+          },
+          "realm_only": false
+         }
+        ],
+        "description": "Whenever your Searing Ember deals periodic damage, you have a 16% chance to make your next Biting Cold instant cast and cost no mana."
+       },
+       {
+        "key": "thermal_feedback",
+        "name": "Thermal Feedback",
         "rank": 5,
         "status": "placeholder",
         "talent_id": 1000058,
@@ -10298,13 +10334,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "searing_ember",
-           "chance": 10,
+           "chance": 20,
            "apply_aura": "aura_thermal_feedback"
           },
           "realm_only": false
          }
         ],
-        "description": "Whenever your Searing Ember deals periodic damage, you have a 10% chance to make your next Biting Cold instant cast and cost no mana."
+        "description": "Whenever your Searing Ember deals periodic damage, you have a 20% chance to make your next Biting Cold instant cast and cost no mana."
        }
       ]
      },
@@ -12035,7 +12071,7 @@
     "aura_hidden": false,
     "cancelable": true,
     "persist_death": false,
-    "duration_ms": 5000,
+    "duration_ms": 6000,
     "modelled": true,
     "effects": [
      {

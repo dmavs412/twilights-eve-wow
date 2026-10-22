@@ -343,7 +343,7 @@ fn the_shipped_catalyst_shatters_for_twice_biting_colds_frost_hit() {
         Effect::ConsumeAura {
             aura_spell_id,
             amount: None,
-            energize_pct_of_max: 20,
+            energize_pct_of_max: 10,
             ..
         } if *aura_spell_id == spell("initiate", "aura_searing_ember")
     ));

@@ -1100,8 +1100,10 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             if out["school"] != "physical" and "apply_aura" not in parsed:
                 parsed["school"] = out["school"]
         if kind in ("periodic_damage", "periodic_heal", "absorb"):
-            if parsed.get("pct_of", "hit") not in ("hit", "heal", "health_cost"):
-                raise BuildError(f"{here}: pct_of is {parsed['pct_of']!r}, want hit, heal or health_cost")
+            if parsed.get("pct_of", "hit") not in ("hit", "heal", "health_cost", "max_mana", "max_health"):
+                raise BuildError(f"{here}: pct_of is {parsed['pct_of']!r}, want hit, heal, health_cost, max_mana or max_health")
+            if kind == "periodic_damage" and parsed.get("pct_of") in ("max_mana", "max_health"):
+                raise BuildError(f"{here}: periodic_damage takes no {parsed['pct_of']} share")
             if parsed.get("ally", "lowest_health") != "lowest_health":
                 raise BuildError(f"{here}: ally is {parsed['ally']!r}, want lowest_health")
             if parsed.get("center", "target") not in ("target", "caster"):

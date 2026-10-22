@@ -954,12 +954,13 @@ fn the_initiates_spark_makes_a_level_1_initiate_on_mana() {
                 "searing_ember",
                 "blink",
                 "ley_spark",
-                "catalyst"
+                "catalyst",
+                "ley_ward"
             ]
         )
         .into_iter()
         .collect(),
-        "Biting Cold, Searing Ember, Blink, Ley-Spark and Catalyst"
+        "Biting Cold, Searing Ember, Blink, Ley-Spark, Catalyst and Ley Ward"
     );
     let tabs: Vec<&str> = realm
         .current_calling()

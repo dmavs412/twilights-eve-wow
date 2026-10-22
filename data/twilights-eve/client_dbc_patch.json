@@ -6877,7 +6877,7 @@
     "dmg_class": 1,
     "school": 4,
     "prevention_type": 1,
-    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 5 seconds.",
+    "description": "Deals moderate Frost damage and heavily slows the target's movement speed for 6 seconds.",
     "implicit_targets": [
      6,
      0
@@ -6888,8 +6888,8 @@
     "dbc_effects": [
      {
       "effect": 2,
-      "base": 18,
-      "per_level": 1.7
+      "base": 15,
+      "per_level": 1.5
      },
      {
       "effect": 3,
@@ -6901,8 +6901,8 @@
     "visual": 13,
     "speed": 28.0,
     "range_index": 4,
-    "cast_time_index": 19,
-    "duration_index": 7
+    "cast_time_index": 5,
+    "duration_index": 32
    }
   },
   {
@@ -6919,7 +6919,7 @@
     "dmg_class": 1,
     "school": 6,
     "prevention_type": 1,
-    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds a large chunk of Mana. If it consumes a Cold, it deals a massive burst of shatter damage.",
+    "description": "The detonator. Consumes your Searing Embers and Biting Colds on the target. If it consumes an Ember, it instantly refunds 10% of your maximum Mana. If it consumes a Cold, it deals a massive burst of shatter damage.",
     "implicit_targets": [
      6,
      0
@@ -6978,6 +6978,40 @@
    }
   },
   {
+   "spell_id": 1000395,
+   "calling": "initiate",
+   "key": "ley_ward",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ley Ward",
+    "cooldown_ms": 30000,
+    "cost_percent": 10.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_DetectLesserInvisibility",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "visual": 968,
+    "duration_index": 18
+   }
+  },
+  {
    "spell_id": 1000251,
    "calling": "initiate",
    "key": "thermal_feedback",
@@ -6989,7 +7023,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 2% chance to make your next Biting Cold instant cast and cost no mana.",
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 4% chance to make your next Biting Cold instant cast and cost no mana.",
     "implicit_targets": [
      1,
      0
@@ -7018,7 +7052,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 4% chance to make your next Biting Cold instant cast and cost no mana.",
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 8% chance to make your next Biting Cold instant cast and cost no mana.",
     "implicit_targets": [
      1,
      0
@@ -7046,7 +7080,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 6% chance to make your next Biting Cold instant cast and cost no mana.",
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 12% chance to make your next Biting Cold instant cast and cost no mana.",
     "implicit_targets": [
      1,
      0
@@ -7074,7 +7108,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 8% chance to make your next Biting Cold instant cast and cost no mana.",
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 16% chance to make your next Biting Cold instant cast and cost no mana.",
     "implicit_targets": [
      1,
      0
@@ -7102,7 +7136,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Whenever your Searing Ember deals periodic damage, you have a 10% chance to make your next Biting Cold instant cast and cost no mana.",
+    "description": "Whenever your Searing Ember deals periodic damage, you have a 20% chance to make your next Biting Cold instant cast and cost no mana.",
     "implicit_targets": [
      1,
      0

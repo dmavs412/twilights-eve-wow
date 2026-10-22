@@ -1084,6 +1084,8 @@ impl Skills {
             callings::PctOf::Hit => self.cast_dealt,
             callings::PctOf::Heal => self.cast_healed,
             callings::PctOf::HealthCost => self.last_health_cost,
+            // The caster's maximums live on the player; `of_pct` reads them.
+            callings::PctOf::MaxMana | callings::PctOf::MaxHealth => 0,
         }
     }
 
@@ -2435,6 +2437,15 @@ impl InWorld {
         ticked
     }
 
+    /// What a share is of: the cast under way's totals, or the caster's maximum mana or health.
+    fn of_pct(&self, of: callings::PctOf) -> u32 {
+        match of {
+            callings::PctOf::MaxMana => buffed(&self.player.stats, &self.skills).max_mana,
+            callings::PctOf::MaxHealth => buffed(&self.player.stats, &self.skills).max_health,
+            _ => self.skills.of(of),
+        }
+    }
+
     /// `pct` percent of what the cast under way dealt or healed (`pct_of`), a tick's share over
     /// `duration_ms` in `tick_ms` ticks; 0 with no share.
     fn share(
@@ -2447,7 +2458,7 @@ impl InWorld {
         let Some(of) = pct_of else {
             return 0;
         };
-        let amount = self.skills.of(of);
+        let amount = self.of_pct(of);
         let ticks = (duration_ms / tick_ms.max(1)).max(1);
         scaled_share(amount, pct) / ticks
     }
@@ -3549,7 +3560,7 @@ impl InWorld {
                 radius_yd,
                 school,
             } => {
-                let amount = scaled_share(self.skills.of(pct_of), pct);
+                let amount = scaled_share(self.of_pct(pct_of), pct);
                 let allies: Vec<u64> = self
                     .friendly_players(c)
                     .into_iter()

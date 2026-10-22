@@ -298,7 +298,7 @@ fn the_shipped_ember_stacks_to_three_and_biting_cold_snares_by_half() {
         e,
         Effect::ModRunSpeed {
             pct: -50,
-            duration_ms: 5000,
+            duration_ms: 6000,
             aura_spell_id: Some(a),
         } if *a == spell("initiate", "aura_biting_cold")
     )));

@@ -964,6 +964,10 @@ pub enum PctOf {
     Heal,
     /// The health the cast cost.
     HealthCost,
+    /// The caster's maximum mana at cast time.
+    MaxMana,
+    /// The caster's maximum health at cast time.
+    MaxHealth,
 }
 
 /// How an effect picks its friendly player.
