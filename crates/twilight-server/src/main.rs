@@ -1,12 +1,14 @@
 //! `twilight-server --join-password pw [--listen addr] [--data-dir dir] [--data wow-data]`: hosts
 //! one realm for friends to join. `--data` is the 1.12.1 `Data` folder (default `WOW_DATA`), for
 //! the terrain; the join password is what a friend's client must present to get in.
+//! Create `<data-dir>/stop` to save everyone and exit.
 
 use std::net::TcpListener;
 use std::path::PathBuf;
 
 const USAGE: &str =
-    "usage: twilight-server --join-password pw [--listen addr] [--data-dir dir] [--data wow-data]";
+    "usage: twilight-server --join-password pw [--listen addr] [--data-dir dir] [--data wow-data]
+Create <data-dir>/stop to save everyone and exit.";
 
 fn main() {
     let mut listen = twilight_server::DEFAULT_LISTEN.to_string();

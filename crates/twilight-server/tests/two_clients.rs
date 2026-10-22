@@ -183,3 +183,53 @@ fn two_clients_see_each_other_over_the_wire() {
     assert_eq!(saves, 2);
     let _ = std::fs::remove_dir_all(&data_dir);
 }
+
+#[test]
+fn stop_file_saves_everyone_and_ends_the_server() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let data_dir =
+        std::env::temp_dir().join(format!("twilight-server-stop-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&data_dir);
+    std::fs::create_dir_all(&data_dir).unwrap();
+    let dir = data_dir.clone();
+    let (done_tx, done_rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let config = twilight_server::Config {
+            data_dir: dir,
+            join_password: PASSWORD.into(),
+            build_id: BUILD.into(),
+        };
+        twilight_server::serve(listener, config, Box::new(twilight_server::FlatHost));
+        let _ = done_tx.send(());
+    });
+
+    let mut a = Client::connect(addr, "anna");
+    let guid = a.create_and_enter("Aldren");
+    a.send(RealmCommand::Move {
+        motion: Default::default(),
+        position: FAR_AWAY,
+        orientation: 0.0,
+    });
+    // A few ticks for the realm to apply the move.
+    std::thread::sleep(Duration::from_millis(500));
+
+    let stop = data_dir.join("stop");
+    std::fs::write(&stop, "").unwrap();
+    done_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("the server ends within 5 s of the stop file");
+
+    let save = std::fs::read_to_string(data_dir.join("characters").join(format!("{guid}.toml")))
+        .expect("the character was saved");
+    let numbers: Vec<f32> = save
+        .split(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-'))
+        .filter_map(|s| s.parse().ok())
+        .collect();
+    assert!(
+        numbers.iter().any(|n| (n - FAR_AWAY[0]).abs() < 0.5),
+        "the save holds the moved position: {save}"
+    );
+    assert!(!stop.exists(), "the stop file is deleted");
+    let _ = std::fs::remove_dir_all(&data_dir);
+}

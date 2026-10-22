@@ -90,11 +90,17 @@ pub struct Config {
     pub build_id: String,
 }
 
-/// Serves `listener` forever in `world`.
+/// Serves `listener` in `world` until `<data-dir>/stop` appears; then everyone is saved and this
+/// returns.
 pub fn serve(listener: TcpListener, config: Config, world: Box<dyn World>) {
     let (tx, rx) = mpsc::channel();
     let gate = std::sync::Arc::new((config.join_password.clone(), config.build_id.clone()));
-    std::thread::spawn(move || run_realm(rx, &config.data_dir, world));
+    let realm = std::thread::spawn(move || run_realm(rx, &config.data_dir, world));
+    std::thread::spawn(move || accept_loop(listener, tx, gate));
+    let _ = realm.join();
+}
+
+fn accept_loop(listener: TcpListener, tx: Sender<Inbound>, gate: std::sync::Arc<(String, String)>) {
     for (conn, stream) in (1..).zip(listener.incoming()) {
         match stream {
             Ok(stream) => {
@@ -184,6 +190,8 @@ fn write_events(stream: TcpStream, events: Receiver<SessionEvent>) {
             return;
         }
     }
+    // The realm is gone: the client sees its connection close.
+    let _ = w.get_ref().shutdown(std::net::Shutdown::Both);
 }
 
 /// A connection the realm serves.
@@ -259,6 +267,27 @@ fn run_realm(rx: Receiver<Inbound>, data_dir: &Path, mut world: Box<dyn World>) 
                 Err(mpsc::RecvTimeoutError::Timeout) => break,
                 Err(mpsc::RecvTimeoutError::Disconnected) => return,
             }
+        }
+        let stop = data_dir.join("stop");
+        if stop.exists() {
+            for (_, c) in conns.drain() {
+                realm.disconnect(c.session);
+            }
+            for (_, _, session) in lingering.drain(..) {
+                realm.disconnect(session);
+            }
+            let mut saved = 0;
+            for op in realm.drain_storage() {
+                if matches!(op, Storage::Write { .. }) {
+                    saved += 1;
+                }
+                store(data_dir, op);
+            }
+            if let Err(e) = std::fs::remove_file(&stop) {
+                eprintln!("twilight-server: cannot delete the stop file: {e}");
+            }
+            eprintln!("twilight-server: stop file seen, saved {saved} characters, exiting");
+            return;
         }
         let now = Instant::now();
         next = now + TICK;
