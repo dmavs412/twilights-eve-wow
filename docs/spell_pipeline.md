@@ -164,6 +164,24 @@ base64 by name, to `client_art.json`, which the client embeds like the patch: an
 accept PNG bytes. When a real server plays to a stock client,
 the same file feeds an MPQ writer.
 
+## Closed zones
+
+`data/twilights-eve/closed_zones.toml` holds the map (`map = 0`, Azeroth) and the AreaTable zone
+ids cut out of the world (`zones = [40]`, Westfall). `tools/twilights-eve/closed_zones.py` reads
+it, rolls each ADT chunk's area id up through AreaTable's parent column to its top-level zone,
+and writes `data/twilights-eve/closed_chunks.json`: `{"map", "zones", "chunks": [[gx, gy], ...]}`
+with `gx = tile_x * 16 + chunk_ix` and `gy = tile_y * 16 + chunk_iy`, sorted, one pair per line.
+It needs the game data (`--data` or `WOW_DATA`) and prints the closed count per zone and per
+area name. After a TOML edit, run it and commit the TOML and the JSON together:
+
+```
+~/.local/bin/python3.15 tools/twilights-eve/closed_zones.py --data "$WOW_DATA"
+```
+
+Both the client and the realm compile the JSON in with `include_str!` (ADR 0015), so neither
+needs game data to know which chunks are closed. Westfall comes to 12,674 chunks, 8,873 of them
+The Great Sea, whose parent area is Westfall.
+
 ## Where it stands
 
 As of 2026-10-16 `build_spells.py` generates both outputs from the CSV, and they are committed

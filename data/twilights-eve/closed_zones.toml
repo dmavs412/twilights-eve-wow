@@ -1,0 +1,4 @@
+# Zones cut out of the world (ADR 0015). AreaTable zone ids; a chunk is closed when its
+# area rolls up through AreaTable's parents to one of these. Rerun closed_zones.py after an edit.
+map = 0          # Azeroth
+zones = [40]     # Westfall
