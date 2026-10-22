@@ -1136,7 +1136,11 @@ impl Realm {
             } => {
                 if let Some(w) = &mut self.world {
                     let from = self.characters.get(w.guid).map(|c| c.position);
-                    if from.is_none_or(|from| w.moved(from, position, &mut self.events)) {
+                    let walled = from.is_some_and(|from| {
+                        w.walled_off(from, position, orientation, &mut self.events)
+                    });
+                    if !walled && from.is_none_or(|from| w.moved(from, position, &mut self.events))
+                    {
                         let guid = w.guid;
                         self.characters.set_position(guid, position, orientation);
                         // Trusted, as reported (ADR 0009): the others who see the player see it.

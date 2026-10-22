@@ -13,6 +13,7 @@ use crate::fields::{
     float, guid_pairs, OBJECT_FIELD_ENTRY, OBJECT_FIELD_SCALE_X, OBJECT_FIELD_TYPE,
 };
 use crate::ground::grounded_at;
+use crate::space::flat_distance;
 use crate::Host;
 
 /// `HIGHGUID_GAMEOBJECT`, in a GameObject guid's top 16 bits.
@@ -507,6 +508,16 @@ pub(crate) struct Dungeon {
     /// The portals in the building that lead to the stops.
     #[serde(default)]
     pub(crate) inner_portal: Vec<InnerPortal>,
+    /// A wall along the footprint's edge, open at the Portal.
+    #[serde(default)]
+    wall: Option<Wall>,
+}
+
+/// An invisible wall that keeps walkers from crossing the footprint's edge in either direction,
+/// except within `gap_yd` of the dungeon's Portal.
+#[derive(Deserialize)]
+struct Wall {
+    gap_yd: f32,
 }
 
 /// A cover pillar: a vertical cylinder standing on `position`, in the dungeon file's frame like
@@ -603,6 +614,20 @@ impl Dungeon {
         }
         let local = self.local(position);
         self.footprint.iter().any(|b| b.holds(local)) || self.stop_at(map, position).is_some()
+    }
+
+    /// Whether a step from `from` to `to` on `map` crosses the footprint's walled edge, outside
+    /// the gap the Portal leaves.
+    pub(crate) fn wall_blocks(&self, map: u32, from: [f32; 3], to: [f32; 3]) -> bool {
+        let Some(wall) = &self.wall else {
+            return false;
+        };
+        let in_box = |p: [f32; 3]| self.footprint.iter().any(|b| b.holds(self.local(p)));
+        map == self.map
+            && in_box(from) != in_box(to)
+            && [from, to]
+                .iter()
+                .all(|&p| flat_distance(self.portal.position, p) > wall.gap_yd)
     }
 
     /// The index of the stop whose box holds `position` on `map`.

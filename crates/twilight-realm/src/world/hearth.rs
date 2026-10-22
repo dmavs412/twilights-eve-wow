@@ -76,6 +76,16 @@ impl InWorld {
         self.stop_attack(events);
         c.position = position;
         c.orientation = orientation;
+        self.snap_client(position, orientation, events);
+    }
+
+    /// Tells the client to snap to `position` and ignore its own reports until it answers.
+    pub(super) fn snap_client(
+        &mut self,
+        position: [f32; 3],
+        orientation: f32,
+        events: &mut Vec<SessionEvent>,
+    ) {
         let t = &mut self.teleports;
         t.counter += 1;
         t.pending = true;
@@ -85,6 +95,11 @@ impl InWorld {
             position,
             orientation,
         });
+    }
+
+    /// Whether a teleport is waiting for the client's answer.
+    pub(super) fn teleport_pending(&self) -> bool {
+        self.teleports.pending
     }
 
     /// A dev teleport (`WOW_PROBE_GOTO`): to the spot on this map, on the ground there, or

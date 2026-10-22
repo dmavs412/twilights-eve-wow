@@ -20,6 +20,10 @@ const HIDE_REACH_YD: f32 = 5.0;
 /// How far a hiding character may drift before the hide ends.
 const HIDE_DRIFT_YD: f32 = 1.0;
 
+/// The longest step between two movement reports that counts as walking; a longer one is a
+/// teleport, which the wall lets through.
+const WALK_STEP_YD: f32 = 40.0;
+
 /// What a click on a GameObject did with a Phased Dungeon's door.
 pub(crate) enum DoorClick {
     /// The GameObject is no door.
@@ -106,6 +110,31 @@ impl InWorld {
             self.noise_shown = 0;
         }
         self.phase = now;
+    }
+
+    /// The player's report of a step from `from` to `to`: if it walks through the wall of a
+    /// Phased Dungeon's footprint, the client is snapped back to `from` and the step is refused.
+    /// The dead walk through, and a jump longer than a walker's step is a teleport. Whether the
+    /// step was refused.
+    pub(crate) fn walled_off(
+        &mut self,
+        from: [f32; 3],
+        to: [f32; 3],
+        orientation: f32,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        if !self.player.alive()
+            || self.teleport_pending()
+            || self.transferring()
+            || flat_distance(from, to) > WALK_STEP_YD
+            || !phased::content()
+                .iter()
+                .any(|d| d.wall_blocks(self.map, from, to))
+        {
+            return false;
+        }
+        self.snap_client(from, orientation, events);
+        true
     }
 
     /// Puts the player at the `back` of stop `stop`'s inner portal, in the same Phase and Run.
