@@ -7,7 +7,7 @@ use benilla_protocol::SessionEvent;
 use super::InWorld;
 use crate::characters::Char;
 use crate::dungeon::Place;
-use crate::ground::grounded_at;
+use crate::ground::{ground_under, grounded_at, settle, Settle};
 use crate::mobs::{self, Mob};
 use crate::phased::{self, GameObjectUse, Phase, StopPortal, UseKind};
 use crate::population::VIEW_YD;
@@ -551,11 +551,29 @@ impl InWorld {
             if !self.quest_objects.contains(&guid) {
                 if !spent && d_yd <= VIEW_YD {
                     self.quest_objects.insert(guid);
+                    if o.grounded && ground_under(host, o.map, o.position, true).is_none() {
+                        self.quest_settling.insert(guid);
+                    }
                     events.push(o.create(host));
                 }
             } else if spent || d_yd > VIEW_YD + 10.0 {
                 self.quest_objects.remove(&guid);
+                self.quest_settling.remove(&guid);
                 gone.push(guid);
+            } else if self.quest_settling.contains(&guid) {
+                // Created before the ground streamed in. The client cannot move a GameObject in
+                // place, so the lift destroys it and creates it again on the ground.
+                match settle(host, o.map, o.position) {
+                    Settle::Waiting => {}
+                    Settle::Level => {
+                        self.quest_settling.remove(&guid);
+                    }
+                    Settle::Lift(_) => {
+                        self.quest_settling.remove(&guid);
+                        events.push(SessionEvent::ObjectsRemoved(vec![guid]));
+                        events.push(o.create(host));
+                    }
+                }
             }
         }
         if !gone.is_empty() {

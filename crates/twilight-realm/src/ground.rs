@@ -50,6 +50,51 @@ pub(crate) fn yes() -> bool {
     true
 }
 
+/// How far a settled unit's ground may differ from where it stands before it is moved, in yards.
+const SETTLE_YD: f32 = 0.05;
+
+/// What a unit created before its ground streamed in finds when it asks again.
+pub(crate) enum Settle {
+    /// The host still has no ground there; ask again later.
+    Waiting,
+    /// The ground is loaded and the unit already stands on it.
+    Level,
+    /// The ground is loaded at this height, not where the unit stands.
+    Lift(f32),
+}
+
+/// Asks the host again for the ground under `at`, for a unit that was created without it.
+pub(crate) fn settle(host: &dyn Host, map: u32, at: [f32; 3]) -> Settle {
+    match ground_under(host, map, at, true) {
+        None => Settle::Waiting,
+        Some(ground) if (ground - at[2]).abs() < SETTLE_YD => Settle::Level,
+        Some(ground) => Settle::Lift(ground),
+    }
+}
+
+/// The one-millisecond move that lifts creature `guid` from `at` to `to`.
+pub(crate) fn lift_event(
+    guid: u64,
+    at: [f32; 3],
+    to: [f32; 3],
+    facing: f32,
+) -> benilla_protocol::SessionEvent {
+    use benilla_protocol::messages::MonsterMoveFacing;
+    use benilla_protocol::SessionEvent;
+    SessionEvent::MonsterMove {
+        guid,
+        transport: None,
+        start: at,
+        spline_id: 0,
+        path: vec![at, to],
+        facing: MonsterMoveFacing::Angle(facing),
+        stop: false,
+        duration_ms: 1,
+        flying: false,
+        run_mode: false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

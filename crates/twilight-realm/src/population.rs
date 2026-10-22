@@ -8,6 +8,7 @@ use std::sync::OnceLock;
 
 use benilla_protocol::SessionEvent;
 
+use crate::ground::{ground_under, lift_event, settle, Settle};
 use crate::mobs::{self, Mob, State};
 use crate::rules::respawn;
 use crate::space::flat_distance;
@@ -76,6 +77,8 @@ pub(crate) struct Population {
     /// Which spawns have a mob in the world, by spawn index.
     present: Vec<bool>,
     dead: Vec<Corpse>,
+    /// The spawns whose mob was created before the host had its ground, by spawn index.
+    settling: Vec<u32>,
     /// Counts every spawn, so each comes back at its own level from its range.
     spawns: u32,
 }
@@ -121,6 +124,8 @@ impl Population {
             }
             self.scanned_at = None;
         }
+
+        self.settle(map, host, mobs, events);
 
         self.since_scan += dt;
         if self.since_scan < RESCAN_SECS
@@ -191,16 +196,50 @@ impl Population {
                     {
                         continue;
                     }
-                    let z = crate::ground::grounded_z(host, map, spawn.position, spawn.grounded);
+                    let ground = ground_under(host, map, spawn.position, spawn.grounded);
+                    let z = ground.unwrap_or(spawn.position[2]);
                     let level = self.level(spawn.guid, spawn.level_min, spawn.level_max);
                     if let Some(mob) = Mob::spawn(i, level, z) {
                         events.push(mob.create());
                         mobs.push(mob);
                         self.present[i as usize] = true;
+                        if spawn.grounded && ground.is_none() {
+                            self.settling.push(i);
+                        }
                     }
                 }
             }
         }
+    }
+
+    /// A mob that spawned before the ground streamed in stood at its spawn's height, often under
+    /// the terrain; once the ground is there, an idle one is lifted onto it, once. One that has
+    /// left the world has nothing to settle.
+    fn settle(
+        &mut self,
+        map: u32,
+        host: &dyn Host,
+        mobs: &mut [Mob],
+        events: &mut Vec<SessionEvent>,
+    ) {
+        self.settling.retain(|&spawn| {
+            let Some(m) = mobs.iter_mut().find(|m| m.spawn == spawn) else {
+                return false;
+            };
+            if m.state != State::Idle || m.walk.is_some() {
+                return true;
+            }
+            match settle(host, map, m.position) {
+                Settle::Waiting => true,
+                Settle::Level => false,
+                Settle::Lift(ground) => {
+                    let (at, to) = (m.position, [m.position[0], m.position[1], ground]);
+                    events.push(lift_event(m.guid, at, to, m.orientation));
+                    m.ground_to(ground);
+                    false
+                }
+            }
+        });
     }
 
     /// A mob of `spawn` died: it comes back once the player has been away `wait` seconds.

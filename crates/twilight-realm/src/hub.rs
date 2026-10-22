@@ -10,7 +10,7 @@ use benilla_protocol::{EntityKind, MoveSpeeds, ObjectFields, SessionEvent};
 use serde::Deserialize;
 
 use crate::fields::*;
-use crate::ground::ground_under;
+use crate::ground::{ground_under, lift_event, settle, Settle};
 use crate::rng::Rng;
 use crate::space::flat_distance;
 use crate::Host;
@@ -408,28 +408,16 @@ impl Standing {
         if self.grounded || self.walk.is_some() {
             return;
         }
-        let [x, y, z] = self.at;
-        let Some(ground) = ground_under(host, map, self.at, true) else {
-            return;
-        };
-        self.grounded = true;
-        if (ground - z).abs() < 0.05 {
-            return;
+        match settle(host, map, self.at) {
+            Settle::Waiting => {}
+            Settle::Level => self.grounded = true,
+            Settle::Lift(ground) => {
+                self.grounded = true;
+                let to = [self.at[0], self.at[1], ground];
+                events.push(lift_event(npc.guid(), self.at, to, npc.facing()));
+                self.at = to;
+            }
         }
-        let to = [x, y, ground];
-        events.push(SessionEvent::MonsterMove {
-            guid: npc.guid(),
-            transport: None,
-            start: self.at,
-            spline_id: 0,
-            path: vec![self.at, to],
-            facing: MonsterMoveFacing::Angle(npc.facing()),
-            stop: false,
-            duration_ms: 1,
-            flying: false,
-            run_mode: false,
-        });
-        self.at = to;
     }
 
     /// Walks on, or after a pause sets off for another spot within `npc`'s wander.

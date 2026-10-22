@@ -297,6 +297,8 @@ pub(crate) struct InWorld {
     in_stop: Option<(u32, usize)>,
     /// The guids of the open-world quest GameObjects the client has.
     quest_objects: std::collections::HashSet<u64>,
+    /// Those among them created before the host had their ground, until they are settled onto it.
+    quest_settling: std::collections::HashSet<u64>,
     /// The quest GameObjects the player used, each with the seconds until it returns.
     quest_spent: Vec<(u64, f32)>,
     /// The stacks of the Phase's meter the player's aura shows; 0 for none.
@@ -441,6 +443,7 @@ impl InWorld {
             run_dead: Vec::new(),
             in_stop: None,
             quest_objects: Default::default(),
+            quest_settling: Default::default(),
             quest_spent: Vec::new(),
             noise_shown: 0,
             noise_gain: 0,

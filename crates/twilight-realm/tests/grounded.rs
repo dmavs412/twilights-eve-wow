@@ -79,6 +79,69 @@ fn created_at(events: &[SessionEvent], guid: u64, kind: EntityKind) -> [f32; 3] 
         .unwrap_or_else(|| panic!("{guid:#x} is created"))
 }
 
+/// A realm with the orc in the world over a host that has no ground yet (#254).
+fn enter_without_ground() -> Realm {
+    let mut realm = Realm::with_seed(1).with_quests(TEST_OBJECTS);
+    assert_eq!(create(&mut realm, "Stander", ORC, 0), CHAR_CREATE_SUCCESS);
+    let guid = roster(&mut realm)[0].guid;
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &Shelf(None));
+    realm.tick(0.1, &Shelf(None));
+    drain(&mut realm);
+    realm
+}
+
+/// The height `guid`'s moves in `events` end at.
+fn lifted_to(events: &[SessionEvent], guid: u64) -> Vec<f32> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::MonsterMove { guid: g, path, .. } if *g == guid => {
+                path.last().map(|p| p[2])
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn units_created_without_ground_are_lifted_once_it_streams_in() {
+    let mut realm = enter_without_ground();
+    realm.tick(0.1, &Shelf(Some(SHELF)));
+    let events = drain(&mut realm);
+    assert_eq!(lifted_to(&events, CREATURE), [SHELF]);
+    assert_eq!(lifted_to(&events, hub_guid(BARG)), [SHELF]);
+    // A GameObject cannot move in place: it is destroyed and created again on the ground.
+    let removed = events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectsRemoved(g) if g.contains(&GROUNDED_OBJECT)));
+    assert!(removed, "the object is destroyed");
+    assert_eq!(
+        created_at(&events, GROUNDED_OBJECT, EntityKind::GameObject)[2],
+        SHELF
+    );
+    // A row that keeps its Z has nothing to settle onto.
+    let again = events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectCreate { guid, .. } if *guid == PLACED_OBJECT));
+    assert!(!again, "the placed object is left alone");
+}
+
+#[test]
+fn a_settled_unit_is_not_asked_again() {
+    let mut realm = enter_without_ground();
+    realm.tick(0.1, &Shelf(Some(SHELF)));
+    drain(&mut realm);
+    realm.tick(0.1, &Shelf(Some(SHELF + 10.0)));
+    let events = drain(&mut realm);
+    assert!(lifted_to(&events, CREATURE).is_empty());
+    assert!(lifted_to(&events, hub_guid(BARG)).is_empty());
+    let created = events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ObjectCreate { guid, .. } if *guid == GROUNDED_OBJECT));
+    assert!(!created, "the object is not created again");
+}
+
 #[test]
 fn each_placed_unit_stands_on_the_hosts_ground() {
     let events = enter(&Shelf(Some(SHELF)));
