@@ -680,6 +680,13 @@ impl WorldMouse {
         }
     }
 
+    /// The world gives up button `b`: neither held nor pressed this frame. A press in the world
+    /// while it is withheld never becomes held, so its release is no click.
+    fn withhold(&mut self, b: LookButton) {
+        self.held[b as usize] = false;
+        self.down[b as usize] = false;
+    }
+
     /// `MouselookStart` (`on`) or `MouselookStop`: one bit, whoever set it, so a stop also ends
     /// a right drag in flight, whose release then clears nothing.
     fn mouselook(&mut self, on: bool) {
@@ -713,6 +720,7 @@ pub(super) fn latch_world_mouse(
     window: Single<&Window, With<PrimaryWindow>>,
     mut script: Option<NonSendMut<benilla_ui::script::UiScript>>,
     cover: Option<Res<crate::loading_screen::LoadingScreen>>,
+    reel: Option<Res<crate::fishing_reel::ReelHoldsMouse>>,
 ) {
     let calls = script
         .as_mut()
@@ -725,6 +733,10 @@ pub(super) fn latch_world_mouse(
     let world_press = rig.look.is_some() || (cursor_in_viewport(&window, camera) && !over_ui);
     let wm = &mut rig.world_mouse;
     wm.update(&buttons, world_press);
+    // The Reeling Bar owns the left button (ADR 0018) until it is released after the bar.
+    if reel.is_some_and(|r| r.0) {
+        wm.withhold(LookButton::Left);
+    }
     // The script's calls, made since the last latch, before this frame's release.
     for on in calls {
         wm.mouselook(on);

@@ -244,6 +244,10 @@ fn pump(
     mut goto: ResMut<goto::GotoGround>,
     adts: Res<Assets<benilla_assets::AdtTile>>,
     water: Query<&'static WaterChunkInfo>,
+    mut reel: (
+        Option<ResMut<crate::fishing_reel::ReelInbox>>,
+        Option<ResMut<crate::fishing_reel::ReelOutbox>>,
+    ),
 ) {
     let LocalRealm {
         far,
@@ -273,6 +277,12 @@ fn pump(
     }
     for DevGoto { x, y, facing } in goto.take_ready() {
         backing.handle(RealmCommand::DevTeleport { x, y, facing });
+    }
+    // The Reeling Bar's results (ADR 0018).
+    if let Some(outbox) = reel.1.as_deref_mut() {
+        for command in outbox.0.drain(..) {
+            backing.handle(command);
+        }
     }
 
     let events: Vec<SessionEvent> = match backing {
@@ -310,9 +320,24 @@ fn pump(
             boss.set_if_neq(BossFightList(guids));
             continue;
         }
+        // Fishing's bite, end and Angler Level go to the Reeling Bar (ADR 0018).
+        if matches!(
+            event,
+            SessionEvent::FishingBite { .. }
+                | SessionEvent::FishingEnd { .. }
+                | SessionEvent::Angler { .. }
+        ) {
+            if let Some(inbox) = reel.0.as_deref_mut() {
+                inbox.0.push(event);
+            }
+            continue;
+        }
         let logged_out = matches!(event, SessionEvent::LoggedOut);
         if logged_out {
             boss.set_if_neq(BossFightList::default());
+            if let Some(inbox) = reel.0.as_deref_mut() {
+                inbox.0.push(SessionEvent::LoggedOut);
+            }
         }
         let _ = far.events.send(event);
         // The IO thread ends the session after a logout, which tears the streamed world down.

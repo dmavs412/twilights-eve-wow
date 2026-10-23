@@ -275,6 +275,10 @@ pub(crate) struct Model {
     pub(crate) now: f64,
     /// `GetGameTime()`'s `(hour, minute)`, pushed by the host as the game clock ticks.
     pub(crate) game_time: (u32, u32),
+    /// The open Reeling Bar `GetReelState()` reads, pushed by the host each frame.
+    pub(crate) reel: Option<super::ReelView>,
+    /// `GetAnglerInfo()`'s Angler Level, pushed by the host.
+    pub(crate) angler: super::fishing::AnglerInfo,
     /// The zone caches the four zone-text getters and `GetZonePVPInfo` read.
     pub(crate) zone: super::ZoneTexts,
     /// The current map's `Map.dbc` `InstanceType`, all `IsInInstance()` reads; `None` for no row.
@@ -1125,6 +1129,8 @@ impl Model {
             raid_selection: 0,
             now: 0.0,
             game_time: (0, 0),
+            reel: None,
+            angler: Default::default(),
             zone: Default::default(),
             instance_type: None,
             can_reset_instances: false,

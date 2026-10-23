@@ -1946,6 +1946,8 @@ fn the_layer_does_not_grow() {
         "GearSlots.xml",
         // The Boss Bar (ADR 0013): the realm's `BossFight` list as `boss1` to `boss3` rows.
         "BossBar.xml",
+        // The Reeling Bar (ADR 0018): the client-run fishing bar, which no stock file has.
+        "FishingReel.xml",
     ];
     assert_eq!(
         super::addons::Addon::layer().toc.files,
@@ -1961,10 +1963,11 @@ fn the_layer_does_not_grow() {
         .filter(|n| !n.starts_with('.'))
         .collect();
     found.sort();
-    // `paperdoll.tga` is the art `GearSlots.xml` names (`Interface\Benilla\paperdoll`).
+    // `paperdoll.tga` is the art `GearSlots.xml` names (`Interface\Benilla\paperdoll`), and
+    // `fishing/` the Reeling Bar's (`Interface\Benilla\fishing\*`).
     let mut shipped: Vec<String> = LAYER
         .iter()
-        .chain(&["layer.toc", "paperdoll.tga"])
+        .chain(&["layer.toc", "paperdoll.tga", "fishing"])
         .map(|s| s.to_string())
         .collect();
     shipped.sort();

@@ -95,6 +95,7 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     install_time(lua)?;
     // Before the Lua layer, whose `debugprofile*` pair keeps its own `GetTime`.
     super::clock::install(lua)?;
+    super::fishing::install(lua)?;
     super::zone_text::install(lua)?;
     lua.load(WOW_STDLIB)
         .set_name("=[benilla wow stdlib]")

@@ -1,0 +1,453 @@
+<Ui>
+    <!--
+        The Reeling Bar (ADR 0018), right of centre: the bar frame, the water track with the catch
+        zone (a 3-slice, `catch_zone` while the fish is outside it and `catch_zone_active` while
+        inside), the fish with its quality-tinted glow, the treasure chest and its mini bar, the
+        progress bar and the reel, which turns while the button is held. Under it the Angler badge
+        and XP bar, shown while a bar is open and for three seconds after. A win or a loss shows a
+        banner top centre for two and a half seconds.
+
+        The app runs the bar and pushes it each frame; the frames read only `GetReelState()` and
+        `GetAnglerInfo()`. `FISHING_REEL_START`, `FISHING_REEL_END(caught item or nil, perfect,
+        treasure)` and `ANGLER_UPDATE` say when to start, end and repaint. The art is
+        `Interface\Benilla\fishing\*`: flat placeholders until the real sheet drops in.
+    -->
+    <Script><![CDATA[
+        -- The water track's height, in pixels; positions arrive as fractions of it.
+        BENILLA_FISHING_TRACK = 268
+        BENILLA_FISHING_CAP = 6
+        -- Seconds the Angler badge stays after a bar, and a banner shows.
+        BENILLA_FISHING_BADGE_LINGER = 3
+        BENILLA_FISHING_BANNER_SECS = 2.5
+        BENILLA_FISHING_ART = "Interface\\Benilla\\fishing\\"
+
+        -- An item's name and quality, when the client knows it.
+        function BenillaFishing_Item(item)
+            if not item then
+                return nil, nil
+            end
+            local name, _, quality = GetItemInfo(item)
+            return name, quality
+        end
+
+        function BenillaFishing_QualityColor(quality)
+            if quality and GetItemQualityColor then
+                local r, g, b = GetItemQualityColor(quality)
+                if r then
+                    return r, g, b
+                end
+            end
+            return 1, 1, 1
+        end
+
+        -- The zone's three slices: two caps and the stretched middle, at `bottom` and `height`
+        -- pixels up the track.
+        function BenillaFishingReel_PaintZone(art, bottom, height)
+            local name = "BenillaFishingReel"
+            local cap = math.min(BENILLA_FISHING_CAP, height / 2)
+            local slices = {
+                { name .. "ZoneBottom", bottom, cap, 0.9, 1 },
+                { name .. "ZoneMid", bottom + cap, math.max(height - 2 * cap, 1), 0.1, 0.9 },
+                { name .. "ZoneTop", bottom + height - cap, cap, 0, 0.1 },
+            }
+            for i = 1, 3 do
+                local s = slices[i]
+                local tex = getglobal(s[1])
+                tex:SetTexture(art)
+                tex:SetTexCoord(0, 1, s[4], s[5])
+                tex:SetHeight(s[3])
+                tex:ClearAllPoints()
+                tex:SetPoint("BOTTOM", "BenillaFishingReelWater", "BOTTOM", 0, s[2])
+            end
+        end
+
+        -- Turns the reel by `angle` radians about its centre (the eight-number SetTexCoord).
+        function BenillaFishingReel_Turn(angle)
+            local c, s = math.cos(angle) * 0.5, math.sin(angle) * 0.5
+            local function at(x, y)
+                return 0.5 + x * c - y * s, 0.5 + x * s + y * c
+            end
+            local ulx, uly = at(-1, -1)
+            local llx, lly = at(-1, 1)
+            local urx, ury = at(1, -1)
+            local lrx, lry = at(1, 1)
+            BenillaFishingReelReel:SetTexCoord(ulx, uly, llx, lly, urx, ury, lrx, lry)
+        end
+
+        -- One frame of the bar from GetReelState(); false once no bar is open.
+        function BenillaFishingReel_Paint(elapsed)
+            local frame = BenillaFishingReel
+            local active, zoneBottom, zoneHeight, fishPos, progress, chestShown, chestPos,
+                chestFill, legendary, fishItem, fishInZone, reeling = GetReelState()
+            if not active then
+                frame:Hide()
+                return false
+            end
+            local track = BENILLA_FISHING_TRACK
+            local art = BENILLA_FISHING_ART
+            BenillaFishingReel_PaintZone(
+                art .. (fishInZone and "catch_zone_active" or "catch_zone"),
+                zoneBottom * track,
+                zoneHeight * track
+            )
+
+            local name, quality = BenillaFishing_Item(fishItem)
+            local r, g, b = BenillaFishing_QualityColor(quality)
+            frame.fishName = name or frame.fishName
+            BenillaFishingReelName:SetText(name or "")
+            BenillaFishingReelName:SetTextColor(r, g, b)
+            BenillaFishingReelFish:SetTexture(art .. (legendary and "fish_legend" or "fish"))
+            BenillaFishingReelFishGlow:SetVertexColor(r, g, b)
+            BenillaFishingReelFish:ClearAllPoints()
+            BenillaFishingReelFish:SetPoint("CENTER", "BenillaFishingReelWater", "BOTTOM", 0, fishPos * track)
+            BenillaFishingReelFishGlow:ClearAllPoints()
+            BenillaFishingReelFishGlow:SetPoint("CENTER", "BenillaFishingReelFish", "CENTER", 0, 0)
+
+            if chestShown then
+                BenillaFishingReelChest:ClearAllPoints()
+                BenillaFishingReelChestBar:ClearAllPoints()
+                BenillaFishingReelChest:Show()
+                BenillaFishingReelChestBar:Show()
+                BenillaFishingReelChest:SetPoint("CENTER", "BenillaFishingReelWater", "BOTTOM", 0, chestPos * track)
+                BenillaFishingReelChestBar:SetPoint("TOP", "BenillaFishingReelChest", "BOTTOM", 0, -1)
+                BenillaFishingReelChestFill:SetWidth(math.max(chestFill * 22, 0.01))
+                BenillaFishingReelChestFill:Show()
+            else
+                BenillaFishingReelChest:Hide()
+                BenillaFishingReelChestBar:Hide()
+                BenillaFishingReelChestFill:Hide()
+            end
+
+            local fill = BenillaFishingReelProgressFill
+            fill:SetHeight(math.max(progress * track, 0.01))
+            if progress < 1 / 3 then
+                fill:SetVertexColor(0.9, 0.2, 0.15)
+            elseif progress < 2 / 3 then
+                fill:SetVertexColor(1, 0.7, 0.1)
+            else
+                fill:SetVertexColor(0.3, 0.9, 0.3)
+            end
+
+            if reeling then
+                frame.reelAngle = (frame.reelAngle or 0) + (elapsed or 0) * 8
+                BenillaFishingReel_Turn(frame.reelAngle)
+            end
+            frame:Show()
+            return true
+        end
+
+        -- The Angler badge and XP bar from GetAnglerInfo().
+        function BenillaFishingAngler_Paint()
+            local level, xp, toNext = GetAnglerInfo()
+            BenillaFishingAnglerLevel:SetText(level)
+            local share = 1
+            if toNext and toNext > 0 then
+                share = math.min(xp / toNext, 1)
+            end
+            BenillaFishingAnglerFill:SetWidth(math.max(share * 124, 0.01))
+            BenillaFishingAnglerText:SetText("Angler " .. level .. " · " .. xp .. " / " .. toNext)
+        end
+
+        function BenillaFishingBanner_Show(caught, perfect, treasure)
+            local banner = BenillaFishingBanner
+            local text
+            if caught then
+                local name = BenillaFishing_Item(caught) or BenillaFishingReel.fishName or "a fish"
+                text = "Caught: " .. name
+                if perfect then
+                    text = text .. "  Perfect!"
+                end
+                if treasure then
+                    text = text .. "  Treasure!"
+                end
+                BenillaFishingBannerArt:SetTexture(BENILLA_FISHING_ART .. "banner_success")
+                banner.success = true
+            else
+                text = "It got away"
+                BenillaFishingBannerArt:SetTexture(BENILLA_FISHING_ART .. "banner_fail")
+                banner.success = false
+            end
+            BenillaFishingBannerText:SetText(text)
+            banner.hideAt = GetTime() + BENILLA_FISHING_BANNER_SECS
+            banner:Show()
+        end
+
+        function BenillaFishing_OnEvent()
+            local controller = BenillaFishingController
+            if event == "FISHING_REEL_START" then
+                BenillaFishingReel.fishName = nil
+                controller.badgeUntil = nil
+            elseif event == "FISHING_REEL_END" then
+                BenillaFishingBanner_Show(arg1, arg2, arg3)
+                controller.badgeUntil = GetTime() + BENILLA_FISHING_BADGE_LINGER
+            end
+            BenillaFishingAngler_Paint()
+        end
+
+        function BenillaFishing_OnUpdate(elapsed)
+            local controller = BenillaFishingController
+            local now = GetTime()
+            local open = BenillaFishingReel_Paint(elapsed)
+            if open then
+                controller.badgeUntil = nil
+                BenillaFishingAngler:Show()
+            elseif controller.badgeUntil and now < controller.badgeUntil then
+                BenillaFishingAngler:Show()
+            else
+                BenillaFishingAngler:Hide()
+            end
+            local banner = BenillaFishingBanner
+            if banner:IsShown() and banner.hideAt and now >= banner.hideAt then
+                banner:Hide()
+            end
+        end
+    ]]></Script>
+
+    <Frame name="BenillaFishingReel" parent="UIParent" frameStrata="HIGH" hidden="true">
+        <Size>
+            <AbsDimension x="96" y="300"/>
+        </Size>
+        <Anchors>
+            <Anchor point="CENTER">
+                <Offset>
+                    <AbsDimension x="240" y="20"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBarFrame" file="Interface\Benilla\fishing\bar_frame">
+                    <Size>
+                        <AbsDimension x="64" y="300"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                    </Anchors>
+                </Texture>
+                <Texture name="$parentProgressBg" file="Interface\Benilla\fishing\progress_bg">
+                    <Size>
+                        <AbsDimension x="12" y="268"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="72" y="-16"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <Texture name="$parentWater" file="Interface\Benilla\fishing\bar_water">
+                    <Size>
+                        <AbsDimension x="32" y="268"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="16" y="-16"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+                <Texture name="$parentProgressFill" file="Interface\Benilla\fishing\progress_fill">
+                    <Size>
+                        <AbsDimension x="12" y="1"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="BOTTOM" relativeTo="$parentProgressBg"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture name="$parentZoneBottom" file="Interface\Benilla\fishing\catch_zone">
+                    <Size>
+                        <AbsDimension x="32" y="6"/>
+                    </Size>
+                </Texture>
+                <Texture name="$parentZoneMid" file="Interface\Benilla\fishing\catch_zone">
+                    <Size>
+                        <AbsDimension x="32" y="1"/>
+                    </Size>
+                </Texture>
+                <Texture name="$parentZoneTop" file="Interface\Benilla\fishing\catch_zone">
+                    <Size>
+                        <AbsDimension x="32" y="6"/>
+                    </Size>
+                </Texture>
+                <Texture name="$parentFishGlow" file="Interface\Benilla\fishing\fish_glow" alphaMode="ADD">
+                    <Size>
+                        <AbsDimension x="40" y="40"/>
+                    </Size>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <Texture name="$parentFish" file="Interface\Benilla\fishing\fish">
+                    <Size>
+                        <AbsDimension x="24" y="24"/>
+                    </Size>
+                </Texture>
+                <Texture name="$parentChest" file="Interface\Benilla\fishing\chest" hidden="true">
+                    <Size>
+                        <AbsDimension x="20" y="20"/>
+                    </Size>
+                </Texture>
+                <Texture name="$parentChestBar" file="Interface\Benilla\fishing\mini_bar_frame" hidden="true">
+                    <Size>
+                        <AbsDimension x="24" y="6"/>
+                    </Size>
+                </Texture>
+                <Texture name="$parentChestFill" file="Interface\Benilla\fishing\progress_fill" hidden="true">
+                    <Size>
+                        <AbsDimension x="1" y="4"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="$parentChestBar">
+                            <Offset>
+                                <AbsDimension x="1" y="0"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                    <Color r="1" g="0.85" b="0.2"/>
+                </Texture>
+                <Texture name="$parentReel" file="Interface\Benilla\fishing\reel">
+                    <Size>
+                        <AbsDimension x="28" y="28"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="BOTTOMRIGHT"/>
+                    </Anchors>
+                </Texture>
+                <FontString name="$parentName" inherits="GameFontNormalLarge">
+                    <Anchors>
+                        <Anchor point="BOTTOM" relativePoint="TOP">
+                            <Offset>
+                                <AbsDimension x="0" y="4"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentHint" inherits="GameFontHighlightSmall" text="Hold [Left-Click] to reel">
+                    <Anchors>
+                        <Anchor point="TOP" relativePoint="BOTTOM">
+                            <Offset>
+                                <AbsDimension x="0" y="-40"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+
+    <Frame name="BenillaFishingAngler" parent="UIParent" frameStrata="HIGH" hidden="true">
+        <Size>
+            <AbsDimension x="160" y="28"/>
+        </Size>
+        <Anchors>
+            <Anchor point="TOP" relativeTo="BenillaFishingReel" relativePoint="BOTTOM">
+                <Offset>
+                    <AbsDimension x="0" y="-4"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBadge" file="Interface\Benilla\fishing\level_badge">
+                    <Size>
+                        <AbsDimension x="28" y="28"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT"/>
+                    </Anchors>
+                </Texture>
+                <Texture name="$parentBar" file="Interface\Benilla\fishing\xp_bar_frame">
+                    <Size>
+                        <AbsDimension x="128" y="16"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="$parentBadge" relativePoint="RIGHT">
+                            <Offset>
+                                <AbsDimension x="4" y="0"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture name="$parentFill" file="Interface\Benilla\fishing\xp_bar_fill">
+                    <Size>
+                        <AbsDimension x="1" y="12"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="LEFT" relativeTo="$parentBar">
+                            <Offset>
+                                <AbsDimension x="2" y="0"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString name="$parentLevel" inherits="GameFontNormal">
+                    <Anchors>
+                        <Anchor point="CENTER" relativeTo="$parentBadge"/>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentText" inherits="GameFontHighlightSmall">
+                    <Anchors>
+                        <Anchor point="CENTER" relativeTo="$parentBar"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+
+    <Frame name="BenillaFishingBanner" parent="UIParent" frameStrata="HIGH" hidden="true">
+        <Size>
+            <AbsDimension x="256" y="64"/>
+        </Size>
+        <Anchors>
+            <Anchor point="TOP">
+                <Offset>
+                    <AbsDimension x="0" y="-120"/>
+                </Offset>
+            </Anchor>
+        </Anchors>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentArt" file="Interface\Benilla\fishing\banner_success" setAllPoints="true"/>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString name="$parentText" inherits="GameFontNormalLarge">
+                    <Anchors>
+                        <Anchor point="CENTER"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+
+    <!-- Always shown, so its OnUpdate runs while the bar and badge are hidden. -->
+    <Frame name="BenillaFishingController" parent="UIParent">
+        <Size>
+            <AbsDimension x="1" y="1"/>
+        </Size>
+        <Anchors>
+            <Anchor point="TOPLEFT"/>
+        </Anchors>
+        <Scripts>
+            <OnLoad>
+                this:RegisterEvent("FISHING_REEL_START")
+                this:RegisterEvent("FISHING_REEL_END")
+                this:RegisterEvent("ANGLER_UPDATE")
+            </OnLoad>
+            <OnEvent>
+                BenillaFishing_OnEvent()
+            </OnEvent>
+            <OnUpdate>
+                BenillaFishing_OnUpdate(arg1)
+            </OnUpdate>
+        </Scripts>
+    </Frame>
+</Ui>

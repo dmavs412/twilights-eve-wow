@@ -5,3 +5,4 @@
 third_party/kira/** -text
 *.jpg binary
 *.png binary
+*.tga binary

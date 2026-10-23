@@ -58,6 +58,7 @@ mod dressup;
 mod duel;
 pub(crate) mod event;
 mod extract;
+mod fishing;
 mod follow;
 pub(crate) mod font;
 mod font_block;
@@ -190,6 +191,7 @@ pub use cvars::{
 pub use death::{DeathAction, DeathUiState};
 pub use dressup::DressUpIntent;
 pub use duel::DuelRequest;
+pub use fishing::ReelView;
 pub use follow::FollowRequest;
 pub use gm_ticket::{GmTicketIntent, GmTicketWrite};
 pub use gossip::{GossipMenu, GossipOptionView, GossipQuestRow};

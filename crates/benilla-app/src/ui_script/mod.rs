@@ -33,6 +33,7 @@ pub(crate) mod gate;
 pub(crate) use session::VmMemo;
 
 // Not test-only: the addon harness loads the whole shipped interface under each addon.
+pub(crate) use content::image as layer_image;
 pub(crate) use manifest::default_bindings;
 pub(crate) use manifest::load_default_ui;
 pub(crate) use manifest::load_ingame_ui;
@@ -696,6 +697,8 @@ mod combo_frame_tests;
 
 #[cfg(test)]
 mod boss_bar_tests;
+#[cfg(test)]
+mod fishing_reel_tests;
 #[cfg(test)]
 mod unit_frame_tests;
 
