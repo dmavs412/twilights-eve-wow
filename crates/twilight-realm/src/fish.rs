@@ -259,7 +259,8 @@ pub(crate) fn fish(item: u32) -> Option<&'static Fish> {
         .find(|f| f.item == item)
 }
 
-fn pools() -> impl Iterator<Item = &'static Pool> {
+/// Every pool: the shipped ones, then any a test added.
+pub(crate) fn pools() -> impl Iterator<Item = &'static Pool> {
     let shipped = file().pool.iter();
     shipped.chain(extra().into_iter().flat_map(|a| &a.pool))
 }

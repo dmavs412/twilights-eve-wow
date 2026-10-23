@@ -15,11 +15,11 @@ use crate::items;
 
 /// The buff slot the meal's aura shows in: the last one, clear of the skills' auras.
 const AURA_SLOT: u16 = 31;
-const UNIT_FIELD_AURA: u16 = 47;
-const UNIT_FIELD_AURAFLAGS: u16 = 95;
-const UNIT_FIELD_AURALEVELS: u16 = 101;
+pub(super) const UNIT_FIELD_AURA: u16 = 47;
+pub(super) const UNIT_FIELD_AURAFLAGS: u16 = 95;
+pub(super) const UNIT_FIELD_AURALEVELS: u16 = 101;
 /// `AFLAG_CANCELABLE | AFLAG_EFF_INDEX_0`.
-const AURA_FLAGS: u32 = 0x03;
+pub(super) const AURA_FLAGS: u32 = 0x03;
 /// `UNIT_FIELD_BYTES_1`: its low byte is the stand state, 1 sitting.
 const UNIT_FIELD_BYTES_1: u16 = 138;
 const UNIT_STAND_STATE_SIT: u32 = 1;

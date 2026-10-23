@@ -172,6 +172,16 @@ pub enum SessionEvent {
         perfect: bool,
         treasure: bool,
     },
+    /// Twilight's Eve, not 1.12: the Fishing Journal (spec #323), complete at login and on every
+    /// change. Never wire-decoded.
+    FishingJournal {
+        /// The chosen bait's item entry.
+        bait: Option<u32>,
+        /// `(zone AreaTable id, [(fish item, best: 0 none, 1 caught, 2 perfect)])`, in pool order.
+        zones: Vec<(u32, Vec<(u32, u8)>)>,
+        /// `(item, zone, hint found, caught)`; empty until the Legendary Fish land.
+        legends: Vec<(u32, u32, bool, bool)>,
+    },
     /// Twilight's Eve, not 1.12: the character's Angler Level, sent at login and on every change.
     /// Never wire-decoded.
     Angler { level: u8, xp: u32, xp_to_next: u32 },

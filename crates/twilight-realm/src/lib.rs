@@ -431,6 +431,11 @@ pub enum RealmCommand {
         treasure: bool,
         secs: f32,
     },
+    /// Choose the Fishing Journal's bait (spec #323): a `[[bait]]` item the character carries, or
+    /// `None` to clear the slot. Anything else is ignored.
+    SetBait {
+        item: Option<u32>,
+    },
     /// A dev aid (`WOW_PROBE_GOTO`): on the next tick, teleport the player to `(x, y)` on its
     /// map, on the ground there, facing `facing` or its own way. A spot with no ground is refused
     /// with a notification.
@@ -1319,13 +1324,17 @@ impl Realm {
                 treasure,
                 secs,
             } => self.fishing_result(won, perfect, treasure, secs),
+            RealmCommand::SetBait { item } => self.set_bait(item),
             RealmCommand::UseItem { bag, slot } => {
                 if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {
                         let slot = inventory::Pos { bag, slot };
                         // A Quest Starter opens its quest; food and drink are eaten at once;
                         // anything else casts its spell.
-                        if !quests::use_starter(c, slot, &mut self.events) {
+                        // A lure goes on the character (#329).
+                        if !quests::use_starter(c, slot, &mut self.events)
+                            && !w.use_lure(slot, c, &mut self.events)
+                        {
                             match w.eat_or_drink(slot, c, self.wall, &mut self.events) {
                                 Some(true) => {
                                     let guid = w.guid;

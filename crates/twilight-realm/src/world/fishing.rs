@@ -2,11 +2,17 @@
 //! The cast is checked at once for what needs no host. The water and the pool wait for the
 //! realm's next tick, which has the host. The bobber is a run-time GameObject the realm keeps
 //! (`crate::objects`); this session names the ones whose cast ended in `spent_bobbers`.
+//!
+//! A lure (#329) is a ten-minute aura under its item's use spell; the chosen bait is taken one per
+//! cast when the bobber lands. What both add is worked out once, at the landing ([`Boost`]), and
+//! the cast keeps it to the bite. The Fishing Journal is each fish's best catch and the bait.
 
 use benilla_protocol::messages::GossipOption;
 use benilla_protocol::SessionEvent;
 
 use super::cast::{refused, SPELL_FAILED_EQUIPPED_ITEM_CLASS, SPELL_FAILED_NOT_KNOWN};
+use super::food::UNIT_FIELD_AURALEVELS;
+use super::food::{use_up_one, AURA_FLAGS, UNIT_FIELD_AURA, UNIT_FIELD_AURAFLAGS};
 use super::InWorld;
 use crate::audience::Audience;
 use crate::characters::Char;
@@ -40,6 +46,42 @@ const OPTION_TEACH: u32 = 2;
 const ICON_VENDOR: u8 = 1;
 const ICON_TRAINER: u8 = 3;
 
+/// The buff slot a lure's aura shows in: the one before the meal's.
+const LURE_AURA_SLOT: u16 = 30;
+
+/// The Journal's best catch of a fish.
+const CAUGHT: u8 = 1;
+const PERFECT: u8 = 2;
+
+/// What a cast's lure and bait add up to (#329).
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
+struct Boost {
+    /// Counted as this many Angler Levels more, for the zone and the bite gate only.
+    angler_levels: u32,
+    /// The bite comes this percent sooner (negative) or later.
+    bite_wait_pct: i32,
+    /// The catch zone is this percent taller, after the cap.
+    zone_pct: i32,
+    /// Percentage points more treasure chance.
+    treasure_points: u32,
+}
+
+impl Boost {
+    fn with(mut self, e: &fish::Effect) -> Self {
+        self.angler_levels += e.angler_levels;
+        self.bite_wait_pct += e.bite_wait_pct;
+        self.zone_pct += e.zone_pct;
+        self.treasure_points += e.treasure_points;
+        self
+    }
+}
+
+/// The lure on the character: its item and the seconds left.
+pub(super) struct Lure {
+    item: u32,
+    left: f32,
+}
+
 /// A Fishing cast under way, from the cast to the end of the Reeling Bar.
 pub(super) struct Fishing {
     /// The bobber's guid; 0 until it lands.
@@ -53,6 +95,7 @@ enum Stage {
     /// The bobber floats: the bite comes in `bite_in` seconds, and the cast is lost in `left`.
     Floating {
         pool: &'static Pool,
+        boost: Boost,
         bite_in: f32,
         left: f32,
     },
@@ -92,9 +135,56 @@ pub(super) fn angler(c: &Char) -> SessionEvent {
     }
 }
 
-/// The Angler Level a cast counts as. Lures and bait add to it (#329).
-fn effective_level(c: &Char) -> u32 {
-    u32::from(c.angler_level)
+/// The Angler Level a cast counts as: the character's, and what its lure and bait add. The zone
+/// height and the bite gate read it; XP and the grey rule read the character's own.
+fn effective_level(c: &Char, boost: Boost) -> u32 {
+    u32::from(c.angler_level) + boost.angler_levels
+}
+
+/// `FishingJournal`: the bait, and every pool's fish with the character's best catch of each.
+pub(super) fn journal(c: &Char) -> SessionEvent {
+    let best = |item: u32| {
+        c.catches
+            .iter()
+            .find(|&&(i, _)| i == item)
+            .map_or(0, |&(_, b)| b)
+    };
+    SessionEvent::FishingJournal {
+        bait: c.bait,
+        zones: fish::pools()
+            .map(|p| {
+                (
+                    p.zone,
+                    p.fish.iter().map(|f| (f.item, best(f.item))).collect(),
+                )
+            })
+            .collect(),
+        legends: Vec::new(),
+    }
+}
+
+/// Records a catch of `item` in the Journal, a perfect one beating a plain one: whether it
+/// changed.
+fn record_catch(c: &mut Char, item: u32, perfect: bool) -> bool {
+    let quality = if perfect { PERFECT } else { CAUGHT };
+    match c.catches.iter_mut().find(|(i, _)| *i == item) {
+        Some((_, best)) if *best >= quality => false,
+        Some((_, best)) => {
+            *best = quality;
+            true
+        }
+        None => {
+            c.catches.push((item, quality));
+            true
+        }
+    }
+}
+
+/// The chosen bait's row while the character carries one.
+fn carried_bait(c: &Char) -> Option<&'static fish::Bait> {
+    c.bait
+        .filter(|&b| c.inventory.count(b) > 0)
+        .and_then(fish::bait)
 }
 
 /// Whether the main hand holds a fishing pole.
@@ -236,6 +326,101 @@ impl InWorld {
         std::mem::take(&mut self.spent_bobbers)
     }
 
+    /// What the lure on the character adds to a cast.
+    fn lure_boost(&self) -> Boost {
+        self.lure
+            .as_ref()
+            .and_then(|l| fish::lure(l.item))
+            .map_or(Boost::default(), |l| Boost::default().with(&l.effect))
+    }
+
+    /// `CMSG_USE_ITEM` on the item in player slot `slot`, if it is a lure: one of the stack goes
+    /// and its aura goes on under the item's use spell for the lure's duration, in place of any
+    /// lure before it. The stock spell wants the pole as its target; whatever target the client
+    /// sent, the use is taken. Whether it was a lure.
+    pub(crate) fn use_lure(
+        &mut self,
+        slot: Pos,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let Some(item) = c.inventory.get(slot) else {
+            return false;
+        };
+        let entry = item.entry;
+        let Some(lure) = fish::lure(entry) else {
+            return false;
+        };
+        let spell_id = items::template(entry).map_or(0, |t| t.use_spell);
+        if self.dead() {
+            return true;
+        }
+        let Some(item_guid) = use_up_one(slot, c, events) else {
+            return true;
+        };
+        events.push(SessionEvent::CastResult {
+            spell_id,
+            success: true,
+            reason: None,
+            arg: None,
+        });
+        events.push(SessionEvent::SpellGo {
+            caster: self.guid,
+            spell_id,
+            cast_flags: 0,
+            hits: vec![self.guid],
+            misses: Vec::new(),
+            target: Some(self.guid),
+            go_target: None,
+            dest: None,
+            ammo_display_id: None,
+            item_caster: Some(item_guid),
+        });
+        let s = LURE_AURA_SLOT;
+        events.push(values(
+            self.guid,
+            &[
+                (UNIT_FIELD_AURA + s, spell_id),
+                (UNIT_FIELD_AURAFLAGS + s / 8, AURA_FLAGS << (4 * (s % 8))),
+                (
+                    UNIT_FIELD_AURALEVELS + s / 4,
+                    u32::from(c.level) << (8 * (s % 4)),
+                ),
+            ],
+        ));
+        let secs = lure.duration_secs as f32;
+        events.push(SessionEvent::AuraDuration {
+            slot: s as u8,
+            remaining_ms: clock::ms(secs),
+        });
+        self.lure = Some(Lure {
+            item: entry,
+            left: secs,
+        });
+        true
+    }
+
+    /// The lure's clock: when it runs out its aura goes.
+    fn lure_tick(&mut self, dt: f32, events: &mut Vec<SessionEvent>) {
+        let Some(l) = &mut self.lure else {
+            return;
+        };
+        l.left -= dt;
+        if l.left > 0.0 {
+            return;
+        }
+        self.lure = None;
+        let s = LURE_AURA_SLOT;
+        events.push(values(
+            self.guid,
+            &[
+                (UNIT_FIELD_AURA + s, 0),
+                (UNIT_FIELD_AURAFLAGS + s / 8, 0),
+                (UNIT_FIELD_AURALEVELS + s / 4, 0),
+            ],
+        ));
+    }
+
     /// The cast's clock, with the host: a fresh cast lands or is refused, a floating bobber
     /// bites, and an unanswered bobber or bar is lost. `Some` with the bobber to make when the
     /// cast lands.
@@ -243,23 +428,25 @@ impl InWorld {
         &mut self,
         dt: f32,
         host: &dyn Host,
-        c: &Char,
+        c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) -> Option<ObjectSpec> {
+        self.lure_tick(dt, events);
         let f = self.fishing.as_mut()?;
         match &mut f.stage {
             Stage::Cast => return self.land(host, c, rng, events),
             Stage::Floating {
                 pool,
+                boost,
                 bite_in,
                 left,
             } => {
                 *bite_in -= dt;
                 *left -= dt;
                 if *bite_in <= 0.0 {
-                    let pool = *pool;
-                    self.bite(pool, c, rng, events);
+                    let (pool, boost) = (*pool, *boost);
+                    self.bite(pool, boost, c, rng, events);
                 } else if *left <= 0.0 {
                     self.lose_fish(events);
                 }
@@ -275,11 +462,11 @@ impl InWorld {
     }
 
     /// The cast lands a random distance ahead: on water whose pool has a fish that bites, the
-    /// bobber floats; elsewhere the cast is refused.
+    /// bobber floats and one of the chosen bait goes; elsewhere the cast is refused and takes none.
     fn land(
         &mut self,
         host: &dyn Host,
-        c: &Char,
+        c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) -> Option<ObjectSpec> {
@@ -295,7 +482,9 @@ impl InWorld {
             events.push(refused(s.id, SPELL_FAILED_NOT_FISHABLE));
             return None;
         };
-        let effective = effective_level(c);
+        let bait = carried_bait(c);
+        let boost = bait.map_or(self.lure_boost(), |b| self.lure_boost().with(&b.effect));
+        let effective = effective_level(c, boost);
         let pool = fish::pool_at(c.map, x, y, host.area_at(c.map, x, y))
             .filter(|&p| !biters(p, effective).is_empty());
         let Some(pool) = pool else {
@@ -305,10 +494,21 @@ impl InWorld {
             });
             return None;
         };
+        match bait {
+            Some(b) => take_bait(c, b.item, events),
+            // A bait chosen but no longer carried clears the slot.
+            None if c.bait.is_some() => {
+                c.bait = None;
+                events.push(journal(c));
+            }
+            None => {}
+        }
+        let wait = rng.frand(s.bite_secs[0], s.bite_secs[1]);
         let f = self.fishing.as_mut()?;
         f.stage = Stage::Floating {
             pool,
-            bite_in: rng.frand(s.bite_secs[0], s.bite_secs[1]),
+            boost,
+            bite_in: wait * (1.0 + boost.bite_wait_pct as f32 / 100.0).max(0.0),
             left: s.cast_secs,
         };
         Some(ObjectSpec {
@@ -374,11 +574,12 @@ impl InWorld {
     fn bite(
         &mut self,
         pool: &'static Pool,
+        boost: Boost,
         c: &Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) {
-        let effective = effective_level(c);
+        let effective = effective_level(c, boost);
         let caught = pick(&biters(pool, effective), |f| f.weight, rng).copied();
         let (Some(caught), Some(f)) = (caught, self.fishing.as_mut()) else {
             return self.lose_fish(events);
@@ -390,9 +591,12 @@ impl InWorld {
         let above = caught.level.saturating_sub(effective) as f32;
         let difficulty =
             (def.difficulty as f32 + bar.difficulty_per_level_above * above).min(100.0);
-        let zone_height =
-            (bar.zone_base + bar.zone_per_level * (effective - 1) as f32).min(bar.zone_max);
-        let chance = bar.treasure_base + bar.treasure_per_level * f32::from(c.angler_level);
+        let zone_height = (bar.zone_base + bar.zone_per_level * (effective - 1) as f32)
+            .min(bar.zone_max)
+            * (1.0 + boost.zone_pct as f32 / 100.0);
+        let chance = bar.treasure_base
+            + bar.treasure_per_level * f32::from(c.angler_level)
+            + boost.treasure_points as f32 / 100.0;
         let treasure = (rng.frand(0.0, 1.0) < chance).then(|| {
             let [lo, hi] = bar.treasure_appears_secs;
             let appears_at = rng.frand(lo, hi);
@@ -484,6 +688,9 @@ impl InWorld {
             let xp = catch_xp(item, bite.level, perfect, c.angler_level);
             gain_angler_xp(c, xp);
             events.push(angler(c));
+            if record_catch(c, item, perfect) {
+                events.push(journal(c));
+            }
         }
         events.push(SessionEvent::FishingEnd {
             caught,
@@ -495,6 +702,22 @@ impl InWorld {
     }
 }
 
+/// Takes one of bait `item` from the bags; the last one clears the slot and sends the Journal.
+fn take_bait(c: &mut Char, item: u32, events: &mut Vec<SessionEvent>) {
+    let slot = c
+        .inventory
+        .iter()
+        .find(|(at, i)| i.entry == item && !at.is_worn())
+        .map(|(at, _)| at);
+    if let Some(slot) = slot {
+        use_up_one(slot, c, events);
+    }
+    if c.inventory.count(item) == 0 {
+        c.bait = None;
+        events.push(journal(c));
+    }
+}
+
 impl crate::Realm {
     /// The served session's Fishing clock, with the host: a cast that lands gets its bobber,
     /// seen by everyone in the world on its map, and the bobbers of the casts that ended go.
@@ -502,7 +725,7 @@ impl crate::Realm {
         let Some(w) = &mut self.world else {
             return;
         };
-        let Some(c) = self.characters.get(w.guid) else {
+        let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
         let landed = w.fishing_tick(dt, host, c, &mut self.rng, &mut self.events);
@@ -557,6 +780,24 @@ impl crate::Realm {
         if changed {
             self.save(guid);
         }
+    }
+
+    /// `SetBait`: a `[[bait]]` item the character carries becomes the Journal's bait, and `None`
+    /// clears it; the Journal comes back. Anything else is ignored.
+    pub(crate) fn set_bait(&mut self, item: Option<u32>) {
+        let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(guid) else {
+            return;
+        };
+        let fits = item.is_none_or(|i| fish::bait(i).is_some() && c.inventory.count(i) > 0);
+        if !fits {
+            return;
+        }
+        c.bait = item;
+        self.events.push(journal(c));
+        self.save(guid);
     }
 
     /// A line of Lee Brown's menu: his goods open the merchant window; the lesson teaches

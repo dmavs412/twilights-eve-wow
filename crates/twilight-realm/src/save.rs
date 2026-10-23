@@ -179,6 +179,12 @@ struct Save {
     angler_level: u8,
     #[serde(default, skip_serializing_if = "is_zero")]
     angler_xp: u32,
+    /// The Fishing Journal (#329), added within version 4: a save without it has caught nothing
+    /// and chosen no bait. `[fish item, 1 caught or 2 perfect]` per fish.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    catches: Vec<(u32, u8)>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    bait: Option<u32>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -328,6 +334,8 @@ pub(crate) fn export(c: &Char) -> String {
         knows_fishing: c.knows_fishing,
         angler_level: c.angler_level,
         angler_xp: c.angler_xp,
+        catches: c.catches.clone(),
+        bait: c.bait,
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -397,6 +405,8 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         knows_fishing: s.knows_fishing,
         angler_level: s.angler_level.max(1),
         angler_xp: s.angler_xp,
+        catches: s.catches,
+        bait: s.bait,
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);

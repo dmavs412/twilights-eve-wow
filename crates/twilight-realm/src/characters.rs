@@ -78,6 +78,10 @@ pub(crate) struct Char {
     /// Their **Angler Level**, from 1, and the XP toward the next.
     pub(crate) angler_level: u8,
     pub(crate) angler_xp: u32,
+    /// The Fishing Journal's best catch of each fish, `(item, 1 caught or 2 perfect)`.
+    pub(crate) catches: Vec<(u32, u8)>,
+    /// The Journal's chosen bait, a `[[bait]]` item.
+    pub(crate) bait: Option<u32>,
 }
 
 /// What being **Marked** holds (#179): the logged-in time left, and the hunter that won, as
@@ -174,6 +178,8 @@ impl Characters {
             knows_fishing: false,
             angler_level: 1,
             angler_xp: 0,
+            catches: Vec::new(),
+            bait: None,
         });
         CHAR_CREATE_SUCCESS
     }

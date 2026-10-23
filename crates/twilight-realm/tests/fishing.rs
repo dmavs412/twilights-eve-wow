@@ -24,7 +24,8 @@ const GAMEOBJECT_TYPE_ID: u16 = 21;
 const FISHINGNODE: u32 = 17;
 
 /// Test pools, each fished by a circle of water off its own side of the Northshire start: a lone
-/// Raw Brilliant Smallfish to the north and a lone level-15 catfish to the west.
+/// Raw Brilliant Smallfish to the north, a lone level-15 catfish to the west and a lone level-11
+/// mud snapper to the south.
 const TEST_FISH: &str = r#"
 [[pool]]
 key = "test_smallfish"
@@ -39,6 +40,13 @@ zone = 990002
 fish = [{ item = 6308, weight = 100.0, level = 15 }]
 treasure = []
 copper = [0, 0]
+
+[[pool]]
+key = "test_level_11"
+zone = 990003
+fish = [{ item = 6289, weight = 100.0, level = 11 }]
+treasure = []
+copper = [0, 0]
 "#;
 
 /// Which way the character faces its water from the start, 15 yards off.
@@ -50,6 +58,8 @@ enum Side {
     North,
     /// The lone level-15 catfish.
     West,
+    /// The lone level-11 mud snapper.
+    South,
 }
 
 impl Side {
@@ -58,6 +68,7 @@ impl Side {
             Side::East => 0.0,
             Side::North => std::f32::consts::FRAC_PI_2,
             Side::West => std::f32::consts::PI,
+            Side::South => -std::f32::consts::FRAC_PI_2,
         }
     }
 }
@@ -72,6 +83,7 @@ fn pond_centre(start: [f32; 3], side: Side) -> [f32; 2] {
 fn test_fish(start: [f32; 3]) -> String {
     let [nx, ny] = pond_centre(start, Side::North);
     let [wx, wy] = pond_centre(start, Side::West);
+    let [sx, sy] = pond_centre(start, Side::South);
     format!(
         "{TEST_FISH}
 [[water]]
@@ -85,6 +97,12 @@ key = \"test_level_15\"
 name = \"Catfish Pond\"
 circle = [0, {wx}, {wy}, 9.0]
 pool = \"test_level_15\"
+
+[[water]]
+key = \"test_level_11\"
+name = \"Snapper Pond\"
+circle = [0, {sx}, {sy}, 9.0]
+pool = \"test_level_11\"
 "
     )
 }
@@ -92,6 +110,16 @@ pool = \"test_level_15\"
 /// A new Elwynn character's save, edited: Angler Level `level`, Fishing known or not, and a
 /// Fishing Pole in the main hand or nothing carried. Its guid, the save and where it starts.
 fn save(level: u8, knows: bool, pole: bool) -> (u64, String, [f32; 3]) {
+    save_carrying(level, knows, pole, &[])
+}
+
+/// [`save`], also carrying `items`: `(player slot, entry, count)`, the backpack from 23.
+fn save_carrying(
+    level: u8,
+    knows: bool,
+    pole: bool,
+    items: &[(u8, u32, u32)],
+) -> (u64, String, [f32; 3]) {
     let mut maker = realm();
     let RealmCommand::CreateCharacter(mut req) = create_cmd("Lee", HUMAN, 0, WARRIOR) else {
         unreachable!()
@@ -114,6 +142,11 @@ fn save(level: u8, knows: bool, pole: bool) -> (u64, String, [f32; 3]) {
             "\n[[items]]\nslot = {MAIN_HAND}\nentry = {FISHING_POLE}\ncount = 1\n"
         ));
     }
+    for (slot, entry, count) in items {
+        blob.push_str(&format!(
+            "\n[[items]]\nslot = {slot}\nentry = {entry}\ncount = {count}\n"
+        ));
+    }
     let table: toml::Table = blob.parse().unwrap();
     let p = table["position"].as_array().unwrap();
     let start = std::array::from_fn(|i| p[i].as_float().unwrap() as f32);
@@ -129,7 +162,16 @@ struct Angler {
 }
 
 fn angler(level: u8, knows: bool, pole: bool, side: Side) -> Angler {
-    let (guid, blob, start) = save(level, knows, pole);
+    carrying(level, side, knows, pole, &[])
+}
+
+/// [`angler`], with a pole and Fishing known, carrying `items` in the backpack.
+fn angler_carrying(level: u8, side: Side, items: &[(u8, u32, u32)]) -> Angler {
+    carrying(level, side, true, true, items)
+}
+
+fn carrying(level: u8, side: Side, knows: bool, pole: bool, items: &[(u8, u32, u32)]) -> Angler {
+    let (guid, blob, start) = save_carrying(level, knows, pole, items);
     let host = Pond {
         centre: pond_centre(start, side),
         radius: 8.0,
@@ -442,4 +484,225 @@ fn the_save_keeps_fishing_and_an_old_save_loads_at_the_defaults() {
     assert_eq!(angler_event(&drain(&mut realm)), Some((1, 0)));
     let back = realm.export_character(guid).unwrap();
     assert!(back.contains("angler_level = 1\n") && !back.contains("knows_fishing"));
+}
+
+// ── Bait, lures and the Journal (#329) ──────────────────────────────────────────────────────────
+
+const WRIGGLING_WORMS: u32 = 960101;
+const SHINY_BAUBLE: u32 = 6529;
+const NIGHTCRAWLERS: u32 = 6530;
+const BRIGHT_BAUBLES: u32 = 6532;
+const MUD_SNAPPER: u32 = 6289;
+/// The backpack's first two slots, and the bag the backpack is.
+const PACK_1: u8 = 23;
+const PACK_2: u8 = 24;
+const PLAYER_BAG: u8 = 255;
+
+/// The last `FishingJournal` in `events`: its bait and its zones.
+fn journal(events: &[SessionEvent]) -> Option<(Option<u32>, Vec<(u32, Vec<(u32, u8)>)>)> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::FishingJournal { bait, zones, .. } => Some((*bait, zones.clone())),
+        _ => None,
+    })
+}
+
+/// The Journal's best catch of `fish` in pool zone `zone`.
+fn best(zones: &[(u32, Vec<(u32, u8)>)], zone: u32, fish: u32) -> Option<u8> {
+    let (_, fish_of) = zones.iter().find(|(z, _)| *z == zone)?;
+    fish_of.iter().find(|(f, _)| *f == fish).map(|&(_, b)| b)
+}
+
+fn zone_height(bite: &SessionEvent) -> f32 {
+    match bite {
+        SessionEvent::FishingBite { zone_height, .. } => *zone_height,
+        _ => unreachable!(),
+    }
+}
+
+impl Angler {
+    fn set_bait(&mut self, item: Option<u32>) -> Vec<SessionEvent> {
+        self.realm.handle(RealmCommand::SetBait { item });
+        drain(&mut self.realm)
+    }
+
+    fn use_item(&mut self, slot: u8) -> Vec<SessionEvent> {
+        self.realm.handle(RealmCommand::UseItem {
+            bag: PLAYER_BAG,
+            slot,
+        });
+        self.realm.tick(0.0, &self.host);
+        drain(&mut self.realm)
+    }
+}
+
+#[test]
+fn login_sends_the_journal_with_every_pool_and_its_fish() {
+    let a = angler(1, true, true, Side::East);
+    let (bait, zones) = journal(&a.events).expect("a Journal at login");
+    assert_eq!(bait, None);
+    assert_eq!(
+        best(&zones, ELWYNN, SMALLFISH),
+        Some(0),
+        "uncaught fish are listed"
+    );
+    for fish in ELWYNN_FISH {
+        assert!(
+            best(&zones, ELWYNN, fish).is_some(),
+            "{fish} in the Elwynn page"
+        );
+    }
+}
+
+#[test]
+fn each_cast_that_lands_takes_one_bait_and_the_last_clears_the_slot() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, WRIGGLING_WORMS, 3)]);
+    let chose = a.set_bait(Some(WRIGGLING_WORMS));
+    assert_eq!(journal(&chose).map(|j| j.0), Some(Some(WRIGGLING_WORMS)));
+
+    for n in 1..=3 {
+        let events = a.cast();
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, SessionEvent::ChannelStart { .. })),
+            "cast {n} landed"
+        );
+        let cleared = journal(&events).map(|j| j.0);
+        if n < 3 {
+            assert_eq!(cleared, None, "cast {n} still has bait");
+        } else {
+            assert_eq!(cleared, Some(None), "the last bait clears the slot");
+        }
+    }
+    let saved = a.realm.export_character(a.guid).unwrap();
+    assert!(
+        !saved.contains("960101"),
+        "the worms are all gone:\n{saved}"
+    );
+}
+
+#[test]
+fn a_refused_cast_takes_no_bait() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, WRIGGLING_WORMS, 1)]);
+    a.set_bait(Some(WRIGGLING_WORMS));
+    let [x, y] = a.host.centre;
+    a.host.centre = [x - 30.0, y];
+    let events = a.cast();
+    assert_eq!(refusal(&events), Some(SPELL_FAILED_NOT_FISHABLE));
+    assert_eq!(journal(&events), None);
+    let saved = a.realm.export_character(a.guid).unwrap();
+    assert!(saved.contains("bait = 960101"), "{saved}");
+}
+
+#[test]
+fn set_bait_ignores_an_item_not_carried_or_not_a_bait() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, SMALLFISH, 1)]);
+    assert_eq!(
+        journal(&a.set_bait(Some(WRIGGLING_WORMS))),
+        None,
+        "not carried"
+    );
+    assert_eq!(journal(&a.set_bait(Some(SMALLFISH))), None, "not a bait");
+    let saved = a.realm.export_character(a.guid).unwrap();
+    assert!(!saved.contains("bait ="), "{saved}");
+}
+
+#[test]
+fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, SHINY_BAUBLE, 1)]);
+    let used = a.use_item(PACK_1);
+    assert!(
+        used.iter().any(|e| matches!(
+            e,
+            SessionEvent::AuraDuration {
+                slot: 30,
+                remaining_ms: 600_000
+            }
+        )),
+        "the lure's ten-minute aura: {used:?}"
+    );
+    let (_, bite) = a.hook();
+    assert!((zone_height(&bite) - 0.1735).abs() < 1e-6, "{bite:?}");
+
+    // An L11 fish bites at Angler 1 with the lure (11 < 2 + 10).
+    let mut south = angler_carrying(1, Side::South, &[(PACK_1, SHINY_BAUBLE, 1)]);
+    south.use_item(PACK_1);
+    let (_, bite) = south.hook();
+    assert!(matches!(
+        bite,
+        SessionEvent::FishingBite {
+            fish: MUD_SNAPPER,
+            ..
+        }
+    ));
+    let landed = south.result(true, false, 6.0);
+    // Angler 1's own XP: 5 + 2 x 11, the lure adding nothing.
+    assert_eq!(angler_event(&landed), Some((1, 27)));
+
+    // Without it the same water has nothing that bites.
+    let mut bare = angler(1, true, true, Side::South);
+    assert!(bare.cast().iter().any(|e| matches!(
+        e,
+        SessionEvent::Notification { text } if text == "Nothing is biting"
+    )));
+}
+
+#[test]
+fn bright_baubles_widen_the_zone_after_the_cap() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, BRIGHT_BAUBLES, 1)]);
+    a.use_item(PACK_1);
+    let (_, bite) = a.hook();
+    assert!((zone_height(&bite) - 0.17 * 1.15).abs() < 1e-6, "{bite:?}");
+}
+
+#[test]
+fn nightcrawlers_and_worms_bring_the_bite_within_five_and_a_half_seconds() {
+    let mut a = angler_carrying(
+        1,
+        Side::East,
+        &[(PACK_1, NIGHTCRAWLERS, 1), (PACK_2, WRIGGLING_WORMS, 1)],
+    );
+    a.use_item(PACK_1);
+    a.set_bait(Some(WRIGGLING_WORMS));
+    let mut events = a.cast();
+    // 12 x (1 - 0.30 - 0.25) = 5.4 s at the longest.
+    events.extend(a.wait_for_bite(5.45));
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::FishingBite { .. })),
+        "no bite within 5.4 s"
+    );
+}
+
+#[test]
+fn the_journal_keeps_the_best_catch_and_the_save_keeps_it_and_the_bait() {
+    let mut a = angler_carrying(1, Side::North, &[(PACK_1, WRIGGLING_WORMS, 5)]);
+    a.hook();
+    let first = a.result(true, false, 6.0);
+    let (_, zones) = journal(&first).expect("a Journal on the first catch");
+    assert_eq!(best(&zones, 990001, SMALLFISH), Some(1));
+
+    a.hook();
+    let perfect = a.result(true, true, 6.0);
+    let (_, zones) = journal(&perfect).expect("a Journal on the perfect catch");
+    assert_eq!(best(&zones, 990001, SMALLFISH), Some(2));
+
+    a.hook();
+    let again = a.result(true, false, 6.0);
+    assert_eq!(
+        journal(&again),
+        None,
+        "a plain catch after a perfect one changes nothing"
+    );
+
+    a.set_bait(Some(WRIGGLING_WORMS));
+    let blob = a.realm.export_character(a.guid).unwrap();
+    let mut back = Realm::new().with_fish(TEST_FISH);
+    back.import_character(&blob).unwrap();
+    back.handle(RealmCommand::EnterWorld { guid: a.guid });
+    back.tick(0.0, &FlatGround);
+    let (bait, zones) = journal(&drain(&mut back)).expect("a Journal at login");
+    assert_eq!(bait, Some(WRIGGLING_WORMS));
+    assert_eq!(best(&zones, 990001, SMALLFISH), Some(2));
 }
