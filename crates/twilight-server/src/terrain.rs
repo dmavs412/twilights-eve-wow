@@ -124,6 +124,11 @@ impl Host for Terrain {
         let chunks = &self.tile_under(map, x, y)?.chunks;
         crate::liquid::water_surface_at(chunks.iter().flat_map(|c| &c.liquids), x, y)
     }
+    /// Whether a standing body at `at` overlaps nothing on the loaded tiles: terrain, doodad
+    /// hulls and WMO walls. Where nothing is loaded, it fits.
+    fn body_fits(&self, map: u32, at: [f32; 3]) -> bool {
+        !self.collision.body_overlaps(map, at, 0.4, 2.0)
+    }
 }
 
 #[cfg(test)]

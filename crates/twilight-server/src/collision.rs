@@ -9,8 +9,9 @@ use benilla_formats::{
     load_m2_collision_hull, load_wmo_collision_tris, Chain, CollisionMesh, TileMesh,
 };
 use parry3d::glamx::{Mat3, Quat, Vec3};
-use parry3d::query::{Ray, RayCast};
-use parry3d::shape::TriMesh;
+use parry3d::math::Pose;
+use parry3d::query::{intersection_test, Ray, RayCast};
+use parry3d::shape::{Capsule, TriMesh};
 
 use crate::terrain::TileKey;
 
@@ -25,6 +26,10 @@ const STEP_UP_YD: f32 = 2.0;
 /// The flattest a face may be, as its normal's upward share, to be stood on: stairs and ramps
 /// count, walls do not.
 const WALKABLE_NORMAL_Z: f32 = 0.5;
+
+/// How far over its feet a standing body's solid starts, in yards: a face lower than this (the
+/// floor, a low step) is under the body, not in it.
+const BODY_FOOT_CLEAR: f32 = 0.3;
 
 /// The loaded tiles' collision, and the model hulls they share.
 #[derive(Default)]
@@ -129,6 +134,23 @@ impl Collision {
             .clone()
     }
 
+    /// Whether a body standing with its feet at `foot` on `map` touches anything loaded: a
+    /// capsule of `radius` whose solid spans [`BODY_FOOT_CLEAR`] to `height` over `foot`, so the
+    /// floor it stands on and a step lower than that never count (ADR 0021). Where nothing is
+    /// loaded, nothing is touched.
+    pub(crate) fn body_overlaps(&self, map: u32, foot: [f32; 3], radius: f32, height: f32) -> bool {
+        let foot = Vec3::from(foot);
+        let a = foot + Vec3::Z * (BODY_FOOT_CLEAR + radius);
+        let b = foot + Vec3::Z * (height - radius).max(BODY_FOOT_CLEAR + radius);
+        let body = Capsule::new(a, b, radius);
+        self.tiles
+            .iter()
+            .filter(|((m, _, _), _)| *m == map)
+            .any(|(_, mesh)| {
+                intersection_test(&Pose::IDENTITY, &body, &Pose::IDENTITY, mesh).unwrap_or(false)
+            })
+    }
+
     /// Whether nothing loaded on `map` lies between `from` and `to`, ends left out. Where nothing
     /// is loaded, nothing is in the way, as in the client.
     pub(crate) fn line_of_sight(&self, map: u32, from: [f32; 3], to: [f32; 3]) -> bool {
@@ -225,6 +247,46 @@ mod tests {
         assert!(!c.line_of_sight(0, [0.0, 0.0, 0.0], [20.0, 0.0, 0.0]));
         assert!(c.line_of_sight(0, [0.0, 0.0, 0.0], [8.0, 0.0, 0.0]));
         assert!(c.line_of_sight(1, [0.0, 0.0, 0.0], [20.0, 0.0, 0.0]));
+    }
+
+    /// A floor at z 0 and a wall in the plane x = 1, both on map 0.
+    fn floor_and_wall() -> Collision {
+        let verts = vec![
+            Vec3::new(-5.0, -5.0, 0.0),
+            Vec3::new(5.0, -5.0, 0.0),
+            Vec3::new(5.0, 5.0, 0.0),
+            Vec3::new(-5.0, 5.0, 0.0),
+            Vec3::new(1.0, -5.0, 0.0),
+            Vec3::new(1.0, 5.0, 0.0),
+            Vec3::new(1.0, 5.0, 4.0),
+            Vec3::new(1.0, -5.0, 4.0),
+        ];
+        let tris = vec![[0, 1, 2], [0, 2, 3], [4, 5, 6], [4, 6, 7]];
+        let mut c = Collision::default();
+        c.tiles
+            .insert((0, 0, 0), TriMesh::new(verts, tris).unwrap());
+        c
+    }
+
+    #[test]
+    fn a_body_overlaps_a_wall_within_its_radius_but_not_its_floor() {
+        let c = floor_and_wall();
+        assert!(
+            !c.body_overlaps(0, [0.0, 0.0, 0.0], 0.4, 2.0),
+            "the floor alone"
+        );
+        assert!(
+            c.body_overlaps(0, [0.8, 0.0, 0.0], 0.4, 2.0),
+            "0.2 yd from the wall"
+        );
+        assert!(
+            !c.body_overlaps(0, [-1.0, 0.0, 0.0], 0.4, 2.0),
+            "clear of it"
+        );
+        assert!(
+            !c.body_overlaps(1, [0.8, 0.0, 0.0], 0.4, 2.0),
+            "another map"
+        );
     }
 
     #[test]

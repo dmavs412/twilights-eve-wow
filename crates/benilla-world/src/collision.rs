@@ -298,6 +298,124 @@ impl WorldCollision<'_, '_> {
     pub fn faces_near_body(&self, at: Vec3, half: Vec3, limit: usize) -> Vec<one_sided::FaceProbe> {
         one_sided::faces_near(&self.ms, at, half, &Self::body_filter(), limit)
     }
+
+    /// Whether a body standing with its feet at `foot` overlaps what a body collides with: a
+    /// capsule of `radius` whose solid spans [`BODY_FOOT_CLEAR`] to `height` over `foot`, so the
+    /// floor it stands on and a step lower than that never count (ADR 0021). Where nothing is
+    /// streamed in, nothing overlaps.
+    pub fn body_overlaps(&self, foot: Vec3, radius: f32, height: f32) -> bool {
+        let a = foot + Vec3::Y * (BODY_FOOT_CLEAR + radius);
+        let b = foot + Vec3::Y * (height - radius).max(BODY_FOOT_CLEAR + radius);
+        let half = Vec3::new(radius, (b.y - a.y) / 2.0 + radius, radius);
+        one_sided::faces_near(
+            &self.ms,
+            (a + b) / 2.0,
+            half,
+            &Self::body_filter(),
+            usize::MAX,
+        )
+        .iter()
+        .any(|f| segment_triangle_distance(a, b, f.verts) < radius)
+    }
+}
+
+/// How far over its feet a standing body's solid starts, in yards: a face lower than this (the
+/// floor, a low step) is under the body, not in it.
+pub const BODY_FOOT_CLEAR: f32 = 0.3;
+
+/// The shortest distance between segment `p`–`q` and triangle `tri`: zero where the segment
+/// pierces it, else the nearest of its ends to the triangle and of it to the triangle's edges.
+fn segment_triangle_distance(p: Vec3, q: Vec3, tri: [Vec3; 3]) -> f32 {
+    if segment_pierces(p, q, tri) {
+        return 0.0;
+    }
+    let ends = [p, q].map(|e| e.distance(closest_on_triangle(e, tri)));
+    let edges = [0, 1, 2].map(|i| segment_segment_distance(p, q, tri[i], tri[(i + 1) % 3]));
+    ends.into_iter().chain(edges).fold(f32::INFINITY, f32::min)
+}
+
+/// Whether segment `p`–`q` crosses triangle `tri` (Möller–Trumbore, two-sided).
+fn segment_pierces(p: Vec3, q: Vec3, [a, b, c]: [Vec3; 3]) -> bool {
+    let dir = q - p;
+    let (e1, e2) = (b - a, c - a);
+    let h = dir.cross(e2);
+    let det = e1.dot(h);
+    if det.abs() < 1e-9 {
+        return false;
+    }
+    let s = p - a;
+    let u = s.dot(h) / det;
+    let k = s.cross(e1);
+    let v = dir.dot(k) / det;
+    let t = e2.dot(k) / det;
+    u >= 0.0 && v >= 0.0 && u + v <= 1.0 && (0.0..=1.0).contains(&t)
+}
+
+/// The point of triangle `tri` nearest `p` (Ericson, *Real-Time Collision Detection* 5.1.5).
+fn closest_on_triangle(p: Vec3, [a, b, c]: [Vec3; 3]) -> Vec3 {
+    let (ab, ac, ap) = (b - a, c - a, p - a);
+    let (d1, d2) = (ab.dot(ap), ac.dot(ap));
+    if d1 <= 0.0 && d2 <= 0.0 {
+        return a;
+    }
+    let bp = p - b;
+    let (d3, d4) = (ab.dot(bp), ac.dot(bp));
+    if d3 >= 0.0 && d4 <= d3 {
+        return b;
+    }
+    let vc = d1 * d4 - d3 * d2;
+    if vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0 {
+        return a + ab * (d1 / (d1 - d3));
+    }
+    let cp = p - c;
+    let (d5, d6) = (ab.dot(cp), ac.dot(cp));
+    if d6 >= 0.0 && d5 <= d6 {
+        return c;
+    }
+    let vb = d5 * d2 - d1 * d6;
+    if vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0 {
+        return a + ac * (d2 / (d2 - d6));
+    }
+    let va = d3 * d6 - d5 * d4;
+    if va <= 0.0 && d4 - d3 >= 0.0 && d5 - d6 >= 0.0 {
+        return b + (c - b) * ((d4 - d3) / ((d4 - d3) + (d5 - d6)));
+    }
+    let denom = 1.0 / (va + vb + vc);
+    a + ab * (vb * denom) + ac * (vc * denom)
+}
+
+/// The shortest distance between segments `p1`–`q1` and `p2`–`q2` (Ericson 5.1.9).
+fn segment_segment_distance(p1: Vec3, q1: Vec3, p2: Vec3, q2: Vec3) -> f32 {
+    let (d1, d2, r) = (q1 - p1, q2 - p2, p1 - p2);
+    let (a, e, f) = (d1.length_squared(), d2.length_squared(), d2.dot(r));
+    let (s, t) = if a <= 1e-12 && e <= 1e-12 {
+        (0.0, 0.0)
+    } else if a <= 1e-12 {
+        (0.0, (f / e).clamp(0.0, 1.0))
+    } else {
+        let c = d1.dot(r);
+        if e <= 1e-12 {
+            ((-c / a).clamp(0.0, 1.0), 0.0)
+        } else {
+            let b = d1.dot(d2);
+            let denom = a * e - b * b;
+            let mut s = if denom > 1e-12 {
+                ((b * f - c * e) / denom).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
+            let mut t = (b * s + f) / e;
+            if t < 0.0 {
+                t = 0.0;
+                s = (-c / a).clamp(0.0, 1.0);
+            } else if t > 1.0 {
+                t = 1.0;
+                s = ((b - c) / a).clamp(0.0, 1.0);
+            }
+            (s, t)
+        }
+    };
+    (p1 + d1 * s).distance(p2 + d2 * t)
 }
 
 /// `cameraWaterCollision` is a trace mask (`0x50e5ec`): the waterline stops the camera boom only
@@ -689,5 +807,90 @@ mod contact_pipeline {
             hit.is_some(),
             "the shape-cast lane must survive the broad phase being gone"
         );
+    }
+}
+
+/// A standing body's overlap (ADR 0021): the floor under it never counts, a wall within its
+/// radius does.
+#[cfg(test)]
+mod body_overlaps {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+    use bevy::prelude::*;
+
+    /// A headless world holding a 10×10 floor at `y = 0` and a 10×4 wall in the plane `z = -1`,
+    /// WoW's floor at z 0 and wall at x = 1.
+    fn floor_and_wall() -> App {
+        let mut app = App::new();
+        app.add_plugins((
+            MinimalPlugins,
+            bevy::transform::TransformPlugin,
+            bevy::asset::AssetPlugin::default(),
+            bevy::scene::ScenePlugin,
+            PhysicsPlugins::new(bevy::app::PostUpdate),
+        ));
+        app.init_asset::<Mesh>();
+        app.init_resource::<MoverTraceExclusions>();
+        let quad =
+            |corners: [Vec3; 4]| Collider::trimesh(corners.to_vec(), vec![[0u32, 2, 1], [0, 3, 2]]);
+        app.world_mut().spawn((
+            RigidBody::Static,
+            quad([
+                Vec3::new(-5.0, 0.0, -5.0),
+                Vec3::new(5.0, 0.0, -5.0),
+                Vec3::new(5.0, 0.0, 5.0),
+                Vec3::new(-5.0, 0.0, 5.0),
+            ]),
+            Transform::default(),
+        ));
+        app.world_mut().spawn((
+            RigidBody::Static,
+            quad([
+                Vec3::new(-5.0, 0.0, -1.0),
+                Vec3::new(5.0, 0.0, -1.0),
+                Vec3::new(5.0, 4.0, -1.0),
+                Vec3::new(-5.0, 4.0, -1.0),
+            ]),
+            Transform::default(),
+        ));
+        app.finish();
+        app.cleanup();
+        app.update();
+        app
+    }
+
+    fn overlaps(app: &mut App, foot: Vec3) -> bool {
+        app.world_mut()
+            .run_system_once(move |c: WorldCollision| c.body_overlaps(foot, 0.4, 2.0))
+            .expect("system runs")
+    }
+
+    #[test]
+    fn the_floor_alone_does_not_count() {
+        assert!(!overlaps(&mut floor_and_wall(), Vec3::ZERO));
+    }
+
+    #[test]
+    fn a_wall_a_fifth_of_a_yard_from_the_axis_does() {
+        assert!(overlaps(&mut floor_and_wall(), Vec3::new(0.0, 0.0, -0.8)));
+    }
+
+    #[test]
+    fn a_body_well_clear_of_the_wall_fits() {
+        assert!(!overlaps(&mut floor_and_wall(), Vec3::new(0.0, 0.0, 1.0)));
+    }
+
+    #[test]
+    fn the_distance_helpers_measure_a_wall_from_an_axis() {
+        let wall = [
+            Vec3::new(-5.0, 0.0, -1.0),
+            Vec3::new(5.0, 0.0, -1.0),
+            Vec3::new(5.0, 4.0, -1.0),
+        ];
+        let d = segment_triangle_distance(Vec3::new(4.0, 1.0, 0.0), Vec3::new(4.0, 1.5, 0.0), wall);
+        assert!((d - 1.0).abs() < 1e-5, "{d}");
+        let pierce =
+            segment_triangle_distance(Vec3::new(4.0, 1.0, -2.0), Vec3::new(4.0, 1.0, 0.0), wall);
+        assert_eq!(pierce, 0.0);
     }
 }

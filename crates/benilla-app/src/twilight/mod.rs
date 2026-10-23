@@ -651,6 +651,10 @@ const SIGHT_END_YD: f32 = 1.0;
 /// How far below a spawn's own height its floor is looked for, in yards.
 const GROUND_RAY_YD: f32 = 40.0;
 
+/// A standing body's radius and height for [`Host::body_fits`], in yards (ADR 0021).
+const BODY_RADIUS_YD: f32 = 0.4;
+const BODY_HEIGHT_YD: f32 = 2.0;
+
 impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     /// The first floor below `z_hint`: a WMO's (a mine's tunnels, a building's storeys) before
     /// the terrain's. Terrain above the hint is either the hill over a tunnel or the ground a
@@ -681,6 +685,14 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
                 .collision
                 .ray_body(a + dir * SIGHT_END_YD, dir, length)
                 .is_none()
+    }
+
+    /// Whether a standing body at `at` overlaps nothing a body collides with: terrain, doodad
+    /// hulls and WMO walls. Where nothing is streamed in, it fits.
+    fn body_fits(&self, _map: u32, at: [f32; 3]) -> bool {
+        !self
+            .collision
+            .body_overlaps(wow_to_bevy(at), BODY_RADIUS_YD, BODY_HEIGHT_YD)
     }
 
     /// The streamed terrain's MCNK `areaId` under the point, the area the client's own zone
