@@ -707,3 +707,86 @@ fn rumours_toml_has_the_three_northshire_rumours() {
     let blue = rumours["chest_pools"]["blue"].as_array().unwrap();
     assert_eq!(blue.len(), 21, "the Abbot's Dungeon rows");
 }
+
+/// The integer at `key` of a `fish.toml` row.
+fn item_of(row: &toml::Value, key: &str) -> u32 {
+    row[key].as_integer().unwrap() as u32
+}
+
+/// `fish.toml` (#326) parses; every item it names is one the realm answers queries with, and
+/// every `[[fish]]` is caught in some pool.
+#[test]
+fn fish_toml_names_items_the_realm_has() {
+    let fish = toml_table("fish.toml");
+    let mut realm = twilight_realm::Realm::new();
+    let pools = fish["pool"].as_array().unwrap();
+    let pooled: Vec<u32> = pools
+        .iter()
+        .flat_map(|p| p["fish"].as_array().unwrap())
+        .map(|f| item_of(f, "item"))
+        .collect();
+    let named = pools
+        .iter()
+        .flat_map(|p| p["treasure"].as_array().unwrap())
+        .chain(fish["lure"].as_array().unwrap())
+        .chain(fish["bait"].as_array().unwrap())
+        .map(|r| item_of(r, "item"))
+        .chain(pooled.iter().copied())
+        .chain([6256]);
+    for item in named {
+        assert!(
+            queried(&mut realm, item).is_some(),
+            "item {item} has no template"
+        );
+    }
+    for row in fish["fish"].as_array().unwrap() {
+        let item = item_of(row, "item");
+        assert!(pooled.contains(&item), "fish {item} is in no pool");
+    }
+}
+
+/// A pool's fish and treasure weights are vmangos's chances, which sum to 100.
+#[test]
+fn every_fishing_pools_weights_sum_to_a_hundred() {
+    for pool in toml_table("fish.toml")["pool"].as_array().unwrap() {
+        let sum: f64 = ["fish", "treasure"]
+            .iter()
+            .flat_map(|k| pool[k].as_array().unwrap())
+            .map(|r| r["weight"].as_float().unwrap())
+            .sum();
+        assert!((sum - 100.0).abs() <= 0.05, "{}: {sum}", pool["key"]);
+    }
+}
+
+/// Every Fishing Water names a pool that exists, and has an area or a circle.
+#[test]
+fn every_fishing_water_names_a_pool_that_exists() {
+    let fish = toml_table("fish.toml");
+    let keys: Vec<&str> = fish["pool"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["key"].as_str().unwrap())
+        .collect();
+    for water in fish["water"].as_array().unwrap() {
+        let key = water["key"].as_str().unwrap();
+        if let Some(pool) = water.get("pool") {
+            assert!(keys.contains(&pool.as_str().unwrap()), "{key}: {pool}");
+        }
+        assert!(
+            water.get("area").is_some() != water.get("circle").is_some(),
+            "{key}: an area or a circle"
+        );
+    }
+}
+
+/// The Angler XP rule: to next = base + per level x level, so level 12 needs 940.
+#[test]
+fn angler_level_12_needs_940_xp() {
+    let angler = &toml_table("fish.toml")["angler"];
+    let (base, per) = (
+        angler["xp_base"].as_integer().unwrap(),
+        angler["xp_per_level"].as_integer().unwrap(),
+    );
+    assert_eq!(base + per * 12, 940);
+}

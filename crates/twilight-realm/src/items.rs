@@ -240,6 +240,16 @@ fn goods() -> &'static HashMap<u32, Template> {
     })
 }
 
+/// Fishing's fish, poles, lures, baits and treasure (`content/fish.toml`), by entry.
+fn fishing() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table =
+            toml::from_str(include_str!("../content/fish.toml")).expect("content/fish.toml parses");
+        table.item.into_iter().map(|t| (t.entry, t)).collect()
+    })
+}
+
 /// The items the realm hands out itself (`content/given_items.toml`), by entry.
 fn given() -> &'static HashMap<u32, Template> {
     static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
@@ -273,6 +283,7 @@ pub(crate) fn template(entry: u32) -> Option<&'static Template> {
         .get(&entry)
         .or_else(|| given().get(&entry))
         .or_else(|| goods().get(&entry))
+        .or_else(|| fishing().get(&entry))
         .or_else(|| crate::quests::item_template(entry))
         .or_else(|| gear().get(&entry))
 }

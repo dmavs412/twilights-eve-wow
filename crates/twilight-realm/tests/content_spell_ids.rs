@@ -146,6 +146,15 @@ fn pairs(t: &toml::Table, at: &str, out: &mut Vec<Named>) {
         if !key.contains("spell") || is_name || NOT_IDS.contains(&key.as_str()) {
             continue;
         }
+        // A table's name (`[spell]`, `[[spell]]`) holds no ids; [`walk`] reaches its rows.
+        let tables = match &t[key] {
+            toml::Value::Table(_) => true,
+            toml::Value::Array(a) => !a.is_empty() && a.iter().all(toml::Value::is_table),
+            _ => false,
+        };
+        if tables {
+            continue;
+        }
         let Some(&(_, name_key, layout)) = ID_KEYS.iter().find(|(id, _, _)| id == key) else {
             panic!("{at}: `{key}` is new; teach this test whether it holds spell ids");
         };

@@ -55,6 +55,7 @@ mod dungeon;
 mod encounters;
 mod equipment;
 mod fields;
+mod fish;
 mod generated;
 mod ground;
 mod group;
