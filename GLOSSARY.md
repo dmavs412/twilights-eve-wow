@@ -224,3 +224,11 @@ _Avoid_: rare fish, boss fish
 **Legend Rumour**:
 A Rumour kind with no giver, no steps and no timer: a readable note that names a Legendary Fish and its criterion. It rolls on a catch in its zone or on a kill, and an NPC's gossip can tell the same hint.
 _Avoid_: fishing quest, hint quest
+
+**Kick**:
+A Calling's skill that stops the cast a mob has under way and puts a Lockout on it. Each Tier 1 Calling learns one at level 10. Effects listed after the interrupt in its row are its bonus, and they happen only when it stopped a cast. ADR 0020.
+_Avoid_: interrupt (the effect kind a Kick uses), silence
+
+**Lockout**:
+The seconds after a Kick during which a mob can't start any Creature Spell of the school it was casting. It still swings and casts spells of other schools.
+_Avoid_: silence, school lock
