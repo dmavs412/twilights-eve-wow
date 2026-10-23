@@ -13,4 +13,3 @@ off-floor jasperlode.toml -9056.7 -627.3 ?
 off-floor jasperlode.toml -9056.7 -627.3 guid 820102
 off-floor jasperlode.toml -9058.9 -612.4 ?
 off-floor jasperlode.toml -9058.9 -612.4 guid 820104
-off-floor wailing_caverns.toml -753.6 -2212.8 ?

@@ -18,10 +18,13 @@ boss = 300999
 boss_loot = [6627, 13245, 6631, 6463, 12997, 12989, 12975, 2194, 12976, 12990, 12988, 3021]
 
 # `AreaTrigger.dbc` 228 on Kalimdor, and where vmangos' `areatrigger_teleport` sends the player.
+# The position is the trigger sphere's centre, the DBC's own, not a unit on the ground, so
+# ground_check.py leaves it alone (#357).
 [entrance]
 trigger = 228
 map = 1
 position = [-753.596, -2212.78, 21.54]
+grounded = false
 radius = 13.0
 to = { map = 43, position = [-158.441, 131.601, -74.255], orientation = 5.847 }
 
