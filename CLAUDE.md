@@ -22,7 +22,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   happens only when Davis asks for one.
 - **Wait for every command to finish.** Commands run in the foreground, except a benilla-app
   test or check build, which can pass the Bash tool's 10-minute cap: start it with
-  `run_in_background` and wait for its notification. A cargo command stopped mid-compile leaves
+  `run_in_background` and wait for its notification. A filtered client test takes `--lib`, so
+  only the binary that holds the tests runs:
+  `cargo test -q -p benilla-app --lib <filter> 2>&1 | grep -E "FAILED|panicked|test result"`. A cargo command stopped mid-compile leaves
   rlibs with corrupt MSVC debug info, and later links fail (`LNK1103`, or unresolved symbols) on
   a crate you never touched. The cure is `cargo clean -p <crate>` for each crate the linker names.
   The build-lock hook refuses `timeout` in front of cargo.

@@ -7,6 +7,8 @@ You are in the **Build lane** (CLAUDE.md, "Three lanes").
 Task: $ARGUMENTS
 If no task is given, take the oldest open issue labelled `ready-for-agent`
 (`gh issue list -R dmavs412/twilights-eve-wow -l ready-for-agent`) and say which one you took.
+This chat takes one ticket. A range of tickets runs through `scripts/overnight.ps1`, one fresh
+session each.
 
 1. Read the issue and only the code it touches.
 2. If it hits a "Grill before architecture" trigger and is not labelled `ready-for-agent`, stop:

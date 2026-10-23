@@ -6,6 +6,7 @@ groups and a small TOML file.
 
 from __future__ import annotations
 
+import glob
 import math
 import struct
 import os
@@ -266,6 +267,54 @@ class Model(unittest.TestCase):
         gd = wowmpq.GameData(DATA)
         self.addCleanup(lambda: [a.f.close() for a in gd.archives])
         self.assertIsNone(ground_check.Models(gd).creature(2358))
+
+
+class TableKinds(unittest.TestCase):
+    def test_every_table_kind_the_gate_reads_is_a_creature_or_a_gameobject(self):
+        # A new kind would fall through the water and model rules unchecked: name it in
+        # CREATURE_KINDS or GAMEOBJECT_KINDS.
+        known = ground_check.CREATURE_KINDS | ground_check.GAMEOBJECT_KINDS
+        for path in sorted(glob.glob(os.path.join(ground_check.CONTENT, "*.toml"))):
+            for r in ground_check.rows(path)[1]:
+                self.assertIn(r.kind, known, "%s:%d" % (os.path.basename(path), r.idx + 1))
+
+
+def quat_matrix(x, y, z, w):
+    """The rotation matrix of unit quaternion (x, y, z, w), rows first."""
+    return (
+        (1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)),
+        (2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)),
+        (2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)),
+    )
+
+
+# WoW to Bevy, bevy = B wow: (x, y, z) -> (-y, z, -x) (benilla-assets coords::wow_to_bevy).
+WOW_TO_BEVY = ((0, -1, 0), (0, 0, 1), (-1, 0, 0))
+
+
+def transpose(m):
+    return tuple(tuple(m[j][i] for j in range(3)) for i in range(3))
+
+
+class PlacementRotation(unittest.TestCase):
+    # crates/benilla-assets/src/coords.rs, placement_rotation_goldens: the MDDF rotation in
+    # degrees and the Bevy-space quaternion (x, y, z, w) the client places a model with. The
+    # server's collision.rs Placement turns models the same way.
+    GOLDENS = [
+        ((86.0, 252.0, 93.5), (-0.691160, -0.107332, -0.156292, 0.697388)),
+        ((0.0, 0.0, 90.0), (math.sqrt(0.5), -math.sqrt(0.5), 0.0, 0.0)),
+        ((30.0, 45.0, 60.0), (0.360423, -0.822363, -0.391904, 0.200562)),
+    ]
+
+    def test_the_python_placement_matches_the_clients_goldens(self):
+        b = WOW_TO_BEVY
+        for deg, q in self.GOLDENS:
+            # The WoW-frame rotation of the Bevy one: B^T R B.
+            want = doodad_check._mul(doodad_check._mul(transpose(b), quat_matrix(*q)), b)
+            got = doodad_check.placement_matrix(deg)
+            for i in range(3):
+                for j in range(3):
+                    self.assertAlmostEqual(got[i][j], want[i][j], places=4, msg="%s [%d][%d]" % (deg, i, j))
 
 
 class Nudge(unittest.TestCase):
