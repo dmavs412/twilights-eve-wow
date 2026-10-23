@@ -2,9 +2,12 @@
 //! a fish bites and the client's Reeling Bar reports the catch, which pays Angler XP.
 
 mod common;
+mod gear_common;
+mod quest_common;
 
 use benilla_protocol::{SessionEvent, START_ELWYNN};
 use common::*;
+use quest_common::{accept, completed, hand_in};
 use twilight_realm::{Realm, RealmCommand};
 
 const FISHING: u32 = 7620;
@@ -979,4 +982,24 @@ fn lee_browns_hint_line_shows_at_angler_five_and_records_the_hint() {
             .any(|&(i, _, hinted, caught)| i == OLD_GOLDFIN && hinted && !caught),
         "{legends:?}"
     );
+}
+
+#[test]
+fn lee_browns_smallfry_quest_is_handed_in_twice_and_paid_twice() {
+    const SMALLFRY: u32 = 96101;
+    // Twenty smallfish in the backpack: two lots of ten.
+    let mut a = angler_carrying(1, Side::East, &[(23, SMALLFISH, 20)]);
+    let lee = hub_guid(LEE_BROWN);
+    let mut paid = Vec::new();
+    for _ in 0..2 {
+        accept(&mut a.realm, lee, SMALLFRY);
+        let done = completed(&hand_in(&mut a.realm, lee, SMALLFRY)).expect("the quest completes");
+        assert_eq!(done.quest_id, SMALLFRY);
+        paid.push((done.money, done.xp));
+    }
+    // The first lot's XP can level the character, so the second lot's XP is not the first's.
+    for (money, xp) in paid {
+        assert_eq!(money, 50, "50 copper");
+        assert!(xp > 0, "quest XP");
+    }
 }

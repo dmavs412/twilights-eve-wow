@@ -690,6 +690,57 @@ tokens = 1
 zone_or_sort = 12
 collect = [{ item = 980016, count = 8, from = [285, 735], chance = 50 }]
 
+# ── Lee Brown's angler quests (#332) ─────────────────────────────────────────────────────────
+#
+# Three repeatables for fish the player catches (content/fish.toml), taken again as soon as they
+# are handed in. They pay copper and quest XP, no Tokens and no Angler XP: they are a way to sell
+# fish for more. A collect objective takes one item, so 96103 asks for the 10 Pound Mud Snapper
+# only, not the 12 Pound one.
+[[quest]]
+id = 96101
+kind = "repeatable"
+giver = 1651
+level = 3
+title = "Smallfry for the Lion's Pride"
+objectives = "Bring 10 Raw Brilliant Smallfish to Fisherman Lee Brown."
+details = "The Lion's Pride feeds half of Goldshire, and I feed the Lion's Pride. Smallfish go in the pot whole, and I never have enough of them. Bring me ten from the lake and I'll pay you for the lot, as often as you can fill a bucket."
+progress = "Is that a bucket of smallfish, or are you just glad to see me?"
+completion = "Ten fat smallfish, and still wet. Farley's cook will be pleased. Here's your coin, and come back when you've more."
+money = 50
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 6291, count = 10 }]
+
+[[quest]]
+id = 96102
+kind = "repeatable"
+giver = 1651
+level = 6
+title = "Snapper Supper"
+objectives = "Bring 8 Raw Longjaw Mud Snapper to Fisherman Lee Brown."
+details = "A longjaw snapper makes a proper supper, and the inn's regulars know it. They're a bit of work to land, but the deep water of the lake gives them up. Bring me eight and I'll pay a silver, and the same again whenever you have another eight."
+progress = "Got my snappers? The regulars are getting restless."
+completion = "Eight good snappers. They'll be on every plate in the Pride tonight. A silver for you, and my thanks."
+money = 100
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 6289, count = 8 }]
+
+[[quest]]
+id = 96103
+kind = "repeatable"
+giver = 1651
+level = 9
+title = "A Trophy for the Wall"
+objectives = "Bring a 10 Pound Mud Snapper to Fisherman Lee Brown."
+details = "Every fisherman wants one big fish to hang over the bar, and mine is long overdue. A ten pound mud snapper would do it. They're rare, and they only take a patient line. Bring me one and I'll pay three silver, and I'll hang the old one in the back to make room."
+progress = "Any sign of that trophy snapper?"
+completion = "Look at the size of it! That's the one for the wall. Three silver, and you've earned every copper."
+money = 300
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 6292, count = 1 }]
+
 # ── Jasperlode Mine (#224) ───────────────────────────────────────────────────────────────────
 #
 # The Phased Dungeon behind the sealed door (content/jasperlode.toml). The boss is the Eye Below.

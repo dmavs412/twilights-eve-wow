@@ -725,8 +725,8 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
     }
     for c in &q.collect {
         assert!(
-            item_template(c.item).is_some(),
-            "quest {}'s item {} is not in content/quest_items.toml",
+            items::template(c.item).is_some(),
+            "quest {}'s item {} is in no content item table",
             q.id,
             c.item
         );
