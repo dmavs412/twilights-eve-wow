@@ -46,3 +46,27 @@ jobs:
         run: python3 -m unittest discover tools/twilights-eve/tests
       - name: generated spell outputs match the CSV
         run: python3 tools/twilights-eve/build_spells.py --no-dbc-check --check
+
+  # The client's tests: the UI layer's file list, the event-shape gate, where each UI feed runs and
+  # the frames' own tests. A session builds them only by choice (10 to 20 minutes), so this job is
+  # where they run on every push.
+  client-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      WOW_DATA: ""
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: System libraries
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq pkg-config libasound2-dev libudev-dev
+      - name: Toolchain
+        run: rustup toolchain install && rustc -V
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: benilla-ui and benilla-app tests
+        run: cargo test -p benilla-ui -p benilla-app

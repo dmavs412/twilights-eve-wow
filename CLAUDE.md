@@ -20,10 +20,12 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   `python3.15 tools/twilights-eve/ground_check.py`; a flagged row is a failed gate, and `--fix`
   writes the answer. That is the whole gate; a commit needs nothing else. A full build or a game run
   happens only when Davis asks for one.
-- **Every command runs in the foreground, and you wait for it.** Let each cargo command finish:
-  one stopped mid-compile leaves rlibs with corrupt MSVC debug info, and later links fail with
-  `LNK1103` on a crate you never touched. The cure is `cargo clean -p <crate>` for each crate the
-  linker names.
+- **Wait for every command to finish.** Commands run in the foreground, except a benilla-app
+  test or check build, which can pass the Bash tool's 10-minute cap: start it with
+  `run_in_background` and wait for its notification. A cargo command stopped mid-compile leaves
+  rlibs with corrupt MSVC debug info, and later links fail (`LNK1103`, or unresolved symbols) on
+  a crate you never touched. The cure is `cargo clean -p <crate>` for each crate the linker names.
+  The build-lock hook refuses `timeout` in front of cargo.
 - **Do the work in this session.** Search with Grep, read with Read. The Agent tool is denied
   in `.claude/settings.json`, so no subagents and no skills that fan out (implement-spec,
   wayfinder, code-review, research). If a task seems to need one, say so and do it inline.
@@ -53,7 +55,8 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   code. A ticket labelled `ready-for-agent` has already passed grilling.
 - **Land as small commits on `main`**, each saying what changed and which check ran. A branch
   and a pull request only when Davis asks. CI (`.github/workflows/ci.yml`) repeats the check and
-  the realm tests on GitHub's runners; it is a backstop you never wait on.
+  the realm tests and runs the client's tests on GitHub's runners; it is a backstop you never
+  wait on.
 
 ## Architecture rules
 
@@ -82,8 +85,9 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   (gitignored, newest 3 kept), because a running exe cannot be overwritten.
 - `WOW_PROBE=list` lists the variables that drive a run with no one at the keyboard.
 - Text is LF in every checkout (`.gitattributes` `eol=lf` overrides `core.autocrlf`); only
-  `third_party/kira` keeps CRLF. Write an edit script with the Write tool and run it by path: a
-  heredoc or a `-c` string mangles `\r\n` and quotes on the way through the shell.
+  `third_party/kira` keeps CRLF. Make edits with the Edit tool. A bulk or many-file edit is a
+  Python script written with the Write tool and run by path (a heredoc or a `-c` string mangles
+  `\r\n` and quotes), and it writes files with `write_bytes`: `write_text` writes `\r\n` here.
 - The vmangos world DB is a sqlite dump at
   `C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite`; Python opens that
   path, never the Git Bash `/tmp/vmangos/...` form.

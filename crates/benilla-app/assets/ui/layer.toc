@@ -2,6 +2,12 @@
 # `assets/ui`, and loads in this order after every `FrameXML.toc` row and before the third-party
 # addons. It is listed in no addon list, fires no `ADDON_LOADED` and cannot be switched off; a dev
 # build boots without it under `WOW_STOCK_UI=1`. A test names its files, so it does not grow.
+#
+# Adding a file: list it below and in `the_layer_does_not_grow` (src/ui_script/shipped_xml_tests.rs)
+# with its reason; any other entry in `assets/ui` (art, a folder) goes in that test's list too.
+# Art path `Interface\Benilla\<path>` reads `assets/ui/<path>.tga`, folders included. A Lua call
+# the host feeds follows `benilla-ui/src/script/clock.rs`; its feed system goes in `UiFeed`. The
+# event-shape gate checks only names in `reference/1.12-events.tsv`, so a new event needs no row.
 
 ## Interface: 11200
 
