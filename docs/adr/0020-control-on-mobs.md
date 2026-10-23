@@ -1,7 +1,7 @@
 # Control on mobs: Kicks, Lockouts, boss immunity and diminishing returns
 
 The Tier 1 Callings had no way to stop a mob's cast except a stun or Gouge, and no control
-for packs. Spec #<spec> gives each one a Kick and a utility skill. The rules below cover every
+for packs. Spec #334 gives each one a Kick and a utility skill. The rules below cover every
 player control on a mob, not just those skills. Davis decided them in the grill of 2026-10-23.
 
 - **A Kick stops the cast under way and locks its school.** The mob can't start any Creature
