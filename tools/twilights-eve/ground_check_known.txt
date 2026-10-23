@@ -48,7 +48,6 @@ off-floor quests_elwynn.toml -9820.0 -1398.0 guid 790605
 off-floor quests_elwynn.toml -9352.0 336.0 guid 790713
 off-floor quests_elwynn.toml -9346.0 344.0 guid 790714
 off-floor wailing_caverns.toml -753.6 -2212.8 ?
-doodad forest_edge.toml -10073.5 680.0 guid 790142
 doodad quests_elwynn.toml -9116.0 -1146.0 guid 790518
 model azora.toml -9219.0 -2701.0 guid 975004
 model quests_elwynn.toml -9293.0 24.0 guid 790101

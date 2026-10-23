@@ -400,7 +400,7 @@ sides = "both"
 [[gameobject]]
 guid = 790142
 display = 6151
-position = [-10073.55, 680.00, 36.57]
+position = [-10070.0, 684.0, 35.59]
 orientation = 0.0
 sides = "both"
 
