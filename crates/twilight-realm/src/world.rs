@@ -727,6 +727,7 @@ impl InWorld {
             }
         }
         self.land_blink(host, c, events);
+        self.land_knockbacks(host, events);
         let me = c.position;
         self.cross_phase(c, events);
         self.show_portals(me, host, events);
@@ -1121,6 +1122,11 @@ impl InWorld {
         }
         // Asleep: no aggro, no threat, no movement, until `wake_sleepers` wakes it.
         if mob.asleep {
+            return;
+        }
+        // Sliding from a knockback: no swing, no cast and no chase until it lands.
+        if mob.knocked > 0.0 {
+            mob.knocked = (mob.knocked - dt).max(0.0);
             return;
         }
         if let Some(t) = mob.assist_in {
@@ -1812,7 +1818,9 @@ pub(crate) fn kick_cast(mob: &mut Mob, lockout_secs: f32, events: &mut Vec<Sessi
     let Some(spell) = drop_cast(mob, events) else {
         return false;
     };
-    mob.lockouts.push((spell.school, lockout_secs));
+    if lockout_secs > 0.0 {
+        mob.lockouts.push((spell.school, lockout_secs));
+    }
     true
 }
 

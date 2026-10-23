@@ -11446,6 +11446,51 @@
    }
   },
   {
+   "spell_id": 1000406,
+   "calling": "initiate",
+   "key": "ember_blast",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Ember Blast",
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "cost_percent": 10,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Every enemy within 6 yd takes Fire damage and is knocked back 10 yd, and any cast it has under way stops. A boss takes the damage only.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Spell_Holy_Excorcism_02",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 8,
+      "per_level": 1
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 963,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
    "spell_id": 1000401,
    "calling": "ranger",
    "key": "silencing_shot",

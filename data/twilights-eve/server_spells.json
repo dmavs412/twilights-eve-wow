@@ -10431,6 +10431,64 @@
      }
     ],
     "description": "Stops the spell the target is casting and locks it out of that spell's school for 6 seconds. When it stops a cast, you regain 10% of your maximum mana."
+   },
+   {
+    "key": "ember_blast",
+    "name": "Ember Blast",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000406,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 20000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 0,
+    "realm_radius_yd": 6,
+    "learn_level": 20,
+    "target": "self_area",
+    "school": "fire",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "school_damage",
+      "params": {
+       "amount": {
+        "base": 8,
+        "per_level": 1
+       },
+       "school": "fire"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "knockback",
+      "params": {
+       "distance_yd": 10
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 0,
+       "bosses": false
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Every enemy within 6 yd takes Fire damage and is knocked back 10 yd, and any cast it has under way stops. A boss takes the damage only."
    }
   ],
   "talent_tabs": [

@@ -1412,6 +1412,9 @@ pub enum Effect {
     /// highest, and fights the caster for `duration_ms` whatever the others do. It never
     /// diminishes and works on bosses.
     Taunt { duration_ms: u32 },
+    /// Each mob it lands on slides `distance_yd` straight away from the caster, stopping short at
+    /// a rise, a drop or a wall, and does nothing while it slides. A boss is not moved.
+    Knockback { distance_yd: f32 },
     /// `amount` combo points on the target, five at most; points on another target are lost.
     AddComboPoints { amount: u32 },
     /// The caster runs to the target.

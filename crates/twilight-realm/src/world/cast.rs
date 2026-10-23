@@ -136,6 +136,8 @@ pub(super) struct Skills {
     consumed: Option<(Aura, u32)>,
     /// A Blink cast and not yet landed: the next tick, which has the ground, moves the caster.
     blink: Option<PendingBlink>,
+    /// Mobs a knockback cast hit and not yet moved: the next tick, which has the ground, slides them.
+    knocks: Vec<PendingKnock>,
     /// Seconds since the player's last step; `None` before the first.
     since_step: Option<f32>,
     /// Seconds the player has been moving without stopping, or standing still.
@@ -232,6 +234,17 @@ struct PendingBlink {
     faces: f32,
     distance_yd: f32,
 }
+
+/// A mob a knockback hit, where the caster stood, and how far it slides.
+#[derive(Debug, Clone, Copy)]
+struct PendingKnock {
+    mob: u64,
+    from: [f32; 3],
+    distance_yd: f32,
+}
+
+/// How fast a knocked mob slides, in yards a second.
+const KNOCKBACK_SPEED_YD_S: f32 = 20.0;
 
 /// An aura row's most stacks: its `max_stacks` with `stack_rule=stack`, one otherwise.
 fn stack_limit(def: &callings::AuraDef) -> u32 {
@@ -3552,6 +3565,19 @@ impl InWorld {
             // Handled in the per-target loop of the cast, which decides whether the effects after
             // it run.
             Effect::Interrupt { .. } => {}
+            Effect::Knockback { distance_yd } => {
+                let hit = self
+                    .mobs
+                    .iter()
+                    .any(|m| m.guid == target && m.alive() && !m.template.raises_boss_bar());
+                if hit {
+                    self.skills.knocks.push(PendingKnock {
+                        mob: target,
+                        from: c.position,
+                        distance_yd,
+                    });
+                }
+            }
             Effect::Taunt { duration_ms } => {
                 let me = self.guid;
                 if let Some(mob) = self
@@ -5377,6 +5403,53 @@ impl InWorld {
             gone += step;
         }
         self.teleport(c, at, b.faces, events);
+    }
+
+    /// Slides the mobs a knockback hit since the last tick: each steps straight away from where
+    /// the caster stood, stopping where the ground rises or falls too sharply (as a Blink does)
+    /// or line of sight breaks, and runs there facing the caster.
+    pub(super) fn land_knockbacks(
+        &mut self,
+        host: &dyn crate::Host,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        for k in std::mem::take(&mut self.skills.knocks) {
+            let caster = self.guid;
+            let map = self.map;
+            let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == k.mob && m.alive()) else {
+                continue;
+            };
+            let (mut dx, mut dy) = (mob.position[0] - k.from[0], mob.position[1] - k.from[1]);
+            let len = dx.hypot(dy);
+            if len < 0.001 {
+                (dx, dy) = (1.0, 0.0);
+            } else {
+                (dx, dy) = (dx / len, dy / len);
+            }
+            let start = mob.position;
+            let mut at = start;
+            let mut gone = 0.0;
+            while gone < k.distance_yd {
+                let step = BLINK_STEP_YD.min(k.distance_yd - gone);
+                let (x, y) = (at[0] + dx * step, at[1] + dy * step);
+                match host.ground_height(map, x, y, at[2] + BLINK_MAX_CLIMB_YD) {
+                    Some(z)
+                        if (z - at[2]).abs() <= BLINK_MAX_CLIMB_YD
+                            && host.line_of_sight(map, at, [x, y, z]) =>
+                    {
+                        at = [x, y, z];
+                    }
+                    _ => break,
+                }
+                gone += step;
+            }
+            if at == start {
+                continue;
+            }
+            let slide = distance(start, at) / KNOCKBACK_SPEED_YD_S;
+            events.push(mob.charge_to(at, KNOCKBACK_SPEED_YD_S, caster));
+            mob.knocked = slide;
+        }
     }
 
     /// A shield on the player under `spell_id` that soaks `amount` for `duration_ms`; a new one

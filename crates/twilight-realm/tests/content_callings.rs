@@ -470,6 +470,9 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         // Kicks live in the master CSV only; tests/kicks.rs reads them.
         Effect::Interrupt { .. } => panic!("{key}: the reference has no realm half for a kick"),
         // Taunts live in the master CSV only; tests/bulwark_taunt.rs reads them.
+        Effect::Knockback { .. } => {
+            panic!("{key}: the reference has no realm half for a knockback")
+        }
         Effect::Taunt { .. } => panic!("{key}: the reference has no realm half for a taunt"),
     }
 }
