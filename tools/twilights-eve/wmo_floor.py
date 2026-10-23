@@ -3,7 +3,9 @@
 
 A point inside a building's bounding box can still stand outdoors: the box holds the ground
 around the walls too. This drops a vertical ray through every placed WMO whose box holds the
-point and lists each surface it crosses, so a caller can tell a floor from bare ground.
+point and lists each surface it crosses, so a caller can tell a floor from bare ground. It also
+reads each group's MLIQ water (`Floors.water`) and finds the walls that cross a standing body
+(`Floors.walls_near`), for ground_check.py.
 
     python3.15 tools/twilights-eve/wmo_floor.py <x> <y> [--map 0]
 
@@ -37,6 +39,16 @@ MOPY_DETAIL = 0x04
 # A surface whose normal leans less than 50 degrees from straight up is a floor, the slope the client
 # lets a unit walk; cave floors are bumpy.
 WALKABLE_NZ = 0.64
+# A standing unit's body for the wall test: a vertical capsule this wide, from this far over its
+# feet to this far (ADR 0021).
+BODY_RADIUS = 0.4
+BODY_LOW = 0.3
+BODY_HIGH = 2.0
+# MLIQ grid step, 4.1666665 yd (benilla-formats MLIQ_CELL_STEP).
+MLIQ_STEP = 25.0 / 6.0
+# WMO liquid type nibbles that are water (LiquidKind::from_nibble): still, ocean, the still
+# variant and rapids. 2, 6 magma and 3, 7 slime are not.
+WATER_NIBBLES = {0, 1, 4, 8}
 
 
 class Surface:
@@ -66,16 +78,63 @@ def _chunks(data, start=0, end=None):
         i += 8 + size
 
 
+class Liquid:
+    """A group's MLIQ grid in the model frame (crates/benilla-wmo/src/lib.rs, parse_mliq):
+    vertex (i, j) at (base x + i step, base y + j step, heights[j xverts + i]), and per tile a flag
+    whose low nibble is the liquid type, 0xF a hole. `group_liquid`, MOGP's groupLiquid, other than
+    0xF overrides every tile's type."""
+
+    def __init__(self, xverts, yverts, base, heights, tiles, group_liquid=0xF):
+        self.xverts, self.yverts = xverts, yverts
+        self.base = base
+        self.heights = heights
+        self.tiles = tiles
+        self.group_liquid = group_liquid
+
+    def surface(self, mx, my):
+        """The water surface over model point (mx, my) in model z, or None."""
+        i = math.floor((mx - self.base[0]) / MLIQ_STEP)
+        j = math.floor((my - self.base[1]) / MLIQ_STEP)
+        xt = self.xverts - 1
+        if not (0 <= i < xt and 0 <= j < self.yverts - 1):
+            return None
+        flag = self.tiles[j * xt + i] & 0x0F
+        if flag == 0x0F:
+            return None
+        kind = self.group_liquid & 0x0F if self.group_liquid != 0x0F else flag
+        if kind not in WATER_NIBBLES:
+            return None
+        xv = self.xverts
+        return sum(self.heights[k] for k in (j * xv + i, j * xv + i + 1,
+                                             (j + 1) * xv + i, (j + 1) * xv + i + 1)) / 4.0
+
+
 class Group:
     """One group file's triangles, in the model frame, with their xy bounds for a fast reject."""
 
-    def __init__(self, index, flags, tris):
+    def __init__(self, index, flags, tris, liquid=None):
         self.index = index
         self.indoor = bool(flags & GROUP_INDOOR)
         self.tris = tris
+        self.liquid = liquid
         xs = [v[0] for t in tris for v in t[:3]] or [0.0]
         ys = [v[1] for t in tris for v in t[:3]] or [0.0]
         self.box = (min(xs), max(xs), min(ys), max(ys))
+        self._walls = None
+
+    @property
+    def walls(self):
+        """The colliding triangles a unit cannot stand on, each with its model-frame bounds:
+        (x0, x1, y0, y1, z0, z1, a, b, c)."""
+        if self._walls is None:
+            self._walls = []
+            for a, b, c, fl in self.tris:
+                if not collides(fl) or _normal_z(a, b, c) >= WALKABLE_NZ:
+                    continue
+                self._walls.append((min(a[0], b[0], c[0]), max(a[0], b[0], c[0]),
+                                    min(a[1], b[1], c[1]), max(a[1], b[1], c[1]),
+                                    min(a[2], b[2], c[2]), max(a[2], b[2], c[2]), a, b, c))
+        return self._walls
 
 
 def load_model(gd, path):
@@ -93,10 +152,11 @@ def load_model(gd, path):
         data = gd.read(f"{stem}_{g:03d}.wmo")
         if data is None:
             continue
-        mopy = movi = movt = None
+        mopy = movi = movt = liquid = None
         for cid, off, size in _chunks(data):
             if cid != b"MOGP":
                 continue
+            group_liquid = struct.unpack_from("<I", data, off + 0x34)[0]
             for sid, soff, ssize in _chunks(data, off + 0x44, off + size):
                 if sid == b"MOPY":
                     mopy = data[soff:soff + ssize]
@@ -104,14 +164,32 @@ def load_model(gd, path):
                     movi = struct.unpack_from(f"<{ssize // 2}H", data, soff)
                 elif sid == b"MOVT":
                     movt = struct.unpack_from(f"<{ssize // 4}f", data, soff)
+                elif sid == b"MLIQ":
+                    liquid = _mliq(data[soff:soff + ssize], group_liquid)
         if not (mopy and movi and movt):
             continue
         tris = []
         for t in range(len(movi) // 3):
             a, b, c = (movt[3 * movi[3 * t + j]:3 * movi[3 * t + j] + 3] for j in range(3))
             tris.append((a, b, c, mopy[2 * t]))
-        groups.append(Group(g, gflags, tris))
+        groups.append(Group(g, gflags, tris, liquid))
     return groups
+
+
+def _mliq(s, group_liquid):
+    """An MLIQ payload: a 30-byte header (xverts, yverts, xtiles, ytiles, base[3], material),
+    8-byte vertices with the height at +4, then one flag byte per tile. None when malformed."""
+    if len(s) < 30:
+        return None
+    xverts, yverts, xtiles, ytiles = struct.unpack_from("<4I", s, 0)
+    base = struct.unpack_from("<3f", s, 16)
+    nverts, ntiles = xverts * yverts, xtiles * ytiles
+    if (not nverts or xtiles + 1 != xverts or ytiles + 1 != yverts or nverts > 1 << 20
+            or len(s) < 30 + nverts * 8 + ntiles):
+        return None
+    heights = [struct.unpack_from("<f", s, 30 + k * 8 + 4)[0] for k in range(nverts)]
+    tiles = s[30 + nverts * 8:30 + nverts * 8 + ntiles]
+    return Liquid(xverts, yverts, base, heights, tiles, group_liquid)
 
 
 def ray(groups, mx, my):
@@ -135,11 +213,75 @@ def ray(groups, mx, my):
             if min(l1, l2, l3) < -1e-6:
                 continue
             z = l1 * a[2] + l2 * b[2] + l3 * c[2]
-            ux, uy, uz = (b[i] - a[i] for i in range(3))
-            vx, vy, vz = (c[i] - a[i] for i in range(3))
-            nx, ny, nz = uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx
-            n = math.sqrt(nx * nx + ny * ny + nz * nz) or 1.0
-            out.append((z, grp, abs(nz) / n, fl))
+            out.append((z, grp, _normal_z(a, b, c), fl))
+    return out
+
+
+def _normal_z(a, b, c):
+    """|normal z| of triangle abc: 1 flat, 0 vertical."""
+    ux, uy, uz = (b[i] - a[i] for i in range(3))
+    vx, vy, vz = (c[i] - a[i] for i in range(3))
+    nx, ny, nz = uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx
+    n = math.sqrt(nx * nx + ny * ny + nz * nz) or 1.0
+    return abs(nz) / n
+
+
+def _clip_slab(poly, lo, hi):
+    """The part of polygon `poly` (3D points) with lo <= z <= hi."""
+    for keep_above, h in ((True, lo), (False, hi)):
+        out = []
+        for k, p in enumerate(poly):
+            q = poly[(k + 1) % len(poly)]
+            p_in = p[2] >= h if keep_above else p[2] <= h
+            q_in = q[2] >= h if keep_above else q[2] <= h
+            if p_in:
+                out.append(p)
+            if p_in != q_in:
+                t = (h - p[2]) / (q[2] - p[2])
+                out.append(tuple(p[i] + t * (q[i] - p[i]) for i in range(3)))
+        poly = out
+        if not poly:
+            return []
+    return poly
+
+
+def _distance_2d(px, py, poly):
+    """Horizontal distance from (px, py) to polygon `poly` seen from above; 0 inside it."""
+    n = len(poly)
+    area = sum(poly[k][0] * poly[(k + 1) % n][1] - poly[(k + 1) % n][0] * poly[k][1] for k in range(n))
+    if n >= 3 and abs(area) > 1e-9:
+        sign = 1 if area > 0 else -1
+        if all(sign * ((poly[(k + 1) % n][0] - poly[k][0]) * (py - poly[k][1])
+                       - (poly[(k + 1) % n][1] - poly[k][1]) * (px - poly[k][0])) >= 0
+               for k in range(n)):
+            return 0.0
+    best = math.inf
+    for k in range(n):
+        ax, ay = poly[k][0], poly[k][1]
+        bx, by = poly[(k + 1) % n][0], poly[(k + 1) % n][1]
+        dx, dy = bx - ax, by - ay
+        L = dx * dx + dy * dy
+        t = 0.0 if L < 1e-12 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / L))
+        best = min(best, math.hypot(px - ax - t * dx, py - ay - t * dy))
+    return best
+
+
+def walls_at(groups, mx, my, mz, radius=BODY_RADIUS):
+    """The wall triangles that cross a body standing at model point (mx, my, mz): a vertical
+    capsule of `radius` from mz + BODY_LOW to mz + BODY_HIGH. Each hit is (group, a, b, c)."""
+    lo, hi = mz + BODY_LOW, mz + BODY_HIGH
+    out = []
+    for grp in groups:
+        x0, x1, y0, y1 = grp.box
+        if not (x0 - radius <= mx <= x1 + radius and y0 - radius <= my <= y1 + radius):
+            continue
+        for tx0, tx1, ty0, ty1, tz0, tz1, a, b, c in grp.walls:
+            if (mx < tx0 - radius or mx > tx1 + radius or my < ty0 - radius or my > ty1 + radius
+                    or tz1 < lo or tz0 > hi):
+                continue
+            part = _clip_slab([a, b, c], lo, hi)
+            if part and _distance_2d(mx, my, part) < radius:
+                out.append((grp, a, b, c))
     return out
 
 
@@ -162,12 +304,11 @@ class Floors:
             self.models[path] = load_model(self.gd, path)
         return self.models[path]
 
-    def surfaces(self, x, y, margin=0.0):
-        """Every surface of every placed WMO whose box holds (x, y), highest first."""
+    def _placed(self, x, y, margin):
+        """(groups, model x, model y, origin z) for each placed WMO whose box holds (x, y)."""
         tile, _, _ = self.terrain._tile_at(x, y)
         if not tile:
-            return []
-        out = []
+            return
         for p in tile["placements"]:
             if not (p["xs"][0] - margin <= x <= p["xs"][1] + margin
                     and p["ys"][0] - margin <= y <= p["ys"][1] + margin):
@@ -183,11 +324,34 @@ class Floors:
             yaw = math.radians(p["rot"][1] + 180.0)
             c, s = math.cos(yaw), math.sin(yaw)
             dx, dy = x - ox, y - oy
-            mx, my = dx * c + dy * s, -dx * s + dy * c
+            yield groups, dx * c + dy * s, -dx * s + dy * c, oz
+
+    def surfaces(self, x, y, margin=0.0):
+        """Every surface of every placed WMO whose box holds (x, y), highest first."""
+        out = []
+        for groups, mx, my, oz in self._placed(x, y, margin):
             for z, grp, nz, fl in ray(groups, mx, my):
                 out.append(Surface(oz + z, (mx, my, z), grp.index, grp.indoor,
                                    nz >= WALKABLE_NZ, collides(fl)))
         return sorted(out, key=lambda s: -s.z)
+
+    def water(self, x, y):
+        """The highest MLIQ water surface over (x, y) in world z, or None."""
+        best = None
+        for groups, mx, my, oz in self._placed(x, y, 0.0):
+            for grp in groups:
+                z = grp.liquid.surface(mx, my) if grp.liquid else None
+                if z is not None and (best is None or oz + z > best):
+                    best = oz + z
+        return best
+
+    def walls_near(self, x, y, z, radius=BODY_RADIUS, margin=0.0):
+        """The wall triangles that cross a body standing at world (x, y, z) (walls_at), in every
+        placed WMO whose box, widened by `margin`, holds the point."""
+        out = []
+        for groups, mx, my, oz in self._placed(x, y, margin):
+            out.extend(walls_at(groups, mx, my, z - oz, radius))
+        return out
 
 
 def main():

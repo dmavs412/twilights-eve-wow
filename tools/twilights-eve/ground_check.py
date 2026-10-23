@@ -1,27 +1,47 @@
 #!/usr/bin/env python3
-"""Check (and with --fix, rewrite) the Z of every placed unit in the realm content TOML.
+"""Check (and with --fix, rewrite) the spot of every placed unit in the realm content TOML.
 
 A row is any table with a `position = [x, y, z]` line. Its Z is compared with the ADT terrain
 height. A row inside a WMO placement box (with a 2 yd margin, Z range included) is interior: it
 must stand on one of the building's floors (wmo_floor.py) or on the terrain, within the same
 limits. `--fix` moves an interior row only onto a floor within 2 yd of its Z; farther off, a
 building has several floors and only its author knows which one, so the row is flagged with the
-nearest floors and its author writes the Z. ground_check_off_floor.txt lists the interior rows
-that were already off every floor when this check began; they pass until fixed, and a listed row
-that stands on a floor fails until its line is deleted. Rows with `grounded = false` and maps
-without terrain data are left alone.
+nearest floors and its author writes the Z. Rows with `grounded = false` and maps without
+terrain data are left alone.
+
+A Rumour point (`{ x = ..., y = ... }` in a `points = [...]` array) has no Z: it stands on the
+terrain, so a point inside a WMO box is flagged (rumour-indoor). Every row and point then passes
+the body rules of ADR 0021:
+- water: no water surface (ADT MCLQ or WMO MLIQ) more than 1.5 yd over its feet, unless it is a
+  GameObject or a creature that swims (`swims = true` on our template, vmangos InhabitType & 2
+  on an imported one). A Hub NPC is never exempt.
+- wall: no colliding, unwalkable WMO triangle crosses its body, a 0.4 yd capsule from 0.3 to 2 yd
+  over its feet.
+- roof: it does not stand on a floor of an outdoor WMO group more than 3 yd over the terrain,
+  unless the row says `on_top = true`.
+`--fix` moves a row or point that fails one of these to the first spot in rings of 1 to 5 yd
+(8 headings each, from +x) that passes every rule, and prints `nudge failed` when none does.
+
+ground_check_known.txt lists the failures already in the content when each rule began, one per
+line, `<rule> <file> <x> <y> <label>`. A listed failure passes until fixed, and a listed row that
+passes its rule fails until its line is deleted.
 
 Exit 1 when any row is flagged (or fixed), 0 otherwise.
 
     python3.15 tools/twilights-eve/ground_check.py [--fix] [--file <path>]
 
-Reads the game data from $WOW_DATA (default C:\\Users\\davis\\wow-data\\Data).
+Reads the game data from $WOW_DATA (default C:\\Users\\davis\\wow-data\\Data) and imported
+creature templates from the vmangos sqlite dump ($VMANGOS_SQLITE).
 """
 import argparse
+import collections
 import glob
+import math
 import os
 import re
+import sqlite3
 import sys
+import tomllib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -30,6 +50,7 @@ import wowmpq  # noqa: E402
 
 CONTENT = os.path.normpath(os.path.join(HERE, "..", "..", "crates", "twilight-realm", "content"))
 DEFAULT_DATA = r"C:\Users\davis\wow-data\Data"
+DEFAULT_VMANGOS = r"C:\Users\davis\AppData\Local\Temp\vmangos\sqlite-dump\mangos.sqlite"
 # Same table as import_barrens_spawns.MAP_DIRS (that module runs its import on load).
 MAP_DIRS = {0: "Azeroth", 1: "Kalimdor"}
 # Files whose rows stand on Kalimdor unless the row says otherwise (hub.rs and mobs.rs default
@@ -42,34 +63,62 @@ KNOWN_WRONG_MAP = {("mobs.toml", "guid 9000101")}
 # Test dungeons whose realm tests (creature_gaze, phased_wards, test_grounds and others) stand on a
 # flat plane at z 47.2 and hard-code that height; their Z is a test convention, not terrain.
 TEST_FIXTURES = {"gaze_hall.toml", "ward_test.toml", "test_grounds.toml"}
+# Files of imported vmangos templates: a creature on one of these swims by vmangos InhabitType.
+IMPORTED_TEMPLATES = {"elwynn.toml", "barrens.toml"}
 MARGIN = 2.0
 ABOVE_LIMIT = 1.0
 BELOW_LIMIT = 0.5
 # `--fix` moves an interior row onto the nearest floor only within this many yards.
 FIX_INTERIOR_YD = 2.0
-# The interior rows off every floor when the floor check began, one per line:
-# `<file> <x> <y> <label>`. Delete a line when its row is fixed.
-KNOWN_OFF_FLOOR = os.path.join(HERE, "ground_check_off_floor.txt")
+# A land unit may stand in water this deep, and on an outdoor WMO floor this far over the terrain.
+WATER_YD = 1.5
+ROOF_YD = 3.0
+# `--fix` tries rings of these radii, 8 headings each, before giving up.
+NUDGE_RINGS = (1, 2, 3, 4, 5)
+# The failures in the content when each rule began, one per line: `<rule> <file> <x> <y> <label>`.
+# Delete a line when its row is fixed.
+KNOWN = os.path.join(HERE, "ground_check_known.txt")
+RULES = ("off-floor", "water", "wall", "roof", "rumour-indoor")
 
-HEADER = re.compile(r"^\s*\[")
+# Table kinds by what they place. Another kind with a position is a creature when its `entry`
+# names a template, else a GameObject.
+GAMEOBJECT_KINDS = {"gameobject", "portal", "portal.door", "inner_portal", "cover", "entrance", "exit"}
+CREATURE_KINDS = {"creature", "creature.on_health", "creature.every", "spawn", "added", "moved", "npc"}
+
+HEADER = re.compile(r"^\s*\[\[?\s*([^\]\s]+)\s*\]")
 NAME = re.compile(r'^\s*name\s*=\s*"([^"]*)"')
 GUID = re.compile(r"^\s*guid\s*=\s*(\d+)")
 MAP = re.compile(r"^\s*map\s*=\s*(\d+)")
+ENTRY = re.compile(r"^\s*entry\s*=\s*(\d+)")
 GROUNDED = re.compile(r"^\s*grounded\s*=\s*(true|false)")
+ON_TOP = re.compile(r"^\s*on_top\s*=\s*(true|false)")
 POSITION = re.compile(
     r"^(?P<head>\s*position\s*=\s*\[\s*)(?P<x>[^,\]\s]+)(?P<s1>\s*,\s*)(?P<y>[^,\]\s]+)"
     r"(?P<s2>\s*,\s*)(?P<z>[^,\]\s]+)(?P<tail>.*)$",
     re.S,
 )
+ID = re.compile(r"^\s*id\s*=\s*(\d+)")
+QUEST = re.compile(r"^\s*quest\s*=\s*(\d+)")
+GIVER = re.compile(r"^\s*giver\s*=\s*(\d+)")
+POINTS = re.compile(r"^\s*points\s*=\s*\[")
+XY = re.compile(r"\{\s*x\s*=\s*(?P<x>-?[\d.]+)\s*,\s*y\s*=\s*(?P<y>-?[\d.]+)")
+STRING = re.compile(r'"[^"]*"')
+
+Row = collections.namedtuple("Row", "idx label map grounded x y z kind entry on_top")
+Point = collections.namedtuple("Point", "idx span label map x y kind entry")
+
+
+def _read_lines(path):
+    with open(path, encoding="utf-8", newline="") as f:
+        return f.read().split("\n")
 
 
 def rows(path):
-    """Yield (line_index, label, map, grounded, x, y, z) for each 3D position line.
+    """(lines, [Row]) for each 3D position line.
 
-    A table's `map` and `grounded` may sit on either side of its position line, so a row is
-    emitted when the next header or the end of the file closes the table."""
-    with open(path, encoding="utf-8", newline="") as f:
-        lines = f.read().split("\n")
+    A table's `map`, `grounded`, `entry` and `on_top` may sit on either side of its position
+    line, so a row is emitted when the next header or the end of the file closes the table."""
+    lines = _read_lines(path)
     file_map = FILE_DEFAULT_MAP.get(os.path.basename(path), 0)
     label = None
     cur = None  # dict for the open table
@@ -77,17 +126,19 @@ def rows(path):
 
     def close():
         if cur and cur["pos"] is not None:
-            out.append((cur["pos"], cur["label"], cur["map"] if cur["map"] is not None else file_map,
-                        cur["grounded"], *cur["xyz"]))
+            out.append(Row(cur["pos"], cur["label"], cur["map"] if cur["map"] is not None else file_map,
+                           cur["grounded"], *cur["xyz"], cur["kind"], cur["entry"], cur["on_top"]))
 
     seen_header = False
     for i, raw in enumerate(lines):
         line = raw.rstrip("\r")
-        if HEADER.match(line):
+        m = HEADER.match(line)
+        if m:
             close()
             seen_header = True
             label = None
-            cur = {"pos": None, "label": None, "map": None, "grounded": True, "xyz": None}
+            cur = {"pos": None, "label": None, "map": None, "grounded": True, "xyz": None,
+                   "kind": m.group(1), "entry": None, "on_top": False}
             continue
         m = MAP.match(line)
         if m:
@@ -106,9 +157,17 @@ def rows(path):
         if m:
             label = "guid " + m.group(1)
             continue
+        m = ENTRY.match(line)
+        if m:
+            cur["entry"] = int(m.group(1))
+            continue
         m = GROUNDED.match(line)
         if m:
             cur["grounded"] = m.group(1) == "true"
+            continue
+        m = ON_TOP.match(line)
+        if m:
+            cur["on_top"] = m.group(1) == "true"
             continue
         m = POSITION.match(line)
         if m:
@@ -119,6 +178,67 @@ def rows(path):
             cur["pos"] = i
             cur["label"] = label
             cur["xyz"] = xyz
+    close()
+    return lines, out
+
+
+def xy_points(path):
+    """(lines, [Point]) for every `{ x = <num>, y = <num>` inside a `points = [` array: a
+    `[[rumour]]`'s spots for its giver, and a `[[rumour.spawn]]`'s. A point's `span` is the
+    (start, end) columns of its x and of its y. A spawn table takes its map from its Rumour."""
+    lines = _read_lines(path)
+    file_map = FILE_DEFAULT_MAP.get(os.path.basename(path), 0)
+    out = []
+    table = {"kind": None}
+    rumour = {"id": None, "map": None, "giver": None}
+    depth = 0
+    found = []
+
+    def close():
+        rumour_map = rumour["map"] if rumour["map"] is not None else file_map
+        tmap = table.get("map")
+        if table["kind"] == "rumour.spawn":
+            base = "rumour %s spawn %s" % (rumour["id"], table.get("quest"))
+            entry = table.get("entry")
+        else:
+            base = "rumour %s" % (table.get("id") if table["kind"] == "rumour" else table["kind"])
+            entry = table.get("giver")
+        for n, (i, span, x, y) in enumerate(found, 1):
+            out.append(Point(i, span, "%s point %d" % (base, n), tmap if tmap is not None else rumour_map,
+                             x, y, table["kind"], entry))
+        found.clear()
+
+    for i, raw in enumerate(lines):
+        line = raw.rstrip("\r")
+        if depth == 0:
+            m = HEADER.match(line)
+            if m:
+                close()
+                table = {"kind": m.group(1)}
+                if table["kind"] == "rumour":
+                    rumour = {"id": None, "map": None, "giver": None}
+                continue
+            if line.lstrip().startswith("#"):
+                continue
+            for key, rx in (("id", ID), ("map", MAP), ("giver", GIVER), ("quest", QUEST), ("entry", ENTRY)):
+                m = rx.match(line)
+                if m:
+                    table[key] = int(m.group(1))
+                    if table["kind"] == "rumour" and key in rumour:
+                        rumour[key] = int(m.group(1))
+                    break
+            m = POINTS.match(line)
+            if not m:
+                continue
+            start = m.end() - 1
+        else:
+            if line.lstrip().startswith("#"):
+                continue
+            start = 0
+        for m in XY.finditer(line, start):
+            found.append((i, (m.span("x"), m.span("y")), float(m.group("x")), float(m.group("y"))))
+        code = STRING.sub("", line[start:]).split("#")[0]
+        depth += code.count("[") - code.count("]")
     close()
     return lines, out
 
@@ -148,23 +268,167 @@ def interior_floors(floors, terrain, x, y):
     return heights + ([g] if g is not None else [])
 
 
-def off_floor_key(name, label, x, y):
-    return "%s %.1f %.1f %s" % (name, x, y, label or "?")
+def too_deep(water, feet):
+    """True when a water surface at `water` stands more than WATER_YD over feet at `feet`."""
+    return water is not None and water - feet > WATER_YD
 
 
-def known_off_floor():
-    if not os.path.exists(KNOWN_OFF_FLOOR):
+def is_roof(surface, ground, on_top=False):
+    """True when a unit standing on WMO `surface` is on a roof: an outdoor group's floor more than
+    ROOF_YD over the terrain at `ground`, which only a row saying `on_top = true` may do."""
+    return (not on_top and surface is not None and not surface.indoor and ground is not None
+            and surface.z - ground > ROOF_YD)
+
+
+def water_checked(kind, entry, templates, swimmers):
+    """Whether the water rule applies to a unit of table `kind` naming template `entry`.
+    `templates` maps an entry to {"ours", "swims"}; `swimmers` holds the imported entries
+    vmangos lets swim."""
+    if kind == "npc":
+        return True
+    if kind in GAMEOBJECT_KINDS or (kind not in CREATURE_KINDS and entry not in templates):
+        return False
+    t = templates.get(entry)
+    if t and t["ours"]:
+        return not t["swims"]
+    return entry not in swimmers
+
+
+def nudge_candidates(x, y):
+    """The spots `--fix` tries, in order: rings of 1 to 5 yd, 8 headings each from +x, rounded
+    to the 0.1 yd the content writes."""
+    for r in NUDGE_RINGS:
+        for k in range(8):
+            a = math.radians(45 * k)
+            yield round(x + r * math.cos(a), 1), round(y + r * math.sin(a), 1)
+
+
+def nudge(x, y, passes):
+    """The first candidate (nudge_candidates) where `passes(cx, cy)` is truthy, as
+    (cx, cy, result); None when none passes."""
+    for cx, cy in nudge_candidates(x, y):
+        got = passes(cx, cy)
+        if got:
+            return cx, cy, got
+    return None
+
+
+def load_templates(paths):
+    """entry -> {"ours", "swims"} over every `[[template]]` in the content files."""
+    out = {}
+    for path in paths:
+        with open(path, "rb") as f:
+            doc = tomllib.load(f)
+        ours = os.path.basename(path) not in IMPORTED_TEMPLATES
+        for t in doc.get("template", []):
+            if "entry" in t:
+                out[t["entry"]] = {"ours": ours, "swims": bool(t.get("swims", False))}
+    return out
+
+
+def load_swimmers():
+    """The vmangos creature_template entries whose InhabitType has the water bit (2)."""
+    path = os.environ.get("VMANGOS_SQLITE", DEFAULT_VMANGOS)
+    if not os.path.exists(path):
+        print("warning: no vmangos sqlite at %s; imported creatures count as land units" % path)
         return set()
-    with open(KNOWN_OFF_FLOOR, encoding="utf-8") as f:
+    con = sqlite3.connect(path)
+    try:
+        return {r[0] for r in con.execute("SELECT entry FROM creature_template WHERE inhabit_type & 2")}
+    finally:
+        con.close()
+
+
+def known_key(rule, name, label, x, y):
+    return "%s %s %.1f %.1f %s" % (rule, name, x, y, label or "?")
+
+
+def load_known():
+    if not os.path.exists(KNOWN):
+        return set()
+    with open(KNOWN, encoding="utf-8") as f:
         return {line.strip() for line in f if line.strip() and not line.startswith("#")}
 
 
 def set_z(lines, idx, z):
+    set_xyz(lines, idx, None, None, z)
+
+
+def set_xyz(lines, idx, x, y, z):
+    """Rewrite a position line's x, y (when given) and z, keeping the rest of the line."""
     raw = lines[idx]
     cr = "\r" if raw.endswith("\r") else ""
     m = POSITION.match(raw.rstrip("\r"))
-    lines[idx] = (m.group("head") + m.group("x") + m.group("s1") + m.group("y")
-                  + m.group("s2") + "%.2f" % z + m.group("tail") + cr)
+    xs = m.group("x") if x is None else "%.1f" % x
+    ys = m.group("y") if y is None else "%.1f" % y
+    lines[idx] = (m.group("head") + xs + m.group("s1") + ys + m.group("s2") + "%.2f" % z
+                  + m.group("tail") + cr)
+
+
+def set_xy(lines, idx, span, x, y):
+    """Rewrite one point's x and y at `span` on line `idx`. Spans of points to its right move, so
+    a caller rewrites a line's points right to left."""
+    (x0, x1), (y0, y1) = span
+    line = lines[idx]
+    lines[idx] = line[:x0] + "%.1f" % x + line[x1:y0] + "%.1f" % y + line[y1:]
+
+
+class World:
+    """The game data for one run: terrain and WMO floors per map, templates and swimmers."""
+
+    def __init__(self, gd, templates, swimmers):
+        self.gd = gd
+        self.templates = templates
+        self.swimmers = swimmers
+        self.terrains = {}
+        self.floors = {}
+
+    def terrain(self, map_id):
+        if map_id not in self.terrains:
+            self.terrains[map_id] = wowmpq.Terrain(self.gd, MAP_DIRS[map_id])
+        return self.terrains[map_id]
+
+    def floors_of(self, map_id):
+        if map_id not in self.floors:
+            self.floors[map_id] = wmo_floor.Floors(self.gd, self.terrain(map_id))
+        return self.floors[map_id]
+
+    def body_rules(self, map_id, x, y, z, kind, entry, on_top):
+        """The water, wall and roof rules a unit standing at (x, y, z) fails."""
+        terrain = self.terrain(map_id)
+        floors = self.floors_of(map_id)
+        failed = []
+        if water_checked(kind, entry, self.templates, self.swimmers):
+            ws = [w for w in (terrain.water_z(x, y), floors.water(x, y)) if w is not None]
+            if ws and too_deep(max(ws), z):
+                failed.append("water")
+        if floors.walls_near(x, y, z, margin=MARGIN):
+            failed.append("wall")
+        stood = [s for s in floors.surfaces(x, y, MARGIN) if s.floor and stands_on(z, s.z)]
+        g = terrain.ground_z(x, y)
+        if stood and not (g is not None and stands_on(z, g)):
+            if is_roof(min(stood, key=lambda s: abs(z - s.z)), g, on_top):
+                failed.append("roof")
+        return failed
+
+    def point_rules(self, p, x, y):
+        """The rules a Rumour point at (x, y) fails, standing on the terrain; None without terrain."""
+        terrain = self.terrain(p.map)
+        g = terrain.ground_z(x, y)
+        if g is None:
+            return None
+        failed = ["rumour-indoor"] if interior(terrain, x, y, g) else []
+        return failed + self.body_rules(p.map, x, y, g, p.kind, p.entry, False)
+
+    def row_spot(self, r, x, y, z_from):
+        """The Z a row nudged to (x, y) stands at: the floor or terrain nearest `z_from` inside a
+        building (within FIX_INTERIOR_YD), the terrain outside; None when there is none."""
+        terrain = self.terrain(r.map)
+        if interior(terrain, x, y, z_from):
+            heights = interior_floors(self.floors_of(r.map), terrain, x, y)
+            near = min(heights, key=lambda h: abs(z_from - h), default=None)
+            return near if near is not None and abs(z_from - near) <= FIX_INTERIOR_YD else None
+        return terrain.ground_z(x, y)
 
 
 def main():
@@ -174,92 +438,174 @@ def main():
     a = ap.parse_args()
 
     data = os.environ.get("WOW_DATA", DEFAULT_DATA)
-    gd = wowmpq.GameData(data)
-    terrains = {}
-    floors_by_map = {}
-    paths = [a.file] if a.file else sorted(glob.glob(os.path.join(CONTENT, "*.toml")))
+    all_paths = sorted(glob.glob(os.path.join(CONTENT, "*.toml")))
+    world = World(wowmpq.GameData(data), load_templates(all_paths), load_swimmers())
+    paths = [a.file] if a.file else all_paths
     verb = "fixed" if a.fix else "flagged"
-    counts = {"checked": 0, verb: 0, "interior": 0, "off-floor": 0, "known": 0, "no-terrain": 0}
-    known = known_off_floor()
-    per_file = {}
+    counts = collections.Counter()
+    known = load_known()
+    per_file = collections.Counter()
+
+    def known_or_flag(rules_failed, name, label, x, y, where):
+        """Split `rules_failed` into new failures, counting known ones and stale known lines."""
+        new = []
+        for rule in RULES[1:]:
+            key = known_key(rule, name, label, x, y)
+            if rule in rules_failed:
+                if key in known:
+                    counts["known"] += 1
+                else:
+                    new.append(rule)
+            elif key in known and rule in where:
+                counts["stale"] += 1
+                print("passes %s now %s %s: delete its line from %s" % (rule, name, label or "?",
+                                                                        os.path.basename(KNOWN)))
+        return new
 
     for path in paths:
-        if os.path.basename(path) in TEST_FIXTURES:
-            print("skipped %s (test fixture on a flat plane)" % os.path.basename(path))
+        name = os.path.basename(path)
+        if name in TEST_FIXTURES:
+            print("skipped %s (test fixture on a flat plane)" % name)
             continue
         lines, found = rows(path)
         changed = False
-        for idx, label, map_id, grounded, x, y, z in found:
-            if not grounded:
+        for r in found:
+            if not r.grounded:
                 continue
-            if (os.path.basename(path), label) in KNOWN_WRONG_MAP:
-                print("skipped %s:%d %s (wrong map in content)" % (os.path.basename(path), idx + 1, label))
+            if (name, r.label) in KNOWN_WRONG_MAP:
+                print("skipped %s:%d %s (wrong map in content)" % (name, r.idx + 1, r.label))
                 continue
-            if map_id not in MAP_DIRS:
+            if r.map not in MAP_DIRS:
                 counts["interior"] += 1
                 continue
-            terrain = terrains.get(map_id)
-            if terrain is None:
-                terrain = terrains[map_id] = wowmpq.Terrain(gd, MAP_DIRS[map_id])
+            terrain = world.terrain(r.map)
+            x, y, z = r.x, r.y, r.z
+            label = r.label or "?"
+            z_now = z  # the Z the body rules see: the row's, or the one --fix writes
             if interior(terrain, x, y, z):
                 counts["interior"] += 1
-                if map_id not in floors_by_map:
-                    floors_by_map[map_id] = wmo_floor.Floors(gd, terrain)
-                name = os.path.basename(path)
-                key = off_floor_key(name, label, x, y)
-                heights = interior_floors(floors_by_map[map_id], terrain, x, y)
+                key = known_key("off-floor", name, r.label, x, y)
+                heights = interior_floors(world.floors_of(r.map), terrain, x, y)
                 if any(stands_on(z, h) for h in heights):
                     if key in known:
-                        counts["off-floor"] += 1
+                        counts["stale"] += 1
                         print("on a floor now %s:%d %s: delete its line from %s"
-                              % (name, idx + 1, label or "?", os.path.basename(KNOWN_OFF_FLOOR)))
+                              % (name, r.idx + 1, label, os.path.basename(KNOWN)))
+                else:
+                    nearest = min(heights, key=lambda h: abs(z - h), default=None)
+                    if a.fix and key not in known and nearest is not None and abs(z - nearest) <= FIX_INTERIOR_YD:
+                        counts[verb] += 1
+                        per_file[name] += 1
+                        print("fixed %s:%d %s z=%.2f floor=%.2f diff=%+.2f"
+                              % (name, r.idx + 1, label, z, nearest, z - nearest))
+                        set_z(lines, r.idx, nearest)
+                        changed = True
+                        z_now = nearest
+                    elif key in known:
+                        counts["known"] += 1
+                        continue
+                    else:
+                        counts["off-floor"] += 1
+                        per_file[name] += 1
+                        below = max((h for h in heights if h < z), default=None)
+                        above = min((h for h in heights if h > z), default=None)
+                        print("off-floor %s:%d %s z=%.2f: nearest floor below %s, above %s (wmo_floor.py %.1f %.1f)"
+                              % (name, r.idx + 1, label, z,
+                                 "none" if below is None else "%.2f" % below,
+                                 "none" if above is None else "%.2f" % above, x, y))
+                        continue
+            else:
+                g = terrain.ground_z(x, y)
+                if g is None:
+                    counts["no-terrain"] += 1
                     continue
-                nearest = min(heights, key=lambda h: abs(z - h), default=None)
-                if a.fix and key not in known and nearest is not None and abs(z - nearest) <= FIX_INTERIOR_YD:
+                counts["checked"] += 1
+                d = z - g
+                if d > ABOVE_LIMIT or -d > BELOW_LIMIT:
                     counts[verb] += 1
-                    per_file[name] = per_file.get(name, 0) + 1
-                    print("fixed %s:%d %s z=%.2f floor=%.2f diff=%+.2f"
-                          % (name, idx + 1, label or "?", z, nearest, z - nearest))
-                    set_z(lines, idx, nearest)
+                    per_file[name] += 1
+                    print("%s %s:%d %s z=%.2f terrain=%.2f diff=%+.2f" % (verb, name, r.idx + 1, label, z, g, d))
+                    if not a.fix:
+                        continue
+                    set_z(lines, r.idx, g)
                     changed = True
-                    continue
-                if key in known:
-                    counts["known"] += 1
-                    continue
-                counts["off-floor"] += 1
-                per_file[name] = per_file.get(name, 0) + 1
-                below = max((h for h in heights if h < z), default=None)
-                above = min((h for h in heights if h > z), default=None)
-                print("off-floor %s:%d %s z=%.2f: nearest floor below %s, above %s (wmo_floor.py %.1f %.1f)"
-                      % (name, idx + 1, label or "?", z,
-                         "none" if below is None else "%.2f" % below,
-                         "none" if above is None else "%.2f" % above, x, y))
+                    z_now = g
+
+            failed = world.body_rules(r.map, x, y, z_now, r.kind, r.entry, r.on_top)
+            new = known_or_flag(failed, name, r.label, x, y, ("water", "wall", "roof"))
+            if not new:
                 continue
-            g = terrain.ground_z(x, y)
-            if g is None:
+            if not a.fix:
+                counts[verb] += 1
+                per_file[name] += 1
+                print("%s %s:%d %s (%.1f %.1f %.2f)" % (" ".join(new), name, r.idx + 1, label, x, y, z_now))
+                continue
+
+            def passes(cx, cy, r=r, z_now=z_now):
+                cz = world.row_spot(r, cx, cy, z_now)
+                if cz is None or world.body_rules(r.map, cx, cy, cz, r.kind, r.entry, r.on_top):
+                    return None
+                return cz
+
+            moved = nudge(x, y, passes)
+            if moved is None:
+                counts["nudge-failed"] += 1
+                per_file[name] += 1
+                print("nudge failed %s:%d %s %s" % (name, r.idx + 1, label, " ".join(new)))
+                continue
+            cx, cy, cz = moved
+            counts[verb] += 1
+            per_file[name] += 1
+            print("nudged %s:%d %s %s: (%.1f %.1f) to (%.1f %.1f %.2f)"
+                  % (name, r.idx + 1, label, " ".join(new), x, y, cx, cy, cz))
+            set_xyz(lines, r.idx, cx, cy, cz)
+            changed = True
+
+        # Row edits touch only position lines, so the points' spans still hold in `lines`.
+        _, points = xy_points(path)
+        moves = []
+        for p in points:
+            if p.map not in MAP_DIRS:
+                continue
+            failed = world.point_rules(p, p.x, p.y)
+            if failed is None:
                 counts["no-terrain"] += 1
                 continue
-            counts["checked"] += 1
-            d = z - g
-            if not (d > ABOVE_LIMIT or -d > BELOW_LIMIT):
+            counts["points"] += 1
+            new = known_or_flag(failed, name, p.label, p.x, p.y, ("water", "wall", "roof", "rumour-indoor"))
+            if not new:
+                continue
+            if not a.fix:
+                counts[verb] += 1
+                per_file[name] += 1
+                print("%s %s:%d %s (%.1f %.1f)" % (" ".join(new), name, p.idx + 1, p.label, p.x, p.y))
+                continue
+            moved = nudge(p.x, p.y, lambda cx, cy, p=p: world.point_rules(p, cx, cy) == [])
+            if moved is None:
+                counts["nudge-failed"] += 1
+                per_file[name] += 1
+                print("nudge failed %s:%d %s %s" % (name, p.idx + 1, p.label, " ".join(new)))
                 continue
             counts[verb] += 1
-            per_file[os.path.basename(path)] = per_file.get(os.path.basename(path), 0) + 1
-            print("%s %s:%d %s z=%.2f terrain=%.2f diff=%+.2f"
-                  % (verb, os.path.basename(path), idx + 1, label or "?", z, g, d))
-            if a.fix:
-                set_z(lines, idx, g)
-                changed = True
+            per_file[name] += 1
+            print("nudged %s:%d %s %s: (%.1f %.1f) to (%.1f %.1f)"
+                  % (name, p.idx + 1, p.label, " ".join(new), p.x, p.y, moved[0], moved[1]))
+            moves.append((p.idx, p.span, moved[0], moved[1]))
+        for idx, span, cx, cy in sorted(moves, key=lambda m: (m[0], -m[1][0][0])):
+            set_xy(lines, idx, span, cx, cy)
+            changed = True
         if changed:
             with open(path, "w", encoding="utf-8", newline="") as f:
                 f.write("\n".join(lines))
 
-    for name, n in sorted(per_file.items()):
-        print("  %s: %d" % (name, n))
-    print("checked %d, %s %d, interior %d (off-floor %d, known off-floor %d), no-terrain %d"
-          % (counts["checked"], verb, counts[verb], counts["interior"], counts["off-floor"],
-             counts["known"], counts["no-terrain"]))
-    return 1 if counts[verb] or counts["off-floor"] else 0
+    for n, c in sorted(per_file.items()):
+        print("  %s: %d" % (n, c))
+    print("checked %d rows and %d points, %s %d, interior %d (off-floor %d), known %d, stale known %d, "
+          "nudge failed %d, no-terrain %d"
+          % (counts["checked"], counts["points"], verb, counts[verb], counts["interior"],
+             counts["off-floor"], counts["known"], counts["stale"], counts["nudge-failed"],
+             counts["no-terrain"]))
+    return 1 if counts[verb] or counts["off-floor"] or counts["stale"] or counts["nudge-failed"] else 0
 
 
 if __name__ == "__main__":

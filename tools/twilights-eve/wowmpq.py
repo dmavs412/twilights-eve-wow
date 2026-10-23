@@ -311,6 +311,10 @@ TILE = 1600.0 / 3.0          # 533.333 yards per ADT tile
 CHUNK = TILE / 16.0          # 33.333 yards per MCNK
 UNIT = CHUNK / 8.0           # 4.1667 yards between outer height vertices
 ORIGIN = 32.0 * TILE         # 17066.666: ADT placement-space origin
+# Bytes per MCLQ block: {f32 min, f32 max, 81 x 8 B verts, 64 B cell flags, u32 nFlow, 2 x 40 B flow}.
+MCLQ_BLOCK = 0x324
+# A dry MCLQ vertex holds a huge height; benilla-formats' liquid.rs skips cells with one.
+LIQUID_SENTINEL = 1.0e9
 
 
 class Terrain:
@@ -375,9 +379,27 @@ class Terrain:
                     hp = p + ofs_h + 8  # ofs is from MCNK chunk start; skip MCVT header
                     if d[p + ofs_h : p + ofs_h + 4][::-1] == b"MCVT":
                         heights = struct.unpack_from("<145f", d, hp)
-                chunks[(ix, iy)] = (area, px, py, pz, heights)
+                chunks[(ix, iy)] = (area, px, py, pz, heights, self._liquids(d, p, h))
             p += 8 + size
         return {"chunks": chunks, "wmos": wmos, "placements": placements}
+
+    @staticmethod
+    def _liquids(d, p, h):
+        """The MCNK's MCLQ blocks as (81 vertex heights, 64 cell flags), the layout in
+        crates/benilla-adt/src/lib.rs: one block per set liquid header bit (0x3c), at least one."""
+        flags = struct.unpack_from("<I", d, h)[0]
+        ofs, size = struct.unpack_from("<II", d, h + 0x60)
+        if not ofs or d[p + ofs : p + ofs + 4][::-1] != b"MCLQ":
+            return []
+        start, end = p + ofs + 8, min(len(d), p + ofs + 8 + size)
+        out = []
+        for k in range(max(1, bin(flags & 0x3C).count("1"))):
+            b = start + k * MCLQ_BLOCK
+            if b + 8 + 81 * 8 + 64 > end:
+                break
+            heights = [struct.unpack_from("<f", d, b + 8 + i * 8 + 4)[0] for i in range(81)]
+            out.append((heights, d[b + 8 + 81 * 8 : b + 8 + 81 * 8 + 64]))
+        return out
 
     def _tile_at(self, x: float, y: float):
         fx = 32.0 - y / TILE
@@ -422,7 +444,7 @@ class Terrain:
         c = self._locate(x, y)
         if not c or c[4] is None:
             return None
-        _, px, py, pz, hts = c
+        _, px, py, pz, hts, _ = c
         # chunk corner (px, py) is its max-x, max-y corner; rows run toward -x, cols toward -y
         r = (px - x) / UNIT
         q = (py - y) / UNIT
@@ -435,3 +457,27 @@ class Terrain:
         z = (outer(r0, q0) * (1 - fr) * (1 - fq) + outer(r0 + 1, q0) * fr * (1 - fq)
              + outer(r0, q0 + 1) * (1 - fr) * fq + outer(r0 + 1, q0 + 1) * fr * fq)
         return pz + z
+
+    def water_z(self, x: float, y: float) -> float | None:
+        """The water surface over (x, y) from the MCNK's MCLQ blocks: the mean of the wet cell's
+        four corners, the highest block's when two cover it. A cell's low nibble is its liquid
+        type: 0xF is dry, and by its class (nibble & 3) 0 is still water and 1 ocean, while 2,
+        magma, and 3, slime, are not water (LiquidKind::from_adt_nibble)."""
+        c = self._locate(x, y)
+        if not c:
+            return None
+        _, px, py, _, _, liquids = c
+        row = max(0, min(7, int((px - x) / UNIT)))
+        col = max(0, min(7, int((py - y) / UNIT)))
+        best = None
+        for heights, cells in liquids:
+            nib = cells[row * 8 + col] & 0x0F
+            if nib == 0x0F or nib & 3 not in (0, 1):
+                continue
+            corners = [heights[i] for i in (row * 9 + col, row * 9 + col + 1,
+                                            (row + 1) * 9 + col, (row + 1) * 9 + col + 1)]
+            if not all(math.isfinite(h) and abs(h) < LIQUID_SENTINEL for h in corners):
+                continue
+            z = sum(corners) / 4.0
+            best = z if best is None else max(best, z)
+        return best
