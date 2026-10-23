@@ -11369,6 +11369,42 @@
    }
   },
   {
+   "spell_id": 1000404,
+   "calling": "cutthroat",
+   "key": "sap",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Sap",
+    "cost": 10.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "From Stealth, incapacitates an enemy that is not in combat for 20 sec. Any damage ends it. You stay stealthed.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_Sap",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 257,
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 18
+   }
+  },
+  {
    "spell_id": 1000400,
    "calling": "initiate",
    "key": "counterspell",
@@ -11772,6 +11808,30 @@
     "name": "Miasma",
     "aura_description": "Healing received increased by 15%.",
     "visual": 33
+   }
+  },
+  {
+   "spell_id": 1000405,
+   "calling": "cutthroat",
+   "key": "aura_sap",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Sap",
+    "mechanic": 30,
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Sap (incapacitate)",
+    "aura_description": "Incapacitated. Any damage ends it.",
+    "visual": 257
    }
   },
   {

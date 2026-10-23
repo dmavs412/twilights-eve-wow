@@ -95,6 +95,10 @@ struct GenSkill {
     target: Option<Target>,
     #[serde(default)]
     requires_out_of_combat: bool,
+    #[serde(default)]
+    requires_stealth: bool,
+    #[serde(default)]
+    requires_target_out_of_combat: bool,
     /// `Some(false)` for a hidden ability, whose `spell_id` is its `realm_spell_id`.
     client_visible: Option<bool>,
     /// `Some(false)` for a visible skill kept off the spell book (`spellbook=no`), cast only as
@@ -328,6 +332,8 @@ fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
         radius_yd: g.realm_radius_yd,
         max_targets: g.meta.shape.max_targets.unwrap_or(u32::MAX),
         requires_out_of_combat: g.requires_out_of_combat,
+        requires_stealth: g.requires_stealth,
+        requires_target_out_of_combat: g.requires_target_out_of_combat,
         requires_target_dodged: false,
         puts_in_combat_ms: 0,
         requires_target_health_pct: 0,
@@ -375,6 +381,8 @@ fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
                 realm_radius_yd: rank.realm_radius_yd,
                 target: Some(target),
                 requires_out_of_combat: false,
+                requires_stealth: false,
+                requires_target_out_of_combat: false,
                 client_visible: None,
                 spellbook: None,
                 effects: rank.effects.clone(),

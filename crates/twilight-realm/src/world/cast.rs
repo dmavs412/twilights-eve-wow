@@ -72,7 +72,9 @@ pub(super) const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
 pub(super) const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
+const SPELL_FAILED_ONLY_STEALTHED: u8 = 0x57;
 const SPELL_FAILED_OUT_OF_RANGE: u8 = 0x59;
+const SPELL_FAILED_TARGET_AFFECTING_COMBAT: u8 = 0x66;
 const SPELL_FAILED_TARGET_AURASTATE: u8 = 0x67;
 const SPELL_FAILED_TARGETS_DEAD: u8 = 0x65;
 const SPELL_FAILED_TOO_CLOSE: u8 = 0x76;
@@ -2484,9 +2486,10 @@ impl InWorld {
                     finisher_target.get_or_insert(guid);
                 }
             }
-            // A cast at a mob, landed or not, turns it on the player.
+            // A cast at a mob, landed or not, turns it on the player. A skill that needs an idle
+            // target (Sap) leaves it idle, so no threat, no call for help and no pack aggro.
             if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == guid) {
-                if mob.state == State::Idle {
+                if mob.state == State::Idle && !skill.requires_target_out_of_combat {
                     super::engage(mob, self.guid, events);
                 }
             }
@@ -2981,6 +2984,9 @@ impl InWorld {
         if skill.requires_out_of_combat && p.in_combat {
             return Err(SPELL_FAILED_AFFECTING_COMBAT);
         }
+        if skill.requires_stealth && !self.skills.stealthed() {
+            return Err(SPELL_FAILED_ONLY_STEALTHED);
+        }
         if skill.is_finisher() && target.is_none_or(|t| self.skills.combo.on(t) == 0) {
             return Err(SPELL_FAILED_NO_COMBO_POINTS);
         }
@@ -3051,6 +3057,9 @@ impl InWorld {
                     && !self.skills.dodged.is_some_and(|(m, _)| m == guid)
                 {
                     return Err(SPELL_FAILED_CASTER_AURASTATE);
+                }
+                if skill.requires_target_out_of_combat && !matches!(mob.state, State::Idle) {
+                    return Err(SPELL_FAILED_TARGET_AFFECTING_COMBAT);
                 }
                 if skill.requires_target_health_pct > 0
                     && u64::from(mob.health) * 100

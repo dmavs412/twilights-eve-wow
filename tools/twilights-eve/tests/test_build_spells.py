@@ -1127,6 +1127,16 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         self.assertEqual(skill["requires"], {"combat": "out"})
         self.assertNotIn("requires_out_of_combat", self.built_skill(requires="combat=in"))
 
+    def test_stealth_and_target_combat_set_the_realm_flags(self):
+        skill = self.built_skill(requires="stealth=yes;target_combat=out")
+        self.assertTrue(skill["requires_stealth"])
+        self.assertTrue(skill["requires_target_out_of_combat"])
+        self.assertEqual(skill["requires"], {"stealth": True, "target_combat": "out"})
+        plain = self.built_skill(requires="position=behind")
+        self.assertNotIn("requires_stealth", plain)
+        self.assertNotIn("requires_target_out_of_combat", plain)
+        self.assert_fails([{**STRIKE, "requires": "target_combat=in"}], "target_combat is 'in'")
+
     def test_client_not_in_combat_needs_combat_out(self):
         self.built_skill(client_not_in_combat="yes", requires="combat=out")
         self.assertTrue(self.patch["spells"][0]["fields"]["not_in_combat"])

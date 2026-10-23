@@ -7903,6 +7903,50 @@
      }
     ],
     "description": "Stops the spell the target is casting and locks it out of that spell's school for 5 seconds. When it stops a cast, you gain 1 combo point."
+   },
+   {
+    "key": "sap",
+    "name": "Sap",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000404,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 0,
+    "realm_gcd_ms": 1000,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "learn_level": 20,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires": {
+     "stealth": true,
+     "target_combat": "out"
+    },
+    "requires_stealth": true,
+    "requires_target_out_of_combat": true,
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": false,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {
+       "apply_aura": "aura_sap"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "From Stealth, incapacitates an enemy that is not in combat for 20 sec. Any damage ends it. You stay stealthed."
    }
   ],
   "talent_tabs": [
@@ -10002,6 +10046,38 @@
      }
     ],
     "description": "Stealthed."
+   },
+   {
+    "key": "aura_sap",
+    "name": "Sap (incapacitate)",
+    "spell_id": 1000405,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "sapped",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "break_on": {
+     "damage": true
+    },
+    "duration_ms": 20000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Incapacitated. Any damage ends it."
    }
   ],
   "name": "Cutthroat",

@@ -756,6 +756,7 @@ impl InWorld {
                 let mob = &self.mobs[i];
                 if mob.state != State::Idle
                     || mob.asleep
+                    || self.skills.incapacitated(mob.guid)
                     || !mob.template.hostile
                     || mob.hunts.is_some_and(|owner| owner != self.guid)
                     || !mob.admits(self.guid)
@@ -1093,6 +1094,7 @@ impl InWorld {
         let phase = self.phase;
         // A rooted mob stands where it is.
         let rooted = self.skills.rooted(self.mobs[i].guid);
+        let incapacitated = self.skills.incapacitated(self.mobs[i].guid);
         let mob = &mut self.mobs[i];
         if rooted {
             events.extend(mob.halt());
@@ -1134,7 +1136,10 @@ impl InWorld {
         match mob.state {
             State::Idle => {
                 mob.engaged_secs = 0.0;
-                if mob.assist_in.is_none() {
+                // A sapped mob stands where it is until the aura ends.
+                if incapacitated {
+                    events.extend(mob.halt());
+                } else if mob.assist_in.is_none() {
                     mob.stroll(dt, map, host, rng, events);
                 }
             }

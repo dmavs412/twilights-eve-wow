@@ -173,6 +173,7 @@ WEAPON_ALIASES = {
 }
 REQUIRES_VALUES = {
     "position": ("behind", "front"), "facing": ("yes", "no"), "stealth": ("yes",), "combat": ("in", "out"),
+    "target_combat": ("out",),
     "target_state": ("bleeding", "stunned", "rooted", "feared", "incapacitated", "poisoned"),
     "caster_state": ("after_crit", "after_dodge", "after_parry", "after_block", "after_kill"),
     "offhand": ("weapon",), "los": ("yes", "no"),
@@ -961,6 +962,10 @@ def build_gates(row: dict, kind: str, where: str) -> dict:
         raise BuildError(f"{where} client_not_in_combat: yes needs requires: combat=out, or the realm is looser than the client")
     if requires.get("combat") == "out":
         out["requires_out_of_combat"] = True
+    if requires.get("stealth") is True:
+        out["requires_stealth"] = True
+    if requires.get("target_combat") == "out":
+        out["requires_target_out_of_combat"] = True
     return out
 
 

@@ -1207,6 +1207,12 @@ pub struct Skill {
     /// Only out of combat (Charge).
     #[serde(default)]
     pub requires_out_of_combat: bool,
+    /// Only while stealthed (Sap).
+    #[serde(default)]
+    pub requires_stealth: bool,
+    /// Only on a target that is not in combat (Sap).
+    #[serde(default)]
+    pub requires_target_out_of_combat: bool,
     /// Only on a target that dodged the caster in the last few seconds (Overpower).
     #[serde(default)]
     pub requires_target_dodged: bool,
