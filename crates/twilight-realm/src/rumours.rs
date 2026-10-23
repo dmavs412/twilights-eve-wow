@@ -754,6 +754,35 @@ impl Rumours {
         }
     }
 
+    /// A dev aid (`WOW_PROBE_RUMOUR`): starts Rumour `id` for `c` alone with its giver at point
+    /// `point`, as a won roll would. The point's note; `None` for an unknown Rumour or point, or
+    /// one `c` holds already.
+    pub(crate) fn force(&mut self, id: u32, point: usize, c: &Char, now: f64) -> Option<u32> {
+        let d = def(id)?;
+        let note = d.points.get(point)?.note;
+        if self
+            .list
+            .iter()
+            .any(|r| r.id == id && r.audience.admits(c.guid))
+        {
+            return None;
+        }
+        self.list.push(Rumour {
+            id,
+            audience: Audience::of(&[c.guid]),
+            giver_guid: 0,
+            point,
+            level: c.level,
+            started: now,
+            ends: d.minutes().map(|m| now + f64::from(m) * 60.0),
+            step: 0,
+            handed_in: HashSet::new(),
+            spawned: HashSet::new(),
+            chests: Vec::new(),
+        });
+        Some(note)
+    }
+
     /// The instances whose giver is not made yet: index, Rumour and level.
     pub(crate) fn unspawned(&self) -> Vec<usize> {
         (0..self.list.len())

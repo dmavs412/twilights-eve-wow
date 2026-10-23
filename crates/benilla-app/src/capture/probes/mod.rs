@@ -17,6 +17,9 @@ pub(crate) use interact::ProbeInteractPlugin;
 /// `WOW_PROBE_GOTO`: in Twilight's Eve, a realm teleport to a spot, grounded there.
 mod goto;
 pub(crate) use goto::ProbeGotoPlugin;
+/// `WOW_PROBE_RUMOUR`: in Twilight's Eve, a Rumour started for the player, its giver at a point.
+mod rumour;
+pub(crate) use rumour::ProbeRumourPlugin;
 /// `WOW_PROBE_SPELLS`: in Twilight's Eve, every spellbook spell cast on a dummy, one report line each.
 mod spells;
 pub(crate) use spells::ProbeSpellsPlugin;

@@ -365,3 +365,35 @@ fn what_the_kobolds_dug_up_runs_three_steps_and_leaves_two_blues() {
     assert_ne!(items[0], items[1], "two distinct blues");
     assert!(items.iter().all(|i| BLUES.contains(i)), "Dungeon blues");
 }
+
+/// The dev aid `WOW_PROBE_RUMOUR` starts What the Kobolds Dug Up with Prospector Hale at the
+/// point it names and puts that point's Claim Marker in the backpack, once.
+#[test]
+fn a_dev_rumour_stands_hale_at_the_named_point_with_its_marker() {
+    let mut party = Party::starting(Realm::with_seed(1), &[10], START_ELWYNN, Box::new(NoGround));
+    let point = at_point(HALE_POINTS[1]);
+    party.go(0, point, 0.0);
+    party.run(0.5);
+    party.cmd(0, RealmCommand::DevRumour { id: 3, point: 1 });
+    party.run(1.0);
+    assert!(
+        party.seen(0).iter().any(|e| matches!(
+            e,
+            SessionEvent::ItemCreate { fields, .. }
+                if fields.object_entry() == Some(980037)
+        )),
+        "the marker for the diggings is in the backpack"
+    );
+    let hale = creatures(party.seen(0), HALE);
+    assert_eq!(hale.len(), 1, "Hale stands for the player");
+    assert!(flat_distance(hale[0].1, point) < 1.5, "at the second point");
+    assert_eq!(party.realm.rumour_givers(), [hale[0].0]);
+
+    party.cmd(0, RealmCommand::DevRumour { id: 3, point: 0 });
+    party.run(1.0);
+    assert_eq!(
+        party.realm.rumour_givers().len(),
+        1,
+        "a held Rumour is not started twice"
+    );
+}

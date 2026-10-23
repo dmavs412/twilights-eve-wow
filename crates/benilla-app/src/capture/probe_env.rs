@@ -95,6 +95,12 @@ pub(crate) const PROBE_VARS: &[ProbeVar] = &[
         wall_clock: true,
     },
     ProbeVar {
+        name: "WOW_PROBE_RUMOUR",
+        purpose: "\"id:point[@secs]\" — Twilight's Eve: the realm starts Rumour <id> of rumours.toml for the player, its giver at <point> (from 1) and that point's note in the backpack (default: once in-world)",
+        // `@secs` fires on `ProbeClock`.
+        wall_clock: true,
+    },
+    ProbeVar {
         name: "WOW_PROBE_TEST_GROUNDS",
         purpose: "1 — Twilight's Eve: the realm teleports the player into the Test Grounds Phase, facing its training dummies (rides WOW_PROBE_GOTO's schedule; wins over it)",
         // Rides `WOW_PROBE_GOTO`'s default schedule.

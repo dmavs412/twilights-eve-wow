@@ -26,6 +26,14 @@ pub(crate) mod vanilla_player;
 
 pub(crate) use goto::DevGoto;
 
+/// A dev aid for the realm: start Rumour `id` for the player, its giver at `point` (from 0)
+/// (`WOW_PROBE_RUMOUR`, `capture::probes::rumour`).
+#[derive(Message, Debug, Clone, Copy)]
+pub(crate) struct DevRumour {
+    pub id: u32,
+    pub point: usize,
+}
+
 /// Set by [`crate::run_twilight`] before the app builds: the `twilights-eve` launcher boots
 /// Twilight's Eve, the plain `benilla` client does not.
 pub(crate) static ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -79,6 +87,7 @@ impl Plugin for TwilightPlugin {
             .init_resource::<BossFightList>()
             .init_resource::<SelfCalling>();
         app.add_message::<DevGoto>()
+            .add_message::<DevRumour>()
             .init_resource::<goto::GotoGround>();
         app.insert_resource(LocalRealm {
             far,
@@ -242,6 +251,7 @@ fn pump(
     mut keys: ResMut<CallingKeys>,
     mut boss: ResMut<BossFightList>,
     mut goto: ResMut<goto::GotoGround>,
+    mut rumours: MessageReader<DevRumour>,
     adts: Res<Assets<benilla_assets::AdtTile>>,
     water: Query<&'static WaterChunkInfo>,
     mut reel: (
@@ -277,6 +287,9 @@ fn pump(
     }
     for DevGoto { x, y, facing } in goto.take_ready() {
         backing.handle(RealmCommand::DevTeleport { x, y, facing });
+    }
+    for &DevRumour { id, point } in rumours.read() {
+        backing.handle(RealmCommand::DevRumour { id, point });
     }
     // The Reeling Bar's results (ADR 0018).
     if let Some(outbox) = reel.1.as_deref_mut() {

@@ -112,6 +112,10 @@ impl Plugin for DevProbesPlugin {
             {
                 app.add_plugins(crate::capture::ProbeGotoPlugin);
             }
+            // `WOW_PROBE_RUMOUR="id:point[@secs]"`: a Twilight Rumour, its giver at a point.
+            if std::env::var("WOW_PROBE_RUMOUR").is_ok() {
+                app.add_plugins(crate::capture::ProbeRumourPlugin);
+            }
             // `WOW_PROBE_SPELLS=<report.jsonl>`: every spellbook spell cast on a dummy.
             if std::env::var("WOW_PROBE_SPELLS").is_ok() {
                 app.add_plugins(crate::capture::ProbeSpellsPlugin);

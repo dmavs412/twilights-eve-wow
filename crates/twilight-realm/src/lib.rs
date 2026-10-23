@@ -444,6 +444,13 @@ pub enum RealmCommand {
         y: f32,
         facing: Option<f32>,
     },
+    /// A dev aid (`WOW_PROBE_RUMOUR`): start Rumour `id` for the player alone, its giver at
+    /// `point` (an index into the row's `points`) from the next tick and that point's note in the
+    /// backpack. Ignored for an unknown Rumour or point, or one the player holds already.
+    DevRumour {
+        id: u32,
+        point: usize,
+    },
 }
 
 /// One client the realm serves: a handle from [`Realm::connect`]. The realm starts with
@@ -1473,6 +1480,7 @@ impl Realm {
                     self.dev_teleport = Some(dev::DevTeleport { x, y, facing });
                 }
             }
+            RealmCommand::DevRumour { id, point } => self.dev_rumour(id, point),
             RealmCommand::AreaTrigger { id } => self.area_trigger(id),
             RealmCommand::WorldportAck => {
                 if let Some(w) = &mut self.world {
@@ -1752,6 +1760,26 @@ impl Realm {
                 self.rumours.add_chest(rumour, chest);
             }
         }
+    }
+
+    /// [`RealmCommand::DevRumour`]: the Rumour for the served player, and its note unless a
+    /// note of that entry is in their bags from an earlier run (a note is one of a kind).
+    fn dev_rumour(&mut self, id: u32, point: usize) {
+        let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(guid) else {
+            return;
+        };
+        let Some(note) = self.rumours.force(id, point, c, self.wall) else {
+            return;
+        };
+        if c.inventory.count(note) == 0 {
+            if let Err(reason) = equipment::receive(c, note, 1, &mut self.events) {
+                self.events.push(equipment::inventory_failure(reason, 0));
+            }
+        }
+        self.save(guid);
     }
 
     fn dev_teleport_served(&mut self, host: &dyn Host) {
