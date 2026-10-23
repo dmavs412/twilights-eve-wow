@@ -216,7 +216,7 @@ guid = 960102
 entry = 96001
 level_min = 6
 level_max = 7
-position = [-8540.0, -194.0, 83.85]
+position = [-8539.0, -196.0, 85.24]
 orientation = 5.5
 
 [[added]]
@@ -232,7 +232,7 @@ guid = 960104
 entry = 96001
 level_min = 6
 level_max = 7
-position = [-8545.0, -198.0, 83.85]
+position = [-8543.0, -201.0, 86.72]
 orientation = 4.0
 
 [[added]]
@@ -240,7 +240,7 @@ guid = 960105
 entry = 96001
 level_min = 6
 level_max = 7
-position = [-8544.0, -213.0, 83.85]
+position = [-8544.0, -211.0, 84.70]
 orientation = 1.2
 
 # The Farmlands' elites (#232). Princess stands where her friendly vanilla spawn (guid 80849) did;
@@ -259,7 +259,7 @@ guid = 960202
 entry = 96012
 level_min = 14
 level_max = 14
-position = [-9265.0, 330.0, 62.0]
+position = [-9265.0, 349.0, 76.70]
 orientation = 3.14
 
 # Crystal Lake and Fargodeep (#236). Foreman Gorn stands at the mine entrance and Gllrg at the
@@ -270,7 +270,7 @@ guid = 960203
 entry = 96013
 level_min = 15
 level_max = 15
-position = [-9800.0, 165.0, 40.0]
+position = [-9823.0, 176.0, 28.37]
 orientation = 3.14
 
 [[added]]

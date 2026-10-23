@@ -14,7 +14,7 @@ const fn spawn(entry: u64, guid: u64) -> u64 {
     HIGHGUID_UNIT << 48 | entry << 24 | guid
 }
 const GORN: u64 = spawn(96013, 960203);
-const GORN_AT: [f32; 3] = [-9800.0, 165.0, 40.0];
+const GORN_AT: [f32; 3] = [-9823.0, 176.0, 28.37];
 
 const THE_KEYSTONE: u32 = 94303;
 const RUNE_MARKED_KEYSTONE: u32 = 980014;
