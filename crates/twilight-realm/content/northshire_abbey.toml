@@ -157,7 +157,7 @@ guid = 780014
 entry = 96004
 rolls = [{ chance = 1, one_of = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 900509, 900510, 900105, 900511, 900512, 900513, 900514, 900515, 900516, 900517, 900518, 900519] }]
 level = 9
-position = [-8894.4, -182.6, 104.4]
+position = [-8894.5, -184.0, 104.84]
 orientation = 2.0
 
 # The Abbot: the middle of the bell tower's top platform, model (-2, -4.5) on its floor (z 33.1),
