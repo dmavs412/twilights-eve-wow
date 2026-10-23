@@ -155,7 +155,7 @@ orientation = 1.30
 guid = 820007
 entry = 96017
 level = 15
-position = [-9124.4, -593.9, 57.5]
+position = [-9126.5, -594.0, 57.50]
 orientation = 1.30
 
 # Passage pack 1.
@@ -171,7 +171,7 @@ orientation = 1.30
 guid = 820009
 entry = 96017
 level = 15
-position = [-9117.4, -579.7, 57.5]
+position = [-9117.5, -581.0, 58.98]
 orientation = 2.60
 
 # Passage pack 2.
@@ -179,7 +179,7 @@ orientation = 2.60
 guid = 820010
 entry = 96017
 level = 16
-position = [-9115.0, -575.3, 57.5]
+position = [-9117.0, -575.0, 59.88]
 orientation = 2.60
 
 # Passage pack 2.
@@ -261,7 +261,7 @@ orientation = 2.00
 guid = 820020
 entry = 96019
 level = 17
-position = [-9026.0, -616.6, 56.4]
+position = [-9027.0, -616.0, 57.85]
 orientation = 2.00
 
 # Dig group 1: a Digger.
@@ -363,29 +363,30 @@ position = [-9038.8, -607.1, 53.4]
 
 # Cover (the Dark Glare, #235): four pillars round the pit, each shown by a boulder (display 2230,
 # vmangos's Cave In) at the same spot. No farther than 35 yd, five seconds' run, from any point
-# in the pit, inside the glare's 10 s cast. The positions are guesses at the rock columns.
+# in the pit, inside the glare's 10 s cast. Each stands on the pit floor at a rock column's foot
+# (#357).
 
 [[cover]]
-position = [-9038.8, -625.6, 53.4]
+position = [-9042.5, -620.0, 55.85]
 radius = 2.5
 height = 8.0
 
 [[gameobject]]
 guid = 820101
 display = 2230
-position = [-9038.8, -625.6, 53.4]
+position = [-9042.5, -620.0, 55.85]
 orientation = 1.50
 sides = "inside"
 
 [[cover]]
-position = [-9056.7, -627.3, 53.4]
+position = [-9056.0, -626.0, 53.90]
 radius = 2.5
 height = 8.0
 
 [[gameobject]]
 guid = 820102
 display = 2230
-position = [-9056.7, -627.3, 53.4]
+position = [-9056.0, -626.0, 53.90]
 orientation = 3.00
 sides = "inside"
 
@@ -402,13 +403,13 @@ orientation = 4.50
 sides = "inside"
 
 [[cover]]
-position = [-9058.9, -612.4, 53.4]
+position = [-9057.0, -615.5, 54.73]
 radius = 2.5
 height = 8.0
 
 [[gameobject]]
 guid = 820104
 display = 2230
-position = [-9058.9, -612.4, 53.4]
+position = [-9057.0, -615.5, 54.73]
 orientation = 6.00
 sides = "inside"
