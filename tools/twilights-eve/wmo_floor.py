@@ -279,10 +279,17 @@ def walls_at(groups, mx, my, mz, radius=BODY_RADIUS):
             if (mx < tx0 - radius or mx > tx1 + radius or my < ty0 - radius or my > ty1 + radius
                     or tz1 < lo or tz0 > hi):
                 continue
-            part = _clip_slab([a, b, c], lo, hi)
-            if part and _distance_2d(mx, my, part) < radius:
+            if crosses_body(a, b, c, mx, my, lo, hi, radius):
                 out.append((grp, a, b, c))
     return out
+
+
+def crosses_body(a, b, c, x, y, lo, hi, radius):
+    """True when triangle abc crosses the vertical capsule of `radius` about (x, y) from z `lo`
+    to `hi`: the part of the triangle in that height band comes nearer than `radius` seen from
+    above."""
+    part = _clip_slab([a, b, c], lo, hi)
+    return bool(part) and _distance_2d(x, y, part) < radius
 
 
 def collides(mopy_flags):

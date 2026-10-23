@@ -342,6 +342,9 @@ class Terrain:
         wmos = []
         # Each MODF entry's model path, world origin and rotation (degrees, placement axes).
         placements = []
+        mmdx = b""
+        mmid = ()
+        doodads = []
         p = 0
         while p + 8 <= len(d):
             tag = d[p : p + 4][::-1]
@@ -350,6 +353,23 @@ class Terrain:
                 mwmo = d[p + 8 : p + 8 + size]
             elif tag == b"MWID":
                 mwid = struct.unpack_from("<%dI" % (size // 4), d, p + 8)
+            elif tag == b"MMDX":
+                mmdx = d[p + 8 : p + 8 + size]
+            elif tag == b"MMID":
+                mmid = struct.unpack_from("<%dI" % (size // 4), d, p + 8)
+            elif tag == b"MDDF":
+                # Each placed M2: model path, uniqueId, world position, rotation (degrees,
+                # placement axes) and scale.
+                for k in range(size // 36):
+                    e = p + 8 + k * 36
+                    name_id, uid = struct.unpack_from("<II", d, e)
+                    pos = struct.unpack_from("<3f", d, e + 8)
+                    off = mmid[name_id]
+                    path = mmdx[off : mmdx.index(b"\0", off)].decode("ascii", "replace")
+                    doodads.append({"path": path, "uid": uid,
+                                    "origin": (ORIGIN - pos[2], ORIGIN - pos[0], pos[1]),
+                                    "rot": struct.unpack_from("<3f", d, e + 20),
+                                    "scale": struct.unpack_from("<H", d, e + 32)[0] / 1024.0})
             elif tag == b"MODF":
                 for k in range(size // 64):
                     e = p + 8 + k * 64
@@ -381,7 +401,7 @@ class Terrain:
                         heights = struct.unpack_from("<145f", d, hp)
                 chunks[(ix, iy)] = (area, px, py, pz, heights, self._liquids(d, p, h))
             p += 8 + size
-        return {"chunks": chunks, "wmos": wmos, "placements": placements}
+        return {"chunks": chunks, "wmos": wmos, "placements": placements, "doodads": doodads}
 
     @staticmethod
     def _liquids(d, p, h):

@@ -1,7 +1,7 @@
 # Spots that failed a ground_check.py rule when that rule began, one per line:
-# `<rule> <file> <x> <y> <label>`, with the rule one of off-floor, water, wall, roof and
+# `<rule> <file> <x> <y> <label>`, with the rule one of off-floor, water, wall, roof, doodad and
 # rumour-indoor. off-floor rows (2026-10-22) need their author to pick a floor; the rest
-# (2026-10-23, #351) are for #357's sweep. The realm places them where they are today. Fix a
+# (2026-10-23, #351 and #352) are for #357's sweep. The realm places them where they are today. Fix a
 # row, then delete its line.
 off-floor azora.toml -9548.0 -715.0 guid 970022
 off-floor elwynn_overrides.toml -8540.0 -194.0 guid 960102
@@ -69,3 +69,37 @@ wall jasperlode.toml -9147.7 -600.4 guid 820005
 wall northshire_abbey.toml -8885.0 -161.5 guid 780008
 wall northshire_abbey.toml -8909.1 -209.0 guid 780012
 wall quests_elwynn.toml -9918.0 14.0 guid 790715
+doodad elwynn_overrides.toml -9122.0 -1135.0 guid 960302
+doodad elwynn_overrides.toml -9030.0 -1075.0 guid 960314
+doodad elwynn_overrides.toml -9050.0 -1085.0 guid 960315
+doodad elwynn_overrides.toml -9394.2 -1298.2 guid 960410
+doodad elwynn_overrides.toml -9432.6 -1327.0 guid 960415
+doodad elwynn_overrides.toml -9949.9 -149.7 guid 960464
+doodad forest_edge.toml -9970.4 530.0 guid 790126
+doodad forest_edge.toml -9966.0 530.0 guid 790127
+doodad forest_edge.toml -9961.8 530.0 guid 790128
+doodad forest_edge.toml -10077.9 680.0 guid 790141
+doodad forest_edge.toml -10073.5 680.0 guid 790142
+doodad forest_edge.toml -10069.2 680.0 guid 790143
+doodad forest_edge.toml -10022.0 680.0 guid 790154
+doodad forest_edge.toml -10017.6 680.0 guid 790155
+doodad forest_edge.toml -10013.4 680.0 guid 790156
+doodad forest_edge.toml -10080.0 596.6 guid 790196
+doodad forest_edge.toml -10080.0 601.0 guid 790197
+doodad forest_edge.toml -10080.0 605.2 guid 790198
+doodad forest_edge.toml -10080.0 609.5 guid 790199
+doodad forest_edge.toml -10080.0 674.0 guid 790214
+doodad forest_edge.toml -10080.0 678.4 guid 790215
+doodad forest_edge.toml -9982.0 559.0 guid 790306
+doodad forest_edge.toml -9983.0 561.0 guid 790308
+doodad hub.toml -539.0 -2640.0 Thousand Needles Refugee
+doodad hub.toml -441.0 -2564.0 Crossroads Peon
+doodad hub.toml -421.0 -2623.0 Crossroads Peon
+doodad hub.toml -465.0 -2633.0 Crossroads Peon
+doodad hub.toml -2381.5 -1902.0 Thousand Needles Refugee
+doodad hub.toml -2339.0 -1990.0 Mosarn Thornwatch
+doodad hub.toml -9382.1 -117.0 Lee Brown
+doodad quests_elwynn.toml -9124.0 -1138.0 guid 790512
+doodad quests_elwynn.toml -9126.0 -1150.0 guid 790516
+doodad quests_elwynn.toml -9116.0 -1146.0 guid 790518
+doodad sealed_yard.toml -9664.0 150.0 ?

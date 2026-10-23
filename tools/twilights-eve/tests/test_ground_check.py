@@ -6,6 +6,7 @@ groups and a small TOML file.
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 import tempfile
@@ -13,8 +14,12 @@ import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
+import doodad_check  # noqa: E402
 import ground_check  # noqa: E402
 import wmo_floor  # noqa: E402
+import wowmpq  # noqa: E402
+
+DATA = os.environ.get("WOW_DATA", ground_check.DEFAULT_DATA)
 
 RUMOURS = """\
 [[rumour]]
@@ -130,6 +135,48 @@ class Roof(unittest.TestCase):
 
     def test_the_same_floor_indoors_is_a_storey(self):
         self.assertFalse(ground_check.is_roof(floor(True), 50.0))
+
+
+def box_hull(sx, sy, sz):
+    """A box of sx by sy by sz yd centred on the model origin: 8 vertices, 12 triangles."""
+    verts = [(dx * sx / 2, dy * sy / 2, dz * sz / 2) for dx in (-1, 1) for dy in (-1, 1) for dz in (-1, 1)]
+    faces = [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
+    return verts, [t for a, b, c, d in faces for t in ((a, b, c), (a, c, d))]
+
+
+class Doodad(unittest.TestCase):
+    def test_a_scaled_cube_hits_its_centre_and_misses_a_point_outside(self):
+        cube = doodad_check.place("cube", 1, box_hull(1, 1, 1), (100.0, 200.0, 50.0), (0.0, 30.0, 0.0), 2.0)
+        self.assertTrue(doodad_check.body_hits(cube, 100.0, 200.0, 49.0))
+        # The cube turns by 30 - 180 degrees; 2.5 yd along a face normal is 1.5 yd outside it.
+        a = math.radians(30.0 - 180.0)
+        self.assertFalse(doodad_check.body_hits(cube, 100.0 + 2.5 * math.cos(a), 200.0 + 2.5 * math.sin(a), 49.0))
+
+    def test_a_body_wholly_inside_a_big_rock_hits(self):
+        rock = doodad_check.place("rock", 1, box_hull(1, 1, 1), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 20.0)
+        self.assertTrue(doodad_check.body_hits(rock, 0.0, 0.0, 0.0))
+
+    def test_a_quarter_turn_moves_the_long_side_to_the_other_axis(self):
+        hull = box_hull(4, 1, 1)
+        along_x = doodad_check.place("box", 1, hull, (0.0, 0.0, 0.5), (0.0, 0.0, 0.0), 1.0)
+        along_y = doodad_check.place("box", 2, hull, (0.0, 0.0, 0.5), (0.0, 90.0, 0.0), 1.0)
+        self.assertTrue(doodad_check.body_hits(along_x, 1.5, 0.0, 0.0))
+        self.assertFalse(doodad_check.body_hits(along_x, 0.0, 1.5, 0.0))
+        self.assertFalse(doodad_check.body_hits(along_y, 1.5, 0.0, 0.0))
+        self.assertTrue(doodad_check.body_hits(along_y, 0.0, 1.5, 0.0))
+
+    @unittest.skipUnless(os.path.isdir(DATA), "no game data under $WOW_DATA")
+    def test_a_real_cliff_rock_on_the_northshire_rim(self):
+        # elwynncliffrock02.m2, MDDF uniqueId 10122, on the east rim of Northshire Valley: its
+        # hull spans x -8765.6 to -8727.6 and y -429.1 to -398.0, so x + 29 is 10 yd north of it.
+        gd = wowmpq.GameData(DATA)
+        self.addCleanup(lambda: [a.f.close() for a in gd.archives])
+        terrain = wowmpq.Terrain(gd, "Azeroth")
+        doodads = doodad_check.Doodads(gd, terrain)
+        rock = "world/azeroth/elwynn/passivedoodads/cliffrocks/elwynncliffrock02.m2"
+        x, y = -8746.6, -413.6
+        self.assertIn(rock, doodads.hits(x, y, terrain.ground_z(x, y)))
+        self.assertNotIn(rock, doodads.hits(x + 29.0, y, terrain.ground_z(x + 29.0, y)))
 
 
 class Nudge(unittest.TestCase):

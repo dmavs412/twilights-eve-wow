@@ -19,6 +19,8 @@ the body rules of ADR 0021:
   over its feet.
 - roof: it does not stand on a floor of an outdoor WMO group more than 3 yd over the terrain,
   unless the row says `on_top = true`.
+- doodad: its body is not inside a placed M2's collision hull, a rock, trunk, fence or cart
+  (doodad_check.py). Doodads a WMO places (MODD) are not checked.
 `--fix` moves a row or point that fails one of these to the first spot in rings of 1 to 5 yd
 (8 headings each, from +x) that passes every rule, and prints `nudge failed` when none does.
 
@@ -45,6 +47,7 @@ import tomllib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import doodad_check  # noqa: E402
 import wmo_floor  # noqa: E402
 import wowmpq  # noqa: E402
 
@@ -78,7 +81,9 @@ NUDGE_RINGS = (1, 2, 3, 4, 5)
 # The failures in the content when each rule began, one per line: `<rule> <file> <x> <y> <label>`.
 # Delete a line when its row is fixed.
 KNOWN = os.path.join(HERE, "ground_check_known.txt")
-RULES = ("off-floor", "water", "wall", "roof", "rumour-indoor")
+RULES = ("off-floor", "water", "wall", "roof", "doodad", "rumour-indoor")
+# The rules a row is checked against after its Z, and a Rumour point after its terrain.
+BODY_RULES = ("water", "wall", "roof", "doodad")
 
 # Table kinds by what they place. Another kind with a position is a creature when its `entry`
 # names a template, else a GameObject.
@@ -339,6 +344,11 @@ def load_swimmers():
         con.close()
 
 
+def inside(failed):
+    """The flag line's ` inside <model>` when a doodad rule failed."""
+    return " inside " + failed["doodad"] if failed.get("doodad") else ""
+
+
 def known_key(rule, name, label, x, y):
     return "%s %s %.1f %.1f %s" % (rule, name, x, y, label or "?")
 
@@ -382,6 +392,7 @@ class World:
         self.swimmers = swimmers
         self.terrains = {}
         self.floors = {}
+        self.doodads = {}
 
     def terrain(self, map_id):
         if map_id not in self.terrains:
@@ -393,22 +404,31 @@ class World:
             self.floors[map_id] = wmo_floor.Floors(self.gd, self.terrain(map_id))
         return self.floors[map_id]
 
+    def doodads_of(self, map_id):
+        if map_id not in self.doodads:
+            self.doodads[map_id] = doodad_check.Doodads(self.gd, self.terrain(map_id))
+        return self.doodads[map_id]
+
     def body_rules(self, map_id, x, y, z, kind, entry, on_top):
-        """The water, wall and roof rules a unit standing at (x, y, z) fails."""
+        """The water, wall, roof and doodad rules a unit standing at (x, y, z) fails, each with
+        what it is in: {rule: detail}, the detail empty but for a doodad's model names."""
         terrain = self.terrain(map_id)
         floors = self.floors_of(map_id)
-        failed = []
+        failed = {}
         if water_checked(kind, entry, self.templates, self.swimmers):
             ws = [w for w in (terrain.water_z(x, y), floors.water(x, y)) if w is not None]
             if ws and too_deep(max(ws), z):
-                failed.append("water")
+                failed["water"] = ""
         if floors.walls_near(x, y, z, margin=MARGIN):
-            failed.append("wall")
+            failed["wall"] = ""
         stood = [s for s in floors.surfaces(x, y, MARGIN) if s.floor and stands_on(z, s.z)]
         g = terrain.ground_z(x, y)
         if stood and not (g is not None and stands_on(z, g)):
             if is_roof(min(stood, key=lambda s: abs(z - s.z)), g, on_top):
-                failed.append("roof")
+                failed["roof"] = ""
+        inside = self.doodads_of(map_id).hits(x, y, z)
+        if inside:
+            failed["doodad"] = " ".join(inside)
         return failed
 
     def point_rules(self, p, x, y):
@@ -417,8 +437,9 @@ class World:
         g = terrain.ground_z(x, y)
         if g is None:
             return None
-        failed = ["rumour-indoor"] if interior(terrain, x, y, g) else []
-        return failed + self.body_rules(p.map, x, y, g, p.kind, p.entry, False)
+        failed = {"rumour-indoor": ""} if interior(terrain, x, y, g) else {}
+        failed.update(self.body_rules(p.map, x, y, g, p.kind, p.entry, False))
+        return failed
 
     def row_spot(self, r, x, y, z_from):
         """The Z a row nudged to (x, y) stands at: the floor or terrain nearest `z_from` inside a
@@ -532,13 +553,13 @@ def main():
                     z_now = g
 
             failed = world.body_rules(r.map, x, y, z_now, r.kind, r.entry, r.on_top)
-            new = known_or_flag(failed, name, r.label, x, y, ("water", "wall", "roof"))
+            new = known_or_flag(failed, name, r.label, x, y, BODY_RULES)
             if not new:
                 continue
             if not a.fix:
                 counts[verb] += 1
                 per_file[name] += 1
-                print("%s %s:%d %s (%.1f %.1f %.2f)" % (" ".join(new), name, r.idx + 1, label, x, y, z_now))
+                print("%s %s:%d %s%s (%.1f %.1f %.2f)" % (" ".join(new), name, r.idx + 1, label, inside(failed), x, y, z_now))
                 continue
 
             def passes(cx, cy, r=r, z_now=z_now):
@@ -572,15 +593,15 @@ def main():
                 counts["no-terrain"] += 1
                 continue
             counts["points"] += 1
-            new = known_or_flag(failed, name, p.label, p.x, p.y, ("water", "wall", "roof", "rumour-indoor"))
+            new = known_or_flag(failed, name, p.label, p.x, p.y, BODY_RULES + ("rumour-indoor",))
             if not new:
                 continue
             if not a.fix:
                 counts[verb] += 1
                 per_file[name] += 1
-                print("%s %s:%d %s (%.1f %.1f)" % (" ".join(new), name, p.idx + 1, p.label, p.x, p.y))
+                print("%s %s:%d %s%s (%.1f %.1f)" % (" ".join(new), name, p.idx + 1, p.label, inside(failed), p.x, p.y))
                 continue
-            moved = nudge(p.x, p.y, lambda cx, cy, p=p: world.point_rules(p, cx, cy) == [])
+            moved = nudge(p.x, p.y, lambda cx, cy, p=p: world.point_rules(p, cx, cy) == {})
             if moved is None:
                 counts["nudge-failed"] += 1
                 per_file[name] += 1
