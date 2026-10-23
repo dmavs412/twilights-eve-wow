@@ -104,6 +104,34 @@ fn lifted_to(events: &[SessionEvent], guid: u64) -> Vec<f32> {
         .collect()
 }
 
+/// A creature made for one player before the ground streamed in (a Rumour's giver, whose row
+/// writes no Z) is lifted onto it once it does, as a placed one is.
+#[test]
+fn an_audience_creature_made_without_ground_is_lifted_once_it_streams_in() {
+    let mut realm = enter_without_ground();
+    let guid = roster(&mut realm)[0].guid;
+    let (map, at) = realm.player_positions()[0];
+    let made = realm
+        .spawn_for(
+            &Shelf(None),
+            3101,
+            1,
+            [at[0] + 5.0, at[1], 0.0],
+            map,
+            twilight_realm::Audience::of(&[guid]),
+        )
+        .expect("a creature");
+    realm.tick(0.1, &Shelf(None));
+    assert_eq!(
+        created_at(&drain(&mut realm), made, EntityKind::Unit)[2],
+        0.0
+    );
+    realm.tick(0.1, &Shelf(Some(SHELF)));
+    assert_eq!(lifted_to(&drain(&mut realm), made), [SHELF]);
+    realm.tick(0.1, &Shelf(Some(SHELF)));
+    assert!(lifted_to(&drain(&mut realm), made).is_empty(), "once");
+}
+
 #[test]
 fn units_created_without_ground_are_lifted_once_it_streams_in() {
     let mut realm = enter_without_ground();

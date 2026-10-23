@@ -36,6 +36,8 @@ pub(crate) struct Shard {
     run: Option<Run>,
     /// How many creatures have been made here for an Audience, which numbers their guids.
     audience_spawned: u32,
+    /// The guids of the Audience's creatures made before the host had their ground.
+    settling: Vec<u64>,
 }
 
 /// A player standing on a shard, as the realm sees them for a tick.
@@ -99,6 +101,7 @@ impl Shard {
             hub: Default::default(),
             run,
             audience_spawned: 0,
+            settling: Vec::new(),
         }
     }
 
@@ -116,6 +119,9 @@ impl Shard {
         let low = mobs::AUDIENCE_GUID_BASE | self.audience_spawned & 0xF_FFFF;
         let guid = mobs::unit_guid(template.entry, low);
         let at = crate::ground::grounded_at(host, self.place.map, position, true);
+        if crate::ground::ground_under(host, self.place.map, position, true).is_none() {
+            self.settling.push(guid);
+        }
         let zone = mobs::zone_factor_at(host, self.place.phase, self.place.map, at);
         self.mobs
             .push(Mob::for_audience(guid, template, level, at, audience, zone));
@@ -282,9 +288,36 @@ impl Shard {
         let map = self.place.map;
         self.population
             .update(dt, players, map, host, &mut self.mobs, &mut events);
+        self.settle_audience(host, &mut events);
         self.hub.update(dt, players, map, host, &mut events);
         events.retain(|e| !matches!(e, SessionEvent::ObjectCreate { .. }));
         events
+    }
+
+    /// An Audience's creature made before the host had its ground stood at the point's own
+    /// height, often under the terrain (a Rumour row writes none); once the ground is there, an
+    /// idle one is lifted onto it, once. One that has left the world has nothing to settle.
+    fn settle_audience(&mut self, host: &dyn Host, events: &mut Vec<SessionEvent>) {
+        use crate::ground::{lift_event, settle, Settle};
+        let (map, mobs) = (self.place.map, &mut self.mobs);
+        self.settling.retain(|&guid| {
+            let Some(m) = mobs.iter_mut().find(|m| m.guid == guid) else {
+                return false;
+            };
+            if m.state != State::Idle || m.walk.is_some() {
+                return true;
+            }
+            match settle(host, map, m.position) {
+                Settle::Waiting => true,
+                Settle::Level => false,
+                Settle::Lift(ground) => {
+                    let (at, to) = (m.position, [m.position[0], m.position[1], ground]);
+                    events.push(lift_event(m.guid, at, to, m.orientation));
+                    m.ground_to(ground);
+                    false
+                }
+            }
+        });
     }
 
     /// Every mob hunting a player who is not on this shard gives up and leaves: its owner went
