@@ -119,6 +119,11 @@ impl Host for Terrain {
     fn area_at(&self, map: u32, x: f32, y: f32) -> Option<u32> {
         area_id_at(&self.tile_under(map, x, y)?.chunks, [x, y, 0.0])
     }
+    /// The tile's ADT water alone: no WMO liquid is loaded here (`crate::liquid`).
+    fn liquid_at(&self, map: u32, x: f32, y: f32) -> Option<f32> {
+        let chunks = &self.tile_under(map, x, y)?.chunks;
+        crate::liquid::water_surface_at(chunks.iter().flat_map(|c| &c.liquids), x, y)
+    }
 }
 
 #[cfg(test)]

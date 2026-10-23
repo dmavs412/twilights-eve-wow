@@ -186,6 +186,33 @@ impl Host for FlatGround {
     }
 }
 
+/// [`FlatGround`] with a pond: water at surface Z [`Pond::SURFACE`] within `radius` of `centre`.
+pub struct Pond {
+    pub centre: [f32; 2],
+    pub radius: f32,
+}
+
+impl Pond {
+    /// The pond's surface height.
+    pub const SURFACE: f32 = 0.5;
+}
+
+impl Host for Pond {
+    fn ground_height(&self, _map: u32, _x: f32, _y: f32, _z_hint: f32) -> Option<f32> {
+        Some(0.0)
+    }
+    fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
+        true
+    }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
+    fn liquid_at(&self, _map: u32, x: f32, y: f32) -> Option<f32> {
+        let [cx, cy] = self.centre;
+        ((x - cx).hypot(y - cy) <= self.radius).then_some(Self::SURFACE)
+    }
+}
+
 /// A flat floor at `z` everywhere and a wall between every two points: no creature ever sees the
 /// character, so none turns on them. For a quest or dialog test inside a building: a flat host
 /// lays all of a building's storeys on one plane, so with sight a Phased Dungeon's upper-floor

@@ -26,6 +26,7 @@ const LINGER: Duration = Duration::from_secs(20);
 
 mod accounts;
 mod collision;
+mod liquid;
 mod terrain;
 
 use accounts::Accounts;

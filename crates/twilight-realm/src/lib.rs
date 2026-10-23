@@ -112,6 +112,12 @@ pub trait Host {
     /// The `AreaTable.dbc` id of the subzone (or zone) under `(x, y)` on `map`, the one a
     /// character standing there discovers; `None` where the host knows of none.
     fn area_at(&self, map: u32, x: f32, y: f32) -> Option<u32>;
+    /// The surface height (WoW Z) of the water under `(x, y)` on `map`, from the terrain's ADT
+    /// `MCLQ` and any WMO `MLIQ`; where surfaces stack, the lowest. `None` where there is no water
+    /// (magma and slime are not water) or nothing is loaded.
+    fn liquid_at(&self, _map: u32, _x: f32, _y: f32) -> Option<f32> {
+        None
+    }
 }
 
 /// A movement report's state beyond its pose: what an observer animates and extrapolates from.

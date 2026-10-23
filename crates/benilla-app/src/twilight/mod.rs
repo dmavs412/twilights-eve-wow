@@ -7,6 +7,7 @@
 use benilla_assets::coords::wow_to_bevy;
 use benilla_protocol::{SessionEnd, SessionEvent};
 use benilla_world::collision::WorldCollision;
+use benilla_world::liquid::{water_surface_at, LiquidClaim, WaterChunkInfo};
 use benilla_world::schedule::WorldStage;
 use benilla_world::world_point::WorldPoint;
 use std::collections::BTreeSet;
@@ -242,6 +243,7 @@ fn pump(
     mut boss: ResMut<BossFightList>,
     mut goto: ResMut<goto::GotoGround>,
     adts: Res<Assets<benilla_assets::AdtTile>>,
+    water: Query<&'static WaterChunkInfo>,
 ) {
     let LocalRealm {
         far,
@@ -285,6 +287,7 @@ fn pump(
                 collision: &collision,
                 goto: &goto,
                 adts: &adts,
+                water: &water,
             };
             realm.tick(time.delta_secs(), &host);
             for op in realm.drain_storage() {
@@ -599,6 +602,8 @@ struct TerrainHost<'a, 'w, 's, 'cw, 'cs> {
     /// The tile a dev teleport fetched beyond the stream window.
     goto: &'a goto::GotoGround,
     adts: &'a Assets<benilla_assets::AdtTile>,
+    /// The streamed liquid surfaces, ADT and WMO alike.
+    water: &'a Query<'w, 's, &'static WaterChunkInfo>,
 }
 
 /// How much of each end a sight line leaves out, in yards: the two bodies it joins.
@@ -643,6 +648,17 @@ impl Host for TerrainHost<'_, '_, '_, '_, '_> {
     /// text names; where nothing is streamed in (or inside a Dungeon, which has no terrain), none.
     fn area_at(&self, _map: u32, x: f32, y: f32) -> Option<u32> {
         self.world.area_id_under(wow_to_bevy([x, y, 0.0]))
+    }
+
+    /// The streamed water under the point, ADT and WMO pools both (the Stormwind canals), the
+    /// lowest where they stack. The question has no height and no room, so the claim admits every
+    /// surface and the height clears every pool's floor.
+    fn liquid_at(&self, _map: u32, x: f32, y: f32) -> Option<f32> {
+        water_surface_at(
+            self.water.iter(),
+            [x, y, f32::INFINITY],
+            LiquidClaim::Unknown,
+        )
     }
 }
 
