@@ -68,22 +68,8 @@ tokens = 0
 explore = { place = "The Abbey Yard", position = [-8920.0, -120.0], radius = 5.0, map = 0 }
 "#;
 
-/// The Abbey's floor everywhere, so every spot here stands at its height, and walls everywhere:
-/// flat, the tower's monsters would stand beside Brother Neals, and no monster here sees the
-/// character, so a hand-in is never a fight.
-struct AbbeyFloor;
-
-impl Host for AbbeyFloor {
-    fn ground_height(&self, _: u32, _: f32, _: f32, _: f32) -> Option<f32> {
-        Some(82.0)
-    }
-    fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
-        false
-    }
-    fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
-        None
-    }
-}
+/// The Abbey's floor everywhere, where no monster sees the character: a hand-in is never a fight.
+const ABBEY_FLOOR: Unseen = Unseen(82.0);
 
 /// A level-10 warrior who began in Northshire, in the world beside McBride, with the test quests.
 fn in_northshire() -> (Realm, u64) {
@@ -114,7 +100,7 @@ fn go(realm: &mut Realm, at: [f32; 3]) -> Vec<SessionEvent> {
     });
     let mut events = Vec::new();
     for _ in 0..5 {
-        realm.tick(0.1, &AbbeyFloor);
+        realm.tick(0.1, &ABBEY_FLOOR);
         events.extend(drain(realm));
     }
     events

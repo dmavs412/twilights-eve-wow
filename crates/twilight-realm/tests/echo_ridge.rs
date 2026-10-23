@@ -49,21 +49,6 @@ impl Host for Floor {
     }
 }
 
-/// The same floor with walls everywhere: no monster sees the character.
-struct Unseen;
-
-impl Host for Unseen {
-    fn ground_height(&self, _: u32, _: f32, _: f32, _: f32) -> Option<f32> {
-        Some(83.0)
-    }
-    fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
-        false
-    }
-    fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
-        None
-    }
-}
-
 /// A human warrior of `level` who began in Northshire, with the starting Chest and the Stone
 /// Gnoll Hammer in hand, in the world.
 fn pilgrim(level: u8, seed: u64) -> (Realm, u64) {
@@ -268,7 +253,7 @@ fn the_idol_chain_from_vurx_to_brother_neals() {
         facing: Some(std::f32::consts::PI),
     });
     for _ in 0..5 {
-        realm.tick(0.1, &Unseen);
+        realm.tick(0.1, &Unseen(83.0));
     }
     drain(&mut realm);
     let done = turn_in(&mut realm, NEALS, INTO_THE_ABBEY);

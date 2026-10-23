@@ -186,6 +186,24 @@ impl Host for FlatGround {
     }
 }
 
+/// A flat floor at `z` everywhere and a wall between every two points: no creature ever sees the
+/// character, so none turns on them. For a quest or dialog test inside a building: a flat host
+/// lays all of a building's storeys on one plane, so with sight a Phased Dungeon's upper-floor
+/// monsters stand beside the ground floor and join in (#314).
+pub struct Unseen(pub f32);
+
+impl Host for Unseen {
+    fn ground_height(&self, _map: u32, _x: f32, _y: f32, _z_hint: f32) -> Option<f32> {
+        Some(self.0)
+    }
+    fn line_of_sight(&self, _map: u32, _from: [f32; 3], _to: [f32; 3]) -> bool {
+        false
+    }
+    fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
+        None
+    }
+}
+
 /// [`FlatGround`] with a scripted map of areas: each `(centre, radius, AreaTable id)`, the first
 /// whose circle holds a point naming it.
 pub struct Areas(pub Vec<([f32; 2], f32, u32)>);
