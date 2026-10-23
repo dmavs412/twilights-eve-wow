@@ -32,6 +32,10 @@ with `wmo_floor.py`, never from the box.
 - Name every place the change touches by file, function and line ("`effect_row` in
   `crates/benilla-formats/src/spells/twilight.rs`, line 172"). The Build session goes straight to
   code from these. A ticket without them sends the session exploring.
+- Acceptance lists only what the Build lane's checks show: a test, `ground_check.py`, the
+  pipeline unittests. The Build lane makes no game run (CLAUDE.md), so a screenshot, a probe
+  run, or "casting X shows Y" belongs to the spec's `unplayed` label or a Lane 2 follow-up, not
+  to the ticket's acceptance.
 - A "Failing tests first" step names the test file to extend, and is written to match that
   file's setup. Read the file once: if its tests run on a test Calling with its own spell ids,
   the step uses that Calling, not the shipped row's id.
