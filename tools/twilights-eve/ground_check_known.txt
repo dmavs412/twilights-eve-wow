@@ -9,12 +9,6 @@ off-floor elwynn_overrides.toml -8545.0 -198.0 guid 960104
 off-floor elwynn_overrides.toml -8544.0 -213.0 guid 960105
 off-floor elwynn_overrides.toml -9265.0 330.0 guid 960202
 off-floor elwynn_overrides.toml -9800.0 165.0 guid 960203
-off-floor elwynn_overrides.toml -9777.0 -1398.0 guid 960429
-off-floor elwynn_overrides.toml -9755.0 -1412.0 guid 960431
-off-floor elwynn_overrides.toml -9800.0 -1415.0 guid 960432
-off-floor elwynn_overrides.toml -9760.0 -1380.0 guid 960433
-off-floor elwynn_overrides.toml -9790.0 -1380.0 guid 960434
-off-floor elwynn_overrides.toml -9762.0 -1414.0 guid 960435
 off-floor hub.toml -8700.0 -128.0 Brother Corwin Ashgrave
 off-floor hub.toml -9349.0 340.0 Sergeant Keane
 off-floor jasperlode.toml -9124.4 -593.9 guid 820007

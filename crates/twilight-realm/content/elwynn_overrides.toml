@@ -448,8 +448,10 @@ orientation = 1.8
 # Eastvale and Ridgepoint (#247). Guids 960401 on. Hadrik stands in the lumber mill, the looters
 # around the mill and the camp, the bears on the ridge between the camp and the tower, Vael on
 # the tower's top floor with Twilight Acolytes on each floor and at its foot. Every z but the
-# camp's is a guess, and the tower's floor heights (58, 78, 98) are estimates. None of these
-# stands within 45 yd of the three overlooks of Eyes on the Ridge or of the route between them.
+# camp's and the tower's is a guess. The tower (#357, wmo_floor.py) has a ground floor at 62.8 in a
+# raised courtyard, a spiral stair with landings near 76.5 and 86.8, and its top floor at 97.06.
+# None of these stands within 45 yd of the three overlooks of Eyes on the Ridge or of the route
+# between them.
 
 [[added]]
 guid = 960401
@@ -680,7 +682,7 @@ guid = 960429
 entry = 96040
 level_min = 24
 level_max = 24
-position = [-9777.0, -1398.0, 100.0]
+position = [-9777.0, -1398.0, 97.06]
 orientation = 0.0
 
 [[added]]
@@ -696,7 +698,7 @@ guid = 960431
 entry = 96031
 level_min = 22
 level_max = 23
-position = [-9755.0, -1412.0, 58.0]
+position = [-9753.0, -1412.0, 65.01]
 orientation = 5.12
 
 [[added]]
@@ -704,7 +706,7 @@ guid = 960432
 entry = 96031
 level_min = 22
 level_max = 23
-position = [-9800.0, -1415.0, 78.0]
+position = [-9773.0, -1402.0, 76.51]
 orientation = 1.34
 
 [[added]]
@@ -712,7 +714,7 @@ guid = 960433
 entry = 96031
 level_min = 22
 level_max = 23
-position = [-9760.0, -1380.0, 78.0]
+position = [-9784.0, -1397.0, 86.80]
 orientation = 0.31
 
 [[added]]
@@ -720,7 +722,7 @@ guid = 960434
 entry = 96031
 level_min = 22
 level_max = 23
-position = [-9790.0, -1380.0, 98.0]
+position = [-9786.0, -1402.0, 97.06]
 orientation = 6.04
 
 [[added]]
@@ -728,7 +730,7 @@ guid = 960435
 entry = 96031
 level_min = 22
 level_max = 23
-position = [-9762.0, -1414.0, 98.0]
+position = [-9774.0, -1406.0, 97.06]
 orientation = 4.96
 
 [[added]]
