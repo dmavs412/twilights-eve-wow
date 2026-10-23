@@ -1531,6 +1531,8 @@ name = "Murloc Tidehunter"
 creature_type = 7
 display_id = 527
 faction_template = 18
+# A murloc: three Tidehunters stand in the lake's shallows off the island (#357).
+swims = true
 unit_class = "warrior"
 level_min = 16
 level_max = 17
