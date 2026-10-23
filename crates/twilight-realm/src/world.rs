@@ -25,7 +25,7 @@ use crate::rng::Rng;
 use crate::rules::melee::Outcome;
 use crate::rules::power::{self as power_rules, PowerKind};
 use crate::rules::stats::CharacterStats;
-use crate::rules::{aggro, leash, rage, xp};
+use crate::rules::{aggro, game_clock, leash, rage, xp};
 use crate::space::distance;
 use crate::Host;
 use power::Power;
@@ -57,9 +57,6 @@ const PLAYER_SPEEDS: MoveSpeeds = MoveSpeeds {
     swim_back: 2.5,
     turn_rate: std::f32::consts::PI,
 };
-
-/// The game time the sky is held at (hours, minutes): evening twilight, after the 21:00 sunset.
-const DUSK: (u8, u8) = (21, 15);
 
 /// A player's combat reach (`DEFAULT_COMBAT_REACH`).
 const PLAYER_COMBAT_REACH: f32 = 1.5;
@@ -384,13 +381,13 @@ impl InWorld {
             needs_ack: false,
         });
         events.push(c.bind.update());
-        // The dusk clock: evening twilight, just after the 21:00 sunset, and a timescale of zero
-        // so the client never advances it. The sky over the world stays at dusk.
+        // The game clock (ADR 0019) at this moment; the client advances it by the timescale.
+        let (hours, minutes) = game_clock::hour_minute(wall);
         events.push(SessionEvent::TimeSpeed {
-            hours: DUSK.0,
-            minutes: DUSK.1,
-            day_serial: 0,
-            timescale: 0.0,
+            hours,
+            minutes,
+            day_serial: game_clock::day_serial(wall),
+            timescale: game_clock::TIMESCALE,
         });
         events.push(cast::spell_book(c, wall));
         events.extend(crate::talents::spell_mods(c));

@@ -135,8 +135,10 @@ fn logging_out_returns_to_the_roster_where_the_character_stood() {
 }
 
 #[test]
-fn the_login_burst_holds_the_sky_at_dusk() {
+fn the_login_burst_starts_the_game_clock_at_the_wall_clocks_hour() {
     let mut realm = realm();
+    // 6375 real seconds at 12x is 1275 game minutes: 21:15 on the first game day.
+    realm.set_wall_clock(6_375_000);
     let (_, events) = enter_new(&mut realm, "Cairne", TAUREN);
 
     let (hours, minutes, timescale) = events
@@ -151,11 +153,9 @@ fn the_login_burst_holds_the_sky_at_dusk() {
             _ => None,
         })
         .expect("the login burst sets the game clock");
-    // Evening twilight: after the 21:00 sunset, before full night at 22:00.
-    let minute = u32::from(hours) * 60 + u32::from(minutes);
-    assert!(
-        (21 * 60..22 * 60).contains(&minute),
-        "dusk, got {hours:02}:{minutes:02}"
+    assert_eq!((hours, minutes), (21, 15));
+    assert_eq!(
+        timescale, 0.2,
+        "the client advances the clock 0.2 game minutes a second"
     );
-    assert_eq!(timescale, 0.0, "the game clock does not advance");
 }
