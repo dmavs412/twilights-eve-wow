@@ -13674,6 +13674,46 @@
      }
     ],
     "description": "Stops the spell the target is casting and locks it out of that spell's school for 3 seconds. When it stops a cast, your Vault is ready again."
+   },
+   {
+    "key": "snare_trap",
+    "name": "Snare Trap",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000407,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 30000,
+    "realm_range_max": 5,
+    "learn_level": 20,
+    "target": "self",
+    "school": "physical",
+    "prevention": "pacify",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 2.5,
+       "duration_ms": 60000,
+       "arm_ms": 2000,
+       "first_only": true,
+       "enemy_aura": "aura_snare_trap"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Lays a trap at your feet that arms after 2 sec and lasts 60 sec. The first enemy that is not a boss to step on it is incapacitated for 12 sec. Damage breaks it. Only one trap at a time."
    }
   ],
   "talent_tabs": [
@@ -16189,6 +16229,38 @@
      }
     ],
     "description": "Your next Auto Shot explodes, dealing 150% weapon damage as Fire to the target and all enemies within 8 yards."
+   },
+   {
+    "key": "aura_snare_trap",
+    "name": "Snare Trap",
+    "spell_id": 1000408,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "incapacitate",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "break_on": {
+     "damage": true
+    },
+    "duration_ms": 12000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Incapacitated. Any damage ends it."
    }
   ],
   "name": "Ranger",

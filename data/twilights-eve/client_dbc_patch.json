@@ -11535,6 +11535,40 @@
    }
   },
   {
+   "spell_id": 1000407,
+   "calling": "ranger",
+   "key": "snare_trap",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Snare Trap",
+    "cooldown_ms": 30000,
+    "cost_percent": 10.0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Lays a trap at your feet that arms after 2 sec and lasts 60 sec. The first enemy that is not a boss to step on it is incapacitated for 12 sec. Damage breaks it. Only one trap at a time.",
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 4398046511104,
+    "icon": "Interface\\Icons\\Spell_Frost_ChainsOfIce",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 3302,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
    "spell_id": 1000402,
    "calling": "acolyte",
    "key": "hush",
@@ -11877,6 +11911,30 @@
     "name": "Sap (incapacitate)",
     "aura_description": "Incapacitated. Any damage ends it.",
     "visual": 257
+   }
+  },
+  {
+   "spell_id": 1000408,
+   "calling": "ranger",
+   "key": "aura_snare_trap",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Frost_ChainsOfIce",
+    "mechanic": 14,
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Snare Trap",
+    "aura_description": "Incapacitated. Any damage ends it.",
+    "visual": 3302
    }
   },
   {

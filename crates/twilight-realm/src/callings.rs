@@ -270,6 +270,9 @@ pub enum AuraEffect {
     SkillAmountPct { skill: String, pct: u32 },
     /// The unit cannot move, though it still attacks and casts; damage does not break it.
     Root,
+    /// The unit cannot act; the row's `break_on` says whether damage ends it. A mob takes
+    /// diminishing returns and a boss takes nothing (Snare Trap).
+    Incapacitate,
     /// `tick` damage in `school` every `tick_ms` from the caster (a ground area's enemy aura).
     PeriodicDamage {
         tick_ms: u32,
@@ -1476,7 +1479,9 @@ pub enum Effect {
     /// A ground area at the cast's destination: `radius_yd` across, for `duration_ms`. Every
     /// enemy inside holds the aura row `enemy_aura_spell_id`, every friendly player inside
     /// `ally_aura_spell_id`; leaving or the area's end takes them off. A new one from the same
-    /// caster replaces the old.
+    /// caster replaces the old. Until `arm_ms` has passed no one counts as inside. A `first_only`
+    /// area ignores friendly players and bosses; the first other enemy inside takes the enemy
+    /// aura and spends the area, and the aura outlasts it (Snare Trap).
     GroundArea {
         radius_yd: f32,
         duration_ms: u32,
@@ -1484,6 +1489,10 @@ pub enum Effect {
         enemy_aura_spell_id: Option<u32>,
         #[serde(default)]
         ally_aura_spell_id: Option<u32>,
+        #[serde(default)]
+        arm_ms: u32,
+        #[serde(default)]
+        first_only: bool,
     },
     /// The caster teleports `distance_yd` along their facing, as far as the ground lets them, and
     /// sheds their stuns and roots first.

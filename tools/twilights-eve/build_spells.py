@@ -1161,6 +1161,11 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 value = parsed.get(field)
                 if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
                     raise BuildError(f"{here}: ground_area needs a positive {field}, has {value!r}")
+            arm = parsed.get("arm_ms", 0)
+            if isinstance(arm, bool) or not isinstance(arm, int) or arm < 0:
+                raise BuildError(f"{here}: ground_area arm_ms is a whole number of 0 or more, has {arm!r}")
+            if not isinstance(parsed.get("first_only", False), bool):
+                raise BuildError(f"{here}: ground_area first_only is yes or no, has {parsed['first_only']!r}")
         if kind == "skill_amount_pct":
             if parsed.get("applies_to", "both") not in ("hit", "tick", "both"):
                 raise BuildError(f"{here}: applies_to is {parsed['applies_to']!r}, want hit, tick or both")

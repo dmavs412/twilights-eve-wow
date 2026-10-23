@@ -447,6 +447,17 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         done, _ = self.run_build([{**area, "visual": "133"}])
         self.assertEqual(done.returncode, 0, done.stderr)
 
+    def test_a_ground_area_checks_arm_ms_and_first_only(self):
+        area = {**STRIKE, "target": "dest", "realm_radius_yd": "8", "client_radius_index": "14",
+                "visual": "133", "effect4_kind": "", "effect4_params": ""}
+        base = "radius_yd=8;duration_ms=1000"
+        done, _ = self.run_build([{**area, "effect1_kind": "ground_area",
+                                   "effect1_params": f"{base};arm_ms=2000;first_only=yes"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        for params, message in ((f"{base};arm_ms=-1", "arm_ms is a whole number of 0 or more"),
+                                (f"{base};first_only=2", "first_only is yes or no")):
+            self.assert_fails([{**area, "effect1_kind": "ground_area", "effect1_params": params}], message)
+
     def test_the_committed_miasma_row_has_radius_index_14(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
                   encoding="utf-8") as f:

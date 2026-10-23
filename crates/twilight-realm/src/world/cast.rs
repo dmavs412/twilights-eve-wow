@@ -210,6 +210,10 @@ struct Area {
     centre: [f32; 3],
     radius_yd: f32,
     left: f32,
+    /// Seconds before anyone counts as inside.
+    arming: f32,
+    /// Only the first enemy that is not a boss is caught, and the area ends with it.
+    first_only: bool,
     enemy_aura: Option<&'static callings::AuraDef>,
     ally_aura: Option<&'static callings::AuraDef>,
     inside: Vec<u64>,
@@ -2185,23 +2189,42 @@ impl InWorld {
         let mut areas = std::mem::take(&mut self.skills.areas);
         for area in &mut areas {
             area.left -= dt;
-            let now: Vec<u64> = if area.left <= CLOCK_EPSILON {
+            area.arming = (area.arming - dt).max(0.0);
+            let now: Vec<u64> = if area.left <= CLOCK_EPSILON || area.arming > CLOCK_EPSILON {
                 Vec::new()
             } else {
                 let mut now: Vec<u64> = self
                     .mobs
                     .iter()
-                    .filter(|m| m.alive() && distance(m.position, area.centre) <= area.radius_yd)
+                    .filter(|m| {
+                        m.alive()
+                            && distance(m.position, area.centre) <= area.radius_yd
+                            && !(area.first_only && !m.remote && m.template.raises_boss_bar())
+                    })
                     .map(|m| m.guid)
                     .collect();
-                now.extend(
-                    self.friendly_players(c)
-                        .into_iter()
-                        .filter(|(_, p, _)| distance(*p, area.centre) <= area.radius_yd)
-                        .map(|(guid, _, _)| guid),
-                );
+                if !area.first_only {
+                    now.extend(
+                        self.friendly_players(c)
+                            .into_iter()
+                            .filter(|(_, p, _)| distance(*p, area.centre) <= area.radius_yd)
+                            .map(|(guid, _, _)| guid),
+                    );
+                }
                 now
             };
+            if area.first_only {
+                // The first enemy inside takes the aura and spends the area; the aura runs out
+                // on its own duration.
+                if let (Some(&unit), Some(def)) = (now.first(), area.enemy_aura) {
+                    self.put_aura(def, unit, c.power_level(), events);
+                    area.left = 0.0;
+                    events.push(SessionEvent::ObjectDestroyed(area.object));
+                } else if area.left <= CLOCK_EPSILON {
+                    events.push(SessionEvent::ObjectDestroyed(area.object));
+                }
+                continue;
+            }
             let left: Vec<u64> = area
                 .inside
                 .iter()
@@ -3851,6 +3874,8 @@ impl InWorld {
                 duration_ms,
                 enemy_aura_spell_id,
                 ally_aura_spell_id,
+                arm_ms,
+                first_only,
             } => {
                 let auras = &callings::of(c.calling).auras;
                 let row =
@@ -3859,9 +3884,17 @@ impl InWorld {
                     object: self.skills.next_patch(self.guid),
                     caster: self.guid,
                     spell_id: skill.spell_id,
-                    centre: self.skills.dest.unwrap_or(c.position),
+                    // A skill that is not aimed at the ground drops it at the caster's feet, not
+                    // at an earlier cast's destination.
+                    centre: if skill.target == Target::Ground {
+                        self.skills.dest.unwrap_or(c.position)
+                    } else {
+                        c.position
+                    },
                     radius_yd,
                     left: clock::secs(duration_ms),
+                    arming: clock::secs(arm_ms),
+                    first_only,
                     enemy_aura: row(enemy_aura_spell_id),
                     ally_aura: row(ally_aura_spell_id),
                     inside: Vec::new(),
@@ -5504,6 +5537,9 @@ impl InWorld {
                     AuraKind::SpellDamagePct { pct: *pct }
                 }
                 callings::AuraEffect::Root => AuraKind::Root,
+                callings::AuraEffect::Incapacitate => AuraKind::Incapacitate {
+                    break_on_damage: def.row.break_on.contains_key("damage"),
+                },
                 callings::AuraEffect::PeriodicDamage { tick, school, .. } => {
                     AuraKind::PeriodicDamage {
                         per_tick: tick.at(level, 0),
@@ -5607,15 +5643,36 @@ impl InWorld {
                 | callings::AuraEffect::PeriodicHeal { tick_ms, .. } => clock::secs(*tick_ms),
                 _ => 0.0,
             };
+            // An incapacitate on a mob goes through diminishing returns; a boss takes nothing.
+            let mut duration_ms = def.duration_ms;
+            if matches!(kind, AuraKind::Incapacitate { .. }) && unit != self.guid {
+                let boss = self
+                    .mobs
+                    .iter()
+                    .any(|m| m.guid == unit && !m.remote && m.template.raises_boss_bar());
+                let alive = self.mobs.iter().any(|m| m.guid == unit && m.alive());
+                let ms = if !alive || boss {
+                    None
+                } else if self.is_diminished_mob(unit) {
+                    self.skills
+                        .control(unit, ControlKind::Incapacitate, duration_ms)
+                } else {
+                    Some(duration_ms)
+                };
+                match ms {
+                    Some(ms) => duration_ms = ms,
+                    None => continue,
+                }
+            }
             let aura = Aura {
                 unit,
                 spell_id: def.spell_id,
                 slot: 0,
                 level,
-                left: if def.duration_ms == 0 {
+                left: if duration_ms == 0 {
                     UNTIL_BROKEN_SECS
                 } else {
-                    clock::secs(def.duration_ms)
+                    clock::secs(duration_ms)
                 },
                 period,
                 next_tick: period,
@@ -5633,6 +5690,9 @@ impl InWorld {
                 if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
                     events.extend(mob.halt());
                 }
+            }
+            if matches!(kind, AuraKind::Incapacitate { .. }) {
+                self.interrupt_mob_cast(unit, events);
             }
             // A count that reached its top gives way to the aura it builds to.
             let full = self.skills.auras.iter().find_map(|a| match a.kind {
