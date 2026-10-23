@@ -106,7 +106,7 @@ orientation = 0.5
 guid = 780008
 entry = 96003
 level = 8
-position = [-8885.0, -161.5, 82.4]
+position = [-8885.7, -160.8, 81.94]
 orientation = 3.6
 
 # Corrupted Brother: the nave's south end, model (-6, -6).
@@ -140,7 +140,7 @@ guid = 780012
 entry = 96004
 rolls = [{ chance = 1, one_of = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 900509, 900510, 900105, 900511, 900512, 900513, 900514, 900515, 900516, 900517, 900518, 900519] }]
 level = 9
-position = [-8909.1, -209.0, 82.4]
+position = [-8908.1, -209.0, 81.94]
 orientation = 1.2
 
 # Corrupted Brother: the back wing's far end, model (-3, -40).

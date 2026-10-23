@@ -288,21 +288,21 @@ sides = "both"
 [[gameobject]]
 guid = 790126
 display = 6151
-position = [-9970.35, 530.00, 35.57]
+position = [-9970.4, 533.0, 35.96]
 orientation = 0.0
 sides = "both"
 
 [[gameobject]]
 guid = 790127
 display = 6151
-position = [-9966.05, 530.00, 35.62]
+position = [-9963.2, 532.8, 36.09]
 orientation = 0.0
 sides = "both"
 
 [[gameobject]]
 guid = 790128
 display = 6151
-position = [-9961.75, 530.00, 35.79]
+position = [-9960.8, 530.0, 35.84]
 orientation = 0.0
 sides = "both"
 
@@ -393,7 +393,7 @@ sides = "both"
 [[gameobject]]
 guid = 790141
 display = 6151
-position = [-10077.85, 680.00, 36.65]
+position = [-10081.4, 683.5, 35.84]
 orientation = 0.0
 sides = "both"
 
@@ -407,7 +407,7 @@ sides = "both"
 [[gameobject]]
 guid = 790143
 display = 6151
-position = [-10069.25, 680.00, 36.48]
+position = [-10067.2, 680.0, 36.47]
 orientation = 0.0
 sides = "both"
 
@@ -484,21 +484,21 @@ sides = "both"
 [[gameobject]]
 guid = 790154
 display = 6151
-position = [-10021.95, 680.00, 34.04]
+position = [-10025.0, 680.0, 34.10]
 orientation = 0.0
 sides = "both"
 
 [[gameobject]]
 guid = 790155
 display = 6151
-position = [-10017.65, 680.00, 33.94]
+position = [-10012.6, 680.0, 33.82]
 orientation = 0.0
 sides = "both"
 
 [[gameobject]]
 guid = 790156
 display = 6151
-position = [-10013.35, 680.00, 33.84]
+position = [-10012.4, 680.0, 33.82]
 orientation = 0.0
 sides = "both"
 
@@ -778,28 +778,28 @@ sides = "both"
 [[gameobject]]
 guid = 790196
 display = 6151
-position = [-10080.00, 596.65, 40.24]
+position = [-10081.0, 596.6, 40.21]
 orientation = 1.5708
 sides = "both"
 
 [[gameobject]]
 guid = 790197
 display = 6151
-position = [-10080.00, 600.95, 40.09]
+position = [-10084.0, 601.0, 40.01]
 orientation = 1.5708
 sides = "both"
 
 [[gameobject]]
 guid = 790198
 display = 6151
-position = [-10080.00, 605.25, 39.83]
+position = [-10084.0, 605.2, 39.85]
 orientation = 1.5708
 sides = "both"
 
 [[gameobject]]
 guid = 790199
 display = 6151
-position = [-10080.00, 609.55, 39.58]
+position = [-10080.0, 612.5, 39.46]
 orientation = 1.5708
 sides = "both"
 
@@ -904,14 +904,14 @@ sides = "both"
 [[gameobject]]
 guid = 790214
 display = 6151
-position = [-10080.00, 674.05, 36.70]
+position = [-10082.0, 674.0, 36.49]
 orientation = 1.5708
 sides = "both"
 
 [[gameobject]]
 guid = 790215
 display = 6151
-position = [-10080.00, 678.35, 36.75]
+position = [-10082.1, 680.5, 36.31]
 orientation = 1.5708
 sides = "both"
 
@@ -1195,7 +1195,7 @@ wake_radius_mod = 3.0
 guid = 790306
 entry = 96007
 level = 28
-position = [-9982.0, 559.0, 37.66]
+position = [-9981.0, 559.0, 37.66]
 orientation = 2.72
 asleep = true
 camp = 2
@@ -1214,7 +1214,7 @@ wake_radius_mod = -2.0
 guid = 790308
 entry = 96009
 level = 27
-position = [-9983.0, 561.0, 37.66]
+position = [-9983.7, 561.7, 37.66]
 orientation = 4.12
 asleep = true
 camp = 2

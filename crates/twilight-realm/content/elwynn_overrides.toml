@@ -135,7 +135,7 @@ guid = 960011
 entry = 257
 level_min = 5
 level_max = 5
-position = [-8607.1, -143.7, 87.618]
+position = [-8606.1, -143.7, 88.42]
 orientation = 0.0
 
 [[added]]
@@ -298,7 +298,7 @@ guid = 960302
 entry = 96026
 level_min = 17
 level_max = 18
-position = [-9122.0, -1135.0, 71.87]
+position = [-9122.0, -1133.0, 72.05]
 orientation = 1.5
 
 [[added]]
@@ -370,7 +370,7 @@ guid = 960311
 entry = 96027
 level_min = 16
 level_max = 17
-position = [-9160.0, -1205.0, 62.97]
+position = [-9160.0, -1209.0, 64.13]
 orientation = 4.2
 
 [[added]]
@@ -402,7 +402,7 @@ guid = 960315
 entry = 96028
 level_min = 17
 level_max = 19
-position = [-9050.0, -1085.0, 71.39]
+position = [-9050.0, -1083.0, 71.48]
 orientation = 2.3
 
 [[added]]
@@ -442,7 +442,7 @@ guid = 960320
 entry = 96028
 level_min = 17
 level_max = 19
-position = [-9020.0, -1140.0, 63.70]
+position = [-9020.7, -1139.3, 64.03]
 orientation = 1.8
 
 # Eastvale and Ridgepoint (#247). Guids 960401 on. Hadrik stands in the lumber mill, the looters
@@ -456,7 +456,7 @@ guid = 960401
 entry = 96039
 level_min = 22
 level_max = 22
-position = [-9425.0, -1318.0, 49.75]
+position = [-9424.0, -1318.0, 49.84]
 orientation = 1.57
 
 [[added]]
@@ -496,7 +496,7 @@ guid = 960406
 entry = 96041
 level_min = 20
 level_max = 23
-position = [-9419.9, -1333.4, 48.25]
+position = [-9418.9, -1333.4, 48.22]
 orientation = 1.82
 
 [[added]]
@@ -528,7 +528,7 @@ guid = 960410
 entry = 96041
 level_min = 20
 level_max = 23
-position = [-9394.2, -1298.2, 53.67]
+position = [-9392.1, -1296.1, 54.51]
 orientation = 4.02
 
 [[added]]
@@ -568,7 +568,7 @@ guid = 960415
 entry = 96041
 level_min = 20
 level_max = 23
-position = [-9432.6, -1327.0, 49.47]
+position = [-9433.6, -1327.0, 49.48]
 orientation = 4.04
 
 [[added]]
@@ -965,7 +965,7 @@ guid = 960464
 entry = 96046
 level_min = 24
 level_max = 26
-position = [-9949.9, -149.7, 24.47]
+position = [-9948.9, -149.7, 24.56]
 orientation = 1.51
 
 [[added]]

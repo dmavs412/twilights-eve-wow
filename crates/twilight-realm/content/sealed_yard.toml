@@ -24,7 +24,7 @@ orientation = 0.0
 [portal.door]
 entry = 98001
 display = 1
-position = [-9664.0, 150.0, 47.2]
+position = [-9661.0, 150.0, 46.73]
 orientation = 0.0
 outside = [-9668.0, 150.0, 47.2]
 open_secs = 15.0

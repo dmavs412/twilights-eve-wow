@@ -168,7 +168,7 @@ ward = { stop = "water", needs_dead = 970015, held_text = "Gresh the Drowned's m
 guid = 970021
 entry = 96031
 level = 20
-position = [-9556.0, -713.0, 75.06]
+position = [-9556.7, -712.3, 75.62]
 orientation = 5.0
 
 [[creature]]
@@ -230,7 +230,7 @@ ward = { stop = "fire", needs_dead = 970035, held_text = "Speaker Thane's magic 
 guid = 970041
 entry = 96033
 level = 21
-position = [-9552.0, -713.0, 90.5]
+position = [-9551.0, -713.0, 90.35]
 orientation = 5.0
 
 # ── Shadow stop: Voidwalkers and darkweavers, and the Kept ───────────────────────────────────────
@@ -252,7 +252,7 @@ orientation = 3.14
 guid = 970053
 entry = 96030
 level = 21
-position = [-9226.0, -2686.0, 88.80]
+position = [-9225.0, -2686.0, 88.80]
 orientation = 3.14
 
 [[creature]]
