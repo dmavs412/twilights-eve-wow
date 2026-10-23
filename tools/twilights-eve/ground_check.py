@@ -21,6 +21,10 @@ the body rules of ADR 0021:
   unless the row says `on_top = true`.
 - doodad: its body is not inside a placed M2's collision hull, a rock, trunk, fence or cart
   (doodad_check.py). Doodads a WMO places (MODD) are not checked.
+Every row's model must also load (model): a creature's display (its own `display_id`, else its
+template's) needs its CreatureDisplayInfo row, a positive scale, its CreatureModelData model file
+and, without ExtendedDisplayInfo, its texture variations; a GameObject's `display` needs its
+GameObjectDisplayInfo row and model file. `--fix` does not touch this rule.
 `--fix` moves a row or point that fails one of these to the first spot in rings of 1 to 5 yd
 (8 headings each, from +x) that passes every rule, and prints `nudge failed` when none does.
 
@@ -81,7 +85,7 @@ NUDGE_RINGS = (1, 2, 3, 4, 5)
 # The failures in the content when each rule began, one per line: `<rule> <file> <x> <y> <label>`.
 # Delete a line when its row is fixed.
 KNOWN = os.path.join(HERE, "ground_check_known.txt")
-RULES = ("off-floor", "water", "wall", "roof", "doodad", "rumour-indoor")
+RULES = ("off-floor", "water", "wall", "roof", "doodad", "model", "rumour-indoor")
 # The rules a row is checked against after its Z, and a Rumour point after its terrain.
 BODY_RULES = ("water", "wall", "roof", "doodad")
 
@@ -97,6 +101,7 @@ MAP = re.compile(r"^\s*map\s*=\s*(\d+)")
 ENTRY = re.compile(r"^\s*entry\s*=\s*(\d+)")
 GROUNDED = re.compile(r"^\s*grounded\s*=\s*(true|false)")
 ON_TOP = re.compile(r"^\s*on_top\s*=\s*(true|false)")
+DISPLAY = re.compile(r"^\s*display(?:_id)?\s*=\s*(\d+)")
 POSITION = re.compile(
     r"^(?P<head>\s*position\s*=\s*\[\s*)(?P<x>[^,\]\s]+)(?P<s1>\s*,\s*)(?P<y>[^,\]\s]+)"
     r"(?P<s2>\s*,\s*)(?P<z>[^,\]\s]+)(?P<tail>.*)$",
@@ -109,7 +114,7 @@ POINTS = re.compile(r"^\s*points\s*=\s*\[")
 XY = re.compile(r"\{\s*x\s*=\s*(?P<x>-?[\d.]+)\s*,\s*y\s*=\s*(?P<y>-?[\d.]+)")
 STRING = re.compile(r'"[^"]*"')
 
-Row = collections.namedtuple("Row", "idx label map grounded x y z kind entry on_top")
+Row = collections.namedtuple("Row", "idx label map grounded x y z kind entry on_top display")
 Point = collections.namedtuple("Point", "idx span label map x y kind entry")
 
 
@@ -132,7 +137,8 @@ def rows(path):
     def close():
         if cur and cur["pos"] is not None:
             out.append(Row(cur["pos"], cur["label"], cur["map"] if cur["map"] is not None else file_map,
-                           cur["grounded"], *cur["xyz"], cur["kind"], cur["entry"], cur["on_top"]))
+                           cur["grounded"], *cur["xyz"], cur["kind"], cur["entry"], cur["on_top"],
+                           cur["display"]))
 
     seen_header = False
     for i, raw in enumerate(lines):
@@ -143,7 +149,7 @@ def rows(path):
             seen_header = True
             label = None
             cur = {"pos": None, "label": None, "map": None, "grounded": True, "xyz": None,
-                   "kind": m.group(1), "entry": None, "on_top": False}
+                   "kind": m.group(1), "entry": None, "on_top": False, "display": None}
             continue
         m = MAP.match(line)
         if m:
@@ -173,6 +179,10 @@ def rows(path):
         m = ON_TOP.match(line)
         if m:
             cur["on_top"] = m.group(1) == "true"
+            continue
+        m = DISPLAY.match(line)
+        if m:
+            cur["display"] = int(m.group(1))
             continue
         m = POSITION.match(line)
         if m:
@@ -327,7 +337,8 @@ def load_templates(paths):
         ours = os.path.basename(path) not in IMPORTED_TEMPLATES
         for t in doc.get("template", []):
             if "entry" in t:
-                out[t["entry"]] = {"ours": ours, "swims": bool(t.get("swims", False))}
+                out[t["entry"]] = {"ours": ours, "swims": bool(t.get("swims", False)),
+                                  "display": t.get("display_id")}
     return out
 
 
@@ -347,6 +358,91 @@ def load_swimmers():
 def inside(failed):
     """The flag line's ` inside <model>` when a doodad rule failed."""
     return " inside " + failed["doodad"] if failed.get("doodad") else ""
+
+
+class Models:
+    """Whether the client can draw a display: its CreatureDisplayInfo or GameObjectDisplayInfo
+    row and the model and texture files it names. `gd` gives `dbc(name)` and `has(path)`; each
+    table and file is looked up once."""
+
+    def __init__(self, gd):
+        self.gd = gd
+        self.tables = {}
+        self.files = {}
+
+    def _table(self, name):
+        if name not in self.tables:
+            rows, block = self.gd.dbc(name)
+            self.tables[name] = ({r[0]: r for r in rows}, block)
+        return self.tables[name]
+
+    def _has(self, path):
+        key = path.lower()
+        if key not in self.files:
+            self.files[key] = self.gd.has(path)
+        return self.files[key]
+
+    def _model(self, path):
+        """Why the model file at `path` (an .mdx name, read as .m2) is missing, or None."""
+        m2 = doodad_check.model_path(path)
+        return None if path and self._has(m2) else "no model file %s" % (m2 or "(empty)")
+
+    def creature(self, display):
+        """None when the client can draw creature display `display`, else why not. A display
+        with ExtendedDisplayInfo (a humanoid NPC) needs only its model; any other needs each
+        texture variation it names beside its model."""
+        rows, block = self._table("CreatureDisplayInfo")
+        r = rows.get(display)
+        if r is None:
+            return "no CreatureDisplayInfo row"
+        scale = wowmpq.dbc_float(r[4])
+        if not scale > 0:
+            return "scale %g" % scale
+        models, mblock = self._table("CreatureModelData")
+        m = models.get(r[1])
+        if m is None:
+            return "no CreatureModelData row %d" % r[1]
+        path = wowmpq.dbc_string(mblock, m[2])
+        why = self._model(path)
+        if why or r[3]:
+            return why
+        folder = path.rsplit("\\", 1)[0]
+        for off in r[6:9]:
+            tex = wowmpq.dbc_string(block, off)
+            if tex and not self._has("%s\\%s.blp" % (folder, tex)):
+                return "no texture %s\\%s.blp" % (folder, tex)
+        return None
+
+    def gameobject(self, display):
+        """None when the client can draw GameObject display `display`, else why not."""
+        if not display:
+            return "display 0"
+        rows, block = self._table("GameObjectDisplayInfo")
+        r = rows.get(display)
+        if r is None:
+            return "no GameObjectDisplayInfo row"
+        return self._model(wowmpq.dbc_string(block, r[1]))
+
+
+def model_failure(r, templates, models):
+    """(display, why) when the client cannot draw row `r`'s model, None when it can or the row
+    places none of its own (a cover, a portal, an explore point). A creature row's display is its
+    own `display_id`, else its template's; a GameObject's is its `display`."""
+    if r.kind in GAMEOBJECT_KINDS or (r.kind not in CREATURE_KINDS and r.entry not in templates):
+        if r.display is None and r.kind != "gameobject":
+            return None
+        why = models.gameobject(r.display or 0)
+        return (r.display or 0, why) if why else None
+    if r.display is not None:
+        display = r.display
+    elif r.entry not in templates:
+        return None, "no template"
+    else:
+        display = templates[r.entry]["display"]
+        if display is None:
+            return None, "no display_id on template %d" % r.entry
+    why = models.creature(display)
+    return (display, why) if why else None
 
 
 def known_key(rule, name, label, x, y):
@@ -390,6 +486,7 @@ class World:
         self.gd = gd
         self.templates = templates
         self.swimmers = swimmers
+        self.models = Models(gd)
         self.terrains = {}
         self.floors = {}
         self.doodads = {}
@@ -491,6 +588,12 @@ def main():
         lines, found = rows(path)
         changed = False
         for r in found:
+            bad = model_failure(r, world.templates, world.models)
+            if known_or_flag({"model": ""} if bad else {}, name, r.label, r.x, r.y, ("model",)):
+                counts["model"] += 1
+                per_file[name] += 1
+                print("model %s:%d %s display %s: %s"
+                      % (name, r.idx + 1, r.label or "?", "-" if bad[0] is None else bad[0], bad[1]))
             if not r.grounded:
                 continue
             if (name, r.label) in KNOWN_WRONG_MAP:
@@ -622,11 +725,12 @@ def main():
     for n, c in sorted(per_file.items()):
         print("  %s: %d" % (n, c))
     print("checked %d rows and %d points, %s %d, interior %d (off-floor %d), known %d, stale known %d, "
-          "nudge failed %d, no-terrain %d"
+          "nudge failed %d, model %d, no-terrain %d"
           % (counts["checked"], counts["points"], verb, counts[verb], counts["interior"],
-             counts["off-floor"], counts["known"], counts["stale"], counts["nudge-failed"],
+             counts["off-floor"], counts["known"], counts["stale"], counts["nudge-failed"], counts["model"],
              counts["no-terrain"]))
-    return 1 if counts[verb] or counts["off-floor"] or counts["stale"] or counts["nudge-failed"] else 0
+    return 1 if (counts[verb] or counts["off-floor"] or counts["stale"] or counts["nudge-failed"]
+                 or counts["model"]) else 0
 
 
 if __name__ == "__main__":

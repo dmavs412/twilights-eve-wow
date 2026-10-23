@@ -7,6 +7,7 @@ groups and a small TOML file.
 from __future__ import annotations
 
 import math
+import struct
 import os
 import sys
 import tempfile
@@ -177,6 +178,94 @@ class Doodad(unittest.TestCase):
         x, y = -8746.6, -413.6
         self.assertIn(rock, doodads.hits(x, y, terrain.ground_z(x, y)))
         self.assertNotIn(rock, doodads.hits(x + 29.0, y, terrain.ground_z(x + 29.0, y)))
+
+
+def bits(f):
+    """A float's int32 bits, as wowmpq.GameData.dbc returns a float cell."""
+    return struct.unpack("<i", struct.pack("<f", f))[0]
+
+
+class FakeData:
+    """Three display DBCs and a file set: dbc(name) gives int32 rows and a string block."""
+
+    def __init__(self, files):
+        self.block = b"\0"
+        self.files = {f.lower() for f in files}
+        model = self.s("Creature\\Wolf\\Wolf.mdx")
+        skin = self.s("WolfSkinGrey")
+        lost = self.s("WolfSkinLost")
+        door = self.s("World\\Generic\\Door.mdx")
+        self.tables = {
+            # ID, ModelID, Sound, Extended, Scale, Alpha, Texture 0..2, SizeClass, Blood, NPCSound
+            "CreatureDisplayInfo": [
+                (10, 1, 0, 0, bits(1.0), 255, skin, 0, 0, 1, 0, 0),
+                (11, 1, 0, 0, bits(0.0), 255, skin, 0, 0, 1, 0, 0),
+                (12, 1, 0, 0, bits(1.0), 255, lost, 0, 0, 1, 0, 0),
+                (13, 2, 0, 0, bits(1.0), 255, 0, 0, 0, 1, 0, 0),
+                (14, 1, 0, 7, bits(1.0), 255, lost, 0, 0, 1, 0, 0),
+            ],
+            "CreatureModelData": [(1, 0, model), (2, 0, self.s("Creature\\Gone\\Gone.mdx"))],
+            "GameObjectDisplayInfo": [(20, door)],
+        }
+
+    def s(self, text):
+        off = len(self.block)
+        self.block += text.encode() + b"\0"
+        return off
+
+    def dbc(self, name):
+        return self.tables[name], self.block
+
+    def has(self, path):
+        return path.lower() in self.files
+
+
+class Model(unittest.TestCase):
+    FILES = ["Creature\\Wolf\\Wolf.m2", "Creature\\Wolf\\WolfSkinGrey.blp", "World\\Generic\\Door.m2"]
+
+    def setUp(self):
+        self.models = ground_check.Models(FakeData(self.FILES))
+
+    def test_a_good_creature_display_passes(self):
+        self.assertIsNone(self.models.creature(10))
+
+    def test_a_scale_of_zero_fails(self):
+        self.assertEqual(self.models.creature(11), "scale 0")
+
+    def test_a_missing_texture_variation_fails(self):
+        self.assertIn("no texture Creature\\Wolf\\WolfSkinLost.blp", self.models.creature(12))
+
+    def test_a_missing_model_file_fails(self):
+        self.assertIn("no model file Creature\\Gone\\Gone.m2", self.models.creature(13))
+
+    def test_a_humanoid_display_needs_only_its_model(self):
+        self.assertIsNone(self.models.creature(14))
+
+    def test_a_missing_display_row_fails(self):
+        self.assertEqual(self.models.creature(99), "no CreatureDisplayInfo row")
+
+    def test_a_gameobject_with_display_0_fails(self):
+        self.assertEqual(self.models.gameobject(0), "display 0")
+        self.assertIsNone(self.models.gameobject(20))
+
+    def test_a_row_takes_its_template_display_and_a_missing_template_fails(self):
+        templates = {96011: {"ours": True, "swims": False, "display": 13}}
+        row = ground_check.Row(0, "guid 1", 0, True, 0.0, 0.0, 0.0, "creature", 96011, False, None)
+        self.assertEqual(ground_check.model_failure(row, templates, self.models)[0], 13)
+        self.assertIsNone(ground_check.model_failure(row._replace(display=10), templates, self.models))
+        self.assertEqual(ground_check.model_failure(row._replace(entry=5), templates, self.models),
+                         (None, "no template"))
+
+    def test_a_portal_without_a_display_is_not_checked(self):
+        row = ground_check.Row(0, None, 0, True, 0.0, 0.0, 0.0, "portal", None, False, None)
+        self.assertIsNone(ground_check.model_failure(row, {}, self.models))
+
+    @unittest.skipUnless(os.path.isdir(DATA), "no game data under $WOW_DATA")
+    def test_the_defias_bandit_display_loads(self):
+        # mobs.toml template 96011, the Defias Bandit, display 2358.
+        gd = wowmpq.GameData(DATA)
+        self.addCleanup(lambda: [a.f.close() for a in gd.archives])
+        self.assertIsNone(ground_check.Models(gd).creature(2358))
 
 
 class Nudge(unittest.TestCase):

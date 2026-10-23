@@ -259,6 +259,14 @@ class GameData:
                     return d
         return None
 
+    def has(self, name: str) -> bool:
+        """True when an archive holds the file, without reading it."""
+        for a in self.archives:
+            blk = a._find(name)
+            if blk is not None and blk[3] & 0x80000000:
+                return True
+        return False
+
     def dbc(self, name: str):
         """Rows of a DBC as tuples of int32, plus the string block."""
         d = self.read("DBFilesClient\\%s.dbc" % name)
@@ -501,3 +509,18 @@ class Terrain:
             z = sum(corners) / 4.0
             best = z if best is None else max(best, z)
         return best
+
+
+# ---------------------------------------------------------------- DBC fields
+
+
+def dbc_string(block: bytes, off: int) -> str:
+    """A DBC string field: `off` is a byte offset into the string block that dbc() returns."""
+    if off <= 0 or off >= len(block):
+        return ""
+    return block[off : block.index(b"\0", off)].decode("utf-8", "replace")
+
+
+def dbc_float(cell: int) -> float:
+    """A DBC float field, which dbc() returns as its int32 bits."""
+    return struct.unpack("<f", struct.pack("<i", cell))[0]
