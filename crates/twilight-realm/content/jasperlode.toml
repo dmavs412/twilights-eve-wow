@@ -129,7 +129,7 @@ orientation = 2.00
 guid = 820004
 entry = 96016
 level = 15
-position = [-9143.4, -601.8, 58.1]
+position = [-9143.4, -601.8, 58.68]
 orientation = 3.50
 
 # A frightened kobold.
@@ -137,7 +137,7 @@ orientation = 3.50
 guid = 820005
 entry = 96016
 level = 15
-position = [-9147.7, -600.4, 58.2]
+position = [-9147.7, -600.4, 59.80]
 orientation = 4.50
 
 # The passages (15-16): four packs of two Deep Kobold Miners and a Deep Kobold Geomancer.
@@ -187,7 +187,7 @@ orientation = 2.60
 guid = 820011
 entry = 96018
 level = 16
-position = [-9120.1, -575.1, 57.5]
+position = [-9120.1, -575.1, 58.93]
 orientation = 2.60
 
 # Passage pack 3.
@@ -269,7 +269,7 @@ orientation = 2.00
 guid = 820021
 entry = 96019
 level = 17
-position = [-9034.0, -616.8, 55.9]
+position = [-9034.0, -616.8, 56.62]
 orientation = 2.00
 
 # Dig group 2: the Delver.
@@ -325,7 +325,7 @@ orientation = 4.00
 guid = 820028
 entry = 96019
 level = 17
-position = [-9022.1, -561.4, 54.9]
+position = [-9022.1, -561.4, 55.42]
 orientation = 4.00
 
 # Dig group 3: a Digger.

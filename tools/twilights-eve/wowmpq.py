@@ -336,6 +336,8 @@ class Terrain:
         mwmo = b""
         mwid = ()
         wmos = []
+        # Each MODF entry's model path, world origin and rotation (degrees, placement axes).
+        placements = []
         p = 0
         while p + 8 <= len(d):
             tag = d[p : p + 4][::-1]
@@ -358,6 +360,10 @@ class Terrain:
                     ys = sorted((ORIGIN - lo[0], ORIGIN - hi[0]))
                     zs = sorted((lo[1], hi[1]))
                     wmos.append((path, name_set, xs, ys, zs))
+                    pos = struct.unpack_from("<3f", d, e + 8)
+                    rot = struct.unpack_from("<3f", d, e + 20)
+                    placements.append({"path": path, "origin": (ORIGIN - pos[2], ORIGIN - pos[0], pos[1]),
+                                       "rot": rot, "xs": xs, "ys": ys, "zs": zs})
             elif tag == b"MCNK":
                 h = p + 8
                 ix, iy = struct.unpack_from("<II", d, h + 4)
@@ -371,7 +377,7 @@ class Terrain:
                         heights = struct.unpack_from("<145f", d, hp)
                 chunks[(ix, iy)] = (area, px, py, pz, heights)
             p += 8 + size
-        return {"chunks": chunks, "wmos": wmos}
+        return {"chunks": chunks, "wmos": wmos, "placements": placements}
 
     def _tile_at(self, x: float, y: float):
         fx = 32.0 - y / TILE

@@ -54,7 +54,7 @@ guid = 960002
 entry = 257
 level_min = 4
 level_max = 5
-position = [-8657.2, -124.4, 89.672]
+position = [-8657.2, -124.4, 90.88]
 orientation = 0.0
 
 [[added]]
@@ -224,7 +224,7 @@ guid = 960103
 entry = 96001
 level_min = 6
 level_max = 7
-position = [-8546.0, -206.0, 83.85]
+position = [-8546.0, -206.0, 84.86]
 orientation = 0.3
 
 [[added]]
@@ -688,7 +688,7 @@ guid = 960430
 entry = 96031
 level_min = 22
 level_max = 23
-position = [-9795.0, -1385.0, 58.0]
+position = [-9795.0, -1385.0, 58.66]
 orientation = 5.07
 
 [[added]]

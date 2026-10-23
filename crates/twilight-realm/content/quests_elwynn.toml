@@ -1244,7 +1244,7 @@ guid = 790606
 entry = 980108
 display = 1011
 map = 0
-position = [-9783.0, -1399.0, 58.0]
+position = [-9783.0, -1399.0, 56.63]
 orientation = 0.0
 respawn = 60.0
 
@@ -1602,7 +1602,7 @@ guid = 790715
 entry = 980113
 display = 1011
 map = 0
-position = [-9918.0, 14.0, 30.5]
+position = [-9918.0, 14.0, 31.23]
 orientation = 0.0
 respawn = 120.0
 
@@ -1629,7 +1629,7 @@ guid = 790718
 entry = 980114
 display = 1011
 map = 0
-position = [-9910.0, 22.0, 30.5]
+position = [-9910.0, 22.0, 31.05]
 orientation = 0.0
 respawn = 120.0
 
@@ -1638,7 +1638,7 @@ guid = 790719
 entry = 980115
 display = 1011
 map = 0
-position = [-9924.0, 8.0, 30.5]
+position = [-9924.0, 8.0, 31.56]
 orientation = 0.0
 respawn = 120.0
 
@@ -1647,7 +1647,7 @@ guid = 790720
 entry = 980115
 display = 1011
 map = 0
-position = [-9896.0, 36.0, 30.5]
+position = [-9896.0, 36.0, 31.70]
 orientation = 0.0
 respawn = 120.0
 

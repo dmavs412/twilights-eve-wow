@@ -20,8 +20,12 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 A ticket gives x and y for every placed unit, and the map when it is not 0. It never gives a Z.
 The Build lane writes `0.0` and runs `python3.15 tools/twilights-eve/ground_check.py --fix`,
-which computes the Z. A ticket for an interior unit names the building, so the session can take
-the Z from the nearest existing row in it.
+which computes the Z. A ticket for an interior unit names the building and the floor it stands
+on (the nave, the tower top). `python3.15 tools/twilights-eve/wmo_floor.py <x> <y>` lists every
+floor of the building over a point; the session writes that floor's Z, and `ground_check.py`
+fails a row inside a building that stands on no floor. A building's bounding box holds the
+ground around its walls too, so a point inside the box can still be outdoors: pick the point
+with `wmo_floor.py`, never from the box.
 
 ## Writing a ready-for-agent ticket
 
