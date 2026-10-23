@@ -1,0 +1,588 @@
+//! Fishing (ADR 0018): the cast, the bobber, the bite, the Reeling Bar's result and Angler XP.
+//! The cast is checked at once for what needs no host. The water and the pool wait for the
+//! realm's next tick, which has the host. The bobber is a run-time GameObject the realm keeps
+//! (`crate::objects`); this session names the ones whose cast ended in `spent_bobbers`.
+
+use benilla_protocol::messages::GossipOption;
+use benilla_protocol::SessionEvent;
+
+use super::cast::{refused, SPELL_FAILED_EQUIPPED_ITEM_CLASS, SPELL_FAILED_NOT_KNOWN};
+use super::InWorld;
+use crate::audience::Audience;
+use crate::characters::Char;
+use crate::equipment;
+use crate::fields::{guid_pairs, values, UNIT_CHANNEL_SPELL, UNIT_FIELD_CHANNEL_OBJECT};
+use crate::fish::{self, Pool, PoolFish, Style};
+use crate::hub::Npc;
+use crate::inventory::Pos;
+use crate::items;
+use crate::objects::{ObjectKind, ObjectSpec};
+use crate::rng::Rng;
+use crate::rules::gear::SLOT_MAIN_HAND;
+use crate::rules::xp::gray_level;
+use crate::{clock, Host};
+
+/// `SPELL_FAILED_NOT_FISHABLE`: "Your cast didn't land in fishable water".
+const SPELL_FAILED_NOT_FISHABLE: u8 = 0x34;
+/// `ITEM_CLASS_WEAPON`.
+const WEAPON: u32 = 2;
+/// The red line when nothing in the water bites at the character's Angler Level.
+const NOTHING_BITING: &str = "Nothing is biting";
+/// Seconds past the bar's timeout a result is still believed, and the bar kept open.
+const RESULT_SLACK_SECS: f32 = 2.0;
+/// The fastest win believed, as a share of the time the meter takes to fill held all the way.
+const FASTEST_WIN: f32 = 0.95;
+
+/// Lee Brown's menu lines: the merchant window and the lesson.
+const OPTION_BROWSE: u32 = 1;
+const OPTION_TEACH: u32 = 2;
+/// `GOSSIP_ICON_VENDOR` and `GOSSIP_ICON_TRAINER`.
+const ICON_VENDOR: u8 = 1;
+const ICON_TRAINER: u8 = 3;
+
+/// A Fishing cast under way, from the cast to the end of the Reeling Bar.
+pub(super) struct Fishing {
+    /// The bobber's guid; 0 until it lands.
+    bobber: u64,
+    stage: Stage,
+}
+
+enum Stage {
+    /// Cast: the next tick, which has the host, lands it or refuses it.
+    Cast,
+    /// The bobber floats: the bite comes in `bite_in` seconds, and the cast is lost in `left`.
+    Floating {
+        pool: &'static Pool,
+        bite_in: f32,
+        left: f32,
+    },
+    /// A fish bit and the Reeling Bar is open.
+    Reeling(Bite),
+}
+
+/// What the realm rolled when the fish bit.
+struct Bite {
+    fish: u32,
+    level: u32,
+    start_fill: f32,
+    fill_per_sec: f32,
+    treasure: Option<Treasure>,
+    /// Seconds until the bar is lost unanswered.
+    left: f32,
+}
+
+/// A treasure chest's contents, rolled at the bite.
+struct Treasure {
+    item: Option<u32>,
+    copper: u32,
+}
+
+/// `Angler`: the character's Angler Level and XP, for login and every change.
+pub(super) fn angler(c: &Char) -> SessionEvent {
+    let a = fish::angler();
+    let level = u32::from(c.angler_level);
+    SessionEvent::Angler {
+        level: c.angler_level,
+        xp: c.angler_xp,
+        xp_to_next: if level < a.cap {
+            a.xp_to_next(level)
+        } else {
+            0
+        },
+    }
+}
+
+/// The Angler Level a cast counts as. Lures and bait add to it (#329).
+fn effective_level(c: &Char) -> u32 {
+    u32::from(c.angler_level)
+}
+
+/// Whether the main hand holds a fishing pole.
+fn holds_pole(c: &Char) -> bool {
+    c.inventory
+        .get(Pos::own(SLOT_MAIN_HAND))
+        .and_then(|i| items::template(i.entry))
+        .is_some_and(|t| t.class == WEAPON && t.subclass == fish::spell().pole_subclass)
+}
+
+/// The fish of `pool` that bite at Angler Level `effective`: those fewer than
+/// `gate_levels_above` levels above it.
+fn biters(pool: &'static Pool, effective: u32) -> Vec<&'static PoolFish> {
+    let gate = fish::bar().gate_levels_above;
+    pool.fish
+        .iter()
+        .filter(|f| f.level < effective + gate && fish::fish(f.item).is_some())
+        .collect()
+}
+
+/// One of `rows` by `weight`.
+fn pick<'a, T>(rows: &'a [T], weight: impl Fn(&T) -> f32, rng: &mut Rng) -> Option<&'a T> {
+    let total: f32 = rows.iter().map(&weight).sum();
+    if total <= 0.0 {
+        return None;
+    }
+    let mut roll = rng.frand(0.0, total);
+    for r in rows {
+        roll -= weight(r);
+        if roll < 0.0 {
+            return Some(r);
+        }
+    }
+    rows.last()
+}
+
+/// The wire's style byte: 0 mixed, 1 dart, 2 smooth, 3 sinker, 4 floater.
+fn style_byte(style: Style) -> u8 {
+    match style {
+        Style::Mixed => 0,
+        Style::Dart => 1,
+        Style::Smooth => 2,
+        Style::Sinker => 3,
+        Style::Floater => 4,
+    }
+}
+
+/// A catch's Angler XP: base + per level x the fish's level, times its rarity's factor, times
+/// the perfect factor for a perfect catch. A fish gray to `angler_level` is worth nothing.
+fn catch_xp(item: u32, level: u32, perfect: bool, angler_level: u8) -> u32 {
+    if level <= u32::from(gray_level(angler_level)) {
+        return 0;
+    }
+    let a = fish::angler();
+    let rarity = fish::fish(item).map_or(1.0, |f| a.rarity_factor.of(f.rarity));
+    let perfect = if perfect { a.perfect_factor } else { 1.0 };
+    ((a.catch_xp_base + a.catch_xp_per_level * level) as f32 * rarity * perfect).round() as u32
+}
+
+/// Adds `xp` Angler XP, levelling up along the curve to the cap.
+fn gain_angler_xp(c: &mut Char, xp: u32) {
+    let a = fish::angler();
+    c.angler_xp += xp;
+    while u32::from(c.angler_level) < a.cap
+        && c.angler_xp >= a.xp_to_next(u32::from(c.angler_level))
+    {
+        c.angler_xp -= a.xp_to_next(u32::from(c.angler_level));
+        c.angler_level += 1;
+    }
+    if u32::from(c.angler_level) >= a.cap {
+        c.angler_xp = 0;
+    }
+}
+
+/// Lee Brown's gossip lines for `c`: his goods, and the lesson while they do not know Fishing.
+pub(crate) fn angler_options(c: &Char) -> Vec<GossipOption> {
+    let mut options = vec![GossipOption {
+        index: OPTION_BROWSE,
+        icon: ICON_VENDOR,
+        coded: false,
+        message: "Let me browse your goods.".into(),
+    }];
+    if !c.knows_fishing {
+        options.push(GossipOption {
+            index: OPTION_TEACH,
+            icon: ICON_TRAINER,
+            coded: false,
+            message: "Teach me to fish.".into(),
+        });
+    }
+    options
+}
+
+impl InWorld {
+    /// `CMSG_CAST_SPELL` of Fishing: refused with the stock reason without the skill or a pole,
+    /// else cast, for the next tick to land.
+    pub(super) fn cast_fishing(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        let id = fish::spell().id;
+        if !c.knows_fishing {
+            events.push(refused(id, SPELL_FAILED_NOT_KNOWN));
+            return;
+        }
+        if !holds_pole(c) {
+            events.push(refused(id, SPELL_FAILED_EQUIPPED_ITEM_CLASS));
+            return;
+        }
+        // A new cast ends a channel under way.
+        self.end_channel(true, events);
+        self.fishing = Some(Fishing {
+            bobber: 0,
+            stage: Stage::Cast,
+        });
+    }
+
+    /// The cast or the bar under way is lost: the client is told the fish got away, the line
+    /// comes in, and the bobber goes.
+    pub(crate) fn lose_fish(&mut self, events: &mut Vec<SessionEvent>) {
+        let Some(f) = self.fishing.take() else {
+            return;
+        };
+        events.push(SessionEvent::FishingEnd {
+            caught: None,
+            perfect: false,
+            treasure: false,
+        });
+        if f.bobber != 0 {
+            self.reel_in(f.bobber, true, events);
+        }
+    }
+
+    /// The channel to `bobber` ends, `broken` when it stopped short, and the bobber is spent.
+    fn reel_in(&mut self, bobber: u64, broken: bool, events: &mut Vec<SessionEvent>) {
+        self.channel_closed(fish::spell().id, broken, events);
+        self.spent_bobbers.push(bobber);
+    }
+
+    /// The bobbers of the casts that ended since the last call, for the realm to remove.
+    pub(crate) fn take_spent_bobbers(&mut self) -> Vec<u64> {
+        std::mem::take(&mut self.spent_bobbers)
+    }
+
+    /// The cast's clock, with the host: a fresh cast lands or is refused, a floating bobber
+    /// bites, and an unanswered bobber or bar is lost. `Some` with the bobber to make when the
+    /// cast lands.
+    pub(crate) fn fishing_tick(
+        &mut self,
+        dt: f32,
+        host: &dyn Host,
+        c: &Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) -> Option<ObjectSpec> {
+        let f = self.fishing.as_mut()?;
+        match &mut f.stage {
+            Stage::Cast => return self.land(host, c, rng, events),
+            Stage::Floating {
+                pool,
+                bite_in,
+                left,
+            } => {
+                *bite_in -= dt;
+                *left -= dt;
+                if *bite_in <= 0.0 {
+                    let pool = *pool;
+                    self.bite(pool, c, rng, events);
+                } else if *left <= 0.0 {
+                    self.lose_fish(events);
+                }
+            }
+            Stage::Reeling(bite) => {
+                bite.left -= dt;
+                if bite.left <= 0.0 {
+                    self.lose_fish(events);
+                }
+            }
+        }
+        None
+    }
+
+    /// The cast lands a random distance ahead: on water whose pool has a fish that bites, the
+    /// bobber floats; elsewhere the cast is refused.
+    fn land(
+        &mut self,
+        host: &dyn Host,
+        c: &Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) -> Option<ObjectSpec> {
+        let s = fish::spell();
+        let d = rng.frand(s.land_yd[0], s.land_yd[1]);
+        let [x, y, _] = c.position;
+        let (x, y) = (x + d * c.orientation.cos(), y + d * c.orientation.sin());
+        let surface = host
+            .liquid_at(c.map, x, y)
+            .filter(|&z| host.ground_height(c.map, x, y, z).is_none_or(|g| z >= g));
+        let Some(z) = surface else {
+            self.fishing = None;
+            events.push(refused(s.id, SPELL_FAILED_NOT_FISHABLE));
+            return None;
+        };
+        let effective = effective_level(c);
+        let pool = fish::pool_at(c.map, x, y, host.area_at(c.map, x, y))
+            .filter(|&p| !biters(p, effective).is_empty());
+        let Some(pool) = pool else {
+            self.fishing = None;
+            events.push(SessionEvent::Notification {
+                text: NOTHING_BITING.into(),
+            });
+            return None;
+        };
+        let f = self.fishing.as_mut()?;
+        f.stage = Stage::Floating {
+            pool,
+            bite_in: rng.frand(s.bite_secs[0], s.bite_secs[1]),
+            left: s.cast_secs,
+        };
+        Some(ObjectSpec {
+            entry: s.bobber_entry,
+            display: s.bobber_display,
+            kind: ObjectKind::Bobber,
+            map: c.map,
+            position: [x, y, z],
+            orientation: c.orientation,
+        })
+    }
+
+    /// The realm made the bobber `bobber` at `at`: the cast goes off and the caster channels to
+    /// it, so every client that sees them draws the line.
+    pub(crate) fn bobber_landed(
+        &mut self,
+        bobber: u64,
+        at: [f32; 3],
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let Some(f) = &mut self.fishing else {
+            return;
+        };
+        f.bobber = bobber;
+        let s = fish::spell();
+        events.push(SessionEvent::SpellStart {
+            caster: self.guid,
+            spell_id: s.id,
+            cast_flags: 0,
+            cast_time_ms: 0,
+            target: None,
+            ammo_display_id: None,
+        });
+        events.push(SessionEvent::CastResult {
+            spell_id: s.id,
+            success: true,
+            reason: None,
+            arg: None,
+        });
+        events.push(SessionEvent::SpellGo {
+            caster: self.guid,
+            spell_id: s.id,
+            cast_flags: 0,
+            hits: Vec::new(),
+            misses: Vec::new(),
+            target: None,
+            go_target: None,
+            dest: Some(at),
+            ammo_display_id: None,
+            item_caster: None,
+        });
+        events.push(SessionEvent::ChannelStart {
+            spell_id: s.id,
+            duration_ms: clock::ms(s.cast_secs),
+        });
+        let mut pairs = vec![(UNIT_CHANNEL_SPELL, s.id)];
+        pairs.extend(guid_pairs(UNIT_FIELD_CHANNEL_OBJECT, bobber));
+        events.push(values(self.guid, &pairs));
+    }
+
+    /// A fish of `pool` bites: the bobber splashes, and the realm rolls the fish, the bar and any
+    /// treasure, and opens the bar.
+    fn bite(
+        &mut self,
+        pool: &'static Pool,
+        c: &Char,
+        rng: &mut Rng,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let effective = effective_level(c);
+        let caught = pick(&biters(pool, effective), |f| f.weight, rng).copied();
+        let (Some(caught), Some(f)) = (caught, self.fishing.as_mut()) else {
+            return self.lose_fish(events);
+        };
+        let Some(def) = fish::fish(caught.item) else {
+            return self.lose_fish(events);
+        };
+        let bar = fish::bar();
+        let above = caught.level.saturating_sub(effective) as f32;
+        let difficulty =
+            (def.difficulty as f32 + bar.difficulty_per_level_above * above).min(100.0);
+        let zone_height =
+            (bar.zone_base + bar.zone_per_level * (effective - 1) as f32).min(bar.zone_max);
+        let chance = bar.treasure_base + bar.treasure_per_level * f32::from(c.angler_level);
+        let treasure = (rng.frand(0.0, 1.0) < chance).then(|| {
+            let [lo, hi] = bar.treasure_appears_secs;
+            let appears_at = rng.frand(lo, hi);
+            let copper = rng.urand(pool.copper[0], pool.copper[1]);
+            let item = pick(&pool.treasure, |t| t.weight, rng).map(|t| t.item);
+            (appears_at, Treasure { item, copper })
+        });
+        events.push(SessionEvent::GameObjectCustomAnim {
+            guid: f.bobber,
+            anim_id: 0,
+        });
+        events.push(SessionEvent::FishingBite {
+            bobber: f.bobber,
+            fish: caught.item,
+            level: caught.level.min(u32::from(u8::MAX)) as u8,
+            style: style_byte(def.style),
+            difficulty,
+            zone_height,
+            start_fill: bar.start_fill,
+            fill_per_sec: bar.fill_per_sec,
+            drain_per_sec: bar.drain_per_sec,
+            timeout_secs: bar.timeout_secs,
+            seed: rng.seed(),
+            treasure: treasure
+                .as_ref()
+                .map(|&(at, _)| (at, bar.treasure_fill_secs)),
+            legendary: false,
+        });
+        f.stage = Stage::Reeling(Bite {
+            fish: caught.item,
+            level: caught.level,
+            start_fill: bar.start_fill,
+            fill_per_sec: bar.fill_per_sec,
+            treasure: treasure.map(|(_, t)| t),
+            left: bar.timeout_secs + RESULT_SLACK_SECS,
+        });
+    }
+
+    /// `FishingResult` with a bar open: a win the realm believes lands the fish, and the chest
+    /// when it was held, and pays Angler XP. The cast always ends. Whether the character changed.
+    pub(crate) fn fishing_result(
+        &mut self,
+        won: bool,
+        perfect: bool,
+        treasure: bool,
+        secs: f32,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let reeling = matches!(
+            self.fishing,
+            Some(Fishing {
+                stage: Stage::Reeling(_),
+                ..
+            })
+        );
+        if !reeling {
+            return false;
+        }
+        let Some(Fishing {
+            bobber,
+            stage: Stage::Reeling(bite),
+        }) = self.fishing.take()
+        else {
+            return false;
+        };
+        let timeout = fish::bar().timeout_secs;
+        let fastest = (1.0 - bite.start_fill) / bite.fill_per_sec * FASTEST_WIN;
+        let won = won && secs >= fastest && secs <= timeout + RESULT_SLACK_SECS;
+        let mut caught = None;
+        let mut chest = false;
+        if won {
+            match equipment::receive(c, bite.fish, 1, events) {
+                Ok(()) => caught = Some(bite.fish),
+                Err(reason) => events.push(equipment::inventory_failure(reason, 0)),
+            }
+            if let Some(t) = bite.treasure.filter(|_| treasure) {
+                chest = true;
+                if let Some(item) = t.item {
+                    if let Err(reason) = equipment::receive(c, item, 1, events) {
+                        events.push(equipment::inventory_failure(reason, 0));
+                    }
+                }
+                c.inventory.money = c.inventory.money.saturating_add(t.copper);
+                events.push(values(c.guid, &[equipment::money_pair(&c.inventory)]));
+            }
+        }
+        if let Some(item) = caught {
+            let xp = catch_xp(item, bite.level, perfect, c.angler_level);
+            gain_angler_xp(c, xp);
+            events.push(angler(c));
+        }
+        events.push(SessionEvent::FishingEnd {
+            caught,
+            perfect: won && perfect,
+            treasure: chest,
+        });
+        self.reel_in(bobber, false, events);
+        won
+    }
+}
+
+impl crate::Realm {
+    /// The served session's Fishing clock, with the host: a cast that lands gets its bobber,
+    /// seen by everyone in the world on its map, and the bobbers of the casts that ended go.
+    pub(crate) fn tick_fishing(&mut self, dt: f32, host: &dyn Host) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get(w.guid) else {
+            return;
+        };
+        let landed = w.fishing_tick(dt, host, c, &mut self.rng, &mut self.events);
+        self.remove_spent_bobbers();
+        let Some(spec) = landed else {
+            return;
+        };
+        let at = spec.position;
+        let audience = self.in_world_on(spec.map);
+        let bobber = self.objects.spawn(spec, audience);
+        if let Some(w) = &mut self.world {
+            w.bobber_landed(bobber, at, &mut self.events);
+        }
+    }
+
+    /// Removes the served session's spent bobbers from the run-time objects; each client that
+    /// had one is sent its destroy on its next tick.
+    pub(crate) fn remove_spent_bobbers(&mut self) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        for bobber in w.take_spent_bobbers() {
+            self.objects.remove(bobber);
+        }
+    }
+
+    /// Everyone in the world on `map`.
+    fn in_world_on(&self, map: u32) -> Audience {
+        let worlds = self
+            .world
+            .iter()
+            .chain(self.parked.values().filter_map(|s| s.world.as_ref()));
+        let guids: Vec<u64> = worlds
+            .filter_map(|w| self.characters.get(w.guid))
+            .filter(|c| c.map == map)
+            .map(|c| c.guid)
+            .collect();
+        Audience::of(&guids)
+    }
+
+    /// `FishingResult`: the bar's outcome, saved when it changed the character.
+    pub(crate) fn fishing_result(&mut self, won: bool, perfect: bool, treasure: bool, secs: f32) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let changed = w.fishing_result(won, perfect, treasure, secs, c, &mut self.events);
+        let guid = w.guid;
+        self.remove_spent_bobbers();
+        if changed {
+            self.save(guid);
+        }
+    }
+
+    /// A line of Lee Brown's menu: his goods open the merchant window; the lesson teaches
+    /// Fishing. Both close the menu.
+    pub(crate) fn angler_select(&mut self, npc: &Npc, option: u32) {
+        if !self.near(npc) || !matches!(option, OPTION_BROWSE | OPTION_TEACH) {
+            return;
+        }
+        let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(guid) else {
+            return;
+        };
+        self.events.push(SessionEvent::GossipComplete);
+        if option == OPTION_BROWSE {
+            crate::vendor::list(npc.guid(), c, &mut self.events);
+            return;
+        }
+        if c.knows_fishing {
+            return;
+        }
+        c.knows_fishing = true;
+        self.events.push(SessionEvent::SpellLearned {
+            spell_id: fish::spell().id,
+        });
+        self.save(guid);
+    }
+}

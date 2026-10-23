@@ -186,10 +186,12 @@ impl Host for FlatGround {
     }
 }
 
-/// [`FlatGround`] with a pond: water at surface Z [`Pond::SURFACE`] within `radius` of `centre`.
+/// [`FlatGround`] with a pond: water at surface Z [`Pond::SURFACE`] within `radius` of `centre`,
+/// and the whole map in area `area`.
 pub struct Pond {
     pub centre: [f32; 2],
     pub radius: f32,
+    pub area: Option<u32>,
 }
 
 impl Pond {
@@ -205,7 +207,7 @@ impl Host for Pond {
         true
     }
     fn area_at(&self, _map: u32, _x: f32, _y: f32) -> Option<u32> {
-        None
+        self.area
     }
     fn liquid_at(&self, _map: u32, x: f32, y: f32) -> Option<f32> {
         let [cx, cy] = self.centre;

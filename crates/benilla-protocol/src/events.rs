@@ -142,6 +142,39 @@ pub enum SessionEvent {
     /// character's view, oldest fight first. Complete on every change; empty clears the bar.
     /// Never wire-decoded.
     BossFight { guids: Vec<u64> },
+    /// Twilight's Eve, not 1.12: a fish bit (ADR 0018), with everything the client needs to run
+    /// the Reeling Bar. The realm has already chosen the fish and any treasure. Never
+    /// wire-decoded.
+    FishingBite {
+        bobber: u64,
+        /// The fish's item entry.
+        fish: u32,
+        level: u8,
+        /// 0 mixed, 1 dart, 2 smooth, 3 sinker, 4 floater.
+        style: u8,
+        /// 0 to 100, after the level-above penalty.
+        difficulty: f32,
+        /// The catch zone, a fraction of the track.
+        zone_height: f32,
+        start_fill: f32,
+        fill_per_sec: f32,
+        drain_per_sec: f32,
+        timeout_secs: f32,
+        seed: u64,
+        /// `(appears_at_secs, fill_secs)` when a treasure chest was rolled.
+        treasure: Option<(f32, f32)>,
+        legendary: bool,
+    },
+    /// Twilight's Eve, not 1.12: the Reeling Bar is over. `caught` names the fish landed; `None`
+    /// when it escaped or the cast was lost. Never wire-decoded.
+    FishingEnd {
+        caught: Option<u32>,
+        perfect: bool,
+        treasure: bool,
+    },
+    /// Twilight's Eve, not 1.12: the character's Angler Level, sent at login and on every change.
+    /// Never wire-decoded.
+    Angler { level: u8, xp: u32, xp_to_next: u32 },
     /// `SMSG_CHAR_CREATE`/`_DELETE`'s raw `WorldResult`; on success a fresh roster comes first.
     CharActionResult { action: CharAction, code: u8 },
     /// We are in the world; the IO thread emits this before any object update.

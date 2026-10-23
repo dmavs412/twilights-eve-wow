@@ -52,8 +52,13 @@ pub fn convert(elwynn: &Value) -> String {
          spawns = [\n",
     );
     let templates = &elwynn["templates"];
-    let spawns = elwynn["spawns"].as_array().expect("spawns");
-    for s in spawns {
+    let spawns: Vec<&Value> = elwynn["spawns"]
+        .as_array()
+        .expect("spawns")
+        .iter()
+        .filter(|s| !HUB_NPCS.contains(&s["entry"].as_u64().unwrap()))
+        .collect();
+    for s in &spawns {
         let guid = s["guid"].as_u64().unwrap();
         let entry = s["entry"].as_u64().unwrap();
         let display = pick_display(
@@ -80,6 +85,10 @@ pub fn convert(elwynn: &Value) -> String {
     }
     out
 }
+
+/// The entries whose spawn moved to `content/hub.toml`, where they do more than a creature
+/// template can: Lee Brown (1651) teaches Fishing and sells its goods (#327).
+const HUB_NPCS: &[u64] = &[1651];
 
 /// `FactionTemplate.dbc` 35, friendly to every player race. Elwynn's NPCs show it whatever the
 /// player's race (spec #71): the guards, vendors and trainers are everyone's friends.

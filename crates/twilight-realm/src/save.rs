@@ -171,6 +171,14 @@ struct Save {
     /// it has finished none.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     finished_rumours: Vec<u32>,
+    /// Fishing (#327), all added within version 4: a save without them has not learned it and
+    /// is Angler Level 1.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    knows_fishing: bool,
+    #[serde(default = "first_angler_level")]
+    angler_level: u8,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    angler_xp: u32,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -273,6 +281,10 @@ fn is_zero(v: &u32) -> bool {
     *v == 0
 }
 
+fn first_angler_level() -> u8 {
+    1
+}
+
 fn is_nothing(v: &f32) -> bool {
     *v == 0.0
 }
@@ -313,6 +325,9 @@ pub(crate) fn export(c: &Char) -> String {
         marked: c.marked.clone(),
         doors_opened: c.doors_opened.clone(),
         finished_rumours: c.finished_rumours.clone(),
+        knows_fishing: c.knows_fishing,
+        angler_level: c.angler_level,
+        angler_xp: c.angler_xp,
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -379,6 +394,9 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         marked: s.marked,
         doors_opened: s.doors_opened,
         finished_rumours: s.finished_rumours,
+        knows_fishing: s.knows_fishing,
+        angler_level: s.angler_level.max(1),
+        angler_xp: s.angler_xp,
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);

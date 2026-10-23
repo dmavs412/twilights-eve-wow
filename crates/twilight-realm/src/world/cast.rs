@@ -64,11 +64,11 @@ const SPELL_FAILED_AFFECTING_COMBAT: u8 = 0x00;
 const SPELL_FAILED_BAD_TARGETS: u8 = 0x0a;
 const SPELL_FAILED_CASTER_AURASTATE: u8 = 0x12;
 const SPELL_FAILED_CASTER_DEAD: u8 = 0x13;
-const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
+pub(super) const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
 const SPELL_FAILED_FLEEING: u8 = 0x1e;
 /// No arrows or bullets for the ranged weapon (#157).
 const SPELL_FAILED_NO_AMMO: u8 = 0x43;
-const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
+pub(super) const SPELL_FAILED_NOT_KNOWN: u8 = 0x38;
 pub(super) const SPELL_FAILED_NOT_READY: u8 = 0x3c;
 const SPELL_FAILED_NO_COMBO_POINTS: u8 = 0x46;
 const SPELL_FAILED_NO_POWER: u8 = 0x4d;
@@ -1562,6 +1562,7 @@ pub(super) fn spell_book(c: &Char, wall: f64) -> SessionEvent {
             .iter()
             .map(|s| s.spell_id)
             .chain(crate::talents::known_spells(c))
+            .chain(c.knows_fishing.then_some(crate::fish::spell().id))
             .collect(),
         cooldowns: c
             .item_cooldowns
@@ -1700,7 +1701,7 @@ enum Landed {
     Missed(u8),
 }
 
-fn refused(spell_id: u32, reason: u8) -> SessionEvent {
+pub(super) fn refused(spell_id: u32, reason: u8) -> SessionEvent {
     SessionEvent::CastResult {
         spell_id,
         success: false,
@@ -1748,8 +1749,13 @@ impl InWorld {
             events.push(refused(spell_id, SPELL_FAILED_FLEEING));
             return ticked;
         }
-        // Casting ends a hide.
+        // Casting ends a hide, and loses a fish.
         self.hiding = None;
+        self.lose_fish(events);
+        if spell_id == crate::fish::spell().id {
+            self.cast_fishing(c, events);
+            return ticked;
+        }
         let Some(skill) = crate::talents::skill(c, spell_id) else {
             events.push(refused(spell_id, SPELL_FAILED_NOT_KNOWN));
             return ticked;
@@ -1846,6 +1852,7 @@ impl InWorld {
 
     /// The player stepped: they are moving, and their `break_on=move` auras come off.
     pub(crate) fn stepped(&mut self, events: &mut Vec<SessionEvent>) {
+        self.lose_fish(events);
         let s = &mut self.skills;
         s.since_step = Some(0.0);
         let gone = std::mem::take(&mut s.break_on_move);
@@ -2175,10 +2182,21 @@ impl InWorld {
         let Some(ch) = self.skills.channel.take() else {
             return;
         };
+        self.channel_closed(ch.spell_id, broken, events);
+    }
+
+    /// A channel of `spell_id` is over: the client's bar empties and the caster's channel fields
+    /// clear. `broken` when it stopped short.
+    pub(super) fn channel_closed(
+        &self,
+        spell_id: u32,
+        broken: bool,
+        events: &mut Vec<SessionEvent>,
+    ) {
         if broken {
             events.push(SessionEvent::SpellFailedOther {
                 caster: self.guid,
-                spell_id: ch.spell_id,
+                spell_id,
             });
         }
         events.push(SessionEvent::ChannelUpdate { remaining_ms: 0 });
@@ -5524,6 +5542,7 @@ impl InWorld {
     /// An item's timed cast under way stops short, as damage taken does (a skill's bar is only
     /// pushed back in vanilla, which the realm does not model).
     pub(crate) fn interrupt_item_cast(&mut self, events: &mut Vec<SessionEvent>) {
+        self.lose_fish(events);
         if self.skills.casting.is_some_and(|c| c.skill.is_none()) {
             self.interrupt_cast(events);
         }
@@ -5532,6 +5551,7 @@ impl InWorld {
     /// The timed cast under way stops short (`Spell::cancel`): the bar shows "Interrupted", and
     /// nothing goes on cooldown.
     pub(crate) fn interrupt_cast(&mut self, events: &mut Vec<SessionEvent>) {
+        self.lose_fish(events);
         self.end_channel(true, events);
         let Some(cast) = self.skills.casting.take() else {
             return;

@@ -422,6 +422,15 @@ pub enum RealmCommand {
     ClearTradeItem {
         trade_slot: u8,
     },
+    /// The Reeling Bar's outcome (ADR 0018), the client's answer to
+    /// [`SessionEvent::FishingBite`]: `won`, whether the meter never fell (`perfect`), whether
+    /// the chest was held (`treasure`), and the seconds the bar ran. Ignored with no bar open.
+    FishingResult {
+        won: bool,
+        perfect: bool,
+        treasure: bool,
+        secs: f32,
+    },
     /// A dev aid (`WOW_PROBE_GOTO`): on the next tick, teleport the player to `(x, y)` on its
     /// map, on the ground there, facing `facing` or its own way. A spot with no ground is refused
     /// with a notification.
@@ -549,6 +558,14 @@ impl Realm {
     /// name with [`Self::with_quests`] first.
     pub fn with_rumours(self, toml: &str) -> Self {
         rumours::add(toml);
+        self
+    }
+
+    /// This realm with the `[[fish]]`, `[[pool]]` and `[[water]]` rows in `toml` (the shape of
+    /// `content/fish.toml`) added alongside the shipped ones, for the rest of the process: a test
+    /// seam, so a player script can fish a pool the content does not ship.
+    pub fn with_fish(self, toml: &str) -> Self {
+        fish::add(toml);
         self
     }
 
@@ -1296,6 +1313,12 @@ impl Realm {
             RealmCommand::CastSpellAtDest { spell_id, dest } => {
                 self.cast(spell_id, None, Some(dest))
             }
+            RealmCommand::FishingResult {
+                won,
+                perfect,
+                treasure,
+                secs,
+            } => self.fishing_result(won, perfect, treasure, secs),
             RealmCommand::UseItem { bag, slot } => {
                 if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {
@@ -1714,6 +1737,13 @@ impl Realm {
             w.dev_teleport(to, host, c, &mut self.events);
         }
         let ticked = w.tick(dt, self.wall, host, c, &mut self.rng, &mut self.events);
+        self.tick_fishing(dt, host);
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
         w.show_runtime_objects(&self.objects, c, &mut self.events);
         w.since_save += dt;
         // Zoning saves (a hearth out of the Dungeon); the dead are saved once they release.
@@ -1958,7 +1988,8 @@ impl Realm {
         let Some(o) = self.objects.get(guid) else {
             return;
         };
-        if !o.audience.admits(w.guid)
+        if o.spec.kind == ObjectKind::Bobber
+            || !o.audience.admits(w.guid)
             || !w.sees_runtime_object(guid)
             || space::flat_distance(o.spec.position, c.position) > space::INTERACTION_YD
         {
@@ -2062,6 +2093,11 @@ impl Realm {
     fn logout(&mut self) {
         self.dev_teleport = None;
         self.give_back();
+        // A cast or a bar under way is lost, and its bobber goes.
+        if let Some(w) = &mut self.world {
+            w.lose_fish(&mut self.events);
+        }
+        self.remove_spent_bobbers();
         let Some(mut w) = self.world.take() else {
             return;
         };

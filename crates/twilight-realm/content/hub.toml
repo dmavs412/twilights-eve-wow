@@ -1243,3 +1243,26 @@ map = 0
 position = [-9349.0, 340.0, 44.0]
 orientation = 3.9
 greeting = "I have nine men and a thousand yards of lake to watch. Tell me you came to help."
+
+# ── Lee Brown, the fisherman (#327, ADR 0018) ────────────────────────────────────────────────────
+# Moved from his Crystal Lake spawn in content/elwynn.toml (vmangos guid 81094) to the same x and y,
+# so he can teach Fishing (`teaches_fishing`) and sell its goods: the pole, the two custom baits and
+# the four stock lures. He still gives his two murloc bounties (content/quests_elwynn.toml). z is
+# ground_check.py's.
+[[npc]]
+guid = 9300025
+entry = 1651
+name = "Lee Brown"
+subname = "Fisherman"
+level = 8
+display_id = 3272
+faction_template = 35
+role = "angler"
+npc_flags = 0x7
+map = 0
+position = [-9382.08, -117.005, 56.77]
+orientation = 4.4331
+text_id = 64138
+teaches_fishing = true
+stock = [6256, 960101, 960102, 6529, 6530, 6532, 6533]
+greeting = "Crystal Lake's the best water in Elwynn, if the murlocs leave it be. Want to learn to fish, $C? A pole, a bit of bait, and patience. The fish do the rest."

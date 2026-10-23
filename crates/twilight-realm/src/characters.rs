@@ -73,6 +73,11 @@ pub(crate) struct Char {
     /// The ids of the Calling Rumours they have finished, ascending: kept for good, Advancement
     /// leaves them alone.
     pub(crate) finished_rumours: Vec<u32>,
+    /// Whether Lee Brown has taught them Fishing (ADR 0018).
+    pub(crate) knows_fishing: bool,
+    /// Their **Angler Level**, from 1, and the XP toward the next.
+    pub(crate) angler_level: u8,
+    pub(crate) angler_xp: u32,
 }
 
 /// What being **Marked** holds (#179): the logged-in time left, and the hunter that won, as
@@ -166,6 +171,9 @@ impl Characters {
             marked: None,
             doors_opened: Vec::new(),
             finished_rumours: Vec::new(),
+            knows_fishing: false,
+            angler_level: 1,
+            angler_xp: 0,
         });
         CHAR_CREATE_SUCCESS
     }

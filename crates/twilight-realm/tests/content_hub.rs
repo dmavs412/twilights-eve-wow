@@ -32,6 +32,8 @@ struct Npc {
     wander: f32,
     #[serde(default)]
     respec: bool,
+    #[serde(default)]
+    teaches_fishing: bool,
     /// The `AreaTable` id an innkeeper binds to.
     area: Option<u32>,
     /// An innkeeper's rest area, in yards.
@@ -158,6 +160,14 @@ fn every_npcs_flags_fit_its_role() {
             // The flight master only stands there: no flags, no menu, no words.
             "flight" => n.npc_flags == 0 && n.text_id.is_none() && n.stock.is_empty() && !n.tokens,
             "giver" => n.npc_flags == QUEST_GIVER && gives && !n.greeting.is_empty(),
+            // Lee Brown: his bounties, his goods, and the lesson in his menu (#327).
+            "angler" => {
+                n.npc_flags == GOSSIP | QUEST_GIVER | VENDOR
+                    && n.teaches_fishing
+                    && talks
+                    && gives
+                    && !n.stock.is_empty()
+            }
             "ambient" => {
                 n.npc_flags == GOSSIP
                     && talks

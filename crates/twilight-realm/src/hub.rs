@@ -59,6 +59,9 @@ pub(crate) struct Npc {
     /// The Blood Coin vendor: it sells its stock for Blood Coin (`crate::token_vendor`).
     #[serde(default)]
     pub(crate) blood_coin: bool,
+    /// Its gossip menu teaches Fishing (ADR 0018) to a character who does not know it.
+    #[serde(default)]
+    pub(crate) teaches_fishing: bool,
     /// What its quest list, or its gossip menu, opens with.
     #[serde(default)]
     pub(crate) greeting: String,
@@ -259,6 +262,8 @@ impl crate::Realm {
             .unwrap_or_default();
         let mut options = if npc.is_innkeeper() {
             crate::inn::options()
+        } else if npc.teaches_fishing {
+            player.map_or_else(Vec::new, crate::world::angler_options)
         } else {
             crate::trainer::options(npc)
         };
@@ -280,6 +285,7 @@ impl crate::Realm {
                 }
             }
             Some(npc) if npc.is_innkeeper() => self.inn_select(npc, option),
+            Some(npc) if npc.teaches_fishing => self.angler_select(npc, option),
             Some(_) => self.trainer_select(guid, option),
             None => self.field_gossip_select(guid, option),
         }

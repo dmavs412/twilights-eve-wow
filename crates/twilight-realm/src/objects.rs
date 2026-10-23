@@ -4,7 +4,9 @@
 
 use crate::audience::Audience;
 use crate::looting::Loot;
-use crate::phased::{gameobject_create, GameObject, CHEST, GENERIC, HIGHGUID_GAMEOBJECT};
+use crate::phased::{
+    gameobject_create, GameObject, CHEST, FISHINGNODE, GENERIC, HIGHGUID_GAMEOBJECT,
+};
 use benilla_protocol::SessionEvent;
 
 /// The first low guid of a GameObject made at run time, above every content row's (790000 to
@@ -23,6 +25,9 @@ pub enum ObjectKind {
     /// A chest filled with these item entries, one of each, and no money. A click opens the
     /// stock loot window; taking the last item removes it.
     Chest(Vec<u32>),
+    /// A Fishing cast's bobber (ADR 0018), floating on the water: the client draws the line to
+    /// it. A click does nothing; the Reeling Bar is the catch.
+    Bobber,
 }
 
 /// Where and what a run-time GameObject is.
@@ -48,12 +53,15 @@ pub(crate) struct Object {
 impl Object {
     /// Its create, at the grounded position it was spawned at.
     pub(crate) fn create(&self) -> SessionEvent {
-        let chest = self.loot.is_some();
         gameobject_create(&GameObject {
             guid: self.guid,
             entry: self.spec.entry,
             display_id: self.spec.display,
-            type_id: if chest { CHEST } else { GENERIC },
+            type_id: match self.spec.kind {
+                ObjectKind::Use => GENERIC,
+                ObjectKind::Chest(_) => CHEST,
+                ObjectKind::Bobber => FISHINGNODE,
+            },
             flags: 0,
             faction: 0,
             position: self.spec.position,
@@ -75,7 +83,7 @@ impl Objects {
         let guid = HIGHGUID_GAMEOBJECT << 48 | (FIRST_GUID + self.made);
         self.made += 1;
         let loot = match &spec.kind {
-            ObjectKind::Use => None,
+            ObjectKind::Use | ObjectKind::Bobber => None,
             ObjectKind::Chest(entries) => Some(Loot {
                 money: 0,
                 items: entries.iter().map(|&e| Some((e, 1))).collect(),

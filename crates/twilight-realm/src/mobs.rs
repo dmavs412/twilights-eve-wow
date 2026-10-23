@@ -813,7 +813,7 @@ pub(crate) fn zone_factor_at(
 }
 
 /// The zone `area` is a subzone of, from `content/area_parents.toml`.
-fn area_parent(area: u32) -> Option<&'static u32> {
+pub(crate) fn area_parent(area: u32) -> Option<&'static u32> {
     #[derive(Deserialize)]
     struct Row {
         id: u32,

@@ -34,6 +34,7 @@ mod death;
 mod discovery;
 mod dungeon;
 mod fear;
+mod fishing;
 mod food;
 mod ground;
 mod notoriety;
@@ -41,6 +42,7 @@ mod phase;
 mod root;
 pub(crate) use phase::DoorClick;
 mod sleep;
+pub(crate) use fishing::angler_options;
 pub(crate) use phase::creatures;
 mod procs;
 mod regen;
@@ -237,6 +239,10 @@ pub(crate) struct InWorld {
     pub(crate) seen: std::collections::HashSet<u64>,
     /// The Boss Bar list the client was last sent (`SessionEvent::BossFight`).
     boss_sent: Vec<u64>,
+    /// The Fishing cast under way (ADR 0018), from the cast to the Reeling Bar's end.
+    fishing: Option<fishing::Fishing>,
+    /// The bobbers of casts that ended, for the realm to remove from its run-time objects.
+    spent_bobbers: Vec<u64>,
     /// The lent mobs whose fight this session runs this tick; every other is another
     /// session's to run.
     pub(crate) runs: std::collections::HashSet<u64>,
@@ -390,6 +396,7 @@ impl InWorld {
             timescale: game_clock::TIMESCALE,
         });
         events.push(cast::spell_book(c, wall));
+        events.push(fishing::angler(c));
         events.extend(crate::talents::spell_mods(c));
         events.push(cast::action_buttons(c));
         // The proficiencies and the carried items' objects, ahead of the player that names them.
@@ -421,6 +428,8 @@ impl InWorld {
             handed_back: None,
             seen: Default::default(),
             boss_sent: Vec::new(),
+            fishing: None,
+            spent_bobbers: Vec::new(),
             runs: Default::default(),
             died: Vec::new(),
             others: Vec::new(),

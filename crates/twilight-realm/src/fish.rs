@@ -2,10 +2,10 @@
 //! levels, the fish, their pools by zone, the Fishing Waters, lures and bait. The file's item rows
 //! are item templates, which `crate::items` loads.
 
-// The fishing rules (#327 on) read these; until they land nothing does.
+// Lures, bait and the Legendary Fish (#329, #331) read the rest.
 #![allow(dead_code)]
 
-use std::sync::OnceLock;
+use std::sync::{OnceLock, RwLock};
 
 use serde::Deserialize;
 
@@ -207,6 +207,38 @@ fn file() -> &'static File {
     })
 }
 
+/// Fish, pools and Fishing Waters a test added (`Realm::with_fish`), in `fish.toml`'s shape.
+#[derive(Deserialize)]
+struct Added {
+    #[serde(default)]
+    fish: Vec<Fish>,
+    #[serde(default)]
+    pool: Vec<Pool>,
+    #[serde(default)]
+    water: Vec<Water>,
+}
+
+/// Each added file's text, and what it parsed to.
+fn added() -> &'static RwLock<Vec<(String, &'static Added)>> {
+    static ADDED: OnceLock<RwLock<Vec<(String, &'static Added)>>> = OnceLock::new();
+    ADDED.get_or_init(Default::default)
+}
+
+/// Every added file, oldest first.
+fn extra() -> Vec<&'static Added> {
+    added().read().unwrap().iter().map(|&(_, a)| a).collect()
+}
+
+/// Adds the `[[fish]]`, `[[pool]]` and `[[water]]` rows in `toml` alongside the shipped ones,
+/// for the rest of the process. Parallel tests add the same text; it is added once.
+pub(crate) fn add(toml: &str) {
+    let parsed: Added = toml::from_str(toml).expect("the added fishing content parses");
+    let mut all = added().write().unwrap();
+    if all.iter().all(|(text, _)| text != toml) {
+        all.push((toml.to_owned(), Box::leak(Box::new(parsed))));
+    }
+}
+
 pub(crate) fn spell() -> &'static Spell {
     &file().spell
 }
@@ -221,17 +253,48 @@ pub(crate) fn angler() -> &'static Angler {
 
 /// The fish caught as `item`.
 pub(crate) fn fish(item: u32) -> Option<&'static Fish> {
-    file().fish.iter().find(|f| f.item == item)
+    let shipped = file().fish.iter();
+    shipped
+        .chain(extra().into_iter().flat_map(|a| &a.fish))
+        .find(|f| f.item == item)
+}
+
+fn pools() -> impl Iterator<Item = &'static Pool> {
+    let shipped = file().pool.iter();
+    shipped.chain(extra().into_iter().flat_map(|a| &a.pool))
 }
 
 /// The pool of the zone `zone` (`AreaTable.dbc` id).
 pub(crate) fn pool_for_zone(zone: u32) -> Option<&'static Pool> {
-    file().pool.iter().find(|p| p.zone == zone)
+    pools().find(|p| p.zone == zone)
 }
 
 /// The pool named `key`.
 pub(crate) fn pool(key: &str) -> Option<&'static Pool> {
-    file().pool.iter().find(|p| p.key == key)
+    pools().find(|p| p.key == key)
+}
+
+/// The pool fished at `(x, y)` on `map`, where the host names the area `area`: that of the
+/// Fishing Water whose circle holds the point, else the one covering `area`, else the zone's
+/// (the area's parent zone, as the Zone Factor resolves it).
+pub(crate) fn pool_at(map: u32, x: f32, y: f32, area: Option<u32>) -> Option<&'static Pool> {
+    let all = waters();
+    let in_circle = |w: &&Water| {
+        w.circle
+            .is_some_and(|[m, cx, cy, r]| m as u32 == map && (x - cx).hypot(y - cy) <= r)
+    };
+    let water = all.iter().copied().find(in_circle).or_else(|| {
+        all.iter()
+            .copied()
+            .find(|w| area.is_some() && w.area == area)
+    });
+    match water.and_then(|w| w.pool.as_deref()) {
+        Some(key) => pool(key),
+        None => {
+            let area = area?;
+            pool_for_zone(crate::mobs::area_parent(area).copied().unwrap_or(area))
+        }
+    }
 }
 
 /// The Fishing Water named `key`.
@@ -239,9 +302,12 @@ pub(crate) fn water(key: &str) -> Option<&'static Water> {
     file().water.iter().find(|w| w.key == key)
 }
 
-/// Every Fishing Water.
-pub(crate) fn waters() -> &'static [Water] {
-    &file().water
+/// Every Fishing Water: the shipped ones, then any a test added.
+pub(crate) fn waters() -> Vec<&'static Water> {
+    let shipped = file().water.iter();
+    shipped
+        .chain(extra().into_iter().flat_map(|a| &a.water))
+        .collect()
 }
 
 /// The lure that is item `item`.

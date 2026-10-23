@@ -22,6 +22,11 @@ impl Rng {
         z ^ (z >> 31)
     }
 
+    /// A fresh seed for dice the client rolls (the Reeling Bar's fish).
+    pub(crate) fn seed(&mut self) -> u64 {
+        self.next_u64()
+    }
+
     /// Uniform in `0..n` (`n > 0`).
     pub(crate) fn below(&mut self, n: u32) -> u32 {
         (((self.next_u64() >> 32) * u64::from(n)) >> 32) as u32
