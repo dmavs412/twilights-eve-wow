@@ -231,6 +231,169 @@ pub fn placed() -> Vec<Placed> {
     out
 }
 
+/// What a spawn-audit row places (ADR 0021).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AuditKind {
+    Creature,
+    HubNpc,
+    GameObject,
+    /// The giver of Rumour `rumour`, at its point `point`.
+    RumourGiver {
+        rumour: u32,
+        point: usize,
+    },
+    /// A spawn the step quest `quest` of Rumour `rumour` makes, at its spawn tables' point
+    /// `point`.
+    RumourStep {
+        rumour: u32,
+        quest: u32,
+        point: usize,
+    },
+}
+
+/// One unit we placed, for the spawn audit (ADR 0021): what [`placed`] calls it, where it
+/// stands, the guid its create carries (none for a Rumour's, which the realm makes at run time)
+/// and the display it is drawn with.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AuditRow {
+    pub what: String,
+    pub kind: AuditKind,
+    pub map: u32,
+    /// It stands in a Phased Dungeon, which the audit does not enter.
+    pub phased: bool,
+    /// The row's position; a Rumour point's Z is 0.
+    pub position: [f32; 3],
+    pub guid: Option<u64>,
+    pub display: u32,
+    /// Deep water does not count against it: a creature whose template swims, or a GameObject.
+    /// A Hub NPC never swims.
+    pub swims: bool,
+}
+
+/// Every unit we placed: the creatures and GameObjects the content stands in the world, Hub
+/// NPCs, and each Rumour point and step point. Imported vmangos spawns are left out, and so are
+/// creatures only a fight brings in (calls for help, timed calls, Encounter waves).
+pub fn audit_rows() -> Vec<AuditRow> {
+    use crate::phased::{Phase, Sides};
+    let swims = |entry| crate::mobs::template(entry).is_some_and(|t| t.swims);
+    let mut out = Vec::new();
+    for s in &crate::mobs::content().spawn {
+        if s.imported || s.called_by.is_some() || s.timed_by.is_some() || s.encounter.is_some() {
+            continue;
+        }
+        out.push(AuditRow {
+            what: format!("creature {} (entry {})", s.guid, s.entry),
+            kind: AuditKind::Creature,
+            map: s.map,
+            phased: s.phase != Phase::OpenWorld,
+            position: s.position,
+            guid: Some(crate::mobs::unit_guid(s.entry, s.guid)),
+            display: s.display_id,
+            swims: swims(s.entry),
+        });
+    }
+    for npc in crate::hub::npcs() {
+        out.push(AuditRow {
+            what: format!("Hub NPC {}", npc.entry),
+            kind: AuditKind::HubNpc,
+            map: npc.map,
+            phased: false,
+            position: npc.position,
+            guid: Some(npc.guid()),
+            display: npc.display_id,
+            swims: false,
+        });
+    }
+    let object = |what: String, map, phased, position, guid, display| AuditRow {
+        what,
+        kind: AuditKind::GameObject,
+        map,
+        phased,
+        position,
+        guid: Some(guid),
+        display,
+        swims: true,
+    };
+    for o in crate::quests::content::objects() {
+        out.push(object(
+            format!("quest GameObject {} (entry {})", o.guid, o.entry),
+            o.map,
+            false,
+            o.position,
+            o.object_guid(),
+            o.display,
+        ));
+    }
+    for d in crate::phased::content() {
+        // The door shows from every side of its Phase.
+        if let Some(door) = &d.portal.door {
+            out.push(object(
+                format!("Phased Dungeon {} door", d.id),
+                d.map,
+                false,
+                door.position,
+                door.guid(),
+                door.display,
+            ));
+        }
+        for o in &d.gameobject {
+            out.push(object(
+                format!("Phased Dungeon {} GameObject {}", d.id, o.guid),
+                d.map,
+                o.sides == Sides::Inside,
+                o.position,
+                o.object_guid(),
+                o.display,
+            ));
+        }
+    }
+    for r in crate::rumours::defs() {
+        let giver = crate::mobs::template(r.giver).map_or(0, |t| t.display_id);
+        for (point, p) in r.points.iter().enumerate() {
+            out.push(AuditRow {
+                what: format!("Rumour {} point {:?}", r.id, p.landmark),
+                kind: AuditKind::RumourGiver {
+                    rumour: r.id,
+                    point,
+                },
+                map: r.map,
+                phased: false,
+                position: [p.x, p.y, 0.0],
+                guid: None,
+                display: giver,
+                swims: swims(r.giver),
+            });
+        }
+        for s in &r.spawn {
+            let (display, swimmer) = match (&s.creature, &s.object) {
+                (Some(entry), _) => (
+                    crate::mobs::template(*entry).map_or(0, |t| t.display_id),
+                    swims(*entry),
+                ),
+                (None, Some(o)) => (o.display, true),
+                (None, None) => (0, true),
+            };
+            for (point, p) in s.points.iter().enumerate() {
+                out.push(AuditRow {
+                    what: format!("Rumour {} step {} point", r.id, s.quest),
+                    kind: AuditKind::RumourStep {
+                        rumour: r.id,
+                        quest: s.quest,
+                        point,
+                    },
+                    map: r.map,
+                    phased: false,
+                    position: [p.x, p.y, 0.0],
+                    guid: None,
+                    display,
+                    swims: swimmer,
+                });
+            }
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

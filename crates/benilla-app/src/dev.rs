@@ -116,6 +116,10 @@ impl Plugin for DevProbesPlugin {
             if std::env::var("WOW_PROBE_RUMOUR").is_ok() {
                 app.add_plugins(crate::capture::ProbeRumourPlugin);
             }
+            // `WOW_PROBE=spawn_audit`: every unit we placed, measured and reported (ADR 0021).
+            if std::env::var("WOW_PROBE").as_deref() == Ok("spawn_audit") {
+                app.add_plugins(crate::capture::ProbeSpawnAuditPlugin);
+            }
             // `WOW_PROBE_SPELLS=<report.jsonl>`: every spellbook spell cast on a dummy.
             if std::env::var("WOW_PROBE_SPELLS").is_ok() {
                 app.add_plugins(crate::capture::ProbeSpellsPlugin);

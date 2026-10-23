@@ -23,7 +23,7 @@ use crate::net::{
 };
 
 /// A drop past this (yd) counts as sunk: clear of the clamp's small corrections, under a storey.
-const SUNK_YD: f32 = 0.5;
+pub(super) const SUNK_YD: f32 = 0.5;
 
 /// Where the stack walk starts above the feet (yd): past one storey, below most roofs.
 const CEILING_YD: f32 = 12.0;
@@ -177,7 +177,7 @@ fn fire_ground_census(
 
 /// The lowest walkable surface strictly above `feet`: casts down from [`CEILING_YD`] overhead,
 /// restarting just under each hit, so the nearest floor overhead wins over the roof.
-fn lowest_surface_above(
+pub(super) fn lowest_surface_above(
     world: &benilla_world::collision::WorldCollision,
     feet: Vec3,
 ) -> Option<f32> {

@@ -304,6 +304,18 @@ impl WorldCollision<'_, '_> {
     /// floor it stands on and a step lower than that never count (ADR 0021). Where nothing is
     /// streamed in, nothing overlaps.
     pub fn body_overlaps(&self, foot: Vec3, radius: f32, height: f32) -> bool {
+        self.body_overlaps_except(foot, radius, height, None)
+    }
+
+    /// [`body_overlaps`](Self::body_overlaps), leaving out the collider on `skip`: a GameObject
+    /// with a hull measured at its own feet.
+    pub fn body_overlaps_except(
+        &self,
+        foot: Vec3,
+        radius: f32,
+        height: f32,
+        skip: Option<bevy::ecs::entity::Entity>,
+    ) -> bool {
         let a = foot + Vec3::Y * (BODY_FOOT_CLEAR + radius);
         let b = foot + Vec3::Y * (height - radius).max(BODY_FOOT_CLEAR + radius);
         let half = Vec3::new(radius, (b.y - a.y) / 2.0 + radius, radius);
@@ -315,7 +327,7 @@ impl WorldCollision<'_, '_> {
             usize::MAX,
         )
         .iter()
-        .any(|f| segment_triangle_distance(a, b, f.verts) < radius)
+        .any(|f| Some(f.entity) != skip && segment_triangle_distance(a, b, f.verts) < radius)
     }
 }
 

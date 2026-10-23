@@ -20,6 +20,9 @@ pub(crate) use goto::ProbeGotoPlugin;
 /// `WOW_PROBE_RUMOUR`: in Twilight's Eve, a Rumour started for the player, its giver at a point.
 mod rumour;
 pub(crate) use rumour::ProbeRumourPlugin;
+/// `WOW_PROBE=spawn_audit`: in Twilight's Eve, every unit we placed walked, measured and reported.
+mod spawn_audit;
+pub(crate) use spawn_audit::ProbeSpawnAuditPlugin;
 /// `WOW_PROBE_SPELLS`: in Twilight's Eve, every spellbook spell cast on a dummy, one report line each.
 mod spells;
 pub(crate) use spells::ProbeSpellsPlugin;

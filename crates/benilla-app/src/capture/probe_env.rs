@@ -345,6 +345,10 @@ pub(crate) const PROBE_NAMES: &[(&str, &str)] = &[
         "castcancel",
         "hearth and press W mid-cast — the local self-cancel's end-to-end timing instrument",
     ),
+    (
+        "spawn_audit",
+        "Twilight's Eve: walk every unit we placed on the player's map, measure what is drawn and write target/spawn_audit.json and .md, then exit",
+    ),
 ];
 
 /// The variables whose presence arms the un-occludable probe window.

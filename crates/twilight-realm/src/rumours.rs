@@ -573,8 +573,13 @@ pub(crate) const CHEST_ENTRY: u32 = 980199;
 
 /// What the realm makes on its next tick, for the instance at an index of the list.
 pub(crate) enum Order {
-    /// The spawns of step quest `quest`, which someone accepted first.
-    Step { rumour: usize, quest: u32 },
+    /// The spawns of step quest `quest`, which someone accepted first: each table's `point`
+    /// (a dev aid's pick), else one rolled.
+    Step {
+        rumour: usize,
+        quest: u32,
+        point: Option<usize>,
+    },
     /// A chest for `guid` alone, who handed in the last step.
     Chest { rumour: usize, guid: u64 },
 }
@@ -801,13 +806,22 @@ impl Rumours {
     /// Notes that `c` accepted quest `quest`; the first of an Audience to take a step has its
     /// spawns made.
     pub(crate) fn accept(&mut self, guid: u64, quest: u32) {
+        self.accept_at(guid, quest, None);
+    }
+
+    /// [`Self::accept`], with the spawns made at each table's point `point` when given.
+    pub(crate) fn accept_at(&mut self, guid: u64, quest: u32, point: Option<usize>) {
         for (i, r) in self.list.iter_mut().enumerate() {
             let Some(d) = def(r.id) else { continue };
             if d.spawn.iter().any(|s| s.quest == quest)
                 && r.audience.admits(guid)
                 && r.spawned.insert(quest)
             {
-                self.orders.push(Order::Step { rumour: i, quest });
+                self.orders.push(Order::Step {
+                    rumour: i,
+                    quest,
+                    point,
+                });
             }
         }
     }
@@ -856,6 +870,18 @@ impl Rumours {
         });
         self.list = kept;
         ended
+    }
+
+    /// A dev aid (`WOW_PROBE=spawn_audit`): runs out the time of each instance of Rumour `id`
+    /// that admits `guid`, so the next [`Self::take_ended`] ends it.
+    pub(crate) fn time_out(&mut self, id: u32, guid: u64, now: f64) {
+        for r in self
+            .list
+            .iter_mut()
+            .filter(|r| r.id == id && r.audience.admits(guid))
+        {
+            r.ends = Some(now);
+        }
     }
 
     /// The giver guids of the Rumours under way.

@@ -30,7 +30,7 @@ pub(crate) struct Npc {
     #[serde(default)]
     subname: String,
     level: u8,
-    display_id: u32,
+    pub(crate) display_id: u32,
     faction_template: u32,
     npc_flags: u32,
     /// The map it stands on: Kalimdor unless the content says otherwise.

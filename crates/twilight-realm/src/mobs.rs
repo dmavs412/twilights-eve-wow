@@ -278,6 +278,9 @@ pub(crate) struct Spawn {
     pub(crate) asleep: bool,
     /// Yards added to the distance at which a character wakes it.
     pub(crate) wake_radius_mod: f32,
+    /// A row built from the vmangos spawns in `barrens.toml` or `elwynn.toml`, not one we placed:
+    /// the spawn audit (ADR 0021) leaves it out.
+    pub(crate) imported: bool,
 }
 
 /// The high bits of a Camp number a dungeon file names, apart from every creature guid and from
@@ -569,12 +572,13 @@ pub(crate) fn content() -> &'static Mobs {
                     phase: Phase::OpenWorld,
                     on_health: &[],
                     called_by: None,
+                    imported: true,
                     ..Default::default()
                 },
             ));
         }
         // The hand-written moves of generated Elwynn spawns, before the Level Bands read where
-        // each stands.
+        // each stands. A moved spawn stands where we put it, so the audit counts it as ours.
         for m in &overrides.moved {
             for s in spawn
                 .iter_mut()
@@ -583,6 +587,7 @@ pub(crate) fn content() -> &'static Mobs {
                 s.position = m.position;
                 s.grounded = m.grounded;
                 s.orientation = m.orientation;
+                s.imported = false;
             }
         }
         let bands: BandFile = toml::from_str(include_str!("../content/level_overrides.toml"))
@@ -690,6 +695,7 @@ pub(crate) fn content() -> &'static Mobs {
                     encounter: None,
                     asleep: c.asleep,
                     wake_radius_mod: c.wake_radius_mod,
+                    imported: false,
                 });
                 // The creatures its calls bring in: rows the Run does not start with, each
                 // with a guid of its own above every authored one.

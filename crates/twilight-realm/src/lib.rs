@@ -101,7 +101,7 @@ pub use dev::DevMultipliers;
 pub use objects::{ObjectKind, ObjectSpec, CHEST_DISPLAY};
 pub use phased::{test_grounds_start, GameObjectUse, UseKind};
 pub use save::{SaveError, Storage, SAVE_VERSION};
-pub use world::closed::{closed_at, placed, Placed};
+pub use world::closed::{audit_rows, closed_at, placed, AuditKind, AuditRow, Placed};
 
 /// What the realm asks of whoever runs it. Coordinates are WoW's (`x` north, `y` west, `z` up).
 pub trait Host {
@@ -455,6 +455,20 @@ pub enum RealmCommand {
     DevRumour {
         id: u32,
         point: usize,
+    },
+    /// A dev aid (`WOW_PROBE=spawn_audit`): start Rumour `id` as [`Self::DevRumour`] does at its
+    /// first point, and make the spawns of its step quest `quest` from the next tick at each
+    /// spawn table's point `point` (from 0, the last when past it), as the player's accept of
+    /// that step would. Ignored for an unknown Rumour or a quest with no spawns.
+    DevRumourStep {
+        id: u32,
+        quest: u32,
+        point: usize,
+    },
+    /// A dev aid (`WOW_PROBE=spawn_audit`): end the player's Rumour `id` on the next tick, as
+    /// its timer running out would.
+    DevRumourEnd {
+        id: u32,
     },
 }
 
@@ -1486,6 +1500,17 @@ impl Realm {
                 }
             }
             RealmCommand::DevRumour { id, point } => self.dev_rumour(id, point),
+            RealmCommand::DevRumourStep { id, quest, point } => {
+                self.dev_rumour(id, 0);
+                if let Some(w) = &self.world {
+                    self.rumours.accept_at(w.guid, quest, Some(point));
+                }
+            }
+            RealmCommand::DevRumourEnd { id } => {
+                if let Some(w) = &self.world {
+                    self.rumours.time_out(id, w.guid, self.wall);
+                }
+            }
             RealmCommand::AreaTrigger { id } => self.area_trigger(id),
             RealmCommand::WorldportAck => {
                 if let Some(w) = &mut self.world {
@@ -1722,14 +1747,23 @@ impl Realm {
     /// Audience, or a chest for the one who handed in.
     fn fill_order(&mut self, host: &dyn Host, order: rumours::Order) {
         match order {
-            rumours::Order::Step { rumour, quest } => {
+            rumours::Order::Step {
+                rumour,
+                quest,
+                point,
+            } => {
                 let r = self.rumours.get(rumour);
                 let Some(d) = rumours::def(r.id) else {
                     return;
                 };
                 let (level, audience) = (r.level, r.audience.clone());
                 for s in d.spawn.iter().filter(|s| s.quest == quest) {
-                    let at = &s.points[self.rng.below(s.points.len() as u32) as usize];
+                    let last = s.points.len() - 1;
+                    let pick = match point {
+                        Some(p) => p.min(last),
+                        None => self.rng.below(s.points.len() as u32) as usize,
+                    };
+                    let at = &s.points[pick];
                     let position = [at.x, at.y, 0.0];
                     for _ in 0..s.count {
                         if let Some(entry) = s.creature {

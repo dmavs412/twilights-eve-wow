@@ -588,3 +588,49 @@ fn a_calling_rumour_is_rolled_at_the_cap_and_finished_once() {
     assert!(!items(&mut s, 0, corpse).iter().any(|i| notes.contains(i)));
     assert!(s.party.realm.rumour_givers().is_empty());
 }
+
+/// The spawn audit's dev aids (#356): `DevRumourStep` starts a Rumour and makes its step's
+/// spawns at the point it names, as an accept would, and `DevRumourEnd` ends it, taking them
+/// away.
+#[test]
+fn a_dev_step_makes_the_steps_spawns_and_a_dev_end_takes_them_away() {
+    let k = 9;
+    let spawn = format!(
+        r#"
+[[rumour.spawn]]
+quest = {}
+creature = {YOUNG_WOLF}
+points = [{{ x = {}, y = {} }}, {{ x = {}, y = {} }}]
+"#,
+        quest(k, 1),
+        at(k, 20.0, 30.0)[0],
+        at(k, 20.0, 30.0)[1],
+        at(k, -20.0, 30.0)[0],
+        at(k, -20.0, 30.0)[1],
+    );
+    let c = content(k, "easy", &["", ""], &spawn, None);
+    let mut s = scene(k, &c, &[8], true);
+    s.party.cmd(
+        0,
+        RealmCommand::DevRumourStep {
+            id: id(k, 0),
+            quest: quest(k, 1),
+            point: 1,
+        },
+    );
+    s.party.run(1.0);
+    let wolves = units(s.party.seen(0), YOUNG_WOLF);
+    assert_eq!(wolves.len(), 1, "the step's one creature");
+    assert!(
+        flat(wolves[0].1, at(k, -20.0, 30.0)) < 0.01,
+        "at the point asked for"
+    );
+    assert_eq!(units(s.party.seen(0), GIVER).len(), 1, "and the giver");
+
+    s.party.cmd(0, RealmCommand::DevRumourEnd { id: id(k, 0) });
+    s.party.run(1.0);
+    assert!(
+        removed(s.party.seen(0), wolves[0].0),
+        "the end takes it away"
+    );
+}

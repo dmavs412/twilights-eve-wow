@@ -6,7 +6,7 @@ mod common;
 use benilla_protocol::{SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
-use twilight_realm::{closed_at, placed};
+use twilight_realm::{audit_rows, closed_at, placed, AuditKind};
 
 /// Elwynn's side of the Westfall edge at y 866.67 (chunk 486, 803), and 2 yards west of it, in
 /// Westfall (chunk 485, 803).
@@ -182,4 +182,61 @@ fn the_content_walk_reaches_every_kind_it_names() {
             .any(|p| p.what.starts_with("Rumour ") && p.what.contains(" step ")),
         "no Rumour step point in the walk"
     );
+}
+
+#[test]
+fn audit_rows_hold_only_our_units() {
+    let rows = audit_rows();
+    // The imported spawns' guids, from the generated rows of `elwynn.toml` and `barrens.toml`.
+    let imported: std::collections::HashSet<String> = [
+        include_str!("../content/elwynn.toml"),
+        include_str!("../content/barrens.toml"),
+    ]
+    .iter()
+    .flat_map(|file| file.lines())
+    .filter_map(|line| {
+        let row = line.trim().strip_prefix('[')?;
+        let guid = row.split(',').next()?.trim();
+        guid.parse::<u32>().ok().map(|g| format!("creature {g} "))
+    })
+    .collect();
+    assert!(!imported.is_empty(), "the imported rows are read");
+    // A `[[moved]]` row stands an imported spawn where we put it, which makes it ours.
+    let overrides = include_str!("../content/elwynn_overrides.toml");
+    let moved: Vec<String> = overrides
+        .split("[[moved]]")
+        .skip(1)
+        .filter_map(|table| {
+            let line = table
+                .lines()
+                .find(|l| l.trim_start().starts_with("entry"))?;
+            Some(format!("(entry {})", line.split('=').nth(1)?.trim()))
+        })
+        .collect();
+    for r in rows
+        .iter()
+        .filter(|r| !moved.iter().any(|m| r.what.ends_with(m)))
+    {
+        assert!(
+            !imported.iter().any(|g| r.what.starts_with(g.as_str())),
+            "{} is an imported spawn",
+            r.what
+        );
+    }
+    let walk = placed();
+    for p in walk.iter().filter(|p| p.what.starts_with("Rumour ")) {
+        if p.what.contains(" point") {
+            assert!(
+                rows.iter().any(|r| r.what == p.what && r.map == p.map),
+                "{} is audited",
+                p.what
+            );
+        }
+    }
+    let kinds = |pick: fn(&AuditKind) -> bool| rows.iter().any(|r| pick(&r.kind));
+    assert!(kinds(|k| *k == AuditKind::Creature));
+    assert!(kinds(|k| *k == AuditKind::HubNpc));
+    assert!(kinds(|k| *k == AuditKind::GameObject));
+    assert!(kinds(|k| matches!(k, AuditKind::RumourGiver { .. })));
+    assert!(kinds(|k| matches!(k, AuditKind::RumourStep { .. })));
 }
