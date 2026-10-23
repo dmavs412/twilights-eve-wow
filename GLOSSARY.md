@@ -200,3 +200,27 @@ _Avoid_: debuff, death penalty, nemesis
 **Grounded**:
 A placed unit whose Z the realm snaps to the ground under it at create time; the default. `grounded = false` on a content row keeps the written Z, for a unit meant to hover or hang. A ticket never gives a Z: the Build lane writes `0.0` and `tools/twilights-eve/ground_check.py --fix` computes it.
 _Avoid_: snapped, clamped (the client's own ground clamp is a different mechanism)
+
+**Angler Level**:
+A character's fishing level, 1 to 60, with its own XP, kept across Callings (ADR 0018). Each level makes the Reeling Bar's catch zone taller and the treasure chest likelier. A fish gives Angler XP until it turns grey against the Angler Level by the same rule mob XP uses; a fish 10 or more levels above it never bites.
+_Avoid_: fishing skill, fishing rank
+
+**Reeling Bar**:
+The minigame that opens when a fish bites: holding the mouse button lifts a catch zone, the fish moves by its style, and progress fills while the fish is inside the zone. The realm picks the fish and seeds the bar; the client runs it and reports the outcome (ADR 0018).
+_Avoid_: minigame, fishing bar, catch bar
+
+**Fishing Water**:
+A named place, an AreaTable subzone or a circle in `content/fish.toml`, whose own fish pool replaces its zone's. Whether a point is water at all comes from the Host's terrain, never from a Fishing Water.
+_Avoid_: fishing spot, fishing hole, pool (a pool is the weighted list of fish)
+
+**Bait**:
+A consumable chosen in the Fishing Journal's bait slot; each cast uses one from the bags. A legendary may bite only with its bait chosen. Not a lure: a lure goes on the pole for a time and gives one bonus.
+_Avoid_: lure
+
+**Legendary Fish**:
+One of four rare fish per fishing zone: one bites anywhere in the zone at 1%, and three need a criterion (a Fishing Water, an hour window on the game clock, or a bait). Its Legend Rumour only hints at the criterion; the fish can bite without it.
+_Avoid_: rare fish, boss fish
+
+**Legend Rumour**:
+A Rumour kind with no giver, no steps and no timer: a readable note that names a Legendary Fish and its criterion. It rolls on a catch in its zone or on a kill, and an NPC's gossip can tell the same hint.
+_Avoid_: fishing quest, hint quest
