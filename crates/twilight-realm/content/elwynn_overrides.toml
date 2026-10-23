@@ -991,3 +991,14 @@ level_min = 24
 level_max = 26
 position = [-9975.9, -156.7, 19.80]
 orientation = 1.38
+
+# The Defias Highwayman (#231) at the wrecked cart on the Stormwind road north of Goldshire, The
+# Wrecked Cart in quests_elwynn.toml. He moved here from a mobs.toml [[spawn]] for #357: those
+# all load onto Kalimdor, so no player could find him there.
+[[added]]
+guid = 960468
+entry = 96011
+level_min = 12
+level_max = 12
+position = [-9290.0, 22.0, 69.11]
+orientation = 1.57

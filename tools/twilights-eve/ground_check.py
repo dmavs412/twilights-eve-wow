@@ -63,10 +63,6 @@ MAP_DIRS = {0: "Azeroth", 1: "Kalimdor"}
 # Files whose rows stand on Kalimdor unless the row says otherwise (hub.rs and mobs.rs default
 # to it); every other file defaults to its top-level `map`, else 0.
 FILE_DEFAULT_MAP = {"hub.toml": 1, "mobs.toml": 1}
-# Hand `[[spawn]]` rows in mobs.toml all load onto Kalimdor (mobs.rs), but this one has Elwynn
-# coordinates. Its map is a content bug for its own ticket; checking it against Kalimdor's terrain
-# would only bake a wrong Z in.
-KNOWN_WRONG_MAP = {("mobs.toml", "guid 9000101")}
 # Test dungeons whose realm tests (creature_gaze, phased_wards, test_grounds and others) stand on a
 # flat plane at z 47.2 and hard-code that height; their Z is a test convention, not terrain.
 TEST_FIXTURES = {"gaze_hall.toml", "ward_test.toml", "test_grounds.toml"}
@@ -595,9 +591,6 @@ def main():
                 print("model %s:%d %s display %s: %s"
                       % (name, r.idx + 1, r.label or "?", "-" if bad[0] is None else bad[0], bad[1]))
             if not r.grounded:
-                continue
-            if (name, r.label) in KNOWN_WRONG_MAP:
-                print("skipped %s:%d %s (wrong map in content)" % (name, r.idx + 1, r.label))
                 continue
             if r.map not in MAP_DIRS:
                 counts["interior"] += 1

@@ -907,13 +907,6 @@ speed_walk = 1.0
 speed_run = 0.857
 detection_range = 18.0
 
-[[spawn]]
-guid = 9000101
-entry = 96011
-level = 12
-position = [-9290.0, 22.0, 62.0]
-orientation = 1.57
-
 # Princess (#232), the Stonefields' boar made an elite for the quest of her name
 # (quests_elwynn.toml). This template shadows content/elwynn.toml's generated friendly one; her
 # spawn is in elwynn_overrides.toml. Display 503 and faction 189 are the Stonetusk Boar's. Always

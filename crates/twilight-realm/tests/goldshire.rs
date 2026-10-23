@@ -192,3 +192,21 @@ fn the_goldshire_chain_runs_from_the_abbots_fall_to_the_wrecked_cart() {
     // Farley offers the cart once the doubt is handed in.
     assert!(offered_by(&mut realm, FARLEY_AT, FARLEY).contains(&THE_WRECKED_CART));
 }
+
+#[test]
+fn the_defias_highwayman_stands_in_elwynn() {
+    let highwayman: Vec<_> = twilight_realm::placed()
+        .into_iter()
+        .filter(|p| p.what.contains("entry 96011"))
+        .collect();
+    assert!(!highwayman.is_empty(), "no Defias Highwayman placed");
+    for p in highwayman {
+        let [x, y] = p.position;
+        assert_eq!(p.map, 0, "{} is on map {}", p.what, p.map);
+        assert!(
+            ((x + 9290.0).powi(2) + (y - 22.0).powi(2)).sqrt() <= 5.0,
+            "{} stands at ({x}, {y})",
+            p.what
+        );
+    }
+}
