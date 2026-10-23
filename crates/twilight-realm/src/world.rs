@@ -1790,6 +1790,17 @@ fn interrupt_cast(mob: &mut Mob, events: &mut Vec<SessionEvent>) {
     }
 }
 
+/// A Kick lands on `mob`: its Creature Spell under way stops short and its school is locked for
+/// `lockout_secs`. The spell does not go on cooldown; the Lockout is the penalty. Returns whether
+/// a cast was stopped.
+pub(crate) fn kick_cast(mob: &mut Mob, lockout_secs: f32, events: &mut Vec<SessionEvent>) -> bool {
+    let Some(spell) = drop_cast(mob, events) else {
+        return false;
+    };
+    mob.lockouts.push((spell.school, lockout_secs));
+    true
+}
+
 /// `path` stopped `by` yards short of its end, as a chase stops short of its quarry.
 fn short_of(mut path: Vec<[f32; 3]>, by: f32) -> Vec<[f32; 3]> {
     if let [.., from, to] = path[..] {

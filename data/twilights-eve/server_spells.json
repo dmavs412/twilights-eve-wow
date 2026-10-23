@@ -1358,6 +1358,55 @@
      }
     ],
     "description": "For 30 sec your melee attacks have a chance to either heal you slightly or grant you a temporary armor spike."
+   },
+   {
+    "key": "rebuke",
+    "name": "Rebuke",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000398,
+    "realm_cost": 10,
+    "realm_cooldown_ms": 12000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "learn_level": 10,
+    "target": "enemy",
+    "school": "holy",
+    "prevention": "silence",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 4000
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_aura_stacks",
+      "params": {
+       "aura": "conviction",
+       "stacks": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4 seconds. When it stops a cast, you gain a stack of Conviction."
    }
   ],
   "talent_tabs": [
@@ -7767,6 +7816,54 @@
      }
     ],
     "description": "Out of combat only. Mobs ignore you unless very close; your first attack from stealth is a critical strike and breaks it."
+   },
+   {
+    "key": "kick",
+    "name": "Kick",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000399,
+    "realm_cost": 25,
+    "realm_cooldown_ms": 10000,
+    "realm_gcd_ms": 0,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "learn_level": 10,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 5000
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_combo_points",
+      "params": {
+       "amount": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5 seconds. When it stops a cast, you gain 1 combo point."
    }
   ],
   "talent_tabs": [
@@ -10169,6 +10266,56 @@
      }
     ],
     "description": "Surrounds you with a ward of ley energy that absorbs damage equal to 10% of your maximum mana for 20 sec."
+   },
+   {
+    "key": "counterspell",
+    "name": "Counterspell",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000400,
+    "realm_cost": 0,
+    "realm_cooldown_ms": 24000,
+    "realm_gcd_ms": 0,
+    "realm_range_max": 30,
+    "learn_level": 10,
+    "target": "enemy",
+    "school": "arcane",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 6000
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "energize",
+      "params": {
+       "power": "mana",
+       "amount": {
+        "base": 0,
+        "per_level": 0,
+        "per_ap": 0
+       },
+       "pct_of_max": 10
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6 seconds. When it stops a cast, you regain 10% of your maximum mana."
    }
   ],
   "talent_tabs": [
@@ -13305,6 +13452,55 @@
      }
     ],
     "description": "150% weapon damage as Fire to the target and all enemies within 8 yards."
+   },
+   {
+    "key": "silencing_shot",
+    "name": "Silencing Shot",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000401,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 20000,
+    "realm_gcd_ms": 0,
+    "realm_range_max": 30,
+    "learn_level": 10,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_ranged"
+    ],
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 3000
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "reset_cooldowns",
+      "params": {
+       "spell_ids": [
+        1000304
+       ]
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 3 seconds. When it stops a cast, your Vault is ready again."
    }
   ],
   "talent_tabs": [
@@ -16085,6 +16281,50 @@
      }
     ],
     "description": "Violently drains health from the target, dealing Shadow damage and rapidly restoring your own health pool."
+   },
+   {
+    "key": "hush",
+    "name": "Hush",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000402,
+    "realm_cost": 5,
+    "realm_cooldown_ms": 24000,
+    "realm_gcd_ms": 0,
+    "realm_range_max": 30,
+    "learn_level": 10,
+    "target": "enemy",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "magic",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "interrupt",
+      "params": {
+       "lockout_ms": 4000
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_creeping_blight"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4 seconds. When it stops a cast, Creeping Blight settles on the target."
    }
   ],
   "talent_tabs": [
@@ -18171,6 +18411,7 @@
         34,
         33,
         35,
+        38,
         36,
         37
        ]
@@ -18207,6 +18448,7 @@
         34,
         33,
         35,
+        38,
         36,
         37
        ]

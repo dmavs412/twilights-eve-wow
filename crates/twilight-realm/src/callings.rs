@@ -1394,6 +1394,14 @@ pub enum Effect {
         #[serde(default)]
         center: Center,
     },
+    /// A Kick: stops the Creature Spell the target is casting and locks its school for
+    /// `lockout_ms`. The effects after it in the row run only on a target whose cast it stopped.
+    /// With `bosses` false it leaves a boss alone.
+    Interrupt {
+        lockout_ms: u32,
+        #[serde(default = "yes")]
+        bosses: bool,
+    },
     /// `amount` combo points on the target, five at most; points on another target are lost.
     AddComboPoints { amount: u32 },
     /// The caster runs to the target.

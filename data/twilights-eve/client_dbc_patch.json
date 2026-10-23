@@ -11254,6 +11254,213 @@
    }
   },
   {
+   "spell_id": 1000398,
+   "calling": "vanguard",
+   "key": "rebuke",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Rebuke",
+    "cost": 10.0,
+    "cooldown_ms": 12000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4 seconds. When it stops a cast, you gain a stack of Conviction.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Ability_Warrior_ShieldBash",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 42,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000399,
+   "calling": "cutthroat",
+   "key": "kick",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Kick",
+    "cost": 25.0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 5 seconds. When it stops a cast, you gain 1 combo point.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Ability_Kick",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 90,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000400,
+   "calling": "initiate",
+   "key": "counterspell",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Counterspell",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 0.0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 6,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 6 seconds. When it stops a cast, you regain 10% of your maximum mana.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Frost_IceShock",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 239,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000401,
+   "calling": "ranger",
+   "key": "silencing_shot",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Silencing Shot",
+    "cooldown_ms": 20000,
+    "gcd_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "equipped_item_class": 2,
+    "equipped_subclass_mask": 851980,
+    "equipped_inventory_mask": 100696064,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 3 seconds. When it stops a cast, your Vault is ready again.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "ranged": true,
+    "spell_family": 4,
+    "family_flags": 2199023255552,
+    "icon": "Interface\\Icons\\Ability_GolemStormBolt",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 361,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000402,
+   "calling": "acolyte",
+   "key": "hush",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Hush",
+    "cooldown_ms": 24000,
+    "gcd_ms": 0,
+    "cost_percent": 5.0,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4 seconds. When it stops a cast, Creeping Blight settles on the target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 274877906944,
+    "icon": "Interface\\Icons\\Spell_Shadow_ImpPhaseShift",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "visual": 179,
+    "range_index": 4,
+    "cast_time_index": 1,
+    "duration_index": 85
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",

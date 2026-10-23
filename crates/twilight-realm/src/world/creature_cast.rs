@@ -54,6 +54,10 @@ impl InWorld {
             *left -= dt;
         }
         mob.spell_cooldowns.retain(|(_, left)| *left > 0.0);
+        for (_, left) in &mut mob.lockouts {
+            *left -= dt;
+        }
+        mob.lockouts.retain(|(_, left)| *left > 0.0);
 
         if let Some((spell, left)) = &mut mob.casting {
             let spell = *spell;
@@ -226,6 +230,7 @@ impl InWorld {
                 && hurt
                 && fed
                 && !mob.spell_cooldowns.iter().any(|(k, _)| *k == s.key)
+                && !mob.lockouts.iter().any(|(school, _)| *school == s.school)
         });
         let Some(spell) = ready else {
             return false;

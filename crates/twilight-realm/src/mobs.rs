@@ -15,6 +15,7 @@ use crate::fields::*;
 use crate::phased::{self, Phase};
 use crate::rng::Rng;
 use crate::rules::melee::MobDefense;
+use crate::rules::school::School;
 use crate::rules::stats::{MobStats, UnitClass};
 use crate::space::distance;
 use crate::Host;
@@ -914,6 +915,8 @@ pub(crate) struct Mob {
     pub(crate) casting: Option<(&'static CreatureSpell, f32)>,
     /// Its Creature Spells' cooldowns: `(key, seconds left)`.
     pub(crate) spell_cooldowns: Vec<(&'static str, f32)>,
+    /// Schools a Kick locked it out of: `(school, seconds left)`.
+    pub(crate) lockouts: Vec<(School, f32)>,
     /// Seconds it has been in combat; 0 out of it.
     pub(crate) engaged_secs: f32,
     /// The character of another session its cast under way goes on; none for the one it fights.
@@ -1077,6 +1080,7 @@ impl Mob {
             display_id: spawn.display_id,
             casting: None,
             spell_cooldowns: Vec::new(),
+            lockouts: Vec::new(),
             engaged_secs: 0.0,
             cast_at: None,
             think_in: 0.0,
@@ -1154,6 +1158,7 @@ impl Mob {
             display_id: template.display_id,
             casting: None,
             spell_cooldowns: Vec::new(),
+            lockouts: Vec::new(),
             engaged_secs: 0.0,
             cast_at: None,
             think_in: 0.0,

@@ -2368,6 +2368,21 @@ impl InWorld {
                     if rider == Some(guid) && matches!(effect, Effect::AddComboPoints { .. }) {
                         continue;
                     }
+                    // A Kick: the effects after it run only on a target whose cast it stopped.
+                    if let Effect::Interrupt { lockout_ms, bosses } = *effect {
+                        let stopped = self
+                            .mobs
+                            .iter_mut()
+                            .find(|m| m.guid == guid && m.state != State::Dead)
+                            .is_some_and(|mob| {
+                                (bosses || !mob.template.raises_boss_bar())
+                                    && super::kick_cast(mob, clock::secs(lockout_ms), events)
+                            });
+                        if !stopped {
+                            break;
+                        }
+                        continue;
+                    }
                     self.effect(
                         skill,
                         effect,
@@ -3451,6 +3466,9 @@ impl InWorld {
                     }
                 }
             }
+            // Handled in the per-target loop of the cast, which decides whether the effects after
+            // it run.
+            Effect::Interrupt { .. } => {}
             Effect::AddComboPoints { amount } => {
                 // Serrated Strikes: a chance of one more point, more so on a bleeding target.
                 let bleeding = self.skills.auras.iter().any(|a| {

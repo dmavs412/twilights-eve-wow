@@ -467,6 +467,8 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         }
         // Stealth lives in the master CSV only; tests/stealth.rs reads it.
         Effect::Stealth { .. } => panic!("{key}: the reference has no realm half for stealth"),
+        // Kicks live in the master CSV only; tests/kicks.rs reads them.
+        Effect::Interrupt { .. } => panic!("{key}: the reference has no realm half for a kick"),
     }
 }
 
@@ -530,7 +532,8 @@ fn the_vanguard_plays_righteous_smash_bulwark_charge_and_zealous_cleave() {
             "bulwark_charge",
             "shield_of_penitent",
             "zealous_cleave",
-            "seal_of_iron"
+            "seal_of_iron",
+            "rebuke"
         ]
     );
 }
