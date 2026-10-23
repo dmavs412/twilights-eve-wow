@@ -177,4 +177,9 @@ fn the_content_walk_reaches_every_kind_it_names() {
             "no {kind:?} in the walk"
         );
     }
+    assert!(
+        all.iter()
+            .any(|p| p.what.starts_with("Rumour ") && p.what.contains(" step ")),
+        "no Rumour step point in the walk"
+    );
 }

@@ -9,6 +9,7 @@ use super::{engage, eye, InWorld};
 use crate::bounty::{self, Affix, Draw};
 use crate::characters::{Char, Marked};
 use crate::creature_spells;
+use crate::ground;
 use crate::mobs::{self, Bounty, Mob};
 use crate::phased::Phase;
 use crate::rng::Rng;
@@ -135,9 +136,13 @@ impl InWorld {
                 s.max_health = (s.max_health * adds.pct / 100).max(1);
                 s.min_damage *= adds.pct as f32 / 100.0;
                 s.max_damage *= adds.pct as f32 / 100.0;
-                // Beside it, a couple of yards to either side.
+                // Beside it, a couple of yards to either side, on its own ground; an add with no
+                // spot that fits is not made.
                 let side = if k % 2 == 0 { 1.0 } else { -1.0 } * (2.0 + k as f32);
-                let by = [at[0] + side, at[1] + side, at[2]];
+                let wanted = [at[0] + side, at[1] + side, at[2]];
+                let Some(by) = ground::spot(host, self.map, wanted, false) else {
+                    continue;
+                };
                 pack.push(self.made_hunter(draw, s, by, c.position));
             }
         }
@@ -196,8 +201,8 @@ impl InWorld {
         )
     }
 
-    /// Where a hunter comes in: on the ground within its spawn range of `me`, never in the Hub,
-    /// and out of their sight when any such spot is.
+    /// Where a hunter comes in: at a [`ground::spot`] within its spawn range of `me`, never in
+    /// the Hub, and out of their sight when any such spot is.
     fn hunter_spot(&self, host: &dyn Host, me: [f32; 3], rng: &mut Rng) -> Option<[f32; 3]> {
         let (near, far) = bounty::hunter().spawn_yd;
         let mut spot = None;
@@ -205,10 +210,9 @@ impl InWorld {
             let angle = rng.frand(0.0, std::f32::consts::TAU);
             let r = rng.frand(near, far);
             let (x, y) = (me[0] + r * angle.cos(), me[1] + r * angle.sin());
-            let z = host
-                .ground_height(self.map, x, y, me[2] + 2.0)
-                .unwrap_or(me[2]);
-            let at = [x, y, z];
+            let Some(at) = ground::spot(host, self.map, [x, y, me[2]], false) else {
+                continue;
+            };
             if notoriety::in_hub(self.map, at) {
                 continue;
             }

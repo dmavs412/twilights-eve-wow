@@ -119,6 +119,11 @@ pub trait Host {
     fn liquid_at(&self, _map: u32, _x: f32, _y: f32) -> Option<f32> {
         None
     }
+    /// Whether a standing body at `at` on `map` (a capsule 0.4 yd in radius from 0.3 to 2 yd over
+    /// `at`) touches nothing solid: terrain, a WMO or a doodad. `true` where nothing is loaded.
+    fn body_fits(&self, _map: u32, _at: [f32; 3]) -> bool {
+        true
+    }
 }
 
 /// A movement report's state beyond its pose: what an observer animates and extrapolates from.
@@ -1657,6 +1662,10 @@ impl Realm {
                 d.map,
                 audience.clone(),
             );
+            // A giver with no spot that fits stays unmade, and the next tick tries again.
+            if guid.is_none() && mobs::template(d.giver).is_some() {
+                continue;
+            }
             // Every instance is offered afresh: the steps an earlier one finished are forgotten.
             if d.kind == rumours::Class::Ordinary {
                 for &g in &audience.0 {
@@ -1756,8 +1765,10 @@ impl Realm {
                     position: [p.x + 2.0, p.y, 0.0],
                     orientation: 0.0,
                 };
-                let chest = self.spawn_object(host, spec, Audience::of(&[guid]));
-                self.rumours.add_chest(rumour, chest);
+                // A chest with no spot that fits is not made.
+                if let Some(chest) = self.spawn_object(host, spec, Audience::of(&[guid])) {
+                    self.rumours.add_chest(rumour, chest);
+                }
             }
         }
     }
@@ -1995,9 +2006,9 @@ impl Realm {
         self.characters.reserve(guid);
     }
 
-    /// Spawns the creature of mob template `entry` at `level` on `map`'s open world, at
-    /// `position` grounded on `host`'s ground, for `audience` alone (ADR 0014). No spawn timer
-    /// revives it. Its guid, or `None` when `entry` is no mob template.
+    /// Spawns the creature of mob template `entry` at `level` on `map`'s open world, at the
+    /// [`ground::spot`] for `position` on `host`, for `audience` alone (ADR 0014). No spawn timer
+    /// revives it. Its guid, or `None` when `entry` is no mob template or no spot fits it.
     pub fn spawn_for(
         &mut self,
         host: &dyn Host,
@@ -2018,7 +2029,7 @@ impl Realm {
             .shards
             .entry(place)
             .or_insert_with(|| shard::Shard::new(place));
-        Some(shard.spawn_for(host, template, level, position, audience))
+        shard.spawn_for(host, template, level, position, audience)
     }
 
     /// Removes every creature made for exactly `audience` on any shard; each admitted client
@@ -2031,16 +2042,17 @@ impl Realm {
         self.objects.despawn_audience(audience);
     }
 
-    /// Spawns a GameObject for `audience` alone (ADR 0014), at `spec.position` grounded on
-    /// `host`'s ground. Its guid. A click from anyone else does nothing and they never see it.
+    /// Spawns a GameObject for `audience` alone (ADR 0014), at the [`ground::spot`] for
+    /// `spec.position` on `host` (a GameObject may stand in water). Its guid, or `None` when no
+    /// spot fits it. A click from anyone else does nothing and they never see it.
     pub fn spawn_object(
         &mut self,
         host: &dyn Host,
         mut spec: ObjectSpec,
         audience: Audience,
-    ) -> u64 {
-        spec.position = ground::grounded_at(host, spec.map, spec.position, true);
-        self.objects.spawn(spec, audience)
+    ) -> Option<u64> {
+        spec.position = ground::spot(host, spec.map, spec.position, true)?;
+        Some(self.objects.spawn(spec, audience))
     }
 
     /// The served session clicks the run-time GameObject `guid`, which `Self::objects` holds.

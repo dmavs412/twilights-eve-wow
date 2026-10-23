@@ -101,7 +101,8 @@ fn a_use_object_is_created_for_its_audience_and_counts_for_their_quest() {
     let host = party.host.as_ref();
     let guid = party
         .realm
-        .spawn_object(host, spec(ROOT, ObjectKind::Use, map), audience);
+        .spawn_object(host, spec(ROOT, ObjectKind::Use, map), audience)
+        .expect("a spot");
     let got = party.run(1.0);
     assert!(object_created(&got[0], guid));
     assert!(!object_created(&got[1], guid));
@@ -130,11 +131,14 @@ fn a_use_object_is_created_for_its_audience_and_counts_for_their_quest() {
 fn a_chest_opens_the_loot_window_for_its_audience_and_goes_when_emptied() {
     let (mut party, map, audience) = scene();
     let host = party.host.as_ref();
-    let guid = party.realm.spawn_object(
-        host,
-        spec(CHEST, ObjectKind::Chest(vec![TRINKET]), map),
-        audience,
-    );
+    let guid = party
+        .realm
+        .spawn_object(
+            host,
+            spec(CHEST, ObjectKind::Chest(vec![TRINKET]), map),
+            audience,
+        )
+        .expect("a spot");
     let got = party.run(1.0);
     assert!(object_created(&got[0], guid));
     assert!(!object_created(&got[1], guid));
@@ -156,11 +160,14 @@ fn a_chest_opens_the_loot_window_for_its_audience_and_goes_when_emptied() {
 fn despawning_the_audience_removes_a_chest_nobody_opened() {
     let (mut party, map, audience) = scene();
     let host = party.host.as_ref();
-    let guid = party.realm.spawn_object(
-        host,
-        spec(CHEST, ObjectKind::Chest(vec![TRINKET]), map),
-        audience.clone(),
-    );
+    let guid = party
+        .realm
+        .spawn_object(
+            host,
+            spec(CHEST, ObjectKind::Chest(vec![TRINKET]), map),
+            audience.clone(),
+        )
+        .expect("a spot");
     assert!(object_created(&party.run(1.0)[0], guid));
     party.realm.despawn_audience(&audience);
     let got = party.run(0.5);

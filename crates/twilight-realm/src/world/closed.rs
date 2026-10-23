@@ -137,6 +137,15 @@ pub fn placed() -> Vec<Placed> {
                 [p.x, p.y],
             );
         }
+        for s in &r.spawn {
+            for p in &s.points {
+                put(
+                    format!("Rumour {} step {} point", r.id, s.quest),
+                    r.map,
+                    [p.x, p.y],
+                );
+            }
+        }
     }
     for e in crate::encounters::content() {
         put(

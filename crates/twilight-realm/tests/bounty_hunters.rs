@@ -34,18 +34,65 @@ impl Host for Floor {
     }
 }
 
+/// Ground rising half a yard per yard north of `OUT`, open sight everywhere.
+struct Slope;
+
+impl Slope {
+    fn ground(x: f32) -> f32 {
+        82.0 + 0.5 * (x - OUT[0])
+    }
+}
+
+impl Host for Slope {
+    fn ground_height(&self, _: u32, x: f32, _: f32, _: f32) -> Option<f32> {
+        Some(Self::ground(x))
+    }
+    fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
+        true
+    }
+    fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
+        None
+    }
+}
+
+/// Flat ground where no body fits anywhere.
+struct Crowded;
+
+impl Host for Crowded {
+    fn ground_height(&self, _: u32, _: f32, _: f32, _: f32) -> Option<f32> {
+        Some(82.0)
+    }
+    fn line_of_sight(&self, _: u32, _: [f32; 3], _: [f32; 3]) -> bool {
+        true
+    }
+    fn area_at(&self, _: u32, _: f32, _: f32) -> Option<u32> {
+        None
+    }
+    fn body_fits(&self, _: u32, _: [f32; 3]) -> bool {
+        false
+    }
+}
+
 /// A level 40 warrior with some Notoriety, and what their client has been told.
 struct Hunted {
     realm: Realm,
     me: u64,
+    host: Box<dyn Host>,
     /// Every hunter created for this client, `(guid, entry, level)`, in order.
     hunters: Vec<(u64, u32, u32)>,
+    /// Where each of `hunters` was created.
+    at: Vec<[f32; 3]>,
     removed: Vec<u64>,
     events: Vec<SessionEvent>,
 }
 
 impl Hunted {
     fn new(notoriety: f32, elwynn: bool) -> Self {
+        Self::on(notoriety, elwynn, 0, Box::new(Floor))
+    }
+
+    /// As [`Self::new`], at Bounty Rank `rank`, over `host`.
+    fn on(notoriety: f32, elwynn: bool, rank: u32, host: Box<dyn Host>) -> Self {
         let mut maker = realm();
         let RealmCommand::CreateCharacter(mut req) = create_cmd("Quarry", HUMAN, 0, WARRIOR) else {
             unreachable!()
@@ -61,7 +108,7 @@ impl Hunted {
             .replace("level = 1\n", "level = 40\n")
             .replacen(
                 "xp = 0\n",
-                &format!("xp = 0\nnotoriety = {notoriety:?}\n"),
+                &format!("xp = 0\nnotoriety = {notoriety:?}\nbounty_rank = {rank}\n"),
                 1,
             );
         let mut realm = realm();
@@ -70,7 +117,9 @@ impl Hunted {
         let mut h = Self {
             realm,
             me,
+            host,
             hunters: Vec::new(),
+            at: Vec::new(),
             removed: Vec::new(),
             events: Vec::new(),
         };
@@ -80,13 +129,14 @@ impl Hunted {
 
     fn run(&mut self, secs: f32) {
         for _ in 0..(secs * 10.0).round().max(1.0) as u32 {
-            self.realm.tick(0.1, &Floor);
+            self.realm.tick(0.1, self.host.as_ref());
             for e in drain(&mut self.realm) {
                 match &e {
                     SessionEvent::ObjectCreate {
                         guid,
                         kind: EntityKind::Unit,
                         fields,
+                        position,
                         ..
                     } if fields
                         .object_entry()
@@ -97,6 +147,7 @@ impl Hunted {
                             fields.object_entry().unwrap(),
                             fields.unit_level().unwrap(),
                         ));
+                        self.at.push(*position);
                     }
                     SessionEvent::ObjectsRemoved(gone) => self.removed.extend(gone),
                     SessionEvent::ObjectDestroyed(g) => self.removed.push(*g),
@@ -209,4 +260,27 @@ fn a_hunter_gives_up_when_its_owner_enters_a_phase() {
     let hunter = h.hunters[0].0;
     h.go(ABBEY_INSIDE);
     assert!(h.removed.contains(&hunter), "it left the world");
+}
+
+#[test]
+fn each_add_stands_on_its_own_ground_not_the_hunters_height() {
+    // Rank 8 rolls every affix, the adds one among them.
+    let mut h = Hunted::on(HOT, false, 8, Box::new(Slope));
+    h.go(OUT);
+    h.run(hunter_secs(heat_level(HOT)).unwrap() + 10.0);
+    assert_eq!(h.sent().len(), 3, "the hunter and its two adds");
+    for at in &h.at {
+        assert!(
+            (at[2] - Slope::ground(at[0])).abs() < 1e-3,
+            "{at:?} stands on the slope"
+        );
+    }
+}
+
+#[test]
+fn no_hunter_comes_where_no_body_fits() {
+    let mut h = Hunted::on(HOT, false, 0, Box::new(Crowded));
+    h.go(OUT);
+    h.run(hunter_secs(heat_level(HOT)).unwrap() + 30.0);
+    assert!(h.hunters.is_empty());
 }

@@ -83,6 +83,9 @@ pub(crate) struct Template {
     /// Friendly to every player: it never fights, and no attack or spell may target it.
     #[serde(default)]
     pub(crate) friendly: bool,
+    /// It may stand in deep water (ADR 0021).
+    #[serde(default)]
+    pub(crate) swims: bool,
     pub(crate) unit_class: UnitClass,
     #[allow(dead_code)]
     pub(crate) level_min: u8,
@@ -192,6 +195,7 @@ impl Template {
             faction_template,
             hostile: true,
             friendly: false,
+            swims: false,
             unit_class,
             level_min: 1,
             level_max: 63,

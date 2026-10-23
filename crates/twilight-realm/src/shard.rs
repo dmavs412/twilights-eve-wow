@@ -106,7 +106,8 @@ impl Shard {
     }
 
     /// A creature of `template` at `level`, made at `position` for `audience` (ADR 0014): it
-    /// stands on the ground under the point, and no spawn timer ever revives it. Its guid.
+    /// stands at the [`crate::ground::spot`] for the point, and no spawn timer ever revives it.
+    /// Its guid, or `None` when no spot within reach fits it.
     pub(crate) fn spawn_for(
         &mut self,
         host: &dyn Host,
@@ -114,18 +115,18 @@ impl Shard {
         level: u8,
         position: [f32; 3],
         audience: Audience,
-    ) -> u64 {
+    ) -> Option<u64> {
+        let at = crate::ground::spot(host, self.place.map, position, template.swims)?;
         self.audience_spawned = self.audience_spawned.wrapping_add(1);
         let low = mobs::AUDIENCE_GUID_BASE | self.audience_spawned & 0xF_FFFF;
         let guid = mobs::unit_guid(template.entry, low);
-        let at = crate::ground::grounded_at(host, self.place.map, position, true);
         if crate::ground::ground_under(host, self.place.map, position, true).is_none() {
             self.settling.push(guid);
         }
         let zone = mobs::zone_factor_at(host, self.place.phase, self.place.map, at);
         self.mobs
             .push(Mob::for_audience(guid, template, level, at, audience, zone));
-        guid
+        Some(guid)
     }
 
     /// Removes every creature made for exactly `audience`. Each admitted client has it destroyed
