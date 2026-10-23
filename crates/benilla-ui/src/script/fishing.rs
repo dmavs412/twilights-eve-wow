@@ -1,6 +1,8 @@
 //! The Reeling Bar's state Lua reads (ADR 0018): `GetReelState()`, the bar the host's simulation
 //! runs, and `GetAnglerInfo()`, the character's Angler Level. The host pushes both into the
-//! [`Model`] and fires `FISHING_REEL_START`, `FISHING_REEL_END` and `ANGLER_UPDATE` itself.
+//! [`Model`] and fires `FISHING_REEL_START`, `FISHING_REEL_END` and `ANGLER_UPDATE` itself. The
+//! Fishing Journal's getters and `SetFishingBait` live here too, and the host fires
+//! `FISHING_JOURNAL_UPDATE`.
 
 use mlua::{Lua, MultiValue, Value};
 
@@ -38,7 +40,43 @@ pub(crate) struct AnglerInfo {
     pub(crate) to_next: u32,
 }
 
+/// One zone of the Fishing Journal: its name and its fish as `(item, best)`, `best` being 0 none,
+/// 1 caught, 2 perfect.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct JournalZone {
+    pub name: String,
+    pub fish: Vec<(u32, u8)>,
+}
+
+/// One Legendary Fish row: the item, its zone's name, whether its hint is found and whether it is
+/// caught.
+#[derive(Debug, Clone, PartialEq)]
+pub struct JournalLegend {
+    pub item: u32,
+    pub zone: String,
+    pub hint_found: bool,
+    pub caught: bool,
+}
+
+/// The last `FishingJournal` the host pushed, zone names already resolved.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct JournalView {
+    pub bait: Option<u32>,
+    pub zones: Vec<JournalZone>,
+    pub legends: Vec<JournalLegend>,
+}
+
 impl super::UiScript {
+    /// Push the Fishing Journal `GetFishingJournal()` and its two siblings answer.
+    pub fn set_fishing_journal(&mut self, view: JournalView) {
+        self.model_mut().journal = view;
+    }
+
+    /// Drain the `SetFishingBait(item or nil)` calls since the last drain, oldest first.
+    pub fn take_bait_requests(&mut self) -> Vec<Option<u32>> {
+        std::mem::take(&mut self.model_mut().bait_requests)
+    }
+
     /// Push the open bar, or `None` once it closes.
     pub fn set_reel(&mut self, view: Option<ReelView>) {
         self.model_mut().reel = view;
@@ -85,6 +123,79 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
         lua.create_function(|lua, ()| {
             let a = lua.app_data_ref::<Model>().expect("model app_data").angler;
             Ok((f64::from(a.level), f64::from(a.xp), f64::from(a.to_next)))
+        })?,
+    )?;
+    // GetFishingJournal(): baitItem (nil for none), zoneCount.
+    g.set(
+        "GetFishingJournal",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let bait = model
+                .journal
+                .bait
+                .map_or(Value::Nil, |i| Value::Number(f64::from(i)));
+            Ok(MultiValue::from_vec(vec![
+                bait,
+                Value::Number(model.journal.zones.len() as f64),
+            ]))
+        })?,
+    )?;
+    // GetFishingJournalZone(i), 1-based: the zone's name, then `item, best` for each fish. Nothing
+    // for an index with no zone.
+    g.set(
+        "GetFishingJournalZone",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let zone = usize::try_from(i - 1)
+                .ok()
+                .and_then(|i| model.journal.zones.get(i));
+            let mut out = Vec::new();
+            if let Some(zone) = zone {
+                out.push(Value::String(lua.create_string(&zone.name)?));
+                for &(item, best) in &zone.fish {
+                    out.push(Value::Number(f64::from(item)));
+                    out.push(Value::Number(f64::from(best)));
+                }
+            }
+            Ok(MultiValue::from_vec(out))
+        })?,
+    )?;
+    // GetFishingLegends(): `item, zoneName, hintFound, caught` for each Legendary Fish.
+    g.set(
+        "GetFishingLegends",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let mut out = Vec::new();
+            for l in &model.journal.legends {
+                out.push(Value::Number(f64::from(l.item)));
+                out.push(Value::String(lua.create_string(&l.zone)?));
+                out.push(Value::Boolean(l.hint_found));
+                out.push(Value::Boolean(l.caught));
+            }
+            Ok(MultiValue::from_vec(out))
+        })?,
+    )?;
+    // SetFishingBait(item or nil): queues the choice for the host to send as `SetBait`.
+    g.set(
+        "SetFishingBait",
+        lua.create_function(|lua, item: Option<u32>| {
+            lua.app_data_mut::<Model>()
+                .expect("model app_data")
+                .bait_requests
+                .push(item);
+            Ok(())
+        })?,
+    )?;
+    // BenillaGetCursorItem(): the entry of the item on the cursor, nil when it carries none. 1.12
+    // has no `GetCursorInfo`.
+    g.set(
+        "BenillaGetCursorItem",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(match &model.cursor {
+                Some(super::cursor::CursorPayload::Item(item)) => Some(f64::from(item.item_id)),
+                _ => None,
+            })
         })?,
     )?;
     Ok(())

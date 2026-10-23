@@ -279,6 +279,10 @@ pub(crate) struct Model {
     pub(crate) reel: Option<super::ReelView>,
     /// `GetAnglerInfo()`'s Angler Level, pushed by the host.
     pub(crate) angler: super::fishing::AnglerInfo,
+    /// The Fishing Journal the three journal getters read, pushed by the host.
+    pub(crate) journal: super::JournalView,
+    /// `SetFishingBait` calls the host has yet to send.
+    pub(crate) bait_requests: Vec<Option<u32>>,
     /// The zone caches the four zone-text getters and `GetZonePVPInfo` read.
     pub(crate) zone: super::ZoneTexts,
     /// The current map's `Map.dbc` `InstanceType`, all `IsInInstance()` reads; `None` for no row.
@@ -1131,6 +1135,8 @@ impl Model {
             game_time: (0, 0),
             reel: None,
             angler: Default::default(),
+            journal: Default::default(),
+            bait_requests: Vec::new(),
             zone: Default::default(),
             instance_type: None,
             can_reset_instances: false,

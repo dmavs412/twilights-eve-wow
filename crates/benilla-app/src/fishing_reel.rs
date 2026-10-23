@@ -17,10 +17,13 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 
 use benilla_protocol::SessionEvent;
-use benilla_ui::script::{ReelView, ScriptValue, UiScript};
+use benilla_ui::script::{
+    JournalLegend, JournalView, JournalZone, ReelView, ScriptValue, UiScript,
+};
 use benilla_world::view::WorldCamera;
 use twilight_realm::RealmCommand;
 
+use crate::area::AreaTableRes;
 use crate::ui_script::UiFeed;
 
 /// One simulation step: Stardew's frame.
@@ -358,6 +361,8 @@ struct Fishing {
     carry: f32,
     /// The Angler Level to push, `(level, xp, to next)`.
     angler: Option<(u32, u32, u32)>,
+    /// The Fishing Journal to push, as the realm sent it.
+    journal: Option<SessionEvent>,
     /// Events for Lua, oldest first.
     events: Vec<(&'static str, Vec<ScriptValue>)>,
     /// The bite alert: the bobber and the seconds left.
@@ -400,6 +405,10 @@ fn run_reel(
             } => {
                 f.angler = Some((u32::from(level), xp, xp_to_next));
                 f.events.push(("ANGLER_UPDATE", Vec::new()));
+            }
+            journal @ SessionEvent::FishingJournal { .. } => {
+                f.journal = Some(journal);
+                f.events.push(("FISHING_JOURNAL_UPDATE", Vec::new()));
             }
             SessionEvent::LoggedOut => {
                 f.reel = None;
@@ -447,8 +456,51 @@ fn run_reel(
     holds.0 = f.reel.is_some() || (holds.0 && held);
 }
 
-/// Pushes the bar and the Angler Level into Lua and fires what happened since the last frame.
-fn feed_reel(script: Option<NonSendMut<UiScript>>, mut fishing: ResMut<Fishing>) {
+/// The Fishing Journal as Lua reads it, each zone named from `AreaTable` (empty with no row).
+fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalView {
+    let SessionEvent::FishingJournal {
+        bait,
+        zones,
+        legends,
+    } = event
+    else {
+        return JournalView::default();
+    };
+    let name = |id: u32| {
+        areas
+            .and_then(|a| a.0.name(id))
+            .unwrap_or_default()
+            .to_string()
+    };
+    JournalView {
+        bait: *bait,
+        zones: zones
+            .iter()
+            .map(|(id, fish)| JournalZone {
+                name: name(*id),
+                fish: fish.clone(),
+            })
+            .collect(),
+        legends: legends
+            .iter()
+            .map(|&(item, zone, hint_found, caught)| JournalLegend {
+                item,
+                zone: name(zone),
+                hint_found,
+                caught,
+            })
+            .collect(),
+    }
+}
+
+/// Pushes the bar, the Angler Level and the Journal into Lua, fires what happened since the last
+/// frame and sends the bait the Journal chose.
+fn feed_reel(
+    script: Option<NonSendMut<UiScript>>,
+    mut fishing: ResMut<Fishing>,
+    mut outbox: ResMut<ReelOutbox>,
+    areas: Option<Res<AreaTableRes>>,
+) {
     let Some(mut script) = script else {
         return;
     };
@@ -456,10 +508,17 @@ fn feed_reel(script: Option<NonSendMut<UiScript>>, mut fishing: ResMut<Fishing>)
     if let Some((level, xp, to_next)) = fishing.angler.take() {
         script.set_angler(level, xp, to_next);
     }
+    if let Some(journal) = fishing.journal.take() {
+        script.set_fishing_journal(journal_view(&journal, areas.as_deref()));
+    }
+    for item in script.take_bait_requests() {
+        outbox.0.push(RealmCommand::SetBait { item });
+    }
     for (name, args) in std::mem::take(&mut fishing.events) {
         match name {
             "FISHING_REEL_START" => script.fire_event("FISHING_REEL_START", args),
             "FISHING_REEL_END" => script.fire_event("FISHING_REEL_END", args),
+            "FISHING_JOURNAL_UPDATE" => script.fire_event("FISHING_JOURNAL_UPDATE", args),
             _ => script.fire_event("ANGLER_UPDATE", args),
         }
     }

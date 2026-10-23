@@ -241,7 +241,7 @@ pub(super) fn load_core_bindings(script: &UiScript) -> Vec<String> {
 /// The defaults, set 0, off the player's chain: `WTF\DefaultBindings.wtf` (`0x846e44`), which
 /// `0x4b62b0` reads line by line (`0x4b6140`); empty when the chain lacks it.
 pub(crate) fn default_bindings() -> Vec<benilla_ui::script::keybind::KeyBinding> {
-    match reference_ui::read(reference_ui::DEFAULT_BINDINGS) {
+    let mut keys = match reference_ui::read(reference_ui::DEFAULT_BINDINGS) {
         Some(bytes) => {
             benilla_ui::script::keybind::parse_bindings_wtf(&String::from_utf8_lossy(&bytes))
         }
@@ -252,7 +252,13 @@ pub(crate) fn default_bindings() -> Vec<benilla_ui::script::keybind::KeyBinding>
             );
             Vec::new()
         }
+    };
+    for &(key, command) in LAYER_DEFAULT_KEYS {
+        if !keys.iter().any(|(k, _)| k.eq_ignore_ascii_case(key)) {
+            keys.push((key.to_owned(), command.to_owned()));
+        }
     }
+    keys
 }
 
 /// The chain's `Bindings.xml` text, for the tests that hold benilla against it.
@@ -278,7 +284,26 @@ pub(crate) fn load_stock_bindings(script: &mut UiScript) {
 /// stock load, with no `ADDON_LOADED` and no registry row, as FrameXML does (`0x48ffed`).
 pub(super) fn load_layer(script: &UiScript) -> Vec<String> {
     let layer = Addon::layer();
-    layer.load_files(script, &layer.toc.files)
+    let failures = layer.load_files(script, &layer.toc.files);
+    register_layer_bindings(script);
+    failures
+}
+
+/// The key-binding commands the layer adds to the stock `Bindings.xml`, which its own windows run.
+const LAYER_BINDINGS: &str = r#"<Bindings>
+    <Binding name="TOGGLEFISHINGJOURNAL" header="BENILLAFISHING">BenillaFishingJournal_Toggle()</Binding>
+</Bindings>"#;
+
+/// The default key of each [`LAYER_BINDINGS`] command, taken only while the chain's own defaults
+/// leave the key unbound.
+const LAYER_DEFAULT_KEYS: &[(&str, &str)] = &[("J", "TOGGLEFISHINGJOURNAL")];
+
+/// Registers [`LAYER_BINDINGS`] after the layer's files, so their names and headers exist.
+pub(crate) fn register_layer_bindings(script: &UiScript) {
+    match benilla_ui::bindings_xml::parse(LAYER_BINDINGS) {
+        Ok(bindings) => script.register_bindings(&bindings),
+        Err(e) => error!("ui_script: the layer's bindings do not parse: {e}"),
+    }
 }
 
 /// The in-game UI, the core, then the layer unless [`layer_enabled`] says no, then every

@@ -698,6 +698,8 @@ mod combo_frame_tests;
 #[cfg(test)]
 mod boss_bar_tests;
 #[cfg(test)]
+mod fishing_journal_tests;
+#[cfg(test)]
 mod fishing_reel_tests;
 #[cfg(test)]
 mod unit_frame_tests;

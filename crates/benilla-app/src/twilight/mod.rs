@@ -326,6 +326,7 @@ fn pump(
             SessionEvent::FishingBite { .. }
                 | SessionEvent::FishingEnd { .. }
                 | SessionEvent::Angler { .. }
+                | SessionEvent::FishingJournal { .. }
         ) {
             if let Some(inbox) = reel.0.as_deref_mut() {
                 inbox.0.push(event);

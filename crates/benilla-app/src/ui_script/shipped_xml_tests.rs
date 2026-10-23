@@ -1948,6 +1948,8 @@ fn the_layer_does_not_grow() {
         "BossBar.xml",
         // The Reeling Bar (ADR 0018): the client-run fishing bar, which no stock file has.
         "FishingReel.xml",
+        // The Fishing Journal (spec #323): the realm's journal, its bait slot and its key.
+        "FishingJournal.xml",
     ];
     assert_eq!(
         super::addons::Addon::layer().toc.files,

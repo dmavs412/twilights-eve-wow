@@ -191,7 +191,7 @@ pub use cvars::{
 pub use death::{DeathAction, DeathUiState};
 pub use dressup::DressUpIntent;
 pub use duel::DuelRequest;
-pub use fishing::ReelView;
+pub use fishing::{JournalLegend, JournalView, JournalZone, ReelView};
 pub use follow::FollowRequest;
 pub use gm_ticket::{GmTicketIntent, GmTicketWrite};
 pub use gossip::{GossipMenu, GossipOptionView, GossipQuestRow};

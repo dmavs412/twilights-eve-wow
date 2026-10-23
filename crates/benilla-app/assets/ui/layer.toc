@@ -33,3 +33,5 @@ GearSlots.xml
 BossBar.xml
 # The Reeling Bar, its Angler badge and its banners (ADR 0018).
 FishingReel.xml
+# The Fishing Journal window, its bait slot, TOGGLEFISHINGJOURNAL's body and /journal.
+FishingJournal.xml
