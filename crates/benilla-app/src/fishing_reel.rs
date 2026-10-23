@@ -736,9 +736,9 @@ mod tests {
         assert!(outside.view().chest_shown);
     }
 
-    /// Every placeholder sprite decodes, the alert among them.
+    /// Every fishing sprite decodes, the alert among them.
     #[test]
-    fn the_placeholder_art_decodes() {
+    fn the_fishing_art_decodes() {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/ui/fishing");
         let mut n = 0;
         for e in std::fs::read_dir(&dir)

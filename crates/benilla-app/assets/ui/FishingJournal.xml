@@ -9,8 +9,7 @@
 
         The app pushes the realm's journal; the frames read only GetFishingJournal(),
         GetFishingJournalZone(i) and GetFishingLegends(), and FISHING_JOURNAL_UPDATE says when to
-        repaint. The art is `Interface\Benilla\fishing\*`: flat placeholders until the real sheet
-        drops in.
+        repaint. The art is `Interface\Benilla\fishing\*`, painted RGBA `.tga` files.
     -->
     <Script><![CDATA[
         BENILLA_JOURNAL_ART = "Interface\\Benilla\\fishing\\"

@@ -10,7 +10,7 @@
         The app runs the bar and pushes it each frame; the frames read only `GetReelState()` and
         `GetAnglerInfo()`. `FISHING_REEL_START`, `FISHING_REEL_END(caught item or nil, perfect,
         treasure)` and `ANGLER_UPDATE` say when to start, end and repaint. The art is
-        `Interface\Benilla\fishing\*`: flat placeholders until the real sheet drops in.
+        `Interface\Benilla\fishing\*`, painted RGBA `.tga` files.
     -->
     <Script><![CDATA[
         -- The water track's height, in pixels; positions arrive as fractions of it.
