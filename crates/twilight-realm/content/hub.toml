@@ -1112,7 +1112,7 @@ faction_template = 35
 role = "trainer"
 npc_flags = 0x13
 map = 0
-position = [-8700.0, -128.0, 91.0]
+position = [-8700.0, -128.0, 87.11]
 orientation = 0.14
 faces = [-8672.0, -124.0]
 text_id = 64034
@@ -1241,7 +1241,7 @@ faction_template = 35
 role = "giver"
 npc_flags = 0x2
 map = 0
-position = [-9349.0, 340.0, 44.0]
+position = [-9349.0, 340.0, 63.75]
 orientation = 3.9
 greeting = "I have nine men and a thousand yards of lake to watch. Tell me you came to help."
 

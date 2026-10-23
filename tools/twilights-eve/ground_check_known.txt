@@ -4,8 +4,6 @@
 # rest (2026-10-23, #351 to #353) are for #357's sweep. The realm places them where they are
 # today. Fix a row, then delete its line.
 off-floor azora.toml -9548.0 -715.0 guid 970022
-off-floor hub.toml -8700.0 -128.0 Brother Corwin Ashgrave
-off-floor hub.toml -9349.0 340.0 Sergeant Keane
 off-floor jasperlode.toml -9124.4 -593.9 guid 820007
 off-floor jasperlode.toml -9117.4 -579.7 guid 820009
 off-floor jasperlode.toml -9115.0 -575.3 guid 820010
