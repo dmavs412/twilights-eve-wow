@@ -1437,8 +1437,8 @@ pub enum Effect {
         per_combo: Option<Linear>,
     },
     /// A stun under the skill's spell id. With `break_on_damage`, any damage after the cast ends
-    /// it. The target stays in combat: no player mechanic takes a mob out of it (#165). No
-    /// diminishing returns.
+    /// it. The target stays in combat: no player mechanic takes a mob out of it (#165). A mob
+    /// takes diminishing returns on its own clock, apart from stuns, and a boss takes nothing.
     Incapacitate {
         duration_ms: u32,
         #[serde(default)]

@@ -168,6 +168,27 @@ pub(super) struct Skills {
     /// The last cast's target as it stood before the cast landed: whether it was snared, and the
     /// spell ids of its auras. A cast proc's `requires_target_aura` reads it.
     pub(super) before: Option<(bool, Vec<u32>)>,
+    /// Diminishing returns on mobs: `(unit, kind, controls landed, seconds since the last)`.
+    control_clocks: Vec<(u64, ControlKind, u32, f32)>,
+}
+
+/// The kinds of control that share a diminishing-returns clock on a mob.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum ControlKind {
+    Stun,
+    Incapacitate,
+}
+
+/// Seconds without a control after which a mob's diminishing returns reset.
+const CONTROL_RESET_SECS: f32 = 15.0;
+
+/// A mob's speed multiplier after its slows: a boss feels half of any slow.
+fn felt_speed_mul(mul: f32, boss: bool) -> f32 {
+    if boss && mul < 1.0 {
+        1.0 - (1.0 - mul) / 2.0
+    } else {
+        mul
+    }
 }
 
 /// The client's `SpellModOp`s a `next_cast` buff moves: the cast bar and the cost.
@@ -1205,6 +1226,37 @@ impl Skills {
         self.auras
             .iter()
             .any(|a| a.unit == unit && a.kind == AuraKind::Root)
+    }
+
+    /// The duration a `kind` of control of `duration_ms` has on mob `unit` after diminishing
+    /// returns: full, then a half, then a quarter, then `None`. Every control that lands resets
+    /// the 15 s. The player is never diminished.
+    pub(super) fn control(
+        &mut self,
+        unit: u64,
+        kind: ControlKind,
+        duration_ms: u32,
+    ) -> Option<u32> {
+        if unit == self.me {
+            return Some(duration_ms);
+        }
+        let live = self
+            .control_clocks
+            .iter()
+            .position(|&(u, k, _, since)| u == unit && k == kind && since < CONTROL_RESET_SECS);
+        let Some(i) = live else {
+            self.control_clocks
+                .retain(|&(u, k, _, _)| !(u == unit && k == kind));
+            self.control_clocks.push((unit, kind, 1, 0.0));
+            return Some(duration_ms);
+        };
+        let count = self.control_clocks[i].2;
+        if count >= 3 {
+            return None;
+        }
+        self.control_clocks[i].2 = count + 1;
+        self.control_clocks[i].3 = 0.0;
+        Some(duration_ms >> count)
     }
 
     /// What `unit`'s swing time is multiplied by.
@@ -3441,16 +3493,38 @@ impl InWorld {
                 per_combo: more,
             } => {
                 let duration_ms = duration_ms + per_combo(more);
-                self.skills
-                    .apply(aura(AuraKind::Stun, aura_spell_id, duration_ms, 0), events);
-                self.interrupt_mob_cast(target, events);
+                let duration_ms = if self.is_diminished_mob(target) {
+                    self.skills.control(target, ControlKind::Stun, duration_ms)
+                } else {
+                    Some(duration_ms)
+                };
+                if let Some(duration_ms) = duration_ms {
+                    self.skills
+                        .apply(aura(AuraKind::Stun, aura_spell_id, duration_ms, 0), events);
+                    self.interrupt_mob_cast(target, events);
+                }
             }
             Effect::Incapacitate {
                 duration_ms,
                 break_on_damage,
             } => {
                 // Damage in the same cast came first, so it does not wake the target.
-                if self.mobs.iter().any(|m| m.guid == target && m.alive()) {
+                // A boss takes nothing, and no clock starts. A duel's stand-in is a player, and
+                // takes the full duration.
+                let alive = self.mobs.iter().any(|m| m.guid == target && m.alive());
+                let boss = self
+                    .mobs
+                    .iter()
+                    .any(|m| m.guid == target && !m.remote && m.template.raises_boss_bar());
+                let duration_ms = if !alive || boss {
+                    None
+                } else if self.is_diminished_mob(target) {
+                    self.skills
+                        .control(target, ControlKind::Incapacitate, duration_ms)
+                } else {
+                    Some(duration_ms)
+                };
+                if let Some(duration_ms) = duration_ms {
                     let kind = AuraKind::Incapacitate { break_on_damage };
                     self.skills
                         .apply(aura(kind, skill.spell_id, duration_ms, 0), events);
@@ -4440,6 +4514,14 @@ impl InWorld {
         level: u8,
         events: &mut Vec<SessionEvent>,
     ) {
+        let duration_ms = if self.is_diminished_mob(unit) {
+            self.skills.control(unit, ControlKind::Stun, duration_ms)
+        } else {
+            Some(duration_ms)
+        };
+        let Some(duration_ms) = duration_ms else {
+            return;
+        };
         let aura = Aura {
             unit,
             spell_id,
@@ -4516,6 +4598,14 @@ impl InWorld {
             };
             self.skills.apply(bleed, events);
         }
+    }
+
+    /// Whether `guid` is a living mob that diminishing returns apply to: not a duel's stand-in,
+    /// which is another session's player.
+    fn is_diminished_mob(&self, guid: u64) -> bool {
+        self.mobs
+            .iter()
+            .any(|m| m.guid == guid && m.alive() && !m.remote)
     }
 
     /// A stun or incapacitate landed on `target`: a mob of that guid loses the cast it is under way.
@@ -4752,6 +4842,11 @@ impl InWorld {
         let s = &mut self.skills;
         s.gcd = (s.gcd - dt).max(0.0);
         s.combat_hold = (s.combat_hold - dt).max(0.0);
+        for clock in &mut s.control_clocks {
+            clock.3 += dt;
+        }
+        s.control_clocks
+            .retain(|&(_, _, _, since)| since < CONTROL_RESET_SECS);
         for (_, left) in &mut s.cooldowns {
             *left -= dt;
         }
@@ -5089,7 +5184,7 @@ impl InWorld {
     pub(super) fn update_speed(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
         let mul = self.skills.speed_mul(unit);
         if let Some(mob) = self.mobs.iter_mut().find(|m| m.guid == unit) {
-            mob.speed_mul = mul;
+            mob.speed_mul = felt_speed_mul(mul, !mob.remote && mob.template.raises_boss_bar());
         }
         if unit == self.guid {
             self.skills.speed_changes += 1;
@@ -5659,6 +5754,30 @@ impl InWorld {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_boss_feels_half_of_a_slow() {
+        assert!((felt_speed_mul(0.4, false) - 0.4).abs() < 1e-6);
+        assert!((felt_speed_mul(0.4, true) - 0.7).abs() < 1e-6);
+        assert!((felt_speed_mul(0.7, true) - 0.85).abs() < 1e-6);
+        assert!((felt_speed_mul(1.5, true) - 1.5).abs() < 1e-6);
+    }
+
+    #[test]
+    fn control_halves_quarters_then_refuses_and_resets_after_fifteen_seconds() {
+        const MOB: u64 = 0xF130 << 48 | 7;
+        let mut s = Skills::new(1);
+        let c = |s: &mut Skills, k| s.control(MOB, k, 8000);
+        assert_eq!(c(&mut s, ControlKind::Incapacitate), Some(8000));
+        assert_eq!(c(&mut s, ControlKind::Incapacitate), Some(4000));
+        assert_eq!(c(&mut s, ControlKind::Stun), Some(8000));
+        assert_eq!(c(&mut s, ControlKind::Incapacitate), Some(2000));
+        assert_eq!(c(&mut s, ControlKind::Incapacitate), None);
+        for clock in &mut s.control_clocks {
+            clock.3 = 15.0;
+        }
+        assert_eq!(c(&mut s, ControlKind::Incapacitate), Some(8000));
+    }
 
     /// A dodge shows the client no combo point unless the Calling has a skill that needs it.
     #[test]
