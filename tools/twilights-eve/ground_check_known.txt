@@ -23,4 +23,3 @@ off-floor jasperlode.toml -9058.9 -612.4 ?
 off-floor jasperlode.toml -9058.9 -612.4 guid 820104
 off-floor northshire_abbey.toml -8894.4 -182.6 guid 780014
 off-floor wailing_caverns.toml -753.6 -2212.8 ?
-model azora.toml -9219.0 -2701.0 guid 975004

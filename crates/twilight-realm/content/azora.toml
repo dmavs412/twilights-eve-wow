@@ -282,10 +282,10 @@ use = "ward"
 ward = { stop = "shadow", needs_dead = 970055, held_text = "The Kept's magic holds the stone." }
 
 # Morganth's ore cache, beside the shadow stop's stone (pinning sends everyone home, so it stands
-# here). It offers 94602 once the Kept is dead. Display 1011 is the placeholder the cairns use.
+# here). It offers 94602 once the Kept is dead. The display is a stock crate (275).
 [[gameobject]]
 guid = 975004
-display = 1011
+display = 275
 position = [-9219.0, -2701.0, 88.80]
 orientation = 3.14
 sides = "inside"
