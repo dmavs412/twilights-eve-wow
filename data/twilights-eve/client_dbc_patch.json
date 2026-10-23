@@ -11611,6 +11611,42 @@
    }
   },
   {
+   "spell_id": 1000409,
+   "calling": "acolyte",
+   "key": "grasping_shadows",
+   "rank": 1,
+   "fields": {
+    "power_type": 0,
+    "name": "Grasping Shadows",
+    "cooldown_ms": 20000,
+    "cost_percent": 12,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 5,
+    "prevention_type": 1,
+    "description": "Shrouds the target area in grasping shadows for 10 sec. Enemies inside move 60% slower, and a boss 30% slower.",
+    "implicit_targets": [
+     16,
+     28
+    ],
+    "targets": 64,
+    "spell_family": 4,
+    "family_flags": 549755813888,
+    "icon": "Interface\\Icons\\Spell_Shadow_GrimWard",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0,
+      "radius_index": 14
+     }
+    ],
+    "visual": 185,
+    "range_index": 4,
+    "cast_time_index": 1
+   }
+  },
+  {
    "spell_id": 1000009,
    "calling": "vanguard",
    "key": "aura_seal_of_iron_armor",
@@ -11935,6 +11971,30 @@
     "name": "Snare Trap",
     "aura_description": "Incapacitated. Any damage ends it.",
     "visual": 3302
+   }
+  },
+  {
+   "spell_id": 1000410,
+   "calling": "acolyte",
+   "key": "aura_grasping_shadows",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Spell_Shadow_GrimWard",
+    "mechanic": 11,
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Grasping Shadows",
+    "aura_description": "Movement speed slowed by 60%.",
+    "visual": 185
    }
   },
   {

@@ -1479,7 +1479,7 @@ pub enum Effect {
     /// A ground area at the cast's destination: `radius_yd` across, for `duration_ms`. Every
     /// enemy inside holds the aura row `enemy_aura_spell_id`, every friendly player inside
     /// `ally_aura_spell_id`; leaving or the area's end takes them off. A new one from the same
-    /// caster replaces the old. Until `arm_ms` has passed no one counts as inside. A `first_only`
+    /// caster and skill replaces the old. Until `arm_ms` has passed no one counts as inside. A `first_only`
     /// area ignores friendly players and bosses; the first other enemy inside takes the enemy
     /// aura and spends the area, and the aura outlasts it (Snare Trap).
     GroundArea {

@@ -16570,6 +16570,47 @@
      }
     ],
     "description": "Stops the spell the target is casting and locks it out of that spell's school for 4 seconds. When it stops a cast, Creeping Blight settles on the target."
+   },
+   {
+    "key": "grasping_shadows",
+    "name": "Grasping Shadows",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000409,
+    "realm_cost": 12,
+    "realm_cooldown_ms": 20000,
+    "realm_range_max": 30,
+    "realm_radius_yd": 8,
+    "learn_level": 20,
+    "target": "dest",
+    "school": "shadow",
+    "prevention": "silence",
+    "cost_kind": "pct_base",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "none",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": false,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "area_shape": "circle",
+    "area_center": "ground",
+    "max_targets": null,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "ground_area",
+      "params": {
+       "radius_yd": 8,
+       "duration_ms": 10000,
+       "enemy_aura": "aura_grasping_shadows"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Shrouds the target area in grasping shadows for 10 sec. Enemies inside move 60% slower, and a boss 30% slower."
    }
   ],
   "talent_tabs": [
@@ -18656,6 +18697,7 @@
         34,
         33,
         35,
+        39,
         38,
         36,
         37
@@ -18693,6 +18735,7 @@
         34,
         33,
         35,
+        39,
         38,
         36,
         37
@@ -18702,6 +18745,36 @@
      }
     ],
     "description": "Casting speed increased by 20%."
+   },
+   {
+    "key": "aura_grasping_shadows",
+    "name": "Grasping Shadows",
+    "spell_id": 1000410,
+    "status": "placeholder",
+    "school": "shadow",
+    "prevention": "silence",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "snare",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_run_speed",
+      "params": {
+       "pct": -60
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Movement speed slowed by 60%."
    }
   ],
   "name": "Acolyte",
