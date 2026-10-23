@@ -1608,6 +1608,14 @@ impl InWorld {
                 powers,
                 stats: std::array::from_fn(|s| new.base[s].saturating_sub(old.base[s])),
             }));
+            // A skill the Calling learns at this level; the player drags it from the spell book.
+            for s in &crate::callings::of(c.calling).skills {
+                if s.learn_level == c.level {
+                    events.push(SessionEvent::SpellLearned {
+                        spell_id: s.spell_id,
+                    });
+                }
+            }
             match xp::xp_to_next(c.level) {
                 // The Tier Cap: what is left over is not banked.
                 Some(_) if at_tier_cap(c) => {

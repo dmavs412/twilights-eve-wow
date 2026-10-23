@@ -1184,6 +1184,9 @@ pub fn spell_mod_op(name: &str) -> Option<u8> {
 pub struct Skill {
     pub key: String,
     pub spell_id: u32,
+    /// The level the Calling learns it at; 1 from the start.
+    #[serde(default = "one_u8")]
+    pub learn_level: u8,
     /// Whole points of the Calling's power (`realm_cost` in the master CSV).
     pub power_cost: u32,
     /// Percent of base health a cast costs (Bloodrage).
@@ -1609,6 +1612,10 @@ fn one() -> u32 {
     1
 }
 
+fn one_u8() -> u8 {
+    1
+}
+
 /// What a new application of an aura does to the stacks it already holds (the `stack_rule`
 /// column).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
@@ -1814,11 +1821,17 @@ pub(crate) fn of(calling: Calling) -> &'static CallingDef {
 /// actions 73-84).
 const STANCE_BAR: u8 = 72;
 
-/// A Calling's bar before the player arranges it: its skills in order on the stance bar, as
-/// `(slot, kind << 24 | spell)` with kind 0, a spell.
+/// A Calling's bar before the player arranges it: its skills learned from level 1, in order on
+/// the stance bar, as `(slot, kind << 24 | spell)` with kind 0, a spell.
 pub(crate) fn default_bar(calling: Calling) -> Vec<(u8, u32)> {
     (STANCE_BAR..)
-        .zip(of(calling).skills.iter().map(|s| s.spell_id))
+        .zip(
+            of(calling)
+                .skills
+                .iter()
+                .filter(|s| s.learn_level <= 1)
+                .map(|s| s.spell_id),
+        )
         .collect()
 }
 

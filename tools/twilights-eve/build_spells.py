@@ -1088,6 +1088,12 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
     for column in REALM_NUMBERS:
         if row[column]:
             out[column] = number(row[column], f"{where} {column}")
+    if row["learn_level"]:
+        learn_level = whole(row["learn_level"], f"{where} learn_level")
+        if not 1 <= learn_level <= 60:
+            raise BuildError(f"{where} learn_level: {learn_level} is outside 1 to 60")
+        if learn_level > 1:
+            out["learn_level"] = learn_level
     if row["target"]:
         out["target"] = row["target"]
     out.update(build_gates(row, row["kind"], where))
@@ -1552,6 +1558,8 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             raise BuildError(f"{where}: calling and key are required")
         if row["status"] not in STATUSES:
             raise BuildError(f"{where}: status is {row['status']!r}, want one of {', '.join(STATUSES)}")
+        if kind != "skill" and row["learn_level"]:
+            raise BuildError(f"{where} learn_level: set on a {kind} row; only skill rows carry it")
         if kind != "aura":
             for column in AURA_ONLY_COLUMNS:
                 # A from-scratch row shows its own dispel type and mechanic on the client.

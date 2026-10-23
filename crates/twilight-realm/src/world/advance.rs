@@ -33,7 +33,11 @@ impl InWorld {
         // The respec's price starts over with the new tree.
         c.talent_wipes = 0;
         c.action_bar = None;
-        for s in &callings::of(c.calling).skills {
+        for s in callings::of(c.calling)
+            .skills
+            .iter()
+            .filter(|s| s.learn_level <= 1)
+        {
             events.push(SessionEvent::SpellLearned {
                 spell_id: s.spell_id,
             });

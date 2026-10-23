@@ -116,9 +116,13 @@ fn sum(c: &Char, pick: impl Fn(&TalentEffect) -> bool) -> u32 {
         .sum()
 }
 
-/// A skill `c` can cast: one of the current Calling's, or a learned active talent's.
+/// A skill `c` can cast: one of the current Calling's that its level has reached, or a learned
+/// active talent's.
 pub(crate) fn skill(c: &Char, spell_id: u32) -> Option<&'static Skill> {
-    let own = callings::of(c.calling).skills.iter();
+    let own = callings::of(c.calling)
+        .skills
+        .iter()
+        .filter(|s| u32::from(s.learn_level) <= u32::from(c.level));
     let talents = tree(c)
         .iter()
         .flat_map(|tab| &tab.talents)

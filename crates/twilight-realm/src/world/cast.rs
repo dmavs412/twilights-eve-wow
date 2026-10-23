@@ -1560,6 +1560,7 @@ pub(super) fn spell_book(c: &Char, wall: f64) -> SessionEvent {
         spell_ids: callings::of(c.calling)
             .skills
             .iter()
+            .filter(|s| u32::from(s.learn_level) <= u32::from(c.level))
             .map(|s| s.spell_id)
             .chain(crate::talents::known_spells(c))
             .chain(c.knows_fishing.then_some(crate::fish::spell().id))

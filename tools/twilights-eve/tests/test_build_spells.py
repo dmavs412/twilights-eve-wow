@@ -260,6 +260,24 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
                                    "notes": "cooldowns differ: the realm alone holds it"}])
         self.assertEqual(done.returncode, 0, done.stderr)
 
+    def test_a_skill_learned_at_level_10_emits_learn_level(self):
+        done, data = self.run_build([{**STRIKE, "learn_level": "10"}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["learn_level"], 10)
+
+    def test_an_empty_or_1_learn_level_emits_nothing(self):
+        for cell in ("", "1"):
+            done, data = self.run_build([{**STRIKE, "learn_level": cell}])
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertNotIn("learn_level", data[0]["skills"][0])
+
+    def test_learn_level_on_an_aura_row_fails(self):
+        self.assert_fails([AURA, {**AURA, "key": "other", "learn_level": "10"}], "learn_level: set on a aura row")
+
+    def test_learn_level_0_or_61_fails(self):
+        for cell in ("0", "61"):
+            self.assert_fails([{**STRIKE, "learn_level": cell}], "outside 1 to 60")
+
     def test_the_committed_bulwark_charge_has_a_15_s_cooldown(self):
         with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "client_dbc_patch.json"),
                   encoding="utf-8") as f:

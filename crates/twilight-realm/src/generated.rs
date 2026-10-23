@@ -79,6 +79,8 @@ struct GenSkill {
     key: String,
     spell_id: u32,
     #[serde(default)]
+    learn_level: u8,
+    #[serde(default)]
     realm_cost: u32,
     #[serde(default)]
     realm_cooldown_ms: u32,
@@ -316,6 +318,7 @@ fn skill(g: &GenSkill, auras: &[GenAura]) -> Option<Skill> {
     Some(Skill {
         key: g.key.clone(),
         spell_id: g.spell_id,
+        learn_level: g.learn_level.max(1),
         power_cost: g.realm_cost,
         health_cost_pct_of_base_health: 0,
         cooldown_ms: g.realm_cooldown_ms,
@@ -363,6 +366,7 @@ fn talent(g: &GenTalent, auras: &[GenAura]) -> Option<TalentDef> {
             &GenSkill {
                 key: rank.key.clone(),
                 spell_id: rank.spell_id,
+                learn_level: 0,
                 realm_cost: rank.realm_cost,
                 realm_cooldown_ms: rank.realm_cooldown_ms,
                 realm_gcd_ms: rank.realm_gcd_ms,
