@@ -1402,6 +1402,10 @@ pub enum Effect {
         #[serde(default = "yes")]
         bosses: bool,
     },
+    /// A Taunt: each mob it lands on turns on the caster, whose threat there rises to the mob's
+    /// highest, and fights the caster for `duration_ms` whatever the others do. It never
+    /// diminishes and works on bosses.
+    Taunt { duration_ms: u32 },
     /// `amount` combo points on the target, five at most; points on another target are lost.
     AddComboPoints { amount: u32 },
     /// The caster runs to the target.

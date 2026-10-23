@@ -32,6 +32,16 @@ impl Table {
         }
     }
 
+    /// Raises `player`'s threat to the table's highest, leaving it if already higher, and puts
+    /// them on the table if they are not (a Taunt).
+    pub fn raise_to_top(&mut self, player: u64) {
+        let top = self.0.iter().map(|&(_, t)| t).fold(0.0, f32::max);
+        match self.0.iter_mut().find(|(g, _)| *g == player) {
+            Some((_, t)) => *t = t.max(top),
+            None => self.0.push((player, top)),
+        }
+    }
+
     pub fn contains(&self, player: u64) -> bool {
         self.0.iter().any(|(g, _)| *g == player)
     }
@@ -135,6 +145,28 @@ mod tests {
         t.seed(1, 50.0);
         t.seed(2, 50.0);
         assert_eq!((t.of(1), t.of(2)), (5.0, 50.0));
+    }
+
+    #[test]
+    fn raise_to_top_lifts_a_lower_player_to_the_highest() {
+        let mut t = table(&[(1, 500.0), (2, 10.0)]);
+        t.raise_to_top(2);
+        assert_eq!((t.of(1), t.of(2)), (500.0, 500.0));
+    }
+
+    #[test]
+    fn raise_to_top_leaves_the_top_player_alone() {
+        let mut t = table(&[(1, 500.0), (2, 10.0)]);
+        t.raise_to_top(1);
+        assert_eq!((t.of(1), t.of(2)), (500.0, 10.0));
+    }
+
+    #[test]
+    fn raise_to_top_puts_a_stranger_on_the_table_at_the_top() {
+        let mut t = table(&[(1, 500.0), (2, 10.0)]);
+        t.raise_to_top(3);
+        assert_eq!(t.of(3), 500.0);
+        assert!(t.contains(3));
     }
 
     #[test]

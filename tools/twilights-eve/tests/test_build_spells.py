@@ -969,6 +969,12 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         self.built_skill(target="", area_shape="circle", area_center="caster", realm_radius_yd="8")
         self.assertEqual(self.patch["spells"][0]["fields"]["implicit_targets"], [22, 15])
 
+    def test_a_self_area_row_takes_the_caster_area_targets_and_all_enemies(self):
+        skill = self.built_skill(target="self_area", realm_radius_yd="10")
+        self.assertEqual(self.patch["spells"][0]["fields"]["implicit_targets"], [22, 15])
+        self.assertEqual(skill["target"], "self_area")
+        self.assertIsNone(skill["max_targets"])
+
     def test_weapon_hand_default_and_failure(self):
         self.assertEqual(self.built_skill()["weapon_hand"], "main")
         self.assertEqual(self.built_skill(weapon_hand="both")["weapon_hand"], "both")

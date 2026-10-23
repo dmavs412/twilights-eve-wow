@@ -917,6 +917,8 @@ pub(crate) struct Mob {
     pub(crate) spell_cooldowns: Vec<(&'static str, f32)>,
     /// Schools a Kick locked it out of: `(school, seconds left)`.
     pub(crate) lockouts: Vec<(School, f32)>,
+    /// A Taunt on it: the taunter and the seconds left. It fights the taunter while it can.
+    pub(crate) taunted: Option<(u64, f32)>,
     /// Seconds it has been in combat; 0 out of it.
     pub(crate) engaged_secs: f32,
     /// The character of another session its cast under way goes on; none for the one it fights.
@@ -1081,6 +1083,7 @@ impl Mob {
             casting: None,
             spell_cooldowns: Vec::new(),
             lockouts: Vec::new(),
+            taunted: None,
             engaged_secs: 0.0,
             cast_at: None,
             think_in: 0.0,
@@ -1159,6 +1162,7 @@ impl Mob {
             casting: None,
             spell_cooldowns: Vec::new(),
             lockouts: Vec::new(),
+            taunted: None,
             engaged_secs: 0.0,
             cast_at: None,
             think_in: 0.0,

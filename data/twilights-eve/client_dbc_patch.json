@@ -11294,6 +11294,41 @@
    }
   },
   {
+   "spell_id": 1000403,
+   "calling": "vanguard",
+   "key": "bulwark_taunt",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Bulwark Taunt",
+    "cost": 0,
+    "cooldown_ms": 10000,
+    "gcd_ms": 0,
+    "interrupt_flags": 0,
+    "dmg_class": 0,
+    "school": 1,
+    "prevention_type": 1,
+    "description": "Every enemy within 10 yd attacks you for 4 sec, and your threat on each rises to match its highest.",
+    "implicit_targets": [
+     22,
+     15
+    ],
+    "spell_family": 4,
+    "family_flags": 1099511627776,
+    "icon": "Interface\\Icons\\Ability_BullRush",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 209,
+    "range_index": 1,
+    "cast_time_index": 1
+   }
+  },
+  {
    "spell_id": 1000399,
    "calling": "cutthroat",
    "key": "kick",

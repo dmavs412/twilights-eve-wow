@@ -3543,6 +3543,20 @@ impl InWorld {
             // Handled in the per-target loop of the cast, which decides whether the effects after
             // it run.
             Effect::Interrupt { .. } => {}
+            Effect::Taunt { duration_ms } => {
+                let me = self.guid;
+                if let Some(mob) = self
+                    .mobs
+                    .iter_mut()
+                    .find(|m| m.guid == target && m.alive() && !m.remote)
+                {
+                    if mob.state == State::Idle {
+                        super::engage(mob, me, events);
+                    }
+                    mob.threat.raise_to_top(me);
+                    mob.taunted = Some((me, clock::secs(duration_ms)));
+                }
+            }
             Effect::AddComboPoints { amount } => {
                 // Serrated Strikes: a chance of one more point, more so on a bleeding target.
                 let bleeding = self.skills.auras.iter().any(|a| {

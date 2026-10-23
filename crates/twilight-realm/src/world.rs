@@ -1101,6 +1101,10 @@ impl InWorld {
         }
         mob.swing_timer = (mob.swing_timer - dt).max(0.0);
         mob.repath_timer = (mob.repath_timer - dt).max(0.0);
+        mob.taunted = mob
+            .taunted
+            .map(|(by, left)| (by, left - dt))
+            .filter(|&(_, left)| left > 0.0);
         if mob.template.inert {
             if let Some(t) = mob.since_hurt {
                 if t + dt >= crate::mobs::INERT_RESET_SECS {
@@ -1166,7 +1170,13 @@ impl InWorld {
                         .map(|p| distance(at, p) <= melee_reach())
                 };
                 mob.threat.retain(|g| reach(g).is_some());
-                let next = mob.threat.pick(target, reach);
+                // A taunter who can be fought holds the mob; one who cannot is ignored and the
+                // threat pick decides.
+                let taunter = mob
+                    .taunted
+                    .map(|(by, _)| by)
+                    .filter(|&by| reach(by).is_some());
+                let next = taunter.or_else(|| mob.threat.pick(target, reach));
                 if let Some(next) = next.filter(|&n| n != target) {
                     engage(mob, next, events);
                     return;
