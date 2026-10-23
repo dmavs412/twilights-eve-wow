@@ -82,6 +82,10 @@ pub(crate) struct Char {
     pub(crate) catches: Vec<(u32, u8)>,
     /// The Journal's chosen bait, a `[[bait]]` item.
     pub(crate) bait: Option<u32>,
+    /// The Legendary Fish (trophy items) they have caught: each bites for them once.
+    pub(crate) legends_caught: Vec<u32>,
+    /// The Legendary Fish they hold a hint of, from a Legend Rumour or an angler's gossip.
+    pub(crate) legend_hints: Vec<u32>,
 }
 
 /// What being **Marked** holds (#179): the logged-in time left, and the hunter that won, as
@@ -180,6 +184,8 @@ impl Characters {
             angler_xp: 0,
             catches: Vec::new(),
             bait: None,
+            legends_caught: Vec::new(),
+            legend_hints: Vec::new(),
         });
         CHAR_CREATE_SUCCESS
     }

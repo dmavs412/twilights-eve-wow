@@ -34,6 +34,8 @@ struct Npc {
     respec: bool,
     #[serde(default)]
     teaches_fishing: bool,
+    #[serde(default)]
+    angler_hints: Vec<toml::Value>,
     /// The `AreaTable` id an innkeeper binds to.
     area: Option<u32>,
     /// An innkeeper's rest area, in yards.
@@ -167,6 +169,14 @@ fn every_npcs_flags_fit_its_role() {
                     && talks
                     && gives
                     && !n.stock.is_empty()
+            }
+            // Innkeeper Farley: quests and a talk menu with an angler hint, no inn service (#331).
+            "talker" => {
+                n.npc_flags == GOSSIP | QUEST_GIVER
+                    && talks
+                    && gives
+                    && n.stock.is_empty()
+                    && !n.angler_hints.is_empty()
             }
             "ambient" => {
                 n.npc_flags == GOSSIP

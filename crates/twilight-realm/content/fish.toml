@@ -52,6 +52,15 @@
 # [[water]], the Fishing Waters: a named stretch of water, by `area` (AreaTable id) or by
 # `circle = [map, x, y, radius]`. `pool` names its pool; without one it fishes its zone's.
 #
+# [[legend]], the twelve Legendary Fish (#331), each a trophy `item` of its own:
+#   item, name, pool (a pool key), level (the Angler level it needs, counting a lure's), style,
+#   difficulty, chance (percent per bite while the criteria hold)
+#   water   a [[water]] key the bobber must be in
+#   hours   [from, to] game hours, wrapping past midnight
+#   minutes [from, to] minutes past every game hour
+#   bait    a [[bait]] item chosen for the cast
+# Every criterion a row names must hold. A Legend Rumour in content/rumours.toml hints at each.
+#
 # [[lure]], the stock lures: a `duration_secs` buff on the pole with one effect:
 #   angler_levels   counts as this many Angler levels more
 #   bite_wait_pct   the bite comes this percent sooner (negative) or later
@@ -87,6 +96,19 @@ item = [
   { entry = 960103, name = "Gnoll Ear", quality = 1, item_level = 5, class = 7, display_id = 1438, sell_price = 1, stackable = 20 },
   { entry = 960104, name = "Prison Gruel", quality = 1, item_level = 5, class = 7, display_id = 6428, sell_price = 1, stackable = 20 },
   { entry = 960105, name = "Worg Haunch", quality = 1, item_level = 5, class = 7, display_id = 2474, sell_price = 1, stackable = 20 },
+  # The Legendary Fish's trophies (#331): orange, one to a character, sold for 500 copper a level.
+  { entry = 960001, name = "Old Goldfin", quality = 5, item_level = 10, class = 15, display_id = 18535, sell_price = 5000, max_count = 1, stackable = 1 },
+  { entry = 960002, name = "Brother Bass", quality = 5, item_level = 6, class = 15, display_id = 24702, sell_price = 3000, max_count = 1, stackable = 1 },
+  { entry = 960003, name = "Moonlit Gar", quality = 5, item_level = 12, class = 15, display_id = 24709, sell_price = 6000, max_count = 1, stackable = 1 },
+  { entry = 960004, name = "Gnoll Tooth Snapper", quality = 5, item_level = 13, class = 15, display_id = 24701, sell_price = 6500, max_count = 1, stackable = 1 },
+  { entry = 960005, name = "The Harbourmaster's Eel", quality = 5, item_level = 15, class = 15, display_id = 24712, sell_price = 7500, max_count = 1, stackable = 1 },
+  { entry = 960006, name = "The Lightscale", quality = 5, item_level = 12, class = 15, display_id = 24710, sell_price = 6000, max_count = 1, stackable = 1 },
+  { entry = 960007, name = "Bell-Toll Bream", quality = 5, item_level = 14, class = 15, display_id = 24697, sell_price = 7000, max_count = 1, stackable = 1 },
+  { entry = 960008, name = "Stockade Sucker", quality = 5, item_level = 18, class = 15, display_id = 24701, sell_price = 9000, max_count = 1, stackable = 1 },
+  { entry = 960009, name = "Blackrock Bloodfin", quality = 5, item_level = 22, class = 15, display_id = 24712, sell_price = 11000, max_count = 1, stackable = 1 },
+  { entry = 960010, name = "The Millstone Carp", quality = 5, item_level = 18, class = 15, display_id = 24702, sell_price = 9000, max_count = 1, stackable = 1 },
+  { entry = 960011, name = "Everstill Leviathan", quality = 5, item_level = 25, class = 15, display_id = 24712, sell_price = 12500, max_count = 1, stackable = 1 },
+  { entry = 960012, name = "Worgfang Pike", quality = 5, item_level = 22, class = 15, display_id = 24709, sell_price = 11000, max_count = 1, stackable = 1 },
   # Treasure that no other content file has.
   { entry = 2447, name = "Peacebloom", quality = 1, item_level = 5, class = 7, display_id = 7396, sell_price = 10, buy_price = 40, buy_count = 1, stackable = 20, material = 7 },
   { entry = 2455, name = "Minor Mana Potion", quality = 1, item_level = 15, required_level = 5, display_id = 15715, sell_price = 10, stackable = 5, use_spell = 437, use_spell_name = "Restore Mana" },
@@ -238,6 +260,124 @@ treasure = [
   { item = 6366, weight = 0.02 },
 ]
 copper = [300, 1500]
+
+[[legend]]
+item = 960001
+name = "Old Goldfin"
+pool = "elwynn"
+level = 10
+style = "smooth"
+difficulty = 80
+chance = 1
+
+[[legend]]
+item = 960002
+name = "Brother Bass"
+pool = "elwynn"
+level = 6
+style = "floater"
+difficulty = 75
+chance = 5
+water = "northshire_river"
+
+[[legend]]
+item = 960003
+name = "Moonlit Gar"
+pool = "elwynn"
+level = 12
+style = "dart"
+difficulty = 85
+chance = 5
+hours = [21, 3]
+
+[[legend]]
+item = 960004
+name = "Gnoll Tooth Snapper"
+pool = "elwynn"
+level = 13
+style = "dart"
+difficulty = 85
+chance = 5
+bait = 960103 # Gnoll Ear
+
+[[legend]]
+item = 960005
+name = "The Harbourmaster's Eel"
+pool = "stormwind"
+level = 15
+style = "mixed"
+difficulty = 85
+chance = 1
+
+[[legend]]
+item = 960006
+name = "The Lightscale"
+pool = "stormwind"
+level = 12
+style = "smooth"
+difficulty = 80
+chance = 5
+water = "cathedral_canal"
+
+[[legend]]
+item = 960007
+name = "Bell-Toll Bream"
+pool = "stormwind"
+level = 14
+style = "dart"
+difficulty = 85
+chance = 5
+minutes = [0, 10]
+
+[[legend]]
+item = 960008
+name = "Stockade Sucker"
+pool = "stormwind"
+level = 18
+style = "sinker"
+difficulty = 90
+chance = 5
+bait = 960104 # Prison Gruel
+
+[[legend]]
+item = 960009
+name = "Blackrock Bloodfin"
+pool = "redridge"
+level = 22
+style = "dart"
+difficulty = 90
+chance = 1
+
+[[legend]]
+item = 960010
+name = "The Millstone Carp"
+pool = "redridge"
+level = 18
+style = "sinker"
+difficulty = 85
+chance = 5
+water = "althers_mill"
+
+[[legend]]
+item = 960011
+name = "Everstill Leviathan"
+pool = "redridge"
+level = 25
+style = "sinker"
+difficulty = 95
+chance = 5
+water = "lake_everstill"
+hours = [1, 4]
+
+[[legend]]
+item = 960012
+name = "Worgfang Pike"
+pool = "redridge"
+level = 22
+style = "dart"
+difficulty = 90
+chance = 5
+bait = 960105 # Worg Haunch
 
 [[water]]
 key = "northshire_river"

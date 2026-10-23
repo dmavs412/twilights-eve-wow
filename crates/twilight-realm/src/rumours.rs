@@ -18,9 +18,10 @@ use crate::world::Kill;
 const ACTIVE_LIMIT: usize = 3;
 
 /// `grade`: how hard the Rumour's steps run. The data ticket gives it XP.
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Grade {
+    #[default]
     Easy,
     Hard,
     Deadly,
@@ -32,6 +33,9 @@ pub(crate) enum Class {
     #[default]
     Ordinary,
     Calling,
+    /// A Legend Rumour (#331): a note that hints at a Legendary Fish. It has no giver, points,
+    /// quests or timer, and rolls on a catch in the fish's pool or a kill of a dropper.
+    Legend,
 }
 
 /// The Callings a calling Rumour moves a character between.
@@ -62,27 +66,43 @@ pub(crate) struct Point {
 pub(crate) struct Def {
     pub(crate) id: u32,
     #[allow(dead_code)]
+    #[serde(default)]
     pub(crate) name: String,
+    #[serde(default)]
     pub(crate) grade: Grade,
     #[serde(default)]
     pub(crate) kind: Class,
     #[serde(default)]
     pub(crate) calling: Option<Span>,
+    #[serde(default)]
     pub(crate) map: u32,
     /// `[x0, y0, x1, y1]` boxes on `map`.
     #[serde(default)]
     pub(crate) bounds: Vec<[f32; 4]>,
     /// Percent per kill, before the rank factor.
+    #[serde(default)]
     pub(crate) chance: f32,
     #[serde(default)]
     pub(crate) droppers: Vec<Dropper>,
+    #[serde(default)]
     pub(crate) giver: u32,
+    #[serde(default)]
     pub(crate) points: Vec<Point>,
+    #[serde(default)]
     pub(crate) quests: Vec<u32>,
     #[serde(default)]
     timer_min: Option<u32>,
     #[serde(default)]
     pub(crate) spawn: Vec<Spawn>,
+    /// A legend Rumour's Legendary Fish, by trophy item.
+    #[serde(default)]
+    pub(crate) legend: Option<u32>,
+    /// A legend Rumour's note, a quest item with `pages`.
+    #[serde(default)]
+    pub(crate) note: Option<u32>,
+    /// A legend Rumour's percent per catch in its fish's pool.
+    #[serde(default)]
+    pub(crate) catch_chance: f32,
 }
 
 /// A spot a step's spawn may stand at.
@@ -152,7 +172,7 @@ impl Def {
     /// `None` for a calling Rumour.
     fn minutes(&self) -> Option<u32> {
         match self.kind {
-            Class::Calling => None,
+            Class::Calling | Class::Legend => None,
             Class::Ordinary => Some(
                 self.timer_min
                     .unwrap_or(30 + 15 * (self.quests.len() as u32 - 1)),
@@ -258,7 +278,12 @@ pub(crate) fn add(toml: &str) {
         if def(d.id).is_some() {
             continue;
         }
-        let all: Vec<&Def> = defs().into_iter().chain(std::iter::once(&d)).collect();
+        // A parallel test may have added `d` between the check above and here: leave it out.
+        let all: Vec<&Def> = defs()
+            .into_iter()
+            .filter(|o| o.id != d.id)
+            .chain(std::iter::once(&d))
+            .collect();
         check(&d, &all);
         // Parallel tests add the same Rumours; the push rechecks under the lock.
         let mut extra = added().write().unwrap();
@@ -289,6 +314,10 @@ fn check(d: &Def, all: &[&Def]) {
         1,
         "Rumour {id} is defined twice"
     );
+    if d.kind == Class::Legend {
+        check_legend(d);
+        return;
+    }
     // A zero base chance is fine for a Rumour that only its droppers roll.
     assert!(
         ((0.01..=100.0).contains(&d.chance) || (d.chance == 0.0 && !d.droppers.is_empty()))
@@ -298,6 +327,7 @@ fn check(d: &Def, all: &[&Def]) {
         "Rumour {id}'s chances must be 0.01 to 100"
     );
     match d.kind {
+        Class::Legend => unreachable!("checked above"),
         Class::Ordinary => {
             assert!(!d.bounds.is_empty(), "Rumour {id} has no bounds");
             assert!(
@@ -422,6 +452,87 @@ fn check(d: &Def, all: &[&Def]) {
         !all.iter().any(mine),
         "a quest of Rumour {id} belongs to another Rumour too"
     );
+}
+
+/// What the content load refuses in legend Rumour `d`.
+fn check_legend(d: &Def) {
+    let id = d.id;
+    let legend = d
+        .legend
+        .unwrap_or_else(|| panic!("legend Rumour {id} names no `legend`"));
+    assert!(
+        crate::fish::legend(legend).is_some(),
+        "legend Rumour {id} names {legend}, which is no [[legend]]"
+    );
+    let note = d
+        .note
+        .unwrap_or_else(|| panic!("legend Rumour {id} has no `note`"));
+    let item = quest_content::item_template(note)
+        .or_else(|| crate::items::template(note))
+        .unwrap_or_else(|| panic!("legend Rumour {id}'s note {note} is no item"));
+    assert!(
+        item.max_count == 1 && !item.pages.is_empty(),
+        "legend Rumour {id}'s note {note} needs max_count = 1 and pages"
+    );
+    assert!(
+        (0.01..=100.0).contains(&d.catch_chance)
+            && d.droppers
+                .iter()
+                .all(|r| (0.01..=100.0).contains(&r.chance)),
+        "legend Rumour {id}'s chances must be 0.01 to 100"
+    );
+    assert!(
+        d.calling.is_none() && d.giver == 0 && d.points.is_empty() && d.quests.is_empty(),
+        "legend Rumour {id} has a calling, giver, points or quests"
+    );
+}
+
+/// The legend Rumours a roll of `chance_of` hit for `c`, who has neither the hint nor the fish:
+/// each `(legend, note)`, in file order.
+fn legend_hits(
+    c: &Char,
+    rng: &mut Rng,
+    chance_of: impl Fn(&Def) -> Option<f32>,
+) -> Vec<(u32, u32)> {
+    let mut hits = Vec::new();
+    for d in defs().into_iter().filter(|d| d.kind == Class::Legend) {
+        let (Some(legend), Some(note), Some(chance)) = (d.legend, d.note, chance_of(d)) else {
+            continue;
+        };
+        if c.legends_caught.contains(&legend) || c.legend_hints.contains(&legend) {
+            continue;
+        }
+        if rng.frand(0.0, 100.0) < chance {
+            hits.push((legend, note));
+        }
+    }
+    hits
+}
+
+/// The legend Rumours a catch in pool `pool` hits for `c`.
+pub(crate) fn legend_catch_hits(c: &Char, pool: &str, rng: &mut Rng) -> Vec<(u32, u32)> {
+    legend_hits(c, rng, |d| {
+        let l = crate::fish::legend(d.legend?)?;
+        (l.pool == pool).then_some(d.catch_chance)
+    })
+}
+
+/// The legend Rumours a kill of creature `entry` hits for `c`.
+pub(crate) fn legend_kill_hits(c: &Char, entry: u32, rng: &mut Rng) -> Vec<(u32, u32)> {
+    legend_hits(c, rng, |d| {
+        d.droppers
+            .iter()
+            .find(|r| r.entry == entry)
+            .map(|r| r.chance)
+    })
+}
+
+/// The note of the legend Rumour for Legendary Fish `legend`.
+pub(crate) fn legend_note(legend: u32) -> Option<u32> {
+    defs()
+        .into_iter()
+        .find(|d| d.kind == Class::Legend && d.legend == Some(legend))
+        .and_then(|d| d.note)
 }
 
 /// One Rumour under way.
@@ -562,6 +673,10 @@ impl Rumours {
             _ => factors.boss,
         };
         for d in defs() {
+            // A legend Rumour rolls apart, outside the active limit.
+            if d.kind == Class::Legend {
+                continue;
+            }
             let dropper = d.droppers.iter().find(|r| r.entry == kill.entry);
             let calling = d.kind == Class::Calling;
             let inside = if calling {
@@ -688,7 +803,7 @@ impl Rumours {
                         c.finished_rumours.push(d.id);
                         c.finished_rumours.sort_unstable();
                     }
-                    Class::Calling => {}
+                    Class::Calling | Class::Legend => {}
                 }
             }
         }

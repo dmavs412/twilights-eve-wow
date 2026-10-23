@@ -62,6 +62,9 @@ pub(crate) struct Npc {
     /// Its gossip menu teaches Fishing (ADR 0018) to a character who does not know it.
     #[serde(default)]
     pub(crate) teaches_fishing: bool,
+    /// The Legendary Fish it hints at in its gossip menu (#331), to those at an Angler Level.
+    #[serde(default)]
+    pub(crate) angler_hints: Vec<AnglerHint>,
     /// What its quest list, or its gossip menu, opens with.
     #[serde(default)]
     pub(crate) greeting: String,
@@ -74,6 +77,13 @@ pub(crate) struct Npc {
     /// An innkeeper's inn as a rest area: the yards around `position` it covers.
     #[serde(default)]
     pub(crate) rest_radius: Option<f32>,
+}
+
+/// A hint at a Legendary Fish (`angler_hints`): its trophy item, and the Angler Level that earns it.
+#[derive(Deserialize)]
+pub(crate) struct AnglerHint {
+    pub(crate) legend: u32,
+    pub(crate) min_angler_level: u32,
 }
 
 fn kalimdor() -> u32 {
@@ -267,6 +277,7 @@ impl crate::Realm {
         } else {
             crate::trainer::options(npc)
         };
+        options.extend(player.map_or_else(Vec::new, |c| crate::world::hint_options(npc, c)));
         options.extend(player.map_or_else(Vec::new, |c| crate::quests::talk_options(c, npc.entry)));
         self.events.push(SessionEvent::GossipMenu {
             npc: npc.guid(),
@@ -284,6 +295,7 @@ impl crate::Realm {
                     self.talk_select(guid, npc.entry, option);
                 }
             }
+            Some(npc) if crate::world::is_hint_option(option) => self.hint_select(npc, option),
             Some(npc) if npc.is_innkeeper() => self.inn_select(npc, option),
             Some(npc) if npc.teaches_fishing => self.angler_select(npc, option),
             Some(_) => self.trainer_select(guid, option),

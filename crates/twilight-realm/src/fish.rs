@@ -188,6 +188,61 @@ pub(crate) struct Bait {
     pub(crate) effect: Effect,
 }
 
+/// A Legendary Fish (`[[legend]]`): it bites ahead of its pool's fish while every criterion holds.
+#[derive(Deserialize)]
+pub(crate) struct Legend {
+    /// Its trophy item.
+    pub(crate) item: u32,
+    pub(crate) name: String,
+    /// The key of the pool it bites in.
+    pub(crate) pool: String,
+    /// The Angler Level it needs, counting a lure's and a bait's.
+    pub(crate) level: u32,
+    pub(crate) style: Style,
+    pub(crate) difficulty: u32,
+    /// Percent per bite while the criteria hold.
+    pub(crate) chance: f32,
+    /// The key of the Fishing Water the bobber must be in.
+    #[serde(default)]
+    pub(crate) water: Option<String>,
+    /// `[from, to]` game hours, wrapping past midnight.
+    #[serde(default)]
+    pub(crate) hours: Option<[u32; 2]>,
+    /// `[from, to]` minutes past every game hour.
+    #[serde(default)]
+    pub(crate) minutes: Option<[u32; 2]>,
+    /// The bait item the cast must carry.
+    #[serde(default)]
+    pub(crate) bait: Option<u32>,
+}
+
+impl Legend {
+    /// Whether the criteria hold for a cast in `water` (a Fishing Water key) with `bait` chosen,
+    /// at game minute `minute_of_day`.
+    pub(crate) fn criteria_hold(
+        &self,
+        water: Option<&str>,
+        bait: Option<u32>,
+        minute_of_day: u32,
+    ) -> bool {
+        let in_range = |v: u32, [from, to]: [u32; 2]| {
+            if from <= to {
+                (from..to).contains(&v)
+            } else {
+                v >= from || v < to
+            }
+        };
+        self.water.as_deref().is_none_or(|w| water == Some(w))
+            && self.bait.is_none_or(|b| bait == Some(b))
+            && self
+                .hours
+                .is_none_or(|[from, to]| in_range(minute_of_day, [from * 60, to * 60]))
+            && self
+                .minutes
+                .is_none_or(|[from, to]| in_range(minute_of_day % 60, [from, to.saturating_add(1)]))
+    }
+}
+
 #[derive(Deserialize)]
 struct File {
     spell: Spell,
@@ -196,6 +251,7 @@ struct File {
     fish: Vec<Fish>,
     pool: Vec<Pool>,
     water: Vec<Water>,
+    legend: Vec<Legend>,
     lure: Vec<Lure>,
     bait: Vec<Bait>,
 }
@@ -203,11 +259,34 @@ struct File {
 fn file() -> &'static File {
     static FILE: OnceLock<File> = OnceLock::new();
     FILE.get_or_init(|| {
-        toml::from_str(include_str!("../content/fish.toml")).expect("content/fish.toml parses")
+        let file: File =
+            toml::from_str(include_str!("../content/fish.toml")).expect("content/fish.toml parses");
+        for l in &file.legend {
+            assert!(
+                file.pool.iter().any(|p| p.key == l.pool),
+                "legend {} names pool {:?}, which does not exist",
+                l.item,
+                l.pool
+            );
+            assert!(
+                l.water
+                    .as_deref()
+                    .is_none_or(|k| file.water.iter().any(|w| w.key == k)),
+                "legend {} names a Fishing Water that does not exist",
+                l.item
+            );
+            assert!(
+                l.bait.is_none_or(|b| file.bait.iter().any(|x| x.item == b)),
+                "legend {} names bait that is no [[bait]]",
+                l.item
+            );
+        }
+        file
     })
 }
 
-/// Fish, pools and Fishing Waters a test added (`Realm::with_fish`), in `fish.toml`'s shape.
+/// Fish, pools, Fishing Waters and Legendary Fish a test added (`Realm::with_fish`), in
+/// `fish.toml`'s shape.
 #[derive(Deserialize)]
 struct Added {
     #[serde(default)]
@@ -216,6 +295,8 @@ struct Added {
     pool: Vec<Pool>,
     #[serde(default)]
     water: Vec<Water>,
+    #[serde(default)]
+    legend: Vec<Legend>,
 }
 
 /// Each added file's text, and what it parsed to.
@@ -229,7 +310,7 @@ fn extra() -> Vec<&'static Added> {
     added().read().unwrap().iter().map(|&(_, a)| a).collect()
 }
 
-/// Adds the `[[fish]]`, `[[pool]]` and `[[water]]` rows in `toml` alongside the shipped ones,
+/// Adds the `[[fish]]`, `[[pool]]`, `[[water]]` and `[[legend]]` rows in `toml` alongside the shipped ones,
 /// for the rest of the process. Parallel tests add the same text; it is added once.
 pub(crate) fn add(toml: &str) {
     let parsed: Added = toml::from_str(toml).expect("the added fishing content parses");
@@ -279,23 +360,41 @@ pub(crate) fn pool(key: &str) -> Option<&'static Pool> {
 /// Fishing Water whose circle holds the point, else the one covering `area`, else the zone's
 /// (the area's parent zone, as the Zone Factor resolves it).
 pub(crate) fn pool_at(map: u32, x: f32, y: f32, area: Option<u32>) -> Option<&'static Pool> {
-    let all = waters();
-    let in_circle = |w: &&Water| {
-        w.circle
-            .is_some_and(|[m, cx, cy, r]| m as u32 == map && (x - cx).hypot(y - cy) <= r)
-    };
-    let water = all.iter().copied().find(in_circle).or_else(|| {
-        all.iter()
-            .copied()
-            .find(|w| area.is_some() && w.area == area)
-    });
-    match water.and_then(|w| w.pool.as_deref()) {
+    match water_at(map, x, y, area).and_then(|w| w.pool.as_deref()) {
         Some(key) => pool(key),
         None => {
             let area = area?;
             pool_for_zone(crate::mobs::area_parent(area).copied().unwrap_or(area))
         }
     }
+}
+
+/// The Fishing Water at `(x, y)` on `map`, where the host names the area `area`: the one whose
+/// circle holds the point, else the one covering `area`.
+pub(crate) fn water_at(map: u32, x: f32, y: f32, area: Option<u32>) -> Option<&'static Water> {
+    let all = waters();
+    let in_circle = |w: &&Water| {
+        w.circle
+            .is_some_and(|[m, cx, cy, r]| m as u32 == map && (x - cx).hypot(y - cy) <= r)
+    };
+    all.iter().copied().find(in_circle).or_else(|| {
+        all.iter()
+            .copied()
+            .find(|w| area.is_some() && w.area == area)
+    })
+}
+
+/// Every Legendary Fish: the shipped ones, then any a test added.
+pub(crate) fn legends() -> Vec<&'static Legend> {
+    let shipped = file().legend.iter();
+    shipped
+        .chain(extra().into_iter().flat_map(|a| &a.legend))
+        .collect()
+}
+
+/// The Legendary Fish whose trophy is `item`.
+pub(crate) fn legend(item: u32) -> Option<&'static Legend> {
+    legends().into_iter().find(|l| l.item == item)
 }
 
 /// The Fishing Water named `key`.

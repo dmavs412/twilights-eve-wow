@@ -185,6 +185,11 @@ struct Save {
     catches: Vec<(u32, u8)>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     bait: Option<u32>,
+    /// The Legendary Fish (#331) caught and hinted, as trophy items.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    legends_caught: Vec<u32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    legend_hints: Vec<u32>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -336,6 +341,8 @@ pub(crate) fn export(c: &Char) -> String {
         angler_xp: c.angler_xp,
         catches: c.catches.clone(),
         bait: c.bait,
+        legends_caught: c.legends_caught.clone(),
+        legend_hints: c.legend_hints.clone(),
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -407,6 +414,8 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         angler_xp: s.angler_xp,
         catches: s.catches,
         bait: s.bait,
+        legends_caught: s.legends_caught,
+        legend_hints: s.legend_hints,
     };
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);

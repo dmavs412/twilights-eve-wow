@@ -650,7 +650,13 @@ fn rumours_toml_has_the_three_northshire_rumours() {
         (2, "hard", 2, 45, vec![38], 3.0, 97011),
         (3, "deadly", 3, 60, vec![6, 257], 2.0, 97012),
     ];
-    let list = rumours["rumour"].as_array().unwrap();
+    // The Legend Rumours (#331) have no giver or steps; the realm's loader checks them.
+    let list: Vec<_> = rumours["rumour"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|r| r.get("kind").and_then(|k| k.as_str()) != Some("legend"))
+        .collect();
     assert_eq!(list.len(), want.len());
     for (r, (id, grade, steps, minutes, droppers, chance, giver)) in list.iter().zip(want) {
         assert_eq!(r["id"].as_integer(), Some(id));

@@ -842,6 +842,7 @@ impl Realm {
             .iter()
             .filter_map(|n| characters.get(n.1.guid))
             .collect();
+        let credited_guids: Vec<u64> = credited.iter().map(|c| c.guid).collect();
         let killer_guid = near.iter().find(|n| n.0 == killer).map_or(0, |n| n.1.guid);
         let found = self.rumours.roll(
             &credited,
@@ -884,6 +885,7 @@ impl Realm {
                 }
             }
         }
+        self.roll_legend_hints(&credited_guids, kill.entry);
         // The killer's part is paid now, so the corpse sparkles for them as it falls; the others'
         // on their next tick.
         let (Some(credit), Some(w)) = (own, self.world.as_mut()) else {
@@ -896,6 +898,33 @@ impl Realm {
         let mut ticked = world::Ticked::default();
         w.take_credit(credit, c, &mut self.rng, &mut self.events, &mut ticked);
         if ticked.leveled {
+            self.save(guid);
+        }
+    }
+
+    /// A kill of creature `entry` rolls the Legend Rumours it drops for each of `guids`: a hit
+    /// puts the note in that character's bags (#331).
+    fn roll_legend_hints(&mut self, guids: &[u64], entry: u32) {
+        for &guid in guids {
+            let Some(c) = self.characters.get_mut(guid) else {
+                continue;
+            };
+            let hits = rumours::legend_kill_hits(c, entry, &mut self.rng);
+            if hits.is_empty() {
+                continue;
+            }
+            let events = if self.world.as_ref().is_some_and(|w| w.guid == guid) {
+                Some(&mut self.events)
+            } else {
+                self.parked
+                    .values_mut()
+                    .find(|s| s.world.as_ref().is_some_and(|w| w.guid == guid))
+                    .map(|s| &mut s.events)
+            };
+            let Some(events) = events else { continue };
+            for (legend, note) in hits {
+                world::find_hint(c, legend, note, events);
+            }
             self.save(guid);
         }
     }

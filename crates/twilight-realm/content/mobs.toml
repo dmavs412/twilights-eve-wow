@@ -801,6 +801,7 @@ speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
 wakes_sleepers = 5.0
+rolls = [{ chance = 8, one_of = [960103] }] # Gnoll Ear, the Gnoll Tooth Snapper's bait (#331)
 
 # The camp's caster. Display 502 is a Riverpaw Mystic's.
 [[template]]
@@ -820,6 +821,7 @@ speed_walk = 1.0
 speed_run = 1.0
 detection_range = 18.0
 spells = ["lightning_bolt_gnoll"]
+rolls = [{ chance = 8, one_of = [960103] }] # Gnoll Ear (#331)
 
 # Slow and hard-hitting: a swing every 3.2 s for half again as much. Display 383.
 [[template]]
@@ -838,6 +840,7 @@ base_attack_time = 3200
 speed_walk = 1.0
 speed_run = 0.857
 detection_range = 18.0
+rolls = [{ chance = 8, one_of = [960103] }] # Gnoll Ear (#331)
 
 # A pup with little health, one or two hits; its death is heard (2 stacks of Noise). Display 10791.
 [[template]]
@@ -857,6 +860,7 @@ speed_walk = 1.0
 speed_run = 1.143
 detection_range = 18.0
 noise_on_death = 2
+rolls = [{ chance = 8, one_of = [960103] }] # Gnoll Ear (#331)
 
 # Hogger (#174), the Riverpaw chief, asleep in his tent at the back of the hollow. At the meter's
 # maximum he wakes and hunts the nearest character, waking the sleepers within 15 yd as he goes.
@@ -881,6 +885,7 @@ speed_run = 1.143
 detection_range = 18.0
 spells = ["eat", "rushing_charge"]
 hunts_at_meter_max = 15.0
+rolls = [{ chance = 8, one_of = [960103] }] # Gnoll Ear (#331)
 
 # The Defias Highwayman (#231) who guards the wrecked cart on the Stormwind road north of
 # Goldshire and always carries the Sealed Strongbox for The Wrecked Cart (quests_elwynn.toml).

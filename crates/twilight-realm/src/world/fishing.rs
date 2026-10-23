@@ -24,8 +24,10 @@ use crate::inventory::Pos;
 use crate::items;
 use crate::objects::{ObjectKind, ObjectSpec};
 use crate::rng::Rng;
+use crate::rules::game_clock;
 use crate::rules::gear::SLOT_MAIN_HAND;
 use crate::rules::xp::gray_level;
+use crate::rumours;
 use crate::{clock, Host};
 
 /// `SPELL_FAILED_NOT_FISHABLE`: "Your cast didn't land in fishable water".
@@ -45,6 +47,8 @@ const OPTION_TEACH: u32 = 2;
 /// `GOSSIP_ICON_VENDOR` and `GOSSIP_ICON_TRAINER`.
 const ICON_VENDOR: u8 = 1;
 const ICON_TRAINER: u8 = 3;
+/// `GOSSIP_ICON_CHAT`.
+const ICON_CHAT: u8 = 0;
 
 /// The buff slot a lure's aura shows in: the one before the meal's.
 const LURE_AURA_SLOT: u16 = 30;
@@ -64,6 +68,8 @@ struct Boost {
     zone_pct: i32,
     /// Percentage points more treasure chance.
     treasure_points: u32,
+    /// The bait on this cast, which a Legendary Fish may ask for.
+    bait: Option<u32>,
 }
 
 impl Boost {
@@ -96,6 +102,8 @@ enum Stage {
     Floating {
         pool: &'static Pool,
         boost: Boost,
+        /// The key of the Fishing Water the bobber is in.
+        water: Option<&'static str>,
         bite_in: f32,
         left: f32,
     },
@@ -107,6 +115,10 @@ enum Stage {
 struct Bite {
     fish: u32,
     level: u32,
+    /// The fish is a Legendary Fish.
+    legend: bool,
+    /// The pool it bit in, whose Legend Rumours a catch rolls.
+    pool: &'static Pool,
     start_fill: f32,
     fill_per_sec: f32,
     treasure: Option<Treasure>,
@@ -159,8 +171,29 @@ pub(super) fn journal(c: &Char) -> SessionEvent {
                 )
             })
             .collect(),
-        legends: Vec::new(),
+        legends: fish::legends()
+            .into_iter()
+            .map(|l| {
+                (
+                    l.item,
+                    fish::pool(&l.pool).map_or(0, |p| p.zone),
+                    c.legend_hints.contains(&l.item),
+                    c.legends_caught.contains(&l.item),
+                )
+            })
+            .collect(),
     }
+}
+
+/// A Legend Rumour's hit: the note goes to the bags and the hint is recorded, and the Journal
+/// follows. Full bags leave the hint unfound, so the roll can come again.
+pub(crate) fn find_hint(c: &mut Char, legend: u32, note: u32, events: &mut Vec<SessionEvent>) {
+    if let Err(reason) = equipment::receive(c, note, 1, events) {
+        events.push(equipment::inventory_failure(reason, 0));
+        return;
+    }
+    c.legend_hints.push(legend);
+    events.push(journal(c));
 }
 
 /// Records a catch of `item` in the Journal, a perfect one beating a plain one: whether it
@@ -239,7 +272,11 @@ fn catch_xp(item: u32, level: u32, perfect: bool, angler_level: u8) -> u32 {
         return 0;
     }
     let a = fish::angler();
-    let rarity = fish::fish(item).map_or(1.0, |f| a.rarity_factor.of(f.rarity));
+    let rarity = match fish::fish(item) {
+        Some(f) => a.rarity_factor.of(f.rarity),
+        None if fish::legend(item).is_some() => a.rarity_factor.rare,
+        None => 1.0,
+    };
     let perfect = if perfect { a.perfect_factor } else { 1.0 };
     ((a.catch_xp_base + a.catch_xp_per_level * level) as f32 * rarity * perfect).round() as u32
 }
@@ -257,6 +294,30 @@ fn gain_angler_xp(c: &mut Char, xp: u32) {
     if u32::from(c.angler_level) >= a.cap {
         c.angler_xp = 0;
     }
+}
+
+/// The gossip line of `npc`'s angler hints, at this index plus the hint's place.
+const OPTION_HINT: u32 = 80;
+
+/// The line "Heard anything about the fish around here?" for each of `npc`'s hints that `c`'s
+/// Angler Level has reached.
+pub(crate) fn hint_options(npc: &Npc, c: &Char) -> Vec<GossipOption> {
+    npc.angler_hints
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| u32::from(c.angler_level) >= h.min_angler_level)
+        .map(|(i, _)| GossipOption {
+            index: OPTION_HINT + i as u32,
+            icon: ICON_CHAT,
+            coded: false,
+            message: "Heard anything about the fish around here?".into(),
+        })
+        .collect()
+}
+
+/// Whether `option` is one of an angler hint's lines.
+pub(crate) fn is_hint_option(option: u32) -> bool {
+    (OPTION_HINT..OPTION_HINT + 10).contains(&option)
 }
 
 /// Lee Brown's gossip lines for `c`: his goods, and the lesson while they do not know Fishing.
@@ -427,6 +488,7 @@ impl InWorld {
     pub(crate) fn fishing_tick(
         &mut self,
         dt: f32,
+        wall: f64,
         host: &dyn Host,
         c: &mut Char,
         rng: &mut Rng,
@@ -439,14 +501,15 @@ impl InWorld {
             Stage::Floating {
                 pool,
                 boost,
+                water,
                 bite_in,
                 left,
             } => {
                 *bite_in -= dt;
                 *left -= dt;
                 if *bite_in <= 0.0 {
-                    let (pool, boost) = (*pool, *boost);
-                    self.bite(pool, boost, c, rng, events);
+                    let (pool, boost, water) = (*pool, *boost, *water);
+                    self.bite(pool, boost, water, wall, c, rng, events);
                 } else if *left <= 0.0 {
                     self.lose_fish(events);
                 }
@@ -483,10 +546,12 @@ impl InWorld {
             return None;
         };
         let bait = carried_bait(c);
-        let boost = bait.map_or(self.lure_boost(), |b| self.lure_boost().with(&b.effect));
+        let mut boost = bait.map_or(self.lure_boost(), |b| self.lure_boost().with(&b.effect));
+        boost.bait = bait.map(|b| b.item);
         let effective = effective_level(c, boost);
-        let pool = fish::pool_at(c.map, x, y, host.area_at(c.map, x, y))
-            .filter(|&p| !biters(p, effective).is_empty());
+        let area = host.area_at(c.map, x, y);
+        let water = fish::water_at(c.map, x, y, area).map(|w| w.key.as_str());
+        let pool = fish::pool_at(c.map, x, y, area).filter(|&p| !biters(p, effective).is_empty());
         let Some(pool) = pool else {
             self.fishing = None;
             events.push(SessionEvent::Notification {
@@ -508,6 +573,7 @@ impl InWorld {
         f.stage = Stage::Floating {
             pool,
             boost,
+            water,
             bite_in: wait * (1.0 + boost.bite_wait_pct as f32 / 100.0).max(0.0),
             left: s.cast_secs,
         };
@@ -571,26 +637,42 @@ impl InWorld {
 
     /// A fish of `pool` bites: the bobber splashes, and the realm rolls the fish, the bar and any
     /// treasure, and opens the bar.
+    #[allow(clippy::too_many_arguments)]
     fn bite(
         &mut self,
         pool: &'static Pool,
         boost: Boost,
+        water: Option<&'static str>,
+        wall: f64,
         c: &Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) {
         let effective = effective_level(c, boost);
-        let caught = pick(&biters(pool, effective), |f| f.weight, rng).copied();
-        let (Some(caught), Some(f)) = (caught, self.fishing.as_mut()) else {
-            return self.lose_fish(events);
+        // A Legendary Fish of the pool whose criteria hold bites before the pool is rolled.
+        let minute = game_clock::minute_of_day(wall);
+        let legend = fish::legends().into_iter().find(|l| {
+            l.pool == pool.key
+                && !c.legends_caught.contains(&l.item)
+                && l.level <= effective
+                && l.criteria_hold(water, boost.bait, minute)
+                && rng.frand(0.0, 100.0) < l.chance
+        });
+        let rolled = match legend {
+            Some(l) => Some((l.item, l.level, l.style, l.difficulty, true)),
+            None => pick(&biters(pool, effective), |f| f.weight, rng).and_then(|f| {
+                let def = fish::fish(f.item)?;
+                Some((f.item, f.level, def.style, def.difficulty, false))
+            }),
         };
-        let Some(def) = fish::fish(caught.item) else {
+        let (Some((item, level, style, base, legendary)), Some(f)) =
+            (rolled, self.fishing.as_mut())
+        else {
             return self.lose_fish(events);
         };
         let bar = fish::bar();
-        let above = caught.level.saturating_sub(effective) as f32;
-        let difficulty =
-            (def.difficulty as f32 + bar.difficulty_per_level_above * above).min(100.0);
+        let above = level.saturating_sub(effective) as f32;
+        let difficulty = (base as f32 + bar.difficulty_per_level_above * above).min(100.0);
         let zone_height = (bar.zone_base + bar.zone_per_level * (effective - 1) as f32)
             .min(bar.zone_max)
             * (1.0 + boost.zone_pct as f32 / 100.0);
@@ -610,9 +692,9 @@ impl InWorld {
         });
         events.push(SessionEvent::FishingBite {
             bobber: f.bobber,
-            fish: caught.item,
-            level: caught.level.min(u32::from(u8::MAX)) as u8,
-            style: style_byte(def.style),
+            fish: item,
+            level: level.min(u32::from(u8::MAX)) as u8,
+            style: style_byte(style),
             difficulty,
             zone_height,
             start_fill: bar.start_fill,
@@ -623,11 +705,13 @@ impl InWorld {
             treasure: treasure
                 .as_ref()
                 .map(|&(at, _)| (at, bar.treasure_fill_secs)),
-            legendary: false,
+            legendary,
         });
         f.stage = Stage::Reeling(Bite {
-            fish: caught.item,
-            level: caught.level,
+            fish: item,
+            level,
+            legend: legendary,
+            pool,
             start_fill: bar.start_fill,
             fill_per_sec: bar.fill_per_sec,
             treasure: treasure.map(|(_, t)| t),
@@ -644,6 +728,7 @@ impl InWorld {
         treasure: bool,
         secs: f32,
         c: &mut Char,
+        rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) -> bool {
         let reeling = matches!(
@@ -687,8 +772,20 @@ impl InWorld {
         if let Some(item) = caught {
             let xp = catch_xp(item, bite.level, perfect, c.angler_level);
             gain_angler_xp(c, xp);
+            // A Legendary Fish pays its bonus once, and never bites for them again.
+            let first_legend = bite.legend && !c.legends_caught.contains(&item);
+            if first_legend {
+                c.legends_caught.push(item);
+                gain_angler_xp(c, fish::angler().legend_bonus_xp);
+            }
             events.push(angler(c));
-            if record_catch(c, item, perfect) {
+            let mut changed = record_catch(c, item, perfect) || first_legend;
+            // Every catch in the pool rolls its Legend Rumours.
+            for (legend, note) in rumours::legend_catch_hits(c, &bite.pool.key, rng) {
+                find_hint(c, legend, note, events);
+                changed = false;
+            }
+            if changed {
                 events.push(journal(c));
             }
         }
@@ -728,7 +825,7 @@ impl crate::Realm {
         let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
-        let landed = w.fishing_tick(dt, host, c, &mut self.rng, &mut self.events);
+        let landed = w.fishing_tick(dt, self.wall, host, c, &mut self.rng, &mut self.events);
         self.remove_spent_bobbers();
         let Some(spec) = landed else {
             return;
@@ -774,7 +871,15 @@ impl crate::Realm {
         let Some(c) = self.characters.get_mut(w.guid) else {
             return;
         };
-        let changed = w.fishing_result(won, perfect, treasure, secs, c, &mut self.events);
+        let changed = w.fishing_result(
+            won,
+            perfect,
+            treasure,
+            secs,
+            c,
+            &mut self.rng,
+            &mut self.events,
+        );
         let guid = w.guid;
         self.remove_spent_bobbers();
         if changed {
@@ -798,6 +903,38 @@ impl crate::Realm {
         c.bait = item;
         self.events.push(journal(c));
         self.save(guid);
+    }
+
+    /// A line of an angler hint in `npc`'s menu: the Legend Rumour's note text is its reply and the
+    /// hint is recorded. Ignored below the hint's Angler Level.
+    pub(crate) fn hint_select(&mut self, npc: &Npc, option: u32) {
+        if !self.near(npc) || !is_hint_option(option) {
+            return;
+        }
+        let Some(hint) = npc.angler_hints.get((option - OPTION_HINT) as usize) else {
+            return;
+        };
+        let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(guid) else {
+            return;
+        };
+        if u32::from(c.angler_level) < hint.min_angler_level {
+            return;
+        }
+        let note = rumours::legend_note(hint.legend)
+            .and_then(|n| crate::quests::content::item_template(n).or_else(|| items::template(n)));
+        self.events.push(SessionEvent::GossipComplete);
+        if let Some(note) = note {
+            self.events
+                .push(crate::quests::system_line(note.pages.join(" ")));
+        }
+        if !c.legend_hints.contains(&hint.legend) {
+            c.legend_hints.push(hint.legend);
+            self.events.push(journal(c));
+            self.save(guid);
+        }
     }
 
     /// A line of Lee Brown's menu: his goods open the merchant window; the lesson teaches

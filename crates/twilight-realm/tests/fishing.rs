@@ -49,6 +49,17 @@ treasure = []
 copper = [0, 0]
 "#;
 
+/// A Legend Rumour that every catch in the test Rumour Pond hits (note 960206 is a shipped note).
+const TEST_LEGEND_RUMOUR: &str = r#"
+[[rumour]]
+id = 99031201
+name = "Test Rumour Fish"
+kind = "legend"
+legend = 6303
+note = 960206
+catch_chance = 100.0
+"#;
+
 /// Which way the character faces its water from the start, 15 yards off.
 #[derive(Clone, Copy)]
 enum Side {
@@ -60,6 +71,10 @@ enum Side {
     West,
     /// The lone level-11 mud snapper.
     South,
+    /// The pool with the test Legendary Fish (#331).
+    NorthWest,
+    /// The pool whose catches roll a test Legend Rumour at 100 percent.
+    NorthEast,
 }
 
 impl Side {
@@ -69,6 +84,8 @@ impl Side {
             Side::North => std::f32::consts::FRAC_PI_2,
             Side::West => std::f32::consts::PI,
             Side::South => -std::f32::consts::FRAC_PI_2,
+            Side::NorthWest => 3.0 * std::f32::consts::FRAC_PI_4,
+            Side::NorthEast => std::f32::consts::FRAC_PI_4,
         }
     }
 }
@@ -84,8 +101,87 @@ fn test_fish(start: [f32; 3]) -> String {
     let [nx, ny] = pond_centre(start, Side::North);
     let [wx, wy] = pond_centre(start, Side::West);
     let [sx, sy] = pond_centre(start, Side::South);
+    let [lx, ly] = pond_centre(start, Side::NorthWest);
+    let [rx, ry] = pond_centre(start, Side::NorthEast);
     format!(
         "{TEST_FISH}
+[[pool]]
+key = \"test_legends\"
+zone = 990004
+fish = [{{ item = 6291, weight = 100.0, level = 1 }}]
+treasure = []
+copper = [0, 0]
+
+[[pool]]
+key = \"test_legend_rumour\"
+zone = 990005
+fish = [{{ item = 6291, weight = 100.0, level = 1 }}]
+treasure = []
+copper = [0, 0]
+
+[[water]]
+key = \"test_legends\"
+name = \"Legend Pond\"
+circle = [0, {lx}, {ly}, 9.0]
+pool = \"test_legends\"
+
+[[water]]
+key = \"test_legend_rumour\"
+name = \"Rumour Pond\"
+circle = [0, {rx}, {ry}, 9.0]
+pool = \"test_legend_rumour\"
+
+# The test Legendary Fish borrow existing fish items as their trophies. Table order is the roll
+# order: at every hit the Gar comes first.
+[[legend]]
+item = 6309
+name = \"Test Gar\"
+pool = \"test_legends\"
+level = 1
+style = \"dart\"
+difficulty = 50
+chance = 100
+hours = [21, 3]
+
+[[legend]]
+item = 6310
+name = \"Test Bream\"
+pool = \"test_legends\"
+level = 1
+style = \"dart\"
+difficulty = 50
+chance = 100
+minutes = [0, 10]
+
+[[legend]]
+item = 6361
+name = \"Test Snapper\"
+pool = \"test_legends\"
+level = 1
+style = \"dart\"
+difficulty = 50
+chance = 100
+bait = 960103
+
+[[legend]]
+item = 6358
+name = \"Test Gate\"
+pool = \"test_legends\"
+level = 5
+style = \"smooth\"
+difficulty = 50
+chance = 100
+
+# Never bites (level 99); a catch in its pool rolls its Rumour.
+[[legend]]
+item = 6303
+name = \"Test Rumour Fish\"
+pool = \"test_legend_rumour\"
+level = 99
+style = \"smooth\"
+difficulty = 50
+chance = 100
+
 [[water]]
 key = \"test_smallfish\"
 name = \"Smallfish Pond\"
@@ -177,7 +273,9 @@ fn carrying(level: u8, side: Side, knows: bool, pole: bool, items: &[(u8, u32, u
         radius: 8.0,
         area: Some(ELWYNN),
     };
-    let mut realm = Realm::with_seed(7).with_fish(&test_fish(start));
+    let mut realm = Realm::with_seed(7)
+        .with_fish(&test_fish(start))
+        .with_rumours(TEST_LEGEND_RUMOUR);
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &host);
@@ -705,4 +803,180 @@ fn the_journal_keeps_the_best_catch_and_the_save_keeps_it_and_the_bait() {
     let (bait, zones) = journal(&drain(&mut back)).expect("a Journal at login");
     assert_eq!(bait, Some(WRIGGLING_WORMS));
     assert_eq!(best(&zones, 990001, SMALLFISH), Some(2));
+}
+
+// Legendary Fish (#331). The test pool's Legendary Fish all bite at 100 percent when their
+// criteria hold, in this order: Gar (game hours 21 to 3), Bream (minutes 0 to 10 of every hour),
+// Snapper (Gnoll Ear as bait) and Gate (Angler Level 5). The game clock runs 5 wall seconds to
+// a game minute.
+
+const GAR: u32 = 6309;
+const BREAM: u32 = 6310;
+const SNAPPER: u32 = 6361;
+const GATE: u32 = 6358;
+const RUMOUR_FISH: u32 = 6303;
+const GNOLL_EAR: u32 = 960103;
+const AQUADYNAMIC: u32 = 6533;
+const LEGEND_NOTE: u32 = 960206;
+const LEE_BROWN_HINT: &str = "Heard anything about the fish around here?";
+const OLD_GOLDFIN: u32 = 960001;
+
+/// Sets the game clock to `hour`:`minute`.
+fn at_game(a: &mut Angler, hour: u64, minute: u64) {
+    a.realm.set_wall_clock((hour * 60 + minute) * 5 * 1000);
+}
+
+/// The Legendary Fish a bite is, if it is one.
+fn legend_of(bite: &SessionEvent) -> Option<u32> {
+    match bite {
+        SessionEvent::FishingBite {
+            fish,
+            legendary: true,
+            ..
+        } => Some(*fish),
+        _ => None,
+    }
+}
+
+/// The last Journal's Legendary Fish: `(item, zone, hint found, caught)`.
+fn legends_of(events: &[SessionEvent]) -> Option<Vec<(u32, u32, bool, bool)>> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::FishingJournal { legends, .. } => Some(legends.clone()),
+        _ => None,
+    })
+}
+
+#[test]
+fn the_gar_bites_by_night_and_never_at_noon() {
+    let mut night = angler(1, true, true, Side::NorthWest);
+    at_game(&mut night, 22, 0);
+    let (_, bite) = night.hook();
+    assert_eq!(legend_of(&bite), Some(GAR));
+
+    let mut noon = angler(1, true, true, Side::NorthWest);
+    at_game(&mut noon, 12, 0);
+    let (_, bite) = noon.hook();
+    assert_ne!(legend_of(&bite), Some(GAR), "{bite:?}");
+}
+
+#[test]
+fn the_bream_bites_in_the_first_minutes_of_an_hour_only() {
+    let mut early = angler(1, true, true, Side::NorthWest);
+    at_game(&mut early, 12, 3);
+    let (_, bite) = early.hook();
+    assert_eq!(legend_of(&bite), Some(BREAM));
+
+    let mut late = angler(1, true, true, Side::NorthWest);
+    at_game(&mut late, 12, 30);
+    let (_, bite) = late.hook();
+    assert_eq!(legend_of(&bite), None, "{bite:?}");
+}
+
+#[test]
+fn the_snapper_needs_the_gnoll_ear_chosen_as_bait() {
+    let mut bare = angler_carrying(1, Side::NorthWest, &[(PACK_1, GNOLL_EAR, 1)]);
+    at_game(&mut bare, 12, 30);
+    let (_, bite) = bare.hook();
+    assert_eq!(legend_of(&bite), None, "carried but not chosen: {bite:?}");
+
+    let mut baited = angler_carrying(1, Side::NorthWest, &[(PACK_1, GNOLL_EAR, 1)]);
+    baited.set_bait(Some(GNOLL_EAR));
+    at_game(&mut baited, 12, 30);
+    let (_, bite) = baited.hook();
+    assert_eq!(legend_of(&bite), Some(SNAPPER));
+}
+
+#[test]
+fn a_legendary_above_the_effective_angler_level_waits_for_a_lure() {
+    let mut plain = angler(1, true, true, Side::NorthWest);
+    at_game(&mut plain, 12, 30);
+    let (_, bite) = plain.hook();
+    assert_eq!(legend_of(&bite), None, "{bite:?}");
+
+    // The Aquadynamic Fish Attractor counts as four levels more: 1 + 4 reaches the Gate's 5.
+    let mut lured = angler_carrying(1, Side::NorthWest, &[(PACK_1, AQUADYNAMIC, 1)]);
+    lured.use_item(PACK_1);
+    at_game(&mut lured, 12, 30);
+    let (_, bite) = lured.hook();
+    assert_eq!(legend_of(&bite), Some(GATE));
+}
+
+#[test]
+fn a_caught_legendary_pays_once_shows_in_the_journal_and_never_bites_again() {
+    let mut a = angler(1, true, true, Side::NorthWest);
+    at_game(&mut a, 23, 30);
+    let (_, bite) = a.hook();
+    assert_eq!(legend_of(&bite), Some(GAR));
+    let landed = a.result(true, false, 6.0);
+    assert_eq!(fishing_end(&landed).map(|e| e.0), Some(Some(GAR)));
+    // The 500 bonus XP carries Angler 1 well past its first level.
+    assert!(angler_event(&landed).is_some_and(|(level, _)| level > 1));
+    let legends = legends_of(&landed).expect("a Journal on the catch");
+    assert!(legends.iter().any(|&(i, _, _, caught)| i == GAR && caught));
+    assert!(legends
+        .iter()
+        .any(|&(i, _, _, caught)| i == BREAM && !caught));
+    let saved = a.realm.export_character(a.guid).unwrap();
+    assert!(saved.contains("legends_caught"), "{saved}");
+
+    at_game(&mut a, 23, 30);
+    let (_, again) = a.hook();
+    assert_eq!(legend_of(&again), None, "{again:?}");
+}
+
+#[test]
+fn a_catch_in_the_pool_hits_its_legend_rumour_once() {
+    let mut a = angler(1, true, true, Side::NorthEast);
+    a.hook();
+    let first = a.result(true, false, 6.0);
+    let legends = legends_of(&first).expect("the Journal follows the hit");
+    assert!(
+        legends
+            .iter()
+            .any(|&(i, _, hint, caught)| i == RUMOUR_FISH && hint && !caught),
+        "{legends:?}"
+    );
+    let saved = a.realm.export_character(a.guid).unwrap();
+    assert!(saved.contains(&format!("entry = {LEGEND_NOTE}")), "{saved}");
+
+    a.hook();
+    let second = a.result(true, false, 6.0);
+    assert_eq!(legends_of(&second), None, "no second roll: {second:?}");
+}
+
+#[test]
+fn lee_browns_hint_line_shows_at_angler_five_and_records_the_hint() {
+    let lee = hub_guid(LEE_BROWN);
+    let mut four = angler(4, true, true, Side::East);
+    walk_up_to(&mut four.realm, lee);
+    four.realm.handle(RealmCommand::GossipHello { guid: lee });
+    let lines = gossip_lines(&drain(&mut four.realm));
+    assert!(!lines.iter().any(|l| l == LEE_BROWN_HINT), "{lines:?}");
+
+    let mut five = angler(5, true, true, Side::East);
+    walk_up_to(&mut five.realm, lee);
+    five.realm.handle(RealmCommand::GossipHello { guid: lee });
+    let events = drain(&mut five.realm);
+    let hint = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu { options, .. } => options
+                .iter()
+                .find(|o| o.message == LEE_BROWN_HINT)
+                .map(|o| o.index),
+            _ => None,
+        })
+        .expect("the hint line at Angler 5");
+    five.realm.handle(RealmCommand::GossipSelectOption {
+        guid: lee,
+        option: hint,
+    });
+    let picked = drain(&mut five.realm);
+    let legends = legends_of(&picked).expect("the Journal follows the hint");
+    assert!(
+        legends
+            .iter()
+            .any(|&(i, _, hinted, caught)| i == OLD_GOLDFIN && hinted && !caught),
+        "{legends:?}"
+    );
 }

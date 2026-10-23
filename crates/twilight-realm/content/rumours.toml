@@ -21,6 +21,9 @@
 #   quests = [94901]                # the steps, in order; each a `kind = "rumour"` quest
 #   timer_min = 30                  # optional; 30 + 15 per extra step by default; none for calling
 #
+# A legend Rumour is `kind = "legend"` with `legend` (the fish's trophy item), `note` and
+# `catch_chance`, and optional `droppers`; see the end of the file.
+#
 # Each point's `note` is a quest item with `max_count = 1`, non-empty `pages` and a `description`
 # that names the landmark. One note belongs to one point only.
 
@@ -145,3 +148,111 @@ quest = 94906
 creature = 257
 count = 2
 points = [{ x = -8775.0, y = -160.0 }, { x = -8766.0, y = -136.0 }]
+
+# Legend Rumours (#331): one per Legendary Fish (content/fish.toml). They have no giver, points,
+# quests or timer. A catch in the fish's pool rolls `catch_chance` percent, and a kill of a
+# `droppers` entry rolls its own chance, for a character with neither the hint nor the fish. A hit
+# puts the `note` in the bags and records the hint; it does not count against the three active
+# Rumours.
+[[rumour]]
+id = 960301
+name = "Old Goldfin"
+kind = "legend"
+legend = 960001
+note = 960201
+catch_chance = 2.0
+
+[[rumour]]
+id = 960302
+name = "Brother Bass"
+kind = "legend"
+legend = 960002
+note = 960202
+catch_chance = 2.0
+
+[[rumour]]
+id = 960303
+name = "Moonlit Gar"
+kind = "legend"
+legend = 960003
+note = 960203
+catch_chance = 2.0
+
+[[rumour]]
+id = 960304
+name = "Gnoll Tooth Snapper"
+kind = "legend"
+legend = 960004
+note = 960204
+catch_chance = 2.0
+droppers = [
+  { entry = 96006, chance = 1.0 },
+  { entry = 96007, chance = 1.0 },
+  { entry = 96008, chance = 1.0 },
+  { entry = 96009, chance = 1.0 },
+  { entry = 96010, chance = 1.0 },
+]
+
+[[rumour]]
+id = 960305
+name = "The Harbourmaster's Eel"
+kind = "legend"
+legend = 960005
+note = 960205
+catch_chance = 2.0
+
+[[rumour]]
+id = 960306
+name = "The Lightscale"
+kind = "legend"
+legend = 960006
+note = 960206
+catch_chance = 2.0
+
+[[rumour]]
+id = 960307
+name = "Bell-Toll Bream"
+kind = "legend"
+legend = 960007
+note = 960207
+catch_chance = 2.0
+
+[[rumour]]
+id = 960308
+name = "Stockade Sucker"
+kind = "legend"
+legend = 960008
+note = 960208
+catch_chance = 2.0
+
+[[rumour]]
+id = 960309
+name = "Blackrock Bloodfin"
+kind = "legend"
+legend = 960009
+note = 960209
+catch_chance = 2.0
+
+[[rumour]]
+id = 960310
+name = "The Millstone Carp"
+kind = "legend"
+legend = 960010
+note = 960210
+catch_chance = 2.0
+
+[[rumour]]
+id = 960311
+name = "Everstill Leviathan"
+kind = "legend"
+legend = 960011
+note = 960211
+catch_chance = 2.0
+
+[[rumour]]
+id = 960312
+name = "Worgfang Pike"
+kind = "legend"
+legend = 960012
+note = 960212
+catch_chance = 2.0

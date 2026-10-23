@@ -192,6 +192,12 @@ fn the_other_northshire_trainers_sell_no_respec() {
     let (mut realm, _, _) = enter(START_ELWYNN, true);
     for entry in &NORTHSHIRE_TRAINERS[1..] {
         walk_to(&mut realm, *entry);
-        assert_eq!(menu(&mut realm, *entry), Some(vec![]), "{entry}");
+        // Brother Corwin (190054) also hints at a Legendary Fish from Angler 1 (#331).
+        let lines = menu(&mut realm, *entry).map(|l| {
+            l.into_iter()
+                .filter(|l| l != "Heard anything about the fish around here?")
+                .collect::<Vec<_>>()
+        });
+        assert_eq!(lines, Some(vec![]), "{entry}");
     }
 }

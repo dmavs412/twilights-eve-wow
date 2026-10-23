@@ -87,8 +87,9 @@ pub fn convert(elwynn: &Value) -> String {
 }
 
 /// The entries whose spawn moved to `content/hub.toml`, where they do more than a creature
-/// template can: Lee Brown (1651) teaches Fishing and sells its goods (#327).
-const HUB_NPCS: &[u64] = &[1651];
+/// template can: Lee Brown (1651) teaches Fishing and sells its goods (#327), and Innkeeper Farley
+/// (295) hints at a Legendary Fish (#331).
+const HUB_NPCS: &[u64] = &[1651, 295];
 
 /// `FactionTemplate.dbc` 35, friendly to every player race. Elwynn's NPCs show it whatever the
 /// player's race (spec #71): the guards, vendors and trainers are everyone's friends.

@@ -42,7 +42,7 @@ mod phase;
 mod root;
 pub(crate) use phase::DoorClick;
 mod sleep;
-pub(crate) use fishing::angler_options;
+pub(crate) use fishing::{angler_options, find_hint, hint_options, is_hint_option};
 pub(crate) use phase::creatures;
 mod procs;
 mod regen;
