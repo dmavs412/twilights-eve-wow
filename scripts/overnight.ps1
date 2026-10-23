@@ -281,7 +281,9 @@ if ($published -like "play/*") {
     $smoke = @()
     foreach ($b in $bad) {
         $title = "Smoke: $($b.calling) $($b.name) ($($b.spell_id)) fails"
-        $open = (gh issue list -R $Repo --state open --search "in:title `"$title`"" --json number,title) -join "`n" | ConvertFrom-Json
+        # No quotes inside the search: PowerShell 5.1 drops them on the way to gh, which then
+        # prints its usage and finds nothing. The next line keeps only the exact title.
+        $open = (gh issue list -R $Repo --state open --search "in:title $title" --json number,title) -join "`n" | ConvertFrom-Json
         $issue = @($open | Where-Object { $_.title -eq $title }) | Select-Object -First 1
         if ($issue) { $no = $issue.number } else {
             $body = "The overnight smoke run ($published, ``scripts/smoke.ps1``) cast $($b.name) ($($b.spell_id)) as a $($b.calling) on a Test Grounds dummy and the client answered:`n`n> $($b.error)`n`nReport: ``$smokeReport``."
