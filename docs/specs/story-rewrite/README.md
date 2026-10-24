@@ -40,6 +40,18 @@ shrinking; the plot shows up in a detail.
     Remy in Goldshire. Commander Aldous Wray gives 64002-64004 and trains in the Old Town barracks
     in Stormwind, beside the vanilla warrior trainers.
 
+## Tickets
+
+Spec #374. Each one is `ready-for-agent` and independent of the others.
+
+1. #375 Content: paste the text with `scripts/story-text.py`.
+2. #376 Client: Elwynn is the only start.
+3. #377 Realm and content: Token vendors in Northshire and Goldshire, and the Blood Coin Broker in
+   Goldshire.
+4. #378 Content: Commander Aldous Wray in Stormwind gives 64002-64004.
+
+Not ticketed yet: moving the realm tests off the Barrens and deleting it (decision 9).
+
 ## Open questions
 
 - The Token item is named "Twilight Token," which ties the Watch's bounty pay to the cult's name.
