@@ -12,7 +12,8 @@
 #
 # [spell], the cast:
 #   id                 the Fishing spell; its effect summons the bobber GameObject
-#   pole_subclass      the weapon subclass a cast needs in the main hand (20, fishing pole)
+#   pole_subclass      the weapon subclass a cast needs in the main hand (20, fishing pole); the
+#                      [[pole]] check reads it too
 #   bobber_entry       the bobber GameObject's entry, and its display
 #   bobber_display
 #   land_yd            [min, max] yards ahead of the caster the bobber lands
@@ -31,6 +32,13 @@
 #   treasure_base, treasure_per_level         the chance a treasure chest appears on the track
 #   treasure_fill_secs                        seconds the zone must hold the chest to win it
 #   treasure_appears_secs                     [min, max] seconds into the reel it appears
+#   peak_factor                               a fish's roll weight times this inside its peak hours
+#   favourite_bait_factor                     a fish's roll weight times this with its favourite bait
+#                                             on the cast (both together multiply)
+#
+# [journal], the Fishing Journal's Fish Pages:
+#   reveal_at                                 the catch counts that unlock a page's three tiers of
+#                                             facts (this file only loads it)
 #
 # [angler], Angler levels and XP:
 #   cap                                       the highest Angler level
@@ -43,14 +51,23 @@
 # [[fish]], one per fish item:
 #   item, style (smooth, mixed, sinker, floater or dart: how it moves on the track),
 #   difficulty (0 to 100), rarity (common, uncommon or rare)
+#   kinds           optional, the Water Kinds it bites in: "river", "lake", "coast" or "pond".
+#                   Absent means every kind. Legendary Fish ignore kinds.
+#   peak_hours      optional [from, to] game hours, `[from, to)`, wrapping past midnight; the fish's
+#                   roll weight is times `peak_factor` inside them
+#   favourite_bait  optional, a [[bait]] item; the fish's roll weight is times
+#                   `favourite_bait_factor` when that bait is on the cast
 #
 # [[pool]], one per zone (AreaTable id). Weights are vmangos `fishing_loot_template` chances; its
 # `0.0` row takes the rest of 100. The fish weights and treasure weights of a pool sum to 100.
-#   key, zone, fish = [{ item, weight, level }], treasure = [{ item, weight }], copper = [min, max]
+#   key, zone, kind, fish = [{ item, weight, level }], treasure = [{ item, weight }],
+#   copper = [min, max]
+#   kind is the Water Kind of the zone's unnamed water.
 #   A treasure chest pays a copper roll in `copper` and one roll on `treasure`.
 #
 # [[water]], the Fishing Waters: a named stretch of water, by `area` (AreaTable id) or by
-# `circle = [map, x, y, radius]`. `pool` names its pool; without one it fishes its zone's.
+# `circle = [map, x, y, radius]`. `pool` names its pool; without one it fishes its zone's. `kind`
+# is optional and overrides its pool's kind.
 #
 # [[legend]], the twelve Legendary Fish (#331), each a trophy `item` of its own:
 #   item, name, pool (a pool key), level (the Angler level it needs, counting a lure's), style,
@@ -61,7 +78,11 @@
 #   bait    a [[bait]] item chosen for the cast
 # Every criterion a row names must hold. A Legend Rumour in content/rumours.toml hints at each.
 #
-# [[lure]], the stock lures: a `duration_secs` buff on the pole with one effect:
+# [[pole]], the fishing poles (a class 2 item of subclass `pole_subclass`), by `item`, with the
+# effect keys a lure has. A pole never wears.
+#
+# [[lure]], the stock lures, by `item`, with one effect. The lure's item row carries its
+# `durability` (one point per bite) and `stackable = 1`:
 #   angler_levels   counts as this many Angler levels more
 #   bite_wait_pct   the bite comes this percent sooner (negative) or later
 #   zone_pct        the catch zone is this percent taller
@@ -86,10 +107,10 @@ item = [
   { entry = 6256, name = "Fishing Pole", quality = 1, item_level = 1, class = 2, subclass = 20, inventory_type = 17, display_id = 20730, sell_price = 4, buy_price = 23, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 16, material = 2, sheath = 1, damage = [[2.0, 4.0, 0]] },
   { entry = 6366, name = "Darkwood Fishing Pole", quality = 1, item_level = 20, required_level = 15, class = 2, subclass = 20, inventory_type = 17, display_id = 20731, sell_price = 1066, buy_price = 5330, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 40, sheath = 1, damage = [[28.0, 43.0, 0]], equip_spells = [7825], equip_spell_names = ["Fishing Skill +15"] },
   # The stock lures.
-  { entry = 6529, name = "Shiny Bauble", quality = 1, item_level = 10, display_id = 12410, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 20, use_spell = 8087, use_spell_name = "Shiny Bauble" },
-  { entry = 6530, name = "Nightcrawlers", quality = 1, item_level = 20, display_id = 18097, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 20, use_spell = 8088, use_spell_name = "Nightcrawlers" },
-  { entry = 6532, name = "Bright Baubles", quality = 1, item_level = 30, display_id = 12423, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 20, use_spell = 8090, use_spell_name = "Bright Baubles" },
-  { entry = 6533, name = "Aquadynamic Fish Attractor", quality = 1, item_level = 30, class = 7, subclass = 3, display_id = 12425, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 20, use_spell = 8089, use_spell_name = "Aquadynamic Fish Attractor" },
+  { entry = 6529, name = "Shiny Bauble", quality = 1, item_level = 10, display_id = 12410, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 1, durability = 20, use_spell = 8087, use_spell_name = "Shiny Bauble" },
+  { entry = 6530, name = "Nightcrawlers", quality = 1, item_level = 20, display_id = 18097, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, durability = 20, use_spell = 8088, use_spell_name = "Nightcrawlers" },
+  { entry = 6532, name = "Bright Baubles", quality = 1, item_level = 30, display_id = 12423, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 20, use_spell = 8090, use_spell_name = "Bright Baubles" },
+  { entry = 6533, name = "Aquadynamic Fish Attractor", quality = 1, item_level = 30, class = 7, subclass = 3, display_id = 12425, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 30, use_spell = 8089, use_spell_name = "Aquadynamic Fish Attractor" },
   # The custom baits: white trade goods, with a stock display that reads right in the bag.
   { entry = 960101, name = "Wriggling Worms", quality = 1, item_level = 5, class = 7, display_id = 18098, sell_price = 2, buy_price = 10, buy_count = 1, stackable = 20 },
   { entry = 960102, name = "Shiny Minnow", quality = 1, item_level = 5, class = 7, display_id = 18535, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 20 },
@@ -126,6 +147,8 @@ cast_secs = 30.0
 bite_secs = [2.0, 12.0]
 
 [bar]
+peak_factor = 2.0
+favourite_bait_factor = 2.0
 start_fill = 0.3
 fill_per_sec = 0.12
 drain_per_sec = 0.18
@@ -150,6 +173,9 @@ rarity_factor = { common = 1.0, uncommon = 1.5, rare = 2.5 }
 perfect_factor = 2.0
 legend_bonus_xp = 500
 
+[journal]
+reveal_at = [5, 10, 25]
+
 [[fish]]
 item = 6291 # Raw Brilliant Smallfish
 style = "smooth"
@@ -161,58 +187,86 @@ item = 6289 # Raw Longjaw Mud Snapper
 style = "mixed"
 difficulty = 25
 rarity = "common"
+kinds = ["river", "lake", "pond"]
+peak_hours = [6, 10]
+favourite_bait = 960101
 
 [[fish]]
 item = 6308 # Raw Bristle Whisker Catfish
 style = "sinker"
 difficulty = 35
 rarity = "common"
+kinds = ["river", "lake"]
+peak_hours = [20, 4]
+favourite_bait = 960105
 
 [[fish]]
 item = 6303 # Raw Slitherskin Mackerel
 style = "floater"
 difficulty = 30
 rarity = "uncommon"
+kinds = ["coast"]
+peak_hours = [5, 9]
+favourite_bait = 960102
 
 [[fish]]
 item = 6361 # Raw Rainbow Fin Albacore
 style = "dart"
 difficulty = 45
 rarity = "uncommon"
+kinds = ["coast"]
+peak_hours = [11, 15]
+favourite_bait = 960102
 
 [[fish]]
 item = 6358 # Oily Blackmouth
 style = "floater"
 difficulty = 40
 rarity = "uncommon"
+kinds = ["coast", "river"]
+peak_hours = [18, 22]
+favourite_bait = 960104
 
 [[fish]]
 item = 6292 # 10 Pound Mud Snapper
 style = "sinker"
 difficulty = 50
 rarity = "rare"
+kinds = ["lake", "pond"]
+peak_hours = [6, 9]
+favourite_bait = 960101
 
 [[fish]]
 item = 6294 # 12 Pound Mud Snapper
 style = "dart"
 difficulty = 55
 rarity = "rare"
+kinds = ["lake", "pond"]
+peak_hours = [17, 20]
+favourite_bait = 960103
 
 [[fish]]
 item = 6309 # 17 Pound Catfish
 style = "sinker"
 difficulty = 60
 rarity = "rare"
+kinds = ["river", "lake"]
+peak_hours = [22, 3]
+favourite_bait = 960105
 
 [[fish]]
 item = 6310 # 19 Pound Catfish
 style = "dart"
 difficulty = 70
 rarity = "rare"
+kinds = ["river"]
+peak_hours = [0, 4]
+favourite_bait = 960104
 
 [[pool]]
 key = "elwynn"
 zone = 12
+kind = "lake"
 fish = [
   { item = 6291, weight = 59.95, level = 1 },
   { item = 6289, weight = 37.85, level = 5 },
@@ -229,6 +283,7 @@ copper = [50, 300]
 [[pool]]
 key = "stormwind"
 zone = 1519
+kind = "coast"
 fish = [
   { item = 6291, weight = 16.99, level = 1 },
   { item = 6289, weight = 55.36, level = 4 },
@@ -248,6 +303,7 @@ copper = [80, 500]
 [[pool]]
 key = "redridge"
 zone = 44
+kind = "lake"
 fish = [
   { item = 6289, weight = 34.10, level = 15 },
   { item = 6308, weight = 65.08, level = 18 },
@@ -385,6 +441,7 @@ name = "Northshire River"
 # The circle covers the valley's stretch of the river. Its terrain says area 9, Northshire Valley,
 # not area 23; Davis moves the circle if it misses the water.
 circle = [0, -8830.0, -330.0, 110.0]
+kind = "river"
 
 [[water]]
 key = "cathedral_canal"
@@ -392,35 +449,41 @@ name = "Cathedral Canal"
 # The canal by the Cathedral of Light; Davis moves it if it misses the water.
 circle = [0, -8560.0, 820.0, 40.0]
 pool = "stormwind"
+kind = "river"
 
 [[water]]
 key = "althers_mill"
 name = "Alther's Mill"
 area = 97
+kind = "river"
 
 [[water]]
 key = "lake_everstill"
 name = "Lake Everstill"
 area = 68
+kind = "lake"
+
+[[pole]]
+item = 6256 # Fishing Pole
+
+[[pole]]
+item = 6366 # Darkwood Fishing Pole
+angler_levels = 3
 
 [[lure]]
 item = 6529 # Shiny Bauble
-duration_secs = 600
 angler_levels = 1
 
 [[lure]]
 item = 6530 # Nightcrawlers
-duration_secs = 600
 bite_wait_pct = -30
 
 [[lure]]
 item = 6532 # Bright Baubles
-duration_secs = 600
 zone_pct = 15
 
 [[lure]]
 item = 6533 # Aquadynamic Fish Attractor
-duration_secs = 600
 angler_levels = 4
 
 [[bait]]

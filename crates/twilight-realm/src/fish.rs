@@ -42,6 +42,27 @@ pub(crate) struct Bar {
     pub(crate) treasure_per_level: f32,
     pub(crate) treasure_fill_secs: f32,
     pub(crate) treasure_appears_secs: [f32; 2],
+    /// A fish's roll weight is times this inside its peak hours.
+    pub(crate) peak_factor: f32,
+    /// A fish's roll weight is times this with its favourite bait on the cast.
+    pub(crate) favourite_bait_factor: f32,
+}
+
+/// The Fishing Journal's tunables (`[journal]`).
+#[derive(Deserialize)]
+pub(crate) struct Journal {
+    /// The catch counts that unlock a Fish Page's three tiers of facts.
+    pub(crate) reveal_at: [u32; 3],
+}
+
+/// A Water Kind: what a fish bites in.
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum Kind {
+    River,
+    Lake,
+    Coast,
+    Pond,
 }
 
 /// Angler levels and XP (`[angler]`).
@@ -109,6 +130,51 @@ pub(crate) struct Fish {
     /// 0 to 100.
     pub(crate) difficulty: u32,
     pub(crate) rarity: Rarity,
+    /// The Water Kinds it bites in; `None` for every kind.
+    #[serde(default)]
+    pub(crate) kinds: Option<Vec<Kind>>,
+    /// `[from, to)` game hours, wrapping past midnight, in which its weight is times `peak_factor`.
+    #[serde(default)]
+    pub(crate) peak_hours: Option<[u32; 2]>,
+    /// The bait item whose presence on the cast multiplies its weight.
+    #[serde(default)]
+    pub(crate) favourite_bait: Option<u32>,
+}
+
+impl Fish {
+    /// Whether it bites in water of `kind`.
+    pub(crate) fn bites_in(&self, kind: Kind) -> bool {
+        self.kinds.as_ref().is_none_or(|k| k.contains(&kind))
+    }
+
+    /// Whether game minute `minute_of_day` is inside its peak hours.
+    pub(crate) fn in_peak(&self, minute_of_day: u32) -> bool {
+        self.peak_hours.is_some_and(|[from, to]| {
+            let hour = minute_of_day / 60;
+            if from <= to {
+                (from..to).contains(&hour)
+            } else {
+                hour >= from || hour < to
+            }
+        })
+    }
+
+    /// Its weight in a roll, from its pool row's `base`: doubled (by the `[bar]` factors) inside
+    /// its peak hours and again with its favourite bait on the cast.
+    pub(crate) fn roll_weight(&self, base: f32, minute_of_day: u32, bait: Option<u32>) -> f32 {
+        let bar = bar();
+        let peak = if self.in_peak(minute_of_day) {
+            bar.peak_factor
+        } else {
+            1.0
+        };
+        let favourite = if self.favourite_bait.is_some() && self.favourite_bait == bait {
+            bar.favourite_bait_factor
+        } else {
+            1.0
+        };
+        base * peak * favourite
+    }
 }
 
 /// One zone's catch (`[[pool]]`). Its fish and treasure weights sum to 100.
@@ -117,6 +183,8 @@ pub(crate) struct Pool {
     pub(crate) key: String,
     /// The zone's `AreaTable.dbc` id.
     pub(crate) zone: u32,
+    /// The Water Kind of the zone's unnamed water.
+    pub(crate) kind: Kind,
     pub(crate) fish: Vec<PoolFish>,
     pub(crate) treasure: Vec<Treasure>,
     /// A treasure chest's `[min, max]` copper.
@@ -152,9 +220,12 @@ pub(crate) struct Water {
     /// Its pool's key; `None` fishes its zone's pool.
     #[serde(default)]
     pub(crate) pool: Option<String>,
+    /// Its Water Kind; `None` takes its pool's.
+    #[serde(default)]
+    pub(crate) kind: Option<Kind>,
 }
 
-/// What a lure or a bait does to a cast; each key 0 when not set.
+/// What a pole, a lure or a bait does to a cast; each key 0 when not set.
 #[derive(Deserialize, Default)]
 pub(crate) struct Effect {
     /// Counts as this many Angler levels more.
@@ -171,11 +242,18 @@ pub(crate) struct Effect {
     pub(crate) treasure_points: u32,
 }
 
-/// A stock lure (`[[lure]]`): a buff on the pole.
+/// A fishing pole (`[[pole]]`); it never wears.
+#[derive(Deserialize)]
+pub(crate) struct Pole {
+    pub(crate) item: u32,
+    #[serde(flatten)]
+    pub(crate) effect: Effect,
+}
+
+/// A stock lure (`[[lure]]`); its item row carries its durability.
 #[derive(Deserialize)]
 pub(crate) struct Lure {
     pub(crate) item: u32,
-    pub(crate) duration_secs: u32,
     #[serde(flatten)]
     pub(crate) effect: Effect,
 }
@@ -248,19 +326,92 @@ struct File {
     spell: Spell,
     bar: Bar,
     angler: Angler,
+    journal: Journal,
     fish: Vec<Fish>,
     pool: Vec<Pool>,
     water: Vec<Water>,
     legend: Vec<Legend>,
+    pole: Vec<Pole>,
     lure: Vec<Lure>,
     bait: Vec<Bait>,
+}
+
+/// Checks a parsed `fish.toml`, panicking on the first row that breaks a rule.
+fn check(file: &File) {
+    for f in &file.fish {
+        assert!(
+            f.favourite_bait
+                .is_none_or(|b| file.bait.iter().any(|x| x.item == b)),
+            "fish {} names a favourite_bait that is no [[bait]]",
+            f.item
+        );
+    }
+    for p in &file.pole {
+        assert!(
+            crate::items::template(p.item)
+                .is_some_and(|t| t.class == 2 && t.subclass == file.spell.pole_subclass),
+            "pole {} is not a fishing pole item",
+            p.item
+        );
+    }
+    for l in &file.lure {
+        assert!(
+            crate::items::template(l.item).is_some_and(|t| t.durability > 0),
+            "lure {} has no durability",
+            l.item
+        );
+    }
+    // Every kind a pool or a Fishing Water gives its pool must leave a fish that bites at the
+    // top Angler Level.
+    let bites = |pool: &Pool, kind: Kind| {
+        pool.fish.iter().any(|pf| {
+            file.fish
+                .iter()
+                .find(|f| f.item == pf.item)
+                .is_some_and(|f| f.bites_in(kind))
+                && pf.level < file.angler.cap + file.bar.gate_levels_above
+        })
+    };
+    for p in &file.pool {
+        assert!(
+            bites(p, p.kind),
+            "pool {} has no fish that bites in its kind {:?}",
+            p.key,
+            p.kind
+        );
+    }
+    for w in &file.water {
+        let Some(kind) = w.kind else { continue };
+        let pool = match &w.pool {
+            Some(key) => file.pool.iter().find(|p| &p.key == key),
+            None => w.area.and_then(|a| {
+                let zone = crate::mobs::area_parent(a).copied().unwrap_or(a);
+                file.pool.iter().find(|p| p.zone == zone)
+            }),
+        };
+        if let Some(pool) = pool {
+            assert!(
+                bites(pool, kind),
+                "water {} leaves pool {} with no fish that bites in its kind {:?}",
+                w.key,
+                pool.key,
+                kind
+            );
+        }
+    }
+}
+
+/// Parses and checks a `fish.toml`'s text.
+fn load(text: &str) -> File {
+    let file: File = toml::from_str(text).expect("content/fish.toml parses");
+    check(&file);
+    file
 }
 
 fn file() -> &'static File {
     static FILE: OnceLock<File> = OnceLock::new();
     FILE.get_or_init(|| {
-        let file: File =
-            toml::from_str(include_str!("../content/fish.toml")).expect("content/fish.toml parses");
+        let file = load(include_str!("../content/fish.toml"));
         for l in &file.legend {
             assert!(
                 file.pool.iter().any(|p| p.key == l.pool),
@@ -410,6 +561,17 @@ pub(crate) fn waters() -> Vec<&'static Water> {
         .collect()
 }
 
+/// The Water Kind of a cast in `water` (a Fishing Water, if the bobber is in one) of `pool`: the
+/// water's own kind, else the pool's.
+pub(crate) fn kind_at(pool: &Pool, water: Option<&Water>) -> Kind {
+    water.and_then(|w| w.kind).unwrap_or(pool.kind)
+}
+
+/// The pole that is item `item`.
+pub(crate) fn pole(item: u32) -> Option<&'static Pole> {
+    file().pole.iter().find(|p| p.item == item)
+}
+
 /// The lure that is item `item`.
 pub(crate) fn lure(item: u32) -> Option<&'static Lure> {
     file().lure.iter().find(|l| l.item == item)
@@ -438,5 +600,53 @@ mod tests {
         assert_eq!(lure(6530).map(|l| l.effect.bite_wait_pct), Some(-30));
         assert_eq!(bait(960102).map(|b| b.effect.treasure_points), Some(10));
         assert_eq!(bait(960105).map(|b| b.effect.angler_levels), Some(0));
+        assert_eq!(pole(6366).map(|p| p.effect.angler_levels), Some(3));
+        assert_eq!(file().journal.reveal_at, [5, 10, 25]);
+    }
+
+    #[test]
+    #[should_panic(expected = "favourite_bait that is no [[bait]]")]
+    fn a_favourite_bait_that_is_no_bait_fails_to_load() {
+        let text = include_str!("../content/fish.toml").replacen(
+            "favourite_bait = 960101",
+            "favourite_bait = 999999",
+            1,
+        );
+        load(&text);
+    }
+
+    #[test]
+    fn a_fish_without_kinds_bites_everywhere() {
+        let smallfish = fish(6291).unwrap();
+        for kind in [Kind::River, Kind::Lake, Kind::Coast, Kind::Pond] {
+            assert!(smallfish.bites_in(kind));
+        }
+        assert!(!fish(6303).unwrap().bites_in(Kind::River));
+    }
+
+    #[test]
+    fn peak_hours_wrap_past_midnight() {
+        let catfish = fish(6308).unwrap();
+        assert!(catfish.in_peak(23 * 60));
+        assert!(catfish.in_peak(3 * 60 + 59));
+        assert!(!catfish.in_peak(4 * 60));
+        assert!(!catfish.in_peak(12 * 60));
+    }
+
+    #[test]
+    fn the_roll_weight_doubles_for_peak_hours_and_favourite_bait() {
+        let snapper = fish(6289).unwrap();
+        let worms = Some(960101);
+        assert_eq!(snapper.roll_weight(37.85, 7 * 60, worms), 37.85 * 4.0);
+        assert_eq!(snapper.roll_weight(37.85, 7 * 60, None), 37.85 * 2.0);
+        assert_eq!(snapper.roll_weight(37.85, 12 * 60, worms), 37.85 * 2.0);
+        assert_eq!(snapper.roll_weight(37.85, 12 * 60, None), 37.85);
+    }
+
+    #[test]
+    fn a_water_overrides_its_pools_kind() {
+        let stormwind = pool("stormwind").unwrap();
+        assert_eq!(kind_at(stormwind, None), Kind::Coast);
+        assert_eq!(kind_at(stormwind, water("cathedral_canal")), Kind::River);
     }
 }

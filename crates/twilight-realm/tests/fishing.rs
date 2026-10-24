@@ -34,6 +34,7 @@ const TEST_FISH: &str = r#"
 [[pool]]
 key = "test_smallfish"
 zone = 990001
+kind = "lake"
 fish = [{ item = 6291, weight = 100.0, level = 1 }]
 treasure = []
 copper = [0, 0]
@@ -41,6 +42,7 @@ copper = [0, 0]
 [[pool]]
 key = "test_level_15"
 zone = 990002
+kind = "lake"
 fish = [{ item = 6308, weight = 100.0, level = 15 }]
 treasure = []
 copper = [0, 0]
@@ -48,6 +50,7 @@ copper = [0, 0]
 [[pool]]
 key = "test_level_11"
 zone = 990003
+kind = "lake"
 fish = [{ item = 6289, weight = 100.0, level = 11 }]
 treasure = []
 copper = [0, 0]
@@ -112,6 +115,7 @@ fn test_fish(start: [f32; 3]) -> String {
 [[pool]]
 key = \"test_legends\"
 zone = 990004
+kind = \"lake\"
 fish = [{{ item = 6291, weight = 100.0, level = 1 }}]
 treasure = []
 copper = [0, 0]
@@ -119,6 +123,7 @@ copper = [0, 0]
 [[pool]]
 key = \"test_legend_rumour\"
 zone = 990005
+kind = \"lake\"
 fish = [{{ item = 6291, weight = 100.0, level = 1 }}]
 treasure = []
 copper = [0, 0]
@@ -1080,4 +1085,62 @@ fn lee_browns_smallfry_quest_is_handed_in_twice_and_paid_twice() {
         assert_eq!(money, 50, "50 copper");
         assert!(xp > 0, "quest XP");
     }
+}
+
+// Water Kinds (#370, spec #368): a fish bites only in the kinds it lists.
+
+const STORMWIND: u32 = 1519;
+const MACKEREL: u32 = 6303;
+const ALBACORE: u32 = 6361;
+const COAST_BARRED: [u32; 4] = [6289, 6308, 6309, 6310];
+const CANAL_BARRED: [u32; 2] = [6303, 6361];
+
+/// Every fish `n` bites at Angler 60 bring in, a lost cast each time.
+fn bitten(a: &mut Angler, n: usize) -> std::collections::HashSet<u32> {
+    let mut seen = std::collections::HashSet::new();
+    for _ in 0..n {
+        let (_, bite) = a.hook();
+        let SessionEvent::FishingBite { fish, .. } = bite else {
+            unreachable!()
+        };
+        seen.insert(fish);
+        a.result(false, false, 1.0);
+    }
+    seen
+}
+
+#[test]
+fn stormwinds_coast_never_bites_river_fish_and_the_canal_never_bites_coast_fish() {
+    let mut coast = angler(60, true, true, Side::East);
+    coast.host.area = Some(STORMWIND);
+    let seen = bitten(&mut coast, 2000);
+    for fish in COAST_BARRED {
+        assert!(!seen.contains(&fish), "{fish} bit on the coast: {seen:?}");
+    }
+    assert!(seen.contains(&SMALLFISH) && seen.contains(&MACKEREL));
+
+    // The Cathedral Canal's circle is a river, inside the Stormwind pool.
+    let mut canal = angler(60, true, true, Side::East);
+    canal.host.area = Some(STORMWIND);
+    canal.host.centre = [-8560.0, 820.0];
+    canal.realm.handle(RealmCommand::Move {
+        position: [-8575.0, 820.0, 0.0],
+        orientation: 0.0,
+        motion: Default::default(),
+    });
+    canal.realm.tick(0.0, &canal.host);
+    drain(&mut canal.realm);
+    let seen = bitten(&mut canal, 2000);
+    for fish in CANAL_BARRED {
+        assert!(!seen.contains(&fish), "{fish} bit in the canal: {seen:?}");
+    }
+    assert!(seen.contains(&SMALLFISH) && seen.contains(&CATFISH));
+    assert!(!seen.contains(&ALBACORE));
+}
+
+#[test]
+fn a_fish_with_no_kinds_bites_in_lake_water_and_a_lake_fish_does_too() {
+    let mut elwynn = angler(60, true, true, Side::East);
+    let seen = bitten(&mut elwynn, 500);
+    assert!(seen.contains(&SMALLFISH) && seen.contains(&MUD_SNAPPER));
 }

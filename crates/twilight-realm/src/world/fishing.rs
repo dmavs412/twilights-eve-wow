@@ -18,7 +18,7 @@ use crate::audience::Audience;
 use crate::characters::Char;
 use crate::equipment;
 use crate::fields::{guid_pairs, values, UNIT_CHANNEL_SPELL, UNIT_FIELD_CHANNEL_OBJECT};
-use crate::fish::{self, Pool, PoolFish, Style};
+use crate::fish::{self, Kind, Pool, PoolFish, Style};
 use crate::hub::Npc;
 use crate::inventory::Pos;
 use crate::items;
@@ -52,6 +52,9 @@ const ICON_CHAT: u8 = 0;
 
 /// The buff slot a lure's aura shows in: the one before the meal's.
 const LURE_AURA_SLOT: u16 = 30;
+/// How long a lure's aura lasts until the gear ticket (#371) moves the lure into the Journal and
+/// removes the aura.
+const LEGACY_LURE_SECS: f32 = 600.0;
 
 /// The Journal's best catch of a fish.
 const CAUGHT: u8 = 1;
@@ -104,6 +107,8 @@ enum Stage {
         boost: Boost,
         /// The key of the Fishing Water the bobber is in.
         water: Option<&'static str>,
+        /// The Water Kind of the bobber's water.
+        kind: Kind,
         bite_in: f32,
         left: f32,
     },
@@ -229,13 +234,20 @@ fn holds_pole(c: &Char) -> bool {
 }
 
 /// The fish of `pool` that bite at Angler Level `effective`: those fewer than
-/// `gate_levels_above` levels above it.
-fn biters(pool: &'static Pool, effective: u32) -> Vec<&'static PoolFish> {
+/// `gate_levels_above` levels above it, and whose kinds include the water's `kind`.
+fn biters(pool: &'static Pool, effective: u32, kind: Kind) -> Vec<&'static PoolFish> {
     let gate = fish::bar().gate_levels_above;
     pool.fish
         .iter()
-        .filter(|f| f.level < effective + gate && fish::fish(f.item).is_some())
+        .filter(|f| {
+            f.level < effective + gate && fish::fish(f.item).is_some_and(|d| d.bites_in(kind))
+        })
         .collect()
+}
+
+/// A pool fish's weight in the bite roll at game minute `minute`, with `bait` on the cast.
+fn roll_weight(f: &PoolFish, minute: u32, bait: Option<u32>) -> f32 {
+    fish::fish(f.item).map_or(f.weight, |d| d.roll_weight(f.weight, minute, bait))
 }
 
 /// One of `rows` by `weight`.
@@ -409,9 +421,9 @@ impl InWorld {
             return false;
         };
         let entry = item.entry;
-        let Some(lure) = fish::lure(entry) else {
+        if fish::lure(entry).is_none() {
             return false;
-        };
+        }
         let spell_id = items::template(entry).map_or(0, |t| t.use_spell);
         if self.dead() {
             return true;
@@ -449,7 +461,7 @@ impl InWorld {
                 ),
             ],
         ));
-        let secs = lure.duration_secs as f32;
+        let secs = LEGACY_LURE_SECS;
         events.push(SessionEvent::AuraDuration {
             slot: s as u8,
             remaining_ms: clock::ms(secs),
@@ -502,14 +514,15 @@ impl InWorld {
                 pool,
                 boost,
                 water,
+                kind,
                 bite_in,
                 left,
             } => {
                 *bite_in -= dt;
                 *left -= dt;
                 if *bite_in <= 0.0 {
-                    let (pool, boost, water) = (*pool, *boost, *water);
-                    self.bite(pool, boost, water, wall, c, rng, events);
+                    let (pool, boost, water, kind) = (*pool, *boost, *water, *kind);
+                    self.bite(pool, boost, water, kind, wall, c, rng, events);
                 } else if *left <= 0.0 {
                     self.lose_fish(events);
                 }
@@ -550,9 +563,11 @@ impl InWorld {
         boost.bait = bait.map(|b| b.item);
         let effective = effective_level(c, boost);
         let area = host.area_at(c.map, x, y);
-        let water = fish::water_at(c.map, x, y, area).map(|w| w.key.as_str());
-        let pool = fish::pool_at(c.map, x, y, area).filter(|&p| !biters(p, effective).is_empty());
-        let Some(pool) = pool else {
+        let fishing_water = fish::water_at(c.map, x, y, area);
+        let water = fishing_water.map(|w| w.key.as_str());
+        let pool = fish::pool_at(c.map, x, y, area).map(|p| (p, fish::kind_at(p, fishing_water)));
+        let pool = pool.filter(|&(p, kind)| !biters(p, effective, kind).is_empty());
+        let Some((pool, kind)) = pool else {
             self.fishing = None;
             events.push(SessionEvent::Notification {
                 text: NOTHING_BITING.into(),
@@ -574,6 +589,7 @@ impl InWorld {
             pool,
             boost,
             water,
+            kind,
             bite_in: wait * (1.0 + boost.bite_wait_pct as f32 / 100.0).max(0.0),
             left: s.cast_secs,
         };
@@ -643,6 +659,7 @@ impl InWorld {
         pool: &'static Pool,
         boost: Boost,
         water: Option<&'static str>,
+        kind: Kind,
         wall: f64,
         c: &Char,
         rng: &mut Rng,
@@ -660,7 +677,12 @@ impl InWorld {
         });
         let rolled = match legend {
             Some(l) => Some((l.item, l.level, l.style, l.difficulty, true)),
-            None => pick(&biters(pool, effective), |f| f.weight, rng).and_then(|f| {
+            None => pick(
+                &biters(pool, effective, kind),
+                |f| roll_weight(f, minute, boost.bait),
+                rng,
+            )
+            .and_then(|f| {
                 let def = fish::fish(f.item)?;
                 Some((f.item, f.level, def.style, def.difficulty, false))
             }),
