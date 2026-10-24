@@ -16944,7 +16944,7 @@
           "realm_only": false
          }
         ],
-        "description": "Creeping Blight has a 10% chance each time it ticks to duplicate itself onto another nearby enemy who does not already have it."
+        "description": "Creeping Blight has a 10% chance each time it ticks to copy itself, with its stacks and time left, onto another nearby enemy who does not already have it."
        },
        {
         "key": "epidemic",
@@ -16980,7 +16980,7 @@
           "realm_only": false
          }
         ],
-        "description": "Creeping Blight has a 20% chance each time it ticks to duplicate itself onto another nearby enemy who does not already have it."
+        "description": "Creeping Blight has a 20% chance each time it ticks to copy itself, with its stacks and time left, onto another nearby enemy who does not already have it."
        },
        {
         "key": "epidemic",
@@ -17016,7 +17016,7 @@
           "realm_only": false
          }
         ],
-        "description": "Creeping Blight has a 30% chance each time it ticks to duplicate itself onto another nearby enemy who does not already have it."
+        "description": "Creeping Blight has a 30% chance each time it ticks to copy itself, with its stacks and time left, onto another nearby enemy who does not already have it."
        }
       ]
      },
@@ -17377,8 +17377,8 @@
           "params": {
            "aura": "aura_creeping_blight",
            "amount": {
-            "base": 40,
-            "per_level": 4
+            "base": 12,
+            "per_level": 1
            },
            "per_stack": true,
            "heal_allies_pct": 150,

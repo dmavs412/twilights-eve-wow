@@ -10317,7 +10317,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Creeping Blight has a 10% chance each time it ticks to duplicate itself onto another nearby enemy who does not already have it.",
+    "description": "Creeping Blight has a 10% chance each time it ticks to copy itself, with its stacks and time left, onto another nearby enemy who does not already have it.",
     "implicit_targets": [
      1,
      0
@@ -10345,7 +10345,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Creeping Blight has a 20% chance each time it ticks to duplicate itself onto another nearby enemy who does not already have it.",
+    "description": "Creeping Blight has a 20% chance each time it ticks to copy itself, with its stacks and time left, onto another nearby enemy who does not already have it.",
     "implicit_targets": [
      1,
      0
@@ -10373,7 +10373,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Creeping Blight has a 30% chance each time it ticks to duplicate itself onto another nearby enemy who does not already have it.",
+    "description": "Creeping Blight has a 30% chance each time it ticks to copy itself, with its stacks and time left, onto another nearby enemy who does not already have it.",
     "implicit_targets": [
      1,
      0
@@ -10638,8 +10638,8 @@
     "dbc_effects": [
      {
       "effect": 3,
-      "base": 40,
-      "per_level": 4
+      "base": 12,
+      "per_level": 1
      }
     ],
     "visual": 3582,

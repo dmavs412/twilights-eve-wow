@@ -357,6 +357,13 @@ fn epidemic_spreads_the_blight_to_a_mob_that_lacks_it() {
         view.aura(mobs[1].guid, BLIGHT).is_some()
     });
     assert!(spread, "the Blight reached the second mob");
+    let source = view.aura(mobs[0].guid, BLIGHT).map(|a| a.stacks);
+    assert_eq!(
+        view.aura(mobs[1].guid, BLIGHT).map(|a| a.stacks),
+        source,
+        "the copy carries the source's stacks"
+    );
+    assert!(source > Some(1), "the test Blight grows each tick");
     assert!(
         view.aura(mobs[0].guid, BLIGHT).is_some(),
         "and stayed on the first"

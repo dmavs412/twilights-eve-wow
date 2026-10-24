@@ -2833,7 +2833,8 @@ impl InWorld {
         }
     }
 
-    /// A copy of the aura whose tick is running its procs, its time left and one stack, goes
+    /// A copy of the aura whose tick is running its procs, with its time left and the stacks the
+    /// source aura holds after this tick's growth (the tick's own if the source is gone), goes
     /// on the living enemy nearest its unit within `radius_yd` that does not already have it.
     pub(super) fn spread_ticking(&mut self, radius_yd: f32, events: &mut Vec<SessionEvent>) {
         let Some(tick) = self.skills.ticking else {
@@ -2861,8 +2862,18 @@ impl InWorld {
         let mut copy = tick;
         copy.unit = other;
         copy.slot = 0;
-        if let AuraKind::PeriodicDamage { stacks, .. } = &mut copy.kind {
-            *stacks = 1;
+        if let AuraKind::PeriodicDamage { caster, .. } = tick.kind {
+            let held = self.skills.auras.iter().find_map(|a| match a.kind {
+                AuraKind::PeriodicDamage {
+                    caster: c, stacks, ..
+                } if a.unit == tick.unit && a.spell_id == tick.spell_id && c == caster => {
+                    Some(stacks)
+                }
+                _ => None,
+            });
+            if let (Some(held), AuraKind::PeriodicDamage { stacks, .. }) = (held, &mut copy.kind) {
+                *stacks = held;
+            }
         }
         self.skills.apply(copy, events);
     }
