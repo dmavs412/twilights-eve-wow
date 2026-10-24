@@ -462,6 +462,7 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
         bait,
         zones,
         legends,
+        ..
     } = event
     else {
         return JournalView::default();

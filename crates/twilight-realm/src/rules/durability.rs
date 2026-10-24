@@ -47,6 +47,10 @@ pub fn repair_cost_of(item_level: u8, quality: u8, class: u32, subclass: u32, lo
 
 /// What repairing item `entry`, now at `durability`, back to full costs, in copper.
 pub fn repair_cost(entry: u32, durability: u32) -> u32 {
+    // A lure is spent, not mended.
+    if crate::fish::lure(entry).is_some() {
+        return 0;
+    }
     items::template(entry).map_or(0, |t| {
         repair_cost_of(
             t.item_level,

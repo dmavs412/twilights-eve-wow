@@ -245,8 +245,6 @@ pub(crate) struct InWorld {
     fishing: Option<fishing::Fishing>,
     /// The bobbers of casts that ended, for the realm to remove from its run-time objects.
     spent_bobbers: Vec<u64>,
-    /// The lure on the character (#329): not saved, so a login has none.
-    lure: Option<fishing::Lure>,
     /// The lent mobs whose fight this session runs this tick; every other is another
     /// session's to run.
     pub(crate) runs: std::collections::HashSet<u64>,
@@ -440,7 +438,6 @@ impl InWorld {
             boss_sent: Vec::new(),
             fishing: None,
             spent_bobbers: Vec::new(),
-            lure: None,
             runs: Default::default(),
             died: Vec::new(),
             others: Vec::new(),

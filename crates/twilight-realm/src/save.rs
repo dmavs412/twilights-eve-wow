@@ -7,7 +7,7 @@ use crate::characters::Char;
 use crate::content::{self, Calling};
 use crate::dungeon::Place;
 use crate::inn::Bind;
-use crate::inventory::{bag_size, Inventory, Pos};
+use crate::inventory::{bag_size, Inventory, Item, Pos};
 
 /// The save format this realm writes. It also reads versions 1 to 3, which have the same layout;
 /// a save from any other version is refused. From version 3 the spell ids are the sheet's own,
@@ -190,6 +190,12 @@ struct Save {
     legends_caught: Vec<u32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     legend_hints: Vec<u32>,
+    /// The Fishing Journal's Pole and Lure slots (#371), added within version 4: a save without
+    /// them has both empty. Each is an item at slot 0.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    fishing_pole: Option<SavedItem>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    fishing_lure: Option<SavedItem>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -248,6 +254,25 @@ struct SavedItem {
     /// Left out: full.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     durability: Option<u32>,
+}
+
+fn saved_gear(item: &Option<Item>) -> Option<SavedItem> {
+    item.as_ref().map(|item| SavedItem {
+        bag: None,
+        slot: 0,
+        entry: item.entry,
+        count: item.count,
+        durability: Some(item.durability),
+    })
+}
+
+/// A Journal slot's item from a save; an unknown item leaves the slot empty.
+fn load_gear(inventory: &mut Inventory, saved: &Option<SavedItem>) -> Option<Item> {
+    let s = saved.as_ref()?;
+    let template = crate::items::template(s.entry)?;
+    let mut item = inventory.new_item(s.entry, s.count.max(1));
+    item.durability = s.durability.unwrap_or(template.durability);
+    Some(item)
 }
 
 fn saved_items(inventory: &Inventory) -> Vec<SavedItem> {
@@ -343,6 +368,8 @@ pub(crate) fn export(c: &Char) -> String {
         bait: c.bait,
         legends_caught: c.legends_caught.clone(),
         legend_hints: c.legend_hints.clone(),
+        fishing_pole: saved_gear(&c.fishing_pole),
+        fishing_lure: saved_gear(&c.fishing_lure),
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -416,7 +443,11 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         bait: s.bait,
         legends_caught: s.legends_caught,
         legend_hints: s.legend_hints,
+        fishing_pole: None,
+        fishing_lure: None,
     };
+    c.fishing_pole = load_gear(&mut c.inventory, &s.fishing_pole);
+    c.fishing_lure = load_gear(&mut c.inventory, &s.fishing_lure);
     crate::quests::settle(&mut c);
     crate::talents::keep_valid(&mut c);
     let notes = dropped

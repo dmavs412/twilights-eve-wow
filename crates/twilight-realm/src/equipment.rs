@@ -139,7 +139,7 @@ fn slot_pairs(c: &Char, at: Pos, item: Option<&Item>) -> Vec<(u64, u16, u32)> {
 }
 
 /// `PLAYER_VISIBLE_ITEM_<slot>_0`.
-fn visible_item(slot: u8) -> u16 {
+pub(crate) fn visible_item(slot: u8) -> u16 {
     PLAYER_VISIBLE_ITEM_1_0 + 12 * u16::from(slot)
 }
 

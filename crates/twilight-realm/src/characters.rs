@@ -10,7 +10,7 @@ use benilla_protocol::{CharCreateReq, Character};
 use crate::content::{
     self, Calling, CROSSROADS, EASTERN_KINGDOMS, ELWYNN_FOREST, KALIMDOR, THE_BARRENS,
 };
-use crate::inventory::Inventory;
+use crate::inventory::{Inventory, Item};
 use crate::quests::QuestLog;
 use crate::save::SaveError;
 
@@ -82,6 +82,10 @@ pub(crate) struct Char {
     pub(crate) catches: Vec<(u32, u8)>,
     /// The Journal's chosen bait, a `[[bait]]` item.
     pub(crate) bait: Option<u32>,
+    /// The Journal's Pole slot: a fishing pole out of the bags. A cast reads it, not the main hand.
+    pub(crate) fishing_pole: Option<Item>,
+    /// The Journal's Lure slot: a `[[lure]]` item, which wears one point per bite.
+    pub(crate) fishing_lure: Option<Item>,
     /// The Legendary Fish (trophy items) they have caught: each bites for them once.
     pub(crate) legends_caught: Vec<u32>,
     /// The Legendary Fish they hold a hint of, from a Legend Rumour or an angler's gossip.
@@ -184,6 +188,8 @@ impl Characters {
             angler_xp: 0,
             catches: Vec::new(),
             bait: None,
+            fishing_pole: None,
+            fishing_lure: None,
             legends_caught: Vec::new(),
             legend_hints: Vec::new(),
         });

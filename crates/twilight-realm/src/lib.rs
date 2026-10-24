@@ -141,6 +141,13 @@ pub struct Motion {
     pub transport: Option<benilla_protocol::messages::TransportPose>,
 }
 
+/// A Fishing Journal gear slot.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FishingGearSlot {
+    Pole,
+    Lure,
+}
+
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
 /// and drops the rest.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -440,6 +447,13 @@ pub enum RealmCommand {
     /// `None` to clear the slot. Anything else is ignored.
     SetBait {
         item: Option<u32>,
+    },
+    /// Fill a Fishing Journal gear slot (spec #368) from the item at `(bag, slot)`, which goes
+    /// into it and sends back what the slot held; `None` puts the slot's item in the bags. The
+    /// Pole slot takes only a `[[pole]]` item and the Lure slot only a `[[lure]]` item.
+    SetFishingGear {
+        slot: FishingGearSlot,
+        from: Option<(u8, u8)>,
     },
     /// A dev aid (`WOW_PROBE_GOTO`): on the next tick, teleport the player to `(x, y)` on its
     /// map, on the ground there, facing `facing` or its own way. A spot with no ground is refused
@@ -1392,6 +1406,7 @@ impl Realm {
                 secs,
             } => self.fishing_result(won, perfect, treasure, secs),
             RealmCommand::SetBait { item } => self.set_bait(item),
+            RealmCommand::SetFishingGear { slot, from } => self.set_fishing_gear(slot, from),
             RealmCommand::UseItem { bag, slot } => {
                 if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {

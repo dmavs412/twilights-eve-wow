@@ -8,7 +8,7 @@ mod quest_common;
 use benilla_protocol::{SessionEvent, START_ELWYNN};
 use common::*;
 use quest_common::{accept, completed, hand_in};
-use twilight_realm::{Realm, RealmCommand};
+use twilight_realm::{FishingGearSlot, Realm, RealmCommand};
 
 const FISHING: u32 = 7620;
 const FISHING_POLE: u32 = 6256;
@@ -213,7 +213,7 @@ pool = \"test_level_11\"
 }
 
 /// A new Elwynn character's save, edited: Angler Level `level`, Fishing known or not, and a
-/// Fishing Pole in the main hand or nothing carried. Its guid, the save and where it starts.
+/// Fishing Pole in the Pole slot or nothing carried. Its guid, the save and where it starts.
 fn save(level: u8, knows: bool, pole: bool) -> (u64, String, [f32; 3]) {
     save_carrying(level, knows, pole, &[])
 }
@@ -244,7 +244,7 @@ fn save_carrying(
     );
     if pole {
         blob.push_str(&format!(
-            "\n[[items]]\nslot = {MAIN_HAND}\nentry = {FISHING_POLE}\ncount = 1\n"
+            "\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n"
         ));
     }
     for (slot, entry, count) in items {
@@ -277,6 +277,11 @@ fn angler_carrying(level: u8, side: Side, items: &[(u8, u32, u32)]) -> Angler {
 
 fn carrying(level: u8, side: Side, knows: bool, pole: bool, items: &[(u8, u32, u32)]) -> Angler {
     let (guid, blob, start) = save_carrying(level, knows, pole, items);
+    from_save(guid, &blob, start, side)
+}
+
+/// The character of `blob` in the world at `start`, facing the water off `side`.
+fn from_save(guid: u64, blob: &str, start: [f32; 3], side: Side) -> Angler {
     let host = Pond {
         centre: pond_centre(start, side),
         radius: 8.0,
@@ -285,7 +290,7 @@ fn carrying(level: u8, side: Side, knows: bool, pole: bool, items: &[(u8, u32, u
     let mut realm = Realm::with_seed(7)
         .with_fish(&test_fish(start))
         .with_rumours(TEST_LEGEND_RUMOUR);
-    realm.import_character(&blob).unwrap();
+    realm.import_character(blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &host);
     realm.handle(RealmCommand::Move {
@@ -754,15 +759,10 @@ fn set_bait_ignores_an_item_not_carried_or_not_a_bait() {
 fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
     let mut a = angler_carrying(1, Side::East, &[(PACK_1, SHINY_BAUBLE, 1)]);
     let used = a.use_item(PACK_1);
-    assert!(
-        used.iter().any(|e| matches!(
-            e,
-            SessionEvent::AuraDuration {
-                slot: 30,
-                remaining_ms: 600_000
-            }
-        )),
-        "the lure's ten-minute aura: {used:?}"
+    assert_eq!(
+        lure_of(&used),
+        Some(Some((SHINY_BAUBLE, 20, 20))),
+        "using the lure slots it: {used:?}"
     );
     let (_, bite) = a.hook();
     assert!((zone_height(&bite) - 0.1735).abs() < 1e-6, "{bite:?}");
@@ -848,6 +848,216 @@ fn the_journal_keeps_the_best_catch_and_the_save_keeps_it_and_the_bait() {
     let (bait, zones) = journal(&drain(&mut back)).expect("a Journal at login");
     assert_eq!(bait, Some(WRIGGLING_WORMS));
     assert_eq!(best(&zones, 990001, SMALLFISH), Some(2));
+}
+
+// The pole and the lure in the Journal (#371).
+
+const DARKWOOD_POLE: u32 = 6366;
+const WORN_SHORTSWORD: u32 = 25;
+
+/// The last `FishingJournal`'s Lure slot in `events`: `(entry, durability, max)`.
+fn lure_of(events: &[SessionEvent]) -> Option<Option<(u32, u32, u32)>> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::FishingJournal { lure, .. } => Some(*lure),
+        _ => None,
+    })
+}
+
+/// The last `FishingJournal`'s Pole slot in `events`.
+fn pole_of(events: &[SessionEvent]) -> Option<Option<u32>> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::FishingJournal { pole, .. } => Some(*pole),
+        _ => None,
+    })
+}
+
+/// How many of `entry` the saved character carries in the bags and worn slots.
+fn carried(a: &Angler, entry: u32) -> usize {
+    let blob = a.realm.export_character(a.guid).unwrap();
+    let table: toml::Table = blob.parse().unwrap();
+    table
+        .get("items")
+        .and_then(|i| i.as_array())
+        .map_or(0, |items| {
+            items
+                .iter()
+                .filter(|i| i["entry"].as_integer() == Some(i64::from(entry)))
+                .count()
+        })
+}
+
+/// A character with `extra` (a TOML table) added to its save, carrying `items`.
+fn with_gear(side: Side, extra: &str, items: &[(u8, u32, u32)]) -> Angler {
+    let (guid, mut blob, start) = save_carrying(1, true, false, items);
+    blob.push_str(extra);
+    from_save(guid, &blob, start, side)
+}
+
+fn lure_table(entry: u32, durability: u32) -> String {
+    format!("\n[fishing_lure]\nslot = 0\nentry = {entry}\ncount = 1\ndurability = {durability}\n")
+}
+
+impl Angler {
+    fn set_gear(&mut self, slot: FishingGearSlot, from: Option<(u8, u8)>) -> Vec<SessionEvent> {
+        self.realm
+            .handle(RealmCommand::SetFishingGear { slot, from });
+        drain(&mut self.realm)
+    }
+
+    /// Ticks the bar out unanswered.
+    fn let_it_go(&mut self) -> Vec<SessionEvent> {
+        let mut all = Vec::new();
+        for _ in 0..300 {
+            self.realm.tick(0.1, &self.host);
+            all.extend(drain(&mut self.realm));
+        }
+        all
+    }
+}
+
+#[test]
+fn a_pole_from_the_bags_fills_the_slot_and_the_sword_stays_in_hand() {
+    let mut a = carrying(
+        1,
+        Side::East,
+        true,
+        false,
+        &[(PACK_1, FISHING_POLE, 1), (MAIN_HAND, WORN_SHORTSWORD, 1)],
+    );
+    let set = a.set_gear(FishingGearSlot::Pole, Some((PLAYER_BAG, PACK_1)));
+    assert_eq!(pole_of(&set), Some(Some(FISHING_POLE)));
+    assert_eq!(carried(&a, FISHING_POLE), 0, "the bag slot is empty");
+    let events = a.cast();
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::ChannelStart { .. })),
+        "the cast landed"
+    );
+    assert_eq!(carried(&a, WORN_SHORTSWORD), 1, "the sword is still worn");
+    let blob = a.realm.export_character(a.guid).unwrap();
+    let table: toml::Table = blob.parse().unwrap();
+    let sword = table["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|i| i["entry"].as_integer() == Some(i64::from(WORN_SHORTSWORD)))
+        .unwrap();
+    assert_eq!(sword["slot"].as_integer(), Some(i64::from(MAIN_HAND)));
+}
+
+#[test]
+fn the_slots_take_only_their_own_kind_and_none_puts_the_item_back() {
+    let mut a = carrying(
+        1,
+        Side::East,
+        true,
+        false,
+        &[(PACK_1, SHINY_BAUBLE, 1), (PACK_2, FISHING_POLE, 1)],
+    );
+    let at_bauble = Some((PLAYER_BAG, PACK_1));
+    let at_pole = Some((PLAYER_BAG, PACK_2));
+    assert!(a.set_gear(FishingGearSlot::Pole, at_bauble).is_empty());
+    assert!(a.set_gear(FishingGearSlot::Lure, at_pole).is_empty());
+    assert_eq!(carried(&a, SHINY_BAUBLE), 1);
+    let set = a.set_gear(FishingGearSlot::Pole, at_pole);
+    assert_eq!(pole_of(&set), Some(Some(FISHING_POLE)));
+    let cleared = a.set_gear(FishingGearSlot::Pole, None);
+    assert_eq!(pole_of(&cleared), Some(None));
+    assert_eq!(carried(&a, FISHING_POLE), 1, "back in the bags");
+}
+
+#[test]
+fn a_main_hand_pole_does_not_cast_without_one_in_the_slot() {
+    let mut a = carrying(1, Side::East, true, false, &[(MAIN_HAND, FISHING_POLE, 1)]);
+    assert_eq!(refusal(&a.cast()), Some(SPELL_FAILED_EQUIPPED_ITEM_CLASS));
+}
+
+#[test]
+fn a_darkwood_pole_adds_three_angler_levels_to_the_zone() {
+    let extra = format!("\n[fishing_pole]\nslot = 0\nentry = {DARKWOOD_POLE}\ncount = 1\n");
+    let mut a = with_gear(Side::East, &extra, &[]);
+    let (_, bite) = a.hook();
+    assert!((zone_height(&bite) - 0.1805).abs() < 1e-6, "{bite:?}");
+}
+
+#[test]
+fn a_lure_at_one_point_breaks_at_the_bite_and_the_next_one_takes_its_place() {
+    let mut a = with_gear(
+        Side::East,
+        &format!(
+            "{}\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n",
+            lure_table(SHINY_BAUBLE, 1)
+        ),
+        &[(PACK_1, SHINY_BAUBLE, 1), (PACK_2, SHINY_BAUBLE, 1)],
+    );
+    let (events, _) = a.hook();
+    assert_eq!(lure_of(&events), Some(Some((SHINY_BAUBLE, 20, 20))));
+    assert!(
+        format!("{events:?}").contains("Your Shiny Bauble broke. Another one is on the line."),
+        "the system line"
+    );
+    // The slot holds one of the others; one is left in the bags.
+    assert_eq!(carried(&a, SHINY_BAUBLE), 1);
+}
+
+#[test]
+fn a_last_lure_at_one_point_leaves_the_slot_empty() {
+    let mut a = with_gear(
+        Side::East,
+        &format!(
+            "{}\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n",
+            lure_table(SHINY_BAUBLE, 1)
+        ),
+        &[],
+    );
+    let (events, _) = a.hook();
+    assert_eq!(lure_of(&events), Some(None));
+    assert!(format!("{events:?}").contains("Your Shiny Bauble broke."));
+    assert_eq!(carried(&a, SHINY_BAUBLE), 0);
+}
+
+#[test]
+fn a_lost_fish_still_costs_the_lure_a_point() {
+    let mut a = with_gear(
+        Side::East,
+        &format!(
+            "{}\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n",
+            lure_table(SHINY_BAUBLE, 5)
+        ),
+        &[],
+    );
+    a.hook();
+    a.let_it_go();
+    let blob = a.realm.export_character(a.guid).unwrap();
+    let table: toml::Table = blob.parse().unwrap();
+    assert_eq!(table["fishing_lure"]["durability"].as_integer(), Some(4));
+}
+
+#[test]
+fn a_lure_is_never_repaired_or_charged_for() {
+    use twilight_realm::rules::durability::repair_cost;
+    assert_eq!(repair_cost(SHINY_BAUBLE, 12), 0);
+}
+
+#[test]
+fn the_save_round_trip_keeps_the_pole_and_the_lure_with_its_durability() {
+    let a = with_gear(
+        Side::East,
+        &format!(
+            "{}\n[fishing_pole]\nslot = 0\nentry = {DARKWOOD_POLE}\ncount = 1\n",
+            lure_table(SHINY_BAUBLE, 12)
+        ),
+        &[],
+    );
+    let blob = a.realm.export_character(a.guid).unwrap();
+    let mut back = Realm::new().with_fish(TEST_FISH);
+    back.import_character(&blob).unwrap();
+    back.handle(RealmCommand::EnterWorld { guid: a.guid });
+    back.tick(0.0, &FlatGround);
+    let events = drain(&mut back);
+    assert_eq!(pole_of(&events), Some(Some(DARKWOOD_POLE)));
+    assert_eq!(lure_of(&events), Some(Some((SHINY_BAUBLE, 12, 20))));
 }
 
 // Legendary Fish (#331). The test pool's Legendary Fish all bite at 100 percent when their

@@ -177,6 +177,10 @@ pub enum SessionEvent {
     FishingJournal {
         /// The chosen bait's item entry.
         bait: Option<u32>,
+        /// The Fishing Pole slot's item entry.
+        pole: Option<u32>,
+        /// The Lure slot: `(item entry, durability, max durability)`.
+        lure: Option<(u32, u32, u32)>,
         /// `(zone AreaTable id, [(fish item, best: 0 none, 1 caught, 2 perfect)])`, in pool order.
         zones: Vec<(u32, Vec<(u32, u8)>)>,
         /// `(item, zone, hint found, caught)`; empty until the Legendary Fish land.

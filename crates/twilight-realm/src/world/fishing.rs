@@ -3,16 +3,15 @@
 //! realm's next tick, which has the host. The bobber is a run-time GameObject the realm keeps
 //! (`crate::objects`); this session names the ones whose cast ended in `spent_bobbers`.
 //!
-//! A lure (#329) is a ten-minute aura under its item's use spell; the chosen bait is taken one per
-//! cast when the bobber lands. What both add is worked out once, at the landing ([`Boost`]), and
+//! The pole and the lure sit in the Journal's gear slots (#371). The lure loses a point of
+//! durability at each bite; the chosen bait is taken one per cast when the bobber lands. What both add is worked out once, at the landing ([`Boost`]), and
 //! the cast keeps it to the bite. The Fishing Journal is each fish's best catch and the bait.
 
 use benilla_protocol::messages::GossipOption;
 use benilla_protocol::SessionEvent;
 
 use super::cast::{refused, SPELL_FAILED_EQUIPPED_ITEM_CLASS, SPELL_FAILED_NOT_KNOWN};
-use super::food::UNIT_FIELD_AURALEVELS;
-use super::food::{use_up_one, AURA_FLAGS, UNIT_FIELD_AURA, UNIT_FIELD_AURAFLAGS};
+use super::food::use_up_one;
 use super::InWorld;
 use crate::audience::Audience;
 use crate::characters::Char;
@@ -28,12 +27,11 @@ use crate::rules::game_clock;
 use crate::rules::gear::SLOT_MAIN_HAND;
 use crate::rules::xp::gray_level;
 use crate::rumours;
+use crate::FishingGearSlot;
 use crate::{clock, Host};
 
 /// `SPELL_FAILED_NOT_FISHABLE`: "Your cast didn't land in fishable water".
 const SPELL_FAILED_NOT_FISHABLE: u8 = 0x34;
-/// `ITEM_CLASS_WEAPON`.
-const WEAPON: u32 = 2;
 /// The red line when nothing in the water bites at the character's Angler Level.
 const NOTHING_BITING: &str = "Nothing is biting";
 /// Seconds past the bar's timeout a result is still believed, and the bar kept open.
@@ -49,12 +47,6 @@ const ICON_VENDOR: u8 = 1;
 const ICON_TRAINER: u8 = 3;
 /// `GOSSIP_ICON_CHAT`.
 const ICON_CHAT: u8 = 0;
-
-/// The buff slot a lure's aura shows in: the one before the meal's.
-const LURE_AURA_SLOT: u16 = 30;
-/// How long a lure's aura lasts until the gear ticket (#371) moves the lure into the Journal and
-/// removes the aura.
-const LEGACY_LURE_SECS: f32 = 600.0;
 
 /// The Journal's best catch of a fish.
 const CAUGHT: u8 = 1;
@@ -85,17 +77,13 @@ impl Boost {
     }
 }
 
-/// The lure on the character: its item and the seconds left.
-pub(super) struct Lure {
-    item: u32,
-    left: f32,
-}
-
 /// A Fishing cast under way, from the cast to the end of the Reeling Bar.
 pub(super) struct Fishing {
     /// The bobber's guid; 0 until it lands.
     bobber: u64,
     stage: Stage,
+    /// The main hand's entry to show again when the cast ends: the pole shows while it lasts.
+    restore: u32,
 }
 
 enum Stage {
@@ -168,6 +156,11 @@ pub(super) fn journal(c: &Char) -> SessionEvent {
     };
     SessionEvent::FishingJournal {
         bait: c.bait,
+        pole: c.fishing_pole.as_ref().map(|p| p.entry),
+        lure: c.fishing_lure.as_ref().map(|l| {
+            let max = items::template(l.entry).map_or(0, |t| t.durability);
+            (l.entry, l.durability, max)
+        }),
         zones: fish::pools()
             .map(|p| {
                 (
@@ -225,12 +218,34 @@ fn carried_bait(c: &Char) -> Option<&'static fish::Bait> {
         .and_then(fish::bait)
 }
 
-/// Whether the main hand holds a fishing pole.
+/// Whether the Pole slot holds a fishing pole.
 fn holds_pole(c: &Char) -> bool {
+    c.fishing_pole.is_some()
+}
+
+/// What the Pole slot's pole and the Lure slot's lure add to a cast.
+fn gear_boost(c: &Char) -> Boost {
+    let pole = c
+        .fishing_pole
+        .as_ref()
+        .and_then(|p| fish::pole(p.entry))
+        .map_or(Boost::default(), |p| Boost::default().with(&p.effect));
+    c.fishing_lure
+        .as_ref()
+        .and_then(|l| fish::lure(l.entry))
+        .map_or(pole, |l| pole.with(&l.effect))
+}
+
+/// The main hand's entry, as other players see it.
+fn main_hand_entry(c: &Char) -> u32 {
     c.inventory
         .get(Pos::own(SLOT_MAIN_HAND))
-        .and_then(|i| items::template(i.entry))
-        .is_some_and(|t| t.class == WEAPON && t.subclass == fish::spell().pole_subclass)
+        .map_or(0, |i| i.entry)
+}
+
+/// The fields that show `entry` in the main hand.
+fn show_hand(guid: u64, entry: u32) -> SessionEvent {
+    values(guid, &[(equipment::visible_item(SLOT_MAIN_HAND), entry)])
 }
 
 /// The fish of `pool` that bite at Angler Level `effective`: those fewer than
@@ -366,16 +381,21 @@ impl InWorld {
         }
         // A new cast ends a channel under way.
         self.end_channel(true, events);
+        let restore = main_hand_entry(c);
+        if let Some(pole) = &c.fishing_pole {
+            events.push(show_hand(self.guid, pole.entry));
+        }
         self.fishing = Some(Fishing {
             bobber: 0,
             stage: Stage::Cast,
+            restore,
         });
     }
 
     /// The cast or the bar under way is lost: the client is told the fish got away, the line
     /// comes in, and the bobber goes.
     pub(crate) fn lose_fish(&mut self, events: &mut Vec<SessionEvent>) {
-        let Some(f) = self.fishing.take() else {
+        let Some(f) = self.end_cast(events) else {
             return;
         };
         events.push(SessionEvent::FishingEnd {
@@ -386,6 +406,13 @@ impl InWorld {
         if f.bobber != 0 {
             self.reel_in(f.bobber, true, events);
         }
+    }
+
+    /// The cast under way is over: the main hand shows what it holds again.
+    fn end_cast(&mut self, events: &mut Vec<SessionEvent>) -> Option<Fishing> {
+        let f = self.fishing.take()?;
+        events.push(show_hand(self.guid, f.restore));
+        Some(f)
     }
 
     /// The channel to `bobber` ends, `broken` when it stopped short, and the bobber is spent.
@@ -399,18 +426,8 @@ impl InWorld {
         std::mem::take(&mut self.spent_bobbers)
     }
 
-    /// What the lure on the character adds to a cast.
-    fn lure_boost(&self) -> Boost {
-        self.lure
-            .as_ref()
-            .and_then(|l| fish::lure(l.item))
-            .map_or(Boost::default(), |l| Boost::default().with(&l.effect))
-    }
-
-    /// `CMSG_USE_ITEM` on the item in player slot `slot`, if it is a lure: one of the stack goes
-    /// and its aura goes on under the item's use spell for the lure's duration, in place of any
-    /// lure before it. The stock spell wants the pole as its target; whatever target the client
-    /// sent, the use is taken. Whether it was a lure.
+    /// `CMSG_USE_ITEM` on the item in player slot `slot`, if it is a lure: it goes into the Lure
+    /// slot, as `SetFishingGear` would put it. Whether it was a lure.
     pub(crate) fn use_lure(
         &mut self,
         slot: Pos,
@@ -420,78 +437,13 @@ impl InWorld {
         let Some(item) = c.inventory.get(slot) else {
             return false;
         };
-        let entry = item.entry;
-        if fish::lure(entry).is_none() {
+        if fish::lure(item.entry).is_none() {
             return false;
         }
-        let spell_id = items::template(entry).map_or(0, |t| t.use_spell);
-        if self.dead() {
-            return true;
+        if !self.dead() {
+            put_gear(c, FishingGearSlot::Lure, Some(slot), events);
         }
-        let Some(item_guid) = use_up_one(slot, c, events) else {
-            return true;
-        };
-        events.push(SessionEvent::CastResult {
-            spell_id,
-            success: true,
-            reason: None,
-            arg: None,
-        });
-        events.push(SessionEvent::SpellGo {
-            caster: self.guid,
-            spell_id,
-            cast_flags: 0,
-            hits: vec![self.guid],
-            misses: Vec::new(),
-            target: Some(self.guid),
-            go_target: None,
-            dest: None,
-            ammo_display_id: None,
-            item_caster: Some(item_guid),
-        });
-        let s = LURE_AURA_SLOT;
-        events.push(values(
-            self.guid,
-            &[
-                (UNIT_FIELD_AURA + s, spell_id),
-                (UNIT_FIELD_AURAFLAGS + s / 8, AURA_FLAGS << (4 * (s % 8))),
-                (
-                    UNIT_FIELD_AURALEVELS + s / 4,
-                    u32::from(c.level) << (8 * (s % 4)),
-                ),
-            ],
-        ));
-        let secs = LEGACY_LURE_SECS;
-        events.push(SessionEvent::AuraDuration {
-            slot: s as u8,
-            remaining_ms: clock::ms(secs),
-        });
-        self.lure = Some(Lure {
-            item: entry,
-            left: secs,
-        });
         true
-    }
-
-    /// The lure's clock: when it runs out its aura goes.
-    fn lure_tick(&mut self, dt: f32, events: &mut Vec<SessionEvent>) {
-        let Some(l) = &mut self.lure else {
-            return;
-        };
-        l.left -= dt;
-        if l.left > 0.0 {
-            return;
-        }
-        self.lure = None;
-        let s = LURE_AURA_SLOT;
-        events.push(values(
-            self.guid,
-            &[
-                (UNIT_FIELD_AURA + s, 0),
-                (UNIT_FIELD_AURAFLAGS + s / 8, 0),
-                (UNIT_FIELD_AURALEVELS + s / 4, 0),
-            ],
-        ));
     }
 
     /// The cast's clock, with the host: a fresh cast lands or is refused, a floating bobber
@@ -506,7 +458,6 @@ impl InWorld {
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) -> Option<ObjectSpec> {
-        self.lure_tick(dt, events);
         let f = self.fishing.as_mut()?;
         match &mut f.stage {
             Stage::Cast => return self.land(host, c, rng, events),
@@ -554,12 +505,12 @@ impl InWorld {
             .liquid_at(c.map, x, y)
             .filter(|&z| host.ground_height(c.map, x, y, z).is_none_or(|g| z >= g));
         let Some(z) = surface else {
-            self.fishing = None;
+            self.end_cast(events);
             events.push(refused(s.id, SPELL_FAILED_NOT_FISHABLE));
             return None;
         };
         let bait = carried_bait(c);
-        let mut boost = bait.map_or(self.lure_boost(), |b| self.lure_boost().with(&b.effect));
+        let mut boost = bait.map_or(gear_boost(c), |b| gear_boost(c).with(&b.effect));
         boost.bait = bait.map(|b| b.item);
         let effective = effective_level(c, boost);
         let area = host.area_at(c.map, x, y);
@@ -568,7 +519,7 @@ impl InWorld {
         let pool = fish::pool_at(c.map, x, y, area).map(|p| (p, fish::kind_at(p, fishing_water)));
         let pool = pool.filter(|&(p, kind)| !biters(p, effective, kind).is_empty());
         let Some((pool, kind)) = pool else {
-            self.fishing = None;
+            self.end_cast(events);
             events.push(SessionEvent::Notification {
                 text: NOTHING_BITING.into(),
             });
@@ -661,7 +612,7 @@ impl InWorld {
         water: Option<&'static str>,
         kind: Kind,
         wall: f64,
-        c: &Char,
+        c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
     ) {
@@ -739,6 +690,7 @@ impl InWorld {
             treasure: treasure.map(|(_, t)| t),
             left: bar.timeout_secs + RESULT_SLACK_SECS,
         });
+        wear_lure(c, events);
     }
 
     /// `FishingResult` with a bar open: a win the realm believes lands the fish, and the chest
@@ -766,7 +718,8 @@ impl InWorld {
         let Some(Fishing {
             bobber,
             stage: Stage::Reeling(bite),
-        }) = self.fishing.take()
+            ..
+        }) = self.end_cast(events)
         else {
             return false;
         };
@@ -819,6 +772,105 @@ impl InWorld {
         self.reel_in(bobber, false, events);
         won
     }
+}
+
+/// The Lure slot's lure loses a point at a bite. At zero it breaks: the first lure of its entry in
+/// the bags takes its place, or the slot empties. The Journal follows either way.
+fn wear_lure(c: &mut Char, events: &mut Vec<SessionEvent>) {
+    let Some(lure) = &mut c.fishing_lure else {
+        return;
+    };
+    lure.durability = lure.durability.saturating_sub(1);
+    if lure.durability > 0 {
+        events.push(journal(c));
+        return;
+    }
+    let entry = lure.entry;
+    let name = items::template(entry).map_or_else(String::new, |t| t.name.clone());
+    c.fishing_lure = None;
+    let next = c
+        .inventory
+        .iter()
+        .find(|(at, i)| i.entry == entry && !at.is_worn())
+        .map(|(at, _)| at);
+    let line = match next {
+        Some(at) => {
+            put_gear(c, FishingGearSlot::Lure, Some(at), events);
+            format!("Your {name} broke. Another one is on the line.")
+        }
+        None => format!("Your {name} broke."),
+    };
+    events.push(crate::quests::system_line(line));
+    events.push(journal(c));
+}
+
+/// Whether `entry` belongs in `slot`.
+fn fits_slot(slot: FishingGearSlot, entry: u32) -> bool {
+    match slot {
+        FishingGearSlot::Pole => fish::pole(entry).is_some(),
+        FishingGearSlot::Lure => fish::lure(entry).is_some(),
+    }
+}
+
+fn gear_cell(c: &mut Char, slot: FishingGearSlot) -> &mut Option<crate::inventory::Item> {
+    match slot {
+        FishingGearSlot::Pole => &mut c.fishing_pole,
+        FishingGearSlot::Lure => &mut c.fishing_lure,
+    }
+}
+
+/// Moves the item of the bags at `from` into `slot`, and what the slot held into the place it
+/// came from; `None` puts the slot's item into the first free place. The Journal and the
+/// inventory follow. Whether anything changed.
+fn put_gear(
+    c: &mut Char,
+    slot: FishingGearSlot,
+    from: Option<Pos>,
+    events: &mut Vec<SessionEvent>,
+) -> bool {
+    let Some(from) = from else {
+        let Some(held) = gear_cell(c, slot).take() else {
+            return false;
+        };
+        let Some(at) = c.inventory.free_slot(held.entry) else {
+            *gear_cell(c, slot) = Some(held);
+            events.push(equipment::inventory_failure(
+                equipment::EQUIP_ERR_INVENTORY_FULL,
+                0,
+            ));
+            return false;
+        };
+        c.inventory.put(at, held);
+        let Some(item) = c.inventory.get(at) else {
+            return false;
+        };
+        events.push(equipment::item_create(c, at, item));
+        equipment::send_slots(c, &[at], events);
+        events.push(journal(c));
+        return true;
+    };
+    let Some(item) = c.inventory.get(from) else {
+        return false;
+    };
+    if from.is_worn() || from.is_bag_slot() || !fits_slot(slot, item.entry) {
+        return false;
+    }
+    let Some(item) = c.inventory.take(from) else {
+        return false;
+    };
+    let guid = item.guid;
+    let old = std::mem::replace(gear_cell(c, slot), Some(item));
+    if let Some(old) = old {
+        c.inventory.put(from, old);
+    }
+    equipment::send_slots(c, &[from], events);
+    events.push(SessionEvent::ObjectDestroyed(guid));
+    if let Some(back) = c.inventory.get(from) {
+        events.push(equipment::item_create(c, from, back));
+        equipment::send_slots(c, &[from], events);
+    }
+    events.push(journal(c));
+    true
 }
 
 /// Takes one of bait `item` from the bags; the last one clears the slot and sends the Journal.
@@ -925,6 +977,20 @@ impl crate::Realm {
         c.bait = item;
         self.events.push(journal(c));
         self.save(guid);
+    }
+
+    /// `SetFishingGear`: see [`RealmCommand::SetFishingGear`]. Saved when it changed anything.
+    pub(crate) fn set_fishing_gear(&mut self, slot: FishingGearSlot, from: Option<(u8, u8)>) {
+        let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(guid) else {
+            return;
+        };
+        let from = from.map(|(bag, slot)| Pos { bag, slot });
+        if put_gear(c, slot, from, &mut self.events) {
+            self.save(guid);
+        }
     }
 
     /// A line of an angler hint in `npc`'s menu: the Legend Rumour's note text is its reply and the
