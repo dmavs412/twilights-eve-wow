@@ -64,6 +64,7 @@ mod inn;
 mod inventory;
 mod items;
 mod looting;
+mod map_marks;
 mod mobs;
 mod objects;
 mod party;

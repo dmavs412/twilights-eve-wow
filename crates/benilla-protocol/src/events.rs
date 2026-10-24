@@ -126,6 +126,51 @@ pub struct FishPage {
     pub favourite_bait: Option<u32>,
 }
 
+/// Twilight's Eve, not 1.12: one place the world map marks (spec #383).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
+pub struct MapMark {
+    /// The map it stands on: 0 Eastern Kingdoms, 1 Kalimdor.
+    pub map: u32,
+    /// WoW x and y.
+    pub position: [f32; 2],
+    /// The giver's or Hub NPC's object guid, as its create carries it (`Npc::guid`,
+    /// `mobs::unit_guid` for a spawn, the GameObject's guid); 0 for a dungeon. The
+    /// minimap reads it to drop the stock quest dot under a quest mark.
+    pub guid: u64,
+    pub icon: MapIcon,
+    /// The tooltip's first line: the NPC's, object's or dungeon's name.
+    pub name: String,
+    /// The line under the name: a Hub NPC's subname or role label, or a dungeon's
+    /// "Phased Dungeon, levels 15-18". Empty for none.
+    pub subtitle: String,
+    /// A quest mark's quests, hand-ins first. Empty for every other icon.
+    pub quests: Vec<MarkedQuest>,
+}
+
+/// What a [`MapMark`] draws.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MapIcon {
+    QuestAvailable,
+    QuestReady,
+    Trainer,
+    Vendor,
+    Innkeeper,
+    FlightMaster,
+    Dungeon,
+}
+
+/// One quest row in a quest [`MapMark`]'s tooltip.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
+pub struct MarkedQuest {
+    pub title: String,
+    /// "Hunting Quest", "Repeatable Quest", "Bounty", "Advancement Quest", "Story Quest" or "Quest".
+    pub kind: String,
+    pub level: u8,
+    /// The kill targets' level range, `None` when the quest has no kill objective with a spawn.
+    pub monsters: Option<[u8; 2]>,
+    pub ready: bool,
+}
+
 /// One decoded world-stream event; its fieldless twin [`SessionEventKind`] keys the handler table.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, strum::EnumDiscriminants)]
 #[strum_discriminants(
@@ -165,6 +210,9 @@ pub enum SessionEvent {
     /// character's view, oldest fight first. Complete on every change; empty clears the bar.
     /// Never wire-decoded.
     BossFight { guids: Vec<u64> },
+    /// Twilight's Eve, not 1.12: everything the world map marks for this character, complete on
+    /// every change. Never wire-decoded.
+    MapMarks { marks: Vec<MapMark> },
     /// Twilight's Eve, not 1.12: a fish bit (ADR 0018), with everything the client needs to run
     /// the Reeling Bar. The realm has already chosen the fish and any treasure. Never
     /// wire-decoded.

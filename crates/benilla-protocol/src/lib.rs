@@ -10,8 +10,8 @@ pub mod wire;
 pub mod world;
 pub use auth::AuthReject;
 pub use events::{
-    decode, CharAction, EntityKind, FishPage, LoginRefusal, LoginStage, MoveSpeeds, Poll,
-    SessionEnd, SessionEvent, SessionEventKind,
+    decode, CharAction, EntityKind, FishPage, LoginRefusal, LoginStage, MapIcon, MapMark,
+    MarkedQuest, MoveSpeeds, Poll, SessionEnd, SessionEvent, SessionEventKind,
 };
 pub use messages::field;
 pub use messages::{

@@ -455,6 +455,7 @@ struct BandFile {
 
 #[derive(Deserialize)]
 struct BandArea {
+    name: String,
     map: u32,
     x: [f32; 2],
     y: [f32; 2],
@@ -490,6 +491,26 @@ pub(crate) fn banded(entry: u32, map: u32, position: [f32; 3]) -> Option<[u8; 2]
         return None;
     }
     crate::bands::range_at(position[0], position[1])
+}
+
+/// The name of the `level_overrides.toml` area holding the point, else (on Eastern Kingdoms) the
+/// Elwynn band that covers it.
+pub(crate) fn level_area(map: u32, x: f32, y: f32) -> Option<&'static str> {
+    static FILE: OnceLock<BandFile> = OnceLock::new();
+    let bands = FILE.get_or_init(|| {
+        toml::from_str(include_str!("../content/level_overrides.toml"))
+            .expect("content/level_overrides.toml parses")
+    });
+    bands
+        .area
+        .iter()
+        .find(|a| a.map == map && (a.x[0]..=a.x[1]).contains(&x) && (a.y[0]..=a.y[1]).contains(&y))
+        .map(|a| a.name.as_str())
+        .or_else(|| {
+            (map == crate::content::EASTERN_KINGDOMS)
+                .then(|| crate::bands::band_at(x, y))
+                .flatten()
+        })
 }
 
 pub(crate) fn content() -> &'static Mobs {

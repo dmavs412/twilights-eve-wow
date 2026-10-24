@@ -9,6 +9,7 @@
 
 id = 2
 name = "Forest's Edge"
+levels = [27, 30]
 map = 0
 # Elwynn Forest, for its creatures' Zone Factor.
 zone = 12

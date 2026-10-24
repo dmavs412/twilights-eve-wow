@@ -9,6 +9,7 @@ type Rect = [f32; 4];
 
 #[derive(Deserialize)]
 struct Band {
+    name: String,
     level_min: u8,
     level_max: u8,
     boxes: Vec<Rect>,
@@ -44,6 +45,15 @@ fn gap(r: &Rect, x: f32, y: f32) -> f32 {
 /// holding the point, or the band with the nearest box. `None` outside the bounds and inside an
 /// excluded box.
 pub(crate) fn range_at(x: f32, y: f32) -> Option<[u8; 2]> {
+    band_for(x, y).map(|b| [b.level_min, b.level_max.max(b.level_min)])
+}
+
+/// The name of the band `range_at` would use for the point.
+pub(crate) fn band_at(x: f32, y: f32) -> Option<&'static str> {
+    band_for(x, y).map(|b| b.name.as_str())
+}
+
+fn band_for(x: f32, y: f32) -> Option<&'static Band> {
     let f = file();
     if !f.bounds.iter().any(|b| holds(b, x, y)) || f.exclude.iter().any(|b| holds(b, x, y)) {
         return None;
@@ -52,7 +62,7 @@ pub(crate) fn range_at(x: f32, y: f32) -> Option<[u8; 2]> {
         .iter()
         .flat_map(|b| b.boxes.iter().map(move |r| (b, gap(r, x, y))))
         .min_by(|a, b| a.1.total_cmp(&b.1))
-        .map(|(b, _)| [b.level_min, b.level_max.max(b.level_min)])
+        .map(|(b, _)| b)
 }
 
 /// A level in `range` for creature `guid`, the same every time.

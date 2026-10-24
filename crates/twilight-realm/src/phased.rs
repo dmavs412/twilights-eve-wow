@@ -490,6 +490,9 @@ pub(crate) struct Dungeon {
     /// What the dungeon is called in the text players read.
     pub(crate) name: String,
     pub(crate) map: u32,
+    /// The level range of its hostile creatures, shown on the world map; none for a test dungeon.
+    #[serde(default)]
+    pub(crate) levels: Option<[u8; 2]>,
     /// The `AreaTable.dbc` area its creatures' Zone Factor comes from; none takes 1.0.
     #[serde(default)]
     pub(crate) zone: Option<u32>,

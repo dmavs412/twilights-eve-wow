@@ -26,9 +26,13 @@ const HEALTH: u32 = 1500;
 pub(crate) struct Npc {
     guid: u32,
     pub(crate) entry: u32,
-    name: String,
+    pub(crate) name: String,
     #[serde(default)]
-    subname: String,
+    pub(crate) subname: String,
+    /// What it does for the player (`giver`, `trainer`, `goods`, ...); `tests/content_hub.rs`
+    /// checks the set.
+    #[serde(default)]
+    pub(crate) role: String,
     level: u8,
     pub(crate) display_id: u32,
     faction_template: u32,

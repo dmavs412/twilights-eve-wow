@@ -241,6 +241,8 @@ pub(crate) struct InWorld {
     pub(crate) seen: std::collections::HashSet<u64>,
     /// The Boss Bar list the client was last sent (`SessionEvent::BossFight`).
     boss_sent: Vec<u64>,
+    /// The map marks last sent; `None` until the first tick after entering the world.
+    marks_sent: Option<Vec<benilla_protocol::MapMark>>,
     /// The Fishing cast under way (ADR 0018), from the cast to the Reeling Bar's end.
     fishing: Option<fishing::Fishing>,
     /// The bobbers of casts that ended, for the realm to remove from its run-time objects.
@@ -436,6 +438,7 @@ impl InWorld {
             handed_back: None,
             seen: Default::default(),
             boss_sent: Vec::new(),
+            marks_sent: None,
             fishing: None,
             spent_bobbers: Vec::new(),
             runs: Default::default(),
@@ -817,7 +820,17 @@ impl InWorld {
         self.eat(dt, c, events);
         self.regenerate(dt, c, events);
         self.boss_fight_tick(events);
+        self.map_marks_tick(c, events);
         ticked
+    }
+
+    /// The world map's marks, sent when they differ from the last list sent.
+    fn map_marks_tick(&mut self, c: &Char, events: &mut Vec<SessionEvent>) {
+        let marks = crate::map_marks::marks(c);
+        if self.marks_sent.as_ref() != Some(&marks) {
+            self.marks_sent = Some(marks.clone());
+            events.push(SessionEvent::MapMarks { marks });
+        }
     }
 
     /// How close the player may come before an idle `mob` notices them: a stealthed player is

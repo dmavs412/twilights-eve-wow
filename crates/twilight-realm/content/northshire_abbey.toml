@@ -8,6 +8,7 @@
 
 id = 1
 name = "Northshire Abbey"
+levels = [8, 10]
 map = 0
 origin = [-8897.0, -178.3, 80.07]
 yaw = -21.5

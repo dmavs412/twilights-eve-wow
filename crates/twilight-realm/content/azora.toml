@@ -29,6 +29,7 @@
 
 id = 7
 name = "Azora"
+levels = [19, 22]
 map = 0
 origin = [-9537.7, -698.7, 65.4]
 yaw = -138.0

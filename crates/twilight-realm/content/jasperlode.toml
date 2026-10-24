@@ -15,6 +15,7 @@
 
 id = 6
 name = "Jasperlode Mine"
+levels = [15, 18]
 map = 0
 # Elwynn Forest, for its creatures' Zone Factor.
 zone = 12

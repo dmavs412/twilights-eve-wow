@@ -443,7 +443,7 @@ pub(crate) fn object_hello(c: &Char, entry: u32, guid: u64, events: &mut Vec<Ses
     }
 }
 
-fn offered(c: &Char, q: &Quest) -> bool {
+pub(crate) fn offered(c: &Char, q: &Quest) -> bool {
     if c.quests.get(q.id).is_some() || done_for_now(c, q) || !after_met(c, q) {
         return false;
     }
@@ -472,7 +472,7 @@ fn in_log(c: &Char, g: Speaker, quest: u32) -> Option<&'static Quest> {
         .filter(|q| !g.object && q.ender() == g.entry && c.quests.get(q.id).is_some())
 }
 
-fn is_complete(c: &Char, q: &Quest) -> bool {
+pub(crate) fn is_complete(c: &Char, q: &Quest) -> bool {
     c.quests.get(q.id).is_some_and(|a| complete(c, a))
 }
 
