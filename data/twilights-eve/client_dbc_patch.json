@@ -5204,7 +5204,7 @@
     "dmg_class": 2,
     "school": 0,
     "prevention_type": 2,
-    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals.",
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby.",
     "implicit_targets": [
      6,
      0
@@ -6325,7 +6325,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Your critical strikes cause the target to bleed for 10% of the damage dealt over 8 seconds.",
+    "description": "Your critical strikes cause the target to bleed for 10% of the damage dealt over 8 seconds. Each tick may spill a blood droplet nearby.",
     "implicit_targets": [
      1,
      0
@@ -6354,7 +6354,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Your critical strikes cause the target to bleed for 20% of the damage dealt over 8 seconds.",
+    "description": "Your critical strikes cause the target to bleed for 20% of the damage dealt over 8 seconds. Each tick may spill a blood droplet nearby.",
     "implicit_targets": [
      1,
      0
@@ -6383,7 +6383,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Your critical strikes cause the target to bleed for 30% of the damage dealt over 8 seconds.",
+    "description": "Your critical strikes cause the target to bleed for 30% of the damage dealt over 8 seconds. Each tick may spill a blood droplet nearby.",
     "implicit_targets": [
      1,
      0
@@ -12027,6 +12027,29 @@
     ],
     "name": "Bloodlust",
     "aura_description": "Physical damage dealt and attack speed increased by 3% a stack."
+   }
+  },
+  {
+   "spell_id": 1000412,
+   "calling": "cutthroat",
+   "key": "aura_blood_droplet",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Racial_Orc_BerserkerStrength",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Blood Droplet",
+    "aura_description": "A droplet of blood. Walk over it for a stack of Bloodlust.",
+    "visual": 3302
    }
   },
   {

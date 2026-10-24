@@ -40,6 +40,12 @@ pub struct CallingDef {
     /// [`power::ENERGY_PER_TICK`]. Only an energy Calling sets it.
     #[serde(default)]
     pub energy_per_tick: Option<u32>,
+    /// The aura row (key) with a `Pickup` effect that a tick of the Calling's own physical bleed
+    /// may spill, and the percent chance of it (`callings.csv`).
+    #[serde(default)]
+    pub bleed_drop: Option<String>,
+    #[serde(default)]
+    pub bleed_drop_chance: u32,
     /// The Tier Bonus: flat base stats on top of the race table, cumulative per Tier.
     pub tier_bonus: TierBonus,
     /// `UNIT_FIELD_BYTES_1` byte 2 while this Calling is current (17, Battle Stance).
@@ -266,6 +272,15 @@ pub enum AuraEffect {
     },
     /// The unit's run speed changes by `pct` percent: faster when positive, a snare when negative.
     ModRunSpeed { pct: i32 },
+    /// A droplet on the ground (Blood Droplet): the row's duration is its life, `scatter_min_yd`
+    /// to `scatter_max_yd` is how far from the bleeding mob it lands, and a player within
+    /// `radius_yd` of it takes the `grants` aura row. Never worn.
+    Pickup {
+        grants: String,
+        radius_yd: f32,
+        scatter_min_yd: f32,
+        scatter_max_yd: f32,
+    },
     /// The player's dodge chance rises by `pct` percent.
     DodgePct { pct: u32 },
     /// The damage the player's non-physical skills deal rises by `pct` percent.

@@ -60,7 +60,7 @@ CALLING = {
 }
 # Every callings.csv cell a test leaves out (`run_build` writes one row per Calling it sees).
 PROFILE = {"icon": "", "power": "rage", "stat_profile": "warrior", "item_class": "warrior", "health_pct": "100",
-           "mana_pct": "100", "energy_per_tick": "",
+           "mana_pct": "100", "energy_per_tick": "", "bleed_drop": "", "bleed_drop_chance": "",
            "armor": "cloth|mail", "weapons": "one_hand_sword|dagger", "spellbook": ""}
 TAB = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms", "tab_id": "900",
        "background": "WarriorArms", "tab_order": "0"}
@@ -313,6 +313,35 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
             done, _ = self.run_build([STRIKE])
             self.assertNotEqual(done.returncode, 0, power)
             self.assertIn("energy_per_tick", done.stderr)
+
+    def test_bleed_drop_names_a_pickup_aura_and_a_chance(self):
+        droplet = {**AURA, "key": "droplet", "spell_id": "1014178", "modelled": "yes",
+                   "effect1_kind": "pickup",
+                   "effect1_params": "grants=buff;radius_yd=1;scatter_min_yd=3;scatter_max_yd=6"}
+        self.profiles = {"vanguard": {"bleed_drop": "droplet", "bleed_drop_chance": "50"}}
+        done, data = self.run_build([STRIKE, AURA, droplet])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["bleed_drop"], "droplet")
+        self.assertEqual(data[0]["bleed_drop_chance"], 50)
+        self.profiles = {"vanguard": {"bleed_drop": "droplet"}}
+        self.assert_fails([STRIKE, AURA, droplet], "set together or not at all")
+        self.profiles = {"vanguard": {"bleed_drop_chance": "50"}}
+        self.assert_fails([STRIKE, AURA, droplet], "set together or not at all")
+        self.profiles = {"vanguard": {"bleed_drop": "buff", "bleed_drop_chance": "50"}}
+        self.assert_fails([STRIKE, AURA, droplet], "with a pickup effect")
+        self.profiles = {"vanguard": {"bleed_drop": "droplet", "bleed_drop_chance": "101"}}
+        self.assert_fails([STRIKE, AURA, droplet], "above 100")
+
+    def test_pickup_needs_a_radius_an_ordered_scatter_and_a_granted_aura(self):
+        def droplet(params: str) -> dict:
+            return {**AURA, "key": "droplet", "spell_id": "1014178", "modelled": "yes",
+                    "effect1_kind": "pickup", "effect1_params": params}
+        self.assert_fails([STRIKE, AURA, droplet("grants=buff;radius_yd=1;scatter_min_yd=7;scatter_max_yd=6")],
+                          "scatter_min_yd 7 is above scatter_max_yd 6")
+        self.assert_fails([STRIKE, AURA, droplet("grants=buff;radius_yd=0;scatter_min_yd=3;scatter_max_yd=6")],
+                          "positive radius_yd")
+        self.assert_fails([STRIKE, AURA, droplet("grants=ghost;radius_yd=1;scatter_min_yd=3;scatter_max_yd=6")],
+                          "is not an aura row")
 
     def test_the_class_and_armour_columns_are_gone(self):
         for column in ("class", "armour"):

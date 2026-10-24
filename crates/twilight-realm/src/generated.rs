@@ -29,6 +29,10 @@ struct GenCalling {
     mana_pct: u32,
     energy_per_tick: Option<u32>,
     #[serde(default)]
+    bleed_drop: Option<String>,
+    #[serde(default)]
+    bleed_drop_chance: u32,
+    #[serde(default)]
     weapons: Vec<WeaponKind>,
     #[serde(default)]
     icon: String,
@@ -198,6 +202,8 @@ fn calling(g: GenCalling) -> CallingDef {
         health_pct: g.health_pct,
         mana_pct: g.mana_pct,
         energy_per_tick: g.energy_per_tick,
+        bleed_drop: g.bleed_drop.clone(),
+        bleed_drop_chance: g.bleed_drop_chance,
         weapons: g.weapons.clone(),
         icon: g.icon.clone(),
         spellbook: g.spellbook.clone(),

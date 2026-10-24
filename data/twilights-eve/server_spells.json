@@ -7612,6 +7612,8 @@
   "health_pct": 100,
   "mana_pct": 100,
   "energy_per_tick": 25,
+  "bleed_drop": "aura_blood_droplet",
+  "bleed_drop_chance": 50,
   "armour": [
    "cloth",
    "leather"
@@ -7782,7 +7784,7 @@
       "realm_only": false
      }
     ],
-    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals."
+    "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby."
    },
    {
     "key": "evasion",
@@ -9356,7 +9358,7 @@
           "realm_only": false
          }
         ],
-        "description": "Your critical strikes cause the target to bleed for 10% of the damage dealt over 8 seconds."
+        "description": "Your critical strikes cause the target to bleed for 10% of the damage dealt over 8 seconds. Each tick may spill a blood droplet nearby."
        },
        {
         "key": "scent_of_blood",
@@ -9393,7 +9395,7 @@
           "realm_only": false
          }
         ],
-        "description": "Your critical strikes cause the target to bleed for 20% of the damage dealt over 8 seconds."
+        "description": "Your critical strikes cause the target to bleed for 20% of the damage dealt over 8 seconds. Each tick may spill a blood droplet nearby."
        },
        {
         "key": "scent_of_blood",
@@ -9430,7 +9432,7 @@
           "realm_only": false
          }
         ],
-        "description": "Your critical strikes cause the target to bleed for 30% of the damage dealt over 8 seconds."
+        "description": "Your critical strikes cause the target to bleed for 30% of the damage dealt over 8 seconds. Each tick may spill a blood droplet nearby."
        }
       ]
      },
@@ -10114,6 +10116,38 @@
      }
     ],
     "description": "Physical damage dealt and attack speed increased by 3% a stack."
+   },
+   {
+    "key": "aura_blood_droplet",
+    "name": "Blood Droplet",
+    "spell_id": 1000412,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 8000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "pickup",
+      "params": {
+       "grants": "aura_bloodlust",
+       "radius_yd": 1,
+       "scatter_min_yd": 3,
+       "scatter_max_yd": 6
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "A droplet of blood. Walk over it for a stack of Bloodlust."
    }
   ],
   "name": "Cutthroat",

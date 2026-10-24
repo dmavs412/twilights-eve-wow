@@ -121,6 +121,8 @@ pub(super) struct Skills {
     auras: Vec<Aura>,
     /// The patches on the ground, one at most for each caster.
     grounds: Vec<Ground>,
+    /// The blood droplets lying about, waiting for the player to walk over them.
+    drops: Vec<Drop>,
     /// The timed cast under way: an item's on-use spell (the Hearthstone's).
     casting: Option<TimedCast>,
     /// The mobs whose aura state says they are at or below a fifth of their health.
@@ -281,6 +283,19 @@ struct TimedCast {
     left: f32,
 }
 
+/// A blood droplet on the ground (`bleed_drop`): the player who walks within `radius_yd` takes the
+/// `grants` aura, and it fades after `left` seconds.
+#[derive(Debug, Clone, Copy)]
+struct Drop {
+    /// The DynamicObject that shows it.
+    object: u64,
+    spell_id: u32,
+    centre: [f32; 3],
+    radius_yd: f32,
+    left: f32,
+    grants: &'static str,
+}
+
 /// A patch on the ground (a `GroundEffect`): each tick it strikes every enemy inside it.
 #[derive(Debug, Clone, Copy)]
 struct Ground {
@@ -337,8 +352,13 @@ impl Skills {
             .areas
             .iter()
             .map(|a| (a.object, a.caster, a.spell_id, a.centre, a.radius_yd));
+        let drops = self
+            .drops
+            .iter()
+            .map(|d| (d.object, self.me, d.spell_id, d.centre, d.radius_yd));
         grounds
             .chain(areas)
+            .chain(drops)
             .map(|(guid, caster, spell_id, centre, radius_yd)| {
                 let create = patch_create(guid, caster, spell_id, centre, radius_yd);
                 (guid, centre, create)
@@ -5138,6 +5158,13 @@ impl InWorld {
                         // The caster's own damage over time ticked: its leech, and its procs
                         // (Thermal Feedback, Morbid Fascination, Epidemic).
                         if caster == self.guid {
+                            if school == School::Physical {
+                                let of = crate::callings::of(c.calling);
+                                if of.bleed_drop.is_some() && rng.below(100) < of.bleed_drop_chance
+                                {
+                                    self.drop_blood(c, a.unit, rng, events);
+                                }
+                            }
                             if leech_pct > 0 {
                                 self.heal_player(
                                     c,
@@ -5211,6 +5238,86 @@ impl InWorld {
             .remove_where(|a| a.left <= CLOCK_EPSILON, events);
         self.faded(&gone, events);
         self.ground_tick(dt, c, rng, events, ticked);
+        self.drop_tick(dt, c, events);
+    }
+
+    /// Spills a blood droplet 3 to 6 yd (the row's scatter) around the mob `unit`.
+    fn drop_blood(&mut self, c: &Char, unit: u64, rng: &mut Rng, events: &mut Vec<SessionEvent>) {
+        let Some(def) = crate::callings::of(c.calling)
+            .bleed_drop
+            .as_deref()
+            .and_then(crate::callings::aura)
+        else {
+            return;
+        };
+        let Some(callings::AuraEffect::Pickup {
+            grants,
+            radius_yd,
+            scatter_min_yd,
+            scatter_max_yd,
+        }) = def
+            .effects
+            .iter()
+            .find(|e| matches!(e, callings::AuraEffect::Pickup { .. }))
+        else {
+            return;
+        };
+        let Some(at) = self
+            .mobs
+            .iter()
+            .find(|m| m.guid == unit)
+            .map(|m| m.position)
+        else {
+            return;
+        };
+        let angle = rng.frand(0.0, std::f32::consts::TAU);
+        let away = rng.frand(*scatter_min_yd, *scatter_max_yd);
+        let centre = [
+            at[0] + angle.cos() * away,
+            at[1] + angle.sin() * away,
+            at[2],
+        ];
+        let object = self.skills.next_patch(self.guid);
+        events.push(patch_create(
+            object,
+            self.guid,
+            def.spell_id,
+            centre,
+            *radius_yd,
+        ));
+        self.skills.drops.push(Drop {
+            object,
+            spell_id: def.spell_id,
+            centre,
+            radius_yd: *radius_yd,
+            left: clock::secs(def.duration_ms),
+            grants: grants.as_str(),
+        });
+    }
+
+    /// The blood droplets: the player who stands within one's radius (measured flat) takes its
+    /// aura and the droplet goes; one nobody reaches fades when its time runs out.
+    fn drop_tick(&mut self, dt: f32, c: &Char, events: &mut Vec<SessionEvent>) {
+        let at = c.position;
+        let alive = self.player.alive();
+        let mut grants = Vec::new();
+        for d in &mut self.skills.drops {
+            d.left -= dt;
+            let reached = alive && (d.centre[0] - at[0]).hypot(d.centre[1] - at[1]) <= d.radius_yd;
+            if reached {
+                grants.push(d.grants);
+            }
+            if reached || d.left <= CLOCK_EPSILON {
+                events.push(SessionEvent::ObjectDestroyed(d.object));
+                d.left = 0.0;
+            }
+        }
+        self.skills.drops.retain(|d| d.left > 0.0);
+        for key in grants {
+            if let Some(def) = crate::callings::aura(key) {
+                self.grant_aura(def, c.level, events);
+            }
+        }
     }
 
     /// The patches on the ground: each tick strikes every living enemy inside, and the last lands
@@ -5654,6 +5761,8 @@ impl InWorld {
     ) {
         for effect in &def.effects {
             let kind = match effect {
+                // A droplet is a patch on the ground (`drop_blood`), never worn.
+                callings::AuraEffect::Pickup { .. } => continue,
                 callings::AuraEffect::SkillCritPct { skill, pct } => AuraKind::SkillCrit {
                     skill: skill.as_str(),
                     pct: *pct,

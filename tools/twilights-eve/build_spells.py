@@ -48,7 +48,7 @@ KNOWN_KINDS = {
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
-    "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike",
+    "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
 STATS = ("strength", "agility", "stamina", "intellect", "spirit")
@@ -65,7 +65,7 @@ POWERS = ("rage", "energy", "focus", "mana")
 POWER_TYPES = {"mana": 0, "rage": 1, "focus": 2, "energy": 3}
 # callings.csv (ADR 0011): one row per Calling.
 CALLING_COLUMNS = ("calling", "name", "icon", "power", "stat_profile", "item_class", "health_pct", "mana_pct",
-                   "energy_per_tick", "armor", "weapons", "spellbook")
+                   "energy_per_tick", "bleed_drop", "bleed_drop_chance", "armor", "weapons", "spellbook")
 # The vanilla class tables a `stat_profile` may name (the realm's `StatProfile`).
 STAT_PROFILES = ("warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid")
 # `ChrClasses.dbc` ids of the profiles, the class byte the client's class-keyed tables read.
@@ -570,6 +570,14 @@ def build_profiles(rows: list[dict]) -> dict[str, dict]:
             if profile["power"] != "energy":
                 raise BuildError(f"{where}: energy_per_tick is set on a {profile['power']} Calling; only energy takes it")
             profile["energy_per_tick"] = positive_whole(row["energy_per_tick"], where, "energy_per_tick")
+        if bool(row["bleed_drop"]) != bool(row["bleed_drop_chance"]):
+            raise BuildError(f"{where}: bleed_drop and bleed_drop_chance are set together or not at all")
+        if row["bleed_drop"]:
+            chance = positive_whole(row["bleed_drop_chance"], where, "bleed_drop_chance")
+            if chance > 100:
+                raise BuildError(f"{where} bleed_drop_chance: {chance} is above 100")
+            profile["bleed_drop"] = row["bleed_drop"]
+            profile["bleed_drop_chance"] = chance
         armour = [a for a in row["armor"].split("|") if a]
         for kind in armour:
             one_of(kind, ARMOUR_KINDS, where, "armor")
@@ -843,6 +851,16 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
             value = params.get(field)
             if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
                 raise BuildError(f"{where}: ground_effect needs a positive {field}, has {value!r}")
+    if kind == "pickup":
+        radius = params.get("radius_yd")
+        if isinstance(radius, bool) or not isinstance(radius, (int, float)) or radius <= 0:
+            raise BuildError(f"{where}: pickup needs a positive radius_yd, has {radius!r}")
+        low, high = params.get("scatter_min_yd"), params.get("scatter_max_yd")
+        for name, value in (("scatter_min_yd", low), ("scatter_max_yd", high)):
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+                raise BuildError(f"{where}: pickup needs {name} of 0 or more, has {value!r}")
+        if low > high:
+            raise BuildError(f"{where}: pickup scatter_min_yd {low} is above scatter_max_yd {high}")
     if kind == "consume_aura_stacks" and not isinstance(params.get("per_stack"), dict):
         raise BuildError(f"{where}: consume_aura_stacks lacks a per_stack formula (per_stack.base, per_stack.per_level)")
     for block in ("per_combo", "duration_per_combo"):
@@ -1173,6 +1191,8 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
                 raise BuildError(f"{here}: aura {parsed.get('aura')!r} is not an aura row of this Calling")
             if kind == "grow_aura" and "periodic_damage" not in auras[parsed["aura"]]:
                 raise BuildError(f"{here}: grow_aura aura {parsed['aura']!r} has no periodic_damage effect to grow")
+        if kind == "pickup" and parsed.get("grants") not in auras:
+            raise BuildError(f"{here}: grants {parsed.get('grants')!r} is not an aura row of this Calling")
         if kind == "ground_area":
             for side in ("enemy_aura", "ally_aura"):
                 if side in parsed and parsed[side] not in auras:
@@ -1594,6 +1614,11 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
     auras = {c: {r["key"]: {r[f"effect{i}_kind"] for i in range(1, MAX_EFFECTS + 1) if r[f"effect{i}_kind"]}
                  for r in rows if r["kind"] == "aura" and r["calling"] == c}
              for c in {r["calling"] for r in rows}}
+    for key, profile in profiles.items():
+        drop = profile.get("bleed_drop")
+        if drop and "pickup" not in auras.get(key, {}).get(drop, set()):
+            raise BuildError(f"callings.csv {key}: bleed_drop {drop!r} is not an aura row of this Calling "
+                             "with a pickup effect")
     for line, row in enumerate(rows, start=2):
         where = f"line {line} ({row['calling']}/{row['key']})"
         kind = row["kind"]
