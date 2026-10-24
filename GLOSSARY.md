@@ -214,11 +214,11 @@ A named place, an AreaTable subzone or a circle in `content/fish.toml`, whose ow
 _Avoid_: fishing spot, fishing hole, pool (a pool is the weighted list of fish)
 
 **Bait**:
-A consumable chosen in the Fishing Journal's bait slot; each cast uses one from the bags. A legendary may bite only with its bait chosen, and an ordinary fish may name one as its favourite. Not a lure: a lure sits in the Journal's Lure slot and wears with each bite.
+A consumable chosen in the Fishing Journal's bait slot; each cast uses one from the Satchel, and the slot keeps the bait chosen when it runs out (ADR 0023). A legendary may bite only with its bait chosen, and an ordinary fish may name one as its favourite. Not a lure: a lure sits in the Journal's Lure slot and wears with each bite.
 _Avoid_: lure
 
 **Lure**:
-An item with durability that sits in the Fishing Journal's Lure slot and gives its bonus to every cast. Each bite costs it one point; at zero it is destroyed and the next one of the same kind loads from the bags. Repair skips it (ADR 0022).
+An item with durability that sits in the Fishing Journal's Lure slot and gives its bonus to every cast. Each bite costs it one point; at zero it is destroyed and the next one of the same kind loads from the Satchel, now or when one arrives. Repair skips it (ADR 0022, ADR 0023).
 _Avoid_: tackle, bait
 
 **Water Kind**:
@@ -228,6 +228,18 @@ _Avoid_: water type, liquid type (the terrain's own water, ocean, magma and slim
 **Fish Page**:
 A fish's page in the Fishing Journal: the character's catch log for it (caught, perfect, and a count per place) and the facts its catch count has unlocked. The realm sends only unlocked facts (ADR 0022).
 _Avoid_: bestiary, fish entry
+
+**Journal**:
+The window with one tab per profession; Fishing is the only tab today, and its tab is the Fishing Journal. Each tab has a Satchel page and that profession's own pages (ADR 0023).
+_Avoid_: profession window, codex
+
+**Journal Item**:
+An item whose row sets `journal` to a profession. Every way the character gets one puts it in that profession's Satchel, never the bags; a withdrawn one in the bags is an ordinary item (ADR 0023).
+_Avoid_: material (the item row's `material` is the stock sound material), reagent
+
+**Satchel**:
+What a Journal tab holds: a count per entry, and each item with durability as its own piece. No slot limit and no stack cap. Withdrawing puts items in the bags; dragging them back returns them (ADR 0023).
+_Avoid_: material bag, reagent bank
 
 **Legendary Fish**:
 One of four rare fish per fishing zone: one bites anywhere in the zone at 1%, and three need a criterion (a Fishing Water, an hour window on the game clock, or a bait). Its Legend Rumour only hints at the criterion; the fish can bite without it.
