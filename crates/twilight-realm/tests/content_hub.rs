@@ -24,6 +24,8 @@ struct Npc {
     #[serde(default)]
     tokens: bool,
     #[serde(default)]
+    flat_tokens: bool,
+    #[serde(default)]
     blood_coin: bool,
     #[serde(default)]
     greeting: String,
@@ -145,7 +147,9 @@ fn every_npcs_flags_fit_its_role() {
         let gives = quests.iter().any(|q| q.giver == n.entry) || elwynn.contains(&n.entry);
         let talks = n.text_id.is_some() && !n.greeting.is_empty();
         let ok = match n.role.as_str() {
-            "goods" => n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty() && !n.tokens,
+            "goods" => {
+                n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty() && !n.tokens && !n.flat_tokens
+            }
             "innkeeper" => {
                 n.npc_flags == GOSSIP | VENDOR | INNKEEPER
                     && talks
@@ -154,13 +158,23 @@ fn every_npcs_flags_fit_its_role() {
                     && !n.tokens
                     && n.area.is_some()
             }
-            "tokens" => n.npc_flags == VENDOR && n.tokens && n.stock.is_empty(),
+            "tokens" => n.npc_flags == VENDOR && n.tokens != n.flat_tokens && n.stock.is_empty(),
             "blood_coin" => {
-                n.npc_flags == VENDOR && n.blood_coin && !n.tokens && n.stock.is_empty()
+                n.npc_flags == VENDOR
+                    && n.blood_coin
+                    && !n.tokens
+                    && !n.flat_tokens
+                    && n.stock.is_empty()
             }
             "trainer" => n.npc_flags == GOSSIP | QUEST_GIVER | TRAINER && talks,
             // The flight master only stands there: no flags, no menu, no words.
-            "flight" => n.npc_flags == 0 && n.text_id.is_none() && n.stock.is_empty() && !n.tokens,
+            "flight" => {
+                n.npc_flags == 0
+                    && n.text_id.is_none()
+                    && n.stock.is_empty()
+                    && !n.tokens
+                    && !n.flat_tokens
+            }
             "giver" => n.npc_flags == QUEST_GIVER && gives && !n.greeting.is_empty(),
             // Lee Brown: his bounties, his goods, and the lesson in his menu (#327).
             "angler" => {

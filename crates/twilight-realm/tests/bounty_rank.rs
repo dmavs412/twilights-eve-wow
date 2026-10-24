@@ -342,6 +342,25 @@ fn the_broker_lists_its_stock_priced_in_blood_coin() {
 }
 
 #[test]
+fn marta_coyle_lists_the_same_rows_as_rusk() {
+    let (_, _, _, rusk) = at_the_broker(0);
+    let (mut realm, _, marta) = in_elwynn_beside(5, &[], 190070);
+    realm.handle(RealmCommand::ListInventory { guid: marta });
+    let rows = drain(&mut realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::VendorInventory { items, .. } => Some(items),
+            _ => None,
+        })
+        .expect("the merchant list");
+    assert_eq!(rows.len(), coin_stock().len());
+    assert_eq!(
+        rows.iter().map(|r| r.entry).collect::<Vec<_>>(),
+        rusk.iter().map(|r| r.entry).collect::<Vec<_>>()
+    );
+}
+
+#[test]
 fn buying_takes_the_blood_coin_and_gives_the_potion() {
     let (mut realm, me, vendor, rows) = at_the_broker(6);
     let row = rows

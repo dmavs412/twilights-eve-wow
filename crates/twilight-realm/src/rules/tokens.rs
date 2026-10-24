@@ -1,6 +1,7 @@
-//! The Token vendor's prices and level bands (`content/token_vendor.toml`,
-//! `docs/reference/items-and-vendors.md` "Token vendor"): greens priced in Tokens, offered by the
-//! band of required levels the buyer's level falls in.
+//! The Token vendors' prices and stock (`content/token_vendor.toml`,
+//! `docs/reference/items-and-vendors.md` "Token vendor"): greens priced in Tokens. The Crossroads
+//! and Northshire vendors offer the band of required levels the buyer's level falls in; the
+//! Goldshire vendor sells one flat list at any level.
 
 use std::sync::OnceLock;
 
@@ -19,18 +20,28 @@ struct Row {
     tokens: u32,
 }
 
+/// The Goldshire vendor's list, sold at any level.
+#[derive(Deserialize)]
+struct Flat {
+    item: Vec<Row>,
+}
+
 #[derive(Deserialize)]
 struct File {
     band: Vec<Band>,
+    flat: Flat,
+}
+
+fn file() -> &'static File {
+    static FILE: OnceLock<File> = OnceLock::new();
+    FILE.get_or_init(|| {
+        toml::from_str(include_str!("../../content/token_vendor.toml"))
+            .expect("content/token_vendor.toml parses")
+    })
 }
 
 fn bands() -> &'static [Band] {
-    static BANDS: OnceLock<Vec<Band>> = OnceLock::new();
-    BANDS.get_or_init(|| {
-        let file: File = toml::from_str(include_str!("../../content/token_vendor.toml"))
-            .expect("content/token_vendor.toml parses");
-        file.band
-    })
+    &file().band
 }
 
 /// The band a character of `level` is offered; the last band serves every level above it.
@@ -61,6 +72,27 @@ pub fn price(entry: u32) -> Option<u32> {
     bands()
         .iter()
         .flat_map(|b| &b.item)
+        .find(|r| r.entry == entry)
+        .map(|r| r.tokens)
+}
+
+/// What the Goldshire Token vendor offers at any level: `(item entry, Tokens)`, in the merchant
+/// window's order.
+pub fn flat_stock() -> Vec<(u32, u32)> {
+    file()
+        .flat
+        .item
+        .iter()
+        .map(|r| (r.entry, r.tokens))
+        .collect()
+}
+
+/// The Token price of `entry` at the Goldshire Token vendor, if it sells it.
+pub fn flat_price(entry: u32) -> Option<u32> {
+    file()
+        .flat
+        .item
+        .iter()
         .find(|r| r.entry == entry)
         .map(|r| r.tokens)
 }

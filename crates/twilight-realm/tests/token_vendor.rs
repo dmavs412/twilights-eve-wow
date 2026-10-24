@@ -317,6 +317,85 @@ fn only_the_buyers_band_is_for_sale_and_only_within_reach() {
     assert_eq!(shop.carried(TOKEN), 20);
 }
 
+/// Northshire's Token vendor, Quartermaster Hollis, and Goldshire's, Wynne Tarrow.
+const HOLLIS: u32 = 190068;
+const WYNNE: u32 = 190069;
+
+/// The rows `npc` lists, and each row's name from its item query.
+fn rows_of(realm: &mut Realm, npc: u64) -> Vec<(VendorItem, String)> {
+    realm.handle(RealmCommand::ListInventory { guid: npc });
+    let rows = drain(realm)
+        .into_iter()
+        .find_map(|e| match e {
+            SessionEvent::VendorInventory { items, .. } => Some(items),
+            _ => None,
+        })
+        .expect("the merchant list");
+    rows.into_iter()
+        .map(|r| {
+            realm.handle(RealmCommand::ItemQuery { entry: r.entry });
+            let name = drain(realm)
+                .into_iter()
+                .find_map(|e| match e {
+                    SessionEvent::ItemTemplate { info, .. } => info.map(|i| i.name),
+                    _ => None,
+                })
+                .expect("the row's template");
+            (r, name)
+        })
+        .collect()
+}
+
+#[test]
+fn quartermaster_hollis_offers_northshires_buyers_their_band() {
+    let (mut realm, _, hollis) = in_elwynn_beside(5, &[], HOLLIS);
+    let rows = rows_of(&mut realm, hollis);
+    assert_eq!(rows.len(), 22, "the 1-10 band");
+    assert_eq!(rows[0].1, "3 Tokens: Novice's Woolen Vest");
+
+    let (mut realm, _, hollis) = in_elwynn_beside(15, &[], HOLLIS);
+    let rows = rows_of(&mut realm, hollis);
+    assert_eq!(rows.len(), 12, "the 11-20 band");
+    assert_eq!(rows[0].1, "4 Tokens: Gnoll Skull Basher");
+}
+
+#[test]
+fn wynne_tarrow_sells_one_list_at_any_level() {
+    for level in [5, 25] {
+        let (mut realm, _, wynne) = in_elwynn_beside(level, &[], WYNNE);
+        let rows = rows_of(&mut realm, wynne);
+        assert_eq!(rows.len(), 25, "level {level}");
+        assert_eq!(rows[0].1, "4 Tokens: Gnoll Skull Basher");
+    }
+}
+
+#[test]
+fn wynne_tarrow_takes_tokens_for_the_green() {
+    let (mut realm, me, wynne) = in_elwynn_beside(5, &[(23, TOKEN, 10)], WYNNE);
+    let first = rows_of(&mut realm, wynne)[0].0;
+    realm.handle(RealmCommand::BuyItem {
+        vendor: wynne,
+        entry: first.entry,
+        count: 1,
+    });
+    let events = drain(&mut realm);
+    assert_eq!(buy_failure(&events), None);
+    assert_eq!(carried(&events, me, GNOLL_SKULL_BASHER), 1);
+    let blob = realm.export_character(me).unwrap();
+    assert!(blob.contains("entry = 90001\ncount = 6\n"), "{blob}");
+
+    let (mut poor, me, wynne) = in_elwynn_beside(5, &[(23, TOKEN, 3)], WYNNE);
+    let first = rows_of(&mut poor, wynne)[0].0;
+    poor.handle(RealmCommand::BuyItem {
+        vendor: wynne,
+        entry: first.entry,
+        count: 1,
+    });
+    let events = drain(&mut poor);
+    assert_eq!(buy_failure(&events), Some(buy_result::NOT_ENOUGH_MONEY));
+    assert_eq!(carried(&events, me, GNOLL_SKULL_BASHER), 0);
+}
+
 #[test]
 fn the_token_vendor_buys_loot_as_any_vendor_does() {
     let mut shop = Shop::new(5, 0, &[(23, 4560, 1)]);

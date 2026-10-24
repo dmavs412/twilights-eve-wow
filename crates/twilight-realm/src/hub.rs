@@ -56,6 +56,9 @@ pub(crate) struct Npc {
     /// The Token vendor: it sells the buyer's band of greens for Tokens (`crate::token_vendor`).
     #[serde(default)]
     pub(crate) tokens: bool,
+    /// The Goldshire Token vendor: it sells one flat list for Tokens (`crate::token_vendor`).
+    #[serde(default)]
+    pub(crate) flat_tokens: bool,
     /// The Blood Coin vendor: it sells its stock for Blood Coin (`crate::token_vendor`).
     #[serde(default)]
     pub(crate) blood_coin: bool,
@@ -109,6 +112,8 @@ impl Npc {
     pub(crate) fn currency(&self) -> Option<&'static crate::token_vendor::Currency> {
         if self.tokens {
             Some(&crate::token_vendor::TOKENS)
+        } else if self.flat_tokens {
+            Some(&crate::token_vendor::FLAT_TOKENS)
         } else if self.blood_coin {
             Some(&crate::token_vendor::BLOOD_COIN)
         } else {

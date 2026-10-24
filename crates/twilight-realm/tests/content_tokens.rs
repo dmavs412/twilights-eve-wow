@@ -46,6 +46,30 @@ fn every_researched_green_is_inside_its_band_by_required_level() {
     }
 }
 
+#[test]
+fn the_goldshire_list_is_the_11_to_30_greens_in_order() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("content/token_vendor.toml");
+    let file: toml::Value = toml::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let rows = |items: &toml::Value| -> Vec<(i64, i64)> {
+        items
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| {
+                (
+                    r["entry"].as_integer().unwrap(),
+                    r["tokens"].as_integer().unwrap(),
+                )
+            })
+            .collect()
+    };
+    let bands = file["band"].as_array().unwrap();
+    let mut want = rows(&bands[1]["item"]);
+    want.extend(rows(&bands[2]["item"]));
+    assert_eq!(want.len(), 25);
+    assert_eq!(rows(&file["flat"]["item"]), want);
+}
+
 /// The 1 to 10 band is the 22 Token whites and nothing else: each a row of the gear sheet
 /// (`content/gear.toml`, generated from it) of quality Common at required level 1, priced 1 to
 /// 3 Tokens, and the same at every level of the band.

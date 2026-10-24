@@ -107,6 +107,49 @@ pub fn enter_saved(guid: u64, blob: &str) -> (Realm, u64, Vec<SessionEvent>) {
     (realm, guid, events)
 }
 
+/// A human warrior of `level` who started in Elwynn with `items` in the bags, standing beside the
+/// Hub NPC `entry`, and that NPC's guid.
+pub fn in_elwynn_beside(level: u8, items: &[Carried], entry: u32) -> (Realm, u64, u64) {
+    let mut maker = realm();
+    let RealmCommand::CreateCharacter(mut req) =
+        crate::common::create_cmd("Tidebreaker", HUMAN, 0, crate::common::WARRIOR)
+    else {
+        unreachable!()
+    };
+    req.start = benilla_protocol::START_ELWYNN;
+    maker.handle(RealmCommand::CreateCharacter(req));
+    let me = roster(&mut maker)[0].guid;
+    let mut blob = maker.export_character(me).unwrap();
+    if let Some(at) = blob.find("[[items]]") {
+        blob.truncate(at);
+    }
+    let mut blob = blob
+        .replace("level = 1\n", &format!("level = {level}\n"))
+        .replace("items = []\n", "");
+    for (slot, item, count) in items {
+        blob.push_str(&format!(
+            "\n[[items]]\nslot = {slot}\nentry = {item}\ncount = {count}\n"
+        ));
+    }
+    let mut realm = Realm::with_seed(SEED);
+    realm
+        .import_character(&blob)
+        .unwrap_or_else(|e| panic!("{e:?}: {blob}"));
+    realm.handle(RealmCommand::EnterWorld { guid: me });
+    realm.tick(0.0, &FlatGround);
+    drain(&mut realm);
+    let npc = crate::common::hub_guid(entry);
+    let [x, y, _] = crate::common::hub_home(npc);
+    realm.handle(RealmCommand::DevTeleport {
+        x: x + 1.5,
+        y,
+        facing: None,
+    });
+    realm.tick(0.1, &FlatGround);
+    drain(&mut realm);
+    (realm, me, npc)
+}
+
 /// A human warrior of `level` in the world (on flat ground) carrying `money` and `items`, with
 /// the entry burst.
 pub fn warrior_with(level: u8, money: u32, items: &[Carried]) -> (Realm, u64, Vec<SessionEvent>) {

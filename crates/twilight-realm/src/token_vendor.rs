@@ -1,6 +1,7 @@
-//! The vendors paid in an item from the bags rather than copper: the Token vendor's half of the
-//! merchant window, the buyer's band of greens ([`rules::tokens`]) for the Twilight Tokens in the
-//! bags, and the Blood Coin vendor's, its stock ([`rules::notoriety`]) for Blood Coin.
+//! The vendors paid in an item from the bags rather than copper: the Token vendors' half of the
+//! merchant window, either the buyer's band of greens or one flat list ([`rules::tokens`]) for the
+//! Twilight Tokens in the bags, and the Blood Coin vendors', their stock ([`rules::notoriety`])
+//! for Blood Coin.
 //!
 //! The 1.12 merchant window can show a price only in copper (extended costs came in 2.0), so each
 //! row is listed under an entry of its own whose template is the item's with the price in front
@@ -52,7 +53,18 @@ pub(crate) const BLOOD_COIN: Currency = Currency {
     price: rules::notoriety::coin_price,
 };
 
-const CURRENCIES: [&Currency; 2] = [&TOKENS, &BLOOD_COIN];
+/// The Twilight Token, for the Goldshire Token vendor's flat list. Its own listing range, so its
+/// prices change independently of the bands'.
+pub(crate) const FLAT_TOKENS: Currency = Currency {
+    item: || TOKEN,
+    listing: 3_000_000,
+    one: "Token",
+    many: "Tokens",
+    stock: |_| rules::tokens::flat_stock(),
+    price: rules::tokens::flat_price,
+};
+
+const CURRENCIES: [&Currency; 3] = [&TOKENS, &BLOOD_COIN, &FLAT_TOKENS];
 
 impl Currency {
     /// The item a row's `entry` lists, and its price; `None` for any other entry.

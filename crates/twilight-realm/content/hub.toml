@@ -1290,6 +1290,62 @@ text_id = 64139
 angler_hints = [{ legend = 960003, min_angler_level = 8 }]
 greeting = "Pull up a stool, $C. I hear everything that passes through this inn, and some of it is even true."
 
+# Quartermaster Hollis (#377): Northshire's Token vendor. Sells the buyer's band of greens
+# (content/token_vendor.toml) for Tokens, like Sarna Duskwhisper in the Crossroads. Placeholders:
+# name, display, spot. z is ground_check.py's.
+[[npc]]
+guid = 9300031
+entry = 190068
+name = "Quartermaster Hollis"
+subname = "Token Vendor"
+level = 30
+display_id = 3342
+faction_template = 35
+role = "tokens"
+npc_flags = 0x4
+map = 0
+position = [-8903.0, -127.0, 81.56]
+orientation = 0.0
+faces = [-8903.0, -100.0]
+tokens = true
+
+# Wynne Tarrow (#377): Goldshire's Token vendor. Sells one flat list (`[flat]` in
+# content/token_vendor.toml) at any level, for Tokens. `flat_tokens` says so. Placeholders: name,
+# display, spot. z is ground_check.py's.
+[[npc]]
+guid = 9300032
+entry = 190069
+name = "Wynne Tarrow"
+subname = "Token Vendor"
+level = 30
+display_id = 1298
+faction_template = 35
+role = "tokens"
+npc_flags = 0x4
+map = 0
+position = [-9470.0, 69.0, 56.35]
+orientation = 0.0
+faces = [-9462.0, 40.0]
+flat_tokens = true
+
+# Marta Coyle (#377): Goldshire's Blood Coin broker, with Rusk Ninefingers's stock. Placeholders:
+# name, display, spot. z is ground_check.py's.
+[[npc]]
+guid = 9300033
+entry = 190070
+name = "Marta Coyle"
+subname = "Blood Coin Broker"
+level = 30
+display_id = 4640
+faction_template = 35
+role = "blood_coin"
+npc_flags = 0x4
+map = 0
+position = [-9491.0, 66.0, 55.97]
+orientation = 0.0
+faces = [-9462.0, 40.0]
+blood_coin = true
+
 # ── Brother Wendell, the Northshire fisherman (#346) ─────────────────────────────────────────────
 # Teaches Fishing and sells Lee Brown's goods on the north bank of the Northshire River, and hints at
 # Brother Bass (`angler_hints`). z is ground_check.py's.
