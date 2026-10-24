@@ -121,6 +121,11 @@ fn load_entry(s: &UiScript, entry: &str, strict_templates: bool, no_warnings: bo
         s.run_chunk_named(&bytes, "@Interface\\FrameXML\\OptionsFrame.lua")
             .expect("the video window's slider table");
     }
+    // The stock `ChatFrame.lua` makes `SlashCmdList` before any of our layer files load.
+    if !super::reference_ui::is_chain_entry(&path) {
+        s.run("SlashCmdList = SlashCmdList or {}")
+            .expect("the stock slash command table");
+    }
     let report = benilla_ui::loader::load_in(s, &doc, &path, &provider);
     assert!(
         report.errors.is_empty(),
