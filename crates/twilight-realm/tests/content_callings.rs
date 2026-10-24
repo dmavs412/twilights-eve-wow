@@ -1021,10 +1021,12 @@ fn line_of(quests: &[Quest], to: &str) -> String {
 
 /// Every Advancement Quest the reference names is in the content as it says, and the Crossroads
 /// has no other. Northshire's trainers' quests (#216) are checked against the Hub's own below.
+/// Commander Aldous Wray (#378) gives the Tier 2 and 3 quests the Crossroads trainers once did.
 #[test]
 fn every_advancement_quest_matches_the_reference() {
     let reference = reference();
-    let crossroads: Vec<u32> = trainers().iter().map(|t| t.entry).collect();
+    let mut crossroads: Vec<u32> = trainers().iter().map(|t| t.entry).collect();
+    crossroads.push(190071);
     let quests: Vec<Quest> = advancement_quests()
         .into_iter()
         .filter(|q| crossroads.contains(&q.giver))

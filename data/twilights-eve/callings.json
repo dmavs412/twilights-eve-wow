@@ -631,7 +631,7 @@
         "quest_level": 30,
         "title": "The Zealot's Vow",
         "details": "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word.",
-        "objectives": "Speak with the Vanguard Trainer at the Crossroads to swear the Zealot's vow.",
+        "objectives": "Speak with Commander Aldous Wray in the Stormwind barracks to swear the Zealot's vow.",
         "offer_reward_text": "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you.",
         "objective": { "kind": "talk", "note": "As The Warrior's Path: accept and complete at the trainer." },
         "on_complete": ["set_calling:zealot", "level:1", "xp:0", "replace_skills", "wipe_talents_and_points", "swap_talent_catalog", "apply_tier_bonus:2"],

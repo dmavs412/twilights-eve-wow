@@ -1602,7 +1602,7 @@ tokens = 0
 [[quest]]
 id = 64002
 kind = "advancement"
-giver = 5810
+giver = 190071
 level = 30
 zone_or_sort = -81
 advancement = { from = "vanguard", to = "ironclad", completable = false }
@@ -1617,12 +1617,12 @@ tokens = 0
 [[quest]]
 id = 64003
 kind = "advancement"
-giver = 5810
+giver = 190071
 level = 30
 zone_or_sort = -81
 advancement = { from = "vanguard", to = "zealot" }
 title = "The Zealot's Vow"
-objectives = "Speak with the Vanguard Trainer at the Crossroads to swear the Zealot's vow."
+objectives = "Speak with Commander Aldous Wray in the Stormwind barracks to swear the Zealot's vow."
 details = "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word."
 progress = "Say the word, $N, and swear the vow."
 completion = "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you."
@@ -1633,7 +1633,7 @@ tokens = 0
 [[quest]]
 id = 64004
 kind = "advancement"
-giver = 5810
+giver = 190071
 level = 50
 zone_or_sort = -81
 advancement = { from = "zealot", to = "templar", completable = false }

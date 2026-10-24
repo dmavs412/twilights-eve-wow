@@ -1346,6 +1346,24 @@ orientation = 0.0
 faces = [-9462.0, 40.0]
 blood_coin = true
 
+# Commander Aldous Wray (#378): gives the Tier 2 and 3 advancement quests (#374) in the Stormwind
+# barracks, beside the warrior trainers. A quest giver only, no training. Placeholders: name,
+# subname, greeting, spot. z is the barracks ground floor (wmo_floor.py group 268).
+[[npc]]
+guid = 9300034
+entry = 190071
+name = "Commander Aldous Wray"
+subname = "Stormwind Barracks"
+level = 40
+display_id = 1504
+faction_template = 35
+role = "giver"
+npc_flags = 0x2
+map = 0
+position = [-8687.0, 328.0, 109.44]
+orientation = 3.14
+greeting = "Stormwind still has a barracks, $C, and I still have warriors to test. The Ironclads hold the line, and the Templars keep the Light. When you're ready for either, you'll find me here."
+
 # ── Brother Wendell, the Northshire fisherman (#346) ─────────────────────────────────────────────
 # Teaches Fishing and sells Lee Brown's goods on the north bank of the Northshire River, and hints at
 # Brother Bass (`angler_hints`). z is ground_check.py's.

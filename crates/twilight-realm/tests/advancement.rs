@@ -193,6 +193,66 @@ fn trainer(events: &[SessionEvent]) -> u64 {
         .expect("the trainer stands at the Hub")
 }
 
+/// Commander Aldous Wray's entry, who gives the Tier 2 and 3 Advancement Quests (#378).
+const WRAY: u32 = 190071;
+
+/// Wray's guid, from the entry burst.
+fn wray(events: &[SessionEvent]) -> u64 {
+    events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::ObjectCreate { guid, fields, .. }
+                if fields.object_entry() == Some(WRAY) =>
+            {
+                Some(*guid)
+            }
+            _ => None,
+        })
+        .expect("Wray stands in the Stormwind barracks")
+}
+
+/// A save moved to Wray's side in Stormwind City: the top `map`, `zone` and `position` lines.
+fn at_wray(blob: &str) -> String {
+    let (head, tail) = blob.split_once("\n[").unwrap_or((blob, ""));
+    let head = head
+        .lines()
+        .map(|line| {
+            if line.starts_with("map = ") {
+                "map = 0".to_string()
+            } else if line.starts_with("zone = ") {
+                "zone = 1519".to_string()
+            } else if line.starts_with("position = [") {
+                "position = [-8684.5, 328.0, 109.44]".to_string()
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    if tail.is_empty() {
+        head
+    } else {
+        format!("{head}\n[{tail}")
+    }
+}
+
+/// [`questing_as`] standing beside Wray.
+fn questing_at_wray(calling: &str, level: u8) -> (Realm, u64, Vec<SessionEvent>) {
+    let (guid, blob) = save_with_quests(level, &[], 0, &[]);
+    let blob = at_wray(&blob.replace(
+        "calling = \"basic_warrior\"",
+        &format!("calling = \"{calling}\""),
+    ));
+    let mut realm = Realm::with_seed(SEED);
+    realm
+        .import_character(&blob)
+        .unwrap_or_else(|e| panic!("{e:?}: {blob}"));
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    let events = drain(&mut realm);
+    (realm, guid, events)
+}
+
 /// The quest rows of the trainer's gossip menu: `(quest, icon, level, title)`.
 fn gossip_quests(realm: &mut Realm, npc: u64) -> Vec<(u32, u32, u32, String)> {
     walk_up_to(realm, npc);
@@ -204,6 +264,27 @@ fn gossip_quests(realm: &mut Realm, npc: u64) -> Vec<(u32, u32, u32, String)> {
             _ => None,
         })
         .expect("the trainer's menu")
+}
+
+/// The quests Wray offers on a click, as `gossip_quests` lists them. He is a plain quest giver:
+/// one quest opens its panel (level 0 here), several open a list, none opens nothing.
+fn wray_quests(realm: &mut Realm, npc: u64) -> Vec<(u32, u32, u32, String)> {
+    walk_up_to(realm, npc);
+    realm.handle(RealmCommand::QuestGiverHello { npc });
+    drain(realm)
+        .into_iter()
+        .flat_map(|e| match e {
+            SessionEvent::QuestGreeting(list) => list
+                .quests
+                .into_iter()
+                .map(|q| (q.quest_id, q.icon, q.level, q.title))
+                .collect(),
+            SessionEvent::QuestDetail(d) => {
+                vec![(d.quest_id, dialog_status::AVAILABLE, 0, d.title)]
+            }
+            _ => Vec::new(),
+        })
+        .collect()
 }
 
 /// Clicks an offered quest in the gossip menu and accepts it, as the stock frames do.
@@ -625,15 +706,15 @@ fn advancement_saves_the_character() {
 
 #[test]
 fn at_thirty_ironclads_quest_is_offered_but_cannot_be_finished() {
-    let (mut realm, _, events) = questing_as("vanguard", 29, &[], 0, &[]);
+    let (mut realm, _, events) = questing_at_wray("vanguard", 29);
     assert!(
-        gossip_quests(&mut realm, trainer(&events)).is_empty(),
+        wray_quests(&mut realm, wray(&events)).is_empty(),
         "not at 29"
     );
 
-    let (mut realm, me, mut events) = questing_as("vanguard", 30, &[], 0, &[]);
-    let uzzek = trainer(&events);
-    let rows = gossip_quests(&mut realm, uzzek);
+    let (mut realm, me, mut events) = questing_at_wray("vanguard", 30);
+    let uzzek = wray(&events);
+    let rows = wray_quests(&mut realm, uzzek);
     assert_eq!(
         rows.iter()
             .map(|r| (r.0, r.1, r.3.as_str()))
@@ -681,12 +762,18 @@ fn at_thirty_ironclads_quest_is_offered_but_cannot_be_finished() {
     assert_eq!(realm.current_calling().unwrap().key, "vanguard");
 }
 
+#[test]
+fn uzzek_no_longer_offers_the_tier_2_quests() {
+    let (mut realm, _, events) = questing_as("vanguard", 30, &[], 0, &[]);
+    assert!(gossip_quests(&mut realm, trainer(&events)).is_empty());
+}
+
 // ── Zealot ──────────────────────────────────────────────────────────────────────────────────────
 
 /// A Vanguard at the cap in Jouster's Chestplate, with Cruelty 3/3.
 fn capped_vanguard() -> (Realm, u64, Vec<SessionEvent>) {
     let (guid, blob) = save_with_quests(30, &[(4, JOUSTERS_CHESTPLATE, 1)], 0, &[]);
-    let blob = blob
+    let blob = at_wray(&blob)
         .replace("calling = \"basic_warrior\"", "calling = \"vanguard\"")
         .replace(
             "xp = 0\n",
@@ -715,7 +802,7 @@ fn the_zealots_vow_makes_a_level_1_zealot_with_six_skills_in_the_same_plate() {
     let (mut realm, me, mut events) = capped_vanguard();
     let chest = descriptor(&events, me).player_inv_slot(4);
     assert!(chest.is_some(), "the plate is worn");
-    let advanced = become_zealot(&mut realm, trainer(&events));
+    let advanced = become_zealot(&mut realm, wray(&events));
     assert!(completed(&advanced).is_some(), "it completes");
     events.extend(advanced);
 
@@ -749,7 +836,7 @@ fn a_zealot_has_the_tier_2_bonus_on_its_sheet() {
 #[test]
 fn a_zealot_save_round_trips_and_names_the_calling() {
     let (mut realm, me, events) = capped_vanguard();
-    become_zealot(&mut realm, trainer(&events));
+    become_zealot(&mut realm, wray(&events));
     realm.handle(RealmCommand::Logout);
     assert_eq!(realm.calling_name(me), Some("Zealot"));
     let blob = realm.export_character(me).unwrap();
@@ -771,15 +858,15 @@ fn a_zealot_save_round_trips_and_names_the_calling() {
 
 #[test]
 fn at_fifty_templars_quest_is_offered_but_cannot_be_finished() {
-    let (mut realm, _, events) = questing_as("zealot", 49, &[], 0, &[]);
+    let (mut realm, _, events) = questing_at_wray("zealot", 49);
     assert!(
-        gossip_quests(&mut realm, trainer(&events)).is_empty(),
+        wray_quests(&mut realm, wray(&events)).is_empty(),
         "not at 49"
     );
 
-    let (mut realm, me, mut events) = questing_as("zealot", 50, &[], 0, &[]);
-    let uzzek = trainer(&events);
-    let rows = gossip_quests(&mut realm, uzzek);
+    let (mut realm, me, mut events) = questing_at_wray("zealot", 50);
+    let uzzek = wray(&events);
+    let rows = wray_quests(&mut realm, uzzek);
     assert_eq!(
         rows.iter()
             .map(|r| (r.0, r.1, r.3.as_str()))
