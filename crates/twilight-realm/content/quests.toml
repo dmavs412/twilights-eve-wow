@@ -1608,9 +1608,9 @@ zone_or_sort = -81
 advancement = { from = "vanguard", to = "ironclad", completable = false }
 title = "The Ironclad's Oath"
 objectives = "Await the Ironclads' summons."
-details = "Thirty battles' worth of scars, and still standing at the front. Few Vanguards come this far, $N.$B$BThe Ironclads hold the line when every other blade has broken, and they do not take just anyone. When they are ready to test you, I will send word. Until then, keep your shield arm strong."
-progress = "The Ironclads have not yet sent for you, $N. Patience."
-completion = "The Ironclads have not yet sent for you, $N. Patience."
+details = "Thirty battles' worth of scars, and still standing at the front. Few Vanguards come this far, $N.$B$BThe Ironclads hold the line when every other blade has broken, and with the world as small as it is now, there's only one line left to hold. They don't take just anyone. When they're ready to test you, I'll send word. Until then, keep your shield arm strong."
+progress = "The Ironclads haven't sent for you yet, $N. Patience."
+completion = "The Ironclads haven't sent for you yet, $N. Patience."
 money = 0
 tokens = 0
 
@@ -1623,9 +1623,9 @@ zone_or_sort = -81
 advancement = { from = "vanguard", to = "zealot" }
 title = "The Zealot's Vow"
 objectives = "Speak with Commander Aldous Wray in the Stormwind barracks to swear the Zealot's vow."
-details = "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word."
+details = "You fight like one possessed, $N, and some say the Light itself guides your blade. These days, plenty of people have stopped believing the Light watches anything at all. There are warriors who answer its call anyway: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word."
 progress = "Say the word, $N, and swear the vow."
-completion = "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you."
+completion = "It's sworn. Seal your blade and judge your foes, Zealot. You start over once more, so let your fury carry you."
 money = 0
 tokens = 0
 
@@ -1639,9 +1639,9 @@ zone_or_sort = -81
 advancement = { from = "zealot", to = "templar", completable = false }
 title = "The Templar's Charge"
 objectives = "Await the Templars' summons."
-details = "Fifty battles of holy fury, and the Light has not yet burned you out. The Templars have heard of you, $N.$B$BThey guard what the Zealots only strike for, and they choose their own. When they are ready to test you, I will send word. Until then, keep your Seals bright."
-progress = "The Templars have not yet sent for you, $N. Patience."
-completion = "The Templars have not yet sent for you, $N. Patience."
+details = "Fifty battles of holy fury, and the Light hasn't burned you out yet. The Templars have heard of you, $N.$B$BThey guard what the Zealots only strike for, and they choose their own. When they're ready to test you, I'll send word. Until then, keep your Seals bright."
+progress = "The Templars haven't sent for you yet, $N. Patience."
+completion = "The Templars haven't sent for you yet, $N. Patience."
 money = 0
 tokens = 0
 
@@ -1721,7 +1721,7 @@ zone_or_sort = -81
 advancement = { from = "basic_warrior", to = "vanguard" }
 title = "The Warrior's Path"
 objectives = "Speak with Sergeant Willem Hale in the Northshire Abbey yard to take up the warrior's path."
-details = "Stormwind sent me to Northshire to drill recruits, $N, and you have outlasted every drill I know. A Basic Warrior has nothing left to learn from me.$B$BThe Vanguard hold the front of the line, in plate, on rage. Take up the path and you begin again, the greenest recruit in the yard. But your body remembers the work, and your arm is stronger for it.$B$BSay the word."
+details = "Stormwind sent me to Northshire to drill recruits, $N, and the city wants every one I can give it. Most of mine are farm boys with no farm left to go home to. You've outlasted every drill I know. A Basic Warrior has nothing left to learn from me.$B$BThe Vanguard hold the front of the line, in plate, on rage. Take up the path and you begin again, the greenest recruit in the yard. But your body remembers the work, and your arm is stronger for it.$B$BSay the word."
 progress = "Say the word, $N, and the drill begins again."
 completion = "Then fall in, Vanguard. You start over, and so did every soldier I ever trusted. Hold the line, and the rest of us live."
 money = 0
@@ -1736,9 +1736,9 @@ zone_or_sort = -162
 advancement = { from = "basic_warrior", to = "cutthroat" }
 title = "The Cutthroat's Mark"
 objectives = "Speak with Jorik Vane at the Northshire Vineyards to take the Cutthroat's mark."
-details = "Keep your voice down, $N. You swing that blade like the whole valley should hear it. I ran with the Brotherhood until I saw what they do to their own, and the one thing they taught me worth keeping is how to fight quiet.$B$BTake the mark and you begin again, a novice at my fence. No more rage: you fight on Energy, and every cut you land sets up the one that finishes it.$B$BSay the word."
+details = "Keep your voice down, $N. You swing that blade as if the whole valley should hear it. I ran with the Brotherhood until I saw what they do to their own. My old crew stayed in Westfall. I don't know what became of them, and I try not to wonder. The one thing they taught me worth keeping is how to fight quietly.$B$BTake the mark and you begin again, a novice at my fence. No more rage. You fight on Energy, and every cut you land sets up the one that finishes it.$B$BSay the word."
 progress = "Quietly, $N. Say the word, and take the mark."
-completion = "Done. Build your cuts, then finish them, Cutthroat. You start over; let your hands be quicker than your name."
+completion = "Done. Build your cuts, then finish them, Cutthroat. You start over, so let your hands be quicker than your name."
 money = 0
 tokens = 0
 
@@ -1751,9 +1751,9 @@ zone_or_sort = -161
 advancement = { from = "basic_warrior", to = "initiate" }
 title = "The Initiate's Spark"
 objectives = "Speak with Elsa Brightwood in the Northshire Abbey garden to fan the spark."
-details = "Put the sword down a moment, $N. I have copied these old texts for weeks, and I know the look of someone the words are written for. There is more in you than a strong arm.$B$BThe Tower of Azora taught me the first lesson, and I will teach it to you. Accept it and you begin again, a novice of the circle. No more rage: you draw on mana, you strike from afar with fire and frost, then break what you have woven.$B$BSay the word."
+details = "Put the sword down a moment, $N. I've spent weeks copying these old texts, because the libraries that held the other copies are behind the grey. I know the look of someone the words were written for. There's more in you than a strong arm.$B$BThe Tower of Azora taught me the first lesson, and I'll teach it to you. Accept it and you begin again, a novice of the circle. No more rage. You draw on mana, strike from afar with fire and frost, then break what you've woven.$B$BSay the word."
 progress = "Say the word, $N, and let the spark catch."
-completion = "Then it is begun. Burn, chill, then shatter, Initiate. You start over; mind your mana as you once minded your blade."
+completion = "Then it's begun. Burn, chill, then shatter, Initiate. You start over, so mind your mana as you once minded your blade."
 money = 0
 tokens = 0
 
@@ -1766,9 +1766,9 @@ zone_or_sort = -261
 advancement = { from = "basic_warrior", to = "ranger" }
 title = "The Ranger's Draw"
 objectives = "Speak with Thalyssa Windbough on the Northshire Abbey lawn to take up the bow."
-details = "You fight close enough to bleed, $N. I have watched you from the tree line. Darnassus sent me to learn why the wolves here run so thin, and what I have learned is that a good shot never lets the wolf near.$B$BAccept the bow and you begin again, a novice of the lodge. No more rage: you draw on mana, and every step you keep between you and the blade is yours.$B$BSay the word."
+details = "You fight close enough to bleed, $N. I've watched you from the tree line. Darnassus sent me across on the last ship from Auberdine, to learn why the wolves here run so thin. The sea went grey behind us. I don't know whether Darnassus is still there, and no one here can tell me. What I do know is that a good shot never lets the wolf near.$B$BAccept the bow and you begin again, a novice of the lodge. No more rage. You draw on mana, and every step you keep between yourself and the blade is yours.$B$BSay the word."
 progress = "Say the word, $N, and take up the bow."
-completion = "Good. Keep your distance, Ranger. You start over; let the wind tell you where to stand."
+completion = "Good. Keep your distance, Ranger. You start over, so let the wind tell you where to stand."
 money = 0
 tokens = 0
 # A bow and a quiver's worth of arrows, set as the ammo, as at the Crossroads (#157).
@@ -1783,9 +1783,9 @@ zone_or_sort = -262
 advancement = { from = "basic_warrior", to = "acolyte" }
 title = "The Acolyte's Vein"
 objectives = "Speak with Brother Corwin Ashgrave outside Echo Ridge Mine in Northshire to open the vein."
-details = "The brothers turned me out for asking how the dying cross over, $N, and I have asked it here, among the kobolds, ever since. You have bled for every fight and never once made the blood work for you.$B$BThe Acolyte spends their own life to rot a foe, and drinks the foe's to mend. It is not a gentle road. Accept it and you begin again, a novice of the order. No more rage: you draw on mana, and on your own veins when mana will not do.$B$BSay the word."
+details = "The brothers turned me out for asking how the dying cross over, $N. Now half the valley asks me where the Hush takes people, and I still have no answer. You've bled in every fight and never once made the blood work for you.$B$BThe Acolyte spends their own life to rot a foe, and drinks the foe's to mend. It isn't a gentle road. Accept it and you begin again, a novice of the order. No more rage. You draw on mana, and on your own veins when mana won't do.$B$BSay the word."
 progress = "Say the word, $N, and open the vein."
-completion = "It is open. Rot them, drink them, mend, Acolyte. You start over; your blood is a tool now, so spend it wisely."
+completion = "It's open. Rot them, drink them, mend, Acolyte. You start over. Your blood is a tool now, so spend it wisely."
 money = 0
 tokens = 0
 

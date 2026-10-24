@@ -403,10 +403,10 @@
         "zone_or_sort": -81,
         "quest_level": 30,
         "title": "The Ironclad's Oath",
-        "details": "Thirty battles' worth of scars, and still standing at the front. Few Vanguards come this far, $N.$B$BThe Ironclads hold the line when every other blade has broken, and they do not take just anyone. When they are ready to test you, I will send word. Until then, keep your shield arm strong.",
+        "details": "Thirty battles' worth of scars, and still standing at the front. Few Vanguards come this far, $N.$B$BThe Ironclads hold the line when every other blade has broken, and with the world as small as it is now, there's only one line left to hold. They don't take just anyone. When they're ready to test you, I'll send word. Until then, keep your shield arm strong.",
         "objectives": "Await the Ironclads' summons.",
         "objective": { "kind": "never", "note": "A single objective the realm never credits (or a kill of a creature entry that is never spawned), so the stock quest log shows it as in progress forever and the trainer shows the 'incomplete' text. Abandoning and retaking it is harmless." },
-        "request_items_text": "The Ironclads have not yet sent for you, $N. Patience.",
+        "request_items_text": "The Ironclads haven't sent for you yet, $N. Patience.",
         "flavour_source": "The vanilla level 30 warrior chain (1718 'The Islander', 1791 'The Windwatcher', 1712 'Cyclonian') for tone only."
       }
     },
@@ -630,9 +630,9 @@
         "zone_or_sort": -81,
         "quest_level": 30,
         "title": "The Zealot's Vow",
-        "details": "You fight like one possessed, $N, and some say the Light itself guides your blade. There are warriors who answer that call: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word.",
+        "details": "You fight like one possessed, $N, and some say the Light itself guides your blade. These days, plenty of people have stopped believing the Light watches anything at all. There are warriors who answer its call anyway: Zealots, who strike with holy fury and pay for it in rage, not prayer.$B$BSwear the vow and you begin again, a novice among them. But the plate on your back stays, and your arm is stronger still.$B$BSay the word.",
         "objectives": "Speak with Commander Aldous Wray in the Stormwind barracks to swear the Zealot's vow.",
-        "offer_reward_text": "It is sworn. Seal your blade and judge your foes, Zealot. You start over once more; let your fury carry you.",
+        "offer_reward_text": "It's sworn. Seal your blade and judge your foes, Zealot. You start over once more, so let your fury carry you.",
         "objective": { "kind": "talk", "note": "As The Warrior's Path: accept and complete at the trainer." },
         "on_complete": ["set_calling:zealot", "level:1", "xp:0", "replace_skills", "wipe_talents_and_points", "swap_talent_catalog", "apply_tier_bonus:2"],
         "flavour_source": "Synthesized; no text is copied."
@@ -657,10 +657,10 @@
         "zone_or_sort": -81,
         "quest_level": 50,
         "title": "The Templar's Charge",
-        "details": "Fifty battles of holy fury, and the Light has not yet burned you out. The Templars have heard of you, $N.$B$BThey guard what the Zealots only strike for, and they choose their own. When they are ready to test you, I will send word. Until then, keep your Seals bright.",
+        "details": "Fifty battles of holy fury, and the Light hasn't burned you out yet. The Templars have heard of you, $N.$B$BThey guard what the Zealots only strike for, and they choose their own. When they're ready to test you, I'll send word. Until then, keep your Seals bright.",
         "objectives": "Await the Templars' summons.",
         "objective": { "kind": "never", "note": "As The Ironclad's Oath: offered, never finished." },
-        "request_items_text": "The Templars have not yet sent for you, $N. Patience.",
+        "request_items_text": "The Templars haven't sent for you yet, $N. Patience.",
         "flavour_source": "Synthesized; no text is copied."
       }
     }
