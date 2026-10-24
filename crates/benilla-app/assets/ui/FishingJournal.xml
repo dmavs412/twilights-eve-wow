@@ -1,15 +1,19 @@
 <Ui>
     <!--
         The Fishing Journal (spec #323), opened by TOGGLEFISHINGJOURNAL (J) or /journal. At the top
-        the bait slot: it shows the chosen bait's icon and how many the bags hold, a bait item
-        dropped on it from the bags calls SetFishingBait, and a right-click clears it. Under it one
+        three slots: Pole, Lure and Bait. The bait slot shows the chosen bait's icon and how many
+        the bags hold, a bait item dropped on it from the bags calls SetFishingBait, and a
+        right-click clears it. A pole or lure dropped on its slot calls SetFishingGear, a
+        right-click calls ClearFishingGear, and the Lure slot shows its durability. Under them one
         zone at a time, paged with the arrows: the zone's name, a grid of fish slots (an icon and
         three pips for caught, perfect and legendary, or a dark silhouette and "???"), a divider
-        and four Legends slots.
+        and four Legends slots. A click on a caught fish swaps the zone view for that fish's page
+        (the Fish Page spec #368): its places, then a line per reveal tier. Back returns.
 
         The app pushes the realm's journal; the frames read only GetFishingJournal(),
-        GetFishingJournalZone(i) and GetFishingLegends(), and FISHING_JOURNAL_UPDATE says when to
-        repaint. The art is `Interface\Benilla\fishing\*`, painted RGBA `.tga` files.
+        GetFishingJournalZone(i), GetFishingLegends(), GetFishingGear(), GetFishPage(item),
+        GetFishPagePlace(item, i) and GetFishPageHabitat(item, i), and FISHING_JOURNAL_UPDATE says
+        when to repaint. The art is `Interface\Benilla\fishing\*`, painted RGBA `.tga` files.
     -->
     <Script><![CDATA[
         BENILLA_JOURNAL_ART = "Interface\\Benilla\\fishing\\"
@@ -17,6 +21,23 @@
         BENILLA_JOURNAL_PER_ROW = 6
         BENILLA_JOURNAL_LEGEND_SLOTS = 4
         BENILLA_JOURNAL_SLOT = 40
+        BENILLA_JOURNAL_PAGE_LINES = 14
+        -- The catch counts that unlock a page's three tiers: `[journal] reveal_at` in fish.toml.
+        BENILLA_JOURNAL_REVEAL_AT = { 5, 10, 25 }
+        BENILLA_JOURNAL_QUALITY = {
+            [0] = { 0.62, 0.62, 0.62 },
+            [1] = { 1, 1, 1 },
+            [2] = { 0.12, 1, 0 },
+            [3] = { 0, 0.44, 0.87 },
+            [4] = { 0.64, 0.21, 0.93 },
+            [5] = { 1, 0.5, 0 },
+        }
+        -- Everything the zone view shows besides the fish and Legends slots.
+        BENILLA_JOURNAL_GRID = {
+            "BenillaFishingJournalZoneName", "BenillaFishingJournalPage",
+            "BenillaFishingJournalPrev", "BenillaFishingJournalNext",
+            "BenillaFishingJournalDivider", "BenillaFishingJournalLegendsTitle",
+        }
         BENILLA_JOURNAL_HINT = "You have heard a rumour of a legendary fish in these waters."
 
         BINDING_HEADER_BENILLAFISHING = "Fishing"
@@ -108,6 +129,21 @@
             BenillaFishingJournalBaitHint:SetText(bait and "" or "Drop bait here")
         end
 
+        -- The Pole and Lure slots. The Lure shows its durability as "14/20".
+        function BenillaFishingJournal_PaintGear()
+            local pole, lure, durability, max = GetFishingGear()
+            local slot = BenillaFishingJournalPole
+            BenillaFishingJournal_Face(slot, pole and "caught" or "empty", pole)
+            slot.kind = "pole"
+            BenillaFishingJournalPoleHint:SetText(pole and "" or "Drop a pole here")
+            slot = BenillaFishingJournalLure
+            BenillaFishingJournal_Face(slot, lure and "caught" or "empty", lure)
+            slot.kind = "lure"
+            slot.durability = lure and (durability .. " / " .. max) or nil
+            BenillaFishingJournalLureCount:SetText(lure and (durability .. "/" .. max) or "")
+            BenillaFishingJournalLureHint:SetText(lure and "" or "Drop a lure here")
+        end
+
         -- The Legendary Fish of `zoneName`: a flat list of item, hintFound, caught triples.
         function BenillaFishingJournal_ZoneLegends(zoneName)
             local all = { GetFishingLegends() }
@@ -162,13 +198,133 @@
             end
         end
 
+        -- Show or hide the zone view's own widgets; the fish and Legends slots follow their paint.
+        function BenillaFishingJournal_ShowGrid(on)
+            for i = 1, table.getn(BENILLA_JOURNAL_GRID) do
+                local widget = getglobal(BENILLA_JOURNAL_GRID[i])
+                if on then
+                    widget:Show()
+                else
+                    widget:Hide()
+                end
+            end
+            if not on then
+                for n = 1, BENILLA_JOURNAL_FISH_SLOTS do
+                    getglobal("BenillaFishingJournalFish" .. n):Hide()
+                end
+                for n = 1, BENILLA_JOURNAL_LEGEND_SLOTS do
+                    getglobal("BenillaFishingJournalLegend" .. n):Hide()
+                end
+            end
+        end
+
+        -- "Water, Zone" for a named Fishing Water, else just the zone.
+        function BenillaFishingJournal_Place(zone, water)
+            if water and water ~= "" then
+                return water .. ", " .. zone
+            end
+            return zone
+        end
+
+        function BenillaFishingJournal_ItemName(item)
+            local name = item and GetItemInfo(item)
+            return name or "an unknown item"
+        end
+
+        -- The page's text lines for `item`: its places, then one line per tier.
+        function BenillaFishingJournal_PageLines(item)
+            local caught, perfect, revealed, nextReveal, places, lives, kinds, peakFrom, peakTo,
+                bait = GetFishPage(item)
+            local lines = {}
+            for i = 1, places do
+                local zone, water, count = GetFishPagePlace(item, i)
+                table.insert(lines, BenillaFishingJournal_Place(zone, water) .. ": " .. count)
+            end
+            local locked = 0
+            for tier = 1, 3 do
+                if tier > revealed then
+                    local need = (locked == 0) and nextReveal or BENILLA_JOURNAL_REVEAL_AT[tier]
+                    locked = locked + 1
+                    table.insert(lines, "??? (catch " .. need .. " to learn)")
+                elseif tier == 1 then
+                    local homes = {}
+                    for i = 1, lives do
+                        local zone, water = GetFishPageHabitat(item, i)
+                        table.insert(homes, BenillaFishingJournal_Place(zone, water))
+                    end
+                    table.insert(lines, "Lives in: " .. (lives > 0 and table.concat(homes, "; ") or "anywhere"))
+                elseif tier == 2 then
+                    local water = (kinds == "") and "any" or string.gsub(kinds, ",", ", ")
+                    table.insert(lines, "Water: " .. water)
+                    if peakFrom then
+                        table.insert(lines, string.format("Bites most: %d:00 to %d:00", peakFrom, peakTo))
+                    else
+                        table.insert(lines, "Bites at any hour")
+                    end
+                else
+                    table.insert(lines, "Favourite bait: " .. (bait and BenillaFishingJournal_ItemName(bait) or "none"))
+                end
+            end
+            return lines, caught, perfect
+        end
+
+        function BenillaFishingJournal_PaintPage(item)
+            local lines, caught, perfect = BenillaFishingJournal_PageLines(item)
+            local name, _, quality, _, _, _, _, _, texture = GetItemInfo(item)
+            local color = BENILLA_JOURNAL_QUALITY[quality or 1] or BENILLA_JOURNAL_QUALITY[1]
+            BenillaFishingJournal_ShowGrid(false)
+            BenillaFishingJournalPageIcon:SetTexture(BenillaFishingJournal_Icon(item))
+            BenillaFishingJournalPageIcon:Show()
+            BenillaFishingJournalPageName:SetText(name or "Unknown fish")
+            BenillaFishingJournalPageName:SetTextColor(color[1], color[2], color[3])
+            BenillaFishingJournalPageName:Show()
+            BenillaFishingJournalPageCaught:SetText("Caught " .. caught .. ", perfect " .. perfect)
+            BenillaFishingJournalPageCaught:Show()
+            for n = 1, BENILLA_JOURNAL_PAGE_LINES do
+                local line = getglobal("BenillaFishingJournalLine" .. n)
+                line:SetText(lines[n] or "")
+                line:Show()
+            end
+            BenillaFishingJournalBack:Show()
+        end
+
+        function BenillaFishingJournal_HidePage()
+            BenillaFishingJournalPageIcon:Hide()
+            BenillaFishingJournalPageName:Hide()
+            BenillaFishingJournalPageCaught:Hide()
+            for n = 1, BENILLA_JOURNAL_PAGE_LINES do
+                getglobal("BenillaFishingJournalLine" .. n):Hide()
+            end
+            BenillaFishingJournalBack:Hide()
+        end
+
+        function BenillaFishingJournal_OpenPage(item)
+            if GetFishPage(item) then
+                BenillaFishingJournal.fish = item
+                BenillaFishingJournal_Paint()
+            end
+        end
+
+        function BenillaFishingJournal_Back()
+            BenillaFishingJournal.fish = nil
+            BenillaFishingJournal_Paint()
+        end
+
         function BenillaFishingJournal_Paint()
             local frame = BenillaFishingJournal
+            BenillaFishingJournal_PaintBait()
+            BenillaFishingJournal_PaintGear()
+            if frame.fish and GetFishPage(frame.fish) then
+                BenillaFishingJournal_PaintPage(frame.fish)
+                return
+            end
+            frame.fish = nil
+            BenillaFishingJournal_HidePage()
+            BenillaFishingJournal_ShowGrid(true)
             local _, count = GetFishingJournal()
             local page = frame.page or 1
             page = math.max(1, math.min(page, math.max(count, 1)))
             frame.page = page
-            BenillaFishingJournal_PaintBait()
             local zone = { GetFishingJournalZone(page) }
             local zoneName = zone[1] or ""
             -- With the name gone, slot n reads zone[2n] and zone[2n + 1].
@@ -210,14 +366,32 @@
             end
         end
 
-        function BenillaFishingJournalSlot_OnClick(button)
-            if this ~= BenillaFishingJournalBait then
-                return
+        -- A pole or lure dropped from the bags goes into its slot; the realm refuses any other item.
+        function BenillaFishingJournalGear_Receive(which)
+            local bag, slot = BenillaGetCursorItemPos()
+            if bag then
+                SetFishingGear(which, bag, slot)
+                ClearCursor()
             end
-            if button == "RightButton" then
-                SetFishingBait(nil)
-            else
-                BenillaFishingJournalBait_Receive()
+        end
+
+        function BenillaFishingJournalSlot_OnClick(button)
+            local slot = this
+            if slot == BenillaFishingJournalBait then
+                if button == "RightButton" then
+                    SetFishingBait(nil)
+                else
+                    BenillaFishingJournalBait_Receive()
+                end
+            elseif slot == BenillaFishingJournalPole or slot == BenillaFishingJournalLure then
+                local which = (slot == BenillaFishingJournalPole) and "POLE" or "LURE"
+                if button == "RightButton" then
+                    ClearFishingGear(which)
+                else
+                    BenillaFishingJournalGear_Receive(which)
+                end
+            elseif slot.kind == "fish" and slot.caught and button ~= "RightButton" then
+                BenillaFishingJournal_OpenPage(slot.item)
             end
         end
 
@@ -229,6 +403,15 @@
             GameTooltip:SetOwner(slot, "ANCHOR_RIGHT")
             if slot.caught and slot.item then
                 GameTooltip:SetHyperlink("item:" .. slot.item .. ":0:0:0")
+                if slot.kind == "lure" and slot.durability then
+                    GameTooltip:AddLine("Durability " .. slot.durability, 1, 1, 1)
+                end
+            elseif slot.kind == "pole" then
+                GameTooltip:SetText("Fishing pole")
+                GameTooltip:AddLine("Drop a pole from your bags here. Right-click to clear.", 1, 1, 1, 1)
+            elseif slot.kind == "lure" then
+                GameTooltip:SetText("Lure")
+                GameTooltip:AddLine("Drop a lure from your bags here. Right-click to clear.", 1, 1, 1, 1)
             elseif slot.kind == "bait" then
                 GameTooltip:SetText("Bait")
                 GameTooltip:AddLine("Drop bait from your bags here. Right-click to clear.", 1, 1, 1, 1)
@@ -414,6 +597,204 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
+                <Texture name="$parentPageIcon" hidden="true">
+                    <Size>
+                        <AbsDimension x="36" y="36"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-92"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </Texture>
+                <FontString name="$parentPageName" inherits="GameFontNormalLarge" justifyH="LEFT" hidden="true">
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="66" y="-94"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentPageCaught" inherits="GameFontHighlight" justifyH="LEFT" hidden="true">
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="66" y="-114"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine1" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-140"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine2" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-153"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine3" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-166"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine4" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-179"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine5" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-192"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine6" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-205"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine7" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-218"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine8" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-231"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine9" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-244"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine10" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-257"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine11" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-270"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine12" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-283"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine13" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-296"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+                <FontString name="$parentLine14" inherits="GameFontHighlightSmall" justifyH="LEFT" hidden="true">
+                    <Size>
+                        <AbsDimension x="296" y="13"/>
+                    </Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT">
+                            <Offset>
+                                <AbsDimension x="22" y="-309"/>
+                            </Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
                 <FontString name="$parentPage" inherits="GameFontHighlightSmall">
                     <Anchors>
                         <Anchor point="BOTTOM">
@@ -426,11 +807,88 @@
             </Layer>
         </Layers>
         <Frames>
+            <Button name="BenillaFishingJournalPole" inherits="BenillaFishingJournalSlotTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="14" y="-40"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="BenillaFishingJournalPoleTitle" inherits="GameFontNormal" text="Pole" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="BOTTOMLEFT" relativeTo="BenillaFishingJournalPole" relativePoint="RIGHT">
+                                    <Offset>
+                                        <AbsDimension x="6" y="2"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                        <FontString name="BenillaFishingJournalPoleHint" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP">
+                            <Size>
+                                <AbsDimension x="56" y="26"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalPole" relativePoint="RIGHT">
+                                    <Offset>
+                                        <AbsDimension x="6" y="-2"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Button>
+            <Button name="BenillaFishingJournalLure" inherits="BenillaFishingJournalSlotTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT">
+                        <Offset>
+                            <AbsDimension x="120" y="-40"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="BenillaFishingJournalLureCount" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                            <Anchors>
+                                <Anchor point="BOTTOMRIGHT">
+                                    <Offset>
+                                        <AbsDimension x="-3" y="3"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                        <FontString name="BenillaFishingJournalLureTitle" inherits="GameFontNormal" text="Lure" justifyH="LEFT">
+                            <Anchors>
+                                <Anchor point="BOTTOMLEFT" relativeTo="BenillaFishingJournalLure" relativePoint="RIGHT">
+                                    <Offset>
+                                        <AbsDimension x="6" y="2"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                        <FontString name="BenillaFishingJournalLureHint" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP">
+                            <Size>
+                                <AbsDimension x="56" y="26"/>
+                            </Size>
+                            <Anchors>
+                                <Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalLure" relativePoint="RIGHT">
+                                    <Offset>
+                                        <AbsDimension x="6" y="-2"/>
+                                    </Offset>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+            </Button>
             <Button name="BenillaFishingJournalBait" inherits="BenillaFishingJournalSlotTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="22" y="-40"/>
+                            <AbsDimension x="226" y="-40"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -447,18 +905,21 @@
                         </FontString>
                         <FontString name="BenillaFishingJournalBaitTitle" inherits="GameFontNormal" text="Bait" justifyH="LEFT">
                             <Anchors>
-                                <Anchor point="LEFT" relativeTo="BenillaFishingJournalBait" relativePoint="RIGHT">
+                                <Anchor point="BOTTOMLEFT" relativeTo="BenillaFishingJournalBait" relativePoint="RIGHT">
                                     <Offset>
-                                        <AbsDimension x="8" y="8"/>
+                                        <AbsDimension x="6" y="2"/>
                                     </Offset>
                                 </Anchor>
                             </Anchors>
                         </FontString>
-                        <FontString name="BenillaFishingJournalBaitHint" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                        <FontString name="BenillaFishingJournalBaitHint" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP">
+                            <Size>
+                                <AbsDimension x="56" y="26"/>
+                            </Size>
                             <Anchors>
-                                <Anchor point="LEFT" relativeTo="BenillaFishingJournalBait" relativePoint="RIGHT">
+                                <Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalBait" relativePoint="RIGHT">
                                     <Offset>
-                                        <AbsDimension x="8" y="-8"/>
+                                        <AbsDimension x="6" y="-2"/>
                                     </Offset>
                                 </Anchor>
                             </Anchors>
@@ -497,6 +958,26 @@
                     </OnLoad>
                     <OnClick>
                         BenillaFishingJournal_Turn(1)
+                    </OnClick>
+                </Scripts>
+            </Button>
+            <Button name="BenillaFishingJournalBack" inherits="BenillaFishingJournalButtonTemplate" hidden="true">
+                <Size>
+                    <AbsDimension x="60" y="24"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-22" y="-92"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        this:SetText("Back")
+                    </OnLoad>
+                    <OnClick>
+                        BenillaFishingJournal_Back()
                     </OnClick>
                 </Scripts>
             </Button>

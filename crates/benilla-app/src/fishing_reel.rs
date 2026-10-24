@@ -18,10 +18,10 @@ use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 
 use benilla_protocol::SessionEvent;
 use benilla_ui::script::{
-    JournalLegend, JournalView, JournalZone, ReelView, ScriptValue, UiScript,
+    JournalLegend, JournalPage, JournalView, JournalZone, ReelView, ScriptValue, UiScript,
 };
 use benilla_world::view::WorldCamera;
-use twilight_realm::RealmCommand;
+use twilight_realm::{FishingGearSlot, RealmCommand};
 
 use crate::area::AreaTableRes;
 use crate::ui_script::UiFeed;
@@ -460,9 +460,11 @@ fn run_reel(
 fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalView {
     let SessionEvent::FishingJournal {
         bait,
+        pole,
+        lure,
         zones,
         legends,
-        ..
+        pages,
     } = event
     else {
         return JournalView::default();
@@ -475,6 +477,31 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
     };
     JournalView {
         bait: *bait,
+        pole: *pole,
+        lure: *lure,
+        pages: pages
+            .iter()
+            .map(|p| JournalPage {
+                item: p.item,
+                caught: p.caught,
+                perfect: p.perfect,
+                places: p
+                    .places
+                    .iter()
+                    .map(|(zone, water, n)| (name(*zone), water.clone(), *n))
+                    .collect(),
+                revealed: p.revealed,
+                next_reveal: p.next_reveal,
+                lives_in: p
+                    .lives_in
+                    .iter()
+                    .map(|(zone, water)| (name(*zone), water.clone()))
+                    .collect(),
+                kinds: p.kinds.clone(),
+                peak_hours: p.peak_hours,
+                favourite_bait: p.favourite_bait,
+            })
+            .collect(),
         zones: zones
             .iter()
             .map(|(id, fish)| JournalZone {
@@ -514,6 +541,23 @@ fn feed_reel(
     }
     for item in script.take_bait_requests() {
         outbox.0.push(RealmCommand::SetBait { item });
+    }
+    for req in script.take_gear_requests() {
+        let slot = if req.lure {
+            FishingGearSlot::Lure
+        } else {
+            FishingGearSlot::Pole
+        };
+        let from = match req.from {
+            Some((bag, at)) => {
+                let Some(pos) = crate::ui_items::wire_pos(bag, at) else {
+                    continue;
+                };
+                Some(pos)
+            }
+            None => None,
+        };
+        outbox.0.push(RealmCommand::SetFishingGear { slot, from });
     }
     for (name, args) in std::mem::take(&mut fishing.events) {
         match name {

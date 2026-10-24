@@ -58,10 +58,40 @@ pub struct JournalLegend {
     pub caught: bool,
 }
 
+/// One fish's page, zone names already resolved. Mirrors `FishPage`: tiers the catch count has
+/// not unlocked arrive empty.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct JournalPage {
+    pub item: u32,
+    pub caught: u32,
+    pub perfect: u32,
+    /// `(zone name, water name or "", catches there)`.
+    pub places: Vec<(String, String, u32)>,
+    pub revealed: u8,
+    pub next_reveal: u32,
+    /// `(zone name, water name or "")`.
+    pub lives_in: Vec<(String, String)>,
+    pub kinds: Vec<String>,
+    pub peak_hours: Option<(u8, u8)>,
+    pub favourite_bait: Option<u32>,
+}
+
+/// One `SetFishingGear` or `ClearFishingGear` call: the slot, and the bag item that fills it
+/// (`None` clears it), in the Lua API's bag numbering.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GearRequest {
+    pub lure: bool,
+    pub from: Option<(i64, u32)>,
+}
+
 /// The last `FishingJournal` the host pushed, zone names already resolved.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct JournalView {
     pub bait: Option<u32>,
+    pub pole: Option<u32>,
+    /// `(item, durability, max durability)`.
+    pub lure: Option<(u32, u32, u32)>,
+    pub pages: Vec<JournalPage>,
     pub zones: Vec<JournalZone>,
     pub legends: Vec<JournalLegend>,
 }
@@ -75,6 +105,11 @@ impl super::UiScript {
     /// Drain the `SetFishingBait(item or nil)` calls since the last drain, oldest first.
     pub fn take_bait_requests(&mut self) -> Vec<Option<u32>> {
         std::mem::take(&mut self.model_mut().bait_requests)
+    }
+
+    /// Drain the `SetFishingGear` and `ClearFishingGear` calls since the last drain, oldest first.
+    pub fn take_gear_requests(&mut self) -> Vec<GearRequest> {
+        std::mem::take(&mut self.model_mut().gear_requests)
     }
 
     /// Push the open bar, or `None` once it closes.
@@ -186,6 +221,101 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             Ok(())
         })?,
     )?;
+    // GetFishingGear(): poleItem, lureItem, lureDurability, lureMax; nil for an empty slot.
+    g.set(
+        "GetFishingGear",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let n = |v: u32| Value::Number(f64::from(v));
+            let j = &model.journal;
+            Ok(MultiValue::from_vec(vec![
+                j.pole.map_or(Value::Nil, n),
+                j.lure.map_or(Value::Nil, |l| n(l.0)),
+                j.lure.map_or(Value::Nil, |l| n(l.1)),
+                j.lure.map_or(Value::Nil, |l| n(l.2)),
+            ]))
+        })?,
+    )?;
+    // SetFishingGear("POLE" or "LURE", bag, slot): queues the item for the host to send.
+    g.set(
+        "SetFishingGear",
+        lua.create_function(|lua, (slot, bag, at): (String, i64, u32)| {
+            if let Some(lure) = gear_slot(&slot) {
+                lua.app_data_mut::<Model>()
+                    .expect("model app_data")
+                    .gear_requests
+                    .push(GearRequest {
+                        lure,
+                        from: Some((bag, at)),
+                    });
+            }
+            Ok(())
+        })?,
+    )?;
+    // ClearFishingGear("POLE" or "LURE"): queues the slot's item going back to the bags.
+    g.set(
+        "ClearFishingGear",
+        lua.create_function(|lua, slot: String| {
+            if let Some(lure) = gear_slot(&slot) {
+                lua.app_data_mut::<Model>()
+                    .expect("model app_data")
+                    .gear_requests
+                    .push(GearRequest { lure, from: None });
+            }
+            Ok(())
+        })?,
+    )?;
+    // GetFishPage(item): caught, perfect, revealed, nextReveal, placeCount, livesCount, kinds,
+    // peakFrom, peakTo, favouriteBait. `kinds` is comma-joined. Nil for a fish with no page.
+    g.set(
+        "GetFishPage",
+        lua.create_function(|lua, item: u32| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(p) = model.journal.pages.iter().find(|p| p.item == item) else {
+                return Ok(MultiValue::from_vec(vec![Value::Nil]));
+            };
+            let n = |v: u32| Value::Number(f64::from(v));
+            Ok(MultiValue::from_vec(vec![
+                n(p.caught),
+                n(p.perfect),
+                n(u32::from(p.revealed)),
+                n(p.next_reveal),
+                n(p.places.len() as u32),
+                n(p.lives_in.len() as u32),
+                Value::String(lua.create_string(p.kinds.join(","))?),
+                p.peak_hours.map_or(Value::Nil, |h| n(u32::from(h.0))),
+                p.peak_hours.map_or(Value::Nil, |h| n(u32::from(h.1))),
+                p.favourite_bait.map_or(Value::Nil, n),
+            ]))
+        })?,
+    )?;
+    // GetFishPagePlace(item, i), 1-based: zoneName, waterName, count.
+    g.set(
+        "GetFishPagePlace",
+        lua.create_function(|lua, (item, i): (u32, i64)| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let mut out = Vec::new();
+            if let Some((zone, water, count)) = page_row(&model.journal, item, i, |p| &p.places) {
+                out.push(Value::String(lua.create_string(zone)?));
+                out.push(Value::String(lua.create_string(water)?));
+                out.push(Value::Number(f64::from(*count)));
+            }
+            Ok(MultiValue::from_vec(out))
+        })?,
+    )?;
+    // GetFishPageHabitat(item, i), 1-based: zoneName, waterName.
+    g.set(
+        "GetFishPageHabitat",
+        lua.create_function(|lua, (item, i): (u32, i64)| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let mut out = Vec::new();
+            if let Some((zone, water)) = page_row(&model.journal, item, i, |p| &p.lives_in) {
+                out.push(Value::String(lua.create_string(zone)?));
+                out.push(Value::String(lua.create_string(water)?));
+            }
+            Ok(MultiValue::from_vec(out))
+        })?,
+    )?;
     // BenillaGetCursorItem(): the entry of the item on the cursor, nil when it carries none. 1.12
     // has no `GetCursorInfo`.
     g.set(
@@ -198,5 +328,40 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             })
         })?,
     )?;
+    // BenillaGetCursorItemPos(): the bag and 1-based slot the cursor's item came from, nil when it
+    // carries none.
+    g.set(
+        "BenillaGetCursorItemPos",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(match &model.cursor {
+                Some(super::cursor::CursorPayload::Item(item)) => (
+                    Value::Number(item.bag as f64),
+                    Value::Number(f64::from(item.slot)),
+                ),
+                _ => (Value::Nil, Value::Nil),
+            })
+        })?,
+    )?;
     Ok(())
+}
+
+/// `Some(true)` for "LURE", `Some(false)` for "POLE", `None` for anything else.
+fn gear_slot(name: &str) -> Option<bool> {
+    match name {
+        "POLE" => Some(false),
+        "LURE" => Some(true),
+        _ => None,
+    }
+}
+
+/// Row `i` (1-based) of the list `rows` picks from `item`'s page.
+fn page_row<T>(
+    journal: &JournalView,
+    item: u32,
+    i: i64,
+    rows: impl Fn(&JournalPage) -> &Vec<T>,
+) -> Option<&T> {
+    let page = journal.pages.iter().find(|p| p.item == item)?;
+    rows(page).get(usize::try_from(i - 1).ok()?)
 }

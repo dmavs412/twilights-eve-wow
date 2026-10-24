@@ -2,7 +2,10 @@
 //! bait slot and its commands, and the key that toggles the window. It needs no game data, so a
 //! missing font only warns.
 
-use benilla_ui::script::{JournalLegend, JournalView, JournalZone, UiScript};
+use benilla_ui::script::{
+    ContainerSlot, ContainerState, GearRequest, JournalLegend, JournalPage, JournalView,
+    JournalZone, UiScript,
+};
 
 use super::test_ui::load_ui as load_xml;
 
@@ -51,7 +54,57 @@ fn two_zones() -> JournalView {
             hint_found: true,
             caught: false,
         }],
+        ..Default::default()
     }
+}
+
+/// `two_zones` with a pole, a Shiny Bauble lure at 14 / 20 and a page for the caught fish: 12
+/// catches, 3 perfect, one place, tier 1 unlocked and the next tier 10 catches away.
+fn with_gear_and_page() -> JournalView {
+    JournalView {
+        pole: Some(6256),
+        lure: Some((6529, 14, 20)),
+        pages: vec![JournalPage {
+            item: 6291,
+            caught: 12,
+            perfect: 3,
+            places: vec![("Elwynn Forest".into(), "Northshire River".into(), 8)],
+            revealed: 1,
+            next_reveal: 10,
+            lives_in: vec![("Elwynn Forest".into(), "Northshire River".into())],
+            ..Default::default()
+        }],
+        ..two_zones()
+    }
+}
+
+/// Put an item from bag 0, slot 2 on the cursor.
+fn pick_up_from_bags(s: &mut UiScript, item_id: u32) {
+    let mut slots = std::collections::HashMap::new();
+    slots.insert(
+        2,
+        ContainerSlot {
+            item_id,
+            count: 1,
+            ..Default::default()
+        },
+    );
+    s.set_container(
+        0,
+        Some(ContainerState {
+            name: Some("Backpack".into()),
+            num_slots: 16,
+            slots,
+        }),
+    );
+    s.run("PickupContainerItem(0, 2)").unwrap();
+}
+
+fn click(s: &UiScript, frame: &str, button: &str) {
+    s.run(&format!(
+        "this = {frame} BenillaFishingJournalSlot_OnClick('{button}')"
+    ))
+    .unwrap();
 }
 
 /// The shown fish slots whose label reads `label`, and those whose slot holds a caught fish.
@@ -154,6 +207,157 @@ fn a_left_click_with_nothing_on_the_cursor_queues_nothing() {
     s.run("this = BenillaFishingJournalBait BenillaFishingJournalSlot_OnClick('LeftButton')")
         .unwrap();
     assert!(s.take_bait_requests().is_empty());
+}
+
+#[test]
+fn the_lure_slot_shows_its_icon_and_durability() {
+    let mut s = journal();
+    s.set_fishing_journal(with_gear_and_page());
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+
+    assert!(shown(&s, "BenillaFishingJournalPoleIcon"));
+    assert!(shown(&s, "BenillaFishingJournalLureIcon"));
+    assert_eq!(text(&s, "BenillaFishingJournalLureCount"), "14/20");
+    assert_eq!(text(&s, "BenillaFishingJournalPoleHint"), "");
+    assert_eq!(
+        s.eval::<(Option<f64>, Option<f64>, Option<f64>, Option<f64>)>("return GetFishingGear()")
+            .unwrap(),
+        (Some(6256.0), Some(6529.0), Some(14.0), Some(20.0))
+    );
+
+    s.set_fishing_journal(two_zones());
+    s.run("BenillaFishingJournal_Paint()").unwrap();
+    assert!(!shown(&s, "BenillaFishingJournalLureIcon"));
+    assert_eq!(text(&s, "BenillaFishingJournalLureCount"), "");
+    assert_eq!(
+        text(&s, "BenillaFishingJournalLureHint"),
+        "Drop a lure here"
+    );
+    assert_eq!(
+        text(&s, "BenillaFishingJournalPoleHint"),
+        "Drop a pole here"
+    );
+}
+
+#[test]
+fn dropping_on_the_pole_slot_queues_the_gear_and_a_right_click_clears_it() {
+    let mut s = journal();
+    s.set_fishing_journal(two_zones());
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+
+    pick_up_from_bags(&mut s, 6256);
+    click(&s, "BenillaFishingJournalPole", "LeftButton");
+    assert_eq!(
+        s.take_gear_requests(),
+        vec![GearRequest {
+            lure: false,
+            from: Some((0, 2))
+        }]
+    );
+    assert!(s.cursor_payload().is_none(), "the drop clears the cursor");
+
+    click(&s, "BenillaFishingJournalPole", "RightButton");
+    click(&s, "BenillaFishingJournalLure", "RightButton");
+    assert_eq!(
+        s.take_gear_requests(),
+        vec![
+            GearRequest {
+                lure: false,
+                from: None
+            },
+            GearRequest {
+                lure: true,
+                from: None
+            }
+        ]
+    );
+
+    click(&s, "BenillaFishingJournalLure", "LeftButton");
+    assert!(
+        s.take_gear_requests().is_empty(),
+        "an empty cursor queues nothing"
+    );
+}
+
+#[test]
+fn a_caught_fish_opens_its_page_and_back_returns_to_the_grid() {
+    let mut s = journal();
+    s.set_fishing_journal(with_gear_and_page());
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+
+    click(&s, "BenillaFishingJournalFish1", "LeftButton");
+    frame(&mut s, 0.05);
+
+    assert!(!shown(&s, "BenillaFishingJournalFish1"), "the grid hides");
+    assert!(!shown(&s, "BenillaFishingJournalLegend1"));
+    assert!(!shown(&s, "BenillaFishingJournalPrev"));
+    assert!(shown(&s, "BenillaFishingJournalBack"));
+    assert_eq!(
+        text(&s, "BenillaFishingJournalPageCaught"),
+        "Caught 12, perfect 3"
+    );
+    assert_eq!(
+        text(&s, "BenillaFishingJournalLine1"),
+        "Northshire River, Elwynn Forest: 8"
+    );
+    assert_eq!(
+        text(&s, "BenillaFishingJournalLine2"),
+        "Lives in: Northshire River, Elwynn Forest"
+    );
+    assert_eq!(
+        text(&s, "BenillaFishingJournalLine3"),
+        "??? (catch 10 to learn)"
+    );
+    assert_eq!(
+        text(&s, "BenillaFishingJournalLine4"),
+        "??? (catch 25 to learn)"
+    );
+    assert_eq!(text(&s, "BenillaFishingJournalLine5"), "");
+
+    // An update repaints the page that is open.
+    s.fire_event("FISHING_JOURNAL_UPDATE", Vec::new());
+    frame(&mut s, 0.05);
+    assert!(shown(&s, "BenillaFishingJournalBack"));
+
+    s.run("BenillaFishingJournal_Back()").unwrap();
+    frame(&mut s, 0.05);
+    assert!(shown(&s, "BenillaFishingJournalFish1"));
+    assert!(shown(&s, "BenillaFishingJournalLegend1"));
+    assert!(!shown(&s, "BenillaFishingJournalBack"));
+    assert_eq!(text(&s, "BenillaFishingJournalZoneName"), "Elwynn Forest");
+}
+
+#[test]
+fn unlocked_tiers_show_their_facts() {
+    let mut s = journal();
+    let mut view = with_gear_and_page();
+    view.pages[0].revealed = 3;
+    view.pages[0].next_reveal = 0;
+    view.pages[0].kinds = vec!["river".into(), "lake".into(), "pond".into()];
+    view.pages[0].peak_hours = Some((6, 10));
+    view.pages[0].favourite_bait = Some(6529);
+    s.set_fishing_journal(view.clone());
+    s.run("BenillaFishingJournal_OpenPage(6291)").unwrap();
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+
+    assert_eq!(
+        text(&s, "BenillaFishingJournalLine3"),
+        "Water: river, lake, pond"
+    );
+    assert_eq!(
+        text(&s, "BenillaFishingJournalLine4"),
+        "Bites most: 6:00 to 10:00"
+    );
+    assert!(text(&s, "BenillaFishingJournalLine5").starts_with("Favourite bait: "));
+
+    view.pages[0].peak_hours = None;
+    s.set_fishing_journal(view);
+    s.run("BenillaFishingJournal_Paint()").unwrap();
+    assert_eq!(text(&s, "BenillaFishingJournalLine4"), "Bites at any hour");
 }
 
 #[test]
