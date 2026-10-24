@@ -44,7 +44,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "absorb", "interrupt", "taunt", "knockback", "add_aura_stacks", "add_combo_points", "at_max_stacks", "healing_taken_pct", "max_health_pct", "mod_cast_speed_pct", "mod_ranged_haste_pct", "mod_ranged_crit_pct", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "absorb", "interrupt", "taunt", "knockback", "add_aura_stacks", "grow_aura","add_combo_points", "at_max_stacks", "healing_taken_pct", "max_health_pct", "mod_cast_speed_pct", "mod_ranged_haste_pct", "mod_ranged_crit_pct", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -812,10 +812,12 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
             raise BuildError(f"{where}: interrupt needs a whole lockout_ms of 0 or more, has {lockout!r}")
         if not isinstance(params.get("bosses", True), bool):
             raise BuildError(f"{where}: interrupt bosses is yes or no, has {params['bosses']!r}")
-    if kind == "add_aura_stacks":
+    if kind in ("add_aura_stacks", "grow_aura"):
         stacks = params.get("stacks", 1)
         if isinstance(stacks, bool) or not isinstance(stacks, int) or stacks <= 0:
-            raise BuildError(f"{where}: add_aura_stacks needs a positive whole stacks, has {stacks!r}")
+            raise BuildError(f"{where}: {kind} needs a positive whole stacks, has {stacks!r}")
+    if kind == "periodic_damage" and params.get("if_worn", "grow") != "grow":
+        raise BuildError(f"{where}: periodic_damage if_worn is grow or absent, has {params['if_worn']!r}")
     if kind == "periodic_damage" and "stacks_per_tick" in params:
         per_tick = params["stacks_per_tick"]
         if isinstance(per_tick, bool) or not isinstance(per_tick, int) or per_tick < 0:
@@ -1154,9 +1156,11 @@ def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
             if kind not in KNOWN_KINDS:
                 raise BuildError(f"{here}: unknown effect kind {kind!r}")
             check_kind_params(kind, parsed, here)
-        if kind in ("add_aura_stacks", "consume_aura_stacks", "grant_aura", "consume_aura"):
+        if kind in ("add_aura_stacks", "grow_aura", "consume_aura_stacks", "grant_aura", "consume_aura"):
             if parsed.get("aura") not in auras:
                 raise BuildError(f"{here}: aura {parsed.get('aura')!r} is not an aura row of this Calling")
+            if kind == "grow_aura" and "periodic_damage" not in auras[parsed["aura"]]:
+                raise BuildError(f"{here}: grow_aura aura {parsed['aura']!r} has no periodic_damage effect to grow")
         if kind == "ground_area":
             for side in ("enemy_aura", "ally_aura"):
                 if side in parsed and parsed[side] not in auras:

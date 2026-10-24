@@ -43,7 +43,17 @@ gcd_ms = 0
 target = "enemy"
 range_yd = [0.0, 30.0]
 meta = { cast_time_ms = 1500 }
-effects = [{ kind = "school_damage", school = "shadow", amount = { base = 1.0 } }]
+effects = [{ kind = "school_damage", school = "shadow", amount = { base = 1.0 } }, { kind = "grow_aura", aura_spell_id = 589, stacks = 1 }]
+
+[[calling.skill]]
+key = "settle"
+spell_id = 15487
+power_cost = 0
+cooldown_ms = 0
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 30.0]
+effects = [{ kind = "periodic_damage", tick_ms = 1000, duration_ms = 10000, tick = { base = 2.0 }, max_stacks = 255, aura_spell_id = 589, stack_rule = "replace", stacks_per_tick = 1, leech_pct = 50, school = "shadow", if_worn = "grow" }]
 
 [[calling.skill]]
 key = "bleed"
@@ -123,6 +133,7 @@ effects = [{ kind = "proc", on = "periodic_tick", damage_school = "shadow", per_
 const BLIGHT: u32 = 589;
 const BLOOD_LANCE: u32 = 8092;
 const BLEED: u32 = 2061;
+const SETTLE: u32 = 15487;
 const DETONATION: u32 = 15286;
 const VIRULENCE_AURA: u32 = 15270;
 const FESTERING_AURA: u32 = 15311;
@@ -241,6 +252,64 @@ fn creeping_blight_grows_each_tick_and_a_recast_starts_it_over() {
         "a recast starts over"
     );
     assert_eq!(dealt(&view.run(&mut realm, 1.0)), [2]);
+}
+
+#[test]
+fn blood_lance_adds_a_stack_and_keeps_the_timer() {
+    let (mut realm, _, mobs, mut view) = world(5, &[], 20.0);
+    let mob = &mobs[0];
+    go(&mut realm, &mut view, BLIGHT, mob.guid);
+    realm.handle(cast(BLOOD_LANCE, Some(mob.guid)));
+    view.drain(&mut realm);
+    // The first tick at 1 s leaves two stacks; the lance lands at 1.5 s.
+    view.run(&mut realm, 1.55);
+    assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(3));
+    let tick = view.run(&mut realm, 0.5);
+    let dealt: Vec<u32> = tick
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::PeriodicAuraLog(l) if l.spell_id == BLIGHT => match l.ticks[0] {
+                benilla_protocol::messages::PeriodicTick::Damage { amount, .. } => Some(amount),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect();
+    assert_eq!(dealt, [6], "three stacks of 2");
+    view.run(&mut realm, 7.85);
+    assert!(view.aura(mob.guid, BLIGHT).is_some(), "9.9 s in");
+    view.run(&mut realm, 0.15);
+    assert!(
+        view.aura(mob.guid, BLIGHT).is_none(),
+        "gone 10.05 s after its own cast"
+    );
+
+    let (mut realm, _, mobs, mut view) = world(6, &[], 20.0);
+    go(&mut realm, &mut view, BLOOD_LANCE, mobs[0].guid);
+    view.run(&mut realm, 1.6);
+    assert!(
+        view.aura(mobs[0].guid, BLIGHT).is_none(),
+        "a lance puts no Blight on a mob without one"
+    );
+}
+
+#[test]
+fn settle_grows_a_worn_blight_and_puts_on_a_missing_one() {
+    let (mut realm, _, mobs, mut view) = world(7, &[], 20.0);
+    let mob = &mobs[0];
+    go(&mut realm, &mut view, SETTLE, mob.guid);
+    assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(1));
+    view.run(&mut realm, 2.05);
+    assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(3));
+    go(&mut realm, &mut view, SETTLE, mob.guid);
+    assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(4));
+    view.run(&mut realm, 7.8);
+    assert!(view.aura(mob.guid, BLIGHT).is_some(), "9.85 s in");
+    view.run(&mut realm, 0.2);
+    assert!(
+        view.aura(mob.guid, BLIGHT).is_none(),
+        "fades 10.05 s after the first application"
+    );
 }
 
 #[test]

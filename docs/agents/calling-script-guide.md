@@ -168,7 +168,7 @@ Write `key=value` pairs joined by `;`, and lists joined by `|`:
 
 ## Effect vocabulary the game runs today (allowed on `modelled=yes`)
 
-`add_aura_stacks`, `add_combo_points`, `armor_pen` (talent, `amount=`), `aura_attack_power`, `dodge_pct` (talent or aura, `pct=`), `max_power` (talent, `amount=`), `charge`, `consume_aura_stacks`, `consume_heal_pct`, `energize`,
+`add_aura_stacks`, `add_combo_points`, `grow_aura`, `armor_pen` (talent, `amount=`), `aura_attack_power`, `dodge_pct` (talent or aura, `pct=`), `max_power` (talent, `amount=`), `charge`, `consume_aura_stacks`, `consume_heal_pct`, `energize`,
 `healing_reduction`, `incapacitate`, `judgement`, `mod_crit_chance`, `mod_crit_damage`, `mod_health_regen_out_of_combat`, `mod_run_speed`, `mod_stat`,
 `periodic_damage`, `proc`, `proc_on_cast`, `proc_on_kill`, `school_damage`, `seal`, `skill_amount_pct`,
 `skill_crit_damage_pct`, `skill_crit_pct`, `skill_duration_ms`, `skill_rage`, `stealth` (aura, `opener_crit=yes`; it lasts until it breaks, so the aura row has no duration, and the skill sets `on_cast=breaks_stealth=no`), `stun`, `weapon_strike`.
@@ -180,10 +180,15 @@ The params the build checks:
 - **`weapon_strike`:** `weapon=normal` or `normalized` (never `W`). Bonus damage is a `bonus.*` formula block.
 - **`periodic_damage`:** optional `stacks_per_tick=` a whole number of 0 or more (default 0). After each tick deals its damage, the
   aura gains that many stacks, up to the aura row's `max_stacks`. Pair it with `stack_rule=replace` so a recast starts over at one stack.
+  Optional `if_worn=grow` (the only value): when the caster's aura is already on the target, the application adds one stack and keeps
+  the timer instead of starting over. With none on the target it applies as usual.
 - **`energize`:** `power=rage|energy|mana` and an `amount.*` block.
 - **`add_combo_points`:** `amount=` a positive whole number (at most five points are held).
 - **`add_aura_stacks`:** `aura=` the key of an aura row of the Calling, `stacks=` a positive whole number (default 1). A landed hit
   puts the stacks on the caster; the aura row's `duration_ms`, `max_stacks` and `stack_rule` govern them.
+- **`grow_aura`:** `aura=` the key of an aura row of the Calling that has a `periodic_damage` effect, `stacks=` a positive whole number
+  (default 1). A landed hit adds the stacks to the caster's aura on the target, up to its `max_stacks`, and leaves its timer. A target
+  without the aura gets nothing.
 - **`consume_aura_stacks`:** `aura=` as above, a `per_stack.*` block and `school=`. The cast takes every stack and strikes each target it hit
   for the block a stack. **`consume_heal_pct`** (a talent effect): `skill=` the consuming skill, `pct=` per rank of the bonus damage healed.
 - **Finishers:** there is no finisher kind. A damage or duration effect with a `per_combo.*` block (`per_combo.base`,

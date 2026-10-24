@@ -1377,6 +1377,9 @@ pub enum Effect {
         /// `max_stacks`.
         #[serde(default)]
         stacks_per_tick: u32,
+        /// What an application does when the caster's aura is already on the target (`if_worn`).
+        #[serde(default)]
+        if_worn: Option<IfWorn>,
     },
     /// Heals the target `amount`, up to its maximum health.
     Heal { amount: Linear },
@@ -1620,6 +1623,13 @@ pub enum Effect {
         #[serde(default)]
         stack_rule: StackRule,
     },
+    /// `stacks` more on the caster's periodic damage `aura_spell_id` on the target, held to its
+    /// `max_stacks`, when the hit lands. The timer stays. A target without the aura gets nothing.
+    GrowAura {
+        aura_spell_id: u32,
+        #[serde(default = "one")]
+        stacks: u32,
+    },
     /// Takes every stack of the caster's aura `aura_spell_id`, and strikes each target the cast
     /// hit for `per_stack` of `school` damage a stack. No stacks, no bonus.
     ConsumeAuraStacks {
@@ -1651,6 +1661,15 @@ fn one() -> u32 {
 
 fn one_u8() -> u8 {
     1
+}
+
+/// What a periodic damage effect does when the caster's aura is already on the target (the
+/// `if_worn` param).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum IfWorn {
+    /// The aura gains a stack and keeps its timer, instead of starting over.
+    Grow,
 }
 
 /// What a new application of an aura does to the stacks it already holds (the `stack_rule`

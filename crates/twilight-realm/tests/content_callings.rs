@@ -445,6 +445,7 @@ fn check_effect(key: &str, got: &Effect, want: &Value) {
         | Effect::PeriodicHeal { .. }
         | Effect::Drain { .. }
         | Effect::GroundArea { .. }
+        | Effect::GrowAura { .. }
         | Effect::Absorb { .. } => {
             panic!("{key}: the reference has no realm half for a snare or a consume")
         }

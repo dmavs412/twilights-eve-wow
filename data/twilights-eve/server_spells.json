@@ -16392,9 +16392,17 @@
        "center": "target"
       },
       "realm_only": false
+     },
+     {
+      "kind": "grow_aura",
+      "params": {
+       "aura": "aura_creeping_blight",
+       "stacks": 1
+      },
+      "realm_only": true
      }
     ],
-    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target."
+    "description": "Rips a crystallized spike of blood from your own veins and hurls it at the target, dealing heavy Shadow damage and granting a moderate Heal-over-Time to the lowest-health ally within 15 yards of the target. If the target has your Creeping Blight, it gains a stack."
    },
    {
     "key": "dark_mending",
@@ -16564,12 +16572,13 @@
      {
       "kind": "periodic_damage",
       "params": {
-       "apply_aura": "aura_creeping_blight"
+       "apply_aura": "aura_creeping_blight",
+       "if_worn": "grow"
       },
       "realm_only": false
      }
     ],
-    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4 seconds. When it stops a cast, Creeping Blight settles on the target."
+    "description": "Stops the spell the target is casting and locks it out of that spell's school for 4 seconds. When it stops a cast, Creeping Blight settles on the target, or gains a stack if it is already there."
    },
    {
     "key": "grasping_shadows",

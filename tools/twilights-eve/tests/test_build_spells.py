@@ -387,6 +387,25 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
                           "positive whole stacks")
         self.assert_fails([CALLING, aura, {**consume, "effect1_params": "aura=conviction"}], "per_stack formula")
 
+    def test_grow_aura_names_a_periodic_damage_aura_and_if_worn_is_grow(self):
+        dot = "tick_ms=1000;duration_ms=6000;tick.base=2;tick.per_level=0"
+        aura = {**AURA, "key": "blight", "modelled": "yes", "effect1_kind": "periodic_damage",
+                "effect1_params": dot}
+        grow = {**STRIKE, "effect1_kind": "grow_aura", "effect1_params": "aura=blight;stacks=1"}
+        done, data = self.run_build([CALLING, aura, grow])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {"aura": "blight", "stacks": 1})
+        bare = {**AURA, "key": "bare", "effect1_kind": "", "effect1_params": "", "modelled": "yes"}
+        self.assert_fails([CALLING, bare, {**grow, "effect1_params": "aura=bare"}], "no periodic_damage effect")
+        self.assert_fails([CALLING, aura, {**grow, "effect1_params": "aura=blight;stacks=0"}],
+                          "positive whole stacks")
+        settle = {**STRIKE, "effect1_kind": "periodic_damage", "effect1_params": "apply_aura=blight;if_worn=grow"}
+        done, data = self.run_build([CALLING, aura, settle])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"]["if_worn"], "grow")
+        self.assert_fails([CALLING, aura, {**settle, "effect1_params": "apply_aura=blight;if_worn=keep"}],
+                          "if_worn is grow or absent")
+
     def test_a_ground_effect_names_its_ground_spell_by_id(self):
         ground = {**STRIKE, "effect1_kind": "ground_effect",
                   "effect1_params": "radius_yd=8;tick_ms=1000;duration_ms=8000;amount.base=4;amount.per_level=0;"

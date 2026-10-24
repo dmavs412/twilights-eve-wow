@@ -15,7 +15,7 @@ use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 
 use super::power::Combo;
 use super::{in_front, melee_reach, InWorld, Ticked};
-use crate::callings::{self, CritBleedOf, Effect, Seal, Skill, StackRule, Target, Weapon};
+use crate::callings::{self, CritBleedOf, Effect, IfWorn, Seal, Skill, StackRule, Target, Weapon};
 use crate::characters::Char;
 use crate::clock;
 use crate::fields::*;
@@ -1550,6 +1550,34 @@ impl Skills {
         }
         events.push(self.slot_fields(aura.unit, aura.slot));
         Some(aura)
+    }
+
+    /// Adds `n` stacks, up to its `max_stacks`, to the player's periodic damage aura `spell_id` on
+    /// `unit`, leaving its timer alone. Returns whether the unit wears one.
+    pub(super) fn grow(
+        &mut self,
+        unit: u64,
+        spell_id: u32,
+        n: u32,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let me = self.me;
+        let Some(aura) = self.auras.iter_mut().find(|a| {
+            a.unit == unit
+                && a.spell_id == spell_id
+                && matches!(a.kind, AuraKind::PeriodicDamage { caster, .. } if caster == me)
+        }) else {
+            return false;
+        };
+        if let AuraKind::PeriodicDamage {
+            stacks, max_stacks, ..
+        } = &mut aura.kind
+        {
+            *stacks = (*stacks + n).min(*max_stacks);
+        }
+        let slot = aura.slot;
+        events.push(self.slot_fields(unit, slot));
+        true
     }
 
     /// Takes every stack of `spell_id` off `unit`: the count it held.
@@ -3451,7 +3479,12 @@ impl InWorld {
                 leech_pct,
                 stack_rule,
                 stacks_per_tick,
+                if_worn,
             } => {
+                let aura_id = aura_spell_id.unwrap_or(skill.spell_id);
+                if if_worn == Some(IfWorn::Grow) && self.skills.grow(target, aura_id, 1, events) {
+                    return;
+                }
                 let duration_ms =
                     duration_ms + stretch.map_or(0, |l| l.at(level, ap) * u32::from(combo));
                 let share = self.share(pct_of, pct, duration_ms, tick_ms);
@@ -3475,7 +3508,7 @@ impl InWorld {
                         rule: stack_rule,
                         stacks_per_tick,
                     },
-                    aura_spell_id.unwrap_or(skill.spell_id),
+                    aura_id,
                     duration_ms,
                     tick_ms,
                 );
@@ -3811,6 +3844,12 @@ impl InWorld {
             Effect::AddAuraStacks { .. } => {
                 let more = self.skills.skill_stacks(&skill.key);
                 self.add_aura_stacks(effect, more, level, events)
+            }
+            Effect::GrowAura {
+                aura_spell_id,
+                stacks,
+            } => {
+                self.skills.grow(target, aura_spell_id, stacks, events);
             }
             Effect::GrantAura { aura_spell_id } => {
                 let auras = &callings::of(c.calling).auras;
