@@ -214,8 +214,20 @@ A named place, an AreaTable subzone or a circle in `content/fish.toml`, whose ow
 _Avoid_: fishing spot, fishing hole, pool (a pool is the weighted list of fish)
 
 **Bait**:
-A consumable chosen in the Fishing Journal's bait slot; each cast uses one from the bags. A legendary may bite only with its bait chosen. Not a lure: a lure goes on the pole for a time and gives one bonus.
+A consumable chosen in the Fishing Journal's bait slot; each cast uses one from the bags. A legendary may bite only with its bait chosen, and an ordinary fish may name one as its favourite. Not a lure: a lure sits in the Journal's Lure slot and wears with each bite.
 _Avoid_: lure
+
+**Lure**:
+An item with durability that sits in the Fishing Journal's Lure slot and gives its bonus to every cast. Each bite costs it one point; at zero it is destroyed and the next one of the same kind loads from the bags. Repair skips it (ADR 0022).
+_Avoid_: tackle, bait
+
+**Water Kind**:
+River, lake, coast or pond: the kind of a pool's unnamed water or of a Fishing Water. A fish bites only in the kinds its row lists, or in every kind when it lists none (ADR 0022).
+_Avoid_: water type, liquid type (the terrain's own water, ocean, magma and slime)
+
+**Fish Page**:
+A fish's page in the Fishing Journal: the character's catch log for it (caught, perfect, and a count per place) and the facts its catch count has unlocked. The realm sends only unlocked facts (ADR 0022).
+_Avoid_: bestiary, fish entry
 
 **Legendary Fish**:
 One of four rare fish per fishing zone: one bites anywhere in the zone at 1%, and three need a criterion (a Fishing Water, an hour window on the game clock, or a bait). Its Legend Rumour only hints at the criterion; the fish can bite without it.
