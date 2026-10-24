@@ -382,7 +382,9 @@ bait = 960105 # Worg Haunch
 [[water]]
 key = "northshire_river"
 name = "Northshire River"
-area = 23
+# The circle covers the valley's stretch of the river. Its terrain says area 9, Northshire Valley,
+# not area 23; Davis moves the circle if it misses the water.
+circle = [0, -8830.0, -330.0, 110.0]
 
 [[water]]
 key = "cathedral_canal"

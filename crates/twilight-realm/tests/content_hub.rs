@@ -170,6 +170,14 @@ fn every_npcs_flags_fit_its_role() {
                     && gives
                     && !n.stock.is_empty()
             }
+            // Brother Wendell: the lesson and Lee Brown's goods, no quests (#346).
+            "fisherman" => {
+                n.npc_flags == GOSSIP | VENDOR
+                    && n.teaches_fishing
+                    && talks
+                    && !gives
+                    && !n.stock.is_empty()
+            }
             // Innkeeper Farley: quests and a talk menu with an angler hint, no inn service (#331).
             "talker" => {
                 n.npc_flags == GOSSIP | QUEST_GIVER

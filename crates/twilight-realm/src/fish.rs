@@ -431,6 +431,10 @@ mod tests {
         assert_eq!(fish(6310).map(|f| f.style), Some(Style::Dart));
         assert_eq!(pool_for_zone(12).map(|p| p.key.as_str()), Some("elwynn"));
         assert!(water("cathedral_canal").is_some_and(|w| w.circle.is_some()));
+        assert_eq!(
+            water_at(0, -8796.0, -338.0, Some(9)).map(|w| w.key.as_str()),
+            Some("northshire_river")
+        );
         assert_eq!(lure(6530).map(|l| l.effect.bite_wait_pct), Some(-30));
         assert_eq!(bait(960102).map(|b| b.effect.treasure_points), Some(10));
         assert_eq!(bait(960105).map(|b| b.effect.angler_levels), Some(0));

@@ -15,6 +15,7 @@ const FISHING_POLE: u32 = 6256;
 const SMALLFISH: u32 = 6291;
 const CATFISH: u32 = 6308;
 const LEE_BROWN: u32 = 1651;
+const BROTHER_WENDELL: u32 = 190067;
 const ELWYNN: u32 = 12;
 const ELWYNN_FISH: [u32; 4] = [6291, 6289, 6292, 6294];
 const MAIN_HAND: u8 = 15;
@@ -412,6 +413,42 @@ fn fishing_unknown_is_refused_until_lee_brown_teaches_it() {
         .any(|e| matches!(e, SessionEvent::GossipComplete)));
 
     a.realm.handle(RealmCommand::GossipHello { guid: lee });
+    let lines = gossip_lines(&drain(&mut a.realm));
+    assert!(
+        !lines.iter().any(|l| l == "Teach me to fish."),
+        "the lesson is gone once learned: {lines:?}"
+    );
+}
+
+#[test]
+fn fishing_unknown_is_refused_until_brother_wendell_teaches_it() {
+    let mut a = angler(1, false, true, Side::East);
+    assert_eq!(refusal(&a.cast()), Some(SPELL_FAILED_NOT_KNOWN));
+
+    let wendell = hub_guid(BROTHER_WENDELL);
+    walk_up_to(&mut a.realm, wendell);
+    a.realm.handle(RealmCommand::GossipHello { guid: wendell });
+    let events = drain(&mut a.realm);
+    let teach = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu { options, .. } => options
+                .iter()
+                .find(|o| o.message == "Teach me to fish.")
+                .map(|o| o.index),
+            _ => None,
+        })
+        .expect("Brother Wendell offers the lesson");
+    a.realm.handle(RealmCommand::GossipSelectOption {
+        guid: wendell,
+        option: teach,
+    });
+    let taught = drain(&mut a.realm);
+    assert!(taught
+        .iter()
+        .any(|e| matches!(e, SessionEvent::SpellLearned { spell_id: FISHING })));
+
+    a.realm.handle(RealmCommand::GossipHello { guid: wendell });
     let lines = gossip_lines(&drain(&mut a.realm));
     assert!(
         !lines.iter().any(|l| l == "Teach me to fish."),
@@ -980,6 +1017,47 @@ fn lee_browns_hint_line_shows_at_angler_five_and_records_the_hint() {
         legends
             .iter()
             .any(|&(i, _, hinted, caught)| i == OLD_GOLDFIN && hinted && !caught),
+        "{legends:?}"
+    );
+}
+
+#[test]
+fn brother_wendells_hint_line_shows_at_angler_three_and_records_the_hint() {
+    const BROTHER_BASS: u32 = 960002;
+    let wendell = hub_guid(BROTHER_WENDELL);
+    let mut two = angler(2, true, true, Side::East);
+    walk_up_to(&mut two.realm, wendell);
+    two.realm
+        .handle(RealmCommand::GossipHello { guid: wendell });
+    let lines = gossip_lines(&drain(&mut two.realm));
+    assert!(!lines.iter().any(|l| l == LEE_BROWN_HINT), "{lines:?}");
+
+    let mut three = angler(3, true, true, Side::East);
+    walk_up_to(&mut three.realm, wendell);
+    three
+        .realm
+        .handle(RealmCommand::GossipHello { guid: wendell });
+    let events = drain(&mut three.realm);
+    let hint = events
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::GossipMenu { options, .. } => options
+                .iter()
+                .find(|o| o.message == LEE_BROWN_HINT)
+                .map(|o| o.index),
+            _ => None,
+        })
+        .expect("the hint line at Angler 3");
+    three.realm.handle(RealmCommand::GossipSelectOption {
+        guid: wendell,
+        option: hint,
+    });
+    let picked = drain(&mut three.realm);
+    let legends = legends_of(&picked).expect("the Journal follows the hint");
+    assert!(
+        legends
+            .iter()
+            .any(|&(i, _, hinted, caught)| i == BROTHER_BASS && hinted && !caught),
         "{legends:?}"
     );
 }
