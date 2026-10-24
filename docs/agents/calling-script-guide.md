@@ -197,7 +197,10 @@ The params the build checks:
 - **`proc`:** `on=cast|kill|dodge|finisher`, optional `skill=` and `chance=` (per rank), then at
   least one of `apply_aura=key|key` or `heal_pct=` (not both), `energize=` (the character's own
   power) and `add_combo_points=` (on the mob being fought, or on the finisher's target; none with no
-  target). A `finisher` proc fires after the finisher has spent its points.
+  target). A `finisher` proc fires after the finisher has spent its points. On `on=periodic_tick`,
+  `chance_per_stack=` (a percent per stack, such as 0.5) replaces `chance=`: the chance is that
+  percent times the stacks of the ticking aura, so 2.5 on a 12-stack tick is 30%. It is a positive
+  number and cannot sit beside `chance=`.
 
 Any other trigger (on dodge, on crit, on a finisher) or proc rate is not in the vocabulary yet. Write it as a
 descriptive kind on a `modelled=no` row and list it in the summary.

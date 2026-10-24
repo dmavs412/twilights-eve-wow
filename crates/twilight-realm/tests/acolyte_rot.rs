@@ -100,7 +100,7 @@ tier = 1
 column = 1
 rank_spells = [15270, 15335, 15336, 15337, 15338]
 spell_name = "Virulence"
-effects = [{ kind = "proc", on = "periodic_tick", skill = "creeping_blight", chances = [4, 8, 12, 16, 20], per_rank = [0, 0, 0, 0, 0], auras = [["virulence"], ["virulence"], ["virulence"], ["virulence"], ["virulence"]] }]
+effects = [{ kind = "proc", on = "periodic_tick", skill = "creeping_blight", chances_per_stack = [0.5, 1.0, 1.5, 2.0, 2.5], per_rank = [0, 0, 0, 0, 0], auras = [["virulence"], ["virulence"], ["virulence"], ["virulence"], ["virulence"]] }]
 
 [[calling.talent_tab.talent]]
 key = "epidemic"
@@ -313,28 +313,43 @@ fn settle_grows_a_worn_blight_and_puts_on_a_missing_one() {
 }
 
 #[test]
-fn virulence_fires_on_about_a_fifth_of_ticks_and_shortens_the_next_blood_lance() {
-    let mut fired = 0;
-    for seed in 0..200 {
+fn virulence_grows_likelier_with_the_blights_stacks() {
+    let mut first = 0;
+    let mut down = 0;
+    let mut eighth = 0;
+    for seed in 0..400 {
         let (mut realm, me, mobs, mut view) = world(seed, &[(VIRULENCE, 5)], 20.0);
         go(&mut realm, &mut view, BLIGHT, mobs[0].guid);
         view.run(&mut realm, 1.05);
-        if view.aura(me, VIRULENCE_AURA).is_none() {
+        if view.aura(me, VIRULENCE_AURA).is_some() {
+            first += 1;
+            realm.handle(cast(BLOOD_LANCE, Some(mobs[0].guid)));
+            let start = view.drain(&mut realm);
+            assert!(start.iter().any(|e| matches!(
+                e,
+                SessionEvent::SpellStart {
+                    spell_id: BLOOD_LANCE,
+                    cast_time_ms: 1000,
+                    ..
+                }
+            )));
             continue;
         }
-        fired += 1;
-        realm.handle(cast(BLOOD_LANCE, Some(mobs[0].guid)));
-        let start = view.drain(&mut realm);
-        assert!(start.iter().any(|e| matches!(
-            e,
-            SessionEvent::SpellStart {
-                spell_id: BLOOD_LANCE,
-                cast_time_ms: 1000,
-                ..
-            }
-        )));
+        view.run(&mut realm, 6.0);
+        if view.aura(me, VIRULENCE_AURA).is_some() {
+            continue;
+        }
+        down += 1;
+        view.run(&mut realm, 1.0);
+        if view.aura(me, VIRULENCE_AURA).is_some() {
+            eighth += 1;
+        }
     }
-    assert!((25..=55).contains(&fired), "{fired} of 200 first ticks");
+    assert!((2..=25).contains(&first), "{first} of 400 first ticks");
+    assert!(
+        (down * 12 / 100..=down * 30 / 100).contains(&eighth),
+        "{eighth} of {down} eighth ticks"
+    );
 }
 
 #[test]

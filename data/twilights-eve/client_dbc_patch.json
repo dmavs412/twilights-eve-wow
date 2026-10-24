@@ -10118,7 +10118,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 3% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 0.5% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10147,7 +10147,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 6% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 1% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10175,7 +10175,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 9% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 1.5% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10203,7 +10203,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 12% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 2% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0
@@ -10231,7 +10231,7 @@
     "dmg_class": 0,
     "school": 0,
     "prevention_type": 2,
-    "description": "Every time Creeping Blight deals periodic damage, you have a 15% chance to reduce the cast time of your next Blood Lance by 0.5 seconds.",
+    "description": "Every time Creeping Blight deals periodic damage, you have a 2.5% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds.",
     "implicit_targets": [
      1,
      0

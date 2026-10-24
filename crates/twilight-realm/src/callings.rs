@@ -803,6 +803,9 @@ pub enum TalentEffect {
         /// The chance a rank has, when it differs from `chance`.
         #[serde(default)]
         chances: Vec<u32>,
+        /// Percent per stack of the ticking aura a rank has, 0.0 for none.
+        #[serde(default)]
+        chances_per_stack: Vec<f32>,
         per_rank: Vec<u32>,
         #[serde(default)]
         auras: Vec<Vec<String>>,

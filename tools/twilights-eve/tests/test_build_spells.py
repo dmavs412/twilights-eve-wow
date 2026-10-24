@@ -869,6 +869,18 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
             done, _ = self.run_build([CALLING, {**base, "effect1_params": params}])
             self.assertEqual(done.returncode, 0, done.stderr)
 
+    def test_chance_per_stack_needs_a_tick_and_replaces_chance(self):
+        base = {**STRIKE, "effect1_kind": "proc", "effect4_kind": "", "effect4_params": ""}
+        ok = "on=periodic_tick;skill=strike;chance_per_stack=0.5;apply_aura=buff"
+        done, data = self.run_build([CALLING, AURA, {**base, "effect1_params": ok}])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"]["chance_per_stack"], 0.5)
+        self.assert_fails([CALLING, AURA, {**base, "effect1_params": ok.replace("periodic_tick", "cast")}],
+                          "periodic_tick")
+        self.assert_fails([CALLING, AURA, {**base, "effect1_params": ok + ";chance=10"}], "not both")
+        self.assert_fails([CALLING, AURA, {**base, "effect1_params": ok.replace("0.5", "0")}],
+                          "positive number")
+
     def test_calling_row_with_only_a_name_gives_its_power_and_no_tier(self):
         bare = {"kind": "calling", "calling": "vanguard", "key": "vanguard", "name": "Vanguard"}
         done, data = self.run_build([bare, STRIKE])

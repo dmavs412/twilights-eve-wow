@@ -544,6 +544,8 @@ pub(crate) struct Proc {
     /// Percent of the damage done splashed on the enemies within `radius_yd` of the target.
     pub(crate) splash_pct: u32,
     pub(crate) chance: u32,
+    /// Percent chance per stack of the ticking aura; replaces `chance` when above 0.
+    pub(crate) chance_per_stack: f32,
     /// Percent of the maximum health healed.
     pub(crate) heal_pct: u32,
     /// The keys of the buffs it grants.
@@ -611,6 +613,7 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                 yields_xp,
                 chance,
                 chances,
+                chances_per_stack,
                 per_rank,
                 auras,
                 energize,
@@ -653,6 +656,7 @@ pub(crate) fn procs(c: &Char, happened: &crate::rules::procs::Happened) -> Vec<P
                         .map(|k| (k, cooldown_ms.get(r).copied().unwrap_or(0))),
                     splash_pct: splash_pct.get(r).copied().unwrap_or(0),
                     chance: chances.get(r).copied().unwrap_or(*chance),
+                    chance_per_stack: chances_per_stack.get(r).copied().unwrap_or(0.0),
                     heal_pct: per_rank[r],
                     auras: auras.get(r).cloned().unwrap_or_default(),
                     energize: energize.get(r).copied().unwrap_or(0),
@@ -704,6 +708,7 @@ pub(crate) fn aura_proc(
         cooldown: None,
         splash_pct: 0,
         chance: p.chance,
+        chance_per_stack: 0.0,
         heal_pct: p.heal_pct,
         auras: p.apply_aura.iter().cloned().collect(),
         energize: p.energize,

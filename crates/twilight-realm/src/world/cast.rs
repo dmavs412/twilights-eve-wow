@@ -1354,6 +1354,11 @@ impl Skills {
     }
 
     /// The procs the player's buffs carry, each with the buff's spell id.
+    /// The stacks of the aura whose tick is running its procs; 0 outside a tick.
+    pub(super) fn ticking_stacks(&self) -> u32 {
+        self.ticking.map_or(0, |a| a.kind.stacks())
+    }
+
     pub(super) fn aura_procs(&self) -> Vec<(u32, &'static callings::AuraProc)> {
         self.auras
             .iter()

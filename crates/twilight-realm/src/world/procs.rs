@@ -44,7 +44,13 @@ impl InWorld {
             if proc.requires_health_cost && self.skills.last_health_cost == 0 {
                 continue;
             }
-            if proc.chance < 100 && rng.below(100) >= proc.chance {
+            if proc.chance_per_stack > 0.0 {
+                let stacks = self.skills.ticking_stacks();
+                let per_mille = (proc.chance_per_stack * 10.0 * stacks as f32).round() as u32;
+                if rng.below(1000) >= per_mille {
+                    continue;
+                }
+            } else if proc.chance < 100 && rng.below(100) >= proc.chance {
                 continue;
             }
             // A shield at a full bar, instead of the rest; the rest, without it, otherwise.

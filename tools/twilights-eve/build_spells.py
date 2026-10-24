@@ -732,6 +732,14 @@ def check_proc(params: dict, auras: set[str], where: str) -> None:
         raise BuildError(f"{where}: a proc needs at least one of {', '.join(PROC_ACTIONS)}")
     if "apply_aura" in params and "heal_pct" in params:
         raise BuildError(f"{where}: a proc takes apply_aura or heal_pct, not both")
+    if "chance_per_stack" in params:
+        per_stack = params["chance_per_stack"]
+        if isinstance(per_stack, bool) or not isinstance(per_stack, (int, float)) or per_stack <= 0:
+            raise BuildError(f"{where}: chance_per_stack needs a positive number, has {per_stack!r}")
+        if params.get("on") != "periodic_tick":
+            raise BuildError(f"{where}: chance_per_stack needs on=periodic_tick, has on={params.get('on')!r}")
+        if "chance" in params:
+            raise BuildError(f"{where}: a proc takes chance or chance_per_stack, not both")
     if "while_aura" in params and params["while_aura"] not in auras:
         raise BuildError(f"{where}: while_aura {params['while_aura']!r} is not an aura row of this Calling")
     for action in ("apply_aura", "apply_aura_area", "apply_aura_target"):

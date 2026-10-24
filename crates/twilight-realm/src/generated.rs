@@ -651,6 +651,7 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     object.remove("heal_pct");
     object.remove("apply_aura");
     object.remove("chance");
+    object.remove("chance_per_stack");
     object.remove("energize");
     object.remove("add_combo_points");
     object.remove("block_value_pct");
@@ -670,12 +671,19 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     let mut block_value = Vec::new();
     let mut auras = Vec::new();
     let mut chances = Vec::new();
+    let mut chances_per_stack = Vec::new();
     let mut energize = Vec::new();
     let mut combo_points = Vec::new();
     for rank in ranks {
         let params = &rank.effects.get(slot)?.params;
         heals.push(params.get("heal_pct").cloned().unwrap_or(0.into()));
         chances.push(params.get("chance").cloned().unwrap_or(100.into()));
+        chances_per_stack.push(
+            params
+                .get("chance_per_stack")
+                .cloned()
+                .unwrap_or(0.0.into()),
+        );
         energize.push(params.get("energize").cloned().unwrap_or(0.into()));
         combo_points.push(params.get("add_combo_points").cloned().unwrap_or(0.into()));
         block_value.push(params.get("block_value_pct").cloned().unwrap_or(0.into()));
@@ -711,6 +719,7 @@ fn proc(ranks: &[GenRank], slot: usize) -> Option<TalentEffect> {
     object.insert("per_rank".into(), Value::Array(heals));
     object.insert("auras".into(), Value::Array(auras));
     object.insert("chances".into(), Value::Array(chances));
+    object.insert("chances_per_stack".into(), Value::Array(chances_per_stack));
     object.insert("energize".into(), Value::Array(energize));
     object.insert("combo_points".into(), Value::Array(combo_points));
     object.insert("block_value_pct".into(), Value::Array(block_value));

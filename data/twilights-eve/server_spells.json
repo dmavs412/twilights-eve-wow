@@ -16666,13 +16666,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "creeping_blight",
-           "chance": 3,
+           "chance_per_stack": 0.5,
            "apply_aura": "aura_virulence"
           },
           "realm_only": false
          }
         ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 3% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+        "description": "Every time Creeping Blight deals periodic damage, you have a 0.5% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds."
        },
        {
         "key": "virulence",
@@ -16702,13 +16702,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "creeping_blight",
-           "chance": 6,
+           "chance_per_stack": 1,
            "apply_aura": "aura_virulence"
           },
           "realm_only": false
          }
         ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 6% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+        "description": "Every time Creeping Blight deals periodic damage, you have a 1% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds."
        },
        {
         "key": "virulence",
@@ -16738,13 +16738,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "creeping_blight",
-           "chance": 9,
+           "chance_per_stack": 1.5,
            "apply_aura": "aura_virulence"
           },
           "realm_only": false
          }
         ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 9% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+        "description": "Every time Creeping Blight deals periodic damage, you have a 1.5% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds."
        },
        {
         "key": "virulence",
@@ -16774,13 +16774,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "creeping_blight",
-           "chance": 12,
+           "chance_per_stack": 2,
            "apply_aura": "aura_virulence"
           },
           "realm_only": false
          }
         ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 12% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+        "description": "Every time Creeping Blight deals periodic damage, you have a 2% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds."
        },
        {
         "key": "virulence",
@@ -16810,13 +16810,13 @@
           "params": {
            "on": "periodic_tick",
            "skill": "creeping_blight",
-           "chance": 15,
+           "chance_per_stack": 2.5,
            "apply_aura": "aura_virulence"
           },
           "realm_only": false
          }
         ],
-        "description": "Every time Creeping Blight deals periodic damage, you have a 15% chance to reduce the cast time of your next Blood Lance by 0.5 seconds."
+        "description": "Every time Creeping Blight deals periodic damage, you have a 2.5% chance per stack to reduce the cast time of your next Blood Lance by 0.5 seconds."
        }
       ]
      },
