@@ -116,6 +116,31 @@ fn sum(c: &Char, pick: impl Fn(&TalentEffect) -> bool) -> u32 {
         .sum()
 }
 
+/// How many more stacks the learned talents give the aura `key`.
+pub(crate) fn aura_max_stacks(c: &Char, key: &str) -> u32 {
+    learned(c)
+        .map(|(e, r)| match e {
+            TalentEffect::AuraMaxStacks { aura, per_rank } if aura == key => per_rank[r],
+            _ => 0,
+        })
+        .sum()
+}
+
+/// The percent of maximum health a droplet's pickup heals.
+pub(crate) fn pickup_heal_pct(c: &Char) -> u32 {
+    sum(c, |e| matches!(e, TalentEffect::PickupHealPct { .. }))
+}
+
+/// The yards farther away a droplet is picked up.
+pub(crate) fn pickup_radius_yd(c: &Char) -> f32 {
+    learned(c)
+        .map(|(e, r)| match e {
+            TalentEffect::PickupRadiusYd { per_rank } => per_rank[r],
+            _ => 0.0,
+        })
+        .sum()
+}
+
 /// A skill `c` can cast: one of the current Calling's that its level has reached, or a learned
 /// active talent's.
 pub(crate) fn skill(c: &Char, spell_id: u32) -> Option<&'static Skill> {

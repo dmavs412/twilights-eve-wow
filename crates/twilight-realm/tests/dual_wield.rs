@@ -20,8 +20,45 @@ const OFF_HAND: u8 = 16;
 const BACKPACK: u8 = 255;
 const PACK_1: u8 = 23;
 /// `Talent.dbc` id of Dual Wield Specialization, 5 ranks.
-static DUAL_WIELD_SPECIALIZATION: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| talent("cutthroat", "dual_wield_specialization"));
+const DUAL_WIELD_SPECIALIZATION: u32 = 1705;
+
+/// A Rogue-Class Calling carrying the off-hand talent, which the shipped Cutthroat no longer has.
+const TEST_CALLINGS: &str = r#"
+[[calling]]
+key = "test_rogue"
+name = "Test Rogue"
+tier = 0
+class = 4
+cap = 10
+tier_bonus = { strength = 0, agility = 0, stamina = 0, intellect = 0, spirit = 0 }
+shapeshift_form = 0
+armour = ["cloth", "leather"]
+weapons = ["dagger", "dual_wield"]
+
+[[calling.skill]]
+key = "builder"
+spell_id = 1752
+power_cost = 10
+cooldown_ms = 0
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [{ kind = "add_combo_points", amount = 1 }]
+
+[[calling.talent_tab]]
+id = 906
+name = "Test"
+background = "RogueAssassination"
+
+[[calling.talent_tab.talent]]
+key = "dual_wield_specialization"
+talent_id = 1705
+tier = 1
+column = 1
+rank_spells = [1000211, 1000212, 1000213, 1000214, 1000215]
+spell_name = "Dual Wield Specialization"
+effects = [{ kind = "offhand_damage_pct", per_rank = [10, 20, 30, 40, 50] }]
+"#;
 /// 1H dagger, 6-12 every 1.5 s.
 const SMALL_HAND_BLADE: u32 = 816;
 /// 1H dagger, 7-14 every 1.4 s.
@@ -34,7 +71,7 @@ const HITINFO_MISS: u32 = 0x10;
 /// A Cutthroat's save carrying `items`, with `talents` learned.
 fn cutthroat_save(items: &[Carried], talents: &[(u32, u8)]) -> (u64, String) {
     let (guid, mut blob) = save_with(LEVEL, 0, items);
-    blob = blob.replace("calling = \"basic_warrior\"", "calling = \"cutthroat\"");
+    blob = blob.replace("calling = \"basic_warrior\"", "calling = \"test_rogue\"");
     if !talents.is_empty() {
         let rows: Vec<String> = talents.iter().map(|(t, r)| format!("[{t}, {r}]")).collect();
         let line = format!("money = 0\ntalents = [{}]\n", rows.join(", "));
@@ -54,7 +91,7 @@ fn two_daggers(talents: &[(u32, u8)]) -> (u64, String) {
 
 /// The save in a realm on `seed`, in the world, attacking a mob near it.
 fn enter(guid: u64, blob: &str, seed: u64) -> Realm {
-    let mut realm = Realm::with_seed(seed);
+    let mut realm = Realm::with_seed(seed).with_callings(TEST_CALLINGS);
     realm.import_character(blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);
@@ -225,7 +262,7 @@ fn the_off_hand_deals_about_half_the_main_hands_damage() {
 #[test]
 fn dual_wield_specialization_raises_the_off_hands_damage() {
     let bare = opening_swings(&two_daggers(&[]), 300);
-    let talents = [(*DUAL_WIELD_SPECIALIZATION, 5)];
+    let talents = [(DUAL_WIELD_SPECIALIZATION, 5)];
     let trained = opening_swings(&two_daggers(&talents), 300);
     let ratio = mean_plain_hit(&trained, true) / mean_plain_hit(&bare, true);
     // A Power Level body's attack power is a larger part of each hit, which the talent does not raise.

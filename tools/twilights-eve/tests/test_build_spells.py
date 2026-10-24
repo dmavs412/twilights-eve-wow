@@ -422,6 +422,17 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
                           "positive whole stacks")
         self.assert_fails([CALLING, aura, {**consume, "effect1_params": "aura=conviction"}], "per_stack formula")
 
+    def test_aura_max_stacks_names_an_aura_row_of_the_calling(self):
+        aura = {**AURA, "key": "frenzy", "effect1_kind": "", "effect1_params": "", "modelled": "yes",
+                "max_stacks": "5"}
+        more = {**STRIKE, "effect1_kind": "aura_max_stacks", "effect1_params": "aura=frenzy;amount=2"}
+        done, data = self.run_build([CALLING, aura, more])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"], {"aura": "frenzy", "amount": 2})
+        self.assert_fails([CALLING, aura, {**more, "effect1_params": "aura=nothing;amount=2"}], "not an aura row")
+        self.assert_fails([CALLING, aura, {**more, "effect1_params": "aura=frenzy;amount=0"}],
+                          "positive amount")
+
     def test_grow_aura_names_a_periodic_damage_aura_and_if_worn_is_grow(self):
         dot = "tick_ms=1000;duration_ms=6000;tick.base=2;tick.per_level=0"
         aura = {**AURA, "key": "blight", "modelled": "yes", "effect1_kind": "periodic_damage",

@@ -3929,7 +3929,7 @@ impl InWorld {
             Effect::GrantAura { aura_spell_id } => {
                 let auras = &callings::of(c.calling).auras;
                 if let Some(def) = auras.iter().find(|a| a.spell_id == aura_spell_id) {
-                    self.grant_aura(def, level, events);
+                    self.grant_aura(def, level, 0, events);
                 }
             }
             Effect::GroundEffect {
@@ -5300,12 +5300,14 @@ impl InWorld {
     fn drop_tick(&mut self, dt: f32, c: &Char, events: &mut Vec<SessionEvent>) {
         let at = c.position;
         let alive = self.player.alive();
+        let reach = crate::talents::pickup_radius_yd(c);
         let mut grants = Vec::new();
         for d in &mut self.skills.drops {
             d.left -= dt;
-            let reached = alive && (d.centre[0] - at[0]).hypot(d.centre[1] - at[1]) <= d.radius_yd;
+            let reached =
+                alive && (d.centre[0] - at[0]).hypot(d.centre[1] - at[1]) <= d.radius_yd + reach;
             if reached {
-                grants.push(d.grants);
+                grants.push((d.spell_id, d.grants));
             }
             if reached || d.left <= CLOCK_EPSILON {
                 events.push(SessionEvent::ObjectDestroyed(d.object));
@@ -5313,9 +5315,15 @@ impl InWorld {
             }
         }
         self.skills.drops.retain(|d| d.left > 0.0);
-        for key in grants {
+        let heal_pct = crate::talents::pickup_heal_pct(c);
+        for (spell_id, key) in grants {
+            if heal_pct > 0 {
+                let max = buffed(&self.player.stats, &self.skills).max_health;
+                self.heal_player(c, spell_id, scaled_share(max, heal_pct), events);
+            }
             if let Some(def) = crate::callings::aura(key) {
-                self.grant_aura(def, c.level, events);
+                let more = crate::talents::aura_max_stacks(c, key);
+                self.grant_aura(def, c.level, more, events);
             }
         }
     }
@@ -5635,14 +5643,16 @@ impl InWorld {
         self.skills.apply(aura, events);
     }
 
-    /// Puts the buff `def` on the player, one aura per effect.
+    /// Puts the buff `def` on the player, one aura per effect, its most stacks raised by
+    /// `more_stacks`.
     pub(super) fn grant_aura(
         &mut self,
         def: &'static callings::AuraDef,
         level: u8,
+        more_stacks: u32,
         events: &mut Vec<SessionEvent>,
     ) {
-        self.put_aura(def, self.guid, level, events);
+        self.put_aura_more(def, self.guid, level, more_stacks, events);
     }
 
     /// Lands a Blink cast since the last tick: the caster steps along their facing over the
@@ -5759,6 +5769,20 @@ impl InWorld {
         level: u8,
         events: &mut Vec<SessionEvent>,
     ) {
+        self.put_aura_more(def, unit, level, 0, events);
+    }
+
+    /// [`Self::put_aura`] with the most stacks of the kinds that stack raised by `more_stacks`.
+    pub(super) fn put_aura_more(
+        &mut self,
+        def: &'static callings::AuraDef,
+        unit: u64,
+        level: u8,
+        more_stacks: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let stacks = def.row.stack_rule.as_deref() == Some("stack");
+        let stack_max = stack_limit(def) + if stacks { more_stacks } else { 0 };
         for effect in &def.effects {
             let kind = match effect {
                 // A droplet is a patch on the ground (`drop_blood`), never worn.
@@ -5814,17 +5838,17 @@ impl InWorld {
                     skill: skill.as_str(),
                     pct: *pct,
                     stacks: 1,
-                    max_stacks: stack_limit(def),
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::ModDamageDonePct { pct } => AuraKind::DamageDone {
                     pct: *pct,
                     stacks: 1,
-                    max_stacks: stack_limit(def),
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::ModMeleeHastePct { pct } => AuraKind::MeleeHaste {
                     pct: *pct,
                     stacks: 1,
-                    max_stacks: stack_limit(def),
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::ModRangedHastePct { pct } => {
                     AuraKind::RangedHaste { pct: *pct }
@@ -5836,12 +5860,12 @@ impl InWorld {
                     next,
                     group: def.row.exclusive_group.as_deref(),
                     stacks: 1,
-                    max_stacks: stack_limit(def),
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::ModArmor { amount } => AuraKind::ArmorLoss {
                     amount: amount.unsigned_abs(),
                     stacks: 1,
-                    max_stacks: stack_limit(def),
+                    max_stacks: stack_max,
                 },
                 callings::AuraEffect::ExtraStrike {
                     skill,

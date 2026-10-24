@@ -19,15 +19,15 @@ const FIRST_SEED: u64 = 0x5EED_0111;
 
 static SINISTER_STRIKE: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| spell("cutthroat", "sinister_strike"));
-static EVISCERATE: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| spell("cutthroat", "eviscerate"));
 /// The test Calling's builder and Rupture, as `TEST_CALLINGS` numbers them.
 const TEST_STRIKE: u32 = 1752;
 const TEST_RUPTURE: u32 = 1943;
 
 /// `Talent.dbc` ids of the talents under test.
-static LETHALITY: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| talent("cutthroat", "lethality"));
+const LETHALITY: u32 = 1703;
+/// The test Calling's builder and finisher, which deal damage and can crit.
+const TEST_SINISTER: u32 = 1760;
+const TEST_EVISCERATE: u32 = 1761;
 static FLURRY_OF_BLADES: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| talent("cutthroat", "flurry_of_blades"));
 const BLOODLETTING: u32 = 1702;
@@ -66,10 +66,39 @@ target = "enemy"
 range_yd = [0.0, 5.0]
 effects = [{ kind = "periodic_damage", tick_ms = 5000, duration_ms = 6000, tick = { base = 4.0 }, per_combo = { base = 0.0 }, duration_per_combo = { base = 2000.0 } }]
 
+[[calling.skill]]
+key = "sinister"
+spell_id = 1760
+power_cost = 10
+cooldown_ms = 0
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [{ kind = "weapon_strike", weapon = "normal", weapon_pct = 110, bonus = { base = 8.0, per_level = 2.0 } }, { kind = "add_combo_points", amount = 1 }]
+
+[[calling.skill]]
+key = "eviscerate"
+spell_id = 1761
+power_cost = 10
+cooldown_ms = 0
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [{ kind = "school_damage", amount = { base = 5.2, per_level = 1.3 }, per_combo = { base = 6.0, per_level = 1.3 }, melee_hit_table = true }]
+
 [[calling.talent_tab]]
 id = 904
 name = "Test"
 background = "WarriorArms"
+
+[[calling.talent_tab.talent]]
+key = "lethality"
+talent_id = 1703
+tier = 1
+column = 2
+rank_spells = [1000203, 1000204, 1000205, 1000206, 1000207]
+spell_name = "Lethality"
+effects = [{ kind = "skill_crit_damage_pct", builders = true, per_rank = [10, 20, 30, 40, 50] }]
 
 [[calling.talent_tab.talent]]
 key = "bloodletting"
@@ -148,6 +177,12 @@ fn world(
     (realm, guid, mobs, view)
 }
 
+/// [`cutthroat`] for the test Calling, whose builder and finisher deal damage.
+fn test_rogue(seed: u64, talents: &[(u32, u8)]) -> (Realm, u64, Mob, View) {
+    let (realm, guid, mut mobs, view) = world(seed, "test_rogue", Some(TEST_CALLINGS), talents);
+    (realm, guid, mobs.swap_remove(0), view)
+}
+
 fn cutthroat(seed: u64, talents: &[(u32, u8)]) -> (Realm, u64, Mob, View) {
     let (realm, guid, mut mobs, view) = world(seed, "cutthroat", None, talents);
     (realm, guid, mobs.swap_remove(0), view)
@@ -204,16 +239,16 @@ fn ticks(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
 #[test]
 fn lethality_raises_sinister_strike_crits_by_fifty_percent() {
     for seed in FIRST_SEED..FIRST_SEED + SEEDS {
-        let (mut realm, _, mob, mut view) = cutthroat(seed, &[]);
-        let Some(bare) = cast_all(&mut realm, &mut view, &mob, &[*SINISTER_STRIKE]) else {
+        let (mut realm, _, mob, mut view) = test_rogue(seed, &[]);
+        let Some(bare) = cast_all(&mut realm, &mut view, &mob, &[TEST_SINISTER]) else {
             continue;
         };
-        let Some((plain, true)) = hit(&bare, *SINISTER_STRIKE) else {
+        let Some((plain, true)) = hit(&bare, TEST_SINISTER) else {
             continue;
         };
-        let (mut realm, _, mob, mut view) = cutthroat(seed, &[(*LETHALITY, 5)]);
-        let trained = cast_all(&mut realm, &mut view, &mob, &[*SINISTER_STRIKE]).unwrap();
-        let (more, crit) = hit(&trained, *SINISTER_STRIKE).unwrap();
+        let (mut realm, _, mob, mut view) = test_rogue(seed, &[(LETHALITY, 5)]);
+        let trained = cast_all(&mut realm, &mut view, &mob, &[TEST_SINISTER]).unwrap();
+        let (more, crit) = hit(&trained, TEST_SINISTER).unwrap();
         assert!(crit, "the same swing crits");
         // 200% of the hit becomes 250%.
         assert!(
@@ -228,22 +263,22 @@ fn lethality_raises_sinister_strike_crits_by_fifty_percent() {
 #[test]
 fn lethality_leaves_eviscerate_crits_as_they_were() {
     for seed in FIRST_SEED..FIRST_SEED + SEEDS {
-        let (mut realm, _, mob, mut view) = cutthroat(seed, &[]);
-        let spells = [*SINISTER_STRIKE, *EVISCERATE];
+        let (mut realm, _, mob, mut view) = test_rogue(seed, &[]);
+        let spells = [TEST_SINISTER, TEST_EVISCERATE];
         let Some(bare) = cast_all(&mut realm, &mut view, &mob, &spells) else {
             continue;
         };
         // The builder's own crit would change the mob's health, not the roll after it.
-        if matches!(hit(&bare, *SINISTER_STRIKE), Some((_, true))) {
+        if matches!(hit(&bare, TEST_SINISTER), Some((_, true))) {
             continue;
         }
-        let Some((plain, true)) = hit(&bare, *EVISCERATE) else {
+        let Some((plain, true)) = hit(&bare, TEST_EVISCERATE) else {
             continue;
         };
-        let (mut realm, _, mob, mut view) = cutthroat(seed, &[(*LETHALITY, 5)]);
+        let (mut realm, _, mob, mut view) = test_rogue(seed, &[(LETHALITY, 5)]);
         let trained = cast_all(&mut realm, &mut view, &mob, &spells).unwrap();
         assert_eq!(
-            hit(&trained, *EVISCERATE),
+            hit(&trained, TEST_EVISCERATE),
             Some((plain, true)),
             "seed {seed:#x}: Eviscerate's crit"
         );

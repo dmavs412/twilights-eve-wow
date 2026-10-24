@@ -8220,8 +8220,8 @@
       ]
      },
      {
-      "key": "lethality",
-      "name": "Lethality",
+      "key": "blood_frenzy",
+      "name": "Blood Frenzy",
       "seat": {
        "row": 1,
        "column": 2
@@ -8229,8 +8229,8 @@
       "exceptional": false,
       "ranks": [
        {
-        "key": "lethality",
-        "name": "Lethality",
+        "key": "blood_frenzy",
+        "name": "Blood Frenzy",
         "rank": 1,
         "status": "wip",
         "talent_id": 1000047,
@@ -8252,19 +8252,19 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "skill_crit_damage_pct",
+          "kind": "aura_max_stacks",
           "params": {
-           "pct": 10,
-           "builders": true
+           "aura": "aura_bloodlust",
+           "amount": 1
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 10%."
+        "description": "Bloodlust stacks up to 1 more times."
        },
        {
-        "key": "lethality",
-        "name": "Lethality",
+        "key": "blood_frenzy",
+        "name": "Blood Frenzy",
         "rank": 2,
         "status": "wip",
         "talent_id": 1000047,
@@ -8286,19 +8286,19 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "skill_crit_damage_pct",
+          "kind": "aura_max_stacks",
           "params": {
-           "pct": 20,
-           "builders": true
+           "aura": "aura_bloodlust",
+           "amount": 2
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 20%."
+        "description": "Bloodlust stacks up to 2 more times."
        },
        {
-        "key": "lethality",
-        "name": "Lethality",
+        "key": "blood_frenzy",
+        "name": "Blood Frenzy",
         "rank": 3,
         "status": "wip",
         "talent_id": 1000047,
@@ -8320,19 +8320,19 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "skill_crit_damage_pct",
+          "kind": "aura_max_stacks",
           "params": {
-           "pct": 30,
-           "builders": true
+           "aura": "aura_bloodlust",
+           "amount": 3
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 30%."
+        "description": "Bloodlust stacks up to 3 more times."
        },
        {
-        "key": "lethality",
-        "name": "Lethality",
+        "key": "blood_frenzy",
+        "name": "Blood Frenzy",
         "rank": 4,
         "status": "wip",
         "talent_id": 1000047,
@@ -8354,19 +8354,19 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "skill_crit_damage_pct",
+          "kind": "aura_max_stacks",
           "params": {
-           "pct": 40,
-           "builders": true
+           "aura": "aura_bloodlust",
+           "amount": 4
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 40%."
+        "description": "Bloodlust stacks up to 4 more times."
        },
        {
-        "key": "lethality",
-        "name": "Lethality",
+        "key": "blood_frenzy",
+        "name": "Blood Frenzy",
         "rank": 5,
         "status": "wip",
         "talent_id": 1000047,
@@ -8388,15 +8388,15 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "skill_crit_damage_pct",
+          "kind": "aura_max_stacks",
           "params": {
-           "pct": 50,
-           "builders": true
+           "aura": "aura_bloodlust",
+           "amount": 5
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the critical strike damage bonus of your combo-generating abilities by 50%."
+        "description": "Bloodlust stacks up to 5 more times."
        }
       ]
      },
@@ -8520,8 +8520,8 @@
       ]
      },
      {
-      "key": "dual_wield_specialization",
-      "name": "Dual Wield Specialization",
+      "key": "thirst",
+      "name": "Thirst",
       "seat": {
        "row": 2,
        "column": 2
@@ -8529,8 +8529,8 @@
       "exceptional": false,
       "ranks": [
        {
-        "key": "dual_wield_specialization",
-        "name": "Dual Wield Specialization",
+        "key": "thirst",
+        "name": "Thirst",
         "rank": 1,
         "status": "placeholder",
         "talent_id": 1000049,
@@ -8552,18 +8552,18 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "offhand_damage_pct",
+          "kind": "pickup_heal_pct",
           "params": {
-           "pct": 10
+           "pct": 2
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the damage done by your offhand weapon by 10%."
+        "description": "Picking up a blood droplet heals you for 2% of your maximum health."
        },
        {
-        "key": "dual_wield_specialization",
-        "name": "Dual Wield Specialization",
+        "key": "thirst",
+        "name": "Thirst",
         "rank": 2,
         "status": "placeholder",
         "talent_id": 1000049,
@@ -8585,18 +8585,18 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "offhand_damage_pct",
+          "kind": "pickup_heal_pct",
           "params": {
-           "pct": 20
+           "pct": 4
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the damage done by your offhand weapon by 20%."
+        "description": "Picking up a blood droplet heals you for 4% of your maximum health."
        },
        {
-        "key": "dual_wield_specialization",
-        "name": "Dual Wield Specialization",
+        "key": "thirst",
+        "name": "Thirst",
         "rank": 3,
         "status": "placeholder",
         "talent_id": 1000049,
@@ -8618,18 +8618,18 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "offhand_damage_pct",
+          "kind": "pickup_heal_pct",
           "params": {
-           "pct": 30
+           "pct": 6
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the damage done by your offhand weapon by 30%."
+        "description": "Picking up a blood droplet heals you for 6% of your maximum health."
        },
        {
-        "key": "dual_wield_specialization",
-        "name": "Dual Wield Specialization",
+        "key": "thirst",
+        "name": "Thirst",
         "rank": 4,
         "status": "placeholder",
         "talent_id": 1000049,
@@ -8651,18 +8651,18 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "offhand_damage_pct",
+          "kind": "pickup_heal_pct",
           "params": {
-           "pct": 40
+           "pct": 8
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the damage done by your offhand weapon by 40%."
+        "description": "Picking up a blood droplet heals you for 8% of your maximum health."
        },
        {
-        "key": "dual_wield_specialization",
-        "name": "Dual Wield Specialization",
+        "key": "thirst",
+        "name": "Thirst",
         "rank": 5,
         "status": "placeholder",
         "talent_id": 1000049,
@@ -8684,14 +8684,14 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "offhand_damage_pct",
+          "kind": "pickup_heal_pct",
           "params": {
-           "pct": 50
+           "pct": 10
           },
           "realm_only": false
          }
         ],
-        "description": "Increases the damage done by your offhand weapon by 50%."
+        "description": "Picking up a blood droplet heals you for 10% of your maximum health."
        }
       ]
      },
@@ -8833,8 +8833,8 @@
       ]
      },
      {
-      "key": "relentless_strikes",
-      "name": "Relentless Strikes",
+      "key": "long_reach",
+      "name": "Long Reach",
       "seat": {
        "row": 4,
        "column": 1
@@ -8842,8 +8842,8 @@
       "exceptional": false,
       "ranks": [
        {
-        "key": "relentless_strikes",
-        "name": "Relentless Strikes",
+        "key": "long_reach",
+        "name": "Long Reach",
         "rank": 1,
         "status": "wip",
         "talent_id": 1000051,
@@ -8865,20 +8865,18 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "proc",
+          "kind": "pickup_radius_yd",
           "params": {
-           "on": "finisher",
-           "chance": 20,
-           "energize": 25
+           "amount": 1
           },
           "realm_only": false
          }
         ],
-        "description": "Your finishing moves have a 20% chance to restore 25 Energy."
+        "description": "You pick up blood droplets from 1 yd farther away."
        },
        {
-        "key": "relentless_strikes",
-        "name": "Relentless Strikes",
+        "key": "long_reach",
+        "name": "Long Reach",
         "rank": 2,
         "status": "wip",
         "talent_id": 1000051,
@@ -8900,20 +8898,18 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "proc",
+          "kind": "pickup_radius_yd",
           "params": {
-           "on": "finisher",
-           "chance": 40,
-           "energize": 25
+           "amount": 2
           },
           "realm_only": false
          }
         ],
-        "description": "Your finishing moves have a 40% chance to restore 25 Energy."
+        "description": "You pick up blood droplets from 2 yd farther away."
        },
        {
-        "key": "relentless_strikes",
-        "name": "Relentless Strikes",
+        "key": "long_reach",
+        "name": "Long Reach",
         "rank": 3,
         "status": "wip",
         "talent_id": 1000051,
@@ -8935,20 +8931,18 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "proc",
+          "kind": "pickup_radius_yd",
           "params": {
-           "on": "finisher",
-           "chance": 60,
-           "energize": 25
+           "amount": 3
           },
           "realm_only": false
          }
         ],
-        "description": "Your finishing moves have a 60% chance to restore 25 Energy."
+        "description": "You pick up blood droplets from 3 yd farther away."
        },
        {
-        "key": "relentless_strikes",
-        "name": "Relentless Strikes",
+        "key": "long_reach",
+        "name": "Long Reach",
         "rank": 4,
         "status": "wip",
         "talent_id": 1000051,
@@ -8970,20 +8964,18 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "proc",
+          "kind": "pickup_radius_yd",
           "params": {
-           "on": "finisher",
-           "chance": 80,
-           "energize": 25
+           "amount": 4
           },
           "realm_only": false
          }
         ],
-        "description": "Your finishing moves have a 80% chance to restore 25 Energy."
+        "description": "You pick up blood droplets from 4 yd farther away."
        },
        {
-        "key": "relentless_strikes",
-        "name": "Relentless Strikes",
+        "key": "long_reach",
+        "name": "Long Reach",
         "rank": 5,
         "status": "wip",
         "talent_id": 1000051,
@@ -9005,16 +8997,14 @@
         "modelled": true,
         "effects": [
          {
-          "kind": "proc",
+          "kind": "pickup_radius_yd",
           "params": {
-           "on": "finisher",
-           "chance": 100,
-           "energize": 25
+           "amount": 5
           },
           "realm_only": false
          }
         ],
-        "description": "Your finishing moves have a 100% chance to restore 25 Energy."
+        "description": "You pick up blood droplets from 5 yd farther away."
        }
       ]
      }

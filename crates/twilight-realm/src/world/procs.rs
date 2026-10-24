@@ -137,7 +137,7 @@ impl InWorld {
             }
             for key in &proc.auras {
                 if let Some(def) = crate::callings::aura(key) {
-                    self.grant_aura(def, c.power_level(), events);
+                    self.grant_aura(def, c.power_level(), 0, events);
                 }
             }
             for key in &proc.area_auras {

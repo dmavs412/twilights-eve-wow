@@ -32,8 +32,55 @@ static EXECUTIONERS_TOLL: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| talent("cutthroat", "executioners_toll"));
 static RUTHLESSNESS: std::sync::LazyLock<u32> =
     std::sync::LazyLock::new(|| talent("cutthroat", "ruthlessness"));
-static RELENTLESS_STRIKES: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| talent("cutthroat", "relentless_strikes"));
+const RELENTLESS_STRIKES: u32 = 1704;
+
+/// A Rogue-Class Calling with a 35 Energy builder and finisher and the finisher energize proc
+/// that Relentless Strikes used to be.
+const RELENTLESS_CALLINGS: &str = r#"
+[[calling]]
+key = "test_rogue"
+name = "Test Rogue"
+tier = 0
+class = 4
+cap = 10
+tier_bonus = { strength = 0, agility = 0, stamina = 0, intellect = 0, spirit = 0 }
+shapeshift_form = 0
+armour = ["cloth", "leather"]
+
+[[calling.skill]]
+key = "builder"
+spell_id = 1752
+power_cost = 35
+cooldown_ms = 0
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [{ kind = "weapon_strike", weapon = "normal", weapon_pct = 110, bonus = { base = 8.0, per_level = 2.0 } }, { kind = "add_combo_points", amount = 1 }]
+
+[[calling.skill]]
+key = "finisher"
+spell_id = 2098
+power_cost = 35
+cooldown_ms = 0
+gcd_ms = 0
+target = "enemy"
+range_yd = [0.0, 5.0]
+effects = [{ kind = "school_damage", amount = { base = 5.2, per_level = 1.3 }, per_combo = { base = 6.0, per_level = 1.3 }, melee_hit_table = true }]
+
+[[calling.talent_tab]]
+id = 905
+name = "Test"
+background = "RogueAssassination"
+
+[[calling.talent_tab.talent]]
+key = "relentless_strikes"
+talent_id = 1704
+tier = 1
+column = 1
+rank_spells = [1000219, 1000220, 1000221, 1000222, 1000223]
+spell_name = "Relentless Strikes"
+effects = [{ kind = "proc", on = "finisher", chance = 100, energize = [25, 25, 25, 25, 25], per_rank = [0, 0, 0, 0, 0] }]
+"#;
 
 /// A Cutthroat of `level` with `talents` in its save, in the world: the realm, its guid, the mobs
 /// in view (those at the scorpid camp south of the Crossroads when `camp`, else those at entry)
@@ -55,6 +102,19 @@ fn cutthroat_seeded(
     camp: bool,
     unarmed: bool,
 ) -> (Realm, u64, Vec<Mob>, View) {
+    cutthroat_in("cutthroat", None, seed, level, talents, camp, unarmed)
+}
+
+/// [`cutthroat_seeded`] as `calling`, defined by the test `callings` when given.
+fn cutthroat_in(
+    calling: &str,
+    callings: Option<&str>,
+    seed: u64,
+    level: u8,
+    talents: &[(u32, u8)],
+    camp: bool,
+    unarmed: bool,
+) -> (Realm, u64, Vec<Mob>, View) {
     let mut maker = realm();
     assert_eq!(create(&mut maker, "Garrote", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
@@ -62,7 +122,10 @@ fn cutthroat_seeded(
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", &format!("level = {level}\n"))
-        .replace("calling = \"basic_warrior\"", "calling = \"cutthroat\"");
+        .replace(
+            "calling = \"basic_warrior\"",
+            &format!("calling = \"{calling}\""),
+        );
     if unarmed {
         // Fists, so that the fight lasts for as many dodges as the test wants.
         blob = drop_slot(&drop_slot(&blob, 15), 16);
@@ -75,6 +138,9 @@ fn cutthroat_seeded(
         );
     }
     let mut realm = Realm::with_seed(seed);
+    if let Some(callings) = callings {
+        realm = realm.with_callings(callings);
+    }
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);
@@ -212,8 +278,19 @@ fn a_cutthroat_without_the_talent_gets_nothing_from_a_dodge() {
 /// miss, and a missed one leaves the client view showing a combo point the realm never gave (bug
 /// #305), so the Eviscerate is refused.
 fn three_eviscerates(talents: &[(u32, u8)]) -> Vec<(u32, u32, (u8, u64))> {
+    let spells = (*SINISTER_STRIKE, *EVISCERATE);
+    three_eviscerates_in("cutthroat", None, spells, talents)
+}
+
+/// [`three_eviscerates`] for `calling`, with its builder and finisher.
+fn three_eviscerates_in(
+    calling: &str,
+    callings: Option<&str>,
+    (builder, finisher): (u32, u32),
+    talents: &[(u32, u8)],
+) -> Vec<(u32, u32, (u8, u64))> {
     let (mut realm, me, camp, mut view) =
-        cutthroat_seeded(EVISCERATE_SEED, 10, talents, true, false);
+        cutthroat_in(calling, callings, EVISCERATE_SEED, 10, talents, true, false);
     let mut rounds = Vec::new();
     for mob in camp.iter().take(3) {
         stand_at(&mut realm, mob, 2.0);
@@ -222,7 +299,7 @@ fn three_eviscerates(talents: &[(u32, u8)]) -> Vec<(u32, u32, (u8, u64))> {
             while energy(&view, me) < 75 {
                 view.run(&mut realm, 0.5);
             }
-            cast_at(&mut realm, &mut view, *SINISTER_STRIKE, mob);
+            cast_at(&mut realm, &mut view, builder, mob);
             realm.handle(RealmCommand::AttackStop);
             view.run(&mut realm, 1.5);
             if combo(&view, me).0 > 0 {
@@ -232,7 +309,7 @@ fn three_eviscerates(talents: &[(u32, u8)]) -> Vec<(u32, u32, (u8, u64))> {
         }
         assert!(built, "Sinister Strike never landed");
         let before = energy(&view, me);
-        cast_at(&mut realm, &mut view, *EVISCERATE, mob);
+        cast_at(&mut realm, &mut view, finisher, mob);
         rounds.push((before, energy(&view, me), combo(&view, me)));
         realm.handle(RealmCommand::AttackStop);
         view.run(&mut realm, 1.5);
@@ -243,10 +320,18 @@ fn three_eviscerates(talents: &[(u32, u8)]) -> Vec<(u32, u32, (u8, u64))> {
 
 #[test]
 fn relentless_strikes_refunds_twenty_five_energy_on_every_eviscerate() {
-    for (before, after, _) in three_eviscerates(&[(*RELENTLESS_STRIKES, 5)]) {
+    let run = |talents: &[(u32, u8)]| {
+        three_eviscerates_in(
+            "test_rogue",
+            Some(RELENTLESS_CALLINGS),
+            (1752, 2098),
+            talents,
+        )
+    };
+    for (before, after, _) in run(&[(RELENTLESS_STRIKES, 5)]) {
         assert_eq!(after, before - 35 + 25);
     }
-    for (before, after, _) in three_eviscerates(&[]) {
+    for (before, after, _) in run(&[]) {
         assert_eq!(after, before - 35, "without the talent");
     }
 }

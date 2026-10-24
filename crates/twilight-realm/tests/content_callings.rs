@@ -658,7 +658,7 @@ fn the_basic_warrior_talent_tree_is_the_sheets() {
             let got_spells: Vec<u64> = t.rank_spells.iter().map(|&s| u64::from(s)).collect();
             assert_eq!(got_spells, spells, "{key}");
             for e in &t.effects {
-                assert_eq!(e.per_rank().len(), spells.len(), "{key}: a size per rank");
+                assert_eq!(e.rank_count(), spells.len(), "{key}: a size per rank");
             }
         }
     }
@@ -922,7 +922,7 @@ fn check_tree(calling: &str, unmodelled: &[&str]) {
             }
             for e in &t.effects {
                 assert_eq!(
-                    e.per_rank().len(),
+                    e.rank_count(),
                     t.rank_spells.len(),
                     "{key}: an effect for every rank"
                 );

@@ -780,6 +780,12 @@ pub enum TalentEffect {
     /// The maximum of the character's own power (Energy for a Cutthroat) rises by this much; what
     /// is held stays.
     MaxPower { per_rank: Vec<u32> },
+    /// The named aura's most stacks rise by this many (Blood Frenzy).
+    AuraMaxStacks { aura: String, per_rank: Vec<u32> },
+    /// Picking up a droplet heals this percent of the maximum health (Thirst).
+    PickupHealPct { per_rank: Vec<u32> },
+    /// Droplets are picked up from this many yards farther away (Long Reach).
+    PickupRadiusYd { per_rank: Vec<f32> },
     /// The character runs this many percent faster, always.
     ModRunSpeed { per_rank: Vec<u32> },
     /// The off hand's swings deal this many percent more damage.
@@ -1105,9 +1111,20 @@ pub enum CritBleedOf {
 }
 
 impl TalentEffect {
-    /// The effect's size at each rank.
+    /// How many ranks the effect has a size for.
+    pub fn rank_count(&self) -> usize {
+        match self {
+            Self::PickupRadiusYd { per_rank } => per_rank.len(),
+            _ => self.per_rank().len(),
+        }
+    }
+
+    /// The effect's size at each rank; empty for `PickupRadiusYd`, whose yards are fractions.
     pub fn per_rank(&self) -> &[u32] {
         match self {
+            Self::PickupRadiusYd { .. } => &[],
+            Self::AuraMaxStacks { per_rank, .. } => per_rank,
+            Self::PickupHealPct { per_rank } => per_rank,
             Self::SkillCost { per_rank, .. }
             | Self::SkillExtraTarget { per_rank, .. }
             | Self::SkillBonusCombo { per_rank, .. }
