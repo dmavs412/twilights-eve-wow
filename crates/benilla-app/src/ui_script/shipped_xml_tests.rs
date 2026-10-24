@@ -1946,6 +1946,8 @@ fn the_layer_does_not_grow() {
         "GearSlots.xml",
         // The Boss Bar (ADR 0013): the realm's `BossFight` list as `boss1` to `boss3` rows.
         "BossBar.xml",
+        // The world map's Twilight marks (spec #383): gossip icons and a tooltip on the POIs.
+        "WorldMapMarks.xml",
         // The Reeling Bar (ADR 0018): the client-run fishing bar, which no stock file has.
         "FishingReel.xml",
         // The Fishing Journal (spec #323): the realm's journal, its bait slot and its key.

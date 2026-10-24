@@ -100,6 +100,7 @@ impl Plugin for TwilightPlugin {
         app.init_resource::<crate::char_select::ClassLabels>()
             .init_resource::<CallingKeys>()
             .init_resource::<BossFightList>()
+            .init_resource::<MapMarkList>()
             .init_resource::<SelfCalling>();
         app.add_message::<DevGoto>()
             .add_message::<DevRumour>()
@@ -267,6 +268,7 @@ fn pump(
     mut labels: ResMut<crate::char_select::ClassLabels>,
     mut keys: ResMut<CallingKeys>,
     mut boss: ResMut<BossFightList>,
+    mut marks: ResMut<MapMarkList>,
     mut goto: ResMut<goto::GotoGround>,
     mut rumours: (
         MessageReader<DevRumour>,
@@ -360,6 +362,11 @@ fn pump(
             boss.set_if_neq(BossFightList(guids));
             continue;
         }
+        // The world map's quest, service and dungeon marks, whole on every change (spec #383).
+        if let SessionEvent::MapMarks { marks: m } = event {
+            marks.set_if_neq(MapMarkList(m));
+            continue;
+        }
         // Fishing's bite, end and Angler Level go to the Reeling Bar (ADR 0018).
         if matches!(
             event,
@@ -376,6 +383,7 @@ fn pump(
         let logged_out = matches!(event, SessionEvent::LoggedOut);
         if logged_out {
             boss.set_if_neq(BossFightList::default());
+            marks.set_if_neq(MapMarkList::default());
             if let Some(inbox) = reel.0.as_deref_mut() {
                 inbox.0.push(SessionEvent::LoggedOut);
             }
@@ -408,6 +416,10 @@ impl CallingKeys {
 /// Only the first three show as `boss1` to `boss3`; the rest wait.
 #[derive(Resource, Default, Clone, PartialEq)]
 pub(crate) struct BossFightList(pub(crate) Vec<u64>);
+
+/// The world map's marks as the realm last sent them (`SessionEvent::MapMarks`).
+#[derive(Resource, Default, Clone, PartialEq)]
+pub(crate) struct MapMarkList(pub(crate) Vec<benilla_protocol::MapMark>);
 
 /// The local player's Calling, or `None` until the realm names it.
 #[derive(Resource, Default, Clone, Copy, PartialEq)]

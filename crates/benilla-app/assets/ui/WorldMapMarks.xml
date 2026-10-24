@@ -1,0 +1,84 @@
+<Ui>
+    <!--
+        The world map's Twilight marks (spec #383). The app feeds the realm's quest, service and
+        dungeon marks as landmarks whose texture index is 64 or more (`TWILIGHT_ICON_BASE` in
+        ui_world_map.rs). The stock POI draws a cell of `POIIcons` for every landmark; this file
+        swaps in the stock gossip icon for index 64 and up, and gives those POIs a tooltip with the
+        name and one line per line of the description.
+    -->
+    <Script><![CDATA[
+        BENILLA_MARK_ICON_BASE = 64
+        BENILLA_MARK_ICONS = {
+            [64] = "Interface\\GossipFrame\\AvailableQuestIcon",
+            [65] = "Interface\\GossipFrame\\ActiveQuestIcon",
+            [66] = "Interface\\GossipFrame\\TrainerGossipIcon",
+            [67] = "Interface\\GossipFrame\\VendorGossipIcon",
+            [68] = "Interface\\GossipFrame\\BinderGossipIcon",
+            [69] = "Interface\\GossipFrame\\TaxiGossipIcon",
+            -- A dungeon door has no stock 1.12 icon; the skeleton key stands for the way in.
+            [70] = "Interface\\Icons\\INV_Misc_Key_03",
+        }
+
+        -- The landmark index of a pool frame, from its name `WorldMapFramePOI<i>`.
+        local function BenillaMark_Index(poi)
+            local _, _, index = string.find(poi:GetName() or "", "^WorldMapFramePOI(%d+)$")
+            return tonumber(index)
+        end
+
+        local function BenillaMark_TextureIndex(poi)
+            local index = BenillaMark_Index(poi)
+            if not index then
+                return nil
+            end
+            local _, _, textureIndex = GetMapLandmarkInfo(index)
+            return textureIndex
+        end
+
+        local BenillaMark_OldUpdate = WorldMapFrame_Update
+        function WorldMapFrame_Update()
+            BenillaMark_OldUpdate()
+            for i = 1, GetNumMapLandmarks() do
+                local poi = getglobal("WorldMapFramePOI" .. i)
+                local texture = getglobal("WorldMapFramePOI" .. i .. "Texture")
+                if poi and texture then
+                    local _, _, textureIndex = GetMapLandmarkInfo(i)
+                    if textureIndex and textureIndex >= BENILLA_MARK_ICON_BASE then
+                        texture:SetTexture(BENILLA_MARK_ICONS[textureIndex] or "Interface\\Minimap\\POIIcons")
+                        texture:SetTexCoord(0, 1, 0, 1)
+                        poi.benillaMark = true
+                    elseif poi.benillaMark then
+                        -- The pool reuses frames; the stock update already reset the tex coords.
+                        texture:SetTexture("Interface\\Minimap\\POIIcons")
+                        poi.benillaMark = nil
+                    end
+                end
+            end
+        end
+
+        local BenillaMark_OldEnter = WorldMapPOI_OnEnter
+        function WorldMapPOI_OnEnter()
+            local textureIndex = BenillaMark_TextureIndex(this)
+            if not textureIndex or textureIndex < BENILLA_MARK_ICON_BASE then
+                return BenillaMark_OldEnter()
+            end
+            WorldMapTooltip:SetOwner(this, "ANCHOR_RIGHT")
+            WorldMapTooltip:SetText(this.name or "")
+            local description = this.description
+            if description and description ~= "" then
+                for line in string.gfind(description, "[^\n]+") do
+                    WorldMapTooltip:AddLine(line, 1, 1, 1, 1)
+                end
+            end
+            WorldMapTooltip:Show()
+        end
+
+        local BenillaMark_OldLeave = WorldMapPOI_OnLeave
+        function WorldMapPOI_OnLeave()
+            local textureIndex = BenillaMark_TextureIndex(this)
+            if not textureIndex or textureIndex < BENILLA_MARK_ICON_BASE then
+                return BenillaMark_OldLeave()
+            end
+            WorldMapTooltip:Hide()
+        end
+    ]]></Script>
+</Ui>

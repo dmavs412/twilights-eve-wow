@@ -30,6 +30,7 @@ fn harness() -> UiScript {
         // The reference's own map, which <Include>s its blip templates itself.
         r"Interface\FrameXML\WorldMapFrame.xml",
         "ScrollTemplates.xml",
+        "WorldMapMarks.xml",
     ] {
         super::test_ui::load_ui(&s, file);
     }
@@ -857,5 +858,61 @@ fn the_fullscreen_quads_follow_a_resize() {
         1080.0,
         "…and the blackout is the new height too"
     );
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// A landmark past the `POIIcons` grid draws its own gossip icon, and a reused slot gets the grid
+/// back (WorldMapMarks.xml).
+#[test]
+fn a_twilight_mark_swaps_the_icon_and_a_reused_slot_gets_the_grid_back() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = harness();
+    s.set_world_map_landmarks(vec![landmark("Marshal Dughan", 64, (0.5, 0.5))]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    let file: String = s
+        .eval("return WorldMapFramePOI1Texture:GetTexture()")
+        .unwrap();
+    assert!(file.contains("AvailableQuestIcon"), "got {file}");
+
+    s.set_world_map_landmarks(vec![landmark("Lion's Pride Inn", 6, (0.5, 0.5))]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    let file: String = s
+        .eval("return WorldMapFramePOI1Texture:GetTexture()")
+        .unwrap();
+    assert!(file.contains("POIIcons"), "got {file}");
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// A mark's POI shows `WorldMapTooltip` with the name and one line per description line, and the
+/// stock label stays empty.
+#[test]
+fn hovering_a_twilight_mark_shows_the_world_map_tooltip() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = harness();
+    let mut mark = landmark("Marshal Dughan", 65, (0.5, 0.5));
+    mark.description = "line one\nline two".into();
+    s.set_world_map_landmarks(vec![mark]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    s.run("this = WorldMapFramePOI1 this:GetScript(\"OnEnter\")() this = nil")
+        .unwrap();
+    assert!(s.eval::<bool>("return WorldMapTooltip:IsShown()").unwrap());
+    assert_eq!(
+        s.eval::<i64>("return WorldMapTooltip:NumLines()").unwrap(),
+        3
+    );
+    assert_eq!(
+        s.eval::<String>("return WorldMapTooltipTextLeft1:GetText()")
+            .unwrap(),
+        "Marshal Dughan"
+    );
+    assert_eq!(
+        s.eval::<Option<String>>("return WorldMapFrameAreaLabel:GetText()")
+            .unwrap(),
+        None,
+        "the stock label stays empty"
+    );
+    s.run("this = WorldMapFramePOI1 this:GetScript(\"OnLeave\")() this = nil")
+        .unwrap();
+    assert!(!s.eval::<bool>("return WorldMapTooltip:IsShown()").unwrap());
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }

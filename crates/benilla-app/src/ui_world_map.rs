@@ -345,7 +345,7 @@ impl MapLevel {
 /// The inputs the landmark list is a pure function of. `0x4a67a0` rebuilds only on these: a
 /// selection change, a world-state push (`0x48fa0d`), a `PLAYER_EXPLORED_ZONES` change
 /// (`0x4a6477`, an UpdateFields callback on byte `0xe6c`) and the gossip marker's set and clear.
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq)]
 struct LandmarkKey {
     /// All three selection cells, the direct area's included.
     selection: (u32, u32, Option<u32>),
@@ -355,6 +355,8 @@ struct LandmarkKey {
     /// The guard-directions marker `(continent, pos, icon)`, the position as raw `f32` bits: it is
     /// copied from the packet, so a bit compare is exact.
     marker: Option<(u32, [u32; 3], u32)>,
+    /// Twilight's marks, as the realm last sent them.
+    marks: Vec<benilla_protocol::MapMark>,
 }
 
 impl LandmarkKey {
@@ -365,13 +367,69 @@ impl LandmarkKey {
         states: u64,
         explored: &[u32],
         marker: Option<(u32, [u32; 3], u32)>,
+        marks: &[benilla_protocol::MapMark],
     ) -> bool {
         self.selection == selection
             && self.map == map
             && self.states == states
             && self.marker == marker
             && self.explored == explored
+            && self.marks == marks
     }
+}
+
+/// Twilight's own map icons, past the 8x8 `POIIcons` grid; the UI layer draws them
+/// (WorldMapMarks.xml).
+const TWILIGHT_ICON_BASE: u32 = 64;
+
+/// The tooltip lines under a mark's name, joined with `\n`.
+fn mark_description(mark: &benilla_protocol::MapMark) -> String {
+    let mut lines = Vec::new();
+    if !mark.subtitle.is_empty() {
+        lines.push(format!("|cffa0a0a0{}|r", mark.subtitle));
+    }
+    for quest in &mark.quests {
+        let ready = if quest.ready {
+            " (ready to hand in)"
+        } else {
+            ""
+        };
+        lines.push(format!("|cffffd100{}{ready}|r", quest.title));
+        let monsters = match quest.monsters {
+            Some([lo, hi]) if lo == hi => format!(", monsters {lo}"),
+            Some([lo, hi]) => format!(", monsters {lo}-{hi}"),
+            None => String::new(),
+        };
+        lines.push(format!("{}, level {}{monsters}", quest.kind, quest.level));
+    }
+    lines.join("\n")
+}
+
+/// The realm's marks as landmarks: none at world level, else every mark that projects onto the
+/// shown map.
+fn mark_landmarks(
+    marks: &[benilla_protocol::MapMark],
+    level: MapLevel,
+    project: impl Fn(u32, f32, f32) -> Option<(f32, f32)>,
+) -> Vec<WorldMapLandmarkView> {
+    if level == MapLevel::World {
+        return Vec::new();
+    }
+    marks
+        .iter()
+        .filter_map(|mark| {
+            let uv = project(mark.map, mark.position[0], mark.position[1])?;
+            if is_degenerate(uv) {
+                return None;
+            }
+            Some(WorldMapLandmarkView {
+                name: mark.name.clone(),
+                description: mark_description(mark),
+                texture_index: TWILIGHT_ICON_BASE + mark.icon as u32,
+                uv,
+            })
+        })
+        .collect()
 }
 
 /// The builder's near-zero skip (`0x4a6868`/`0x4a687a`, epsilon `2.384e-7`): a UV of 0 on both
@@ -564,6 +622,7 @@ fn feed_world_map(
     unit_pos: Query<&GlobalTransform, With<crate::net::NetEntity>>,
     pois: Option<Res<crate::area_poi::AreaPoiRes>>,
     world_states: Res<crate::world_state::WorldStates>,
+    marks: Option<Res<crate::twilight::MapMarkList>>,
     mut memo: Local<crate::ui_script::VmMemo<FeedMemos>>,
 ) {
     let (Some(mut script), Some(data), Some(map), Some(areas)) = (script, data, map, areas) else {
@@ -634,11 +693,12 @@ fn feed_world_map(
         .on_map(map.0)
         .map(|m| (m.continent_id, m.pos.map(f32::to_bits), m.icon));
     let states_gen = world_states.generation();
+    let marks: &[benilla_protocol::MapMark] = marks.as_ref().map_or(&[], |m| m.0.as_slice());
     let unchanged = memo
         .get(&script)
         .landmarks
         .as_ref()
-        .is_some_and(|k| k.matches(selection, map.0, states_gen, &explored, marker));
+        .is_some_and(|k| k.matches(selection, map.0, states_gen, &explored, marker, marks));
     if !unchanged {
         let level = MapLevel::of(selection);
         let mut landmarks = Vec::new();
@@ -663,6 +723,8 @@ fn feed_world_map(
                 });
             }
         }
+        // Twilight's marks, after the DBC rows so their indices stay where the reference puts them.
+        landmarks.extend(mark_landmarks(marks, level, &project));
         // Then the guard-directions marker, last (`0x4a69c7`): no gate and no icon substitution,
         // only the degenerate-projection test.
         if let Some(poi) = poi_marker.on_map(map.0) {
@@ -683,6 +745,7 @@ fn feed_world_map(
             states: states_gen,
             explored: explored.clone(),
             marker,
+            marks: marks.to_vec(),
         });
         script.set_world_map_landmarks(landmarks);
     }
@@ -1431,5 +1494,74 @@ mod direct_area_tests {
             (1, 0, None),
             "selecting a continent clears the direct cell"
         );
+    }
+
+    use benilla_protocol::{MapIcon, MapMark, MarkedQuest};
+
+    fn wolves(ready: bool, monsters: Option<[u8; 2]>) -> MarkedQuest {
+        MarkedQuest {
+            title: "Wolves at the Fold".into(),
+            kind: "Bounty".into(),
+            level: 3,
+            monsters,
+            ready,
+        }
+    }
+
+    fn mark(map: u32, icon: MapIcon, quests: Vec<MarkedQuest>) -> MapMark {
+        MapMark {
+            map,
+            position: [10.0, 20.0],
+            guid: 0,
+            icon,
+            name: "Peltskinner".into(),
+            subtitle: String::new(),
+            quests,
+        }
+    }
+
+    #[test]
+    fn a_quest_mark_describes_each_quest_under_its_title() {
+        let m = mark(
+            0,
+            MapIcon::QuestAvailable,
+            vec![wolves(false, Some([1, 4]))],
+        );
+        assert_eq!(
+            mark_description(&m),
+            "|cffffd100Wolves at the Fold|r\nBounty, level 3, monsters 1-4"
+        );
+        let ready = mark(0, MapIcon::QuestReady, vec![wolves(true, None)]);
+        assert_eq!(
+            mark_description(&ready),
+            "|cffffd100Wolves at the Fold (ready to hand in)|r\nBounty, level 3"
+        );
+        let same = mark(
+            0,
+            MapIcon::QuestAvailable,
+            vec![wolves(false, Some([7, 7]))],
+        );
+        assert!(mark_description(&same).ends_with(", monsters 7"));
+        let mut sub = mark(0, MapIcon::Trainer, Vec::new());
+        sub.subtitle = "Rogue Trainer".into();
+        assert_eq!(mark_description(&sub), "|cffa0a0a0Rogue Trainer|r");
+    }
+
+    #[test]
+    fn marks_become_landmarks_only_below_world_level_and_on_the_shown_map() {
+        let marks = vec![
+            mark(0, MapIcon::QuestAvailable, Vec::new()),
+            mark(1, MapIcon::Dungeon, Vec::new()),
+        ];
+        let project = |map: u32, _x: f32, _y: f32| (map == 0).then_some((0.25, 0.5));
+        assert!(mark_landmarks(&marks, MapLevel::World, project).is_empty());
+        let zone = mark_landmarks(&marks, MapLevel::Zone, project);
+        assert_eq!(zone.len(), 1, "the map 1 mark does not project");
+        assert_eq!(zone[0].texture_index, TWILIGHT_ICON_BASE);
+        let all = |_: u32, _: f32, _: f32| Some((0.25, 0.5));
+        let both = mark_landmarks(&marks, MapLevel::Continent, all);
+        assert_eq!(both[1].texture_index, 70, "a dungeon is icon 70");
+        let degenerate = |_: u32, _: f32, _: f32| Some((0.0, 0.0));
+        assert!(mark_landmarks(&marks, MapLevel::Zone, degenerate).is_empty());
     }
 }

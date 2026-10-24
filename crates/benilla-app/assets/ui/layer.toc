@@ -31,6 +31,8 @@ FrameXMLFixes.xml
 GearSlots.xml
 # The Boss Bar: boss1 to boss3 top centre with cast bars and the kill linger (ADR 0013).
 BossBar.xml
+# The world map's quest, service and dungeon marks: gossip icons and a tooltip (spec #383).
+WorldMapMarks.xml
 # The Reeling Bar, its Angler badge and its banners (ADR 0018).
 FishingReel.xml
 # The Fishing Journal window, its bait slot, TOGGLEFISHINGJOURNAL's body and /journal.
