@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::characters::Char;
+use crate::characters::{Char, FishLog};
 use crate::content::{self, Calling};
 use crate::dungeon::Place;
 use crate::inn::Bind;
@@ -183,6 +183,10 @@ struct Save {
     /// and chosen no bait. `[fish item, 1 caught or 2 perfect]` per fish.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     catches: Vec<(u32, u8)>,
+    /// The catch log (#372), added within version 4. It replaces `catches`, which is read for an
+    /// older save and never written.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    fish_log: Vec<FishLog>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     bait: Option<u32>,
     /// The Legendary Fish (#331) caught and hinted, as trophy items.
@@ -364,7 +368,8 @@ pub(crate) fn export(c: &Char) -> String {
         knows_fishing: c.knows_fishing,
         angler_level: c.angler_level,
         angler_xp: c.angler_xp,
-        catches: c.catches.clone(),
+        catches: Vec::new(),
+        fish_log: c.fish_log.clone(),
         bait: c.bait,
         legends_caught: c.legends_caught.clone(),
         legend_hints: c.legend_hints.clone(),
@@ -439,7 +444,20 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         knows_fishing: s.knows_fishing,
         angler_level: s.angler_level.max(1),
         angler_xp: s.angler_xp,
-        catches: s.catches,
+        fish_log: if s.fish_log.is_empty() {
+            s.catches
+                .iter()
+                .map(|&(item, best)| FishLog {
+                    item,
+                    best,
+                    caught: 1,
+                    perfect: u32::from(best == 2),
+                    places: Vec::new(),
+                })
+                .collect()
+        } else {
+            s.fish_log
+        },
         bait: s.bait,
         legends_caught: s.legends_caught,
         legend_hints: s.legend_hints,

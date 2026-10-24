@@ -103,6 +103,29 @@ impl LoginRefusal {
     }
 }
 
+/// Twilight's Eve, not 1.12: one fish's page in the Fishing Journal (spec #368). The realm sends
+/// only the facts the catch count has unlocked.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct FishPage {
+    pub item: u32,
+    pub caught: u32,
+    pub perfect: u32,
+    /// `(zone AreaTable id, named Fishing Water's name or "", catches there)`, most first.
+    pub places: Vec<(u32, String, u32)>,
+    /// How many reveal tiers are unlocked: 0 to 3.
+    pub revealed: u8,
+    /// The catch count that unlocks the next tier; 0 when all three are.
+    pub next_reveal: u32,
+    /// Tier 1: `(zone AreaTable id, named Fishing Water's name or "")` it bites in. Empty while locked.
+    pub lives_in: Vec<(u32, String)>,
+    /// Tier 2: its kinds ("river", ...); empty means every kind once unlocked.
+    pub kinds: Vec<String>,
+    /// Tier 2: its peak hours, `None` for no peak (or while locked).
+    pub peak_hours: Option<(u8, u8)>,
+    /// Tier 3: its favourite bait's item entry, `None` for none (or while locked).
+    pub favourite_bait: Option<u32>,
+}
+
 /// One decoded world-stream event; its fieldless twin [`SessionEventKind`] keys the handler table.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, strum::EnumDiscriminants)]
 #[strum_discriminants(
@@ -185,6 +208,8 @@ pub enum SessionEvent {
         zones: Vec<(u32, Vec<(u32, u8)>)>,
         /// `(item, zone, hint found, caught)`; empty until the Legendary Fish land.
         legends: Vec<(u32, u32, bool, bool)>,
+        /// One page per fish caught at least once, in `[[fish]]` order.
+        pages: Vec<FishPage>,
     },
     /// Twilight's Eve, not 1.12: the character's Angler Level, sent at login and on every change.
     /// Never wire-decoded.

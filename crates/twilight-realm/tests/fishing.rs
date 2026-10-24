@@ -5,7 +5,7 @@ mod common;
 mod gear_common;
 mod quest_common;
 
-use benilla_protocol::{SessionEvent, START_ELWYNN};
+use benilla_protocol::{FishPage, SessionEvent, START_ELWYNN};
 use common::*;
 use quest_common::{accept, completed, hand_in};
 use twilight_realm::{FishingGearSlot, Realm, RealmCommand};
@@ -833,10 +833,11 @@ fn the_journal_keeps_the_best_catch_and_the_save_keeps_it_and_the_bait() {
 
     a.hook();
     let again = a.result(true, false, 6.0);
+    let (_, zones) = journal(&again).expect("every catch sends the Journal");
     assert_eq!(
-        journal(&again),
-        None,
-        "a plain catch after a perfect one changes nothing"
+        best(&zones, 990001, SMALLFISH),
+        Some(2),
+        "a plain catch after a perfect one keeps the best"
     );
 
     a.set_bait(Some(WRIGGLING_WORMS));
@@ -1196,7 +1197,15 @@ fn a_catch_in_the_pool_hits_its_legend_rumour_once() {
 
     a.hook();
     let second = a.result(true, false, 6.0);
-    assert_eq!(legends_of(&second), None, "no second roll: {second:?}");
+    assert!(
+        !second
+            .iter()
+            .any(|e| matches!(e, SessionEvent::ItemPushResult(p) if p.item_entry == LEGEND_NOTE)),
+        "no second roll: {second:?}"
+    );
+    let saved = a.realm.export_character(a.guid).unwrap();
+    let note = format!("entry = {LEGEND_NOTE}");
+    assert_eq!(saved.matches(&note).count(), 1, "{saved}");
 }
 
 #[test]
@@ -1353,4 +1362,136 @@ fn a_fish_with_no_kinds_bites_in_lake_water_and_a_lake_fish_does_too() {
     let mut elwynn = angler(60, true, true, Side::East);
     let seen = bitten(&mut elwynn, 500);
     assert!(seen.contains(&SMALLFISH) && seen.contains(&MUD_SNAPPER));
+}
+
+// The catch log and the Fish Page (#372, spec #368).
+
+/// The Fish Page of `item` in the last `FishingJournal` of `events`.
+fn page_of(events: &[SessionEvent], item: u32) -> Option<FishPage> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::FishingJournal { pages, .. } => {
+            pages.iter().find(|p| p.item == item).cloned()
+        }
+        _ => None,
+    })
+}
+
+/// Casts until `fish` bites and lands it, `n` times: another fish that bites is let go. The events
+/// of the last landing.
+fn land_fish(a: &mut Angler, fish: u32, n: usize) -> Vec<SessionEvent> {
+    let mut last = Vec::new();
+    for _ in 0..n {
+        loop {
+            let (_, bite) = a.hook();
+            let SessionEvent::FishingBite { fish: bit, .. } = bite else {
+                unreachable!()
+            };
+            if bit == fish {
+                last = a.result(true, false, 6.0);
+                break;
+            }
+            a.result(false, false, 1.0);
+        }
+    }
+    last
+}
+
+/// A page's `lives_in` without the test pools, which hold the snapper too.
+fn shipped_lives_in(page: &FishPage) -> Vec<(u32, String)> {
+    page.lives_in
+        .iter()
+        .filter(|(zone, _)| *zone < 990000)
+        .cloned()
+        .collect()
+}
+
+#[test]
+fn a_fish_page_unlocks_its_facts_at_five_ten_and_twenty_five_catches() {
+    let mut a = angler(20, true, true, Side::East);
+    let events = land_fish(&mut a, MUD_SNAPPER, 4);
+    let page = page_of(&events, MUD_SNAPPER).expect("a page after the first catch");
+    assert_eq!((page.caught, page.perfect), (4, 0));
+    assert_eq!((page.revealed, page.next_reveal), (0, 5));
+    assert!(page.lives_in.is_empty() && page.kinds.is_empty());
+    assert!(page.peak_hours.is_none() && page.favourite_bait.is_none());
+
+    let events = land_fish(&mut a, MUD_SNAPPER, 1);
+    let page = page_of(&events, MUD_SNAPPER).unwrap();
+    assert_eq!((page.revealed, page.next_reveal), (1, 10));
+    let expected: Vec<(u32, String)> = [
+        (12, ""),
+        (44, ""),
+        (12, "Northshire River"),
+        (1519, "Cathedral Canal"),
+        (44, "Alther's Mill"),
+        (44, "Lake Everstill"),
+    ]
+    .map(|(zone, name)| (zone, name.to_owned()))
+    .to_vec();
+    assert_eq!(shipped_lives_in(&page), expected);
+    assert!(page.kinds.is_empty() && page.favourite_bait.is_none());
+
+    let events = land_fish(&mut a, MUD_SNAPPER, 5);
+    let page = page_of(&events, MUD_SNAPPER).unwrap();
+    assert_eq!((page.revealed, page.next_reveal), (2, 25));
+    assert_eq!(page.kinds, ["river", "lake", "pond"]);
+    assert_eq!(page.peak_hours, Some((6, 10)));
+    assert!(page.favourite_bait.is_none());
+
+    let events = land_fish(&mut a, MUD_SNAPPER, 15);
+    let page = page_of(&events, MUD_SNAPPER).unwrap();
+    assert_eq!((page.caught, page.revealed, page.next_reveal), (25, 3, 0));
+    assert_eq!(page.favourite_bait, Some(WRIGGLING_WORMS));
+}
+
+#[test]
+fn catches_in_the_river_and_in_plain_water_are_two_places_the_larger_first() {
+    let (guid, blob, start) = save(20, true, true);
+    let mut a = from_save(guid, &blob, start, Side::East);
+    a.host.centre = [-8830.0, -330.0];
+    a.realm.handle(RealmCommand::Move {
+        position: [-8845.0, -330.0, 0.0],
+        orientation: 0.0,
+        motion: Default::default(),
+    });
+    a.realm.tick(0.0, &a.host);
+    drain(&mut a.realm);
+    land_fish(&mut a, MUD_SNAPPER, 2);
+
+    a.host.centre = pond_centre(start, Side::East);
+    a.realm.handle(RealmCommand::Move {
+        position: [start[0], start[1], 0.0],
+        orientation: Side::East.facing(),
+        motion: Default::default(),
+    });
+    a.realm.tick(0.0, &a.host);
+    drain(&mut a.realm);
+    let events = land_fish(&mut a, MUD_SNAPPER, 1);
+    let page = page_of(&events, MUD_SNAPPER).unwrap();
+    assert_eq!(
+        page.places,
+        [
+            (ELWYNN, "Northshire River".to_owned(), 2),
+            (ELWYNN, String::new(), 1)
+        ]
+    );
+}
+
+#[test]
+fn an_old_catches_save_loads_as_a_log_and_saves_back_as_one() {
+    let (guid, blob, _) = save(1, true, false);
+    let blob = blob.replace(
+        "angler_level = 1\n",
+        "angler_level = 1\ncatches = [[6291, 2]]\n",
+    );
+    let mut realm = realm();
+    realm.import_character(&blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    let page = page_of(&drain(&mut realm), SMALLFISH).expect("a page for the old catch");
+    assert_eq!((page.caught, page.perfect), (1, 1));
+    assert!(page.places.is_empty());
+    let back = realm.export_character(guid).unwrap();
+    assert!(back.contains("fish_log"), "{back}");
+    assert!(!back.contains("catches"), "{back}");
 }

@@ -65,6 +65,19 @@ pub(crate) enum Kind {
     Pond,
 }
 
+impl Kind {
+    /// The lowercase word the row and the Fish Page write.
+    pub(crate) fn name(&self) -> String {
+        match self {
+            Kind::River => "river",
+            Kind::Lake => "lake",
+            Kind::Coast => "coast",
+            Kind::Pond => "pond",
+        }
+        .to_owned()
+    }
+}
+
 /// Angler levels and XP (`[angler]`).
 #[derive(Deserialize)]
 pub(crate) struct Angler {
@@ -220,6 +233,10 @@ pub(crate) struct Water {
     /// Its pool's key; `None` fishes its zone's pool.
     #[serde(default)]
     pub(crate) pool: Option<String>,
+    /// The zone a circle with no `pool` and no `area` lies in, which its Fish Page names; `None`
+    /// when `pool` or `area` already gives it.
+    #[serde(default)]
+    pub(crate) zone: Option<u32>,
     /// Its Water Kind; `None` takes its pool's.
     #[serde(default)]
     pub(crate) kind: Option<Kind>,
@@ -565,6 +582,55 @@ pub(crate) fn waters() -> Vec<&'static Water> {
 /// water's own kind, else the pool's.
 pub(crate) fn kind_at(pool: &Pool, water: Option<&Water>) -> Kind {
     water.and_then(|w| w.kind).unwrap_or(pool.kind)
+}
+
+/// The Fishing Journal's tunables.
+pub(crate) fn journal() -> &'static Journal {
+    &file().journal
+}
+
+/// Every fish's item, in `[[fish]]` order: the shipped ones, then any a test added.
+pub(crate) fn fish_items() -> impl Iterator<Item = u32> {
+    let shipped = file().fish.iter();
+    shipped
+        .chain(extra().into_iter().flat_map(|a| &a.fish))
+        .map(|f| f.item)
+}
+
+/// The pool a Fishing Water fishes: its `pool`, else the pool of its area's zone, else of its
+/// `zone`.
+fn water_pool(w: &Water) -> Option<&'static Pool> {
+    match (&w.pool, w.area) {
+        (Some(key), _) => pool(key),
+        (None, Some(area)) => {
+            pool_for_zone(crate::mobs::area_parent(area).copied().unwrap_or(area))
+        }
+        (None, None) => pool_for_zone(w.zone?),
+    }
+}
+
+/// The zone of a Fishing Water: its pool's.
+pub(crate) fn water_zone(w: &Water) -> Option<u32> {
+    water_pool(w).map(|p| p.zone)
+}
+
+/// Where fish `item` lives, for its Fish Page: every pool holding it whose own kind it bites in,
+/// as `(zone, "")`, then every Fishing Water whose pool holds it and whose kind it bites in, as
+/// `(its zone, its name)`, each in file order.
+pub(crate) fn lives_in(item: u32) -> Vec<(u32, String)> {
+    let Some(def) = fish(item) else {
+        return Vec::new();
+    };
+    let holds = |p: &Pool| p.fish.iter().any(|f| f.item == item);
+    let pools = pools()
+        .filter(|p| holds(p) && def.bites_in(p.kind))
+        .map(|p| (p.zone, String::new()));
+    let waters = waters().into_iter().filter_map(|w| {
+        let pool = water_pool(w).filter(|p| holds(p))?;
+        def.bites_in(kind_at(pool, Some(w)))
+            .then(|| (pool.zone, w.name.clone()))
+    });
+    pools.chain(waters).collect()
 }
 
 /// The pole that is item `item`.

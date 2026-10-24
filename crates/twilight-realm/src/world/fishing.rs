@@ -8,13 +8,13 @@
 //! the cast keeps it to the bite. The Fishing Journal is each fish's best catch and the bait.
 
 use benilla_protocol::messages::GossipOption;
-use benilla_protocol::SessionEvent;
+use benilla_protocol::{FishPage, SessionEvent};
 
 use super::cast::{refused, SPELL_FAILED_EQUIPPED_ITEM_CLASS, SPELL_FAILED_NOT_KNOWN};
 use super::food::use_up_one;
 use super::InWorld;
 use crate::audience::Audience;
-use crate::characters::Char;
+use crate::characters::{Char, FishLog};
 use crate::equipment;
 use crate::fields::{guid_pairs, values, UNIT_CHANNEL_SPELL, UNIT_FIELD_CHANNEL_OBJECT};
 use crate::fish::{self, Kind, Pool, PoolFish, Style};
@@ -112,6 +112,8 @@ struct Bite {
     legend: bool,
     /// The pool it bit in, whose Legend Rumours a catch rolls.
     pool: &'static Pool,
+    /// The catch log's place key: the cast's Fishing Water, else the pool.
+    place: &'static str,
     start_fill: f32,
     fill_per_sec: f32,
     treasure: Option<Treasure>,
@@ -149,11 +151,15 @@ fn effective_level(c: &Char, boost: Boost) -> u32 {
 /// `FishingJournal`: the bait, and every pool's fish with the character's best catch of each.
 pub(super) fn journal(c: &Char) -> SessionEvent {
     let best = |item: u32| {
-        c.catches
+        c.fish_log
             .iter()
-            .find(|&&(i, _)| i == item)
-            .map_or(0, |&(_, b)| b)
+            .find(|l| l.item == item)
+            .map_or(0, |l| l.best)
     };
+    let pages = fish::fish_items()
+        .filter_map(|item| c.fish_log.iter().find(|l| l.item == item && l.caught > 0))
+        .map(fish_page)
+        .collect();
     SessionEvent::FishingJournal {
         bait: c.bait,
         pole: c.fishing_pole.as_ref().map(|p| p.entry),
@@ -180,6 +186,7 @@ pub(super) fn journal(c: &Char) -> SessionEvent {
                 )
             })
             .collect(),
+        pages,
     }
 }
 
@@ -194,21 +201,71 @@ pub(crate) fn find_hint(c: &mut Char, legend: u32, note: u32, events: &mut Vec<S
     events.push(journal(c));
 }
 
-/// Records a catch of `item` in the Journal, a perfect one beating a plain one: whether it
-/// changed.
-fn record_catch(c: &mut Char, item: u32, perfect: bool) -> bool {
+/// Records a catch of `item` at `place` (a Fishing Water's key, else the pool's) in the catch
+/// log, a perfect one beating a plain one for the best.
+fn record_catch(c: &mut Char, item: u32, perfect: bool, place: &str) {
     let quality = if perfect { PERFECT } else { CAUGHT };
-    match c.catches.iter_mut().find(|(i, _)| *i == item) {
-        Some((_, best)) if *best >= quality => false,
-        Some((_, best)) => {
-            *best = quality;
-            true
-        }
+    let at = match c.fish_log.iter().position(|l| l.item == item) {
+        Some(at) => at,
         None => {
-            c.catches.push((item, quality));
-            true
+            c.fish_log.push(FishLog {
+                item,
+                ..FishLog::default()
+            });
+            c.fish_log.len() - 1
         }
+    };
+    let log = &mut c.fish_log[at];
+    log.best = log.best.max(quality);
+    log.caught += 1;
+    log.perfect += u32::from(perfect);
+    match log.places.iter_mut().find(|(k, _)| k == place) {
+        Some((_, n)) => *n += 1,
+        None => log.places.push((place.to_owned(), 1)),
     }
+}
+
+/// A fish's Fish Page: its counts, and the facts its catch count has unlocked.
+fn fish_page(log: &FishLog) -> FishPage {
+    let reveal_at = fish::journal().reveal_at;
+    let revealed = reveal_at.iter().filter(|&&n| log.caught >= n).count();
+    let def = fish::fish(log.item);
+    let mut places: Vec<(u32, String, u32)> = log
+        .places
+        .iter()
+        .filter_map(|(key, n)| {
+            let (zone, name) = match fish::water(key) {
+                Some(w) => (fish::water_zone(w)?, w.name.clone()),
+                None => (fish::pool(key)?.zone, String::new()),
+            };
+            Some((zone, name, *n))
+        })
+        .collect();
+    places.sort_by_key(|&(_, _, n)| std::cmp::Reverse(n));
+    let mut page = FishPage {
+        item: log.item,
+        caught: log.caught,
+        perfect: log.perfect,
+        places,
+        revealed: revealed as u8,
+        next_reveal: reveal_at.get(revealed).copied().unwrap_or(0),
+        lives_in: Vec::new(),
+        kinds: Vec::new(),
+        peak_hours: None,
+        favourite_bait: None,
+    };
+    let Some(def) = def else { return page };
+    if revealed >= 1 {
+        page.lives_in = fish::lives_in(log.item);
+    }
+    if revealed >= 2 {
+        page.kinds = def.kinds.iter().flatten().map(Kind::name).collect();
+        page.peak_hours = def.peak_hours.map(|[from, to]| (from as u8, to as u8));
+    }
+    if revealed >= 3 {
+        page.favourite_bait = def.favourite_bait;
+    }
+    page
 }
 
 /// The chosen bait's row while the character carries one.
@@ -685,6 +742,7 @@ impl InWorld {
             level,
             legend: legendary,
             pool,
+            place: water.unwrap_or(pool.key.as_str()),
             start_fill: bar.start_fill,
             fill_per_sec: bar.fill_per_sec,
             treasure: treasure.map(|(_, t)| t),
@@ -754,13 +812,15 @@ impl InWorld {
                 gain_angler_xp(c, fish::angler().legend_bonus_xp);
             }
             events.push(angler(c));
-            let mut changed = record_catch(c, item, perfect) || first_legend;
+            record_catch(c, item, perfect, bite.place);
             // Every catch in the pool rolls its Legend Rumours.
+            let mut hinted = false;
             for (legend, note) in rumours::legend_catch_hits(c, &bite.pool.key, rng) {
                 find_hint(c, legend, note, events);
-                changed = false;
+                hinted = true;
             }
-            if changed {
+            // A hint sends the Journal itself, after the log changed.
+            if !hinted {
                 events.push(journal(c));
             }
         }

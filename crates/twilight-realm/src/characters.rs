@@ -25,6 +25,20 @@ const CHAR_NAME_TOO_SHORT: u8 = 0x46;
 const CHAR_NAME_TOO_LONG: u8 = 0x47;
 const CHAR_NAME_INVALID_CHARACTER: u8 = 0x48;
 
+/// One fish's row in the Fishing Journal's catch log.
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub(crate) struct FishLog {
+    pub(crate) item: u32,
+    /// The best catch: 0 none, 1 caught, 2 perfect.
+    pub(crate) best: u8,
+    pub(crate) caught: u32,
+    pub(crate) perfect: u32,
+    /// `(place key, catches there)`: a Fishing Water's key when the bobber was in one, else the
+    /// pool's.
+    #[serde(default)]
+    pub(crate) places: Vec<(String, u32)>,
+}
+
 /// One character's lasting state.
 #[derive(Debug, Clone)]
 pub(crate) struct Char {
@@ -78,8 +92,8 @@ pub(crate) struct Char {
     /// Their **Angler Level**, from 1, and the XP toward the next.
     pub(crate) angler_level: u8,
     pub(crate) angler_xp: u32,
-    /// The Fishing Journal's best catch of each fish, `(item, 1 caught or 2 perfect)`.
-    pub(crate) catches: Vec<(u32, u8)>,
+    /// The Fishing Journal's catch log, one row per fish caught at least once.
+    pub(crate) fish_log: Vec<FishLog>,
     /// The Journal's chosen bait, a `[[bait]]` item.
     pub(crate) bait: Option<u32>,
     /// The Journal's Pole slot: a fishing pole out of the bags. A cast reads it, not the main hand.
@@ -186,7 +200,7 @@ impl Characters {
             knows_fishing: false,
             angler_level: 1,
             angler_xp: 0,
-            catches: Vec::new(),
+            fish_log: Vec::new(),
             bait: None,
             fishing_pole: None,
             fishing_lure: None,
