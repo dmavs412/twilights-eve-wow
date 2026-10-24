@@ -7787,6 +7787,56 @@
     "description": "Finishing move: a bleed that deals damage every 2 sec for 6 sec, plus 2 sec and more damage per combo point. You heal for 40% of the damage it deals. Each tick may spill a blood droplet nearby."
    },
    {
+    "key": "garrote",
+    "name": "Garrote",
+    "rank": 1,
+    "status": "placeholder",
+    "spell_id": 1000413,
+    "realm_cost": 40,
+    "realm_gcd_ms": 1000,
+    "realm_range_min": 0,
+    "realm_range_max": 5,
+    "target": "enemy",
+    "school": "physical",
+    "prevention": "pacify",
+    "requires_weapon": [
+     "any_melee"
+    ],
+    "requires": {
+     "stealth": true
+    },
+    "requires_stealth": true,
+    "cost_kind": "flat",
+    "cast_kind": "instant",
+    "interrupt_on": [],
+    "defense_type": "melee",
+    "on_cast": {
+     "breaks_stealth": true,
+     "starts_auto_attack": true,
+     "resets_swing": false
+    },
+    "weapon_hand": "main",
+    "max_targets": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "apply_aura": "aura_garrote"
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "add_combo_points",
+      "params": {
+       "amount": 1
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "From Stealth: garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby."
+   },
+   {
     "key": "evasion",
     "name": "Evasion",
     "rank": 1,
@@ -9992,6 +10042,41 @@
    }
   ],
   "auras": [
+   {
+    "key": "aura_garrote",
+    "name": "Garrote",
+    "spell_id": 1000414,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "bleed",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 18000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "tick_ms": 3000,
+       "tick": {
+        "base": 8,
+        "per_level": 0.8
+       }
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Bleeding."
+   },
    {
     "key": "aura_evasion",
     "name": "Evasion",

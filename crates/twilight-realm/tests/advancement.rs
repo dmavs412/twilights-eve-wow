@@ -913,13 +913,14 @@ fn the_cutthroats_mark_makes_a_level_1_cutthroat_on_energy() {
                 "sinister_strike",
                 "stealth",
                 "rupture",
+                "garrote",
                 "eviscerate",
                 "evasion"
             ]
         )
         .into_iter()
         .collect(),
-        "Sinister Strike, Stealth, Rupture, Eviscerate and Evasion"
+        "Sinister Strike, Stealth, Rupture, Garrote, Eviscerate and Evasion"
     );
     let tabs: Vec<&str> = realm
         .current_calling()

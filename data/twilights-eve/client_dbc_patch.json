@@ -5227,6 +5227,46 @@
    }
   },
   {
+   "spell_id": 1000413,
+   "calling": "cutthroat",
+   "key": "garrote",
+   "rank": 1,
+   "fields": {
+    "power_type": 3,
+    "name": "Garrote",
+    "cost": 40,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "From Stealth: garrote the enemy, causing it to bleed every 3 sec for 18 sec. Awards 1 combo point. Each tick may spill a blood droplet nearby.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 757,
+    "range_index": 2,
+    "duration_index": 85
+   }
+  },
+  {
    "spell_id": 1000194,
    "calling": "cutthroat",
    "key": "evasion",
@@ -5247,7 +5287,7 @@
      0
     ],
     "spell_family": 4,
-    "family_flags": 68719476736,
+    "family_flags": 137438953472,
     "icon": "Interface\\Icons\\Spell_Shadow_ShadowWard",
     "dbc_effects": [
      {
@@ -5283,7 +5323,7 @@
      0
     ],
     "spell_family": 4,
-    "family_flags": 137438953472,
+    "family_flags": 274877906944,
     "icon": "Interface\\Icons\\Ability_Stealth",
     "dbc_effects": [
      {
@@ -11354,7 +11394,7 @@
      0
     ],
     "spell_family": 4,
-    "family_flags": 274877906944,
+    "family_flags": 549755813888,
     "icon": "Interface\\Icons\\Ability_Kick",
     "dbc_effects": [
      {
@@ -11394,7 +11434,7 @@
      0
     ],
     "spell_family": 4,
-    "family_flags": 549755813888,
+    "family_flags": 1099511627776,
     "icon": "Interface\\Icons\\Ability_Sap",
     "dbc_effects": [
      {
@@ -11812,6 +11852,32 @@
     "name": "Charge (stun)",
     "aura_description": "Stunned.",
     "visual": 2816
+   }
+  },
+  {
+   "spell_id": 1000414,
+   "calling": "cutthroat",
+   "key": "aura_garrote",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "icon": "Interface\\Icons\\Ability_Rogue_Garrote",
+    "mechanic": 15,
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "name": "Garrote",
+    "aura_description": "Bleeding.",
+    "visual": 757
    }
   },
   {
