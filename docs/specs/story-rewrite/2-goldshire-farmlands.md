@@ -40,15 +40,15 @@ has had no iron since the Ironforge tram stopped. The clues are unchanged.
 - **Completion:** A crate off a wrecked cart. Strangers buying ore by the cartload. A debtor who
   ran the very night the Abbey fell. That's three things I can't wave away. It's still a Defias
   matter, mind. But it's a matter.
-- **Farley's reply** (option unchanged): That mark? Aye, I've seen it. It was on a crate that fell
+- **Farley's reply (npc 295):** That mark? Aye, I've seen it. It was on a crate that fell
   off a cart wrecked on the Stormwind road a week back. Nobody came for the crate, and nobody will
   say what was in it. I'd have gone to look myself, but I have families sleeping on my common-room
   floor, and someone has to feed them.
-- **Argus's reply** (option unchanged): Strangers, buying ore by the cartload and paying in coin
+- **Argus's reply (npc 514):** Strangers, buying ore by the cartload and paying in coin
   I've never seen the like of. Since the tram to Ironforge stopped running, every smith in the city
   has been begging for iron, and these men want raw ore instead. They won't say what they're
   building. I don't ask, and I don't sell them my good iron.
-- **Remy's reply** (option unchanged): A mark like that? Can't say I have. But my biggest debtor
+- **Remy's reply (npc 241):** A mark like that? Can't say I have. But my biggest debtor
   skipped town the night the Abbey fell, and he left without his coat. I don't take that for a
   coincidence.
 
@@ -183,10 +183,10 @@ Angle: there's too little land left in the world to waste it fighting over a fen
 - **Completion:** So the feud was bought. Each of them thought the other had done it, and now they
   know better. There's too little land left in this world to waste it fighting over a fence. I'll
   tell them to mend it together, and I'll hold Morgan to account if I can.
-- **Ma Stonefield's reply** (option unchanged): That's Princess's collar, with the stamp I showed
+- **Ma Stonefield's reply (npc 244):** That's Princess's collar, with the stamp I showed
   you. I thought Joshua Maclure set his pig on me out of spite. But the stamp isn't his. Whoever
   gave him that sow wanted her loose on my land. Joshua may know more than he thinks.
-- **Joshua Maclure's reply** (option unchanged): That's Princess's collar. I never wanted that sow.
+- **Joshua Maclure's reply (npc 258):** That's Princess's collar. I never wanted that sow.
   A man gave her to me and said she'd make a fine pet, and then she broke out and tore up Ma
   Stonefield's fields. I paid for every row, and I never knew why she ran. Whoever stamped this
   collar owes us both an apology.

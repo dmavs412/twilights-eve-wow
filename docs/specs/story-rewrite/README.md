@@ -29,6 +29,22 @@ shrinking; the plot shows up in a detail.
    kept all of them as written after a grammar and prose pass (2026-10-23). Claude wrote the rest
    in that voice. Tickets only paste reviewed text.
 
+9. **The Barrens goes in stages.** 93 of the realm's 181 test files run on Barrens content (the
+   shared harness creates every character at the Crossroads). First the client stops offering the
+   Barrens start, so players never reach it. The content stays loaded, unreachable, while the
+   tests move to Elwynn fixtures in batches; a last ticket deletes it and moves any saved Kalimdor
+   character to Northshire. The migration is planned in its own Pipeline session.
+10. **The new NPCs (Claude's picks, placeholders Davis can rename).** Quartermaster Hollis sells
+    the banded Tokens in front of Northshire Abbey, beside Brother Danil. Wynne Tarrow sells the
+    flat list in Goldshire, beside Marshal Dughan. Marta Coyle, the Blood Coin Broker, stands near
+    Remy in Goldshire. Commander Aldous Wray gives 64002-64004 and trains in the Old Town barracks
+    in Stormwind, beside the vanilla warrior trainers.
+
+## Open questions
+
+- The Token item is named "Twilight Token," which ties the Watch's bounty pay to the cult's name.
+  A rename is a one-row change in the item data; Davis decides the name.
+
 ## The voice Davis approved
 
 - Each quest starts with one person's own trouble. The shrinking world shows in a detail: a road
