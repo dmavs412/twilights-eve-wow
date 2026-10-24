@@ -18,7 +18,9 @@ pub const RACE_HUMAN: u8 = 0x1;
 pub const CLASS_WARRIOR: u8 = 0x1;
 pub const GENDER_MALE: u8 = 0x0;
 
-/// The Local Realm's starting zones, sent in [`CharCreateReq::start`].
+/// The Local Realm's starting zones, sent in [`CharCreateReq::start`]. The client always sends
+/// `START_ELWYNN`; `START_BARRENS` survives only for the realm's tests until the Barrens is
+/// deleted (#374).
 pub const START_BARRENS: u8 = 0;
 pub const START_ELWYNN: u8 = 1;
 
@@ -38,7 +40,8 @@ pub struct CharCreateReq {
     pub hair_style: u8,
     pub hair_color: u8,
     pub facial_hair: u8,
-    /// The starting zone ([`START_BARRENS`], [`START_ELWYNN`]), sent as the outfit id byte: vmangos
+    /// The starting zone, always [`START_ELWYNN`] from the client ([`START_BARRENS`] is for the
+    /// realm's tests until #374 deletes the Barrens), sent as the outfit id byte: vmangos
     /// ignores that byte and picks the start gear itself (`CharacterHandler.cpp:310`), so 0 is
     /// what a real server sees.
     pub start: u8,

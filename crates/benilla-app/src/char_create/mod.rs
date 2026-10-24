@@ -216,9 +216,6 @@ pub(crate) struct CreateSelection {
     name: EditBoxState,
     /// Waiting on `SMSG_CHAR_CREATE`: Create is disarmed.
     creating: bool,
-    /// The Local Realm starting zone ([`benilla_protocol::START_BARRENS`] or
-    /// [`benilla_protocol::START_ELWYNN`]).
-    start: u8,
 }
 
 /// The five dial counts for a (race, sex), or `[1; 5]` without the catalog.
@@ -284,7 +281,7 @@ impl CreateSelection {
             hair_style: self.dials[2],
             hair_color: self.dials[3],
             facial_hair: self.dials[4],
-            start: self.start,
+            start: benilla_protocol::START_ELWYNN,
         }
     }
 }
@@ -300,8 +297,6 @@ enum CreateAction {
     /// Dial index 0..5, direction ±1.
     Dial(u8, i8),
     Randomize,
-    /// Switches the starting zone between The Barrens and Elwynn Forest.
-    Start,
     Create,
     Back,
     /// Hold to rotate, like the reference's rotate buttons.
@@ -410,14 +405,6 @@ fn create_input(
                 sounds.write(GlueSound("gsCharacterCreationLook"));
                 randomize(&mut sel, cat, &mut rng);
                 changed_look = true;
-            }
-            CreateAction::Start => {
-                sounds.write(GlueSound("gsCharacterCreationLook"));
-                sel.start = if sel.start == benilla_protocol::START_ELWYNN {
-                    benilla_protocol::START_BARRENS
-                } else {
-                    benilla_protocol::START_ELWYNN
-                };
             }
             CreateAction::Create => do_create = true,
             CreateAction::Back => {
@@ -715,6 +702,17 @@ mod tests {
             warrior, mage,
             "the booth look must differ by class, or the preview cannot re-dress"
         );
+    }
+
+    #[test]
+    fn the_create_request_always_starts_in_elwynn() {
+        let sel = CreateSelection {
+            race: 1,
+            sex: 0,
+            class: 1,
+            ..default()
+        };
+        assert_eq!(sel.request().start, benilla_protocol::START_ELWYNN);
     }
 
     /// `SetCharacterRace`, `SetCharacterClass` and `SetCharacterGender` `LockHighlight()` the

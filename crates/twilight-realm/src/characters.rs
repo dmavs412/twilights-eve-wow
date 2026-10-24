@@ -147,6 +147,8 @@ impl Characters {
             return CHAR_CREATE_SERVER_LIMIT;
         }
         self.last_guid += 1;
+        // The client always sends START_ELWYNN; START_BARRENS survives only for the realm's tests
+        // until the Barrens is deleted (#374).
         let elwynn = req.start == benilla_protocol::START_ELWYNN;
         let (map, zone, [x, y, z, facing], bind) = if elwynn {
             let at = content::NORTHSHIRE;
