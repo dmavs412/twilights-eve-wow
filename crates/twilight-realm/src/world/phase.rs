@@ -27,6 +27,16 @@ const WALK_STEP_YD: f32 = 40.0;
 /// Seconds of realm time between two "You cannot go that way." messages to one character.
 pub(super) const CLOSED_HUSH_SECS: f32 = 3.0;
 
+/// What a click on a GameObject did with a Phased Dungeon's locked door.
+pub(crate) enum LockedClick {
+    /// The GameObject is no locked door.
+    NotLocked,
+    /// A door that stays as it is: out of reach, already unlocked or no key in the bags.
+    Stays,
+    /// The key is taken and the Run's locked door `door` of `dungeon` unlocks.
+    Unlock { dungeon: u32, door: u32 },
+}
+
 /// What a click on a GameObject did with a Phased Dungeon's door.
 pub(crate) enum DoorClick {
     /// The GameObject is no door.
@@ -81,6 +91,20 @@ impl InWorld {
         } else {
             self.in_stop = phased::stop_at(self.map, c.position);
         }
+        // A dungeon's key never leaves it: a living character outside its Phase carries none.
+        if self.player.alive() {
+            for d in phased::content()
+                .iter()
+                .filter(|d| now != Phase::Dungeon(d.id))
+            {
+                if let Some(key) = &d.key {
+                    let held = c.inventory.count(key.item);
+                    if held > 0 {
+                        crate::equipment::take(c, key.item, held, events);
+                    }
+                }
+            }
+        }
         if now == self.phase {
             return;
         }
@@ -130,14 +154,110 @@ impl InWorld {
             || self.teleport_pending()
             || self.transferring()
             || flat_distance(from, to) > WALK_STEP_YD
-            || !phased::content()
-                .iter()
-                .any(|d| d.wall_blocks(self.map, from, to))
         {
             return false;
         }
+        if phased::content()
+            .iter()
+            .any(|d| d.wall_blocks(self.map, from, to))
+        {
+            self.snap_client(from, orientation, events);
+            return true;
+        }
+        let locked = phased::content()
+            .iter()
+            .filter(|d| self.phase == Phase::Dungeon(d.id))
+            .find_map(|d| d.locked_door_crossed(self.map, from, to, &self.run_unlocked));
+        let Some(door) = locked else {
+            return false;
+        };
         self.snap_client(from, orientation, events);
+        if self.closed_hush <= 0.0 {
+            self.closed_hush = CLOSED_HUSH_SECS;
+            events.push(SessionEvent::Notification {
+                text: door.locked_text.clone(),
+            });
+        }
         true
+    }
+
+    /// The text id of the greeting creature `guid` gives in the Run's dungeon, when it is the
+    /// dungeon's `hint_npc`: it names the creature that carries the key.
+    pub(crate) fn key_hint_text(&self, guid: u64) -> Option<u32> {
+        let Phase::Dungeon(id) = self.phase else {
+            return None;
+        };
+        let key = phased::dungeon(id)?.key.as_ref()?;
+        let holder = self.run_key_holder?;
+        let mob = self.mobs.iter().find(|m| m.guid == guid)?;
+        (mob.spawn_row()?.guid == key.hint_npc).then_some(quests::HINT_TEXT + holder)
+    }
+
+    /// The player clicks the GameObject of `guid`, which may be a Phased Dungeon's locked door.
+    /// In reach, alive and in the Phase, with the key in the bags, the key is taken; the Run
+    /// unlocks the door. Without it the click only says the door is locked.
+    pub(crate) fn click_locked_door(
+        &mut self,
+        guid: u64,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> LockedClick {
+        let Some((d, door)) = phased::locked_door_with(guid) else {
+            return LockedClick::NotLocked;
+        };
+        if self.phase != Phase::Dungeon(d.id)
+            || !self.player.alive()
+            || self.run_unlocked.contains(&door.guid)
+            || flat_distance(door.position, c.position) > crate::space::INTERACTION_YD
+        {
+            return LockedClick::Stays;
+        }
+        if c.inventory.count(door.opens_with) == 0 {
+            events.push(SessionEvent::Notification {
+                text: door.locked_text.clone(),
+            });
+            return LockedClick::Stays;
+        }
+        crate::equipment::take(c, door.opens_with, 1, events);
+        self.run_unlocked.push(door.guid);
+        LockedClick::Unlock {
+            dungeon: d.id,
+            door: door.guid,
+        }
+    }
+
+    /// Streams `d`'s locked doors in and out with the view, for the Phase only, and shows each
+    /// locked or open as the Run has it.
+    fn show_locked_doors(
+        &mut self,
+        d: &phased::Dungeon,
+        me: [f32; 3],
+        events: &mut Vec<SessionEvent>,
+    ) {
+        for door in &d.locked_door {
+            let d_yd = if d.map == self.map && self.phase == Phase::Dungeon(d.id) {
+                flat_distance(door.position, me)
+            } else {
+                f32::INFINITY
+            };
+            let open = self.run_unlocked.contains(&door.guid);
+            match self.locked_shown.get(&door.guid).copied() {
+                None if d_yd <= VIEW_YD => {
+                    events.push(door.create());
+                    self.locked_shown.insert(door.guid, false);
+                }
+                Some(_) if d_yd > VIEW_YD + 10.0 => {
+                    self.locked_shown.remove(&door.guid);
+                    events.push(SessionEvent::ObjectsRemoved(vec![door.object_guid()]));
+                    continue;
+                }
+                Some(_) => {}
+                None => continue,
+            }
+            if self.locked_shown.insert(door.guid, open) != Some(open) {
+                events.push(door.state(open));
+            }
+        }
     }
 
     /// The player's report of a step from `from` to `to`: if it ends on a Closed Zone's chunk
@@ -446,6 +566,7 @@ impl InWorld {
             }
             self.show_dungeon_objects(d, me, host, events);
             self.show_stop_portals(d, me, host, events);
+            self.show_locked_doors(d, me, events);
             if let Some(door) = &d.portal.door {
                 self.show_door(d, door, me, host, events);
             }

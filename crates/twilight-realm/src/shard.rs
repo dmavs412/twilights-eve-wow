@@ -84,10 +84,10 @@ pub(crate) fn public_player_field(field: u16) -> bool {
 impl Shard {
     /// A fresh shard: an open world streams in around its players; a Phased Dungeon's Run starts
     /// with all its creatures at full health.
-    pub(crate) fn new(place: Place) -> Self {
+    pub(crate) fn new(place: Place, seed: u64) -> Self {
         let dungeon = place.phase != Phase::OpenWorld;
         let run = match place.phase {
-            Phase::Dungeon(id) => Some(Run::new(id)),
+            Phase::Dungeon(id) => Some(Run::new(id, seed)),
             Phase::OpenWorld => None,
         };
         Self {
@@ -154,6 +154,26 @@ impl Shard {
         self.run.as_ref().map_or((Vec::new(), Vec::new()), |r| {
             (r.pinned.clone(), r.dead.clone())
         })
+    }
+
+    /// The creature that carries the Run's key and the locked doors unlocked in it; none with no
+    /// Run.
+    pub(crate) fn key_facts(&self) -> (Option<u32>, Vec<u32>) {
+        self.run
+            .as_ref()
+            .map_or((None, Vec::new()), |r| (r.key_holder, r.unlocked.clone()))
+    }
+
+    /// Unlocks the locked door of `guid` for the rest of the Run. Whether it was locked.
+    pub(crate) fn unlock(&mut self, guid: u32) -> bool {
+        let Some(run) = &mut self.run else {
+            return false;
+        };
+        let new = !run.unlocked.contains(&guid);
+        if new {
+            run.unlocked.push(guid);
+        }
+        new
     }
 
     /// Whether the dungeon creature of `guid` has died in the Run.
@@ -514,10 +534,13 @@ mod tests {
 
     /// The Abbey's Run, a Phased Dungeon with creatures in it.
     fn run() -> Shard {
-        let shard = Shard::new(Place {
-            map: 0,
-            phase: Phase::Dungeon(1),
-        });
+        let shard = Shard::new(
+            Place {
+                map: 0,
+                phase: Phase::Dungeon(1),
+            },
+            7,
+        );
         assert!(shard.mobs.len() >= 2, "the Abbey holds creatures");
         shard
     }

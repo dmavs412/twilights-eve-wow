@@ -193,3 +193,31 @@ entry = 952
 level = 50
 position = [-8903.4, -184.9, 82.4]
 orientation = 1.46
+
+# The tower door: the gallery's doorway into the tower stair room (nsabbey.wmo portal 4, group 2
+# to group 7, model (-4.0, -8.3), floor z 17.6, 3.1 yd wide and 5 yd tall). Group 7's one other
+# doorway leads up to the tower top, so the door stands before the stair Disciple and the Abbot.
+# Display 441 is the Scarlet Monastery's secret door, 3.0 yd wide and 5.4 yd tall.
+[[locked_door]]
+guid = 790901
+display = 441
+position = [-8903.8, -184.5, 97.69]
+orientation = 5.908
+# The doorway in the model frame, as the footprints are: the plane x = -4.0 between these y and z.
+doorway = { x = -4.0, y = [-9.85, -6.75], z = [17.0, 23.0] }
+opens_with = 980121
+locked_text = "The tower door is locked. One of the corrupted brothers carries its key."
+
+# The tower key: one of these brothers carries it, rolled when the Run starts. Brother Neals
+# names the room of the one who has it.
+[key]
+item = 980121
+hint_npc = 780005
+holders = [
+  { guid = 780006, hint = "They locked the tower stair. The brother who took the key went back toward the front doors. You must have passed him." },
+  { guid = 780007, hint = "They locked the tower stair. The brother with the key paces the far west end of the nave." },
+  { guid = 780008, hint = "They locked the tower stair. The brother who carries the key stands just outside this chapel." },
+  { guid = 780009, hint = "They locked the tower stair. The key is on the brother at the south end of the nave." },
+  { guid = 780011, hint = "They locked the tower stair. They gave the key to a brother in the back wing." },
+  { guid = 780013, hint = "They locked the tower stair. The key went deep into the back wing, to the brother at its far end." },
+]

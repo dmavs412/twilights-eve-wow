@@ -142,10 +142,13 @@ mod tests {
 
     /// The Abbey's creatures, a Run with several mobs in it; all awake, each in a Camp of its own.
     fn creatures() -> Vec<Mob> {
-        let shard = Shard::new(Place {
-            map: 0,
-            phase: Phase::Dungeon(1),
-        });
+        let shard = Shard::new(
+            Place {
+                map: 0,
+                phase: Phase::Dungeon(1),
+            },
+            7,
+        );
         assert!(shard.mobs.len() >= 3, "the Abbey holds creatures");
         shard.mobs
     }
@@ -261,10 +264,13 @@ mod tests {
 
     /// Forest's Edge's creatures, Hogger among them.
     fn forest_edge() -> (Vec<Mob>, usize) {
-        let shard = Shard::new(Place {
-            map: 0,
-            phase: Phase::Dungeon(2),
-        });
+        let shard = Shard::new(
+            Place {
+                map: 0,
+                phase: Phase::Dungeon(2),
+            },
+            7,
+        );
         let hogger = shard
             .mobs
             .iter()

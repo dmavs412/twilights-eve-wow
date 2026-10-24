@@ -239,12 +239,13 @@ impl Realm {
         };
         let options = super::talk_options(c, entry);
         let quests = gossip_rows(c, entry);
-        if options.is_empty() && quests.is_empty() {
+        let hint = w.key_hint_text(guid);
+        if options.is_empty() && quests.is_empty() && hint.is_none() {
             return;
         }
         self.events.push(SessionEvent::GossipMenu {
             npc: guid,
-            text_id: super::greeting_text(entry),
+            text_id: hint.unwrap_or_else(|| super::greeting_text(entry)),
             options,
             quests,
         });

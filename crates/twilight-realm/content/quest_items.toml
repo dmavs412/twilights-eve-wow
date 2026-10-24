@@ -1,6 +1,8 @@
 # The items the quests use: the collect objectives' drops and the Token the reward panels
 # show. Same layout as items.toml, kept apart because that file is generated and its items fill
-# the loot pools; these drop only while a quest wants them.
+# the loot pools; these drop only while a quest wants them. The one exception is a Phased
+# Dungeon's key (the Abbey Tower Key): the Run's key holder carries it, through the dungeon file's
+# `[key]`, and it leaves the bags of a character who leaves the Phase.
 #
 # The drops are real 1.12 quest items (entry, name, display) from
 # data/twilights-eve/barrens_creature_loot.json's `quest_drops`. Class 12 is Quest.
@@ -61,6 +63,7 @@ item = [
   # Stone Cairn Lake (#243). The displays are placeholders borrowed from stock quest items. The
   # Resonant Shard is Quest Starter of An Echo in the Ore; Toren takes it. Ilsa takes the marks.
   { entry = 980019, name = "Resonant Shard", quality = 1, item_level = 19, class = 12, display_id = 7697, max_count = 1, start_quest = 94503 },
+  { entry = 980121, name = "Abbey Tower Key", quality = 1, item_level = 10, class = 12, display_id = 8042, max_count = 1, description = "Opens the door to the bell tower stair in Northshire Abbey." },
   { entry = 980020, name = "Riverpaw Scout Mark", quality = 1, item_level = 18, class = 12, display_id = 7255, stackable = 20 },
   # The Tower of Azora (#244). Displays are placeholders borrowed from stock quest items. Ward
   # Shards are 94605's; the scroll is 94603's reward: it reads with the Hearthstone's spell (8690,

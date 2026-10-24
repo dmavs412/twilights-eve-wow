@@ -87,7 +87,7 @@ BODY_RULES = ("water", "wall", "roof", "doodad")
 
 # Table kinds by what they place. Another kind with a position is a creature when its `entry`
 # names a template, else a GameObject.
-GAMEOBJECT_KINDS = {"gameobject", "portal", "portal.door", "inner_portal", "cover", "entrance", "exit"}
+GAMEOBJECT_KINDS = {"gameobject", "locked_door", "portal", "portal.door", "inner_portal", "cover", "entrance", "exit"}
 CREATURE_KINDS = {"creature", "creature.on_health", "creature.every", "spawn", "added", "moved", "npc"}
 
 HEADER = re.compile(r"^\s*\[\[?\s*([^\]\s]+)\s*\]")

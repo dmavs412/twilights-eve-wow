@@ -521,6 +521,77 @@ pub(crate) struct Dungeon {
     /// A wall along the footprint's edge, open at the Portal.
     #[serde(default)]
     wall: Option<Wall>,
+    /// Doors inside the building that a Run's key unlocks.
+    #[serde(default)]
+    pub(crate) locked_door: Vec<LockedDoor>,
+    /// The key its locked doors take, and the creatures that may carry it.
+    #[serde(default)]
+    pub(crate) key: Option<Key>,
+}
+
+/// A door inside a Phased Dungeon, locked at the start of every Run until a character with the
+/// dungeon's key clicks it.
+#[derive(Deserialize)]
+pub(crate) struct LockedDoor {
+    pub(crate) guid: u32,
+    pub(crate) display: u32,
+    pub(crate) position: [f32; 3],
+    pub(crate) orientation: f32,
+    /// The doorway in the building's frame.
+    pub(crate) doorway: Doorway,
+    /// The item that unlocks it: the dungeon's `[key]` item.
+    pub(crate) opens_with: u32,
+    pub(crate) locked_text: String,
+}
+
+/// A doorway in the building's frame: the plane `x` between these `y` and `z`.
+#[derive(Deserialize)]
+pub(crate) struct Doorway {
+    pub(crate) x: f32,
+    pub(crate) y: [f32; 2],
+    pub(crate) z: [f32; 2],
+}
+
+impl LockedDoor {
+    pub(crate) fn object_guid(&self) -> u64 {
+        HIGHGUID_GAMEOBJECT << 48 | u64::from(self.guid)
+    }
+
+    /// Its create, in the closed state, standing at the written Z.
+    pub(crate) fn create(&self) -> SessionEvent {
+        gameobject_create(&GameObject {
+            guid: self.object_guid(),
+            entry: self.guid,
+            display_id: self.display,
+            type_id: GAMEOBJECT_TYPE_DOOR,
+            flags: 0,
+            faction: 0,
+            position: self.position,
+            orientation: self.orientation,
+        })
+    }
+
+    /// The update that puts the door in its open or closed state.
+    pub(crate) fn state(&self, open: bool) -> SessionEvent {
+        let state = if open { ACTIVE } else { READY };
+        crate::fields::values(self.object_guid(), &[(GAMEOBJECT_STATE, state)])
+    }
+}
+
+/// The key of a Phased Dungeon's locked doors: one of the `holders` carries it in each Run, and
+/// the `hint_npc` says which.
+#[derive(Deserialize)]
+pub(crate) struct Key {
+    pub(crate) item: u32,
+    pub(crate) hint_npc: u32,
+    pub(crate) holders: Vec<Holder>,
+}
+
+/// A creature that may carry the key, and what the hint says when it does.
+#[derive(Deserialize)]
+pub(crate) struct Holder {
+    pub(crate) guid: u32,
+    pub(crate) hint: String,
 }
 
 /// An invisible wall that keeps walkers from crossing the footprint's edge in either direction,
@@ -638,6 +709,37 @@ impl Dungeon {
             && [from, to]
                 .iter()
                 .all(|&p| flat_distance(self.portal.position, p) > wall.gap_yd)
+    }
+
+    /// The locked door of this dungeon that a step from `from` to `to` on `map` walks through:
+    /// the step crosses the doorway's plane inside its rectangle, in either direction.
+    pub(crate) fn locked_door_crossed(
+        &self,
+        map: u32,
+        from: [f32; 3],
+        to: [f32; 3],
+        unlocked: &[u32],
+    ) -> Option<&LockedDoor> {
+        if map != self.map {
+            return None;
+        }
+        let (a, b) = (self.local(from), self.local(to));
+        self.locked_door.iter().find(|door| {
+            let w = &door.doorway;
+            if unlocked.contains(&door.guid) || (a[0] - w.x) * (b[0] - w.x) >= 0.0 {
+                return false;
+            }
+            let t = (w.x - a[0]) / (b[0] - a[0]);
+            let (y, z) = (a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t);
+            (w.y[0]..=w.y[1]).contains(&y) && (w.z[0]..=w.z[1]).contains(&z)
+        })
+    }
+
+    /// The hint the key's `hint_npc` gives when `holder` carries the key.
+    pub(crate) fn hint_for(&self, holder: u32) -> Option<&str> {
+        let key = self.key.as_ref()?;
+        let h = key.holders.iter().find(|h| h.guid == holder)?;
+        Some(&h.hint)
     }
 
     /// The index of the stop whose box holds `position` on `map`.
@@ -770,6 +872,21 @@ pub(crate) fn is_door(entry: u32) -> bool {
     })
 }
 
+/// The dungeon whose locked door has this GameObject guid.
+pub(crate) fn locked_door_with(guid: u64) -> Option<(&'static Dungeon, &'static LockedDoor)> {
+    content().iter().find_map(|d| {
+        d.locked_door
+            .iter()
+            .find(|o| o.object_guid() == guid)
+            .map(|o| (d, o))
+    })
+}
+
+/// The hint a dungeon's `hint_npc` gives when creature `holder` carries its key.
+pub(crate) fn hint_text(holder: u32) -> Option<&'static str> {
+    content().iter().find_map(|d| d.hint_for(holder))
+}
+
 /// The Phased Dungeon of this id.
 pub(crate) fn dungeon(id: u32) -> Option<&'static Dungeon> {
     content().iter().find(|d| d.id == id)
@@ -803,6 +920,22 @@ pub(crate) fn content() -> &'static [Dungeon] {
             for c in &d.creature {
                 for roll in &c.rolls {
                     roll.check(&format!("creature {}", c.guid));
+                }
+            }
+            if let Some(key) = &d.key {
+                let has = |guid: u32| d.creature.iter().any(|c| c.guid == guid);
+                assert!(has(key.hint_npc), "{}: key hint_npc is no creature", d.name);
+                assert!(!key.holders.is_empty(), "{}: a key with no holders", d.name);
+                for h in &key.holders {
+                    assert!(
+                        has(h.guid),
+                        "{}: key holder {} is no creature",
+                        d.name,
+                        h.guid
+                    );
+                }
+                for door in &d.locked_door {
+                    assert_eq!(door.opens_with, key.item, "{}: door {}", d.name, door.guid);
                 }
             }
         })
@@ -889,11 +1022,16 @@ pub(crate) struct Run {
     /// Whether the creatures it started with stand on the host's ground: the shard makes them
     /// before it has a host, and grounds them on its first tick, before any client is shown them.
     pub(crate) grounded: bool,
+    /// The guid of the creature that carries the dungeon's key, rolled as the Run starts.
+    pub(crate) key_holder: Option<u32>,
+    /// The guids of the locked doors a character has unlocked in the Run.
+    pub(crate) unlocked: Vec<u32>,
 }
 
 impl Run {
-    /// A Run of dungeon `dungeon`, its inner portals as the content opens them.
-    pub(crate) fn new(dungeon: u32) -> Self {
+    /// A Run of dungeon `dungeon`, its inner portals as the content opens them and its key on
+    /// the holder `seed` picks.
+    pub(crate) fn new(dungeon: u32, seed: u64) -> Self {
         Self {
             elapsed: 0.0,
             noise: 0,
@@ -903,6 +1041,10 @@ impl Run {
             dead: Vec::new(),
             appeared: Vec::new(),
             grounded: false,
+            key_holder: self::dungeon(dungeon)
+                .and_then(|d| d.key.as_ref())
+                .map(|k| k.holders[((seed >> 32) * k.holders.len() as u64 >> 32) as usize].guid),
+            unlocked: Vec::new(),
         }
     }
 
@@ -945,6 +1087,36 @@ impl Run {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_abbeys_tower_door_blocks_a_crossing_of_its_doorway_and_no_other_step() {
+        let abbey = dungeon(1).unwrap();
+        let door = &abbey.locked_door[0];
+        let at = |x: f32, y: f32, z: f32| {
+            let (sin, cos) = abbey.yaw.to_radians().sin_cos();
+            let [ox, oy, oz] = abbey.origin;
+            [ox + x * cos - y * sin, oy + x * sin + y * cos, oz + z]
+        };
+        let across = |a: [f32; 3], b: [f32; 3], open: &[u32]| {
+            abbey.locked_door_crossed(0, a, b, open).is_some()
+        };
+        let (west, east) = (at(-5.0, -8.3, 17.6), at(-3.0, -8.3, 17.6));
+        assert!(across(west, east, &[]), "west to east");
+        assert!(across(east, west, &[]), "east to west");
+        assert!(!across(west, east, &[door.guid]), "an unlocked door");
+        // Beside the doorway, above its top and on the same side.
+        assert!(!across(at(-5.0, -5.0, 17.6), at(-3.0, -5.0, 17.6), &[]));
+        assert!(!across(at(-5.0, -8.3, 24.0), at(-3.0, -8.3, 24.0), &[]));
+        assert!(!across(west, at(-4.5, -8.3, 17.6), &[]));
+    }
+
+    #[test]
+    fn the_abbeys_key_is_a_known_item_its_holders_are_creatures_and_the_door_takes_it() {
+        let abbey = dungeon(1).unwrap();
+        let key = abbey.key.as_ref().unwrap();
+        assert!(crate::items::template(key.item).is_some());
+        assert_eq!(abbey.locked_door[0].opens_with, key.item);
+    }
 
     #[test]
     fn a_pillar_blocks_a_line_through_it_and_no_other() {

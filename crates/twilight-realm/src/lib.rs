@@ -491,6 +491,17 @@ struct Session {
     dev_teleport: Option<dev::DevTeleport>,
 }
 
+/// The seed a new shard at `place` rolls its Run's facts from. Only a Run with a key to hand to
+/// a holder rolls any, so every other shard leaves the realm's dice where they were.
+fn shard_seed(place: shard::Place, rng: &mut rng::Rng) -> u64 {
+    match place.phase {
+        phased::Phase::Dungeon(id) if phased::dungeon(id).is_some_and(|d| d.key.is_some()) => {
+            rng.seed()
+        }
+        _ => 0,
+    }
+}
+
 /// The realm: its characters, the sessions and who of theirs is in the world, and the events not
 /// yet drained.
 #[derive(Default)]
@@ -731,7 +742,7 @@ impl Realm {
         let shard = self
             .shards
             .entry(map)
-            .or_insert_with(|| shard::Shard::new(map));
+            .or_insert_with(|| shard::Shard::new(map, shard_seed(map, &mut self.rng)));
         w.mobs = std::mem::take(&mut shard.mobs);
         w.lent = true;
         self.lent_from = Some(map);
@@ -756,7 +767,7 @@ impl Realm {
         let shard = self
             .shards
             .entry(map)
-            .or_insert_with(|| shard::Shard::new(map));
+            .or_insert_with(|| shard::Shard::new(map, shard_seed(map, &mut self.rng)));
         if let Some(w) = &mut self.world {
             shard.mobs = if w.lent {
                 w.lent = false;
@@ -1003,7 +1014,7 @@ impl Realm {
             let shard = self
                 .shards
                 .entry(*map)
-                .or_insert_with(|| shard::Shard::new(*map));
+                .or_insert_with(|| shard::Shard::new(*map, shard_seed(*map, &mut self.rng)));
             let positions: Vec<[f32; 3]> = players.iter().map(|p| p.position).collect();
             let present: Vec<u64> = players.iter().map(|p| p.guid).collect();
             shard.drop_hunts(&present);
@@ -1089,6 +1100,7 @@ impl Realm {
                 w.runs = owners.remove(&id).unwrap_or_default();
                 w.inner_open = shard.portals_open();
                 (w.run_pinned, w.run_dead) = shard.run_facts();
+                (w.run_key_holder, w.run_unlocked) = shard.key_facts();
                 w.others = players
                     .iter()
                     .filter(|o| o.alive && o.guid != w.guid)
@@ -1423,6 +1435,7 @@ impl Realm {
             RealmCommand::UseGameObject { guid } => {
                 let mut credited = None;
                 let mut ward = None;
+                let mut unlock = None;
                 if let Some(w) = &mut self.world {
                     let player = w.guid;
                     let giver = self
@@ -1436,11 +1449,26 @@ impl Realm {
                             .characters
                             .get_mut(player)
                             .is_some_and(|c| w.use_quest_object(guid, c, &mut self.events));
+                        let locked = match self.characters.get_mut(player) {
+                            Some(c) if !quest_object => {
+                                w.click_locked_door(guid, c, &mut self.events)
+                            }
+                            _ => world::LockedClick::NotLocked,
+                        };
                         let door = match self.characters.get_mut(player) {
-                            Some(c) if !quest_object => w.click_door(guid, c, &mut self.events),
+                            Some(c)
+                                if !quest_object
+                                    && matches!(locked, world::LockedClick::NotLocked) =>
+                            {
+                                w.click_door(guid, c, &mut self.events)
+                            }
                             _ => world::DoorClick::NotADoor,
                         };
-                        if let world::DoorClick::Opened {
+                        if let world::LockedClick::Unlock { dungeon, door } = locked {
+                            unlock = Some((dungeon, door));
+                        } else if !matches!(locked, world::LockedClick::NotLocked) {
+                            // A locked door that stays locked.
+                        } else if let world::DoorClick::Opened {
                             dungeon,
                             secs,
                             first,
@@ -1474,6 +1502,15 @@ impl Realm {
                 }
                 if let Some(used) = ward {
                     self.use_ward(used);
+                }
+                if let Some((dungeon, door)) = unlock {
+                    let place = shard::Place {
+                        map: phased::dungeon(dungeon).map_or(0, |d| d.map),
+                        phase: phased::Phase::Dungeon(dungeon),
+                    };
+                    if let Some(shard) = self.shards.get_mut(&place) {
+                        shard.unlock(door);
+                    }
                 }
                 if let Some(player) = credited {
                     self.save(player);
@@ -2062,7 +2099,7 @@ impl Realm {
         let shard = self
             .shards
             .entry(place)
-            .or_insert_with(|| shard::Shard::new(place));
+            .or_insert_with(|| shard::Shard::new(place, shard_seed(place, &mut self.rng)));
         shard.spawn_for(host, template, level, position, audience)
     }
 

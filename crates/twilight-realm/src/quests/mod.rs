@@ -269,6 +269,9 @@ pub(crate) const TALK_OPTION: u32 = 100;
 /// `NpcText` ids for a talk NPC's greeting (`GREETING_TEXT` + its entry) and a talk reply
 /// (`REPLY_TEXT` + quest id x 4 + talk index), answered by [`talk_text`].
 const GREETING_TEXT: u32 = 0x4000_0000;
+/// `NpcText` ids for a dungeon hint (`HINT_TEXT` + the guid of the creature that carries the
+/// Run's key), answered by [`talk_text`] with that holder's `hint`.
+pub(crate) const HINT_TEXT: u32 = 0x3000_0000;
 const REPLY_TEXT: u32 = 0x5000_0000;
 
 /// The talk lines NPC `entry` offers `c` now: `(quest, talk index)` of each active quest that has
@@ -304,6 +307,9 @@ pub(crate) fn talk_options(c: &Char, entry: u32) -> Vec<benilla_protocol::messag
 
 /// The text a talk NPC's greeting or reply shows, for `CMSG_NPC_TEXT_QUERY`.
 pub(crate) fn talk_text(text_id: u32) -> Option<String> {
+    if (HINT_TEXT..GREETING_TEXT).contains(&text_id) {
+        return crate::phased::hint_text(text_id - HINT_TEXT).map(str::to_string);
+    }
     if text_id >= REPLY_TEXT {
         let n = text_id - REPLY_TEXT;
         let q = content::quest(n / 4)?;

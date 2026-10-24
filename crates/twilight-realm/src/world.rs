@@ -40,7 +40,7 @@ mod ground;
 mod notoriety;
 mod phase;
 mod root;
-pub(crate) use phase::DoorClick;
+pub(crate) use phase::{DoorClick, LockedClick};
 mod sleep;
 pub(crate) use fishing::{angler_options, find_hint, hint_options, is_hint_option};
 pub(crate) use phase::creatures;
@@ -87,6 +87,8 @@ pub(crate) struct Kill {
     pub(crate) boss: bool,
     /// Items the corpse always holds (a Phased Dungeon creature's `drop`).
     pub(crate) drops: &'static [u32],
+    /// The Run's key, when this creature is the one carrying it.
+    pub(crate) key: Option<u32>,
     /// Loot rolls: the first to succeed adds one item to each looter's corpse.
     pub(crate) rolls: &'static [crate::rules::loot::Roll],
     /// The corpse's money, rolled once for everyone; 0 for a kill made alone, whose loot rolls
@@ -305,6 +307,11 @@ pub(crate) struct InWorld {
     /// The stops a ward stone has pinned in the Run, and the creatures dead in it.
     pub(crate) run_pinned: Vec<String>,
     pub(crate) run_dead: Vec<u32>,
+    /// The creature that carries the Run's key, and the locked doors unlocked in the Run.
+    pub(crate) run_key_holder: Option<u32>,
+    pub(crate) run_unlocked: Vec<u32>,
+    /// The locked doors the client has, by guid, each with the state it was last shown in.
+    locked_shown: std::collections::HashMap<u32, bool>,
     /// The dungeon and stop whose box the player stood in at the last Phase check.
     in_stop: Option<(u32, usize)>,
     /// The guids of the open-world quest GameObjects the client has.
@@ -463,6 +470,9 @@ impl InWorld {
             inner_open: Vec::new(),
             run_pinned: Vec::new(),
             run_dead: Vec::new(),
+            run_key_holder: None,
+            run_unlocked: Vec::new(),
+            locked_shown: Default::default(),
             in_stop: None,
             quest_objects: Default::default(),
             runtime_objects: Default::default(),
@@ -1399,6 +1409,15 @@ impl InWorld {
             ),
             _ => (&[][..], &mob.template.rolls[..]),
         };
+        // The Run's key is on its holder's corpse, on top of the fixed drops.
+        let key = mob
+            .spawn_row()
+            .filter(|s| self.run_key_holder == Some(s.guid))
+            .and_then(|s| match s.phase {
+                crate::phased::Phase::Dungeon(id) => crate::phased::dungeon(id)?.key.as_ref(),
+                _ => None,
+            })
+            .map(|k| k.item);
         let engaged = mob.state == State::Engaged;
         mob.state = State::Dead;
         mob.walk = None;
@@ -1452,6 +1471,7 @@ impl InWorld {
             elite,
             boss,
             drops,
+            key,
             rolls,
             money,
             position: mob.position,
@@ -1524,6 +1544,7 @@ impl InWorld {
         }
         loot.items
             .extend(k.drops.iter().map(|&item| Some((item, 1))));
+        loot.items.extend(k.key.map(|item| Some((item, 1))));
         if let Some(item) = crate::rules::loot::first_roll(k.rolls, rng) {
             loot.items.push(Some((item, 1)));
         }
