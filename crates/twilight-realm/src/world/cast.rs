@@ -430,6 +430,10 @@ enum AuraKind {
         max_stacks: u32,
         /// Percent of each tick's damage that heals its caster.
         leech_pct: u32,
+        /// `Replace` starts the aura over at the new application's stacks; any other rule adds.
+        rule: StackRule,
+        /// Stacks gained after each tick deals its damage.
+        stacks_per_tick: u32,
     },
     Rage {
         per_tick: u32,
@@ -1502,11 +1506,16 @@ impl Skills {
             if let (
                 AuraKind::PeriodicDamage { stacks: held, .. },
                 AuraKind::PeriodicDamage {
-                    stacks, max_stacks, ..
+                    stacks,
+                    max_stacks,
+                    rule,
+                    ..
                 },
             ) = (old.kind, &mut aura.kind)
             {
-                *stacks = (held + *stacks).min(*max_stacks);
+                if *rule != StackRule::Replace {
+                    *stacks = (held + *stacks).min(*max_stacks);
+                }
             }
             *old = aura;
         } else if let Some(sibling) = self
@@ -3440,6 +3449,8 @@ impl InWorld {
                 pct_of,
                 pct,
                 leech_pct,
+                stack_rule,
+                stacks_per_tick,
             } => {
                 let duration_ms =
                     duration_ms + stretch.map_or(0, |l| l.at(level, ap) * u32::from(combo));
@@ -3461,6 +3472,8 @@ impl InWorld {
                         stacks: 1,
                         max_stacks,
                         leech_pct,
+                        rule: stack_rule,
+                        stacks_per_tick,
                     },
                     aura_spell_id.unwrap_or(skill.spell_id),
                     duration_ms,
@@ -4675,6 +4688,8 @@ impl InWorld {
                     stacks: 1,
                     max_stacks: 1,
                     leech_pct: 0,
+                    rule: StackRule::Stack,
+                    stacks_per_tick: 0,
                 },
                 charges: 0,
             };
@@ -4947,6 +4962,7 @@ impl InWorld {
 
         // Ticks first, then fading: the last tick lands as the aura runs out.
         let mut due = Vec::new();
+        let mut grown = Vec::new();
         for a in &mut s.auras {
             a.left -= dt;
             if a.period > 0.0 {
@@ -4955,7 +4971,12 @@ impl InWorld {
                     a.next_tick += a.period;
                     let mut tick = *a;
                     if let AuraKind::PeriodicDamage {
-                        per_tick, carry, ..
+                        per_tick,
+                        carry,
+                        stacks,
+                        max_stacks,
+                        stacks_per_tick,
+                        ..
                     } = &mut a.kind
                     {
                         if *carry > 0 {
@@ -4964,10 +4985,20 @@ impl InWorld {
                                 *p = *per_tick + 1;
                             }
                         }
+                        // The tick pushed below deals its damage at the old count.
+                        if *stacks_per_tick > 0 {
+                            *stacks = (*stacks + *stacks_per_tick).min(*max_stacks);
+                            if !grown.contains(&(a.unit, a.slot)) {
+                                grown.push((a.unit, a.slot));
+                            }
+                        }
                     }
                     due.push(tick);
                 }
             }
+        }
+        for (unit, slot) in grown {
+            events.push(s.slot_fields(unit, slot));
         }
         for a in due {
             match a.kind {
@@ -5347,6 +5378,8 @@ impl InWorld {
                 stacks: 1,
                 max_stacks: 1,
                 leech_pct: 0,
+                rule: StackRule::Stack,
+                stacks_per_tick: 0,
             },
             charges: 0,
         };
@@ -5549,6 +5582,8 @@ impl InWorld {
                         stacks: 1,
                         max_stacks: 1,
                         leech_pct: 0,
+                        rule: StackRule::Stack,
+                        stacks_per_tick: 0,
                     }
                 }
                 callings::AuraEffect::ModHitChance { pct } => AuraKind::HitChance { pct: *pct },

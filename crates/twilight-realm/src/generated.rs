@@ -305,8 +305,11 @@ fn effect(e: &GenEffect, auras: &[GenAura]) -> Option<Effect> {
         ) {
             merged.insert("aura_spell_id".into(), aura.spell_id.into());
         }
-        if e.kind == "periodic_damage" && aura.row.stack_rule.as_deref() == Some("stack") {
-            merged.insert("max_stacks".into(), aura.row.max_stacks.into());
+        if e.kind == "periodic_damage" {
+            if let Some(rule @ ("stack" | "replace")) = aura.row.stack_rule.as_deref() {
+                merged.insert("max_stacks".into(), aura.row.max_stacks.into());
+                merged.insert("stack_rule".into(), rule.into());
+            }
         }
         merged.extend(object);
         object = merged;

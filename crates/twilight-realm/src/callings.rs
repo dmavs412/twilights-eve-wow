@@ -1370,6 +1370,13 @@ pub enum Effect {
         /// Each tick heals the caster this percent of what it dealt (Creeping Blight).
         #[serde(default)]
         leech_pct: u32,
+        /// `Replace` starts the aura over at the new application's stacks; any other rule adds.
+        #[serde(default)]
+        stack_rule: StackRule,
+        /// Stacks the aura gains after each tick deals its damage (Creeping Blight), up to
+        /// `max_stacks`.
+        #[serde(default)]
+        stacks_per_tick: u32,
     },
     /// Heals the target `amount`, up to its maximum health.
     Heal { amount: Linear },

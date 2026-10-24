@@ -32,7 +32,7 @@ cooldown_ms = 0
 gcd_ms = 0
 target = "enemy"
 range_yd = [0.0, 30.0]
-effects = [{ kind = "periodic_damage", tick_ms = 1000, duration_ms = 10000, tick = { base = 2.0 }, max_stacks = 5, leech_pct = 50, school = "shadow" }]
+effects = [{ kind = "periodic_damage", tick_ms = 1000, duration_ms = 10000, tick = { base = 2.0 }, max_stacks = 255, stack_rule = "replace", stacks_per_tick = 1, leech_pct = 50, school = "shadow" }]
 
 [[calling.skill]]
 key = "blood_lance"
@@ -207,26 +207,40 @@ fn heals(events: &[SessionEvent], spell_id: u32) -> Vec<u32> {
 }
 
 #[test]
-fn creeping_blight_stacks_to_five_and_leeches_half_of_each_tick() {
+fn creeping_blight_grows_each_tick_and_a_recast_starts_it_over() {
     let (mut realm, _, mobs, mut view) = world(1, &[], 20.0);
     let mob = &mobs[0];
-    for _ in 0..6 {
-        go(&mut realm, &mut view, BLIGHT, mob.guid);
-    }
-    assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(5));
-    let tick = view.run(&mut realm, 1.05);
-    let dealt: Vec<u32> = tick
-        .iter()
-        .filter_map(|e| match e {
-            SessionEvent::PeriodicAuraLog(l) if l.spell_id == BLIGHT => match l.ticks[0] {
-                benilla_protocol::messages::PeriodicTick::Damage { amount, .. } => Some(amount),
+    let dealt = |events: &[SessionEvent]| -> Vec<u32> {
+        events
+            .iter()
+            .filter_map(|e| match e {
+                SessionEvent::PeriodicAuraLog(l) if l.spell_id == BLIGHT => match l.ticks[0] {
+                    benilla_protocol::messages::PeriodicTick::Damage { amount, .. } => Some(amount),
+                    _ => None,
+                },
                 _ => None,
-            },
-            _ => None,
-        })
-        .collect();
-    assert_eq!(dealt, [10], "five stacks of 2");
-    assert_eq!(heals(&tick, BLIGHT), [5], "half of it back");
+            })
+            .collect()
+    };
+    go(&mut realm, &mut view, BLIGHT, mob.guid);
+    assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(1));
+    let mut log = Vec::new();
+    let mut healed = Vec::new();
+    for _ in 0..3 {
+        let tick = view.run(&mut realm, 1.0);
+        log.extend(dealt(&tick));
+        healed.extend(heals(&tick, BLIGHT));
+    }
+    assert_eq!(log, [2, 4, 6], "one more stack after each tick");
+    assert_eq!(healed, [1, 2, 3], "half of each tick back");
+    assert_eq!(view.aura(mob.guid, BLIGHT).map(|a| a.stacks), Some(4));
+    go(&mut realm, &mut view, BLIGHT, mob.guid);
+    assert_eq!(
+        view.aura(mob.guid, BLIGHT).map(|a| a.stacks),
+        Some(1),
+        "a recast starts over"
+    );
+    assert_eq!(dealt(&view.run(&mut realm, 1.0)), [2]);
 }
 
 #[test]
@@ -285,9 +299,8 @@ fn necrotic_detonation_at_five_stacks_deals_five_times_heals_and_clears_the_blig
     let detonate = |stacks: usize| {
         let (mut realm, _, mobs, mut view) = world(3, &[(SYMBIOTIC_ROT, 3)], 8.0);
         let mob = &mobs[0];
-        for _ in 0..stacks {
-            go(&mut realm, &mut view, BLIGHT, mob.guid);
-        }
+        go(&mut realm, &mut view, BLIGHT, mob.guid);
+        view.run(&mut realm, (stacks - 1) as f32 + 0.05);
         let events = go(&mut realm, &mut view, DETONATION, mob.guid);
         assert!(
             view.aura(mob.guid, BLIGHT).is_none(),

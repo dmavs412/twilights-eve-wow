@@ -135,8 +135,8 @@ Write `key=value` pairs joined by `;`, and lists joined by `|`:
   damage ends is `break_on=damage=yes` on its aura row. Set `target=enemy` on a debuff row.
 - Aura-only columns on any other row kind fail the build.
 - `max_stacks` (default 1).
-- `stack_rule`: `refresh` (default), `replace` (a finisher's new strength replaces the old), `ignore` or
-  `independent`.
+- `stack_rule`: `refresh` (default), `replace` (a finisher's new strength replaces the old; on a
+  `periodic_damage` aura it starts the aura over at one stack), `ignore` or `independent`.
 - `unique_per`: `caster` (default) or `target`.
 - `exclusive_group` + `group_scope` (`caster` or `target`): only one aura of the group at a time. Examples: one poison per hand, one Seal.
 - `dispel_type`: `magic`, `curse`, `disease`, `poison` or `none`. `mechanic`: `stun`, `root`, `snare`, `fear`,
@@ -178,6 +178,8 @@ per_ap × attack power)`. Never put arithmetic in a cell.
 
 The params the build checks:
 - **`weapon_strike`:** `weapon=normal` or `normalized` (never `W`). Bonus damage is a `bonus.*` formula block.
+- **`periodic_damage`:** optional `stacks_per_tick=` a whole number of 0 or more (default 0). After each tick deals its damage, the
+  aura gains that many stacks, up to the aura row's `max_stacks`. Pair it with `stack_rule=replace` so a recast starts over at one stack.
 - **`energize`:** `power=rage|energy|mana` and an `amount.*` block.
 - **`add_combo_points`:** `amount=` a positive whole number (at most five points are held).
 - **`add_aura_stacks`:** `aura=` the key of an aura row of the Calling, `stacks=` a positive whole number (default 1). A landed hit

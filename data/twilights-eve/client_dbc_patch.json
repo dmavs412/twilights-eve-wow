@@ -9924,7 +9924,7 @@
     "dmg_class": 1,
     "school": 5,
     "prevention_type": 1,
-    "description": "Infects the target with a stacking Shadow DoT. Every time it deals damage, it heals the Acolyte for 50% of the damage dealt.",
+    "description": "Infects the target with a Shadow DoT for 18 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack.",
     "implicit_targets": [
      6,
      0
@@ -9940,7 +9940,7 @@
       "aura": 3
      }
     ],
-    "aura_description": "Taking Shadow damage over time.",
+    "aura_description": "Taking Shadow damage over time. It grows with every tick.",
     "visual": 71,
     "range_index": 4,
     "cast_time_index": 1,

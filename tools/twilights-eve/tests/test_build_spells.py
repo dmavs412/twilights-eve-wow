@@ -361,6 +361,16 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
             self.assert_fails([{**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": bad}],
                               "positive whole amount")
 
+    def test_periodic_damage_stacks_per_tick_is_a_whole_number_of_zero_or_more(self):
+        base = "tick_ms=1000;duration_ms=6000;tick.base=2;tick.per_level=0"
+        row = {**STRIKE, "effect1_kind": "periodic_damage", "effect1_params": base + ";stacks_per_tick=1"}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"]["stacks_per_tick"], 1)
+        for bad in ("-1", "1.5"):
+            self.assert_fails([{**row, "effect1_params": base + ";stacks_per_tick=" + bad}],
+                              "stacks_per_tick is a whole number")
+
     def test_aura_stacks_effects_name_an_aura_row_of_the_calling(self):
         aura = {**AURA, "key": "conviction", "effect1_kind": "", "effect1_params": "", "modelled": "yes",
                 "max_stacks": "5"}

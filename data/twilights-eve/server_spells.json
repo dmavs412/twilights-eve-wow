@@ -16338,7 +16338,7 @@
       "realm_only": false
      }
     ],
-    "description": "Infects the target with a stacking Shadow DoT. Every time it deals damage, it heals the Acolyte for 50% of the damage dealt."
+    "description": "Infects the target with a Shadow DoT for 18 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack."
    },
    {
     "key": "blood_lance",
@@ -18236,8 +18236,8 @@
     "status": "placeholder",
     "school": "shadow",
     "prevention": "silence",
-    "max_stacks": 5,
-    "stack_rule": "stack",
+    "max_stacks": 255,
+    "stack_rule": "replace",
     "unique_per": "caster",
     "group_scope": "caster",
     "dispel_type": "none",
@@ -18257,12 +18257,13 @@
         "per_level": 0.5
        },
        "leech_pct": 50,
+       "stacks_per_tick": 1,
        "school": "shadow"
       },
       "realm_only": false
      }
     ],
-    "description": "Taking Shadow damage over time."
+    "description": "Taking Shadow damage over time. It grows with every tick."
    },
    {
     "key": "aura_dark_mending",

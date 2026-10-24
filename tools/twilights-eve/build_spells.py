@@ -816,6 +816,10 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         stacks = params.get("stacks", 1)
         if isinstance(stacks, bool) or not isinstance(stacks, int) or stacks <= 0:
             raise BuildError(f"{where}: add_aura_stacks needs a positive whole stacks, has {stacks!r}")
+    if kind == "periodic_damage" and "stacks_per_tick" in params:
+        per_tick = params["stacks_per_tick"]
+        if isinstance(per_tick, bool) or not isinstance(per_tick, int) or per_tick < 0:
+            raise BuildError(f"{where}: periodic_damage stacks_per_tick is a whole number of 0 or more, has {per_tick!r}")
     if kind == "stealth" and not isinstance(params.get("opener_crit", False), bool):
         raise BuildError(f"{where}: stealth opener_crit is yes or no, has {params['opener_crit']!r}")
     if kind == "ground_effect":
