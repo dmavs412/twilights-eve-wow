@@ -12003,6 +12003,33 @@
    }
   },
   {
+   "spell_id": 1000411,
+   "calling": "cutthroat",
+   "key": "aura_bloodlust",
+   "rank": 1,
+   "fields": {
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "icon": "Interface\\Icons\\Racial_Orc_BerserkerStrength",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "name": "Bloodlust",
+    "aura_description": "Physical damage dealt and attack speed increased by 3% a stack."
+   }
+  },
+  {
    "spell_id": 1900001,
    "creature": "corruption_creature",
    "fields": {

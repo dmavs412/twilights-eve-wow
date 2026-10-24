@@ -44,7 +44,7 @@ CLIENT_EFFECTS = 3
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
 # any other kind fails the build; add the kind here when its components land.
 KNOWN_KINDS = {
-    "absorb", "interrupt", "taunt", "knockback", "add_aura_stacks", "grow_aura","add_combo_points", "at_max_stacks", "healing_taken_pct", "max_health_pct", "mod_cast_speed_pct", "mod_ranged_haste_pct", "mod_ranged_crit_pct", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
+    "absorb", "interrupt", "taunt", "knockback", "add_aura_stacks", "grow_aura","add_combo_points", "at_max_stacks", "healing_taken_pct", "max_health_pct", "mod_cast_speed_pct", "mod_ranged_haste_pct", "mod_ranged_crit_pct", "mod_damage_done_pct", "mod_melee_haste_pct", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
     "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
@@ -806,6 +806,10 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
         amount = params.get("amount")
         if isinstance(amount, bool) or not isinstance(amount, int) or amount <= 0:
             raise BuildError(f"{where}: add_combo_points needs a positive whole amount, has {amount!r}")
+    if kind in ("mod_damage_done_pct", "mod_melee_haste_pct"):
+        pct = params.get("pct")
+        if isinstance(pct, bool) or not isinstance(pct, int) or pct <= 0:
+            raise BuildError(f"{where}: {kind} needs a positive whole pct, has {pct!r}")
     if kind == "taunt":
         duration = params.get("duration_ms")
         if isinstance(duration, bool) or not isinstance(duration, int) or duration <= 0:

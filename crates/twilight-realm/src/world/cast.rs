@@ -534,6 +534,18 @@ enum AuraKind {
         stacks: u32,
         max_stacks: u32,
     },
+    /// The player deals `pct` percent more physical damage for each stack (Bloodlust).
+    DamageDone {
+        pct: u32,
+        stacks: u32,
+        max_stacks: u32,
+    },
+    /// The player's melee swings are `pct` percent faster for each stack (Bloodlust).
+    MeleeHaste {
+        pct: u32,
+        stacks: u32,
+        max_stacks: u32,
+    },
     /// The player's ranged weapon shoots `pct` percent faster.
     RangedHaste {
         pct: u32,
@@ -675,6 +687,8 @@ impl AuraKind {
                 | AuraKind::HealingTaken { .. }
                 | AuraKind::CastSpeed { .. }
                 | AuraKind::SkillAmount { .. }
+                | AuraKind::DamageDone { .. }
+                | AuraKind::MeleeHaste { .. }
                 | AuraKind::SpellDamagePct { .. }
                 | AuraKind::Defense { .. }
                 | AuraKind::Proc(_)
@@ -695,6 +709,8 @@ impl AuraKind {
             AuraKind::PeriodicDamage { stacks, .. } => stacks,
             AuraKind::StackTo { count, .. } => count,
             AuraKind::SkillAmount { stacks, .. }
+            | AuraKind::DamageDone { stacks, .. }
+            | AuraKind::MeleeHaste { stacks, .. }
             | AuraKind::NextCast { stacks, .. }
             | AuraKind::ArmorLoss { stacks, .. }
             | AuraKind::Marker { stacks, .. } => stacks,
@@ -727,10 +743,20 @@ impl Skills {
     /// How much faster the player's buffs make their swings, in percent (Seal of the
     /// Crusader's).
     fn haste_pct(&self) -> u32 {
-        match self.seal() {
+        let seal = match self.seal() {
             Some(Seal::Crusader { haste_pct, .. }) => haste_pct,
             _ => 0,
-        }
+        };
+        let stacked: u32 = self
+            .auras
+            .iter()
+            .filter(|a| a.unit == self.me)
+            .map(|a| match a.kind {
+                AuraKind::MeleeHaste { pct, stacks, .. } => pct * stacks,
+                _ => 0,
+            })
+            .sum();
+        seal + stacked
     }
 
     /// The percent more holy damage `unit` takes (Judgement of the Crusader).
@@ -767,6 +793,7 @@ impl Skills {
                     armor_loss_pct,
                     ..
                 } => (health, damage + pct, armor + armor_loss_pct),
+                AuraKind::DamageDone { pct, stacks, .. } => (health, damage + pct * stacks, armor),
                 _ => (health, damage, armor),
             },
         )
@@ -1490,6 +1517,18 @@ impl Skills {
             if let (
                 AuraKind::SkillAmount { stacks: held, .. },
                 AuraKind::SkillAmount {
+                    stacks, max_stacks, ..
+                },
+            )
+            | (
+                AuraKind::DamageDone { stacks: held, .. },
+                AuraKind::DamageDone {
+                    stacks, max_stacks, ..
+                },
+            )
+            | (
+                AuraKind::MeleeHaste { stacks: held, .. },
+                AuraKind::MeleeHaste {
                     stacks, max_stacks, ..
                 },
             )
@@ -5668,6 +5707,16 @@ impl InWorld {
                     stacks: 1,
                     max_stacks: stack_limit(def),
                 },
+                callings::AuraEffect::ModDamageDonePct { pct } => AuraKind::DamageDone {
+                    pct: *pct,
+                    stacks: 1,
+                    max_stacks: stack_limit(def),
+                },
+                callings::AuraEffect::ModMeleeHastePct { pct } => AuraKind::MeleeHaste {
+                    pct: *pct,
+                    stacks: 1,
+                    max_stacks: stack_limit(def),
+                },
                 callings::AuraEffect::ModRangedHastePct { pct } => {
                     AuraKind::RangedHaste { pct: *pct }
                 }
@@ -6162,6 +6211,44 @@ mod tests {
         // Granting one again refreshes it rather than adding a third.
         skills.apply(crit("cleave", 30), &mut events);
         assert_eq!(skills.auras.len(), 2);
+    }
+
+    fn bloodlust(kind: AuraKind) -> Aura {
+        Aura {
+            kind,
+            spell_id: 1000411,
+            ..crit("", 0)
+        }
+    }
+
+    /// Bloodlust's damage and haste effects each gain a stack a application, up to five.
+    #[test]
+    fn bloodlust_stacks_damage_and_haste_to_the_limit() {
+        let mut skills = Skills::new(1);
+        let mut events = Vec::new();
+        for n in 1..=6u32 {
+            skills.apply(
+                bloodlust(AuraKind::MeleeHaste {
+                    pct: 3,
+                    stacks: 1,
+                    max_stacks: 5,
+                }),
+                &mut events,
+            );
+            skills.apply(
+                bloodlust(AuraKind::DamageDone {
+                    pct: 3,
+                    stacks: 1,
+                    max_stacks: 5,
+                }),
+                &mut events,
+            );
+            let stacks = n.min(5);
+            assert_eq!(skills.haste_pct(), 3 * stacks);
+            assert_eq!(skills.damage_pct(), 3 * stacks);
+        }
+        assert_eq!(skills.auras.len(), 2);
+        assert!(skills.auras.iter().all(|a| a.kind.stacks() == 5));
     }
 }
 

@@ -10078,6 +10078,42 @@
      }
     ],
     "description": "Incapacitated. Any damage ends it."
+   },
+   {
+    "key": "aura_bloodlust",
+    "name": "Bloodlust",
+    "spell_id": 1000411,
+    "status": "placeholder",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 5,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "mod_damage_done_pct",
+      "params": {
+       "pct": 3
+      },
+      "realm_only": false
+     },
+     {
+      "kind": "mod_melee_haste_pct",
+      "params": {
+       "pct": 3
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Physical damage dealt and attack speed increased by 3% a stack."
    }
   ],
   "name": "Cutthroat",

@@ -251,6 +251,10 @@ pub enum AuraEffect {
     ModRangedHastePct { pct: u32 },
     /// The player's ranged attacks crit `pct` percent more often.
     ModRangedCritPct { pct: u32 },
+    /// The player deals `pct` percent more physical damage a stack (Bloodlust).
+    ModDamageDonePct { pct: u32 },
+    /// The player's melee swings are `pct` percent faster a stack (Bloodlust).
+    ModMeleeHastePct { pct: u32 },
     /// The unit's armour changes by `amount` (a stacking Sunder when negative).
     ModArmor { amount: i32 },
     /// Each cast of `skill` also strikes its targets for `weapon_pct` percent of a `weapon`

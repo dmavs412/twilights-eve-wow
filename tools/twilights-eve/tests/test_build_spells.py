@@ -361,6 +361,12 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
             self.assert_fails([{**STRIKE, "effect1_kind": "add_combo_points", "effect1_params": bad}],
                               "positive whole amount")
 
+    def test_bloodlust_kinds_need_a_positive_whole_pct(self):
+        for kind in ("mod_melee_haste_pct", "mod_damage_done_pct"):
+            for bad in ("pct=0", "pct=-3", "pct=1.5", ""):
+                self.assert_fails([{**STRIKE, "effect1_kind": kind, "effect1_params": bad}],
+                                  "positive whole pct")
+
     def test_periodic_damage_stacks_per_tick_is_a_whole_number_of_zero_or_more(self):
         base = "tick_ms=1000;duration_ms=6000;tick.base=2;tick.per_level=0"
         row = {**STRIKE, "effect1_kind": "periodic_damage", "effect1_params": base + ";stacks_per_tick=1"}
