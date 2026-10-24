@@ -14,8 +14,10 @@ use common::*;
 const HIGHGUID_UNIT: u64 = 0xF130;
 /// The Abbey's survivor, a Field Giver (#85).
 const BROTHER_NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
-/// His row's x and y: the nave floor at the foot of the tower stair, model (-3.5, -8.5) (#314).
-const NEALS_AT: [f32; 2] = [-8903.4, -184.9];
+/// His row's x and y: the nave floor at the back of the side chapel, model (-0.5, 26.4) (#349).
+const NEALS_AT: [f32; 2] = [-8887.8, -153.5];
+/// The cage around him (#349), a GameObject guid.
+const NEALS_CAGE: u64 = 0xF110 << 48 | 790902;
 /// `FactionTemplate.dbc` 35, friendly to every race.
 const FRIENDLY_TO_ALL: u32 = 35;
 /// The Abbot at the top of the bell tower, whose bell calls two Corrupted Brothers at half health.
@@ -95,6 +97,8 @@ struct Abbey {
     /// How many times the client was shown the tower door, and had its state updated.
     door_creates: u32,
     door_updates: u32,
+    /// Where the client was shown Brother Neals's cage.
+    cage: Option<[f32; 3]>,
     /// The counter of the teleport the client has yet to answer.
     teleport: Option<u32>,
 }
@@ -146,6 +150,7 @@ impl Abbey {
             notes: Vec::new(),
             door_creates: 0,
             door_updates: 0,
+            cage: None,
             teleport: None,
         };
         a.go(OUTSIDE, 1.0);
@@ -183,6 +188,9 @@ impl Abbey {
                 }
                 SessionEvent::ObjectCreate { guid, .. } if guid == TOWER_DOOR => {
                     self.door_creates += 1;
+                }
+                SessionEvent::ObjectCreate { guid, position, .. } if guid == NEALS_CAGE => {
+                    self.cage = Some(position);
                 }
                 SessionEvent::ObjectValues { guid, .. } if guid == TOWER_DOOR => {
                     self.door_updates += 1;
@@ -264,12 +272,13 @@ fn outside_sees_no_monster_and_inside_sees_only_the_abbeys_own() {
 }
 
 #[test]
-fn brother_neals_waits_friendly_at_the_foot_of_the_tower_stair() {
+fn brother_neals_waits_friendly_in_a_cage_at_the_back_of_the_side_chapel() {
     let mut a = Abbey::new();
     assert!(
         !a.created.contains_key(&BROTHER_NEALS),
         "Brother Neals shows outside the Abbey"
     );
+    assert_eq!(a.cage, None, "the cage shows outside the Abbey");
     a.go(INSIDE, 0.5);
     assert!(a.realm.run_elapsed().is_some(), "no Run");
     let (at, fields) = &a.created[&BROTHER_NEALS];
@@ -279,6 +288,12 @@ fn brother_neals_waits_friendly_at_the_foot_of_the_tower_stair() {
         "Brother Neals stands at {at:?}, {off} yd off his row"
     );
     assert_eq!(fields.unit_faction_template(), Some(FRIENDLY_TO_ALL));
+    let cage = a.cage.expect("the cage shows inside the Abbey");
+    let off = flat_off(cage, NEALS_AT);
+    assert!(
+        off <= 1.0,
+        "the cage stands at {cage:?}, {off} yd off Neals"
+    );
 }
 
 fn flat_off(at: [f32; 3], to: [f32; 2]) -> f32 {

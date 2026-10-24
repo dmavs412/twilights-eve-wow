@@ -183,16 +183,27 @@ count = 2
 position = [-8894.0, -187.0, 104.4]
 
 # Brother Neals (#85), the Abbey's one survivor and the ender of Into the Abbey: friendly, quest
-# flags only. He hides at the foot of the stair to the bell tower, in the nave's south-east
-# corner, at model point (-3.5, -8.5) on the nave's floor (z 1.87, ceiling 6.7), facing back up
-# the nave. The stair's first step is 1.5 yd east. The old point (8, -6) was inside the boxes but
-# outside the walls (#314); a vertical ray through the groups' meshes finds no floor there.
+# flags only. He stands caged at the back of the side chapel, the dead-end alcove off the nave's
+# north end (model x -6 to 5, y 22 to 29), at model point (-0.5, 26.4) on the nave's floor
+# (z 1.87, ceiling 22.8), facing the chapel's mouth. Nothing frees him. The old point at the foot
+# of the tower stair, model (-3.5, -8.5), was moved for #347 so the key's hint sends the player
+# through the nave.
 [[creature]]
 guid = 780005
 entry = 952
 level = 50
-position = [-8903.4, -184.9, 82.4]
-orientation = 1.46
+position = [-8887.8, -153.5, 81.94]
+orientation = 4.74
+
+# Brother Neals's cage (#347), around him at the back of the side chapel. Display 1787 is
+# G_Cage02 (vmangos's Melizza's Cage), 2.6 by 2.7 yd and 3.1 yd tall. It has no `use`, so it is
+# unselectable and a click on Neals reaches him.
+[[gameobject]]
+guid = 790902
+display = 1787
+position = [-8887.8, -153.5, 81.94]
+orientation = 4.74
+sides = "inside"
 
 # The tower door: the gallery's doorway into the tower stair room (nsabbey.wmo portal 4, group 2
 # to group 7, model (-4.0, -8.3), floor z 17.6, 3.1 yd wide and 5 yd tall). Group 7's one other

@@ -20,7 +20,7 @@ const VURX_AT: [f32; 3] = [-8533.0, -204.0, 83.85];
 const MCBRIDE: u64 = HIGHGUID_UNIT << 48 | 197 << 24 | 79970;
 const MCBRIDE_AT: [f32; 3] = [-8912.0, -140.5, 82.0];
 const NEALS: u64 = HIGHGUID_UNIT << 48 | 952 << 24 | 780005;
-const NEALS_AT: [f32; 3] = [-8903.4, -184.9, 82.4];
+const NEALS_AT: [f32; 3] = [-8887.8, -153.5, 82.0];
 const IDOL: u32 = 980001;
 const THE_IDOL_IN_THE_DEEP: u32 = 94001;
 const INTO_THE_ABBEY: u32 = 94002;
@@ -244,9 +244,9 @@ fn the_idol_chain_from_vurx_to_brother_neals() {
     });
     drain(&mut realm);
 
-    // Brother Neals takes it in, inside the Abbey. A player reaches him by clearing the nave; the
-    // flat floor would also bring the tower's monsters down beside him, so here none sees the
-    // character, and the step is the hand-in alone.
+    // Brother Neals takes it in, inside the Abbey, caged at the back of the side chapel. A player
+    // reaches him past the nave's brothers; the flat floor would also bring the tower's monsters
+    // down beside him, so here none sees the character, and the step is the hand-in alone.
     realm.handle(RealmCommand::DevTeleport {
         x: NEALS_AT[0] + 2.0,
         y: NEALS_AT[1],
