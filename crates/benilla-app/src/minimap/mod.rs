@@ -236,6 +236,8 @@ struct MinimapAssets {
     /// (`Rotating-MinimapArrow.mdx`) shows exactly one of these layers per blip source's looping
     /// sequence, so one flat sprite each draws the same ([`blips::RimArrow`]).
     rim_arrows: blips::RimArrowArt,
+    /// The `!` and `?` quest mark art, loaded once.
+    quest_marks: blips::QuestMarkArt,
     /// The unit-blip atlas (`Interface\Minimap\ObjectIcons`, five 32-px dot cells).
     object_icons: Option<Handle<Image>>,
     /// `SpellShapeshiftForm.dbc`, the tracking dots' creature-type override (a cat-form druid is a
@@ -276,6 +278,10 @@ fn setup_minimap(
             for kind in blips::RimArrow::ALL {
                 rim_arrows.set(kind, assets.sprite_texture(kind.texture(), &mut images));
             }
+            let quest_marks = blips::QuestMarkArt {
+                available: assets.sprite_texture(blips::QUEST_AVAILABLE_TEXTURE, &mut images),
+                ready: assets.sprite_texture(blips::QUEST_READY_TEXTURE, &mut images),
+            };
             let object_icons =
                 assets.sprite_texture("Interface\\Minimap\\ObjectIcons", &mut images);
             if mask.is_none() {
@@ -297,6 +303,7 @@ fn setup_minimap(
                 arrow,
                 poi,
                 rim_arrows,
+                quest_marks,
                 object_icons,
                 forms,
             });
@@ -377,7 +384,7 @@ fn emit_minimap(
         go_templates,
         locks,
         poi_marker,
-        pois,
+        (pois, marks),
         mut ping,
         script,
     ) = blip_inputs;
@@ -714,6 +721,17 @@ fn emit_minimap(
                 &mut quads,
             );
         }
+        // Quest marks sit above the landmarks and below the player arrow and the dots.
+        if let Some(marks) = &marks {
+            blips::emit_quest_marks(
+                ctx,
+                &marks.0,
+                map.0,
+                &assets.quest_marks,
+                &mut quads,
+                &mut hover,
+            );
+        }
     }
 
     // The player arrow: centered, spun to the facing. WoW orientation 0 = north (screen up),
@@ -740,6 +758,22 @@ fn emit_minimap(
 
     // The object dots draw last, above the player arrow (`0x4ed7b7`): tracking dots (cells 0/1),
     // then quest (3) and party (4) dots.
+    // A giver under a quest mark keeps no stock dot. Empty under a vanilla server.
+    let marked: std::collections::HashSet<u64> = marks
+        .as_ref()
+        .map(|m| {
+            m.0.iter()
+                .filter(|m| {
+                    matches!(
+                        m.icon,
+                        benilla_protocol::MapIcon::QuestAvailable
+                            | benilla_protocol::MapIcon::QuestReady
+                    )
+                })
+                .map(|m| m.guid)
+                .collect()
+        })
+        .unwrap_or_default();
     if let Some(ctx) = &blip_ctx {
         if let Some(icons) = &assets.object_icons {
             blips::emit_tracking_dots(
@@ -763,6 +797,7 @@ fn emit_minimap(
                 quest.statuses(),
                 &tracked,
                 self_guid,
+                &marked,
                 icons,
                 player_indoors,
                 // A dot NPC's own containment, the faces-only down-ray the entity lights use.

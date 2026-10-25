@@ -457,9 +457,15 @@ impl super::UiScript {
         } else {
             GOLD
         };
-        if let Err(e) = append_line(&self.lua, &wrapper, (text.to_string(), color), None, false) {
-            self.push_error(e);
-            return false;
+        // The first line is the name in gold; a quest mark's description lines follow in white
+        // and carry their own colour codes.
+        for (i, line) in text.split('\n').enumerate() {
+            let color = if i == 0 { color } else { WHITE };
+            if let Err(e) = append_line(&self.lua, &wrapper, (line.to_string(), color), None, false)
+            {
+                self.push_error(e);
+                return false;
+            }
         }
         set_world_owned(&self.lua, h);
         {

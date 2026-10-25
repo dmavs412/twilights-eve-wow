@@ -151,6 +151,8 @@ pub(crate) enum MinimapBlipHover {
     Npc(u64, Vec2, bool),
     /// A tracked GameObject dot: its template name, the cursor point and the grey flag.
     TrackedGo(String, Vec2, bool),
+    /// A quest mark: its name, then the description lines, joined with `\n`, and the cursor point.
+    Mark(String, Vec2),
 }
 
 /// The blip layer's system inputs, tupled to keep `emit_minimap` under Bevy's 16-parameter cap.
@@ -168,7 +170,10 @@ pub(super) type BlipInputs<'w, 's> = (
     Res<'w, GameObjectTemplates>,
     Option<Res<'w, crate::go_templates::Locks>>,
     Res<'w, crate::poi_marker::PoiMarker>,
-    Option<Res<'w, crate::area_poi::AreaPoiRes>>,
+    (
+        Option<Res<'w, crate::area_poi::AreaPoiRes>>,
+        Option<Res<'w, crate::twilight::MapMarkList>>,
+    ),
     ResMut<'w, super::MinimapPing>,
     Option<NonSendMut<'w, UiScript>>,
 );
@@ -327,6 +332,118 @@ pub(super) fn emit_landmarks(
     }
 }
 
+/// The point on the 0.8 rim in a screen direction from the widget centre.
+fn rim_point(ctx: &BlipCtx, dir: Vec2) -> Vec2 {
+    ctx.center + dir * (ctx.side * 0.5 * BLIP_EDGE_RATIO)
+}
+
+/// The quest mark icon's quad, 12 px against the 140.8 px basis.
+const QUEST_MARK_PX: f32 = 12.0;
+/// The `!` art, a mark with a quest to give.
+pub(crate) const QUEST_AVAILABLE_TEXTURE: &str = "Interface\\GossipFrame\\AvailableQuestIcon";
+/// The `?` art, a mark with a quest to hand in.
+pub(crate) const QUEST_READY_TEXTURE: &str = "Interface\\GossipFrame\\ActiveQuestIcon";
+
+/// The `!` and `?` textures; a missing one draws no mark of its kind.
+#[derive(Default)]
+pub(crate) struct QuestMarkArt {
+    pub(crate) available: Option<Handle<Image>>,
+    pub(crate) ready: Option<Handle<Image>>,
+}
+
+/// Where a quest mark draws on the minimap.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub(super) enum MarkPlace {
+    /// Within 0.8 of the view radius: at its position, as a world offset `[dx, dy]` in yards.
+    At([f32; 2]),
+    /// Past that and within [`LANDMARK_RANK_YD`]: on the rim, at this world bearing in radians
+    /// (`atan2(dy, dx)`).
+    Rim(f32),
+}
+
+/// The quest marks the minimap draws: `QuestAvailable` and `QuestReady` on `map`, in range at
+/// their position and out to [`LANDMARK_RANK_YD`] on the rim, with no slot cap.
+pub(super) fn quest_mark_blips(
+    marks: &[benilla_protocol::MapMark],
+    map: u32,
+    player: [f32; 2],
+    view_radius: f32,
+) -> Vec<(usize, MarkPlace)> {
+    use benilla_protocol::MapIcon;
+    marks
+        .iter()
+        .enumerate()
+        .filter(|(_, m)| {
+            m.map == map && matches!(m.icon, MapIcon::QuestAvailable | MapIcon::QuestReady)
+        })
+        .filter_map(|(i, m)| {
+            let (dx, dy) = (m.position[0] - player[0], m.position[1] - player[1]);
+            let d = (dx * dx + dy * dy).sqrt();
+            if d / view_radius <= BLIP_EDGE_RATIO {
+                Some((i, MarkPlace::At([dx, dy])))
+            } else if d <= LANDMARK_RANK_YD {
+                Some((i, MarkPlace::Rim(dy.atan2(dx))))
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+/// Draw the quest marks, `!` first so `?` lands above it; the later-drawn hover hit wins.
+pub(super) fn emit_quest_marks(
+    ctx: &BlipCtx,
+    marks: &[benilla_protocol::MapMark],
+    map_id: u32,
+    art: &QuestMarkArt,
+    quads: &mut UiQuads,
+    hover: &mut MinimapBlipHover,
+) {
+    use benilla_protocol::MapIcon;
+    let placed = quest_mark_blips(marks, map_id, [ctx.wx, ctx.wy], ctx.radius_yd);
+    for icon in [MapIcon::QuestAvailable, MapIcon::QuestReady] {
+        let tex = match icon {
+            MapIcon::QuestAvailable => art.available.as_ref(),
+            _ => art.ready.as_ref(),
+        };
+        let Some(tex) = tex else {
+            continue;
+        };
+        for (i, place) in placed.iter().filter(|(i, _)| marks[*i].icon == icon) {
+            let mark = &marks[*i];
+            let at = match place {
+                MarkPlace::At(_) => {
+                    ctx.center + ctx.offset([mark.position[0], mark.position[1], 0.0])
+                }
+                MarkPlace::Rim(_) => rim_point(
+                    ctx,
+                    ctx.offset([mark.position[0], mark.position[1], 0.0])
+                        .normalize_or_zero(),
+                ),
+            };
+            let rect =
+                Rect::from_center_size(at, Vec2::splat(ctx.side * (QUEST_MARK_PX / BLIP_BASIS_PX)));
+            quads.overlays.push(UiQuad {
+                rect,
+                z_key: ctx.z,
+                texture: Some(tex.clone()),
+                color: [1.0, 1.0, 1.0, ctx.alpha],
+                ..default()
+            });
+            if let (Some(c), Some(ui)) = (ctx.cursor, ctx.cursor_ui) {
+                if rect.contains(c) {
+                    let text = format!(
+                        "{}\n{}",
+                        mark.name,
+                        crate::ui_world_map::mark_description(mark)
+                    );
+                    *hover = MinimapBlipHover::Mark(text, ui);
+                }
+            }
+        }
+    }
+}
+
 /// One rim arrow on the 0.8 rim, pointing at its target, drawn in one pass as only one of the
 /// model's layers is ever opaque. Returns its rect for the hover test.
 fn push_rim_arrow(
@@ -336,7 +453,7 @@ fn push_rim_arrow(
     quads: &mut UiQuads,
 ) -> Rect {
     let dir = ctx.offset(target).normalize_or_zero();
-    let pos = ctx.center + dir * (ctx.side * 0.5 * BLIP_EDGE_RATIO);
+    let pos = rim_point(ctx, dir);
     // Quad rotation is clockwise on a y-down screen and the art points up at zero.
     let rotation = dir.x.atan2(-dir.y);
     let rect = Rect::from_center_size(pos, Vec2::splat(ctx.side * (ARROW_QUAD_PX / BLIP_BASIS_PX)));
@@ -424,6 +541,7 @@ pub(super) fn drive_blip_tooltip(
             .resolve(*npc, &commands)
             .map(|n| (n.to_string(), *at, *grey)),
         MinimapBlipHover::TrackedGo(name, at, grey) => Some((name.clone(), *at, *grey)),
+        MinimapBlipHover::Mark(text, at) => Some((text.clone(), *at, false)),
     };
     match (&show, &*last) {
         // Same blip: the reference's blip tooltip follows the cursor.
@@ -520,6 +638,35 @@ mod tests {
         let sel = select_landmarks(rows.iter(), None, 0, 0.0, 0.0, 100.0);
         let names: Vec<&str> = sel.arrows.iter().map(|(_, p, _)| p.name.as_str()).collect();
         assert_eq!(names, ["minor-near", "minor-far", "city-near"]);
+    }
+
+    fn mark(icon: benilla_protocol::MapIcon, map: u32, x: f32) -> benilla_protocol::MapMark {
+        benilla_protocol::MapMark {
+            map,
+            position: [x, 0.0],
+            guid: 1,
+            icon,
+            name: "Giver".into(),
+            subtitle: String::new(),
+            quests: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn quest_marks_split_into_in_range_rim_and_absent() {
+        use benilla_protocol::MapIcon::*;
+        let marks = [
+            mark(QuestAvailable, 0, 20.0),
+            mark(QuestReady, 0, 300.0),
+            mark(QuestAvailable, 0, 800.0),
+            mark(Vendor, 0, 20.0),
+            mark(Dungeon, 0, 300.0),
+            mark(QuestAvailable, 1, 20.0),
+        ];
+        let got = quest_mark_blips(&marks, 0, [0.0, 0.0], 100.0);
+        assert_eq!(got.len(), 2, "{got:?}");
+        assert_eq!(got[0], (0, MarkPlace::At([20.0, 0.0])));
+        assert_eq!(got[1], (1, MarkPlace::Rim(0.0)));
     }
 
     /// The marker carries `Importance` 0, so it outranks the cities though farthest.

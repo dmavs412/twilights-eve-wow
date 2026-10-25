@@ -1,7 +1,7 @@
 //! The `ObjectIcons.blp` dots of the classifier `0x4eaa90`: quest gold cell 3, tracking gold and
 //! red cells 0 and 1, party blue cell 4.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use bevy::math::Rect;
 use bevy::prelude::*;
@@ -37,6 +37,14 @@ fn quest_dot_cell(status: u32) -> Option<[f32; 4]> {
     (status == 7).then_some([0.75, 1.0, 0.0, 0.25])
 }
 
+/// The quest dot's cell for a unit, none when a quest mark already stands for its guid.
+fn quest_dot_for(status: Option<u32>, guid: u64, marked: &HashSet<u64>) -> Option<[f32; 4]> {
+    if marked.contains(&guid) {
+        return None;
+    }
+    status.and_then(quest_dot_cell)
+}
+
 /// The three gates `0x4eaa90` applies to a unit or player ahead of the status-7 compare at
 /// `0x4eac31`, so they bar the quest dot and the tracking dot alike, never a GameObject or party
 /// dot. A unit with no descriptor yet fails, as a zeroed health field does in the reference.
@@ -68,6 +76,7 @@ pub(in crate::minimap) fn emit_quest_dots(
     statuses: &HashMap<u64, u32>,
     candidates: &TrackedCandidates,
     self_guid: Option<u64>,
+    marked: &HashSet<u64>,
     icons: &Handle<Image>,
     player_indoors: bool,
     unit_indoors: impl Fn(Vec3) -> bool,
@@ -79,7 +88,7 @@ pub(in crate::minimap) fn emit_quest_dots(
         if !matches!(net.kind, EntityKind::Unit | EntityKind::Player) {
             continue; // the GameObject leg (`0x4eab43`) never reaches the status-7 compare
         }
-        let Some(cell) = statuses.get(&npc).copied().and_then(quest_dot_cell) else {
+        let Some(cell) = quest_dot_for(statuses.get(&npc).copied(), npc, marked) else {
             continue;
         };
         if !unit_dot_eligible(store, self_guid) {
@@ -380,6 +389,15 @@ mod tests {
         for s in [0, 1, 2, 3, 4, 5, 6, 8] {
             assert_eq!(quest_dot_cell(s), None, "status {s} must not dot");
         }
+    }
+
+    #[test]
+    fn a_marked_giver_keeps_no_stock_quest_dot() {
+        let marked = HashSet::from([7u64]);
+        assert_eq!(quest_dot_for(Some(7), 7, &marked), None, "marked: no dot");
+        assert!(quest_dot_for(Some(7), 8, &marked).is_some(), "unmarked");
+        assert_eq!(quest_dot_for(Some(6), 8, &marked), None, "status 6");
+        assert_eq!(quest_dot_for(None, 8, &HashSet::new()), None, "no status");
     }
 
     /// Bit `1 << (n − 1)`, `n` the lock's skill-slot `LockType` or the creature type.

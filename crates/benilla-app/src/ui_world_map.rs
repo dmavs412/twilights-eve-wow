@@ -384,7 +384,7 @@ impl LandmarkKey {
 const TWILIGHT_ICON_BASE: u32 = 64;
 
 /// The tooltip lines under a mark's name, joined with `\n`.
-fn mark_description(mark: &benilla_protocol::MapMark) -> String {
+pub(crate) fn mark_description(mark: &benilla_protocol::MapMark) -> String {
     let mut lines = Vec::new();
     if !mark.subtitle.is_empty() {
         lines.push(format!("|cffa0a0a0{}|r", mark.subtitle));
