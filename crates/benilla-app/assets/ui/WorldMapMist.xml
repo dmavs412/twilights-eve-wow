@@ -28,6 +28,8 @@
             local texture = getglobal("WorldMapMist" .. i)
             if not texture then
                 texture = mistFrame:CreateTexture("WorldMapMist" .. i, "OVERLAY")
+                -- The Highlight art is a silhouette on black, made for ADD like WorldMapHighlight.
+                texture:SetBlendMode("ADD")
             end
             return texture
         end

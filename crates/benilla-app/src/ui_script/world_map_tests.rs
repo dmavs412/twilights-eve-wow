@@ -772,6 +772,14 @@ fn the_real_catalog_mists_westfall_on_the_eastern_kingdoms_only() {
     s.run(&format!("SetMapZoom({ek})")).unwrap();
     s.run("WorldMapFrame_Update()").unwrap();
     assert!(s.eval::<bool>("return WorldMapMist1:IsShown()").unwrap());
+    for i in [1, 2] {
+        assert_eq!(
+            s.eval::<String>(&format!("return WorldMapMist{i}:GetBlendMode()"))
+                .unwrap(),
+            "ADD",
+            "the Highlight art is a silhouette on black, drawn additively like WorldMapHighlight"
+        );
+    }
     assert_eq!(
         s.eval::<String>("return WorldMapMist1:GetTexture()")
             .unwrap(),
