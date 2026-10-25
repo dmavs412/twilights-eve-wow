@@ -1327,6 +1327,70 @@ fn the_hover_names_the_zone_at_every_zoom() {
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
+/// The mouse over a dungeon mark and a quest mark on the canvas shows the mark's tooltip, at the
+/// zoom the map opens at and at the deepest zoom (#420). Each mark sits by an `AreaPOI.dbc`
+/// landmark, as in Elwynn: the Abbey's portal is 38 yd from the stock "Northshire Abbey" flag and
+/// a Goldshire quest giver stands by the "Goldshire" flag. The stock row comes first, so its POI
+/// is the earlier link and takes the hover at an equal level (`order::hit_test`).
+#[test]
+fn hovering_a_mark_on_the_canvas_shows_its_tooltip_at_every_zoom() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let marks = [
+        (
+            landmark("Northshire Abbey", 6, (0.3278, 0.2674)),
+            70,
+            (0.3213, 0.2714),
+            "Northshire Abbey",
+            "Phased Dungeon, levels 6-15",
+        ),
+        (
+            landmark("Goldshire", 6, (0.2826, 0.4307)),
+            64,
+            (0.2805, 0.4290),
+            "Marshal Dughan",
+            "Report to the Marshal",
+        ),
+    ];
+    for (stock, icon, uv, name, line) in marks {
+        let mut s = canvas_harness();
+        let mut mark = landmark(name, icon, uv);
+        mark.description = line.into();
+        s.set_world_map_landmarks(vec![stock, mark]);
+        s.run("WorldMapFrame_Update()").unwrap();
+        settle(&mut s);
+        let (u, v) = (f64::from(uv.0), f64::from(uv.1));
+        for deepest in [false, true] {
+            if deepest {
+                let at = map_point(&s, u, v);
+                wheel(&mut s, at, 20, 1.0);
+                // Off the mark and back, so the hover enters it again at this zoom.
+                s.mouse_move(1.0, 1.0);
+            }
+            let at = map_point(&s, u, v);
+            s.mouse_move(at.0, at.1);
+            settle(&mut s);
+            assert_eq!(
+                s.hit_test_name(at.0, at.1).as_deref(),
+                Some("WorldMapFramePOI2"),
+                "icon {icon}, zoom {}",
+                zoom_of(&s)
+            );
+            assert!(
+                s.eval::<bool>("return WorldMapTooltip:IsShown()").unwrap(),
+                "icon {icon}, zoom {}",
+                zoom_of(&s)
+            );
+            let texts = s
+                .eval::<(String, String)>(
+                    "return WorldMapTooltipTextLeft1:GetText(), WorldMapTooltipTextLeft2:GetText()",
+                )
+                .unwrap();
+            assert_eq!(texts, (name.into(), line.into()), "icon {icon}");
+        }
+        assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+    }
+}
+
 /// The zone dropdown lists the canvas zones alphabetically, and a choice zooms to that zone's
 /// stock size and centres it.
 #[test]

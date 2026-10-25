@@ -5,6 +5,11 @@
         ui_world_map.rs). The stock POI draws a cell of `POIIcons` for every landmark; this file
         swaps in the stock gossip icon for index 64 and up, and gives those POIs a tooltip with the
         name and one line per line of the description.
+
+        A mark's POI sits one level above the stock POIs. The `AreaPOI.dbc` rows come first in the
+        landmark list, and at an equal level the earlier link takes the mouse while the later one
+        draws on top, so a stock flag under a mark (the Abbey's portal is 38 yd from the
+        "Northshire Abbey" flag) took its hover and its tooltip (#420).
     -->
     <Script><![CDATA[
         BENILLA_MARK_ICON_BASE = 64
@@ -45,10 +50,12 @@
                     if textureIndex and textureIndex >= BENILLA_MARK_ICON_BASE then
                         texture:SetTexture(BENILLA_MARK_ICONS[textureIndex] or "Interface\\Minimap\\POIIcons")
                         texture:SetTexCoord(0, 1, 0, 1)
+                        poi:SetFrameLevel(WorldMapButton:GetFrameLevel() + 2)
                         poi.benillaMark = true
                     elseif poi.benillaMark then
                         -- The pool reuses frames; the stock update already reset the tex coords.
                         texture:SetTexture("Interface\\Minimap\\POIIcons")
+                        poi:SetFrameLevel(WorldMapButton:GetFrameLevel() + 1)
                         poi.benillaMark = nil
                     end
                 end
