@@ -17,6 +17,9 @@ const BEYOND_1_12: &[&str] = &[
     // Twilight's Eve: the world map's mist over Closed Zones (ADR 0015) has no 1.12 verb, and
     // `WorldMapMist.xml` reads the seatings from it.
     "GetMapMists",
+    // Twilight's Eve: the world map canvas (#410) has no 1.12 verb, and the canvas layer reads
+    // the zone maps it stitches from it.
+    "GetMapCanvas",
 ];
 
 /// `reference/1.12-globals.tsv`'s names.

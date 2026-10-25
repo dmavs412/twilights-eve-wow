@@ -78,12 +78,24 @@ pub struct WorldMapContinentView {
     /// [`Self::zones`], 0 for none; empty when no bitmap ships, leaving hover and click inert.
     pub zone_grid: Vec<u16>,
     pub zones: Vec<WorldMapZoneView>,
+    /// The map canvas (#410): while one exists it is the only view, with no continent or world
+    /// level. Twilight only.
+    pub canvas: Option<WorldMapCanvasView>,
+}
+
+/// The zone maps of a continent's open zones, each drawn at its true place on one rect.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct WorldMapCanvasView {
+    /// 1-based indices into the continent's `zones`, in draw order, later on top.
+    pub zones: Vec<u32>,
+    /// The canvas rect `(left, right, top, bottom)`, in the same form as `loc_rect`.
+    pub loc_rect: (f32, f32, f32, f32),
 }
 
 /// The `0x4a6ec0` cell law: clamp the UV, un-lerp through the loc rect to world coordinates,
 /// scale by `0x806544` (1/(64·533.33)), range-check, and index `col - row·128`, `row` being
 /// truncated from the negated axis and so `<= 0`.
-fn area_grid_cell(loc: (f32, f32, f32, f32), u: f32, v: f32) -> Option<usize> {
+pub(crate) fn area_grid_cell(loc: (f32, f32, f32, f32), u: f32, v: f32) -> Option<usize> {
     const K: f32 = 2.929_687_6e-5;
     let (left, right, top, bottom) = loc;
     let clamp01 = |p: f32| {
@@ -114,7 +126,8 @@ fn area_grid_cell(loc: (f32, f32, f32, f32), u: f32, v: f32) -> Option<usize> {
 }
 
 /// The 1-based zone or city under a hover or click: the continent's one grid, windowed by its own
-/// loc rect at continent level and by the displayed zone's at zone level (`0x4a6ec0`).
+/// loc rect at continent level, by the displayed zone's at zone level (`0x4a6ec0`) and by the
+/// canvas rect on the canvas.
 fn grid_area(state: &WorldMapState, u: f32, v: f32) -> Option<u16> {
     // An instance map has no grid (`0x4a6ec0` opens `cmp esi,-2; je 0x4a70ed`); tested apart from
     // `c == 0`, which the world sheet shares.
@@ -129,15 +142,17 @@ fn grid_area(state: &WorldMapState, u: f32, v: f32) -> Option<u16> {
     if cont.zone_grid.is_empty() {
         return None;
     }
-    let rect = if z == 0 {
-        cont.loc_rect
-    } else {
-        cont.zones.get(z as usize - 1)?.loc_rect
+    let canvas = shown_canvas(state);
+    let rect = match (canvas, z) {
+        (Some(canvas), _) => canvas.loc_rect,
+        (None, 0) => cont.loc_rect,
+        (None, z) => cont.zones.get(z as usize - 1)?.loc_rect,
     };
     let cell = area_grid_cell(rect, u, v)?;
     match cont.zone_grid.get(cell).copied().unwrap_or(0) {
         0 => None,
-        // A Closed Zone is a miss: no name, no highlight, no drill-in.
+        // A Closed Zone is a miss: no name, no highlight, no drill-in. So is a zone off the
+        // canvas list, on the canvas.
         zi if cont
             .zones
             .get(zi as usize - 1)
@@ -145,8 +160,40 @@ fn grid_area(state: &WorldMapState, u: f32, v: f32) -> Option<u16> {
         {
             None
         }
+        zi if canvas.is_some_and(|canvas| !canvas.zones.contains(&u32::from(zi))) => None,
         zi => Some(zi),
     }
+}
+
+/// The 1-based index of the first continent with a canvas, where every selection lands.
+fn canvas_continent(state: &WorldMapState) -> Option<u32> {
+    state
+        .continents
+        .iter()
+        .position(|cont| cont.canvas.is_some())
+        .map(|i| i as u32 + 1)
+}
+
+/// The canvas when the selection is on it: `(cc, 0)` with no direct area.
+fn shown_canvas(state: &WorldMapState) -> Option<&WorldMapCanvasView> {
+    let cc = canvas_continent(state)?;
+    if state.direct_area.is_some() || state.selection != (cc, 0) {
+        return None;
+    }
+    state.continents[cc as usize - 1].canvas.as_ref()
+}
+
+/// A canvas UV through the canvas rect to world coordinates, then into the zone's own map UV.
+fn canvas_to_zone_uv(
+    canvas: (f32, f32, f32, f32),
+    zone: (f32, f32, f32, f32),
+    u: f32,
+    v: f32,
+) -> (f32, f32) {
+    let (cl, cr, ct, cb) = canvas;
+    let (zl, zr, zt, zb) = zone;
+    let (wx, wy) = (cl - u * (cl - cr), ct - v * (ct - cb));
+    ((zl - wx) / (zl - zr), (zt - wy) / (zt - zb))
 }
 
 /// The client's power-of-two round-up (`0x4a833c`).
@@ -210,8 +257,13 @@ const OVERLAY_RECIP_Y: f32 = 1.0 / 668.0;
 /// rect holds the cursor, edges inclusive, names its first area; a zero-width rect or a NaN cursor
 /// never hits, and a nameless overlay is walked past. The list is the revealed one (`[0xb6e630]`,
 /// built by `0x4a6ad9`, gated at `0x4a6bfa`), so a fogged sub-area has no name.
-fn overlay_hover(state: &WorldMapState, x: f32, y: f32) -> Option<String> {
-    revealed_overlays(state).into_iter().find_map(|o| {
+fn overlay_hover(
+    zone: Option<&WorldMapZoneView>,
+    explored: &[u32],
+    x: f32,
+    y: f32,
+) -> Option<String> {
+    revealed_overlays(zone, explored).into_iter().find_map(|o| {
         let (top, left, bottom, right) = o.hit_rect;
         let (xlo, xhi) = (
             left as f32 * OVERLAY_RECIP_X,
@@ -306,7 +358,8 @@ fn rects_overlap(a: (f32, f32, f32, f32), b: (f32, f32, f32, f32)) -> bool {
 
 /// The mist seatings of the shown map: one per Closed Zone of the shown continent, against the
 /// continent's rect at continent level and, at zone level, against the shown zone's rect for each
-/// closed zone that overlaps it. Empty at world level and on an instance map.
+/// closed zone that overlaps it. On the canvas, one per zone off the canvas list whose rect meets
+/// the canvas rect, closed or not. Empty at world level and on an instance map.
 fn mists(wm: &WorldMapState) -> Vec<(&WorldMapZoneView, Seat)> {
     if wm.direct_area.is_some() {
         return Vec::new();
@@ -315,6 +368,18 @@ fn mists(wm: &WorldMapState) -> Vec<(&WorldMapZoneView, Seat)> {
     let Some(cont) = c.checked_sub(1).and_then(|i| wm.continents.get(i as usize)) else {
         return Vec::new();
     };
+    if let Some(canvas) = shown_canvas(wm) {
+        return cont
+            .zones
+            .iter()
+            .enumerate()
+            .filter(|(i, zone)| {
+                !canvas.zones.contains(&(*i as u32 + 1))
+                    && rects_overlap(canvas.loc_rect, zone.loc_rect)
+            })
+            .filter_map(|(_, zone)| seat(canvas.loc_rect, zone).map(|s| (zone, s)))
+            .collect();
+    }
     let frame = if z == 0 {
         cont.loc_rect
     } else {
@@ -333,7 +398,8 @@ fn mists(wm: &WorldMapState) -> Vec<(&WorldMapZoneView, Seat)> {
 /// `0x4a7fa0`'s level dispatch. Continent level: the grid's zone highlights. Zone level: the
 /// overlay pre-search, then the grid through the displayed zone's rect (`0x4a7620`), naming a
 /// neighbour but never the displayed zone, name only (`0x4a812e`). World level: the tail, as the
-/// continent highlight the reference draws there is not built here.
+/// continent highlight the reference draws there is not built here. On the canvas: the listed
+/// zone under the cursor, then its own overlay pre-search, names only.
 fn hover(wm: &WorldMapState, x: f32, y: f32) -> Hover {
     // An instance map resolves no area (`0x4a7620` opens `cmp esi,-2; je 0x4a76d7`).
     if wm.direct_area.is_some() {
@@ -343,8 +409,16 @@ fn hover(wm: &WorldMapState, x: f32, y: f32) -> Hover {
     let Some(cont) = c.checked_sub(1).and_then(|i| wm.continents.get(i as usize)) else {
         return Hover::Miss;
     };
+    if let Some(canvas) = shown_canvas(wm) {
+        let Some(zone) = grid_area(wm, x, y).and_then(|zi| cont.zones.get(zi as usize - 1)) else {
+            return Hover::Miss;
+        };
+        let (zu, zv) = canvas_to_zone_uv(canvas.loc_rect, zone.loc_rect, x, y);
+        let name = overlay_hover(Some(zone), &wm.explored, zu, zv);
+        return Hover::Name(name.unwrap_or_else(|| zone.name.clone()));
+    }
     if z != 0 {
-        if let Some(name) = overlay_hover(wm, x, y) {
+        if let Some(name) = overlay_hover(current_zone(wm), &wm.explored, x, y) {
             return Hover::Name(name);
         }
         return match grid_area(wm, x, y) {
@@ -389,20 +463,19 @@ fn current_zone(state: &WorldMapState) -> Option<&WorldMapZoneView> {
         .get(z as usize - 1)
 }
 
-/// The displayed zone's revealed overlays in catalog order, the i-th `GetMapOverlayInfo(i)`.
-fn revealed_overlays(state: &WorldMapState) -> Vec<&WorldMapOverlayView> {
-    current_zone(state)
-        .map(|zone| {
-            zone.overlays
-                .iter()
-                .filter(|o| {
-                    o.explore_bits
-                        .iter()
-                        .any(|&b| explored_bit(&state.explored, b))
-                })
-                .collect()
-        })
-        .unwrap_or_default()
+/// A zone's revealed overlays in catalog order; for the displayed zone, the i-th is
+/// `GetMapOverlayInfo(i)`.
+fn revealed_overlays<'a>(
+    zone: Option<&'a WorldMapZoneView>,
+    explored: &[u32],
+) -> Vec<&'a WorldMapOverlayView> {
+    zone.map(|zone| {
+        zone.overlays
+            .iter()
+            .filter(|o| o.explore_bits.iter().any(|&b| explored_bit(explored, b)))
+            .collect()
+    })
+    .unwrap_or_default()
 }
 
 impl super::UiScript {
@@ -527,8 +600,12 @@ fn store_selection(model: &mut Model, selection: (u32, u32), direct_area: Option
 }
 
 /// Clamps and stores a continent and zone, clearing the direct area: the tail of `SetMapZoom`,
-/// `SetMapToCurrentZone` and `ProcessMapClick`.
+/// `SetMapToCurrentZone` and `ProcessMapClick`. While a canvas exists, it stores the canvas.
 fn select(model: &mut Model, continent: i64, zone: i64) {
+    if let Some(cc) = canvas_continent(&model.worldmap) {
+        store_selection(model, (cc, 0), None);
+        return;
+    }
     let c = continent.clamp(0, model.worldmap.continents.len() as i64) as u32;
     let z = if c == 0 {
         0
@@ -548,9 +625,13 @@ fn select(model: &mut Model, continent: i64, zone: i64) {
 }
 
 /// Selects an instance map, `0x4a67a0` with `ecx == -2`: the zone cell goes to -1 (our 0) and the
-/// row id is stored unchecked, as every reader bound-checks it ([`direct_row`]).
+/// row id is stored unchecked, as every reader bound-checks it ([`direct_row`]). While a canvas
+/// exists, it stores the canvas.
 fn select_direct(model: &mut Model, wma_id: u32) {
-    store_selection(model, (0, 0), Some(wma_id));
+    match canvas_continent(&model.worldmap) {
+        Some(cc) => store_selection(model, (cc, 0), None),
+        None => store_selection(model, (0, 0), Some(wma_id)),
+    }
 }
 
 /// Applies the resolver `0x4a6650`'s answer, the tail of `SetMapToCurrentZone` and of the login
@@ -750,6 +831,10 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             if model.worldmap.direct_area.is_some() {
                 return Ok(());
             }
+            // The canvas has no level to drill into.
+            if shown_canvas(&model.worldmap).is_some() {
+                return Ok(());
+            }
             if model.worldmap.selection.0 == 0 {
                 let hit = model.worldmap.continents.iter().position(|cont| {
                     let (u0, v0, u1, v1) = cont.world_rect;
@@ -822,6 +907,50 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
 
+    // GetMapCanvas() → nil off the canvas; on it an array in draw order of {name, file, left,
+    // top, width, height, overlays}, the zone's rect in canvas UV and its revealed overlays as
+    // GetMapOverlayInfo gives them at zone level. Twilight only: the stock client has no such verb.
+    g.set(
+        "GetMapCanvas",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let wm = &model.worldmap;
+            let Some(canvas) = shown_canvas(wm) else {
+                return Ok(Value::Nil);
+            };
+            let cont = &wm.continents[wm.selection.0 as usize - 1];
+            let (cl, cr, ct, cb) = canvas.loc_rect;
+            let out = lua.create_table()?;
+            for zone in canvas
+                .zones
+                .iter()
+                .filter_map(|&zi| zi.checked_sub(1).and_then(|i| cont.zones.get(i as usize)))
+            {
+                let (zl, zr, zt, zb) = zone.loc_rect;
+                let t = lua.create_table()?;
+                t.set("name", zone.name.as_str())?;
+                t.set("file", zone.map_file.as_str())?;
+                t.set("left", f64::from((cl - zl) / (cl - cr)))?;
+                t.set("top", f64::from((ct - zt) / (ct - cb)))?;
+                t.set("width", f64::from((zl - zr) / (cl - cr)))?;
+                t.set("height", f64::from((zt - zb) / (ct - cb)))?;
+                let overlays = lua.create_table()?;
+                for o in revealed_overlays(Some(zone), &wm.explored) {
+                    let ot = lua.create_table()?;
+                    ot.set("texture", o.texture.as_str())?;
+                    ot.set("width", i64::from(o.width))?;
+                    ot.set("height", i64::from(o.height))?;
+                    ot.set("offsetX", i64::from(o.offset_x))?;
+                    ot.set("offsetY", i64::from(o.offset_y))?;
+                    overlays.push(ot)?;
+                }
+                t.set("overlays", overlays)?;
+                out.push(t)?;
+            }
+            Ok(Value::Table(out))
+        })?,
+    )?;
+
     g.set(
         "GetNumMapLandmarks",
         lua.create_function(|lua, ()| {
@@ -865,7 +994,8 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
         "GetNumMapOverlays",
         lua.create_function(|lua, ()| {
             let model = lua.app_data_ref::<Model>().expect("model app_data");
-            Ok(revealed_overlays(&model.worldmap).len() as i64)
+            let wm = &model.worldmap;
+            Ok(revealed_overlays(current_zone(wm), &wm.explored).len() as i64)
         })?,
     )?;
 
@@ -876,10 +1006,16 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
         lua.create_function(|lua, i: i64| {
             let overlay = {
                 let model = lua.app_data_ref::<Model>().expect("model app_data");
+                let wm = &model.worldmap;
                 usize::try_from(i)
                     .ok()
                     .and_then(|i| i.checked_sub(1))
-                    .and_then(|i| revealed_overlays(&model.worldmap).get(i).cloned().cloned())
+                    .and_then(|i| {
+                        revealed_overlays(current_zone(wm), &wm.explored)
+                            .get(i)
+                            .cloned()
+                            .cloned()
+                    })
             };
             let Some(o) = overlay else {
                 return Ok(MultiValue::from_vec(vec![Value::Nil]));

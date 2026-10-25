@@ -80,6 +80,7 @@ fn catalog() -> Vec<WorldMapContinentView> {
         world_rect: (0.0, 0.0, 1.0, 1.0),
         loc_rect: (10000.0, -10000.0, 10000.0, -10000.0),
         zone_grid: Vec::new(),
+        canvas: None,
         zones: vec![WorldMapZoneView {
             name: "Warsong Gulch".into(),
             area_id: 3277,

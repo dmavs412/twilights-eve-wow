@@ -27,6 +27,7 @@ fn push_catalog_closing(s: &mut UiScript, closed_city: bool) {
             world_rect: (0.08882, 0.07910, 0.40020, 0.86952),
             loc_rect: (17066.6, -19733.2, 12799.9, -11733.3),
             zone_grid: Vec::new(),
+            canvas: None,
             zones: vec![
                 WorldMapZoneView {
                     name: "Durotar".into(),
@@ -52,6 +53,7 @@ fn push_catalog_closing(s: &mut UiScript, closed_city: bool) {
             world_rect: (0.62375, 0.02695, 0.92315, 0.87126),
             loc_rect: (16000.0, -19199.9, 7466.6, -16000.0),
             zone_grid: ek_grid,
+            canvas: None,
             zones: vec![
                 WorldMapZoneView {
                     name: "Elwynn Forest".into(),
@@ -745,4 +747,211 @@ fn world_loc_map_position_projects_through_the_host() {
             "{call}: {err}"
         );
     }
+}
+
+/// Kalimdor as in [`push_catalog_closing`], then Eastern Kingdoms with the real loc rects of the
+/// four canvas zones and two neighbours, and the canvas of #410 over Duskwood, Redridge Mountains,
+/// Elwynn Forest and Stormwind City. Elwynn has one overlay, Goldshire, on explore bit 5, whose
+/// hit rect is the whole detail frame.
+fn push_canvas_catalog(s: &mut UiScript) {
+    const CANVAS: (f32, f32, f32, f32) = (1579.69, -3785.94, -7939.58, -11516.67);
+    let zone = |name: &str, area_id: u32, file: &str, loc_rect, closed| WorldMapZoneView {
+        name: name.into(),
+        area_id,
+        map_file: file.into(),
+        loc_rect,
+        overlays: Vec::new(),
+        closed,
+    };
+    let mut elwynn = zone(
+        "Elwynn Forest",
+        12,
+        "Elwynn",
+        (1535.42, -1935.42, -7939.58, -10254.17),
+        false,
+    );
+    elwynn.overlays.push(WorldMapOverlayView {
+        texture: r"Interface\WorldMap\Elwynn\GOLDSHIRE".into(),
+        width: 256,
+        height: 256,
+        offset_x: 300,
+        offset_y: 200,
+        explore_bits: vec![5],
+        hit_rect: (0, 0, 668, 1002),
+        area_name: Some("Goldshire".into()),
+    });
+    let mut ek_grid = vec![0u16; 128 * 128];
+    ek_grid[crate::script::worldmap::area_grid_cell(CANVAS, 0.28, 0.43).unwrap()] = 1;
+    ek_grid[crate::script::worldmap::area_grid_cell(CANVAS, 0.05, 0.85).unwrap()] = 5;
+    push_catalog(s);
+    let mut catalog = s.model_ref().worldmap.continents.clone();
+    catalog[1] = WorldMapContinentView {
+        name: "Eastern Kingdoms".into(),
+        map_file: "Azeroth".into(),
+        world_rect: (0.62375, 0.02695, 0.92315, 0.87126),
+        loc_rect: (16000.0, -19199.9, 7466.6, -16000.0),
+        zone_grid: ek_grid,
+        zones: vec![
+            elwynn,
+            zone(
+                "Stormwind City",
+                1519,
+                "Stormwind",
+                (1380.97, 36.70, -8278.85, -9175.21),
+                false,
+            ),
+            zone(
+                "Duskwood",
+                10,
+                "Duskwood",
+                (833.33, -1866.67, -9716.67, -11516.67),
+                false,
+            ),
+            zone(
+                "Redridge Mountains",
+                44,
+                "Redridge",
+                (-1570.83, -3741.67, -8575.0, -10022.92),
+                false,
+            ),
+            zone(
+                "Westfall",
+                40,
+                "Westfall",
+                (3016.67, -483.33, -9400.0, -11733.33),
+                true,
+            ),
+            zone(
+                "Dun Morogh",
+                1,
+                "DunMorogh",
+                (1802.08, -3122.92, -3877.08, -7160.42),
+                false,
+            ),
+        ],
+        canvas: Some(WorldMapCanvasView {
+            zones: vec![3, 4, 1, 2],
+            loc_rect: CANVAS,
+        }),
+    };
+    s.set_world_map_catalog(catalog);
+}
+
+/// While a continent has a canvas, every selection lands on it and a click drills nowhere (#410).
+#[test]
+fn every_selection_lands_on_the_canvas() {
+    let mut s = script();
+    push_canvas_catalog(&mut s);
+    s.set_world_map_feed(Some((2, 1)), None, 0.0, None, Vec::new(), Vec::new());
+    for call in [
+        "SetMapZoom(0)",
+        "SetMapZoom(1)",
+        "SetMapZoom(2, 1)",
+        "SetMapToCurrentZone()",
+        "ProcessMapClick(0.5, 0.5)",
+    ] {
+        s.run(call).unwrap();
+        assert_eq!(
+            s.eval::<(i64, i64)>("return GetCurrentMapContinent(), GetCurrentMapZone()")
+                .unwrap(),
+            (2, 0),
+            "{call}"
+        );
+    }
+}
+
+/// `GetMapCanvas` lists the canvas zones in draw order with their rects in canvas UV and their
+/// revealed overlays.
+#[test]
+fn the_canvas_lists_its_zones_in_draw_order() {
+    let mut s = script();
+    push_canvas_catalog(&mut s);
+    s.run("SetMapZoom(2)").unwrap();
+    assert_eq!(
+        s.eval::<(String, String, String, String)>(
+            "local c = GetMapCanvas() return c[1].name, c[2].name, c[3].name, c[4].name"
+        )
+        .unwrap(),
+        (
+            "Duskwood".into(),
+            "Redridge Mountains".into(),
+            "Elwynn Forest".into(),
+            "Stormwind City".into()
+        )
+    );
+    let (n, file, left, top, width, height, overlays) = s
+        .eval::<(i64, String, f64, f64, f64, f64, i64)>(
+            "local c = GetMapCanvas() local e = c[3] \
+             return getn(c), e.file, e.left, e.top, e.width, e.height, getn(e.overlays)",
+        )
+        .unwrap();
+    assert_eq!((n, file.as_str(), overlays), (4, "Elwynn", 0));
+    for (got, want) in [
+        (left, 0.0083),
+        (top, 0.0),
+        (width, 0.6469),
+        (height, 0.6471),
+    ] {
+        assert!((got - want).abs() < 1e-3, "{got} vs {want}");
+    }
+    s.set_world_map_explored(vec![1 << 5]);
+    assert_eq!(
+        s.eval::<(i64, String, i64, i64, i64, i64)>(
+            "local o = GetMapCanvas()[3].overlays \
+             return getn(o), o[1].texture, o[1].width, o[1].height, o[1].offsetX, o[1].offsetY"
+        )
+        .unwrap(),
+        (
+            1,
+            r"Interface\WorldMap\Elwynn\GOLDSHIRE".into(),
+            256,
+            256,
+            300,
+            200
+        )
+    );
+}
+
+/// The canvas mists every off-list zone that meets its rect, seated against the canvas rect.
+#[test]
+fn the_canvas_mists_the_zones_off_its_list() {
+    let mut s = script();
+    push_canvas_catalog(&mut s);
+    s.run("SetMapZoom(2)").unwrap();
+    let (n, file, texture_x, scroll_x, scroll_y) = s
+        .eval::<(i64, String, f64, f64, f64)>(
+            "local m = GetMapMists() return getn(m), m[1].file, m[1].textureX, m[1].scrollX, \
+             m[1].scrollY",
+        )
+        .unwrap();
+    assert_eq!((n, file.as_str()), (1, "Westfall"), "Dun Morogh misses");
+    for (got, want) in [(texture_x, 0.6523), (scroll_x, -0.2678), (scroll_y, 0.4083)] {
+        assert!((got - want).abs() < 1e-3, "{got} vs {want}");
+    }
+}
+
+/// The canvas hover names a listed zone, or its explored sub-area under the cursor, and never
+/// draws a highlight; a misted zone names nothing.
+#[test]
+fn the_canvas_hover_names_zones_and_their_explored_areas() {
+    let mut s = script();
+    push_canvas_catalog(&mut s);
+    s.run("SetMapZoom(2)").unwrap();
+    let hover = |s: &UiScript, x: f32, y: f32| {
+        s.eval::<(Option<String>, Option<String>)>(&format!("return UpdateMapHighlight({x}, {y})"))
+            .unwrap()
+    };
+    assert_eq!(hover(&s, 0.28, 0.43), (Some("Elwynn Forest".into()), None));
+    s.set_world_map_explored(vec![1 << 5]);
+    assert_eq!(hover(&s, 0.28, 0.43), (Some("Goldshire".into()), None));
+    assert_eq!(hover(&s, 0.05, 0.85), (None, None));
+}
+
+/// A catalog with no canvas has no `GetMapCanvas` answer.
+#[test]
+fn no_canvas_answers_nil() {
+    let mut s = script();
+    push_catalog(&mut s);
+    s.run("SetMapZoom(2)").unwrap();
+    assert!(s.eval::<bool>("return GetMapCanvas() == nil").unwrap());
 }

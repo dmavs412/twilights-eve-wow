@@ -221,6 +221,7 @@ pub(crate) fn build_catalog(
             world_rect,
             loc_rect: (cont.loc_left, cont.loc_right, cont.loc_top, cont.loc_bottom),
             zone_grid,
+            canvas: None,
             zones: zones
                 .iter()
                 .map(|(wma_id, a, name)| map_row_view(*wma_id, a, name.clone(), areas, &wmo))

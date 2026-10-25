@@ -981,6 +981,7 @@ fn zoom_catalog() -> Vec<benilla_ui::script::WorldMapContinentView> {
         world_rect: (0.62375, 0.02695, 0.92315, 0.87126),
         loc_rect: (16000.0, -19199.9, 7466.6, -16000.0),
         zone_grid: vec![1u16; 128 * 128],
+        canvas: None,
         zones: vec![
             zone("Elwynn Forest", 12, "Elwynn"),
             zone("Westfall", 40, "Westfall"),
