@@ -15,7 +15,7 @@ mod chain;
 pub use chain::{Chain, ChainEntry};
 /// The PNG art the sheet names, embedded in the binary (ADR 0011).
 mod art;
-pub use art::{embedded_icon_png, is_png, png_to_rgba};
+pub use art::{embedded_icon_png, has_embedded_icon, is_png, png_to_rgba};
 
 mod callings;
 pub use callings::{calling as twilight_calling, parse_callings, CallingInfo};

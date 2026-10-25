@@ -18,12 +18,22 @@ const ART_DIRS: [&str; 2] = [
 /// The PNG bytes behind an art path (any case, `/` or `\`, with or without `.blp`), or `None`
 /// when the path is not embedded art.
 pub fn embedded_icon_png(path: &str) -> Option<Vec<u8>> {
+    embedded(path).cloned()
+}
+
+/// Whether [`embedded_icon_png`] answers for `path`, without copying the bytes: the UI's texture
+/// probe asks this on every `SetTexture`.
+pub fn has_embedded_icon(path: &str) -> bool {
+    embedded(path).is_some()
+}
+
+fn embedded(path: &str) -> Option<&'static Vec<u8>> {
     static ART: OnceLock<HashMap<String, Vec<u8>>> = OnceLock::new();
     let art = ART.get_or_init(|| parse_art(CLIENT_ART));
     let lower = path.replace('\\', "/").to_ascii_lowercase();
     let name = ART_DIRS.iter().find_map(|dir| lower.strip_prefix(dir))?;
     let name = name.strip_suffix(".blp").unwrap_or(name);
-    art.get(name).cloned()
+    art.get(name)
 }
 
 fn parse_art(json: &str) -> HashMap<String, Vec<u8>> {
@@ -90,5 +100,16 @@ mod tests {
         assert!(is_png(&art["ember_lash"]));
         assert!(embedded_icon_png("Interface\\Icons\\Twilight\\nothing").is_none());
         assert!(embedded_icon_png("Interface\\Icons\\Spell_Fire_Fireball").is_none());
+    }
+
+    /// A painted item icon (#406) as the sprite loader asks for it, with `.blp`, decodes.
+    #[test]
+    fn a_painted_item_icon_decodes_from_the_loaders_path() {
+        let path = "interface/icons/twilight/wriggling_worms.blp";
+        assert!(has_embedded_icon(path));
+        let png = embedded_icon_png(path).expect("the worms icon is embedded");
+        let (w, h, rgba) = crate::png_to_rgba(&png).expect("it decodes");
+        assert_eq!((w, h), (128, 128));
+        assert_eq!(rgba.len(), 128 * 128 * 4);
     }
 }

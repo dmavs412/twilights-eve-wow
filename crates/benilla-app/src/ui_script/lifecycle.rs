@@ -84,9 +84,12 @@ fn install_addon_asset_resolvers(world: &mut World, script: &mut UiScript) {
     let size_root = root.clone();
     let font_chain = chain.clone();
     let font_root = root.clone();
+    // The same stores, in the same order, as the sprite loader reads (`decode_sprite_origin`), or a
+    // painted item icon is refused before the loader is asked.
     script.set_texture_probe(Box::new(move |path| {
         benilla_assets::sprite_candidates(path).iter().any(|c| {
             benilla_assets::layer_image(c).is_some()
+                || benilla_formats::has_embedded_icon(c)
                 || chain.lock_recover().contains(c)
                 || root
                     .as_deref()
