@@ -68,6 +68,24 @@ fn view_radius_yd(zoom: u8, inside_zoom: u8, inside: bool) -> f32 {
     }
 }
 
+/// The screen rect of a square of `size_yd` whose north-west corner is `(north, west)` in WoW
+/// coordinates, for a view centred on the player at `(wx, wy)`. Screen left is world +Y and
+/// screen up is world +X. The tiles and the closed-chunk fill share it.
+fn world_rect(
+    center: Vec2,
+    wx: f32,
+    wy: f32,
+    px_per_yd: f32,
+    north: f32,
+    west: f32,
+    size_yd: f32,
+) -> Rect {
+    let left = center.x + (wy - west) * px_per_yd;
+    let top = center.y + (north - wx) * -px_per_yd;
+    let size = size_yd * px_per_yd;
+    Rect::new(left, top, left + size, top + size)
+}
+
 /// The outer-edge bleed: a tile on its group grid's boundary grows 1 yd on that side, so groups
 /// whose bboxes touch overlap by 2 yd (`0x6a549e`…`0x6a54db`, `0xca8098` = `0.5 + 0.5`).
 const EDGE_BLEED_YD: f32 = 1.0;
@@ -566,10 +584,7 @@ fn emit_minimap(
                 };
                 // The tile's max-x/max-y world corner is its north-west corner = screen top-left.
                 let (tile_north, tile_west) = tile_to_world(tx, ty);
-                let left = center.x + (wy - tile_west) * px_per_yd;
-                let top = center.y + (tile_north - wx) * -px_per_yd;
-                let size = TILE_YARDS * px_per_yd;
-                let rect = Rect::new(left, top, left + size, top + size);
+                let rect = world_rect(center, wx, wy, px_per_yd, tile_north, tile_west, TILE_YARDS);
                 if rect.intersect(slot.rect).is_empty() {
                     continue;
                 }
@@ -587,6 +602,29 @@ fn emit_minimap(
                     ..default()
                 });
             }
+        }
+        // Closed Zones (ADR 0015): each closed chunk is the scene fog colour, the colour the mist
+        // curtain takes, not Westfall's stock tiles. The day tint does not apply.
+        let fog = lighting
+            .as_ref()
+            .map(|l| l.fog_color)
+            .unwrap_or([0.6, 0.62, 0.65]);
+        for (gx, gy) in
+            benilla_formats::closed_zones::closed_chunks_near(map.0, wx, wy, half_extent)
+        {
+            let (north, west) = benilla_formats::closed_zones::chunk_corner(gx, gy);
+            let rect = world_rect(center, wx, wy, px_per_yd, north, west, CHUNK_YARDS);
+            if rect.intersect(slot.rect).is_empty() {
+                continue;
+            }
+            quads.overlays.push(UiQuad {
+                rect,
+                z_key: slot.z,
+                texture: None,
+                color: [fog[0], fog[1], fog[2], slot.alpha],
+                mask: mask.clone(),
+                ..default()
+            });
         }
     }
 
@@ -919,7 +957,30 @@ impl Plugin for MinimapPlugin {
 
 #[cfg(test)]
 mod tests {
-    use super::minimap_day_tint;
+    use super::{minimap_day_tint, world_rect, CHUNK_YARDS};
+    use bevy::math::Vec2;
+
+    #[test]
+    fn world_rect_puts_a_chunk_west_of_the_player_left_of_centre() {
+        // The chunk's west edge is 50 yd west (greater y); it spans the player's x.
+        let center = Vec2::new(100.0, 100.0);
+        let (wx, wy) = (-10000.0, 500.0);
+        let r = world_rect(
+            center,
+            wx,
+            wy,
+            2.0,
+            wx + CHUNK_YARDS * 0.5,
+            wy + 50.0,
+            CHUNK_YARDS,
+        );
+        assert!(r.max.x < center.x || r.min.x < center.x, "left of centre");
+        assert!((r.min.x - (center.x - 100.0)).abs() < 1e-3, "50 yd * 2 px");
+        assert!(
+            r.min.y < center.y && r.max.y > center.y,
+            "straddles centre.y"
+        );
+    }
 
     fn approx(a: [f32; 3], b: [f32; 3]) {
         for c in 0..3 {

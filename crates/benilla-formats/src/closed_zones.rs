@@ -77,9 +77,67 @@ pub fn chunk_closed(map: u32, gx: u32, gy: u32) -> bool {
     map == c.map && c.chunks.contains(&(gx, gy))
 }
 
+/// The north-west corner `(north x, west y)` of chunk `(gx, gy)` in WoW coordinates. The chunk
+/// spans [`CHUNK_SIZE`] yards south (down x) and east (down y) of it.
+pub fn chunk_corner(gx: u32, gy: u32) -> (f32, f32) {
+    (
+        32.0 * TILE_SIZE - gy as f32 * CHUNK_SIZE,
+        32.0 * TILE_SIZE - gx as f32 * CHUNK_SIZE,
+    )
+}
+
+/// Every closed chunk `(gx, gy)` whose square overlaps the square of half-side `radius_yd`
+/// around `(x, y)` on `map`, in the file's grid convention (`gx` from y, `gy` from x).
+pub fn closed_chunks_near(map: u32, x: f32, y: f32, radius_yd: f32) -> Vec<(u32, u32)> {
+    let c = closed();
+    if map != c.map {
+        return Vec::new();
+    }
+    let index = |v: f32| ((32.0 * TILE_SIZE - v) / CHUNK_SIZE).floor() as i64;
+    let last = CHUNKS - 1;
+    // World coordinates shrink as the index grows, so the square's max edge gives the low index.
+    let (gx_lo, gx_hi) = (
+        index(y + radius_yd).clamp(0, last),
+        index(y - radius_yd).clamp(0, last),
+    );
+    let (gy_lo, gy_hi) = (
+        index(x + radius_yd).clamp(0, last),
+        index(x - radius_yd).clamp(0, last),
+    );
+    let mut out = Vec::new();
+    for gx in gx_lo..=gx_hi {
+        for gy in gy_lo..=gy_hi {
+            if c.chunks.contains(&(gx as u32, gy as u32)) {
+                out.push((gx as u32, gy as u32));
+            }
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn closed_chunks_near_finds_westfall_and_not_northshire() {
+        let near = closed_chunks_near(0, -10508.8, 1045.23, 100.0);
+        assert!(!near.is_empty(), "Gryan Stoutmantle");
+        for (gx, gy) in near {
+            assert!(chunk_closed(0, gx, gy), "({gx}, {gy})");
+        }
+        assert!(closed_chunks_near(0, -8933.54, -136.523, 300.0).is_empty());
+        assert!(closed_chunks_near(1, -10508.8, 1045.23, 100.0).is_empty());
+    }
+
+    #[test]
+    fn chunk_corner_puts_a_point_within_a_chunk_south_and_east_of_it() {
+        let (x, y) = (-10508.8_f32, 1045.23_f32);
+        let index = |v: f32| ((32.0 * TILE_SIZE - v) / CHUNK_SIZE).floor() as u32;
+        let (north, west) = chunk_corner(index(y), index(x));
+        assert!((0.0..=CHUNK_SIZE).contains(&(north - x)), "south of north");
+        assert!((0.0..=CHUNK_SIZE).contains(&(west - y)), "east of west");
+    }
 
     #[test]
     fn sentinel_hill_is_closed_and_goldshire_and_northshire_are_open() {
