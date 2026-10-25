@@ -8,6 +8,13 @@ use benilla_protocol::messages::{ItemDamage, ItemInfo, ItemSpellEntry, ItemUseSp
 use benilla_protocol::SessionEvent;
 use serde::Deserialize;
 
+/// A profession with a Journal (ADR 0023), as an item row's `journal` key spells it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum Profession {
+    Fishing,
+}
+
 /// One item template, as the realm's table spells it. A field the table leaves out is at its
 /// default.
 #[derive(Debug, Clone, Deserialize)]
@@ -78,6 +85,9 @@ pub(crate) struct Template {
     pub(crate) teleport_to: Option<[f32; 4]>,
     /// The tooltip's yellow flavor line; empty for none.
     pub(crate) description: String,
+    /// The profession Journal this item belongs to (ADR 0023): a received one goes to its
+    /// Satchel, never a bag slot.
+    pub(crate) journal: Option<Profession>,
     /// A readable item's pages, one string each. The client's reader expands `$N`, `$B` and the
     /// other macros; the realm sends the text as written.
     pub(crate) pages: Vec<String>,
@@ -117,6 +127,7 @@ impl Default for Template {
             start_quest: 0,
             teleport_to: None,
             description: String::new(),
+            journal: None,
             pages: Vec::new(),
             stackable: 0,
             container_slots: 0,

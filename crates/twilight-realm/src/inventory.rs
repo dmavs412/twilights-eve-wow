@@ -3,7 +3,11 @@
 //! `InventorySlots`): 0-18 equipment, 19-22 the bag slots, 23-38 the backpack. An item inside a
 //! bag is at `(bag slot, slot in the bag)`, the wire's own address for it.
 
-use crate::items;
+use std::collections::BTreeMap;
+
+use benilla_protocol::{SatchelPick, SatchelRow};
+
+use crate::{fish, items};
 
 /// Every player slot the realm keeps.
 pub(crate) const SLOTS: usize = 39;
@@ -109,8 +113,113 @@ pub(crate) fn bag_size(entry: u32) -> u8 {
     items::template(entry).map_or(0, |t| t.container_slots.min(36) as u8)
 }
 
+/// A Journal's Satchel (ADR 0023): the Journal Items a character holds outside its bags. An item
+/// with no durability is a count per entry; one with durability is a piece with its own wear.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct Satchel {
+    pub(crate) counts: BTreeMap<u32, u32>,
+    /// In arrival order.
+    pub(crate) pieces: Vec<Item>,
+}
+
+/// Whether `entry` is a Journal Item: its row names a profession.
+pub(crate) fn is_journal(entry: u32) -> bool {
+    items::template(entry).is_some_and(|t| t.journal.is_some())
+}
+
+/// Whether a Journal Item is a piece rather than a count.
+fn is_piece(entry: u32) -> bool {
+    items::template(entry).is_some_and(|t| t.durability > 0)
+}
+
+impl Satchel {
+    /// The rows of `profession`'s tab: counted rows by entry ascending, then the pieces.
+    pub(crate) fn rows(&self, profession: items::Profession) -> Vec<SatchelRow> {
+        let of = |entry: u32| items::template(entry).and_then(|t| t.journal) == Some(profession);
+        let tackle = |entry: u32| {
+            fish::pole(entry).is_some()
+                || fish::lure(entry).is_some()
+                || fish::bait(entry).is_some()
+        };
+        let counted = self
+            .counts
+            .iter()
+            .filter(|(entry, count)| of(**entry) && **count > 0)
+            .map(|(&item, &count)| SatchelRow {
+                item,
+                count,
+                wear: None,
+                tackle: tackle(item),
+            });
+        let pieces = self
+            .pieces
+            .iter()
+            .filter(|p| of(p.entry))
+            .map(|p| SatchelRow {
+                item: p.entry,
+                count: 1,
+                wear: Some((
+                    p.durability,
+                    items::template(p.entry).map_or(0, |t| t.durability),
+                )),
+                tackle: tackle(p.entry),
+            });
+        counted.chain(pieces).collect()
+    }
+
+    /// How many of `entry` the Satchel holds, a piece counting one.
+    pub(crate) fn count(&self, entry: u32) -> u32 {
+        self.counts.get(&entry).copied().unwrap_or(0)
+            + self.pieces.iter().filter(|p| p.entry == entry).count() as u32
+    }
+
+    /// Puts a bag item in: a piece keeps its durability.
+    pub(crate) fn deposit(&mut self, item: Item) {
+        if is_piece(item.entry) {
+            self.pieces.push(item);
+        } else {
+            *self.counts.entry(item.entry).or_insert(0) += item.count;
+        }
+    }
+
+    /// Removes up to `count` of `entry`, counted first, then the latest pieces; how many left.
+    pub(crate) fn take(&mut self, entry: u32, count: u32) -> u32 {
+        let mut left = count;
+        if let Some(have) = self.counts.get_mut(&entry) {
+            let n = left.min(*have);
+            *have -= n;
+            left -= n;
+            if *have == 0 {
+                self.counts.remove(&entry);
+            }
+        }
+        while left > 0 {
+            let Some(at) = self.pieces.iter().rposition(|p| p.entry == entry) else {
+                break;
+            };
+            self.pieces.remove(at);
+            left -= 1;
+        }
+        count - left
+    }
+
+    /// The index of the piece `pick` names: the first with its durability, else the last of the
+    /// entry to arrive.
+    fn piece_at(&self, pick: SatchelPick) -> Option<usize> {
+        match pick.durability {
+            Some(d) => self
+                .pieces
+                .iter()
+                .position(|p| p.entry == pick.item && p.durability == d),
+            None => self.pieces.iter().rposition(|p| p.entry == pick.item),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Inventory {
+    /// The Journal Items held outside the bags.
+    pub(crate) satchel: Satchel,
     slots: [Option<Item>; SLOTS],
     /// What each equipped bag holds, by bag slot (19-22), sized by the bag; empty with no bag.
     bags: [Vec<Option<Item>>; 4],
@@ -125,6 +234,7 @@ pub(crate) struct Inventory {
 impl Default for Inventory {
     fn default() -> Self {
         Self {
+            satchel: Satchel::default(),
             slots: std::array::from_fn(|_| None),
             bags: std::array::from_fn(|_| Vec::new()),
             money: 0,
@@ -298,8 +408,78 @@ impl Inventory {
 
     /// Stores `count` of `entry`, onto its stacks with room first and then into free places
     /// (vmangos `Player::CanStoreItem`), the backpack before the bags, all or nothing. The places
-    /// it changed, and whether each now holds a new item.
+    /// it changed, and whether each now holds a new item. A Journal Item goes to the Satchel
+    /// instead, never fails and changes no place.
     pub(crate) fn store(&mut self, entry: u32, count: u32) -> Result<Vec<(Pos, bool)>, Full> {
+        if is_journal(entry) {
+            if is_piece(entry) {
+                for _ in 0..count {
+                    let piece = self.new_item(entry, 1);
+                    self.satchel.pieces.push(piece);
+                }
+            } else {
+                *self.satchel.counts.entry(entry).or_insert(0) += count;
+            }
+            return Ok(Vec::new());
+        }
+        self.store_in_bags(entry, count)
+    }
+
+    /// How many of `entry` the bags have room for.
+    fn bag_room(&self, entry: u32) -> u32 {
+        let stack = items::template(entry).map_or(1, |t| t.stack_size());
+        self.storage()
+            .into_iter()
+            .filter(|at| self.takes(*at, entry))
+            .map(|at| match self.get(at) {
+                None => stack,
+                Some(item) if item.entry == entry => stack.saturating_sub(item.count),
+                Some(_) => 0,
+            })
+            .sum()
+    }
+
+    /// Moves up to `count` of the Satchel entry `pick` names into the bags. A counted row moves
+    /// what fits; a piece moves one, with its durability. The number moved and the places
+    /// changed; `Full` when nothing fits.
+    pub(crate) fn withdraw(
+        &mut self,
+        pick: SatchelPick,
+        count: u32,
+    ) -> Result<(u32, Vec<(Pos, bool)>), Full> {
+        let room = self.bag_room(pick.item);
+        if is_piece(pick.item) {
+            let Some(at) = self.satchel.piece_at(pick) else {
+                return Ok((0, Vec::new()));
+            };
+            if room == 0 {
+                return Err(Full);
+            }
+            let piece = self.satchel.pieces.remove(at);
+            let changed = self.store_in_bags(piece.entry, 1)?;
+            if let Some(&(at, _)) = changed.first() {
+                if let Some(item) = self.get_mut(at) {
+                    item.durability = piece.durability;
+                }
+            }
+            return Ok((1, changed));
+        }
+        let have = self.satchel.counts.get(&pick.item).copied().unwrap_or(0);
+        let n = count.min(have).min(room);
+        if n == 0 {
+            return if have > 0 && count > 0 {
+                Err(Full)
+            } else {
+                Ok((0, Vec::new()))
+            };
+        }
+        let changed = self.store_in_bags(pick.item, n)?;
+        self.satchel.take(pick.item, n);
+        Ok((n, changed))
+    }
+
+    /// [`Inventory::store`] onto the bags alone.
+    fn store_in_bags(&mut self, entry: u32, count: u32) -> Result<Vec<(Pos, bool)>, Full> {
         let stack = items::template(entry).map_or(1, |t| t.stack_size());
         // Where it may go, a quiver or ammo pouch first (vmangos `CanStoreItem`'s special bags).
         let mut places: Vec<Pos> = self
@@ -358,13 +538,14 @@ impl Inventory {
         self.clone().store(entry, count).is_ok()
     }
 
-    /// How many of `entry` the backpack and bags hold.
+    /// How many of `entry` the backpack, bags and Satchel hold.
     pub(crate) fn count(&self, entry: u32) -> u32 {
         self.storage()
             .into_iter()
             .filter_map(|p| self.get(p))
             .filter(|i| i.entry == entry)
             .map(|i| i.count)
-            .sum()
+            .sum::<u32>()
+            + self.satchel.count(entry)
     }
 }

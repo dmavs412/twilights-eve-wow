@@ -149,7 +149,7 @@ fn effective_level(c: &Char, boost: Boost) -> u32 {
 }
 
 /// `FishingJournal`: the bait, and every pool's fish with the character's best catch of each.
-pub(super) fn journal(c: &Char) -> SessionEvent {
+pub(crate) fn journal(c: &Char) -> SessionEvent {
     let best = |item: u32| {
         c.fish_log
             .iter()
@@ -187,6 +187,8 @@ pub(super) fn journal(c: &Char) -> SessionEvent {
             })
             .collect(),
         pages,
+        lure_waiting: None,
+        satchel: c.inventory.satchel.rows(items::Profession::Fishing),
     }
 }
 
@@ -823,6 +825,8 @@ impl InWorld {
             if !hinted {
                 events.push(journal(c));
             }
+            // A collect quest may want the fish that just landed in the Satchel.
+            crate::quests::refresh(c, events);
         }
         events.push(SessionEvent::FishingEnd {
             caught,

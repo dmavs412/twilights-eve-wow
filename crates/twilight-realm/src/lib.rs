@@ -456,6 +456,17 @@ pub enum RealmCommand {
         slot: FishingGearSlot,
         from: Option<(u8, u8)>,
     },
+    /// Move up to `count` of a Journal Satchel entry into the bags (ADR 0023), where it is an
+    /// ordinary item. A piece moves one per command; `pick.durability` names which.
+    WithdrawFromJournal {
+        pick: benilla_protocol::SatchelPick,
+        count: u32,
+    },
+    /// Put the bag item at `from` into its profession's Satchel; anything that is not a Journal
+    /// Item changes nothing.
+    DepositToJournal {
+        from: (u8, u8),
+    },
     /// A dev aid (`WOW_PROBE_GOTO`): on the next tick, teleport the player to `(x, y)` on its
     /// map, on the ground there, facing `facing` or its own way. A spot with no ground is refused
     /// with a notification.
@@ -1303,6 +1314,22 @@ impl Realm {
         self.handle_as(SessionId::DEFAULT, command);
     }
 
+    /// Runs a Satchel change on the character in the world; a change saves it.
+    fn change_satchel(
+        &mut self,
+        f: impl FnOnce(&mut characters::Char, &mut Vec<SessionEvent>) -> bool,
+    ) {
+        let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(guid) else {
+            return;
+        };
+        if f(c, &mut self.events) {
+            self.save(guid);
+        }
+    }
+
     fn handle_served(&mut self, command: RealmCommand) {
         match command {
             RealmCommand::ListCharacters => self.send_roster(),
@@ -1408,14 +1435,31 @@ impl Realm {
             } => self.fishing_result(won, perfect, treasure, secs),
             RealmCommand::SetBait { item } => self.set_bait(item),
             RealmCommand::SetFishingGear { slot, from } => self.set_fishing_gear(slot, from),
+            RealmCommand::WithdrawFromJournal { pick, count } => {
+                self.change_satchel(|c, events| equipment::withdraw(c, pick, count, events))
+            }
+            RealmCommand::DepositToJournal { from: (bag, slot) } => {
+                self.change_satchel(|c, events| equipment::deposit(c, bag, slot, events))
+            }
             RealmCommand::UseItem { bag, slot } => {
                 if let Some(w) = &mut self.world {
                     if let Some(c) = self.characters.get_mut(w.guid) {
                         let slot = inventory::Pos { bag, slot };
                         // A Quest Starter opens its quest; food and drink are eaten at once;
                         // anything else casts its spell.
-                        // A lure goes on the character (#329).
-                        if !quests::use_starter(c, slot, &mut self.events)
+                        // A Journal Item that is not food or drink goes back to its Satchel.
+                        let journal = c.inventory.get(slot).is_some_and(|i| {
+                            inventory::is_journal(i.entry)
+                                && !items::template(i.entry)
+                                    .is_some_and(|t| t.restores_health > 0 || t.restores_mana > 0)
+                        });
+                        if journal {
+                            let guid = w.guid;
+                            if equipment::deposit(c, bag, slot.slot, &mut self.events) {
+                                self.save(guid);
+                            }
+                        } else if !quests::use_starter(c, slot, &mut self.events)
+                            // A lure goes on the character (#329).
                             && !w.use_lure(slot, c, &mut self.events)
                         {
                             match w.eat_or_drink(slot, c, self.wall, &mut self.events) {

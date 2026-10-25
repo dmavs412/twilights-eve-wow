@@ -156,11 +156,7 @@ pub(crate) fn load(
 
 /// How many of `item` the character carries.
 fn carried(c: &Char, item: u32) -> u32 {
-    c.inventory
-        .iter()
-        .filter(|(_, i)| i.entry == item)
-        .map(|(_, i)| i.count)
-        .sum()
+    c.inventory.count(item)
 }
 
 /// Whether every objective of `a` is met.

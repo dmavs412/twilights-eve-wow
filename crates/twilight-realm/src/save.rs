@@ -7,13 +7,14 @@ use crate::characters::{Char, FishLog};
 use crate::content::{self, Calling};
 use crate::dungeon::Place;
 use crate::inn::Bind;
-use crate::inventory::{bag_size, Inventory, Item, Pos};
+use crate::inventory::{bag_size, is_journal, Inventory, Item, Pos, Satchel};
 
-/// The save format this realm writes. It also reads versions 1 to 3, which have the same layout;
+/// The save format this realm writes. It also reads versions 1 to 4, which have the same layout;
 /// a save from any other version is refused. From version 3 the spell ids are the sheet's own,
 /// from version 4 the talent ids too (ADR 0011): an older save's action bar and talents name
-/// stock ids, remapped on load through [`OLD_IDS`].
-pub const SAVE_VERSION: u32 = 4;
+/// stock ids, remapped on load through [`OLD_IDS`]. Version 5 adds the Satchel (ADR 0023): an
+/// older save's bag Journal Items move into it on load, once.
+pub const SAVE_VERSION: u32 = 5;
 
 /// The oldest save version the realm still reads. Version 2's quests are Hunting Quests, done once
 /// per character; version 1's are read the same way.
@@ -200,6 +201,10 @@ struct Save {
     fishing_pole: Option<SavedItem>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     fishing_lure: Option<SavedItem>,
+    /// The Satchel's Journal Items (version 5). Before `items`, since TOML writes an array of
+    /// tables after every plain key.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    satchel: Vec<SavedHeld>,
     /// Gear and bags. Added within version 1: a save without them carries nothing. Kept last,
     /// since TOML writes an array of tables after every plain key.
     #[serde(default)]
@@ -240,6 +245,58 @@ impl From<&SavedBind> for Bind {
                 orientation: s.orientation,
             },
             area: s.area,
+        }
+    }
+}
+
+/// One Satchel entry in a save: a counted row, or a piece with its durability.
+#[derive(Serialize, Deserialize)]
+struct SavedHeld {
+    entry: u32,
+    count: u32,
+    /// A piece's wear; left out for a counted row.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    durability: Option<u32>,
+}
+
+fn saved_satchel(satchel: &Satchel) -> Vec<SavedHeld> {
+    let counted = satchel.counts.iter().map(|(&entry, &count)| SavedHeld {
+        entry,
+        count,
+        durability: None,
+    });
+    let pieces = satchel.pieces.iter().map(|p| SavedHeld {
+        entry: p.entry,
+        count: 1,
+        durability: Some(p.durability),
+    });
+    counted.chain(pieces).collect()
+}
+
+/// Fills `inventory`'s Satchel from a save; an unknown item makes it unreadable.
+fn load_satchel(inventory: &mut Inventory, saved: &[SavedHeld]) -> Result<(), SaveError> {
+    for s in saved {
+        let template = crate::items::template(s.entry).ok_or(SaveError::Unreadable)?;
+        if s.count == 0 {
+            return Err(SaveError::Unreadable);
+        }
+        let mut item = inventory.new_item(s.entry, s.count);
+        item.durability = s.durability.unwrap_or(template.durability);
+        inventory.satchel.deposit(item);
+    }
+    Ok(())
+}
+
+/// A version 4 save kept its Journal Items in the bags: move them to the Satchel.
+fn move_journal_items(inventory: &mut Inventory) {
+    let held: Vec<Pos> = inventory
+        .iter()
+        .filter(|(_, item)| is_journal(item.entry))
+        .map(|(at, _)| at)
+        .collect();
+    for at in held {
+        if let Some(item) = inventory.take(at) {
+            inventory.satchel.deposit(item);
         }
     }
 }
@@ -375,6 +432,7 @@ pub(crate) fn export(c: &Char) -> String {
         legend_hints: c.legend_hints.clone(),
         fishing_pole: saved_gear(&c.fishing_pole),
         fishing_lure: saved_gear(&c.fishing_lure),
+        satchel: saved_satchel(&c.inventory.satchel),
         items: saved_items(&c.inventory),
         quests: crate::quests::saved(&c.quests),
     };
@@ -417,7 +475,14 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
             s.talents
         },
         talent_wipes: s.talent_wipes,
-        inventory: load_inventory(s.money, s.ammo, &s.items)?,
+        inventory: {
+            let mut inventory = load_inventory(s.money, s.ammo, &s.items)?;
+            load_satchel(&mut inventory, &s.satchel)?;
+            if header.version < 5 {
+                move_journal_items(&mut inventory);
+            }
+            inventory
+        },
         item_cooldowns: s
             .item_ready_at
             .iter()

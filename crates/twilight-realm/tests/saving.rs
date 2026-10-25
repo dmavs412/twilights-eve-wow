@@ -161,21 +161,21 @@ fn garbage_is_unreadable() {
 }
 
 #[test]
-fn the_save_is_version_4_and_older_saves_still_load() {
-    assert_eq!(twilight_realm::SAVE_VERSION, 4);
+fn the_save_is_version_5_and_older_saves_still_load() {
+    assert_eq!(twilight_realm::SAVE_VERSION, 5);
     let mut realm = realm();
     let (guid, _) = enter_new(&mut realm, "Vol", TAUREN);
     let blob = realm.export_character(guid).unwrap();
-    assert!(blob.starts_with("version = 4\n"), "{blob}");
+    assert!(blob.starts_with("version = 5\n"), "{blob}");
 
-    for version in [1, 2, 3] {
-        let old = blob.replacen("version = 4\n", &format!("version = {version}\n"), 1);
+    for version in [1, 2, 3, 4] {
+        let old = blob.replacen("version = 5\n", &format!("version = {version}\n"), 1);
         let mut fresh = Realm::new();
         assert_eq!(fresh.import_character(&old), Ok(guid));
         assert_eq!(
             fresh.export_character(guid),
             Some(blob.clone()),
-            "version {version} written back as version 4"
+            "version {version} written back as version 5"
         );
     }
 }
@@ -205,7 +205,7 @@ fn an_older_saves_stock_spell_ids_on_the_bar_load_as_the_sheets_own() {
         realm.handle(RealmCommand::SetActionButton { slot, packed });
     }
     let blob = realm.export_character(guid).unwrap();
-    let old = blob.replacen("version = 4\n", "version = 2\n", 1);
+    let old = blob.replacen("version = 5\n", "version = 2\n", 1);
 
     let mut fresh = Realm::new();
     fresh.import_character(&old).unwrap();
@@ -217,7 +217,7 @@ fn an_older_saves_stock_spell_ids_on_the_bar_load_as_the_sheets_own() {
     );
     assert!(!again.contains(&format!("[2, {unknown}]")));
 
-    // A version 4 save is the sheet's already: the same ids load untouched.
+    // A current save is the sheet's already: the same ids load untouched.
     let mut current = Realm::new();
     current.import_character(&blob).unwrap();
     assert_eq!(current.export_character(guid), Some(blob));
@@ -235,7 +235,7 @@ fn an_older_saves_stock_talent_ids_load_as_the_sheets_own_and_an_unknown_one_is_
         .export_character(guid)
         .unwrap()
         .replace("level = 1\n", "level = 10\n")
-        .replacen("version = 4\n", "version = 3\n", 1)
+        .replacen("version = 5\n", "version = 3\n", 1)
         .replace(
             "money = 0\n",
             &format!("money = 0\ntalents = [[{unknown}, 1], [{stock}, 1]]\n"),
@@ -255,7 +255,7 @@ fn a_save_from_another_format_version_is_refused() {
     let mut realm = realm();
     let (guid, _) = enter_new(&mut realm, "Vol", TAUREN);
     let blob = realm.export_character(guid).unwrap();
-    let future = blob.replacen("version = 4\n", "version = 999\n", 1);
+    let future = blob.replacen("version = 5\n", "version = 999\n", 1);
     assert_ne!(blob, future, "the save names its version");
 
     let mut fresh = Realm::new();

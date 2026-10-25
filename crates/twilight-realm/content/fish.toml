@@ -9,6 +9,9 @@
 # `Spell.dbc` name, and `restores_health` over `duration_ms` from that spell's tooltip. The mana
 # potions carry their tooltip spell but no `restores_mana`: the realm's potion restores health
 # only, so a mana potion with one would be used up for nothing.
+# `item` rows also take `journal = "fishing"` (ADR 0023): the item is a Journal Item, and any
+# way of receiving one puts it in the Fishing Journal's Satchel, never a bag slot. Every fish,
+# trophy, pole, lure and bait sets it; the treasure rows do not.
 #
 # [spell], the cast:
 #   id                 the Fishing spell; its effect summons the bobber GameObject
@@ -93,43 +96,43 @@
 
 item = [
   # The fish.
-  { entry = 6291, name = "Raw Brilliant Smallfish", quality = 1, item_level = 5, required_level = 1, display_id = 18535, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000 },
-  { entry = 6289, name = "Raw Longjaw Mud Snapper", quality = 1, item_level = 15, required_level = 5, display_id = 24702, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, use_spell = 433, use_spell_name = "Food", restores_health = 61, duration_ms = 18000 },
-  { entry = 6308, name = "Raw Bristle Whisker Catfish", quality = 1, item_level = 25, required_level = 15, display_id = 24710, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000 },
-  { entry = 6303, name = "Raw Slitherskin Mackerel", quality = 1, item_level = 5, required_level = 1, display_id = 24697, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000 },
-  { entry = 6361, name = "Raw Rainbow Fin Albacore", quality = 1, item_level = 15, required_level = 5, display_id = 24709, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 433, use_spell_name = "Food", restores_health = 61, duration_ms = 18000 },
-  { entry = 6358, name = "Oily Blackmouth", quality = 1, item_level = 15, class = 5, display_id = 9150, sell_price = 4, buy_price = 16, buy_count = 1, stackable = 20 },
-  { entry = 6292, name = "10 Pound Mud Snapper", quality = 1, item_level = 15, class = 15, display_id = 24701, sell_price = 8, buy_price = 34, buy_count = 1, stackable = 1 },
-  { entry = 6294, name = "12 Pound Mud Snapper", quality = 1, item_level = 15, class = 15, display_id = 24701, sell_price = 10, buy_price = 40, buy_count = 1, stackable = 1 },
-  { entry = 6309, name = "17 Pound Catfish", quality = 1, item_level = 15, class = 15, display_id = 24712, sell_price = 100, buy_price = 400, buy_count = 1, stackable = 1 },
-  { entry = 6310, name = "19 Pound Catfish", quality = 1, item_level = 15, class = 15, display_id = 24712, sell_price = 150, buy_price = 600, buy_count = 1, stackable = 1 },
+  { entry = 6291, name = "Raw Brilliant Smallfish", quality = 1, item_level = 5, required_level = 1, display_id = 18535, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 6289, name = "Raw Longjaw Mud Snapper", quality = 1, item_level = 15, required_level = 5, display_id = 24702, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, use_spell = 433, use_spell_name = "Food", restores_health = 61, duration_ms = 18000, journal = "fishing" },
+  { entry = 6308, name = "Raw Bristle Whisker Catfish", quality = 1, item_level = 25, required_level = 15, display_id = 24710, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 6303, name = "Raw Slitherskin Mackerel", quality = 1, item_level = 5, required_level = 1, display_id = 24697, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 6361, name = "Raw Rainbow Fin Albacore", quality = 1, item_level = 15, required_level = 5, display_id = 24709, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 433, use_spell_name = "Food", restores_health = 61, duration_ms = 18000, journal = "fishing" },
+  { entry = 6358, name = "Oily Blackmouth", quality = 1, item_level = 15, class = 5, display_id = 9150, sell_price = 4, buy_price = 16, buy_count = 1, stackable = 20, journal = "fishing" },
+  { entry = 6292, name = "10 Pound Mud Snapper", quality = 1, item_level = 15, class = 15, display_id = 24701, sell_price = 8, buy_price = 34, buy_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 6294, name = "12 Pound Mud Snapper", quality = 1, item_level = 15, class = 15, display_id = 24701, sell_price = 10, buy_price = 40, buy_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 6309, name = "17 Pound Catfish", quality = 1, item_level = 15, class = 15, display_id = 24712, sell_price = 100, buy_price = 400, buy_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 6310, name = "19 Pound Catfish", quality = 1, item_level = 15, class = 15, display_id = 24712, sell_price = 150, buy_price = 600, buy_count = 1, stackable = 1, journal = "fishing" },
   # The poles: a two-handed weapon of subclass 20. The Darkwood pole is Redridge treasure.
-  { entry = 6256, name = "Fishing Pole", quality = 1, item_level = 1, class = 2, subclass = 20, inventory_type = 17, display_id = 20730, sell_price = 4, buy_price = 23, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 16, material = 2, sheath = 1, damage = [[2.0, 4.0, 0]] },
-  { entry = 6366, name = "Darkwood Fishing Pole", quality = 1, item_level = 20, required_level = 15, class = 2, subclass = 20, inventory_type = 17, display_id = 20731, sell_price = 1066, buy_price = 5330, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 40, sheath = 1, damage = [[28.0, 43.0, 0]], equip_spells = [7825], equip_spell_names = ["Fishing Skill +15"] },
+  { entry = 6256, name = "Fishing Pole", quality = 1, item_level = 1, class = 2, subclass = 20, inventory_type = 17, display_id = 20730, sell_price = 4, buy_price = 23, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 16, material = 2, sheath = 1, damage = [[2.0, 4.0, 0]], journal = "fishing" },
+  { entry = 6366, name = "Darkwood Fishing Pole", quality = 1, item_level = 20, required_level = 15, class = 2, subclass = 20, inventory_type = 17, display_id = 20731, sell_price = 1066, buy_price = 5330, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 40, sheath = 1, damage = [[28.0, 43.0, 0]], equip_spells = [7825], equip_spell_names = ["Fishing Skill +15"], journal = "fishing" },
   # The stock lures.
-  { entry = 6529, name = "Shiny Bauble", quality = 1, item_level = 10, display_id = 12410, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 1, durability = 20, use_spell = 8087, use_spell_name = "Shiny Bauble" },
-  { entry = 6530, name = "Nightcrawlers", quality = 1, item_level = 20, display_id = 18097, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, durability = 20, use_spell = 8088, use_spell_name = "Nightcrawlers" },
-  { entry = 6532, name = "Bright Baubles", quality = 1, item_level = 30, display_id = 12423, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 20, use_spell = 8090, use_spell_name = "Bright Baubles" },
-  { entry = 6533, name = "Aquadynamic Fish Attractor", quality = 1, item_level = 30, class = 7, subclass = 3, display_id = 12425, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 30, use_spell = 8089, use_spell_name = "Aquadynamic Fish Attractor" },
+  { entry = 6529, name = "Shiny Bauble", quality = 1, item_level = 10, display_id = 12410, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 1, durability = 20, use_spell = 8087, use_spell_name = "Shiny Bauble", journal = "fishing" },
+  { entry = 6530, name = "Nightcrawlers", quality = 1, item_level = 20, display_id = 18097, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, durability = 20, use_spell = 8088, use_spell_name = "Nightcrawlers", journal = "fishing" },
+  { entry = 6532, name = "Bright Baubles", quality = 1, item_level = 30, display_id = 12423, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 20, use_spell = 8090, use_spell_name = "Bright Baubles", journal = "fishing" },
+  { entry = 6533, name = "Aquadynamic Fish Attractor", quality = 1, item_level = 30, class = 7, subclass = 3, display_id = 12425, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 30, use_spell = 8089, use_spell_name = "Aquadynamic Fish Attractor", journal = "fishing" },
   # The custom baits: white trade goods, with a stock display that reads right in the bag.
-  { entry = 960101, name = "Wriggling Worms", quality = 1, item_level = 5, class = 7, display_id = 18098, sell_price = 2, buy_price = 10, buy_count = 1, stackable = 20 },
-  { entry = 960102, name = "Shiny Minnow", quality = 1, item_level = 5, class = 7, display_id = 18535, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 20 },
-  { entry = 960103, name = "Gnoll Ear", quality = 1, item_level = 5, class = 7, display_id = 1438, sell_price = 1, stackable = 20 },
-  { entry = 960104, name = "Prison Gruel", quality = 1, item_level = 5, class = 7, display_id = 6428, sell_price = 1, stackable = 20 },
-  { entry = 960105, name = "Worg Haunch", quality = 1, item_level = 5, class = 7, display_id = 2474, sell_price = 1, stackable = 20 },
+  { entry = 960101, name = "Wriggling Worms", quality = 1, item_level = 5, class = 7, display_id = 18098, sell_price = 2, buy_price = 10, buy_count = 1, stackable = 20, journal = "fishing" },
+  { entry = 960102, name = "Shiny Minnow", quality = 1, item_level = 5, class = 7, display_id = 18535, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 20, journal = "fishing" },
+  { entry = 960103, name = "Gnoll Ear", quality = 1, item_level = 5, class = 7, display_id = 1438, sell_price = 1, stackable = 20, journal = "fishing" },
+  { entry = 960104, name = "Prison Gruel", quality = 1, item_level = 5, class = 7, display_id = 6428, sell_price = 1, stackable = 20, journal = "fishing" },
+  { entry = 960105, name = "Worg Haunch", quality = 1, item_level = 5, class = 7, display_id = 2474, sell_price = 1, stackable = 20, journal = "fishing" },
   # The Legendary Fish's trophies (#331): orange, one to a character, sold for 500 copper a level.
-  { entry = 960001, name = "Old Goldfin", quality = 5, item_level = 10, class = 15, display_id = 18535, sell_price = 5000, max_count = 1, stackable = 1 },
-  { entry = 960002, name = "Brother Bass", quality = 5, item_level = 6, class = 15, display_id = 24702, sell_price = 3000, max_count = 1, stackable = 1 },
-  { entry = 960003, name = "Moonlit Gar", quality = 5, item_level = 12, class = 15, display_id = 24709, sell_price = 6000, max_count = 1, stackable = 1 },
-  { entry = 960004, name = "Gnoll Tooth Snapper", quality = 5, item_level = 13, class = 15, display_id = 24701, sell_price = 6500, max_count = 1, stackable = 1 },
-  { entry = 960005, name = "The Harbourmaster's Eel", quality = 5, item_level = 15, class = 15, display_id = 24712, sell_price = 7500, max_count = 1, stackable = 1 },
-  { entry = 960006, name = "The Lightscale", quality = 5, item_level = 12, class = 15, display_id = 24710, sell_price = 6000, max_count = 1, stackable = 1 },
-  { entry = 960007, name = "Bell-Toll Bream", quality = 5, item_level = 14, class = 15, display_id = 24697, sell_price = 7000, max_count = 1, stackable = 1 },
-  { entry = 960008, name = "Stockade Sucker", quality = 5, item_level = 18, class = 15, display_id = 24701, sell_price = 9000, max_count = 1, stackable = 1 },
-  { entry = 960009, name = "Blackrock Bloodfin", quality = 5, item_level = 22, class = 15, display_id = 24712, sell_price = 11000, max_count = 1, stackable = 1 },
-  { entry = 960010, name = "The Millstone Carp", quality = 5, item_level = 18, class = 15, display_id = 24702, sell_price = 9000, max_count = 1, stackable = 1 },
-  { entry = 960011, name = "Everstill Leviathan", quality = 5, item_level = 25, class = 15, display_id = 24712, sell_price = 12500, max_count = 1, stackable = 1 },
-  { entry = 960012, name = "Worgfang Pike", quality = 5, item_level = 22, class = 15, display_id = 24709, sell_price = 11000, max_count = 1, stackable = 1 },
+  { entry = 960001, name = "Old Goldfin", quality = 5, item_level = 10, class = 15, display_id = 18535, sell_price = 5000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960002, name = "Brother Bass", quality = 5, item_level = 6, class = 15, display_id = 24702, sell_price = 3000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960003, name = "Moonlit Gar", quality = 5, item_level = 12, class = 15, display_id = 24709, sell_price = 6000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960004, name = "Gnoll Tooth Snapper", quality = 5, item_level = 13, class = 15, display_id = 24701, sell_price = 6500, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960005, name = "The Harbourmaster's Eel", quality = 5, item_level = 15, class = 15, display_id = 24712, sell_price = 7500, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960006, name = "The Lightscale", quality = 5, item_level = 12, class = 15, display_id = 24710, sell_price = 6000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960007, name = "Bell-Toll Bream", quality = 5, item_level = 14, class = 15, display_id = 24697, sell_price = 7000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960008, name = "Stockade Sucker", quality = 5, item_level = 18, class = 15, display_id = 24701, sell_price = 9000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960009, name = "Blackrock Bloodfin", quality = 5, item_level = 22, class = 15, display_id = 24712, sell_price = 11000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960010, name = "The Millstone Carp", quality = 5, item_level = 18, class = 15, display_id = 24702, sell_price = 9000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960011, name = "Everstill Leviathan", quality = 5, item_level = 25, class = 15, display_id = 24712, sell_price = 12500, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960012, name = "Worgfang Pike", quality = 5, item_level = 22, class = 15, display_id = 24709, sell_price = 11000, max_count = 1, stackable = 1, journal = "fishing" },
   # Treasure that no other content file has.
   { entry = 2447, name = "Peacebloom", quality = 1, item_level = 5, class = 7, display_id = 7396, sell_price = 10, buy_price = 40, buy_count = 1, stackable = 20, material = 7 },
   { entry = 2455, name = "Minor Mana Potion", quality = 1, item_level = 15, required_level = 5, display_id = 15715, sell_price = 10, stackable = 5, use_spell = 437, use_spell_name = "Restore Mana" },

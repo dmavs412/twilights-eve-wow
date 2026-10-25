@@ -465,6 +465,7 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
         zones,
         legends,
         pages,
+        ..
     } = event
     else {
         return JournalView::default();

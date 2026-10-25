@@ -34,7 +34,7 @@ mod death;
 mod discovery;
 mod dungeon;
 mod fear;
-mod fishing;
+pub(crate) mod fishing;
 mod food;
 mod ground;
 mod notoriety;

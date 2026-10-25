@@ -126,6 +126,25 @@ pub struct FishPage {
     pub favourite_bait: Option<u32>,
 }
 
+/// Twilight's Eve, not 1.12: one row of a Journal's Satchel (ADR 0023).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct SatchelRow {
+    pub item: u32,
+    /// A counted row's count; 1 for a piece.
+    pub count: u32,
+    /// A piece's (durability, max durability); `None` for a counted row.
+    pub wear: Option<(u32, u32)>,
+    /// Tackle: a `[[pole]]`, `[[lure]]` or `[[bait]]` row. Otherwise Catch.
+    pub tackle: bool,
+}
+
+/// Which Satchel item: its entry, and a piece's durability (`None` for a counted row).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SatchelPick {
+    pub item: u32,
+    pub durability: Option<u32>,
+}
+
 /// Twilight's Eve, not 1.12: one place the world map marks (spec #383).
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct MapMark {
@@ -258,6 +277,11 @@ pub enum SessionEvent {
         legends: Vec<(u32, u32, bool, bool)>,
         /// One page per fish caught at least once, in `[[fish]]` order.
         pages: Vec<FishPage>,
+        /// The Lure slot's kept entry while it is empty and waiting for one (ADR 0023).
+        lure_waiting: Option<u32>,
+        /// The Satchel's fishing Journal Items: counted rows by entry ascending, then pieces in
+        /// the order they arrived.
+        satchel: Vec<SatchelRow>,
     },
     /// Twilight's Eve, not 1.12: the character's Angler Level, sent at login and on every change.
     /// Never wire-decoded.

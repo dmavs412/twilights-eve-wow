@@ -3,13 +3,13 @@
 //! proficiency (vmangos `Player::SwapItem`, `Player::CanEquipItem`).
 
 use benilla_protocol::messages::{ItemPushResult, ObjectType};
-use benilla_protocol::{CharEnumItem, ObjectFields, SessionEvent};
+use benilla_protocol::{CharEnumItem, ObjectFields, SatchelPick, SessionEvent};
 
 use crate::callings;
 use crate::characters::Char;
 use crate::content::Calling;
 use crate::fields::*;
-use crate::inventory::{bag_size, Inventory, Item, Pos, PACK, PLAYER_BAG};
+use crate::inventory::{self, bag_size, Inventory, Item, Pos, PACK, PLAYER_BAG};
 use crate::items;
 use crate::rules::gear::{self, can_equip, equip_slots, Refusal};
 use crate::rules::stats::CharacterStats;
@@ -329,6 +329,23 @@ pub(crate) fn receive_from(
         .inventory
         .store(entry, count)
         .map_err(|_| EQUIP_ERR_INVENTORY_FULL)?;
+    if inventory::is_journal(entry) {
+        // No object and no slot: the line shows against the backpack, and the Journal follows.
+        events.push(SessionEvent::ItemPushResult(ItemPushResult {
+            player_guid: c.guid,
+            from_npc,
+            created: false,
+            show_in_chat: true,
+            bag_slot: PLAYER_BAG,
+            item_slot: 0,
+            item_entry: entry,
+            suffix_factor: 0,
+            random_property_id: 0,
+            count,
+        }));
+        events.push(crate::world::fishing::journal(c));
+        return Ok(());
+    }
     let mut fresh = Vec::new();
     for &(at, new) in &changed {
         let Some(item) = c.inventory.get(at) else {
@@ -611,6 +628,12 @@ pub(crate) fn destroy(
 /// Destroys `count` of `entry` from wherever the character carries it, last stacks first: a
 /// hand-in's collected items, a Token purchase's Tokens. The caller has checked they are there.
 pub(crate) fn take(c: &mut Char, entry: u32, mut count: u32, events: &mut Vec<SessionEvent>) {
+    // The Satchel first.
+    let from_satchel = c.inventory.satchel.take(entry, count);
+    if from_satchel > 0 {
+        count -= from_satchel;
+        events.push(crate::world::fishing::journal(c));
+    }
     let stacks: Vec<(Pos, u32)> = c
         .inventory
         .iter()
@@ -628,6 +651,63 @@ pub(crate) fn take(c: &mut Char, entry: u32, mut count: u32, events: &mut Vec<Se
         count -= take;
     }
     debug_assert_eq!(count, 0, "the items to take are all there");
+}
+
+/// `WithdrawFromJournal`: moves up to `count` of the Satchel entry `pick` names into the bags,
+/// what fits of it. With no room at all nothing moves and the client is told the bags are full.
+/// Whether the Satchel changed.
+pub(crate) fn withdraw(
+    c: &mut Char,
+    pick: SatchelPick,
+    count: u32,
+    events: &mut Vec<SessionEvent>,
+) -> bool {
+    let Ok((moved, changed)) = c.inventory.withdraw(pick, count) else {
+        refuse(EQUIP_ERR_INVENTORY_FULL, 0, events);
+        return false;
+    };
+    if moved == 0 {
+        return false;
+    }
+    let mut fresh = Vec::new();
+    for &(at, new) in &changed {
+        let Some(item) = c.inventory.get(at) else {
+            continue;
+        };
+        if new {
+            events.push(item_create(c, at, item));
+            fresh.push(at);
+        } else {
+            events.push(values(item.guid, &[(ITEM_FIELD_STACK_COUNT, item.count)]));
+        }
+    }
+    if !fresh.is_empty() {
+        send_slots(c, &fresh, events);
+    }
+    events.push(crate::world::fishing::journal(c));
+    true
+}
+
+/// `DepositToJournal`: the bag item at `(bag, slot)`, if its row names a profession, leaves the
+/// bag for the Satchel, keeping a piece's durability. Whether it did.
+pub(crate) fn deposit(c: &mut Char, bag: u8, slot: u8, events: &mut Vec<SessionEvent>) -> bool {
+    let Some(at) = place(c, bag, slot).filter(|at| at.is_storage()) else {
+        return false;
+    };
+    if !c
+        .inventory
+        .get(at)
+        .is_some_and(|i| inventory::is_journal(i.entry))
+    {
+        return false;
+    }
+    let Some(item) = c.inventory.take(at) else {
+        return false;
+    };
+    send_slots(c, &[at], events);
+    c.inventory.satchel.deposit(item);
+    events.push(crate::world::fishing::journal(c));
+    true
 }
 
 /// Whether the item at `at` may leave it: not a bag that holds items. Sells and the like ask.

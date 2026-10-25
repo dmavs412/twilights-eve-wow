@@ -5,7 +5,7 @@ mod common;
 mod gear_common;
 mod quest_common;
 
-use benilla_protocol::{FishPage, SessionEvent, START_ELWYNN};
+use benilla_protocol::{FishPage, SatchelPick, SatchelRow, SessionEvent, START_ELWYNN};
 use common::*;
 use quest_common::{accept, completed, hand_in};
 use twilight_realm::{FishingGearSlot, Realm, RealmCommand};
@@ -758,7 +758,7 @@ fn set_bait_ignores_an_item_not_carried_or_not_a_bait() {
 #[test]
 fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
     let mut a = angler_carrying(1, Side::East, &[(PACK_1, SHINY_BAUBLE, 1)]);
-    let used = a.use_item(PACK_1);
+    let used = a.slot_lure(PACK_1);
     assert_eq!(
         lure_of(&used),
         Some(Some((SHINY_BAUBLE, 20, 20))),
@@ -769,7 +769,7 @@ fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
 
     // An L11 fish bites at Angler 1 with the lure (11 < 2 + 10).
     let mut south = angler_carrying(1, Side::South, &[(PACK_1, SHINY_BAUBLE, 1)]);
-    south.use_item(PACK_1);
+    south.slot_lure(PACK_1);
     let (_, bite) = south.hook();
     assert!(matches!(
         bite,
@@ -793,7 +793,7 @@ fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
 #[test]
 fn bright_baubles_widen_the_zone_after_the_cap() {
     let mut a = angler_carrying(1, Side::East, &[(PACK_1, BRIGHT_BAUBLES, 1)]);
-    a.use_item(PACK_1);
+    a.slot_lure(PACK_1);
     let (_, bite) = a.hook();
     assert!((zone_height(&bite) - 0.17 * 1.15).abs() < 1e-6, "{bite:?}");
 }
@@ -805,7 +805,7 @@ fn nightcrawlers_and_worms_bring_the_bite_within_five_and_a_half_seconds() {
         Side::East,
         &[(PACK_1, NIGHTCRAWLERS, 1), (PACK_2, WRIGGLING_WORMS, 1)],
     );
-    a.use_item(PACK_1);
+    a.slot_lure(PACK_1);
     a.set_bait(Some(WRIGGLING_WORMS));
     let mut events = a.cast();
     // 12 x (1 - 0.30 - 0.25) = 5.4 s at the longest.
@@ -903,6 +903,11 @@ impl Angler {
         self.realm
             .handle(RealmCommand::SetFishingGear { slot, from });
         drain(&mut self.realm)
+    }
+
+    /// Puts the lure at backpack slot `slot` in the Lure slot.
+    fn slot_lure(&mut self, slot: u8) -> Vec<SessionEvent> {
+        self.set_gear(FishingGearSlot::Lure, Some((PLAYER_BAG, slot)))
     }
 
     /// Ticks the bar out unanswered.
@@ -1151,7 +1156,7 @@ fn a_legendary_above_the_effective_angler_level_waits_for_a_lure() {
 
     // The Aquadynamic Fish Attractor counts as four levels more: 1 + 4 reaches the Gate's 5.
     let mut lured = angler_carrying(1, Side::NorthWest, &[(PACK_1, AQUADYNAMIC, 1)]);
-    lured.use_item(PACK_1);
+    lured.slot_lure(PACK_1);
     at_game(&mut lured, 12, 30);
     let (_, bite) = lured.hook();
     assert_eq!(legend_of(&bite), Some(GATE));
@@ -1494,4 +1499,300 @@ fn an_old_catches_save_loads_as_a_log_and_saves_back_as_one() {
     let back = realm.export_character(guid).unwrap();
     assert!(back.contains("fish_log"), "{back}");
     assert!(!back.contains("catches"), "{back}");
+}
+
+// The Satchel (#391, ADR 0023): Journal Items never take a bag slot.
+
+const TROPHY_FILL: u32 = WORN_SHORTSWORD;
+
+fn satchel_of(events: &[SessionEvent]) -> Option<Vec<SatchelRow>> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::FishingJournal { satchel, .. } => Some(satchel.clone()),
+        _ => None,
+    })
+}
+
+fn row(item: u32, count: u32) -> SatchelRow {
+    SatchelRow {
+        item,
+        count,
+        wear: None,
+        tackle: false,
+    }
+}
+
+/// A fisher who holds `satchel` (`(entry, count, durability)`) and carries `items`, in a version
+/// 5 save; `blob` lets a test edit the save first.
+fn holding(
+    side: Side,
+    satchel: &[(u32, u32, Option<u32>)],
+    items: &[(u8, u32, u32)],
+    blob: impl FnOnce(String) -> String,
+) -> (Angler, [f32; 3]) {
+    let (guid, mut text, start) = save_carrying(1, true, true, items);
+    for (entry, count, durability) in satchel {
+        text.push_str(&format!(
+            "\n[[satchel]]\nentry = {entry}\ncount = {count}\n"
+        ));
+        if let Some(d) = durability {
+            text.push_str(&format!("durability = {d}\n"));
+        }
+    }
+    (from_save(guid, &blob(text), start, side), start)
+}
+
+/// A save with copper enough for the shop.
+fn rich(blob: String) -> String {
+    let (head, tail) = blob.split_once("money = ").expect("a save keeps money");
+    let rest = tail.split_once('\n').expect("a line").1;
+    format!("{head}money = 100000\n{rest}")
+}
+
+fn saved(a: &Angler) -> String {
+    a.realm.export_character(a.guid).unwrap()
+}
+
+/// Every backpack slot full of something else.
+fn full_bags() -> Vec<(u8, u32, u32)> {
+    (23..39).map(|slot| (slot, TROPHY_FILL, 1)).collect()
+}
+
+fn buy(a: &mut Angler, entry: u32, count: u8) -> Vec<SessionEvent> {
+    let lee = hub_guid(LEE_BROWN);
+    walk_up_to(&mut a.realm, lee);
+    a.realm.handle(RealmCommand::ListInventory { guid: lee });
+    a.realm.handle(RealmCommand::BuyItem {
+        vendor: lee,
+        entry,
+        count,
+    });
+    drain(&mut a.realm)
+}
+
+#[test]
+fn a_won_catch_with_full_bags_lands_in_the_satchel() {
+    let (mut a, _) = holding(Side::North, &[], &full_bags(), |b| b);
+    a.hook();
+    let events = a.result(true, false, 6.0);
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            SessionEvent::FishingEnd {
+                caught: Some(SMALLFISH),
+                ..
+            }
+        )),
+        "{events:?}"
+    );
+    assert_eq!(satchel_of(&events), Some(vec![row(SMALLFISH, 1)]));
+    let blob = saved(&a);
+    assert_eq!(blob.matches("[[items]]").count(), 16, "{blob}");
+    assert!(!blob.contains(&format!("entry = {SMALLFISH}\ncount = 1\ndurability")));
+}
+
+#[test]
+fn buying_worms_with_full_bags_succeeds_and_the_satchel_holds_them() {
+    let (mut a, _) = holding(Side::East, &[], &full_bags(), rich);
+    let events = buy(&mut a, WRIGGLING_WORMS, 5);
+    let worms = SatchelRow {
+        tackle: true,
+        ..row(WRIGGLING_WORMS, 5)
+    };
+    assert_eq!(satchel_of(&events), Some(vec![worms]));
+}
+
+#[test]
+fn two_shiny_baubles_are_two_pieces_after_the_counted_rows() {
+    let (mut a, _) = holding(Side::East, &[(SMALLFISH, 2, None)], &full_bags(), rich);
+    let events = buy(&mut a, SHINY_BAUBLE, 2);
+    let piece = SatchelRow {
+        item: SHINY_BAUBLE,
+        count: 1,
+        wear: Some((20, 20)),
+        tackle: true,
+    };
+    assert_eq!(
+        satchel_of(&events),
+        Some(vec![row(SMALLFISH, 2), piece.clone(), piece])
+    );
+}
+
+#[test]
+fn withdrawing_moves_to_the_bags_and_a_later_catch_stays_in_the_satchel() {
+    let (mut a, _) = holding(Side::North, &[(SMALLFISH, 10, None)], &[], |b| b);
+    a.realm.handle(RealmCommand::WithdrawFromJournal {
+        pick: SatchelPick {
+            item: SMALLFISH,
+            durability: None,
+        },
+        count: 3,
+    });
+    let events = drain(&mut a.realm);
+    assert_eq!(satchel_of(&events), Some(vec![row(SMALLFISH, 7)]));
+    assert!(saved(&a).contains(&format!("entry = {SMALLFISH}\ncount = 3\n")));
+
+    a.hook();
+    let events = a.result(true, false, 6.0);
+    assert_eq!(satchel_of(&events), Some(vec![row(SMALLFISH, 8)]));
+    assert!(saved(&a).contains(&format!("entry = {SMALLFISH}\ncount = 3\n")));
+
+    // Depositing the bag stack puts it back.
+    a.realm.handle(RealmCommand::DepositToJournal {
+        from: (PLAYER_BAG, PACK_1),
+    });
+    let events = drain(&mut a.realm);
+    assert_eq!(satchel_of(&events), Some(vec![row(SMALLFISH, 11)]));
+    assert!(!saved(&a).contains("[[items]]"), "{}", saved(&a));
+}
+
+#[test]
+fn a_withdrawn_bauble_deposits_on_use_and_a_withdrawn_fish_is_eaten() {
+    let (mut a, _) = holding(
+        Side::East,
+        &[(SHINY_BAUBLE, 1, Some(14)), (SMALLFISH, 2, None)],
+        &[],
+        |b| b,
+    );
+    a.realm.handle(RealmCommand::WithdrawFromJournal {
+        pick: SatchelPick {
+            item: SHINY_BAUBLE,
+            durability: Some(14),
+        },
+        count: 1,
+    });
+    a.realm.handle(RealmCommand::WithdrawFromJournal {
+        pick: SatchelPick {
+            item: SMALLFISH,
+            durability: None,
+        },
+        count: 1,
+    });
+    drain(&mut a.realm);
+    let bag = saved(&a);
+    assert!(bag.contains(&format!(
+        "entry = {SHINY_BAUBLE}\ncount = 1\ndurability = 14"
+    )));
+    let items_from = bag.find("[[items]]").expect("bag items");
+    let slot_of = |entry: u32| {
+        let at = items_from
+            + bag[items_from..]
+                .find(&format!("entry = {entry}\n"))
+                .unwrap();
+        let head = &bag[..at];
+        let s = head.rfind("slot = ").unwrap() + 7;
+        head[s..].lines().next().unwrap().parse::<u8>().unwrap()
+    };
+    let (bauble, fish) = (slot_of(SHINY_BAUBLE), slot_of(SMALLFISH));
+    let used = a.use_item(bauble);
+    let rows = satchel_of(&used).expect("the Journal follows");
+    assert!(rows.iter().any(|r| r.wear == Some((14, 20))), "{rows:?}");
+    a.use_item(fish);
+    let blob = saved(&a);
+    // The fish was eaten, not deposited: the Satchel still holds the one it kept.
+    assert!(
+        blob.contains(&format!("[[satchel]]\nentry = {SMALLFISH}\ncount = 1\n")),
+        "{blob}"
+    );
+}
+
+#[test]
+fn withdrawing_into_full_bags_moves_nothing_and_says_so() {
+    let (mut a, _) = holding(Side::East, &[(SMALLFISH, 4, None)], &full_bags(), |b| b);
+    a.realm.handle(RealmCommand::WithdrawFromJournal {
+        pick: SatchelPick {
+            item: SMALLFISH,
+            durability: None,
+        },
+        count: 4,
+    });
+    let events = drain(&mut a.realm);
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, SessionEvent::InventoryFailure { .. })),
+        "{events:?}"
+    );
+    assert!(satchel_of(&events).is_none());
+}
+
+#[test]
+fn a_collect_quest_counts_the_satchel_and_the_bags_and_takes_the_satchel_first() {
+    const SMALLFRY: u32 = 96101;
+    let lee = hub_guid(LEE_BROWN);
+    for (satchel, bags, left) in [(7, 3, (0, 0)), (12, 3, (2, 3))] {
+        let (mut a, _) = holding(
+            Side::East,
+            &[(SMALLFISH, satchel, None)],
+            &[(PACK_1, SMALLFISH, bags)],
+            |b| b,
+        );
+        accept(&mut a.realm, lee, SMALLFRY);
+        let done = completed(&hand_in(&mut a.realm, lee, SMALLFRY)).expect("the quest completes");
+        assert_eq!(done.quest_id, SMALLFRY);
+        let blob = saved(&a);
+        let in_satchel = blob.contains("[[satchel]]");
+        assert_eq!(in_satchel, left.0 > 0, "{blob}");
+        if left.0 > 0 {
+            assert!(blob.contains(&format!("entry = {SMALLFISH}\ncount = {}\n", left.0)));
+        }
+        assert_eq!(blob.contains("[[items]]"), left.1 > 0, "{blob}");
+    }
+}
+
+#[test]
+fn the_tenth_catch_completes_a_collect_quest_through_the_satchel() {
+    const SMALLFRY: u32 = 96101;
+    let lee = hub_guid(LEE_BROWN);
+    let (mut a, start) = holding(Side::North, &[(SMALLFISH, 9, None)], &[], |b| b);
+    accept(&mut a.realm, lee, SMALLFRY);
+    a.realm.handle(RealmCommand::Move {
+        position: [start[0], start[1], 0.0],
+        orientation: Side::North.facing(),
+        motion: Default::default(),
+    });
+    a.realm.tick(0.0, &a.host);
+    drain(&mut a.realm);
+    a.hook();
+    let events = a.result(true, false, 6.0);
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            SessionEvent::QuestObjectivesComplete { quest_id: SMALLFRY }
+        )),
+        "{events:?}"
+    );
+}
+
+#[test]
+fn a_version_4_save_moves_its_bag_journal_items_and_a_version_5_save_keeps_them() {
+    let items = [
+        (PACK_1, SMALLFISH, 4),
+        (PACK_2, SHINY_BAUBLE, 1),
+        (25, WORN_SHORTSWORD, 1),
+    ];
+    let old = |b: String| {
+        b.replace("version = 5", "version = 4").replace(
+            &format!("entry = {SHINY_BAUBLE}\ncount = 1\n"),
+            &format!("entry = {SHINY_BAUBLE}\ncount = 1\ndurability = 14\n"),
+        )
+    };
+    let (a, _) = holding(Side::East, &[], &items, old);
+    let blob = saved(&a);
+    assert!(
+        blob.contains(&format!("[[satchel]]\nentry = {SMALLFISH}\ncount = 4\n")),
+        "{blob}"
+    );
+    assert!(
+        blob.contains(&format!(
+            "[[satchel]]\nentry = {SHINY_BAUBLE}\ncount = 1\ndurability = 14\n"
+        )),
+        "{blob}"
+    );
+    assert!(blob.contains("version = 5"));
+    assert_eq!(blob.matches("[[items]]").count(), 1, "{blob}");
+
+    let (b, _) = holding(Side::East, &[], &items, |b| b);
+    let blob = saved(&b);
+    assert!(!blob.contains("[[satchel]]"), "{blob}");
+    assert_eq!(blob.matches("[[items]]").count(), 3, "{blob}");
 }

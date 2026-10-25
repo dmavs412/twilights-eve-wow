@@ -11,7 +11,8 @@ pub mod world;
 pub use auth::AuthReject;
 pub use events::{
     decode, CharAction, EntityKind, FishPage, LoginRefusal, LoginStage, MapIcon, MapMark,
-    MarkedQuest, MoveSpeeds, Poll, SessionEnd, SessionEvent, SessionEventKind,
+    MarkedQuest, MoveSpeeds, Poll, SatchelPick, SatchelRow, SessionEnd, SessionEvent,
+    SessionEventKind,
 };
 pub use messages::field;
 pub use messages::{

@@ -671,6 +671,26 @@ mod tests {
     }
 
     #[test]
+    fn every_fishing_material_is_a_journal_item_and_nothing_else_is() {
+        let f = file();
+        let mut materials: Vec<u32> = f.fish.iter().map(|x| x.item).collect();
+        materials.extend(f.pole.iter().map(|x| x.item));
+        materials.extend(f.lure.iter().map(|x| x.item));
+        materials.extend(f.bait.iter().map(|x| x.item));
+        materials.extend(legends().iter().map(|l| l.item));
+        for item in &materials {
+            let t = crate::items::template(*item).expect("a template");
+            assert_eq!(t.journal, Some(crate::items::Profession::Fishing), "{item}");
+        }
+        for (entry, t) in crate::items::all() {
+            assert!(
+                t.journal.is_none() || materials.contains(entry),
+                "{entry} sets journal but is no fishing material"
+            );
+        }
+    }
+
+    #[test]
     #[should_panic(expected = "favourite_bait that is no [[bait]]")]
     fn a_favourite_bait_that_is_no_bait_fails_to_load() {
         let text = include_str!("../content/fish.toml").replacen(
