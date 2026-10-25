@@ -1089,7 +1089,7 @@
     "status": "placeholder",
     "icon_id": 856,
     "spell_id": 1000004,
-    "realm_cost": 15,
+    "realm_cost": 12,
     "realm_cooldown_ms": 0,
     "realm_gcd_ms": 0,
     "realm_range_min": 0,
@@ -1119,7 +1119,7 @@
        "weapon": "normal",
        "on_next_swing": true,
        "bonus": {
-        "base": 14.3,
+        "base": 22,
         "per_level": 2,
         "per_ap": 0
        }
