@@ -691,8 +691,8 @@ fn the_real_feralas_catalog_names_dire_maul_under_the_cursor() {
     let areas = benilla_formats::load_area_table_catalog(&mut chain).expect("AreaTable");
     let maps =
         benilla_assets::MapCatalogRes(benilla_formats::load_map_catalog(&mut chain).expect("Map"));
-    let (views, _) =
-        crate::ui_world_map::build_catalog(&mut chain, &areas, &maps).expect("the real catalog");
+    let (views, _) = crate::ui_world_map::build_catalog(&mut chain, &areas, &maps, false)
+        .expect("the real catalog");
     // Feralas' place in the pushed catalog, found the way Lua would.
     let (ci, zi) = views
         .iter()
@@ -740,8 +740,8 @@ fn the_real_catalog_mists_westfall_on_the_eastern_kingdoms_only() {
     let areas = benilla_formats::load_area_table_catalog(&mut chain).expect("AreaTable");
     let maps =
         benilla_assets::MapCatalogRes(benilla_formats::load_map_catalog(&mut chain).expect("Map"));
-    let (views, _) =
-        crate::ui_world_map::build_catalog(&mut chain, &areas, &maps).expect("the real catalog");
+    let (views, _) = crate::ui_world_map::build_catalog(&mut chain, &areas, &maps, false)
+        .expect("the real catalog");
     let continent = |name: &str| {
         views
             .iter()

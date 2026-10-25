@@ -35,6 +35,7 @@ pub(crate) use session::VmMemo;
 // Not test-only: the addon harness loads the whole shipped interface under each addon.
 pub(crate) use content::image as layer_image;
 pub(crate) use manifest::default_bindings;
+pub(crate) use manifest::layer_enabled;
 pub(crate) use manifest::load_default_ui;
 pub(crate) use manifest::load_ingame_ui;
 #[cfg(test)]

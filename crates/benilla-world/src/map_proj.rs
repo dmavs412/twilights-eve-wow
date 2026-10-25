@@ -37,6 +37,32 @@ pub struct ZoneRect {
     pub bottom: f32,
 }
 
+/// The map art's width over its height, 1002 / 668.
+const ART_ASPECT: f32 = 1002.0 / 668.0;
+
+/// The map canvas's rect (#410): the union of `rects`, padded evenly on its short axis to the
+/// art's 1002 / 668. `None` for no rects.
+pub fn canvas_rect(rects: &[ZoneRect]) -> Option<ZoneRect> {
+    let first = *rects.first()?;
+    let mut r = rects.iter().fold(first, |a, b| ZoneRect {
+        left: a.left.max(b.left),
+        right: a.right.min(b.right),
+        top: a.top.max(b.top),
+        bottom: a.bottom.min(b.bottom),
+    });
+    let (width, height) = (r.left - r.right, r.top - r.bottom);
+    if width < height * ART_ASPECT {
+        let pad = (height * ART_ASPECT - width) / 2.0;
+        r.left += pad;
+        r.right -= pad;
+    } else {
+        let pad = (width / ART_ASPECT - height) / 2.0;
+        r.top += pad;
+        r.bottom -= pad;
+    }
+    Some(r)
+}
+
 /// World to UV on the world sheet (`0x4a7360` world mode): u from wy, v from wx, unclamped as in
 /// the reference. `0x4a72b0`, the arrow frame's variant, is the same with a final `1 − v`.
 pub fn world_uv(proj: WorldProj, wx: f32, wy: f32) -> (f32, f32) {
@@ -200,6 +226,34 @@ mod tests {
                 "({back_wx}, {back_wy}) vs ({wx}, {wy})"
             );
         }
+    }
+
+    /// The canvas over the 5875 rows of Elwynn, Stormwind City, Duskwood and Redridge: the union
+    /// is too narrow for the art, so it pads east and west by 44.27 yards each.
+    #[test]
+    fn canvas_rect_pads_the_union_to_the_art_aspect() {
+        let rect = |left, right, top, bottom| ZoneRect {
+            left,
+            right,
+            top,
+            bottom,
+        };
+        let r = canvas_rect(&[
+            rect(1535.42, -1935.42, -7939.58, -10254.17),
+            rect(1380.97, 36.70, -8278.85, -9175.21),
+            rect(833.33, -1866.67, -9716.67, -11516.67),
+            rect(-1570.83, -3741.67, -8575.0, -10022.92),
+        ])
+        .expect("four rects");
+        let near = |a: f32, b: f32| (a - b).abs() < 0.01;
+        assert!(
+            near(r.left, 1579.69)
+                && near(r.right, -3785.94)
+                && near(r.top, -7939.58)
+                && near(r.bottom, -11516.67),
+            "{r:?}"
+        );
+        assert_eq!(canvas_rect(&[]), None);
     }
 
     /// At scale 1 the world-level pair is inverse; the mismatch is the scale's.

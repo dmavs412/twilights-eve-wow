@@ -270,6 +270,7 @@ pub use models::{
     OWNER_RUNG_BUCKETS, SHIPPED_GLUE_SCENES,
 };
 pub mod closed_zones;
+pub mod map_canvas;
 mod terrain;
 pub use terrain::{
     adt_to_tile_mesh, area_id_at, find_tile_near, ground_effect_at, impassable_at, load_tile_mesh,

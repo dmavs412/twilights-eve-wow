@@ -16,7 +16,8 @@ use benilla_formats::{
     load_zone_map, WorldMapArea,
 };
 use benilla_ui::script::{
-    UiScript, WorldMapContinentView, WorldMapLandmarkView, WorldMapOverlayView, WorldMapZoneView,
+    UiScript, WorldMapCanvasView, WorldMapContinentView, WorldMapLandmarkView, WorldMapOverlayView,
+    WorldMapZoneView,
 };
 
 use crate::net::{ObjectStore, SelfPlayer};
@@ -37,12 +38,22 @@ pub(crate) struct WorldMapUiData {
     direct: Vec<DirectAreaEntry>,
 }
 
+impl WorldMapUiData {
+    /// The map canvas's rect on the 1-based `continent`, if it carries one.
+    fn canvas(&self, continent: u32) -> Option<ZoneRect> {
+        let i = continent.checked_sub(1)?;
+        self.continents.get(i as usize)?.canvas
+    }
+}
+
 #[derive(Clone)]
 pub(crate) struct ContinentEntry {
     map_id: u32,
     proj: Option<WorldProj>,
     rect: ZoneRect,
     zones: Vec<ZoneEntry>,
+    /// The map canvas's rect (#410), which replaces `rect` for the whole-continent selection.
+    canvas: Option<ZoneRect>,
 }
 
 #[derive(Clone)]
@@ -121,13 +132,43 @@ fn map_row_view(
     }
 }
 
+/// The map canvas over a continent's sorted zones: `map_canvas.json`'s area ids as 1-based zone
+/// indices, and the rect over their rects. `None` when no listed id has a zone.
+fn canvas_view(
+    zones: &[(u32, &WorldMapArea, String)],
+    area_ids: &[u32],
+) -> Option<(WorldMapCanvasView, ZoneRect)> {
+    let mut indices = Vec::with_capacity(area_ids.len());
+    let mut rects = Vec::with_capacity(area_ids.len());
+    for &area_id in area_ids {
+        match zones.iter().position(|(_, a, _)| a.area_id == area_id) {
+            Some(i) => {
+                indices.push(i as u32 + 1);
+                rects.push(zone_rect(zones[i].1));
+            }
+            None => warn!("world map: canvas area {area_id} has no zone on its continent"),
+        }
+    }
+    let rect = map_proj::canvas_rect(&rects)?;
+    Some((
+        WorldMapCanvasView {
+            zones: indices,
+            loc_rect: (rect.left, rect.right, rect.top, rect.bottom),
+        },
+        rect,
+    ))
+}
+
 /// The catalog off the patch chain, the pure half of [`seed_world_map_catalog`]; `None` when a
-/// DBC fails to load, which disables the map window.
+/// DBC fails to load, which disables the map window. With `canvas`, the continent that
+/// `map_canvas.json` names carries the map canvas (#410).
 pub(crate) fn build_catalog(
     chain: &mut benilla_formats::Chain,
     areas: &benilla_formats::AreaTableCatalog,
     maps: &MapCatalogRes,
+    canvas: bool,
 ) -> Option<(Vec<WorldMapContinentView>, WorldMapUiData)> {
+    let (canvas_map, canvas_areas) = benilla_formats::map_canvas::canvas();
     let loaded = load_world_map_area_catalog(&mut *chain).and_then(|wma| {
         let wmc = load_world_map_continent_catalog(&mut *chain)?;
         let wmo = load_world_map_overlay_catalog(&mut *chain)?;
@@ -210,6 +251,12 @@ pub(crate) fn build_catalog(
             }
         };
 
+        let (this_canvas, this_canvas_rect) = if canvas && cont.map_id == canvas_map {
+            canvas_view(&zones, canvas_areas).unzip()
+        } else {
+            (None, None)
+        };
+
         views.push(WorldMapContinentView {
             // Map.dbc's localized name, never the art folder (`0x4a65a0`).
             name: maps
@@ -221,7 +268,7 @@ pub(crate) fn build_catalog(
             world_rect,
             loc_rect: (cont.loc_left, cont.loc_right, cont.loc_top, cont.loc_bottom),
             zone_grid,
-            canvas: None,
+            canvas: this_canvas,
             zones: zones
                 .iter()
                 .map(|(wma_id, a, name)| map_row_view(*wma_id, a, name.clone(), areas, &wmo))
@@ -238,6 +285,7 @@ pub(crate) fn build_catalog(
                     rect: zone_rect(a),
                 })
                 .collect(),
+            canvas: this_canvas_rect,
         });
     }
 
@@ -309,13 +357,19 @@ pub(crate) fn seed_world_map_catalog(world: &mut World, script: &mut UiScript) {
     }
 }
 
-/// [`build_catalog`] over the app's `Startup` resources; only a bare test world gets `None`.
+/// [`build_catalog`] over the app's `Startup` resources; only a bare test world gets `None`. The
+/// canvas comes with the UI layer, so `WOW_STOCK_UI=1` keeps the stock map.
 fn build_catalog_from_world(world: &World) -> Option<(Vec<WorldMapContinentView>, WorldMapUiData)> {
     let assets = world.get_resource::<WorldAssets>()?;
     let maps = world.get_resource::<MapCatalogRes>()?;
     let areas = world.get_resource::<crate::area::AreaTableRes>()?;
     let mut chain = assets.chain.lock_recover();
-    build_catalog(&mut chain, &areas.0, maps)
+    build_catalog(
+        &mut chain,
+        &areas.0,
+        maps,
+        crate::ui_script::layer_enabled(),
+    )
 }
 
 /// The displayed level the landmark gates branch on, from the selection cells `[0x84506c]`,
@@ -333,12 +387,13 @@ enum MapLevel {
 
 impl MapLevel {
     /// From the engine's selection, the 1-based `(continent, zone)` with 0 for whole plus the
-    /// direct area, which is read first because it shares the world sheet's `(0, 0)`.
-    fn of((continent, zone, direct): (u32, u32, Option<u32>)) -> Self {
+    /// direct area, which is read first because it shares the world sheet's `(0, 0)`. A
+    /// continent with a map canvas is `Zone`: the canvas is zone maps, gated as zone maps.
+    fn of(data: &WorldMapUiData, (continent, zone, direct): (u32, u32, Option<u32>)) -> Self {
         match (continent, zone, direct) {
             (_, _, Some(_)) => Self::Zone,
             (0, _, None) => Self::World,
-            (_, 0, None) => Self::Continent,
+            (c, 0, None) if data.canvas(c).is_none() => Self::Continent,
             _ => Self::Zone,
         }
     }
@@ -557,7 +612,8 @@ fn world_enter_selection(
 /// A position's UV on the displayed map (`0x4a7360`), `None` off it, which Lua sees as the
 /// `(0, 0)` hide: the world sheet projects through the position's own continent constants, a
 /// continent or zone through its rect, an instance map through its row's rect (`0x4a73e0`). The
-/// last two require the position's own map (`0x4a7437`; `0x4a7870` passes the unit's).
+/// last two require the position's own map (`0x4a7437`; `0x4a7870` passes the unit's). A
+/// continent with a map canvas projects through the canvas rect.
 pub(crate) fn project_on_displayed(
     data: &WorldMapUiData,
     selection: (u32, u32, Option<u32>),
@@ -583,7 +639,7 @@ pub(crate) fn project_on_displayed(
             .get(c as usize - 1)
             .filter(|cont| cont.map_id == pos_map)
             .and_then(|cont| match z {
-                0 => Some(cont.rect),
+                0 => Some(cont.canvas.unwrap_or(cont.rect)),
                 z => cont.zones.get(z as usize - 1).map(|zone| zone.rect),
             })
             .map(|rect| map_proj::zone_uv(rect, px, py)),
@@ -702,7 +758,9 @@ fn feed_world_map(
         .as_ref()
         .is_some_and(|k| k.matches(selection, map.0, states_gen, &explored, marker, marks));
     if !unchanged {
-        let level = MapLevel::of(selection);
+        // On the canvas, a landmark off its rect is dropped too: `zone_uv` answers the `(0, 0)`
+        // sentinel for any position outside [0, 1], and the degenerate test below skips it.
+        let level = MapLevel::of(&data, selection);
         let mut landmarks = Vec::new();
         // The DBC rows first, in file order, the Lua landmark index (`0x4a6819`'s walk of
         // `[0xc0e054]`).
@@ -848,7 +906,7 @@ fn dev_map_jump(
                 return;
             };
             let rect = match z.checked_sub(1) {
-                None => cont.rect,
+                None => cont.canvas.unwrap_or(cont.rect),
                 Some(i) => match cont.zones.get(i as usize) {
                     Some(zone) => zone.rect,
                     None => return,
@@ -1043,15 +1101,19 @@ mod tests {
 
     #[test]
     fn the_selection_pair_maps_onto_the_reference_levels() {
-        assert_eq!(MapLevel::of((0, 0, None)), MapLevel::World);
+        let d = WorldMapUiData {
+            continents: Vec::new(),
+            direct: Vec::new(),
+        };
+        assert_eq!(MapLevel::of(&d, (0, 0, None)), MapLevel::World);
         assert_eq!(
-            MapLevel::of((0, 3, None)),
+            MapLevel::of(&d, (0, 3, None)),
             MapLevel::World,
             "continent 0 wins"
         );
-        assert_eq!(MapLevel::of((2, 0, None)), MapLevel::Continent);
-        assert_eq!(MapLevel::of((2, 7, None)), MapLevel::Zone);
-        assert_eq!(MapLevel::of((0, 0, Some(443))), MapLevel::Zone);
+        assert_eq!(MapLevel::of(&d, (2, 0, None)), MapLevel::Continent);
+        assert_eq!(MapLevel::of(&d, (2, 7, None)), MapLevel::Zone);
+        assert_eq!(MapLevel::of(&d, (0, 0, Some(443))), MapLevel::Zone);
     }
 
     #[test]
@@ -1178,8 +1240,18 @@ mod player_zone_tests {
         }
     }
 
-    /// Kalimdor (map 1), Azeroth (map 0) with Elwynn at index 9 (Lua zone 10), and Warsong
-    /// Gulch's real row (`WorldMapArea` 443, map 489) as the one instance map.
+    /// The map canvas over Elwynn, Stormwind City, Duskwood and Redridge (`map_proj::canvas_rect`).
+    fn canvas() -> ZoneRect {
+        ZoneRect {
+            left: 1579.69,
+            right: -3785.94,
+            top: -7939.58,
+            bottom: -11516.67,
+        }
+    }
+
+    /// Kalimdor (map 1), Azeroth (map 0) with Elwynn at index 9 (Lua zone 10) and the map canvas,
+    /// and Warsong Gulch's real row (`WorldMapArea` 443, map 489) as the one instance map.
     fn data() -> WorldMapUiData {
         WorldMapUiData {
             continents: vec![
@@ -1188,11 +1260,13 @@ mod player_zone_tests {
                     proj: None,
                     rect: rect(),
                     zones: Vec::new(),
+                    canvas: None,
                 },
                 ContinentEntry {
                     map_id: 0,
                     proj: None,
                     rect: rect(),
+                    canvas: Some(canvas()),
                     zones: (0..10)
                         .map(|i| ZoneEntry {
                             // index 9 is Elwynn's areaId 12; the rest are filler ids.
@@ -1316,8 +1390,8 @@ mod player_zone_tests {
             None,
             "the world sheet has no continent for map 489 at all"
         );
-        assert_eq!(MapLevel::of(sel), MapLevel::Zone);
-        assert_eq!(MapLevel::of((0, 0, None)), MapLevel::World);
+        assert_eq!(MapLevel::of(&d, sel), MapLevel::Zone);
+        assert_eq!(MapLevel::of(&d, (0, 0, None)), MapLevel::World);
     }
 
     /// `0x494780` calls `0x4a6650` at `0x4947ac` when the cached zone id `[0xb4e314]` was 0.
@@ -1354,6 +1428,47 @@ mod player_zone_tests {
         };
         assert_eq!(world_enter_selection(false, Some(3277), bg), Some(bg));
     }
+
+    /// The whole-continent selection on the canvas projects through the canvas rect, gates as a
+    /// zone map, and keeps only the marks inside the rect.
+    #[test]
+    fn the_canvas_projects_through_its_rect_at_zone_level() {
+        use benilla_protocol::{MapIcon, MapMark};
+
+        let d = data();
+        let near = |a: (f32, f32), b: (f32, f32)| {
+            assert!(
+                (a.0 - b.0).abs() < 1e-3 && (a.1 - b.1).abs() < 1e-3,
+                "{a:?} vs {b:?}"
+            )
+        };
+        let goldshire = project_on_displayed(&d, (2, 0, None), 0, -9464.0, 62.0);
+        near(
+            goldshire.expect("Goldshire is on the canvas"),
+            (0.2829, 0.4262),
+        );
+        assert_eq!(MapLevel::of(&d, (2, 0, None)), MapLevel::Zone);
+        assert_eq!(MapLevel::of(&d, (1, 0, None)), MapLevel::Continent);
+
+        let at = |name: &str, x: f32, y: f32| MapMark {
+            map: 0,
+            position: [x, y],
+            guid: 0,
+            icon: MapIcon::QuestAvailable,
+            name: name.into(),
+            subtitle: String::new(),
+            quests: Vec::new(),
+        };
+        let marks = vec![
+            at("Lakeshire", -9254.0, -2210.0),
+            at("Ironforge", -4981.0, -881.0),
+        ];
+        let project = |map: u32, x: f32, y: f32| project_on_displayed(&d, (2, 0, None), map, x, y);
+        let kept = mark_landmarks(&marks, MapLevel::Zone, project);
+        assert_eq!(kept.len(), 1, "Ironforge, v about -0.83, is off the canvas");
+        assert_eq!(kept[0].name, "Lakeshire");
+        near(kept[0].uv, (0.7063, 0.3675));
+    }
 }
 
 #[cfg(test)]
@@ -1368,7 +1483,7 @@ mod direct_area_tests {
         let maps = benilla_assets::MapCatalogRes(
             benilla_formats::load_map_catalog(&mut chain).expect("Map"),
         );
-        Some(build_catalog(&mut chain, &areas, &maps).expect("the real catalog"))
+        Some(build_catalog(&mut chain, &areas, &maps, false).expect("the real catalog"))
     }
 
     #[test]

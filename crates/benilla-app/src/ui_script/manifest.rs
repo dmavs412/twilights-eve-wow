@@ -15,7 +15,7 @@ pub(super) const LAYER_MANIFEST: &str = "layer.toc";
 
 /// Whether this run loads the layer: always in a player build; a dev build boots the stock UI
 /// alone under `WOW_STOCK_UI=1`.
-pub(super) fn layer_enabled() -> bool {
+pub(crate) fn layer_enabled() -> bool {
     layer_enabled_by(
         crate::run_mode::dev_affordances(),
         std::env::var("WOW_STOCK_UI").ok().as_deref(),

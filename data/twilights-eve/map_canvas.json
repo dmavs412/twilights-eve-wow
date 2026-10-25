@@ -1,0 +1,5 @@
+{
+  "//": "The map canvas (#410): Duskwood, Redridge Mountains, Elwynn Forest, Stormwind City, in draw order, later on top.",
+  "map": 0,
+  "zones": [10, 44, 12, 1519]
+}
