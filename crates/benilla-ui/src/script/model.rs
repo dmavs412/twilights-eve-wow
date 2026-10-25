@@ -285,6 +285,10 @@ pub(crate) struct Model {
     pub(crate) bait_requests: Vec<Option<u32>>,
     /// The `SetFishingGear` and `ClearFishingGear` calls since the host last drained them.
     pub(crate) gear_requests: Vec<super::GearRequest>,
+    /// The `WithdrawFishingItem` calls since the host last drained them.
+    pub(crate) withdraw_requests: Vec<super::WithdrawRequest>,
+    /// The `DepositFishingItem` calls since the host last drained them, as `(bag, slot)`.
+    pub(crate) deposit_requests: Vec<(i64, u32)>,
     /// The zone caches the four zone-text getters and `GetZonePVPInfo` read.
     pub(crate) zone: super::ZoneTexts,
     /// The current map's `Map.dbc` `InstanceType`, all `IsInInstance()` reads; `None` for no row.
@@ -1140,6 +1144,8 @@ impl Model {
             journal: Default::default(),
             bait_requests: Vec::new(),
             gear_requests: Vec::new(),
+            withdraw_requests: Vec::new(),
+            deposit_requests: Vec::new(),
             zone: Default::default(),
             instance_type: None,
             can_reset_instances: false,

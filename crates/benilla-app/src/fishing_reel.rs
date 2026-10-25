@@ -18,13 +18,13 @@ use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 
 use benilla_protocol::{SatchelPick, SessionEvent};
 use benilla_ui::script::{
-    JournalLegend, JournalPage, JournalView, JournalZone, ReelView, ScriptValue, UiScript,
+    JournalLegend, JournalPage, JournalView, JournalZone, ReelView, SatchelSlot, ScriptValue,
+    UiScript,
 };
 use benilla_world::view::WorldCamera;
 use twilight_realm::{FishingGearSlot, RealmCommand};
 
 use crate::area::AreaTableRes;
-use crate::net::{ObjectStore, Objects, SelfPlayer};
 use crate::ui_script::UiFeed;
 
 /// One simulation step: Stardew's frame.
@@ -476,11 +476,24 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
         zone_text,
         legends,
         pages,
-        ..
+        lure_waiting,
+        satchel,
     } = event
     else {
         return JournalView::default();
     };
+    // Catch first, then tackle, each in the realm's order.
+    let (catch, tackle): (Vec<_>, Vec<_>) = satchel.iter().partition(|row| !row.tackle);
+    let satchel = catch
+        .into_iter()
+        .chain(tackle)
+        .map(|row| SatchelSlot {
+            item: row.item,
+            count: row.count,
+            wear: row.wear,
+            tackle: row.tackle,
+        })
+        .collect();
     let name = |id: u32| {
         areas
             .and_then(|a| a.0.name(id))
@@ -538,6 +551,8 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
                 caught,
             })
             .collect(),
+        lure_waiting: *lure_waiting,
+        satchel,
     }
 }
 
@@ -551,8 +566,6 @@ fn feed_reel(
     mut outbox: ResMut<ReelOutbox>,
     mut pushed: Local<crate::ui_script::VmMemo<()>>,
     areas: Option<Res<AreaTableRes>>,
-    objects: Objects,
-    self_q: Query<&ObjectStore, With<SelfPlayer>>,
 ) {
     let Some(mut script) = script else {
         return;
@@ -571,41 +584,30 @@ fn feed_reel(
     for item in script.take_bait_requests() {
         outbox.0.push(RealmCommand::SetBait { item });
     }
+    // Deposits first: a bag item dropped on a gear slot is deposited, then slotted (ADR 0023).
+    for (bag, at) in script.take_deposit_requests() {
+        if let Some(from) = crate::ui_items::wire_pos(bag, at) {
+            outbox.0.push(RealmCommand::DepositToJournal { from });
+        }
+    }
+    for req in script.take_withdraw_requests() {
+        outbox.0.push(RealmCommand::WithdrawFromJournal {
+            pick: SatchelPick {
+                item: req.item,
+                durability: req.durability,
+            },
+            count: req.count,
+        });
+    }
     for req in script.take_gear_requests() {
         let slot = if req.lure {
             FishingGearSlot::Lure
         } else {
             FishingGearSlot::Pole
         };
-        // The Journal's slots fill from the Satchel (ADR 0023): a bag item goes in first.
-        let from = match req.from {
-            Some((bag, at)) => {
-                let Some(pos) = crate::ui_items::wire_pos(bag, at) else {
-                    continue;
-                };
-                let Ok(store) = self_q.single() else {
-                    continue;
-                };
-                let held = crate::ui_items::collect_inventory(
-                    &store.0,
-                    &objects,
-                    crate::ui_items::InventoryScope::DEFAULT,
-                );
-                let Some(item) = held
-                    .into_iter()
-                    .find(|&(b, s, _)| (b, s) == pos)
-                    .and_then(|(_, _, guid)| objects.object(guid)?.object_entry())
-                else {
-                    continue;
-                };
-                outbox.0.push(RealmCommand::DepositToJournal { from: pos });
-                Some(SatchelPick {
-                    item,
-                    durability: None,
-                })
-            }
-            None => None,
-        };
+        let from = req
+            .from
+            .map(|(item, durability)| SatchelPick { item, durability });
         outbox.0.push(RealmCommand::SetFishingGear { slot, from });
     }
     for (name, args) in std::mem::take(&mut fishing.events) {

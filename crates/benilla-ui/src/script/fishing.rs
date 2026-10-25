@@ -79,12 +79,34 @@ pub struct JournalPage {
     pub favourite_bait: Option<u32>,
 }
 
-/// One `SetFishingGear` or `ClearFishingGear` call: the slot, and the bag item that fills it
-/// (`None` clears it), in the Lua API's bag numbering.
+/// One `SetFishingGear` or `ClearFishingGear` call: the slot, and the Satchel item that fills it
+/// as `(item, durability)` (ADR 0023; `None` clears it, and a `None` durability takes any piece).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GearRequest {
     pub lure: bool,
-    pub from: Option<(i64, u32)>,
+    pub from: Option<(u32, Option<u32>)>,
+}
+
+/// One row of the Journal's Satchel (ADR 0023): catch or tackle the profession holds outside the
+/// bags.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct SatchelSlot {
+    pub item: u32,
+    /// A counted row's count; 1 for a piece.
+    pub count: u32,
+    /// A piece's `(durability, max durability)`; `None` for a counted row.
+    pub wear: Option<(u32, u32)>,
+    /// A pole, lure or bait; otherwise a catch.
+    pub tackle: bool,
+}
+
+/// One `WithdrawFishingItem` call: up to `count` of the Satchel item, a piece named by its
+/// durability.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct WithdrawRequest {
+    pub item: u32,
+    pub durability: Option<u32>,
+    pub count: u32,
 }
 
 /// The last `FishingJournal` the host pushed, zone names already resolved.
@@ -101,6 +123,10 @@ pub struct JournalView {
     pub pages: Vec<JournalPage>,
     pub zones: Vec<JournalZone>,
     pub legends: Vec<JournalLegend>,
+    /// The lure the empty Lure slot waits to refill with (ADR 0023), shown dimmed.
+    pub lure_waiting: Option<u32>,
+    /// The Satchel, catch first and then tackle, each in the realm's order.
+    pub satchel: Vec<SatchelSlot>,
 }
 
 impl super::UiScript {
@@ -117,6 +143,17 @@ impl super::UiScript {
     /// Drain the `SetFishingGear` and `ClearFishingGear` calls since the last drain, oldest first.
     pub fn take_gear_requests(&mut self) -> Vec<GearRequest> {
         std::mem::take(&mut self.model_mut().gear_requests)
+    }
+
+    /// Drain the `WithdrawFishingItem` calls since the last drain, oldest first.
+    pub fn take_withdraw_requests(&mut self) -> Vec<WithdrawRequest> {
+        std::mem::take(&mut self.model_mut().withdraw_requests)
+    }
+
+    /// Drain the `DepositFishingItem(bag, slot)` calls since the last drain, oldest first, in the
+    /// Lua API's bag numbering.
+    pub fn take_deposit_requests(&mut self) -> Vec<(i64, u32)> {
+        std::mem::take(&mut self.model_mut().deposit_requests)
     }
 
     /// Push the open bar, or `None` once it closes.
@@ -246,7 +283,8 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             Ok(())
         })?,
     )?;
-    // GetFishingGear(): poleItem, lureItem, lureDurability, lureMax; nil for an empty slot.
+    // GetFishingGear(): poleItem, lureItem, lureDurability, lureMax, lureWaiting; nil for an
+    // empty slot, and lureWaiting the lure an empty Lure slot waits for.
     g.set(
         "GetFishingGear",
         lua.create_function(|lua, ()| {
@@ -258,22 +296,85 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 j.lure.map_or(Value::Nil, |l| n(l.0)),
                 j.lure.map_or(Value::Nil, |l| n(l.1)),
                 j.lure.map_or(Value::Nil, |l| n(l.2)),
+                j.lure_waiting.map_or(Value::Nil, n),
             ]))
         })?,
     )?;
-    // SetFishingGear("POLE" or "LURE", bag, slot): queues the item for the host to send.
+    // SetFishingGear("POLE" or "LURE", item, durability or nil): queues the Satchel item for the
+    // host to send.
     g.set(
         "SetFishingGear",
-        lua.create_function(|lua, (slot, bag, at): (String, i64, u32)| {
-            if let Some(lure) = gear_slot(&slot) {
-                lua.app_data_mut::<Model>()
-                    .expect("model app_data")
-                    .gear_requests
-                    .push(GearRequest {
-                        lure,
-                        from: Some((bag, at)),
-                    });
-            }
+        lua.create_function(
+            |lua, (slot, item, durability): (String, u32, Option<u32>)| {
+                if let Some(lure) = gear_slot(&slot) {
+                    lua.app_data_mut::<Model>()
+                        .expect("model app_data")
+                        .gear_requests
+                        .push(GearRequest {
+                            lure,
+                            from: Some((item, durability)),
+                        });
+                }
+                Ok(())
+            },
+        )?,
+    )?;
+    // GetFishingSatchel(): the Satchel's row count.
+    g.set(
+        "GetFishingSatchel",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(model.journal.satchel.len() as f64)
+        })?,
+    )?;
+    // GetFishingSatchelItem(i), 1-based: item, count, durability, maxDurability, tackle, slotted.
+    // Durability is nil for a counted row; slotted is true for the chosen bait. Nothing past the
+    // end.
+    g.set(
+        "GetFishingSatchelItem",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(row) = usize::try_from(i - 1)
+                .ok()
+                .and_then(|i| model.journal.satchel.get(i))
+            else {
+                return Ok(MultiValue::new());
+            };
+            let n = |v: u32| Value::Number(f64::from(v));
+            Ok(MultiValue::from_vec(vec![
+                n(row.item),
+                n(row.count),
+                row.wear.map_or(Value::Nil, |w| n(w.0)),
+                row.wear.map_or(Value::Nil, |w| n(w.1)),
+                Value::Boolean(row.tackle),
+                Value::Boolean(row.wear.is_none() && model.journal.bait == Some(row.item)),
+            ]))
+        })?,
+    )?;
+    // WithdrawFishingItem(item, durability or nil, count): queues moving up to `count` into the
+    // bags.
+    g.set(
+        "WithdrawFishingItem",
+        lua.create_function(|lua, (item, durability, count): (u32, Option<u32>, u32)| {
+            lua.app_data_mut::<Model>()
+                .expect("model app_data")
+                .withdraw_requests
+                .push(WithdrawRequest {
+                    item,
+                    durability,
+                    count,
+                });
+            Ok(())
+        })?,
+    )?;
+    // DepositFishingItem(bag, slot): queues the bag item going into its Satchel.
+    g.set(
+        "DepositFishingItem",
+        lua.create_function(|lua, (bag, at): (i64, u32)| {
+            lua.app_data_mut::<Model>()
+                .expect("model app_data")
+                .deposit_requests
+                .push((bag, at));
             Ok(())
         })?,
     )?;

@@ -3,8 +3,8 @@
 //! missing font only warns.
 
 use benilla_ui::script::{
-    ContainerSlot, ContainerState, GearRequest, JournalLegend, JournalPage, JournalView,
-    JournalZone, UiScript,
+    ContainerSlot, ContainerState, GearRequest, ItemTemplateView, JournalLegend, JournalPage,
+    JournalView, JournalZone, SatchelSlot, UiScript, WithdrawRequest,
 };
 
 use super::test_ui::load_ui as load_xml;
@@ -255,10 +255,15 @@ fn dropping_on_the_pole_slot_queues_the_gear_and_a_right_click_clears_it() {
     pick_up_from_bags(&mut s, 6256);
     click(&s, "BenillaFishingJournalPole", "LeftButton");
     assert_eq!(
+        s.take_deposit_requests(),
+        vec![(0, 2)],
+        "the bag item goes into the Satchel first"
+    );
+    assert_eq!(
         s.take_gear_requests(),
         vec![GearRequest {
             lure: false,
-            from: Some((0, 2))
+            from: Some((6256, None))
         }]
     );
     assert!(s.cursor_payload().is_none(), "the drop clears the cursor");
@@ -644,4 +649,129 @@ fn an_unknown_fish_gets_its_name_once_the_client_learns_the_item() {
         "Raw Brilliant Smallfish",
         "the open Journal repaints until it knows every item"
     );
+}
+
+/// `two_zones` with a Satchel: 23 Raw Brilliant Smallfish, a Fishing Pole at 30 / 30 and a Shiny
+/// Bauble at 14 / 20.
+fn with_satchel() -> JournalView {
+    JournalView {
+        satchel: vec![
+            SatchelSlot {
+                item: 6291,
+                count: 23,
+                wear: None,
+                tackle: false,
+            },
+            SatchelSlot {
+                item: 6256,
+                count: 1,
+                wear: Some((30, 30)),
+                tackle: true,
+            },
+            SatchelSlot {
+                item: 6529,
+                count: 1,
+                wear: Some((14, 20)),
+                tackle: true,
+            },
+        ],
+        ..two_zones()
+    }
+}
+
+fn inventory(view: JournalView) -> UiScript {
+    let mut s = journal();
+    s.set_fishing_journal(view);
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    s.run("BenillaJournal_ShowPage('Inventory')").unwrap();
+    frame(&mut s, 0.05);
+    s
+}
+
+#[test]
+fn the_satchel_shows_its_stacks_and_pieces_on_the_inventory_tab() {
+    let s = inventory(with_satchel());
+    assert!(shown(&s, "BenillaFishingJournalSatchel1Icon"));
+    assert_eq!(text(&s, "BenillaFishingJournalSatchel1Stack"), "23");
+    assert!(shown(&s, "BenillaFishingJournalSatchel2Icon"));
+    assert_eq!(text(&s, "BenillaFishingJournalSatchel3Stack"), "14/20");
+    assert!(
+        !shown(&s, "BenillaFishingJournalSatchel4Icon"),
+        "the rest are empty"
+    );
+}
+
+#[test]
+fn a_right_click_withdraws_a_stack_and_shift_one() {
+    let mut s = inventory(with_satchel());
+    s.set_item_template(
+        6291,
+        ItemTemplateView {
+            name: "Raw Brilliant Smallfish".into(),
+            stackable: 20,
+            ..Default::default()
+        },
+    );
+    click(&s, "BenillaFishingJournalSatchel1", "RightButton");
+    s.set_modifiers(true, false, false);
+    click(&s, "BenillaFishingJournalSatchel1", "RightButton");
+    click(&s, "BenillaFishingJournalSatchel3", "RightButton");
+    assert_eq!(
+        s.take_withdraw_requests(),
+        vec![
+            WithdrawRequest {
+                item: 6291,
+                durability: None,
+                count: 20
+            },
+            WithdrawRequest {
+                item: 6291,
+                durability: None,
+                count: 1
+            },
+            WithdrawRequest {
+                item: 6529,
+                durability: Some(14),
+                count: 1
+            },
+        ]
+    );
+}
+
+#[test]
+fn a_left_click_on_satchel_tackle_slots_it() {
+    let mut s = inventory(with_satchel());
+    click(&s, "BenillaFishingJournalSatchel3", "LeftButton");
+    assert_eq!(
+        s.take_gear_requests(),
+        vec![GearRequest {
+            lure: true,
+            from: Some((6529, Some(14)))
+        }]
+    );
+    click(&s, "BenillaFishingJournalSatchel1", "LeftButton");
+    assert!(
+        s.take_gear_requests().is_empty() && s.take_bait_requests().is_empty(),
+        "a catch is not tackle"
+    );
+}
+
+#[test]
+fn a_bag_item_dropped_on_the_window_is_deposited() {
+    let mut s = inventory(with_satchel());
+    pick_up_from_bags(&mut s, 6291);
+    s.run("BenillaFishingJournal_Deposit()").unwrap();
+    assert_eq!(s.take_deposit_requests(), vec![(0, 2)]);
+    assert!(s.cursor_payload().is_none());
+}
+
+#[test]
+fn an_empty_lure_slot_shows_the_lure_it_waits_for_with_none_held() {
+    let s = inventory(JournalView {
+        lure_waiting: Some(6529),
+        ..two_zones()
+    });
+    assert!(shown(&s, "BenillaFishingJournalLureIcon"));
+    assert_eq!(text(&s, "BenillaFishingJournalLureCount"), "0");
+    assert_eq!(text(&s, "BenillaFishingJournalLureHint"), "");
 }
