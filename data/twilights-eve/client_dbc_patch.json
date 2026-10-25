@@ -12834,6 +12834,13 @@
     "cast_time_index": 16,
     "duration_index": 32
    }
+  },
+  {
+   "spell_id": 7620,
+   "fields": {
+    "equipped_item_class": -1,
+    "equipped_subclass_mask": 0
+   }
   }
  ],
  "talent_tabs": [

@@ -329,6 +329,23 @@ def item_displays(content_dir: str, art: list[str], art_dir: str) -> list[dict]:
     return sorted(rows, key=lambda row: row["id"])
 
 
+def fishing_spell(content_dir: str) -> list[dict]:
+    """The stock Fishing row `fish.toml` `[spell]` names, without its main-hand pole requirement:
+    the pole lives in the Journal's Pole slot and the realm checks it (ADR 0022). A content folder
+    without `fish.toml` gives none."""
+    path = os.path.join(content_dir, "fish.toml")
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, "rb") as f:
+            spell = tomllib.load(f).get("spell", {})
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise BuildError(f"cannot read {path}: {error}") from error
+    if not isinstance(spell.get("id"), int):
+        raise BuildError(f"{path} [spell] id: {spell.get('id')!r} is not a spell id")
+    return [{"spell_id": spell["id"], "fields": {"equipped_item_class": -1, "equipped_subclass_mask": 0}}]
+
+
 def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], art_dir: str) -> list[dict]:
     """The client rows of `creature_spells.toml` (ADR 0008, 0011). Each is a spell of its own, with
     an id from 1,000,000 up that no master.csv row and no other creature spell claims, its name,
@@ -1816,6 +1833,8 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
                     seat["prereq"] = talent["prereq"]
                 seats.append(seat)
     overrides.extend(build_creature_spells(creature_spells or [], rows, art, art_dir))
+    if content_dir:
+        overrides.extend(fishing_spell(content_dir))
     patch: dict = {"callings": [client_calling(c, profiles[c["key"]]["name"]) for c in callings.values()],
                    "spells": overrides,
                    "talent_tabs": tabs, "talents": seats}

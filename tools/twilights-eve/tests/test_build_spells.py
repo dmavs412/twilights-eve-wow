@@ -197,6 +197,14 @@ class BuildSpells(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertNotIn("item_displays", self.patch)
 
+    def test_the_fishing_spell_loses_its_main_hand_pole_requirement(self):
+        self.content = {"fish.toml": "[spell]\nid = 7620\npole_subclass = 20\n"}
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        fishing = [s for s in self.patch["spells"] if s["spell_id"] == 7620]
+        self.assertEqual(fishing, [{"spell_id": 7620,
+                                    "fields": {"equipped_item_class": -1, "equipped_subclass_mask": 0}}])
+
     def creature(self, spell_id: int = 1900001, key: str = "curse") -> str:
         """A Creature Spell as creature_spells.toml writes one: Corruption's look, 6 ticks of 10."""
         return f"""
