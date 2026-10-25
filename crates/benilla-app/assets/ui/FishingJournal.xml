@@ -1,6 +1,6 @@
 <Ui>
     <!--
-        The Journal (spec #323, #396), opened by TOGGLEFISHINGJOURNAL (J) or /journal. One 340 x 620
+        The Journal (spec #323, #396), opened by TOGGLEFISHINGJOURNAL (J) or /journal. One 420 x 660
         frame with a profession bookmark column on its right edge (Fishing live, Herbalism greyed)
         and three bottom tabs, each a child frame: Zones (the default), Inventory and Progression.
 
@@ -26,7 +26,12 @@
         BENILLA_JOURNAL_FISH_SLOTS = 10
         BENILLA_JOURNAL_PER_ROW = 5
         BENILLA_JOURNAL_LEGEND_SLOTS = 4
-        BENILLA_JOURNAL_SLOT = 48
+        BENILLA_JOURNAL_SLOT = 52
+        BENILLA_JOURNAL_XP_WIDTH = 208
+        -- Text on bare parchment is ink, as the mockup has it; gold stays for the title, the zone
+        -- card and the red legend panel.
+        BENILLA_JOURNAL_INK = { 0.27, 0.16, 0.06 }
+        BENILLA_JOURNAL_FADED_INK = { 0.45, 0.33, 0.2 }
         -- The catch counts that unlock a page's three tiers: `[journal] reveal_at` in fish.toml.
         BENILLA_JOURNAL_REVEAL_AT = { 5, 10, 25 }
         BENILLA_JOURNAL_HINT = "You have heard a rumour of a legendary fish in these waters."
@@ -62,13 +67,15 @@
             return total
         end
 
-        -- An item's icon, or the placeholder fish when the client does not know it.
+        -- An item's icon, or the placeholder fish when the client does not know it yet. A miss
+        -- asks the realm for the item, so the open Journal repaints until the answer lands.
         function BenillaFishingJournal_Icon(item)
             if item then
                 local _, _, _, _, _, _, _, _, texture = GetItemInfo(item)
                 if texture then
                     return texture
                 end
+                BenillaFishingJournal.missing = true
             end
             return BENILLA_FISHING_ART .. "fish"
         end
@@ -92,7 +99,35 @@
 
         function BenillaFishingJournal_ItemName(item)
             local name = item and GetItemInfo(item)
+            if item and not name then
+                BenillaFishingJournal.missing = true
+            end
             return name or "an unknown item"
+        end
+
+        -- A gear item's name under its slot: empty until the client knows the item.
+        function BenillaFishingJournal_GearName(item)
+            if not item then
+                return ""
+            end
+            local name = GetItemInfo(item)
+            if not name then
+                BenillaFishingJournal.missing = true
+            end
+            return name or ""
+        end
+
+        -- While open with an item the client has not heard of, repaint every half second.
+        function BenillaFishingJournal_OnUpdate(elapsed)
+            local frame = BenillaFishingJournal
+            if not frame.missing then
+                return
+            end
+            frame.retry = (frame.retry or 0) + elapsed
+            if frame.retry >= 0.5 then
+                frame.retry = 0
+                BenillaFishingJournal_Paint()
+            end
         end
 
         -- A slot's face: `state` is "caught" (the item's icon), "silhouette" (a dark fish), "dark"
@@ -129,6 +164,7 @@
             slot.kind = "bait"
             BenillaFishingJournalBaitCount:SetText(bait and BenillaFishingJournal_ItemCount(bait) or "")
             BenillaFishingJournalBaitHint:SetText(bait and "" or "Drop bait here")
+            BenillaFishingJournalBaitName:SetText(BenillaFishingJournal_GearName(bait))
         end
 
         -- The Pole and Lure slots. The Lure shows its durability as "14/20".
@@ -138,12 +174,14 @@
             BenillaFishingJournal_Face(slot, pole and "caught" or "empty", pole)
             slot.kind = "pole"
             BenillaFishingJournalPoleHint:SetText(pole and "" or "Drop a pole here")
+            BenillaFishingJournalPoleName:SetText(BenillaFishingJournal_GearName(pole))
             slot = BenillaFishingJournalLure
             BenillaFishingJournal_Face(slot, lure and "caught" or "empty", lure)
             slot.kind = "lure"
             slot.durability = lure and (durability .. " / " .. max) or nil
             BenillaFishingJournalLureCount:SetText(lure and (durability .. "/" .. max) or "")
             BenillaFishingJournalLureHint:SetText(lure and "" or "Drop a lure here")
+            BenillaFishingJournalLureName:SetText(BenillaFishingJournal_GearName(lure))
         end
 
         -- The Legendary Fish of `zoneName`: a flat list of item, hintFound, caught triples.
@@ -338,6 +376,50 @@
             return s
         end
 
+        -- Colour a list of font strings by name, without the drop shadow that muddies ink.
+        function BenillaJournal_Ink(names, colour)
+            for i = 1, table.getn(names) do
+                local fs = getglobal(names[i])
+                if fs then
+                    fs:SetTextColor(colour[1], colour[2], colour[3])
+                    if fs.SetShadowColor then
+                        fs:SetShadowColor(0, 0, 0, 0)
+                    end
+                end
+            end
+        end
+
+        -- One-time styling at load: ink on the parchment and the large gear slots.
+        function BenillaJournal_Style()
+            local j = "BenillaFishingJournal"
+            local p = j .. "Progression"
+            -- The section bands are dark enough for their gold titles and white counts.
+            local ink = {
+                j .. "PoleTitle", j .. "LureTitle", j .. "BaitTitle",
+                j .. "PoleName", j .. "LureName", j .. "BaitName",
+                p .. "Title", p .. "XpText",
+            }
+            for n = 1, BENILLA_JOURNAL_FISH_SLOTS do
+                table.insert(ink, j .. "Fish" .. n .. "Name")
+            end
+            for i = 1, 5 do
+                table.insert(ink, p .. "StatLabel" .. i)
+                table.insert(ink, p .. "StatValue" .. i)
+            end
+            BenillaJournal_Ink(ink, BENILLA_JOURNAL_INK)
+            BenillaJournal_Ink({ j .. "PoleHint", j .. "LureHint", j .. "BaitHint", p .. "Caption" }, BENILLA_JOURNAL_FADED_INK)
+            for _, key in ipairs({ "Pole", "Lure", "Bait" }) do
+                local slot = j .. key
+                getglobal(slot .. "Frame"):SetTexture(BENILLA_JOURNAL_ART .. "gear_slot")
+                local icon = getglobal(slot .. "Icon")
+                icon:SetWidth(48)
+                icon:SetHeight(48)
+                local name = getglobal(slot .. "Name")
+                name:SetWidth(100)
+                name:SetHeight(26)
+            end
+        end
+
         function BenillaJournalTalent_OnEnter()
             if not GameTooltip then
                 return
@@ -360,10 +442,10 @@
             else
                 fill:Show()
                 if toNext > 0 then
-                    fill:SetWidth(math.max(1, 186 * math.min(xp / toNext, 1)))
+                    fill:SetWidth(math.max(1, BENILLA_JOURNAL_XP_WIDTH * math.min(xp / toNext, 1)))
                     getglobal(p .. "XpText"):SetText(BenillaJournal_Commas(xp) .. " / " .. BenillaJournal_Commas(toNext) .. " XP")
                 else
-                    fill:SetWidth(186)
+                    fill:SetWidth(BENILLA_JOURNAL_XP_WIDTH)
                     getglobal(p .. "XpText"):SetText("Max level")
                 end
             end
@@ -420,6 +502,7 @@
 
         function BenillaFishingJournal_Paint()
             local frame = BenillaFishingJournal
+            frame.missing = nil
             BenillaJournal_ShowPage(frame.pageName or BENILLA_JOURNAL_PAGES[1])
             BenillaJournal_PaintProfessions()
             BenillaFishingJournal_PaintBait()
@@ -440,6 +523,11 @@
             end
             BenillaFishingJournalZoneName:SetText(zoneName)
             BenillaFishingJournalDescription:SetText(zone[3] or "")
+            if (zone[3] or "") == "" then
+                BenillaFishingJournalZonesBand:Hide()
+            else
+                BenillaFishingJournalZonesBand:Show()
+            end
             BenillaFishingJournalPage:SetText(count > 0 and (page .. " / " .. count) or "")
             if count > 1 then
                 BenillaFishingJournalPrev:Show()
@@ -570,7 +658,7 @@
             </Layer>
             <Layer level="ARTWORK">
                 <Texture name="$parentIcon" file="Interface\Icons\INV_Misc_QuestionMark">
-                    <Size><AbsDimension x="32" y="32"/></Size>
+                    <Size><AbsDimension x="36" y="36"/></Size>
                     <Anchors><Anchor point="CENTER"/></Anchors>
                 </Texture>
             </Layer>
@@ -607,10 +695,15 @@
             <Layer level="BACKGROUND">
                 <Texture name="$parentWell" file="Interface\Benilla\journal\slot_bg" setAllPoints="true"/>
             </Layer>
+            <!-- The painted slot is opaque inside its rim, so it sits under the icon. -->
+            <Layer level="BORDER">
+                <Texture name="$parentFrame" file="Interface\Benilla\journal\slot" setAllPoints="true"/>
+            </Layer>
             <Layer level="ARTWORK">
+                <!-- Sized for a 52 fish slot; BenillaJournal_Style enlarges the gear slots' icons. -->
                 <Texture name="$parentIcon">
                     <Size>
-                        <AbsDimension x="30" y="30"/>
+                        <AbsDimension x="40" y="40"/>
                     </Size>
                     <Anchors>
                         <Anchor point="CENTER"/>
@@ -618,7 +711,6 @@
                 </Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <Texture name="$parentFrame" file="Interface\Benilla\journal\slot" setAllPoints="true"/>
                 <Texture name="$parentPip1" file="Interface\Benilla\fishing\pip_off" hidden="true">
                     <Size>
                         <AbsDimension x="6" y="6"/>
@@ -660,14 +752,14 @@
                         <Anchor point="CENTER"/>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentName" inherits="GameFontHighlightSmall">
+                <FontString name="$parentName" inherits="GameFontHighlightSmall" justifyV="TOP">
                     <Size>
-                        <AbsDimension x="58" y="12"/>
+                        <AbsDimension x="64" y="26"/>
                     </Size>
                     <Anchors>
                         <Anchor point="TOP" relativePoint="BOTTOM">
                             <Offset>
-                                <AbsDimension x="0" y="-2"/>
+                                <AbsDimension x="0" y="-3"/>
                             </Offset>
                         </Anchor>
                     </Anchors>
@@ -696,7 +788,7 @@
     <!-- A bottom tab; its id indexes BENILLA_JOURNAL_PAGES. -->
     <Button name="BenillaJournalTabTemplate" virtual="true">
         <Size>
-            <AbsDimension x="110" y="28"/>
+            <AbsDimension x="120" y="30"/>
         </Size>
         <Layers>
             <Layer level="BACKGROUND">
@@ -720,7 +812,7 @@
     <!-- A profession bookmark on the right edge; its id indexes BENILLA_JOURNAL_PROFESSIONS. -->
     <Button name="BenillaJournalProfessionTemplate" virtual="true">
         <Size>
-            <AbsDimension x="40" y="40"/>
+            <AbsDimension x="44" y="44"/>
         </Size>
         <Layers>
             <Layer level="BACKGROUND">
@@ -729,7 +821,7 @@
             <Layer level="ARTWORK">
                 <Texture name="$parentIcon">
                     <Size>
-                        <AbsDimension x="28" y="28"/>
+                        <AbsDimension x="30" y="30"/>
                     </Size>
                     <Anchors>
                         <Anchor point="CENTER"/>
@@ -751,538 +843,221 @@
     </Button>
 
     <Frame name="BenillaFishingJournal" parent="UIParent" frameStrata="HIGH" movable="true" enableMouse="true" hidden="true">
-        <Size>
-            <AbsDimension x="340" y="620"/>
-        </Size>
-        <Anchors>
-            <Anchor point="CENTER">
-                <Offset>
-                    <AbsDimension x="0" y="20"/>
-                </Offset>
-            </Anchor>
-        </Anchors>
+        <Size><AbsDimension x="420" y="660"/></Size>
+        <Anchors><Anchor point="CENTER"><Offset><AbsDimension x="0" y="16"/></Offset></Anchor></Anchors>
         <Layers>
             <Layer level="BACKGROUND">
-                <Texture name="$parentBackground" file="Interface\Benilla\journal\window_bg" setAllPoints="true"/>
+                <!-- Dark wood behind window_bg, whose border has see-through gaps between its rails. -->
+                <Texture name="$parentBacking"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="8" y="-8"/></Offset></Anchor><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-8" y="8"/></Offset></Anchor></Anchors><Color r="0.09" g="0.06" b="0.035" a="1"/></Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <!-- window_bg in nine pieces, so the border keeps its painted width at any frame size. -->
+                <Texture name="$parentTopLeft" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="TOPLEFT"/></Anchors><TexCoords left="0.000000" right="0.156250" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentTopRight" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="TOPRIGHT"/></Anchors><TexCoords left="0.843750" right="1.000000" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentBottomLeft" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="BOTTOMLEFT"/></Anchors><TexCoords left="0.000000" right="0.156250" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentBottomRight" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="BOTTOMRIGHT"/></Anchors><TexCoords left="0.843750" right="1.000000" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentTop" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="50" y="0"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-50" y="-50"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentBottom" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="50" y="50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-50" y="0"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentLeft" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="50" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.000000" right="0.156250" top="0.078125" bottom="0.921875"/></Texture>
+                <Texture name="$parentRight" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-50" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="0" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.843750" right="1.000000" top="0.078125" bottom="0.921875"/></Texture>
+                <Texture name="$parentMiddle" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="50" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-50" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.078125" bottom="0.921875"/></Texture>
             </Layer>
             <Layer level="ARTWORK">
-                <Texture name="$parentPlaque" file="Interface\Benilla\journal\title_plaque">
-                    <Size>
-                        <AbsDimension x="200" y="36"/>
-                    </Size>
-                    <Anchors>
-                        <Anchor point="TOP">
-                            <Offset>
-                                <AbsDimension x="0" y="-8"/>
-                            </Offset>
-                        </Anchor>
-                    </Anchors>
-                </Texture>
+                <Texture name="$parentPlaque" file="Interface\Benilla\journal\title_plaque"><Size><AbsDimension x="240" y="48"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="2"/></Offset></Anchor></Anchors></Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <FontString name="$parentTitle" inherits="GameFontNormalLarge" text="Fishing Journal">
-                    <Anchors>
-                        <Anchor point="TOP">
-                            <Offset>
-                                <AbsDimension x="0" y="-17"/>
-                            </Offset>
-                        </Anchor>
-                    </Anchors>
-                </FontString>
+                <FontString name="$parentTitle" inherits="GameFontNormalLarge" text="Fishing Journal"><Anchors><Anchor point="CENTER" relativeTo="$parentPlaque"><Offset><AbsDimension x="0" y="1"/></Offset></Anchor></Anchors></FontString>
             </Layer>
         </Layers>
         <Frames>
-            <Button name="BenillaFishingJournalClose">
-                <Size>
-                    <AbsDimension x="24" y="24"/>
-                </Size>
-                <Anchors>
-                    <Anchor point="TOPRIGHT">
-                        <Offset>
-                            <AbsDimension x="-10" y="-10"/>
-                        </Offset>
-                    </Anchor>
-                </Anchors>
-                <NormalTexture file="Interface\Benilla\journal\close_normal"/>
-                <PushedTexture file="Interface\Benilla\journal\close_pushed"/>
-                <HighlightTexture file="Interface\Benilla\journal\close_hover" alphaMode="ADD"/>
-                <Scripts>
-                    <OnClick>
-                        BenillaFishingJournal:Hide()
-                    </OnClick>
-                </Scripts>
-            </Button>
-            <Button name="BenillaFishingJournalProf1" inherits="BenillaJournalProfessionTemplate" id="1">
-                <Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-2" y="-60"/></Offset></Anchor></Anchors>
-            </Button>
-            <Button name="BenillaFishingJournalProf2" inherits="BenillaJournalProfessionTemplate" id="2">
-                <Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-2" y="-104"/></Offset></Anchor></Anchors>
-            </Button>
-            <Button name="BenillaFishingJournalTab1" inherits="BenillaJournalTabTemplate" id="1">
-                <Anchors><Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="5" y="6"/></Offset></Anchor></Anchors>
-            </Button>
-            <Button name="BenillaFishingJournalTab2" inherits="BenillaJournalTabTemplate" id="2">
-                <Anchors><Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="115" y="6"/></Offset></Anchor></Anchors>
-            </Button>
-            <Button name="BenillaFishingJournalTab3" inherits="BenillaJournalTabTemplate" id="3">
-                <Anchors><Anchor point="BOTTOMLEFT"><Offset><AbsDimension x="225" y="6"/></Offset></Anchor></Anchors>
-            </Button>
+            <Button name="BenillaFishingJournalClose"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-12"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\close_normal"/><PushedTexture file="Interface\Benilla\journal\close_pushed"/><HighlightTexture file="Interface\Benilla\journal\close_hover" alphaMode="ADD"/><Scripts><OnClick>BenillaFishingJournal:Hide()</OnClick></Scripts></Button>
+            <Button name="BenillaFishingJournalProf1" inherits="BenillaJournalProfessionTemplate" id="1"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-64"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaFishingJournalProf2" inherits="BenillaJournalProfessionTemplate" id="2"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-112"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaFishingJournalTab1" inherits="BenillaJournalTabTemplate" id="1"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="24" y="10"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaFishingJournalTab2" inherits="BenillaJournalTabTemplate" id="2"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="150" y="10"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaFishingJournalTab3" inherits="BenillaJournalTabTemplate" id="3"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="276" y="10"/></Offset></Anchor></Anchors></Button>
 
             <!-- Zones: the card, Common Fish and Legendary Fish. -->
             <Frame name="$parentZones" setAllPoints="true">
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <Texture file="Interface\Benilla\journal\inset_fill">
-                            <Size>
-                                <AbsDimension x="300" y="150"/>
-                            </Size>
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-50"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </Texture>
-                        <Texture file="Interface\Benilla\journal\legend_panel">
-                            <Size><AbsDimension x="64" y="78"/></Size>
-                            <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="27" y="-392"/></Offset></Anchor></Anchors>
-                        </Texture>
-                        <Texture file="Interface\Benilla\journal\legend_panel">
-                            <Size><AbsDimension x="64" y="78"/></Size>
-                            <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="101" y="-392"/></Offset></Anchor></Anchors>
-                        </Texture>
-                        <Texture file="Interface\Benilla\journal\legend_panel">
-                            <Size><AbsDimension x="64" y="78"/></Size>
-                            <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="175" y="-392"/></Offset></Anchor></Anchors>
-                        </Texture>
-                        <Texture file="Interface\Benilla\journal\legend_panel">
-                            <Size><AbsDimension x="64" y="78"/></Size>
-                            <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="249" y="-392"/></Offset></Anchor></Anchors>
-                        </Texture>
+                        <Texture><Size><AbsDimension x="320" y="154"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="50" y="-54"/></Offset></Anchor></Anchors><Color r="0.08" g="0.05" b="0.02" a="1"/></Texture>
+                        <Texture file="Interface\Benilla\journal\legend_panel"><Size><AbsDimension x="316" y="100"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-466"/></Offset></Anchor></Anchors></Texture>
                     </Layer>
                     <Layer level="ARTWORK">
-                        <Texture name="BenillaFishingJournalScene">
-                            <Size>
-                                <AbsDimension x="296" y="146"/>
-                            </Size>
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-52"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </Texture>
-                        <Texture file="Interface\Benilla\journal\section_band">
-                            <Size>
-                                <AbsDimension x="296" y="20"/>
-                            </Size>
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-208"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </Texture>
-                        <Texture file="Interface\Benilla\journal\divider">
-                            <Size>
-                                <AbsDimension x="296" y="2"/>
-                            </Size>
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-364"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </Texture>
-                        <Texture file="Interface\Benilla\journal\section_band">
-                            <Size>
-                                <AbsDimension x="296" y="20"/>
-                            </Size>
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-370"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </Texture>
+                        <Texture name="BenillaFishingJournalScene"><Size><AbsDimension x="316" y="150"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-56"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-214"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\divider"><Size><AbsDimension x="316" y="12"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-416"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-432"/></Offset></Anchor></Anchors></Texture>
                     </Layer>
                     <Layer level="OVERLAY">
-                        <Texture name="$parentBand">
-                            <Size>
-                                <AbsDimension x="296" y="44"/>
-                            </Size>
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-154"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                            <Color r="0" g="0" b="0" a="0.6"/>
-                        </Texture>
-                        <FontString name="BenillaFishingJournalZoneName" inherits="GameFontNormalLarge">
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-62"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                        <FontString name="BenillaFishingJournalPage" inherits="GameFontHighlightSmall">
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-84"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                        <FontString name="BenillaFishingJournalDescription" inherits="GameFontHighlightSmall" justifyV="TOP">
-                            <Size>
-                                <AbsDimension x="284" y="40"/>
-                            </Size>
-                            <Anchors>
-                                <Anchor point="TOP">
-                                    <Offset>
-                                        <AbsDimension x="0" y="-156"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                        <FontString inherits="GameFontNormal" text="Common Fish" justifyH="LEFT">
-                            <Anchors>
-                                <Anchor point="TOPLEFT">
-                                    <Offset>
-                                        <AbsDimension x="30" y="-211"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                        <FontString name="BenillaFishingJournalCommonCount" inherits="GameFontHighlightSmall" justifyH="RIGHT">
-                            <Anchors>
-                                <Anchor point="TOPRIGHT">
-                                    <Offset>
-                                        <AbsDimension x="-30" y="-212"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                        <FontString inherits="GameFontNormal" text="Legendary Fish" justifyH="LEFT">
-                            <Anchors>
-                                <Anchor point="TOPLEFT">
-                                    <Offset>
-                                        <AbsDimension x="30" y="-373"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
-                        <FontString name="BenillaFishingJournalLegendCount" inherits="GameFontHighlightSmall" justifyH="RIGHT">
-                            <Anchors>
-                                <Anchor point="TOPRIGHT">
-                                    <Offset>
-                                        <AbsDimension x="-30" y="-374"/>
-                                    </Offset>
-                                </Anchor>
-                            </Anchors>
-                        </FontString>
+                        <Texture name="$parentTopShade"><Size><AbsDimension x="316" y="46"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-56"/></Offset></Anchor></Anchors><Color r="0" g="0" b="0" a="0.45"/></Texture>
+                        <Texture name="$parentBand"><Size><AbsDimension x="316" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-154"/></Offset></Anchor></Anchors><Color r="0" g="0" b="0" a="0.6"/></Texture>
+                        <FontString name="BenillaFishingJournalZoneName" inherits="GameFontNormalLarge"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-64"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalPage" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-84"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalDescription" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="296" y="44"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="62" y="-160"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="$parentCommonTitle" inherits="GameFontNormal" text="Common Fish" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-221"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalCommonCount" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-92" y="-222"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="$parentLegendTitle" inherits="GameFontNormal" text="Legendary Fish" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-439"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalLegendCount" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-92" y="-440"/></Offset></Anchor></Anchors></FontString>
                     </Layer>
                 </Layers>
                 <Frames>
-                    <Button name="BenillaFishingJournalPrev" hidden="true">
-                        <Size>
-                            <AbsDimension x="24" y="24"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor point="TOPLEFT">
-                                <Offset>
-                                    <AbsDimension x="30" y="-60"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <NormalTexture file="Interface\Benilla\journal\arrow_normal"/>
-                        <PushedTexture file="Interface\Benilla\journal\arrow_pushed"/>
-                        <HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/>
-                        <DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/>
-                        <Scripts>
-                            <OnLoad>
-                                this:GetNormalTexture():SetTexCoord(1, 0, 0, 1)
-                                this:GetPushedTexture():SetTexCoord(1, 0, 0, 1)
-                                this:GetHighlightTexture():SetTexCoord(1, 0, 0, 1)
-                                this:GetDisabledTexture():SetTexCoord(1, 0, 0, 1)
-                            </OnLoad>
-                            <OnClick>
-                                BenillaFishingJournal_Turn(-1)
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-                    <Button name="BenillaFishingJournalNext" hidden="true">
-                        <Size>
-                            <AbsDimension x="24" y="24"/>
-                        </Size>
-                        <Anchors>
-                            <Anchor point="TOPRIGHT">
-                                <Offset>
-                                    <AbsDimension x="-30" y="-60"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <NormalTexture file="Interface\Benilla\journal\arrow_normal"/>
-                        <PushedTexture file="Interface\Benilla\journal\arrow_pushed"/>
-                        <HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/>
-                        <DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/>
-                        <Scripts>
-                            <OnClick>
-                                BenillaFishingJournal_Turn(1)
-                            </OnClick>
-                        </Scripts>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish1" inherits="BenillaFishingJournalSlotTemplate" id="1">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="28" y="-234"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish2" inherits="BenillaFishingJournalSlotTemplate" id="2">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="88" y="-234"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish3" inherits="BenillaFishingJournalSlotTemplate" id="3">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="148" y="-234"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish4" inherits="BenillaFishingJournalSlotTemplate" id="4">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="208" y="-234"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish5" inherits="BenillaFishingJournalSlotTemplate" id="5">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="268" y="-234"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish6" inherits="BenillaFishingJournalSlotTemplate" id="6">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="28" y="-296"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish7" inherits="BenillaFishingJournalSlotTemplate" id="7">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="88" y="-296"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish8" inherits="BenillaFishingJournalSlotTemplate" id="8">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="148" y="-296"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish9" inherits="BenillaFishingJournalSlotTemplate" id="9">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="208" y="-296"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalFish10" inherits="BenillaFishingJournalSlotTemplate" id="10">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="268" y="-296"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalLegend1" inherits="BenillaFishingJournalSlotTemplate" id="1">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="35" y="-400"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalLegend2" inherits="BenillaFishingJournalSlotTemplate" id="2">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="109" y="-400"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalLegend3" inherits="BenillaFishingJournalSlotTemplate" id="3">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="183" y="-400"/></Offset></Anchor></Anchors>
-                    </Button>
-                    <Button name="BenillaFishingJournalLegend4" inherits="BenillaFishingJournalSlotTemplate" id="4">
-                        <Size><AbsDimension x="48" y="48"/></Size>
-                        <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="257" y="-400"/></Offset></Anchor></Anchors>
-                    </Button>
+                    <Button name="BenillaFishingJournalPrev" hidden="true"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="60" y="-62"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\arrow_normal"/><PushedTexture file="Interface\Benilla\journal\arrow_pushed"/><HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/><DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/><Scripts><OnLoad>this:GetNormalTexture():SetTexCoord(1, 0, 0, 1) this:GetPushedTexture():SetTexCoord(1, 0, 0, 1) this:GetHighlightTexture():SetTexCoord(1, 0, 0, 1) this:GetDisabledTexture():SetTexCoord(1, 0, 0, 1)</OnLoad><OnClick>BenillaFishingJournal_Turn(-1)</OnClick></Scripts></Button>
+                    <Button name="BenillaFishingJournalNext" hidden="true"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-60" y="-62"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\arrow_normal"/><PushedTexture file="Interface\Benilla\journal\arrow_pushed"/><HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/><DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/><Scripts><OnClick>BenillaFishingJournal_Turn(1)</OnClick></Scripts></Button>
+                    <Button name="BenillaFishingJournalFish1" inherits="BenillaFishingJournalSlotTemplate" id="1"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish2" inherits="BenillaFishingJournalSlotTemplate" id="2"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish3" inherits="BenillaFishingJournalSlotTemplate" id="3"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish4" inherits="BenillaFishingJournalSlotTemplate" id="4"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish5" inherits="BenillaFishingJournalSlotTemplate" id="5"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish6" inherits="BenillaFishingJournalSlotTemplate" id="6"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish7" inherits="BenillaFishingJournalSlotTemplate" id="7"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish8" inherits="BenillaFishingJournalSlotTemplate" id="8"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish9" inherits="BenillaFishingJournalSlotTemplate" id="9"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalFish10" inherits="BenillaFishingJournalSlotTemplate" id="10"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalLegend1" inherits="BenillaFishingJournalSlotTemplate" id="1"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="73" y="-474"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalLegend2" inherits="BenillaFishingJournalSlotTemplate" id="2"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="147" y="-474"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalLegend3" inherits="BenillaFishingJournalSlotTemplate" id="3"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="221" y="-474"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalLegend4" inherits="BenillaFishingJournalSlotTemplate" id="4"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="295" y="-474"/></Offset></Anchor></Anchors></Button>
                 </Frames>
             </Frame>
 
-            <!-- Inventory: the Pole, Lure and Bait slots; #393 restyles them. -->
+            <!-- Inventory: Fishing Gear (Pole, Lure, Bait) and the Satchel grid, which #393 fills. -->
             <Frame name="$parentInventory" setAllPoints="true" hidden="true">
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture><Size><AbsDimension x="316" y="128"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-88"/></Offset></Anchor></Anchors><Color r="0.35" g="0.2" b="0.06" a="0.16"/></Texture>
+                        <Texture><Size><AbsDimension x="316" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-88"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="316" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-215"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="1" y="128"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-88"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="1" y="128"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="367" y="-88"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-544"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-544"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-544"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-544"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot_bg"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-544"/></Offset></Anchor></Anchors></Texture>
+                    </Layer>
+                    <Layer level="ARTWORK">
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-56"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\divider"><Size><AbsDimension x="316" y="12"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-228"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-248"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-280"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-346"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-412"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-478"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-544"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-544"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-544"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-544"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\slot"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-544"/></Offset></Anchor></Anchors></Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="$parentGearTitle" inherits="GameFontNormal" text="Fishing Gear" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-63"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="$parentSatchelTitle" inherits="GameFontNormal" text="Inventory" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-255"/></Offset></Anchor></Anchors></FontString>
+                    </Layer>
+                </Layers>
                 <Frames>
-                    <Button name="BenillaFishingJournalPole" inherits="BenillaFishingJournalSlotTemplate">
-                        <Anchors>
-                            <Anchor point="TOPLEFT">
-                                <Offset>
-                                    <AbsDimension x="14" y="-60"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                            <Layer level="OVERLAY">
-                                <FontString name="BenillaFishingJournalPoleTitle" inherits="GameFontNormal" text="Pole" justifyH="LEFT">
-                                    <Anchors>
-                                        <Anchor point="BOTTOMLEFT" relativeTo="BenillaFishingJournalPole" relativePoint="RIGHT">
-                                            <Offset>
-                                                <AbsDimension x="6" y="2"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                                <FontString name="BenillaFishingJournalPoleHint" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP">
-                                    <Size>
-                                        <AbsDimension x="56" y="26"/>
-                                    </Size>
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalPole" relativePoint="RIGHT">
-                                            <Offset>
-                                                <AbsDimension x="6" y="-2"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
-                    </Button>
-                    <Button name="BenillaFishingJournalLure" inherits="BenillaFishingJournalSlotTemplate">
-                        <Anchors>
-                            <Anchor point="TOPLEFT">
-                                <Offset>
-                                    <AbsDimension x="120" y="-60"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                            <Layer level="OVERLAY">
-                                <FontString name="BenillaFishingJournalLureCount" inherits="GameFontHighlightSmall" justifyH="RIGHT">
-                                    <Anchors>
-                                        <Anchor point="BOTTOMRIGHT">
-                                            <Offset>
-                                                <AbsDimension x="-3" y="3"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                                <FontString name="BenillaFishingJournalLureTitle" inherits="GameFontNormal" text="Lure" justifyH="LEFT">
-                                    <Anchors>
-                                        <Anchor point="BOTTOMLEFT" relativeTo="BenillaFishingJournalLure" relativePoint="RIGHT">
-                                            <Offset>
-                                                <AbsDimension x="6" y="2"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                                <FontString name="BenillaFishingJournalLureHint" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP">
-                                    <Size>
-                                        <AbsDimension x="56" y="26"/>
-                                    </Size>
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalLure" relativePoint="RIGHT">
-                                            <Offset>
-                                                <AbsDimension x="6" y="-2"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
-                    </Button>
-                    <Button name="BenillaFishingJournalBait" inherits="BenillaFishingJournalSlotTemplate">
-                        <Anchors>
-                            <Anchor point="TOPLEFT">
-                                <Offset>
-                                    <AbsDimension x="226" y="-60"/>
-                                </Offset>
-                            </Anchor>
-                        </Anchors>
-                        <Layers>
-                            <Layer level="OVERLAY">
-                                <FontString name="BenillaFishingJournalBaitCount" inherits="GameFontHighlightSmall" justifyH="RIGHT">
-                                    <Anchors>
-                                        <Anchor point="BOTTOMRIGHT">
-                                            <Offset>
-                                                <AbsDimension x="-3" y="3"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                                <FontString name="BenillaFishingJournalBaitTitle" inherits="GameFontNormal" text="Bait" justifyH="LEFT">
-                                    <Anchors>
-                                        <Anchor point="BOTTOMLEFT" relativeTo="BenillaFishingJournalBait" relativePoint="RIGHT">
-                                            <Offset>
-                                                <AbsDimension x="6" y="2"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                                <FontString name="BenillaFishingJournalBaitHint" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP">
-                                    <Size>
-                                        <AbsDimension x="56" y="26"/>
-                                    </Size>
-                                    <Anchors>
-                                        <Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalBait" relativePoint="RIGHT">
-                                            <Offset>
-                                                <AbsDimension x="6" y="-2"/>
-                                            </Offset>
-                                        </Anchor>
-                                    </Anchors>
-                                </FontString>
-                            </Layer>
-                        </Layers>
-                    </Button>
+                    <Button name="BenillaFishingJournalPole" inherits="BenillaFishingJournalSlotTemplate"><Size><AbsDimension x="64" y="64"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="73" y="-118"/></Offset></Anchor></Anchors><Layers><Layer level="OVERLAY"><FontString name="BenillaFishingJournalPoleTitle" inherits="GameFontNormalSmall" text="Fishing Pole" justifyH="CENTER"><Anchors><Anchor point="BOTTOM" relativeTo="BenillaFishingJournalPole" relativePoint="TOP"><Offset><AbsDimension x="0" y="4"/></Offset></Anchor></Anchors></FontString><FontString name="BenillaFishingJournalPoleHint" inherits="GameFontHighlightSmall" justifyH="CENTER" justifyV="TOP"><Size><AbsDimension x="100" y="26"/></Size><Anchors><Anchor point="TOP" relativeTo="BenillaFishingJournalPole" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString></Layer></Layers></Button>
+                    <Button name="BenillaFishingJournalLure" inherits="BenillaFishingJournalSlotTemplate"><Size><AbsDimension x="64" y="64"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="178" y="-118"/></Offset></Anchor></Anchors><Layers><Layer level="OVERLAY"><FontString name="BenillaFishingJournalLureCount" inherits="NumberFontNormal" justifyH="RIGHT"><Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-6" y="6"/></Offset></Anchor></Anchors></FontString><FontString name="BenillaFishingJournalLureTitle" inherits="GameFontNormalSmall" text="Lure" justifyH="CENTER"><Anchors><Anchor point="BOTTOM" relativeTo="BenillaFishingJournalLure" relativePoint="TOP"><Offset><AbsDimension x="0" y="4"/></Offset></Anchor></Anchors></FontString><FontString name="BenillaFishingJournalLureHint" inherits="GameFontHighlightSmall" justifyH="CENTER" justifyV="TOP"><Size><AbsDimension x="100" y="26"/></Size><Anchors><Anchor point="TOP" relativeTo="BenillaFishingJournalLure" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString></Layer></Layers></Button>
+                    <Button name="BenillaFishingJournalBait" inherits="BenillaFishingJournalSlotTemplate"><Size><AbsDimension x="64" y="64"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="283" y="-118"/></Offset></Anchor></Anchors><Layers><Layer level="OVERLAY"><FontString name="BenillaFishingJournalBaitCount" inherits="NumberFontNormal" justifyH="RIGHT"><Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-6" y="6"/></Offset></Anchor></Anchors></FontString><FontString name="BenillaFishingJournalBaitTitle" inherits="GameFontNormalSmall" text="Bait" justifyH="CENTER"><Anchors><Anchor point="BOTTOM" relativeTo="BenillaFishingJournalBait" relativePoint="TOP"><Offset><AbsDimension x="0" y="4"/></Offset></Anchor></Anchors></FontString><FontString name="BenillaFishingJournalBaitHint" inherits="GameFontHighlightSmall" justifyH="CENTER" justifyV="TOP"><Size><AbsDimension x="100" y="26"/></Size><Anchors><Anchor point="TOP" relativeTo="BenillaFishingJournalBait" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString></Layer></Layers></Button>
                 </Frames>
             </Frame>
 
             <!-- Progression: the level, the XP bar, the locked talent tree and five stats. -->
-<Frame name="$parentProgression" setAllPoints="true" hidden="true">
-<Layers>
-<Layer level="BACKGROUND">
-<Texture file="Interface\Benilla\journal\inset_fill"><Size><AbsDimension x="296" y="180"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-192"/></Offset></Anchor></Anchors></Texture>
-<Texture file="Interface\Benilla\journal\inset_edge"><Size><AbsDimension x="296" y="180"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-192"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionStripe1"><Size><AbsDimension x="296" y="18"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-404"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionStripe2"><Size><AbsDimension x="296" y="18"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-422"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionStripe3"><Size><AbsDimension x="296" y="18"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-440"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionStripe4"><Size><AbsDimension x="296" y="18"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-458"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionStripe5"><Size><AbsDimension x="296" y="18"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-476"/></Offset></Anchor></Anchors></Texture>
-</Layer>
-<Layer level="ARTWORK">
-<Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="296" y="20"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-50"/></Offset></Anchor></Anchors></Texture>
-<Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="296" y="20"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-170"/></Offset></Anchor></Anchors></Texture>
-<Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="296" y="20"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-380"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionBadge" file="Interface\Benilla\journal\level_badge"><Size><AbsDimension x="80" y="80"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="22" y="-78"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionXpFrame" file="Interface\Benilla\journal\xp_frame"><Size><AbsDimension x="190" y="20"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="112" y="-116"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionXpFill" file="Interface\Benilla\journal\xp_fill"><Size><AbsDimension x="186" y="16"/></Size><Anchors><Anchor point="LEFT" relativeTo="BenillaFishingJournalProgressionXpFrame" relativePoint="LEFT"><Offset><AbsDimension x="2" y="0"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionBranch1" file="Interface\Benilla\journal\branch"><Size><AbsDimension x="16" y="24"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="62" y="-250"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionBranchArrow1" file="Interface\Benilla\journal\branch_arrow"><Size><AbsDimension x="16" y="14"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="62" y="-274"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionBranch2" file="Interface\Benilla\journal\branch"><Size><AbsDimension x="16" y="24"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="162" y="-250"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionBranchArrow2" file="Interface\Benilla\journal\branch_arrow"><Size><AbsDimension x="16" y="14"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="162" y="-274"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionBranch3" file="Interface\Benilla\journal\branch"><Size><AbsDimension x="16" y="24"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="262" y="-250"/></Offset></Anchor></Anchors></Texture>
-<Texture name="BenillaFishingJournalProgressionBranchArrow3" file="Interface\Benilla\journal\branch_arrow"><Size><AbsDimension x="16" y="14"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="262" y="-274"/></Offset></Anchor></Anchors></Texture>
-</Layer>
-<Layer level="OVERLAY">
-<FontString name="BenillaFishingJournalProgressionLevelBand" inherits="GameFontNormal" text="Fishing Level" justifyH="LEFT"><Size><AbsDimension x="280" y="20"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="30" y="-50"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionTalentBand" inherits="GameFontNormal" text="Talents" justifyH="LEFT"><Size><AbsDimension x="280" y="20"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="30" y="-170"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatBand" inherits="GameFontNormal" text="Stats" justifyH="LEFT"><Size><AbsDimension x="280" y="20"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="30" y="-380"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionLevel" inherits="GameFontNormalLarge" justifyH="CENTER"><Size><AbsDimension x="80" y="80"/></Size><Anchors><Anchor point="CENTER" relativeTo="BenillaFishingJournalProgressionBadge" relativePoint="CENTER"><Offset><AbsDimension x="0" y="0"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionTitle" inherits="GameFontNormalLarge" justifyH="LEFT"><Size><AbsDimension x="196" y="24"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="112" y="-86"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionXpText" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="190" y="14"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalProgressionXpFrame" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="0" y="-2"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionPoints" inherits="GameFontHighlightSmall" text="0 / 0 Points Spent" justifyH="RIGHT"><Size><AbsDimension x="160" y="20"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-30" y="-170"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionCaption" inherits="GameFontNormal" text="Coming later" justifyH="CENTER"><Size><AbsDimension x="296" y="16"/></Size><Anchors><Anchor point="TOP" relativeTo="BenillaFishingJournalProgression" relativePoint="TOP"><Offset><AbsDimension x="0" y="-350"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatLabel1" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="18"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="30" y="-404"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatValue1" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="18"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-30" y="-404"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatLabel2" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="18"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="30" y="-422"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatValue2" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="18"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-30" y="-422"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatLabel3" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="18"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="30" y="-440"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatValue3" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="18"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-30" y="-440"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatLabel4" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="18"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="30" y="-458"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatValue4" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="18"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-30" y="-458"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatLabel5" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="18"/></Size><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPLEFT"><Offset><AbsDimension x="30" y="-476"/></Offset></Anchor></Anchors></FontString>
-<FontString name="BenillaFishingJournalProgressionStatValue5" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="18"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalProgression" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-30" y="-476"/></Offset></Anchor></Anchors></FontString>
-</Layer>
-</Layers>
-<Frames>
-<Button name="$parentSlot1" inherits="BenillaJournalTalentSlotTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="46" y="-200"/></Offset></Anchor></Anchors></Button>
-<Button name="$parentSlot4" inherits="BenillaJournalTalentSlotTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="46" y="-290"/></Offset></Anchor></Anchors></Button>
-<Button name="$parentSlot2" inherits="BenillaJournalTalentSlotTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="146" y="-200"/></Offset></Anchor></Anchors></Button>
-<Button name="$parentSlot5" inherits="BenillaJournalTalentSlotTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="146" y="-290"/></Offset></Anchor></Anchors></Button>
-<Button name="$parentSlot3" inherits="BenillaJournalTalentSlotTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="246" y="-200"/></Offset></Anchor></Anchors></Button>
-<Button name="$parentSlot6" inherits="BenillaJournalTalentSlotTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="246" y="-290"/></Offset></Anchor></Anchors></Button>
-</Frames>
-</Frame>
+            <Frame name="$parentProgression" setAllPoints="true" hidden="true">
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture><Size><AbsDimension x="316" y="186"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-218"/></Offset></Anchor></Anchors><Color r="0.35" g="0.2" b="0.06" a="0.16"/></Texture>
+                        <Texture><Size><AbsDimension x="316" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-218"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="316" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-403"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="1" y="186"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-218"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="1" y="186"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="367" y="-218"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture name="BenillaFishingJournalProgressionStripe1"><Size><AbsDimension x="316" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-448"/></Offset></Anchor></Anchors><Color r="0" g="0" b="0" a="0"/></Texture>
+                        <Texture name="BenillaFishingJournalProgressionStripe2"><Size><AbsDimension x="316" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-468"/></Offset></Anchor></Anchors><Color r="0" g="0" b="0" a="0"/></Texture>
+                        <Texture name="BenillaFishingJournalProgressionStripe3"><Size><AbsDimension x="316" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-488"/></Offset></Anchor></Anchors><Color r="0" g="0" b="0" a="0"/></Texture>
+                        <Texture name="BenillaFishingJournalProgressionStripe4"><Size><AbsDimension x="316" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-508"/></Offset></Anchor></Anchors><Color r="0" g="0" b="0" a="0"/></Texture>
+                        <Texture name="BenillaFishingJournalProgressionStripe5"><Size><AbsDimension x="316" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-528"/></Offset></Anchor></Anchors><Color r="0" g="0" b="0" a="0"/></Texture>
+                    </Layer>
+                    <Layer level="ARTWORK">
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-56"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-186"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-414"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionBadge" file="Interface\Benilla\journal\level_badge"><Size><AbsDimension x="84" y="84"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="60" y="-86"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionXpFrame" file="Interface\Benilla\journal\xp_frame"><Size><AbsDimension x="212" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="152" y="-124"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionXpFill" file="Interface\Benilla\journal\xp_fill"><Size><AbsDimension x="208" y="16"/></Size><Anchors><Anchor point="LEFT" relativeTo="BenillaFishingJournalProgressionXpFrame" relativePoint="LEFT"><Offset><AbsDimension x="2" y="0"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionBranch1" file="Interface\Benilla\journal\branch"><Size><AbsDimension x="16" y="18"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="97" y="-287"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionBranchArrow1" file="Interface\Benilla\journal\branch_arrow"><Size><AbsDimension x="16" y="12"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="97" y="-305"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionBranch2" file="Interface\Benilla\journal\branch"><Size><AbsDimension x="16" y="18"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="202" y="-287"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionBranchArrow2" file="Interface\Benilla\journal\branch_arrow"><Size><AbsDimension x="16" y="12"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="202" y="-305"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionBranch3" file="Interface\Benilla\journal\branch"><Size><AbsDimension x="16" y="18"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="307" y="-287"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalProgressionBranchArrow3" file="Interface\Benilla\journal\branch_arrow"><Size><AbsDimension x="16" y="12"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="307" y="-305"/></Offset></Anchor></Anchors></Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString name="BenillaFishingJournalProgressionLevelBand" inherits="GameFontNormal" text="Fishing Level" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-63"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionTalentBand" inherits="GameFontNormal" text="Talents" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-193"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatBand" inherits="GameFontNormal" text="Stats" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-421"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionLevel" inherits="GameFontNormalLarge" justifyH="CENTER"><Anchors><Anchor point="CENTER" relativeTo="BenillaFishingJournalProgressionBadge"/></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionTitle" inherits="GameFontNormalLarge" justifyH="LEFT"><Size><AbsDimension x="212" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="152" y="-98"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionXpText" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="212" y="14"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalProgressionXpFrame" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="0" y="-3"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionPoints" inherits="GameFontHighlightSmall" text="0 / 0 Points Spent" justifyH="RIGHT"><Size><AbsDimension x="200" y="20"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-92" y="-192"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionCaption" inherits="GameFontNormalSmall" text="Coming later" justifyH="CENTER"><Size><AbsDimension x="316" y="14"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-384"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatLabel1" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="64" y="-448"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatValue1" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="20"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-64" y="-448"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatLabel2" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="64" y="-468"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatValue2" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="20"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-64" y="-468"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatLabel3" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="64" y="-488"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatValue3" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="20"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-64" y="-488"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatLabel4" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="64" y="-508"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatValue4" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="20"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-64" y="-508"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatLabel5" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="64" y="-528"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalProgressionStatValue5" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="110" y="20"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-64" y="-528"/></Offset></Anchor></Anchors></FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="$parentSlot1" inherits="BenillaJournalTalentSlotTemplate"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="79" y="-230"/></Offset></Anchor></Anchors></Button>
+                    <Button name="$parentSlot2" inherits="BenillaJournalTalentSlotTemplate"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-230"/></Offset></Anchor></Anchors></Button>
+                    <Button name="$parentSlot3" inherits="BenillaJournalTalentSlotTemplate"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="289" y="-230"/></Offset></Anchor></Anchors></Button>
+                    <Button name="$parentSlot4" inherits="BenillaJournalTalentSlotTemplate"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="79" y="-320"/></Offset></Anchor></Anchors></Button>
+                    <Button name="$parentSlot5" inherits="BenillaJournalTalentSlotTemplate"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-320"/></Offset></Anchor></Anchors></Button>
+                    <Button name="$parentSlot6" inherits="BenillaJournalTalentSlotTemplate"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="289" y="-320"/></Offset></Anchor></Anchors></Button>
+                </Frames>
+            </Frame>
         </Frames>
         <Scripts>
             <OnLoad>
@@ -1292,7 +1067,11 @@
                 if UISpecialFrames then
                     tinsert(UISpecialFrames, "BenillaFishingJournal")
                 end
+                BenillaJournal_Style()
             </OnLoad>
+            <OnUpdate>
+                BenillaFishingJournal_OnUpdate(arg1)
+            </OnUpdate>
             <OnShow>
                 BenillaFishingJournal_Paint()
             </OnShow>

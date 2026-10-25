@@ -619,3 +619,29 @@ fn get_angler_info_returns_four_values() {
         "Apprentice Fisher"
     );
 }
+
+#[test]
+fn an_unknown_fish_gets_its_name_once_the_client_learns_the_item() {
+    let mut s = journal();
+    s.set_fishing_journal(two_zones());
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+    assert_eq!(
+        text(&s, "BenillaFishingJournalFish1Name"),
+        "an unknown item"
+    );
+
+    s.set_item_template(
+        6291,
+        benilla_ui::script::ItemTemplateView {
+            name: "Raw Brilliant Smallfish".into(),
+            ..Default::default()
+        },
+    );
+    frame(&mut s, 0.6);
+    assert_eq!(
+        text(&s, "BenillaFishingJournalFish1Name"),
+        "Raw Brilliant Smallfish",
+        "the open Journal repaints until it knows every item"
+    );
+}
