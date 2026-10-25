@@ -754,7 +754,7 @@ detection_range = 18.0
 spells = ["shadow_word_pain_creature"]
 
 # The Abbot, the Abbey's boss at the top of the bell tower: elite, a heavy Corruption and a
-# self-heal, and his bell (northshire_abbey.toml). Display 2492 is vmangos's Scarlet Abbot's
+# self-heal; no adds (his bell came out 2026-10-25). Display 2492 is vmangos's Scarlet Abbot's
 # (entry 4303), a robed human priest.
 [[template]]
 entry = 96005

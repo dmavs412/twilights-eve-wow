@@ -1202,7 +1202,10 @@ mod tests {
             .spells
             .iter()
             .any(|s| s == "abbot_heal"));
-        assert!(abbot.on_health.iter().any(|call| call.pct == 50));
+        assert!(
+            abbot.on_health.is_empty(),
+            "the Abbot calls no adds (2026-10-25)"
+        );
         assert!(abbot.drop.is_empty() && !abbot.rolls.is_empty());
         for &item in abbot.rolls.iter().flat_map(|r| &r.one_of) {
             let gear = crate::items::template(item).expect("the Abbot's roll names an item");

@@ -174,14 +174,8 @@ position = [-8900.5, -181.8, 113.7]
 orientation = 5.84
 rolls = [{ chance = 5, one_of = [900599] }, { chance = 100, one_of = [900500, 900501, 900502, 900503, 900504, 900505, 900506, 900507, 900508, 900509, 900510, 900105, 900511, 900512, 900513, 900514, 900515, 900516, 900517, 900518, 900519] }]
 
-# The bell: at half health he rings it, and two Corrupted Brothers come up the tower stair below
-# him, model (6, -7, 22).
-[[creature.on_health]]
-pct = 50
-entry = 96003
-level = 8
-count = 2
-position = [-8894.0, -187.0, 104.4]
+# He calls no one: the bell that brought two Corrupted Brothers up the stair at half health
+# came out on 2026-10-25, when the model showed no Calling at 10 in greens surviving them.
 
 # Brother Neals (#85), the Abbey's one survivor and the ender of Into the Abbey: friendly, quest
 # flags only. He stands caged at the back of the side chapel, the dead-end alcove off the nave's

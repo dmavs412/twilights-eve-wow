@@ -20,7 +20,7 @@ const NEALS_AT: [f32; 2] = [-8887.8, -153.5];
 const NEALS_CAGE: u64 = 0xF110 << 48 | 790902;
 /// `FactionTemplate.dbc` 35, friendly to every race.
 const FRIENDLY_TO_ALL: u32 = 35;
-/// The Abbot at the top of the bell tower, whose bell calls two Corrupted Brothers at half health.
+/// The Abbot at the top of the bell tower.
 const ABBOT: u64 = HIGHGUID_UNIT << 48 | 96005 << 24 | 780015;
 /// Where the Abbot stands, in the test's flat Abbey.
 const ABBOT_AT: [f32; 2] = [-8900.5, -181.8];
@@ -30,8 +30,6 @@ const ABBOT_AT: [f32; 2] = [-8900.5, -181.8];
 const PLATFORM_MIDDLE: [f32; 2] = [-8900.5, -181.8];
 /// Staff of the Friar (item 3415), in his main hand.
 const STAFF_OF_THE_FRIAR_DISPLAY: u32 = 20339;
-/// The first low guid of a creature a call for help brings in.
-const CALLED_GUID_BASE: u64 = 0x90_0000;
 /// Inside the nave, and out in the yard before the front doors.
 const INSIDE: [f32; 2] = [-8890.0, -172.0];
 const OUTSIDE: [f32; 2] = [-8950.0, -120.0];
@@ -84,10 +82,6 @@ struct Abbey {
     created_health: Vec<(u32, u32)>,
     /// The character.
     me: u64,
-    /// Every creature a call for help has brought in, since last cleared.
-    called: HashSet<u64>,
-    /// Everything that has turned on the character.
-    attackers: HashSet<u64>,
     /// Each creature's latest create: where it stands and its fields.
     created: HashMap<u64, ([f32; 3], ObjectFields)>,
     /// The height the host's ground reports.
@@ -143,8 +137,6 @@ impl Abbey {
             seen: HashSet::new(),
             created_health: Vec::new(),
             me,
-            called: HashSet::new(),
-            attackers: HashSet::new(),
             created: HashMap::new(),
             floor: 82.0,
             notes: Vec::new(),
@@ -175,9 +167,6 @@ impl Abbey {
                 } if is_unit(guid) => {
                     self.seen.insert(guid);
                     self.created.insert(guid, (position, fields.clone()));
-                    if guid & 0xFF_FFFF >= CALLED_GUID_BASE {
-                        self.called.insert(guid);
-                    }
                     if monsters().contains(&guid) {
                         let h = (
                             fields.unit_health().unwrap(),
@@ -203,9 +192,6 @@ impl Abbey {
                 SessionEvent::ObjectDestroyed(g) => {
                     self.seen.remove(&g);
                 }
-                SessionEvent::AttackStart { attacker, victim } if victim == self.me => {
-                    self.attackers.insert(attacker);
-                }
                 _ => {}
             }
         }
@@ -220,25 +206,6 @@ impl Abbey {
         self.tick(secs);
         if let Some(counter) = self.teleport.take() {
             self.realm.handle(RealmCommand::TeleportAck { counter });
-        }
-    }
-
-    /// Walks up to the Abbot and fights him until he rings his bell.
-    fn fight_the_abbot(&mut self) {
-        self.called.clear();
-        self.attackers.clear();
-        self.realm.handle(RealmCommand::DevTeleport {
-            x: ABBOT_AT[0] + 1.5,
-            y: ABBOT_AT[1],
-            facing: Some(std::f32::consts::PI),
-        });
-        self.tick(0.1);
-        self.realm.handle(RealmCommand::AttackSwing { guid: ABBOT });
-        for _ in 0..3000 {
-            self.tick(0.1);
-            if !self.called.is_empty() {
-                break;
-            }
         }
     }
 
@@ -393,51 +360,6 @@ fn the_abbeys_npcs_are_gone_and_mcbride_waits_outside() {
         assert!(!entries.contains(&entry), "{entry} still spawns");
     }
     assert!(entries.contains(&197), "Marshal McBride is gone");
-}
-
-#[test]
-fn the_abbots_bell_calls_two_brothers_and_they_fall_on_his_attacker() {
-    let mut a = Abbey::champion(40);
-    a.go(INSIDE, 0.1);
-    assert!(a.called.is_empty(), "the adds were there from the start");
-    a.fight_the_abbot();
-    assert_eq!(a.called.len(), 2, "the call brought {:?}", a.called);
-    assert!(
-        a.called.is_subset(&a.attackers),
-        "the adds are not fighting the character: {:?} of {:?}",
-        a.attackers,
-        a.called
-    );
-}
-
-#[test]
-fn a_call_is_made_once_a_life() {
-    let mut a = Abbey::champion(40);
-    a.go(INSIDE, 0.1);
-    a.fight_the_abbot();
-    assert_eq!(a.called.len(), 2);
-    // Many more blows, each past the threshold again.
-    a.tick(3.0);
-    assert_eq!(a.called.len(), 2, "a second call: {:?}", a.called);
-}
-
-#[test]
-fn a_reset_run_lets_the_call_fire_again() {
-    let mut a = Abbey::champion(40);
-    a.go(INSIDE, 0.1);
-    a.fight_the_abbot();
-    assert_eq!(a.called.len(), 2);
-
-    a.go(OUTSIDE, 0.1);
-    assert_eq!(a.realm.run_elapsed(), None, "the Run did not end");
-    assert!(a.seen.is_disjoint(&a.called), "the adds outlived the Run");
-    a.go(INSIDE, 0.1);
-    assert!(
-        a.seen.is_disjoint(&a.called),
-        "the adds are there at the Run's start"
-    );
-    a.fight_the_abbot();
-    assert_eq!(a.called.len(), 2, "no call in the second Run");
 }
 
 /// The tower door (#348), a GameObject guid.
