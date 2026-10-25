@@ -833,6 +833,25 @@ fn fishing_pools_hold_the_settled_roster() {
     }
 }
 
+/// The Shiny Bauble and the Darkwood Fishing Pole show icons no other item in the content uses
+/// (#400).
+#[test]
+fn the_shiny_bauble_and_darkwood_pole_show_their_own_icons() {
+    let fish = toml_table("fish.toml");
+    let display_of = |entry: i64| {
+        fish["item"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["entry"].as_integer() == Some(entry))
+            .unwrap_or_else(|| panic!("no item {entry}"))["display_id"]
+            .as_integer()
+            .unwrap()
+    };
+    assert_eq!(display_of(6529), 26571, "Shiny Bauble");
+    assert_eq!(display_of(6366), 20619, "Darkwood Fishing Pole");
+}
+
 /// Every pool fish has a `[[fish]]` row, and the four weight fish are in no pool.
 #[test]
 fn every_fishing_pool_fish_has_a_fish_row() {
