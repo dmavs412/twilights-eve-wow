@@ -97,6 +97,37 @@ impl ItemDisplayCatalog {
     pub fn iter(&self) -> impl Iterator<Item = (u32, &ItemDisplay)> {
         self.displays.iter().map(|(&id, d)| (id, d))
     }
+
+    /// Merge the client DBC patch's `item_displays` rows: each clones its `base` display, takes
+    /// the row's `icon`, and lands under `id`. A row whose `base` the catalog lacks is skipped
+    /// with a warning. Returns the number inserted; a patch without the key returns 0.
+    pub fn apply_item_displays(&mut self, json: &str) -> Result<usize, serde_json::Error> {
+        let patch: serde_json::Value = serde_json::from_str(json)?;
+        let Some(rows) = patch.get("item_displays").and_then(|v| v.as_array()) else {
+            return Ok(0);
+        };
+        let mut inserted = 0;
+        for row in rows {
+            let (Some(id), Some(base), Some(icon)) = (
+                row.get("id").and_then(|v| v.as_u64()),
+                row.get("base").and_then(|v| v.as_u64()),
+                row.get("icon").and_then(|v| v.as_str()),
+            ) else {
+                tracing::warn!("item_displays row skipped, it needs id, base and icon: {row}");
+                continue;
+            };
+            let Some(mut display) = self.displays.get(&(base as u32)).cloned() else {
+                tracing::warn!(
+                    "item display {id} skipped, base display {base} is not in the catalog"
+                );
+                continue;
+            };
+            display.icon = Some(icon.to_string());
+            self.displays.insert(id as u32, display);
+            inserted += 1;
+        }
+        Ok(inserted)
+    }
 }
 
 /// All 23 columns, the unread ones included, so the field-count check against the header is exact.
@@ -323,6 +354,49 @@ mod tests {
             display.group_sounds, 21,
             "field 11 is the ItemGroupSounds id"
         );
+    }
+
+    fn catalog_with_base() -> ItemDisplayCatalog {
+        let base = ItemDisplay {
+            model: [Some("fishingpole_01.m2".into()), None],
+            icon: Some("Interface\\Icons\\INV_Misc_Fish_02".into()),
+            ..Default::default()
+        };
+        ItemDisplayCatalog::from_displays(HashMap::from([(24701, base)]))
+    }
+
+    #[test]
+    fn a_patched_display_copies_its_base_and_takes_the_icon() {
+        let mut cat = catalog_with_base();
+        let patch = r#"{"item_displays": [{"id": 995001, "base": 24701, "icon": "Interface\\Icons\\Twilight\\old_goldfin"}]}"#;
+        assert_eq!(cat.apply_item_displays(patch).unwrap(), 1);
+        let d = cat.get(995001).expect("patched display present");
+        assert_eq!(
+            d.icon.as_deref(),
+            Some("Interface\\Icons\\Twilight\\old_goldfin")
+        );
+        assert_eq!(d.model, cat.get(24701).unwrap().model);
+        assert_eq!(
+            cat.get(24701).unwrap().icon.as_deref(),
+            Some("Interface\\Icons\\INV_Misc_Fish_02"),
+            "the base row keeps its own icon"
+        );
+    }
+
+    #[test]
+    fn a_patch_row_whose_base_is_missing_is_skipped() {
+        let mut cat = catalog_with_base();
+        let patch = r#"{"item_displays": [{"id": 995002, "base": 1, "icon": "x"}]}"#;
+        assert_eq!(cat.apply_item_displays(patch).unwrap(), 0);
+        assert!(cat.get(995002).is_none());
+        assert_eq!(cat.len(), 1);
+    }
+
+    #[test]
+    fn a_patch_without_item_displays_adds_nothing() {
+        let mut cat = catalog_with_base();
+        assert_eq!(cat.apply_item_displays(r#"{"spells": []}"#).unwrap(), 0);
+        assert_eq!(cat.len(), 1);
     }
 
     #[test]

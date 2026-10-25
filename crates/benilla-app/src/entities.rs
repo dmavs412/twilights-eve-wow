@@ -859,8 +859,17 @@ fn setup_entities(
         Err(e) => warn!("char-create catalog unavailable, the create screen is disabled: {e:#}"),
     }
     match load_item_display_catalog(&mut chain) {
-        Ok(catalog) => {
-            info!("item display catalog: {} entries", catalog.len());
+        Ok(mut catalog) => {
+            let painted = catalog
+                .apply_item_displays(benilla_formats::CLIENT_DBC_PATCH)
+                .unwrap_or_else(|e| {
+                    warn!("patch item_displays unreadable, painted icons stay missing: {e:#}");
+                    0
+                });
+            info!(
+                "item display catalog: {} entries, {painted} from the patch",
+                catalog.len()
+            );
             commands.insert_resource(ItemDisplays {
                 catalog,
                 models: HashMap::new(),

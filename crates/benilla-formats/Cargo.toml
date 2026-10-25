@@ -29,6 +29,7 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 benilla-wdt = { path = "../benilla-wdt" }
 benilla-wmo = { path = "../benilla-wmo" }
 serde_json = "1"
+tracing = "0.1"
 
 [dev-dependencies]
 glam = "0.31"

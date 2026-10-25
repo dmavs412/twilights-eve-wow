@@ -700,6 +700,7 @@ dependencies = [
  "glam 0.31.1",
  "image",
  "serde_json",
+ "tracing",
 ]
 
 [[package]]
