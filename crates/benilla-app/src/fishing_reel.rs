@@ -360,10 +360,12 @@ struct Fishing {
     sent: bool,
     /// Seconds not yet stepped.
     carry: f32,
-    /// The Angler Level to push, `(level, xp, to next, title)`.
+    /// The last Angler Level, `(level, xp, to next, title)`, kept so a new VM gets it again.
     angler: Option<(u32, u32, u32, String)>,
-    /// The Fishing Journal to push, as the realm sent it.
+    /// The last Fishing Journal as the realm sent it, kept so a new VM gets it again.
     journal: Option<SessionEvent>,
+    /// The Angler Level or the Journal changed since the last push.
+    changed: bool,
     /// Events for Lua, oldest first.
     events: Vec<(&'static str, Vec<ScriptValue>)>,
     /// The bite alert: the bobber and the seconds left.
@@ -406,16 +408,20 @@ fn run_reel(
                 title,
             } => {
                 f.angler = Some((u32::from(level), xp, xp_to_next, title));
+                f.changed = true;
                 f.events.push(("ANGLER_UPDATE", Vec::new()));
             }
             journal @ SessionEvent::FishingJournal { .. } => {
                 f.journal = Some(journal);
+                f.changed = true;
                 f.events.push(("FISHING_JOURNAL_UPDATE", Vec::new()));
             }
             SessionEvent::LoggedOut => {
                 f.reel = None;
                 f.sent = false;
                 f.alert = None;
+                f.angler = None;
+                f.journal = None;
             }
             bite => {
                 if let Some(bite) = Bite::of(&bite) {
@@ -536,11 +542,14 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
 }
 
 /// Pushes the bar, the Angler Level and the Journal into Lua, fires what happened since the last
-/// frame and sends the bait the Journal chose.
+/// frame and sends the bait the Journal chose. Gated on the in-game UI: the login burst's Angler
+/// Level and Journal would otherwise go to the boot VM and die with it. A new VM (world entry or
+/// `ReloadUI`) gets both again.
 fn feed_reel(
     script: Option<NonSendMut<UiScript>>,
     mut fishing: ResMut<Fishing>,
     mut outbox: ResMut<ReelOutbox>,
+    mut pushed: Local<crate::ui_script::VmMemo<()>>,
     areas: Option<Res<AreaTableRes>>,
     objects: Objects,
     self_q: Query<&ObjectStore, With<SelfPlayer>>,
@@ -549,11 +558,15 @@ fn feed_reel(
         return;
     };
     script.set_reel(fishing.reel.as_ref().map(Reel::view));
-    if let Some((level, xp, to_next, title)) = fishing.angler.take() {
-        script.set_angler(level, xp, to_next, title);
-    }
-    if let Some(journal) = fishing.journal.take() {
-        script.set_fishing_journal(journal_view(&journal, areas.as_deref()));
+    let (_, new_vm) = pushed.get_reset(&script);
+    if new_vm || fishing.changed {
+        fishing.changed = false;
+        if let Some((level, xp, to_next, title)) = fishing.angler.clone() {
+            script.set_angler(level, xp, to_next, title);
+        }
+        if let Some(journal) = &fishing.journal {
+            script.set_fishing_journal(journal_view(journal, areas.as_deref()));
+        }
     }
     for item in script.take_bait_requests() {
         outbox.0.push(RealmCommand::SetBait { item });
@@ -686,7 +699,11 @@ impl Plugin for FishingReelPlugin {
             .init_resource::<Fishing>()
             .add_systems(
                 Update,
-                (run_reel, feed_reel, place_bite_alert)
+                (
+                    run_reel,
+                    feed_reel.run_if(crate::ui_script::ingame_ui_up),
+                    place_bite_alert,
+                )
                     .chain()
                     .in_set(UiFeed),
             );
@@ -834,5 +851,32 @@ mod tests {
         }
         assert_eq!(n, 32);
         assert!(crate::ui_script::layer_image(ALERT_ART).is_some());
+    }
+
+    /// The login burst's Angler Level reaches the world-entry VM, and a `ReloadUI`'s VM after it,
+    /// though the realm sends it once.
+    #[test]
+    fn a_new_vm_gets_the_angler_level_again() {
+        use bevy::ecs::system::RunSystemOnce;
+        let mut world = World::new();
+        world.init_resource::<crate::net::GuidIndex>();
+        world.init_resource::<ReelOutbox>();
+        world.insert_resource(Fishing {
+            angler: Some((12, 420, 1000, "Apprentice".into())),
+            changed: true,
+            ..Fishing::default()
+        });
+        let level = |world: &World| -> u32 {
+            world
+                .non_send_resource::<UiScript>()
+                .eval("return (GetAnglerInfo())")
+                .unwrap()
+        };
+        world.insert_non_send_resource(UiScript::new().unwrap());
+        world.run_system_once(feed_reel).unwrap();
+        assert_eq!(level(&world), 12);
+        world.insert_non_send_resource(UiScript::new().unwrap());
+        world.run_system_once(feed_reel).unwrap();
+        assert_eq!(level(&world), 12, "the reloaded VM has the level too");
     }
 }
