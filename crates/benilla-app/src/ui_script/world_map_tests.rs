@@ -32,6 +32,7 @@ fn harness() -> UiScript {
         "ScrollTemplates.xml",
         "WorldMapZoom.xml",
         "WorldMapMarks.xml",
+        "WorldMapMist.xml",
     ] {
         super::test_ui::load_ui(&s, file);
     }
@@ -728,6 +729,50 @@ fn the_real_feralas_catalog_names_dire_maul_under_the_cursor() {
     );
 }
 
+/// Westfall is the one Closed Zone (ADR 0015, `closed_chunks.json`): the real catalog marks it, and
+/// the Eastern Kingdoms continent map draws its `WestfallHighlight` art as mist. Kalimdor has none.
+#[test]
+fn the_real_catalog_mists_westfall_on_the_eastern_kingdoms_only() {
+    let data = benilla_formats::wow_data_or_skip!();
+    let mut s = harness();
+
+    let mut chain = benilla_formats::open_chain(&data).expect("chain");
+    let areas = benilla_formats::load_area_table_catalog(&mut chain).expect("AreaTable");
+    let maps =
+        benilla_assets::MapCatalogRes(benilla_formats::load_map_catalog(&mut chain).expect("Map"));
+    let (views, _) =
+        crate::ui_world_map::build_catalog(&mut chain, &areas, &maps).expect("the real catalog");
+    let continent = |name: &str| {
+        views
+            .iter()
+            .position(|c| c.name == name)
+            .map(|i| i + 1)
+            .unwrap_or_else(|| panic!("{name} is in the catalog"))
+    };
+    let (ek, kalimdor) = (continent("Eastern Kingdoms"), continent("Kalimdor"));
+    s.set_world_map_catalog(views);
+    s.run("ToggleWorldMap()").unwrap();
+    s.resolve();
+
+    s.run(&format!("SetMapZoom({ek})")).unwrap();
+    s.run("WorldMapFrame_Update()").unwrap();
+    assert!(s.eval::<bool>("return WorldMapMist1:IsShown()").unwrap());
+    assert_eq!(
+        s.eval::<String>("return WorldMapMist1:GetTexture()")
+            .unwrap(),
+        "Interface\\WorldMap\\Westfall\\WestfallHighlight"
+    );
+
+    s.run(&format!("SetMapZoom({kalimdor})")).unwrap();
+    s.run("WorldMapFrame_Update()").unwrap();
+    assert!(
+        !s.eval::<bool>("return WorldMapMist1 ~= nil and WorldMapMist1:IsShown()")
+            .unwrap(),
+        "Kalimdor has no Closed Zone"
+    );
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
 /// An addon that windows the map (Cartographer's `LookNFeel`) stamps userPlaced through a drag
 /// (`0x7652b0`, at `0x7652e5`). The layout cache gates both ends on `movable|resizable` too, as the
 /// reference does (writer `0x490e97`; apply `0x490600`, `0x490689`), and stock `WorldMapFrame` has
@@ -928,6 +973,7 @@ fn zoom_catalog() -> Vec<benilla_ui::script::WorldMapContinentView> {
         map_file: map_file.into(),
         loc_rect: (-8000.0, -10000.0, -400.0, -1900.0),
         overlays: Vec::new(),
+        closed: false,
     };
     vec![WorldMapContinentView {
         name: "Eastern Kingdoms".into(),

@@ -25,6 +25,8 @@ pub struct WorldMapZoneView {
     /// The `WorldMapArea` loc rect `(left, right, top, bottom)`; at zone level, the grid's window.
     pub loc_rect: (f32, f32, f32, f32),
     pub overlays: Vec<WorldMapOverlayView>,
+    /// A Closed Zone (ADR 0015): misted, unnamed and unclickable on the map.
+    pub closed: bool,
 }
 
 /// A POI icon on the displayed map, projected to map UV. The reference's builder (`0x4a67a0`)
@@ -135,6 +137,14 @@ fn grid_area(state: &WorldMapState, u: f32, v: f32) -> Option<u16> {
     let cell = area_grid_cell(rect, u, v)?;
     match cont.zone_grid.get(cell).copied().unwrap_or(0) {
         0 => None,
+        // A Closed Zone is a miss: no name, no highlight, no drill-in.
+        zi if cont
+            .zones
+            .get(zi as usize - 1)
+            .is_some_and(|zone| zone.closed) =>
+        {
+            None
+        }
         zi => Some(zi),
     }
 }
@@ -236,11 +246,17 @@ enum Hover {
     Miss,
 }
 
-/// The continent-level highlight (`0x4a81de` → `0x4a822a`): the zone's art folder, drawn as
-/// `<file>\<file>Highlight`, and the coords seating it over the zone's rect in the client's mixed
-/// f32 and f64.
-fn continent_hover(cont: &WorldMapContinentView, zone: &WorldMapZoneView) -> Option<Hover> {
-    let (cl, cr, ct, cb) = cont.loc_rect;
+/// Where a zone's `<file>Highlight` art sits over a frame showing `frame`'s loc rect.
+struct Seat {
+    tex_pct_y: f64,
+    texture: (f64, f64),
+    scroll: (f64, f64),
+}
+
+/// The highlight seating (`0x4a81de` → `0x4a822a`) in the client's mixed f32 and f64: the zone's
+/// rect against the shown rect, a continent's at continent level.
+fn seat(frame: (f32, f32, f32, f32), zone: &WorldMapZoneView) -> Option<Seat> {
+    let (cl, cr, ct, cb) = frame;
     let (zl, zr, zt, zb) = zone.loc_rect;
     let (w, h) = (zl - zr, zt - zb);
     let (cont_w, cont_h) = (cl - cr, ct - cb);
@@ -261,13 +277,57 @@ fn continent_hover(cont: &WorldMapContinentView, zone: &WorldMapZoneView) -> Opt
     } else {
         0.0
     };
-    Some(Hover::Highlight {
-        name: zone.name.clone(),
-        file: zone.map_file.clone(),
+    Some(Seat {
         tex_pct_y,
         texture: (texture_x, texture_y),
         scroll: (scroll_x, scroll_y),
     })
+}
+
+/// The continent-level highlight: the zone's art folder, drawn as `<file>\<file>Highlight`,
+/// seated over the zone's rect.
+fn continent_hover(cont: &WorldMapContinentView, zone: &WorldMapZoneView) -> Option<Hover> {
+    let s = seat(cont.loc_rect, zone)?;
+    Some(Hover::Highlight {
+        name: zone.name.clone(),
+        file: zone.map_file.clone(),
+        tex_pct_y: s.tex_pct_y,
+        texture: s.texture,
+        scroll: s.scroll,
+    })
+}
+
+/// Whether two loc rects `(left, right, top, bottom)` share area; either axis may run either way.
+fn rects_overlap(a: (f32, f32, f32, f32), b: (f32, f32, f32, f32)) -> bool {
+    let span = |p: f32, q: f32| (p.min(q), p.max(q));
+    let meet = |(alo, ahi): (f32, f32), (blo, bhi): (f32, f32)| alo < bhi && blo < ahi;
+    meet(span(a.0, a.1), span(b.0, b.1)) && meet(span(a.2, a.3), span(b.2, b.3))
+}
+
+/// The mist seatings of the shown map: one per Closed Zone of the shown continent, against the
+/// continent's rect at continent level and, at zone level, against the shown zone's rect for each
+/// closed zone that overlaps it. Empty at world level and on an instance map.
+fn mists(wm: &WorldMapState) -> Vec<(&WorldMapZoneView, Seat)> {
+    if wm.direct_area.is_some() {
+        return Vec::new();
+    }
+    let (c, z) = wm.selection;
+    let Some(cont) = c.checked_sub(1).and_then(|i| wm.continents.get(i as usize)) else {
+        return Vec::new();
+    };
+    let frame = if z == 0 {
+        cont.loc_rect
+    } else {
+        match cont.zones.get(z as usize - 1) {
+            Some(shown) => shown.loc_rect,
+            None => return Vec::new(),
+        }
+    };
+    cont.zones
+        .iter()
+        .filter(|zone| zone.closed && (z == 0 || rects_overlap(frame, zone.loc_rect)))
+        .filter_map(|zone| seat(frame, zone).map(|s| (zone, s)))
+        .collect()
 }
 
 /// `0x4a7fa0`'s level dispatch. Continent level: the grid's zone highlights. Zone level: the
@@ -474,7 +534,15 @@ fn select(model: &mut Model, continent: i64, zone: i64) {
         0
     } else {
         let n = model.worldmap.continents[c as usize - 1].zones.len() as i64;
-        zone.clamp(0, n) as u32
+        let zone = zone.clamp(0, n) as u32;
+        // A Closed Zone cannot be opened: the continent shows instead.
+        let closed =
+            zone != 0 && model.worldmap.continents[c as usize - 1].zones[zone as usize - 1].closed;
+        if closed {
+            0
+        } else {
+            zone
+        }
     };
     store_selection(model, (c, z), None);
 }
@@ -728,6 +796,29 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 Hover::Name(name) => (string(&name)?, Value::Nil, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
                 Hover::Miss => (Value::Nil, Value::Nil, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
             })
+        })?,
+    )?;
+
+    // GetMapMists() → an array of {file, texPctX, texPctY, textureX, textureY, scrollX, scrollY},
+    // one per Closed Zone on the shown map, seated as UpdateMapHighlight seats a hovered zone.
+    // Twilight only: the stock client has no such verb.
+    g.set(
+        "GetMapMists",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let out = lua.create_table()?;
+            for (zone, s) in mists(&model.worldmap) {
+                let t = lua.create_table()?;
+                t.set("file", zone.map_file.as_str())?;
+                t.set("texPctX", 1.0f64)?;
+                t.set("texPctY", s.tex_pct_y)?;
+                t.set("textureX", s.texture.0)?;
+                t.set("textureY", s.texture.1)?;
+                t.set("scrollX", s.scroll.0)?;
+                t.set("scrollY", s.scroll.1)?;
+                out.push(t)?;
+            }
+            Ok(out)
         })?,
     )?;
 

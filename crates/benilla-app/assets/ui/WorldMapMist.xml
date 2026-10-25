@@ -1,0 +1,99 @@
+<Ui>
+    <!--
+        The mist over Closed Zones on the world map (ADR 0015, spec #383). `GetMapMists()` lists
+        one seating per closed zone on the shown map, in the values `UpdateMapHighlight` gives a
+        hovered zone. This file seats the zone's `<file>Highlight` art with them, as
+        `WorldMapButton_OnUpdate` seats `WorldMapHighlight`, tinted grey-white. Each zone gets two
+        textures, `WorldMapMist<2n-1>` and `WorldMapMist<2n>`, whose alpha drifts out of phase.
+        The textures belong to `WorldMapDetailFrame`, so they scroll and zoom with the map, draw
+        above its tiles and overlays, and sit below `WorldMapButton`'s POIs.
+    -->
+    <Script><![CDATA[
+        local MIST_RED, MIST_GREEN, MIST_BLUE = 0.78, 0.80, 0.82
+        local MIST_ALPHA_MIN, MIST_ALPHA_MAX = 0.55, 0.85
+        -- Seconds for one full drift of the alpha.
+        local MIST_PERIOD = 9
+        -- The second texture of a zone trails the first by this many radians.
+        local MIST_PHASE = 2.1
+
+        local mistTime = 0
+        local mistUsed = 0
+
+        local function BenillaMist_Texture(i)
+            local texture = getglobal("WorldMapMist" .. i)
+            if not texture then
+                texture = WorldMapDetailFrame:CreateTexture("WorldMapMist" .. i, "OVERLAY")
+            end
+            return texture
+        end
+
+        local function BenillaMist_Alpha(i)
+            local phase = 0
+            if math.mod(i, 2) == 0 then
+                phase = MIST_PHASE
+            end
+            local wave = 0.5 + 0.5 * math.sin(2 * math.pi * mistTime / MIST_PERIOD + phase)
+            return MIST_ALPHA_MIN + (MIST_ALPHA_MAX - MIST_ALPHA_MIN) * wave
+        end
+
+        local function BenillaMist_Tint(texture, i)
+            texture:SetVertexColor(MIST_RED, MIST_GREEN, MIST_BLUE, BenillaMist_Alpha(i))
+        end
+
+        local function BenillaMist_Seat()
+            local mists = GetMapMists()
+            local count = table.getn(mists)
+            local width = WorldMapDetailFrame:GetWidth()
+            local height = WorldMapDetailFrame:GetHeight()
+            local used = 0
+            for n = 1, count do
+                local mist = mists[n]
+                local w = mist.textureX * width
+                local h = mist.textureY * height
+                for k = 1, 2 do
+                    local i = 2 * n - 2 + k
+                    local texture = BenillaMist_Texture(i)
+                    if w > 0 and h > 0 then
+                        texture:SetTexture("Interface\\WorldMap\\" .. mist.file .. "\\" .. mist.file .. "Highlight")
+                        texture:SetTexCoord(0, mist.texPctX, 0, mist.texPctY)
+                        texture:SetWidth(w)
+                        texture:SetHeight(h)
+                        texture:ClearAllPoints()
+                        texture:SetPoint("TOPLEFT", "WorldMapDetailFrame", "TOPLEFT", mist.scrollX * width, -mist.scrollY * height)
+                        BenillaMist_Tint(texture, i)
+                        texture:Show()
+                        used = i
+                    else
+                        texture:Hide()
+                    end
+                end
+            end
+            -- Hide the rest of the pool.
+            for i = used + 1, math.max(mistUsed, 2 * count) do
+                local texture = getglobal("WorldMapMist" .. i)
+                if texture then
+                    texture:Hide()
+                end
+            end
+            mistUsed = used
+        end
+
+        local BenillaMist_OldUpdate = WorldMapFrame_Update
+        function WorldMapFrame_Update()
+            BenillaMist_OldUpdate()
+            BenillaMist_Seat()
+        end
+
+        -- The drift runs while the map is shown, as the driver is a child of the map frame.
+        local driver = CreateFrame("Frame", "WorldMapMistDriver", WorldMapFrame)
+        driver:SetScript("OnUpdate", function()
+            mistTime = mistTime + arg1
+            for i = 1, mistUsed do
+                local texture = getglobal("WorldMapMist" .. i)
+                if texture and texture:IsShown() then
+                    BenillaMist_Tint(texture, i)
+                end
+            end
+        end)
+    ]]></Script>
+</Ui>

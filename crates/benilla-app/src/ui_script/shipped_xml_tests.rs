@@ -1948,6 +1948,10 @@ fn the_layer_does_not_grow() {
         "BossBar.xml",
         // The world map's Twilight marks (spec #383): gossip icons and a tooltip on the POIs.
         "WorldMapMarks.xml",
+        // The world map's mouse wheel zoom and left-drag pan (spec #383).
+        "WorldMapZoom.xml",
+        // The mist over Closed Zones on the world map (ADR 0015): `GetMapMists()` seatings.
+        "WorldMapMist.xml",
         // The Reeling Bar (ADR 0018): the client-run fishing bar, which no stock file has.
         "FishingReel.xml",
         // The Fishing Journal (spec #323): the realm's journal, its bait slot and its key.

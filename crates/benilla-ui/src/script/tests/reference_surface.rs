@@ -14,6 +14,9 @@ const BEYOND_1_12: &[&str] = &[
     // addon reaches the globals with `getfenv(0)`); ours does, as our `getglobal`/`setglobal` are
     // written over it.
     "_G",
+    // Twilight's Eve: the world map's mist over Closed Zones (ADR 0015) has no 1.12 verb, and
+    // `WorldMapMist.xml` reads the seatings from it.
+    "GetMapMists",
 ];
 
 /// `reference/1.12-globals.tsv`'s names.

@@ -14,12 +14,13 @@ const CLOSED_CHUNKS: &str = include_str!("../../../data/twilights-eve/closed_chu
 
 struct Closed {
     map: u32,
+    zones: Vec<u32>,
     chunks: HashSet<(u32, u32)>,
 }
 
-/// `{"map": 0, "zones": [..], "chunks": [[gx, gy], ..]}`: the map, and the chunks in the
-/// file's order.
-fn parse(text: &str) -> (u32, Vec<(u32, u32)>) {
+/// `{"map": 0, "zones": [..], "chunks": [[gx, gy], ..]}`: the map, its closed `AreaTable` zone
+/// ids, and the chunks in the file's order.
+fn parse(text: &str) -> (u32, Vec<u32>, Vec<(u32, u32)>) {
     let v: serde_json::Value = serde_json::from_str(text).expect("closed_chunks.json parses");
     let num = |v: &serde_json::Value| v.as_u64().expect("closed_chunks.json holds numbers") as u32;
     let list: Vec<(u32, u32)> = v["chunks"]
@@ -28,18 +29,31 @@ fn parse(text: &str) -> (u32, Vec<(u32, u32)>) {
         .iter()
         .map(|c| (num(&c[0]), num(&c[1])))
         .collect();
-    (num(&v["map"]), list)
+    let zones: Vec<u32> = v["zones"]
+        .as_array()
+        .expect("closed_chunks.json has zones")
+        .iter()
+        .map(num)
+        .collect();
+    (num(&v["map"]), zones, list)
 }
 
 fn closed() -> &'static Closed {
     static CLOSED: OnceLock<Closed> = OnceLock::new();
     CLOSED.get_or_init(|| {
-        let (map, list) = parse(CLOSED_CHUNKS);
+        let (map, zones, list) = parse(CLOSED_CHUNKS);
         Closed {
             map,
+            zones,
             chunks: list.into_iter().collect(),
         }
     })
+}
+
+/// Whether the `AreaTable` zone `area_id` on `map` is a Closed Zone: misted on the world map.
+pub fn zone_closed(map: u32, area_id: u32) -> bool {
+    let c = closed();
+    map == c.map && c.zones.contains(&area_id)
 }
 
 /// Whether `(x, y)` on `map` lies on a closed chunk. A point off the map's grid, or on another
@@ -77,8 +91,15 @@ mod tests {
     }
 
     #[test]
+    fn zone_closed_holds_the_files_zone_on_the_files_map_only() {
+        assert!(zone_closed(0, 40));
+        assert!(!zone_closed(0, 12));
+        assert!(!zone_closed(1, 40));
+    }
+
+    #[test]
     fn chunk_closed_agrees_with_closed_at_at_the_first_and_last_chunks_centres() {
-        let (map, list) = parse(CLOSED_CHUNKS);
+        let (map, _, list) = parse(CLOSED_CHUNKS);
         let ends = [list[0], *list.last().unwrap()];
         for (gx, gy) in ends {
             // Chunk `gx` runs west to east along y, `gy` north to south along x.

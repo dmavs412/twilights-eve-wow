@@ -8,6 +8,11 @@ use crate::script::*;
 /// every Lua-visible index, with the real disjoint sheet rects. The sparse EK grid marks the real
 /// Goldshire cell (12735 in `Azeroth.zmp`) as zone 1.
 fn push_catalog(s: &mut UiScript) {
+    push_catalog_closing(s, false);
+}
+
+/// [`push_catalog`], with the Stormwind City peer a Closed Zone when `closed_city`.
+fn push_catalog_closing(s: &mut UiScript, closed_city: bool) {
     let mut ek_grid = vec![0u16; 128 * 128];
     ek_grid[12735] = 1;
     // Cell 8801 is where (0.5, 0.5) lands through Elwynn's own loc rect: the Stormwind City peer,
@@ -29,6 +34,7 @@ fn push_catalog(s: &mut UiScript) {
                     map_file: "Durotar".into(),
                     loc_rect: (-1800.0, -6800.0, -3800.0, -8500.0),
                     overlays: Vec::new(),
+                    closed: false,
                 },
                 WorldMapZoneView {
                     name: "The Barrens".into(),
@@ -36,6 +42,7 @@ fn push_catalog(s: &mut UiScript) {
                     map_file: "Barrens".into(),
                     loc_rect: (-1000.0, -11000.0, -5500.0, -17000.0),
                     overlays: Vec::new(),
+                    closed: false,
                 },
             ],
         },
@@ -87,6 +94,7 @@ fn push_catalog(s: &mut UiScript) {
                             area_name: Some("Goldshire".into()),
                         },
                     ],
+                    closed: false,
                 },
                 // A city peer of Elwynn, which the reference treats as a zone (`0x4a67a0`).
                 WorldMapZoneView {
@@ -95,6 +103,7 @@ fn push_catalog(s: &mut UiScript) {
                     map_file: "StormwindCity".into(),
                     loc_rect: (-8200.0, -8900.0, -400.0, -1100.0),
                     overlays: Vec::new(),
+                    closed: closed_city,
                 },
             ],
         },
@@ -113,6 +122,7 @@ fn push_direct_areas(s: &mut UiScript) {
             // A synthetic rect: the app owns every projection, so nothing here reads it.
             loc_rect: (1500.0, 500.0, 1600.0, 600.0),
             overlays,
+            closed: false,
         }
     };
     s.set_world_map_direct_areas(vec![
@@ -492,6 +502,73 @@ fn worldmap_click_containment_and_zone_grid() {
     s.run("SetMapZoom(0)").unwrap();
     s.run("ProcessMapClick(0.01, 0.99)").unwrap();
     assert_eq!(s.eval::<i64>("return GetCurrentMapContinent()").unwrap(), 0);
+}
+
+/// A Closed Zone (ADR 0015) is a miss for hover and click, selects the continent from the zone
+/// dropdown, and shows up in `GetMapMists` seated as its highlight would be. The Stormwind City
+/// peer stands in for it: cell 8801 sits at (0.70834, 0.36932) on the continent.
+#[test]
+fn worldmap_closed_zone_is_unnamed_unclickable_and_misted() {
+    const OVER_CLOSED: &str = "0.70834, 0.36932";
+    let mut s = script();
+    push_catalog(&mut s);
+    s.run("SetMapZoom(2, 0)").unwrap();
+    let open = s
+        .eval::<(String, String, f64, f64, f64, f64, f64, f64)>(&format!(
+            "return UpdateMapHighlight({OVER_CLOSED})"
+        ))
+        .unwrap();
+    assert_eq!(open.0, "Stormwind City");
+
+    let mut s = script();
+    push_catalog_closing(&mut s, true);
+    s.run("SetMapZoom(0)").unwrap();
+    assert_eq!(
+        s.eval::<i64>("return getn(GetMapMists())").unwrap(),
+        0,
+        "the world sheet shows no mist"
+    );
+
+    s.run("SetMapZoom(2, 0)").unwrap();
+    assert!(s
+        .eval::<Option<String>>(&format!("return UpdateMapHighlight({OVER_CLOSED})"))
+        .unwrap()
+        .is_none());
+    s.run(&format!("ProcessMapClick({OVER_CLOSED})")).unwrap();
+    assert_eq!(s.eval::<i64>("return GetCurrentMapZone()").unwrap(), 0);
+    s.run("SetMapZoom(2, 2)").unwrap();
+    assert_eq!(s.eval::<i64>("return GetCurrentMapZone()").unwrap(), 0);
+
+    let (n, file, tpx, tpy, tx, ty, sx, sy) = s
+        .eval::<(i64, String, f64, f64, f64, f64, f64, f64)>(
+            "local m = GetMapMists() return getn(m), m[1].file, m[1].texPctX, m[1].texPctY, \
+             m[1].textureX, m[1].textureY, m[1].scrollX, m[1].scrollY",
+        )
+        .unwrap();
+    assert_eq!(n, 1);
+    assert_eq!(file, "StormwindCity");
+    // Seated as the open zone's highlight is.
+    assert_eq!(
+        (tpx, tpy, tx, ty, sx, sy),
+        (open.2, open.3, open.4, open.5, open.6, open.7)
+    );
+
+    // An open neighbour still hovers and clicks.
+    assert_eq!(
+        s.eval::<String>("return (UpdateMapHighlight(0.452843, 0.720880))")
+            .unwrap(),
+        "Elwynn Forest"
+    );
+    s.run("ProcessMapClick(0.452843, 0.720880)").unwrap();
+    assert_eq!(s.eval::<i64>("return GetCurrentMapZone()").unwrap(), 1);
+
+    // At zone level the closed neighbour's mist is seated against Elwynn's rect, and the grid
+    // answers no name for it.
+    assert_eq!(s.eval::<i64>("return getn(GetMapMists())").unwrap(), 1);
+    assert!(s
+        .eval::<Option<String>>("return UpdateMapHighlight(0.5, 0.5)")
+        .unwrap()
+        .is_none());
 }
 
 /// At zone level `UpdateMapHighlight` answers a name only (`0x4a812e`): a revealed overlay's
