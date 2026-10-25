@@ -5,8 +5,9 @@
         hovered zone. This file seats the zone's `<file>Highlight` art with them, as
         `WorldMapButton_OnUpdate` seats `WorldMapHighlight`, tinted grey-white. Each zone gets two
         textures, `WorldMapMist<2n-1>` and `WorldMapMist<2n>`, whose alpha drifts out of phase.
-        The textures belong to `WorldMapDetailFrame`, so they scroll and zoom with the map, draw
-        above its tiles and overlays, and sit below `WorldMapButton`'s POIs.
+        The textures belong to `WorldMapMistFrame`, a child of `WorldMapDetailFrame` sized to it,
+        so they scroll and zoom with the map. Its frame level is one under `WorldMapButton`'s
+        (WorldMapCanvas.xml), so the mist draws over the canvas plates and under the POIs.
     -->
     <Script><![CDATA[
         local MIST_RED, MIST_GREEN, MIST_BLUE = 0.78, 0.80, 0.82
@@ -19,10 +20,14 @@
         local mistTime = 0
         local mistUsed = 0
 
+        local mistFrame = CreateFrame("Frame", "WorldMapMistFrame", WorldMapDetailFrame)
+        mistFrame:SetAllPoints(WorldMapDetailFrame)
+        mistFrame:SetFrameLevel(WorldMapButton:GetFrameLevel() - 1)
+
         local function BenillaMist_Texture(i)
             local texture = getglobal("WorldMapMist" .. i)
             if not texture then
-                texture = WorldMapDetailFrame:CreateTexture("WorldMapMist" .. i, "OVERLAY")
+                texture = mistFrame:CreateTexture("WorldMapMist" .. i, "OVERLAY")
             end
             return texture
         end

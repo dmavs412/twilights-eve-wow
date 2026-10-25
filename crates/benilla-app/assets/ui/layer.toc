@@ -33,8 +33,8 @@ GearSlots.xml
 BossBar.xml
 # The world map's quest, service and dungeon marks: gossip icons and a tooltip (spec #383).
 WorldMapMarks.xml
-# The world map's mouse wheel zoom from 1x to 4x and left-drag pan (spec #383).
-WorldMapZoom.xml
+# The map canvas: zone plates on one canvas, wheel zoom, drag pan and the zone dropdown (#410).
+WorldMapCanvas.xml
 # The mist over Closed Zones on the world map: `GetMapMists()` seatings, drifting (ADR 0015).
 WorldMapMist.xml
 # The Reeling Bar, its Angler badge and its banners (ADR 0018).

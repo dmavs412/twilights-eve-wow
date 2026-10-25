@@ -11,6 +11,16 @@ use benilla_ui::script::{
 fn harness() -> UiScript {
     let mut s = UiScript::new().unwrap();
     s.set_screen_size(1024.0, 768.0);
+    // A player for `WorldMapUnit_OnEnter`'s tooltip, which a cursor over the arrow's button opens.
+    s.set_unit(
+        "player",
+        Some(benilla_ui::script::UnitState {
+            exists: true,
+            name: Some("Probefour".into()),
+            level: 60,
+            ..Default::default()
+        }),
+    );
     for file in [
         "Interface\\FrameXML\\GlobalStrings.lua",
         "Interface\\FrameXML\\Fonts.xml",
@@ -30,12 +40,16 @@ fn harness() -> UiScript {
         // The reference's own map, which <Include>s its blip templates itself.
         r"Interface\FrameXML\WorldMapFrame.xml",
         "ScrollTemplates.xml",
-        "WorldMapZoom.xml",
         "WorldMapMarks.xml",
+        "WorldMapCanvas.xml",
         "WorldMapMist.xml",
     ] {
         super::test_ui::load_ui(&s, file);
     }
+    // The map's OnShow calls `UpdateMicroButtons`, and the ping's fade reads Minimap.lua's
+    // `MINIMAPPING_FADE_TIMER`; this kit loads neither the main menu bar nor the minimap.
+    s.run("function UpdateMicroButtons() end MINIMAPPING_FADE_TIMER = 0.5")
+        .unwrap();
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
     s
 }
@@ -706,8 +720,9 @@ fn the_real_feralas_catalog_names_dire_maul_under_the_cursor() {
         .expect("Feralas is in the catalog");
     s.set_world_map_catalog(views);
     s.set_world_map_explored(vec![u32::MAX; 64]); // a fully-discovered character
-    s.run(&format!("SetMapZoom({ci}, {zi})")).unwrap();
+                                                  // After the toggle, whose `SetMapToCurrentZone` lands on the world with no player zone.
     s.run("ToggleWorldMap()").unwrap();
+    s.run(&format!("SetMapZoom({ci}, {zi})")).unwrap();
     s.resolve();
 
     // (58.8 %, 42.6 %) of the detail frame in screen units: what `WorldMapButton_OnUpdate` inverts.
@@ -939,6 +954,8 @@ fn hovering_a_twilight_mark_shows_the_world_map_tooltip() {
     mark.description = "line one\nline two".into();
     s.set_world_map_landmarks(vec![mark]);
     s.run("WorldMapFrame_Update()").unwrap();
+    // The stock OnUpdate clears the label's XML placeholder to the (empty) area name first.
+    update(&mut s);
     s.run("this = WorldMapFramePOI1 this:GetScript(\"OnEnter\")() this = nil")
         .unwrap();
     assert!(s.eval::<bool>("return WorldMapTooltip:IsShown()").unwrap());
@@ -963,48 +980,150 @@ fn hovering_a_twilight_mark_shows_the_world_map_tooltip() {
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
-/// Eastern Kingdoms with Elwynn Forest and Westfall. Every cell of the area grid names Elwynn, so a
-/// continent-level hover over any point of the map has a zone under it.
-fn zoom_catalog() -> Vec<benilla_ui::script::WorldMapContinentView> {
-    use benilla_ui::script::{WorldMapContinentView, WorldMapZoneView};
-    let zone = |name: &str, area_id: u32, map_file: &str| WorldMapZoneView {
-        name: name.into(),
-        area_id,
-        map_file: map_file.into(),
-        loc_rect: (-8000.0, -10000.0, -400.0, -1900.0),
-        overlays: Vec::new(),
-        closed: false,
-    };
-    vec![WorldMapContinentView {
-        name: "Eastern Kingdoms".into(),
-        map_file: "Azeroth".into(),
-        world_rect: (0.62375, 0.02695, 0.92315, 0.87126),
-        loc_rect: (16000.0, -19199.9, 7466.6, -16000.0),
-        zone_grid: vec![1u16; 128 * 128],
-        canvas: None,
-        zones: vec![
-            zone("Elwynn Forest", 12, "Elwynn"),
-            zone("Westfall", 40, "Westfall"),
-        ],
-    }]
+/// The canvas rect of #410 over Duskwood, Redridge Mountains, Elwynn Forest and Stormwind City.
+const CANVAS: (f32, f32, f32, f32) = (1579.69, -3785.94, -7939.58, -11516.67);
+
+/// The player at Eastvale (-9450, -1300) in canvas UV.
+const EASTVALE: (f32, f32) = (0.5367, 0.4222);
+
+/// The `0x4a6ec0` cell law, as `benilla_ui`'s `area_grid_cell` runs it: un-lerp the UV through the
+/// rect to world coordinates and index the 128x128 grid as `col - row * 128`.
+fn grid_cell(loc: (f32, f32, f32, f32), u: f32, v: f32) -> usize {
+    const K: f32 = 2.929_687_6e-5;
+    let (left, right, top, bottom) = loc;
+    let f1 = 0.5 - ((1.0 - u) * (left - right) + right) * K;
+    let f2 = 0.5 - ((1.0 - v) * (top - bottom) + bottom) * K;
+    let col = (f1 * 128.0) as i32;
+    let row = (f2 * -128.0) as i32;
+    usize::try_from(col - row * 128).unwrap()
 }
 
-/// The map shown on `SetMapZoom(continent, zone)`, in the 1024x768 harness.
-fn zoom_harness(continent: u32, zone: u32) -> UiScript {
+/// The engine ticket's `push_canvas_catalog`: a bare Kalimdor, then Eastern Kingdoms with the real
+/// loc rects of the four canvas zones and two neighbours, and the canvas over Duskwood, Redridge,
+/// Elwynn and Stormwind. The grid names Elwynn at canvas UV (0.28, 0.43) and Westfall at
+/// (0.05, 0.85).
+fn canvas_catalog() -> Vec<benilla_ui::script::WorldMapContinentView> {
+    use benilla_ui::script::{
+        WorldMapCanvasView, WorldMapContinentView, WorldMapOverlayView, WorldMapZoneView,
+    };
+    let zone = |name: &str, area_id: u32, file: &str, loc_rect, closed| WorldMapZoneView {
+        name: name.into(),
+        area_id,
+        map_file: file.into(),
+        loc_rect,
+        overlays: Vec::new(),
+        closed,
+    };
+    let mut elwynn = zone(
+        "Elwynn Forest",
+        12,
+        "Elwynn",
+        (1535.42, -1935.42, -7939.58, -10254.17),
+        false,
+    );
+    elwynn.overlays.push(WorldMapOverlayView {
+        texture: r"Interface\WorldMap\Elwynn\GOLDSHIRE".into(),
+        width: 256,
+        height: 256,
+        offset_x: 300,
+        offset_y: 200,
+        explore_bits: vec![5],
+        hit_rect: (0, 0, 668, 1002),
+        area_name: Some("Goldshire".into()),
+    });
+    let mut grid = vec![0u16; 128 * 128];
+    grid[grid_cell(CANVAS, 0.28, 0.43)] = 1;
+    grid[grid_cell(CANVAS, 0.05, 0.85)] = 5;
+    vec![
+        WorldMapContinentView {
+            name: "Kalimdor".into(),
+            map_file: "Kalimdor".into(),
+            ..Default::default()
+        },
+        WorldMapContinentView {
+            name: "Eastern Kingdoms".into(),
+            map_file: "Azeroth".into(),
+            world_rect: (0.62375, 0.02695, 0.92315, 0.87126),
+            loc_rect: (16000.0, -19199.9, 7466.6, -16000.0),
+            zone_grid: grid,
+            zones: vec![
+                elwynn,
+                zone(
+                    "Stormwind City",
+                    1519,
+                    "Stormwind",
+                    (1380.97, 36.70, -8278.85, -9175.21),
+                    false,
+                ),
+                zone(
+                    "Duskwood",
+                    10,
+                    "Duskwood",
+                    (833.33, -1866.67, -9716.67, -11516.67),
+                    false,
+                ),
+                zone(
+                    "Redridge Mountains",
+                    44,
+                    "Redridge",
+                    (-1570.83, -3741.67, -8575.0, -10022.92),
+                    false,
+                ),
+                zone(
+                    "Westfall",
+                    40,
+                    "Westfall",
+                    (3016.67, -483.33, -9400.0, -11733.33),
+                    true,
+                ),
+                zone(
+                    "Dun Morogh",
+                    1,
+                    "DunMorogh",
+                    (1802.08, -3122.92, -3877.08, -7160.42),
+                    false,
+                ),
+            ],
+            canvas: Some(WorldMapCanvasView {
+                zones: vec![3, 4, 1, 2],
+                loc_rect: CANVAS,
+            }),
+        },
+    ]
+}
+
+/// The canvas open in the 1024x768 harness, with the player at Eastvale.
+fn canvas_harness() -> UiScript {
     let mut s = harness();
-    s.set_world_map_catalog(zoom_catalog());
-    s.run(&format!("SetMapZoom({continent}, {zone})")).unwrap();
+    arrow_facts(&mut s);
+    s.set_world_map_catalog(canvas_catalog());
+    s.set_world_map_feed(
+        Some((2, 1)),
+        Some(EASTVALE),
+        0.0,
+        None,
+        Vec::new(),
+        Vec::new(),
+    );
+    s.run("SetMapZoom(2)").unwrap();
     s.run("ToggleWorldMap()").unwrap();
     s.resolve();
+    settle(&mut s);
     s
 }
 
-/// The screen point at map UV `(u, v)` of `WorldMapButton`, at the current zoom and scroll.
+/// One map update and a layout pass, so every icon sits where this zoom puts it.
+fn settle(s: &mut UiScript) {
+    update(s);
+    s.resolve();
+}
+
+/// The screen point at map UV `(u, v)` of `WorldMapDetailFrame`, at the current zoom and scroll.
 fn map_point(s: &UiScript, u: f64, v: f64) -> (f32, f32) {
     let (l, r, t, b, eff) = s
         .eval::<(f64, f64, f64, f64, f64)>(
-            "return WorldMapButton:GetLeft(), WorldMapButton:GetRight(), WorldMapButton:GetTop(), \
-             WorldMapButton:GetBottom(), WorldMapButton:GetEffectiveScale()",
+            "local d = WorldMapDetailFrame \
+             return d:GetLeft(), d:GetRight(), d:GetTop(), d:GetBottom(), d:GetEffectiveScale()",
         )
         .unwrap();
     (
@@ -1013,180 +1132,250 @@ fn map_point(s: &UiScript, u: f64, v: f64) -> (f32, f32) {
     )
 }
 
-/// The UV `WorldMapButton_OnUpdate` computes for the cursor.
+/// The UV `WorldMapButton_OnUpdate` computes for the cursor, measured against the detail frame.
 fn cursor_uv(s: &UiScript) -> (f64, f64) {
     s.eval::<(f64, f64)>(
-        "local scale = WorldMapButton:GetEffectiveScale() \
+        "local d = WorldMapDetailFrame \
+         local scale = d:GetEffectiveScale() \
          local x, y = GetCursorPosition() \
          x = x / scale y = y / scale \
-         local cx, cy = WorldMapButton:GetCenter() \
-         local w, h = WorldMapButton:GetWidth(), WorldMapButton:GetHeight() \
+         local cx, cy = d:GetCenter() \
+         local w, h = d:GetWidth(), d:GetHeight() \
          return (x - (cx - w / 2)) / w, ((cy + h / 2) - y) / h",
     )
     .unwrap()
 }
 
+/// A frame's centre in screen units.
+fn centre(s: &UiScript, frame: &str) -> (f32, f32) {
+    let (x, y, eff) = s
+        .eval::<(f64, f64, f64)>(&format!(
+            "local f = {frame} local x, y = f:GetCenter() return x, y, f:GetEffectiveScale()"
+        ))
+        .unwrap();
+    ((x * eff) as f32, (y * eff) as f32)
+}
+
+/// The player arrow, the anonymous `Model` the canvas moves into `WorldMapButton`, as a global.
+fn find_arrow(s: &UiScript) {
+    s.run(
+        "for _, c in ipairs({ WorldMapButton:GetChildren() }) do \
+             if c:GetObjectType() == 'Model' and not c:GetName() then BenillaTestArrow = c end \
+         end",
+    )
+    .unwrap();
+}
+
 fn zoom_of(s: &UiScript) -> f64 {
-    s.eval::<f64>("return BenillaMapZoom_GetZoom()").unwrap()
+    s.eval::<f64>("return BenillaMapCanvas_GetZoom()").unwrap()
 }
 
-/// Three wheel-in notches at zone level zoom by 1.25 each, and the map point under the cursor does
-/// not move.
-#[test]
-fn wheel_in_zooms_around_the_cursor() {
-    let _data = benilla_formats::wow_data_or_skip!();
-    let mut s = zoom_harness(1, 1);
-    let (x, y) = map_point(&s, 0.3, 0.4);
-    s.mouse_move(x, y);
-    let (u0, v0) = cursor_uv(&s);
-    for _ in 0..3 {
-        s.mouse_wheel(x, y, 1.0);
-    }
-    s.resolve();
-    assert!(
-        (zoom_of(&s) - 1.25f64.powi(3)).abs() < 1e-4,
-        "{}",
-        zoom_of(&s)
-    );
-    let (u1, v1) = cursor_uv(&s);
-    assert!(
-        (u1 - u0).abs() < 0.002 && (v1 - v0).abs() < 0.002,
-        "({u0}, {v0}) became ({u1}, {v1})"
-    );
-    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+fn near(a: (f32, f32), b: (f32, f32)) -> bool {
+    (a.0 - b.0).abs() < 1.0 && (a.1 - b.1).abs() < 1.0
 }
 
+fn wheel(s: &mut UiScript, at: (f32, f32), notches: u32, delta: f32) {
+    s.mouse_move(at.0, at.1);
+    for _ in 0..notches {
+        s.mouse_wheel(at.0, at.1, delta);
+    }
+    settle(s);
+}
+
+/// The map opens on the player's zone at its stock size, centred on the player, with no continent
+/// picker and a zoom-out that does nothing.
 #[test]
-fn wheel_in_stops_at_4x_and_wheel_out_returns_to_1x() {
+fn the_canvas_opens_on_the_players_zone_centred_on_the_player() {
     let _data = benilla_formats::wow_data_or_skip!();
-    let mut s = zoom_harness(1, 1);
-    let (x, y) = map_point(&s, 0.6, 0.5);
-    s.mouse_move(x, y);
-    for _ in 0..9 {
-        s.mouse_wheel(x, y, 1.0);
-    }
-    assert_eq!(zoom_of(&s), 4.0);
-    // 4 / 1.25^6 is about 1.05, so six notches out are not 1x yet.
-    for _ in 0..6 {
-        s.mouse_wheel(x, y, -1.0);
-    }
-    assert!(zoom_of(&s) > 1.0);
-    for _ in 0..2 {
-        s.mouse_wheel(x, y, -1.0);
-    }
-    s.resolve();
-    assert_eq!(zoom_of(&s), 1.0);
+    let s = canvas_harness();
+    assert!((zoom_of(&s) - 1.5459).abs() < 1e-3, "{}", zoom_of(&s));
+    let view = centre(&s, "WorldMapZoomFrame");
+    let player = centre(&s, "WorldMapPlayer");
+    assert!(
+        near(player, view),
+        "player {player:?}, view centre {view:?}"
+    );
+    find_arrow(&s);
+    let arrow = centre(&s, "BenillaTestArrow");
+    assert!(near(arrow, view), "arrow {arrow:?}, view centre {view:?}");
     assert_eq!(
-        s.eval::<f64>("return WorldMapZoomFrame:GetHorizontalScroll()")
+        s.eval::<String>("return WorldMapZoneDropDownText:GetText()")
             .unwrap(),
-        0.0
+        "Elwynn Forest"
+    );
+    assert!(
+        !s.eval::<bool>(
+            "return WorldMapContinentDropDown:IsShown() or WorldMapZoomOutButton:IsShown()"
+        )
+        .unwrap(),
+        "the canvas has no continent picker and no zoom-out button"
+    );
+    s.run("WorldMapZoomOutButton_OnClick()").unwrap();
+    assert!((zoom_of(&s) - 1.5459).abs() < 1e-3, "{}", zoom_of(&s));
+    assert_eq!(
+        s.eval::<(i64, i64)>("return GetCurrentMapContinent(), GetCurrentMapZone()")
+            .unwrap(),
+        (2, 0),
+        "the right-click's zoom-out does nothing"
+    );
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// Zoom 1 fits the canvas and the deepest zoom is four times Elwynn's stock size.
+#[test]
+fn the_canvas_zooms_from_the_whole_canvas_to_four_times_elwynn() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = canvas_harness();
+    let at = centre(&s, "WorldMapZoomFrame");
+    wheel(&mut s, at, 20, -1.0);
+    assert_eq!(zoom_of(&s), 1.0);
+    assert_eq!(s.eval::<i64>("return GetCurrentMapContinent()").unwrap(), 2);
+    wheel(&mut s, at, 20, 1.0);
+    assert!((zoom_of(&s) - 6.184).abs() < 1e-3, "{}", zoom_of(&s));
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// The drift regression: through five notches in and five out, a landmark and the player arrow
+/// stay on their map points at their starting size, and so does a landmark pushed mid-zoom.
+#[test]
+fn icons_stay_on_their_map_points_through_a_zoom_round_trip() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = canvas_harness();
+    const MARK: (f64, f64) = (0.7063, 0.3675);
+    let mark = (MARK.0 as f32, MARK.1 as f32);
+    s.set_world_map_landmarks(vec![landmark("The Inn", 6, mark)]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    settle(&mut s);
+    find_arrow(&s);
+    let size = |s: &UiScript, poi: &str| {
+        s.eval::<f64>(&format!(
+            "return {poi}:GetWidth() * {poi}:GetEffectiveScale()"
+        ))
+        .unwrap()
+    };
+    let start = size(&s, "WorldMapFramePOI1");
+    let mut poi = "WorldMapFramePOI1";
+    for step in 0..10 {
+        let delta = if step < 5 { 1.0 } else { -1.0 };
+        let at = map_point(&s, MARK.0, MARK.1);
+        wheel(&mut s, at, 1, delta);
+        if step == 2 {
+            s.set_world_map_landmarks(vec![
+                landmark("The Bank", 6, (0.2, 0.2)),
+                landmark("The Inn", 6, mark),
+            ]);
+            s.run("WorldMapFrame_Update()").unwrap();
+            settle(&mut s);
+            poi = "WorldMapFramePOI2";
+        }
+        let got = centre(&s, poi);
+        let want = map_point(&s, MARK.0, MARK.1);
+        assert!(
+            near(got, want),
+            "step {step}: {poi} at {got:?}, map point {want:?}"
+        );
+        let got_size = size(&s, poi);
+        assert!(
+            (got_size - start).abs() < 1e-3,
+            "step {step}: {start} became {got_size}"
+        );
+        let player = map_point(&s, f64::from(EASTVALE.0), f64::from(EASTVALE.1));
+        for icon in ["WorldMapPlayer", "BenillaTestArrow"] {
+            let got = centre(&s, icon);
+            assert!(
+                near(got, player),
+                "step {step}: {icon} at {got:?}, map point {player:?}"
+            );
+        }
+    }
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// At every zoom the cursor over canvas UV (0.28, 0.43) names Elwynn Forest in the area label.
+#[test]
+fn the_hover_names_the_zone_at_every_zoom() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = canvas_harness();
+    for step in 0..16 {
+        let delta = if step < 8 { 1.0 } else { -1.0 };
+        let at = map_point(&s, 0.28, 0.43);
+        s.mouse_move(at.0, at.1);
+        settle(&mut s);
+        let (u, v) = cursor_uv(&s);
+        assert!(
+            (u - 0.28).abs() < 0.002 && (v - 0.43).abs() < 0.002,
+            "step {step}: ({u}, {v})"
+        );
+        assert_eq!(
+            s.eval::<Option<String>>("return WorldMapFrameAreaLabel:GetText()")
+                .unwrap()
+                .as_deref(),
+            Some("Elwynn Forest"),
+            "step {step}, zoom {}",
+            zoom_of(&s)
+        );
+        wheel(&mut s, at, 1, delta);
+    }
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// The zone dropdown lists the canvas zones alphabetically, and a choice zooms to that zone's
+/// stock size and centres it.
+#[test]
+fn choosing_a_zone_in_the_dropdown_zooms_to_it_and_centres_it() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = canvas_harness();
+    s.run("ToggleDropDownMenu(1, nil, WorldMapZoneDropDown)")
+        .unwrap();
+    let names = s
+        .eval::<(String, String, String, String)>(
+            "return DropDownList1Button1:GetText(), DropDownList1Button2:GetText(), \
+             DropDownList1Button3:GetText(), DropDownList1Button4:GetText()",
+        )
+        .unwrap();
+    assert_eq!(
+        names,
+        (
+            "Duskwood".into(),
+            "Elwynn Forest".into(),
+            "Redridge Mountains".into(),
+            "Stormwind City".into()
+        )
+    );
+    s.run("this = DropDownList1Button3 this:GetScript('OnClick')() this = nil")
+        .unwrap();
+    settle(&mut s);
+    assert!((zoom_of(&s) - 2.4717).abs() < 1e-3, "{}", zoom_of(&s));
+    let (u, v) = s
+        .eval::<(f64, f64)>(
+            "local e = GetMapCanvas()[2] return e.left + e.width / 2, e.top + e.height / 2",
+        )
+        .unwrap();
+    let got = map_point(&s, u, v);
+    let want = centre(&s, "WorldMapZoomFrame");
+    assert!(
+        near(got, want),
+        "Redridge's centre {got:?}, view centre {want:?}"
     );
     assert_eq!(
-        s.eval::<i64>("return GetCurrentMapZone()").unwrap(),
-        1,
-        "the notches that unwind the zoom do not leave the zone"
+        s.eval::<String>("return WorldMapZoneDropDownText:GetText()")
+            .unwrap(),
+        "Redridge Mountains"
     );
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
-#[test]
-fn wheel_out_at_1x_leaves_the_zone_for_the_continent() {
-    let _data = benilla_formats::wow_data_or_skip!();
-    let mut s = zoom_harness(1, 1);
-    let (x, y) = map_point(&s, 0.5, 0.5);
-    s.mouse_move(x, y);
-    s.mouse_wheel(x, y, -1.0);
-    assert_eq!(s.eval::<i64>("return GetCurrentMapZone()").unwrap(), 0);
-    assert_eq!(s.eval::<i64>("return GetCurrentMapContinent()").unwrap(), 1);
-    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
-}
-
-#[test]
-fn wheel_in_at_1x_over_a_zone_on_the_continent_opens_it() {
-    let _data = benilla_formats::wow_data_or_skip!();
-    let mut s = zoom_harness(1, 0);
-    let (x, y) = map_point(&s, 0.5, 0.5);
-    s.mouse_move(x, y);
-    s.mouse_wheel(x, y, 1.0);
-    assert_eq!(s.eval::<String>("return (GetMapInfo())").unwrap(), "Elwynn");
-    assert_eq!(zoom_of(&s), 1.0);
-    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
-}
-
-#[test]
-fn changing_the_shown_map_resets_the_zoom() {
-    let _data = benilla_formats::wow_data_or_skip!();
-    let mut s = zoom_harness(1, 1);
-    let (x, y) = map_point(&s, 0.7, 0.3);
-    s.mouse_move(x, y);
-    for _ in 0..4 {
-        s.mouse_wheel(x, y, 1.0);
-    }
-    assert!(zoom_of(&s) > 1.0);
-    s.run("SetMapZoom(1, 2)").unwrap();
-    s.run("WorldMapFrame_Update()").unwrap();
-    assert_eq!(zoom_of(&s), 1.0);
-    let (h, v): (f64, f64) = s
-        .eval(
-            "return WorldMapZoomFrame:GetHorizontalScroll(), WorldMapZoomFrame:GetVerticalScroll()",
-        )
-        .unwrap();
-    assert_eq!((h, v), (0.0, 0.0));
-    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
-}
-
-/// A landmark's effective scale is the same at every zoom, and its centre stays on its map point.
-#[test]
-fn icons_keep_their_size_and_their_map_point_at_4x() {
-    let _data = benilla_formats::wow_data_or_skip!();
-    let mut s = zoom_harness(1, 1);
-    s.set_world_map_landmarks(vec![landmark("The Inn", 6, (0.5, 0.5))]);
-    s.run("WorldMapFrame_Update()").unwrap();
-    s.resolve();
-    let at_1x: f64 = s
-        .eval("return WorldMapFramePOI1:GetEffectiveScale()")
-        .unwrap();
-    let (x, y) = map_point(&s, 0.5, 0.5);
-    s.mouse_move(x, y);
-    for _ in 0..8 {
-        s.mouse_wheel(x, y, 1.0);
-    }
-    s.resolve();
-    assert_eq!(zoom_of(&s), 4.0);
-    let at_4x: f64 = s
-        .eval("return WorldMapFramePOI1:GetEffectiveScale()")
-        .unwrap();
-    assert!((at_4x - at_1x).abs() < 1e-4, "{at_1x} became {at_4x}");
-    let (cx, cy, eff) = s
-        .eval::<(f64, f64, f64)>(
-            "local x, y = WorldMapFramePOI1:GetCenter() return x, y, WorldMapFramePOI1:GetEffectiveScale()",
-        )
-        .unwrap();
-    let (mx, my) = map_point(&s, 0.5, 0.5);
-    assert!(
-        (cx * eff - f64::from(mx)).abs() < 1.0 && (cy * eff - f64::from(my)).abs() < 1.0,
-        "centre ({}, {}) against the map point ({mx}, {my})",
-        cx * eff,
-        cy * eff
-    );
-    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
-}
-
-/// At 4x a drag far past the map's edge leaves the detail frame over the whole view.
+/// At the deepest zoom a drag far past the map's edge leaves the detail frame over the whole view.
 #[test]
 fn a_drag_past_the_edge_leaves_no_gap() {
     let _data = benilla_formats::wow_data_or_skip!();
-    let mut s = zoom_harness(1, 1);
-    let (x, y) = map_point(&s, 0.5, 0.5);
-    s.mouse_move(x, y);
-    for _ in 0..8 {
-        s.mouse_wheel(x, y, 1.0);
-    }
-    s.resolve();
+    let mut s = canvas_harness();
+    let (x, y) = centre(&s, "WorldMapZoomFrame");
+    wheel(&mut s, (x, y), 20, 1.0);
     for (dx, dy) in [(900.0, 700.0), (-900.0, -700.0)] {
         s.mouse_button(x, y, "LeftButton", true);
         s.mouse_move(x + dx, y + dy);
-        s.run("BenillaMapZoom_Pan()").unwrap();
+        s.run("BenillaMapCanvas_Pan()").unwrap();
         s.resolve();
         let covers: bool = s
             .eval(
@@ -1202,5 +1391,134 @@ fn a_drag_past_the_edge_leaves_no_gap() {
         s.mouse_button(x + dx, y + dy, "LeftButton", false);
         s.mouse_move(x, y);
     }
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// Each canvas zone has a plate on its canvas rect, at zoom 1 and at the deepest zoom.
+#[test]
+fn each_canvas_zone_has_a_plate_on_its_rect() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = canvas_harness();
+    let at = centre(&s, "WorldMapZoomFrame");
+    for (notches, delta) in [(20, -1.0), (20, 1.0)] {
+        wheel(&mut s, at, notches, delta);
+        for i in 1..=4 {
+            let (left, top, width) = s
+                .eval::<(f64, f64, f64)>(&format!(
+                    "local e = GetMapCanvas()[{i}] return e.left, e.top, e.width"
+                ))
+                .unwrap();
+            let want = map_point(&s, left, top);
+            let (pl, pt, pw, eff, dw, deff) = s
+                .eval::<(f64, f64, f64, f64, f64, f64)>(&format!(
+                    "local p, d = BenillaCanvasPlate{i}, WorldMapDetailFrame \
+                     return p:GetLeft(), p:GetTop(), p:GetWidth(), p:GetEffectiveScale(), \
+                        d:GetWidth(), d:GetEffectiveScale()"
+                ))
+                .unwrap();
+            let got = ((pl * eff) as f32, (pt * eff) as f32);
+            assert!(
+                near(got, want),
+                "plate {i} at zoom {}: {got:?} vs {want:?}",
+                zoom_of(&s)
+            );
+            assert!(
+                (pw * eff - width * dw * deff).abs() < 1.0,
+                "plate {i} width {} vs {}",
+                pw * eff,
+                width * dw * deff
+            );
+        }
+    }
+    assert!(
+        !s.eval::<bool>("return WorldMapDetailTile1:IsShown()")
+            .unwrap(),
+        "the stock tiles hide under the plates"
+    );
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// At the deepest zoom `WorldMapButton` is larger than the view; outside the view the hit test
+/// reaches neither it nor a POI seated there.
+#[test]
+fn outside_the_view_the_hit_test_misses_the_map() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = canvas_harness();
+    let at = centre(&s, "WorldMapZoomFrame");
+    wheel(&mut s, at, 20, 1.0);
+    let (top, eff) = s
+        .eval::<(f64, f64)>(
+            "return WorldMapZoomFrame:GetTop(), WorldMapZoomFrame:GetEffectiveScale()",
+        )
+        .unwrap();
+    let probe = (at.0, (top * eff) as f32 + 10.0);
+    let (u, v) = s
+        .eval::<(f64, f64)>(&format!(
+            "local d = WorldMapDetailFrame local e = d:GetEffectiveScale() \
+             return ({x} / e - d:GetLeft()) / d:GetWidth(), (d:GetTop() - {y} / e) / d:GetHeight()",
+            x = probe.0,
+            y = probe.1
+        ))
+        .unwrap();
+    assert!(v > 0.0, "the button reaches past the view's top ({u}, {v})");
+    s.set_world_map_landmarks(vec![landmark("The Inn", 6, (u as f32, v as f32))]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    settle(&mut s);
+    assert!(near(centre(&s, "WorldMapFramePOI1"), probe));
+    let hit = s.hit_test_name(probe.0, probe.1);
+    assert!(
+        !matches!(hit.as_deref(), Some("WorldMapButton" | "WorldMapFramePOI1")),
+        "{hit:?}"
+    );
+    assert!(s.world_map_uv_at(probe.0, probe.1).is_none());
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// Off the canvas the stock map stays as it is: a wheel notch changes nothing.
+#[test]
+fn off_the_canvas_the_wheel_does_nothing() {
+    use benilla_ui::script::{WorldMapContinentView, WorldMapZoneView};
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = harness();
+    s.set_world_map_catalog(vec![WorldMapContinentView {
+        name: "Eastern Kingdoms".into(),
+        map_file: "Azeroth".into(),
+        world_rect: (0.62375, 0.02695, 0.92315, 0.87126),
+        loc_rect: (16000.0, -19199.9, 7466.6, -16000.0),
+        zone_grid: vec![1u16; 128 * 128],
+        canvas: None,
+        zones: vec![WorldMapZoneView {
+            name: "Elwynn Forest".into(),
+            area_id: 12,
+            map_file: "Elwynn".into(),
+            loc_rect: (-8000.0, -10000.0, -400.0, -1900.0),
+            overlays: Vec::new(),
+            closed: false,
+        }],
+    }]);
+    // After the toggle, whose `SetMapToCurrentZone` lands on the world with no player zone.
+    s.run("ToggleWorldMap()").unwrap();
+    s.run("SetMapZoom(1, 1)").unwrap();
+    s.run("WorldMapFrame_Update()").unwrap();
+    s.resolve();
+    let at = centre(&s, "WorldMapZoomFrame");
+    wheel(&mut s, at, 1, 1.0);
+    wheel(&mut s, at, 1, -1.0);
+    assert_eq!(zoom_of(&s), 1.0);
+    let sizes = s
+        .eval::<(f64, f64, f64, f64)>(
+            "return WorldMapDetailFrame:GetWidth(), WorldMapButton:GetWidth(), \
+             WorldMapZoomFrame:GetHorizontalScroll(), WorldMapZoomFrame:GetVerticalScroll()",
+        )
+        .unwrap();
+    assert_eq!(sizes, (1002.0, 1002.0, 0.0, 0.0));
+    assert_eq!(
+        s.eval::<(i64, i64)>("return GetCurrentMapContinent(), GetCurrentMapZone()")
+            .unwrap(),
+        (1, 1)
+    );
+    assert!(s
+        .eval::<bool>("return WorldMapDetailTile1:IsShown() and WorldMapZoomOutButton:IsShown()")
+        .unwrap());
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }

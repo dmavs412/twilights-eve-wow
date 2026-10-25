@@ -1,0 +1,459 @@
+<Ui>
+    <!--
+        The map canvas (spec #410): while `GetMapCanvas()` answers, the world map is one canvas of
+        zone plates under a mouse wheel zoom and a left-drag pan. Off the canvas the stock map is
+        left as it is, with no zoom.
+
+        `WorldMapDetailFrame` becomes the scroll child of a new `WorldMapZoomFrame` that takes its
+        anchors and size, and `WorldMapButton` moves into the detail frame, so the scroll frame
+        clips the POIs and blips and they scroll with the map. A zoom of `z` sizes both frames to
+        1002z by 668z at scale 1, so the stock code seats every icon at its map point and no icon
+        is scaled. Frame levels above the detail frame's: one per plate, then
+        `WorldMapMistFrame` (WorldMapMist.xml), then `WorldMapButton` and its children.
+    -->
+    <Script><![CDATA[
+        local ZOOM_STEP = 1.25
+        -- The deepest zoom, in multiples of the widest zone's stock size.
+        local ZOOM_DEPTH = 4
+        local MAX_PLATES = 8
+        local TILE = 256
+        local TILES_WIDE = 4
+
+        local zoom = 1
+        local zoomMax = 1
+        local pan = nil
+        local canvas = nil
+        local onCanvas = false
+        local opening = false
+        -- The zone the dropdown names: the last chosen, or the one the map opened on.
+        local chosen = nil
+        local plates = {}
+
+        local detail = WorldMapDetailFrame
+        local baseWidth = detail:GetWidth()
+        local baseHeight = detail:GetHeight()
+        local view = CreateFrame("ScrollFrame", "WorldMapZoomFrame", WorldMapFrame)
+        local level = detail:GetFrameLevel()
+        local buttonLevel = level + MAX_PLATES + 2
+
+        do
+            local points = {}
+            for i = 1, detail:GetNumPoints() do
+                points[i] = { detail:GetPoint(i) }
+            end
+            view:SetScale(detail:GetScale())
+            view:SetWidth(baseWidth)
+            view:SetHeight(baseHeight)
+            for i = 1, table.getn(points) do
+                local p = points[i]
+                view:SetPoint(p[1], p[2], p[3], p[4], p[5])
+            end
+            if level > 0 then
+                view:SetFrameLevel(level - 1)
+            end
+            detail:ClearAllPoints()
+            detail:SetParent(view)
+            detail:SetScale(1)
+            view:SetScrollChild(detail)
+            detail:SetFrameLevel(level)
+            view:EnableMouseWheel(true)
+            view:Show()
+        end
+
+        -- A script level change moves no children, so each descendant moves by hand.
+        local function BenillaCanvas_Lift(frame, delta)
+            local children = { frame:GetChildren() }
+            for i = 1, table.getn(children) do
+                children[i]:SetFrameLevel(children[i]:GetFrameLevel() + delta)
+                BenillaCanvas_Lift(children[i], delta)
+            end
+        end
+
+        -- The area label stays at the top of the view instead of scrolling with the map.
+        WorldMapFrameAreaFrame:SetParent(WorldMapFrame)
+        WorldMapFrameAreaFrame:ClearAllPoints()
+        WorldMapFrameAreaFrame:SetPoint("TOP", view, "TOP", 0, -10)
+
+        do
+            local oldLevel = WorldMapButton:GetFrameLevel()
+            WorldMapButton:SetParent(detail)
+            WorldMapButton:ClearAllPoints()
+            WorldMapButton:SetPoint("TOPLEFT", detail, "TOPLEFT", 0, 0)
+            WorldMapButton:SetFrameLevel(buttonLevel)
+            BenillaCanvas_Lift(WorldMapButton, buttonLevel - oldLevel)
+            WorldMapFrameAreaFrame:SetFrameLevel(buttonLevel + 2)
+        end
+
+        local function BenillaCanvas_ZoomOf(entry)
+            return 1 / entry.width
+        end
+
+        local function BenillaCanvas_SetSize()
+            detail:SetWidth(baseWidth * zoom)
+            detail:SetHeight(baseHeight * zoom)
+            WorldMapButton:SetWidth(baseWidth * zoom)
+            WorldMapButton:SetHeight(baseHeight * zoom)
+        end
+
+        local function BenillaCanvas_SetOffsets(x, y)
+            local overX = math.max(0, detail:GetWidth() - view:GetWidth())
+            local overY = math.max(0, detail:GetHeight() - view:GetHeight())
+            view:SetHorizontalScroll(math.min(0, math.max(-overX, x)))
+            view:SetVerticalScroll(math.max(0, math.min(overY, y)))
+        end
+
+        local function BenillaCanvas_Plate(i)
+            local plate = plates[i]
+            if plate then
+                return plate
+            end
+            plate = CreateFrame("Frame", "BenillaCanvasPlate" .. i, detail)
+            plate:SetWidth(baseWidth)
+            plate:SetHeight(baseHeight)
+            plate:SetFrameLevel(level + i)
+            plate.tiles = {}
+            for n = 1, NUM_WORLDMAP_DETAIL_TILES do
+                local tile = plate:CreateTexture(nil, "BACKGROUND")
+                tile:SetWidth(TILE)
+                tile:SetHeight(TILE)
+                tile:SetPoint("TOPLEFT", plate, "TOPLEFT", TILE * math.mod(n - 1, TILES_WIDE),
+                    -TILE * math.floor((n - 1) / TILES_WIDE))
+                plate.tiles[n] = tile
+            end
+            plate.pieces = {}
+            plates[i] = plate
+            return plate
+        end
+
+        -- The entry's overlays in 256 px pieces, as the stock WorldMapFrame_Update cuts them.
+        local function BenillaCanvas_Pieces(plate, overlays)
+            local count = 0
+            for i = 1, table.getn(overlays) do
+                local o = overlays[i]
+                local wide = math.ceil(o.width / TILE)
+                local tall = math.ceil(o.height / TILE)
+                for j = 1, tall do
+                    local pixelHeight, fileHeight = TILE, TILE
+                    if j == tall then
+                        pixelHeight = math.mod(o.height, TILE)
+                        if pixelHeight == 0 then
+                            pixelHeight = TILE
+                        end
+                        fileHeight = 16
+                        while fileHeight < pixelHeight do
+                            fileHeight = fileHeight * 2
+                        end
+                    end
+                    for k = 1, wide do
+                        local pixelWidth, fileWidth = TILE, TILE
+                        if k == wide then
+                            pixelWidth = math.mod(o.width, TILE)
+                            if pixelWidth == 0 then
+                                pixelWidth = TILE
+                            end
+                            fileWidth = 16
+                            while fileWidth < pixelWidth do
+                                fileWidth = fileWidth * 2
+                            end
+                        end
+                        count = count + 1
+                        local piece = plate.pieces[count]
+                        if not piece then
+                            piece = plate:CreateTexture(nil, "ARTWORK")
+                            plate.pieces[count] = piece
+                        end
+                        piece:SetWidth(pixelWidth)
+                        piece:SetHeight(pixelHeight)
+                        piece:SetTexCoord(0, pixelWidth / fileWidth, 0, pixelHeight / fileHeight)
+                        piece:ClearAllPoints()
+                        piece:SetPoint("TOPLEFT", plate, "TOPLEFT", o.offsetX + TILE * (k - 1),
+                            -(o.offsetY + TILE * (j - 1)))
+                        piece:SetTexture(o.texture .. ((j - 1) * wide + k))
+                        piece:Show()
+                    end
+                end
+            end
+            for i = count + 1, table.getn(plate.pieces) do
+                plate.pieces[i]:Hide()
+            end
+        end
+
+        -- Each plate is 1002x668 in its own units at scale `width * zoom`, so its anchor offset,
+        -- in those units, does not change with the zoom.
+        local function BenillaCanvas_SeatPlates()
+            local count = 0
+            if onCanvas then
+                count = math.min(table.getn(canvas), MAX_PLATES)
+            end
+            for i = 1, count do
+                local entry = canvas[i]
+                local plate = BenillaCanvas_Plate(i)
+                plate:SetScale(entry.width * zoom)
+                plate:ClearAllPoints()
+                plate:SetPoint("TOPLEFT", detail, "TOPLEFT", entry.left * baseWidth / entry.width,
+                    -entry.top * baseHeight / entry.width)
+                for n = 1, NUM_WORLDMAP_DETAIL_TILES do
+                    plate.tiles[n]:SetTexture("Interface\\WorldMap\\" .. entry.file .. "\\" .. entry.file .. n)
+                end
+                BenillaCanvas_Pieces(plate, entry.overlays)
+                plate:Show()
+            end
+            for i = count + 1, table.getn(plates) do
+                plates[i]:Hide()
+            end
+        end
+
+        local function BenillaCanvas_ShowStock(shown)
+            for i = 1, NUM_WORLDMAP_DETAIL_TILES do
+                local tile = getglobal("WorldMapDetailTile" .. i)
+                if shown then
+                    tile:Show()
+                else
+                    tile:Hide()
+                end
+            end
+            if shown then
+                WorldMapContinentDropDown:Show()
+                WorldMapZoomOutButton:Show()
+            else
+                WorldMapContinentDropDown:Hide()
+                WorldMapZoomOutButton:Hide()
+                for i = 1, NUM_WORLDMAP_OVERLAYS do
+                    getglobal("WorldMapOverlay" .. i):Hide()
+                end
+            end
+        end
+
+        -- The player arrow is a child of the map frame, under the plates; on the canvas it rides
+        -- in WorldMapButton, clipped and above them.
+        local function BenillaCanvas_LiftArrow()
+            local children = { WorldMapFrame:GetChildren() }
+            for i = 1, table.getn(children) do
+                if children[i]:GetObjectType() == "Model" then
+                    children[i]:SetParent(WorldMapButton)
+                    children[i]:SetFrameLevel(buttonLevel + 1)
+                end
+            end
+        end
+
+        local function BenillaCanvas_SetZoom(newZoom)
+            zoom = math.max(1, math.min(zoomMax, newZoom))
+            if zoom < 1.0001 then
+                zoom = 1
+            end
+            BenillaCanvas_SetSize()
+            if zoom > 1 then
+                WorldMapButton:RegisterForDrag("LeftButton")
+            else
+                pan = nil
+                WorldMapButton:RegisterForDrag()
+            end
+        end
+
+        -- Sets the zoom and puts canvas UV (u, v) at the view's centre.
+        local function BenillaCanvas_ZoomTo(newZoom, u, v)
+            BenillaCanvas_SetZoom(newZoom)
+            BenillaCanvas_SetOffsets(view:GetWidth() / 2 - u * detail:GetWidth(),
+                v * detail:GetHeight() - view:GetHeight() / 2)
+            WorldMapFrame_Update()
+        end
+
+        -- The last canvas entry whose rect holds (u, v).
+        local function BenillaCanvas_EntryAt(u, v)
+            local found = nil
+            for i = 1, table.getn(canvas) do
+                local e = canvas[i]
+                if u >= e.left and u <= e.left + e.width and v >= e.top and v <= e.top + e.height then
+                    found = e
+                end
+            end
+            return found
+        end
+
+        local function BenillaCanvas_Sorted()
+            local list = {}
+            for i = 1, table.getn(canvas) do
+                table.insert(list, canvas[i])
+            end
+            table.sort(list, function(a, b)
+                return a.name < b.name
+            end)
+            return list
+        end
+
+        local function BenillaCanvas_Open()
+            opening = false
+            pan = nil
+            local u, v = GetPlayerMapPosition("player")
+            local entry = nil
+            if u ~= 0 or v ~= 0 then
+                entry = BenillaCanvas_EntryAt(u, v)
+            end
+            if entry then
+                chosen = entry.name
+                BenillaCanvas_ZoomTo(BenillaCanvas_ZoomOf(entry), u, v)
+            else
+                BenillaCanvas_ZoomTo(1, 0.5, 0.5)
+            end
+            WorldMap_UpdateZoneDropDownText()
+        end
+
+        -- Follows `GetMapCanvas()` on and off the canvas.
+        local function BenillaCanvas_Refresh()
+            canvas = GetMapCanvas()
+            if canvas and not onCanvas then
+                onCanvas = true
+                -- The widest zone has the smallest stock-size zoom.
+                local widest = nil
+                for i = 1, table.getn(canvas) do
+                    local z = BenillaCanvas_ZoomOf(canvas[i])
+                    if not widest or z < widest then
+                        widest = z
+                    end
+                end
+                zoomMax = math.max(1, ZOOM_DEPTH * (widest or 1))
+                BenillaCanvas_LiftArrow()
+                BenillaCanvas_ShowStock(false)
+                opening = true
+            elseif not canvas and onCanvas then
+                onCanvas = false
+                chosen = nil
+                BenillaCanvas_SetZoom(1)
+                zoomMax = 1
+                view:SetHorizontalScroll(0)
+                view:SetVerticalScroll(0)
+                BenillaCanvas_ShowStock(true)
+                BenillaCanvas_SeatPlates()
+            end
+        end
+
+        function BenillaMapCanvas_GetZoom()
+            return zoom
+        end
+
+        function BenillaMapCanvas_OnMouseWheel(delta)
+            if not onCanvas then
+                return
+            end
+            if delta < 0 and zoom <= 1 then
+                return
+            end
+            local cx, cy = GetCursorPosition()
+            local scale = view:GetEffectiveScale()
+            -- The cursor in view units from the view's top-left, y down, and the map point under it.
+            local px, py = cx / scale - view:GetLeft(), view:GetTop() - cy / scale
+            local u = (px - view:GetHorizontalScroll()) / detail:GetWidth()
+            local v = (py + view:GetVerticalScroll()) / detail:GetHeight()
+            if delta < 0 then
+                BenillaCanvas_SetZoom(zoom / ZOOM_STEP)
+            else
+                BenillaCanvas_SetZoom(zoom * ZOOM_STEP)
+            end
+            BenillaCanvas_SetOffsets(px - u * detail:GetWidth(), v * detail:GetHeight() - py)
+            WorldMapFrame_Update()
+        end
+
+        function BenillaMapCanvas_DragStart()
+            if zoom <= 1 then
+                return
+            end
+            local cx, cy = GetCursorPosition()
+            pan = {
+                cx = cx,
+                cy = cy,
+                x = view:GetHorizontalScroll(),
+                y = view:GetVerticalScroll(),
+            }
+        end
+
+        function BenillaMapCanvas_DragStop()
+            pan = nil
+        end
+
+        function BenillaMapCanvas_Pan()
+            if not pan then
+                return
+            end
+            local cx, cy = GetCursorPosition()
+            local scale = view:GetEffectiveScale()
+            BenillaCanvas_SetOffsets(pan.x + (cx - pan.cx) / scale, pan.y + (cy - pan.cy) / scale)
+        end
+
+        view:SetScript("OnMouseWheel", function()
+            BenillaMapCanvas_OnMouseWheel(arg1)
+        end)
+        view:SetScript("OnShow", function()
+            opening = true
+            BenillaCanvas_Refresh()
+            if onCanvas then
+                BenillaCanvas_Open()
+            end
+        end)
+        view:SetScript("OnUpdate", BenillaMapCanvas_Pan)
+        WorldMapButton:SetScript("OnDragStart", BenillaMapCanvas_DragStart)
+        WorldMapButton:SetScript("OnDragStop", BenillaMapCanvas_DragStop)
+
+        local BenillaCanvas_OldUpdate = WorldMapFrame_Update
+        function WorldMapFrame_Update()
+            BenillaCanvas_OldUpdate()
+            BenillaCanvas_Refresh()
+            if onCanvas then
+                BenillaCanvas_ShowStock(false)
+            end
+            BenillaCanvas_SeatPlates()
+            if opening and onCanvas and view:IsVisible() then
+                BenillaCanvas_Open()
+            end
+        end
+
+        local BenillaCanvas_OldZoneInit = WorldMapZoneDropDown_Initialize
+        function WorldMapZoneDropDown_Initialize()
+            if not onCanvas then
+                BenillaCanvas_OldZoneInit()
+                return
+            end
+            local list = BenillaCanvas_Sorted()
+            for i = 1, table.getn(list) do
+                local info = {}
+                info.text = list[i].name
+                info.func = WorldMapZoneButton_OnClick
+                UIDropDownMenu_AddButton(info)
+            end
+        end
+
+        local BenillaCanvas_OldZoneClick = WorldMapZoneButton_OnClick
+        function WorldMapZoneButton_OnClick()
+            if not onCanvas then
+                BenillaCanvas_OldZoneClick()
+                return
+            end
+            local entry = BenillaCanvas_Sorted()[this:GetID()]
+            if not entry then
+                return
+            end
+            UIDropDownMenu_SetSelectedID(WorldMapZoneDropDown, this:GetID())
+            chosen = entry.name
+            BenillaCanvas_ZoomTo(BenillaCanvas_ZoomOf(entry), entry.left + entry.width / 2,
+                entry.top + entry.height / 2)
+            WorldMap_UpdateZoneDropDownText()
+        end
+
+        local BenillaCanvas_OldZoneText = WorldMap_UpdateZoneDropDownText
+        function WorldMap_UpdateZoneDropDownText()
+            if not onCanvas then
+                BenillaCanvas_OldZoneText()
+            elseif chosen then
+                UIDropDownMenu_SetText(chosen, WorldMapZoneDropDown)
+            else
+                UIDropDownMenu_ClearAll(WorldMapZoneDropDown)
+            end
+        end
+
+        local BenillaCanvas_OldZoomOut = WorldMapZoomOutButton_OnClick
+        function WorldMapZoomOutButton_OnClick()
+            if not onCanvas then
+                BenillaCanvas_OldZoomOut()
+            end
+        end
+    ]]></Script>
+</Ui>
