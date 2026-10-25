@@ -273,6 +273,12 @@ pub enum SessionEvent {
         lure: Option<(u32, u32, u32)>,
         /// `(zone AreaTable id, [(fish item, best: 0 none, 1 caught, 2 perfect)])`, in pool order.
         zones: Vec<(u32, Vec<(u32, u8)>)>,
+        /// Total casts whose bobber floated.
+        casts: u32,
+        /// Total fish caught, the sum of the catch log.
+        caught: u32,
+        /// `(zone AreaTable id, description)`, in pool order.
+        zone_text: Vec<(u32, String)>,
         /// `(item, zone, hint found, caught)`; empty until the Legendary Fish land.
         legends: Vec<(u32, u32, bool, bool)>,
         /// One page per fish caught at least once, in `[[fish]]` order.
@@ -285,7 +291,13 @@ pub enum SessionEvent {
     },
     /// Twilight's Eve, not 1.12: the character's Angler Level, sent at login and on every change.
     /// Never wire-decoded.
-    Angler { level: u8, xp: u32, xp_to_next: u32 },
+    Angler {
+        level: u8,
+        xp: u32,
+        xp_to_next: u32,
+        /// The title of the Angler level band.
+        title: String,
+    },
     /// `SMSG_CHAR_CREATE`/`_DELETE`'s raw `WorldResult`; on success a fresh roster comes first.
     CharActionResult { action: CharAction, code: u8 },
     /// We are in the world; the IO thread emits this before any object update.

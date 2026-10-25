@@ -188,6 +188,9 @@ struct Save {
     /// older save and never written.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     fish_log: Vec<FishLog>,
+    /// Casts whose bobber floated; an older save loads at 0.
+    #[serde(default)]
+    fishing_casts: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     bait: Option<u32>,
     /// The Legendary Fish (#331) caught and hinted, as trophy items.
@@ -431,6 +434,7 @@ pub(crate) fn export(c: &Char) -> String {
         angler_xp: c.angler_xp,
         catches: Vec::new(),
         fish_log: c.fish_log.clone(),
+        fishing_casts: c.fishing_casts,
         bait: c.bait,
         legends_caught: c.legends_caught.clone(),
         legend_hints: c.legend_hints.clone(),
@@ -528,6 +532,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         } else {
             s.fish_log
         },
+        fishing_casts: s.fishing_casts,
         bait: s.bait,
         legends_caught: s.legends_caught,
         legend_hints: s.legend_hints,

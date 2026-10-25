@@ -35,6 +35,7 @@ const TEST_FISH: &str = r#"
 key = "test_smallfish"
 zone = 990001
 kind = "lake"
+description = "A test pond."
 fish = [{ item = 6291, weight = 100.0, level = 1 }]
 treasure = []
 copper = [0, 0]
@@ -43,6 +44,7 @@ copper = [0, 0]
 key = "test_level_15"
 zone = 990002
 kind = "lake"
+description = "A test pond."
 fish = [{ item = 6308, weight = 100.0, level = 15 }]
 treasure = []
 copper = [0, 0]
@@ -51,6 +53,7 @@ copper = [0, 0]
 key = "test_level_11"
 zone = 990003
 kind = "lake"
+description = "A test pond."
 fish = [{ item = 6289, weight = 100.0, level = 11 }]
 treasure = []
 copper = [0, 0]
@@ -120,6 +123,7 @@ fn test_fish(start: [f32; 3]) -> String {
 key = \"test_legends\"
 zone = 990004
 kind = \"lake\"
+description = \"A test pond.\"
 fish = [{{ item = 6291, weight = 100.0, level = 1 }}]
 treasure = []
 copper = [0, 0]
@@ -128,6 +132,7 @@ copper = [0, 0]
 key = \"test_legend_rumour\"
 zone = 990005
 kind = \"lake\"
+description = \"A test pond.\"
 fish = [{{ item = 6291, weight = 100.0, level = 1 }}]
 treasure = []
 copper = [0, 0]
@@ -201,6 +206,7 @@ chance = 100
 key = \"test_gated\"
 zone = 990006
 kind = \"lake\"
+description = \"A test pond.\"
 fish = [
     {{ item = 960003, weight = 100.0, level = 1 }},
     {{ item = 960004, weight = 100.0, level = 1 }},
@@ -686,6 +692,69 @@ fn the_save_keeps_fishing_and_an_old_save_loads_at_the_defaults() {
     assert!(back.contains("angler_level = 1\n") && !back.contains("knows_fishing"));
 }
 
+/// The last `FishingJournal`'s total casts.
+fn casts_in(events: &[SessionEvent]) -> Option<u32> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::FishingJournal { casts, .. } => Some(*casts),
+        _ => None,
+    })
+}
+
+/// The last `Angler` event's title.
+fn title_in(events: &[SessionEvent]) -> Option<String> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::Angler { title, .. } => Some(title.clone()),
+        _ => None,
+    })
+}
+
+#[test]
+fn a_landed_cast_counts_and_a_refused_one_does_not() {
+    let (_, _, start) = save(1, true, true);
+    let mut a = angler(1, true, true, Side::North);
+    assert!(landed(&a.cast()));
+    assert!(landed(&a.cast()));
+    let back = from_save(a.guid, &saved(&a), start, Side::North);
+    assert_eq!(casts_in(&back.events), Some(2));
+
+    let mut bare = angler(1, true, false, Side::North);
+    assert!(!landed(&bare.cast()));
+    let back = from_save(bare.guid, &saved(&bare), start, Side::North);
+    assert_eq!(casts_in(&back.events), Some(0));
+}
+
+#[test]
+fn the_save_keeps_the_cast_count() {
+    let (guid, blob, _) = save(6, true, false);
+    let blob = blob.replace("fishing_casts = 0\n", "fishing_casts = 17\n");
+    let mut realm = realm();
+    realm.import_character(&blob).unwrap();
+    let back = realm.export_character(guid).unwrap();
+    assert!(back.contains("fishing_casts = 17\n"), "{back}");
+
+    let old: String = back
+        .lines()
+        .filter(|l| !l.starts_with("fishing_casts"))
+        .map(|l| format!("{l}\n"))
+        .collect();
+    let mut realm = Realm::new();
+    realm.import_character(&old).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    assert_eq!(casts_in(&drain(&mut realm)), Some(0));
+}
+
+#[test]
+fn the_angler_event_names_the_title() {
+    let one = angler(1, true, true, Side::East);
+    assert_eq!(title_in(&one.events).as_deref(), Some("Novice Fisher"));
+    let twenty = angler(20, true, true, Side::East);
+    assert_eq!(
+        title_in(&twenty.events).as_deref(),
+        Some("Journeyman Fisher")
+    );
+}
+
 // ── Bait, lures and the Journal (#329) ──────────────────────────────────────────────────────────
 
 const WRIGGLING_WORMS: u32 = 960101;
@@ -751,6 +820,22 @@ fn login_sends_the_journal_with_every_pool_and_its_fish() {
             "{fish} in the Elwynn page"
         );
     }
+    let zone_text = a
+        .events
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            SessionEvent::FishingJournal { zone_text, .. } => Some(zone_text.clone()),
+            _ => None,
+        })
+        .expect("a Journal at login");
+    for zone in [12, 1519, 44, 10] {
+        assert!(zone_text.iter().any(|(z, _)| *z == zone), "zone {zone}");
+    }
+    assert!(
+        zone_text.iter().all(|(_, t)| !t.is_empty()),
+        "{zone_text:?}"
+    );
 }
 
 #[test]

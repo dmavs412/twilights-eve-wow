@@ -403,6 +403,7 @@ fn run_reel(
                 level,
                 xp,
                 xp_to_next,
+                ..
             } => {
                 f.angler = Some((u32::from(level), xp, xp_to_next));
                 f.events.push(("ANGLER_UPDATE", Vec::new()));

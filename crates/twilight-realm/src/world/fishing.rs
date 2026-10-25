@@ -141,6 +141,7 @@ pub(super) fn angler(c: &Char) -> SessionEvent {
         } else {
             0
         },
+        title: a.title(level).to_owned(),
     }
 }
 
@@ -176,6 +177,11 @@ pub(crate) fn journal(c: &Char) -> SessionEvent {
                     p.fish.iter().map(|f| (f.item, best(f.item))).collect(),
                 )
             })
+            .collect(),
+        casts: c.fishing_casts,
+        caught: c.fish_log.iter().map(|l| l.caught).sum(),
+        zone_text: fish::pools()
+            .map(|p| (p.zone, p.description.clone()))
             .collect(),
         legends: fish::legends()
             .into_iter()
@@ -589,6 +595,7 @@ impl InWorld {
         if let Some(b) = bait {
             take_bait(c, b.item, events);
         }
+        c.fishing_casts = c.fishing_casts.saturating_add(1);
         let wait = rng.frand(s.bite_secs[0], s.bite_secs[1]);
         let f = self.fishing.as_mut()?;
         f.stage = Stage::Floating {

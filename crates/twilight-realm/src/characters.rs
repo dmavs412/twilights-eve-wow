@@ -94,6 +94,8 @@ pub(crate) struct Char {
     pub(crate) angler_xp: u32,
     /// The Fishing Journal's catch log, one row per fish caught at least once.
     pub(crate) fish_log: Vec<FishLog>,
+    /// Casts whose bobber floated.
+    pub(crate) fishing_casts: u32,
     /// The Journal's chosen bait, a `[[bait]]` item.
     pub(crate) bait: Option<u32>,
     /// The Journal's Pole slot: a fishing pole out of the bags. A cast reads it, not the main hand.
@@ -206,6 +208,7 @@ impl Characters {
             angler_level: 1,
             angler_xp: 0,
             fish_log: Vec::new(),
+            fishing_casts: 0,
             bait: None,
             fishing_pole: None,
             fishing_lure: None,

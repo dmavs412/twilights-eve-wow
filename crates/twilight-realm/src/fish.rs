@@ -89,9 +89,27 @@ pub(crate) struct Angler {
     pub(crate) rarity_factor: RarityFactor,
     pub(crate) perfect_factor: f32,
     pub(crate) legend_bonus_xp: u32,
+    /// Title bands, rising by `from`.
+    pub(crate) titles: Vec<Title>,
+}
+
+/// A title band: held from Angler level `from` until the next band.
+#[derive(Deserialize)]
+pub(crate) struct Title {
+    pub(crate) from: u32,
+    pub(crate) title: String,
 }
 
 impl Angler {
+    /// The title of the last band whose `from` is at or below `level`.
+    pub(crate) fn title(&self, level: u32) -> &str {
+        self.titles
+            .iter()
+            .rev()
+            .find(|t| t.from <= level)
+            .map_or("", |t| t.title.as_str())
+    }
+
     /// The XP from Angler level `level` to the next: base + per level x level.
     pub(crate) fn xp_to_next(&self, level: u32) -> u32 {
         self.xp_base + self.xp_per_level * level
@@ -256,6 +274,8 @@ pub(crate) struct Pool {
     pub(crate) zone: u32,
     /// The Water Kind of the zone's unnamed water.
     pub(crate) kind: Kind,
+    /// The Journal's text for the zone.
+    pub(crate) description: String,
     pub(crate) fish: Vec<PoolFish>,
     pub(crate) treasure: Vec<Treasure>,
     /// A treasure chest's `[min, max]` copper.
@@ -422,6 +442,19 @@ fn check(file: &File) {
             f.lure.is_none_or(|l| file.lure.iter().any(|x| x.item == l)),
             "fish {} names a lure that is no [[lure]]",
             f.item
+        );
+    }
+    let titles = &file.angler.titles;
+    assert!(
+        titles.first().is_some_and(|t| t.from == 1)
+            && titles.windows(2).all(|w| w[0].from < w[1].from),
+        "[angler] titles must start at level 1 and rise"
+    );
+    for p in &file.pool {
+        assert!(
+            !p.description.trim().is_empty(),
+            "pool {} has no description",
+            p.key
         );
     }
     for p in &file.pole {
@@ -714,6 +747,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn titles_pick_the_last_band_at_or_below_the_level() {
+        assert_eq!(angler().title(9), "Novice Fisher");
+        assert_eq!(angler().title(10), "Apprentice Fisher");
+        assert_eq!(angler().title(60), "Master Fisher");
+    }
+
+    #[test]
     fn the_file_loads_and_its_accessors_answer() {
         assert_eq!(spell().id, 7620);
         assert_eq!(angler().xp_to_next(12), 940);
@@ -778,7 +818,7 @@ mod tests {
     fn a_pool_whose_only_fish_is_gated_fails_to_load() {
         // Elwynn keeps only the smallfish, which then bites at dusk alone.
         let text = include_str!("../content/fish.toml");
-        let head = "key = \"elwynn\"\nzone = 12\nkind = \"lake\"\nfish = [\n";
+        let head = "description = \"Still lakes and the Northshire river, full of perch and snapper. Half of Stormwind learned to fish here.\"\nfish = [\n";
         let from = text.find(head).unwrap() + head.len();
         let to = from + text[from..].find("]\n").unwrap();
         let text = format!(

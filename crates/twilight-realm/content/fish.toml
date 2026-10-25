@@ -50,6 +50,9 @@
 #   rarity_factor, perfect_factor             times its rarity's factor, times perfect_factor for
 #                                             a catch with the meter never falling
 #   legend_bonus_xp                           added for a Legendary Fish
+#   titles                                    { from, title } bands: the title of the last band
+#                                             whose `from` is at or below the level; the first
+#                                             `from` is 1 and they rise
 #
 # [[fish]], one per fish item:
 #   item, style (smooth, mixed, sinker, floater or dart: how it moves on the track),
@@ -73,7 +76,7 @@
 #
 # [[pool]], one per zone (AreaTable id). Weights are vmangos `fishing_loot_template` chances; its
 # `0.0` row takes the rest of 100. The fish weights and treasure weights of a pool sum to 100.
-#   key, zone, kind, fish = [{ item, weight, level }], treasure = [{ item, weight }],
+#   key, zone, kind, description (the Journal's text for the zone), fish =[{ item, weight, level }], treasure = [{ item, weight }],
 #   copper = [min, max]
 #   kind is the Water Kind of the zone's unnamed water.
 #   A treasure chest pays a copper roll in `copper` and one roll on `treasure`.
@@ -213,6 +216,14 @@ catch_xp_per_level = 2
 rarity_factor = { common = 1.0, uncommon = 1.5, rare = 2.5 }
 perfect_factor = 2.0
 legend_bonus_xp = 500
+titles = [
+  { from = 1, title = "Novice Fisher" },
+  { from = 10, title = "Apprentice Fisher" },
+  { from = 20, title = "Journeyman Fisher" },
+  { from = 30, title = "Expert Fisher" },
+  { from = 45, title = "Artisan Fisher" },
+  { from = 60, title = "Master Fisher" },
+]
 
 [journal]
 reveal_at = [5, 10, 25]
@@ -490,6 +501,7 @@ block = "dawn"
 key = "elwynn"
 zone = 12
 kind = "lake"
+description = "Still lakes and the Northshire river, full of perch and snapper. Half of Stormwind learned to fish here."
 fish = [
   { item = 6291, weight = 20.62, level = 1 },
   { item = 960401, weight = 20.62, level = 1 },
@@ -511,6 +523,7 @@ copper = [50, 300]
 key = "stormwind"
 zone = 1519
 kind = "coast"
+description = "Canals under the city walls and the grey sea beyond them. City fish grow fat on what the city throws away."
 fish = [
   { item = 6291, weight = 16.33, level = 1 },
   { item = 960407, weight = 16.33, level = 3 },
@@ -533,6 +546,7 @@ copper = [80, 500]
 key = "redridge"
 zone = 44
 kind = "lake"
+description = "Lake Everstill runs deep and cold, and the race at Alther's Mill never stops turning. Bigger fish, and orcs on the far shore."
 fish = [
   { item = 960411, weight = 19.53, level = 12 },
   { item = 6289, weight = 19.53, level = 12 },
@@ -555,6 +569,7 @@ copper = [300, 1500]
 key = "duskwood"
 zone = 10
 kind = "river"
+description = "Black rivers under a sky that never quite clears. The Night Watch fish here, and they never fish alone."
 fish = [
   { item = 6289, weight = 19.55, level = 16 },
   { item = 960418, weight = 19.55, level = 16 },
