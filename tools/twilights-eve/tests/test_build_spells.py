@@ -76,6 +76,8 @@ class BuildSpells(unittest.TestCase):
         self.profiles: dict[str, dict | None] = {}
         # The creature_spells.toml `run_build` hands the script: none, unless a test sets it.
         self.creature_spells = ""
+        # Content files by name for the `--content` folder `run_build` hands the script: none, unless set.
+        self.content: dict[str, str] = {}
 
     def run_build(self, rows: list[dict],
                   extra_columns: tuple = ()) -> tuple[subprocess.CompletedProcess, list | None]:
@@ -116,9 +118,15 @@ class BuildSpells(unittest.TestCase):
         for name, data in {"ember_lash.png": PNG, **getattr(self, "extra_art", {})}.items():
             with open(os.path.join(art_dir, name), "wb") as f:
                 f.write(data)
+        content_dir = os.path.join(tmp, "content")
+        os.mkdir(content_dir)
+        for name, text in self.content.items():
+            with open(os.path.join(content_dir, name), "w", encoding="utf-8") as f:
+                f.write(text)
         self.out_dir = tmp
         command = [sys.executable, SCRIPT, "--csv", path, "--callings", callings_path, "--out-dir", tmp,
-                   "--art-dir", art_dir, "--creature-spells", creature_path, "--no-dbc-check"]
+                   "--art-dir", art_dir, "--creature-spells", creature_path, "--content", content_dir,
+                   "--no-dbc-check"]
         done = subprocess.run(command, capture_output=True, text=True)
         self.patch = None
         data = None
@@ -155,6 +163,39 @@ class BuildSpells(unittest.TestCase):
         self.assertNotIn("art", self.patch)
         with open(os.path.join(self.out_dir, "client_art.json"), encoding="utf-8") as f:
             self.assertEqual(base64.b64decode(json.load(f)["ember_lash"]), PNG)
+
+    def item(self, display_id: int = 995001, icon: str = "ember_lash", extra: str = "") -> str:
+        """An item row as an items file writes one: an inline table with a painted icon."""
+        return (f'[[item]]\nentry = 1\nname = "Old Goldfin"\n{extra}'
+                f'icon = "{icon}"\nicon_base = 24701\ndisplay_id = {display_id}\n')
+
+    def test_an_item_with_a_painted_icon_makes_an_item_display_and_embeds_its_png(self):
+        self.content = {"items.toml": self.item(995002) + self.item(995001)}
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.patch["item_displays"], [
+            {"id": 995001, "base": 24701, "icon": "Interface\\Icons\\Twilight\\ember_lash"},
+            {"id": 995002, "base": 24701, "icon": "Interface\\Icons\\Twilight\\ember_lash"}])
+        with open(os.path.join(self.out_dir, "client_art.json"), encoding="utf-8") as f:
+            self.assertEqual(base64.b64decode(json.load(f)["ember_lash"]), PNG)
+
+    def test_an_item_display_id_below_the_synthetic_range_fails(self):
+        self.content = {"items.toml": self.item(24701)}
+        self.assert_fails([STRIKE], "items.toml item[0] display_id: 24701 is not its own (995000 up)")
+
+    def test_two_items_on_one_display_id_fail(self):
+        self.content = {"items.toml": self.item() + self.item()}
+        self.assert_fails([STRIKE], "items.toml item[1] display_id: 995001 is already claimed by items.toml item[0]")
+
+    def test_an_item_icon_without_a_png_fails(self):
+        self.content = {"items.toml": self.item(icon="missing")}
+        self.assert_fails([STRIKE], "items.toml item[0] icon: 'missing.png' is not in")
+
+    def test_content_without_painted_icons_leaves_the_patch_alone(self):
+        self.content = {"items.toml": '[[item]]\nentry = 1\ndisplay_id = 24701\n'}
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("item_displays", self.patch)
 
     def creature(self, spell_id: int = 1900001, key: str = "curse") -> str:
         """A Creature Spell as creature_spells.toml writes one: Corruption's look, 6 ticks of 10."""

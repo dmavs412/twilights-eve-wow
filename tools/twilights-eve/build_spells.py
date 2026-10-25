@@ -110,6 +110,9 @@ IMPLICIT_TARGETS = {"enemy": (6, 0), "ally": (21, 0), "self": (1, 0), "dest": (1
 TARGET_FLAG_DEST_LOCATION = 0x40
 DEFAULT_ART_DIR = os.path.join(REPO, "data", "twilights-eve", "art")
 # Where the client finds an embedded PNG icon (benilla-formats `embedded_icon_png`).
+DEFAULT_CONTENT = os.path.join(REPO, "crates", "twilight-realm", "content")
+# The first synthetic ItemDisplayInfo id; an item with a painted icon takes its own from here up.
+ITEM_DISPLAY_MIN = 995000
 ART_ICON_DIR = "Interface\\Icons\\Twilight\\"
 # A talent tab's PNG background: the four quarters the talent frame draws, named
 # `<stem>-<quarter>.png`; the client finds them under `Interface\TalentFrame\Twilight\`.
@@ -283,6 +286,47 @@ def icon_path(icon: str, art: list[str], art_dir: str, where: str) -> str:
     if stem not in art:
         art.append(stem)
     return ART_ICON_DIR + stem
+
+
+def item_rows(node, trail: str = ""):
+    """Every dict under `node` that names a painted icon for an item: it has `icon` and a
+    `display_id` or an `icon_base`. A Creature Spell's `icon` is a stock path and has neither."""
+    if isinstance(node, dict):
+        if "icon" in node and ("display_id" in node or "icon_base" in node):
+            yield trail, node
+        for key, value in node.items():
+            yield from item_rows(value, f"{trail}.{key}" if trail else key)
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            yield from item_rows(value, f"{trail}[{index}]")
+
+
+def item_displays(content_dir: str, art: list[str], art_dir: str) -> list[dict]:
+    """The synthetic ItemDisplayInfo rows for the content items with a painted icon, by id."""
+    found: dict[int, str] = {}
+    rows: list[dict] = []
+    for name in sorted(os.listdir(content_dir)):
+        if not name.endswith(".toml"):
+            continue
+        try:
+            with open(os.path.join(content_dir, name), "rb") as f:
+                data = tomllib.load(f)
+        except (OSError, tomllib.TOMLDecodeError) as error:
+            raise BuildError(f"cannot read {os.path.join(content_dir, name)}: {error}") from error
+        for trail, item in item_rows(data):
+            where = f"{name} {trail}"
+            display_id = item.get("display_id", 0)
+            if not isinstance(display_id, int) or display_id < ITEM_DISPLAY_MIN:
+                raise BuildError(f"{where} display_id: {display_id!r} is not its own ({ITEM_DISPLAY_MIN} up)")
+            if display_id in found:
+                raise BuildError(f"{where} display_id: {display_id} is already claimed by {found[display_id]}")
+            base = item.get("icon_base", 0)
+            if not isinstance(base, int) or base <= 0:
+                raise BuildError(f"{where} icon_base: {base!r} must be a stock display id above 0")
+            found[display_id] = where
+            rows.append({"id": display_id, "base": base,
+                         "icon": icon_path(f"{item['icon']}.png", art, art_dir, where)})
+    return sorted(rows, key=lambda row: row["id"])
 
 
 def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], art_dir: str) -> list[dict]:
@@ -1576,7 +1620,8 @@ def tab_background(tab: dict, calling: str, art: list[str], art_dir: str) -> str
 
 def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
           calling_rows: list[dict] | None = None,
-          creature_spells: list[dict] | None = None) -> tuple[list[dict], dict]:
+          creature_spells: list[dict] | None = None,
+          content_dir: str | None = None) -> tuple[list[dict], dict]:
     for column in (rows[0] if rows else {}):
         found = re.fullmatch(r"spellmod(\d+)_\w+", column)
         if found and int(found.group(1)) > MAX_SPELLMODS:
@@ -1774,6 +1819,9 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
     patch: dict = {"callings": [client_calling(c, profiles[c["key"]]["name"]) for c in callings.values()],
                    "spells": overrides,
                    "talent_tabs": tabs, "talents": seats}
+    displays = item_displays(content_dir, art, art_dir) if content_dir else []
+    if displays:
+        patch["item_displays"] = displays
     if art:
         # The PNG stems the patch names; `main` embeds them in client_art.json and drops the key.
         patch["art"] = art
@@ -1786,6 +1834,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--callings", default=DEFAULT_CALLINGS, help="callings.csv, one row per Calling")
     parser.add_argument("--creature-spells", default=DEFAULT_CREATURE_SPELLS,
                         help="the realm's creature_spells.toml, whose client rows the patch carries")
+    parser.add_argument("--content", default=DEFAULT_CONTENT,
+                        help="the realm's content folder, whose items with a painted icon the patch carries")
     parser.add_argument("--out-dir", default=DEFAULT_OUT_DIR)
     parser.add_argument("--art-dir", default=DEFAULT_ART_DIR, help="folder of the PNG icons the icon cells name")
     parser.add_argument("--data", default=os.environ.get("WOW_DATA"), help="game Data folder for the DBC check")
@@ -1805,7 +1855,7 @@ def main(argv: list[str] | None = None) -> int:
                 creature_spells = tomllib.load(f).get("spell", [])
         except (OSError, tomllib.TOMLDecodeError) as error:
             raise BuildError(f"cannot read {args.creature_spells}: {error}") from error
-        server, patch = build(rows, args.art_dir, calling_rows, creature_spells)
+        server, patch = build(rows, args.art_dir, calling_rows, creature_spells, args.content)
         art = patch.pop("art", [])
         if not args.no_dbc_check:
             check_dbc_ids(rows, args.data)
