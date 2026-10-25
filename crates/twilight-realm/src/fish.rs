@@ -135,6 +135,39 @@ pub(crate) enum Rarity {
     Rare,
 }
 
+/// A block of the game day; a fish's peak and a Legendary Fish's criterion name one.
+#[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum Block {
+    Night,
+    Dawn,
+    Day,
+    Dusk,
+}
+
+impl Block {
+    /// Its `[from, to)` game hours; `night` wraps past midnight.
+    pub(crate) fn hours(self) -> [u32; 2] {
+        match self {
+            Block::Night => [21, 3],
+            Block::Dawn => [3, 9],
+            Block::Day => [9, 15],
+            Block::Dusk => [15, 21],
+        }
+    }
+
+    /// Whether game minute `minute_of_day` falls in it.
+    pub(crate) fn holds(self, minute_of_day: u32) -> bool {
+        let [from, to] = self.hours();
+        let hour = minute_of_day / 60;
+        if from <= to {
+            (from..to).contains(&hour)
+        } else {
+            hour >= from || hour < to
+        }
+    }
+}
+
 /// One fish (`[[fish]]`), by its item.
 #[derive(Deserialize)]
 pub(crate) struct Fish {
@@ -146,9 +179,9 @@ pub(crate) struct Fish {
     /// The Water Kinds it bites in; `None` for every kind.
     #[serde(default)]
     pub(crate) kinds: Option<Vec<Kind>>,
-    /// `[from, to)` game hours, wrapping past midnight, in which its weight is times `peak_factor`.
+    /// The block of the game day in which its weight is times `peak_factor`.
     #[serde(default)]
-    pub(crate) peak_hours: Option<[u32; 2]>,
+    pub(crate) peak: Option<Block>,
     /// The bait item whose presence on the cast multiplies its weight.
     #[serde(default)]
     pub(crate) favourite_bait: Option<u32>,
@@ -160,16 +193,9 @@ impl Fish {
         self.kinds.as_ref().is_none_or(|k| k.contains(&kind))
     }
 
-    /// Whether game minute `minute_of_day` is inside its peak hours.
+    /// Whether game minute `minute_of_day` is inside its peak block.
     pub(crate) fn in_peak(&self, minute_of_day: u32) -> bool {
-        self.peak_hours.is_some_and(|[from, to]| {
-            let hour = minute_of_day / 60;
-            if from <= to {
-                (from..to).contains(&hour)
-            } else {
-                hour >= from || hour < to
-            }
-        })
+        self.peak.is_some_and(|b| b.holds(minute_of_day))
     }
 
     /// Its weight in a roll, from its pool row's `base`: doubled (by the `[bar]` factors) inside
@@ -285,6 +311,7 @@ pub(crate) struct Bait {
 
 /// A Legendary Fish (`[[legend]]`): it bites ahead of its pool's fish while every criterion holds.
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct Legend {
     /// Its trophy item.
     pub(crate) item: u32,
@@ -300,12 +327,9 @@ pub(crate) struct Legend {
     /// The key of the Fishing Water the bobber must be in.
     #[serde(default)]
     pub(crate) water: Option<String>,
-    /// `[from, to]` game hours, wrapping past midnight.
+    /// The block of the game day the cast must fall in.
     #[serde(default)]
-    pub(crate) hours: Option<[u32; 2]>,
-    /// `[from, to]` minutes past every game hour.
-    #[serde(default)]
-    pub(crate) minutes: Option<[u32; 2]>,
+    pub(crate) block: Option<Block>,
     /// The bait item the cast must carry.
     #[serde(default)]
     pub(crate) bait: Option<u32>,
@@ -320,21 +344,9 @@ impl Legend {
         bait: Option<u32>,
         minute_of_day: u32,
     ) -> bool {
-        let in_range = |v: u32, [from, to]: [u32; 2]| {
-            if from <= to {
-                (from..to).contains(&v)
-            } else {
-                v >= from || v < to
-            }
-        };
         self.water.as_deref().is_none_or(|w| water == Some(w))
             && self.bait.is_none_or(|b| bait == Some(b))
-            && self
-                .hours
-                .is_none_or(|[from, to]| in_range(minute_of_day, [from * 60, to * 60]))
-            && self
-                .minutes
-                .is_none_or(|[from, to]| in_range(minute_of_day % 60, [from, to.saturating_add(1)]))
+            && self.block.is_none_or(|b| b.holds(minute_of_day))
     }
 }
 
@@ -711,12 +723,23 @@ mod tests {
     }
 
     #[test]
-    fn peak_hours_wrap_past_midnight() {
+    fn the_night_block_wraps_past_midnight() {
         let catfish = fish(6308).unwrap();
-        assert!(catfish.in_peak(23 * 60));
-        assert!(catfish.in_peak(3 * 60 + 59));
-        assert!(!catfish.in_peak(4 * 60));
-        assert!(!catfish.in_peak(12 * 60));
+        assert!(catfish.in_peak(22 * 60));
+        assert!(catfish.in_peak(2 * 60));
+        assert!(!catfish.in_peak(3 * 60));
+        assert!(!catfish.in_peak(20 * 60 + 59));
+    }
+
+    #[test]
+    #[should_panic]
+    fn a_legend_with_minutes_fails_to_load() {
+        let text = include_str!("../content/fish.toml").replacen(
+            "block = \"dawn\"",
+            "minutes = [0, 10]",
+            1,
+        );
+        load(&text);
     }
 
     #[test]

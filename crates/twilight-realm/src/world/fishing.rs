@@ -262,7 +262,10 @@ fn fish_page(log: &FishLog) -> FishPage {
     }
     if revealed >= 2 {
         page.kinds = def.kinds.iter().flatten().map(Kind::name).collect();
-        page.peak_hours = def.peak_hours.map(|[from, to]| (from as u8, to as u8));
+        page.peak_hours = def.peak.map(|b| {
+            let [from, to] = b.hours();
+            (from as u8, to as u8)
+        });
     }
     if revealed >= 3 {
         page.favourite_bait = def.favourite_bait;

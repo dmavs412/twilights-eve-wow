@@ -56,10 +56,13 @@
 #   difficulty (0 to 100), rarity (common, uncommon or rare)
 #   kinds           optional, the Water Kinds it bites in: "river", "lake", "coast" or "pond".
 #                   Absent means every kind. Legendary Fish ignore kinds.
-#   peak_hours      optional [from, to] game hours, `[from, to)`, wrapping past midnight; the fish's
-#                   roll weight is times `peak_factor` inside them
+#   peak            optional, a block of the game day (see Blocks below); the fish's roll
+#                   weight is times `peak_factor` inside it
 #   favourite_bait  optional, a [[bait]] item; the fish's roll weight is times
 #                   `favourite_bait_factor` when that bait is on the cast
+#
+# Blocks, the four parts of the game day, as game hours `[from, to)`:
+#   night 21 to 3 (wraps past midnight), dawn 3 to 9, day 9 to 15, dusk 15 to 21
 #
 # [[pool]], one per zone (AreaTable id). Weights are vmangos `fishing_loot_template` chances; its
 # `0.0` row takes the rest of 100. The fish weights and treasure weights of a pool sum to 100.
@@ -76,8 +79,7 @@
 #   item, name, pool (a pool key), level (the Angler level it needs, counting a lure's), style,
 #   difficulty, chance (percent per bite while the criteria hold)
 #   water   a [[water]] key the bobber must be in
-#   hours   [from, to] game hours, wrapping past midnight
-#   minutes [from, to] minutes past every game hour
+#   block   a block of the game day (see Blocks below) the cast must fall in
 #   bait    a [[bait]] item chosen for the cast
 # Every criterion a row names must hold. A Legend Rumour in content/rumours.toml hints at each.
 #
@@ -184,6 +186,7 @@ item = 6291 # Raw Brilliant Smallfish
 style = "smooth"
 difficulty = 15
 rarity = "common"
+peak = "day"
 
 [[fish]]
 item = 6289 # Raw Longjaw Mud Snapper
@@ -191,7 +194,7 @@ style = "mixed"
 difficulty = 25
 rarity = "common"
 kinds = ["river", "lake", "pond"]
-peak_hours = [6, 10]
+peak = "dawn"
 favourite_bait = 960101
 
 [[fish]]
@@ -200,7 +203,7 @@ style = "sinker"
 difficulty = 35
 rarity = "common"
 kinds = ["river", "lake"]
-peak_hours = [20, 4]
+peak = "night"
 favourite_bait = 960105
 
 [[fish]]
@@ -209,7 +212,7 @@ style = "floater"
 difficulty = 30
 rarity = "uncommon"
 kinds = ["coast"]
-peak_hours = [5, 9]
+peak = "dawn"
 favourite_bait = 960102
 
 [[fish]]
@@ -218,7 +221,7 @@ style = "dart"
 difficulty = 45
 rarity = "uncommon"
 kinds = ["coast"]
-peak_hours = [11, 15]
+peak = "day"
 favourite_bait = 960102
 
 [[fish]]
@@ -227,7 +230,7 @@ style = "floater"
 difficulty = 40
 rarity = "uncommon"
 kinds = ["coast", "river"]
-peak_hours = [18, 22]
+peak = "dusk"
 favourite_bait = 960104
 
 [[fish]]
@@ -236,7 +239,7 @@ style = "sinker"
 difficulty = 50
 rarity = "rare"
 kinds = ["lake", "pond"]
-peak_hours = [6, 9]
+peak = "dawn"
 favourite_bait = 960101
 
 [[fish]]
@@ -245,7 +248,7 @@ style = "dart"
 difficulty = 55
 rarity = "rare"
 kinds = ["lake", "pond"]
-peak_hours = [17, 20]
+peak = "dusk"
 favourite_bait = 960103
 
 [[fish]]
@@ -254,7 +257,7 @@ style = "sinker"
 difficulty = 60
 rarity = "rare"
 kinds = ["river", "lake"]
-peak_hours = [22, 3]
+peak = "night"
 favourite_bait = 960105
 
 [[fish]]
@@ -263,7 +266,7 @@ style = "dart"
 difficulty = 70
 rarity = "rare"
 kinds = ["river"]
-peak_hours = [0, 4]
+peak = "night"
 favourite_bait = 960104
 
 [[pool]]
@@ -347,7 +350,7 @@ level = 12
 style = "dart"
 difficulty = 85
 chance = 5
-hours = [21, 3]
+block = "night"
 
 [[legend]]
 item = 960004
@@ -386,7 +389,7 @@ level = 14
 style = "dart"
 difficulty = 85
 chance = 5
-minutes = [0, 10]
+block = "dawn"
 
 [[legend]]
 item = 960008
@@ -426,7 +429,7 @@ style = "sinker"
 difficulty = 95
 chance = 5
 water = "lake_everstill"
-hours = [1, 4]
+block = "night"
 
 [[legend]]
 item = 960012

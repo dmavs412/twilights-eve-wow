@@ -150,7 +150,7 @@ level = 1
 style = \"dart\"
 difficulty = 50
 chance = 100
-hours = [21, 3]
+block = \"night\"
 
 [[legend]]
 item = 6310
@@ -160,7 +160,7 @@ level = 1
 style = \"dart\"
 difficulty = 50
 chance = 100
-minutes = [0, 10]
+block = \"dawn\"
 
 [[legend]]
 item = 6361
@@ -1128,7 +1128,7 @@ fn the_save_round_trip_keeps_the_pole_and_the_lure_with_its_durability() {
 }
 
 // Legendary Fish (#331). The test pool's Legendary Fish all bite at 100 percent when their
-// criteria hold, in this order: Gar (game hours 21 to 3), Bream (minutes 0 to 10 of every hour),
+// criteria hold, in this order: Gar (the night block), Bream (the dawn block),
 // Snapper (Gnoll Ear as bait) and Gate (Angler Level 5). The game clock runs 5 wall seconds to
 // a game minute.
 
@@ -1182,14 +1182,14 @@ fn the_gar_bites_by_night_and_never_at_noon() {
 }
 
 #[test]
-fn the_bream_bites_in_the_first_minutes_of_an_hour_only() {
+fn the_bream_bites_at_dawn_only() {
     let mut early = angler(1, true, true, Side::NorthWest);
-    at_game(&mut early, 12, 3);
+    at_game(&mut early, 5, 0);
     let (_, bite) = early.hook();
     assert_eq!(legend_of(&bite), Some(BREAM));
 
     let mut late = angler(1, true, true, Side::NorthWest);
-    at_game(&mut late, 12, 30);
+    at_game(&mut late, 12, 0);
     let (_, bite) = late.hook();
     assert_eq!(legend_of(&bite), None, "{bite:?}");
 }
@@ -1501,7 +1501,7 @@ fn a_fish_page_unlocks_its_facts_at_five_ten_and_twenty_five_catches() {
     let page = page_of(&events, MUD_SNAPPER).unwrap();
     assert_eq!((page.revealed, page.next_reveal), (2, 25));
     assert_eq!(page.kinds, ["river", "lake", "pond"]);
-    assert_eq!(page.peak_hours, Some((6, 10)));
+    assert_eq!(page.peak_hours, Some((3, 9)));
     assert!(page.favourite_bait.is_none());
 
     let events = land_fish(&mut a, MUD_SNAPPER, 15);
