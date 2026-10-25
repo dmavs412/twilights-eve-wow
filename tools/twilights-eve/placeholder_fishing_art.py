@@ -9,7 +9,8 @@ there is no PIL. A frame-like sprite gets a darker two-pixel border so its edge 
 """
 
 import pathlib
-import struct
+
+from import_art import rle_row, tga_header
 
 OUT = pathlib.Path(__file__).resolve().parents[2] / "crates/benilla-app/assets/ui/fishing"
 
@@ -76,32 +77,9 @@ def pixel(colour):
     return bytes((b, g, r, a))
 
 
-def rle_row(row):
-    """One row as RLE packets: a run of up to 128 equal pixels, or up to 128 raw ones."""
-    out = bytearray()
-    i = 0
-    while i < len(row):
-        run = 1
-        while i + run < len(row) and run < 128 and row[i + run] == row[i]:
-            run += 1
-        if run > 1:
-            out.append(0x80 | (run - 1))
-            out += row[i]
-            i += run
-            continue
-        start = i
-        while i < len(row) and i - start < 128 and (i + 1 >= len(row) or row[i + 1] != row[i]):
-            i += 1
-        out.append(i - start - 1)
-        for p in row[start:i]:
-            out += p
-    return bytes(out)
-
-
 def tga(width, height, colour, bordered):
     fill, edge = pixel(colour), pixel(darker(colour))
-    # Type 10, 32 bpp, descriptor 0x28: 8 alpha bits, rows top-down.
-    data = bytearray(struct.pack("<BBBHHBHHHHBB", 0, 0, 10, 0, 0, 0, 0, 0, width, height, 32, 0x28))
+    data = bytearray(tga_header(width, height))
     for y in range(height):
         row = []
         for x in range(width):
