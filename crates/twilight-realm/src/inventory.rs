@@ -203,6 +203,18 @@ impl Satchel {
         count - left
     }
 
+    /// Removes the piece `pick` names, with its durability.
+    pub(crate) fn take_piece(&mut self, pick: SatchelPick) -> Option<Item> {
+        let at = self.piece_at(pick)?;
+        Some(self.pieces.remove(at))
+    }
+
+    /// Removes the first piece of `entry` to arrive.
+    pub(crate) fn take_first(&mut self, entry: u32) -> Option<Item> {
+        let at = self.pieces.iter().position(|p| p.entry == entry)?;
+        Some(self.pieces.remove(at))
+    }
+
     /// The index of the piece `pick` names: the first with its durability, else the last of the
     /// entry to arrive.
     fn piece_at(&self, pick: SatchelPick) -> Option<usize> {

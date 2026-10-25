@@ -16,7 +16,7 @@ use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 
-use benilla_protocol::SessionEvent;
+use benilla_protocol::{SatchelPick, SessionEvent};
 use benilla_ui::script::{
     JournalLegend, JournalPage, JournalView, JournalZone, ReelView, ScriptValue, UiScript,
 };
@@ -24,6 +24,7 @@ use benilla_world::view::WorldCamera;
 use twilight_realm::{FishingGearSlot, RealmCommand};
 
 use crate::area::AreaTableRes;
+use crate::net::{ObjectStore, Objects, SelfPlayer};
 use crate::ui_script::UiFeed;
 
 /// One simulation step: Stardew's frame.
@@ -529,6 +530,8 @@ fn feed_reel(
     mut fishing: ResMut<Fishing>,
     mut outbox: ResMut<ReelOutbox>,
     areas: Option<Res<AreaTableRes>>,
+    objects: Objects,
+    self_q: Query<&ObjectStore, With<SelfPlayer>>,
 ) {
     let Some(mut script) = script else {
         return;
@@ -549,12 +552,32 @@ fn feed_reel(
         } else {
             FishingGearSlot::Pole
         };
+        // The Journal's slots fill from the Satchel (ADR 0023): a bag item goes in first.
         let from = match req.from {
             Some((bag, at)) => {
                 let Some(pos) = crate::ui_items::wire_pos(bag, at) else {
                     continue;
                 };
-                Some(pos)
+                let Ok(store) = self_q.single() else {
+                    continue;
+                };
+                let held = crate::ui_items::collect_inventory(
+                    &store.0,
+                    &objects,
+                    crate::ui_items::InventoryScope::DEFAULT,
+                );
+                let Some(item) = held
+                    .into_iter()
+                    .find(|&(b, s, _)| (b, s) == pos)
+                    .and_then(|(_, _, guid)| objects.object(guid)?.object_entry())
+                else {
+                    continue;
+                };
+                outbox.0.push(RealmCommand::DepositToJournal { from: pos });
+                Some(SatchelPick {
+                    item,
+                    durability: None,
+                })
             }
             None => None,
         };

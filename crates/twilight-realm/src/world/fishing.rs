@@ -3,15 +3,15 @@
 //! realm's next tick, which has the host. The bobber is a run-time GameObject the realm keeps
 //! (`crate::objects`); this session names the ones whose cast ended in `spent_bobbers`.
 //!
-//! The pole and the lure sit in the Journal's gear slots (#371). The lure loses a point of
-//! durability at each bite; the chosen bait is taken one per cast when the bobber lands. What both add is worked out once, at the landing ([`Boost`]), and
-//! the cast keeps it to the bite. The Fishing Journal is each fish's best catch and the bait.
+//! The pole and the lure sit in the Journal's gear slots (#371), filled from the Satchel, and so is
+//! the bait (ADR 0023). The lure loses a point of durability at each bite; the chosen bait is
+//! taken one per cast when the bobber lands. What both add is worked out once, at the landing
+//! ([`Boost`]), and the cast keeps it to the bite. The Fishing Journal is each fish's best catch and the bait.
 
 use benilla_protocol::messages::GossipOption;
-use benilla_protocol::{FishPage, SessionEvent};
+use benilla_protocol::{FishPage, SatchelPick, SessionEvent};
 
 use super::cast::{refused, SPELL_FAILED_EQUIPPED_ITEM_CLASS, SPELL_FAILED_NOT_KNOWN};
-use super::food::use_up_one;
 use super::InWorld;
 use crate::audience::Audience;
 use crate::characters::{Char, FishLog};
@@ -187,7 +187,7 @@ pub(crate) fn journal(c: &Char) -> SessionEvent {
             })
             .collect(),
         pages,
-        lure_waiting: None,
+        lure_waiting: c.lure_waiting,
         satchel: c.inventory.satchel.rows(items::Profession::Fishing),
     }
 }
@@ -485,26 +485,6 @@ impl InWorld {
         std::mem::take(&mut self.spent_bobbers)
     }
 
-    /// `CMSG_USE_ITEM` on the item in player slot `slot`, if it is a lure: it goes into the Lure
-    /// slot, as `SetFishingGear` would put it. Whether it was a lure.
-    pub(crate) fn use_lure(
-        &mut self,
-        slot: Pos,
-        c: &mut Char,
-        events: &mut Vec<SessionEvent>,
-    ) -> bool {
-        let Some(item) = c.inventory.get(slot) else {
-            return false;
-        };
-        if fish::lure(item.entry).is_none() {
-            return false;
-        }
-        if !self.dead() {
-            put_gear(c, FishingGearSlot::Lure, Some(slot), events);
-        }
-        true
-    }
-
     /// The cast's clock, with the host: a fresh cast lands or is refused, a floating bobber
     /// bites, and an unanswered bobber or bar is lost. `Some` with the bobber to make when the
     /// cast lands.
@@ -584,14 +564,9 @@ impl InWorld {
             });
             return None;
         };
-        match bait {
-            Some(b) => take_bait(c, b.item, events),
-            // A bait chosen but no longer carried clears the slot.
-            None if c.bait.is_some() => {
-                c.bait = None;
-                events.push(journal(c));
-            }
-            None => {}
+        // A bait chosen but none held casts bare, and the choice stays.
+        if let Some(b) = bait {
+            take_bait(c, b.item, events);
         }
         let wait = rng.frand(s.bite_secs[0], s.bite_secs[1]);
         let f = self.fishing.as_mut()?;
@@ -838,8 +813,9 @@ impl InWorld {
     }
 }
 
-/// The Lure slot's lure loses a point at a bite. At zero it breaks: the first lure of its entry in
-/// the bags takes its place, or the slot empties. The Journal follows either way.
+/// The Lure slot's lure loses a point at a bite. At zero it breaks: the first piece of its entry
+/// in the Satchel takes its place, or the slot empties and waits for one (`lure_waiting`). The
+/// Journal follows either way.
 fn wear_lure(c: &mut Char, events: &mut Vec<SessionEvent>) {
     let Some(lure) = &mut c.fishing_lure else {
         return;
@@ -852,19 +828,34 @@ fn wear_lure(c: &mut Char, events: &mut Vec<SessionEvent>) {
     let entry = lure.entry;
     let name = items::template(entry).map_or_else(String::new, |t| t.name.clone());
     c.fishing_lure = None;
-    let next = c
-        .inventory
-        .iter()
-        .find(|(at, i)| i.entry == entry && !at.is_worn())
-        .map(|(at, _)| at);
-    let line = match next {
-        Some(at) => {
-            put_gear(c, FishingGearSlot::Lure, Some(at), events);
+    let line = match c.inventory.satchel.take_first(entry) {
+        Some(next) => {
+            c.fishing_lure = Some(next);
             format!("Your {name} broke. Another one is on the line.")
         }
-        None => format!("Your {name} broke."),
+        None => {
+            c.lure_waiting = Some(entry);
+            format!("Your {name} broke.")
+        }
     };
     events.push(crate::quests::system_line(line));
+    events.push(journal(c));
+}
+
+/// An empty Lure slot that waits for a lure takes the first piece of that entry in the Satchel,
+/// if one is there now. The Journal follows when it did.
+pub(crate) fn refill(c: &mut Char, events: &mut Vec<SessionEvent>) {
+    if c.fishing_lure.is_some() {
+        return;
+    }
+    let Some(entry) = c.lure_waiting else {
+        return;
+    };
+    let Some(piece) = c.inventory.satchel.take_first(entry) else {
+        return;
+    };
+    c.fishing_lure = Some(piece);
+    c.lure_waiting = None;
     events.push(journal(c));
 }
 
@@ -883,73 +874,52 @@ fn gear_cell(c: &mut Char, slot: FishingGearSlot) -> &mut Option<crate::inventor
     }
 }
 
-/// Moves the item of the bags at `from` into `slot`, and what the slot held into the place it
-/// came from; `None` puts the slot's item into the first free place. The Journal and the
-/// inventory follow. Whether anything changed.
+/// Moves the Satchel piece `from` names into `slot`, and what the slot held into the Satchel;
+/// `None` puts the slot's item into the Satchel, and clears a Lure slot's `lure_waiting`. The
+/// Journal follows. Whether anything changed.
 fn put_gear(
     c: &mut Char,
     slot: FishingGearSlot,
-    from: Option<Pos>,
+    from: Option<SatchelPick>,
     events: &mut Vec<SessionEvent>,
 ) -> bool {
-    let Some(from) = from else {
-        let Some(held) = gear_cell(c, slot).take() else {
-            return false;
-        };
-        let Some(at) = c.inventory.free_slot(held.entry) else {
-            *gear_cell(c, slot) = Some(held);
-            events.push(equipment::inventory_failure(
-                equipment::EQUIP_ERR_INVENTORY_FULL,
-                0,
-            ));
-            return false;
-        };
-        c.inventory.put(at, held);
-        let Some(item) = c.inventory.get(at) else {
-            return false;
-        };
-        events.push(equipment::item_create(c, at, item));
-        equipment::send_slots(c, &[at], events);
+    let lure = slot == FishingGearSlot::Lure;
+    let changed = match from {
+        None => {
+            let held = gear_cell(c, slot).take();
+            let waiting = lure && c.lure_waiting.take().is_some();
+            let moved = held.is_some();
+            if let Some(held) = held {
+                c.inventory.satchel.deposit(held);
+            }
+            moved || waiting
+        }
+        Some(pick) => {
+            if !fits_slot(slot, pick.item) {
+                return false;
+            }
+            let Some(item) = c.inventory.satchel.take_piece(pick) else {
+                return false;
+            };
+            if let Some(old) = gear_cell(c, slot).replace(item) {
+                c.inventory.satchel.deposit(old);
+            }
+            if lure {
+                c.lure_waiting = None;
+            }
+            true
+        }
+    };
+    if changed {
         events.push(journal(c));
-        return true;
-    };
-    let Some(item) = c.inventory.get(from) else {
-        return false;
-    };
-    if from.is_worn() || from.is_bag_slot() || !fits_slot(slot, item.entry) {
-        return false;
     }
-    let Some(item) = c.inventory.take(from) else {
-        return false;
-    };
-    let guid = item.guid;
-    let old = std::mem::replace(gear_cell(c, slot), Some(item));
-    if let Some(old) = old {
-        c.inventory.put(from, old);
-    }
-    equipment::send_slots(c, &[from], events);
-    events.push(SessionEvent::ObjectDestroyed(guid));
-    if let Some(back) = c.inventory.get(from) {
-        events.push(equipment::item_create(c, from, back));
-        equipment::send_slots(c, &[from], events);
-    }
-    events.push(journal(c));
-    true
+    changed
 }
 
-/// Takes one of bait `item` from the bags; the last one clears the slot and sends the Journal.
+/// Takes one of bait `item` from the Satchel. The chosen bait stays when it was the last.
 fn take_bait(c: &mut Char, item: u32, events: &mut Vec<SessionEvent>) {
-    let slot = c
-        .inventory
-        .iter()
-        .find(|(at, i)| i.entry == item && !at.is_worn())
-        .map(|(at, _)| at);
-    if let Some(slot) = slot {
-        use_up_one(slot, c, events);
-    }
-    if c.inventory.count(item) == 0 {
-        c.bait = None;
-        events.push(journal(c));
+    if c.inventory.count(item) > 0 {
+        equipment::take(c, item, 1, events);
     }
 }
 
@@ -1044,14 +1014,13 @@ impl crate::Realm {
     }
 
     /// `SetFishingGear`: see [`RealmCommand::SetFishingGear`]. Saved when it changed anything.
-    pub(crate) fn set_fishing_gear(&mut self, slot: FishingGearSlot, from: Option<(u8, u8)>) {
+    pub(crate) fn set_fishing_gear(&mut self, slot: FishingGearSlot, from: Option<SatchelPick>) {
         let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
             return;
         };
         let Some(c) = self.characters.get_mut(guid) else {
             return;
         };
-        let from = from.map(|(bag, slot)| Pos { bag, slot });
         if put_gear(c, slot, from, &mut self.events) {
             self.save(guid);
         }

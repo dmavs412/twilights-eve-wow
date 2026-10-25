@@ -195,6 +195,10 @@ struct Save {
     legends_caught: Vec<u32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     legend_hints: Vec<u32>,
+    /// The entry the empty Lure slot waits to refill with (version 5). A plain key, so before the
+    /// gear tables.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    lure_waiting: Option<u32>,
     /// The Fishing Journal's Pole and Lure slots (#371), added within version 4: a save without
     /// them has both empty. Each is an item at slot 0.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -430,6 +434,7 @@ pub(crate) fn export(c: &Char) -> String {
         bait: c.bait,
         legends_caught: c.legends_caught.clone(),
         legend_hints: c.legend_hints.clone(),
+        lure_waiting: c.lure_waiting,
         fishing_pole: saved_gear(&c.fishing_pole),
         fishing_lure: saved_gear(&c.fishing_lure),
         satchel: saved_satchel(&c.inventory.satchel),
@@ -528,6 +533,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         legend_hints: s.legend_hints,
         fishing_pole: None,
         fishing_lure: None,
+        lure_waiting: s.lure_waiting,
     };
     c.fishing_pole = load_gear(&mut c.inventory, &s.fishing_pole);
     c.fishing_lure = load_gear(&mut c.inventory, &s.fishing_lure);

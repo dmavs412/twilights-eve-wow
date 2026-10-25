@@ -449,12 +449,13 @@ pub enum RealmCommand {
     SetBait {
         item: Option<u32>,
     },
-    /// Fill a Fishing Journal gear slot (spec #368) from the item at `(bag, slot)`, which goes
-    /// into it and sends back what the slot held; `None` puts the slot's item in the bags. The
-    /// Pole slot takes only a `[[pole]]` item and the Lure slot only a `[[lure]]` item.
+    /// Fill a Fishing Journal gear slot (spec #368) from the Satchel piece `from` names (ADR
+    /// 0023), which goes into it and sends back what the slot held; `None` puts the slot's item
+    /// in the Satchel. The Pole slot takes only a `[[pole]]` piece and the Lure slot only a
+    /// `[[lure]]` piece.
     SetFishingGear {
         slot: FishingGearSlot,
-        from: Option<(u8, u8)>,
+        from: Option<benilla_protocol::SatchelPick>,
     },
     /// Move up to `count` of a Journal Satchel entry into the bags (ADR 0023), where it is an
     /// ordinary item. A piece moves one per command; `pick.durability` names which.
@@ -1458,10 +1459,7 @@ impl Realm {
                             if equipment::deposit(c, bag, slot.slot, &mut self.events) {
                                 self.save(guid);
                             }
-                        } else if !quests::use_starter(c, slot, &mut self.events)
-                            // A lure goes on the character (#329).
-                            && !w.use_lure(slot, c, &mut self.events)
-                        {
+                        } else if !quests::use_starter(c, slot, &mut self.events) {
                             match w.eat_or_drink(slot, c, self.wall, &mut self.events) {
                                 Some(true) => {
                                     let guid = w.guid;

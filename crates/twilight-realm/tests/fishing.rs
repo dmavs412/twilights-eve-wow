@@ -702,31 +702,38 @@ fn login_sends_the_journal_with_every_pool_and_its_fish() {
 }
 
 #[test]
-fn each_cast_that_lands_takes_one_bait_and_the_last_clears_the_slot() {
-    let mut a = angler_carrying(1, Side::East, &[(PACK_1, WRIGGLING_WORMS, 3)]);
+fn each_cast_that_lands_takes_one_bait_and_the_last_leaves_the_choice() {
+    let (mut a, start) = holding(Side::East, &[(WRIGGLING_WORMS, 1, None)], &[], rich);
     let chose = a.set_bait(Some(WRIGGLING_WORMS));
     assert_eq!(journal(&chose).map(|j| j.0), Some(Some(WRIGGLING_WORMS)));
 
-    for n in 1..=3 {
-        let events = a.cast();
-        assert!(
-            events
-                .iter()
-                .any(|e| matches!(e, SessionEvent::ChannelStart { .. })),
-            "cast {n} landed"
-        );
-        let cleared = journal(&events).map(|j| j.0);
-        if n < 3 {
-            assert_eq!(cleared, None, "cast {n} still has bait");
-        } else {
-            assert_eq!(cleared, Some(None), "the last bait clears the slot");
-        }
-    }
-    let saved = a.realm.export_character(a.guid).unwrap();
-    assert!(
-        !saved.contains("960101"),
-        "the worms are all gone:\n{saved}"
+    let events = a.cast();
+    assert!(landed(&events), "the cast landed");
+    assert_eq!(
+        journal(&events).map(|j| j.0),
+        Some(Some(WRIGGLING_WORMS)),
+        "the choice stays with the last bait gone"
     );
+    assert_eq!(satchel_of(&events), Some(vec![]), "the Satchel has none");
+
+    let bare = a.cast();
+    assert!(landed(&bare), "a cast with no bait still lands");
+    assert_eq!(journal(&bare), None, "nothing to take, nothing to send");
+    assert!(saved(&a).contains("bait = 960101"), "{}", saved(&a));
+
+    // Buying more puts them on the next cast without a SetBait.
+    let bought = buy(&mut a, WRIGGLING_WORMS, 1);
+    assert_eq!(satchel_of(&bought).map(|r| r.len()), Some(1));
+    a.realm.handle(RealmCommand::Move {
+        position: [start[0], start[1], 0.0],
+        orientation: Side::East.facing(),
+        motion: Default::default(),
+    });
+    a.realm.tick(0.0, &a.host);
+    drain(&mut a.realm);
+    let again = a.cast();
+    assert!(landed(&again), "the cast landed");
+    assert_eq!(satchel_of(&again), Some(vec![]), "the new worms were taken");
 }
 
 #[test]
@@ -758,7 +765,7 @@ fn set_bait_ignores_an_item_not_carried_or_not_a_bait() {
 #[test]
 fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
     let mut a = angler_carrying(1, Side::East, &[(PACK_1, SHINY_BAUBLE, 1)]);
-    let used = a.slot_lure(PACK_1);
+    let used = a.slot_lure(PACK_1, SHINY_BAUBLE);
     assert_eq!(
         lure_of(&used),
         Some(Some((SHINY_BAUBLE, 20, 20))),
@@ -769,7 +776,7 @@ fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
 
     // An L11 fish bites at Angler 1 with the lure (11 < 2 + 10).
     let mut south = angler_carrying(1, Side::South, &[(PACK_1, SHINY_BAUBLE, 1)]);
-    south.slot_lure(PACK_1);
+    south.slot_lure(PACK_1, SHINY_BAUBLE);
     let (_, bite) = south.hook();
     assert!(matches!(
         bite,
@@ -793,7 +800,7 @@ fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
 #[test]
 fn bright_baubles_widen_the_zone_after_the_cap() {
     let mut a = angler_carrying(1, Side::East, &[(PACK_1, BRIGHT_BAUBLES, 1)]);
-    a.slot_lure(PACK_1);
+    a.slot_lure(PACK_1, BRIGHT_BAUBLES);
     let (_, bite) = a.hook();
     assert!((zone_height(&bite) - 0.17 * 1.15).abs() < 1e-6, "{bite:?}");
 }
@@ -805,7 +812,7 @@ fn nightcrawlers_and_worms_bring_the_bite_within_five_and_a_half_seconds() {
         Side::East,
         &[(PACK_1, NIGHTCRAWLERS, 1), (PACK_2, WRIGGLING_WORMS, 1)],
     );
-    a.slot_lure(PACK_1);
+    a.slot_lure(PACK_1, NIGHTCRAWLERS);
     a.set_bait(Some(WRIGGLING_WORMS));
     let mut events = a.cast();
     // 12 x (1 - 0.30 - 0.25) = 5.4 s at the longest.
@@ -899,15 +906,18 @@ fn lure_table(entry: u32, durability: u32) -> String {
 }
 
 impl Angler {
-    fn set_gear(&mut self, slot: FishingGearSlot, from: Option<(u8, u8)>) -> Vec<SessionEvent> {
+    fn set_gear(&mut self, slot: FishingGearSlot, from: Option<SatchelPick>) -> Vec<SessionEvent> {
         self.realm
             .handle(RealmCommand::SetFishingGear { slot, from });
         drain(&mut self.realm)
     }
 
-    /// Puts the lure at backpack slot `slot` in the Lure slot.
-    fn slot_lure(&mut self, slot: u8) -> Vec<SessionEvent> {
-        self.set_gear(FishingGearSlot::Lure, Some((PLAYER_BAG, slot)))
+    /// Deposits the lure of `entry` at backpack slot `slot`, then puts it in the Lure slot.
+    fn slot_lure(&mut self, slot: u8, entry: u32) -> Vec<SessionEvent> {
+        self.realm.handle(RealmCommand::DepositToJournal {
+            from: (PLAYER_BAG, slot),
+        });
+        self.set_gear(FishingGearSlot::Lure, pick(entry))
     }
 
     /// Ticks the bar out unanswered.
@@ -922,24 +932,19 @@ impl Angler {
 }
 
 #[test]
-fn a_pole_from_the_bags_fills_the_slot_and_the_sword_stays_in_hand() {
-    let mut a = carrying(
-        1,
-        Side::East,
-        true,
+fn a_pole_from_the_satchel_fills_the_slot_and_the_sword_stays_in_hand() {
+    let (mut a, _) = holding_pole(
         false,
-        &[(PACK_1, FISHING_POLE, 1), (MAIN_HAND, WORN_SHORTSWORD, 1)],
+        Side::East,
+        &[(FISHING_POLE, 1, Some(16))],
+        &[(MAIN_HAND, WORN_SHORTSWORD, 1)],
+        |b| b,
     );
-    let set = a.set_gear(FishingGearSlot::Pole, Some((PLAYER_BAG, PACK_1)));
+    let set = a.set_gear(FishingGearSlot::Pole, pick(FISHING_POLE));
     assert_eq!(pole_of(&set), Some(Some(FISHING_POLE)));
-    assert_eq!(carried(&a, FISHING_POLE), 0, "the bag slot is empty");
+    assert_eq!(satchel_of(&set), Some(vec![]), "the Satchel holds no pole");
     let events = a.cast();
-    assert!(
-        events
-            .iter()
-            .any(|e| matches!(e, SessionEvent::ChannelStart { .. })),
-        "the cast landed"
-    );
+    assert!(landed(&events), "the cast landed");
     assert_eq!(carried(&a, WORN_SHORTSWORD), 1, "the sword is still worn");
     let blob = a.realm.export_character(a.guid).unwrap();
     let table: toml::Table = blob.parse().unwrap();
@@ -954,23 +959,34 @@ fn a_pole_from_the_bags_fills_the_slot_and_the_sword_stays_in_hand() {
 
 #[test]
 fn the_slots_take_only_their_own_kind_and_none_puts_the_item_back() {
-    let mut a = carrying(
-        1,
-        Side::East,
-        true,
+    let (mut a, _) = holding_pole(
         false,
-        &[(PACK_1, SHINY_BAUBLE, 1), (PACK_2, FISHING_POLE, 1)],
+        Side::East,
+        &[(SHINY_BAUBLE, 1, Some(20)), (FISHING_POLE, 1, Some(16))],
+        &full_bags(),
+        |b| b,
     );
-    let at_bauble = Some((PLAYER_BAG, PACK_1));
-    let at_pole = Some((PLAYER_BAG, PACK_2));
-    assert!(a.set_gear(FishingGearSlot::Pole, at_bauble).is_empty());
-    assert!(a.set_gear(FishingGearSlot::Lure, at_pole).is_empty());
-    assert_eq!(carried(&a, SHINY_BAUBLE), 1);
-    let set = a.set_gear(FishingGearSlot::Pole, at_pole);
+    assert!(a
+        .set_gear(FishingGearSlot::Pole, pick(SHINY_BAUBLE))
+        .is_empty());
+    assert!(a
+        .set_gear(FishingGearSlot::Lure, pick(FISHING_POLE))
+        .is_empty());
+    assert!(
+        a.set_gear(FishingGearSlot::Pole, pick(SHINY_BAUBLE + 1))
+            .is_empty(),
+        "a pick the Satchel does not hold changes nothing"
+    );
+    let set = a.set_gear(FishingGearSlot::Pole, pick(FISHING_POLE));
     assert_eq!(pole_of(&set), Some(Some(FISHING_POLE)));
     let cleared = a.set_gear(FishingGearSlot::Pole, None);
     assert_eq!(pole_of(&cleared), Some(None));
-    assert_eq!(carried(&a, FISHING_POLE), 1, "back in the bags");
+    let rows = satchel_of(&cleared).expect("the Journal follows");
+    assert!(
+        rows.iter().any(|r| r.item == FISHING_POLE),
+        "back in the Satchel: {rows:?}"
+    );
+    assert_eq!(carried(&a, TROPHY_FILL), 16, "every bag slot still full");
 }
 
 #[test]
@@ -989,13 +1005,11 @@ fn a_darkwood_pole_adds_three_angler_levels_to_the_zone() {
 
 #[test]
 fn a_lure_at_one_point_breaks_at_the_bite_and_the_next_one_takes_its_place() {
-    let mut a = with_gear(
+    let (mut a, _) = holding(
         Side::East,
-        &format!(
-            "{}\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n",
-            lure_table(SHINY_BAUBLE, 1)
-        ),
-        &[(PACK_1, SHINY_BAUBLE, 1), (PACK_2, SHINY_BAUBLE, 1)],
+        &[(SHINY_BAUBLE, 1, Some(20)), (SHINY_BAUBLE, 1, Some(20))],
+        &[],
+        |b| b + &lure_table(SHINY_BAUBLE, 1),
     );
     let (events, _) = a.hook();
     assert_eq!(lure_of(&events), Some(Some((SHINY_BAUBLE, 20, 20))));
@@ -1003,24 +1017,71 @@ fn a_lure_at_one_point_breaks_at_the_bite_and_the_next_one_takes_its_place() {
         format!("{events:?}").contains("Your Shiny Bauble broke. Another one is on the line."),
         "the system line"
     );
-    // The slot holds one of the others; one is left in the bags.
-    assert_eq!(carried(&a, SHINY_BAUBLE), 1);
+    // The slot holds one of the two; one is left in the Satchel.
+    let rows = satchel_of(&events).expect("the Journal follows");
+    assert_eq!(rows.iter().filter(|r| r.item == SHINY_BAUBLE).count(), 1);
 }
 
 #[test]
-fn a_last_lure_at_one_point_leaves_the_slot_empty() {
-    let mut a = with_gear(
-        Side::East,
-        &format!(
-            "{}\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n",
-            lure_table(SHINY_BAUBLE, 1)
-        ),
-        &[],
-    );
+fn a_last_lure_empties_the_slot_and_only_its_own_kind_refills_it() {
+    let (mut a, _) = holding(Side::East, &[(BRIGHT_BAUBLES, 1, Some(20))], &[], |b| {
+        rich(b) + &lure_table(SHINY_BAUBLE, 1)
+    });
     let (events, _) = a.hook();
     assert_eq!(lure_of(&events), Some(None));
+    assert_eq!(waiting_of(&events), Some(Some(SHINY_BAUBLE)));
     assert!(format!("{events:?}").contains("Your Shiny Bauble broke."));
-    assert_eq!(carried(&a, SHINY_BAUBLE), 0);
+    let rows = satchel_of(&events).expect("the Journal follows");
+    assert!(rows.iter().any(|r| r.item == BRIGHT_BAUBLES), "{rows:?}");
+
+    a.let_it_go();
+    let bought = buy(&mut a, SHINY_BAUBLE, 1);
+    assert_eq!(lure_of(&bought), Some(Some((SHINY_BAUBLE, 20, 20))));
+    assert_eq!(waiting_of(&bought), Some(None));
+    let rows = satchel_of(&bought).expect("the Journal follows");
+    assert!(rows.iter().any(|r| r.item == BRIGHT_BAUBLES), "{rows:?}");
+}
+
+#[test]
+fn clearing_the_lure_slot_forgets_what_it_waited_for() {
+    let (mut a, _) = holding(
+        Side::East,
+        &[],
+        &[(PACK_1, SHINY_BAUBLE, 1)],
+        waiting_for(SHINY_BAUBLE),
+    );
+    let cleared = a.set_gear(FishingGearSlot::Lure, None);
+    assert_eq!(waiting_of(&cleared), Some(None));
+    a.realm.handle(RealmCommand::DepositToJournal {
+        from: (PLAYER_BAG, PACK_1),
+    });
+    let events = drain(&mut a.realm);
+    assert_eq!(lure_of(&events), Some(None), "the slot stays empty");
+    let rows = satchel_of(&events).expect("the Journal follows");
+    assert!(rows.iter().any(|r| r.item == SHINY_BAUBLE), "{rows:?}");
+}
+
+#[test]
+fn using_a_bag_lure_deposits_it_and_leaves_the_lure_slot_as_it_was() {
+    let (mut a, _) = holding(Side::East, &[], &[(PACK_1, SHINY_BAUBLE, 1)], |b| {
+        b + &lure_table(BRIGHT_BAUBLES, 9)
+    });
+    let used = a.use_item(PACK_1);
+    assert_eq!(lure_of(&used), Some(Some((BRIGHT_BAUBLES, 9, 20))));
+    let rows = satchel_of(&used).expect("the Journal follows");
+    assert!(rows.iter().any(|r| r.item == SHINY_BAUBLE), "{rows:?}");
+}
+
+#[test]
+fn the_save_keeps_what_the_lure_slot_waits_for() {
+    let (a, _) = holding(Side::East, &[], &[], waiting_for(SHINY_BAUBLE));
+    let blob = saved(&a);
+    assert!(blob.contains("lure_waiting = 6529"), "{blob}");
+    let mut back = Realm::new().with_fish(TEST_FISH);
+    back.import_character(&blob).unwrap();
+    back.handle(RealmCommand::EnterWorld { guid: a.guid });
+    back.tick(0.0, &FlatGround);
+    assert_eq!(waiting_of(&drain(&mut back)), Some(Some(SHINY_BAUBLE)));
 }
 
 #[test]
@@ -1156,7 +1217,7 @@ fn a_legendary_above_the_effective_angler_level_waits_for_a_lure() {
 
     // The Aquadynamic Fish Attractor counts as four levels more: 1 + 4 reaches the Gate's 5.
     let mut lured = angler_carrying(1, Side::NorthWest, &[(PACK_1, AQUADYNAMIC, 1)]);
-    lured.slot_lure(PACK_1);
+    lured.slot_lure(PACK_1, AQUADYNAMIC);
     at_game(&mut lured, 12, 30);
     let (_, bite) = lured.hook();
     assert_eq!(legend_of(&bite), Some(GATE));
@@ -1529,7 +1590,18 @@ fn holding(
     items: &[(u8, u32, u32)],
     blob: impl FnOnce(String) -> String,
 ) -> (Angler, [f32; 3]) {
-    let (guid, mut text, start) = save_carrying(1, true, true, items);
+    holding_pole(true, side, satchel, items, blob)
+}
+
+/// [`holding`], with a pole in the Pole slot or not.
+fn holding_pole(
+    pole: bool,
+    side: Side,
+    satchel: &[(u32, u32, Option<u32>)],
+    items: &[(u8, u32, u32)],
+    blob: impl FnOnce(String) -> String,
+) -> (Angler, [f32; 3]) {
+    let (guid, mut text, start) = save_carrying(1, true, pole, items);
     for (entry, count, durability) in satchel {
         text.push_str(&format!(
             "\n[[satchel]]\nentry = {entry}\ncount = {count}\n"
@@ -1546,6 +1618,40 @@ fn rich(blob: String) -> String {
     let (head, tail) = blob.split_once("money = ").expect("a save keeps money");
     let rest = tail.split_once('\n').expect("a line").1;
     format!("{head}money = 100000\n{rest}")
+}
+
+/// A gear request for the Satchel piece of `item`.
+fn pick(item: u32) -> Option<SatchelPick> {
+    Some(SatchelPick {
+        item,
+        durability: None,
+    })
+}
+
+/// Whether a cast landed its bobber.
+fn landed(events: &[SessionEvent]) -> bool {
+    events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::ChannelStart { .. }))
+}
+
+/// The last Journal's kept lure entry.
+fn waiting_of(events: &[SessionEvent]) -> Option<Option<u32>> {
+    events.iter().rev().find_map(|e| match e {
+        SessionEvent::FishingJournal { lure_waiting, .. } => Some(*lure_waiting),
+        _ => None,
+    })
+}
+
+/// A save with the Lure slot waiting to refill with `entry`.
+fn waiting_for(entry: u32) -> impl FnOnce(String) -> String {
+    move |b| {
+        b.replacen(
+            "version = 5\n",
+            &format!("version = 5\nlure_waiting = {entry}\n"),
+            1,
+        )
+    }
 }
 
 fn saved(a: &Angler) -> String {

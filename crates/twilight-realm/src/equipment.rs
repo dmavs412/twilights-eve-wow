@@ -344,6 +344,7 @@ pub(crate) fn receive_from(
             count,
         }));
         events.push(crate::world::fishing::journal(c));
+        crate::world::fishing::refill(c, events);
         return Ok(());
     }
     let mut fresh = Vec::new();
@@ -707,6 +708,7 @@ pub(crate) fn deposit(c: &mut Char, bag: u8, slot: u8, events: &mut Vec<SessionE
     send_slots(c, &[at], events);
     c.inventory.satchel.deposit(item);
     events.push(crate::world::fishing::journal(c));
+    crate::world::fishing::refill(c, events);
     true
 }
 

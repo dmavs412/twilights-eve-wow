@@ -100,6 +100,9 @@ pub(crate) struct Char {
     pub(crate) fishing_pole: Option<Item>,
     /// The Journal's Lure slot: a `[[lure]]` item, which wears one point per bite.
     pub(crate) fishing_lure: Option<Item>,
+    /// The entry of the lure that ran out in the Lure slot: the next one of it to reach the
+    /// Satchel refills the slot (#392).
+    pub(crate) lure_waiting: Option<u32>,
     /// The Legendary Fish (trophy items) they have caught: each bites for them once.
     pub(crate) legends_caught: Vec<u32>,
     /// The Legendary Fish they hold a hint of, from a Legend Rumour or an angler's gossip.
@@ -206,6 +209,7 @@ impl Characters {
             bait: None,
             fishing_pole: None,
             fishing_lure: None,
+            lure_waiting: None,
             legends_caught: Vec::new(),
             legend_hints: Vec::new(),
         });
