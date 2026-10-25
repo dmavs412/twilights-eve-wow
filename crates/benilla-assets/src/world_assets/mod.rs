@@ -132,23 +132,38 @@ fn decode_sprite(
     loose_root: Option<&Path>,
     path: &str,
 ) -> Option<(u32, u32, Vec<u8>)> {
+    decode_sprite_origin(chain, loose_root, path).map(|(w, h, rgba, _)| (w, h, rgba))
+}
+
+/// [`decode_sprite`] plus whether the image is our own art (a layer image or an embedded PNG
+/// icon), which [`WorldAssets::sprite_texture`] gives mips.
+fn decode_sprite_origin(
+    chain: &Mutex<Chain>,
+    loose_root: Option<&Path>,
+    path: &str,
+) -> Option<(u32, u32, Vec<u8>, bool)> {
     let candidates = sprite_candidates(path);
     let mut chain = chain.lock_recover();
     for candidate in &candidates {
-        if let Some(Ok(decoded)) = layer_image(candidate).map(decode_sprite_bytes) {
-            return Some(decoded);
+        if let Some(Ok((w, h, rgba))) = layer_image(candidate).map(decode_sprite_bytes) {
+            return Some((w, h, rgba, true));
+        }
+        if let Some(Ok((w, h, rgba))) = benilla_formats::embedded_icon_png(candidate)
+            .map(|bytes| benilla_formats::png_to_rgba(&bytes))
+        {
+            return Some((w, h, rgba, true));
         }
         if let Ok(bytes) = chain.read_file(candidate) {
-            if let Ok(decoded) = decode_sprite_bytes(&bytes) {
-                return Some(decoded);
+            if let Ok((w, h, rgba)) = decode_sprite_bytes(&bytes) {
+                return Some((w, h, rgba, false));
             }
         }
         if let Some(file) = loose_root.and_then(|root| loose_addon_file(root, candidate)) {
-            if let Ok(decoded) = std::fs::read(&file)
+            if let Ok((w, h, rgba)) = std::fs::read(&file)
                 .map_err(anyhow::Error::from)
                 .and_then(|bytes| decode_sprite_bytes(&bytes))
             {
-                return Some(decoded);
+                return Some((w, h, rgba, false));
             }
         }
     }
@@ -157,6 +172,7 @@ fn decode_sprite(
         .iter()
         .filter(|c| {
             layer_image(c).is_some()
+                || benilla_formats::embedded_icon_png(c).is_some()
                 || chain.read_file(c).is_ok()
                 || loose_root.is_some_and(|root| loose_addon_file(root, c).is_some())
         })
@@ -186,10 +202,13 @@ fn decode_sprite(
 }
 
 /// Decode by content, not extension, since addon folders mislabel both ways: a `BLP2` magic is a
-/// BLP, anything else goes to the TGA decoder, whose header check is the gate.
+/// BLP, a PNG signature is a PNG, anything else goes to the TGA decoder, whose header check is the
+/// gate.
 fn decode_sprite_bytes(bytes: &[u8]) -> anyhow::Result<(u32, u32, Vec<u8>)> {
     if bytes.starts_with(b"BLP2") {
         blp_to_rgba(bytes)
+    } else if benilla_formats::is_png(bytes) {
+        benilla_formats::png_to_rgba(bytes)
     } else {
         tga_to_rgba(bytes)
     }
@@ -335,7 +354,9 @@ impl WorldAssets {
         Some(handle)
     }
 
-    /// A clamp-sampled sRGB sprite, mip 0 only: the celestial discs and every UI quad.
+    /// A clamp-sampled sRGB sprite: the celestial discs and every UI quad. Stock art keeps mip 0
+    /// only, as the reference does; our own art (layer images, embedded PNG icons) gets a full
+    /// chain ([`sprite_image_mipped`]), a deviation since the reference has no such art.
     pub fn sprite_texture(
         &mut self,
         path: &str,
@@ -347,8 +368,15 @@ impl WorldAssets {
         if let Some(cached) = self.sprites.get(&key) {
             return cached.clone();
         }
-        let loaded = decode_sprite(&self.chain, self.loose_root.as_deref(), path)
-            .map(|(w, h, rgba)| images.add(sprite_image(w, h, rgba)));
+        let loaded = decode_sprite_origin(&self.chain, self.loose_root.as_deref(), path).map(
+            |(w, h, rgba, own_art)| {
+                images.add(if own_art {
+                    sprite_image_mipped(w, h, rgba)
+                } else {
+                    sprite_image(w, h, rgba)
+                })
+            },
+        );
         self.sprites.insert(key, loaded.clone());
         loaded
     }
@@ -616,6 +644,25 @@ pub enum AssetSet {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn decode_sprite_bytes_reads_a_png() {
+        let mut png = Vec::new();
+        let source = image::RgbaImage::from_raw(
+            2,
+            2,
+            vec![
+                255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 10, 20, 30, 40,
+            ],
+        )
+        .unwrap();
+        source
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .unwrap();
+        let (w, h, rgba) = decode_sprite_bytes(&png).unwrap();
+        assert_eq!((w, h), (2, 2));
+        assert_eq!(rgba, source.into_raw());
+    }
 
     #[test]
     fn loose_addon_file_maps_addon_paths_case_insensitively() {

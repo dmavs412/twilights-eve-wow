@@ -246,6 +246,57 @@ pub fn sprite_image(width: u32, height: u32, rgba: Vec<u8>) -> Image {
     image
 }
 
+/// [`sprite_image`] with a full mip chain down to 1 x 1, each level a 2 x 2 box filter of the one
+/// above on the sRGB bytes, as BLP mips are authored, sampled with a linear `mipmap_filter`. A side
+/// that is not a power of two gets [`sprite_image`]'s single level.
+///
+/// Deviation: the reference has no PNG or layer art, and its UI sprites keep one level. Only our
+/// own art takes this path, so a 128 px icon drawn at 52 px does not alias.
+pub fn sprite_image_mipped(width: u32, height: u32, rgba: Vec<u8>) -> Image {
+    if !width.is_power_of_two() || !height.is_power_of_two() {
+        return sprite_image(width, height, rgba);
+    }
+    let levels = width.max(height).ilog2() + 1;
+    let mut data = Vec::with_capacity(rgba.len() * 4 / 3 + 4);
+    let (mut w, mut h) = (width as usize, height as usize);
+    let mut level = rgba;
+    data.extend_from_slice(&level);
+    for _ in 1..levels {
+        let (nw, nh) = ((w / 2).max(1), (h / 2).max(1));
+        let mut next = Vec::with_capacity(nw * nh * 4);
+        for y in 0..nh {
+            for x in 0..nw {
+                // A side already at 1 reads the same texel twice.
+                let (x0, x1) = (x * 2 % w, (x * 2 + 1) % w);
+                let (y0, y1) = (y * 2 % h, (y * 2 + 1) % h);
+                for c in 0..4 {
+                    let sum: u32 = [(x0, y0), (x1, y0), (x0, y1), (x1, y1)]
+                        .iter()
+                        .map(|&(sx, sy)| u32::from(level[(sy * w + sx) * 4 + c]))
+                        .sum();
+                    next.push(((sum + 2) / 4) as u8);
+                }
+            }
+        }
+        data.extend_from_slice(&next);
+        level = next;
+        (w, h) = (nw, nh);
+    }
+    // `Image::new` checks the byte count against one level, so build it with level 0 and swap in
+    // the whole chain.
+    let mut image = sprite_image(
+        width,
+        height,
+        data[..width as usize * height as usize * 4].to_vec(),
+    );
+    image.data = Some(data);
+    image.texture_descriptor.mip_level_count = levels;
+    if let ImageSampler::Descriptor(descriptor) = &mut image.sampler {
+        descriptor.mipmap_filter = ImageFilterMode::Linear;
+    }
+    image
+}
+
 /// A coverage mask (the minimap's `MinimapMask.blp`, its circle ramp in the alpha): sampled like
 /// [`sprite_image`] but uploaded `Rgba8Unorm`, since the shader reads coverage, not colour.
 pub fn mask_image(width: u32, height: u32, rgba: Vec<u8>) -> Image {
@@ -388,6 +439,38 @@ pub fn extend_nearest(out: &mut Vec<u8>, src: &[u8], sw: u32, sh: u32, dw: u32, 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_mipped_sprite_has_a_full_chain() {
+        // Left half black, right half white, opaque.
+        let mut rgba = Vec::new();
+        for _ in 0..4 {
+            for x in 0..4 {
+                let v = if x < 2 { 0 } else { 255 };
+                rgba.extend_from_slice(&[v, v, v, 255]);
+            }
+        }
+        let img = sprite_image_mipped(4, 4, rgba);
+        assert_eq!(img.texture_descriptor.mip_level_count, 3);
+        let data = img.data.as_ref().unwrap();
+        assert_eq!(data.len(), (16 + 4 + 1) * 4);
+        // Level 1: left texels black, right white.
+        assert_eq!(&data[64..68], &[0, 0, 0, 255]);
+        assert_eq!(&data[68..72], &[255, 255, 255, 255]);
+        // Level 2's one texel is their average.
+        assert_eq!(&data[80..84], &[128, 128, 128, 255]);
+        match &img.sampler {
+            ImageSampler::Descriptor(d) => assert_eq!(d.mipmap_filter, ImageFilterMode::Linear),
+            _ => panic!("expected a descriptor sampler"),
+        }
+    }
+
+    #[test]
+    fn a_sprite_that_is_not_a_power_of_two_keeps_one_level() {
+        let img = sprite_image_mipped(3, 4, vec![9; 3 * 4 * 4]);
+        assert_eq!(img.texture_descriptor.mip_level_count, 1);
+        assert_eq!(img.data.as_ref().unwrap().len(), 3 * 4 * 4);
+    }
 
     /// Two 2x2 frames with far-apart means and a full 2-level chain each.
     fn dc_frames() -> Vec<BlpMipChain> {
