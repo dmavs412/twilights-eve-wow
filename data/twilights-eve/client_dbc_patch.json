@@ -14409,5 +14409,117 @@
    ],
    "exceptional": true
   }
+ ],
+ "item_displays": [
+  {
+   "id": 995001,
+   "base": 18535,
+   "icon": "Interface\\Icons\\Twilight\\old_goldfin"
+  },
+  {
+   "id": 995002,
+   "base": 24702,
+   "icon": "Interface\\Icons\\Twilight\\brother_bass"
+  },
+  {
+   "id": 995003,
+   "base": 24709,
+   "icon": "Interface\\Icons\\Twilight\\moonlit_gar"
+  },
+  {
+   "id": 995004,
+   "base": 24701,
+   "icon": "Interface\\Icons\\Twilight\\gnoll_tooth_snapper"
+  },
+  {
+   "id": 995005,
+   "base": 24712,
+   "icon": "Interface\\Icons\\Twilight\\the_harbourmasters_eel"
+  },
+  {
+   "id": 995006,
+   "base": 24710,
+   "icon": "Interface\\Icons\\Twilight\\the_lightscale"
+  },
+  {
+   "id": 995007,
+   "base": 24697,
+   "icon": "Interface\\Icons\\Twilight\\bell_toll_bream"
+  },
+  {
+   "id": 995008,
+   "base": 24701,
+   "icon": "Interface\\Icons\\Twilight\\stockade_sucker"
+  },
+  {
+   "id": 995009,
+   "base": 24712,
+   "icon": "Interface\\Icons\\Twilight\\blackrock_bloodfin"
+  },
+  {
+   "id": 995010,
+   "base": 24702,
+   "icon": "Interface\\Icons\\Twilight\\the_millstone_carp"
+  },
+  {
+   "id": 995011,
+   "base": 24712,
+   "icon": "Interface\\Icons\\Twilight\\everstill_leviathan"
+  },
+  {
+   "id": 995012,
+   "base": 24709,
+   "icon": "Interface\\Icons\\Twilight\\worgfang_pike"
+  },
+  {
+   "id": 995013,
+   "base": 24701,
+   "icon": "Interface\\Icons\\Twilight\\sorrowgill"
+  },
+  {
+   "id": 995014,
+   "base": 24701,
+   "icon": "Interface\\Icons\\Twilight\\the_twilight_koi"
+  },
+  {
+   "id": 995015,
+   "base": 24701,
+   "icon": "Interface\\Icons\\Twilight\\stitchjaw_eel"
+  },
+  {
+   "id": 995016,
+   "base": 24701,
+   "icon": "Interface\\Icons\\Twilight\\moonless_muskie"
+  },
+  {
+   "id": 995017,
+   "base": 18098,
+   "icon": "Interface\\Icons\\Twilight\\wriggling_worms"
+  },
+  {
+   "id": 995018,
+   "base": 18535,
+   "icon": "Interface\\Icons\\Twilight\\shiny_minnow"
+  },
+  {
+   "id": 995019,
+   "base": 1438,
+   "icon": "Interface\\Icons\\Twilight\\gnoll_ear"
+  },
+  {
+   "id": 995020,
+   "base": 2474,
+   "icon": "Interface\\Icons\\Twilight\\worg_haunch"
+  },
+  {
+   "id": 995021,
+   "base": 18098,
+   "icon": "Interface\\Icons\\Twilight\\corpse_grub"
+  },
+  {
+   "id": 995022,
+   "base": 18097,
+   "icon": "Interface\\Icons\\Twilight\\nightcrawlers"
+  }
  ]
 }

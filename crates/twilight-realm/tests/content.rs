@@ -852,6 +852,34 @@ fn the_shiny_bauble_and_darkwood_pole_show_their_own_icons() {
     assert_eq!(display_of(6366), 20619, "Darkwood Fishing Pole");
 }
 
+/// The 22 items with Davis's painted icons (#406) show their own synthetic display and keep the
+/// stock one they borrowed as `icon_base`.
+#[test]
+fn the_painted_items_carry_icons() {
+    let fish = toml_table("fish.toml");
+    let items = fish["item"].as_array().unwrap();
+    let entries = (960001..=960016)
+        .chain([960101, 960102, 960103, 960105, 960106, 6530])
+        .collect::<Vec<i64>>();
+    assert_eq!(entries.len(), 22);
+    for entry in entries {
+        let row = items
+            .iter()
+            .find(|r| r["entry"].as_integer() == Some(entry))
+            .unwrap_or_else(|| panic!("no item {entry}"));
+        let display = row["display_id"].as_integer().unwrap();
+        assert!(display >= 995000, "{entry} display_id {display}");
+        assert!(
+            row["icon"].as_str().is_some_and(|i| !i.is_empty()),
+            "{entry} icon"
+        );
+        assert!(
+            row["icon_base"].as_integer().is_some_and(|b| b > 0),
+            "{entry} icon_base"
+        );
+    }
+}
+
 /// Every pool fish has a `[[fish]]` row, and the four weight fish are in no pool.
 #[test]
 fn every_fishing_pool_fish_has_a_fish_row() {

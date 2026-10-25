@@ -5,7 +5,9 @@ No two items in the game show the same icon. Two display ids can point at one ic
 compares icon names, not display ids. An item is a table under an `item` key in
 crates/twilight-realm/content/*.toml with both `entry` and `display_id`; its icon is field 5 of
 its ItemDisplayInfo.dbc row. Items are grouped by lowercased icon name, and an icon with two or
-more distinct entries is a clash. One entry listed in several files is not a clash.
+more distinct entries is a clash. One entry listed in several files is not a clash. A synthetic
+display (995000 up) is not in the DBC; its icon is the stem of its `item_displays` row in
+data/twilights-eve/client_dbc_patch.json.
 
 icon_check_known.txt lists the clashes already in the content when the rule began, one per line,
 `icon<TAB>entry,entry,...`. A listed clash passes until fixed. A listed line whose clash is gone
@@ -21,6 +23,7 @@ Reads the game data from $WOW_DATA (default C:\\Users\\davis\\wow-data\\Data).
 import argparse
 import collections
 import glob
+import json
 import os
 import struct
 import sys
@@ -33,6 +36,7 @@ import mpq_dbc  # noqa: E402
 CONTENT = os.path.normpath(os.path.join(HERE, "..", "..", "crates", "twilight-realm", "content"))
 DEFAULT_DATA = r"C:\Users\davis\wow-data\Data"
 KNOWN = os.path.join(HERE, "icon_check_known.txt")
+PATCH = os.path.normpath(os.path.join(HERE, "..", "..", "data", "twilights-eve", "client_dbc_patch.json"))
 ICON_FIELD = 5
 
 
@@ -47,6 +51,21 @@ def read_icons(data_dir):
         o = vals[ICON_FIELD]
         icons[vals[0]] = strings[o:strings.index(b"\0", o)].decode("utf-8", "replace")
     return icons
+
+
+def patch_icons(patch):
+    """Synthetic display id to icon name, from the `item_displays` of the client patch."""
+    icons = {}
+    for row in patch.get("item_displays", []):
+        icons[row["id"]] = row["icon"].replace("/", "\\").rsplit("\\", 1)[-1]
+    return icons
+
+
+def read_patch_icons(path=PATCH):
+    if not os.path.exists(path):
+        return {}
+    with open(path, "rb") as f:
+        return patch_icons(json.load(f))
 
 
 def collect_items(content_dir):
@@ -120,7 +139,9 @@ def main():
                     help="rewrite icon_check_known.txt from the current clashes")
     args = ap.parse_args()
 
-    clashes = find_clashes(collect_items(CONTENT), read_icons(args.data))
+    icons = read_icons(args.data)
+    icons.update(read_patch_icons())
+    clashes = find_clashes(collect_items(CONTENT), icons)
     if args.write_known:
         with open(KNOWN, "wb") as f:
             for icon, items in clashes.items():

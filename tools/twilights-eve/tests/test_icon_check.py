@@ -32,6 +32,24 @@ class FindClashes(unittest.TestCase):
         self.assertEqual(icon_check.find_clashes(rows, ICONS), {})
 
 
+class PatchIcons(unittest.TestCase):
+    patch = {"item_displays": [
+        {"id": 995001, "base": 10, "icon": "Interface\\Icons\\Painted\\Old_Goldfin"},
+        {"id": 995002, "base": 12, "icon": "Interface\\Icons\\Painted\\old_goldfin"},
+    ]}
+
+    def test_a_synthetic_display_resolves_to_its_patch_icon(self):
+        self.assertEqual(icon_check.patch_icons(self.patch),
+                         {995001: "Old_Goldfin", 995002: "old_goldfin"})
+        self.assertEqual(icon_check.patch_icons({}), {})
+
+    def test_two_rows_on_one_painted_icon_clash(self):
+        icons = {**ICONS, **icon_check.patch_icons(self.patch)}
+        rows = [(1, "Fish", 995001, "a.toml"), (2, "Carp", 995002, "a.toml")]
+        clashes = icon_check.find_clashes(rows, icons)
+        self.assertEqual(list(clashes), ["old_goldfin"])
+
+
 class Judge(unittest.TestCase):
     clashes = {"inv_misc_bag_01": [(1, "Bag", "a.toml"), (2, "Pouch", "b.toml")]}
 
