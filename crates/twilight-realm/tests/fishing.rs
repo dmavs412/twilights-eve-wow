@@ -17,7 +17,7 @@ const CATFISH: u32 = 6308;
 const LEE_BROWN: u32 = 1651;
 const BROTHER_WENDELL: u32 = 190067;
 const ELWYNN: u32 = 12;
-const ELWYNN_FISH: [u32; 4] = [6291, 6289, 6292, 6294];
+const ELWYNN_FISH: [u32; 8] = [6291, 960401, 960402, 6289, 960403, 960404, 960405, 960406];
 const MAIN_HAND: u8 = 15;
 
 const SPELL_FAILED_EQUIPPED_ITEM_CLASS: u8 = 0x19;
@@ -1539,10 +1539,15 @@ fn a_fish_page_unlocks_its_facts_at_five_ten_and_twenty_five_catches() {
     let expected: Vec<(u32, String)> = [
         (12, ""),
         (44, ""),
+        (10, ""),
         (12, "Northshire River"),
         (1519, "Cathedral Canal"),
         (44, "Alther's Mill"),
         (44, "Lake Everstill"),
+        (12, "Crystal Lake"),
+        (10, "The Hushed Bank"),
+        (10, "The Darkened Bank"),
+        (10, "Twilight Grove"),
     ]
     .map(|(zone, name)| (zone, name.to_owned()))
     .to_vec();

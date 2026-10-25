@@ -717,7 +717,7 @@ mod tests {
     fn the_file_loads_and_its_accessors_answer() {
         assert_eq!(spell().id, 7620);
         assert_eq!(angler().xp_to_next(12), 940);
-        assert_eq!(fish(6310).map(|f| f.style), Some(Style::Dart));
+        assert_eq!(fish(960416).map(|f| f.style), Some(Style::Dart));
         assert_eq!(pool_for_zone(12).map(|p| p.key.as_str()), Some("elwynn"));
         assert!(water("cathedral_canal").is_some_and(|w| w.circle.is_some()));
         assert_eq!(
@@ -777,13 +777,16 @@ mod tests {
     #[should_panic(expected = "has no fish that bites")]
     fn a_pool_whose_only_fish_is_gated_fails_to_load() {
         // Elwynn keeps only the smallfish, which then bites at dusk alone.
-        let text = include_str!("../content/fish.toml")
-            .replacen(
-                "  { item = 6289, weight = 37.85, level = 5 },\n  { item = 6292, weight = 0.72, level = 8 },\n  { item = 6294, weight = 0.47, level = 10 },\n",
-                "",
-                1,
-            )
-            .replacen("peak = \"day\"", "peak = \"day\"\nblock = \"dusk\"", 1);
+        let text = include_str!("../content/fish.toml");
+        let head = "key = \"elwynn\"\nzone = 12\nkind = \"lake\"\nfish = [\n";
+        let from = text.find(head).unwrap() + head.len();
+        let to = from + text[from..].find("]\n").unwrap();
+        let text = format!(
+            "{}  {{ item = 6291, weight = 99.0, level = 1 }},\n{}",
+            &text[..from],
+            &text[to..]
+        )
+        .replacen("peak = \"day\"", "peak = \"day\"\nblock = \"dusk\"", 1);
         load(&text);
     }
 
@@ -821,8 +824,8 @@ mod tests {
     #[should_panic]
     fn a_legend_with_minutes_fails_to_load() {
         let text = include_str!("../content/fish.toml").replacen(
-            "block = \"dawn\"",
-            "minutes = [0, 10]",
+            "water = \"twilight_grove\"\nblock = \"dusk\"",
+            "water = \"twilight_grove\"\nminutes = [0, 10]",
             1,
         );
         load(&text);

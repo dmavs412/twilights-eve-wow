@@ -256,3 +256,35 @@ kind = "legend"
 legend = 960012
 note = 960212
 catch_chance = 2.0
+
+[[rumour]]
+id = 960313
+name = "Sorrowgill"
+kind = "legend"
+legend = 960013
+note = 960213
+catch_chance = 2.0
+
+[[rumour]]
+id = 960314
+name = "The Twilight Koi"
+kind = "legend"
+legend = 960014
+note = 960214
+catch_chance = 2.0
+
+[[rumour]]
+id = 960315
+name = "Stitchjaw Eel"
+kind = "legend"
+legend = 960015
+note = 960215
+catch_chance = 2.0
+
+[[rumour]]
+id = 960316
+name = "Moonless Muskie"
+kind = "legend"
+legend = 960016
+note = 960216
+catch_chance = 2.0

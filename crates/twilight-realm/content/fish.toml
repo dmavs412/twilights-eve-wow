@@ -82,7 +82,7 @@
 # `circle = [map, x, y, radius]`. `pool` names its pool; without one it fishes its zone's. `kind`
 # is optional and overrides its pool's kind.
 #
-# [[legend]], the twelve Legendary Fish (#331), each a trophy `item` of its own:
+# [[legend]], the sixteen Legendary Fish (#331, #394), each a trophy `item` of its own:
 #   item, name, pool (a pool key), level (the Angler level it needs, counting a lure's), style,
 #   difficulty, chance (percent per bite while the criteria hold)
 #   water   a [[water]] key the bobber must be in
@@ -115,6 +115,30 @@ item = [
   { entry = 6294, name = "12 Pound Mud Snapper", quality = 1, item_level = 15, class = 15, display_id = 24701, sell_price = 10, buy_price = 40, buy_count = 1, stackable = 1, journal = "fishing" },
   { entry = 6309, name = "17 Pound Catfish", quality = 1, item_level = 15, class = 15, display_id = 24712, sell_price = 100, buy_price = 400, buy_count = 1, stackable = 1, journal = "fishing" },
   { entry = 6310, name = "19 Pound Catfish", quality = 1, item_level = 15, class = 15, display_id = 24712, sell_price = 150, buy_price = 600, buy_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 8365, name = "Raw Mithril Head Trout", quality = 1, item_level = 35, required_level = 25, display_id = 1208, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, use_spell = 435, use_spell_name = "Food", restores_health = 552, duration_ms = 24000, journal = "fishing" },
+  { entry = 960401, name = "Goldshire Perch", quality = 1, item_level = 5, required_level = 1, display_id = 4813, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 960402, name = "Northshire Brook Trout", quality = 1, item_level = 5, required_level = 1, display_id = 24716, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 960403, name = "Mirror Lake Shiner", quality = 1, item_level = 5, required_level = 1, display_id = 18536, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 960404, name = "Stonefield Carp", quality = 1, item_level = 5, required_level = 1, display_id = 4810, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 960405, name = "Duskfin", quality = 1, item_level = 5, required_level = 1, display_id = 24698, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 960406, name = "Crystal Lake Glimmerfish", quality = 1, item_level = 15, required_level = 5, display_id = 32261, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, use_spell = 433, use_spell_name = "Food", restores_health = 61, duration_ms = 18000, journal = "fishing" },
+  { entry = 960407, name = "Harbour Herring", quality = 1, item_level = 5, required_level = 1, display_id = 24521, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 960408, name = "Canal Eel", quality = 1, item_level = 5, required_level = 1, display_id = 24131, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, material = 8, use_spell = 7737, use_spell_name = "Food", restores_health = 30, duration_ms = 15000, journal = "fishing" },
+  { entry = 960409, name = "Gilded Koi", quality = 1, item_level = 15, required_level = 5, display_id = 4811, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, use_spell = 433, use_spell_name = "Food", restores_health = 61, duration_ms = 18000, journal = "fishing" },
+  { entry = 960410, name = "Dockside Gulper", quality = 1, item_level = 25, required_level = 15, display_id = 24711, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960411, name = "Everstill Perch", quality = 1, item_level = 15, required_level = 5, display_id = 24719, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, use_spell = 433, use_spell_name = "Food", restores_health = 61, duration_ms = 18000, journal = "fishing" },
+  { entry = 960412, name = "Redridge Bluegill", quality = 1, item_level = 15, required_level = 5, display_id = 28622, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, use_spell = 433, use_spell_name = "Food", restores_health = 61, duration_ms = 18000, journal = "fishing" },
+  { entry = 960413, name = "Millrace Trout", quality = 1, item_level = 25, required_level = 15, display_id = 32520, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960414, name = "Lakeshire Sunfish", quality = 1, item_level = 25, required_level = 15, display_id = 24704, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960415, name = "Ironjaw Pike", quality = 1, item_level = 25, required_level = 15, display_id = 31804, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960416, name = "Emberscale Darter", quality = 1, item_level = 25, required_level = 15, display_id = 4809, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960417, name = "Everstill Whitefish", quality = 1, item_level = 25, required_level = 15, display_id = 24718, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960418, name = "Darkshire Bleak", quality = 1, item_level = 25, required_level = 15, display_id = 18538, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960419, name = "Ravenwood Chub", quality = 1, item_level = 25, required_level = 15, display_id = 24713, sell_price = 1, buy_price = 20, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960420, name = "Gravemoss Loach", quality = 1, item_level = 25, required_level = 15, display_id = 24696, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960421, name = "Hushed Bank Grayling", quality = 1, item_level = 25, required_level = 15, display_id = 4823, sell_price = 2, buy_price = 40, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960422, name = "Ghostscale Carp", quality = 1, item_level = 25, required_level = 15, display_id = 24694, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
+  { entry = 960423, name = "Dreaming Glassfin", quality = 1, item_level = 25, required_level = 15, display_id = 24522, sell_price = 4, buy_price = 80, buy_count = 5, stackable = 20, use_spell = 434, use_spell_name = "Food", restores_health = 243, duration_ms = 21000, journal = "fishing" },
   # The poles: a two-handed weapon of subclass 20. The Darkwood pole is Redridge treasure.
   { entry = 6256, name = "Fishing Pole", quality = 1, item_level = 1, class = 2, subclass = 20, inventory_type = 17, display_id = 20730, sell_price = 4, buy_price = 23, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 16, material = 2, sheath = 1, damage = [[2.0, 4.0, 0]], journal = "fishing" },
   { entry = 6366, name = "Darkwood Fishing Pole", quality = 1, item_level = 20, required_level = 15, class = 2, subclass = 20, inventory_type = 17, display_id = 20731, sell_price = 1066, buy_price = 5330, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 40, sheath = 1, damage = [[28.0, 43.0, 0]], equip_spells = [7825], equip_spell_names = ["Fishing Skill +15"], journal = "fishing" },
@@ -129,6 +153,7 @@ item = [
   { entry = 960103, name = "Gnoll Ear", quality = 1, item_level = 5, class = 7, display_id = 1438, sell_price = 1, stackable = 20, journal = "fishing" },
   { entry = 960104, name = "Prison Gruel", quality = 1, item_level = 5, class = 7, display_id = 6428, sell_price = 1, stackable = 20, journal = "fishing" },
   { entry = 960105, name = "Worg Haunch", quality = 1, item_level = 5, class = 7, display_id = 2474, sell_price = 1, stackable = 20, journal = "fishing" },
+  { entry = 960106, name = "Corpse Grub", quality = 1, item_level = 20, class = 7, display_id = 18098, sell_price = 1, stackable = 20, journal = "fishing" },
   # The Legendary Fish's trophies (#331): orange, one to a character, sold for 500 copper a level.
   { entry = 960001, name = "Old Goldfin", quality = 5, item_level = 10, class = 15, display_id = 18535, sell_price = 5000, max_count = 1, stackable = 1, journal = "fishing" },
   { entry = 960002, name = "Brother Bass", quality = 5, item_level = 6, class = 15, display_id = 24702, sell_price = 3000, max_count = 1, stackable = 1, journal = "fishing" },
@@ -142,6 +167,10 @@ item = [
   { entry = 960010, name = "The Millstone Carp", quality = 5, item_level = 18, class = 15, display_id = 24702, sell_price = 9000, max_count = 1, stackable = 1, journal = "fishing" },
   { entry = 960011, name = "Everstill Leviathan", quality = 5, item_level = 25, class = 15, display_id = 24712, sell_price = 12500, max_count = 1, stackable = 1, journal = "fishing" },
   { entry = 960012, name = "Worgfang Pike", quality = 5, item_level = 22, class = 15, display_id = 24709, sell_price = 11000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960013, name = "Sorrowgill", quality = 5, item_level = 22, class = 15, display_id = 24701, sell_price = 11000, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960014, name = "The Twilight Koi", quality = 5, item_level = 23, class = 15, display_id = 24701, sell_price = 11500, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960015, name = "Stitchjaw Eel", quality = 5, item_level = 25, class = 15, display_id = 24701, sell_price = 12500, max_count = 1, stackable = 1, journal = "fishing" },
+  { entry = 960016, name = "Moonless Muskie", quality = 5, item_level = 26, class = 15, display_id = 24701, sell_price = 13000, max_count = 1, stackable = 1, journal = "fishing" },
   # Treasure that no other content file has.
   { entry = 2447, name = "Peacebloom", quality = 1, item_level = 5, class = 7, display_id = 7396, sell_price = 10, buy_price = 40, buy_count = 1, stackable = 20, material = 7 },
   { entry = 2455, name = "Minor Mana Potion", quality = 1, item_level = 15, required_level = 5, display_id = 15715, sell_price = 10, stackable = 5, use_spell = 437, use_spell_name = "Restore Mana" },
@@ -241,50 +270,235 @@ peak = "dusk"
 favourite_bait = 960104
 
 [[fish]]
-item = 6292 # 10 Pound Mud Snapper
-style = "sinker"
-difficulty = 50
-rarity = "rare"
+item = 8365 # Raw Mithril Head Trout
+style = "mixed"
+difficulty = 40
+rarity = "uncommon"
+kinds = ["river"]
+peak = "day"
+favourite_bait = 960102
+
+[[fish]]
+item = 960401 # Goldshire Perch
+style = "smooth"
+difficulty = 15
+rarity = "common"
 kinds = ["lake", "pond"]
 peak = "dawn"
 favourite_bait = 960101
 
 [[fish]]
-item = 6294 # 12 Pound Mud Snapper
+item = 960402 # Northshire Brook Trout
+style = "mixed"
+difficulty = 20
+rarity = "common"
+kinds = ["river"]
+peak = "day"
+water = "northshire_river"
+
+[[fish]]
+item = 960403 # Mirror Lake Shiner
 style = "dart"
-difficulty = 55
-rarity = "rare"
+difficulty = 30
+rarity = "uncommon"
+kinds = ["lake"]
+peak = "day"
+favourite_bait = 960102
+
+[[fish]]
+item = 960404 # Stonefield Carp
+style = "sinker"
+difficulty = 35
+rarity = "uncommon"
 kinds = ["lake", "pond"]
 peak = "dusk"
-favourite_bait = 960103
+bait = 960101
 
 [[fish]]
-item = 6309 # 17 Pound Catfish
-style = "sinker"
-difficulty = 60
-rarity = "rare"
-kinds = ["river", "lake"]
-peak = "night"
-favourite_bait = 960105
-
-[[fish]]
-item = 6310 # 19 Pound Catfish
+item = 960405 # Duskfin
 style = "dart"
-difficulty = 70
+difficulty = 50
 rarity = "rare"
+kinds = ["lake", "river"]
+block = "dusk"
+
+[[fish]]
+item = 960406 # Crystal Lake Glimmerfish
+style = "floater"
+difficulty = 55
+rarity = "rare"
+kinds = ["lake"]
+peak = "night"
+favourite_bait = 960102
+water = "crystal_lake"
+
+[[fish]]
+item = 960407 # Harbour Herring
+style = "smooth"
+difficulty = 15
+rarity = "common"
+kinds = ["coast"]
+peak = "dawn"
+favourite_bait = 960102
+
+[[fish]]
+item = 960408 # Canal Eel
+style = "mixed"
+difficulty = 25
+rarity = "common"
 kinds = ["river"]
 peak = "night"
 favourite_bait = 960104
+
+[[fish]]
+item = 960409 # Gilded Koi
+style = "floater"
+difficulty = 60
+rarity = "rare"
+kinds = ["river"]
+peak = "day"
+lure = 6532
+
+[[fish]]
+item = 960410 # Dockside Gulper
+style = "sinker"
+difficulty = 65
+rarity = "rare"
+kinds = ["coast"]
+block = "night"
+bait = 960104
+
+[[fish]]
+item = 960411 # Everstill Perch
+style = "smooth"
+difficulty = 25
+rarity = "common"
+kinds = ["lake"]
+peak = "dawn"
+favourite_bait = 960101
+
+[[fish]]
+item = 960412 # Redridge Bluegill
+style = "mixed"
+difficulty = 28
+rarity = "common"
+kinds = ["river", "lake"]
+peak = "day"
+favourite_bait = 960101
+
+[[fish]]
+item = 960413 # Millrace Trout
+style = "dart"
+difficulty = 40
+rarity = "uncommon"
+kinds = ["river"]
+peak = "dawn"
+water = "althers_mill"
+
+[[fish]]
+item = 960414 # Lakeshire Sunfish
+style = "floater"
+difficulty = 40
+rarity = "uncommon"
+kinds = ["lake"]
+peak = "day"
+favourite_bait = 960102
+
+[[fish]]
+item = 960415 # Ironjaw Pike
+style = "dart"
+difficulty = 45
+rarity = "uncommon"
+kinds = ["lake", "river"]
+peak = "dusk"
+favourite_bait = 960105
+
+[[fish]]
+item = 960416 # Emberscale Darter
+style = "dart"
+difficulty = 60
+rarity = "rare"
+kinds = ["river"]
+favourite_bait = 960105
+block = "dawn"
+
+[[fish]]
+item = 960417 # Everstill Whitefish
+style = "sinker"
+difficulty = 65
+rarity = "rare"
+kinds = ["lake"]
+favourite_bait = 960102
+water = "lake_everstill"
+block = "day"
+
+[[fish]]
+item = 960418 # Darkshire Bleak
+style = "smooth"
+difficulty = 25
+rarity = "common"
+kinds = ["river"]
+peak = "dusk"
+favourite_bait = 960101
+
+[[fish]]
+item = 960419 # Ravenwood Chub
+style = "mixed"
+difficulty = 30
+rarity = "common"
+kinds = ["river", "pond"]
+peak = "night"
+favourite_bait = 960106
+
+[[fish]]
+item = 960420 # Gravemoss Loach
+style = "sinker"
+difficulty = 40
+rarity = "uncommon"
+kinds = ["river", "pond"]
+peak = "night"
+favourite_bait = 960106
+
+[[fish]]
+item = 960421 # Hushed Bank Grayling
+style = "dart"
+difficulty = 45
+rarity = "uncommon"
+kinds = ["river"]
+peak = "dawn"
+water = "hushed_bank"
+
+[[fish]]
+item = 960422 # Ghostscale Carp
+style = "floater"
+difficulty = 65
+rarity = "rare"
+kinds = ["river", "pond"]
+favourite_bait = 960106
+block = "night"
+
+[[fish]]
+item = 960423 # Dreaming Glassfin
+style = "dart"
+difficulty = 70
+rarity = "rare"
+kinds = ["pond"]
+water = "twilight_grove"
+block = "dawn"
 
 [[pool]]
 key = "elwynn"
 zone = 12
 kind = "lake"
 fish = [
-  { item = 6291, weight = 59.95, level = 1 },
-  { item = 6289, weight = 37.85, level = 5 },
-  { item = 6292, weight = 0.72, level = 8 },
-  { item = 6294, weight = 0.47, level = 10 },
+  { item = 6291, weight = 20.62, level = 1 },
+  { item = 960401, weight = 20.62, level = 1 },
+  { item = 960402, weight = 20.62, level = 2 },
+  { item = 6289, weight = 20.62, level = 3 },
+  { item = 960403, weight = 6.19, level = 5 },
+  { item = 960404, weight = 6.19, level = 6 },
+  { item = 960405, weight = 2.06, level = 8 },
+  { item = 960406, weight = 2.06, level = 10 },
 ]
 treasure = [
   { item = 118, weight = 0.30 },
@@ -298,14 +512,16 @@ key = "stormwind"
 zone = 1519
 kind = "coast"
 fish = [
-  { item = 6291, weight = 16.99, level = 1 },
-  { item = 6289, weight = 55.36, level = 4 },
-  { item = 6303, weight = 1.67, level = 6 },
-  { item = 6308, weight = 22.00, level = 8 },
-  { item = 6361, weight = 2.40, level = 10 },
-  { item = 6358, weight = 0.71, level = 12 },
-  { item = 6309, weight = 0.30, level = 14 },
-  { item = 6310, weight = 0.20, level = 15 },
+  { item = 6291, weight = 16.33, level = 1 },
+  { item = 960407, weight = 16.33, level = 3 },
+  { item = 6289, weight = 16.33, level = 3 },
+  { item = 960408, weight = 16.33, level = 5 },
+  { item = 6308, weight = 16.33, level = 8 },
+  { item = 6303, weight = 4.90, level = 7 },
+  { item = 6361, weight = 4.90, level = 10 },
+  { item = 6358, weight = 4.90, level = 12 },
+  { item = 960409, weight = 1.63, level = 14 },
+  { item = 960410, weight = 1.63, level = 16 },
 ]
 treasure = [
   { item = 858, weight = 0.19 },
@@ -318,10 +534,15 @@ key = "redridge"
 zone = 44
 kind = "lake"
 fish = [
-  { item = 6289, weight = 34.10, level = 15 },
-  { item = 6308, weight = 65.08, level = 18 },
-  { item = 6309, weight = 0.19, level = 22 },
-  { item = 6310, weight = 0.24, level = 25 },
+  { item = 960411, weight = 19.53, level = 12 },
+  { item = 6289, weight = 19.53, level = 12 },
+  { item = 6308, weight = 19.53, level = 13 },
+  { item = 960412, weight = 19.53, level = 14 },
+  { item = 960413, weight = 5.86, level = 15 },
+  { item = 960414, weight = 5.86, level = 16 },
+  { item = 960415, weight = 5.86, level = 18 },
+  { item = 960416, weight = 1.95, level = 19 },
+  { item = 960417, weight = 1.95, level = 21 },
 ]
 treasure = [
   { item = 929, weight = 0.17 },
@@ -330,11 +551,32 @@ treasure = [
 ]
 copper = [300, 1500]
 
+[[pool]]
+key = "duskwood"
+zone = 10
+kind = "river"
+fish = [
+  { item = 6289, weight = 19.55, level = 16 },
+  { item = 960418, weight = 19.55, level = 16 },
+  { item = 6308, weight = 19.55, level = 17 },
+  { item = 960419, weight = 19.55, level = 17 },
+  { item = 8365, weight = 5.86, level = 19 },
+  { item = 960420, weight = 5.86, level = 20 },
+  { item = 960421, weight = 5.86, level = 21 },
+  { item = 960422, weight = 1.95, level = 22 },
+  { item = 960423, weight = 1.95, level = 24 },
+]
+treasure = [
+  { item = 929, weight = 0.18 },
+  { item = 3827, weight = 0.12 },
+]
+copper = [400, 2000]
+
 [[legend]]
 item = 960001
 name = "Old Goldfin"
 pool = "elwynn"
-level = 10
+level = 20
 style = "smooth"
 difficulty = 80
 chance = 1
@@ -353,7 +595,7 @@ water = "northshire_river"
 item = 960003
 name = "Moonlit Gar"
 pool = "elwynn"
-level = 12
+level = 11
 style = "dart"
 difficulty = 85
 chance = 5
@@ -373,7 +615,7 @@ bait = 960103 # Gnoll Ear
 item = 960005
 name = "The Harbourmaster's Eel"
 pool = "stormwind"
-level = 15
+level = 22
 style = "mixed"
 difficulty = 85
 chance = 1
@@ -402,7 +644,7 @@ block = "dawn"
 item = 960008
 name = "Stockade Sucker"
 pool = "stormwind"
-level = 18
+level = 17
 style = "sinker"
 difficulty = 90
 chance = 5
@@ -412,7 +654,7 @@ bait = 960104 # Prison Gruel
 item = 960009
 name = "Blackrock Bloodfin"
 pool = "redridge"
-level = 22
+level = 21
 style = "dart"
 difficulty = 90
 chance = 1
@@ -421,7 +663,7 @@ chance = 1
 item = 960010
 name = "The Millstone Carp"
 pool = "redridge"
-level = 18
+level = 17
 style = "sinker"
 difficulty = 85
 chance = 5
@@ -431,7 +673,7 @@ water = "althers_mill"
 item = 960011
 name = "Everstill Leviathan"
 pool = "redridge"
-level = 25
+level = 24
 style = "sinker"
 difficulty = 95
 chance = 5
@@ -442,11 +684,52 @@ block = "night"
 item = 960012
 name = "Worgfang Pike"
 pool = "redridge"
-level = 22
+level = 19
 style = "dart"
 difficulty = 90
 chance = 5
 bait = 960105 # Worg Haunch
+
+[[legend]]
+item = 960013
+name = "Sorrowgill"
+pool = "duskwood"
+level = 22
+style = "smooth"
+difficulty = 90
+chance = 1
+
+[[legend]]
+item = 960014
+name = "The Twilight Koi"
+pool = "duskwood"
+level = 23
+style = "floater"
+difficulty = 90
+chance = 5
+water = "twilight_grove"
+block = "dusk"
+
+[[legend]]
+item = 960015
+name = "Stitchjaw Eel"
+pool = "duskwood"
+level = 25
+style = "mixed"
+difficulty = 92
+chance = 5
+bait = 960106 # Corpse Grub
+
+[[legend]]
+item = 960016
+name = "Moonless Muskie"
+pool = "duskwood"
+level = 26
+style = "dart"
+difficulty = 95
+chance = 5
+water = "darkened_bank"
+block = "night"
 
 [[water]]
 key = "northshire_river"
@@ -476,6 +759,30 @@ key = "lake_everstill"
 name = "Lake Everstill"
 area = 68
 kind = "lake"
+
+[[water]]
+key = "crystal_lake"
+name = "Crystal Lake"
+area = 18
+kind = "lake"
+
+[[water]]
+key = "hushed_bank"
+name = "The Hushed Bank"
+area = 1097
+kind = "river"
+
+[[water]]
+key = "darkened_bank"
+name = "The Darkened Bank"
+area = 799
+kind = "river"
+
+[[water]]
+key = "twilight_grove"
+name = "Twilight Grove"
+area = 856
+kind = "pond"
 
 [[pole]]
 item = 6256 # Fishing Pole
@@ -516,3 +823,6 @@ item = 960104 # Prison Gruel
 
 [[bait]]
 item = 960105 # Worg Haunch
+
+[[bait]]
+item = 960106 # Corpse Grub

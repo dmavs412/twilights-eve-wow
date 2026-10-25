@@ -751,6 +751,115 @@ fn fish_toml_names_items_the_realm_has() {
     }
 }
 
+/// Each pool's fish are the settled roster (#394, #399), as sets of (item, level).
+#[test]
+fn fishing_pools_hold_the_settled_roster() {
+    let want: [(&str, &[(u32, i64)]); 4] = [
+        (
+            "elwynn",
+            &[
+                (6291, 1),
+                (960401, 1),
+                (960402, 2),
+                (6289, 3),
+                (960403, 5),
+                (960404, 6),
+                (960405, 8),
+                (960406, 10),
+            ],
+        ),
+        (
+            "stormwind",
+            &[
+                (6291, 1),
+                (960407, 3),
+                (6289, 3),
+                (960408, 5),
+                (6308, 8),
+                (6303, 7),
+                (6361, 10),
+                (6358, 12),
+                (960409, 14),
+                (960410, 16),
+            ],
+        ),
+        (
+            "redridge",
+            &[
+                (960411, 12),
+                (6289, 12),
+                (6308, 13),
+                (960412, 14),
+                (960413, 15),
+                (960414, 16),
+                (960415, 18),
+                (960416, 19),
+                (960417, 21),
+            ],
+        ),
+        (
+            "duskwood",
+            &[
+                (6289, 16),
+                (960418, 16),
+                (6308, 17),
+                (960419, 17),
+                (8365, 19),
+                (960420, 20),
+                (960421, 21),
+                (960422, 22),
+                (960423, 24),
+            ],
+        ),
+    ];
+    let fish = toml_table("fish.toml");
+    let pools = fish["pool"].as_array().unwrap();
+    assert_eq!(pools.len(), want.len());
+    for (key, roster) in want {
+        let pool = pools
+            .iter()
+            .find(|p| p["key"].as_str() == Some(key))
+            .unwrap_or_else(|| panic!("no pool {key}"));
+        let mut have: Vec<(u32, i64)> = pool["fish"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| (item_of(f, "item"), f["level"].as_integer().unwrap()))
+            .collect();
+        let mut roster = roster.to_vec();
+        have.sort();
+        roster.sort();
+        assert_eq!(have, roster, "{key}");
+    }
+}
+
+/// Every pool fish has a `[[fish]]` row, and the four weight fish are in no pool.
+#[test]
+fn every_fishing_pool_fish_has_a_fish_row() {
+    let fish = toml_table("fish.toml");
+    let rows: Vec<u32> = fish["fish"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| item_of(r, "item"))
+        .collect();
+    for pool in fish["pool"].as_array().unwrap() {
+        for f in pool["fish"].as_array().unwrap() {
+            let item = item_of(f, "item");
+            assert!(
+                rows.contains(&item),
+                "{}: fish {item} has no row",
+                pool["key"]
+            );
+            assert!(
+                ![6292, 6294, 6309, 6310].contains(&item),
+                "{}: weight fish {item} is pooled",
+                pool["key"]
+            );
+        }
+    }
+}
+
 /// A pool's fish and treasure weights are vmangos's chances, which sum to 100.
 #[test]
 fn every_fishing_pools_weights_sum_to_a_hundred() {
