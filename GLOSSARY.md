@@ -230,7 +230,7 @@ A fish's page in the Fishing Journal: the character's catch log for it (caught, 
 _Avoid_: bestiary, fish entry
 
 **Journal**:
-The window with one tab per profession; Fishing is the only tab today, and its tab is the Fishing Journal. Each tab has a Satchel page and that profession's own pages (ADR 0023).
+The window with one tab per profession: the Fishing Journal and the Herbalism Journal. Each tab has a Satchel page and that profession's own pages (ADR 0023).
 _Avoid_: profession window, codex
 
 **Journal Item**:
@@ -248,6 +248,38 @@ _Avoid_: rare fish, boss fish
 **Legend Rumour**:
 A Rumour kind with no giver, no steps and no timer: a readable note that names a Legendary Fish and its criterion. It rolls on a catch in its zone or on a kill, and an NPC's gossip can tell the same hint.
 _Avoid_: fishing quest, hint quest
+
+**Herb Patch**:
+A generic bush the player clicks to play the Forager's Grid. Each character has their own patches (ADR 0024). A zone keeps a set number live per character at its Herb Spots, and a finished patch comes back later at another spot.
+_Avoid_: herb node, herb (a herb is an item), bush
+
+**Herb Spot**:
+A place a Herb Patch can stand: a vanilla herb spawn point imported from vmangos into its zone's row in `content/herbs.toml`.
+_Avoid_: node, spawn point
+
+**Forager's Grid**:
+The Herbalism minigame: a 5 by 5 grid of hidden plants, weeds and thorns, played with a few pulls. The realm holds the grid and answers each pull (ADR 0024).
+_Avoid_: minigame, herb grid
+
+**Stake**:
+What a pulled weed or plant leaves on the grid: the number of plants still hidden in the eight tiles touching it.
+_Avoid_: clue, number, hint
+
+**Herbalist Level**:
+A character's herbalism level, 1 to 30, with its own XP, kept across Callings. A plant above it never grows in their patches, and each level above 1 raises the roll weight of uncommon and rare plants (ADR 0024).
+_Avoid_: herbalism skill
+
+**Bloom**:
+A plant's block of the game day. During it the plant has double roll weight and gives double when pulled. A **Timed Plant** grows only during its bloom.
+_Avoid_: peak (fish have peak hours), season
+
+**Tool Skill**:
+The grid action the tool in the Herbalism Journal's Tool slot gives: Sweep (Sickle), Probe (Trowel) or Snip (Shears). It costs pulls.
+_Avoid_: ability, tool power
+
+**Perk**:
+A Herbalist's permanent pick, one slot per 10 Herbalist Levels. A **Boon** is a plain upgrade. A **Pact** gives and takes. The Goldshire herbalist resets every pick for gold that doubles each time.
+_Avoid_: talent (a Calling's), trait
 
 **Kick**:
 A Calling's skill that stops the cast a mob has under way and puts a Lockout on it. Each Tier 1 Calling learns one at level 10. Effects listed after the interrupt in its row are its bonus, and they happen only when it stopped a cast. ADR 0020.
