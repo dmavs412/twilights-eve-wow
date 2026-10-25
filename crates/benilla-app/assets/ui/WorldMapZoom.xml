@@ -1,0 +1,265 @@
+<Ui>
+    <!--
+        Mouse wheel zoom and drag on the world map (spec #383). `WorldMapDetailFrame` becomes the
+        scroll child of a new `WorldMapZoomFrame` that takes its anchors and size, so a zoomed map
+        clips to the stock map rectangle. The zoom (1 to 4) is the detail frame's scale under the
+        scroll frame, and the scroll offsets are in the detail frame's own units. Icons keep their
+        size by taking scale 1 / zoom and an offset multiplied by the zoom.
+    -->
+    <Script><![CDATA[
+        local ZOOM_MAX = 4
+        local ZOOM_STEP = 1.25
+        local ICON_SLOTS = 40
+
+        local zoom = 1
+        local pan = nil
+        local iconsDirty = false
+        local lastContinent, lastZone, lastInfo
+
+        local detail = WorldMapDetailFrame
+        local baseWidth = detail:GetWidth()
+        local baseHeight = detail:GetHeight()
+        local view = CreateFrame("ScrollFrame", "WorldMapZoomFrame", WorldMapFrame)
+
+        do
+            local level = detail:GetFrameLevel()
+            local points = {}
+            for i = 1, detail:GetNumPoints() do
+                points[i] = { detail:GetPoint(i) }
+            end
+            view:SetScale(detail:GetScale())
+            view:SetWidth(baseWidth)
+            view:SetHeight(baseHeight)
+            for i = 1, table.getn(points) do
+                local p = points[i]
+                view:SetPoint(p[1], p[2], p[3], p[4], p[5])
+            end
+            if level > 0 then
+                view:SetFrameLevel(level - 1)
+            end
+            detail:ClearAllPoints()
+            detail:SetParent(view)
+            detail:SetScale(1)
+            view:SetScrollChild(detail)
+            detail:SetFrameLevel(level)
+            view:EnableMouseWheel(true)
+            view:Show()
+        end
+
+        -- A slot per frame that rides on the map: landmarks, unit blips, the corpse.
+        local function BenillaZoom_Icons()
+            local icons = {}
+            for i = 1, NUM_WORLDMAP_POIS or 0 do
+                table.insert(icons, getglobal("WorldMapFramePOI" .. i))
+            end
+            table.insert(icons, WorldMapPlayer)
+            for i = 1, 4 do
+                table.insert(icons, getglobal("WorldMapParty" .. i))
+            end
+            for i = 1, ICON_SLOTS do
+                table.insert(icons, getglobal("WorldMapRaid" .. i))
+            end
+            for i = 1, 2 do
+                table.insert(icons, getglobal("WorldMapFlag" .. i))
+            end
+            table.insert(icons, WorldMapCorpse)
+            table.insert(icons, WorldMapDeathRelease)
+            return icons
+        end
+
+        -- Scale 1 / zoom and the anchor offset times the zoom, so the icon's centre stays on its map
+        -- point at its 1x size. The stock code rewrites the offsets unscaled; an offset that is not
+        -- the one written here is the new 1x base.
+        local function BenillaZoom_Seat(icon)
+            local point, relativeTo, relativePoint, x, y = icon:GetPoint(1)
+            if not point then
+                return
+            end
+            local baseX, baseY = x, y
+            if icon.benillaOutX and math.abs(x - icon.benillaOutX) < 0.01
+                and math.abs(y - icon.benillaOutY) < 0.01 then
+                baseX, baseY = icon.benillaBaseX, icon.benillaBaseY
+            end
+            local outX, outY = baseX * zoom, baseY * zoom
+            icon:SetScale(1 / zoom)
+            if outX ~= x or outY ~= y then
+                icon:SetPoint(point, relativeTo, relativePoint, outX, outY)
+            end
+            icon.benillaBaseX, icon.benillaBaseY = baseX, baseY
+            icon.benillaOutX, icon.benillaOutY = outX, outY
+        end
+
+        function BenillaMapZoom_SeatIcons()
+            if zoom == 1 and not iconsDirty then
+                return
+            end
+            iconsDirty = false
+            local icons = BenillaZoom_Icons()
+            for i = 1, table.getn(icons) do
+                BenillaZoom_Seat(icons[i])
+            end
+        end
+
+        local function BenillaZoom_Clamp(x, y)
+            local effective = detail:GetEffectiveScale()
+            local viewEffective = view:GetEffectiveScale()
+            local overX = (baseWidth * effective - view:GetWidth() * viewEffective) / effective
+            local overY = (baseHeight * effective - view:GetHeight() * viewEffective) / effective
+            x = math.min(0, math.max(-overX, x))
+            y = math.max(0, math.min(overY, y))
+            return x, y
+        end
+
+        local function BenillaZoom_SetOffsets(x, y)
+            x, y = BenillaZoom_Clamp(x, y)
+            view:SetHorizontalScroll(x)
+            view:SetVerticalScroll(y)
+        end
+
+        function BenillaMapZoom_GetZoom()
+            return zoom
+        end
+
+        function BenillaMapZoom_Reset()
+            pan = nil
+            if zoom ~= 1 then
+                zoom = 1
+                detail:SetScale(1)
+                iconsDirty = true
+            end
+            view:SetHorizontalScroll(0)
+            view:SetVerticalScroll(0)
+            WorldMapButton:RegisterForDrag()
+            BenillaMapZoom_SeatIcons()
+        end
+
+        -- The map under the cursor, as WorldMapButton_OnUpdate computes it.
+        local function BenillaZoom_CursorUV(cx, cy)
+            local scale = WorldMapButton:GetEffectiveScale()
+            local centerX, centerY = WorldMapButton:GetCenter()
+            local width = WorldMapButton:GetWidth()
+            local height = WorldMapButton:GetHeight()
+            return (cx / scale - (centerX - width / 2)) / width,
+                ((centerY + height / 2) - cy / scale) / height
+        end
+
+        -- Sets the zoom so the map point under (cx, cy) stays under it.
+        local function BenillaZoom_SetZoom(newZoom, cx, cy)
+            local viewEffective = view:GetEffectiveScale()
+            local oldEffective = detail:GetEffectiveScale()
+            local newEffective = viewEffective * newZoom
+            local left = detail:GetLeft() * oldEffective
+            local top = detail:GetTop() * oldEffective
+            local u = (cx - left) / (baseWidth * oldEffective)
+            local v = (top - cy) / (baseHeight * oldEffective)
+            local viewLeft = view:GetLeft() * viewEffective
+            local viewTop = view:GetTop() * viewEffective
+
+            zoom = newZoom
+            if zoom < 1.0001 then
+                zoom = 1
+            end
+            detail:SetScale(zoom)
+            iconsDirty = true
+            newEffective = viewEffective * zoom
+            BenillaZoom_SetOffsets(
+                (cx - u * baseWidth * newEffective - viewLeft) / newEffective,
+                (cy + v * baseHeight * newEffective - viewTop) / newEffective)
+            if zoom > 1 then
+                WorldMapButton:RegisterForDrag("LeftButton")
+            else
+                pan = nil
+                WorldMapButton:RegisterForDrag()
+            end
+            BenillaMapZoom_SeatIcons()
+        end
+
+        function BenillaMapZoom_OnMouseWheel(delta)
+            local cx, cy = GetCursorPosition()
+            if delta < 0 then
+                if zoom == 1 then
+                    WorldMapZoomOutButton_OnClick()
+                    BenillaMapZoom_Sync()
+                else
+                    BenillaZoom_SetZoom(math.max(1, zoom / ZOOM_STEP), cx, cy)
+                end
+                return
+            end
+            if zoom == 1 and GetCurrentMapZone() == 0 and GetCurrentMapContinent() >= 0 then
+                local u, v = BenillaZoom_CursorUV(cx, cy)
+                local _, file = UpdateMapHighlight(u, v)
+                if file then
+                    ProcessMapClick(u, v)
+                    BenillaMapZoom_Sync()
+                    return
+                end
+            end
+            BenillaZoom_SetZoom(math.min(ZOOM_MAX, zoom * ZOOM_STEP), cx, cy)
+        end
+
+        function BenillaMapZoom_DragStart()
+            if zoom <= 1 then
+                return
+            end
+            local cx, cy = GetCursorPosition()
+            pan = {
+                cx = cx,
+                cy = cy,
+                x = view:GetHorizontalScroll(),
+                y = view:GetVerticalScroll(),
+            }
+        end
+
+        function BenillaMapZoom_DragStop()
+            pan = nil
+        end
+
+        function BenillaMapZoom_Pan()
+            if not pan then
+                return
+            end
+            local cx, cy = GetCursorPosition()
+            local effective = detail:GetEffectiveScale()
+            BenillaZoom_SetOffsets(pan.x + (cx - pan.cx) / effective, pan.y + (cy - pan.cy) / effective)
+        end
+
+        -- A change of the shown map puts the view back at 1x.
+        function BenillaMapZoom_Sync()
+            local continent, zone, info = GetCurrentMapContinent(), GetCurrentMapZone(), GetMapInfo()
+            if continent ~= lastContinent or zone ~= lastZone or info ~= lastInfo then
+                lastContinent, lastZone, lastInfo = continent, zone, info
+                BenillaMapZoom_Reset()
+            end
+        end
+
+        view:SetScript("OnMouseWheel", function()
+            BenillaMapZoom_OnMouseWheel(arg1)
+        end)
+        view:SetScript("OnShow", function()
+            lastContinent, lastZone, lastInfo = GetCurrentMapContinent(), GetCurrentMapZone(), GetMapInfo()
+            BenillaMapZoom_Reset()
+        end)
+        view:SetScript("OnUpdate", function()
+            BenillaMapZoom_Pan()
+            BenillaMapZoom_Sync()
+        end)
+        WorldMapButton:SetScript("OnDragStart", BenillaMapZoom_DragStart)
+        WorldMapButton:SetScript("OnDragStop", BenillaMapZoom_DragStop)
+
+        local BenillaZoom_OldUpdate = WorldMapFrame_Update
+        function WorldMapFrame_Update()
+            BenillaZoom_OldUpdate()
+            BenillaMapZoom_Sync()
+            iconsDirty = true
+            BenillaMapZoom_SeatIcons()
+        end
+
+        -- The stock update seats the unit blips every frame at 1x offsets.
+        local BenillaZoom_OldButtonUpdate = WorldMapButton_OnUpdate
+        function WorldMapButton_OnUpdate(elapsed)
+            BenillaMapZoom_Pan()
+            BenillaZoom_OldButtonUpdate(elapsed)
+            BenillaMapZoom_SeatIcons()
+        end
+    ]]></Script>
+</Ui>
