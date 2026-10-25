@@ -16,18 +16,20 @@ use benilla_formats::{
 use image::RgbaImage;
 use serde_json::{json, Value};
 
-/// The canvas image in pixels: the canvas rect at Stormwind City's stock size (zoom 3.992).
-const CANVAS_W: u32 = 4000;
-const CANVAS_H: u32 = 2667;
+/// The canvas image's scale: Stormwind City at its stock size, its 1002 art pixels across its rect.
+const SCALE_ZONE: u32 = 1519;
 /// The part of a zone's 4 by 3 grid of 256 px tiles the stock map shows.
 const ART_W: u32 = 1002;
 const ART_H: u32 = 668;
 const TILE: u32 = 256;
 const TILES_WIDE: u32 = 4;
 const TILES_TALL: u32 = 3;
-/// The mist tint of `WorldMapMist.xml`, and the fog's alpha over a full silhouette.
+/// The mist tint of `WorldMapMist.xml`, and the fog's alpha inside the zone.
 const FOG_TINT: [f32; 3] = [0.78, 0.80, 0.82];
 const FOG_ALPHA: f32 = 0.9;
+/// The silhouette values the fog's edge runs between: clear below the first, solid above the
+/// second, so the fog fills the zone flat with a soft rim instead of tracing the Highlight's glow.
+const FOG_EDGE: (f32, f32) = (0.15, 0.45);
 /// For a zone with a black Highlight: the torn parchment frame's width in art pixels, and the soft
 /// edge inside it.
 const FRAME_INSET: f32 = 30.0;
@@ -85,12 +87,21 @@ fn overlaps(a: Rect, b: Rect) -> bool {
         && meet(span(a.top, a.bottom), span(b.top, b.bottom))
 }
 
-/// Where `zone` lands on the canvas image that shows `canvas`, as pixel edges
+/// The canvas image's pixel size: `canvas` at `scale`'s stock size, its art width across its rect.
+fn canvas_size(canvas: Rect, scale: Rect) -> (u32, u32) {
+    let per_yard = f64::from(ART_W) / f64::from(scale.left - scale.right);
+    (
+        (f64::from(canvas.left - canvas.right) * per_yard).round() as u32,
+        (f64::from(canvas.top - canvas.bottom) * per_yard).round() as u32,
+    )
+}
+
+/// Where `zone` lands on the `size` canvas image that shows `canvas`, as pixel edges
 /// `[x0, y0, x1, y1]`, unclipped: a rect past the canvas edge keeps its full size.
-fn place(canvas: Rect, zone: Rect) -> [f64; 4] {
+fn place(canvas: Rect, size: (u32, u32), zone: Rect) -> [f64; 4] {
     let (cl, ct) = (f64::from(canvas.left), f64::from(canvas.top));
-    let sx = f64::from(CANVAS_W) / (cl - f64::from(canvas.right));
-    let sy = f64::from(CANVAS_H) / (ct - f64::from(canvas.bottom));
+    let sx = f64::from(size.0) / (cl - f64::from(canvas.right));
+    let sy = f64::from(size.1) / (ct - f64::from(canvas.bottom));
     [
         (cl - f64::from(zone.left)) * sx,
         (ct - f64::from(zone.top)) * sy,
@@ -99,9 +110,9 @@ fn place(canvas: Rect, zone: Rect) -> [f64; 4] {
     ]
 }
 
-/// `[x0, y0, x1, y1]` in canvas pixels as canvas UV.
-fn uv(px: [f64; 4]) -> [f64; 4] {
-    let (w, h) = (f64::from(CANVAS_W), f64::from(CANVAS_H));
+/// `[x0, y0, x1, y1]` in pixels of the `size` canvas as canvas UV.
+fn uv(px: [f64; 4], size: (u32, u32)) -> [f64; 4] {
+    let (w, h) = (f64::from(size.0), f64::from(size.1));
     [px[0] / w, px[1] / h, px[2] / w, px[3] / h]
 }
 
@@ -388,7 +399,14 @@ fn draw(canvas: &mut Picture, at: [f64; 4], zone: &Zone) {
     }
 }
 
-/// The zone's fog over its whole placed rect: the mist tint, 0.9 times the silhouette as alpha.
+/// The fog's alpha over a silhouette value: 0 outside the zone, `FOG_ALPHA` inside, a smoothstep
+/// across `FOG_EDGE` between.
+fn fog_alpha(silhouette: f32) -> f32 {
+    let t = ((silhouette - FOG_EDGE.0) / (FOG_EDGE.1 - FOG_EDGE.0)).clamp(0.0, 1.0);
+    FOG_ALPHA * t * t * (3.0 - 2.0 * t)
+}
+
+/// The zone's fog over its whole placed rect: the mist tint, flat inside the zone's silhouette.
 fn fog(at: [f64; 4], zone: &Zone) -> Picture {
     let w = (at[2] - at[0]).round().max(1.0) as u32;
     let h = (at[3] - at[1]).round().max(1.0) as u32;
@@ -396,11 +414,64 @@ fn fog(at: [f64; 4], zone: &Zone) -> Picture {
     for y in 0..h {
         for x in 0..w {
             let (u, v) = ((x as f32 + 0.5) / w as f32, (y as f32 + 0.5) / h as f32);
-            let a = FOG_ALPHA * zone.silhouette(u, v);
+            let a = fog_alpha(zone.silhouette(u, v));
             out.put(x, y, [FOG_TINT[0], FOG_TINT[1], FOG_TINT[2], a]);
         }
     }
+    // The Highlight is coarse next to the canvas, so its texels show as steps along the edge;
+    // a blur about one texel wide rounds them off.
+    let texel = (w as f32 / zone.highlight.w as f32).round().max(1.0) as usize;
+    soften_alpha(&mut out, texel);
     out
+}
+
+/// Three box-blur passes of `radius` over `pic`'s alpha, each along rows then columns.
+fn soften_alpha(pic: &mut Picture, radius: usize) {
+    let (w, h) = (pic.w as usize, pic.h as usize);
+    let mut alpha: Vec<f32> = pic.rgba.chunks(4).map(|p| f32::from(p[3])).collect();
+    let mut line = Vec::new();
+    let mut blur =
+        |alpha: &mut [f32], len: usize, count: usize, at: &dyn Fn(usize, usize) -> usize| {
+            for k in 0..count {
+                line.clear();
+                line.extend((0..len).map(|i| alpha[at(k, i)]));
+                let mut sum: f32 = line[..radius.min(len)].iter().sum();
+                for i in 0..len {
+                    if i + radius < len {
+                        sum += line[i + radius];
+                    }
+                    if i > radius {
+                        sum -= line[i - radius - 1];
+                    }
+                    let n = (i + radius).min(len - 1) + 1 - i.saturating_sub(radius);
+                    alpha[at(k, i)] = sum / n as f32;
+                }
+            }
+        };
+    for _ in 0..3 {
+        blur(&mut alpha, w, h, &|y, x| y * w + x);
+        blur(&mut alpha, h, w, &|x, y| y * w + x);
+    }
+    for (p, a) in pic.rgba.chunks_mut(4).zip(alpha) {
+        p[3] = a.round().clamp(0.0, 255.0) as u8;
+    }
+}
+
+/// Blend `fog`, placed at `at`, over `canvas`: the preview of the map with every misted zone shut.
+fn blend(canvas: &mut Picture, at: [f64; 4], fog: &Picture) {
+    let (x0, y0) = (at[0].round() as i64, at[1].round() as i64);
+    for fy in 0..fog.h {
+        for fx in 0..fog.w {
+            let (px, py) = (x0 + i64::from(fx), y0 + i64::from(fy));
+            if px < 0 || py < 0 || px >= i64::from(canvas.w) || py >= i64::from(canvas.h) {
+                continue;
+            }
+            let s = fog.texel(fx, fy);
+            let d = canvas.texel(px as u32, py as u32);
+            let c = [0, 1, 2].map(|i| s[i] * s[3] + d[i] * (1.0 - s[3]));
+            canvas.put(px as u32, py as u32, [c[0], c[1], c[2], 1.0]);
+        }
+    }
 }
 
 /// One overlay piece's cover: the base pixels under the piece, the piece's alpha, at the piece's
@@ -449,23 +520,34 @@ fn main() -> Result<()> {
     let wma = load_world_map_area_catalog(&mut chain)?;
     let wmo = load_world_map_overlay_catalog(&mut chain)?;
     let (map, listed) = benilla_formats::map_canvas::canvas();
+    let held = benilla_formats::map_canvas::held();
 
     let on_map: Vec<(u32, &WorldMapArea)> = wma
         .iter()
         .filter(|(_, a)| a.map_id == map && a.area_id != 0)
         .collect();
-    let find = |area_id: u32| on_map.iter().find(|(_, a)| a.area_id == area_id).copied();
-    let listed_rows: Vec<(u32, &WorldMapArea)> = listed
-        .iter()
-        .map(|&id| find(id).with_context(|| format!("canvas area {id} has no WorldMapArea row")))
-        .collect::<Result<_>>()?;
+    let find = |area_id: u32| {
+        on_map
+            .iter()
+            .find(|(_, a)| a.area_id == area_id)
+            .copied()
+            .with_context(|| format!("canvas area {area_id} has no WorldMapArea row"))
+    };
+    let listed_rows: Vec<(u32, &WorldMapArea)> =
+        listed.iter().map(|&id| find(id)).collect::<Result<_>>()?;
+    let mut held_rects = Vec::new();
+    for &id in held {
+        held_rects.push(Rect::of(find(id)?.1));
+    }
     let canvas = canvas_rect(
         &listed_rows
             .iter()
             .map(|(_, a)| Rect::of(a))
+            .chain(held_rects)
             .collect::<Vec<_>>(),
     )
     .context("map_canvas.json lists no zone")?;
+    let size = canvas_size(canvas, Rect::of(find(SCALE_ZONE)?.1));
     let mut misted: Vec<(u32, &WorldMapArea)> = on_map
         .iter()
         .filter(|(_, a)| !listed.contains(&a.area_id) && overlaps(canvas, Rect::of(a)))
@@ -473,8 +555,8 @@ fn main() -> Result<()> {
         .collect();
     misted.sort_by_key(|(_, a)| a.area_id);
     println!(
-        "canvas rect: left {:.2} right {:.2} top {:.2} bottom {:.2}",
-        canvas.left, canvas.right, canvas.top, canvas.bottom
+        "canvas rect: left {:.2} right {:.2} top {:.2} bottom {:.2}, {} by {} px",
+        canvas.left, canvas.right, canvas.top, canvas.bottom, size.0, size.1
     );
 
     std::fs::create_dir_all(out.join("covers"))?;
@@ -483,21 +565,22 @@ fn main() -> Result<()> {
         .find(|(_, a)| a.name == "Elwynn")
         .context("no Elwynn row")?;
     let parchment = Zone::load(&mut chain, elwynn.1, &[])?.parchment();
-    let mut img = Picture::blank(CANVAS_W, CANVAS_H);
-    for y in 0..CANVAS_H {
-        for x in 0..CANVAS_W {
+    let mut img = Picture::blank(size.0, size.1);
+    for y in 0..size.1 {
+        for x in 0..size.0 {
             img.put(x, y, [parchment[0], parchment[1], parchment[2], 1.0]);
         }
     }
 
     let mut fogs = Vec::new();
+    let mut placed_fogs = Vec::new();
     let mut covers = Vec::new();
     let mut written = Vec::new();
     let groups = [(&misted, true), (&listed_rows, false)];
     for (rows, is_misted) in groups {
         for &(id, area) in rows.iter() {
             let zone = Zone::load(&mut chain, area, wmo.for_area(id))?;
-            let at = place(canvas, zone.rect);
+            let at = place(canvas, size, zone.rect);
             println!(
                 "{:>4} {:<18} at {:8.1} {:8.1} {:8.1} {:8.1}{}",
                 area.area_id,
@@ -513,7 +596,8 @@ fn main() -> Result<()> {
                 let name = format!("fog_{}.png", zone.file.to_lowercase());
                 let f = fog(at, &zone);
                 f.save(&out.join(&name))?;
-                fogs.push(json!({ "file": name, "size": [f.w, f.h], "rect": uv(at) }));
+                fogs.push(json!({ "file": name, "size": [f.w, f.h], "rect": uv(at, size) }));
+                placed_fogs.push((at, f));
                 written.push(name);
                 continue;
             }
@@ -536,7 +620,7 @@ fn main() -> Result<()> {
                         "zone": zone.file,
                         "size": [c.w, c.h],
                         "used": [p.used.0, p.used.1],
-                        "rect": uv([x0, y0, x1, y1]),
+                        "rect": uv([x0, y0, x1, y1], size),
                     }));
                     written.push(name);
                 }
@@ -545,11 +629,16 @@ fn main() -> Result<()> {
     }
     img.save(&out.join("canvas.png"))?;
     written.insert(0, "canvas.png".to_string());
+    for (at, f) in &placed_fogs {
+        blend(&mut img, *at, f);
+    }
+    img.save(&out.join("preview.png"))?;
+    written.insert(1, "preview.png".to_string());
 
     let manifest: Value = json!({
         "canvas": {
             "file": "canvas.png",
-            "size": [CANVAS_W, CANVAS_H],
+            "size": [size.0, size.1],
             "rect": [0.0, 0.0, 1.0, 1.0],
             "loc_rect": [canvas.left, canvas.right, canvas.top, canvas.bottom],
         },
@@ -580,13 +669,16 @@ mod tests {
         bottom: -11516.67,
     };
 
+    /// That rect's image before Burning Steppes was held (#422).
+    const SIZE: (u32, u32) = (4000, 2667);
+
     fn near(a: f64, b: f64) -> bool {
         (a - b).abs() < 0.05
     }
 
     #[test]
     fn a_zone_equal_to_the_canvas_fills_the_image() {
-        let at = place(CANVAS, CANVAS);
+        let at = place(CANVAS, SIZE, CANVAS);
         assert!(near(at[0], 0.0) && near(at[1], 0.0), "{at:?}");
         assert!(near(at[2], 4000.0) && near(at[3], 2667.0), "{at:?}");
     }
@@ -599,7 +691,7 @@ mod tests {
             top: -7939.58,
             bottom: -10254.17,
         };
-        let at = place(CANVAS, elwynn);
+        let at = place(CANVAS, SIZE, elwynn);
         assert!(near(at[0], 33.0), "left edge {}", at[0]);
         assert!(near(at[1], 0.0), "top edge {}", at[1]);
     }
@@ -612,12 +704,61 @@ mod tests {
             top: CANVAS.bottom + 300.0,
             bottom: CANVAS.bottom - 300.0,
         };
-        let at = place(CANVAS, zone);
+        let at = place(CANVAS, SIZE, zone);
         let px_per_yard = 4000.0 / f64::from(CANVAS.left - CANVAS.right);
         assert!(near(at[2] - at[0], 1000.0 * px_per_yard), "{at:?}");
         assert!(
             at[2] > 4000.0 && at[3] > 2667.0,
             "runs past the edge: {at:?}"
+        );
+    }
+
+    #[test]
+    fn the_canvas_size_puts_the_scale_zone_at_its_art_width() {
+        let scale = Rect {
+            left: 0.0,
+            right: -1002.0,
+            top: 0.0,
+            bottom: -668.0,
+        };
+        let canvas = Rect {
+            left: 1000.0,
+            right: -3008.0,
+            top: 0.0,
+            bottom: -2672.0,
+        };
+        assert_eq!(canvas_size(canvas, scale), (4008, 2672));
+        let at = place(canvas, canvas_size(canvas, scale), scale);
+        assert!(near(at[2] - at[0], 1002.0), "{at:?}");
+    }
+
+    #[test]
+    fn the_fog_is_flat_inside_the_zone_and_clear_outside() {
+        assert_eq!(fog_alpha(0.0), 0.0);
+        assert_eq!(fog_alpha(FOG_EDGE.0), 0.0);
+        assert_eq!(fog_alpha(FOG_EDGE.1), FOG_ALPHA);
+        assert_eq!(fog_alpha(1.0), FOG_ALPHA);
+        let mid = fog_alpha((FOG_EDGE.0 + FOG_EDGE.1) / 2.0);
+        assert!((mid - FOG_ALPHA / 2.0).abs() < 1e-6, "{mid}");
+    }
+
+    #[test]
+    fn softening_keeps_a_flat_fog_flat_and_rounds_a_step() {
+        let mut pic = Picture::blank(40, 3);
+        for y in 0..3 {
+            for x in 0..40 {
+                pic.put(x, y, [0.0, 0.0, 0.0, if x < 20 { 1.0 } else { 0.0 }]);
+            }
+        }
+        soften_alpha(&mut pic, 4);
+        let a = |x| pic.texel(x, 1)[3];
+        assert_eq!(a(0), 1.0);
+        assert_eq!(a(39), 0.0);
+        assert!(
+            a(18) < 1.0 && a(18) > a(21) && a(21) > 0.0,
+            "{} {}",
+            a(18),
+            a(21)
         );
     }
 

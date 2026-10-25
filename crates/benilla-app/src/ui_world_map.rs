@@ -133,10 +133,12 @@ fn map_row_view(
 }
 
 /// The map canvas over a continent's sorted zones: `map_canvas.json`'s area ids as 1-based zone
-/// indices, and the rect over their rects. `None` when no listed id has a zone.
+/// indices, and the rect over their rects and the held zones' rects (#421). `None` when no listed
+/// id has a zone.
 fn canvas_view(
     zones: &[(u32, &WorldMapArea, String)],
     area_ids: &[u32],
+    held: &[u32],
 ) -> Option<(WorldMapCanvasView, ZoneRect)> {
     let mut indices = Vec::with_capacity(area_ids.len());
     let mut rects = Vec::with_capacity(area_ids.len());
@@ -147,6 +149,15 @@ fn canvas_view(
                 rects.push(zone_rect(zones[i].1));
             }
             None => warn!("world map: canvas area {area_id} has no zone on its continent"),
+        }
+    }
+    if rects.is_empty() {
+        return None;
+    }
+    for &area_id in held {
+        match zones.iter().find(|(_, a, _)| a.area_id == area_id) {
+            Some((_, a, _)) => rects.push(zone_rect(a)),
+            None => warn!("world map: held canvas area {area_id} has no zone on its continent"),
         }
     }
     let rect = map_proj::canvas_rect(&rects)?;
@@ -252,7 +263,7 @@ pub(crate) fn build_catalog(
         };
 
         let (this_canvas, this_canvas_rect) = if canvas && cont.map_id == canvas_map {
-            canvas_view(&zones, canvas_areas).unzip()
+            canvas_view(&zones, canvas_areas, benilla_formats::map_canvas::held()).unzip()
         } else {
             (None, None)
         };

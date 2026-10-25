@@ -1,5 +1,6 @@
 {
-  "//": "The map canvas (#410): Duskwood, Redridge Mountains, Elwynn Forest, Stormwind City, in draw order, later on top.",
+  "//": "The map canvas (#410): Duskwood, Redridge Mountains, Elwynn Forest, Stormwind City, in draw order, later on top. held: zones the canvas holds in full while they stay misted, so the painted map already has them when they open (#421); Burning Steppes.",
   "map": 0,
-  "zones": [10, 44, 12, 1519]
+  "zones": [10, 44, 12, 1519],
+  "held": [46]
 }
