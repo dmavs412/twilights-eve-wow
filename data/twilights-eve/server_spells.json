@@ -16483,7 +16483,7 @@
       "realm_only": false
      }
     ],
-    "description": "Infects the target with a Shadow DoT for 18 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack."
+    "description": "Infects the target with a Shadow DoT for 12 sec that grows: each tick adds a stack, and so does each Blood Lance that hits the target. Each tick deals its damage once per stack and heals you for 50% of it. Recasting it starts it over at one stack."
    },
    {
     "key": "blood_lance",
@@ -16518,7 +16518,7 @@
       "kind": "school_damage",
       "params": {
        "amount": {
-        "base": 33,
+        "base": 36,
         "per_level": 2
        },
        "school": "shadow"
@@ -18399,7 +18399,7 @@
     "aura_hidden": false,
     "cancelable": true,
     "persist_death": false,
-    "duration_ms": 18000,
+    "duration_ms": 12000,
     "modelled": true,
     "effects": [
      {
@@ -18408,7 +18408,7 @@
        "tick_ms": 3000,
        "tick": {
         "base": 6,
-        "per_level": 0.5
+        "per_level": 0.4
        },
        "leech_pct": 50,
        "stacks_per_tick": 1,
