@@ -303,14 +303,26 @@ fn the_seeded_gear_keeps_the_references_numbers() {
         if item["pool_level"].as_i64().is_some_and(|l| l <= 12) {
             item["pool_level"] = 0.into();
         }
-        assert_eq!(
-            sheet_fields(row),
-            sheet_fields(&expected_item(&item)),
-            "gear {entry}"
-        );
+        let mut want = expected_item(&item);
+        retune_shield_block(&mut want);
+        assert_eq!(sheet_fields(row), sheet_fields(&want), "gear {entry}");
         seeded += 1;
     }
     assert!(seeded > 400, "only {seeded} seeded rows");
+}
+
+/// The one retune the seeded rows carry: every shield's block value is 30% over the reference's,
+/// rounded to the nearest whole number and at least one more (Davis 2026-10-25, 7bb8494).
+fn retune_shield_block(item: &mut toml::Value) {
+    let t = item.as_table_mut().unwrap();
+    if t.get("class").and_then(|c| c.as_integer()) != Some(4) {
+        return;
+    }
+    let block = t.get("block").and_then(|b| b.as_integer()).unwrap_or(0);
+    if block > 0 {
+        let up = ((block as f64) * 1.3 + 0.5).floor() as i64;
+        t.insert("block".into(), up.max(block + 1).into());
+    }
 }
 
 /// Running `tools/twilights-eve/build_gear.py` on the committed sheet writes the committed
