@@ -185,9 +185,41 @@ pub(crate) struct Fish {
     /// The bait item whose presence on the cast multiplies its weight.
     #[serde(default)]
     pub(crate) favourite_bait: Option<u32>,
+    /// The key of the Fishing Water the bobber must be in.
+    #[serde(default)]
+    pub(crate) water: Option<String>,
+    /// The block of the game day in which it bites.
+    #[serde(default)]
+    pub(crate) block: Option<Block>,
+    /// The bait item the cast must carry.
+    #[serde(default)]
+    pub(crate) bait: Option<u32>,
+    /// The lure item that must be in the Lure slot.
+    #[serde(default)]
+    pub(crate) lure: Option<u32>,
 }
 
 impl Fish {
+    /// Whether it has a water, block, bait or lure condition.
+    pub(crate) fn has_conditions(&self) -> bool {
+        self.water.is_some() || self.block.is_some() || self.bait.is_some() || self.lure.is_some()
+    }
+
+    /// Whether its conditions hold for a cast in `water` (a Fishing Water key) with `bait` chosen
+    /// and `lure` slotted, at game minute `minute_of_day`.
+    pub(crate) fn conditions_hold(
+        &self,
+        water: Option<&str>,
+        bait: Option<u32>,
+        lure: Option<u32>,
+        minute_of_day: u32,
+    ) -> bool {
+        self.water.as_deref().is_none_or(|w| water == Some(w))
+            && self.bait.is_none_or(|b| bait == Some(b))
+            && self.lure.is_none_or(|l| lure == Some(l))
+            && self.block.is_none_or(|b| b.holds(minute_of_day))
+    }
+
     /// Whether it bites in water of `kind`.
     pub(crate) fn bites_in(&self, kind: Kind) -> bool {
         self.kinds.as_ref().is_none_or(|k| k.contains(&kind))
@@ -374,6 +406,23 @@ fn check(file: &File) {
             "fish {} names a favourite_bait that is no [[bait]]",
             f.item
         );
+        assert!(
+            f.water
+                .as_deref()
+                .is_none_or(|k| file.water.iter().any(|w| w.key == k)),
+            "fish {} names a Fishing Water that does not exist",
+            f.item
+        );
+        assert!(
+            f.bait.is_none_or(|b| file.bait.iter().any(|x| x.item == b)),
+            "fish {} names a bait that is no [[bait]]",
+            f.item
+        );
+        assert!(
+            f.lure.is_none_or(|l| file.lure.iter().any(|x| x.item == l)),
+            "fish {} names a lure that is no [[lure]]",
+            f.item
+        );
     }
     for p in &file.pole {
         assert!(
@@ -397,7 +446,7 @@ fn check(file: &File) {
             file.fish
                 .iter()
                 .find(|f| f.item == pf.item)
-                .is_some_and(|f| f.bites_in(kind))
+                .is_some_and(|f| !f.has_conditions() && f.bites_in(kind))
                 && pf.level < file.angler.cap + file.bar.gate_levels_above
         })
     };
@@ -711,6 +760,43 @@ mod tests {
             1,
         );
         load(&text);
+    }
+
+    #[test]
+    #[should_panic(expected = "names a Fishing Water that does not exist")]
+    fn a_fish_whose_water_is_no_water_fails_to_load() {
+        let text = include_str!("../content/fish.toml").replacen(
+            "favourite_bait = 960101",
+            "favourite_bait = 960101\nwater = \"no_such_water\"",
+            1,
+        );
+        load(&text);
+    }
+
+    #[test]
+    #[should_panic(expected = "has no fish that bites")]
+    fn a_pool_whose_only_fish_is_gated_fails_to_load() {
+        // Elwynn keeps only the smallfish, which then bites at dusk alone.
+        let text = include_str!("../content/fish.toml")
+            .replacen(
+                "  { item = 6289, weight = 37.85, level = 5 },\n  { item = 6292, weight = 0.72, level = 8 },\n  { item = 6294, weight = 0.47, level = 10 },\n",
+                "",
+                1,
+            )
+            .replacen("peak = \"day\"", "peak = \"day\"\nblock = \"dusk\"", 1);
+        load(&text);
+    }
+
+    #[test]
+    fn a_fish_whose_conditions_do_not_all_hold_stays_out() {
+        let f: Fish = toml::from_str(
+            "item = 1\nstyle = \"smooth\"\ndifficulty = 1\nrarity = \"common\"\nblock = \"dusk\"\nlure = 6532\n",
+        )
+        .unwrap();
+        assert!(f.has_conditions());
+        assert!(f.conditions_hold(None, None, Some(6532), 16 * 60));
+        assert!(!f.conditions_hold(None, None, Some(6532), 12 * 60));
+        assert!(!f.conditions_hold(None, None, None, 16 * 60));
     }
 
     #[test]

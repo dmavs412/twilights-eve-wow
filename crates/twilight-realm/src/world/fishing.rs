@@ -65,6 +65,8 @@ struct Boost {
     treasure_points: u32,
     /// The bait on this cast, which a Legendary Fish may ask for.
     bait: Option<u32>,
+    /// The lure in the Lure slot, which a fish may ask for.
+    lure: Option<u32>,
 }
 
 impl Boost {
@@ -292,10 +294,10 @@ fn gear_boost(c: &Char) -> Boost {
         .as_ref()
         .and_then(|p| fish::pole(p.entry))
         .map_or(Boost::default(), |p| Boost::default().with(&p.effect));
-    c.fishing_lure
-        .as_ref()
-        .and_then(|l| fish::lure(l.entry))
-        .map_or(pole, |l| pole.with(&l.effect))
+    let lure = c.fishing_lure.as_ref().and_then(|l| fish::lure(l.entry));
+    let mut boost = lure.map_or(pole, |l| pole.with(&l.effect));
+    boost.lure = lure.map(|l| l.item);
+    boost
 }
 
 /// The main hand's entry, as other players see it.
@@ -311,13 +313,25 @@ fn show_hand(guid: u64, entry: u32) -> SessionEvent {
 }
 
 /// The fish of `pool` that bite at Angler Level `effective`: those fewer than
-/// `gate_levels_above` levels above it, and whose kinds include the water's `kind`.
-fn biters(pool: &'static Pool, effective: u32, kind: Kind) -> Vec<&'static PoolFish> {
+/// `gate_levels_above` levels above it, whose kinds include the water's `kind` and whose
+/// conditions hold for a cast in `water` with `bait` and `lure` at game minute `minute`.
+fn biters(
+    pool: &'static Pool,
+    effective: u32,
+    kind: Kind,
+    water: Option<&str>,
+    bait: Option<u32>,
+    lure: Option<u32>,
+    minute: u32,
+) -> Vec<&'static PoolFish> {
     let gate = fish::bar().gate_levels_above;
     pool.fish
         .iter()
         .filter(|f| {
-            f.level < effective + gate && fish::fish(f.item).is_some_and(|d| d.bites_in(kind))
+            f.level < effective + gate
+                && fish::fish(f.item).is_some_and(|d| {
+                    d.bites_in(kind) && d.conditions_hold(water, bait, lure, minute)
+                })
         })
         .collect()
 }
@@ -502,7 +516,7 @@ impl InWorld {
     ) -> Option<ObjectSpec> {
         let f = self.fishing.as_mut()?;
         match &mut f.stage {
-            Stage::Cast => return self.land(host, c, rng, events),
+            Stage::Cast => return self.land(host, wall, c, rng, events),
             Stage::Floating {
                 pool,
                 boost,
@@ -535,6 +549,7 @@ impl InWorld {
     fn land(
         &mut self,
         host: &dyn Host,
+        wall: f64,
         c: &mut Char,
         rng: &mut Rng,
         events: &mut Vec<SessionEvent>,
@@ -559,7 +574,10 @@ impl InWorld {
         let fishing_water = fish::water_at(c.map, x, y, area);
         let water = fishing_water.map(|w| w.key.as_str());
         let pool = fish::pool_at(c.map, x, y, area).map(|p| (p, fish::kind_at(p, fishing_water)));
-        let pool = pool.filter(|&(p, kind)| !biters(p, effective, kind).is_empty());
+        let minute = game_clock::minute_of_day(wall);
+        let pool = pool.filter(|&(p, kind)| {
+            !biters(p, effective, kind, water, boost.bait, boost.lure, minute).is_empty()
+        });
         let Some((pool, kind)) = pool else {
             self.end_cast(events);
             events.push(SessionEvent::Notification {
@@ -666,7 +684,7 @@ impl InWorld {
         let rolled = match legend {
             Some(l) => Some((l.item, l.level, l.style, l.difficulty, true)),
             None => pick(
-                &biters(pool, effective, kind),
+                &biters(pool, effective, kind, water, boost.bait, boost.lure, minute),
                 |f| roll_weight(f, minute, boost.bait),
                 rng,
             )

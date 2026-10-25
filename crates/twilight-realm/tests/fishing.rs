@@ -82,6 +82,8 @@ enum Side {
     NorthWest,
     /// The pool whose catches roll a test Legend Rumour at 100 percent.
     NorthEast,
+    /// The pool whose fish carry conditions (#398).
+    SouthEast,
 }
 
 impl Side {
@@ -93,6 +95,7 @@ impl Side {
             Side::South => -std::f32::consts::FRAC_PI_2,
             Side::NorthWest => 3.0 * std::f32::consts::FRAC_PI_4,
             Side::NorthEast => std::f32::consts::FRAC_PI_4,
+            Side::SouthEast => -std::f32::consts::FRAC_PI_4,
         }
     }
 }
@@ -110,6 +113,7 @@ fn test_fish(start: [f32; 3]) -> String {
     let [sx, sy] = pond_centre(start, Side::South);
     let [lx, ly] = pond_centre(start, Side::NorthWest);
     let [rx, ry] = pond_centre(start, Side::NorthEast);
+    let [gx, gy] = pond_centre(start, Side::SouthEast);
     format!(
         "{TEST_FISH}
 [[pool]]
@@ -190,6 +194,54 @@ level = 99
 style = \"smooth\"
 difficulty = 50
 chance = 100
+
+# Conditioned fish (#398) borrow four legend trophies as their items. The ungated one keeps the
+# pool valid when no condition holds.
+[[pool]]
+key = \"test_gated\"
+zone = 990006
+kind = \"lake\"
+fish = [
+    {{ item = 960003, weight = 100.0, level = 1 }},
+    {{ item = 960004, weight = 100.0, level = 1 }},
+    {{ item = 960005, weight = 100.0, level = 1 }},
+    {{ item = 960006, weight = 0.01, level = 1 }},
+]
+treasure = []
+copper = [0, 0]
+
+[[fish]]
+item = 960003
+style = \"smooth\"
+difficulty = 10
+rarity = \"common\"
+block = \"dusk\"
+
+[[fish]]
+item = 960004
+style = \"smooth\"
+difficulty = 10
+rarity = \"common\"
+lure = 6532
+
+[[fish]]
+item = 960005
+style = \"smooth\"
+difficulty = 10
+rarity = \"common\"
+bait = 960101
+
+[[fish]]
+item = 960006
+style = \"smooth\"
+difficulty = 10
+rarity = \"common\"
+
+[[water]]
+key = \"test_gated\"
+name = \"Gated Pond\"
+circle = [0, {gx}, {gy}, 9.0]
+pool = \"test_gated\"
 
 [[water]]
 key = \"test_smallfish\"
@@ -1901,4 +1953,50 @@ fn a_version_4_save_moves_its_bag_journal_items_and_a_version_5_save_keeps_them(
     let blob = saved(&b);
     assert!(!blob.contains("[[satchel]]"), "{blob}");
     assert_eq!(blob.matches("[[items]]").count(), 3, "{blob}");
+}
+
+// Fish conditions (#398): a fish whose block, bait or lure does not hold is left out of the roll.
+
+const DUSK_FISH: u32 = 960003;
+const LURE_FISH: u32 = 960004;
+const BAIT_FISH: u32 = 960005;
+const UNGATED_FISH: u32 = 960006;
+const WRIGGLING_WORMS_ITEM: u32 = 960101;
+
+#[test]
+fn a_dusk_fish_bites_at_dusk_and_never_at_noon() {
+    let mut dusk = angler(60, true, true, Side::SouthEast);
+    at_game(&mut dusk, 16, 0);
+    assert!(bitten(&mut dusk, 3).contains(&DUSK_FISH));
+
+    let mut noon = angler(60, true, true, Side::SouthEast);
+    at_game(&mut noon, 12, 0);
+    assert_eq!(bitten(&mut noon, 3), [UNGATED_FISH].into());
+}
+
+#[test]
+fn a_lure_fish_bites_only_with_that_lure_slotted() {
+    let items = [(PACK_1, BRIGHT_BAUBLES, 1), (PACK_2, SHINY_BAUBLE, 1)];
+    let mut bright = angler_carrying(60, Side::SouthEast, &items);
+    bright.slot_lure(PACK_1, BRIGHT_BAUBLES);
+    at_game(&mut bright, 12, 0);
+    assert!(bitten(&mut bright, 3).contains(&LURE_FISH));
+
+    let mut shiny = angler_carrying(60, Side::SouthEast, &items);
+    shiny.slot_lure(PACK_2, SHINY_BAUBLE);
+    at_game(&mut shiny, 12, 0);
+    assert_eq!(bitten(&mut shiny, 3), [UNGATED_FISH].into());
+}
+
+#[test]
+fn a_bait_fish_bites_only_with_that_bait_chosen() {
+    let items = [(PACK_1, WRIGGLING_WORMS_ITEM, 20)];
+    let mut chosen = angler_carrying(60, Side::SouthEast, &items);
+    chosen.set_bait(Some(WRIGGLING_WORMS_ITEM));
+    at_game(&mut chosen, 12, 0);
+    assert!(bitten(&mut chosen, 3).contains(&BAIT_FISH));
+
+    let mut carried = angler_carrying(60, Side::SouthEast, &items);
+    at_game(&mut carried, 12, 0);
+    assert_eq!(bitten(&mut carried, 3), [UNGATED_FISH].into());
 }

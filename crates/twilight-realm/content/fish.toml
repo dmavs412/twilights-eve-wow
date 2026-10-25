@@ -60,6 +60,13 @@
 #                   weight is times `peak_factor` inside it
 #   favourite_bait  optional, a [[bait]] item; the fish's roll weight is times
 #                   `favourite_bait_factor` when that bait is on the cast
+#   water, block, bait, lure
+#                   optional conditions, each left out of the bite roll unless it holds; a fish
+#                   with none bites as always. `water` is a [[water]] key the bobber must be in,
+#                   `block` bites only in that block (see Blocks below), `bait` is a [[bait]]
+#                   item that must be the cast's bait and `lure` is a [[lure]] item that must be
+#                   in the Lure slot. A pool or water must keep a fish with no conditions that
+#                   bites in its kind.
 #
 # Blocks, the four parts of the game day, as game hours `[from, to)`:
 #   night 21 to 3 (wraps past midnight), dawn 3 to 9, day 9 to 15, dusk 15 to 21
