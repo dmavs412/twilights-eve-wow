@@ -40,11 +40,13 @@ pub(crate) struct AnglerInfo {
     pub(crate) to_next: u32,
 }
 
-/// One zone of the Fishing Journal: its name and its fish as `(item, best)`, `best` being 0 none,
-/// 1 caught, 2 perfect.
+/// One zone of the Fishing Journal: its name, AreaTable id, the pool's description and its fish
+/// as `(item, best)`, `best` being 0 none, 1 caught, 2 perfect.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct JournalZone {
     pub name: String,
+    pub zone: u32,
+    pub description: String,
     pub fish: Vec<(u32, u8)>,
 }
 
@@ -89,6 +91,10 @@ pub struct GearRequest {
 pub struct JournalView {
     pub bait: Option<u32>,
     pub pole: Option<u32>,
+    /// Total casts whose bobber floated.
+    pub casts: u32,
+    /// Total fish caught.
+    pub caught: u32,
     /// `(item, durability, max durability)`.
     pub lure: Option<(u32, u32, u32)>,
     pub pages: Vec<JournalPage>,
@@ -160,7 +166,7 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             Ok((f64::from(a.level), f64::from(a.xp), f64::from(a.to_next)))
         })?,
     )?;
-    // GetFishingJournal(): baitItem (nil for none), zoneCount.
+    // GetFishingJournal(): baitItem (nil for none), zoneCount, casts, caught.
     g.set(
         "GetFishingJournal",
         lua.create_function(|lua, ()| {
@@ -172,11 +178,13 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             Ok(MultiValue::from_vec(vec![
                 bait,
                 Value::Number(model.journal.zones.len() as f64),
+                Value::Number(f64::from(model.journal.casts)),
+                Value::Number(f64::from(model.journal.caught)),
             ]))
         })?,
     )?;
-    // GetFishingJournalZone(i), 1-based: the zone's name, then `item, best` for each fish. Nothing
-    // for an index with no zone.
+    // GetFishingJournalZone(i), 1-based: the zone's name, AreaTable id and description, then
+    // `item, best` for each fish. Nothing for an index with no zone.
     g.set(
         "GetFishingJournalZone",
         lua.create_function(|lua, i: i64| {
@@ -187,6 +195,8 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             let mut out = Vec::new();
             if let Some(zone) = zone {
                 out.push(Value::String(lua.create_string(&zone.name)?));
+                out.push(Value::Number(f64::from(zone.zone)));
+                out.push(Value::String(lua.create_string(&zone.description)?));
                 for &(item, best) in &zone.fish {
                     out.push(Value::Number(f64::from(item)));
                     out.push(Value::Number(f64::from(best)));

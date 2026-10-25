@@ -465,6 +465,9 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
         pole,
         lure,
         zones,
+        casts,
+        caught,
+        zone_text,
         legends,
         pages,
         ..
@@ -481,6 +484,8 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
     JournalView {
         bait: *bait,
         pole: *pole,
+        casts: *casts,
+        caught: *caught,
         lure: *lure,
         pages: pages
             .iter()
@@ -509,6 +514,12 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
             .iter()
             .map(|(id, fish)| JournalZone {
                 name: name(*id),
+                zone: *id,
+                description: zone_text
+                    .iter()
+                    .find(|(zone, _)| zone == id)
+                    .map(|(_, text)| text.clone())
+                    .unwrap_or_default(),
                 fish: fish.clone(),
             })
             .collect(),

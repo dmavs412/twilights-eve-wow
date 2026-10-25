@@ -41,11 +41,15 @@ fn two_zones() -> JournalView {
         zones: vec![
             JournalZone {
                 name: "Elwynn Forest".into(),
+                zone: 12,
                 fish: vec![(6291, 1), (6308, 0)],
+                ..Default::default()
             },
             JournalZone {
                 name: "Westfall".into(),
+                zone: 40,
                 fish: vec![(6289, 2)],
+                ..Default::default()
             },
         ],
         legends: vec![JournalLegend {
@@ -114,7 +118,7 @@ fn fish_slots(s: &UiScript) -> (i64, i64) {
          for n = 1, BENILLA_JOURNAL_FISH_SLOTS do
              local slot = getglobal('BenillaFishingJournalFish' .. n)
              if slot:IsVisible() then
-                 if getglobal(slot:GetName() .. 'Label'):GetText() == '???' then
+                 if getglobal(slot:GetName() .. 'Name'):GetText() == '???' then
                      unknown = unknown + 1
                  end
                  if slot.caught then
@@ -214,6 +218,7 @@ fn the_lure_slot_shows_its_icon_and_durability() {
     let mut s = journal();
     s.set_fishing_journal(with_gear_and_page());
     s.run("BenillaFishingJournal_Toggle()").unwrap();
+    s.run("BenillaJournal_ShowPage('Inventory')").unwrap();
     frame(&mut s, 0.05);
 
     assert!(shown(&s, "BenillaFishingJournalPoleIcon"));
@@ -281,58 +286,185 @@ fn dropping_on_the_pole_slot_queues_the_gear_and_a_right_click_clears_it() {
     );
 }
 
+/// A stand-in `GameTooltip` that records its lines, since the journal tests load no stock files.
+fn stub_tooltip(s: &UiScript) {
+    s.run(
+        "GameTooltip = { lines = {} }
+         function GameTooltip:SetOwner() self.lines = {} end
+         function GameTooltip:SetHyperlink(link) self.lines = { link } end
+         function GameTooltip:SetText(text) self.lines = { text } end
+         function GameTooltip:AddLine(text) table.insert(self.lines, text) end
+         function GameTooltip:Show() end
+         function GameTooltip:Hide() end",
+    )
+    .unwrap();
+}
+
+fn tooltip_lines(s: &UiScript) -> Vec<String> {
+    s.eval::<Vec<String>>("return GameTooltip.lines").unwrap()
+}
+
+fn hover(s: &UiScript, frame: &str, handler: &str) {
+    s.run(&format!("this = {frame} {handler}()")).unwrap();
+}
+
 #[test]
-fn a_caught_fish_opens_its_page_and_back_returns_to_the_grid() {
+fn the_journal_opens_on_zones_and_a_tab_swaps_the_page() {
     let mut s = journal();
+    s.set_fishing_journal(two_zones());
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+
+    for tab in 1..=3 {
+        assert!(shown(&s, &format!("BenillaFishingJournalTab{tab}")));
+    }
+    assert_eq!(text(&s, "BenillaFishingJournalTab1"), "Zones");
+    assert_eq!(text(&s, "BenillaFishingJournalTab2"), "Inventory");
+    assert_eq!(text(&s, "BenillaFishingJournalTab3"), "Progression");
+    assert!(shown(&s, "BenillaFishingJournalZones"));
+    assert!(!shown(&s, "BenillaFishingJournalInventory"));
+    assert!(!shown(&s, "BenillaFishingJournalProgression"));
+
+    s.run("this = BenillaFishingJournalTab3 BenillaJournal_ShowPage('Progression')")
+        .unwrap();
+    assert!(!shown(&s, "BenillaFishingJournalZones"));
+    assert!(shown(&s, "BenillaFishingJournalProgression"));
+
+    // An update repaint keeps the chosen page.
+    s.fire_event("FISHING_JOURNAL_UPDATE", Vec::new());
+    frame(&mut s, 0.05);
+    assert!(shown(&s, "BenillaFishingJournalProgression"));
+
+    s.run("BenillaJournal_ShowPage('Inventory')").unwrap();
+    assert!(shown(&s, "BenillaFishingJournalPole"));
+}
+
+#[test]
+fn fishing_is_the_selected_bookmark_and_herbalism_is_inert() {
+    let mut s = journal();
+    stub_tooltip(&s);
+    s.set_fishing_journal(two_zones());
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+
+    assert!(shown(&s, "BenillaFishingJournalProf1"));
+    assert!(shown(&s, "BenillaFishingJournalProf2"));
+    assert!(
+        s.eval::<bool>("return BenillaFishingJournalProf3 == nil")
+            .unwrap(),
+        "two bookmarks"
+    );
+    assert!(s
+        .eval::<bool>("return BenillaFishingJournalProf1.selected")
+        .unwrap());
+
+    click_bookmark(&s, 2);
+    assert!(
+        s.eval::<bool>("return BenillaFishingJournalProf1.selected")
+            .unwrap(),
+        "a click on Herbalism changes nothing"
+    );
+    assert!(!s
+        .eval::<bool>("return BenillaFishingJournalProf2.selected")
+        .unwrap());
+
+    hover(
+        &s,
+        "BenillaFishingJournalProf2",
+        "BenillaJournalProfession_OnEnter",
+    );
+    assert_eq!(tooltip_lines(&s), vec!["Herbalism: coming soon"]);
+}
+
+fn click_bookmark(s: &UiScript, n: u32) {
+    s.run(&format!(
+        "this = BenillaFishingJournalProf{n} BenillaJournalProfession_OnClick()"
+    ))
+    .unwrap();
+}
+
+#[test]
+fn a_zone_card_counts_its_collected_fish_and_shows_its_description() {
+    let mut s = journal();
+    let mut view = two_zones();
+    view.zones[0] = JournalZone {
+        name: "Elwynn Forest".into(),
+        zone: 12,
+        description: "Slow rivers and a quiet lake.".into(),
+        fish: vec![(6291, 1), (6308, 0), (6289, 2)],
+    };
+    s.set_fishing_journal(view);
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+
+    assert_eq!(
+        text(&s, "BenillaFishingJournalCommonCount"),
+        "2 / 3 Collected"
+    );
+    assert_eq!(
+        text(&s, "BenillaFishingJournalDescription"),
+        "Slow rivers and a quiet lake."
+    );
+    assert_eq!(
+        text(&s, "BenillaFishingJournalLegendCount"),
+        "0 / 4 Collected"
+    );
+    assert_eq!(text(&s, "BenillaFishingJournalFish2Name"), "???");
+    assert_ne!(text(&s, "BenillaFishingJournalFish1Name"), "???");
+    assert!(
+        shown(&s, "BenillaFishingJournalScene"),
+        "Elwynn has a scene"
+    );
+
+    s.run("BenillaFishingJournal_Turn(1)").unwrap();
+    assert!(
+        !shown(&s, "BenillaFishingJournalScene"),
+        "a zone missing from the table shows none"
+    );
+}
+
+#[test]
+fn hovering_a_caught_fish_shows_its_page_as_tooltip_lines() {
+    let mut s = journal();
+    stub_tooltip(&s);
     s.set_fishing_journal(with_gear_and_page());
     s.run("BenillaFishingJournal_Toggle()").unwrap();
     frame(&mut s, 0.05);
 
+    hover(
+        &s,
+        "BenillaFishingJournalFish1",
+        "BenillaFishingJournalSlot_OnEnter",
+    );
+    let lines = tooltip_lines(&s);
+    assert_eq!(lines[0], "item:6291:0:0:0", "the item's own tooltip first");
+    assert!(lines.contains(&"Lives in: Northshire River, Elwynn Forest".to_string()));
+    assert!(lines.contains(&"Northshire River, Elwynn Forest: 8".to_string()));
+    assert!(lines.contains(&"??? (catch 10 to learn)".to_string()));
+
+    hover(
+        &s,
+        "BenillaFishingJournalFish2",
+        "BenillaFishingJournalSlot_OnEnter",
+    );
+    assert_eq!(tooltip_lines(&s), vec!["???", "Catch it to learn more."]);
+
+    assert!(
+        !s.eval::<bool>("return BenillaFishingJournalBack ~= nil")
+            .unwrap(),
+        "no page frame exists"
+    );
     click(&s, "BenillaFishingJournalFish1", "LeftButton");
-    frame(&mut s, 0.05);
-
-    assert!(!shown(&s, "BenillaFishingJournalFish1"), "the grid hides");
-    assert!(!shown(&s, "BenillaFishingJournalLegend1"));
-    assert!(!shown(&s, "BenillaFishingJournalPrev"));
-    assert!(shown(&s, "BenillaFishingJournalBack"));
-    assert_eq!(
-        text(&s, "BenillaFishingJournalPageCaught"),
-        "Caught 12, perfect 3"
+    assert!(
+        shown(&s, "BenillaFishingJournalFish1"),
+        "a click opens nothing"
     );
-    assert_eq!(
-        text(&s, "BenillaFishingJournalLine1"),
-        "Northshire River, Elwynn Forest: 8"
-    );
-    assert_eq!(
-        text(&s, "BenillaFishingJournalLine2"),
-        "Lives in: Northshire River, Elwynn Forest"
-    );
-    assert_eq!(
-        text(&s, "BenillaFishingJournalLine3"),
-        "??? (catch 10 to learn)"
-    );
-    assert_eq!(
-        text(&s, "BenillaFishingJournalLine4"),
-        "??? (catch 25 to learn)"
-    );
-    assert_eq!(text(&s, "BenillaFishingJournalLine5"), "");
-
-    // An update repaints the page that is open.
-    s.fire_event("FISHING_JOURNAL_UPDATE", Vec::new());
-    frame(&mut s, 0.05);
-    assert!(shown(&s, "BenillaFishingJournalBack"));
-
-    s.run("BenillaFishingJournal_Back()").unwrap();
-    frame(&mut s, 0.05);
-    assert!(shown(&s, "BenillaFishingJournalFish1"));
-    assert!(shown(&s, "BenillaFishingJournalLegend1"));
-    assert!(!shown(&s, "BenillaFishingJournalBack"));
-    assert_eq!(text(&s, "BenillaFishingJournalZoneName"), "Elwynn Forest");
 }
 
 #[test]
 fn unlocked_tiers_show_their_facts() {
     let mut s = journal();
+    stub_tooltip(&s);
     let mut view = with_gear_and_page();
     view.pages[0].revealed = 3;
     view.pages[0].next_reveal = 0;
@@ -340,24 +472,27 @@ fn unlocked_tiers_show_their_facts() {
     view.pages[0].peak_hours = Some((6, 10));
     view.pages[0].favourite_bait = Some(6529);
     s.set_fishing_journal(view.clone());
-    s.run("BenillaFishingJournal_OpenPage(6291)").unwrap();
     s.run("BenillaFishingJournal_Toggle()").unwrap();
     frame(&mut s, 0.05);
 
-    assert_eq!(
-        text(&s, "BenillaFishingJournalLine3"),
-        "Water: river, lake, pond"
+    hover(
+        &s,
+        "BenillaFishingJournalFish1",
+        "BenillaFishingJournalSlot_OnEnter",
     );
-    assert_eq!(
-        text(&s, "BenillaFishingJournalLine4"),
-        "Bites most: 6:00 to 10:00"
-    );
-    assert!(text(&s, "BenillaFishingJournalLine5").starts_with("Favourite bait: "));
+    let lines = tooltip_lines(&s);
+    assert!(lines.contains(&"Water: river, lake, pond".to_string()));
+    assert!(lines.contains(&"Bites most: 6:00 to 10:00".to_string()));
+    assert!(lines.iter().any(|l| l.starts_with("Favourite bait: ")));
 
     view.pages[0].peak_hours = None;
     s.set_fishing_journal(view);
-    s.run("BenillaFishingJournal_Paint()").unwrap();
-    assert_eq!(text(&s, "BenillaFishingJournalLine4"), "Bites at any hour");
+    hover(
+        &s,
+        "BenillaFishingJournalFish1",
+        "BenillaFishingJournalSlot_OnEnter",
+    );
+    assert!(tooltip_lines(&s).contains(&"Bites at any hour".to_string()));
 }
 
 #[test]

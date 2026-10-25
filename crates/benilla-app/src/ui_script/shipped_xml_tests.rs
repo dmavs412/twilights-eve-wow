@@ -1972,10 +1972,11 @@ fn the_layer_does_not_grow() {
         .collect();
     found.sort();
     // `paperdoll.tga` is the art `GearSlots.xml` names (`Interface\Benilla\paperdoll`), and
-    // `fishing/` the Reeling Bar's (`Interface\Benilla\fishing\*`).
+    // `fishing/` the Reeling Bar's (`Interface\Benilla\fishing\*`) and `journal/` the Journal's
+    // (`Interface\Benilla\journal\*`).
     let mut shipped: Vec<String> = LAYER
         .iter()
-        .chain(&["layer.toc", "paperdoll.tga", "fishing"])
+        .chain(&["layer.toc", "paperdoll.tga", "fishing", "journal"])
         .map(|s| s.to_string())
         .collect();
     shipped.sort();
