@@ -360,8 +360,8 @@ struct Fishing {
     sent: bool,
     /// Seconds not yet stepped.
     carry: f32,
-    /// The Angler Level to push, `(level, xp, to next)`.
-    angler: Option<(u32, u32, u32)>,
+    /// The Angler Level to push, `(level, xp, to next, title)`.
+    angler: Option<(u32, u32, u32, String)>,
     /// The Fishing Journal to push, as the realm sent it.
     journal: Option<SessionEvent>,
     /// Events for Lua, oldest first.
@@ -403,9 +403,9 @@ fn run_reel(
                 level,
                 xp,
                 xp_to_next,
-                ..
+                title,
             } => {
-                f.angler = Some((u32::from(level), xp, xp_to_next));
+                f.angler = Some((u32::from(level), xp, xp_to_next, title));
                 f.events.push(("ANGLER_UPDATE", Vec::new()));
             }
             journal @ SessionEvent::FishingJournal { .. } => {
@@ -549,8 +549,8 @@ fn feed_reel(
         return;
     };
     script.set_reel(fishing.reel.as_ref().map(Reel::view));
-    if let Some((level, xp, to_next)) = fishing.angler.take() {
-        script.set_angler(level, xp, to_next);
+    if let Some((level, xp, to_next, title)) = fishing.angler.take() {
+        script.set_angler(level, xp, to_next, title);
     }
     if let Some(journal) = fishing.journal.take() {
         script.set_fishing_journal(journal_view(&journal, areas.as_deref()));

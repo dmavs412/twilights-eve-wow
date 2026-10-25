@@ -74,7 +74,7 @@ fn a_pushed_view_shows_the_bar_and_no_view_hides_it() {
 #[test]
 fn the_end_event_shows_the_success_banner_and_the_badge_lingers() {
     let mut s = reel();
-    s.set_angler(3, 40, 310);
+    s.set_angler(3, 40, 310, String::new());
     s.fire_event("ANGLER_UPDATE", Vec::new());
     s.set_reel(Some(view()));
     frame(&mut s, 0.05);

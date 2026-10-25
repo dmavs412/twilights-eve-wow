@@ -33,11 +33,12 @@ pub struct ReelView {
 }
 
 /// The character's Angler Level and the XP toward the next.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub(crate) struct AnglerInfo {
     pub(crate) level: u32,
     pub(crate) xp: u32,
     pub(crate) to_next: u32,
+    pub(crate) title: String,
 }
 
 /// One zone of the Fishing Journal: its name, AreaTable id, the pool's description and its fish
@@ -124,8 +125,13 @@ impl super::UiScript {
     }
 
     /// Push the Angler Level `GetAnglerInfo()` answers.
-    pub fn set_angler(&mut self, level: u32, xp: u32, to_next: u32) {
-        self.model_mut().angler = AnglerInfo { level, xp, to_next };
+    pub fn set_angler(&mut self, level: u32, xp: u32, to_next: u32, title: String) {
+        self.model_mut().angler = AnglerInfo {
+            level,
+            xp,
+            to_next,
+            title,
+        };
     }
 }
 
@@ -158,12 +164,21 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             ]))
         })?,
     )?;
-    // GetAnglerInfo(): level, xp, xpToNext; level 0 until the host's first push.
+    // GetAnglerInfo(): level, xp, xpToNext, title; level 0 until the host's first push.
     g.set(
         "GetAnglerInfo",
         lua.create_function(|lua, ()| {
-            let a = lua.app_data_ref::<Model>().expect("model app_data").angler;
-            Ok((f64::from(a.level), f64::from(a.xp), f64::from(a.to_next)))
+            let a = lua
+                .app_data_ref::<Model>()
+                .expect("model app_data")
+                .angler
+                .clone();
+            Ok((
+                f64::from(a.level),
+                f64::from(a.xp),
+                f64::from(a.to_next),
+                a.title,
+            ))
         })?,
     )?;
     // GetFishingJournal(): baitItem (nil for none), zoneCount, casts, caught.

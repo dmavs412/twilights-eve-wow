@@ -525,3 +525,97 @@ fn the_default_key_is_j_unless_the_chain_binds_it() {
         "J opens the journal, or the chain already uses J: {keys:?}"
     );
 }
+
+fn progression(s: &mut UiScript) {
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    s.run("BenillaJournal_ShowPage('Progression')").unwrap();
+    frame(s, 0.05);
+}
+
+#[test]
+fn the_progression_tab_shows_the_level_title_and_xp() {
+    let mut s = journal();
+    s.set_fishing_journal(two_zones());
+    s.set_angler(12, 420, 1000, "Apprentice Fisher".into());
+    progression(&mut s);
+
+    let p = "BenillaFishingJournalProgression";
+    assert_eq!(text(&s, &format!("{p}Level")), "12");
+    assert_eq!(text(&s, &format!("{p}Title")), "Apprentice Fisher");
+    assert_eq!(text(&s, &format!("{p}XpText")), "420 / 1,000 XP");
+
+    s.set_angler(30, 0, 0, "Master Angler".into());
+    s.fire_event("ANGLER_UPDATE", Vec::new());
+    frame(&mut s, 0.05);
+    assert_eq!(text(&s, &format!("{p}XpText")), "Max level");
+    assert_eq!(text(&s, &format!("{p}Title")), "Master Angler");
+}
+
+#[test]
+fn the_progression_stats_count_each_fish_once() {
+    let mut s = journal();
+    // Fish 6291 is in both zones and caught in the first only.
+    let mut view = two_zones();
+    view.zones[1].fish.push((6291, 0));
+    view.casts = 1234;
+    view.caught = 7;
+    s.set_fishing_journal(view);
+    s.set_angler(1, 0, 100, String::new());
+    progression(&mut s);
+
+    let p = "BenillaFishingJournalProgression";
+    assert_eq!(text(&s, &format!("{p}StatValue1")), "7");
+    // Caught: 6291 (zone 1) and 6289 (best 2, zone 2). Distinct: 6291, 6308, 6289.
+    assert_eq!(text(&s, &format!("{p}StatValue2")), "2 / 3");
+    assert_eq!(text(&s, &format!("{p}StatValue3")), "0 / 1");
+    assert_eq!(text(&s, &format!("{p}StatValue4")), "2 / 2");
+    assert_eq!(text(&s, &format!("{p}StatValue5")), "1,234");
+    assert_eq!(text(&s, &format!("{p}StatLabel5")), "Total Casts");
+}
+
+#[test]
+fn a_zone_with_no_catch_is_not_discovered() {
+    let mut s = journal();
+    let mut view = two_zones();
+    view.zones[1].fish = vec![(6289, 0)];
+    s.set_fishing_journal(view);
+    progression(&mut s);
+    assert_eq!(
+        text(&s, "BenillaFishingJournalProgressionStatValue4"),
+        "1 / 2"
+    );
+}
+
+#[test]
+fn the_talent_tree_is_locked() {
+    let mut s = journal();
+    stub_tooltip(&s);
+    s.set_fishing_journal(two_zones());
+    progression(&mut s);
+
+    let p = "BenillaFishingJournalProgression";
+    assert_eq!(text(&s, &format!("{p}Points")), "0 / 0 Points Spent");
+    assert_eq!(text(&s, &format!("{p}Caption")), "Coming later");
+    for i in 1..=6 {
+        assert_eq!(text(&s, &format!("{p}Slot{i}Rank")), "0/5");
+    }
+    hover(&s, &format!("{p}Slot4"), "BenillaJournalTalent_OnEnter");
+    assert!(tooltip_lines(&s)
+        .iter()
+        .any(|l| l == "Fishing talents are coming later."));
+}
+
+#[test]
+fn get_angler_info_returns_four_values() {
+    let mut s = journal();
+    s.set_angler(12, 420, 1000, "Apprentice Fisher".into());
+    let n = s
+        .eval::<i64>("local t = { GetAnglerInfo() } return table.getn(t)")
+        .unwrap();
+    assert_eq!(n, 4);
+    assert_eq!(
+        s.eval::<String>("local _, _, _, t = GetAnglerInfo() return t")
+            .unwrap(),
+        "Apprentice Fisher"
+    );
+}
