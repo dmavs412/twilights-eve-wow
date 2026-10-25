@@ -18,7 +18,8 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
   or to the CSV also runs the unittest line in `docs/spell_pipeline.md` and regenerates the
   outputs. When a commit touches `crates/twilight-realm/content/`, also run
   `python3.15 tools/twilights-eve/ground_check.py`; a flagged row is a failed gate, and `--fix`
-  writes the answer. That is the whole gate; a commit needs nothing else. A full build or a game run
+  writes the answer. A commit that touches `crates/twilight-realm/content/` also runs
+  `python3.15 tools/twilights-eve/icon_check.py`; a new icon clash is a failed gate. That is the whole gate; a commit needs nothing else. A full build or a game run
   happens only when Davis asks for one.
 - **Wait for every command to finish.** Commands run in the foreground, except a benilla-app
   test or check build, which can pass the Bash tool's 10-minute cap: start it with
