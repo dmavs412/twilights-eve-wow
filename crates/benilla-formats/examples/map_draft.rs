@@ -34,6 +34,30 @@ const FOG_EDGE: (f32, f32) = (0.15, 0.45);
 /// edge inside it.
 const FRAME_INSET: f32 = 30.0;
 const FRAME_FADE: f32 = 40.0;
+/// The colour distances (RGB, 0 to 1) a black-Highlight zone's backdrop key runs between: clear
+/// at the first, the art's own at the second.
+const BACKDROP_KEY: (f32, f32) = (0.06, 0.16);
+
+/// The commonest colour of the art's shown 1002 by 668, by 16-step bins, as the bin's mean.
+fn commonest_colour(art: &Picture) -> [f32; 3] {
+    let mut bins = std::collections::HashMap::<[u8; 3], ([f64; 3], u32)>::new();
+    for y in 0..ART_H {
+        for x in 0..ART_W {
+            let c = art.texel(x, y);
+            let key = [0, 1, 2].map(|i| (c[i] * 15.99) as u8);
+            let e = bins.entry(key).or_insert(([0.0; 3], 0));
+            for i in 0..3 {
+                e.0[i] += f64::from(c[i]);
+            }
+            e.1 += 1;
+        }
+    }
+    let (sum, n) = bins
+        .into_values()
+        .max_by_key(|(_, n)| *n)
+        .unwrap_or(([0.0; 3], 1));
+    sum.map(|s| (s / f64::from(n)) as f32)
+}
 
 /// A loc rect: left and right are world Y, top and bottom world X, as `WorldMapArea` has them.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -162,6 +186,18 @@ impl Picture {
         Ok(Picture { w, h, rgba })
     }
 
+    fn open(path: &Path) -> Result<Self> {
+        let img = image::open(path)
+            .with_context(|| format!("reading {}", path.display()))?
+            .to_rgba8();
+        let (w, h) = img.dimensions();
+        Ok(Picture {
+            w,
+            h,
+            rgba: img.into_raw(),
+        })
+    }
+
     fn texel(&self, x: u32, y: u32) -> [f32; 4] {
         let i = ((y.min(self.h - 1) * self.w + x.min(self.w - 1)) * 4) as usize;
         let p = &self.rgba[i..i + 4];
@@ -265,6 +301,8 @@ struct Zone {
     highlight: Picture,
     /// The Highlight's brightest channel, 0 for a black one.
     peak: f32,
+    /// For a black Highlight: the art's backdrop colour, keyed out so the land around shows.
+    backdrop: Option<[f32; 3]>,
     tex_pct_y: f32,
     overlays: Vec<WorldMapOverlay>,
 }
@@ -315,6 +353,7 @@ impl Zone {
             .max()
             .map_or(0.0, |b| f32::from(b) / 255.0);
         let rect = Rect::of(area);
+        let backdrop = (peak == 0.0).then(|| commonest_colour(&explored));
         Ok(Zone {
             file,
             rect,
@@ -322,6 +361,7 @@ impl Zone {
             explored,
             highlight,
             peak,
+            backdrop,
             tex_pct_y: tex_pct_y(rect),
             overlays: overlays.to_vec(),
         })
@@ -331,12 +371,20 @@ impl Zone {
     /// texture coords `(0, 1, 0, texPctY)` stretched over the zone's rect. A Highlight is a faint
     /// tinted glow drawn in ADD (Elwynn's peaks at 58 of 255), so the peak reads as opaque.
     /// `StormwindHighlight` is black, as the stock client draws no highlight for the city, so a
-    /// black Highlight falls back to the art inset by its frame with a soft edge.
+    /// black Highlight falls back to the art inset by its frame with a soft edge, less its
+    /// backdrop colour, so the city's walls, districts and crest stay and its plain ground goes.
     fn silhouette(&self, u: f32, v: f32) -> f32 {
         if self.peak == 0.0 {
             let (x, y) = (u * ART_W as f32, v * ART_H as f32);
             let edge = x.min(ART_W as f32 - x).min(y).min(ART_H as f32 - y);
-            return ((edge - FRAME_INSET) / FRAME_FADE).clamp(0.0, 1.0);
+            let frame = ((edge - FRAME_INSET) / FRAME_FADE).clamp(0.0, 1.0);
+            let Some(bg) = self.backdrop else {
+                return frame;
+            };
+            let c = self.art(u, v);
+            let d = ((0..3).map(|i| (c[i] - bg[i]).powi(2)).sum::<f32>()).sqrt();
+            let t = ((d - BACKDROP_KEY.0) / (BACKDROP_KEY.1 - BACKDROP_KEY.0)).clamp(0.0, 1.0);
+            return frame * t * t * (3.0 - 2.0 * t);
         }
         let c = self.highlight.sample(u, v * self.tex_pct_y);
         (c[0].max(c[1]).max(c[2]) * c[3] / self.peak).min(1.0)
@@ -371,8 +419,9 @@ impl Zone {
     }
 }
 
-/// Draw `zone`'s explored art onto `canvas` over its placed rect, its silhouette as the alpha.
-fn draw(canvas: &mut Picture, at: [f64; 4], zone: &Zone) {
+/// Draw `zone`'s explored art onto `canvas` over its placed rect, its silhouette as the alpha, and
+/// lay the same alpha over `cover`, the share of each canvas pixel that zone art fills.
+fn draw(canvas: &mut Picture, cover: &mut [f32], at: [f64; 4], zone: &Zone) {
     let x_lo = at[0].floor().max(0.0) as u32;
     let y_lo = at[1].floor().max(0.0) as u32;
     let x_hi = (at[2].ceil().max(0.0) as u32).min(canvas.w);
@@ -395,8 +444,243 @@ fn draw(canvas: &mut Picture, at: [f64; 4], zone: &Zone) {
             let d = canvas.texel(px, py);
             let c = [0, 1, 2].map(|i| s[i] * a + d[i] * (1.0 - a));
             canvas.put(px, py, [c[0], c[1], c[2], 1.0]);
+            let k = (py * canvas.w + px) as usize;
+            cover[k] = a + cover[k] * (1.0 - a);
         }
     }
+}
+
+/// A painting to fill the canvas's bare parchment with, and the landmarks that pin it: each pair
+/// is one place's canvas UV and its UV on the painting.
+struct FillSpec {
+    painting: PathBuf,
+    pairs: Vec<FillPair>,
+}
+
+struct FillPair {
+    canvas: [f64; 2],
+    painting: [f64; 2],
+}
+
+impl FillSpec {
+    /// `{"painting": "<png beside this file>", "pairs": [{"name", "canvas": [u, v],
+    /// "painting": [u, v]}, ..]}`.
+    fn read(path: &Path) -> Result<Self> {
+        let text =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+        let v: Value = serde_json::from_str(&text)?;
+        let uv = |p: &Value, key: &str| -> Result<[f64; 2]> {
+            let a = p[key]
+                .as_array()
+                .context("a pair needs canvas and painting")?;
+            match (
+                a.first().and_then(Value::as_f64),
+                a.get(1).and_then(Value::as_f64),
+            ) {
+                (Some(u), Some(v)) => Ok([u, v]),
+                _ => bail!("{key} of {} is not [u, v]", p["name"]),
+            }
+        };
+        let pairs = v["pairs"]
+            .as_array()
+            .context("the fill file has pairs")?
+            .iter()
+            .map(|p| {
+                Ok(FillPair {
+                    canvas: uv(p, "canvas")?,
+                    painting: uv(p, "painting")?,
+                })
+            })
+            .collect::<Result<_>>()?;
+        let painting = v["painting"]
+            .as_str()
+            .context("the fill file names a painting")?;
+        Ok(FillSpec {
+            painting: path.parent().unwrap_or(Path::new(".")).join(painting),
+            pairs,
+        })
+    }
+}
+
+/// How far the thin-plate warp may bend away from an exact fit through every landmark, since
+/// landmarks read off a repainted map disagree by a few pixels.
+const WARP_SMOOTHING: f64 = 1e-4;
+/// The cover values the fill's blend runs between: painting below the first, zone art above the
+/// second.
+const FILL_EDGE: (f32, f32) = (0.25, 0.75);
+/// Pins along each canvas edge for `Warp::fit_inside`, less one.
+const BORDER_PINS: u32 = 12;
+
+/// A thin-plate spline from canvas points to painting points, both in UV; canvas V is scaled by
+/// the canvas's height over its width so distances are square.
+struct Warp {
+    points: Vec<[f64; 2]>,
+    /// Per output axis: one weight per point, then the affine part `a0 + a1 x + a2 y`.
+    coef: [Vec<f64>; 2],
+    aspect: f64,
+}
+
+fn tps_kernel(r2: f64) -> f64 {
+    if r2 <= 0.0 {
+        0.0
+    } else {
+        0.5 * r2 * r2.ln()
+    }
+}
+
+impl Warp {
+    fn fit(pairs: &[FillPair], aspect: f64) -> Result<Self> {
+        let n = pairs.len();
+        if n < 3 {
+            bail!("a fill needs at least 3 landmarks, got {n}");
+        }
+        let points: Vec<[f64; 2]> = pairs
+            .iter()
+            .map(|p| [p.canvas[0], p.canvas[1] * aspect])
+            .collect();
+        let m = n + 3;
+        let mut a = vec![vec![0.0; m]; m];
+        for i in 0..n {
+            for j in 0..n {
+                let (dx, dy) = (points[i][0] - points[j][0], points[i][1] - points[j][1]);
+                a[i][j] = tps_kernel(dx * dx + dy * dy);
+            }
+            a[i][i] += WARP_SMOOTHING;
+            let row = [1.0, points[i][0], points[i][1]];
+            for (k, v) in row.into_iter().enumerate() {
+                a[i][n + k] = v;
+                a[n + k][i] = v;
+            }
+        }
+        let solve_axis = |axis: usize| {
+            let mut b = vec![0.0; m];
+            for (i, p) in pairs.iter().enumerate() {
+                b[i] = p.painting[axis];
+            }
+            solve(a.clone(), b)
+        };
+        Ok(Warp {
+            coef: [solve_axis(0)?, solve_axis(1)?],
+            points,
+            aspect,
+        })
+    }
+
+    /// `fit`, then refit with the canvas border pinned inside the painting: a repainted map often
+    /// shows less land than the canvas, and a border point the warp sends past the painting's edge
+    /// is pulled back onto it, so the margin stretches the painting's edge instead of running off.
+    fn fit_inside(pairs: &[FillPair], aspect: f64) -> Result<Self> {
+        let first = Warp::fit(pairs, aspect)?;
+        let mut all: Vec<FillPair> = pairs
+            .iter()
+            .map(|p| FillPair {
+                canvas: p.canvas,
+                painting: p.painting,
+            })
+            .collect();
+        for i in 0..=BORDER_PINS {
+            let t = f64::from(i) / f64::from(BORDER_PINS);
+            for (u, v) in [(t, 0.0), (t, 1.0), (0.0, t), (1.0, t)] {
+                let (pu, pv) = first.at(u, v);
+                all.push(FillPair {
+                    canvas: [u, v],
+                    painting: [pu.clamp(0.0, 1.0), pv.clamp(0.0, 1.0)],
+                });
+            }
+        }
+        Warp::fit(&all, aspect)
+    }
+
+    /// The painting UV under canvas UV `(u, v)`.
+    fn at(&self, u: f64, v: f64) -> (f64, f64) {
+        let (x, y) = (u, v * self.aspect);
+        let n = self.points.len();
+        let mut out = [0.0; 2];
+        for (axis, c) in self.coef.iter().enumerate() {
+            let mut s = c[n] + c[n + 1] * x + c[n + 2] * y;
+            for (p, w) in self.points.iter().zip(c) {
+                let (dx, dy) = (x - p[0], y - p[1]);
+                s += w * tps_kernel(dx * dx + dy * dy);
+            }
+            out[axis] = s;
+        }
+        (out[0], out[1])
+    }
+}
+
+/// Gaussian elimination with partial pivoting.
+fn solve(mut a: Vec<Vec<f64>>, mut b: Vec<f64>) -> Result<Vec<f64>> {
+    let m = b.len();
+    for col in 0..m {
+        let pivot = (col..m)
+            .max_by(|&i, &j| a[i][col].abs().total_cmp(&a[j][col].abs()))
+            .unwrap_or(col);
+        if a[pivot][col].abs() < 1e-12 {
+            bail!("the landmarks are degenerate (three in a line?)");
+        }
+        a.swap(col, pivot);
+        b.swap(col, pivot);
+        for row in col + 1..m {
+            let f = a[row][col] / a[col][col];
+            for k in col..m {
+                a[row][k] -= f * a[col][k];
+            }
+            b[row] -= f * b[col];
+        }
+    }
+    let mut x = vec![0.0; m];
+    for row in (0..m).rev() {
+        let s: f64 = (row + 1..m).map(|k| a[row][k] * x[k]).sum();
+        x[row] = (b[row] - s) / a[row][row];
+    }
+    Ok(x)
+}
+
+/// The canvas with its bare parchment filled from `painting`, warped onto the canvas by `warp`:
+/// zone art where `cover` is high, the painting where it is low, a smoothstep across
+/// `FILL_EDGE` between.
+fn fill(canvas: &Picture, cover: &[f32], painting: &Picture, warp: &Warp) -> Picture {
+    // The warp is smooth, so it is evaluated on a coarse grid and interpolated between.
+    const STEP: u32 = 8;
+    let (gw, gh) = (canvas.w / STEP + 2, canvas.h / STEP + 2);
+    let grid: Vec<(f64, f64)> = (0..gh)
+        .flat_map(|gy| (0..gw).map(move |gx| (gx, gy)))
+        .map(|(gx, gy)| {
+            warp.at(
+                f64::from(gx * STEP) / f64::from(canvas.w),
+                f64::from(gy * STEP) / f64::from(canvas.h),
+            )
+        })
+        .collect();
+    let mut out = Picture::blank(canvas.w, canvas.h);
+    for py in 0..canvas.h {
+        for px in 0..canvas.w {
+            let k = (py * canvas.w + px) as usize;
+            let t = ((cover[k] - FILL_EDGE.0) / (FILL_EDGE.1 - FILL_EDGE.0)).clamp(0.0, 1.0);
+            let keep = t * t * (3.0 - 2.0 * t);
+            let d = canvas.texel(px, py);
+            if keep >= 1.0 {
+                out.put(px, py, d);
+                continue;
+            }
+            let (gx, gy) = (px / STEP, py / STEP);
+            let (fx, fy) = (
+                f64::from(px % STEP) / f64::from(STEP),
+                f64::from(py % STEP) / f64::from(STEP),
+            );
+            let g = |x: u32, y: u32| grid[(y * gw + x) as usize];
+            let lerp = |a: (f64, f64), b: (f64, f64), t: f64| {
+                (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t)
+            };
+            let top = lerp(g(gx, gy), g(gx + 1, gy), fx);
+            let bottom = lerp(g(gx, gy + 1), g(gx + 1, gy + 1), fx);
+            let (u, v) = lerp(top, bottom, fy);
+            let s = painting.sample(u as f32, v as f32);
+            let c = [0, 1, 2].map(|i| d[i] * keep + s[i] * (1.0 - keep));
+            out.put(px, py, [c[0], c[1], c[2], 1.0]);
+        }
+    }
+    out
 }
 
 /// The fog's alpha over a silhouette value: 0 outside the zone, `FOG_ALPHA` inside, a smoothstep
@@ -493,15 +777,17 @@ fn cover(chain: &mut Chain, zone: &Zone, o: &WorldMapOverlay, p: &Piece) -> Resu
     Ok(out)
 }
 
-fn args() -> Result<(PathBuf, PathBuf)> {
+fn args() -> Result<(PathBuf, PathBuf, Option<PathBuf>)> {
     let mut data = None;
     let mut out = None;
+    let mut fill = None;
     let mut it = std::env::args().skip(1);
     while let Some(a) = it.next() {
         match a.as_str() {
             "--data" => data = it.next().map(PathBuf::from),
             "--out" => out = it.next().map(PathBuf::from),
-            _ => bail!("usage: map_draft --data <WoW Data> --out <dir>"),
+            "--fill" => fill = it.next().map(PathBuf::from),
+            _ => bail!("usage: map_draft --data <WoW Data> --out <dir> [--fill <landmarks.json>]"),
         }
     }
     let data = match data {
@@ -511,11 +797,12 @@ fn args() -> Result<(PathBuf, PathBuf)> {
     Ok((
         data,
         out.unwrap_or_else(|| PathBuf::from("target/map_draft")),
+        fill,
     ))
 }
 
 fn main() -> Result<()> {
-    let (data, out) = args()?;
+    let (data, out, fill_with) = args()?;
     let mut chain = benilla_formats::open_chain(&data)?;
     let wma = load_world_map_area_catalog(&mut chain)?;
     let wmo = load_world_map_overlay_catalog(&mut chain)?;
@@ -566,6 +853,7 @@ fn main() -> Result<()> {
         .context("no Elwynn row")?;
     let parchment = Zone::load(&mut chain, elwynn.1, &[])?.parchment();
     let mut img = Picture::blank(size.0, size.1);
+    let mut art_cover = vec![0.0f32; (size.0 * size.1) as usize];
     for y in 0..size.1 {
         for x in 0..size.0 {
             img.put(x, y, [parchment[0], parchment[1], parchment[2], 1.0]);
@@ -591,7 +879,7 @@ fn main() -> Result<()> {
                 at[3],
                 if is_misted { "  misted" } else { "" }
             );
-            draw(&mut img, at, &zone);
+            draw(&mut img, &mut art_cover, at, &zone);
             if is_misted {
                 let name = format!("fog_{}.png", zone.file.to_lowercase());
                 let f = fog(at, &zone);
@@ -629,6 +917,19 @@ fn main() -> Result<()> {
     }
     img.save(&out.join("canvas.png"))?;
     written.insert(0, "canvas.png".to_string());
+    if let Some(path) = &fill_with {
+        let spec = FillSpec::read(path)?;
+        let painting = Picture::open(&spec.painting)?;
+        let warp = Warp::fit_inside(&spec.pairs, f64::from(size.1) / f64::from(size.0))?;
+        let mut filled = fill(&img, &art_cover, &painting, &warp);
+        filled.save(&out.join("filled.png"))?;
+        written.push("filled.png".to_string());
+        for (at, f) in &placed_fogs {
+            blend(&mut filled, *at, f);
+        }
+        filled.save(&out.join("filled_preview.png"))?;
+        written.push("filled_preview.png".to_string());
+    }
     for (at, f) in &placed_fogs {
         blend(&mut img, *at, f);
     }
@@ -759,6 +1060,56 @@ mod tests {
             "{} {}",
             a(18),
             a(21)
+        );
+    }
+
+    #[test]
+    fn the_warp_passes_through_its_landmarks_and_keeps_a_shift() {
+        let shift = |u: f64, v: f64| FillPair {
+            canvas: [u, v],
+            painting: [u - 0.05, v - 0.1],
+        };
+        let pairs = vec![
+            shift(0.1, 0.1),
+            shift(0.9, 0.1),
+            shift(0.5, 0.5),
+            shift(0.1, 0.9),
+            shift(0.9, 0.9),
+        ];
+        let warp = Warp::fit(&pairs, 2.0 / 3.0).unwrap();
+        for (u, v) in [(0.5, 0.5), (0.3, 0.7), (0.0, 0.0)] {
+            let (pu, pv) = warp.at(u, v);
+            assert!((pu - (u - 0.05)).abs() < 1e-3, "u {u}: {pu}");
+            assert!((pv - (v - 0.1)).abs() < 1e-3, "v {v}: {pv}");
+        }
+    }
+
+    #[test]
+    fn a_pinned_warp_keeps_the_canvas_border_on_the_painting() {
+        // The painting shows a tenth less land on every side: the canvas border falls outside.
+        let zoom = |u: f64, v: f64| FillPair {
+            canvas: [u, v],
+            painting: [(u - 0.5) * 1.25 + 0.5, (v - 0.5) * 1.25 + 0.5],
+        };
+        let pairs = vec![
+            zoom(0.2, 0.2),
+            zoom(0.8, 0.2),
+            zoom(0.5, 0.5),
+            zoom(0.2, 0.8),
+            zoom(0.8, 0.8),
+        ];
+        let warp = Warp::fit_inside(&pairs, 2.0 / 3.0).unwrap();
+        for t in [0.0, 0.3, 0.5, 1.0] {
+            for (u, v) in [(t, 0.0), (t, 1.0), (0.0, t), (1.0, t)] {
+                let (pu, pv) = warp.at(u, v);
+                assert!((-0.01..=1.01).contains(&pu), "({u}, {v}) -> u {pu}");
+                assert!((-0.01..=1.01).contains(&pv), "({u}, {v}) -> v {pv}");
+            }
+        }
+        let (pu, pv) = warp.at(0.5, 0.5);
+        assert!(
+            (pu - 0.5).abs() < 0.01 && (pv - 0.5).abs() < 0.01,
+            "{pu} {pv}"
         );
     }
 
