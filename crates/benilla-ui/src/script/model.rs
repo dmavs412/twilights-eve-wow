@@ -293,6 +293,13 @@ pub(crate) struct Model {
     pub(crate) herb_grid: Option<super::HerbGridView>,
     /// The `Herb*` calls since the host last drained them.
     pub(crate) herb_calls: Vec<super::HerbCall>,
+    /// The Herbalist Level and perk slots the Herbalism Journal's getters read, pushed by the host.
+    pub(crate) herbalist: super::HerbalistView,
+    /// The Herbalism Journal its getters read, pushed by the host.
+    pub(crate) herb_journal: super::HerbJournalView,
+    /// The Journal's `SetHerb*`, `PickHerbPerk` and `WithdrawHerbItem` calls since the host last
+    /// drained them.
+    pub(crate) herb_journal_calls: Vec<super::HerbJournalCall>,
     /// The Calling Choice the popup's getters read, pushed by the host.
     pub(crate) calling_choice: super::CallingChoiceView,
     /// The `ChooseCalling` quest ids since the host last drained them.
@@ -1156,6 +1163,9 @@ impl Model {
             deposit_requests: Vec::new(),
             herb_grid: None,
             herb_calls: Vec::new(),
+            herbalist: Default::default(),
+            herb_journal: Default::default(),
+            herb_journal_calls: Vec::new(),
             calling_choice: Default::default(),
             calling_choice_requests: Vec::new(),
             zone: Default::default(),

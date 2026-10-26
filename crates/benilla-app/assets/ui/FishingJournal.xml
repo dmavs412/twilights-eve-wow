@@ -1,8 +1,11 @@
 <Ui>
     <!--
-        The Journal (spec #323, #396), opened by TOGGLEFISHINGJOURNAL (J) or /journal. One 420 x 660
-        frame with a profession bookmark column on its right edge (Fishing live, Herbalism greyed)
-        and three bottom tabs, each a child frame: Zones (the default), Inventory and Progression.
+        The Journal (spec #323, #396, #435), opened by TOGGLEFISHINGJOURNAL (J) or /journal. One
+        420 x 660 frame with a profession bookmark column on its right edge (Fishing, and Herbalism
+        once GetHerbalistInfo() says the character knows it; until then it is greyed) and three
+        bottom tabs, each a child frame: Zones (the default), Inventory and Progression. The
+        bookmark switches the three tabs between the Fishing frames and the Herbalism frames
+        (BenillaFishingJournalHerbZones, HerbInventory and HerbProgression, described below).
 
         Zones shows one fishing zone at a time, paged with the arrows: a card (the zone's scene, its
         name and its description), "Common Fish" as a grid of slots (an icon, the name and three
@@ -23,6 +26,24 @@
         GetFishPagePlace(item, i) and GetFishPageHabitat(item, i), and FISHING_JOURNAL_UPDATE says
         when to repaint. The frame art is `Interface\Benilla\journal\*`, the pips are
         `Interface\Benilla\fishing\*`, painted RGBA `.tga` files.
+
+        The Herbalism tab (#443) mirrors the three tabs. Zones shows one zone at a time, paged with
+        the arrows, on the same zone scene, with its plants as a grid of slots: a plant with picks
+        shows its icon and name and a Plant Page tooltip (the name in its quality colour, "Picked N
+        times" and the next unlock from GetHerbRevealAt()); a plant with none shows the silhouette
+        and "Unknown plant". Inventory holds the Tool and Consumable slots and the Herbalism Satchel.
+        Left-click on a Satchel tool or consumable slots it (SetHerbTool, SetHerbConsumable);
+        right-click on a slot empties the Consumable (the Tool cannot be emptied); right-click on a
+        Satchel item withdraws the stack (WithdrawHerbItem), shift-right-click one. A bag item
+        dropped on the window calls DepositFishingItem, which the realm routes to the item's own
+        Satchel. Progression shows the Herbalist level, title and XP bar and one row per perk slot:
+        an empty slot opens a list of the perks (Boons gold, Pacts purple), a choice asks "This
+        choice is permanent. Choose <name>?" through a static popup and then calls PickHerbPerk. The
+        frames read only GetHerbalistInfo(), GetHerbGear(), GetHerbSatchel(), GetHerbSatchelItem(i),
+        GetHerbJournalZones(), GetHerbJournalZone(i), GetHerbJournalPlant(zone, j),
+        GetHerbRevealAt(), GetHerbPerkSlots(), GetHerbPerkSlot(i), GetNumHerbPerks() and
+        GetHerbPerk(i); HERBALIST_UPDATE and HERBALISM_JOURNAL_UPDATE say when to repaint. A tool or
+        consumable is told from a Satchel plant by its name, since the realm sends only the item.
     -->
     <Script><![CDATA[
         BENILLA_JOURNAL_ART = "Interface\\Benilla\\journal\\"
@@ -41,11 +62,40 @@
         BENILLA_JOURNAL_HINT = "You have heard a rumour of a legendary fish in these waters."
         BENILLA_JOURNAL_PROFESSIONS = {
             { key = "fishing", icon = "prof_fishing", live = true },
-            { key = "herbalism", icon = "prof_herbalism", live = false, tip = "Herbalism: coming soon" },
+            { key = "herbalism", icon = "prof_herbalism", live = true },
         }
+        -- The tip on the bookmark of a profession the character has not learned.
+        BENILLA_JOURNAL_LOCKED_TIP = "Herbalism: coming soon"
         BENILLA_JOURNAL_PAGES = { "Zones", "Inventory", "Progression" }
         -- AreaTable id to the scene `journal\zone_<key>`; a zone missing here shows no scene.
         BENILLA_JOURNAL_ZONE_ART = { [12] = "elwynn", [1519] = "stormwind", [44] = "redridge", [10] = "duskwood" }
+
+        -- The Herbalism tab. The plant grid holds 15 slots, the Satchel 25 and the perk list 9; the
+        -- perk rows are `[herbalist] cap / perk_every` in herbs.toml (30 / 10).
+        BENILLA_JOURNAL_HERB_SLOTS = 15
+        BENILLA_JOURNAL_HERB_SATCHEL_SLOTS = 25
+        BENILLA_JOURNAL_HERB_PERKS = 9
+        BENILLA_JOURNAL_HERB_PERK_ROWS = 3
+        BENILLA_JOURNAL_HERB_PERK_EVERY = 10
+        BENILLA_JOURNAL_HERB_UNKNOWN = "Unknown plant"
+        BENILLA_JOURNAL_HERB_ZONE_NAMES = { [12] = "Elwynn Forest", [44] = "Redridge Mountains", [10] = "Duskwood" }
+        BENILLA_JOURNAL_HERB_BOON = { 1, 0.82, 0 }
+        BENILLA_JOURNAL_HERB_PACT = { 0.7, 0.45, 0.95 }
+        -- The names of the Satchel items that fill the Tool and Consumable slots.
+        BENILLA_JOURNAL_HERB_TOOLS = {
+            ["Herbalist's Sickle"] = true,
+            ["Herbalist's Trowel"] = true,
+            ["Herbalist's Shears"] = true,
+        }
+        BENILLA_JOURNAL_HERB_CONSUMABLES = {
+            ["Thyme Tea"] = true,
+            ["Elixir of Herb Sight"] = true,
+            ["Thorn Salve"] = true,
+            ["Bloom Draught"] = true,
+            ["Weedcutter's Twine"] = true,
+            ["Forager's Charm"] = true,
+            ["Moonwater"] = true,
+        }
 
         BINDING_HEADER_BENILLAFISHING = "Fishing"
         BINDING_NAME_TOGGLEFISHINGJOURNAL = "Toggle Fishing Journal"
@@ -370,8 +420,16 @@
             end
         end
 
+        -- Whether the character has learned a profession; Fishing is open to everyone.
+        function BenillaJournal_Known(key)
+            if key == "herbalism" then
+                return (GetHerbalistInfo()) and true or false
+            end
+            return true
+        end
+
         -- The bookmark column: the selected profession's tab is `side_tab_selected`, a profession
-        -- that is not live is grey.
+        -- that is not live or not learned is grey.
         function BenillaJournal_PaintProfessions()
             local chosen = BenillaFishingJournal.profession or "fishing"
             for i = 1, table.getn(BENILLA_JOURNAL_PROFESSIONS) do
@@ -379,14 +437,15 @@
                 local button = getglobal("BenillaFishingJournalProf" .. i)
                 local bg = getglobal(button:GetName() .. "Bg")
                 local icon = getglobal(button:GetName() .. "Icon")
+                local live = row.live and BenillaJournal_Known(row.key)
                 button.key = row.key
-                button.live = row.live
-                button.tip = row.tip
+                button.live = live
+                button.tip = (not live) and BENILLA_JOURNAL_LOCKED_TIP or nil
                 button.selected = (row.key == chosen)
                 bg:SetTexture(BENILLA_JOURNAL_ART .. (button.selected and "side_tab_selected" or "side_tab"))
                 icon:SetTexture(BENILLA_JOURNAL_ART .. row.icon)
-                BenillaJournal_Grey(bg, not row.live)
-                BenillaJournal_Grey(icon, not row.live)
+                BenillaJournal_Grey(bg, not live)
+                BenillaJournal_Grey(icon, not live)
             end
         end
 
@@ -396,7 +455,7 @@
                 return
             end
             BenillaFishingJournal.profession = button.key
-            BenillaJournal_PaintProfessions()
+            BenillaFishingJournal_Paint()
         end
 
         function BenillaJournalProfession_OnEnter()
@@ -409,18 +468,29 @@
             GameTooltip:Show()
         end
 
-        -- Show the child frame of one bottom tab and hide the others.
+        -- Show the child frame of one bottom tab and hide the others. The chosen profession's
+        -- frame shows; the other profession's frame of the same tab hides.
         function BenillaJournal_ShowPage(name)
+            local herbs = (BenillaFishingJournal.profession == "herbalism")
             BenillaFishingJournal.pageName = name
+            BenillaFishingJournalHerbPerkList:Hide()
             for i = 1, table.getn(BENILLA_JOURNAL_PAGES) do
                 local page = BENILLA_JOURNAL_PAGES[i]
-                local child = getglobal("BenillaFishingJournal" .. page)
+                local fishing = getglobal("BenillaFishingJournal" .. page)
+                local herbalism = getglobal("BenillaFishingJournalHerb" .. page)
                 local bg = getglobal("BenillaFishingJournalTab" .. i .. "Bg")
                 if page == name then
-                    child:Show()
+                    if herbs then
+                        fishing:Hide()
+                        herbalism:Show()
+                    else
+                        herbalism:Hide()
+                        fishing:Show()
+                    end
                     bg:SetTexture(BENILLA_JOURNAL_ART .. "bottom_tab_selected")
                 else
-                    child:Hide()
+                    fishing:Hide()
+                    herbalism:Hide()
                     bg:SetTexture(BENILLA_JOURNAL_ART .. "bottom_tab")
                 end
             end
@@ -468,7 +538,15 @@
             end
             BenillaJournal_Ink(ink, BENILLA_JOURNAL_INK)
             BenillaJournal_Ink({ j .. "PoleHint", j .. "LureHint", j .. "BaitHint", p .. "Caption" }, BENILLA_JOURNAL_FADED_INK)
-            for _, key in ipairs({ "Pole", "Lure", "Bait" }) do
+            -- The Herbalism tab's gear and plant names, perk page and caption.
+            local h = j .. "Herb"
+            local herbInk = { h .. "ToolTitle", h .. "ConsumableTitle", h .. "ToolName", h .. "ConsumableName", h .. "ProgressionTitle", h .. "ProgressionXpText" }
+            for n = 1, BENILLA_JOURNAL_HERB_SLOTS do
+                table.insert(herbInk, h .. "Plant" .. n .. "Name")
+            end
+            BenillaJournal_Ink(herbInk, BENILLA_JOURNAL_INK)
+            BenillaJournal_Ink({ h .. "ToolHint", h .. "ConsumableHint", h .. "Caption", h .. "PerkCaption" }, BENILLA_JOURNAL_FADED_INK)
+            for _, key in ipairs({ "Pole", "Lure", "Bait", "HerbTool", "HerbConsumable" }) do
                 local slot = j .. key
                 getglobal(slot .. "Frame"):SetTexture(BENILLA_JOURNAL_ART .. "gear_slot")
                 local icon = getglobal(slot .. "Icon")
@@ -563,8 +641,17 @@
         function BenillaFishingJournal_Paint()
             local frame = BenillaFishingJournal
             frame.missing = nil
+            if frame.profession == "herbalism" and not BenillaJournal_Known("herbalism") then
+                frame.profession = "fishing"
+            end
             BenillaJournal_ShowPage(frame.pageName or BENILLA_JOURNAL_PAGES[1])
             BenillaJournal_PaintProfessions()
+            if frame.profession == "herbalism" then
+                BenillaFishingJournalTitle:SetText("Herbalism Journal")
+                BenillaHerbJournal_Paint()
+                return
+            end
+            BenillaFishingJournalTitle:SetText("Fishing Journal")
             BenillaFishingJournal_PaintBait()
             BenillaFishingJournal_PaintGear()
             BenillaFishingJournal_PaintSatchel()
@@ -602,6 +689,361 @@
             BenillaFishingJournalCommonCount:SetText(collected .. " / " .. total .. " Collected")
             local legends = BenillaFishingJournal_PaintLegends(zoneName)
             BenillaFishingJournalLegendCount:SetText(legends .. " / " .. BENILLA_JOURNAL_LEGEND_SLOTS .. " Collected")
+        end
+
+        -- ── The Herbalism tab ──
+
+        -- The count of `item` the Herbalism Satchel holds.
+        function BenillaHerbJournal_Held(item)
+            local total = 0
+            for i = 1, GetHerbSatchel() do
+                local held, count = GetHerbSatchelItem(i)
+                if held == item then
+                    total = total + count
+                end
+            end
+            return total
+        end
+
+        -- "tool" or "consumable" for a Satchel item the slots take, nil for anything else.
+        function BenillaHerbJournal_Use(item)
+            local name = item and GetItemInfo(item)
+            if not name then
+                return nil
+            end
+            if BENILLA_JOURNAL_HERB_TOOLS[name] then
+                return "tool"
+            elseif BENILLA_JOURNAL_HERB_CONSUMABLES[name] then
+                return "consumable"
+            end
+            return nil
+        end
+
+        -- The Plant Page lines under the name: the picks, then the next unlock.
+        function BenillaHerbJournal_PageLines(picks)
+            local first, second, third = GetHerbRevealAt()
+            local lines = {}
+            table.insert(lines, "Picked " .. picks .. ((picks == 1) and " time" or " times"))
+            if picks < first then
+                table.insert(lines, "At " .. first .. " picks: a patch tells you it is there.")
+            elseif picks < second then
+                table.insert(lines, "At " .. second .. " picks: a patch names its rows.")
+            elseif picks < third then
+                table.insert(lines, "At " .. third .. " picks: its bush glows.")
+            else
+                table.insert(lines, "You know this plant by heart.")
+            end
+            return lines
+        end
+
+        function BenillaHerbJournal_PaintZones()
+            local frame = BenillaFishingJournal
+            local count = GetHerbJournalZones()
+            local page = math.max(1, math.min(frame.herbPage or 1, math.max(count, 1)))
+            frame.herbPage = page
+            local area, plants = GetHerbJournalZone(page)
+            local art = BENILLA_JOURNAL_ZONE_ART[area or 0]
+            if art then
+                BenillaFishingJournalHerbScene:SetTexture(BENILLA_JOURNAL_ART .. "zone_" .. art)
+                BenillaFishingJournalHerbScene:Show()
+            else
+                BenillaFishingJournalHerbScene:Hide()
+            end
+            BenillaFishingJournalHerbZoneName:SetText(area and (BENILLA_JOURNAL_HERB_ZONE_NAMES[area] or ("Zone " .. area)) or "")
+            BenillaFishingJournalHerbPage:SetText(count > 0 and (page .. " / " .. count) or "")
+            if count > 1 then
+                BenillaFishingJournalHerbPrev:Show()
+                BenillaFishingJournalHerbNext:Show()
+            else
+                BenillaFishingJournalHerbPrev:Hide()
+                BenillaFishingJournalHerbNext:Hide()
+            end
+            local known, total = 0, 0
+            for n = 1, BENILLA_JOURNAL_HERB_SLOTS do
+                local slot = getglobal("BenillaFishingJournalHerbPlant" .. n)
+                local item, picks = GetHerbJournalPlant(page, n)
+                slot.kind = "plant"
+                if not item then
+                    slot.item = nil
+                    slot:Hide()
+                else
+                    total = total + 1
+                    slot.picks = picks
+                    local label = getglobal(slot:GetName() .. "Name")
+                    if picks > 0 then
+                        known = known + 1
+                        BenillaFishingJournal_Face(slot, "caught", item)
+                        label:SetText(BenillaFishingJournal_ItemName(item))
+                    else
+                        BenillaFishingJournal_Face(slot, "silhouette", item)
+                        label:SetText(BENILLA_JOURNAL_HERB_UNKNOWN)
+                    end
+                    BenillaFishingJournal_HidePips(slot)
+                end
+            end
+            BenillaFishingJournalHerbPlantCount:SetText(known .. " / " .. total .. " Discovered")
+        end
+
+        function BenillaHerbJournal_Turn(step)
+            BenillaFishingJournal.herbPage = (BenillaFishingJournal.herbPage or 1) + step
+            BenillaFishingJournal_Paint()
+        end
+
+        function BenillaHerbJournal_PaintGear()
+            local tool, consumable = GetHerbGear()
+            local slot = BenillaFishingJournalHerbTool
+            BenillaFishingJournal_Face(slot, tool and "caught" or "empty", tool)
+            slot.kind = "herbtool"
+            BenillaFishingJournalHerbToolHint:SetText(tool and "" or "Pick a tool below")
+            BenillaFishingJournalHerbToolName:SetText(BenillaFishingJournal_GearName(tool))
+            slot = BenillaFishingJournalHerbConsumable
+            BenillaFishingJournal_Face(slot, consumable and "caught" or "empty", consumable)
+            slot.kind = "herbconsumable"
+            local held = consumable and BenillaHerbJournal_Held(consumable) or 0
+            BenillaJournal_Dim(slot, consumable and held == 0)
+            BenillaFishingJournalHerbConsumableCount:SetText(consumable and held or "")
+            BenillaFishingJournalHerbConsumableHint:SetText(consumable and "" or "Pick a consumable below")
+            BenillaFishingJournalHerbConsumableName:SetText(BenillaFishingJournal_GearName(consumable))
+        end
+
+        -- The Satchel grid from the scroll offset; the slotted tool and consumable are lit.
+        function BenillaHerbJournal_PaintSatchel()
+            local frame = BenillaFishingJournal
+            local tool, consumable = GetHerbGear()
+            local rows = GetHerbSatchel()
+            local most = math.max(0, math.ceil((rows - BENILLA_JOURNAL_HERB_SATCHEL_SLOTS) / 5) * 5)
+            frame.herbOffset = math.max(0, math.min(frame.herbOffset or 0, most))
+            for k = 1, BENILLA_JOURNAL_HERB_SATCHEL_SLOTS do
+                local slot = getglobal("BenillaFishingJournalHerbSatchel" .. k)
+                local name = slot:GetName()
+                local item, count = GetHerbSatchelItem(frame.herbOffset + k)
+                BenillaFishingJournal_Face(slot, item and "caught" or "empty", item)
+                slot.kind = "herbsatchel"
+                slot.row = item and (frame.herbOffset + k) or nil
+                slot.count = count
+                slot.use = BenillaHerbJournal_Use(item)
+                getglobal(name .. "Stack"):SetText((count and count > 1) and count or "")
+                if item and (item == tool or item == consumable) then
+                    getglobal(name .. "Glow"):Show()
+                else
+                    getglobal(name .. "Glow"):Hide()
+                end
+            end
+        end
+
+        function BenillaHerbJournal_ScrollSatchel(delta)
+            BenillaFishingJournal.herbOffset = (BenillaFishingJournal.herbOffset or 0) - delta * 5
+            BenillaHerbJournal_PaintSatchel()
+        end
+
+        -- A perk's colour: gold for a Boon, purple for a Pact, dimmed when `dim`.
+        function BenillaHerbJournal_PerkColour(fontString, boon, dim)
+            local c = boon and BENILLA_JOURNAL_HERB_BOON or BENILLA_JOURNAL_HERB_PACT
+            local v = dim and 0.5 or 1
+            fontString:SetTextColor(c[1] * v, c[2] * v, c[3] * v)
+        end
+
+        -- The perk `key` as `key, name, isBoon, text`, or nothing for a key the realm did not list.
+        function BenillaHerbJournal_FindPerk(key)
+            for n = 1, GetNumHerbPerks() do
+                local k, name, boon, text = GetHerbPerk(n)
+                if k == key then
+                    return k, name, boon, text
+                end
+            end
+        end
+
+        -- The Progression page: the level badge, title and XP bar, then one row per perk slot.
+        function BenillaHerbJournal_PaintProgression()
+            local p = "BenillaFishingJournalHerbProgression"
+            local _, level, xp, toNext, title = GetHerbalistInfo()
+            getglobal(p .. "Level"):SetText(level)
+            getglobal(p .. "Title"):SetText(title or "")
+            local fill = getglobal(p .. "XpFill")
+            if level == 0 then
+                getglobal(p .. "XpText"):SetText("0 / 0 XP")
+                fill:Hide()
+            else
+                fill:Show()
+                if toNext > 0 then
+                    fill:SetWidth(math.max(1, BENILLA_JOURNAL_XP_WIDTH * math.min(xp / toNext, 1)))
+                    getglobal(p .. "XpText"):SetText(BenillaJournal_Commas(xp) .. " / " .. BenillaJournal_Commas(toNext) .. " XP")
+                else
+                    fill:SetWidth(BENILLA_JOURNAL_XP_WIDTH)
+                    getglobal(p .. "XpText"):SetText("Max level")
+                end
+            end
+            local slots = GetHerbPerkSlots()
+            local taken = {}
+            for i = 1, slots do
+                local key = GetHerbPerkSlot(i)
+                if key then
+                    taken[key] = true
+                end
+            end
+            BenillaFishingJournal.herbTaken = taken
+            for i = 1, BENILLA_JOURNAL_HERB_PERK_ROWS do
+                local row = getglobal("BenillaFishingJournalHerbPerk" .. i)
+                local name = getglobal(row:GetName() .. "Name")
+                local text = getglobal(row:GetName() .. "Text")
+                row.index = i
+                if i > slots then
+                    row.state = "locked"
+                    name:SetText("Locked")
+                    name:SetTextColor(0.5, 0.5, 0.5)
+                    text:SetText("Unlocks at Herbalist Level " .. (i * BENILLA_JOURNAL_HERB_PERK_EVERY))
+                else
+                    local key = GetHerbPerkSlot(i)
+                    if key then
+                        local _, perkName, boon, perkText = BenillaHerbJournal_FindPerk(key)
+                        row.state = "filled"
+                        name:SetText(perkName or key)
+                        BenillaHerbJournal_PerkColour(name, boon, false)
+                        text:SetText(perkText or "")
+                    else
+                        row.state = "empty"
+                        name:SetText("Choose a perk")
+                        name:SetTextColor(1, 1, 1)
+                        text:SetText("Click to see the perks. A choice is permanent.")
+                    end
+                end
+            end
+        end
+
+        function BenillaHerbJournal_Paint()
+            BenillaHerbJournal_PaintZones()
+            BenillaHerbJournal_PaintGear()
+            BenillaHerbJournal_PaintSatchel()
+            BenillaHerbJournal_PaintProgression()
+        end
+
+        -- An empty, opened perk row lists every perk to choose from.
+        function BenillaHerbJournal_PerkRow_OnClick()
+            local row = this
+            if row.state ~= "empty" then
+                return
+            end
+            BenillaFishingJournal.perkSlot = row.index
+            for n = 1, BENILLA_JOURNAL_HERB_PERKS do
+                local choice = getglobal("BenillaFishingJournalHerbPerkChoice" .. n)
+                local key, name, boon, text = GetHerbPerk(n)
+                if not key then
+                    choice:Hide()
+                else
+                    local taken = BenillaFishingJournal.herbTaken and BenillaFishingJournal.herbTaken[key]
+                    choice.key = key
+                    choice.perkName = name
+                    choice.taken = taken
+                    local label = getglobal(choice:GetName() .. "Name")
+                    label:SetText(name .. (taken and " (chosen)" or ""))
+                    BenillaHerbJournal_PerkColour(label, boon, taken)
+                    getglobal(choice:GetName() .. "Text"):SetText(text)
+                    choice:Show()
+                end
+            end
+            BenillaFishingJournalHerbPerkList:Show()
+        end
+
+        -- A perk in the list asks for confirmation; the stock static popup calls PickHerbPerk.
+        function BenillaHerbJournal_Choice_OnClick()
+            local choice = this
+            local slot = BenillaFishingJournal.perkSlot
+            if choice.taken or not choice.key or not slot then
+                return
+            end
+            -- Registered on use, since the stock StaticPopup.lua may load after this file.
+            StaticPopupDialogs = StaticPopupDialogs or {}
+            StaticPopupDialogs["BENILLA_HERB_PICK_PERK"] = {
+                text = "This choice is permanent. Choose %s?",
+                button1 = "Choose",
+                button2 = "Cancel",
+                timeout = 0,
+                whileDead = 1,
+                hideOnEscape = 1,
+                OnAccept = function(data)
+                    PickHerbPerk(data.slot, data.key)
+                    BenillaFishingJournalHerbPerkList:Hide()
+                end,
+            }
+            StaticPopup_Show("BENILLA_HERB_PICK_PERK", choice.perkName, nil, { slot = slot, key = choice.key })
+        end
+
+        -- Left-click on a Satchel tool or consumable slots it; right-click on the Consumable slot
+        -- empties it (the Tool slot cannot be emptied) and on a Satchel item withdraws the stack,
+        -- or one with shift. Returns whether the slot was a Herbalism one.
+        function BenillaHerbJournal_OnClick(slot, button)
+            if slot.kind == "herbsatchel" then
+                if BenillaFishingJournal_Deposit() or not slot.item then
+                    return true
+                end
+                if button == "RightButton" then
+                    local one = (IsShiftKeyDown and IsShiftKeyDown()) and true or false
+                    WithdrawHerbItem(slot.row, one)
+                elseif slot.use == "tool" then
+                    SetHerbTool(slot.item)
+                elseif slot.use == "consumable" then
+                    SetHerbConsumable(slot.item)
+                end
+                return true
+            elseif slot.kind == "herbtool" or slot.kind == "herbconsumable" then
+                if BenillaFishingJournal_Deposit() then
+                    return true
+                end
+                if button == "RightButton" and slot.kind == "herbconsumable" then
+                    SetHerbConsumable(nil)
+                end
+                return true
+            end
+            return false
+        end
+
+        -- The tooltip of a Herbalism slot. Returns whether the slot was one.
+        function BenillaHerbJournal_OnEnter(slot)
+            local kind = slot.kind
+            if kind == "plant" then
+                if slot.picks and slot.picks > 0 then
+                    local name, _, quality = GetItemInfo(slot.item)
+                    local r, g, b = 1, 1, 1
+                    if GetItemQualityColor then
+                        r, g, b = GetItemQualityColor(quality or 1)
+                    end
+                    GameTooltip:SetText(name or "an unknown item", r, g, b)
+                    local lines = BenillaHerbJournal_PageLines(slot.picks)
+                    for i = 1, table.getn(lines) do
+                        GameTooltip:AddLine(lines[i], 1, 1, 1, 1)
+                    end
+                else
+                    GameTooltip:SetText(BENILLA_JOURNAL_HERB_UNKNOWN)
+                    GameTooltip:AddLine("Pick it to learn more.", 1, 1, 1, 1)
+                end
+            elseif kind == "herbsatchel" then
+                if not slot.item then
+                    return true
+                end
+                GameTooltip:SetHyperlink("item:" .. slot.item .. ":0:0:0")
+                if slot.use then
+                    GameTooltip:AddLine("Left-click to use it. Right-click to withdraw.", 1, 1, 1, 1)
+                else
+                    GameTooltip:AddLine("Right-click to withdraw.", 1, 1, 1, 1)
+                end
+            elseif kind == "herbtool" or kind == "herbconsumable" then
+                if slot.item then
+                    GameTooltip:SetHyperlink("item:" .. slot.item .. ":0:0:0")
+                elseif kind == "herbtool" then
+                    GameTooltip:SetText("Tool")
+                else
+                    GameTooltip:SetText("Consumable")
+                end
+                if kind == "herbconsumable" then
+                    GameTooltip:AddLine("Left-click one in the Satchel to slot it. Right-click to empty.", 1, 1, 1, 1)
+                else
+                    GameTooltip:AddLine("Left-click one in the Satchel to swap it.", 1, 1, 1, 1)
+                end
+            else
+                return false
+            end
+            GameTooltip:Show()
+            return true
         end
 
         function BenillaFishingJournal_Turn(step)
@@ -677,6 +1119,9 @@
 
         function BenillaFishingJournalSlot_OnClick(button)
             local slot = this
+            if BenillaHerbJournal_OnClick(slot, button) then
+                return
+            end
             if slot.kind == "satchel" then
                 BenillaFishingJournalSatchel_OnClick(slot, button)
             elseif slot == BenillaFishingJournalBait then
@@ -701,6 +1146,9 @@
                 return
             end
             GameTooltip:SetOwner(slot, "ANCHOR_RIGHT")
+            if BenillaHerbJournal_OnEnter(slot) then
+                return
+            end
             if slot.kind == "satchel" and not slot.item then
                 return
             end
@@ -960,6 +1408,46 @@
         </Scripts>
     </Button>
 
+    <!-- One Herbalism perk slot on the Progression page: its name, then its text; a click on an empty one lists the perks. -->
+    <Button name="BenillaHerbJournalPerkTemplate" virtual="true">
+        <Size><AbsDimension x="316" y="64"/></Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBg" setAllPoints="true"><Color r="0.12" g="0.08" b="0.04" a="0.92"/></Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT"><Size><AbsDimension x="292" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-8"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="292" y="30"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-28"/></Offset></Anchor></Anchors></FontString>
+            </Layer>
+        </Layers>
+        <HighlightTexture file="Interface\Buttons\CheckButtonHilight" alphaMode="ADD"/>
+        <Scripts>
+            <OnClick>
+                BenillaHerbJournal_PerkRow_OnClick()
+            </OnClick>
+        </Scripts>
+    </Button>
+
+    <!-- One perk in the list the empty slot opens: a click asks to confirm. -->
+    <Button name="BenillaHerbJournalChoiceTemplate" virtual="true">
+        <Size><AbsDimension x="304" y="46"/></Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBg" setAllPoints="true"><Color r="0.2" g="0.13" b="0.06" a="1"/></Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="292" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-4"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="292" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-18"/></Offset></Anchor></Anchors></FontString>
+            </Layer>
+        </Layers>
+        <HighlightTexture file="Interface\Buttons\CheckButtonHilight" alphaMode="ADD"/>
+        <Scripts>
+            <OnClick>
+                BenillaHerbJournal_Choice_OnClick()
+            </OnClick>
+        </Scripts>
+    </Button>
+
     <Frame name="BenillaFishingJournal" parent="UIParent" frameStrata="HIGH" movable="true" enableMouse="true" hidden="true">
         <Size><AbsDimension x="420" y="660"/></Size>
         <Anchors><Anchor point="CENTER"><Offset><AbsDimension x="0" y="16"/></Offset></Anchor></Anchors>
@@ -1152,12 +1640,158 @@
                     <Button name="$parentSlot6" inherits="BenillaJournalTalentSlotTemplate"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="289" y="-320"/></Offset></Anchor></Anchors></Button>
                 </Frames>
             </Frame>
+
+            <!-- Herbalism Zones: the zone's scene and its plants. -->
+            <Frame name="$parentHerbZones" setAllPoints="true" hidden="true">
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture><Size><AbsDimension x="320" y="154"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="50" y="-54"/></Offset></Anchor></Anchors><Color r="0.08" g="0.05" b="0.02" a="1"/></Texture>
+                    </Layer>
+                    <Layer level="ARTWORK">
+                        <Texture name="BenillaFishingJournalHerbScene"><Size><AbsDimension x="316" y="150"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-56"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-214"/></Offset></Anchor></Anchors></Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <Texture><Size><AbsDimension x="316" y="46"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-56"/></Offset></Anchor></Anchors><Color r="0" g="0" b="0" a="0.45"/></Texture>
+                        <FontString name="BenillaFishingJournalHerbZoneName" inherits="GameFontNormalLarge"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-64"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalHerbPage" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-84"/></Offset></Anchor></Anchors></FontString>
+                        <FontString inherits="GameFontNormal" text="Plants" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-221"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalHerbPlantCount" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-92" y="-222"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalHerbCaption" inherits="GameFontNormalSmall" text="Hover a plant to read its Plant Page." justifyH="CENTER"><Size><AbsDimension x="316" y="14"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-528"/></Offset></Anchor></Anchors></FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="BenillaFishingJournalHerbPrev" hidden="true"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="60" y="-62"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\arrow_normal"/><PushedTexture file="Interface\Benilla\journal\arrow_pushed"/><HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/><DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/><Scripts><OnLoad>this:GetNormalTexture():SetTexCoord(1, 0, 0, 1) this:GetPushedTexture():SetTexCoord(1, 0, 0, 1) this:GetHighlightTexture():SetTexCoord(1, 0, 0, 1) this:GetDisabledTexture():SetTexCoord(1, 0, 0, 1)</OnLoad><OnClick>BenillaHerbJournal_Turn(-1)</OnClick></Scripts></Button>
+                    <Button name="BenillaFishingJournalHerbNext" hidden="true"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-60" y="-62"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\arrow_normal"/><PushedTexture file="Interface\Benilla\journal\arrow_pushed"/><HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/><DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/><Scripts><OnClick>BenillaHerbJournal_Turn(1)</OnClick></Scripts></Button>
+                    <Button name="BenillaFishingJournalHerbPlant1" inherits="BenillaFishingJournalSlotTemplate" id="1"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant2" inherits="BenillaFishingJournalSlotTemplate" id="2"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant3" inherits="BenillaFishingJournalSlotTemplate" id="3"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant4" inherits="BenillaFishingJournalSlotTemplate" id="4"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant5" inherits="BenillaFishingJournalSlotTemplate" id="5"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-250"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant6" inherits="BenillaFishingJournalSlotTemplate" id="6"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant7" inherits="BenillaFishingJournalSlotTemplate" id="7"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant8" inherits="BenillaFishingJournalSlotTemplate" id="8"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant9" inherits="BenillaFishingJournalSlotTemplate" id="9"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant10" inherits="BenillaFishingJournalSlotTemplate" id="10"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-334"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant11" inherits="BenillaFishingJournalSlotTemplate" id="11"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-418"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant12" inherits="BenillaFishingJournalSlotTemplate" id="12"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-418"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant13" inherits="BenillaFishingJournalSlotTemplate" id="13"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-418"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant14" inherits="BenillaFishingJournalSlotTemplate" id="14"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-418"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPlant15" inherits="BenillaFishingJournalSlotTemplate" id="15"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-418"/></Offset></Anchor></Anchors></Button>
+                </Frames>
+            </Frame>
+
+            <!-- Herbalism Inventory: the Tool and Consumable slots and the Satchel, five across; the wheel scrolls it a row. -->
+            <Frame name="$parentHerbInventory" setAllPoints="true" enableMouse="true" hidden="true">
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture><Size><AbsDimension x="316" y="128"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-88"/></Offset></Anchor></Anchors><Color r="0.35" g="0.2" b="0.06" a="0.16"/></Texture>
+                        <Texture><Size><AbsDimension x="316" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-88"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="316" y="1"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-215"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="1" y="128"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-88"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                        <Texture><Size><AbsDimension x="1" y="128"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="367" y="-88"/></Offset></Anchor></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                    </Layer>
+                    <Layer level="ARTWORK">
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-56"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\divider"><Size><AbsDimension x="316" y="12"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-228"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-248"/></Offset></Anchor></Anchors></Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString inherits="GameFontNormal" text="Herbalist Gear" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-63"/></Offset></Anchor></Anchors></FontString>
+                        <FontString inherits="GameFontNormal" text="Satchel" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-255"/></Offset></Anchor></Anchors></FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="BenillaFishingJournalHerbTool" inherits="BenillaFishingJournalSlotTemplate"><Size><AbsDimension x="64" y="64"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="99" y="-118"/></Offset></Anchor></Anchors><Layers><Layer level="OVERLAY"><FontString name="BenillaFishingJournalHerbToolTitle" inherits="GameFontNormalSmall" text="Tool" justifyH="CENTER"><Anchors><Anchor point="BOTTOM" relativeTo="BenillaFishingJournalHerbTool" relativePoint="TOP"><Offset><AbsDimension x="0" y="4"/></Offset></Anchor></Anchors></FontString><FontString name="BenillaFishingJournalHerbToolHint" inherits="GameFontHighlightSmall" justifyH="CENTER" justifyV="TOP"><Size><AbsDimension x="100" y="26"/></Size><Anchors><Anchor point="TOP" relativeTo="BenillaFishingJournalHerbTool" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString></Layer></Layers></Button>
+                    <Button name="BenillaFishingJournalHerbConsumable" inherits="BenillaFishingJournalSlotTemplate"><Size><AbsDimension x="64" y="64"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="257" y="-118"/></Offset></Anchor></Anchors><Layers><Layer level="OVERLAY"><FontString name="BenillaFishingJournalHerbConsumableCount" inherits="NumberFontNormal" justifyH="RIGHT"><Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-6" y="6"/></Offset></Anchor></Anchors></FontString><FontString name="BenillaFishingJournalHerbConsumableTitle" inherits="GameFontNormalSmall" text="Consumable" justifyH="CENTER"><Anchors><Anchor point="BOTTOM" relativeTo="BenillaFishingJournalHerbConsumable" relativePoint="TOP"><Offset><AbsDimension x="0" y="4"/></Offset></Anchor></Anchors></FontString><FontString name="BenillaFishingJournalHerbConsumableHint" inherits="GameFontHighlightSmall" justifyH="CENTER" justifyV="TOP"><Size><AbsDimension x="100" y="26"/></Size><Anchors><Anchor point="TOP" relativeTo="BenillaFishingJournalHerbConsumable" relativePoint="BOTTOM"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors></FontString></Layer></Layers></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel1" inherits="BenillaFishingJournalSlotTemplate" id="1"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-280"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel2" inherits="BenillaFishingJournalSlotTemplate" id="2"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-280"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel3" inherits="BenillaFishingJournalSlotTemplate" id="3"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-280"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel4" inherits="BenillaFishingJournalSlotTemplate" id="4"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-280"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel5" inherits="BenillaFishingJournalSlotTemplate" id="5"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-280"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel6" inherits="BenillaFishingJournalSlotTemplate" id="6"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-346"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel7" inherits="BenillaFishingJournalSlotTemplate" id="7"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-346"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel8" inherits="BenillaFishingJournalSlotTemplate" id="8"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-346"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel9" inherits="BenillaFishingJournalSlotTemplate" id="9"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-346"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel10" inherits="BenillaFishingJournalSlotTemplate" id="10"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-346"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel11" inherits="BenillaFishingJournalSlotTemplate" id="11"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-412"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel12" inherits="BenillaFishingJournalSlotTemplate" id="12"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-412"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel13" inherits="BenillaFishingJournalSlotTemplate" id="13"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-412"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel14" inherits="BenillaFishingJournalSlotTemplate" id="14"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-412"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel15" inherits="BenillaFishingJournalSlotTemplate" id="15"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-412"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel16" inherits="BenillaFishingJournalSlotTemplate" id="16"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-478"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel17" inherits="BenillaFishingJournalSlotTemplate" id="17"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-478"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel18" inherits="BenillaFishingJournalSlotTemplate" id="18"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-478"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel19" inherits="BenillaFishingJournalSlotTemplate" id="19"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-478"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel20" inherits="BenillaFishingJournalSlotTemplate" id="20"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-478"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel21" inherits="BenillaFishingJournalSlotTemplate" id="21"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-544"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel22" inherits="BenillaFishingJournalSlotTemplate" id="22"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="118" y="-544"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel23" inherits="BenillaFishingJournalSlotTemplate" id="23"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="184" y="-544"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel24" inherits="BenillaFishingJournalSlotTemplate" id="24"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="250" y="-544"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbSatchel25" inherits="BenillaFishingJournalSlotTemplate" id="25"><Size><AbsDimension x="52" y="52"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="316" y="-544"/></Offset></Anchor></Anchors></Button>
+                </Frames>
+                <Scripts><OnMouseWheel>BenillaHerbJournal_ScrollSatchel(arg1)</OnMouseWheel><OnReceiveDrag>BenillaFishingJournal_Deposit()</OnReceiveDrag><OnMouseDown>BenillaFishingJournal:StartMoving()</OnMouseDown><OnMouseUp>BenillaFishingJournal:StopMovingOrSizing()</OnMouseUp></Scripts>
+            </Frame>
+
+            <!-- Herbalism Progression: the level, the XP bar and one row per perk slot. -->
+            <Frame name="$parentHerbProgression" setAllPoints="true" hidden="true">
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-56"/></Offset></Anchor></Anchors></Texture>
+                        <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="316" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-186"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalHerbProgressionBadge" file="Interface\Benilla\journal\level_badge"><Size><AbsDimension x="84" y="84"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="60" y="-86"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalHerbProgressionXpFrame" file="Interface\Benilla\journal\xp_frame"><Size><AbsDimension x="212" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="152" y="-124"/></Offset></Anchor></Anchors></Texture>
+                        <Texture name="BenillaFishingJournalHerbProgressionXpFill" file="Interface\Benilla\journal\xp_fill"><Size><AbsDimension x="208" y="16"/></Size><Anchors><Anchor point="LEFT" relativeTo="BenillaFishingJournalHerbProgressionXpFrame" relativePoint="LEFT"><Offset><AbsDimension x="2" y="0"/></Offset></Anchor></Anchors></Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString inherits="GameFontNormal" text="Herbalist Level" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-63"/></Offset></Anchor></Anchors></FontString>
+                        <FontString inherits="GameFontNormal" text="Perks" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="92" y="-193"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalHerbProgressionLevel" inherits="GameFontNormalLarge" justifyH="CENTER"><Anchors><Anchor point="CENTER" relativeTo="BenillaFishingJournalHerbProgressionBadge"/></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalHerbProgressionTitle" inherits="GameFontNormalLarge" justifyH="LEFT"><Size><AbsDimension x="212" y="20"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="152" y="-98"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalHerbProgressionXpText" inherits="GameFontHighlightSmall" justifyH="RIGHT"><Size><AbsDimension x="212" y="14"/></Size><Anchors><Anchor point="TOPRIGHT" relativeTo="BenillaFishingJournalHerbProgressionXpFrame" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="0" y="-3"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalHerbPerkCaption" inherits="GameFontNormalSmall" text="Perks unlock at Herbalist Level 10, 20 and 30. A choice is permanent." justifyH="CENTER" justifyV="TOP"><Size><AbsDimension x="300" y="28"/></Size><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-436"/></Offset></Anchor></Anchors></FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="BenillaFishingJournalHerbPerk1" inherits="BenillaHerbJournalPerkTemplate" id="1"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-222"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerk2" inherits="BenillaHerbJournalPerkTemplate" id="2"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-292"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerk3" inherits="BenillaHerbJournalPerkTemplate" id="3"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-362"/></Offset></Anchor></Anchors></Button>
+                </Frames>
+            </Frame>
+
+            <!-- The list an empty perk slot opens: every perk, Boons gold and Pacts purple. -->
+            <Frame name="BenillaFishingJournalHerbPerkList" frameStrata="DIALOG" enableMouse="true" hidden="true">
+                <Size><AbsDimension x="324" y="480"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="48" y="-90"/></Offset></Anchor></Anchors>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture setAllPoints="true"><Color r="0.05" g="0.03" b="0.015" a="0.98"/></Texture>
+                    </Layer>
+                    <Layer level="OVERLAY">
+                        <FontString inherits="GameFontNormal" text="Choose a perk" justifyH="LEFT"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="14" y="-14"/></Offset></Anchor></Anchors></FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="BenillaFishingJournalHerbPerkCancel"><Size><AbsDimension x="90" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-8" y="-6"/></Offset></Anchor></Anchors><Layers><Layer level="BACKGROUND"><Texture file="Interface\Benilla\journal\bottom_tab" setAllPoints="true"/></Layer></Layers><ButtonText name="$parentText"/><HighlightTexture file="Interface\Benilla\journal\bottom_tab_hover" alphaMode="ADD"/><NormalFont inherits="GameFontNormal"/><HighlightFont inherits="GameFontHighlight"/><Scripts><OnLoad>this:SetText("Cancel")</OnLoad><OnClick>BenillaFishingJournalHerbPerkList:Hide()</OnClick></Scripts></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice1" inherits="BenillaHerbJournalChoiceTemplate" id="1"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-40"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice2" inherits="BenillaHerbJournalChoiceTemplate" id="2"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-88"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice3" inherits="BenillaHerbJournalChoiceTemplate" id="3"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-136"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice4" inherits="BenillaHerbJournalChoiceTemplate" id="4"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-184"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice5" inherits="BenillaHerbJournalChoiceTemplate" id="5"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-232"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice6" inherits="BenillaHerbJournalChoiceTemplate" id="6"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-280"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice7" inherits="BenillaHerbJournalChoiceTemplate" id="7"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-328"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice8" inherits="BenillaHerbJournalChoiceTemplate" id="8"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-376"/></Offset></Anchor></Anchors></Button>
+                    <Button name="BenillaFishingJournalHerbPerkChoice9" inherits="BenillaHerbJournalChoiceTemplate" id="9"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="10" y="-424"/></Offset></Anchor></Anchors></Button>
+                </Frames>
+            </Frame>
         </Frames>
         <Scripts>
             <OnLoad>
                 this:RegisterEvent("FISHING_JOURNAL_UPDATE")
                 this:RegisterEvent("BAG_UPDATE")
                 this:RegisterEvent("ANGLER_UPDATE")
+                this:RegisterEvent("HERBALIST_UPDATE")
+                this:RegisterEvent("HERBALISM_JOURNAL_UPDATE")
                 if UISpecialFrames then
                     tinsert(UISpecialFrames, "BenillaFishingJournal")
                 end

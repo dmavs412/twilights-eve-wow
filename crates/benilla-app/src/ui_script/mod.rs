@@ -707,6 +707,8 @@ mod fishing_reel_tests;
 #[cfg(test)]
 mod herb_patch_tests;
 #[cfg(test)]
+mod herbalism_journal_tests;
+#[cfg(test)]
 mod unit_frame_tests;
 
 #[cfg(test)]

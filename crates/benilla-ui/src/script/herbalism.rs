@@ -3,6 +3,14 @@
 //! `HerbSweep`, `HerbProbe`, `HerbSnip`, `HerbSight`, `HerbTwine`, `HerbArmCharm` and `HerbLeave`.
 //! The host pushes the open grid into the [`Model`] and fires `HERB_GRID_UPDATE` and
 //! `HERB_GRID_CLOSED` itself. Tile numbers are 1-based in Lua and 0-based here.
+//!
+//! The Herbalism Journal tab (#443) reads `GetHerbalistInfo()`, `GetHerbGear()`, the Satchel
+//! (`GetHerbSatchel`, `GetHerbSatchelItem`), the zones and plants (`GetHerbJournalZones`,
+//! `GetHerbJournalZone`, `GetHerbJournalPlant`, `GetHerbRevealAt`) and the perks
+//! (`GetHerbPerkSlots`, `GetHerbPerkSlot`, `GetNumHerbPerks`, `GetHerbPerk`). It queues
+//! `SetHerbTool`, `SetHerbConsumable`, `PickHerbPerk` and `WithdrawHerbItem` as
+//! [`HerbJournalCall`]s. The host pushes the views and fires `HERBALIST_UPDATE` and
+//! `HERBALISM_JOURNAL_UPDATE`. Perk slots are 1-based in Lua and 0-based here.
 
 use mlua::{Lua, MultiValue, Value};
 
@@ -60,7 +68,68 @@ pub enum HerbCall {
     Leave,
 }
 
+/// The character's Herbalist Level and perk slots, as the realm's `Herbalist` event.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HerbalistView {
+    pub knows: bool,
+    pub level: u32,
+    pub xp: u32,
+    pub to_next: u32,
+    pub title: String,
+    /// One per perk slot the level opens: the picked perk's key, or "" for an empty slot.
+    pub perks: Vec<String>,
+}
+
+/// One perk of `herbs.toml`, as the Journal lists it.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HerbPerkView {
+    pub key: String,
+    pub name: String,
+    pub boon: bool,
+    pub text: String,
+}
+
+/// The Herbalism Journal, as the realm's `HerbalismJournal` event.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HerbJournalView {
+    /// The Tool and Consumable slots' items; 0 for empty.
+    pub tool: u32,
+    pub consumable: u32,
+    pub satchel: Vec<super::SatchelSlot>,
+    /// `(item, tiles pulled)`.
+    pub picks: Vec<(u32, u32)>,
+    /// `(AreaTable id, plant items)`.
+    pub zones: Vec<(u32, Vec<u32>)>,
+    pub reveal_at: [u32; 3],
+    pub perks: Vec<HerbPerkView>,
+}
+
+/// One call the Journal queued for the host, perk slots 0-based.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HerbJournalCall {
+    SetTool(u32),
+    SetConsumable(Option<u32>),
+    PickPerk { slot: u8, key: String },
+    Withdraw { item: u32, count: u32 },
+}
+
 impl super::UiScript {
+    /// Push the character's Herbalist Level `GetHerbalistInfo()` and the perk getters answer.
+    pub fn set_herbalist(&mut self, view: HerbalistView) {
+        self.model_mut().herbalist = view;
+    }
+
+    /// Push the Herbalism Journal the `GetHerb*` Journal getters answer.
+    pub fn set_herb_journal(&mut self, view: HerbJournalView) {
+        self.model_mut().herb_journal = view;
+    }
+
+    /// Drain the Journal's `SetHerbTool`, `SetHerbConsumable`, `PickHerbPerk` and
+    /// `WithdrawHerbItem` calls since the last drain, oldest first.
+    pub fn take_herb_journal_calls(&mut self) -> Vec<HerbJournalCall> {
+        std::mem::take(&mut self.model_mut().herb_journal_calls)
+    }
+
     /// Push the open grid `GetHerbGrid()` and its siblings answer, or `None` once it closes.
     pub fn set_herb_grid(&mut self, view: Option<HerbGridView>) {
         self.model_mut().herb_grid = view;
@@ -88,6 +157,27 @@ fn queue(lua: &Lua, call: Option<HerbCall>) {
 
 fn num(v: impl Into<f64>) -> Value {
     Value::Number(v.into())
+}
+
+fn queue_journal(lua: &Lua, call: HerbJournalCall) {
+    lua.app_data_mut::<Model>()
+        .expect("model app_data")
+        .herb_journal_calls
+        .push(call);
+}
+
+/// The item for a slot: nil for 0.
+fn item_or_nil(item: u32) -> Value {
+    if item == 0 {
+        Value::Nil
+    } else {
+        num(item)
+    }
+}
+
+/// The 0-based index for a 1-based Lua number.
+fn index(i: i64) -> Option<usize> {
+    usize::try_from(i.checked_sub(1)?).ok()
 }
 
 /// Register the `GetHerb*` getters and the `Herb*` calls.
@@ -252,6 +342,196 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
         "HerbLeave",
         lua.create_function(|lua, ()| {
             queue(lua, Some(HerbCall::Leave));
+            Ok(())
+        })?,
+    )?;
+    install_journal(lua)
+}
+
+/// Register the Herbalism Journal's getters and calls.
+fn install_journal(lua: &Lua) -> mlua::Result<()> {
+    let g = lua.globals();
+    // GetHerbalistInfo(): knows, level, xp, xpToNext, title; level 0 until the host's first push.
+    g.set(
+        "GetHerbalistInfo",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let h = &model.herbalist;
+            Ok(MultiValue::from_vec(vec![
+                Value::Boolean(h.knows),
+                num(h.level),
+                num(h.xp),
+                num(h.to_next),
+                Value::String(lua.create_string(&h.title)?),
+            ]))
+        })?,
+    )?;
+    // GetHerbGear(): the Tool and Consumable slots' items, nil for an empty slot.
+    g.set(
+        "GetHerbGear",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(MultiValue::from_vec(vec![
+                item_or_nil(model.herb_journal.tool),
+                item_or_nil(model.herb_journal.consumable),
+            ]))
+        })?,
+    )?;
+    // GetHerbSatchel(): the Satchel's row count. GetHerbSatchelItem(i), 1-based: item, count.
+    g.set(
+        "GetHerbSatchel",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(model.herb_journal.satchel.len() as f64)
+        })?,
+    )?;
+    g.set(
+        "GetHerbSatchelItem",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(row) = index(i).and_then(|i| model.herb_journal.satchel.get(i)) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![num(row.item), num(row.count)]))
+        })?,
+    )?;
+    // GetHerbJournalZones(): the zone count. GetHerbJournalZone(i): areaId, numPlants.
+    // GetHerbJournalPlant(zone, j): item, picks.
+    g.set(
+        "GetHerbJournalZones",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(model.herb_journal.zones.len() as f64)
+        })?,
+    )?;
+    g.set(
+        "GetHerbJournalZone",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some((area, plants)) = index(i).and_then(|i| model.herb_journal.zones.get(i))
+            else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                num(*area),
+                num(plants.len() as f64),
+            ]))
+        })?,
+    )?;
+    g.set(
+        "GetHerbJournalPlant",
+        lua.create_function(|lua, (zone, j): (i64, i64)| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let item = index(zone)
+                .and_then(|z| model.herb_journal.zones.get(z))
+                .zip(index(j))
+                .and_then(|((_, plants), j)| plants.get(j));
+            let Some(&item) = item else {
+                return Ok(MultiValue::new());
+            };
+            let picks = model
+                .herb_journal
+                .picks
+                .iter()
+                .find(|p| p.0 == item)
+                .map_or(0, |p| p.1);
+            Ok(MultiValue::from_vec(vec![num(item), num(picks)]))
+        })?,
+    )?;
+    // GetHerbRevealAt(): the pick counts that unlock a Plant Page's three lines.
+    g.set(
+        "GetHerbRevealAt",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let [a, b, c] = model.herb_journal.reveal_at;
+            Ok(MultiValue::from_vec(vec![num(a), num(b), num(c)]))
+        })?,
+    )?;
+    // GetHerbPerkSlots(): the perk slots the level opens. GetHerbPerkSlot(i): the picked perk's
+    // key, nil for an empty slot.
+    g.set(
+        "GetHerbPerkSlots",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(model.herbalist.perks.len() as f64)
+        })?,
+    )?;
+    g.set(
+        "GetHerbPerkSlot",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let key = index(i)
+                .and_then(|i| model.herbalist.perks.get(i))
+                .filter(|k| !k.is_empty());
+            Ok(key.map(|k| lua.create_string(k)).transpose()?)
+        })?,
+    )?;
+    // GetNumHerbPerks(): the perk count. GetHerbPerk(i): key, name, isBoon, text.
+    g.set(
+        "GetNumHerbPerks",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(model.herb_journal.perks.len() as f64)
+        })?,
+    )?;
+    g.set(
+        "GetHerbPerk",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(p) = index(i).and_then(|i| model.herb_journal.perks.get(i)) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                Value::String(lua.create_string(&p.key)?),
+                Value::String(lua.create_string(&p.name)?),
+                Value::Boolean(p.boon),
+                Value::String(lua.create_string(&p.text)?),
+            ]))
+        })?,
+    )?;
+    g.set(
+        "SetHerbTool",
+        lua.create_function(|lua, item: u32| {
+            queue_journal(lua, HerbJournalCall::SetTool(item));
+            Ok(())
+        })?,
+    )?;
+    g.set(
+        "SetHerbConsumable",
+        lua.create_function(|lua, item: Option<u32>| {
+            queue_journal(lua, HerbJournalCall::SetConsumable(item));
+            Ok(())
+        })?,
+    )?;
+    g.set(
+        "PickHerbPerk",
+        lua.create_function(|lua, (slot, key): (i64, String)| {
+            if let Some(slot) = index(slot).and_then(|s| u8::try_from(s).ok()) {
+                queue_journal(lua, HerbJournalCall::PickPerk { slot, key });
+            }
+            Ok(())
+        })?,
+    )?;
+    // WithdrawHerbItem(i, one): queues moving Satchel row `i` (the whole stack, or one) to the bags.
+    g.set(
+        "WithdrawHerbItem",
+        lua.create_function(|lua, (i, one): (i64, Option<bool>)| {
+            let row = {
+                let model = lua.app_data_ref::<Model>().expect("model app_data");
+                index(i)
+                    .and_then(|i| model.herb_journal.satchel.get(i))
+                    .copied()
+            };
+            if let Some(row) = row {
+                let count = if one == Some(true) { 1 } else { row.count };
+                queue_journal(
+                    lua,
+                    HerbJournalCall::Withdraw {
+                        item: row.item,
+                        count,
+                    },
+                );
+            }
             Ok(())
         })?,
     )?;

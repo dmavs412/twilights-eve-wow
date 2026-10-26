@@ -205,7 +205,10 @@ pub use guild::{
     GuildMemberInfo, GuildRankEdit, GuildRankInfo, GuildRequest, GuildState, LastOnline, UnitGuild,
     MAX_RANKS, MIN_RANKS, RANK_RIGHT_BITS,
 };
-pub use herbalism::{HerbCall, HerbGridView, HerbKnownView, HerbTileView};
+pub use herbalism::{
+    HerbCall, HerbGridView, HerbJournalCall, HerbJournalView, HerbKnownView, HerbPerkView,
+    HerbTileView, HerbalistView,
+};
 pub use input_verbs::{BindingInput, FiredInput, HeldInput};
 pub use modelframe::ModelPaneFrame;
 pub use petition::{

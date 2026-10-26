@@ -383,10 +383,13 @@ fn pump(
             }
             continue;
         }
-        // The Forager's Grid and its close go to the herb window's feed (spec #435).
+        // The Forager's Grid, its close and the Herbalism Journal go to the herb feed (spec #435).
         if matches!(
             event,
-            SessionEvent::HerbGrid { .. } | SessionEvent::HerbGridClosed { .. }
+            SessionEvent::HerbGrid { .. }
+                | SessionEvent::HerbGridClosed { .. }
+                | SessionEvent::Herbalist { .. }
+                | SessionEvent::HerbalismJournal { .. }
         ) {
             if let Some(inbox) = reel.3.as_deref_mut() {
                 inbox.0.push(event);

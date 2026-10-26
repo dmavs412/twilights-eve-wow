@@ -1,12 +1,17 @@
 //! The Forager's Grid window's host (spec #435, `assets/ui/HerbPatch.xml`): the realm's `HerbGrid`
 //! becomes the view Lua reads, `HerbGridClosed` hides the window, and every `Herb*` call the
 //! window queued goes back as a `RealmCommand::Herb`. The client holds no rules.
+//!
+//! The Herbalism Journal tab (`assets/ui/FishingJournal.xml`, #443) rides the same feed: `Herbalist`
+//! and `HerbalismJournal` become the views its getters read, and its slot, perk and withdraw calls
+//! go back as the realm's `SetHerbTool`, `SetHerbConsumable`, `PickPerk` and `WithdrawFromJournal`.
 
 use bevy::prelude::*;
 
-use benilla_protocol::SessionEvent;
+use benilla_protocol::{SatchelPick, SessionEvent};
 use benilla_ui::script::{
-    HerbCall, HerbGridView, HerbKnownView, HerbTileView, ScriptValue, UiScript,
+    HerbCall, HerbGridView, HerbJournalCall, HerbJournalView, HerbKnownView, HerbPerkView,
+    HerbTileView, HerbalistView, SatchelSlot, ScriptValue, UiScript,
 };
 use twilight_realm::{HerbAction, RealmCommand};
 
@@ -27,6 +32,11 @@ struct HerbPatch {
     grid: Option<HerbGridView>,
     /// The grid changed since the last push.
     changed: bool,
+    /// The last `Herbalist` and `HerbalismJournal` the realm sent, and whether either changed
+    /// since the last push.
+    herbalist: Option<HerbalistView>,
+    journal: Option<HerbJournalView>,
+    journal_changed: bool,
     /// Events for Lua, oldest first.
     events: Vec<(&'static str, Vec<ScriptValue>)>,
 }
@@ -82,6 +92,86 @@ fn view_of(event: &SessionEvent) -> Option<HerbGridView> {
     })
 }
 
+/// The view of a `Herbalist` event; `None` for any other event.
+fn herbalist_of(event: &SessionEvent) -> Option<HerbalistView> {
+    let SessionEvent::Herbalist {
+        knows,
+        level,
+        xp,
+        to_next,
+        title,
+        perks,
+    } = event
+    else {
+        return None;
+    };
+    Some(HerbalistView {
+        knows: *knows,
+        level: u32::from(*level),
+        xp: *xp,
+        to_next: *to_next,
+        title: title.clone(),
+        perks: perks.clone(),
+    })
+}
+
+/// The view of a `HerbalismJournal` event, field for field; `None` for any other event.
+fn journal_of(event: &SessionEvent) -> Option<HerbJournalView> {
+    let SessionEvent::HerbalismJournal {
+        tool,
+        consumable,
+        satchel,
+        picks,
+        zones,
+        reveal_at,
+        perks,
+    } = event
+    else {
+        return None;
+    };
+    Some(HerbJournalView {
+        tool: *tool,
+        consumable: *consumable,
+        satchel: satchel
+            .iter()
+            .map(|row| SatchelSlot {
+                item: row.item,
+                count: row.count,
+                wear: row.wear,
+                tackle: row.tackle,
+            })
+            .collect(),
+        picks: picks.clone(),
+        zones: zones.clone(),
+        reveal_at: *reveal_at,
+        perks: perks
+            .iter()
+            .map(|(key, name, boon, text)| HerbPerkView {
+                key: key.clone(),
+                name: name.clone(),
+                boon: *boon,
+                text: text.clone(),
+            })
+            .collect(),
+    })
+}
+
+/// The realm command a Journal call stands for.
+fn journal_command_of(call: HerbJournalCall) -> RealmCommand {
+    match call {
+        HerbJournalCall::SetTool(item) => RealmCommand::SetHerbTool { item: Some(item) },
+        HerbJournalCall::SetConsumable(item) => RealmCommand::SetHerbConsumable { item },
+        HerbJournalCall::PickPerk { slot, key } => RealmCommand::PickPerk { slot, perk: key },
+        HerbJournalCall::Withdraw { item, count } => RealmCommand::WithdrawFromJournal {
+            pick: SatchelPick {
+                item,
+                durability: None,
+            },
+            count,
+        },
+    }
+}
+
 /// The realm command a queued call stands for.
 fn command_of(call: HerbCall) -> RealmCommand {
     RealmCommand::Herb(match call {
@@ -113,6 +203,16 @@ fn run_herbs(mut inbox: ResMut<HerbInbox>, mut patch: ResMut<HerbPatch>) {
                 p.grid = None;
                 p.changed = true;
             }
+            SessionEvent::Herbalist { .. } => {
+                p.herbalist = herbalist_of(&event);
+                p.journal_changed = true;
+                p.events.push(("HERBALIST_UPDATE", Vec::new()));
+            }
+            SessionEvent::HerbalismJournal { .. } => {
+                p.journal = journal_of(&event);
+                p.journal_changed = true;
+                p.events.push(("HERBALISM_JOURNAL_UPDATE", Vec::new()));
+            }
             grid => {
                 if let Some(view) = view_of(&grid) {
                     p.grid = Some(view);
@@ -140,8 +240,20 @@ fn feed_herbs(
         patch.changed = false;
         script.set_herb_grid(patch.grid.clone());
     }
+    if new_vm || patch.journal_changed {
+        patch.journal_changed = false;
+        if let Some(herbalist) = patch.herbalist.clone() {
+            script.set_herbalist(herbalist);
+        }
+        if let Some(journal) = patch.journal.clone() {
+            script.set_herb_journal(journal);
+        }
+    }
     for call in script.take_herb_calls() {
         outbox.0.push(command_of(call));
+    }
+    for call in script.take_herb_journal_calls() {
+        outbox.0.push(journal_command_of(call));
     }
     for (name, args) in std::mem::take(&mut patch.events) {
         script.fire_event(name, args);
@@ -266,6 +378,54 @@ mod tests {
         for (call, action) in cases {
             assert!(matches!(command_of(call), RealmCommand::Herb(a) if a == action));
         }
+    }
+
+    #[test]
+    fn every_journal_call_becomes_its_realm_command() {
+        assert!(matches!(
+            journal_command_of(HerbJournalCall::SetTool(961101)),
+            RealmCommand::SetHerbTool { item: Some(961101) }
+        ));
+        assert!(matches!(
+            journal_command_of(HerbJournalCall::SetConsumable(None)),
+            RealmCommand::SetHerbConsumable { item: None }
+        ));
+        assert!(matches!(
+            journal_command_of(HerbJournalCall::PickPerk { slot: 0, key: "reach".into() }),
+            RealmCommand::PickPerk { slot: 0, perk } if perk == "reach"
+        ));
+        assert!(matches!(
+            journal_command_of(HerbJournalCall::Withdraw { item: 961202, count: 3 }),
+            RealmCommand::WithdrawFromJournal { pick, count: 3 }
+                if pick.item == 961202 && pick.durability.is_none()
+        ));
+    }
+
+    #[test]
+    fn the_herbalist_and_journal_events_become_their_views() {
+        let herbalist = herbalist_of(&SessionEvent::Herbalist {
+            knows: true,
+            level: 12,
+            xp: 30,
+            to_next: 90,
+            title: "Herb Gatherer".into(),
+            perks: vec!["reach".into()],
+        })
+        .unwrap();
+        assert_eq!((herbalist.level, herbalist.perks.len()), (12, 1));
+        assert!(herbalist_of(&SessionEvent::LoggedOut).is_none());
+        let journal = journal_of(&SessionEvent::HerbalismJournal {
+            tool: 961101,
+            consumable: 0,
+            satchel: Vec::new(),
+            picks: vec![(2447, 7)],
+            zones: vec![(12, vec![2447])],
+            reveal_at: [5, 10, 25],
+            perks: vec![("reach".into(), "Long Reach".into(), true, "text".into())],
+        })
+        .unwrap();
+        assert_eq!((journal.tool, journal.picks[0].1), (961101, 7));
+        assert!(journal.perks[0].boon);
     }
 
     #[test]
