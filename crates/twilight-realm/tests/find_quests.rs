@@ -87,7 +87,8 @@ fn walking_into_the_spot_explores_it() {
     walk_to(&mut realm, TOWN);
     assert_eq!(status(&mut realm, zunjin), dialog_status::REWARD2);
     let done = completed(&hand_in(&mut realm, zunjin, SCOUTING_THORN_HILL)).expect("handed in");
-    assert_eq!(done.items, [(TOKEN, 1)]);
+    assert_eq!(done.money, 405);
+    assert!(done.items.is_empty(), "no Token: {:?}", done.items);
 }
 
 #[test]
@@ -120,7 +121,9 @@ fn a_find_quest_is_handed_in_to_the_person_found_and_she_offers_the_next_step() 
     let outrider = giver(&there, OUTRIDER);
     assert_eq!(status(&mut realm, outrider), dialog_status::REWARD2);
     let done = hand_in(&mut realm, outrider, THE_KOLKAR_WATCH);
-    assert_eq!(completed(&done).expect("handed in").items, [(TOKEN, 1)]);
+    let paid = completed(&done).expect("handed in");
+    assert_eq!(paid.money, 622);
+    assert!(paid.items.is_empty(), "no Token: {:?}", paid.items);
     // Her quest opens at once, as the next in the chain.
     let next = done.iter().find_map(|e| match e {
         SessionEvent::QuestDetail(d) => Some(d.quest_id),

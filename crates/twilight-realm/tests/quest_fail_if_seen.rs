@@ -33,7 +33,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 fail_if_seen = "You were seen."
 
 [[quest]]
@@ -47,7 +46,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 fail_if_seen = "You were seen."
 explore = [{ place = "The Test Spot", position = [-441.8, -2540.0], radius = 5.0 }]
 
@@ -62,7 +60,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 "#;
 
 const FAILED: u8 = 2;

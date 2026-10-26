@@ -1,5 +1,4 @@
-# The items the quests use: the collect objectives' drops and the Token the reward panels
-# show. Same layout as items.toml, kept apart because that file is generated and its items fill
+# The items the quests use: the collect objectives' drops, and the old Token. Same layout as items.toml, kept apart because that file is generated and its items fill
 # the loot pools; these drop only while a quest wants them. The one exception is a Phased
 # Dungeon's key (the Abbey Tower Key): the Run's key holder carries it, through the dungeon file's
 # `[key]`, and it leaves the bags of a character who leaves the Phase.
@@ -27,10 +26,10 @@ item = [
   { entry = 5164, name = "Thunderhawk Wings", quality = 1, item_level = 1, class = 12, display_id = 8284, stackable = 20 },
   { entry = 6443, name = "Deviate Hide", quality = 1, item_level = 1, class = 12, display_id = 11164, stackable = 20 },
   { entry = 7119, name = "Twitching Antenna", quality = 1, item_level = 1, class = 12, display_id = 15507, stackable = 20 },
-  # The Token: quests pay it into the bags and the Token vendor takes it from there,
-  # so the bags show how many the character has. No vendor buys it (no sell price). Its display
-  # is the amethyst's (INV_Misc_Gem_Amethyst_01). The entry is outside 1.12's item range.
-  { entry = 90001, name = "Twilight Token", quality = 2, item_level = 1, class = 15, display_id = 7401, stackable = 100 },
+  # The Token: junk now. No quest pays it (ADR 0027); it stays defined so old saves load and the
+  # Tokens they carry sell to any vendor for a silver each. Its display is the amethyst's
+  # (INV_Misc_Gem_Amethyst_01). The entry is outside 1.12's item range.
+  { entry = 90001, name = "Twilight Token", quality = 1, item_level = 1, class = 15, display_id = 7401, sell_price = 100, stackable = 100 },
   # Echo Ridge Mine's Quest Starter (#85): it begins The Idol in the Deep. Its display is
   # vmangos's Carved Stone Idol's (item 2636).
   { entry = 980001, name = "Smoldering Twilight Idol", quality = 1, item_level = 7, class = 12, display_id = 2551, max_count = 1, start_quest = 94001 },

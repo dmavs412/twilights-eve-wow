@@ -43,7 +43,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 
 [[quest]]
 id = 99202
@@ -56,7 +55,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 
 [[quest]]
 id = 99203
@@ -70,7 +68,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 
 [[quest]]
 id = 99204
@@ -83,7 +80,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 talk = [{ npc = 197, option = "Ask about the road.", reply = "Mind the wolves." }]
 
 [[quest]]
@@ -97,7 +93,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 use = [[990001, 2]]
 
 [[gameobject]]
@@ -119,7 +114,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 
 [[quest]]
 id = 99207
@@ -134,7 +128,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 "#;
 
 const NOTICE: u64 = HIGHGUID_GAMEOBJECT << 48 | 990002;
@@ -283,7 +276,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 "#;
     realm = realm.with_quests(toml);
     assert!(!offered(&mut realm).contains(&99290));
@@ -462,7 +454,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 kill = [[6, 1], [38, 1]]
 talk = [{ npc = 197, option = "a", reply = "b" }]
 use = [[990001, 1], [990001, 2]]
@@ -532,7 +523,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 "#;
 
 #[test]

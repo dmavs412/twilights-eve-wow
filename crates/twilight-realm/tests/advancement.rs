@@ -73,7 +73,7 @@ fn a_basic_warrior_at_the_tier_cap_gains_no_xp() {
     let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
     let done = completed(&turned_in).expect("the quest still completes");
     assert_eq!(done.xp, 0, "no XP at the cap, even with ?xp=");
-    assert_eq!(done.money, 400, "the rest of the reward still comes");
+    assert_eq!(done.money, 500, "the rest of the reward still comes");
     assert!(!turned_in
         .iter()
         .any(|e| matches!(e, SessionEvent::LevelUp(_))));
@@ -586,7 +586,7 @@ fn a_talent_respec_leaves_the_quests_alone() {
     events.extend(drain(&mut realm));
     assert_eq!(
         descriptor(&events, me).player_money(),
-        Some(12345 + 400 - 10000),
+        Some(12345 + 500 - 10000),
         "the respec went through"
     );
     assert_eq!(quest_log(&events, me), log_before, "the quest under way");

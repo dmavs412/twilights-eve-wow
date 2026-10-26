@@ -31,7 +31,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 explore = [
     { place = "North Overlook", position = [-5000.0, -3000.0], radius = 10.0 },
     { place = "East Overlook", position = [-4800.0, -3200.0], radius = 10.0 },
@@ -49,7 +48,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 explore = { place = "Lone Overlook", position = [-4000.0, -3000.0], radius = 10.0 }
 "#;
 
@@ -169,7 +167,6 @@ fn three_listed_spots_and_two_kills_fail_validation() {
         progress = "-"
         completion = "-"
         money = 0
-        tokens = 0
         kill = [[3, 1], [4, 1]]
         explore = [
             { place = "A", position = [0.0, 0.0], radius = 5.0 },

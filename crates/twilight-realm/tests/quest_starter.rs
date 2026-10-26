@@ -39,7 +39,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 collect = [{ item = 990001, count = 1 }]
 "#;
 

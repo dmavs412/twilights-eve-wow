@@ -9,7 +9,7 @@ use benilla_protocol::messages::{
 use benilla_protocol::SessionEvent;
 
 use super::content::{self, Quest};
-use super::{complete, slot_pairs, Active, TOKEN};
+use super::{complete, slot_pairs, Active};
 use crate::characters::Char;
 use crate::fields::values;
 use crate::{equipment, items, Realm, RealmCommand};
@@ -563,17 +563,13 @@ fn choice_rewards(q: &Quest) -> Vec<QuestRewardItem> {
         .collect()
 }
 
-/// What every hand-in gives, `(entry, count)`: the Tokens, then the quest's reward items.
+/// What every hand-in gives, `(entry, count)`: the quest's reward items.
 fn fixed_rewards(q: &Quest) -> Vec<(u32, u32)> {
-    let tokens = (q.tokens > 0).then_some((TOKEN, q.tokens));
-    tokens
-        .into_iter()
-        .chain(q.rewards.iter().copied())
-        .collect()
+    q.rewards.clone()
 }
 
 /// The reward panel's "You will receive" rows.
-fn token_rewards(q: &Quest) -> Vec<QuestRewardItem> {
+fn reward_rows(q: &Quest) -> Vec<QuestRewardItem> {
     fixed_rewards(q)
         .into_iter()
         .map(|(item_id, count)| QuestRewardItem {
@@ -598,7 +594,7 @@ fn details(npc: u64, q: &Quest) -> QuestDetails {
         objectives: q.objectives.clone(),
         auto_finish: 0,
         choices: choice_rewards(q),
-        rewards: token_rewards(q),
+        rewards: reward_rows(q),
         money: q.money as i32,
         reward_spell: 0,
     }
@@ -613,7 +609,7 @@ fn offer_reward(npc: u64, q: &Quest) -> QuestOfferReward {
         offer_text: q.completion.clone(),
         auto_finish: 0,
         choices: choice_rewards(q),
-        rewards: token_rewards(q),
+        rewards: reward_rows(q),
         money: q.money as i32,
         quest_flags: 0,
         reward_spell: 0,
@@ -685,7 +681,7 @@ fn turn_in(c: &Char, npc: u64, q: &Quest, events: &mut Vec<SessionEvent>) {
     }));
 }
 
-/// The hand-in's goods: the collected items go, the money, Tokens and `chosen` item come, and the
+/// The hand-in's goods: the collected items go, the money, reward items and `chosen` item come, and the
 /// slot clears. The XP is the world's to pay. Goods that would not fit in the bags refuse the
 /// hand-in before anything changes, as vmangos `Player::CanRewardQuest` does; whether it went
 /// through.

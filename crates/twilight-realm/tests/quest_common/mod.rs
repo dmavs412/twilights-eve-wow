@@ -31,7 +31,7 @@ pub const CROCOLISK_SKINS: u32 = 91006;
 pub const VENOM_SAC: u32 = 4886;
 pub const CROCOLISK_SKIN: u32 = 2925;
 
-/// The Token's item entry, as the dialogs show it.
+/// The Token's item entry, as old saves carry it.
 pub const TOKEN: u32 = 90001;
 
 /// Every quest giver created in `events`: `(guid, entry, position)`.

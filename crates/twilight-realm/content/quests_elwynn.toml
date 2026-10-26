@@ -20,7 +20,6 @@ details = "The idol is warm to the touch, though no fire burns near it. Dark wax
 progress = "You've found something. I can see it on your face. Out with it."
 completion = "I've seen that mark once before. It was painted on the undercroft door the morning after the Abbey fell, and the paint was still wet. Kobolds don't dig toward an abbey by chance. That mine runs under our feet, and whatever took the Abbey came up through the floor."
 money = 0
-tokens = 0
 zone_or_sort = 12
 collect = [{ item = 980001, count = 1 }]
 
@@ -39,7 +38,6 @@ details = "We lost the Abbey in a single night, and until now we didn't know how
 progress = "-"
 completion = "Light be praised, a living face! They came up through the undercroft, chanting, and the candles never went out. Not once, not even with the doors thrown open. I've hidden by this stair for days. Listen to me. Whatever they're doing below, it isn't finished."
 money = 0
-tokens = 0
 zone_or_sort = 12
 
 # ── Garrick Padfoot ──────────────────────────────────────────────────────────────────────────
@@ -57,7 +55,6 @@ details = "The Defias in the vineyards answer to one man, Garrick Padfoot. He ra
 progress = "Is Padfoot still breathing?"
 completion = "Padfoot's dead? Then the vineyards are ours again. I almost pity him. He lost everything, and all he could think to do was take from people who had a little left. He kept a fine stash for a thief. Take whichever suits your hand. You've earned it."
 money = 500
-tokens = 0
 zone_or_sort = 12
 kill = [[103, 1]]
 choices = [900101, 900102, 900103, 900104]
@@ -79,14 +76,13 @@ details = "It was the Abbot who let them in. He opened the undercroft himself an
 progress = "The bell. I keep hearing the bell."
 completion = "Then it's quiet up there at last. Light forgive him, and forgive me for being glad. He taught me my letters, you know. Whatever they were digging for, they'll have to dig without him."
 money = 0
-tokens = 0
 zone_or_sort = 12
 kill = [[96005, 1]]
 
 # ── Northshire's bounties (#96, #98) ─────────────────────────────────────────────────────────
 #
 # Bounties: taken again as soon as they are handed in, offered from the Tier of their level, and
-# paid half a level's XP, a Token and a little copper. The givers are the vanilla NPCs at their usual spots. Copper amounts are placeholders.
+# paid half a level's XP and copper. The givers are the vanilla NPCs at their usual spots. Copper amounts are placeholders.
 
 [[quest]]
 id = 94005
@@ -98,8 +94,7 @@ objectives = "Kill 10 Young Wolves or Timber Wolves in Northshire Valley, then r
 details = "There are more wolves every season, and they aren't ours. They come in thin and hungry from the west, out of the hills above Westfall, where my brother kept sheep before the Hush took it. Whatever is over there, they won't stay near it, so they come here, to my fold. I'll pay for every pack you thin, young or timber. It's all the same to me."
 progress = "Are they still out there? I haven't slept through a night in weeks."
 completion = "That will buy the fold a few quiet nights. More will come. They have nowhere else to go, the same as the rest of us. My coin will be here when they do."
-money = 50
-tokens = 1
+money = 121
 zone_or_sort = 12
 kill = [[299, 10], [69, 10]]
 
@@ -113,8 +108,7 @@ objectives = "Bring 8 Northshire Wolf Pelts to Eagan Peltskinner."
 details = "The quartermaster in Goldshire buys every pelt I send him, and his price climbs every month. Our furs used to come down from Dun Morogh, but that road ends in grey now, and no one who has walked it has come back. Either Elwynn's wolves keep the Watch warm this winter, or nothing does. Bring me their pelts, whole if you can manage it."
 progress = "Any pelts for me?"
 completion = "Good, thick hides. That's a few more men warm at the gate this winter. Here is your share."
-money = 60
-tokens = 1
+money = 135
 zone_or_sort = 12
 collect = [{ item = 980002, count = 8, from = [299, 69], chance = 50 }]
 
@@ -128,8 +122,7 @@ objectives = "Kill 10 Kobold Vermin or Kobold Workers at Echo Ridge Mine, then r
 details = "I've been a deputy for six weeks. Everyone with more years than me went to the city when the king's ship didn't come home, so now it's me watching Echo Ridge. The kobolds are digging faster than ever, and they're digging in a straight line, toward the Abbey. Kobolds never dig straight. The Marshal's posted a standing bounty. Vermin or workers, they all count."
 progress = "Are they still digging out there?"
 completion = "That will slow them down. It won't stop them, mind. Come back when they've dug a few more holes, and I'll have the bounty ready."
-money = 80
-tokens = 1
+money = 158
 zone_or_sort = 12
 kill = [[6, 10], [257, 10]]
 
@@ -143,8 +136,7 @@ objectives = "Kill 10 Defias Thugs in the Northshire Vineyards, then return to M
 details = "Half the thugs in those vineyards picked grapes in the same rows last summer. There's no wine trade with the ships gone, so there are no wages, and the Defias pay. I can't blame a man for eating, but I can't let him rob the valley either. I can't spare the guards, but I can spare the coin. There's a bounty on every thug you bring down, as often as you care to collect it."
 progress = "Are the vineyards still crawling with Defias?"
 completion = "Ten fewer thieves. Padfoot will find more. As long as there's no work, there will always be hungry men. My bounty will be here when he does."
-money = 120
-tokens = 1
+money = 206
 zone_or_sort = 12
 kill = [[38, 10]]
 
@@ -162,8 +154,7 @@ objectives = "Recover 10 Twilight Relics from the Abbey's corrupted brothers and
 details = "Every brother they turned carries some trinket of theirs: a wax-sealed charm, a carved stone, a candle that won't go out. The disciples carry more. I want all of it out of the Abbey and burned. The brothers' families still come to the gate every morning, asking whether there's news. I'd like to be able to tell them the place is clean. Bring me what you find, and keep bringing it."
 progress = "More of their filth, I hope?"
 completion = "Into the fire with the rest. Each one we burn is one they can't use. Come back when the Abbey has filled up again."
-money = 200
-tokens = 3
+money = 500
 zone_or_sort = 12
 collect = [{ item = 980003, count = 10, sources = [{ from = [96003], chance = 35 }, { from = [96004], chance = 100 }, { from = [96005], chance = 100, count = 3 }] }]
 
@@ -187,7 +178,6 @@ details = "It's all here: the idol in the undercroft, the robed men, and the Abb
 progress = "Have you got the report for Marshal Dughan?"
 completion = "McBride's seal. A cult, he writes, with the Abbot ringing the bell for them. Brother Sammuel heard confessions in that Abbey for thirty years. I've had Defias in my fields since spring, and the Defias I understand. I'll read every word, but don't ask me to believe all of it."
 money = 0
-tokens = 0
 choices = [903000, 903001, 903002]
 zone_or_sort = 12
 gives = [[980004, 1]]
@@ -207,7 +197,6 @@ details = "One idol and one frightened marshal's word. That isn't enough to rous
 progress = "Well? Has anyone in town seen that mark?"
 completion = "A crate off a wrecked cart. Strangers buying ore by the cartload. A debtor who ran the very night the Abbey fell. That's three things I can't wave away. It's still a Defias matter, mind. But it's a matter."
 money = 0
-tokens = 0
 choices = [903003, 903004, 903005]
 zone_or_sort = 12
 talk = [
@@ -230,7 +219,6 @@ details = "The crate I told the Marshal about came off a cart that wrecked north
 progress = "Did you find that strongbox?"
 completion = "Coin I've never seen before, and a letter addressed to the Collector, at Brackwell. The Defias don't pay in this coin. South, then. I'll keep an eye on Brackwell."
 money = 400
-tokens = 0
 choices = [903006, 903007, 903008, 903009]
 zone_or_sort = 12
 collect = [{ item = 980005, count = 1, from = [96011], chance = 100 }]
@@ -256,8 +244,7 @@ objectives = "Kill 10 Prowlers or Forest Spiders near Goldshire, then return to 
 details = "Every week more people walk out of Stormwind looking for farm work, and they walk the forest road with nothing but a bundle and their children. Prowlers drag off the stragglers' goats, and the forest spiders make the road deadly after dark. I can't put a guard on every mile of it. Thin them out, and I'll pay a bounty each time. Prowlers or spiders, either will do."
 progress = "Is the road any safer?"
 completion = "Ten fewer teeth on the road. They'll creep back. They always do. My coin will be waiting when they do."
-money = 150
-tokens = 1
+money = 260
 zone_or_sort = 12
 kill = [[118, 10], [30, 10]]
 
@@ -271,8 +258,7 @@ objectives = "Bring 8 Forest Spider Silk to Smith Argus."
 details = "My bellows rope was Kul Tiran hemp, and the last ship that carried any never came back. Spider silk makes a better rope than hemp ever did, and the forest is full of spiders. Bring me silk, eight at a time, and I'll pay you fairly for the trouble. Mind the bites."
 progress = "Have you got that silk?"
 completion = "Strong stuff. That will keep my forge breathing through the week. Come back when you have more."
-money = 170
-tokens = 1
+money = 280
 zone_or_sort = 12
 collect = [{ item = 980006, count = 8, from = [30], chance = 50 }]
 
@@ -286,8 +272,7 @@ objectives = "Kill 10 Defias Bandits, then return to Deputy Rainer."
 details = "The bandits on the Stormwind road used to rob merchants. There aren't many merchants left, so now they rob families carrying everything they own. Yesterday I watched a woman hand over her husband's wedding ring, and I was too far away to do a thing about it. Every bandit you put down is one fewer on that road. The bounty stands as long as there are bandits to hunt."
 progress = "Are there still plenty of bandits about?"
 completion = "Ten fewer bandits. If only there weren't always ten more. Here's your share."
-money = 200
-tokens = 1
+money = 316
 zone_or_sort = 12
 kill = [[116, 10]]
 
@@ -301,8 +286,7 @@ objectives = "Bring 8 Gold Dust from Kobold Vermin and Kobold Tunnelers to Remy 
 details = "The kobolds at the edge of Fargodeep dig up flecks of gold and don't know what to do with them. I do. Everyone in Goldshire is selling, and nobody is buying anything but gold. When the world gets smaller, gold gets heavier. Bring me the dust, eight at a time, and I'll make it worth your while. Twice, if you're quick about it."
 progress = "Have you got my dust?"
 completion = "Pure enough. Don't ask where it goes. Come back when you have more, and I'll pay you again."
-money = 180
-tokens = 1
+money = 290
 zone_or_sort = 12
 collect = [{ item = 980007, count = 8, from = [6, 475], chance = 50 }]
 
@@ -326,7 +310,6 @@ details = "The letter from the strongbox is addressed to the Collector, at Brack
 progress = "-"
 completion = "Morgan. Aye, I know the name. He's spent the past year buying the debts of every farm that's struggling, and since the crown fixed the price of grain, that's every farm. The Stonefields owe him, and so do the Maclures. Neither family knows the other owes him too. Let me think on that."
 money = 0
-tokens = 0
 choices = [903010, 903011, 903012]
 zone_or_sort = 12
 
@@ -342,7 +325,6 @@ details = "Since the Westfall families came over the ridge, every acre in Elwynn
 progress = "Is that pig dead yet?"
 completion = "That's no Maclure stamp on this collar. It's the same mark that's on the letters about our debt, the ones the postman won't leave with me. Someone gave that sow to the Maclures and turned her loose on my land, and I'd like to know who."
 money = 300
-tokens = 0
 choices = [903013, 903014, 903015]
 zone_or_sort = 12
 kill = [[330, 1]]
@@ -362,7 +344,6 @@ details = "Morgan holds both families' debts, and the pig wore his mark. I think
 progress = "Did they see the collar?"
 completion = "So the feud was bought. Each of them thought the other had done it, and now they know better. There's too little land left in this world to waste it fighting over a fence. I'll tell them to mend it together, and I'll hold Morgan to account if I can."
 money = 0
-tokens = 0
 choices = [903016, 903017, 903018]
 zone_or_sort = 12
 talk = [
@@ -371,7 +352,7 @@ talk = [
 ]
 
 # The moneylender's end. An item quest with placeholder rewards until the gear pass:
-# 800 copper and 3 Tokens, no choices.
+# 800 copper, no choices.
 [[quest]]
 id = 94204
 kind = "story"
@@ -384,7 +365,6 @@ details = "Thomas tells me the farms have stopped fighting, and that Morgan is t
 progress = "Is the Collector's ledger yours yet?"
 completion = "Defias wages, paid in that coin, line after line. And here, in the margin: road to the Landing, keep clear. They paid the Defias to keep the farmers fighting so that nobody watched the road to Jerod's Landing. This is no Defias matter anymore."
 money = 800
-tokens = 0
 choices = [903019, 903020, 903021]
 zone_or_sort = 12
 kill = [[96012, 1]]
@@ -512,8 +492,7 @@ objectives = "Kill 10 Defias Thugs, then return to Guard Thomas."
 details = "The Defias have made a camp of the Brackwell pumpkin patch, and old Bridenbecker can't tend his own field. He has no sons left to help him. One died at the Abbey, and the other walked west the week after and never came back. I can't leave the crossroads. You can. Put down ten thugs, and I'll pay a bounty each time you come back."
 progress = "Are there still thugs in the patch?"
 completion = "Ten fewer in the pumpkins. They'll send more, and I'll pay for those too."
-money = 200
-tokens = 1
+money = 316
 zone_or_sort = 12
 kill = [[38, 10]]
 
@@ -527,8 +506,7 @@ objectives = "Kill 10 Stonetusk Boars, then return to Joshua Maclure."
 details = "My boy joined the Watch last month. He says a man ought to guard something now that there's less of it to guard. So it's me, the vines and the boars, and the boars are winning. They come down every night and take more than they can eat. Kill ten Stonetusks, and I'll pay you for it, and again whenever you like."
 progress = "Have the boars been thinned?"
 completion = "Ten fewer boars. The vines may live through the season yet. Here's your coin. If you see my boy in Goldshire, tell him the vines are fine."
-money = 170
-tokens = 1
+money = 286
 zone_or_sort = 12
 kill = [[113, 10]]
 
@@ -542,8 +520,7 @@ objectives = "Gather 8 Ripe Pumpkins from the Brackwell patch, then return to Be
 details = "For as long as anyone can remember, Stormwind ate Westfall's wheat. Now that Westfall's gone grey, the city eats whatever Elwynn grows, and the buyers are at the gate before anything is ripe. The Brackwell patch is the best we have left, but the Defias have run off the pickers. Bring me ripe pumpkins, whole ones, and I'll pay for every one."
 progress = "Have you got my pumpkins?"
 completion = "Good and heavy. Half go on the city cart, and half stay here. We've had eleven at the table since my sister walked in from Westfall with her boys. Come back when the patch has grown more."
-money = 180
-tokens = 1
+money = 296
 zone_or_sort = 12
 use = [[980102, 8]]
 
@@ -557,8 +534,7 @@ objectives = "Bring 8 Boar Ribs to Innkeeper Farley."
 details = "Every bed in the Lion's Pride is taken, and half the common-room floor besides. Families from the west, a pair of sailors with no ship, an old woman from Lordaeron who sings in her sleep. They all have to eat, and my cellar is empty. The Stonetusk boars in the farmlands are plentiful and fat. Bring me their ribs, eight at a time, and I'll pay a fair price."
 progress = "Have you got those ribs?"
 completion = "Good, meaty ribs. Nobody under my roof goes to bed hungry tonight. Come back with more."
-money = 190
-tokens = 1
+money = 312
 zone_or_sort = 12
 collect = [{ item = 980010, count = 8, from = [113], chance = 50 }]
 
@@ -569,7 +545,7 @@ collect = [{ item = 980010, count = 8, from = [113], chance = 50 }]
 # docs/specs/elwynn-10-30.
 
 # Morgan's ledger listed ore from Fargodeep. An item quest with placeholder rewards until the gear
-# pass: 600 copper and 3 Tokens, no choices.
+# pass: 600 copper, no choices.
 [[quest]]
 id = 94301
 kind = "story"
@@ -582,7 +558,6 @@ details = "Morgan's ledger lists ore from Fargodeep, shipped by the cartload. Th
 progress = "Do you have Narg's journal yet?"
 completion = "Narg didn't write this for the Defias. He writes about the kobolds who fled Jasperlode, driven out by the ones who dig down instead of across. They didn't come to Fargodeep to work. They came to hide, the same as half the people in my town. Whatever is digging in Jasperlode is no kobold."
 money = 600
-tokens = 0
 choices = [903022, 903023, 903024]
 zone_or_sort = 12
 kill = [[79, 1]]
@@ -602,7 +577,6 @@ details = "A Stormwind courier lies dead beside his satchel. His wounds are not 
 progress = "Is that the courier's satchel?"
 completion = "Aldo Finch. His mother sells eggs by the well. I'll tell her myself. The dispatch reads: disturbances in Redridge under review, Elwynn considered clear, no further patrols required. Considered clear! I've sent that office a report every week since the Abbey fell. Either nobody there reads them, or they read them and don't believe a word. Aldo died a day's walk from home to carry this."
 money = 0
-tokens = 0
 choices = [903025, 903026, 903027]
 zone_or_sort = 12
 gives = [[980012, 1]]
@@ -622,7 +596,6 @@ details = "Narg's journal tells me what we feared. The inner door of Jasperlode 
 progress = "The keystone, if you please."
 completion = "Rune-marked, and the runes still glow. That's the key to the sealed door in Jasperlode. Keep it. Whatever is behind that door is no business for a foreman. I have a crew to bring home every night, and I mean to bring home all of them."
 money = 0
-tokens = 0
 choices = [903028, 903029, 903030, 903031]
 rewards = [[980013, 1]]
 zone_or_sort = 12
@@ -650,8 +623,7 @@ objectives = "Kill 10 Kobold Tunnelers or Kobold Geomancers, then return to Fore
 details = "The city needs iron, and with the Ironforge tram stopped, Fargodeep is what it has. The tunnelers dig wherever I tell them not to, and the geomancers chant over the holes. I can't send my own men in. Put down ten of either, and I'll pay a bounty each time you come back."
 progress = "Are the tunnels any quieter?"
 completion = "Ten fewer holes to mind. They'll dig more, and I'll pay for those too."
-money = 250
-tokens = 1
+money = 378
 zone_or_sort = 12
 kill = [[475, 10], [476, 10]]
 
@@ -665,8 +637,7 @@ objectives = "Bring 8 Kobold Candles to Foreman Gorn."
 details = "Our lamp oil came in by ship. The ships stopped coming a year ago, and the court says it's the weather. My men can't dig in the dark, and a kobold never goes anywhere without a candle on its head. Take them from the kobolds in Fargodeep and bring me eight at a time. I'll pay for every lot."
 progress = "Have you got my candles?"
 completion = "Tallow and wick. They'll do. Half my crew were farmhands in Westfall until last spring, and not one of them had held a pick before. They need all the light they can get."
-money = 260
-tokens = 1
+money = 388
 zone_or_sort = 12
 collect = [{ item = 980015, count = 8, from = [40, 475, 476], chance = 50 }]
 
@@ -680,8 +651,7 @@ objectives = "Kill 10 Murloc Foragers or Murloc Lurkers, then return to Fisherma
 details = "These aren't lake murlocs. I've fished Crystal Lake for thirty years, and I know the lake ones. These came up the river from the coast after the sea went grey, and there are more every month. They scare the fish off, and my nets come up empty. Kill ten of the foragers or the lurkers, and I'll pay you, as often as you like."
 progress = "Are there any murlocs left on my shore?"
 completion = "Ten fewer on the shore. I'd almost feel sorry for them, if they'd leave my nets alone. Here's your coin."
-money = 280
-tokens = 1
+money = 408
 zone_or_sort = 12
 kill = [[46, 10], [732, 10]]
 
@@ -695,15 +665,14 @@ objectives = "Bring 8 Murloc Fins to Fisherman Lee Brown."
 details = "A murloc fin makes good bait and better stew, and Farley needs every pot of stew he can get with his floor full of sleepers. Bring me eight from the lake's murlocs, and I'll pay a fair price whenever you have more."
 progress = "Have you got my fins?"
 completion = "Fresh fins, and a good lot. The stew will stretch further tonight. Come back for more."
-money = 270
-tokens = 1
+money = 404
 zone_or_sort = 12
 collect = [{ item = 980016, count = 8, from = [285, 735], chance = 50 }]
 
 # ── Lee Brown's angler quests (#332) ─────────────────────────────────────────────────────────
 #
 # Three repeatables for fish the player catches (content/fish.toml), taken again as soon as they
-# are handed in. They pay copper and quest XP, no Tokens and no Angler XP: they are a way to sell
+# are handed in. They pay copper and quest XP, no Angler XP: they are a way to sell
 # fish for more. A collect objective takes one item, so 96103 asks for the 10 Pound Mud Snapper
 # only, not the 12 Pound one.
 [[quest]]
@@ -717,7 +686,6 @@ details = "The Lion's Pride feeds half of Goldshire, and I feed the Lion's Pride
 progress = "Is that a bucket of smallfish, or are you just glad to see me?"
 completion = "Ten fat smallfish, and still wet. Farley's cook will be pleased. Here's your coin. Come back when you have more."
 money = 50
-tokens = 0
 zone_or_sort = 12
 collect = [{ item = 6291, count = 10 }]
 
@@ -732,7 +700,6 @@ details = "A longjaw snapper makes a proper supper, and the inn's regulars know 
 progress = "Have you got my snappers? The regulars are getting restless."
 completion = "Eight good snappers. They'll be on every plate in the Pride tonight. A silver for you, and my thanks."
 money = 100
-tokens = 0
 zone_or_sort = 12
 collect = [{ item = 6289, count = 8 }]
 
@@ -747,7 +714,6 @@ details = "The fish over my bar is a sea bass I took off the Stormwind breakwate
 progress = "Any sign of that trophy snapper?"
 completion = "Look at the size of it! That's the one for the wall. I'll hang the old bass in the back, where I can still see it. Three silver, and you've earned every copper."
 money = 300
-tokens = 0
 zone_or_sort = 12
 collect = [{ item = 6292, count = 1 }]
 
@@ -771,13 +737,12 @@ details = "You have the keystone, and the sealed door in Jasperlode is the door 
 progress = "You haven't opened the door yet."
 completion = "You are the first of the big folk to come through that door. Sit, but keep your voice down. The thing below hears loud voices."
 money = 0
-tokens = 0
 choices = [903032, 903033, 903034]
 zone_or_sort = 12
 use = [[98002, 1]]
 
-# Grik gives and takes it. An item quest with placeholder rewards until the gear pass: 1000 copper
-# and 3 Tokens, no choices.
+# Grik gives and takes it. An item quest with placeholder rewards until the gear pass: 1000 copper,
+# no choices.
 [[quest]]
 id = 94402
 kind = "story"
@@ -790,7 +755,6 @@ details = "The dark robes came down with big-folk diggers and drove us into the 
 progress = "Is it dead? I can still hear it humming."
 completion = "The humming has stopped. We leave tonight. Where we will go, I don't know. Every tunnel my grandmother knew ends in grey now. But we will not stay here. Take this, and tell your Marshal that what dug here dug for something older than a mine."
 money = 1000
-tokens = 0
 choices = [903035, 903036, 903037]
 zone_or_sort = 12
 kill = [[96022, 1]]
@@ -809,7 +773,6 @@ details = "Narg wrote that the ones who dig down took the mine. A thing like tha
 progress = "Did you find any orders?"
 completion = "The same mark as the idol from Echo Ridge, in the same hand. I called this a Defias matter for far too long. It was never the Defias. Forgive an old soldier, and let's see what else this hand has signed."
 money = 0
-tokens = 0
 choices = [903100, 903101, 903102, 903103]
 zone_or_sort = 12
 collect = [{ item = 980018, count = 1 }]
@@ -826,8 +789,7 @@ objectives = "Bring 10 Resonant Ore to Smith Argus in Goldshire."
 details = "Strangers have bought my ore in bulk, and now I hear the kobolds in Jasperlode are digging up something that rings when you strike it. Resonant ore, they call it. My apprentice handled one piece last week, and now he can't stand a quiet room. He hums to himself all day. I want to know why. Bring me ten pieces, and again whenever you find more."
 progress = "Does it still ring?"
 completion = "It rings, all right. Hold it up to your ear. I don't like what I hear, but I'll pay for more of it. I won't forge with it. Not ever."
-money = 400
-tokens = 3
+money = 823
 zone_or_sort = 12
 collect = [{ item = 980017, count = 10, sources = [{ from = [96017, 96018], chance = 35 }, { from = [96019], chance = 100 }, { from = [96022], chance = 100, count = 3 }] }]
 
@@ -850,14 +812,13 @@ details = "Half the new stones at the Vigil have nobody under them. People bring
 progress = "Are the stones clean? Is it done?"
 completion = "The stones are clean, and the painters are down. Low cultists, and they ran at the first blow. But they came to my graves with a brush, and that's how the cult works. They mark a place before they take it."
 money = 0
-tokens = 0
 choices = [903038, 903039, 903040]
 zone_or_sort = 12
 kill = [[96023, 6]]
 use = [[980104, 5]]
 
 # Hold the cairn against three waves, then kill Serane. An item quest with placeholder rewards
-# until the gear pass: 800 copper and 3 Tokens, no choices. Serane carries the Resonant Shard.
+# until the gear pass: 800 copper, no choices. Serane carries the Resonant Shard.
 [[quest]]
 id = 94502
 kind = "story"
@@ -870,7 +831,6 @@ details = "The marks on the cairns weren't vandalism. They were a survey, and th
 progress = "Is the ritualist dead? Is the stone still ours?"
 completion = "Serane's orders were in her hand when she fell: the tower is ready, and the tribute moves by water. The tower can only be Azora, and the water is the lake. They didn't come for the Vigil's dead. They were using the Vigil to hide a boat."
 money = 800
-tokens = 0
 choices = [903041, 903042, 903043]
 zone_or_sort = 12
 kill = [[96025, 1]]
@@ -889,7 +849,6 @@ details = "The shard hums against your palm, a note too low to hear and too stea
 progress = "Is that a shard of resonant ore? Let me see it."
 completion = "I know this sound. The master set a rod of this ore in the tower's heart, and it hummed just like this. Then the doors sealed with him inside, and I've been sleeping on these steps for a month, waiting for them to open. If the cult has the ore too, then the tower isn't the master's anymore."
 money = 0
-tokens = 0
 choices = [903044, 903045, 903046, 903047]
 zone_or_sort = 12
 collect = [{ item = 980019, count = 1 }]
@@ -951,8 +910,7 @@ objectives = "Kill 10 Murloc Nestguards or Murloc Tidehunters, then return to Gu
 details = "There used to be six of us at this post. The other five were called to the city in spring, and nobody was sent to replace them. So when the murlocs come up from the lake at night and nose around the Vigil, there's only me to chase them. Kill ten of the nestguards or tidehunters, and I'll pay a bounty each time you come back."
 progress = "Have the murlocs been thinned?"
 completion = "Ten fewer at the water's edge. They'll be back, and I'll pay for those too."
-money = 320
-tokens = 1
+money = 468
 zone_or_sort = 12
 kill = [[96026, 10], [96027, 10]]
 
@@ -966,8 +924,7 @@ objectives = "Burn 6 Murloc Nests on the lake's island, then return to Guard Pel
 details = "The murlocs breed on the island, and every nest we leave means ten more by spring. Row out and burn six of their nests. Ilsa says it's cruel. Maybe it is. But I can't hold this shore against twice as many with one sword. I'll pay for each lot, and they'll have built more by the time you're back."
 progress = "Are the nests burned?"
 completion = "Six nests gone. The island will smoke for a day. Here's your coin. There will be more nests."
-money = 330
-tokens = 1
+money = 478
 zone_or_sort = 12
 use = [[980105, 6]]
 
@@ -981,8 +938,7 @@ objectives = "Kill 10 Riverpaw Scouts, then return to Guard Pell."
 details = "Riverpaw gnolls have been watching the lake from the east shore. Gnolls never came this far in when I was a boy. Now they're everywhere, and these are scouts, and a scout who gets home tells his chief where to strike. Kill ten, and I'll pay a bounty, again whenever you like."
 progress = "Are the scouts dead?"
 completion = "Ten scouts who won't report back. The chief will send more, and I'll pay for those too."
-money = 350
-tokens = 1
+money = 505
 zone_or_sort = 12
 kill = [[96028, 10]]
 
@@ -996,8 +952,7 @@ objectives = "Bring 8 Riverpaw Scout Marks to Grave-tender Ilsa."
 details = "The gnolls daub every grave they pass, and I scrub off every daub. Their scouts wear a token of the same paint. Bring me eight of those marks, and I'll know how many walk among my stones. I'll pay for each lot."
 progress = "Have you got the marks?"
 completion = "The same daub on every one, and it isn't the cult's mark. It's a gnoll chief's. Someone out west is gathering the packs. Thank you. Bring me more if you find them."
-money = 340
-tokens = 1
+money = 495
 zone_or_sort = 12
 collect = [{ item = 980020, count = 8, from = [96028], chance = 50 }]
 
@@ -1027,7 +982,6 @@ details = "The master set three wards on the tower, and the cult has hung them o
 progress = "Are the wards pinned? Which are left?"
 completion = "Three stones, three pins. I felt the tower sigh from out here. The way up is open. Mind the top. The master is up there, and he isn't alone."
 money = 0
-tokens = 0
 choices = [903048, 903049, 903050]
 zone_or_sort = 12
 use = [[975001, 1], [975002, 1], [975003, 1]]
@@ -1045,7 +999,6 @@ details = "The cache is lined with the same humming ore as the shard. Under the 
 progress = "You have something from the cache?"
 completion = "M. Ilgalar. Morganth. We were apprentices together, and we made up our own alphabet so the master couldn't read our notes. Then we were told he'd died, and I grieved for him for years. If he's alive, and he did this, then I don't know who I was grieving. I'll run this note to the town myself. Go on up and finish what you started."
 money = 0
-tokens = 0
 choices = [903051, 903052, 903053]
 zone_or_sort = 12
 
@@ -1060,8 +1013,7 @@ objectives = "Kill the Shadow of Morganth in the top chamber of the Tower of Azo
 details = "Do you see the cord? It isn't rope. I've been bound to this floor since the evening the rod went in, and the thing standing where my work table was has Morganth's old face and none of his mind. Put it down, and the cord will let go of me. Take this scroll when it does. It will bring you back to my door whenever you need it."
 progress = "It still stands. I can feel it through the cord."
 completion = "The cord is gone. Dear gods, the air. Take the scroll and the coin. I owe you more than either."
-money = 1200
-tokens = 3
+money = 1740
 zone_or_sort = 12
 kill = [[96037, 1]]
 rewards = [[980022, 1]]
@@ -1079,7 +1031,6 @@ details = "Morganth was my apprentice for eleven years. I taught him to listen t
 progress = "Have you seen the marshal yet?"
 completion = "East, then, toward Redridge. I send a report to Stormwind every week, and every week the same answer comes back. Elwynn considered clear. Someone isn't reading them. Thank you for bringing this. Go and rest; you've earned it."
 money = 0
-tokens = 0
 choices = [903104, 903105, 903106, 903107]
 zone_or_sort = 12
 
@@ -1096,8 +1047,7 @@ objectives = "Bring 10 Ward Shards to Toren."
 details = "Whatever the cult's wards are made of, it chips off the creatures that carry them like glass. I can grind a chip down into something safe to hold. Bring me ten from the tower's gnolls, its acolytes and the voidwalkers, and I'll pay for the lot."
 progress = "How many shards have you got?"
 completion = "Ten. That's a good handful, and the tower is a little quieter for it. Here's your pay. Come back with more if you can."
-money = 500
-tokens = 3
+money = 1013
 zone_or_sort = 12
 collect = [{ item = 980021, count = 10, from = [96029], chance = 35, sources = [{ from = [96031, 96033], chance = 100 }] }]
 
@@ -1111,8 +1061,7 @@ objectives = "Bring 10 Ward Shards to Theocritus."
 details = "My wards are broken glass now, and the glass is all over the floor of my tower. Bring me ten shards from the gnolls, the acolytes and the voidwalkers, and I'll find a use for them. I'll pay for the lot."
 progress = "How many shards have you got?"
 completion = "Ten. I'll melt them down and set the wards again, properly this time. I taught a boy to listen to ore once. I should have taught him to listen to people. The pay is yours."
-money = 500
-tokens = 3
+money = 1013
 zone_or_sort = 12
 collect = [{ item = 980021, count = 10, from = [96029], chance = 35, sources = [{ from = [96031, 96033], chance = 100 }] }]
 
@@ -1196,7 +1145,6 @@ details = "Half of what this camp cuts goes out on a Defias cart, and the city g
 progress = "Has Hadrik's manifest come to hand?"
 completion = "Scaffold lengths, every one, addressed to the Landing, for the pit. A pit with scaffolding is a dig, and a dig at Jerod's Landing is no Defias business. Here's your coin. Keep your eyes on the ridge."
 money = 600
-tokens = 0
 choices = [903054, 903055, 903056]
 zone_or_sort = 12
 kill = [[96039, 1]]
@@ -1216,7 +1164,6 @@ details = "Dughan's letter says the signpost points at Ridgepoint Tower, the old
 progress = "What do you see on the tower?"
 completion = "Black-sun banners on the walls, in daylight, on an Alliance watchtower. Three or four of them, by your count, and nobody on the road thought to look up. My father would have wept. Thank you for not being seen."
 money = 0
-tokens = 0
 choices = [903057, 903058, 903059]
 zone_or_sort = 12
 explore = [
@@ -1226,8 +1173,8 @@ explore = [
 ]
 fail_if_seen = "You were seen."
 
-# The assault. An item quest with placeholder rewards until the gear pass: 1000 copper and
-# 3 Tokens, no choices. Vael's last words are in Raelen's reading of his notes.
+# The assault. An item quest with placeholder rewards until the gear pass: 1000 copper,
+# no choices. Vael's last words are in Raelen's reading of his notes.
 [[quest]]
 id = 94703
 kind = "story"
@@ -1240,7 +1187,6 @@ details = "Now we know who holds the tower. Speaker Vael speaks for the cult on 
 progress = "Is Vael dead?"
 completion = "Vael's notes. The hand is shaky, as if he wrote while he fell: the gnoll was promised power; he digs for us. The gnoll at the pit is no ally and no thief. He's a tool they promised the world to. That's worth more than the tower. Here's your reward."
 money = 1000
-tokens = 0
 choices = [903060, 903061, 903062, 903063]
 zone_or_sort = 12
 kill = [[96040, 1]]
@@ -1259,7 +1205,6 @@ details = "A pack lies on the floor with its straps cut. Toren's name is sewn in
 progress = "Is that my pack?"
 completion = "My pack, and you aren't one of them. I went looking for Morganth, and the cult found me first. They didn't pay me, and they didn't hurt me. They kept me, fed and unharmed, as if someone had ordered it. I can't think who in this world would care. Tell Dughan I'm alive, and that I'll tell him the rest myself."
 money = 0
-tokens = 0
 choices = [903064, 903065, 903066]
 zone_or_sort = 12
 
@@ -1338,8 +1283,7 @@ objectives = "Kill 10 Defias Looters, then return to Supervisor Raelen."
 details = "The looters are back in the camp, stripping the stacks and the sheds. Every beam they take is a roof someone in the city goes without. I can't spare a man to guard the lumber. Put down ten of them, and I'll pay for it, and again whenever you come back."
 progress = "Have the looters been thinned?"
 completion = "Ten fewer. They'll send more, but the camp can breathe for a day. Take your coin."
-money = 400
-tokens = 1
+money = 580
 zone_or_sort = 12
 kill = [[96041, 10]]
 
@@ -1353,8 +1297,7 @@ objectives = "Bring 8 Eastvale Lumber to Supervisor Raelen."
 details = "Stormwind has ordered every beam we can cut, to house the families who've been sleeping in the Cathedral square since Westfall went. Then looters come by night and carry it off, dropping some along the way. Bring me eight lengths of Eastvale Lumber, and I'll pay for each batch."
 progress = "Have you got the lumber?"
 completion = "Straight and sound. That's a roof for somebody. Odd thing, though. They never haul it toward the city. Every cart track runs down to the river. Come back when they've stolen more."
-money = 420
-tokens = 1
+money = 600
 zone_or_sort = 12
 collect = [{ item = 980024, count = 8, from = [96041], chance = 50 }]
 
@@ -1368,8 +1311,7 @@ objectives = "Kill 10 Grizzled Bears, then return to Lumberjack Tomas."
 details = "My family has cut Eastvale for four generations. My grandfather cut the beams for the Cathedral. In all that time the grizzlies kept to the ridge. Since the tower woke, they've come down onto the slope, bold as you like, and we can't cut near it. Kill ten, and I'll pay you, and again each time you do."
 progress = "Have the bears been thinned?"
 completion = "Ten fewer on the ridge. The men can cut the slope again. Take your coin."
-money = 430
-tokens = 1
+money = 619
 zone_or_sort = 12
 kill = [[96042, 10]]
 
@@ -1383,8 +1325,7 @@ objectives = "Bring 8 Grizzled Hides to Lumberjack Tomas."
 details = "A grizzly hide makes the best apron a sawyer can wear. Mine has lasted twenty years, but the new men came to me with nothing. Clerks, a cooper and a dockhand who'd never held an axe. Bring me eight hides, and I'll pay for the lot."
 progress = "Have you got the hides?"
 completion = "Thick hides, and good ones. The new men can stop complaining about splinters. Come back for more."
-money = 440
-tokens = 1
+money = 629
 zone_or_sort = 12
 collect = [{ item = 980025, count = 8, from = [96042], chance = 50 }]
 
@@ -1399,8 +1340,7 @@ objectives = "Kill 10 Twilight Acolytes at Ridgepoint Tower, then return to Supe
 details = "Corin worked my saw for eight years. His wife walked into the grey last winter, and in the spring he walked up that ridge in a robe. They told him the Hush was a god, and that she was with it. I'll pay to see that tower emptied. Kill ten acolytes on the ridge, and I'll give you a bounty, again whenever you like."
 progress = "Have the acolytes been thinned?"
 completion = "Ten acolytes fewer, and the tower grows quieter. If you see Corin up there, I'd rather you didn't tell me. Take your coin."
-money = 480
-tokens = 1
+money = 678
 zone_or_sort = 12
 kill = [[96031, 10]]
 
@@ -1423,7 +1363,6 @@ details = "The man who owes me the most skipped town the night the Abbey fell. D
 progress = "Did you find Dobbs?"
 completion = "Remy sent you? Then either I'm forgiven or I'm a dead man, and I can't tell which. My wife took our girl to her mother's in Sentinel Hill the week before Westfall went, and I haven't had a letter since. These men pay me to write down every crate they load, and every crate goes upriver. Take what I know to Dughan. I've no one left to keep it for."
 money = 0
-tokens = 0
 choices = [903067, 903068, 903069]
 zone_or_sort = 12
 
@@ -1440,13 +1379,12 @@ details = "Dobbs's ledger and Vael's notes tell the same story from two ends. Je
 progress = "Are the caches broken?"
 completion = "Ore, timber, pumpkins and relics, every one stolen from a farm or a family I know by name. Six caches fewer, and the dock goes quiet for a night. Thank you."
 money = 0
-tokens = 0
 choices = [903070, 903071, 903072]
 zone_or_sort = 12
 use = [[980109, 6]]
 
-# The assault on the pit. An item quest with placeholder rewards until the gear pass: 1000 copper
-# and 3 Tokens, no choices. Marren's orders are in Keane's reading of them.
+# The assault on the pit. An item quest with placeholder rewards until the gear pass: 1000 copper,
+# no choices. Marren's orders are in Keane's reading of them.
 [[quest]]
 id = 94803
 kind = "story"
@@ -1459,7 +1397,6 @@ details = "I hold this post at the lake, and I watch the carts go by in the dark
 progress = "Is Marren dead?"
 completion = "Marren's orders. They read: \"Hogger's camp is the staging ground. Move at the new moon.\" That's the gnolls' camp at the Forest's Edge, and the new moon is close. The dig in the barn was their second, and it won't be their last. Here's your reward."
 money = 1000
-tokens = 0
 choices = [903073, 903074, 903075]
 zone_or_sort = 12
 kill = [[96043, 1]]
@@ -1478,7 +1415,6 @@ details = "The cult moves its goods upriver by skiff, toward Everstill, and it w
 progress = "Are the boats burning?"
 completion = "Three skiffs gone. The dock has no way out now but the road, and the road is ours. You've bought us a month."
 money = 500
-tokens = 0
 choices = [903076, 903077, 903078]
 zone_or_sort = 12
 use = [[980110, 3]]
@@ -1495,8 +1431,7 @@ objectives = "Kill 10 Riverpaw Brutes or Riverpaw Shamans, then return to Sergea
 details = "The Riverpaw have a camp on the lake shore, and they've grown bold since someone started paying them. The farmers on this shore have started sleeping in shifts. Put down ten of the brutes and shamans, and I'll pay you, and again whenever you come back."
 progress = "Have the gnolls been thinned?"
 completion = "Ten fewer on the shore. They breed fast, so there will be more. Take your coin."
-money = 500
-tokens = 1
+money = 708
 zone_or_sort = 12
 kill = [[96044, 10], [96045, 10]]
 
@@ -1510,8 +1445,7 @@ objectives = "Bring 8 Twilight Fetishes to Sergeant Keane."
 details = "The Riverpaw shamans carry black fetishes that no gnoll made. They're the cult's work. I've sent proof to Stormwind twice and heard nothing back. I'll send it a third time, and a fourth if I must. Bring me eight, and I'll pay for each lot."
 progress = "Have you got the fetishes?"
 completion = "The same black work on every one. Into the crate for Stormwind they go. Someone there has to open a crate eventually. Take your coin, and bring more."
-money = 520
-tokens = 1
+money = 728
 zone_or_sort = 12
 collect = [{ item = 980026, count = 8, from = [96045], chance = 50 }]
 
@@ -1526,8 +1460,7 @@ objectives = "Kill 10 Defias Smugglers, then return to Dobbs."
 details = "The smugglers watch me write, and they watch me not write. I'd sleep better with fewer of them. Kill ten, and I'll pay you out of what Remy forgave me, and again whenever you like."
 progress = "Have the smugglers been thinned?"
 completion = "Ten fewer men watching me. I can breathe a little easier. Take your coin."
-money = 540
-tokens = 1
+money = 758
 zone_or_sort = 12
 kill = [[96046, 10]]
 
@@ -1542,8 +1475,7 @@ objectives = "Bring 8 Smuggled Goods to Dobbs."
 details = "The smugglers carry samples of what they ship, to show the men upriver what's coming. I need eight of them to check against the ledger. I mean to know where every line goes before they catch me at it. Bring them to me, and I'll pay for the lot."
 progress = "Have you got the goods?"
 completion = "Every one matches a line in the ledger, down to the Abbey's candlesticks. Good. Now I know what's still missing. Come back for more."
-money = 550
-tokens = 1
+money = 768
 zone_or_sort = 12
 collect = [{ item = 980027, count = 8, from = [96046], chance = 50 }]
 
@@ -1735,7 +1667,7 @@ orientation = 0.0
 respawn = 120.0
 
 # ── Northshire's Rumours (#289, rumours.toml) ────────────────────────────────────────────────
-# No Token and no money: a Rumour pays the Grade's quest XP and its last step's chest. Each step
+# No money: a Rumour pays the Grade's quest XP and its last step's chest. Each step
 # is handed in to the giver who offered it.
 
 # A Hermit's Request, easy (Rumour 1).
@@ -1751,7 +1683,6 @@ details = "I herded goats in the Alterac foothills until the plague came. I walk
 progress = "Are the wolves still out there?"
 completion = "The hills will be quieter tonight. I've nothing left to guard, but I'll sleep better all the same. Thank you, stranger."
 money = 0
-tokens = 0
 zone_or_sort = 12
 kill = [[69, 8]]
 
@@ -1769,7 +1700,6 @@ details = "The Defias took the vineyard's ledger and tore it into pages, and my 
 progress = "Have you found my pages?"
 completion = "These aren't our figures. Someone has scraped ours off and written over them in a careful hand: wages, names and sums paid. Someone is keeping the Defias' accounts, and he's no thug."
 money = 0
-tokens = 0
 zone_or_sort = 12
 collect = [{ item = 980039, count = 5, from = [38], chance = 60 }]
 
@@ -1786,7 +1716,6 @@ details = "The pages name the man who keeps the Defias' books, and he's close. A
 progress = "Is the bookkeeper dealt with?"
 completion = "No more sums for the Defias. There was strange coin in his purse, too, the kind nobody in Northshire will change. The vineyard owes you more than I can write down."
 money = 0
-tokens = 0
 zone_or_sort = 12
 kill = [[97013, 1]]
 
@@ -1803,7 +1732,6 @@ details = "I've prospected for thirty years, and I sold every pick I owned to bu
 progress = "Are the workers dead?"
 completion = "Good. With the diggers gone, I can see where they buried things."
 money = 0
-tokens = 0
 zone_or_sort = 12
 kill = [[257, 8]]
 
@@ -1820,7 +1748,6 @@ details = "The workers left caches in the ground, three of them near the digging
 progress = "What was in the caches?"
 completion = "Coin. Strange coin, not Stormwind's and not Ironforge's, with a foreman's scratch-mark on every purse. Someone is paying these kobolds, and the mark belongs to Grubhollow."
 money = 0
-tokens = 0
 zone_or_sort = 12
 use = [[980120, 3]]
 
@@ -1837,7 +1764,6 @@ details = "Grubhollow runs the diggings, and he doesn't work alone. Go and put h
 progress = "Is Grubhollow dead?"
 completion = "The claim is mine again, for whatever a claim is worth now. Take what the foreman guarded, and my thanks."
 money = 0
-tokens = 0
 zone_or_sort = 12
 kill = [[97014, 1]]
 
@@ -1869,7 +1795,6 @@ details = "The Defias emptied the root cellar the night they came, and the broth
 progress = "The cellar is still bare. Have you the Earthroot, the Peacebloom and the Silverleaf?"
 completion = "Look at that, shelves again. The brothers will weep into their soup. Take the Herbalist's Trowel, $C. It digs roots without bruising them."
 money = 0
-tokens = 0
 zone_or_sort = 12
 collect = [{ item = 2449, count = 20 }, { item = 2447, count = 20 }, { item = 765, count = 10 }]
 rewards = [[961102, 1]]
@@ -1888,7 +1813,6 @@ details = "I trust my shears to very few hands, $C. Swiftthistle only opens at d
 progress = "Mageroyal and Briarthorn grow anywhere. It is the Swiftthistle that tells me who you are."
 completion = "Clean stems, no tearing. You have the hands for it. Take the Herbalist's Shears, and keep them oiled."
 money = 0
-tokens = 0
 zone_or_sort = 12
 collect = [{ item = 785, count = 15 }, { item = 2450, count = 15 }, { item = 2452, count = 5 }]
 rewards = [[961103, 1]]

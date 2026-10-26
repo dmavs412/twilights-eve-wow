@@ -93,7 +93,8 @@ fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
         })
         .expect("the accept panel");
     assert_eq!(detail.title, "Thinning the Herds");
-    assert_eq!(detail.money, 60);
+    // 60 copper and the old Token's worth at level 2, 68.
+    assert_eq!(detail.money, 128);
 
     // Accepting closes the dialog and fills the first log slot.
     let accepted = accept(&mut realm, grezz, THINNING_THE_HERDS);
@@ -203,7 +204,7 @@ fn levels(events: &[SessionEvent]) -> Vec<u32> {
 }
 
 #[test]
-fn a_hunting_quest_at_its_own_level_gives_half_a_level_and_a_token_and_is_not_offered_again() {
+fn a_hunting_quest_at_its_own_level_gives_half_a_level_and_its_copper_and_is_not_offered_again() {
     let (mut realm, me, mut events) = questing(4, &[], 0, &[(THE_FAMILIAR_THREAT, [5, 0, 0, 0])]);
     let grezz = giver(&events, GREZZ);
     walk_up_to(&mut realm, grezz);
@@ -220,24 +221,25 @@ fn a_hunting_quest_at_its_own_level_gives_half_a_level_and_a_token_and_is_not_of
             _ => None,
         })
         .expect("the reward panel");
-    assert_eq!((offer.quest_id, offer.money), (THE_FAMILIAR_THREAT, 100));
-    let rewards: Vec<(u32, u32)> = offer.rewards.iter().map(|i| (i.item_id, i.count)).collect();
-    assert_eq!(rewards, [(TOKEN, 1)]);
+    // 100 copper and the old Token's worth at level 4, 75.
+    assert_eq!((offer.quest_id, offer.money), (THE_FAMILIAR_THREAT, 175));
+    assert!(offer.rewards.is_empty(), "no Token");
 
     let turned_in = hand_in(&mut realm, grezz, THE_FAMILIAR_THREAT);
     let done = completed(&turned_in).expect("the quest completes");
     // Half of level 4's 2100 XP.
     assert_eq!(
         (done.quest_id, done.xp, done.money),
-        (THE_FAMILIAR_THREAT, 1050, 100)
+        (THE_FAMILIAR_THREAT, 1050, 175)
     );
-    assert_eq!(done.items, [(TOKEN, 1)]);
+    assert!(done.items.is_empty(), "no Token: {:?}", done.items);
     assert!(levels(&turned_in).is_empty());
     events.extend(turned_in);
     let me_now = descriptor(&events, me);
     assert_eq!(me_now.unit_level(), Some(4));
     assert_eq!(me_now.player_xp(), Some(1050));
-    assert_eq!(carried(&events, me, TOKEN), 1);
+    assert_eq!(me_now.player_money(), Some(175));
+    assert_eq!(carried(&events, me, TOKEN), 0);
     assert!(quest_log(&events, me).is_empty(), "the slot clears");
 
     // Done for this Tier: Grezz no longer offers it, and it cannot be taken.
@@ -293,7 +295,7 @@ fn an_unfinished_quest_shows_its_progress_and_cannot_be_handed_in() {
 }
 
 #[test]
-fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
+fn a_collect_quest_takes_its_items_and_pays_money() {
     // A level 15 Vanguard on a level 10 quest: still half of level 10's 7600 XP, at the Tier XP
     // Rate's ×3.
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 5), (24, CROCOLISK_SKIN, 4)];
@@ -303,7 +305,7 @@ fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
     walk_up_to(&mut realm, zunjin);
     assert_eq!(quest_log(&events, me)[0].3, 1, "complete from the bags");
 
-    // The progress panel asks for the skins and may go on; the reward panel shows the Token.
+    // The progress panel asks for the skins and may go on; the reward panel shows the copper.
     realm.handle(RealmCommand::QuestGiverCompleteQuest {
         npc: zunjin,
         quest: CROCOLISK_SKINS,
@@ -334,13 +336,14 @@ fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
             _ => None,
         })
         .expect("the reward panel");
-    let rewards: Vec<(u32, u32)> = offer.rewards.iter().map(|i| (i.item_id, i.count)).collect();
-    assert_eq!(rewards, [(TOKEN, 1)]);
+    // 400 copper and the old Token's worth at level 10, 100.
+    assert_eq!(offer.money, 500);
+    assert!(offer.rewards.is_empty(), "no Token");
 
     let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
     let done = completed(&turned_in).expect("the quest completes");
-    assert_eq!((done.xp, done.money), (3 * 3800, 400));
-    assert_eq!(done.items, [(TOKEN, 1)]);
+    assert_eq!((done.xp, done.money), (3 * 3800, 500));
+    assert!(done.items.is_empty(), "no Token: {:?}", done.items);
     events.extend(turned_in);
     // Eight of the nine skins are gone: the first stack whole, three of the second... or the
     // other way round; one skin is left either way.
@@ -355,24 +358,44 @@ fn a_collect_quest_takes_its_items_and_pays_money_and_a_token() {
         .map(|(guid, _)| descriptor(&events, *guid).item_stack_count().unwrap_or(1))
         .sum();
     assert_eq!(left, 1);
-    // The Token goes onto the two in the bags.
-    assert_eq!(carried(&events, me, TOKEN), 3);
-    assert!(events.iter().any(|e| matches!(
+    // The copper is paid, and the two old Tokens in the bags stay two.
+    assert_eq!(descriptor(&events, me).player_money(), Some(500));
+    assert_eq!(carried(&events, me, TOKEN), 2);
+    assert!(!events.iter().any(|e| matches!(
         e,
-        SessionEvent::ItemPushResult(p) if p.item_entry == TOKEN && p.count == 1
+        SessionEvent::ItemPushResult(p) if p.item_entry == TOKEN
     )));
 }
 
+/// A test-only copy of Crocolisk Skins that hands over a quiver's worth of arrows.
+const SKINS_FOR_ARROWS: u32 = 99301;
+const SKINS_FOR_ARROWS_TOML: &str = r#"
+[[quest]]
+id = 99301
+kind = "hunting"
+giver = 90103
+level = 10
+title = "Skins for Arrows"
+objectives = "-"
+details = "-"
+progress = "-"
+completion = "-"
+money = 0
+collect = [{ item = 2925, count = 8, chance = 60, from = [3110, 3231] }]
+rewards = [[2512, 200]]
+"#;
+
 #[test]
-fn a_hand_in_whose_tokens_do_not_fit_in_the_bags_is_refused() {
+fn a_hand_in_whose_rewards_do_not_fit_in_the_bags_is_refused() {
+    let _ = Realm::with_seed(SEED).with_quests(SKINS_FOR_ARROWS_TOML);
     // Fifteen skins, one per slot, and the sixteenth slot full: the eight skins leave seven
     // slots full, but the bags are checked before anything is taken, as vmangos does.
     let mut items: Vec<Carried> = (23..38).map(|s| (s, CROCOLISK_SKIN, 1)).collect();
     items.push((38, 4560, 1));
-    let (mut realm, me, mut events) = questing(15, &items, 0, &[(CROCOLISK_SKINS, [0; 4])]);
+    let (mut realm, me, mut events) = questing(15, &items, 0, &[(SKINS_FOR_ARROWS, [0; 4])]);
     let zunjin = giver(&events, ZUNJIN);
     walk_up_to(&mut realm, zunjin);
-    let turned_in = hand_in(&mut realm, zunjin, CROCOLISK_SKINS);
+    let turned_in = hand_in(&mut realm, zunjin, SKINS_FOR_ARROWS);
     assert!(completed(&turned_in).is_none());
     assert!(turned_in
         .iter()

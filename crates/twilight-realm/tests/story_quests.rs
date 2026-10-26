@@ -26,7 +26,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 "#;
 
 fn at_the_hub(level: u8, completed: &[u32]) -> (Realm, u64, Vec<benilla_protocol::SessionEvent>) {

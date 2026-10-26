@@ -37,7 +37,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 
 [[quest]]
 id = 99102
@@ -51,7 +50,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 
 [[quest]]
 id = 99103
@@ -64,7 +62,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 explore = { place = "The Abbey Yard", position = [-8920.0, -120.0], radius = 5.0, map = 0 }
 "#;
 
@@ -262,7 +259,6 @@ fn a_giver_with_no_spawn_anywhere_fails_the_content_load() {
         progress = "-"
         completion = "-"
         money = 0
-        tokens = 0
         "#,
     );
 }

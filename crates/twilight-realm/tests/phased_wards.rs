@@ -68,7 +68,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 use = [[810001, 1]]
 "#;
 

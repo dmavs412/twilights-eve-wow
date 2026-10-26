@@ -818,7 +818,7 @@ fn the_disciples_stand_on_the_skull_and_offer_the_caverns_quests_from_tier_one()
 }
 
 #[test]
-fn slaying_lady_anacondra_pays_a_full_level_and_three_tokens_and_is_offered_again_at_once() {
+fn slaying_lady_anacondra_pays_a_full_level_and_its_copper_and_is_offered_again_at_once() {
     let items: Vec<Carried> = RUN_GEAR.iter().map(|&(slot, e)| (slot, e, 1)).collect();
     // A Zealot: only the Chest carries armour (ADR 0007), and its Tier Bonus makes up for the
     // rest of the set a level 25 warrior used to wear against her.
@@ -845,8 +845,10 @@ fn slaying_lady_anacondra_pays_a_full_level_and_three_tokens_and_is_offered_agai
     // Level 25's whole 131900 XP, times the Calling's Tier XP Rate of 5: a Repeatable Quest pays
     // the player's next level.
     assert_eq!((done.quest_id, done.xp), (THE_FANGLORD, 659500));
-    assert_eq!(done.items, [(TOKEN, 3)]);
-    assert_eq!(carried(&s.events, s.me, TOKEN), 3);
+    // 2500 copper and three Tokens' worth at level 20, 489.
+    assert_eq!(done.money, 2989);
+    assert!(done.items.is_empty(), "no Token: {:?}", done.items);
+    assert_eq!(carried(&s.events, s.me, TOKEN), 0);
     assert_eq!(s.quest_state(THE_FANGLORD), None, "the slot clears");
 
     // Repeatable: Nalpak offers it again at once, and it can be taken again.
@@ -880,7 +882,8 @@ fn a_deviate_killed_inside_counts_toward_nalpaks_quest() {
     let nalpak = s.go_to_disciple(NALPAK);
     let done = completed(&hand_in(&mut s.realm, nalpak, THE_NIGHTMARES_BROOD))
         .expect("the quest completes");
-    assert_eq!(done.items, [(TOKEN, 3)]);
+    assert_eq!(done.money, 2489);
+    assert!(done.items.is_empty(), "no Token: {:?}", done.items);
 }
 
 #[test]
@@ -913,7 +916,7 @@ fn the_deviates_inside_drop_their_hides_for_ebrus_quest() {
     });
     assert!(dropped, "no Guardian dropped a hide");
 
-    // Five hides in the bags: Ebru takes them for a full level and three Tokens.
+    // Five hides in the bags: Ebru takes them for a full level and its copper.
     let mut s = questing_at_the_skull(7, 20, &[(23, DEVIATE_HIDE, 5)], &[(DEVIATE_HIDES, [0; 4])]);
     assert_eq!(
         s.quest_state(DEVIATE_HIDES),
@@ -924,5 +927,6 @@ fn the_deviates_inside_drop_their_hides_for_ebrus_quest() {
     let done = completed(&hand_in(&mut s.realm, ebru, DEVIATE_HIDES)).expect("it completes");
     // Level 20's whole 57300 XP, times the Tier XP Rate of 3.
     assert_eq!(done.xp, 171900);
-    assert_eq!(done.items, [(TOKEN, 3)]);
+    assert_eq!(done.money, 2489);
+    assert!(done.items.is_empty(), "no Token: {:?}", done.items);
 }

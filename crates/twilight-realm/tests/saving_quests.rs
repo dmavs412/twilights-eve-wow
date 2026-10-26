@@ -67,7 +67,7 @@ fn kill_progress_and_tokens_survive_a_save_round_trip() {
 }
 
 #[test]
-fn a_hand_in_saves_the_tokens_and_the_emptied_log() {
+fn a_hand_in_saves_the_copper_and_the_emptied_log() {
     let skins: &[Carried] = &[(23, CROCOLISK_SKIN, 8)];
     let (mut realm, me, events) = questing(10, skins, 4, &[(CROCOLISK_SKINS, [0; 4])]);
     realm.drain_storage();
@@ -75,7 +75,9 @@ fn a_hand_in_saves_the_tokens_and_the_emptied_log() {
     let blob = last_write(&mut realm);
     assert!(!blob.contains("[[quests]]"), "{blob}");
     let again = reload(me, &blob);
-    assert_eq!(carried(&again, me, TOKEN), 5);
+    assert_eq!(descriptor(&again, me).player_money(), Some(500));
+    // The old Tokens in the bags stay as they were: the quest pays none.
+    assert_eq!(carried(&again, me, TOKEN), 4);
     assert!(quest_log(&again, me).is_empty());
 }
 

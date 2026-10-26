@@ -30,7 +30,6 @@ struct Quest {
     title: String,
     details: String,
     money: u32,
-    tokens: u32,
     #[serde(default)]
     kill: Vec<(u32, u32)>,
     #[serde(default)]
@@ -124,17 +123,14 @@ fn every_objective_names_a_creature_and_an_item_the_realm_has() {
 }
 
 #[test]
-fn every_quest_names_its_kind_and_pays_its_kinds_tokens() {
+fn every_quest_names_its_kind() {
     for q in content().quest {
-        let tokens = match q.kind.as_str() {
-            "hunting" => 1,
-            "repeatable" => 3,
-            "advancement" => 0,
-            // A once-per-character quest pays what it is worth, never nothing.
-            "once" if q.tokens > 0 => q.tokens,
-            other => panic!("quest {}: kind {other:?}", q.id),
-        };
-        assert_eq!(q.tokens, tokens, "quest {} ({})", q.id, q.kind);
+        assert!(
+            ["hunting", "repeatable", "advancement", "once"].contains(&q.kind.as_str()),
+            "quest {}: kind {:?}",
+            q.id,
+            q.kind
+        );
         assert_eq!(
             q.kind == "advancement",
             q.advancement.is_some(),
@@ -177,6 +173,42 @@ fn the_quests_cover_levels_one_to_thirty() {
 fn the_token_is_a_known_item() {
     let mut realm = realm();
     assert!(item_known(&mut realm, 90001));
+}
+
+/// Quests pay copper, not Tokens (ADR 0027).
+#[test]
+fn no_quest_carries_a_tokens_key() {
+    for (name, text) in [
+        ("quests.toml", include_str!("../content/quests.toml")),
+        (
+            "quests_elwynn.toml",
+            include_str!("../content/quests_elwynn.toml"),
+        ),
+    ] {
+        let file: toml::Table = toml::from_str(text).expect("parses");
+        for q in file["quest"].as_array().unwrap() {
+            assert!(
+                !q.as_table().unwrap().contains_key("tokens"),
+                "{name}: quest {} has a tokens key",
+                q["id"]
+            );
+        }
+    }
+}
+
+/// The Twilight Token stays defined so old saves load, as junk that sells (ADR 0027).
+#[test]
+fn the_twilight_token_is_junk_that_sells_for_a_silver() {
+    let items: toml::Table =
+        toml::from_str(include_str!("../content/quest_items.toml")).expect("parses");
+    let token = items
+        .values()
+        .filter_map(|v| v.as_array())
+        .flatten()
+        .find(|i| i.get("entry").and_then(|e| e.as_integer()) == Some(90001))
+        .expect("item 90001");
+    assert_eq!(token["quality"].as_integer(), Some(1));
+    assert_eq!(token["sell_price"].as_integer(), Some(100));
 }
 
 /// The compass words a quest's details may use, as bearings: degrees from north (+x) toward west
@@ -350,9 +382,9 @@ fn exactly_the_five_northshire_advancement_quests_are_calling_choices() {
 }
 
 /// Every Elwynn story quest (#448) offers a choice of sheet rows the character may wear by the
-/// time the quest is done, and pays no Token.
+/// time the quest is done.
 #[test]
-fn every_elwynn_story_quest_offers_gear_it_can_be_worn_at_and_pays_no_token() {
+fn every_elwynn_story_quest_offers_gear_it_can_be_worn_at() {
     let quests: toml::Value =
         toml::from_str(include_str!("../content/quests_elwynn.toml")).expect("parses");
     let gear: toml::Value = toml::from_str(include_str!("../content/gear.toml")).expect("parses");
@@ -375,7 +407,6 @@ fn every_elwynn_story_quest_offers_gear_it_can_be_worn_at_and_pays_no_token() {
         if q["kind"].as_str() != Some("story") {
             continue;
         }
-        assert_eq!(q["tokens"].as_integer(), Some(0), "quest {id} pays a Token");
         if id < 94101 {
             continue;
         }

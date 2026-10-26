@@ -39,7 +39,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 
 [[gameobject]]
 guid = 990801
@@ -60,7 +59,6 @@ details = "-"
 progress = "-"
 completion = "-"
 money = 0
-tokens = 0
 use = [[990801, 1]]
 "#;
 

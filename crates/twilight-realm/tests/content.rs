@@ -550,7 +550,7 @@ fn outside_the_gear_slots(realm: &mut twilight_realm::Realm, entry: u32) -> bool
 }
 
 /// No loot pool, vendor, Token vendor band or Dungeon boss hands out an item for a body part the
-/// ten Gear Slots leave out (ADR 0007). Quests reward XP and Tokens, no items.
+/// ten Gear Slots leave out (ADR 0007). Quests reward XP and copper, no items.
 #[test]
 fn nothing_hands_out_gear_outside_the_ten_slots() {
     use twilight_realm::rules::loot::{pool, Quality};

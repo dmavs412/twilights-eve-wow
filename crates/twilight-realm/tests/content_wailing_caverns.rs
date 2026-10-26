@@ -210,7 +210,6 @@ fn the_caverns_quests_are_repeatable_from_sixteen_given_on_the_skull_for_the_run
     for q in caverns {
         let id = int(&q["id"]);
         assert_eq!(q["kind"].as_str(), Some("repeatable"), "{id}");
-        assert_eq!(int(&q["tokens"]), 3, "{id}");
         assert!(q.get("min_level").is_none(), "{id}");
         assert_eq!(int(&q["level"]), 20, "{id}");
         // Its giver stands on the skull's crown.

@@ -142,15 +142,15 @@ pub(crate) enum Kind {
     Hunting,
     /// A Dungeon's: taken again as soon as it is handed in.
     Repeatable,
-    /// A field giver's: taken again as soon as it is handed in, paying half a level's XP, a
-    /// Token and its money. Advancement never forgets it.
+    /// A field giver's: taken again as soon as it is handed in, paying half a level's XP and
+    /// its money. Advancement never forgets it.
     Bounty,
     /// Into another Calling, with an [`Advancement`].
     Advancement,
     /// Once per character: Advancement never forgets it.
     Once,
     /// A Story Quest: once per character, Advancement never forgets it, and it pays XP as a
-    /// Hunting Quest does, with no Token.
+    /// Hunting Quest does.
     Story,
     /// A step of a Rumour (`content/rumours.toml`): once per Rumour instance, offered only by that
     /// instance's giver to its Audience, and failed when the Rumour ends.
@@ -314,14 +314,12 @@ pub(crate) struct Quest {
     pub(crate) completion: String,
     /// Copper on hand-in.
     pub(crate) money: u32,
-    /// Tokens on hand-in.
-    pub(crate) tokens: u32,
     /// The reward panel's "You will be able to choose one of these": item entries, one of the
     /// chosen one on hand-in. At most six (`QUEST_REWARD_CHOICES_COUNT`).
     #[serde(default)]
     pub(crate) choices: Vec<u32>,
-    /// The reward panel's "You will receive": `[item entry, count]`, all of them on hand-in, beside
-    /// any Tokens. Ammo among them is set as the ammo when none is (the Ranger's arrows).
+    /// The reward panel's "You will receive": `[item entry, count]`, all of them on hand-in. Ammo
+    /// among them is set as the ammo when none is (the Ranger's arrows).
     #[serde(default)]
     pub(crate) rewards: Vec<(u32, u32)>,
     /// `[item entry, count]` the giver hands over when the quest is taken: a quest item to carry
@@ -681,7 +679,7 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
         q.id
     );
     assert!(
-        q.rewards.len() + usize::from(q.tokens > 0) <= 4,
+        q.rewards.len() <= 4,
         "quest {} gives more than four reward items",
         q.id
     );
@@ -854,7 +852,7 @@ fn added_items() -> &'static RwLock<AddedItems> {
     ADDED.get_or_init(Default::default)
 }
 
-/// A quest item's (or the Token's) template.
+/// A quest item's template.
 pub(crate) fn item_template(entry: u32) -> Option<&'static items::Template> {
     static BY_ENTRY: OnceLock<HashMap<u32, &'static items::Template>> = OnceLock::new();
     BY_ENTRY
@@ -959,7 +957,7 @@ mod tests {
         assert_eq!(q(94401).ender(), 96015);
         assert_eq!(q(94402).after.ids(), [94401]);
         assert_eq!(q(94402).kill, [(96022, 1)]);
-        assert_eq!((q(94402).money, q(94402).tokens), (1000, 0));
+        assert_eq!(q(94402).money, 1000);
         assert_eq!(q(94402).choices.len(), 3);
         assert_eq!(q(94403).after.ids(), [94402]);
         assert!(matches!(q(94403).giver, Giver::Npc(240)));
@@ -967,7 +965,7 @@ mod tests {
         assert!(matches!(ore.giver, Giver::Npc(514)));
         assert!(ore.after.ids().is_empty());
         assert!(!ore.offered_at_tier(0) && ore.offered_at_tier(1) && ore.offered_at_tier(3));
-        assert_eq!((ore.money, ore.tokens), (400, 3));
+        assert_eq!(ore.money, 823);
     }
 
     #[test]
@@ -978,7 +976,7 @@ mod tests {
         assert_eq!(q(94501).kill, [(96023, 6)]);
         assert_eq!(q(94502).after.ids(), [94501, 94403]);
         assert_eq!(q(94502).kill, [(96025, 1)]);
-        assert_eq!((q(94502).money, q(94502).tokens), (800, 0));
+        assert_eq!(q(94502).money, 800);
         assert_eq!(q(94502).choices.len(), 3);
         assert_eq!(q(94503).after.ids(), [94502]);
         assert!(matches!(q(94503).giver, Giver::Item));
@@ -1011,14 +1009,14 @@ mod tests {
 
     #[test]
     fn stone_cairns_bounties_have_their_range_giver_and_objective() {
-        // id, giver, kills, uses, collected item; all offered from Tier 1.
-        let rows: [(u32, u32, &[u32], &[u32], Option<u32>); 4] = [
-            (94505, 190061, &[96026, 96027], &[], None),
-            (94506, 190061, &[], &[980105], None),
-            (94507, 190061, &[96028], &[], None),
-            (94508, 190060, &[], &[], Some(980020)),
+        // id, giver, copper, kills, uses, collected item; all offered from Tier 1.
+        let rows: [(u32, u32, u32, &[u32], &[u32], Option<u32>); 4] = [
+            (94505, 190061, 468, &[96026, 96027], &[], None),
+            (94506, 190061, 478, &[], &[980105], None),
+            (94507, 190061, 505, &[96028], &[], None),
+            (94508, 190060, 495, &[], &[], Some(980020)),
         ];
-        for (id, giver, kills, uses, item) in rows {
+        for (id, giver, money, kills, uses, item) in rows {
             let q = super::quest(id).unwrap_or_else(|| panic!("no quest {id}"));
             assert!(q.kind == Kind::Bounty, "{id}'s kind");
             assert!(
@@ -1026,7 +1024,7 @@ mod tests {
                 "{id}'s giver"
             );
             assert_eq!(q.min_tier(), 1, "{id}'s Tier");
-            assert_eq!(q.tokens, 1, "{id}'s Token");
+            assert_eq!(q.money, money, "{id}'s copper");
             let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
             assert_eq!(killed, kills, "{id}'s kills");
             let used: Vec<u32> = q.use_object.iter().map(|&(e, _)| e).collect();
@@ -1043,14 +1041,14 @@ mod tests {
 
     #[test]
     fn goldshires_bounties_and_wrecked_cart_have_their_range_giver_and_objective() {
-        // id, giver, kills, collected item; all offered from Tier 1.
-        let rows: [(u32, u32, &[u32], Option<u32>); 4] = [
-            (94105, 963, &[118, 30], None),
-            (94106, 514, &[], Some(980006)),
-            (94107, 963, &[116], None),
-            (94108, 241, &[], Some(980007)),
+        // id, giver, copper, kills, collected item; all offered from Tier 1.
+        let rows: [(u32, u32, u32, &[u32], Option<u32>); 4] = [
+            (94105, 963, 260, &[118, 30], None),
+            (94106, 514, 280, &[], Some(980006)),
+            (94107, 963, 316, &[116], None),
+            (94108, 241, 290, &[], Some(980007)),
         ];
-        for (id, giver, kills, item) in rows {
+        for (id, giver, money, kills, item) in rows {
             let q = super::quest(id).unwrap_or_else(|| panic!("no quest {id}"));
             assert!(q.kind == Kind::Bounty, "{id}'s kind");
             assert!(
@@ -1058,7 +1056,7 @@ mod tests {
                 "{id}'s giver"
             );
             assert_eq!(q.min_tier(), 1, "{id}'s Tier");
-            assert_eq!(q.tokens, 1, "{id}'s Token");
+            assert_eq!(q.money, money, "{id}'s copper");
             let killed: Vec<u32> = q.kill.iter().map(|&(e, _)| e).collect();
             assert_eq!(killed, kills, "{id}'s kills");
             assert_eq!(q.collect.first().map(|c| c.item), item, "{id}'s item");
@@ -1088,7 +1086,6 @@ mod tests {
             progress = ""
             completion = ""
             money = 0
-            tokens = 3
             "#
         ))
         .expect("a quest")
@@ -1148,8 +1145,7 @@ mod tests {
         details = ""
         progress = ""
         completion = ""
-        money = 0
-        tokens = 1"#
+        money = 0"#
     }
 
     #[test]
@@ -1164,7 +1160,6 @@ mod tests {
             progress = ""
             completion = ""
             money = 0
-            tokens = 1
         "#;
         assert!(toml::from_str::<Quest>(no_kind).is_err());
     }

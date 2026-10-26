@@ -1,6 +1,6 @@
 //! "Know the Land" (spec #28): the scout in the Crossroads watchtower asks the player to discover
 //! every Barrens subzone. It counts the discoveries made before it was taken, completes on the
-//! last, pays 5 Tokens, and is done once per character: Advancement never offers it again. Played
+//! last, pays 500 copper, and is done once per character: Advancement never offers it again. Played
 //! on a host with a scripted map holding the last subzone.
 
 mod common;
@@ -37,7 +37,7 @@ fn the_watchtower_scout_offers_know_the_land() {
 }
 
 #[test]
-fn the_last_subzone_completes_it_and_the_hand_in_pays_five_tokens() {
+fn the_last_subzone_completes_it_and_the_hand_in_pays_five_silver() {
     let (mut realm, _, events) = in_world(5, &BARRENS[..24]);
     let scout = giver(&events, SCOUT_AHANU);
     let taken = accept(&mut realm, scout, KNOW_THE_LAND);
@@ -48,7 +48,9 @@ fn the_last_subzone_completes_it_and_the_hand_in_pays_five_tokens() {
 
     let done = hand_in(&mut realm, scout, KNOW_THE_LAND);
     let done = completed(&done).expect("handed in");
-    assert_eq!(done.items, [(TOKEN, 5)]);
+    // Five Tokens' worth at level 10.
+    assert_eq!(done.money, 500);
+    assert!(done.items.is_empty(), "no Token: {:?}", done.items);
     assert!(!on_offer(&mut realm, scout).contains(&KNOW_THE_LAND));
 }
 
