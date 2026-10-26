@@ -26,7 +26,8 @@ and `on_hit` are `;`-separated spell ids.
 
 `spell_power` (#272) is the flat Spell Power a Weapon, a held Offhand or a Wand carries; any
 other slot with one is refused. The realm reads the column; the client sees it as the vanilla
-"Increase Spell Dam N" item spell appended to `equip`, so the tooltip shows the line. `budget` is
+"Increase Spell Dam N" item spell appended to `equip`, so the tooltip shows the line; above 30 it
+shows several lines that add up. `budget` is
 the stat points a hand-authored row may spend (str + agi + sta + int + spi + ceil(spell_power / 2));
 a row over it is refused, and a blank is unchecked. It is not written to gear.toml.
 
@@ -255,11 +256,22 @@ def ids(value: str, column: str, where: str) -> list[int]:
     return [integer(v, column, where) for v in value.split(";")] if value else []
 
 
+def spell_power_spells(n: int, where: str) -> list[int]:
+    """The item spells whose tooltips add up to "+N Spell Damage and Healing".
+
+    Above the largest vanilla spell the tooltip carries several lines, each a spell that exists,
+    split so the last chunk is one that exists too."""
+    top = max(SPELL_POWER_SPELLS)
+    spells = []
+    while n > top:
+        chunk = top if (n - top) in SPELL_POWER_SPELLS or n - top > top else top - 1
+        spells.append(SPELL_POWER_SPELLS[chunk])
+        n -= chunk
+    return spells + [spell_power_spell(n, where)]
+
+
 def spell_power_spell(n: int, where: str) -> int:
     """The item spell whose tooltip says "+N Spell Damage and Healing", or the nearest lower."""
-    top = max(SPELL_POWER_SPELLS)
-    if n > top:
-        raise SheetError(f"{where}: spell_power {n} is above {top}, the last tooltip spell")
     if n not in SPELL_POWER_SPELLS:
         lower = max(k for k in SPELL_POWER_SPELLS if k < n)
         print(f"build_gear: {where}: no tooltip spell for spell_power {n}; the tooltip says {lower}",
@@ -437,7 +449,7 @@ def row_line(item: dict, spells: dict[int, str], pool: int, wardrobe: dict | Non
         parts.append(f"damage = [{damage}]")
     equip = ids(row["equip"], "equip", where)
     if item["spell_power"]:
-        equip.append(spell_power_spell(item["spell_power"], where))
+        equip.extend(spell_power_spells(item["spell_power"], where))
     if equip:
         names = [toml_string(spell_name(s, spells)) for s in equip]
         parts.append(f"equip_spells = [{', '.join(map(str, equip))}]")

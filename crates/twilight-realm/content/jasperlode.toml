@@ -245,6 +245,7 @@ orientation = 5.20
 [[creature]]
 guid = 820018
 entry = 96020
+rolls = [{ chance = 1, one_of = [905000, 905001, 905002, 905003, 905004, 905005, 905006, 905007, 905008, 905009, 905010, 905011, 905012, 905013, 905014, 905015, 905016, 905017, 905018, 905019] }]
 level = 17
 position = [-9030.0, -613.7, 56.6]
 orientation = 3.00
@@ -277,6 +278,7 @@ orientation = 2.00
 [[creature]]
 guid = 820022
 entry = 96020
+rolls = [{ chance = 1, one_of = [905000, 905001, 905002, 905003, 905004, 905005, 905006, 905007, 905008, 905009, 905010, 905011, 905012, 905013, 905014, 905015, 905016, 905017, 905018, 905019] }]
 level = 17
 position = [-9033.9, -585.5, 56.3]
 orientation = 4.00
@@ -309,6 +311,7 @@ orientation = 3.00
 [[creature]]
 guid = 820026
 entry = 96020
+rolls = [{ chance = 1, one_of = [905000, 905001, 905002, 905003, 905004, 905005, 905006, 905007, 905008, 905009, 905010, 905011, 905012, 905013, 905014, 905015, 905016, 905017, 905018, 905019] }]
 level = 17
 position = [-9024.8, -564.4, 54.9]
 orientation = 5.00
@@ -337,15 +340,15 @@ level = 17
 position = [-9024.0, -568.8, 54.9]
 orientation = 4.00
 
-# The Eye Below, at the bottom of the pit. It always drops the Dig Orders and, three Resonant Ore, a
-# blue (900105, Ashworth's Black Psalter, the Abbot's placeholder until the gear pass).
+# The Eye Below, at the bottom of the pit. It always drops the Dig Orders and, three Resonant Ore, and
+# rolls a Jasperlode blue, or one time in twenty an epic (#455).
 [[creature]]
 guid = 820030
 entry = 96022
 level = 18
 position = [-9049.5, -621.1, 53.4]
 orientation = 3.50
-drop = [900105]
+rolls = [{ chance = 5, one_of = [905900, 905901, 905902] }, { chance = 100, one_of = [905000, 905001, 905002, 905003, 905004, 905005, 905006, 905007, 905008, 905009, 905010, 905011, 905012, 905013, 905014, 905015, 905016, 905017, 905018, 905019] }]
 
 # At 66% and again at 33% health it calls two Eye Tentacles at the pit's edge.
 [[creature.on_health]]

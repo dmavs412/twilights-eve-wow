@@ -885,7 +885,6 @@ speed_run = 1.143
 detection_range = 18.0
 spells = ["eat", "rushing_charge"]
 hunts_at_meter_max = 15.0
-rolls = [{ chance = 8, one_of = [960103] }] # Gnoll Ear (#331)
 
 # The Defias Highwayman (#231) who guards the wrecked cart on the Stormwind road north of
 # Goldshire and always carries the Sealed Strongbox for The Wrecked Cart (quests_elwynn.toml).
@@ -1224,6 +1223,7 @@ spells = ["shadow_bolt_creature", "shadow_nova_creature", "terrify_creature"]
 [[template]]
 entry = 96038
 name = "Shadowhide Gnoll"
+rolls = [{ chance = 1, one_of = [905020, 905021, 905022, 905023, 905024, 905025, 905026, 905027, 905028, 905029, 905030, 905031, 905032, 905033, 905034, 905035, 905036, 905037, 905038, 905039] }]
 creature_type = 7
 rank = 1
 display_id = 512

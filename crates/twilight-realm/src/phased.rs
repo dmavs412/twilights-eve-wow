@@ -1262,7 +1262,7 @@ mod tests {
             .on_health
             .iter()
             .all(|c| template(c.entry).name == "Eye Tentacle"));
-        assert!(!eye.drop.is_empty());
+        assert!(!eye.rolls.is_empty());
         let covers = d.cover.len();
         assert_eq!(covers, 4);
         let boulders = d.gameobject.len();

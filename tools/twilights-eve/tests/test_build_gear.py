@@ -112,5 +112,21 @@ class LineColumn(unittest.TestCase):
         build_gear.build([a, b], [], {})
 
 
+class SpellPowerTooltip(unittest.TestCase):
+    def values(self, n):
+        by_spell = {v: k for k, v in build_gear.SPELL_POWER_SPELLS.items()}
+        return [by_spell[s] for s in build_gear.spell_power_spells(n, "row")]
+
+    def test_up_to_thirty_is_one_spell(self):
+        self.assertEqual(self.values(14), [14])
+
+    def test_above_thirty_splits_into_spells_that_add_up(self):
+        for n in (34, 38, 46, 48, 54, 68):
+            self.assertEqual(sum(self.values(n)), n, n)
+
+    def test_a_split_never_ends_on_a_missing_spell(self):
+        self.assertEqual(sum(self.values(33)), 33)
+
+
 if __name__ == "__main__":
     unittest.main()
