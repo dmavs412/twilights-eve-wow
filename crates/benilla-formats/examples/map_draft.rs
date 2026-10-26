@@ -546,6 +546,8 @@ fn draw(canvas: &mut Picture, layer: &mut [[f32; 4]], at: [f64; 4], zone: &Zone)
 struct FillSpec {
     painting: PathBuf,
     pairs: Vec<FillPair>,
+    /// Each pair's name, in the same order.
+    names: Vec<String>,
     erase: Vec<Erase>,
     /// Boxes `[u0, v0, u1, v1]` of the canvas where the zone art stays solid however faint its
     /// cover, for a stock label its own zone's silhouette clips.
@@ -623,9 +625,12 @@ impl FillSpec {
                 _ => bail!("{key} of {} is not [u, v]", p["name"]),
             }
         };
-        let pairs = v["pairs"]
-            .as_array()
-            .context("the fill file has pairs")?
+        let rows = v["pairs"].as_array().context("the fill file has pairs")?;
+        let names = rows
+            .iter()
+            .map(|p| p["name"].as_str().unwrap_or("?").to_string())
+            .collect();
+        let pairs = rows
             .iter()
             .map(|p| {
                 Ok(FillPair {
@@ -673,6 +678,7 @@ impl FillSpec {
         Ok(FillSpec {
             painting: path.parent().unwrap_or(Path::new(".")).join(painting),
             pairs,
+            names,
             erase,
             keep,
         })
@@ -784,6 +790,64 @@ impl Warp {
             out[axis] = s;
         }
         (out[0], out[1])
+    }
+}
+
+/// A landmark whose leave-one-out error passes this many times the median is flagged: likely
+/// misread. A repainted map drifts unevenly, so every landmark has some error; a misread one has
+/// far more than its neighbours.
+const LANDMARK_FLAG: f64 = 2.0;
+
+/// The median of `xs`, 0 when empty.
+fn median(xs: &[f64]) -> f64 {
+    let mut s = xs.to_vec();
+    s.sort_by(f64::total_cmp);
+    s.get(s.len() / 2).copied().unwrap_or(0.0)
+}
+
+/// Each landmark's leave-one-out error in painting pixels: how far the warp fitted through every
+/// other landmark lands from where the file says the place sits on the painting. A misread
+/// landmark disagrees with its neighbours and stands out; a warp through all of them hides it.
+fn landmark_errors(pairs: &[FillPair], aspect: f64, painting: &Picture) -> Vec<f64> {
+    (0..pairs.len())
+        .map(|i| {
+            let rest: Vec<FillPair> = pairs
+                .iter()
+                .enumerate()
+                .filter(|(j, _)| *j != i)
+                .map(|(_, p)| FillPair {
+                    canvas: p.canvas,
+                    painting: p.painting,
+                })
+                .collect();
+            let Ok(warp) = Warp::fit(&rest, aspect) else {
+                return f64::INFINITY;
+            };
+            let (u, v) = warp.at(pairs[i].canvas[0], pairs[i].canvas[1]);
+            let dx = (u - pairs[i].painting[0]) * f64::from(painting.w);
+            let dy = (v - pairs[i].painting[1]) * f64::from(painting.h);
+            (dx * dx + dy * dy).sqrt()
+        })
+        .collect()
+}
+
+/// Mark each landmark's canvas point on `pic` with a red cross: on the warped painting, the
+/// painted place should sit on its cross.
+fn mark_landmarks(pic: &mut Picture, pairs: &[FillPair]) {
+    const ARM: i64 = 14;
+    const HALF_WIDTH: i64 = 1;
+    for p in pairs {
+        let cx = (p.canvas[0] * f64::from(pic.w)) as i64;
+        let cy = (p.canvas[1] * f64::from(pic.h)) as i64;
+        for d in -ARM..=ARM {
+            for t in -HALF_WIDTH..=HALF_WIDTH {
+                for (x, y) in [(cx + d, cy + t), (cx + t, cy + d)] {
+                    if (0..i64::from(pic.w)).contains(&x) && (0..i64::from(pic.h)).contains(&y) {
+                        pic.put(x as u32, y as u32, [1.0, 0.0, 0.0, 1.0]);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1085,7 +1149,7 @@ fn main() -> Result<()> {
                 e.apply(&mut painting);
             }
             let warp = Warp::fit_inside(&spec.pairs, f64::from(size.1) / f64::from(size.0))?;
-            Some((painting, warp, spec.keep))
+            Some((painting, warp, spec))
         }
         None => None,
     };
@@ -1142,10 +1206,26 @@ fn main() -> Result<()> {
     }
     img.save(&out.join("canvas.png"))?;
     written.insert(0, "canvas.png".to_string());
-    if let Some((painting, warp, keep)) = &filler {
-        let mut filled = fill(size.0, size.1, &art_layer, painting, warp, keep);
+    if let Some((painting, warp, spec)) = &filler {
+        let mut filled = fill(size.0, size.1, &art_layer, painting, warp, &spec.keep);
         filled.save(&out.join("filled.png"))?;
         written.push("filled.png".to_string());
+
+        let aspect = f64::from(size.1) / f64::from(size.0);
+        let errors = landmark_errors(&spec.pairs, aspect, painting);
+        let mut order: Vec<usize> = (0..errors.len()).collect();
+        order.sort_by(|&a, &b| errors[b].total_cmp(&errors[a]));
+        let limit = LANDMARK_FLAG * median(&errors);
+        println!("landmark leave-one-out error, painting px (over {limit:.1} is flagged):");
+        for i in order {
+            let flag = if errors[i] > limit { "  FLAG" } else { "" };
+            println!("  {:6.1}  {}{flag}", errors[i], spec.names[i]);
+        }
+        let bare = vec![[0.0f32; 4]; (size.0 * size.1) as usize];
+        let mut marked = fill(size.0, size.1, &bare, painting, warp, &[]);
+        mark_landmarks(&mut marked, &spec.pairs);
+        marked.save(&out.join("landmarks.png"))?;
+        written.push("landmarks.png".to_string());
         for (at, f) in &placed_fogs {
             blend(&mut filled, *at, f);
         }
@@ -1304,6 +1384,27 @@ mod tests {
             assert!((pu - (u - 0.05)).abs() < 1e-3, "u {u}: {pu}");
             assert!((pv - (v - 0.1)).abs() < 1e-3, "v {v}: {pv}");
         }
+    }
+
+    #[test]
+    fn a_misread_landmark_has_the_largest_leave_one_out_error() {
+        let shift = |u: f64, v: f64| FillPair {
+            canvas: [u, v],
+            painting: [u - 0.05, v - 0.1],
+        };
+        let mut pairs: Vec<FillPair> = [0.1, 0.4, 0.7, 0.9]
+            .iter()
+            .flat_map(|&u| [0.1, 0.5, 0.9].map(move |v| (u, v)))
+            .map(|(u, v)| shift(u, v))
+            .collect();
+        pairs[4].painting[0] += 0.05;
+        let painting = Picture::blank(1000, 1000);
+        let errors = landmark_errors(&pairs, 1.0, &painting);
+        let worst = (0..errors.len())
+            .max_by(|&a, &b| errors[a].total_cmp(&errors[b]))
+            .unwrap();
+        assert_eq!(worst, 4, "{errors:?}");
+        assert!(errors[4] > LANDMARK_FLAG * median(&errors), "{errors:?}");
     }
 
     #[test]
