@@ -121,6 +121,11 @@ pub(crate) struct Char {
     pub(crate) herb_tracking: bool,
     /// The perk keys they hold, one per slot filled.
     pub(crate) herb_perks: Vec<String>,
+    /// The Journal's Tool slot, a `[[tool]]` item the Satchel holds (#440).
+    pub(crate) herb_tool: Option<u32>,
+    /// The Journal's Consumable slot, a `[[consumable]]` item; it keeps its choice when the
+    /// Satchel runs out.
+    pub(crate) herb_consumable: Option<u32>,
     /// How many times they have reset their perks.
     pub(crate) perk_resets: u32,
 }
@@ -236,6 +241,8 @@ impl Characters {
             herb_picks: Vec::new(),
             herb_tracking: false,
             herb_perks: Vec::new(),
+            herb_tool: None,
+            herb_consumable: None,
             perk_resets: 0,
         });
         CHAR_CREATE_SUCCESS

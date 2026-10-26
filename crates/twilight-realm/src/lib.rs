@@ -158,6 +158,18 @@ pub enum HerbAction {
     Pull(u8),
     /// Close the grid and leave the patch.
     Leave,
+    /// Tool Skill: reveal a line from this tile, across or down.
+    Sweep { tile: u8, across: bool },
+    /// Tool Skill: mark the 3 x 3 around this tile.
+    Probe(u8),
+    /// Tool Skill: reveal this tile, a plant yielding more.
+    Snip(u8),
+    /// Sight Consumable: mark up to three hidden tiles' kinds.
+    Sight([u8; 3]),
+    /// Twine Consumable: mark every weed in the 3 x 3 around this tile.
+    Twine(u8),
+    /// Forager's Charm: arm or disarm it for the next pull.
+    ArmCharm,
 }
 
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
@@ -471,6 +483,21 @@ pub enum RealmCommand {
     /// `None` to clear the slot. Anything else is ignored.
     SetBait {
         item: Option<u32>,
+    },
+    /// Choose the Herbalism Journal's Tool (spec #435): a `[[tool]]` item the Satchel holds, or
+    /// `None` to clear the slot. Anything else is ignored.
+    SetHerbTool {
+        item: Option<u32>,
+    },
+    /// Choose the Herbalism Journal's Consumable: a `[[consumable]]` item the Satchel holds, or
+    /// `None` to clear the slot. Anything else is ignored.
+    SetHerbConsumable {
+        item: Option<u32>,
+    },
+    /// Fill an empty, unlocked Herbalist perk slot with a perk not already picked.
+    PickPerk {
+        slot: u8,
+        perk: String,
     },
     /// Fill a Fishing Journal gear slot (spec #368) from the Satchel piece `from` names (ADR
     /// 0023), which goes into it and sends back what the slot held; `None` puts the slot's item
@@ -1474,6 +1501,9 @@ impl Realm {
                 self.change_satchel(|c, events| calling_choice::choose(c, quest, events))
             }
             RealmCommand::SetBait { item } => self.set_bait(item),
+            RealmCommand::SetHerbTool { item } => self.set_herb_tool(item),
+            RealmCommand::SetHerbConsumable { item } => self.set_herb_consumable(item),
+            RealmCommand::PickPerk { slot, perk } => self.pick_perk(slot, &perk),
             RealmCommand::SetFishingGear { slot, from } => self.set_fishing_gear(slot, from),
             RealmCommand::WithdrawFromJournal { pick, count } => {
                 self.change_satchel(|c, events| equipment::withdraw(c, pick, count, events))

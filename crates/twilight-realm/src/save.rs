@@ -212,6 +212,10 @@ struct Save {
     herb_tracking: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     herb_perks: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    herb_tool: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    herb_consumable: Option<u32>,
     #[serde(default, skip_serializing_if = "is_zero")]
     perk_resets: u32,
     /// The entry the empty Lure slot waits to refill with (version 5). A plain key, so before the
@@ -464,6 +468,8 @@ pub(crate) fn export(c: &Char) -> String {
         herb_picks: c.herb_picks.clone(),
         herb_tracking: c.herb_tracking,
         herb_perks: c.herb_perks.clone(),
+        herb_tool: c.herb_tool,
+        herb_consumable: c.herb_consumable,
         perk_resets: c.perk_resets,
         lure_waiting: c.lure_waiting,
         calling_chosen: c.calling_chosen,
@@ -570,6 +576,8 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         herb_picks: s.herb_picks,
         herb_tracking: s.herb_tracking,
         herb_perks: s.herb_perks,
+        herb_tool: s.herb_tool,
+        herb_consumable: s.herb_consumable,
         perk_resets: s.perk_resets,
         fishing_pole: None,
         fishing_lure: None,

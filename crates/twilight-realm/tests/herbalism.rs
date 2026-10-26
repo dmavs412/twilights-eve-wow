@@ -480,3 +480,337 @@ fn five_picks_list_the_plant_in_the_journal_and_ten_show_its_rows() {
         }
     }
 }
+
+const PROBE: u32 = 961_102;
+const SNIP: u32 = 961_103;
+const THYME_TEA: u32 = 961_201;
+const CHARM: u32 = 961_206;
+
+/// A second test zone whose every tile is a thorn, with its own spots near the Northshire start.
+const THORN_HERBS: &str = r#"
+[[zone]]
+key = "thorn_yard"
+zone = 990102
+live = 3
+thorns = 25
+points = [
+  { x = -8960.0, y = -120.0 },
+  { x = -8940.0, y = -120.0 },
+  { x = -8960.0, y = -145.0 },
+  { x = -8945.0, y = -142.0 },
+  { x = -8955.0, y = -132.0 },
+]
+
+[[plant]]
+zone = "thorn_yard"
+item = 961001
+rarity = "common"
+level = 1
+weight = 1000
+use = "cooking"
+
+[[plant]]
+zone = "thorn_yard"
+item = 961009
+rarity = "legendary"
+level = 14
+bloom = "night"
+timed = true
+weight = 0
+use = "alchemy"
+"#;
+
+const THORN_POINTS: [[f32; 2]; 5] = [
+    [-8960.0, -120.0],
+    [-8940.0, -120.0],
+    [-8960.0, -145.0],
+    [-8945.0, -142.0],
+    [-8955.0, -132.0],
+];
+
+/// Stands player 0 beside a patch of the thorn zone and clicks it.
+fn click_a_thorn_patch(p: &mut Party) {
+    let (guid, at) = p
+        .seen(0)
+        .iter()
+        .find_map(|e| match e {
+            SessionEvent::ObjectCreate {
+                guid,
+                kind: EntityKind::GameObject,
+                fields,
+                position,
+                ..
+            } if fields.object_entry() == Some(PATCH_ENTRY)
+                && THORN_POINTS
+                    .iter()
+                    .any(|t| flat_distance(*position, [t[0], t[1], 0.0]) < 1.0) =>
+            {
+                Some((*guid, *position))
+            }
+            _ => None,
+        })
+        .expect("a thorn patch");
+    p.go(0, [at[0] + 1.0, at[1], at[2]], 0.0);
+    p.run(0.5);
+    p.cmd(0, RealmCommand::UseGameObject { guid });
+}
+
+/// A party of one who knows Herbalism, with `plain` extra top-level save keys and `satchel`
+/// `(entry, count)` rows in the Satchel. With `thorny`, the thorn zone is added too.
+fn kitted_party(plain: &str, satchel: &[(u32, u32)], thorny: bool) -> Party {
+    let mut realm = Realm::with_seed(7).with_herbs(TEST_HERBS);
+    if thorny {
+        realm = realm.with_herbs(THORN_HERBS);
+    }
+    let plain = plain.to_owned();
+    let satchel = satchel.to_vec();
+    Party::edited(
+        realm,
+        &[1],
+        START_ELWYNN,
+        Box::new(FlatGround),
+        move |_, blob| {
+            let blob = if plain.contains("herbalist_level") {
+                blob.replacen("herbalist_level = 1\n", "", 1)
+            } else {
+                blob
+            };
+            let mut blob = blob.replacen(
+                "angler_level = 1\n",
+                &format!("angler_level = 1\nknows_herbalism = true\n{plain}\n"),
+                1,
+            );
+            for (entry, count) in &satchel {
+                blob.push_str(&format!(
+                    "\n[[satchel]]\nentry = {entry}\ncount = {count}\n"
+                ));
+            }
+            blob
+        },
+    )
+}
+
+/// The last `HerbGrid`'s pulls left, tiles, tool, skill cost, consumable and readiness.
+fn last_grid(events: &[SessionEvent]) -> (u8, Vec<benilla_protocol::HerbTile>) {
+    events
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            SessionEvent::HerbGrid {
+                pulls_left, tiles, ..
+            } => Some((*pulls_left, tiles.clone())),
+            _ => None,
+        })
+        .expect("a grid")
+}
+
+fn journals(events: &[SessionEvent]) -> Vec<&SessionEvent> {
+    events
+        .iter()
+        .filter(|e| matches!(e, SessionEvent::HerbalismJournal { .. }))
+        .collect()
+}
+
+/// The count the last `HerbalismJournal` shows for Satchel entry `item`.
+fn satchel_count(events: &[SessionEvent], item: u32) -> u32 {
+    events
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            SessionEvent::HerbalismJournal { satchel, .. } => Some(
+                satchel
+                    .iter()
+                    .filter(|r| r.item == item)
+                    .map(|r| r.count)
+                    .sum(),
+            ),
+            _ => None,
+        })
+        .expect("a Herbalism Journal")
+}
+
+fn perk_slots(events: &[SessionEvent]) -> Vec<Vec<String>> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::Herbalist { perks, .. } => Some(perks.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn sweep_across_from_the_first_tile_reveals_three_for_two_pulls() {
+    let mut p = kitted_party("herb_tool = 961101", &[(SICKLE, 1)], false);
+    click_a_patch(&mut p);
+    let before = p.seen(0).len();
+    p.cmd(
+        0,
+        RealmCommand::Herb(HerbAction::Sweep {
+            tile: 0,
+            across: true,
+        }),
+    );
+    let (pulls, tiles) = last_grid(&p.seen(0)[before..]);
+    assert_eq!(pulls, 4);
+    let pulled: Vec<usize> = (0..25).filter(|&i| tiles[i].state != 0).collect();
+    assert_eq!(pulled, [0, 1, 2]);
+}
+
+#[test]
+fn sweep_from_the_last_column_shifts_to_fit() {
+    let mut p = kitted_party("herb_tool = 961101", &[(SICKLE, 1)], false);
+    click_a_patch(&mut p);
+    let before = p.seen(0).len();
+    p.cmd(
+        0,
+        RealmCommand::Herb(HerbAction::Sweep {
+            tile: 4,
+            across: true,
+        }),
+    );
+    let (_, tiles) = last_grid(&p.seen(0)[before..]);
+    let pulled: Vec<usize> = (0..25).filter(|&i| tiles[i].state != 0).collect();
+    assert_eq!(pulled, [2, 3, 4]);
+}
+
+#[test]
+fn a_skill_of_another_tool_is_refused() {
+    let mut p = kitted_party("herb_tool = 961101", &[(SICKLE, 1)], false);
+    click_a_patch(&mut p);
+    let before = p.seen(0).len();
+    p.cmd(0, RealmCommand::Herb(HerbAction::Probe(12)));
+    p.cmd(0, RealmCommand::Herb(HerbAction::Snip(12)));
+    assert!(grids(&p.seen(0)[before..]).is_empty(), "nothing changed");
+}
+
+#[test]
+fn probe_on_the_centre_marks_nine_tiles_for_one_pull() {
+    let mut p = kitted_party("herb_tool = 961102", &[(PROBE, 1)], false);
+    click_a_patch(&mut p);
+    let before = p.seen(0).len();
+    p.cmd(0, RealmCommand::Herb(HerbAction::Probe(12)));
+    let (pulls, tiles) = last_grid(&p.seen(0)[before..]);
+    assert_eq!(pulls, 5);
+    let marked: Vec<usize> = (0..25).filter(|&i| tiles[i].known != 0).collect();
+    assert_eq!(marked, [6, 7, 8, 11, 12, 13, 16, 17, 18]);
+}
+
+#[test]
+fn snip_on_a_thorn_costs_two_pulls_and_nothing_more() {
+    let mut p = kitted_party("herb_tool = 961103", &[(SNIP, 1)], true);
+    click_a_thorn_patch(&mut p);
+    let before = p.seen(0).len();
+    p.cmd(0, RealmCommand::Herb(HerbAction::Snip(0)));
+    let (pulls, tiles) = last_grid(&p.seen(0)[before..]);
+    assert_eq!((pulls, tiles[0].state), (4, 3));
+}
+
+#[test]
+fn thyme_tea_adds_a_pull_and_leaves_one_fewer_in_the_satchel() {
+    let mut p = kitted_party("herb_consumable = 961201", &[(THYME_TEA, 2)], false);
+    let before = p.seen(0).len();
+    click_a_patch(&mut p);
+    let got = &p.seen(0)[before..];
+    assert_eq!(last_grid(got).0, 7);
+    assert_eq!(satchel_count(got, THYME_TEA), 1);
+}
+
+#[test]
+fn an_armed_charm_is_spent_by_the_next_pull() {
+    let mut p = kitted_party("herb_consumable = 961206", &[(CHARM, 1)], false);
+    click_a_patch(&mut p);
+    p.cmd(0, RealmCommand::Herb(HerbAction::ArmCharm));
+    let armed = p.seen(0).len();
+    p.cmd(0, RealmCommand::Herb(HerbAction::Pull(0)));
+    let (pulls, tiles) = last_grid(&p.seen(0)[armed..]);
+    match tiles[0].state {
+        1 => assert_eq!((tiles[0].count, pulls), (2, 5), "a plant doubles"),
+        _ => assert_eq!(pulls, 4, "a weed costs one more"),
+    }
+    let ready = p.seen(0)[armed..].iter().rev().find_map(|e| match e {
+        SessionEvent::HerbGrid {
+            consumable_ready,
+            charm_armed,
+            ..
+        } => Some((*consumable_ready, *charm_armed)),
+        _ => None,
+    });
+    assert_eq!(ready, Some((false, false)));
+}
+
+#[test]
+fn night_owl_gives_seven_pulls_at_night() {
+    let mut p = kitted_party("herb_perks = [\"nightowl\"]", &[], false);
+    p.realm.set_wall_clock(23 * 60 * 5 * 1000);
+    let before = p.seen(0).len();
+    click_a_patch(&mut p);
+    assert_eq!(last_grid(&p.seen(0)[before..]).0, 7);
+}
+
+#[test]
+fn thornwise_shows_every_thorn_and_gives_five_pulls() {
+    let mut p = kitted_party("herb_perks = [\"thornwise\"]", &[], true);
+    let before = p.seen(0).len();
+    click_a_thorn_patch(&mut p);
+    let got = &p.seen(0)[before..];
+    let (pulls, tiles) = last_grid(got);
+    assert_eq!(pulls, 5);
+    assert!(tiles.iter().all(|t| t.known == 3));
+}
+
+#[test]
+fn a_perk_slot_opens_at_level_ten_and_fills_once() {
+    let mut p = kitted_party("herbalist_level = 1", &[], false);
+    let before = p.seen(0).len();
+    p.cmd(
+        0,
+        RealmCommand::PickPerk {
+            slot: 0,
+            perk: "gloves".into(),
+        },
+    );
+    assert!(
+        perk_slots(&p.seen(0)[before..]).is_empty(),
+        "slot 0 is locked"
+    );
+
+    let mut p = kitted_party("herbalist_level = 10", &[], false);
+    let before = p.seen(0).len();
+    p.cmd(
+        0,
+        RealmCommand::PickPerk {
+            slot: 0,
+            perk: "gloves".into(),
+        },
+    );
+    assert_eq!(
+        perk_slots(&p.seen(0)[before..]),
+        [vec!["gloves".to_owned()]]
+    );
+    let again = p.seen(0).len();
+    p.cmd(
+        0,
+        RealmCommand::PickPerk {
+            slot: 0,
+            perk: "keeneye".into(),
+        },
+    );
+    assert!(
+        perk_slots(&p.seen(0)[again..]).is_empty(),
+        "a filled slot stays"
+    );
+}
+
+#[test]
+fn receiving_a_herb_sends_the_herbalism_journal_not_the_fishing_one() {
+    let mut p = kitted_party("", &[], false);
+    click_a_patch(&mut p);
+    let got = pull_a_plant(&mut p);
+    assert!(!journals(&got).is_empty(), "the Herbalism Journal follows");
+    assert!(
+        !got.iter()
+            .any(|e| matches!(e, SessionEvent::FishingJournal { .. })),
+        "no Fishing Journal"
+    );
+}

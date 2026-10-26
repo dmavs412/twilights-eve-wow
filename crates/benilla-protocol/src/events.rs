@@ -387,6 +387,25 @@ pub enum SessionEvent {
         consumable_ready: bool,
         charm_armed: bool,
     },
+    /// Twilight's Eve, not 1.12: the Herbalism Journal (spec #435), complete at login and on every
+    /// change, as `FishingJournal` is. Never wire-decoded.
+    HerbalismJournal {
+        /// The Tool slot's item and the Consumable slot's choice; 0 for empty.
+        tool: u32,
+        consumable: u32,
+        /// The Satchel's herbalism Journal Items (ADR 0023).
+        satchel: Vec<SatchelRow>,
+        /// `(item, tiles pulled)` for every plant picked at least once, ascending by item.
+        picks: Vec<(u32, u32)>,
+        /// Each zone's AreaTable id and its plant items in `herbs.toml` order, legendary last; the
+        /// shared finds are listed under every zone.
+        zones: Vec<(u32, Vec<u32>)>,
+        /// `[herbalist] reveal_at`.
+        reveal_at: [u32; 3],
+        /// Every perk in `herbs.toml` order: `(key, name, is_boon, text)`. The Progression tab
+        /// lists them; `Herbalist.perks` names the picked ones by key.
+        perks: Vec<(String, String, bool, String)>,
+    },
     /// Twilight's Eve, not 1.12: the Forager's Grid closed. `reason`: 0 out of pulls, 1 every tile
     /// pulled, 2 the player left, 3 damage, 4 walked away. Never wire-decoded.
     HerbGridClosed { patch: u64, reason: u8 },

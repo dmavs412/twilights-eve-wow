@@ -343,8 +343,10 @@ pub(crate) fn receive_from(
             random_property_id: 0,
             count,
         }));
-        events.push(crate::world::fishing::journal(c));
-        crate::world::fishing::refill(c, events);
+        events.push(journal_of(c, entry));
+        if items::template(entry).and_then(|t| t.journal) == Some(items::Profession::Fishing) {
+            crate::world::fishing::refill(c, events);
+        }
         return Ok(());
     }
     let mut fresh = Vec::new();
@@ -633,7 +635,7 @@ pub(crate) fn take(c: &mut Char, entry: u32, mut count: u32, events: &mut Vec<Se
     let from_satchel = c.inventory.satchel.take(entry, count);
     if from_satchel > 0 {
         count -= from_satchel;
-        events.push(crate::world::fishing::journal(c));
+        events.push(journal_of(c, entry));
     }
     let stacks: Vec<(Pos, u32)> = c
         .inventory
@@ -685,7 +687,7 @@ pub(crate) fn withdraw(
     if !fresh.is_empty() {
         send_slots(c, &fresh, events);
     }
-    events.push(crate::world::fishing::journal(c));
+    events.push(journal_of(c, pick.item));
     true
 }
 
@@ -705,11 +707,22 @@ pub(crate) fn deposit(c: &mut Char, bag: u8, slot: u8, events: &mut Vec<SessionE
     let Some(item) = c.inventory.take(at) else {
         return false;
     };
+    let entry = item.entry;
     send_slots(c, &[at], events);
     c.inventory.satchel.deposit(item);
-    events.push(crate::world::fishing::journal(c));
-    crate::world::fishing::refill(c, events);
+    events.push(journal_of(c, entry));
+    if items::template(entry).and_then(|t| t.journal) == Some(items::Profession::Fishing) {
+        crate::world::fishing::refill(c, events);
+    }
     true
+}
+
+/// The Journal of `entry`'s own profession, complete.
+fn journal_of(c: &Char, entry: u32) -> SessionEvent {
+    match items::template(entry).and_then(|t| t.journal) {
+        Some(items::Profession::Herbalism) => crate::world::herbalism::journal(c),
+        _ => crate::world::fishing::journal(c),
+    }
 }
 
 /// Whether the item at `at` may leave it: not a bag that holds items. Sells and the like ask.
