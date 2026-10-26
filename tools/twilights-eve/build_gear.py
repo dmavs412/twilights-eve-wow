@@ -29,6 +29,11 @@ other slot with one is refused. The realm reads the column; the client sees it a
 "Increase Spell Dam N" item spell appended to `equip`, so the tooltip shows the line. `budget` is
 the stat points a hand-authored row may spend (str + agi + sta + int + spi + ceil(spell_power / 2));
 a row over it is refused, and a blank is unchecked. It is not written to gear.toml.
+
+Northshire rows (entry 900000 and up, plus the outfit whites) are held to the tiers of #426: stat
+points within 2 of the quality's budget (Common 2, Uncommon 6, Rare 13, Epic 18, doubled for a
+two-hander), the `budget` cell equal to the points, and a weapon's DPS within 10% of its curve.
+Every other row is unchecked.
 """
 
 from __future__ import annotations
@@ -115,6 +120,20 @@ SPELL_POWER_NAMES = {spell: f"Increase Spell Dam {n}" for n, spell in SPELL_POWE
 SPELL_POWER_SLOTS = (("Weapon", None), ("Offhand", "Held"), ("Ranged", "Wand"))
 
 
+# The Northshire tier rule (#426). Stat points of a row sit within FLEX of its quality's budget,
+# doubled for a two-hander; a weapon's DPS sits within DPS_FLEX of its curve at item level 10,
+# scaled by min(item_level, 10) / 10. MH counts as 1H; a Bow, Gun or Crossbow is "bow".
+BUDGET = {"Common": 2, "Uncommon": 6, "Rare": 13, "Epic": 18}
+FLEX = 2
+WEAPON_DPS = {("1H", "Uncommon"): 7.9, ("1H", "Rare"): 10.3, ("2H", "Uncommon"): 10.5,
+              ("2H", "Rare"): 13.6, ("2H", "Epic"): 15.8, ("bow", "Uncommon"): 6.0,
+              ("bow", "Rare"): 7.8}
+DPS_FLEX = 0.10
+# Only these rows are checked: entries from here up, and the vanilla outfit whites.
+FIRST_CHECKED = 900000
+OUTFIT_WHITES = (2108, 2109, 2110, 3260, 25, 37, 4565, 1388, 2055, 2362, 8179)
+
+
 class SheetError(Exception):
     pass
 
@@ -168,6 +187,44 @@ def classify(row: dict) -> tuple[int, int, int]:
             raise SheetError(f"{where}: a Chest of type {kind!r}")
         return CLASS_ARMOR, ARMOUR_TYPES[kind], 20 if kind == "Robe" else 5
     raise SheetError(f"{where}: slot {slot!r} is none of the ten Gear Slots")
+
+
+def is_checked(entry: int) -> bool:
+    """Whether the Northshire tier rule applies to this entry."""
+    return entry >= FIRST_CHECKED or entry in OUTFIT_WHITES
+
+
+def check_tier(row: dict, entry: int, where: str, points: int) -> None:
+    """Refuse a checked row whose stat points stray from its quality's budget by more than FLEX."""
+    quality = row["quality"]
+    if quality not in BUDGET:
+        return
+    budget = BUDGET[quality] * (2 if row["hand"] == "2H" else 1)
+    if abs(points - budget) > FLEX:
+        raise SheetError(f"{where}: a {quality} row spends {points} stat points, "
+                         f"{budget} +/- {FLEX} allowed")
+    if integer(row["budget"], "budget", where) != points:
+        raise SheetError(f"{where}: the budget cell {row['budget']!r} is not the {points} "
+                         "points the row spends")
+
+
+def check_dps(row: dict, where: str, damage: list, speed_ms: int) -> None:
+    """Refuse a checked weapon whose DPS is more than DPS_FLEX off its curve."""
+    if row["slot"] == "Weapon":
+        shape = "2H" if row["hand"] == "2H" else "1H"
+    elif row["slot"] == "Ranged" and row["type"] in ("Bow", "Gun", "Crossbow"):
+        shape = "bow"
+    else:
+        return
+    curve = WEAPON_DPS.get((shape, row["quality"]))
+    if curve is None or not damage or not speed_ms:
+        return
+    level = integer(row["item_level"], "item_level", where)
+    target = curve * min(level, 10) / 10
+    dps = sum((lo + hi) / 2 for lo, hi, _ in damage) / (speed_ms / 1000)
+    if abs(dps - target) > DPS_FLEX * target:
+        raise SheetError(f"{where}: a {row['quality']} {shape} weapon of item level {level} "
+                         f"does {dps:.1f} DPS, {target:.1f} +/- {DPS_FLEX:.0%} allowed")
 
 
 def word(table: dict, value: str, column: str, where: str) -> int:
@@ -245,9 +302,11 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
                                    for slot, kind in SPELL_POWER_SLOTS):
             raise SheetError(f"{where}: spell_power on a {row['slot']} of type {row['type']!r}; "
                              "only a Weapon, a held Offhand or a Wand carries it")
-        if row["budget"]:
+        spent = sum(integer(row[col], col, where) for col, _ in STATS) + -(-spell_power // 2)
+        if is_checked(entry):
+            check_tier(row, entry, where, spent)
+        elif row["budget"]:
             budget = integer(row["budget"], "budget", where)
-            spent = sum(integer(row[col], col, where) for col, _ in STATS) + -(-spell_power // 2)
             if spent > budget:
                 raise SheetError(f"{where}: spends {spent} stat points of a budget of {budget}")
         cells = {part: integer(row[f"wardrobe_{part}"], f"wardrobe_{part}", where)
@@ -275,6 +334,8 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
             speed_ms = round(float(row["speed"]) * 1000) if row["speed"] else 0
         except ValueError:
             raise SheetError(f"{where}: a damage or speed that is no number") from None
+        if is_checked(entry):
+            check_dps(row, where, damage, speed_ms)
         items.append({
             "entry": entry, "row": row, "class": cls, "subclass": sub, "inventory_type": inv,
             "damage": damage, "speed_ms": speed_ms, "use": uses, "where": where,
