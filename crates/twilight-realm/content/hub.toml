@@ -1398,7 +1398,7 @@ level = 10
 display_id = 3277
 faction_template = 35
 role = "herbalist"
-npc_flags = 0x5
+npc_flags = 0x7
 map = 0
 position = [-8875.0, -210.0, 81.39]
 orientation = 1.57
@@ -1406,3 +1406,24 @@ text_id = 64141
 teaches_herbalism = true
 stock = [961201, 961203, 961205]
 greeting = "The brothers keep the Abbey's herb beds, $C, and the beds keep us in tea and salve. I can teach you to gather what grows wild around here, and sell you a few things for the work."
+
+# ── Hedda Thornwick, the Goldshire herbalist (#441) ──────────────────────────────────────────────
+# Gives the Shears quest, sells every herbalist's good and forgets a Herbalist's perks for money.
+# z is ground_check.py's.
+[[npc]]
+guid = 9300036
+entry = 190073
+name = "Hedda Thornwick"
+subname = "Herbalist"
+level = 20
+display_id = 3323
+faction_template = 35
+role = "herbalist"
+npc_flags = 0x7
+map = 0
+position = [-9445.0, 55.0, 56.15]
+orientation = 1.57
+text_id = 64142
+resets_perks = true
+stock = [961201, 961202, 961203, 961204, 961205, 961206, 961207]
+greeting = "Elwynn's hedgerows are the best larder in the kingdom, $C, if you know where to look and when to cut. I sell what a herbalist needs, and for a price I can make you forget the habits you picked up."

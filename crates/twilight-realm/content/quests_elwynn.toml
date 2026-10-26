@@ -1825,3 +1825,43 @@ map = 0
 position = [-8790.0, -175.0, 81.38]
 orientation = 0.0
 respawn = 60.0
+
+# Herbalism tool quests (#441, ADR 0024). A quest asks `min_herbalist_level` of a character who
+# knows Herbalism; the collected herbs come out of the Satchel.
+[[quest]]
+id = 96201
+kind = "once"
+giver = 190072
+ender = 190072
+level = 10
+min_tier = 0
+min_herbalist_level = 10
+title = "The Abbey's Root Cellar"
+objectives = "Bring 20 Earthroot, 20 Peacebloom and 10 Silverleaf to Brother Ansel."
+details = "The Defias emptied the root cellar the night they came, and the brothers have been eating gruel since. You gather well, $C. Bring me twenty Earthroot, twenty Peacebloom and ten Silverleaf, and the cellar will be stocked by Sunday. I will give you the trowel I kept back from the Abbey's tools."
+progress = "The cellar is still bare. Have you the Earthroot, the Peacebloom and the Silverleaf?"
+completion = "Look at that, shelves again. The brothers will weep into their soup. Take the Herbalist's Trowel, $C. It digs roots without bruising them."
+money = 0
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 2449, count = 20 }, { item = 2447, count = 20 }, { item = 765, count = 10 }]
+rewards = [[961102, 1]]
+
+[[quest]]
+id = 96202
+kind = "once"
+giver = 190073
+ender = 190073
+level = 20
+min_tier = 0
+min_herbalist_level = 20
+title = "A Careful Cut"
+objectives = "Bring 15 Mageroyal, 15 Briarthorn and 5 Swiftthistle to Hedda Thornwick."
+details = "I trust my shears to very few hands, $C. Swiftthistle only opens at dusk, and a herbalist who can find it at dusk can be trusted with a blade. Bring me fifteen Mageroyal, fifteen Briarthorn and five Swiftthistle, and I will hand over a pair of shears."
+progress = "Mageroyal and Briarthorn grow anywhere. It is the Swiftthistle that tells me who you are."
+completion = "Clean stems, no tearing. You have the hands for it. Take the Herbalist's Shears, and keep them oiled."
+money = 0
+tokens = 0
+zone_or_sort = 12
+collect = [{ item = 785, count = 15 }, { item = 2450, count = 15 }, { item = 2452, count = 5 }]
+rewards = [[961103, 1]]

@@ -39,6 +39,8 @@ struct Npc {
     #[serde(default)]
     teaches_herbalism: bool,
     #[serde(default)]
+    resets_perks: bool,
+    #[serde(default)]
     angler_hints: Vec<toml::Value>,
     /// The `AreaTable` id an innkeeper binds to.
     area: Option<u32>,
@@ -210,12 +212,13 @@ fn every_npcs_flags_fit_its_role() {
                     && !n.tokens
                     && !n.greeting.contains('\n')
             }
-            // Brother Ansel: the lesson and the herbalist's goods, no quests (#438).
+            // Brother Ansel teaches the lesson, Hedda Thornwick resets the perks (#441); each sells
+            // the herbalist's goods and gives a tool quest.
             "herbalist" => {
-                n.npc_flags == GOSSIP | VENDOR
-                    && n.teaches_herbalism
+                n.npc_flags == GOSSIP | QUEST_GIVER | VENDOR
+                    && (n.teaches_herbalism != n.resets_perks)
                     && talks
-                    && !gives
+                    && gives
                     && !n.stock.is_empty()
                     && !n.tokens
             }

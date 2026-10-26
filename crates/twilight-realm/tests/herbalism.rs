@@ -2,10 +2,13 @@
 //! has Herb Patches of their own, and Find Herbs toggles the minimap's leaves.
 
 mod common;
+mod gear_common;
+mod quest_common;
 
 use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
+use quest_common::{accept, completed, hand_in};
 use twilight_realm::{Audience, HerbAction, Realm, RealmCommand};
 
 const PATCH_ENTRY: u32 = 981_001;
@@ -800,6 +803,167 @@ fn a_perk_slot_opens_at_level_ten_and_fills_once() {
         perk_slots(&p.seen(0)[again..]).is_empty(),
         "a filled slot stays"
     );
+}
+
+// The tool quests and the perk reset (#441): Brother Ansel's and Hedda Thornwick's.
+
+const HEDDA: u32 = 190_073;
+const TROWEL: u32 = 961_102;
+const SHEARS: u32 = 961_103;
+const ROOT_CELLAR: u32 = 96_201;
+const CAREFUL_CUT: u32 = 96_202;
+const EARTHROOT: u32 = 2449;
+const PEACEBLOOM: u32 = 2447;
+const SILVERLEAF: u32 = 765;
+const GOLD: u32 = 10_000;
+
+/// A lone Herbalist in the world at the Northshire start, driven through the default session.
+/// `plain` is extra top-level save keys (it may set `herbalist_level` and `money`).
+fn lone_herbalist(plain: &str, satchel: &[(u32, u32)]) -> (Realm, u64) {
+    let mut maker = realm();
+    let RealmCommand::CreateCharacter(mut req) = create_cmd("Lee", HUMAN, 0, WARRIOR) else {
+        unreachable!()
+    };
+    req.start = START_ELWYNN;
+    maker.handle(RealmCommand::CreateCharacter(req));
+    assert_eq!(create_result(&mut maker), CHAR_CREATE_SUCCESS);
+    let guid = roster(&mut maker)[0].guid;
+    let mut blob = maker.export_character(guid).unwrap();
+    if plain.contains("herbalist_level") {
+        blob = blob.replacen("herbalist_level = 1\n", "", 1);
+    }
+    if plain.contains("money") {
+        blob = blob.replacen("money = 0\n", "", 1);
+    }
+    let mut blob = blob.replacen(
+        "angler_level = 1\n",
+        &format!("angler_level = 1\nknows_herbalism = true\n{plain}\n"),
+        1,
+    );
+    for (entry, count) in satchel {
+        blob.push_str(&format!(
+            "\n[[satchel]]\nentry = {entry}\ncount = {count}\n"
+        ));
+    }
+    let mut realm = Realm::with_seed(7);
+    realm.import_character(&blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    drain(&mut realm);
+    (realm, guid)
+}
+
+/// How many of `item` the saved character holds in the Satchel.
+fn saved_satchel(realm: &Realm, guid: u64, item: u32) -> i64 {
+    let blob = realm.export_character(guid).unwrap();
+    let table: toml::Table = blob.parse().unwrap();
+    table
+        .get("satchel")
+        .and_then(|s| s.as_array())
+        .into_iter()
+        .flatten()
+        .filter(|r| r["entry"].as_integer() == Some(i64::from(item)))
+        .map(|r| r["count"].as_integer().unwrap())
+        .sum()
+}
+
+fn offered_by(realm: &mut Realm, entry: u32) -> Vec<u32> {
+    quest_common::on_offer(realm, hub_guid(entry))
+}
+
+#[test]
+fn the_root_cellar_quest_waits_for_herbalist_level_ten_and_pays_a_trowel() {
+    let herbs = [(EARTHROOT, 20), (PEACEBLOOM, 20), (SILVERLEAF, 10)];
+    let (mut low, _) = lone_herbalist("herbalist_level = 9", &herbs);
+    assert!(!offered_by(&mut low, BROTHER_ANSEL).contains(&ROOT_CELLAR));
+    let (mut realm, guid) = lone_herbalist("herbalist_level = 10", &herbs);
+    assert!(offered_by(&mut realm, BROTHER_ANSEL).contains(&ROOT_CELLAR));
+    let ansel = hub_guid(BROTHER_ANSEL);
+    accept(&mut realm, ansel, ROOT_CELLAR);
+    let done = completed(&hand_in(&mut realm, ansel, ROOT_CELLAR)).expect("the quest completes");
+    assert_eq!(done.quest_id, ROOT_CELLAR);
+    assert_eq!(saved_satchel(&realm, guid, EARTHROOT), 0);
+    assert_eq!(saved_satchel(&realm, guid, PEACEBLOOM), 0);
+    assert_eq!(saved_satchel(&realm, guid, SILVERLEAF), 0);
+    assert_eq!(saved_satchel(&realm, guid, TROWEL), 1);
+}
+
+#[test]
+fn the_careful_cut_quest_is_offered_only_at_herbalist_level_twenty() {
+    for (level, offered) in [(10, false), (19, false), (20, true)] {
+        let (mut realm, _) = lone_herbalist(&format!("herbalist_level = {level}"), &[]);
+        assert_eq!(
+            offered_by(&mut realm, HEDDA).contains(&CAREFUL_CUT),
+            offered,
+            "Herbalist Level {level}"
+        );
+    }
+    let _ = SHEARS;
+}
+
+/// The lines of the menu `npc` opens, and the index of the one that begins with `prefix`.
+fn menu_line(realm: &mut Realm, npc: u64, prefix: &str) -> Option<(u32, String)> {
+    quest_common::talk(realm, npc);
+    realm.handle(RealmCommand::GossipHello { guid: npc });
+    drain(realm).into_iter().find_map(|e| match e {
+        SessionEvent::GossipMenu { options, .. } => options
+            .into_iter()
+            .find(|o| o.message.starts_with(prefix))
+            .map(|o| (o.index, o.message)),
+        _ => None,
+    })
+}
+
+fn money_of(realm: &Realm, guid: u64) -> i64 {
+    let blob = realm.export_character(guid).unwrap();
+    let table: toml::Table = blob.parse().unwrap();
+    table["money"].as_integer().unwrap()
+}
+
+#[test]
+fn hedda_forgets_the_perks_for_money_that_doubles_each_time() {
+    let hedda = hub_guid(HEDDA);
+    let perks = "herbalist_level = 10\nherb_perks = [\"nightowl\"]";
+    // One perk and 1 gold: the reset clears it and takes the gold.
+    let (mut realm, guid) = lone_herbalist(&format!("{perks}\nmoney = {GOLD}"), &[]);
+    let (option, line) = menu_line(&mut realm, hedda, "Forget my perks").expect("the line");
+    assert_eq!(line, "Forget my perks (1 gold).");
+    realm.handle(RealmCommand::GossipSelectOption {
+        guid: hedda,
+        option,
+    });
+    let events = drain(&mut realm);
+    assert_eq!(perk_slots(&events), [vec![String::new()]]);
+    assert_eq!(money_of(&realm, guid), 0);
+    let blob = realm.export_character(guid).unwrap();
+    assert!(blob.contains("perk_resets = 1"), "{blob}");
+    assert!(!blob.contains("nightowl"), "{blob}");
+    // No perk, no line.
+    assert!(menu_line(&mut realm, hedda, "Forget my perks").is_none());
+
+    // The second reset asks 2 gold; short of it, nothing changes.
+    let second = format!("{perks}\nperk_resets = 1\nmoney = {}", 2 * GOLD - 1);
+    let (mut realm, guid) = lone_herbalist(&second, &[]);
+    let (option, line) = menu_line(&mut realm, hedda, "Forget my perks").expect("the line");
+    assert_eq!(line, "Forget my perks (2 gold).");
+    realm.handle(RealmCommand::GossipSelectOption {
+        guid: hedda,
+        option,
+    });
+    let events = drain(&mut realm);
+    assert!(events
+        .iter()
+        .any(|e| matches!(e, SessionEvent::VendorBuyFailed { .. })));
+    assert!(perk_slots(&events).is_empty());
+    assert_eq!(money_of(&realm, guid), i64::from(2 * GOLD - 1));
+    let blob = realm.export_character(guid).unwrap();
+    assert!(blob.contains("nightowl"), "{blob}");
+}
+
+#[test]
+fn brother_ansel_does_not_sell_the_perk_reset() {
+    let (mut realm, _) = lone_herbalist("herb_perks = [\"nightowl\"]", &[]);
+    assert!(menu_line(&mut realm, hub_guid(BROTHER_ANSEL), "Forget my perks").is_none());
 }
 
 #[test]

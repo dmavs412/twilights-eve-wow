@@ -72,6 +72,10 @@ pub(crate) struct Npc {
     /// Its gossip menu teaches Herbalism (ADR 0024) to a character who does not know it.
     #[serde(default)]
     pub(crate) teaches_herbalism: bool,
+    /// Its gossip menu sells a Herbalist the forgetting of their perks, for money that doubles
+    /// with each reset (ADR 0024).
+    #[serde(default)]
+    pub(crate) resets_perks: bool,
     /// The Legendary Fish it hints at in its gossip menu (#331), to those at an Angler Level.
     #[serde(default)]
     pub(crate) angler_hints: Vec<AnglerHint>,
@@ -286,8 +290,8 @@ impl crate::Realm {
             crate::inn::options()
         } else if npc.teaches_fishing {
             player.map_or_else(Vec::new, crate::world::angler_options)
-        } else if npc.teaches_herbalism {
-            player.map_or_else(Vec::new, crate::world::herbalist_options)
+        } else if npc.teaches_herbalism || npc.resets_perks {
+            player.map_or_else(Vec::new, |c| crate::world::herbalist_options(npc, c))
         } else {
             crate::trainer::options(npc)
         };
@@ -312,7 +316,9 @@ impl crate::Realm {
             Some(npc) if crate::world::is_hint_option(option) => self.hint_select(npc, option),
             Some(npc) if npc.is_innkeeper() => self.inn_select(npc, option),
             Some(npc) if npc.teaches_fishing => self.angler_select(npc, option),
-            Some(npc) if npc.teaches_herbalism => self.herbalist_select(npc, option),
+            Some(npc) if npc.teaches_herbalism || npc.resets_perks => {
+                self.herbalist_select(npc, option)
+            }
             Some(_) => self.trainer_select(guid, option),
             None => self.field_gossip_select(guid, option),
         }

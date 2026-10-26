@@ -447,6 +447,11 @@ pub(crate) fn offered(c: &Char, q: &Quest) -> bool {
     if c.quests.get(q.id).is_some() || done_for_now(c, q) || !after_met(c, q) {
         return false;
     }
+    if q.min_herbalist_level > 0
+        && !(c.knows_herbalism && c.herbalist_level >= q.min_herbalist_level)
+    {
+        return false;
+    }
     match &q.advancement {
         // At the Tier Cap of the Calling it advances from.
         Some(a) => c.calling.key() == a.from && c.level >= crate::callings::of(c.calling).cap,

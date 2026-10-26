@@ -298,6 +298,9 @@ pub(crate) struct Quest {
     #[serde(default)]
     pub(crate) after_taken: Option<u32>,
     pub(crate) level: u8,
+    /// The Herbalist Level it asks of a character who knows Herbalism, 0 for none.
+    #[serde(default)]
+    pub(crate) min_herbalist_level: u8,
     /// The lowest Tier it is offered at, when the Tier of its `level` is not the one.
     #[serde(default)]
     min_tier: Option<u8>,

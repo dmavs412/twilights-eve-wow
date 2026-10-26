@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use benilla_protocol::messages::GossipOption;
+use benilla_protocol::messages::{buy_result, GossipOption};
 use benilla_protocol::SessionEvent;
 
 use crate::audience::Audience;
@@ -33,6 +33,8 @@ const CLOSED_WALKED_AWAY: u8 = 4;
 /// Brother Ansel's menu lines: the merchant window and the lesson.
 const OPTION_BROWSE: u32 = 1;
 const OPTION_TEACH: u32 = 2;
+/// Hedda Thornwick's perk reset.
+const OPTION_RESET: u32 = 3;
 /// `GOSSIP_ICON_VENDOR` and `GOSSIP_ICON_TRAINER`.
 const ICON_VENDOR: u8 = 1;
 const ICON_TRAINER: u8 = 3;
@@ -113,21 +115,49 @@ pub(crate) fn tracking(c: &Char) -> SessionEvent {
     }
 }
 
-/// Brother Ansel's gossip lines for `c`: his goods, and the lesson while they do not know
-/// Herbalism.
-pub(crate) fn herbalist_options(c: &Char) -> Vec<GossipOption> {
+/// What `c`'s next perk reset costs, in copper: the base doubled once per reset so far.
+fn reset_cost(c: &Char) -> u32 {
+    herbs::herbalist()
+        .reset_base_copper
+        .saturating_mul(1u32.checked_shl(c.perk_resets).unwrap_or(u32::MAX))
+}
+
+/// `copper` as the menu shows it: gold, then silver and copper when there are any.
+fn money_text(copper: u32) -> String {
+    let (gold, silver, rest) = (copper / 10_000, copper / 100 % 100, copper % 100);
+    let mut parts = vec![format!("{gold} gold")];
+    if silver > 0 {
+        parts.push(format!("{silver} silver"));
+    }
+    if rest > 0 {
+        parts.push(format!("{rest} copper"));
+    }
+    parts.join(" ")
+}
+
+/// A herbalist's gossip lines for `c`: the goods, the lesson while they do not know Herbalism
+/// (`teaches_herbalism`), and the perk reset once they hold a perk (`resets_perks`).
+pub(crate) fn herbalist_options(npc: &Npc, c: &Char) -> Vec<GossipOption> {
     let mut options = vec![GossipOption {
         index: OPTION_BROWSE,
         icon: ICON_VENDOR,
         coded: false,
         message: "Let me browse your goods.".into(),
     }];
-    if !c.knows_herbalism {
+    if npc.teaches_herbalism && !c.knows_herbalism {
         options.push(GossipOption {
             index: OPTION_TEACH,
             icon: ICON_TRAINER,
             coded: false,
             message: "Teach me Herbalism.".into(),
+        });
+    }
+    if npc.resets_perks && c.herb_perks.iter().any(|k| !k.is_empty()) {
+        options.push(GossipOption {
+            index: OPTION_RESET,
+            icon: ICON_TRAINER,
+            coded: false,
+            message: format!("Forget my perks ({}).", money_text(reset_cost(c))),
         });
     }
     options
@@ -167,10 +197,10 @@ struct Patches {
 pub(crate) struct HerbPatches(HashMap<u64, Patches>);
 
 impl crate::Realm {
-    /// A line of Brother Ansel's menu: his goods open the merchant window; the lesson teaches
-    /// Herbalism. Both close the menu.
+    /// A line of a herbalist's menu: the goods open the merchant window; the lesson teaches
+    /// Herbalism; the reset forgets the perks for money. Each closes the menu.
     pub(crate) fn herbalist_select(&mut self, npc: &Npc, option: u32) {
-        if !self.near(npc) || !matches!(option, OPTION_BROWSE | OPTION_TEACH) {
+        if !self.near(npc) || !matches!(option, OPTION_BROWSE | OPTION_TEACH | OPTION_RESET) {
             return;
         }
         let Some(guid) = self.world.as_ref().map(|w| w.guid) else {
@@ -184,7 +214,29 @@ impl crate::Realm {
             crate::vendor::list(npc.guid(), c, &mut self.events);
             return;
         }
-        if c.knows_herbalism {
+        if option == OPTION_RESET {
+            if !npc.resets_perks || !c.herb_perks.iter().any(|k| !k.is_empty()) {
+                return;
+            }
+            let cost = reset_cost(c);
+            if c.inventory.money < cost {
+                self.events.push(SessionEvent::VendorBuyFailed {
+                    vendor: npc.guid(),
+                    item_entry: 0,
+                    reason: buy_result::NOT_ENOUGH_MONEY,
+                });
+                return;
+            }
+            c.inventory.money -= cost;
+            self.events
+                .push(values(c.guid, &[equipment::money_pair(&c.inventory)]));
+            c.herb_perks.clear();
+            c.perk_resets += 1;
+            self.events.push(herbalist(c));
+            self.save(guid);
+            return;
+        }
+        if option == OPTION_TEACH && (!npc.teaches_herbalism || c.knows_herbalism) {
             return;
         }
         c.knows_herbalism = true;
