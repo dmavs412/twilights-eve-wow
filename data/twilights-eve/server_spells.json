@@ -1081,6 +1081,7 @@
   ],
   "icon": "Interface\\Icons\\Ability_Rogue_Ambush",
   "spellbook": "Vanguard",
+  "blurb": "Holds the front of the line in plate. Takes the hits, keeps foes on you, and hits back hard.",
   "skills": [
    {
     "key": "righteous_smash",
@@ -7639,6 +7640,7 @@
   ],
   "icon": "Interface\\Icons\\Spell_Shadow_RitualOfSacrifice",
   "spellbook": "Cutthroat",
+  "blurb": "Strikes from the shadows and opens wounds that bleed. Stepping in the spilled blood drives them into a faster, harder Bloodlust.",
   "skills": [
    {
     "key": "sinister_strike",
@@ -10267,6 +10269,7 @@
   ],
   "icon": "Interface\\Icons\\Spell_Arcane_StarFire",
   "spellbook": "Initiate",
+  "blurb": "Strikes from afar with fire and frost, then shatters what is chilled. Fragile up close.",
   "skills": [
    {
     "key": "ley_spark",
@@ -13425,6 +13428,7 @@
   ],
   "icon": "Interface\\Icons\\Ability_Whirlwind",
   "spellbook": "Ranger",
+  "blurb": "Fights with the bow and keeps the foe at a distance. Every step away is safety.",
   "skills": [
    {
     "key": "auto_shot",
@@ -16450,6 +16454,7 @@
   ],
   "icon": "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
   "spellbook": "Acolyte",
+  "blurb": "Rots foes and drinks their life to mend. Spends their own blood when mana runs dry.",
   "skills": [
    {
     "key": "creeping_blight",

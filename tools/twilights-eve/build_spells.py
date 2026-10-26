@@ -65,7 +65,7 @@ POWERS = ("rage", "energy", "focus", "mana")
 POWER_TYPES = {"mana": 0, "rage": 1, "focus": 2, "energy": 3}
 # callings.csv (ADR 0011): one row per Calling.
 CALLING_COLUMNS = ("calling", "name", "icon", "power", "stat_profile", "item_class", "health_pct", "mana_pct",
-                   "energy_per_tick", "bleed_drop", "bleed_drop_chance", "armor", "weapons", "spellbook")
+                   "energy_per_tick", "bleed_drop", "bleed_drop_chance", "armor", "weapons", "spellbook", "blurb")
 # The vanilla class tables a `stat_profile` may name (the realm's `StatProfile`).
 STAT_PROFILES = ("warrior", "paladin", "hunter", "rogue", "priest", "shaman", "mage", "warlock", "druid")
 # `ChrClasses.dbc` ids of the profiles, the class byte the client's class-keyed tables read.
@@ -649,6 +649,8 @@ def build_profiles(rows: list[dict]) -> dict[str, dict]:
         profile["weapons"] = weapons
         profile["icon"] = row["icon"]
         profile["spellbook"] = row["spellbook"]
+        if row["blurb"]:
+            profile["blurb"] = row["blurb"]
         out[key] = profile
     return out
 

@@ -60,6 +60,9 @@ pub struct CallingDef {
     pub icon: String,
     #[serde(default)]
     pub spellbook: String,
+    /// Its Calling Choice blurb, `callings.csv`; empty for a TOML Calling and most sheet Callings.
+    #[serde(default)]
+    pub blurb: String,
     #[serde(rename = "skill")]
     pub skills: Vec<Skill>,
     /// The Talent Tree: its tabs, as the stock talent frame shows them.

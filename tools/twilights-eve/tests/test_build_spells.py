@@ -61,7 +61,7 @@ CALLING = {
 # Every callings.csv cell a test leaves out (`run_build` writes one row per Calling it sees).
 PROFILE = {"icon": "", "power": "rage", "stat_profile": "warrior", "item_class": "warrior", "health_pct": "100",
            "mana_pct": "100", "energy_per_tick": "", "bleed_drop": "", "bleed_drop_chance": "",
-           "armor": "cloth|mail", "weapons": "one_hand_sword|dagger", "spellbook": ""}
+           "armor": "cloth|mail", "weapons": "one_hand_sword|dagger", "spellbook": "", "blurb": ""}
 TAB = {"kind": "talent_tab", "calling": "vanguard", "key": "arms", "name": "Arms", "tab_id": "900",
        "background": "WarriorArms", "tab_order": "0"}
 AURA = {"kind": "aura", "calling": "vanguard", "key": "buff", "name": "Buff", "rank": "1", "spell_id": "1014177",
@@ -362,6 +362,17 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
             done, _ = self.run_build([STRIKE])
             self.assertNotEqual(done.returncode, 0, power)
             self.assertIn("energy_per_tick", done.stderr)
+
+    def test_blurb_is_on_the_server_calling_only_when_set(self):
+        self.profiles = {"vanguard": {"blurb": "Holds the line, and hits back."}}
+        done, data = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["blurb"], "Holds the line, and hits back.")
+        self.assertNotIn("blurb", json.dumps(self.patch["callings"]))
+        self.profiles = {"vanguard": {"blurb": ""}}
+        done, data = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertNotIn("blurb", data[0])
 
     def test_bleed_drop_names_a_pickup_aura_and_a_chance(self):
         droplet = {**AURA, "key": "droplet", "spell_id": "1014178", "modelled": "yes",

@@ -38,6 +38,8 @@ struct GenCalling {
     icon: String,
     #[serde(default)]
     spellbook: String,
+    #[serde(default)]
+    blurb: String,
     name: Option<String>,
     tier: Option<u8>,
     tier_cap: Option<u8>,
@@ -207,6 +209,7 @@ fn calling(g: GenCalling) -> CallingDef {
         weapons: g.weapons.clone(),
         icon: g.icon.clone(),
         spellbook: g.spellbook.clone(),
+        blurb: g.blurb.clone(),
         cap: g.tier_cap.unwrap_or_else(|| missing("tier_cap")),
         tier_bonus: g.tier_bonus.unwrap_or_else(|| missing("tier_bonus")),
         shapeshift_form: g

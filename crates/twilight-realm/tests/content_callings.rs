@@ -1004,6 +1004,15 @@ fn trainers() -> Vec<Npc> {
     trainers_on(kalimdor())
 }
 
+#[test]
+fn the_five_tier_1_callings_carry_a_calling_choice_blurb() {
+    for key in ["vanguard", "cutthroat", "initiate", "ranger", "acolyte"] {
+        let calling = callings::calling(key).unwrap_or_else(|| panic!("{key}: no Calling"));
+        assert!(!calling.blurb.is_empty(), "{key}: no blurb");
+    }
+    assert!(callings::calling("basic_warrior").unwrap().blurb.is_empty());
+}
+
 /// The Tier 1 Calling an Advancement Quest's Calling `to` branches from: its Line.
 fn line_of(quests: &[Quest], to: &str) -> String {
     fn adv(q: &Quest) -> &Advancement {

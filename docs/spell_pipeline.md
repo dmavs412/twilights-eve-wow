@@ -98,9 +98,10 @@ wrote it once from the old `class` and `armour` cells.
 | `armor` | armour kinds joined by `\|`: `cloth`, `leather`, `mail`, `plate`, `shield` |
 | `weapons` | weapon kinds joined by `\|` (`one_hand_axe`, `two_hand_axe`, `bow`, `gun`, `one_hand_mace`, `two_hand_mace`, `polearm`, `one_hand_sword`, `two_hand_sword`, `staff`, `fist`, `misc`, `dagger`, `thrown`, `crossbow`, `wand`, `fishing_pole`), and `dual_wield` for a one-hander in the off hand too |
 | `spellbook` | the spell book tab's name |
+| `blurb` | a sentence or two the Calling Choice popup shows; empty for a Calling the popup never lists |
 
 Both JSON files' Callings carry these as `power`, `stat_profile`, `item_class`, `health_pct`,
-`mana_pct`, `energy_per_tick`, `bleed_drop` and `bleed_drop_chance` (each only when set), `armour`, `weapons`, `icon` and `spellbook`. The client patch also has a `callings`
+`mana_pct`, `energy_per_tick`, `bleed_drop` and `bleed_drop_chance` and `blurb` (each only when set), `armour`, `weapons`, `icon` and `spellbook`. The client patch also has a `callings`
 table, `{key, name, icon, spellbook, power_type, class, item_class, spell_family, weapon_mask,
 armor_mask, dual_wield}`, which the client (`benilla_formats::twilight_calling`) reads in place of
 every class byte (#207): the realm names each character's Calling by key, its own at the roster
