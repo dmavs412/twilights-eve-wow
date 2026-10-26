@@ -12,9 +12,8 @@ use crate::inventory::{Item, Pos};
 use crate::items;
 use crate::rules::durability;
 
-/// `CMSG_LIST_INVENTORY`: the vendor's rows, numbered from 1, or the Token vendor's for the
-/// buyer's level, or the Blood Coin vendor's; nothing for an NPC out of reach or that is no
-/// vendor.
+/// `CMSG_LIST_INVENTORY`: the vendor's rows, numbered from 1, or the Blood Coin vendor's; nothing
+/// for an NPC out of reach or that is no vendor.
 pub(crate) fn list(vendor: u64, c: &Char, events: &mut Vec<SessionEvent>) {
     let Some(npc) = reachable(vendor, c) else {
         return;

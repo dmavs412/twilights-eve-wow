@@ -6,7 +6,7 @@
 # every green qualifies. Every entry is a row of data/twilights-eve/gear.csv; a green's `level` is
 # its item level. tests/northshire_loot.rs checks each band against the sheet.
 
-# Northshire: the 22 Token whites and the 21 World greens.
+# Northshire: the 22 whites and the 21 World greens.
 [[band]]
 levels = [1, 10]
 white = [

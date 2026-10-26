@@ -1,19 +1,16 @@
-//! The vendors paid in an item from the bags rather than copper: the Token vendors' half of the
-//! merchant window, either the buyer's band of greens or one flat list ([`rules::tokens`]) for the
-//! Twilight Tokens in the bags, and the Blood Coin vendors', their stock ([`rules::notoriety`])
-//! for Blood Coin.
+//! The vendors paid in an item from the bags rather than copper: the Blood Coin vendor's half of
+//! the merchant window, its stock ([`rules::notoriety`]) for the Blood Coin in the bags.
 //!
 //! The 1.12 merchant window can show a price only in copper (extended costs came in 2.0), so each
 //! row is listed under an entry of its own whose template is the item's with the price in front
-//! of its name ("2 Tokens: Warrior's Pants") and no copper price. Buying a row hands over the
-//! item itself, under its own entry and name. A buyer short of the currency gets the stock "You
-//! don't have enough money." refusal, the only one 1.12 has for a price not met.
+//! of its name ("2 Blood Coin: Lesser Healing Potion") and no copper price. Buying a row hands
+//! over the item itself, under its own entry and name. A buyer short of the currency gets the
+//! stock "You don't have enough money." refusal, the only one 1.12 has for a price not met.
 
 use benilla_protocol::messages::{buy_result, ItemInfo, VendorItem};
 use benilla_protocol::SessionEvent;
 
 use crate::characters::Char;
-use crate::quests::TOKEN;
 use crate::vendor::Traded;
 use crate::{equipment, items, rules};
 
@@ -33,16 +30,6 @@ pub(crate) struct Currency {
     price: fn(u32) -> Option<u32>,
 }
 
-/// The Twilight Token, for the Token vendor's greens.
-pub(crate) const TOKENS: Currency = Currency {
-    item: || TOKEN,
-    listing: 1_000_000,
-    one: "Token",
-    many: "Tokens",
-    stock: rules::tokens::stock,
-    price: rules::tokens::price,
-};
-
 /// Blood Coin, for the Blood Coin vendor's stock.
 pub(crate) const BLOOD_COIN: Currency = Currency {
     item: rules::notoriety::blood_coin,
@@ -53,18 +40,7 @@ pub(crate) const BLOOD_COIN: Currency = Currency {
     price: rules::notoriety::coin_price,
 };
 
-/// The Twilight Token, for the Goldshire Token vendor's flat list. Its own listing range, so its
-/// prices change independently of the bands'.
-pub(crate) const FLAT_TOKENS: Currency = Currency {
-    item: || TOKEN,
-    listing: 3_000_000,
-    one: "Token",
-    many: "Tokens",
-    stock: |_| rules::tokens::flat_stock(),
-    price: rules::tokens::flat_price,
-};
-
-const CURRENCIES: [&Currency; 3] = [&TOKENS, &BLOOD_COIN, &FLAT_TOKENS];
+const CURRENCIES: [&Currency; 1] = [&BLOOD_COIN];
 
 impl Currency {
     /// The item a row's `entry` lists, and its price; `None` for any other entry.

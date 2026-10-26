@@ -22,10 +22,6 @@ struct Npc {
     #[serde(default)]
     stock: Vec<u32>,
     #[serde(default)]
-    tokens: bool,
-    #[serde(default)]
-    flat_tokens: bool,
-    #[serde(default)]
     blood_coin: bool,
     #[serde(default)]
     greeting: String,
@@ -151,34 +147,18 @@ fn every_npcs_flags_fit_its_role() {
         let gives = quests.iter().any(|q| q.giver == n.entry) || elwynn.contains(&n.entry);
         let talks = n.text_id.is_some() && !n.greeting.is_empty();
         let ok = match n.role.as_str() {
-            "goods" => {
-                n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty() && !n.tokens && !n.flat_tokens
-            }
+            "goods" => n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty(),
             "innkeeper" => {
                 n.npc_flags == GOSSIP | VENDOR | INNKEEPER
                     && talks
                     && !gives
                     && !n.stock.is_empty()
-                    && !n.tokens
                     && n.area.is_some()
             }
-            "tokens" => n.npc_flags == VENDOR && n.tokens != n.flat_tokens && n.stock.is_empty(),
-            "blood_coin" => {
-                n.npc_flags == VENDOR
-                    && n.blood_coin
-                    && !n.tokens
-                    && !n.flat_tokens
-                    && n.stock.is_empty()
-            }
+            "blood_coin" => n.npc_flags == VENDOR && n.blood_coin && n.stock.is_empty(),
             "trainer" => n.npc_flags == GOSSIP | QUEST_GIVER | TRAINER && talks,
             // The flight master only stands there: no flags, no menu, no words.
-            "flight" => {
-                n.npc_flags == 0
-                    && n.text_id.is_none()
-                    && n.stock.is_empty()
-                    && !n.tokens
-                    && !n.flat_tokens
-            }
+            "flight" => n.npc_flags == 0 && n.text_id.is_none() && n.stock.is_empty(),
             "giver" => n.npc_flags == QUEST_GIVER && gives && !n.greeting.is_empty(),
             // Lee Brown: his bounties, his goods, and the lesson in his menu (#327).
             "angler" => {
@@ -209,7 +189,6 @@ fn every_npcs_flags_fit_its_role() {
                     && talks
                     && !gives
                     && n.stock.is_empty()
-                    && !n.tokens
                     && !n.greeting.contains('\n')
             }
             // Brother Ansel teaches the lesson, Hedda Thornwick resets the perks (#441); each sells
@@ -220,7 +199,6 @@ fn every_npcs_flags_fit_its_role() {
                     && talks
                     && gives
                     && !n.stock.is_empty()
-                    && !n.tokens
             }
             other => panic!("{}: no role {other:?}", n.name),
         };
@@ -334,7 +312,7 @@ fn about_twenty_townsfolk_live_in_the_crossroads_and_some_wander() {
 }
 
 /// Camp Taurajo, the Outpost: an innkeeper who binds to it, a goods vendor, about eight
-/// townsfolk, and no trainer or Token vendor.
+/// townsfolk, and no trainer.
 #[test]
 fn camp_taurajo_has_an_inn_a_goods_vendor_and_its_own_folk_but_no_trainers() {
     const CAMP_TAURAJO: u32 = 378;
@@ -350,7 +328,7 @@ fn camp_taurajo_has_an_inn_a_goods_vendor_and_its_own_folk_but_no_trainers() {
         "{} townsfolk",
         count("ambient")
     );
-    assert_eq!(count("trainer") + count("tokens"), 0);
+    assert_eq!(count("trainer"), 0);
 }
 
 #[test]

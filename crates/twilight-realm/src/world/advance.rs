@@ -1,7 +1,7 @@
 //! **Advancement** (`GLOSSARY.md`), in the world: the character becomes level 1 of the Calling it
 //! advanced into. Its skills, talents and Talent Points are replaced by the new Calling's, and
-//! //! that Calling's Tier Bonus lifts its base stats, and its proficiency is sent again. Gear, bags,
-//! gold, Tokens and every quest, done or under way, stay.
+//! that Calling's Tier Bonus lifts its base stats, and its proficiency is sent again. Gear, bags,
+//! gold and every quest, done or under way, stay.
 
 use benilla_protocol::SessionEvent;
 

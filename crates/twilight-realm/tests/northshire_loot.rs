@@ -39,7 +39,7 @@ fn each_band_lists_its_whites_and_greens_from_the_gear_sheet() {
     let bands = bands();
     assert_eq!(bands.len(), 1 + LATER_BANDS.len());
 
-    // Band 1, Northshire: the 22 Token whites and the 21 World greens at their levels.
+    // Band 1, Northshire: the 22 whites and the 21 World greens at their levels.
     assert_eq!(bands[0].levels, [1, 10]);
     let whites = bands[0].whites();
     assert_eq!(whites.len(), 22);

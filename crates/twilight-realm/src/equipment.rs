@@ -629,7 +629,7 @@ pub(crate) fn destroy(
 }
 
 /// Destroys `count` of `entry` from wherever the character carries it, last stacks first: a
-/// hand-in's collected items, a Token purchase's Tokens. The caller has checked they are there.
+/// hand-in's collected items, a Blood Coin purchase's coin. The caller has checked they are there.
 pub(crate) fn take(c: &mut Char, entry: u32, mut count: u32, events: &mut Vec<SessionEvent>) {
     // The Satchel first.
     let from_satchel = c.inventory.satchel.take(entry, count);

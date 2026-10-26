@@ -342,7 +342,7 @@ pub(crate) fn query_response(entry: u32) -> SessionEvent {
         entry,
         info: template(entry)
             .map(info)
-            .or_else(|| crate::token_vendor::row_info(entry))
+            .or_else(|| crate::currency_vendor::row_info(entry))
             .map(Box::new),
     }
 }

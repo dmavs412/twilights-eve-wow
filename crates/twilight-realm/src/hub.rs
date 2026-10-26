@@ -57,13 +57,7 @@ pub(crate) struct Npc {
     /// The trainer who sells the talent respec (`crate::trainer`).
     #[serde(default)]
     respec: bool,
-    /// The Token vendor: it sells the buyer's band of greens for Tokens (`crate::token_vendor`).
-    #[serde(default)]
-    pub(crate) tokens: bool,
-    /// The Goldshire Token vendor: it sells one flat list for Tokens (`crate::token_vendor`).
-    #[serde(default)]
-    pub(crate) flat_tokens: bool,
-    /// The Blood Coin vendor: it sells its stock for Blood Coin (`crate::token_vendor`).
+    /// The Blood Coin vendor: it sells its stock for Blood Coin (`crate::currency_vendor`).
     #[serde(default)]
     pub(crate) blood_coin: bool,
     /// Its gossip menu teaches Fishing (ADR 0018) to a character who does not know it.
@@ -120,13 +114,9 @@ pub(crate) fn npcs() -> &'static [Npc] {
 
 impl Npc {
     /// What it takes in place of copper, if it is a vendor of that kind.
-    pub(crate) fn currency(&self) -> Option<&'static crate::token_vendor::Currency> {
-        if self.tokens {
-            Some(&crate::token_vendor::TOKENS)
-        } else if self.flat_tokens {
-            Some(&crate::token_vendor::FLAT_TOKENS)
-        } else if self.blood_coin {
-            Some(&crate::token_vendor::BLOOD_COIN)
+    pub(crate) fn currency(&self) -> Option<&'static crate::currency_vendor::Currency> {
+        if self.blood_coin {
+            Some(&crate::currency_vendor::BLOOD_COIN)
         } else {
             None
         }

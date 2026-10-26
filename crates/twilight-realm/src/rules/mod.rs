@@ -25,5 +25,4 @@ pub mod spell_power;
 pub mod stats;
 pub mod talents;
 pub mod threat;
-pub mod tokens;
 pub mod xp;

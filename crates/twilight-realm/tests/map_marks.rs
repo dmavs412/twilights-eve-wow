@@ -127,9 +127,9 @@ fn a_new_character_sees_the_dungeons_and_vendors_but_not_the_test_ones() {
     ] {
         assert!(marks.iter().all(|m| m.name != name), "{name} is marked");
     }
-    let hollis = mark(marks, "Quartermaster Hollis");
-    assert_eq!(hollis.icon, MapIcon::Vendor);
-    assert_eq!(hollis.subtitle, "Token Vendor");
+    let marta = mark(marks, "Marta Coyle");
+    assert_eq!(marta.icon, MapIcon::Vendor);
+    assert_eq!(marta.subtitle, "Blood Coin Broker");
     assert!(marks.iter().all(|m| m.name != "Brother Neals"));
     assert!(marks.iter().all(|m| m.name != "Commander Aldous Wray"));
 }

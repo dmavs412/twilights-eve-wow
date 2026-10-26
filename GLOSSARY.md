@@ -30,11 +30,11 @@ The whole-body look a Chest carries: what the character's head, shoulders, back,
 _Avoid_: transmog, set (an item set with bonuses)
 
 **Loot Source**:
-Where a piece of Gear comes from: Token, World, Quest or Dungeon. Each has its own quality. The word is never Tier. Spec #272.
+Where a piece of Gear comes from: White, World, Quest or Dungeon. Each has its own quality. A White drops; no vendor sells Gear (ADR 0027). The word is never Tier. Spec #272.
 _Avoid_: tier, pool
 
 **Loot Band**:
-A range of mob and buyer levels with one set of rows per Loot Source, keyed in `loot_bands.toml` and the Token vendor. Spec #448.
+A range of mob levels with one set of rows per Loot Source, keyed in `loot_bands.toml`. Spec #448.
 
 **Line**:
 Hand-authored rows that repeat across bands or dungeons with only their numbers changing and share one icon. The gear sheet's `line` column names it, and the icon check counts a Line as one item. ADR 0026.
@@ -105,10 +105,6 @@ _Avoid_: repeatable quest, daily
 A quest tied to a Dungeon that can be taken again as soon as it is handed in. It is worth about one level of the character's own XP, at any level.
 _Avoid_: daily
 
-**Token**:
-A currency that Hunting Quests and Repeatable Quests reward, traded at a Hub vendor for green (uncommon) gear.
-_Avoid_: mark, badge
-
 **Dungeon**:
 A run through mobs to a boss whose kill always drops one blue (rare) item, either on a real 1.12 instance map (Wailing Caverns) or as a Phased Dungeon on the open world. It can be run again without limit.
 _Avoid_: instance (the map a Dungeon takes place on), raid
@@ -167,7 +163,7 @@ A quest giver or ender who is not a Hub NPC: a friendly creature the realm place
 _Avoid_: field NPC, quest NPC
 
 **Story Quest**:
-A quest that tells part of the world's story, such as the Idol chain out of Echo Ridge Mine. It can be done once per character and Advancement never forgets it. It pays XP as a Hunting Quest does, and no Token.
+A quest that tells part of the world's story, such as the Idol chain out of Echo Ridge Mine. It can be done once per character and Advancement never forgets it. It pays XP as a Hunting Quest does.
 _Avoid_: main quest, campaign quest
 
 **Quest Starter**:
@@ -202,7 +198,7 @@ _Avoid_: hunter, stalker, assassin
 How many Bounty Hunters a character has killed since their last death. Each rank makes the next Bounty Hunter much stronger and pays more Blood Coin. Any death sets it back to zero.
 
 **Blood Coin**:
-The currency only Bounty Hunters drop, more at a higher Bounty Rank. It is never lost on death and buys consumables, cosmetics and titles from a single vendor. It is not a Token.
+The currency only Bounty Hunters drop, more at a higher Bounty Rank. It is never lost on death and buys consumables, cosmetics and titles from a single vendor.
 _Avoid_: token, mark, spoils
 
 **Marked**:

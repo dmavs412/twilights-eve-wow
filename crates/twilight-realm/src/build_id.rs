@@ -45,7 +45,6 @@ const CONTENT: &[&str] = &[
     include_str!("../content/gaze_hall.toml"),
     include_str!("../content/starting_outfits.toml"),
     include_str!("../content/test_grounds.toml"),
-    include_str!("../content/token_vendor.toml"),
     include_str!("../content/wailing_caverns.toml"),
     include_str!("../../../data/twilights-eve/server_spells.json"),
     include_str!("../../../data/twilights-eve/tuning.json"),

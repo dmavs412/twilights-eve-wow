@@ -549,11 +549,11 @@ fn outside_the_gear_slots(realm: &mut twilight_realm::Realm, entry: u32) -> bool
         && !twilight_realm::rules::gear::is_gear_slot(info.inventory_type)
 }
 
-/// No loot pool, vendor, Token vendor band or Dungeon boss hands out an item for a body part the
-/// ten Gear Slots leave out (ADR 0007). Quests reward XP and copper, no items.
+/// No loot pool, Loot Band, vendor or Dungeon boss hands out an item for a body part the ten Gear
+/// Slots leave out (ADR 0007). Quests reward XP and copper, no items.
 #[test]
 fn nothing_hands_out_gear_outside_the_ten_slots() {
-    use twilight_realm::rules::loot::{pool, Quality};
+    use twilight_realm::rules::loot::{band_greens, band_whites, pool, Quality};
     let mut entries: Vec<(String, u32)> = Vec::new();
     for level in 1..=60 {
         for q in [
@@ -565,11 +565,12 @@ fn nothing_hands_out_gear_outside_the_ten_slots() {
             let from = format!("the level {level} {q:?} pool");
             entries.extend(pool(level, q).iter().map(|e| (from.clone(), *e)));
         }
-        let from = format!("the level {level} Token band");
+        let from = format!("the level {level} Loot Band");
         entries.extend(
-            twilight_realm::rules::tokens::stock(level)
-                .into_iter()
-                .map(|(e, _)| (from.clone(), e)),
+            band_whites(level)
+                .iter()
+                .chain(band_greens(level))
+                .map(|e| (from.clone(), *e)),
         );
     }
     for npc in toml_table("hub.toml")["npc"].as_array().unwrap() {

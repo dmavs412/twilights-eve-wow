@@ -24,10 +24,6 @@ pub(crate) use dialogs::{
     gossip_rows, is_complete, object_hello, offered, take, template_response, use_starter,
 };
 
-/// The Token's item entry. Tokens are stacks of it in the bags, from saves made before quests
-/// paid copper (ADR 0027), and the Token vendor takes them from there.
-pub(crate) const TOKEN: u32 = 90001;
-
 /// `MAX_QUEST_LOG_SIZE`.
 pub(crate) const LOG_SLOTS: u8 = 20;
 

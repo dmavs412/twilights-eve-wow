@@ -9,7 +9,7 @@
 #
 # `guid` is the spawn's low guid, kept clear of the imported spawns' (0xF00000 up). `entry` is a
 # creature entry of our own, outside 1.12's range, unless a real creature lends its name.
-# `role` is what it is in the town (goods, innkeeper, tokens, trainer, giver, ambient), which its
+# `role` is what it is in the town (goods, innkeeper, trainer, giver, ambient), which its
 # flags must fit (tests/content_hub.rs). `respec` marks the one trainer who sells the talent
 # respec. `npc_flags` are `UNIT_NPC_FLAG_*` (0x1 gossip, 0x2 quest giver, 0x4 vendor, 0x10
 # trainer, 0x80 innkeeper, 0x4000 repair),
@@ -148,22 +148,22 @@ orientation = 5.13
 text_id = 64020
 greeting = "The Acolytes walk between life and death, $C. We spend our own blood to rot our foes and mend our own."
 
-# The Token vendor: the greens of the buyer's level band (content/token_vendor.toml), priced in
-# the Twilight Tokens in the bags. `tokens` says so; it has no `stock` of its own and no repairs.
-# The display is a dressed orc woman.
+# Sarna Duskwhisper, the Crossroads quartermaster: a townsperson now, with one line and nothing to
+# sell (ADR 0027). The display is a dressed orc woman.
 [[npc]]
 guid = 0xF00002
 entry = 190002
 name = "Sarna Duskwhisper"
-subname = "Token Vendor"
+subname = "Quartermaster"
 level = 30
 display_id = 1312
 faction_template = 35
-role = "tokens"
-npc_flags = 0x4
+role = "ambient"
+npc_flags = 0x1
 position = [-432.0, -2644.5, 96.3]
 orientation = 3.30
-tokens = true
+text_id = 64143
+greeting = "The Tokens are done, $C. The Warchief pays in coin like everyone else now, and the greens that stood on these shelves went to whoever could carry them."
 
 # The Blood Coin vendor (#178): potions for the Blood Coin only Bounty Hunters drop
 # (content/notoriety.toml's `coin_stock`). `blood_coin` says so; it has no `stock` of its own and
@@ -765,7 +765,7 @@ greeting = "Since the sky dimmed, Naralex cries out in his sleep, and the cavern
 
 # ── Camp Taurajo, the Outpost (ticket #40) ───────────────────────────────────────────────────────
 # The outer ring's camp, in the southern Barrens: an inn, a goods vendor, and the camp's own folk,
-# but no trainers and no Token vendor. The spots were read off the ADT's doodads: the longhouse
+# but no trainers. The spots were read off the ADT's doodads: the longhouse
 # (WMO at -2372, -1990) is the inn, the big hut (-2400, -1920) with its baskets is the trade hut,
 # and the signpost and brazier (-2347, -1915) mark the way in from the Gold Road.
 #
@@ -1289,44 +1289,6 @@ orientation = 3.0369
 text_id = 64139
 angler_hints = [{ legend = 960003, min_angler_level = 8 }]
 greeting = "Pull up a stool, $C. I hear everything that passes through this inn, and some of it is even true."
-
-# Quartermaster Hollis (#377): Northshire's Token vendor. Sells the buyer's band of greens
-# (content/token_vendor.toml) for Tokens, like Sarna Duskwhisper in the Crossroads. Placeholders:
-# name, display, spot. z is ground_check.py's.
-[[npc]]
-guid = 9300031
-entry = 190068
-name = "Quartermaster Hollis"
-subname = "Token Vendor"
-level = 30
-display_id = 3342
-faction_template = 35
-role = "tokens"
-npc_flags = 0x4
-map = 0
-position = [-8903.0, -127.0, 81.56]
-orientation = 0.0
-faces = [-8903.0, -100.0]
-tokens = true
-
-# Wynne Tarrow (#377): Goldshire's Token vendor. Sells one flat list (`[flat]` in
-# content/token_vendor.toml) at any level, for Tokens. `flat_tokens` says so. Placeholders: name,
-# display, spot. z is ground_check.py's.
-[[npc]]
-guid = 9300032
-entry = 190069
-name = "Wynne Tarrow"
-subname = "Token Vendor"
-level = 30
-display_id = 1298
-faction_template = 35
-role = "tokens"
-npc_flags = 0x4
-map = 0
-position = [-9470.0, 69.0, 56.35]
-orientation = 0.0
-faces = [-9462.0, 40.0]
-flat_tokens = true
 
 # Marta Coyle (#377): Goldshire's Blood Coin broker, with Rusk Ninefingers's stock. Placeholders:
 # name, display, spot. z is ground_check.py's.
