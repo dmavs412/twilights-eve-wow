@@ -56,7 +56,9 @@ failed.
 ## The gate
 
 - After every edit: `cargo check -q -p <crate> 2>&1 | tail -40`. When the realm, `data/` or
-  `tools/` changed: `cargo test -q -p twilight-realm 2>&1 | grep -E "FAILED|panicked"; echo "exit ${PIPESTATUS[0]}"`.
+  `tools/` changed: `cargo test -q -p twilight-realm 2>&1 | grep -E "FAILED|panicked|test result"`,
+  which passes when every `test result:` line says `ok` and no line says `FAILED`. Don't add
+  `${PIPESTATUS[0]}`: the night permission check denies it.
   Before each commit, `rustfmt --edition 2021` the `.rs` files you touched; the pre-commit hook
   refuses unformatted ones.
 - When a commit touches `crates/twilight-realm/content/`, also run

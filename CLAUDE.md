@@ -12,8 +12,8 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 
 - **Verify with `cargo check -q -p <crate> 2>&1 | tail -40`** in the foreground after every
   edit; the pipe keeps warnings out of the context. When a realm rule changes, also
-  `cargo test -q -p twilight-realm 2>&1 | grep -E "FAILED|panicked"; echo "exit ${PIPESTATUS[0]}"`
-  (seconds, no game data). Before a commit, `rustfmt --edition 2021` the `.rs` files you touched;
+  `cargo test -q -p twilight-realm 2>&1 | grep -E "FAILED|panicked|test result"`
+  (seconds, no game data); it passes when every `test result:` line says `ok`. Before a commit, `rustfmt --edition 2021` the `.rs` files you touched;
   the pre-commit hook refuses unformatted ones. An edit under `tools/twilights-eve/`
   or to the CSV also runs the unittest line in `docs/spell_pipeline.md` and regenerates the
   outputs. When a commit touches `crates/twilight-realm/content/`, also run
