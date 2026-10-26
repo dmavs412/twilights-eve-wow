@@ -289,6 +289,10 @@ pub(crate) struct Model {
     pub(crate) withdraw_requests: Vec<super::WithdrawRequest>,
     /// The `DepositFishingItem` calls since the host last drained them, as `(bag, slot)`.
     pub(crate) deposit_requests: Vec<(i64, u32)>,
+    /// The Calling Choice the popup's getters read, pushed by the host.
+    pub(crate) calling_choice: super::CallingChoiceView,
+    /// The `ChooseCalling` quest ids since the host last drained them.
+    pub(crate) calling_choice_requests: Vec<u32>,
     /// The zone caches the four zone-text getters and `GetZonePVPInfo` read.
     pub(crate) zone: super::ZoneTexts,
     /// The current map's `Map.dbc` `InstanceType`, all `IsInInstance()` reads; `None` for no row.
@@ -1146,6 +1150,8 @@ impl Model {
             gear_requests: Vec::new(),
             withdraw_requests: Vec::new(),
             deposit_requests: Vec::new(),
+            calling_choice: Default::default(),
+            calling_choice_requests: Vec::new(),
             zone: Default::default(),
             instance_type: None,
             can_reset_instances: false,

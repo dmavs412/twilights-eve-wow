@@ -1,0 +1,193 @@
+<Ui>
+    <!--
+        The Calling Choice popup (spec #414): a Basic Warrior who has learned everything the class
+        teaches picks a Tier 1 Calling. The app pushes the realm's options; the frame reads only
+        GetNumCallingChoices(), GetCallingChoice(i) and GetCallingChoiceSkill(i, j), and shows on
+        CALLING_CHOICE_SHOW. A row's Choose button calls ChooseCalling(i) and hides the frame; the
+        close button and Escape hide it and send nothing.
+
+        The border and backdrop are the stock DialogBoxFrame art, set here as a <Backdrop> so the
+        frame needs no stock template. There are five rows of 118 px, each with up to eight skill
+        icons; a row past the option count stays hidden.
+    -->
+    <Script><![CDATA[
+        BENILLA_CALLING_ROWS = 5
+        BENILLA_CALLING_SKILLS = 8
+
+        -- Paint every row from the getters, and hide the ones past the option count.
+        function BenillaCallingChoice_Paint()
+            local count = GetNumCallingChoices()
+            for i = 1, BENILLA_CALLING_ROWS do
+                local row = getglobal("BenillaCallingChoiceRow" .. i)
+                if i <= count then
+                    local name, icon, power, blurb, objectives, skills = GetCallingChoice(i)
+                    local base = row:GetName()
+                    getglobal(base .. "Icon"):SetTexture(icon)
+                    getglobal(base .. "Name"):SetText(name)
+                    getglobal(base .. "Power"):SetText(power)
+                    getglobal(base .. "Blurb"):SetText(blurb)
+                    getglobal(base .. "Objectives"):SetText(objectives)
+                    for j = 1, BENILLA_CALLING_SKILLS do
+                        local button = getglobal(base .. "Skill" .. j)
+                        if j <= skills then
+                            local skillName, skillIcon, skillText = GetCallingChoiceSkill(i, j)
+                            button.skillName = skillName
+                            button.skillText = skillText
+                            getglobal(button:GetName() .. "Icon"):SetTexture(skillIcon)
+                            button:Show()
+                        else
+                            button:Hide()
+                        end
+                    end
+                    row:Show()
+                else
+                    row:Hide()
+                end
+            end
+        end
+
+        function BenillaCallingChoiceSkill_OnEnter()
+            GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+            GameTooltip:SetText(this.skillName or "")
+            if this.skillText and this.skillText ~= "" then
+                GameTooltip:AddLine(this.skillText, 1, 1, 1, 1)
+            end
+            GameTooltip:Show()
+        end
+
+        function BenillaCallingChoice_OnChoose()
+            ChooseCalling(this:GetParent():GetID())
+            BenillaCallingChoice:Hide()
+        end
+    ]]></Script>
+
+    <Button name="BenillaCallingSkillTemplate" virtual="true">
+        <Size><AbsDimension x="24" y="24"/></Size>
+        <Layers>
+            <Layer level="ARTWORK">
+                <Texture name="$parentIcon" setAllPoints="true"/>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnEnter>BenillaCallingChoiceSkill_OnEnter()</OnEnter>
+            <OnLeave>GameTooltip:Hide()</OnLeave>
+        </Scripts>
+    </Button>
+
+    <Frame name="BenillaCallingChoiceRowTemplate" virtual="true" hidden="true">
+        <Size><AbsDimension x="490" y="114"/></Size>
+        <Layers>
+            <Layer level="ARTWORK">
+                <Texture name="$parentIcon">
+                    <Size><AbsDimension x="40" y="40"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                </Texture>
+                <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT">
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="50" y="-4"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentPower" inherits="GameFontHighlightSmall" justifyH="LEFT">
+                    <Anchors><Anchor point="LEFT" relativeTo="$parentName" relativePoint="RIGHT"><Offset><AbsDimension x="8" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentBlurb" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP">
+                    <Size><AbsDimension x="440" y="30"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="50" y="-26"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentObjectives" inherits="GameFontNormalSmall" justifyH="LEFT" justifyV="TOP">
+                    <Size><AbsDimension x="490" y="24"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="0" y="-88"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="$parentChoose" inherits="UIPanelButtonTemplate" text="Choose">
+                <Size><AbsDimension x="90" y="22"/></Size>
+                <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="0" y="-2"/></Offset></Anchor></Anchors>
+                <Scripts>
+                    <OnClick>BenillaCallingChoice_OnChoose()</OnClick>
+                </Scripts>
+            </Button>
+            <Button name="$parentSkill1" inherits="BenillaCallingSkillTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="50" y="-60"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentSkill2" inherits="BenillaCallingSkillTemplate">
+                <Anchors><Anchor point="LEFT" relativeTo="$parentSkill1" relativePoint="RIGHT"><Offset><AbsDimension x="4" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentSkill3" inherits="BenillaCallingSkillTemplate">
+                <Anchors><Anchor point="LEFT" relativeTo="$parentSkill2" relativePoint="RIGHT"><Offset><AbsDimension x="4" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentSkill4" inherits="BenillaCallingSkillTemplate">
+                <Anchors><Anchor point="LEFT" relativeTo="$parentSkill3" relativePoint="RIGHT"><Offset><AbsDimension x="4" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentSkill5" inherits="BenillaCallingSkillTemplate">
+                <Anchors><Anchor point="LEFT" relativeTo="$parentSkill4" relativePoint="RIGHT"><Offset><AbsDimension x="4" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentSkill6" inherits="BenillaCallingSkillTemplate">
+                <Anchors><Anchor point="LEFT" relativeTo="$parentSkill5" relativePoint="RIGHT"><Offset><AbsDimension x="4" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentSkill7" inherits="BenillaCallingSkillTemplate">
+                <Anchors><Anchor point="LEFT" relativeTo="$parentSkill6" relativePoint="RIGHT"><Offset><AbsDimension x="4" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentSkill8" inherits="BenillaCallingSkillTemplate">
+                <Anchors><Anchor point="LEFT" relativeTo="$parentSkill7" relativePoint="RIGHT"><Offset><AbsDimension x="4" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <Frame name="BenillaCallingChoice" parent="UIParent" frameStrata="FULLSCREEN_DIALOG" toplevel="true" enableMouse="true" hidden="true">
+        <Size><AbsDimension x="540" y="690"/></Size>
+        <Anchors><Anchor point="CENTER"/></Anchors>
+        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+            <BackgroundInsets><AbsInset left="11" right="12" top="12" bottom="11"/></BackgroundInsets>
+            <TileSize><AbsValue val="32"/></TileSize>
+            <EdgeSize><AbsValue val="32"/></EdgeSize>
+        </Backdrop>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString name="BenillaCallingChoiceTitle" inherits="GameFontNormalLarge" text="Choose Your Calling">
+                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-20"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="BenillaCallingChoiceSubtitle" inherits="GameFontHighlight" justifyH="LEFT" justifyV="TOP" text="You have learned all a Basic Warrior can learn. Choose the path you will take.">
+                    <Size><AbsDimension x="490" y="30"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-44"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="BenillaCallingChoiceClose" inherits="UIPanelCloseButton">
+                <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-6" y="-6"/></Offset></Anchor></Anchors>
+                <Scripts>
+                    <OnClick>this:GetParent():Hide()</OnClick>
+                </Scripts>
+            </Button>
+            <Frame name="$parentRow1" id="1" inherits="BenillaCallingChoiceRowTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-80"/></Offset></Anchor></Anchors>
+            </Frame>
+            <Frame name="$parentRow2" id="2" inherits="BenillaCallingChoiceRowTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-198"/></Offset></Anchor></Anchors>
+            </Frame>
+            <Frame name="$parentRow3" id="3" inherits="BenillaCallingChoiceRowTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-316"/></Offset></Anchor></Anchors>
+            </Frame>
+            <Frame name="$parentRow4" id="4" inherits="BenillaCallingChoiceRowTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-434"/></Offset></Anchor></Anchors>
+            </Frame>
+            <Frame name="$parentRow5" id="5" inherits="BenillaCallingChoiceRowTemplate">
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="25" y="-552"/></Offset></Anchor></Anchors>
+            </Frame>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                this:RegisterEvent("CALLING_CHOICE_SHOW")
+                if UISpecialFrames then
+                    tinsert(UISpecialFrames, "BenillaCallingChoice")
+                end
+            </OnLoad>
+            <OnEvent>
+                if event == "CALLING_CHOICE_SHOW" then
+                    BenillaCallingChoice_Paint()
+                    this:Show()
+                end
+            </OnEvent>
+        </Scripts>
+    </Frame>
+</Ui>

@@ -41,3 +41,5 @@ WorldMapMist.xml
 FishingReel.xml
 # The Fishing Journal window, its bait slot, TOGGLEFISHINGJOURNAL's body and /journal.
 FishingJournal.xml
+# The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
+CallingChoice.xml

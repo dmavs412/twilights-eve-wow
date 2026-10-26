@@ -29,6 +29,7 @@ mod aura_visual;
 mod bindings;
 mod blob_shadow;
 mod bowstring;
+mod calling_choice;
 mod camera_shake;
 #[cfg(feature = "dev")]
 mod capture;

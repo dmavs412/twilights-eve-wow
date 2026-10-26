@@ -280,6 +280,7 @@ fn pump(
     mut reel: (
         Option<ResMut<crate::fishing_reel::ReelInbox>>,
         Option<ResMut<crate::fishing_reel::ReelOutbox>>,
+        Option<ResMut<crate::calling_choice::CallingChoiceInbox>>,
     ),
 ) {
     let LocalRealm {
@@ -367,6 +368,13 @@ fn pump(
             marks.set_if_neq(MapMarkList(m));
             continue;
         }
+        // The Calling Choice popup's options go to its own feed (spec #414).
+        if matches!(event, SessionEvent::CallingChoice { .. }) {
+            if let Some(inbox) = reel.2.as_deref_mut() {
+                inbox.0.push(event);
+            }
+            continue;
+        }
         // Fishing's bite, end and Angler Level go to the Reeling Bar (ADR 0018).
         if matches!(
             event,
@@ -385,6 +393,9 @@ fn pump(
             boss.set_if_neq(BossFightList::default());
             marks.set_if_neq(MapMarkList::default());
             if let Some(inbox) = reel.0.as_deref_mut() {
+                inbox.0.push(SessionEvent::LoggedOut);
+            }
+            if let Some(inbox) = reel.2.as_deref_mut() {
                 inbox.0.push(SessionEvent::LoggedOut);
             }
         }

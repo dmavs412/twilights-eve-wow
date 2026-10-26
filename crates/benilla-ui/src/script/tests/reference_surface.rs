@@ -20,6 +20,12 @@ const BEYOND_1_12: &[&str] = &[
     // Twilight's Eve: the world map canvas (#410) has no 1.12 verb, and the canvas layer reads
     // the zone maps it stitches from it.
     "GetMapCanvas",
+    // Twilight's Eve: the Calling Choice popup (spec #414) has no 1.12 verb; `CallingChoice.xml`
+    // reads the options from these and `ChooseCalling` queues the pick for the host.
+    "GetNumCallingChoices",
+    "GetCallingChoice",
+    "GetCallingChoiceSkill",
+    "ChooseCalling",
 ];
 
 /// `reference/1.12-globals.tsv`'s names.

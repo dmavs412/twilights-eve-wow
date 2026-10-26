@@ -111,6 +111,7 @@ impl PluginGroup for GamePlugins {
             .add(crate::weapon_trail::WeaponTrailPlugin)
             .add(FishingLinePlugin)
             .add(FishingReelPlugin)
+            .add(crate::calling_choice::CallingChoicePlugin)
             .add(QuestMarkersPlugin)
             .add(crate::pipe_warm::plugin)
             .add(EntitiesPlugin)

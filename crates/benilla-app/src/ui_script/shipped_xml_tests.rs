@@ -1956,6 +1956,8 @@ fn the_layer_does_not_grow() {
         "FishingReel.xml",
         // The Fishing Journal (spec #323): the realm's journal, its bait slot and its key.
         "FishingJournal.xml",
+        // The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
+        "CallingChoice.xml",
     ];
     assert_eq!(
         super::addons::Addon::layer().toc.files,
