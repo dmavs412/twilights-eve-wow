@@ -17,7 +17,8 @@ realm picks what a kill drops, and how the no-duplicate-icons rule survives 389 
   and green lists in `content/loot_bands.toml`: Northshire 1-10 (the existing roll), then
   11-14, 15-18, 19-22, 23-26 and 27-30. A kill on map 0 rolls 8% a white and 4% a green of the
   mob's band; a mob above the last band takes the last band. The vanilla pool roll is gone.
-  The Token vendor serves the buyer's band by the same table. A creature's own `rolls`
+  The Token vendor serves the buyer's band by the same table (amended by ADR 0027: the Token
+  vendor is gone and the Source is called White; the roll is unchanged). A creature's own `rolls`
   (elites, bosses) run on top, first success wins.
 - **A Line is one item for the icon rule.** ADR 0025 let the rows generated from one recipe
   share an icon. This ADR extends that to a Line: hand-authored rows that repeat across bands

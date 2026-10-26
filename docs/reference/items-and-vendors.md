@@ -238,6 +238,9 @@ here.
 
 ## Token vendor (`token_vendor.json`)
 
+History. ADR 0027 (2026-10-26) removed the Token and its vendors; `token_vendor.json` stays as
+the research record. The whites it priced drop from kills instead (ADR 0026's roll).
+
 For each band (by required level: 1-10, 11-20, 21-30) and each slot, the stock has the best
 Warrior green near the top of the band and the best around its middle. Only fixed-stat greens
 from the loot pools that a Warrior can use at their required level are picked. Cloth body
