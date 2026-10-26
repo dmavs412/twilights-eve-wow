@@ -1,5 +1,5 @@
 {
-  "//": "map_draft --fill: the painting that fills the canvas's bare parchment (#423), and the places that pin it. canvas and painting are [u, v] in each image, 0 to 1 from the top left.",
+  "//": "map_draft --fill: the painting that fills the canvas's bare parchment (#423), and the places that pin it. canvas and painting are [u, v] in each image, 0 to 1 from the top left. How to measure pairs and when to add erase and keep boxes: docs/map_pipeline.md.",
   "painting": "fill_painting.png",
   "pairs": [
     { "name": "Alliance crest", "canvas": [0.160, 0.315], "painting": [0.1615, 0.2900] },

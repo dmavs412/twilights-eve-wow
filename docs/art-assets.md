@@ -15,7 +15,6 @@ spec #395). Until it is painted, an item borrows a stock icon that no other item
 
 | Asset | Where | Notes |
 |---|---|---|
-| World map painting | #423 | Edit the map draft and commit the painted PNGs. #424 waits on it. |
 | Fishing pips, restyled | `crates/benilla-app/assets/ui/fishing/pip_on.tga`, `pip_off.tga` | The old fishing pips stand in on the Journal (#396). |
 
 ## Herbalism (spec #435)

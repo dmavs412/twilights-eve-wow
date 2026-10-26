@@ -4,7 +4,7 @@
 //!
 //! Each zone's art is cut along its `<file>Highlight` silhouette, which drops the parchment frame.
 //! The tool writes only under `--out`; the committed PNGs are the source of truth and it never
-//! touches them. Output is Blizzard data: commit only what Davis has edited (#423).
+//! touches them. Remaking the canvas, the fill file and opening a zone: `docs/map_pipeline.md`.
 
 use std::path::{Path, PathBuf};
 
