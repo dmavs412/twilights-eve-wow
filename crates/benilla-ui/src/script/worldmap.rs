@@ -472,10 +472,18 @@ fn revealed_overlays<'a>(
     zone.map(|zone| {
         zone.overlays
             .iter()
-            .filter(|o| o.explore_bits.iter().any(|&b| explored_bit(explored, b)))
+            .filter(|o| overlay_explored(o, explored))
             .collect()
     })
     .unwrap_or_default()
+}
+
+/// An overlay shows once any of its explore bits is set.
+fn overlay_explored(overlay: &WorldMapOverlayView, explored: &[u32]) -> bool {
+    overlay
+        .explore_bits
+        .iter()
+        .any(|&b| explored_bit(explored, b))
 }
 
 impl super::UiScript {
@@ -908,8 +916,9 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     )?;
 
     // GetMapCanvas() → nil off the canvas; on it an array in draw order of {name, file, left,
-    // top, width, height, overlays}, the zone's rect in canvas UV and its revealed overlays as
-    // GetMapOverlayInfo gives them at zone level. Twilight only: the stock client has no such verb.
+    // top, width, height, overlays}, the zone's rect in canvas UV and every overlay as
+    // GetMapOverlayInfo gives it at zone level, plus `explored` (#424: the canvas covers the
+    // unexplored ones). Twilight only: the stock client has no such verb.
     g.set(
         "GetMapCanvas",
         lua.create_function(|lua, ()| {
@@ -935,8 +944,9 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 t.set("width", f64::from((zl - zr) / (cl - cr)))?;
                 t.set("height", f64::from((zt - zb) / (ct - cb)))?;
                 let overlays = lua.create_table()?;
-                for o in revealed_overlays(Some(zone), &wm.explored) {
+                for o in &zone.overlays {
                     let ot = lua.create_table()?;
+                    ot.set("explored", overlay_explored(o, &wm.explored))?;
                     ot.set("texture", o.texture.as_str())?;
                     ot.set("width", i64::from(o.width))?;
                     ot.set("height", i64::from(o.height))?;

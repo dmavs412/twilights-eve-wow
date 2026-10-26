@@ -3,11 +3,13 @@ write 32-bit RLE TGAs (what the UI layer loads) or 8-bit RGBA PNGs. Pure Python,
 no Pillow.
 
     ~/.local/bin/python3.15 tools/twilights-eve/import_art.py SRC_DIR OUT_DIR \
-        [--size WxH] [--format tga|png] [--only name,...]
+        [--size WxH] [--format tga|png] [--only name,...] [--tile N]
 
 The decoder reads 8-bit RGB and RGBA, non-interlaced, and refuses anything else. --size shrinks
 or grows by area averaging in gamma space: each output pixel is the mean of the source pixels it
-covers, weighted by overlap, so ratios like 1254 to 128 work.
+covers, weighted by overlap, so ratios like 1254 to 128 work. --tile N cuts each image into N by N
+pieces, row-major from the top-left and numbered from 1, the last column and row cut short, and
+writes each as `<name>_<n>` (#424: the painted map's canvas and fogs).
 """
 
 import argparse
@@ -193,6 +195,20 @@ def png_bytes(width, height, rgba):
     )
 
 
+def tiles(width, height, rgba, n):
+    """[(number, width, height, RGBA bytes)]: n by n pieces, row-major from the top-left."""
+    out = []
+    for y0 in range(0, height, n):
+        for x0 in range(0, width, n):
+            w, h = min(n, width - x0), min(n, height - y0)
+            px = bytearray()
+            for y in range(y0, y0 + h):
+                i = (y * width + x0) * 4
+                px += rgba[i : i + w * 4]
+            out.append((len(out) + 1, w, h, bytes(px)))
+    return out
+
+
 def parse_size(text):
     try:
         w, h = text.lower().split("x")
@@ -211,7 +227,10 @@ def main():
     ap.add_argument("--size", type=parse_size, help="WxH to resize every file to")
     ap.add_argument("--format", choices=("tga", "png"), default="tga")
     ap.add_argument("--only", help="comma-separated file names (no extension) to convert")
+    ap.add_argument("--tile", type=int, help="cut each image into N by N pieces")
     args = ap.parse_args()
+    if args.tile is not None and args.tile < 1:
+        sys.exit("--tile must be positive")
 
     only = set(args.only.split(",")) if args.only else None
     files = sorted(p for p in args.src.glob("*.png") if only is None or p.stem in only)
@@ -227,9 +246,15 @@ def main():
         if args.size:
             px = resize(px, w, h, *args.size)
             w, h = args.size
-        data = tga_bytes(w, h, px) if args.format == "tga" else png_bytes(w, h, px)
-        (args.out / f"{path.stem}.{args.format}").write_bytes(data)
-        print(f"{path.stem}: {w}x{h}")
+        encode = tga_bytes if args.format == "tga" else png_bytes
+        if args.tile:
+            pieces = tiles(w, h, px, args.tile)
+            for n, pw, ph, piece in pieces:
+                (args.out / f"{path.stem}_{n}.{args.format}").write_bytes(encode(pw, ph, piece))
+            print(f"{path.stem}: {w}x{h} in {len(pieces)} pieces")
+        else:
+            (args.out / f"{path.stem}.{args.format}").write_bytes(encode(w, h, px))
+            print(f"{path.stem}: {w}x{h}")
     print(f"wrote {len(files)} files to {args.out}")
 
 

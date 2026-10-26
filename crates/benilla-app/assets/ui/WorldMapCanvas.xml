@@ -1,15 +1,21 @@
 <Ui>
     <!--
-        The map canvas (spec #410): while `GetMapCanvas()` answers, the world map is one canvas of
-        zone plates under a mouse wheel zoom and a left-drag pan. Off the canvas the stock map is
-        left as it is, with no zoom.
+        The map canvas (spec #410, painted by #421): while `GetMapCanvas()` answers, the world map
+        is one painted image under a mouse wheel zoom and a left-drag pan. Off the canvas the stock
+        map is left as it is, with no zoom.
+
+        The canvas plate draws `Interface\Benilla\map\canvas_<n>`, the image cut into 256 px
+        pieces by `import_art.py` with its tile flag, with a cover over each unexplored overlay of a listed
+        zone. A fog plate per `GetMapMists()` entry draws `fog_<file>_<n>` on the zone's mist
+        seat. All of them work in the image's pixels, scaled so the image fills the detail frame.
 
         `WorldMapDetailFrame` becomes the scroll child of a new `WorldMapZoomFrame` that takes its
         anchors and size, and `WorldMapButton` moves into the detail frame, so the scroll frame
         clips the POIs and blips and they scroll with the map. A zoom of `z` sizes both frames to
         1002z by 668z at scale 1, so the stock code seats every icon at its map point and no icon
-        is scaled. Frame levels above the detail frame's: one per plate, then
-        `WorldMapMistFrame` (WorldMapMist.xml), then `WorldMapButton` and its children.
+        is scaled. Frame levels above the detail frame's: the canvas plate, then every fog plate,
+        each up to `MAX_PLATES`, then `WorldMapMistFrame` (WorldMapMist.xml), then
+        `WorldMapButton` and its children.
     -->
     <Script><![CDATA[
         local ZOOM_STEP = 1.25
@@ -17,7 +23,9 @@
         local ZOOM_DEPTH = 4
         local MAX_PLATES = 8
         local TILE = 256
-        local TILES_WIDE = 4
+        -- The painted image's size, from `data/twilights-eve/map/manifest.json`.
+        local CANVAS_WIDTH, CANVAS_HEIGHT = 5015, 3343
+        local ART = "Interface\\Benilla\\map\\"
 
         local zoom = 1
         local zoomMax = 1
@@ -27,7 +35,8 @@
         local opening = false
         -- The zone the dropdown names: the last chosen, or the one the map opened on.
         local chosen = nil
-        local plates = {}
+        local canvasPlate = nil
+        local fogs = {}
 
         local detail = WorldMapDetailFrame
         local baseWidth = detail:GetWidth()
@@ -102,32 +111,50 @@
             view:SetVerticalScroll(math.max(0, math.min(overY, y)))
         end
 
-        local function BenillaCanvas_Plate(i)
-            local plate = plates[i]
-            if plate then
-                return plate
+        -- The scale of a plate whose units are the painted image's pixels.
+        local function BenillaCanvas_ArtScale()
+            return zoom * baseWidth / CANVAS_WIDTH
+        end
+
+        -- A plate's textures in a grid of 256 px pieces over a width by height image, each named
+        -- `prefix .. n` and cut short in the last column and row, as `import_art.py --tile` cuts.
+        local function BenillaCanvas_Grid(plate, prefix, width, height)
+            local wide = math.ceil(width / TILE)
+            local tall = math.ceil(height / TILE)
+            local count = 0
+            for j = 1, tall do
+                for k = 1, wide do
+                    count = count + 1
+                    local tile = plate.tiles[count]
+                    if not tile then
+                        tile = plate:CreateTexture(plate:GetName() .. "Tile" .. count, "BACKGROUND")
+                        plate.tiles[count] = tile
+                    end
+                    tile:SetWidth(math.min(TILE, width - TILE * (k - 1)))
+                    tile:SetHeight(math.min(TILE, height - TILE * (j - 1)))
+                    tile:ClearAllPoints()
+                    tile:SetPoint("TOPLEFT", plate, "TOPLEFT", TILE * (k - 1), -TILE * (j - 1))
+                    tile:SetTexture(prefix .. count)
+                    tile:Show()
+                end
             end
-            plate = CreateFrame("Frame", "BenillaCanvasPlate" .. i, detail)
-            plate:SetWidth(baseWidth)
-            plate:SetHeight(baseHeight)
-            plate:SetFrameLevel(level + i)
+            for i = count + 1, table.getn(plate.tiles) do
+                plate.tiles[i]:Hide()
+            end
+        end
+
+        local function BenillaCanvas_NewPlate(name, frameLevel)
+            local plate = CreateFrame("Frame", name, detail)
+            plate:SetFrameLevel(frameLevel)
             plate.tiles = {}
-            for n = 1, NUM_WORLDMAP_DETAIL_TILES do
-                local tile = plate:CreateTexture(nil, "BACKGROUND")
-                tile:SetWidth(TILE)
-                tile:SetHeight(TILE)
-                tile:SetPoint("TOPLEFT", plate, "TOPLEFT", TILE * math.mod(n - 1, TILES_WIDE),
-                    -TILE * math.floor((n - 1) / TILES_WIDE))
-                plate.tiles[n] = tile
-            end
             plate.pieces = {}
-            plates[i] = plate
             return plate
         end
 
-        -- The entry's overlays in 256 px pieces, as the stock WorldMapFrame_Update cuts them.
-        local function BenillaCanvas_Pieces(plate, overlays)
-            local count = 0
+        -- Overlays in 256 px pieces, as the stock WorldMapFrame_Update cuts them, seated from
+        -- plate point (x, y) at `scale` plate units per overlay pixel. The pieces after `count`
+        -- are this call's; it answers the last one used.
+        local function BenillaCanvas_Pieces(plate, count, overlays, x, y, scale)
             for i = 1, table.getn(overlays) do
                 local o = overlays[i]
                 local wide = math.ceil(o.width / TILE)
@@ -159,47 +186,107 @@
                         count = count + 1
                         local piece = plate.pieces[count]
                         if not piece then
-                            piece = plate:CreateTexture(nil, "ARTWORK")
+                            piece = plate:CreateTexture("BenillaCanvasCover" .. count, "ARTWORK")
                             plate.pieces[count] = piece
                         end
-                        piece:SetWidth(pixelWidth)
-                        piece:SetHeight(pixelHeight)
+                        piece:SetWidth(pixelWidth * scale)
+                        piece:SetHeight(pixelHeight * scale)
                         piece:SetTexCoord(0, pixelWidth / fileWidth, 0, pixelHeight / fileHeight)
                         piece:ClearAllPoints()
-                        piece:SetPoint("TOPLEFT", plate, "TOPLEFT", o.offsetX + TILE * (k - 1),
-                            -(o.offsetY + TILE * (j - 1)))
+                        piece:SetPoint("TOPLEFT", plate, "TOPLEFT",
+                            x + (o.offsetX + TILE * (k - 1)) * scale,
+                            -(y + (o.offsetY + TILE * (j - 1)) * scale))
                         piece:SetTexture(o.texture .. ((j - 1) * wide + k))
                         piece:Show()
                     end
                 end
             end
-            for i = count + 1, table.getn(plate.pieces) do
-                plate.pieces[i]:Hide()
+            return count
+        end
+
+        -- A zone's unexplored overlays as covers: `covers\<overlay name>_<n>` from the draft tool.
+        local function BenillaCanvas_Covers(entry)
+            local covers = {}
+            for i = 1, table.getn(entry.overlays) do
+                local o = entry.overlays[i]
+                if not o.explored then
+                    local name = string.lower((string.gsub(o.texture, "^.*\\", "")))
+                    table.insert(covers, {
+                        texture = ART .. "covers\\" .. name .. "_",
+                        width = o.width,
+                        height = o.height,
+                        offsetX = o.offsetX,
+                        offsetY = o.offsetY,
+                    })
+                end
+            end
+            return covers
+        end
+
+        -- The canvas plate covers the detail frame, and each zone's covers sit on it where its
+        -- stock overlays would: the zone's 1002 px art spans `width` of the image.
+        local function BenillaCanvas_SeatCanvas()
+            if not canvasPlate then
+                canvasPlate = BenillaCanvas_NewPlate("BenillaCanvasPlate", level + 1)
+                canvasPlate:SetWidth(CANVAS_WIDTH)
+                canvasPlate:SetHeight(CANVAS_HEIGHT)
+                canvasPlate:SetPoint("TOPLEFT", detail, "TOPLEFT", 0, 0)
+                BenillaCanvas_Grid(canvasPlate, ART .. "canvas_", CANVAS_WIDTH, CANVAS_HEIGHT)
+            end
+            canvasPlate:SetScale(BenillaCanvas_ArtScale())
+            local count = 0
+            for i = 1, table.getn(canvas) do
+                local entry = canvas[i]
+                count = BenillaCanvas_Pieces(canvasPlate, count, BenillaCanvas_Covers(entry),
+                    entry.left * CANVAS_WIDTH, entry.top * CANVAS_HEIGHT,
+                    entry.width * CANVAS_WIDTH / baseWidth)
+            end
+            for i = count + 1, table.getn(canvasPlate.pieces) do
+                canvasPlate.pieces[i]:Hide()
+            end
+            canvasPlate:Show()
+        end
+
+        -- One fog plate per misted zone on its mist seat, in the fog image's pixels.
+        local function BenillaCanvas_SeatFogs()
+            local mists = GetMapMists()
+            for n = 1, table.getn(mists) do
+                local mist = mists[n]
+                local fog = fogs[n]
+                if not fog then
+                    fog = BenillaCanvas_NewPlate("BenillaCanvasFog" .. n, level + 2)
+                    fogs[n] = fog
+                end
+                local width = math.floor(mist.textureX * CANVAS_WIDTH + 0.5)
+                local height = math.floor(mist.textureY * CANVAS_HEIGHT + 0.5)
+                if fog.file ~= mist.file then
+                    fog.file = mist.file
+                    BenillaCanvas_Grid(fog, ART .. "fog_" .. string.lower(mist.file) .. "_", width, height)
+                end
+                fog:SetWidth(width)
+                fog:SetHeight(height)
+                fog:SetScale(BenillaCanvas_ArtScale())
+                fog:ClearAllPoints()
+                fog:SetPoint("TOPLEFT", detail, "TOPLEFT", mist.scrollX * CANVAS_WIDTH,
+                    -mist.scrollY * CANVAS_HEIGHT)
+                fog:Show()
+            end
+            for n = table.getn(mists) + 1, table.getn(fogs) do
+                fogs[n]:Hide()
             end
         end
 
-        -- Each plate is 1002x668 in its own units at scale `width * zoom`, so its anchor offset,
-        -- in those units, does not change with the zoom.
         local function BenillaCanvas_SeatPlates()
-            local count = 0
             if onCanvas then
-                count = math.min(table.getn(canvas), MAX_PLATES)
+                BenillaCanvas_SeatCanvas()
+                BenillaCanvas_SeatFogs()
+                return
             end
-            for i = 1, count do
-                local entry = canvas[i]
-                local plate = BenillaCanvas_Plate(i)
-                plate:SetScale(entry.width * zoom)
-                plate:ClearAllPoints()
-                plate:SetPoint("TOPLEFT", detail, "TOPLEFT", entry.left * baseWidth / entry.width,
-                    -entry.top * baseHeight / entry.width)
-                for n = 1, NUM_WORLDMAP_DETAIL_TILES do
-                    plate.tiles[n]:SetTexture("Interface\\WorldMap\\" .. entry.file .. "\\" .. entry.file .. n)
-                end
-                BenillaCanvas_Pieces(plate, entry.overlays)
-                plate:Show()
+            if canvasPlate then
+                canvasPlate:Hide()
             end
-            for i = count + 1, table.getn(plates) do
-                plates[i]:Hide()
+            for n = 1, table.getn(fogs) do
+                fogs[n]:Hide()
             end
         end
 

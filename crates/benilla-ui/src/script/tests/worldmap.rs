@@ -861,7 +861,7 @@ fn every_selection_lands_on_the_canvas() {
 }
 
 /// `GetMapCanvas` lists the canvas zones in draw order with their rects in canvas UV and their
-/// revealed overlays.
+/// overlays.
 #[test]
 fn the_canvas_lists_its_zones_in_draw_order() {
     let mut s = script();
@@ -885,7 +885,7 @@ fn the_canvas_lists_its_zones_in_draw_order() {
              return getn(c), e.file, e.left, e.top, e.width, e.height, getn(e.overlays)",
         )
         .unwrap();
-    assert_eq!((n, file.as_str(), overlays), (4, "Elwynn", 0));
+    assert_eq!((n, file.as_str(), overlays), (4, "Elwynn", 1));
     for (got, want) in [
         (left, 0.0083),
         (top, 0.0),
@@ -910,6 +910,27 @@ fn the_canvas_lists_its_zones_in_draw_order() {
             200
         )
     );
+}
+
+/// `GetMapCanvas` lists an unexplored overlay with `explored == false`, so the canvas can cover it
+/// (#424), and flips it once the bit is set.
+#[test]
+fn the_canvas_lists_unexplored_overlays() {
+    let mut s = script();
+    push_canvas_catalog(&mut s);
+    s.run("SetMapZoom(2)").unwrap();
+    let explored = |s: &UiScript| {
+        s.eval::<(i64, String, bool)>(
+            "local o = GetMapCanvas()[3].overlays return getn(o), o[1].texture, o[1].explored",
+        )
+        .unwrap()
+    };
+    assert_eq!(
+        explored(&s),
+        (1, r"Interface\WorldMap\Elwynn\GOLDSHIRE".into(), false)
+    );
+    s.set_world_map_explored(vec![1 << 5]);
+    assert!(explored(&s).2);
 }
 
 /// The canvas mists every off-list zone that meets its rect, seated against the canvas rect.

@@ -1466,47 +1466,131 @@ fn a_drag_past_the_edge_leaves_no_gap() {
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 
-/// Each canvas zone has a plate on its canvas rect, at zoom 1 and at the deepest zoom.
+/// The canvas plate draws the painted image's pieces from the detail frame's top-left; the last
+/// piece is cut short, at the image's scale against the detail frame (#424).
 #[test]
-fn each_canvas_zone_has_a_plate_on_its_rect() {
+fn the_canvas_plate_draws_the_painted_pieces() {
     let _data = benilla_formats::wow_data_or_skip!();
     let mut s = canvas_harness();
     let at = centre(&s, "WorldMapZoomFrame");
-    for (notches, delta) in [(20, -1.0), (20, 1.0)] {
-        wheel(&mut s, at, notches, delta);
-        for i in 1..=4 {
-            let (left, top, width) = s
-                .eval::<(f64, f64, f64)>(&format!(
-                    "local e = GetMapCanvas()[{i}] return e.left, e.top, e.width"
-                ))
-                .unwrap();
-            let want = map_point(&s, left, top);
-            let (pl, pt, pw, eff, dw, deff) = s
-                .eval::<(f64, f64, f64, f64, f64, f64)>(&format!(
-                    "local p, d = BenillaCanvasPlate{i}, WorldMapDetailFrame \
-                     return p:GetLeft(), p:GetTop(), p:GetWidth(), p:GetEffectiveScale(), \
-                        d:GetWidth(), d:GetEffectiveScale()"
-                ))
-                .unwrap();
-            let got = ((pl * eff) as f32, (pt * eff) as f32);
-            assert!(
-                near(got, want),
-                "plate {i} at zoom {}: {got:?} vs {want:?}",
-                zoom_of(&s)
-            );
-            assert!(
-                (pw * eff - width * dw * deff).abs() < 1.0,
-                "plate {i} width {} vs {}",
-                pw * eff,
-                width * dw * deff
-            );
-        }
-    }
+    wheel(&mut s, at, 20, -1.0);
+    assert_eq!(zoom_of(&s), 1.0);
+    assert_eq!(
+        s.eval::<String>("return BenillaCanvasPlateTile1:GetTexture()")
+            .unwrap(),
+        r"Interface\Benilla\map\canvas_1"
+    );
+    let (tl, tt, teff) = s
+        .eval::<(f64, f64, f64)>(
+            "local t = BenillaCanvasPlateTile1 \
+             return t:GetLeft(), t:GetTop(), BenillaCanvasPlate:GetEffectiveScale()",
+        )
+        .unwrap();
+    assert!(near(
+        ((tl * teff) as f32, (tt * teff) as f32),
+        map_point(&s, 0.0, 0.0)
+    ));
+    // 5015 by 3343 px in 256 px pieces: 20 columns by 14 rows, the last 151 by 15.
+    let (w, h, eff, dw, deff, shown) = s
+        .eval::<(f64, f64, f64, f64, f64, bool)>(
+            "local t, d = BenillaCanvasPlateTile280, WorldMapDetailFrame \
+             return t:GetWidth(), t:GetHeight(), BenillaCanvasPlate:GetEffectiveScale(), d:GetWidth(), \
+                d:GetEffectiveScale(), t:IsShown()",
+        )
+        .unwrap();
+    assert!(shown);
+    assert_eq!((w, h), (151.0, 15.0));
+    let base = dw / 5015.0;
+    assert!((eff - base * deff).abs() < 1e-6, "{eff} vs {}", base * deff);
+    assert_eq!(
+        s.eval::<Option<String>>("return BenillaCanvasPlateTile281 and 'extra'")
+            .unwrap(),
+        None
+    );
     assert!(
         !s.eval::<bool>("return WorldMapDetailTile1:IsShown()")
             .unwrap(),
-        "the stock tiles hide under the plates"
+        "the stock tiles hide under the canvas"
     );
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// The fixture's misted Westfall gets a fog plate on its mist seat, under the live mist.
+#[test]
+fn a_misted_zone_has_a_fog_plate_on_its_mist_seat() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let s = canvas_harness();
+    assert_eq!(
+        s.eval::<String>("return BenillaCanvasFog1Tile1:GetTexture()")
+            .unwrap(),
+        r"Interface\Benilla\map\fog_westfall_1"
+    );
+    let (scroll_x, scroll_y) = s
+        .eval::<(f64, f64)>("local m = GetMapMists()[1] return m.scrollX, m.scrollY")
+        .unwrap();
+    let (l, t, eff, shown) = s
+        .eval::<(f64, f64, f64, bool)>(
+            "local t = BenillaCanvasFog1Tile1 \
+             return t:GetLeft(), t:GetTop(), BenillaCanvasFog1:GetEffectiveScale(), t:IsVisible()",
+        )
+        .unwrap();
+    assert!(shown);
+    let got = ((l * eff) as f32, (t * eff) as f32);
+    let want = map_point(&s, scroll_x, scroll_y);
+    assert!(near(got, want), "{got:?} vs {want:?}");
+    assert!(
+        s.eval::<bool>(
+            "return BenillaCanvasFog1:GetFrameLevel() < WorldMapMistFrame:GetFrameLevel() \
+             and BenillaCanvasFog1:GetFrameLevel() > BenillaCanvasPlate:GetFrameLevel()"
+        )
+        .unwrap(),
+        "the fog sits over the canvas and under the live mist"
+    );
+    assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
+}
+
+/// An unexplored overlay of a listed zone draws its cover where the stock overlay would sit, and
+/// exploring it hides the cover.
+#[test]
+fn an_unexplored_overlay_draws_its_cover_until_explored() {
+    let _data = benilla_formats::wow_data_or_skip!();
+    let mut s = canvas_harness();
+    assert_eq!(
+        s.eval::<String>("return BenillaCanvasCover1:GetTexture()")
+            .unwrap(),
+        r"Interface\Benilla\map\covers\goldshire_1"
+    );
+    // GOLDSHIRE sits at (300, 200) of Elwynn's 1002 by 668 art.
+    let (left, top, width) = s
+        .eval::<(f64, f64, f64)>("local e = GetMapCanvas()[3] return e.left, e.top, e.width")
+        .unwrap();
+    let want = map_point(
+        &s,
+        left + 300.0 * width / 1002.0,
+        top + 200.0 * width / 668.0,
+    );
+    let (l, t, eff, w, dw, deff) = s
+        .eval::<(f64, f64, f64, f64, f64, f64)>(
+            "local c, d = BenillaCanvasCover1, WorldMapDetailFrame \
+             return c:GetLeft(), c:GetTop(), BenillaCanvasPlate:GetEffectiveScale(), c:GetWidth(), \
+                d:GetWidth(), d:GetEffectiveScale()",
+        )
+        .unwrap();
+    let got = ((l * eff) as f32, (t * eff) as f32);
+    assert!(near(got, want), "{got:?} vs {want:?}");
+    assert!(
+        (w * eff - 256.0 * width * dw / 1002.0 * deff).abs() < 1.0,
+        "the cover is at the overlay's scale"
+    );
+    assert!(s
+        .eval::<bool>("return BenillaCanvasCover1:IsVisible()")
+        .unwrap());
+
+    s.set_world_map_explored(vec![1 << 5]);
+    s.run("WorldMapFrame_Update()").unwrap();
+    assert!(!s
+        .eval::<bool>("return BenillaCanvasCover1:IsShown()")
+        .unwrap());
     assert!(s.errors().is_empty(), "script errors: {:?}", s.errors());
 }
 

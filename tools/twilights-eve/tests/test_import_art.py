@@ -157,6 +157,27 @@ class TgaTests(unittest.TestCase):
         self.assertEqual(back, px)
 
 
+class TileTests(unittest.TestCase):
+    def test_pieces_run_row_major_with_the_last_column_and_row_cut_short(self):
+        # 5x3 pixels, red channel the x + 10y index, cut into 2 by 2 pieces.
+        w, h = 5, 3
+        px = bytearray()
+        for y in range(h):
+            for x in range(w):
+                px += bytes((x + 10 * y, 0, 0, 255))
+        pieces = import_art.tiles(w, h, px, 2)
+        self.assertEqual(
+            [(n, pw, ph) for n, pw, ph, _ in pieces],
+            [(1, 2, 2), (2, 2, 2), (3, 1, 2), (4, 2, 1), (5, 2, 1), (6, 1, 1)],
+        )
+        self.assertEqual([pieces[1][3][i * 4] for i in range(4)], [2, 3, 12, 13])
+        self.assertEqual(pieces[5][3], bytes((24, 0, 0, 255)))
+
+    def test_an_exact_fit_has_no_short_pieces(self):
+        pieces = import_art.tiles(4, 4, bytes(64), 2)
+        self.assertEqual([(pw, ph) for _, pw, ph, _ in pieces], [(2, 2)] * 4)
+
+
 class PngWriteTests(unittest.TestCase):
     def test_png_round_trips(self):
         data = import_art.png_bytes(2, 2, PIXELS)
