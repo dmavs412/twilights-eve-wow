@@ -37,6 +37,8 @@ struct Npc {
     #[serde(default)]
     teaches_fishing: bool,
     #[serde(default)]
+    teaches_herbalism: bool,
+    #[serde(default)]
     angler_hints: Vec<toml::Value>,
     /// The `AreaTable` id an innkeeper binds to.
     area: Option<u32>,
@@ -207,6 +209,15 @@ fn every_npcs_flags_fit_its_role() {
                     && n.stock.is_empty()
                     && !n.tokens
                     && !n.greeting.contains('\n')
+            }
+            // Brother Ansel: the lesson and the herbalist's goods, no quests (#438).
+            "herbalist" => {
+                n.npc_flags == GOSSIP | VENDOR
+                    && n.teaches_herbalism
+                    && talks
+                    && !gives
+                    && !n.stock.is_empty()
+                    && !n.tokens
             }
             other => panic!("{}: no role {other:?}", n.name),
         };

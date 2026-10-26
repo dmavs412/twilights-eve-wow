@@ -1386,3 +1386,23 @@ teaches_fishing = true
 angler_hints = [{ legend = 960002, min_angler_level = 3 }]
 stock = [6256, 960101, 960102, 6529, 6530, 6532, 6533]
 greeting = "The brothers fish this river for the Abbey's table, $C, and feed the heels of the bread to one bass too clever to be caught. I can teach you to fish, and sell you a pole and some bait."
+
+# ── Brother Ansel, the Northshire herbalist (#438) ───────────────────────────────────────────────
+# Teaches Herbalism and sells the herbalist's goods, east of the Abbey. z is ground_check.py's.
+[[npc]]
+guid = 9300035
+entry = 190072
+name = "Brother Ansel"
+subname = "Herbalist"
+level = 10
+display_id = 3277
+faction_template = 35
+role = "herbalist"
+npc_flags = 0x5
+map = 0
+position = [-8875.0, -210.0, 81.39]
+orientation = 1.57
+text_id = 64141
+teaches_herbalism = true
+stock = [961201, 961203, 961205]
+greeting = "The brothers keep the Abbey's herb beds, $C, and the beds keep us in tea and salve. I can teach you to gather what grows wild around here, and sell you a few things for the work."

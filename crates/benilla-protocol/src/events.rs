@@ -324,6 +324,21 @@ pub enum SessionEvent {
         /// The title of the Angler level band.
         title: String,
     },
+    /// Twilight's Eve, not 1.12: the character's Herbalist Level (spec #435), sent at login and on
+    /// every change. `knows` is false until Herbalism is learned. Never wire-decoded.
+    Herbalist {
+        knows: bool,
+        level: u8,
+        xp: u32,
+        to_next: u32,
+        title: String,
+        /// One per perk slot the level opens: the perk's key, or "" for an empty slot.
+        perks: Vec<String>,
+    },
+    /// Twilight's Eve, not 1.12: Find Herbs (spec #435). While `on`, the client draws a leaf on the
+    /// minimap at each GameObject whose entry is `patch_entry`. Sent at login and on every toggle.
+    /// Never wire-decoded.
+    HerbTracking { patch_entry: u32, on: bool },
     /// `SMSG_CHAR_CREATE`/`_DELETE`'s raw `WorldResult`; on success a fresh roster comes first.
     CharActionResult { action: CharAction, code: u8 },
     /// We are in the world; the IO thread emits this before any object update.

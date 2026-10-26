@@ -198,6 +198,22 @@ struct Save {
     legends_caught: Vec<u32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     legend_hints: Vec<u32>,
+    /// Herbalism (#438), all added within version 5: a save without them has not learned it and
+    /// is Herbalist Level 1.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    knows_herbalism: bool,
+    #[serde(default = "first_angler_level")]
+    herbalist_level: u8,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    herbalist_xp: u32,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    herb_picks: Vec<(u32, u32)>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    herb_tracking: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    herb_perks: Vec<String>,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    perk_resets: u32,
     /// The entry the empty Lure slot waits to refill with (version 5). A plain key, so before the
     /// gear tables.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -442,6 +458,13 @@ pub(crate) fn export(c: &Char) -> String {
         bait: c.bait,
         legends_caught: c.legends_caught.clone(),
         legend_hints: c.legend_hints.clone(),
+        knows_herbalism: c.knows_herbalism,
+        herbalist_level: c.herbalist_level,
+        herbalist_xp: c.herbalist_xp,
+        herb_picks: c.herb_picks.clone(),
+        herb_tracking: c.herb_tracking,
+        herb_perks: c.herb_perks.clone(),
+        perk_resets: c.perk_resets,
         lure_waiting: c.lure_waiting,
         calling_chosen: c.calling_chosen,
         fishing_pole: saved_gear(&c.fishing_pole),
@@ -541,6 +564,13 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         bait: s.bait,
         legends_caught: s.legends_caught,
         legend_hints: s.legend_hints,
+        knows_herbalism: s.knows_herbalism,
+        herbalist_level: s.herbalist_level.max(1),
+        herbalist_xp: s.herbalist_xp,
+        herb_picks: s.herb_picks,
+        herb_tracking: s.herb_tracking,
+        herb_perks: s.herb_perks,
+        perk_resets: s.perk_resets,
         fishing_pole: None,
         fishing_lure: None,
         lure_waiting: s.lure_waiting,

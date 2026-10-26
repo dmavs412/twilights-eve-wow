@@ -588,6 +588,8 @@ pub struct Realm {
     doors: phased::Doors,
     /// The GameObjects made at run time for an Audience.
     objects: objects::Objects,
+    /// Each character's Herb Patches (#438): not saved.
+    herb_patches: world::HerbPatches,
     /// The Rumours under way: not saved.
     rumours: rumours::Rumours,
 }
@@ -1969,6 +1971,7 @@ impl Realm {
         }
         let ticked = w.tick(dt, self.wall, host, c, &mut self.rng, &mut self.events);
         self.tick_fishing(dt, host);
+        self.tick_herbs(host);
         let Some(w) = &mut self.world else {
             return;
         };
@@ -1994,6 +1997,9 @@ impl Realm {
     fn cast(&mut self, spell_id: u32, target: Option<u64>, dest: Option<[f32; 3]>) {
         if spell_id == duel::content().challenge_spell {
             return self.challenge(target);
+        }
+        if spell_id == herbs::spell().find && self.find_herbs() {
+            return;
         }
         let Some(w) = &mut self.world else {
             return;
@@ -2220,7 +2226,9 @@ impl Realm {
         let Some(o) = self.objects.get(guid) else {
             return;
         };
+        // A Herb Patch opens the Forager's Grid in a later ticket; for now a click does nothing.
         if o.spec.kind == ObjectKind::Bobber
+            || matches!(o.spec.kind, ObjectKind::HerbPatch { .. })
             || !o.audience.admits(w.guid)
             || !w.sees_runtime_object(guid)
             || space::flat_distance(o.spec.position, c.position) > space::INTERACTION_YD
@@ -2334,6 +2342,7 @@ impl Realm {
         let Some(mut w) = self.world.take() else {
             return;
         };
+        self.forget_herb_patches(w.guid);
         // Leaving dead is a release: the save puts the character where it comes back.
         if let Some(c) = self.characters.get_mut(w.guid) {
             w.release(c, &mut Vec::new());

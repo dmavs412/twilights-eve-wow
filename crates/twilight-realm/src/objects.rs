@@ -28,6 +28,9 @@ pub enum ObjectKind {
     /// A Fishing cast's bobber (ADR 0018), floating on the water: the client draws the line to
     /// it. A click does nothing; the Reeling Bar is the catch.
     Bobber,
+    /// One of a character's Herb Patches (ADR 0024): the herb zone and the spot in it. A click
+    /// does nothing yet; the Forager's Grid opens from it.
+    HerbPatch { zone: usize, spot: usize },
 }
 
 /// Where and what a run-time GameObject is.
@@ -58,7 +61,7 @@ impl Object {
             entry: self.spec.entry,
             display_id: self.spec.display,
             type_id: match self.spec.kind {
-                ObjectKind::Use => GENERIC,
+                ObjectKind::Use | ObjectKind::HerbPatch { .. } => GENERIC,
                 ObjectKind::Chest(_) => CHEST,
                 ObjectKind::Bobber => FISHINGNODE,
             },
@@ -83,7 +86,7 @@ impl Objects {
         let guid = HIGHGUID_GAMEOBJECT << 48 | (FIRST_GUID + self.made);
         self.made += 1;
         let loot = match &spec.kind {
-            ObjectKind::Use | ObjectKind::Bobber => None,
+            ObjectKind::Use | ObjectKind::Bobber | ObjectKind::HerbPatch { .. } => None,
             ObjectKind::Chest(entries) => Some(Loot {
                 money: 0,
                 items: entries.iter().map(|&e| Some((e, 1))).collect(),

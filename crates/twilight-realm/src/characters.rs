@@ -111,6 +111,18 @@ pub(crate) struct Char {
     pub(crate) legends_caught: Vec<u32>,
     /// The Legendary Fish they hold a hint of, from a Legend Rumour or an angler's gossip.
     pub(crate) legend_hints: Vec<u32>,
+    /// Whether Brother Ansel has taught them Herbalism (#438).
+    pub(crate) knows_herbalism: bool,
+    pub(crate) herbalist_level: u8,
+    pub(crate) herbalist_xp: u32,
+    /// `(item, tiles pulled)`, ascending by item.
+    pub(crate) herb_picks: Vec<(u32, u32)>,
+    /// Whether Find Herbs is on.
+    pub(crate) herb_tracking: bool,
+    /// The perk keys they hold, one per slot filled.
+    pub(crate) herb_perks: Vec<String>,
+    /// How many times they have reset their perks.
+    pub(crate) perk_resets: u32,
 }
 
 /// What being **Marked** holds (#179): the logged-in time left, and the hunter that won, as
@@ -218,6 +230,13 @@ impl Characters {
             calling_chosen: false,
             legends_caught: Vec::new(),
             legend_hints: Vec::new(),
+            knows_herbalism: false,
+            herbalist_level: 1,
+            herbalist_xp: 0,
+            herb_picks: Vec::new(),
+            herb_tracking: false,
+            herb_perks: Vec::new(),
+            perk_resets: 0,
         });
         CHAR_CREATE_SUCCESS
     }
