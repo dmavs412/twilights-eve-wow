@@ -1600,9 +1600,8 @@ mod tests {
         assert!(laborers
             .iter()
             .all(|s| (s.level_min, s.level_max) == (6, 7)));
-        // The deep tunnels' hand-added ones (#89) keep their own levels, past the band.
-        assert!(!added.is_empty());
-        assert!(added.iter().all(|s| s.level_min >= 4 && s.level_max <= 6));
+        // The deep tunnels' hand-added ones (#89) went when the mine's creatures were halved.
+        assert!(added.is_empty());
         // Young Wolf, which also roams outside the valley toward Goldshire.
         let wolves: Vec<_> = content().spawn.iter().filter(|s| s.entry == 299).collect();
         let (inside, outside): (Vec<_>, Vec<_>) =
