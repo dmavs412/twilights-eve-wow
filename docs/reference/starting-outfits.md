@@ -13,6 +13,8 @@ a character is created a Basic Warrior, so that outfit is the one worn.
 
 ## The outfits
 
+Each starter piece carries +2 Stamina (+4 on a staff or other two-hander) per #426.
+
 | Calling | Chest | weapon | off hand | ranged |
 |---|---|---|---|---|
 | Basic Warrior | 900000 Recruit's Mail Vest | 25 Worn Shortsword | 2362 Worn Wooden Shield | 3111 Crude Throwing Axe (200) |

@@ -305,6 +305,14 @@ fn the_seeded_gear_keeps_the_references_numbers() {
         }
         let mut want = expected_item(&item);
         retune_shield_block(&mut want);
+        // The starting outfits' vanilla pieces carry +2 Stamina, +4 on a two-hander (#426, #427).
+        if [2108, 2109, 2110, 3260, 25, 37, 4565, 1388, 2055, 2362, 8179].contains(&entry) {
+            let sta = if entry == 1388 { 4 } else { 2 };
+            let stat = toml::Value::Array(vec![7.into(), sta.into()]);
+            want.as_table_mut()
+                .unwrap()
+                .insert("stats".into(), toml::Value::Array(vec![stat]));
+        }
         assert_eq!(sheet_fields(row), sheet_fields(&want), "gear {entry}");
         seeded += 1;
     }

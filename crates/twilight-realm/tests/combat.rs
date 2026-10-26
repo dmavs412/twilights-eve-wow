@@ -56,9 +56,9 @@ fn the_character_sheet_shows_the_realms_stats() {
     let f = own_create(&events, guid);
     // A level-1 human warrior (§5 of the combat reference) in the starting outfit: the Worn
     // Shortsword in hand, the Recruit's Mail Vest (51 armour, spec #272) and the Worn Wooden Shield
-    // (5 armour).
-    assert_eq!(f.unit_max_health(), Some(60));
-    assert_eq!(f.unit_health(), Some(60));
+    // (5 armour). Each of the three pieces carries +2 Stamina (#427), +60 health.
+    assert_eq!(f.unit_max_health(), Some(120));
+    assert_eq!(f.unit_health(), Some(120));
     assert_eq!(f.unit_attack_power(), Some(29));
     assert_eq!(
         f.unit_resistance(0),
@@ -71,7 +71,8 @@ fn the_character_sheet_shows_the_realms_stats() {
     assert_eq!(f.player_block_percentage(), Some(5.0), "the shield blocks");
     assert_eq!(
         (0..5).map(|i| f.unit_stat(i).unwrap()).collect::<Vec<_>>(),
-        [23, 20, 22, 20, 20]
+        [23, 20, 28, 20, 20],
+        "the three starter pieces add +6 Stamina (#427)"
     );
     // 1-3 damage plus 29 attack power over a 1.9 s swing.
     assert!((f.unit_min_damage().unwrap() - 4.936).abs() < 1e-3);
@@ -155,7 +156,7 @@ fn the_mob_fights_back_and_its_hits_come_off_the_players_health() {
     let taken: u32 = swings(&events, mob.guid).map(|s| s.damage).sum();
     assert!(swings(&events, mob.guid).count() >= 5, "a swing every 2 s");
     assert!(taken > 0);
-    assert_eq!(last_health(&events, me), Some(60 - taken));
+    assert_eq!(last_health(&events, me), Some(120 - taken));
 }
 
 #[test]
@@ -369,8 +370,8 @@ fn enough_xp_levels_the_character_up() {
     assert_eq!(sheet.unit_level(), Some(5));
     assert_eq!(sheet.player_xp(), Some(20));
     assert_eq!(sheet.player_next_level_xp(), Some(2800));
-    assert_eq!(sheet.unit_max_health(), Some(136));
-    assert_eq!(sheet.unit_health(), Some(136), "a level-up heals");
+    assert_eq!(sheet.unit_max_health(), Some(196));
+    assert_eq!(sheet.unit_health(), Some(196), "a level-up heals");
     assert_eq!(sheet.unit_attack_power(), Some(51));
 
     // The level is the character's now: the roster shows it, and a save was asked for.
