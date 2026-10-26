@@ -249,6 +249,7 @@ foreach ($t in $queue) {
     if ($state -eq "OPEN") {
         gh issue close -R $Repo $n --comment "Closed by the overnight run. Commits $shas passed: $($gate.what)." | Out-Null
     }
+    gh issue edit -R $Repo $n --remove-label $Label | Out-Null
     Write-Log "#${n}: done ($shas); gate passed: $($gate.what)"
     Add-Content $summary ("| #{0} | {1} | done | {2} | {3} |" -f $n, $title, $shas, $cost) -Encoding utf8
 }

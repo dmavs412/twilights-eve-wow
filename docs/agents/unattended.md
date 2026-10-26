@@ -83,7 +83,8 @@ failed.
 ## Finishing
 
 - Done: `gh issue close -R dmavs412/twilights-eve-wow <n> --comment "..."` with what landed,
-  the commit shas, and the assumptions.
+  the commit shas, and the assumptions, then
+  `gh issue edit -R dmavs412/twilights-eve-wow <n> --remove-label ready-for-agent`.
 - Cannot finish, whether the gate will not pass, the ticket is mislabelled, or it needs a build
   or a game run: commit nothing partial, run
   `gh issue edit -R dmavs412/twilights-eve-wow <n> --add-label blocked`, comment with the
