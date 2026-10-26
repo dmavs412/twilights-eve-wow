@@ -37,7 +37,15 @@ struct Item {
 }
 
 #[derive(Deserialize)]
+struct Zone {
+    key: String,
+    live: usize,
+    points: Vec<toml::Value>,
+}
+
+#[derive(Deserialize)]
 struct Herbs {
+    zone: Vec<Zone>,
     plant: Vec<Plant>,
     tool: Vec<Ref>,
     consumable: Vec<Ref>,
@@ -113,6 +121,19 @@ fn a_plants_row_says_what_it_is_for() {
             Some(other) => panic!("plant {} has use {other}", p.item),
         };
         assert_eq!(rows[&p.item].description, want, "item {}", p.item);
+    }
+}
+
+#[test]
+fn each_zone_has_at_least_as_many_points_as_its_live_count() {
+    for z in herbs().zone {
+        assert!(
+            z.points.len() >= z.live,
+            "zone {} has {} points for {} live patches",
+            z.key,
+            z.points.len(),
+            z.live
+        );
     }
 }
 

@@ -122,8 +122,15 @@ pub(crate) struct Zone {
     pub(crate) zone: u32,
     /// Patches kept live per character.
     pub(crate) live: u32,
-    /// The Herb Spots, `[x, y, z]` each.
-    pub(crate) points: Vec<[f32; 3]>,
+    /// The Herb Spots. They have no Z: a spot stands on the terrain.
+    pub(crate) points: Vec<Point>,
+}
+
+/// A Herb Spot (`{ x = .., y = .. }`).
+#[derive(Deserialize, Clone, Copy)]
+pub(crate) struct Point {
+    pub(crate) x: f32,
+    pub(crate) y: f32,
 }
 
 #[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
@@ -259,6 +266,13 @@ fn check(file: &File) {
             legendaries == 1,
             "zone {} has {legendaries} legendaries, not one",
             z.key
+        );
+        assert!(
+            z.points.len() >= z.live as usize,
+            "zone {} has {} points, fewer than its {} live patches",
+            z.key,
+            z.points.len(),
+            z.live
         );
     }
     let titles = &file.herbalist.titles;
