@@ -34,9 +34,36 @@ const FOG_EDGE: (f32, f32) = (0.15, 0.45);
 /// edge inside it.
 const FRAME_INSET: f32 = 30.0;
 const FRAME_FADE: f32 = 40.0;
-/// The colour distances (RGB, 0 to 1) a black-Highlight zone's backdrop key runs between: clear
-/// at the first, the art's own at the second.
+/// The colour distances (RGB, 0 to 1) a black-Highlight zone's backdrop key runs between: cut
+/// at the first, kept at the second. The key is blurred by `CUTOUT_BLUR` art pixels and
+/// sharpened across `CUTOUT_EDGE`, so the backdrop's mottling does not speckle the cut.
 const BACKDROP_KEY: (f32, f32) = (0.06, 0.16);
+const CUTOUT_BLUR: usize = 3;
+const CUTOUT_EDGE: (f32, f32) = (0.35, 0.65);
+
+/// A city map's cut-out: 0 where the art is its commonest colour, its plain backdrop, 1 where it
+/// differs, smoothed.
+fn cutout(art: &Picture) -> Vec<f32> {
+    let bg = commonest_colour(art);
+    let mut key = Picture::blank(ART_W, ART_H);
+    for y in 0..ART_H {
+        for x in 0..ART_W {
+            let c = art.texel(x, y);
+            let d = ((0..3).map(|i| (c[i] - bg[i]).powi(2)).sum::<f32>()).sqrt();
+            let t = ((d - BACKDROP_KEY.0) / (BACKDROP_KEY.1 - BACKDROP_KEY.0)).clamp(0.0, 1.0);
+            key.put(x, y, [0.0, 0.0, 0.0, t]);
+        }
+    }
+    soften_alpha(&mut key, CUTOUT_BLUR);
+    key.rgba
+        .chunks(4)
+        .map(|p| {
+            let a = f32::from(p[3]) / 255.0;
+            let t = ((a - CUTOUT_EDGE.0) / (CUTOUT_EDGE.1 - CUTOUT_EDGE.0)).clamp(0.0, 1.0);
+            t * t * (3.0 - 2.0 * t)
+        })
+        .collect()
+}
 
 /// The commonest colour of the art's shown 1002 by 668, by 16-step bins, as the bin's mean.
 fn commonest_colour(art: &Picture) -> [f32; 3] {
@@ -301,8 +328,9 @@ struct Zone {
     highlight: Picture,
     /// The Highlight's brightest channel, 0 for a black one.
     peak: f32,
-    /// For a black Highlight: the art's backdrop colour, keyed out so the land around shows.
-    backdrop: Option<[f32; 3]>,
+    /// For a black Highlight: the art's cut-out, 1 on the city's walls, districts, labels and
+    /// crest and 0 on its grey-purple backdrop, row by row over the 1002 by 668 it shows.
+    cutout: Option<Vec<f32>>,
     tex_pct_y: f32,
     overlays: Vec<WorldMapOverlay>,
 }
@@ -353,7 +381,7 @@ impl Zone {
             .max()
             .map_or(0.0, |b| f32::from(b) / 255.0);
         let rect = Rect::of(area);
-        let backdrop = (peak == 0.0).then(|| commonest_colour(&explored));
+        let cutout = (peak == 0.0).then(|| cutout(&explored));
         Ok(Zone {
             file,
             rect,
@@ -361,7 +389,7 @@ impl Zone {
             explored,
             highlight,
             peak,
-            backdrop,
+            cutout,
             tex_pct_y: tex_pct_y(rect),
             overlays: overlays.to_vec(),
         })
@@ -371,20 +399,21 @@ impl Zone {
     /// texture coords `(0, 1, 0, texPctY)` stretched over the zone's rect. A Highlight is a faint
     /// tinted glow drawn in ADD (Elwynn's peaks at 58 of 255), so the peak reads as opaque.
     /// `StormwindHighlight` is black, as the stock client draws no highlight for the city, so a
-    /// black Highlight falls back to the art inset by its frame with a soft edge, less its
-    /// backdrop colour, so the city's walls, districts and crest stay and its plain ground goes.
+    /// black Highlight falls back to the art inset by its frame with a soft edge, times its
+    /// cut-out, so the city lies on the land around it and not on its card.
     fn silhouette(&self, u: f32, v: f32) -> f32 {
         if self.peak == 0.0 {
             let (x, y) = (u * ART_W as f32, v * ART_H as f32);
             let edge = x.min(ART_W as f32 - x).min(y).min(ART_H as f32 - y);
             let frame = ((edge - FRAME_INSET) / FRAME_FADE).clamp(0.0, 1.0);
-            let Some(bg) = self.backdrop else {
+            let Some(cut) = &self.cutout else {
                 return frame;
             };
-            let c = self.art(u, v);
-            let d = ((0..3).map(|i| (c[i] - bg[i]).powi(2)).sum::<f32>()).sqrt();
-            let t = ((d - BACKDROP_KEY.0) / (BACKDROP_KEY.1 - BACKDROP_KEY.0)).clamp(0.0, 1.0);
-            return frame * t * t * (3.0 - 2.0 * t);
+            let (cx, cy) = (
+                (x as u32).min(ART_W - 1) as usize,
+                (y as u32).min(ART_H - 1) as usize,
+            );
+            return frame * cut[cy * ART_W as usize + cx];
         }
         let c = self.highlight.sample(u, v * self.tex_pct_y);
         (c[0].max(c[1]).max(c[2]) * c[3] / self.peak).min(1.0)
@@ -395,7 +424,6 @@ impl Zone {
         self.explored
             .bilinear(u * ART_W as f32, v * ART_H as f32, ART_W, ART_H)
     }
-
     /// The mean base colour where the silhouette is zero: the map's own parchment.
     fn parchment(&self) -> [f32; 3] {
         let (mut sum, mut count) = ([0.0f64; 3], 0u64);
@@ -579,7 +607,9 @@ impl FillSpec {
 const WARP_SMOOTHING: f64 = 1e-4;
 /// The cover values the fill's blend runs between: painting below the first, zone art above the
 /// second.
-const FILL_EDGE: (f32, f32) = (0.25, 0.75);
+/// The fog's edge: a Highlight's glow is not flat inside its zone, so a higher edge lets the
+/// painting's own labels and icons show through the stock art.
+const FILL_EDGE: (f32, f32) = FOG_EDGE;
 /// Pins along each canvas edge for `Warp::fit_inside`, less one.
 const BORDER_PINS: u32 = 12;
 
@@ -928,7 +958,8 @@ fn main() -> Result<()> {
         .iter()
         .find(|(_, a)| a.name == "Elwynn")
         .context("no Elwynn row")?;
-    let parchment = Zone::load(&mut chain, elwynn.1, &[])?.parchment();
+    let elwynn = Zone::load(&mut chain, elwynn.1, &[])?;
+    let parchment = elwynn.parchment();
     let mut img = Picture::blank(size.0, size.1);
     let mut art_layer = vec![[0.0f32; 4]; (size.0 * size.1) as usize];
     for y in 0..size.1 {
@@ -941,6 +972,18 @@ fn main() -> Result<()> {
     let mut placed_fogs = Vec::new();
     let mut covers = Vec::new();
     let mut written = Vec::new();
+    let filler = match &fill_with {
+        Some(path) => {
+            let spec = FillSpec::read(path)?;
+            let mut painting = Picture::open(&spec.painting)?;
+            for e in &spec.erase {
+                e.apply(&mut painting);
+            }
+            let warp = Warp::fit_inside(&spec.pairs, f64::from(size.1) / f64::from(size.0))?;
+            Some((painting, warp))
+        }
+        None => None,
+    };
     let groups = [(&misted, true), (&listed_rows, false)];
     for (rows, is_misted) in groups {
         for &(id, area) in rows.iter() {
@@ -994,14 +1037,8 @@ fn main() -> Result<()> {
     }
     img.save(&out.join("canvas.png"))?;
     written.insert(0, "canvas.png".to_string());
-    if let Some(path) = &fill_with {
-        let spec = FillSpec::read(path)?;
-        let mut painting = Picture::open(&spec.painting)?;
-        for e in &spec.erase {
-            e.apply(&mut painting);
-        }
-        let warp = Warp::fit_inside(&spec.pairs, f64::from(size.1) / f64::from(size.0))?;
-        let mut filled = fill(size.0, size.1, &art_layer, &painting, &warp);
+    if let Some((painting, warp)) = &filler {
+        let mut filled = fill(size.0, size.1, &art_layer, painting, warp);
         filled.save(&out.join("filled.png"))?;
         written.push("filled.png".to_string());
         for (at, f) in &placed_fogs {
