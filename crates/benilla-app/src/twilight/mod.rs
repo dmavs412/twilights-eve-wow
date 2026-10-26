@@ -281,6 +281,8 @@ fn pump(
         Option<ResMut<crate::fishing_reel::ReelInbox>>,
         Option<ResMut<crate::fishing_reel::ReelOutbox>>,
         Option<ResMut<crate::calling_choice::CallingChoiceInbox>>,
+        Option<ResMut<crate::herb_patch::HerbInbox>>,
+        Option<ResMut<crate::herb_patch::HerbOutbox>>,
     ),
 ) {
     let LocalRealm {
@@ -323,6 +325,12 @@ fn pump(
     }
     // The Reeling Bar's results (ADR 0018).
     if let Some(outbox) = reel.1.as_deref_mut() {
+        for command in outbox.0.drain(..) {
+            backing.handle(command);
+        }
+    }
+    // The Forager's Grid's clicks (spec #435).
+    if let Some(outbox) = reel.4.as_deref_mut() {
         for command in outbox.0.drain(..) {
             backing.handle(command);
         }
@@ -375,6 +383,16 @@ fn pump(
             }
             continue;
         }
+        // The Forager's Grid and its close go to the herb window's feed (spec #435).
+        if matches!(
+            event,
+            SessionEvent::HerbGrid { .. } | SessionEvent::HerbGridClosed { .. }
+        ) {
+            if let Some(inbox) = reel.3.as_deref_mut() {
+                inbox.0.push(event);
+            }
+            continue;
+        }
         // Fishing's bite, end and Angler Level go to the Reeling Bar (ADR 0018).
         if matches!(
             event,
@@ -396,6 +414,9 @@ fn pump(
                 inbox.0.push(SessionEvent::LoggedOut);
             }
             if let Some(inbox) = reel.2.as_deref_mut() {
+                inbox.0.push(SessionEvent::LoggedOut);
+            }
+            if let Some(inbox) = reel.3.as_deref_mut() {
                 inbox.0.push(SessionEvent::LoggedOut);
             }
         }

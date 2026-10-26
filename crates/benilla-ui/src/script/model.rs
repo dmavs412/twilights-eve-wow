@@ -289,6 +289,10 @@ pub(crate) struct Model {
     pub(crate) withdraw_requests: Vec<super::WithdrawRequest>,
     /// The `DepositFishingItem` calls since the host last drained them, as `(bag, slot)`.
     pub(crate) deposit_requests: Vec<(i64, u32)>,
+    /// The open Forager's Grid the `GetHerb*` getters read, pushed by the host.
+    pub(crate) herb_grid: Option<super::HerbGridView>,
+    /// The `Herb*` calls since the host last drained them.
+    pub(crate) herb_calls: Vec<super::HerbCall>,
     /// The Calling Choice the popup's getters read, pushed by the host.
     pub(crate) calling_choice: super::CallingChoiceView,
     /// The `ChooseCalling` quest ids since the host last drained them.
@@ -1150,6 +1154,8 @@ impl Model {
             gear_requests: Vec::new(),
             withdraw_requests: Vec::new(),
             deposit_requests: Vec::new(),
+            herb_grid: None,
+            herb_calls: Vec::new(),
             calling_choice: Default::default(),
             calling_choice_requests: Vec::new(),
             zone: Default::default(),

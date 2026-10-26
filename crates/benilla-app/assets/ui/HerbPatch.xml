@@ -1,0 +1,561 @@
+<Ui>
+    <!--
+        The Forager's Grid window (spec #435, #442). The app pushes the realm's open grid; the frame
+        reads only GetHerbGrid(), GetHerbTile(i), GetHerbKnown(), GetHerbKnownItem(i),
+        GetNumHerbNotes() and GetHerbNote(i), and sends clicks through HerbPull, HerbSweep,
+        HerbProbe, HerbSnip, HerbSight, HerbTwine, HerbArmCharm and HerbLeave. HERB_GRID_UPDATE says
+        when to repaint and HERB_GRID_CLOSED (reason 0 to 4) hides the window with one chat line.
+
+        A 5 x 5 grid of 64 px tiles. A hidden tile is a bush (glowing, wilted or thorned once the
+        player knows what it is); a pulled tile is soil with the plant's icon, a weed glyph or a
+        thorn glyph. A skill button arms skill mode, and the next tile click uses the skill. The
+        tool's skill and the consumable's kind come from the item's name, since the realm sends only
+        the item. The art is `Interface\Benilla\herbalism\*`, painted RGBA `.tga` files.
+    -->
+    <Script><![CDATA[
+        BENILLA_HERB_ART = "Interface\\Benilla\\herbalism\\"
+        BENILLA_HERB_SIZE = 5
+        BENILLA_HERB_PIPS = 16
+        BENILLA_HERB_KNOWN_LINES = 6
+        BENILLA_HERB_NOTE_LINES = 2
+        BENILLA_HERB_LOG_LINES = 10
+        -- The tool item's name to its skill, and the consumable item's name to what it asks of the
+        -- player. A name missing here shows no button.
+        BENILLA_HERB_SKILLS = {
+            ["Herbalist's Sickle"] = "Sweep",
+            ["Herbalist's Trowel"] = "Probe",
+            ["Herbalist's Shears"] = "Snip",
+        }
+        BENILLA_HERB_CONSUMABLES = {
+            ["Elixir of Herb Sight"] = "sight",
+            ["Weedcutter's Twine"] = "twine",
+            ["Forager's Charm"] = "charm",
+        }
+        BENILLA_HERB_CLOSED = {
+            [0] = "Out of pulls.",
+            [1] = "You cleared the patch.",
+            [2] = "You leave the patch.",
+            [3] = "You are hurt, and drop the patch.",
+            [4] = "You walk away from the patch.",
+        }
+        BENILLA_HERB_SIGHT_PICKS = 3
+
+        BenillaHerbState = { mode = nil, across = true, sight = {}, log = {}, missing = false }
+
+        function BenillaHerb_ItemInfo(item)
+            if not item or item == 0 then
+                return nil
+            end
+            local name, _, quality, _, _, _, _, _, texture = GetItemInfo(item)
+            if not name then
+                BenillaHerbState.missing = true
+            end
+            return name, quality, texture
+        end
+
+        -- The tiles a hovered tile `i` would cover in the armed mode, as a set.
+        function BenillaHerb_Covered(i)
+            local size = BENILLA_HERB_SIZE
+            local row, col = math.floor((i - 1) / size), math.mod(i - 1, size)
+            local set = {}
+            local mode = BenillaHerbState.mode
+            local skill = BenillaHerbState.skill
+            if mode == "twine" or (mode == "skill" and skill == "Probe") then
+                for r = row - 1, row + 1 do
+                    for c = col - 1, col + 1 do
+                        if r >= 0 and r < size and c >= 0 and c < size then
+                            set[r * size + c + 1] = true
+                        end
+                    end
+                end
+            elseif mode == "skill" and skill == "Sweep" then
+                for n = 0, size - 1 do
+                    if BenillaHerbState.across then
+                        set[row * size + n + 1] = true
+                    else
+                        set[n * size + col + 1] = true
+                    end
+                end
+            elseif mode then
+                set[i] = true
+            end
+            return set
+        end
+
+        -- The eight tiles around tile `i`, which its stake counts.
+        function BenillaHerb_Around(i)
+            local size = BENILLA_HERB_SIZE
+            local row, col = math.floor((i - 1) / size), math.mod(i - 1, size)
+            local set = {}
+            for r = row - 1, row + 1 do
+                for c = col - 1, col + 1 do
+                    if r >= 0 and r < size and c >= 0 and c < size and not (r == row and c == col) then
+                        set[r * size + c + 1] = true
+                    end
+                end
+            end
+            return set
+        end
+
+        function BenillaHerbTile_Paint(i)
+            local base = "BenillaHerbTile" .. i
+            local state, known, stake, item, count, bloom = GetHerbTile(i)
+            local bg, icon, part = getglobal(base .. "Bg"), getglobal(base .. "Icon"), getglobal(base .. "Part")
+            local name, countText, bloomText = getglobal(base .. "Name"), getglobal(base .. "Count"), getglobal(base .. "Bloom")
+            icon:Hide()
+            part:Hide()
+            name:SetText("")
+            countText:SetText("")
+            bloomText:SetText("")
+            if not state or state == 0 then
+                local art = "bush_hidden"
+                if known == 1 then
+                    art = "bush_glow"
+                elseif known == 2 then
+                    art = "bush_wilted"
+                elseif known == 3 then
+                    art = "bush_thorn"
+                end
+                bg:SetTexture(BENILLA_HERB_ART .. art)
+            elseif state == 1 then
+                bg:SetTexture(BENILLA_HERB_ART .. "soil")
+                local itemName, quality, texture = BenillaHerb_ItemInfo(item)
+                if texture then
+                    icon:SetTexture(texture)
+                    icon:Show()
+                end
+                if itemName then
+                    name:SetText(itemName)
+                    local colour = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality or 1]
+                    if colour then
+                        name:SetTextColor(colour.r, colour.g, colour.b)
+                    end
+                end
+                countText:SetText(count and count > 1 and tostring(count) or "")
+                bloomText:SetText(bloom and "Bloom" or "")
+            elseif state == 2 then
+                bg:SetTexture(BENILLA_HERB_ART .. "soil")
+                part:SetTexture(BENILLA_HERB_ART .. "part_weed")
+                part:Show()
+            else
+                bg:SetTexture(BENILLA_HERB_ART .. "soil_thorn")
+                part:SetTexture(BENILLA_HERB_ART .. "part_thorn")
+                part:Show()
+            end
+            local stakeTex, stakeText = getglobal(base .. "Stake"), getglobal(base .. "StakeText")
+            if stake then
+                stakeTex:Show()
+                stakeText:SetText(tostring(stake))
+            else
+                stakeTex:Hide()
+                stakeText:SetText("")
+            end
+            getglobal(base .. "Highlight"):Hide()
+            getglobal(base .. "Target"):Hide()
+        end
+
+        function BenillaHerb_Paint()
+            local open, size, pulls, tool, cost, consumable, ready, armed = GetHerbGrid()
+            if not open then
+                return
+            end
+            BenillaHerbState.missing = false
+            for n = 1, BENILLA_HERB_PIPS do
+                local pip = getglobal("BenillaHerbPip" .. n)
+                if n <= pulls then
+                    pip:Show()
+                else
+                    pip:Hide()
+                end
+            end
+            for n = 1, BENILLA_HERB_KNOWN_LINES do
+                local line = getglobal("BenillaHerbKnown" .. n)
+                if n <= GetHerbKnown() then
+                    local item, present, rows = GetHerbKnownItem(n)
+                    local name = BenillaHerb_ItemInfo(item) or "Unknown plant"
+                    local text = name .. ": not here"
+                    if present then
+                        text = name .. ": in this patch"
+                        if rows and rows ~= "" then
+                            text = text .. ", rows " .. rows
+                        end
+                    end
+                    line:SetText(text)
+                else
+                    line:SetText("")
+                end
+            end
+            for n = 1, BENILLA_HERB_NOTE_LINES do
+                getglobal("BenillaHerbNote" .. n):SetText(n <= GetNumHerbNotes() and GetHerbNote(n) or "")
+            end
+            for i = 1, BENILLA_HERB_SIZE * BENILLA_HERB_SIZE do
+                BenillaHerbTile_Paint(i)
+            end
+            -- The skill button, named for the tool's skill with its cost.
+            local toolName = BenillaHerb_ItemInfo(tool)
+            BenillaHerbState.skill = toolName and BENILLA_HERB_SKILLS[toolName]
+            if BenillaHerbState.skill then
+                BenillaHerbSkill:SetText(BenillaHerbState.skill .. " (" .. cost .. ")")
+                BenillaHerbSkill:Show()
+            else
+                BenillaHerbSkill:Hide()
+                if BenillaHerbState.mode == "skill" then
+                    BenillaHerbState.mode = nil
+                end
+            end
+            if BenillaHerbState.skill == "Sweep" and BenillaHerbState.mode == "skill" then
+                BenillaHerbAcross:SetText(BenillaHerbState.across and "Across" or "Down")
+                BenillaHerbAcross:Show()
+            else
+                BenillaHerbAcross:Hide()
+            end
+            -- The consumable button.
+            local consumableName = BenillaHerb_ItemInfo(consumable)
+            local kind = consumableName and BENILLA_HERB_CONSUMABLES[consumableName]
+            BenillaHerbState.kind = kind
+            if ready and kind then
+                local text = consumableName
+                if kind == "sight" and BenillaHerbState.mode == "sight" then
+                    text = text .. " (" .. table.getn(BenillaHerbState.sight) .. "/" .. BENILLA_HERB_SIGHT_PICKS .. ")"
+                end
+                BenillaHerbConsumable:SetText(text)
+                BenillaHerbConsumable:Show()
+                if (kind == "charm" and armed) or BenillaHerbState.mode == kind then
+                    BenillaHerbConsumable:LockHighlight()
+                else
+                    BenillaHerbConsumable:UnlockHighlight()
+                end
+            else
+                BenillaHerbConsumable:Hide()
+                if BenillaHerbState.mode == "sight" or BenillaHerbState.mode == "twine" then
+                    BenillaHerbState.mode = nil
+                end
+            end
+            -- The log, newest first.
+            local log = BenillaHerbState.log
+            for n = 1, BENILLA_HERB_LOG_LINES do
+                getglobal("BenillaHerbLog" .. n):SetText(log[table.getn(log) - n + 1] or "")
+            end
+        end
+
+        function BenillaHerb_OnUpdate()
+            if not GetHerbGrid() then
+                if BenillaHerbPatch:IsVisible() then
+                    BenillaHerbPatch:Hide()
+                end
+                return
+            end
+            if BenillaHerbState.missing then
+                BenillaHerbState.wait = (BenillaHerbState.wait or 0) + arg1
+                if BenillaHerbState.wait > 0.5 then
+                    BenillaHerbState.wait = 0
+                    BenillaHerb_Paint()
+                end
+            end
+        end
+
+        function BenillaHerb_Update()
+            local open, _, _, _, _, _, _, _, log = GetHerbGrid()
+            if not open then
+                return
+            end
+            if not BenillaHerbPatch:IsVisible() then
+                BenillaHerbState.mode = nil
+                BenillaHerbState.sight = {}
+                BenillaHerbState.log = {}
+                BenillaHerbPatch:Show()
+            end
+            if log and log ~= "" then
+                table.insert(BenillaHerbState.log, log)
+                while table.getn(BenillaHerbState.log) > 40 do
+                    table.remove(BenillaHerbState.log, 1)
+                end
+            end
+            BenillaHerb_Paint()
+        end
+
+        function BenillaHerb_Closed(reason)
+            BenillaHerbState.mode = nil
+            BenillaHerbState.sight = {}
+            BenillaHerbPatch:Hide()
+            local text = BENILLA_HERB_CLOSED[reason]
+            if text and DEFAULT_CHAT_FRAME then
+                DEFAULT_CHAT_FRAME:AddMessage(text, 1, 1, 0)
+            end
+        end
+
+        function BenillaHerbTile_OnClick()
+            local i = this:GetID()
+            local state = GetHerbTile(i)
+            local mode = BenillaHerbState.mode
+            if mode == "skill" then
+                local skill = BenillaHerbState.skill
+                if skill == "Sweep" then
+                    HerbSweep(i, BenillaHerbState.across)
+                elseif skill == "Probe" then
+                    HerbProbe(i)
+                elseif skill == "Snip" then
+                    HerbSnip(i)
+                end
+                BenillaHerbState.mode = nil
+            elseif mode == "twine" then
+                HerbTwine(i)
+                BenillaHerbState.mode = nil
+            elseif mode == "sight" then
+                if state == 0 then
+                    local picks = BenillaHerbState.sight
+                    local dup = false
+                    for _, p in ipairs(picks) do
+                        if p == i then
+                            dup = true
+                        end
+                    end
+                    if not dup then
+                        table.insert(picks, i)
+                    end
+                    if table.getn(picks) >= BENILLA_HERB_SIGHT_PICKS then
+                        HerbSight(picks[1], picks[2], picks[3])
+                        BenillaHerbState.sight = {}
+                        BenillaHerbState.mode = nil
+                    end
+                end
+            elseif state == 0 then
+                HerbPull(i)
+            end
+            BenillaHerb_Paint()
+        end
+
+        function BenillaHerbTile_OnEnter()
+            local i = this:GetID()
+            local _, _, stake = GetHerbTile(i)
+            local counted = stake and BenillaHerb_Around(i) or {}
+            local covered = BenillaHerbState.mode and BenillaHerb_Covered(i) or {}
+            for n = 1, BENILLA_HERB_SIZE * BENILLA_HERB_SIZE do
+                local base = "BenillaHerbTile" .. n
+                if counted[n] then
+                    getglobal(base .. "Highlight"):Show()
+                else
+                    getglobal(base .. "Highlight"):Hide()
+                end
+                if covered[n] then
+                    getglobal(base .. "Target"):Show()
+                else
+                    getglobal(base .. "Target"):Hide()
+                end
+            end
+        end
+
+        function BenillaHerbTile_OnLeave()
+            for n = 1, BENILLA_HERB_SIZE * BENILLA_HERB_SIZE do
+                getglobal("BenillaHerbTile" .. n .. "Highlight"):Hide()
+                getglobal("BenillaHerbTile" .. n .. "Target"):Hide()
+            end
+        end
+
+        function BenillaHerbSkill_OnClick()
+            if BenillaHerbState.mode == "skill" then
+                BenillaHerbState.mode = nil
+            else
+                BenillaHerbState.mode = "skill"
+                BenillaHerbState.sight = {}
+            end
+            BenillaHerb_Paint()
+        end
+
+        function BenillaHerbAcross_OnClick()
+            BenillaHerbState.across = not BenillaHerbState.across
+            BenillaHerb_Paint()
+        end
+
+        function BenillaHerbConsumable_OnClick()
+            local kind = BenillaHerbState.kind
+            if kind == "charm" then
+                HerbArmCharm()
+            elseif BenillaHerbState.mode == kind then
+                BenillaHerbState.mode = nil
+                BenillaHerbState.sight = {}
+            else
+                BenillaHerbState.mode = kind
+                BenillaHerbState.sight = {}
+            end
+            BenillaHerb_Paint()
+        end
+    ]]></Script>
+
+    <Button name="BenillaHerbTileTemplate" virtual="true">
+        <Size><AbsDimension x="64" y="64"/></Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBg" setAllPoints="true"/>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture name="$parentIcon" hidden="true">
+                    <Size><AbsDimension x="36" y="36"/></Size>
+                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-4"/></Offset></Anchor></Anchors>
+                </Texture>
+                <Texture name="$parentPart" hidden="true">
+                    <Size><AbsDimension x="32" y="32"/></Size>
+                    <Anchors><Anchor point="CENTER"/></Anchors>
+                </Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <Texture name="$parentTarget" file="Interface\Benilla\herbalism\tile_target" hidden="true" setAllPoints="true"/>
+                <Texture name="$parentHighlight" file="Interface\Benilla\herbalism\tile_highlight" hidden="true" setAllPoints="true"/>
+                <Texture name="$parentStake" file="Interface\Benilla\herbalism\stake" hidden="true">
+                    <Size><AbsDimension x="20" y="25"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="3" y="-3"/></Offset></Anchor></Anchors>
+                </Texture>
+                <FontString name="$parentStakeText" inherits="GameFontNormalSmall" justifyH="CENTER">
+                    <Size><AbsDimension x="20" y="14"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="3" y="-9"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="CENTER">
+                    <Size><AbsDimension x="62" y="12"/></Size>
+                    <Anchors><Anchor point="BOTTOM"><Offset><AbsDimension x="0" y="2"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentCount" inherits="GameFontHighlightSmall" justifyH="RIGHT">
+                    <Size><AbsDimension x="24" y="12"/></Size>
+                    <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-3" y="-3"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentBloom" inherits="GameFontNormalSmall" justifyH="CENTER">
+                    <Size><AbsDimension x="62" y="12"/></Size>
+                    <Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-26"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnClick>BenillaHerbTile_OnClick()</OnClick>
+            <OnEnter>BenillaHerbTile_OnEnter()</OnEnter>
+            <OnLeave>BenillaHerbTile_OnLeave()</OnLeave>
+        </Scripts>
+    </Button>
+
+    <Frame name="BenillaHerbPatch" parent="UIParent" frameStrata="HIGH" movable="true" enableMouse="true" hidden="true">
+        <Size><AbsDimension x="600" y="580"/></Size>
+        <Anchors><Anchor point="CENTER"><Offset><AbsDimension x="0" y="16"/></Offset></Anchor></Anchors>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentBacking"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="8" y="-8"/></Offset></Anchor><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-8" y="8"/></Offset></Anchor></Anchors><Color r="0.09" g="0.06" b="0.035" a="1"/></Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <Texture name="$parentTopLeft" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="TOPLEFT"/></Anchors><TexCoords left="0.000000" right="0.156250" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentTopRight" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="TOPRIGHT"/></Anchors><TexCoords left="0.843750" right="1.000000" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentBottomLeft" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="BOTTOMLEFT"/></Anchors><TexCoords left="0.000000" right="0.156250" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentBottomRight" file="Interface\Benilla\journal\window_bg"><Size><AbsDimension x="50" y="50"/></Size><Anchors><Anchor point="BOTTOMRIGHT"/></Anchors><TexCoords left="0.843750" right="1.000000" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentTop" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="50" y="0"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-50" y="-50"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.000000" bottom="0.078125"/></Texture>
+                <Texture name="$parentBottom" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="50" y="50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-50" y="0"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.921875" bottom="1.000000"/></Texture>
+                <Texture name="$parentLeft" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="50" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.000000" right="0.156250" top="0.078125" bottom="0.921875"/></Texture>
+                <Texture name="$parentRight" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-50" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="0" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.843750" right="1.000000" top="0.078125" bottom="0.921875"/></Texture>
+                <Texture name="$parentMiddle" file="Interface\Benilla\journal\window_bg"><Anchors><Anchor point="TOPLEFT" relativePoint="TOPLEFT"><Offset><AbsDimension x="50" y="-50"/></Offset></Anchor><Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"><Offset><AbsDimension x="-50" y="50"/></Offset></Anchor></Anchors><TexCoords left="0.156250" right="0.843750" top="0.078125" bottom="0.921875"/></Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <FontString name="BenillaHerbTitle" inherits="GameFontNormalLarge" text="Herb Patch">
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-24"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="BenillaHerbLogTitle" inherits="GameFontNormal" justifyH="LEFT" text="Pull log">
+                    <Size><AbsDimension x="170" y="14"/></Size>
+                    <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-170"/></Offset></Anchor></Anchors>
+                </FontString>
+                <Texture name="BenillaHerbPip1" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip2" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="48" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip3" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="66" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip4" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="84" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip5" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="102" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip6" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="120" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip7" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="138" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip8" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="156" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip9" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="174" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip10" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="192" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip11" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="210" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip12" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="228" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip13" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="246" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip14" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="264" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip15" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="282" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="BenillaHerbPip16" file="Interface\Benilla\fishing\pip_on" hidden="true"><Size><AbsDimension x="16" y="16"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="300" y="-50"/></Offset></Anchor></Anchors></Texture>
+                <FontString name="BenillaHerbKnown1" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="340" y="13"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-72"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbKnown2" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="340" y="13"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-85"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbKnown3" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="340" y="13"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-98"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbKnown4" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="340" y="13"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-111"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbKnown5" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="340" y="13"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-124"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbKnown6" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="340" y="13"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-137"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbNote1" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="340" y="13"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-152"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbNote2" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="340" y="13"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-165"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog1" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-190"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog2" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-204"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog3" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-218"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog4" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-232"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog5" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-246"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog6" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-260"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog7" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-274"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog8" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-288"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog9" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-302"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="BenillaHerbLog10" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="170" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-316"/></Offset></Anchor></Anchors></FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Frame name="BenillaHerbGrid">
+                <Size><AbsDimension x="340" y="340"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="30" y="-190"/></Offset></Anchor></Anchors>
+            </Frame>
+            <Button name="BenillaHerbTile1" id="1" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="0"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile2" id="2" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="68" y="0"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile3" id="3" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="136" y="0"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile4" id="4" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="204" y="0"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile5" id="5" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="272" y="0"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile6" id="6" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-68"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile7" id="7" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="68" y="-68"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile8" id="8" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="136" y="-68"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile9" id="9" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="204" y="-68"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile10" id="10" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="272" y="-68"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile11" id="11" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-136"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile12" id="12" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="68" y="-136"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile13" id="13" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="136" y="-136"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile14" id="14" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="204" y="-136"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile15" id="15" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="272" y="-136"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile16" id="16" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-204"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile17" id="17" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="68" y="-204"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile18" id="18" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="136" y="-204"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile19" id="19" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="204" y="-204"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile20" id="20" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="272" y="-204"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile21" id="21" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="0" y="-272"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile22" id="22" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="68" y="-272"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile23" id="23" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="136" y="-272"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile24" id="24" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="204" y="-272"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbTile25" id="25" inherits="BenillaHerbTileTemplate"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaHerbGrid" relativePoint="TOPLEFT"><Offset><AbsDimension x="272" y="-272"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaHerbSkill" inherits="UIPanelButtonTemplate" hidden="true">
+                <Size><AbsDimension x="160" y="24"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-30"/></Offset></Anchor></Anchors>
+                <Scripts><OnClick>BenillaHerbSkill_OnClick()</OnClick></Scripts>
+            </Button>
+            <Button name="BenillaHerbAcross" inherits="UIPanelButtonTemplate" hidden="true">
+                <Size><AbsDimension x="160" y="24"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-58"/></Offset></Anchor></Anchors>
+                <Scripts><OnClick>BenillaHerbAcross_OnClick()</OnClick></Scripts>
+            </Button>
+            <Button name="BenillaHerbConsumable" inherits="UIPanelButtonTemplate" hidden="true">
+                <Size><AbsDimension x="160" y="24"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="400" y="-92"/></Offset></Anchor></Anchors>
+                <Scripts><OnClick>BenillaHerbConsumable_OnClick()</OnClick></Scripts>
+            </Button>
+            <Button name="BenillaHerbLeave" inherits="UIPanelButtonTemplate" text="Leave">
+                <Size><AbsDimension x="160" y="24"/></Size>
+                <Anchors><Anchor point="BOTTOMRIGHT"><Offset><AbsDimension x="-30" y="30"/></Offset></Anchor></Anchors>
+                <Scripts><OnClick>HerbLeave()</OnClick></Scripts>
+            </Button>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                this:RegisterEvent("HERB_GRID_UPDATE")
+                this:RegisterEvent("HERB_GRID_CLOSED")
+            </OnLoad>
+            <OnEvent>
+                if event == "HERB_GRID_UPDATE" then
+                    BenillaHerb_Update()
+                elseif event == "HERB_GRID_CLOSED" then
+                    BenillaHerb_Closed(arg1)
+                end
+            </OnEvent>
+            <OnUpdate>BenillaHerb_OnUpdate()</OnUpdate>
+        </Scripts>
+    </Frame>
+</Ui>

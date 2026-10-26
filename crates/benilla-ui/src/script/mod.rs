@@ -68,6 +68,7 @@ mod gm_ticket;
 mod gossip;
 mod guild;
 mod handler_prof;
+mod herbalism;
 mod screenshot;
 mod tabard;
 pub use handler_prof::HandlerRow;
@@ -204,6 +205,7 @@ pub use guild::{
     GuildMemberInfo, GuildRankEdit, GuildRankInfo, GuildRequest, GuildState, LastOnline, UnitGuild,
     MAX_RANKS, MIN_RANKS, RANK_RIGHT_BITS,
 };
+pub use herbalism::{HerbCall, HerbGridView, HerbKnownView, HerbTileView};
 pub use input_verbs::{BindingInput, FiredInput, HeldInput};
 pub use modelframe::ModelPaneFrame;
 pub use petition::{

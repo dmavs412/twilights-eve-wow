@@ -41,5 +41,7 @@ WorldMapMist.xml
 FishingReel.xml
 # The Fishing Journal window, its bait slot, TOGGLEFISHINGJOURNAL's body and /journal.
 FishingJournal.xml
+# The Forager's Grid window (spec #435): the realm's open grid, its clicks and its close.
+HerbPatch.xml
 # The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
 CallingChoice.xml

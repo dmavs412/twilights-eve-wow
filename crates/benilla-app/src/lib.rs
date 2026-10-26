@@ -62,6 +62,7 @@ mod glue;
 mod glue_strings;
 mod go_anim;
 mod go_templates;
+mod herb_patch;
 #[cfg(feature = "dev")]
 mod hover_log;
 mod items;

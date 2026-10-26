@@ -1956,6 +1956,8 @@ fn the_layer_does_not_grow() {
         "FishingReel.xml",
         // The Fishing Journal (spec #323): the realm's journal, its bait slot and its key.
         "FishingJournal.xml",
+        // The Forager's Grid window (spec #435): the realm's open grid, its clicks and its close.
+        "HerbPatch.xml",
         // The Calling Choice popup (spec #414): the realm's Tier 1 options and the pick.
         "CallingChoice.xml",
     ];
@@ -1975,10 +1977,18 @@ fn the_layer_does_not_grow() {
     found.sort();
     // `paperdoll.tga` is the art `GearSlots.xml` names (`Interface\Benilla\paperdoll`), and
     // `fishing/` the Reeling Bar's (`Interface\Benilla\fishing\*`) and `journal/` the Journal's
-    // (`Interface\Benilla\journal\*`).
+    // (`Interface\Benilla\journal\*`) and `herbalism/` the Forager's Grid's
+    // (`Interface\Benilla\herbalism\*`). `map/` holds the painted world map's canvas tiles (#424).
     let mut shipped: Vec<String> = LAYER
         .iter()
-        .chain(&["layer.toc", "paperdoll.tga", "fishing", "journal"])
+        .chain(&[
+            "layer.toc",
+            "paperdoll.tga",
+            "fishing",
+            "herbalism",
+            "journal",
+            "map",
+        ])
         .map(|s| s.to_string())
         .collect();
     shipped.sort();

@@ -24,6 +24,7 @@ use crate::entities::EntitiesPlugin;
 use crate::fishing_line::FishingLinePlugin;
 use crate::fishing_reel::FishingReelPlugin;
 use crate::footprints::FootprintsPlugin;
+use crate::herb_patch::HerbPatchPlugin;
 use crate::loading_screen::LoadingScreenPlugin;
 use crate::name_persist::NamePersistPlugin;
 use crate::net::NetPlugin;
@@ -111,6 +112,7 @@ impl PluginGroup for GamePlugins {
             .add(crate::weapon_trail::WeaponTrailPlugin)
             .add(FishingLinePlugin)
             .add(FishingReelPlugin)
+            .add(HerbPatchPlugin)
             .add(crate::calling_choice::CallingChoicePlugin)
             .add(QuestMarkersPlugin)
             .add(crate::pipe_warm::plugin)
