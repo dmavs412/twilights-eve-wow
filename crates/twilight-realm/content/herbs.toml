@@ -1,0 +1,692 @@
+# Herbalism (spec #435, ADR 0024): the Herb Patch, the Forager's Grid, Herbalist levels, the
+# plants of each zone, the tools, the consumables and the perks. `src/herbs.rs` loads it; the
+# realm's herbalism rules read it (no rule does yet).
+#
+# `item` rows are item templates in content/items.toml's format, as content/fish.toml writes them:
+# every plant, find, tool and consumable herbalism hands out. The eleven stock herbs are vmangos's
+# `item_template`. Every row sets `journal = "herbalism"` (ADR 0023): any way of receiving one
+# puts it in the Herbalism Journal's Satchel, never a bag slot. The new rows borrow a stock
+# `display_id` whose icon no other content item uses, until painted icons replace them
+# (docs/art-assets.md). `description` says what a plant is for: "Cooking ingredient." or
+# "Alchemy reagent.".
+#
+# [spell]:
+#   learn              the spell teaching Herbalism adds to the spellbook (Herb Gathering)
+#   find               the Find Herbs spell, which toggles herb tracking
+#
+# [patch], the Herb Patch GameObject:
+#   entry, display     its entry, and the stock display it wears (419, "Stardust Covered Bush")
+#   name               its name
+#   respawn_secs       real seconds before a finished patch is replaced at a random free spot
+#
+# [grid], the Forager's Grid:
+#   size               the grid is size x size tiles
+#   pulls              pulls a patch gives
+#   plants             [min, max] plants rolled into a patch
+#   thorns             thorns in a patch
+#   thorn_cost         extra pulls a pulled thorn costs
+#   legendary_chance   the chance per patch that its zone's legendary replaces a rolled plant, in
+#                      its Bloom
+#   bloom_factor       a plant in its Bloom weighs and yields this much more
+#   uncommon_boost,    weight added per Herbalist level above 1, as a fraction of the base weight,
+#   rare_boost         to uncommon and rare plants
+#   sweep_cost, sweep_length    the Sickle's Sweep: pulls spent, tiles in the line
+#   probe_cost         the Trowel's Probe: pulls spent on a 3 x 3 area
+#   snip_cost, snip_bonus       the Shears' Snip: pulls spent, extra yield
+#
+# [herbalist], Herbalist levels and XP:
+#   cap                         the highest Herbalist level
+#   xp_base, xp_per_level       XP to the next level: base + per_level x level
+#   plant_xp_base, plant_xp_per_level   a pulled plant's XP: base + per_level x the plant's level,
+#                               times its colour's factor
+#   weed_xp, thorn_xp           XP for a pulled weed and for a pulled thorn
+#   colours                     { up_to, factor } bands by how many levels the Herbalist is above
+#                               the plant: the first band whose `up_to` is at or above the gap
+#                               gives the factor; a larger gap gives 0
+#   perk_every                  one perk slot per this many Herbalist levels
+#   reveal_at                   the pick counts that unlock a plant's three tiers of facts
+#   reset_base_copper           what the first perk reset costs; it doubles with each reset
+#   titles                      { from, title } bands: the title of the last band whose `from` is
+#                               at or below the level; the first `from` is 1 and they rise
+#
+# [[zone]], one per herb zone:
+#   key, zone (AreaTable id), live (patches kept live per character)
+#   points              the Herb Spots, [x, y, z] each (empty until the import)
+#
+# [[plant]], one per pool row. Rarity, level, Bloom and weight belong to the zone's row, not the
+# item:
+#   zone      a [[zone]] key, or "any" for the shared finds of every zone
+#   item      its item row
+#   rarity    common, uncommon, rare or legendary
+#   level     the Herbalist level it needs
+#   bloom     night, dawn, day or dusk (see Blocks in fish.toml); absent for the shared finds
+#   timed     true: it grows only in its Bloom (default false); a legendary is always timed
+#   weight    its roll weight in the zone's pool
+#   use       cooking or alchemy; the Lost Coin Purse has none
+#   money     the Lost Coin Purse only: [min, max] copper it pays at once instead of entering the
+#             Satchel
+#
+# [[tool]], the tool in the Tool slot gives its skill: item, skill (sweep, probe or snip).
+# [[consumable]], one used per patch: item, effect (tea, sight, salve, draught, twine, charm or
+# moonwater).
+# [[perk]], one slot per `perk_every` levels: key, name, kind (boon or pact), text.
+
+item = [
+  # The stock herbs (vmangos item_template).
+  { entry = 2447, name = "Peacebloom", quality = 1, item_level = 5, class = 7, display_id = 7396, sell_price = 10, buy_price = 40, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 765, name = "Silverleaf", quality = 1, item_level = 5, class = 7, display_id = 18088, sell_price = 10, buy_price = 40, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 2449, name = "Earthroot", quality = 1, item_level = 5, class = 7, display_id = 1464, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 785, name = "Mageroyal", quality = 1, item_level = 10, class = 7, display_id = 7341, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 2450, name = "Briarthorn", quality = 1, item_level = 15, class = 7, display_id = 18169, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 2452, name = "Swiftthistle", quality = 1, item_level = 15, class = 7, display_id = 7241, sell_price = 15, buy_price = 60, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 3820, name = "Stranglekelp", quality = 1, item_level = 20, class = 7, display_id = 18089, sell_price = 100, buy_price = 400, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 2453, name = "Bruiseweed", quality = 1, item_level = 20, class = 7, display_id = 7337, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 3355, name = "Wild Steelbloom", quality = 1, item_level = 22, class = 7, display_id = 6524, sell_price = 50, buy_price = 200, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 3369, name = "Grave Moss", quality = 1, item_level = 24, class = 7, display_id = 19495, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 3356, name = "Kingsblood", quality = 1, item_level = 24, class = 7, display_id = 7346, sell_price = 30, buy_price = 120, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  # The new plants and finds.
+  { entry = 961001, name = "Dandelion Greens", quality = 1, item_level = 1, class = 7, display_id = 19492, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961002, name = "Wild Onion", quality = 1, item_level = 2, class = 7, display_id = 1196, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961003, name = "Blackberries", quality = 1, item_level = 3, class = 7, display_id = 21203, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961004, name = "Elwynn Chanterelle", quality = 1, item_level = 4, class = 7, display_id = 15852, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961005, name = "Hazelnuts", quality = 1, item_level = 5, class = 7, display_id = 2641, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961006, name = "Wild Strawberries", quality = 2, item_level = 6, class = 7, display_id = 21904, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961007, name = "Wild Thyme", quality = 2, item_level = 10, class = 7, display_id = 19493, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961008, name = "Sweetroot", quality = 2, item_level = 12, class = 7, display_id = 7381, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961009, name = "Moonpetal", quality = 5, item_level = 14, class = 7, display_id = 19494, sell_price = 500, buy_price = 2000, buy_count = 1, stackable = 1, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 961010, name = "Wild Garlic", quality = 1, item_level = 6, class = 7, display_id = 1264, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961011, name = "Redridge Pepper", quality = 1, item_level = 8, class = 7, display_id = 21905, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961012, name = "Rock Sage", quality = 1, item_level = 10, class = 7, display_id = 19497, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961013, name = "Lakeshore Watercress", quality = 2, item_level = 12, class = 7, display_id = 19496, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961014, name = "Redridge Morel", quality = 2, item_level = 14, class = 7, display_id = 15853, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961015, name = "Hill Truffle", quality = 3, item_level = 18, class = 7, display_id = 15855, sell_price = 60, buy_price = 240, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961016, name = "Emberbloom", quality = 5, item_level = 20, class = 7, display_id = 19498, sell_price = 500, buy_price = 2000, buy_count = 1, stackable = 1, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 961017, name = "Ghostcap", quality = 1, item_level = 12, class = 7, display_id = 15854, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961018, name = "Raven's Bramble", quality = 1, item_level = 13, class = 7, display_id = 2965, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961019, name = "Black Morel", quality = 1, item_level = 15, class = 7, display_id = 15856, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961020, name = "Duskroot", quality = 1, item_level = 16, class = 7, display_id = 18087, sell_price = 5, buy_price = 20, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961021, name = "Gravecap", quality = 2, item_level = 18, class = 7, display_id = 16296, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 961022, name = "Black Truffle", quality = 3, item_level = 22, class = 7, display_id = 15857, sell_price = 60, buy_price = 240, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961023, name = "Widow's Lily", quality = 5, item_level = 25, class = 7, display_id = 24693, sell_price = 500, buy_price = 2000, buy_count = 1, stackable = 1, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 961024, name = "Wild Honeycomb", quality = 2, item_level = 1, class = 7, display_id = 18079, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961025, name = "Amber Sap", quality = 2, item_level = 1, class = 7, display_id = 32432, sell_price = 20, buy_price = 80, buy_count = 1, stackable = 20, description = "Alchemy reagent.", journal = "herbalism" },
+  { entry = 961026, name = "Bird's Nest", quality = 3, item_level = 1, class = 7, display_id = 18046, sell_price = 60, buy_price = 240, buy_count = 1, stackable = 20, description = "Cooking ingredient.", journal = "herbalism" },
+  { entry = 961027, name = "Lost Coin Purse", quality = 3, item_level = 1, class = 7, display_id = 1285, sell_price = 60, buy_price = 240, buy_count = 1, stackable = 20, description = "A purse someone dropped in the brush.", journal = "herbalism" },
+  # The tools.
+  { entry = 961101, name = "Herbalist's Sickle", quality = 1, class = 2, subclass = 14, display_id = 3257, stackable = 1, description = "Sweep: pull a line of tiles.", journal = "herbalism" },
+  { entry = 961102, name = "Herbalist's Trowel", quality = 1, class = 2, subclass = 14, display_id = 8115, stackable = 1, description = "Probe: learn what lies in a 3 x 3 area.", journal = "herbalism" },
+  { entry = 961103, name = "Herbalist's Shears", quality = 1, class = 2, subclass = 14, display_id = 7841, stackable = 1, description = "Snip: pull one tile carefully.", journal = "herbalism" },
+  # The consumables.
+  { entry = 961201, name = "Thyme Tea", quality = 1, class = 0, display_id = 18057, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 20, description = "+1 pull this patch.", journal = "herbalism" },
+  { entry = 961202, name = "Elixir of Herb Sight", quality = 1, class = 0, display_id = 15733, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 20, description = "Pick 3 tiles anywhere to learn whether each is a plant, weed or thorn. Costs no pull.", journal = "herbalism" },
+  { entry = 961203, name = "Thorn Salve", quality = 1, class = 0, display_id = 926, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 20, description = "Your first thorn costs only its pull.", journal = "herbalism" },
+  { entry = 961204, name = "Bloom Draught", quality = 1, class = 0, display_id = 15771, sell_price = 25, buy_price = 100, buy_count = 1, stackable = 20, description = "One random plant in the patch blooms. It does not say which.", journal = "herbalism" },
+  { entry = 961205, name = "Weedcutter's Twine", quality = 1, class = 0, display_id = 1443, sell_price = 18, buy_price = 75, buy_count = 1, stackable = 20, description = "Pick a tile: every weed in the 3 x 3 around it is shown. Costs no pull.", journal = "herbalism" },
+  { entry = 961206, name = "Forager's Charm", quality = 1, class = 0, display_id = 898, sell_price = 37, buy_price = 150, buy_count = 1, stackable = 20, description = "Arm it before a pull. That pull is doubled: a plant yields x2, a weed or thorn costs 1 more pull.", journal = "herbalism" },
+  { entry = 961207, name = "Moonwater", quality = 1, class = 0, display_id = 29434, sell_price = 50, buy_price = 200, buy_count = 1, stackable = 20, description = "The zone's legendary glows from the start if it is in the patch.", journal = "herbalism" },
+]
+
+[spell]
+learn = 2366
+find = 2383
+
+[patch]
+entry = 981001
+display = 419
+name = "Herb Patch"
+respawn_secs = 600.0
+
+[grid]
+size = 5
+pulls = 6
+plants = [8, 11]
+thorns = 3
+thorn_cost = 1
+legendary_chance = 0.01
+bloom_factor = 2.0
+uncommon_boost = 0.02
+rare_boost = 0.03
+sweep_cost = 2
+sweep_length = 3
+probe_cost = 1
+snip_cost = 2
+snip_bonus = 1
+
+[herbalist]
+cap = 30
+xp_base = 40
+xp_per_level = 20
+plant_xp_base = 8
+plant_xp_per_level = 3
+weed_xp = 1
+thorn_xp = 1
+colours = [{ up_to = 2, factor = 1.0 }, { up_to = 5, factor = 0.6 }, { up_to = 9, factor = 0.25 }]
+perk_every = 10
+reveal_at = [5, 10, 25]
+reset_base_copper = 10000
+titles = [
+  { from = 1, title = "Weed Puller" },
+  { from = 5, title = "Hedge Forager" },
+  { from = 10, title = "Herb Gatherer" },
+  { from = 15, title = "Field Herbalist" },
+  { from = 20, title = "Grove Keeper" },
+  { from = 25, title = "Master Herbalist" },
+  { from = 30, title = "Verdant Sage" },
+]
+
+[[zone]]
+key = "elwynn"
+zone = 12
+live = 30
+points = []
+
+[[zone]]
+key = "redridge"
+zone = 44
+live = 20
+points = []
+
+[[zone]]
+key = "duskwood"
+zone = 10
+live = 25
+points = []
+
+[[plant]]
+zone = "elwynn"
+item = 2447
+rarity = "common"
+level = 1
+bloom = "day"
+weight = 30
+use = "alchemy"
+
+[[plant]]
+zone = "elwynn"
+item = 765
+rarity = "common"
+level = 1
+bloom = "dusk"
+weight = 30
+use = "alchemy"
+
+[[plant]]
+zone = "elwynn"
+item = 961001
+rarity = "common"
+level = 1
+bloom = "day"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "elwynn"
+item = 961002
+rarity = "common"
+level = 2
+bloom = "day"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "elwynn"
+item = 2449
+rarity = "common"
+level = 3
+bloom = "dawn"
+weight = 25
+use = "alchemy"
+
+[[plant]]
+zone = "elwynn"
+item = 961003
+rarity = "common"
+level = 3
+bloom = "dusk"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "elwynn"
+item = 961004
+rarity = "common"
+level = 4
+bloom = "night"
+timed = true
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "elwynn"
+item = 961005
+rarity = "common"
+level = 5
+bloom = "dusk"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "elwynn"
+item = 961006
+rarity = "uncommon"
+level = 6
+bloom = "dawn"
+timed = true
+weight = 10
+use = "cooking"
+
+[[plant]]
+zone = "elwynn"
+item = 785
+rarity = "uncommon"
+level = 10
+bloom = "dawn"
+weight = 10
+use = "alchemy"
+
+[[plant]]
+zone = "elwynn"
+item = 961007
+rarity = "uncommon"
+level = 10
+bloom = "day"
+weight = 10
+use = "cooking"
+
+[[plant]]
+zone = "elwynn"
+item = 961008
+rarity = "uncommon"
+level = 12
+bloom = "night"
+weight = 10
+use = "cooking"
+
+[[plant]]
+zone = "elwynn"
+item = 2450
+rarity = "uncommon"
+level = 14
+bloom = "dusk"
+weight = 10
+use = "alchemy"
+
+[[plant]]
+zone = "elwynn"
+item = 2452
+rarity = "rare"
+level = 10
+bloom = "dusk"
+timed = true
+weight = 3
+use = "alchemy"
+
+[[plant]]
+zone = "elwynn"
+item = 961009
+rarity = "legendary"
+level = 14
+bloom = "night"
+timed = true
+weight = 0
+use = "alchemy"
+
+[[plant]]
+zone = "redridge"
+item = 2449
+rarity = "common"
+level = 3
+bloom = "dawn"
+weight = 25
+use = "alchemy"
+
+[[plant]]
+zone = "redridge"
+item = 961010
+rarity = "common"
+level = 6
+bloom = "day"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "redridge"
+item = 961011
+rarity = "common"
+level = 8
+bloom = "day"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "redridge"
+item = 785
+rarity = "common"
+level = 10
+bloom = "dawn"
+weight = 25
+use = "alchemy"
+
+[[plant]]
+zone = "redridge"
+item = 961012
+rarity = "common"
+level = 10
+bloom = "dusk"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "redridge"
+item = 961013
+rarity = "uncommon"
+level = 12
+bloom = "day"
+timed = true
+weight = 10
+use = "cooking"
+
+[[plant]]
+zone = "redridge"
+item = 2450
+rarity = "common"
+level = 14
+bloom = "dusk"
+weight = 25
+use = "alchemy"
+
+[[plant]]
+zone = "redridge"
+item = 961014
+rarity = "uncommon"
+level = 14
+bloom = "dawn"
+timed = true
+weight = 10
+use = "cooking"
+
+[[plant]]
+zone = "redridge"
+item = 3820
+rarity = "uncommon"
+level = 17
+bloom = "dawn"
+weight = 10
+use = "alchemy"
+
+[[plant]]
+zone = "redridge"
+item = 2453
+rarity = "uncommon"
+level = 20
+bloom = "day"
+weight = 10
+use = "alchemy"
+
+[[plant]]
+zone = "redridge"
+item = 2452
+rarity = "rare"
+level = 10
+bloom = "dusk"
+weight = 3
+use = "alchemy"
+
+[[plant]]
+zone = "redridge"
+item = 961015
+rarity = "rare"
+level = 18
+bloom = "night"
+timed = true
+weight = 3
+use = "cooking"
+
+[[plant]]
+zone = "redridge"
+item = 961016
+rarity = "legendary"
+level = 20
+bloom = "day"
+timed = true
+weight = 0
+use = "alchemy"
+
+[[plant]]
+zone = "duskwood"
+item = 961017
+rarity = "common"
+level = 12
+bloom = "night"
+timed = true
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "duskwood"
+item = 961018
+rarity = "common"
+level = 13
+bloom = "dusk"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "duskwood"
+item = 2450
+rarity = "common"
+level = 14
+bloom = "dusk"
+weight = 25
+use = "alchemy"
+
+[[plant]]
+zone = "duskwood"
+item = 961019
+rarity = "common"
+level = 15
+bloom = "night"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "duskwood"
+item = 961020
+rarity = "common"
+level = 16
+bloom = "dusk"
+weight = 25
+use = "cooking"
+
+[[plant]]
+zone = "duskwood"
+item = 961021
+rarity = "uncommon"
+level = 18
+bloom = "dusk"
+timed = true
+weight = 10
+use = "alchemy"
+
+[[plant]]
+zone = "duskwood"
+item = 2453
+rarity = "common"
+level = 20
+bloom = "day"
+weight = 25
+use = "alchemy"
+
+[[plant]]
+zone = "duskwood"
+item = 961022
+rarity = "rare"
+level = 22
+bloom = "dawn"
+timed = true
+weight = 3
+use = "cooking"
+
+[[plant]]
+zone = "duskwood"
+item = 3355
+rarity = "uncommon"
+level = 23
+bloom = "day"
+weight = 10
+use = "alchemy"
+
+[[plant]]
+zone = "duskwood"
+item = 3369
+rarity = "uncommon"
+level = 24
+bloom = "night"
+weight = 10
+use = "alchemy"
+
+[[plant]]
+zone = "duskwood"
+item = 3356
+rarity = "rare"
+level = 25
+bloom = "night"
+weight = 3
+use = "alchemy"
+
+[[plant]]
+zone = "duskwood"
+item = 961023
+rarity = "legendary"
+level = 25
+bloom = "night"
+timed = true
+weight = 0
+use = "alchemy"
+
+[[plant]]
+zone = "any"
+item = 961024
+rarity = "uncommon"
+level = 1
+weight = 6
+use = "cooking"
+
+[[plant]]
+zone = "any"
+item = 961025
+rarity = "uncommon"
+level = 1
+weight = 6
+use = "alchemy"
+
+[[plant]]
+zone = "any"
+item = 961026
+rarity = "rare"
+level = 1
+weight = 2
+use = "cooking"
+
+[[plant]]
+zone = "any"
+item = 961027
+rarity = "rare"
+level = 1
+weight = 2
+money = [1000, 5000]
+
+[[tool]]
+item = 961101
+skill = "sweep"
+
+[[tool]]
+item = 961102
+skill = "probe"
+
+[[tool]]
+item = 961103
+skill = "snip"
+
+[[consumable]]
+item = 961201
+effect = "tea"
+
+[[consumable]]
+item = 961202
+effect = "sight"
+
+[[consumable]]
+item = 961203
+effect = "salve"
+
+[[consumable]]
+item = 961204
+effect = "draught"
+
+[[consumable]]
+item = 961205
+effect = "twine"
+
+[[consumable]]
+item = 961206
+effect = "charm"
+
+[[consumable]]
+item = 961207
+effect = "moonwater"
+
+[[perk]]
+key = "gloves"
+name = "Thick Gloves"
+kind = "boon"
+text = "Your first thorn each patch costs only its pull."
+
+[[perk]]
+key = "keeneye"
+name = "Keen Eye"
+kind = "boon"
+text = "One random plant glints from the start."
+
+[[perk]]
+key = "reach"
+name = "Long Reach"
+kind = "boon"
+text = "Sweep reaches one tile further, and Probe also shows the counts of the tiles it covers."
+
+[[perk]]
+key = "bramble"
+name = "Bramble Bargain"
+kind = "pact"
+text = "+2 thorns, but 2 plants are one rarity higher."
+
+[[perk]]
+key = "greedyhands"
+name = "Greedy Hands"
+kind = "pact"
+text = "Plants yield +1, but each weed costs an extra pull."
+
+[[perk]]
+key = "overgrowth"
+name = "Overgrowth"
+kind = "pact"
+text = "+3 plants, but plants show no numbers."
+
+[[perk]]
+key = "wildluck"
+name = "Wild Luck"
+kind = "pact"
+text = "Legendary chance x5, but nothing shows numbers."
+
+[[perk]]
+key = "nightowl"
+name = "Night Owl"
+kind = "pact"
+text = "+1 pull at Night and Dusk, -1 pull at Dawn and Day."
+
+[[perk]]
+key = "thornwise"
+name = "Thornwise"
+kind = "pact"
+text = "Every thorn is visible from the start, but you get 1 fewer pull."
+

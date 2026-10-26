@@ -26,6 +26,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/group.toml"),
     include_str!("../content/given_items.toml"),
     include_str!("../content/goods.toml"),
+    include_str!("../content/herbs.toml"),
     include_str!("../content/hub.toml"),
     include_str!("../content/items.toml"),
     include_str!("../content/level_overrides.toml"),

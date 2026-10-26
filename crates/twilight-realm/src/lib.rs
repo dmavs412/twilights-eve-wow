@@ -60,6 +60,7 @@ mod fish;
 mod generated;
 mod ground;
 mod group;
+mod herbs;
 mod hub;
 mod inn;
 mod inventory;
@@ -646,6 +647,15 @@ impl Realm {
     /// seam, so a player script can fish a pool the content does not ship.
     pub fn with_fish(self, toml: &str) -> Self {
         fish::add(toml);
+        self
+    }
+
+    /// This realm with the `[[zone]]`, `[[plant]]`, `[[tool]]`, `[[consumable]]` and `[[perk]]`
+    /// rows in `toml` (the shape of `content/herbs.toml`) added alongside the shipped ones, for
+    /// the rest of the process: a test seam, so a player script can forage a pool the content does
+    /// not ship.
+    pub fn with_herbs(self, toml: &str) -> Self {
+        herbs::add(toml);
         self
     }
 

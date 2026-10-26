@@ -13,6 +13,7 @@ use serde::Deserialize;
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Profession {
     Fishing,
+    Herbalism,
 }
 
 /// One item template, as the realm's table spells it. A field the table leaves out is at its
@@ -261,6 +262,16 @@ fn fishing() -> &'static HashMap<u32, Template> {
     })
 }
 
+/// Herbalism's herbs, finds, tools and consumables (`content/herbs.toml`), by entry.
+fn herbalism() -> &'static HashMap<u32, Template> {
+    static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
+    ITEMS.get_or_init(|| {
+        let table: Table = toml::from_str(include_str!("../content/herbs.toml"))
+            .expect("content/herbs.toml parses");
+        table.item.into_iter().map(|t| (t.entry, t)).collect()
+    })
+}
+
 /// The items the realm hands out itself (`content/given_items.toml`), by entry.
 fn given() -> &'static HashMap<u32, Template> {
     static ITEMS: OnceLock<HashMap<u32, Template>> = OnceLock::new();
@@ -295,6 +306,7 @@ pub(crate) fn template(entry: u32) -> Option<&'static Template> {
         .or_else(|| given().get(&entry))
         .or_else(|| goods().get(&entry))
         .or_else(|| fishing().get(&entry))
+        .or_else(|| herbalism().get(&entry))
         .or_else(|| crate::quests::item_template(entry))
         .or_else(|| gear().get(&entry))
 }
