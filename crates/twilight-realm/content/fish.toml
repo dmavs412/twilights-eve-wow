@@ -112,6 +112,7 @@
 # and these:
 #   treasure_points  percentage points more treasure chance
 #   extra_fish       this many more of the fish land with a catch
+#   reveal           true: a bite shows what bit and waits for the player to reel or let go
 #   ignored_by       rarities (`common`, `uncommon`, `rare`) whose fish drop out of the bite roll
 #   always_block     a block (see Blocks below) that counts as now, for peaks and conditions
 
@@ -845,6 +846,7 @@ extra_fish = 1
 
 [[bait]]
 item = 960104 # Prison Gruel
+reveal = true
 
 [[bait]]
 item = 960105 # Worg Haunch

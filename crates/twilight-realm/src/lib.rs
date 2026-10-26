@@ -445,6 +445,11 @@ pub enum RealmCommand {
         treasure: bool,
         secs: f32,
     },
+    /// The answer to a `FishingBite` with `reveal` (#425): `reel` opens the bar; otherwise the
+    /// cast ends and the bait goes back to the Satchel. Ignored with no bite waiting.
+    FishingChoice {
+        reel: bool,
+    },
     /// Pick a Tier 1 Calling from the Calling Choice popup: `quest` is the Advancement Quest of
     /// one of its options, which goes in the log. Ignored unless the popup is due.
     ChooseCalling {
@@ -1440,6 +1445,7 @@ impl Realm {
                 treasure,
                 secs,
             } => self.fishing_result(won, perfect, treasure, secs),
+            RealmCommand::FishingChoice { reel } => self.fishing_choice(reel),
             RealmCommand::ChooseCalling { quest } => {
                 self.change_satchel(|c, events| calling_choice::choose(c, quest, events))
             }

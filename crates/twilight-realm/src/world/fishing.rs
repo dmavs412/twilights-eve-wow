@@ -36,6 +36,8 @@ const SPELL_FAILED_NOT_FISHABLE: u8 = 0x34;
 const NOTHING_BITING: &str = "Nothing is biting";
 /// Seconds past the bar's timeout a result is still believed, and the bar kept open.
 const RESULT_SLACK_SECS: f32 = 2.0;
+/// Seconds a revealed bite waits for reel or release before the client reels by itself.
+const CHOICE_SECS: f32 = 3.0;
 /// The fastest win believed, as a share of the time the meter takes to fill held all the way.
 const FASTEST_WIN: f32 = 0.95;
 
@@ -73,6 +75,8 @@ struct Boost {
     second_hook: f32,
     /// This many more of the fish land with a catch.
     extra_fish: u32,
+    /// A bite shows what bit and waits for the player to reel or let go (Prison Gruel).
+    reveal: bool,
     /// The bait on this cast, which a Legendary Fish may ask for.
     bait: Option<u32>,
     /// The lure in the Lure slot, which a fish may ask for.
@@ -90,6 +94,7 @@ impl Boost {
         self.treasure_points += e.treasure_points;
         self.second_hook = self.second_hook.max(e.second_hook);
         self.extra_fish += e.extra_fish;
+        self.reveal |= e.reveal;
         self
     }
 }
@@ -117,6 +122,8 @@ enum Stage {
         bite_in: f32,
         left: f32,
     },
+    /// A fish bit on Prison Gruel and the player chooses to reel or let go (#425).
+    Choosing { bite: Bite, boost: Boost, left: f32 },
     /// A fish bit and the Reeling Bar is open.
     Reeling(Bite),
 }
@@ -562,6 +569,12 @@ impl InWorld {
                     self.lose_fish(events);
                 }
             }
+            Stage::Choosing { left, .. } => {
+                *left -= dt;
+                if *left <= 0.0 {
+                    self.fishing_choice(true, c, events);
+                }
+            }
             Stage::Reeling(bite) => {
                 bite.left -= dt;
                 if bite.left <= 0.0 {
@@ -570,6 +583,51 @@ impl InWorld {
             }
         }
         None
+    }
+
+    /// `FishingChoice` with a revealed bite waiting: reeling wears the lure and opens the bar;
+    /// letting go ends the cast and gives the bait back to the Satchel. Whether the character
+    /// changed.
+    pub(crate) fn fishing_choice(
+        &mut self,
+        reel: bool,
+        c: &mut Char,
+        events: &mut Vec<SessionEvent>,
+    ) -> bool {
+        let Some(f) = self.fishing.as_mut() else {
+            return false;
+        };
+        if !matches!(f.stage, Stage::Choosing { .. }) {
+            return false;
+        }
+        let Stage::Choosing {
+            mut bite, boost, ..
+        } = std::mem::replace(&mut f.stage, Stage::Cast)
+        else {
+            return false;
+        };
+        if reel {
+            bite.left = fish::bar().timeout_secs + RESULT_SLACK_SECS;
+            f.stage = Stage::Reeling(bite);
+            wear_lure(c, events);
+            return true;
+        }
+        if let Some(bait) = boost.bait {
+            if let Err(reason) = equipment::receive(c, bait, 1, events) {
+                events.push(equipment::inventory_failure(reason, 0));
+            }
+        }
+        if let Some(f) = self.end_cast(events) {
+            events.push(SessionEvent::FishingEnd {
+                caught: None,
+                perfect: false,
+                treasure: false,
+            });
+            if f.bobber != 0 {
+                self.reel_in(f.bobber, false, events);
+            }
+        }
+        true
     }
 
     /// The cast lands a random distance ahead: on water whose pool has a fish that bites, the
@@ -751,6 +809,15 @@ impl InWorld {
             guid: f.bobber,
             anim_id: 0,
         });
+        let reveal = boost.reveal.then(|| {
+            if legendary {
+                "Legendary fish".to_string()
+            } else if c.fish_log.iter().any(|l| l.item == item && l.caught > 0) {
+                items::template(item).map_or_else(|| "Unknown fish".to_string(), |t| t.name.clone())
+            } else {
+                "Unknown fish".to_string()
+            }
+        });
         events.push(SessionEvent::FishingBite {
             bobber: f.bobber,
             fish: item,
@@ -768,8 +835,9 @@ impl InWorld {
                 .map(|&(at, _)| (at, bar.treasure_fill_secs)),
             legendary,
             second_hook: boost.second_hook,
+            reveal: reveal.clone(),
         });
-        f.stage = Stage::Reeling(Bite {
+        let bite = Bite {
             fish: item,
             level,
             legend: legendary,
@@ -780,7 +848,16 @@ impl InWorld {
             fill_per_sec,
             treasure: treasure.map(|(_, t)| t),
             left: bar.timeout_secs + RESULT_SLACK_SECS,
-        });
+        };
+        if reveal.is_some() {
+            f.stage = Stage::Choosing {
+                bite,
+                boost,
+                left: CHOICE_SECS + RESULT_SLACK_SECS,
+            };
+            return;
+        }
+        f.stage = Stage::Reeling(bite);
         wear_lure(c, events);
     }
 
@@ -1044,6 +1121,22 @@ impl crate::Realm {
             &mut self.rng,
             &mut self.events,
         );
+        let guid = w.guid;
+        self.remove_spent_bobbers();
+        if changed {
+            self.save(guid);
+        }
+    }
+
+    /// `FishingChoice`: reel or let go of a revealed bite, saved when it changed the character.
+    pub(crate) fn fishing_choice(&mut self, reel: bool) {
+        let Some(w) = &mut self.world else {
+            return;
+        };
+        let Some(c) = self.characters.get_mut(w.guid) else {
+            return;
+        };
+        let changed = w.fishing_choice(reel, c, &mut self.events);
         let guid = w.guid;
         self.remove_spent_bobbers();
         if changed {

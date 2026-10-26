@@ -186,6 +186,16 @@ chance = 100
 bait = 960103
 
 [[legend]]
+item = 6308
+name = \"Test Gruel Fish\"
+pool = \"test_legends\"
+level = 1
+style = \"dart\"
+difficulty = 50
+chance = 100
+bait = 960104
+
+[[legend]]
 item = 6358
 name = \"Test Gate\"
 pool = \"test_legends\"
@@ -1345,6 +1355,7 @@ const GAR: u32 = 6309;
 const BREAM: u32 = 6310;
 const SNAPPER: u32 = 6361;
 const GATE: u32 = 6358;
+const GRUEL_FISH: u32 = 6308;
 const RUMOUR_FISH: u32 = 6303;
 const GNOLL_EAR: u32 = 960103;
 const WORG_HAUNCH: u32 = 960105;
@@ -2233,4 +2244,159 @@ fn a_bait_fish_bites_only_with_that_bait_chosen() {
     let mut carried = angler_carrying(60, Side::SouthEast, &items);
     at_game(&mut carried, 12, 0);
     assert_eq!(bitten(&mut carried, 3), [UNGATED_FISH].into());
+}
+
+// Prison Gruel shows the bite and lets it go (#431).
+
+const PRISON_GRUEL: u32 = 960104;
+
+impl Angler {
+    /// Answers a revealed bite: `reel` opens the bar, otherwise the cast ends.
+    fn choose(&mut self, reel: bool) -> Vec<SessionEvent> {
+        self.realm.handle(RealmCommand::FishingChoice { reel });
+        self.realm.tick(0.0, &self.host);
+        drain(&mut self.realm)
+    }
+
+    /// Ticks `secs` seconds in tenths; every event on the way.
+    fn wait(&mut self, secs: f32) -> Vec<SessionEvent> {
+        let mut all = Vec::new();
+        for _ in 0..(secs * 10.0) as u32 {
+            self.realm.tick(0.1, &self.host);
+            all.extend(drain(&mut self.realm));
+        }
+        all
+    }
+}
+
+fn reveal_of(bite: &SessionEvent) -> Option<String> {
+    match bite {
+        SessionEvent::FishingBite { reveal, .. } => reveal.clone(),
+        _ => unreachable!(),
+    }
+}
+
+/// How many Prison Gruel the last Journal's Satchel holds.
+fn gruel_of(events: &[SessionEvent]) -> Option<u32> {
+    satchel_of(events).map(|rows| {
+        rows.iter()
+            .filter(|r| r.item == PRISON_GRUEL)
+            .map(|r| r.count)
+            .sum()
+    })
+}
+
+/// How many Prison Gruel the saved character carries in the backpack, where a cast takes bait from.
+fn packed_gruel(a: &Angler) -> i64 {
+    let blob = a.realm.export_character(a.guid).unwrap();
+    let table: toml::Table = blob.parse().unwrap();
+    table
+        .get("items")
+        .and_then(|i| i.as_array())
+        .map_or(0, |items| {
+            items
+                .iter()
+                .filter(|i| i["entry"].as_integer() == Some(i64::from(PRISON_GRUEL)))
+                .filter_map(|i| i["count"].as_integer())
+                .sum()
+        })
+}
+
+/// An Angler 1 off the north shore with two Gruel chosen as bait and a Shiny Bauble slotted.
+fn gruel_angler() -> Angler {
+    let mut a = angler_carrying(
+        1,
+        Side::North,
+        &[(PACK_1, SHINY_BAUBLE, 1), (PACK_2, PRISON_GRUEL, 2)],
+    );
+    a.slot_lure(PACK_1, SHINY_BAUBLE);
+    a.set_bait(Some(PRISON_GRUEL));
+    a
+}
+
+#[test]
+fn a_gruel_bite_names_an_unknown_fish_and_holds_the_lure_and_the_bar() {
+    let mut a = gruel_angler();
+    let (events, bite) = a.hook();
+    assert_eq!(packed_gruel(&a), 1);
+    assert_eq!(reveal_of(&bite), Some("Unknown fish".to_string()));
+    // Wear sends the Journal; none came, and any that did shows the lure whole.
+    if let Some(lure) = lure_of(&events) {
+        assert_eq!(lure, Some((SHINY_BAUBLE, 20, 20)));
+    }
+}
+
+#[test]
+fn releasing_a_gruel_bite_ends_the_cast_and_gives_the_gruel_back() {
+    let mut a = gruel_angler();
+    a.hook();
+    let events = a.choose(false);
+    assert_eq!(fishing_end(&events), Some((None, false)));
+    // The cast took one from the backpack; the release puts it in the Journal's Satchel.
+    assert_eq!(packed_gruel(&a), 1);
+    assert_eq!(gruel_of(&events), Some(1));
+    if let Some(lure) = lure_of(&events) {
+        assert_eq!(lure, Some((SHINY_BAUBLE, 20, 20)));
+    }
+    assert_eq!(angler_event(&events), None, "no XP for a release");
+}
+
+#[test]
+fn a_known_fish_is_named_and_reeling_wears_the_lure_then_the_bar_lands_it() {
+    let mut a = gruel_angler();
+    a.set_bait(None);
+    a.hook();
+    a.result(true, false, 6.0);
+    a.set_bait(Some(PRISON_GRUEL));
+    let (_, bite) = a.hook();
+    assert_eq!(
+        reveal_of(&bite),
+        Some("Raw Brilliant Smallfish".to_string())
+    );
+    // The first, bait-free catch wore the lure once already.
+    let chosen = a.choose(true);
+    assert_eq!(lure_of(&chosen), Some(Some((SHINY_BAUBLE, 18, 20))));
+    let landed = a.result(true, false, 6.0);
+    assert_eq!(fishing_end(&landed).map(|(c, _)| c), Some(Some(SMALLFISH)));
+}
+
+#[test]
+fn an_unanswered_gruel_bite_reels_by_itself_after_three_seconds() {
+    let mut a = gruel_angler();
+    a.hook();
+    // The realm waits the 3 s choice and the 2 s slack; 5.5 s clears float drift.
+    let events = a.wait(5.5);
+    assert_eq!(lure_of(&events), Some(Some((SHINY_BAUBLE, 19, 20))));
+    let landed = a.result(true, false, 6.0);
+    assert_eq!(fishing_end(&landed).map(|(c, _)| c), Some(Some(SMALLFISH)));
+}
+
+#[test]
+fn a_result_while_choosing_is_ignored() {
+    let mut a = gruel_angler();
+    a.hook();
+    let early = a.result(true, false, 6.0);
+    assert_eq!(fishing_end(&early), None);
+    assert_eq!(angler_event(&early), None);
+    let chosen = a.choose(true);
+    assert_eq!(lure_of(&chosen), Some(Some((SHINY_BAUBLE, 19, 20))));
+}
+
+#[test]
+fn a_cast_with_no_bait_has_no_reveal_and_wears_the_lure_at_the_bite() {
+    let mut a = angler_carrying(1, Side::North, &[(PACK_1, SHINY_BAUBLE, 1)]);
+    a.slot_lure(PACK_1, SHINY_BAUBLE);
+    let (events, bite) = a.hook();
+    assert_eq!(reveal_of(&bite), None);
+    assert_eq!(lure_of(&events), Some(Some((SHINY_BAUBLE, 19, 20))));
+}
+
+#[test]
+fn a_legendary_gruel_bite_says_legendary_fish() {
+    let mut a = angler_carrying(1, Side::NorthWest, &[(PACK_1, PRISON_GRUEL, 2)]);
+    a.set_bait(Some(PRISON_GRUEL));
+    at_game(&mut a, 12, 30);
+    let (_, bite) = a.hook();
+    assert_eq!(legend_of(&bite), Some(GRUEL_FISH));
+    assert_eq!(reveal_of(&bite), Some("Legendary fish".to_string()));
 }

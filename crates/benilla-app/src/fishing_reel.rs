@@ -107,6 +107,44 @@ impl Bite {
     }
 }
 
+/// The label a Prison Gruel bite shows (#425), from `SessionEvent::FishingBite`.
+fn reveal_of(event: &SessionEvent) -> Option<String> {
+    match event {
+        SessionEvent::FishingBite { reveal, .. } => reveal.clone(),
+        _ => None,
+    }
+}
+
+/// How long a revealed bite waits for a click before the client reels by itself.
+const CHOICE_SECS: f32 = 3.0;
+
+/// The choice a revealed bite waits on.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Choice {
+    left: f32,
+}
+
+impl Choice {
+    fn new() -> Self {
+        Self { left: CHOICE_SECS }
+    }
+
+    /// Counts `dt` down. `Some(true)` reels (a left click, or time ran out) and `Some(false)`
+    /// lets the fish go (a right click); a click wins over the clock.
+    fn step(&mut self, dt: f32, reel_clicked: bool, release_clicked: bool) -> Option<bool> {
+        self.left -= dt;
+        if reel_clicked {
+            Some(true)
+        } else if release_clicked {
+            Some(false)
+        } else if self.left <= 0.0 {
+            Some(true)
+        } else {
+            None
+        }
+    }
+}
+
 /// The bar's dice, SplitMix64 from the bite's seed: the same seed gives the same fish.
 struct Dice(u64);
 
@@ -386,6 +424,19 @@ struct Fishing {
     events: Vec<(&'static str, Vec<ScriptValue>)>,
     /// The bite alert: the bobber and the seconds left.
     alert: Option<(u64, f32)>,
+    /// A Prison Gruel bite waiting for reel or release: the bite, its label and the clock.
+    choosing: Option<(Bite, String, Choice)>,
+}
+
+impl Fishing {
+    /// Opens the bar for `bite` and shows the alert, as a bite without Gruel does at once.
+    fn start_reel(&mut self, bite: Bite) {
+        self.reel = Some(Reel::new(bite));
+        self.sent = false;
+        self.carry = 0.0;
+        self.alert = Some((bite.bobber, ALERT_SECS));
+        self.events.push(("FISHING_REEL_START", Vec::new()));
+    }
 }
 
 /// Reads the realm's fishing events, steps the open bar and sends its result.
@@ -407,6 +458,7 @@ fn run_reel(
             } => {
                 f.reel = None;
                 f.sent = false;
+                f.choosing = None;
                 let item = caught.map_or(ScriptValue::Nil, |i| ScriptValue::Int(i64::from(i)));
                 f.events.push((
                     "FISHING_REEL_END",
@@ -436,26 +488,54 @@ fn run_reel(
                 f.reel = None;
                 f.sent = false;
                 f.alert = None;
+                f.choosing = None;
                 f.angler = None;
                 f.journal = None;
             }
             bite => {
-                if let Some(bite) = Bite::of(&bite) {
-                    f.reel = Some(Reel::new(bite));
-                    f.sent = false;
-                    f.carry = 0.0;
-                    f.alert = Some((bite.bobber, ALERT_SECS));
-                    f.events.push(("FISHING_REEL_START", Vec::new()));
+                if let Some(found) = Bite::of(&bite) {
+                    match reveal_of(&bite) {
+                        Some(label) => {
+                            f.choosing = Some((found, label, Choice::new()));
+                            f.alert = Some((found.bobber, ALERT_SECS));
+                        }
+                        None => f.start_reel(found),
+                    }
                 }
             }
         }
     }
     let dt = time.delta_secs();
-    if let Some((_, left)) = &mut f.alert {
-        *left -= dt;
-        if *left <= 0.0 {
+    // The alert stays up while the player chooses.
+    if f.choosing.is_none() {
+        if let Some((_, left)) = &mut f.alert {
+            *left -= dt;
+            if *left <= 0.0 {
+                f.alert = None;
+            }
+        }
+    }
+    // Escape opens the game menu, so only the right button lets the fish go.
+    let answer = f.choosing.as_mut().map(|(bite, _, choice)| {
+        let step = choice.step(
+            dt,
+            buttons.just_pressed(MouseButton::Left),
+            buttons.just_pressed(MouseButton::Right),
+        );
+        (*bite, step)
+    });
+    match answer {
+        Some((bite, Some(true))) => {
+            outbox.0.push(RealmCommand::FishingChoice { reel: true });
+            f.choosing = None;
+            f.start_reel(bite);
+        }
+        Some((_, Some(false))) => {
+            outbox.0.push(RealmCommand::FishingChoice { reel: false });
+            f.choosing = None;
             f.alert = None;
         }
+        _ => {}
     }
     let held = buttons.pressed(MouseButton::Left);
     if let (Some(reel), false) = (&mut f.reel, f.sent) {
@@ -482,7 +562,7 @@ fn run_reel(
         }
         f.carry = f.carry.min(STEP_SECS * MAX_STEPS as f32);
     }
-    holds.0 = f.reel.is_some() || (holds.0 && held);
+    holds.0 = f.reel.is_some() || f.choosing.is_some() || (holds.0 && held);
 }
 
 /// The Fishing Journal as Lua reads it, each zone named from `AreaTable` (empty with no row).
@@ -653,7 +733,8 @@ fn place_bite_alert(
     index: Option<Res<crate::net::GuidIndex>>,
     bobbers: Query<&GlobalTransform>,
     camera: Query<(&Camera, &Transform), With<WorldCamera>>,
-    mut alert: Query<(&mut Node, &mut Visibility), With<BiteAlert>>,
+    mut alert: Query<(&mut Node, &mut Visibility), (With<BiteAlert>, Without<BiteName>)>,
+    mut name: Query<(&mut Node, &mut Visibility, &mut Text), With<BiteName>>,
 ) {
     let seat = (|| {
         let (bobber, _) = fishing.alert?;
@@ -663,6 +744,19 @@ fn place_bite_alert(
         cam.world_to_viewport(&GlobalTransform::from(*pose), at)
             .ok()
     })();
+    match (name.single_mut(), seat, &fishing.choosing) {
+        (Ok((mut node, mut shown, mut text)), Some(at), Some((_, label, _))) => {
+            node.left = Val::Px(at.x - BITE_NAME_PX / 2.0);
+            node.top = Val::Px(at.y - ALERT_PX / 2.0);
+            if text.0 != *label {
+                text.0.clone_from(label);
+            }
+            *shown = Visibility::Visible;
+        }
+        (Ok((_, mut shown, _)), _, _) => *shown = Visibility::Hidden,
+        (Err(_), Some(_), Some(_)) => spawn_bite_name(&mut commands),
+        (Err(_), _, _) => {}
+    }
     let Ok((mut node, mut shown)) = alert.single_mut() else {
         if seat.is_some() {
             spawn_alert(&mut commands, &mut images);
@@ -677,6 +771,46 @@ fn place_bite_alert(
         }
         None => *shown = Visibility::Hidden,
     }
+}
+
+/// The label under the bite alert while a Prison Gruel bite waits (#425): the name of what bit,
+/// and under it the two answers.
+#[derive(Component)]
+struct BiteName;
+
+/// The label's width on screen; it is centred on the bobber.
+const BITE_NAME_PX: f32 = 240.0;
+
+fn spawn_bite_name(commands: &mut Commands) {
+    commands
+        .spawn((
+            BiteName,
+            Text::new(String::new()),
+            TextLayout {
+                linebreak: LineBreak::WordBoundary,
+                justify: Justify::Center,
+            },
+            TextFont {
+                font_size: 16.0,
+                ..default()
+            },
+            TextColor(Color::WHITE),
+            TextShadow::default(),
+            Node {
+                position_type: PositionType::Absolute,
+                width: Val::Px(BITE_NAME_PX),
+                ..default()
+            },
+            Visibility::Hidden,
+        ))
+        .with_child((
+            TextSpan::new("\nLeft-click: reel   Right-click: let go"),
+            TextFont {
+                font_size: 11.0,
+                ..default()
+            },
+            TextColor(Color::WHITE),
+        ));
 }
 
 /// The alert node, hidden until the next frame places it; nothing when the art does not decode.
@@ -753,6 +887,15 @@ mod tests {
             legendary: false,
             second_hook: 0.0,
         }
+    }
+
+    #[test]
+    fn a_choice_reels_on_left_lets_go_on_right_and_reels_when_time_runs_out() {
+        assert_eq!(Choice::new().step(0.1, true, false), Some(true));
+        assert_eq!(Choice::new().step(0.1, false, true), Some(false));
+        let mut waiting = Choice::new();
+        assert_eq!(waiting.step(2.9, false, false), None);
+        assert_eq!(waiting.step(0.2, false, false), Some(true));
     }
 
     #[test]

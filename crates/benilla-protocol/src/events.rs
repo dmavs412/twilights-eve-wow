@@ -274,6 +274,9 @@ pub enum SessionEvent {
         legendary: bool,
         /// Where the meter refills to the first time it reaches zero; 0.0 for no second hook (#425).
         second_hook: f32,
+        /// Prison Gruel (#425): the label to show over the bobber, and the bar waits for
+        /// `RealmCommand::FishingChoice`. None opens the bar at once.
+        reveal: Option<String>,
     },
     /// Twilight's Eve, not 1.12: the Reeling Bar is over. `caught` names the fish landed; `None`
     /// when it escaped or the cast was lost. Never wire-decoded.

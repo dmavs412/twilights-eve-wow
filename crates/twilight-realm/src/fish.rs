@@ -355,6 +355,9 @@ pub(crate) struct Effect {
     /// This many more of the fish land with a catch.
     #[serde(default)]
     pub(crate) extra_fish: u32,
+    /// A bite shows what bit and waits for the player to reel or let go (#425).
+    #[serde(default)]
+    pub(crate) reveal: bool,
     /// Fish of these rarities drop out of the bite roll.
     #[serde(default)]
     pub(crate) ignored_by: Vec<Rarity>,
