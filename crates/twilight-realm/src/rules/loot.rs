@@ -352,4 +352,18 @@ mod roll_tests {
         assert_eq!(rolls.len(), 1);
         assert_eq!(rolls[0].one_of, [900409, 900410, 900411, 900412, 900413]);
     }
+
+    #[test]
+    fn princess_rolls_her_elite_pool_then_her_bands_greens() {
+        let rolls = &crate::mobs::template(330).expect("Princess").rolls;
+        assert_eq!(rolls.len(), 2);
+        let pool = 904000..=904005;
+        let greens = 902000..=902019;
+        let drops: Vec<u32> = (0..400)
+            .filter_map(|seed| first_roll(rolls, &mut Rng::new(seed)))
+            .collect();
+        assert!(drops.iter().any(|i| pool.contains(i)), "no elite blue");
+        assert!(drops.iter().any(|i| greens.contains(i)), "no green");
+        assert!(drops.iter().all(|i| pool.contains(i) || greens.contains(i)));
+    }
 }
