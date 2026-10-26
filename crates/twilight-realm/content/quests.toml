@@ -7,6 +7,8 @@
 # - "bounty": a Field Giver's bounty, taken again as soon as it is handed in. It pays half a
 #   level's XP, as a Hunting Quest does, and the `tokens` and `money` it names (1 Token).
 # - "advancement": an Advancement Quest, with an `advancement` table (below). It pays no Token.
+#   `calling_choice = true` on an advancement quest from `basic_warrior` lists it in the Calling
+#   Choice popup; picking it there puts it in the log. Needs a giver NPC, and its Calling a blurb.
 # - "once": once per character. Advancement never forgets it. It pays no XP.
 # - "story": a Story Quest, once per character. Advancement never forgets it. It pays XP as a
 #   Hunting Quest does (below) and no Token; `money` is allowed, though the Story Quests set 0.
@@ -1711,6 +1713,7 @@ tokens = 0
 # quest of its Line (same `level`, `zone_or_sort` and `advancement`) with a Northshire trainer
 # as `giver` and its own wording. A character takes whichever trainer is near; the Crossroads
 # quests above are untouched. Tier 2 stays at the Crossroads.
+# The Calling Choice popup lists these five (`calling_choice`).
 
 [[quest]]
 id = 64009
@@ -1720,6 +1723,7 @@ level = 10
 zone_or_sort = -81
 advancement = { from = "basic_warrior", to = "vanguard" }
 title = "The Warrior's Path"
+calling_choice = true
 objectives = "Speak with Sergeant Willem Hale in the Northshire Abbey yard to take up the warrior's path."
 details = "Stormwind sent me to Northshire to drill recruits, $N, and the city wants every one I can give it. Most of mine are farm boys with no farm left to go home to. You've outlasted every drill I know. A Basic Warrior has nothing left to learn from me.$B$BThe Vanguard hold the front of the line, in plate, on rage. Take up the path and you begin again, the greenest recruit in the yard. But your body remembers the work, and your arm is stronger for it.$B$BSay the word."
 progress = "Say the word, $N, and the drill begins again."
@@ -1735,6 +1739,7 @@ level = 10
 zone_or_sort = -162
 advancement = { from = "basic_warrior", to = "cutthroat" }
 title = "The Cutthroat's Mark"
+calling_choice = true
 objectives = "Speak with Jorik Vane at the Northshire Vineyards to take the Cutthroat's mark."
 details = "Keep your voice down, $N. You swing that blade as if the whole valley should hear it. I ran with the Brotherhood until I saw what they do to their own. My old crew stayed in Westfall. I don't know what became of them, and I try not to wonder. The one thing they taught me worth keeping is how to fight quietly.$B$BTake the mark and you begin again, a novice at my fence. No more rage. You fight on Energy, and every cut you land sets up the one that finishes it.$B$BSay the word."
 progress = "Quietly, $N. Say the word, and take the mark."
@@ -1750,6 +1755,7 @@ level = 10
 zone_or_sort = -161
 advancement = { from = "basic_warrior", to = "initiate" }
 title = "The Initiate's Spark"
+calling_choice = true
 objectives = "Speak with Elsa Brightwood in the Northshire Abbey garden to fan the spark."
 details = "Put the sword down a moment, $N. I've spent weeks copying these old texts, because the libraries that held the other copies are behind the grey. I know the look of someone the words were written for. There's more in you than a strong arm.$B$BThe Tower of Azora taught me the first lesson, and I'll teach it to you. Accept it and you begin again, a novice of the circle. No more rage. You draw on mana, strike from afar with fire and frost, then break what you've woven.$B$BSay the word."
 progress = "Say the word, $N, and let the spark catch."
@@ -1765,6 +1771,7 @@ level = 10
 zone_or_sort = -261
 advancement = { from = "basic_warrior", to = "ranger" }
 title = "The Ranger's Draw"
+calling_choice = true
 objectives = "Speak with Thalyssa Windbough on the Northshire Abbey lawn to take up the bow."
 details = "You fight close enough to bleed, $N. I've watched you from the tree line. Darnassus sent me across on the last ship from Auberdine, to learn why the wolves here run so thin. The sea went grey behind us. I don't know whether Darnassus is still there, and no one here can tell me. What I do know is that a good shot never lets the wolf near.$B$BAccept the bow and you begin again, a novice of the lodge. No more rage. You draw on mana, and every step you keep between yourself and the blade is yours.$B$BSay the word."
 progress = "Say the word, $N, and take up the bow."
@@ -1782,6 +1789,7 @@ level = 10
 zone_or_sort = -262
 advancement = { from = "basic_warrior", to = "acolyte" }
 title = "The Acolyte's Vein"
+calling_choice = true
 objectives = "Speak with Brother Corwin Ashgrave outside Echo Ridge Mine in Northshire to open the vein."
 details = "The brothers turned me out for asking how the dying cross over, $N. Now half the valley asks me where the Hush takes people, and I still have no answer. You've bled in every fight and never once made the blood work for you.$B$BThe Acolyte spends their own life to rot a foe, and drinks the foe's to mend. It isn't a gentle road. Accept it and you begin again, a novice of the order. No more rage. You draw on mana, and on your own veins when mana won't do.$B$BSay the word."
 progress = "Say the word, $N, and open the vein."

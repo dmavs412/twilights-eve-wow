@@ -202,6 +202,10 @@ struct Save {
     /// gear tables.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     lure_waiting: Option<u32>,
+    /// Whether they have picked from the Calling Choice. A plain key, so before the tables; an old
+    /// save has not chosen.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    calling_chosen: bool,
     /// The Fishing Journal's Pole and Lure slots (#371), added within version 4: a save without
     /// them has both empty. Each is an item at slot 0.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -439,6 +443,7 @@ pub(crate) fn export(c: &Char) -> String {
         legends_caught: c.legends_caught.clone(),
         legend_hints: c.legend_hints.clone(),
         lure_waiting: c.lure_waiting,
+        calling_chosen: c.calling_chosen,
         fishing_pole: saved_gear(&c.fishing_pole),
         fishing_lure: saved_gear(&c.fishing_lure),
         satchel: saved_satchel(&c.inventory.satchel),
@@ -539,6 +544,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         fishing_pole: None,
         fishing_lure: None,
         lure_waiting: s.lure_waiting,
+        calling_chosen: s.calling_chosen,
     };
     c.fishing_pole = load_gear(&mut c.inventory, &s.fishing_pole);
     c.fishing_lure = load_gear(&mut c.inventory, &s.fishing_lure);

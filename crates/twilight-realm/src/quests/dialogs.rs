@@ -618,6 +618,16 @@ fn offer_reward(npc: u64, q: &Quest) -> QuestOfferReward {
 /// `CMSG_QUESTGIVER_ACCEPT_QUEST`: the quest takes the lowest free log slot, and the dialog
 /// closes. Whether it went in.
 fn accept(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
+    let taken = take(c, q, events);
+    if taken {
+        events.push(SessionEvent::GossipComplete);
+    }
+    taken
+}
+
+/// Puts `q` in the log, with its goods and the log's update fields, and no dialog to close. A full
+/// log or full bags push their refusal and put nothing in. Whether it went in.
+pub(crate) fn take(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
     let Some(slot) = c.quests.free_slot() else {
         events.push(SessionEvent::QuestLogFull);
         return false;
@@ -638,7 +648,6 @@ fn accept(c: &mut Char, q: &Quest, events: &mut Vec<SessionEvent>) -> bool {
     let i = c.quests.active.len() - 1;
     // The bags may already hold what it asks for.
     super::update_slot(c, i, events);
-    events.push(SessionEvent::GossipComplete);
     true
 }
 

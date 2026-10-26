@@ -42,6 +42,7 @@ mod areas;
 mod audience;
 mod bands;
 mod bounty;
+mod calling_choice;
 pub mod callings;
 mod characters;
 pub mod chat;
@@ -443,6 +444,11 @@ pub enum RealmCommand {
         perfect: bool,
         treasure: bool,
         secs: f32,
+    },
+    /// Pick a Tier 1 Calling from the Calling Choice popup: `quest` is the Advancement Quest of
+    /// one of its options, which goes in the log. Ignored unless the popup is due.
+    ChooseCalling {
+        quest: u32,
     },
     /// Choose the Fishing Journal's bait (spec #323): a `[[bait]]` item the character carries, or
     /// `None` to clear the slot. Anything else is ignored.
@@ -1434,6 +1440,9 @@ impl Realm {
                 treasure,
                 secs,
             } => self.fishing_result(won, perfect, treasure, secs),
+            RealmCommand::ChooseCalling { quest } => {
+                self.change_satchel(|c, events| calling_choice::choose(c, quest, events))
+            }
             RealmCommand::SetBait { item } => self.set_bait(item),
             RealmCommand::SetFishingGear { slot, from } => self.set_fishing_gear(slot, from),
             RealmCommand::WithdrawFromJournal { pick, count } => {
@@ -2294,6 +2303,7 @@ impl Realm {
         entry.casters = self.casters.clone();
         self.world = Some(entry);
         self.events.push(chat::joined_world_channel());
+        self.events.extend(calling_choice::at_login(c));
     }
 
     /// A logout is always instant: no timer, no rest-area rule, no refusal in combat.

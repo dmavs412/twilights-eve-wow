@@ -21,7 +21,7 @@ use crate::rng::Rng;
 
 pub(crate) use content::item_template;
 pub(crate) use dialogs::{
-    gossip_rows, is_complete, object_hello, offered, template_response, use_starter,
+    gossip_rows, is_complete, object_hello, offered, take, template_response, use_starter,
 };
 
 /// The Token's item entry. Tokens are stacks of it in the bags: the quest dialogs pay them there

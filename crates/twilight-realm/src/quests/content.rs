@@ -302,6 +302,9 @@ pub(crate) struct Quest {
     #[serde(default)]
     min_tier: Option<u8>,
     pub(crate) title: String,
+    /// Listed in the Calling Choice popup; picking it there puts it in the log.
+    #[serde(default)]
+    pub(crate) calling_choice: bool,
     pub(crate) objectives: String,
     pub(crate) details: String,
     pub(crate) progress: String,
@@ -499,6 +502,24 @@ pub(crate) fn shipped() -> &'static [Quest] {
                 q.id
             );
         }
+        let mut chosen: Vec<&str> = Vec::new();
+        for a in quests
+            .iter()
+            .filter(|q| q.calling_choice)
+            .filter_map(|q| q.advancement.as_ref())
+        {
+            assert!(
+                !chosen.contains(&a.to.as_str()),
+                "two Calling Choice quests advance into {}",
+                a.to
+            );
+            chosen.push(&a.to);
+            assert!(
+                crate::callings::calling(&a.to).is_some_and(|c| !c.blurb.is_empty()),
+                "the Calling Choice offers {}, which has no blurb in callings.csv",
+                a.to
+            );
+        }
         for t in shipped_items().item.iter().filter(|t| t.start_quest != 0) {
             assert!(
                 quests
@@ -639,6 +660,18 @@ fn check(q: &Quest, known: &dyn Fn(u32) -> bool, object: &dyn Fn(u32) -> bool) {
             q.id,
         );
     }
+    if q.calling_choice {
+        assert!(
+            q.kind == Kind::Advancement
+                && q.advancement
+                    .as_ref()
+                    .is_some_and(|a| a.from == "basic_warrior")
+                && q.giver.npc().is_some(),
+            "quest {} is a Calling Choice, so it must be an advancement from basic_warrior \
+             with a giver NPC",
+            q.id
+        );
+    }
     assert!(
         q.choices.len() <= 6,
         "quest {} offers more than six reward choices",
@@ -739,6 +772,11 @@ pub(crate) fn quests() -> Vec<&'static Quest> {
         .iter()
         .chain(added().read().unwrap().iter().copied())
         .collect()
+}
+
+/// The quests the Calling Choice popup lists, in the content's order.
+pub(crate) fn calling_choices() -> impl Iterator<Item = &'static Quest> {
+    quests().into_iter().filter(|q| q.calling_choice)
 }
 
 pub(crate) fn quest(id: u32) -> Option<&'static Quest> {

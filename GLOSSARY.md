@@ -123,7 +123,10 @@ The highest level a character can reach in a Tier, which is also the level at wh
 _Avoid_: max level
 
 **Advancement Quest**:
-A quest from a Calling's trainer, offered at the Tier Cap. Completing it advances the character into that Calling, so choosing which one to finish is how a player chooses their branch.
+A quest from a Calling's trainer, offered at the Tier Cap. Completing it advances the character into that Calling, so choosing which one to finish is how a player chooses their branch. A Basic Warrior can also take one from the Calling Choice.
+
+**Calling Choice**:
+The popup a Basic Warrior gets at the Tier Cap, listing each Tier 1 Calling with a blurb. Picking one puts that Calling's Northshire Advancement Quest in the log, to hand in at its trainer. It is offered until a pick is made, and never again after.
 
 **Tier Bonus**:
 A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. With the Power Level, it is what makes a character stronger after Advancement resets their level. Gear, gold and completed quests carry over; skills and talents are replaced by the new Calling's.

@@ -145,6 +145,24 @@ pub struct SatchelPick {
     pub durability: Option<u32>,
 }
 
+/// Twilight's Eve, not 1.12: one Tier 1 Calling the Calling Choice popup offers.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct CallingOption {
+    /// The Advancement Quest picking it puts in the log.
+    pub quest: u32,
+    /// The Calling's key.
+    pub calling: String,
+    pub name: String,
+    pub icon: String,
+    /// The `Powers` value of its bar: mana 0, rage 1, energy 3.
+    pub power: u8,
+    pub blurb: String,
+    /// The Calling's skill spell ids, in order.
+    pub skills: Vec<u32>,
+    /// The quest's objectives line.
+    pub objectives: String,
+}
+
 /// Twilight's Eve, not 1.12: one place the world map marks (spec #383).
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq)]
 pub struct MapMark {
@@ -289,6 +307,9 @@ pub enum SessionEvent {
         /// the order they arrived.
         satchel: Vec<SatchelRow>,
     },
+    /// Twilight's Eve, not 1.12: the Calling Choice popup (spec #414), sent to a Basic Warrior at
+    /// the Tier Cap who has not picked. Never wire-decoded.
+    CallingChoice { options: Vec<CallingOption> },
     /// Twilight's Eve, not 1.12: the character's Angler Level, sent at login and on every change.
     /// Never wire-decoded.
     Angler {

@@ -1672,6 +1672,7 @@ impl InWorld {
                 // The Tier Cap: what is left over is not banked.
                 Some(_) if at_tier_cap(c) => {
                     c.xp = 0;
+                    events.extend(crate::calling_choice::calling_choice(c));
                     break;
                 }
                 Some(n) => next = n,

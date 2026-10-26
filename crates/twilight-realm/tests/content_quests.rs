@@ -42,6 +42,9 @@ struct Quest {
     /// An Advancement Quest asks for nothing but a word with its giver.
     #[serde(default)]
     advancement: Option<toml::Value>,
+    /// Listed in the Calling Choice popup.
+    #[serde(default)]
+    calling_choice: bool,
 }
 
 #[derive(Deserialize)]
@@ -333,4 +336,15 @@ fn every_explore_spot_is_a_named_place_in_the_barrens() {
             e.radius
         );
     }
+}
+
+#[test]
+fn exactly_the_five_northshire_advancement_quests_are_calling_choices() {
+    let chosen: Vec<u32> = content()
+        .quest
+        .into_iter()
+        .filter(|q| q.calling_choice)
+        .map(|q| q.id)
+        .collect();
+    assert_eq!(chosen, [64009, 64010, 64011, 64012, 64013]);
 }
