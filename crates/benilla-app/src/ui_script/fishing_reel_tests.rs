@@ -113,6 +113,21 @@ fn the_end_event_shows_the_success_banner_and_the_badge_lingers() {
 }
 
 #[test]
+fn the_second_hook_event_shows_its_banner_for_a_second_and_a_half() {
+    let mut s = reel();
+    s.fire_event("FISHING_REEL_SECOND_HOOK", Vec::new());
+    frame(&mut s, 0.05);
+    assert_eq!(text(&s, "BenillaFishingBannerText"), "The hook holds!");
+    frame(&mut s, 1.0);
+    assert!(shown(&s, "BenillaFishingBanner"), "the banner left early");
+    frame(&mut s, 0.6);
+    assert!(
+        !shown(&s, "BenillaFishingBanner"),
+        "the banner outlived 1.5 s"
+    );
+}
+
+#[test]
 fn a_lost_fish_shows_the_fail_banner() {
     let mut s = reel();
     s.fire_event(

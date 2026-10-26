@@ -69,6 +69,8 @@ struct Boost {
     drain_pct: i32,
     /// Percentage points more treasure chance.
     treasure_points: u32,
+    /// Where the bar refills to the first time it reaches zero; the larger of the two wins.
+    second_hook: f32,
     /// The bait on this cast, which a Legendary Fish may ask for.
     bait: Option<u32>,
     /// The lure in the Lure slot, which a fish may ask for.
@@ -84,6 +86,7 @@ impl Boost {
         self.fill_pct += e.fill_pct;
         self.drain_pct += e.drain_pct;
         self.treasure_points += e.treasure_points;
+        self.second_hook = self.second_hook.max(e.second_hook);
         self
     }
 }
@@ -754,6 +757,7 @@ impl InWorld {
                 .as_ref()
                 .map(|&(at, _)| (at, bar.treasure_fill_secs)),
             legendary,
+            second_hook: boost.second_hook,
         });
         f.stage = Stage::Reeling(Bite {
             fish: item,

@@ -272,6 +272,8 @@ pub enum SessionEvent {
         /// `(appears_at_secs, fill_secs)` when a treasure chest was rolled.
         treasure: Option<(f32, f32)>,
         legendary: bool,
+        /// Where the meter refills to the first time it reaches zero; 0.0 for no second hook (#425).
+        second_hook: f32,
     },
     /// Twilight's Eve, not 1.12: the Reeling Bar is over. `caught` names the fish landed; `None`
     /// when it escaped or the cast was lost. Never wire-decoded.

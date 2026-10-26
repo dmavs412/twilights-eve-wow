@@ -344,6 +344,9 @@ pub(crate) struct Effect {
     /// Percentage points more treasure chance.
     #[serde(default)]
     pub(crate) treasure_points: u32,
+    /// Where the Reeling Bar refills to the first time it reaches zero; 0 for no second hook.
+    #[serde(default)]
+    pub(crate) second_hook: f32,
 }
 
 /// A fishing pole (`[[pole]]`); it never wears.

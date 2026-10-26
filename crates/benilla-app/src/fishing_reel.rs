@@ -64,6 +64,8 @@ pub(crate) struct Bite {
     pub(crate) seed: u64,
     pub(crate) treasure: Option<(f32, f32)>,
     pub(crate) legendary: bool,
+    /// Where the meter refills to the first time it reaches zero; 0.0 for no second hook.
+    pub(crate) second_hook: f32,
 }
 
 impl Bite {
@@ -81,6 +83,7 @@ impl Bite {
             seed,
             treasure,
             legendary,
+            second_hook,
             ..
         } = *event
         else {
@@ -99,6 +102,7 @@ impl Bite {
             seed,
             treasure,
             legendary,
+            second_hook,
         })
     }
 }
@@ -157,6 +161,8 @@ pub(crate) struct Reel {
     sink: f32,
     progress: f32,
     perfect: bool,
+    /// The second hook has fired.
+    hook_used: bool,
     secs: f32,
     held: bool,
     chest: Option<Chest>,
@@ -197,6 +203,7 @@ impl Reel {
             sink: 0.0,
             progress: bite.start_fill,
             perfect: true,
+            hook_used: false,
             secs: 0.0,
             held: false,
             chest,
@@ -306,6 +313,15 @@ impl Reel {
                 c.fill = (c.fill + if inside { rate } else { -rate }).clamp(0.0, 1.0);
                 c.won = c.fill >= 1.0;
             }
+        }
+        if self.progress <= 0.0
+            && self.bite.second_hook > 0.0
+            && !self.hook_used
+            && self.secs < self.bite.timeout_secs
+        {
+            self.progress = self.bite.second_hook;
+            self.hook_used = true;
+            return None;
         }
         let won = self.progress >= 1.0;
         if !won && self.progress > 0.0 && self.secs < self.bite.timeout_secs {
@@ -448,7 +464,12 @@ fn run_reel(
         while f.carry >= STEP_SECS && steps < MAX_STEPS {
             f.carry -= STEP_SECS;
             steps += 1;
-            if let Some(end) = reel.step(held) {
+            let hooked = reel.hook_used;
+            let ended = reel.step(held);
+            if reel.hook_used && !hooked {
+                f.events.push(("FISHING_REEL_SECOND_HOOK", Vec::new()));
+            }
+            if let Some(end) = ended {
                 outbox.0.push(RealmCommand::FishingResult {
                     won: end.won,
                     perfect: end.perfect,
@@ -730,7 +751,45 @@ mod tests {
             seed: 99,
             treasure: None,
             legendary: false,
+            second_hook: 0.0,
         }
+    }
+
+    #[test]
+    fn a_second_hook_refills_the_meter_once_and_lengthens_the_bar() {
+        let plain = bite(0);
+        let hooked = Bite {
+            second_hook: 0.25,
+            ..plain
+        };
+        let (n_plain, _) = run_pinned(&mut Reel::new(plain), |_| 20.0);
+        let mut reel = Reel::new(hooked);
+        let (n_hooked, end) = run_pinned(&mut reel, |_| 20.0);
+        assert!(!end.won && !end.perfect, "{end:?}");
+        assert!(reel.hook_used);
+        let extra = 0.25 / hooked.drain_per_sec / STEP_SECS;
+        assert!(
+            ((n_hooked - n_plain) as f32 - extra).abs() <= 1.5,
+            "{n_plain} -> {n_hooked}, want {extra} more"
+        );
+    }
+
+    #[test]
+    fn a_fish_back_in_the_zone_after_the_second_hook_is_won_not_perfect() {
+        let b = Bite {
+            second_hook: 0.25,
+            ..bite(2)
+        };
+        let mut reel = Reel::new(b);
+        let (_, end) = run_pinned(&mut reel, |r| {
+            if r.hook_used {
+                r.zone_pos + r.zone_height / 2.0
+            } else {
+                20.0
+            }
+        });
+        assert!(end.won && !end.perfect, "{end:?}");
+        assert!(reel.hook_used);
     }
 
     #[test]

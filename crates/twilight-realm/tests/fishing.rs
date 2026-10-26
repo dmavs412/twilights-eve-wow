@@ -959,6 +959,26 @@ fn bright_baubles_fill_the_bar_faster_and_keep_the_zone() {
     assert!((zone_height(&bite) - 0.17).abs() < 1e-6, "{bite:?}");
 }
 
+fn second_hook_of(bite: &SessionEvent) -> f32 {
+    match bite {
+        SessionEvent::FishingBite { second_hook, .. } => *second_hook,
+        _ => unreachable!(),
+    }
+}
+
+#[test]
+fn the_attractor_gives_a_second_hook_and_a_bauble_does_not() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, AQUADYNAMIC, 1)]);
+    a.slot_lure(PACK_1, AQUADYNAMIC);
+    let (_, bite) = a.hook();
+    assert!((second_hook_of(&bite) - 0.25).abs() < 1e-6, "{bite:?}");
+
+    let mut b = angler_carrying(1, Side::East, &[(PACK_1, SHINY_BAUBLE, 1)]);
+    b.slot_lure(PACK_1, SHINY_BAUBLE);
+    let (_, bite) = b.hook();
+    assert_eq!(second_hook_of(&bite), 0.0, "{bite:?}");
+}
+
 #[test]
 fn nightcrawlers_slow_the_drain() {
     let mut a = angler_carrying(1, Side::East, &[(PACK_1, NIGHTCRAWLERS, 1)]);

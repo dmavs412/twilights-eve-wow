@@ -105,6 +105,8 @@
 #   start_fill_pct  the Reeling Bar starts this percent fuller (at most 0.95 of the track)
 #   fill_pct        the bar fills this percent faster
 #   drain_pct       the bar drains this percent faster (negative: slower)
+#   second_hook     the first time the bar reaches zero it refills to this fraction (0.25 is a
+#                   quarter) and the fish stays on; the larger value wins
 #
 # [[bait]], the custom baits at 960101 on, used up one per cast; the same effect keys as a lure,
 # and `treasure_points` (percentage points more treasure chance). A bait with no effect is one a
@@ -824,6 +826,7 @@ fill_pct = 25
 
 [[lure]]
 item = 6533 # Aquadynamic Fish Attractor
+second_hook = 0.25
 
 [[bait]]
 item = 960101 # Wriggling Worms

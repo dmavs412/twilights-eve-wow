@@ -19,6 +19,7 @@
         -- Seconds the Angler badge stays after a bar, and a banner shows.
         BENILLA_FISHING_BADGE_LINGER = 3
         BENILLA_FISHING_BANNER_SECS = 2.5
+        BENILLA_FISHING_HOOK_SECS = 1.5
         BENILLA_FISHING_ART = "Interface\\Benilla\\fishing\\"
 
         -- An item's name and quality, when the client knows it.
@@ -172,11 +173,23 @@
             banner:Show()
         end
 
+        -- The second hook fired: the same banner, for a shorter time.
+        function BenillaFishingBanner_Hook()
+            local banner = BenillaFishingBanner
+            BenillaFishingBannerArt:SetTexture(BENILLA_FISHING_ART .. "banner_success")
+            banner.success = true
+            BenillaFishingBannerText:SetText("The hook holds!")
+            banner.hideAt = GetTime() + BENILLA_FISHING_HOOK_SECS
+            banner:Show()
+        end
+
         function BenillaFishing_OnEvent()
             local controller = BenillaFishingController
             if event == "FISHING_REEL_START" then
                 BenillaFishingReel.fishName = nil
                 controller.badgeUntil = nil
+            elseif event == "FISHING_REEL_SECOND_HOOK" then
+                BenillaFishingBanner_Hook()
             elseif event == "FISHING_REEL_END" then
                 BenillaFishingBanner_Show(arg1, arg2, arg3)
                 controller.badgeUntil = GetTime() + BENILLA_FISHING_BADGE_LINGER
@@ -440,6 +453,7 @@
             <OnLoad>
                 this:RegisterEvent("FISHING_REEL_START")
                 this:RegisterEvent("FISHING_REEL_END")
+                this:RegisterEvent("FISHING_REEL_SECOND_HOOK")
                 this:RegisterEvent("ANGLER_UPDATE")
             </OnLoad>
             <OnEvent>
