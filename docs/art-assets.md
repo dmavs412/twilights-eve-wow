@@ -118,3 +118,30 @@ new.
 ### World model
 
 A Herb Patch uses a stock 1.12 bush model, so it needs no art.
+
+## Cooking and alchemy (spec #447)
+
+Every row has its own icon: the no-duplicate-icons rule holds for each quality, band and
+Strength Step (ADR 0025). The tickets write the exact list from the recipe rows; these are the
+spec's counts.
+
+### Item icons, 128 x 128 PNG
+
+| Group | Count | Notes |
+|---|---|---|
+| Potions | 30 | 6 Properties x 5 Strength Steps |
+| Weapon oils | 30 | 6 Properties x 5 steps |
+| Tinctures | 30 | 6 Properties x 5 steps |
+| Essences | 30 | 6 Properties x 5 steps |
+| Flasks | 105 | 21 Essence pairs x 5 steps |
+| Fish Oil, Murky Sludge | 2 | |
+| Combat meals | about 360 | about 30 recipes x 4 bands x 3 qualities |
+| Out-of-combat and gatherer meals | about 90 | about 30 recipes x 3 qualities |
+| Legendary meals | 19 | 16 Legendary Fish, 3 legendary plants |
+| Cut bait | 22 | one per common and uncommon fish |
+| Hearty Mush | 1 | |
+
+### Crafting window
+
+The kitchen and alchemy table window (ADR 0025): a frame, a recipe list row, an ingredient slot
+and a commit button. The tickets name the files.

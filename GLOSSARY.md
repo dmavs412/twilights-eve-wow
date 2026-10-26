@@ -281,6 +281,34 @@ _Avoid_: ability, tool power
 A Herbalist's permanent pick, one slot per 10 Herbalist Levels. A **Boon** is a plain upgrade. A **Pact** gives and takes. The Goldshire herbalist resets every pick for gold that doubles each time.
 _Avoid_: talent (a Calling's), trait
 
+**Ingredient Level**:
+The level of a fish or herb for crafting: the lowest level any fishing or herb pool lists it at, derived at load. A Legendary Fish uses its own level (ADR 0025).
+_Avoid_: item level (the stock item_template field)
+
+**Meal**:
+What cooking makes: an item in the bags that gives one food buff when eaten. A **combat meal** gives a Well Fed stat set by its band (1, 10, 20 or 30, from its ingredients' average level); an out-of-combat meal or a gatherer meal does not scale with level. Its quality is Plain, Fine or Exquisite. One food buff at a time (ADR 0025).
+_Avoid_: dish (fine in a recipe's name), food buff item
+
+**Pairing**:
+The one cooking herb a fish goes best with. A meal holding both is one quality step higher. Found by cooking, recorded on the Fish Page.
+_Avoid_: combo, synergy
+
+**Kitchen Order**:
+One of three requests a kitchen posts per character at dawn (raw fish, a meal, raw herbs by category), expiring at the next dawn. Pays gold, and one in three also a rare ingredient or a recipe Rumour.
+_Avoid_: daily quest, bounty (a Bounty is a kill quest)
+
+**Property**:
+One of six alchemy values a herb carries with a strength: Restorative, Fortifying, Volatile, Arcane, Calming, Toxic. A recipe is a threshold over a brew's summed properties (ADR 0025).
+_Avoid_: stat (a character's), trait
+
+**Tincture**:
+Five herbs carrying one Property, distilled into one item of that Property. Tinctures make weapon oils; three of one Property condense into an **Essence**, and two Essences make a flask.
+_Avoid_: extract, reagent
+
+**Strength Step**:
+A brewed product's strength, its main Property over the recipe's threshold, rounded down to x1, x1.25, x1.5, x1.75 or x2. Each step is its own item row.
+_Avoid_: quality (a meal's), grade
+
 **Kick**:
 A Calling's skill that stops the cast a mob has under way and puts a Lockout on it. Each Tier 1 Calling learns one at level 10. Effects listed after the interrupt in its row are its bonus, and they happen only when it stopped a cast. ADR 0020.
 _Avoid_: interrupt (the effect kind a Kick uses), silence
