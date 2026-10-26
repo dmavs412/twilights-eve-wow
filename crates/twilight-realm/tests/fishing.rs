@@ -87,6 +87,8 @@ enum Side {
     NorthEast,
     /// The pool whose fish carry conditions (#398).
     SouthEast,
+    /// The pool of a common and an uncommon lake fish (#430).
+    SouthWest,
 }
 
 impl Side {
@@ -99,6 +101,7 @@ impl Side {
             Side::NorthWest => 3.0 * std::f32::consts::FRAC_PI_4,
             Side::NorthEast => std::f32::consts::FRAC_PI_4,
             Side::SouthEast => -std::f32::consts::FRAC_PI_4,
+            Side::SouthWest => -3.0 * std::f32::consts::FRAC_PI_4,
         }
     }
 }
@@ -117,6 +120,7 @@ fn test_fish(start: [f32; 3]) -> String {
     let [lx, ly] = pond_centre(start, Side::NorthWest);
     let [rx, ry] = pond_centre(start, Side::NorthEast);
     let [gx, gy] = pond_centre(start, Side::SouthEast);
+    let [bx, by] = pond_centre(start, Side::SouthWest);
     format!(
         "{TEST_FISH}
 [[pool]]
@@ -212,9 +216,28 @@ fish = [
     {{ item = 960004, weight = 100.0, level = 1 }},
     {{ item = 960005, weight = 100.0, level = 1 }},
     {{ item = 960006, weight = 0.01, level = 1 }},
+    {{ item = 960007, weight = 100.0, level = 1 }},
 ]
 treasure = []
 copper = [0, 0]
+
+[[pool]]
+key = \"test_commons\"
+zone = 990007
+kind = \"lake\"
+description = \"A test pond.\"
+fish = [
+    {{ item = 6291, weight = 100.0, level = 1 }},
+    {{ item = 960403, weight = 100.0, level = 1 }},
+]
+treasure = []
+copper = [0, 0]
+
+[[water]]
+key = \"test_commons\"
+name = \"Commons Pond\"
+circle = [0, {bx}, {by}, 9.0]
+pool = \"test_commons\"
 
 [[fish]]
 item = 960003
@@ -242,6 +265,13 @@ item = 960006
 style = \"smooth\"
 difficulty = 10
 rarity = \"common\"
+
+[[fish]]
+item = 960007
+style = \"smooth\"
+difficulty = 10
+rarity = \"common\"
+block = \"night\"
 
 [[water]]
 key = \"test_gated\"
@@ -1317,6 +1347,8 @@ const SNAPPER: u32 = 6361;
 const GATE: u32 = 6358;
 const RUMOUR_FISH: u32 = 6303;
 const GNOLL_EAR: u32 = 960103;
+const WORG_HAUNCH: u32 = 960105;
+const CORPSE_GRUB: u32 = 960106;
 const AQUADYNAMIC: u32 = 6533;
 const LEGEND_NOTE: u32 = 960206;
 const LEE_BROWN_HINT: &str = "Heard anything about the fish around here?";
@@ -1358,6 +1390,12 @@ fn the_gar_bites_by_night_and_never_at_noon() {
     at_game(&mut noon, 12, 0);
     let (_, bite) = noon.hook();
     assert_ne!(legend_of(&bite), Some(GAR), "{bite:?}");
+
+    let mut grub = angler_carrying(1, Side::NorthWest, &[(PACK_1, CORPSE_GRUB, 1)]);
+    grub.set_bait(Some(CORPSE_GRUB));
+    at_game(&mut grub, 12, 0);
+    let (_, bite) = grub.hook();
+    assert_eq!(legend_of(&bite), Some(GAR));
 }
 
 #[test]
@@ -2114,6 +2152,60 @@ fn a_dusk_fish_bites_at_dusk_and_never_at_noon() {
     let mut noon = angler(60, true, true, Side::SouthEast);
     at_game(&mut noon, 12, 0);
     assert_eq!(bitten(&mut noon, 3), [UNGATED_FISH].into());
+}
+
+#[test]
+fn a_night_fish_bites_at_noon_only_with_corpse_grub() {
+    const NIGHT_FISH: u32 = 960007;
+    let items = [(PACK_1, CORPSE_GRUB, 20)];
+    let mut bare = angler_carrying(60, Side::SouthEast, &items);
+    at_game(&mut bare, 12, 0);
+    assert_eq!(bitten(&mut bare, 3), [UNGATED_FISH].into());
+
+    let mut grub = angler_carrying(60, Side::SouthEast, &items);
+    grub.set_bait(Some(CORPSE_GRUB));
+    at_game(&mut grub, 12, 0);
+    assert!(bitten(&mut grub, 6).contains(&NIGHT_FISH));
+}
+
+#[test]
+fn gnoll_ear_lands_two_fish_and_counts_them_once_for_xp() {
+    let mut a = angler_carrying(1, Side::North, &[(PACK_1, GNOLL_EAR, 5)]);
+    a.set_bait(Some(GNOLL_EAR));
+    a.hook();
+    let events = a.result(true, true, 6.0);
+    assert_eq!(satchel_of(&events), Some(vec![row(SMALLFISH, 2)]));
+    let page = page_of(&events, SMALLFISH).expect("a page");
+    assert_eq!((page.caught, page.perfect), (2, 1));
+    // (5 + 2 x 1) x 2 for perfect, once.
+    assert_eq!(angler_event(&events), Some((1, 14)));
+}
+
+#[test]
+fn worg_haunch_drops_common_fish_from_the_roll() {
+    let items = [(PACK_1, WORG_HAUNCH, 20)];
+    let mut bare = angler_carrying(60, Side::SouthWest, &items);
+    assert_eq!(bitten(&mut bare, 15), [SMALLFISH, 960403].into());
+
+    // Each cast uses up one Haunch, so the casts stay within the 20 carried.
+    let mut haunch = angler_carrying(60, Side::SouthWest, &items);
+    haunch.set_bait(Some(WORG_HAUNCH));
+    assert_eq!(bitten(&mut haunch, 15), [960403].into());
+}
+
+#[test]
+fn worg_haunch_over_water_of_only_commons_says_nothing_is_biting_and_is_kept() {
+    let mut a = angler_carrying(1, Side::North, &[(PACK_1, WORG_HAUNCH, 3)]);
+    a.set_bait(Some(WORG_HAUNCH));
+    let events = a.cast();
+    assert!(
+        events.iter().any(|e| matches!(
+            e,
+            SessionEvent::Notification { text } if text == "Nothing is biting"
+        )),
+        "{events:?}"
+    );
+    assert!(saved(&a).contains(&format!("entry = {WORG_HAUNCH}\ncount = 3")));
 }
 
 #[test]

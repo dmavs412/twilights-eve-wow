@@ -235,7 +235,9 @@ impl Fish {
         self.water.as_deref().is_none_or(|w| water == Some(w))
             && self.bait.is_none_or(|b| bait == Some(b))
             && self.lure.is_none_or(|l| lure == Some(l))
-            && self.block.is_none_or(|b| b.holds(minute_of_day))
+            && self
+                .block
+                .is_none_or(|b| block_holds(b, minute_of_day, bait))
     }
 
     /// Whether it bites in water of `kind`.
@@ -252,7 +254,10 @@ impl Fish {
     /// its peak hours and again with its favourite bait on the cast.
     pub(crate) fn roll_weight(&self, base: f32, minute_of_day: u32, bait: Option<u32>) -> f32 {
         let bar = bar();
-        let peak = if self.in_peak(minute_of_day) {
+        let peak = if self
+            .peak
+            .is_some_and(|b| block_holds(b, minute_of_day, bait))
+        {
             bar.peak_factor
         } else {
             1.0
@@ -347,6 +352,15 @@ pub(crate) struct Effect {
     /// Where the Reeling Bar refills to the first time it reaches zero; 0 for no second hook.
     #[serde(default)]
     pub(crate) second_hook: f32,
+    /// This many more of the fish land with a catch.
+    #[serde(default)]
+    pub(crate) extra_fish: u32,
+    /// Fish of these rarities drop out of the bite roll.
+    #[serde(default)]
+    pub(crate) ignored_by: Vec<Rarity>,
+    /// This block of the game day counts as now, for peaks and conditions.
+    #[serde(default)]
+    pub(crate) always_block: Option<Block>,
 }
 
 /// A fishing pole (`[[pole]]`); it never wears.
@@ -410,8 +424,18 @@ impl Legend {
     ) -> bool {
         self.water.as_deref().is_none_or(|w| water == Some(w))
             && self.bait.is_none_or(|b| bait == Some(b))
-            && self.block.is_none_or(|b| b.holds(minute_of_day))
+            && self
+                .block
+                .is_none_or(|b| block_holds(b, minute_of_day, bait))
     }
+}
+
+/// Whether `block` holds at game minute `minute_of_day`, or the cast's `bait` makes it always hold.
+pub(crate) fn block_holds(block: Block, minute_of_day: u32, bait: Option<u32>) -> bool {
+    block.holds(minute_of_day)
+        || bait
+            .and_then(self::bait)
+            .is_some_and(|b| b.effect.always_block == Some(block))
 }
 
 #[derive(Deserialize)]
@@ -892,6 +916,17 @@ mod tests {
         assert_eq!(snapper.roll_weight(37.85, 7 * 60, None), 37.85 * 2.0);
         assert_eq!(snapper.roll_weight(37.85, 12 * 60, worms), 37.85 * 2.0);
         assert_eq!(snapper.roll_weight(37.85, 12 * 60, None), 37.85);
+    }
+
+    #[test]
+    fn corpse_grub_puts_the_night_peak_and_condition_at_any_hour() {
+        let catfish = fish(6308).unwrap();
+        let grub = Some(960106);
+        assert_eq!(catfish.roll_weight(10.0, 12 * 60, grub), 10.0 * 4.0);
+        assert_eq!(catfish.roll_weight(10.0, 12 * 60, Some(960105)), 10.0);
+        assert!(block_holds(Block::Night, 12 * 60, grub));
+        assert!(!block_holds(Block::Dusk, 12 * 60, grub));
+        assert!(!block_holds(Block::Night, 12 * 60, None));
     }
 
     #[test]

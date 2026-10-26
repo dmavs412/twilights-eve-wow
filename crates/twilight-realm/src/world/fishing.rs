@@ -71,6 +71,8 @@ struct Boost {
     treasure_points: u32,
     /// Where the bar refills to the first time it reaches zero; the larger of the two wins.
     second_hook: f32,
+    /// This many more of the fish land with a catch.
+    extra_fish: u32,
     /// The bait on this cast, which a Legendary Fish may ask for.
     bait: Option<u32>,
     /// The lure in the Lure slot, which a fish may ask for.
@@ -87,6 +89,7 @@ impl Boost {
         self.drain_pct += e.drain_pct;
         self.treasure_points += e.treasure_points;
         self.second_hook = self.second_hook.max(e.second_hook);
+        self.extra_fish += e.extra_fish;
         self
     }
 }
@@ -124,6 +127,8 @@ struct Bite {
     level: u32,
     /// The fish is a Legendary Fish.
     legend: bool,
+    /// This many more of the fish land with the catch; 0 for a Legendary Fish.
+    extra_fish: u32,
     /// The pool it bit in, whose Legend Rumours a catch rolls.
     pool: &'static Pool,
     /// The catch log's place key: the cast's Fishing Water, else the pool.
@@ -224,8 +229,8 @@ pub(crate) fn find_hint(c: &mut Char, legend: u32, note: u32, events: &mut Vec<S
 }
 
 /// Records a catch of `item` at `place` (a Fishing Water's key, else the pool's) in the catch
-/// log, a perfect one beating a plain one for the best.
-fn record_catch(c: &mut Char, item: u32, perfect: bool, place: &str) {
+/// log, a perfect one beating a plain one for the best. `count` fish landed with the catch.
+fn record_catch(c: &mut Char, item: u32, count: u32, perfect: bool, place: &str) {
     let quality = if perfect { PERFECT } else { CAUGHT };
     let at = match c.fish_log.iter().position(|l| l.item == item) {
         Some(at) => at,
@@ -239,11 +244,11 @@ fn record_catch(c: &mut Char, item: u32, perfect: bool, place: &str) {
     };
     let log = &mut c.fish_log[at];
     log.best = log.best.max(quality);
-    log.caught += 1;
+    log.caught += count;
     log.perfect += u32::from(perfect);
     match log.places.iter_mut().find(|(k, _)| k == place) {
-        Some((_, n)) => *n += 1,
-        None => log.places.push((place.to_owned(), 1)),
+        Some((_, n)) => *n += count,
+        None => log.places.push((place.to_owned(), count)),
     }
 }
 
@@ -343,12 +348,17 @@ fn biters(
     minute: u32,
 ) -> Vec<&'static PoolFish> {
     let gate = fish::bar().gate_levels_above;
+    let ignored = bait
+        .and_then(fish::bait)
+        .map_or(&[][..], |b| &b.effect.ignored_by);
     pool.fish
         .iter()
         .filter(|f| {
             f.level < effective + gate
                 && fish::fish(f.item).is_some_and(|d| {
-                    d.bites_in(kind) && d.conditions_hold(water, bait, lure, minute)
+                    d.bites_in(kind)
+                        && !ignored.contains(&d.rarity)
+                        && d.conditions_hold(water, bait, lure, minute)
                 })
         })
         .collect()
@@ -763,6 +773,7 @@ impl InWorld {
             fish: item,
             level,
             legend: legendary,
+            extra_fish: if legendary { 0 } else { boost.extra_fish },
             pool,
             place: water.unwrap_or(pool.key.as_str()),
             start_fill,
@@ -809,7 +820,7 @@ impl InWorld {
         let mut caught = None;
         let mut chest = false;
         if won {
-            match equipment::receive(c, bite.fish, 1, events) {
+            match equipment::receive(c, bite.fish, 1 + bite.extra_fish, events) {
                 Ok(()) => caught = Some(bite.fish),
                 Err(reason) => events.push(equipment::inventory_failure(reason, 0)),
             }
@@ -834,7 +845,7 @@ impl InWorld {
                 gain_angler_xp(c, fish::angler().legend_bonus_xp);
             }
             events.push(angler(c));
-            record_catch(c, item, perfect, bite.place);
+            record_catch(c, item, 1 + bite.extra_fish, perfect, bite.place);
             // Every catch in the pool rolls its Legend Rumours.
             let mut hinted = false;
             for (legend, note) in rumours::legend_catch_hits(c, &bite.pool.key, rng) {

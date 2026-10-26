@@ -109,8 +109,11 @@
 #                   quarter) and the fish stays on; the larger value wins
 #
 # [[bait]], the custom baits at 960101 on, used up one per cast; the same effect keys as a lure,
-# and `treasure_points` (percentage points more treasure chance). A bait with no effect is one a
-# Legendary Fish asks for.
+# and these:
+#   treasure_points  percentage points more treasure chance
+#   extra_fish       this many more of the fish land with a catch
+#   ignored_by       rarities (`common`, `uncommon`, `rare`) whose fish drop out of the bite roll
+#   always_block     a block (see Blocks below) that counts as now, for peaks and conditions
 
 item = [
   # The fish.
@@ -257,7 +260,7 @@ difficulty = 35
 rarity = "common"
 kinds = ["river", "lake"]
 peak = "night"
-favourite_bait = 960105
+favourite_bait = 960106
 
 [[fish]]
 item = 6303 # Raw Slitherskin Mackerel
@@ -838,12 +841,15 @@ treasure_points = 10
 
 [[bait]]
 item = 960103 # Gnoll Ear
+extra_fish = 1
 
 [[bait]]
 item = 960104 # Prison Gruel
 
 [[bait]]
 item = 960105 # Worg Haunch
+ignored_by = ["common"]
 
 [[bait]]
 item = 960106 # Corpse Grub
+always_block = "night"
