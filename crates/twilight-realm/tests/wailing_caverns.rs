@@ -511,15 +511,14 @@ fn lady_anacondra_always_drops_one_blue_from_the_runs_level_band() {
 
 #[test]
 fn the_boss_blue_follows_the_runners_level() {
-    // At level 30 her own blues are all below the band: a blue of levels 26-30 drops instead.
+    // At level 30 her own blues are all below the band, and no world pool holds a blue to carry
+    // it on (spec #448 emptied the drop file): the band falls back to her own highest blues.
+    let pool = boss_pool();
     for seed in [1, 2, 3] {
         let blues = boss_blues(seed, 30);
         assert_eq!(blues.len(), 1, "seed {seed}: {blues:?}");
-        let (_, required) = blues[0];
-        assert!(
-            (26..=30).contains(&required),
-            "seed {seed}: needs {required}"
-        );
+        let (entry, _) = blues[0];
+        assert!(pool.contains(&entry), "seed {seed}: {entry} is not hers");
     }
 }
 

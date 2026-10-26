@@ -298,11 +298,9 @@ fn the_seeded_gear_keeps_the_references_numbers() {
                 None => continue,
             }
         }
-        // The vanilla rows of pool level 12 and under left the drop file (spec #272:
-        // Northshire's loot is hand-authored); their numbers stay.
-        if item["pool_level"].as_i64().is_some_and(|l| l <= 12) {
-            item["pool_level"] = 0.into();
-        }
+        // Every vanilla row left the drop file (spec #272 for pool level 12 and under, spec #448
+        // for the rest: loot is hand-authored); their numbers stay.
+        item["pool_level"] = 0.into();
         let mut want = expected_item(&item);
         retune_shield_block(&mut want);
         // The starting outfits' vanilla pieces carry +2 Stamina, +4 on a two-hander (#426, #427).
@@ -588,7 +586,7 @@ fn nothing_hands_out_gear_outside_the_ten_slots() {
     }
     entries.sort_unstable_by_key(|(_, e)| *e);
     entries.dedup_by_key(|(_, e)| *e);
-    assert!(entries.len() > 300, "only {} entries", entries.len());
+    assert!(entries.len() > 200, "only {} entries", entries.len());
     let mut realm = twilight_realm::Realm::new();
     for (from, entry) in entries {
         assert!(
