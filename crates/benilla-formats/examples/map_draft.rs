@@ -34,25 +34,62 @@ const FOG_EDGE: (f32, f32) = (0.15, 0.45);
 /// edge inside it.
 const FRAME_INSET: f32 = 30.0;
 const FRAME_FADE: f32 = 40.0;
-/// The colour distances (RGB, 0 to 1) a black-Highlight zone's backdrop key runs between: cut
-/// at the first, kept at the second. The key is blurred by `CUTOUT_BLUR` art pixels and
-/// sharpened across `CUTOUT_EDGE`, so the backdrop's mottling does not speckle the cut.
-const BACKDROP_KEY: (f32, f32) = (0.06, 0.16);
+/// A city map's backdrop flood: from the frame inward, a step to a neighbour takes it when their
+/// colours differ by under `FLOOD_STEP` and it is within `FLOOD_REACH` of the backdrop's colour
+/// (RGB distances, 0 to 1). The ink outlines round the walls, districts and crest stop it.
+const FLOOD_STEP: f32 = 0.06;
+const FLOOD_REACH: f32 = 0.16;
+/// The cut is blurred by `CUTOUT_BLUR` art pixels and sharpened across `CUTOUT_EDGE`, so its rim
+/// is soft but not hazy.
 const CUTOUT_BLUR: usize = 3;
 const CUTOUT_EDGE: (f32, f32) = (0.35, 0.65);
+/// How far inside the frame a cut-out city's clearing of the zone under it reaches full, in art
+/// pixels, so the clearing has no hard rim.
+const CLEAR_FADE: f32 = 150.0;
 
-/// A city map's cut-out: 0 where the art is its commonest colour, its plain backdrop, 1 where it
-/// differs, smoothed.
+/// A city map's cut-out: 0 on its backdrop, the ground flooded in from the frame, and 1 on all it
+/// encloses, smoothed.
 fn cutout(art: &Picture) -> Vec<f32> {
     let bg = commonest_colour(art);
-    let mut key = Picture::blank(ART_W, ART_H);
-    for y in 0..ART_H {
-        for x in 0..ART_W {
-            let c = art.texel(x, y);
-            let d = ((0..3).map(|i| (c[i] - bg[i]).powi(2)).sum::<f32>()).sqrt();
-            let t = ((d - BACKDROP_KEY.0) / (BACKDROP_KEY.1 - BACKDROP_KEY.0)).clamp(0.0, 1.0);
-            key.put(x, y, [0.0, 0.0, 0.0, t]);
+    let (w, h) = (ART_W as usize, ART_H as usize);
+    let colour = |i: usize| art.texel((i % w) as u32, (i / w) as u32);
+    let dist =
+        |a: [f32; 4], b: [f32; 4]| ((0..3).map(|i| (a[i] - b[i]).powi(2)).sum::<f32>()).sqrt();
+    let bg4 = [bg[0], bg[1], bg[2], 1.0];
+    let mut flooded = vec![false; w * h];
+    let mut queue = std::collections::VecDeque::new();
+    for i in 0..w * h {
+        let (x, y) = (i % w, i / w);
+        let edge = x.min(w - 1 - x).min(y).min(h - 1 - y) as f32;
+        if edge < FRAME_INSET {
+            flooded[i] = true;
+            queue.push_back(i);
         }
+    }
+    while let Some(i) = queue.pop_front() {
+        let (x, y) = (i % w, i / w);
+        let c = colour(i);
+        let around = [
+            (x > 0).then(|| i - 1),
+            (x + 1 < w).then(|| i + 1),
+            (y > 0).then(|| i - w),
+            (y + 1 < h).then(|| i + w),
+        ];
+        for j in around.into_iter().flatten() {
+            if flooded[j] {
+                continue;
+            }
+            let n = colour(j);
+            if dist(n, c) < FLOOD_STEP && dist(n, bg4) < FLOOD_REACH {
+                flooded[j] = true;
+                queue.push_back(j);
+            }
+        }
+    }
+    let mut key = Picture::blank(ART_W, ART_H);
+    for (i, f) in flooded.iter().enumerate() {
+        let a = if *f { 0.0 } else { 1.0 };
+        key.put((i % w) as u32, (i / w) as u32, [0.0, 0.0, 0.0, a]);
     }
     soften_alpha(&mut key, CUTOUT_BLUR);
     key.rgba
@@ -403,20 +440,38 @@ impl Zone {
     /// cut-out, so the city lies on the land around it and not on its card.
     fn silhouette(&self, u: f32, v: f32) -> f32 {
         if self.peak == 0.0 {
-            let (x, y) = (u * ART_W as f32, v * ART_H as f32);
-            let edge = x.min(ART_W as f32 - x).min(y).min(ART_H as f32 - y);
-            let frame = ((edge - FRAME_INSET) / FRAME_FADE).clamp(0.0, 1.0);
+            let frame = Self::frame(u, v);
             let Some(cut) = &self.cutout else {
                 return frame;
             };
             let (cx, cy) = (
-                (x as u32).min(ART_W - 1) as usize,
-                (y as u32).min(ART_H - 1) as usize,
+                ((u * ART_W as f32) as u32).min(ART_W - 1) as usize,
+                ((v * ART_H as f32) as u32).min(ART_H - 1) as usize,
             );
             return frame * cut[cy * ART_W as usize + cx];
         }
         let c = self.highlight.sample(u, v * self.tex_pct_y);
         (c[0].max(c[1]).max(c[2]) * c[3] / self.peak).min(1.0)
+    }
+
+    /// The art inset by its frame with a soft edge, at zone UV `(u, v)`.
+    fn frame(u: f32, v: f32) -> f32 {
+        let (x, y) = (u * ART_W as f32, v * ART_H as f32);
+        let edge = x.min(ART_W as f32 - x).min(y).min(ART_H as f32 - y);
+        ((edge - FRAME_INSET) / FRAME_FADE).clamp(0.0, 1.0)
+    }
+
+    /// How much of the zone art already laid under this zone it clears from the fill's layer: a
+    /// cut-out city clears its whole frame, so the zone it sits in (Elwynn draws its own
+    /// Stormwind, label and all) does not show between its districts; the painting does.
+    fn clears(&self, u: f32, v: f32) -> f32 {
+        if self.cutout.is_some() {
+            let (x, y) = (u * ART_W as f32, v * ART_H as f32);
+            let edge = x.min(ART_W as f32 - x).min(y).min(ART_H as f32 - y);
+            ((edge - FRAME_INSET) / CLEAR_FADE).clamp(0.0, 1.0)
+        } else {
+            0.0
+        }
     }
 
     /// The explored art at zone UV `(u, v)`, bilinear inside the 1002 by 668 the map shows.
@@ -464,6 +519,11 @@ fn draw(canvas: &mut Picture, layer: &mut [[f32; 4]], at: [f64; 4], zone: &Zone)
             if !(0.0..1.0).contains(&u) {
                 continue;
             }
+            let k = (py * canvas.w + px) as usize;
+            let clear = zone.clears(u, v);
+            if clear > 0.0 {
+                layer[k] = layer[k].map(|o| o * (1.0 - clear));
+            }
             let a = zone.silhouette(u, v);
             if a <= 0.0 {
                 continue;
@@ -472,7 +532,6 @@ fn draw(canvas: &mut Picture, layer: &mut [[f32; 4]], at: [f64; 4], zone: &Zone)
             let d = canvas.texel(px, py);
             let c = [0, 1, 2].map(|i| s[i] * a + d[i] * (1.0 - a));
             canvas.put(px, py, [c[0], c[1], c[2], 1.0]);
-            let k = (py * canvas.w + px) as usize;
             let src = [s[0] * a, s[1] * a, s[2] * a, a];
             for (o, n) in layer[k].iter_mut().zip(src) {
                 *o = n + *o * (1.0 - a);
