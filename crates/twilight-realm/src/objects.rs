@@ -5,7 +5,7 @@
 use crate::audience::Audience;
 use crate::looting::Loot;
 use crate::phased::{
-    gameobject_create, GameObject, CHEST, FISHINGNODE, GENERIC, HIGHGUID_GAMEOBJECT,
+    gameobject_create, GameObject, CHEST, FISHINGNODE, GOOBER, HIGHGUID_GAMEOBJECT,
 };
 use benilla_protocol::SessionEvent;
 
@@ -29,7 +29,7 @@ pub enum ObjectKind {
     /// it. A click does nothing; the Reeling Bar is the catch.
     Bobber,
     /// One of a character's Herb Patches (ADR 0024): the herb zone and the spot in it. A click
-    /// does nothing yet; the Forager's Grid opens from it.
+    /// opens the Forager's Grid.
     HerbPatch { zone: usize, spot: usize },
 }
 
@@ -61,7 +61,7 @@ impl Object {
             entry: self.spec.entry,
             display_id: self.spec.display,
             type_id: match self.spec.kind {
-                ObjectKind::Use | ObjectKind::HerbPatch { .. } => GENERIC,
+                ObjectKind::Use | ObjectKind::HerbPatch { .. } => GOOBER,
                 ObjectKind::Chest(_) => CHEST,
                 ObjectKind::Bobber => FISHINGNODE,
             },

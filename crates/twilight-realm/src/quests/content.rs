@@ -267,7 +267,7 @@ impl QuestObject {
             guid: self.object_guid(),
             entry: self.entry,
             display_id: self.display,
-            type_id: crate::phased::GENERIC,
+            type_id: crate::phased::GOOBER,
             flags: 0,
             faction: 0,
             position: crate::ground::grounded_at(host, self.map, self.position, self.grounded),

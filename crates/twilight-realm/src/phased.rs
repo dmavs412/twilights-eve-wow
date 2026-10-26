@@ -29,9 +29,13 @@ const GAMEOBJECT_POS_X: u16 = 15;
 const GAMEOBJECT_TYPE_ID: u16 = 21;
 /// `GameObjectDisplayInfo` 672: `InstancePortal.mdx`, the swirl in every dungeon's doorway.
 const PORTAL_DISPLAY: u32 = 672;
-/// `GAMEOBJECT_TYPE_GENERIC`, flagged `GO_FLAG_NOT_SELECTABLE`, in `GO_STATE_READY`.
+/// `GAMEOBJECT_TYPE_GENERIC`, flagged `GO_FLAG_NOT_SELECTABLE`, in `GO_STATE_READY`: scenery. The
+/// client never lets a player use a GENERIC, whatever its flags (`0x5f47f0`).
 pub(crate) const GENERIC: u32 = 5;
 const NOT_SELECTABLE: u32 = 0x10;
+/// `GAMEOBJECT_TYPE_GOOBER`: a GameObject a player clicks. The client shows the interact cursor
+/// and sends `CMSG_GAMEOBJ_USE`, and the realm decides what the click does.
+pub(crate) const GOOBER: u32 = 10;
 /// `GAMEOBJECT_TYPE_CHEST`.
 pub(crate) const CHEST: u32 = 3;
 /// `GAMEOBJECT_TYPE_FISHINGNODE`: a fishing bobber.
@@ -370,16 +374,17 @@ impl DungeonObject {
             guid: self.object_guid(),
             entry: self.guid,
             display_id: self.display,
-            type_id: GENERIC,
-            flags: if self.use_kind.is_some() || self.gives_quests {
-                0
-            } else {
-                NOT_SELECTABLE
-            },
+            type_id: if self.clicked() { GOOBER } else { GENERIC },
+            flags: if self.clicked() { 0 } else { NOT_SELECTABLE },
             faction: 0,
             position: grounded_at(host, map, self.position, self.grounded),
             orientation: self.orientation,
         })
+    }
+
+    /// Whether a click does something: a use, or quests to offer.
+    fn clicked(&self) -> bool {
+        self.use_kind.is_some() || self.gives_quests
     }
 
     /// Whether a character in `phase` sees it.
@@ -825,7 +830,7 @@ impl Dungeon {
             guid,
             entry: guid as u32,
             display_id: PORTAL_DISPLAY,
-            type_id: GENERIC,
+            type_id: GOOBER,
             flags: 0,
             faction: 0,
             position,

@@ -313,6 +313,33 @@ fn the_water_portal_stands_on_the_floor_not_the_terrain_under_the_tower() {
     assert_eq!(teleports(&p, 0, from), [[-9200.0, -2020.0, 43.0]]);
 }
 
+/// `GAMEOBJECT_TYPE_GOOBER`: the client lets a player use it. A GENERIC (5) it never does, so a
+/// right-click on one sends nothing (#263).
+const GOOBER: i32 = 10;
+
+/// The type the client was given for `guid`'s GameObject, if it was shown.
+fn shown_type(p: &Party, i: usize, guid: u64) -> Option<i32> {
+    p.seen(i).iter().find_map(|e| match e {
+        SessionEvent::ObjectCreate {
+            guid: g, fields, ..
+        } if *g == guid => Some(fields.gameobject_type_id()),
+        _ => None,
+    })
+}
+
+#[test]
+fn the_water_portal_and_its_ward_stone_are_goobers_the_client_lets_a_player_click() {
+    let mut p = party(PLAYERS);
+    p.go(0, BY_INNER_WATER, 0.0);
+    p.run(0.5);
+    assert_eq!(shown_type(&p, 0, INNER_WATER), Some(GOOBER));
+    click(&mut p, 0, INNER_WATER);
+    ack(&mut p, 0);
+    p.go(0, BY_WARD_WATER, 0.0);
+    p.run(0.5);
+    assert_eq!(shown_type(&p, 0, object(WARD_WATER)), Some(GOOBER));
+}
+
 #[test]
 fn pinning_water_opens_fire_and_pinning_shadow_brings_the_shadow_of_morganth() {
     let mut p = party(PLAYERS);
