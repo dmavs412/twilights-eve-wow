@@ -17,7 +17,7 @@ param(
     [int[]]$Issues,
     [string]$Label = "ready-for-agent",
     [string]$Model = "claude-opus-5-5",
-    [double]$BudgetUsd = 5.0,
+    [double]$BudgetUsd = 8.0,
     [string]$StopAt,
     [int]$Max = 30,
     [switch]$DryRun
