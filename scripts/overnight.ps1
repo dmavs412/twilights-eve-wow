@@ -2,7 +2,7 @@
 .SYNOPSIS
 Work through GitHub issues labelled ready-for-agent with no one at the keyboard.
 
-One fresh `claude -p` session per ticket, Sonnet, dollar-capped. After each session the script
+One fresh `claude -p` session per ticket, Opus, dollar-capped. After each session the script
 re-runs the gate (cargo check on every crate the commits touched, realm tests when the realm or
 data changed) and resets main to the pre-ticket commit if it fails. Rules the session follows:
 docs/agents/unattended.md. Logs: .claude/overnight/<timestamp>/.
@@ -16,8 +16,8 @@ docs/agents/unattended.md. Logs: .claude/overnight/<timestamp>/.
 param(
     [int[]]$Issues,
     [string]$Label = "ready-for-agent",
-    [string]$Model = "claude-sonnet-5-5",
-    [double]$BudgetUsd = 3.0,
+    [string]$Model = "claude-opus-5-5",
+    [double]$BudgetUsd = 5.0,
     [string]$StopAt,
     [int]$Max = 30,
     [switch]$DryRun

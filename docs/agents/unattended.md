@@ -1,7 +1,7 @@
 # Unattended runs
 
 `scripts/overnight.ps1` works through open issues labelled `ready-for-agent` with no one at the
-keyboard: every one labelled `bug` first, at any age, oldest first, then features oldest first. Each ticket gets a fresh `claude -p` session on Sonnet with
+keyboard: every one labelled `bug` first, at any age, oldest first, then features oldest first. Each ticket gets a fresh `claude -p` session on Opus with
 `scripts/overnight-settings.json` layered over the shared settings. These rules apply to that
 session on top of `CLAUDE.md`. Nobody will answer a question; a session that asks one has
 failed.

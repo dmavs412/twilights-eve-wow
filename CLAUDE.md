@@ -35,7 +35,7 @@ Vocabulary: `GLOSSARY.md`. Decisions: `docs/adr/`. Specs: `docs/specs/`. Vanilla
 - **Keep context small.** Read the lines you need. Report in a few lines. Davis runs `/clear` or
   `/compact` between tasks; say so when a task is done and the next one starts cold.
 - **Unattended runs.** `scripts/overnight.ps1` works through open issues labelled
-  `ready-for-agent`, oldest first, one fresh Sonnet session each, with no one at the keyboard;
+  `ready-for-agent`, oldest first, one fresh Opus session each, with no one at the keyboard;
   rules in `docs/agents/unattended.md`. An evening grill ends by writing those tickets: each
   one fully specified, with its assumptions allowed and its acceptance stated, so the night
   session can pick a reading and record it instead of asking.
