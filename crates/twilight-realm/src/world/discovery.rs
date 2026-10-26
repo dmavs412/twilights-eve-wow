@@ -1,13 +1,13 @@
-//! **Discovery**, in the world: the first time the character stands in an area, its explore bit
-//! lifts the fog on the map, the client announces it, and it pays an eighth of a level's XP times
-//! the Tier XP Rate (`Player::CheckAreaExploreAndOutdoor`). Once per character, never again.
+//! **Discovery**, in the world: the first time the character stands in an area, the client
+//! announces it and it pays an eighth of a level's XP times the Tier XP Rate
+//! (`Player::CheckAreaExploreAndOutdoor`). Once per character, never again. The map's fog is
+//! already lifted everywhere (`areas::explored_pairs`).
 
 use benilla_protocol::messages::{ExplorationXp, XpGain};
 use benilla_protocol::SessionEvent;
 
 use super::{InWorld, Ticked};
 use crate::characters::Char;
-use crate::fields::values;
 use crate::rules::xp;
 use crate::Host;
 
@@ -30,10 +30,6 @@ impl InWorld {
         c.discovered.insert(at, area.id);
         ticked.discovered = true;
         crate::quests::refresh(c, events);
-        events.push(values(
-            self.guid,
-            &[crate::areas::explored_pair(&c.discovered, area)],
-        ));
         let gained = self.scaled_xp(c, xp::discovery_xp(c.level));
         if gained > 0 {
             events.push(SessionEvent::XpGain(XpGain {

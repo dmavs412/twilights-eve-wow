@@ -1,8 +1,8 @@
-//! Discovery (spec #28): the first time a character stands in a subzone its fog lifts (the
-//! explored-zones bit), "Discovered: <name>" shows (`SMSG_EXPLORATION_EXPERIENCE`), and it earns
-//! 1/8 of the XP from its level to the next, times the Tier XP Rate. Once per character: through
-//! Advancement and a reload, nothing is paid twice and the map stays revealed. Played on a host
-//! with a scripted map of areas.
+//! Discovery (spec #28): the first time a character stands in a subzone "Discovered: <name>"
+//! shows (`SMSG_EXPLORATION_EXPERIENCE`), and it earns 1/8 of the XP from its level to the next,
+//! times the Tier XP Rate. Once per character: through Advancement and a reload, nothing is paid
+//! twice. The map shows every area explored from the first login. Played on a host with a
+//! scripted map of areas.
 
 mod common;
 mod gear_common;
@@ -41,14 +41,13 @@ fn barrens() -> Areas {
 }
 
 #[test]
-fn entering_a_new_subzone_lifts_its_fog_announces_it_and_pays_an_eighth_of_a_level() {
+fn entering_a_new_subzone_announces_it_and_pays_an_eighth_of_a_level() {
     let (mut realm, me, _) = in_world(1, "basic_warrior", 1.0);
     let events = step(&mut realm, AT_CROSSROADS);
     assert_eq!(
         discovered(&events),
         vec![(THE_CROSSROADS, LEVEL_1_DISCOVERY_XP)]
     );
-    assert!(explored(&descriptor(&events, me), CROSSROADS_BIT));
     let gain = events
         .iter()
         .find_map(|e| match e {
@@ -73,14 +72,15 @@ fn re_entering_a_subzone_pays_nothing() {
 }
 
 #[test]
-fn each_discovery_keeps_the_bits_already_set() {
-    let (mut realm, me, mut events) = in_world(1, "basic_warrior", 1.0);
-    events.extend(step(&mut realm, AT_TAURAJO));
-    events.extend(step(&mut realm, AT_CROSSROADS));
-    events.extend(step(&mut realm, AT_BAEL_MODAN));
+fn the_whole_map_is_explored_from_the_first_login() {
+    let (_, me, events) = in_world(1, "basic_warrior", 1.0);
     let me_now = descriptor(&events, me);
-    for bit in [CAMP_TAURAJO_BIT, CROSSROADS_BIT, BAEL_MODAN_BIT] {
-        assert!(explored(&me_now, bit), "bit {bit}");
+    for slot in 0..64 {
+        assert_eq!(
+            me_now.player_explored_zone_slot(slot),
+            u32::MAX,
+            "slot {slot}"
+        );
     }
 }
 
@@ -116,10 +116,9 @@ fn the_tier_xp_rate_and_the_dev_multiplier_scale_it() {
 
 #[test]
 fn at_the_tier_cap_a_discovery_still_shows_but_pays_nothing() {
-    let (mut realm, me, _) = in_world(10, "basic_warrior", 1.0);
+    let (mut realm, _, _) = in_world(10, "basic_warrior", 1.0);
     let events = step(&mut realm, AT_CROSSROADS);
     assert_eq!(discovered(&events), vec![(THE_CROSSROADS, 0)]);
-    assert!(explored(&descriptor(&events, me), CROSSROADS_BIT));
 }
 
 #[test]
@@ -131,12 +130,8 @@ fn discoveries_survive_a_save_and_reload() {
     let mut fresh = Realm::with_seed(SEED);
     fresh.import_character(&blob).unwrap();
     fresh.handle(RealmCommand::EnterWorld { guid: me });
-    let mut events = drain(&mut fresh);
-    assert!(
-        explored(&descriptor(&events, me), CROSSROADS_BIT),
-        "the map is revealed from the login on"
-    );
-    events = step(&mut fresh, AT_CROSSROADS);
+    drain(&mut fresh);
+    let events = step(&mut fresh, AT_CROSSROADS);
     assert!(discovered(&events).is_empty(), "never paid twice");
 }
 
@@ -155,8 +150,7 @@ fn a_save_without_discoveries_loads_with_none() {
     let mut fresh = Realm::with_seed(SEED);
     fresh.import_character(&old).unwrap();
     fresh.handle(RealmCommand::EnterWorld { guid: me });
-    let events = drain(&mut fresh);
-    assert!(!explored(&descriptor(&events, me), CROSSROADS_BIT));
+    drain(&mut fresh);
     assert_eq!(
         discovered(&step(&mut fresh, AT_CROSSROADS)),
         vec![(THE_CROSSROADS, LEVEL_1_DISCOVERY_XP)]

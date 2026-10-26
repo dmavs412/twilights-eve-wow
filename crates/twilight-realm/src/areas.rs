@@ -1,17 +1,15 @@
 //! **Discovery**: the areas a character can discover (`content/areas.toml`, Kalimdor's rows of
-//! `AreaTable.dbc`), and the explore bits that lift their fog on the client's map.
+//! `AreaTable.dbc`), and the explore bits of the client's map, which are all set.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use crate::fields::PLAYER_EXPLORED_ZONES_1;
 
-/// One area of `content/areas.toml`; its `zone` and `name` are there for the reader.
+/// One area of `content/areas.toml`; its `zone`, `bit` and `name` are there for the reader.
 #[derive(Debug, serde::Deserialize)]
 pub(crate) struct Area {
     pub(crate) id: u32,
-    /// Its bit in `PLAYER_EXPLORED_ZONES`.
-    pub(crate) bit: u32,
 }
 
 #[derive(serde::Deserialize)]
@@ -41,27 +39,10 @@ pub(crate) fn known(mut ids: Vec<u32>) -> Vec<u32> {
     ids
 }
 
-/// The `PLAYER_EXPLORED_ZONES` dwords that `discovered` sets, each with every discovered bit in it.
-pub(crate) fn explored_pairs(discovered: &[u32]) -> Vec<(u16, u32)> {
-    let mut words: Vec<(u16, u32)> = Vec::new();
-    for bit in discovered.iter().filter_map(|&id| get(id)).map(|a| a.bit) {
-        let field = PLAYER_EXPLORED_ZONES_1 + (bit / 32) as u16;
-        let mask = 1 << (bit % 32);
-        match words.iter_mut().find(|(f, _)| *f == field) {
-            Some((_, word)) => *word |= mask,
-            None => words.push((field, mask)),
-        }
-    }
-    words.sort_unstable();
-    words
-}
-
-/// The `PLAYER_EXPLORED_ZONES` dword that holds `area`'s bit, as `discovered` sets it.
-pub(crate) fn explored_pair(discovered: &[u32], area: &Area) -> (u16, u32) {
-    let field = PLAYER_EXPLORED_ZONES_1 + (area.bit / 32) as u16;
-    let word = explored_pairs(discovered)
-        .into_iter()
-        .find(|&(f, _)| f == field)
-        .map_or(0, |(_, w)| w);
-    (field, word)
+/// The `PLAYER_EXPLORED_ZONES` dwords, every bit set: the whole world map shows explored from the
+/// first login (Davis, 2026-10-26). Discovery still pays its XP and meets discover objectives.
+pub(crate) fn explored_pairs() -> Vec<(u16, u32)> {
+    (0..64)
+        .map(|i| (PLAYER_EXPLORED_ZONES_1 + i, u32::MAX))
+        .collect()
 }

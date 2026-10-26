@@ -2035,7 +2035,7 @@ fn player_fields(c: &Char, stats: &CharacterStats, power: &Power) -> ObjectField
     pairs.push(crate::talents::points_pair(c));
     pairs.extend(crate::equipment::inventory_pairs(c));
     pairs.extend(crate::quests::log_pairs(c));
-    pairs.extend(crate::areas::explored_pairs(&c.discovered));
+    pairs.extend(crate::areas::explored_pairs());
     // No school's damage is modified: every multiplier is 1.
     for school in 0..7 {
         pairs.push((PLAYER_FIELD_MOD_DAMAGE_DONE_PCT + school, float(1.0)));
