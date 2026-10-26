@@ -1566,7 +1566,8 @@ mod tests {
 
     #[test]
     fn elwynn_npcs_are_everyones_friends_and_its_beasts_still_fight() {
-        // Northshire Guard, Marshal McBride. Innkeeper Farley is a Hub NPC now (#331).
+        // Northshire Guard, Marshal McBride. Innkeeper Farley is a Hub NPC now (#331), as are
+        // Goldshire's townsfolk (#459).
         for entry in [1642, 197] {
             let t = template(entry).unwrap();
             assert!(t.friendly && !t.hostile, "{} fights", t.name);

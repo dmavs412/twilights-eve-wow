@@ -36,8 +36,6 @@ struct Npc {
     teaches_herbalism: bool,
     #[serde(default)]
     resets_perks: bool,
-    #[serde(default)]
-    angler_hints: Vec<toml::Value>,
     /// The `AreaTable` id an innkeeper binds to.
     area: Option<u32>,
     /// An innkeeper's rest area, in yards.
@@ -180,14 +178,9 @@ fn every_npcs_flags_fit_its_role() {
                     && !gives
                     && !n.stock.is_empty()
             }
-            // Innkeeper Farley: quests and a talk menu with an angler hint, no inn service (#331).
-            "talker" => {
-                n.npc_flags == GOSSIP | QUEST_GIVER
-                    && talks
-                    && gives
-                    && n.stock.is_empty()
-                    && !n.angler_hints.is_empty()
-            }
+            // Innkeeper Farley and Smith Argus: quests and a talk menu, no inn service or goods
+            // (#331, #459).
+            "talker" => n.npc_flags == GOSSIP | QUEST_GIVER && talks && gives && n.stock.is_empty(),
             "ambient" => {
                 n.npc_flags == GOSSIP
                     && talks
@@ -371,6 +364,65 @@ fn goldshire_has_an_inn_and_its_shops() {
         assert_eq!(role(shopkeeper), ("shop", false), "{shopkeeper}");
     }
     assert_eq!(role("Andrew Krighton"), ("repairer", true));
+}
+
+/// Goldshire's townsfolk (#459): seventeen stock NPCs speak a line under a title the game has a
+/// use for, and Smith Argus keeps his quests. No Eastern Kingdoms title names a class trainer or a
+/// trade the game does not have.
+#[test]
+fn goldshire_townsfolk_speak_and_no_title_names_a_dead_trade() {
+    let town: Vec<Npc> = in_town(GOLDSHIRE)
+        .into_iter()
+        .filter(|n| n.map == EASTERN_KINGDOMS)
+        .collect();
+    for name in [
+        "Smith Argus",
+        "Corina Steele",
+        "Kurran Steele",
+        "Lyria Du Lac",
+        "Brother Wilhelm",
+        "Keryn Sylvius",
+        "Priestess Josetta",
+        "Zaldimar Wefhellt",
+        "Michelle Belle",
+        "William Pestle",
+        "Maximillian Crowe",
+        "Cylina Darkheart",
+        "Remen Marcot",
+        "Tomas",
+        "Adele Fielder",
+        "Helene Peltskinner",
+        "Erma",
+        "Melika Isenstrider",
+        "Brog Hamfist",
+        "Barkeep Dobbins",
+        "Toddrick",
+        "Kira Songshine",
+        "Tharynn Bouden",
+        "Andrew Krighton",
+    ] {
+        assert!(
+            town.iter().any(|n| n.name == name),
+            "{name} stands in Goldshire"
+        );
+    }
+    let argus = town.iter().find(|n| n.name == "Smith Argus").unwrap();
+    assert_eq!(
+        (argus.role.as_str(), argus.subname.as_str()),
+        ("talker", "Blacksmith")
+    );
+    for n in hub().iter().filter(|n| n.map == EASTERN_KINGDOMS) {
+        let trainer = n.subname.contains("Trainer") && n.role != "trainer";
+        let dead = ["Journeyman", "Merchant", "Physician"]
+            .iter()
+            .any(|t| n.subname.contains(t));
+        assert!(!trainer && !dead, "{}: {:?}", n.name, n.subname);
+        assert!(
+            n.role != "ambient" || !n.greeting.is_empty(),
+            "{} says nothing",
+            n.name
+        );
+    }
 }
 
 #[test]

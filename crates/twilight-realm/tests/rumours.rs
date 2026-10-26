@@ -16,9 +16,9 @@ const WOLF: u32 = 2958;
 const YOUNG_WOLF: u32 = 299;
 /// A creature no test kills: the dropper that must not match.
 const OTHER_CREATURE: u32 = 69;
-/// Corina Steele: any friendly template will do for a giver.
-const GIVER: u32 = 54;
-const GIVER_NAME: &str = "Corina Steele";
+/// Brother Danil: any friendly template will do for a giver.
+const GIVER: u32 = 152;
+const GIVER_NAME: &str = "Brother Danil";
 
 /// Where area `k` is: far out past The Barrens' camps, 4000 yards from the next area.
 fn base(k: usize) -> [f32; 3] {

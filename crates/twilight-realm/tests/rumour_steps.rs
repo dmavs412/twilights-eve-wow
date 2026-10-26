@@ -15,8 +15,8 @@ use twilight_realm::{Audience, CROSSROADS};
 const WOLF: u32 = 2958;
 /// The creature the Rumours spawn, and the dropper the Calling Rumour rolls on.
 const YOUNG_WOLF: u32 = WOLF;
-/// Corina Steele: any friendly template will do for a giver.
-const GIVER: u32 = 54;
+/// Brother Danil: any friendly template will do for a giver.
+const GIVER: u32 = 152;
 /// The Vanguard Trainer, who gives the Advancement into `vanguard`.
 const VANGUARD_TRAINER: u32 = 5810;
 /// The entry of the chest a last hand-in makes.

@@ -90,7 +90,12 @@ pub fn convert(elwynn: &Value) -> String {
 /// template can: Lee Brown (1651) teaches Fishing and sells its goods (#327), Innkeeper Farley
 /// (295) hints at a Legendary Fish (#331), and the rest are Goldshire's inn and shops (#459):
 /// Melika Isenstrider (6778) keeps the inn, five shopkeepers sell and Andrew Krighton repairs.
-const HUB_NPCS: &[u64] = &[1651, 295, 6778, 151, 465, 3935, 3937, 66, 2046];
+/// After them come Goldshire's townsfolk (#459): Smith Argus (514) and sixteen others who speak a
+/// line under a title the game has a use for.
+const HUB_NPCS: &[u64] = &[
+    1651, 295, 6778, 151, 465, 3935, 3937, 66, 2046, 514, 54, 74, 913, 927, 917, 377, 328, 2329,
+    253, 906, 6374, 6121, 1430, 1632, 6306, 6749,
+];
 
 /// `FactionTemplate.dbc` 35, friendly to every player race. Elwynn's NPCs show it whatever the
 /// player's race (spec #71): the guards, vendors and trainers are everyone's friends.

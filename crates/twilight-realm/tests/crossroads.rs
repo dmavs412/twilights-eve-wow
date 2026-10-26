@@ -29,7 +29,8 @@ fn npcs(events: &[SessionEvent]) -> Vec<(u64, u32, u32, [f32; 3])> {
         .collect()
 }
 
-/// `content/hub.toml`'s townsfolk: `(name, guid, greeting, wander)`.
+/// `content/hub.toml`'s townsfolk on Kalimdor, `(name, guid, greeting, wander)`. Goldshire's
+/// (#459) stand on the Eastern Kingdoms.
 fn townsfolk() -> Vec<(String, u64, String, f32)> {
     let hub: toml::Table = include_str!("../content/hub.toml").parse().unwrap();
     hub["npc"]
@@ -37,6 +38,7 @@ fn townsfolk() -> Vec<(String, u64, String, f32)> {
         .unwrap()
         .iter()
         .filter(|n| n["role"].as_str() == Some("ambient"))
+        .filter(|n| n.get("map").and_then(|m| m.as_integer()).unwrap_or(1) == 1)
         .map(|n| {
             (
                 n["name"].as_str().unwrap().to_string(),

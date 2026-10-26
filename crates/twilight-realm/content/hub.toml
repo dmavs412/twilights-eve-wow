@@ -1435,6 +1435,303 @@ map = 0
 position = [-9462.29, 87.815, 58.421]
 orientation = 0.733
 
+# ── Goldshire's townsfolk (#459) ─────────────────────────────────────────────────────────────────
+# Moved from their Goldshire spawns in content/elwynn.toml to the same x and y, under titles the
+# game has a use for: no class trainer, no trade it lacks. Each says one line. Smith Argus keeps
+# his quests (content/quests_elwynn.toml) and talks, as Farley does. An outdoor row's z is
+# ground_check.py's. A row under a roof keeps its stock floor's z: the inn's cellar, ground or
+# upper floor, the smithy's floor (as Andrew Krighton's), or the ground floor of the house east of
+# town.
+
+# the smithy
+[[npc]]
+guid = 9300047
+entry = 514
+name = "Smith Argus"
+subname = "Blacksmith"
+level = 24
+display_id = 1288
+faction_template = 35
+role = "talker"
+npc_flags = 0x3
+map = 0
+position = [-9456.65, 87.855, 58.427]
+orientation = 2.4085
+text_id = 64145
+greeting = "If it's iron you want, you're in the wrong decade, $C. If it's spider silk you've got, we can talk."
+
+# the smithy
+[[npc]]
+guid = 9300048
+entry = 54
+name = "Corina Steele"
+subname = "Weaponsmith"
+level = 10
+display_id = 1287
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9464.87, 93.99, 58.527]
+orientation = 0.0
+text_id = 64146
+greeting = "A weaponsmith with no iron is a woman with a hammer and nothing to hit. Since the tram stopped I've been reforging plough blades. Bring me an edge and I'll put it back, that much I can still do."
+
+# the smithy
+[[npc]]
+guid = 9300049
+entry = 74
+name = "Kurran Steele"
+subname = "Clothier"
+level = 10
+display_id = 1289
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9457.64, 99.688, 58.427]
+orientation = 4.119
+text_id = 64147
+greeting = "Not a bolt of cloth since the ships stopped. The tunics on that rack are the last I'll see for a while, and they're spoken for. Mending I can do."
+
+# outdoors
+[[npc]]
+guid = 9300050
+entry = 913
+name = "Lyria Du Lac"
+subname = "Veteran of the Ironclads"
+level = 12
+display_id = 1300
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9461.85, 109.353, 57.69]
+orientation = 2.6529
+text_id = 64148
+greeting = "Second War, then twenty years of drilling farm boys. I've watched the Ironclads hold a line in plate while everything behind them ran. When you're ready for that road, it starts at the Stormwind barracks, not here."
+
+# outdoors
+[[npc]]
+guid = 9300051
+entry = 927
+name = "Brother Wilhelm"
+subname = "Chaplain"
+level = 11
+display_id = 1299
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9468.14, 108.976, 57.48]
+orientation = 1.7977
+text_id = 64149
+greeting = "I say the morning prayers under the oak now that the Abbey is shut. The Light does not need a roof. Sit with it a while, $C, before you go back out."
+
+# inn, upper floor
+[[npc]]
+guid = 9300052
+entry = 917
+name = "Keryn Sylvius"
+subname = "Retired Duellist"
+level = 11
+display_id = 1297
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9465.79, 12.645, 63.904]
+orientation = 1.0996
+text_id = 64150
+greeting = "I taught knife work to anyone with coin. Now I sit up here and watch who comes in and what they pay with. More strange coin every week."
+
+# inn, upper floor
+[[npc]]
+guid = 9300053
+entry = 377
+name = "Priestess Josetta"
+subname = "Sister of the Light"
+level = 13
+display_id = 1295
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9460.75, 33.134, 63.904]
+orientation = 4.3633
+text_id = 64151
+greeting = "Half this floor is sickbeds. The road brings a fever with every family, and the Abbey's healers are gone. I pray, and I boil water, and both help."
+
+# inn, upper floor
+[[npc]]
+guid = 9300054
+entry = 328
+name = "Zaldimar Wefhellt"
+subname = "Scholar of Azora"
+level = 13
+display_id = 1294
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9471.67, 34.451, 63.904]
+orientation = 4.6251
+text_id = 64152
+greeting = "Theocritus has not answered a letter since spring, and his tower is not a place one simply visits. I study here instead. The inn is loud, but the ceiling is sound."
+
+# inn, upper floor
+[[npc]]
+guid = 9300055
+entry = 2329
+name = "Michelle Belle"
+subname = "Apothecary"
+level = 11
+display_id = 1296
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9456.81, 29.361, 63.904]
+orientation = 2.9671
+text_id = 64153
+greeting = "Herbs I can get. Glass I can't. Every vial in Goldshire is on that shelf, and when they're gone the brewing stops. Hedda out back grows them. I turn them into something."
+
+# inn, ground floor
+[[npc]]
+guid = 9300056
+entry = 253
+name = "William Pestle"
+subname = "Apothecary's Apprentice"
+level = 6
+display_id = 5038
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9460.3, 31.939, 57.049]
+orientation = 2.9845
+text_id = 64154
+greeting = "Mistress Belle says a dropped vial is a week's wages. I have not dropped one. Today."
+
+# inn, cellar
+[[npc]]
+guid = 9300057
+entry = 906
+name = "Maximillian Crowe"
+subname = "Dealer in Curiosities"
+level = 10
+display_id = 3271
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9472.8, -5.327, 49.878]
+orientation = 5.5502
+text_id = 64155
+greeting = "Rarities, $C. Coins from places no map names, idols no priest will bless. I buy, I sell, I ask no questions, which is why so many people bring me things."
+
+# inn, cellar
+[[npc]]
+guid = 9300058
+entry = 6374
+name = "Cylina Darkheart"
+subname = "Traveller from the South"
+level = 11
+display_id = 5092
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9466.97, -5.529, 49.877]
+orientation = 4.5728
+text_id = 64156
+greeting = "I came up from the south ahead of the rest. Silithus is sand and screaming now. Whatever walks there carries a hammer on its banner. Don't ask me more."
+
+# inn, cellar
+[[npc]]
+guid = 9300059
+entry = 6121
+name = "Remen Marcot"
+subname = "Crowe's Assistant"
+level = 10
+display_id = 4866
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9473.43, -8.588, 49.878]
+orientation = 6.2308
+text_id = 64157
+greeting = "Master Crowe pays me to carry boxes and not to open them. I'm good at the first part."
+
+# inn, ground floor
+[[npc]]
+guid = 9300060
+entry = 1430
+name = "Tomas"
+subname = "Cook"
+level = 10
+display_id = 1293
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9466.99, -4.534, 57.033]
+orientation = 1.6406
+text_id = 64158
+greeting = "Thirty mouths on the floor and two pots. When this kitchen cooks for travellers again you'll smell it from the road. Until then, Toddrick's your man."
+
+# the house east of town, ground floor
+[[npc]]
+guid = 9300061
+entry = 1632
+name = "Adele Fielder"
+subname = "Tanner"
+level = 22
+display_id = 3335
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9375.68, -74.476, 64.521]
+orientation = 3.4558
+text_id = 64159
+greeting = "Hides come in, I tan them, somebody wears them. The boar hides are thick this year. Nobody wants to know why the wolves are bolder."
+
+# the house east of town, ground floor
+[[npc]]
+guid = 9300062
+entry = 6306
+name = "Helene Peltskinner"
+subname = "Hunter"
+level = 12
+display_id = 5365
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9380.23, -69.529, 64.521]
+orientation = 4.5553
+text_id = 64160
+greeting = "I used to skin what the trainers' pupils killed. Now I skin what the refugees can't eat, and there's less of it every week."
+
+# outdoors, the stable
+[[npc]]
+guid = 9300063
+entry = 6749
+name = "Erma"
+subname = "Stable Master"
+level = 30
+display_id = 9257
+faction_template = 35
+role = "ambient"
+npc_flags = 0x1
+map = 0
+position = [-9465.95, 48.142, 56.89]
+orientation = 1.4661
+text_id = 64161
+greeting = "Three horses, no feed to spare, and every family off the road asks what I'd take for one. Not coin. Not yet. Come back when the roads are safe enough to ride."
+
 # Commander Aldous Wray (#378): gives the Tier 2 and 3 advancement quests (#374) in the Stormwind
 # barracks, beside the warrior trainers. A quest giver only, no training. Placeholders: name,
 # subname, greeting, spot. z is the barracks ground floor (wmo_floor.py group 268).

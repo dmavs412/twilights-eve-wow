@@ -16,9 +16,9 @@ const fn spawn(entry: u64, guid: u64) -> u64 {
 }
 const MCBRIDE: u64 = spawn(197, 79970);
 const DUGHAN: u64 = spawn(240, 80334);
-// Farley is a Hub NPC (hub.toml guid 9300026) since #331.
+// Farley is a Hub NPC (hub.toml guid 9300026) since #331, Argus (9300047) since #459.
 const FARLEY: u64 = spawn(295, 9_300_026);
-const ARGUS: u64 = spawn(514, 80336);
+const ARGUS: u64 = spawn(514, 9_300_047);
 const REMY: u64 = spawn(241, 80326);
 
 const MCBRIDE_AT: [f32; 3] = [-8912.0, -140.5, 82.0];
