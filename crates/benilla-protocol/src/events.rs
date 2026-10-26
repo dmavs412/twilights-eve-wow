@@ -138,6 +138,33 @@ pub struct SatchelRow {
     pub tackle: bool,
 }
 
+/// Twilight's Eve, not 1.12: one tile of an open Forager's Grid, as far as the player may know it
+/// (spec #435). Row-major, `size` x `size`.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct HerbTile {
+    /// 0 hidden, 1 pulled plant, 2 pulled weed, 3 pulled thorn.
+    pub state: u8,
+    /// What the player knows of a hidden tile: 0 nothing, 1 a plant (its bush glows), 2 a weed,
+    /// 3 a thorn.
+    pub known: u8,
+    /// The Stake on a pulled plant or weed, or on a hidden tile a probe counted; -1 for none.
+    pub stake: i8,
+    /// A pulled plant's item and how many it gave; 0 otherwise.
+    pub item: u32,
+    pub count: u32,
+    /// A pulled plant that was in its Bloom.
+    pub bloom: bool,
+}
+
+/// Twilight's Eve, not 1.12: what the Journal tells about one plant in the open patch: listed
+/// at 5 picks with `present`, and `rows` (1-based) from 10 picks, empty before.
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct HerbKnown {
+    pub item: u32,
+    pub present: bool,
+    pub rows: Vec<u8>,
+}
+
 /// Which Satchel item: its entry, and a piece's durability (`None` for a counted row).
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SatchelPick {
@@ -339,6 +366,30 @@ pub enum SessionEvent {
     /// minimap at each GameObject whose entry is `patch_entry`. Sent at login and on every toggle.
     /// Never wire-decoded.
     HerbTracking { patch_entry: u32, on: bool },
+    /// Twilight's Eve, not 1.12: the open Forager's Grid (spec #435), sent when a patch opens and
+    /// after every action on it. Never wire-decoded.
+    HerbGrid {
+        patch: u64,
+        size: u8,
+        pulls_left: u8,
+        tiles: Vec<HerbTile>,
+        known: Vec<HerbKnown>,
+        /// One line per start-of-patch effect ("Bloom Draught: one plant here is now blooming.").
+        notes: Vec<String>,
+        /// The last action's line for the pull log ("Pulled B3: Peacebloom x2.").
+        log: String,
+        /// The Tool slot's item, the Tool Skill's pull cost, the Consumable slot's item, whether
+        /// that consumable can still be used, and whether the Forager's Charm is armed. All 0 or
+        /// false until the next ticket.
+        tool: u32,
+        skill_cost: u8,
+        consumable: u32,
+        consumable_ready: bool,
+        charm_armed: bool,
+    },
+    /// Twilight's Eve, not 1.12: the Forager's Grid closed. `reason`: 0 out of pulls, 1 every tile
+    /// pulled, 2 the player left, 3 damage, 4 walked away. Never wire-decoded.
+    HerbGridClosed { patch: u64, reason: u8 },
     /// `SMSG_CHAR_CREATE`/`_DELETE`'s raw `WorldResult`; on success a fresh roster comes first.
     CharActionResult { action: CharAction, code: u8 },
     /// We are in the world; the IO thread emits this before any object update.

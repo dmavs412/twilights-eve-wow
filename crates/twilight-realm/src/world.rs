@@ -328,6 +328,8 @@ pub(crate) struct InWorld {
     noise_shown: u32,
     /// Stacks the player's doings added to the Run's meter since the shard last took them.
     pub(crate) noise_gain: u32,
+    /// Damage landed on the player since the Forager's Grid last looked (#439).
+    pub(crate) hurt: bool,
     /// Stacks the player's hiding took off it since the shard last took them.
     noise_drain: u32,
     /// The hiding spot the player is crouched at.
@@ -484,6 +486,7 @@ impl InWorld {
             quest_spent: Vec::new(),
             noise_shown: 0,
             noise_gain: 0,
+            hurt: false,
             noise_drain: 0,
             hiding: None,
             gazes: Vec::new(),
@@ -1368,6 +1371,7 @@ impl InWorld {
         }
         self.skills.break_stealth(events);
         let damage = self.skills.absorb(damage, school, events);
+        self.hurt |= damage > 0;
         let p = &mut self.player;
         p.health = p.health.saturating_sub(damage);
         p.power.gain_stored(

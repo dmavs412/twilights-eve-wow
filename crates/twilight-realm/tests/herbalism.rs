@@ -6,7 +6,7 @@ mod common;
 use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
-use twilight_realm::{Realm, RealmCommand};
+use twilight_realm::{Audience, HerbAction, Realm, RealmCommand};
 
 const PATCH_ENTRY: u32 = 981_001;
 const BROTHER_ANSEL: u32 = 190_072;
@@ -22,6 +22,7 @@ const TEST_HERBS: &str = r#"
 key = "test_yard"
 zone = 990101
 live = 3
+thorns = 0
 points = [
   { x = -8930.0, y = -132.0 },
   { x = -8970.0, y = -132.0 },
@@ -29,6 +30,14 @@ points = [
   { x = -8950.0, y = -155.0 },
   { x = -8935.0, y = -150.0 },
 ]
+
+[[plant]]
+zone = "test_yard"
+item = 961001
+rarity = "common"
+level = 1
+weight = 1000
+use = "cooking"
 
 [[plant]]
 zone = "test_yard"
@@ -279,4 +288,195 @@ fn the_herbalist_fields_survive_a_save_round_trip() {
     assert_eq!(herbalist_events(&events), [(true, 3, 10)]);
     assert_eq!(tracking(&events), [(PATCH_ENTRY, true)]);
     let _ = &mut p;
+}
+
+const PRAIRIE_WOLF: u32 = 2958;
+const DANDELION: u32 = 961_001;
+
+/// A party of one who knows Herbalism, with `picks` pulls of Dandelion Greens behind them.
+fn picked_party(picks: u32) -> Party {
+    let realm = Realm::with_seed(7).with_herbs(TEST_HERBS);
+    Party::edited(
+        realm,
+        &[1],
+        START_ELWYNN,
+        Box::new(FlatGround),
+        move |_, blob| {
+            blob.replacen(
+                "angler_level = 1\n",
+                &format!(
+                    "angler_level = 1\nknows_herbalism = true\nherb_picks = [[{DANDELION}, {picks}]]\n"
+                ),
+                1,
+            )
+        },
+    )
+}
+
+type Grid = (
+    u8,
+    u8,
+    Vec<benilla_protocol::HerbTile>,
+    Vec<benilla_protocol::HerbKnown>,
+);
+
+/// Each `HerbGrid` in `events`: size, pulls left, tiles and knowledge.
+fn grids(events: &[SessionEvent]) -> Vec<Grid> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::HerbGrid {
+                size,
+                pulls_left,
+                tiles,
+                known,
+                ..
+            } => Some((*size, *pulls_left, tiles.clone(), known.clone())),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The reason of each `HerbGridClosed` in `events`.
+fn closed(events: &[SessionEvent]) -> Vec<u8> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::HerbGridClosed { reason, .. } => Some(*reason),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Stands player 0 beside their first patch and clicks it; the patch's guid and position.
+fn click_a_patch(p: &mut Party) -> (u64, [f32; 3]) {
+    let (guid, at) = patches(p.seen(0))[0];
+    p.go(0, [at[0] + 1.0, at[1], at[2]], 0.0);
+    p.run(0.5);
+    p.cmd(0, RealmCommand::UseGameObject { guid });
+    (guid, at)
+}
+
+/// Pulls tiles in order until one is a plant; the events of the pulls.
+fn pull_a_plant(p: &mut Party) -> Vec<SessionEvent> {
+    let before = p.seen(0).len();
+    for tile in 0..25u8 {
+        p.cmd(0, RealmCommand::Herb(HerbAction::Pull(tile)));
+        let got = &p.seen(0)[before..];
+        let last = grids(got).pop().expect("a grid after each pull");
+        if last.2[usize::from(tile)].state == 1 {
+            return got.to_vec();
+        }
+    }
+    panic!("no plant in 25 tiles");
+}
+
+#[test]
+fn clicking_a_patch_opens_a_grid_of_hidden_tiles() {
+    let mut p = party(&[true]);
+    let before = p.seen(0).len();
+    click_a_patch(&mut p);
+    let all = grids(&p.seen(0)[before..]);
+    assert_eq!(all.len(), 1);
+    let (size, pulls, tiles, _) = &all[0];
+    assert_eq!((*size, *pulls, tiles.len()), (5, 6, 25));
+    assert!(tiles.iter().all(|t| t.state == 0 && t.stake == -1));
+}
+
+#[test]
+fn pulling_a_plant_gives_the_item_and_xp_and_spends_a_pull() {
+    let mut p = party(&[true]);
+    click_a_patch(&mut p);
+    let got = pull_a_plant(&mut p);
+    let last = grids(&got).pop().unwrap();
+    assert!(last.1 < 6, "pulls left {}", last.1);
+    let tile = last.2.iter().find(|t| t.state == 1).unwrap();
+    assert!(tile.item != 0 && tile.count >= 1);
+    assert!(
+        got.iter()
+            .any(|e| !matches!(e, SessionEvent::HerbGrid { .. })
+                && format!("{e:?}").contains(&tile.item.to_string())),
+        "the plant reaches the bags"
+    );
+    let xp = herbalist_events(&got);
+    assert!(xp.last().is_some_and(|&(_, _, xp)| xp > 0), "{xp:?}");
+}
+
+#[test]
+fn six_pulls_close_the_grid_and_finish_the_patch() {
+    let mut p = party(&[true]);
+    let (patch, _) = click_a_patch(&mut p);
+    let before = p.seen(0).len();
+    for tile in 0..6u8 {
+        p.cmd(0, RealmCommand::Herb(HerbAction::Pull(tile)));
+    }
+    assert_eq!(closed(&p.seen(0)[before..]), [0]);
+    let later = skip(&mut p, 0, 5.0);
+    assert!(
+        later.iter().any(|e| match e {
+            SessionEvent::ObjectsRemoved(gone) => gone.contains(&patch),
+            SessionEvent::ObjectDestroyed(g) => *g == patch,
+            _ => false,
+        }),
+        "the patch is removed"
+    );
+}
+
+#[test]
+fn leaving_closes_the_grid() {
+    let mut p = party(&[true]);
+    click_a_patch(&mut p);
+    let before = p.seen(0).len();
+    p.cmd(0, RealmCommand::Herb(HerbAction::Leave));
+    assert_eq!(closed(&p.seen(0)[before..]), [2]);
+}
+
+#[test]
+fn damage_closes_the_grid() {
+    let mut p = party(&[true]);
+    let (_, at) = click_a_patch(&mut p);
+    let map = p.realm.player_positions()[0].0;
+    let audience = Audience::of(&[p.guids[0]]);
+    p.realm
+        .spawn_for(
+            p.host.as_ref(),
+            PRAIRIE_WOLF,
+            5,
+            [at[0] + 3.0, at[1], at[2]],
+            map,
+            audience,
+        )
+        .expect("a wolf");
+    let before = p.seen(0).len();
+    p.run(15.0);
+    assert_eq!(closed(&p.seen(0)[before..]), [3]);
+}
+
+#[test]
+fn walking_away_closes_the_grid() {
+    let mut p = party(&[true]);
+    let (_, at) = click_a_patch(&mut p);
+    let before = p.seen(0).len();
+    p.go(0, [at[0] + 21.0, at[1], at[2]], 0.0);
+    p.run(1.0);
+    assert_eq!(closed(&p.seen(0)[before..]), [4]);
+}
+
+#[test]
+fn five_picks_list_the_plant_in_the_journal_and_ten_show_its_rows() {
+    for (picks, rows) in [(0, None), (5, Some(false)), (10, Some(true))] {
+        let mut p = picked_party(picks);
+        let before = p.seen(0).len();
+        click_a_patch(&mut p);
+        let (_, _, _, known) = grids(&p.seen(0)[before..]).remove(0);
+        let entry = known.iter().find(|k| k.item == DANDELION);
+        match rows {
+            None => assert!(entry.is_none(), "{known:?}"),
+            Some(shown) => {
+                let k = entry.unwrap_or_else(|| panic!("{picks} picks list it: {known:?}"));
+                assert!(k.present);
+                assert_eq!(!k.rows.is_empty(), shown, "{k:?}");
+            }
+        }
+    }
 }

@@ -151,6 +151,15 @@ pub enum FishingGearSlot {
     Lure,
 }
 
+/// What the player does on an open Forager's Grid (spec #435).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HerbAction {
+    /// Pull this tile, row-major from 0.
+    Pull(u8),
+    /// Close the grid and leave the patch.
+    Leave,
+}
+
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these
 /// and drops the rest.
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -194,6 +203,8 @@ pub enum RealmCommand {
         spell_id: u32,
         dest: [f32; 3],
     },
+    /// An action on the open Forager's Grid (spec #435).
+    Herb(HerbAction),
     /// Click off one of the player's own buffs.
     CancelAura {
         spell_id: u32,
@@ -1458,6 +1469,7 @@ impl Realm {
                 secs,
             } => self.fishing_result(won, perfect, treasure, secs),
             RealmCommand::FishingChoice { reel } => self.fishing_choice(reel),
+            RealmCommand::Herb(action) => self.herb_action(action),
             RealmCommand::ChooseCalling { quest } => {
                 self.change_satchel(|c, events| calling_choice::choose(c, quest, events))
             }
@@ -2226,13 +2238,16 @@ impl Realm {
         let Some(o) = self.objects.get(guid) else {
             return;
         };
-        // A Herb Patch opens the Forager's Grid in a later ticket; for now a click does nothing.
         if o.spec.kind == ObjectKind::Bobber
-            || matches!(o.spec.kind, ObjectKind::HerbPatch { .. })
             || !o.audience.admits(w.guid)
             || !w.sees_runtime_object(guid)
             || space::flat_distance(o.spec.position, c.position) > space::INTERACTION_YD
         {
+            return;
+        }
+        if let ObjectKind::HerbPatch { zone, .. } = &o.spec.kind {
+            let zone = *zone;
+            self.open_herb_grid(guid, zone);
             return;
         }
         match &o.loot {

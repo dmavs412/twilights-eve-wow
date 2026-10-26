@@ -4,6 +4,7 @@
 
 pub mod aggro;
 pub mod durability;
+pub mod forage;
 pub mod game_clock;
 pub mod gear;
 pub mod haste;

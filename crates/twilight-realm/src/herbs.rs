@@ -122,6 +122,9 @@ pub(crate) struct Zone {
     pub(crate) zone: u32,
     /// Patches kept live per character.
     pub(crate) live: u32,
+    /// Thorns in this zone's patches in place of `[grid]`'s; a test zone sets 0.
+    #[serde(default)]
+    pub(crate) thorns: Option<u32>,
     /// The Herb Spots. They have no Z: a spot stands on the terrain.
     pub(crate) points: Vec<Point>,
 }
