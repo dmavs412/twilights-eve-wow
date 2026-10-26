@@ -173,6 +173,7 @@ pub(super) type BlipInputs<'w, 's> = (
     (
         Option<Res<'w, crate::area_poi::AreaPoiRes>>,
         Option<Res<'w, crate::twilight::MapMarkList>>,
+        Res<'w, crate::twilight::HerbTracking>,
     ),
     ResMut<'w, super::MinimapPing>,
     Option<NonSendMut<'w, UiScript>>,

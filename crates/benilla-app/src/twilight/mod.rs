@@ -101,6 +101,7 @@ impl Plugin for TwilightPlugin {
             .init_resource::<CallingKeys>()
             .init_resource::<BossFightList>()
             .init_resource::<MapMarkList>()
+            .init_resource::<HerbTracking>()
             .init_resource::<SelfCalling>();
         app.add_message::<DevGoto>()
             .add_message::<DevRumour>()
@@ -269,6 +270,7 @@ fn pump(
     mut keys: ResMut<CallingKeys>,
     mut boss: ResMut<BossFightList>,
     mut marks: ResMut<MapMarkList>,
+    mut herb_tracking: ResMut<HerbTracking>,
     mut goto: ResMut<goto::GotoGround>,
     mut rumours: (
         MessageReader<DevRumour>,
@@ -376,6 +378,14 @@ fn pump(
             marks.set_if_neq(MapMarkList(m));
             continue;
         }
+        // Find Herbs on or off, with the Herb Patch entry the minimap leaf follows (spec #435).
+        if let SessionEvent::HerbTracking { patch_entry, on } = event {
+            herb_tracking.set_if_neq(HerbTracking {
+                entry: patch_entry,
+                on,
+            });
+            continue;
+        }
         // The Calling Choice popup's options go to its own feed (spec #414).
         if matches!(event, SessionEvent::CallingChoice { .. }) {
             if let Some(inbox) = reel.2.as_deref_mut() {
@@ -413,6 +423,7 @@ fn pump(
         if logged_out {
             boss.set_if_neq(BossFightList::default());
             marks.set_if_neq(MapMarkList::default());
+            herb_tracking.set_if_neq(HerbTracking::default());
             if let Some(inbox) = reel.0.as_deref_mut() {
                 inbox.0.push(SessionEvent::LoggedOut);
             }
@@ -455,6 +466,14 @@ pub(crate) struct BossFightList(pub(crate) Vec<u64>);
 /// The world map's marks as the realm last sent them (`SessionEvent::MapMarks`).
 #[derive(Resource, Default, Clone, PartialEq)]
 pub(crate) struct MapMarkList(pub(crate) Vec<benilla_protocol::MapMark>);
+
+/// Whether Find Herbs is on and the entry of a Herb Patch, as the realm last sent them
+/// (`SessionEvent::HerbTracking`, spec #435). The minimap draws a leaf at each patch while `on`.
+#[derive(Resource, Default, Clone, Copy, PartialEq)]
+pub(crate) struct HerbTracking {
+    pub(crate) entry: u32,
+    pub(crate) on: bool,
+}
 
 /// The local player's Calling, or `None` until the realm names it.
 #[derive(Resource, Default, Clone, Copy, PartialEq)]

@@ -14,6 +14,7 @@ use crate::creature_type::CreatureTypeSources;
 use crate::go_templates::GameObjectTemplates;
 use crate::names::NameCache;
 use crate::net::{GuidIndex, NetEntity, ObjectStore};
+use crate::twilight::HerbTracking;
 use crate::ui_pass::{UiQuad, UiQuads, UvRect};
 
 use super::{party_member_pos, BlipCtx, MinimapBlipHover, TrackedCandidates, BLIP_BASIS_PX};
@@ -182,6 +183,8 @@ pub(in crate::minimap) fn emit_tracking_dots(
     locks: Option<&LockCatalog>,
     forms: Option<&HashMap<u32, ShapeshiftForm>>,
     icons: &Handle<Image>,
+    herb: HerbTracking,
+    leaf: Option<&Handle<Image>>,
     player_indoors: bool,
     unit_indoors: impl Fn(Vec3) -> bool,
     quads: &mut UiQuads,
@@ -256,6 +259,76 @@ pub(in crate::minimap) fn emit_tracking_dots(
         let creature_type = store.map(|s| types.of(s));
         if tracked_creature(tracking, creature_type, dyn_flags, creeping) {
             dot(guid.0, tf, TRACKED_UNIT_CELL, DotName::Guid);
+        }
+    }
+    // The Herb Patch leaf draws whether or not resource tracking is on, and the gold dot never
+    // draws for a patch (a patch has no template, so the GameObject pass above skips it).
+    if let Some(leaf) = leaf {
+        emit_herb_leaves(
+            ctx,
+            herb,
+            leaf,
+            candidates
+                .iter()
+                .filter(|(_, net, _, _)| net.kind == EntityKind::GameObject)
+                .map(|(_, _, tf, store)| {
+                    (store.and_then(|s| s.0.object_entry()), tf.translation())
+                }),
+            player_indoors,
+            unit_indoors,
+            quads,
+            hover,
+        );
+    }
+}
+
+/// The leaf's quad: 1.5 times the quest dot, so it reads over the gold dots around it.
+const HERB_LEAF_PX: f32 = QUEST_DOT_PX * 1.5;
+/// The tooltip line of a hovered leaf.
+const HERB_PATCH_NAME: &str = "Herb Patch";
+
+/// While Find Herbs is on, a leaf at each GameObject whose entry is the Herb Patch entry, greyed
+/// by the dots' indoor rule. Each item is a GameObject's `OBJECT_FIELD_ENTRY` and bevy position.
+pub(in crate::minimap) fn emit_herb_leaves(
+    ctx: &BlipCtx,
+    herb: HerbTracking,
+    leaf: &Handle<Image>,
+    objects: impl Iterator<Item = (Option<u32>, Vec3)>,
+    player_indoors: bool,
+    unit_indoors: impl Fn(Vec3) -> bool,
+    quads: &mut UiQuads,
+    hover: &mut MinimapBlipHover,
+) {
+    if !herb.on {
+        return;
+    }
+    for (entry, pos) in objects {
+        if entry != Some(herb.entry) {
+            continue;
+        }
+        let w = bevy_to_wow(pos);
+        let d3 =
+            ((w[0] - ctx.wx).powi(2) + (w[1] - ctx.wy).powi(2) + (w[2] - ctx.wz).powi(2)).sqrt();
+        if d3 > ctx.radius_yd {
+            continue;
+        }
+        let grey = unit_indoors(pos) != player_indoors;
+        let tint = if grey { 0xb0 as f32 / 255.0 } else { 1.0 };
+        let rect = Rect::from_center_size(
+            ctx.center + ctx.offset(w),
+            Vec2::splat(ctx.side * (HERB_LEAF_PX / BLIP_BASIS_PX)),
+        );
+        quads.overlays.push(UiQuad {
+            rect,
+            z_key: ctx.z,
+            texture: Some(leaf.clone()),
+            color: [tint, tint, tint, ctx.alpha],
+            ..default()
+        });
+        if let (Some(c), Some(ui)) = (ctx.cursor, ctx.cursor_ui) {
+            if rect.contains(c) {
+                *hover = MinimapBlipHover::TrackedGo(HERB_PATCH_NAME.into(), ui, grey);
+            }
         }
     }
 }
@@ -475,6 +548,59 @@ mod tests {
         assert!(
             !tracked_creature(SelfTracking::default(), None, 0, true),
             "we don't track stealthed"
+        );
+    }
+
+    /// Find Herbs puts a leaf on each Herb Patch in range, and on nothing else.
+    #[test]
+    fn find_herbs_draws_a_leaf_at_each_herb_patch_only() {
+        const PATCH: u32 = 981001;
+        let ctx = BlipCtx {
+            center: Vec2::new(100.0, 100.0),
+            side: 140.8,
+            px_per_yd: 1.0,
+            radius_yd: 100.0,
+            z: 0,
+            alpha: 1.0,
+            wx: 0.0,
+            wy: 0.0,
+            wz: 0.0,
+            cursor: None,
+            cursor_ui: None,
+            seam: 1.0,
+        };
+        let leaf = Handle::<Image>::default();
+        let near = Vec3::new(5.0, 0.0, -5.0);
+        let run = |herb: HerbTracking, objects: Vec<(Option<u32>, Vec3)>| {
+            let mut quads = UiQuads::default();
+            let mut hover = MinimapBlipHover::None;
+            emit_herb_leaves(
+                &ctx,
+                herb,
+                &leaf,
+                objects.into_iter(),
+                false,
+                |_| false,
+                &mut quads,
+                &mut hover,
+            );
+            quads.overlays
+        };
+        let on = HerbTracking {
+            entry: PATCH,
+            on: true,
+        };
+
+        let drawn = run(on, vec![(Some(PATCH), near)]);
+        assert_eq!(drawn.len(), 1, "one patch in range, one leaf");
+        assert!(drawn[0].texture.is_some(), "the leaf texture");
+        assert!(
+            run(HerbTracking { on: false, ..on }, vec![(Some(PATCH), near)]).is_empty(),
+            "Find Herbs off: no leaf"
+        );
+        assert!(
+            run(on, vec![(Some(PATCH + 1), near), (None, near)]).is_empty(),
+            "another entry, or no descriptor yet: no leaf"
         );
     }
 

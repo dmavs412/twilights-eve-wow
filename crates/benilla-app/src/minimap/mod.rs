@@ -240,6 +240,8 @@ struct MinimapAssets {
     quest_marks: blips::QuestMarkArt,
     /// The unit-blip atlas (`Interface\Minimap\ObjectIcons`, five 32-px dot cells).
     object_icons: Option<Handle<Image>>,
+    /// The Herb Patch leaf (`assets/ui/herbalism/minimap_leaf.tga`), drawn while Find Herbs is on.
+    herb_leaf: Option<Handle<Image>>,
     /// `SpellShapeshiftForm.dbc`, the tracking dots' creature-type override (a cat-form druid is a
     /// Beast).
     forms: Option<HashMap<u32, benilla_formats::ShapeshiftForm>>,
@@ -284,6 +286,8 @@ fn setup_minimap(
             };
             let object_icons =
                 assets.sprite_texture("Interface\\Minimap\\ObjectIcons", &mut images);
+            let herb_leaf =
+                assets.sprite_texture("Interface\\Benilla\\herbalism\\minimap_leaf", &mut images);
             if mask.is_none() {
                 warn!("minimap: MinimapMask.blp missing — the map will draw square");
             }
@@ -305,6 +309,7 @@ fn setup_minimap(
                 rim_arrows,
                 quest_marks,
                 object_icons,
+                herb_leaf,
                 forms,
             });
         }
@@ -384,7 +389,7 @@ fn emit_minimap(
         go_templates,
         locks,
         poi_marker,
-        (pois, marks),
+        (pois, marks, herb_tracking),
         mut ping,
         script,
     ) = blip_inputs;
@@ -787,6 +792,8 @@ fn emit_minimap(
                 locks.as_deref().map(|l| &l.0),
                 assets.forms.as_ref(),
                 icons,
+                *herb_tracking,
+                assets.herb_leaf.as_ref(),
                 player_indoors,
                 |feet| world.indoors_at(feet),
                 &mut quads,
