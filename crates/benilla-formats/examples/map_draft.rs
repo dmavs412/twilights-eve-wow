@@ -547,7 +547,13 @@ struct FillSpec {
     painting: PathBuf,
     pairs: Vec<FillPair>,
     erase: Vec<Erase>,
+    /// Boxes `[u0, v0, u1, v1]` of the canvas where the zone art stays solid however faint its
+    /// cover, for a stock label its own zone's silhouette clips.
+    keep: Vec<[f64; 4]>,
 }
+
+/// The width in canvas pixels over which a keep box fades into the fill around it.
+const KEEP_FEATHER: f64 = 4.0;
 
 struct FillPair {
     canvas: [f64; 2],
@@ -599,7 +605,8 @@ impl Erase {
 impl FillSpec {
     /// `{"painting": "<png beside this file>", "pairs": [{"name", "canvas": [u, v],
     /// "painting": [u, v]}, ..], "erase": [{"name", "rect": [u0, v0, u1, v1],
-    /// "from": [du, dv]}, ..]}`; `erase` may be absent.
+    /// "from": [du, dv]}, ..], "keep": [{"name", "rect": [u0, v0, u1, v1]}, ..]}`; `erase` and
+    /// `keep` may be absent.
     fn read(path: &Path) -> Result<Self> {
         let text =
             std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
@@ -650,6 +657,16 @@ impl FillSpec {
                 })
             })
             .collect::<Result<_>>()?;
+        let keep = v["keep"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or_default()
+            .iter()
+            .map(|k| {
+                let r = nums(k, "rect", 4)?;
+                Ok([r[0], r[1], r[2], r[3]])
+            })
+            .collect::<Result<_>>()?;
         let painting = v["painting"]
             .as_str()
             .context("the fill file names a painting")?;
@@ -657,6 +674,7 @@ impl FillSpec {
             painting: path.parent().unwrap_or(Path::new(".")).join(painting),
             pairs,
             erase,
+            keep,
         })
     }
 }
@@ -800,8 +818,36 @@ fn solve(mut a: Vec<Vec<f64>>, mut b: Vec<f64>) -> Result<Vec<f64>> {
 /// The `w` by `h` canvas filled from `painting`, warped onto it by `warp`, under the zone art of
 /// `layer`: the art where its cover is high, the painting where it is low, a smoothstep across
 /// `FILL_EDGE` between. The art is unpremultiplied first, so a zone's soft rim fades into the
-/// painting, not into parchment.
-fn fill(w: u32, h: u32, layer: &[[f32; 4]], painting: &Picture, warp: &Warp) -> Picture {
+/// painting, not into parchment. Inside a `keep` box the art stays solid.
+fn fill(
+    w: u32,
+    h: u32,
+    layer: &[[f32; 4]],
+    painting: &Picture,
+    warp: &Warp,
+    keep: &[[f64; 4]],
+) -> Picture {
+    let boxes: Vec<[f64; 4]> = keep
+        .iter()
+        .map(|r| {
+            [
+                r[0] * f64::from(w),
+                r[1] * f64::from(h),
+                r[2] * f64::from(w),
+                r[3] * f64::from(h),
+            ]
+        })
+        .collect();
+    let kept = |px: u32, py: u32| -> f32 {
+        let (x, y) = (f64::from(px) + 0.5, f64::from(py) + 0.5);
+        boxes
+            .iter()
+            .map(|b| {
+                let inside = (x - b[0]).min(b[2] - x).min(y - b[1]).min(b[3] - y);
+                ((inside + KEEP_FEATHER) / (2.0 * KEEP_FEATHER)).clamp(0.0, 1.0) as f32
+            })
+            .fold(0.0, f32::max)
+    };
     // The warp is smooth, so it is evaluated on a coarse grid and interpolated between.
     const STEP: u32 = 8;
     let (gw, gh) = (w / STEP + 2, h / STEP + 2);
@@ -819,7 +865,7 @@ fn fill(w: u32, h: u32, layer: &[[f32; 4]], painting: &Picture, warp: &Warp) -> 
         for px in 0..w {
             let l = layer[(py * w + px) as usize];
             let t = ((l[3] - FILL_EDGE.0) / (FILL_EDGE.1 - FILL_EDGE.0)).clamp(0.0, 1.0);
-            let keep = t * t * (3.0 - 2.0 * t);
+            let keep = (t * t * (3.0 - 2.0 * t)).max(if l[3] > 0.0 { kept(px, py) } else { 0.0 });
             let d = if l[3] > 0.0 {
                 [l[0] / l[3], l[1] / l[3], l[2] / l[3], 1.0]
             } else {
@@ -1039,7 +1085,7 @@ fn main() -> Result<()> {
                 e.apply(&mut painting);
             }
             let warp = Warp::fit_inside(&spec.pairs, f64::from(size.1) / f64::from(size.0))?;
-            Some((painting, warp))
+            Some((painting, warp, spec.keep))
         }
         None => None,
     };
@@ -1096,8 +1142,8 @@ fn main() -> Result<()> {
     }
     img.save(&out.join("canvas.png"))?;
     written.insert(0, "canvas.png".to_string());
-    if let Some((painting, warp)) = &filler {
-        let mut filled = fill(size.0, size.1, &art_layer, painting, warp);
+    if let Some((painting, warp, keep)) = &filler {
+        let mut filled = fill(size.0, size.1, &art_layer, painting, warp, keep);
         filled.save(&out.join("filled.png"))?;
         written.push("filled.png".to_string());
         for (at, f) in &placed_fogs {

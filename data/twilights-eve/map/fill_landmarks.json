@@ -35,6 +35,13 @@
   ],
   "erase": [
     { "name": "Stonecairn Lake label", "rect": [0.4453, 0.3730, 0.5091, 0.3877], "from": [0.0, -0.03125] },
-    { "name": "Tranquil Gardens label, its GARDENS end", "rect": [0.5234, 0.7578, 0.5443, 0.7764], "from": [0.0, -0.0391] }
+    { "name": "Tranquil Gardens label, its GARDENS end", "rect": [0.5234, 0.7578, 0.5443, 0.7764], "from": [0.0, -0.0391] },
+    { "name": "Forest's Edge label, its FO start", "rect": [0.2253, 0.5391, 0.2474, 0.5537], "from": [0.0, 0.0146] },
+    { "name": "Dreadmaul Hold label, its DRE start", "rect": [0.6816, 0.7861, 0.7018, 0.7998], "from": [-0.0195, 0.0] },
+    { "name": "stroke left from the removed Alliance crest", "rect": [0.1445, 0.2520, 0.1667, 0.2822], "from": [0.026, 0.0] }
+  ],
+  "keep": [
+    { "name": "Forest's Edge label's F, clipped by Elwynn's silhouette", "rect": [0.2369, 0.6150, 0.2413, 0.6235] },
+    { "name": "Dreadmaul Hold label's D, clipped by Blasted Lands' silhouette", "rect": [0.7163, 0.8603, 0.7206, 0.8687] }
   ]
 }
