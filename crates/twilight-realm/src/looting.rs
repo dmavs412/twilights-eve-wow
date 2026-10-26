@@ -10,7 +10,7 @@ use crate::characters::Char;
 use crate::equipment;
 use crate::items;
 use crate::rng::Rng;
-use crate::rules::loot::{money, pool, quality, NORTHSHIRE_ROLL, QUALITY_ROLL};
+use crate::rules::loot::{money, pool, quality, BAND_ROLL, QUALITY_ROLL};
 
 /// `UNIT_DYNAMIC_FLAGS`, and its `UNIT_DYNFLAG_LOOTABLE` bit: the sparkle, the loot cursor and
 /// right-click looting.
@@ -51,16 +51,16 @@ impl Loot {
         }
     }
 
-    /// What a Northshire mob of `level` drops (spec #272): its money, then one roll for Gear,
-    /// 8% a Token white, 4% a World green within a level of the mob's, else nothing. The vanilla
-    /// pool never runs here, so there is no grey vendor trash either.
-    pub(crate) fn northshire(level: u8, rng: &mut Rng) -> Self {
-        use crate::rules::loot::{northshire_greens, northshire_roll, northshire_whites, Pick};
+    /// What an Eastern Kingdoms mob of `level` drops (spec #448): its money, then one roll for
+    /// Gear from its Loot Band, 8% a white, 4% a green within a level of the mob's, else
+    /// nothing. The vanilla pool never runs here, so there is no grey vendor trash either.
+    pub(crate) fn band(level: u8, rng: &mut Rng) -> Self {
+        use crate::rules::loot::{band_greens, band_roll, band_whites, Pick};
         let (lo, hi) = money(level);
         let money = rng.urand(lo, hi);
-        let list: &[u32] = match northshire_roll(level, rng.below(NORTHSHIRE_ROLL)) {
-            Some(Pick::White) => northshire_whites(),
-            Some(Pick::Green) => northshire_greens(level),
+        let list: &[u32] = match band_roll(rng.below(BAND_ROLL)) {
+            Some(Pick::White) => band_whites(level),
+            Some(Pick::Green) => band_greens(level),
             None => &[],
         };
         let items = if list.is_empty() {

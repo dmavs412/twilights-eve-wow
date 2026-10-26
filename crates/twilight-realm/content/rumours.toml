@@ -42,7 +42,7 @@ hard = 2
 deadly = 3
 
 # Where a last-step chest draws from: an easy Rumour one row of `green`, a hard one a row of
-# `blue`, a deadly one two. `green` names the World greens of `northshire_loot.toml`; `blue` lists
+# `blue`, a deadly one two. `green` names the World greens of `loot_bands.toml`'s first band; `blue` lists
 # gear rows (the Dungeon pool of the Abbey's Abbot).
 [chest_pools]
 green = "northshire_world"

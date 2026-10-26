@@ -1,11 +1,11 @@
-//! What a kill drops (spec #1, "Loot"), and some copper. Above level 10, or off Eastern
-//! Kingdoms: real 1.12 world-drop items near the mob's level, mostly grey and white with a green
-//! now and then. The item pools are the reference's (`docs/reference/items-and-vendors.md`):
-//! every world-drop item, grouped by the level it drops at and its quality; the Gear rows of
-//! pool level 12 and under have left them. On Eastern Kingdoms at level 10 and under, the
-//! Northshire roll instead (spec #272, `content/northshire_loot.toml`): 8% a Token white, 4% a
-//! World green within a level of the mob's, nothing else and no grey. The spread and the money
-//! are this slice's tuning, not vanilla's.
+//! What a kill drops (spec #1, "Loot"), and some copper. Off Eastern Kingdoms: real 1.12
+//! world-drop items near the mob's level, mostly grey and white with a green now and then. The
+//! item pools are the reference's (`docs/reference/items-and-vendors.md`): every world-drop item,
+//! grouped by the level it drops at and its quality; the Gear rows of pool level 12 and under
+//! have left them. On Eastern Kingdoms, the Loot Band roll instead (spec #448, ADR 0026,
+//! `content/loot_bands.toml`): the mob's level picks its band, the last band above them all,
+//! and a kill drops 8% a white and 4% a green of that band within a level of the mob's, nothing
+//! else and no grey. The spread and the money are this slice's tuning, not vanilla's.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -143,33 +143,26 @@ fn build_pool(level: u8, quality: Quality) -> Vec<u32> {
     Vec::new()
 }
 
-/// What the Northshire roll picks.
+/// What the Loot Band roll picks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Pick {
-    /// One of the 22 Token whites.
+    /// One of the band's whites.
     White,
-    /// A World green within a level of the mob's.
+    /// One of the band's greens within a level of the mob's.
     Green,
 }
 
-/// The Northshire roll is out of this.
-pub const NORTHSHIRE_ROLL: u32 = 100;
-/// The highest mob level the Northshire roll runs at; above it, the pools.
+/// The Loot Band roll is out of this.
+pub const BAND_ROLL: u32 = 100;
+/// Northshire's highest level: an easy Rumour's chest draws the greens of a mob no higher.
 pub const NORTHSHIRE_MAX_LEVEL: u8 = 10;
-/// The share of kills that drop a Token white, in hundredths.
+/// The share of kills that drop a white, in hundredths.
 const WHITE_PCT: u32 = 8;
-/// The share of kills that drop a World green, in hundredths.
+/// The share of kills that drop a green, in hundredths.
 const GREEN_PCT: u32 = 4;
-/// The World greens run from level 5 to 8: a mob's level is clamped into that before the
-/// within-one match.
-const GREEN_LEVELS: (u8, u8) = (5, 8);
 
-/// The Northshire roll for a mob of `level` and a roll in `0..NORTHSHIRE_ROLL`: 8% a white,
-/// 4% a green, else nothing; nothing at all above level 10, where the pools roll.
-pub fn northshire_roll(level: u8, roll: u32) -> Option<Pick> {
-    if level > NORTHSHIRE_MAX_LEVEL {
-        return None;
-    }
+/// The Loot Band roll for a roll in `0..BAND_ROLL`: 8% a white, 4% a green, else nothing.
+pub fn band_roll(roll: u32) -> Option<Pick> {
     if roll < WHITE_PCT {
         Some(Pick::White)
     } else if roll < WHITE_PCT + GREEN_PCT {
@@ -180,7 +173,15 @@ pub fn northshire_roll(level: u8, roll: u32) -> Option<Pick> {
 }
 
 #[derive(Deserialize)]
-struct NorthshireFile {
+struct BandFile {
+    band: Vec<Band>,
+}
+
+/// One Loot Band of `content/loot_bands.toml`.
+#[derive(Deserialize)]
+pub struct Band {
+    /// The first and last mob level the band covers.
+    pub levels: [u8; 2],
     white: Vec<u32>,
     green: Vec<GreenRow>,
 }
@@ -191,38 +192,55 @@ struct GreenRow {
     level: u8,
 }
 
-fn northshire() -> &'static NorthshireFile {
-    static FILE: OnceLock<NorthshireFile> = OnceLock::new();
-    FILE.get_or_init(|| {
-        toml::from_str(include_str!("../../content/northshire_loot.toml"))
-            .expect("content/northshire_loot.toml parses")
-    })
+impl Band {
+    /// The whites the band's roll draws from.
+    pub fn whites(&self) -> &[u32] {
+        &self.white
+    }
+
+    /// Every green of the band with its level, as the content lists them.
+    pub fn green_rows(&self) -> Vec<(u32, u8)> {
+        self.green.iter().map(|g| (g.entry, g.level)).collect()
+    }
 }
 
-/// The 22 Token whites the Northshire roll draws from.
-pub fn northshire_whites() -> &'static [u32] {
-    &northshire().white
+/// Every Loot Band, lowest first.
+pub fn bands() -> &'static [Band] {
+    static FILE: OnceLock<BandFile> = OnceLock::new();
+    &FILE
+        .get_or_init(|| {
+            toml::from_str(include_str!("../../content/loot_bands.toml"))
+                .expect("content/loot_bands.toml parses")
+        })
+        .band
 }
 
-/// Every World green with its level, as the content lists them.
-pub fn northshire_green_rows() -> Vec<(u32, u8)> {
-    northshire()
-        .green
+/// The band whose levels hold `level`; a mob above every band takes the last.
+pub fn band_of(level: u8) -> &'static Band {
+    let bands = bands();
+    bands
         .iter()
-        .map(|g| (g.entry, g.level))
-        .collect()
+        .find(|b| (b.levels[0]..=b.levels[1]).contains(&level))
+        .unwrap_or_else(|| bands.last().expect("content/loot_bands.toml has a band"))
 }
 
-/// The World greens a mob of `level` may drop: those within one level of the mob's, the mob's
-/// level first clamped to the greens' 5 to 8.
-pub fn northshire_greens(level: u8) -> &'static [u32] {
+/// The whites a mob of `level` may drop.
+pub fn band_whites(level: u8) -> &'static [u32] {
+    band_of(level).whites()
+}
+
+/// The greens a mob of `level` may drop: its band's greens within one level of the mob's, the
+/// mob's level first clamped into the levels those greens span.
+pub fn band_greens(level: u8) -> &'static [u32] {
     static BY_LEVEL: OnceLock<Vec<Vec<u32>>> = OnceLock::new();
     let by_level = BY_LEVEL.get_or_init(|| {
-        (0..=NORTHSHIRE_MAX_LEVEL)
+        (0..=MAX_LEVEL)
             .map(|level| {
-                let l = level.clamp(GREEN_LEVELS.0, GREEN_LEVELS.1);
-                northshire()
-                    .green
+                let band = band_of(level);
+                let lo = band.green.iter().map(|g| g.level).min().unwrap_or(level);
+                let hi = band.green.iter().map(|g| g.level).max().unwrap_or(level);
+                let l = level.clamp(lo, hi);
+                band.green
                     .iter()
                     .filter(|g| g.level.abs_diff(l) <= 1)
                     .map(|g| g.entry)
@@ -230,7 +248,7 @@ pub fn northshire_greens(level: u8) -> &'static [u32] {
             })
             .collect()
     });
-    by_level.get(usize::from(level)).map_or(&[], Vec::as_slice)
+    &by_level[usize::from(level.min(MAX_LEVEL))]
 }
 
 /// The level an item drops at, for the items any pool holds.

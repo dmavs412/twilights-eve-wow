@@ -1,0 +1,188 @@
+# The Loot Band roll (spec #448, ADR 0026): what a kill on Eastern Kingdoms rolls for, in place
+# of the vanilla pools. Each band covers the mob levels in `levels`; a mob above the last band
+# rolls the last band. 8% of kills drop one of the band's `white`; 4% drop one of its `green`,
+# those whose `level` is within one of the mob's level clamped into the band's green levels. In
+# band 1 the greens run from 5 to 8; in every later band they sit at the band's set level, so
+# every green qualifies. Every entry is a row of data/twilights-eve/gear.csv; a green's `level` is
+# its item level. tests/northshire_loot.rs checks each band against the sheet.
+
+# Northshire: the 22 Token whites and the 21 World greens.
+[[band]]
+levels = [1, 10]
+white = [
+  900200, 900201, 900202, 900203, 900204, 900205, 900206, 900207, 900208, 900209, 900210,
+  900211, 900212, 900213, 900214, 900215, 900216, 900217, 900218, 900219, 900220, 900221,
+]
+green = [
+  { entry = 900300, level = 6 },
+  { entry = 900301, level = 7 },
+  { entry = 900302, level = 8 },
+  { entry = 900303, level = 8 },
+  { entry = 900304, level = 7 },
+  { entry = 900305, level = 6 },
+  { entry = 900306, level = 8 },
+  { entry = 900307, level = 7 },
+  { entry = 900308, level = 8 },
+  { entry = 900309, level = 5 },
+  { entry = 900310, level = 6 },
+  { entry = 900311, level = 5 },
+  { entry = 900312, level = 6 },
+  { entry = 900313, level = 5 },
+  { entry = 900314, level = 8 },
+  { entry = 900315, level = 7 },
+  { entry = 900316, level = 5 },
+  { entry = 900317, level = 8 },
+  { entry = 900318, level = 8 },
+  { entry = 900319, level = 6 },
+  { entry = 900320, level = 7 },
+]
+
+# Goldshire: 21 whites and 20 greens at item level 12.
+[[band]]
+levels = [11, 14]
+white = [
+  901000, 901001, 901002, 901003, 901004, 901005, 901006, 901007, 901008, 901009, 901010,
+  901011, 901012, 901013, 901014, 901015, 901016, 901017, 901018, 901019, 901020,
+]
+green = [
+  { entry = 902000, level = 12 },
+  { entry = 902001, level = 12 },
+  { entry = 902002, level = 12 },
+  { entry = 902003, level = 12 },
+  { entry = 902004, level = 12 },
+  { entry = 902005, level = 12 },
+  { entry = 902006, level = 12 },
+  { entry = 902007, level = 12 },
+  { entry = 902008, level = 12 },
+  { entry = 902009, level = 12 },
+  { entry = 902010, level = 12 },
+  { entry = 902011, level = 12 },
+  { entry = 902012, level = 12 },
+  { entry = 902013, level = 12 },
+  { entry = 902014, level = 12 },
+  { entry = 902015, level = 12 },
+  { entry = 902016, level = 12 },
+  { entry = 902017, level = 12 },
+  { entry = 902018, level = 12 },
+  { entry = 902019, level = 12 },
+]
+
+# Lakeside: 21 whites and 20 greens at item level 15.
+[[band]]
+levels = [15, 18]
+white = [
+  901021, 901022, 901023, 901024, 901025, 901026, 901027, 901028, 901029, 901030, 901031,
+  901032, 901033, 901034, 901035, 901036, 901037, 901038, 901039, 901040, 901041,
+]
+green = [
+  { entry = 902020, level = 15 },
+  { entry = 902021, level = 15 },
+  { entry = 902022, level = 15 },
+  { entry = 902023, level = 15 },
+  { entry = 902024, level = 15 },
+  { entry = 902025, level = 15 },
+  { entry = 902026, level = 15 },
+  { entry = 902027, level = 15 },
+  { entry = 902028, level = 15 },
+  { entry = 902029, level = 15 },
+  { entry = 902030, level = 15 },
+  { entry = 902031, level = 15 },
+  { entry = 902032, level = 15 },
+  { entry = 902033, level = 15 },
+  { entry = 902034, level = 15 },
+  { entry = 902035, level = 15 },
+  { entry = 902036, level = 15 },
+  { entry = 902037, level = 15 },
+  { entry = 902038, level = 15 },
+  { entry = 902039, level = 15 },
+]
+
+# Cairn: 21 whites and 20 greens at item level 19.
+[[band]]
+levels = [19, 22]
+white = [
+  901042, 901043, 901044, 901045, 901046, 901047, 901048, 901049, 901050, 901051, 901052,
+  901053, 901054, 901055, 901056, 901057, 901058, 901059, 901060, 901061, 901062,
+]
+green = [
+  { entry = 902040, level = 19 },
+  { entry = 902041, level = 19 },
+  { entry = 902042, level = 19 },
+  { entry = 902043, level = 19 },
+  { entry = 902044, level = 19 },
+  { entry = 902045, level = 19 },
+  { entry = 902046, level = 19 },
+  { entry = 902047, level = 19 },
+  { entry = 902048, level = 19 },
+  { entry = 902049, level = 19 },
+  { entry = 902050, level = 19 },
+  { entry = 902051, level = 19 },
+  { entry = 902052, level = 19 },
+  { entry = 902053, level = 19 },
+  { entry = 902054, level = 19 },
+  { entry = 902055, level = 19 },
+  { entry = 902056, level = 19 },
+  { entry = 902057, level = 19 },
+  { entry = 902058, level = 19 },
+  { entry = 902059, level = 19 },
+]
+
+# Eastvale: 21 whites and 20 greens at item level 23.
+[[band]]
+levels = [23, 26]
+white = [
+  901063, 901064, 901065, 901066, 901067, 901068, 901069, 901070, 901071, 901072, 901073,
+  901074, 901075, 901076, 901077, 901078, 901079, 901080, 901081, 901082, 901083,
+]
+green = [
+  { entry = 902060, level = 23 },
+  { entry = 902061, level = 23 },
+  { entry = 902062, level = 23 },
+  { entry = 902063, level = 23 },
+  { entry = 902064, level = 23 },
+  { entry = 902065, level = 23 },
+  { entry = 902066, level = 23 },
+  { entry = 902067, level = 23 },
+  { entry = 902068, level = 23 },
+  { entry = 902069, level = 23 },
+  { entry = 902070, level = 23 },
+  { entry = 902071, level = 23 },
+  { entry = 902072, level = 23 },
+  { entry = 902073, level = 23 },
+  { entry = 902074, level = 23 },
+  { entry = 902075, level = 23 },
+  { entry = 902076, level = 23 },
+  { entry = 902077, level = 23 },
+  { entry = 902078, level = 23 },
+  { entry = 902079, level = 23 },
+]
+
+# Westbrook: 21 whites and 20 greens at item level 28.
+[[band]]
+levels = [27, 30]
+white = [
+  901084, 901085, 901086, 901087, 901088, 901089, 901090, 901091, 901092, 901093, 901094,
+  901095, 901096, 901097, 901098, 901099, 901100, 901101, 901102, 901103, 901104,
+]
+green = [
+  { entry = 902080, level = 28 },
+  { entry = 902081, level = 28 },
+  { entry = 902082, level = 28 },
+  { entry = 902083, level = 28 },
+  { entry = 902084, level = 28 },
+  { entry = 902085, level = 28 },
+  { entry = 902086, level = 28 },
+  { entry = 902087, level = 28 },
+  { entry = 902088, level = 28 },
+  { entry = 902089, level = 28 },
+  { entry = 902090, level = 28 },
+  { entry = 902091, level = 28 },
+  { entry = 902092, level = 28 },
+  { entry = 902093, level = 28 },
+  { entry = 902094, level = 28 },
+  { entry = 902095, level = 28 },
+  { entry = 902096, level = 28 },
+  { entry = 902097, level = 28 },
+  { entry = 902098, level = 28 },
+  { entry = 902099, level = 28 },
+]

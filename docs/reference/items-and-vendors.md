@@ -122,11 +122,11 @@ from `pools_by_level` at L-2..L+2 for a mob of level L and widen the window when
 is empty.
 
 Since spec #272 the pools start at level 13: every Gear row of pool level 12 and under left
-`data/twilights-eve/gear_drops.csv`. Northshire's loot is hand-authored instead
-(`crates/twilight-realm/content/northshire_loot.toml`): a kill on Eastern Kingdoms of a mob at
-level 10 or under rolls once, 8% a Token white and 4% a World green within a level of the mob's,
-and never the vanilla pool, so it drops no grey vendor trash. Kills above level 10, and every kill
-on Kalimdor, roll the pools as before.
+`data/twilights-eve/gear_drops.csv`. Eastern Kingdoms loot is hand-authored instead
+(`crates/twilight-realm/content/loot_bands.toml`, spec #448): the mob's level picks its Loot
+Band, and a mob above the last band takes the last. A kill rolls once, 8% one of the band's whites
+and 4% one of its greens within a level of the mob's, and never the vanilla pool, so it drops no
+grey vendor trash. Every kill on Kalimdor rolls the pools as before.
 
 ### Random-enchant greens ("of the Bear")
 

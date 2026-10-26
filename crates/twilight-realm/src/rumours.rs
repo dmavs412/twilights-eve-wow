@@ -621,9 +621,7 @@ pub(crate) fn chest_items(d: &Def, level: u8, rng: &mut Rng) -> Vec<u32> {
     }
     match d.grade {
         Grade::Easy => draw(
-            crate::rules::loot::northshire_greens(
-                level.min(crate::rules::loot::NORTHSHIRE_MAX_LEVEL),
-            ),
+            crate::rules::loot::band_greens(level.min(crate::rules::loot::NORTHSHIRE_MAX_LEVEL)),
             1,
             rng,
         ),

@@ -9,7 +9,7 @@ use benilla_protocol::messages::LootItem;
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::party::*;
 use common::*;
-use twilight_realm::rules::loot::northshire_greens;
+use twilight_realm::rules::loot::band_greens;
 use twilight_realm::{Audience, CROSSROADS};
 
 const WOLF: u32 = 2958;
@@ -22,7 +22,7 @@ const VANGUARD_TRAINER: u32 = 5810;
 /// The entry of the chest a last hand-in makes.
 const CHEST_ENTRY: u32 = 980199;
 /// The killed creature's level, which is the giver's and the chest's. The Wolf at level 6 beats
-/// a level 8 warrior; `northshire_greens` clamps level 1 to the same 5 to 8 band.
+/// a level 8 warrior; `band_greens` clamps level 1 to the same 5 to 8 band.
 const LEVEL: u8 = 1;
 /// The Dungeon pool in `content/rumours.toml`.
 const BLUES: [u32; 21] = [
@@ -484,10 +484,7 @@ fn an_easy_hand_in_pays_once_and_leaves_a_green_for_the_one_who_handed_in() {
     let (xp, items, theirs) = finish(2, "easy");
     assert!(xp > 0);
     assert_eq!(items.len(), 1);
-    assert!(
-        northshire_greens(LEVEL).contains(&items[0]),
-        "a World green"
-    );
+    assert!(band_greens(LEVEL).contains(&items[0]), "a World green");
     assert!(!theirs, "B's click does nothing");
 }
 

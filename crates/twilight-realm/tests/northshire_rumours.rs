@@ -10,7 +10,7 @@ use benilla_protocol::messages::LootItem;
 use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
-use twilight_realm::rules::loot::northshire_greens;
+use twilight_realm::rules::loot::band_greens;
 use twilight_realm::Audience;
 
 /// The entry of the chest a last hand-in makes.
@@ -292,10 +292,7 @@ fn a_hermits_request_is_rolled_by_a_wolf_and_leaves_a_green() {
     s.kill_and_hand_in(94901, TIMBER_WOLF, 8);
     let items = s.chest();
     assert_eq!(items.len(), 1, "an easy chest holds one row");
-    assert!(
-        northshire_greens(LEVEL).contains(&items[0]),
-        "a World green"
-    );
+    assert!(band_greens(LEVEL).contains(&items[0]), "a World green");
 }
 
 #[test]

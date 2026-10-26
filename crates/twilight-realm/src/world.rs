@@ -1550,11 +1550,9 @@ impl InWorld {
         let mut loot = if k.boss {
             let pool = crate::dungeon::boss_drops(c.level, c.race);
             looting::Loot::boss(k.level, &pool, rng)
-        } else if k.map == crate::content::EASTERN_KINGDOMS
-            && k.level <= crate::rules::loot::NORTHSHIRE_MAX_LEVEL
-        {
-            // Northshire's own roll (spec #272); the vanilla pools above level 10 and elsewhere.
-            looting::Loot::northshire(k.level, rng)
+        } else if k.map == crate::content::EASTERN_KINGDOMS {
+            // The Loot Band roll (spec #448); the vanilla pools on Kalimdor.
+            looting::Loot::band(k.level, rng)
         } else {
             looting::Loot::roll(k.level, rng)
         };
