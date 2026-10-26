@@ -9,7 +9,8 @@ more distinct entries is a clash. One entry listed in several files is not a cla
 a `line` (ADR 0026) counts as the item named by its line: every row of one Line is one item, so
 a Line on one icon is no clash and the clash listing names the line, not the entry. A synthetic
 display (995000 up) is not in the DBC; its icon is the stem of its `item_displays` row in
-data/twilights-eve/client_dbc_patch.json.
+data/twilights-eve/client_dbc_patch.json. A Wardrobe look template (gear.toml, 990000 up) is no
+item: no bag holds one and no one sees its icon, so it is skipped.
 
 icon_check_known.txt lists the clashes already in the content when the rule began, one per line,
 `icon<TAB>entry,entry,...`. A listed clash passes until fixed. A listed line whose clash is gone
@@ -40,6 +41,7 @@ DEFAULT_DATA = r"C:\Users\davis\wow-data\Data"
 KNOWN = os.path.join(HERE, "icon_check_known.txt")
 PATCH = os.path.normpath(os.path.join(HERE, "..", "..", "data", "twilights-eve", "client_dbc_patch.json"))
 ICON_FIELD = 5
+FIRST_LOOK = 990000  # build_gear.py's first look template
 
 
 def read_icons(data_dir):
@@ -95,14 +97,15 @@ def find_clashes(rows, icons):
     """Icon name to the items on it, for each icon with two or more distinct entries.
 
     `rows` is (entry, name, display_id, file, line), the line optional; `icons` maps display id
-    to icon name. Every row of one Line counts as one item, keyed by the line's name. Each value
+    to icon name. Every row of one Line counts as one item, keyed by the line's name. A look
+    template is skipped. Each value
     is a list of (entry or line name, name, file), one per item, entries first in entry order,
     then Lines by name.
     """
     by_icon = collections.defaultdict(dict)
     for entry, name, display_id, fname, *rest in rows:
         icon = icons.get(display_id)
-        if not icon:
+        if not icon or entry >= FIRST_LOOK:
             continue
         line = rest[0] if rest else None
         key = line or entry

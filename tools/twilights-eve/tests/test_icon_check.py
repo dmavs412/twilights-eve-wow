@@ -31,6 +31,11 @@ class FindClashes(unittest.TestCase):
         rows = [(1, "Bag", 99, "a.toml"), (2, "Pouch", 98, "a.toml")]
         self.assertEqual(icon_check.find_clashes(rows, ICONS), {})
 
+    def test_look_templates_are_skipped(self):
+        rows = [(1, "Bag", 10, "a.toml"), (990000, "Wardrobe feet", 10, "gear.toml"),
+                (990001, "Wardrobe hands", 11, "gear.toml")]
+        self.assertEqual(icon_check.find_clashes(rows, ICONS), {})
+
 
 class Lines(unittest.TestCase):
     def test_two_rows_of_one_line_on_one_icon_are_no_clash(self):

@@ -516,10 +516,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 900521,Capstone Amulet of Swiftness,Amulet,Misc,,Rare,10,1,,9,4,,,,,,,,,,,,,,,,,,,13,,,,,32073,1530,Pickup,,,,,,,,,,,
 900522,Capstone Amulet of the Mind,Amulet,Misc,,Rare,10,1,,,,7,6,,,,,,,,,,,,,,,,,13,,,,,9854,1530,Pickup,,,,,,,,,,,
 900599,The Abbot's Crook,Weapon,Staff,2H,Epic,10,1,,,,21,,,,39,56,Physical,3.0,,,,,,,,,,30,36,,,,,20298,2250,Pickup,120,Staff,Wood,,,,,,,,
-902000,Brackwell Wool Robe,Chest,Cloth,,Uncommon,12,11,,,1,4,2,120,,,,,,,,,,,,,,,,7,world-chest-cloth,,,,17462,160,Equip,50,,Cloth,,,,,,,,
-902001,Stonefield Leather Jerkin,Chest,Leather,,Uncommon,12,11,,5,2,,,210,,,,,,,,,,,,,,,,7,world-chest-leather,,,,17214,192,Equip,60,,Leather,,,,,,,,
-902002,Maclure Chain Hauberk,Chest,Mail,,Uncommon,12,11,5,,2,,,360,,,,,,,,,,,,,,,,7,world-chest-mail,,,,25848,189,Equip,65,,Chain,,,,,,,,
-902003,Lion's Pride Plate Cuirass,Chest,Plate,,Uncommon,12,11,5,,2,,,450,,,,,,,,,,,,,,,,7,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,,,,,,,
+902000,Brackwell Wool Robe,Chest,Cloth,,Uncommon,12,11,,,1,4,2,120,,,,,,,,,,,,,,,,7,world-chest-cloth,,,,17462,160,Equip,50,,Cloth,,,25875,25874,16586,14431,25876,25879
+902001,Stonefield Leather Jerkin,Chest,Leather,,Uncommon,12,11,,5,2,,,210,,,,,,,,,,,,,,,,7,world-chest-leather,,,,17214,192,Equip,60,,Leather,,,23052,8437,6717,17124,17152,16991
+902002,Maclure Chain Hauberk,Chest,Mail,,Uncommon,12,11,5,,2,,,360,,,,,,,,,,,,,,,,7,world-chest-mail,,,,25848,189,Equip,65,,Chain,,,26979,26928,27175,26930,26932,26927
+902003,Lion's Pride Plate Cuirass,Chest,Plate,,Uncommon,12,11,5,,2,,,450,,,,,,,,,,,,,,,,7,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,,25948,22679,22682,22678,3058,22680
 902004,Brackwell Cutlass,Weapon,Sword,1H,Uncommon,12,11,5,,2,,,,,14,21,Physical,2.0,,,,,,,,,,,7,world-sword,,,,20168,386,Equip,40,Side,Metal,,,,,,,,
 902005,Stonefield Kite Shield,Offhand,Shield,,Uncommon,12,11,5,,2,,,162,4,,,,,,,,,,,,,,,7,world-shield,,,,23750,248,Equip,50,Shield,Metal,,,,,,,,
 902006,Maclure Dirk,Weapon,Dagger,1H,Uncommon,12,11,,5,2,,,,,10,16,Physical,1.5,,,,,,,,,,,7,world-dagger,,,,24990,388,Equip,30,Side,Metal,,,,,,,,
@@ -536,10 +536,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902017,Stonefield Ring,Ring,Misc,,Uncommon,12,11,,4,3,,,,,,,,,,,,,,,,,,,7,world-ring-swift-b,,,,12984,1130,Equip,,,,,,,,,,,
 902018,Maclure Circle,Ring,Misc,,Uncommon,12,11,,,1,4,2,,,,,,,,,,,,,,,,,7,world-ring-mind-a,,,,9832,1130,Equip,,,,,,,,,,,
 902019,Lion's Pride Seal,Ring,Misc,,Uncommon,12,11,,,1,3,3,,,,,,,,,,,,,,,,,7,world-ring-mind-b,,,,12987,1130,Equip,,,,,,,,,,,
-902020,Crystal Lake Wool Robe,Chest,Cloth,,Uncommon,15,15,,,2,4,2,150,,,,,,,,,,,,,,,,8,world-chest-cloth,,,,17462,275,Equip,50,,Cloth,,,,,,,,
-902021,Fargodeep Leather Jerkin,Chest,Leather,,Uncommon,15,15,,5,3,,,263,,,,,,,,,,,,,,,,8,world-chest-leather,,,,17214,347,Equip,65,,Leather,,,,,,,,
-902022,Kobold Chain Hauberk,Chest,Mail,,Uncommon,15,15,5,,3,,,450,,,,,,,,,,,,,,,,8,world-chest-mail,,,,25848,436,Equip,75,,Chain,,,,,,,,
-902023,Grik's Plate Cuirass,Chest,Plate,,Uncommon,15,15,5,,3,,,563,,,,,,,,,,,,,,,,8,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,,,,,,,
+902020,Crystal Lake Wool Robe,Chest,Cloth,,Uncommon,15,15,,,2,4,2,150,,,,,,,,,,,,,,,,8,world-chest-cloth,,,,17462,275,Equip,50,,Cloth,,,23113,14342,14528,14530,14529,14531
+902021,Fargodeep Leather Jerkin,Chest,Leather,,Uncommon,15,15,,5,3,,,263,,,,,,,,,,,,,,,,8,world-chest-leather,,,,17214,347,Equip,65,,Leather,,,23034,17169,19032,19034,19030,19033
+902022,Kobold Chain Hauberk,Chest,Mail,,Uncommon,15,15,5,,3,,,450,,,,,,,,,,,,,,,,8,world-chest-mail,,,,25848,436,Equip,75,,Chain,,,22691,6953,12450,22692,22693,22690
+902023,Grik's Plate Cuirass,Chest,Plate,,Uncommon,15,15,5,,3,,,563,,,,,,,,,,,,,,,,8,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,,25960,22685,22686,22683,22687,22684
 902024,Crystal Lake Cutlass,Weapon,Sword,1H,Uncommon,15,15,5,,3,,,,,16,24,Physical,2.0,,,,,,,,,,,8,world-sword,,,,20168,696,Equip,50,Side,Metal,,,,,,,,
 902025,Fargodeep Kite Shield,Offhand,Shield,,Uncommon,15,15,5,,3,,,203,5,,,,,,,,,,,,,,,8,world-shield,,,,23750,470,Equip,55,Shield,Metal,,,,,,,,
 902026,Kobold Dirk,Weapon,Dagger,1H,Uncommon,15,15,,5,3,,,,,12,18,Physical,1.5,,,,,,,,,,,8,world-dagger,,,,24990,703,Equip,35,Side,Metal,,,,,,,,
@@ -556,10 +556,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902037,Fargodeep Ring,Ring,Misc,,Uncommon,15,15,,4,4,,,,,,,,,,,,,,,,,,,8,world-ring-swift-b,,,,12984,1130,Equip,,,,,,,,,,,
 902038,Kobold Circle,Ring,Misc,,Uncommon,15,15,,,2,4,2,,,,,,,,,,,,,,,,,8,world-ring-mind-a,,,,9832,1130,Equip,,,,,,,,,,,
 902039,Grik's Seal,Ring,Misc,,Uncommon,15,15,,,2,3,3,,,,,,,,,,,,,,,,,8,world-ring-mind-b,,,,12987,1130,Equip,,,,,,,,,,,
-902040,Stone Cairn Wool Robe,Chest,Cloth,,Uncommon,19,19,,,2,5,2,190,,,,,,,,,,,,,,,,9,world-chest-cloth,,,,17462,488,Equip,60,,Cloth,,,,,,,,
-902041,Azora Leather Jerkin,Chest,Leather,,Uncommon,19,19,,6,3,,,333,,,,,,,,,,,,,,,,9,world-chest-leather,,,,17214,601,Equip,70,,Leather,,,,,,,,
-902042,Murloc Chain Hauberk,Chest,Mail,,Uncommon,19,19,6,,3,,,570,,,,,,,,,,,,,,,,9,world-chest-mail,,,,25848,630,Equip,80,,Chain,,,,,,,,
-902043,Cairn Watch Plate Cuirass,Chest,Plate,,Uncommon,19,19,6,,3,,,713,,,,,,,,,,,,,,,,9,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,,,,,,,
+902040,Stone Cairn Wool Robe,Chest,Cloth,,Uncommon,19,19,,,2,5,2,190,,,,,,,,,,,,,,,,9,world-chest-cloth,,,,17462,488,Equip,60,,Cloth,,,23137,16595,16592,16594,16591,11060
+902041,Azora Leather Jerkin,Chest,Leather,,Uncommon,19,19,,6,3,,,333,,,,,,,,,,,,,,,,9,world-chest-leather,,,,17214,601,Equip,70,,Leather,,,23006,14728,14729,17113,14730,19184
+902042,Murloc Chain Hauberk,Chest,Mail,,Uncommon,19,19,6,,3,,,570,,,,,,,,,,,,,,,,9,world-chest-mail,,,,25848,630,Equip,80,,Chain,,25777,25978,25776,13484,25775,3541,6987
+902043,Cairn Watch Plate Cuirass,Chest,Plate,,Uncommon,19,19,6,,3,,,713,,,,,,,,,,,,,,,,9,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,,25953,25758,25756,25757,25759,6931
 902044,Stone Cairn Cutlass,Weapon,Sword,1H,Uncommon,19,19,6,,3,,,,,20,30,Physical,2.0,,,,,,,,,,,9,world-sword,,,,20168,1180,Equip,55,Side,Metal,,,,,,,,
 902045,Azora Kite Shield,Offhand,Shield,,Uncommon,19,19,6,,3,,,257,6,,,,,,,,,,,,,,,9,world-shield,,,,23750,794,Equip,65,Shield,Metal,,,,,,,,
 902046,Murloc Dirk,Weapon,Dagger,1H,Uncommon,19,19,,6,3,,,,,15,22,Physical,1.5,,,,,,,,,,,9,world-dagger,,,,24990,1248,Equip,40,Side,Metal,,,,,,,,
@@ -576,10 +576,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902057,Azora Ring,Ring,Misc,,Uncommon,19,19,,5,4,,,,,,,,,,,,,,,,,,,9,world-ring-swift-b,,,,12984,625,Equip,,,,,,,,,,,
 902058,Murloc Circle,Ring,Misc,,Uncommon,19,19,,,2,5,2,,,,,,,,,,,,,,,,,9,world-ring-mind-a,,,,9832,625,Equip,,,,,,,,,,,
 902059,Cairn Watch Seal,Ring,Misc,,Uncommon,19,19,,,2,4,3,,,,,,,,,,,,,,,,,9,world-ring-mind-b,,,,12987,625,Equip,,,,,,,,,,,
-902060,Eastvale Wool Robe,Chest,Cloth,,Uncommon,23,23,,,2,6,3,230,,,,,,,,,,,,,,,,11,world-chest-cloth,,,,17462,847,Equip,65,,Cloth,,,,,,,,
-902061,Ridgepoint Leather Jerkin,Chest,Leather,,Uncommon,23,23,,7,4,,,403,,,,,,,,,,,,,,,,11,world-chest-leather,,,,17214,1010,Equip,75,,Leather,,,,,,,,
-902062,Mirror Lake Chain Hauberk,Chest,Mail,,Uncommon,23,23,7,,4,,,690,,,,,,,,,,,,,,,,11,world-chest-mail,,,,25848,1269,Equip,90,,Chain,,,,,,,,
-902063,Smuggler's Plate Cuirass,Chest,Plate,,Uncommon,23,23,7,,4,,,863,,,,,,,,,,,,,,,,11,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,,,,,,,
+902060,Eastvale Wool Robe,Chest,Cloth,,Uncommon,23,23,,,2,6,3,230,,,,,,,,,,,,,,,,11,world-chest-cloth,,,,17462,847,Equip,65,,Cloth,,14371,23093,16806,14370,16807,12930,3757
+902061,Ridgepoint Leather Jerkin,Chest,Leather,,Uncommon,23,23,,7,4,,,403,,,,,,,,,,,,,,,,11,world-chest-leather,,,,17214,1010,Equip,75,,Leather,,15002,23058,17015,17066,16935,16967,16992
+902062,Mirror Lake Chain Hauberk,Chest,Mail,,Uncommon,23,23,7,,4,,,690,,,,,,,,,,,,,,,,11,world-chest-mail,,,,25848,1269,Equip,90,,Chain,,26988,26958,26982,26985,26987,26986,26983
+902063,Smuggler's Plate Cuirass,Chest,Plate,,Uncommon,23,23,7,,4,,,863,,,,,,,,,,,,,,,,11,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,25770,26048,25766,16731,25767,25768,25765
 902064,Eastvale Cutlass,Weapon,Sword,1H,Uncommon,23,23,7,,4,,,,,24,36,Physical,2.0,,,,,,,,,,,11,world-sword,,,,20168,2131,Equip,65,Side,Metal,,,,,,,,
 902065,Ridgepoint Kite Shield,Offhand,Shield,,Uncommon,23,23,7,,4,,,311,7,,,,,,,,,,,,,,,11,world-shield,,,,23750,1308,Equip,70,Shield,Metal,,,,,,,,
 902066,Mirror Lake Dirk,Weapon,Dagger,1H,Uncommon,23,23,,7,4,,,,,18,27,Physical,1.5,,,,,,,,,,,11,world-dagger,,,,24990,2107,Equip,45,Side,Metal,,,,,,,,
@@ -596,10 +596,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 902077,Ridgepoint Ring,Ring,Misc,,Uncommon,23,23,,6,5,,,,,,,,,,,,,,,,,,,11,world-ring-swift-b,,,,12984,1087,Equip,,,,,,,,,,,
 902078,Mirror Lake Circle,Ring,Misc,,Uncommon,23,23,,,2,6,3,,,,,,,,,,,,,,,,,11,world-ring-mind-a,,,,9832,1087,Equip,,,,,,,,,,,
 902079,Smuggler's Seal,Ring,Misc,,Uncommon,23,23,,,2,5,4,,,,,,,,,,,,,,,,,11,world-ring-mind-b,,,,12987,1087,Equip,,,,,,,,,,,
-902080,Westbrook Wool Robe,Chest,Cloth,,Uncommon,28,27,,,3,7,4,280,,,,,,,,,,,,,,,,14,world-chest-cloth,,,,17462,1430,Equip,70,,Cloth,,,,,,,,
-902081,Riverpaw Leather Jerkin,Chest,Leather,,Uncommon,28,27,,9,5,,,490,,,,,,,,,,,,,,,,14,world-chest-leather,,,,17214,1937,Equip,85,,Leather,,,,,,,,
-902082,Forest's Edge Chain Hauberk,Chest,Mail,,Uncommon,28,27,9,,5,,,840,,,,,,,,,,,,,,,,14,world-chest-mail,,,,25848,2140,Equip,100,,Chain,,,,,,,,
-902083,Deepwater Plate Cuirass,Chest,Plate,,Uncommon,28,27,9,,5,,,1050,,,,,,,,,,,,,,,,14,world-chest-plate,,,,16109,4904,Equip,115,,Plate,,,,,,,,
+902080,Westbrook Wool Robe,Chest,Cloth,,Uncommon,28,27,,,3,7,4,280,,,,,,,,,,,,,,,,14,world-chest-cloth,,,,17462,1430,Equip,70,,Cloth,,25887,25884,16805,25885,25881,10079,16802
+902081,Riverpaw Leather Jerkin,Chest,Leather,,Uncommon,28,27,,9,5,,,490,,,,,,,,,,,,,,,,14,world-chest-leather,,,,17214,1937,Equip,85,,Leather,,28002,28006,28001,28005,27998,28003,27999
+902082,Forest's Edge Chain Hauberk,Chest,Mail,,Uncommon,28,27,9,,5,,,840,,,,,,,,,,,,,,,,14,world-chest-mail,,,,25848,2140,Equip,100,,Chain,,25783,25979,25779,25782,25781,11525,25778
+902083,Deepwater Plate Cuirass,Chest,Plate,,Uncommon,28,27,9,,5,,,1050,,,,,,,,,,,,,,,,14,world-chest-plate,,,,16109,4904,Equip,115,,Plate,27083,27080,27082,27074,27075,27079,27076,27540
 902084,Westbrook Cutlass,Weapon,Sword,1H,Uncommon,28,27,9,,5,,,,,30,46,Physical,2.0,,,,,,,,,,,14,world-sword,,,,20168,3842,Equip,70,Side,Metal,,,,,,,,
 902085,Riverpaw Kite Shield,Offhand,Shield,,Uncommon,28,27,9,,5,,,378,8,,,,,,,,,,,,,,,14,world-shield,,,,23750,2451,Equip,80,Shield,Metal,,,,,,,,
 902086,Forest's Edge Dirk,Weapon,Dagger,1H,Uncommon,28,27,,9,5,,,,,23,34,Physical,1.5,,,,,,,,,,,14,world-dagger,,,,24990,3830,Equip,50,Side,Metal,,,,,,,,
@@ -622,10 +622,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903003,Marshal's Signet,Ring,Misc,,Uncommon,11,11,4,0,2,0,0,,,,,,,,,,,,,,,,,6,,,,,14432,1130,Pickup,,,Chain,,,,,,,,
 903004,Dughan's Loop,Ring,Misc,,Uncommon,11,11,0,4,2,0,0,,,,,,,,,,,,,,,,,6,,,,,16132,1130,Pickup,,,Chain,,,,,,,,
 903005,Doubter's Band,Ring,Misc,,Uncommon,11,11,0,0,1,3,2,,,,,,,,,,,,,,,,,6,,,,,23728,1130,Pickup,,,Chain,,,,,,,,
-903006,Cartwright Robe,Chest,Cloth,,Uncommon,12,12,0,0,1,4,2,120,,,,,,,,,,,,,,,,7,,,,,12400,160,Pickup,50,,Cloth,,,,,,,,
-903007,Cartwright Jerkin,Chest,Leather,,Uncommon,12,12,0,5,2,0,0,210,,,,,,,,,,,,,,,,7,,,,,1080,192,Pickup,60,,Leather,,,,,,,,
-903008,Cartwright Hauberk,Chest,Mail,,Uncommon,12,12,5,0,2,0,0,360,,,,,,,,,,,,,,,,7,,,,,26936,189,Pickup,65,,Chain,,,,,,,,
-903009,Cartwright Cuirass,Chest,Plate,,Uncommon,12,12,5,0,2,0,0,450,,,,,,,,,,,,,,,,7,,,,,3413,4904,Pickup,115,,Plate,,,,,,,,
+903006,Cartwright Robe,Chest,Cloth,,Uncommon,12,12,0,0,1,4,2,120,,,,,,,,,,,,,,,,7,,,,,12400,160,Pickup,50,,Cloth,,,25875,25874,16586,14431,25876,25879
+903007,Cartwright Jerkin,Chest,Leather,,Uncommon,12,12,0,5,2,0,0,210,,,,,,,,,,,,,,,,7,,,,,1080,192,Pickup,60,,Leather,,,23052,8437,6717,17124,17152,16991
+903008,Cartwright Hauberk,Chest,Mail,,Uncommon,12,12,5,0,2,0,0,360,,,,,,,,,,,,,,,,7,,,,,26936,189,Pickup,65,,Chain,,,26979,26928,27175,26930,26932,26927
+903009,Cartwright Cuirass,Chest,Plate,,Uncommon,12,12,5,0,2,0,0,450,,,,,,,,,,,,,,,,7,,,,,3413,4904,Pickup,115,,Plate,,,25948,22679,22682,22678,3058,22680
 903010,Collector's Locket,Amulet,Misc,,Uncommon,12,12,5,0,2,0,0,,,,,,,,,,,,,,,,,7,,,,,18172,1535,Pickup,,,Liquid,,,,,,,,
 903011,Collector's Pendant,Amulet,Misc,,Uncommon,12,12,0,5,2,0,0,,,,,,,,,,,,,,,,,7,,,,,9657,1535,Pickup,,,Liquid,,,,,,,,
 903012,Collector's Charm,Amulet,Misc,,Uncommon,12,12,0,0,1,4,2,,,,,,,,,,,,,,,,,7,,,,,9860,1535,Pickup,,,Liquid,,,,,,,,
@@ -644,10 +644,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903025,Courier's Signet,Ring,Misc,,Uncommon,14,14,5,0,2,0,0,,,,,,,,,,,,,,,,,7,,,,,14436,1130,Pickup,,,Chain,,,,,,,,
 903026,Courier's Loop,Ring,Misc,,Uncommon,14,14,0,5,2,0,0,,,,,,,,,,,,,,,,,7,,,,,3258,1130,Pickup,,,Chain,,,,,,,,
 903027,Courier's Seal,Ring,Misc,,Uncommon,14,14,0,0,1,4,2,,,,,,,,,,,,,,,,,7,,,,,28682,1130,Pickup,,,Chain,,,,,,,,
-903028,Keystone Vest,Chest,Cloth,,Uncommon,15,15,0,0,2,4,2,150,,,,,,,,,,,,,,,,8,,,,,2490,268,Pickup,50,,Cloth,,,,,,,,
-903029,Keystone Jerkin,Chest,Leather,,Uncommon,15,15,0,5,3,0,0,263,,,,,,,,,,,,,,,,8,,,,,17092,347,Pickup,65,,Leather,,,,,,,,
-903030,Keystone Hauberk,Chest,Mail,,Uncommon,15,15,5,0,3,0,0,450,,,,,,,,,,,,,,,,8,,,,,16114,436,Pickup,75,,Chain,,,,,,,,
-903031,Keystone Cuirass,Chest,Plate,,Uncommon,15,15,5,0,3,0,0,563,,,,,,,,,,,,,,,,8,,,,,24393,4904,Pickup,115,,Plate,,,,,,,,
+903028,Keystone Vest,Chest,Cloth,,Uncommon,15,15,0,0,2,4,2,150,,,,,,,,,,,,,,,,8,,,,,2490,268,Pickup,50,,Cloth,,,23113,14342,14528,14530,14529,14531
+903029,Keystone Jerkin,Chest,Leather,,Uncommon,15,15,0,5,3,0,0,263,,,,,,,,,,,,,,,,8,,,,,17092,347,Pickup,65,,Leather,,,23034,17169,19032,19034,19030,19033
+903030,Keystone Hauberk,Chest,Mail,,Uncommon,15,15,5,0,3,0,0,450,,,,,,,,,,,,,,,,8,,,,,16114,436,Pickup,75,,Chain,,,22691,6953,12450,22692,22693,22690
+903031,Keystone Cuirass,Chest,Plate,,Uncommon,15,15,5,0,3,0,0,563,,,,,,,,,,,,,,,,8,,,,,24393,4904,Pickup,115,,Plate,,,25960,22685,22686,22683,22687,22684
 903032,Jasperlode Locket,Amulet,Misc,,Uncommon,15,15,5,0,3,0,0,,,,,,,,,,,,,,,,,8,,,,,6494,1535,Pickup,,,Liquid,,,,,,,,
 903033,Jasperlode Pendant,Amulet,Misc,,Uncommon,15,15,0,5,3,0,0,,,,,,,,,,,,,,,,,8,,,,,9859,1535,Pickup,,,Liquid,,,,,,,,
 903034,Jasperlode Charm,Amulet,Misc,,Uncommon,15,15,0,0,2,4,2,,,,,,,,,,,,,,,,,8,,,,,9658,1535,Pickup,,,Liquid,,,,,,,,
@@ -660,10 +660,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903041,Standing Stone Ring,Ring,Misc,,Uncommon,18,18,6,0,3,0,0,,,,,,,,,,,,,,,,,9,,,,,14438,625,Pickup,,,Chain,,,,,,,,
 903042,Stonerite Loop,Ring,Misc,,Uncommon,18,18,0,6,3,0,0,,,,,,,,,,,,,,,,,9,,,,,20769,625,Pickup,,,Chain,,,,,,,,
 903043,Rite Band,Ring,Misc,,Uncommon,18,18,0,0,2,5,2,,,,,,,,,,,,,,,,,9,,,,,23608,625,Pickup,,,Chain,,,,,,,,
-903044,Echo Ore Robe,Chest,Cloth,,Uncommon,19,19,0,0,2,5,2,190,,,,,,,,,,,,,,,,9,,,,,14739,488,Pickup,60,,Cloth,,,,,,,,
-903045,Echo Ore Jerkin,Chest,Leather,,Uncommon,19,19,0,6,3,0,0,333,,,,,,,,,,,,,,,,9,,,,,8660,601,Pickup,70,,Leather,,,,,,,,
-903046,Echo Ore Hauberk,Chest,Mail,,Uncommon,19,19,6,0,3,0,0,570,,,,,,,,,,,,,,,,9,,,,,12945,630,Pickup,80,,Chain,,,,,,,,
-903047,Echo Ore Cuirass,Chest,Plate,,Uncommon,19,19,6,0,3,0,0,713,,,,,,,,,,,,,,,,9,,,,,27372,4904,Pickup,115,,Plate,,,,,,,,
+903044,Echo Ore Robe,Chest,Cloth,,Uncommon,19,19,0,0,2,5,2,190,,,,,,,,,,,,,,,,9,,,,,14739,488,Pickup,60,,Cloth,,,23137,16595,16592,16594,16591,11060
+903045,Echo Ore Jerkin,Chest,Leather,,Uncommon,19,19,0,6,3,0,0,333,,,,,,,,,,,,,,,,9,,,,,8660,601,Pickup,70,,Leather,,,23006,14728,14729,17113,14730,19184
+903046,Echo Ore Hauberk,Chest,Mail,,Uncommon,19,19,6,0,3,0,0,570,,,,,,,,,,,,,,,,9,,,,,12945,630,Pickup,80,,Chain,,25777,25978,25776,13484,25775,3541,6987
+903047,Echo Ore Cuirass,Chest,Plate,,Uncommon,19,19,6,0,3,0,0,713,,,,,,,,,,,,,,,,9,,,,,27372,4904,Pickup,115,,Plate,,,25953,25758,25756,25757,25759,6931
 903048,Open Tower Locket,Amulet,Misc,,Uncommon,19,19,6,0,3,0,0,,,,,,,,,,,,,,,,,9,,,,,15420,1535,Pickup,,,Liquid,,,,,,,,
 903049,Open Tower Pendant,Amulet,Misc,,Uncommon,19,19,0,6,3,0,0,,,,,,,,,,,,,,,,,9,,,,,6497,1535,Pickup,,,Liquid,,,,,,,,
 903050,Open Tower Charm,Amulet,Misc,,Uncommon,19,19,0,0,2,5,2,,,,,,,,,,,,,,,,,9,,,,,7899,1535,Pickup,,,Liquid,,,,,,,,
@@ -676,10 +676,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903057,Ridgewatch Signet,Ring,Misc,,Uncommon,22,22,7,0,4,0,0,,,,,,,,,,,,,,,,,11,,,,,12643,556,Pickup,,,Chain,,,,,,,,
 903058,Ridgewatch Loop,Ring,Misc,,Uncommon,22,22,0,7,4,0,0,,,,,,,,,,,,,,,,,11,,,,,18397,556,Pickup,,,Chain,,,,,,,,
 903059,Ridgewatch Seal,Ring,Misc,,Uncommon,22,22,0,0,2,6,3,,,,,,,,,,,,,,,,,11,,,,,23629,556,Pickup,,,Chain,,,,,,,,
-903060,Ridgepoint Robe,Chest,Cloth,,Uncommon,23,23,0,0,2,6,3,230,,,,,,,,,,,,,,,,11,,,,,12701,890,Pickup,65,,Cloth,,,,,,,,
-903061,Ridgepoint Jerkin,Chest,Leather,,Uncommon,23,23,0,7,4,0,0,403,,,,,,,,,,,,,,,,11,,,,,27683,1010,Pickup,75,,Leather,,,,,,,,
-903062,Ridgepoint Hauberk,Chest,Mail,,Uncommon,23,23,7,0,4,0,0,690,,,,,,,,,,,,,,,,11,,,,,23530,1269,Pickup,90,,Chain,,,,,,,,
-903063,Ridgepoint Cuirass,Chest,Plate,,Uncommon,23,23,7,0,4,0,0,863,,,,,,,,,,,,,,,,11,,,,,26838,4904,Pickup,115,,Plate,,,,,,,,
+903060,Ridgepoint Robe,Chest,Cloth,,Uncommon,23,23,0,0,2,6,3,230,,,,,,,,,,,,,,,,11,,,,,12701,890,Pickup,65,,Cloth,,14371,23093,16806,14370,16807,12930,3757
+903061,Ridgepoint Jerkin,Chest,Leather,,Uncommon,23,23,0,7,4,0,0,403,,,,,,,,,,,,,,,,11,,,,,27683,1010,Pickup,75,,Leather,,15002,23058,17015,17066,16935,16967,16992
+903062,Ridgepoint Hauberk,Chest,Mail,,Uncommon,23,23,7,0,4,0,0,690,,,,,,,,,,,,,,,,11,,,,,23530,1269,Pickup,90,,Chain,,26988,26958,26982,26985,26987,26986,26983
+903063,Ridgepoint Cuirass,Chest,Plate,,Uncommon,23,23,7,0,4,0,0,863,,,,,,,,,,,,,,,,11,,,,,26838,4904,Pickup,115,,Plate,,25770,26048,25766,16731,25767,25768,25765
 903064,Toren's Locket,Amulet,Misc,,Uncommon,23,23,7,0,4,0,0,,,,,,,,,,,,,,,,,11,,,,,6522,1535,Pickup,,,Liquid,,,,,,,,
 903065,Toren's Pendant,Amulet,Misc,,Uncommon,23,23,0,7,4,0,0,,,,,,,,,,,,,,,,,11,,,,,9858,1535,Pickup,,,Liquid,,,,,,,,
 903066,Toren's Charm,Amulet,Misc,,Uncommon,23,23,0,0,2,6,3,,,,,,,,,,,,,,,,,11,,,,,17918,1535,Pickup,,,Liquid,,,,,,,,
@@ -695,18 +695,18 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 903076,Boatburner's Signet,Ring,Misc,,Uncommon,26,26,9,0,4,0,0,,,,,,,,,,,,,,,,,13,,,,,28733,25,Pickup,,,Chain,,,,,,,,
 903077,Boatburner's Loop,Ring,Misc,,Uncommon,26,26,0,9,4,0,0,,,,,,,,,,,,,,,,,13,,,,,24087,25,Pickup,,,Chain,,,,,,,,
 903078,Boatburner's Seal,Ring,Misc,,Uncommon,26,26,0,0,3,7,3,,,,,,,,,,,,,,,,,13,,,,,24022,25,Pickup,,,Chain,,,,,,,,
-903100,Narg's Dread Robe,Chest,Cloth,,Rare,18,15,0,0,4,10,5,207,,,,,,,,,,,,,,,,19,,,,,24988,1202,Pickup,75,,Cloth,,,,,,,,
-903101,Narg's Dread Jerkin,Chest,Leather,,Rare,18,15,0,13,6,0,0,362,,,,,,,,,,,,,,,,19,,,,,27728,1137,Pickup,90,,Leather,,,,,,,,
-903102,Narg's Dread Hauberk,Chest,Mail,,Rare,18,15,13,0,6,0,0,621,,,,,,,,,,,,,,,,19,,,,,22688,1880,Pickup,105,,Chain,,,,,,,,
-903103,Narg's Dread Plate,Chest,Plate,,Rare,18,15,13,0,6,0,0,776,,,,,,,,,,,,,,,,19,,,,,26795,6377,Pickup,135,,Plate,,,,,,,,
-903104,Pointed Robe of Azora,Chest,Cloth,,Rare,22,19,0,0,5,12,6,253,,,,,,,,,,,,,,,,23,,,,,12670,1202,Pickup,75,,Cloth,,,,,,,,
-903105,Pointed Jerkin of Azora,Chest,Leather,,Rare,22,19,0,15,8,0,0,443,,,,,,,,,,,,,,,,23,,,,,27586,1137,Pickup,90,,Leather,,,,,,,,
-903106,Pointed Hauberk of Azora,Chest,Mail,,Rare,22,19,15,0,8,0,0,759,,,,,,,,,,,,,,,,23,,,,,23540,1880,Pickup,105,,Chain,,,,,,,,
-903107,Pointed Plate of Azora,Chest,Plate,,Rare,22,19,15,0,8,0,0,949,,,,,,,,,,,,,,,,23,,,,,21898,6377,Pickup,135,,Plate,,,,,,,,
-903108,Hogger's Dread Robe,Chest,Cloth,,Rare,30,27,0,0,8,17,9,345,,,,,,,,,,,,,,,,34,,,,,17128,1892,Pickup,80,,Cloth,,,,,,,,
-903109,Hogger's Dread Jerkin,Chest,Leather,,Rare,30,27,0,23,11,0,0,604,,,,,,,,,,,,,,,,34,,,,,19012,1553,Pickup,95,,Leather,,,,,,,,
-903110,Hogger's Dread Hauberk,Chest,Mail,,Rare,30,27,23,0,11,0,0,1035,,,,,,,,,,,,,,,,34,,,,,26961,3108,Pickup,120,,Chain,,,,,,,,
-903111,Hogger's Dread Plate,Chest,Plate,,Rare,30,27,23,0,11,0,0,1294,,,,,,,,,,,,,,,,34,,,,,28355,6377,Pickup,135,,Plate,,,,,,,,
+903100,Narg's Dread Robe,Chest,Cloth,,Rare,18,15,0,0,4,10,5,207,,,,,,,,,,,,,,,,19,,,,,24988,1202,Pickup,75,,Cloth,,5394,25916,16664,16657,25915,16656,25929
+903101,Narg's Dread Jerkin,Chest,Leather,,Rare,18,15,0,13,6,0,0,362,,,,,,,,,,,,,,,,19,,,,,27728,1137,Pickup,90,,Leather,,12403,23021,,9526,12464,12402,9530
+903102,Narg's Dread Hauberk,Chest,Mail,,Rare,18,15,13,0,6,0,0,621,,,,,,,,,,,,,,,,19,,,,,22688,1880,Pickup,105,,Chain,,27014,27011,27007,27012,27008,27013,27009
+903103,Narg's Dread Plate,Chest,Plate,,Rare,18,15,13,0,6,0,0,776,,,,,,,,,,,,,,,,19,,,,,26795,6377,Pickup,135,,Plate,,,25945,22674,22676,11131,7193,22673
+903104,Pointed Robe of Azora,Chest,Cloth,,Rare,22,19,0,0,5,12,6,253,,,,,,,,,,,,,,,,23,,,,,12670,1202,Pickup,75,,Cloth,,,23094,16555,14348,16554,16552,16553
+903105,Pointed Jerkin of Azora,Chest,Leather,,Rare,22,19,0,15,8,0,0,443,,,,,,,,,,,,,,,,23,,,,,27586,1137,Pickup,90,,Leather,,27667,27673,13355,27672,27668,27670,16997
+903106,Pointed Hauberk of Azora,Chest,Mail,,Rare,22,19,15,0,8,0,0,759,,,,,,,,,,,,,,,,23,,,,,23540,1880,Pickup,105,,Chain,,26997,26991,26993,26994,26992,26995,27541
+903107,Pointed Plate of Azora,Chest,Plate,,Rare,22,19,15,0,8,0,0,949,,,,,,,,,,,,,,,,23,,,,,21898,6377,Pickup,135,,Plate,,25764,25967,12456,25761,25762,12453,25760
+903108,Hogger's Dread Robe,Chest,Cloth,,Rare,30,27,0,0,8,17,9,345,,,,,,,,,,,,,,,,34,,,,,17128,1892,Pickup,80,,Cloth,,25859,25855,14541,14542,25858,11421,25857
+903109,Hogger's Dread Jerkin,Chest,Leather,,Rare,30,27,0,23,11,0,0,604,,,,,,,,,,,,,,,,34,,,,,19012,1553,Pickup,95,,Leather,,9527,28042,17002,28046,17114,14522,28039
+903110,Hogger's Dread Hauberk,Chest,Mail,,Rare,30,27,23,0,11,0,0,1035,,,,,,,,,,,,,,,,34,,,,,26961,3108,Pickup,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
+903111,Hogger's Dread Plate,Chest,Plate,,Rare,30,27,23,0,11,0,0,1294,,,,,,,,,,,,,,,,34,,,,,28355,6377,Pickup,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
 904000,Pasture Torc,Amulet,Misc,,Rare,12,11,9,,5,,,,,,,,,,,,,,,,,,,14,elite-amulet-might,,,,23715,1566,Equip,,,,,,,,,,,
 904001,Pasture Pendant,Amulet,Misc,,Rare,12,11,,9,5,,,,,,,,,,,,,,,,,,,14,elite-amulet-swift,,,,23717,1566,Equip,,,,,,,,,,,
 904002,Pasture Charm,Amulet,Misc,,Rare,12,11,,,3,7,4,,,,,,,,,,,,,,,,,14,elite-amulet-mind,,,,30696,1566,Equip,,,,,,,,,,,
@@ -731,10 +731,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 904021,Bookkeeper's Signet,Ring,Misc,,Rare,28,27,21,,10,,,,,,,,,,,,,,,,,,,31,elite-ring-might,,,,31664,2055,Equip,,,,,,,,,,,
 904022,Bookkeeper's Loop,Ring,Misc,,Rare,28,27,,21,10,,,,,,,,,,,,,,,,,,,31,elite-ring-swift,,,,32678,2055,Equip,,,,,,,,,,,
 904023,Bookkeeper's Band,Ring,Misc,,Rare,28,27,,,7,16,8,,,,,,,,,,,,,,,,,31,elite-ring-mind,,,,31905,2055,Equip,,,,,,,,,,,
-905000,Eye's Robe,Chest,Cloth,,Rare,18,15,,,4,10,5,207,,,,,,,,,,,,,,,,19,dungeon-chest-cloth,,,,12696,1202,Equip,75,,Cloth,,,,,,,,
-905001,Digger's Jerkin,Chest,Leather,,Rare,18,15,,13,6,,,362,,,,,,,,,,,,,,,,19,dungeon-chest-leather,,,,21719,1137,Equip,90,,Leather,,,,,,,,
-905002,Grik's Hauberk,Chest,Mail,,Rare,18,15,13,,6,,,621,,,,,,,,,,,,,,,,19,dungeon-chest-mail,,,,15897,1880,Equip,105,,Chain,,,,,,,,
-905003,Eye's Cuirass,Chest,Plate,,Rare,18,15,13,,6,,,776,,,,,,,,,,,,,,,,19,dungeon-chest-plate,,,,26373,22519,Equip,135,,Plate,,,,,,,,
+905000,Eye's Robe,Chest,Cloth,,Rare,18,15,,,4,10,5,207,,,,,,,,,,,,,,,,19,dungeon-chest-cloth,,,,12696,1202,Equip,75,,Cloth,,5394,25916,16664,16657,25915,16656,25929
+905001,Digger's Jerkin,Chest,Leather,,Rare,18,15,,13,6,,,362,,,,,,,,,,,,,,,,19,dungeon-chest-leather,,,,21719,1137,Equip,90,,Leather,,12403,23021,,9526,12464,12402,9530
+905002,Grik's Hauberk,Chest,Mail,,Rare,18,15,13,,6,,,621,,,,,,,,,,,,,,,,19,dungeon-chest-mail,,,,15897,1880,Equip,105,,Chain,,27014,27011,27007,27012,27008,27013,27009
+905003,Eye's Cuirass,Chest,Plate,,Rare,18,15,13,,6,,,776,,,,,,,,,,,,,,,,19,dungeon-chest-plate,,,,26373,22519,Equip,135,,Plate,,,25945,22674,22676,11131,7193,22673
 905004,Digger's Blade,Weapon,Sword,1H,Rare,18,15,13,,6,,,,,24,36,Physical,2.0,,,,,,,,,,,19,dungeon-sword,,,,13488,1742,Equip,65,Side,Metal,,,,,,,,
 905005,Grik's Bulwark,Offhand,Shield,,Rare,18,15,13,,6,,,279,6,,,,,,,,,,,,,,,19,dungeon-shield,,,,20974,1067,Equip,75,Shield,Metal,,,,,,,,
 905006,Eye's Dirk,Weapon,Dagger,1H,Rare,18,15,,13,6,,,,,18,27,Physical,1.5,,,,,,,,,,,19,dungeon-dagger,,,,6555,2509,Equip,50,Side,Metal,,,,,,,,
@@ -751,10 +751,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905017,Grik's Ring,Ring,Misc,,Rare,18,15,,12,7,,,,,,,,,,,,,,,,,,,19,dungeon-ring-swift-b,,,,31576,812,Equip,,,,,,,,,,,
 905018,Eye's Circle,Ring,Misc,,Rare,18,15,,,4,10,5,,,,,,,,,,,,,,,,,19,dungeon-ring-mind-a,,,,31616,812,Equip,,,,,,,,,,,
 905019,Digger's Seal,Ring,Misc,,Rare,18,15,,,4,9,6,,,,,,,,,,,,,,,,,19,dungeon-ring-mind-b,,,,31655,812,Equip,,,,,,,,,,,
-905020,Void Robe,Chest,Cloth,,Rare,22,19,,,5,12,6,253,,,,,,,,,,,,,,,,23,dungeon-chest-cloth,,,,12696,1202,Equip,75,,Cloth,,,,,,,,
-905021,Morganth's Jerkin,Chest,Leather,,Rare,22,19,,15,8,,,443,,,,,,,,,,,,,,,,23,dungeon-chest-leather,,,,21719,1467,Equip,90,,Leather,,,,,,,,
-905022,Shadowhide Hauberk,Chest,Mail,,Rare,22,19,15,,8,,,759,,,,,,,,,,,,,,,,23,dungeon-chest-mail,,,,15897,1880,Equip,105,,Chain,,,,,,,,
-905023,Void Cuirass,Chest,Plate,,Rare,22,19,15,,8,,,949,,,,,,,,,,,,,,,,23,dungeon-chest-plate,,,,26373,22519,Equip,135,,Plate,,,,,,,,
+905020,Void Robe,Chest,Cloth,,Rare,22,19,,,5,12,6,253,,,,,,,,,,,,,,,,23,dungeon-chest-cloth,,,,12696,1202,Equip,75,,Cloth,,,23094,16555,14348,16554,16552,16553
+905021,Morganth's Jerkin,Chest,Leather,,Rare,22,19,,15,8,,,443,,,,,,,,,,,,,,,,23,dungeon-chest-leather,,,,21719,1467,Equip,90,,Leather,,27667,27673,13355,27672,27668,27670,16997
+905022,Shadowhide Hauberk,Chest,Mail,,Rare,22,19,15,,8,,,759,,,,,,,,,,,,,,,,23,dungeon-chest-mail,,,,15897,1880,Equip,105,,Chain,,26997,26991,26993,26994,26992,26995,27541
+905023,Void Cuirass,Chest,Plate,,Rare,22,19,15,,8,,,949,,,,,,,,,,,,,,,,23,dungeon-chest-plate,,,,26373,22519,Equip,135,,Plate,,25764,25967,12456,25761,25762,12453,25760
 905024,Morganth's Blade,Weapon,Sword,1H,Rare,22,19,15,,8,,,,,29,44,Physical,2.0,,,,,,,,,,,23,dungeon-sword,,,,13488,2964,Equip,75,Side,Metal,,,,,,,,
 905025,Shadowhide Bulwark,Offhand,Shield,,Rare,22,19,15,,8,,,342,8,,,,,,,,,,,,,,,23,dungeon-shield,,,,20974,1920,Equip,90,Shield,Metal,,,,,,,,
 905026,Void Dirk,Weapon,Dagger,1H,Rare,22,19,,15,8,,,,,22,33,Physical,1.5,,,,,,,,,,,23,dungeon-dagger,,,,6555,2974,Equip,50,Side,Metal,,,,,,,,
@@ -771,10 +771,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905037,Shadowhide Ring,Ring,Misc,,Rare,22,19,,14,9,,,,,,,,,,,,,,,,,,,23,dungeon-ring-swift-b,,,,31576,2207,Equip,,,,,,,,,,,
 905038,Void Circle,Ring,Misc,,Rare,22,19,,,5,12,6,,,,,,,,,,,,,,,,,23,dungeon-ring-mind-a,,,,31616,2207,Equip,,,,,,,,,,,
 905039,Morganth's Seal,Ring,Misc,,Rare,22,19,,,5,11,7,,,,,,,,,,,,,,,,,23,dungeon-ring-mind-b,,,,31655,2207,Equip,,,,,,,,,,,
-905040,Gnoll Robe,Chest,Cloth,,Rare,30,27,,,8,17,9,345,,,,,,,,,,,,,,,,34,dungeon-chest-cloth,,,,12696,2352,Equip,80,,Cloth,,,,,,,,
-905041,Riverpaw Jerkin,Chest,Leather,,Rare,30,27,,23,11,,,604,,,,,,,,,,,,,,,,34,dungeon-chest-leather,,,,21719,4161,Equip,100,,Leather,,,,,,,,
-905042,Hogger's Hauberk,Chest,Mail,,Rare,30,27,23,,11,,,1035,,,,,,,,,,,,,,,,34,dungeon-chest-mail,,,,15897,3379,Equip,120,,Chain,,,,,,,,
-905043,Gnoll Cuirass,Chest,Plate,,Rare,30,27,23,,11,,,1294,,,,,,,,,,,,,,,,34,dungeon-chest-plate,,,,26373,6377,Equip,135,,Plate,,,,,,,,
+905040,Gnoll Robe,Chest,Cloth,,Rare,30,27,,,8,17,9,345,,,,,,,,,,,,,,,,34,dungeon-chest-cloth,,,,12696,2352,Equip,80,,Cloth,,25859,25855,14541,14542,25858,11421,25857
+905041,Riverpaw Jerkin,Chest,Leather,,Rare,30,27,,23,11,,,604,,,,,,,,,,,,,,,,34,dungeon-chest-leather,,,,21719,4161,Equip,100,,Leather,,9527,28042,17002,28046,17114,14522,28039
+905042,Hogger's Hauberk,Chest,Mail,,Rare,30,27,23,,11,,,1035,,,,,,,,,,,,,,,,34,dungeon-chest-mail,,,,15897,3379,Equip,120,,Chain,,26965,26962,24793,26963,26960,26968,26964
+905043,Gnoll Cuirass,Chest,Plate,,Rare,30,27,23,,11,,,1294,,,,,,,,,,,,,,,,34,dungeon-chest-plate,,,,26373,6377,Equip,135,,Plate,,26975,26977,26971,26973,26969,26974,26970
 905044,Riverpaw Blade,Weapon,Sword,1H,Rare,30,27,23,,11,,,,,44,66,Physical,2.0,,,,,,,,,,,34,dungeon-sword,,,,13488,8094,Equip,90,Side,Metal,,,,,,,,
 905045,Hogger's Bulwark,Offhand,Shield,,Rare,30,27,23,,11,,,466,10,,,,,,,,,,,,,,,34,dungeon-shield,,,,20974,3960,Equip,100,Shield,Metal,,,,,,,,
 905046,Gnoll Dirk,Weapon,Dagger,1H,Rare,30,27,,23,11,,,,,33,49,Physical,1.5,,,,,,,,,,,34,dungeon-dagger,,,,6555,6731,Equip,65,Side,Metal,,,,,,,,
@@ -800,10 +800,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 905906,Hogger's Pen Gate,Offhand,Shield,,Epic,30,27,32,,16,,,527,11,,,,,,,,,,,,,,,48,,,,,18816,18815,Pickup,120,Shield,Metal,,,,,,,,
 905907,Hogger's Hunting Bow,Ranged,Bow,,Epic,30,27,,32,16,,,,,46,69,Physical,2.4,,,,,,,,,,,48,,,,,32571,14721,Pickup,90,,Wood,,,,,,,,
 905908,Hogger's Lucky Charm,Offhand,Held,,Epic,30,27,,,,24,,,,,,,,,,,,,,,,,48,48,,,,,24039,10452,Pickup,,Hip,,,,,,,,,
-901000,Goldshire Cloth Vest,Chest,Cloth,,Common,12,11,,,2,,,102,,,,,,,,,,,,,,,,2,white-chest-cloth,,,,12394,56,,45,,Cloth,,,,,,,,
-901001,Goldshire Leather Vest,Chest,Leather,,Common,12,11,,,2,,,179,,,,,,,,,,,,,,,,2,white-chest-leather,,,,32974,121,,60,,Leather,,,,,,,,
-901002,Goldshire Chain Vest,Chest,Mail,,Common,12,11,,,2,,,306,,,,,,,,,,,,,,,,2,white-chest-mail,,,,16080,82,,65,,Chain,,,,,,,,
-901003,Goldshire Plate Vest,Chest,Plate,,Common,12,11,,,2,,,383,,,,,,,,,,,,,,,,2,white-chest-plate,,,,23559,82,,65,,Plate,,,,,,,,
+901000,Goldshire Cloth Vest,Chest,Cloth,,Common,12,11,,,2,,,102,,,,,,,,,,,,,,,,2,white-chest-cloth,,,,12394,56,,45,,Cloth,,,25875,25874,16586,14431,25876,25879
+901001,Goldshire Leather Vest,Chest,Leather,,Common,12,11,,,2,,,179,,,,,,,,,,,,,,,,2,white-chest-leather,,,,32974,121,,60,,Leather,,,23052,8437,6717,17124,17152,16991
+901002,Goldshire Chain Vest,Chest,Mail,,Common,12,11,,,2,,,306,,,,,,,,,,,,,,,,2,white-chest-mail,,,,16080,82,,65,,Chain,,,26979,26928,27175,26930,26932,26927
+901003,Goldshire Plate Vest,Chest,Plate,,Common,12,11,,,2,,,383,,,,,,,,,,,,,,,,2,white-chest-plate,,,,23559,82,,65,,Plate,,,25948,22679,22682,22678,3058,22680
 901004,Goldshire Sword,Weapon,Sword,1H,Common,12,11,,,2,,,,,11,17,Physical,2.0,,,,,,,,,,,2,white-sword,,,,32076,188,,40,Side,Metal,,,,,,,,
 901005,Goldshire Buckler,Offhand,Shield,,Common,12,11,,,2,,,138,3,,,,,,,,,,,,,,,2,white-shield,,,,27517,153,,50,Shield,Metal,,,,,,,,
 901006,Goldshire Dirk,Weapon,Dagger,1H,Common,12,11,,,2,,,,,8,13,Physical,1.5,,,,,,,,,,,2,white-dagger,,,,35819,226,,30,Side,Metal,,,,,,,,
@@ -821,10 +821,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 901018,Goldshire Band of Endurance,Ring,Misc,,Common,12,11,,,2,,,,,,,,,,,,,,,,,,,2,white-band-endurance,,,,31908,50,,,,,,,,,,,,
 901019,Goldshire Band of Wit,Ring,Misc,,Common,12,11,,,,2,,,,,,,,,,,,,,,,,,2,white-band-wit,,,,33856,50,,,,,,,,,,,,
 901020,Goldshire Band of Calm,Ring,Misc,,Common,12,11,,,,,2,,,,,,,,,,,,,,,,,2,white-band-calm,,,,32353,50,,,,,,,,,,,,
-901021,Lakeside Cloth Vest,Chest,Cloth,,Common,15,15,,,3,,,128,,,,,,,,,,,,,,,,3,white-chest-cloth,,,,12394,224,,55,,Cloth,,,,,,,,
-901022,Lakeside Leather Vest,Chest,Leather,,Common,15,15,,,3,,,223,,,,,,,,,,,,,,,,3,white-chest-leather,,,,32974,290,,65,,Leather,,,,,,,,
-901023,Lakeside Chain Vest,Chest,Mail,,Common,15,15,,,3,,,383,,,,,,,,,,,,,,,,3,white-chest-mail,,,,16080,349,,75,,Chain,,,,,,,,
-901024,Lakeside Plate Vest,Chest,Plate,,Common,15,15,,,3,,,478,,,,,,,,,,,,,,,,3,white-chest-plate,,,,23559,349,,75,,Plate,,,,,,,,
+901021,Lakeside Cloth Vest,Chest,Cloth,,Common,15,15,,,3,,,128,,,,,,,,,,,,,,,,3,white-chest-cloth,,,,12394,224,,55,,Cloth,,,23113,14342,14528,14530,14529,14531
+901022,Lakeside Leather Vest,Chest,Leather,,Common,15,15,,,3,,,223,,,,,,,,,,,,,,,,3,white-chest-leather,,,,32974,290,,65,,Leather,,,23034,17169,19032,19034,19030,19033
+901023,Lakeside Chain Vest,Chest,Mail,,Common,15,15,,,3,,,383,,,,,,,,,,,,,,,,3,white-chest-mail,,,,16080,349,,75,,Chain,,,22691,6953,12450,22692,22693,22690
+901024,Lakeside Plate Vest,Chest,Plate,,Common,15,15,,,3,,,478,,,,,,,,,,,,,,,,3,white-chest-plate,,,,23559,349,,75,,Plate,,,25960,22685,22686,22683,22687,22684
 901025,Lakeside Sword,Weapon,Sword,1H,Common,15,15,,,3,,,,,13,19,Physical,2.0,,,,,,,,,,,3,white-sword,,,,32076,404,,50,Side,Metal,,,,,,,,
 901026,Lakeside Buckler,Offhand,Shield,,Common,15,15,,,3,,,172,4,,,,,,,,,,,,,,,3,white-shield,,,,27517,215,,50,Shield,Metal,,,,,,,,
 901027,Lakeside Dirk,Weapon,Dagger,1H,Common,15,15,,,3,,,,,10,15,Physical,1.5,,,,,,,,,,,3,white-dagger,,,,35819,478,,35,Side,Metal,,,,,,,,
@@ -842,10 +842,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 901039,Lakeside Band of Endurance,Ring,Misc,,Common,15,15,,,3,,,,,,,,,,,,,,,,,,,3,white-band-endurance,,,,31908,125,,,,,,,,,,,,
 901040,Lakeside Band of Wit,Ring,Misc,,Common,15,15,,,,3,,,,,,,,,,,,,,,,,,3,white-band-wit,,,,33856,125,,,,,,,,,,,,
 901041,Lakeside Band of Calm,Ring,Misc,,Common,15,15,,,,,3,,,,,,,,,,,,,,,,,3,white-band-calm,,,,32353,125,,,,,,,,,,,,
-901042,Cairn Cloth Vest,Chest,Cloth,,Common,19,19,,,3,,,162,,,,,,,,,,,,,,,,3,white-chest-cloth,,,,12394,224,,55,,Cloth,,,,,,,,
-901043,Cairn Leather Vest,Chest,Leather,,Common,19,19,,,3,,,283,,,,,,,,,,,,,,,,3,white-chest-leather,,,,32974,290,,65,,Leather,,,,,,,,
-901044,Cairn Chain Vest,Chest,Mail,,Common,19,19,,,3,,,485,,,,,,,,,,,,,,,,3,white-chest-mail,,,,16080,349,,75,,Chain,,,,,,,,
-901045,Cairn Plate Vest,Chest,Plate,,Common,19,19,,,3,,,606,,,,,,,,,,,,,,,,3,white-chest-plate,,,,23559,349,,75,,Plate,,,,,,,,
+901042,Cairn Cloth Vest,Chest,Cloth,,Common,19,19,,,3,,,162,,,,,,,,,,,,,,,,3,white-chest-cloth,,,,12394,224,,55,,Cloth,,,23137,16595,16592,16594,16591,11060
+901043,Cairn Leather Vest,Chest,Leather,,Common,19,19,,,3,,,283,,,,,,,,,,,,,,,,3,white-chest-leather,,,,32974,290,,65,,Leather,,,23006,14728,14729,17113,14730,19184
+901044,Cairn Chain Vest,Chest,Mail,,Common,19,19,,,3,,,485,,,,,,,,,,,,,,,,3,white-chest-mail,,,,16080,349,,75,,Chain,,25777,25978,25776,13484,25775,3541,6987
+901045,Cairn Plate Vest,Chest,Plate,,Common,19,19,,,3,,,606,,,,,,,,,,,,,,,,3,white-chest-plate,,,,23559,349,,75,,Plate,,,25953,25758,25756,25757,25759,6931
 901046,Cairn Sword,Weapon,Sword,1H,Common,19,19,,,3,,,,,16,24,Physical,2.0,,,,,,,,,,,3,white-sword,,,,32076,763,,55,Side,Metal,,,,,,,,
 901047,Cairn Buckler,Offhand,Shield,,Common,19,19,,,3,,,218,5,,,,,,,,,,,,,,,3,white-shield,,,,27517,453,,65,Shield,Metal,,,,,,,,
 901048,Cairn Dirk,Weapon,Dagger,1H,Common,19,19,,,3,,,,,12,18,Physical,1.5,,,,,,,,,,,3,white-dagger,,,,35819,730,,40,Side,Metal,,,,,,,,
@@ -863,10 +863,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 901060,Cairn Band of Endurance,Ring,Misc,,Common,19,19,,,3,,,,,,,,,,,,,,,,,,,3,white-band-endurance,,,,31908,125,,,,,,,,,,,,
 901061,Cairn Band of Wit,Ring,Misc,,Common,19,19,,,,3,,,,,,,,,,,,,,,,,,3,white-band-wit,,,,33856,125,,,,,,,,,,,,
 901062,Cairn Band of Calm,Ring,Misc,,Common,19,19,,,,,3,,,,,,,,,,,,,,,,,3,white-band-calm,,,,32353,125,,,,,,,,,,,,
-901063,Eastvale Cloth Vest,Chest,Cloth,,Common,23,23,,,4,,,196,,,,,,,,,,,,,,,,4,white-chest-cloth,,,,12394,454,,60,,Cloth,,,,,,,,
-901064,Eastvale Leather Vest,Chest,Leather,,Common,23,23,,,4,,,342,,,,,,,,,,,,,,,,4,white-chest-leather,,,,32974,559,,75,,Leather,,,,,,,,
-901065,Eastvale Chain Vest,Chest,Mail,,Common,23,23,,,4,,,587,,,,,,,,,,,,,,,,4,white-chest-mail,,,,16080,752,,90,,Chain,,,,,,,,
-901066,Eastvale Plate Vest,Chest,Plate,,Common,23,23,,,4,,,733,,,,,,,,,,,,,,,,4,white-chest-plate,,,,23559,752,,90,,Plate,,,,,,,,
+901063,Eastvale Cloth Vest,Chest,Cloth,,Common,23,23,,,4,,,196,,,,,,,,,,,,,,,,4,white-chest-cloth,,,,12394,454,,60,,Cloth,,14371,23093,16806,14370,16807,12930,3757
+901064,Eastvale Leather Vest,Chest,Leather,,Common,23,23,,,4,,,342,,,,,,,,,,,,,,,,4,white-chest-leather,,,,32974,559,,75,,Leather,,15002,23058,17015,17066,16935,16967,16992
+901065,Eastvale Chain Vest,Chest,Mail,,Common,23,23,,,4,,,587,,,,,,,,,,,,,,,,4,white-chest-mail,,,,16080,752,,90,,Chain,,26988,26958,26982,26985,26987,26986,26983
+901066,Eastvale Plate Vest,Chest,Plate,,Common,23,23,,,4,,,733,,,,,,,,,,,,,,,,4,white-chest-plate,,,,23559,752,,90,,Plate,,25770,26048,25766,16731,25767,25768,25765
 901067,Eastvale Sword,Weapon,Sword,1H,Common,23,23,,,4,,,,,19,29,Physical,2.0,,,,,,,,,,,4,white-sword,,,,32076,763,,55,Side,Metal,,,,,,,,
 901068,Eastvale Buckler,Offhand,Shield,,Common,23,23,,,4,,,264,6,,,,,,,,,,,,,,,4,white-shield,,,,27517,729,,70,Shield,Metal,,,,,,,,
 901069,Eastvale Dirk,Weapon,Dagger,1H,Common,23,23,,,4,,,,,14,21,Physical,1.5,,,,,,,,,,,4,white-dagger,,,,35819,1423,,45,Side,Metal,,,,,,,,
@@ -884,10 +884,10 @@ entry,name,slot,type,hand,quality,item_level,required_level,str,agi,sta,int,spi,
 901081,Eastvale Band of Endurance,Ring,Misc,,Common,23,23,,,4,,,,,,,,,,,,,,,,,,,4,white-band-endurance,,,,31908,575,,,,,,,,,,,,
 901082,Eastvale Band of Wit,Ring,Misc,,Common,23,23,,,,4,,,,,,,,,,,,,,,,,,4,white-band-wit,,,,33856,575,,,,,,,,,,,,
 901083,Eastvale Band of Calm,Ring,Misc,,Common,23,23,,,,,4,,,,,,,,,,,,,,,,,4,white-band-calm,,,,32353,575,,,,,,,,,,,,
-901084,Westbrook Cloth Vest,Chest,Cloth,,Common,28,27,,,5,,,238,,,,,,,,,,,,,,,,5,white-chest-cloth,,,,12394,832,,70,,Cloth,,,,,,,,
-901085,Westbrook Leather Vest,Chest,Leather,,Common,28,27,,,5,,,417,,,,,,,,,,,,,,,,5,white-chest-leather,,,,32974,1044,,80,,Leather,,,,,,,,
-901086,Westbrook Chain Vest,Chest,Mail,,Common,28,27,,,5,,,714,,,,,,,,,,,,,,,,5,white-chest-mail,,,,16080,1185,,95,,Chain,,,,,,,,
-901087,Westbrook Plate Vest,Chest,Plate,,Common,28,27,,,5,,,893,,,,,,,,,,,,,,,,5,white-chest-plate,,,,23559,1185,,95,,Plate,,,,,,,,
+901084,Westbrook Cloth Vest,Chest,Cloth,,Common,28,27,,,5,,,238,,,,,,,,,,,,,,,,5,white-chest-cloth,,,,12394,832,,70,,Cloth,,25887,25884,16805,25885,25881,10079,16802
+901085,Westbrook Leather Vest,Chest,Leather,,Common,28,27,,,5,,,417,,,,,,,,,,,,,,,,5,white-chest-leather,,,,32974,1044,,80,,Leather,,28002,28006,28001,28005,27998,28003,27999
+901086,Westbrook Chain Vest,Chest,Mail,,Common,28,27,,,5,,,714,,,,,,,,,,,,,,,,5,white-chest-mail,,,,16080,1185,,95,,Chain,,25783,25979,25779,25782,25781,11525,25778
+901087,Westbrook Plate Vest,Chest,Plate,,Common,28,27,,,5,,,893,,,,,,,,,,,,,,,,5,white-chest-plate,,,,23559,1185,,95,,Plate,27083,27080,27082,27074,27075,27079,27076,27540
 901088,Westbrook Sword,Weapon,Sword,1H,Common,28,27,,,5,,,,,24,36,Physical,2.0,,,,,,,,,,,5,white-sword,,,,32076,2400,,55,Side,Metal,,,,,,,,
 901089,Westbrook Buckler,Offhand,Shield,,Common,28,27,,,5,,,321,7,,,,,,,,,,,,,,,5,white-shield,,,,27517,1312,,80,Shield,Metal,,,,,,,,
 901090,Westbrook Dirk,Weapon,Dagger,1H,Common,28,27,,,5,,,,,18,27,Physical,1.5,,,,,,,,,,,5,white-dagger,,,,35819,2400,,55,Side,Metal,,,,,,,,
