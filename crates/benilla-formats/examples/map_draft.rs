@@ -420,8 +420,8 @@ impl Zone {
 }
 
 /// Draw `zone`'s explored art onto `canvas` over its placed rect, its silhouette as the alpha, and
-/// lay the same alpha over `cover`, the share of each canvas pixel that zone art fills.
-fn draw(canvas: &mut Picture, cover: &mut [f32], at: [f64; 4], zone: &Zone) {
+/// onto `layer` too: the zone art alone, premultiplied RGBA, with no parchment under it.
+fn draw(canvas: &mut Picture, layer: &mut [[f32; 4]], at: [f64; 4], zone: &Zone) {
     let x_lo = at[0].floor().max(0.0) as u32;
     let y_lo = at[1].floor().max(0.0) as u32;
     let x_hi = (at[2].ceil().max(0.0) as u32).min(canvas.w);
@@ -445,16 +445,21 @@ fn draw(canvas: &mut Picture, cover: &mut [f32], at: [f64; 4], zone: &Zone) {
             let c = [0, 1, 2].map(|i| s[i] * a + d[i] * (1.0 - a));
             canvas.put(px, py, [c[0], c[1], c[2], 1.0]);
             let k = (py * canvas.w + px) as usize;
-            cover[k] = a + cover[k] * (1.0 - a);
+            let src = [s[0] * a, s[1] * a, s[2] * a, a];
+            for (o, n) in layer[k].iter_mut().zip(src) {
+                *o = n + *o * (1.0 - a);
+            }
         }
     }
 }
 
 /// A painting to fill the canvas's bare parchment with, and the landmarks that pin it: each pair
-/// is one place's canvas UV and its UV on the painting.
+/// is one place's canvas UV and its UV on the painting. Each erase patches a box of the painting
+/// with the land at an offset from it, for a painted label the stock art does not fully cover.
 struct FillSpec {
     painting: PathBuf,
     pairs: Vec<FillPair>,
+    erase: Vec<Erase>,
 }
 
 struct FillPair {
@@ -462,9 +467,52 @@ struct FillPair {
     painting: [f64; 2],
 }
 
+/// A box `[u0, v0, u1, v1]` of the painting, refilled from the box moved by `from`.
+struct Erase {
+    rect: [f64; 4],
+    from: [f64; 2],
+}
+
+/// The width in painting pixels over which an erase's patch fades into the painting around it.
+const ERASE_FEATHER: f64 = 3.0;
+
+impl Erase {
+    fn apply(&self, painting: &mut Picture) {
+        let (w, h) = (f64::from(painting.w), f64::from(painting.h));
+        let [x0, y0, x1, y1] = [
+            self.rect[0] * w,
+            self.rect[1] * h,
+            self.rect[2] * w,
+            self.rect[3] * h,
+        ];
+        let (dx, dy) = (self.from[0] * w, self.from[1] * h);
+        let source = Picture {
+            w: painting.w,
+            h: painting.h,
+            rgba: painting.rgba.clone(),
+        };
+        let lo = |t: f64| (t - ERASE_FEATHER).floor().max(0.0) as u32;
+        for py in lo(y0)..((y1 + ERASE_FEATHER).ceil() as u32).min(painting.h) {
+            for px in lo(x0)..((x1 + ERASE_FEATHER).ceil() as u32).min(painting.w) {
+                let (x, y) = (f64::from(px) + 0.5, f64::from(py) + 0.5);
+                let inside = (x - x0).min(x1 - x).min(y - y0).min(y1 - y);
+                let a = ((inside + ERASE_FEATHER) / (2.0 * ERASE_FEATHER)).clamp(0.0, 1.0) as f32;
+                if a <= 0.0 {
+                    continue;
+                }
+                let s = source.bilinear((x + dx) as f32, (y + dy) as f32, source.w, source.h);
+                let d = source.texel(px, py);
+                let c = [0, 1, 2].map(|i| s[i] * a + d[i] * (1.0 - a));
+                painting.put(px, py, [c[0], c[1], c[2], 1.0]);
+            }
+        }
+    }
+}
+
 impl FillSpec {
     /// `{"painting": "<png beside this file>", "pairs": [{"name", "canvas": [u, v],
-    /// "painting": [u, v]}, ..]}`.
+    /// "painting": [u, v]}, ..], "erase": [{"name", "rect": [u0, v0, u1, v1],
+    /// "from": [du, dv]}, ..]}`; `erase` may be absent.
     fn read(path: &Path) -> Result<Self> {
         let text =
             std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
@@ -492,12 +540,36 @@ impl FillSpec {
                 })
             })
             .collect::<Result<_>>()?;
+        let nums = |p: &Value, key: &str, n: usize| -> Result<Vec<f64>> {
+            let a: Vec<f64> = p[key]
+                .as_array()
+                .map(|a| a.iter().filter_map(Value::as_f64).collect())
+                .unwrap_or_default();
+            if a.len() != n {
+                bail!("{key} of erase {} needs {n} numbers", p["name"]);
+            }
+            Ok(a)
+        };
+        let erase = v["erase"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or_default()
+            .iter()
+            .map(|e| {
+                let (r, f) = (nums(e, "rect", 4)?, nums(e, "from", 2)?);
+                Ok(Erase {
+                    rect: [r[0], r[1], r[2], r[3]],
+                    from: [f[0], f[1]],
+                })
+            })
+            .collect::<Result<_>>()?;
         let painting = v["painting"]
             .as_str()
             .context("the fill file names a painting")?;
         Ok(FillSpec {
             painting: path.parent().unwrap_or(Path::new(".")).join(painting),
             pairs,
+            erase,
         })
     }
 }
@@ -636,29 +708,34 @@ fn solve(mut a: Vec<Vec<f64>>, mut b: Vec<f64>) -> Result<Vec<f64>> {
     Ok(x)
 }
 
-/// The canvas with its bare parchment filled from `painting`, warped onto the canvas by `warp`:
-/// zone art where `cover` is high, the painting where it is low, a smoothstep across
-/// `FILL_EDGE` between.
-fn fill(canvas: &Picture, cover: &[f32], painting: &Picture, warp: &Warp) -> Picture {
+/// The `w` by `h` canvas filled from `painting`, warped onto it by `warp`, under the zone art of
+/// `layer`: the art where its cover is high, the painting where it is low, a smoothstep across
+/// `FILL_EDGE` between. The art is unpremultiplied first, so a zone's soft rim fades into the
+/// painting, not into parchment.
+fn fill(w: u32, h: u32, layer: &[[f32; 4]], painting: &Picture, warp: &Warp) -> Picture {
     // The warp is smooth, so it is evaluated on a coarse grid and interpolated between.
     const STEP: u32 = 8;
-    let (gw, gh) = (canvas.w / STEP + 2, canvas.h / STEP + 2);
+    let (gw, gh) = (w / STEP + 2, h / STEP + 2);
     let grid: Vec<(f64, f64)> = (0..gh)
         .flat_map(|gy| (0..gw).map(move |gx| (gx, gy)))
         .map(|(gx, gy)| {
             warp.at(
-                f64::from(gx * STEP) / f64::from(canvas.w),
-                f64::from(gy * STEP) / f64::from(canvas.h),
+                f64::from(gx * STEP) / f64::from(w),
+                f64::from(gy * STEP) / f64::from(h),
             )
         })
         .collect();
-    let mut out = Picture::blank(canvas.w, canvas.h);
-    for py in 0..canvas.h {
-        for px in 0..canvas.w {
-            let k = (py * canvas.w + px) as usize;
-            let t = ((cover[k] - FILL_EDGE.0) / (FILL_EDGE.1 - FILL_EDGE.0)).clamp(0.0, 1.0);
+    let mut out = Picture::blank(w, h);
+    for py in 0..h {
+        for px in 0..w {
+            let l = layer[(py * w + px) as usize];
+            let t = ((l[3] - FILL_EDGE.0) / (FILL_EDGE.1 - FILL_EDGE.0)).clamp(0.0, 1.0);
             let keep = t * t * (3.0 - 2.0 * t);
-            let d = canvas.texel(px, py);
+            let d = if l[3] > 0.0 {
+                [l[0] / l[3], l[1] / l[3], l[2] / l[3], 1.0]
+            } else {
+                [0.0; 4]
+            };
             if keep >= 1.0 {
                 out.put(px, py, d);
                 continue;
@@ -853,7 +930,7 @@ fn main() -> Result<()> {
         .context("no Elwynn row")?;
     let parchment = Zone::load(&mut chain, elwynn.1, &[])?.parchment();
     let mut img = Picture::blank(size.0, size.1);
-    let mut art_cover = vec![0.0f32; (size.0 * size.1) as usize];
+    let mut art_layer = vec![[0.0f32; 4]; (size.0 * size.1) as usize];
     for y in 0..size.1 {
         for x in 0..size.0 {
             img.put(x, y, [parchment[0], parchment[1], parchment[2], 1.0]);
@@ -879,7 +956,7 @@ fn main() -> Result<()> {
                 at[3],
                 if is_misted { "  misted" } else { "" }
             );
-            draw(&mut img, &mut art_cover, at, &zone);
+            draw(&mut img, &mut art_layer, at, &zone);
             if is_misted {
                 let name = format!("fog_{}.png", zone.file.to_lowercase());
                 let f = fog(at, &zone);
@@ -919,9 +996,12 @@ fn main() -> Result<()> {
     written.insert(0, "canvas.png".to_string());
     if let Some(path) = &fill_with {
         let spec = FillSpec::read(path)?;
-        let painting = Picture::open(&spec.painting)?;
+        let mut painting = Picture::open(&spec.painting)?;
+        for e in &spec.erase {
+            e.apply(&mut painting);
+        }
         let warp = Warp::fit_inside(&spec.pairs, f64::from(size.1) / f64::from(size.0))?;
-        let mut filled = fill(&img, &art_cover, &painting, &warp);
+        let mut filled = fill(size.0, size.1, &art_layer, &painting, &warp);
         filled.save(&out.join("filled.png"))?;
         written.push("filled.png".to_string());
         for (at, f) in &placed_fogs {
@@ -1111,6 +1191,26 @@ mod tests {
             (pu - 0.5).abs() < 0.01 && (pv - 0.5).abs() < 0.01,
             "{pu} {pv}"
         );
+    }
+
+    #[test]
+    fn an_erase_copies_the_land_at_its_offset_and_leaves_the_rest() {
+        let mut pic = Picture::blank(40, 40);
+        for y in 0..40 {
+            for x in 0..40 {
+                let red = if y < 20 { 1.0 } else { 0.0 };
+                pic.put(x, y, [red, 0.0, 0.0, 1.0]);
+            }
+        }
+        // A box in the lower, black half takes the red land 20 px above it.
+        Erase {
+            rect: [0.25, 0.625, 0.75, 0.875],
+            from: [0.0, -0.5],
+        }
+        .apply(&mut pic);
+        assert_eq!(pic.texel(20, 30)[0], 1.0, "the box's middle is patched");
+        assert_eq!(pic.texel(2, 30)[0], 0.0, "outside the box is untouched");
+        assert_eq!(pic.texel(20, 5)[0], 1.0, "the source is untouched");
     }
 
     #[test]
