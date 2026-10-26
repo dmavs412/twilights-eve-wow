@@ -94,13 +94,17 @@
 # Every criterion a row names must hold. A Legend Rumour in content/rumours.toml hints at each.
 #
 # [[pole]], the fishing poles (a class 2 item of subclass `pole_subclass`), by `item`, with the
-# effect keys a lure has. A pole never wears.
+# effect keys a lure has, and `angler_levels`. A pole never wears.
 #
 # [[lure]], the stock lures, by `item`, with one effect. The lure's item row carries its
 # `durability` (one point per bite) and `stackable = 1`:
-#   angler_levels   counts as this many Angler levels more
+#   angler_levels   counts as this many Angler levels more; poles only, no lure or bait
+#                   sets it (#425)
 #   bite_wait_pct   the bite comes this percent sooner (negative) or later
 #   zone_pct        the catch zone is this percent taller
+#   start_fill_pct  the Reeling Bar starts this percent fuller (at most 0.95 of the track)
+#   fill_pct        the bar fills this percent faster
+#   drain_pct       the bar drains this percent faster (negative: slower)
 #
 # [[bait]], the custom baits at 960101 on, used up one per cast; the same effect keys as a lure,
 # and `treasure_points` (percentage points more treasure chance). A bait with no effect is one a
@@ -146,17 +150,17 @@ item = [
   { entry = 6256, name = "Fishing Pole", quality = 1, item_level = 1, class = 2, subclass = 20, inventory_type = 17, display_id = 20730, sell_price = 4, buy_price = 23, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 16, material = 2, sheath = 1, damage = [[2.0, 4.0, 0]], journal = "fishing" },
   { entry = 6366, name = "Darkwood Fishing Pole", quality = 1, item_level = 20, required_level = 15, class = 2, subclass = 20, inventory_type = 17, display_id = 20619, sell_price = 1066, buy_price = 5330, buy_count = 1, stackable = 1, speed_ms = 3000, durability = 40, sheath = 1, damage = [[28.0, 43.0, 0]], equip_spells = [7825], equip_spell_names = ["Fishing Skill +15"], journal = "fishing" },
   # The stock lures.
-  { entry = 6529, name = "Shiny Bauble", quality = 1, item_level = 10, display_id = 26571, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 1, durability = 20, use_spell = 8087, use_spell_name = "Shiny Bauble", journal = "fishing" },
-  { entry = 6530, name = "Nightcrawlers", quality = 1, item_level = 20, display_id = 995022, icon_base = 18097, icon = "nightcrawlers", sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, durability = 20, use_spell = 8088, use_spell_name = "Nightcrawlers", journal = "fishing" },
-  { entry = 6532, name = "Bright Baubles", quality = 1, item_level = 30, display_id = 12423, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 20, use_spell = 8090, use_spell_name = "Bright Baubles", journal = "fishing" },
-  { entry = 6533, name = "Aquadynamic Fish Attractor", quality = 1, item_level = 30, class = 7, subclass = 3, display_id = 12425, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 30, use_spell = 8089, use_spell_name = "Aquadynamic Fish Attractor", journal = "fishing" },
+  { entry = 6529, name = "Shiny Bauble", quality = 1, item_level = 10, display_id = 26571, sell_price = 12, buy_price = 50, buy_count = 1, stackable = 1, durability = 20, description = "Lure: the catch meter starts at 45%.", journal = "fishing" },
+  { entry = 6530, name = "Nightcrawlers", quality = 1, item_level = 20, display_id = 995022, icon_base = 18097, icon = "nightcrawlers", sell_price = 25, buy_price = 100, buy_count = 1, stackable = 1, durability = 20, description = "Lure: the catch meter drains 30% slower.", journal = "fishing" },
+  { entry = 6532, name = "Bright Baubles", quality = 1, item_level = 30, display_id = 12423, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 20, description = "Lure: the catch meter fills 25% faster.", journal = "fishing" },
+  { entry = 6533, name = "Aquadynamic Fish Attractor", quality = 1, item_level = 30, class = 7, subclass = 3, display_id = 12425, sell_price = 62, buy_price = 250, buy_count = 1, stackable = 1, durability = 30, description = "Lure: once per fish, an empty catch meter refills to 25%.", journal = "fishing" },
   # The custom baits: white trade goods, with a stock display that reads right in the bag.
-  { entry = 960101, name = "Wriggling Worms", quality = 1, item_level = 5, class = 7, display_id = 995017, icon_base = 18098, icon = "wriggling_worms", sell_price = 2, buy_price = 10, buy_count = 1, stackable = 20, journal = "fishing" },
-  { entry = 960102, name = "Shiny Minnow", quality = 1, item_level = 5, class = 7, display_id = 995018, icon_base = 18535, icon = "shiny_minnow", sell_price = 12, buy_price = 50, buy_count = 1, stackable = 20, journal = "fishing" },
-  { entry = 960103, name = "Gnoll Ear", quality = 1, item_level = 5, class = 7, display_id = 995019, icon_base = 1438, icon = "gnoll_ear", sell_price = 1, stackable = 20, journal = "fishing" },
-  { entry = 960104, name = "Prison Gruel", quality = 1, item_level = 5, class = 7, display_id = 6428, sell_price = 1, stackable = 20, journal = "fishing" },
-  { entry = 960105, name = "Worg Haunch", quality = 1, item_level = 5, class = 7, display_id = 995020, icon_base = 2474, icon = "worg_haunch", sell_price = 1, stackable = 20, journal = "fishing" },
-  { entry = 960106, name = "Corpse Grub", quality = 1, item_level = 20, class = 7, display_id = 995021, icon_base = 18098, icon = "corpse_grub", sell_price = 1, stackable = 20, journal = "fishing" },
+  { entry = 960101, name = "Wriggling Worms", quality = 1, item_level = 5, class = 7, display_id = 995017, icon_base = 18098, icon = "wriggling_worms", sell_price = 2, buy_price = 10, buy_count = 1, stackable = 20, description = "Bait: fish bite 25% sooner.", journal = "fishing" },
+  { entry = 960102, name = "Shiny Minnow", quality = 1, item_level = 5, class = 7, display_id = 995018, icon_base = 18535, icon = "shiny_minnow", sell_price = 12, buy_price = 50, buy_count = 1, stackable = 20, description = "Bait: 10% more chance of treasure.", journal = "fishing" },
+  { entry = 960103, name = "Gnoll Ear", quality = 1, item_level = 5, class = 7, display_id = 995019, icon_base = 1438, icon = "gnoll_ear", sell_price = 1, stackable = 20, description = "Bait: a landed fish comes up as two.", journal = "fishing" },
+  { entry = 960104, name = "Prison Gruel", quality = 1, item_level = 5, class = 7, display_id = 6428, sell_price = 1, stackable = 20, description = "Bait: see what bit before you reel. Let it go to keep the Gruel.", journal = "fishing" },
+  { entry = 960105, name = "Worg Haunch", quality = 1, item_level = 5, class = 7, display_id = 995020, icon_base = 2474, icon = "worg_haunch", sell_price = 1, stackable = 20, description = "Bait: common fish ignore it.", journal = "fishing" },
+  { entry = 960106, name = "Corpse Grub", quality = 1, item_level = 20, class = 7, display_id = 995021, icon_base = 18098, icon = "corpse_grub", sell_price = 1, stackable = 20, description = "Bait: fish bite as if it were night.", journal = "fishing" },
   # The Legendary Fish's trophies (#331): orange, one to a character, sold for 500 copper a level.
   { entry = 960001, name = "Old Goldfin", quality = 5, item_level = 10, class = 15, display_id = 995001, icon_base = 18535, icon = "old_goldfin", sell_price = 5000, max_count = 1, stackable = 1, journal = "fishing" },
   { entry = 960002, name = "Brother Bass", quality = 5, item_level = 6, class = 15, display_id = 995002, icon_base = 24702, icon = "brother_bass", sell_price = 3000, max_count = 1, stackable = 1, journal = "fishing" },
@@ -808,19 +812,18 @@ angler_levels = 3
 
 [[lure]]
 item = 6529 # Shiny Bauble
-angler_levels = 1
+start_fill_pct = 50
 
 [[lure]]
 item = 6530 # Nightcrawlers
-bite_wait_pct = -30
+drain_pct = -30
 
 [[lure]]
 item = 6532 # Bright Baubles
-zone_pct = 15
+fill_pct = 25
 
 [[lure]]
 item = 6533 # Aquadynamic Fish Attractor
-angler_levels = 4
 
 [[bait]]
 item = 960101 # Wriggling Worms

@@ -61,6 +61,12 @@ struct Boost {
     bite_wait_pct: i32,
     /// The catch zone is this percent taller, after the cap.
     zone_pct: i32,
+    /// The Reeling Bar starts this percent fuller.
+    start_fill_pct: i32,
+    /// The Reeling Bar fills this percent faster.
+    fill_pct: i32,
+    /// The Reeling Bar drains this percent faster.
+    drain_pct: i32,
     /// Percentage points more treasure chance.
     treasure_points: u32,
     /// The bait on this cast, which a Legendary Fish may ask for.
@@ -74,6 +80,9 @@ impl Boost {
         self.angler_levels += e.angler_levels;
         self.bite_wait_pct += e.bite_wait_pct;
         self.zone_pct += e.zone_pct;
+        self.start_fill_pct += e.start_fill_pct;
+        self.fill_pct += e.fill_pct;
+        self.drain_pct += e.drain_pct;
         self.treasure_points += e.treasure_points;
         self
     }
@@ -711,6 +720,10 @@ impl InWorld {
         let zone_height = (bar.zone_base + bar.zone_per_level * (effective - 1) as f32)
             .min(bar.zone_max)
             * (1.0 + boost.zone_pct as f32 / 100.0);
+        let start_fill =
+            (bar.start_fill * (1.0 + boost.start_fill_pct as f32 / 100.0)).clamp(0.0, 0.95);
+        let fill_per_sec = bar.fill_per_sec * (1.0 + boost.fill_pct as f32 / 100.0);
+        let drain_per_sec = (bar.drain_per_sec * (1.0 + boost.drain_pct as f32 / 100.0)).max(0.0);
         let chance = bar.treasure_base
             + bar.treasure_per_level * f32::from(c.angler_level)
             + boost.treasure_points as f32 / 100.0;
@@ -732,9 +745,9 @@ impl InWorld {
             style: style_byte(style),
             difficulty,
             zone_height,
-            start_fill: bar.start_fill,
-            fill_per_sec: bar.fill_per_sec,
-            drain_per_sec: bar.drain_per_sec,
+            start_fill,
+            fill_per_sec,
+            drain_per_sec,
             timeout_secs: bar.timeout_secs,
             seed: rng.seed(),
             treasure: treasure
@@ -748,8 +761,8 @@ impl InWorld {
             legend: legendary,
             pool,
             place: water.unwrap_or(pool.key.as_str()),
-            start_fill: bar.start_fill,
-            fill_per_sec: bar.fill_per_sec,
+            start_fill,
+            fill_per_sec,
             treasure: treasure.map(|(_, t)| t),
             left: bar.timeout_secs + RESULT_SLACK_SECS,
         });

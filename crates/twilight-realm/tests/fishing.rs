@@ -788,6 +788,19 @@ fn zone_height(bite: &SessionEvent) -> f32 {
     }
 }
 
+/// The bar a `FishingBite` opens: `(start_fill, fill_per_sec, drain_per_sec)`.
+fn bar_of(bite: &SessionEvent) -> (f32, f32, f32) {
+    match bite {
+        SessionEvent::FishingBite {
+            start_fill,
+            fill_per_sec,
+            drain_per_sec,
+            ..
+        } => (*start_fill, *fill_per_sec, *drain_per_sec),
+        _ => unreachable!(),
+    }
+}
+
 impl Angler {
     fn set_bait(&mut self, item: Option<u32>) -> Vec<SessionEvent> {
         self.realm.handle(RealmCommand::SetBait { item });
@@ -900,7 +913,7 @@ fn set_bait_ignores_an_item_not_carried_or_not_a_bait() {
 }
 
 #[test]
-fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
+fn a_shiny_bauble_starts_the_bar_fuller_and_gives_no_angler_level() {
     let mut a = angler_carrying(1, Side::East, &[(PACK_1, SHINY_BAUBLE, 1)]);
     let used = a.slot_lure(PACK_1, SHINY_BAUBLE);
     assert_eq!(
@@ -909,56 +922,65 @@ fn a_shiny_bauble_counts_as_one_angler_level_more_but_not_for_xp() {
         "using the lure slots it: {used:?}"
     );
     let (_, bite) = a.hook();
-    assert!((zone_height(&bite) - 0.1735).abs() < 1e-6, "{bite:?}");
+    assert!((bar_of(&bite).0 - 0.45).abs() < 1e-6, "{bite:?}");
+    assert!((zone_height(&bite) - 0.17).abs() < 1e-6, "{bite:?}");
 
-    // An L11 fish bites at Angler 1 with the lure (11 < 2 + 10).
+    // The L11 fish stays out of reach: the bauble adds no Angler level.
     let mut south = angler_carrying(1, Side::South, &[(PACK_1, SHINY_BAUBLE, 1)]);
     south.slot_lure(PACK_1, SHINY_BAUBLE);
-    let (_, bite) = south.hook();
-    assert!(matches!(
-        bite,
-        SessionEvent::FishingBite {
-            fish: MUD_SNAPPER,
-            ..
-        }
-    ));
-    let landed = south.result(true, false, 6.0);
-    // Angler 1's own XP: 5 + 2 x 11, the lure adding nothing.
-    assert_eq!(angler_event(&landed), Some((1, 27)));
-
-    // Without it the same water has nothing that bites.
-    let mut bare = angler(1, true, true, Side::South);
-    assert!(bare.cast().iter().any(|e| matches!(
+    assert!(south.cast().iter().any(|e| matches!(
         e,
         SessionEvent::Notification { text } if text == "Nothing is biting"
     )));
 }
 
 #[test]
-fn bright_baubles_widen_the_zone_after_the_cap() {
-    let mut a = angler_carrying(1, Side::East, &[(PACK_1, BRIGHT_BAUBLES, 1)]);
-    a.slot_lure(PACK_1, BRIGHT_BAUBLES);
-    let (_, bite) = a.hook();
-    assert!((zone_height(&bite) - 0.17 * 1.15).abs() < 1e-6, "{bite:?}");
+fn a_shiny_bauble_shortens_the_fastest_win() {
+    // (1 - 0.45) / 0.12 x 0.95 = 4.354 s.
+    let mut fast = angler_carrying(1, Side::East, &[(PACK_1, SHINY_BAUBLE, 1)]);
+    fast.slot_lure(PACK_1, SHINY_BAUBLE);
+    fast.hook();
+    let landed = fast.result(true, false, 4.5);
+    assert_eq!(fishing_end(&landed).map(|e| e.0.is_some()), Some(true));
+
+    let mut early = angler_carrying(1, Side::East, &[(PACK_1, SHINY_BAUBLE, 1)]);
+    early.slot_lure(PACK_1, SHINY_BAUBLE);
+    early.hook();
+    let lost = early.result(true, false, 4.2);
+    assert_eq!(fishing_end(&lost), Some((None, false)));
 }
 
 #[test]
-fn nightcrawlers_and_worms_bring_the_bite_within_five_and_a_half_seconds() {
-    let mut a = angler_carrying(
-        1,
-        Side::East,
-        &[(PACK_1, NIGHTCRAWLERS, 1), (PACK_2, WRIGGLING_WORMS, 1)],
-    );
+fn bright_baubles_fill_the_bar_faster_and_keep_the_zone() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, BRIGHT_BAUBLES, 1)]);
+    a.slot_lure(PACK_1, BRIGHT_BAUBLES);
+    let (_, bite) = a.hook();
+    assert!((bar_of(&bite).1 - 0.15).abs() < 1e-6, "{bite:?}");
+    assert!((zone_height(&bite) - 0.17).abs() < 1e-6, "{bite:?}");
+}
+
+#[test]
+fn nightcrawlers_slow_the_drain() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, NIGHTCRAWLERS, 1)]);
     a.slot_lure(PACK_1, NIGHTCRAWLERS);
+    let (_, bite) = a.hook();
+    let (start, _, drain) = bar_of(&bite);
+    assert!((drain - 0.126).abs() < 1e-6, "{bite:?}");
+    assert!((start - 0.30).abs() < 1e-6, "{bite:?}");
+}
+
+#[test]
+fn wriggling_worms_bring_the_bite_within_nine_seconds() {
+    let mut a = angler_carrying(1, Side::East, &[(PACK_1, WRIGGLING_WORMS, 1)]);
     a.set_bait(Some(WRIGGLING_WORMS));
     let mut events = a.cast();
-    // 12 x (1 - 0.30 - 0.25) = 5.4 s at the longest.
-    events.extend(a.wait_for_bite(5.45));
+    // 12 x 0.75 = 9.0 s at the longest.
+    events.extend(a.wait_for_bite(9.05));
     assert!(
         events
             .iter()
             .any(|e| matches!(e, SessionEvent::FishingBite { .. })),
-        "no bite within 5.4 s"
+        "no bite within 9.05 s"
     );
 }
 
@@ -1346,18 +1368,28 @@ fn the_snapper_needs_the_gnoll_ear_chosen_as_bait() {
 }
 
 #[test]
-fn a_legendary_above_the_effective_angler_level_waits_for_a_lure() {
-    let mut plain = angler(1, true, true, Side::NorthWest);
+fn a_legendary_above_the_effective_angler_level_waits_for_a_pole() {
+    let mut plain = angler(2, true, true, Side::NorthWest);
     at_game(&mut plain, 12, 30);
     let (_, bite) = plain.hook();
     assert_eq!(legend_of(&bite), None, "{bite:?}");
 
-    // The Aquadynamic Fish Attractor counts as four levels more: 1 + 4 reaches the Gate's 5.
-    let mut lured = angler_carrying(1, Side::NorthWest, &[(PACK_1, AQUADYNAMIC, 1)]);
+    // The Darkwood pole counts as three levels more: 2 + 3 reaches the Gate's 5.
+    let (guid, mut blob, start) = save_carrying(2, true, false, &[]);
+    blob.push_str(&format!(
+        "\n[fishing_pole]\nslot = 0\nentry = {DARKWOOD_POLE}\ncount = 1\n"
+    ));
+    let mut poled = from_save(guid, &blob, start, Side::NorthWest);
+    at_game(&mut poled, 12, 30);
+    let (_, bite) = poled.hook();
+    assert_eq!(legend_of(&bite), Some(GATE));
+
+    // The Aquadynamic Fish Attractor adds no level.
+    let mut lured = angler_carrying(2, Side::NorthWest, &[(PACK_1, AQUADYNAMIC, 1)]);
     lured.slot_lure(PACK_1, AQUADYNAMIC);
     at_game(&mut lured, 12, 30);
     let (_, bite) = lured.hook();
-    assert_eq!(legend_of(&bite), Some(GATE));
+    assert_eq!(legend_of(&bite), None, "{bite:?}");
 }
 
 #[test]

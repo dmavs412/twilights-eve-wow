@@ -332,6 +332,15 @@ pub(crate) struct Effect {
     /// The catch zone is this percent taller.
     #[serde(default)]
     pub(crate) zone_pct: i32,
+    /// The Reeling Bar starts this percent fuller (negative: emptier).
+    #[serde(default)]
+    pub(crate) start_fill_pct: i32,
+    /// The Reeling Bar fills this percent faster (negative: slower).
+    #[serde(default)]
+    pub(crate) fill_pct: i32,
+    /// The Reeling Bar drains this percent faster (negative: slower).
+    #[serde(default)]
+    pub(crate) drain_pct: i32,
     /// Percentage points more treasure chance.
     #[serde(default)]
     pub(crate) treasure_points: u32,
@@ -370,7 +379,7 @@ pub(crate) struct Legend {
     pub(crate) name: String,
     /// The key of the pool it bites in.
     pub(crate) pool: String,
-    /// The Angler Level it needs, counting a lure's and a bait's.
+    /// The Angler Level it needs, counting a pole's.
     pub(crate) level: u32,
     pub(crate) style: Style,
     pub(crate) difficulty: u32,
@@ -764,7 +773,8 @@ mod tests {
             water_at(0, -8796.0, -338.0, Some(9)).map(|w| w.key.as_str()),
             Some("northshire_river")
         );
-        assert_eq!(lure(6530).map(|l| l.effect.bite_wait_pct), Some(-30));
+        assert_eq!(lure(6530).map(|l| l.effect.drain_pct), Some(-30));
+        assert_eq!(lure(6529).map(|l| l.effect.angler_levels), Some(0));
         assert_eq!(bait(960102).map(|b| b.effect.treasure_points), Some(10));
         assert_eq!(bait(960105).map(|b| b.effect.angler_levels), Some(0));
         assert_eq!(pole(6366).map(|p| p.effect.angler_levels), Some(3));
