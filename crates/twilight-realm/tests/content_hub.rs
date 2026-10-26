@@ -148,6 +148,10 @@ fn every_npcs_flags_fit_its_role() {
         let talks = n.text_id.is_some() && !n.greeting.is_empty();
         let ok = match n.role.as_str() {
             "goods" => n.npc_flags == VENDOR | REPAIR && !n.stock.is_empty(),
+            // Goldshire's shopkeepers sell and do not repair; Andrew Krighton repairs and sells
+            // nothing (#459).
+            "shop" => n.npc_flags == VENDOR && !n.stock.is_empty(),
+            "repairer" => n.npc_flags == VENDOR | REPAIR && n.stock.is_empty(),
             "innkeeper" => {
                 n.npc_flags == GOSSIP | VENDOR | INNKEEPER
                     && talks
@@ -329,6 +333,44 @@ fn camp_taurajo_has_an_inn_a_goods_vendor_and_its_own_folk_but_no_trainers() {
         count("ambient")
     );
     assert_eq!(count("trainer"), 0);
+}
+
+/// The middle of Goldshire, on the Eastern Kingdoms.
+const GOLDSHIRE: [f32; 2] = [-9465.0, 40.0];
+
+/// Goldshire (#459): Melika Isenstrider keeps the Lion's Pride Inn and binds to Goldshire, five
+/// shopkeepers sell, and Andrew Krighton repairs.
+#[test]
+fn goldshire_has_an_inn_and_its_shops() {
+    const GOLDSHIRE_AREA: u32 = 87;
+    let town: Vec<Npc> = in_town(GOLDSHIRE)
+        .into_iter()
+        .filter(|n| n.map == EASTERN_KINGDOMS)
+        .collect();
+    let role = |name: &str| {
+        let n = town
+            .iter()
+            .find(|n| n.name == name)
+            .unwrap_or_else(|| panic!("{name} stands in Goldshire"));
+        (n.role.as_str(), n.stock.is_empty())
+    };
+    let melika = town
+        .iter()
+        .find(|n| n.name == "Melika Isenstrider")
+        .expect("Melika stands in Goldshire");
+    assert_eq!(melika.role, "innkeeper");
+    assert_eq!(melika.area, Some(GOLDSHIRE_AREA));
+    assert!(melika.rest_radius.is_some());
+    for shopkeeper in [
+        "Brog Hamfist",
+        "Barkeep Dobbins",
+        "Toddrick",
+        "Kira Songshine",
+        "Tharynn Bouden",
+    ] {
+        assert_eq!(role(shopkeeper), ("shop", false), "{shopkeeper}");
+    }
+    assert_eq!(role("Andrew Krighton"), ("repairer", true));
 }
 
 #[test]

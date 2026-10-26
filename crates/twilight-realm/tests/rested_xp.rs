@@ -9,7 +9,7 @@ mod gear_common;
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight::{stand_at, Mob};
 use common::*;
-use gear_common::{save_with, SEED};
+use gear_common::{in_elwynn_beside, save_with, SEED};
 use twilight_realm::CROSSROADS;
 
 const PLAYER_FLAGS: u16 = 190;
@@ -62,6 +62,22 @@ fn the_pool_stops_at_three_quarters_of_a_level() {
 fn standing_in_the_inn_rests_and_fills_the_pool() {
     let mut realm = realm();
     let (me, events) = enter_new(&mut realm, "Thrall", ORC);
+    assert_eq!(flags(&events, me), Some(PLAYER_FLAGS_RESTING));
+    let events = idle(&mut realm, 3600);
+    // An hour: 3600 × 400 / 72000 × 0.125 = 2.5.
+    assert_eq!(rest_shown(&events, me), Some((2, REST_STATE_RESTED)));
+}
+
+/// Melika Isenstrider, who keeps Goldshire's inn on the Eastern Kingdoms (#459).
+const MELIKA: u32 = 6778;
+
+#[test]
+fn standing_in_goldshires_inn_rests_and_fills_the_pool() {
+    let (mut realm, me, melika) = in_elwynn_beside(1, &[], MELIKA);
+    // The inn's floor, as hub.toml has it: the rest area is measured in three dimensions.
+    let [x, y, z] = hub_home(melika);
+    walk_to(&mut realm, [x + 300.0, y, z]);
+    let events = walk_to(&mut realm, [x + 1.0, y, z]);
     assert_eq!(flags(&events, me), Some(PLAYER_FLAGS_RESTING));
     let events = idle(&mut realm, 3600);
     // An hour: 3600 × 400 / 72000 × 0.125 = 2.5.

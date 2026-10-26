@@ -5,7 +5,6 @@
 //! `Player::Update`).
 
 use crate::characters::Char;
-use crate::content::KALIMDOR;
 use crate::fields::{PLAYER_BYTES_2, PLAYER_FLAGS, PLAYER_REST_STATE_EXPERIENCE};
 use crate::rules::xp;
 use crate::space::distance;
@@ -42,11 +41,11 @@ pub(crate) struct Left {
 
 /// Whether `position` on `map` stands in an inn.
 pub(crate) fn in_inn(map: u32, position: [f32; 3]) -> bool {
-    map == KALIMDOR
-        && crate::hub::npcs().iter().any(|n| {
-            n.rest_radius
+    crate::hub::npcs().iter().any(|n| {
+        n.map == map
+            && n.rest_radius
                 .is_some_and(|r| distance(n.position, position) <= r)
-        })
+    })
 }
 
 /// The most `c`'s pool holds: nothing at the Tier Cap or the end of the game.

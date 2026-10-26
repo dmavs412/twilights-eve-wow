@@ -1,5 +1,5 @@
-//! The innkeeper (`content/hub.toml`, role `innkeeper`): his gossip binds the Hearthstone and opens
-//! his merchant window. The bind runs the stock flow (vmangos `Player::SetBindPoint`,
+//! The innkeeper (`content/hub.toml`, role `innkeeper`): the innkeeper's gossip binds the
+//! Hearthstone and opens the innkeeper's merchant window. The bind runs the stock flow (vmangos `Player::SetBindPoint`,
 //! `Spell::EffectBind`): the gossip's bind line closes the menu and asks `SMSG_BINDER_CONFIRM`;
 //! the client's `CMSG_BINDER_ACTIVATE` binds the character where they stand and answers with
 //! `SMSG_BINDPOINTUPDATE` and `SMSG_PLAYERBOUND`, whose "is now your home" line the client shows.

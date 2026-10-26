@@ -8,7 +8,7 @@ mod gear_common;
 
 use benilla_protocol::SessionEvent;
 use common::*;
-use gear_common::{descriptor, stand_by, the_mob};
+use gear_common::{descriptor, in_elwynn_beside, stand_by, the_mob};
 use twilight_realm::CROSSROADS;
 
 const HEARTHSTONE: u32 = 6948;
@@ -559,6 +559,43 @@ fn binding_at_camp_taurajo_sends_the_hearthstone_there() {
     let [x, y, _] = hub_home(byula);
     let (there, _) = hearth_home(&mut realm);
     assert_eq!([there[0], there[1]], [x + 1.5, y], "back at Byula's fire");
+}
+
+/// Melika Isenstrider, who keeps Goldshire's inn on the Eastern Kingdoms (#459).
+const MELIKA: u32 = 6778;
+const GOLDSHIRE: u32 = 87;
+const EASTERN_KINGDOMS: u32 = 0;
+
+#[test]
+fn binding_at_goldshire_sends_the_hearthstone_there() {
+    // The save holds only what it is given: the Hearthstone in its first backpack slot.
+    let (mut realm, me, melika) = in_elwynn_beside(1, &[(FIRST_PACK_SLOT, HEARTHSTONE, 1)], MELIKA);
+    ask_to_bind(&mut realm, melika);
+    realm.handle(RealmCommand::BinderActivate { binder: melika });
+    let events = drain(&mut realm);
+    assert_eq!(bound(&events), Some((melika, GOLDSHIRE)));
+    assert_eq!(bind_point(&events), Some(GOLDSHIRE));
+
+    // Up the street by the smithy, clear of the inn and of Elwynn's wolves.
+    let [x, y, _] = hub_home(melika);
+    realm.handle(RealmCommand::Move {
+        motion: Default::default(),
+        position: [x, y + 60.0, 0.0],
+        orientation: 0.0,
+    });
+    realm.tick(0.1, &FlatGround);
+    drain(&mut realm);
+    realm.handle(use_hearthstone());
+    let events = run(&mut realm, 10.1);
+    let (there, _) = teleport(&events).expect("a teleport on the same map");
+    assert_eq!([there[0], there[1]], [x + 1.5, y], "back at Melika's bar");
+
+    realm.handle(RealmCommand::Logout);
+    let c = roster(&mut realm)
+        .into_iter()
+        .find(|c| c.guid == me)
+        .unwrap();
+    assert_eq!(c.map, EASTERN_KINGDOMS);
 }
 
 #[test]

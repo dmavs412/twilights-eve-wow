@@ -87,9 +87,10 @@ pub fn convert(elwynn: &Value) -> String {
 }
 
 /// The entries whose spawn moved to `content/hub.toml`, where they do more than a creature
-/// template can: Lee Brown (1651) teaches Fishing and sells its goods (#327), and Innkeeper Farley
-/// (295) hints at a Legendary Fish (#331).
-const HUB_NPCS: &[u64] = &[1651, 295];
+/// template can: Lee Brown (1651) teaches Fishing and sells its goods (#327), Innkeeper Farley
+/// (295) hints at a Legendary Fish (#331), and the rest are Goldshire's inn and shops (#459):
+/// Melika Isenstrider (6778) keeps the inn, five shopkeepers sell and Andrew Krighton repairs.
+const HUB_NPCS: &[u64] = &[1651, 295, 6778, 151, 465, 3935, 3937, 66, 2046];
 
 /// `FactionTemplate.dbc` 35, friendly to every player race. Elwynn's NPCs show it whatever the
 /// player's race (spec #71): the guards, vendors and trainers are everyone's friends.

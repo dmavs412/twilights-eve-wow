@@ -146,7 +146,14 @@ pub fn in_elwynn_beside(level: u8, items: &[Carried], entry: u32) -> (Realm, u64
         facing: None,
     });
     realm.tick(0.1, &FlatGround);
-    drain(&mut realm);
+    // The client's ack, after which the realm takes its moves again.
+    let counter = drain(&mut realm).into_iter().find_map(|e| match e {
+        SessionEvent::Teleport { counter, .. } => Some(counter),
+        _ => None,
+    });
+    if let Some(counter) = counter {
+        realm.handle(RealmCommand::TeleportAck { counter });
+    }
     (realm, me, npc)
 }
 
