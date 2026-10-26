@@ -30,15 +30,24 @@ The whole-body look a Chest carries: what the character's head, shoulders, back,
 _Avoid_: transmog, set (an item set with bonuses)
 
 **Loot Source**:
-Where a piece of Gear comes from: Token, World, Quest or Dungeon. Each has its own stat Budget per slot. The word is never Tier. Spec #272.
+Where a piece of Gear comes from: Token, World, Quest or Dungeon. Each has its own quality. The word is never Tier. Spec #272.
 _Avoid_: tier, pool
+
+**Loot Band**:
+A range of mob and buyer levels with one set of rows per Loot Source, keyed in `loot_bands.toml` and the Token vendor. Spec #448.
+
+**Line**:
+Hand-authored rows that repeat across bands or dungeons with only their numbers changing and share one icon. The gear sheet's `line` column names it, and the icon check counts a Line as one item. ADR 0026.
+
+**Elite pool**:
+The six blues a Loot Band's open-world elites roll at 20%. Spec #448.
 
 **Flavour**:
 The stat mix a piece of Gear carries: Might, Swift or Mind. Spec #272.
 _Avoid_: archetype, role
 
 **Budget**:
-The stat points a piece of Gear may spend, set by its Loot Source and slot: 1 point is +1 Str, Agi, Sta, Int or Spi, and Spell Power costs half a point. Weapon damage and armour are free. The gear sheet's `budget` column holds it and the tool refuses a row over it. Spec #272.
+The stat points a piece of Gear may spend, set by its quality and item level (ADR 0026): 1 point is +1 Str, Agi, Sta, Int or Spi, and Spell Power costs half a point. Weapon damage and armour are free. The gear sheet's `budget` column holds it and the tool refuses a row over it. Spec #272.
 _Avoid_: item level, stat weight
 
 **Hub**:

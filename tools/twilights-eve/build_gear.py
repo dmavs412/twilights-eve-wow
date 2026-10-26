@@ -53,7 +53,7 @@ COLUMNS = (
     "entry", "name", "slot", "type", "hand", "quality", "item_level", "required_level",
     "str", "agi", "sta", "int", "spi", "armor", "block", "dmg_min", "dmg_max", "dmg_school",
     "speed", "res_holy", "res_fire", "res_nature", "res_frost", "res_shadow", "res_arcane",
-    "attack_power", "crit", "defense", "spell_power", "budget", "equip", "use", "on_hit",
+    "attack_power", "crit", "defense", "spell_power", "budget", "line", "equip", "use", "on_hit",
     "display_id", "sell_price",
     "bonding", "durability", "sheath", "material", "wardrobe_head", "wardrobe_shoulders",
     "wardrobe_back", "wardrobe_wrists", "wardrobe_hands", "wardrobe_waist", "wardrobe_legs",
@@ -125,10 +125,13 @@ SPELL_POWER_SLOTS = (("Weapon", None), ("Offhand", "Held"), ("Ranged", "Wand"))
 # scaled by min(item_level, 10) / 10. MH counts as 1H; a Bow, Gun or Crossbow is "bow".
 BUDGET = {"Common": 2, "Uncommon": 6, "Rare": 13, "Epic": 18}
 FLEX = 2
-WEAPON_DPS = {("1H", "Uncommon"): 7.9, ("1H", "Rare"): 10.3, ("2H", "Uncommon"): 10.5,
-              ("2H", "Rare"): 13.6, ("2H", "Epic"): 15.8, ("bow", "Uncommon"): 6.0,
-              ("bow", "Rare"): 7.8}
+WEAPON_DPS = {("1H", "Common"): 6.3, ("1H", "Uncommon"): 7.9, ("1H", "Rare"): 10.3,
+              ("1H", "Epic"): 11.9, ("2H", "Common"): 8.4, ("2H", "Uncommon"): 10.5,
+              ("2H", "Rare"): 13.6, ("2H", "Epic"): 15.8, ("bow", "Common"): 4.8,
+              ("bow", "Uncommon"): 6.0, ("bow", "Rare"): 7.8, ("bow", "Epic"): 9.0}
 DPS_FLEX = 0.10
+# Above item level 10 budgets and weapon DPS compound 5% a level (ADR 0026, spec #448).
+LEVEL_GROWTH = 1.05
 # Only these rows are checked: entries from here up, and the vanilla outfit whites.
 FIRST_CHECKED = 900000
 OUTFIT_WHITES = (2108, 2109, 2110, 3260, 25, 37, 4565, 1388, 2055, 2362, 8179)
@@ -199,7 +202,11 @@ def check_tier(row: dict, entry: int, where: str, points: int) -> None:
     quality = row["quality"]
     if quality not in BUDGET:
         return
-    budget = BUDGET[quality] * (2 if row["hand"] == "2H" else 1)
+    level = integer(row["item_level"], "item_level", where)
+    base = BUDGET[quality]
+    if level > 10:
+        base = int(base * LEVEL_GROWTH ** (level - 10) + 0.5)
+    budget = base * (2 if row["hand"] == "2H" else 1)
     if abs(points - budget) > FLEX:
         raise SheetError(f"{where}: a {quality} row spends {points} stat points, "
                          f"{budget} +/- {FLEX} allowed")
@@ -220,7 +227,9 @@ def check_dps(row: dict, where: str, damage: list, speed_ms: int) -> None:
     if curve is None or not damage or not speed_ms:
         return
     level = integer(row["item_level"], "item_level", where)
-    target = curve * min(level, 10) / 10
+    if row["quality"] == "Common" and level <= 10:
+        return  # Northshire's whites predate the white curve (#426, #448)
+    target = curve * LEVEL_GROWTH ** (level - 10) if level > 10 else curve * level / 10
     dps = sum((lo + hi) / 2 for lo, hi, _ in damage) / (speed_ms / 1000)
     if abs(dps - target) > DPS_FLEX * target:
         raise SheetError(f"{where}: a {row['quality']} {shape} weapon of item level {level} "
@@ -283,7 +292,7 @@ def fmt_float(v: float) -> str:
 
 def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
     seen = set()
-    items, wardrobes = [], {}
+    items, wardrobes, lines = [], {}, {}
     for row in rows:
         entry = integer(row["entry"], "entry", row["name"])
         where = f"{entry} {row['name']}"
@@ -302,6 +311,14 @@ def build(rows: list[dict], drops: list[dict], spells: dict[int, str]) -> str:
                                    for slot, kind in SPELL_POWER_SLOTS):
             raise SheetError(f"{where}: spell_power on a {row['slot']} of type {row['type']!r}; "
                              "only a Weapon, a held Offhand or a Wand carries it")
+        if row["line"]:
+            if entry < FIRST_CHECKED:
+                raise SheetError(f"{where}: a line on an entry under {FIRST_CHECKED}")
+            shape = (row["slot"], row["type"])
+            if lines.setdefault(row["line"], shape) != shape:
+                raise SheetError(f"{where}: line {row['line']!r} is a {shape[0]} of type "
+                                 f"{shape[1]!r}, but its other rows are a "
+                                 f"{lines[row['line']][0]} of type {lines[row['line']][1]!r}")
         spent = sum(integer(row[col], col, where) for col, _ in STATS) + -(-spell_power // 2)
         if is_checked(entry):
             check_tier(row, entry, where, spent)
@@ -407,6 +424,8 @@ def row_line(item: dict, spells: dict[int, str], pool: int, wardrobe: dict | Non
         ("pool_level", pool),
     ]
     parts += [f"{k} = {v}" for k, v in ints if v]
+    if row["line"]:
+        parts.append(f"line = {toml_string(row['line'])}")
     stats = [f"[{sid}, {num(col)}]" for col, sid in STATS if num(col)]
     if stats:
         parts.append(f"stats = [{', '.join(stats)}]")

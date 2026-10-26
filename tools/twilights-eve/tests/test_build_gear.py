@@ -60,5 +60,57 @@ class TierCheck(unittest.TestCase):
         build_gear.build([vanilla], [], {})
 
 
+def ring_at(level: int, points: int, **cells) -> dict:
+    return {**ring(900001, "Uncommon", points), "item_level": str(level), **cells}
+
+
+def blue_sword_at_30(lo: float, hi: float) -> dict:
+    return {**sword("Rare", lo, hi, 2.0), "item_level": "30", "sta": "34", "budget": "34"}
+
+
+class LevelCurves(unittest.TestCase):
+    def test_green_ring_at_22_spends_11(self):
+        build_gear.build([ring_at(22, 11)], [], {})
+
+    def test_green_ring_at_22_with_14_is_refused(self):
+        with self.assertRaises(build_gear.SheetError) as e:
+            build_gear.build([ring_at(22, 14)], [], {})
+        self.assertIn("900001", str(e.exception))
+
+    def test_blue_one_hander_at_30_on_the_curve_passes(self):
+        # 27.3 DPS at speed 2.0
+        build_gear.build([blue_sword_at_30(43.7, 65.5)], [], {})
+
+    def test_blue_one_hander_at_30_on_the_level_10_curve_is_refused(self):
+        # 21.0 DPS at speed 2.0
+        with self.assertRaises(build_gear.SheetError) as e:
+            build_gear.build([blue_sword_at_30(33.6, 50.4)], [], {})
+        self.assertIn("DPS", str(e.exception))
+
+    def test_green_staff_at_15_carries_double_of_8(self):
+        staff = {**ring_at(15, 16), "slot": "Weapon", "type": "Staff", "hand": "2H"}
+        build_gear.build([staff], [], {})
+
+
+class LineColumn(unittest.TestCase):
+    def test_line_on_an_outfit_white_is_refused(self):
+        white = {**ring(2108, "Common", 2), "line": "x"}
+        with self.assertRaises(build_gear.SheetError) as e:
+            build_gear.build([white], [], {})
+        self.assertIn("2108", str(e.exception))
+
+    def test_two_rows_of_a_line_with_different_slots_are_refused(self):
+        a = {**ring(900001, "Uncommon", 6), "line": "x"}
+        b = {**ring(900002, "Uncommon", 6), "line": "x", "slot": "Amulet"}
+        with self.assertRaises(build_gear.SheetError) as e:
+            build_gear.build([a, b], [], {})
+        self.assertIn("900002", str(e.exception))
+
+    def test_rows_of_one_line_with_one_slot_pass(self):
+        a = {**ring(900001, "Uncommon", 6), "line": "x"}
+        b = {**ring_at(22, 11), "entry": "900002", "line": "x"}
+        build_gear.build([a, b], [], {})
+
+
 if __name__ == "__main__":
     unittest.main()

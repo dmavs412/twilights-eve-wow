@@ -5,7 +5,9 @@ No two items in the game show the same icon. Two display ids can point at one ic
 compares icon names, not display ids. An item is a table under an `item` key in
 crates/twilight-realm/content/*.toml with both `entry` and `display_id`; its icon is field 5 of
 its ItemDisplayInfo.dbc row. Items are grouped by lowercased icon name, and an icon with two or
-more distinct entries is a clash. One entry listed in several files is not a clash. A synthetic
+more distinct entries is a clash. One entry listed in several files is not a clash. A table with
+a `line` (ADR 0026) counts as the item named by its line: every row of one Line is one item, so
+a Line on one icon is no clash and the clash listing names the line, not the entry. A synthetic
 display (995000 up) is not in the DBC; its icon is the stem of its `item_displays` row in
 data/twilights-eve/client_dbc_patch.json.
 
@@ -69,13 +71,14 @@ def read_patch_icons(path=PATCH):
 
 
 def collect_items(content_dir):
-    """(entry, name, display_id, file) for every item table in the content TOML."""
+    """(entry, name, display_id, file, line) for every item table in the content TOML."""
     rows = []
 
     def walk(o, key, fname):
         if isinstance(o, dict):
             if key == "item" and "entry" in o and "display_id" in o:
-                rows.append((o["entry"], o.get("name", "?"), o["display_id"], fname))
+                rows.append((o["entry"], o.get("name", "?"), o["display_id"], fname,
+                             o.get("line")))
             for k, v in o.items():
                 walk(v, k, fname)
         elif isinstance(o, list):
@@ -91,16 +94,21 @@ def collect_items(content_dir):
 def find_clashes(rows, icons):
     """Icon name to the items on it, for each icon with two or more distinct entries.
 
-    `rows` is (entry, name, display_id, file); `icons` maps display id to icon name. Each
-    value is a list of (entry, name, file), one per entry, ordered by entry.
+    `rows` is (entry, name, display_id, file, line), the line optional; `icons` maps display id
+    to icon name. Every row of one Line counts as one item, keyed by the line's name. Each value
+    is a list of (entry or line name, name, file), one per item, entries first in entry order,
+    then Lines by name.
     """
     by_icon = collections.defaultdict(dict)
-    for entry, name, display_id, fname in rows:
+    for entry, name, display_id, fname, *rest in rows:
         icon = icons.get(display_id)
         if not icon:
             continue
-        by_icon[icon.lower()].setdefault(entry, (entry, name, fname))
-    return {icon: [ents[e] for e in sorted(ents)]
+        line = rest[0] if rest else None
+        key = line or entry
+        by_icon[icon.lower()].setdefault(key, (key, line or name, fname))
+    order = lambda key: (isinstance(key, str), key)  # noqa: E731
+    return {icon: [ents[k] for k in sorted(ents, key=order)]
             for icon, ents in sorted(by_icon.items()) if len(ents) > 1}
 
 
@@ -129,7 +137,9 @@ def judge(clashes, known):
 
 
 def show(icon, items):
-    return "%s: %s" % (icon, "; ".join("%d %s (%s)" % (e, n, f) for e, n, f in items))
+    return "%s: %s" % (icon, "; ".join(
+        "line %s (%s)" % (e, f) if isinstance(e, str) else "%d %s (%s)" % (e, n, f)
+        for e, n, f in items))
 
 
 def main():

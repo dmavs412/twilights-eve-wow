@@ -32,6 +32,27 @@ class FindClashes(unittest.TestCase):
         self.assertEqual(icon_check.find_clashes(rows, ICONS), {})
 
 
+class Lines(unittest.TestCase):
+    def test_two_rows_of_one_line_on_one_icon_are_no_clash(self):
+        rows = [(1, "Ring A", 10, "g.toml", "x"), (2, "Ring B", 10, "g.toml", "x")]
+        self.assertEqual(icon_check.find_clashes(rows, ICONS), {})
+
+    def test_two_rows_with_no_line_on_one_icon_clash(self):
+        rows = [(1, "Ring A", 10, "g.toml", None), (2, "Ring B", 10, "g.toml", None)]
+        self.assertEqual(list(icon_check.find_clashes(rows, ICONS)), ["inv_misc_bag_01"])
+
+    def test_two_lines_on_one_icon_clash_and_are_named(self):
+        rows = [(1, "Ring A", 10, "g.toml", "x"), (2, "Ring B", 10, "g.toml", "x"),
+                (3, "Ring C", 11, "g.toml", "y")]
+        clashes = icon_check.find_clashes(rows, ICONS)
+        self.assertEqual([k for k, _, _ in clashes["inv_misc_bag_01"]], ["x", "y"])
+        self.assertIn("line x", icon_check.show("inv_misc_bag_01", clashes["inv_misc_bag_01"]))
+
+    def test_one_line_on_two_icons_is_no_clash(self):
+        rows = [(1, "Ring A", 10, "g.toml", "x"), (2, "Ring B", 12, "g.toml", "x")]
+        self.assertEqual(icon_check.find_clashes(rows, ICONS), {})
+
+
 class PatchIcons(unittest.TestCase):
     patch = {"item_displays": [
         {"id": 995001, "base": 10, "icon": "Interface\\Icons\\Painted\\Old_Goldfin"},
