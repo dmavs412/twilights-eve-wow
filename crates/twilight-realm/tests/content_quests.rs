@@ -348,3 +348,54 @@ fn exactly_the_five_northshire_advancement_quests_are_calling_choices() {
         .collect();
     assert_eq!(chosen, [64009, 64010, 64011, 64012, 64013]);
 }
+
+/// Every Elwynn story quest (#448) offers a choice of sheet rows the character may wear by the
+/// time the quest is done, and pays no Token.
+#[test]
+fn every_elwynn_story_quest_offers_gear_it_can_be_worn_at_and_pays_no_token() {
+    let quests: toml::Value =
+        toml::from_str(include_str!("../content/quests_elwynn.toml")).expect("parses");
+    let gear: toml::Value = toml::from_str(include_str!("../content/gear.toml")).expect("parses");
+    let required: std::collections::HashMap<i64, i64> = gear["item"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| {
+            (
+                i["entry"].as_integer().unwrap(),
+                i.get("required_level")
+                    .and_then(|l| l.as_integer())
+                    .unwrap_or(0),
+            )
+        })
+        .collect();
+    let mut checked = 0;
+    for q in quests["quest"].as_array().unwrap() {
+        let id = q["id"].as_integer().unwrap();
+        if q["kind"].as_str() != Some("story") {
+            continue;
+        }
+        assert_eq!(q["tokens"].as_integer(), Some(0), "quest {id} pays a Token");
+        if id < 94101 {
+            continue;
+        }
+        let level = q["level"].as_integer().unwrap();
+        let choices = q
+            .get("choices")
+            .and_then(|c| c.as_array())
+            .unwrap_or_else(|| panic!("quest {id} offers no choice"));
+        assert!(!choices.is_empty(), "quest {id}");
+        for c in choices {
+            let entry = c.as_integer().unwrap();
+            let need = required
+                .get(&entry)
+                .unwrap_or_else(|| panic!("quest {id}: choice {entry} is no sheet row"));
+            assert!(
+                *need <= level,
+                "quest {id}: choice {entry} needs level {need}"
+            );
+        }
+        checked += 1;
+    }
+    assert_eq!(checked, 27);
+}

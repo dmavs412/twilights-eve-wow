@@ -959,8 +959,8 @@ mod tests {
         assert_eq!(q(94401).ender(), 96015);
         assert_eq!(q(94402).after.ids(), [94401]);
         assert_eq!(q(94402).kill, [(96022, 1)]);
-        assert_eq!((q(94402).money, q(94402).tokens), (1000, 3));
-        assert!(q(94402).choices.is_empty());
+        assert_eq!((q(94402).money, q(94402).tokens), (1000, 0));
+        assert_eq!(q(94402).choices.len(), 3);
         assert_eq!(q(94403).after.ids(), [94402]);
         assert!(matches!(q(94403).giver, Giver::Npc(240)));
         let ore = q(94404);
@@ -978,8 +978,8 @@ mod tests {
         assert_eq!(q(94501).kill, [(96023, 6)]);
         assert_eq!(q(94502).after.ids(), [94501, 94403]);
         assert_eq!(q(94502).kill, [(96025, 1)]);
-        assert_eq!((q(94502).money, q(94502).tokens), (800, 3));
-        assert!(q(94502).choices.is_empty());
+        assert_eq!((q(94502).money, q(94502).tokens), (800, 0));
+        assert_eq!(q(94502).choices.len(), 3);
         assert_eq!(q(94503).after.ids(), [94502]);
         assert!(matches!(q(94503).giver, Giver::Item));
         assert_eq!(q(94503).ender(), 190062);
