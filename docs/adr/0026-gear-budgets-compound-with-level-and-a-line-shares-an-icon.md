@@ -44,3 +44,17 @@ realm picks what a kill drops, and how the no-duplicate-icons rule survives 389 
   for every row. The model runs after the rows instead, as a check (#448 decision 18).
 - **Icons unique per quality.** A blue ring that looks like a white one reads wrong.
 - **Painting the overflow.** About 150 PNGs for rings, amulets, bows and shields.
+
+## Amended 2026-10-26: budgets follow the Power Curve, and gear doubles
+
+A level 20 in level-19 greens lost to two level-15 Elwynn normals: the vanilla creature table
+grows faster than 5% a level through the 20s, so mobs outran gear. Gear and mobs now share one
+**Power Curve** P(level) (`content/power_curve.toml`, ADR 0012's amendment): level / 10 up to 30,
+then 3% compounding. `budget(quality, L) = round_half_up(base x P(L))` above item level 10, and
+weapon DPS is its anchor x P(L) at every level, replacing 1.05^(L-10).
+
+Every row also got stronger, the vanilla rows too: stats and spell power x2, weapon damage x1.6,
+armour x1.5, rounded half up. The anchors double to white 4, green 12, blue 26, epic 36 with a
+flex of 4, and the weapon anchors move x1.6 (green one-hander 12.6, staff 16.8, bow 9.6). The
+"linear budgets" option rejected above failed only because mobs grew on their own curve; on one
+shared curve it is the right shape up to 30.

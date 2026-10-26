@@ -168,12 +168,12 @@ impl Draw {
         (draw.first < a.first.len() && draw.epithet < a.epithet.len()).then_some(draw)
     }
 
-    /// Its stats at `level` for an owner of Bounty Rank `rank`: its class's, made hard, then
-    /// the rank's multiple of its health and damage.
+    /// Its stats at `level` for an owner of Bounty Rank `rank`: its class's on the Power Curve,
+    /// made hard, then the rank's multiple of its health and damage.
     pub(crate) fn stats(self, level: u8, rank: u32) -> MobStats {
         let h = hunter();
-        let (health_mul, damage_mul) = crate::mobs::difficulty_muls();
-        let mut stats = MobStats::new(
+        let (health_mul, damage_mul) = crate::mobs::difficulty_muls(level);
+        let mut stats = MobStats::on_curve(
             self.archetype().unit_class,
             level,
             h.health * health_mul,

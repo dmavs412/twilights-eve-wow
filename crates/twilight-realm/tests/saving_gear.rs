@@ -99,7 +99,7 @@ fn worn_down_durability_is_kept() {
 
 #[test]
 fn loot_taken_is_there_after_a_reload() {
-    let (mut realm, me, events) = warrior_with(5, 0, &[]);
+    let (mut realm, me, events) = fighter_with(5, 0, &[]);
     let mob = the_mob(&events);
     kill(&mut realm, &mob);
     realm.handle(RealmCommand::Loot { guid: mob.guid });
@@ -125,8 +125,8 @@ fn loot_taken_is_there_after_a_reload() {
     let events = reload(me, &blob);
     assert_eq!(descriptor(&events, me).player_money(), Some(gold));
     let back = carried(&events, me);
-    assert_eq!(back.len(), 1);
-    assert_eq!((back[0].0, back[0].1), (23, entry));
+    assert_eq!(back.len(), 2, "the loot, and the sword in hand");
+    assert!(back.iter().any(|b| (b.0, b.1) == (23, entry)), "{back:?}");
 }
 
 #[test]

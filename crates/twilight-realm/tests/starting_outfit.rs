@@ -114,5 +114,5 @@ fn the_sword_answers_its_item_query() {
         })
         .expect("its template");
     assert_eq!(info.name, "Worn Shortsword");
-    assert_eq!((info.dmg_min, info.dmg_max), (1.0, 3.0));
+    assert_eq!((info.dmg_min, info.dmg_max), (2.0, 5.0));
 }

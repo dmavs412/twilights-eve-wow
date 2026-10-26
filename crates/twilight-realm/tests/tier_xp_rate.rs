@@ -10,7 +10,7 @@ mod quest_common;
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight::{stand_at, Mob};
 use common::*;
-use gear_common::{Carried, SEED};
+use gear_common::{Carried, MAIN_HAND_SLOT, SEED, THUGS_CUTLASS};
 use quest_common::*;
 use twilight_realm::rules::xp::tier_rate;
 use twilight_realm::DevMultipliers;
@@ -60,14 +60,17 @@ fn the_xp_bar_shows_the_multiplied_kill() {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────────────────────────
 
-/// A level 5 character of `calling`, in a realm with `?xp=` at `xp`, and the entry burst.
+/// A level 5 character of `calling` holding Thug's Cutlass, so it wins its fight, in a realm
+/// with `?xp=` at `xp`, and the entry burst.
 fn in_world_as(
     calling: &str,
     level: u8,
     xp: f32,
     quests: &[Underway],
 ) -> (Realm, u64, Vec<SessionEvent>) {
-    let (guid, blob) = save_with_quests(level, EIGHT_SKINS, 0, quests);
+    let mut items = EIGHT_SKINS.to_vec();
+    items.push((MAIN_HAND_SLOT, THUGS_CUTLASS, 1));
+    let (guid, blob) = save_with_quests(level, &items, 0, quests);
     let blob = blob.replace(
         "calling = \"basic_warrior\"",
         &format!("calling = \"{calling}\""),

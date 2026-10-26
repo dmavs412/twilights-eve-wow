@@ -1,0 +1,9 @@
+# The Power Curve (ADR 0012, ADR 0026): one number a level that both sides of a fight grow by.
+# A mob's health and damage are its unit class's level-10 vanilla values times P(level)
+# (mobs.toml's [difficulty] then lays its factors over that); a piece of Gear's stat budget and
+# weapon DPS are its quality's level-10 values times P(item level)
+# (tools/twilights-eve/build_gear.py). P(10) is 1.
+#
+# P(level) = level / 10 up to `linear_to`, then `late_growth` compounding a level after it.
+linear_to = 30
+late_growth = 0.03

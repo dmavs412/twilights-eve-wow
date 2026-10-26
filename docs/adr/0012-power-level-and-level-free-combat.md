@@ -52,3 +52,27 @@ character a second level for its body.
   Tier 2 band exists to calibrate them.
 - Old Bounties can be farmed by a higher Tier. That is accepted: their pay is fixed by their own
   level.
+
+## Amended 2026-10-26: mobs grow on the Power Curve
+
+The 5% health and 4% damage a level compounded on the vanilla creature table, which itself grows
+about 7% a level through the 20s, so mobs outran gear: a level 20 in level-19 greens lost to two
+level-15 normals, and every Tier 1 Calling but the Ranger died to one level-20 Elwynn mob.
+
+- **One Power Curve for both sides.** P(level) is level / 10 up to 30, then 3% compounding
+  (`content/power_curve.toml`). A creature's health and damage are its unit class's level-10
+  vanilla values x P(level), then `[difficulty]`, the Tier Step, its rank, its Zone Factor and
+  its template. Armour stays the vanilla table's at its level. Gear budgets follow the same
+  curve (ADR 0026's amendment). `health_per_level` and `damage_per_level` are gone.
+- **One Difficulty, fitted at Power Level 20.** Health 3.2, damage 3.0, chosen by the balance
+  model so a level 20 in level-20 greens kills a same-level Elwynn mob in about 22 s and loses
+  about half its health; the same numbers land near that at 10 and 30. If a level drifts, the
+  curve's shape changes, never a per-level patch.
+- **Damage fades in over Tier 0.** The damage factor runs from 1.5 at level 1 to 3.0 at 10 in a
+  straight line, so Tier 0 hits close to how it did and there is no cliff at 10.
+- **The Tier Step.** Creatures of level 31 and up take another factor (1.5 health, 1.5 damage),
+  the answer to Tier 2's Tier Bonus. It is a placeholder until Tier 2 Callings exist to fit it.
+  Gear does not take it.
+
+Northshire gets easier, about 8-14 s kills at level 10 in greens. That is accepted: Elwynn's
+Zone Factor still makes the step out of it hostile.

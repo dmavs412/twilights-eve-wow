@@ -108,7 +108,7 @@ fn eating(me: &ObjectFields) -> bool {
 #[test]
 fn food_restores_its_health_over_its_duration_while_sitting() {
     let mut s = Script::new();
-    s.get_hurt(120.0);
+    s.get_hurt(30.0);
     let max = s.me().unit_max_health().unwrap();
     let before = s.health();
     assert!(
@@ -187,7 +187,7 @@ fn eating_in_combat_is_refused() {
 #[test]
 fn standing_up_ends_the_meal() {
     let mut s = Script::new();
-    s.get_hurt(120.0);
+    s.get_hurt(30.0);
     let before = s.health();
     s.eat();
     s.run(4.0);

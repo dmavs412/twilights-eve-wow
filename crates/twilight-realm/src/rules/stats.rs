@@ -444,7 +444,28 @@ impl MobStats {
             max_damage: avg * (1.0 + DAMAGE_VARIANCE),
         }
     }
+
+    /// A mob of `class` at `level` on the Power Curve (ADR 0012): health and damage are the
+    /// class's level-10 values times P(`level`), then the multipliers; armour stays the vanilla
+    /// table's at `level`.
+    pub fn on_curve(
+        class: UnitClass,
+        level: u8,
+        health_mul: f32,
+        damage_mul: f32,
+        armor_mul: f32,
+    ) -> Self {
+        let p = crate::rules::power_curve::at(level);
+        Self {
+            level,
+            armor: Self::new(class, level, 1.0, 1.0, armor_mul).armor,
+            ..Self::new(class, CURVE_ANCHOR, health_mul * p, damage_mul * p, 1.0)
+        }
+    }
 }
+
+/// The level whose vanilla class stats the Power Curve multiplies: where P is 1.
+const CURVE_ANCHOR: u8 = 10;
 
 /// A warrior's block chance with a shield, in percent: 5, and 0.04 a point of Defense over the
 /// level's maximum (vmangos `Player::UpdateBlockPercentage`).

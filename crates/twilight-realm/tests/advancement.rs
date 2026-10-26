@@ -626,7 +626,7 @@ fn gear_worn_before_advancement_stays_worn_and_keeps_its_stats() {
     let (mut realm, me, mut events) = questing(10, &[(4, LARGE_OGRE_CHAIN_ARMOR, 1)], 0, &[]);
     let chest = descriptor(&events, me).player_inv_slot(4);
     let green = descriptor(&events, me).player_posstat(0);
-    assert_eq!(green, Some(10), "its +10 strength");
+    assert_eq!(green, Some(20), "its +20 strength");
     events.extend(advance(&mut realm, trainer(&events)));
     let now = descriptor(&events, me);
     assert_eq!(now.unit_level(), Some(1));

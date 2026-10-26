@@ -140,6 +140,14 @@ A flat boost to base stats, set by each Calling and growing with each Tier; its 
 The level a character's body and combat count as: each Tier's levels mapped in a straight line onto the band that Tier's content is built for, 1–10 for Tier 0, 10–30 for Tier 1, 30–50 for Tier 2 and 50–60 for Tier 3. A Tier 1 character at level 1 has Power Level 10. Base stats and combat formulas use it; XP, Talent Points, the Tier Cap and the level the client shows use the real level. ADR 0012.
 _Avoid_: effective level, item level
 
+**Power Curve**:
+P(level), the one number a level that both sides of a fight grow by: level / 10 up to 30, then 3% a level. A mob's health and damage are its class's level-10 values times P, and a piece of Gear's stat budget and weapon DPS are its quality's level-10 values times P. `content/power_curve.toml`. ADR 0012, ADR 0026.
+_Avoid_: level scaling, growth rate
+
+**Tier Step**:
+A multiplier on the health and damage of every mob from level 31 up, the content a Tier 2 character's Tier Bonus fights. Set in `mobs.toml`; gear does not take it.
+_Avoid_: tier multiplier, Tier 2 difficulty
+
 **Zone Factor**:
 A multiplier on the health and damage of every mob in one area, set in `mobs.toml` per `AreaTable.dbc` area. A subzone without its own takes its parent zone's. It is what makes a new zone feel hostile: Northshire Valley is ×1, the rest of Elwynn Forest is harsher.
 _Avoid_: zone difficulty, zone level

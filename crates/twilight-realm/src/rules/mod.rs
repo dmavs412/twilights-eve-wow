@@ -13,6 +13,7 @@ pub mod loot;
 pub mod melee;
 pub mod notoriety;
 pub mod power;
+pub mod power_curve;
 pub mod procs;
 pub mod quest;
 pub mod rage;

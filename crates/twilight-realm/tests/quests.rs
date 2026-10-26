@@ -14,7 +14,7 @@ use twilight_realm::CROSSROADS;
 
 #[test]
 fn quest_givers_stand_at_the_hub_with_names_and_marks() {
-    let (mut realm, _, events) = warrior_with(1, 0, &[]);
+    let (mut realm, _, events) = fighter_with(1, 0, &[]);
     // The Warrior trainer (5810) gives quests too: his Advancement Quests.
     // One giver per Hunting Ground, each at a gate or the watchtower of the town.
     for entry in [GREZZ, TAMAHA, ZUNJIN, 90104, MAHU] {
@@ -43,7 +43,7 @@ fn quest_givers_stand_at_the_hub_with_names_and_marks() {
 
 #[test]
 fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
-    let (mut realm, me, mut events) = warrior_with(1, 0, &[]);
+    let (mut realm, me, mut events) = fighter_with(1, 0, &[]);
     let grezz = giver(&events, GREZZ);
     walk_up_to(&mut realm, grezz);
 
@@ -134,7 +134,7 @@ fn a_giver_lists_its_quests_and_the_accepted_one_goes_in_the_log() {
 
 #[test]
 fn a_giver_far_away_does_not_talk() {
-    let (mut realm, _, events) = warrior_with(1, 0, &[]);
+    let (mut realm, _, events) = fighter_with(1, 0, &[]);
     let grezz = giver(&events, GREZZ);
     walk_up_to(&mut realm, grezz);
     let [x, y, _] = hub_home(grezz);
@@ -158,7 +158,12 @@ const VILE_FAMILIAR: u32 = 3101;
 #[test]
 fn a_kill_counts_toward_the_quest_and_the_last_one_completes_it() {
     // Four familiars down, one to go.
-    let (mut realm, me, mut events) = questing(5, &[], 0, &[(THE_FAMILIAR_THREAT, [4, 0, 0, 0])]);
+    let (mut realm, me, mut events) = questing(
+        5,
+        &[(MAIN_HAND_SLOT, THUGS_CUTLASS, 1)],
+        0,
+        &[(THE_FAMILIAR_THREAT, [4, 0, 0, 0])],
+    );
     let grezz = giver(&events, GREZZ);
     walk_up_to(&mut realm, grezz);
     // Grezz's other quests' yellow `!` shows until this one is done.
@@ -446,7 +451,12 @@ fn the_xp_multiplier_multiplies_quest_xp() {
 
 #[test]
 fn a_kill_no_quest_wants_changes_no_quest() {
-    let (mut realm, me, mut events) = questing(5, &[], 0, &[(THINNING_THE_HERDS, [1, 2, 0, 0])]);
+    let (mut realm, me, mut events) = questing(
+        5,
+        &[(MAIN_HAND_SLOT, THUGS_CUTLASS, 1)],
+        0,
+        &[(THINNING_THE_HERDS, [1, 2, 0, 0])],
+    );
     let mob = the_mob(&events);
     let fight = kill(&mut realm, &mob);
     assert!(!fight
@@ -482,7 +492,7 @@ fn where_now(events: &[SessionEvent], mob: &Mob) -> [f32; 3] {
 fn clear_the_scorpids(with_quest: bool) -> (Vec<u32>, Vec<SessionEvent>, u64) {
     // Level 14: the four workers have twice the health and hit half again as hard, and a level 8
     // warrior no longer lives through the camp.
-    let (mut realm, me, events) = warrior_with(14, 0, &[]);
+    let (mut realm, me, events) = fighter_with(14, 0, &[]);
     let mut all = events.clone();
     if with_quest {
         all.extend(accept(&mut realm, giver(&events, GREZZ), SCORPID_VENOM));
@@ -564,7 +574,7 @@ fn quest_items_drop_only_while_a_quest_wants_them() {
 #[test]
 fn the_last_quest_item_looted_completes_the_quest() {
     // Five sacs in the pack: the next one finishes Scorpid Venom.
-    let sacs: &[Carried] = &[(23, VENOM_SAC, 5)];
+    let sacs: &[Carried] = &[(23, VENOM_SAC, 5), (MAIN_HAND_SLOT, THUGS_CUTLASS, 1)];
     let (mut realm, me, mut events) = questing(8, sacs, 0, &[(SCORPID_VENOM, [0; 4])]);
     realm.handle(RealmCommand::Move {
         motion: Default::default(),

@@ -305,15 +305,26 @@ struct HandSpawn {
 struct Row(u32, u32, u8, u8, f32, f32, f32, f32, u32, f32, u32);
 
 /// `[difficulty]` in `mobs.toml`: factors on every non-inert creature's health and melee damage,
-/// laid over its template's own multipliers.
+/// laid over its template's own multipliers and the Power Curve.
 #[derive(Deserialize, Clone, Copy)]
 pub(crate) struct Difficulty {
     pub(crate) health: f32,
-    pub(crate) damage: f32,
-    /// Each level past 1 multiplies health by `1 + health_per_level` (ADR 0012).
-    health_per_level: f32,
-    damage_per_level: f32,
+    damage: f32,
+    /// The damage factor at level 1; it climbs in a straight line to `damage` at `fade_to`, so
+    /// Tier 0's mobs hit about as they did before the Power Curve (ADR 0012).
+    damage_at_1: f32,
+    fade_to: u8,
     rank: RankFactors,
+    tier_step: TierStep,
+}
+
+/// `[difficulty.tier_step]`: the **Tier Step**, health and damage factors on every creature of
+/// level `from` and up, the content a Tier 2 character's Tier Bonus fights (ADR 0012).
+#[derive(Deserialize, Clone, Copy)]
+struct TierStep {
+    from: u8,
+    health: f32,
+    damage: f32,
 }
 
 /// `[difficulty.rank]`: `[health, damage]` factors for each rank above normal.
@@ -326,7 +337,17 @@ struct RankFactors {
 }
 
 impl Difficulty {
-    /// The health and damage factors on a non-inert creature of `rank` at `level` in `zone`.
+    /// The damage factor at `level`: `damage_at_1` faded in to `damage` by `fade_to`.
+    pub(crate) fn damage_at(&self, level: u8) -> f32 {
+        if level >= self.fade_to {
+            return self.damage;
+        }
+        let t = f32::from(level.max(1) - 1) / f32::from(self.fade_to - 1);
+        self.damage_at_1 + (self.damage - self.damage_at_1) * t
+    }
+
+    /// The health and damage factors on a non-inert creature of `rank` at `level` in `zone`, laid
+    /// over the Power Curve.
     fn muls(&self, rank: u32, level: u8, zone: ZoneFactor) -> (f32, f32) {
         let [rank_health, rank_damage] = match rank {
             1 => self.rank.elite,
@@ -335,10 +356,14 @@ impl Difficulty {
             4 => self.rank.rare,
             _ => [1.0, 1.0],
         };
-        let steps = i32::from(level.max(1)) - 1;
+        let (step_health, step_damage) = if level >= self.tier_step.from {
+            (self.tier_step.health, self.tier_step.damage)
+        } else {
+            (1.0, 1.0)
+        };
         (
-            self.health * (1.0 + self.health_per_level).powi(steps) * rank_health * zone.health,
-            self.damage * (1.0 + self.damage_per_level).powi(steps) * rank_damage * zone.damage,
+            self.health * step_health * rank_health * zone.health,
+            self.damage_at(level) * step_damage * rank_damage * zone.damage,
         )
     }
 }
@@ -815,10 +840,10 @@ pub(crate) fn content() -> &'static Mobs {
     })
 }
 
-/// The global health and damage factors from `mobs.toml`'s `[difficulty]`.
-pub(crate) fn difficulty_muls() -> (f32, f32) {
+/// The global health and damage factors from `mobs.toml`'s `[difficulty]` at `level`.
+pub(crate) fn difficulty_muls(level: u8) -> (f32, f32) {
     let d = content().difficulty;
-    (d.health, d.damage)
+    (d.health, d.damage_at(level))
 }
 
 /// The Zone Factor of `area`: its own `[[zone]]` row, else its parent zone's
@@ -1047,7 +1072,7 @@ impl Mob {
                 template.armor_multiplier,
             )
         } else {
-            MobStats::new(
+            MobStats::on_curve(
                 template.unit_class,
                 level,
                 template.health_multiplier * health_mul,
@@ -1650,18 +1675,21 @@ mod tests {
     }
 
     #[test]
-    fn difficulty_scales_health_and_damage_by_level_except_for_dummies() {
-        // Defias Thug, a normal mob: x2 health and x1.5 damage, and 5% and 4% a level past 1.
+    fn difficulty_puts_health_and_damage_on_the_power_curve_except_for_dummies() {
+        // Defias Thug, a normal mob at 8: its level-10 vanilla stats x P(8) = 0.8, then x3.2
+        // health, and damage faded in from x1.5 at 1 to x3.0 at 10: x2.67 at 8. Armour stays
+        // its level's.
         let (hard, vanilla) = mob_and_vanilla(38, 8, ZoneFactor::NONE);
-        let (health, damage) = (2.0 * 1.05f32.powi(7), 1.5 * 1.04f32.powi(7));
-        let want = (vanilla.max_health as f32 * health).round() as u32;
+        let (_, at_ten) = mob_and_vanilla(38, 10, ZoneFactor::NONE);
+        let (health, damage) = (3.2 * 0.8, (1.5 + 1.5 * 7.0 / 9.0) * 0.8);
+        let want = (at_ten.max_health as f32 * health).round() as u32;
         assert!(
             hard.max_health.abs_diff(want) <= 1,
             "{} vs {want}",
             hard.max_health
         );
-        assert!((hard.min_damage - vanilla.min_damage * damage).abs() < 1e-3);
-        assert!((hard.max_damage - vanilla.max_damage * damage).abs() < 1e-3);
+        assert!((hard.min_damage - at_ten.min_damage * damage).abs() < 1e-3);
+        assert!((hard.max_damage - at_ten.max_damage * damage).abs() < 1e-3);
         assert_eq!(hard.armor, vanilla.armor);
         // Training Dummy, even in Elwynn Forest.
         let (dummy, vanilla) = mob_and_vanilla(97001, 10, zone(ELWYNN_FOREST));
@@ -1698,15 +1726,16 @@ mod tests {
         let t = warrior(0);
         let northshire = Mob::stats_for(&t, 12, zone(NORTHSHIRE_VALLEY));
         let elwynn = Mob::stats_for(&t, 12, zone(ELWYNN_FOREST));
-        let vanilla = MobStats::new(UnitClass::Warrior, 12, 1.0, 1.0, 1.0);
-        let want = (vanilla.max_health as f32 * 2.0 * 1.05f32.powi(11)).round() as u32;
+        // A level-10 warrior's 198 health, x P(12) = 1.2, x3.2.
+        let at_ten = MobStats::new(UnitClass::Warrior, 10, 1.0, 1.0, 1.0);
+        let want = (at_ten.max_health as f32 * 1.2 * 3.2).round() as u32;
         assert_eq!(northshire.max_health, want);
         let half_again = (northshire.max_health as f32 * 1.5).round() as u32;
         assert!(elwynn.max_health.abs_diff(half_again) <= 1);
-        // About 1,270 health and a 59 swing on average.
-        assert_eq!(elwynn.max_health, 1267);
+        // About 1,140 health and a 71 swing on average.
+        assert_eq!(elwynn.max_health, 1140);
         let swing = (elwynn.min_damage + elwynn.max_damage) / 2.0;
-        assert!((swing - 59.05).abs() < 0.05, "{swing}");
+        assert!((swing - 71.32).abs() < 0.05, "{swing}");
     }
 
     #[test]

@@ -29,7 +29,7 @@ fn loot_window(events: &[SessionEvent]) -> Option<(u64, u8, u32, Vec<LootItem>)>
 
 /// A level 5 warrior, the level 3 mob dead at its feet.
 fn after_a_kill() -> (Realm, u64, Mob, Vec<SessionEvent>) {
-    let (mut realm, me, events) = warrior_with(5, 0, &[]);
+    let (mut realm, me, events) = fighter_with(5, 0, &[]);
     let mob = the_mob(&events);
     let events = kill(&mut realm, &mob);
     (realm, me, mob, events)
@@ -100,7 +100,7 @@ fn a_corpse_is_in_reach_as_far_as_an_npc_is() {
 
 #[test]
 fn a_living_mob_cannot_be_looted() {
-    let (mut realm, _, events) = warrior_with(5, 0, &[]);
+    let (mut realm, _, events) = fighter_with(5, 0, &[]);
     let mob = the_mob(&events);
     stand_by(&mut realm, &mob);
     realm.handle(RealmCommand::Loot { guid: mob.guid });
@@ -224,7 +224,7 @@ fn looting_asks_for_a_save() {
 fn a_full_backpack_refuses_the_item() {
     // Sixteen backpack slots, all taken.
     let full: Vec<Carried> = (23..39).map(|slot| (slot, 1384, 1)).collect();
-    let (mut realm, _, events) = warrior_with(5, 0, &full);
+    let (mut realm, _, events) = fighter_with(5, 0, &full);
     let mob = the_mob(&events);
     kill(&mut realm, &mob);
     realm.handle(RealmCommand::Loot { guid: mob.guid });

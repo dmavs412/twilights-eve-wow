@@ -275,8 +275,8 @@ fn anticipation_raises_defense_and_toughness_the_armour_of_items() {
     );
     let (_, _, _, tough) = zealot_at(10, SEED, &[(*TOUGHNESS, 5)], &harness);
     let armor = |v: &View| v.fields(me).unit_resistance(0).unwrap();
-    // 10% more of the harness's 70: 7.
-    assert_eq!(armor(&tough), armor(&plain) + 7);
+    // 10% more of the harness's 105: 10.5, rounded to 11.
+    assert_eq!(armor(&tough), armor(&plain) + 11);
 }
 
 #[test]

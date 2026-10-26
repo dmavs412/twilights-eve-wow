@@ -169,6 +169,26 @@ pub fn warrior_with(level: u8, money: u32, items: &[Carried]) -> (Realm, u64, Ve
     (realm, guid, events)
 }
 
+/// Thug's Cutlass, a level-6 green sword: 13-18 at 2.0 s, +12 Strength.
+pub const THUGS_CUTLASS: u32 = 900305;
+/// The main hand's equipment slot.
+pub const MAIN_HAND_SLOT: u8 = 15;
+
+/// [`warrior_with`] holding Thug's Cutlass: for a test about what a kill brings, whose fighter
+/// must win the fight. Bare-handed, a Tier 0 warrior loses to its own level on the Power Curve.
+pub fn fighter_with(level: u8, money: u32, items: &[Carried]) -> (Realm, u64, Vec<SessionEvent>) {
+    let mut held = items.to_vec();
+    held.push((MAIN_HAND_SLOT, THUGS_CUTLASS, 1));
+    warrior_with(level, money, &held)
+}
+
+/// [`save_with`] holding Thug's Cutlass, as [`fighter_with`].
+pub fn fighter_save(level: u8, money: u32, items: &[Carried]) -> (u64, String) {
+    let mut held = items.to_vec();
+    held.push((MAIN_HAND_SLOT, THUGS_CUTLASS, 1));
+    save_with(level, money, &held)
+}
+
 /// Where `guid` ends up: the end of its last stroll or run in `events`, else `created`.
 pub fn settled_at(events: &[SessionEvent], guid: u64, created: [f32; 3]) -> [f32; 3] {
     events

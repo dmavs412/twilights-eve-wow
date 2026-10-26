@@ -8,7 +8,7 @@ use benilla_protocol::{EntityKind, ObjectFields, SessionEvent};
 use common::*;
 use gear_common::*;
 
-const GNOLL_WAR_HARNESS: u32 = 1211; // green leather chest: 70 armour, +2 str +2 sta, 65 durability
+const GNOLL_WAR_HARNESS: u32 = 1211; // green leather chest: 105 armour, +4 str +4 sta, 65 durability
 const FINE_SCIMITAR: u32 = 4560; // white sword, 30 durability
 const CHEST: u8 = 4;
 const MAIN_HAND: u8 = 15;
@@ -111,9 +111,9 @@ fn broken_gear_gives_no_stats_until_it_is_repaired() {
     let fixed = s.me();
     assert_eq!(
         fixed.unit_resistance(0),
-        Some(naked.unit_resistance(0).unwrap() + 70)
+        Some(naked.unit_resistance(0).unwrap() + 105)
     );
-    assert_eq!(fixed.unit_stat(0), Some(naked.unit_stat(0).unwrap() + 2));
+    assert_eq!(fixed.unit_stat(0), Some(naked.unit_stat(0).unwrap() + 4));
 }
 
 #[test]

@@ -36,6 +36,7 @@ const CONTENT: &[&str] = &[
     include_str!("../content/mobs.toml"),
     include_str!("../content/northshire_abbey.toml"),
     include_str!("../content/notoriety.toml"),
+    include_str!("../content/power_curve.toml"),
     include_str!("../content/quest_items.toml"),
     include_str!("../content/quests.toml"),
     include_str!("../content/quests_elwynn.toml"),

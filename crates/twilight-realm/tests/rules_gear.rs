@@ -8,11 +8,11 @@ use twilight_realm::rules::stats::CharacterStats;
 
 const HUMAN: u8 = 1;
 
-const FINE_SCIMITAR: u32 = 4560; // white 1H sword, 3-6 at 1.9 s
+const FINE_SCIMITAR: u32 = 4560; // white 1H sword, 5-10 at 1.9 s
 const CROOKED_STAFF: u32 = 1388; // white staff, two-handed
 const FIRE_WAND: u32 = 5069; // required level 7
 const PITCHFORK: u32 = 1485; // polearm, required level 20
-const GNOLL_WAR_HARNESS: u32 = 1211; // leather chest, 70 armour, +2 str +2 sta, required level 10
+const GNOLL_WAR_HARNESS: u32 = 1211; // leather chest, 105 armour, +4 str +4 sta, required level 10
 const LARGE_OGRE_CHAIN_ARMOR: u32 = 914; // mail chest, required level 25
 const JOUSTERS_CHESTPLATE: u32 = 8157; // plate chest, required level 40
 const RING_OF_DEFENSE: u32 = 12985; // Equip: +4 Defense
@@ -164,12 +164,12 @@ fn armour_and_stats_add_to_the_sheet() {
     let naked = CharacterStats::naked(WARRIOR, HUMAN, 10);
     let worn = CharacterStats::geared(WARRIOR, HUMAN, 10, &[GNOLL_WAR_HARNESS]);
     let [str, agi, sta, int, spi] = naked.base;
-    assert_eq!(worn.base, [str + 2, agi, sta + 2, int, spi]);
-    assert_eq!(worn.bonus, [2, 0, 2, 0, 0], "the green part of each stat");
-    assert_eq!(worn.armor, naked.armor + 70);
-    // Two strength is four attack power; two stamina past the first 20 is 20 health.
-    assert_eq!(worn.attack_power, naked.attack_power + 4);
-    assert_eq!(worn.max_health, naked.max_health + 20);
+    assert_eq!(worn.base, [str + 4, agi, sta + 4, int, spi]);
+    assert_eq!(worn.bonus, [4, 0, 4, 0, 0], "the green part of each stat");
+    assert_eq!(worn.armor, naked.armor + 105);
+    // Four strength is eight attack power; four stamina past the first 20 is 40 health.
+    assert_eq!(worn.attack_power, naked.attack_power + 8);
+    assert_eq!(worn.max_health, naked.max_health + 40);
 }
 
 #[test]
@@ -177,8 +177,8 @@ fn a_weapon_sets_the_swing_damage_and_speed() {
     // Level 1 human: 29 attack power, 29 / 14 × 1.9 s = 3.936 on each end.
     let s = CharacterStats::geared(WARRIOR, HUMAN, 1, &[FINE_SCIMITAR]);
     assert_eq!(s.attack_time_ms, 1900);
-    assert!((s.min_damage - 6.936).abs() < 1e-3, "{}", s.min_damage);
-    assert!((s.max_damage - 9.936).abs() < 1e-3, "{}", s.max_damage);
+    assert!((s.min_damage - 8.936).abs() < 1e-3, "{}", s.min_damage);
+    assert!((s.max_damage - 13.936).abs() < 1e-3, "{}", s.max_damage);
 }
 
 #[test]

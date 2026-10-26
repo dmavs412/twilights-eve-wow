@@ -41,8 +41,8 @@ to = { map = 1, position = [-738.462, -2217.8, 16.919], orientation = 6.021 }
 # alone, so health is halved and damage cut to about a normal mob's (the boss's packs two
 # druids beside her). They stay elite (`rank` 1): the dragon on the portrait, and dungeon kill XP.
 # Each row's `tuned` holds its solo tuning; its multipliers are that divided by mobs.toml's
-# [difficulty], the elite rank and the growth to its `level_min`, so a creature at its row's
-# higher level is 5% and 4% tougher.
+# [difficulty], the elite rank and the Power Curve at its `level_min` (over the vanilla table
+# there), so a creature at its row's higher level is tougher by the curve's step.
 
 [[template]]
 entry = 3637
@@ -55,8 +55,8 @@ faction_template = 270
 unit_class = "warrior"
 level_min = 18
 level_max = 19
-health_multiplier = 0.3272
-damage_multiplier = 0.2738
+health_multiplier = 0.5485
+damage_multiplier = 0.2966
 armor_multiplier = 1.0
 tuned = { health = 3.0, damage = 1.2 }
 base_attack_time = 2000
@@ -74,8 +74,8 @@ faction_template = 270
 unit_class = "warrior"
 level_min = 18
 level_max = 19
-health_multiplier = 0.3272
-damage_multiplier = 0.2738
+health_multiplier = 0.5485
+damage_multiplier = 0.2966
 armor_multiplier = 1.0
 tuned = { health = 3.0, damage = 1.2 }
 base_attack_time = 2000
@@ -95,8 +95,8 @@ unit_class = "paladin"
 level_min = 19
 level_max = 20
 # Lady Anacondra's two druids, solo-tuned like her.
-health_multiplier = 0.1558
-damage_multiplier = 0.1755
+health_multiplier = 0.2679
+damage_multiplier = 0.1987
 armor_multiplier = 1.0
 tuned = { health = 1.5, damage = 0.8 }
 base_attack_time = 2000
@@ -117,8 +117,8 @@ unit_class = "paladin"
 level_min = 20
 level_max = 20
 # The loot tests need a level 25 warrior to beat her alone.
-health_multiplier = 0.2473
-damage_multiplier = 0.211
+health_multiplier = 0.4547
+damage_multiplier = 0.2494
 armor_multiplier = 1.0
 tuned = { health = 2.5, damage = 1.0 }
 base_attack_time = 2000

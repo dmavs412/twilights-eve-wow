@@ -137,6 +137,7 @@ fn only_a_bag_goes_in_a_bag_slot() {
 fn loot_that_finds_the_backpack_full_goes_in_the_bag() {
     let mut items: Vec<Carried> = (23..39).map(|slot| (slot, DULL_BLADE, 1)).collect();
     items.push((BAG_1, SMALL_RED_POUCH, 1));
+    items.push((MAIN_HAND_SLOT, THUGS_CUTLASS, 1));
     let mut s = Script::new(&items, &[]);
     let mob = the_mob(&s.events);
     let fight = kill(&mut s.realm, &mob);

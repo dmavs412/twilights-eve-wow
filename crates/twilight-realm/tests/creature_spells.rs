@@ -142,10 +142,10 @@ fn a_caster_killed_mid_cast_lands_nothing() {
     let mut mid_cast = 0;
     for seed in 0..400 {
         let realm = Realm::with_seed(seed).with_creature_spells(VILE_FAMILIAR, &[CORRUPTION]);
-        let (mut realm, me, mob) = warrior(realm, 60);
+        // A heavy sword, so the kill lands inside a cast; vary when the first swing lands so
+        // some seed ends the cast rather than coming before it.
+        let (mut realm, me, mob) = warrior_holding(realm, 60, RIVERPAW_BLADE);
         stand_by(&mut realm, mob.1);
-        // The familiar has twice the health it had, so the kill takes more swings; vary when the
-        // first one lands so some seed still ends the cast.
         let lead = 0.1 * (seed % 20) as f32;
         let mut events = run(&mut realm, lead);
         realm.handle(RealmCommand::AttackSwing { guid: mob.0 });
@@ -451,15 +451,37 @@ fn warrior(realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3])) {
     (realm, guid, mob)
 }
 
+/// [`warrior`] holding `weapon` in place of the Worn Shortsword it starts with.
+fn warrior_holding(realm: Realm, level: u8, weapon: u32) -> (Realm, u64, (u64, [f32; 3])) {
+    let (realm, guid, mob, _) = warrior_seen_holding(realm, level, WORN_SHORTSWORD, weapon);
+    (realm, guid, mob)
+}
+
+/// The sword a new warrior starts with.
+const WORN_SHORTSWORD: u32 = 25;
+/// Riverpaw Blade, a level-30 blue sword: a level 60 kills the familiar in a swing or two.
+const RIVERPAW_BLADE: u32 = 905044;
+
 /// [`warrior`], and the view of what entering the world created.
-fn warrior_seen(mut realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3]), fight::View) {
+fn warrior_seen(realm: Realm, level: u8) -> (Realm, u64, (u64, [f32; 3]), fight::View) {
+    warrior_seen_holding(realm, level, WORN_SHORTSWORD, WORN_SHORTSWORD)
+}
+
+/// [`warrior_seen`] with item `worn` swapped for `held`.
+fn warrior_seen_holding(
+    mut realm: Realm,
+    level: u8,
+    worn: u32,
+    held: u32,
+) -> (Realm, u64, (u64, [f32; 3]), fight::View) {
     let mut maker = common::realm();
     assert_eq!(create(&mut maker, "Varian", HUMAN, 0), CHAR_CREATE_SUCCESS);
     let guid = roster(&mut maker)[0].guid;
     let blob = maker
         .export_character(guid)
         .unwrap()
-        .replace("level = 1\n", &format!("level = {level}\n"));
+        .replace("level = 1\n", &format!("level = {level}\n"))
+        .replace(&format!("entry = {worn}\n"), &format!("entry = {held}\n"));
     realm.import_character(&blob).unwrap();
     realm.handle(RealmCommand::EnterWorld { guid });
     realm.tick(0.0, &FlatGround);

@@ -9,7 +9,7 @@ mod gear_common;
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight::{stand_at, Mob};
 use common::*;
-use gear_common::{in_elwynn_beside, save_with, SEED};
+use gear_common::{fighter_save, in_elwynn_beside, save_with, SEED};
 use twilight_realm::CROSSROADS;
 
 const PLAYER_FLAGS: u16 = 190;
@@ -137,7 +137,7 @@ fn a_save_without_a_pool_loads_with_none() {
 
 /// A level 5 `calling` whose save holds `rested` XP, in the world at the Hub, with the entry burst.
 fn in_world_as(calling: &str, rested: u32) -> (Realm, u64, Vec<SessionEvent>) {
-    let (guid, blob) = save_with(5, 0, &[]);
+    let (guid, blob) = fighter_save(5, 0, &[]);
     let blob = blob
         .replace(
             "calling = \"basic_warrior\"",

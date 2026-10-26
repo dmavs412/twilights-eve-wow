@@ -93,7 +93,7 @@ fn kill_xp_is_base_times_the_tier_rate_times_the_heat_multiplier() {
     let heat = heat_level(650.0);
     assert_eq!(heat, 3);
     for (notoriety, want) in [(0.0, 3 * 60), (650.0, with_heat(3 * 60, heat))] {
-        let (guid, blob) = with_notoriety(save_with(5, 0, &[]), notoriety);
+        let (guid, blob) = with_notoriety(fighter_save(5, 0, &[]), notoriety);
         let blob = blob.replace("calling = \"basic_warrior\"", "calling = \"vanguard\"");
         let (mut realm, _, events) = enter_saved(guid, &blob);
         let events = kill(&mut realm, &the_mob(&events));
@@ -187,7 +187,7 @@ fn with_notoriety((guid, blob): (u64, String), notoriety: f32) -> (u64, String) 
 
 /// A warrior of `level` with `notoriety`, in the world at the Crossroads.
 fn warrior_at(level: u8, notoriety: f32) -> (Realm, u64, Vec<SessionEvent>) {
-    let (guid, blob) = with_notoriety(save_with(level, 0, &[]), notoriety);
+    let (guid, blob) = with_notoriety(fighter_save(level, 0, &[]), notoriety);
     enter_saved(guid, &blob)
 }
 

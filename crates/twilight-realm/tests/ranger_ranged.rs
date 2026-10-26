@@ -231,7 +231,7 @@ fn snapshot_and_puncturing_shaft_add_their_bonus_to_the_bow() {
         !auto.is_empty() && !snap.is_empty() && !shaft.is_empty(),
         "{auto:?} {snap:?} {shaft:?}"
     );
-    let top = (6.0 + shot_bonus()).ceil() as u32;
+    let top = (10.0 + shot_bonus()).ceil() as u32;
     let best_auto = *auto.iter().max().unwrap();
     assert!(best_auto <= top, "Auto Shot: {auto:?} over {top}");
     assert!(
@@ -369,13 +369,13 @@ fn the_sheet_shows_ranged_attack_power() {
         Some((BOW_SPEED_SECS * 1000.0) as u32)
     );
     let ap = (rap as f32 / 14.0 + ARROW_DPS) * BOW_SPEED_SECS;
-    // The Cracked Shortbow rolls 3-6, plus ranged AP and the arrows.
+    // The Cracked Shortbow rolls 5-10, plus ranged AP and the arrows.
     let (min, max) = (
         sheet.unit_min_ranged_damage().unwrap(),
         sheet.unit_max_ranged_damage().unwrap(),
     );
     assert!(
-        (min - (3.0 + ap)).abs() < 0.01 && (max - (6.0 + ap)).abs() < 0.01,
+        (min - (5.0 + ap)).abs() < 0.01 && (max - (10.0 + ap)).abs() < 0.01,
         "{min}-{max}"
     );
 }

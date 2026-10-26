@@ -32,8 +32,10 @@ the stat points a hand-authored row may spend (str + agi + sta + int + spi + cei
 a row over it is refused, and a blank is unchecked. It is not written to gear.toml.
 
 Northshire rows (entry 900000 and up, plus the outfit whites) are held to the tiers of #426: stat
-points within 2 of the quality's budget (Common 2, Uncommon 6, Rare 13, Epic 18, doubled for a
+points within 4 of the quality's budget (Common 4, Uncommon 12, Rare 26, Epic 36, doubled for a
 two-hander), the `budget` cell equal to the points, and a weapon's DPS within 10% of its curve.
+Above item level 10 both grow by the Power Curve P(item level) of
+crates/twilight-realm/content/power_curve.toml (ADR 0026).
 Every other row is unchecked.
 """
 
@@ -43,8 +45,10 @@ import argparse
 import csv
 import os
 import sys
+import tomllib
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+POWER_CURVE = os.path.join(REPO, "crates", "twilight-realm", "content", "power_curve.toml")
 DEFAULT_CSV = os.path.join(REPO, "data", "twilights-eve", "gear.csv")
 DEFAULT_DROPS = os.path.join(REPO, "data", "twilights-eve", "gear_drops.csv")
 DEFAULT_MASTER = os.path.join(REPO, "data", "twilights-eve", "master.csv")
@@ -121,18 +125,27 @@ SPELL_POWER_NAMES = {spell: f"Increase Spell Dam {n}" for n, spell in SPELL_POWE
 SPELL_POWER_SLOTS = (("Weapon", None), ("Offhand", "Held"), ("Ranged", "Wand"))
 
 
-# The Northshire tier rule (#426). Stat points of a row sit within FLEX of its quality's budget,
-# doubled for a two-hander; a weapon's DPS sits within DPS_FLEX of its curve at item level 10,
-# scaled by min(item_level, 10) / 10. MH counts as 1H; a Bow, Gun or Crossbow is "bow".
-BUDGET = {"Common": 2, "Uncommon": 6, "Rare": 13, "Epic": 18}
-FLEX = 2
-WEAPON_DPS = {("1H", "Common"): 6.3, ("1H", "Uncommon"): 7.9, ("1H", "Rare"): 10.3,
-              ("1H", "Epic"): 11.9, ("2H", "Common"): 8.4, ("2H", "Uncommon"): 10.5,
-              ("2H", "Rare"): 13.6, ("2H", "Epic"): 15.8, ("bow", "Common"): 4.8,
-              ("bow", "Uncommon"): 6.0, ("bow", "Rare"): 7.8, ("bow", "Epic"): 9.0}
+# The tier rule (#426, doubled with the Power Curve, ADR 0026). Stat points of a row sit within
+# FLEX of its quality's budget, doubled for a two-hander; a weapon's DPS sits within DPS_FLEX of
+# its curve at item level 10 times P(item_level). MH counts as 1H; a Bow, Gun or Crossbow is "bow".
+BUDGET = {"Common": 4, "Uncommon": 12, "Rare": 26, "Epic": 36}
+FLEX = 4
+WEAPON_DPS = {("1H", "Common"): 10.1, ("1H", "Uncommon"): 12.6, ("1H", "Rare"): 16.5,
+              ("1H", "Epic"): 19.0, ("2H", "Common"): 13.4, ("2H", "Uncommon"): 16.8,
+              ("2H", "Rare"): 21.8, ("2H", "Epic"): 25.3, ("bow", "Common"): 7.7,
+              ("bow", "Uncommon"): 9.6, ("bow", "Rare"): 12.5, ("bow", "Epic"): 14.4}
 DPS_FLEX = 0.10
-# Above item level 10 budgets and weapon DPS compound 5% a level (ADR 0026, spec #448).
-LEVEL_GROWTH = 1.05
+
+
+def power_curve(level: int) -> float:
+    """P(level), the Power Curve (content/power_curve.toml, ADR 0026): level / 10 up to
+    `linear_to`, then `late_growth` compounding. Above item level 10 budgets and weapon DPS grow
+    by it."""
+    with open(POWER_CURVE, "rb") as f:
+        c = tomllib.load(f)
+    if level <= c["linear_to"]:
+        return level / 10
+    return c["linear_to"] / 10 * (1 + c["late_growth"]) ** (level - c["linear_to"])
 # Only these rows are checked: entries from here up, and the vanilla outfit whites.
 FIRST_CHECKED = 900000
 OUTFIT_WHITES = (2108, 2109, 2110, 3260, 25, 37, 4565, 1388, 2055, 2362, 8179)
@@ -206,7 +219,7 @@ def check_tier(row: dict, entry: int, where: str, points: int) -> None:
     level = integer(row["item_level"], "item_level", where)
     base = BUDGET[quality]
     if level > 10:
-        base = int(base * LEVEL_GROWTH ** (level - 10) + 0.5)
+        base = int(base * power_curve(level) + 0.5)
     budget = base * (2 if row["hand"] == "2H" else 1)
     if abs(points - budget) > FLEX:
         raise SheetError(f"{where}: a {quality} row spends {points} stat points, "
@@ -230,7 +243,7 @@ def check_dps(row: dict, where: str, damage: list, speed_ms: int) -> None:
     level = integer(row["item_level"], "item_level", where)
     if row["quality"] == "Common" and level <= 10:
         return  # Northshire's whites predate the white curve (#426, #448)
-    target = curve * LEVEL_GROWTH ** (level - 10) if level > 10 else curve * level / 10
+    target = curve * power_curve(level)
     dps = sum((lo + hi) / 2 for lo, hi, _ in damage) / (speed_ms / 1000)
     if abs(dps - target) > DPS_FLEX * target:
         raise SheetError(f"{where}: a {row['quality']} {shape} weapon of item level {level} "

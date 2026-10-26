@@ -8,14 +8,14 @@ use benilla_protocol::SessionEvent;
 use common::*;
 use gear_common::*;
 
-const FINE_SCIMITAR: u32 = 4560; // white 1H sword, 3-6 at 1.9 s
+const FINE_SCIMITAR: u32 = 4560; // white 1H sword, 5-10 at 1.9 s
 const DULL_BLADE: u32 = 1384; // white 1H sword, 1-3 at 1.9 s
 const CROOKED_STAFF: u32 = 1388; // white staff, two-handed
 const WARRIORS_SHIELD: u32 = 1438; // required level 4
 const FIRE_WAND: u32 = 5069;
-const GNOLL_WAR_HARNESS: u32 = 1211; // leather chest, 70 armour, +2 str +2 sta, required level 10
+const GNOLL_WAR_HARNESS: u32 = 1211; // leather chest, 105 armour, +4 str +4 sta, required level 10
 const LARGE_OGRE_CHAIN_ARMOR: u32 = 914; // required level 25
-const JOUSTERS_CHESTPLATE: u32 = 8157; // plate, 339 armour, +15 str +4 sta, required level 40
+const JOUSTERS_CHESTPLATE: u32 = 8157; // plate, 509 armour, +30 str +8 sta, required level 40
 const TUNNEL_PICK: u32 = 756; // two-handed axe, required level 24
 
 const BACKPACK: u8 = 255;
@@ -186,10 +186,10 @@ fn plate_worn_by_a_vanguard_keeps_giving_its_stats_after_a_reload() {
     let naked = s.me();
     s.equip(PACK_1);
     let worn = s.me();
-    assert_eq!(worn.player_posstat(0), Some(15), "the green +15 strength");
+    assert_eq!(worn.player_posstat(0), Some(30), "the green +30 strength");
     assert_eq!(
         worn.unit_resistance(0),
-        Some(naked.unit_resistance(0).unwrap() + 339)
+        Some(naked.unit_resistance(0).unwrap() + 509)
     );
     let blob = s.realm.export_character(s.me).unwrap();
     let (_, me, events) = enter_saved(s.me, &blob);
@@ -198,7 +198,7 @@ fn plate_worn_by_a_vanguard_keeps_giving_its_stats_after_a_reload() {
         again.player_visible_item_entry(CHEST),
         Some(JOUSTERS_CHESTPLATE)
     );
-    assert_eq!(again.player_posstat(0), Some(15));
+    assert_eq!(again.player_posstat(0), Some(30));
     assert_eq!(again.unit_resistance(0), worn.unit_resistance(0));
 }
 
@@ -214,8 +214,8 @@ fn equipping_a_sword_puts_it_in_the_main_hand_and_sets_the_swing() {
     let me = s.me();
     assert_eq!(me.player_visible_item_entry(MAIN_HAND), Some(FINE_SCIMITAR));
     assert_eq!(me.unit_base_attack_time(0), Some(1900));
-    assert!((me.unit_min_damage().unwrap() - 6.936).abs() < 1e-3);
-    assert!((me.unit_max_damage().unwrap() - 9.936).abs() < 1e-3);
+    assert!((me.unit_min_damage().unwrap() - 8.936).abs() < 1e-3);
+    assert!((me.unit_max_damage().unwrap() - 13.936).abs() < 1e-3);
 }
 
 #[test]
@@ -246,19 +246,19 @@ fn armour_and_stats_change_the_sheet() {
     );
     assert_eq!(
         after.unit_resistance(0),
-        Some(before.unit_resistance(0).unwrap() + 70)
+        Some(before.unit_resistance(0).unwrap() + 105)
     );
-    assert_eq!(after.unit_stat(0), Some(before.unit_stat(0).unwrap() + 2));
-    assert_eq!(after.unit_stat(2), Some(before.unit_stat(2).unwrap() + 2));
-    assert_eq!(after.player_posstat(0), Some(2), "the green +2 strength");
-    assert_eq!(after.player_posstat(2), Some(2));
+    assert_eq!(after.unit_stat(0), Some(before.unit_stat(0).unwrap() + 4));
+    assert_eq!(after.unit_stat(2), Some(before.unit_stat(2).unwrap() + 4));
+    assert_eq!(after.player_posstat(0), Some(4), "the green +4 strength");
+    assert_eq!(after.player_posstat(2), Some(4));
     assert_eq!(
         after.unit_max_health(),
-        Some(before.unit_max_health().unwrap() + 20)
+        Some(before.unit_max_health().unwrap() + 40)
     );
     assert_eq!(
         after.unit_attack_power(),
-        Some(before.unit_attack_power().unwrap() + 4)
+        Some(before.unit_attack_power().unwrap() + 8)
     );
 }
 

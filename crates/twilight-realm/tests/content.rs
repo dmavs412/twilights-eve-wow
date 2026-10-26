@@ -303,9 +303,11 @@ fn the_seeded_gear_keeps_the_references_numbers() {
         item["pool_level"] = 0.into();
         let mut want = expected_item(&item);
         retune_shield_block(&mut want);
-        // The starting outfits' vanilla pieces carry +2 Stamina, +4 on a two-hander (#426, #427).
+        retune_power_curve(&mut want);
+        // The starting outfits' vanilla pieces carry +4 Stamina, +8 on a two-hander (#426, #427,
+        // doubled with the Power Curve).
         if [2108, 2109, 2110, 3260, 25, 37, 4565, 1388, 2055, 2362, 8179].contains(&entry) {
-            let sta = if entry == 1388 { 4 } else { 2 };
+            let sta = if entry == 1388 { 8 } else { 4 };
             let stat = toml::Value::Array(vec![7.into(), sta.into()]);
             want.as_table_mut()
                 .unwrap()
@@ -328,6 +330,36 @@ fn retune_shield_block(item: &mut toml::Value) {
     if block > 0 {
         let up = ((block as f64) * 1.3 + 0.5).floor() as i64;
         t.insert("block".into(), up.max(block + 1).into());
+    }
+}
+
+/// The Power Curve's retune of every vanilla row (ADR 0026, 2026-10-26): stats and attack power
+/// x2, armour x1.5, weapon damage x1.6, each rounded half up, a damage line's low end at least 1
+/// where it was and its high end never under its low.
+fn retune_power_curve(item: &mut toml::Value) {
+    fn up(v: f64, by: f64) -> f64 {
+        (v * by + 0.5).floor()
+    }
+    let t = item.as_table_mut().unwrap();
+    if let Some(stats) = t.get_mut("stats").and_then(|s| s.as_array_mut()) {
+        for stat in stats.iter_mut() {
+            let pair = stat.as_array_mut().unwrap();
+            pair[1] = (up(pair[1].as_integer().unwrap() as f64, 2.0) as i64).into();
+        }
+    }
+    for (key, by) in [("attack_power", 2.0), ("armor", 1.5)] {
+        if let Some(v) = t.get(key).and_then(|v| v.as_integer()) {
+            t.insert(key.into(), (up(v as f64, by) as i64).into());
+        }
+    }
+    if let Some(lines) = t.get_mut("damage").and_then(|d| d.as_array_mut()) {
+        for line in lines.iter_mut() {
+            let line = line.as_array_mut().unwrap();
+            let (lo, hi) = (line[0].as_float().unwrap(), line[1].as_float().unwrap());
+            let new_lo = up(lo, 1.6).max(if lo >= 1.0 { 1.0 } else { 0.0 });
+            line[0] = new_lo.into();
+            line[1] = up(hi, 1.6).max(new_lo).into();
+        }
     }
 }
 
