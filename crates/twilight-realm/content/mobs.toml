@@ -70,6 +70,18 @@ area = 59 # Northshire Vineyards
 health = 1.0
 damage = 1.0
 
+# Duskwood and Redridge Mountains (spec #466): Elwynn's factor again, on top of the Tier Step
+# from 31. Their subzones take it through area_parents.toml.
+[[zone]]
+area = 10 # Duskwood
+health = 1.5
+damage = 1.3
+
+[[zone]]
+area = 44 # Redridge Mountains
+health = 1.5
+damage = 1.3
+
 [[template]]
 entry = 3101
 name = "Vile Familiar"

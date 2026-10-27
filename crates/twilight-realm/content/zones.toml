@@ -1,15 +1,23 @@
 # Hand-written changes laid over the generated content/duskwood.toml, redridge.toml and
 # stormwind.toml (spec #466), which are never edited. One [[zone]] per file.
+# `levels` is the zone's Level Stretch: every spawn but friendly NPCs and critters has its vanilla
+# levels mapped linearly from `from` onto `to`, rounded and clamped into `to`.
 
 [[zone]]
 file = "duskwood"
 # Unseen (3094): 28 level-49 spawns, invisible in vanilla (aura 4986). The realm does not model
 # invisibility.
 removed = [3094]
+# Vanilla 18-35, the non-critter, non-friendly spawns with the Unseen aside, onto the lore
+# bible's 30-50 (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2.
+levels = { from = [18, 35], to = [30, 50] }
 
 [[zone]]
 file = "redridge"
 removed = []
+# Vanilla 14-27, the non-critter, non-friendly spawns, onto the lore bible's 30-50
+# (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2.
+levels = { from = [14, 27], to = [30, 50] }
 
 [[zone]]
 file = "stormwind"

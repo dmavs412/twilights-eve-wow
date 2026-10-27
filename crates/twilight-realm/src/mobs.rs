@@ -459,6 +459,15 @@ struct ZoneOverrides {
     file: String,
     /// Entries whose spawns are deleted.
     removed: Vec<u32>,
+    /// The zone's Level Stretch, for its hostile and neutral creatures.
+    #[serde(default)]
+    levels: Option<Stretch>,
+}
+
+#[derive(Clone, Copy, Deserialize)]
+struct Stretch {
+    from: [u8; 2],
+    to: [u8; 2],
 }
 
 /// The generated zone files that `content/zones.toml` lays its changes over, all on Eastern
@@ -583,13 +592,27 @@ pub(crate) fn content() -> &'static Mobs {
             .map(|(name, text)| {
                 let mut file: ZoneFile = toml::from_str(text)
                     .unwrap_or_else(|e| panic!("content/{name}.toml parses: {e}"));
-                let removed = &zone_overrides
+                let z = zone_overrides
                     .zone
                     .iter()
                     .find(|z| z.file == *name)
-                    .unwrap_or_else(|| panic!("content/zones.toml has no [[zone]] for {name}"))
-                    .removed;
-                file.spawns.retain(|r| !removed.contains(&r.1));
+                    .unwrap_or_else(|| panic!("content/zones.toml has no [[zone]] for {name}"));
+                file.spawns.retain(|r| !z.removed.contains(&r.1));
+                // The Level Stretch, for every creature but friendly NPCs and critters
+                // (CreatureType.dbc 8).
+                if let Some(Stretch { from, to }) = z.levels {
+                    for r in &mut file.spawns {
+                        let keeps = file
+                            .template
+                            .iter()
+                            .find(|t| t.entry == r.1)
+                            .is_some_and(|t| t.friendly || t.creature_type == 8);
+                        if !keeps {
+                            r.2 = crate::bands::stretch(r.2, from, to);
+                            r.3 = crate::bands::stretch(r.3, from, to);
+                        }
+                    }
+                }
                 file
             })
             .collect();
@@ -1695,7 +1718,28 @@ mod tests {
         // Starving Dire Wolf at -10007.3, -1494.3, in the Darkened Bank.
         let wolf = content().spawn.iter().find(|s| s.guid == 4348).unwrap();
         assert_eq!(wolf.entry, 213);
-        assert_eq!((wolf.level_min, wolf.level_max), (19, 20));
+        assert_eq!((wolf.level_min, wolf.level_max), (31, 32));
+    }
+
+    #[test]
+    fn duskwood_and_redridge_stretch_onto_30_to_50() {
+        let want = [
+            (5086, (50, 50)),  // Mor'Ladim, Duskwood
+            (4183, (50, 50)),  // Bliztik, Duskwood, neutral
+            (8747, (30, 32)),  // Redridge Thrasher
+            (18385, (45, 47)), // Blackrock Gladiator
+            (6707, (33, 35)),  // Great Goretusk, neutral
+            (6140, (30, 30)),  // Narnie, neutral beast
+            (4061, (40, 40)),  // Role Dreuger, Duskwood, friendly
+            (6139, (21, 21)),  // Bartender Wental, Redridge, friendly
+            (4212, (1, 1)),    // Black Rat, Duskwood, critter
+            (6146, (1, 1)),    // Rabbit, Redridge, critter
+            (86301, (50, 50)), // Sewer Beast, Stormwind
+        ];
+        for (guid, levels) in want {
+            let s = content().spawn.iter().find(|s| s.guid == guid).unwrap();
+            assert_eq!((s.level_min, s.level_max), levels, "spawn {guid}");
+        }
     }
 
     #[test]
@@ -1891,6 +1935,17 @@ mod tests {
         assert_eq!(zone_factor(None), ZoneFactor::NONE);
         // Forest's Edge's creatures stand in its file's zone.
         assert_eq!(phased::zone(Phase::Dungeon(2)), Some(ELWYNN_FOREST));
+    }
+
+    #[test]
+    fn duskwood_and_redridge_take_elwynns_zone_factor() {
+        assert_eq!(zone(10), zone(ELWYNN_FOREST));
+        assert_eq!(zone(44), zone(ELWYNN_FOREST));
+        // Darkshire and Lakeshire, through area_parents.toml.
+        assert_eq!(zone(42), zone(10));
+        assert_eq!(zone(69), zone(44));
+        // Stormwind City.
+        assert_eq!(zone(1519), ZoneFactor::NONE);
     }
 }
 

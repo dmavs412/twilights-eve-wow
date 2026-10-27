@@ -66,6 +66,10 @@ _Avoid_: zone (a WoW map area, which a Hunting Ground may only partly cover)
 The range of Power Levels a Hunting Ground is built for, such as 1–10 for Northshire Valley. Its mobs' levels are set to fit the band, not taken from vanilla.
 _Avoid_: zone level, level range (of a single mob)
 
+**Level Stretch**:
+A linear map of one imported zone's vanilla levels onto a new range, set per zone in `content/zones.toml`. Duskwood's 18–35 and Redridge's 14–27 both stretch onto 30–50. Friendly NPCs and critters keep their vanilla levels.
+_Avoid_: rescale, relevel
+
 **Camp**:
 A group of mobs that stand together and fight together: pulling one pulls the rest. The Barrens' camps come from its vanilla spawns; the low camps by the Hub are placed by hand.
 _Avoid_: pack, group (a player party)

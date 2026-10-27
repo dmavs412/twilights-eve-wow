@@ -70,6 +70,19 @@ pub(crate) fn pick(guid: u32, [lo, hi]: [u8; 2]) -> u8 {
     lo + (guid % u32::from(hi - lo + 1)) as u8
 }
 
+/// A Level Stretch: `level` mapped linearly from the `from` range onto the `to` range, rounded
+/// half away from zero and clamped into `to`.
+pub(crate) fn stretch(level: u8, from: [u8; 2], to: [u8; 2]) -> u8 {
+    debug_assert!(
+        from[0] < from[1],
+        "a stretch needs a range of two levels or more"
+    );
+    let [f0, f1] = from.map(f32::from);
+    let [t0, t1] = to.map(f32::from);
+    let mapped = t0 + (f32::from(level) - f0) * (t1 - t0) / (f1 - f0);
+    mapped.round().clamp(t0, t1) as u8
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,6 +200,27 @@ mod tests {
             if s.map == EASTERN_KINGDOMS && friendly && x > -9000.0 && range_at(x, y).is_some() {
                 panic!("friendly {} ({}) at {x}, {y} takes a band", s.entry, s.guid);
             }
+        }
+    }
+
+    #[test]
+    fn stretch_maps_the_from_range_onto_the_to_range_and_clamps() {
+        let duskwood = [18, 35];
+        for (level, want) in [(18, 30), (19, 31), (20, 32), (35, 50), (36, 50)] {
+            assert_eq!(stretch(level, duskwood, [30, 50]), want, "Duskwood {level}");
+        }
+        let redridge = [14, 27];
+        let cases = [
+            (14, 30),
+            (15, 32),
+            (16, 33),
+            (24, 45),
+            (25, 47),
+            (27, 50),
+            (1, 30),
+        ];
+        for (level, want) in cases {
+            assert_eq!(stretch(level, redridge, [30, 50]), want, "Redridge {level}");
         }
     }
 
