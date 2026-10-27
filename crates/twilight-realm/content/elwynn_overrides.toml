@@ -842,3 +842,26 @@ level_min = 12
 level_max = 12
 position = [-9290.0, 22.0, 69.11]
 orientation = 1.57
+
+# Creature kits (#469): vanilla's spells, lines and idle emotes, laid over the template of
+# `entry`, each field only when given. `spells` replaces the template's. A kit whose entry has
+# no template fails the content load.
+
+# Kobold Vermin, Kobold Worker and Kobold Laborer: vanilla's aggro line.
+[[kit]]
+entry = 6
+say = { aggro = ["You no take candle!"], aggro_chance = 30 }
+
+[[kit]]
+entry = 257
+say = { aggro = ["You no take candle!"], aggro_chance = 30 }
+
+[[kit]]
+entry = 80
+say = { aggro = ["You no take candle!"], aggro_chance = 30 }
+
+# Defias Thug: the Brotherhood's lines, and talk (emote 1) while it stands idle.
+[[kit]]
+entry = 38
+say = { aggro = ["Ah, a chance to use this freshly sharpened blade.", "The Brotherhood will not tolerate your actions.", "Feel the power of the Brotherhood!"], aggro_chance = 30 }
+emote_ooc = { emote = 1, every_ms = [2000, 10000] }

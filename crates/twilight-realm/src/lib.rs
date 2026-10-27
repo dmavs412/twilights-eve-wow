@@ -720,6 +720,15 @@ impl Realm {
         self
     }
 
+    /// This realm with the `[[kit]]` rows in `toml` (the shape of
+    /// `content/elwynn_overrides.toml`'s) laid over the creature templates, for the rest of the
+    /// process: a test seam, so a player script can fight a creature with a kit the content does
+    /// not give it. A kit naming no template panics, as a shipped one does.
+    pub fn with_kits(self, toml: &str) -> Self {
+        mobs::add_kits(toml);
+        self
+    }
+
     /// Sets the wall clock to `unix_ms`, milliseconds since the Unix epoch. Ticks advance it in
     /// between; a host without one leaves it running from 0. An item's cooldown runs on it, so
     /// the time between two sessions counts.
@@ -1824,6 +1833,7 @@ impl Realm {
             self.tick_served(dt, host);
         }
         self.give_back();
+        self.creature_speech();
         self.tick_rumours(host);
         self.tick_noise();
         self.tick_gazes();

@@ -63,7 +63,7 @@ fn yes() -> bool {
     true
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub(crate) struct Template {
     pub(crate) entry: u32,
     pub(crate) name: String,
@@ -143,6 +143,111 @@ pub(crate) struct Template {
     /// casts from where it stands.
     #[serde(default = "yes")]
     pub(crate) melee: bool,
+    /// The lines it says (#470).
+    #[serde(default)]
+    pub(crate) say: Option<Say>,
+    /// The health percent at which it runs from a fight.
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub(crate) flee_at_pct: Option<u32>,
+    /// The anim emote it plays now and then while it stands idle.
+    #[serde(default)]
+    pub(crate) emote_ooc: Option<EmoteOoc>,
+}
+
+/// A creature's say table: `say = { aggro = [..], aggro_chance = 30, flee = ".." }`.
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct Say {
+    /// The lines it may say as it turns from idle to a fight, one picked at random.
+    #[serde(default)]
+    pub(crate) aggro: Vec<String>,
+    /// The percent chance it says one of them.
+    #[serde(default)]
+    pub(crate) aggro_chance: u32,
+    /// The line it says as it runs.
+    #[serde(default)]
+    #[allow(dead_code)]
+    pub(crate) flee: Option<String>,
+}
+
+/// `emote_ooc = { emote = 1, every_ms = [2000, 10000] }`: an `Emotes.dbc` id, played once a
+/// random time in the range while the creature stands idle.
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct EmoteOoc {
+    pub(crate) emote: u32,
+    pub(crate) every_ms: [u32; 2],
+}
+
+/// A `[[kit]]` row of `content/elwynn_overrides.toml`: fields laid over the template of `entry`,
+/// each only when given.
+#[derive(Deserialize)]
+struct Kit {
+    entry: u32,
+    #[serde(default)]
+    spells: Option<Vec<String>>,
+    #[serde(default)]
+    say: Option<Say>,
+    #[serde(default)]
+    flee_at_pct: Option<u32>,
+    #[serde(default)]
+    emote_ooc: Option<EmoteOoc>,
+}
+
+impl Kit {
+    /// Lays the kit's given fields over `t`: its `spells` replace the template's.
+    fn lay_over(&self, t: &mut Template) {
+        if let Some(spells) = &self.spells {
+            t.spells = spells.clone();
+        }
+        if let Some(say) = &self.say {
+            t.say = Some(say.clone());
+        }
+        if let Some(pct) = self.flee_at_pct {
+            t.flee_at_pct = Some(pct);
+        }
+        if let Some(emote) = &self.emote_ooc {
+            t.emote_ooc = Some(emote.clone());
+        }
+    }
+}
+
+/// Lays each of `kits` over every template of its entry; a kit naming no template is a content
+/// error.
+fn lay_kits(template: &mut [Template], kits: &[Kit]) {
+    for k in kits {
+        let mut found = false;
+        for t in template.iter_mut().filter(|t| t.entry == k.entry) {
+            k.lay_over(t);
+            found = true;
+        }
+        assert!(found, "[[kit]] for entry {} names no template", k.entry);
+    }
+}
+
+/// `[[kit]]` rows a test laid over the content (`Realm::with_kits`): the templates they made,
+/// for the rest of the process. [`template`] reads them first.
+static EXTRA_KITS: std::sync::Mutex<Vec<&'static Template>> = std::sync::Mutex::new(Vec::new());
+
+/// Lays the `[[kit]]` rows in `toml` (the shape of `content/elwynn_overrides.toml`'s) over the
+/// content's templates, for the rest of the process. A kit naming no template panics, as the
+/// content's own do.
+pub(crate) fn add_kits(toml: &str) {
+    #[derive(Deserialize)]
+    struct File {
+        #[serde(default)]
+        kit: Vec<Kit>,
+    }
+    let file: File = toml::from_str(toml).expect("[[kit]] rows parse");
+    for k in &file.kit {
+        let mut t = template(k.entry)
+            .unwrap_or_else(|| panic!("[[kit]] for entry {} names no template", k.entry))
+            .clone();
+        k.lay_over(&mut t);
+        let t: &'static Template = Box::leak(Box::new(t));
+        if let Ok(mut extra) = EXTRA_KITS.lock() {
+            extra.push(t);
+        }
+    }
 }
 
 /// The creature entries a test flagged as bosses, for the rest of the process.
@@ -219,6 +324,9 @@ impl Template {
             hunts_at_meter_max: None,
             melee: true,
             tuned: None,
+            say: None,
+            flee_at_pct: None,
+            emote_ooc: None,
         }
     }
 
@@ -444,6 +552,9 @@ struct Overrides {
     /// Bands.
     #[serde(default)]
     added: Vec<Added>,
+    /// Creature kits (#469): spells, lines and an idle emote laid over a template.
+    #[serde(default)]
+    kit: Vec<Kit>,
 }
 
 /// `content/zones.toml`: hand-written changes to the generated Duskwood, Redridge and Stormwind
@@ -772,6 +883,7 @@ pub(crate) fn content() -> &'static Mobs {
         let dungeon: DungeonFile = toml::from_str(include_str!("../content/wailing_caverns.toml"))
             .expect("content/wailing_caverns.toml parses");
         template.extend(dungeon.template);
+        lay_kits(&mut template, &overrides.kit);
         for t in &template {
             for roll in &t.rolls {
                 roll.check(&t.name);
@@ -977,11 +1089,17 @@ pub(crate) fn area_parent(area: u32) -> Option<&'static u32> {
 }
 
 pub(crate) fn template(entry: u32) -> Option<&'static Template> {
-    content()
-        .template
-        .iter()
-        .find(|t| t.entry == entry)
-        .or_else(|| crate::bounty::template(entry))
+    let kitted = EXTRA_KITS
+        .lock()
+        .ok()
+        .and_then(|extra| extra.iter().rev().find(|t| t.entry == entry).copied());
+    kitted.or_else(|| {
+        content()
+            .template
+            .iter()
+            .find(|t| t.entry == entry)
+            .or_else(|| crate::bounty::template(entry))
+    })
 }
 
 /// `SMSG_CREATURE_QUERY_RESPONSE` for `entry`; an unknown entry answers with no name.
@@ -1114,6 +1232,13 @@ pub(crate) struct Mob {
     /// The characters that see it and that it acts on; none for every mob a spawn row or a
     /// Phased Dungeon places. Fixed at spawn.
     pub(crate) audience: Option<crate::audience::Audience>,
+    /// It turned from idle to a fight since the realm last looked: its aggro line is due a roll
+    /// (`Realm::creature_speech`).
+    pub(crate) aggro_due: bool,
+    /// Seconds until its idle emote; `None` until it is armed, and out of idle.
+    pub(crate) emote_in: Option<f32>,
+    /// Its idle emote came due since the realm last looked.
+    pub(crate) emote_due: bool,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -1252,6 +1377,9 @@ impl Mob {
             since_hurt: None,
             noised: false,
             death_noised: false,
+            aggro_due: false,
+            emote_in: None,
+            emote_due: false,
         })
     }
 
@@ -1332,6 +1460,9 @@ impl Mob {
             since_hurt: None,
             noised: false,
             death_noised: false,
+            aggro_due: false,
+            emote_in: None,
+            emote_due: false,
         }
     }
 
@@ -1387,6 +1518,29 @@ impl Mob {
     /// The spawn that placed it; `None` for one no spawn placed.
     pub(crate) fn spawn_row(&self) -> Option<&'static Spawn> {
         content().spawn.get(self.spawn as usize)
+    }
+
+    /// Its idle emote's timer (#470), ticked while it stands idle: armed at a random time in its
+    /// template's range, and on running out marked due and armed again. Out of idle it is
+    /// disarmed, and armed afresh when the creature is idle again.
+    pub(crate) fn tick_idle_emote(&mut self, dt: f32, rng: &mut Rng) {
+        let Some(e) = &self.template.emote_ooc else {
+            return;
+        };
+        if self.state != State::Idle {
+            self.emote_in = None;
+            return;
+        }
+        let [lo, hi] = e.every_ms;
+        let mut arm = || rng.urand(lo, hi) as f32 / 1000.0;
+        self.emote_in = match self.emote_in {
+            None => Some(arm()),
+            Some(t) if t <= dt => {
+                self.emote_due = true;
+                Some(arm())
+            }
+            Some(t) => Some(t - dt),
+        };
     }
 
     /// An idle mob's stroll: after a pause it walks to a spot within its wander of home, and
@@ -1858,6 +2012,29 @@ mod tests {
         );
         t.rank = rank;
         t
+    }
+
+    #[test]
+    fn a_kits_spells_replace_the_templates_and_its_absent_fields_leave_the_rest() {
+        let mut t = warrior(0);
+        t.spells = vec!["corruption_creature".into()];
+        t.flee_at_pct = Some(20);
+        let kit: Kit = toml::from_str(
+            "entry = 0\nspells = [\"abbot_heal\"]\nsay = { aggro = [\"Hi\"], aggro_chance = 30 }",
+        )
+        .unwrap();
+        lay_kits(std::slice::from_mut(&mut t), &[kit]);
+        assert_eq!(t.spells, ["abbot_heal"]);
+        assert_eq!(t.say.as_ref().map(|s| s.aggro_chance), Some(30));
+        assert_eq!(t.flee_at_pct, Some(20), "no flee_at_pct in the kit");
+        assert!(t.emote_ooc.is_none());
+    }
+
+    #[test]
+    #[should_panic(expected = "[[kit]] for entry 7 names no template")]
+    fn a_kit_for_an_entry_with_no_template_fails() {
+        let kit: Kit = toml::from_str("entry = 7").unwrap();
+        lay_kits(&mut [warrior(0)], &[kit]);
     }
 
     #[test]

@@ -16,6 +16,14 @@ fn elwynn_toml_is_the_import_of_the_dump() {
     );
 }
 
+/// Every `[[kit]]` in `content/elwynn_overrides.toml` names a creature with a template: the
+/// content loads, and the kits lay over it again through the test seam.
+#[test]
+fn every_elwynn_kit_names_a_template() {
+    let overrides = include_str!("../content/elwynn_overrides.toml");
+    let _ = twilight_realm::Realm::new().with_kits(overrides);
+}
+
 /// The nine Elwynn elites (#454) each roll their band's Elite pool at 20% and the band's World
 /// greens at 50%; the pool's rows are Rare at the band's set level.
 #[test]

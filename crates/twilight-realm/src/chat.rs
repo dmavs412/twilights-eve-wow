@@ -6,10 +6,15 @@ use benilla_protocol::messages::ChannelNoticeTail;
 use benilla_protocol::messages::{self as m, ChatMessage};
 use benilla_protocol::SessionEvent;
 
+use crate::mobs::Mob;
+use crate::rng::Rng;
+use crate::shard::Place;
 use crate::{Realm, SessionId};
 
-/// How far `/say`, a custom `/emote` and a text emote carry, in yards.
+/// How far `/say`, a custom `/emote`, a text emote and a creature's line carry, in yards.
 const SAY_YD: f32 = 25.0;
+/// How far a creature's idle emote is seen.
+const EMOTE_YD: f32 = 40.0;
 /// How far `/yell` carries.
 const YELL_YD: f32 = 300.0;
 /// `Languages.dbc` 0: every player reads every line, whatever its race.
@@ -143,6 +148,57 @@ impl Realm {
         }
     }
 
+    /// The creatures' lines and idle emotes that came due since the last look (#470): an aggro
+    /// line rolls its chance on the realm's dice and goes to each character in the creature's
+    /// Phase within say range, an emote to each within [`EMOTE_YD`]. A creature in a session's
+    /// own world is heard by that session alone.
+    pub(crate) fn creature_speech(&mut self) {
+        let rng = &mut self.rng;
+        let mut said: Vec<(Hearers, [f32; 3], SessionEvent, f32)> = Vec::new();
+        for (place, shard) in &mut self.shards {
+            for mob in &mut shard.mobs {
+                let at = mob.position;
+                for (e, yd) in due_speech(mob, rng) {
+                    said.push((Hearers::Place(*place), at, e, yd));
+                }
+            }
+        }
+        let worlds = std::iter::once((self.active, &mut self.world))
+            .chain(self.parked.iter_mut().map(|(id, s)| (*id, &mut s.world)));
+        for (session, w) in worlds {
+            let Some(w) = w else { continue };
+            for mob in &mut w.mobs {
+                let at = mob.position;
+                for (e, yd) in due_speech(mob, rng) {
+                    said.push((Hearers::Session(session), at, e, yd));
+                }
+            }
+        }
+        if said.is_empty() {
+            return;
+        }
+        let worlds = std::iter::once((self.active, &self.world))
+            .chain(self.parked.iter().map(|(id, s)| (*id, &s.world)));
+        let all: Vec<(SessionId, Option<Place>, [f32; 3])> = worlds
+            .filter_map(|(session, w)| {
+                let w = w.as_ref()?;
+                let c = self.characters.get(w.guid)?;
+                Some((session, w.shard_place(), c.position))
+            })
+            .collect();
+        for (hearers, at, event, yd) in said {
+            for &(session, place, position) in &all {
+                let hears = match hearers {
+                    Hearers::Place(p) => place == Some(p),
+                    Hearers::Session(only) => session == only,
+                };
+                if hears && crate::space::distance(position, at) <= yd {
+                    self.send_to(session, event.clone());
+                }
+            }
+        }
+    }
+
     /// `SMSG_NAME_QUERY_RESPONSE` for a character; an unknown guid answers with no name.
     pub(crate) fn name_query(&mut self, guid: u64) {
         let answer = match self.characters.get(guid) {
@@ -163,6 +219,47 @@ impl Realm {
         };
         self.events.push(answer);
     }
+}
+
+/// Who may hear a creature: the characters on its shard, or the one session whose own world
+/// holds it.
+#[derive(Clone, Copy)]
+enum Hearers {
+    Place(Place),
+    Session(SessionId),
+}
+
+/// What `mob` says or plays that came due, clearing it: each event and how far it carries.
+fn due_speech(mob: &mut Mob, rng: &mut Rng) -> Vec<(SessionEvent, f32)> {
+    let mut out = Vec::new();
+    if std::mem::take(&mut mob.aggro_due) {
+        if let Some(say) = mob.template.say.as_ref().filter(|s| !s.aggro.is_empty()) {
+            if rng.below(100) < say.aggro_chance {
+                let text = say.aggro[rng.below(say.aggro.len() as u32) as usize].clone();
+                let line = SessionEvent::Chat(ChatMessage {
+                    chat_type: m::CHAT_MSG_MONSTER_SAY,
+                    language: LANGUAGE_UNIVERSAL,
+                    sender_guid: mob.guid,
+                    target_guid: 0,
+                    sender_name: Some(mob.template.name.clone()),
+                    channel: None,
+                    text,
+                    chat_tag: 0,
+                });
+                out.push((line, SAY_YD));
+            }
+        }
+    }
+    if std::mem::take(&mut mob.emote_due) {
+        if let Some(e) = &mob.template.emote_ooc {
+            let emote = SessionEvent::Emote {
+                guid: mob.guid,
+                emote_id: e.emote,
+            };
+            out.push((emote, EMOTE_YD));
+        }
+    }
+    out
 }
 
 /// The server-wide channel's join notice, sent on entering the world.

@@ -1167,6 +1167,7 @@ impl InWorld {
                 mob.assist_in = Some(t - dt);
             }
         }
+        mob.tick_idle_emote(dt, rng);
         match mob.state {
             State::Idle => {
                 mob.engaged_secs = 0.0;
@@ -1743,11 +1744,14 @@ fn at_tier_rate(c: &Char, base: u32) -> u32 {
 
 /// `mob` turns on the player, who joins its threat table with the pull seed if not on it:
 /// `SMSG_AI_REACTION`, `SMSG_ATTACKSTART`, and its target and combat
-/// flag.
+/// flag. Turning from idle, its aggro line comes due (`Realm::creature_speech`).
 pub(crate) fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>) {
     // A dummy never turns on anyone.
     if mob.template.inert {
         return;
+    }
+    if mob.state == State::Idle && mob.template.say.is_some() {
+        mob.aggro_due = true;
     }
     let seed = mob.stats.max_health as f32 * crate::group::get().pull_threat_health_fraction;
     mob.threat.seed(player, seed);
