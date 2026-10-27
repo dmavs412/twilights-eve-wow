@@ -221,6 +221,21 @@ impl Abbey {
 }
 
 #[test]
+fn the_abbeys_cultists_cast_and_the_abbot_is_unchanged() {
+    // The Corrupted Brother heals himself and swings 10% softer to pay for it (#469, #474).
+    assert_eq!(mob_spells(96003), ["brother_heal"]);
+    assert_eq!(
+        mob_template(96003)["damage_multiplier"].as_float(),
+        Some(0.9)
+    );
+    assert_eq!(
+        mob_spells(96004),
+        ["shadow_word_pain_creature", "shadow_bolt_creature"]
+    );
+    assert_eq!(mob_spells(96005), ["abbot_corruption", "abbot_heal"]);
+}
+
+#[test]
 fn outside_sees_no_monster_and_inside_sees_only_the_abbeys_own() {
     let mut a = Abbey::new();
     assert!(a.seen.is_disjoint(&monsters()), "a monster shows outside");

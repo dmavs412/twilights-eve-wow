@@ -122,6 +122,28 @@ pub fn creature_spell(key: &str) -> u32 {
         .unwrap() as u32
 }
 
+/// The hand-written creature template `entry` of `content/mobs.toml`.
+pub fn mob_template(entry: u32) -> &'static toml::Value {
+    static FILE: std::sync::LazyLock<toml::Value> = std::sync::LazyLock::new(|| {
+        toml::from_str(include_str!("../../content/mobs.toml")).unwrap()
+    });
+    FILE["template"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["entry"].as_integer() == Some(entry.into()))
+        .unwrap_or_else(|| panic!("{entry} is not a template of mobs.toml"))
+}
+
+/// The Creature Spell keys template `entry` names, in order.
+pub fn mob_spells(entry: u32) -> Vec<&'static str> {
+    mob_template(entry)
+        .get("spells")
+        .and_then(|s| s.as_array())
+        .map(|s| s.iter().map(|k| k.as_str().unwrap()).collect())
+        .unwrap_or_default()
+}
+
 /// The spell ids of `calling`'s skills or auras `keys`, in order.
 pub fn spells(calling: &str, keys: &[&str]) -> Vec<u32> {
     keys.iter().map(|key| spell(calling, key)).collect()

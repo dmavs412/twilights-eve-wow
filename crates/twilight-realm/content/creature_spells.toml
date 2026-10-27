@@ -13,7 +13,7 @@
 # icon             a stock icon path, or a PNG in data/twilights-eve/art/
 # visual           the stock spell whose look (SpellVisual) it takes; nothing else is read from it
 # aura_description optional: the debuff's tooltip, in Spell.dbc's $s1/$t1 terms
-# school           physical, holy, fire or shadow
+# school           physical, holy, fire, frost or shadow
 # cast_time_ms     the cast bar; the creature stops swinging for it
 # cooldown_ms      from the cast's end: a number, or [min, max] rolled anew at each cast's end (a
 #                  cast cut short waits out min)
@@ -635,3 +635,73 @@ range_max = 0.0
 chance = 100
 first_cast_ms = 0
 effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, duration_ms = 0 }
+
+# Geomancer Vurx's Frost Armor (#474). Looks like vanilla Frost Armor (168). Placeholders: a 50
+# damage shield for the fight (10 min), instant on engage, once a fight: its cooldown is as long as
+# the shield. A shield back up the moment it breaks cut a level 9's wins against Vurx
+# (tests/echo_ridge.rs) from at least 24 of 40 to 1.
+[[spell]]
+key = "frost_armor_vurx"
+spell_id = 1900036
+name = "Frost Armor"
+icon = 'Interface\Icons\Spell_Frost_FrostArmor02'
+visual = 168
+aura_description = "Absorbs $s1 damage."
+school = "frost"
+cast_time_ms = 0
+cooldown_ms = 600000
+range_max = 0.0
+chance = 100
+first_cast_ms = 0
+effect = { kind = "absorb", amount = 50, duration_ms = 600000 }
+
+# Vurx's Frostbolt. Looks like vanilla Frostbolt (116). Creature Spells have no direct damage, so it
+# lands as a short frost curse: 2 ticks of 12, 24 frost damage over 4 s, from 30 yd after a 2 s
+# cast, every 4 s. It alternates with frost_chill_vurx, each on cooldown while the other is off.
+[[spell]]
+key = "frostbolt_vurx"
+spell_id = 1900037
+name = "Frostbolt"
+icon = 'Interface\Icons\Spell_Frost_FrostBolt02'
+visual = 116
+aura_description = "$s1 Frost damage every $t1 seconds."
+school = "frost"
+cast_time_ms = 2000
+cooldown_ms = 4000
+range_max = 30.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 2000, duration_ms = 4000, tick = { base = 12 } }
+
+# The Frostbolt's chill, as a cast of its own (a Creature Spell has one effect). Frostbolt's look
+# (116). Placeholders: 30% slower for 4 s, from 30 yd after a 2 s cast, every 4 s, and not before
+# 2 s into the fight, so Frostbolt goes first.
+[[spell]]
+key = "frost_chill_vurx"
+spell_id = 1900038
+name = "Frostbolt Chill"
+icon = 'Interface\Icons\Spell_Frost_FrostArmor'
+visual = 116
+aura_description = "Movement slowed by $s1%."
+school = "frost"
+cast_time_ms = 2000
+cooldown_ms = 4000
+range_max = 30.0
+chance = 100
+first_cast_ms = 2000
+effect = { kind = "snare", pct = 30, duration_ms = 4000 }
+
+# The Corrupted Brother's self-heal (#474), kept_heal's numbers (visual 2050): 15% of max health
+# after a 3 s cast, every 20 s, only under 50% health.
+[[spell]]
+key = "brother_heal"
+spell_id = 1900039
+name = "Lesser Heal"
+icon = 'Interface\Icons\Spell_Holy_LesserHeal'
+visual = 2050
+school = "holy"
+cast_time_ms = 3000
+cooldown_ms = 20000
+range_max = 0.0
+chance = 100
+below_health_pct = 50
+effect = { kind = "heal", pct_max_health = 15 }

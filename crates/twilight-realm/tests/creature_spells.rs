@@ -3,7 +3,7 @@
 
 mod common;
 
-use benilla_protocol::messages::{MonsterMoveFacing, PeriodicAuraLog, PeriodicTick};
+use benilla_protocol::messages::{MonsterMoveFacing, PeriodicAuraLog, PeriodicTick, SpeedKind};
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight;
 use common::*;
@@ -92,6 +92,77 @@ fn a_caster_starts_its_cast_and_the_curse_ticks_shadow_damage_after_it() {
         let due = goes[0] + 3.0 * (n + 1) as f32;
         assert!((t - due).abs() < 0.15, "{ticks:?}");
     }
+}
+
+/// The frost school in a damage log.
+const FROST: u32 = 4;
+
+#[test]
+fn a_frost_row_parses_and_its_ticks_lose_nothing_to_armour() {
+    let key = "frostbolt_vurx";
+    let realm = Realm::with_seed(1).with_creature_spells(VILE_FAMILIAR, &[key]);
+    // The warrior wears armour. The familiar dies soon after its first cast and the curse runs
+    // on, as Corruption's does above.
+    let (mut realm, me, mob) = warrior(realm, 60);
+    stand_by(&mut realm, mob.1);
+    run(&mut realm, 2.2);
+    realm.handle(RealmCommand::AttackSwing { guid: mob.0 });
+    let events = run(&mut realm, 12.0);
+    let id = creature_spell(key);
+    let ticks: Vec<(u32, u32)> = events
+        .iter()
+        .filter_map(|(_, e)| match e {
+            SessionEvent::PeriodicAuraLog(PeriodicAuraLog {
+                target,
+                spell_id,
+                ticks,
+                ..
+            }) if *target == me && *spell_id == id => match ticks[..] {
+                [PeriodicTick::Damage { amount, school, .. }] => Some((school, amount)),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect();
+    // 2 ticks of 12 frost damage, whole: armour takes nothing off a magic school.
+    assert_eq!(ticks, [(FROST, 12), (FROST, 12)]);
+}
+
+/// A run's speed, unslowed.
+const RUN_SPEED: f32 = 7.0;
+
+#[test]
+fn frostbolt_then_its_chill_leave_both_auras_and_a_run_thirty_percent_slower() {
+    let keys = ["frostbolt_vurx", "frost_chill_vurx"];
+    let (bolt, chill) = (creature_spell(keys[0]), creature_spell(keys[1]));
+    let realm = Realm::with_seed(1).with_creature_spells(VILE_FAMILIAR, &keys);
+    let (mut realm, me, mob, mut view) = warrior_seen(realm, LEVEL);
+    stand_by(&mut realm, mob.1);
+    let (mut speeds, mut bolt_first) = (Vec::new(), false);
+    for _ in 0..100 {
+        realm.tick(0.1, &FlatGround);
+        speeds.extend(view.drain(&mut realm).into_iter().filter_map(|e| match e {
+            SessionEvent::ForceSpeedChange {
+                guid,
+                kind: SpeedKind::Run,
+                speed,
+                ..
+            } if guid == me => Some(speed),
+            _ => None,
+        }));
+        let (bolted, chilled) = (
+            view.aura(me, bolt).is_some(),
+            view.aura(me, chill).is_some(),
+        );
+        bolt_first |= bolted && !chilled;
+        if bolted && chilled {
+            assert!(bolt_first, "the Frostbolt lands before its chill");
+            let slowed = *speeds.last().expect("the chill sets a run speed");
+            assert!((slowed - RUN_SPEED * 0.7).abs() < 1e-3, "{speeds:?}");
+            return;
+        }
+    }
+    panic!("never wore both: {speeds:?}");
 }
 
 #[test]

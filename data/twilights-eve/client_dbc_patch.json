@@ -13021,6 +13021,110 @@
    }
   },
   {
+   "spell_id": 1900036,
+   "creature": "frost_armor_vurx",
+   "fields": {
+    "name": "Frost Armor",
+    "icon": "Interface\\Icons\\Spell_Frost_FrostArmor02",
+    "school": 4,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 50,
+      "per_level": 0,
+      "aura": 69
+     }
+    ],
+    "aura_description": "Absorbs $s1 damage.",
+    "visual": 124,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 6
+   }
+  },
+  {
+   "spell_id": 1900037,
+   "creature": "frostbolt_vurx",
+   "fields": {
+    "name": "Frostbolt",
+    "icon": "Interface\\Icons\\Spell_Frost_FrostBolt02",
+    "school": 4,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 12,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 2000
+     }
+    ],
+    "aura_description": "$s1 Frost damage every $t1 seconds.",
+    "visual": 13,
+    "speed": 28.0,
+    "range_index": 4,
+    "cast_time_index": 5,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1900038,
+   "creature": "frost_chill_vurx",
+   "fields": {
+    "name": "Frostbolt Chill",
+    "icon": "Interface\\Icons\\Spell_Frost_FrostArmor",
+    "school": 4,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": -30,
+      "per_level": 0,
+      "aura": 33
+     }
+    ],
+    "aura_description": "Movement slowed by $s1%.",
+    "visual": 13,
+    "speed": 28.0,
+    "range_index": 4,
+    "cast_time_index": 5,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1900039,
+   "creature": "brother_heal",
+   "fields": {
+    "name": "Lesser Heal",
+    "icon": "Interface\\Icons\\Spell_Holy_LesserHeal",
+    "school": 1,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 10,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 285,
+    "range_index": 1,
+    "cast_time_index": 14
+   }
+  },
+  {
    "spell_id": 7620,
    "fields": {
     "equipped_item_class": -1,

@@ -24,9 +24,8 @@ const NEALS_AT: [f32; 3] = [-8887.8, -153.5, 82.0];
 const IDOL: u32 = 980001;
 const THE_IDOL_IN_THE_DEEP: u32 = 94001;
 const INTO_THE_ABBEY: u32 = 94002;
-/// The Creature Spell Vurx casts.
-static CORRUPTION_SPELL: std::sync::LazyLock<u32> =
-    std::sync::LazyLock::new(|| creature_spell("corruption_creature"));
+/// Vurx's kit (#474), in the order he tries them.
+const VURX_SPELLS: [&str; 3] = ["frost_armor_vurx", "frostbolt_vurx", "frost_chill_vurx"];
 /// The Stone Gnoll Hammer (item level 9): a level 8's weapon.
 const HAMMER: u32 = 781;
 /// The starting Worn Shortsword it replaces.
@@ -164,12 +163,28 @@ fn the_cultists_and_their_elite_load() {
 }
 
 #[test]
-fn vurx_casts_corruption() {
+fn the_initiate_casts_shadow_bolt_and_vurx_frost() {
+    assert_eq!(mob_spells(INITIATE), ["shadow_bolt_creature"]);
+    assert_eq!(
+        mob_template(INITIATE)["unit_class"].as_str(),
+        Some("warrior")
+    );
+    assert_eq!(mob_spells(VURX_ENTRY), VURX_SPELLS);
+}
+
+#[test]
+fn vurx_casts_frost_armor_frostbolt_and_its_chill() {
     let (mut realm, me) = pilgrim(8, 1);
     let (_, events) = fight_vurx(&mut realm, me);
-    assert!(events.iter().any(|e| matches!(e,
-        SessionEvent::SpellStart { caster, spell_id, .. }
-            if *caster == VURX && *spell_id == *CORRUPTION_SPELL)));
+    for key in VURX_SPELLS {
+        let id = creature_spell(key);
+        assert!(
+            events.iter().any(|e| matches!(e,
+                SessionEvent::SpellGo { caster, spell_id, .. }
+                    if *caster == VURX && *spell_id == id)),
+            "Vurx casts {key}"
+        );
+    }
 }
 
 #[test]
