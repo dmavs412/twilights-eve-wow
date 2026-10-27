@@ -67,16 +67,29 @@ One icon per product type (ADR 0025): the five Strength Steps of a potion share 
 the bands and qualities of a meal recipe share the recipe's icon. The tickets write the exact
 list from the recipe rows; these are the spec's counts.
 
-### Item icons, 128 x 128 PNG
+### Alchemy item icons, painted
+
+Davis painted all 47 alchemy icons. They are 128 x 128 PNGs in `data/twilights-eve/art/`,
+waiting for the alchemy item rows. `<p>` is one of `arcane`, `calming`, `fortifying`,
+`restorative`, `toxic`, `volatile`.
+
+| Group | Files | Painting |
+|---|---|---|
+| Potions | `potion_<p>.png` | a round bottle; Volatile is a lit bomb |
+| Weapon oils | `oil_<p>.png` | an open tin with a rag |
+| Tinctures | `tincture_<p>.png` | a dropper bottle |
+| Essences | `essence_<p>.png` | a crystal in an iron cage |
+| Flasks of two Essences | `flask_<p1>_<p2>.png`, the two in alphabetical order | a gold flask, one colour per Essence |
+| Flasks of one Essence twice | `flask_<p>_<p>.png` | a tall bottle with a gem stopper |
+| Fish Oil, Murky Sludge | `fish_oil.png`, `murky_sludge.png` | |
+
+Each Property has one colour: Arcane purple, Calming cyan, Fortifying amber, Restorative red,
+Toxic green, Volatile orange.
+
+### Cooking item icons, 128 x 128 PNG
 
 | Group | Count | Notes |
 |---|---|---|
-| Potions | 6 | one per Property |
-| Weapon oils | 6 | one per Property |
-| Tinctures | 6 | one per Property |
-| Essences | 6 | one per Property |
-| Flasks | 21 | one per Essence pair |
-| Fish Oil, Murky Sludge | 2 | |
 | Meals | about 60 | one per recipe: category recipes and the 30 named fish dishes |
 | Legendary meals | 19 | 16 Legendary Fish, 3 legendary plants |
 | Cut bait | 22 | one per common and uncommon fish |
