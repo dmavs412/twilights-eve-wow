@@ -14816,6 +14816,191 @@
    "id": 995022,
    "base": 18097,
    "icon": "Interface\\Icons\\Twilight\\nightcrawlers"
+  },
+  {
+   "id": 995023,
+   "base": 19492,
+   "icon": "Interface\\Icons\\Twilight\\dandelion_greens"
+  },
+  {
+   "id": 995024,
+   "base": 1196,
+   "icon": "Interface\\Icons\\Twilight\\wild_onion"
+  },
+  {
+   "id": 995025,
+   "base": 21203,
+   "icon": "Interface\\Icons\\Twilight\\blackberries"
+  },
+  {
+   "id": 995026,
+   "base": 15852,
+   "icon": "Interface\\Icons\\Twilight\\elwynn_chanterelle"
+  },
+  {
+   "id": 995027,
+   "base": 2641,
+   "icon": "Interface\\Icons\\Twilight\\hazelnuts"
+  },
+  {
+   "id": 995028,
+   "base": 21904,
+   "icon": "Interface\\Icons\\Twilight\\wild_strawberries"
+  },
+  {
+   "id": 995029,
+   "base": 19493,
+   "icon": "Interface\\Icons\\Twilight\\wild_thyme"
+  },
+  {
+   "id": 995030,
+   "base": 7381,
+   "icon": "Interface\\Icons\\Twilight\\sweetroot"
+  },
+  {
+   "id": 995031,
+   "base": 19494,
+   "icon": "Interface\\Icons\\Twilight\\moonpetal"
+  },
+  {
+   "id": 995032,
+   "base": 1264,
+   "icon": "Interface\\Icons\\Twilight\\wild_garlic"
+  },
+  {
+   "id": 995033,
+   "base": 21905,
+   "icon": "Interface\\Icons\\Twilight\\redridge_pepper"
+  },
+  {
+   "id": 995034,
+   "base": 19497,
+   "icon": "Interface\\Icons\\Twilight\\rock_sage"
+  },
+  {
+   "id": 995035,
+   "base": 19496,
+   "icon": "Interface\\Icons\\Twilight\\lakeshore_watercress"
+  },
+  {
+   "id": 995036,
+   "base": 15853,
+   "icon": "Interface\\Icons\\Twilight\\redridge_morel"
+  },
+  {
+   "id": 995037,
+   "base": 15855,
+   "icon": "Interface\\Icons\\Twilight\\hill_truffle"
+  },
+  {
+   "id": 995038,
+   "base": 19498,
+   "icon": "Interface\\Icons\\Twilight\\emberbloom"
+  },
+  {
+   "id": 995039,
+   "base": 15854,
+   "icon": "Interface\\Icons\\Twilight\\ghostcap"
+  },
+  {
+   "id": 995040,
+   "base": 2965,
+   "icon": "Interface\\Icons\\Twilight\\ravens_bramble"
+  },
+  {
+   "id": 995041,
+   "base": 15856,
+   "icon": "Interface\\Icons\\Twilight\\black_morel"
+  },
+  {
+   "id": 995042,
+   "base": 18087,
+   "icon": "Interface\\Icons\\Twilight\\duskroot"
+  },
+  {
+   "id": 995043,
+   "base": 16296,
+   "icon": "Interface\\Icons\\Twilight\\gravecap"
+  },
+  {
+   "id": 995044,
+   "base": 15857,
+   "icon": "Interface\\Icons\\Twilight\\black_truffle"
+  },
+  {
+   "id": 995045,
+   "base": 24693,
+   "icon": "Interface\\Icons\\Twilight\\widows_lily"
+  },
+  {
+   "id": 995046,
+   "base": 18079,
+   "icon": "Interface\\Icons\\Twilight\\wild_honeycomb"
+  },
+  {
+   "id": 995047,
+   "base": 32432,
+   "icon": "Interface\\Icons\\Twilight\\amber_sap"
+  },
+  {
+   "id": 995048,
+   "base": 18046,
+   "icon": "Interface\\Icons\\Twilight\\birds_nest"
+  },
+  {
+   "id": 995049,
+   "base": 1285,
+   "icon": "Interface\\Icons\\Twilight\\lost_coin_purse"
+  },
+  {
+   "id": 995050,
+   "base": 3257,
+   "icon": "Interface\\Icons\\Twilight\\herbalists_sickle"
+  },
+  {
+   "id": 995051,
+   "base": 8115,
+   "icon": "Interface\\Icons\\Twilight\\herbalists_trowel"
+  },
+  {
+   "id": 995052,
+   "base": 7841,
+   "icon": "Interface\\Icons\\Twilight\\herbalists_shears"
+  },
+  {
+   "id": 995053,
+   "base": 18057,
+   "icon": "Interface\\Icons\\Twilight\\thyme_tea"
+  },
+  {
+   "id": 995054,
+   "base": 15733,
+   "icon": "Interface\\Icons\\Twilight\\elixir_of_herb_sight"
+  },
+  {
+   "id": 995055,
+   "base": 926,
+   "icon": "Interface\\Icons\\Twilight\\thorn_salve"
+  },
+  {
+   "id": 995056,
+   "base": 15771,
+   "icon": "Interface\\Icons\\Twilight\\bloom_draught"
+  },
+  {
+   "id": 995057,
+   "base": 1443,
+   "icon": "Interface\\Icons\\Twilight\\weedcutters_twine"
+  },
+  {
+   "id": 995058,
+   "base": 898,
+   "icon": "Interface\\Icons\\Twilight\\foragers_charm"
+  },
+  {
+   "id": 995059,
+   "base": 29434,
+   "icon": "Interface\\Icons\\Twilight\\moonwater"
   }
  ]
 }

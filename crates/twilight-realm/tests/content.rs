@@ -931,6 +931,35 @@ fn the_painted_items_carry_icons() {
     }
 }
 
+/// Every herbalism item outside the stock herbs wears Davis's painted icon: a synthetic display,
+/// an `icon` name and the stock display it borrowed as `icon_base`.
+#[test]
+fn the_painted_herb_items_carry_icons() {
+    let herbs = toml_table("herbs.toml");
+    let entries = (961001..=961027)
+        .chain(961101..=961103)
+        .chain(961201..=961207)
+        .collect::<Vec<i64>>();
+    assert_eq!(entries.len(), 37);
+    let items = herbs["item"].as_array().unwrap();
+    for entry in entries {
+        let row = items
+            .iter()
+            .find(|r| r["entry"].as_integer() == Some(entry))
+            .unwrap_or_else(|| panic!("no item {entry}"));
+        let display = row["display_id"].as_integer().unwrap();
+        assert!(display >= 995000, "{entry} display_id {display}");
+        assert!(
+            row["icon"].as_str().is_some_and(|i| !i.is_empty()),
+            "{entry} icon"
+        );
+        assert!(
+            row["icon_base"].as_integer().is_some_and(|b| b > 0),
+            "{entry} icon_base"
+        );
+    }
+}
+
 /// Every pool fish has a `[[fish]]` row, and the four weight fish are in no pool.
 #[test]
 fn every_fishing_pool_fish_has_a_fish_row() {

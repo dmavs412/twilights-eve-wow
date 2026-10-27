@@ -19,64 +19,7 @@ spec #395). Until it is painted, an item borrows a stock icon that no other item
 
 ## Herbalism (spec #435)
 
-### Item icons, 128 x 128 PNG, 37 items
-
-Each one is a row in `crates/twilight-realm/content/herbs.toml`. The name in brackets is the
-`icon` name to paint it under.
-
-Forage and finds:
-
-| Entry | Item | Icon name |
-|---|---|---|
-| 961001 | Dandelion Greens | `dandelion_greens` |
-| 961002 | Wild Onion | `wild_onion` |
-| 961003 | Blackberries | `blackberries` |
-| 961004 | Elwynn Chanterelle | `elwynn_chanterelle` |
-| 961005 | Hazelnuts | `hazelnuts` |
-| 961006 | Wild Strawberries | `wild_strawberries` |
-| 961007 | Wild Thyme | `wild_thyme` |
-| 961008 | Sweetroot | `sweetroot` |
-| 961009 | Moonpetal (legendary) | `moonpetal` |
-| 961010 | Wild Garlic | `wild_garlic` |
-| 961011 | Redridge Pepper | `redridge_pepper` |
-| 961012 | Rock Sage | `rock_sage` |
-| 961013 | Lakeshore Watercress | `lakeshore_watercress` |
-| 961014 | Redridge Morel | `redridge_morel` |
-| 961015 | Hill Truffle | `hill_truffle` |
-| 961016 | Emberbloom (legendary) | `emberbloom` |
-| 961017 | Ghostcap | `ghostcap` |
-| 961018 | Raven's Bramble | `ravens_bramble` |
-| 961019 | Black Morel | `black_morel` |
-| 961020 | Duskroot | `duskroot` |
-| 961021 | Gravecap | `gravecap` |
-| 961022 | Black Truffle | `black_truffle` |
-| 961023 | Widow's Lily (legendary) | `widows_lily` |
-| 961024 | Wild Honeycomb | `wild_honeycomb` |
-| 961025 | Amber Sap | `amber_sap` |
-| 961026 | Bird's Nest | `birds_nest` |
-| 961027 | Lost Coin Purse | `lost_coin_purse` |
-
-Tools:
-
-| Entry | Item | Icon name |
-|---|---|---|
-| 961101 | Herbalist's Sickle | `herbalists_sickle` |
-| 961102 | Herbalist's Trowel | `herbalists_trowel` |
-| 961103 | Herbalist's Shears | `herbalists_shears` |
-
-Consumables:
-
-| Entry | Item | Icon name |
-|---|---|---|
-| 961201 | Thyme Tea | `thyme_tea` |
-| 961202 | Elixir of Herb Sight | `elixir_of_herb_sight` |
-| 961203 | Thorn Salve | `thorn_salve` |
-| 961204 | Bloom Draught | `bloom_draught` |
-| 961205 | Weedcutter's Twine | `weedcutters_twine` |
-| 961206 | Forager's Charm | `foragers_charm` |
-| 961207 | Moonwater | `moonwater` |
-
-The eleven stock herbs (Peacebloom, Silverleaf, Earthroot, Mageroyal, Briarthorn, Swiftthistle,
+The 37 herbalism items wear Davis's painted icons (2026-10-27). The eleven stock herbs (Peacebloom, Silverleaf, Earthroot, Mageroyal, Briarthorn, Swiftthistle,
 Stranglekelp, Bruiseweed, Wild Steelbloom, Grave Moss, Kingsblood) keep their stock icons and
 need no art.
 
