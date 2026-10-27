@@ -86,14 +86,82 @@ waiting for the alchemy item rows. `<p>` is one of `arcane`, `calming`, `fortify
 Each Property has one colour: Arcane purple, Calming cyan, Fortifying amber, Restorative red,
 Toxic green, Volatile orange.
 
-### Cooking item icons, 128 x 128 PNG
+### Cooking item icons, painted
 
-| Group | Count | Notes |
-|---|---|---|
-| Meals | about 60 | one per recipe: category recipes and the 30 named fish dishes |
-| Legendary meals | 19 | 16 Legendary Fish, 3 legendary plants |
-| Cut bait | 22 | one per common and uncommon fish |
-| Hearty Mush | 1 | |
+Davis painted 72 cooking icons: 22 cut baits and 50 meals. They are 128 x 128 PNGs in
+`data/twilights-eve/art/`, waiting for the cooking item rows. The 50 meals are the 30 named fish
+dishes, the 16 legendary meals, the 3 legendary plant meals and Hearty Mush. No category recipe
+has an icon yet.
+
+**Cut baits**, `cut_<fish>.png`, one per common and uncommon fish: `brilliant_smallfish`,
+`bristle_whisker_catfish`, `canal_eel`, `darkshire_bleak`, `everstill_perch`, `goldshire_perch`,
+`gravemoss_loach`, `harbour_herring`, `hushed_bank_grayling`, `ironjaw_pike`, `lakeshire_sunfish`,
+`longjaw_mud_snapper`, `millrace_trout`, `mirror_lake_shiner`, `mithril_head_trout`,
+`northshire_brook_trout`, `oily_blackmouth`, `rainbow_fin_albacore`, `ravenwood_chub`,
+`redridge_bluegill`, `slitherskin_mackerel`, `stonefield_carp`. The paintings arrived in this
+order, and each skin matches its fish.
+
+**Named meals.** The painting shows which meal it is.
+
+| File | Painting |
+|---|---|
+| `hearty_mush.png` | a plain bowl of mush |
+| `meal_emberbloom.png` | chili with a red flower in a gold-trimmed bowl |
+| `meal_moonpetal.png` | a petal tart with a crescent moon |
+| `meal_widows_lily.png` | a teacup with a white lily |
+| `meal_blackrock_bloodfin.png` | a red fin in an iron skillet |
+| `meal_brother_bass.png` | a fish with a pastry cross |
+| `meal_gnoll_tooth_snapper.png` | a red fish with a tooth tied on |
+| `meal_moonless_muskie.png` | a dark fish on a dark plate with violets |
+| `meal_moonlit_gar.png` | a gar with lemons and blue flowers |
+| `meal_stitchjaw_eel.png` | a stew with a toothed jaw |
+| `meal_the_harbourmasters_eel.png` | an eel on a pie with an anchor |
+| `meal_the_lightscale.png` | a pale shining fish with white flowers |
+| `meal_the_millstone_carp.png` | a fish between millstones |
+| `meal_the_twilight_koi.png` | a purple fish on a crescent-moon stand |
+| `meal_worgfang_pike.png` | a fanged pike in a fang-trimmed bowl |
+
+**Unassigned meals**, `meal_01.png` to `meal_35.png`: the 30 named fish dishes and five legends
+(Bell-Toll Bream, Everstill Leviathan, Old Goldfin, Sorrowgill, Stockade Sucker). The cooking
+tickets pick each one's dish and rename the file.
+
+| File | Painting |
+|---|---|
+| `meal_01` | three fish on a skewer |
+| `meal_02` | a fish on a plate with lemons |
+| `meal_03` | four fish hung to dry |
+| `meal_04` | a fish in a silver bowl set with a blue gem (a legend?) |
+| `meal_05` | fish rolls on a gold plate |
+| `meal_06` | a pot with a fish head and fin |
+| `meal_07` | a pot of fish and vegetable stew |
+| `meal_08` | a fish stuffed through its mouth with potatoes |
+| `meal_09` | an orange fish in a skillet of green sauce |
+| `meal_10` | a fish under herb sprigs |
+| `meal_11` | a grilled fish steak |
+| `meal_12` | a roast fish with lemon and potatoes |
+| `meal_13` | a blackened fillet on a board |
+| `meal_14` | a pie with a fish head through the crust |
+| `meal_15` | a soup with a whole small fish |
+| `meal_16` | fish balls in a bowl |
+| `meal_17` | fried small fish in a paper cone (Brilliant Smallfish?) |
+| `meal_18` | purple and pink fish cubes with a violet garnish |
+| `meal_19` | a red fish stew |
+| `meal_20` | a soup in a knot-patterned bowl (a legend?) |
+| `meal_21` | an orange fish on leaves |
+| `meal_22` | translucent raw slices (Dreaming Glassfin?) |
+| `meal_23` | a grilled fillet on a plate |
+| `meal_24` | a golden fish with lemon (Old Goldfin?) |
+| `meal_25` | a fish with bread in a basket |
+| `meal_26` | a paper parcel tied with string |
+| `meal_27` | a pike head on a grill |
+| `meal_28` | a soup with striped blue skin pieces (Slitherskin Mackerel?) |
+| `meal_29` | a fillet on a big leaf |
+| `meal_30` | a fish steak with lemon |
+| `meal_31` | leaf-wrapped rice rolls |
+| `meal_32` | a salt-crusted fish on paper |
+| `meal_33` | pickled fish in a jar (Harbour Herring?) |
+| `meal_34` | a pale fish soup with cabbage |
+| `meal_35` | a braided pasty |
 
 ### Crafting window
 
