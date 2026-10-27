@@ -55,6 +55,14 @@ pub(crate) enum CreatureEffect {
     /// A self-cast: the caster gains a shield of `amount` that damage comes off first, for
     /// `duration_ms`.
     Absorb { amount: u32, duration_ms: u32 },
+    /// The target's armour is `amount` lower for each stack, never below 0. Each landing adds a
+    /// stack, up to `max_stacks`, and starts `duration_ms` over; when it runs out every stack
+    /// goes.
+    ArmorDebuff {
+        amount: u32,
+        max_stacks: u32,
+        duration_ms: u32,
+    },
 }
 
 impl CreatureEffect {

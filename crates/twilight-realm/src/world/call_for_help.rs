@@ -98,12 +98,13 @@ impl InWorld {
     }
 
     /// Makes each call for help that a creature's health has just reached, once per life: it
-    /// lives on the [`Mob`], which a Run's reset replaces.
+    /// lives on the [`Mob`], which a Run's reset replaces. A fleeing creature calls once its run
+    /// is over.
     pub(super) fn call_for_help(&mut self, host: &dyn Host, events: &mut Vec<SessionEvent>) {
         let content = mobs::content();
         let mut made = Vec::new();
         for mob in &mut self.mobs {
-            if mob.state != State::Engaged {
+            if mob.state != State::Engaged || mob.fleeing.is_some() {
                 continue;
             }
             let Some(spawn) = mob.spawn_row() else {

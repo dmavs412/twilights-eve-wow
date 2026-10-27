@@ -1793,6 +1793,8 @@ pub(super) fn buffed(stats: &CharacterStats, skills: &Skills) -> CharacterStats 
     let items_armor = s.armor.saturating_sub(2 * s.base[1]);
     s.armor += scaled(items_armor, skills.defense_pct(DefenseStat::ArmorItems)) - items_armor;
     s.armor -= s.armor * armor_loss_pct.min(100) / 100;
+    // A creature's sunder on the player.
+    s.armor = s.armor.saturating_sub(skills.armor_loss(skills.me));
     s.dodge_pct = (s.dodge_pct + f64::from(skills.dodge_pct())).min(100.0);
     s.parry_pct = (s.parry_pct + f64::from(skills.defense_pct(DefenseStat::Parry))).min(100.0);
     // Blocking takes a shield; the roll table never passes 100%.
@@ -5385,6 +5387,9 @@ impl InWorld {
                 AuraKind::Dodge { .. } | AuraKind::Defense { .. } => {
                     events.push(values(self.guid, &self.sheet_now()));
                 }
+                AuraKind::ArmorLoss { .. } if a.unit == self.guid => {
+                    events.push(values(self.guid, &self.sheet_now()));
+                }
                 AuraKind::MaxHealthPct(_) | AuraKind::DamagePct { .. } => {
                     // What was over the maximum goes with it.
                     let max = buffed(&self.player.stats, &self.skills).max_health;
@@ -5566,6 +5571,31 @@ impl InWorld {
             };
             self.skills.apply(aura, events);
             self.update_speed(self.guid, events);
+            return;
+        }
+        if let CreatureEffect::ArmorDebuff {
+            amount,
+            max_stacks,
+            duration_ms,
+        } = spell.effect
+        {
+            let aura = Aura {
+                unit: self.guid,
+                spell_id: spell.spell_id,
+                slot: 0,
+                level,
+                left: clock::secs(duration_ms),
+                period: 0.0,
+                next_tick: 0.0,
+                kind: AuraKind::ArmorLoss {
+                    amount,
+                    stacks: 1,
+                    max_stacks,
+                },
+                charges: 0,
+            };
+            self.skills.apply(aura, events);
+            events.push(values(self.guid, &self.sheet_now()));
             return;
         }
         let CreatureEffect::PeriodicDamage {

@@ -146,9 +146,8 @@ pub(crate) struct Template {
     /// The lines it says (#470).
     #[serde(default)]
     pub(crate) say: Option<Say>,
-    /// The health percent at which it runs from a fight.
+    /// The health percent at which it runs from a fight, once a fight (#472).
     #[serde(default)]
-    #[allow(dead_code)]
     pub(crate) flee_at_pct: Option<u32>,
     /// The anim emote it plays now and then while it stands idle.
     #[serde(default)]
@@ -166,7 +165,6 @@ pub(crate) struct Say {
     pub(crate) aggro_chance: u32,
     /// The line it says as it runs.
     #[serde(default)]
-    #[allow(dead_code)]
     pub(crate) flee: Option<String>,
 }
 
@@ -1239,6 +1237,19 @@ pub(crate) struct Mob {
     pub(crate) emote_in: Option<f32>,
     /// Its idle emote came due since the realm last looked.
     pub(crate) emote_due: bool,
+    /// The run from its target under way (#472); it stays engaged.
+    pub(crate) fleeing: Option<Flee>,
+    /// It has fled in this fight; leaving combat clears it.
+    pub(crate) fled: bool,
+    /// It began to flee since the realm last looked: its flee line is due.
+    pub(crate) flee_due: bool,
+}
+
+/// A creature's run from its target at low health: what is left of its time and its yards.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Flee {
+    pub(crate) secs_left: f32,
+    pub(crate) yards_left: f32,
 }
 
 /// A Bounty Hunter's tag: the player it was sent after, and their Bounty Rank when it came.
@@ -1380,6 +1391,9 @@ impl Mob {
             aggro_due: false,
             emote_in: None,
             emote_due: false,
+            fleeing: None,
+            fled: false,
+            flee_due: false,
         })
     }
 
@@ -1463,6 +1477,9 @@ impl Mob {
             aggro_due: false,
             emote_in: None,
             emote_due: false,
+            fleeing: None,
+            fled: false,
+            flee_due: false,
         }
     }
 

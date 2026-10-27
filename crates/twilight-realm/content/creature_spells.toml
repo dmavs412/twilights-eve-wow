@@ -46,7 +46,10 @@
 #                  character within radius yards of it takes tick damage of the school; it does
 #                  not follow anyone and outlasts its caster), or
 #                  absorb { amount, duration_ms } (a self-cast, range_max = 0: a shield that
-#                  damage comes off first and that ends early once amount is used up)
+#                  damage comes off first and that ends early once amount is used up), or
+#                  armor_debuff { amount, max_stacks, duration_ms } (each landing adds a stack, up
+#                  to max_stacks, and starts duration_ms over; the target's armour is amount
+#                  lower a stack, never below 0, until it runs out and every stack goes)
 
 # Corruption rank 1's look. Placeholders: 6 ticks of 10, 60 shadow damage over 18 s.
 [[spell]]
@@ -593,3 +596,19 @@ cooldown_ms = [5000, 9000]
 range_max = 5.0
 chance = 100
 effect = { kind = "hit", pct_of_swing = 150 }
+
+# The Kobold Laborer's sunder (#472). Looks like vanilla Sunder Armor (7386). Placeholders: 10 less
+# armour a stack, up to 3, for 30 s, instant, every 8 s.
+[[spell]]
+key = "sunder_kobold"
+spell_id = 1900034
+name = "Sunder Armor"
+icon = 'Interface\Icons\Ability_Warrior_Sunder'
+visual = 7386
+aura_description = "Armor reduced by $s1."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 8000
+range_max = 5.0
+chance = 100
+effect = { kind = "armor_debuff", amount = 10, max_stacks = 3, duration_ms = 30000 }

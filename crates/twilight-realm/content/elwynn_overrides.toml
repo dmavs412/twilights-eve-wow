@@ -847,10 +847,12 @@ orientation = 1.57
 # `entry`, each field only when given. `spells` replaces the template's. A kit whose entry has
 # no template fails the content load.
 
-# Kobold Vermin, Kobold Worker and Kobold Laborer: vanilla's aggro line.
+# Kobold Vermin, Kobold Worker and Kobold Laborer: vanilla's aggro line. The Vermin and the
+# Laborer run at 15% health (#472), and the Laborer sunders armour.
 [[kit]]
 entry = 6
-say = { aggro = ["You no take candle!"], aggro_chance = 30 }
+say = { aggro = ["You no take candle!"], aggro_chance = 30, flee = "Yiieeeee! Me run!" }
+flee_at_pct = 15
 
 [[kit]]
 entry = 257
@@ -859,7 +861,9 @@ say = { aggro = ["You no take candle!"], aggro_chance = 30 }
 
 [[kit]]
 entry = 80
-say = { aggro = ["You no take candle!"], aggro_chance = 30 }
+spells = ["sunder_kobold"]
+say = { aggro = ["You no take candle!"], aggro_chance = 30, flee = "Yiieeeee! Me run!" }
+flee_at_pct = 15
 
 # Defias Thug: the Brotherhood's lines, and talk (emote 1) while it stands idle.
 [[kit]]

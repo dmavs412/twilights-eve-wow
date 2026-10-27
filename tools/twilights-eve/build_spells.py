@@ -128,7 +128,8 @@ DUMMY_EFFECT = (3, 0)
 # The same numbers for a Creature Spell's effect kinds: a curse, a heal, a snare.
 CREATURE_EFFECTS_OF = {"periodic_damage": (6, 3), "heal": (10, 0), "snare": (6, 33), "charge": DUMMY_EFFECT,
                        "gaze": DUMMY_EFFECT, "nova": DUMMY_EFFECT, "fear": (6, 7), "root": (6, 26),
-                       "ground_patch": DUMMY_EFFECT, "absorb": (6, 69), "hit": DUMMY_EFFECT}
+                       "ground_patch": DUMMY_EFFECT, "absorb": (6, 69), "hit": DUMMY_EFFECT,
+                       "armor_debuff": (6, 22)}
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms",
@@ -384,6 +385,10 @@ def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], 
             row_effect["base"] = -effect["pct"]
         elif effect["kind"] == "absorb":
             row_effect["base"] = effect["amount"]
+        elif effect["kind"] == "armor_debuff":
+            # SPELL_AURA_MOD_RESISTANCE on armour (school mask 1), as vanilla Sunder Armor.
+            row_effect["base"] = -effect["amount"]
+            row_effect["misc_value"] = 1
         fields = {"name": spell["name"], "icon": icon_path(spell["icon"], art, art_dir, where),
                   "school": SCHOOLS.index(one_of(spell["school"], SCHOOLS, where, "school")),
                   "visual_spell": spell["visual"],

@@ -315,3 +315,81 @@ fn an_absorb_shield_goes_up_on_the_caster_for_its_duration() {
         "10 s of shield: {up} to {down}"
     );
 }
+
+/// `UNIT_FIELD_RESISTANCES`, whose first is armour.
+const UNIT_FIELD_RESISTANCES: u16 = 155;
+/// Far from Elwynn's creatures, so nothing fights the character there.
+const NOWHERE: [f32; 3] = [-5000.0, -5000.0, 47.2];
+
+#[test]
+fn an_armor_debuff_stacks_to_its_most_and_all_of_it_goes_when_it_runs_out() {
+    let sunder = creature_spell("sunder_kobold");
+    // The fourth cast lands, then the character leaves for somewhere no creature stands, where
+    // the debuff runs out.
+    let mut left_at = None;
+    let f = fight("sunder_kobold", &[EXPOSED], 66.0, |p, at| {
+        let casts = p
+            .seen(0)
+            .iter()
+            .filter(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == sunder))
+            .count();
+        if casts == 4 && left_at.is_none() {
+            left_at = Some(at);
+            p.go(0, NOWHERE, 0.0);
+        }
+    });
+    let left_at = left_at.expect("four casts before the fight ends");
+    let guid = f.party.guids[0];
+    // The character's armour as each create or update said it, with the time.
+    let armor: Vec<(f32, u32)> = f
+        .log
+        .iter()
+        .filter(|s| s.player == 0)
+        .filter_map(|s| match &s.event {
+            SessionEvent::ObjectCreate {
+                guid: g, fields, ..
+            }
+            | SessionEvent::ObjectValues { guid: g, fields }
+                if *g == guid =>
+            {
+                fields
+                    .raw_fields()
+                    .find_map(|(field, v)| (field == UNIT_FIELD_RESISTANCES).then_some((s.at, v)))
+            }
+            _ => None,
+        })
+        .collect();
+    let gos: Vec<f32> = f
+        .of(0)
+        .filter(
+            |s| matches!(&s.event, SessionEvent::SpellGo { spell_id, .. } if *spell_id == sunder),
+        )
+        .map(|s| s.at)
+        .collect();
+    assert_eq!(gos.len(), 4, "four casts and no more: {gos:?}");
+    let at = |t: f32| {
+        armor
+            .iter()
+            .rev()
+            .find(|(at, _)| *at <= t)
+            .map(|&(_, v)| v)
+            .unwrap_or_else(|| panic!("no armour sent by {t}: {armor:?}"))
+    };
+    // What the first stack took away, the expiry gives back.
+    let base = at(gos[0] + 0.05) + 10;
+    for (n, &go) in gos.iter().enumerate() {
+        let lost = 10 * (n as u32 + 1).min(3);
+        assert_eq!(
+            at(go + 0.05),
+            base - lost,
+            "after cast {}: {armor:?}",
+            n + 1
+        );
+    }
+    // 30 s after the last cast, every stack goes at once.
+    let last = gos[3];
+    assert!(left_at < last + 1.0);
+    assert!(!died(f.party.seen(0), guid), "alive to the end");
+    assert_eq!(at(last + 29.8), base - 30, "{armor:?}");
+    assert_eq!(at(last + 30.3), base, "{armor:?}");
+}

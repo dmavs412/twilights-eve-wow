@@ -35,6 +35,7 @@ mod discovery;
 mod dungeon;
 mod fear;
 pub(crate) mod fishing;
+mod flee;
 mod food;
 mod ground;
 pub(crate) mod herbalism;
@@ -806,6 +807,7 @@ impl InWorld {
         self.patch_tick(dt);
         // A next-cast buff that ran out puts the client's cast bar back.
         self.sync_next_cast_mods(c, events);
+        self.start_flees(events);
         self.call_for_help(host, events);
         self.timed_calls(host, events);
         self.update_aura_states(events);
@@ -1228,6 +1230,20 @@ impl InWorld {
                     return;
                 }
                 mob.engaged_secs += dt;
+                // Running from its target at low health: no swing, no cast and no chase.
+                if mob.fleeing.is_some() {
+                    let from = if mob.target == self.guid {
+                        me
+                    } else {
+                        self.others
+                            .iter()
+                            .find(|o| o.0 == mob.target)
+                            .map_or(me, |o| o.1)
+                    };
+                    let held = rooted || self.skills.stunned(mob.guid);
+                    flee::flee_step(mob, from, dt, map, host, held, events);
+                    return;
+                }
                 if self.skills.stunned(mob.guid) {
                     interrupt_cast(mob, events);
                     return;

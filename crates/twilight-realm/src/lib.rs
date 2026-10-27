@@ -729,6 +729,21 @@ impl Realm {
         self
     }
 
+    /// Sets creature `guid`'s health to `pct` percent of its maximum, wherever it is: a test
+    /// seam, so a script can bring a creature to a health threshold without dice deciding the
+    /// swing that crosses it. The clients learn of it from the creature's next health update.
+    pub fn set_creature_health_pct(&mut self, guid: u64, pct: u32) {
+        self.give_back();
+        let shards = self.shards.values_mut().flat_map(|s| s.mobs.iter_mut());
+        let worlds = std::iter::once(&mut self.world)
+            .chain(self.parked.iter_mut().map(|(_, s)| &mut s.world))
+            .flatten()
+            .flat_map(|w| w.mobs.iter_mut());
+        for mob in shards.chain(worlds).filter(|m| m.guid == guid) {
+            mob.health = (mob.stats.max_health * pct / 100).max(1);
+        }
+    }
+
     /// Sets the wall clock to `unix_ms`, milliseconds since the Unix epoch. Ticks advance it in
     /// between; a host without one leaves it running from 0. An item's cooldown runs on it, so
     /// the time between two sessions counts.

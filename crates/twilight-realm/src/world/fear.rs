@@ -166,7 +166,13 @@ impl InWorld {
 /// Where a run of up to `yards` from `start` along `heading` ends: on the ground, short of any
 /// wall, and short of a drop or a rise too sharp to walk. Where the host has no ground loaded the
 /// run keeps its height.
-fn flee_to(map: u32, host: &dyn Host, start: [f32; 3], heading: f32, yards: f32) -> [f32; 3] {
+pub(super) fn flee_to(
+    map: u32,
+    host: &dyn Host,
+    start: [f32; 3],
+    heading: f32,
+    yards: f32,
+) -> [f32; 3] {
     let (dx, dy) = (heading.cos(), heading.sin());
     let mut at = start;
     let mut gone = 0.0;

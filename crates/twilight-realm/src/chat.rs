@@ -250,6 +250,21 @@ fn due_speech(mob: &mut Mob, rng: &mut Rng) -> Vec<(SessionEvent, f32)> {
             }
         }
     }
+    if std::mem::take(&mut mob.flee_due) {
+        if let Some(text) = mob.template.say.as_ref().and_then(|s| s.flee.clone()) {
+            let line = SessionEvent::Chat(ChatMessage {
+                chat_type: m::CHAT_MSG_MONSTER_SAY,
+                language: LANGUAGE_UNIVERSAL,
+                sender_guid: mob.guid,
+                target_guid: 0,
+                sender_name: Some(mob.template.name.clone()),
+                channel: None,
+                text,
+                chat_tag: 0,
+            });
+            out.push((line, SAY_YD));
+        }
+    }
     if std::mem::take(&mut mob.emote_due) {
         if let Some(e) = &mob.template.emote_ooc {
             let emote = SessionEvent::Emote {
