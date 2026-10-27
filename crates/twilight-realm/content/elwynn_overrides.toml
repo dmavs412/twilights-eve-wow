@@ -854,6 +854,7 @@ say = { aggro = ["You no take candle!"], aggro_chance = 30 }
 
 [[kit]]
 entry = 257
+spells = ["throw_kobold"]
 say = { aggro = ["You no take candle!"], aggro_chance = 30 }
 
 [[kit]]
@@ -863,5 +864,20 @@ say = { aggro = ["You no take candle!"], aggro_chance = 30 }
 # Defias Thug: the Brotherhood's lines, and talk (emote 1) while it stands idle.
 [[kit]]
 entry = 38
+spells = ["rend_thug"]
 say = { aggro = ["Ah, a chance to use this freshly sharpened blade.", "The Brotherhood will not tolerate your actions.", "Feel the power of the Brotherhood!"], aggro_chance = 30 }
 emote_ooc = { emote = 1, every_ms = [2000, 10000] }
+
+# Young Wolf and Timber Wolf (#471): vanilla's Bite and Rend.
+[[kit]]
+entry = 299
+spells = ["bite_wolf"]
+
+[[kit]]
+entry = 69
+spells = ["rend_wolf"]
+
+# Defias Cutpurse (#471): vanilla's Backstab.
+[[kit]]
+entry = 94
+spells = ["backstab_cutpurse"]

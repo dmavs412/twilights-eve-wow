@@ -1849,8 +1849,10 @@ fn drop_cast(
 /// Crowd control lands on `mob`: its Creature Spell under way is cancelled and goes on cooldown.
 fn interrupt_cast(mob: &mut Mob, events: &mut Vec<SessionEvent>) {
     if let Some(spell) = drop_cast(mob, events) {
-        mob.spell_cooldowns
-            .push((spell.key.as_str(), clock::secs(spell.cooldown_ms)));
+        mob.spell_cooldowns.push((
+            spell.key.as_str(),
+            clock::secs(spell.cooldown_ms.shortest()),
+        ));
     }
 }
 

@@ -6,6 +6,7 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 
+use crate::rng::Rng;
 use crate::rules::school::School;
 use crate::rules::skills::Linear;
 
@@ -27,6 +28,10 @@ pub(crate) enum CreatureEffect {
     /// The caster runs to its target at `speed_yd_s` along the floor, then lands one weapon hit
     /// worth `bonus_pct` percent more than a white swing.
     Charge { speed_yd_s: f32, bonus_pct: u32 },
+    /// When the cast lands, one blow at the character the creature fights, rolled on the table a
+    /// swing uses, worth `pct_of_swing` percent of the caster's average swing. It takes the place
+    /// of the next swing.
+    Hit { pct_of_swing: u32 },
     /// When the cast lands, every character in the caster's Phase within `radius` yards takes
     /// `damage` of the spell's school, unless a cover pillar stands in the line to the caster.
     Gaze { damage: u32, radius: f32 },
@@ -59,6 +64,32 @@ impl CreatureEffect {
     }
 }
 
+/// A Creature Spell's cooldown: `15000`, or `[5000, 9000]`, rolled anew at each cast's end.
+#[derive(Deserialize, Debug, Clone, Copy)]
+#[serde(untagged)]
+pub(crate) enum Cooldown {
+    Fixed(u32),
+    Range([u32; 2]),
+}
+
+impl Cooldown {
+    /// Milliseconds until the spell is ready again, after a cast that went off.
+    pub(crate) fn rolled(self, rng: &mut Rng) -> u32 {
+        match self {
+            Self::Fixed(ms) => ms,
+            Self::Range([lo, hi]) => rng.urand(lo, hi),
+        }
+    }
+
+    /// Milliseconds until the spell is ready again, after a cast that was cut short.
+    pub(crate) fn shortest(self) -> u32 {
+        match self {
+            Self::Fixed(ms) => ms,
+            Self::Range([lo, _]) => lo,
+        }
+    }
+}
+
 /// Whom a Creature Spell is cast at.
 #[derive(Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -79,7 +110,7 @@ pub(crate) struct CreatureSpell {
     pub(crate) spell_id: u32,
     pub(crate) school: School,
     pub(crate) cast_time_ms: u32,
-    pub(crate) cooldown_ms: u32,
+    pub(crate) cooldown_ms: Cooldown,
     /// Yards to the player; a self-cast (heal) has no range to check.
     pub(crate) range_max: f32,
     /// Yards the player must be beyond: a charge is not cast from melee reach.

@@ -15,7 +15,8 @@
 # aura_description optional: the debuff's tooltip, in Spell.dbc's $s1/$t1 terms
 # school           physical, holy, fire or shadow
 # cast_time_ms     the cast bar; the creature stops swinging for it
-# cooldown_ms      from the cast's end
+# cooldown_ms      from the cast's end: a number, or [min, max] rolled anew at each cast's end (a
+#                  cast cut short waits out min)
 # range_max        yards; the cast is interrupted if the target leaves it (0 for a self-cast)
 # chance           percent per decision (one a second) while fighting and off cooldown
 # below_health_pct optional: cast only while the caster's health is under this percent of its max
@@ -27,6 +28,9 @@
 #                  the creature keeps fighting the same character)
 # effect           periodic_damage (a curse on the player, in the skills' own terms),
 #                  heal { pct_max_health } (the caster, no range or line of sight to check),
+#                  hit { pct_of_swing } (one blow at the character the creature fights, rolled on
+#                  the table a swing uses, pct_of_swing percent of the caster's average swing; it
+#                  takes the next swing's place),
 #                  snare { pct, duration_ms } (the player runs pct percent slower),
 #                  gaze { damage, radius } (when the cast lands, flat damage of the school to
 #                  every character in the Phase within radius yards, except those behind a
@@ -510,3 +514,82 @@ range_max = 30.0
 chance = 100
 target = "random"
 effect = { kind = "fear", duration_ms = 6000 }
+
+# The Young Wolf's bite. Looks like the vanilla creature Bite (17253). Placeholders: one blow of its
+# whole average swing, instant, every 8 s.
+[[spell]]
+key = "bite_wolf"
+spell_id = 1900029
+name = "Bite"
+icon = 'Interface\Icons\Ability_Druid_FerociousBite'
+visual = 17253
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 8000
+range_max = 5.0
+chance = 100
+effect = { kind = "hit", pct_of_swing = 100 }
+
+# The Timber Wolf's rend. Looks like Rend (visual 772), as hunter_rend. Placeholders: 3 ticks of 2,
+# 6 physical damage over 9 s, every 12 s.
+[[spell]]
+key = "rend_wolf"
+spell_id = 1900030
+name = "Rend"
+icon = 'Interface\Icons\Ability_Gouge'
+visual = 772
+aura_description = "Bleeding for $s1 damage every $t1 seconds."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 12000
+range_max = 5.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 9000, tick = { base = 2 } }
+
+# The Kobold Worker's throw from 8 to 30 yd. Takes vanilla Throw's look (2764), which has no
+# SpellVisual of its own. Placeholders: one blow of its whole average swing after a 1 s cast,
+# every 6 s.
+[[spell]]
+key = "throw_kobold"
+spell_id = 1900031
+name = "Throw"
+icon = 'Interface\Icons\Ability_Throw'
+visual = 2764
+school = "physical"
+cast_time_ms = 1000
+cooldown_ms = 6000
+range_min = 8.0
+range_max = 30.0
+chance = 100
+effect = { kind = "hit", pct_of_swing = 100 }
+
+# The Defias Thug's rend. Looks like Rend (visual 772). Placeholders: 5 ticks of 3, 15 physical
+# damage over 15 s, every 15 s.
+[[spell]]
+key = "rend_thug"
+spell_id = 1900032
+name = "Rend"
+icon = 'Interface\Icons\Ability_Gouge'
+visual = 772
+aura_description = "Bleeding for $s1 damage every $t1 seconds."
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 15000
+range_max = 5.0
+chance = 100
+effect = { kind = "periodic_damage", tick_ms = 3000, duration_ms = 15000, tick = { base = 3 } }
+
+# The Defias Cutpurse's backstab. Looks like vanilla Backstab (53). Placeholders: one blow of 150%
+# of its average swing, instant, every 5 to 9 s.
+[[spell]]
+key = "backstab_cutpurse"
+spell_id = 1900033
+name = "Backstab"
+icon = 'Interface\Icons\Ability_BackStab'
+visual = 53
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = [5000, 9000]
+range_max = 5.0
+chance = 100
+effect = { kind = "hit", pct_of_swing = 150 }

@@ -128,7 +128,7 @@ DUMMY_EFFECT = (3, 0)
 # The same numbers for a Creature Spell's effect kinds: a curse, a heal, a snare.
 CREATURE_EFFECTS_OF = {"periodic_damage": (6, 3), "heal": (10, 0), "snare": (6, 33), "charge": DUMMY_EFFECT,
                        "gaze": DUMMY_EFFECT, "nova": DUMMY_EFFECT, "fear": (6, 7), "root": (6, 26),
-                       "ground_patch": DUMMY_EFFECT, "absorb": (6, 69)}
+                       "ground_patch": DUMMY_EFFECT, "absorb": (6, 69), "hit": DUMMY_EFFECT}
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms",

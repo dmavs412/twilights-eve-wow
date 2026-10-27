@@ -114,6 +114,37 @@ pub(crate) fn mob_swing(
     rng: &mut Rng,
 ) -> Swing {
     let raw = rng.urand(mob.stats.min_damage as u32, mob.stats.max_damage as u32);
+    mob_blow(mob, raw, p, from_front, miss_pct, rng)
+}
+
+/// `mob`'s melee spell at the player (a Bite, a Backstab): one roll on the table its swing uses,
+/// worth `pct_of_swing` percent of its average swing.
+pub(crate) fn mob_strike(
+    mob: &Mob,
+    pct_of_swing: u32,
+    p: &CharacterStats,
+    from_front: bool,
+    miss_pct: u32,
+    rng: &mut Rng,
+) -> Swing {
+    let raw = average_swing(mob.stats.min_damage, mob.stats.max_damage) * pct_of_swing / 100;
+    mob_blow(mob, raw, p, from_front, miss_pct, rng)
+}
+
+/// The middle of a weapon's damage range, truncated as a swing's roll is.
+fn average_swing(min_damage: f32, max_damage: f32) -> u32 {
+    (min_damage as u32 + max_damage as u32) / 2
+}
+
+/// A blow of `raw` damage from `mob` at the player, on the table a swing rolls.
+fn mob_blow(
+    mob: &Mob,
+    raw: u32,
+    p: &CharacterStats,
+    from_front: bool,
+    miss_pct: u32,
+    rng: &mut Rng,
+) -> Swing {
     let armored = armor_reduced(raw, p.armor, mob.level());
     let table = mob_vs_player(
         PlayerDefense {

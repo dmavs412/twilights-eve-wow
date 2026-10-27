@@ -12836,6 +12836,130 @@
    }
   },
   {
+   "spell_id": 1900029,
+   "creature": "bite_wolf",
+   "fields": {
+    "name": "Bite",
+    "icon": "Interface\\Icons\\Ability_Druid_FerociousBite",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 376,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1900030,
+   "creature": "rend_wolf",
+   "fields": {
+    "name": "Rend",
+    "icon": "Interface\\Icons\\Ability_Gouge",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 2,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "aura_description": "Bleeding for $s1 damage every $t1 seconds.",
+    "visual": 372,
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 105
+   }
+  },
+  {
+   "spell_id": 1900031,
+   "creature": "throw_kobold",
+   "fields": {
+    "name": "Throw",
+    "icon": "Interface\\Icons\\Ability_Throw",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 0,
+    "speed": 20.0,
+    "range_index": 74,
+    "cast_time_index": 4
+   }
+  },
+  {
+   "spell_id": 1900032,
+   "creature": "rend_thug",
+   "fields": {
+    "name": "Rend",
+    "icon": "Interface\\Icons\\Ability_Gouge",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": 3,
+      "per_level": 0,
+      "aura": 3,
+      "amplitude_ms": 3000
+     }
+    ],
+    "aura_description": "Bleeding for $s1 damage every $t1 seconds.",
+    "visual": 372,
+    "range_index": 2,
+    "cast_time_index": 1,
+    "duration_index": 8
+   }
+  },
+  {
+   "spell_id": 1900033,
+   "creature": "backstab_cutpurse",
+   "fields": {
+    "name": "Backstab",
+    "icon": "Interface\\Icons\\Ability_BackStab",
+    "school": 0,
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 155,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
    "spell_id": 7620,
    "fields": {
     "equipped_item_class": -1,

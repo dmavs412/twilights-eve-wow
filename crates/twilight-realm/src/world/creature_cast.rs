@@ -3,7 +3,7 @@
 //! `SMSG_SPELL_START` with the cast time, then `SMSG_SPELL_GO`, then the aura on its target, as
 //! vmangos sends a creature's cast. Nothing here names a spell.
 
-use benilla_protocol::messages::SpellHealLog;
+use benilla_protocol::messages::{SpellDamageLog, SpellHealLog};
 use benilla_protocol::SessionEvent;
 
 use super::{cast, eye, in_front, melee_reach, Foreign, Gaze, InWorld};
@@ -13,6 +13,7 @@ use crate::creature_spells::{charge_dest, CreatureEffect, SpellTarget};
 use crate::fields::{values, UNIT_FIELD_HEALTH};
 use crate::mobs::State;
 use crate::rng::Rng;
+use crate::rules::melee::Outcome;
 use crate::rules::school::School;
 use crate::space::distance;
 use crate::Host;
@@ -81,8 +82,9 @@ impl InWorld {
                 return true;
             }
             mob.casting = None;
+            let cooldown = spell.cooldown_ms.rolled(rng);
             mob.spell_cooldowns
-                .push((spell.key.as_str(), clock::secs(spell.cooldown_ms)));
+                .push((spell.key.as_str(), clock::secs(cooldown)));
             let (guid, level) = (mob.guid, mob.level());
             let victim = mob.cast_at.take();
             let target = if self_cast {
@@ -90,12 +92,37 @@ impl InWorld {
             } else {
                 victim.unwrap_or(player)
             };
+            // A melee spell rolls the attack table as it lands, and takes the next swing's place.
+            let blow = match spell.effect {
+                CreatureEffect::Hit { pct_of_swing } if victim.is_none() => {
+                    let stats = cast::buffed(&self.player.stats, &self.skills);
+                    let from_front = in_front(facing, me, mob.position);
+                    let miss = self.skills.miss_bonus(guid);
+                    mob.swing_timer = clock::secs(mob.template.base_attack_time)
+                        * mob.attack_time_mul
+                        * self.skills.attack_time_mul(guid);
+                    Some(combat::mob_strike(
+                        mob,
+                        pct_of_swing,
+                        &stats,
+                        from_front,
+                        miss,
+                        rng,
+                    ))
+                }
+                _ => None,
+            };
+            let missed = blow.and_then(|b| cast::missed_by(b.outcome));
             events.push(SessionEvent::SpellGo {
                 caster: guid,
                 spell_id: spell.spell_id,
                 cast_flags: 0,
-                hits: vec![target],
-                misses: Vec::new(),
+                hits: if missed.is_some() {
+                    Vec::new()
+                } else {
+                    vec![target]
+                },
+                misses: missed.map(|m| (target, m)).into_iter().collect(),
                 target: Some(target),
                 go_target: None,
                 dest: None,
@@ -121,6 +148,21 @@ impl InWorld {
             } = spell.effect
             {
                 self.creature_charges(i, speed_yd_s, bonus_pct, me, facing, rng, events);
+            } else if let Some(blow) = blow {
+                if missed.is_none() {
+                    events.push(SessionEvent::SpellDamageLog(SpellDamageLog {
+                        blocked: blow.blocked,
+                        ..cast::damage_log(
+                            guid,
+                            player,
+                            spell.spell_id,
+                            blow.damage,
+                            spell.school,
+                            blow.outcome == Outcome::Crit,
+                        )
+                    }));
+                    self.player_takes(guid, blow.damage, spell.school, events);
+                }
             } else if let CreatureEffect::Gaze { damage, radius } = spell.effect {
                 self.gazes.push(Gaze {
                     caster: guid,

@@ -1883,9 +1883,20 @@ pub(super) fn refused(spell_id: u32, reason: u8) -> SessionEvent {
     }
 }
 
+/// The `SpellMissInfo` a melee spell's target goes into `SMSG_SPELL_GO`'s miss list with, when the
+/// roll on the attack table was a miss, a dodge or a parry. A block still hits.
+pub(super) fn missed_by(outcome: Outcome) -> Option<u8> {
+    match outcome {
+        Outcome::Miss => Some(SPELL_MISS_MISS),
+        Outcome::Dodge => Some(SPELL_MISS_DODGE),
+        Outcome::Parry => Some(SPELL_MISS_PARRY),
+        _ => None,
+    }
+}
+
 /// `SMSG_SPELLNONMELEEDAMAGELOG` for `damage` of `school` from `attacker`'s `spell_id`: nothing
 /// absorbed, resisted or blocked, flagged as a crit when it was one.
-fn damage_log(
+pub(super) fn damage_log(
     attacker: u64,
     target: u64,
     spell_id: u32,
@@ -4950,12 +4961,6 @@ impl InWorld {
                 crate::combat::player_swing(&stats, m, front, false, rng),
             ));
         }
-        let missed_by = |outcome: Outcome| match outcome {
-            Outcome::Miss => Some(SPELL_MISS_MISS),
-            Outcome::Dodge => Some(SPELL_MISS_DODGE),
-            Outcome::Parry => Some(SPELL_MISS_PARRY),
-            _ => None,
-        };
         events.push(SessionEvent::SpellStart {
             caster: self.guid,
             spell_id,

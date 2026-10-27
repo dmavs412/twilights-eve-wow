@@ -7,6 +7,7 @@ use benilla_protocol::messages::{MonsterMoveFacing, PeriodicAuraLog, PeriodicTic
 use benilla_protocol::{EntityKind, SessionEvent};
 use common::fight;
 use common::*;
+use twilight_realm::rules::melee::armor_reduced;
 
 /// The Vile Familiar near the Crossroads.
 const VILE_FAMILIAR: u32 = 3101;
@@ -124,6 +125,158 @@ fn a_charge_carries_its_caster_to_the_player_and_lands_a_blow() {
         )),
         "and lands a blow"
     );
+}
+
+/// The physical school in a damage log.
+const PHYSICAL: u8 = 0;
+
+#[test]
+fn a_hit_deals_its_percent_of_the_casters_average_swing() {
+    for (key, pct) in [("bite_wolf", 100), ("backstab_cutpurse", 150)] {
+        let spell_id = creature_spell(key);
+        let mut plain = 0;
+        for seed in 0..10 {
+            let realm = Realm::with_seed(seed).with_creature_spells(VILE_FAMILIAR, &[key]);
+            let (mut realm, me, mob, mut view) = warrior_seen(realm, 30);
+            stand_by(&mut realm, mob.1);
+            let mut events = Vec::new();
+            for _ in 0..200 {
+                realm.tick(0.1, &FlatGround);
+                events.extend(view.drain(&mut realm));
+            }
+            let caster = &view.objects[&mob.0];
+            let swing = (caster.unit_min_damage().unwrap() as u32
+                + caster.unit_max_damage().unwrap() as u32)
+                / 2;
+            let level = caster.unit_level().unwrap() as u8;
+            let armor = view.objects[&me].unit_resistance(0).unwrap() as u32;
+            let want = armor_reduced(swing * pct / 100, armor, level);
+            for e in &events {
+                let SessionEvent::SpellDamageLog(l) = e else {
+                    continue;
+                };
+                if l.attacker != mob.0 || l.spell_id != spell_id {
+                    continue;
+                }
+                assert_eq!((l.target, l.school), (me, PHYSICAL), "{key} seed {seed}");
+                // A plain hit: no crit flag, nothing blocked.
+                if l.hit_info == 0 && l.blocked == 0 {
+                    assert_eq!(l.damage, want, "{key} seed {seed}: {swing} x {pct}%");
+                    plain += 1;
+                }
+            }
+        }
+        assert!(plain > 0, "{key}: some seed lands a plain hit");
+    }
+}
+
+#[test]
+fn a_hit_takes_the_place_of_a_swing() {
+    let spell_id = creature_spell("bite_wolf");
+    let realm = Realm::with_seed(3).with_creature_spells(VILE_FAMILIAR, &["bite_wolf"]);
+    let (mut realm, me, mob, mut view) = warrior_seen(realm, 30);
+    stand_by(&mut realm, mob.1);
+    let mut events = Vec::new();
+    for n in 1..=300 {
+        realm.tick(0.1, &FlatGround);
+        events.extend(
+            view.drain(&mut realm)
+                .into_iter()
+                .map(|e| (n as f32 * 0.1, e)),
+        );
+    }
+    let attack = view.objects[&mob.0].unit_base_attack_time(0).unwrap() as f32 / 1000.0;
+    let at = |pred: &dyn Fn(&SessionEvent) -> bool| -> Vec<f32> {
+        events
+            .iter()
+            .filter(|(_, e)| pred(e))
+            .map(|(t, _)| *t)
+            .collect()
+    };
+    let swings = at(
+        &|e| matches!(e, SessionEvent::AttackerState(a) if a.attacker == mob.0 && a.victim == me),
+    );
+    let bites = at(
+        &|e| matches!(e, SessionEvent::SpellGo { caster, spell_id: s, .. } if *caster == mob.0 && *s == spell_id),
+    );
+    assert!(bites.len() > 2, "{bites:?}");
+    for bite in &bites {
+        let Some(next) = swings.iter().find(|t| *t > bite) else {
+            continue;
+        };
+        assert!(
+            next - bite >= attack - 0.15,
+            "a swing {:.1} s after the bite at {bite}, the attack time is {attack} s",
+            next - bite
+        );
+    }
+}
+
+#[test]
+fn a_spell_with_a_minimum_range_waits_until_its_target_is_past_it() {
+    let spell_id = creature_spell("throw_kobold");
+    // The player keeps `yd` yards past wherever the familiar last ran to, for 3 s.
+    let started = |realm: &mut Realm, mob: (u64, [f32; 3]), yd: f32| {
+        stand_by(realm, mob.1);
+        run(realm, 0.5);
+        let mut to = mob.1;
+        let mut began = false;
+        for _ in 0..30 {
+            realm.handle(RealmCommand::Move {
+                motion: Default::default(),
+                position: [to[0] + yd, to[1], to[2]],
+                orientation: std::f32::consts::PI,
+            });
+            realm.tick(0.1, &FlatGround);
+            for e in drain(realm) {
+                match e {
+                    SessionEvent::MonsterMove { guid, path, .. } if guid == mob.0 => {
+                        to = *path.last().unwrap_or(&to);
+                    }
+                    SessionEvent::SpellStart {
+                        caster,
+                        spell_id: s,
+                        ..
+                    } if caster == mob.0 && s == spell_id => began = true,
+                    _ => {}
+                }
+            }
+        }
+        began
+    };
+    let realm = Realm::with_seed(1).with_creature_spells(VILE_FAMILIAR, &["throw_kobold"]);
+    let (mut realm, _, mob) = warrior(realm, 30);
+    assert!(!started(&mut realm, mob, 3.0), "no throw at 3 yd");
+    let realm = Realm::with_seed(1).with_creature_spells(VILE_FAMILIAR, &["throw_kobold"]);
+    let (mut realm, _, mob) = warrior(realm, 30);
+    assert!(started(&mut realm, mob, 12.0), "a throw at 12 yd");
+}
+
+#[test]
+fn a_cooldown_range_rearms_inside_its_range() {
+    let spell_id = creature_spell("backstab_cutpurse");
+    let mut gaps = Vec::new();
+    for seed in 0..10 {
+        let realm =
+            Realm::with_seed(seed).with_creature_spells(VILE_FAMILIAR, &["backstab_cutpurse"]);
+        let (mut realm, _, mob) = warrior(realm, 30);
+        stand_by(&mut realm, mob.1);
+        let goes: Vec<f32> = run(&mut realm, 60.0)
+            .into_iter()
+            .filter(|(_, e)| {
+                matches!(e, SessionEvent::SpellGo { caster, spell_id: s, .. }
+                    if *caster == mob.0 && *s == spell_id)
+            })
+            .map(|(t, _)| t)
+            .collect();
+        gaps.extend(goes.windows(2).map(|w| w[1] - w[0]));
+    }
+    assert!(gaps.len() > 20, "{gaps:?}");
+    // 5 to 9 s of cooldown, then up to a second before the next decision and a tick to land.
+    assert!(gaps.iter().all(|g| (4.95..=10.25).contains(g)), "{gaps:?}");
+    // Rolled at each cast: some gaps near the short end, some near the long one.
+    assert!(gaps.iter().any(|g| *g < 6.5), "{gaps:?}");
+    assert!(gaps.iter().any(|g| *g > 8.5), "{gaps:?}");
 }
 
 #[test]
