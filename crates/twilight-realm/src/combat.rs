@@ -136,7 +136,7 @@ fn average_swing(min_damage: f32, max_damage: f32) -> u32 {
     (min_damage as u32 + max_damage as u32) / 2
 }
 
-/// A blow of `raw` damage from `mob` at the player, on the table a swing rolls.
+/// A blow of `raw` damage from `mob` at the player, after its stance, on the table a swing rolls.
 fn mob_blow(
     mob: &Mob,
     raw: u32,
@@ -145,7 +145,7 @@ fn mob_blow(
     miss_pct: u32,
     rng: &mut Rng,
 ) -> Swing {
-    let armored = armor_reduced(raw, p.armor, mob.level());
+    let armored = armor_reduced(mob.deals(raw), p.armor, mob.level());
     let table = mob_vs_player(
         PlayerDefense {
             dodge_pct: p.dodge_pct,

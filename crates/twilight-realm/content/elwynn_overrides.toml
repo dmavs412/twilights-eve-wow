@@ -885,3 +885,10 @@ spells = ["rend_wolf"]
 [[kit]]
 entry = 94
 spells = ["backstab_cutpurse"]
+
+# Garrick Padfoot (#473): vanilla's Defensive Stance on engage, and his line. Vanilla says the line
+# a second after the stance; here the line comes on engage and the stance a decision later.
+[[kit]]
+entry = 103
+spells = ["defensive_stance_padfoot"]
+say = { aggro = ["I see those fools at the Abbey sent some fresh meat for us."], aggro_chance = 100 }

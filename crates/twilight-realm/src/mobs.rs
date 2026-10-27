@@ -1243,6 +1243,24 @@ pub(crate) struct Mob {
     pub(crate) fled: bool,
     /// It began to flee since the realm last looked: its flee line is due.
     pub(crate) flee_due: bool,
+    /// The stance a Creature Spell put it in (#473).
+    pub(crate) stance: Option<Stance>,
+}
+
+/// A creature's stance (#473): the damage it deals and takes, each changed by a percent.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Stance {
+    /// The spell that put it up, whose buff shows it.
+    pub(crate) spell_id: u32,
+    pub(crate) damage_dealt_pct: i32,
+    pub(crate) damage_taken_pct: i32,
+    /// Seconds left; `None` holds until it leaves combat or dies.
+    pub(crate) secs_left: Option<f32>,
+}
+
+/// `damage` changed by `pct` percent, never below 0.
+fn changed_by(damage: u32, pct: i32) -> u32 {
+    (i64::from(damage) * i64::from(100 + pct) / 100).max(0) as u32
 }
 
 /// A creature's run from its target at low health: what is left of its time and its yards.
@@ -1394,6 +1412,7 @@ impl Mob {
             fleeing: None,
             fled: false,
             flee_due: false,
+            stance: None,
         })
     }
 
@@ -1480,7 +1499,35 @@ impl Mob {
             fleeing: None,
             fled: false,
             flee_due: false,
+            stance: None,
         }
+    }
+
+    /// The `damage` of a swing or hit it lands, after its stance.
+    pub(crate) fn deals(&self, damage: u32) -> u32 {
+        self.stance
+            .map_or(damage, |s| changed_by(damage, s.damage_dealt_pct))
+    }
+
+    /// The `damage` it takes, any school, after its stance.
+    pub(crate) fn takes(&self, damage: u32) -> u32 {
+        self.stance
+            .map_or(damage, |s| changed_by(damage, s.damage_taken_pct))
+    }
+
+    /// Runs its stance's clock on by `dt`. The stance's spell when it ended: its time ran out,
+    /// or it is out of combat or dead.
+    pub(crate) fn stance_tick(&mut self, dt: f32) -> Option<u32> {
+        let s = self.stance.as_mut()?;
+        if let Some(left) = &mut s.secs_left {
+            *left -= dt;
+        }
+        let ended = self.state != State::Engaged || s.secs_left.is_some_and(|left| left <= 0.0);
+        let spell_id = s.spell_id;
+        ended.then(|| {
+            self.stance = None;
+            spell_id
+        })
     }
 
     /// A Bounty Hunter that killed its owner (#179): it stops hunting and roams `roam` yards
@@ -2045,6 +2092,76 @@ mod tests {
         assert_eq!(t.say.as_ref().map(|s| s.aggro_chance), Some(30));
         assert_eq!(t.flee_at_pct, Some(20), "no flee_at_pct in the kit");
         assert!(t.emote_ooc.is_none());
+    }
+
+    /// A level-10 warrior, and the same one in a stance of 10% less dealt and taken (#473).
+    fn plain_and_stanced() -> (Mob, Mob) {
+        let t: &'static Template = Box::leak(Box::new(warrior(0)));
+        let stats = Mob::stats_for(t, 10, ZoneFactor::NONE);
+        let plain = Mob::hunter(1, t, stats, [0.0; 3], 0.0, 0);
+        let mut stanced = Mob::hunter(2, t, stats, [0.0; 3], 0.0, 0);
+        stanced.stance = Some(Stance {
+            spell_id: 7,
+            damage_dealt_pct: -10,
+            damage_taken_pct: -10,
+            secs_left: None,
+        });
+        (plain, stanced)
+    }
+
+    #[test]
+    fn a_stanced_creature_swings_and_hits_for_ninety_percent() {
+        let (plain, stanced) = plain_and_stanced();
+        // No armour, so the swing's own damage shows through.
+        let mut p = crate::rules::stats::CharacterStats::naked(1, 1, 10);
+        p.armor = 0;
+        let mut hits = 0;
+        for seed in 0..60 {
+            let a = crate::combat::mob_swing(&plain, &p, true, 0, &mut Rng::new(seed));
+            let b = crate::combat::mob_swing(&stanced, &p, true, 0, &mut Rng::new(seed));
+            let c = crate::combat::mob_strike(&plain, 150, &p, true, 0, &mut Rng::new(seed));
+            let d = crate::combat::mob_strike(&stanced, 150, &p, true, 0, &mut Rng::new(seed));
+            assert_eq!(a.outcome, b.outcome, "the same rolls");
+            if a.outcome == crate::rules::melee::Outcome::Hit {
+                hits += 1;
+                assert_eq!(b.damage, a.damage * 9 / 10, "a swing of {}", a.damage);
+                assert_eq!(d.damage, c.damage * 9 / 10, "a hit of {}", c.damage);
+            }
+        }
+        assert!(hits > 10, "{hits} plain hits");
+    }
+
+    #[test]
+    fn a_stanced_creature_takes_ninety_percent_of_any_school() {
+        for school in [School::Physical, School::Shadow] {
+            let (mut plain, mut stanced) = plain_and_stanced();
+            let (was, harms) = (plain.health, &mut Vec::new());
+            crate::world::wound(&mut plain, 50, 9, school, harms, &mut Vec::new());
+            crate::world::wound(&mut stanced, 50, 9, school, harms, &mut Vec::new());
+            assert_eq!(was - plain.health, 50, "{school:?}");
+            assert_eq!(was - stanced.health, 45, "{school:?}");
+        }
+    }
+
+    #[test]
+    fn a_stance_holds_through_the_fight_and_drops_out_of_it_or_when_its_time_is_up() {
+        let (_, mut held) = plain_and_stanced();
+        held.state = State::Engaged;
+        assert_eq!(
+            held.stance_tick(600.0),
+            None,
+            "no clock: held while it fights"
+        );
+        held.state = State::Evading;
+        assert_eq!(held.stance_tick(0.1), Some(7), "out of combat");
+        assert!(held.stance.is_none() && held.stance_tick(0.1).is_none());
+
+        let (_, mut timed) = plain_and_stanced();
+        timed.state = State::Engaged;
+        timed.stance.as_mut().unwrap().secs_left = Some(1.0);
+        assert_eq!(timed.stance_tick(0.6), None);
+        assert_eq!(timed.stance_tick(0.6), Some(7), "its time is up");
+        assert_eq!(timed.deals(100), 100, "gone");
     }
 
     #[test]

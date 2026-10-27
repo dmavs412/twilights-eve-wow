@@ -239,6 +239,31 @@ effect = {{ kind = "periodic_damage", tick_ms = 3000, duration_ms = 18000, tick 
         # The realm reads the file itself; the server JSON is the Callings' alone.
         self.assertNotIn("curse", json.dumps(data))
 
+    def test_a_creature_stance_is_two_damage_percent_auras_on_the_caster_with_no_end(self):
+        self.creature_spells = """
+[[spell]]
+key = "stance"
+spell_id = 1900001
+name = "Defensive Stance"
+icon = 'Interface\\Icons\\Ability_Warrior_DefensiveStance'
+visual = 71
+school = "physical"
+cast_time_ms = 0
+cooldown_ms = 0
+range_max = 0.0
+chance = 100
+effect = { kind = "stance", damage_dealt_pct = -10, damage_taken_pct = -10, duration_ms = 0 }
+"""
+        done, _ = self.run_build([STRIKE])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        fields = next(e for e in self.patch["spells"] if e["spell_id"] == 1900001)["fields"]
+        self.assertEqual(fields["implicit_targets"], [1, 0])
+        self.assertEqual(fields["duration_ms"], -1)
+        self.assertEqual(fields["dbc_effects"], [
+            {"effect": 6, "aura": 79, "base": -10, "per_level": 0, "misc_value": 127},
+            {"effect": 6, "aura": 87, "base": -10, "per_level": 0, "misc_value": 127},
+        ])
+
     def test_a_creature_spell_on_a_sheet_id_fails(self):
         self.creature_spells = self.creature(spell_id=1000078)
         self.assert_fails([STRIKE], "curse: spell_id 1000078 is already claimed by line 2 (vanguard/strike)")

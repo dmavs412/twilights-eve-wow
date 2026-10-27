@@ -12987,6 +12987,40 @@
    }
   },
   {
+   "spell_id": 1900035,
+   "creature": "defensive_stance_padfoot",
+   "fields": {
+    "name": "Defensive Stance",
+    "icon": "Interface\\Icons\\Ability_Warrior_DefensiveStance",
+    "school": 0,
+    "implicit_targets": [
+     1,
+     0
+    ],
+    "dbc_effects": [
+     {
+      "effect": 6,
+      "base": -10,
+      "per_level": 0,
+      "aura": 79,
+      "misc_value": 127
+     },
+     {
+      "effect": 6,
+      "aura": 87,
+      "base": -10,
+      "per_level": 0,
+      "misc_value": 127
+     }
+    ],
+    "aura_description": "Damage dealt and taken reduced by 10%.",
+    "visual": 44,
+    "range_index": 1,
+    "cast_time_index": 1,
+    "duration_index": 21
+   }
+  },
+  {
    "spell_id": 7620,
    "fields": {
     "equipped_item_class": -1,

@@ -1138,6 +1138,9 @@ impl InWorld {
             .taunted
             .map(|(by, left)| (by, left - dt))
             .filter(|&(_, left)| left > 0.0);
+        if let Some(spell_id) = mob.stance_tick(dt) {
+            self.skills.hide_marker_on(mob.guid, spell_id, events);
+        }
         if mob.template.inert {
             if let Some(t) = mob.since_hurt {
                 if t + dt >= crate::mobs::INERT_RESET_SECS {
@@ -1787,8 +1790,9 @@ pub(crate) fn engage(mob: &mut Mob, player: u64, events: &mut Vec<SessionEvent>)
     events.push(values(mob.guid, &pairs));
 }
 
-/// `mob` loses `damage` of `school` from the player `from`. A stand-in's health stops at 1 and
-/// the damage goes into `harms`, for the session whose player it stands in for.
+/// `mob` loses `damage` of `school` from the player `from`, after armour, absorbs and its stance.
+/// A stand-in's health stops at 1 and the damage goes into `harms`, for the session whose player
+/// it stands in for.
 pub(crate) fn wound(
     mob: &mut Mob,
     damage: u32,
@@ -1797,6 +1801,7 @@ pub(crate) fn wound(
     harms: &mut Vec<Harm>,
     events: &mut Vec<SessionEvent>,
 ) {
+    let damage = mob.takes(damage);
     // A dummy's health stops at 1; the clock to its reset starts over with every hit.
     if mob.template.inert {
         mob.health = mob.health.saturating_sub(damage).max(1);

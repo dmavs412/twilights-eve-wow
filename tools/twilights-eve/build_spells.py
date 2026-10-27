@@ -129,7 +129,12 @@ DUMMY_EFFECT = (3, 0)
 CREATURE_EFFECTS_OF = {"periodic_damage": (6, 3), "heal": (10, 0), "snare": (6, 33), "charge": DUMMY_EFFECT,
                        "gaze": DUMMY_EFFECT, "nova": DUMMY_EFFECT, "fear": (6, 7), "root": (6, 26),
                        "ground_patch": DUMMY_EFFECT, "absorb": (6, 69), "hit": DUMMY_EFFECT,
-                       "armor_debuff": (6, 22)}
+                       "armor_debuff": (6, 22), "stance": (6, 79)}
+# SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN, a stance's second effect, and the school mask of every school.
+AURA_DAMAGE_PERCENT_TAKEN = 87
+ALL_SCHOOLS_MASK = 127
+# SpellDuration.dbc's base for a duration with no end, as vanilla Defensive Stance's.
+ENDLESS_DURATION_MS = -1
 CLIENT_NUMBERS = (
     "client_cost", "client_cooldown_ms", "client_gcd_ms", "client_cast_time_ms", "client_range_min",
     "client_range_max", "client_duration_ms",
@@ -389,15 +394,27 @@ def build_creature_spells(spells: list[dict], rows: list[dict], art: list[str], 
             # SPELL_AURA_MOD_RESISTANCE on armour (school mask 1), as vanilla Sunder Armor.
             row_effect["base"] = -effect["amount"]
             row_effect["misc_value"] = 1
+        dbc_effects = [row_effect]
+        if effect["kind"] == "stance":
+            # SPELL_AURA_MOD_DAMAGE_PERCENT_DONE then _TAKEN on every school, as vanilla
+            # Defensive Stance's numbers.
+            row_effect["base"] = effect["damage_dealt_pct"]
+            row_effect["misc_value"] = ALL_SCHOOLS_MASK
+            dbc_effects.append({"effect": number_, "aura": AURA_DAMAGE_PERCENT_TAKEN,
+                                "base": effect["damage_taken_pct"], "per_level": 0,
+                                "misc_value": ALL_SCHOOLS_MASK})
         fields = {"name": spell["name"], "icon": icon_path(spell["icon"], art, art_dir, where),
                   "school": SCHOOLS.index(one_of(spell["school"], SCHOOLS, where, "school")),
                   "visual_spell": spell["visual"],
-                  # A heal or a shield is the caster's own; a curse or snare lands on the player it fights.
-                  "implicit_targets": list(IMPLICIT_TARGETS["self" if effect["kind"] in ("heal", "absorb") else "enemy"]),
+                  # A heal, a shield or a stance is the caster's own; a curse or snare lands on the player it fights.
+                  "implicit_targets": list(IMPLICIT_TARGETS["self" if effect["kind"] in ("heal", "absorb", "stance") else "enemy"]),
                   "cast_time_ms": spell["cast_time_ms"], "range_min": spell.get("range_min", 0), "range_max": spell["range_max"],
-                  "dbc_effects": [row_effect]}
+                  "dbc_effects": dbc_effects}
         if "duration_ms" in effect:
             fields["duration_ms"] = effect["duration_ms"]
+            # A stance of duration 0 holds for the fight: no end on the client's buff.
+            if effect["kind"] == "stance" and effect["duration_ms"] == 0:
+                fields["duration_ms"] = ENDLESS_DURATION_MS
         if spell.get("aura_description"):
             fields["aura_description"] = spell["aura_description"]
         entries.append({"spell_id": sid, "creature": key, "fields": fields})

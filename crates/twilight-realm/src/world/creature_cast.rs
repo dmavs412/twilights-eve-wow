@@ -11,7 +11,7 @@ use crate::clock;
 use crate::combat;
 use crate::creature_spells::{charge_dest, CreatureEffect, SpellTarget};
 use crate::fields::{values, UNIT_FIELD_HEALTH};
-use crate::mobs::State;
+use crate::mobs::{Stance, State};
 use crate::rng::Rng;
 use crate::rules::melee::Outcome;
 use crate::rules::school::School;
@@ -228,6 +228,19 @@ impl InWorld {
             } = spell.effect
             {
                 self.mob_shield(guid, level, spell.spell_id, amount, duration_ms, events);
+            } else if let CreatureEffect::Stance {
+                damage_dealt_pct,
+                damage_taken_pct,
+                duration_ms,
+            } = spell.effect
+            {
+                mob.stance = Some(Stance {
+                    spell_id: spell.spell_id,
+                    damage_dealt_pct,
+                    damage_taken_pct,
+                    secs_left: (duration_ms > 0).then(|| clock::secs(duration_ms)),
+                });
+                self.show_stance(guid, level, spell.spell_id, duration_ms, events);
             } else if let Some(target) = victim {
                 self.foreign.push(Foreign {
                     target,
@@ -266,8 +279,12 @@ impl InWorld {
             let begun = s
                 .first_cast_ms
                 .is_none_or(|ms| mob.engaged_secs >= clock::secs(ms) - CLOCK_EPSILON);
+            // A stance already up is not taken again.
+            let unstanced =
+                !matches!(s.effect, CreatureEffect::Stance { .. }) || mob.stance.is_none();
             in_reach
                 && begun
+                && unstanced
                 && d >= s.range_min
                 && hurt
                 && fed

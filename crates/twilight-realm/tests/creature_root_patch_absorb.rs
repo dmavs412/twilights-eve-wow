@@ -7,6 +7,7 @@ use benilla_protocol::messages::MoveMode;
 use benilla_protocol::{EntityKind, SessionEvent, START_ELWYNN};
 use common::party::*;
 use common::*;
+use twilight_realm::{Audience, CROSSROADS};
 
 /// The Vile Familiar's entry, which the Gaze Hall places at (-9650, 20).
 const FAMILIAR: u32 = 3101;
@@ -392,4 +393,138 @@ fn an_armor_debuff_stacks_to_its_most_and_all_of_it_goes_when_it_runs_out() {
     assert!(!died(f.party.seen(0), guid), "alive to the end");
     assert_eq!(at(last + 29.8), base - 30, "{armor:?}");
     assert_eq!(at(last + 30.3), base, "{armor:?}");
+}
+
+/// `UNIT_FIELD_HEALTH`.
+const UNIT_FIELD_HEALTH: u16 = 22;
+
+/// The familiar's guid, from the cast of `spell` it made.
+fn caster_of(f: &Fight, spell: u32) -> u64 {
+    f.log
+        .iter()
+        .find_map(|s| match &s.event {
+            SessionEvent::SpellGo {
+                caster, spell_id, ..
+            } if *spell_id == spell => Some(*caster),
+            _ => None,
+        })
+        .expect("the familiar casts it")
+}
+
+#[test]
+fn a_stance_goes_up_once_and_drops_when_the_creature_leaves_combat() {
+    let stance = creature_spell("defensive_stance_padfoot");
+    // Out in the open: leaving the Gaze Hall's Phase takes every aura off its creatures anyway,
+    // and coming back meets a fresh familiar, so neither shows the stance drop. A Kobold Vermin
+    // alone past The Barrens' camps takes the stance when a swing pulls it; the character then
+    // steps 70 yd off, past its leash, and it gives up the fight.
+    let realm = realm().with_creature_spells(KOBOLD_VERMIN, &["defensive_stance_padfoot"]);
+    let mut party = Party::new(realm, &[20]);
+    party.go(0, away(0.0), 0.0);
+    party.run(0.5);
+    let map = party.realm.player_positions()[0].0;
+    let kobold = party
+        .realm
+        .spawn_for(
+            party.host.as_ref(),
+            KOBOLD_VERMIN,
+            2,
+            away(3.0),
+            map,
+            Audience::of(&[party.guids[0]]),
+        )
+        .expect("a kobold");
+    party.run(0.5);
+    party.cmd(0, RealmCommand::AttackSwing { guid: kobold });
+    party.run_until(3.0, |got| {
+        got[0]
+            .iter()
+            .any(|e| matches!(e, SessionEvent::AttackStart { attacker, .. } if *attacker == kobold))
+    });
+    party.cmd(0, RealmCommand::AttackStop);
+    party.run(10.0);
+    let left = party.seen(0).len();
+    party.go(0, away(70.0), 0.0);
+    party.run(20.0);
+    let seen = party.seen(0);
+    assert!(!died(seen, kobold), "the kobold lives");
+    let gos = seen
+        .iter()
+        .filter(|e| matches!(e, SessionEvent::SpellGo { spell_id, .. } if *spell_id == stance))
+        .count();
+    assert_eq!(gos, 1, "cast once, and not again while it is up");
+    // Where in what the character saw the kobold's first aura slot showed the stance or not.
+    let slots: Vec<(usize, bool)> = seen
+        .iter()
+        .enumerate()
+        .filter_map(|(n, e)| match e {
+            SessionEvent::ObjectValues { guid, fields } if *guid == kobold => fields
+                .raw_fields()
+                .find(|&(field, _)| field == UNIT_FIELD_AURA)
+                .map(|(_, v)| (n, v == stance)),
+            _ => None,
+        })
+        .collect();
+    let [(up, true), (down, false)] = slots[..] else {
+        panic!("up once and down once: {slots:?}");
+    };
+    assert!(
+        up < left && down > left,
+        "held through the fight, gone once it ends: {up} and {down}, the character leaving at {left}"
+    );
+}
+
+const KOBOLD_VERMIN: u32 = 6;
+
+/// `dx` yd east of a spot far out past The Barrens' camps, where nothing else streams in.
+fn away(dx: f32) -> [f32; 3] {
+    [CROSSROADS[0] + 3000.0 + dx, CROSSROADS[1], 0.0]
+}
+
+#[test]
+fn a_stance_takes_a_tenth_off_every_blow_the_creature_takes() {
+    let stance = creature_spell("defensive_stance_padfoot");
+    let mut swinging = false;
+    let f = fight("defensive_stance_padfoot", &[EXPOSED], 12.0, |p, _| {
+        if !swinging {
+            swinging = true;
+            let (guid, at) = p.unit(0, FAMILIAR, EXPOSED);
+            p.go_facing(0, EXPOSED, at);
+            p.cmd(0, RealmCommand::AttackSwing { guid });
+        }
+    });
+    let familiar = caster_of(&f, stance);
+    let me = f.party.guids[0];
+    // Each landed swing of the character's after the stance went up, with the health the
+    // familiar lost to it.
+    let (mut up, mut health, mut swing) = (false, None, None);
+    let mut blows = Vec::new();
+    for s in f.of(0) {
+        match &s.event {
+            SessionEvent::SpellGo { spell_id, .. } if *spell_id == stance => up = true,
+            SessionEvent::AttackerState(a) if a.attacker == me && a.victim == familiar => {
+                swing = (a.damage > 0).then_some(a.damage);
+            }
+            SessionEvent::ObjectCreate { guid, fields, .. }
+            | SessionEvent::ObjectValues { guid, fields }
+                if *guid == familiar =>
+            {
+                let Some((_, now)) = fields
+                    .raw_fields()
+                    .find(|&(field, _)| field == UNIT_FIELD_HEALTH)
+                else {
+                    continue;
+                };
+                if let (true, Some(was), Some(d)) = (up, health, swing.take()) {
+                    blows.push((d, was - now));
+                }
+                health = Some(now);
+            }
+            _ => {}
+        }
+    }
+    assert!(blows.len() >= 3, "several swings land: {blows:?}");
+    for (dealt, lost) in blows {
+        assert_eq!(lost, dealt * 9 / 10, "a swing of {dealt}");
+    }
 }

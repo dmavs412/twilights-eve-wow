@@ -1664,6 +1664,23 @@ impl Skills {
         .sum()
     }
 
+    /// Takes `unit`'s [`AuraKind::Marker`] of `spell_id` off.
+    pub(super) fn hide_marker_on(
+        &mut self,
+        unit: u64,
+        spell_id: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        self.remove_where(
+            |a| {
+                a.unit == unit
+                    && a.spell_id == spell_id
+                    && matches!(a.kind, AuraKind::Marker { .. })
+            },
+            events,
+        );
+    }
+
     /// Takes every aura `keep` refuses off, clearing their slots.
     fn remove_where(
         &mut self,
@@ -5438,10 +5455,7 @@ impl InWorld {
     /// Takes the player's [`AuraKind::Marker`] of `spell_id` off.
     pub(super) fn hide_marker(&mut self, spell_id: u32, events: &mut Vec<SessionEvent>) {
         let me = self.guid;
-        self.skills.remove_where(
-            |a| a.unit == me && a.spell_id == spell_id && matches!(a.kind, AuraKind::Marker { .. }),
-            events,
-        );
+        self.skills.hide_marker_on(me, spell_id, events);
     }
 
     pub(super) fn auras_die_with(&mut self, unit: u64, events: &mut Vec<SessionEvent>) {
@@ -5672,6 +5686,37 @@ impl InWorld {
             kind: AuraKind::Absorb {
                 left: amount,
                 school: None,
+            },
+            charges: 0,
+        };
+        self.skills.apply(aura, events);
+    }
+
+    /// The buff that shows a creature's stance goes up on `mob`, under the spell's client row,
+    /// for `duration_ms`, or until taken off when 0. The stance itself is on the mob.
+    pub(super) fn show_stance(
+        &mut self,
+        mob: u64,
+        level: u8,
+        spell_id: u32,
+        duration_ms: u32,
+        events: &mut Vec<SessionEvent>,
+    ) {
+        let aura = Aura {
+            unit: mob,
+            spell_id,
+            slot: 0,
+            level,
+            left: if duration_ms == 0 {
+                UNTIL_BROKEN_SECS
+            } else {
+                clock::secs(duration_ms)
+            },
+            period: 0.0,
+            next_tick: 0.0,
+            kind: AuraKind::Marker {
+                helpful: true,
+                stacks: 1,
             },
             charges: 0,
         };

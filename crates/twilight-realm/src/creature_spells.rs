@@ -63,12 +63,24 @@ pub(crate) enum CreatureEffect {
         max_stacks: u32,
         duration_ms: u32,
     },
+    /// A self-cast: the caster takes a stance in which every swing and hit it lands changes by
+    /// `damage_dealt_pct` percent and every damage it takes, any school, by `damage_taken_pct`
+    /// percent, for `duration_ms`; 0 holds until it leaves combat or dies. A stance already on
+    /// the caster blocks the cast.
+    Stance {
+        damage_dealt_pct: i32,
+        damage_taken_pct: i32,
+        duration_ms: u32,
+    },
 }
 
 impl CreatureEffect {
     /// Whether the spell lands on its caster, so it has no range or line of sight to check.
     pub(crate) fn on_caster(&self) -> bool {
-        matches!(self, Self::Heal { .. } | Self::Absorb { .. })
+        matches!(
+            self,
+            Self::Heal { .. } | Self::Absorb { .. } | Self::Stance { .. }
+        )
     }
 }
 
