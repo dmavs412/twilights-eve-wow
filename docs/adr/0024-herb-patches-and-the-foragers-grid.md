@@ -12,6 +12,15 @@ Spec #435.
   answers with the tiles that action revealed, the stake numbers and the pulls left. The client
   never learns a hidden tile, so no check is needed. A round trip per click costs nothing
   in-process, and nothing a player would notice over a socket.
+
+  **Amended 2026-10-27 (#478 grill): a finished patch shows its whole grid.** When a patch ends
+  because its pulls ran out or every tile was pulled, the realm sends one last grid with every
+  unpulled tile shown, flagged as missed, before it closes the grid. The client keeps the window
+  open on a summary card until the player closes it. The patch is already finished, so nothing
+  on the shown grid can be gathered and the client still learns no tile it could use. Leaving,
+  damage and walking away close the window at once with nothing shown, as before. The realm also
+  sends what the window's header and basket show (time block, plants in bloom, basket, thorns
+  and XP this patch), so the client works none of it out.
 - **A Herb Patch is a run-time GameObject for one character.** Each character has its own
   patches, made with an Audience of that character alone (ADR 0014) through `Realm::spawn_object`.
   Friends never compete for a patch. Patches stand at Herb Spots, the vanilla herb spawn points
