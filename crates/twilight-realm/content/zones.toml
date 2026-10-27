@@ -1,0 +1,17 @@
+# Hand-written changes laid over the generated content/duskwood.toml, redridge.toml and
+# stormwind.toml (spec #466), which are never edited. One [[zone]] per file.
+
+[[zone]]
+file = "duskwood"
+# Unseen (3094): 28 level-49 spawns, invisible in vanilla (aura 4986). The realm does not model
+# invisibility.
+removed = [3094]
+
+[[zone]]
+file = "redridge"
+removed = []
+
+[[zone]]
+file = "stormwind"
+# Rift Spawn (6492): six spawns, invisible until a quest item shows them (aura 9093).
+removed = [6492]

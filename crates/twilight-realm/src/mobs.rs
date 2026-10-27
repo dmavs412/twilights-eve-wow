@@ -1,8 +1,9 @@
-//! The mobs: their templates and spawns (`content/mobs.toml` by hand, `content/barrens.toml`
-//! and `content/elwynn.toml` generated from the research dumps by `examples/import_barrens.rs`
-//! and `examples/import_elwynn.rs`), and each one's state in the world.
+//! The mobs: their templates and spawns (`content/mobs.toml` by hand, and the generated zone
+//! files `content/barrens.toml`, `elwynn.toml`, `duskwood.toml`, `redridge.toml` and
+//! `stormwind.toml`, made from the research dumps by `examples/import_barrens.rs`,
+//! `examples/import_elwynn.rs` and `examples/import_zone.rs`), and each one's state in the world.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 use benilla_protocol::messages::{MonsterMoveFacing, ObjectType};
@@ -278,7 +279,7 @@ pub(crate) struct Spawn {
     pub(crate) asleep: bool,
     /// Yards added to the distance at which a character wakes it.
     pub(crate) wake_radius_mod: f32,
-    /// A row built from the vmangos spawns in `barrens.toml` or `elwynn.toml`, not one we placed:
+    /// A row built from the vmangos spawns in the generated zone files, not one we placed:
     /// the spawn audit (ADR 0021) leaves it out.
     pub(crate) imported: bool,
 }
@@ -299,7 +300,7 @@ struct HandSpawn {
     orientation: f32,
 }
 
-/// A generated spawn row in `barrens.toml` or `elwynn.toml`: guid, entry, level_min, level_max, x, y, z,
+/// A generated spawn row in the generated zone files: guid, entry, level_min, level_max, x, y, z,
 /// orientation, display_id, wander_radius, camp.
 #[derive(Deserialize)]
 struct Row(u32, u32, u8, u8, f32, f32, f32, f32, u32, f32, u32);
@@ -445,6 +446,29 @@ struct Overrides {
     added: Vec<Added>,
 }
 
+/// `content/zones.toml`: hand-written changes to the generated Duskwood, Redridge and Stormwind
+/// City spawns (spec #466).
+#[derive(Deserialize)]
+struct ZonesFile {
+    zone: Vec<ZoneOverrides>,
+}
+
+#[derive(Deserialize)]
+struct ZoneOverrides {
+    /// The generated file's name, without `.toml`.
+    file: String,
+    /// Entries whose spawns are deleted.
+    removed: Vec<u32>,
+}
+
+/// The generated zone files that `content/zones.toml` lays its changes over, all on Eastern
+/// Kingdoms.
+const ZONE_FILES: [(&str, &str); 3] = [
+    ("duskwood", include_str!("../content/duskwood.toml")),
+    ("redridge", include_str!("../content/redridge.toml")),
+    ("stormwind", include_str!("../content/stormwind.toml")),
+];
+
 #[derive(Deserialize)]
 struct Added {
     guid: u32,
@@ -552,6 +576,23 @@ pub(crate) fn content() -> &'static Mobs {
         elwynn.spawns.retain(|r| {
             !overrides.removed.contains(&r.1) && !overrides.removed_guids.contains(&r.0)
         });
+        let zone_overrides: ZonesFile = toml::from_str(include_str!("../content/zones.toml"))
+            .expect("content/zones.toml parses");
+        let mut eastern: Vec<ZoneFile> = ZONE_FILES
+            .iter()
+            .map(|(name, text)| {
+                let mut file: ZoneFile = toml::from_str(text)
+                    .unwrap_or_else(|e| panic!("content/{name}.toml parses: {e}"));
+                let removed = &zone_overrides
+                    .zone
+                    .iter()
+                    .find(|z| z.file == *name)
+                    .unwrap_or_else(|| panic!("content/zones.toml has no [[zone]] for {name}"))
+                    .removed;
+                file.spawns.retain(|r| !removed.contains(&r.1));
+                file
+            })
+            .collect();
         let difficulty = hand.difficulty;
         let zone_factors = hand
             .zone
@@ -573,6 +614,16 @@ pub(crate) fn content() -> &'static Mobs {
             .filter(|e| !template.iter().any(|t| t.entry == *e))
             .collect();
         template.extend(elwynn.template);
+        // The other zones' templates, past the entries Elwynn or the hand already define (seven
+        // shared creatures such as the Stormwind City Guard). They are not `vanilla`: that list is
+        // Elwynn's, which the Level Bands read.
+        for file in &mut eastern {
+            for t in std::mem::take(&mut file.template) {
+                if !template.iter().any(|have| have.entry == t.entry) {
+                    template.push(t);
+                }
+            }
+        }
         let mut spawn: Vec<Spawn> = hand
             .spawn
             .into_iter()
@@ -597,10 +648,17 @@ pub(crate) fn content() -> &'static Mobs {
                 })
             })
             .collect();
+        let elwynn_guids: HashSet<u32> = elwynn.spawns.iter().map(|r| r.0).collect();
         let zones = [
             (barrens.spawns, crate::content::KALIMDOR),
             (elwynn.spawns, crate::content::EASTERN_KINGDOMS),
-        ];
+        ]
+        .into_iter()
+        .chain(
+            eastern
+                .into_iter()
+                .map(|f| (f.spawns, crate::content::EASTERN_KINGDOMS)),
+        );
         for (rows, map) in zones {
             spawn.extend(rows.into_iter().map(
                 |Row(guid, entry, lmin, lmax, x, y, z, o, display_id, wander, camp)| Spawn {
@@ -626,10 +684,11 @@ pub(crate) fn content() -> &'static Mobs {
         // The hand-written moves of generated Elwynn spawns, before the Level Bands read where
         // each stands. A moved spawn stands where we put it, so the audit counts it as ours.
         for m in &overrides.moved {
-            for s in spawn
-                .iter_mut()
-                .filter(|s| s.map == crate::content::EASTERN_KINGDOMS && s.entry == m.entry)
-            {
+            for s in spawn.iter_mut().filter(|s| {
+                s.map == crate::content::EASTERN_KINGDOMS
+                    && s.entry == m.entry
+                    && elwynn_guids.contains(&s.guid)
+            }) {
                 s.position = m.position;
                 s.grounded = m.grounded;
                 s.orientation = m.orientation;
@@ -651,9 +710,13 @@ pub(crate) fn content() -> &'static Mobs {
                 [s.level_min, s.level_max] = c.levels;
             }
         }
-        // The Level Bands: a vanilla Elwynn spawn takes its sub-zone's levels.
+        // The Level Bands: a vanilla Elwynn spawn takes its sub-zone's levels. A Duskwood spawn
+        // inside the bands' bounds keeps its own.
         for s in &mut spawn {
-            if s.map != crate::content::EASTERN_KINGDOMS || !vanilla.contains(&s.entry) {
+            if s.map != crate::content::EASTERN_KINGDOMS
+                || !vanilla.contains(&s.entry)
+                || !elwynn_guids.contains(&s.guid)
+            {
                 continue;
             }
             if let Some(range) = crate::bands::range_at(s.position[0], s.position[1]) {
@@ -1601,6 +1664,38 @@ mod tests {
         // Defias Thug.
         let thug = template(38).unwrap();
         assert!(thug.hostile && !thug.friendly);
+    }
+
+    #[test]
+    fn duskwood_redridge_and_stormwind_spawn_on_eastern_kingdoms() {
+        // Mor'Ladim, Blackrock Gladiator, Sewer Beast, Highlord Bolvar Fordragon (spec #466).
+        for (guid, entry) in [(5086, 522), (18385, 4464), (86301, 3581), (10495, 1748)] {
+            let s = content()
+                .spawn
+                .iter()
+                .find(|s| s.guid == guid)
+                .unwrap_or_else(|| panic!("no spawn {guid}"));
+            assert_eq!(s.entry, entry, "spawn {guid}");
+            assert_eq!(s.map, crate::content::EASTERN_KINGDOMS, "spawn {guid}");
+            assert_eq!(s.phase, Phase::OpenWorld, "spawn {guid}");
+        }
+        let bolvar = template(1748).unwrap();
+        assert!(bolvar.friendly && !bolvar.hostile);
+        assert_eq!(bolvar.faction_template, 35);
+        assert!(template(522).unwrap().hostile);
+        // Unseen and Rift Spawn are invisible in vanilla.
+        assert!(!content()
+            .spawn
+            .iter()
+            .any(|s| [3094, 6492].contains(&s.entry)));
+    }
+
+    #[test]
+    fn a_duskwood_spawn_inside_elwynns_band_bounds_keeps_its_own_levels() {
+        // Starving Dire Wolf at -10007.3, -1494.3, in the Darkened Bank.
+        let wolf = content().spawn.iter().find(|s| s.guid == 4348).unwrap();
+        assert_eq!(wolf.entry, 213);
+        assert_eq!((wolf.level_min, wolf.level_max), (19, 20));
     }
 
     #[test]

@@ -528,7 +528,7 @@ pub fn rank(name: &str) -> u32 {
         "normal" => 0,
         "elite" => 1,
         "rare_elite" => 2,
-        "world_boss" => 3,
+        "boss" => 3,
         "rare" => 4,
         other => panic!("unknown rank {other}"),
     }
