@@ -1549,11 +1549,12 @@ def power_level(tier, level):
 
 def calling_level(calling, level):
     """The level a character of Power Level `level` has in its Calling: Advancement starts a
-    Tier 1 Calling at 1 (talents.rs counts points from it), and its Power Level runs 10 to 30."""
+    Tier 1 Calling at 1 (talents.rs counts points from it), and its Power Level runs 10 to 30. Past
+    the band's top the Calling stays at its cap."""
     tier = SPELLS[calling].get("tier") or 0
     if tier == 0:
         return level
-    return next(cl for cl in range(1, tier_cap(tier) + 1) if power_level(tier, cl) >= level)
+    return next((cl for cl in range(1, tier_cap(tier) + 1) if power_level(tier, cl) >= level), tier_cap(tier))
 
 
 def points_at(level):

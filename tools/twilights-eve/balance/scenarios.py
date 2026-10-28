@@ -213,10 +213,11 @@ def b_boss(levels, fights, callings, run):
 
 def _named(rule, gear, above, need, fights, callings, run):
     """Every named boss, whatever the levels asked for: the boss sets the level. A Tier 1
-    character is 10 to 30, so a boss below 10 (or above 30) is fought at the nearest."""
+    character starts at 10, so a boss below 10 is fought at 10. Above 30 the character is fought at
+    the level it wants (G+5-named puts it at 35 against Hogger), on the provisional level table."""
     cells = []
     for b in _bosses().values():
-        lv = min(max(b["level"] + above, 10), 30)
+        lv = max(b["level"] + above, 10)
         cells += [cell(c, lv, gear, named(b), fights) for c in callings]
     rows = _rows(rule, cells, run, lambda r: r["win"] >= need)
     for r, c in zip(rows, cells):

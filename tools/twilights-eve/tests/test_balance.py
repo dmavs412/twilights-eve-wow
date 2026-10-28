@@ -53,6 +53,15 @@ class BalanceModel(unittest.TestCase):
                     self.assertIn(row["win"], (0, 1))
                     self.assertTrue(math.isfinite(row["dps"]))
 
+    def test_a_calling_above_30_keeps_its_cap(self):
+        # G+5-named fights Hogger (30) at 35: the Calling stays at its cap, the base stats grow.
+        for calling in model.CALLINGS:
+            with self.subTest(calling=calling):
+                self.assertEqual(model.calling_level(calling, 35), model.calling_level(calling, 30))
+                at_30, at_35 = model.character(calling, 30, "green"), model.character(calling, 35, "green")
+                self.assertEqual(at_35["talents"], at_30["talents"])
+                self.assertGreater(at_35["stats"].max_hp, at_30["stats"].max_hp)
+
     def test_kits_fill_every_slot(self):
         for calling in model.CALLINGS:
             for level in (15, 25):
