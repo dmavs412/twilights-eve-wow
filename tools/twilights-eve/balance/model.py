@@ -43,8 +43,9 @@ class DataRoot:
         self.tables = {k: self.json(f"{k}_level_stats.json") for k in CLASS_ID}
         self.gear = {int(r["entry"]): r for r in self.csv("gear.csv")}
         self.callings_csv = {r["calling"]: r for r in self.csv("callings.csv")}
+        # Tree talents only: a Skill Choice or a Talent row (ADR 0028) has no seat.
         self.talent_row = {(r["calling"], r["key"]): (r["tab"], int(r["tab_row"]))
-                           for r in self.csv("master.csv") if r["kind"] == "talent"}
+                           for r in self.csv("master.csv") if r["kind"] == "talent" and r["tab_row"]}
         self.outfits = self.toml("starting_outfits.toml")
         mobs = self.toml("mobs.toml")
         self.difficulty = mobs["difficulty"]

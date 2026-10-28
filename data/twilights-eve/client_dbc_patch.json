@@ -257,6 +257,480 @@
    }
   },
   {
+   "spell_id": 1000415,
+   "calling": "basic_warrior",
+   "key": "bull_rush",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Bull Rush",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generate $/10;s2 rage, and stun it for 3 sec.  Cannot be used in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_BullRush",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 8.5,
+      "per_level": 0.14
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "mechanic": 12,
+    "aura_description": "Stunned.",
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000416,
+   "calling": "basic_warrior",
+   "key": "rallying_charge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Rallying Charge",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generate 20 rage, and stun it for $7922d.  Cannot be used in combat.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_Warrior_BattleShout",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 20,
+      "per_level": 0
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000417,
+   "calling": "basic_warrior",
+   "key": "reckless_charge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Reckless Charge",
+    "cost": 0.0,
+    "cooldown_ms": 15000,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Charge an enemy, generate $/10;s2 rage, and stun it for $7922d.",
+    "stances": [
+     "Battle Stance"
+    ],
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 17179869184,
+    "icon": "Interface\\Icons\\Ability_Rogue_Sprint",
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     },
+     {
+      "effect": 30,
+      "base": 8.5,
+      "per_level": 0.14
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 12
+     }
+    ],
+    "visual": 867,
+    "range_index": 95,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000418,
+   "calling": "basic_warrior",
+   "key": "searing_blast",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Searing Blast",
+    "cost": 10,
+    "cooldown_ms": 8000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Blasts the enemy with fire damage, then burns it for 60% more over 6 sec. Ignores armour; it cannot be dodged, parried or blocked.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Fire_Immolation",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 20,
+      "per_level": 2.5
+     },
+     {
+      "effect": 6,
+      "base": 0,
+      "per_level": 0,
+      "aura": 3
+     }
+    ],
+    "aura_description": "Burning.",
+    "visual": 143,
+    "range_index": 3,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000419,
+   "calling": "basic_warrior",
+   "key": "flash_burn",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Flash Burn",
+    "cost": 10,
+    "cooldown_ms": 4000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Fire_FlameBolt",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 20,
+      "per_level": 2.5
+     }
+    ],
+    "visual": 143,
+    "range_index": 3,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000420,
+   "calling": "basic_warrior",
+   "key": "backdraft",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Backdraft",
+    "cost": 10,
+    "cooldown_ms": 8000,
+    "interrupt_flags": 0,
+    "dmg_class": 1,
+    "school": 2,
+    "prevention_type": 1,
+    "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked. Double damage to a stunned or incapacitated target.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 68719476736,
+    "icon": "Interface\\Icons\\Spell_Fire_SoulBurn",
+    "visual": 143,
+    "range_index": 3,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000421,
+   "calling": "basic_warrior",
+   "key": "deep_gouge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Deep Gouge",
+    "cost": 15,
+    "cooldown_ms": 10000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Strikes the enemy hard for Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_BackStab",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 30,
+      "per_level": 4.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 256,
+    "range_index": 2,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000422,
+   "calling": "basic_warrior",
+   "key": "blindside",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Blindside",
+    "cost": 15,
+    "cooldown_ms": 10000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Strikes the enemy for a little Physical damage and incapacitates it for 6 sec. Any later damage ends it. Your next hit is a critical strike.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Rogue_KidneyShot",
+    "mechanic": 14,
+    "dbc_effects": [
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Incapacitated. Any later damage ends it.",
+    "visual": 256,
+    "range_index": 2,
+    "duration_index": 32
+   }
+  },
+  {
+   "spell_id": 1000423,
+   "calling": "basic_warrior",
+   "key": "quick_gouge",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Quick Gouge",
+    "cost": 5,
+    "cooldown_ms": 6000,
+    "gcd_ms": 1000,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 34359738368,
+    "icon": "Interface\\Icons\\Ability_Rogue_SliceDice",
+    "dbc_effects": [
+     {
+      "effect": 2,
+      "base": 10,
+      "per_level": 1.5
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "visual": 256,
+    "range_index": 2,
+    "duration_index": 35
+   }
+  },
+  {
+   "spell_id": 1000424,
+   "calling": "basic_warrior",
+   "key": "cleave",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Cleave",
+    "cost": 15.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. A second enemy in reach takes half the hit.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Warrior_Cleave",
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000425,
+   "calling": "basic_warrior",
+   "key": "finisher",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Finisher",
+    "cost": 15.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. Deals 50% more to an enemy below 30% health.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Ability_Rogue_Eviscerate",
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
+   "spell_id": 1000426,
+   "calling": "basic_warrior",
+   "key": "frenzy",
+   "rank": 1,
+   "fields": {
+    "power_type": 1,
+    "name": "Frenzy",
+    "cost": 15.0,
+    "cooldown_ms": 0,
+    "gcd_ms": 0,
+    "not_in_combat": false,
+    "on_next_swing": true,
+    "interrupt_flags": 0,
+    "dmg_class": 2,
+    "school": 0,
+    "prevention_type": 2,
+    "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. Each strike within 5 sec of the last adds 25% to the bonus, up to three times.",
+    "implicit_targets": [
+     6,
+     0
+    ],
+    "spell_family": 4,
+    "family_flags": 8589934592,
+    "icon": "Interface\\Icons\\Spell_Shadow_UnholyFrenzy",
+    "dbc_effects": [
+     {
+      "effect": 58,
+      "base": 9.5,
+      "per_level": 1.4
+     },
+     {
+      "effect": 3,
+      "base": 0,
+      "per_level": 0
+     }
+    ],
+    "aura_description": "Heroic Strike's bonus is 25% higher per stack.",
+    "visual": 39,
+    "range_index": 2,
+    "cast_time_index": 1
+   }
+  },
+  {
    "spell_id": 1000004,
    "calling": "vanguard",
    "key": "righteous_smash",

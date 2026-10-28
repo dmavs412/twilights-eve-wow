@@ -51,7 +51,18 @@ KNOWN_KINDS = {
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
-STATS = ("strength", "agility", "stamina", "intellect", "spirit")
+# Talent Rows (ADR 0028): a `talent` row with `variant_of` is a Skill Choice of that skill, one
+# with `row_key` a Talent of that row; `row_level` opens a skill's row or a Talent row. The tree
+# columns stay empty on both (#502 removes the tree).
+ROW_COLUMNS = ("variant_of", "row_key", "row_level")
+TREE_COLUMNS = ("tab", "tab_row", "tab_column", "prereq_key", "prereq_rank", "max_rank", "talent_id",
+                "source_tab_id")
+# The cells a Skill Choice never inherits from its skill: they are the choice's own, empty or not.
+CHOICE_OWN_COLUMNS = ("kind", "key", "name", "rank", "spell_id", "icon", "visual", "status", "description",
+                      "assumptions", "notes", "modelled", "variant_of")
+# A choice cell of this blanks the inherited cell.
+BLANK = "-"
+STATS =("strength", "agility", "stamina", "intellect", "spirit")
 ARMOUR_KINDS = ("cloth", "leather", "mail", "plate", "shield")
 PROC_EVENTS = ("cast", "kill", "dodge", "finisher", "block", "parry", "crit_taken", "melee_hit", "consume", "periodic_tick", "damage_done", "moving_for", "still_for", "crit")
 PROC_ACTIONS = ("apply_aura", "heal_pct", "energize", "add_combo_points", "damage_attacker", "block_value_pct", "weapon_pct", "spread", "apply_aura_area", "refund_cost_pct", "absorb_cost_pct", "energize_pct_of_base", "apply_aura_target", "spread_aura", "heal_allies_pct", "repeat_cast", "cooldown_ms", "splash_pct")
@@ -956,6 +967,27 @@ def check_kind_params(kind: str, params: dict, where: str) -> None:
             raise BuildError(f"{where}: pickup_heal_pct needs a positive whole pct, has {pct!r}")
     if kind == "consume_aura_stacks" and not isinstance(params.get("per_stack"), dict):
         raise BuildError(f"{where}: consume_aura_stacks lacks a per_stack formula (per_stack.base, per_stack.per_level)")
+    # Talent Rows' params (#500 reads them): that percent more against a stunned or incapacitated
+    # target, a second enemy in melee reach taking that percent, and a bonus under a health share.
+    if kind in ("school_damage", "weapon_strike") and "controlled_pct" in params:
+        pct = params["controlled_pct"]
+        if isinstance(pct, bool) or not isinstance(pct, int) or pct <= 0:
+            raise BuildError(f"{where}: controlled_pct needs a positive whole number, has {pct!r}")
+    if kind == "weapon_strike":
+        if "cleave_pct" in params:
+            pct = params["cleave_pct"]
+            if isinstance(pct, bool) or not isinstance(pct, int) or not 1 <= pct <= 100:
+                raise BuildError(f"{where}: cleave_pct needs a whole number from 1 to 100, has {pct!r}")
+        if ("below_health_pct" in params) != ("below_bonus_pct" in params):
+            raise BuildError(f"{where}: below_health_pct and below_bonus_pct go together")
+        if "below_health_pct" in params:
+            health, bonus = params["below_health_pct"], params["below_bonus_pct"]
+            if isinstance(health, bool) or not isinstance(health, int) or not 1 <= health <= 100:
+                raise BuildError(f"{where}: below_health_pct needs a whole number from 1 to 100, has {health!r}")
+            if isinstance(bonus, bool) or not isinstance(bonus, int) or bonus <= 0:
+                raise BuildError(f"{where}: below_bonus_pct needs a positive whole number, has {bonus!r}")
+    if kind == "skill_crit_pct" and not isinstance(params.get("skill", "any"), str):
+        raise BuildError(f"{where}: skill_crit_pct skill is one skill key or any, has {params['skill']!r}")
     for block in ("per_combo", "duration_per_combo"):
         if block in params and not isinstance(params[block], dict):
             raise BuildError(f"{where}: {block} is a formula block ({block}.base, {block}.per_level)")
@@ -1208,6 +1240,107 @@ def build_shape(row: dict, kind: str, school: str, hidden: bool, where: str) -> 
         # Unlimited (null) for an area row, one target otherwise.
         out["max_targets"] = None if area else 1
     return out
+
+
+def overlay(skill_row: dict, choice_row: dict, where: str) -> dict:
+    """A Skill Choice's raw row: a copy of its skill's with the choice's own cells always the
+    choice's, every other cell the choice's when set (`-` blanks it), and each effect or spellmod
+    slot N the choice's whole when its kind (or any spellmod cell) is set, dropped with `-`."""
+    merged = dict(skill_row)
+    for column, value in choice_row.items():
+        if column in CHOICE_OWN_COLUMNS:
+            merged[column] = value
+        elif re.fullmatch(r"effect\d+_(kind|params)", column) or re.fullmatch(r"spellmod\d+_\w+", column):
+            continue
+        elif value == BLANK:
+            merged[column] = ""
+        elif value:
+            merged[column] = value
+    for i in range(1, MAX_EFFECTS + 1):
+        kind, params = choice_row[f"effect{i}_kind"], choice_row[f"effect{i}_params"]
+        if kind == BLANK:
+            if params:
+                raise BuildError(f"{where}: effect{i}_kind=- drops the slot, but effect{i}_params is set")
+            merged[f"effect{i}_kind"] = merged[f"effect{i}_params"] = ""
+        elif kind:
+            merged[f"effect{i}_kind"], merged[f"effect{i}_params"] = kind, params
+        elif params:
+            raise BuildError(f"{where}: effect{i}_params set with no effect{i}_kind; a Skill Choice replaces a slot whole")
+    for i in range(1, MAX_SPELLMODS + 1):
+        columns = [f"spellmod{i}_{c}" for c in SPELLMOD_COLUMNS]
+        values = {c: choice_row.get(c, "") for c in columns}
+        if not any(values.values()):
+            continue
+        if any(v == BLANK for v in values.values()):
+            if any(v and v != BLANK for v in values.values()):
+                raise BuildError(f"{where}: spellmod{i} mixes - with a value; - drops the group whole")
+            for c in columns:
+                merged[c] = ""
+        else:
+            merged.update(values)
+    if merged["client_visible"] == "no" or merged.get("spellbook") == "no":
+        raise BuildError(f"{where}: a Skill Choice is a visible spell-book skill; its skill or itself is "
+                         f"client_visible=no or spellbook=no")
+    merged["spellbook"] = ""
+    if not merged["visual"]:
+        raise BuildError(f"{where}: a Skill Choice needs a visual (its skill's, or another Spell.dbc id), "
+                         f"or visual={NO_VISUAL}")
+    return merged
+
+
+def build_rows(calling: dict, skill_rows: list[tuple[int, dict]], choices: dict[str, list[tuple[int, dict, str]]],
+               row_talents: dict[str, list[tuple[int, dict, dict, str]]]) -> list[dict]:
+    """A Calling's Talent Rows (ADR 0028): a Skill Choice row per skill with a `row_level`, a Talent
+    row per `row_key`, each of exactly three choices, sorted by level then sheet order."""
+    out: list[tuple[int, int, dict]] = []
+    cap = calling.get("tier_cap")
+    levels: dict[str, int] = {}
+    for line, row in skill_rows:
+        if not row["row_level"]:
+            continue
+        where = f"line {line} ({row['calling']}/{row['key']})"
+        level = whole(row["row_level"], f"{where} row_level")
+        levels[row["key"]] = level
+        learn = whole(row["learn_level"], f"{where} learn_level") if row["learn_level"] else 1
+        if level < learn:
+            raise BuildError(f"{where}: row_level {level} is below learn_level {learn}")
+        if cap is None:
+            raise BuildError(f"{where}: row_level needs the Calling's tier_cap, and {calling['key']} has no calling row with one")
+        if level > cap:
+            raise BuildError(f"{where}: row_level {level} is above {calling['key']}'s tier_cap {cap}")
+        mine = choices.get(row["key"], [])
+        if len(mine) != 3:
+            raise BuildError(f"{where}: {row['key']} has row_level {level} and {len(mine)} Skill Choices, want 3")
+        skill_id = next((s.get("spell_id") for s in calling["skills"] if s["key"] == row["key"]), None)
+        for _, built, choice_where in mine:
+            if built.get("spell_id") == skill_id:
+                raise BuildError(f"{choice_where}: spell_id {skill_id} is its skill's; a Skill Choice is its own spell")
+        out.append((level, line, {"key": row["key"], "level": level, "kind": "skill_choice", "skill": row["key"],
+                                  "choices": [built for _, built, _ in mine]}))
+    for key, mine in choices.items():
+        if key not in levels:
+            _, _, where = mine[0]
+            raise BuildError(f"{where}: variant_of {key!r} names a skill with no row_level")
+    for key, mine in row_talents.items():
+        line, first, _, where = mine[0]
+        if len(mine) != 3:
+            raise BuildError(f"{where}: Talent row {key!r} has {len(mine)} rows, want 3")
+        wanted = {r["row_level"] for _, r, _, _ in mine}
+        if len(wanted) != 1 or not first["row_level"]:
+            raise BuildError(f"{where}: Talent row {key!r}'s three rows need one row_level, have {sorted(wanted)}")
+        level = whole(first["row_level"], f"{where} row_level")
+        if cap is None:
+            raise BuildError(f"{where}: row_level needs the Calling's tier_cap, and {calling['key']} has no calling row with one")
+        if not 1 <= level <= cap:
+            raise BuildError(f"{where}: row_level {level} is outside 1 to {calling['key']}'s tier_cap {cap}")
+        out.append((level, line, {"key": key, "level": level, "kind": "talent", "skill": None,
+                                  "choices": [built for _, _, built, _ in mine]}))
+    return [entry for _, _, entry in sorted(out, key=lambda e: (e[0], e[1]))]
+
+
+def choice_skills(calling: dict) -> list[dict]:
+    """Every Skill Choice of the Calling's rows: a full skill the skill lookups run over too."""
+    return [c for r in calling.get("rows", []) if r["kind"] == "skill_choice" for c in r["choices"]]
 
 
 def build_row(row: dict, where: str, auras: dict[str, set[str]] = {}) -> dict:
@@ -1676,8 +1809,20 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             raise BuildError(f"column {column} is gone (ADR 0011): a row is its own spell_id and a Calling's "
                              "power and armour are its callings.csv row; tools/twilights-eve/migrate_*.py "
                              "moved the sheet once")
+    # A sheet older than the Talent Rows columns (a test fixture) reads them as empty cells.
+    for row in rows:
+        for column in ROW_COLUMNS:
+            row.setdefault(column, "")
     check_unique_ids(rows)
     masks = skill_masks(rows)
+    # Each Calling's skill rows by key, in sheet order: what a Skill Choice overlays, and the rows
+    # whose `row_level` opens a Skill Choice row.
+    skills_by_key: dict[tuple[str, str], tuple[int, dict]] = {}
+    for line, row in enumerate(rows, start=2):
+        if row["kind"] == "skill":
+            skills_by_key.setdefault((row["calling"], row["key"]), (line, row))
+    choices: dict[tuple[str, str], list[tuple[int, dict, str]]] = {}
+    row_talents: dict[tuple[str, str], list[tuple[int, dict, dict, str]]] = {}
     profiles = build_profiles(calling_rows or [])
     named = {r["calling"] for r in rows if r["calling"]}
     for key in sorted(named - set(profiles)):
@@ -1725,6 +1870,22 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             raise BuildError(f"{where}: status is {row['status']!r}, want one of {', '.join(STATUSES)}")
         if kind != "skill" and row["learn_level"]:
             raise BuildError(f"{where} learn_level: set on a {kind} row; only skill rows carry it")
+        choice_of, talent_row = row["variant_of"], row["row_key"]
+        if (choice_of or talent_row) and kind != "talent":
+            raise BuildError(f"{where}: variant_of and row_key belong to a talent row; this is a {kind} row")
+        if choice_of and talent_row:
+            raise BuildError(f"{where}: variant_of and row_key are both set; a row is a Skill Choice or a Talent")
+        row_kind = "Skill Choice" if choice_of else "Talent" if talent_row else kind
+        if choice_of or talent_row:
+            for column in TREE_COLUMNS:
+                if row[column]:
+                    raise BuildError(f"{where} {column}: set on a {row_kind} row; the tree columns stay empty")
+            if row["rank"] != "1":
+                raise BuildError(f"{where}: a {row_kind} row is rank 1, has {row['rank']!r}")
+        if row["row_level"]:
+            if choice_of or kind not in ("skill", "talent") or (kind == "talent" and not talent_row):
+                raise BuildError(f"{where} row_level: set on a {row_kind} row; only skill rows and Talent rows carry it")
+            whole(row["row_level"], f"{where} row_level")
         if kind != "aura":
             for column in AURA_ONLY_COLUMNS:
                 # A from-scratch row shows its own dispel type and mechanic on the client.
@@ -1734,7 +1895,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
         calling = callings.setdefault(row["calling"], {"key": row["calling"],
                                                       **{k: v for k, v in profile.items() if k != "name"},
                                                       "skills": [],
-                                                      "talent_tabs": [], "auras": []})
+                                                      "talent_tabs": [], "auras": [], "rows": []})
         if kind == "calling":
             if "name" in calling:
                 raise BuildError(f"{where}: second calling row for {row['calling']}")
@@ -1750,8 +1911,14 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
                 raise BuildError(f"{where}: duplicate talent_tab {tab['name']!r}")
             calling["talent_tabs"].append(tab)
             continue
-        built = build_row(row, where, auras[row["calling"]])
-        if kind == "talent":
+        source = row
+        if choice_of:
+            if (row["calling"], choice_of) not in skills_by_key:
+                raise BuildError(f"{where}: variant_of {choice_of!r} is not a skill of {row['calling']}")
+            # The merged row builds exactly as a skill: a visible, castable spell-book row.
+            source = {**overlay(skills_by_key[(row["calling"], choice_of)][1], row, where), "kind": "skill"}
+        built = build_row(source, where, auras[row["calling"]])
+        if kind == "talent" and not (choice_of or talent_row):
             built["max_rank"] = max_rank(row, where)
         elif row["max_rank"]:
             raise BuildError(f"{where}: max_rank is set on a {kind} row; only talent ranks carry it")
@@ -1765,17 +1932,23 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
             if override := aura_override(row, aura, where, art, art_dir):
                 aura_overrides.append((override, where))
             continue
-        spellmods = build_spellmods(row, where, masks.get(row["calling"], {}))
+        spellmods = build_spellmods(source, where, masks.get(row["calling"], {}))
         if spellmods and kind == "aura":
             raise BuildError(f"{where}: spellmod cells are set on an aura row; only skill and talent rows carry them")
         if spellmods:
             built["spellmods"] = spellmods
-        family = masks.get(row["calling"], {}).get(row["key"]) if kind == "skill" else None
-        override = client_override(row, built, where, categories, art, art_dir, family, profile["power"])
+        # A Skill Choice takes its skill's family bit, so a spell mod aimed at the skill reaches it.
+        family = masks.get(row["calling"], {}).get(choice_of or row["key"]) if kind == "skill" or choice_of else None
+        override = client_override(source, built, where, categories, art, art_dir, family, profile["power"])
         if override:
             overrides.append(override)
         if kind == "skill":
             calling["skills"].append(built)
+        elif choice_of:
+            built["variant_of"] = choice_of
+            choices.setdefault((row["calling"], choice_of), []).append((line, built, where))
+        elif talent_row:
+            row_talents.setdefault((row["calling"], talent_row), []).append((line, row, built, where))
         else:
             talent_rows.setdefault((row["calling"], row["key"]), []).append((row, built, where))
 
@@ -1785,8 +1958,14 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
         merge_override(overrides, extra, where)
 
     for calling in callings.values():
-        resolve_amount_of(calling)
-        resolve_ground_spell(calling)
+        key = calling["key"]
+        calling["rows"] = build_rows(calling, [(line, r) for (c, _), (line, r) in skills_by_key.items() if c == key],
+                                     {k: v for (c, k), v in choices.items() if c == key},
+                                     {k: v for (c, k), v in row_talents.items() if c == key})
+        # A Skill Choice is a full skill: the lookups a skill's effects need run over the choices too.
+        with_choices = {**calling, "skills": calling["skills"] + choice_skills(calling)}
+        resolve_amount_of(with_choices)
+        resolve_ground_spell(with_choices)
         resolve_next_cast(calling, masks.get(calling["key"], {}))
 
     for (calling_key, key), ranks in talent_rows.items():
@@ -1835,7 +2014,7 @@ def build(rows: list[dict], art_dir: str = DEFAULT_ART_DIR,
                 if prereq["rank"] > len(target["ranks"]):
                     raise BuildError(f"{where}: prereq {prereq['key']} has no rank {prereq['rank']}")
     for calling in callings.values():
-        resolve_reset_cooldowns(calling)
+        resolve_reset_cooldowns({**calling, "skills": calling["skills"] + choice_skills(calling)})
     seats = []
     tabs = []
     for calling in callings.values():

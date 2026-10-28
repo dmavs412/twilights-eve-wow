@@ -1033,6 +1033,733 @@
      }
     ],
     "description": "Incapacitated. Any later damage ends it."
+   },
+   {
+    "key": "bull_rush_stun",
+    "name": "Bull Rush (stun)",
+    "spell_id": 1000415,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "stun",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 3000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "stun",
+      "params": {
+       "aura_spell_id": 7922
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Stunned."
+   },
+   {
+    "key": "searing_burn",
+    "name": "Searing Blast (burn)",
+    "spell_id": 1000418,
+    "status": "wip",
+    "school": "fire",
+    "prevention": "silence",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "periodic_damage",
+      "params": {
+       "amount": {
+        "base": 2,
+        "per_level": 0.25
+       },
+       "tick_ms": 1000,
+       "school": "fire"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Burning."
+   },
+   {
+    "key": "blindside_incapacitate",
+    "name": "Blindside (incapacitate)",
+    "spell_id": 1000422,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "target": "enemy",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "mechanic": "incapacitate",
+    "aura_positive": false,
+    "aura_hidden": false,
+    "cancelable": false,
+    "persist_death": false,
+    "break_on": {
+     "damage": true
+    },
+    "duration_ms": 6000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "incapacitate",
+      "params": {},
+      "realm_only": false
+     }
+    ],
+    "description": "Incapacitated. Any later damage ends it."
+   },
+   {
+    "key": "blindside_edge",
+    "name": "Blindside (edge)",
+    "spell_id": 1000422,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 1,
+    "stack_rule": "refresh",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 10000,
+    "charges": 1,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_crit_pct",
+      "params": {
+       "skill": "any",
+       "pct": 100
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Your next hit is a critical strike."
+   },
+   {
+    "key": "frenzy",
+    "name": "Frenzy",
+    "spell_id": 1000426,
+    "status": "wip",
+    "school": "physical",
+    "prevention": "pacify",
+    "max_stacks": 3,
+    "stack_rule": "stack",
+    "unique_per": "caster",
+    "group_scope": "caster",
+    "dispel_type": "none",
+    "aura_positive": true,
+    "aura_hidden": false,
+    "cancelable": true,
+    "persist_death": false,
+    "duration_ms": 5000,
+    "modelled": true,
+    "effects": [
+     {
+      "kind": "skill_amount_pct",
+      "params": {
+       "skill": "heroic_strike",
+       "pct": 25,
+       "applies_to": "hit"
+      },
+      "realm_only": false
+     }
+    ],
+    "description": "Heroic Strike's bonus is 25% higher per stack."
+   }
+  ],
+  "rows": [
+   {
+    "key": "charge",
+    "level": 2,
+    "kind": "skill_choice",
+    "skill": "charge",
+    "choices": [
+     {
+      "key": "bull_rush",
+      "name": "Bull Rush",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 457,
+      "spell_id": 1000415,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 8.5,
+          "per_level": 0.14,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "bull_rush_stun"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Charge an enemy, generate $/10;s2 rage, and stun it for 3 sec.  Cannot be used in combat.",
+      "variant_of": "charge"
+     },
+     {
+      "key": "rallying_charge",
+      "name": "Rallying Charge",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 457,
+      "spell_id": 1000416,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "requires": {
+       "combat": "out"
+      },
+      "requires_out_of_combat": true,
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 20,
+          "per_level": 0,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "charge_stun"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Charge an enemy, generate 20 rage, and stun it for $7922d.  Cannot be used in combat.",
+      "variant_of": "charge"
+     },
+     {
+      "key": "reckless_charge",
+      "name": "Reckless Charge",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 457,
+      "spell_id": 1000417,
+      "realm_cost": 0,
+      "realm_cooldown_ms": 15000,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 8,
+      "realm_range_max": 25,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "charge",
+        "params": {
+         "speed_yd_s": 24
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "energize",
+        "params": {
+         "power": "rage",
+         "amount": {
+          "base": 8.5,
+          "per_level": 0.14,
+          "per_ap": 0
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "stun",
+        "params": {
+         "apply_aura": "charge_stun"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Charge an enemy, generate $/10;s2 rage, and stun it for $7922d.",
+      "variant_of": "charge"
+     }
+    ]
+   },
+   {
+    "key": "fire_blast",
+    "level": 4,
+    "kind": "skill_choice",
+    "skill": "fire_blast",
+    "choices": [
+     {
+      "key": "searing_blast",
+      "name": "Searing Blast",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000418,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 20,
+      "target": "enemy",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 20,
+          "per_level": 2.5
+         },
+         "school": "fire"
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "periodic_damage",
+        "params": {
+         "apply_aura": "searing_burn"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Blasts the enemy with fire damage, then burns it for 60% more over 6 sec. Ignores armour; it cannot be dodged, parried or blocked.",
+      "variant_of": "fire_blast"
+     },
+     {
+      "key": "flash_burn",
+      "name": "Flash Burn",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000419,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 4000,
+      "realm_range_max": 20,
+      "target": "enemy",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 20,
+          "per_level": 2.5
+         },
+         "school": "fire"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked.",
+      "variant_of": "fire_blast"
+     },
+     {
+      "key": "backdraft",
+      "name": "Backdraft",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000420,
+      "realm_cost": 10,
+      "realm_cooldown_ms": 8000,
+      "realm_range_max": 20,
+      "target": "enemy",
+      "school": "fire",
+      "prevention": "silence",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "magic",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": false,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": false,
+      "effects": [],
+      "description": "Blasts the enemy with fire damage. Ignores armour; it cannot be dodged, parried or blocked. Double damage to a stunned or incapacitated target.",
+      "variant_of": "fire_blast"
+     }
+    ]
+   },
+   {
+    "key": "gouge",
+    "level": 6,
+    "kind": "skill_choice",
+    "skill": "gouge",
+    "choices": [
+     {
+      "key": "deep_gouge",
+      "name": "Deep Gouge",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000421,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 10000,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 30,
+          "per_level": 4.5
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "incapacitate",
+        "params": {
+         "apply_aura": "gouge_incapacitate"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Strikes the enemy hard for Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
+      "variant_of": "gouge"
+     },
+     {
+      "key": "blindside",
+      "name": "Blindside",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000422,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 10000,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": false,
+      "effects": [],
+      "description": "Strikes the enemy for a little Physical damage and incapacitates it for 6 sec. Any later damage ends it. Your next hit is a critical strike.",
+      "variant_of": "gouge"
+     },
+     {
+      "key": "quick_gouge",
+      "name": "Quick Gouge",
+      "rank": 1,
+      "status": "wip",
+      "spell_id": 1000423,
+      "realm_cost": 5,
+      "realm_cooldown_ms": 6000,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "instant",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "school_damage",
+        "params": {
+         "amount": {
+          "base": 10,
+          "per_level": 1.5
+         }
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "incapacitate",
+        "params": {
+         "apply_aura": "gouge_incapacitate"
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "Strikes the enemy for a little Physical damage and incapacitates it for 4 sec. Any later damage ends it.",
+      "variant_of": "gouge"
+     }
+    ]
+   },
+   {
+    "key": "heroic_strike",
+    "level": 8,
+    "kind": "skill_choice",
+    "skill": "heroic_strike",
+    "choices": [
+     {
+      "key": "cleave",
+      "name": "Cleave",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 856,
+      "spell_id": 1000424,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": false,
+      "effects": [],
+      "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. A second enemy in reach takes half the hit.",
+      "variant_of": "heroic_strike"
+     },
+     {
+      "key": "finisher",
+      "name": "Finisher",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 856,
+      "spell_id": 1000425,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": false,
+      "effects": [],
+      "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. Deals 50% more to an enemy below 30% health.",
+      "variant_of": "heroic_strike"
+     },
+     {
+      "key": "frenzy",
+      "name": "Frenzy",
+      "rank": 1,
+      "status": "wip",
+      "icon_id": 856,
+      "spell_id": 1000426,
+      "realm_cost": 15,
+      "realm_cooldown_ms": 0,
+      "realm_gcd_ms": 0,
+      "realm_range_min": 0,
+      "realm_range_max": 5,
+      "target": "enemy",
+      "school": "physical",
+      "prevention": "pacify",
+      "cost_kind": "flat",
+      "cast_kind": "next_swing",
+      "interrupt_on": [],
+      "defense_type": "melee",
+      "on_cast": {
+       "breaks_stealth": true,
+       "starts_auto_attack": true,
+       "resets_swing": false
+      },
+      "weapon_hand": "main",
+      "max_targets": 1,
+      "modelled": true,
+      "effects": [
+       {
+        "kind": "weapon_strike",
+        "params": {
+         "weapon": "normal",
+         "on_next_swing": true,
+         "bonus": {
+          "base": 9.5,
+          "per_level": 1.4,
+          "per_ap": 0
+         },
+         "threat_bonus": 20
+        },
+        "realm_only": false
+       },
+       {
+        "kind": "add_aura_stacks",
+        "params": {
+         "aura": "frenzy",
+         "stacks": 1
+        },
+        "realm_only": false
+       }
+      ],
+      "description": "A strong attack that increases melee damage by $s1 and causes a high amount of threat. Each strike within 5 sec of the last adds 25% to the bonus, up to three times.",
+      "variant_of": "heroic_strike"
+     }
+    ]
    }
   ],
   "name": "Basic Warrior",
@@ -4214,6 +4941,7 @@
     "description": "Your next Righteous Smash grants 2 stacks of Conviction."
    }
   ],
+  "rows": [],
   "name": "Vanguard",
   "tier": 1,
   "tier_cap": 30,
@@ -7603,6 +8331,7 @@
    }
   ],
   "auras": [],
+  "rows": [],
   "name": "Zealot"
  },
  {
@@ -10227,6 +10956,7 @@
     "description": "A droplet of blood. Walk over it for a stack of Bloodlust."
    }
   ],
+  "rows": [],
   "name": "Cutthroat",
   "tier": 1,
   "tier_cap": 30,
@@ -13385,6 +14115,7 @@
     "description": "Ley-Spark has no cast time."
    }
   ],
+  "rows": [],
   "name": "Initiate",
   "tier": 1,
   "tier_cap": 30,
@@ -16412,6 +17143,7 @@
     "description": "Incapacitated. Any damage ends it."
    }
   ],
+  "rows": [],
   "name": "Ranger",
   "tier": 1,
   "tier_cap": 30,
@@ -18937,6 +19669,7 @@
     "description": "Movement speed slowed by 60%."
    }
   ],
+  "rows": [],
   "name": "Acolyte",
   "tier": 1,
   "tier_cap": 30,

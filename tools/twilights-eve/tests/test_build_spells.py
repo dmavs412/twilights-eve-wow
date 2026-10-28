@@ -90,8 +90,10 @@ class BuildSpells(unittest.TestCase):
         for row in rows:
             if row["kind"] == "talent":
                 ranks[(row["calling"], row["key"])] = ranks.get((row["calling"], row["key"]), 0) + 1
+        # A Skill Choice or a Talent row (ADR 0028) carries no max_rank: the tree columns stay empty.
+        tree = lambda row: row["kind"] == "talent" and not (row.get("variant_of") or row.get("row_key"))
         rows = [{"status": "placeholder",
-                 **({"max_rank": str(ranks[(row["calling"], row["key"])])} if row["kind"] == "talent" else {}),
+                 **({"max_rank": str(ranks[(row["calling"], row["key"])])} if tree(row) else {}),
                  **({"visual": "none"} if (row["kind"] == "skill" or row.get("cast_kind"))
                     and row.get("client_visible") != "no" else {}),
                  **row} for row in rows]
@@ -1564,6 +1566,133 @@ class CheckOutputs(unittest.TestCase):
             self.assertNotIn("server_spells.json", done.stderr)
             with open(patch_path, encoding="utf-8") as f:
                 self.assertEqual(json.load(f), patch, "--check must write nothing")
+
+
+def choice(key: str, spell_id: int, skill: str = "strike", **extra: str) -> dict:
+    """A Skill Choice of `skill` (ADR 0028): a talent row with variant_of and its own spell."""
+    return {"kind": "talent", "calling": "vanguard", "key": key, "name": key.title(), "rank": "1",
+            "variant_of": skill, "spell_id": str(spell_id), "visual": "78", "icon": "Interface\\Icons\\Ability_X",
+            "modelled": "yes", "description": f"{key}.", **extra}
+
+
+def row_talent(key: str, row_key: str = "fury", level: str = "4", **extra: str) -> dict:
+    """A Talent of a Talent row: a one-rank passive with row_key and row_level."""
+    return {"kind": "talent", "calling": "vanguard", "key": key, "name": key.title(), "rank": "1",
+            "row_key": row_key, "row_level": level, "effect1_kind": "mod_stat",
+            "effect1_params": "stat=strength;amount=1", "modelled": "yes", **extra}
+
+
+class TalentRows(BuildSpells):
+    """Skill Choice rows and Talent rows (ADR 0028, #499)."""
+
+    def three(self, **extra: str) -> list[dict]:
+        return [choice("a", 1000501, **extra), choice("b", 1000502), choice("c", 1000503)]
+
+    def test_a_skill_choice_inherits_blanks_and_replaces_slots_whole(self):
+        a = choice("a", 1000501, client_cost="-", effect1_kind="school_damage",
+                   effect1_params="amount.base=1;amount.per_level=0", effect4_kind="-")
+        b = choice("b", 1000502, client_cost="20", realm_cost="20")
+        rows = [CALLING, {**STRIKE, "row_level": "3"}, a, b, choice("c", 1000503)]
+        done, data = self.run_build(rows)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        (row,) = data[0]["rows"]
+        self.assertEqual({k: v for k, v in row.items() if k != "choices"},
+                         {"key": "strike", "level": 3, "kind": "skill_choice", "skill": "strike"})
+        built_a, built_b, built_c = row["choices"]
+        # Slot 1 is the choice's whole, slot 4 is dropped; the realm cost is the skill's.
+        self.assertEqual([(e["kind"], e["params"]) for e in built_a["effects"]],
+                         [("school_damage", {"amount": {"base": 1, "per_level": 0}})])
+        self.assertEqual(built_a["realm_cost"], 15)
+        self.assertEqual((built_b["realm_cost"], built_b["name"], built_b["description"]), (20, "B", "b."))
+        self.assertEqual([e["kind"] for e in built_c["effects"]], ["weapon_strike", "stun"])
+        self.assertEqual(built_c["variant_of"], "strike")
+        self.assertEqual(len(data[0]["skills"]), 1)
+        patch = {o["spell_id"]: o["fields"] for o in self.patch["spells"]}
+        self.assertNotIn("cost", patch[1000501])
+        self.assertEqual(patch[1000502]["cost"], 20)
+        self.assertEqual(patch[1000503]["cost"], 15)
+        # Every choice carries the skill's family bit and is castable, never passive.
+        for spell_id in (1000501, 1000502, 1000503):
+            self.assertEqual(patch[spell_id]["family_flags"], 1 << 33)
+            self.assertNotIn("passive", patch[spell_id])
+        self.assertNotIn("talent_tabs", [t for t in self.patch["talents"]])
+        self.assertEqual(self.patch["talents"], [])
+
+    def test_rows_sort_by_level_then_sheet_order(self):
+        shout = {**STRIKE, "key": "shout", "spell_id": "1000079", "row_level": "2"}
+        rows = [CALLING, {**STRIKE, "row_level": "5"}, *self.three(), shout,
+                choice("d", 1000504, "shout"), choice("e", 1000505, "shout"), choice("f", 1000506, "shout"),
+                row_talent("x"), row_talent("y"), row_talent("z")]
+        done, data = self.run_build(rows)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual([(r["key"], r["level"], r["kind"], r["skill"]) for r in data[0]["rows"]],
+                         [("shout", 2, "skill_choice", "shout"), ("fury", 4, "talent", None),
+                          ("strike", 5, "skill_choice", "strike")])
+        fury = data[0]["rows"][1]
+        self.assertEqual([c["key"] for c in fury["choices"]], ["x", "y", "z"])
+        self.assertEqual(fury["choices"][0]["effects"][0]["kind"], "mod_stat")
+        self.assertNotIn("max_rank", fury["choices"][0])
+        self.assertEqual(data[0]["talent_tabs"], [])
+
+    def test_two_choices_fail(self):
+        rows = [CALLING, {**STRIKE, "row_level": "3"}, choice("a", 1000501), choice("b", 1000502)]
+        self.assert_fails(rows, "has row_level 3 and 2 Skill Choices, want 3")
+
+    def test_a_choice_whose_skill_has_no_row_level_fails(self):
+        self.assert_fails([CALLING, STRIKE, *self.three()], "names a skill with no row_level")
+
+    def test_row_level_under_learn_level_fails(self):
+        rows = [CALLING, {**STRIKE, "learn_level": "5", "row_level": "3"}, *self.three()]
+        self.assert_fails(rows, "row_level 3 is below learn_level 5")
+
+    def test_row_level_over_tier_cap_fails(self):
+        rows = [CALLING, {**STRIKE, "row_level": "11"}, *self.three()]
+        self.assert_fails(rows, "row_level 11 is above vanguard's tier_cap 10")
+
+    def test_row_level_without_a_tier_cap_fails(self):
+        self.assert_fails([{**STRIKE, "row_level": "3"}, *self.three()], "has no calling row with one")
+
+    def test_a_tree_column_on_a_choice_fails(self):
+        rows = [CALLING, {**STRIKE, "row_level": "3"}, *self.three(tab="Arms")]
+        self.assert_fails(rows, "tab: set on a Skill Choice row")
+
+    def test_variant_of_with_row_key_fails(self):
+        rows = [CALLING, {**STRIKE, "row_level": "3"}, *self.three(row_key="fury")]
+        self.assert_fails(rows, "variant_of and row_key are both set")
+
+    def test_row_level_on_a_choice_fails(self):
+        rows = [CALLING, {**STRIKE, "row_level": "3"}, *self.three(row_level="3")]
+        self.assert_fails(rows, "row_level: set on a Skill Choice row")
+
+    def test_a_choice_on_its_skills_spell_id_fails(self):
+        rows = [CALLING, {**STRIKE, "row_level": "3"}, *self.three()]
+        rows[2]["spell_id"] = STRIKE["spell_id"]
+        # The id check refuses it first; `build_rows` also would.
+        self.assert_fails(rows, "spell_id 1000078 is already claimed by")
+
+    def test_a_talent_row_of_two_fails(self):
+        self.assert_fails([CALLING, row_talent("x"), row_talent("y")], "Talent row 'fury' has 2 rows, want 3")
+
+    def test_a_talent_row_with_unequal_levels_fails(self):
+        rows = [CALLING, row_talent("x"), row_talent("y"), row_talent("z", level="5")]
+        self.assert_fails(rows, "need one row_level")
+
+    def test_the_talent_row_params_are_accepted_and_the_health_pair_goes_together(self):
+        params = STRIKE["effect1_params"]
+        row = {**STRIKE, "effect1_params": params + ";cleave_pct=50;controlled_pct=100;below_health_pct=30;below_bonus_pct=50"}
+        done, data = self.run_build([row])
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(data[0]["skills"][0]["effects"][0]["params"]["cleave_pct"], 50)
+        self.assert_fails([{**STRIKE, "effect1_params": params + ";below_health_pct=30"}],
+                          "below_health_pct and below_bonus_pct go together")
+
+    def test_the_committed_basic_warrior_has_four_rows(self):
+        with open(os.path.join(HERE, "..", "..", "..", "data", "twilights-eve", "server_spells.json"),
+                  encoding="utf-8") as f:
+            warrior = next(c for c in json.load(f) if c["key"] == "basic_warrior")
+        self.assertEqual([(r["key"], r["level"]) for r in warrior["rows"]],
+                         [("charge", 2), ("fire_blast", 4), ("gouge", 6), ("heroic_strike", 8)])
+        self.assertTrue(all(len(r["choices"]) == 3 for r in warrior["rows"]))
 
 
 class SeamChecks(unittest.TestCase):
