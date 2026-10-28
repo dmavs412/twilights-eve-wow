@@ -23,27 +23,46 @@ The 37 herbalism items wear Davis's painted icons (2026-10-27). The eleven stock
 Stranglekelp, Bruiseweed, Wild Steelbloom, Grave Moss, Kingsblood) keep their stock icons and
 need no art.
 
-### Forager's Grid window, RGBA TGA
+### Forager's Grid window, RGBA TGA, placeholder
 
 Files in `crates/benilla-app/assets/ui/herbalism/`, loaded as `Interface\Benilla\herbalism\<name>`.
-`tools/twilights-eve/placeholder_herb_art.py` writes flat placeholders at these sizes. The window
-frame reuses the Journal's `journal/window_bg.tga`.
+Every size is a power of two, as the 1.12 UI needs. `tools/twilights-eve/placeholder_herb_art.py`
+writes flat placeholders at these sizes (#481, spec #479) and checks each size. Paint each file at
+twice its shipped size, as a PNG under `data/twilights-eve/art/herbalism/<name>.png`;
+`tools/twilights-eve/import_art.py --size` shrinks it to the shipped size. The prototype's CSS
+(`.bed`, `.bush`, `.glint`, `.stake`, `.pip`) and its `GLYPHS` table give the shapes and colours.
+
+All 34 rows are placeholders waiting for Davis's painting.
+
+| File | Shipped size | What it shows | State |
+|---|---|---|---|
+| `bush_hidden_1` to `_3` | 128 x 128 | Three shapes of an unpulled bush, leafy green, base at the bottom centre | placeholder |
+| `bush_wilted_1` to `_3` | 128 x 128 | The same three shapes, wilted brown-grey: a hidden tile known to be a weed | placeholder |
+| `bush_thorn_1` to `_3` | 128 x 128 | The same three shapes, red: a hidden tile known to be a thorn | placeholder |
+| `bush_glow` | 128 x 128 | Overlay: warm gold glow and four sparkles, transparent elsewhere, laid over any bush known to be a plant | placeholder |
+| `mound` | 128 x 128 | A pulled tile: a small dark dirt mound | placeholder |
+| `mound_thorn` | 128 x 128 | A pulled thorn: a reddish mound | placeholder |
+| `bed_corner_tl`, `_tr`, `_bl`, `_br` | 64 x 64 | The hedge border's rounded corners | placeholder |
+| `bed_edge_top`, `_bottom` | 64 x 64 | Hedge edge, tiled across | placeholder |
+| `bed_edge_left`, `_right` | 64 x 64 | Hedge edge, tiled down | placeholder |
+| `bed_soil` | 128 x 128 | Dark soil with faint specks, tiling seamlessly in both directions | placeholder |
+| `stake` | 32 x 64 | A wooden board on a post; the game prints the number on the board | placeholder |
+| `pip_on`, `pip_off` | 16 x 16 | The gold diamond pull pip, lit and dark | placeholder |
+| `glyph_flower`, `_leaf`, `_root`, `_berry`, `_mushroom`, `_nest`, `_nut`, `_honeycomb`, `_sap`, `_purse` | 64 x 64 | A plant part's glyph in white on transparent; the game tints it by rarity | placeholder |
+
+These earlier placeholders stay as they are:
 
 | File | Size | What it shows |
 |---|---|---|
-| `bush_hidden.tga` | 64 x 64 | An unpulled tile, a leafy bush |
-| `bush_glow.tga` | 64 x 64 | A hidden tile known to be a plant, glowing |
-| `bush_wilted.tga` | 64 x 64 | A hidden tile known to be a weed |
-| `bush_thorn.tga` | 64 x 64 | A hidden tile known to be a thorn, red |
-| `soil.tga` | 64 x 64 | A pulled tile, bare soil |
-| `soil_thorn.tga` | 64 x 64 | A pulled thorn, reddish soil |
-| `stake.tga` | 32 x 40 | The wooden stake; the game prints the number on it |
 | `tile_highlight.tga` | 64 x 64 | Gold ring over the tiles a stake counts, on hover |
 | `tile_target.tga` | 64 x 64 | Dashed outline over the tiles a tool skill will cover |
 | `part_weed.tga` | 32 x 32 | Weed glyph on a pulled weed |
 | `part_thorn.tga` | 32 x 32 | Thorn glyph on a pulled thorn |
 
-A pulled plant shows its own item icon, so it needs no glyph.
+The window's panel, chips, XP bar and tour outline are drawn from colour and need no art. The
+window frame reuses the Journal's `journal/window_bg.tga`. The old 64 x 64 `bush_hidden`,
+`bush_wilted`, `bush_thorn`, `soil` and `soil_thorn` need no painting: ticket 3 of #479 retires
+them once nothing loads them.
 
 ### Minimap
 
