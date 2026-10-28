@@ -20,10 +20,7 @@ OUT = pathlib.Path(__file__).resolve().parents[2] / "crates/benilla-app/assets/u
 
 CLEAR = (0, 0, 0, 0)
 GREEN = (60, 140, 60, 255)
-WILTED = (120, 90, 50, 255)
 THORN_RED = (190, 40, 40, 255)
-SOIL = (90, 60, 35, 255)
-SOIL_RED = (120, 55, 45, 255)
 RING = (245, 205, 80, 255)
 TARGET = (240, 240, 240, 255)
 WEED = (150, 170, 70, 255)
@@ -57,12 +54,6 @@ def pixel(colour):
 
 def on_edge(x, y, w, h, width=BORDER):
     return x < width or y < width or x >= w - width or y >= h - width
-
-
-def solid(colour):
-    """A flat fill with a darker border."""
-    return lambda x, y, w, h: darker(colour) if on_edge(x, y, w, h) else colour
-
 
 
 def ring(colour):
@@ -231,13 +222,6 @@ def new_painter(name):
 
 # name: (width, height, painter)
 SPRITES = {
-    # Ticket 3 of #479 retires bush_hidden, bush_wilted, bush_thorn, soil and soil_thorn once
-    # nothing loads them; bush_glow and stake are NEW_ART's now.
-    "bush_hidden": (64, 64, solid(GREEN)),
-    "bush_wilted": (64, 64, solid(WILTED)),
-    "bush_thorn": (64, 64, solid(THORN_RED)),
-    "soil": (64, 64, solid(SOIL)),
-    "soil_thorn": (64, 64, solid(SOIL_RED)),
     "tile_highlight": (64, 64, ring(RING)),
     "tile_target": (64, 64, dashed(TARGET)),
     "part_weed": (32, 32, glyph(WEED)),

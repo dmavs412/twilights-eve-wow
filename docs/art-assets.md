@@ -59,10 +59,9 @@ These earlier placeholders stay as they are:
 | `part_weed.tga` | 32 x 32 | Weed glyph on a pulled weed |
 | `part_thorn.tga` | 32 x 32 | Thorn glyph on a pulled thorn |
 
-The window's panel, chips, XP bar and tour outline are drawn from colour and need no art. The
-window frame reuses the Journal's `journal/window_bg.tga`. The old 64 x 64 `bush_hidden`,
-`bush_wilted`, `bush_thorn`, `soil` and `soil_thorn` need no painting: ticket 3 of #479 retires
-them once nothing loads them.
+The window's panel, the pull log's panel, chips, XP bar and tour outline are drawn from colour and
+need no art. The old 64 x 64 `bush_hidden`, `bush_wilted`, `bush_thorn`, `soil` and `soil_thorn`
+were deleted in #482, when the rebuilt window stopped loading them.
 
 ### Minimap
 

@@ -1,10 +1,10 @@
-//! The Forager's Grid window (`assets/ui/HerbPatch.xml`) over pushed grids: the tile art, the
-//! clicks that queue `Herb*` calls, skill mode and the close. It needs no game data, so a missing
-//! font only warns.
+//! The Forager's Grid window (`assets/ui/HerbPatch.xml`) over pushed grids: the header, the tile
+//! art, the chips, the basket, the end card, the pull log, the clicks that queue `Herb*` calls,
+//! skill mode and the close. It needs no game data, so a missing font only warns.
 
 use benilla_ui::script::{
-    HerbCall, HerbGridView, HerbKnownView, HerbLogView, HerbTileView, ItemTemplateView,
-    ScriptValue, UiScript,
+    HerbBasketView, HerbCall, HerbGridView, HerbKnownView, HerbLogView, HerbTileView,
+    ItemTemplateView, ScriptValue, UiScript,
 };
 
 use super::test_ui::load_ui as load_xml;
@@ -27,6 +27,15 @@ fn shown(s: &UiScript, frame: &str) -> bool {
 fn text(s: &UiScript, frame: &str) -> String {
     s.eval::<String>(&format!("return {frame}:GetText() or ''"))
         .unwrap()
+}
+
+/// `text` with its `|cffrrggbb` and `|r` colour codes taken out.
+fn plain(s: &UiScript, frame: &str) -> String {
+    s.eval::<String>(&format!(
+        "local t = string.gsub({frame}:GetText() or '', '|c%x%x%x%x%x%x%x%x', '') \
+         t = string.gsub(t, '|r', '') return t"
+    ))
+    .unwrap()
 }
 
 fn texture(s: &UiScript, frame: &str) -> String {
@@ -76,6 +85,7 @@ fn mixed() -> HerbGridView {
             item: 2447,
             count: 2,
             bloom: true,
+            part: "flower".into(),
             ..Default::default()
         };
         g.tiles[1] = HerbTileView {
@@ -120,33 +130,75 @@ fn a_pushed_grid_draws_plant_weed_and_thorn() {
     named(&mut s, 765, "Silverleaf");
     push(&mut s, mixed());
     assert!(shown(&s, "BenillaHerbPatch"));
-    assert_eq!(texture(&s, "BenillaHerbTile1Bg"), format!("{ART}soil"));
+    assert_eq!(texture(&s, "BenillaHerbTile1Bush"), format!("{ART}mound"));
     assert_eq!(text(&s, "BenillaHerbTile1Name"), "Peacebloom");
-    assert_eq!(text(&s, "BenillaHerbTile1Count"), "2");
-    assert_eq!(text(&s, "BenillaHerbTile1Bloom"), "Bloom");
-    assert_eq!(texture(&s, "BenillaHerbTile2Bg"), format!("{ART}soil"));
+    assert_eq!(texture(&s, "BenillaHerbTile2Bush"), format!("{ART}mound"));
     assert_eq!(
-        texture(&s, "BenillaHerbTile2Part"),
+        texture(&s, "BenillaHerbTile2Glyph"),
         format!("{ART}part_weed")
     );
     assert!(shown(&s, "BenillaHerbTile2Stake"));
     assert_eq!(text(&s, "BenillaHerbTile2StakeText"), "2");
     assert_eq!(
-        texture(&s, "BenillaHerbTile3Bg"),
-        format!("{ART}bush_thorn")
-    );
-    assert_eq!(
-        texture(&s, "BenillaHerbTile4Bg"),
-        format!("{ART}bush_hidden")
+        texture(&s, "BenillaHerbTile3Bush"),
+        format!("{ART}bush_thorn_3")
     );
     assert!(!shown(&s, "BenillaHerbTile4Stake"));
     assert_eq!(
-        text(&s, "BenillaHerbKnown1"),
-        "Peacebloom: in this patch, rows 2, 4"
+        plain(&s, "BenillaHerbKnownChip1Text"),
+        "Peacebloom row 2, 4"
     );
-    assert_eq!(text(&s, "BenillaHerbKnown2"), "Silverleaf: not here");
-    assert!(shown(&s, "BenillaHerbPip7"));
-    assert!(!shown(&s, "BenillaHerbPip8"));
+    assert_eq!(
+        plain(&s, "BenillaHerbKnownChip2Text"),
+        "Silverleaf not in this patch"
+    );
+    assert_eq!(texture(&s, "BenillaHerbPip7"), format!("{ART}pip_on"));
+    assert!(s
+        .eval::<bool>("return not (BenillaHerbPip8 and BenillaHerbPip8:IsVisible())")
+        .unwrap());
+}
+
+#[test]
+fn the_header_names_the_time_size_and_grown_for_level() {
+    let mut s = window();
+    push(
+        &mut s,
+        grid(|g| {
+            g.time_block = "Dusk".into();
+            g.grown_for = 12;
+        }),
+    );
+    assert_eq!(
+        text(&s, "BenillaHerbMeta"),
+        "Dusk · 5×5 · grown for herbalism 12"
+    );
+    assert!(!shown(&s, "BenillaHerbBloomLine"));
+}
+
+#[test]
+fn a_hidden_bush_takes_its_shape_and_facing_from_its_tile_number() {
+    let mut s = window();
+    push(&mut s, grid(|g| g.tiles[6].known = 1));
+    let first_u = |s: &UiScript, frame: &str| {
+        s.eval::<f32>(&format!("local u = {frame}:GetTexCoord() return u"))
+            .unwrap()
+    };
+    assert_eq!(
+        texture(&s, "BenillaHerbTile1Bush"),
+        format!("{ART}bush_hidden_1")
+    );
+    assert_eq!(first_u(&s, "BenillaHerbTile1Bush"), 0.0);
+    assert_eq!(
+        texture(&s, "BenillaHerbTile5Bush"),
+        format!("{ART}bush_hidden_2")
+    );
+    assert_eq!(
+        first_u(&s, "BenillaHerbTile5Bush"),
+        1.0,
+        "tile 4 is mirrored"
+    );
+    assert!(shown(&s, "BenillaHerbTile7Glow"));
+    assert!(!shown(&s, "BenillaHerbTile1Glow"));
 }
 
 #[test]
@@ -159,11 +211,85 @@ fn a_known_tile_shows_its_kind_of_bush() {
             g.tiles[1].known = 2;
         }),
     );
-    assert_eq!(texture(&s, "BenillaHerbTile1Bg"), format!("{ART}bush_glow"));
     assert_eq!(
-        texture(&s, "BenillaHerbTile2Bg"),
-        format!("{ART}bush_wilted")
+        texture(&s, "BenillaHerbTile1Bush"),
+        format!("{ART}bush_hidden_1")
     );
+    assert!(shown(&s, "BenillaHerbTile1Glow"));
+    assert_eq!(
+        texture(&s, "BenillaHerbTile2Bush"),
+        format!("{ART}bush_wilted_2")
+    );
+}
+
+#[test]
+fn a_pulled_plant_shows_its_part_glyph() {
+    let mut s = window();
+    named(&mut s, 2447, "Peacebloom");
+    push(&mut s, mixed());
+    assert_eq!(
+        texture(&s, "BenillaHerbTile1Glyph"),
+        format!("{ART}glyph_flower")
+    );
+    assert!(shown(&s, "BenillaHerbTile1Glyph"));
+}
+
+#[test]
+fn the_basket_lists_its_rows_or_says_it_is_empty() {
+    let mut s = window();
+    named(&mut s, 2447, "Peacebloom");
+    push(&mut s, grid(|_| {}));
+    assert_eq!(
+        text(&s, "BenillaHerbBasketEmpty"),
+        "Nothing yet. Pull a tile to start."
+    );
+    assert!(!shown(&s, "BenillaHerbBasket1"));
+    push(
+        &mut s,
+        grid(|g| {
+            g.basket = vec![HerbBasketView {
+                item: 2447,
+                count: 3,
+                part: "flower".into(),
+            }]
+        }),
+    );
+    assert!(shown(&s, "BenillaHerbBasket1"));
+    assert_eq!(text(&s, "BenillaHerbBasket1Name"), "Peacebloom");
+    assert_eq!(text(&s, "BenillaHerbBasket1Count"), "3");
+    assert_eq!(text(&s, "BenillaHerbBasketEmpty"), "");
+    assert!(!shown(&s, "BenillaHerbBasket2"));
+}
+
+#[test]
+fn an_ended_patch_shows_its_end_card_and_close_until_closed() {
+    let mut s = window();
+    push(
+        &mut s,
+        grid(|g| {
+            g.over = Some(0);
+            g.xp = 25;
+        }),
+    );
+    assert!(shown(&s, "BenillaHerbEnd"));
+    assert_eq!(text(&s, "BenillaHerbEndReason"), "Out of pulls.");
+    assert_eq!(
+        text(&s, "BenillaHerbEndSummary"),
+        "You gathered 0 plants · +25 XP"
+    );
+    assert!(shown(&s, "BenillaHerbClose"));
+    assert!(!shown(&s, "BenillaHerbLeave"));
+    // The realm closes the patch after its last grid; the window stays on its end card.
+    s.fire_event("HERB_GRID_CLOSED", vec![ScriptValue::Int(0)]);
+    s.set_herb_grid(None);
+    s.tick(0.0);
+    s.resolve();
+    assert!(shown(&s, "BenillaHerbPatch"));
+    click(&s, 1);
+    s.run("this = BenillaHerbClose BenillaHerbClose:Click()")
+        .unwrap();
+    assert!(!shown(&s, "BenillaHerbPatch"));
+    assert!(s.take_herb_calls().is_empty());
 }
 
 #[test]
@@ -198,7 +324,11 @@ fn sweep_mode_sends_the_skill_across_or_down() {
             g.skill_cost = 2;
         }),
     );
-    assert_eq!(text(&s, "BenillaHerbSkill"), "Sweep (2)");
+    assert_eq!(text(&s, "BenillaHerbSkill"), "Sweep · 2 pulls");
+    assert_eq!(
+        plain(&s, "BenillaHerbChip1Text"),
+        "Tool Herbalist's Sickle · Sweep costs 2 pulls"
+    );
     s.run("this = BenillaHerbSkill BenillaHerbSkill_OnClick()")
         .unwrap();
     assert!(shown(&s, "BenillaHerbAcross"));
@@ -235,6 +365,14 @@ fn herb_sight_waits_for_three_hidden_tiles() {
             g.consumable_ready = true;
         }),
     );
+    assert_eq!(
+        text(&s, "BenillaHerbConsumable"),
+        "Use Elixir of Herb Sight"
+    );
+    assert_eq!(
+        plain(&s, "BenillaHerbChip1Text"),
+        "Item Elixir of Herb Sight · ready"
+    );
     s.run("this = BenillaHerbConsumable BenillaHerbConsumable_OnClick()")
         .unwrap();
     click(&s, 1);
@@ -266,24 +404,37 @@ fn the_buttons_queue_the_charm_and_the_leave() {
 }
 
 #[test]
-fn the_pull_log_prints_each_entry_title_and_place_newest_first() {
+fn the_pull_log_puts_the_newest_entry_at_the_top() {
     let mut s = window();
-    let entry = |title: &str, place: &str| {
+    let entry = |kind: u8, title: &str, place: &str, xp: u32| {
         grid(|g| {
             g.log = Some(HerbLogView {
-                kind: 0,
+                kind,
                 title: title.into(),
                 place: place.into(),
-                xp: 5,
+                xp,
             })
         })
     };
-    push(&mut s, entry("Peacebloom x2", "B3"));
-    push(&mut s, entry("Sweep", "A1-C1"));
+    push(&mut s, entry(0, "Peacebloom x2", "B3", 5));
+    push(&mut s, entry(3, "Sweep", "A1-C1", 0));
     push(&mut s, grid(|_| {}));
-    assert_eq!(text(&s, "BenillaHerbLog1"), "Sweep A1-C1");
-    assert_eq!(text(&s, "BenillaHerbLog2"), "Peacebloom x2 B3");
-    assert_eq!(text(&s, "BenillaHerbLog3"), "");
+    assert_eq!(text(&s, "BenillaHerbLogEntry1Title"), "Sweep");
+    assert_eq!(text(&s, "BenillaHerbLogEntry1Place"), "A1-C1");
+    assert_eq!(text(&s, "BenillaHerbLogEntry1Xp"), "");
+    assert_eq!(text(&s, "BenillaHerbLogEntry2Title"), "Peacebloom x2");
+    assert_eq!(text(&s, "BenillaHerbLogEntry2Xp"), "+5 XP");
+    assert!(!shown(&s, "BenillaHerbLogEntry3"));
+}
+
+#[test]
+fn the_title_sits_inside_the_margin() {
+    let mut s = window();
+    push(&mut s, grid(|_| {}));
+    let inset = s
+        .eval::<f32>("return BenillaHerbTitle:GetLeft() - BenillaHerbPatch:GetLeft()")
+        .unwrap();
+    assert!(inset >= 18.0, "the title is {inset} inside the frame");
 }
 
 #[test]
