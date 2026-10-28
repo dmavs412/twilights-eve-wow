@@ -701,6 +701,8 @@ mod boss_bar_tests;
 #[cfg(test)]
 mod calling_choice_tests;
 #[cfg(test)]
+mod cooking_journal_tests;
+#[cfg(test)]
 mod fishing_journal_tests;
 #[cfg(test)]
 mod fishing_reel_tests;

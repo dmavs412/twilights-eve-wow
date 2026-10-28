@@ -3,7 +3,9 @@
 
 mod common;
 
-use benilla_protocol::{KitchenOrderRow, KitchenRecipe, SessionEvent, START_ELWYNN};
+use benilla_protocol::{
+    DishPage, FishPage, KitchenOrderRow, KitchenRecipe, SessionEvent, START_ELWYNN,
+};
 use common::*;
 use twilight_realm::{KitchenAction, KitchenMode, Realm, RealmCommand};
 
@@ -19,6 +21,7 @@ const SWEETROOT: u32 = 961_008;
 const WILD_GARLIC: u32 = 961_010;
 const DUSKROOT: u32 = 961_020;
 const GILDED_KOI: u32 = 960_409;
+const KOI_CAKES: u32 = 962_125;
 
 const CHOWDER: u32 = 962_025;
 const FISH_STEW: u32 = 962_001;
@@ -260,6 +263,42 @@ fn the_first_experiment_teaches_the_starters_and_cooks_the_chowder() {
     assert_eq!(Some(perch_pages), perch_count);
     let saved = realm.export_character(guid).unwrap();
     assert!(saved.contains("cook_visited = [\"goldshire\"]"), "{saved}");
+}
+
+/// The last `CookingJournal`'s pages in `events`.
+fn dish_pages(events: &[SessionEvent]) -> Vec<DishPage> {
+    events
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            SessionEvent::CookingJournal { pages } => Some(pages.clone()),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("a CookingJournal in {events:?}"))
+}
+
+#[test]
+fn the_first_goldshire_cook_fills_the_cooking_journal_with_the_starters() {
+    let (mut realm, _) = at_tomas();
+    open(&mut realm);
+    let events = cook(&mut realm, KitchenMode::Experiment, "", &FIRST_POT);
+    let pages = dish_pages(&events);
+    let mut keys: Vec<&str> = pages.iter().map(|p| p.recipe.as_str()).collect();
+    keys.sort_unstable();
+    assert_eq!(keys, ["pull_1", "regen_1", "stamina_1", "xp_1"]);
+    for p in &pages {
+        if p.meal == CHOWDER {
+            assert_eq!(p.cooked, 1, "{p:?}");
+            assert!(p.first.ends_with("Lion's Pride kitchen"), "{p:?}");
+            assert_eq!(p.family, "Out-of-combat Well Fed");
+            assert_eq!(p.effect, "Faster regen");
+            assert_eq!(p.band, 1);
+            assert_eq!(p.ingredients, FIRST_POT);
+        } else {
+            assert_eq!(p.cooked, 0, "{p:?}");
+            assert_eq!(p.first, "");
+        }
+    }
 }
 
 #[test]
@@ -633,7 +672,8 @@ fn the_first_gilded_koi_teaches_its_dish() {
     );
     blob.push_str(&format!(
         "\n[fishing_pole]\nslot = 0\nentry = {FISHING_POLE}\ncount = 1\n\
-         \n[fishing_lure]\nslot = 0\nentry = {KOI_LURE}\ncount = 1\ndurability = 50\n"
+         \n[fishing_lure]\nslot = 0\nentry = {KOI_LURE}\ncount = 1\ndurability = 50\n\
+         \n[[fish_log]]\nitem = {GOLDSHIRE_PERCH}\nbest = 1\ncaught = 1\nperfect = 0\n"
     ));
     let host = Pond {
         centre: [start[0] + 15.0, start[1]],
@@ -684,4 +724,19 @@ fn the_first_gilded_koi_teaches_its_dish() {
     );
     let saved = realm.export_character(guid).unwrap();
     assert!(saved.contains("dish_gilded_koi"), "{saved}");
+
+    // The Fish Pages name the koi's own dish and the perch's cut bait.
+    let pages: Vec<FishPage> = events
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            SessionEvent::FishingJournal { pages, .. } => Some(pages.clone()),
+            _ => None,
+        })
+        .expect("a FishingJournal");
+    let page = |item: u32| pages.iter().find(|p| p.item == item).unwrap();
+    assert_eq!(page(GILDED_KOI).dish, KOI_CAKES);
+    assert_eq!(page(GILDED_KOI).cut_bait, 0);
+    assert_eq!(page(GOLDSHIRE_PERCH).cut_bait, CUT_PERCH);
+    assert!(dish_pages(&events).iter().any(|p| p.meal == KOI_CAKES));
 }

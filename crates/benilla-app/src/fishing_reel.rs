@@ -628,6 +628,8 @@ fn journal_view(event: &SessionEvent, areas: Option<&AreaTableRes>) -> JournalVi
                 kinds: p.kinds.clone(),
                 peak_hours: p.peak_hours,
                 favourite_bait: p.favourite_bait,
+                dish: p.dish,
+                cut_bait: p.cut_bait,
             })
             .collect(),
         zones: zones

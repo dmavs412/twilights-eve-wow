@@ -1,7 +1,9 @@
 //! The Kitchen window's state Lua reads (ADR 0025, spec #447): `GetKitchen()`, the recipe book
 //! (`GetKitchenRecipe`, `GetKitchenRecipeSlot`), the pantry, today's orders, the fish that cut into
 //! bait and the six lessons; what the filled pot would cook (`GetKitchenPrediction`); and the last
-//! cook's result (`GetKitchenCooked`). The window queues `KitchenPredict`, `KitchenCook`,
+//! cook's result (`GetKitchenCooked`). The Journal's Cooking bookmark reads the Cooking Journal
+//! (`GetCookingJournal`, `GetDishPage`, `GetDishPageIngredient`), whose host fires
+//! `COOKING_JOURNAL_UPDATE`. The window queues `KitchenPredict`, `KitchenCook`,
 //! `KitchenDeliver`, `KitchenCut` and `KitchenClose` for the host. The host pushes the views and
 //! fires `KITCHEN_UPDATE`, `KITCHEN_PREDICTION`, `KITCHEN_COOKED` and `KITCHEN_CLOSED` itself.
 //! Indices are 1-based in Lua; an order is 0-based in [`KitchenCall::Deliver`].
@@ -93,6 +95,29 @@ pub struct KitchenCookedView {
     pub line: String,
 }
 
+/// One known recipe's Dish Page, as the realm's `DishPage`.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct DishPageView {
+    pub recipe: String,
+    pub meal: u32,
+    /// 0 tier, 1 dish, 2 legend, 3 plant.
+    pub kind: u8,
+    pub effect: String,
+    pub family: String,
+    /// 1, 10, 20 or 30; 0 for a legend or plant meal.
+    pub band: u8,
+    pub ingredients: Vec<u32>,
+    pub cooked: u32,
+    /// "" while never cooked.
+    pub first: String,
+}
+
+/// The Cooking Journal, as the realm's `CookingJournal` event.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct CookingJournalView {
+    pub pages: Vec<DishPageView>,
+}
+
 /// How the pot is filled: from a known recipe, guessing an unknown one, or anything at all.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KitchenMode {
@@ -147,6 +172,11 @@ impl super::UiScript {
     /// Push the last cook's result, as `GetKitchenCooked()` answers.
     pub fn set_kitchen_cooked(&mut self, view: Option<KitchenCookedView>) {
         self.model_mut().kitchen_cooked = view;
+    }
+
+    /// Push the Cooking Journal `GetCookingJournal()` and `GetDishPage*` answer.
+    pub fn set_cooking_journal(&mut self, view: CookingJournalView) {
+        self.model_mut().cooking_journal = view;
     }
 
     /// Drain the `Kitchen*` calls since the last drain, oldest first.
@@ -397,6 +427,47 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 return Ok(MultiValue::new());
             };
             Ok(MultiValue::from_vec(vec![num(item), num(count)]))
+        })?,
+    )?;
+    // GetCookingJournal(): the Cooking Journal's page count.
+    g.set(
+        "GetCookingJournal",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(model.cooking_journal.pages.len() as f64)
+        })?,
+    )?;
+    // GetDishPage(i): recipe, meal, kind, effect, family, band, numIngredients, cooked, first.
+    g.set(
+        "GetDishPage",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(p) = index(i).and_then(|i| model.cooking_journal.pages.get(i)) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                text(lua, &p.recipe)?,
+                num(p.meal),
+                num(p.kind),
+                text(lua, &p.effect)?,
+                text(lua, &p.family)?,
+                num(p.band),
+                num(p.ingredients.len() as f64),
+                num(p.cooked),
+                text(lua, &p.first)?,
+            ]))
+        })?,
+    )?;
+    // GetDishPageIngredient(i, j): the item of ingredient j on page i, 0 when missing.
+    g.set(
+        "GetDishPageIngredient",
+        lua.create_function(|lua, (i, j): (i64, i64)| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let item = index(i)
+                .and_then(|i| model.cooking_journal.pages.get(i))
+                .zip(index(j))
+                .and_then(|(p, j)| p.ingredients.get(j));
+            Ok(item.copied().unwrap_or(0) as f64)
         })?,
     )?;
     // KitchenPredict(mode, key, ...) and KitchenCook(mode, key, ...): mode "recipe", "discover" or

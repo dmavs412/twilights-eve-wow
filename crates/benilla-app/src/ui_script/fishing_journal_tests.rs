@@ -354,10 +354,11 @@ fn fishing_is_the_selected_bookmark_and_herbalism_is_inert() {
 
     assert!(shown(&s, "BenillaFishingJournalProf1"));
     assert!(shown(&s, "BenillaFishingJournalProf2"));
+    assert!(shown(&s, "BenillaFishingJournalProf3"));
     assert!(
-        s.eval::<bool>("return BenillaFishingJournalProf3 == nil")
+        s.eval::<bool>("return BenillaFishingJournalProf4 == nil")
             .unwrap(),
-        "two bookmarks"
+        "three bookmarks"
     );
     assert!(s
         .eval::<bool>("return BenillaFishingJournalProf1.selected")
@@ -464,6 +465,53 @@ fn hovering_a_caught_fish_shows_its_page_as_tooltip_lines() {
         shown(&s, "BenillaFishingJournalFish1"),
         "a click opens nothing"
     );
+}
+
+#[test]
+fn a_fish_page_tooltip_names_its_own_dish_and_cut_bait() {
+    const KOI_CAKES: u32 = 962125;
+    const CUT_PERCH: u32 = 960502;
+    let mut s = journal();
+    stub_tooltip(&s);
+    for (item, name) in [(KOI_CAKES, "Gilded Koi Cakes"), (CUT_PERCH, "Cut Perch")] {
+        s.set_item_template(
+            item,
+            ItemTemplateView {
+                name: name.into(),
+                ..Default::default()
+            },
+        );
+    }
+    let mut view = with_gear_and_page();
+    view.pages[0].dish = KOI_CAKES;
+    view.pages[0].cut_bait = CUT_PERCH;
+    s.set_fishing_journal(view.clone());
+    s.run("BenillaFishingJournal_Toggle()").unwrap();
+    frame(&mut s, 0.05);
+
+    hover(
+        &s,
+        "BenillaFishingJournalFish1",
+        "BenillaFishingJournalSlot_OnEnter",
+    );
+    let lines = tooltip_lines(&s);
+    assert!(
+        lines.contains(&"Own dish: Gilded Koi Cakes".to_string()),
+        "{lines:?}"
+    );
+    assert!(lines.contains(&"Cuts into: Cut Perch".to_string()));
+
+    view.pages[0].dish = 0;
+    view.pages[0].cut_bait = 0;
+    s.set_fishing_journal(view);
+    hover(
+        &s,
+        "BenillaFishingJournalFish1",
+        "BenillaFishingJournalSlot_OnEnter",
+    );
+    let lines = tooltip_lines(&s);
+    assert!(lines.contains(&"Own dish: Learned on first catch".to_string()));
+    assert!(!lines.iter().any(|l| l.starts_with("Cuts into")));
 }
 
 #[test]

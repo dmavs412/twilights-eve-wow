@@ -181,8 +181,8 @@ pub use container::{
     PetitionSlotView, RandomPropertyView, UiCursorMode,
 };
 pub use cooking::{
-    KitchenCall, KitchenCookedView, KitchenIngredientView, KitchenMode, KitchenOrderView,
-    KitchenPredictionView, KitchenRecipeView, KitchenView,
+    CookingJournalView, DishPageView, KitchenCall, KitchenCookedView, KitchenIngredientView,
+    KitchenMode, KitchenOrderView, KitchenPredictionView, KitchenRecipeView, KitchenView,
 };
 pub use craft::{CraftReagent, CraftRecipe, CraftState, CraftTooltip};
 pub use cursor::money::coin_icon;

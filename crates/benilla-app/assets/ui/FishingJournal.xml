@@ -1,8 +1,8 @@
 <Ui>
     <!--
         The Journal (spec #323, #396, #435), opened by TOGGLEFISHINGJOURNAL (J) or /journal. One
-        420 x 660 frame with a profession bookmark column on its right edge (Fishing, and Herbalism
-        once GetHerbalistInfo() says the character knows it; until then it is greyed) and three
+        420 x 660 frame with a profession bookmark column on its right edge (Fishing; Herbalism
+        once GetHerbalistInfo() says the character knows it, until then greyed; Cooking) and three
         bottom tabs, each a child frame: Zones (the default), Inventory and Progression. The
         bookmark switches the three tabs between the Fishing frames and the Herbalism frames
         (BenillaFishingJournalHerbZones, HerbInventory and HerbProgression, described below).
@@ -44,6 +44,16 @@
         GetHerbRevealAt(), GetHerbPerkSlots(), GetHerbPerkSlot(i), GetNumHerbPerks() and
         GetHerbPerk(i); HERBALIST_UPDATE and HERBALISM_JOURNAL_UPDATE say when to repaint. A tool or
         consumable is told from a Satchel plant by its name, since the realm sends only the item.
+
+        The Cooking bookmark (ADR 0025, #496) is greyed until GetCookingJournal() counts a page.
+        It has no bottom tabs: choosing it hides them and shows one frame,
+        BenillaFishingJournalCookPages, a grid of six Dish Pages paged with the arrows. A Dish Page
+        is a parchment card with the family and band ("Combat Well Fed · Band 10"), the meal's
+        icon and name in its quality colour, "+Stamina · needs ..." with the ingredients, "Times
+        cooked N" and the first cook's day, time and kitchen (or "Not cooked yet"). The frame reads
+        only GetCookingJournal(), GetDishPage(i) and GetDishPageIngredient(i, j);
+        COOKING_JOURNAL_UPDATE says when to repaint. A Fish Page tooltip also names the fish's own
+        dish ("Own dish: ...", or "Learned on first catch") and the bait it cuts into.
     -->
     <Script><![CDATA[
         BENILLA_JOURNAL_ART = "Interface\\Benilla\\journal\\"
@@ -63,9 +73,13 @@
         BENILLA_JOURNAL_PROFESSIONS = {
             { key = "fishing", icon = "prof_fishing", live = true },
             { key = "herbalism", icon = "prof_herbalism", live = true },
+            { key = "cooking", icon = "prof_cooking", live = true, tip = "Cooking: learn a recipe at a kitchen first" },
         }
-        -- The tip on the bookmark of a profession the character has not learned.
+        -- The tip on the bookmark of a profession the character has not learned, unless its row
+        -- names its own.
         BENILLA_JOURNAL_LOCKED_TIP = "Herbalism: coming soon"
+        -- The Cooking bookmark: six Dish Pages a screen.
+        BENILLA_JOURNAL_DISH_SLOTS = 6
         BENILLA_JOURNAL_PAGES = { "Zones", "Inventory", "Progression" }
         -- AreaTable id to the scene `journal\zone_<key>`; a zone missing here shows no scene.
         BENILLA_JOURNAL_ZONE_ART = { [12] = "elwynn", [1519] = "stormwind", [44] = "redridge", [10] = "duskwood" }
@@ -373,14 +387,23 @@
             return zone
         end
 
-        -- The page's text lines for `item`: its places, then one line per tier.
+        -- The page's text lines for `item`: its places, its own dish and cut bait, then one line
+        -- per tier.
         function BenillaFishingJournal_PageLines(item)
             local caught, perfect, revealed, nextReveal, places, lives, kinds, peakFrom, peakTo,
-                bait = GetFishPage(item)
+                bait, dish, cutBait = GetFishPage(item)
             local lines = {}
             for i = 1, places do
                 local zone, water, count = GetFishPagePlace(item, i)
                 table.insert(lines, BenillaFishingJournal_Place(zone, water) .. ": " .. count)
+            end
+            if dish and dish > 0 then
+                table.insert(lines, "Own dish: " .. BenillaFishingJournal_ItemName(dish))
+            else
+                table.insert(lines, "Own dish: Learned on first catch")
+            end
+            if cutBait and cutBait > 0 then
+                table.insert(lines, "Cuts into: " .. BenillaFishingJournal_ItemName(cutBait))
             end
             local locked = 0
             for tier = 1, 3 do
@@ -420,10 +443,13 @@
             end
         end
 
-        -- Whether the character has learned a profession; Fishing is open to everyone.
+        -- Whether the character has learned a profession; Fishing is open to everyone, Cooking once
+        -- the Cooking Journal has a page.
         function BenillaJournal_Known(key)
             if key == "herbalism" then
                 return (GetHerbalistInfo()) and true or false
+            elseif key == "cooking" then
+                return GetCookingJournal() > 0
             end
             return true
         end
@@ -440,7 +466,7 @@
                 local live = row.live and BenillaJournal_Known(row.key)
                 button.key = row.key
                 button.live = live
-                button.tip = (not live) and BENILLA_JOURNAL_LOCKED_TIP or nil
+                button.tip = (not live) and (row.tip or BENILLA_JOURNAL_LOCKED_TIP) or nil
                 button.selected = (row.key == chosen)
                 bg:SetTexture(BENILLA_JOURNAL_ART .. (button.selected and "side_tab_selected" or "side_tab"))
                 icon:SetTexture(BENILLA_JOURNAL_ART .. row.icon)
@@ -469,17 +495,33 @@
         end
 
         -- Show the child frame of one bottom tab and hide the others. The chosen profession's
-        -- frame shows; the other profession's frame of the same tab hides.
+        -- frame shows; the other profession's frame of the same tab hides. The Cooking bookmark
+        -- has no tabs: it hides them and every tab's frames and shows its Dish Pages.
         function BenillaJournal_ShowPage(name)
             local herbs = (BenillaFishingJournal.profession == "herbalism")
+            local cooking = (BenillaFishingJournal.profession == "cooking")
             BenillaFishingJournal.pageName = name
             BenillaFishingJournalHerbPerkList:Hide()
+            if cooking then
+                BenillaFishingJournalCookPages:Show()
+            else
+                BenillaFishingJournalCookPages:Hide()
+            end
             for i = 1, table.getn(BENILLA_JOURNAL_PAGES) do
                 local page = BENILLA_JOURNAL_PAGES[i]
                 local fishing = getglobal("BenillaFishingJournal" .. page)
                 local herbalism = getglobal("BenillaFishingJournalHerb" .. page)
+                local tab = getglobal("BenillaFishingJournalTab" .. i)
                 local bg = getglobal("BenillaFishingJournalTab" .. i .. "Bg")
-                if page == name then
+                if cooking then
+                    tab:Hide()
+                else
+                    tab:Show()
+                end
+                if cooking then
+                    fishing:Hide()
+                    herbalism:Hide()
+                elseif page == name then
                     if herbs then
                         fishing:Hide()
                         herbalism:Show()
@@ -546,6 +588,17 @@
             end
             BenillaJournal_Ink(herbInk, BENILLA_JOURNAL_INK)
             BenillaJournal_Ink({ h .. "ToolHint", h .. "ConsumableHint", h .. "Caption", h .. "PerkCaption" }, BENILLA_JOURNAL_FADED_INK)
+            -- The Dish Page cards; the meal's name keeps its quality colour on its band.
+            local dishInk, dishFaded = { j .. "CookCount" }, {}
+            for n = 1, BENILLA_JOURNAL_DISH_SLOTS do
+                local card = j .. "Dish" .. n
+                table.insert(dishInk, card .. "Needs")
+                table.insert(dishInk, card .. "Cooked")
+                table.insert(dishFaded, card .. "Kind")
+                table.insert(dishFaded, card .. "First")
+            end
+            BenillaJournal_Ink(dishInk, BENILLA_JOURNAL_INK)
+            BenillaJournal_Ink(dishFaded, BENILLA_JOURNAL_FADED_INK)
             for _, key in ipairs({ "Pole", "Lure", "Bait", "HerbTool", "HerbConsumable" }) do
                 local slot = j .. key
                 getglobal(slot .. "Frame"):SetTexture(BENILLA_JOURNAL_ART .. "gear_slot")
@@ -641,7 +694,7 @@
         function BenillaFishingJournal_Paint()
             local frame = BenillaFishingJournal
             frame.missing = nil
-            if frame.profession == "herbalism" and not BenillaJournal_Known("herbalism") then
+            if frame.profession and not BenillaJournal_Known(frame.profession) then
                 frame.profession = "fishing"
             end
             BenillaJournal_ShowPage(frame.pageName or BENILLA_JOURNAL_PAGES[1])
@@ -649,6 +702,10 @@
             if frame.profession == "herbalism" then
                 BenillaFishingJournalTitle:SetText("Herbalism Journal")
                 BenillaHerbJournal_Paint()
+                return
+            elseif frame.profession == "cooking" then
+                BenillaFishingJournalTitle:SetText("Cooking Journal")
+                BenillaCookJournal_Paint()
                 return
             end
             BenillaFishingJournalTitle:SetText("Fishing Journal")
@@ -689,6 +746,76 @@
             BenillaFishingJournalCommonCount:SetText(collected .. " / " .. total .. " Collected")
             local legends = BenillaFishingJournal_PaintLegends(zoneName)
             BenillaFishingJournalLegendCount:SetText(legends .. " / " .. BENILLA_JOURNAL_LEGEND_SLOTS .. " Collected")
+        end
+
+        -- ── The Cooking bookmark ──
+
+        function BenillaCookJournal_Turn(step)
+            BenillaFishingJournal.cookPage = (BenillaFishingJournal.cookPage or 1) + step
+            BenillaFishingJournal_Paint()
+        end
+
+        -- "Combat Well Fed · Band 10"; a legend or plant meal has no band.
+        function BenillaCookJournal_Kind(family, band)
+            if band and band > 0 then
+                return family .. " · Band " .. band
+            end
+            return family
+        end
+
+        -- One Dish Page card from page `i` of the Cooking Journal.
+        function BenillaCookJournal_PaintCard(card, i)
+            local name = card:GetName()
+            local _, meal, _, effect, family, band, numIngredients, cooked, first = GetDishPage(i)
+            local needs = {}
+            for j = 1, numIngredients do
+                table.insert(needs, BenillaFishingJournal_ItemName(GetDishPageIngredient(i, j)))
+            end
+            local mealName, _, quality = GetItemInfo(meal)
+            if not mealName then
+                BenillaFishingJournal.missing = true
+            end
+            local r, g, b = 1, 1, 1
+            if GetItemQualityColor then
+                r, g, b = GetItemQualityColor(quality or 1)
+            end
+            getglobal(name .. "Kind"):SetText(BenillaCookJournal_Kind(family, band))
+            getglobal(name .. "Icon"):SetTexture(BenillaFishingJournal_Icon(meal))
+            local label = getglobal(name .. "Name")
+            label:SetText(mealName or "an unknown item")
+            label:SetTextColor(r, g, b)
+            getglobal(name .. "Needs"):SetText(effect .. " · needs " .. table.concat(needs, ", "))
+            getglobal(name .. "Cooked"):SetText("Times cooked " .. cooked)
+            getglobal(name .. "First"):SetText((first ~= "") and ("First cook " .. first) or "Not cooked yet")
+            card.meal = meal
+            card:Show()
+        end
+
+        -- The Dish Pages, six a screen, paged with the arrows.
+        function BenillaCookJournal_Paint()
+            local frame = BenillaFishingJournal
+            local count = GetCookingJournal()
+            local screens = math.max(1, math.ceil(count / BENILLA_JOURNAL_DISH_SLOTS))
+            local screen = math.max(1, math.min(frame.cookPage or 1, screens))
+            frame.cookPage = screen
+            BenillaFishingJournalCookCount:SetText(count .. " known")
+            BenillaFishingJournalCookScreen:SetText((screens > 1) and (screen .. " / " .. screens) or "")
+            if screens > 1 then
+                BenillaFishingJournalCookPrev:Show()
+                BenillaFishingJournalCookNext:Show()
+            else
+                BenillaFishingJournalCookPrev:Hide()
+                BenillaFishingJournalCookNext:Hide()
+            end
+            for n = 1, BENILLA_JOURNAL_DISH_SLOTS do
+                local card = getglobal("BenillaFishingJournalDish" .. n)
+                local i = (screen - 1) * BENILLA_JOURNAL_DISH_SLOTS + n
+                if i > count then
+                    card:Hide()
+                else
+                    BenillaCookJournal_PaintCard(card, i)
+                end
+            end
         end
 
         -- ── The Herbalism tab ──
@@ -1448,6 +1575,31 @@
         </Scripts>
     </Button>
 
+    <!-- One Dish Page: a parchment card with the family and band, the meal's icon and name on a band, what it does and needs, and its cook counts. -->
+    <Frame name="BenillaJournalDishPageTemplate" virtual="true" hidden="true">
+        <Size><AbsDimension x="154" y="164"/></Size>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture setAllPoints="true"><Color r="0.35" g="0.2" b="0.06" a="0.16"/></Texture>
+                <Texture><Size><AbsDimension x="154" y="1"/></Size><Anchors><Anchor point="TOPLEFT"/></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                <Texture><Size><AbsDimension x="154" y="1"/></Size><Anchors><Anchor point="BOTTOMLEFT"/></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                <Texture><Size><AbsDimension x="1" y="164"/></Size><Anchors><Anchor point="TOPLEFT"/></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+                <Texture><Size><AbsDimension x="1" y="164"/></Size><Anchors><Anchor point="TOPRIGHT"/></Anchors><Color r="0.42" g="0.29" b="0.11" a="0.9"/></Texture>
+            </Layer>
+            <Layer level="ARTWORK">
+                <Texture file="Interface\Benilla\journal\section_band"><Size><AbsDimension x="150" y="34"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="2" y="-22"/></Offset></Anchor></Anchors></Texture>
+                <Texture name="$parentIcon"><Size><AbsDimension x="28" y="28"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-25"/></Offset></Anchor></Anchors></Texture>
+            </Layer>
+            <Layer level="OVERLAY">
+                <FontString name="$parentKind" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="142" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-5"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT"><Size><AbsDimension x="110" y="30"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="40" y="-24"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentNeeds" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="142" y="50"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-62"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentCooked" inherits="GameFontHighlightSmall" justifyH="LEFT"><Size><AbsDimension x="142" y="14"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-114"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentFirst" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size><AbsDimension x="142" y="30"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="6" y="-130"/></Offset></Anchor></Anchors></FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+
     <Frame name="BenillaFishingJournal" parent="UIParent" frameStrata="HIGH" movable="true" enableMouse="true" hidden="true">
         <Size><AbsDimension x="420" y="660"/></Size>
         <Anchors><Anchor point="CENTER"><Offset><AbsDimension x="0" y="16"/></Offset></Anchor></Anchors>
@@ -1479,6 +1631,7 @@
             <Button name="BenillaFishingJournalClose"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-12" y="-12"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\close_normal"/><PushedTexture file="Interface\Benilla\journal\close_pushed"/><HighlightTexture file="Interface\Benilla\journal\close_hover" alphaMode="ADD"/><Scripts><OnClick>BenillaFishingJournal:Hide()</OnClick></Scripts></Button>
             <Button name="BenillaFishingJournalProf1" inherits="BenillaJournalProfessionTemplate" id="1"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-64"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalProf2" inherits="BenillaJournalProfessionTemplate" id="2"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-112"/></Offset></Anchor></Anchors></Button>
+            <Button name="BenillaFishingJournalProf3" inherits="BenillaJournalProfessionTemplate" id="3"><Anchors><Anchor point="TOPLEFT" relativeTo="BenillaFishingJournal" relativePoint="TOPRIGHT"><Offset><AbsDimension x="-8" y="-160"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalTab1" inherits="BenillaJournalTabTemplate" id="1"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="24" y="10"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalTab2" inherits="BenillaJournalTabTemplate" id="2"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="150" y="10"/></Offset></Anchor></Anchors></Button>
             <Button name="BenillaFishingJournalTab3" inherits="BenillaJournalTabTemplate" id="3"><Anchors><Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT"><Offset><AbsDimension x="276" y="10"/></Offset></Anchor></Anchors></Button>
@@ -1759,6 +1912,26 @@
                 </Frames>
             </Frame>
 
+            <!-- The Cooking bookmark's one frame, in place of the bottom tabs: six Dish Pages, two across, paged with the arrows. -->
+            <Frame name="$parentCookPages" setAllPoints="true" hidden="true">
+                <Layers>
+                    <Layer level="OVERLAY">
+                        <FontString name="BenillaFishingJournalCookCount" inherits="GameFontNormal"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-62"/></Offset></Anchor></Anchors></FontString>
+                        <FontString name="BenillaFishingJournalCookScreen" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOP"><Offset><AbsDimension x="0" y="-80"/></Offset></Anchor></Anchors></FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="BenillaFishingJournalCookPrev" hidden="true"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="60" y="-62"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\arrow_normal"/><PushedTexture file="Interface\Benilla\journal\arrow_pushed"/><HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/><DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/><Scripts><OnLoad>this:GetNormalTexture():SetTexCoord(1, 0, 0, 1) this:GetPushedTexture():SetTexCoord(1, 0, 0, 1) this:GetHighlightTexture():SetTexCoord(1, 0, 0, 1) this:GetDisabledTexture():SetTexCoord(1, 0, 0, 1)</OnLoad><OnClick>BenillaCookJournal_Turn(-1)</OnClick></Scripts></Button>
+                    <Button name="BenillaFishingJournalCookNext" hidden="true"><Size><AbsDimension x="26" y="26"/></Size><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-60" y="-62"/></Offset></Anchor></Anchors><NormalTexture file="Interface\Benilla\journal\arrow_normal"/><PushedTexture file="Interface\Benilla\journal\arrow_pushed"/><HighlightTexture file="Interface\Benilla\journal\arrow_hover" alphaMode="ADD"/><DisabledTexture file="Interface\Benilla\journal\arrow_disabled"/><Scripts><OnClick>BenillaCookJournal_Turn(1)</OnClick></Scripts></Button>
+                    <Frame name="BenillaFishingJournalDish1" inherits="BenillaJournalDishPageTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-96"/></Offset></Anchor></Anchors></Frame>
+                    <Frame name="BenillaFishingJournalDish2" inherits="BenillaJournalDishPageTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="214" y="-96"/></Offset></Anchor></Anchors></Frame>
+                    <Frame name="BenillaFishingJournalDish3" inherits="BenillaJournalDishPageTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-268"/></Offset></Anchor></Anchors></Frame>
+                    <Frame name="BenillaFishingJournalDish4" inherits="BenillaJournalDishPageTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="214" y="-268"/></Offset></Anchor></Anchors></Frame>
+                    <Frame name="BenillaFishingJournalDish5" inherits="BenillaJournalDishPageTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="52" y="-440"/></Offset></Anchor></Anchors></Frame>
+                    <Frame name="BenillaFishingJournalDish6" inherits="BenillaJournalDishPageTemplate"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="214" y="-440"/></Offset></Anchor></Anchors></Frame>
+                </Frames>
+            </Frame>
+
             <!-- The list an empty perk slot opens: every perk, Boons gold and Pacts purple. -->
             <Frame name="BenillaFishingJournalHerbPerkList" frameStrata="DIALOG" enableMouse="true" hidden="true">
                 <Size><AbsDimension x="324" y="480"/></Size>
@@ -1792,6 +1965,7 @@
                 this:RegisterEvent("ANGLER_UPDATE")
                 this:RegisterEvent("HERBALIST_UPDATE")
                 this:RegisterEvent("HERBALISM_JOURNAL_UPDATE")
+                this:RegisterEvent("COOKING_JOURNAL_UPDATE")
                 if UISpecialFrames then
                     tinsert(UISpecialFrames, "BenillaFishingJournal")
                 end

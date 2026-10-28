@@ -7,7 +7,7 @@
 use std::collections::{BTreeSet, HashMap};
 
 use benilla_protocol::messages::{self as m, ChatMessage, GossipOption};
-use benilla_protocol::{KitchenIngredient, KitchenOrderRow, KitchenRecipe, SessionEvent};
+use benilla_protocol::{DishPage, KitchenIngredient, KitchenOrderRow, KitchenRecipe, SessionEvent};
 
 use crate::characters::{Bonus, Char, DishLog, KitchenOrders, Order, Want};
 use crate::cooking::{self, Family, Kind, Recipe};
@@ -124,6 +124,7 @@ impl crate::Realm {
                 Ok(cooked) => {
                     self.events.push(cooked);
                     self.events.push(kitchen_event(c, npc, kitchen));
+                    self.events.push(journal(c));
                     self.save(guid);
                 }
                 Err(note) => self.events.push(SessionEvent::KitchenPrediction {
@@ -208,6 +209,7 @@ pub(crate) fn learn_first(c: &mut Char, item: u32, how: &str, events: &mut Vec<S
             "Your first {how} teaches you: {}.",
             taught.join(", ")
         )));
+        events.push(journal(c));
     }
 }
 
@@ -377,6 +379,40 @@ fn pantry(c: &Char) -> Vec<KitchenIngredient> {
         .collect();
     rows.sort_by_key(|(rarity, r)| (*rarity, r.level, r.item));
     rows.into_iter().map(|(_, r)| r).collect()
+}
+
+/// `c`'s Cooking Journal: a Dish Page per known recipe, by kind (tier, dish, legend, plant), then
+/// name.
+pub(crate) fn journal(c: &Char) -> SessionEvent {
+    let mut pages: Vec<DishPage> = cooking::recipes()
+        .into_iter()
+        .filter(|r| knows(c, &r.key))
+        .map(|r| {
+            let (effect, family) = labels(r);
+            let log = c.dish_log.iter().find(|l| l.recipe == r.key);
+            DishPage {
+                recipe: r.key.clone(),
+                meal: r.meal,
+                kind: kind_code(r.kind),
+                effect,
+                family: family.to_owned(),
+                band: band(r),
+                ingredients: r.ingredients.clone(),
+                cooked: log.map_or(0, |l| l.cooked),
+                first: log.map_or_else(String::new, |l| l.first.clone()),
+            }
+        })
+        .collect();
+    pages.sort_by_cached_key(|p| (p.kind, meal_name(p.meal)));
+    SessionEvent::CookingJournal { pages }
+}
+
+/// The meal of `fish`'s own dish once `c` knows its recipe; 0 before.
+pub(crate) fn own_dish(c: &Char, fish: u32) -> u32 {
+    cooking::recipes_taught_by(fish)
+        .into_iter()
+        .find(|r| knows(c, &r.key))
+        .map_or(0, |r| r.meal)
 }
 
 /// The `Kitchen` event of `kitchen`, opened at the cook `npc`, for `c`.
@@ -916,6 +952,7 @@ fn rumour(c: &mut Char, rng: &mut Rng, events: &mut Vec<SessionEvent>) {
         "The bonus Rumour teaches you: {}.",
         meal_name(r.meal)
     )));
+    events.push(journal(c));
 }
 
 /// The prototype's `deliver`: fills `kitchen`'s order `index` from what `c` holds, the cheapest

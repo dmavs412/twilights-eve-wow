@@ -300,6 +300,8 @@ pub(crate) struct Model {
     pub(crate) kitchen_cooked: Option<super::KitchenCookedView>,
     /// The `Kitchen*` calls since the host last drained them.
     pub(crate) kitchen_calls: Vec<super::KitchenCall>,
+    /// The Cooking Journal the `GetDishPage*` getters read, pushed by the host.
+    pub(crate) cooking_journal: super::CookingJournalView,
     /// The Herbalist Level and perk slots the Herbalism Journal's getters read, pushed by the host.
     pub(crate) herbalist: super::HerbalistView,
     /// The Herbalism Journal its getters read, pushed by the host.
@@ -1174,6 +1176,7 @@ impl Model {
             kitchen_prediction: None,
             kitchen_cooked: None,
             kitchen_calls: Vec::new(),
+            cooking_journal: Default::default(),
             herbalist: Default::default(),
             herb_journal: Default::default(),
             herb_journal_calls: Vec::new(),

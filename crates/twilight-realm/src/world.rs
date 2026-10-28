@@ -431,6 +431,7 @@ impl InWorld {
         events.push(herbalism::tracking(c));
         events.push(fishing::journal(c));
         events.push(herbalism::journal(c));
+        events.push(kitchen::journal(c));
         events.extend(crate::talents::spell_mods(c));
         events.push(cast::action_buttons(c));
         // The proficiencies and the carried items' objects, ahead of the player that names them.

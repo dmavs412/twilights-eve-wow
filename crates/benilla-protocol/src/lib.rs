@@ -10,10 +10,10 @@ pub mod wire;
 pub mod world;
 pub use auth::AuthReject;
 pub use events::{
-    decode, CallingOption, CharAction, EntityKind, FishPage, HerbBasketRow, HerbKnown, HerbLog,
-    HerbTile, KitchenIngredient, KitchenOrderRow, KitchenRecipe, LoginRefusal, LoginStage, MapIcon,
-    MapMark, MarkedQuest, MoveSpeeds, Poll, SatchelPick, SatchelRow, SessionEnd, SessionEvent,
-    SessionEventKind,
+    decode, CallingOption, CharAction, DishPage, EntityKind, FishPage, HerbBasketRow, HerbKnown,
+    HerbLog, HerbTile, KitchenIngredient, KitchenOrderRow, KitchenRecipe, LoginRefusal, LoginStage,
+    MapIcon, MapMark, MarkedQuest, MoveSpeeds, Poll, SatchelPick, SatchelRow, SessionEnd,
+    SessionEvent, SessionEventKind,
 };
 pub use messages::field;
 pub use messages::{

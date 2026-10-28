@@ -415,13 +415,14 @@ fn pump(
             continue;
         }
         // The open kitchen, its prediction, a cooked pot and its close go to the Kitchen window
-        // (ADR 0025).
+        // (ADR 0025), and the Cooking Journal to the same feed.
         if matches!(
             event,
             SessionEvent::Kitchen { .. }
                 | SessionEvent::KitchenPrediction { .. }
                 | SessionEvent::KitchenCooked { .. }
                 | SessionEvent::KitchenClosed
+                | SessionEvent::CookingJournal { .. }
         ) {
             if let Some(inbox) = reel.5.as_deref_mut() {
                 inbox.0.push(event);

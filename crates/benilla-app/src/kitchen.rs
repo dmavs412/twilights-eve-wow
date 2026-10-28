@@ -1,14 +1,14 @@
 //! The Kitchen window's host (ADR 0025, spec #447, `assets/ui/Kitchen.xml`): the realm's
 //! `Kitchen`, `KitchenPrediction` and `KitchenCooked` become the views Lua reads,
-//! `KitchenClosed` hides the window, and every `Kitchen*` call the window queued goes back as a
+//! `KitchenClosed` hides the window, `CookingJournal` feeds the Journal's Cooking bookmark, and every `Kitchen*` call the window queued goes back as a
 //! `RealmCommand::Kitchen`. The client computes no result.
 
 use bevy::prelude::*;
 
 use benilla_protocol::SessionEvent;
 use benilla_ui::script::{
-    KitchenCall, KitchenCookedView, KitchenIngredientView, KitchenMode, KitchenOrderView,
-    KitchenPredictionView, KitchenRecipeView, KitchenView, UiScript,
+    CookingJournalView, DishPageView, KitchenCall, KitchenCookedView, KitchenIngredientView,
+    KitchenMode, KitchenOrderView, KitchenPredictionView, KitchenRecipeView, KitchenView, UiScript,
 };
 use twilight_realm::{KitchenAction, RealmCommand};
 
@@ -29,7 +29,9 @@ struct Kitchen {
     view: Option<KitchenView>,
     prediction: Option<KitchenPredictionView>,
     cooked: Option<KitchenCookedView>,
-    /// Any of the three changed since the last push.
+    /// The last Cooking Journal the realm sent.
+    journal: CookingJournalView,
+    /// Any of the four changed since the last push.
     changed: bool,
     /// Events for Lua, oldest first.
     events: Vec<&'static str>,
@@ -138,6 +140,29 @@ fn cooked_of(event: &SessionEvent) -> Option<KitchenCookedView> {
     })
 }
 
+/// The view of a `CookingJournal` event, field for field; `None` for any other event.
+fn journal_of(event: &SessionEvent) -> Option<CookingJournalView> {
+    let SessionEvent::CookingJournal { pages } = event else {
+        return None;
+    };
+    Some(CookingJournalView {
+        pages: pages
+            .iter()
+            .map(|p| DishPageView {
+                recipe: p.recipe.clone(),
+                meal: p.meal,
+                kind: p.kind,
+                effect: p.effect.clone(),
+                family: p.family.clone(),
+                band: p.band,
+                ingredients: p.ingredients.clone(),
+                cooked: p.cooked,
+                first: p.first.clone(),
+            })
+            .collect(),
+    })
+}
+
 fn mode_of(mode: KitchenMode) -> twilight_realm::KitchenMode {
     match mode {
         KitchenMode::Recipe => twilight_realm::KitchenMode::Recipe,
@@ -196,10 +221,15 @@ fn run_kitchen(mut inbox: ResMut<KitchenInbox>, mut kitchen: ResMut<Kitchen>) {
                 k.cooked = None;
                 k.events.push("KITCHEN_CLOSED");
             }
+            SessionEvent::CookingJournal { .. } => {
+                k.journal = journal_of(&event).unwrap_or_default();
+                k.events.push("COOKING_JOURNAL_UPDATE");
+            }
             SessionEvent::LoggedOut => {
                 k.view = None;
                 k.prediction = None;
                 k.cooked = None;
+                k.journal = CookingJournalView::default();
             }
             _ => continue,
         }
@@ -224,6 +254,7 @@ fn feed_kitchen(
         script.set_kitchen(kitchen.view.clone());
         script.set_kitchen_prediction(kitchen.prediction.clone());
         script.set_kitchen_cooked(kitchen.cooked.clone());
+        script.set_cooking_journal(kitchen.journal.clone());
     }
     for call in script.take_kitchen_calls() {
         outbox.0.push(command_of(call));

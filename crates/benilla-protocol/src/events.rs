@@ -124,6 +124,11 @@ pub struct FishPage {
     pub peak_hours: Option<(u8, u8)>,
     /// Tier 3: its favourite bait's item entry, `None` for none (or while locked).
     pub favourite_bait: Option<u32>,
+    /// The fish's own dish's meal (ADR 0025), 0 until its recipe is learned. Shown from the
+    /// first catch, outside the reveal tiers.
+    pub dish: u32,
+    /// The bait the fish cuts into, 0 for none. Shown from the first catch.
+    pub cut_bait: u32,
 }
 
 /// Twilight's Eve, not 1.12: one row of a Journal's Satchel (ADR 0023).
@@ -240,6 +245,26 @@ pub struct KitchenOrderRow {
     pub bonus: String,
     /// The bonus is a rare item.
     pub bonus_rare: bool,
+}
+
+/// Twilight's Eve, not 1.12: one known recipe's Dish Page in the Cooking Journal (ADR 0025).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct DishPage {
+    pub recipe: String,
+    pub meal: u32,
+    /// 0 tier, 1 dish, 2 legend, 3 plant.
+    pub kind: u8,
+    /// "+Stamina", "More XP", ... as [`KitchenRecipe::effect`].
+    pub effect: String,
+    /// "Combat Well Fed", ... as [`KitchenRecipe::family`].
+    pub family: String,
+    /// 1, 10, 20 or 30; 0 for a legend or plant meal.
+    pub band: u8,
+    pub ingredients: Vec<u32>,
+    /// Times cooked.
+    pub cooked: u32,
+    /// "Day 2, 08:00, Lion's Pride kitchen", or "" while never cooked.
+    pub first: String,
 }
 
 /// Which Satchel item: its entry, and a piece's durability (`None` for a counted row).
@@ -501,6 +526,10 @@ pub enum SessionEvent {
         /// lists them; `Herbalist.perks` names the picked ones by key.
         perks: Vec<(String, String, bool, String)>,
     },
+    /// Twilight's Eve, not 1.12: the Cooking Journal (ADR 0025), one Dish Page per known recipe,
+    /// sorted by kind (tier, dish, legend, plant), then name. Sent at login, after every cook and
+    /// after every recipe learned. Never wire-decoded.
+    CookingJournal { pages: Vec<DishPage> },
     /// Twilight's Eve, not 1.12: the Forager's Grid closed. `reason`: 0 out of pulls, 1 every tile
     /// pulled, 2 the player left, 3 damage, 4 walked away. Never wire-decoded.
     HerbGridClosed { patch: u64, reason: u8 },

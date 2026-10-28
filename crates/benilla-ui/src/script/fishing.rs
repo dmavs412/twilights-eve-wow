@@ -77,6 +77,9 @@ pub struct JournalPage {
     pub kinds: Vec<String>,
     pub peak_hours: Option<(u8, u8)>,
     pub favourite_bait: Option<u32>,
+    /// The fish's own dish's meal, 0 until learned; the bait it cuts into, 0 for none.
+    pub dish: u32,
+    pub cut_bait: u32,
 }
 
 /// One `SetFishingGear` or `ClearFishingGear` call: the slot, and the Satchel item that fills it
@@ -392,7 +395,8 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
         })?,
     )?;
     // GetFishPage(item): caught, perfect, revealed, nextReveal, placeCount, livesCount, kinds,
-    // peakFrom, peakTo, favouriteBait. `kinds` is comma-joined. Nil for a fish with no page.
+    // peakFrom, peakTo, favouriteBait, dish, cutBait. `kinds` is comma-joined; `dish` is 0 until
+    // its recipe is learned and `cutBait` 0 for none. Nil for a fish with no page.
     g.set(
         "GetFishPage",
         lua.create_function(|lua, item: u32| {
@@ -412,6 +416,8 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 p.peak_hours.map_or(Value::Nil, |h| n(u32::from(h.0))),
                 p.peak_hours.map_or(Value::Nil, |h| n(u32::from(h.1))),
                 p.favourite_bait.map_or(Value::Nil, n),
+                n(p.dish),
+                n(p.cut_bait),
             ]))
         })?,
     )?;

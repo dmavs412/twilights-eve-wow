@@ -185,7 +185,7 @@ pub(crate) fn journal(c: &Char) -> SessionEvent {
     };
     let pages = fish::fish_items()
         .filter_map(|item| c.fish_log.iter().find(|l| l.item == item && l.caught > 0))
-        .map(fish_page)
+        .map(|log| fish_page(c, log))
         .collect();
     SessionEvent::FishingJournal {
         bait: c.bait,
@@ -259,8 +259,9 @@ fn record_catch(c: &mut Char, item: u32, count: u32, perfect: bool, place: &str)
     }
 }
 
-/// A fish's Fish Page: its counts, and the facts its catch count has unlocked.
-fn fish_page(log: &FishLog) -> FishPage {
+/// A fish's Fish Page for `c`: its counts, its own dish and cut bait, and the facts its catch
+/// count has unlocked.
+fn fish_page(c: &Char, log: &FishLog) -> FishPage {
     let reveal_at = fish::journal().reveal_at;
     let revealed = reveal_at.iter().filter(|&&n| log.caught >= n).count();
     let def = fish::fish(log.item);
@@ -287,6 +288,8 @@ fn fish_page(log: &FishLog) -> FishPage {
         kinds: Vec::new(),
         peak_hours: None,
         favourite_bait: None,
+        dish: super::kitchen::own_dish(c, log.item),
+        cut_bait: crate::cooking::cut_of(log.item).map_or(0, |cut| cut.bait),
     };
     let Some(def) = def else { return page };
     if revealed >= 1 {
