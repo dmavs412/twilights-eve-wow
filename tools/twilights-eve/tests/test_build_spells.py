@@ -1695,6 +1695,52 @@ class TalentRows(BuildSpells):
         self.assertTrue(all(len(r["choices"]) == 3 for r in warrior["rows"]))
 
 
+class Vocabulary(unittest.TestCase):
+    """The build's vocabulary matches the realm's: every known kind is a realm enum variant, and a
+    stock icon path names a file in the game archives."""
+
+    REALM_SRC = os.path.join(HERE, "..", "..", "..", "crates", "twilight-realm", "src")
+
+    def test_every_known_kind_is_a_realm_enum_variant(self):
+        sys.path.insert(0, os.path.join(HERE, ".."))
+        import build_spells
+        import re
+        source = ""
+        for root, _, files in os.walk(self.REALM_SRC):
+            for name in files:
+                if name.endswith(".rs"):
+                    with open(os.path.join(root, name), encoding="utf-8") as f:
+                        source += f.read()
+        dead = [kind for kind in sorted(build_spells.KNOWN_KINDS)
+                if not re.search(r"\b" + "".join(p.title() for p in kind.split("_")) + r"\b", source)]
+        self.assertEqual(dead, [], "KNOWN_KINDS names kinds with no variant in crates/twilight-realm/src; "
+                                   "drop them or land their components")
+
+    def test_a_stock_icon_missing_from_the_archives_fails_the_dbc_check(self):
+        data = os.environ.get("WOW_DATA")
+        if not data or not os.path.isdir(data):
+            self.skipTest("needs WOW_DATA (the game's Data folder) for the archive probe")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "master.csv")
+            with open(path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, COLUMNS, restval="")
+                writer.writeheader()
+                writer.writerow({**STRIKE, "status": "placeholder", "visual": "none",
+                                 "icon": "Interface\\Icons\\Ability_No_Such_Icon"})
+            callings = os.path.join(tmp, "callings.csv")
+            with open(callings, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, ["calling", "name", *PROFILE], restval="")
+                writer.writeheader()
+                writer.writerow({"calling": "vanguard", "name": "Vanguard", **PROFILE})
+            with open(os.path.join(tmp, "creature_spells.toml"), "w", encoding="utf-8") as f:
+                f.write("")
+            done = subprocess.run([sys.executable, SCRIPT, "--csv", path, "--callings", callings, "--out-dir", tmp,
+                                   "--creature-spells", os.path.join(tmp, "creature_spells.toml"),
+                                   "--content", tmp, "--data", data], capture_output=True, text=True)
+            self.assertEqual(done.returncode, 1, done.stdout)
+            self.assertIn("icon Interface\\Icons\\Ability_No_Such_Icon is not in the archives", done.stderr)
+
+
 class SeamChecks(unittest.TestCase):
     """The fixtures under fixtures/ each rebuild one bug from the client/realm seam."""
 

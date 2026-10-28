@@ -42,12 +42,14 @@ MAX_EFFECTS = 5
 CLIENT_EFFECTS = 3
 
 # Every effect kind the realm has components for (docs/bevy_guidelines.md). A modelled row naming
-# any other kind fails the build; add the kind here when its components land.
+# any other kind fails the build; add the kind here when its components land. Each name is the
+# snake_case of an enum variant in crates/twilight-realm/src (test_build_spells checks that), so a
+# kind the realm has dropped cannot linger here and mislead a ticket.
 KNOWN_KINDS = {
     "absorb", "interrupt", "taunt", "knockback", "add_aura_stacks", "grow_aura","add_combo_points", "at_max_stacks", "healing_taken_pct", "max_health_pct", "mod_cast_speed_pct", "mod_ranged_haste_pct", "mod_ranged_crit_pct", "mod_damage_done_pct", "mod_melee_haste_pct", "drain", "ground_area", "heal", "mod_damage_taken_pct", "mod_healing_taken_pct", "mod_hit_chance", "periodic_heal", "reset_cooldowns", "blink", "next_cast", "root", "grant_aura", "skill_stacks", "skill_block_value_pct", "armor_pen", "aura_attack_power", "dodge_pct", "parry_pct", "block_pct", "block_value_pct", "armor_items_pct", "max_power", "aura_max_stacks", "pickup_heal_pct", "pickup_radius_yd", "consume_aura", "consume_aura_stacks", "consume_amount_pct", "consume_heal_pct", "mod_spell_damage_pct", "charge", "crit_bleed", "energize", "ground_amount_pct", "ground_duration_ms", "ground_effect", "healing_reduction",
     "incapacitate", "judgement", "mod_crit_chance", "mod_crit_damage",
     "mod_health_regen_out_of_combat", "mod_run_speed", "mod_stat", "offhand_damage_pct", "periodic_damage", "proc",
-    "proc_on_cast", "proc_on_kill", "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
+    "school_damage", "seal", "skill_amount_pct", "skill_cost", "skill_crit_damage_pct",
     "skill_crit_pct", "skill_armor_ignore", "no_min_range", "mod_armor", "extra_strike", "damage_pct_vs_aura", "skill_duration_ms", "skill_rage", "skill_bonus_combo", "skill_extra_target", "stealth", "stun", "weapon_strike", "pickup",
 }
 ROW_KINDS = ("skill", "talent", "calling", "talent_tab", "aura")
@@ -265,6 +267,10 @@ def check_dbc_ids(rows: list[dict], data_dir: str | None) -> None:
             text = (row.get(column) or "").strip()
             if text and (not text.isdigit() or tables[table].row(int(text)) is None):
                 bad.append(f"line {line} ({row.get('calling')}/{row.get('key')}): {column} {text} is not in {table}")
+        # A stock icon path names a BLP in the archives; a typo would show as a blank icon in play.
+        icon = (row.get("icon") or "").strip()
+        if icon and not icon.lower().endswith(".png") and not any(a.has(icon + ".blp") for a in chain.archives):
+            bad.append(f"line {line} ({row.get('calling')}/{row.get('key')}): icon {icon} is not in the archives")
     if bad:
         raise BuildError(f"{len(bad)} ids not in the DBCs:\n" + "\n".join(bad))
 
