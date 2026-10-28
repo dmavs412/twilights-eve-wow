@@ -89,12 +89,12 @@ How far a character has advanced: 0, 1, 2, and so on. Each Advancement puts the 
 The Tier 0 Calling every player starts as. At level 10 it advances into one of the Tier 1 Callings, each the start of a Line.
 
 **Calling**:
-A named node in the advancement tree, at one Tier on one Line: Basic Warrior, Vanguard, Zealot, Templar. Each Calling can branch into several Callings at the next Tier, and has at most 8 skills, its own Talent Tree, its own Tier Bonus and the armour it may wear.
+A named node in the advancement tree, at one Tier on one Line: Basic Warrior, Vanguard, Zealot, Templar. Each Calling can branch into several Callings at the next Tier, and has at most 8 skills, its own Talent Rows, its own Tier Bonus and the armour it may wear.
 _Avoid_: specialization, spec (that means a talent build in WoW), job, rank, class
 
 **Line**:
 A Tier 1 Calling and every Calling that branches from it, such as the Vanguard line (Vanguard, Ironclad, Zealot, Bastion, Templar). Basic Warrior belongs to no Line.
-_Avoid_: path, tree (a Talent Tree)
+_Avoid_: path, tree
 _Avoid_: specialization, spec (that means a talent build in WoW), job, rank
 
 **Advancement**:
@@ -138,10 +138,10 @@ A quest from a Calling's trainer, offered at the Tier Cap. Completing it advance
 The popup a Basic Warrior gets at the Tier Cap, listing each Tier 1 Calling with a blurb. Picking one puts that Calling's Northshire Advancement Quest in the log, to hand in at its trainer. It is offered until a pick is made, and never again after.
 
 **Tier Bonus**:
-A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. With the Power Level, it is what makes a character stronger after Advancement resets their level. Gear, gold and completed quests carry over; skills and talents are replaced by the new Calling's.
+A flat boost to base stats, set by each Calling and growing with each Tier; its mix suits the Calling's Line. With the Power Level, it is what makes a character stronger after Advancement resets their level. Gear, gold and completed quests carry over; skills and Talent Rows are replaced by the new Calling's, every row empty.
 
 **Power Level**:
-The level a character's body and combat count as: each Tier's levels mapped in a straight line onto the band that Tier's content is built for, 1–10 for Tier 0, 10–30 for Tier 1, 30–50 for Tier 2 and 50–60 for Tier 3. A Tier 1 character at level 1 has Power Level 10. Base stats and combat formulas use it; XP, Talent Points, the Tier Cap and the level the client shows use the real level. ADR 0012.
+The level a character's body and combat count as: each Tier's levels mapped in a straight line onto the band that Tier's content is built for, 1–10 for Tier 0, 10–30 for Tier 1, 30–50 for Tier 2 and 50–60 for Tier 3. A Tier 1 character at level 1 has Power Level 10. Base stats and combat formulas use it; XP, Talent Rows, the Tier Cap and the level the client shows use the real level. ADR 0012.
 _Avoid_: effective level, item level
 
 **Power Curve**:
@@ -160,11 +160,17 @@ _Avoid_: zone difficulty, zone level
 How much more XP a character earns from everything, set by their Tier: ×1 at Tier 0, ×3 at Tier 1, ×5 at Tier 2 and ×7 at Tier 3. With kill and quest XP paid by the mob's or quest's own level, it makes the first levels after an Advancement go by in a few hand-ins.
 _Avoid_: XP bonus, rested XP (WoW's own, which is separate)
 
-**Talent Point**:
-Earned one per level. Talents are the only abilities a character must earn; every skill of the character's current Calling is available from level 1.
+**Talent Row**:
+A row of three choices on the Talents panel, one row per skill of the Calling that has one, and later rows of passives or actives tied to no skill. A row opens at its level; the player sets one of its three. An empty row is set anywhere; a set row changes only at an innkeeper, free either way, and never clears. Advancement empties every row. Every skill of the current Calling is available from its learn level without a row. ADR 0028.
+_Avoid_: talent tree, talent point, tab, tier (of a tree), respec
 
-**Talent Tree**:
-The talents one Calling offers. Every Calling has its own.
+**Skill Choice**:
+One of the three choices in a skill's Talent Row: the skill with one strength added and nothing taken away, its own spell with its own name and icon. While set it replaces the plain skill in the spell book and on the action bar. In the sheet, a `talent` row with `variant_of`.
+_Avoid_: variant, card, glyph, rank
+
+**Talent**:
+One of the three choices in a Talent Row that belongs to no skill: a passive (one-rank effects) or an active (a skill of its own), learned while set. In the sheet, a `talent` row with `row_key`. No Calling ships one yet.
+_Avoid_: perk, trait
 
 **Creature Spell**:
 A spell a creature casts in a fight, such as Geomancer Vurx's Corruption. Creature Spells are written by hand in the realm's `creature_spells.toml`, not in the master CSV, and a creature lists the ones it knows. The client only shows them: the cast bar, the icon and the debuff come from a stock spell's row.
