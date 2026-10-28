@@ -14,7 +14,7 @@
 "Bash(tr:*)", "Bash(printf:*)", "Bash(test:*)", "Bash(xargs:*)", "Bash(tee:*)", "Bash(jq:*)"
     ],
     "deny": [
-      "Agent", "WebSearch", "WebFetch", "PowerShell",
+      "WebSearch", "WebFetch", "PowerShell",
       "Bash(cargo build:*)", "Bash(cargo run:*)", "Bash(cargo clean:*)", "Bash(cargo install:*)",
       "Bash(*run.ps1*)",
       "Bash(git push:*)", "Bash(git reset:*)", "Bash(git rebase:*)", "Bash(git checkout:*)",

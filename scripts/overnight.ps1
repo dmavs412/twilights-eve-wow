@@ -12,14 +12,16 @@ docs/agents/unattended.md. Logs: .claude/overnight/<timestamp>/.
 .\scripts\overnight.ps1 -StopAt 07:00     # start no new ticket after 7am
 .\scripts\overnight.ps1 -Issues 71,72     # only these, in this order
 .\scripts\overnight.ps1 -DryRun           # show the queue and exit
+.\scripts\overnight.ps1 -BudgetUsd 0 -AllowAgents   # no dollar cap, subagents allowed
 #>
 param(
     [int[]]$Issues,
     [string]$Label = "ready-for-agent",
     [string]$Model = "claude-opus-5-5",
-    [double]$BudgetUsd = 8.0,
+    [double]$BudgetUsd = 8.0,   # 0 means no cap
     [string]$StopAt,
     [int]$Max = 30,
+    [switch]$AllowAgents,       # let the sessions spawn subagents (the Agent tool) tonight
     [switch]$DryRun
 )
 
@@ -185,9 +187,15 @@ foreach ($t in $queue) {
     $before = (git rev-parse HEAD).Trim()
     $prompt = "Unattended run, nobody is at the keyboard. Read $rules first and follow it. " +
               "Then implement GitHub issue #$n ($title) on $Repo."
+    if ($AllowAgents) {
+        $prompt += " Tonight the Agent tool is allowed: CLAUDE.md's line that subagents are denied does not apply. " +
+                   "Use subagents for reading, searching and independent sub-tasks; only the main session runs cargo " +
+                   "and commits, so two sessions never edit the same file."
+    }
     $cargs = @("-p", $prompt, "--model", $Model, "--settings", $settings,
-               "--permission-mode", "dontAsk", "--max-budget-usd", $BudgetUsd,
-               "--output-format", "json")
+               "--permission-mode", "dontAsk", "--output-format", "json")
+    if ($BudgetUsd -gt 0) { $cargs += @("--max-budget-usd", $BudgetUsd) }
+    if ($AllowAgents) { $cargs += @("--allowedTools", "Agent") }
     $stderr = Join-Path $script:LogDir "$n.stderr.log"
     $json = & $claude @cargs 2> $stderr
     $exit = $LASTEXITCODE
