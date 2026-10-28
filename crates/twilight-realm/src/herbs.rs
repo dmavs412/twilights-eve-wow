@@ -409,6 +409,27 @@ pub(crate) fn perk(key: &str) -> Option<&'static Perk> {
     perks().into_iter().find(|p| p.key == key)
 }
 
+/// The plant part keys an item row's `part` may hold.
+pub(crate) const PARTS: [&str; 10] = [
+    "flower",
+    "leaf",
+    "root",
+    "berry",
+    "mushroom",
+    "nest",
+    "nut",
+    "honeycomb",
+    "sap",
+    "purse",
+];
+
+/// The plant part of `item`'s row, "" for none.
+pub(crate) fn part_of(item: u32) -> &'static str {
+    crate::items::template(item)
+        .and_then(|t| t.part.as_deref())
+        .unwrap_or("")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -441,6 +462,23 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn every_plant_has_a_part() {
+        for z in zones() {
+            for p in plants_in(&z.key) {
+                assert!(
+                    PARTS.contains(&part_of(p.item)),
+                    "plant item {} in zone {} has part {:?}",
+                    p.item,
+                    z.key,
+                    part_of(p.item)
+                );
+            }
+        }
+        assert_eq!(part_of(961027), "purse");
+        assert_eq!(part_of(961101), "");
     }
 
     #[test]

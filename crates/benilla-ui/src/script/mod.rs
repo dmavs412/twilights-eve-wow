@@ -206,8 +206,8 @@ pub use guild::{
     MAX_RANKS, MIN_RANKS, RANK_RIGHT_BITS,
 };
 pub use herbalism::{
-    HerbCall, HerbGridView, HerbJournalCall, HerbJournalView, HerbKnownView, HerbPerkView,
-    HerbTileView, HerbalistView,
+    HerbBasketView, HerbCall, HerbGridView, HerbJournalCall, HerbJournalView, HerbKnownView,
+    HerbLogView, HerbPerkView, HerbTileView, HerbalistView,
 };
 pub use input_verbs::{BindingInput, FiredInput, HeldInput};
 pub use modelframe::ModelPaneFrame;

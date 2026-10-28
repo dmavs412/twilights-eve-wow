@@ -89,6 +89,10 @@ pub(crate) struct Template {
     /// The profession Journal this item belongs to (ADR 0023): a received one goes to its
     /// Satchel, never a bag slot.
     pub(crate) journal: Option<Profession>,
+    /// A plant's part key (`herbs.toml`), which the Forager's Grid draws it as; None for any other
+    /// item.
+    #[serde(default)]
+    pub(crate) part: Option<String>,
     /// A readable item's pages, one string each. The client's reader expands `$N`, `$B` and the
     /// other macros; the realm sends the text as written.
     pub(crate) pages: Vec<String>,
@@ -129,6 +133,7 @@ impl Default for Template {
             teleport_to: None,
             description: String::new(),
             journal: None,
+            part: None,
             pages: Vec::new(),
             stackable: 0,
             container_slots: 0,

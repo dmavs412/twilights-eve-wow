@@ -119,6 +119,8 @@ pub(crate) struct Char {
     pub(crate) herb_picks: Vec<(u32, u32)>,
     /// Whether Find Herbs is on.
     pub(crate) herb_tracking: bool,
+    /// Whether they have seen the Forager's Grid guided tour.
+    pub(crate) herb_tour_seen: bool,
     /// The perk keys they hold, one per slot filled.
     pub(crate) herb_perks: Vec<String>,
     /// The Journal's Tool slot, a `[[tool]]` item the Satchel holds (#440).
@@ -240,6 +242,7 @@ impl Characters {
             herbalist_xp: 0,
             herb_picks: Vec::new(),
             herb_tracking: false,
+            herb_tour_seen: false,
             herb_perks: Vec::new(),
             herb_tool: None,
             herb_consumable: None,

@@ -340,6 +340,38 @@ fn grids(events: &[SessionEvent]) -> Vec<Grid> {
         .collect()
 }
 
+/// What a `HerbGrid` adds for the Forager's Grid window (#480): basket, XP, log, `over` and tiles.
+type Patch = (
+    Vec<benilla_protocol::HerbBasketRow>,
+    u32,
+    Option<benilla_protocol::HerbLog>,
+    Option<u8>,
+    Vec<benilla_protocol::HerbTile>,
+);
+
+/// Each `HerbGrid` in `events`, as a [`Patch`].
+fn patch_of(events: &[SessionEvent]) -> Vec<Patch> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::HerbGrid {
+                basket,
+                xp,
+                log,
+                over,
+                tiles,
+                ..
+            } => Some((basket.clone(), *xp, log.clone(), *over, tiles.clone())),
+            _ => None,
+        })
+        .collect()
+}
+
+/// A tile's name in a 5 x 5 grid: "B3".
+fn tile_name(tile: usize) -> String {
+    format!("{}{}", (b'A' + (tile % 5) as u8) as char, tile / 5 + 1)
+}
+
 /// The reason of each `HerbGridClosed` in `events`.
 fn closed(events: &[SessionEvent]) -> Vec<u8> {
     events
@@ -393,7 +425,7 @@ fn pulling_a_plant_gives_the_item_and_xp_and_spends_a_pull() {
     let got = pull_a_plant(&mut p);
     let last = grids(&got).pop().unwrap();
     assert!(last.1 < 6, "pulls left {}", last.1);
-    let tile = last.2.iter().find(|t| t.state == 1).unwrap();
+    let tile = last.2.iter().find(|t| t.state == 1 && !t.missed).unwrap();
     assert!(tile.item != 0 && tile.count >= 1);
     assert!(
         got.iter()
@@ -403,6 +435,39 @@ fn pulling_a_plant_gives_the_item_and_xp_and_spends_a_pull() {
     );
     let xp = herbalist_events(&got);
     assert!(xp.last().is_some_and(|&(_, _, xp)| xp > 0), "{xp:?}");
+
+    // The window's data (#480): the basket, the patch's XP and the pull's log entry.
+    let (basket, patch_xp, log, _, tiles) = patch_of(&got)
+        .into_iter()
+        .rev()
+        .find(|g| g.2.is_some())
+        .unwrap();
+    let at = tiles
+        .iter()
+        .position(|t| t.state == 1 && !t.missed)
+        .unwrap();
+    // The test zone grows Dandelion Greens beside the shared finds; this seed's first is one.
+    let (part, name) = match tiles[at].item {
+        DANDELION => ("leaf", "Dandelion Greens"),
+        961_024 => ("honeycomb", "Wild Honeycomb"),
+        961_025 => ("sap", "Amber Sap"),
+        961_026 => ("nest", "Bird's Nest"),
+        other => panic!("pulled {other}"),
+    };
+    assert_eq!(tiles[at].part, part);
+    assert_eq!(
+        basket,
+        [benilla_protocol::HerbBasketRow {
+            item: tiles[at].item,
+            count: tiles[at].count,
+            part: part.into(),
+        }]
+    );
+    assert!(patch_xp > 0);
+    let log = log.unwrap();
+    assert_eq!((log.kind, log.place.as_str()), (0, tile_name(at).as_str()));
+    assert_eq!(log.title, format!("{name} x{}", tiles[at].count));
+    assert!(log.xp > 0 && log.xp <= patch_xp, "{} of {patch_xp}", log.xp);
 }
 
 #[test]
@@ -413,7 +478,24 @@ fn six_pulls_close_the_grid_and_finish_the_patch() {
     for tile in 0..6u8 {
         p.cmd(0, RealmCommand::Herb(HerbAction::Pull(tile)));
     }
-    assert_eq!(closed(&p.seen(0)[before..]), [0]);
+    let got = &p.seen(0)[before..];
+    assert_eq!(closed(got), [0]);
+    // The last grid shows what the patch held (#480).
+    let at = got
+        .iter()
+        .position(|e| matches!(e, SessionEvent::HerbGridClosed { .. }))
+        .unwrap();
+    let last = patch_of(&got[at - 1..at]);
+    assert_eq!(last.len(), 1, "a HerbGrid comes just before HerbGridClosed");
+    let (_, _, log, over, tiles) = &last[0];
+    assert_eq!((*over, log), (Some(0), &None));
+    for (i, t) in tiles.iter().enumerate() {
+        assert!(t.state > 0, "tile {i} {t:?}");
+        assert_eq!(t.missed, i >= 6, "tile {i} {t:?}");
+        if t.state == 1 {
+            assert!(t.item != 0 && !t.part.is_empty(), "tile {i} {t:?}");
+        }
+    }
     let later = skip(&mut p, 0, 5.0);
     assert!(
         later.iter().any(|e| match e {
@@ -432,6 +514,38 @@ fn leaving_closes_the_grid() {
     let before = p.seen(0).len();
     p.cmd(0, RealmCommand::Herb(HerbAction::Leave));
     assert_eq!(closed(&p.seen(0)[before..]), [2]);
+    assert!(
+        patch_of(&p.seen(0)[before..]).iter().all(|g| g.3.is_none()),
+        "leaving sends no end-of-patch grid"
+    );
+}
+
+/// The `tour_seen` of each `Herbalist` in `events`.
+fn tour_seen(events: &[SessionEvent]) -> Vec<bool> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            SessionEvent::Herbalist { tour_seen, .. } => Some(*tour_seen),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn the_tour_seen_flag_needs_no_grid_and_survives_a_save_round_trip() {
+    let mut p = party(&[true]);
+    assert_eq!(tour_seen(p.seen(0)), [false], "login sends it unseen");
+    let before = p.seen(0).len();
+    p.cmd(0, RealmCommand::Herb(HerbAction::TourSeen));
+    assert_eq!(tour_seen(&p.seen(0)[before..]), [true]);
+    let guid = p.guids[0];
+    let blob = p.realm.export_character(guid).unwrap();
+    assert!(blob.contains("herb_tour_seen = true"), "{blob}");
+    let mut realm = Realm::with_seed(9).with_herbs(TEST_HERBS);
+    realm.import_character(&blob).unwrap();
+    realm.handle(RealmCommand::EnterWorld { guid });
+    realm.tick(0.0, &FlatGround);
+    assert_eq!(tour_seen(&drain(&mut realm)), [true]);
 }
 
 #[test]

@@ -10,8 +10,8 @@ use bevy::prelude::*;
 
 use benilla_protocol::{SatchelPick, SessionEvent};
 use benilla_ui::script::{
-    HerbCall, HerbGridView, HerbJournalCall, HerbJournalView, HerbKnownView, HerbPerkView,
-    HerbTileView, HerbalistView, SatchelSlot, ScriptValue, UiScript,
+    HerbBasketView, HerbCall, HerbGridView, HerbJournalCall, HerbJournalView, HerbKnownView,
+    HerbLogView, HerbPerkView, HerbTileView, HerbalistView, SatchelSlot, ScriptValue, UiScript,
 };
 use twilight_realm::{HerbAction, RealmCommand};
 
@@ -55,6 +55,14 @@ fn view_of(event: &SessionEvent) -> Option<HerbGridView> {
         consumable,
         consumable_ready,
         charm_armed,
+        time_block,
+        grown_for,
+        in_bloom,
+        bloom_factor,
+        basket,
+        thorns,
+        xp,
+        over,
         ..
     } = event
     else {
@@ -72,6 +80,8 @@ fn view_of(event: &SessionEvent) -> Option<HerbGridView> {
                 item: t.item,
                 count: t.count,
                 bloom: t.bloom,
+                part: t.part.clone(),
+                missed: t.missed,
             })
             .collect(),
         known: known
@@ -83,12 +93,32 @@ fn view_of(event: &SessionEvent) -> Option<HerbGridView> {
             })
             .collect(),
         notes: notes.clone(),
-        log: log.clone(),
+        log: log.as_ref().map(|l| HerbLogView {
+            kind: l.kind,
+            title: l.title.clone(),
+            place: l.place.clone(),
+            xp: l.xp,
+        }),
         tool: *tool,
         skill_cost: *skill_cost,
         consumable: *consumable,
         consumable_ready: *consumable_ready,
         charm_armed: *charm_armed,
+        time_block: time_block.clone(),
+        grown_for: *grown_for,
+        in_bloom: in_bloom.clone(),
+        bloom_factor: *bloom_factor,
+        basket: basket
+            .iter()
+            .map(|r| HerbBasketView {
+                item: r.item,
+                count: r.count,
+                part: r.part.clone(),
+            })
+            .collect(),
+        thorns: *thorns,
+        xp: *xp,
+        over: *over,
     })
 }
 
@@ -101,6 +131,7 @@ fn herbalist_of(event: &SessionEvent) -> Option<HerbalistView> {
         to_next,
         title,
         perks,
+        tour_seen,
     } = event
     else {
         return None;
@@ -112,6 +143,7 @@ fn herbalist_of(event: &SessionEvent) -> Option<HerbalistView> {
         to_next: *to_next,
         title: title.clone(),
         perks: perks.clone(),
+        tour_seen: *tour_seen,
     })
 }
 
@@ -183,6 +215,7 @@ fn command_of(call: HerbCall) -> RealmCommand {
         HerbCall::Twine(tile) => HerbAction::Twine(tile),
         HerbCall::ArmCharm => HerbAction::ArmCharm,
         HerbCall::Leave => HerbAction::Leave,
+        HerbCall::TourSeen => HerbAction::TourSeen,
     })
 }
 
@@ -279,7 +312,7 @@ impl Plugin for HerbPatchPlugin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use benilla_protocol::{HerbKnown, HerbTile};
+    use benilla_protocol::{HerbBasketRow, HerbKnown, HerbLog, HerbTile};
 
     fn grid_event() -> SessionEvent {
         SessionEvent::HerbGrid {
@@ -294,6 +327,8 @@ mod tests {
                     item: 2447,
                     count: 2,
                     bloom: true,
+                    part: "flower".into(),
+                    missed: false,
                 },
                 HerbTile {
                     state: 0,
@@ -302,6 +337,18 @@ mod tests {
                     item: 0,
                     count: 0,
                     bloom: false,
+                    part: String::new(),
+                    missed: false,
+                },
+                HerbTile {
+                    state: 1,
+                    known: 0,
+                    stake: -1,
+                    item: 765,
+                    count: 0,
+                    bloom: false,
+                    part: "leaf".into(),
+                    missed: true,
                 },
             ],
             known: vec![HerbKnown {
@@ -310,12 +357,29 @@ mod tests {
                 rows: vec![2, 4],
             }],
             notes: vec!["Bloom Draught: one plant here is now blooming.".into()],
-            log: "Pulled B3: Peacebloom x2.".into(),
+            log: Some(HerbLog {
+                kind: 0,
+                title: "Peacebloom x2".into(),
+                place: "B3".into(),
+                xp: 11,
+            }),
             tool: 5001,
             skill_cost: 2,
             consumable: 5002,
             consumable_ready: true,
             charm_armed: true,
+            time_block: "Dusk".into(),
+            grown_for: 4,
+            in_bloom: vec![2447, 785],
+            bloom_factor: 2.0,
+            basket: vec![HerbBasketRow {
+                item: 2447,
+                count: 2,
+                part: "flower".into(),
+            }],
+            thorns: 1,
+            xp: 25,
+            over: Some(0),
         }
     }
 
@@ -333,9 +397,12 @@ mod tests {
                 item: 2447,
                 count: 2,
                 bloom: true,
+                part: "flower".into(),
+                missed: false,
             }
         );
         assert_eq!((view.tiles[1].known, view.tiles[1].stake), (3, 4));
+        assert!(view.tiles[2].missed && view.tiles[2].part == "leaf");
         assert_eq!(
             view.known,
             vec![HerbKnownView {
@@ -345,12 +412,34 @@ mod tests {
             }]
         );
         assert_eq!(view.notes.len(), 1);
-        assert_eq!(view.log, "Pulled B3: Peacebloom x2.");
+        assert_eq!(
+            view.log,
+            Some(HerbLogView {
+                kind: 0,
+                title: "Peacebloom x2".into(),
+                place: "B3".into(),
+                xp: 11,
+            })
+        );
         assert_eq!(
             (view.tool, view.skill_cost, view.consumable),
             (5001, 2, 5002)
         );
         assert!(view.consumable_ready && view.charm_armed);
+        assert_eq!(
+            (view.time_block.as_str(), view.grown_for, view.bloom_factor),
+            ("Dusk", 4, 2.0)
+        );
+        assert_eq!(view.in_bloom, [2447, 785]);
+        assert_eq!(
+            view.basket,
+            [HerbBasketView {
+                item: 2447,
+                count: 2,
+                part: "flower".into(),
+            }]
+        );
+        assert_eq!((view.thorns, view.xp, view.over), (1, 25, Some(0)));
         assert!(view_of(&SessionEvent::LoggedOut).is_none());
     }
 
@@ -374,6 +463,7 @@ mod tests {
             (HerbCall::Twine(12), HerbAction::Twine(12)),
             (HerbCall::ArmCharm, HerbAction::ArmCharm),
             (HerbCall::Leave, HerbAction::Leave),
+            (HerbCall::TourSeen, HerbAction::TourSeen),
         ];
         for (call, action) in cases {
             assert!(matches!(command_of(call), RealmCommand::Herb(a) if a == action));
@@ -410,9 +500,11 @@ mod tests {
             to_next: 90,
             title: "Herb Gatherer".into(),
             perks: vec!["reach".into()],
+            tour_seen: true,
         })
         .unwrap();
         assert_eq!((herbalist.level, herbalist.perks.len()), (12, 1));
+        assert!(herbalist.tour_seen);
         assert!(herbalist_of(&SessionEvent::LoggedOut).is_none());
         let journal = journal_of(&SessionEvent::HerbalismJournal {
             tool: 961101,
@@ -436,6 +528,11 @@ mod tests {
         world.insert_resource(HerbPatch {
             grid: view_of(&grid_event()),
             changed: true,
+            herbalist: Some(HerbalistView {
+                tour_seen: true,
+                ..HerbalistView::default()
+            }),
+            journal_changed: true,
             ..HerbPatch::default()
         });
         world.insert_non_send_resource(UiScript::new().unwrap());
@@ -445,13 +542,40 @@ mod tests {
             .eval("return (GetHerbGrid())")
             .unwrap();
         assert!(open);
+        let script = world.non_send_resource::<UiScript>();
+        let said = |lua: &str| script.eval::<String>(lua).unwrap();
+        assert_eq!(
+            said("local _, t, p = GetHerbLog() return t .. ' ' .. p"),
+            "Peacebloom x2 B3"
+        );
+        assert_eq!(
+            said(
+                "local _, _, _, _, _, _, _, _, block, grown, factor, thorns, xp, over = GetHerbGrid() \
+                 return block .. grown .. factor .. thorns .. xp .. over"
+            ),
+            "Dusk421250"
+        );
+        assert_eq!(
+            said("local item, count, part = GetHerbBasket(1) return GetNumHerbBasket() .. item .. count .. part"),
+            "124472flower"
+        );
+        assert_eq!(said("return GetNumHerbBloom() .. GetHerbBloom(2)"), "2785");
+        assert_eq!(
+            said("local _, _, _, _, _, seen = GetHerbalistInfo() return tostring(seen)"),
+            "true"
+        );
+        assert_eq!(
+            said("local _, _, _, _, _, _, part, missed = GetHerbTile(3) return part .. tostring(missed)"),
+            "leaftrue"
+        );
         world
             .non_send_resource_mut::<UiScript>()
-            .run("HerbPull(4) HerbLeave()")
+            .run("HerbPull(4) HerbLeave() HerbTourSeen()")
             .unwrap();
         world.run_system_once(feed_herbs).unwrap();
         let sent = &world.resource::<HerbOutbox>().0;
-        assert_eq!(sent.len(), 2);
+        assert_eq!(sent.len(), 3);
         assert!(matches!(sent[0], RealmCommand::Herb(HerbAction::Pull(3))));
+        assert!(matches!(sent[2], RealmCommand::Herb(HerbAction::TourSeen)));
     }
 }

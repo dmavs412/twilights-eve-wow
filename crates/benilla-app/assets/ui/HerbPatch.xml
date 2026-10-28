@@ -2,7 +2,7 @@
     <!--
         The Forager's Grid window (spec #435, #442). The app pushes the realm's open grid; the frame
         reads only GetHerbGrid(), GetHerbTile(i), GetHerbKnown(), GetHerbKnownItem(i),
-        GetNumHerbNotes() and GetHerbNote(i), and sends clicks through HerbPull, HerbSweep,
+        GetNumHerbNotes(), GetHerbNote(i) and GetHerbLog(), and sends clicks through HerbPull, HerbSweep,
         HerbProbe, HerbSnip, HerbSight, HerbTwine, HerbArmCharm and HerbLeave. HERB_GRID_UPDATE says
         when to repaint and HERB_GRID_CLOSED (reason 0 to 4) hides the window with one chat line.
 
@@ -255,10 +255,11 @@
         end
 
         function BenillaHerb_Update()
-            local open, _, _, _, _, _, _, _, log = GetHerbGrid()
-            if not open then
+            if not GetHerbGrid() then
                 return
             end
+            local _, title, place = GetHerbLog()
+            local log = title and (title .. " " .. place)
             if not BenillaHerbPatch:IsVisible() then
                 BenillaHerbState.mode = nil
                 BenillaHerbState.sight = {}

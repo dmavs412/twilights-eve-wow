@@ -154,6 +154,31 @@ pub struct HerbTile {
     pub count: u32,
     /// A pulled plant that was in its Bloom.
     pub bloom: bool,
+    /// The plant part key (`herbs.toml` `part`) of a pulled or missed plant; "" otherwise.
+    pub part: String,
+    /// An unpulled tile shown when the patch ended: `state` 1 to 3 and `item` say what it held.
+    pub missed: bool,
+}
+
+/// Twilight's Eve, not 1.12: one row of the open patch's basket, merged by item (spec #479).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct HerbBasketRow {
+    pub item: u32,
+    pub count: u32,
+    pub part: String,
+}
+
+/// Twilight's Eve, not 1.12: the last action on the open patch, for the pull log (spec #479).
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct HerbLog {
+    /// 0 plant, 1 weed, 2 thorn, 3 tool skill, 4 consumable.
+    pub kind: u8,
+    /// "Peacebloom x2", "Weed", "Thorn, 2 pulls", "Sweep", "Elixir of Herb Sight".
+    pub title: String,
+    /// The tile or span: "B3" or "B3-D3".
+    pub place: String,
+    /// Herbalist XP the action gave.
+    pub xp: u32,
 }
 
 /// Twilight's Eve, not 1.12: what the Journal tells about one plant in the open patch: listed
@@ -361,6 +386,8 @@ pub enum SessionEvent {
         title: String,
         /// One per perk slot the level opens: the perk's key, or "" for an empty slot.
         perks: Vec<String>,
+        /// The Forager's Grid guided tour has been seen.
+        tour_seen: bool,
     },
     /// Twilight's Eve, not 1.12: Find Herbs (spec #435). While `on`, the client draws a leaf on the
     /// minimap at each GameObject whose entry is `patch_entry`. Sent at login and on every toggle.
@@ -376,8 +403,8 @@ pub enum SessionEvent {
         known: Vec<HerbKnown>,
         /// One line per start-of-patch effect ("Bloom Draught: one plant here is now blooming.").
         notes: Vec<String>,
-        /// The last action's line for the pull log ("Pulled B3: Peacebloom x2.").
-        log: String,
+        /// The last action, for the pull log; `None` when the grid opens or a slot changes.
+        log: Option<HerbLog>,
         /// The Tool slot's item, the Tool Skill's pull cost, the Consumable slot's item, whether
         /// that consumable can still be used, and whether the Forager's Charm is armed. All 0 or
         /// false until the next ticket.
@@ -386,6 +413,22 @@ pub enum SessionEvent {
         consumable: u32,
         consumable_ready: bool,
         charm_armed: bool,
+        /// The game-clock block: "Night", "Dawn", "Day" or "Dusk".
+        time_block: String,
+        /// The Herbalist level the patch was rolled at.
+        grown_for: u8,
+        /// The zone's plants in Bloom now at or under the Herbalist level, legendary excluded, in
+        /// `herbs.toml` order; and how much a blooming plant multiplies its yield.
+        in_bloom: Vec<u32>,
+        bloom_factor: f32,
+        /// What this patch has given so far, merged by item.
+        basket: Vec<HerbBasketRow>,
+        /// Thorns pulled and Herbalist XP gained this patch.
+        thorns: u8,
+        xp: u32,
+        /// `Some(reason)`, the `HerbGridClosed` reason, on the last grid of a patch that ran out of
+        /// pulls or tiles; its unpulled tiles are `missed`.
+        over: Option<u8>,
     },
     /// Twilight's Eve, not 1.12: the Herbalism Journal (spec #435), complete at login and on every
     /// change, as `FishingJournal` is. Never wire-decoded.

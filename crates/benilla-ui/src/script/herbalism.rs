@@ -1,6 +1,7 @@
 //! The Forager's Grid's state Lua reads (spec #435): `GetHerbGrid()`, `GetHerbTile(i)`, the known
-//! plants and the start-of-patch notes, and the calls the window queues for the host: `HerbPull`,
-//! `HerbSweep`, `HerbProbe`, `HerbSnip`, `HerbSight`, `HerbTwine`, `HerbArmCharm` and `HerbLeave`.
+//! plants, the start-of-patch notes, and (#480) the plants in Bloom, the basket and the last log
+//! entry; and the calls the window queues for the host: `HerbPull`, `HerbSweep`, `HerbProbe`,
+//! `HerbSnip`, `HerbSight`, `HerbTwine`, `HerbArmCharm`, `HerbLeave` and `HerbTourSeen`.
 //! The host pushes the open grid into the [`Model`] and fires `HERB_GRID_UPDATE` and
 //! `HERB_GRID_CLOSED` itself. Tile numbers are 1-based in Lua and 0-based here.
 //!
@@ -28,6 +29,27 @@ pub struct HerbTileView {
     pub item: u32,
     pub count: u32,
     pub bloom: bool,
+    /// The plant part key of a pulled or missed plant; "" otherwise.
+    pub part: String,
+    /// An unpulled tile shown when the patch ended.
+    pub missed: bool,
+}
+
+/// One basket row of the open patch, merged by item.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HerbBasketView {
+    pub item: u32,
+    pub count: u32,
+    pub part: String,
+}
+
+/// The last action on the open patch: kind 0 plant, 1 weed, 2 thorn, 3 tool skill, 4 consumable.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct HerbLogView {
+    pub kind: u8,
+    pub title: String,
+    pub place: String,
+    pub xp: u32,
 }
 
 /// What the Journal tells about one plant in the open patch.
@@ -47,25 +69,43 @@ pub struct HerbGridView {
     pub tiles: Vec<HerbTileView>,
     pub known: Vec<HerbKnownView>,
     pub notes: Vec<String>,
-    pub log: String,
+    pub log: Option<HerbLogView>,
     pub tool: u32,
     pub skill_cost: u8,
     pub consumable: u32,
     pub consumable_ready: bool,
     pub charm_armed: bool,
+    /// "Night", "Dawn", "Day" or "Dusk".
+    pub time_block: String,
+    /// The Herbalist level the patch was rolled at.
+    pub grown_for: u8,
+    /// The zone's plants in Bloom now, and how much a blooming plant yields.
+    pub in_bloom: Vec<u32>,
+    pub bloom_factor: f32,
+    pub basket: Vec<HerbBasketView>,
+    /// Thorns pulled and Herbalist XP gained this patch.
+    pub thorns: u8,
+    pub xp: u32,
+    /// The `HERB_GRID_CLOSED` reason on the last grid of a patch that ran out of pulls or tiles.
+    pub over: Option<u8>,
 }
 
 /// One call the window queued for the host, tiles 0-based.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HerbCall {
     Pull(u8),
-    Sweep { tile: u8, across: bool },
+    Sweep {
+        tile: u8,
+        across: bool,
+    },
     Probe(u8),
     Snip(u8),
     Sight([u8; 3]),
     Twine(u8),
     ArmCharm,
     Leave,
+    /// The guided tour was seen; needs no open grid.
+    TourSeen,
 }
 
 /// The character's Herbalist Level and perk slots, as the realm's `Herbalist` event.
@@ -78,6 +118,8 @@ pub struct HerbalistView {
     pub title: String,
     /// One per perk slot the level opens: the picked perk's key, or "" for an empty slot.
     pub perks: Vec<String>,
+    /// The Forager's Grid guided tour has been seen.
+    pub tour_seen: bool,
 }
 
 /// One perk of `herbs.toml`, as the Journal lists it.
@@ -184,7 +226,8 @@ fn index(i: i64) -> Option<usize> {
 pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
     let g = lua.globals();
     // GetHerbGrid(): open, size, pullsLeft, tool, skillCost, consumable, consumableReady,
-    // charmArmed, log. With no grid open, `false` alone.
+    // charmArmed, timeBlock, grownFor, bloomFactor, thorns, xp, over (nil until the patch ends by
+    // pulls or tiles). With no grid open, `false` alone.
     g.set(
         "GetHerbGrid",
         lua.create_function(|lua, ()| {
@@ -201,12 +244,76 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 num(grid.consumable),
                 Value::Boolean(grid.consumable_ready),
                 Value::Boolean(grid.charm_armed),
-                Value::String(lua.create_string(&grid.log)?),
+                Value::String(lua.create_string(&grid.time_block)?),
+                num(grid.grown_for),
+                num(grid.bloom_factor),
+                num(grid.thorns),
+                num(grid.xp),
+                grid.over.map_or(Value::Nil, num),
             ]))
         })?,
     )?;
-    // GetHerbTile(i), 1-based: state, known, stake (nil for none), item, count, bloom. Nothing for
-    // a tile the grid does not have.
+    // GetNumHerbBloom() and GetHerbBloom(i), 1-based: the item of a plant in Bloom now.
+    g.set(
+        "GetNumHerbBloom",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(model.herb_grid.as_ref().map_or(0, |g| g.in_bloom.len()) as f64)
+        })?,
+    )?;
+    g.set(
+        "GetHerbBloom",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let item = index(i)
+                .zip(model.herb_grid.as_ref())
+                .and_then(|(i, grid)| grid.in_bloom.get(i));
+            Ok(item.map(|&item| item as f64))
+        })?,
+    )?;
+    // GetNumHerbBasket() and GetHerbBasket(i), 1-based: item, count, part.
+    g.set(
+        "GetNumHerbBasket",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            Ok(model.herb_grid.as_ref().map_or(0, |g| g.basket.len()) as f64)
+        })?,
+    )?;
+    g.set(
+        "GetHerbBasket",
+        lua.create_function(|lua, i: i64| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let row = index(i)
+                .zip(model.herb_grid.as_ref())
+                .and_then(|(i, grid)| grid.basket.get(i));
+            let Some(row) = row else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                num(row.item),
+                num(row.count),
+                Value::String(lua.create_string(&row.part)?),
+            ]))
+        })?,
+    )?;
+    // GetHerbLog(): kind, title, place, xp of the last action; nothing when the grid has none.
+    g.set(
+        "GetHerbLog",
+        lua.create_function(|lua, ()| {
+            let model = lua.app_data_ref::<Model>().expect("model app_data");
+            let Some(log) = model.herb_grid.as_ref().and_then(|g| g.log.as_ref()) else {
+                return Ok(MultiValue::new());
+            };
+            Ok(MultiValue::from_vec(vec![
+                num(log.kind),
+                Value::String(lua.create_string(&log.title)?),
+                Value::String(lua.create_string(&log.place)?),
+                num(log.xp),
+            ]))
+        })?,
+    )?;
+    // GetHerbTile(i), 1-based: state, known, stake (nil for none), item, count, bloom, part,
+    // missed. Nothing for a tile the grid does not have.
     g.set(
         "GetHerbTile",
         lua.create_function(|lua, i: i64| {
@@ -229,6 +336,8 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
                 num(t.item),
                 num(t.count),
                 Value::Boolean(t.bloom),
+                Value::String(lua.create_string(&t.part)?),
+                Value::Boolean(t.missed),
             ]))
         })?,
     )?;
@@ -345,13 +454,21 @@ pub(super) fn install(lua: &Lua) -> mlua::Result<()> {
             Ok(())
         })?,
     )?;
+    g.set(
+        "HerbTourSeen",
+        lua.create_function(|lua, ()| {
+            queue(lua, Some(HerbCall::TourSeen));
+            Ok(())
+        })?,
+    )?;
     install_journal(lua)
 }
 
 /// Register the Herbalism Journal's getters and calls.
 fn install_journal(lua: &Lua) -> mlua::Result<()> {
     let g = lua.globals();
-    // GetHerbalistInfo(): knows, level, xp, xpToNext, title; level 0 until the host's first push.
+    // GetHerbalistInfo(): knows, level, xp, xpToNext, title, tourSeen; level 0 until the host's
+    // first push.
     g.set(
         "GetHerbalistInfo",
         lua.create_function(|lua, ()| {
@@ -363,6 +480,7 @@ fn install_journal(lua: &Lua) -> mlua::Result<()> {
                 num(h.xp),
                 num(h.to_next),
                 Value::String(lua.create_string(&h.title)?),
+                Value::Boolean(h.tour_seen),
             ]))
         })?,
     )?;

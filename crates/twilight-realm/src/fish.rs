@@ -184,6 +184,24 @@ impl Block {
             hour >= from || hour < to
         }
     }
+
+    /// The block game minute `minute_of_day` falls in.
+    pub(crate) fn of(minute_of_day: u32) -> Block {
+        [Block::Night, Block::Dawn, Block::Day, Block::Dusk]
+            .into_iter()
+            .find(|b| b.holds(minute_of_day))
+            .unwrap_or(Block::Night)
+    }
+
+    /// Its name as the client shows it: "Night", "Dawn", "Day" or "Dusk".
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Block::Night => "Night",
+            Block::Dawn => "Dawn",
+            Block::Day => "Day",
+            Block::Dusk => "Dusk",
+        }
+    }
 }
 
 /// One fish (`[[fish]]`), by its item.

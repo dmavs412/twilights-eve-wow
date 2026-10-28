@@ -210,6 +210,8 @@ struct Save {
     herb_picks: Vec<(u32, u32)>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     herb_tracking: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    herb_tour_seen: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     herb_perks: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -467,6 +469,7 @@ pub(crate) fn export(c: &Char) -> String {
         herbalist_xp: c.herbalist_xp,
         herb_picks: c.herb_picks.clone(),
         herb_tracking: c.herb_tracking,
+        herb_tour_seen: c.herb_tour_seen,
         herb_perks: c.herb_perks.clone(),
         herb_tool: c.herb_tool,
         herb_consumable: c.herb_consumable,
@@ -575,6 +578,7 @@ pub(crate) fn import(blob: &str) -> Result<(Char, Vec<String>), SaveError> {
         herbalist_xp: s.herbalist_xp,
         herb_picks: s.herb_picks,
         herb_tracking: s.herb_tracking,
+        herb_tour_seen: s.herb_tour_seen,
         herb_perks: s.herb_perks,
         herb_tool: s.herb_tool,
         herb_consumable: s.herb_consumable,

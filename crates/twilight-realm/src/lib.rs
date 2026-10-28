@@ -170,6 +170,8 @@ pub enum HerbAction {
     Twine(u8),
     /// Forager's Charm: arm or disarm it for the next pull.
     ArmCharm,
+    /// The Forager's Grid guided tour was seen. Needs no open grid.
+    TourSeen,
 }
 
 /// Everything a client can ask of the realm. The glue maps the client's own commands onto these

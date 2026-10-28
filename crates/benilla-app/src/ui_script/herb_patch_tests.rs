@@ -3,7 +3,8 @@
 //! font only warns.
 
 use benilla_ui::script::{
-    HerbCall, HerbGridView, HerbKnownView, HerbTileView, ItemTemplateView, ScriptValue, UiScript,
+    HerbCall, HerbGridView, HerbKnownView, HerbLogView, HerbTileView, ItemTemplateView,
+    ScriptValue, UiScript,
 };
 
 use super::test_ui::load_ui as load_xml;
@@ -262,6 +263,27 @@ fn the_buttons_queue_the_charm_and_the_leave() {
         s.take_herb_calls(),
         vec![HerbCall::ArmCharm, HerbCall::Leave]
     );
+}
+
+#[test]
+fn the_pull_log_prints_each_entry_title_and_place_newest_first() {
+    let mut s = window();
+    let entry = |title: &str, place: &str| {
+        grid(|g| {
+            g.log = Some(HerbLogView {
+                kind: 0,
+                title: title.into(),
+                place: place.into(),
+                xp: 5,
+            })
+        })
+    };
+    push(&mut s, entry("Peacebloom x2", "B3"));
+    push(&mut s, entry("Sweep", "A1-C1"));
+    push(&mut s, grid(|_| {}));
+    assert_eq!(text(&s, "BenillaHerbLog1"), "Sweep A1-C1");
+    assert_eq!(text(&s, "BenillaHerbLog2"), "Peacebloom x2 B3");
+    assert_eq!(text(&s, "BenillaHerbLog3"), "");
 }
 
 #[test]

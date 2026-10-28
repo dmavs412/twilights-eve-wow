@@ -74,6 +74,7 @@ fn herbalist(knows: bool, level: u32, perks: &[&str]) -> HerbalistView {
         to_next: 100,
         title: "Herb Gatherer".into(),
         perks: perks.iter().map(|k| k.to_string()).collect(),
+        tour_seen: true,
     }
 }
 

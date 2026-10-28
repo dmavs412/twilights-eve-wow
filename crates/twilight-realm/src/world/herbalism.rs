@@ -11,6 +11,7 @@ use crate::characters::Char;
 use crate::content::EASTERN_KINGDOMS;
 use crate::equipment;
 use crate::fields::values;
+use crate::fish::Block;
 use crate::herbs;
 use crate::herbs::{Effect, Skill};
 use crate::hub::Npc;
@@ -21,7 +22,7 @@ use crate::rules::forage::{self, Cell};
 use crate::rules::game_clock;
 use crate::space;
 use crate::{HerbAction, Host};
-use benilla_protocol::{HerbKnown, HerbTile};
+use benilla_protocol::{HerbBasketRow, HerbKnown, HerbLog, HerbTile};
 
 /// `HerbGridClosed` reasons.
 const CLOSED_OUT_OF_PULLS: u8 = 0;
@@ -59,6 +60,7 @@ pub(crate) fn herbalist(c: &Char) -> SessionEvent {
         },
         title: h.title(level).to_owned(),
         perks,
+        tour_seen: c.herb_tour_seen,
     }
 }
 
@@ -180,6 +182,13 @@ struct Open {
     effect: Option<Effect>,
     /// One line per start-of-patch effect.
     notes: Vec<String>,
+    /// The Herbalist level the patch was rolled at.
+    grown_for: u8,
+    /// What the patch has given so far, merged by item; the Lost Coin Purse adds no row.
+    basket: Vec<HerbBasketRow>,
+    /// Thorns pulled and Herbalist XP gained so far.
+    thorns: u32,
+    xp: u32,
 }
 
 /// One character's patches: those standing, and the replacements waiting on their delay.
@@ -399,6 +408,10 @@ impl crate::Realm {
             consumable: 0,
             effect: None,
             notes: Vec::new(),
+            grown_for: c.herbalist_level,
+            basket: Vec::new(),
+            thorns: 0,
+            xp: 0,
         };
         let chosen = c
             .herb_consumable
@@ -411,8 +424,7 @@ impl crate::Realm {
             apply_consumable(&mut open, &mut self.rng, &z.key);
         }
         w.hurt = false;
-        self.events
-            .push(grid_event(c, &open, minute, String::new()));
+        self.events.push(grid_event(c, &open, minute, None, None));
         p.open = Some(open);
     }
 
@@ -423,6 +435,14 @@ impl crate::Realm {
         };
         let t = herbs::grid();
         match action {
+            HerbAction::TourSeen => {
+                let Some(c) = self.characters.get_mut(guid) else {
+                    return;
+                };
+                c.herb_tour_seen = true;
+                self.events.push(herbalist(c));
+                self.save(guid);
+            }
             HerbAction::Leave => self.close_herb_grid(guid, CLOSED_LEFT),
             HerbAction::Pull(tile) => self.act(guid, |c, open, rng, ev| {
                 let tile = usize::from(tile);
@@ -437,7 +457,7 @@ impl crate::Realm {
                 let reach = forage::Perks::of(&c.herb_perks).reach;
                 let length = t.sweep_length as usize + usize::from(reach);
                 let line = forage::sweep_line(open.grid.size, usize::from(tile), across, length);
-                skill_reveal(c, rng, ev, open, &line, t.sweep_cost, 0)
+                skill_reveal(c, rng, ev, open, &line, t.sweep_cost, 0, "Sweep")
             }),
             HerbAction::Snip(tile) => self.act(guid, |c, open, rng, ev| {
                 if tool_skill(c) != Some(Skill::Snip) {
@@ -451,6 +471,7 @@ impl crate::Realm {
                     &[usize::from(tile)],
                     t.snip_cost,
                     t.snip_bonus,
+                    "Snip",
                 )
             }),
             HerbAction::Probe(tile) => self.act(guid, |c, open, _, _| {
@@ -463,8 +484,10 @@ impl crate::Realm {
                     return None;
                 }
                 let reach = forage::Perks::of(&c.herb_perks).reach;
-                let hidden: Vec<usize> = forage::square(g, tile)
-                    .into_iter()
+                let square = forage::square(g, tile);
+                let hidden: Vec<usize> = square
+                    .iter()
+                    .copied()
                     .filter(|&i| !g.tiles[i].pulled)
                     .collect();
                 if hidden.is_empty() {
@@ -475,7 +498,12 @@ impl crate::Realm {
                     g.probed[i] = reach;
                 }
                 g.pulls_left -= t.probe_cost;
-                Some((0, "Probe: the tiles around it are marked.".to_owned()))
+                Some(HerbLog {
+                    kind: LOG_SKILL,
+                    title: "Probe".to_owned(),
+                    place: span(g.size, &square),
+                    xp: 0,
+                })
             }),
             HerbAction::Sight(tiles) => self.act(guid, |_, open, _, _| {
                 let g = &mut open.grid;
@@ -495,10 +523,12 @@ impl crate::Realm {
                     g.known[i] = forage::kind_of(g.tiles[i].cell);
                 }
                 g.ready = false;
-                Some((
-                    0,
-                    format!("Spyglass Sight: {} tiles are marked.", marked.len()),
-                ))
+                let place = marked
+                    .iter()
+                    .map(|&i| tile_name(g.size, i))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                Some(consumable_log(open.consumable, place))
             }),
             HerbAction::Twine(tile) => self.act(guid, |_, open, _, _| {
                 let g = &mut open.grid;
@@ -506,13 +536,14 @@ impl crate::Realm {
                 if open.effect != Some(Effect::Twine) || !g.ready || tile >= g.tiles.len() {
                     return None;
                 }
-                for i in forage::square(g, tile) {
+                let square = forage::square(g, tile);
+                for &i in &square {
                     if !g.tiles[i].pulled && g.tiles[i].cell == Cell::Weed {
                         g.known[i] = 2;
                     }
                 }
                 g.ready = false;
-                Some((0, "Twine: the weeds around it are marked.".to_owned()))
+                Some(consumable_log(open.consumable, span(g.size, &square)))
             }),
             HerbAction::ArmCharm => self.act(guid, |_, open, _, _| {
                 let g = &mut open.grid;
@@ -520,22 +551,18 @@ impl crate::Realm {
                     return None;
                 }
                 g.charm_armed = !g.charm_armed;
-                let line = if g.charm_armed {
-                    "Forager's Charm: armed for the next pull."
-                } else {
-                    "Forager's Charm: put away."
-                };
-                Some((0, line.to_owned()))
+                Some(consumable_log(open.consumable, String::new()))
             }),
         }
     }
 
-    /// Runs `f` on the served character and their open grid. When it returns the XP earned and a
-    /// log line, the XP is added, the grid is sent, and the grid closes when it is out of pulls or
-    /// tiles. `None` changes nothing.
+    /// Runs `f` on the served character and their open grid. When it returns the action's log
+    /// entry, its XP is added, the grid is sent, and the patch ends when it is out of pulls or
+    /// tiles: a last grid shows the tiles left unpulled, then the grid closes. `None` changes
+    /// nothing.
     fn act<F>(&mut self, guid: u64, f: F)
     where
-        F: FnOnce(&mut Char, &mut Open, &mut Rng, &mut Vec<SessionEvent>) -> Option<(u32, String)>,
+        F: FnOnce(&mut Char, &mut Open, &mut Rng, &mut Vec<SessionEvent>) -> Option<HerbLog>,
     {
         let Some(c) = self.characters.get_mut(guid) else {
             return;
@@ -548,15 +575,18 @@ impl crate::Realm {
         else {
             return;
         };
-        let Some((xp, log)) = f(c, open, &mut self.rng, &mut self.events) else {
+        let Some(log) = f(c, open, &mut self.rng, &mut self.events) else {
             return;
         };
+        let xp = log.xp;
+        open.xp += xp;
         let levelled = gain_herbalist_xp(c, xp);
         if xp > 0 || levelled {
             self.events.push(herbalist(c));
         }
         let minute = game_clock::minute_of_day(self.wall);
-        self.events.push(grid_event(c, open, minute, log));
+        self.events
+            .push(grid_event(c, open, minute, Some(log), None));
         let end = if open.grid.pulls_left == 0 {
             Some(CLOSED_OUT_OF_PULLS)
         } else if !open.grid.any_hidden() {
@@ -564,6 +594,10 @@ impl crate::Realm {
         } else {
             None
         };
+        if let Some(reason) = end {
+            self.events
+                .push(grid_event(c, open, minute, None, Some(reason)));
+        }
         match end {
             Some(reason) => self.close_herb_grid(guid, reason),
             None if levelled => self.save(guid),
@@ -611,7 +645,7 @@ impl crate::Realm {
             // An open grid shows the Tool's skill, so it follows.
             let minute = game_clock::minute_of_day(self.wall);
             if let Some(open) = self.herb_patches.0.get(&guid).and_then(|p| p.open.as_ref()) {
-                self.events.push(grid_event(c, open, minute, String::new()));
+                self.events.push(grid_event(c, open, minute, None, None));
             }
         }
         self.save(guid);
@@ -742,9 +776,47 @@ fn apply_consumable(open: &mut Open, rng: &mut Rng, zone_key: &str) {
     }
 }
 
-/// A Tool Skill that reveals `tiles`: refused when the pulls left fall short of `base` or nothing
-/// is hidden. Each tile collects as a pull would; a thorn costs its extra unless the skill is a
-/// Snip (`bonus` above 0), and a Snipped plant yields `bonus` more.
+/// `HerbLog` kinds.
+const LOG_PLANT: u8 = 0;
+const LOG_WEED: u8 = 1;
+const LOG_THORN: u8 = 2;
+const LOG_SKILL: u8 = 3;
+const LOG_CONSUMABLE: u8 = 4;
+
+/// A tile's name as the grid labels it: its column letter and 1-based row, "B3".
+fn tile_name(size: usize, tile: usize) -> String {
+    format!(
+        "{}{}",
+        (b'A' + (tile % size) as u8) as char,
+        tile / size + 1
+    )
+}
+
+/// The span `tiles` cover, from the first to the last: "B3-D3", or "B3" for one tile.
+fn span(size: usize, tiles: &[usize]) -> String {
+    match (tiles.iter().min(), tiles.iter().max()) {
+        (Some(&first), Some(&last)) if first != last => {
+            format!("{}-{}", tile_name(size, first), tile_name(size, last))
+        }
+        (Some(&first), _) => tile_name(size, first),
+        _ => String::new(),
+    }
+}
+
+/// The log entry for using the open patch's consumable on `place`: titled with its item's name.
+fn consumable_log(consumable: u32, place: String) -> HerbLog {
+    HerbLog {
+        kind: LOG_CONSUMABLE,
+        title: crate::items::template(consumable).map_or_else(String::new, |t| t.name.clone()),
+        place,
+        xp: 0,
+    }
+}
+
+/// A Tool Skill named `skill` that reveals `tiles`: refused when the pulls left fall short of
+/// `base` or nothing is hidden. Each tile collects as a pull would; a thorn costs its extra unless
+/// the skill is a Snip (`bonus` above 0), and a Snipped plant yields `bonus` more.
+#[allow(clippy::too_many_arguments)]
 fn skill_reveal(
     c: &mut Char,
     rng: &mut Rng,
@@ -753,7 +825,8 @@ fn skill_reveal(
     tiles: &[usize],
     base: u32,
     bonus: u32,
-) -> Option<(u32, String)> {
+    skill: &str,
+) -> Option<HerbLog> {
     if open.grid.pulls_left < base {
         return None;
     }
@@ -765,7 +838,7 @@ fn skill_reveal(
     if hidden.is_empty() {
         return None;
     }
-    let (mut cost, mut xp, mut lines) = (base, 0, Vec::new());
+    let (mut cost, mut xp) = (base, 0);
     for tile in hidden {
         let spared = if bonus > 0 {
             std::mem::take(&mut open.grid.free_thorns)
@@ -782,32 +855,31 @@ fn skill_reveal(
             cost += extra;
         }
         open.grid.tiles[tile].cell = cell;
-        let (gained, line) = collect(c, rng, events, open, tile, cell, 1);
-        xp += gained;
-        lines.push(line);
+        xp += collect(c, rng, events, open, tile, cell, 1).xp;
     }
     open.grid.pulls_left = open.grid.pulls_left.saturating_sub(cost);
-    Some((xp, lines.join(" ")))
+    Some(HerbLog {
+        kind: LOG_SKILL,
+        title: skill.to_owned(),
+        place: span(open.grid.size, tiles),
+        xp,
+    })
 }
 
 /// What pulling `tile`, which held `cell` and cost `cost` pulls, gives `c`: the plant to the
-/// Satchel and the pick count, the XP and the log line.
+/// Satchel, the basket and the pick count, a thorn to the patch's count, and the log entry with
+/// its XP.
 fn collect(
     c: &mut Char,
     rng: &mut Rng,
     events: &mut Vec<SessionEvent>,
-    open: &Open,
+    open: &mut Open,
     tile: usize,
     cell: Cell,
     cost: u32,
-) -> (u32, String) {
+) -> HerbLog {
     let h = herbs::herbalist();
-    let size = open.grid.size;
-    let name = format!(
-        "{}{}",
-        (b'A' + (tile % size) as u8) as char,
-        tile / size + 1
-    );
+    let place = tile_name(open.grid.size, tile);
     let key = &herbs::zones()[open.zone].key;
     let level = u32::from(c.herbalist_level);
     match cell {
@@ -824,24 +896,47 @@ fn collect(
                 None => c.herb_picks.push((item, 1)),
             }
             let item_name = crate::items::template(item).map_or("a plant", |t| t.name.as_str());
-            let log = if let Some([lo, hi]) = money {
+            let title = if let Some([lo, hi]) = money {
                 let copper = rng.urand(lo, hi);
                 c.inventory.money += copper;
                 events.push(values(c.guid, &[equipment::money_pair(&c.inventory)]));
-                format!("Pulled {name}: {item_name}, {copper} copper.")
+                format!("{item_name}, {copper} copper")
             } else {
                 if let Err(reason) = equipment::receive(c, item, count, events) {
                     events.push(equipment::inventory_failure(reason, 0));
                 }
-                format!("Pulled {name}: {item_name} x{count}.")
+                match open.basket.iter_mut().find(|r| r.item == item) {
+                    Some(row) => row.count += count,
+                    None => open.basket.push(HerbBasketRow {
+                        item,
+                        count,
+                        part: herbs::part_of(item).to_owned(),
+                    }),
+                }
+                format!("{item_name} x{count}")
             };
-            (xp, log)
+            HerbLog {
+                kind: LOG_PLANT,
+                title,
+                place,
+                xp,
+            }
         }
-        Cell::Weed => (h.weed_xp, format!("Pulled {name}: a weed.")),
-        Cell::Thorn => (
-            h.thorn_xp,
-            format!("Pulled {name}: a thorn. It cost {cost} pulls."),
-        ),
+        Cell::Weed => HerbLog {
+            kind: LOG_WEED,
+            title: "Weed".to_owned(),
+            place,
+            xp: h.weed_xp,
+        },
+        Cell::Thorn => {
+            open.thorns += 1;
+            HerbLog {
+                kind: LOG_THORN,
+                title: format!("Thorn, {cost} pull{}", if cost == 1 { "" } else { "s" }),
+                place,
+                xp: h.thorn_xp,
+            }
+        }
     }
 }
 
@@ -871,8 +966,15 @@ fn picks(c: &Char, item: u32) -> u32 {
 }
 
 /// The `HerbGrid` for `c`'s open grid: each tile as far as `c` may know it, and what the Journal
-/// knows of the zone's plants.
-fn grid_event(c: &Char, open: &Open, minute: u32, log: String) -> SessionEvent {
+/// knows of the zone's plants. `over` is the reason a patch that ran out of pulls or tiles ended:
+/// its unpulled tiles then show what they held, marked `missed`.
+fn grid_event(
+    c: &Char,
+    open: &Open,
+    minute: u32,
+    log: Option<HerbLog>,
+    over: Option<u8>,
+) -> SessionEvent {
     let h = herbs::herbalist();
     let grid = &open.grid;
     let t = herbs::grid();
@@ -904,9 +1006,22 @@ fn grid_event(c: &Char, open: &Open, minute: u32, log: String) -> SessionEvent {
                     tile.item = item;
                     tile.count = count;
                     tile.bloom = bloom;
+                    tile.part = herbs::part_of(item).to_owned();
                 }
                 (true, Cell::Weed) => tile.state = 2,
                 (true, Cell::Thorn) => tile.state = 3,
+                (false, cell) if over.is_some() => {
+                    tile.missed = true;
+                    match cell {
+                        Cell::Plant { item, .. } => {
+                            tile.state = 1;
+                            tile.item = item;
+                            tile.part = herbs::part_of(item).to_owned();
+                        }
+                        Cell::Weed => tile.state = 2,
+                        Cell::Thorn => tile.state = 3,
+                    }
+                }
                 (false, cell) => {
                     tile.known = grid.known[i];
                     if matches!(cell, Cell::Plant { item, .. } if picks(c, item) >= h.reveal_at[2])
@@ -945,6 +1060,12 @@ fn grid_event(c: &Char, open: &Open, minute: u32, log: String) -> SessionEvent {
             }
         })
         .collect();
+    let in_bloom = herbs::plants_in(key)
+        .into_iter()
+        .filter(|p| p.rarity != herbs::Rarity::Legendary && p.level <= level)
+        .filter(|p| p.bloom.is_some_and(|b| b.holds(minute)))
+        .map(|p| p.item)
+        .collect();
     SessionEvent::HerbGrid {
         patch: open.patch,
         size: grid.size as u8,
@@ -958,5 +1079,13 @@ fn grid_event(c: &Char, open: &Open, minute: u32, log: String) -> SessionEvent {
         consumable: open.consumable,
         consumable_ready: grid.ready,
         charm_armed: grid.charm_armed,
+        time_block: Block::of(minute).name().to_owned(),
+        grown_for: open.grown_for,
+        in_bloom,
+        bloom_factor: t.bloom_factor,
+        basket: open.basket.clone(),
+        thorns: open.thorns.min(u32::from(u8::MAX)) as u8,
+        xp: open.xp,
+        over,
     }
 }
