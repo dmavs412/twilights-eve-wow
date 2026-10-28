@@ -1,0 +1,397 @@
+<title>Warrior Skill Cards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: a single column; state up top, the four talent rows in the middle, kit and walkthroughs below. Dark first, a forge. */
+:root{
+  --bg:#1b1d22; --panel:#24272e; --panel-2:#2d3138; --line:#3a3f48;
+  --fg:#e8e4da; --muted:#a09d94; --accent:#d9873b; --accent-ink:#1b1d22;
+  --good:#7fb77e; --bad:#d16a5a;
+  --display:"Cinzel",Georgia,serif; --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#e7e6e0; --panel:#f5f4f0; --panel-2:#eceae3; --line:#cfccc3;
+  --fg:#1f2126; --muted:#5f5e58; --accent:#b4621c; --accent-ink:#ffffff;
+  --good:#3f7a3e; --bad:#a9402f; color-scheme:light; } }
+:root[data-theme="light"]{
+  --bg:#e7e6e0; --panel:#f5f4f0; --panel-2:#eceae3; --line:#cfccc3;
+  --fg:#1f2126; --muted:#5f5e58; --accent:#b4621c; --accent-ink:#ffffff;
+  --good:#3f7a3e; --bad:#a9402f; color-scheme:light; }
+
+body{background:var(--bg);color:var(--fg);font:16px/1.45 var(--body);
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:1040px;margin:0 auto;display:grid;gap:20px}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:1.7rem} h2{font-size:1.05rem;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:500}
+h3{font-size:1.1rem}
+p{margin:0;max-width:68ch}
+.intro{display:grid;gap:8px}
+.muted{color:var(--muted)}
+section{display:grid;gap:12px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.row>*{flex:1 1 280px;min-width:0}
+button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);border-radius:4px;padding:8px 14px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.track{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.lv{text-align:center;padding:6px 0;border:1px solid var(--line);border-radius:4px;font-variant-numeric:tabular-nums;font-size:.9rem;background:var(--panel-2)}
+.lv.card-lv{border-color:var(--accent)}
+.lv.now{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.lv.past{opacity:.6}
+.lv small{display:block;font-size:.7rem;line-height:1.1;color:inherit;opacity:.85}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0}
+dt{color:var(--muted)} dd{margin:0}
+.trow{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.trow.locked{opacity:.5}
+.trow.set{border-color:var(--line)}
+.trow header{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}
+.trow header .status{font-size:.85rem;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.card{display:grid;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;align-content:start}
+.card.chosen{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.card .kicker{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)}
+.card ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:.95rem}
+.card .fight{font-size:.9rem;border-top:1px solid var(--line);padding-top:6px;display:grid;gap:2px;font-variant-numeric:tabular-nums}
+.delta-good{color:var(--good)} .delta-bad{color:var(--bad)}
+.kit{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.skill{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)}
+.skill b{font-family:var(--display);font-weight:500}
+.skill .variant{color:var(--accent);font-size:.9rem}
+.skill .tip{font-size:.93rem}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.steps{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.steps .done{opacity:.5;text-decoration:line-through}
+.steps .next{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.log{font-size:.88rem;font-variant-numeric:tabular-nums;display:grid;gap:1px;max-height:220px;overflow:auto;color:var(--muted)}
+.log b{color:var(--fg);font-weight:600}
+.notice{border-left:3px solid var(--accent);padding:6px 10px;background:var(--panel-2);border-radius:0 4px 4px 0}
+.stats{display:flex;flex-wrap:wrap;gap:14px;font-variant-numeric:tabular-nums}
+.stats span b{display:block;font-size:1.3rem;font-family:var(--display);font-weight:500}
+.inn{border-color:var(--accent)}
+</style>
+
+<main>
+  <div class="intro">
+    <h1>Warrior Skill Cards</h1>
+    <p>Talent trees and talent points are gone. In their place a Basic Warrior has four talent rows, one per skill, laid out like the Mists of Pandaria panel. A row unlocks at level 2, 4, 6 or 8 and holds three cards, each a strict upgrade to that skill with no cost attached; you set one, so the choice is which strength, never a trade. An empty row can be set anywhere. A set row can only be changed at an innkeeper. The question this page tests: do four rows of three feel like progression across ten levels, and does each pick change how the kit plays? Every card shows a 30-second dummy fight at your current level with that card set, next to what you have now.</p>
+    <p class="muted">Base numbers are the real master.csv rows. The fight, the mob and the white-hit damage are placeholders, good enough to compare cards against each other, not against the game.</p>
+  </div>
+
+  <section>
+    <h2>Where you are</h2>
+    <div class="row">
+      <div class="panel" id="state"></div>
+      <div class="panel" id="fight"></div>
+    </div>
+    <div class="actions" id="actions"></div>
+    <div id="notice"></div>
+  </section>
+
+  <section>
+    <h2>Talent rows</h2>
+    <div id="rows" style="display:grid;gap:10px"></div>
+  </section>
+
+  <section>
+    <h2>Your kit at this level</h2>
+    <div class="kit" id="kit"></div>
+  </section>
+
+  <section>
+    <h2>Walkthroughs</h2>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="panel" id="scenario"></div>
+  </section>
+
+  <section>
+    <h2>Last fight, blow by blow</h2>
+    <div class="panel log" id="log"></div>
+  </section>
+</main>
+
+<script>
+// ---------- The module worth keeping: skills, variants, the talent-row state machine, the dummy fight. No DOM in here. ----------
+const CARDS = (() => {
+  const SKILLS = [
+    { key:'charge', name:'Charge', level:2,
+      base:{ cost:0, cd:15, stun:1, rage:L=>Math.round(8.5+0.14*L), inCombat:false },
+      tip:(s,L)=>`Charge an enemy${s.stun?`, stun it for ${s.stun} s`:''} and generate ${s.rage(L)} rage. Cooldown ${s.cd} s.${s.inCombat?' Usable in combat.':' Cannot be used in combat.'}`,
+      variants:[
+        { key:'bull_rush', name:'Bull Rush', blurb:'Hit like a battering ram.', changes:['Stun lasts 3 s instead of 1 s'],
+          mod:s=>({...s, stun:3}) },
+        { key:'rallying_charge', name:'Rallying Charge', blurb:'Arrive with a full head of steam.', changes:['Generates 20 rage instead of 9'],
+          mod:s=>({...s, rage:()=>20}) },
+        { key:'reckless_charge', name:'Reckless Charge', blurb:'Charge again mid-fight.', changes:['Usable in combat'],
+          mod:s=>({...s, inCombat:true}) },
+      ]},
+    { key:'fire_blast', name:'Fire Blast', level:4,
+      base:{ cost:10, cd:8, dmg:L=>20+2.5*L, mult:1, burn:0, backdraft:false },
+      tip:(s,L)=>`Blasts the enemy for ${Math.round(s.dmg(L)*s.mult)} fire damage. Ignores armour. ${s.cost} rage, cooldown ${s.cd} s.${s.burn?` Then burns for ${Math.round(s.dmg(L)*s.burn)} over 6 s.`:''}${s.backdraft?' Double damage to a stunned or incapacitated target.':''}`,
+      variants:[
+        { key:'searing_blast', name:'Searing Blast', blurb:'The fire keeps working.', changes:['Target burns for 60% of the damage over 6 s','Burn damage ends a Gouge'],
+          mod:s=>({...s, burn:0.6}) },
+        { key:'flash_burn', name:'Flash Burn', blurb:'Twice as often.', changes:['Cooldown 4 s instead of 8 s'],
+          mod:s=>({...s, cd:4}) },
+        { key:'backdraft', name:'Backdraft', blurb:'Punish a target that cannot move.', changes:['Double damage to a stunned or incapacitated target','Ends a Gouge when it hits'],
+          mod:s=>({...s, backdraft:true}) },
+      ]},
+    { key:'gouge', name:'Gouge', level:6,
+      base:{ cost:15, cd:10, dmg:L=>10+1.5*L, incap:4, bleed:0, critNext:false },
+      tip:(s,L)=>`Strikes for ${Math.round(s.dmg(L))} damage${s.incap?` and incapacitates the enemy for ${s.incap} s. Any later damage ends it.`:'.'}${s.bleed?` It bleeds for ${Math.round(s.dmg(L)*s.bleed)} over 6 s.`:''}${s.critNext?' Your next hit on it is a critical strike.':''} ${s.cost} rage, cooldown ${s.cd} s.`,
+      variants:[
+        { key:'deep_gouge', name:'Deep Gouge', blurb:'The strike itself hurts.', changes:['Deals three times the damage'],
+          mod:s=>({...s, dmg:L=>3*(10+1.5*L)}) },
+        { key:'blindside', name:'Blindside', blurb:'A longer pause and a bigger follow-up.', changes:['Incapacitates for 6 s instead of 4 s','Your next hit on the target is a critical strike'],
+          mod:s=>({...s, incap:6, critNext:true}) },
+        { key:'quick_gouge', name:'Quick Gouge', blurb:'Cheap and often.', changes:['Costs 5 rage instead of 15','Cooldown 6 s instead of 10 s'],
+          mod:s=>({...s, cost:5, cd:6}) },
+      ]},
+    { key:'heroic_strike', name:'Heroic Strike', level:8,
+      base:{ cost:15, bonus:L=>9.5+1.4*L, cleave:0, finisher:false, frenzy:false },
+      tip:(s,L)=>`Your next swing deals ${Math.round(s.bonus(L))} extra damage. ${s.cost} rage.${s.cleave?` A second enemy takes ${Math.round(s.cleave*100)}% of the hit.`:''}${s.finisher?' Deals 50% more to an enemy below 30% health.':''}${s.frenzy?' Each strike within 5 s of the last adds 25% to the bonus, up to three times.':''}`,
+      variants:[
+        { key:'cleave', name:'Cleave', blurb:'Hit the one beside it too.', changes:['A second enemy takes 50% of the hit'],
+          mod:s=>({...s, cleave:0.5}) },
+        { key:'finisher', name:'Finisher', blurb:'End it when it is nearly over.', changes:['50% more damage to an enemy below 30% health'],
+          mod:s=>({...s, finisher:true}) },
+        { key:'frenzy', name:'Frenzy', blurb:'Keep swinging and it grows.', changes:['Each strike within 5 s of the last adds 25% to the bonus, up to three stacks'],
+          mod:s=>({...s, frenzy:true}) },
+      ]},
+  ];
+  const TIER_CAP = 10;
+  const byKey = Object.fromEntries(SKILLS.map(s=>[s.key,s]));
+
+  // Resolved numbers for one skill under the chosen variant (null = plain).
+  function resolve(skillKey, variantKey){
+    const s = byKey[skillKey];
+    const v = s.variants.find(v=>v.key===variantKey);
+    return v ? v.mod(s.base) : s.base;
+  }
+
+  // ----- State machine: one Basic Warrior, four talent rows. -----
+  function initial(){
+    return { level:1, picks:{charge:null,fire_blast:null,gouge:null,heroic_strike:null}, atInn:false, changes:0, lastMessage:'A new character. Level 1, every row locked.', refused:false };
+  }
+  const unlocked = (st, skillKey) => st.level >= byKey[skillKey].level;
+
+  function reduce(state, action){
+    const st = structuredClone(state); st.refused = false;
+    const refuse = msg => { st.lastMessage = 'Refused: ' + msg; st.refused = true; return st; };
+    switch(action.type){
+      case 'LEVEL_UP': {
+        if (st.level >= TIER_CAP) return refuse(`level ${TIER_CAP} is the Tier Cap. The next step is an Advancement, which replaces these rows with the new Calling's.`);
+        st.level += 1;
+        const sk = SKILLS.find(s=>s.level===st.level);
+        const open = SKILLS.filter(s=>unlocked(st,s.key) && !st.picks[s.key]).map(s=>s.name);
+        st.lastMessage = sk ? `Level ${st.level}. The ${sk.name} row is open; set it now or later.`
+                            : `Level ${st.level}. No row opens at this level.${open.length?` Still unset: ${open.join(', ')}.`:''}`;
+        return st;
+      }
+      case 'SET': {
+        const sk = byKey[action.skill]; if (!sk) return refuse(`${action.skill} is not a row.`);
+        if (!unlocked(st, sk.key)) return refuse(`the ${sk.name} row opens at level ${sk.level}.`);
+        const v = action.variant===null ? null : sk.variants.find(v=>v.key===action.variant);
+        if (action.variant!==null && !v) return refuse(`${action.variant} is not a ${sk.name} card.`);
+        if (st.picks[sk.key] && !st.atInn) return refuse(`${sk.name} is already set. A set row changes only at an innkeeper.`);
+        if (st.picks[sk.key]===action.variant) return refuse(`${sk.name} is already ${v?v.name:'plain'}.`);
+        const was = st.picks[sk.key]; st.picks[sk.key] = action.variant;
+        if (was) st.changes += 1;
+        st.lastMessage = v ? `${sk.name} is ${v.name}${was?' now; changed at the innkeeper':''}.` : `${sk.name} is plain again.`;
+        return st;
+      }
+      case 'ENTER_INN': { if (st.atInn) return refuse('you are already at the innkeeper.'); st.atInn = true; st.lastMessage = 'At the innkeeper. Any open row can be changed, or cleared back to plain.'; return st; }
+      case 'LEAVE_INN': { if (!st.atInn) return refuse('you are not at an innkeeper.'); st.atInn = false; st.lastMessage = 'Back in the field. Set rows are fixed until the next innkeeper.'; return st; }
+      case 'NEW_CHARACTER': return initial();
+    }
+    return st;
+  }
+
+  // ----- Dummy fight: 30 s against one mob of the same level, with a second mob standing beside it for Cleave only. -----
+  function fight(level, picks){
+    const L = level;
+    const C = resolve('charge', picks.charge), F = resolve('fire_blast', picks.fire_blast),
+          G = resolve('gouge', picks.gouge), H = resolve('heroic_strike', picks.heroic_strike);
+    const mob = { hp:60+25*L, max:60+25*L, hit:5+1.5*L, swingAt:1.0, stunUntil:0, incapUntil:0, dots:[] };
+    const me = { rage:0, white:10+2*L, swingAt:0.6, taken:0, hsQueued:false, critNext:false, frenzy:0, lastHs:-99, second:0, spent:0, nextSkillAt:0, cds:{charge:-99,fire_blast:-99,gouge:-99} };
+    const log = []; let controlled = 0, killAt = null;
+    const dt = 0.1, END = 30;
+    const say = (t,msg)=>log.push({t:+t.toFixed(1), msg});
+    const isStunned = t => t < mob.stunUntil, isIncap = t => t < mob.incapUntil, isControlled = t => isStunned(t)||isIncap(t);
+    function hurt(t, amount, label){
+      let d = amount;
+      if (me.critNext) { d *= 2; me.critNext=false; label += ' (critical)'; }
+      mob.hp -= d;
+      if (isIncap(t)) { mob.incapUntil = 0; say(t, `${label} for ${Math.round(d)}; the Gouge ends.`); }
+      else say(t, `${label} for ${Math.round(d)}.`);
+      return d;
+    }
+    for (let t=0; t<END && mob.hp>0; t=+(t+dt).toFixed(1)){
+      for (const dot of mob.dots) if (t >= dot.nextAt && dot.ticks>0){ dot.ticks--; dot.nextAt += 1; hurt(t, dot.per, dot.label); }
+      mob.dots = mob.dots.filter(d=>d.ticks>0);
+      if (mob.hp<=0) break;
+      const canAct = t >= me.nextSkillAt;
+      const chargeReady = t - me.cds.charge >= C.cd && (t===0 || C.inCombat);
+      if (canAct && chargeReady && !isControlled(t)){
+        me.cds.charge = t; me.nextSkillAt = t+1; me.rage += C.rage(L);
+        if (C.stun) mob.stunUntil = t + C.stun;
+        say(t, `Charge: +${C.rage(L)} rage${C.stun?`, stunned ${C.stun} s`:''}.`);
+      } else if (isIncap(t)) {
+        if (canAct && F.backdraft && t - me.cds.fire_blast >= F.cd && me.rage >= F.cost){
+          me.cds.fire_blast = t; me.nextSkillAt = t+1; me.rage -= F.cost; me.spent += F.cost;
+          hurt(t, F.dmg(L)*F.mult*2, 'Backdraft Fire Blast');
+        } else { me.swingAt = Math.max(me.swingAt, t+dt); }
+      } else if (canAct) {
+        if (!isStunned(t) && t - me.cds.gouge >= G.cd && me.rage >= G.cost){
+          me.cds.gouge = t; me.nextSkillAt = t+1; me.rage -= G.cost; me.spent += G.cost;
+          hurt(t, G.dmg(L), 'Gouge');
+          if (G.incap) { mob.incapUntil = t + G.incap; say(t, `Incapacitated ${G.incap} s; the warrior waits.`); }
+          if (G.bleed) mob.dots.push({per:G.dmg(L)*G.bleed/6, ticks:6, nextAt:t+1, label:'Bleed'});
+          if (G.critNext) me.critNext = true;
+        } else if (t - me.cds.fire_blast >= F.cd && me.rage >= F.cost){
+          me.cds.fire_blast = t; me.nextSkillAt = t+1; me.rage -= F.cost; me.spent += F.cost;
+          const twice = F.backdraft && isControlled(t);
+          const d = hurt(t, F.dmg(L)*F.mult*(twice?2:1), twice?'Backdraft Fire Blast':'Fire Blast');
+          if (F.burn) mob.dots.push({per:d*F.burn/6, ticks:6, nextAt:t+1, label:'Burn'});
+        }
+      }
+      if (!me.hsQueued && me.rage >= H.cost && !isIncap(t)) { me.hsQueued = true; }
+      if (t >= me.swingAt && !isIncap(t) && mob.hp>0){
+        let d = me.white, label = 'Swing';
+        if (me.hsQueued && me.rage < H.cost) me.hsQueued = false;
+        if (me.hsQueued){
+          me.rage -= H.cost; me.spent += H.cost; me.hsQueued=false;
+          let bonus = H.bonus(L);
+          if (H.frenzy){ me.frenzy = (t - me.lastHs <= 5) ? Math.min(3, me.frenzy+1) : 0; bonus *= 1 + 0.25*me.frenzy; }
+          me.lastHs = t; d += bonus; label = 'Heroic Strike' + (me.frenzy?` x${me.frenzy}`:'');
+          if (H.finisher && mob.hp/mob.max < 0.3){ d *= 1.5; label += ', finisher'; }
+          if (H.cleave){ me.second += d*H.cleave; }
+        }
+        hurt(t, d, label); me.rage += 5; me.swingAt = t + 2.0;
+      }
+      if (mob.hp<=0) break;
+      if (isControlled(t)) { controlled += dt; mob.swingAt = Math.max(mob.swingAt, t+dt); }
+      else if (t >= mob.swingAt){ me.taken += mob.hit; me.rage += 3; mob.swingAt = t+2.0; say(t, `The mob hits you for ${Math.round(mob.hit)}.`); }
+    }
+    if (mob.hp<=0){ killAt = log[log.length-1].t; say(killAt, 'The mob dies.'); }
+    return { killAt, taken:Math.round(me.taken), controlled:+controlled.toFixed(1), spent:me.spent, second:Math.round(me.second), myHp:80+20*L, log };
+  }
+
+  return { SKILLS, TIER_CAP, byKey, resolve, initial, reduce, fight, unlocked };
+})();
+
+// ---------- The page: a thin shell over the module. ----------
+const $ = id => document.getElementById(id);
+let state = CARDS.initial();
+let lastFight = null;
+
+const S = (skill, variant) => ({type:'SET', skill, variant});
+const SCENARIOS = [
+  { name:'Control build', text:'Set each row as it opens with the card that stops the mob moving: Bull Rush, Backdraft, Blindside, Finisher. Watch damage taken fall and kill time rise, and watch Backdraft turn each pause into a double hit.',
+    steps:[['Level 2',{type:'LEVEL_UP'}],['Bull Rush',S('charge','bull_rush')],['Level 3',{type:'LEVEL_UP'}],['Level 4',{type:'LEVEL_UP'}],['Backdraft',S('fire_blast','backdraft')],['Level 5',{type:'LEVEL_UP'}],['Level 6',{type:'LEVEL_UP'}],['Blindside',S('gouge','blindside')],['Level 7',{type:'LEVEL_UP'}],['Level 8',{type:'LEVEL_UP'}],['Finisher',S('heroic_strike','finisher')],['Level 9',{type:'LEVEL_UP'}],['Level 10',{type:'LEVEL_UP'}]] },
+  { name:'Change at the innkeeper', text:'Build for speed to level 8, then walk into the inn and swap two rows for control. Outside the inn a set row refuses to change; inside, every open row is live and the fight numbers update as you switch.',
+    steps:[['Level 2',{type:'LEVEL_UP'}],['Rallying Charge',S('charge','rallying_charge')],['Level 3',{type:'LEVEL_UP'}],['Level 4',{type:'LEVEL_UP'}],['Flash Burn',S('fire_blast','flash_burn')],['Level 5',{type:'LEVEL_UP'}],['Level 6',{type:'LEVEL_UP'}],['Deep Gouge',S('gouge','deep_gouge')],['Level 7',{type:'LEVEL_UP'}],['Level 8',{type:'LEVEL_UP'}],['Frenzy',S('heroic_strike','frenzy')],['Try Backdraft outside (refused)',S('fire_blast','backdraft')],['Visit the innkeeper',{type:'ENTER_INN'}],['Backdraft',S('fire_blast','backdraft')],['Blindside',S('gouge','blindside')],['Leave the inn',{type:'LEAVE_INN'}]] },
+  { name:'Cards that fight each other', text:'Searing Blast leaves a burn, and any damage ends a Gouge. Set both and read the fight log: the burn tick breaks the pause a second after it starts. The rows are set one skill at a time, so nothing warns you. Then fix it at the inn.',
+    steps:[['Level 2',{type:'LEVEL_UP'}],['Bull Rush',S('charge','bull_rush')],['Level 3',{type:'LEVEL_UP'}],['Level 4',{type:'LEVEL_UP'}],['Searing Blast',S('fire_blast','searing_blast')],['Level 5',{type:'LEVEL_UP'}],['Level 6',{type:'LEVEL_UP'}],['Blindside',S('gouge','blindside')],['Visit the innkeeper',{type:'ENTER_INN'}],['Backdraft instead',S('fire_blast','backdraft')],['Leave the inn',{type:'LEAVE_INN'}]] },
+  { name:'Leaving rows empty', text:'Level to 6 without setting anything. Nothing stops you; the open rows just wait. Then set Charge in the field (allowed, it was empty), try to change it in the field (refused), and clear it back to plain at the inn.',
+    steps:[['Level 2',{type:'LEVEL_UP'}],['Level 3',{type:'LEVEL_UP'}],['Level 4',{type:'LEVEL_UP'}],['Level 5',{type:'LEVEL_UP'}],['Level 6',{type:'LEVEL_UP'}],['Bull Rush in the field',S('charge','bull_rush')],['Rallying Charge in the field (refused)',S('charge','rallying_charge')],['Visit the innkeeper',{type:'ENTER_INN'}],['Clear Charge to plain',S('charge',null)],['Leave the inn',{type:'LEAVE_INN'}]] },
+];
+let tab = 0, step = 0;
+
+function dispatch(action){
+  state = CARDS.reduce(state, action);
+  lastFight = CARDS.fight(state.level, state.picks);
+  render();
+}
+function fmtDelta(a, b, lowerIsGood, unit){
+  if (a==null || b==null) return '';
+  const d = +(b - a).toFixed(1); if (!d) return '';
+  const good = lowerIsGood ? d<0 : d>0;
+  return ` <span class="${good?'delta-good':'delta-bad'}">(${d>0?'+':''}${d}${unit})</span>`;
+}
+const kill = f => f.killAt==null ? 'not dead at 30 s' : `${f.killAt.toFixed(1)} s`;
+const vname = (sk, vk) => vk ? sk.variants.find(v=>v.key===vk).name : 'plain';
+
+function render(){
+  const L = state.level, picks = state.picks;
+  $('state').innerHTML = `
+    <div class="track">${Array.from({length:10},(_,i)=>i+1).map(l=>{
+      const sk = CARDS.SKILLS.find(s=>s.level===l); const cls = ['lv', sk?'card-lv':'', l===L?'now':'', l<L?'past':''].join(' ');
+      return `<div class="${cls}">${l}${sk?`<small>${sk.name.split(' ')[0]}</small>`:'<small>&nbsp;</small>'}</div>`; }).join('')}</div>
+    <dl style="margin-top:12px">
+      <dt>Level</dt><dd>${L} of ${CARDS.TIER_CAP} (Tier 0)</dd>
+      <dt>Where</dt><dd>${state.atInn ? 'at the innkeeper' : 'in the field'}</dd>
+      <dt>Rows</dt><dd>${CARDS.SKILLS.map(sk=>`${sk.name}: ${CARDS.unlocked(state,sk.key) ? vname(sk,picks[sk.key]) : `locked until ${sk.level}`}`).join('<br>')}</dd>
+      <dt>Changes at inns</dt><dd>${state.changes}</dd>
+    </dl>`;
+  const f = lastFight || CARDS.fight(L, picks);
+  $('fight').innerHTML = `
+    <h3>Dummy fight at level ${L}</h3>
+    <p class="muted" style="font-size:.9rem">One mob of your level (${60+25*L} health, hits for ${Math.round(5+1.5*L)} every 2 s). You have ${80+20*L} health and swing for ${10+2*L} every 2 s.</p>
+    <div class="stats" style="margin-top:8px">
+      <span>Mob dead at<b>${kill(f)}</b></span>
+      <span>Damage taken<b>${f.taken}</b></span>
+      <span>Mob held<b>${f.controlled} s</b></span>
+      <span>Rage spent<b>${f.spent}</b></span>
+      ${f.second?`<span>Second mob took<b>${f.second}</b></span>`:''}
+    </div>`;
+  $('actions').innerHTML = `
+    <button class="primary" id="btn-level" ${L>=CARDS.TIER_CAP?'disabled':''}>Level up</button>
+    <button id="btn-inn" class="${state.atInn?'inn':''}">${state.atInn?'Leave the inn':'Visit the innkeeper'}</button>
+    <button id="btn-new">New character</button>
+    <span class="muted">Free play: press these in any order.</span>`;
+  $('btn-level').onclick = ()=>dispatch({type:'LEVEL_UP'});
+  $('btn-inn').onclick = ()=>dispatch({type: state.atInn?'LEAVE_INN':'ENTER_INN'});
+  $('btn-new').onclick = ()=>dispatch({type:'NEW_CHARACTER'});
+  $('notice').innerHTML = `<div class="notice" ${state.refused?'style="border-color:var(--bad)"':''}>${state.lastMessage}</div>`;
+
+  const now = CARDS.fight(L, picks);
+  $('rows').innerHTML = CARDS.SKILLS.map(sk=>{
+    const open = CARDS.unlocked(state, sk.key), cur = picks[sk.key];
+    const canChange = open && (!cur || state.atInn);
+    const status = !open ? `opens at level ${sk.level}` : !cur ? 'open, unset: the plain skill' : state.atInn ? `set to ${vname(sk,cur)}; change it here` : `set to ${vname(sk,cur)}; change at an innkeeper`;
+    return `<div class="trow ${open?'':'locked'} ${cur?'set':''}">
+      <header><h3>${sk.name}</h3><span class="status">${status}</span></header>
+      <p class="muted" style="font-size:.9rem">Plain: ${sk.tip(CARDS.resolve(sk.key,null), L)}</p>
+      <div class="cards">${sk.variants.map(v=>{
+        const r = CARDS.fight(L, {...picks, [sk.key]:v.key}); const chosen = cur===v.key;
+        return `<div class="card ${chosen?'chosen':''}">
+          <div class="kicker">${chosen?'set':'&nbsp;'}</div>
+          <h3>${v.name}</h3>
+          <p><i>${v.blurb}</i></p>
+          <ul>${v.changes.map(c=>`<li>${c}</li>`).join('')}</ul>
+          <div class="fight">
+            <span>Mob dead at ${kill(r)}${chosen?'':fmtDelta(now.killAt, r.killAt, true, ' s')}</span>
+            <span>Damage taken ${r.taken}${chosen?'':fmtDelta(now.taken, r.taken, true, '')}</span>
+            <span>Mob held ${r.controlled} s${chosen?'':fmtDelta(now.controlled, r.controlled, false, ' s')}</span>
+            ${r.second?`<span>Second mob took ${r.second}</span>`:''}
+          </div>
+          <button class="${chosen?'':'primary'}" data-skill="${sk.key}" data-variant="${v.key}" ${chosen||!canChange?'disabled':''}>${chosen?'Set':`Set ${v.name}`}</button>
+        </div>`; }).join('')}</div>
+      ${cur && state.atInn ? `<div><button data-skill="${sk.key}" data-variant="">Clear to plain</button></div>`:''}
+    </div>`; }).join('');
+  $('rows').querySelectorAll('[data-skill]').forEach(b=>b.onclick=()=>dispatch(S(b.dataset.skill, b.dataset.variant||null)));
+
+  $('kit').innerHTML = CARDS.SKILLS.map(sk=>{
+    const vk = picks[sk.key];
+    return `<div class="skill"><b>${sk.name}</b><span class="variant">${vname(sk,vk)}${sk.level>L?` <span class="muted">(row opens at level ${sk.level})</span>`:''}</span><span class="tip">${sk.tip(CARDS.resolve(sk.key, vk), L)}</span></div>`; }).join('');
+
+  $('tabs').innerHTML = SCENARIOS.map((s,i)=>`<button role="tab" aria-selected="${i===tab}" data-tab="${i}">${s.name}</button>`).join('');
+  $('tabs').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ tab=+b.dataset.tab; step=0; dispatch({type:'NEW_CHARACTER'}); });
+  const sc = SCENARIOS[tab];
+  $('scenario').innerHTML = `<p>${sc.text}</p><div class="steps" style="margin-top:10px">
+    <button id="btn-start">Start over</button>
+    ${sc.steps.map((s,i)=>`<button data-step="${i}" class="${i<step?'done':i===step?'next':''}" ${i!==step?'disabled':''}>${i+1}. ${s[0]}</button>`).join('')}
+    ${step>=sc.steps.length?'<span class="muted">Done. Read the fight log below, then free-play from here.</span>':''}</div>`;
+  $('btn-start').onclick = ()=>{ step=0; dispatch({type:'NEW_CHARACTER'}); };
+  $('scenario').querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{ const s = sc.steps[+b.dataset.step]; step++; dispatch(s[1]); });
+
+  $('log').innerHTML = f.log.map(e=>`<span><b>${e.t.toFixed(1)} s</b> ${e.msg}</span>`).join('') || '<span class="muted">No fight yet.</span>';
+}
+render();
+</script>
