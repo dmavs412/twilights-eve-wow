@@ -8,6 +8,18 @@ file = "duskwood"
 # Unseen (3094): 28 level-49 spawns, invisible in vanilla (aura 4986). The realm does not model
 # invisibility.
 removed = [3094]
+# The open-world creatures inside the lore bible's Phased Dungeons, deleted (2026-10-27,
+# Davis's call); phased.rs's lore_bible_dungeons test keeps the footprints clear.
+removed_guids = [
+  # Raven Hill Deeps (raven_hill_deeps.toml): every creature inside its footprint.
+  4334, 4336, 4337, 4338, 4339, 4340, 4341, 4386, 4387, 4388, 4389, 4391, 4392, 4393, 4394,
+  4395, 4396, 4397, 4398, 4399, 4400, 4401, 4403, 4404, 4405, 4407, 4452, 4461, 4880, 4882,
+  4883, 4884, 4885, 4886, 4888, 4889, 4898, 4980, 4982, 4983, 4986, 4987, 4989, 4992, 5037,
+  5093, 5094, 5095, 5101, 5102, 5126, 5966, 5969, 5970, 5971, 5972, 5973, 5979, 5980, 5981,
+  5983,
+  # Mistmantle Manor (mistmantle_manor.toml): every creature inside its footprint.
+  5010,
+]
 # Vanilla 18-35, the non-critter, non-friendly spawns with the Unseen aside, onto the lore
 # bible's 30-50 (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2.
 levels = { from = [18, 35], to = [30, 50] }
@@ -15,6 +27,16 @@ levels = { from = [18, 35], to = [30, 50] }
 [[zone]]
 file = "redridge"
 removed = []
+# The open-world creatures inside the lore bible's Phased Dungeons, deleted (2026-10-27,
+# Davis's call); phased.rs's lore_bible_dungeons test keeps the footprints clear.
+removed_guids = [
+  # Tower of Ilgalar (ilgalar.toml): every creature inside its footprint.
+  6147, 6148, 6149, 6268, 6269, 6278, 6279, 7654, 7768, 7771, 8167, 8314, 8315, 8316, 8317,
+  8671, 8672, 8673, 8676, 8700, 8701,
+  # Stonewatch Keep (stonewatch_keep.toml): every creature inside its footprint.
+  6722, 6724, 7655, 18382, 18383, 18384, 18385, 18433, 18441, 18442, 18443, 18444, 18445, 18446,
+  18451, 18452, 18453, 18454, 18455, 18456, 18457, 18458, 18459, 20703, 20704, 20705, 20706,
+]
 # Vanilla 14-27, the non-critter, non-friendly spawns, onto the lore bible's 30-50
 # (docs/lore-bible.md, "Zone arcs and dungeons"); spec #466 decision 2.
 levels = { from = [14, 27], to = [30, 50] }
@@ -23,3 +45,15 @@ levels = { from = [14, 27], to = [30, 50] }
 file = "stormwind"
 # Rift Spawn (6492): six spawns, invisible until a quest item shows them (aura 9093).
 removed = [6492]
+# The open-world creatures inside the lore bible's Phased Dungeons, deleted (2026-10-27,
+# Davis's call); phased.rs's lore_bible_dungeons test keeps the footprints clear.
+removed_guids = [
+  # Cathedral of Light (cathedral_of_light.toml): every creature inside its footprint.
+  1079, 5000, 7566, 7629, 15216, 33919, 37556, 37571, 37585, 37586, 39536, 39538, 44022, 52472,
+  300992,
+  # Stormwind Keep (stormwind_keep.toml): every creature inside its footprint.
+  8704, 10494, 10495, 10497, 10498, 10499, 10500, 10502, 10507, 10508, 10509, 10510, 10511,
+  10512, 10513, 10514, 10515, 10516, 10517, 10518, 10519, 10520, 10521, 10522, 10523, 10524,
+  10525, 10526, 10527, 10528, 14740, 16182, 16365, 30018, 33821, 42893, 43667, 45707, 51984,
+  54614, 54625, 79748, 79749,
+]

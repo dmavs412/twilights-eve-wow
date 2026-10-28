@@ -1,0 +1,122 @@
+# Stonewatch Keep, a Phased Dungeon for levels 44 to 48 in Redridge (the lore bible's "Zone arcs
+# and dungeons"). Hand-written, from the game data.
+#
+# The building is the stock `ruinedkeep.wmo`, placed by the ADT's MODF at (-9387.8, -3029.3,
+# 142.6) with heading -445.0, so `origin` is that point and `yaw` is 95 (heading plus 180), as
+# Jasperlode's. Each footprint box is one indoor WMO group's MOGI bounding box in that frame, z
+# widened by a yard each way; the comment above it names the group. The portal stands in the
+# doorway the WMO's portal 0 draws between the building and the outside.
+#
+# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the hall inside
+# the gate so a character can see the Phase, and the open-world creatures that stood inside the
+# boxes are deleted. Guids: creatures 971001 up, one a dungeon.
+
+id = 9
+name = "Stonewatch Keep"
+levels = [44, 48]
+map = 0
+zone = 44
+origin = [-9387.8, -3029.3, 142.6]
+yaw = 95
+
+# Group 0.
+[[footprint]]
+x = [-61.0, -17.0]
+y = [-13.0, 13.0]
+z = [13.0, 36.0]
+
+# Group 1.
+[[footprint]]
+x = [-30.0, -19.0]
+y = [-24.0, -12.0]
+z = [13.0, 23.0]
+
+# Group 2, war_room.
+[[footprint]]
+x = [-39.0, -29.0]
+y = [-24.0, -13.0]
+z = [5.0, 23.0]
+
+# Group 3, left_upper03.
+[[footprint]]
+x = [-54.0, -38.0]
+y = [-24.0, -12.0]
+z = [5.0, 15.0]
+
+# Group 4, left_upper02.
+[[footprint]]
+x = [-66.0, -51.0]
+y = [-30.0, -11.0]
+z = [5.0, 35.0]
+
+# Group 5, left_upper01.
+[[footprint]]
+x = [-25.0, -17.0]
+y = [-6.0, 6.0]
+z = [-6.0, 11.0]
+
+# Group 6, left_tower_rear.
+[[footprint]]
+x = [-66.0, -47.0]
+y = [14.0, 31.0]
+z = [-4.0, 8.0]
+
+# Group 7, entry.
+[[footprint]]
+x = [-35.0, -24.0]
+y = [10.0, 19.0]
+z = [-3.0, 7.0]
+
+# Group 8, rearstorage01.
+[[footprint]]
+x = [-37.0, -18.0]
+y = [17.0, 28.0]
+z = [-5.0, 7.0]
+
+# Group 9, righthall08.
+[[footprint]]
+x = [-47.0, -36.0]
+y = [10.0, 19.0]
+z = [-4.0, 8.0]
+
+# Group 10, righthall09.
+[[footprint]]
+x = [-48.0, -34.0]
+y = [17.0, 28.0]
+z = [-4.0, 7.0]
+
+# Group 11, righthall10.
+[[footprint]]
+x = [-63.0, -36.0]
+y = [-15.0, 11.0]
+z = [-5.0, 14.0]
+
+# Group 13, generalarea.
+[[footprint]]
+x = [-35.0, -24.0]
+y = [-11.0, 11.0]
+z = [-5.0, 9.0]
+
+# Group 14, exterior.
+[[footprint]]
+x = [-35.0, -24.0]
+y = [-23.0, -10.0]
+z = [-4.0, 7.0]
+
+# Group 15, stagingarea02.
+[[footprint]]
+x = [-47.0, -36.0]
+y = [-23.0, -10.0]
+z = [-4.0, 7.0]
+
+[portal]
+position = [-9386.3, -3046.8, 139.16]
+orientation = 4.8
+
+# The Phase Tester: friendly, no quests.
+[[creature]]
+guid = 971002
+entry = 97100
+level = 44
+position = [-9385.2, -3059.2, 139.22]
+orientation = 4.8

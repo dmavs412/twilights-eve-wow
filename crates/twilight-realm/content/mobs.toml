@@ -1775,6 +1775,30 @@ speed_run = 1.143
 detection_range = 16.0
 respawn_secs = 120.0
 
+# The Phase Tester: the one creature in each of the lore bible's eight new Phased Dungeons
+# (ilgalar.toml and the rest), there so a character can see the Phase. Friendly, no quests; it
+# wears Hermit Oswin's display. Each dungeon file sets its level.
+[[template]]
+entry = 97100
+name = "Phase Tester"
+subname = ""
+creature_type = 7
+rank = 0
+display_id = 1943
+faction_template = 12
+hostile = false
+unit_class = "warrior"
+level_min = 30
+level_max = 60
+health_multiplier = 1.0
+damage_multiplier = 0.75
+armor_multiplier = 1.0
+base_attack_time = 2000
+speed_walk = 1.0
+speed_run = 1.0
+detection_range = 10.0
+friendly = true
+
 # The Northshire Rumours' creatures (#289, rumours.toml). None has a spawn row; the realm makes
 # each at run time. The three givers are friendly level 10s. Their displays come from vmangos's
 # creature_template: Hermit Oswin wears Farmer Saldean's (entry 233, display 1943, a human man),

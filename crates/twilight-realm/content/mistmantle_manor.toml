@@ -1,0 +1,38 @@
+# Mistmantle Manor, a Phased Dungeon for levels 32 to 36 in Duskwood (the lore bible's "Zone arcs
+# and dungeons"). Hand-written, from the game data.
+#
+# The building is the stock `duskwoodabandoned_human_farm.wmo` at Manor Mistmantle, placed by the
+# ADT's MODF at (-10368.6, -1255.5, 31.8) with heading -89.5, so `origin` is that point and `yaw`
+# is 90.5 (heading plus 180), as Jasperlode's. Each footprint box is one indoor WMO group's MOGI
+# bounding box in that frame, z widened by a yard each way; the comment above it names the group.
+# The portal stands in the doorway the WMO's portal 0 draws between the building and the outside.
+#
+# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the house's one
+# room so a character can see the Phase, and the open-world creatures that stood inside the boxes
+# are deleted. Guids: creatures 971001 up, one a dungeon.
+
+id = 10
+name = "Mistmantle Manor"
+levels = [32, 36]
+map = 0
+zone = 10
+origin = [-10368.6, -1255.5, 31.8]
+yaw = 90.5
+
+# Group 1.
+[[footprint]]
+x = [-7.0, 7.0]
+y = [-7.0, 9.0]
+z = [2.0, 15.0]
+
+[portal]
+position = [-10362.6, -1257.0, 35.91]
+orientation = 3.15
+
+# The Phase Tester: friendly, no quests.
+[[creature]]
+guid = 971003
+entry = 97100
+level = 32
+position = [-10370.6, -1255.0, 35.91]
+orientation = 3.15

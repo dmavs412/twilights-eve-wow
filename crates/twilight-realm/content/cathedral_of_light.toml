@@ -1,0 +1,212 @@
+# Cathedral of Light, a Phased Dungeon for levels 48 to 50 in Stormwind City (the lore bible's
+# "Zone arcs and dungeons"). Hand-written, from the game data.
+#
+# The building is the Cathedral's rooms in the stock `stormwind.wmo`, placed by the ADT's MODF at
+# (-8931.6, 539.3, 102.0) with heading 38.5, so `origin` is that point and `yaw` is -141.5
+# (heading plus 180), as Jasperlode's. Each footprint box is one indoor WMO group's MOGI bounding
+# box in that frame, z widened by a yard each way; the comment above it names the group. The
+# portal stands in the doorway the WMO's portal 183 draws between the building and the outside.
+#
+# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the nave so a
+# character can see the Phase, and the open-world creatures that stood inside the boxes are
+# deleted. Guids: creatures 971001 up, one a dungeon.
+
+id = 12
+name = "Cathedral of Light"
+levels = [48, 50]
+map = 0
+zone = 1519
+origin = [-8931.6, 539.3, 102.0]
+yaw = -141.5
+
+# Group 140, shopBroom29.
+[[footprint]]
+x = [-532.0, -504.0]
+y = [-15.0, 31.0]
+z = [3.0, 35.0]
+
+# Group 151, Old Town.
+[[footprint]]
+x = [-505.0, -466.0]
+y = [-14.0, 31.0]
+z = [3.0, 35.0]
+
+# Group 141, Cathedral Square.
+[[footprint]]
+x = [-514.0, -504.0]
+y = [28.0, 48.0]
+z = [3.0, 19.0]
+
+# Group 149, The Canals.
+[[footprint]]
+x = [-514.0, -504.0]
+y = [-32.0, -12.0]
+z = [3.0, 19.0]
+
+# Group 134, shopBroom24.
+[[footprint]]
+x = [-467.0, -455.0]
+y = [3.0, 14.0]
+z = [3.0, 18.0]
+
+# Group 142, shopB29.
+[[footprint]]
+x = [-504.0, -476.0]
+y = [-53.0, -12.0]
+z = [3.0, 17.0]
+
+# Group 143, Cathedral Square.
+[[footprint]]
+x = [-504.0, -476.0]
+y = [29.0, 69.0]
+z = [3.0, 17.0]
+
+# Group 146, shopC28.
+[[footprint]]
+x = [-522.0, -512.0]
+y = [29.0, 45.0]
+z = [-7.0, 12.0]
+
+# Group 147, Trade District.
+[[footprint]]
+x = [-522.0, -513.0]
+y = [-29.0, -12.0]
+z = [-7.0, 12.0]
+
+# Group 135, Trade District.
+[[footprint]]
+x = [-466.0, -450.0]
+y = [12.0, 23.0]
+z = [3.0, 18.0]
+
+# Group 136, shopBstairs29.
+[[footprint]]
+x = [-466.0, -450.0]
+y = [-6.0, 4.0]
+z = [3.0, 18.0]
+
+# Group 144, FlowerShop01.
+[[footprint]]
+x = [-513.0, -502.0]
+y = [25.0, 45.0]
+z = [-7.0, 5.0]
+
+# Group 148, shopC30.
+[[footprint]]
+x = [-514.0, -504.0]
+y = [-28.0, -9.0]
+z = [-7.0, 5.0]
+
+# Group 138, shopBupstairs29.
+[[footprint]]
+x = [-451.0, -436.0]
+y = [12.0, 23.0]
+z = [3.0, 18.0]
+
+# Group 137, Cathedral Square.
+[[footprint]]
+x = [-451.0, -436.0]
+y = [-6.0, 4.0]
+z = [3.0, 18.0]
+
+# Group 145, The Canals.
+[[footprint]]
+x = [-521.0, -493.0]
+y = [44.0, 73.0]
+z = [-16.0, 5.0]
+
+# Group 150, shopC31.
+[[footprint]]
+x = [-522.0, -495.0]
+y = [-57.0, -27.0]
+z = [-16.0, 5.0]
+
+# Group 139, Cathedral Square.
+[[footprint]]
+x = [-447.0, -436.0]
+y = [3.0, 13.0]
+z = [3.0, 18.0]
+
+# Group 173, Trade District.
+[[footprint]]
+x = [-495.0, -488.0]
+y = [56.0, 71.0]
+z = [-22.0, -8.0]
+
+# Group 178, The Slaughtered Lamb.
+[[footprint]]
+x = [-497.0, -489.0]
+y = [-64.0, -48.0]
+z = [-22.0, -8.0]
+
+# Group 95, Valley Of Heroes.
+[[footprint]]
+x = [-437.0, -432.0]
+y = [5.0, 12.0]
+z = [3.0, 15.0]
+
+# Group 174, mountains.
+[[footprint]]
+x = [-515.0, -468.0]
+y = [43.0, 63.0]
+z = [-22.0, -9.0]
+
+# Group 179, warlock01.
+[[footprint]]
+x = [-516.0, -469.0]
+y = [-76.0, -56.0]
+z = [-22.0, -9.0]
+
+# Group 175, Bnkentrance05.
+[[footprint]]
+x = [-496.0, -457.0]
+y = [62.0, 101.0]
+z = [-31.0, -14.0]
+
+# Group 176, Trade District.
+[[footprint]]
+x = [-548.0, -502.0]
+y = [50.0, 82.0]
+z = [-31.0, -9.0]
+
+# Group 180, The Slaughtered Lamb.
+[[footprint]]
+x = [-550.0, -503.0]
+y = [-57.0, -37.0]
+z = [-22.0, -9.0]
+
+# Group 177, wartavern.
+[[footprint]]
+x = [-559.0, -520.0]
+y = [25.0, 53.0]
+z = [-31.0, -15.0]
+
+# Group 183, warlock03.
+[[footprint]]
+x = [-579.0, -532.0]
+y = [-76.0, -56.0]
+z = [-22.0, -9.0]
+
+# Group 182, The Slaughtered Lamb.
+[[footprint]]
+x = [-576.0, -569.0]
+y = [-57.0, -45.0]
+z = [-31.0, -14.0]
+
+# Group 181, warlock02.
+[[footprint]]
+x = [-592.0, -553.0]
+y = [-47.0, -19.0]
+z = [-31.0, -15.0]
+
+[portal]
+position = [-8587.1, 802.8, 106.51]
+orientation = 0.67
+
+# The Phase Tester: friendly, no quests.
+[[creature]]
+guid = 971005
+entry = 97100
+level = 48
+position = [-8547.1, 835.0, 106.52]
+orientation = 0.67

@@ -568,6 +568,9 @@ struct ZoneOverrides {
     file: String,
     /// Entries whose spawns are deleted.
     removed: Vec<u32>,
+    /// Spawns deleted by guid, where their entry also spawns elsewhere and must stay there.
+    #[serde(default)]
+    removed_guids: Vec<u32>,
     /// The zone's Level Stretch, for its hostile and neutral creatures.
     #[serde(default)]
     levels: Option<Stretch>,
@@ -706,7 +709,8 @@ pub(crate) fn content() -> &'static Mobs {
                     .iter()
                     .find(|z| z.file == *name)
                     .unwrap_or_else(|| panic!("content/zones.toml has no [[zone]] for {name}"));
-                file.spawns.retain(|r| !z.removed.contains(&r.1));
+                file.spawns
+                    .retain(|r| !z.removed.contains(&r.1) && !z.removed_guids.contains(&r.0));
                 // The Level Stretch, for every creature but friendly NPCs and critters
                 // (CreatureType.dbc 8).
                 if let Some(Stretch { from, to }) = z.levels {
@@ -1909,8 +1913,8 @@ mod tests {
 
     #[test]
     fn duskwood_redridge_and_stormwind_spawn_on_eastern_kingdoms() {
-        // Mor'Ladim, Blackrock Gladiator, Sewer Beast, Highlord Bolvar Fordragon (spec #466).
-        for (guid, entry) in [(5086, 522), (18385, 4464), (86301, 3581), (10495, 1748)] {
+        // Mor'Ladim, Shadowhide Warrior, Sewer Beast, Stormwind City Patroller (spec #466).
+        for (guid, entry) in [(5086, 522), (6214, 568), (86301, 3581), (12088, 1976)] {
             let s = content()
                 .spawn
                 .iter()
@@ -1945,7 +1949,7 @@ mod tests {
             (5086, (50, 50)),  // Mor'Ladim, Duskwood
             (4183, (50, 50)),  // Bliztik, Duskwood, neutral
             (8747, (30, 32)),  // Redridge Thrasher
-            (18385, (45, 47)), // Blackrock Gladiator
+            (6214, (45, 47)),  // Shadowhide Warrior
             (6707, (33, 35)),  // Great Goretusk, neutral
             (6140, (30, 30)),  // Narnie, neutral beast
             (4061, (40, 40)),  // Role Dreuger, Duskwood, friendly

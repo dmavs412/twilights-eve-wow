@@ -1,0 +1,154 @@
+# Blackrock Stronghold, a Phased Dungeon for levels 52 to 55 in the Burning Steppes (the lore
+# bible's "Zone arcs and dungeons"). Hand-written, from the game data.
+#
+# The building is the stock `blackrockorcfortress.wmo`, placed by the ADT's MODF at (-7724.7,
+# -1496.8, 143.2) with heading -295.5, so `origin` is that point and `yaw` is -115.5 (heading plus
+# 180), as Jasperlode's. Each footprint box is one indoor WMO group's MOGI bounding box in that
+# frame, z widened by a yard each way; the comment above it names the group. The portal stands in
+# the doorway the WMO's portal 2 draws between the building and the outside.
+#
+# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the great hall
+# so a character can see the Phase, and the open-world creatures that stood inside the boxes are
+# deleted. Guids: creatures 971001 up, one a dungeon.
+
+id = 14
+name = "Blackrock Stronghold"
+levels = [52, 55]
+map = 0
+zone = 46
+origin = [-7724.7, -1496.8, 143.2]
+yaw = -115.5
+
+# Group 0.
+[[footprint]]
+x = [-91.0, -83.0]
+y = [-5.0, 5.0]
+z = [-4.0, 5.0]
+
+# Group 2, FortHallway25.
+[[footprint]]
+x = [-27.0, -16.0]
+y = [-7.0, 7.0]
+z = [-4.0, 16.0]
+
+# Group 3, FortExt01.
+[[footprint]]
+x = [-44.0, -26.0]
+y = [-20.0, -3.0]
+z = [-4.0, 5.0]
+
+# Group 4, Portcullis06.
+[[footprint]]
+x = [-34.0, -26.0]
+y = [-5.0, 5.0]
+z = [-4.0, 5.0]
+
+# Group 5, FortHallway09.
+[[footprint]]
+x = [-91.0, -78.0]
+y = [-20.0, -2.0]
+z = [-4.0, 5.0]
+
+# Group 6, FortHallway10.
+[[footprint]]
+x = [-46.0, -27.0]
+y = [15.0, 32.0]
+z = [-4.0, 11.0]
+
+# Group 7, FortHallway24.
+[[footprint]]
+x = [-78.0, -61.0]
+y = [24.0, 36.0]
+z = [-4.0, 5.0]
+
+# Group 8, corner02.
+[[footprint]]
+x = [-90.0, -71.0]
+y = [14.0, 32.0]
+z = [-4.0, 11.0]
+
+# Group 9, FortHallway17.
+[[footprint]]
+x = [-82.0, -35.0]
+y = [-21.0, 21.0]
+z = [-5.0, 26.0]
+
+# Group 10, corner03.
+[[footprint]]
+x = [-38.0, -26.0]
+y = [3.0, 20.0]
+z = [-4.0, 5.0]
+
+# Group 11, mainchamber.
+[[footprint]]
+x = [-91.0, -74.0]
+y = [3.0, 22.0]
+z = [-4.0, 5.0]
+
+# Group 12, FortHallway16.
+[[footprint]]
+x = [-56.0, -39.0]
+y = [24.0, 36.0]
+z = [-4.0, 5.0]
+
+# Group 13, FortHallway22.
+[[footprint]]
+x = [-63.0, -53.0]
+y = [28.0, 37.0]
+z = [-4.0, 5.0]
+
+# Group 14, FortHallway15.
+[[footprint]]
+x = [-69.0, -52.0]
+y = [-29.0, -10.0]
+z = [-4.0, 16.0]
+
+# Group 15, FortHallway26.
+[[footprint]]
+x = [-69.0, -47.0]
+y = [10.0, 29.0]
+z = [-4.0, 16.0]
+
+# Group 16, Portcullis05.
+[[footprint]]
+x = [-46.0, -27.0]
+y = [-32.0, -14.0]
+z = [-4.0, 11.0]
+
+# Group 17, Portcullis04.
+[[footprint]]
+x = [-90.0, -71.0]
+y = [-32.0, -14.0]
+z = [-4.0, 11.0]
+
+# Group 18, corner01.
+[[footprint]]
+x = [-56.0, -39.0]
+y = [-36.0, -24.0]
+z = [-4.0, 5.0]
+
+# Group 19, corner04.
+[[footprint]]
+x = [-79.0, -61.0]
+y = [-36.0, -24.0]
+z = [-4.0, 5.0]
+
+# Group 20, FortHallway12.
+[[footprint]]
+x = [-63.0, -53.0]
+y = [-37.0, -28.0]
+z = [-4.0, 5.0]
+
+# 1.5 yd inside the gate (local -18, 0), on the gatehouse's indoor floor: the threshold itself is
+# an outdoor floor 6.5 yd over the terrain, which ground_check reads as a roof.
+[portal]
+position = [-7716.95, -1480.55, 140.76]
+orientation = 1.13
+
+# The Phase Tester: friendly, no quests.
+[[creature]]
+guid = 971007
+entry = 97100
+level = 52
+position = [-7699.7, -1444.5, 139.79]
+orientation = 1.13

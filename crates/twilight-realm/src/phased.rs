@@ -921,6 +921,14 @@ pub(crate) fn content() -> &'static [Dungeon] {
             include_str!("../content/jasperlode.toml"),
             include_str!("../content/ward_test.toml"),
             include_str!("../content/azora.toml"),
+            include_str!("../content/ilgalar.toml"),
+            include_str!("../content/stonewatch_keep.toml"),
+            include_str!("../content/mistmantle_manor.toml"),
+            include_str!("../content/raven_hill_deeps.toml"),
+            include_str!("../content/cathedral_of_light.toml"),
+            include_str!("../content/stormwind_keep.toml"),
+            include_str!("../content/blackrock_stronghold.toml"),
+            include_str!("../content/dreadmaul_rock.toml"),
         ]
         .into_iter()
         .map(|file| toml::from_str(file).expect("a Phased Dungeon's content file parses"))
@@ -1497,5 +1505,58 @@ mod tests {
         // Jorik Kerridan (vmangos).
         assert!(!abbey.holds(0, [-8926.7, -195.6, 80.8]));
         assert!(!abbey.holds(0, [-8863.5, -210.9, 80.8]));
+    }
+}
+
+#[cfg(test)]
+mod lore_bible_dungeons {
+    use super::*;
+
+    /// The lore bible's eight dungeons on the open world, ids 8 to 15.
+    const IDS: std::ops::RangeInclusive<u32> = 8..=15;
+
+    #[test]
+    fn no_open_world_creature_or_hub_npc_stands_inside_them() {
+        let dungeons: Vec<_> = IDS.map(|id| dungeon(id).expect("a dungeon")).collect();
+        let inside = |map: u32, p: [f32; 3]| dungeons.iter().find(|d| d.holds(map, p));
+        let mut found = Vec::new();
+        for s in &crate::mobs::content().spawn {
+            if s.phase != Phase::OpenWorld {
+                continue;
+            }
+            if let Some(d) = inside(s.map, s.position) {
+                found.push(format!(
+                    "{}: creature {} (entry {})",
+                    d.name, s.guid, s.entry
+                ));
+            }
+        }
+        for npc in crate::hub::npcs() {
+            if let Some(d) = inside(npc.map, npc.position) {
+                found.push(format!("{}: Hub NPC {}", d.name, npc.entry));
+            }
+        }
+        assert!(found.is_empty(), "{}", found.join("\n"));
+    }
+
+    #[test]
+    fn each_holds_its_one_friendly_creature_and_its_portal_stands_at_the_door() {
+        for id in IDS {
+            let d = dungeon(id).expect("a dungeon");
+            assert_eq!(d.creature.len(), 1, "{}", d.name);
+            let c = &d.creature[0];
+            assert!(crate::mobs::template(c.entry).is_some_and(|t| t.friendly));
+            assert!(
+                d.holds(d.map, c.position),
+                "{}: its creature stands outside",
+                d.name
+            );
+            assert!(d.levels.is_some(), "{}: a map mark", d.name);
+            let near = d
+                .footprint_points(1.0)
+                .into_iter()
+                .any(|[x, y]| flat_distance(d.portal.position, [x, y, 0.0]) <= 5.0);
+            assert!(near, "{}: its portal is off the footprint", d.name);
+        }
     }
 }

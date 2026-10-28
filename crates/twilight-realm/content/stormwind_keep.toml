@@ -1,0 +1,182 @@
+# Stormwind Keep, a Phased Dungeon at level 60 in Stormwind City (the lore bible's "Zone arcs and
+# dungeons"). Hand-written, from the game data.
+#
+# The building is the Keep's rooms in the stock `stormwind.wmo`, placed by the ADT's MODF at
+# (-8931.6, 539.3, 102.0) with heading 38.5, so `origin` is that point and `yaw` is -141.5
+# (heading plus 180), as Jasperlode's. Each footprint box is one indoor WMO group's MOGI bounding
+# box in that frame, z widened by a yard each way; the comment above it names the group. The
+# portal stands in the doorway the WMO's portal 228 draws between the building and the outside.
+#
+# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the throne room
+# so a character can see the Phase, and the open-world creatures that stood inside the boxes are
+# deleted. Guids: creatures 971001 up, one a dungeon.
+
+id = 13
+name = "Stormwind Keep"
+levels = [60, 60]
+map = 0
+zone = 1519
+origin = [-8931.6, 539.3, 102.0]
+yaw = -141.5
+
+# Group 211, canal305.
+[[footprint]]
+x = [-286.0, -229.0]
+y = [460.0, 500.0]
+z = [17.0, 76.0]
+
+# Group 207, canal504.
+[[footprint]]
+x = [-263.0, -247.0]
+y = [499.0, 515.0]
+z = [17.0, 41.0]
+
+# Group 212, The Canals.
+[[footprint]]
+x = [-281.0, -225.0]
+y = [443.0, 479.0]
+z = [17.0, 76.0]
+
+# Group 208, The Canals.
+[[footprint]]
+x = [-276.0, -235.0]
+y = [514.0, 556.0]
+z = [17.0, 41.0]
+
+# Group 198, The Canals.
+[[footprint]]
+x = [-267.0, -244.0]
+y = [409.0, 444.0]
+z = [9.0, 49.0]
+
+# Group 205, canal505.
+[[footprint]]
+x = [-238.0, -219.0]
+y = [433.0, 453.0]
+z = [17.0, 41.0]
+
+# Group 210, The Canals.
+[[footprint]]
+x = [-292.0, -272.0]
+y = [433.0, 453.0]
+z = [17.0, 41.0]
+
+# Group 199, canal200.
+[[footprint]]
+x = [-267.0, -244.0]
+y = [376.0, 411.0]
+z = [5.0, 40.0]
+
+# Group 206, The Canals.
+[[footprint]]
+x = [-235.0, -182.0]
+y = [396.0, 449.0]
+z = [17.0, 41.0]
+
+# Group 209, canal101.
+[[footprint]]
+x = [-329.0, -275.0]
+y = [396.0, 449.0]
+z = [17.0, 41.0]
+
+# Group 197, canal302.
+[[footprint]]
+x = [-293.0, -266.0]
+y = [377.0, 393.0]
+z = [5.0, 34.0]
+
+# Group 200, The Canals.
+[[footprint]]
+x = [-267.0, -243.0]
+y = [323.0, 377.0]
+z = [1.0, 37.0]
+
+# Group 196, The Canals.
+[[footprint]]
+x = [-330.0, -292.0]
+y = [377.0, 393.0]
+z = [11.0, 41.0]
+
+# Group 188, Wizard's Sanctum.
+[[footprint]]
+x = [-260.0, -251.0]
+y = [315.0, 325.0]
+z = [1.0, 17.0]
+
+# Group 204, The Canals.
+[[footprint]]
+x = [-244.0, -216.0]
+y = [360.0, 376.0]
+z = [5.0, 28.0]
+
+# Group 193, canal203.
+[[footprint]]
+x = [-346.0, -329.0]
+y = [346.0, 424.0]
+z = [19.0, 42.0]
+
+# Group 203, canal600.
+[[footprint]]
+x = [-217.0, -175.0]
+y = [348.0, 389.0]
+z = [5.0, 28.0]
+
+# Group 191, cath01.
+[[footprint]]
+x = [-407.0, -329.0]
+y = [346.0, 424.0]
+z = [20.0, 74.0]
+
+# Group 194, The Canals.
+[[footprint]]
+x = [-392.0, -344.0]
+y = [407.0, 424.0]
+z = [19.0, 42.0]
+
+# Group 195, canal301.
+[[footprint]]
+x = [-392.0, -344.0]
+y = [346.0, 363.0]
+z = [19.0, 42.0]
+
+# Group 192, Cathedral of Light.
+[[footprint]]
+x = [-407.0, -390.0]
+y = [346.0, 424.0]
+z = [19.0, 42.0]
+
+# Group 190, Wizard's Sanctum.
+[[footprint]]
+x = [-376.0, -360.0]
+y = [423.0, 451.0]
+z = [19.0, 42.0]
+
+# Group 202, The Canals.
+[[footprint]]
+x = [-434.0, -406.0]
+y = [377.0, 393.0]
+z = [19.0, 42.0]
+
+# Group 189, mageinterior03.
+[[footprint]]
+x = [-389.0, -347.0]
+y = [450.0, 492.0]
+z = [19.0, 42.0]
+
+# Group 201, canal500.
+[[footprint]]
+x = [-475.0, -433.0]
+y = [364.0, 406.0]
+z = [19.0, 42.0]
+
+[portal]
+position = [-8535.1, 451.0, 104.92]
+orientation = 5.38
+
+# The Phase Tester: friendly, no quests.
+[[creature]]
+guid = 971006
+entry = 97100
+level = 60
+position = [-8448.8, 342.0, 120.89]
+orientation = 5.38

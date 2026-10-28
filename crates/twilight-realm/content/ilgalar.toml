@@ -1,0 +1,56 @@
+# Tower of Ilgalar, a Phased Dungeon for levels 34 to 38 in Redridge (the lore bible's "Zone arcs
+# and dungeons"). Hand-written, from the game data.
+#
+# The building is the stock `redridge_magetower.wmo`, Morganth's workshop, placed by the ADT's
+# MODF at (-9282.4, -3329.7, 116.3) with heading 84.5, so `origin` is that point and `yaw` is
+# -95.5 (heading plus 180), as Jasperlode's. Each footprint box is one indoor WMO group's MOGI
+# bounding box in that frame, z widened by a yard each way; the comment above it names the group.
+# The portal stands in the doorway the WMO's portal 2 draws between the building and the outside.
+#
+# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the ground floor
+# so a character can see the Phase, and the open-world creatures that stood inside the boxes are
+# deleted. Guids: creatures 971001 up, one a dungeon.
+
+id = 8
+name = "Tower of Ilgalar"
+levels = [34, 38]
+map = 0
+zone = 44
+origin = [-9282.4, -3329.7, 116.3]
+yaw = -95.5
+
+# Group 1.
+[[footprint]]
+x = [-16.0, -2.0]
+y = [-3.0, 3.0]
+z = [-2.0, 6.0]
+
+# Group 2, towerexterior02.
+[[footprint]]
+x = [-53.0, -8.0]
+y = [-23.0, 23.0]
+z = [31.0, 64.0]
+
+# Group 3, towerexterior.
+[[footprint]]
+x = [-50.0, -11.0]
+y = [-19.0, 20.0]
+z = [22.0, 64.0]
+
+# Group 4, towertop.
+[[footprint]]
+x = [-47.0, -15.0]
+y = [-16.0, 16.0]
+z = [-2.0, 30.0]
+
+[portal]
+position = [-9282.2, -3327.6, 115.67]
+orientation = 1.47
+
+# The Phase Tester: friendly, no quests.
+[[creature]]
+guid = 971001
+entry = 97100
+level = 34
+position = [-9279.5, -3299.8, 115.67]
+orientation = 1.47

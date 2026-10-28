@@ -1,0 +1,101 @@
+# Raven Hill Deeps, a Phased Dungeon for levels 44 to 48 in Duskwood (the lore bible's "Zone arcs
+# and dungeons"). Hand-written, from the game data.
+#
+# The building is the stock `md_crypt_c.wmo`, the crypt under Raven Hill Cemetery, placed by the
+# ADT's MODF at (-10413.7, 405.5, 47.2) with heading -104.0, so `origin` is that point and `yaw`
+# is 76 (heading plus 180), as Jasperlode's. Each footprint box is one indoor WMO group's MOGI
+# bounding box in that frame, z widened by a yard each way; the comment above it names the group.
+# The portal stands on the mausoleum floor beside the stairwell that the WMO's portal 9 cuts.
+#
+# A shell for now (2026-10-27, Davis's call): one friendly Phase Tester stands in the first vault
+# below the stairs so a character can see the Phase, and the open-world creatures that stood
+# inside the boxes are deleted. Guids: creatures 971001 up, one a dungeon.
+
+id = 11
+name = "Raven Hill Deeps"
+levels = [44, 48]
+map = 0
+zone = 10
+origin = [-10413.7, 405.5, 47.2]
+yaw = 76
+
+# Group 0.
+[[footprint]]
+x = [20.0, 94.0]
+y = [-44.0, -11.0]
+z = [-25.0, -7.0]
+
+# Group 1.
+[[footprint]]
+x = [22.0, 105.0]
+y = [-107.0, -47.0]
+z = [-36.0, -20.0]
+
+# Group 2, vault01.
+[[footprint]]
+x = [-2.0, 34.0]
+y = [-206.0, -92.0]
+z = [-39.0, -20.0]
+
+# Group 3, vault05: the stairs down. The WMO's portal 9 is a flat hole in the mausoleum's floor
+# (local z 0.6), so the box stops a yard under it: a character on the mausoleum floor stays in
+# the open world.
+[[footprint]]
+x = [-1.0, 19.0]
+y = [-18.0, 3.0]
+z = [-20.0, -0.5]
+
+# Group 4, vault06.
+[[footprint]]
+x = [-75.0, 18.0]
+y = [-270.0, -171.0]
+z = [-49.0, -25.0]
+
+# Group 5, Stairs02.
+[[footprint]]
+x = [8.0, 24.0]
+y = [-93.0, -17.0]
+z = [-33.0, -11.0]
+
+# Group 7, middle.
+[[footprint]]
+x = [-283.0, -190.0]
+y = [-180.0, -97.0]
+z = [-47.0, -16.0]
+
+# Group 8, exterior02.
+[[footprint]]
+x = [-238.0, -135.0]
+y = [-285.0, -169.0]
+z = [-49.0, -31.0]
+
+# Group 9, XBox.
+[[footprint]]
+x = [-145.0, -50.0]
+y = [-254.0, -176.0]
+z = [-48.0, -26.0]
+
+# Group 11, endroom.
+[[footprint]]
+x = [-66.0, 9.0]
+y = [-87.0, -51.0]
+z = [-33.0, -17.0]
+
+# Group 12, exterior01.
+[[footprint]]
+x = [-63.0, 12.0]
+y = [-53.0, -3.0]
+z = [-25.0, -7.0]
+
+# On the mausoleum's floor beside the stairwell (local 4, 6), since the doorway is the hole.
+[portal]
+position = [-10418.6, 410.8, 47.8]
+orientation = 1.32
+
+# The Phase Tester: friendly, no quests.
+[[creature]]
+guid = 971004
+entry = 97100
+level = 44
+position = [-10377.3, 427.4, 29.08]
+orientation = 1.32
