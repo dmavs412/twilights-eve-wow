@@ -302,16 +302,20 @@ A Herbalist's permanent pick, one slot per 10 Herbalist Levels. A **Boon** is a 
 _Avoid_: talent (a Calling's), trait
 
 **Ingredient Level**:
-The level of a fish or herb for crafting: the lowest level any fishing or herb pool lists it at, derived at load. A Legendary Fish uses its own level (ADR 0025).
+The level of a fish or herb for crafting: the lowest level any fishing or herb pool lists it at, derived at load. A Legendary Fish uses its own level. It sets a fish dish's band and an alchemy herb's property budget (ADR 0025).
 _Avoid_: item level (the stock item_template field)
 
 **Meal**:
-What cooking makes: an item in the bags that gives one food buff when eaten. A **combat meal** gives a Well Fed stat set by its band (1, 10, 20 or 30, from its ingredients' average level); an out-of-combat meal or a gatherer meal does not scale with level. Its quality is Plain, Fine or Exquisite. One food buff at a time (ADR 0025).
+What cooking makes: an item in the bags that gives one Well Fed buff when eaten. One recipe makes one meal, always the same. One food buff at a time (ADR 0025).
 _Avoid_: dish (fine in a recipe's name), food buff item
 
-**Pairing**:
-The one cooking herb a fish goes best with. A meal holding both is one quality step higher. Found by cooking, recorded on the Fish Page.
-_Avoid_: combo, synergy
+**Recipe Tier**:
+One of a Well Fed effect's four cooking recipes, one per band (1, 10, 20, 30), each with its own exact ingredients. The tier sets the meal's strength and its quality colour: white, green, blue, purple. A higher band is a different recipe (ADR 0025).
+_Avoid_: quality (a meal has none apart from its tier), rank
+
+**Revealed Ingredient**:
+An ingredient the character has cooked with at least once. The recipe book shows it in every unknown recipe that uses it; any other slot of an unknown recipe shows `???`.
+_Avoid_: discovered, unlocked
 
 **Kitchen Order**:
 One of three requests a kitchen posts per character at dawn (raw fish, a meal, raw herbs by category), expiring at the next dawn. Pays gold, and one in three also a rare ingredient or a recipe Rumour.

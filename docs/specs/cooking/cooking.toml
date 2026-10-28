@@ -1,0 +1,1152 @@
+# Cooking (spec #447, ADR 0025 amended 2026-10-27), as Davis's Kitchen prototype plays it
+# (docs/specs/cooking/kitchen-prototype.html). Staged by the Pipeline lane; the content ticket moves
+# it to crates/twilight-realm/content/cooking.toml and src/cooking.rs loads it. Generated from the
+# prototype and the realm's item entries on 2026-10-27, so every name below is the realm's.
+#
+# [eat]: a meal is eaten from the bags out of combat; one Well Fed buff at a time.
+#   use_spell        the stock Spell.dbc spell every meal row names, so the client lets it be used:
+#                    25695 "Food", whose description is empty, so the tooltip shows only the row's
+#   buff_spell       the aura the client shows while Well Fed: stock 19705 "Well Fed" (its text is
+#                    stock until the Well Fed effect list adds real spells)
+#   minutes, legendary_minutes
+# [tier]: bands (1, 10, 20, 30); a tier recipe's meal quality is tier + 1 (white to purple).
+# [[effect]]: the 11 Well Fed effects. family combat (a stat), ooc (off in combat) or gather;
+#   values = the strength at each tier, placeholders until the Well Fed effect list.
+# [[kitchen]]: key, name, cook (the hub NPC entry whose gossip opens it), starters (recipe keys).
+# [category]: a cooking herb's category, for orders and the pantry.
+# [[recipe]]: key, kind (tier, dish, legend or plant), meal (its item), ingredients (item entries,
+#   in any order). tier: effect and tier. dish: effect, tier (the band of the fish's level) and
+#   teacher (the fish whose first catch teaches it). legend: teacher, and double = { stat,
+#   stat_value, ooc, ooc_value } or unique = { key, params }. plant: teacher (first pick), stat, specials.
+# [mush]: the miss: its item and its regen value.
+# [[cut]]: fish, bait: 1 fish cuts into `count` of its bait at a kitchen.
+# [orders]: kitchen orders, rolled per character at dawn (prototype rollOrders).
+# [[item]]: the meal and cut bait rows, in content/items.toml's format.
+
+[eat]
+use_spell = 25695
+buff_spell = 19705
+minutes = 30
+legendary_minutes = 60
+
+[tier]
+bands = [1, 10, 20, 30]
+
+[[effect]]
+key = "stamina"
+family = "combat"
+values = [2, 7, 12, 17]
+
+[[effect]]
+key = "strength"
+family = "combat"
+values = [2, 7, 12, 17]
+
+[[effect]]
+key = "agility"
+family = "combat"
+values = [2, 7, 12, 17]
+
+[[effect]]
+key = "intellect"
+family = "combat"
+values = [2, 7, 12, 17]
+
+[[effect]]
+key = "spirit"
+family = "combat"
+values = [2, 7, 12, 17]
+
+[[effect]]
+key = "xp"
+family = "ooc"
+values = [10, 15, 20, 25]
+
+[[effect]]
+key = "regen"
+family = "ooc"
+values = [100, 150, 200, 250]
+
+[[effect]]
+key = "speed"
+family = "ooc"
+values = [12, 18, 24, 30]
+
+[[effect]]
+key = "pull"
+family = "gather"
+values = [1, 1, 2, 2]
+
+[[effect]]
+key = "rarity"
+family = "gather"
+values = [25, 37, 50, 62]
+
+[[effect]]
+key = "lure"
+family = "gather"
+values = [50, 60, 70, 80]
+
+[[kitchen]]
+key = "goldshire"
+name = "Lion's Pride kitchen"
+cook = 1430 # Tomas
+starters = ["stamina_1", "xp_1", "regen_1", "pull_1"]
+
+[[kitchen]]
+key = "abbey"
+name = "Abbey kitchen"
+cook = 190074 # Brother Hollis, new in the realm ticket
+starters = ["intellect_1", "spirit_1", "speed_1", "pull_1"]
+
+[category]
+961001 = "greens" # Dandelion Greens
+961013 = "greens" # Lakeshore Watercress
+961002 = "allium" # Wild Onion
+961010 = "allium" # Wild Garlic
+961003 = "fruit" # Blackberries
+961006 = "fruit" # Wild Strawberries
+961018 = "fruit" # Raven's Bramble
+961004 = "mushroom" # Elwynn Chanterelle
+961017 = "mushroom" # Ghostcap
+961014 = "mushroom" # Redridge Morel
+961019 = "mushroom" # Black Morel
+961015 = "mushroom" # Hill Truffle
+961022 = "mushroom" # Black Truffle
+961005 = "nut" # Hazelnuts
+961011 = "spice" # Redridge Pepper
+961007 = "spice" # Wild Thyme
+961012 = "spice" # Rock Sage
+961008 = "root" # Sweetroot
+961020 = "root" # Duskroot
+961024 = "sweet" # Wild Honeycomb
+961026 = "egg" # Bird's Nest
+
+[[recipe]]
+key = "stamina_1"
+kind = "tier"
+meal = 962001 # Hunter's Fish Stew
+ingredients = [960401, 961002, 961008] # Goldshire Perch, Wild Onion, Sweetroot
+effect = "stamina"
+tier = 0
+
+[[recipe]]
+key = "stamina_10"
+kind = "tier"
+meal = 962002 # Woodsman's Hotpot
+ingredients = [960411, 961010, 961020] # Everstill Perch, Wild Garlic, Duskroot
+effect = "stamina"
+tier = 1
+
+[[recipe]]
+key = "stamina_20"
+kind = "tier"
+meal = 962003 # Darkshire Gulper Pot
+ingredients = [960410, 961020, 961019] # Dockside Gulper, Duskroot, Black Morel
+effect = "stamina"
+tier = 2
+
+[[recipe]]
+key = "stamina_30"
+kind = "tier"
+meal = 962004 # Ghostlight Stew
+ingredients = [960422, 961020, 960423] # Ghostscale Carp, Duskroot, Dreaming Glassfin
+effect = "stamina"
+tier = 3
+
+[[recipe]]
+key = "strength_1"
+kind = "tier"
+meal = 962005 # Spiced Fish Skewer
+ingredients = [960408, 961011] # Canal Eel, Redridge Pepper
+effect = "strength"
+tier = 0
+
+[[recipe]]
+key = "strength_10"
+kind = "tier"
+meal = 962006 # Brawler's Skewer
+ingredients = [6361, 960405, 961012] # Raw Rainbow Fin Albacore, Duskfin, Rock Sage
+effect = "strength"
+tier = 1
+
+[[recipe]]
+key = "strength_20"
+kind = "tier"
+meal = 962007 # Ironjaw Kebab
+ingredients = [960415, 961011, 961012] # Ironjaw Pike, Redridge Pepper, Rock Sage
+effect = "strength"
+tier = 2
+
+[[recipe]]
+key = "strength_30"
+kind = "tier"
+meal = 962008 # Ember Truffle Kebab
+ingredients = [960423, 960416, 961015] # Dreaming Glassfin, Emberscale Darter, Hill Truffle
+effect = "strength"
+tier = 3
+
+[[recipe]]
+key = "agility_1"
+kind = "tier"
+meal = 962009 # Brookside Fry
+ingredients = [6291, 961001, 961005] # Raw Brilliant Smallfish, Dandelion Greens, Hazelnuts
+effect = "agility"
+tier = 0
+
+[[recipe]]
+key = "agility_10"
+kind = "tier"
+meal = 962010 # Millrace Fry
+ingredients = [960413, 961005, 961013] # Millrace Trout, Hazelnuts, Lakeshore Watercress
+effect = "agility"
+tier = 1
+
+[[recipe]]
+key = "agility_20"
+kind = "tier"
+meal = 962011 # Emberscale Fry
+ingredients = [960416, 961005, 961006] # Emberscale Darter, Hazelnuts, Wild Strawberries
+effect = "agility"
+tier = 2
+
+[[recipe]]
+key = "agility_30"
+kind = "tier"
+meal = 962012 # Truffled Grayling
+ingredients = [960421, 961022] # Hushed Bank Grayling, Black Truffle
+effect = "agility"
+tier = 3
+
+[[recipe]]
+key = "intellect_1"
+kind = "tier"
+meal = 962013 # Abbey Mushroom Pie
+ingredients = [960403, 961026, 961004] # Mirror Lake Shiner, Bird's Nest, Elwynn Chanterelle
+effect = "intellect"
+tier = 0
+
+[[recipe]]
+key = "intellect_10"
+kind = "tier"
+meal = 962014 # Scholar's Supper
+ingredients = [960406, 8365, 961017] # Crystal Lake Glimmerfish, Raw Mithril Head Trout, Ghostcap
+effect = "intellect"
+tier = 1
+
+[[recipe]]
+key = "intellect_20"
+kind = "tier"
+meal = 962015 # Koi and Ghostcap Pie
+ingredients = [960409, 961017, 961026] # Gilded Koi, Ghostcap, Bird's Nest
+effect = "intellect"
+tier = 2
+
+[[recipe]]
+key = "intellect_30"
+kind = "tier"
+meal = 962016 # Dreaming Truffle Pie
+ingredients = [960423, 961022] # Dreaming Glassfin, Black Truffle
+effect = "intellect"
+tier = 3
+
+[[recipe]]
+key = "spirit_1"
+kind = "tier"
+meal = 962017 # Monk's Honey Broth
+ingredients = [960402, 961001, 961024] # Northshire Brook Trout, Dandelion Greens, Wild Honeycomb
+effect = "spirit"
+tier = 0
+
+[[recipe]]
+key = "spirit_10"
+kind = "tier"
+meal = 962018 # Vigil Broth
+ingredients = [960418, 961019, 961024] # Darkshire Bleak, Black Morel, Wild Honeycomb
+effect = "spirit"
+tier = 1
+
+[[recipe]]
+key = "spirit_20"
+kind = "tier"
+meal = 962019 # Mithril Honey Broth
+ingredients = [8365, 961024, 961014] # Raw Mithril Head Trout, Wild Honeycomb, Redridge Morel
+effect = "spirit"
+tier = 2
+
+[[recipe]]
+key = "spirit_30"
+kind = "tier"
+meal = 962020 # Twilight Rite
+ingredients = [960422, 961015] # Ghostscale Carp, Hill Truffle
+effect = "spirit"
+tier = 3
+
+[[recipe]]
+key = "xp_1"
+kind = "tier"
+meal = 962021 # Hearthside Fish Cakes
+ingredients = [960407, 961026, 961002] # Harbour Herring, Bird's Nest, Wild Onion
+effect = "xp"
+tier = 0
+
+[[recipe]]
+key = "xp_10"
+kind = "tier"
+meal = 962022 # Traveller's Supper
+ingredients = [960414, 6303, 961007] # Lakeshire Sunfish, Raw Slitherskin Mackerel, Wild Thyme
+effect = "xp"
+tier = 1
+
+[[recipe]]
+key = "xp_20"
+kind = "tier"
+meal = 962023 # Lakeshire Fish Cakes
+ingredients = [960414, 961026, 961002] # Lakeshire Sunfish, Bird's Nest, Wild Onion
+effect = "xp"
+tier = 2
+
+[[recipe]]
+key = "xp_30"
+kind = "tier"
+meal = 962024 # Whitefish Truffle Cakes
+ingredients = [960417, 961022] # Everstill Whitefish, Black Truffle
+effect = "xp"
+tier = 3
+
+[[recipe]]
+key = "regen_1"
+kind = "tier"
+meal = 962025 # Lion's Pride Chowder
+ingredients = [960401, 961001, 961002] # Goldshire Perch, Dandelion Greens, Wild Onion
+effect = "regen"
+tier = 0
+
+[[recipe]]
+key = "regen_10"
+kind = "tier"
+meal = 962026 # Lakeshore Chowder
+ingredients = [960411, 961013] # Everstill Perch, Lakeshore Watercress
+effect = "regen"
+tier = 1
+
+[[recipe]]
+key = "regen_20"
+kind = "tier"
+meal = 962027 # Hushed Bank Chowder
+ingredients = [960421, 961013, 961020] # Hushed Bank Grayling, Lakeshore Watercress, Duskroot
+effect = "regen"
+tier = 2
+
+[[recipe]]
+key = "regen_30"
+kind = "tier"
+meal = 962028 # Gravemoss Chowder
+ingredients = [960420, 961022] # Gravemoss Loach, Black Truffle
+effect = "regen"
+tier = 3
+
+[[recipe]]
+key = "speed_1"
+kind = "tier"
+meal = 962029 # Trail Fish Wrap
+ingredients = [6289, 961003] # Raw Longjaw Mud Snapper, Blackberries
+effect = "speed"
+tier = 0
+
+[[recipe]]
+key = "speed_10"
+kind = "tier"
+meal = 962030 # Ravenwood Wrap
+ingredients = [960419, 961018] # Ravenwood Chub, Raven's Bramble
+effect = "speed"
+tier = 1
+
+[[recipe]]
+key = "speed_20"
+kind = "tier"
+meal = 962031 # Millrace Wrap
+ingredients = [960413, 961003, 961018] # Millrace Trout, Blackberries, Raven's Bramble
+effect = "speed"
+tier = 2
+
+[[recipe]]
+key = "speed_30"
+kind = "tier"
+meal = 962032 # Runner's Glassfin Wrap
+ingredients = [960423, 961020] # Dreaming Glassfin, Duskroot
+effect = "speed"
+tier = 3
+
+[[recipe]]
+key = "pull_1"
+kind = "tier"
+meal = 962033 # Forager's Stew
+ingredients = [960401, 961004, 961001] # Goldshire Perch, Elwynn Chanterelle, Dandelion Greens
+effect = "pull"
+tier = 0
+
+[[recipe]]
+key = "pull_10"
+kind = "tier"
+meal = 962034 # Redridge Forager's Pot
+ingredients = [960412, 6308, 961014] # Redridge Bluegill, Raw Bristle Whisker Catfish, Redridge Morel
+effect = "pull"
+tier = 1
+
+[[recipe]]
+key = "pull_20"
+kind = "tier"
+meal = 962035 # Gravemoss Forager's Pot
+ingredients = [960420, 961019, 961017] # Gravemoss Loach, Black Morel, Ghostcap
+effect = "pull"
+tier = 2
+
+[[recipe]]
+key = "pull_30"
+kind = "tier"
+meal = 962036 # Truffle Hunter's Pot
+ingredients = [960423, 961015] # Dreaming Glassfin, Hill Truffle
+effect = "pull"
+tier = 3
+
+[[recipe]]
+key = "rarity_1"
+kind = "tier"
+meal = 962037 # Angler's Soup
+ingredients = [960401, 6291, 961007, 961010] # Goldshire Perch, Raw Brilliant Smallfish, Wild Thyme, Wild Garlic
+effect = "rarity"
+tier = 0
+
+[[recipe]]
+key = "rarity_10"
+kind = "tier"
+meal = 962038 # Ironjaw Angler's Soup
+ingredients = [960415, 960418, 961007, 961010] # Ironjaw Pike, Darkshire Bleak, Wild Thyme, Wild Garlic
+effect = "rarity"
+tier = 1
+
+[[recipe]]
+key = "rarity_20"
+kind = "tier"
+meal = 962039 # Lakeshire Angler's Soup
+ingredients = [960414, 960415, 961007, 961014] # Lakeshire Sunfish, Ironjaw Pike, Wild Thyme, Redridge Morel
+effect = "rarity"
+tier = 2
+
+[[recipe]]
+key = "rarity_30"
+kind = "tier"
+meal = 962040 # Hushed Bank Angler's Soup
+ingredients = [960421, 960417, 961015] # Hushed Bank Grayling, Everstill Whitefish, Hill Truffle
+effect = "rarity"
+tier = 3
+
+[[recipe]]
+key = "lure_1"
+kind = "tier"
+meal = 962041 # Smoked Fish Jerky
+ingredients = [960404, 961011, 961010] # Stonefield Carp, Redridge Pepper, Wild Garlic
+effect = "lure"
+tier = 0
+
+[[recipe]]
+key = "lure_10"
+kind = "tier"
+meal = 962042 # Blackmouth Jerky
+ingredients = [6358, 961012, 961008] # Oily Blackmouth, Rock Sage, Sweetroot
+effect = "lure"
+tier = 1
+
+[[recipe]]
+key = "lure_20"
+kind = "tier"
+meal = 962043 # Ironjaw Jerky
+ingredients = [960415, 961011, 961020] # Ironjaw Pike, Redridge Pepper, Duskroot
+effect = "lure"
+tier = 2
+
+[[recipe]]
+key = "lure_30"
+kind = "tier"
+meal = 962044 # Gravemoss Jerky
+ingredients = [960420, 960421, 961022] # Gravemoss Loach, Hushed Bank Grayling, Black Truffle
+effect = "lure"
+tier = 3
+
+[[recipe]]
+key = "dish_brilliant_smallfish"
+kind = "dish"
+meal = 962101 # Brilliant Smallfish Bites
+ingredients = [6291, 961003] # Raw Brilliant Smallfish, Blackberries
+effect = "agility"
+tier = 0
+teacher = 6291
+
+[[recipe]]
+key = "dish_goldshire_perch"
+kind = "dish"
+meal = 962102 # Grilled Perch Platter
+ingredients = [960401, 961010, 961020] # Goldshire Perch, Wild Garlic, Duskroot
+effect = "stamina"
+tier = 0
+teacher = 960401
+
+[[recipe]]
+key = "dish_northshire_brook_trout"
+kind = "dish"
+meal = 962103 # Brook Trout Chowder
+ingredients = [960402, 961013] # Northshire Brook Trout, Lakeshore Watercress
+effect = "regen"
+tier = 0
+teacher = 960402
+
+[[recipe]]
+key = "dish_longjaw_mud_snapper"
+kind = "dish"
+meal = 962104 # Longjaw Snapper Stew
+ingredients = [6289, 961010] # Raw Longjaw Mud Snapper, Wild Garlic
+effect = "stamina"
+tier = 0
+teacher = 6289
+
+[[recipe]]
+key = "dish_harbour_herring"
+kind = "dish"
+meal = 962105 # Harbour Herring Cakes
+ingredients = [960407, 961026, 961010] # Harbour Herring, Bird's Nest, Wild Garlic
+effect = "xp"
+tier = 0
+teacher = 960407
+
+[[recipe]]
+key = "dish_canal_eel"
+kind = "dish"
+meal = 962106 # Canal Eel Skewer
+ingredients = [960408, 961012] # Canal Eel, Rock Sage
+effect = "strength"
+tier = 0
+teacher = 960408
+
+[[recipe]]
+key = "dish_bristle_whisker_catfish"
+kind = "dish"
+meal = 962107 # Whisker Catfish Gumbo
+ingredients = [6308, 961017, 961001] # Raw Bristle Whisker Catfish, Ghostcap, Dandelion Greens
+effect = "pull"
+tier = 0
+teacher = 6308
+
+[[recipe]]
+key = "dish_everstill_perch"
+kind = "dish"
+meal = 962108 # Lakeside Perch Wrap
+ingredients = [960411, 961006] # Everstill Perch, Wild Strawberries
+effect = "speed"
+tier = 1
+teacher = 960411
+
+[[recipe]]
+key = "dish_redridge_bluegill"
+kind = "dish"
+meal = 962109 # Redridge Bluegill Stew
+ingredients = [960412, 961017, 961013] # Redridge Bluegill, Ghostcap, Lakeshore Watercress
+effect = "pull"
+tier = 1
+teacher = 960412
+
+[[recipe]]
+key = "dish_darkshire_bleak"
+kind = "dish"
+meal = 962110 # Darkshire Bleak Broth
+ingredients = [960418, 961019] # Darkshire Bleak, Black Morel
+effect = "spirit"
+tier = 1
+teacher = 960418
+
+[[recipe]]
+key = "dish_ravenwood_chub"
+kind = "dish"
+meal = 962111 # Ravenwood Chub Hotpot
+ingredients = [960419, 961002, 961008] # Ravenwood Chub, Wild Onion, Sweetroot
+effect = "stamina"
+tier = 1
+teacher = 960419
+
+[[recipe]]
+key = "dish_mirror_lake_shiner"
+kind = "dish"
+meal = 962112 # Mirror Lake Shiner Pie
+ingredients = [960403, 961026] # Mirror Lake Shiner, Bird's Nest
+effect = "intellect"
+tier = 0
+teacher = 960403
+
+[[recipe]]
+key = "dish_stonefield_carp"
+kind = "dish"
+meal = 962113 # Stonefield Carp Cakes
+ingredients = [960404, 961026, 961002] # Stonefield Carp, Bird's Nest, Wild Onion
+effect = "xp"
+tier = 0
+teacher = 960404
+
+[[recipe]]
+key = "dish_slitherskin_mackerel"
+kind = "dish"
+meal = 962114 # Slitherskin Mackerel Fry
+ingredients = [6303, 961013, 961001] # Raw Slitherskin Mackerel, Lakeshore Watercress, Dandelion Greens
+effect = "agility"
+tier = 0
+teacher = 6303
+
+[[recipe]]
+key = "dish_rainbow_fin_albacore"
+kind = "dish"
+meal = 962115 # Rainbow Fin Steak
+ingredients = [6361, 961011] # Raw Rainbow Fin Albacore, Redridge Pepper
+effect = "strength"
+tier = 1
+teacher = 6361
+
+[[recipe]]
+key = "dish_oily_blackmouth"
+kind = "dish"
+meal = 962116 # Oily Blackmouth Jerky
+ingredients = [6358, 961020] # Oily Blackmouth, Duskroot
+effect = "lure"
+tier = 1
+teacher = 6358
+
+[[recipe]]
+key = "dish_millrace_trout"
+kind = "dish"
+meal = 962117 # Millrace Trout Almondine
+ingredients = [960413, 961005] # Millrace Trout, Hazelnuts
+effect = "agility"
+tier = 1
+teacher = 960413
+
+[[recipe]]
+key = "dish_lakeshire_sunfish"
+kind = "dish"
+meal = 962118 # Lakeshire Sunfish Chowder
+ingredients = [960414, 961010, 961001] # Lakeshire Sunfish, Wild Garlic, Dandelion Greens
+effect = "regen"
+tier = 1
+teacher = 960414
+
+[[recipe]]
+key = "dish_ironjaw_pike"
+kind = "dish"
+meal = 962119 # Ironjaw Pike Jerky
+ingredients = [960415, 961012, 961008] # Ironjaw Pike, Rock Sage, Sweetroot
+effect = "lure"
+tier = 1
+teacher = 960415
+
+[[recipe]]
+key = "dish_mithril_head_trout"
+kind = "dish"
+meal = 962120 # Mithril Head Trout Pie
+ingredients = [8365, 961019] # Raw Mithril Head Trout, Black Morel
+effect = "intellect"
+tier = 1
+teacher = 8365
+
+[[recipe]]
+key = "dish_gravemoss_loach"
+kind = "dish"
+meal = 962121 # Gravemoss Loach Broth
+ingredients = [960420, 961024, 961019] # Gravemoss Loach, Wild Honeycomb, Black Morel
+effect = "spirit"
+tier = 2
+teacher = 960420
+
+[[recipe]]
+key = "dish_hushed_bank_grayling"
+kind = "dish"
+meal = 962122 # Hushed Bank Grayling Soup
+ingredients = [960421, 961012, 961010] # Hushed Bank Grayling, Rock Sage, Wild Garlic
+effect = "rarity"
+tier = 2
+teacher = 960421
+
+[[recipe]]
+key = "dish_duskfin"
+kind = "dish"
+meal = 962123 # Duskfin Crisp
+ingredients = [960405, 961001, 961006] # Duskfin, Dandelion Greens, Wild Strawberries
+effect = "agility"
+tier = 0
+teacher = 960405
+
+[[recipe]]
+key = "dish_crystal_lake_glimmerfish"
+kind = "dish"
+meal = 962124 # Glimmerfish Pie
+ingredients = [960406, 961004] # Crystal Lake Glimmerfish, Elwynn Chanterelle
+effect = "intellect"
+tier = 1
+teacher = 960406
+
+[[recipe]]
+key = "dish_gilded_koi"
+kind = "dish"
+meal = 962125 # Gilded Koi Cakes
+ingredients = [960409, 961010] # Gilded Koi, Wild Garlic
+effect = "xp"
+tier = 1
+teacher = 960409
+
+[[recipe]]
+key = "dish_dockside_gulper"
+kind = "dish"
+meal = 962126 # Dockside Gulper Stew
+ingredients = [960410, 961020, 961010] # Dockside Gulper, Duskroot, Wild Garlic
+effect = "stamina"
+tier = 1
+teacher = 960410
+
+[[recipe]]
+key = "dish_emberscale_darter"
+kind = "dish"
+meal = 962127 # Emberscale Darter Kebab
+ingredients = [960416, 961011, 961012] # Emberscale Darter, Redridge Pepper, Rock Sage
+effect = "strength"
+tier = 1
+teacher = 960416
+
+[[recipe]]
+key = "dish_everstill_whitefish"
+kind = "dish"
+meal = 962128 # Everstill Whitefish Wrap
+ingredients = [960417, 961006] # Everstill Whitefish, Wild Strawberries
+effect = "speed"
+tier = 2
+teacher = 960417
+
+[[recipe]]
+key = "dish_ghostscale_carp"
+kind = "dish"
+meal = 962129 # Ghostscale Carp Broth
+ingredients = [960422, 961017] # Ghostscale Carp, Ghostcap
+effect = "spirit"
+tier = 2
+teacher = 960422
+
+[[recipe]]
+key = "dish_dreaming_glassfin"
+kind = "dish"
+meal = 962130 # Dreaming Glassfin Pie
+ingredients = [960423, 961014] # Dreaming Glassfin, Redridge Morel
+effect = "intellect"
+tier = 2
+teacher = 960423
+
+[[recipe]]
+key = "legend_brother_bass"
+kind = "legend"
+meal = 962201 # Brother Bass Supper
+ingredients = [960002, 961001] # Brother Bass, Dandelion Greens
+teacher = 960002
+double = { stat = "stamina", stat_value = 6, ooc = "regen", ooc_value = 300 }
+
+[[recipe]]
+key = "legend_moonlit_gar"
+kind = "legend"
+meal = 962202 # Moonlit Gar Fillet
+ingredients = [960003, 961003] # Moonlit Gar, Blackberries
+teacher = 960003
+double = { stat = "agility", stat_value = 21, ooc = "speed", ooc_value = 36 }
+
+[[recipe]]
+key = "legend_gnoll_tooth_snapper"
+kind = "legend"
+meal = 962203 # Gnoll Tooth Snapper Stew
+ingredients = [960004, 961011] # Gnoll Tooth Snapper, Redridge Pepper
+teacher = 960004
+unique = { key = "extra_strike", chance_pct = 10 }
+
+[[recipe]]
+key = "legend_old_goldfin"
+kind = "legend"
+meal = 962204 # Old Goldfin's Gilded Plate
+ingredients = [960001, 961024] # Old Goldfin, Wild Honeycomb
+teacher = 960001
+unique = { key = "rarity_up" }
+
+[[recipe]]
+key = "legend_the_lightscale"
+kind = "legend"
+meal = 962205 # Lightscale Bake
+ingredients = [960006, 961026] # The Lightscale, Bird's Nest
+teacher = 960006
+double = { stat = "intellect", stat_value = 21, ooc = "xp", ooc_value = 30 }
+
+[[recipe]]
+key = "legend_bell_toll_bream"
+kind = "legend"
+meal = 962206 # Bell-Toll Bream Broth
+ingredients = [960007, 961005] # Bell-Toll Bream, Hazelnuts
+teacher = 960007
+double = { stat = "spirit", stat_value = 21, ooc = "regen", ooc_value = 300 }
+
+[[recipe]]
+key = "legend_stockade_sucker"
+kind = "legend"
+meal = 962207 # Stockade Sucker Pot
+ingredients = [960008, 961008] # Stockade Sucker, Sweetroot
+teacher = 960008
+unique = { key = "cc_half", pct = 50 }
+
+[[recipe]]
+key = "legend_the_harbourmasters_eel"
+kind = "legend"
+meal = 962208 # Harbourmaster's Eel Pie
+ingredients = [960005, 961010] # The Harbourmaster's Eel, Wild Garlic
+teacher = 960005
+unique = { key = "kill_heal", pct = 3 }
+
+[[recipe]]
+key = "legend_the_millstone_carp"
+kind = "legend"
+meal = 962209 # Millstone Carp Loaf
+ingredients = [960010, 961014] # The Millstone Carp, Redridge Morel
+teacher = 960010
+double = { stat = "stamina", stat_value = 21, ooc = "xp", ooc_value = 30 }
+
+[[recipe]]
+key = "legend_worgfang_pike"
+kind = "legend"
+meal = 962210 # Worgfang Pike Steak
+ingredients = [960012, 961007] # Worgfang Pike, Wild Thyme
+teacher = 960012
+double = { stat = "strength", stat_value = 21, ooc = "speed", ooc_value = 36 }
+
+[[recipe]]
+key = "legend_blackrock_bloodfin"
+kind = "legend"
+meal = 962211 # Bloodfin Searing
+ingredients = [960009, 961012] # Blackrock Bloodfin, Rock Sage
+teacher = 960009
+unique = { key = "damage_stack", pct = 1, max_pct = 10 }
+
+[[recipe]]
+key = "legend_everstill_leviathan"
+kind = "legend"
+meal = 962212 # Leviathan Feast
+ingredients = [960011, 961013] # Everstill Leviathan, Lakeshore Watercress
+teacher = 960011
+unique = { key = "revive", health_pct = 30 }
+
+[[recipe]]
+key = "legend_sorrowgill"
+kind = "legend"
+meal = 962213 # Sorrowgill Soup
+ingredients = [960013, 961020] # Sorrowgill, Duskroot
+teacher = 960013
+double = { stat = "spirit", stat_value = 36, ooc = "regen", ooc_value = 300 }
+
+[[recipe]]
+key = "legend_the_twilight_koi"
+kind = "legend"
+meal = 962214 # Twilight Koi Platter
+ingredients = [960014, 961018] # The Twilight Koi, Raven's Bramble
+teacher = 960014
+double = { stat = "intellect", stat_value = 36, ooc = "xp", ooc_value = 30 }
+
+[[recipe]]
+key = "legend_stitchjaw_eel"
+kind = "legend"
+meal = 962215 # Stitchjaw Stew
+ingredients = [960015, 961019] # Stitchjaw Eel, Black Morel
+teacher = 960015
+unique = { key = "melee_reflect", pct = 10 }
+
+[[recipe]]
+key = "legend_moonless_muskie"
+kind = "legend"
+meal = 962216 # Moonless Muskie Supper
+ingredients = [960016, 961022] # Moonless Muskie, Black Truffle
+teacher = 960016
+unique = { key = "night_aggro_half", pct = 50 }
+
+[[recipe]]
+key = "plant_moonpetal"
+kind = "plant"
+meal = 962301 # Moonpetal Tart
+ingredients = [961009, 961006, 961024] # Moonpetal, Wild Strawberries, Wild Honeycomb
+teacher = 961009
+stat = { stat = "spirit", value = 12 }
+specials = [{ key = "night_regen", pct = 300 }]
+
+[[recipe]]
+key = "plant_emberbloom"
+kind = "plant"
+meal = 962302 # Emberbloom Chili
+ingredients = [961016, 961011, 960416] # Emberbloom, Redridge Pepper, Emberscale Darter
+teacher = 961016
+stat = { stat = "strength", value = 17 }
+specials = [{ key = "fire_proc", chance_pct = 5, damage = 20 }]
+
+[[recipe]]
+key = "plant_widows_lily"
+kind = "plant"
+meal = 962303 # Widow's Lily Tea
+ingredients = [961023, 961013] # Widow's Lily, Lakeshore Watercress
+teacher = 961023
+specials = [{ key = "shadow_resist", amount = 25 }, { key = "fear_half", pct = 50 }]
+
+[mush]
+meal = 962400
+regen = 100
+
+[[cut]]
+fish = 6291 # Raw Brilliant Smallfish
+bait = 960501 # Smallfish Chunks
+count = 3
+
+[[cut]]
+fish = 960401 # Goldshire Perch
+bait = 960502 # Cut Perch
+count = 3
+
+[[cut]]
+fish = 960402 # Northshire Brook Trout
+bait = 960503 # Trout Strips
+count = 3
+
+[[cut]]
+fish = 6289 # Raw Longjaw Mud Snapper
+bait = 960504 # Snapper Belly
+count = 3
+
+[[cut]]
+fish = 960407 # Harbour Herring
+bait = 960505 # Herring Chunks
+count = 3
+
+[[cut]]
+fish = 960408 # Canal Eel
+bait = 960506 # Eel Slices
+count = 3
+
+[[cut]]
+fish = 6308 # Raw Bristle Whisker Catfish
+bait = 960507 # Whisker Bait
+count = 3
+
+[[cut]]
+fish = 960411 # Everstill Perch
+bait = 960508 # Cut Lake Perch
+count = 3
+
+[[cut]]
+fish = 960412 # Redridge Bluegill
+bait = 960509 # Bluegill Strips
+count = 3
+
+[[cut]]
+fish = 960418 # Darkshire Bleak
+bait = 960510 # Bleak Fry
+count = 3
+
+[[cut]]
+fish = 960419 # Ravenwood Chub
+bait = 960511 # Chub Chunks
+count = 3
+
+[[cut]]
+fish = 960403 # Mirror Lake Shiner
+bait = 960512 # Shiner Flash
+count = 3
+
+[[cut]]
+fish = 960404 # Stonefield Carp
+bait = 960513 # Carp Dough
+count = 3
+
+[[cut]]
+fish = 6303 # Raw Slitherskin Mackerel
+bait = 960514 # Mackerel Strips
+count = 3
+
+[[cut]]
+fish = 6361 # Raw Rainbow Fin Albacore
+bait = 960515 # Albacore Belly
+count = 3
+
+[[cut]]
+fish = 6358 # Oily Blackmouth
+bait = 960516 # Blackmouth Oil Bait
+count = 3
+
+[[cut]]
+fish = 960413 # Millrace Trout
+bait = 960517 # Millrace Strips
+count = 3
+
+[[cut]]
+fish = 960414 # Lakeshire Sunfish
+bait = 960518 # Sunfish Chunks
+count = 3
+
+[[cut]]
+fish = 960415 # Ironjaw Pike
+bait = 960519 # Pike Fillet Bait
+count = 3
+
+[[cut]]
+fish = 8365 # Raw Mithril Head Trout
+bait = 960520 # Mithril Scale Bait
+count = 3
+
+[[cut]]
+fish = 960420 # Gravemoss Loach
+bait = 960521 # Loach Bits
+count = 3
+
+[[cut]]
+fish = 960421 # Hushed Bank Grayling
+bait = 960522 # Grayling Slices
+count = 3
+
+[orders]
+# The fish order: a named fish this often, else "N fish of any kind".
+named_fish_chance = 0.6
+named_fish_qty = [3, 6]            # a rare fish asks for 1 or 2
+named_fish_copper = [20, 8]        # qty x (base + per_level x fish level) x (1 + rarity value)
+any_fish_qty = [6, 10]
+any_fish_copper = 30               # per fish
+# The meal order: dishes with a herb of one category in them (from the recipes the character
+# knows, or the kitchen's starters), band 10 or higher half the time from character level 10.
+meal_qty = [2, 3]
+meal_copper = [100, 10]            # qty x (base + per_level x character level) x (1 + band-10 flag)
+# The herb order: raw cooking herbs of one category the character can reach.
+herb_qty = [3, 5]
+herb_copper = [15, 3]              # qty x (base + per_level x character level)
+# One order in three also pays a bonus: a recipe Rumour or one rare ingredient, half and half.
+bonus_chance = 0.3333
+# A character's first Goldshire fish order.
+first_order = { item = 960401, qty = 3, copper = 84 }
+
+
+item = [
+  { entry = 962001, name = "Hunter's Fish Stew", quality = 1, item_level = 1, display_id = 995060, icon_base = 2473, icon = "meal_hunters_fish_stew", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Stamina for 30 min." },
+  { entry = 962002, name = "Woodsman's Hotpot", quality = 2, item_level = 10, display_id = 995061, icon_base = 2473, icon = "meal_woodsmans_hotpot", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Stamina for 30 min." },
+  { entry = 962003, name = "Darkshire Gulper Pot", quality = 3, item_level = 20, display_id = 995062, icon_base = 2473, icon = "meal_darkshire_gulper_pot", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Stamina for 30 min." },
+  { entry = 962004, name = "Ghostlight Stew", quality = 4, item_level = 30, display_id = 995063, icon_base = 2473, icon = "meal_ghostlight_stew", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +17 Stamina for 30 min." },
+  { entry = 962005, name = "Spiced Fish Skewer", quality = 1, item_level = 1, display_id = 995064, icon_base = 2473, icon = "meal_spiced_fish_skewer", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Strength for 30 min." },
+  { entry = 962006, name = "Brawler's Skewer", quality = 2, item_level = 10, display_id = 995065, icon_base = 2473, icon = "meal_brawlers_skewer", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Strength for 30 min." },
+  { entry = 962007, name = "Ironjaw Kebab", quality = 3, item_level = 20, display_id = 995066, icon_base = 2473, icon = "meal_ironjaw_kebab", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Strength for 30 min." },
+  { entry = 962008, name = "Ember Truffle Kebab", quality = 4, item_level = 30, display_id = 995067, icon_base = 2473, icon = "meal_ember_truffle_kebab", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +17 Strength for 30 min." },
+  { entry = 962009, name = "Brookside Fry", quality = 1, item_level = 1, display_id = 995068, icon_base = 2473, icon = "meal_brookside_fry", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Agility for 30 min." },
+  { entry = 962010, name = "Millrace Fry", quality = 2, item_level = 10, display_id = 995069, icon_base = 2473, icon = "meal_millrace_fry", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Agility for 30 min." },
+  { entry = 962011, name = "Emberscale Fry", quality = 3, item_level = 20, display_id = 995070, icon_base = 2473, icon = "meal_emberscale_fry", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Agility for 30 min." },
+  { entry = 962012, name = "Truffled Grayling", quality = 4, item_level = 30, display_id = 995071, icon_base = 2473, icon = "meal_truffled_grayling", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +17 Agility for 30 min." },
+  { entry = 962013, name = "Abbey Mushroom Pie", quality = 1, item_level = 1, display_id = 995072, icon_base = 2473, icon = "meal_abbey_mushroom_pie", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Intellect for 30 min." },
+  { entry = 962014, name = "Scholar's Supper", quality = 2, item_level = 10, display_id = 995073, icon_base = 2473, icon = "meal_scholars_supper", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Intellect for 30 min." },
+  { entry = 962015, name = "Koi and Ghostcap Pie", quality = 3, item_level = 20, display_id = 995074, icon_base = 2473, icon = "meal_koi_and_ghostcap_pie", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Intellect for 30 min." },
+  { entry = 962016, name = "Dreaming Truffle Pie", quality = 4, item_level = 30, display_id = 995075, icon_base = 2473, icon = "meal_dreaming_truffle_pie", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +17 Intellect for 30 min." },
+  { entry = 962017, name = "Monk's Honey Broth", quality = 1, item_level = 1, display_id = 995076, icon_base = 2473, icon = "meal_monks_honey_broth", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Spirit for 30 min." },
+  { entry = 962018, name = "Vigil Broth", quality = 2, item_level = 10, display_id = 995077, icon_base = 2473, icon = "meal_vigil_broth", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Spirit for 30 min." },
+  { entry = 962019, name = "Mithril Honey Broth", quality = 3, item_level = 20, display_id = 995078, icon_base = 2473, icon = "meal_mithril_honey_broth", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Spirit for 30 min." },
+  { entry = 962020, name = "Twilight Rite", quality = 4, item_level = 30, display_id = 995079, icon_base = 2473, icon = "meal_twilight_rite", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +17 Spirit for 30 min." },
+  { entry = 962021, name = "Hearthside Fish Cakes", quality = 1, item_level = 1, display_id = 995080, icon_base = 2473, icon = "meal_hearthside_fish_cakes", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: XP from kills and quests +10% for 30 min." },
+  { entry = 962022, name = "Traveller's Supper", quality = 2, item_level = 10, display_id = 995081, icon_base = 2473, icon = "meal_travellers_supper", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: XP from kills and quests +15% for 30 min." },
+  { entry = 962023, name = "Lakeshire Fish Cakes", quality = 3, item_level = 20, display_id = 995082, icon_base = 2473, icon = "meal_lakeshire_fish_cakes", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: XP from kills and quests +20% for 30 min." },
+  { entry = 962024, name = "Whitefish Truffle Cakes", quality = 4, item_level = 30, display_id = 995083, icon_base = 2473, icon = "meal_whitefish_truffle_cakes", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: XP from kills and quests +25% for 30 min." },
+  { entry = 962025, name = "Lion's Pride Chowder", quality = 1, item_level = 1, display_id = 995084, icon_base = 2473, icon = "meal_lions_pride_chowder", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Out-of-combat health and mana regen +100% for 30 min." },
+  { entry = 962026, name = "Lakeshore Chowder", quality = 2, item_level = 10, display_id = 995085, icon_base = 2473, icon = "meal_lakeshore_chowder", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Out-of-combat health and mana regen +150% for 30 min." },
+  { entry = 962027, name = "Hushed Bank Chowder", quality = 3, item_level = 20, display_id = 995086, icon_base = 2473, icon = "meal_hushed_bank_chowder", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Out-of-combat health and mana regen +200% for 30 min." },
+  { entry = 962028, name = "Gravemoss Chowder", quality = 4, item_level = 30, display_id = 995087, icon_base = 2473, icon = "meal_gravemoss_chowder", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Out-of-combat health and mana regen +250% for 30 min." },
+  { entry = 962029, name = "Trail Fish Wrap", quality = 1, item_level = 1, display_id = 995088, icon_base = 2473, icon = "meal_trail_fish_wrap", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Move speed +12% for 30 min." },
+  { entry = 962030, name = "Ravenwood Wrap", quality = 2, item_level = 10, display_id = 995089, icon_base = 2473, icon = "meal_ravenwood_wrap", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Move speed +18% for 30 min." },
+  { entry = 962031, name = "Millrace Wrap", quality = 3, item_level = 20, display_id = 995090, icon_base = 2473, icon = "meal_millrace_wrap", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Move speed +24% for 30 min." },
+  { entry = 962032, name = "Runner's Glassfin Wrap", quality = 4, item_level = 30, display_id = 995091, icon_base = 2473, icon = "meal_runners_glassfin_wrap", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Move speed +30% for 30 min." },
+  { entry = 962033, name = "Forager's Stew", quality = 1, item_level = 1, display_id = 995092, icon_base = 2473, icon = "meal_foragers_stew", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +1 pull per Herb Patch for 30 min." },
+  { entry = 962034, name = "Redridge Forager's Pot", quality = 2, item_level = 10, display_id = 995093, icon_base = 2473, icon = "meal_redridge_foragers_pot", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +1 pull per Herb Patch for 30 min." },
+  { entry = 962035, name = "Gravemoss Forager's Pot", quality = 3, item_level = 20, display_id = 995094, icon_base = 2473, icon = "meal_gravemoss_foragers_pot", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 pulls per Herb Patch for 30 min." },
+  { entry = 962036, name = "Truffle Hunter's Pot", quality = 4, item_level = 30, display_id = 995095, icon_base = 2473, icon = "meal_truffle_hunters_pot", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 pulls per Herb Patch for 30 min." },
+  { entry = 962037, name = "Angler's Soup", quality = 1, item_level = 1, display_id = 995096, icon_base = 2473, icon = "meal_anglers_soup", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Uncommon and rare roll weights +25% at fishing pools and herb patches for 30 min." },
+  { entry = 962038, name = "Ironjaw Angler's Soup", quality = 2, item_level = 10, display_id = 995097, icon_base = 2473, icon = "meal_ironjaw_anglers_soup", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Uncommon and rare roll weights +37% at fishing pools and herb patches for 30 min." },
+  { entry = 962039, name = "Lakeshire Angler's Soup", quality = 3, item_level = 20, display_id = 995098, icon_base = 2473, icon = "meal_lakeshire_anglers_soup", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Uncommon and rare roll weights +50% at fishing pools and herb patches for 30 min." },
+  { entry = 962040, name = "Hushed Bank Angler's Soup", quality = 4, item_level = 30, display_id = 995099, icon_base = 2473, icon = "meal_hushed_bank_anglers_soup", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Uncommon and rare roll weights +62% at fishing pools and herb patches for 30 min." },
+  { entry = 962041, name = "Smoked Fish Jerky", quality = 1, item_level = 1, display_id = 995100, icon_base = 2473, icon = "meal_smoked_fish_jerky", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Lure wear per bite -50% for 30 min." },
+  { entry = 962042, name = "Blackmouth Jerky", quality = 2, item_level = 10, display_id = 995101, icon_base = 2473, icon = "meal_blackmouth_jerky", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Lure wear per bite -60% for 30 min." },
+  { entry = 962043, name = "Ironjaw Jerky", quality = 3, item_level = 20, display_id = 995102, icon_base = 2473, icon = "meal_ironjaw_jerky", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Lure wear per bite -70% for 30 min." },
+  { entry = 962044, name = "Gravemoss Jerky", quality = 4, item_level = 30, display_id = 995103, icon_base = 2473, icon = "meal_gravemoss_jerky", sell_price = 400, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Lure wear per bite -80% for 30 min." },
+  { entry = 962101, name = "Brilliant Smallfish Bites", quality = 1, item_level = 1, display_id = 995104, icon_base = 2473, icon = "meal_brilliant_smallfish", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Agility for 30 min." },
+  { entry = 962102, name = "Grilled Perch Platter", quality = 1, item_level = 1, display_id = 995105, icon_base = 2473, icon = "meal_goldshire_perch", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Stamina for 30 min." },
+  { entry = 962103, name = "Brook Trout Chowder", quality = 1, item_level = 1, display_id = 995106, icon_base = 2473, icon = "meal_northshire_brook_trout", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Out-of-combat health and mana regen +100% for 30 min." },
+  { entry = 962104, name = "Longjaw Snapper Stew", quality = 1, item_level = 1, display_id = 995107, icon_base = 2473, icon = "meal_longjaw_mud_snapper", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Stamina for 30 min." },
+  { entry = 962105, name = "Harbour Herring Cakes", quality = 1, item_level = 1, display_id = 995108, icon_base = 2473, icon = "meal_harbour_herring", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: XP from kills and quests +10% for 30 min." },
+  { entry = 962106, name = "Canal Eel Skewer", quality = 1, item_level = 1, display_id = 995109, icon_base = 2473, icon = "meal_canal_eel", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Strength for 30 min." },
+  { entry = 962107, name = "Whisker Catfish Gumbo", quality = 1, item_level = 1, display_id = 995110, icon_base = 2473, icon = "meal_bristle_whisker_catfish", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +1 pull per Herb Patch for 30 min." },
+  { entry = 962108, name = "Lakeside Perch Wrap", quality = 2, item_level = 10, display_id = 995111, icon_base = 2473, icon = "meal_everstill_perch", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Move speed +18% for 30 min." },
+  { entry = 962109, name = "Redridge Bluegill Stew", quality = 2, item_level = 10, display_id = 995112, icon_base = 2473, icon = "meal_redridge_bluegill", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +1 pull per Herb Patch for 30 min." },
+  { entry = 962110, name = "Darkshire Bleak Broth", quality = 2, item_level = 10, display_id = 995113, icon_base = 2473, icon = "meal_darkshire_bleak", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Spirit for 30 min." },
+  { entry = 962111, name = "Ravenwood Chub Hotpot", quality = 2, item_level = 10, display_id = 995114, icon_base = 2473, icon = "meal_ravenwood_chub", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Stamina for 30 min." },
+  { entry = 962112, name = "Mirror Lake Shiner Pie", quality = 1, item_level = 1, display_id = 995115, icon_base = 2473, icon = "meal_mirror_lake_shiner", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Intellect for 30 min." },
+  { entry = 962113, name = "Stonefield Carp Cakes", quality = 1, item_level = 1, display_id = 995116, icon_base = 2473, icon = "meal_stonefield_carp", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: XP from kills and quests +10% for 30 min." },
+  { entry = 962114, name = "Slitherskin Mackerel Fry", quality = 1, item_level = 1, display_id = 995117, icon_base = 2473, icon = "meal_slitherskin_mackerel", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Agility for 30 min." },
+  { entry = 962115, name = "Rainbow Fin Steak", quality = 2, item_level = 10, display_id = 995118, icon_base = 2473, icon = "meal_rainbow_fin_albacore", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Strength for 30 min." },
+  { entry = 962116, name = "Oily Blackmouth Jerky", quality = 2, item_level = 10, display_id = 995119, icon_base = 2473, icon = "meal_oily_blackmouth", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Lure wear per bite -60% for 30 min." },
+  { entry = 962117, name = "Millrace Trout Almondine", quality = 2, item_level = 10, display_id = 995120, icon_base = 2473, icon = "meal_millrace_trout", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Agility for 30 min." },
+  { entry = 962118, name = "Lakeshire Sunfish Chowder", quality = 2, item_level = 10, display_id = 995121, icon_base = 2473, icon = "meal_lakeshire_sunfish", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Out-of-combat health and mana regen +150% for 30 min." },
+  { entry = 962119, name = "Ironjaw Pike Jerky", quality = 2, item_level = 10, display_id = 995122, icon_base = 2473, icon = "meal_ironjaw_pike", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Lure wear per bite -60% for 30 min." },
+  { entry = 962120, name = "Mithril Head Trout Pie", quality = 2, item_level = 10, display_id = 995123, icon_base = 2473, icon = "meal_mithril_head_trout", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Intellect for 30 min." },
+  { entry = 962121, name = "Gravemoss Loach Broth", quality = 3, item_level = 20, display_id = 995124, icon_base = 2473, icon = "meal_gravemoss_loach", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Spirit for 30 min." },
+  { entry = 962122, name = "Hushed Bank Grayling Soup", quality = 3, item_level = 20, display_id = 995125, icon_base = 2473, icon = "meal_hushed_bank_grayling", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Uncommon and rare roll weights +50% at fishing pools and herb patches for 30 min." },
+  { entry = 962123, name = "Duskfin Crisp", quality = 1, item_level = 1, display_id = 995126, icon_base = 2473, icon = "meal_duskfin", sell_price = 10, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +2 Agility for 30 min." },
+  { entry = 962124, name = "Glimmerfish Pie", quality = 2, item_level = 10, display_id = 995127, icon_base = 2473, icon = "meal_crystal_lake_glimmerfish", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Intellect for 30 min." },
+  { entry = 962125, name = "Gilded Koi Cakes", quality = 2, item_level = 10, display_id = 995128, icon_base = 2473, icon = "meal_gilded_koi", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: XP from kills and quests +15% for 30 min." },
+  { entry = 962126, name = "Dockside Gulper Stew", quality = 2, item_level = 10, display_id = 995129, icon_base = 2473, icon = "meal_dockside_gulper", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Stamina for 30 min." },
+  { entry = 962127, name = "Emberscale Darter Kebab", quality = 2, item_level = 10, display_id = 995130, icon_base = 2473, icon = "meal_emberscale_darter", sell_price = 50, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +7 Strength for 30 min." },
+  { entry = 962128, name = "Everstill Whitefish Wrap", quality = 3, item_level = 20, display_id = 995131, icon_base = 2473, icon = "meal_everstill_whitefish", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Move speed +24% for 30 min." },
+  { entry = 962129, name = "Ghostscale Carp Broth", quality = 3, item_level = 20, display_id = 995132, icon_base = 2473, icon = "meal_ghostscale_carp", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Spirit for 30 min." },
+  { entry = 962130, name = "Dreaming Glassfin Pie", quality = 3, item_level = 20, display_id = 995133, icon_base = 2473, icon = "meal_dreaming_glassfin", sell_price = 150, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Intellect for 30 min." },
+  { entry = 962201, name = "Brother Bass Supper", quality = 5, item_level = 6, display_id = 995134, icon_base = 2473, icon = "meal_brother_bass", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +6 Stamina and out-of-combat health and mana regen +300% for 60 min. Survives death." },
+  { entry = 962202, name = "Moonlit Gar Fillet", quality = 5, item_level = 11, display_id = 995135, icon_base = 2473, icon = "meal_moonlit_gar", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +21 Agility and move speed +36% for 60 min. Survives death." },
+  { entry = 962203, name = "Gnoll Tooth Snapper Stew", quality = 5, item_level = 13, display_id = 995136, icon_base = 2473, icon = "meal_gnoll_tooth_snapper", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Each melee hit has a 10% chance to strike again for 60 min. Survives death." },
+  { entry = 962204, name = "Old Goldfin's Gilded Plate", quality = 5, item_level = 20, display_id = 995137, icon_base = 2473, icon = "meal_old_goldfin", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Every fish you catch is one rarity higher for 60 min. Survives death." },
+  { entry = 962205, name = "Lightscale Bake", quality = 5, item_level = 12, display_id = 995138, icon_base = 2473, icon = "meal_the_lightscale", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +21 Intellect and xP from kills and quests +30% for 60 min. Survives death." },
+  { entry = 962206, name = "Bell-Toll Bream Broth", quality = 5, item_level = 14, display_id = 995139, icon_base = 2473, icon = "meal_bell_toll_bream", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +21 Spirit and out-of-combat health and mana regen +300% for 60 min. Survives death." },
+  { entry = 962207, name = "Stockade Sucker Pot", quality = 5, item_level = 17, display_id = 995140, icon_base = 2473, icon = "meal_stockade_sucker", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Crowd control on you lasts half as long for 60 min. Survives death." },
+  { entry = 962208, name = "Harbourmaster's Eel Pie", quality = 5, item_level = 22, display_id = 995141, icon_base = 2473, icon = "meal_the_harbourmasters_eel", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Each kill heals you for 3% of your maximum health for 60 min. Survives death." },
+  { entry = 962209, name = "Millstone Carp Loaf", quality = 5, item_level = 17, display_id = 995142, icon_base = 2473, icon = "meal_the_millstone_carp", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +21 Stamina and xP from kills and quests +30% for 60 min. Survives death." },
+  { entry = 962210, name = "Worgfang Pike Steak", quality = 5, item_level = 19, display_id = 995143, icon_base = 2473, icon = "meal_worgfang_pike", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +21 Strength and move speed +36% for 60 min. Survives death." },
+  { entry = 962211, name = "Bloodfin Searing", quality = 5, item_level = 21, display_id = 995144, icon_base = 2473, icon = "meal_blackrock_bloodfin", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Each hit adds 1% damage, up to 10%. The stack resets out of combat for 60 min. Survives death." },
+  { entry = 962212, name = "Leviathan Feast", quality = 5, item_level = 24, display_id = 995145, icon_base = 2473, icon = "meal_everstill_leviathan", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Your first death revives you at 30% health, and the buff ends for 60 min. Survives death." },
+  { entry = 962213, name = "Sorrowgill Soup", quality = 5, item_level = 22, display_id = 995146, icon_base = 2473, icon = "meal_sorrowgill", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +36 Spirit and out-of-combat health and mana regen +300% for 60 min. Survives death." },
+  { entry = 962214, name = "Twilight Koi Platter", quality = 5, item_level = 23, display_id = 995147, icon_base = 2473, icon = "meal_the_twilight_koi", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +36 Intellect and xP from kills and quests +30% for 60 min. Survives death." },
+  { entry = 962215, name = "Stitchjaw Stew", quality = 5, item_level = 25, display_id = 995148, icon_base = 2473, icon = "meal_stitchjaw_eel", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: 10% of the melee damage you take returns as nature damage for 60 min. Survives death." },
+  { entry = 962216, name = "Moonless Muskie Supper", quality = 5, item_level = 26, display_id = 995149, icon_base = 2473, icon = "meal_moonless_muskie", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: At night, mobs' aggro radius is halved for 60 min. Survives death." },
+  { entry = 962301, name = "Moonpetal Tart", quality = 5, item_level = 14, display_id = 995150, icon_base = 2473, icon = "meal_moonpetal", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +12 Spirit. At night, out-of-combat health and mana regen +300% for 60 min. Survives death." },
+  { entry = 962302, name = "Emberbloom Chili", quality = 5, item_level = 20, display_id = 995151, icon_base = 2473, icon = "meal_emberbloom", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +17 Strength. Each melee hit has a 5% chance to deal 20 fire damage for 60 min. Survives death." },
+  { entry = 962303, name = "Widow's Lily Tea", quality = 5, item_level = 25, display_id = 995152, icon_base = 2473, icon = "meal_widows_lily", sell_price = 1000, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: +25 Shadow Resistance. Fear effects on you last half as long for 60 min. Survives death." },
+  { entry = 962400, name = "Hearty Mush", quality = 1, item_level = 1, display_id = 995153, icon_base = 2473, icon = "hearty_mush", sell_price = 1, stackable = 20, use_spell = 25695, use_spell_name = "Food", description = "Use: Out-of-combat health and mana regen +100% for 30 min." },
+  { entry = 960501, name = "Smallfish Chunks", quality = 1, item_level = 1, class = 7, display_id = 995154, icon_base = 18098, icon = "cut_brilliant_smallfish", sell_price = 3, buy_count = 1, stackable = 20, description = "Bait: Mirror Lake Shiner favours it.", journal = "fishing" },
+  { entry = 960502, name = "Cut Perch", quality = 1, item_level = 1, class = 7, display_id = 995155, icon_base = 18098, icon = "cut_goldshire_perch", sell_price = 3, buy_count = 1, stackable = 20, description = "Bait: Canal Eel favours it.", journal = "fishing" },
+  { entry = 960503, name = "Trout Strips", quality = 1, item_level = 2, class = 7, display_id = 995156, icon_base = 18098, icon = "cut_northshire_brook_trout", sell_price = 4, buy_count = 1, stackable = 20, description = "Bait: Stonefield Carp favours it.", journal = "fishing" },
+  { entry = 960504, name = "Snapper Belly", quality = 1, item_level = 3, class = 7, display_id = 995157, icon_base = 18098, icon = "cut_longjaw_mud_snapper", sell_price = 5, buy_count = 1, stackable = 20, description = "Bait: Raw Bristle Whisker Catfish favours it.", journal = "fishing" },
+  { entry = 960505, name = "Herring Chunks", quality = 1, item_level = 3, class = 7, display_id = 995158, icon_base = 18098, icon = "cut_harbour_herring", sell_price = 5, buy_count = 1, stackable = 20, description = "Bait: Raw Slitherskin Mackerel favours it.", journal = "fishing" },
+  { entry = 960506, name = "Eel Slices", quality = 1, item_level = 5, class = 7, display_id = 995159, icon_base = 18098, icon = "cut_canal_eel", sell_price = 7, buy_count = 1, stackable = 20, description = "Bait: Duskfin favours it.", journal = "fishing" },
+  { entry = 960507, name = "Whisker Bait", quality = 1, item_level = 8, class = 7, display_id = 995160, icon_base = 18098, icon = "cut_bristle_whisker_catfish", sell_price = 10, buy_count = 1, stackable = 20, description = "Bait: Raw Rainbow Fin Albacore favours it.", journal = "fishing" },
+  { entry = 960508, name = "Cut Lake Perch", quality = 1, item_level = 12, class = 7, display_id = 995161, icon_base = 18098, icon = "cut_everstill_perch", sell_price = 14, buy_count = 1, stackable = 20, description = "Bait: Oily Blackmouth favours it.", journal = "fishing" },
+  { entry = 960509, name = "Bluegill Strips", quality = 1, item_level = 14, class = 7, display_id = 995162, icon_base = 18098, icon = "cut_redridge_bluegill", sell_price = 16, buy_count = 1, stackable = 20, description = "Bait: Gilded Koi favours it.", journal = "fishing" },
+  { entry = 960510, name = "Bleak Fry", quality = 1, item_level = 16, class = 7, display_id = 995163, icon_base = 18098, icon = "cut_darkshire_bleak", sell_price = 18, buy_count = 1, stackable = 20, description = "Bait: Dockside Gulper favours it.", journal = "fishing" },
+  { entry = 960511, name = "Chub Chunks", quality = 1, item_level = 17, class = 7, display_id = 995164, icon_base = 18098, icon = "cut_ravenwood_chub", sell_price = 19, buy_count = 1, stackable = 20, description = "Bait: Ironjaw Pike favours it.", journal = "fishing" },
+  { entry = 960512, name = "Shiner Flash", quality = 2, item_level = 5, class = 7, display_id = 995165, icon_base = 18098, icon = "cut_mirror_lake_shiner", sell_price = 7, buy_count = 1, stackable = 20, description = "Bait: Crystal Lake Glimmerfish favours it.", journal = "fishing" },
+  { entry = 960513, name = "Carp Dough", quality = 2, item_level = 6, class = 7, display_id = 995166, icon_base = 18098, icon = "cut_stonefield_carp", sell_price = 8, buy_count = 1, stackable = 20, description = "Bait: Millrace Trout favours it.", journal = "fishing" },
+  { entry = 960514, name = "Mackerel Strips", quality = 2, item_level = 7, class = 7, display_id = 995167, icon_base = 18098, icon = "cut_slitherskin_mackerel", sell_price = 9, buy_count = 1, stackable = 20, description = "Bait: Everstill Perch favours it.", journal = "fishing" },
+  { entry = 960515, name = "Albacore Belly", quality = 2, item_level = 10, class = 7, display_id = 995168, icon_base = 18098, icon = "cut_rainbow_fin_albacore", sell_price = 12, buy_count = 1, stackable = 20, description = "Bait: Redridge Bluegill favours it.", journal = "fishing" },
+  { entry = 960516, name = "Blackmouth Oil Bait", quality = 2, item_level = 12, class = 7, display_id = 995169, icon_base = 18098, icon = "cut_oily_blackmouth", sell_price = 14, buy_count = 1, stackable = 20, description = "Bait: Lakeshire Sunfish favours it.", journal = "fishing" },
+  { entry = 960517, name = "Millrace Strips", quality = 2, item_level = 15, class = 7, display_id = 995170, icon_base = 18098, icon = "cut_millrace_trout", sell_price = 17, buy_count = 1, stackable = 20, description = "Bait: Emberscale Darter favours it.", journal = "fishing" },
+  { entry = 960518, name = "Sunfish Chunks", quality = 2, item_level = 16, class = 7, display_id = 995171, icon_base = 18098, icon = "cut_lakeshire_sunfish", sell_price = 18, buy_count = 1, stackable = 20, description = "Bait: Raw Mithril Head Trout favours it.", journal = "fishing" },
+  { entry = 960519, name = "Pike Fillet Bait", quality = 2, item_level = 18, class = 7, display_id = 995172, icon_base = 18098, icon = "cut_ironjaw_pike", sell_price = 20, buy_count = 1, stackable = 20, description = "Bait: Everstill Whitefish favours it.", journal = "fishing" },
+  { entry = 960520, name = "Mithril Scale Bait", quality = 2, item_level = 19, class = 7, display_id = 995173, icon_base = 18098, icon = "cut_mithril_head_trout", sell_price = 21, buy_count = 1, stackable = 20, description = "Bait: Ghostscale Carp favours it.", journal = "fishing" },
+  { entry = 960521, name = "Loach Bits", quality = 2, item_level = 20, class = 7, display_id = 995174, icon_base = 18098, icon = "cut_gravemoss_loach", sell_price = 22, buy_count = 1, stackable = 20, description = "Bait: Dreaming Glassfin favours it.", journal = "fishing" },
+  { entry = 960522, name = "Grayling Slices", quality = 2, item_level = 21, class = 7, display_id = 995175, icon_base = 18098, icon = "cut_hushed_bank_grayling", sell_price = 23, buy_count = 1, stackable = 20, description = "Bait: Dreaming Glassfin favours it.", journal = "fishing" },
+]

@@ -1,0 +1,1268 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Twilight's Eve Kitchen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout: 1.12 game screen. Character and lessons on the left, kitchen on the right. Parchment only for paper: recipe pages and journals. */
+:root {
+  color-scheme: dark;
+  --ground: #0c0a08;
+  --stone: #1c1813;
+  --stone-hi: #2a241c;
+  --edge: #6e5a39;
+  --edge-dark: #2e2518;
+  --text: #ebe1c8;
+  --muted: #a3967b;
+  --gold: #ffd100;
+  --parch: #e6d3a5;
+  --parch-dark: #cdb27b;
+  --ink: #2c1e0e;
+  --ink-muted: #6b5434;
+  --q-common: #ffffff;
+  --q-uncommon: #1eff00;
+  --q-rare: #2f8cff;
+  --q-epic: #a335ee;
+  --q-legendary: #ff8000;
+  --good: #3fdc3f;
+  --bad: #ff4b3e;
+  --tip-bg: rgba(6, 8, 22, .96);
+  --font-display: "Marcellus SC", "Palatino Linotype", Georgia, serif;
+  --font-body: "Alegreya Sans", "Trebuchet MS", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  background-image: radial-gradient(ellipse at 50% -10%, #2a2216 0%, transparent 60%);
+  color: var(--text); font: 15px/1.4 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 40px;
+}
+button, select, input { font: inherit; color: inherit; }
+.q-common { color: var(--q-common); } .q-uncommon { color: var(--q-uncommon); }
+.q-rare { color: var(--q-rare); } .q-epic { color: var(--q-epic); } .q-legendary { color: var(--q-legendary); }
+.gold-t { color: var(--gold); } .muted { color: var(--muted); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.frame {
+  background: linear-gradient(180deg, var(--stone-hi), var(--stone) 40%);
+  border: 2px solid var(--edge); border-radius: 4px;
+  box-shadow: inset 0 0 0 1px #000, inset 0 0 0 3px var(--edge-dark), 0 3px 10px #000;
+  min-width: 0;
+}
+.fh {
+  margin: 0; padding: 8px 12px 6px; font: 17px/1.2 var(--font-display); color: var(--gold);
+  text-shadow: 0 1px 0 #000; border-bottom: 1px solid var(--edge-dark);
+  display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap;
+}
+.fh small { font: 13px var(--font-body); color: var(--muted); text-shadow: none; }
+.fb { padding: 10px 12px 12px; }
+
+.btn {
+  background: linear-gradient(180deg, #8c1a10, #5a0d07); border: 1px solid #c49a4a; border-radius: 3px;
+  color: var(--gold); padding: 5px 12px; cursor: pointer; font: 14px var(--font-display);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 1px 2px #000; text-shadow: 0 1px 0 #000;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.2); }
+.btn:disabled { background: linear-gradient(180deg, #3b3530, #2a2622); color: #7d7468; border-color: #5c5245; cursor: not-allowed; }
+.btn.small { padding: 3px 9px; font-size: 13px; }
+.btn.big { padding: 9px 26px; font-size: 18px; }
+.btn.ghost { background: rgba(0,0,0,.35); border-color: var(--edge); color: var(--text); }
+select, input[type=number] { background: #0d0b08; border: 1px solid var(--edge); border-radius: 3px; padding: 4px 6px; min-width: 0; max-width: 100%; }
+
+/* top bar */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; padding: 8px 14px; }
+.brand { font: 24px/1 var(--font-display); color: var(--gold); text-shadow: 0 2px 0 #000; margin: 0; }
+.brand span { display: block; font: 12px var(--font-body); color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; text-shadow: none; }
+.spacer { flex: 1; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border: 1px solid var(--edge-dark); border-radius: 3px; background: rgba(0,0,0,.35); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip.combat { border-color: var(--bad); color: var(--bad); }
+.money .g { color: #ffd700; } .money .s { color: #c7c7cf; } .money .c { color: #c8733b; }
+
+.layout { display: grid; grid-template-columns: 310px minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 12px; min-width: 0; }
+
+/* lessons */
+.lessons ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lesson { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 6px; font-size: 14px; color: var(--muted); }
+.lesson .mk { width: 16px; height: 16px; border: 1px solid var(--edge); border-radius: 2px; margin-top: 2px; display: grid; place-items: center; font-size: 12px; line-height: 1; }
+.lesson.done { color: #7c735f; } .lesson.done .t { text-decoration: line-through; } .lesson.done .mk { background: #2c4a12; border-color: var(--good); color: var(--good); }
+.lesson.now { color: var(--text); } .lesson.now .t { color: var(--gold); font-weight: 700; } .lesson.now .mk { border-color: var(--gold); }
+.lesson p { margin: 2px 0 0; color: var(--text); }
+.lessons .all { color: var(--good); font-size: 14px; }
+
+/* character */
+.stats { display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.stat { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: baseline; padding: 2px 4px; border-radius: 2px; }
+.stat .v { color: var(--text); min-width: 2.5ch; text-align: right; }
+.stat .b { color: var(--good); min-width: 3.5ch; text-align: right; font-weight: 700; }
+.stat.up .v { color: var(--good); }
+.stat .lbl { color: var(--gold); }
+.hp { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; padding: 2px 4px 6px; border-bottom: 1px solid var(--edge-dark); margin-bottom: 4px; }
+.effects { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--edge-dark); display: grid; gap: 2px; font-size: 14px; }
+.eff { display: flex; justify-content: space-between; gap: 8px; }
+.eff .on { color: var(--good); font-weight: 700; } .eff .off { color: #7f776b; }
+.eff .tag { color: var(--bad); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.buffline { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; padding: 6px 8px; background: rgba(0,0,0,.35); border: 1px solid var(--edge-dark); border-radius: 3px; }
+.buffline .timer { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 14px; }
+.nobuff { color: var(--muted); font-style: italic; font-size: 14px; margin: 0 0 8px; }
+@media (prefers-reduced-motion: no-preference) {
+  .flash { animation: flash 1.6s ease-out; }
+  @keyframes flash { 0%, 30% { background: rgba(63, 220, 63, .28); } 100% { background: transparent; } }
+  .pop { animation: pop .35s ease-out; }
+  @keyframes pop { from { transform: scale(.94); opacity: .4; } }
+}
+
+/* meals */
+.meal { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--edge-dark); }
+.meal:last-child { border-bottom: none; }
+.meal .mn { font-weight: 500; line-height: 1.2; }
+.meal .ms { font-size: 13px; color: var(--muted); line-height: 1.25; }
+.meal .mu { font-size: 13px; color: var(--good); line-height: 1.25; }
+
+/* icons */
+.ico {
+  --h: 30; width: 30px; height: 30px; flex: none; position: relative; border-radius: 3px; border: 2px solid #8a8a8a;
+  background: radial-gradient(circle at 35% 30%, hsl(var(--h) 55% 46%), hsl(var(--h) 50% 18%) 75%);
+  box-shadow: inset 0 0 6px #000; display: grid; place-items: center; font: 11px var(--font-display); color: rgba(255,255,255,.92); text-shadow: 0 1px 2px #000;
+}
+.ico.b-uncommon { border-color: var(--q-uncommon); } .ico.b-rare { border-color: var(--q-rare); } .ico.b-epic { border-color: var(--q-epic); } .ico.b-legendary { border-color: var(--q-legendary); }
+
+/* tabs */
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tab { background: linear-gradient(180deg, #2b241b, #16130f); border: 2px solid var(--edge); border-bottom: none; border-radius: 6px 6px 0 0; padding: 6px 16px 4px; font: 15px var(--font-display); color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--gold); background: linear-gradient(180deg, #3a3022, var(--stone-hi)); }
+.tab .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: #8c1a10; color: var(--gold); font: 12px/18px var(--font-body); }
+
+/* kitchen */
+.kitchen { display: grid; grid-template-columns: minmax(200px, 270px) minmax(0, 1fr); }
+@media (max-width: 680px) { .kitchen { grid-template-columns: minmax(0, 1fr); } }
+.book { border-right: 1px solid var(--edge-dark); padding: 8px; background: rgba(0,0,0,.25); max-height: 760px; overflow-y: auto; }
+@media (max-width: 680px) { .book { border-right: none; border-bottom: 1px solid var(--edge-dark); max-height: 300px; } }
+.bh { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 12px 4px 4px; display: flex; justify-content: space-between; }
+.bh:first-child { margin-top: 2px; }
+.rb { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: 8px; width: 100%; text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; padding: 5px 6px; cursor: pointer; }
+.rb:hover { background: rgba(255, 209, 0, .07); }
+.rb[aria-pressed="true"] { background: rgba(255, 209, 0, .14); border-color: rgba(255, 209, 0, .55); }
+.rb .sw { border-radius: 2px; background: hsl(var(--h) 55% 45%); }
+.rb .rn { font-weight: 500; line-height: 1.2; }
+.rb .re { font-size: 13px; color: var(--good); }
+.rb .rv { font-size: 12.5px; color: var(--muted); }
+.rb.unknown .rn { color: var(--muted); font-style: italic; }
+.rb.unknown .sw { background: repeating-linear-gradient(45deg, #3b3125 0 3px, #241e16 3px 6px); }
+
+.pot { padding: 14px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.pot-title { margin: 0; font: 22px var(--font-display); }
+.pot-sub { color: var(--muted); font-size: 14.5px; margin-top: 2px; max-width: 60ch; }
+.pot-sub b { color: var(--good); font-weight: 500; }
+.clue { padding: 8px 12px; font-style: italic; }
+.clue b { font-style: normal; }
+.slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.slot {
+  min-height: 74px; border: 2px dashed #5b4b33; border-radius: 4px; background: #0d0b08; padding: 7px 9px; text-align: left; cursor: default;
+  display: grid; align-content: start; gap: 2px;
+}
+.slot .sl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.slot .sv { font-weight: 500; line-height: 1.2; }
+.slot .sx { font-size: 12px; color: var(--muted); }
+.slot.filled { border-style: solid; border-color: var(--edge); background: linear-gradient(180deg, #2b2419, #17130e); cursor: pointer; }
+.slot.filled:hover .sx { color: var(--bad); }
+.slot.guess { border-color: var(--gold); }
+.slot .empty { color: #6d6150; font-style: italic; }
+
+.predict { border: 1px solid var(--edge); border-radius: 4px; background: rgba(0,0,0,.4); padding: 10px 12px; display: grid; gap: 4px; }
+.predict .ph { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.predict .pv { font-size: 19px; font-weight: 500; line-height: 1.25; }
+.predict .pe { color: var(--good); }
+.predict ul { margin: 2px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--muted); }
+.cookrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.pantry { border-top: 1px solid var(--edge-dark); padding: 12px 14px 14px; display: grid; gap: 10px; }
+.pantry-h { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.pantry-h h3 { margin: 0; font: 16px var(--font-display); color: var(--gold); }
+.pg { display: grid; gap: 4px; }
+.pg-l { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.card {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px; align-items: center; text-align: left;
+  background: linear-gradient(180deg, #231d15, #15110c); border: 1px solid var(--edge-dark); border-radius: 3px; padding: 4px 9px 4px 4px; cursor: pointer; max-width: 100%;
+}
+.card:hover:not(:disabled) { border-color: var(--gold); }
+.card:disabled { opacity: .33; cursor: not-allowed; }
+.card .cn { font-weight: 500; line-height: 1.15; font-size: 14px; }
+.card .cm { font-size: 12px; color: var(--muted); line-height: 1.15; font-variant-numeric: tabular-nums; }
+
+.log { padding: 8px 14px; display: grid; gap: 2px; font-size: 14px; border-top: 1px solid var(--edge-dark); }
+.log .say { font-style: italic; color: var(--muted); }
+.log .error { color: var(--bad); }
+.log .learn { color: var(--gold); }
+
+
+.eg { margin: 2px 0 8px; }
+.eh { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; padding: 4px 6px 2px; border-left: 4px solid hsl(var(--h) 55% 45%); }
+.eh .re { color: var(--good); font-weight: 700; font-size: 14px; }
+.eh .fam { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.rb { grid-template-columns: 46px minmax(0, 1fr) !important; }
+.tierlab { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding-top: 2px; }
+.rb .ro { font-size: 12.5px; margin-left: 6px; }
+.ings { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+.ing { font-size: 11.5px; padding: 0 5px; border: 1px solid var(--edge-dark); border-radius: 2px; background: #0d0b08; line-height: 1.5; }
+.ing.hid { color: #7a6c55; letter-spacing: .1em; border-style: dashed; }
+.rb .rv { display: block; }
+.new-b { display: inline-block; font: 700 10.5px/1.5 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: #1a1305; background: var(--gold); border-radius: 2px; padding: 0 4px; vertical-align: 1px; }
+.book { max-height: 900px; }
+
+/* result banner */
+.banner-wrap { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(0,0,0,.55); padding: 16px; }
+.banner { width: min(440px, 100%); text-align: center; padding: 18px 20px 16px; display: grid; gap: 8px; justify-items: center; }
+.banner .kick { font: 13px var(--font-body); text-transform: uppercase; letter-spacing: .16em; color: var(--muted); }
+.banner .big { font: 26px/1.15 var(--font-display); text-shadow: 0 2px 0 #000; }
+.banner .eff { color: var(--good); }
+.banner .news { display: grid; gap: 4px; width: 100%; }
+.banner .new { padding: 6px 10px; border-radius: 3px; background: rgba(255, 209, 0, .1); border: 1px solid rgba(255, 209, 0, .45); color: var(--gold); }
+.banner .cookline { font-style: italic; color: var(--muted); }
+.banner .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+
+/* orders */
+.order { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--edge-dark); }
+.order:last-child { border-bottom: none; }
+.order .ot { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.order .ol { font-size: 17px; }
+.order .or { font-size: 14px; color: var(--muted); }
+.order.done .ol { text-decoration: line-through; color: var(--muted); }
+.prog { font-variant-numeric: tabular-nums; font-size: 14px; text-align: right; }
+.two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 1000px) { .two { grid-template-columns: minmax(0, 1fr); } }
+
+/* journal */
+.sub { display: flex; gap: 6px; padding: 10px 12px 0; flex-wrap: wrap; }
+.pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; padding: 12px; }
+.parch { background: linear-gradient(180deg, var(--parch), var(--parch-dark)); color: var(--ink); border-radius: 2px; box-shadow: inset 0 0 18px rgba(80, 50, 10, .45), 0 2px 6px #000; }
+.page { padding: 12px 14px; display: grid; gap: 6px; align-content: start; }
+.page h3 { margin: 0; font: 17px var(--font-display); }
+.page .kind { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-muted); }
+.page dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; font-size: 14px; }
+.page dt { color: var(--ink-muted); } .page dd { margin: 0; }
+.namechip { display: inline-block; background: #15110b; padding: 1px 7px; border-radius: 2px; font-weight: 500; }
+.page.dim { opacity: .62; }
+.page.leg { box-shadow: inset 0 0 0 2px rgba(255, 128, 0, .6), inset 0 0 18px rgba(80, 50, 10, .45), 0 2px 6px #000; }
+
+/* debug drawer */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(300px, 100%); z-index: 30; overflow-y: auto;
+  padding-top: env(safe-area-inset-top, 0px); padding-right: env(safe-area-inset-right, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-radius: 0; border-right: none; }
+.drawer .fb { display: grid; gap: 14px; }
+.dbg { display: grid; gap: 5px; }
+.dbg .lab { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.dbg .r { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.dbg select { flex: 1 1 100%; width: 100%; }
+.dbg input[type=number] { width: 64px; }
+.toggle { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggle input { accent-color: #c0301c; width: 16px; height: 16px; }
+
+#tip { position: fixed; z-index: 60; pointer-events: none; max-width: 300px; background: var(--tip-bg); border: 1px solid #aaa; border-radius: 4px; padding: 7px 10px; font-size: 14px; box-shadow: 0 2px 10px #000; line-height: 1.35; }
+#tip .tn { font-size: 15.5px; font-weight: 500; }
+#tip .muted { color: #9a9aa8; } #tip .gold { color: var(--gold); } #tip .use { color: var(--good); } #tip .legendary { color: var(--q-legendary); }
+</style>
+
+<div id="app"></div>
+<div id="tip" hidden></div>
+
+<script>
+// ============================================================
+// realm — every game rule lives here. The UI only asks.
+// ============================================================
+const realm = (() => {
+  const RCLASS = ['common', 'uncommon', 'rare', 'legendary'];
+  const RV = { c: 0, u: 1, r: 2 };
+  const CAT = {
+    fish: { one: 'fish', many: 'fish' },
+    greens: { one: 'greens', many: 'greens' },
+    allium: { one: 'allium', many: 'alliums' },
+    fruit: { one: 'fruit', many: 'fruit' },
+    mushroom: { one: 'mushroom', many: 'mushrooms' },
+    nut: { one: 'nut', many: 'nuts' },
+    spice: { one: 'spice', many: 'spices' },
+    root: { one: 'root', many: 'roots' },
+    sweet: { one: 'sweet', many: 'sweets' },
+    egg: { one: 'egg', many: 'eggs' },
+  };
+  const CAT_ORDER = ['fish', 'greens', 'allium', 'fruit', 'mushroom', 'nut', 'spice', 'root', 'sweet', 'egg'];
+  const STATS = ['Stamina', 'Strength', 'Agility', 'Intellect', 'Spirit'];
+  const OOC = {
+    xp: { base: 10, label: 'XP from kills and quests', text: v => `XP from kills and quests +${v}%` },
+    regen: { base: 100, label: 'Out-of-combat regen', text: v => `Out-of-combat health and mana regen +${v}%` },
+    speed: { base: 12, label: 'Move speed', text: v => `Move speed +${v}%` },
+  };
+  // Each tier is its own recipe. The tier sets the band, the strength and the quality colour.
+  const BANDS = [1, 10, 20, 30];
+  const TIERS = BANDS.map(b => `Band ${b}`);
+  const TCLASS = ['common', 'uncommon', 'rare', 'epic'];
+  const TMUL = [1, 1.5, 2, 2.5];
+  const DAY = 1440, DAWN = 360;
+
+  // ---------- items ----------
+  const I = {};
+  [
+    ['dandelion', 'Dandelion Greens', 'greens', 1, 'c'], ['watercress', 'Lakeshore Watercress', 'greens', 12, 'u'],
+    ['onion', 'Wild Onion', 'allium', 2, 'c'], ['garlic', 'Wild Garlic', 'allium', 6, 'c'],
+    ['blackberry', 'Blackberries', 'fruit', 3, 'c'], ['strawberry', 'Wild Strawberries', 'fruit', 6, 'u'], ['bramble', "Raven's Bramble", 'fruit', 13, 'c'],
+    ['chanterelle', 'Elwynn Chanterelle', 'mushroom', 4, 'c'], ['ghostcap', 'Ghostcap', 'mushroom', 12, 'c'], ['redmorel', 'Redridge Morel', 'mushroom', 14, 'u'],
+    ['blackmorel', 'Black Morel', 'mushroom', 15, 'c'], ['hilltruffle', 'Hill Truffle', 'mushroom', 18, 'r'], ['blacktruffle', 'Black Truffle', 'mushroom', 22, 'r'],
+    ['hazel', 'Hazelnuts', 'nut', 5, 'c'],
+    ['pepper', 'Redridge Pepper', 'spice', 8, 'c'], ['thyme', 'Wild Thyme', 'spice', 10, 'u'], ['sage', 'Rock Sage', 'spice', 10, 'c'],
+    ['sweetroot', 'Sweetroot', 'root', 12, 'u'], ['duskroot', 'Duskroot', 'root', 16, 'c'],
+    ['honey', 'Wild Honeycomb', 'sweet', 1, 'u'], ['nest', "Bird's Nest", 'egg', 1, 'r'],
+  ].forEach(([id, name, cat, lvl, r]) => I[id] = { id, name, kind: 'herb', cat, lvl, rar: RV[r] });
+  [['moonpetal', 'Moonpetal', 14], ['emberbloom', 'Emberbloom', 20], ['widowslily', "Widow's Lily", 25]]
+    .forEach(([id, name, lvl]) => I[id] = { id, name, kind: 'lplant', cat: 'lplant', lvl, rar: 3 });
+
+  // fish: id, name, lvl, rarity, cut bait, bait favoured by
+  const FISH = [
+    ['smallfish', 'Raw Brilliant Smallfish', 1, 'c', 'Smallfish Chunks', 'shiner'],
+    ['gperch', 'Goldshire Perch', 1, 'c', 'Cut Perch', 'canaleel'],
+    ['brooktrout', 'Northshire Brook Trout', 2, 'c', 'Trout Strips', 'carp'],
+    ['mudsnapper', 'Raw Longjaw Mud Snapper', 3, 'c', 'Snapper Belly', 'catfish'],
+    ['herring', 'Harbour Herring', 3, 'c', 'Herring Chunks', 'mackerel'],
+    ['canaleel', 'Canal Eel', 5, 'c', 'Eel Slices', 'duskfin'],
+    ['catfish', 'Raw Bristle Whisker Catfish', 8, 'c', 'Whisker Bait', 'albacore'],
+    ['everperch', 'Everstill Perch', 12, 'c', 'Cut Lake Perch', 'blackmouth'],
+    ['bluegill', 'Redridge Bluegill', 14, 'c', 'Bluegill Strips', 'koi'],
+    ['bleak', 'Darkshire Bleak', 16, 'c', 'Bleak Fry', 'gulper'],
+    ['chub', 'Ravenwood Chub', 17, 'c', 'Chub Chunks', 'pike'],
+    ['shiner', 'Mirror Lake Shiner', 5, 'u', 'Shiner Flash', 'glimmer'],
+    ['carp', 'Stonefield Carp', 6, 'u', 'Carp Dough', 'millrace'],
+    ['mackerel', 'Raw Slitherskin Mackerel', 7, 'u', 'Mackerel Strips', 'everperch'],
+    ['albacore', 'Raw Rainbow Fin Albacore', 10, 'u', 'Albacore Belly', 'bluegill'],
+    ['blackmouth', 'Oily Blackmouth', 12, 'u', 'Blackmouth Oil Bait', 'sunfish'],
+    ['millrace', 'Millrace Trout', 15, 'u', 'Millrace Strips', 'darter'],
+    ['sunfish', 'Lakeshire Sunfish', 16, 'u', 'Sunfish Chunks', 'mithril'],
+    ['pike', 'Ironjaw Pike', 18, 'u', 'Pike Fillet Bait', 'whitefish'],
+    ['mithril', 'Raw Mithril Head Trout', 19, 'u', 'Mithril Scale Bait', 'ghostcarp'],
+    ['loach', 'Gravemoss Loach', 20, 'u', 'Loach Bits', 'glassfin'],
+    ['grayling', 'Hushed Bank Grayling', 21, 'u', 'Grayling Slices', 'glassfin'],
+    ['duskfin', 'Duskfin', 8, 'r'],
+    ['glimmer', 'Crystal Lake Glimmerfish', 10, 'r'],
+    ['koi', 'Gilded Koi', 14, 'r'],
+    ['gulper', 'Dockside Gulper', 16, 'r'],
+    ['darter', 'Emberscale Darter', 19, 'r'],
+    ['whitefish', 'Everstill Whitefish', 21, 'r'],
+    ['ghostcarp', 'Ghostscale Carp', 22, 'r'],
+    ['glassfin', 'Dreaming Glassfin', 24, 'r'],
+  ];
+  FISH.forEach(([id, name, lvl, r, baitName, favBy]) => {
+    I[id] = { id, name, kind: 'fish', cat: 'fish', lvl, rar: RV[r] };
+    if (baitName) { I[id].bait = 'bait_' + id; I['bait_' + id] = { id: 'bait_' + id, name: baitName, kind: 'bait', cat: 'bait', lvl, rar: RV[r], from: id, favouredBy: favBy }; }
+  });
+
+  const R = {};
+  const bandOf = lvl => lvl >= 30 ? 30 : lvl >= 20 ? 20 : lvl >= 10 ? 10 : 1;
+  const items = ids => ids.map(id => ({ item: id }));
+
+  // ---------- 11 effects x 4 tiers (bands 1, 10, 20, 30), every slot an exact item ----------
+  // Every fish and herb is in at least 2 recipes, counting fish dishes. Legendary fish and plants are in one.
+  const EFFECTS = [
+    ['stamina', 'combat', 'Stamina', 18, [
+      ["Hunter's Fish Stew", ['gperch', 'onion', 'sweetroot'], 'goldshire'],
+      ["Woodsman's Hotpot", ['everperch', 'garlic', 'duskroot']],
+      ['Darkshire Gulper Pot', ['gulper', 'duskroot', 'blackmorel']],
+      ['Ghostlight Stew', ['ghostcarp', 'duskroot', 'glassfin']]]],
+    ['strength', 'combat', 'Strength', 0, [
+      ['Spiced Fish Skewer', ['canaleel', 'pepper']],
+      ["Brawler's Skewer", ['albacore', 'duskfin', 'sage']],
+      ['Ironjaw Kebab', ['pike', 'pepper', 'sage']],
+      ['Ember Truffle Kebab', ['glassfin', 'darter', 'hilltruffle']]]],
+    ['agility', 'combat', 'Agility', 95, [
+      ['Brookside Fry', ['smallfish', 'dandelion', 'hazel']],
+      ['Millrace Fry', ['millrace', 'hazel', 'watercress']],
+      ['Emberscale Fry', ['darter', 'hazel', 'strawberry']],
+      ['Truffled Grayling', ['grayling', 'blacktruffle']]]],
+    ['intellect', 'combat', 'Intellect', 220, [
+      ['Abbey Mushroom Pie', ['shiner', 'nest', 'chanterelle'], 'abbey'],
+      ["Scholar's Supper", ['glimmer', 'mithril', 'ghostcap']],
+      ['Koi and Ghostcap Pie', ['koi', 'ghostcap', 'nest']],
+      ['Dreaming Truffle Pie', ['glassfin', 'blacktruffle']]]],
+    ['spirit', 'combat', 'Spirit', 265, [
+      ["Monk's Honey Broth", ['brooktrout', 'dandelion', 'honey'], 'abbey'],
+      ['Vigil Broth', ['bleak', 'blackmorel', 'honey']],
+      ['Mithril Honey Broth', ['mithril', 'honey', 'redmorel']],
+      ['Twilight Rite', ['ghostcarp', 'hilltruffle']]]],
+    ['xp', 'ooc', 'xp', 45, [
+      ['Hearthside Fish Cakes', ['herring', 'nest', 'onion'], 'goldshire'],
+      ["Traveller's Supper", ['sunfish', 'mackerel', 'thyme']],
+      ['Lakeshire Fish Cakes', ['sunfish', 'nest', 'onion']],
+      ['Whitefish Truffle Cakes', ['whitefish', 'blacktruffle']]]],
+    ['regen', 'ooc', 'regen', 175, [
+      ["Lion's Pride Chowder", ['gperch', 'dandelion', 'onion'], 'goldshire'],
+      ['Lakeshore Chowder', ['everperch', 'watercress']],
+      ['Hushed Bank Chowder', ['grayling', 'watercress', 'duskroot']],
+      ['Gravemoss Chowder', ['loach', 'blacktruffle']]]],
+    ['speed', 'ooc', 'speed', 140, [
+      ['Trail Fish Wrap', ['mudsnapper', 'blackberry'], 'abbey'],
+      ['Ravenwood Wrap', ['chub', 'bramble']],
+      ['Millrace Wrap', ['millrace', 'blackberry', 'bramble']],
+      ["Runner's Glassfin Wrap", ['glassfin', 'duskroot']]]],
+    ['pull', 'gather', 'pull', 30, [
+      ["Forager's Stew", ['gperch', 'chanterelle', 'dandelion'], 'both'],
+      ["Redridge Forager's Pot", ['bluegill', 'catfish', 'redmorel']],
+      ["Gravemoss Forager's Pot", ['loach', 'blackmorel', 'ghostcap']],
+      ["Truffle Hunter's Pot", ['glassfin', 'hilltruffle']]]],
+    ['rarity', 'gather', 'rarity', 200, [
+      ["Angler's Soup", ['gperch', 'smallfish', 'thyme', 'garlic']],
+      ["Ironjaw Angler's Soup", ['pike', 'bleak', 'thyme', 'garlic']],
+      ["Lakeshire Angler's Soup", ['sunfish', 'pike', 'thyme', 'redmorel']],
+      ["Hushed Bank Angler's Soup", ['grayling', 'whitefish', 'hilltruffle']]]],
+    ['lure', 'gather', 'lure', 330, [
+      ['Smoked Fish Jerky', ['carp', 'pepper', 'garlic']],
+      ['Blackmouth Jerky', ['blackmouth', 'sage', 'sweetroot']],
+      ['Ironjaw Jerky', ['pike', 'pepper', 'duskroot']],
+      ['Gravemoss Jerky', ['loach', 'grayling', 'blacktruffle']]]],
+  ];
+  EFFECTS.forEach(([eff, family, arg, hue, tiers]) => tiers.forEach(([name, ids, by], t) => {
+    const id = `b_${eff}_${t}`;
+    R[id] = { id, name, kind: 'base', effect: eff, tier: t, pattern: items(ids), family, arg, by: by || null, hue };
+  }));
+
+  // fish dishes: each fish's own dish, learned on first catch; its band comes from the fish's level
+  const DISHES = [
+    ['smallfish', 'Brilliant Smallfish Bites', ['blackberry'], 'agility'], ['gperch', 'Grilled Perch Platter', ['garlic', 'duskroot'], 'stamina'],
+    ['brooktrout', 'Brook Trout Chowder', ['watercress'], 'regen'], ['mudsnapper', 'Longjaw Snapper Stew', ['garlic'], 'stamina'],
+    ['herring', 'Harbour Herring Cakes', ['nest', 'garlic'], 'xp'], ['canaleel', 'Canal Eel Skewer', ['sage'], 'strength'],
+    ['catfish', 'Whisker Catfish Gumbo', ['ghostcap', 'dandelion'], 'pull'], ['everperch', 'Lakeside Perch Wrap', ['strawberry'], 'speed'],
+    ['bluegill', 'Redridge Bluegill Stew', ['ghostcap', 'watercress'], 'pull'], ['bleak', 'Darkshire Bleak Broth', ['blackmorel'], 'spirit'],
+    ['chub', 'Ravenwood Chub Hotpot', ['onion', 'sweetroot'], 'stamina'], ['shiner', 'Mirror Lake Shiner Pie', ['nest'], 'intellect'],
+    ['carp', 'Stonefield Carp Cakes', ['nest', 'onion'], 'xp'], ['mackerel', 'Slitherskin Mackerel Fry', ['watercress', 'dandelion'], 'agility'],
+    ['albacore', 'Rainbow Fin Steak', ['pepper'], 'strength'], ['blackmouth', 'Oily Blackmouth Jerky', ['duskroot'], 'lure'],
+    ['millrace', 'Millrace Trout Almondine', ['hazel'], 'agility'], ['sunfish', 'Lakeshire Sunfish Chowder', ['garlic', 'dandelion'], 'regen'],
+    ['pike', 'Ironjaw Pike Jerky', ['sage', 'sweetroot'], 'lure'], ['mithril', 'Mithril Head Trout Pie', ['blackmorel'], 'intellect'],
+    ['loach', 'Gravemoss Loach Broth', ['honey', 'blackmorel'], 'spirit'], ['grayling', 'Hushed Bank Grayling Soup', ['sage', 'garlic'], 'rarity'],
+    ['duskfin', 'Duskfin Crisp', ['dandelion', 'strawberry'], 'agility'], ['glimmer', 'Glimmerfish Pie', ['chanterelle'], 'intellect'],
+    ['koi', 'Gilded Koi Cakes', ['garlic'], 'xp'], ['gulper', 'Dockside Gulper Stew', ['duskroot', 'garlic'], 'stamina'],
+    ['darter', 'Emberscale Darter Kebab', ['pepper', 'sage'], 'strength'], ['whitefish', 'Everstill Whitefish Wrap', ['strawberry'], 'speed'],
+    ['ghostcarp', 'Ghostscale Carp Broth', ['ghostcap'], 'spirit'], ['glassfin', 'Dreaming Glassfin Pie', ['redmorel'], 'intellect'],
+  ];
+  const EFF = Object.fromEntries(EFFECTS.map(([eff, family, arg, hue]) => [eff, { family, arg, hue }]));
+  DISHES.forEach(([fid, name, herbs, eff]) => {
+    R['n_' + fid] = { id: 'n_' + fid, name, kind: 'named', fish: fid, effect: eff, tier: BANDS.indexOf(bandOf(I[fid].lvl)), pattern: items([fid, ...herbs]), ...EFF[eff] };
+  });
+
+  const LEGENDS = [
+    ['bass', 'Brother Bass', 'Elwynn', 6, 'D', 'dandelion', { stat: 'Stamina', ooc: 'regen' }, 'gperch', 'Brother Bass Supper'],
+    ['gar', 'Moonlit Gar', 'Elwynn', 11, 'D', 'blackberry', { stat: 'Agility', ooc: 'speed' }, 'smallfish', 'Moonlit Gar Fillet'],
+    ['snapper', 'Gnoll Tooth Snapper', 'Elwynn', 13, 'U', 'pepper', 'Each melee hit has a 10% chance to strike again.', 'mudsnapper', 'Gnoll Tooth Snapper Stew'],
+    ['goldfin', 'Old Goldfin', 'Elwynn', 20, 'U', 'honey', 'Every fish you catch is one rarity higher.', 'shiner', "Old Goldfin's Gilded Plate"],
+    ['lightscale', 'The Lightscale', 'Stormwind', 12, 'D', 'nest', { stat: 'Intellect', ooc: 'xp' }, 'herring', 'Lightscale Bake'],
+    ['bream', 'Bell-Toll Bream', 'Stormwind', 14, 'D', 'hazel', { stat: 'Spirit', ooc: 'regen' }, 'canaleel', 'Bell-Toll Bream Broth'],
+    ['sucker', 'Stockade Sucker', 'Stormwind', 17, 'U', 'sweetroot', 'Crowd control on you lasts half as long.', 'carp', 'Stockade Sucker Pot'],
+    ['harboureel', "The Harbourmaster's Eel", 'Stormwind', 22, 'U', 'garlic', 'Each kill heals you for 3% of your maximum health.', 'mackerel', "Harbourmaster's Eel Pie"],
+    ['millstone', 'The Millstone Carp', 'Redridge', 17, 'D', 'redmorel', { stat: 'Stamina', ooc: 'xp' }, 'catfish', 'Millstone Carp Loaf'],
+    ['worgfang', 'Worgfang Pike', 'Redridge', 19, 'D', 'thyme', { stat: 'Strength', ooc: 'speed' }, 'bluegill', 'Worgfang Pike Steak'],
+    ['bloodfin', 'Blackrock Bloodfin', 'Redridge', 21, 'U', 'sage', 'Each hit adds 1% damage, up to 10%. The stack resets out of combat.', 'albacore', 'Bloodfin Searing'],
+    ['leviathan', 'Everstill Leviathan', 'Redridge', 24, 'U', 'watercress', 'Your first death revives you at 30% health, and the buff ends.', 'everperch', 'Leviathan Feast'],
+    ['sorrowgill', 'Sorrowgill', 'Duskwood', 22, 'D', 'duskroot', { stat: 'Spirit', ooc: 'regen' }, 'bleak', 'Sorrowgill Soup'],
+    ['twkoi', 'The Twilight Koi', 'Duskwood', 23, 'D', 'bramble', { stat: 'Intellect', ooc: 'xp' }, 'chub', 'Twilight Koi Platter'],
+    ['stitchjaw', 'Stitchjaw Eel', 'Duskwood', 25, 'U', 'blackmorel', '10% of the melee damage you take returns as nature damage.', 'loach', 'Stitchjaw Stew'],
+    ['muskie', 'Moonless Muskie', 'Duskwood', 26, 'U', 'blacktruffle', "At night, mobs' aggro radius is halved.", 'grayling', 'Moonless Muskie Supper'],
+  ];
+  LEGENDS.forEach(([id, name, pool, lvl, type, herb, eff, baitFish, meal]) => {
+    I[id] = { id, name, kind: 'legend', cat: 'fish', lvl, rar: 3, pool, type, baitFish };
+    const r = { id: 'l_' + id, name: meal, kind: 'legendary', legend: id, pattern: items([id, herb]), legendLvl: lvl, hue: 28 };
+    if (type === 'D') Object.assign(r, { family: 'double', stat: eff.stat, ooc: eff.ooc });
+    else Object.assign(r, { family: 'unique', effect: eff, revive: id === 'leviathan', night: id === 'muskie' });
+    R[r.id] = r;
+  });
+  [
+    ['p_moonpetal', 'Moonpetal Tart', ['moonpetal', 'strawberry', 'honey'], [{ kind: 'stat', stat: 'Spirit', v: 12 }, { kind: 'night', text: 'At night, out-of-combat health and mana regen +300%' }]],
+    ['p_emberbloom', 'Emberbloom Chili', ['emberbloom', 'pepper', 'darter'], [{ kind: 'stat', stat: 'Strength', v: 17 }, { kind: 'unique', text: 'Each melee hit has a 5% chance to deal 20 fire damage' }]],
+    ['p_widowslily', "Widow's Lily Tea", ['widowslily', 'watercress'], [{ kind: 'unique', text: '+25 Shadow Resistance' }, { kind: 'unique', text: 'Fear effects on you last half as long' }]],
+  ].forEach(([id, name, ids, effects]) => R[id] = { id, name, kind: 'plant', pattern: items(ids), family: 'plant', effects, hue: 285 });
+
+  const KITCHENS = {
+    goldshire: { name: "Lion's Pride kitchen", place: 'Goldshire', cook: 'Tomas' },
+    abbey: { name: 'Abbey kitchen', place: 'Northshire Abbey', cook: 'Brother Hollis' },
+  };
+  const BASES = Object.values(R).filter(r => r.kind === 'base');
+  const starterOf = k => BASES.filter(r => r.by === k || r.by === 'both').map(r => r.id);
+
+  // ---------- state ----------
+  const S = {
+    level: 12, clock: 8 * 60, inCombat: false, kitchen: 'goldshire', visited: {}, known: {}, inv: {}, gold: 0,
+    buff: null, dishJ: {}, fishJ: {}, seen: {}, used: {}, orders: {},
+    lessons: { cook: false, recipe: false, eat: false, order: false, reveal: false, discover: false },
+  };
+  Object.assign(S.inv, {
+    gperch: 10, smallfish: 4, brooktrout: 3, mudsnapper: 2, herring: 3, canaleel: 2, carp: 2, shiner: 2, everperch: 2,
+    dandelion: 8, onion: 6, garlic: 4, blackberry: 3, strawberry: 2, chanterelle: 4, ghostcap: 2, hazel: 3, honey: 3, nest: 2,
+    pepper: 3, sage: 2, thyme: 2, sweetroot: 4, duskroot: 2,
+  });
+
+  // ---------- helpers ----------
+  const rnd = n => Math.floor(Math.random() * n);
+  const pick = a => a[rnd(a.length)];
+  const perm = a => a.length <= 1 ? [a] : a.flatMap((x, i) => perm([...a.slice(0, i), ...a.slice(i + 1)]).map(p => [x, ...p]));
+  const PERMS = { 1: [[0]], 2: perm([0, 1]), 3: perm([0, 1, 2]), 4: perm([0, 1, 2, 3]) };
+  const isIngredient = id => I[id] && ['herb', 'fish', 'legend', 'lplant'].includes(I[id].kind);
+  const accepts = (slot, id) => slot.any ? isIngredient(id) : slot.item === id;
+  const count = id => S.inv[id] || 0;
+  const addItem = (id, n = 1) => { S.inv[id] = (S.inv[id] || 0) + n; };
+  const removeItem = (id, n = 1) => { S.inv[id] -= n; if (S.inv[id] <= 0) delete S.inv[id]; };
+  // Placeholder strengths until the Well Fed effect list is written.
+  const combatAmt = t => 2 + Math.floor(BANDS[t] / 2);
+  const oocAmt = (type, t) => Math.floor(OOC[type].base * TMUL[t]);
+  const gatherText = (type, t) => type === 'pull' ? `+${t >= 2 ? 2 : 1} pull per Herb Patch`
+    : type === 'rarity' ? `Uncommon and rare roll weights +${Math.floor(25 * TMUL[t])}% at fishing pools and herb patches`
+    : `Lure wear per bite -${[50, 60, 70, 80][t]}%`;
+  const fmtClock = c => { const m = ((c % DAY) + DAY) % DAY; return `Day ${Math.floor(c / DAY) + 1}, ${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+  const isNight = () => { const h = Math.floor((S.clock % DAY) / 60); return h >= 20 || h < 6; };
+  const effectLabel = r => r.family === 'combat' ? `+${r.arg}` : r.family === 'ooc' ? { xp: 'More XP', regen: 'Faster regen', speed: 'Faster movement' }[r.arg]
+    : r.family === 'gather' ? { pull: 'Extra herb pulls', rarity: 'Rarer finds', lure: 'Less lure wear' }[r.arg]
+    : r.family === 'double' ? `+${r.stat} and ${OOC[r.ooc].label.toLowerCase()}` : r.family === 'unique' ? 'Unique legendary effect' : 'Legendary plant meal';
+  const familyName = f => ({ combat: 'Combat Well Fed', ooc: 'Out-of-combat Well Fed', gather: 'Gatherer', double: 'Legendary double meal', unique: 'Legendary unique meal', plant: 'Legendary plant meal' })[f];
+  const ids = r => r.pattern.map(s => s.item);
+
+  function distance(pattern, list) {
+    if (pattern.length !== list.length) return Infinity;
+    let best = 0;
+    for (const p of PERMS[list.length]) {
+      let c = 0;
+      for (let i = 0; i < list.length; i++) if (accepts(pattern[i], list[p[i]])) c++;
+      if (c > best) best = c;
+    }
+    return list.length - best;
+  }
+  function hasAll(list) {
+    const t = {};
+    list.forEach(id => t[id] = (t[id] || 0) + 1);
+    return Object.entries(t).every(([id, n]) => count(id) >= n);
+  }
+  // What a set of ingredients makes. Exact match only.
+  function resolve(list) {
+    const PRI = { plant: 3, legendary: 3, named: 2, base: 1 };
+    return Object.values(R).filter(r => (r.kind === 'base' || S.known[r.id]) && distance(r.pattern, list) === 0)
+      .sort((a, b) => PRI[b.kind] - PRI[a.kind])[0] || null;
+  }
+  // ---------- meals ----------
+  const mealKey = r => `m|${r.id}`;
+  function mealInfo(key) {
+    const rid = key.split('|')[1];
+    if (rid === 'mush') return { name: 'Hearty Mush', rclass: 'common', sub: 'Failed dish', minutes: 30, survives: false, parts: [{ kind: 'ooc', ooc: 'regen', v: 100, text: OOC.regen.text(100) }], hue: 35 };
+    const r = R[rid];
+    if (r.kind === 'legendary' || r.kind === 'plant') {
+      let parts;
+      if (r.family === 'double') {
+        const band = bandOf(r.legendLvl), v = 3 * (2 + Math.floor(band / 2)), o = 3 * OOC[r.ooc].base;
+        parts = [{ kind: 'stat', stat: r.stat, v, text: `+${v} ${r.stat}` }, { kind: 'ooc', ooc: r.ooc, v: o, text: OOC[r.ooc].text(o) }];
+      } else if (r.family === 'unique') parts = [{ kind: r.night ? 'night' : 'unique', text: r.effect }];
+      else parts = r.effects.map(e => e.kind === 'stat' ? { ...e, text: `+${e.v} ${e.stat}` } : e);
+      return { name: r.name, rclass: 'legendary', sub: 'Legendary', minutes: 60, survives: true, revive: !!r.revive, parts, hue: r.hue };
+    }
+    const t = r.tier;
+    let parts;
+    if (r.family === 'combat') { const v = combatAmt(t); parts = [{ kind: 'stat', stat: r.arg, v, text: `+${v} ${r.arg}` }]; }
+    else if (r.family === 'ooc') { const v = oocAmt(r.arg, t); parts = [{ kind: 'ooc', ooc: r.arg, v, text: OOC[r.arg].text(v) }]; }
+    else parts = [{ kind: 'gather', text: gatherText(r.arg, t) }];
+    return { name: r.name, rclass: TCLASS[t], sub: TIERS[t], minutes: 30, survives: false, parts, hue: r.hue };
+  }
+
+  function learn(rid, msgs, how) {
+    if (S.known[rid]) return false;
+    S.known[rid] = true;
+    S.dishJ[rid] = { cooked: 0, first: null };
+    // a known recipe shows all its ingredients
+    msgs.push({ t: 'learn', text: `${how}: ${R[rid].name}`, rid });
+    return true;
+  }
+  const slotShown = (r, s) => S.known[r.id] || S.used[s.item];
+
+  // ---------- orders ----------
+  function rollOrders(first) {
+    const L = S.level;
+    const fish = FISH.map(f => I[f[0]]).filter(f => f.lvl <= L);
+    const herbs = Object.values(I).filter(h => h.kind === 'herb' && h.lvl <= L);
+    for (const k of Object.keys(KITCHENS)) {
+      const list = [];
+      if (first && k === 'goldshire') list.push({ type: 'fish', label: '3 Goldshire Perch', req: { item: 'gperch' }, qty: 3, gold: 84 });
+      else if (Math.random() < 0.6 && fish.length) {
+        const f = pick(fish), qty = f.rar === 2 ? 1 + rnd(2) : 3 + rnd(4);
+        list.push({ type: 'fish', label: `${qty} ${f.name}`, req: { item: f.id }, qty, gold: qty * (20 + f.lvl * 8) * (1 + f.rar) });
+      } else {
+        const qty = 6 + rnd(5);
+        list.push({ type: 'fish', label: `${qty} fish of any kind`, req: { anyFish: true }, qty, gold: qty * 30 });
+      }
+      const cats = new Set();
+      const recs = Object.keys(S.known).length ? Object.keys(S.known) : starterOf(k);
+      recs.map(id => R[id]).filter(r => r.kind === 'base' || r.kind === 'named')
+        .forEach(r => r.pattern.forEach(s => { const c = I[s.item].cat; if (c !== 'fish' && herbs.some(h => h.cat === c)) cats.add(c); }));
+      const mc = pick([...cats]), mt = L >= 10 && Math.random() < 0.5 ? 1 : 0, mqty = 2 + rnd(2);
+      list.push({ type: 'meal', label: `${mqty} ${mt ? 'band 10 or higher ' : ''}dishes with ${mc === 'greens' ? 'greens' : (/^[aeiou]/.test(CAT[mc].one) ? 'an ' : 'a ') + CAT[mc].one} in them`, req: { mealCat: mc, minTier: mt }, qty: mqty, gold: mqty * (100 + L * 10) * (1 + mt) });
+      const hc = pick([...new Set(herbs.map(h => h.cat))]), hqty = 3 + rnd(3);
+      list.push({ type: 'herb', label: `${hqty} raw ${CAT[hc].many}`, req: { herbCat: hc }, qty: hqty, gold: hqty * (15 + L * 3) });
+      const rares = [...herbs, ...fish].filter(x => x.rar === 2);
+      list.forEach(o => {
+        o.done = false;
+        if (Math.random() < 1 / 3) o.bonus = (Math.random() < 0.5 || !rares.length) ? { type: 'rumour' } : { type: 'item', id: pick(rares).id };
+      });
+      S.orders[k] = list;
+    }
+  }
+  function orderAccepts(req, id) {
+    if (req.item) return id === req.item;
+    if (req.anyFish) return I[id] && I[id].kind === 'fish';
+    if (req.herbCat) return I[id] && I[id].kind === 'herb' && I[id].cat === req.herbCat;
+    if (req.mealCat) {
+      if (!id.startsWith('m|')) return false;
+      const r = R[id.split('|')[1]];
+      return !!r && ['base', 'named'].includes(r.kind) && r.tier >= req.minTier && r.pattern.some(s => I[s.item].cat === req.mealCat);
+    }
+    return false;
+  }
+  const valueOf = id => id.startsWith('m|') ? (R[id.split('|')[1]] ? (R[id.split('|')[1]].tier ?? 4) + 1 : 0) : (I[id].rar * 100 + I[id].lvl);
+  function rumour(msgs, how) {
+    const pool = BASES.filter(r => !S.known[r.id]);
+    if (!pool.length) { msgs.push({ t: 'info', text: 'You already know every recipe a Rumour can teach.' }); return; }
+    learn(pick(pool).id, msgs, how);
+  }
+  rollOrders(true);
+
+  // ---------- public API ----------
+  return {
+    status: () => ({ level: S.level, clock: fmtClock(S.clock), night: isNight(), inCombat: S.inCombat, gold: S.gold, kitchen: S.kitchen }),
+    kitchens: () => Object.entries(KITCHENS).map(([id, k]) => ({ id, ...k, visited: !!S.visited[id] })),
+    setKitchen(id) { if (KITCHENS[id]) S.kitchen = id; },
+    cookName: () => KITCHENS[S.kitchen].cook,
+
+    lessons() {
+      const L = S.lessons;
+      return [
+        { id: 'cook', done: L.cook, title: 'Cook something', text: "In the Lion's Pride kitchen, choose Experiment and put Goldshire Perch, Dandelion Greens and Wild Onion in the pot. Tomas will teach you his recipes on your first cook." },
+        { id: 'recipe', done: L.recipe, title: 'Cook from your recipe book', text: "Pick Hunter's Fish Stew. The pot fills itself from your satchels. Cook it." },
+        { id: 'eat', done: L.eat, title: 'Eat it', text: 'Eat the stew from Your meals and watch your Stamina go up on the character sheet.' },
+        { id: 'order', done: L.order, title: 'Fill an order', text: "Open Orders and deliver Tomas's order for 3 Goldshire Perch." },
+        { id: 'reveal', done: L.reveal, title: 'Reveal an ingredient', text: 'Unknown recipes hide their ingredients as ???. Cook with an ingredient marked Untried, in any dish, and it shows up in every recipe that uses it.' },
+        { id: 'discover', done: L.discover, title: 'Work out a recipe', text: 'Pick an unknown recipe. Fill its ??? slots with your best guesses and cook. Only the exact ingredients work.' },
+      ];
+    },
+
+    icon(key) {
+      if (key.startsWith('m|')) { const m = mealInfo(key); return { glyph: m.name.replace(/^(The |Old )/, '').split(/[\s']/).filter(Boolean).slice(0, 2).map(w => w[0]).join(''), hue: m.hue }; }
+      const it = I[key];
+      return { glyph: it.name.replace(/^(Raw |The )/, '').split(' ').slice(0, 2).map(w => w[0]).join(''), hue: it.kind === 'legend' ? 28 : it.kind === 'lplant' ? 285 : it.kind === 'bait' ? 350 : { fish: 205, greens: 105, allium: 55, fruit: 335, mushroom: 28, nut: 38, spice: 5, root: 18, sweet: 46, egg: 48 }[it.cat] };
+    },
+    nameOf: key => key.startsWith('m|') ? mealInfo(key).name : I[key].name,
+    rclassOf: key => key.startsWith('m|') ? mealInfo(key).rclass : RCLASS[I[key].rar],
+
+    describe(key) {
+      if (key.startsWith('m|')) {
+        const m = mealInfo(key);
+        return { name: m.name, rclass: m.rclass, lines: [{ text: m.sub, c: 'muted' }, { text: `Use: ${m.parts.map(p => p.text).join('. ')} for ${m.minutes} min.`, c: 'use' }, ...(m.survives ? [{ text: 'Survives death.', c: 'use' }] : [])] };
+      }
+      const it = I[key], lines = [];
+      if (it.kind === 'herb') lines.push({ text: `Cooking herb · ${CAT[it.cat].one}`, c: 'gold' }, { text: `Level ${it.lvl}` });
+      if (it.kind === 'lplant') lines.push({ text: 'Legendary plant', c: 'gold' }, { text: `Level ${it.lvl}` });
+      if (it.kind === 'fish') lines.push({ text: 'Fish', c: 'gold' }, { text: `Level ${it.lvl}` });
+      if (it.kind === 'legend') lines.push({ text: `Legendary Fish · ${it.pool}`, c: 'legendary' }, { text: `Level ${it.lvl}` });
+      if (it.kind === 'bait') lines.push({ text: 'Cut bait', c: 'gold' }, { text: `Favourite bait of ${I[it.favouredBy].name}` },
+        ...LEGENDS.filter(l => l[7] === it.from).map(l => ({ text: `Also the bait of ${l[1]}`, c: 'legendary' })));
+      if (isIngredient(key)) lines.push(S.used[key] ? { text: 'Tried. Shown in every recipe that uses it.', c: 'muted' } : { text: 'Untried. Cook with it to reveal where it goes.', c: 'gold' });
+      return { name: it.name, rclass: RCLASS[it.rar], lines };
+    },
+
+    // Recipe book: 11 effects x 4 tiers, then fish dishes and legendary meals you know.
+    recipeBook() {
+      const page = r => {
+        const known = !!S.known[r.id];
+        const out = known ? mealInfo(mealKey(r)) : null;
+        return { id: r.id, known, tier: TIERS[r.tier], name: known ? r.name : '???', hue: r.hue,
+          slots: r.pattern.map(s => slotShown(r, s) ? { name: I[s.item].name, rclass: RCLASS[I[s.item].rar], key: s.item } : null),
+          revealed: r.pattern.filter(s => slotShown(r, s)).length,
+          band: r.tier !== undefined ? `band ${BANDS[r.tier]}` : null,
+          output: out ? { sub: out.sub, rclass: out.rclass, text: out.parts.map(p => p.text).join('. ') } : null };
+      };
+      const effects = EFFECTS.map(([eff, family, arg, hue]) => ({ effect: effectLabel({ family, arg }), family: familyName(family), hue,
+        tiers: [0, 1, 2, 3].map(t => page(R[`b_${eff}_${t}`])) }));
+      const extra = Object.keys(S.known).map(id => R[id]).filter(r => r.kind !== 'base').map(r => ({ ...page(r), kind: r.kind, effect: effectLabel(r), tier: null, legendary: r.kind !== 'named' }));
+      return { open: Object.keys(S.visited).length > 0, effects, dishes: extra.filter(x => x.kind === 'named'), legendary: extra.filter(x => x.legendary),
+        knownCount: BASES.filter(r => S.known[r.id]).length, total: BASES.length };
+    },
+
+    // mode: 'recipe' (known), 'discover' (unknown page), 'experiment' (n free slots)
+    slots(mode, id, n) {
+      let pattern;
+      if (mode === 'experiment') pattern = Array.from({ length: n }, () => ({ any: true }));
+      else if (mode === 'discover') pattern = R[id].pattern.map(s => slotShown(R[id], s) ? s : { any: true });
+      else pattern = R[id].pattern;
+      return pattern.map(s => ({ label: s.any ? (mode === 'discover' ? '???' : 'Anything') : I[s.item].name, any: !!s.any,
+        accepts: Object.keys(S.inv).filter(k => accepts(s, k)) }));
+    },
+    autoFill(mode, id, n) {
+      if (mode === 'experiment') return Array(n).fill(null);
+      const used = {};
+      return this.slots(mode, id, n).map(s => {
+        if (s.any) return null;
+        const k = s.accepts.find(k => count(k) - (used[k] || 0) > 0) || null;
+        if (k) used[k] = (used[k] || 0) + 1;
+        return k;
+      });
+    },
+    pantry() {
+      const groups = [];
+      const keys = Object.keys(S.inv).filter(isIngredient).sort((a, b) => I[a].rar - I[b].rar || I[a].lvl - I[b].lvl);
+      const add = (label, list) => list.length && groups.push({ label, items: list.map(k => ({ key: k, name: I[k].name, rclass: RCLASS[I[k].rar], count: S.inv[k], lvl: I[k].lvl, untried: !S.used[k] })) });
+      add('Fish', keys.filter(k => I[k].kind === 'fish' || I[k].kind === 'legend'));
+      CAT_ORDER.slice(1).forEach(c => add(CAT[c].many[0].toUpperCase() + CAT[c].many.slice(1), keys.filter(k => I[k].kind === 'herb' && I[k].cat === c)));
+      add('Legendary plants', keys.filter(k => I[k].kind === 'lplant'));
+      return groups;
+    },
+
+    predict(mode, id, slots) {
+      if (slots.some(s => !s)) return { ready: false, note: mode === 'discover' ? 'Fill the ??? slots with your guesses.' : 'Fill every slot to see what you would get.' };
+      if (!hasAll(slots)) return { ready: false, note: "You don't have enough of those ingredients." };
+      if (mode === 'recipe') {
+        const r = R[id];
+        if (distance(r.pattern, slots) !== 0) return { ready: false, note: "That isn't this recipe's ingredients." };
+        const m = mealInfo(mealKey(r));
+        const why = [];
+        if (r.kind === 'legendary' || r.kind === 'plant') why.push('Legendary meals have one fixed strength. 60 minutes, survives death.');
+        else if (r.kind === 'named') why.push(`${I[r.fish].name} is level ${I[r.fish].lvl}, so its dish is ${TIERS[r.tier].toLowerCase()}.`);
+        else why.push(`A ${TIERS[r.tier].toLowerCase()} recipe. A higher band is a different recipe.`);
+        return { ready: true, name: r.name, rclass: m.rclass, quality: m.sub, effect: m.parts.map(p => p.text).join('. ') + ` for ${m.minutes} min.`, why };
+      }
+      return { ready: true, trial: true, why: ['An exact match teaches the recipe and cooks its meal.', 'If not, you get Hearty Mush and lose the ingredients.'] };
+    },
+
+    cook(mode, id, slots) {
+      const msgs = [], events = { learned: [], revealed: [], product: null, close: false, mush: false }, k = KITCHENS[S.kitchen];
+      if (slots.some(s => !s)) return { ok: false, msgs: [{ t: 'error', text: 'Fill every slot first.' }], events };
+      if (!hasAll(slots)) return { ok: false, msgs: [{ t: 'error', text: "You don't have enough of those ingredients." }], events };
+      if (mode === 'recipe' && (!S.known[id] || distance(R[id].pattern, slots) !== 0)) return { ok: false, msgs: [{ t: 'error', text: "That isn't this recipe's ingredients." }], events };
+      if (!S.visited[S.kitchen]) {
+        S.visited[S.kitchen] = true;
+        msgs.push({ t: 'say', text: `${k.cook}: "First time in my kitchen? Here, these are mine."` });
+        starterOf(S.kitchen).forEach(rid => { if (learn(rid, msgs, `${k.cook} teaches you`)) events.learned.push({ rid, how: 'starter' }); });
+      }
+      const recipe = mode === 'recipe' ? R[id] : resolve(slots);
+      if (recipe && !S.known[recipe.id]) { learn(recipe.id, msgs, 'You work out a new recipe'); events.learned.push({ rid: recipe.id, how: 'trial' }); S.lessons.discover = true; }
+      if (!recipe) events.close = Object.values(R).some(r => (r.kind === 'base' || S.known[r.id]) && distance(r.pattern, slots) === 1);
+      // Every ingredient used shows up in every unknown recipe that uses it.
+      [...new Set(slots)].forEach(s => {
+        if (S.used[s]) return;
+        S.used[s] = true;
+        const where = BASES.filter(r => !S.known[r.id] && r.pattern.some(p => p.item === s));
+        if (where.length) { events.revealed.push({ item: s, count: where.length }); S.lessons.reveal = true; }
+      });
+      slots.forEach(s => { removeItem(s); if (I[s].kind === 'fish') S.seen[s] = true; });
+      let key;
+      if (!recipe) {
+        key = 'm|mush|0|0'; events.mush = true;
+        msgs.push({ t: 'say', text: events.close ? `${k.cook} tastes it: "Close. One thing's wrong, I'd say."` : `${k.cook} tastes it: "Well. It's food."` });
+      } else {
+        key = mealKey(recipe);
+        const J = S.dishJ[recipe.id];
+        J.cooked++;
+        if (!J.first) J.first = { when: fmtClock(S.clock), where: k.name };
+        if (recipe.id === 'b_stamina_0' && mode === 'recipe') S.lessons.recipe = true;
+      }
+      S.lessons.cook = true;
+      addItem(key);
+      events.product = key;
+      events.revealed.forEach(r => msgs.push({ t: 'learn', text: `${I[r.item].name} revealed in ${r.count} unknown ${r.count === 1 ? 'recipe' : 'recipes'}.` }));
+      msgs.push({ t: 'product', key, text: mealInfo(key).sub });
+      return { ok: true, msgs, events };
+    },
+
+    meals() {
+      return Object.keys(S.inv).filter(k => k.startsWith('m|')).sort((a, b) => valueOf(b) - valueOf(a)).map(k => {
+        const m = mealInfo(k);
+        return { key: k, name: m.name, rclass: m.rclass, sub: m.sub, count: S.inv[k], use: m.parts.map(p => p.text).join('. '), minutes: m.minutes };
+      });
+    },
+    eat(key) {
+      if (S.inCombat) return [{ t: 'error', text: "You can't eat in combat." }];
+      if (!count(key) || !key.startsWith('m|')) return [{ t: 'error', text: "You don't have that." }];
+      removeItem(key);
+      const m = mealInfo(key), prev = S.buff;
+      S.buff = { key, remaining: m.minutes };
+      S.lessons.eat = true;
+      return [{ t: 'info', text: `You eat ${m.name}.${prev ? ` It replaces ${mealInfo(prev.key).name}.` : ''}` }];
+    },
+    character() {
+      const L = S.level, m = S.buff ? mealInfo(S.buff.key) : null;
+      const baseStat = { Stamina: 20 + 2 * L, Strength: 18 + 2 * L, Agility: 16 + 2 * L, Intellect: 14 + 2 * L, Spirit: 15 + 2 * L };
+      const stats = STATS.map(s => {
+        const bonus = m ? m.parts.filter(p => p.kind === 'stat' && p.stat === s).reduce((a, p) => a + p.v, 0) : 0;
+        return { name: s, base: baseStat[s], bonus, total: baseStat[s] + bonus };
+      });
+      const ooc = Object.entries(OOC).map(([k, o]) => {
+        const p = m && m.parts.find(x => x.kind === 'ooc' && x.ooc === k);
+        return { label: o.label, base: k === 'regen' ? 'normal' : '100%', bonus: p ? `+${p.v}%` : null, active: !!p && !S.inCombat };
+      });
+      const other = m ? m.parts.filter(p => ['gather', 'unique', 'night'].includes(p.kind)).map(p => ({ text: p.text, active: p.kind !== 'night' || isNight(), why: p.kind === 'night' && !isNight() ? 'night only' : '' })) : [];
+      return { level: L, health: stats[0].total * 10, healthBonus: stats[0].bonus * 10, stats, ooc, other, inCombat: S.inCombat,
+        buff: m ? { name: m.name, rclass: m.rclass, sub: m.sub, remaining: S.buff.remaining, survives: m.survives } : null };
+    },
+
+    setCombat(on) { S.inCombat = !!on; return [{ t: 'info', text: on ? 'You enter combat. Out-of-combat effects switch off.' : 'You leave combat. Out-of-combat effects come back.' }]; },
+    die() {
+      const msgs = [{ t: 'error', text: 'You die.' }];
+      S.inCombat = false;
+      if (S.buff) {
+        const m = mealInfo(S.buff.key);
+        if (m.revive) { msgs.push({ t: 'info', text: 'Everstill Leviathan revives you at 30% health. The buff ends.' }); S.buff = null; }
+        else if (m.survives) msgs.push({ t: 'info', text: `${m.name} survives your death.` });
+        else { msgs.push({ t: 'info', text: `${m.name} ends.` }); S.buff = null; }
+      }
+      return msgs;
+    },
+    advance(min) {
+      const msgs = [], before = S.clock;
+      S.clock += min;
+      if (S.buff) { S.buff.remaining -= min; if (S.buff.remaining <= 0) { msgs.push({ t: 'info', text: `${mealInfo(S.buff.key).name} wears off.` }); S.buff = null; } }
+      if (Math.floor((S.clock - DAWN) / DAY) > Math.floor((before - DAWN) / DAY)) { rollOrders(); msgs.push({ t: 'info', text: 'Dawn. The kitchens post new orders.' }); }
+      return msgs;
+    },
+    nextDawn() { S.clock = (Math.floor((S.clock - DAWN) / DAY) + 1) * DAY + DAWN; rollOrders(); return [{ t: 'info', text: 'Dawn. The kitchens post new orders.' }]; },
+    setLevel(l) { S.level = Math.max(1, Math.min(60, Math.floor(l) || 1)); },
+
+    give(id, n) { if (!I[id] || n < 1) return []; addItem(id, n); return [{ t: 'info', text: `Received ${n} ${I[id].name}.` }]; },
+    giveRandom() {
+      const pool = Object.values(I).filter(i => (i.kind === 'herb' || i.kind === 'fish') && i.lvl <= S.level), got = [];
+      for (let i = 0; i < 8; i++) { const it = pick(pool), n = 1 + rnd(3); addItem(it.id, n); got.push(`${n} ${it.name}`); }
+      return [{ t: 'info', text: `Received ${got.join(', ')}.` }];
+    },
+    allItems: () => Object.values(I).filter(i => i.kind !== 'bait').map(i => ({ id: i.id, name: i.name, kind: i.kind })),
+    catchables: () => [...FISH.map(f => I[f[0]]), ...LEGENDS.map(l => I[l[0]])].map(i => ({ id: i.id, name: i.name, lvl: i.lvl, legend: i.kind === 'legend' })),
+    catchFish(id) {
+      const it = I[id];
+      if (!it || !['fish', 'legend'].includes(it.kind)) return { msgs: [], learned: null };
+      const msgs = [{ t: 'info', text: `You catch ${it.name}.` }];
+      addItem(id); S.seen[id] = true;
+      const J = S.fishJ[id] || (S.fishJ[id] = { caught: 0 });
+      J.caught++;
+      let learned = null;
+      if (J.caught === 1) {
+        const rid = (it.kind === 'fish' ? 'n_' : 'l_') + id;
+        if (learn(rid, msgs, 'Your first catch teaches you')) learned = rid;
+        msgs.push({ t: 'info', text: `${R[rid].name}: ${R[rid].pattern.map(s => I[s.item].name).join(' + ')}.` });
+      }
+      return { msgs, learned };
+    },
+    readRumour() { const m = []; rumour(m, 'A Rumour teaches you'); return m; },
+    readPlantRumour() {
+      const m = [], pool = Object.values(R).filter(r => r.kind === 'plant' && !S.known[r.id]);
+      if (!pool.length) return [{ t: 'info', text: 'You already know all three plant meals.' }];
+      const r = pick(pool);
+      learn(r.id, m, 'A Rumour teaches you');
+      if (!count(r.pattern[0].item)) { addItem(r.pattern[0].item); m.push({ t: 'info', text: `The Rumour leads you to 1 ${I[r.pattern[0].item].name}.` }); }
+      return m;
+    },
+    recipeInfo(rid) { const r = R[rid]; return { name: r.name, effect: effectLabel(r), family: familyName(r.family), kind: r.kind, tier: r.tier !== undefined ? TIERS[r.tier] : null, rclass: ['legendary', 'plant'].includes(r.kind) ? 'legendary' : TCLASS[r.tier] }; },
+
+    cuttable: () => Object.keys(S.inv).filter(id => I[id] && I[id].kind === 'fish' && I[id].bait).map(id => ({ key: id, name: I[id].name, count: S.inv[id], rclass: RCLASS[I[id].rar], bait: I[I[id].bait].name })),
+    baits: () => Object.keys(S.inv).filter(id => I[id] && I[id].kind === 'bait').map(id => ({ key: id, name: I[id].name, count: S.inv[id], rclass: RCLASS[I[id].rar], forFish: I[I[id].favouredBy].name })),
+    cutBait(id) {
+      const it = I[id];
+      if (!it || !it.bait || !count(id)) return [{ t: 'error', text: "You can't cut that." }];
+      removeItem(id); addItem(it.bait, 3);
+      return [{ t: 'info', text: `You cut ${it.name} into 3 ${I[it.bait].name}. They go in your Fishing Satchel.` }];
+    },
+
+    orders() {
+      return (S.orders[S.kitchen] || []).map((o, i) => {
+        const have = Object.keys(S.inv).filter(id => orderAccepts(o.req, id)).reduce((a, id) => a + S.inv[id], 0);
+        return { i, type: o.type, label: o.label, gold: o.gold, qty: o.qty, have: Math.min(have, o.qty), done: o.done, canDeliver: !o.done && have >= o.qty,
+          bonus: o.bonus ? (o.bonus.type === 'rumour' ? 'a recipe Rumour' : `1 ${I[o.bonus.id].name}`) : null, bonusRare: o.bonus?.type === 'item' };
+      });
+    },
+    deliver(i) {
+      const o = (S.orders[S.kitchen] || [])[i];
+      if (!o || o.done) return [{ t: 'error', text: 'That order is closed.' }];
+      const keys = Object.keys(S.inv).filter(id => orderAccepts(o.req, id)).sort((a, b) => valueOf(a) - valueOf(b));
+      if (keys.reduce((a, id) => a + S.inv[id], 0) < o.qty) return [{ t: 'error', text: `You need ${o.label}.` }];
+      let left = o.qty;
+      for (const id of keys) { const n = Math.min(left, S.inv[id]); removeItem(id, n); left -= n; if (!left) break; }
+      o.done = true; S.gold += o.gold; S.lessons.order = true;
+      const msgs = [{ t: 'say', text: `${KITCHENS[S.kitchen].cook}: "Just what I needed."` }, { t: 'gold', copper: o.gold }];
+      if (o.bonus) { if (o.bonus.type === 'item') { addItem(o.bonus.id); msgs.push({ t: 'info', text: `Bonus: 1 ${I[o.bonus.id].name}.` }); } else rumour(msgs, 'The bonus Rumour teaches you'); }
+      return msgs;
+    },
+
+    cookingJournal() {
+      const ord = { base: 0, named: 1, legendary: 2, plant: 3 };
+      return Object.keys(S.known).map(id => {
+        const r = R[id], J = S.dishJ[id];
+        return { id, name: r.name, kind: r.kind, effect: effectLabel(r), family: familyName(r.family), tier: r.tier !== undefined ? TIERS[r.tier] : null,
+          slots: r.pattern.map(s => I[s.item].name), cooked: J.cooked, first: J.first,
+          rclass: ['legendary', 'plant'].includes(r.kind) ? 'legendary' : TCLASS[r.tier] };
+      }).sort((a, b) => ord[a.kind] - ord[b.kind] || a.name.localeCompare(b.name));
+    },
+    fishingJournal() {
+      return [...FISH.map(f => I[f[0]]), ...LEGENDS.map(l => I[l[0]])].map(it => {
+        const rid = (it.kind === 'fish' ? 'n_' : 'l_') + it.id;
+        return { id: it.id, name: it.name, rclass: RCLASS[it.rar], lvl: it.lvl, legend: it.kind === 'legend', pool: it.pool, type: it.type,
+          caught: S.fishJ[it.id]?.caught || 0, seen: !!S.seen[it.id],
+          dish: R[rid].name, dishKnown: !!S.known[rid], cutBait: it.bait ? I[it.bait].name : null,
+          bites: it.kind === 'legend' ? [I[I[it.baitFish].bait].name] : Object.values(I).filter(b => b.kind === 'bait' && b.favouredBy === it.id).map(b => b.name) };
+      });
+    },
+    // for checking the data
+    _audit() {
+      return Object.values(R).map(r => { const l = ids(r); return { id: r.id, name: r.name, kind: r.kind, tier: r.tier, key: [...l].sort().join('+') }; });
+    },
+  };
+})();
+if (typeof module !== 'undefined') module.exports = realm;
+
+</script>
+<script>
+// ============================================================
+// UI: shows what realm says. It keeps only screen state
+// (which tab, which recipe page, what's in the pot).
+// ============================================================
+const ui = { tab: 'cook', jtab: 'dishes', mode: 'experiment', id: null, n: 3, slots: [null, null, null], log: [], banner: null, debug: false, flash: false, giveId: 'gperch', giveN: 5, catchId: 'gperch', cutId: null };
+const $app = document.getElementById('app'), $tip = document.getElementById('tip');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function money(c) {
+  const g = Math.floor(c / 10000), s = Math.floor(c / 100) % 100, cc = c % 100, out = [];
+  if (g) out.push(`<span class="g">${g}g</span>`);
+  if (s || g) out.push(`<span class="s">${s}s</span>`);
+  out.push(`<span class="c">${cc}c</span>`);
+  return `<span class="money">${out.join(' ')}</span>`;
+}
+const ico = key => { const i = realm.icon(key); return `<span class="ico b-${realm.rclassOf(key)}" style="--h:${i.hue}">${esc(i.glyph)}</span>`; };
+const push = msgs => { ui.log.push(...msgs); ui.log = ui.log.slice(-30); };
+
+function choose(mode, id) {
+  ui.mode = mode; ui.id = id;
+  ui.slots = realm.autoFill(mode, id, ui.n);
+}
+
+function render() {
+  const st = realm.status();
+  const kitchens = realm.kitchens();
+  const openOrders = realm.orders().filter(o => o.canDeliver).length;
+  $app.innerHTML = `
+  <header class="frame topbar">
+    <h1 class="brand">Twilight's Eve<span>Cooking prototype</span></h1>
+    <label class="chip">Kitchen
+      <select id="kitchen" data-ch="kitchen">${kitchens.map(x => `<option value="${x.id}" ${x.id === st.kitchen ? 'selected' : ''}>${esc(x.name)}, ${esc(x.place)}</option>`).join('')}</select>
+    </label>
+    <span class="spacer"></span>
+    <span class="chip">${esc(st.clock)} · ${st.night ? 'Night' : 'Day'}</span>
+    ${st.inCombat ? '<span class="chip combat">In combat</span>' : ''}
+    <span class="chip">${money(st.gold)}</span>
+    <button class="btn ghost small" data-act="debug" aria-expanded="${ui.debug}">Debug</button>
+  </header>
+  <div class="layout">
+    <div class="col">${lessonsPanel()}${characterPanel()}${mealsPanel()}</div>
+    <div class="col">
+      <div class="tabs" role="tablist">
+        ${[['cook', 'Cook'], ['orders', 'Orders & bait'], ['journal', 'Journal']].map(([id, l]) =>
+          `<button class="tab" role="tab" aria-selected="${ui.tab === id}" data-act="tab" data-v="${id}">${l}${id === 'orders' && openOrders ? `<span class="badge">${openOrders}</span>` : ''}</button>`).join('')}
+      </div>
+      ${ui.tab === 'cook' ? cookTab() : ui.tab === 'orders' ? ordersTab() : journalTab()}
+    </div>
+  </div>
+  ${ui.debug ? debugDrawer(st) : ''}
+  ${ui.banner ? bannerHtml() : ''}`;
+  ui.flash = false;
+}
+
+function lessonsPanel() {
+  const ls = realm.lessons(), now = ls.findIndex(l => !l.done);
+  return `<section class="frame lessons"><h2 class="fh">${esc(realm.cookName() === 'Tomas' ? "Tomas's lessons" : 'Lessons')} <small>${ls.filter(l => l.done).length} of ${ls.length}</small></h2><div class="fb">
+    ${now === -1 ? '<p class="all">All lessons done. The kitchen is yours.</p>' : ''}
+    <ol>${ls.map((l, i) => `<li class="lesson ${l.done ? 'done' : i === now ? 'now' : ''}">
+      <span class="mk" aria-hidden="true">${l.done ? '✓' : ''}</span>
+      <div><span class="t">${esc(l.title)}</span>${i === now ? `<p>${esc(l.text)}</p>` : ''}</div></li>`).join('')}</ol>
+  </div></section>`;
+}
+
+function characterPanel() {
+  const c = realm.character();
+  const fl = ui.flash ? ' flash' : '';
+  return `<section class="frame"><h2 class="fh">Character <small>level ${c.level}</small></h2><div class="fb">
+    ${c.buff ? `<div class="buffline"><span><span class="q-${c.buff.rclass}" style="font-weight:500">${esc(c.buff.name)}</span> <span class="muted" style="font-size:13px">${esc(c.buff.sub)}</span></span>
+      <span class="timer">${c.buff.remaining} min left${c.buff.survives ? ' · survives death' : ''}</span></div>`
+      : '<p class="nobuff">Not Well Fed. Eat a meal to get a buff.</p>'}
+    <div class="hp"><span class="gold-t">Health</span><span>${c.health}${c.healthBonus ? ` <b style="color:var(--good)">(+${c.healthBonus})</b>` : ''}</span></div>
+    <div class="stats">${c.stats.map(s => `<div class="stat${s.bonus ? ' up' + fl : ''}"><span class="lbl">${s.name}</span><span class="v">${s.total}</span><span class="b">${s.bonus ? '+' + s.bonus : ''}</span></div>`).join('')}</div>
+    <div class="effects">${c.ooc.map(o => `<div class="eff${o.bonus ? fl : ''}"><span>${esc(o.label)}</span>
+        ${o.bonus ? (o.active ? `<span class="on">${o.bonus}</span>` : `<span class="off">${o.bonus} <span class="tag">off in combat</span></span>`) : `<span class="muted">${o.base}</span>`}</div>`).join('')}
+      ${c.other.map(o => `<div class="eff${fl}"><span class="${o.active ? 'on' : 'off'}" style="font-weight:500">${esc(o.text)}</span>${o.why ? `<span class="tag">${o.why}</span>` : ''}</div>`).join('')}
+    </div>
+  </div></section>`;
+}
+
+function mealsPanel() {
+  const ms = realm.meals(), st = realm.status();
+  return `<section class="frame"><h2 class="fh">Your meals <small>in your bags</small></h2><div class="fb">
+    ${ms.length ? ms.map(m => `<div class="meal" data-tip="${m.key}">${ico(m.key)}
+      <div style="min-width:0"><div class="mn q-${m.rclass}">${esc(m.name)}${m.count > 1 ? ` <span class="muted">× ${m.count}</span>` : ''}</div>
+        <div class="ms">${esc(m.sub)}</div><div class="mu">${esc(m.use)}</div></div>
+      <button class="btn small" data-act="eat" data-v="${m.key}" ${st.inCombat ? 'disabled title="You can\'t eat in combat"' : ''}>Eat</button></div>`).join('')
+      : '<p class="nobuff" style="margin:0">Nothing cooked yet.</p>'}
+  </div></section>`;
+}
+
+function cookTab() {
+  const book = realm.recipeBook();
+  const chip = s => s ? `<span class="ing q-${s.rclass}">${esc(s.name)}</span>` : '<span class="ing hid">???</span>';
+  const row = (r, label) => `<button class="rb ${r.known ? '' : 'unknown'}" style="--h:${r.hue}" data-act="choose" data-mode="${r.known ? 'recipe' : 'discover'}" data-v="${r.id}" aria-pressed="${ui.id === r.id}">
+      <span class="tierlab">${esc(label)}</span>
+      <span style="min-width:0"><span class="rn ${r.legendary ? 'q-legendary' : r.known && r.output ? 'q-' + r.output.rclass : ''}">${esc(r.name)}</span>
+        ${r.tier ? '' : r.output ? `<span class="ro q-${r.output.rclass}">${esc(r.output.sub)}</span>` : ''}
+        <span class="ings">${r.slots.map(chip).join('')}</span></span></button>`;
+  const effects = book.effects.map(e => `<div class="eg">
+      <div class="eh" style="--h:${e.hue}"><span class="re">${esc(e.effect)}</span><span class="fam">${esc(e.family)}</span></div>
+      ${e.tiers.map(t => row(t, t.tier)).join('')}</div>`).join('');
+  const list = `
+    <div class="bh">Recipe book <span>${book.knownCount} of ${book.total} known</span></div>
+    ${book.open ? effects : `<p class="muted" style="font-size:14px;margin:4px">Empty. Cook anything once and ${esc(realm.cookName())} shows you his recipes.</p>`}
+    ${book.dishes.length ? `<div class="bh">Fish dishes</div>${book.dishes.map(d => row(d, d.effect)).join('')}` : ''}
+    ${book.legendary.length ? `<div class="bh">Legendary</div>${book.legendary.map(d => row(d, d.effect)).join('')}` : ''}
+    <div class="bh">Free</div>
+    <button class="rb" style="--h:40" data-act="choose" data-mode="experiment" data-v="" aria-pressed="${ui.mode === 'experiment'}">
+      <span class="tierlab">Any</span><span><span class="rn">Experiment</span><span class="rv">2 to 4 ingredients. Reveals every one you use.</span></span></button>`;
+  return `<section class="frame">
+    <h2 class="fh">${esc(realm.kitchens().find(k => k.id === realm.status().kitchen).name)} <small>cook: ${esc(realm.cookName())}</small></h2>
+    <div class="kitchen"><div class="book">${list}</div><div>${potHtml(book)}${pantryHtml()}${logHtml()}</div></div>
+  </section>`;
+}
+
+function findPage(book, id) {
+  for (const e of book.effects) for (const t of e.tiers) if (t.id === id) return { ...t, effect: e.effect };
+  return [...book.dishes, ...book.legendary].find(x => x.id === id);
+}
+
+function potHtml(book) {
+  const r = ui.id ? findPage(book, ui.id) : null;
+  const slotsInfo = realm.slots(ui.mode, ui.id, ui.n);
+  let title, sub;
+  if (ui.mode === 'experiment') { title = 'Experiment'; sub = 'Put in whatever you like. Every ingredient you cook with shows up in every unknown recipe that uses it. An exact match teaches the recipe. Anything else makes Hearty Mush.'; }
+  else if (ui.mode === 'discover') {
+    const hidden = r.slots.filter(s => !s).length;
+    title = `Unknown recipe · ${r.tier}`;
+    sub = `Makes: <b>${esc(r.effect)}</b>${r.band ? `, ${r.band}` : ''}. ${hidden ? `${hidden} of ${r.slots.length} ingredients still hidden. Guess them, or cook with untried ingredients elsewhere to reveal them.` : 'Every ingredient is revealed. Cook it to learn the recipe.'}`;
+  } else { const info = realm.recipeInfo(ui.id); title = r.name; sub = `Makes: <b>${esc(info.effect)}</b> · ${esc(info.family)}${info.tier ? ` · ${info.tier}` : ''}.`; }
+  const slots = ui.slots.map((k, i) => {
+    const s = slotsInfo[i];
+    const guess = s.any && ui.mode === 'discover' ? 'guess' : '';
+    return k ? `<button class="slot filled ${guess}" data-act="unslot" data-v="${i}" data-tip="${k}"><span class="sl">${esc(s.label)}</span><span class="sv q-${realm.rclassOf(k)}">${esc(realm.nameOf(k))}</span><span class="sx">Click to take out</span></button>`
+      : `<div class="slot ${guess}"><span class="sl">${esc(s.label)}</span><span class="empty">${s.any ? 'Empty. Pick from the pantry.' : `You have no ${esc(s.label)}.`}</span></div>`;
+  }).join('');
+  const p = realm.predict(ui.mode, ui.id, ui.slots);
+  const pred = p.ready ? `<div class="ph">You'll get</div>
+      ${p.trial ? `<div class="pv">A guess</div>` : `<div class="pv"><span class="q-${p.rclass}">${esc(p.name)}</span> <span class="q-${p.rclass}" style="font-size:15px">(${esc(p.quality)})</span></div><div class="pe">${esc(p.effect)}</div>`}
+      <ul>${p.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul>`
+    : `<div class="ph">You'll get</div><div class="muted">${esc(p.note)}</div>`;
+  return `<div class="pot">
+    <div><h3 class="pot-title ${r && r.legendary ? 'q-legendary' : ui.mode === 'recipe' ? '' : 'gold-t'}">${esc(title)}</h3><div class="pot-sub">${sub}</div></div>
+    ${ui.mode === 'experiment' ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="muted" style="font-size:14px">Slots</span>${[2, 3, 4].map(n => `<button class="btn small ${ui.n === n ? '' : 'ghost'}" data-act="n" data-v="${n}">${n}</button>`).join('')}</div>` : ''}
+    <div class="slots">${slots}</div>
+    <div class="predict" aria-live="polite">${pred}</div>
+    <div class="cookrow"><button class="btn big" data-act="cook" ${p.ready ? '' : 'disabled'}>Cook</button>
+      ${ui.mode === 'recipe' ? '<button class="btn small ghost" data-act="refill">Refill</button>' : '<button class="btn small ghost" data-act="clear">Empty the pot</button>'}</div>
+  </div>`;
+}
+
+function pantryHtml() {
+  const info = realm.slots(ui.mode, ui.id, ui.n);
+  const used = {};
+  ui.slots.forEach(k => { if (k) used[k] = (used[k] || 0) + 1; });
+  const fits = (key, count) => count - (used[key] || 0) > 0 && ui.slots.some((s, i) => !s && info[i].accepts.includes(key));
+  const groups = realm.pantry();
+  return `<div class="pantry"><div class="pantry-h"><h3>Pantry</h3><span class="muted" style="font-size:13.5px">Click to put in the pot. <span class="new-b">Untried</span> items reveal recipes when you cook with them.</span></div>
+    ${groups.map(g => `<div class="pg"><div class="pg-l">${esc(g.label)}</div><div class="cards">${g.items.map(it => `
+      <button class="card" data-act="add" data-v="${it.key}" data-tip="${it.key}" ${fits(it.key, it.count) ? '' : 'disabled'}>${ico(it.key)}
+        <span><span class="cn q-${it.rclass}">${esc(it.name)}</span>${it.untried ? ' <span class="new-b">Untried</span>' : ''}<br><span class="cm">L${it.lvl} · ${it.count - (used[it.key] || 0)} left</span></span></button>`).join('')}</div></div>`).join('')}
+  </div>`;
+}
+
+function logHtml() {
+  if (!ui.log.length) return '';
+  return `<div class="log" aria-live="polite">${ui.log.slice(-5).map(m => m.t === 'gold' ? `<div>Received ${money(m.copper)}.</div>` : m.t === 'product' ? '' : `<div class="${m.t}">${esc(m.text)}</div>`).join('')}</div>`;
+}
+
+function bannerHtml() {
+  const b = ui.banner;
+  return `<div class="banner-wrap" data-act="closebanner"><div class="frame banner pop" role="dialog" aria-label="Cooking result">
+    <div class="kick">${b.mush ? 'No recipe matched' : 'You cooked'}</div>
+    <div class="big q-${realm.rclassOf(b.key)}">${esc(realm.nameOf(b.key))}</div>
+    <div class="muted">${esc(b.sub)}</div>
+    <div class="eff">${esc(realm.describe(b.key).lines[1].text)}</div>
+    ${b.line ? `<div class="cookline">${esc(b.line)}</div>` : ''}
+    <div class="news">${b.news.map(n => `<div class="new">${esc(n.text)}</div>`).join('')}</div>
+    <div class="row"><button class="btn" data-act="eatnow" data-v="${b.key}" ${realm.status().inCombat ? 'disabled' : ''}>Eat it now</button><button class="btn ghost" data-act="closebanner">Keep cooking</button></div>
+  </div></div>`;
+}
+
+function ordersTab() {
+  const orders = realm.orders(), cut = realm.cuttable(), baits = realm.baits();
+  if (!cut.some(c => c.key === ui.cutId)) ui.cutId = cut[0]?.key || null;
+  return `<div class="two">
+    <section class="frame"><h2 class="fh">Orders from ${esc(realm.cookName())} <small>until next dawn</small></h2><div class="fb">
+      ${orders.map(o => `<div class="order ${o.done ? 'done' : ''}">
+        <div><div class="ot">${{ fish: 'Raw fish', meal: 'Cooked meals', herb: 'Raw herbs' }[o.type]}</div>
+          <div class="ol">${esc(o.label)}</div>
+          <div class="or">Pays ${money(o.gold)}${o.bonus ? ` and <span class="${o.bonusRare ? 'q-rare' : 'gold-t'}">${esc(o.bonus)}</span>` : ''}</div></div>
+        <div><div class="prog">${o.done ? 'Delivered' : `You have ${o.have} / ${o.qty}`}</div>
+          ${o.done ? '' : `<button class="btn small" style="margin-top:4px;width:100%" data-act="deliver" data-v="${o.i}" ${o.canDeliver ? '' : 'disabled'}>Deliver</button>`}</div>
+      </div>`).join('')}
+    </div></section>
+    <section class="frame"><h2 class="fh">Cut bait</h2><div class="fb" style="display:grid;gap:8px">
+      ${cut.length ? `<label for="cutsel" class="muted" style="font-size:14px">Cut 1 fish into 3 bait. Each bait is the favourite of a bigger fish.</label>
+        <select id="cutsel" data-ch="cutsel">${cut.map(c => `<option value="${c.key}" ${c.key === ui.cutId ? 'selected' : ''}>${esc(c.name)} (${c.count}) → 3 ${esc(c.bait)}</option>`).join('')}</select>
+        <div><button class="btn small" data-act="cut">Cut bait</button></div>` : '<p class="muted">No common or uncommon fish to cut.</p>'}
+      ${baits.length ? `<div class="bh" style="margin:6px 0 0">Bait in your Fishing Satchel</div>${baits.map(b => `<div style="font-size:14px" data-tip="${b.key}"><span class="q-${b.rclass}">${esc(b.name)}</span> × ${b.count} <span class="muted">· for ${esc(b.forFish)}</span></div>`).join('')}` : ''}
+    </div></section>
+  </div>`;
+}
+
+function journalTab() {
+  const sub = `<div class="sub">${[['dishes', 'Dish pages'], ['fish', 'Fish pages']].map(([id, l]) => `<button class="btn small ${ui.jtab === id ? '' : 'ghost'}" data-act="jtab" data-v="${id}">${l}</button>`).join('')}</div>`;
+  if (ui.jtab === 'dishes') {
+    const pages = realm.cookingJournal();
+    return `<section class="frame"><h2 class="fh">Cooking Journal <small>${pages.length} known</small></h2>${sub}
+      ${pages.length ? `<div class="pages">${pages.map(p => `<article class="parch page ${p.rclass === 'legendary' ? 'leg' : ''}">
+        <div class="kind">${esc(p.family)}${p.tier ? ` · ${esc(p.tier)}` : ''}</div>
+        <h3><span class="namechip q-${p.rclass}">${esc(p.name)}</span></h3>
+        <div style="font-size:14px">${esc(p.effect)} · needs ${esc(p.slots.join(', '))}</div>
+        <dl><dt>Times cooked</dt><dd>${p.cooked}</dd>
+          <dt>First cook</dt><dd>${p.first ? `${esc(p.first.when)}, ${esc(p.first.where)}` : 'Not cooked yet'}</dd></dl>
+      </article>`).join('')}</div>` : '<p class="muted fb">No recipes yet.</p>'}</section>`;
+  }
+  const fish = realm.fishingJournal();
+  const page = f => `<article class="parch page ${f.caught || f.seen ? '' : 'dim'} ${f.legend ? 'leg' : ''}">
+      <div class="kind">${f.legend ? `${esc(f.pool)} legend · ${f.type === 'U' ? 'unique meal' : 'double meal'}` : `Fish · L${f.lvl}`}</div>
+      <h3><span class="namechip q-${f.rclass}">${esc(f.name)}</span></h3>
+      <dl><dt>Own dish</dt><dd>${f.dishKnown ? esc(f.dish) : 'Learned on first catch'}</dd>
+        <dt>Caught</dt><dd>${f.caught}</dd>
+        ${f.bites.length ? `<dt>Bites on</dt><dd>${esc(f.bites.join(', '))}</dd>` : ''}</dl></article>`;
+  return `<section class="frame"><h2 class="fh">Fishing Journal <small>${fish.filter(f => !f.legend && f.caught).length} of 30 caught</small></h2>${sub}
+    <div class="pages">${fish.filter(f => !f.legend).map(page).join('')}</div>
+    <h2 class="fh" style="border-top:1px solid var(--edge-dark)">Legendary Fish</h2>
+    <div class="pages">${fish.filter(f => f.legend).map(page).join('')}</div></section>`;
+}
+
+function debugDrawer(st) {
+  const items = realm.allItems(), catchables = realm.catchables();
+  const kinds = [['herb', 'Herbs'], ['lplant', 'Legendary plants'], ['fish', 'Fish'], ['legend', 'Legendary Fish']];
+  return `<aside class="frame drawer" aria-label="Debug"><h2 class="fh">Debug <button class="btn small ghost" data-act="debug">Close</button></h2><div class="fb">
+    <div class="dbg"><label class="lab" for="lvl">Character level</label><div class="r"><input type="number" id="lvl" min="1" max="60" value="${st.level}" data-ch="level"></div></div>
+    <div class="dbg"><span class="lab">Give ingredients</span>
+      <div class="r"><button class="btn small" data-act="giveRandom">Random mix</button></div>
+      <div class="r"><select id="giveId" data-ch="giveId" aria-label="Item">${kinds.map(([k, l]) => `<optgroup label="${l}">${items.filter(i => i.kind === k).map(i => `<option value="${i.id}" ${i.id === ui.giveId ? 'selected' : ''}>${esc(i.name)}</option>`).join('')}</optgroup>`).join('')}</select>
+        <input type="number" id="giveN" min="1" max="99" value="${ui.giveN}" aria-label="Amount" data-ch="giveN"><button class="btn small" data-act="give">Give</button></div></div>
+    <div class="dbg"><span class="lab">Combat</span>
+      <label class="toggle"><input type="checkbox" id="combat" data-ch="combat" ${st.inCombat ? 'checked' : ''}> In combat</label>
+      <div class="r"><button class="btn small" data-act="die">Die</button></div></div>
+    <div class="dbg"><span class="lab">Time</span>
+      <div class="r"><button class="btn small" data-act="adv">Advance 10 minutes</button><button class="btn small" data-act="dawn">Next dawn</button></div>
+      <div class="muted" style="font-size:12.5px">Next dawn rerolls orders without spending buff time.</div></div>
+    <div class="dbg"><label class="lab" for="catchId">Catch fish</label>
+      <div class="r"><select id="catchId" data-ch="catchId"><optgroup label="Fish">${catchables.filter(c => !c.legend).map(c => `<option value="${c.id}" ${c.id === ui.catchId ? 'selected' : ''}>${esc(c.name)} (L${c.lvl})</option>`).join('')}</optgroup>
+        <optgroup label="Legendary Fish">${catchables.filter(c => c.legend).map(c => `<option value="${c.id}" ${c.id === ui.catchId ? 'selected' : ''}>${esc(c.name)} (L${c.lvl})</option>`).join('')}</optgroup></select>
+        <button class="btn small" data-act="catch">Catch</button></div></div>
+    <div class="dbg"><span class="lab">Rumours</span>
+      <div class="r"><button class="btn small" data-act="rumour">Read a Rumour</button><button class="btn small" data-act="plant">Plant Rumour</button></div></div>
+    <div class="dbg"><span class="lab">Log</span><div style="font-size:13px;display:grid;gap:2px">${ui.log.slice(-6).map(m => `<div class="${m.t === 'error' ? '' : 'muted'}">${m.t === 'gold' ? 'Received ' + money(m.copper) : m.t === 'product' ? '' : esc(m.text)}</div>`).join('')}</div></div>
+  </div></aside>`;
+}
+
+// ---------- events ----------
+const after = msgs => { push(msgs); render(); };
+$app.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  if (el.classList.contains('banner-wrap') && e.target !== el) return;
+  const a = el.dataset.act, v = el.dataset.v;
+  hideTip();
+  switch (a) {
+    case 'tab': ui.tab = v; render(); break;
+    case 'jtab': ui.jtab = v; render(); break;
+    case 'debug': ui.debug = !ui.debug; render(); break;
+    case 'choose': choose(el.dataset.mode, v || null); render(); break;
+    case 'n': ui.n = +v; ui.slots = Array.from({ length: ui.n }, (_, i) => ui.slots[i] || null); render(); break;
+    case 'clear': ui.slots = realm.autoFill(ui.mode, ui.id, ui.n); if (ui.mode !== 'discover') ui.slots = ui.slots.map(() => null); render(); break;
+    case 'refill': choose(ui.mode, ui.id); render(); break;
+    case 'unslot': ui.slots[+v] = null; render(); break;
+    case 'add': {
+      const info = realm.slots(ui.mode, ui.id, ui.n);
+      const i = ui.slots.findIndex((s, j) => !s && info[j].accepts.includes(v));
+      if (i >= 0) ui.slots[i] = v;
+      render(); break;
+    }
+    case 'cook': {
+      const res = realm.cook(ui.mode, ui.id, ui.slots);
+      push(res.msgs);
+      if (res.ok) {
+        const ev = res.events, news = [];
+        ev.learned.filter(l => l.how === 'trial').forEach(l => news.push({ text: `New recipe: ${realm.recipeInfo(l.rid).name}!` }));
+        const starters = ev.learned.filter(l => l.how === 'starter');
+        if (starters.length) news.push({ text: `${realm.cookName()} taught you ${starters.length} recipes. Your recipe book is open.` });
+        ev.revealed.forEach(r => news.push({ text: `${realm.nameOf(r.item)} revealed in ${r.count} unknown ${r.count === 1 ? 'recipe' : 'recipes'}` }));
+        const say = res.msgs.find(m => m.t === 'say' && m.text.includes('tastes'));
+        ui.banner = { key: ev.product, mush: ev.mush, sub: res.msgs.find(m => m.t === 'product').text, news, line: say ? say.text : '' };
+        const trialLearn = ev.learned.find(l => l.how === 'trial');
+        if (trialLearn) choose('recipe', trialLearn.rid);
+        else if (ui.mode !== 'experiment') choose(ui.mode, ui.id);
+        else ui.slots = ui.slots.map(() => null);
+      }
+      render(); break;
+    }
+    case 'closebanner': ui.banner = null; render(); break;
+    case 'eatnow': ui.banner = null; ui.flash = true; after(realm.eat(v)); break;
+    case 'eat': ui.flash = true; after(realm.eat(v)); break;
+    case 'deliver': after(realm.deliver(+v)); break;
+    case 'cut': if (ui.cutId) after(realm.cutBait(ui.cutId)); break;
+    case 'giveRandom': after(realm.giveRandom()); break;
+    case 'give': after(realm.give(ui.giveId, ui.giveN)); break;
+    case 'die': after(realm.die()); break;
+    case 'adv': after(realm.advance(10)); break;
+    case 'dawn': after(realm.nextDawn()); break;
+    case 'catch': {
+      const r = realm.catchFish(ui.catchId);
+      push(r.msgs);
+      if (r.learned) ui.banner = null;
+      render(); break;
+    }
+    case 'rumour': after(realm.readRumour()); break;
+    case 'plant': after(realm.readPlantRumour()); break;
+  }
+});
+$app.addEventListener('change', e => {
+  const el = e.target;
+  switch (el.dataset.ch) {
+    case 'kitchen': realm.setKitchen(el.value); choose('experiment', null); render(); break;
+    case 'giveId': ui.giveId = el.value; break;
+    case 'giveN': ui.giveN = Math.max(1, +el.value || 1); break;
+    case 'catchId': ui.catchId = el.value; break;
+    case 'cutsel': ui.cutId = el.value; break;
+    case 'level': realm.setLevel(+el.value); render(); break;
+    case 'combat': after(realm.setCombat(el.checked)); break;
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.banner) { ui.banner = null; render(); } });
+
+// ---------- tooltip ----------
+function showTip(el, x, y) {
+  const d = realm.describe(el.dataset.tip);
+  $tip.innerHTML = `<div class="tn q-${d.rclass}">${esc(d.name)}</div>${d.lines.map(l => `<div class="${l.c || ''}">${esc(l.text)}</div>`).join('')}`;
+  $tip.hidden = false;
+  const r = $tip.getBoundingClientRect();
+  let left = x + 16, top = y + 16;
+  if (left + r.width > innerWidth - 8) left = Math.max(8, x - r.width - 12);
+  if (top + r.height > innerHeight - 8) top = Math.max(8, y - r.height - 12);
+  $tip.style.left = left + 'px'; $tip.style.top = top + 'px';
+}
+function hideTip() { $tip.hidden = true; }
+document.addEventListener('mousemove', e => { const el = e.target.closest?.('[data-tip]'); if (el && !ui.banner) showTip(el, e.clientX, e.clientY); else hideTip(); });
+document.addEventListener('scroll', hideTip, true);
+
+choose('experiment', null);
+render();
+</script>
+
+</body></html>
