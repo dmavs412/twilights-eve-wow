@@ -77,6 +77,12 @@ class BalanceModel(unittest.TestCase):
                 self.assertIsInstance(b["unmodelled"], list)
         # The Shadow of Morganth's Terrify is a fear: listed, not raised.
         self.assertTrue(any("terrify_creature" in b["unmodelled"] for b in bosses))
+        # Each takes the Zone Factor of where it spawns, not of the template above or below it:
+        # the Abbot in the Abbey, Vurx in Echo Ridge Mine, the Eye Below in Jasperlode (zone 12).
+        areas = {b["name"]: b["area"] for b in bosses}
+        self.assertEqual(areas["Abbot Ashworth"], model.NORTHSHIRE_VALLEY)
+        self.assertEqual(areas["Geomancer Vurx"], model.NORTHSHIRE_VALLEY)
+        self.assertEqual(areas["The Eye Below"], model.ELWYNN_FOREST)
 
 
 if __name__ == "__main__":

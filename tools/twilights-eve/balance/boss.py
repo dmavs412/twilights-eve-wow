@@ -28,25 +28,50 @@ NORTHSHIRE_WORDS = ("Northshire", "Abbey", "Echo Ridge")
 
 
 def _comments(text):
-    """Each template's entry and the comment lines above and inside its block."""
-    out, pending, current = {}, [], None
+    """Each template's entry and the comment lines above and inside its block. A blank line ends
+    the block's inside, so the comment over the next block is that block's."""
+    out, pending, current, inside = {}, [], None, False
     for line in text.splitlines():
         s = line.strip()
         if s.startswith("[["):
             current = None
             if s == "[[template]]":
                 current = {"comments": pending}
-            pending = []
+            pending, inside = [], current is not None
         elif s.startswith("#"):
-            (current["comments"] if current else pending).append(s)
+            (current["comments"] if inside else pending).append(s)
         elif not s:
-            if current is None:
+            if inside:
+                inside = False
+            else:
                 pending = []
         else:
             m = re.match(r"entry\s*=\s*(\d+)", s)
             if current is not None and m and "entry" not in current:
                 current["entry"] = int(m.group(1))
                 out[current["entry"]] = current["comments"]
+    return out
+
+
+def _spawn_comments(text):
+    """Each entry a non-template block places (one with a `position`) and the comment lines
+    between the key line before that block and the block's own: its paragraph and any section
+    heading over it."""
+    out, since, block = {}, [], None
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("[["):
+            block = None if s == "[[template]]" else {"comments": since, "entry": None}
+            since = []
+        elif s.startswith("#"):
+            since.append(s)
+        elif s:
+            since = []
+            m = re.match(r"entry\s*=\s*(\d+)", s)
+            if block is not None and m and block["entry"] is None:
+                block["entry"] = int(m.group(1))
+            if block is not None and block["entry"] is not None and s.startswith("position"):
+                out.setdefault(block["entry"], []).extend(block["comments"])
     return out
 
 
@@ -76,6 +101,7 @@ def named_bosses():
     files = sorted(glob.glob(os.path.join(content, "*.toml")))
     parsed = []
     kits = {}
+    spawns = {}      # entry -> [(its spawn file's name, that file's zone or None, comments)]
     for path in files:
         with open(path, "rb") as f:
             raw = f.read()
@@ -84,6 +110,10 @@ def named_bosses():
         for k in data.get("kit", []):
             if "spells" in k:
                 kits[k["entry"]] = k["spells"]
+        zone = data.get("zone") if isinstance(data.get("zone"), int) else None
+        name = os.path.splitext(os.path.basename(path))[0].replace("_", " ")
+        for entry, comments in _spawn_comments(raw.decode("utf-8")).items():
+            spawns.setdefault(entry, []).append((name, zone, comments))
     bands = _band_levels()
     bosses = []
     for path, text, data in parsed:
@@ -94,11 +124,16 @@ def named_bosses():
             entry = t["entry"]
             band = bands.get(entry)
             level = max(band[0]) if band else t["level_max"]
-            words = " ".join(notes.get(entry, [])) + " " + (band[1] if band else "")
-            if isinstance(data.get("zone"), int):
+            placed = spawns.get(entry, [])
+            words = " ".join([*notes.get(entry, []), band[1] if band else "",
+                              *(f"{name} {' '.join(comments)}" for name, _, comments in placed)]).lower()
+            dungeon = next((zone for _, zone, _ in placed if zone is not None), None)
+            if dungeon is not None:
+                area, why = dungeon, f"its spawn's file's zone {dungeon}"
+            elif isinstance(data.get("zone"), int):
                 area, why = data["zone"], f"its file's zone {data['zone']}"
-            elif any(w in words for w in NORTHSHIRE_WORDS):
-                area, why = model.NORTHSHIRE_VALLEY, "Northshire, from its comment or band"
+            elif any(w.lower() in words for w in NORTHSHIRE_WORDS):
+                area, why = model.NORTHSHIRE_VALLEY, "Northshire, from its comments, band or spawn"
             else:
                 area, why = model.ELWYNN_FOREST, "Elwynn Forest, the default"
             keys = kits.get(entry, t.get("spells", []))
